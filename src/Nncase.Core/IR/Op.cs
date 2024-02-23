@@ -17,6 +17,7 @@ public enum ParameterKind : int
 {
     Input,
     Attribute,
+    Weights,
 }
 
 /// <summary>

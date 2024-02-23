@@ -35,6 +35,12 @@ public class UninitializedEvaluator : IEvaluator<Uninitialized>, ITypeInferencer
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Uninitialized target)
     {
-        return Cost.Zero;
+        // return Cost.Zero;
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = 1,
+            [CostFactorNames.MemoryStore] = 1,
+            [CostFactorNames.CPUCycles] = 1,
+        };
     }
 }

@@ -20,6 +20,7 @@ public class EGraphPassWithQuantize : EGraphRulesPass
     protected override async Task<IEGraph> RunCoreAsync(IEGraph input, RunPassContext context)
     {
         var quantizer = new Quantizer(input, CompileSession.CompileOptions.QuantizeOptions);
+        var inputExpr = input.Extract(input.Root!, null, out _);
         await quantizer.RunAsync(context);
         return input;
     }

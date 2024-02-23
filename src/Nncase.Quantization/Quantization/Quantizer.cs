@@ -3,12 +3,16 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using DryIoc;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Nncase.Diagnostics;
+using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.Passes;
@@ -18,339 +22,277 @@ using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Quantization;
-
 internal partial class Quantizer
 {
     private readonly IEGraph _graph;
+    private readonly Expr _expr;
     private readonly QuantizeOptions _quantizeOptions;
-    private readonly List<ENode> _rangeOfs = new List<ENode>();
-    private readonly List<ENode> _childrenOfRangeOfs = new List<ENode>();
-    private readonly List<ENode> _markers = new List<ENode>();
+    private readonly Dictionary<Var, QuantConfig>? _fakeNodeConfigs = new();
 
     public Quantizer(IEGraph graph, QuantizeOptions quantizeOptions)
     {
         _graph = graph;
+        _expr = ExtractExpr();
         _quantizeOptions = quantizeOptions;
-        MarkRangeOfs();
-        MarkMarkers();
-    }
-
-    public Dictionary<ENode, List<Tensor>> GetMarkerOutputGroundTruth(List<IReadOnlyDictionary<Var, IValue>> samples)
-    {
-        var markerOutputGroundTruth = new Dictionary<ENode, List<Tensor>>(ReferenceEqualityComparer.Instance);
-        foreach (var sample in samples)
-        {
-            using var dumpScope = new DumpScope("eval_marker");
-            using var markerEvaluator = new CalibrationEvaluator(sample, _markers);
-            var markerValues = markerEvaluator.Evaluate();
-            foreach (var key in markerValues.Keys)
-            {
-                if (markerOutputGroundTruth.TryGetValue(key, out _))
-                {
-                    markerOutputGroundTruth[key].Add(markerValues[key]);
-                }
-                else
-                {
-                    var tensorList = new List<Tensor>();
-                    tensorList.Add(markerValues[key]);
-                    markerOutputGroundTruth.Add(key, tensorList);
-                }
-            }
-        }
-
-        return markerOutputGroundTruth;
-    }
-
-    public void DumpCosineAndMRE(Dictionary<ENode, List<Tensor>> markerOutputGroundTruth, List<IReadOnlyDictionary<Var, IValue>> samples)
-    {
-        var cosineError = new Dictionary<string, float[]>();
-        var mreError = new Dictionary<string, float[]>();
-        var sampleIndex = 0;
-
-        // hardcoded maxSamplesCount to be 5 to avoid export too much parameters for users and make them confused
-        int maxSamplesCount = Math.Min(samples.Count, 5);
-        samples = samples.GetRange(0, maxSamplesCount);
-        foreach (var sample in samples)
-        {
-            using var dumpScope = new DumpScope("eval_marker_with_accumulated_error");
-            using var markerEvaluator = new CalibrationEvaluator(sample, _markers);
-            var markerValues = markerEvaluator.Evaluate();
-            foreach (var key in markerValues.Keys)
-            {
-                if (key.Expr.Metadata.OutputNames == null)
-                {
-                    continue;
-                }
-
-                var groundTruth = markerOutputGroundTruth[key][sampleIndex];
-                var quantedValue = markerValues[key];
-                var outputNames = key.Expr.Metadata.OutputNames![0];
-                var sampleCosineError = Utility.GetCosineSimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(quantedValue.BytesBuffer));
-                var sampleMREError = Utility.GetMRESimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(quantedValue.BytesBuffer));
-                if (!File.Exists(DumpScope.Current.Directory + "/" + $"{outputNames}.csv"))
-                {
-                    using var tensorWriter = new StreamWriter(DumpScope.Current.OpenFile($"{outputNames}.csv"));
-                    tensorWriter.WriteLine($"ground_truth, simulate_output");
-                    for (int i = 0; i < MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer).Length; i++)
-                    {
-                        tensorWriter.WriteLine($"{MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer)[i]}, {MemoryMarshal.Cast<byte, float>(quantedValue.BytesBuffer)[i]}");
-                    }
-                }
-
-                if (cosineError.TryGetValue(outputNames, out var outputNamesOfKey))
-                {
-                    cosineError[outputNames][sampleIndex] = sampleCosineError;
-                    mreError[outputNames][sampleIndex] = sampleMREError;
-                }
-                else
-                {
-                    cosineError.Add(outputNames, new float[maxSamplesCount]);
-                    cosineError[outputNames][0] = sampleCosineError;
-                    mreError.Add(outputNames, new float[maxSamplesCount]);
-                    mreError[outputNames][0] = sampleMREError;
-                }
-            }
-
-            sampleIndex++;
-        }
-
-        var cosineErrorAvg = cosineError.ToDictionary(item => item.Key, item => item.Value.Average());
-        var mreErrorAvg = mreError.ToDictionary(item => item.Key, item => item.Value.Average());
-        using var writer = new StreamWriter(DumpScope.Current.OpenFile("quant_error.csv"));
-        writer.WriteLine($"name, cosine_error, mre_error");
-        foreach (var (name, err) in cosineErrorAvg)
-        {
-            writer.WriteLine($"{name}, {err}, {mreErrorAvg[name]}");
-        }
-    }
-
-    public async Task DumpQuantError(IDictionary<ENode, ValueRange<float>> ranges)
-    {
-        var samples = await _quantizeOptions.CalibrationDataset!.Samples.ToListAsync();
-        var markerOutputGroundTruth = GetMarkerOutputGroundTruth(samples);
-        AssignQuantParameters(ranges);
-        DumpCosineAndMRE(markerOutputGroundTruth, samples);
-    }
-
-    public async Task DumpQuantErrorFromConfig(IDictionary<ENode, ValueRange<float>[]> ranges)
-    {
-        var samples = await _quantizeOptions.CalibrationDataset!.Samples.ToListAsync();
-        var markerOutputGroundTruth = GetMarkerOutputGroundTruth(samples);
-        AssignQuantParametersFromConfig(ranges);
-        DumpCosineAndMRE(markerOutputGroundTruth, samples);
     }
 
     public async Task RunAsync(RunPassContext options)
     {
-        bool configExist = _quantizeOptions.QuantScheme != string.Empty;
-        bool exportQuantScheme = _quantizeOptions.ExportQuantScheme;
-        bool exportWeightRangeByChannel = _quantizeOptions.ExportWeightRangeByChannel;
-
-        if (!configExist)
+        int srcBinSize = 8192;
+        int dstBinSize = 256;
+        if (_quantizeOptions.CalibrationDataset == null)
         {
-            int srcBinSize = 8192;
-            int dstBinSize = 256;
+            throw new InvalidOperationException($"{nameof(_quantizeOptions.CalibrationDataset)} is not set");
+        }
 
-            if (_quantizeOptions.CalibrationDataset == null)
+        // 1.0 Get ranges
+        var ranges = await GetRangesAsync(_quantizeOptions.CalibrationDataset!);
+
+        // ranges = ranges.ToDictionary(item => item.Key, item => FixUpRange(item.Value));
+        ranges = ranges.ToDictionary(item => item.Key, item => item.Value.Select(v => FixUpRange(v)).ToArray());
+
+        if (_quantizeOptions.CalibrationMethod is CalibMethod.Kld)
+        {
+            // 1.1. Get histograms
+            var histograms = await GetHistogramsAsync(_quantizeOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);
+
+            // 1.2. Select best ranges
+            ranges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, _quantizeOptions.CalibrationMethod);
+        }
+
+        UpdateFakeNodesWithRange(ranges);
+        AssignRanges();
+    }
+
+    private Expr ExtractExpr()
+    {
+        Func<ENode, bool> fakeCallFilter = node =>
+        {
+            return node.Expr is Call call &&
+                            (call.Target is QuantizeOp);
+        };
+
+        Func<ENode, Tuple<ENode, ENode>> replaceUninitlizedWithVar = node =>
+        {
+            var parameters = ((Call)node.Expr).Arguments.ToArray();
+            parameters[^1] = new Var("placeholder", new TensorType(DataTypes.Float32, Shape.Unknown(1)));
+            var newCall = ((Call)node.Expr).With(arguments: parameters);
+            var newEnode = ENode.Create(newCall, Array.Empty<EClass>());
+            _fakeNodeConfigs?.Add((Var)parameters[^1], default!); // config detail info will be update later.
+            return new Tuple<ENode, ENode>(node, newEnode);
+        };
+
+        var callPairs = _graph.Nodes.Where(node => fakeCallFilter(node)).Select(node => replaceUninitlizedWithVar(node)).ToArray();
+
+        foreach ((var nodeWithUninitlized, var nodeWithVar) in callPairs)
+        {
+            var rangeEclass = _graph.Add(nodeWithVar.Expr);
+            var rangeOfEclass = _graph.Find(nodeWithUninitlized);
+            _graph.Union(rangeOfEclass, rangeEclass);
+        }
+
+        _graph.Rebuild();
+
+        return _graph.Extract(_graph.Root!, null, out _);
+    }
+
+    private void AssignRanges()
+    {
+        if (_fakeNodeConfigs is not null)
+        {
+            foreach (var (var, config) in _fakeNodeConfigs)
             {
-                throw new InvalidOperationException($"{nameof(_quantizeOptions.CalibrationDataset)} is not set");
-            }
-
-            // 1.0 Get ranges
-            var ranges = await GetRangesAsync(_quantizeOptions.CalibrationDataset);
-
-            ranges = ranges.ToDictionary(item => item.Key, item => FixUpRange(item.Value));
-
-            if (_quantizeOptions.CalibrationMethod is CalibMethod.Kld)
-            {
-                // 1.1. Get histograms
-                var histograms = await GetHistogramsAsync(_quantizeOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);
-
-                // 1.2. Select best ranges
-                ranges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, _quantizeOptions.CalibrationMethod);
-
-                // 1.3. Assign ranges
-                AssignRanges(ranges);
-            }
-            else
-            { // 2. Assign ranges
-                AssignRanges(ranges);
-            }
-
-            // 3. Export quant info
-            if (_quantizeOptions.ExportQuantScheme == true)
-            {
-                var outputNames = new HashSet<string>();
-                var quantScheme = new QuantScheme();
-                quantScheme.Version = "1.0";
-                var outputsCount = 0;
-                foreach (var range in ranges)
+                if (config.IsEmpty())
                 {
-                    if (range.Key.Expr.Metadata.OutputNames != null && !outputNames.Contains(range.Key.Expr.Metadata.OutputNames[0]))
-                    {
-                        outputNames.Add(range.Key.Expr.Metadata.OutputNames[0]);
-                        outputsCount++;
-                    }
+                    continue;
                 }
 
-                outputNames.Clear();
+                var eNode = ENode.Create(var, Array.Empty<EClass>());
+                var rangeEclass = _graph.Add(config.ToRaw());
+                var rangeOfEclass = _graph.Find(eNode);
+                _graph.Union(rangeOfEclass, rangeEclass);
+            }
 
-                quantScheme.Outputs = new Output[outputsCount];
+            _graph.Rebuild();
 
-                if (_quantizeOptions.ExportWeightRangeByChannel == false)
+            // var debugExpr = _graph.Extract(_graph.Root!, null, out _);
+        }
+    }
+
+    private void UpdateFakeNodesWithRange(IDictionary<Expr, ValueRange<float>[]> ranges)
+    {
+        float[] argRange = new float[2];
+        foreach (var (key, range) in ranges)
+        {
+            if (key is Call &&
+                (((Call)key).Target is QuantizeOp))
+            {
+                // 输入信息的填充
+                var parameters = ((Op)((Call)key).Target).Parameters.ToArray();
+                var configHeader = new float[] { parameters.Length, range.Length };
+                var inputConfigs = new List<QuantConfigData>();
+                var outConfigs = new List<QuantConfigData>();
+                for (int argIdx = 0; argIdx < ((Call)key).Arguments.Length; argIdx++)
                 {
-                    var index = 0;
-                    foreach (var range in ranges.Where(r => r.Key.Expr.Metadata.OutputNames != null && !outputNames.Contains(r.Key.Expr.Metadata.OutputNames[0])))
+                    var arg = ((Call)key).Arguments[argIdx];
+                    if (arg is not Nncase.IR.None)
                     {
-                        quantScheme.Outputs[index] = new Output();
-                        quantScheme.Outputs[index].Name = range.Key.Expr.Metadata.OutputNames![0];
-                        quantScheme.Outputs[index].DataRangeMode = "by_tensor";
-                        quantScheme.Outputs[index].DataType = ((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight == true ? _quantizeOptions.WQuantType.ToString() : _quantizeOptions.QuantType.ToString();
-                        quantScheme.Outputs[index].DataRange = new ValueRange<float>[1];
-                        quantScheme.Outputs[index].DataRange![0] = range.Value;
-                        outputNames.Add(range.Key.Expr.Metadata.OutputNames[0]);
-                        index++;
-                    }
-                }
-                else
-                {
-                    var byChannelRanges = new Dictionary<ENode, ValueRange<float>[]>(ReferenceEqualityComparer.Instance);
-                    foreach (var range in ranges)
-                    {
-                        if (((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight == true)
+                        if (parameters[argIdx].ParameterKind == ParameterKind.Weights)
                         {
-                            var oc = range.Key.Children[1].Nodes[0].Expr.CheckedShape[0].FixedValue;
-                            var valueRanges = new ValueRange<float>[oc];
-                            var weightsValue = ((TensorConst)range.Key.Children[1].Nodes[0].Expr).Value.Cast<float>().Buffer;
-                            var weightsSize = weightsValue.Length;
-                            var eachChannelSize = weightsSize / oc;
-                            var tmpMin = float.MaxValue;
-                            var tmpMax = float.MinValue;
-
-                            for (int i = 0; i < weightsSize; i++)
-                            {
-                                if (weightsValue.Span[i] < tmpMin)
-                                {
-                                    tmpMin = weightsValue.Span[i];
-                                }
-
-                                if (weightsValue.Span[i] > tmpMax)
-                                {
-                                    tmpMax = weightsValue.Span[i];
-                                }
-
-                                if ((i + 1) % eachChannelSize == 0)
-                                {
-                                    valueRanges[i / eachChannelSize] = new ValueRange<float> { Min = tmpMin, Max = tmpMax };
-                                    tmpMin = float.MaxValue;
-                                    tmpMax = float.MinValue;
-                                }
-                            }
-
-                            byChannelRanges.Add(range.Key, valueRanges);
+                            var dType = DataTypes.UInt8;
+                            var weights = (TensorConst)((Call)key).Arguments[argIdx];
+                            var weightsValue = weights.Value.ToArray<float>();
+                            var oc = weights.CheckedShape[0].FixedValue;
+                            var minMaxArr = QuantUtility.GetWeightsRangesByChannel(weightsValue, oc);
+                            inputConfigs.Add(new QuantConfigData(Tensor.From(minMaxArr.ToArray(), new[] { oc, 2 }), dType));
                         }
                         else
                         {
-                            var valueRanges = new ValueRange<float>[1];
-                            valueRanges[0] = range.Value;
-                            byChannelRanges.Add(range.Key, valueRanges);
+                            // 每个parameter的range只有一个，所以这里固定索引为0
+                            var dType = DataTypes.UInt8;
+                            argRange = new float[] { ranges[arg][0].Min, ranges[arg][0].Max };
+                            inputConfigs.Add(new QuantConfigData(new Tensor<float>(argRange, new[] { 1, 2 }), dType));
                         }
                     }
-
-                    var index = 0;
-                    foreach (var range in ranges.Where(r => r.Key.Expr.Metadata.OutputNames != null && !outputNames.Contains(r.Key.Expr.Metadata.OutputNames[0])))
+                    else
                     {
-                        quantScheme.Outputs[index] = new Output();
-                        quantScheme.Outputs[index].Name = range.Key.Expr.Metadata.OutputNames![0];
-                        quantScheme.Outputs[index].DataRangeMode = ((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight == true ? "by_channel" : "by_tensor";
-                        quantScheme.Outputs[index].DataType = ((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight == true ? _quantizeOptions.WQuantType.ToString() : _quantizeOptions.QuantType.ToString();
-                        var rangeLength = byChannelRanges[range.Key].Length;
-                        quantScheme.Outputs[index].DataRange = new ValueRange<float>[rangeLength];
-                        for (int i = 0; i < rangeLength; i++)
-                        {
-                            quantScheme.Outputs[index].DataRange![i] = byChannelRanges[range.Key][i];
-                        }
-
-                        outputNames.Add(range.Key.Expr.Metadata.OutputNames[0]);
-                        index++;
+                        var dType = DataTypes.UInt8;
+                        argRange = new float[] { float.MinValue, float.MaxValue };
+                        inputConfigs.Add(new QuantConfigData(new Tensor<float>(argRange, new[] { 1, 2 }), dType));
                     }
                 }
 
-                var quantSchemeString = JsonConvert.SerializeObject(quantScheme, Newtonsoft.Json.Formatting.Indented);
-                _quantizeOptions.QuantSchemeInnerCheck = quantSchemeString;
-                if (Path.Exists(DumpScope.Current.Directory))
+                // 输出range
+                foreach (var outRange in range)
                 {
-                    File.WriteAllText(Path.Join(DumpScope.Current.Directory, "..", "..", "QuantScheme.json"), quantSchemeString);
+                    var dType = DataTypes.UInt8;
+                    argRange = new float[] { outRange.Min, outRange.Max };
+                    outConfigs.Add(new QuantConfigData(new Tensor<float>(argRange, new[] { 1, 2 }), dType));
                 }
-            }
 
-            if (_quantizeOptions.DumpQuantError)
-            {
-                await DumpQuantError(ranges);
+                var quantInfo = configHeader.Concat(inputConfigs.SelectMany(x => x.ToRaw())).Concat(outConfigs.SelectMany(x => x.ToRaw())).ToArray();
+                var quantConfig = QuantConfig.FromRaw(quantInfo);
+                _fakeNodeConfigs![(Var)((Call)key).Arguments[^1]] = quantConfig;
             }
         }
-        else
-        {
-            // 原本设计导入json功能将来会被集成在nncase studio中，在网页中交互直接复制粘贴json字符串到QuantScheme参数中比较合适，此时以下代码应走上面的分支，
-            // 但是目前由于没有nncase studio，c#与python调试时不可能粘贴数万行的json，可在此处手动临时开启下面的分支，这样导入json时，QuantScheme填入json文件的路径即可。
-            // 若未来不再需要nncase studio，也可直接写死代码只保留下面的分支逻辑，但目前建议先用if的方式保留代码。另外注意，UnitTestExportQuantScheme,UnitTestDumpQuantError等所有与QuantScheme有关的test也需要随之调整。
-            string readJson = _quantizeOptions.QuantScheme;
-
-            // load from stream
-            // var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(readJson);
-            // var ranges = GetRangesFromConfig(quantScheme!);
-            // AssignByChannelRanges(ranges);
-            // AssignDataTypeFromConfig(quantScheme!);
-
-            // load from file
-            using (var r = new StreamReader(readJson))
-            {
-                string json = r.ReadToEnd();
-                var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(json);
-                var ranges = GetRangesFromConfig(quantScheme!);
-                AssignByChannelRanges(ranges);
-                AssignDataTypeFromConfig(quantScheme!);
-                if (_quantizeOptions.DumpQuantError)
-                {
-                    await DumpQuantErrorFromConfig(ranges);
-                }
-            }
-        }
-
-        // // 3. Choose better quant method using cosine, and bind info with ir.
-        // if (quantOptions.BindQuantMethod)
-        // {
-        //     var info = await options.Target.BindQuantMethodCosine(quantOptions.CalibrationDataset, options.Target, _rangeOfs, _childrenOfRangeOfs, _context);
-        // }
-        _graph.Rebuild();
     }
 
-    private async Task RunForHistogramsAsync(ICalibrationDatasetProvider calibrationDataset, Action<IReadOnlyDictionary<ENode, Tensor>> func)
+    private async Task<IDictionary<Expr, ValueRange<float>[]>> GetRangesAsync(ICalibrationDatasetProvider calibrationDataset)
     {
-        await foreach (var sample in calibrationDataset.Samples)
+        var ranges = new Dictionary<Expr, ValueRange<float>[]>(ReferenceEqualityComparer.Instance);
+        await RunPassAsync(calibrationDataset, (values) =>
         {
-            IReadOnlyDictionary<ENode, Tensor> childrenValues;
-            using (var dumpScope2 = new DumpScope("ep2"))
+            foreach (var value in values)
             {
-                var childrenEvaluator = new CalibrationEvaluator(sample, _childrenOfRangeOfs);
-                var tmpChildrenValues = childrenEvaluator.Evaluate().ToList();
-                childrenValues = tmpChildrenValues.Zip(_rangeOfs).ToDictionary(pair => pair.Second, pair => pair.First.Value);
-            }
+                int globalVarIndex = 0;
+                if (value.Key is Call && ((Call)value.Key).Arguments[^1] is Var)
+                {
+                    globalVarIndex = ((Var)((Call)value.Key).Arguments[^1]).GlobalVarIndex;
+                }
 
-            // values are children op range values(only two scalars for each value: Min and Max), childrenValues are children op tensor values.
-            func(childrenValues);
+                try
+                {
+                    var outputNum = value.Value.AsTensors().Length;
+                    var outRange = new ValueRange<float>[outputNum];
+                    for (int i = 0; i < outputNum; i++)
+                    {
+                        var tensor = Tensor.From(value.Value.AsTensors()[i].ToArray<float>());
+                        var range = GetMinMax(tensor);
+                        if (ranges.TryGetValue(value.Key, out var oldRange))
+                        {
+                            ranges[value.Key][i] = oldRange[i].Union(range);
+                        }
+                        else
+                        {
+                            outRange[i] = range;
+                            ranges.Add(value.Key, outRange);
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+            }
+        });
+        return ranges;
+    }
+
+    private Dictionary<Expr, IValue> GetMemo(Dictionary<Var, IValue> sample)
+    {
+        if (_fakeNodeConfigs is not null && _fakeNodeConfigs.Count != 0)
+        {
+            foreach (var (var, _) in _fakeNodeConfigs!)
+            {
+                sample.Add(var, IR.F.Random.Normal(DataTypes.Float32, new int[] { 1 }).Evaluate());
+            }
+        }
+
+        return EvaluatorUtil.GetMemo(_expr, sample);
+    }
+
+    private async Task RunPassAsync(ICalibrationDatasetProvider calibrationDataset, Action<IReadOnlyDictionary<Expr, IValue>> func)
+    {
+        await foreach (Dictionary<Var, IValue> sample in calibrationDataset.Samples)
+        {
+            var memo = GetMemo(sample);
+            func(memo);
             GC.Collect();
         }
     }
 
-    private async Task RunPassAsync(ICalibrationDatasetProvider calibrationDataset, Action<IReadOnlyDictionary<ENode, Tensor>> func)
+    private async Task<IDictionary<Expr, QuantizeHistogram<float>[]>> GetHistogramsAsync(ICalibrationDatasetProvider calibrationDataset, IDictionary<Expr, ValueRange<float>[]> ranges, int srcBinSize, int dstBinSize)
     {
-        await foreach (var sample in calibrationDataset.Samples)
+        var histograms = new Dictionary<Expr, QuantizeHistogram<float>[]>(ReferenceEqualityComparer.Instance);
+        histograms = ranges.ToDictionary(range => range.Key, range => Enumerable.Range(0, range.Value.Length)
+                       .Select(i => new QuantizeHistogram<float>(
+                           new List<float>(new float[srcBinSize]),
+                           new List<float>(new float[srcBinSize]))).ToArray());
+
+        await RunForHistogramsAsync(calibrationDataset, ranges, childrenValues =>
         {
-            using var dumpScope = new DumpScope("ep1");
-            var evaluator = new CalibrationEvaluator(sample, _rangeOfs);
-            var values = evaluator.Evaluate();
-            func(values);
+            foreach (var (key, value) in childrenValues)
+            {
+                for (int i = 0; i < value.Length; i++)
+                {
+                    var r = ranges[key][i].Max - ranges[key][i].Min;
+                    var srcBinInterval = r / srcBinSize;
+
+                    var childrenTensor = value[i].Cast<float>();
+                    var childrenBuffer = childrenTensor.Buffer.Span;
+                    var valueRange = ranges[key][i];
+                    var histogram = histograms[key][i];
+                    foreach (var buf in childrenBuffer)
+                    {
+                        var r_index = (buf - valueRange.Min) / srcBinInterval;
+                        var index = (int)Math.Clamp((float)r_index, 0F, (float)srcBinSize - 1);
+                        histogram.SrcBin[index]++;
+                    }
+                }
+            }
+        });
+        return histograms;
+    }
+
+    private async Task RunForHistogramsAsync(ICalibrationDatasetProvider calibrationDataset, IDictionary<Expr, ValueRange<float>[]> ranges, Action<IReadOnlyDictionary<Expr, Tensor[]>> func)
+    {
+        await foreach (Dictionary<Var, IValue> sample in calibrationDataset.Samples)
+        {
+            var memoTensors = new Dictionary<Expr, Tensor[]>();
+            var memo = GetMemo(sample);
+            foreach (var (key, _) in ranges)
+            {
+                try
+                {
+                    memoTensors[key] = memo[key].AsTensors();
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+            }
+
+            func(memoTensors);
             GC.Collect();
         }
     }
@@ -386,197 +328,45 @@ internal partial class Quantizer
         return range;
     }
 
-    private async Task<IDictionary<ENode, ValueRange<float>>> GetRangesAsync(ICalibrationDatasetProvider calibrationDataset)
+    private IDictionary<Expr, ValueRange<float>[]> GetOptRanges(IDictionary<Expr, QuantizeHistogram<float>[]> histograms, IDictionary<Expr, ValueRange<float>[]> ranges, int srcBinSize, int dstBinSize, CalibMethod calibrationMethod)
     {
-        var ranges = new Dictionary<ENode, ValueRange<float>>(ReferenceEqualityComparer.Instance);
-        await RunPassAsync(calibrationDataset, (values) =>
-        {
-            foreach (var value in values)
-            {
-                var tensor = value.Value.Cast<float>();
-                var range = GetMinMax(tensor);
-                if (ranges.TryGetValue(value.Key, out var oldRange))
-                {
-                    ranges[value.Key] = oldRange.Union(range);
-                }
-                else
-                {
-                    ranges.Add(value.Key, range);
-                }
-            }
-        });
-        return ranges;
-    }
-
-    private IDictionary<ENode, ValueRange<float>[]> GetRangesFromConfig(QuantScheme quantScheme)
-    {
-        var ranges = new Dictionary<ENode, ValueRange<float>[]>(ReferenceEqualityComparer.Instance);
-
-        foreach (var rangeOf in _rangeOfs)
-        {
-            bool getRange = false;
-            for (int i = 0; i < quantScheme!.Outputs!.Length; i++)
-            {
-                if (rangeOf.Expr.Metadata.OutputNames?[0] == quantScheme!.Outputs[i].Name)
-                {
-                    getRange = true;
-                    if (((RangeOf)((Call)rangeOf.Expr).Target).IsRangeOfWeight == true && quantScheme!.Outputs[i].DataRangeMode == "by_tensor")
-                    {
-                        var oc = ((Call)rangeOf.Expr).Operands[1].CheckedShape[0].FixedValue;
-                        var valueRanges = new ValueRange<float>[oc];
-                        for (int j = 0; j < oc; j++)
-                        {
-                            valueRanges[j] = FixUpRange(new ValueRange<float>((float)quantScheme!.Outputs[i].DataRange![0].Min, (float)quantScheme!.Outputs[i].DataRange![0].Max));
-                        }
-
-                        ranges.Add(rangeOf, valueRanges);
-                    }
-                    else
-                    {
-                        var call = rangeOf.Expr.Users.ToList()[0].Users.ToList()[0];
-                        if (call is Call && ((Call)call).Target is MatMul && call.CheckedShape.HasUnknownDimension && quantScheme!.Outputs[i].DataRangeMode == "by_channel")
-                        {
-                            var min = ((TensorConst)rangeOf.Expr.Operands[1]).Value.ToArray<float>().Min();
-                            var max = ((TensorConst)rangeOf.Expr.Operands[1]).Value.ToArray<float>().Max();
-                            var valueRanges = new ValueRange<float>[1];
-                            valueRanges[0] = new ValueRange<float>(min, max);
-
-                            ranges.Add(rangeOf, valueRanges);
-                        }
-                        else
-                        {
-                            var valueRanges = new ValueRange<float>[quantScheme!.Outputs[i].DataRange!.Length];
-                            for (int j = 0; j < quantScheme!.Outputs[i].DataRange!.Length; j++)
-                            {
-                                valueRanges[j] = FixUpRange(new ValueRange<float>((float)quantScheme!.Outputs[i].DataRange![j].Min, (float)quantScheme!.Outputs[i].DataRange![j].Max));
-                            }
-
-                            ranges.Add(rangeOf, valueRanges);
-                        }
-                    }
-                }
-            }
-
-            if (getRange == false && _quantizeOptions.QuantScheme != string.Empty && _quantizeOptions.QuantSchemeStrictMode == true)
-            {
-                if (((RangeOf)((Call)rangeOf.Expr).Target).IsRangeOfWeight == true)
-                {
-                    var oc = ((Call)rangeOf.Expr).Operands[1].CheckedShape[0].FixedValue;
-                    var valueRanges = new ValueRange<float>[oc];
-                    ranges.Add(rangeOf, valueRanges);
-                }
-                else
-                {
-                    var valueRanges = new ValueRange<float>[1];
-                    ranges.Add(rangeOf, valueRanges);
-                }
-            }
-        }
-
-        return ranges;
-    }
-
-    private void AssignDataTypeFromConfig(QuantScheme quantScheme)
-    {
-        foreach (var marker in _markers)
-        {
-            bool getRange = false;
-            for (int i = 0; i < quantScheme!.Outputs!.Length; i++)
-            {
-                getRange = true;
-                if (marker.Expr.Metadata.OutputNames?[0] == quantScheme.Outputs[i].Name)
-                {
-                    var markerExpr = (Marker)marker.Expr;
-                    if (markerExpr.MixQuantInfo == null)
-                    {
-                        markerExpr.MixQuantInfo = new MixQuantInfo();
-                    }
-
-                    DataType dataType = DataTypes.FromShortName(quantScheme!.Outputs[i].DataType!);
-                    markerExpr.MixQuantInfo!.MarkerQuantType = dataType;
-                }
-            }
-
-            if (getRange == false && _quantizeOptions.QuantScheme != string.Empty && _quantizeOptions.QuantSchemeStrictMode == true)
-            {
-                var markerExpr = (Marker)marker.Expr;
-                markerExpr.MixQuantInfo!.MarkerQuantType = DataTypes.Float16;
-            }
-        }
-    }
-
-    private async Task<IDictionary<ENode, QuantizeHistogram<float>>> GetHistogramsAsync(ICalibrationDatasetProvider calibrationDataset, IDictionary<ENode, ValueRange<float>> ranges, int srcBinSize, int dstBinSize)
-    {
-        var histograms = new Dictionary<ENode, QuantizeHistogram<float>>(ReferenceEqualityComparer.Instance);
-        foreach (var (key, value) in ranges)
-        {
-            var initSrcBin = new List<float>(new float[srcBinSize]);
-            histograms[key] = new QuantizeHistogram<float>(initSrcBin, initSrcBin);
-        }
-
-        await RunForHistogramsAsync(calibrationDataset, childrenValues =>
-        {
-            foreach (var (key, value) in childrenValues)
-            {
-                var r = ranges[key].Max - ranges[key].Min;
-                var srcBinInterval = r / srcBinSize;
-
-                var childrenTensor = value.Cast<float>();
-                var childrenBuffer = childrenTensor.Buffer.Span;
-                var valueRange = ranges[key];
-                var histogram = histograms[key];
-                foreach (var buf in childrenBuffer)
-                {
-                    var r_index = (buf - valueRange.Min) / srcBinInterval;
-                    var index = (int)Math.Clamp((float)r_index, 0F, (float)srcBinSize - 1);
-                    histogram.SrcBin[index]++;
-                }
-            }
-        });
-        return histograms;
-    }
-
-    private IDictionary<ENode, ValueRange<float>> GetOptRanges(IDictionary<ENode, QuantizeHistogram<float>> histograms, IDictionary<ENode, ValueRange<float>> ranges, int srcBinSize, int dstBinSize, CalibMethod calibrationMethod)
-    {
-        var optRanges = new Dictionary<ENode, ValueRange<float>>(ReferenceEqualityComparer.Instance);
+        var optRanges = new Dictionary<Expr, ValueRange<float>[]>(ReferenceEqualityComparer.Instance);
         if (calibrationMethod == CalibMethod.Kld)
         {
-            foreach (KeyValuePair<ENode, QuantizeHistogram<float>> histogram in histograms)
+            foreach (KeyValuePair<Expr, QuantizeHistogram<float>[]> histogram in histograms)
             {
-                histogram.Value.SrcBin = Smooth(histogram.Value.SrcBin);
-                var minKld = float.MaxValue;
-                var r = ranges[histogram.Key].Max - ranges[histogram.Key].Min;
-                var srcBinInterval = r / srcBinSize;
-                var betterThreshold = new Tuple<int, int>(0, srcBinSize);
-                var zeroThreshold = (int)Math.Clamp((0 - ranges[histogram.Key].Min) / srcBinInterval, 0, srcBinSize - 1);
-
-                // range max first
-                int lowerThreshold = 0;
-                var srcBin = histogram.Value.SrcBin;
-                for (int upperThreshold = srcBinSize; upperThreshold >= dstBinSize && upperThreshold >= zeroThreshold; upperThreshold -= dstBinSize)
+                var optRange = new ValueRange<float>[histogram.Value.Length];
+                for (int i = 0; i < histogram.Value.Length; i++)
                 {
-                    GetKldOptRanges(lowerThreshold, upperThreshold, dstBinSize, ref srcBin, ref minKld, ref betterThreshold);
+                    histogram.Value[i].SrcBin = Smooth(histogram.Value[i].SrcBin);
+                    var minKld = float.MaxValue;
+                    var r = ranges[histogram.Key][i].Max - ranges[histogram.Key][i].Min;
+                    var srcBinInterval = r / srcBinSize;
+                    var betterThreshold = new Tuple<int, int>(0, srcBinSize);
+                    var zeroThreshold = (int)Math.Clamp((0 - ranges[histogram.Key][i].Min) / srcBinInterval, 0, srcBinSize - 1);
 
-                    // betterThreshold = thresholdWithMinKldWithSmoothSrcBin.Item1;
-                    // minKld = thresholdWithMinKldWithSmoothSrcBin.Item2;
-                    // srcBin = thresholdWithMinKldWithSmoothSrcBin.Item3;
+                    // range max first
+                    int lowerThreshold = 0;
+                    var srcBin = histogram.Value[i].SrcBin;
+                    for (int upperThreshold = srcBinSize; upperThreshold >= dstBinSize && upperThreshold >= zeroThreshold; upperThreshold -= dstBinSize)
+                    {
+                        GetKldOptRanges(lowerThreshold, upperThreshold, dstBinSize, ref srcBin, ref minKld, ref betterThreshold);
+                    }
+
+                    // range min
+                    minKld = float.MaxValue;
+                    int upperThreshold2 = betterThreshold.Item2;
+                    for (int lowerThreshold2 = 0; lowerThreshold2 <= zeroThreshold && lowerThreshold2 <= upperThreshold2 - dstBinSize; lowerThreshold2 += dstBinSize)
+                    {
+                        GetKldOptRanges(lowerThreshold2, upperThreshold2, dstBinSize, ref srcBin, ref minKld, ref betterThreshold);
+                    }
+
+                    var optMin = ((betterThreshold.Item1 - 0.5f) * srcBinInterval) + ranges[histogram.Key][i].Min;
+                    var optMax = ((betterThreshold.Item2 + 0.5f) * srcBinInterval) + ranges[histogram.Key][i].Min;
+                    optRange[i] = new ValueRange<float>(optMin, optMax);
                 }
 
-                // range min
-                minKld = float.MaxValue;
-                int upperThreshold2 = betterThreshold.Item2;
-                for (int lowerThreshold2 = 0; lowerThreshold2 <= zeroThreshold && lowerThreshold2 <= upperThreshold2 - dstBinSize; lowerThreshold2 += dstBinSize)
-                {
-                    GetKldOptRanges(lowerThreshold2, upperThreshold2, dstBinSize, ref srcBin, ref minKld, ref betterThreshold);
-
-                    // betterThreshold = thresholdWithMinKldWithSmoothSrcBin.Item1;
-                    // minKld = thresholdWithMinKldWithSmoothSrcBin.Item2;
-                    // srcBin = thresholdWithMinKldWithSmoothSrcBin.Item3;
-                }
-
-                var optMin = ((betterThreshold.Item1 - 0.5f) * srcBinInterval) + ranges[histogram.Key].Min;
-                var optMax = ((betterThreshold.Item2 + 0.5f) * srcBinInterval) + ranges[histogram.Key].Min;
-                optRanges.Add(histogram.Key, new ValueRange<float>(optMin, optMax));
+                optRanges.Add(histogram.Key, optRange);
             }
 
             return optRanges;
@@ -584,164 +374,6 @@ internal partial class Quantizer
         else
         {
             throw new ArgumentException("Invalid calibration method.");
-        }
-    }
-
-    private void AssignRanges(IDictionary<ENode, ValueRange<float>> ranges)
-    {
-        // note union the constant in the rangeof eclass, when extact the graph will replace the rangeof expression with the constant ValueRange.
-        foreach (var range in ranges)
-        {
-            var value = new[] { range.Value.Min, range.Value.Max };
-            var rangeEclass = _graph.Add(value);
-            var rangeOfEclass = _graph.Find(range.Key);
-            _graph.Union(rangeOfEclass, rangeEclass);
-        }
-
-        // _graph.Rebuild();
-    }
-
-    private int GetQuantBits(DataType dataType) => dataType switch
-    {
-        var x when x == DataTypes.UInt8 => 8,
-        var x when x == DataTypes.Int8 => 8,
-        var x when x == DataTypes.Int16 => 16,
-        _ => throw new ArgumentException("Invalid data type."),
-    };
-
-    private QuantMode GetQuantSymmetricMode(DataType dataType, bool dumpQuantErrorSymmetricForSigned) => dataType switch
-    {
-        var x when x == DataTypes.UInt8 => QuantMode.UnsignedMode,
-        var x when x == DataTypes.Int8 => dumpQuantErrorSymmetricForSigned == true ? QuantMode.SignedSymmetricMode : QuantMode.SignedAsymmetricMode,
-        var x when x == DataTypes.Int16 => dumpQuantErrorSymmetricForSigned == true ? QuantMode.SignedSymmetricMode : QuantMode.SignedAsymmetricMode,
-        _ => throw new ArgumentException("Invalid data type."),
-    };
-
-    private void AssignQuantParameters(IDictionary<ENode, ValueRange<float>> ranges)
-    {
-        var dumpQuantErrorSymmetricForSigned = _quantizeOptions.DumpQuantErrorSymmetricForSigned;
-        foreach (var range in ranges)
-        {
-            if (((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight)
-            {
-                var weights = (TensorConst)range.Key.Expr.Operands[1];
-                var oc = weights.CheckedShape[0].FixedValue;
-                var weightsValue = weights.Value.Cast<float>().Buffer;
-                var weightsSize = weightsValue.Length;
-                var eachChannelSize = weightsSize / oc;
-                var tmpMin = float.MaxValue;
-                var tmpMax = float.MinValue;
-                for (int i = 0; i < weightsSize; i++)
-                {
-                    if (weightsValue.Span[i] < tmpMin)
-                    {
-                        tmpMin = weightsValue.Span[i];
-                    }
-
-                    if (weightsValue.Span[i] > tmpMax)
-                    {
-                        tmpMax = weightsValue.Span[i];
-                    }
-
-                    if ((i + 1) % eachChannelSize == 0)
-                    {
-                        var quantParameter = new QuantParam(0, 1.0f);
-                        var quantType = DataTypes.FromShortName(((Nncase.IR.Marker)range.Key.Expr.Users.First()).MixQuantInfo!.MarkerQuantType.ToString());
-                        if (quantType == DataTypes.UInt8 || quantType == DataTypes.Int8 || quantType == DataTypes.Int16)
-                        {
-                            quantParameter = QuantUtility.GetQuantParam(new ValueRange<float> { Min = tmpMin, Max = tmpMax }, GetQuantBits(quantType), GetQuantSymmetricMode(quantType, dumpQuantErrorSymmetricForSigned));
-                        }
-
-                        ((Nncase.IR.Marker)range.Key.Expr.Users.First()).MixQuantInfo!.QuantParameter.Add(quantParameter);
-
-                        tmpMin = float.MaxValue;
-                        tmpMax = float.MinValue;
-                    }
-                }
-            }
-            else
-            {
-                var quantParameter = new QuantParam(0, 1.0f);
-                var quantType = DataTypes.FromShortName(((Nncase.IR.Marker)range.Key.Expr.Users.First()).MixQuantInfo!.MarkerQuantType.ToString());
-                if (quantType == DataTypes.UInt8 || quantType == DataTypes.Int8 || quantType == DataTypes.Int16)
-                {
-                    quantParameter = QuantUtility.GetQuantParam(range.Value, GetQuantBits(quantType), GetQuantSymmetricMode(quantType, dumpQuantErrorSymmetricForSigned));
-                }
-
-                ((Nncase.IR.Marker)range.Key.Expr.Users.First()).MixQuantInfo!.QuantParameter.Add(quantParameter);
-            }
-        }
-    }
-
-    private void AssignQuantParametersFromConfig(IDictionary<ENode, ValueRange<float>[]> ranges)
-    {
-        var dumpQuantErrorSymmetricForSigned = _quantizeOptions.DumpQuantErrorSymmetricForSigned;
-        foreach (var range in ranges)
-        {
-            for (int i = 0; i < range.Value.Length; i++)
-            {
-                var quantParameter = new QuantParam(0, 1.0f);
-                var quantType = DataTypes.FromShortName(((Nncase.IR.Marker)range.Key.Expr.Users.First()).MixQuantInfo!.MarkerQuantType.ToString());
-                if (quantType == DataTypes.UInt8 || quantType == DataTypes.Int8 || quantType == DataTypes.Int16)
-                {
-                    quantParameter = QuantUtility.GetQuantParam(range.Value[i], GetQuantBits(quantType), GetQuantSymmetricMode(quantType, dumpQuantErrorSymmetricForSigned));
-                }
-
-                ((Nncase.IR.Marker)range.Key.Expr.Users.First()).MixQuantInfo!.QuantParameter.Add(quantParameter);
-            }
-        }
-    }
-
-    private void AssignByChannelRanges(IDictionary<ENode, ValueRange<float>[]> ranges)
-    {
-        // note union the constant in the rangeof eclass, when extact the graph will replace the rangeof expression with the constant ValueRange.
-        foreach (var range in ranges)
-        {
-            var value = range.Value;
-            var oc = value.Length;
-            var minMaxArrSize = oc * 2;
-            var minMaxArr = new float[minMaxArrSize];
-            for (int i = 0; i < minMaxArrSize; i++)
-            {
-                minMaxArr[i] = i % 2 == 0 ? value[i / 2].Min : value[i / 2].Max;
-            }
-
-            var shape = oc == 1 ? new[] { 2 } : new[] { oc, 2 };
-            var rangeEclass = _graph.Add(new TensorConst(Tensor.From(minMaxArr, shape)));
-            var rangeOfEclass = _graph.Find(range.Key);
-            range.Key.Expr.CheckedType = rangeEclass.CheckedType;
-            rangeOfEclass.SetCheckedType(rangeEclass.CheckedType);
-            _graph.Union(rangeOfEclass, rangeEclass);
-        }
-    }
-
-    /// <summary>
-    /// collect all rangeof enode.
-    /// </summary>
-    private void MarkRangeOfs()
-    {
-        if (EGraphMatcher.TryMatchRoot(_graph.Nodes, IsRangeOf(IsWildcard()), out var matches))
-        {
-            foreach (var match in matches)
-            {
-                var rangeOf = (ENode)match.Root;
-                _rangeOfs.Add(rangeOf);
-                _childrenOfRangeOfs.Add(rangeOf.Children[1].Nodes[0]);
-            }
-        }
-    }
-
-    /// <summary>
-    /// collect all marker enode.
-    /// </summary>
-    private void MarkMarkers()
-    {
-        foreach (var node in _graph.Nodes)
-        {
-            if (node.Expr is Marker)
-            {
-                _markers.Add(node);
-            }
         }
     }
 }

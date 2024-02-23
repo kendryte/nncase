@@ -7,44 +7,10 @@ using Nncase.IR;
 
 namespace Nncase;
 
-public record QuantConfigHeader(int SizeOfInput, int SizeOfOutput)
-{
-    public float[] ToRaw() => new float[] { SizeOfInput, SizeOfOutput };
-
-    public static QuantConfigHeader FromRaw(Span<float> raw)
-    {
-        return new QuantConfigHeader((int)raw[0], (int)raw[1]);
-    }
-}
-
-public record QuantConfigData(Tensor<float> Range, DataType DType)
-{
-    public float[] ToRaw() => Range.ToArray().Append((float)QuantTypeMap[DType]).ToArray();
-
-    public static QuantConfigData FromRaw(Span<float> rawData)
-    {
-        var dt = QuantTypeMapReverse[(int)rawData[0]];
-        var channels = (int)rawData[1];
-        var range = Tensor.From(rawData.Slice(2, channels * 2).ToArray());
-        return new QuantConfigData(range, dt);
-    }
-
-    public int RawLength => Range.Length + 2;
-
-    public int Channels => Range.Length / 2;
-
-    internal static readonly Dictionary<DataType, int> QuantTypeMap = new Dictionary<DataType, int>
-    {
-        { DataTypes.UInt8, 0 }, { DataTypes.Int8, 1 }, { DataTypes.Int16, 2 },
-    };
-
-    internal static readonly Dictionary<int, DataType> QuantTypeMapReverse = QuantTypeMap.ToDictionary(x => x.Value, x => x.Key);
-}
-
 public struct QuantConfig : IEquatable<QuantConfig>
 {
-    private readonly QuantConfigData[] _inputConfig = Array.Empty<QuantConfigData>();
-    private readonly QuantConfigData[] _outputConfig = Array.Empty<QuantConfigData>();
+    private readonly List<QuantConfigData> _inputConfig = new();
+    private readonly List<QuantConfigData> _outputConfig = new();
 
     private QuantConfigHeader _header = new(0, 0);
 
@@ -57,7 +23,7 @@ public struct QuantConfig : IEquatable<QuantConfig>
         // header: sizeof input, sizeof output
         // data: [sizeof(input) + sizeof(output)][datatype, n, min, max]
         var raw = rawTensor.ToArray<float>();
-        var config = default(QuantConfig);
+        var config = new QuantConfig();
         config._header = QuantConfigHeader.FromRaw(raw);
         var rawData = raw.AsSpan().Slice(2);
         var rawDataBaseIndex = 0;
@@ -67,14 +33,15 @@ public struct QuantConfig : IEquatable<QuantConfig>
             var currentConfig = QuantConfigData.FromRaw(rawData.Slice(rawDataBaseIndex));
             if (i < config._header.SizeOfInput)
             {
-                config._inputConfig[i] = currentConfig;
+                config._inputConfig.Add(currentConfig);
             }
             else
             {
-                config._outputConfig[i - config._header.SizeOfInput] = currentConfig;
+                config._outputConfig.Add(currentConfig);
             }
 
             rawDataBaseIndex += currentConfig.RawLength;
+            i++;
         }
 
         return config;
@@ -83,7 +50,7 @@ public struct QuantConfig : IEquatable<QuantConfig>
     public Tensor ToRaw()
     {
         var header = _header.ToRaw();
-        var rawData = _inputConfig.Concat(_outputConfig).SelectMany(x => x.ToRaw());
+        var rawData = _inputConfig.ToArray().Concat(_outputConfig).SelectMany(x => x.ToRaw());
         return header.Concat(rawData).ToArray();
     }
 
@@ -114,5 +81,41 @@ public struct QuantConfig : IEquatable<QuantConfig>
 
     public bool Equals(QuantConfig other) => _inputConfig.Equals(other._inputConfig) && _outputConfig.Equals(other._outputConfig) && _header.Equals(other._header);
 
+    public bool IsEmpty() => _header == null || (_inputConfig.Count == 0 && _outputConfig.Count == 0);
+
     public override int GetHashCode() => HashCode.Combine(_inputConfig, _outputConfig, _header);
+}
+
+public record QuantConfigHeader(int SizeOfInput, int SizeOfOutput)
+{
+    public float[] ToRaw() => new float[] { SizeOfInput, SizeOfOutput };
+
+    public static QuantConfigHeader FromRaw(Span<float> raw)
+    {
+        return new QuantConfigHeader((int)raw[0], (int)raw[1]);
+    }
+}
+
+public record QuantConfigData(Tensor<float> Range, DataType DType)
+{
+    internal static readonly Dictionary<DataType, int> QuantTypeMap = new Dictionary<DataType, int>
+    {
+        { DataTypes.UInt8, 0 }, { DataTypes.Int8, 1 }, { DataTypes.Int16, 2 },
+    };
+
+    internal static readonly Dictionary<int, DataType> QuantTypeMapReverse = QuantTypeMap!.ToDictionary(x => x.Value, x => x.Key);
+
+    public int RawLength => Range.Length + 2;
+
+    public int Channels => Range.Length / 2;
+
+    public float[] ToRaw() => Range.ToArray().Prepend(Channels).Prepend((float)QuantTypeMap[DType]).ToArray();
+
+    public static QuantConfigData FromRaw(Span<float> rawData)
+    {
+        var dt = QuantTypeMapReverse[(int)rawData[0]];
+        var channels = (int)rawData[1];
+        var range = Tensor.From(rawData.Slice(2, channels * 2).ToArray());
+        return new QuantConfigData(range, dt);
+    }
 }
