@@ -21,8 +21,7 @@ internal partial class Program
 {
     public static async Task<int> Main(string[] args)
     {
-        var solver = new TilingSolver();
-        solver.Solve();
+        Tiling.AutoTile();
 
         return await ConfigureCommandLine()
             .UseHost(ConfigureHost)

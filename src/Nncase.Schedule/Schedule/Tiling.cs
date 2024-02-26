@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using Google.OrTools.ConstraintSolver;
@@ -17,19 +18,21 @@ public static class Tiling
 {
     public static void AutoTile()
     {
-        var solver = new TilingSolver();
+        var solver = new TilingSolver(new[] { 16, 256, 256 }, 3, new LoopMask[] { new(0b101), new(0b110), new(0b011) });
         solver.Solve();
     }
 }
 
 public struct LoopMask
 {
-    private readonly int _mask;
+    private readonly uint _mask;
 
-    public LoopMask(int mask)
+    public LoopMask(uint mask)
     {
         _mask = mask;
     }
+
+    public int Count => BitOperations.PopCount(_mask);
 
     public bool IsRelated(int loop) => (_mask & (1 << loop)) != 0;
 }
@@ -41,6 +44,19 @@ public record struct OrderCombination(LoopMask Loops)
 
 public class TilingSolver
 {
+    // 1. Constants
+    private const int L2_SIZE = 1024 * 1024 * 4; // 4MB
+    private const int L3_BANDWIDTH = 128; // 128B/cycle
+    private const int MMA_PRIM_M = 32;
+    private const int MMA_PRIM_N = 32;
+    private const int MMA_PRIM_K = 32;
+    private const int MMA_PRIM_CYCLES = 8;
+
+    private readonly int _loopsCount;
+    private readonly int _reductionLoopsCount;
+    private readonly int _buffersCount;
+    private readonly LoopMask[] _loopMasks;
+
     private readonly Solver _solver = new("TilingSolver");
     private readonly IntVar[] _tiles;
     private readonly IntVar[,] _orders;
@@ -51,36 +67,25 @@ public class TilingSolver
     private readonly DecisionBuilder _decisionBuilder;
     private readonly SolutionCollector _solutionCollector;
 
-    // 1. Constants
-    private const int M = 16;
-    private const int N = 256;
-    private const int K = 256;
-    private const int LoopsCount = 3; // m, n, k
-    private const int ReductionLoopsCount = 1; // k
-    private const int BuffersCount = 3;
-
-    private const int L2_SIZE = 1024 * 1024 * 4; // 4MB
-    private const int LDST_PRIM = 128; // 128B
-    private const int L3_BANDWIDTH = 128; // 128B/cycle
-    private const int MMA_PRIM_M = 32;
-    private const int MMA_PRIM_N = 32;
-    private const int MMA_PRIM_K = 32;
-    private const int MMA_PRIM_CYCLES = 8;
-
-    private readonly IntExpr[] Dims;
+    private readonly IntExpr[] _dims;
     private readonly IntExpr[] _tileCounts;
-    private readonly LoopMask[] _loopMasks = new LoopMask[] { new(0b101), new(0b110), new(0b011) };
 
-    public TilingSolver()
+    public TilingSolver(int[] dims, int buffersCount, LoopMask[] loopMasks)
     {
+        // 1. Constants
+        _loopsCount = dims.Length;
+        _reductionLoopsCount = _loopsCount - loopMasks[^1].Count;
+        _buffersCount = buffersCount;
+        _loopMasks = loopMasks;
+
         // 2. Variables
-        _tiles = CreateTileVars(new[] { M, N, K });
+        _tiles = CreateTileVars(dims);
         _orders = CreateLoopOrderVars();
         _places = CreateBufferPlaceVars();
 
         // 3. Expressions
         // 3.1. Orders
-        Dims = new[] { M, N, K }.Select(x => _solver.MakeIntConst(x)).ToArray();
+        _dims = dims.Select(x => _solver.MakeIntConst(x)).ToArray();
         _orderCombinations = CreateOrderCombinationExprs();
         _tileCounts = CreateTileCountsExprs();
 
@@ -111,9 +116,7 @@ public class TilingSolver
         AddPlacesConstraints();
 
         // 4.4. Reduction aware
-        _solver.Add(_places[2, 1] * _orders[2, 0] == 0);
-        _solver.Add(_places[2, 2] * (_orders[2, 0] + _orders[2, 1]) == 0);
-        _solver.Add(_places[2, 3] == 0);
+        AddReductionPlacesConstraints();
 
         // 5. Objective
         _objective = totalCycles.Var();
@@ -165,10 +168,10 @@ public class TilingSolver
 
     private IntVar[,] CreateLoopOrderVars()
     {
-        var orders = new IntVar[LoopsCount, LoopsCount];
-        for (int i = 0; i < LoopsCount; i++)
+        var orders = new IntVar[_loopsCount, _loopsCount];
+        for (int i = 0; i < _loopsCount; i++)
         {
-            for (int j = 0; j < LoopsCount; j++)
+            for (int j = 0; j < _loopsCount; j++)
             {
                 orders[i, j] = _solver.MakeBoolVar($"order_d{i}_l{j}");
             }
@@ -179,10 +182,10 @@ public class TilingSolver
 
     private IntVar[,] CreateBufferPlaceVars()
     {
-        var places = new IntVar[BuffersCount, LoopsCount + 1];
-        for (int i = 0; i < BuffersCount; i++)
+        var places = new IntVar[_buffersCount, _loopsCount + 1];
+        for (int i = 0; i < _buffersCount; i++)
         {
-            for (int j = 0; j < LoopsCount + 1; j++)
+            for (int j = 0; j < _loopsCount + 1; j++)
             {
                 places[i, j] = _solver.MakeBoolVar($"place_b{i}_{j}");
             }
@@ -193,7 +196,7 @@ public class TilingSolver
 
     private OrderCombination[][] CreateOrderCombinationExprs()
     {
-        var maxCount = LoopsCount + 1;
+        var maxCount = _loopsCount + 1;
         var permutations = new OrderCombination[maxCount][];
         for (int i = 0; i < permutations.Length; i++)
         {
@@ -205,11 +208,11 @@ public class TilingSolver
 
     private OrderCombination[] CreateOrderCombinationExprs(int count)
     {
-        var combinations = new OrderCombination[MathUtility.Factorial(LoopsCount) / (MathUtility.Factorial(LoopsCount - count) * MathUtility.Factorial(count))];
+        var combinations = new OrderCombination[MathUtility.Factorial(_loopsCount) / (MathUtility.Factorial(_loopsCount - count) * MathUtility.Factorial(count))];
 
         int index = 0;
         var combination = new int[count];
-        bool[] chosen = new bool[LoopsCount];
+        bool[] chosen = new bool[_loopsCount];
         GenerateOrderCombinations(count, combinations, combination, 0, 0, chosen, ref index);
         return combinations;
     }
@@ -229,7 +232,7 @@ public class TilingSolver
             return;
         }
 
-        for (int i = start; i <= LoopsCount - count + index; ++i)
+        for (int i = start; i <= _loopsCount - count + index; ++i)
         {
             combination[index] = i;
             GenerateOrderCombinations(count, combinations, combination, i + 1, index + 1, chosen, ref combineResultIndex);
@@ -238,10 +241,10 @@ public class TilingSolver
 
     private LoopMask CombinationToLoopMask(int[] combination)
     {
-        int mask = 0;
+        uint mask = 0;
         foreach (var loop in combination)
         {
-            mask |= 1 << loop;
+            mask |= 1U << loop;
         }
 
         return new LoopMask(mask);
@@ -287,7 +290,7 @@ public class TilingSolver
 
     private int GetOrderDim(int solution, int order)
     {
-        for (int i = 0; i < LoopsCount; i++)
+        for (int i = 0; i < _loopsCount; i++)
         {
             if (_solutionCollector.Value(solution, _orders[i, order]) == 1)
             {
@@ -300,7 +303,7 @@ public class TilingSolver
 
     private int GetBufferPlace(int solution, int bufferIndex)
     {
-        for (int i = 0; i < LoopsCount + 1; i++)
+        for (int i = 0; i < _loopsCount + 1; i++)
         {
             if (_solutionCollector.Value(solution, _places[bufferIndex, i]) == 1)
             {
@@ -313,10 +316,10 @@ public class TilingSolver
 
     private IntExpr[] CreateTileCountsExprs()
     {
-        var exprs = new IntExpr[LoopsCount];
+        var exprs = new IntExpr[_loopsCount];
         for (int i = 0; i < exprs.Length; i++)
         {
-            exprs[i] = Dims[i].CeilDiv(_tiles[i]);
+            exprs[i] = _dims[i].CeilDiv(_tiles[i]);
         }
 
         return exprs;
@@ -324,7 +327,7 @@ public class TilingSolver
 
     private IntExpr[] CreateBufferSizeExprs()
     {
-        var exprs = new IntExpr[BuffersCount];
+        var exprs = new IntExpr[_buffersCount];
         for (int i = 0; i < exprs.Length; i++)
         {
             exprs[i] = CreateBufferSizeExpr(i);
@@ -337,17 +340,17 @@ public class TilingSolver
     {
         var loopMask = _loopMasks[bufferIndex];
         IntExpr? bufferSizeExpr = null;
-        for (int place = 0; place < LoopsCount + 1; place++)
+        for (int place = 0; place < _loopsCount + 1; place++)
         {
             IntExpr? placedBufferSizeExpr = null;
             foreach (var combination in _orderCombinations[place])
             {
                 IntExpr? tileSizeExpr = null;
-                for (int loop = 0; loop < LoopsCount; loop++)
+                for (int loop = 0; loop < _loopsCount; loop++)
                 {
                     if (loopMask.IsRelated(loop))
                     {
-                        var tileDimExpr = combination.Loops.IsRelated(loop) ? _tiles[loop] : Dims[loop];
+                        var tileDimExpr = combination.Loops.IsRelated(loop) ? _tiles[loop] : _dims[loop];
                         tileSizeExpr = tileSizeExpr == null ? tileDimExpr : tileSizeExpr * tileDimExpr;
                     }
                 }
@@ -365,7 +368,7 @@ public class TilingSolver
 
     private IntExpr[] CreateBufferAccessTimesExprs()
     {
-        var exprs = new IntExpr[BuffersCount];
+        var exprs = new IntExpr[_buffersCount];
         for (int i = 0; i < exprs.Length; i++)
         {
             exprs[i] = CreateBufferAccessTimesExpr(i);
@@ -377,13 +380,13 @@ public class TilingSolver
     private IntExpr CreateBufferAccessTimesExpr(int bufferIndex)
     {
         IntExpr? timesExpr = null;
-        for (int place = 0; place < LoopsCount + 1; place++)
+        for (int place = 0; place < _loopsCount + 1; place++)
         {
             IntExpr? placedTimesExpr = null;
             foreach (var combination in _orderCombinations[place])
             {
                 IntExpr timeExpr = _solver.MakeIntConst(1);
-                for (int loop = 0; loop < LoopsCount; loop++)
+                for (int loop = 0; loop < _loopsCount; loop++)
                 {
                     if (combination.Loops.IsRelated(loop))
                     {
@@ -405,10 +408,10 @@ public class TilingSolver
     private void AddOrdersConstraints()
     {
         // 1. Every dim has one loop
-        for (int i = 0; i < LoopsCount; i++)
+        for (int i = 0; i < _loopsCount; i++)
         {
             IntExpr expr = _orders[i, 0];
-            for (int j = 1; j < LoopsCount; j++)
+            for (int j = 1; j < _loopsCount; j++)
             {
                 expr += _orders[i, j];
             }
@@ -417,10 +420,10 @@ public class TilingSolver
         }
 
         // 2. Every loop has one dim
-        for (int i = 0; i < LoopsCount; i++)
+        for (int i = 0; i < _loopsCount; i++)
         {
             IntExpr expr = _orders[0, i];
-            for (int j = 1; j < LoopsCount; j++)
+            for (int j = 1; j < _loopsCount; j++)
             {
                 expr += _orders[j, i];
             }
@@ -432,15 +435,37 @@ public class TilingSolver
     private void AddPlacesConstraints()
     {
         // 1. Every buffer has one place
-        for (int i = 0; i < BuffersCount; i++)
+        for (int i = 0; i < _buffersCount; i++)
         {
             IntExpr expr = _places[i, 0];
-            for (int j = 1; j < LoopsCount + 1; j++)
+            for (int j = 1; j < _loopsCount + 1; j++)
             {
                 expr += _places[i, j];
             }
 
             _solver.Add(expr == 1);
+        }
+    }
+
+    private void AddReductionPlacesConstraints()
+    {
+        for (int place = 1; place < _loopsCount + 1; place++)
+        {
+            var placeVar = _places[_buffersCount - 1, place];
+
+            // Outer loops should not be reduction loops.
+            IntExpr? anyOrder = null;
+            for (int reductionLoop = _loopsCount - _reductionLoopsCount; reductionLoop < _loopsCount; reductionLoop++)
+            {
+                for (int order = 0; order < place; order++)
+                {
+                    var expr = _orders[reductionLoop, order];
+                    anyOrder = anyOrder == null ? expr : anyOrder + expr;
+                }
+            }
+
+            var constraint = placeVar * (anyOrder ?? _solver.MakeIntConst(1)) == 0;
+            _solver.Add(constraint);
         }
     }
 }
