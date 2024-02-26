@@ -390,6 +390,44 @@ internal class NcnnEmitter
         });
     }
 
+    public void Matmul(string name, string inputA, string inputB, int lOrR, float[] constInput, int[] constShape)
+    {
+        var inputList = new[] { inputA, inputB };
+
+        if (constInput != null && constShape != null)
+        {
+            if (lOrR == 1)
+            {
+                inputList[0] = name + "_memorydata";
+            }
+            else
+            {
+                inputList[1] = name + "_memorydata";
+            }
+
+            var paramDict = new ParamDict();
+            for (int i = 0; i < constShape.Length; i++)
+            {
+                int index = i switch
+                {
+                    0 => 0,
+                    1 => 1,
+                    2 when constShape.Length == 3 => 2,
+                    2 when constShape.Length == 4 => 11,
+                    3 when constShape.Length == 4 => 2,
+                    _ => throw new NotSupportedException("Only support less than 5D"),
+                };
+                paramDict[index] = new ParamValue { Kind = ParamKind.Int, IntValue = constShape[constShape.Length - 1 - i] };
+            }
+
+            AddLayer("MemoryData", name + "_memorydata", Array.Empty<string>(), new[] { name + "_memorydata" }, paramDict);
+
+            WriteFloatArray(constInput);
+        }
+
+        AddLayer("MatMul", name, inputList, new[] { name }, null);
+    }
+
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
     {
         var layer = new NcnnLayer(type, name, bottoms.Length, tops.Length);

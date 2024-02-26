@@ -91,4 +91,7 @@ public sealed class Ncnn
 
     public static Call NcnnPermute(Expr expr, int orderType, int[] perm) =>
         new Call(new NcnnPermute(orderType, perm), expr);
+
+    public static Call NcnnMatMul(Expr[] inExpr, int lorR, float[]? constInput, int[]? constShape) =>
+        new Call(new NcnnMatMul(lorR, constInput, constShape), inExpr);
 }

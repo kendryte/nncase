@@ -91,6 +91,7 @@ internal class NcnnFunctionBuilder : FunctionBuilder
         protected override string VisitLeafCall(Call expr)
         {
             var names = new List<string> { GetNextName() };
+            string[]? inString;
             switch (expr.Target)
             {
                 case NcnnSoftmax op:
@@ -103,7 +104,7 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                     _emitter.BatchNorm(names[0], ExprMemo[expr.Arguments[0]], op.Channels, op.Eps, op.SlopeData, op.MeanData, op.VarData, op.BiasData);
                     break;
                 case NcnnBinary op:
-                    string[]? inString = op.LorR switch
+                    inString = op.LorR switch
                     {
                         0 => new string[] { ExprMemo[expr.Arguments[0]], ExprMemo[expr.Arguments[1]] },
                         1 => new string[] { string.Empty, ExprMemo[expr.Arguments[0]] },
@@ -198,6 +199,16 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                     break;
                 case NcnnPermute op:
                     _emitter.Permute(names.ToArray(), ExprMemo[expr.Arguments[0]], op.OrderType);
+                    break;
+                case NcnnMatMul op:
+                    inString = op.LorR switch
+                    {
+                        0 => new string[] { ExprMemo[expr.Arguments[0]], ExprMemo[expr.Arguments[1]] },
+                        1 => new string[] { string.Empty, ExprMemo[expr.Arguments[0]] },
+                        2 => new string[] { ExprMemo[expr.Arguments[0]], string.Empty },
+                        _ => throw new NotImplementedException("Not found MatMul emmiter."),
+                    };
+                    _emitter.Matmul(names[0], inString[0], inString[1], op.LorR, op.ConstInput, op.ConstShape);
                     break;
                 default:
                     throw new NotSupportedException();
