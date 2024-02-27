@@ -104,6 +104,11 @@ public class QuantizeOptions
     public CalibMethod CalibrationMethod { get; set; } = CalibMethod.NoClip;
 
     /// <summary>
+    /// Gets or sets a value indicating whether strict mode.
+    /// </summary>
+    public bool SensitivityQuantEnabled { get; set; }
+
+    /// <summary>
     /// Gets or sets a value indicating whether enable the Auto bind quant method.
     /// </summary>
     public bool BindQuantMethod { get; set; }

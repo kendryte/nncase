@@ -28,6 +28,7 @@ internal partial class Quantizer
     private readonly Expr _expr;
     private readonly QuantizeOptions _quantizeOptions;
     private readonly Dictionary<Var, QuantConfig>? _fakeNodeConfigs = new();
+    private readonly Dictionary<Var, Expr> _fakeNodesVars = new();
 
     public Quantizer(IEGraph graph, QuantizeOptions quantizeOptions)
     {
@@ -60,8 +61,106 @@ internal partial class Quantizer
             ranges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, _quantizeOptions.CalibrationMethod);
         }
 
-        UpdateFakeNodesWithRange(ranges);
+        // 获取Extract之后Expr中FakeOP的List，以便后面进行处理
+        UpdateFakeNodesList(ranges);
+
+        // 如果量化方式由json文件指定，那么直接从json文件中读取
+        if (_quantizeOptions.QuantScheme != string.Empty)
+        {
+            UpdateQuantInfoFromJson();
+        }
+        else
+        {
+            // 如果量化方式由config.toml文件指定，那么直接按照config.toml中指定的全局量化方式进行量化
+            if (_quantizeOptions.SensitivityQuantEnabled == false)
+            {
+                UpdateQuantInfoFromConfig(ranges);
+            }
+            else
+            {
+                // 如果量化方式需要基于敏感度排序进行量化，则直接按照敏感度排序后的量化方式进行量化
+                UpdateQuantInfoFromSensitivity();
+            }
+
+            if (_quantizeOptions.ExportQuantScheme == true)
+            {
+                ExportQuantScheme();
+            }
+        }
+
         AssignRanges();
+    }
+
+    private void UpdateQuantInfoFromJson()
+    {
+        throw new NotImplementedException();
+    }
+
+    private void UpdateQuantInfoFromConfig(IDictionary<Expr, ValueRange<float>[]> ranges)
+    {
+        var quantType = _quantizeOptions.QuantType;
+        var wQuantType = _quantizeOptions.WQuantType;
+        foreach (var (var, fakeNode) in _fakeNodesVars)
+        {
+            float[] argRange = new float[2];
+
+            // 输入信息的填充
+            var parameters = ((Op)((Call)fakeNode).Target).Parameters.ToArray();
+            var configHeader = new float[] { parameters.Length, ranges[fakeNode].Length };
+            var inputConfigs = new List<QuantConfigData>();
+            var outConfigs = new List<QuantConfigData>();
+            for (int argIdx = 0; argIdx < ((Call)fakeNode).Arguments.Length; argIdx++)
+            {
+                var arg = ((Call)fakeNode).Arguments[argIdx];
+                if (arg is not Nncase.IR.None)
+                {
+                    if (parameters[argIdx].ParameterKind == ParameterKind.Weights)
+                    {
+                        var dType = wQuantType;
+                        var weights = (TensorConst)((Call)fakeNode).Arguments[argIdx];
+                        var weightsValue = weights.Value.ToArray<float>();
+                        var oc = weights.CheckedShape[0].FixedValue;
+                        var minMaxArr = QuantUtility.GetWeightsRangesByChannel(weightsValue, oc);
+                        inputConfigs.Add(new QuantConfigData(Tensor.From(minMaxArr.ToArray(), new[] { oc, 2 }), dType));
+                    }
+                    else
+                    {
+                        // 每个parameter的range只有一个，所以这里固定索引为0
+                        var dType = quantType;
+                        argRange = new float[] { ranges[arg][0].Min, ranges[arg][0].Max };
+                        inputConfigs.Add(new QuantConfigData(new Tensor<float>(argRange, new[] { 1, 2 }), dType));
+                    }
+                }
+                else
+                {
+                    var dType = quantType;
+                    argRange = new float[] { float.MinValue, float.MaxValue };
+                    inputConfigs.Add(new QuantConfigData(new Tensor<float>(argRange, new[] { 1, 2 }), dType));
+                }
+            }
+
+            // 输出range: 这里的range以及量化方式可能在后续中不会实际使用到
+            foreach (var outRange in ranges[fakeNode])
+            {
+                var dType = quantType;
+                argRange = new float[] { outRange.Min, outRange.Max };
+                outConfigs.Add(new QuantConfigData(new Tensor<float>(argRange, new[] { 1, 2 }), dType));
+            }
+
+            var quantInfo = configHeader.Concat(inputConfigs.SelectMany(x => x.ToRaw())).Concat(outConfigs.SelectMany(x => x.ToRaw())).ToArray();
+            var quantConfig = QuantConfig.FromRaw(quantInfo);
+            _fakeNodeConfigs![var] = quantConfig;
+        }
+    }
+
+    private void UpdateQuantInfoFromSensitivity()
+    {
+        throw new NotImplementedException();
+    }
+
+    private void ExportQuantScheme()
+    {
+        throw new NotImplementedException();
     }
 
     private Expr ExtractExpr()
@@ -119,6 +218,19 @@ internal partial class Quantizer
         }
     }
 
+    private void UpdateFakeNodesList(IDictionary<Expr, ValueRange<float>[]> ranges)
+    {
+        foreach (var (key, _) in ranges)
+        {
+            if (key is Call &&
+                (((Call)key).Target is QuantizeOp))
+            {
+                // 记录量化节点，以便后续进行量化
+                _fakeNodesVars![(Var)((Call)key).Arguments[^1]] = key;
+            }
+        }
+    }
+
     private void UpdateFakeNodesWithRange(IDictionary<Expr, ValueRange<float>[]> ranges)
     {
         float[] argRange = new float[2];
@@ -162,7 +274,7 @@ internal partial class Quantizer
                     }
                 }
 
-                // 输出range
+                // 输出range: 这里的range以及量化方式可能在后续中不会实际使用到
                 foreach (var outRange in range)
                 {
                     var dType = DataTypes.UInt8;
@@ -173,6 +285,9 @@ internal partial class Quantizer
                 var quantInfo = configHeader.Concat(inputConfigs.SelectMany(x => x.ToRaw())).Concat(outConfigs.SelectMany(x => x.ToRaw())).ToArray();
                 var quantConfig = QuantConfig.FromRaw(quantInfo);
                 _fakeNodeConfigs![(Var)((Call)key).Arguments[^1]] = quantConfig;
+
+                // 记录量化节点，以便后续进行量化
+                _fakeNodesVars![(Var)((Call)key).Arguments[^1]] = key;
             }
         }
     }
