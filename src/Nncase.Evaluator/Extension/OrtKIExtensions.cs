@@ -56,6 +56,11 @@ public static class OrtKIExtensions
         return Tensor.FromBytes(tensor.DataType.ToDataType(), tensor.BytesBuffer.ToArray(), tensor.Shape.ToInts());
     }
 
+    public static Tensor ToTensor(this OrtKISharp.Tensor tensor, TensorType tensorType)
+    {
+        return Tensor.FromBytes(tensorType.DType, tensor.BytesBuffer.ToArray(), tensorType.Shape);
+    }
+
     public static TensorValue ToValue(this OrtKISharp.Tensor tensor)
     {
         return tensor.ToTensor();

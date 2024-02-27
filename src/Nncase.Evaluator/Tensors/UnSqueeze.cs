@@ -21,7 +21,7 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
     {
         var input = context.GetOrtArgumentValue(unSqueeze, Unsqueeze.Input);
         var axes = context.GetInt64OrtTensorArgumentValue(unSqueeze, Unsqueeze.Dim);
-        return OrtKI.Unsqueeze(input, axes).ToValue();
+        return Value.FromTensor(OrtKI.Unsqueeze(input, axes).ToTensor(context.CurrentCall.CheckedTensorType));
     }
 
     /// <inheritdoc/>

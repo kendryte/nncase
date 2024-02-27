@@ -15,6 +15,23 @@ namespace Nncase;
 /// </summary>
 public static class LinqExtensions
 {
+    public static int IndexOf<T>(this T[] source, T value)
+    {
+        if (source != null && source.Length != 0)
+        {
+            for (int i = 0; i < source.Length; i++)
+            {
+                T val = source[i];
+                if (object.Equals(val, value))
+                {
+                    return i;
+                }
+            }
+        }
+
+        return -1;
+    }
+
     /// <summary>
     /// Get the ranges from range desc.
     /// </summary>

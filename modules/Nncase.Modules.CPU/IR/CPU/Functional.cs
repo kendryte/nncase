@@ -38,13 +38,28 @@ public partial class CPU
         return new Call(new Store(), input);
     }
 
-    public static Call Pack(Expr input, int[] lanes, int[] axes)
+    public static Expr Pack(Expr input, int[] lanes, int[] axes)
     {
+        if (lanes.Length != axes.Length)
+        {
+            throw new NotSupportedException();
+        }
+
+        if (axes.Length == 0)
+        {
+            return input;
+        }
+
         return new Call(new Pack(lanes, axes), input);
     }
 
-    public static Call Unpack(Expr input, int[] axes)
+    public static Expr Unpack(Expr input, int[] axes)
     {
+        if (axes.Length == 0)
+        {
+            return input;
+        }
+
         return new Call(new Unpack(axes), input);
     }
 
@@ -67,4 +82,11 @@ public partial class CPU
     {
         return new Call(new PackedBinary(binaryOp, lhsPackedAxes, lhsPadedNums, rhsPackedAxes, rhsPadedNums), lhs, rhs);
     }
+
+    public static Expr PackedTranspose(Expr input, Expr perm, IRArray<int> packedAxes)
+    {
+        return new Call(new PackedTranspose(packedAxes), input, perm);
+    }
+
+    public static Expr PackedReshape(Expr packed, int[] newShape, IRArray<int> packedAxes) => throw new NotImplementedException();
 }

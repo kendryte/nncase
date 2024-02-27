@@ -32,12 +32,6 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
             case (1, 2):
                 a = OrtKI.Unsqueeze(a, new long[] { -2 });
                 break;
-            case (2, 0):
-                b = OrtKI.Unsqueeze(b, new long[] { -1, -1 });
-                break;
-            case (0, 2):
-                a = OrtKI.Unsqueeze(a, new long[] { -1, -1 });
-                break;
             default:
                 break;
         }
@@ -180,7 +174,7 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
             case (VectorType va, VectorType vb):
                 {
                     var valid = true;
-                    for (int i = -1; i >= System.Math.Max(va.Lanes.Count, vb.Lanes.Count); --i)
+                    for (int i = -1; i >= -System.Math.Max(va.Lanes.Count, vb.Lanes.Count); --i)
                     {
                         var ai = va.Lanes.Count + i;
                         var bi = vb.Lanes.Count + i;
@@ -191,7 +185,7 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
                                 break;
                             case ( >= 0, >= 0):
                                 var adim = (a.Shape[target.LhsPackedAxes[ai]].FixedValue * va.Lanes[ai]) - target.LhsPadedNums[ai];
-                                var bdim = (b.Shape[target.LhsPackedAxes[bi]].FixedValue * vb.Lanes[bi]) - target.RhsPadedNums[bi];
+                                var bdim = (b.Shape[target.RhsPackedAxes[bi]].FixedValue * vb.Lanes[bi]) - target.RhsPadedNums[bi];
                                 valid &= adim == bdim && adim != 1;
 
                                 break;
