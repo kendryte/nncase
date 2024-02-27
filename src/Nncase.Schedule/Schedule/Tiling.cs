@@ -39,12 +39,11 @@ internal class TilingSolver
         const int L2_SIZE = 1024 * 1024 * 4; // 4MB
         const int LDST_PRIM = 128; // 128B
         const int L3_BANDWIDTH = 128; // 128B/cycle
-
-        var model = new CpModel();
+        _ = new CpModel();
 
         // variables
-        var tiles = CreateTileVars(new[] { M, N, K });
-        var orders = CreateLoopOrderVars(LoopsCount);
+        _ = CreateTileVars(new[] { M, N, K });
+        _ = CreateLoopOrderVars(LoopsCount);
     }
 
     private IntVar[] CreateTileVars(int[] upperbounds)

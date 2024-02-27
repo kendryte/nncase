@@ -21,7 +21,7 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
     private readonly List<Expr> _mainBody;
     private readonly HashSet<PrimFunction> _devices;
     private readonly List<(int, TIR.Buffer)> _outputbuffers;
-    private Dictionary<Fusion, FusionChecker> _fusionCheckCache;
+    private readonly Dictionary<Fusion, FusionChecker> _fusionCheckCache;
 
     public KernelToTIRVisitor(List<Expr> mainBody, HashSet<PrimFunction> devices, Dictionary<Fusion, FusionChecker> fusionCheckCache)
     {
@@ -143,9 +143,9 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
 
     private void GenerateBinary(Binary binary, Buffer[] arguments, Buffer ret, Call expr)
     {
-        var lhs = (DistributedType)expr.Arguments[0].CheckedType;
-        var rhs = (DistributedType)expr.Arguments[1].CheckedType;
-        var outtype = (DistributedType)expr.CheckedType;
+        _ = (DistributedType)expr.Arguments[0].CheckedType;
+        _ = (DistributedType)expr.Arguments[1].CheckedType;
+        _ = (DistributedType)expr.CheckedType;
         _mainBody.Add(TIR.F.CPU.Binary(binary.BinaryOp, arguments[0], arguments[1], ret));
     }
 

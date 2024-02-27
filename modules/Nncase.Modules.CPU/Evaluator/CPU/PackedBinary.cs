@@ -22,7 +22,7 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
     {
         var a = context.GetOrtArgumentValue(target, PackedBinary.Lhs);
         var b = context.GetOrtArgumentValue(target, PackedBinary.Rhs);
-        var pRank = System.Math.Max(target.LhsPackedAxes.Count, target.RhsPackedAxes.Count);
+        _ = System.Math.Max(target.LhsPackedAxes.Count, target.RhsPackedAxes.Count);
 
         switch (target.LhsPackedAxes.Count, target.RhsPackedAxes.Count)
         {
@@ -90,8 +90,8 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
     {
         var rank = System.Math.Max(a.Shape.Rank, b.Shape.Rank);
         Shape outShape = Shape.Scalar;
-        var leftA = rank - a.Shape.Rank;
-        var leftB = rank - b.Shape.Rank;
+        _ = rank - a.Shape.Rank;
+        _ = rank - b.Shape.Rank;
 
         bool CheckDimBroadCast(int dimA, int dimB, out int dimOut)
         {

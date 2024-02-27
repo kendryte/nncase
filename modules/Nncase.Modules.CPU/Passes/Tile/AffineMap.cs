@@ -244,14 +244,14 @@ public class AffineMap
         }
 
         var feedDict = new Dictionary<Var, IValue>();
-        foreach (var dv in Dims.Zip(dims))
+        foreach (var (first, second) in Dims.Zip(dims))
         {
-            feedDict.Add((Var)dv.First, Value.FromTensor(Tensor.FromScalar(dv.Second)));
+            feedDict.Add((Var)first, Value.FromTensor(Tensor.FromScalar(second)));
         }
 
-        foreach (var sv in Symbols.Zip(symbols))
+        foreach (var (first, second) in Symbols.Zip(symbols))
         {
-            feedDict.Add((Var)sv.First, Value.FromTensor(Tensor.FromScalar(sv.Second)));
+            feedDict.Add((Var)first, Value.FromTensor(Tensor.FromScalar(second)));
         }
 
         return Results.Select(expr => expr.Evaluate(feedDict).AsTensor().ToScalar<int>()).ToList();

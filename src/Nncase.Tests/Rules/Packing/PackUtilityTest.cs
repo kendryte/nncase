@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -62,6 +62,7 @@ public sealed class PackUtilityTest
         }
     }
 
+    [Theory]
     public void DisplayMat(int[,] mat)
     {
         for (int i = 0; i < mat.GetLength(0); i++)
