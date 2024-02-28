@@ -160,7 +160,9 @@ public sealed class PackMatMul : PackRule
             var packedRhs = IR.F.CPU.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
 
             var matmul = IR.F.CPU.PackedMatMul(packedLhs, packedRhs, lhsPackedAxes, lhsPadNums, rhsPackedAxes, rhsPadNums);
-            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(matmul, new[] { lhsPackedAxes[0], rhsPackedAxes[1] }), candidate.CheckedShape.ToValueArray(), new[] { lhsPadNums[0], rhsPadNums[1] });
+            var lhsAlign = System.Math.Max(lhsShape.Length, rhsShape.Length) - lhsShape.Length;
+            var rhsAlign = System.Math.Max(lhsShape.Length, rhsShape.Length) - rhsShape.Length;
+            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(matmul, new[] { lhsAlign + lhsPackedAxes[0], rhsAlign + rhsPackedAxes[1] }), candidate.CheckedShape.ToValueArray(), new[] { lhsPadNums[0], rhsPadNums[1] });
             rets.Add(post);
         }
 
@@ -260,7 +262,7 @@ public sealed class PackBinary : PackRule
 
     public IEnumerable<int[]> GeneratePackAxes(int[] shape)
     {
-        if (shape.Length == 0)
+        if (shape.Length == 0 || (shape.Length == 1 && shape[0] == 1))
         {
             yield return Array.Empty<int>();
         }
@@ -486,9 +488,14 @@ public sealed class PackReshape : PackRule
                     var outAxis = mapedOutAxes.First();
 
                     // when the outAxis is merged dim, only support no transpose order and no pad.
-                    if (backwardDict[outAxis][^1] == axis && inShape[axis] % Lane == 0)
+                    var inAxes = backwardDict[outAxis];
+                    if (inAxes.Count == 1 || (inAxes[^1] == axis && inShape[axis] % Lane == 0))
                     {
                         unpackAxes.Add(outAxis);
+                    }
+                    else
+                    {
+                        return;
                     }
                 }
             }
@@ -539,17 +546,18 @@ public sealed class PackSlice : PackRule
         }
 
         var input = (Expr)result["input"];
-        var begins = ((TensorConst)result["begins"]).Value.ToArray<int>();
-        var ends = ((TensorConst)result["ends"]).Value.ToArray<int>();
-        var axes = ((TensorConst)result["axes"]).Value.ToArray<int>();
-        var strides = ((TensorConst)result["strides"]).Value.ToArray<int>();
+        var begins = ((TensorConst)result["begins"]).Value.ToArray<long>();
+        var ends = ((TensorConst)result["ends"]).Value.ToArray<long>();
+        var axes = ((TensorConst)result["axes"]).Value.ToArray<long>();
+        var strides = ((TensorConst)result["strides"]).Value.ToArray<long>();
         var inShape = input.CheckedShape.ToValueArray();
         for (int i = 0; i < axes.Length; i++)
         {
             ends[i] = ends[i] switch
             {
                 < 0 => inShape[axes[i]] + ends[i],
-                int.MaxValue => ends[i],
+                int.MaxValue => inShape[axes[i]],
+                long.MaxValue => inShape[axes[i]],
                 _ => ends[i],
             };
         }
@@ -601,5 +609,55 @@ public sealed class PackSlice : PackRule
         }
 
         return rets;
+    }
+}
+
+[RuleGenerator]
+public sealed partial class FoldPackUnpack : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } = PatternMatch.F.CPU.IsPack("pack", "caller", _ => true, PatternMatch.F.CPU.IsUnpack("unpack", "callee", _ => true, IsWildcard("input")));
+
+    private Expr? GetReplace(IR.CPU.Pack pack, IR.CPU.Unpack unpack, Expr input)
+    {
+        if (pack.Axes.SequenceEqual(unpack.Axes))
+        {
+            return input;
+        }
+
+        return null;
+    }
+}
+
+[RuleGenerator]
+public sealed partial class FoldPackConcatUnpack : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } = PatternMatch.F.CPU.IsPack("pack", "caller", _ => true, PatternMatch.F.Tensors.IsConcat("concat", _ => true, IsTuple("tuple", IsVArgsRepeat("fileds", exprs =>
+        {
+            var patterns = new Pattern[exprs.Length];
+            for (int i = 0; i < exprs.Length; i++)
+            {
+                patterns[i] = PatternMatch.F.CPU.IsUnpack($"unpack_{i}", $"callee_{i}", _ => true, IsWildcard($"input_{i}"));
+            }
+
+            return patterns;
+        }))));
+
+    private Expr? GetReplace(IR.CPU.Pack pack, IR.Tensors.Concat concat, IReadOnlyList<Expr> fileds, IMatchResult result)
+    {
+        var inputs = new Expr[fileds.Count];
+        for (int i = 0; i < fileds.Count; i++)
+        {
+            var unpack = (IR.CPU.Unpack)result[$"unpack_{i}"];
+            if (pack.Axes.SequenceEqual(unpack.Axes))
+            {
+                inputs[i] = (Expr)result[$"input_{i}"];
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        return IR.F.Tensors.Concat(new IR.Tuple(inputs), concat.Axis);
     }
 }

@@ -47,6 +47,12 @@ public class CPUTarget : ITarget
     /// <inheritdoc/>
     public void RegisterTargetDependentPass(IPassManager passManager, CompileOptions options)
     {
+        // passManager.AddWithName<DataflowPass>("MakeFusion").Configure(p =>
+        // {
+        //     p.Add<Passes.Rules.CombineMHA>();
+        //     p.Add<Passes.Rules.Neutral.FoldConstCall>();
+        //     p.Add<Passes.Rules.FuseMHA2>();
+        // });
         passManager.AddWithName<DataflowPass>("CPUDeviceFusion").Configure(p =>
         {
             p.Add<Passes.Rules.CPU.Affine.LowerUnary>();
@@ -79,6 +85,11 @@ public class CPUTarget : ITarget
     /// <inheritdoc/>
     public void RegisterTargetDependentAfterQuantPass(IPassManager passManager, CompileOptions options)
     {
+        // passManager.AddWithName<DataflowPass>("AutoPacking").Configure(p =>
+        // {
+        //     p.Add<Passes.Rules.AutoPacking>();
+        // });
+
         passManager.AddWithName<DataflowPass>("AutoDistributed").Configure(p =>
         {
             p.Add<Passes.Rules.AutoDistributed>();

@@ -25,5 +25,5 @@ public sealed partial class Unpack : Op
     public IRArray<int> Axes { get; }
 
     /// <inheritdoc/>
-    public override string DisplayProperty() => $"{Axes}";
+    public override string DisplayProperty() => $"Axes: {Axes}";
 }

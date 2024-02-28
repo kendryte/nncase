@@ -27,5 +27,5 @@ public sealed partial class Pack : Op
     public IRArray<int> Axes { get; }
 
     /// <inheritdoc/>
-    public override string DisplayProperty() => $"{Lanes}, {Axes}";
+    public override string DisplayProperty() => $"Lanes: {Lanes}, Axes: {Axes}";
 }

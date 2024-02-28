@@ -62,8 +62,7 @@ public sealed class PackUtilityTest
         }
     }
 
-    [Theory]
-    public void DisplayMat(int[,] mat)
+    private void DisplayMat(int[,] mat)
     {
         for (int i = 0; i < mat.GetLength(0); i++)
         {

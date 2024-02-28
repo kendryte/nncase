@@ -34,11 +34,7 @@ internal class TilingSolver
         const int N = 256;
         const int K = 256;
         const int LoopsCount = 3; // m, n, k
-        const int InputOperands = 2;
 
-        const int L2_SIZE = 1024 * 1024 * 4; // 4MB
-        const int LDST_PRIM = 128; // 128B
-        const int L3_BANDWIDTH = 128; // 128B/cycle
         _ = new CpModel();
 
         // variables
