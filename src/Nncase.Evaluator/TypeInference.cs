@@ -323,8 +323,7 @@ public static class TypeInference
                 }
             }
 
-            // TODO: please confirm the shape @zhen8838, all zero means scaler
-            return input with { Shape = outShape.All(x => x == 0) ? new Shape(new[] { 1 }) : new Shape(outShape.Where(x => x != 0)) };
+            return input with { Shape = new Shape(outShape.Where(x => x != 0)) };
         }
 
         return input with { Shape = Shape.Unranked };
