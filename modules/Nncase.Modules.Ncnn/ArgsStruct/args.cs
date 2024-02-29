@@ -155,3 +155,75 @@ public record CropArgs
 
     public int[]? Axes { get; }
 }
+
+public record ConvTransposeArgs
+{
+    public ConvTransposeArgs(Tensor weightData = null, float[] biasData = null, int numOutput = default, int kernelW = default, int kernelH = default, int dilationW = default, int dilationH = default, int strideW = default, int strideH = default, int padLeft = default, int padRight = default, int padTop = default, int padBottom = default, int biasTerm = default, int weightDataSize = default, int activationType = default, float[] activationParams = null, int outputPadRight = default, int outputPadBottom = default, int outputW = default, int outputH = default)
+    {
+        WeightData = weightData;
+        BiasData = biasData;
+        NumOutput = numOutput;
+        KernelW = kernelW;
+        KernelH = kernelH;
+        DilationW = dilationW;
+        DilationH = dilationH;
+        StrideW = strideW;
+        StrideH = strideH;
+        PadLeft = padLeft;
+        PadRight = padRight;
+        PadTop = padTop;
+        PadBottom = padBottom;
+        BiasTerm = biasTerm;
+        WeightDataSize = weightDataSize;
+        ActivationType = activationType;
+        ActivationParams = activationParams;
+        OutputPadRight = outputPadRight;
+        OutputPadBottom = outputPadBottom;
+        OutputW = outputW;
+        OutputH = outputH;
+    }
+
+    public Tensor WeightData { get; }
+
+    public float[] BiasData { get; }
+
+    public int NumOutput { get; }
+
+    public int KernelW { get; }
+
+    public int KernelH { get; }
+
+    public int DilationW { get; }
+
+    public int DilationH { get; }
+
+    public int StrideW { get; }
+
+    public int StrideH { get; }
+
+    public int PadLeft { get; }
+
+    public int PadRight { get; }
+
+    public int PadTop { get; }
+
+    public int PadBottom { get; }
+
+    public int BiasTerm { get; }
+
+    public int WeightDataSize { get; }
+
+    public int ActivationType { get; }
+
+    public float[] ActivationParams { get; }
+
+    public int OutputPadRight { get; }
+
+    public int OutputPadBottom { get; }
+
+    public int OutputW { get; }
+
+    public int OutputH { get; }
+
+    public override string ToString() => $"{nameof(WeightData)}: {string.Join("_", WeightData.Shape.ToValueArray())}, {nameof(NumOutput)}: {NumOutput}, {nameof(KernelW)}: {KernelW}, {nameof(KernelH)}: {KernelH}, {nameof(DilationW)}: {DilationW}, {nameof(DilationH)}: {DilationH}, {nameof(StrideW)}: {StrideW}, {nameof(StrideH)}: {StrideH}, {nameof(PadLeft)}: {PadLeft}, {nameof(PadRight)}: {PadRight}, {nameof(PadTop)}: {PadTop}, {nameof(PadBottom)}: {PadBottom}, {nameof(BiasTerm)}: {BiasTerm}, {nameof(WeightDataSize)}: {WeightDataSize}, {nameof(OutputPadRight)}: {OutputPadRight}, {nameof(OutputPadBottom)}: {OutputPadBottom}, {nameof(OutputW)}: {OutputW}, {nameof(OutputH)}: {OutputH}";
+}

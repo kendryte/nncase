@@ -208,7 +208,10 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                         2 => new string[] { ExprMemo[expr.Arguments[0]], string.Empty },
                         _ => throw new NotImplementedException("Not found MatMul emmiter."),
                     };
-                    _emitter.Matmul(names[0], inString[0], inString[1], op.LorR, op.ConstInput, op.ConstShape);
+                    _emitter.Matmul(names.ToArray(), inString[0], inString[1], op.LorR, op.ConstInput, op.ConstShape);
+                    break;
+                case NcnnConvTranspose op:
+                    _emitter.ConvTranspose(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Args);
                     break;
                 default:
                     throw new NotSupportedException();

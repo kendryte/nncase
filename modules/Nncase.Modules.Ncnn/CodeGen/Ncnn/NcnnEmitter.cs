@@ -390,7 +390,7 @@ internal class NcnnEmitter
         });
     }
 
-    public void Matmul(string name, string inputA, string inputB, int lOrR, float[] constInput, int[] constShape)
+    public void Matmul(string[] name, string inputA, string inputB, int lOrR, float[] constInput, int[] constShape)
     {
         var inputList = new[] { inputA, inputB };
 
@@ -425,7 +425,38 @@ internal class NcnnEmitter
             WriteFloatArray(constInput);
         }
 
-        AddLayer("MatMul", name, inputList, new[] { name }, null);
+        AddLayer("MatMul", name[0], inputList, name, null);
+    }
+
+    public void ConvTranspose(string[] name, string input, ConvTransposeArgs args)
+    {
+        AddLayer("Deconvolution", name[0], new[] { input }, name, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = args.NumOutput },
+            [1] = new ParamValue { Kind = ParamKind.Int, IntValue = args.KernelW },
+            [11] = new ParamValue { Kind = ParamKind.Int, IntValue = args.KernelH },
+            [2] = new ParamValue { Kind = ParamKind.Int, IntValue = args.DilationW },
+            [12] = new ParamValue { Kind = ParamKind.Int, IntValue = args.DilationH },
+            [3] = new ParamValue { Kind = ParamKind.Int, IntValue = args.StrideW },
+            [13] = new ParamValue { Kind = ParamKind.Int, IntValue = args.StrideH },
+            [4] = new ParamValue { Kind = ParamKind.Int, IntValue = args.PadLeft },
+            [14] = new ParamValue { Kind = ParamKind.Int, IntValue = args.PadTop },
+            [15] = new ParamValue { Kind = ParamKind.Int, IntValue = args.PadRight },
+            [16] = new ParamValue { Kind = ParamKind.Int, IntValue = args.PadBottom },
+
+            // [18] = new ParamValue { Kind = ParamKind.Int, IntValue = args.OutputPadRight },
+            // [19] = new ParamValue { Kind = ParamKind.Int, IntValue = args.OutputPadBottom },
+            // [20] = new ParamValue { Kind = ParamKind.Int, IntValue = args.OutputW },
+            // [21] = new ParamValue { Kind = ParamKind.Int, IntValue = args.OutputH },
+            [5] = new ParamValue { Kind = ParamKind.Int, IntValue = args.BiasTerm },
+            [6] = new ParamValue { Kind = ParamKind.Int, IntValue = args.WeightDataSize },
+
+            // [9] = new ParamValue { Kind = ParamKind.Int, IntValue = args.ActivationType },
+            // [10] = new ParamValue { Kind = ParamKind.ArrayOfFloat, TensorValue = args.ActivationParams },
+        });
+        WriteFloatArray(new float[] { 0 }); // quantize flag [Not exist in ncnn op.md]
+        WriteFloatArray(args.WeightData.ToArray<float>());
+        WriteFloatArray(args.BiasData);
     }
 
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)

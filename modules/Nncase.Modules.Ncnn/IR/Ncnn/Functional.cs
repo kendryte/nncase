@@ -94,4 +94,6 @@ public sealed class Ncnn
 
     public static Call NcnnMatMul(Expr[] inExpr, int lorR, float[]? constInput, int[]? constShape) =>
         new Call(new NcnnMatMul(lorR, constInput, constShape), inExpr);
+
+    public static Call NcnnConvTranspose(Expr expr, ConvTransposeArgs args) => new Call(new NcnnConvTranspose(args), expr);
 }
