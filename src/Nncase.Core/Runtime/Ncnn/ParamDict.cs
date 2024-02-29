@@ -45,6 +45,11 @@ public class ParamDict
         set => _values[index] = value;
     }
 
+    public void Add(int index, ParamValue paramValue)
+    {
+        _values[index] = paramValue;
+    }
+
     public void LoadFrom(ReadOnlySpan<string> fields)
     {
         foreach (var field in fields)

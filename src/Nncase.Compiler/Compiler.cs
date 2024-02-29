@@ -20,9 +20,12 @@ using Nncase.Passes.Rules.Lower;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Passes.Rules.ShapeBucket;
 using Nncase.Passes.Rules.ShapeExpr;
+using Nncase.Passes.Rules.WithMarker;
 using Nncase.Passes.Transforms;
 using Nncase.Quantization;
 using static Nncase.Passes.Rules.ShapeBucket.ShapeBucketRegister;
+using CombinePadTranspose = Nncase.Passes.Rules.WithMarker.CombinePadTranspose;
+using CombineReshapePad = Nncase.Passes.Rules.Neutral.CombineReshapePad;
 using FoldConstCall = Nncase.Passes.Rules.Neutral.FoldConstCall;
 
 namespace Nncase.Compiler;
@@ -97,6 +100,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.NormAxisReshape>();
             p.Add<Passes.Rules.Neutral.NormAxisReduceArg>();
             p.Add<Passes.Rules.Neutral.NormAxisSlice>();
+            p.Add<Passes.Rules.Neutral.SwapBinaryArgs>();
             p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
             p.Add<Passes.Rules.Neutral.Squeeze5DTranspose>();
             p.Add<Passes.Rules.Neutral.SqueezeBinaryShape>();
@@ -117,8 +121,6 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldTwoSlices>();
             p.Add<Passes.Rules.Neutral.FocusFull>();
             p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
-            p.Add<Passes.Rules.Neutral.SplitSpaceToBatch>();
-            p.Add<Passes.Rules.Neutral.SplitBatchToSpace>();
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
             p.Add<Passes.Rules.Neutral.FoldShapeOf>();
             p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
@@ -131,6 +133,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldUnsqueezeSqueeze>();
             p.Add<Passes.Rules.Neutral.FoldTwoTransposes>();
             p.Add<Passes.Rules.Neutral.FoldNopClamp>();
+            p.Add<Passes.Rules.ShapeBucket.FoldRepeatMarker>();
             p.Add<Passes.Rules.Neutral.SqueezeToReshape>();
             p.Add<Passes.Rules.Neutral.UnSqueezeToReshape>();
             p.Add<Passes.Rules.ShapeExpr.GatherToGetItem>();
@@ -138,6 +141,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldNopReduce>();
             p.Add<Passes.Rules.Neutral.SliceToGetItem>();
             p.Add<Passes.Rules.Neutral.FoldTwoPads>();
+            p.Add<Passes.Rules.Neutral.FoldDilatedConv2D>();
         });
 
         passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
@@ -145,6 +149,12 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
             p.Add<Passes.Rules.Neutral.FoldNopTranspose>();
             p.Add<Passes.Rules.Neutral.FoldTwoTransposes>();
+            p.Add<FoldRepeatMarker>();
+            p.Add<Passes.Rules.WithMarker.FoldTransposeActTranspose>();
+            p.Add<Passes.Rules.WithMarker.FoldTransposeBinaryActTranspose>();
+            p.Add<Passes.Rules.WithMarker.CombineReshapePad>();
+            p.Add<Passes.Rules.WithMarker.CombineTransposePad>();
+            p.Add<Passes.Rules.WithMarker.CombinePadTranspose>();
             p.Add<Passes.Rules.Neutral.CombineTransposeUnary>();
             p.Add<Passes.Rules.Neutral.CombineTransposePad>();
             p.Add<Passes.Rules.Neutral.CombinePadTranspose>();
@@ -179,12 +189,14 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldNopSlice>();
             p.Add<Passes.Rules.Neutral.FoldTwoSlices>();
             p.Add<Passes.Rules.Neutral.SpaceToBatchToPad>();
+            p.Add<Passes.Rules.Neutral.FoldConv2DAddMul>();
         });
 
         _compileSession.Target.RegisterTargetInDependentPass(passManager, _compileSession.CompileOptions);
 
         passManager.AddWithName<DataflowPass>("BroadcastMarker").Configure(p =>
         {
+            p.Add<FoldTransposeActTranspose>();
             p.Add<BroadcastInputMarker>();
             p.Add<BroadcastOutputMarker>();
         });
@@ -220,8 +232,8 @@ internal class Compiler : ICompiler
             MergeOp(p, true);
             ClearMarker(p);
             MergeFusion(p, singleVar, true);
-            Bucket(p);
             Rebuild(p, singleVar);
+            Bucket(p);
             Simplify(p);
         }
         else

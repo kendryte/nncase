@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
@@ -71,6 +72,8 @@ internal class NcnnFunctionBuilder : FunctionBuilder
 
         public List<string> Inputs { get; } = new();
 
+        public List<string> Outputs { get; } = new();
+
         protected override string VisitLeafVar(Var expr)
         {
             var name = GetNextName();
@@ -87,33 +90,34 @@ internal class NcnnFunctionBuilder : FunctionBuilder
 
         protected override string VisitLeafCall(Call expr)
         {
-            var name = GetNextName();
+            var names = new List<string> { GetNextName() };
+            string[]? inString;
             switch (expr.Target)
             {
                 case NcnnSoftmax op:
-                    _emitter.Softmax(name, ExprMemo[expr.Arguments[0]], op.Axis);
+                    _emitter.Softmax(names[0], ExprMemo[expr.Arguments[0]], op.Axis);
                     break;
                 case NcnnUnary op:
-                    _emitter.Unary(name, ExprMemo[expr.Arguments[0]], op.OpType);
+                    _emitter.Unary(names[0], ExprMemo[expr.Arguments[0]], op.OpType);
                     break;
                 case NcnnBatchNorm op:
-                    _emitter.BatchNorm(name, ExprMemo[expr.Arguments[0]], op.Channels, op.Eps, op.SlopeData, op.MeanData, op.VarData, op.BiasData);
+                    _emitter.BatchNorm(names[0], ExprMemo[expr.Arguments[0]], op.Channels, op.Eps, op.SlopeData, op.MeanData, op.VarData, op.BiasData);
                     break;
                 case NcnnBinary op:
-                    string[]? inString = op.LorR switch
+                    inString = op.LorR switch
                     {
                         0 => new string[] { ExprMemo[expr.Arguments[0]], ExprMemo[expr.Arguments[1]] },
                         1 => new string[] { string.Empty, ExprMemo[expr.Arguments[0]] },
                         2 => new string[] { ExprMemo[expr.Arguments[0]], string.Empty },
                         _ => throw new NotImplementedException("Not found binary emmiter."),
                     };
-                    _emitter.Binary(name, inString[0], inString[1], op.OpType, op.LorR, op.ConstInput, op.ConstShape);
+                    _emitter.Binary(names[0], inString[0], inString[1], op.OpType, op.LorR, op.ConstInput, op.ConstShape);
                     break;
                 case NcnnCelu op:
-                    _emitter.Celu(name, ExprMemo[expr.Arguments[0]], op.Alpha);
+                    _emitter.Celu(names[0], ExprMemo[expr.Arguments[0]], op.Alpha);
                     break;
                 case NcnnClip op:
-                    _emitter.Clip(name, ExprMemo[expr.Arguments[0]], op.Min, op.Max);
+                    _emitter.Clip(names[0], ExprMemo[expr.Arguments[0]], op.Min, op.Max);
                     break;
                 case NcnnConcat op:
                     List<string> in_ = new();
@@ -123,28 +127,91 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                         in_.Add(ExprMemo[t.Fields[i]]);
                     }
 
-                    _emitter.Concat(name, in_.ToArray(), op.Axis);
+                    _emitter.Concat(names[0], in_.ToArray(), op.Axis);
                     break;
                 case NcnnConv op:
-                    _emitter.Conv(name, ExprMemo[expr.Arguments[0]], op.WeightData, op.BiasData, op.NumOutput, op.KernelW, op.KernelH, op.DilationW, op.DilationH, op.StrideW, op.StrideH, op.PadLeft, op.PadTop, op.PadRight, op.PadBottom, op.BiasTerm, op.WeightDataSize, op.Int8ScaleTerm, op.ActivationType, op.ActivationParams, op.PadValue, op.DynamicWeight);
+                    _emitter.Conv(names[0], ExprMemo[expr.Arguments[0]], op.WeightData, op.BiasData, op.NumOutput, op.KernelW, op.KernelH, op.DilationW, op.DilationH, op.StrideW, op.StrideH, op.PadLeft, op.PadTop, op.PadRight, op.PadBottom, op.BiasTerm, op.WeightDataSize, op.Int8ScaleTerm, op.ActivationType, op.ActivationParams, op.PadValue, op.DynamicWeight);
                     break;
                 case NcnnCumsum op:
-                    _emitter.Cumsum(name, ExprMemo[expr.Arguments[0]], op.Axis);
+                    _emitter.Cumsum(names[0], ExprMemo[expr.Arguments[0]], op.Axis);
                     break;
                 case NcnnElu op:
-                    _emitter.Elu(name, ExprMemo[expr.Arguments[0]], op.Alpha);
+                    _emitter.Elu(names[0], ExprMemo[expr.Arguments[0]], op.Alpha);
                     break;
                 case NcnnErf:
-                    _emitter.Erf(name, ExprMemo[expr.Arguments[0]]);
+                    _emitter.Erf(names[0], ExprMemo[expr.Arguments[0]]);
                     break;
                 case NcnnHardSigmoid op:
-                    _emitter.HardSigmoid(name, ExprMemo[expr.Arguments[0]], op.Alpha, op.Beta);
+                    _emitter.HardSigmoid(names[0], ExprMemo[expr.Arguments[0]], op.Alpha, op.Beta);
                     break;
                 case NcnnHardSwish op:
-                    _emitter.HardSwish(name, ExprMemo[expr.Arguments[0]], op.Alpha, op.Beta);
+                    _emitter.HardSwish(names[0], ExprMemo[expr.Arguments[0]], op.Alpha, op.Beta);
                     break;
                 case NcnnInstanceNorm op:
-                    _emitter.InstanceNorm(name, ExprMemo[expr.Arguments[0]], op.Channels, op.Eps, op.Affine, op.GammaData, op.BetaData);
+                    _emitter.InstanceNorm(names[0], ExprMemo[expr.Arguments[0]], op.Channels, op.Eps, op.Affine, op.GammaData, op.BetaData);
+                    break;
+                case NcnnLRN op:
+                    _emitter.LRN(names[0], ExprMemo[expr.Arguments[0]], op.Alpha, op.Beta, op.Bias, op.Size);
+                    break;
+                case NcnnLSTM op:
+                    for (int i = 1; i < op.OutputSize; i++)
+                    {
+                        var a = GetNextName();
+                        Console.WriteLine($"{i} = {a}");
+                        names.Add(a);
+                    }
+
+                    _emitter.LSTM(names.ToArray(), ExprMemo[expr.Arguments[0]], op.HiddenSize, op.WeightDataSize, op.Direction, op.W, op.R, op.B);
+                    break;
+                case NcnnPadding op:
+                    _emitter.Padding(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Top, op.Bottom, op.Left, op.Right, op.Type, op.Value, op.Front, op.Behind);
+                    break;
+                case NcnnPooling op:
+                    _emitter.Pooling(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Args);
+                    break;
+                case NcnnPReLU op:
+                    _emitter.PReLU(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Slope);
+                    break;
+                case NcnnReduction op:
+                    _emitter.Reduction(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Args);
+                    break;
+                case NcnnReshape op:
+                    _emitter.Reshape(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Shape);
+                    break;
+                case NcnnSELU op:
+                    _emitter.SELU(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Alpha, op.Gamma);
+                    break;
+                case NcnnSigmoid:
+                    _emitter.Sigmoid(names.ToArray(), ExprMemo[expr.Arguments[0]]);
+                    break;
+                case NcnnCrop op:
+                    _emitter.Crop(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Args);
+                    break;
+                case NcnnSoftplus:
+                    _emitter.Softplus(names.ToArray(), ExprMemo[expr.Arguments[0]]);
+                    break;
+                case NcnnSlice op:
+                    names.AddRange(op.Slices.Select(i => GetNextName()));
+                    _emitter.Slice(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Slices, op.Axis);
+                    break;
+                case NcnnTile op:
+                    _emitter.Tile(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Repeats);
+                    break;
+                case NcnnPermute op:
+                    _emitter.Permute(names.ToArray(), ExprMemo[expr.Arguments[0]], op.OrderType);
+                    break;
+                case NcnnMatMul op:
+                    inString = op.LorR switch
+                    {
+                        0 => new string[] { ExprMemo[expr.Arguments[0]], ExprMemo[expr.Arguments[1]] },
+                        1 => new string[] { string.Empty, ExprMemo[expr.Arguments[0]] },
+                        2 => new string[] { ExprMemo[expr.Arguments[0]], string.Empty },
+                        _ => throw new NotImplementedException("Not found MatMul emmiter."),
+                    };
+                    _emitter.Matmul(names.ToArray(), inString[0], inString[1], op.LorR, op.ConstInput, op.ConstShape);
+                    break;
+                case NcnnConvTranspose op:
+                    _emitter.ConvTranspose(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Args);
                     break;
                 case NcnnLayerNorm op:
                     _emitter.LayerNorm(name, ExprMemo[expr.Arguments[0]], op.AffineSize, op.Eps, op.Affine, op.GammaData, op.BetaData);
@@ -153,7 +220,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                     throw new NotSupportedException("Not support in Ncnn ops emitter");
             }
 
-            return name;
+            // serialize outputs to string.
+            string output = string.Join(",", names.Select(x => x.ToString()));
+            return output;
         }
 
         private string GetNextName() => $"layer{_layerId++}";

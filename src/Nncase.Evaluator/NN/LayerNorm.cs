@@ -214,7 +214,13 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
             }
         }
 
-        return new Tensor<float>(outputArray, input.Shape);
+        var ret = new Tensor<float>(outputArray, input.Shape);
+        return input.ElementType switch
+        {
+            Float32Type => ret,
+            Float16Type => ret.Cast<Half>(CastMode.KDefault),
+            _ => throw new NotSupportedException("Not Supported Type of Layernorm!"),
+        };
     }
 #endif
 }

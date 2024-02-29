@@ -14,47 +14,93 @@
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
 import pytest
-import torch
+import onnx
+from onnx import helper
+from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
+import numpy as np
 
 
-def _make_module(dim0, dim1):
+def _make_module(in_shape, axis, op_version):
+    inputs = []
+    outputs = []
+    initializers = []
+    attributes_dict = {}
+    nodes = []
 
-    class TransposeModule(torch.nn.Module):
-        def __init__(self):
-            super(TransposeModule, self).__init__()
+    input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
+    inputs.append('input')
 
-        def forward(self, x):
-            x = torch.transpose(x, dim0=dim0, dim1=dim1)
-            return x
+    data = np.ones(in_shape)
+    out_shape = np.transpose(data, axis).shape
+    output = helper.make_tensor_value_info('output', TensorProto.FLOAT, out_shape)
+    outputs.append('output')
 
-    return TransposeModule()
+    if axis is not None:
+        attributes_dict['perm'] = axis
+
+    node = onnx.helper.make_node(
+        'Transpose',
+        inputs=inputs,
+        outputs=outputs,
+        **attributes_dict
+    )
+    nodes.append(node)
+
+    graph_def = helper.make_graph(
+        nodes,
+        'test-model',
+        [input],
+        [output],
+        initializer=initializers)
+
+    op = onnx.OperatorSetIdProto()
+    op.version = op_version
+    model_def = helper.make_model(graph_def, producer_name='onnx', opset_imports=[op])
+    return model_def
 
 
 in_shapes = [
-    [3, 4],
-    [3, 4, 5],
-    [2, 3, 24, 24]
+    [16, 16],
+    [3, 16, 16],
+    [1, 8, 16],
+    [1, 3, 16, 16]
 ]
 
 axes = [
+    None,
     [0, 1],
-    [0, 2],
-    [0, 3],
-    [1, 2],
-    [1, 3],
-    [2, 3]
+    [1, 0],
+    [0, 1, 2],
+    [0, 2, 1],
+    [1, 0, 2],
+    [1, 2, 0],
+    [2, 0, 1],
+    [2, 1, 0],
+    [0, 1, 2, 3],
+    [0, 1, 3, 2],
+    [0, 2, 1, 3],
+    [0, 2, 3, 1],
+    [0, 3, 1, 2],
+    [0, 3, 2, 1],
+    [3, 2, 1, 0]
+]
+
+op_versions = [
+    1,
+    13
 ]
 
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('axis', axes)
-def test_transpose(in_shape, axis, request):
-    if len(in_shape) > axis[1]:
-        module = _make_module(axis[0], axis[1])
+@pytest.mark.parametrize('op_version', op_versions)
+def test_transpose(in_shape, axis, op_version, request):
+    if axis is None or (len(axis) == len(in_shape)):
+        model_def = _make_module(in_shape, axis, op_version)
 
         runner = OnnxTestRunner(request.node.name)
-        model_file = runner.from_torch(module, in_shape)
+        model_file = runner.from_onnx_helper(model_def)
         runner.run(model_file)
 
 

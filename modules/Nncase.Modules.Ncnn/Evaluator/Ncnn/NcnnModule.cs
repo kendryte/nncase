@@ -28,5 +28,21 @@ internal class NcnnModule : IApplicationPart
         registrator.RegisterManyInterface<NcnnHardSwishEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnInstanceNormEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnLayerNormEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnLRNEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnLSTMEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnPaddingEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnPoolingEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnPReluEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnReductionEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnReshapeEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnSELUEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnSigmoidEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnCropEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnSoftplusEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnSliceEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnTileEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnPermuteEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnMatMulEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnConvTransposeEvaluator>(reuse: Reuse.Singleton);
     }
 }

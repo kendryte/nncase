@@ -23,12 +23,12 @@ public sealed partial class NcnnHardSigmoid : Op
     public static readonly ParameterInfo Input = new(typeof(NcnnHardSigmoid), 0, "input");
 
     /// <summary>
-    /// Gets axis of Ncnn HardSigmoid.
+    /// Gets Alpha of Ncnn HardSigmoid.
     /// </summary>
     public float Alpha { get; }
 
     /// <summary>
-    /// Gets axis of Ncnn HardSigmoid.
+    /// Gets Beta of Ncnn HardSigmoid.
     /// </summary>
     public float Beta { get; }
 

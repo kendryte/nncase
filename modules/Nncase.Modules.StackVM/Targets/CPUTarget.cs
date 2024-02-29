@@ -14,6 +14,7 @@ using Nncase.CodeGen.Ncnn;
 using Nncase.CodeGen.StackVM;
 using Nncase.IR;
 using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.Passes.Transforms;
 using Nncase.Quantization;
 
@@ -48,10 +49,19 @@ public class CPUTarget : ITarget
     {
         passManager.AddWithName<DataflowPass>("LowerNcnnIR").Configure(p =>
         {
+            p.Add<Passes.Rules.Lower.RemoveMarker>();
+
+            // Fold reduce
+            p.Add<Passes.Rules.Ncnn.LowerReductionSumSquare>();
+            p.Add<Passes.Rules.Ncnn.LowerReductionL1>();
+            p.Add<Passes.Rules.Ncnn.LowerReductionL2>();
+            p.Add<Passes.Rules.Ncnn.LowerReductionLogSum>();
+            p.Add<Passes.Rules.Ncnn.LowerReductionLogSumExp>();
+
+            // single op
             p.Add<Passes.Rules.Ncnn.LowerBatchNorm>();
             p.Add<Passes.Rules.Ncnn.LowerSoftmax>();
             p.Add<Passes.Rules.Ncnn.LowerUnary>();
-            p.Add<Passes.Rules.Lower.RemoveMarker>();
             p.Add<Passes.Rules.Ncnn.LowerBinary>();
 
             // p.Add<Passes.Rules.Ncnn.LowerCelu>(); //0816ncnn not support
@@ -66,6 +76,22 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.Ncnn.LowerHardSwish>();
             p.Add<Passes.Rules.Ncnn.LowerInstanceNorm>();
             p.Add<Passes.Rules.Ncnn.LowerLayerNorm>();
+            p.Add<Passes.Rules.Ncnn.LowerLRN>();
+            p.Add<Passes.Rules.Ncnn.LowerLSTM>();
+            p.Add<Passes.Rules.Ncnn.LowerPadding>();
+            p.Add<Passes.Rules.Ncnn.LowerPooling>();
+            p.Add<Passes.Rules.Ncnn.LowerPReLU>();
+            p.Add<Passes.Rules.Ncnn.LowerReduction>();
+            p.Add<Passes.Rules.Ncnn.LowerReshape>();
+            p.Add<Passes.Rules.Ncnn.LowerSELU>();
+            p.Add<Passes.Rules.Ncnn.LowerSigmoid>();
+            p.Add<Passes.Rules.Ncnn.LowerCrop>();
+            p.Add<Passes.Rules.Ncnn.LowerSoftplus>();
+            p.Add<Passes.Rules.Ncnn.LowerSlice>();
+            p.Add<Passes.Rules.Ncnn.LowerTile>();
+            p.Add<Passes.Rules.Ncnn.LowerPermute>();
+            p.Add<Passes.Rules.Ncnn.LowerMatmul>();
+            p.Add<Passes.Rules.Ncnn.LowerConvTranspose>();
         });
     }
 

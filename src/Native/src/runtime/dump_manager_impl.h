@@ -28,23 +28,23 @@ void dump_append(dump_manager &dump_manager_, F &&f, const std::string &path) {
 
 template <typename F>
 void dump(dump_manager &dump_manager_, nncase::value_t value, F &&f) {
-    dump(dump_manager_, value, f, dump_manager_.dump_path());
+    auto stream = dump_manager_.get_stream(dump_manager_.dump_path());
+    dump(dump_manager_, value, f, stream);
+    stream.close();
 }
 
 template <typename F>
 void dump(dump_manager &dump_manager_, nncase::value_t value, F &&f,
-          const std::string &path) {
-    auto stream = dump_manager_.get_stream(path);
+          std::ofstream &stream) {
+
     if (value.is_a<nncase::tensor>()) {
         auto value_tensor = value.as<nncase::tensor>().unwrap();
         f(stream, value_tensor);
-        stream.close();
     } else if (value.is_a<nncase::tuple>()) {
         //        stream << "tuple" << "\n";
-        stream.close();
         auto value_tuple = value.as<nncase::tuple>().unwrap();
         for (auto &field : value_tuple->fields()) {
-            dump(dump_manager_, field, f, path);
+            dump(dump_manager_, field, f, stream);
         }
     } else {
         std::cout << "unknown in dump" << std::endl;
@@ -91,6 +91,7 @@ void dump_data(std::ostream &stream, const T *data,
             stream << std::to_string(data[i]) << "\n";
         }
     }
+    stream << "------------------\n" << std::endl;
 }
 
 END_NS_NNCASE_RUNTIME

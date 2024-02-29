@@ -23,7 +23,7 @@ public sealed partial class NcnnCelu : Op
     public static readonly ParameterInfo Input = new(typeof(NcnnCelu), 0, "input");
 
     /// <summary>
-    /// Gets axis of Ncnn Celu.
+    /// Gets Alpha of Ncnn Celu.
     /// </summary>
     public float Alpha { get; }
 

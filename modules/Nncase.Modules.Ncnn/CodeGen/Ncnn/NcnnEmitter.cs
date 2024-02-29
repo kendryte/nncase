@@ -6,7 +6,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DryIoc.ImTools;
 using Microsoft.Toolkit.HighPerformance;
+using Nncase.ArgsStruct;
+using Nncase.IR;
 using Nncase.IR.Ncnn;
 using Nncase.Runtime.Ncnn;
 
@@ -193,7 +196,9 @@ internal class NcnnEmitter
         WriteFloatArray(betaData);
     }
 
-    public void LayerNorm(string name, string input, int affineSize, float eps, int affine, float[] gammaData, float[] betaData)
+
+    public void LayerNorm(string name, string input, int affineSize, float eps, int affine, float[] gammaData,
+        float[] betaData)
     {
         AddLayer("LayerNorm", name, new[] { input }, new[] { name }, new ParamDict
         {
@@ -203,6 +208,269 @@ internal class NcnnEmitter
         });
         WriteFloatArray(gammaData);
         WriteFloatArray(betaData);
+    }
+
+    public void LRN(string name, string input, float alpha, float beta, float bias, int size) =>
+        AddLayer("LRN", name, new[] { input }, new[] { name }, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = 0 }, // region_type
+            [1] = new ParamValue { Kind = ParamKind.Int, IntValue = size }, // size
+            [2] = new ParamValue { Kind = ParamKind.Float, FloatValue = alpha }, // alpha
+            [3] = new ParamValue { Kind = ParamKind.Float, FloatValue = beta }, // beta
+            [4] = new ParamValue { Kind = ParamKind.Float, FloatValue = bias }, // bias
+        });
+
+    public void LSTM(string[] name, string input, int hiddenSize, int weightDataSize, int direction, float[] w, float[] r, float[] b)
+    {
+        AddLayer("LSTM", name[0], new[] { input }, name, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = hiddenSize },
+            [1] = new ParamValue { Kind = ParamKind.Int, IntValue = weightDataSize },
+            [2] = new ParamValue { Kind = ParamKind.Int, IntValue = direction },
+        });
+        WriteFloatArray(new float[] { 0 });
+        WriteFloatArray(w);
+        WriteFloatArray(new float[] { 0 });
+        WriteFloatArray(b);
+        WriteFloatArray(new float[] { 0 });
+        WriteFloatArray(r);
+    }
+
+    public void Padding(string[] name, string input, int top, int bottom, int left, int right, int type, float value, int front, int behind)
+    {
+        AddLayer("Padding", name[0], new[] { input }, name, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = top },
+            [1] = new ParamValue { Kind = ParamKind.Int, IntValue = bottom },
+            [2] = new ParamValue { Kind = ParamKind.Int, IntValue = left },
+            [3] = new ParamValue { Kind = ParamKind.Int, IntValue = right },
+            [4] = new ParamValue { Kind = ParamKind.Int, IntValue = type },
+            [5] = new ParamValue { Kind = ParamKind.Float, FloatValue = value },
+
+            // [6] for perChannelPadDataSize.
+            [7] = new ParamValue { Kind = ParamKind.Int, IntValue = front },
+            [8] = new ParamValue { Kind = ParamKind.Int, IntValue = behind },
+        });
+
+        // TODO: confirm padValue is a tensor.
+        WriteFloatArray(new float[] { value });
+    }
+
+    public void Pooling(string[] name, string input, PoolingArgs poolingArgs)
+    {
+        AddLayer("Pooling", name[0], new[] { input }, name, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.PoolingType },
+            [1] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.KernelW },
+            [11] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.KernelH },
+            [2] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.StrideW },
+            [12] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.StrideH },
+            [3] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.PadLeft },
+            [14] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.PadRight },
+            [13] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.PadTop },
+            [15] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.PadBottom },
+            [4] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.GlobalPooling ? 1 : 0 },
+            [5] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.PadMode },
+            [6] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.AvgPoolCountIncludePad ? 1 : 0 },
+            [7] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.AdaptivePooling ? 1 : 0 },
+
+            // [8] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.OutH },
+            // [18] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.OutH },
+        });
+    }
+
+    public void PReLU(string[] name, string input, float[] slope)
+    {
+        AddLayer("PReLU", name[0], new[] { input }, name, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = slope.Length },
+        });
+
+        WriteFloatArray(slope);
+    }
+
+    public void Reduction(string[] name, string input, ReductionArgs reductionArgs)
+    {
+        var args = new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = reductionArgs.OpType },
+            [1] = new ParamValue { Kind = ParamKind.Int, IntValue = reductionArgs.ReduceAll },
+        };
+
+        if (reductionArgs.Axes.Length > 0)
+        {
+            var axesSizeAndData = new List<long> { reductionArgs.Axes.Length };
+            foreach (var item in reductionArgs.Axes)
+            {
+                axesSizeAndData.Add(item);
+            }
+
+            args.Add(-3, new ParamValue { Kind = ParamKind.ArrayOfInt, TensorValue = axesSizeAndData.ToArray() });
+        }
+
+        args.Add(4, new ParamValue { Kind = ParamKind.Int, IntValue = reductionArgs.Keepdims });
+        args.Add(5, new ParamValue { Kind = ParamKind.Int, IntValue = 1 });
+        AddLayer("Reduction", name[0], new[] { input }, name, args);
+    }
+
+    public void Reshape(string[] name, string input, int[] newshape)
+    {
+        if (newshape.Length == 4)
+        {
+            newshape[2] *= newshape[3];
+            newshape.RemoveAt(3);
+        }
+
+        var args = new ParamDict();
+        const int i = 0;
+        foreach (var item in newshape.Reverse())
+        {
+            args.Add(i, new ParamValue { Kind = ParamKind.Int, IntValue = item });
+        }
+
+        AddLayer("Reshape", name[0], new[] { input }, name, args);
+    }
+
+    public void SELU(string[] name, string input, float alpha, float gamma)
+    {
+        AddLayer("SELU", name[0], new[] { input }, name, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Float, FloatValue = alpha },
+            [1] = new ParamValue { Kind = ParamKind.Float, FloatValue = gamma },
+        });
+    }
+
+    public void Crop(string[] name, string input, CropArgs cropArgs)
+    {
+        var args = new ParamDict();
+
+        // TODO: if need to fit torch crop, add other args into paramDict.
+        if (cropArgs.Axes.Length > 0)
+        {
+            var startData = new List<long> { cropArgs.Axes.Length };
+            var endData = new List<long> { cropArgs.Axes.Length };
+            var axisData = new List<long> { cropArgs.Axes.Length };
+            for (int i = 0; i < cropArgs.Axes.Length; i++)
+            {
+                startData.Add(cropArgs.Starts[i]);
+                endData.Add(cropArgs.Ends[i]);
+                axisData.Add(cropArgs.Axes[i]);
+            }
+
+            args.Add(-9, new ParamValue { Kind = ParamKind.ArrayOfInt, TensorValue = startData.ToArray() });
+            args.Add(-10, new ParamValue { Kind = ParamKind.ArrayOfInt, TensorValue = endData.ToArray() });
+            args.Add(-11, new ParamValue { Kind = ParamKind.ArrayOfInt, TensorValue = axisData.ToArray() });
+        }
+
+        AddLayer("Crop", name[0], new[] { input }, name, args);
+    }
+
+    public void Sigmoid(string[] name, string input)
+    {
+        AddLayer("Sigmoid", name[0], new[] { input }, name);
+    }
+
+    public void Softplus(string[] name, string input)
+    {
+        AddLayer("Softplus", name[0], new[] { input }, name);
+    }
+
+    public void Slice(string[] name, string input, int[] slices, int axis)
+    {
+        var sliceData = new List<int> { slices.Length };
+        sliceData.AddRange(slices);
+        AddLayer("Slice", name[0], new[] { input }, name, new ParamDict
+        {
+            [-0] = new ParamValue { Kind = ParamKind.ArrayOfInt, TensorValue = sliceData.ToArray() },
+            [1] = new ParamValue { Kind = ParamKind.Int, IntValue = axis },
+        });
+    }
+
+    public void Tile(string[] name, string input, int[] repeats)
+    {
+        var repeatsData = new List<int> { repeats.Length };
+        repeatsData.AddRange(repeats);
+        AddLayer("Tile", name[0], new[] { input }, name, new ParamDict
+        {
+            [-2] = new ParamValue { Kind = ParamKind.ArrayOfInt, TensorValue = repeatsData.ToArray() },
+        });
+    }
+
+    public void Permute(string[] name, string input, int orderType)
+    {
+        AddLayer("Permute", name[0], new[] { input }, name, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = orderType },
+        });
+    }
+
+    public void Matmul(string[] name, string inputA, string inputB, int lOrR, float[] constInput, int[] constShape)
+    {
+        var inputList = new[] { inputA, inputB };
+
+        if (constInput != null && constShape != null)
+        {
+            if (lOrR == 1)
+            {
+                inputList[0] = name + "_memorydata";
+            }
+            else
+            {
+                inputList[1] = name + "_memorydata";
+            }
+
+            var paramDict = new ParamDict();
+            for (int i = 0; i < constShape.Length; i++)
+            {
+                int index = i switch
+                {
+                    0 => 0,
+                    1 => 1,
+                    2 when constShape.Length == 3 => 2,
+                    2 when constShape.Length == 4 => 11,
+                    3 when constShape.Length == 4 => 2,
+                    _ => throw new NotSupportedException("Only support less than 5D"),
+                };
+                paramDict[index] = new ParamValue { Kind = ParamKind.Int, IntValue = constShape[constShape.Length - 1 - i] };
+            }
+
+            AddLayer("MemoryData", name + "_memorydata", Array.Empty<string>(), new[] { name + "_memorydata" }, paramDict);
+
+            WriteFloatArray(constInput);
+        }
+
+        AddLayer("MatMul", name[0], inputList, name, null);
+    }
+
+    public void ConvTranspose(string[] name, string input, ConvTransposeArgs args)
+    {
+        AddLayer("Deconvolution", name[0], new[] { input }, name, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = args.NumOutput },
+            [1] = new ParamValue { Kind = ParamKind.Int, IntValue = args.KernelW },
+            [11] = new ParamValue { Kind = ParamKind.Int, IntValue = args.KernelH },
+            [2] = new ParamValue { Kind = ParamKind.Int, IntValue = args.DilationW },
+            [12] = new ParamValue { Kind = ParamKind.Int, IntValue = args.DilationH },
+            [3] = new ParamValue { Kind = ParamKind.Int, IntValue = args.StrideW },
+            [13] = new ParamValue { Kind = ParamKind.Int, IntValue = args.StrideH },
+            [4] = new ParamValue { Kind = ParamKind.Int, IntValue = args.PadLeft },
+            [14] = new ParamValue { Kind = ParamKind.Int, IntValue = args.PadTop },
+            [15] = new ParamValue { Kind = ParamKind.Int, IntValue = args.PadRight },
+            [16] = new ParamValue { Kind = ParamKind.Int, IntValue = args.PadBottom },
+
+            // [18] = new ParamValue { Kind = ParamKind.Int, IntValue = args.OutputPadRight },
+            // [19] = new ParamValue { Kind = ParamKind.Int, IntValue = args.OutputPadBottom },
+            // [20] = new ParamValue { Kind = ParamKind.Int, IntValue = args.OutputW },
+            // [21] = new ParamValue { Kind = ParamKind.Int, IntValue = args.OutputH },
+            [5] = new ParamValue { Kind = ParamKind.Int, IntValue = args.BiasTerm },
+            [6] = new ParamValue { Kind = ParamKind.Int, IntValue = args.WeightDataSize },
+
+            // [9] = new ParamValue { Kind = ParamKind.Int, IntValue = args.ActivationType },
+            // [10] = new ParamValue { Kind = ParamKind.ArrayOfFloat, TensorValue = args.ActivationParams },
+        });
+        WriteFloatArray(new float[] { 0 }); // quantize flag [Not exist in ncnn op.md]
+        WriteFloatArray(args.WeightData.ToArray<float>());
+        WriteFloatArray(args.BiasData);
     }
 
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
