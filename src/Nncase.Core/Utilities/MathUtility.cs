@@ -17,4 +17,14 @@ public static class MathUtility
 
     public static T CeilDiv<T>(T value, T div)
         where T : INumber<T> => (value + (div - T.One)) / div;
+
+    public static int Factorial(int n)
+    {
+        if (n == 0)
+        {
+            return 1;
+        }
+
+        return n * Factorial(n - 1);
+    }
 }

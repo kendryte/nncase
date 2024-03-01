@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Nncase.Hosting;
+using Nncase.Schedule;
 
 namespace Nncase.Cli;
 
@@ -20,6 +21,8 @@ internal partial class Program
 {
     public static async Task<int> Main(string[] args)
     {
+        Tiling.AutoTile();
+
         return await ConfigureCommandLine()
             .UseHost(ConfigureHost)
             .UseDefaults()

@@ -37,6 +37,7 @@
     <ProjectReference Include="..\Nncase.Compiler\Nncase.Compiler.csproj" />
     <ProjectReference Include="..\Nncase.EGraph\Nncase.EGraph.csproj" /> 
     <ProjectReference Include="..\Nncase.Graph\Nncase.Graph.csproj" /> 
+    <ProjectReference Include="..\Nncase.Schedule\Nncase.Schedule.csproj" /> 
     <ProjectReference Include="..\Nncase.Tests.TestFixture\Nncase.Tests.TestFixture.csproj" />
     <ProjectReference Include="..\Nncase.Passes\Nncase.Passes.csproj" />
     <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
