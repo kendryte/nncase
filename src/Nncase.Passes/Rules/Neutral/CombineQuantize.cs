@@ -57,7 +57,7 @@ public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>
                             var quantUser = userCall.Arguments[Nncase.IR.Math.Quantize.QuantParam.Index];
                             if (quantUser != quantParam)
                             {
-                                return null;
+                                continue;
                             }
                         }
                         else
