@@ -18,6 +18,12 @@ namespace Nncase.Evaluator.IR.CPU;
 
 public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInferencer<PackedBinary>, ICostEvaluator<PackedBinary>
 {
+    internal enum DimKind : int
+    {
+        E, // elemwise
+        B, // broadcast
+    }
+
     public IValue Visit(IEvaluateContext context, PackedBinary target)
     {
         var a = context.GetOrtArgumentValue(target, PackedBinary.Lhs);
@@ -89,82 +95,58 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
     private IRType Visit(PackedBinary target, TensorType a, TensorType b)
     {
         var rank = System.Math.Max(a.Shape.Rank, b.Shape.Rank);
-        Shape outShape = Shape.Scalar;
-        _ = rank - a.Shape.Rank;
-        _ = rank - b.Shape.Rank;
-
-        bool CheckDimBroadCast(int dimA, int dimB, out int dimOut)
+        var outShape = new int[rank];
+        var lhsOrginShape = a.Shape.ToValueArray();
+        var rhsOrginShape = b.Shape.ToValueArray();
+        for (int i = 0; i < target.LhsPackedAxes.Count; i++)
         {
-            dimOut = System.Math.Max(dimA, dimB);
-            return (dimA, dimB) switch
-            {
-                (int a, int b) when a == b => true,
-                (1, _) => true,
-                (_, 1) => true,
-                _ => false,
-            };
+            lhsOrginShape[target.LhsPackedAxes[i]] = (lhsOrginShape[target.LhsPackedAxes[i]] * ((VectorType)a.DType).Lanes[i]) - target.LhsPadedNums[i];
         }
 
-        bool CheckBroadCast([MaybeNullWhen(false)] out Shape shape)
+        for (int i = 0; i < target.RhsPackedAxes.Count; i++)
         {
-            shape = null!;
-            var dims = new Dimension[rank];
-            for (int i = -1; i >= -rank; i--)
-            {
-                var aAxis = a.Shape.Rank + i;
-                var bAxis = b.Shape.Rank + i;
-                switch (aAxis, bAxis)
-                {
-                    case ( < 0, _):
-                        dims[rank + i] = b.Shape[bAxis];
-                        break;
-                    case (_, < 0):
-                        dims[rank + i] = a.Shape[aAxis];
-                        break;
-                    case ( >= 0, >= 0):
-                        if (CheckDimBroadCast(a.Shape[aAxis].FixedValue, b.Shape[bAxis].FixedValue, out int dimOut))
-                        {
-                            dims[rank + i] = dimOut;
-                        }
-                        else
-                        {
-                            return false;
-                        }
+            rhsOrginShape[target.RhsPackedAxes[i]] = (rhsOrginShape[target.RhsPackedAxes[i]] * ((VectorType)b.DType).Lanes[i]) - target.RhsPadedNums[i];
+        }
 
-                        break;
-                    default:
-                        throw new NotSupportedException();
-                }
+        var orginKinds = new DimKind[rank];
+
+        for (int i = -1; i >= -rank; i--)
+        {
+            var aAxis = a.Shape.Rank + i;
+            var bAxis = b.Shape.Rank + i;
+            switch (aAxis, bAxis)
+            {
+                case ( < 0, _):
+                    outShape[rank + i] = b.Shape[bAxis].FixedValue;
+                    orginKinds[rank + i] = DimKind.B;
+                    break;
+                case (_, < 0):
+                    outShape[rank + i] = a.Shape[aAxis].FixedValue;
+                    orginKinds[rank + i] = DimKind.B;
+                    break;
+                case ( >= 0, >= 0):
+                    switch (lhsOrginShape[aAxis], rhsOrginShape[bAxis])
+                    {
+                        case (int l, int r) when l == r:
+                            outShape[rank + i] = a.Shape[aAxis].FixedValue;
+                            orginKinds[rank + i] = DimKind.E;
+                            break;
+                        case (1, _):
+                            outShape[rank + i] = b.Shape[bAxis].FixedValue;
+                            orginKinds[rank + i] = DimKind.B;
+                            break;
+                        case (_, 1):
+                            outShape[rank + i] = a.Shape[aAxis].FixedValue;
+                            orginKinds[rank + i] = DimKind.B;
+                            break;
+                        default:
+                            return new InvalidType("packed binary not support dim");
+                    }
+
+                    break;
+                default:
+                    throw new NotSupportedException();
             }
-
-            shape = new Shape(dims);
-            return true;
-        }
-
-        // first check shape can broadcast
-        switch (a.Shape.Rank, b.Shape.Rank)
-        {
-            case (0, 0):
-                break;
-            case ( > 0, 0):
-                outShape = a.Shape;
-                break;
-            case (0, > 0):
-                outShape = b.Shape;
-                break;
-            case ( > 0, > 0):
-                if (CheckBroadCast(out var oShape))
-                {
-                    outShape = oShape;
-                }
-                else
-                {
-                    goto ERROR;
-                }
-
-                break;
-            default:
-            ERROR: return new InvalidType("Shape Can't Broadcast");
         }
 
         // second check the dtype.
@@ -173,21 +155,24 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
         {
             case (VectorType va, VectorType vb):
                 {
+                    var lanes = System.Math.Max(va.Lanes.Count, vb.Lanes.Count);
                     var valid = true;
-                    for (int i = -1; i >= -System.Math.Max(va.Lanes.Count, vb.Lanes.Count); --i)
+                    for (int i = -1; i >= -lanes; --i)
                     {
                         var ai = va.Lanes.Count + i;
                         var bi = vb.Lanes.Count + i;
                         switch (ai, bi)
                         {
                             case ( < 0, _):
+                                valid &= orginKinds[target.RhsPackedAxes[bi] - b.Shape.Rank + rank] == DimKind.B && rhsOrginShape[target.RhsPackedAxes[bi]] != 1;
+                                break;
                             case (_, < 0):
+                                valid &= orginKinds[target.LhsPackedAxes[ai] - a.Shape.Rank + rank] == DimKind.B && lhsOrginShape[target.LhsPackedAxes[ai]] != 1;
                                 break;
                             case ( >= 0, >= 0):
-                                var adim = (a.Shape[target.LhsPackedAxes[ai]].FixedValue * va.Lanes[ai]) - target.LhsPadedNums[ai];
-                                var bdim = (b.Shape[target.RhsPackedAxes[bi]].FixedValue * vb.Lanes[bi]) - target.RhsPadedNums[bi];
-                                valid &= adim == bdim && adim != 1;
-
+                                var laxis = target.LhsPackedAxes[ai] - a.Shape.Rank + rank;
+                                var raxis = target.RhsPackedAxes[bi] - b.Shape.Rank + rank;
+                                valid &= lhsOrginShape[target.LhsPackedAxes[ai]] == rhsOrginShape[target.RhsPackedAxes[bi]] && laxis == raxis && orginKinds[laxis] == orginKinds[raxis] && orginKinds[raxis] == DimKind.E;
                                 break;
                         }
                     }

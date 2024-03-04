@@ -14,6 +14,7 @@
  */
 #include <cstddef>
 #include <cstdint>
+#include <cstdarg>
 
 extern "C" {
 struct nncase_runtime_cpu_mt_t {

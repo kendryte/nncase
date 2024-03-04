@@ -28,6 +28,11 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
     {
         var input = context.GetOrtArgumentValue(reshape, Reshape.Input);
         var shape = context.GetArgumentValueAsArray<long>(reshape, Reshape.Shape);
+        if (context.CurrentCall.CheckedType is AnyType)
+        {
+            return Value.FromTensor(OrtKI.Reshape(input, shape, 0).ToTensor());
+        }
+
         var tensorType = context.CurrentCall.CheckedTensorType;
         var allowzero = tensorType.Shape.Contains(0) ? 1L : 0L;
         if (tensorType.DType is VectorType vtype)

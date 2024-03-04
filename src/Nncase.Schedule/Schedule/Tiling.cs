@@ -14,6 +14,8 @@ using Nncase.Utilities;
 
 namespace Nncase.Schedule;
 
+#pragma warning disable
+
 public static class Tiling
 {
     public static void AutoTile()
@@ -484,3 +486,5 @@ public static class CPExtensions
     public static IntExpr CeilDiv(this int numer, IntExpr denom) =>
         denom.solver().MakeDiv(numer + (denom - 1), denom);
 }
+
+#pragma warning restore

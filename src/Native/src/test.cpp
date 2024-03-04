@@ -131,8 +131,8 @@ int main() {
         ntt::pack<1>(ta, tb.view());
         ntt::unpack<1>(tb, tc.view());
         ntt::apply(tc.shape(), [&](auto index) {
-            auto a = ta(index);
-            auto c = tc(index);
+            NNCASE_UNUSED auto a = ta(index);
+            NNCASE_UNUSED auto c = tc(index);
             assert(a == c);
         });
     }
@@ -148,8 +148,8 @@ int main() {
         ntt::pack<1>(ta, tb);
         ntt::unpack<1>(tb, tc);
         ntt::apply(tc.shape(), [&](auto index) {
-            auto a = ta(index);
-            auto c = tc(index);
+            NNCASE_UNUSED auto a = ta(index);
+            NNCASE_UNUSED auto c = tc(index);
             assert(a == c);
         });
     }

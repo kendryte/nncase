@@ -103,15 +103,15 @@ public sealed class AffineMap : Expr
     {
         var parameters = func.Method.GetParameters();
         var arguments = new object[parameters.Length];
-        var dims = new List<AffineDomain>();
+        var domains = new List<AffineDomain>();
         var symbols = new List<AffineSymbol>();
         for (int i = 0; i < arguments.Length; i++)
         {
             var type = parameters[i].ParameterType;
-            if (type == typeof(AffineDim))
+            if (type == typeof(AffineDomain))
             {
-                var domain = F.Affine.Domain(dims.Count);
-                dims.Add(domain);
+                var domain = F.Affine.Domain(i);
+                domains.Add(domain);
                 arguments[i] = domain;
             }
             else if (type == typeof(AffineSymbol))
@@ -127,7 +127,7 @@ public sealed class AffineMap : Expr
         }
 
         var results = (AffineRange[])func.DynamicInvoke(arguments)!;
-        return new AffineMap(CollectionsMarshal.AsSpan(dims), CollectionsMarshal.AsSpan(symbols), results);
+        return new AffineMap(CollectionsMarshal.AsSpan(domains), CollectionsMarshal.AsSpan(symbols), results);
     }
 
     public static AffineMap Identity(int rank)

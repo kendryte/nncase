@@ -254,7 +254,9 @@ public sealed class UnitTestEvaluatorCPU
 
     [Theory]
     [InlineData(new object[] { BinaryOp.Add, new[] { 1, 77, 768 }, new int[] { 1, 77, 768 }, new[] { 1, 2 }, new int[] { 1, 2 } })] // normal
+    [InlineData(new object[] { BinaryOp.Add, new[] { 12, 77, 64 }, new[] { 12, 1, 64 }, new[] { 0 }, new[] { 1, 2 }, false })] // packed on broadcast axis, invalid
     [InlineData(new object[] { BinaryOp.Add, new[] { 12, 77, 64 }, new[] { 12, 1, 64 }, new[] { 1, 2 }, new[] { 1, 2 }, false })] // packed on broadcast axis, invalid
+    [InlineData(new object[] { BinaryOp.Add, new[] { 12, 77, 64 }, new[] { 12, 1, 64 }, new[] { 0, 2 }, new[] { 2 }, false })] // packed on broadcast axis, invalid
     [InlineData(new object[] { BinaryOp.Add, new[] { 12, 77, 64 }, new[] { 12, 1, 64 }, new[] { 1, 2 }, new[] { 2 } })] // packed on no broadcast axis, 2d simd with 1d simd.
     [InlineData(new object[] { BinaryOp.Mul, new[] { 12, 77, 64 }, new int[] { }, new[] { 1, 2 }, new int[] { } })]
     [InlineData(new object[] { BinaryOp.Add, new[] { 12, 77, 77 }, new int[] { 1, 77, 77 }, new[] { 1 }, new int[] { 1 } })]
@@ -300,7 +302,7 @@ public sealed class UnitTestEvaluatorCPU
     [InlineData(new object[] { BinaryOp.Mul, new[] { 12, 77, 64 }, new int[] { } })]
     [InlineData(new object[] { BinaryOp.Add, new[] { 12, 77, 77 }, new int[] { 1, 77, 77 } })]
     [InlineData(new object[] { BinaryOp.Mul, new[] { 1, 77, 3072 }, new int[] { 3072 } })]
-    [InlineData(new object[] { BinaryOp.Add, new[] { 1, 64, 384, 384 }, new int[] { 1 } })] // normal
+    [InlineData(new object[] { BinaryOp.Add, new[] { 1, 64, 96, 128 }, new int[] { 1 } })] // normal
     public void TestPackBinaryRule(BinaryOp op, int[] lhsShape, int[] rhsShape)
     {
         var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
@@ -316,7 +318,9 @@ public sealed class UnitTestEvaluatorCPU
         var posts = rule.GetReplace(pre);
         foreach (var post in posts)
         {
+#if DEBUG
             System.Console.WriteLine(CompilerServices.Print(post));
+#endif
             Comparator.Compare(pre.Evaluate(feedDict), post.Evaluate(feedDict), 0.999f);
         }
     }
@@ -444,8 +448,8 @@ public sealed class UnitTestEvaluatorCPU
     {
         var inputs = shapes.Select(shape => new Var(new TensorType(DataTypes.Float32, shape))).ToArray();
         var pre = IR.F.Tensors.Concat(new IR.Tuple(inputs), axis);
-
-        var feedDict = shapes.Zip(inputs).ToDictionary(kv => kv.Second, kv => IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, kv.Second).Evaluate());
+        int count = 1;
+        var feedDict = shapes.Zip(inputs).ToDictionary(kv => kv.Second, kv => IR.F.Random.Normal(DataTypes.Float32, 0, 1, count++, kv.First).Evaluate());
         var post = IR.F.Tensors.Concat(new IR.Tuple(inputs.Zip(packedAxes).Select(p => IR.F.CPU.Pack(p.First, Enumerable.Repeat(Lanes, p.Second.Length).ToArray(), p.Second)).ToArray()), axis);
         post.Evaluate(feedDict);
     }

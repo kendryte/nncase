@@ -115,7 +115,7 @@ internal sealed partial class CPUSingleKernelFusion : FusionMaker
 }
 
 [RuleGenerator]
-public sealed partial class FuseMHA2 : FusionMaker
+internal sealed partial class FuseMHA2 : FusionMaker
 {
     public override string ModuleKind { get; } = CPUTarget.Kind;
 
@@ -235,7 +235,6 @@ public sealed partial class FuseMHA2 : FusionMaker
     }
 }
 
-
 /// <summary>
 /// Convert QKV computation to MHA style.
 /// %9 = MatMul(%2, const(f32[768,768]))
@@ -245,7 +244,7 @@ public sealed partial class FuseMHA2 : FusionMaker
 /// %13 = Reshape(%12, const(i32[3] : {12,77,64})).
 /// </summary>
 [RuleGenerator]
-public sealed partial class CombineMHA : IRewriteRule
+internal sealed partial class CombineMHA : IRewriteRule
 {
     public CombineMHA()
     {
