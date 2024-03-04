@@ -77,6 +77,99 @@ int main() {
         assert(tc(0) == sinf(1.f));
     }
 
+    // fixed pack
+    {
+        ntt::tensor<float, ntt::fixed_shape<16, 64, 32>> ta;
+        ntt::tensor<ntt::simd_type<float, 4>::type,
+                    ntt::fixed_shape<16, 16, 32>>
+            tb;
+        std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        ntt::pack<1>(ta, tb.view());
+        assert(tb(0, 0, 0)[0] == ta(0, 0, 0));
+        assert(tb(0, 0, 0)[1] == ta(0, 1, 0));
+        assert(tb(0, 0, 0)[2] == ta(0, 2, 0));
+        assert(tb(0, 0, 0)[3] == ta(0, 3, 0));
+    }
+
+    // fixed pack with pad
+    {
+        ntt::tensor<float, ntt::fixed_shape<1, 3, 4>> ta;
+        ntt::tensor<ntt::simd_type<float, 4>::type, ntt::fixed_shape<1, 1, 4>>
+            tb;
+        std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        ntt::pack<1>(ta, tb);
+        assert(tb(0, 0, 0)[0] == ta(0, 0, 0));
+        assert(tb(0, 0, 0)[1] == ta(0, 1, 0));
+        assert(tb(0, 0, 0)[2] == ta(0, 2, 0));
+        assert(tb(0, 0, 0)[3] == 0.0f);
+    }
+
+    // fixed pack with pad, and unary
+    {
+        ntt::tensor<float, ntt::fixed_shape<1, 3, 4>> ta;
+        ntt::tensor<ntt::simd_type<float, 4>::type, ntt::fixed_shape<1, 1, 4>>
+            tb;
+        std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        ntt::pack<1>(ta, tb.view());
+        ntt::tensor<ntt::simd_type<float, 4>::type, ntt::fixed_shape<1, 1, 4>>
+            tc;
+        ntt::unary<ntt::mathops::cos>(tb, tc);
+        assert(tc(0, 0, 0)[0] == std::cos(ta(0, 0, 0)));
+        assert(tc(0, 0, 0)[1] == std::cos(ta(0, 1, 0)));
+        assert(tc(0, 0, 0)[2] == std::cos(ta(0, 2, 0)));
+        assert(tc(0, 0, 0)[3] == std::cos(0.0f));
+    }
+
+    // fixed unpack
+    {
+        ntt::tensor<float, ntt::fixed_shape<16, 64, 32>> ta;
+        ntt::tensor<ntt::simd_type<float, 4>::type,
+                    ntt::fixed_shape<16, 16, 32>>
+            tb;
+        ntt::tensor<float, ntt::fixed_shape<16, 64, 32>> tc;
+        std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        ntt::pack<1>(ta, tb.view());
+        ntt::unpack<1>(tb, tc.view());
+        ntt::apply(tc.shape(), [&](auto index) {
+            auto a = ta(index);
+            auto c = tc(index);
+            assert(a == c);
+        });
+    }
+
+    // fixed unpack with pad
+    {
+        ntt::tensor<float, ntt::fixed_shape<16, 62, 32>> ta;
+        ntt::tensor<ntt::simd_type<float, 4>::type,
+                    ntt::fixed_shape<16, 16, 32>>
+            tb;
+        ntt::tensor<float, ntt::fixed_shape<16, 62, 32>> tc;
+        std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        ntt::pack<1>(ta, tb);
+        ntt::unpack<1>(tb, tc);
+        ntt::apply(tc.shape(), [&](auto index) {
+            auto a = ta(index);
+            auto c = tc(index);
+            assert(a == c);
+        });
+    }
+
+    // matmul
+    {
+        ntt::tensor<float, ntt::fixed_shape<3, 4>> ta;
+        ntt::tensor<float, ntt::fixed_shape<4, 2>> tb;
+        ntt::tensor<float, ntt::fixed_shape<3, 2>> tc;
+        std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        std::iota(tb.buffer().begin(), tb.buffer().end(), 0.f);
+        ntt::matmul(ta, tb, tc);
+        assert(tc(0, 0) == 28.f);
+        assert(tc(0, 1) == 34.f);
+        assert(tc(1, 0) == 76.f);
+        assert(tc(1, 1) == 98.f);
+        assert(tc(2, 0) == 124.f);
+        assert(tc(2, 1) == 162.f);
+    }
+
     auto kmodel = read_file(
         R"(/mnt/home-nas/work/repo/nncase/tests_output/UnitTestCPUTarget/TestSimpleUnary/TestSimpleUnary.kmodel)");
 

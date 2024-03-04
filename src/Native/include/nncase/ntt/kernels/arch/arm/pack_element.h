@@ -12,13 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
-#include "kernels/binary.h"
-#include "kernels/copy.h"
-#include "kernels/unary.h"
-#include "kernels/pack.h"
-#include "kernels/unpack.h"
-#include "kernels/matmul.h"
-#include "simd_type.h"
-#include "tensor.h"
-#include "utility.h"
+#include <arm_neon.h>
+#include <array>
+
+inline float32x4_t pack_elemt(const std::array<float, 4> &vec) {
+    return vld1q_f32(&vec[0]);
+}
+
+inline float32x2_t pack_elemt(const std::array<float, 2> &vec) {
+    return vld1_f32(&vec[0]);
+}

@@ -12,13 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
-#include "kernels/binary.h"
-#include "kernels/copy.h"
-#include "kernels/unary.h"
-#include "kernels/pack.h"
-#include "kernels/unpack.h"
-#include "kernels/matmul.h"
-#include "simd_type.h"
-#include "tensor.h"
-#include "utility.h"
+#include <arm_neon.h>
+#include <array>
+
+inline void unpack_elemt(std::array<float, 4> &arr, const float32x4_t &vec) {
+    vst1q_f32(&arr[0], vec);
+}

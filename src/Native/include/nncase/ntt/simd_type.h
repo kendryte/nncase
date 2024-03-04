@@ -13,12 +13,17 @@
  * limitations under the License.
  */
 #pragma once
-#include "kernels/binary.h"
-#include "kernels/copy.h"
-#include "kernels/unary.h"
-#include "kernels/pack.h"
-#include "kernels/unpack.h"
-#include "kernels/matmul.h"
-#include "simd_type.h"
-#include "tensor.h"
-#include "utility.h"
+#include <cstddef>
+
+namespace nncase::ntt {
+template <class T, size_t... Lanes> struct simd_type {};
+
+#ifdef __ARM_NEON__
+#include <nncase/ntt/kernels/arch/arm/simd_types.h>
+#endif
+
+#ifdef __AVX__
+#include <nncase/ntt/kernels/arch/x86_64/simd_types.h>
+#endif
+
+} // namespace nncase::ntt

@@ -1,3 +1,4 @@
+
 /* Copyright 2019-2021 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,12 +14,20 @@
  * limitations under the License.
  */
 #pragma once
-#include "kernels/binary.h"
-#include "kernels/copy.h"
-#include "kernels/unary.h"
-#include "kernels/pack.h"
-#include "kernels/unpack.h"
-#include "kernels/matmul.h"
-#include "simd_type.h"
-#include "tensor.h"
-#include "utility.h"
+#include <cstdint>
+#include <utility>
+
+namespace nncase::ntt {
+namespace detail {
+template <size_t... Index, class Callable>
+static constexpr void loop_impl(Callable &&f, std::index_sequence<Index...>) {
+    (f(std::integral_constant<size_t, Index>{}), ...);
+}
+
+} // namespace detail
+
+template <size_t N, class Callable> static constexpr void loop(Callable &&f) {
+    loop_impl(std::forward<Callable>(f), std::make_index_sequence<N>{});
+}
+
+} // namespace nncase::ntt

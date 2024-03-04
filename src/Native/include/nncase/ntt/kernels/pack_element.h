@@ -12,13 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
-#include "kernels/binary.h"
-#include "kernels/copy.h"
-#include "kernels/unary.h"
-#include "kernels/pack.h"
-#include "kernels/unpack.h"
-#include "kernels/matmul.h"
-#include "simd_type.h"
-#include "tensor.h"
-#include "utility.h"
+#include <array>
+#include <cstdint>
+
+template <class TScalar, size_t Lanes, class TVec>
+TVec pack_elemt(const std::array<TScalar, Lanes> &arr);
+
+#ifdef __ARM_NEON__
+#include "arch/arm/pack_element.h"
+#endif
+
+#ifdef __AVX__
+#include "arch/x86_64/pack_element.h"
+#endif

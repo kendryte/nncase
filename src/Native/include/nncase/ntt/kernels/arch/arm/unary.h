@@ -13,12 +13,26 @@
  * limitations under the License.
  */
 #pragma once
-#include "kernels/binary.h"
-#include "kernels/copy.h"
-#include "kernels/unary.h"
-#include "kernels/pack.h"
-#include "kernels/unpack.h"
-#include "kernels/matmul.h"
-#include "simd_type.h"
-#include "tensor.h"
-#include "utility.h"
+#include "arm_math.h"
+
+namespace std {
+inline float32x4_t cos(float32x4_t v) { return cos_ps(v); }
+} // namespace std
+
+namespace nncase::ntt {
+namespace arch {
+template <size_t Extent, class T, class Op>
+constexpr void unary(Op &&op, const T *input_p, T *output_p) {
+    for (size_t i = 0; i < Extent; i++) {
+        output_p[i] = op(input_p[i]);
+    }
+}
+
+template <class T, class Op>
+constexpr void unary(Op &&op, const T *input_p, T *output_p, size_t extent) {
+    for (size_t i = 0; i < extent; i++) {
+        output_p[i] = op(input_p[i]);
+    }
+}
+} // namespace arch
+} // namespace nncase::ntt

@@ -12,13 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
-#include "kernels/binary.h"
-#include "kernels/copy.h"
-#include "kernels/unary.h"
-#include "kernels/pack.h"
-#include "kernels/unpack.h"
-#include "kernels/matmul.h"
-#include "simd_type.h"
-#include "tensor.h"
-#include "utility.h"
+#include <immintrin.h>
+#include <array>
+
+inline __m128 pack_elemt(const std::array<float, 4> &vec) {
+    return _mm_load_ps(&vec[0]);
+}
+
+inline __m256 pack_elemt(const std::array<float, 8> &vec) {
+    return _mm256_load_ps(&vec[0]);
+}

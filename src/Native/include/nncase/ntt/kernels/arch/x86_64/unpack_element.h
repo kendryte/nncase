@@ -12,13 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
-#include "kernels/binary.h"
-#include "kernels/copy.h"
-#include "kernels/unary.h"
-#include "kernels/pack.h"
-#include "kernels/unpack.h"
-#include "kernels/matmul.h"
-#include "simd_type.h"
-#include "tensor.h"
-#include "utility.h"
+#include <immintrin.h>
+#include <array>
+
+inline void unpack_elemt(std::array<float, 4> &arr, const __m128 &vec) {
+    _mm_store_ps(&arr[0], vec);
+}
+
+inline void unpack_elemt(std::array<float, 8> &arr, const __m256 &vec) {
+    _mm256_store_ps(&arr[0], vec);
+}
