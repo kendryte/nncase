@@ -196,9 +196,7 @@ internal class NcnnEmitter
         WriteFloatArray(betaData);
     }
 
-
-    public void LayerNorm(string name, string input, int affineSize, float eps, int affine, float[] gammaData,
-        float[] betaData)
+    public void LayerNorm(string name, string input, int affineSize, float eps, int affine, float[] gammaData, float[] betaData)
     {
         AddLayer("LayerNorm", name, new[] { input }, new[] { name }, new ParamDict
         {

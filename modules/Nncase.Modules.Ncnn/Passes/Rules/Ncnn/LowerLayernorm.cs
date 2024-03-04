@@ -40,30 +40,15 @@ public partial class LowerLayerNorm : RewriteRule<Pattern>
             return null;
         }
 
-        // var newShape = FitNcnnShape(input.CheckedShape.ToValueList(), op.Axis); // newAxis = 1;
-        // Console.WriteLine($"op.Axis: {op.Axis}");
-        // Console.WriteLine($"oldShape: {input.CheckedShape.ToValueList().Select(x => x.ToString()).Aggregate((x, y) => x + ", " + y)}");
-        // Console.WriteLine($"newShape: {newShape.Select(x => x.ToString()).Aggregate((x, y) => x + "," + y)}");
-        // var inRes = Reshape(input, newShape.ToArray());
-        // var inResO = new Var(inRes.CheckedType);
-
-        // int affine = gamma.All(a => a != 1) && beta.All(a => a != 0) ? 1 : 0;
-        // int affineSize = newShape[2];
-
-        // var layerNorm = new Call(new Fusion("ncnn", NcnnLayerNorm(inResO, affineSize, op.Epsilon, affine, gamma, beta), new[] { inResO }), inRes);
-
-        // return Reshape(layerNorm, input.CheckedShape);
-
-        // var newShape = FitNcnnShape(input.CheckedShape.ToValueList(), op.Axis); // newAxis = 1;
-        // Console.WriteLine($"op.Axis: {op.Axis}");
-        // Console.WriteLine($"oldShape: {input.CheckedShape.ToValueList().Select(x => x.ToString()).Aggregate((x, y) => x + ", " + y)}");
-        // Console.WriteLine($"newShape: {newShape.Select(x => x.ToString()).Aggregate((x, y) => x + "," + y)}");
-        var inRes = Squeeze(input, new[]{0});
+        var inRes = Squeeze(input, new[] { 0 });
         var inResO = new Var(inRes.CheckedType);
 
         int affine = gamma.All(a => a != 1) && beta.All(a => a != 0) ? 1 : 0;
         int affineSize = 1;
-        for(int i = 1; i < inRes.CheckedShape.Rank; i++)
+
+        int newAxis = op.Axis > 0 ? op.Axis - 1 : 0; // BatchSize has been squeezed.
+
+        for (int i = newAxis; i < inRes.CheckedShape.Rank; i++)
         {
             affineSize *= inRes.CheckedShape.ToValueArray()[i];
         }

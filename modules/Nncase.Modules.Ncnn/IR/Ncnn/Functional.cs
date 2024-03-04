@@ -50,6 +50,7 @@ public sealed class Ncnn
 
     public static Call NcnnInstanceNorm(Expr expr, int channels, float eps, int affine, float[] gammaData, float[] betaData) =>
         new Call(new NcnnInstanceNorm(channels, eps, affine, gammaData, betaData), expr);
+
     public static Call NcnnLayerNorm(Expr expr, int affineSize, float eps, int affine, float[] gammaData, float[] betaData) =>
         new Call(new NcnnLayerNorm(affineSize, eps, affine, gammaData, betaData), expr);
 
@@ -98,5 +99,4 @@ public sealed class Ncnn
         new Call(new NcnnMatMul(lorR, constInput, constShape), inExpr);
 
     public static Call NcnnConvTranspose(Expr expr, ConvTransposeArgs args) => new Call(new NcnnConvTranspose(args), expr);
-
 }
