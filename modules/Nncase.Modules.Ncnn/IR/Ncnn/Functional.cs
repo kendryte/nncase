@@ -99,4 +99,7 @@ public sealed class Ncnn
         new Call(new NcnnMatMul(lorR, constInput, constShape), inExpr);
 
     public static Call NcnnConvTranspose(Expr expr, ConvTransposeArgs args) => new Call(new NcnnConvTranspose(args), expr);
+
+    public static Call NcnnCast(Expr expr, int fromType, int toType) =>
+        new Call(new NcnnCast(fromType, toType), expr);
 }

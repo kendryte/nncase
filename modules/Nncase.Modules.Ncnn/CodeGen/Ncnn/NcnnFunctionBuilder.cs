@@ -151,13 +151,12 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                     _emitter.InstanceNorm(names[0], ExprMemo[expr.Arguments[0]], op.Channels, op.Eps, op.Affine, op.GammaData, op.BetaData);
                     break;
                 case NcnnLRN op:
-                    _emitter.LRN(names[0], ExprMemo[expr.Arguments[0]], op.Alpha, op.Beta, op.Bias, op.Size);
+                    _emitter.LRN(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Alpha, op.Beta, op.Bias, op.Size);
                     break;
                 case NcnnLSTM op:
                     for (int i = 1; i < op.OutputSize; i++)
                     {
                         var a = GetNextName();
-                        Console.WriteLine($"{i} = {a}");
                         names.Add(a);
                     }
 
@@ -214,7 +213,10 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                     _emitter.ConvTranspose(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Args);
                     break;
                 case NcnnLayerNorm op:
-                    _emitter.LayerNorm(names[0], ExprMemo[expr.Arguments[0]], op.AffineSize, op.Eps, op.Affine, op.GammaData, op.BetaData);
+                    _emitter.LayerNorm(names.ToArray(), ExprMemo[expr.Arguments[0]], op.AffineSize, op.Eps, op.Affine, op.GammaData, op.BetaData);
+                    break;
+                case NcnnCast op:
+                    _emitter.Cast(names.ToArray(), ExprMemo[expr.Arguments[0]], op.FromType, op.ToType);
                     break;
                 default:
                     throw new NotSupportedException("Not support in Ncnn ops emitter");

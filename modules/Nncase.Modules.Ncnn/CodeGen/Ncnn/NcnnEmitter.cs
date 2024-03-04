@@ -196,9 +196,9 @@ internal class NcnnEmitter
         WriteFloatArray(betaData);
     }
 
-    public void LayerNorm(string name, string input, int affineSize, float eps, int affine, float[] gammaData, float[] betaData)
+    public void LayerNorm(string[] name, string input, int affineSize, float eps, int affine, float[] gammaData, float[] betaData)
     {
-        AddLayer("LayerNorm", name, new[] { input }, new[] { name }, new ParamDict
+        AddLayer("LayerNorm", name[0], new[] { input }, name, new ParamDict
         {
             [0] = new ParamValue { Kind = ParamKind.Int, IntValue = affineSize }, // affineSize
             [1] = new ParamValue { Kind = ParamKind.Float, FloatValue = eps }, // eps
@@ -208,8 +208,8 @@ internal class NcnnEmitter
         WriteFloatArray(betaData);
     }
 
-    public void LRN(string name, string input, float alpha, float beta, float bias, int size) =>
-        AddLayer("LRN", name, new[] { input }, new[] { name }, new ParamDict
+    public void LRN(string[] name, string input, float alpha, float beta, float bias, int size) =>
+        AddLayer("LRN", name[0], new[] { input }, name, new ParamDict
         {
             [0] = new ParamValue { Kind = ParamKind.Int, IntValue = 0 }, // region_type
             [1] = new ParamValue { Kind = ParamKind.Int, IntValue = size }, // size
@@ -469,6 +469,15 @@ internal class NcnnEmitter
         WriteFloatArray(new float[] { 0 }); // quantize flag [Not exist in ncnn op.md]
         WriteFloatArray(args.WeightData.ToArray<float>());
         WriteFloatArray(args.BiasData);
+    }
+
+    public void Cast(string[] name, string input, int fromType, int toType)
+    {
+        AddLayer("Cast", name[0], new[] { input }, name, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = fromType },
+            [1] = new ParamValue { Kind = ParamKind.Int, IntValue = toType },
+        });
     }
 
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)

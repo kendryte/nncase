@@ -44,5 +44,6 @@ internal class NcnnModule : IApplicationPart
         registrator.RegisterManyInterface<NcnnPermuteEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnMatMulEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnConvTransposeEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnCastEvaluator>(reuse: Reuse.Singleton);
     }
 }
