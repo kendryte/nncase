@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.TIR;
@@ -29,6 +30,8 @@ public sealed class AffineDomain : Expr
 
     public AffineDomain With(AffineDim? offset = null, AffineExtent? extent = null)
         => new AffineDomain(offset ?? Offset, extent ?? Extent);
+
+    public override string ToString() => $"({Offset}, {Extent})";
 }
 
 public sealed class AffineRange : Expr
@@ -47,11 +50,11 @@ public sealed class AffineRange : Expr
     public AffineRange With(AffineExpr? offset = null, AffineExpr? extent = null)
         => new AffineRange(offset ?? Offset, extent ?? Extent);
 
-    public TIR.Range Apply(ReadOnlySpan<Expr> dims, ReadOnlySpan<Expr> extents, IReadOnlyDictionary<AffineSymbol, Expr> symbols)
+    public (Expr Offset, Expr Extent) Apply(ReadOnlySpan<Expr> dims, ReadOnlySpan<Expr> extents, IReadOnlyDictionary<AffineSymbol, Expr> symbols)
     {
         var offset = Offset.Apply(dims, extents, symbols);
         var extent = Extent.Apply(dims, extents, symbols);
-        return new TIR.Range(offset, offset + extent, 1);
+        return (offset, extent);
     }
 
     internal string GetDisplayString(ReadOnlySpan<AffineSymbol> symbols)
@@ -149,6 +152,9 @@ public sealed class AffineMap : Expr
     }
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.VisitAffineMap(this, context);
+
+    public AffineMap With(AffineDomain[]? domains = null, AffineSymbol[]? symbols = null, AffineRange[]? results = null)
+        => new AffineMap(domains ?? Domains, symbols ?? Symbols, results ?? Results);
 
     public override string ToString()
     {

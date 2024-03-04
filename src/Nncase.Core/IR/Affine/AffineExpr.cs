@@ -122,7 +122,11 @@ public sealed class AffineDim : AffineExpr
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.VisitAffineDim(this, context);
 
+    public AffineDim With(int? position = null) => new AffineDim(position ?? Position);
+
     public override string ToString() => $"d{Position}";
+
+    protected override int GetHashCodeCore() => HashCode.Combine(Position);
 }
 
 public abstract class AffineSymbolBase : AffineExpr
@@ -147,7 +151,11 @@ public sealed class AffineExtent : AffineSymbolBase
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.VisitAffineExtent(this, context);
 
+    public AffineExtent With(int? position = null) => new AffineExtent(position ?? Position);
+
     public override string ToString() => $"t{Position}";
+
+    protected override int GetHashCodeCore() => HashCode.Combine(Position);
 }
 
 public sealed class AffineSymbol : AffineSymbolBase
@@ -163,6 +171,8 @@ public sealed class AffineSymbol : AffineSymbolBase
     public override TExprResult Accept<TExprResult, TContext>(AffineExprVisitor<TExprResult, TContext> functor, TContext context) => functor.VisitAffineSymbol(this, context);
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.VisitAffineSymbol(this, context);
+
+    public AffineSymbol With(string? name = null) => new AffineSymbol(name ?? Name);
 
     public override string ToString() => Name;
 }
@@ -183,6 +193,8 @@ public sealed class AffineConstant : AffineSymbolBase
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.VisitAffineConstant(this, context);
 
+    public AffineConstant With(long? value = null) => new AffineConstant(value ?? Value);
+
     public override string ToString() => Value.ToString();
 }
 
@@ -202,6 +214,8 @@ public sealed class AffineAddBinary : AffineExpr
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.VisitAffineAddBinary(this, context);
 
+    public AffineAddBinary With(AffineExpr? lhs = null, AffineExpr? rhs = null) => new AffineAddBinary(lhs ?? Lhs, rhs ?? Rhs);
+
     public override string ToString() => $"({Lhs} + {Rhs})";
 }
 
@@ -220,6 +234,8 @@ public sealed class AffineMulBinary : AffineExpr
     public override TExprResult Accept<TExprResult, TContext>(AffineExprVisitor<TExprResult, TContext> functor, TContext context) => functor.VisitAffineMulBinary(this, context);
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.VisitAffineMulBinary(this, context);
+
+    public AffineMulBinary With(AffineSymbolBase? lhs = null, AffineExpr? rhs = null) => new AffineMulBinary(lhs ?? Lhs, rhs ?? Rhs);
 
     public override string ToString() => $"({Lhs} * {Rhs})";
 }
@@ -242,6 +258,8 @@ public sealed class AffineDivBinary : AffineExpr
     public override TExprResult Accept<TExprResult, TContext>(AffineExprVisitor<TExprResult, TContext> functor, TContext context) => functor.VisitAffineDivBinary(this, context);
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.VisitAffineDivBinary(this, context);
+
+    public AffineDivBinary With(AffineDivBinaryOp? binaryOp = null, AffineExpr? lhs = null, AffineSymbolBase? rhs = null) => new AffineDivBinary(binaryOp ?? BinaryOp, lhs ?? Lhs, rhs ?? Rhs);
 
     public override string ToString() => $"({Lhs} {F.Affine.ToString(BinaryOp)} {Rhs})";
 }

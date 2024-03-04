@@ -56,6 +56,6 @@ public sealed class Grid : Expr
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitGrid(this, context);
 
-    public Grid With(Var[]? loopVars = null, AffineMap[]? accessMaps = null, TIR.Buffer[]? buffers = null, Expr[]? reads = null, Sequential? body = null)
-        => new Grid(loopVars ?? BodyParameters, accessMaps ?? AccessMaps, buffers ?? Buffers, reads ?? Reads, body ?? Body);
+    public Grid With(Var[]? bodyParameters = null, AffineMap[]? accessMaps = null, Expr[]? buffers = null, Expr[]? reads = null, Sequential? body = null)
+        => new Grid(bodyParameters ?? BodyParameters, accessMaps ?? AccessMaps, buffers ?? Buffers, reads ?? Reads, body ?? Body);
 }

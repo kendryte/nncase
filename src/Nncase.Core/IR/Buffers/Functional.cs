@@ -47,5 +47,5 @@ public static class Buffer
 
     public static Call Allocate(Expr size, DataType dataType, TIR.MemoryLocation location) => new Call(new Allocate(dataType, location), size);
 
-    public static Call AllocateBufferView(Expr buffer) => new Call(new AllocateBufferView(), buffer);
+    public static Call AllocateBufferView(Expr buffer, Expr offset, Expr shape) => new Call(new AllocateBufferView(), buffer, offset, shape);
 }

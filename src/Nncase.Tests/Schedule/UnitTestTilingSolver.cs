@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Nncase.Schedule;
 using Xunit;
@@ -15,7 +16,7 @@ public class UnitTestTilingSolver
     [Fact]
     public void TestSimpleFor()
     {
-        var solver = new TilingSolver();
-        solver.Solve();
+        var schedule = Tiling.AutoTile();
+        Debug.WriteLine(schedule);
     }
 }

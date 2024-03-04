@@ -21,4 +21,6 @@ public sealed class Load : Expr
     public AffineMap Region => (AffineMap)Operands[1];
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.VisitLoad(this, context);
+
+    public Load With(Expr? source = null, AffineMap? region = null) => new Load(source ?? Source, region ?? Region);
 }
