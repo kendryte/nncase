@@ -15,6 +15,12 @@
 #pragma once
 #include "../apply.h"
 
+#ifdef __ARM_NEON__
+#include "arch/arm/unary.h"
+#else
+#include "arch/x86_64/unary.h"
+#endif
+
 namespace nncase::ntt {
 // math ops
 namespace mathops {
@@ -99,8 +105,6 @@ template <class T> struct tanh {
 };
 } // namespace mathops
 } // namespace nncase::ntt
-
-#include "arch/x86_64/unary.h"
 
 namespace nncase::ntt {
 namespace detail {
@@ -192,9 +196,10 @@ class unary_impl<ranked_shape<Rank>, InStrides, OutStrides> {
 template <template <class T> class Op, class TIn, class TOut>
 void unary(const TIn &input, TOut &&output) {
     Op<typename TIn::element_type> op;
-    detail::unary_impl<
-        common_shape_t<typename TIn::shape_type, typename TOut::shape_type>,
-        typename TIn::strides_type, typename std::decay_t<TOut>::strides_type>
+    detail::unary_impl<common_shape_t<typename TIn::shape_type,
+                                      typename std::decay_t<TOut>::shape_type>,
+                       typename TIn::strides_type,
+                       typename std::decay_t<TOut>::strides_type>
         impl;
     impl(op, input, output);
 }
