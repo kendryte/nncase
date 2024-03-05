@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 #pragma once
-#include <cstdint>
+#include <cstddef>
 #include <utility>
 
 namespace nncase::ntt {
@@ -27,7 +27,7 @@ static constexpr void loop_impl(Callable &&f, std::index_sequence<Index...>) {
 } // namespace detail
 
 template <size_t N, class Callable> static constexpr void loop(Callable &&f) {
-    loop_impl(std::forward<Callable>(f), std::make_index_sequence<N>{});
+    detail::loop_impl(std::forward<Callable>(f), std::make_index_sequence<N>{});
 }
 
 } // namespace nncase::ntt

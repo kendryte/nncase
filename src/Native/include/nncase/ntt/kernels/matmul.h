@@ -24,8 +24,8 @@ void matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output) {
     mathops::mul<TElemt> mul;
     mathops::add<TElemt> add;
     apply(out_shape, [&](auto index) {
-        constexpr auto lrank = TLhs::shape_type::length();
-        constexpr auto rrank = TRhs::shape_type::length();
+        constexpr auto lrank = TLhs::shape_type::rank();
+        constexpr auto rrank = TRhs::shape_type::rank();
         auto lhs_index = ranked_shape<lrank>{};
         auto rhs_index = ranked_shape<rrank>{};
         constexpr size_t lk = lhs_index.rank() - 1;
