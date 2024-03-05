@@ -54,26 +54,19 @@ internal sealed class AffineTiler
         }
 
         var root = T.Sequential();
+        ISequentialBuilder<Expr> cntBlock = root;
 
         // 2. Allocate temporal buffers
         // 2.1. Place 0
-        AllocateTempBuffers(schedule.Places[0], root);
+        cntBlock = AllocateTempBuffers(schedule.Places[0], cntBlock);
 
         // 2.2. Place 1..
         for (int loop = 0; loop < _loopBuilders.Length; loop++)
         {
             var place = loop + 1;
             var loopBuilder = _loopBuilders[loop];
-            AllocateTempBuffers(schedule.Places[place], loopBuilder);
-
-            if (loop == 0)
-            {
-                root.Body(loopBuilder);
-            }
-            else
-            {
-                _loopBuilders[loop - 1].Body(loopBuilder);
-            }
+            cntBlock.Body(loopBuilder);
+            cntBlock = AllocateTempBuffers(schedule.Places[place], loopBuilder);
         }
 
         // 3. Nest compute body
@@ -81,14 +74,13 @@ internal sealed class AffineTiler
         var bodyVarReplaces = new Dictionary<Expr, Expr>();
         for (int i = 0; i < bodyBuffers.Length; i++)
         {
-            bodyBuffers[i] = AllocateSubBuffer(_tempBuffers[i], schedule.BodyBufferViews[i]);
-            _loopBuilders[^1].Body(bodyBuffers[i]);
+            (bodyBuffers[i], cntBlock) = AllocateSubBuffer(cntBlock, _tempBuffers[i], schedule.BodyBufferViews[i]);
             bodyVarReplaces.Add(_grid.BodyParameters[i], bodyBuffers[i]);
         }
 
         var cloner = new ReplacingExprCloner(bodyVarReplaces);
         var nestBody = cloner.Clone(_grid.Body, default);
-        _loopBuilders[^1].Body(nestBody);
+        cntBlock.Body(nestBody);
 
         // 4. Create PrimFunction
         var body = root.Build();
@@ -99,26 +91,27 @@ internal sealed class AffineTiler
         return new Call(wrapper, _grid.Buffers);
     }
 
-    private void AllocateTempBuffers<T>(GridSchedule.Place place, ISequentialBuilder<T> sequential)
-        where T : Expr
+    private ISequentialBuilder<Expr> AllocateTempBuffers(GridSchedule.Place place, ISequentialBuilder<Expr> sequential)
     {
         for (int i = 0; i < place.TemporalBuffers.Length; i++)
         {
             var tempBuffer = place.TemporalBuffers[i];
-            var bufferExpr = AllocateSubBuffer(_grid.Buffers[tempBuffer.Buffer], tempBuffer.Subview);
-            sequential.Body(bufferExpr);
-
+            (var bufferExpr, sequential) = AllocateSubBuffer(sequential, _grid.Buffers[tempBuffer.Buffer], tempBuffer.Subview);
             _tempBuffers[tempBuffer.Buffer] = bufferExpr;
         }
+
+        return sequential;
     }
 
-    private Expr AllocateSubBuffer(Expr parentBuffer, AffineMap accessMap)
+    private (Expr Buffer, ISequentialBuilder<Expr> NewSeq) AllocateSubBuffer(ISequentialBuilder<Expr> parentSeq, Expr parentBuffer, AffineMap accessMap)
     {
         var regions = accessMap.Results.AsValueEnumerable().Select(x => x.Apply(_domainOffsets, _domainExtents, null));
         var offset = new IR.Tuple(regions.Select(x => x.Offset).ToArray());
         var shape = new IR.Tuple(regions.Select(x => x.Extent).ToArray());
         var bufferExpr = IR.F.Buffer.AllocateBufferView(parentBuffer, offset, shape);
-        return bufferExpr;
+        var letExpr = T.Let(out var letVar, bufferExpr);
+        parentSeq.Body(letExpr);
+        return (letVar, letExpr);
     }
 
     private GridSchedule SolveSchedule()
