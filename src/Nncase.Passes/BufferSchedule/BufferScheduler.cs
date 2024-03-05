@@ -13,49 +13,10 @@ using Nncase.IR;
 
 namespace Nncase.Passes.BufferSchedule;
 
-internal sealed class BufferScheduler
+public class BufferScheduler
 {
-    public IReadOnlyDictionary<Expr, ScheduleBuffer> CollectLifeTime(Function func)
+    public virtual void ExternalConstrains(CpModel model, IReadOnlyDictionary<Expr, ScheduleBuffer> bufferMap, IReadOnlyDictionary<Expr, (IntervalVar X, IntervalVar Y)> boxs)
     {
-        var c = new LifeTimeCollector();
-        return c.Collect(func);
-    }
-
-    public void Schedule(IReadOnlyDictionary<Expr, ScheduleBuffer> bufferMap)
-    {
-        var model = new CpModel();
-        var noOverlap = model.AddNoOverlap2D();
-        var boxs = new Dictionary<Expr, (IntervalVar X, IntervalVar Y)>(ReferenceEqualityComparer.Instance);
-        var timeMap = new Dictionary<int, List<Expr>>();
-        var yStarts = new List<IntVar>();
-        foreach (var (expr, item) in bufferMap)
-        {
-            var xInterval = model.NewIntervalVar(model.NewConstant(item.Interval.Brith), model.NewConstant(item.Interval.Size), model.NewConstant(item.Interval.Death), item.Name + $"{item.Number}_x");
-
-            var upbound = 2147483648 - item.Span.End;
-            if (upbound <= 0)
-            {
-                throw new System.NotSupportedException();
-            }
-
-            var memStartVar = model.NewIntVar(0, upbound, $"{item.Name}_{item.Number}_y_start");
-            var yInterval = model.NewFixedSizeIntervalVar(memStartVar, item.Span.End, $"{item.Name}_{item.Number}_y");
-            noOverlap.AddRectangle(xInterval, yInterval);
-            yStarts.Add(memStartVar);
-            boxs.Add(expr, (xInterval, yInterval));
-
-            for (int time = item.Interval.Brith; time < item.Interval.Death; time++)
-            {
-                if (!timeMap.TryGetValue(time, out var timelist))
-                {
-                    timelist = new();
-                    timeMap.Add(time, timelist);
-                }
-
-                timelist.Add(expr);
-            }
-        }
-
         foreach (var (expr, item) in bufferMap)
         {
             if (expr is Call { Target: IR.Tensors.Concat } concatCall && concatCall.Arguments[0] is IR.Tuple tuple)
@@ -65,7 +26,7 @@ internal sealed class BufferScheduler
                 for (int i = 0; i < tuple.Fields.Length; i++)
                 {
                     model.Add((boxs[concatCall].Y.StartExpr() + offset) == boxs[tuple.Fields[i]].Y.StartExpr());
-                    offset += bufferMap[tuple.Fields[i]].Span.Size;
+                    offset += bufferMap[tuple.Fields[i]].MemInterval.Size;
                 }
             }
             else if (expr is Call { Target: IR.Tensors.Split } splitCall)
@@ -79,7 +40,7 @@ internal sealed class BufferScheduler
                 foreach (var user in users.OrderBy(e => ((Call)e).Arguments[1].Evaluate().AsTensor().ToScalar<int>()))
                 {
                     model.Add((boxs[splitCall].Y.StartExpr() + offset) == boxs[user].Y.StartExpr());
-                    offset += bufferMap[user].Span.Size;
+                    offset += bufferMap[user].MemInterval.Size;
                 }
             }
             else if (expr is Call { Target: IR.Tensors.Reshape } reshapCall)
@@ -88,6 +49,44 @@ internal sealed class BufferScheduler
                 model.Add(boxs[reshapCall].Y.StartExpr() == boxs[reshapCall.Arguments[0]].Y.StartExpr());
             }
         }
+    }
+
+    public void Schedule(IReadOnlyDictionary<Expr, ScheduleBuffer> bufferMap)
+    {
+        var model = new CpModel();
+        var noOverlap = model.AddNoOverlap2D();
+        var boxs = new Dictionary<Expr, (IntervalVar X, IntervalVar Y)>(ReferenceEqualityComparer.Instance);
+        var timeMap = new Dictionary<int, List<Expr>>();
+        var yStarts = new List<IntVar>();
+        foreach (var (expr, item) in bufferMap)
+        {
+            var xInterval = model.NewIntervalVar(model.NewConstant(item.TimeInterval.Start), model.NewConstant(item.TimeInterval.Size), model.NewConstant(item.TimeInterval.Stop), item.Name + $"{item.Number}_x");
+
+            var upbound = 2147483648 - item.MemInterval.Stop;
+            if (upbound <= 0)
+            {
+                throw new System.NotSupportedException();
+            }
+
+            var memStartVar = model.NewIntVar(0, upbound, $"{item.Name}_{item.Number}_y_start");
+            var yInterval = model.NewFixedSizeIntervalVar(memStartVar, item.MemInterval.Stop, $"{item.Name}_{item.Number}_y");
+            noOverlap.AddRectangle(xInterval, yInterval);
+            yStarts.Add(memStartVar);
+            boxs.Add(expr, (xInterval, yInterval));
+
+            for (int time = item.TimeInterval.Start; time < item.TimeInterval.Stop; time++)
+            {
+                if (!timeMap.TryGetValue(time, out var timelist))
+                {
+                    timelist = new();
+                    timeMap.Add(time, timelist);
+                }
+
+                timelist.Add(expr);
+            }
+        }
+
+        ExternalConstrains(model, bufferMap, boxs);
 
         model.Minimize(LinearExpr.Sum(yStarts));
 
@@ -99,10 +98,10 @@ internal sealed class BufferScheduler
             throw new System.NotSupportedException();
         }
 
-        foreach (var (k, v) in bufferMap)
+        foreach (var (k, _) in bufferMap)
         {
-            bufferMap[k].Span.Start = checked((int)solver.Value(boxs[k].Y.StartExpr()));
-            bufferMap[k].Span.End = checked((int)solver.Value(boxs[k].Y.EndExpr()));
+            bufferMap[k].MemInterval.Start = checked((int)solver.Value(boxs[k].Y.StartExpr()));
+            bufferMap[k].MemInterval.Stop = checked((int)solver.Value(boxs[k].Y.EndExpr()));
         }
     }
 
@@ -119,18 +118,11 @@ from enum import Enum
 from typing import List
 
 @dataclass
-class TimeInterval():
+class Interval():
   start: int
   end: int
   def __str__(self) -> str:
-    return f'(start: {self.start}, end {self.end})'
-
-@dataclass
-class MemSpan():
-  depth_start: int
-  depth_end: int
-  def __str__(self) -> str:
-    return f'(start: {self.depth_start}, size {self.depth_end - self.depth_start})'
+    return f'(start: {self.start}, end {self.end}, size {self.end - self.start})'
 
 class ConstraintsMode(Enum):
   No = 0
@@ -140,8 +132,8 @@ class ConstraintsMode(Enum):
 class ScheduledBuffer():
   name: str
   number: int
-  interval: TimeInterval
-  location: MemSpan
+  time_interval: Interval
+  mem_interval: Interval
   constraints: ConstraintsMode
   shape: List[int]
   stride: List[int]
@@ -166,8 +158,8 @@ source = {
     'height': [],
     'alpha': [],
     'color': [],
-    'location': [],
-    'interval': [],
+    'mem_interval': [],
+    'time_interval': [],
     'shape': [],
     'stride': [],
 }
@@ -177,10 +169,10 @@ x_range_max = 0
 color_dict = {}
 for buffer in buffers:
   source['name'].append(buffer.name)
-  width = buffer.interval.end - buffer.interval.start
-  x = buffer.interval.start + (width / 2)
-  height = buffer.location.depth_end - buffer.location.depth_start
-  y = buffer.location.depth_start + (height / 2)
+  width = buffer.time_interval.end - buffer.time_interval.start
+  x = buffer.time_interval.start + (width / 2)
+  height = buffer.mem_interval.end - buffer.mem_interval.start
+  y = buffer.mem_interval.start + (height / 2)
   y_range_max = max(y_range_max, y)
   x_range_max = max(x_range_max, buffer.interval.end)
   source['x'].append(x)
@@ -193,13 +185,13 @@ for buffer in buffers:
     color_dict[buffer.name] = color
   source['color'].append(color)
   source['alpha'].append(0.2 if buffer.inplace else 1.0)
-  source['interval'].append(str(buffer.interval))
-  source['location'].append(str(buffer.location))
+  source['time_interval'].append(str(buffer.time_interval))
+  source['mem_interval'].append(str(buffer.mem_interval))
   source['shape'].append(','.join([str(s) for s in buffer.shape]))
   source['stride'].append(','.join([str(s) for s in buffer.stride]))
 
 source = ColumnDataSource(source)
-hover = HoverTool(tooltips=[('name', '@name'), ('interval', '@interval'), ('location', '@location'),
+hover = HoverTool(tooltips=[('name', '@name'), ('time_interval', '@time_interval'), ('mem_interval', '@mem_interval'),
                             ('shape', '@shape'), ('stride', '@stride')])
 
 p = figure(tools=[hover, WheelPanTool(), SaveTool(), WheelZoomTool(), ResetTool()], width=1280, height=720,
