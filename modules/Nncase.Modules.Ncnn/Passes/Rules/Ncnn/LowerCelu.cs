@@ -29,13 +29,16 @@ public partial class LowerCelu : RewriteRule<Pattern>
 
     private Expr? GetReplace(Expr input, float alpha)
     {
-        if (alpha != 1.0)
+        if (input.CheckedShape.Count > 4 || input.CheckedShape[0].FixedValue != 1)
         {
-            return false;
+            Console.WriteLine("ncnn not support more than 4D or batchSize > 1");
+            return null;
         }
 
-        var newInput = new Var(input.CheckedType);
+        var inRes = Squeeze(input, new[] { 0 });
+        var inResO = new Var(inRes.CheckedType);
+        var celu = new Call(new Fusion("ncnn", NcnnCelu(inResO, alpha), new[] { inResO }), inRes);
+        return Unsqueeze(celu, new[] { 0 });
 
-        return new Call(new Fusion("ncnn", NcnnCelu(newInput, alpha), new[] { newInput }), input);
     }
 }

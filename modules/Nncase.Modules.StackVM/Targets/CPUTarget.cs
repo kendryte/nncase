@@ -64,14 +64,14 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.Ncnn.LowerUnary>();
             p.Add<Passes.Rules.Ncnn.LowerBinary>();
 
-            // p.Add<Passes.Rules.Ncnn.LowerCelu>();
+            p.Add<Passes.Rules.Ncnn.LowerCelu>();
             p.Add<Passes.Rules.Ncnn.LowerClamp>();
             p.Add<Passes.Rules.Ncnn.LowerConcat>();
             p.Add<Passes.Rules.Ncnn.LowerConv>();
             p.Add<Passes.Rules.Ncnn.LowerCumsum>();
             p.Add<Passes.Rules.Ncnn.LowerElu>();
 
-            // p.Add<Passes.Rules.Ncnn.LowerErf>();
+            p.Add<Passes.Rules.Ncnn.LowerErf>();
             p.Add<Passes.Rules.Ncnn.LowerHardSigmoid>();
             p.Add<Passes.Rules.Ncnn.LowerHardSwish>();
             p.Add<Passes.Rules.Ncnn.LowerInstanceNorm>();
