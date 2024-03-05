@@ -480,6 +480,11 @@ internal class NcnnEmitter
         });
     }
 
+    public void GELU(string[] name, string input)
+    {
+        AddLayer("GELU", name[0], new[] { input }, name, null);
+    }
+
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
     {
         var layer = new NcnnLayer(type, name, bottoms.Length, tops.Length);

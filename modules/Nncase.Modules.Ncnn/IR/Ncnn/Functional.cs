@@ -102,4 +102,6 @@ public sealed class Ncnn
 
     public static Call NcnnCast(Expr expr, int fromType, int toType) =>
         new Call(new NcnnCast(fromType, toType), expr);
+
+    public static Call NcnnGELU(Expr expr) => new Call(new NcnnGELU(), expr);
 }

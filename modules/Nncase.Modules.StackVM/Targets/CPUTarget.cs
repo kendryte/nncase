@@ -93,6 +93,7 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.Ncnn.LowerMatmul>();
             p.Add<Passes.Rules.Ncnn.LowerConvTranspose>();
             p.Add<Passes.Rules.Ncnn.LowerCast>();
+            p.Add<Passes.Rules.Ncnn.LowerGELU>();
         });
     }
 

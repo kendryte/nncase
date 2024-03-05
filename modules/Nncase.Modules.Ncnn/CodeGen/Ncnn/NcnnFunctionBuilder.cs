@@ -218,6 +218,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnCast op:
                     _emitter.Cast(names.ToArray(), ExprMemo[expr.Arguments[0]], op.FromType, op.ToType);
                     break;
+                case NcnnGELU:
+                    _emitter.GELU(names.ToArray(), ExprMemo[expr.Arguments[0]]);
+                    break;
                 default:
                     throw new NotSupportedException("Not support in Ncnn ops emitter");
             }
