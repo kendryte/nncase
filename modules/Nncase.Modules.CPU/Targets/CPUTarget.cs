@@ -16,6 +16,7 @@ using Nncase.CodeGen.CPU;
 using Nncase.CodeGen.StackVM;
 using Nncase.IR;
 using Nncase.Passes;
+using Nncase.Passes.Transforms;
 using Nncase.Quantization;
 
 namespace Nncase.Targets;
@@ -95,6 +96,8 @@ public class CPUTarget : ITarget
                 p.Add<Passes.Rules.CPUDeviceFusion>();
             });
         }
+
+        passManager.Add<AutoTilePass>();
 
         passManager.Add<CPUFusionToTirPass>();
 

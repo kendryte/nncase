@@ -208,7 +208,10 @@ public abstract partial class Expr : IDisposable
             return true;
         }
 
-        return obj is Expr other && GetHashCode() == other.GetHashCode() && Operands.SequenceEqual(other.Operands);
+        return obj is Expr other
+            && GetType() == other.GetType()
+            && GetHashCode() == other.GetHashCode()
+            && Operands.SequenceEqual(other.Operands);
     }
 
     /// <inheritdoc/>

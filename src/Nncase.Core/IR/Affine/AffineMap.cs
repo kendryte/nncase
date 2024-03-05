@@ -50,7 +50,7 @@ public sealed class AffineRange : Expr
     public AffineRange With(AffineExpr? offset = null, AffineExpr? extent = null)
         => new AffineRange(offset ?? Offset, extent ?? Extent);
 
-    public (Expr Offset, Expr Extent) Apply(ReadOnlySpan<Expr> dims, ReadOnlySpan<Expr> extents, IReadOnlyDictionary<AffineSymbol, Expr> symbols)
+    public (Expr Offset, Expr Extent) Apply(ReadOnlySpan<Expr> dims, ReadOnlySpan<Expr> extents, IReadOnlyDictionary<AffineSymbol, Expr>? symbols = null)
     {
         var offset = Offset.Apply(dims, extents, symbols);
         var extent = Extent.Apply(dims, extents, symbols);

@@ -67,7 +67,7 @@ public abstract class AffineExpr : Expr
         };
     }
 
-    internal Expr Apply(ReadOnlySpan<Expr> dims, ReadOnlySpan<Expr> extents, IReadOnlyDictionary<AffineSymbol, Expr> symbols)
+    internal Expr Apply(ReadOnlySpan<Expr> dims, ReadOnlySpan<Expr> extents, IReadOnlyDictionary<AffineSymbol, Expr>? symbols = null)
     {
         static Expr ApplyDivBinary(AffineDivBinaryOp binaryOp, Expr lhs, Expr rhs) =>
             binaryOp switch
@@ -83,7 +83,7 @@ public abstract class AffineExpr : Expr
             AffineConstant e => e.Value,
             AffineExtent e => extents[e.Position],
             AffineDim e => dims[e.Position],
-            AffineSymbol e => symbols[e],
+            AffineSymbol e => (symbols ?? throw new ArgumentNullException(nameof(symbols)))[e],
             AffineAddBinary e => e.Lhs.Apply(dims, extents, symbols) + e.Rhs.Apply(dims, extents, symbols),
             AffineMulBinary e => e.Lhs.Apply(dims, extents, symbols) * e.Rhs.Apply(dims, extents, symbols),
             AffineDivBinary e => ApplyDivBinary(e.BinaryOp, e.Lhs.Apply(dims, extents, symbols), e.Rhs.Apply(dims, extents, symbols)),

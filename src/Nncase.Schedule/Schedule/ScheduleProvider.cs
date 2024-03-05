@@ -6,15 +6,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR;
 using Nncase.IR.Affine;
 
 namespace Nncase.Schedule;
 
-public sealed record GridSchedule(GridSchedule.Loop[] Loops, GridSchedule.Place[] Places, AffineMap[] BodyBufferViews)
+internal class ScheduleProvider : IScheduleProvider
 {
-    public sealed record Loop(AffineDomain Domain, int TileSize);
-
-    public sealed record TemporalBuffer(int Buffer, AffineMap Subview);
-
-    public sealed record Place(TemporalBuffer[] TemporalBuffers);
+    public Call Tile(Grid grid, IRModule module)
+    {
+        var scheduler = new AffineTiler(grid);
+        return scheduler.Tile(module);
+    }
 }

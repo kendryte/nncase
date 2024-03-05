@@ -31,9 +31,10 @@ using namespace nncase::ntt;
     {
         string init_tensors = string.Join("\n", primFunction.Parameters.ToArray().Select((b, i) =>
         {
+            var buffer = (TIR.Buffer)b;
             var size = TensorUtilities.GetSize(b.CheckedShape.ToValueArray(), TensorUtilities.GetStrides(b.CheckedShape.ToValueArray()), 1);
-            return $@"    std::span<{b.ElemType.ToC()}, {size}> p{b.Name}(({b.ElemType.ToC()} *)inputs[{i}], {size});
-    tensor_view<{b.ElemType.ToC()}, {KernelUtility.DimensionsToC(b.Dimensions)}, {KernelUtility.StridesToC(b.Strides)}> {b.Name}(p{b.Name});
+            return $@"    std::span<{buffer.ElemType.ToC()}, {size}> p{buffer.Name}(({buffer.ElemType.ToC()} *)inputs[{i}], {size});
+    tensor_view<{buffer.ElemType.ToC()}, {KernelUtility.DimensionsToC(buffer.Dimensions)}, {KernelUtility.StridesToC(buffer.Strides)}> {buffer.Name}(p{buffer.Name});
 ";
         }).Concat(rdataBuffers.Select(b =>
         {
@@ -49,7 +50,7 @@ extern ""C"" void kernel_entry(nncase_runtime_cpu_mt_t *cpu_mt, uint8_t **inputs
 g_cpu_mt = cpu_mt;
 {init_tensors}
 
-    {primFunction.Name}({string.Join(", ", primFunction.Parameters.AsValueEnumerable().Select(b => b.Name).ToArray().Concat(rdataBuffers.Select(b => b.Name)).ToArray())});
+    {primFunction.Name}({string.Join(", ", primFunction.Parameters.AsValueEnumerable().Select(b => ((TIR.Buffer)b).Name).ToArray().Concat(rdataBuffers.Select(b => b.Name)).ToArray())});
 }}";
     }
 

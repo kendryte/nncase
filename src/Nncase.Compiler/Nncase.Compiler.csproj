@@ -23,6 +23,7 @@
         <ProjectReference Include="..\Nncase.EGraph\Nncase.EGraph.csproj" />
         <ProjectReference Include="..\Nncase.Evaluator\Nncase.Evaluator.csproj" />
         <ProjectReference Include="..\Nncase.Importer\Nncase.Importer.csproj" />
+        <ProjectReference Include="..\Nncase.Schedule\Nncase.Schedule.csproj" />
         <ProjectReference Include="..\Nncase.Simulator\Nncase.Simulator.csproj" />
         <ProjectReference Include="..\Nncase.Quantization\Nncase.Quantization.csproj" />
         <ProjectReference Include="..\Nncase.Passes\Nncase.Passes.csproj" />

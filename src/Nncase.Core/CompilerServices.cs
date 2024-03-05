@@ -14,8 +14,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Nncase.CostModel;
 using Nncase.Evaluator;
 using Nncase.IR;
+using Nncase.IR.Affine;
 using Nncase.Passes;
 using Nncase.PatternMatch;
+using Nncase.Schedule;
 using Nncase.Targets;
 
 namespace Nncase;
@@ -217,6 +219,8 @@ public interface ICompilerServicesProvider
     /// <param name="options">Options.</param>
     /// <returns>Rewrited expression.</returns>
     IEGraph ERewrite(IEGraph expr, IEnumerable<IRewriteRule> rules, RunPassContext options);
+
+    Call Tile(Grid grid, IRModule module);
 }
 
 internal interface ICompilerServicesProviderInternal
@@ -517,6 +521,8 @@ public static class CompilerServices
     /// <returns>Target.</returns>
     public static ITarget GetTarget(string name) => Provider.GetTarget(name);
 
+    public static Call Tile(Grid grid, IRModule module) => Provider.Tile(grid, module);
+
     internal static DryIoc.IContainer CreateScope()
     {
         var container = (DryIoc.IContainer)_serviceProvider!;
@@ -547,6 +553,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     private readonly IEGraphRewriteProvider _eGraphrewriteProvider;
     private readonly ITargetProvider _targetProvider;
     private readonly IShapeEvaluateProvider _shapeEvaluateProvider;
+    private readonly IScheduleProvider _scheduleProvider;
 
     public CompilerServicesProvider(
         IEvaluateProvider evaluateProvider,
@@ -560,7 +567,8 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         IEGraphMatchProvider eGraphMatchProvider,
         IEGraphRewriteProvider eGraphrewriteProvider,
         ITargetProvider targetProvider,
-        IShapeEvaluateProvider shapeEvaluateProvider)
+        IShapeEvaluateProvider shapeEvaluateProvider,
+        IScheduleProvider scheduleProvider)
     {
         // _compileOptions = compileOptions.Value;
         _evaluateProvider = evaluateProvider;
@@ -575,6 +583,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         _eGraphrewriteProvider = eGraphrewriteProvider;
         _targetProvider = targetProvider;
         _shapeEvaluateProvider = shapeEvaluateProvider;
+        _scheduleProvider = scheduleProvider;
     }
 
     public IDataTypeServiceProvider DataTypeService { get; }
@@ -703,4 +712,6 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     {
         return _eGraphrewriteProvider.ERewrite(graph, rules, options);
     }
+
+    public Call Tile(Grid grid, IRModule module) => _scheduleProvider.Tile(grid, module);
 }

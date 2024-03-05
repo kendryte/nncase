@@ -122,6 +122,7 @@ public class TilingSolver
         var solution = _solutionCollector.SolutionCount() - 1;
 
         // Generate schedule
+        // 1. Loops
         var loops = new GridSchedule.Loop[_loopsCount];
         for (int loop = 0; loop < loops.Length; loop++)
         {
@@ -130,30 +131,33 @@ public class TilingSolver
             loops[loop] = new GridSchedule.Loop(_accessMaps[0].Domains[domain], tileSize);
         }
 
+        // 2. Places & body buffers
         var buffersByPlace = (from b in Enumerable.Range(0, _buffersCount)
                               let place = GetBufferPlace(solution, b)
                               group b by place).ToDictionary(x => x.Key, x => x.ToArray());
         var places = new GridSchedule.Place[_loopsCount + 1];
+        var bodyBufferViews = new AffineMap[_buffersCount];
         for (int place = 0; place < places.Length; place++)
         {
-            var bufferIds = buffersByPlace[place];
+            var bufferIds = buffersByPlace.GetValueOrDefault(place, Array.Empty<int>());
             var buffers = new GridSchedule.TemporalBuffer[bufferIds.Length];
             for (int i = 0; i < buffers.Length; i++)
             {
                 var buffer = bufferIds[i];
-                var subview = GetBufferSubview(solution, buffer, place);
-                buffers[i] = new GridSchedule.TemporalBuffer(place, subview);
+                (var subview, var bodyBufferView) = GetBufferSubview(solution, buffer, place);
+                buffers[i] = new GridSchedule.TemporalBuffer(buffer, subview);
+                bodyBufferViews[buffer] = bodyBufferView;
             }
 
             places[place] = new(buffers);
         }
 
-        return new GridSchedule(loops, places);
+        return new GridSchedule(loops, places, bodyBufferViews);
     }
 
     private static IntExpr GetTileCalcCycles(IntVar[] tiles)
     {
-        return tiles[0].CeilDiv(MMA_PRIM_M) * tiles[1].CeilDiv(MMA_PRIM_N) * tiles[2].CeilDiv(MMA_PRIM_K) * MMA_PRIM_CYCLES;
+        return tiles.Aggregate<IntExpr>((x, y) => x * y);
     }
 
     private static LoopMask GetLoopMask(AffineMap map)
@@ -348,27 +352,44 @@ public class TilingSolver
         throw new InvalidOperationException();
     }
 
-    private AffineMap GetBufferSubview(int solution, int buffer, int place)
+    private (AffineMap SubView, AffineMap BodyView) GetBufferSubview(int solution, int buffer, int place)
     {
         var accessMap = _accessMaps[buffer];
         var placeMask = GetPlaceLoopMask(solution, place);
-        var extentMap = new Dictionary<AffineExtent, AffineExpr>();
+        var subviewReplaceMap = new Dictionary<AffineExpr, AffineExpr>();
+        var bodyViewReplaceMap = new Dictionary<AffineExpr, AffineExpr>();
         for (int domain = 0; domain < _loopsCount; domain++)
         {
             if (!placeMask.IsRelated(domain))
             {
-                extentMap.Add(accessMap.Domains[domain].Extent, ((IntVar)_dims[domain]).Value());
+                subviewReplaceMap.Add(accessMap.Domains[domain].Offset, 0);
+                subviewReplaceMap.Add(accessMap.Domains[domain].Extent, ((IntVar)_dims[domain]).Value());
+            }
+            else
+            {
+                bodyViewReplaceMap.Add(accessMap.Domains[domain].Offset, 0);
             }
         }
 
-        var generator = new BufferSubviewGenerator(extentMap);
-        var results = new AffineRange[accessMap.Results.Length];
-        for (int i = 0; i < results.Length; i++)
+        var subviewResults = new AffineRange[accessMap.Results.Length];
+        var bodyViewResults = new AffineRange[accessMap.Results.Length];
         {
-            results[i] = generator.Clone(accessMap.Results[i], default);
+            var generator = new BufferSubviewGenerator(subviewReplaceMap);
+            for (int i = 0; i < subviewResults.Length; i++)
+            {
+                subviewResults[i] = generator.Clone(accessMap.Results[i], default);
+            }
         }
 
-        return accessMap.With(results: results);
+        {
+            var generator = new BufferSubviewGenerator(bodyViewReplaceMap);
+            for (int i = 0; i < subviewResults.Length; i++)
+            {
+                bodyViewResults[i] = generator.Clone(accessMap.Results[i], default);
+            }
+        }
+
+        return (accessMap.With(results: subviewResults), accessMap.With(results: bodyViewResults));
     }
 
     private LoopMask GetPlaceLoopMask(int solution, int place)
@@ -557,11 +578,21 @@ public class TilingSolver
 
     private sealed class BufferSubviewGenerator : ExprCloner<Unit>
     {
-        private readonly Dictionary<AffineExtent, AffineExpr> _mapper;
+        private readonly Dictionary<AffineExpr, AffineExpr> _mapper;
 
-        public BufferSubviewGenerator(Dictionary<AffineExtent, AffineExpr> mapper)
+        public BufferSubviewGenerator(Dictionary<AffineExpr, AffineExpr> mapper)
         {
             _mapper = mapper;
+        }
+
+        protected override Expr VisitAffineDim(AffineDim expr, Unit context)
+        {
+            if (_mapper.TryGetValue(expr, out var newExpr))
+            {
+                return newExpr;
+            }
+
+            return expr;
         }
 
         protected override Expr VisitLeafAffineExtent(AffineExtent expr, Unit context)

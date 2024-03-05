@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using DryIoc;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Nncase.IR.Buffers;
 using Nncase.IR.Math;
 using Nncase.TIR;
 using Nncase.Utilities;
@@ -560,6 +561,19 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         var memSpan = Visit(expr.MemSpan);
         _scope.Append($"T.Buffer({expr.Name}, {VisitType(expr.ElemType)}, {memSpan.Span}, [{string.Join(',', expr.Dimensions.AsValueEnumerable().Select(Visit).Select(e => e.Span.ToString()).ToArray())}], [{string.Join(',', expr.Strides.AsValueEnumerable().Select(Visit).Select(e => e.Span.ToString()).ToArray())}])");
         doc = new(_scope.Pop(), expr.Name, true);
+        _exprMemo.Add(expr, doc);
+        return doc;
+    }
+
+    protected override IPrintSymbol VisitBufferOf(BufferOf expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var doc))
+        {
+            return doc;
+        }
+
+        var buffer = Visit(expr.Input);
+        doc = new ScriptSymobl(new("BufferOf"), "BufferOf", false);
         _exprMemo.Add(expr, doc);
         return doc;
     }

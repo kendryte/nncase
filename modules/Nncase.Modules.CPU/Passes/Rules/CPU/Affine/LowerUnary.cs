@@ -10,7 +10,7 @@ using Nncase.IR;
 using Nncase.IR.Affine;
 using Nncase.IR.Math;
 using Nncase.PatternMatch;
-
+using Nncase.Targets;
 using static Nncase.IR.F.CPU;
 using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Math;
@@ -30,10 +30,10 @@ public partial class LowerUnary : RewriteRule<Pattern>
     private Expr GetReplace(Unary unary, Expr input)
     {
         var rank = input.CheckedShape.Rank;
-        return IR.F.Affine.Grid()
+        return IR.F.Affine.Grid(CPUTarget.Kind)
             .Read(input, AffineMap.Identity(rank), out var inTile)
-            .Write(TIR.T.CreateBuffer(input.CheckedTensorType, TIR.MemoryLocation.Data, out _), AffineMap.Identity(rank), out _)
-            .Body(IR.F.Math.Unary(unary.UnaryOp, inTile))
+            .Write(TIR.T.CreateBuffer(input.CheckedTensorType, TIR.MemoryLocation.Data, out _), AffineMap.Identity(rank), out var outTile)
+            .Body(TIR.F.CPU.Unary(unary.UnaryOp, inTile, outTile))
             .Build();
     }
 }
