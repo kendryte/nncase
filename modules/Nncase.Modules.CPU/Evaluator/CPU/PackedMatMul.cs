@@ -19,7 +19,7 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
     {
         var lhs = context.GetOrtArgumentValue(target, PackedMatMul.Lhs); // [x,m/32,k/32,m',k']
         var rhs = context.GetOrtArgumentValue(target, PackedMatMul.Rhs); // [x,k/32,n/32,k',n']
-        var lanes = new[] { (int)lhs.Shape[^2], (int)rhs.Shape[^1] };
+        var outLanes = new[] { (int)lhs.Shape[^2], (int)rhs.Shape[^1] };
         var outshape = new[] { (int)lhs.Shape[^4], (int)rhs.Shape[^3] };
         var maxRank = System.Math.Max(lhs.Shape.Length, rhs.Shape.Length);
         outshape = Enumerable.Repeat(1L, maxRank - lhs.Shape.Length).Concat(lhs.Shape.SkipLast(4)).
@@ -27,12 +27,27 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
          Select(p => (int)System.Math.Max(p.First, p.Second)).
          Concat(outshape).ToArray();
 
-        lhs = OrtKI.Unsqueeze(lhs, new long[] { -4, -1 }); // [x,m/32,k/32, 1  , m' ,k', 1 ]
-        rhs = OrtKI.Unsqueeze(rhs, new long[] { -6, -3 }); // [x, 1  ,k/32,n/32, 1  ,k', n']
-        var matmul = OrtKI.Mul(lhs, rhs); // [x, m/32,k/32,n/32,m',k',n']
-        matmul = OrtKI.ReduceSum(matmul, new long[] { -2, -5 }, 0, 1);
+        foreach (var axis in target.LhsPackedAxes.Reverse())
+        {
+            lhs = lhs.Unpack(axis);
+        }
 
-        return Value.FromTensor(Tensor.FromBytes(new VectorType(DataTypes.Float32, lanes), matmul.BytesBuffer.ToArray(), outshape));
+        foreach (var axis in target.RhsPackedAxes.Reverse())
+        {
+            rhs = rhs.Unpack(axis);
+        }
+
+        // lhs = OrtKI.Unsqueeze(lhs, new long[] { -4, -1 }); // [x,m/32,k/32, 1  , m' ,k', 1 ]
+        // rhs = OrtKI.Unsqueeze(rhs, new long[] { -6, -3 }); // [x, 1  ,k/32,n/32, 1  ,k', n']
+        // var matmul = OrtKI.Mul(lhs, rhs); // [x, m/32,k/32,n/32,m',k',n']
+        // matmul = OrtKI.ReduceSum(matmul, new long[] { -2, -5 }, 0, 1);
+        var matmul = OrtKI.MatMul(lhs, rhs);
+        foreach (var (lane, axis) in outLanes.Zip(new[] { -2 + outshape.Length, -1 + outshape.Length }))
+        {
+            matmul = matmul.Pack(lane, axis);
+        }
+
+        return Value.FromTensor(Tensor.FromBytes(new VectorType(DataTypes.Float32, outLanes), matmul.BytesBuffer.ToArray(), outshape));
     }
 
     public IRType Visit(ITypeInferenceContext context, PackedMatMul target)

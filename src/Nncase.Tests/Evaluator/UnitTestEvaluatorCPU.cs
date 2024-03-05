@@ -174,8 +174,7 @@ public sealed class UnitTestEvaluatorCPU
     [InlineData(new object[] { new[] { 1, 128, 777 }, new[] { 12, 777, 64 }, new[] { 1, 2 }, new[] { 1, 2 } })] // broadcast, pad
     [InlineData(new object[] { new[] { 1, 131, 776 }, new[] { 12, 776, 64 }, new[] { 1, 2 }, new[] { 1, 2 } })] // broadcast, pad
     [InlineData(new object[] { new[] { 1, 131, 776 }, new[] { 12, 776, 58 }, new[] { 1, 2 }, new[] { 1, 2 } })] // broadcast, pad
-
-    // [InlineData(new object[] { new[] { 1, 1, 12 * 32, 256 * 32 }, new[] { 64, 256 * 32, 4 * 32 }, new[] { 2, 3 }, new[] { 1, 2 } })] // onnx bug
+    [InlineData(new object[] { new[] { 1, 1, 12 * 32, 256 * 32 }, new[] { 64, 256 * 32, 4 * 32 }, new[] { 2, 3 }, new[] { 1, 2 } })] // onnx bug
     public void TestPackedMatMul(int[] lhsShape, int[] rhsShape, int[] lhsPackedAxes, int[] rhsPackedAxes)
     {
         var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
