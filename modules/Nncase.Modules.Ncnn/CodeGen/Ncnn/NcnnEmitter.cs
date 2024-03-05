@@ -485,6 +485,18 @@ internal class NcnnEmitter
         AddLayer("GELU", name[0], new[] { input }, name, null);
     }
 
+    public void Dequantize(string[] name, string input, float[] scale, float[] bias)
+    {
+        AddLayer("Dequantize", name[0], new[] { input }, name, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = scale.Length },
+            [1] = new ParamValue { Kind = ParamKind.Int, IntValue = bias.Length },
+        });
+
+        WriteFloatArray(scale);
+        WriteFloatArray(bias);
+    }
+
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
     {
         var layer = new NcnnLayer(type, name, bottoms.Length, tops.Length);

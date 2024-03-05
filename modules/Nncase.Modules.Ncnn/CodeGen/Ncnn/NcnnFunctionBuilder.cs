@@ -221,6 +221,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnGELU:
                     _emitter.GELU(names.ToArray(), ExprMemo[expr.Arguments[0]]);
                     break;
+                case NcnnDequantize op:
+                    _emitter.Dequantize(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Scale, op.Bias);
+                    break;
                 default:
                     throw new NotSupportedException("Not support in Ncnn ops emitter");
             }

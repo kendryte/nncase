@@ -46,5 +46,6 @@ internal class NcnnModule : IApplicationPart
         registrator.RegisterManyInterface<NcnnConvTransposeEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnCastEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnGELUEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnDequantizeEvaluator>(reuse: Reuse.Singleton);
     }
 }

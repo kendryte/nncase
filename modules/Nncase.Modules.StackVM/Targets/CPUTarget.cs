@@ -94,6 +94,7 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.Ncnn.LowerConvTranspose>();
             p.Add<Passes.Rules.Ncnn.LowerCast>();
             p.Add<Passes.Rules.Ncnn.LowerGELU>();
+            // p.Add<Passes.Rules.Ncnn.LowerDequantize>(); // ncnn dequantize int to float.
         });
 
         passManager.AddWithName<DataflowPass>("RemoveGlueOp").Configure(p =>
