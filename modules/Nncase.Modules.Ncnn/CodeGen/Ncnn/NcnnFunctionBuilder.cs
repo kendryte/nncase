@@ -224,6 +224,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnDequantize op:
                     _emitter.Dequantize(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Scale, op.Bias);
                     break;
+                case NcnnSqueeze op:
+                    _emitter.Squeeze(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Dims);
+                    break;
                 default:
                     throw new NotSupportedException("Not support in Ncnn ops emitter");
             }

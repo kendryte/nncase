@@ -101,6 +101,7 @@ public class CPUTarget : ITarget
         {
             p.Add<Passes.Rules.Neutral.FoldSqueezeUnsqueeze>();
             p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
+            p.Add<Passes.Rules.Ncnn.LowerSqueeze>();
         });
     }
 

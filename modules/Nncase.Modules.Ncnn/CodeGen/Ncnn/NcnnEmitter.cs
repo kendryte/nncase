@@ -497,6 +497,25 @@ internal class NcnnEmitter
         WriteFloatArray(bias);
     }
 
+    public void Squeeze(string[] name, string input, int[] dims)
+    {
+        var repeatsData = new List<int> { dims.Length };
+        repeatsData.AddRange(dims);
+        var args = new ParamDict();
+        if (dims.Length == 0)
+        {
+            args.Add(0, new ParamValue { Kind = ParamKind.Int, IntValue = 1 });
+            args.Add(1, new ParamValue { Kind = ParamKind.Int, IntValue = 1 });
+            args.Add(2, new ParamValue { Kind = ParamKind.Int, IntValue = 1 });
+        }
+        else
+        {
+            args.Add(-3, new ParamValue { Kind = ParamKind.ArrayOfInt, TensorValue = repeatsData.ToArray() });
+        }
+
+        AddLayer("Squeeze", name[0], new[] { input }, name, args);
+    }
+
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
     {
         var layer = new NcnnLayer(type, name, bottoms.Length, tops.Length);
