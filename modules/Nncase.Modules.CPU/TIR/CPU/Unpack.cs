@@ -7,25 +7,26 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR;
 using Nncase.PatternMatch;
 
-namespace Nncase.IR.CPU;
+namespace Nncase.TIR.CPU;
 
 /// <summary>
-/// Pack expression.
+/// Unpack expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed partial class Pack : Op
+public sealed partial class Unpack : Op
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Pack), 0, "input", ParameterKind.Input);
+    public static readonly ParameterInfo Input = new(typeof(Unpack), 0, "input", ParameterKind.Input);
 
-    public IRArray<int> Lanes { get; }
+    public static readonly ParameterInfo Output = new(typeof(Unpack), 1, "output", ParameterKind.Input);
 
     public IRArray<int> Axes { get; }
 
     /// <inheritdoc/>
-    public override string DisplayProperty() => $"Lanes: {Lanes}, Axes: {Axes}";
+    public override string DisplayProperty() => $"Axes: {Axes}";
 }

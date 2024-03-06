@@ -87,6 +87,4 @@ public partial class CPU
     {
         return new Call(new PackedTranspose(packedAxes), input, perm);
     }
-
-    public static Expr PackedReshape(Expr packed, int[] newShape, IRArray<int> packedAxes) => throw new NotImplementedException();
 }

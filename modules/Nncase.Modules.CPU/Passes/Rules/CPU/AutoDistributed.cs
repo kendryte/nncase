@@ -214,7 +214,7 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRT
     {
         if (!target.Parameters.Where(p => p.ParameterKind == ParameterKind.Input).All(p => IsDistributed(args[p.Index].CheckedType)))
         {
-            throw new InvalidDataException();
+            throw new ArgumentException("the some arg have no distributed type.", nameof(args));
         }
 
         var calls = new List<Call>();
@@ -285,7 +285,7 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRT
             candidateNdsbps[i] = new List<SBP> { SBP.B };
             for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
             {
-                if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && Utilities.DistributedUtility.IsDivideBy(s, type.Placement.Hierarchy[i]))
+                if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && Utilities.DistributedUtility.IsDivideExactly(s, type.Placement.Hierarchy[i]))
                 {
                     candidateNdsbps[i].Add(SBP.S(axis));
                 }

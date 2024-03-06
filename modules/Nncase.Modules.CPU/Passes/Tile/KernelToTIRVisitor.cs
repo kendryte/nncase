@@ -67,6 +67,30 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             case Binary binary:
                 GenerateBinary(binary, arguments, ret, expr);
                 break;
+            case IR.CPU.Pack pack:
+                _mainBody.Add(TIR.F.CPU.Pack(arguments[0], ret, pack.Lanes, pack.Axes));
+                break;
+            case IR.CPU.Unpack unpack:
+                _mainBody.Add(TIR.F.CPU.Unpack(arguments[0], ret, unpack.Axes));
+                break;
+            case IR.CPU.PackedBinary packed_binary:
+                // _mainBody.Add(TIR.F.CPU.Binary(arguments[0], arguments[1], ret, packed_binary.BinaryOp, packed_binary.LhsPackedAxes, packed_binary.LhsPadedNums, packed_binary.RhsPackedAxes, packed_binary.RhsPadedNums));
+                _mainBody.Add(TIR.F.CPU.Binary(packed_binary.BinaryOp, arguments[0], arguments[1], ret));
+                break;
+            case IR.CPU.PackedMatMul packed_mat_mul:
+                // _mainBody.Add(TIR.F.CPU.PackedMatMul(arguments[0], arguments[1], ret, packed_mat_mul.LhsPackedAxes, packed_mat_mul.LhsPadedNums, packed_mat_mul.RhsPackedAxes, packed_mat_mul.RhsPadedNums));
+                _mainBody.Add(TIR.F.CPU.Matmul(arguments[0], arguments[1], ret));
+                break;
+            case IR.CPU.PackedSoftmax packed_softmax:
+                _mainBody.Add(TIR.F.CPU.PackedSoftmax(arguments[0], ret, packed_softmax.Axis, packed_softmax.PackedAxes));
+                break;
+            case IR.CPU.PackedTranspose packed_transpose:
+                // _mainBody.Add(TIR.F.CPU.PackedTranspose(arguments[0], arguments[1], ret, packed_transpose.PackedAxes));
+                _mainBody.Add(TIR.F.CPU.PackedTranspose(arguments[0], arguments[1], ret, packed_transpose.PackedAxes));
+                break;
+            case IR.CPU.PackedLayerNorm packed_layer_norm:
+                _mainBody.Add(TIR.F.CPU.PackedLayerNorm(arguments[0], arguments[1], arguments[2], ret, packed_layer_norm.Axis, packed_layer_norm.Epsilon, packed_layer_norm.UseMean, packed_layer_norm.PackedAxes, packed_layer_norm.PadedNums));
+                break;
 #if false
             case MatMul matmul:
                 GenerateMatmul(matmul, arguments, ret);

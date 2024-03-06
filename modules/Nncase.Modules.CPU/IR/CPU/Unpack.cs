@@ -20,7 +20,7 @@ public sealed partial class Unpack : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Unpack), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Unpack), 0, "input", ParameterKind.Input);
 
     public IRArray<int> Axes { get; }
 

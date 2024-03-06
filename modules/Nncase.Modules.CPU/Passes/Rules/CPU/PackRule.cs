@@ -19,13 +19,11 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Passes.Rules.CPU;
 
-public abstract class PackRule
+public abstract class PackRule : RewriteRule<Pattern>
 {
     public const int Lane = 32;
 
-    public abstract Pattern Pattern { get; }
-
-    public abstract List<Expr> GetReplace(Expr candidate);
+    public override Expr? GetReplace(IMatchResult result, RunPassContext options) => throw new NotImplementedException();
 }
 
 public sealed class PackSoftmax : PackRule
@@ -35,14 +33,9 @@ public sealed class PackSoftmax : PackRule
       IsWildcard("input") with { TypePattern = IsFloat() },
       IsWildcard("axis") with { TypePattern = IsIntegralScalar() });
 
-    public override List<Expr> GetReplace(Expr candidate)
+    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
-        if (!CompilerServices.TryMatchRoot(candidate, Pattern, out var result))
-        {
-            return rets;
-        }
-
         var input = (Expr)result["input"];
         var axis = ((TensorConst)result["axis"]).Value.ToScalar<int>();
         var inShape = input.CheckedShape.ToValueArray();
@@ -80,14 +73,9 @@ public sealed class PackLayerNorm : PackRule
       IsWildcard("scale") with { TypePattern = IsFloat() },
       IsWildcard("bias") with { TypePattern = IsFloat() });
 
-    public override List<Expr> GetReplace(Expr candidate)
+    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
-        if (!CompilerServices.TryMatchRoot(candidate, Pattern, out var result))
-        {
-            return rets;
-        }
-
         var op = (IR.NN.LayerNorm)result["target"];
         var input = (Expr)result["input"];
         var scale = (Expr)result["scale"];
@@ -141,16 +129,12 @@ public sealed class PackMatMul : PackRule
       IsWildcard("lhs") with { TypePattern = IsFloat() },
       IsWildcard("rhs") with { TypePattern = IsFloat() });
 
-    public override List<Expr> GetReplace(Expr candidate)
+    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
-        if (!CompilerServices.TryMatchRoot(candidate, Pattern, out var result))
-        {
-            return rets;
-        }
-
         var lhs = (Expr)result["lhs"];
         var rhs = (Expr)result["rhs"];
+        var candidate = (Expr)result[Pattern];
         var lhsShape = lhs.CheckedShape.ToValueArray();
         var rhsShape = rhs.CheckedShape.ToValueArray();
 
@@ -179,14 +163,9 @@ public sealed class PackUnary : PackRule
       _ => true,
       IsWildcard("input") with { TypePattern = IsFloat() });
 
-    public override List<Expr> GetReplace(Expr candidate)
+    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
-        if (!CompilerServices.TryMatchRoot(candidate, Pattern, out var result))
-        {
-            return rets;
-        }
-
         var op = (IR.Math.Unary)result["target"];
         var input = (Expr)result["input"];
         var inShape = input.CheckedShape.ToValueArray();
@@ -223,17 +202,13 @@ public sealed class PackBinary : PackRule
       IsWildcard("lhs") with { TypePattern = IsFloat() },
       IsWildcard("rhs") with { TypePattern = IsFloat() });
 
-    public override List<Expr> GetReplace(Expr candidate)
+    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
-        if (!CompilerServices.TryMatchRoot(candidate, Pattern, out var result))
-        {
-            return rets;
-        }
-
         var op = (IR.Math.Binary)result["target"];
         var lhs = (Expr)result["lhs"];
         var rhs = (Expr)result["rhs"];
+        var candidate = (Expr)result[Pattern];
         var lhsShape = lhs.CheckedShape.ToValueArray();
         var rhsShape = rhs.CheckedShape.ToValueArray();
 
@@ -287,14 +262,9 @@ public sealed class PackSwish : PackRule
       IsWildcard("input") with { TypePattern = IsFloat() },
       IsTensorConst("beta") with { TypePattern = IsFloatScalar() });
 
-    public override List<Expr> GetReplace(Expr candidate)
+    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
-        if (!CompilerServices.TryMatchRoot(candidate, Pattern, out var result))
-        {
-            return rets;
-        }
-
         var input = (Expr)result["input"];
         var beta = ((TensorConst)result["beta"]).Value.ToScalar<float>();
         var inShape = input.CheckedShape.ToValueArray();
@@ -327,13 +297,9 @@ public sealed class PackTranspose : PackRule
       IsWildcard("input") with { TypePattern = IsFloat() },
       IsTensorConst("perm") with { TypePattern = IsIntegral() });
 
-    public override List<Expr> GetReplace(Expr candidate)
+    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
-        if (!CompilerServices.TryMatchRoot(candidate, Pattern, out var result))
-        {
-            return rets;
-        }
 
         var input = (Expr)result["input"];
         var perm = ((TensorConst)result["perm"]).Value.ToArray<int>();
@@ -379,13 +345,9 @@ public sealed class PackUnsqueeze : PackRule
       IsWildcard("input") with { TypePattern = IsFloat() },
       IsTensorConst("axes") with { TypePattern = IsIntegral() });
 
-    public override List<Expr> GetReplace(Expr candidate)
+    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
-        if (!CompilerServices.TryMatchRoot(candidate, Pattern, out var result))
-        {
-            return rets;
-        }
 
         var input = (Expr)result["input"];
         var axes = ((TensorConst)result["axes"]).Value.ToArray<int>();
@@ -437,13 +399,9 @@ public sealed class PackReshape : PackRule
       IsWildcard("input") with { TypePattern = IsFloat() },
       IsTensorConst("newShape") with { TypePattern = IsIntegral() });
 
-    public override List<Expr> GetReplace(Expr candidate)
+    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
-        if (!CompilerServices.TryMatchRoot(candidate, Pattern, out var result))
-        {
-            return rets;
-        }
 
         var input = (Expr)result["input"];
         var newShape = ((TensorConst)result["newShape"]).Value.ToArray<int>();
@@ -452,7 +410,7 @@ public sealed class PackReshape : PackRule
         // 1. find the mapping transforms
         if (!PackUtility.TryGetShapeMapMatrix(inShape, newShape, out var mat))
         {
-            return new List<Expr> { candidate };
+            return new List<Expr> { };
         }
 
         var (forwardDict, backwardDict) = PackUtility.ShapeMapMatrixAsDict(mat);
@@ -537,13 +495,9 @@ public sealed class PackSlice : PackRule
       IsTensorConst("axes") with { TypePattern = IsIntegral() },
       IsTensorConst("strides") with { TypePattern = IsIntegral() });
 
-    public override List<Expr> GetReplace(Expr candidate)
+    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
-        if (!CompilerServices.TryMatchRoot(candidate, Pattern, out var result))
-        {
-            return rets;
-        }
 
         var input = (Expr)result["input"];
         var begins = ((TensorConst)result["begins"]).Value.ToArray<long>();
@@ -551,6 +505,7 @@ public sealed class PackSlice : PackRule
         var axes = ((TensorConst)result["axes"]).Value.ToArray<long>();
         var strides = ((TensorConst)result["strides"]).Value.ToArray<long>();
         var inShape = input.CheckedShape.ToValueArray();
+        var candidate = (Expr)result[Pattern];
         for (int i = 0; i < axes.Length; i++)
         {
             ends[i] = ends[i] switch

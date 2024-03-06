@@ -64,7 +64,8 @@ public sealed class UnitTestEvaluatorCPU
         var pre = IR.F.NN.Softmax(input, axis);
         var feedDict = new Dictionary<Var, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
         var rule = new Passes.Rules.CPU.PackSoftmax();
-        var posts = rule.GetReplace(pre);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
         foreach (var post in posts)
         {
 #if DEBUG
@@ -157,7 +158,8 @@ public sealed class UnitTestEvaluatorCPU
         };
 
         var rule = new Passes.Rules.CPU.PackLayerNorm();
-        var posts = rule.GetReplace(pre);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
         foreach (var post in posts)
         {
 #if DEBUG
@@ -219,7 +221,8 @@ public sealed class UnitTestEvaluatorCPU
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
         };
         var rule = new Passes.Rules.CPU.PackBinary();
-        var posts = rule.GetReplace(pre);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
         foreach (var post in posts)
         {
 #if DEBUG
@@ -241,7 +244,8 @@ public sealed class UnitTestEvaluatorCPU
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
         var rule = new Passes.Rules.CPU.PackUnary();
-        var posts = rule.GetReplace(pre);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
         foreach (var post in posts)
         {
 #if DEBUG
@@ -314,7 +318,8 @@ public sealed class UnitTestEvaluatorCPU
         };
 
         var rule = new Passes.Rules.CPU.PackBinary();
-        var posts = rule.GetReplace(pre);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
         foreach (var post in posts)
         {
 #if DEBUG
@@ -352,7 +357,8 @@ public sealed class UnitTestEvaluatorCPU
         var pre = IR.F.NN.Swish(input, 1.23f);
 
         var rule = new Passes.Rules.CPU.PackSwish();
-        var posts = rule.GetReplace(pre);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
         var feedDict = new Dictionary<Var, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
         foreach (var post in posts)
         {
@@ -376,7 +382,8 @@ public sealed class UnitTestEvaluatorCPU
         var pre = IR.F.Tensors.Transpose(input, perm);
 
         var rule = new Passes.Rules.CPU.PackTranspose();
-        var posts = rule.GetReplace(pre);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
         var feedDict = new Dictionary<Var, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
         foreach (var post in posts)
         {
@@ -392,7 +399,8 @@ public sealed class UnitTestEvaluatorCPU
         var pre = IR.F.Tensors.Unsqueeze(input, axes);
 
         var rule = new Passes.Rules.CPU.PackUnsqueeze();
-        var posts = rule.GetReplace(pre);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
         var feedDict = new Dictionary<Var, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
         foreach (var post in posts)
         {
@@ -410,7 +418,8 @@ public sealed class UnitTestEvaluatorCPU
         var pre = IR.F.Tensors.Reshape(input, newShape);
 
         var rule = new Passes.Rules.CPU.PackReshape();
-        var posts = rule.GetReplace(pre);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
         var feedDict = new Dictionary<Var, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
         foreach (var post in posts)
         {
@@ -431,7 +440,8 @@ public sealed class UnitTestEvaluatorCPU
 
         var feedDict = new Dictionary<Var, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
         var rule = new Passes.Rules.CPU.PackSlice();
-        var posts = rule.GetReplace(pre);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
         foreach (var post in posts)
         {
 #if DEBUG
