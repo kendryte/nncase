@@ -94,6 +94,7 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.Ncnn.LowerConvTranspose>();
             p.Add<Passes.Rules.Ncnn.LowerCast>();
             p.Add<Passes.Rules.Ncnn.LowerGELU>();
+
             // p.Add<Passes.Rules.Ncnn.LowerDequantize>(); // ncnn dequantize int to float.
         });
 
@@ -101,7 +102,12 @@ public class CPUTarget : ITarget
         {
             p.Add<Passes.Rules.Neutral.FoldSqueezeUnsqueeze>();
             p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
+        });
+
+        passManager.AddWithName<DataflowPass>("RemoveSingleSqueezeAndUnsqueeze").Configure(p =>
+        {
             p.Add<Passes.Rules.Ncnn.LowerSqueeze>();
+            p.Add<Passes.Rules.Ncnn.LowerUnsqueeze>();
         });
     }
 

@@ -73,7 +73,6 @@ public class NcnnSqueezeEvaluator : IEvaluator<NcnnSqueeze>, ITypeInferencer<Ncn
                 .ToArray();
         }
 
-
         return new TensorType(input.DType, outputShape);
     }
 }

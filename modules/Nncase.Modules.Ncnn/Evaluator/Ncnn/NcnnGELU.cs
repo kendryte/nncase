@@ -25,7 +25,7 @@ public class NcnnGELUEvaluator : IEvaluator<NcnnGELU>, ITypeInferencer<NcnnGELU>
     public IValue Visit(IEvaluateContext context, NcnnGELU celu)
     {
         var input = context.GetOrtArgumentValue(celu, NcnnGELU.Input);
-        var res = IR.F.Math.Mul(IR.F.NN.Erf(IR.F.Math.Div(input.ToValue().AsTensor(), 1.4142135381698608)) + 1 , input.ToValue().AsTensor()) * 0.5;
+        var res = IR.F.Math.Mul(IR.F.NN.Erf(IR.F.Math.Div(input.ToValue().AsTensor(), 1.4142135381698608)) + 1, input.ToValue().AsTensor()) * 0.5;
         return res.Evaluate();
     }
 
@@ -49,7 +49,7 @@ public class NcnnGELUEvaluator : IEvaluator<NcnnGELU>, ITypeInferencer<NcnnGELU>
 
     public Metric Visit(IMetricEvaluateContext context, NcnnGELU target)
     {
-        var inputType = context.GetArgumentType<TensorType>(target, NcnnGELU.Input);
+        _ = context.GetArgumentType<TensorType>(target, NcnnGELU.Input);
         var returnType = context.GetReturnType<TensorType>();
 
         return new()

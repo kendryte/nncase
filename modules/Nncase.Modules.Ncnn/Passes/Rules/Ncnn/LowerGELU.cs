@@ -33,7 +33,6 @@ public partial class LowerGELU : RewriteRule<Pattern>
 
     private Expr? GetReplace(Expr input, float alpha)
     {
-
         if (input.CheckedShape.Count > 4 || input.CheckedShape[0].FixedValue != 1)
         {
             Console.WriteLine("ncnn not support more than 4D or batchSize > 1");
@@ -41,7 +40,6 @@ public partial class LowerGELU : RewriteRule<Pattern>
         }
 
         // TODO: support GELU with scale.
-
         var inRes = Squeeze(input, new[] { 0 });
         var inResO = new Var(inRes.CheckedType);
         if (Math.Abs(alpha - 1.0) > 1e-06)

@@ -104,7 +104,10 @@ public sealed class Ncnn
         new Call(new NcnnCast(fromType, toType), expr);
 
     public static Call NcnnGELU(Expr expr) => new Call(new NcnnGELU(), expr);
+
     public static Call NcnnDequantize(Expr expr, float[] scale, float[] bias) => new Call(new NcnnDequantize(scale, bias), expr);
 
     public static Call NcnnSqueeze(Expr expr, int[] dims) => new Call(new NcnnSqueeze(dims), expr);
+
+    public static Call NcnnUnsqueeze(Expr expr, int[] dims) => new Call(new NcnnUnsqueeze(dims), expr);
 }

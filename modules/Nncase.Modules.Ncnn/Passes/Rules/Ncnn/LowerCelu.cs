@@ -39,6 +39,5 @@ public partial class LowerCelu : RewriteRule<Pattern>
         var inResO = new Var(inRes.CheckedType);
         var celu = new Call(new Fusion("ncnn", NcnnCelu(inResO, alpha), new[] { inResO }), inRes);
         return Unsqueeze(celu, new[] { 0 });
-
     }
 }

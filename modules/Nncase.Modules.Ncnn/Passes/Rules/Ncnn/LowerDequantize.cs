@@ -53,6 +53,5 @@ public partial class LowerDequantize : RewriteRule<Pattern>
         var dequantize = new Call(new Fusion("ncnn", NcnnDequantize(inResO, scale, bias), new[] { inResO }), inRes);
 
         return Unsqueeze(dequantize, new[] { 0 });
-
     }
 }

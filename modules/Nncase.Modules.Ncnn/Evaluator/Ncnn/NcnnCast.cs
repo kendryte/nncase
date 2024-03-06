@@ -47,7 +47,7 @@ public class NcnnCastEvaluator : IEvaluator<NcnnCast>, ITypeInferencer<NcnnCast>
 
     public Metric Visit(IMetricEvaluateContext context, NcnnCast target)
     {
-        var inputType = context.GetArgumentType<TensorType>(target, NcnnCast.Input);
+        _ = context.GetArgumentType<TensorType>(target, NcnnCast.Input);
         var returnType = context.GetReturnType<TensorType>();
 
         return new()

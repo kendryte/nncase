@@ -516,6 +516,16 @@ internal class NcnnEmitter
         AddLayer("Squeeze", name[0], new[] { input }, name, args);
     }
 
+    public void Unsqueeze(string[] name, string input, int[] dims)
+    {
+        var repeatsData = new List<int> { dims.Length };
+        repeatsData.AddRange(dims);
+        AddLayer("ExpandDims", name[0], new[] { input }, name, new ParamDict
+        {
+            [-3] = new ParamValue { Kind = ParamKind.ArrayOfInt, TensorValue = repeatsData.ToArray() },
+        });
+    }
+
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
     {
         var layer = new NcnnLayer(type, name, bottoms.Length, tops.Length);

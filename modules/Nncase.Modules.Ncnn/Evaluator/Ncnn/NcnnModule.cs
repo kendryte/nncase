@@ -48,5 +48,6 @@ internal class NcnnModule : IApplicationPart
         registrator.RegisterManyInterface<NcnnGELUEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnDequantizeEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnSqueezeEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnUnsqueezeEvaluator>(reuse: Reuse.Singleton);
     }
 }

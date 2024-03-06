@@ -12,20 +12,21 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Passes.Rules.Ncnn;
 
 [RuleGenerator]
-public partial class LowerSqueeze : RewriteRule<Pattern>
+public partial class LowerUnsqueeze : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
-    public override Pattern Pattern { get; } = IsSqueeze(
+    public override Pattern Pattern { get; } = IsUnsqueeze(
         IsWildcard("input"),
         IsTensorConst("dims"));
 
     private Expr? GetReplace(Expr input, int[] dims)
     {
-        if (input.CheckedShape.Count < 5)
+        if (input.CheckedShape.Count + dims.Length <= 5)
         {
             var inResO = new Var(input.CheckedType);
+
             // var newDims = dims[0] == 0 ? dims[1..] : dims;
-            return new Call(new Fusion("ncnn", NcnnSqueeze(inResO, dims), new[] { inResO }), input);
+            return new Call(new Fusion("ncnn", NcnnUnsqueeze(inResO, dims), new[] { inResO }), input);
         }
 
         return null;

@@ -54,7 +54,6 @@ public partial class LowerCast : RewriteRule<Pattern>
 
     private Expr? GetReplace(Expr input, Cast cast)
     {
-
         if (input.CheckedShape.Count > 4 || input.CheckedShape[0].FixedValue != 1)
         {
             Console.WriteLine("ncnn not support more than 4D or batchSize > 1");
