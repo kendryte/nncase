@@ -138,27 +138,25 @@ internal sealed class PrimFuncEvaluateVisitor
     public IValue Evaluate()
     {
         throw new NotImplementedException();
-        //// 1. copy input into input pool
-        //foreach (var (arg, param) in _args.Zip(_wrapper.Target.Parameters[.._wrapper.ParametersCount].ToArray()))
-        //{
-        //    Assert.Equal(param.MemSpan.Size.Evaluate().AsTensor().ToScalar<int>(), arg.AsTensor().BytesBuffer.Length);
-        //    arg.AsTensor().BytesBuffer.CopyTo(_poolMap[param.MemSpan.Location].AsSpan(param.MemSpan.Start.Evaluate().AsTensor().ToScalar<int>()));
-        //}
 
-        //// 2. start l2 computing
-        //foreach (var statement in _wrapper.Target.Body.Fields)
-        //{
-        //    EvaluateStatement(statement);
-        //}
-
-        //// 3. return output buffer
-        //var tensors = new List<Tensor>();
-        //foreach (var outputParam in _wrapper.Target.Parameters[_wrapper.ParametersCount..])
-        //{
-        //    tensors.Add(Tensor.FromBytes(outputParam.ElemType, GetBufferSpan(outputParam).ToArray(), outputParam.Dimensions.AsValueEnumerable().Select(e => e.Evaluate().AsTensor().ToScalar<int>()).ToArray()));
-        //}
-
-        //return tensors.Count == 1 ? Value.FromTensor(tensors[0]) : Value.FromTensors(tensors.ToArray());
+        // 1. copy input into input pool
+        /* foreach (var (arg, param) in _args.Zip(_wrapper.Target.Parameters[.._wrapper.ParametersCount].ToArray()))
+        {
+           Assert.Equal(param.MemSpan.Size.Evaluate().AsTensor().ToScalar<int>(), arg.AsTensor().BytesBuffer.Length);
+           arg.AsTensor().BytesBuffer.CopyTo(_poolMap[param.MemSpan.Location].AsSpan(param.MemSpan.Start.Evaluate().AsTensor().ToScalar<int>()));
+        }
+        // 2. start l2 computing
+        foreach (var statement in _wrapper.Target.Body.Fields)
+        {
+           EvaluateStatement(statement);
+        }
+        // 3. return output buffer
+        var tensors = new List<Tensor>();
+        foreach (var outputParam in _wrapper.Target.Parameters[_wrapper.ParametersCount..])
+        {
+           tensors.Add(Tensor.FromBytes(outputParam.ElemType, GetBufferSpan(outputParam).ToArray(), outputParam.Dimensions.AsValueEnumerable().Select(e => e.Evaluate().AsTensor().ToScalar<int>()).ToArray()));
+        }
+        return tensors.Count == 1 ? Value.FromTensor(tensors[0]) : Value.FromTensors(tensors.ToArray()); */
     }
 
     private void EvaluateStatement(Expr statement)
