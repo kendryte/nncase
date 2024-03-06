@@ -22,10 +22,10 @@ public sealed partial class Pack : Op
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(Pack), 0, "input");
 
-    public int Lanes { get; }
+    public IRArray<int> Lanes { get; }
 
-    public int Axis { get; }
+    public IRArray<int> Axes { get; }
 
     /// <inheritdoc/>
-    public override string DisplayProperty() => $"{Lanes}, {Axis}";
+    public override string DisplayProperty() => $"Lanes: {Lanes}, Axes: {Axes}";
 }

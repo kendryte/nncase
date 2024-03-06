@@ -14,7 +14,6 @@ public sealed record class TiledFor(For For, AffineSymbol[] TileSizes);
 
 public static class AffineUtility
 {
-
 #if false
     private sealed class AutoTileRewriter : ExprRewriter
     {

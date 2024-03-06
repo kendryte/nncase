@@ -16,15 +16,91 @@ namespace Nncase.Evaluator.NN;
 public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNorm>, ICostEvaluator<LayerNorm>,
     IShapeEvaluator<LayerNorm>, IMetricEvaluator<LayerNorm>
 {
+#if true
+    public static float[] LayerNormImpl(int[] inShape, Span<float> input, Span<float> scale, Span<float> bias, int axis, float epsilon, bool useMean = true)
+    {
+        int outerSize = 1;
+        int innerSize = 1;
+        float[] outputArray = new float[input.Length];
+        if (axis < 0)
+        {
+            axis += inShape.Length;
+        }
+
+        for (int i = 0; i < axis; i++)
+        {
+            outerSize *= inShape[i];
+        }
+
+        for (int i = axis; i < inShape.Length; i++)
+        {
+            innerSize *= inShape[i];
+        }
+
+        for (int batch = 0; batch < outerSize; batch++)
+        {
+            float mean1 = 0f;
+            if (useMean)
+            {
+                for (int i = 0; i < innerSize; i++)
+                {
+                    mean1 += input[(i + (batch * innerSize)) % input.Length];
+                }
+
+                mean1 /= innerSize;
+            }
+
+            float[] sub = new float[innerSize];
+            for (int i = 0; i < innerSize; i++)
+            {
+                sub[i] = input[(i + (batch * innerSize)) % input.Length] - mean1;
+            }
+
+            float[] pow = new float[innerSize];
+            for (int i = 0; i < innerSize; i++)
+            {
+                pow[i] = (float)System.MathF.Pow(sub[i], 2);
+            }
+
+            float mean2 = 0f;
+            for (int i = 0; i < innerSize; i++)
+            {
+                mean2 += pow[i];
+            }
+
+            mean2 /= innerSize;
+
+            float add = mean2 + epsilon;
+            float sqrt = (float)System.Math.Sqrt(add);
+
+            float[] div = new float[innerSize];
+            for (int i = 0; i < innerSize; i++)
+            {
+                div[i] = sub[i] / sqrt;
+            }
+
+            for (int i = 0; i < innerSize; i++)
+            {
+                outputArray[(i + (batch * innerSize)) % outputArray.Length] =
+                    (div[i] * scale[i % scale.Length]) + bias[i % bias.Length];
+            }
+        }
+
+        return outputArray;
+    }
+#endif
+
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, LayerNorm layerNorm)
     {
-        var input = context.GetOrtArgumentValue(layerNorm, LayerNorm.Input);
-        var scale = context.GetOrtArgumentValue(layerNorm, LayerNorm.Scale);
-        var bias = context.GetOrtArgumentValue(layerNorm, LayerNorm.Bias);
+        var input = context.GetArgumentValueAsTensor<float>(layerNorm, LayerNorm.Input);
+        var scale = context.GetArgumentValueAsTensor<float>(layerNorm, LayerNorm.Scale);
+        var bias = context.GetArgumentValueAsTensor<float>(layerNorm, LayerNorm.Bias);
 
         // return Value.FromTensor(OrtKI.LayerNormalization(input, scale, bias, layerNorm.Axis, layerNorm.Epsilon, 1));
-        return Value.FromTensor(LayerNormImpl(input.ToTensor(), scale.ToTensor(), bias.ToTensor(), layerNorm.Axis, layerNorm.Epsilon, layerNorm.UseMean));
+        var shape = input.Shape.ToValueArray();
+        var output = LayerNormImpl(shape, input.Buffer.Span, scale.Buffer.Span, bias.Buffer.Span, layerNorm.Axis, layerNorm.Epsilon, layerNorm.UseMean);
+        return Value.FromTensor(Tensor.From(output, shape));
     }
 
     /// <inheritdoc/>
@@ -141,80 +217,4 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
         var v = CostUtility.GetMemoryAccess(distributedType.TensorType);
         return (p - 1) * (v / p);
     }
-
-#if true
-    private Tensor LayerNormImpl(Tensor input, Tensor scale, Tensor bias, int axis, float epsilon, bool useMean = true)
-    {
-        int outerSize = 1;
-        int innerSize = 1;
-        float[] inputArray = input.ToArray<float>();
-        float[] outputArray = new float[inputArray.Length];
-        int[] inShape = input.Shape.ToValueArray();
-        if (axis < 0)
-        {
-            axis += inShape.Length;
-        }
-
-        for (int i = 0; i < axis; i++)
-        {
-            outerSize *= inShape[i];
-        }
-
-        for (int i = axis; i < inShape.Length; i++)
-        {
-            innerSize *= inShape[i];
-        }
-
-        for (int batch = 0; batch < outerSize; batch++)
-        {
-            float mean1 = 0f;
-            if (useMean)
-            {
-                for (int i = 0; i < innerSize; i++)
-                {
-                    mean1 += inputArray[(i + (batch * innerSize)) % inputArray.Length];
-                }
-
-                mean1 /= innerSize;
-            }
-
-            float[] sub = new float[innerSize];
-            for (int i = 0; i < innerSize; i++)
-            {
-                sub[i] = inputArray[(i + (batch * innerSize)) % inputArray.Length] - mean1;
-            }
-
-            float[] pow = new float[innerSize];
-            for (int i = 0; i < innerSize; i++)
-            {
-                pow[i] = (float)System.Math.Pow(sub[i], 2);
-            }
-
-            float mean2 = 0f;
-            for (int i = 0; i < innerSize; i++)
-            {
-                mean2 += pow[i];
-            }
-
-            mean2 /= innerSize;
-
-            float add = mean2 + epsilon;
-            float sqrt = (float)System.Math.Sqrt(add);
-
-            float[] div = new float[innerSize];
-            for (int i = 0; i < innerSize; i++)
-            {
-                div[i] = sub[i] / sqrt;
-            }
-
-            for (int i = 0; i < innerSize; i++)
-            {
-                outputArray[(i + (batch * innerSize)) % outputArray.Length] =
-                    (div[i] * scale.ToArray<float>()[i % scale.Length]) + bias.ToArray<float>()[i % bias.Length];
-            }
-        }
-
-        return new Tensor<float>(outputArray, input.Shape);
-    }
-#endif
 }

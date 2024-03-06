@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using DryIoc.ImTools;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.CPU;
@@ -21,15 +20,12 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
     public IValue Visit(IEvaluateContext context, Pack target)
     {
         var input = context.GetOrtArgumentValue(target, Pack.Input);
-        var paddedDim = MathUtility.AlignUp(input.Shape[target.Axis], target.Lanes);
-        var paddings = Enumerable.Repeat(0L, input.Rank + target.Axis).Append(paddedDim - input.Shape[target.Axis])
-            .Concat(Enumerable.Repeat(0L, input.Rank - target.Axis - 1)).ToArray();
-        var padded = OrtKI.Pad(input, paddings, 0, "constant");
-        var dividedShape = input.Shape.Take(target.Axis).Concat(new[] { paddedDim / target.Lanes, target.Lanes }).Concat(input.Shape.Skip(target.Axis + 1)).ToArray();
-        var perm = Enumerable.Range(0, target.Axis + 1).Concat(Enumerable.Range(target.Axis + 2, dividedShape.Length - (target.Axis + 2))).Cast<long>().ToArray();
-        var tp = OrtKI.Transpose(OrtKI.Reshape(padded, dividedShape, 0), perm);
-        var tensor = tp.ToTensor();
-        return Value.FromTensor(tensor.CastTo(new VectorType(tensor.ElementType, target.Lanes)));
+        foreach (var (lanes, axis) in target.Lanes.Zip(target.Axes))
+        {
+            input = input.Pack(lanes, axis);
+        }
+
+        return Value.FromTensor(Tensor.FromBytes(new VectorType(input.DataType.ToDataType(), target.Lanes), input.BytesBuffer.ToArray(), input.Shape.ToArray().SkipLast(target.Lanes.Count).Select(i => (int)i).ToArray()));
     }
 
     /// <inheritdoc/>
@@ -70,7 +66,7 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
 
     private IRType Visit(ITypeInferenceContext context, Pack target, TensorType input)
     {
-        return TypeInference.PackType(input, target.Lanes, target.Axis);
+        return TypeInference.PackType(input, target.Lanes, target.Axes);
     }
 
     private IRType Visit(ITypeInferenceContext context, Pack target, DistributedType input)

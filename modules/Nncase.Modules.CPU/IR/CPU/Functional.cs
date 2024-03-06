@@ -38,13 +38,55 @@ public partial class CPU
         return new Call(new Store(), input);
     }
 
-    public static Call Pack(Expr input, int lanes, int axis)
+    public static Expr Pack(Expr input, int[] lanes, int[] axes)
     {
-        return new Call(new Pack(lanes, axis), input);
+        if (lanes.Length != axes.Length)
+        {
+            throw new NotSupportedException();
+        }
+
+        if (axes.Length == 0)
+        {
+            return input;
+        }
+
+        return new Call(new Pack(lanes, axes), input);
     }
 
-    public static Call Unpack(Expr input, Expr originDim, int axis)
+    public static Expr Unpack(Expr input, int[] axes)
     {
-        return new Call(new Unpack(axis), input, originDim);
+        if (axes.Length == 0)
+        {
+            return input;
+        }
+
+        return new Call(new Unpack(axes), input);
     }
+
+    public static Expr PackedSoftmax(Expr input, int axis, IRArray<int> packedAxes)
+    {
+        return new Call(new PackedSoftmax(axis, packedAxes), input);
+    }
+
+    public static Expr PackedLayerNorm(Expr input, Expr scale, Expr bias, int axis, float epsilon, bool usemean, IRArray<int> packedAxes, IRArray<int> padedNums)
+    {
+        return new Call(new PackedLayerNorm(axis, epsilon, usemean, packedAxes, padedNums), input, scale, bias);
+    }
+
+    public static Expr PackedMatMul(Expr lhs, Expr rhs, IRArray<int> lhsPackedAxes, IRArray<int> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<int> rhsPadedNums)
+    {
+        return new Call(new PackedMatMul(lhsPackedAxes, lhsPadedNums, rhsPackedAxes, rhsPadedNums), lhs, rhs);
+    }
+
+    public static Expr PackedBinary(Expr lhs, Expr rhs, BinaryOp binaryOp, IRArray<int> lhsPackedAxes, IRArray<int> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<int> rhsPadedNums)
+    {
+        return new Call(new PackedBinary(binaryOp, lhsPackedAxes, lhsPadedNums, rhsPackedAxes, rhsPadedNums), lhs, rhs);
+    }
+
+    public static Expr PackedTranspose(Expr input, Expr perm, IRArray<int> packedAxes)
+    {
+        return new Call(new PackedTranspose(packedAxes), input, perm);
+    }
+
+    public static Expr PackedReshape(Expr packed, int[] newShape, IRArray<int> packedAxes) => throw new NotImplementedException();
 }

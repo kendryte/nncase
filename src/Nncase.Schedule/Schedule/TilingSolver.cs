@@ -15,6 +15,8 @@ using Nncase.Utilities;
 
 namespace Nncase.Schedule;
 
+#pragma warning disable
+
 public class TilingSolver
 {
     // 1. Constants
@@ -606,3 +608,5 @@ public class TilingSolver
         }
     }
 }
+
+#pragma warning restore

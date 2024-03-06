@@ -528,7 +528,7 @@ public class SwishEvaluator : IEvaluator<Swish>, ITypeInferencer<Swish>, ICostEv
     {
         var input = context.GetOrtArgumentValue(swish, Swish.Input);
         var beta = context.GetOrtArgumentValue(swish, Swish.Beta);
-        return OrtKI.Mul(OrtKI.Sigmoid(input * beta), input).ToValue();
+        return Value.FromTensor(OrtKI.Mul(OrtKI.Sigmoid(input * beta), input).ToTensor(context.CurrentCall.CheckedTensorType));
     }
 
     /// <inheritdoc/>
