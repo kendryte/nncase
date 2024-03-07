@@ -40,7 +40,7 @@ internal static class CSourceExtensions
     {
         PrimType ptype => ptype.ToC(),
         PointerType => "uint8_t *",
-        VectorType vtype => $"simd_type<{vtype.ElemType.ToC()},{string.Join(",", vtype.Lanes)}>",
+        VectorType vtype => $"vector<{vtype.ElemType.ToC()},{string.Join(",", vtype.Lanes)}>",
         _ => throw new NotSupportedException(dataType.ToString()),
     };
 

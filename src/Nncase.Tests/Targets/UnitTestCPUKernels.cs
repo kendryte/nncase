@@ -5,7 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
+using System.Runtime;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,12 +36,27 @@ public interface ICpuKernelCase
     public static Placement DefaultPlacement { get; } = new Placement(new[] { 1 }, "t");
 }
 
+public sealed class PackUnpackCaseData : TheoryData<ICpuKernelCase>
+{
+    public PackUnpackCaseData()
+    {
+        if (RuntimeInformation.OSArchitecture == Architecture.Arm64 && RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            Add(new PackUnpackCase("PackUnpack0", new[] { 1, 32, 128 }, new[] { 32, 32 }, new[] { 1, 2 }));
+        }
+        else if (Vector256.IsHardwareAccelerated)
+        {
+            Add(new PackUnpackCase("PackUnpack0", new[] { 1, 32, 128 }, new[] { 8 }, new[] { 1 }));
+            Add(new PackUnpackCase("PackUnpack1", new[] { 1, 32, 128 }, new[] { 8 }, new[] { 2 }));
+        }
+    }
+}
+
 [AutoSetupTestMethod(InitSession = true)]
 public sealed class UnitTestCPUKernels : TestClassBase
 {
     public static readonly TheoryData<ICpuKernelCase> Cases = new()
     {
-        new PackUnpackCase("PackUnpack0", new[] { 1, 32, 128 }, new[] { 32, 32 }, new[] { 1, 2 }),
     };
 
     public UnitTestCPUKernels()
@@ -51,7 +68,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [MemberData(nameof(Cases))]
+    [ClassData(typeof(PackUnpackCaseData))]
     internal async Task Run(ICpuKernelCase kernelCase)
     {
         CompileOptions.DumpDir = Path.Join(CompileOptions.DumpDir, kernelCase.Name);
