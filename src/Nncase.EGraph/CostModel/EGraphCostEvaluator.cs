@@ -299,6 +299,13 @@ internal sealed class EGraphOpCostEvaluateContext : ICostEvaluateContext
         return (T)_arguments[parameter.Index].Nodes[0].Expr;
     }
 
+    public T[] GetArgumentExprs<T>(Op op, ParameterInfo parameter)
+      where T : Expr
+    {
+        System.Diagnostics.Trace.Assert(_arguments[parameter.Index].Nodes.Count > 0);
+        return _arguments[parameter.Index].Nodes.Select(x => (T)x.Expr).ToArray();
+    }
+
     public T GetArgumentType<T>(Op op, ParameterInfo parameter)
         where T : IRType
     {

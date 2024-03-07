@@ -158,7 +158,7 @@ public abstract class CustomOp : Op
 
 public abstract class QuantizeOp : Op
 {
-    public virtual QuantType[] SupportedQuantType()
+    public virtual List<Dictionary<ParameterInfo, DataType>> SupportedQuantType()
     {
         throw new InvalidOperationException("QuantizeOp should override SupportedQuantType");
     }

@@ -34,6 +34,12 @@ internal sealed class CostEvaluateContext : ICostEvaluateContext
         return (T)CurrentCall[parameter];
     }
 
+    public T[] GetArgumentExprs<T>(Op op, ParameterInfo parameter)
+      where T : Expr
+    {
+        return new T[] { (T)CurrentCall[parameter] };
+    }
+
     public Cost GetArgumentCost(Op op, ParameterInfo parameter)
     {
         return GetCost(GetArgumentExpr(op, parameter));

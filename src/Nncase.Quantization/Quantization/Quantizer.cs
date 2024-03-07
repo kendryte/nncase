@@ -35,34 +35,16 @@ internal partial class Quantizer
         _graph = graph;
         _expr = ExtractExpr();
         _quantizeOptions = quantizeOptions;
+
+        var dumpPath = Path.Join(DumpScope.Current.Directory, "..", "..", "..", "/");
+        EGraphPrinter.DumpEgraphAsDot(_graph, dumpPath + "_graph.dot");
+        CompilerServices.DumpIR(_expr, "_expr", dumpPath);
     }
 
     public async Task RunAsync(RunPassContext options)
     {
-        int srcBinSize = 8192;
-        int dstBinSize = 256;
-        if (_quantizeOptions.CalibrationDataset == null)
-        {
-            throw new InvalidOperationException($"{nameof(_quantizeOptions.CalibrationDataset)} is not set");
-        }
-
-        // 1.0 Get ranges
-        var ranges = await GetRangesAsync(_quantizeOptions.CalibrationDataset!);
-
-        // ranges = ranges.ToDictionary(item => item.Key, item => FixUpRange(item.Value));
-        ranges = ranges.ToDictionary(item => item.Key, item => item.Value.Select(v => FixUpRange(v)).ToArray());
-
-        if (_quantizeOptions.CalibrationMethod is CalibMethod.Kld)
-        {
-            // 1.1. Get histograms
-            var histograms = await GetHistogramsAsync(_quantizeOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);
-
-            // 1.2. Select best ranges
-            ranges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, _quantizeOptions.CalibrationMethod);
-        }
-
-        // 获取Extract之后Expr中FakeOP的List，以便后面进行处理
-        UpdateFakeNodesList(ranges);
+        var ranges = new Dictionary<Expr, ValueRange<float>[]>(ReferenceEqualityComparer.Instance);
+        var quantTypes = new Dictionary<Expr, Dictionary<ParameterInfo, DataType>>();
 
         // 如果量化方式由json文件指定，那么直接从json文件中读取
         if (_quantizeOptions.QuantScheme != string.Empty)
@@ -71,15 +53,38 @@ internal partial class Quantizer
         }
         else
         {
+            if (_quantizeOptions.CalibrationDataset == null)
+            {
+                throw new InvalidOperationException($"{nameof(_quantizeOptions.CalibrationDataset)} is not set");
+            }
+
+            // 1.0 Get ranges
+            ranges = (Dictionary<Expr, ValueRange<float>[]>)await GetRangesAsync(_quantizeOptions.CalibrationDataset!);
+
+            // ranges = ranges.ToDictionary(item => item.Key, item => FixUpRange(item.Value));
+            ranges = ranges.ToDictionary(item => item.Key, item => item.Value.Select(v => FixUpRange(v)).ToArray());
+
+            if (_quantizeOptions.CalibrationMethod is CalibMethod.Kld)
+            {
+                int srcBinSize = 8192;
+                int dstBinSize = 256;
+
+                // 1.1. Get histograms
+                var histograms = await GetHistogramsAsync(_quantizeOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);
+
+                // 1.2. Select best ranges
+                ranges = (Dictionary<Expr, ValueRange<float>[]>)GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, _quantizeOptions.CalibrationMethod);
+            }
+
             // 如果量化方式由config.toml文件指定，那么直接按照config.toml中指定的全局量化方式进行量化
             if (_quantizeOptions.SensitivityQuantEnabled == false)
             {
-                UpdateQuantInfoFromConfig(ranges);
+                UpdateQuantTypesByConfig(quantTypes);
             }
             else
             {
                 // 如果量化方式需要基于敏感度排序进行量化，则直接按照敏感度排序后的量化方式进行量化
-                UpdateQuantInfoFromSensitivity();
+                UpdateQuantTypesBySensitivity(quantTypes);
             }
 
             if (_quantizeOptions.ExportQuantScheme == true)
@@ -87,6 +92,8 @@ internal partial class Quantizer
                 ExportQuantScheme();
             }
         }
+
+        FillQuantConfig(ranges, quantTypes);
 
         AssignRanges();
     }
@@ -96,10 +103,33 @@ internal partial class Quantizer
         throw new NotImplementedException();
     }
 
-    private void UpdateQuantInfoFromConfig(IDictionary<Expr, ValueRange<float>[]> ranges)
+    private void UpdateQuantTypesByConfig(Dictionary<Expr, Dictionary<ParameterInfo, DataType>> quantTypes)
     {
         var quantType = _quantizeOptions.QuantType;
         var wQuantType = _quantizeOptions.WQuantType;
+        foreach (var (var, fakeNode) in _fakeNodesVars)
+        {
+            Dictionary<ParameterInfo, DataType> paraTypes = new();
+            var parameters = ((Op)((Call)fakeNode).Target).Parameters.ToArray();
+            for (int argIdx = 0; argIdx < ((Call)fakeNode).Arguments.Length; argIdx++)
+            {
+                if (parameters[argIdx].ParameterKind == ParameterKind.Weights)
+                {
+                    paraTypes.Add(parameters[argIdx], wQuantType);
+                }
+                else
+                {
+                    paraTypes.Add(parameters[argIdx], quantType);
+                }
+            }
+
+            quantTypes.Add(fakeNode, paraTypes);
+        }
+    }
+
+    private void FillQuantConfig(IDictionary<Expr, ValueRange<float>[]> ranges, Dictionary<Expr, Dictionary<ParameterInfo, DataType>> quantTypes)
+    {
+        var quantTypeDefault = DataTypes.UInt8;
         foreach (var (var, fakeNode) in _fakeNodesVars)
         {
             float[] argRange = new float[2];
@@ -111,12 +141,13 @@ internal partial class Quantizer
             var outConfigs = new List<QuantConfigData>();
             for (int argIdx = 0; argIdx < ((Call)fakeNode).Arguments.Length; argIdx++)
             {
+                var quantType = quantTypes[fakeNode].GetValueOrDefault(parameters[argIdx], quantTypeDefault);
                 var arg = ((Call)fakeNode).Arguments[argIdx];
                 if (arg is not Nncase.IR.None)
                 {
                     if (parameters[argIdx].ParameterKind == ParameterKind.Weights)
                     {
-                        var dType = wQuantType;
+                        var dType = quantType;
                         var weights = (TensorConst)((Call)fakeNode).Arguments[argIdx];
                         var weightsValue = weights.Value.ToArray<float>();
                         var oc = weights.CheckedShape[0].FixedValue;
@@ -133,16 +164,16 @@ internal partial class Quantizer
                 }
                 else
                 {
-                    var dType = quantType;
+                    var dType = quantTypeDefault;
                     argRange = new float[] { float.MinValue, float.MaxValue };
                     inputConfigs.Add(new QuantConfigData(new Tensor<float>(argRange, new[] { 1, 2 }), dType));
                 }
             }
 
-            // 输出range: 这里的range以及量化方式可能在后续中不会实际使用到
+            // 输出range: 这里的range以及量化方式在后续中不会实际使用到
             foreach (var outRange in ranges[fakeNode])
             {
-                var dType = quantType;
+                var dType = quantTypeDefault;
                 argRange = new float[] { outRange.Min, outRange.Max };
                 outConfigs.Add(new QuantConfigData(new Tensor<float>(argRange, new[] { 1, 2 }), dType));
             }
@@ -153,8 +184,10 @@ internal partial class Quantizer
         }
     }
 
-    private void UpdateQuantInfoFromSensitivity()
+    private void UpdateQuantTypesBySensitivity(Dictionary<Expr, Dictionary<ParameterInfo, DataType>> quantTypes)
     {
+        var sensitivities = new Dictionary<Expr, Dictionary<QuantConfig, Sensitivity>>();
+
         throw new NotImplementedException();
     }
 
@@ -192,7 +225,11 @@ internal partial class Quantizer
 
         _graph.Rebuild();
 
-        return _graph.Extract(_graph.Root!, null, out _);
+        var expr = _graph.Extract(_graph.Root!, null, out _);
+
+        ExprCollector.Collect(expr).OfType<Call>().Where(call => call.Target is QuantizeOp).ToList().ForEach(fakeCall => _fakeNodesVars![(Var)fakeCall.Arguments[^1]] = fakeCall);
+
+        return expr;
     }
 
     private void AssignRanges()
@@ -490,5 +527,36 @@ internal partial class Quantizer
         {
             throw new ArgumentException("Invalid calibration method.");
         }
+    }
+}
+
+public record Sensitivity
+{
+    private float _value;
+
+    public Sensitivity(float value)
+    {
+        _value = value;
+    }
+
+    public float Value
+    {
+        get { return _value; }
+        set { _value = value; }
+    }
+
+    // 隐式转换float到Sensitivity
+    public static implicit operator Sensitivity(float value) => new(value);
+
+    // 隐式转换Sensitivity到float
+    public static implicit operator float(Sensitivity sensitivity)
+    {
+        return sensitivity._value;
+    }
+
+    // 例如，一个显示为字符串的方法
+    public override string ToString()
+    {
+        return _value.ToString();
     }
 }

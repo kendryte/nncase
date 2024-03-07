@@ -229,6 +229,12 @@ internal sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
             return (T)_arguments[parameter.Index];
         }
 
+        public T[] GetArgumentExprs<T>(Op op, ParameterInfo parameter)
+          where T : Expr
+        {
+            return new T[] { (T)_arguments[parameter.Index] };
+        }
+
         public T GetArgumentType<T>(Op op, ParameterInfo parameter)
             where T : IRType
         {
