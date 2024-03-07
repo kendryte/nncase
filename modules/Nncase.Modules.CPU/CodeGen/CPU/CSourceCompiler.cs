@@ -171,9 +171,9 @@ public class CSourceCompiler
 #endif
         var script = $"""
             cd {sourcePath} &&
-            /Users/lisa/miniforge3/envs/ci/bin/cmake -E remove_directory build &&
-            /Users/lisa/miniforge3/envs/ci/bin/cmake -G Ninja -S . -B build -DCMAKE_BUILD_TYPE={config} &&
-            /Users/lisa/miniforge3/envs/ci/bin/cmake --build build --config {config}
+            cmake -E remove_directory build &&
+            cmake -G Ninja -S . -B build -DCMAKE_BUILD_TYPE={config} &&
+            cmake --build build --config {config}
             """.Replace("\r\n", " ", StringComparison.Ordinal);
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
