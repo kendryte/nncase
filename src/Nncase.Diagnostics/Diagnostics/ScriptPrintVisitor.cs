@@ -132,6 +132,8 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         PrimType ptype => ptype.GetDisplayName() + (type.Shape.IsScalar ? string.Empty : type.Shape.ToString()),
         PointerType { ElemType: PrimType etype } => $"*{etype.GetDisplayName()}",
         ValueType vtype => vtype.GetDisplayName() + (type.Shape.IsScalar ? string.Empty : type.Shape.ToString()),
+        VectorType vtype => $"{vtype.ElemType.GetDisplayName()}<{string.Join(",", vtype.Lanes)}>" + (type.Shape.IsScalar ? string.Empty : type.Shape.ToString()),
+
         _ => throw new NotSupportedException(type.DType.GetType().Name),
     };
 

@@ -14,9 +14,13 @@
  */
 #pragma once
 #include "arm_math.h"
+#include <nncase/ntt/vector_type.h>
 
 namespace std {
-inline float32x4_t cos(float32x4_t v) { return cos_ps(v); }
+inline nncase::ntt::vector<float32_t, 4>
+cos(nncase::ntt::vector<float32_t, 4> v) {
+    return cos_ps(v);
+}
 } // namespace std
 
 namespace nncase::ntt {

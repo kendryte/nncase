@@ -21,47 +21,46 @@
 namespace nncase::ntt {
 namespace detail {
 
-template <class InShape, class OutShape, class InStrides, class OutStrides,
-          size_t Axis>
+template <class InShape, class InElemShape, class OutShape, class InStrides,
+          class OutStrides, size_t... Axes>
 class unpack_impl;
 
-template <size_t... InDims, size_t... OutDims, size_t... InStrides,
-          size_t... OutStrides, size_t Axis>
-class unpack_impl<fixed_shape<InDims...>, fixed_shape<OutDims...>,
-                  fixed_strides<InStrides...>, fixed_strides<OutStrides...>,
-                  Axis> {
+template <size_t... InDims, size_t... InElemDims, size_t... OutDims,
+          size_t... InStrides, size_t... OutStrides, size_t... Axes>
+class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>,
+                  fixed_shape<OutDims...>, fixed_strides<InStrides...>,
+                  fixed_strides<OutStrides...>, Axes...> {
   public:
     template <class TIn, class TOut>
     constexpr void operator()(const TIn &input, TOut &&output) {
         using TVec = typename TIn::element_type;
         using TScalar = typename std::decay_t<TOut>::element_type;
-        constexpr size_t lanes = sizeof(TVec) / sizeof(TScalar);
-        apply(input.shape(), [&](auto input_index) {
-            std::array<TScalar, lanes> arr;
-            const auto output_index =
-                shape_infer::unpacked_index_by_shape<lanes, Axis>(input_index);
-            const TVec vec = input(input_index);
-            const size_t output_offset =
-                linear_offset(output_index, output.strides());
-            auto iter = output.buffer().begin() + output_offset;
-            unpack_elemt(arr, vec);
-            loop<lanes>([&](auto i) {
-                if (output_index[Axis] + i <= output.shape()[Axis]) {
-                    *(iter + i * output.strides()[Axis]) = arr[i];
-                }
+        constexpr auto axes = std::array<size_t, sizeof...(Axes)>{Axes...};
+        constexpr auto rank = TIn::shape_type::rank();
+        constexpr auto elem_rank = TVec::shape_type::rank();
+        constexpr fixed_shape<InDims..., InElemDims...> domain{};
+
+        apply(domain, [&](auto index) {
+            auto in_index = slice_index<rank>(index);
+            auto elem_index = slice_index<elem_rank>(index, rank);
+            auto out_index = slice_index<rank>(index);
+            loop<axes.size()>([&](auto i) {
+                out_index[axes[i]] =
+                    out_index[axes[i]] * TVec::shape()[i] + index[rank + i];
             });
+            output(out_index) = input(in_index)(elem_index);
         });
     }
 };
 
 } // namespace detail
 
-template <size_t Axis, class TIn, class TOut>
+template <size_t... Axes, class TIn, class TOut>
 void unpack(const TIn &input, TOut &&output) noexcept {
-    detail::unpack_impl<typename TIn::shape_type,
-                        typename std::decay_t<TOut>::shape_type,
-                        typename TIn::strides_type,
-                        typename std::decay_t<TOut>::strides_type, Axis>
+    detail::unpack_impl<
+        typename TIn::shape_type, typename TIn::element_type::shape_type,
+        typename std::decay_t<TOut>::shape_type, typename TIn::strides_type,
+        typename std::decay_t<TOut>::strides_type, Axes...>
         impl;
     impl(input, output);
 }

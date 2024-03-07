@@ -15,8 +15,7 @@ namespace Nncase.TIR.CPU;
 /// <summary>
 /// Pack expression.
 /// </summary>
-[PatternFunctionalGenerator]
-public sealed partial class Pack : Op
+public sealed partial class Pack : CPUKernelOp
 {
     /// <summary>
     /// Gets input.

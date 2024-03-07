@@ -6,8 +6,7 @@ using Nncase.PatternMatch;
 
 namespace Nncase.TIR.CPU;
 
-[PatternFunctionalGenerator]
-public sealed partial class PackedSoftmax : Op
+public sealed partial class PackedSoftmax : CPUKernelOp
 {
     public static readonly ParameterInfo Input = new(typeof(PackedSoftmax), 0, "input", ParameterKind.Input);
 

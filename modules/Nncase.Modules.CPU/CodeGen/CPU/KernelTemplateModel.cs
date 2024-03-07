@@ -28,3 +28,9 @@ public class BinaryKernelTemplateModel : KernelTemplateModel
 {
     public BinaryOp BinaryOp { get; set; }
 }
+
+public class TypedKernelTemplateModel<T> : KernelTemplateModel
+    where T : IR.Op
+{
+    public T Target { get; set; }
+}

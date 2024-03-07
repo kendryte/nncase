@@ -15,8 +15,7 @@ namespace Nncase.TIR.CPU;
 /// <summary>
 /// Unpack expression.
 /// </summary>
-[PatternFunctionalGenerator]
-public sealed partial class Unpack : Op
+public sealed partial class Unpack : CPUKernelOp
 {
     /// <summary>
     /// Gets input.

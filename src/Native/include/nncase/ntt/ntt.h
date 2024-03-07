@@ -19,6 +19,6 @@
 #include "kernels/pack.h"
 #include "kernels/unpack.h"
 #include "kernels/matmul.h"
-#include "simd_type.h"
+#include "vector_type.h"
 #include "tensor.h"
 #include "utility.h"

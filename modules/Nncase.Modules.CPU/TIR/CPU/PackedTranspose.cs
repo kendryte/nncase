@@ -7,8 +7,7 @@ using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.TIR.CPU;
 
-[PatternFunctionalGenerator]
-public sealed partial class PackedTranspose : Op
+public sealed partial class PackedTranspose : CPUKernelOp
 {
     /// <summary>
     /// Gets input.
