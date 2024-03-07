@@ -128,7 +128,7 @@ int main() {
     // fixed unpack
     {
         ntt::tensor<float, ntt::fixed_shape<16, 64, 32>> ta;
-        ntt::tensor<ntt::tensor<float, ntt::fixed_shape<4>>,
+        ntt::tensor<ntt::vector<float, 4>,
                     ntt::fixed_shape<16, 16, 32>>
             tb;
         ntt::tensor<float, ntt::fixed_shape<16, 64, 32>> tc;
@@ -145,7 +145,7 @@ int main() {
     // fixed unpack with pad
     {
         ntt::tensor<float, ntt::fixed_shape<16, 62, 32>> ta;
-        ntt::tensor<ntt::tensor<float, ntt::fixed_shape<4>>,
+        ntt::tensor<ntt::vector<float,4>,
                     ntt::fixed_shape<16, 16, 32>>
             tb;
         ntt::tensor<float, ntt::fixed_shape<16, 62, 32>> tc;

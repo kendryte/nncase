@@ -19,26 +19,6 @@
 
 namespace nncase::ntt {
 template <class T, size_t... Lanes> struct native_vector_type;
-//  {
-// using value_type = T;
-
-// using shape = fixed_shape<Lanes...>;
-// using strides = default_strides_type<shape>;
-
-// T elements[shape::length()];
-
-// constexpr size_t length_at(size_t i) { return shape::at(i); }
-
-// constexpr size_t rank() { return shape::rank(); }
-
-// constexpr T operator[](size_t index) const noexcept {
-//     return elements[index];
-// }
-
-// constexpr T operator()(size_t i, size_t j) const noexcept {
-//     return elements[i * Width + j];
-// }
-// };
 
 #ifdef __ARM_NEON__
 #include <nncase/ntt/kernels/arch/arm/vector_types.h>
@@ -66,14 +46,17 @@ template <class T, size_t... Lanes> struct vector {
 
     constexpr operator value_type &() noexcept { return v_; }
 
-    constexpr const shape_type shape() const noexcept { return shape_type{}; }
+    static constexpr auto shape() noexcept { return shape_type{}; }
 
-    constexpr const shape_type strides() const noexcept {
-        return strides_type{};
-    }
+    static constexpr auto strides() noexcept { return strides_type{}; }
 
     constexpr auto buffer() noexcept {
         return std::span(reinterpret_cast<element_type *>(&v_),
+                         shape_type::length());
+    }
+
+    constexpr auto buffer() const noexcept {
+        return std::span(reinterpret_cast<const element_type *>(&v_),
                          shape_type::length());
     }
 
