@@ -22,7 +22,6 @@
 #include <nncase/value.h>
 #include <string>
 #include <unordered_map>
-using nlohmann::json;
 
 extern "C" {
 typedef void *clr_object_handle_t;
@@ -451,7 +450,7 @@ class shape_bucket_options : public clr_object_base {
 
     std::map<std::string, std::tuple<int, int>> range_info() { return {}; }
     void range_info(std::map<std::string, std::tuple<int, int>> value) {
-        json j = value;
+        nlohmann::json j = value;
         std::string s = j.dump();
         nncase_clr_api()->shape_bucket_options_set_range_info(
             obj_.get(), s.c_str(), s.length());
@@ -465,7 +464,7 @@ class shape_bucket_options : public clr_object_base {
 
     std::map<std::string, int> fix_var_map() { return {}; }
     void fix_var_map(std::map<std::string, int> value) {
-        json j = value;
+        nlohmann::json j = value;
         std::string s = j.dump();
         nncase_clr_api()->shape_bucket_options_set_fix_var_map(
             obj_.get(), s.c_str(), s.length());
