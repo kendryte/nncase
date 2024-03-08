@@ -71,21 +71,4 @@ public static class TIRUtilities
             IR.F.Math.Max(0, t.First.Start),
             IR.F.Math.Min(t.Second.FixedValue, t.First.Stop),
             t.First.Step)).ToArray();
-
-    public static bool TryGetFixedRegions(TIR.BufferRegion region, out (int Start, int Stop, int Step)[] slice)
-    {
-        slice = new (int Start, int Stop, int Step)[region.Region.Length];
-        for (int i = 0; i < region.Region.Length; i++)
-        {
-            var rg = region.Region[i];
-            if (rg is not Range { Start: IR.TensorConst start, Stop: IR.TensorConst stop, Step: IR.TensorConst step })
-            {
-                return false;
-            }
-
-            slice[i] = (start.Value.ToScalar<int>(), stop.Value.ToScalar<int>(), step.Value.ToScalar<int>());
-        }
-
-        return true;
-    }
 }
