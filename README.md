@@ -109,7 +109,7 @@ All version of `nncase` and `nncase-kpu` in [Release](https://github.com/kendryt
 
 |[eye gaze](https://developer.canaan-creative.com/devAdmin/model/download?mid=be978f1f38b8aa2f2b649185a10c2e9c&filePath=/upload/model/official/k230/yolop_lane_seg/yolop_lane_seg.zip)  | [space_resize](https://developer.canaan-creative.com/devAdmin/model/download?mid=7d48cb68a499dd54daf0ced14549b142&filePath=/upload/model/official/k230/space_resize/space_resize.zip) | [face pose](https://developer.canaan-creative.com/devAdmin/model/download?mid=5b87c02b969a9e60d48b08e357c20e31&filePath=/upload/model/official/k230/face_pose/face_pose.zip) |
 |---|---|---|
-|![](https://developer.canaan-creative.com/upload/model/official/k230/eye_gaze/eye_gaze_result.gif) |![](https://developer.canaan-creative.com/upload/model/official/k230/space_resize/space_resize.gif)|![](https://developer.canaan-creative.com/upload/model/official/k230/face_pose/face_pose_result.gif)|
+|<img src="https://developer.canaan-creative.com/upload/model/official/k230/eye_gaze/eye_gaze_result.gif"  alt="gif"> | <img src="https://developer.canaan-creative.com/upload/model/official/k230/space_resize/space_resize.gif" alt="gif">| <img src="https://developer.canaan-creative.com/upload/model/official/k230/face_pose/face_pose_result.gif" alt="gif">|
 
 ---
 
