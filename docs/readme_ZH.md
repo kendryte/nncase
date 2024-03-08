@@ -1,46 +1,44 @@
 <div align="center">
-<img src="docs/logo.png" width="400" alt="nncase" />
+<img src="logo.png" width="400" alt="nncase" />
 </div>
 
 [![GitHub repository](https://img.shields.io/badge/github-repository-blue?logo=github&style=plastic)](https://github.com/kendryte/nncase) [![Gitee repository](https://img.shields.io/badge/gitee-repository-blue?logo=gitee&style=plastic)](https://gitee.com/kendryte/nncase) [![GitHub release](https://img.shields.io/github/v/release/kendryte/nncase?color=brightgreen&display_name=tag&logo=github&style=plastic)](https://github.com/kendryte/nncase/releases)
 
-[切换中文](docs/readme_ZH.md)
+[Switch to English](../README.md)
 
-`nncase` is a neural network compiler for AI accelerators.
-
+`nncase` 是一个为 AI 加速器设计的神经网络编译器。
+技术交流 QQ 群：790699378 答案：人工智能
 Telegram: [nncase community](https://t.me/joinchat/PPcEPZMLaTViNDI1)
-Technical Discussion QQ Group: 790699378 .   Answer: 人工智能
 
 [TOC]
 
 ---
 
-## Architecture
+## 架构
 
 <div align="center">
-<img src="docs/imgs/arch.jpeg" alt="nncase arch" />
+<img src="imgs/arch.jpeg" alt="nncase arch" />
 </div>
 
 ---
 
-## Build from source
+## 源码编译
 
-**It is recommended to install nncase directly through `pip`. At present, the source code related to k510 and K230 chips is not open source, so it is not possible to use `nncase-K510` and `nncase-kpu` (K230) directly by compiling source code.**
+**推荐直接通过`pip`安装nncase来使用，目前K510、K230芯片相关的源码并未开源，因此无法直接通过编译源码来使用`nncase-k510`和`nncase-kpu`(K230)。**
 
-
-If there are operators in your model that `nncase` does not yet support, you can request them in the issue or implement them yourself and submit the PR. Later versions will be integrated, or contact us to provide a temporary version.
-Here are the steps to compile `nncase`.
+如果你的模型中存在`nncase`尚未支持的算子，可以在issue中提出需求，或者自己实现并提交PR。后续版本将会进行集成，或者联系我们提供临时版本。
+以下为编译 `nncase` 的步骤
 
 ```shell
 git clone https://github.com/kendryte/nncase.git
 cd nncase
 mkdir build && cd build
 
-# Use Ninja
+# 使用Ninja编译
 cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./install
 ninja && ninja install
 
-# Use make
+# 使用make编译
 cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./install
 make && make install
 ```
@@ -49,14 +47,13 @@ make && make install
 
 ## K230
 
-- [Usage](./docs/USAGE_v2_EN.md)
-- [FAQ](./docs/FAQ_EN.md)
-- [Example](./examples/user_guide/k230_simulate-EN.ipynb)
-- [Colab run](https://colab.research.google.com/drive/1m8TTree096m5VHmq-Uc60gXyltVCgnRb?usp=sharing)
-- [ *Version relationship between `nncase` and `K230_SDK`* ](https://developer.canaan-creative.com/k230/dev/zh/03_other/K230_SDK_%E7%89%88%E6%9C%AC%E8%AF%B4%E6%98%8E.html#id15)
+- [使用说明](./USAGE_v2.md)
+- [常见问题](./FAQ_ZH.md)
+- [示例](../examples/user_guide/k230_simulate-ZH.ipynb)
+- [Colab 在线示例](https://colab.research.google.com/drive/1m8TTree096m5VHmq-Uc60gXyltVCgnRb?usp=sharing)
+- [ *nncase与K230_SDK版本对应关系说明* ](https://developer.canaan-creative.com/k230/dev/zh/03_other/K230_SDK_%E7%89%88%E6%9C%AC%E8%AF%B4%E6%98%8E.html#id15)
 
-
-### Install
+### 安装
 
 - Linux：
 
@@ -68,18 +65,17 @@ make && make install
 
     ```shell
     1. pip install nncase
-    2. Download `nncase_kpu-2.x.x-py2.py3-none-win_amd64.whl` in below link.
+    2. 在下面release链接中下载`nncase_kpu-2.x.x-py2.py3-none-win_amd64.whl`
     3. pip install nncase_kpu-2.x.x-py2.py3-none-win_amd64.whl
     ```
 
-All version of `nncase` and `nncase-kpu` in [Release](https://github.com/kendryte/nncase/releases).
+已经发布Python包见[Release](https://github.com/kendryte/nncase/releases)页面。
 
-### Supported operators
+### 支持的算子
 
 - [TFLite ops](./docs/tflite_ops.md)
 - [Caffe ops](./docs/caffe_ops.md)
 - [ONNX ops](./docs/onnx_ops.md)
-
 
 ### benchmark test
 
@@ -105,7 +101,7 @@ All version of `nncase` and `nncase-kpu` in [Release](https://github.com/kendryt
 </table>
 
 
-### Demo
+### Demo示例
 
 |[eye gaze](https://developer.canaan-creative.com/devAdmin/model/download?mid=be978f1f38b8aa2f2b649185a10c2e9c&filePath=/upload/model/official/k230/yolop_lane_seg/yolop_lane_seg.zip)  | [space_resize](https://developer.canaan-creative.com/devAdmin/model/download?mid=7d48cb68a499dd54daf0ced14549b142&filePath=/upload/model/official/k230/space_resize/space_resize.zip) | [face pose](https://developer.canaan-creative.com/devAdmin/model/download?mid=5b87c02b969a9e60d48b08e357c20e31&filePath=/upload/model/official/k230/face_pose/face_pose.zip) |
 |---|---|---|
@@ -115,11 +111,11 @@ All version of `nncase` and `nncase-kpu` in [Release](https://github.com/kendryt
 
 ## K210/K510
 
-- [Usage](https://github.com/kendryte/nncase/blob/release/1.0/docs/USAGE_EN.md)
-- [FAQ](https://github.com/kendryte/nncase/blob/release/1.0/docs/FAQ_EN.md)
-- [Example](https://github.com/kendryte/nncase/blob/release/1.0/examples/user_guide/)
+- [使用说明](https://github.com/kendryte/nncase/blob/release/1.0/docs/USAGE_ZH.md)
+- [常见问题](https://github.com/kendryte/nncase/blob/release/1.0/docs/FAQ_ZH.md)
+- [示例程序](https://github.com/kendryte/nncase/blob/release/1.0/examples/user_guide/)
 
-### Supported operators
+### 支持的算子
 
 - [TFLite ops](https://github.com/kendryte/nncase/blob/release/1.0/docs/tflite_ops.md)
 - [Caffe ops](https://github.com/kendryte/nncase/blob/release/1.0/docs/caffe_ops.md)
@@ -127,42 +123,41 @@ All version of `nncase` and `nncase-kpu` in [Release](https://github.com/kendryt
 
 ---
 
-## Features
+## 特性
 
-- Supports multiple inputs and outputs and multi-branch structure
-- Static memory allocation, no heap memory acquired
-- Operators fusion and optimizations
-- Support float and quantized uint8 inference
-- Support post quantization from float model with calibration dataset
-- Flat model with zero copy loading
+- 支持多输入输出网络，支持多分支结构
+- 静态内存分配，不需要堆内存
+- 算子合并和优化
+- 支持 float 和量化 uint8 推理
+- 支持训练后量化，使用浮点模型和量化校准集
+- 平坦模型，支持零拷贝加载
 
 ---
 
-## Resources
+## 资源
 
-### Kendryte developer community
+### 嘉楠开发者社区
 
-[Kendryte developer community](https://developer.canaan-creative.com/resource) contains all resources related to K210, K510, and K230.
-- 资料下载 --> Pre-compiled images available for the development boards corresponding to the three chips.
-- 文档 --> Documents corresponding to the three chips.
-- 模型库 --> Examples and code for industrial, security, educational and other scenarios that can be run on the K210 and K230.
-- 模型训练 --> The model training platform for K210 and K230 supports the training of various scenarios.
+[嘉楠开发者社区](https://developer.canaan-creative.com/resource)中包含所有K210、K510、K230相关的资源，包括：
+- 资料下载 --> 三款芯片对应的开发板可使用的预编译镜像。
+- 文档 --> 三款芯片及不同版本对应的文档。
+- 模型库 --> K210、K230上可运行的应用于工业、安防、教育等场景的示例以及代码。
+- 模型训练 --> 针对K210、K230的模型训练平台，支持多种场景的训练。
 
 ### Bilibili
-- [Kendryte AI tutorial and application demonstration](https://space.bilibili.com/677429436)
+- [嘉楠 AI教程及应用演示](https://space.bilibili.com/677429436)
 
-### K210 related repo
+### K210相关仓库
 
 - [K210_Yolo_framework](https://github.com/zhen8838/K210_Yolo_framework)
 - [Shts!&#39;s Blog (Japanese)](https://www.shtsno24.tokyo/2020/03/nncase-v020.html)
-- [Examples](https://github.com/kendryte/canmv_examples/tree/main/01-K210)
+- [示例脚本](https://github.com/kendryte/canmv_examples/tree/main/01-K210)
 
-### K230 related repo
+### K230相关仓库
 
 - C: [K230_SDK](https://github.com/kendryte/k230_sdk)
-    - [Documents](https://github.com/kendryte/k230_docs)
-    - [K230 end-to-end tutorial](https://github.com/kendryte/K230_training_scripts)
+    - [文档](https://github.com/kendryte/k230_docs)
+    - [K230端到端全流程教程](https://github.com/kendryte/K230_training_scripts)
 - MicroPython: [Canmv_k230](https://github.com/kendryte/k230_canmv)
-    - [Documents](https://github.com/kendryte/k230_canmv_docs)
-    - [Examples](https://github.com/kendryte/canmv_examples/tree/main/02-K230)
----
+    - [文档](https://github.com/kendryte/k230_canmv_docs)
+    - [示例脚本](https://github.com/kendryte/canmv_examples/tree/main/02-K230)
