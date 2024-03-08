@@ -16,9 +16,11 @@
 #include "shape.h"
 #include <array>
 #include <cstddef>
+#include <type_traits>
 
 namespace nncase::ntt {
 template <class T, size_t... Lanes> struct native_vector_type;
+}
 
 #ifdef __ARM_NEON__
 #include <nncase/ntt/kernels/arch/arm/vector_types.h>
@@ -28,27 +30,58 @@ template <class T, size_t... Lanes> struct native_vector_type;
 #include <nncase/ntt/kernels/arch/x86_64/vector_types.h>
 #endif
 
+namespace nncase::ntt {
+
 template <class T, size_t... Lanes> struct vector {
     using element_type = T;
-    using value_type = typename native_vector_type<T, Lanes...>::type;
+    using value_type = native_vector_type<T, Lanes...>;
+    using native_type = typename value_type::type;
     using shape_type = fixed_shape<Lanes...>;
     using strides_type = typename default_strides_type<shape_type>::type;
 
   private:
-    alignas(sizeof(value_type)) value_type v_;
+    alignas(sizeof(native_type)) native_type v_;
 
   public:
     vector() = default;
 
-    vector(const value_type &vec) : v_(vec) {}
+    vector(const native_type &vec) : v_(vec) {}
 
-    constexpr operator value_type() const noexcept { return v_; }
+    vector(const element_type &v) : v_(value_type::from_element(v)) {}
 
-    constexpr operator value_type &() noexcept { return v_; }
+    template <typename TOther>
+        requires std::is_nothrow_convertible_v<TOther, element_type>
+    vector(const TOther &v) : v_(value_type::from_element(v)) {}
+
+    constexpr operator native_type() const noexcept { return v_; }
+
+    constexpr operator native_type &() noexcept { return v_; }
 
     static constexpr auto shape() noexcept { return shape_type{}; }
 
     static constexpr auto strides() noexcept { return strides_type{}; }
+
+    // template<typename TOther>
+    // requires std::is_nothrow_convertible_v<TOther, element_type>
+    // static auto from(const TOther &other) {
+    //   return  ((element_type)other)
+    // }
+
+    constexpr vector<T, Lanes...> operator+(const vector<T, Lanes...> &rhs) {
+        return v_ + rhs.v_;
+    }
+
+    constexpr vector<T, Lanes...> operator-(const vector<T, Lanes...> &rhs) {
+        return v_ - rhs.v_;
+    }
+
+    constexpr vector<T, Lanes...> operator*(const vector<T, Lanes...> &rhs) {
+        return v_ * rhs.v_;
+    }
+
+    constexpr vector<T, Lanes...> operator/(const vector<T, Lanes...> &rhs) {
+        return v_ / rhs.v_;
+    }
 
     constexpr auto buffer() noexcept {
         return std::span(reinterpret_cast<element_type *>(&v_),

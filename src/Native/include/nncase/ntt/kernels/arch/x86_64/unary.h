@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "../../../vector_type.h"
 #include "avx_mathfun.h"
 #include <immintrin.h>
 
@@ -27,10 +28,12 @@ inline __m128 cos(__m128 v) {
     float arr[4];
     _mm_store_ps(arr, v);
     for (size_t i = 0; i < 4; i++) {
-      arr[i] = cosf(arr[i]);
+        arr[i] = cosf(arr[i]);
     }
     return _mm_load_ps(arr);
 }
+
+inline __m128 sqrt(__m128 v) { return _mm_sqrt_ps(v); }
 } // namespace std
 
 namespace nncase::ntt::arch {
@@ -48,3 +51,13 @@ constexpr void unary(Op &&op, const T *input_p, T *output_p, size_t extent) {
     }
 }
 } // namespace nncase::ntt::arch
+
+// namespace nncase::ntt::mathops {
+// template <> struct sqrt<ntt::vector<float, 4>> {
+//     ntt::vector<float, 4> operator()(ntt::vector<float, 4> v) const noexcept
+//     {
+//         return std::sqrt(v);
+//     }
+// };
+
+// } // namespace nncase::ntt::mathops

@@ -21,21 +21,6 @@
 namespace nncase::ntt {
 namespace detail {
 
-template <size_t OutRank, size_t InRank, size_t... Ints>
-constexpr ranked_shape<OutRank>
-slice_index(const ranked_shape<InRank> &index, const size_t offset,
-            std::index_sequence<Ints...>) noexcept {
-    return ranked_shape<OutRank>{index[offset + Ints]...};
-}
-
-template <size_t OutRank, size_t InRank>
-constexpr ranked_shape<OutRank> slice_index(const ranked_shape<InRank> &index,
-                                            const size_t offset = 0) {
-    static_assert(OutRank <= InRank, "the out rank must less then inRank");
-    return slice_index<OutRank>(index, offset,
-                                std::make_index_sequence<OutRank>{});
-}
-
 template <class InShape, class OutShape, class OutElemShape, class InStrides,
           class OutStrides, size_t... Axes>
 class pack_impl;

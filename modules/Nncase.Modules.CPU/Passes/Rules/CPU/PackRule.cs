@@ -21,7 +21,7 @@ namespace Nncase.Passes.Rules.CPU;
 
 public abstract class PackRule : RewriteRule<Pattern>
 {
-    public const int Lane = 32;
+    public int Lane { get; set; } = 32;
 
     public override Expr? GetReplace(IMatchResult result, RunPassContext options) => throw new NotImplementedException();
 }

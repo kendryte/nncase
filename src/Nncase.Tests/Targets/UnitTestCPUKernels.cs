@@ -42,12 +42,40 @@ public sealed class PackUnpackCaseData : TheoryData<ICpuKernelCase>
     {
         if (RuntimeInformation.OSArchitecture == Architecture.Arm64 && RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            Add(new PackUnpackCase("PackUnpack0", new[] { 1, 32, 128 }, new[] { 32, 32 }, new[] { 1, 2 }));
+            // Add(new PackUnpackCase("PackUnpack0", new[] { 1, 32, 128 }, new[] { 32, 32 }, new[] { 1, 2 }));
+            Add(new PackUnpackCase("PackUnpack0", new[] { 1, 32, 128 }, new[] { 4 }, new[] { 1 }));
         }
         else if (Vector256.IsHardwareAccelerated)
         {
             Add(new PackUnpackCase("PackUnpack0", new[] { 1, 32, 128 }, new[] { 8 }, new[] { 1 }));
             Add(new PackUnpackCase("PackUnpack1", new[] { 1, 32, 128 }, new[] { 8 }, new[] { 2 }));
+        }
+    }
+}
+
+public sealed class PackLayerNormCaseData : TheoryData<ICpuKernelCase>
+{
+    public PackLayerNormCaseData()
+    {
+        var shape = new[] { 32, 64, 128 };
+        var axis = 1;
+
+        var input = new Var(new TensorType(DataTypes.Float32, shape));
+        var pshape = shape.Skip(axis).ToArray();
+        var scale = new Var(new TensorType(DataTypes.Float32, pshape));
+        var bias = new Var(new TensorType(DataTypes.Float32, pshape));
+        var pre = IR.F.NN.LayerNorm(axis, 1e-6f, input, scale, bias, false);
+
+        var rule = new Passes.Rules.CPU.PackLayerNorm
+        {
+            Lane = 4,
+        };
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
+        int cnt = 0;
+        foreach (var post in posts)
+        {
+            Add(new PackLayerNormCase($"PackLayerNormCase_{cnt++}", new[] { input }, post));
         }
     }
 }
@@ -69,9 +97,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     [Theory]
     [ClassData(typeof(PackUnpackCaseData))]
+    [ClassData(typeof(PackLayerNormCaseData))]
     internal async Task Run(ICpuKernelCase kernelCase)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
             return;
         }
 
@@ -142,6 +172,32 @@ internal sealed class PackUnpackCase : ICpuKernelCase
         }
 
         Vars = new[] { input };
+    }
+
+    public string Name { get; }
+
+    public Fusion Fusion { get; }
+
+    public IReadOnlyList<Var> Vars { get; }
+
+    public IReadOnlyList<Tensor> Inputs
+    {
+        get
+        {
+            return Vars.Select(v => IR.F.Random.Uniform(v.CheckedDataType, 30, 0, 1, v.CheckedShape).Evaluate().AsTensor()).ToArray();
+        }
+    }
+
+    public override string ToString() => Name;
+}
+
+internal sealed class PackLayerNormCase : ICpuKernelCase
+{
+    public PackLayerNormCase(string name, Var[] vars, Expr body)
+    {
+        Name = name;
+        Fusion = new Fusion(Name + "_kernel", CPUTarget.Kind, body, vars);
+        Vars = vars;
     }
 
     public string Name { get; }

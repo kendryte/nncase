@@ -128,9 +128,7 @@ int main() {
     // fixed unpack
     {
         ntt::tensor<float, ntt::fixed_shape<16, 64, 32>> ta;
-        ntt::tensor<ntt::vector<float, 4>,
-                    ntt::fixed_shape<16, 16, 32>>
-            tb;
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<16, 16, 32>> tb;
         ntt::tensor<float, ntt::fixed_shape<16, 64, 32>> tc;
         std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
         ntt::pack<1>(ta, tb.view());
@@ -145,9 +143,7 @@ int main() {
     // fixed unpack with pad
     {
         ntt::tensor<float, ntt::fixed_shape<16, 62, 32>> ta;
-        ntt::tensor<ntt::vector<float,4>,
-                    ntt::fixed_shape<16, 16, 32>>
-            tb;
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<16, 16, 32>> tb;
         ntt::tensor<float, ntt::fixed_shape<16, 62, 32>> tc;
         std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
         ntt::pack<1>(ta, tb);
@@ -157,6 +153,22 @@ int main() {
             NNCASE_UNUSED auto c = tc(index);
             assert(a == c);
         });
+    }
+    // layer_norm
+    {
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 2, 3, 4>> ta;
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<4>> ts;
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<4>> tb;
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 2, 3, 4>> to;
+        // std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        // std::iota(ts.buffer().begin(), ts.buffer().end(), 0.f);
+        ntt::layer_norm<3>(ta, ts, tb, to, ntt::vector<float, 4>{1e-6f});
+        // assert(tc(0, 0) == 28.f);
+        // assert(tc(0, 1) == 34.f);
+        // assert(tc(1, 0) == 76.f);
+        // assert(tc(1, 1) == 98.f);
+        // assert(tc(2, 0) == 124.f);
+        // assert(tc(2, 1) == 162.f);
     }
 
     // // matmul
