@@ -11,20 +11,18 @@ using Nncase.CostModel;
 using Nncase.Diagnostics;
 using Nncase.IR;
 
-namespace Nncase.Passes;
+namespace Nncase.Passes.EGraphExtractors;
 
-public delegate void EGraphExtractConstrains(CpModel model, IReadOnlyDictionary<ENode, BoolVar> vars);
-
-internal class EGraphExtractor
+internal class SatExtractor : IExtractor
 {
     private readonly EGraphCostModel _costModel;
 
-    public EGraphExtractor(EGraphCostModel costModel)
+    public SatExtractor(EGraphCostModel costModel)
     {
         _costModel = costModel;
     }
 
-    public Expr Extract(EClass root, IEGraph eGraph, EGraphExtractConstrains[] constrains)
+    public Expr Extract(EClass root, IEGraph eGraph, out IReadOnlyDictionary<ENode, bool> picks)
     {
         var cpmodel = new CpModel();
 
@@ -68,11 +66,6 @@ internal class EGraphExtractor
             }
 
             EliminateAllCycles(root, new(), new(), visited, cpmodel, vars);
-        }
-
-        foreach (var constrain in constrains)
-        {
-            constrain(cpmodel, vars);
         }
 
         // 3. add pick weights for all enode.
@@ -128,7 +121,7 @@ internal class EGraphExtractor
             throw new InvalidProgramException("SatExtract Failed!");
         }
 
-        var picks = eGraph.Nodes.ToDictionary(e => e, e => solver.BooleanValue(vars[e]));
+        picks = eGraph.Nodes.ToDictionary(e => e, e => solver.BooleanValue(vars[e]));
         using (var dumpStream = enableDump ? DumpScope.Current.OpenFile("Costs/Pick.dot") : Stream.Null)
         {
             EGraphPrinter.DumpEgraphAsDot(eGraph, _costModel, picks, root.Find(), dumpStream);
