@@ -32,7 +32,7 @@ template <class T, size_t... Lanes> struct vector {
     using element_type = T;
     using value_type = typename native_vector_type<T, Lanes...>::type;
     using shape_type = fixed_shape<Lanes...>;
-    using strides_type = default_strides_type<shape_type>::type;
+    using strides_type = typename default_strides_type<shape_type>::type;
 
   private:
     alignas(sizeof(value_type)) value_type v_;
