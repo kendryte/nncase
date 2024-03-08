@@ -705,6 +705,4 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     {
         return _eGraphrewriteProvider.ERewrite(graph, rules, options);
     }
-
-    public Call Tile(Grid grid, IRModule module) => _scheduleProvider.Tile(grid, module);
 }

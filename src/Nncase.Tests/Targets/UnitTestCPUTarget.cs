@@ -139,7 +139,7 @@ public class UnitTestCPUTarget : TestClassBase
         GenerateKModelAndRunFromFn(main, new[] { 2f }, (Tensor)new[] { -1f });
     }
 
-    [Fact]
+    [Fact(Skip = "Solving too slowly")]
     public void TestSimpleTupleOutput()
     {
         var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));

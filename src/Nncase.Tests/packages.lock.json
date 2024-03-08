@@ -917,6 +917,7 @@
           "Nncase.Evaluator": "[1.0.0, )",
           "Nncase.Modules.StackVM": "[1.0.0, )",
           "Nncase.Passes": "[1.0.0, )",
+          "Nncase.Schedule": "[1.0.0, )",
           "Razor.Templating.Core": "[1.9.0, )"
         }
       },

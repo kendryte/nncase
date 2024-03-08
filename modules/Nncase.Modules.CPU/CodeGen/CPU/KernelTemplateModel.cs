@@ -32,5 +32,10 @@ public class BinaryKernelTemplateModel : KernelTemplateModel
 public class TypedKernelTemplateModel<T> : KernelTemplateModel
     where T : IR.Op
 {
-    public T Target { get; set; }
+    public TypedKernelTemplateModel(T target)
+    {
+        Target = target;
+    }
+
+    public T Target { get; }
 }

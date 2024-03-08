@@ -55,10 +55,12 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.FuseMHA2>();
         });
 
+#if false
         passManager.AddWithName<DataflowPass>("CPUDeviceFusion").Configure(p =>
         {
             p.Add<Passes.Rules.CPU.Affine.LowerUnary>();
         });
+#endif
 
         passManager.AddWithName<DataflowPass>("CPUDeviceFusion").Configure(p =>
         {

@@ -18,4 +18,3 @@ public sealed class PackedBinaryEvaluator : ITypeInferencer<PackedBinary>
 {
     public IRType Visit(ITypeInferenceContext context, PackedBinary target) => TupleType.Void;
 }
-

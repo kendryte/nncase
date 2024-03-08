@@ -6,12 +6,14 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Toolkit.HighPerformance;
 using Nncase.IR;
+using Nncase.Tests.TestFixture;
 using Nncase.Utilities;
 using Xunit;
 
 namespace Nncase.Tests.EvaluatorTest;
 
-public sealed class UnitTestEvaluatorCPU
+[AutoSetupTestMethod(InitSession = true)]
+public sealed class UnitTestEvaluatorCPU : TestClassBase
 {
     public const int Lanes = 32;
 
@@ -220,7 +222,7 @@ public sealed class UnitTestEvaluatorCPU
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
         };
-        var rule = new Passes.Rules.CPU.PackBinary();
+        var rule = new Passes.Rules.CPU.PackMatMul();
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
         foreach (var post in posts)

@@ -48,7 +48,6 @@ class pack_impl<fixed_shape<InDims...>, fixed_shape<OutDims...>,
   public:
     template <class TIn, class TOut>
     constexpr void operator()(const TIn &input, TOut &&output) {
-        using TScalar = typename TIn::element_type;
         using TVec = typename std::decay_t<TOut>::element_type;
         constexpr fixed_shape<OutDims..., OutElemDims...> domain{};
         constexpr auto axes = std::array<size_t, sizeof...(Axes)>{Axes...};

@@ -23,7 +23,7 @@ public sealed class BufferizePass : ModulePass
         {
             if (input.Functions[i] is Function function)
             {
-                var newFunc = Bufferize(function);
+                var newFunc = Bufferize(function, input);
                 input.Replace(i, newFunc);
             }
         }
@@ -34,7 +34,7 @@ public sealed class BufferizePass : ModulePass
     private BaseFunction Bufferize(Function function, IRModule module)
     {
         // 1. Merge grids into new PrimFunctions
-
+        throw new NotImplementedException();
     }
 
     private sealed class GraphMerger
@@ -53,7 +53,6 @@ public sealed class BufferizePass : ModulePass
 
         private void CreateRegions()
         {
-
         }
 
         private sealed class Region
@@ -69,6 +68,8 @@ public sealed class BufferizePass : ModulePass
 
             public bool Add(Expr node)
             {
+                throw new NotImplementedException();
+#if false
                 if (_nodesSet.Add(node))
                 {
                     Nodes.Add(node);
@@ -93,7 +94,7 @@ public sealed class BufferizePass : ModulePass
                     foreach (var input in _inputs)
                     {
                     }
-                }
+#endif
             }
         }
     }

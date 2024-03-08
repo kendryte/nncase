@@ -34,7 +34,6 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>,
     template <class TIn, class TOut>
     constexpr void operator()(const TIn &input, TOut &&output) {
         using TVec = typename TIn::element_type;
-        using TScalar = typename std::decay_t<TOut>::element_type;
         constexpr auto axes = std::array<size_t, sizeof...(Axes)>{Axes...};
         constexpr auto rank = TIn::shape_type::rank();
         constexpr auto elem_rank = TVec::shape_type::rank();
