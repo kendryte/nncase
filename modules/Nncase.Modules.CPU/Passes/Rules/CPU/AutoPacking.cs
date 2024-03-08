@@ -27,7 +27,7 @@ public sealed partial class AutoPacking : IRewriteRule
     private Expr? GetReplace(Call call, Fusion fusion, Expr body, IReadOnlyList<Expr> parameters, IReadOnlyList<Expr> callParams)
     {
         // 1. convert to distribute graph
-        if (body is Call { Target: Unpack or Boxing } || (body is IR.Tuple tp && tp.Fields.AsValueEnumerable().Any(e => e is Call { Target: Unpack or Boxing })))
+        if (fusion.Metadata is PackMetaData)
         {
             return null;
         }
@@ -52,6 +52,11 @@ public sealed partial class AutoPacking : IRewriteRule
             new());
 
         var newFusion = fusion.With(moduleKind: CPUTarget.Kind, body: newbody, parameters: parameters.Cast<Var>().ToArray());
+        newFusion.Metadata = new PackMetaData();
         return new Call(newFusion, callParams.ToArray());
+    }
+
+    private sealed class PackMetaData : IR.IRMetadata
+    {
     }
 }
