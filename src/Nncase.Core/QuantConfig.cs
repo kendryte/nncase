@@ -100,7 +100,7 @@ public record QuantConfigData(Tensor<float> Range, DataType DType)
 {
     internal static readonly Dictionary<DataType, int> QuantTypeMap = new Dictionary<DataType, int>
     {
-        { DataTypes.UInt8, 0 }, { DataTypes.Int8, 1 }, { DataTypes.Int16, 2 },
+        { DataTypes.UInt8, 0 }, { DataTypes.Int8, 1 }, { DataTypes.Int16, 2 }, { DataTypes.Float16, 3 },
     };
 
     internal static readonly Dictionary<int, DataType> QuantTypeMapReverse = QuantTypeMap!.ToDictionary(x => x.Value, x => x.Key);

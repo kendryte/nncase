@@ -106,7 +106,7 @@ public class QuantizeOptions
     /// <summary>
     /// Gets or sets a value indicating whether strict mode.
     /// </summary>
-    public bool SensitivityQuantEnabled { get; set; }
+    public bool SensitivityQuantEnabled { get; set; } = true;
 
     /// <summary>
     /// Gets or sets a value indicating whether enable the Auto bind quant method.
