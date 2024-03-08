@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.15)
 
 project(nncase_cpu_module)
 
-include(@Model.CMakePath)
+include(@Html.Raw(Model.CMakePath))
 
 add_executable(nncase_cpu_module main.cpp)
 target_compile_features(nncase_cpu_module PUBLIC cxx_std_20)
