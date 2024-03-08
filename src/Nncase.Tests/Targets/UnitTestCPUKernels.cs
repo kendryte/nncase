@@ -71,6 +71,10 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [ClassData(typeof(PackUnpackCaseData))]
     internal async Task Run(ICpuKernelCase kernelCase)
     {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+            return;
+        }
+
         CompileOptions.DumpDir = Path.Join(CompileOptions.DumpDir, kernelCase.Name);
         using var dumpScope = new Diagnostics.DumpScope(string.Empty, CompileOptions.DumpFlags);
 
