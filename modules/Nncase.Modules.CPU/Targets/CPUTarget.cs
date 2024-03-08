@@ -89,10 +89,12 @@ public class CPUTarget : ITarget
     /// <inheritdoc/>
     public void RegisterTargetDependentAfterQuantPass(IPassManager passManager, CompileOptions options)
     {
+#if false
         passManager.AddWithName<DataflowPass>("AutoPacking").Configure(p =>
         {
             p.Add<Passes.Rules.AutoPacking>();
         });
+#endif
 
         passManager.AddWithName<DataflowPass>("AutoDistributed").Configure(p =>
         {

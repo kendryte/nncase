@@ -108,7 +108,7 @@ internal sealed class AffineTiler
         var regions = accessMap.Results.AsValueEnumerable().Select(x => x.Apply(_domainOffsets, _domainExtents, null));
         var offset = new IR.Tuple(regions.Select(x => x.Offset).ToArray());
         var shape = new IR.Tuple(regions.Select(x => x.Extent).ToArray());
-        var bufferExpr = IR.F.Buffer.AllocateBufferView(parentBuffer, offset, shape);
+        var bufferExpr = IR.F.Buffer.BufferSubview(parentBuffer, offset, shape);
         var letExpr = T.Let(out var letVar, bufferExpr);
         parentSeq.Body(letExpr);
         return (letVar, letExpr);

@@ -118,7 +118,7 @@ public class UnitTestCPUTarget : TestClassBase
         GenerateKModelAndRun(module, new[] { 1.0f }, new[] { 2.0f });
     }
 
-    [Fact(Skip = "Bug")]
+    [Fact]
     public void TestSimpleUnary()
     {
         var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
@@ -139,7 +139,7 @@ public class UnitTestCPUTarget : TestClassBase
         GenerateKModelAndRunFromFn(main, new[] { 2f }, (Tensor)new[] { -1f });
     }
 
-    [Fact(Skip = "Solving too slowly")]
+    [Fact]
     public void TestSimpleTupleOutput()
     {
         var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
