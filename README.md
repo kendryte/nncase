@@ -53,7 +53,7 @@ make && make install
 - [FAQ](./docs/FAQ_EN.md)
 - [Example](./examples/user_guide/k230_simulate-EN.ipynb)
 - [Colab run](https://colab.research.google.com/drive/1m8TTree096m5VHmq-Uc60gXyltVCgnRb?usp=sharing)
-- [ *Version relationship between `nncase` and `K230_SDK`* ](https://developer.canaan-creative.com/k230/dev/zh/03_other/K230_SDK_%E7%89%88%E6%9C%AC%E8%AF%B4%E6%98%8E.html#id15)
+- [ *Version relationship between `nncase` and `K230_SDK`* ](https://developer.canaan-creative.com/k230/dev/zh/03_other/K230_SDK_%E7%89%88%E6%9C%AC%E8%AF%B4%E6%98%8E.html#ai-sdkcanmvnncase)
 
 
 ### Install

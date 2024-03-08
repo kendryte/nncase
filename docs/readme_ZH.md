@@ -51,7 +51,7 @@ make && make install
 - [常见问题](./FAQ_ZH.md)
 - [示例](../examples/user_guide/k230_simulate-ZH.ipynb)
 - [Colab 在线示例](https://colab.research.google.com/drive/1m8TTree096m5VHmq-Uc60gXyltVCgnRb?usp=sharing)
-- [ *nncase与K230_SDK版本对应关系说明* ](https://developer.canaan-creative.com/k230/dev/zh/03_other/K230_SDK_%E7%89%88%E6%9C%AC%E8%AF%B4%E6%98%8E.html#id15)
+- [ *nncase与K230_SDK版本对应关系说明* ](https://developer.canaan-creative.com/k230/dev/zh/03_other/K230_SDK_%E7%89%88%E6%9C%AC%E8%AF%B4%E6%98%8E.html#ai-sdkcanmvnncase)
 
 ### 安装
 
