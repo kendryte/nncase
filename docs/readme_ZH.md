@@ -14,37 +14,6 @@ Telegram: [nncase community](https://t.me/joinchat/PPcEPZMLaTViNDI1)
 
 ---
 
-## 架构
-
-<div align="center">
-<img src="imgs/arch.jpeg" alt="nncase arch" />
-</div>
-
----
-
-## 源码编译
-
-**推荐直接通过`pip`安装nncase来使用，目前K510、K230芯片相关的源码并未开源，因此无法直接通过编译源码来使用`nncase-k510`和`nncase-kpu`(K230)。**
-
-如果你的模型中存在`nncase`尚未支持的算子，可以在issue中提出需求，或者自己实现并提交PR。后续版本将会进行集成，或者联系我们提供临时版本。
-以下为编译 `nncase` 的步骤
-
-```shell
-git clone https://github.com/kendryte/nncase.git
-cd nncase
-mkdir build && cd build
-
-# 使用Ninja编译
-cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./install
-ninja && ninja install
-
-# 使用make编译
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./install
-make && make install
-```
-
----
-
 ## K230
 
 - [使用说明](./USAGE_v2.md)
@@ -105,7 +74,7 @@ make && make install
 
 |[eye gaze](https://developer.canaan-creative.com/devAdmin/model/download?mid=be978f1f38b8aa2f2b649185a10c2e9c&filePath=/upload/model/official/k230/yolop_lane_seg/yolop_lane_seg.zip)  | [space_resize](https://developer.canaan-creative.com/devAdmin/model/download?mid=7d48cb68a499dd54daf0ced14549b142&filePath=/upload/model/official/k230/space_resize/space_resize.zip) | [face pose](https://developer.canaan-creative.com/devAdmin/model/download?mid=5b87c02b969a9e60d48b08e357c20e31&filePath=/upload/model/official/k230/face_pose/face_pose.zip) |
 |---|---|---|
-|<img src="https://developer.canaan-creative.com/upload/model/official/k230/eye_gaze/eye_gaze_result.gif"  alt="gif"> | <img src="https://developer.canaan-creative.com/upload/model/official/k230/space_resize/space_resize.gif" alt="gif">| <img src="https://developer.canaan-creative.com/upload/model/official/k230/face_pose/face_pose_result.gif" alt="gif">|
+|<img src="https://github.com/kendryte/nncase_docs/blob/master/gif/eye_gaze_result.gif?raw=true"  alt="gif"> | <img src="https://github.com/kendryte/nncase_docs/blob/master/gif/space_resize.gif?raw=true" alt="gif">| <img src="https://github.com/kendryte/nncase_docs/blob/master/gif/face_pose_result.gif?raw=true">|
 
 ---
 
@@ -131,6 +100,37 @@ make && make install
 - 支持 float 和量化 uint8 推理
 - 支持训练后量化，使用浮点模型和量化校准集
 - 平坦模型，支持零拷贝加载
+
+---
+
+## 架构
+
+<div align="center">
+<img src="imgs/arch.jpeg" alt="nncase arch" />
+</div>
+
+---
+
+## 源码编译
+
+**推荐直接通过`pip`安装nncase来使用，目前K510、K230芯片相关的源码并未开源，因此无法直接通过编译源码来使用`nncase-k510`和`nncase-kpu`(K230)。**
+
+如果你的模型中存在`nncase`尚未支持的算子，可以在issue中提出需求，或者自己实现并提交PR。后续版本将会进行集成，或者联系我们提供临时版本。
+以下为编译 `nncase` 的步骤
+
+```shell
+git clone https://github.com/kendryte/nncase.git
+cd nncase
+mkdir build && cd build
+
+# 使用Ninja编译
+cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./install
+ninja && ninja install
+
+# 使用make编译
+cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./install
+make && make install
+```
 
 ---
 

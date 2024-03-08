@@ -15,38 +15,6 @@ Technical Discussion QQ Group: 790699378 .   Answer: 人工智能
 
 ---
 
-## Architecture
-
-<div align="center">
-<img src="docs/imgs/arch.jpeg" alt="nncase arch" />
-</div>
-
----
-
-## Build from source
-
-**It is recommended to install nncase directly through `pip`. At present, the source code related to k510 and K230 chips is not open source, so it is not possible to use `nncase-K510` and `nncase-kpu` (K230) directly by compiling source code.**
-
-
-If there are operators in your model that `nncase` does not yet support, you can request them in the issue or implement them yourself and submit the PR. Later versions will be integrated, or contact us to provide a temporary version.
-Here are the steps to compile `nncase`.
-
-```shell
-git clone https://github.com/kendryte/nncase.git
-cd nncase
-mkdir build && cd build
-
-# Use Ninja
-cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./install
-ninja && ninja install
-
-# Use make
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./install
-make && make install
-```
-
----
-
 ## K230
 
 - [Usage](./docs/USAGE_v2_EN.md)
@@ -109,7 +77,7 @@ All version of `nncase` and `nncase-kpu` in [Release](https://github.com/kendryt
 
 |[eye gaze](https://developer.canaan-creative.com/devAdmin/model/download?mid=be978f1f38b8aa2f2b649185a10c2e9c&filePath=/upload/model/official/k230/yolop_lane_seg/yolop_lane_seg.zip)  | [space_resize](https://developer.canaan-creative.com/devAdmin/model/download?mid=7d48cb68a499dd54daf0ced14549b142&filePath=/upload/model/official/k230/space_resize/space_resize.zip) | [face pose](https://developer.canaan-creative.com/devAdmin/model/download?mid=5b87c02b969a9e60d48b08e357c20e31&filePath=/upload/model/official/k230/face_pose/face_pose.zip) |
 |---|---|---|
-|<img src="https://developer.canaan-creative.com/upload/model/official/k230/eye_gaze/eye_gaze_result.gif"  alt="gif"> | <img src="https://developer.canaan-creative.com/upload/model/official/k230/space_resize/space_resize.gif" alt="gif">| <img src="https://developer.canaan-creative.com/upload/model/official/k230/face_pose/face_pose_result.gif" alt="gif">|
+|<img src="https://github.com/kendryte/nncase_docs/blob/master/gif/eye_gaze_result.gif?raw=true"  alt="gif"> | <img src="https://github.com/kendryte/nncase_docs/blob/master/gif/space_resize.gif?raw=true" alt="gif">| <img src="https://github.com/kendryte/nncase_docs/blob/master/gif/face_pose_result.gif?raw=true">|
 
 ---
 
@@ -135,6 +103,38 @@ All version of `nncase` and `nncase-kpu` in [Release](https://github.com/kendryt
 - Support float and quantized uint8 inference
 - Support post quantization from float model with calibration dataset
 - Flat model with zero copy loading
+
+---
+
+## Architecture
+
+<div align="center">
+<img src="docs/imgs/arch.jpeg" alt="nncase arch" />
+</div>
+
+---
+
+## Build from source
+
+**It is recommended to install nncase directly through `pip`. At present, the source code related to k510 and K230 chips is not open source, so it is not possible to use `nncase-K510` and `nncase-kpu` (K230) directly by compiling source code.**
+
+
+If there are operators in your model that `nncase` does not yet support, you can request them in the issue or implement them yourself and submit the PR. Later versions will be integrated, or contact us to provide a temporary version.
+Here are the steps to compile `nncase`.
+
+```shell
+git clone https://github.com/kendryte/nncase.git
+cd nncase
+mkdir build && cd build
+
+# Use Ninja
+cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./install
+ninja && ninja install
+
+# Use make
+cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./install
+make && make install
+```
 
 ---
 
