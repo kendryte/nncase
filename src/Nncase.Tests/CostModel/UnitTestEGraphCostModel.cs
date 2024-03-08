@@ -47,10 +47,10 @@ public sealed class UnitTestEGraphCostModel
           },
         };
 
-        Assert.IsType<TensorConst>(list.OrderBy(e => e, ENodeTypeComparer.Instance).First());
+        Assert.IsType<TensorConst>(list.OrderBy(e => e, EGraphExtractExtensions.ENodeTypeComparer.Instance).First());
 
         Assert.True(cost[b] < cost[c]);
 
-        Assert.IsType<TensorConst>(list.OrderBy(e => e, ENodeTypeComparer.Instance).MinBy(e => cost[e]));
+        Assert.IsType<TensorConst>(list.OrderBy(e => e, EGraphExtractExtensions.ENodeTypeComparer.Instance).MinBy(e => cost[e]));
     }
 }

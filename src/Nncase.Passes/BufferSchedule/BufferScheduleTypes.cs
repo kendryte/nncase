@@ -3,34 +3,54 @@
 
 namespace Nncase.Passes.BufferSchedule;
 
-public sealed class Interval
+internal sealed class TimeInterval
 {
-    public Interval(int start, int end)
+    public TimeInterval(int start, int end)
+    {
+        Brith = start;
+        Death = end;
+    }
+
+    public int Brith { get; set; }
+
+    public int Death { get; set; }
+
+    public int Size => Death - Brith;
+
+    public override string ToString()
+    {
+        return $"TimeInterval({Brith}, {Death})";
+    }
+}
+
+internal sealed class MemSpan
+{
+    public MemSpan(int start, int end)
     {
         Start = start;
-        Stop = end;
+        End = end;
     }
 
     public int Start { get; set; }
 
-    public int Stop { get; set; }
+    public int End { get; set; }
 
-    public int Size => Stop - Start;
+    public int Size => End - Start;
 
     public override string ToString()
     {
-        return $"Interval({Start}, {Stop})";
+        return $"MemSpan({Start}, {End})";
     }
 }
 
-public class ScheduleBuffer
+internal class ScheduleBuffer
 {
-    public ScheduleBuffer(string name, int number, Interval timeInterval, Interval memInterval, int[] shape, int[] strides, bool inplace)
+    public ScheduleBuffer(string name, int number, TimeInterval interval, MemSpan span, int[] shape, int[] strides, bool inplace)
     {
         Name = name;
         Number = number;
-        TimeInterval = timeInterval;
-        MemInterval = memInterval;
+        Interval = interval;
+        Span = span;
         Shape = shape;
         Strides = strides;
         Inplace = inplace;
@@ -40,9 +60,9 @@ public class ScheduleBuffer
 
     public int Number { get; }
 
-    public Interval TimeInterval { get; }
+    public TimeInterval Interval { get; }
 
-    public Interval MemInterval { get; }
+    public MemSpan Span { get; }
 
     public int[] Shape { get; }
 
@@ -52,6 +72,6 @@ public class ScheduleBuffer
 
     public override string ToString()
     {
-        return $"ScheduledBuffer('{Name}', {Number}, {TimeInterval}, {MemInterval}, ConstraintsMode.No, [{string.Join(",", Shape)}], [{string.Join(",", Strides)}], {Inplace})";
+        return $"ScheduledBuffer('{Name}', {Number}, {Interval}, {Span}, ConstraintsMode.No, [{string.Join(",", Shape)}], [{string.Join(",", Strides)}], {Inplace})";
     }
 }
