@@ -14,6 +14,5 @@ internal class ScheduleModule : IApplicationPart
 {
     public void ConfigureServices(IRegistrator registrator)
     {
-        registrator.RegisterManyInterface<ScheduleProvider>(reuse: Reuse.Singleton);
     }
 }

@@ -40,7 +40,7 @@ internal class GridBuilder : IGridBuilder
     private Expr? _writeBuffer;
     private AffineMap? _writeMap;
 
-    public GridBuilder(string moduleKind)
+    public GridBuilder(string moduleKind = "")
     {
         _moduleKind = moduleKind;
     }

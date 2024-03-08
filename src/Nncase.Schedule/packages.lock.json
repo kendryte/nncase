@@ -50,6 +50,37 @@
         "resolved": "9.4.1874",
         "contentHash": "fUs5qDnZA6itygolcX6nPuachQkY9CVvQbakIzIiRAWKcaj8umQAbFdGwbkyzp3qp34BKW5mtPVsmMyfQBBjOQ=="
       },
+      "libortki": {
+        "type": "Transitive",
+        "resolved": "0.0.2",
+        "contentHash": "svfuG5mxGY/QC/5DVheHOCELmdSP90RtxQ73j23KarPXZ9ZXW+7v1l5J77hGDyQbEh1BGrnGgKBlyn76RauGHg==",
+        "dependencies": {
+          "libortki-linux": "0.0.2",
+          "libortki-osx": "0.0.2",
+          "libortki-osx-arm64": "0.0.2",
+          "libortki-win": "0.0.2"
+        }
+      },
+      "libortki-linux": {
+        "type": "Transitive",
+        "resolved": "0.0.2",
+        "contentHash": "b04LWD4lgGy60tys3hPFhnUpgWDM6dN5r1PI7GOcPj8VupXCaI70LKNQ5/5twbDE6rkowOGanVTw0S2wBGBqBQ=="
+      },
+      "libortki-osx": {
+        "type": "Transitive",
+        "resolved": "0.0.2",
+        "contentHash": "O6Q9GLULkDkZEPAZJVKLPH0ROXGVOE7BxuddgOcHNK2oiTEM7wIRnzp2OIlYgLpaOLyxJMisbGOhtWgdzt2Wng=="
+      },
+      "libortki-osx-arm64": {
+        "type": "Transitive",
+        "resolved": "0.0.2",
+        "contentHash": "4Qn2dirJmRicnUG945oWpq7HVGwgqCKKxYPMISv/MRvmpZBbXrZ1cVvRaF8WwTu4XXgfKTa1sLv+i8zLifUMeQ=="
+      },
+      "libortki-win": {
+        "type": "Transitive",
+        "resolved": "0.0.2",
+        "contentHash": "HAoROgAKn8XBun11X43HZuspKlo5JGy8/OYw5IUPo7FVh5TCaPrLjGmyGYYZ2dqLlv31yv/b6s254PIRGn95cA=="
+      },
       "Microsoft.Extensions.Configuration.Abstractions": {
         "type": "Transitive",
         "resolved": "7.0.0",
@@ -108,6 +139,40 @@
           "NetFabric.Hyperlinq": "[3.0.0-beta48, )",
           "System.CommandLine": "[2.0.0-beta4.22272.1, )",
           "System.Reactive": "[5.0.0, )"
+        }
+      },
+      "nncase.egraph": {
+        "type": "Project",
+        "dependencies": {
+          "GiGraph.Dot": "[2.0.0, )",
+          "Google.OrTools": "[9.4.1874, )",
+          "NetFabric.Hyperlinq": "[3.0.0-beta48, )",
+          "Nncase.Core": "[1.0.0, )",
+          "Nncase.Evaluator": "[1.0.0, )",
+          "Singulink.Collections.Weak": "[1.0.2, )"
+        }
+      },
+      "nncase.evaluator": {
+        "type": "Project",
+        "dependencies": {
+          "Nncase.Core": "[1.0.0, )",
+          "OrtKISharp": "[0.0.2, )"
+        }
+      },
+      "nncase.graph": {
+        "type": "Project",
+        "dependencies": {
+          "Nncase.Core": "[1.0.0, )",
+          "Nncase.Evaluator": "[1.0.0, )"
+        }
+      },
+      "nncase.passes": {
+        "type": "Project",
+        "dependencies": {
+          "Nncase.Core": "[1.0.0, )",
+          "Nncase.EGraph": "[1.0.0, )",
+          "Nncase.Evaluator": "[1.0.0, )",
+          "Nncase.Graph": "[1.0.0, )"
         }
       },
       "DryIoc.dll": {
@@ -171,6 +236,21 @@
           "System.Buffers": "4.5.1",
           "System.Runtime.CompilerServices.Unsafe": "5.0.0"
         }
+      },
+      "OrtKISharp": {
+        "type": "CentralTransitive",
+        "requested": "[0.0.2, )",
+        "resolved": "0.0.2",
+        "contentHash": "q8j0yR5836Zhv9WB9BFkQt1UaEFyibq8bqJcTiULlILF6/sz8z7Wy2N8sgYdDKsdW25zncIz7j6IDbKM5ynePg==",
+        "dependencies": {
+          "libortki": "0.0.2"
+        }
+      },
+      "Singulink.Collections.Weak": {
+        "type": "CentralTransitive",
+        "requested": "[1.0.2, )",
+        "resolved": "1.0.2",
+        "contentHash": "giLAHrjJe0Bh7yhNexR6pmcv02+Fi+lEPxQVdB8zvkuJCmy6rnqu8CZLIpxrUfLcWDuTCSiK0IfGmMhig3UDhA=="
       },
       "System.CommandLine": {
         "type": "CentralTransitive",

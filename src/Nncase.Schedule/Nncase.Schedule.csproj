@@ -14,5 +14,6 @@
   
   <ItemGroup>
     <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
+    <ProjectReference Include="..\Nncase.Passes\Nncase.Passes.csproj" />
   </ItemGroup>
 </Project>

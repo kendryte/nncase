@@ -756,7 +756,8 @@
         "type": "Project",
         "dependencies": {
           "Google.OrTools": "[9.4.1874, )",
-          "Nncase.Core": "[1.0.0, )"
+          "Nncase.Core": "[1.0.0, )",
+          "Nncase.Passes": "[1.0.0, )"
         }
       },
       "nncase.simulator": {

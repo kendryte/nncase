@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.IR.Affine;
+using Nncase.Schedule;
 
 namespace Nncase.Passes.Transforms;
 
@@ -36,8 +37,8 @@ public sealed class AutoTilePass : ModulePass
 
         protected override Expr RewriteLeafGrid(Grid grid)
         {
-            var call = CompilerServices.Tile(grid, _module);
-            return call;
+            var scheduler = new AffineTiler(grid);
+            return scheduler.Tile(_module);
         }
     }
 }
