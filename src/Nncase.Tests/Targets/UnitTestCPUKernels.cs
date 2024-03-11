@@ -57,26 +57,13 @@ public sealed class PackLayerNormCaseData : TheoryData<ICpuKernelCase>
 {
     public PackLayerNormCaseData()
     {
-        var shape = new[] { 32, 64, 128 };
-        var axis = 1;
-
-        var input = new Var(new TensorType(DataTypes.Float32, shape));
-        var pshape = shape.Skip(axis).ToArray();
-        var scale = new Var(new TensorType(DataTypes.Float32, pshape));
-        var bias = new Var(new TensorType(DataTypes.Float32, pshape));
-        var pre = IR.F.NN.LayerNorm(axis, 1e-6f, input, scale, bias, false);
-
-        var rule = new Passes.Rules.CPU.PackLayerNorm
+        var lane = 4;
+        if (Vector256.IsHardwareAccelerated)
         {
-            Lane = 4,
-        };
-        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
-        var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
-        int cnt = 0;
-        foreach (var post in posts)
-        {
-            Add(new PackLayerNormCase($"PackLayerNormCase_{cnt++}", new[] { input }, post));
+            lane = 8;
         }
+
+        Add(new PackLayerNormCase("PackLayerNorm0", new[] { 32, 64, 128 }, 1, new[] { 0 }, lane));
     }
 }
 
@@ -193,11 +180,44 @@ internal sealed class PackUnpackCase : ICpuKernelCase
 
 internal sealed class PackLayerNormCase : ICpuKernelCase
 {
-    public PackLayerNormCase(string name, Var[] vars, Expr body)
+    public PackLayerNormCase(string name, int[] shape, int axis, int[] packedAxes, int lane)
     {
         Name = name;
-        Fusion = new Fusion(Name + "_kernel", CPUTarget.Kind, body, vars);
-        Vars = vars;
+        var inputType = new TensorType(DataTypes.Float32, shape);
+        Expr input = new Var(inputType);
+        var pshape = shape.Skip(axis).ToArray();
+        var scaleType = new TensorType(DataTypes.Float32, pshape);
+        Expr scale = new Var(scaleType);
+        var biasType = new TensorType(DataTypes.Float32, pshape);
+        Expr bias = new Var(biasType);
+        Vars = new[] { (Var)input, (Var)scale, (Var)bias };
+        {
+            input = IR.F.CPU.Boxing(input, new DistributedType(inputType, new SBP[] { SBP.B }, ICpuKernelCase.DefaultPlacement));
+            scale = IR.F.CPU.Boxing(scale, new DistributedType(scaleType, new SBP[] { SBP.B }, ICpuKernelCase.DefaultPlacement));
+            bias = IR.F.CPU.Boxing(bias, new DistributedType(biasType, new SBP[] { SBP.B }, ICpuKernelCase.DefaultPlacement));
+
+            var lanes = Enumerable.Repeat(lane, packedAxes.Length).ToArray();
+            var packedInput = IR.F.CPU.Pack(PackUtility.PadForPack(input, shape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+
+            var pAxes = packedAxes.Where(i => i >= axis).Select(i => i - axis).ToArray();
+            var packedScale = PackUtility.PadForPack(scale, pshape, pAxes, lanes, 0f, out var padsScale);
+            if (pAxes.Length > 0)
+            {
+                packedScale = IR.F.CPU.Pack(packedScale, Enumerable.Repeat(lane, pAxes.Length).ToArray(), pAxes);
+            }
+
+            var packedBias = PackUtility.PadForPack(bias, pshape, pAxes, lanes, 0f, out var padsBias);
+            if (pAxes.Length > 0)
+            {
+                packedBias = IR.F.CPU.Pack(packedBias, Enumerable.Repeat(lane, pAxes.Length).ToArray(), pAxes);
+            }
+
+            var layernorm = IR.F.CPU.PackedLayerNorm(packedInput, packedScale, packedBias, axis, 1e-6f, false, packedAxes, padsInput);
+
+            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(layernorm, packedAxes), shape, padsInput);
+
+            Fusion = new Fusion(Name + "_kernel", CPUTarget.Kind, IR.F.CPU.Boxing(post, new DistributedType(inputType, new SBP[] { SBP.B }, ICpuKernelCase.DefaultPlacement)), Vars);
+        }
     }
 
     public string Name { get; }
@@ -216,6 +236,7 @@ internal sealed class PackLayerNormCase : ICpuKernelCase
 
     public override string ToString() => Name;
 }
+
 
 #if false
 
