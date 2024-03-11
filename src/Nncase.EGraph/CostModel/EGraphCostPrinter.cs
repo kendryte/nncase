@@ -32,6 +32,25 @@ public partial class EGraphPrinter
         return printer.SaveToStream(file);
     }
 
+    /// <summary>
+    /// find the minCostEnode in eclass.
+    /// <remarks>
+    /// the marker first.
+    /// </remarks>
+    /// </summary>
+    internal static ENode MinByWithMarker(EClass eClass, CostModel.EGraphCostModel costModel)
+    {
+        return eClass.Nodes.OrderBy(e => e.Expr, ENodeTypeComparer.Instance).MinBy(x => x.Expr is Marker ? CostModel.Cost.Zero : costModel[x])!;
+    }
+
+    /// <summary>
+    /// find the minCostEnode in eclass skip marker.
+    /// </summary>
+    internal static ENode MinByWithOutMarker(EClass eClass, CostModel.EGraphCostModel costModel)
+    {
+        return eClass.Nodes.Where(e => e.Expr is not Marker).MinBy(x => costModel[x])!;
+    }
+
     private DotGraph AttachEGraphCost(CostModel.EGraphCostModel costModel, EClass entry)
     {
         // 1. display each enode costs.
@@ -72,12 +91,12 @@ public partial class EGraphPrinter
                     continue;
                 }
 
-                var minCostEnode = parent.MinByWithMarker(costModel);
+                var minCostEnode = MinByWithMarker(parent, costModel);
 
                 // when this marker ecalss has been visited, skip it.
                 if (markerEclassMemo.Contains(parent))
                 {
-                    minCostEnode = parent.MinByWithOutMarker(costModel);
+                    minCostEnode = MinByWithOutMarker(parent, costModel);
                 }
 
                 var (minCostDotnode, table) = NodesMap[minCostEnode];
@@ -93,7 +112,7 @@ public partial class EGraphPrinter
                     if (minCostEnode.Expr is Marker && child == parent)
                     {
                         markerEclassMemo.Add(child);
-                        var otherminCostENode = child.MinByWithOutMarker(costModel);
+                        var otherminCostENode = MinByWithOutMarker(child, costModel);
                         var (childDotNode, _) = NodesMap[otherminCostENode];
                         _dotGraph.Edges.Add(childDotNode, minCostDotnode, edge =>
                         {
@@ -103,7 +122,7 @@ public partial class EGraphPrinter
                     }
                     else
                     {
-                        var childEnode = child.Find().MinByWithMarker(costModel);
+                        var childEnode = MinByWithMarker(child.Find(), costModel);
                         var (childDotNode, _) = NodesMap[childEnode];
                         _dotGraph.Edges.Add(childDotNode, minCostDotnode, edge =>
                         {
@@ -125,4 +144,24 @@ public partial class EGraphPrinter
         Dfs(entry.Find());
         return _dotGraph;
     }
+}
+
+internal sealed class ENodeTypeComparer : IComparer<Expr>
+{
+    public static readonly ENodeTypeComparer Instance = new();
+
+    public int Compare(Expr? x, Expr? y) => (x, y) switch
+    {
+        (null, null) => 0,
+        (Expr, null) => 1,
+        (null, Expr) => -1,
+        (Expr, Expr) => GetPriority(x).CompareTo(GetPriority(y)),
+    };
+
+    private int GetPriority(Expr x) => x switch
+    {
+        Marker => 0,
+        Const => 1,
+        _ => 2,
+    };
 }
