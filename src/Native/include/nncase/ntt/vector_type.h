@@ -61,21 +61,22 @@ template <class T, size_t... Lanes> struct vector {
 
     static constexpr auto strides() noexcept { return strides_type{}; }
 
-    constexpr vector<T, Lanes...> operator+(const vector<T, Lanes...> &rhs) {
-        return v_ + rhs.v_;
-    }
+    // NOTE we can't assume the simd type have the compiler support.
+    // constexpr vector<T, Lanes...> operator+(const vector<T, Lanes...> &rhs) {
+    //     return v_ + rhs.v_;
+    // }
 
-    constexpr vector<T, Lanes...> operator-(const vector<T, Lanes...> &rhs) {
-        return v_ - rhs.v_;
-    }
+    // constexpr vector<T, Lanes...> operator-(const vector<T, Lanes...> &rhs) {
+    //     return v_ - rhs.v_;
+    // }
 
-    constexpr vector<T, Lanes...> operator*(const vector<T, Lanes...> &rhs) {
-        return v_ * rhs.v_;
-    }
+    // constexpr vector<T, Lanes...> operator*(const vector<T, Lanes...> &rhs) {
+    //     return v_ * rhs.v_;
+    // }
 
-    constexpr vector<T, Lanes...> operator/(const vector<T, Lanes...> &rhs) {
-        return v_ / rhs.v_;
-    }
+    // constexpr vector<T, Lanes...> operator/(const vector<T, Lanes...> &rhs) {
+    //     return v_ / rhs.v_;
+    // }
 
     constexpr auto buffer() noexcept {
         return std::span(reinterpret_cast<element_type *>(&v_),

@@ -106,6 +106,10 @@ template <class T> struct tanh {
 } // namespace mathops
 } // namespace nncase::ntt
 
+#ifdef __ARM_NEON__
+#include "arch/arm/unary_mathops.h"
+#endif
+
 namespace nncase::ntt {
 namespace detail {
 template <class Shape, class InStrides, class OutStrides> class unary_impl;

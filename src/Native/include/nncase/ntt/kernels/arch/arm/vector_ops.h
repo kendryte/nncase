@@ -1,0 +1,50 @@
+/* Copyright 2019-2021 Canaan Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#pragma once
+#include <arm_neon.h>
+
+namespace nncase::ntt::vector_ops {
+template <> struct sum<ntt::vector<float, 4>> {
+    float operator()(ntt::vector<float, 4> v) const noexcept {
+        float32x2_t vec1 = vadd_f32(vget_low_f32(v), vget_high_f32(v));
+        float32x2_t vec2 = vadd_f32(vec1, vrev64_f32(vec1));
+        float32x2_t vec3 = vadd_f32(vec2, vrev64_f32(vec2));
+        float result =
+            vget_lane_f32(vec3, 0); // 提取结果的低32位作为最终的float结果
+        return result;
+    }
+};
+
+template <> struct sum<ntt::vector<float, 8>> {
+    float operator()(ntt::vector<float, 8> v) const noexcept {
+        float32x4x2_t val = v;
+        float result = 0;
+        auto vec = val.val[0];
+        float32x2_t vec1 = vadd_f32(vget_low_f32(vec), vget_high_f32(vec));
+        float32x2_t vec2 = vadd_f32(vec1, vrev64_f32(vec1));
+        float32x2_t vec3 = vadd_f32(vec2, vrev64_f32(vec2));
+        result += vget_lane_f32(vec3, 0);
+
+        vec = val.val[1];
+        vec1 = vadd_f32(vget_low_f32(vec), vget_high_f32(vec));
+        vec2 = vadd_f32(vec1, vrev64_f32(vec1));
+        vec3 = vadd_f32(vec2, vrev64_f32(vec2));
+        result += vget_lane_f32(vec3, 0);
+
+        return result;
+    }
+};
+
+} // namespace nncase::ntt::vector_ops

@@ -30,7 +30,7 @@ slice_index(const ranked_shape<InRank> &index, const size_t offset,
 
 template <size_t OutRank, size_t OffSet = 0, template <size_t...> class A,
           size_t... Dims, size_t... Ints>
-inline constexpr auto slice(const A<Dims...> &a,
+inline constexpr auto slice(const A<Dims...> a,
                             std::index_sequence<Ints...>) noexcept {
     return A<a.at(Ints + OffSet)...>{};
 }

@@ -171,7 +171,7 @@ int main() {
         pack<0>(buffer_4, buffer_5);
         pack<0>(buffer_7, buffer_8);
         packed_layer_norm<1>(buffer_2, buffer_5, buffer_8, buffer_9,
-                             ntt::vector<float, 8>{1E-06}, false,
+                             ntt::vector<float, 8>{1E-06}, true,
                              ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
 
         ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> buffer_10;

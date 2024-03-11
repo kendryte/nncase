@@ -59,7 +59,15 @@ template <class T> struct pow {
     T operator()(T v1, T v2) const noexcept { return std::pow(v1, v2); }
 };
 } // namespace mathops
+} // namespace nncase::ntt
 
+#ifdef __ARM_NEON__
+#include "arch/arm/binary.h"
+#else
+#include "arch/x86_64/binary.h"
+#endif
+
+namespace nncase::ntt {
 template <template <class T> class Op, class TLhs, class TRhs, class TOut>
 void binary(const TLhs &lhs, const TRhs &rhs, TOut &&output) {
     Op<typename TLhs::element_type> op;
