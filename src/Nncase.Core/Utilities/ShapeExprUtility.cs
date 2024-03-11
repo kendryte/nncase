@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using GiGraph.Dot.Output.Writers.Edges;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Tensors;
