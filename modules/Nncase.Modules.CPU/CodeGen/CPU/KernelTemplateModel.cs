@@ -38,4 +38,6 @@ public class TypedKernelTemplateModel<T> : KernelTemplateModel
     }
 
     public T Target { get; }
+
+    public IR.Expr[] Args { get; set; } = Array.Empty<IR.Expr>();
 }

@@ -14,13 +14,11 @@
  */
 #pragma once
 #include "../apply.h"
+#include "../vector_ops.h"
 #include "binary.h"
 #include "unary.h"
-#include <algorithm>
-#include <concepts>
 
 namespace nncase::ntt {
-namespace layer_norm_detail {}
 
 template <typename T>
 concept IsFixedTensor = requires(T t) {
@@ -28,15 +26,15 @@ concept IsFixedTensor = requires(T t) {
     is_fixed_dims_v<typename std::decay_t<T>::shape_type>;
 };
 
-// namespace detail {
-// template <class Shape, class InStrides, class OutStrides> class unary_impl
-// }
+namespace packed_layer_norm_detail {
 
 template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TScale,
           IsFixedTensor TBias, IsFixedTensor TOut, typename TEp>
-void layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
-                TOut &&output, const TEp &epsilon) {
+void within_axis_pack_impl(const TIn &input, const TScale &scale,
+                           const TBias &bias, TOut &&output, const TEp &epsilon,
+                           [[maybe_unused]] const bool &use_mean) {
     using TElem = TIn::element_type;
+    using TScalar = typename TIn::element_type::element_type;
     constexpr size_t in_contigous_dim =
         contiguous_dims(input.shape(), input.strides());
     constexpr size_t scale_contiguous_dims =
@@ -52,7 +50,6 @@ void layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
                   "shape not match");
     static_assert(is_same_seq(input.strides(), output.strides()),
                   "strides not match");
-
     constexpr auto domain = slice<Axis>(input.shape());
     constexpr auto strides = slice<Axis>(input.strides());
     constexpr size_t inner_size =
@@ -60,8 +57,9 @@ void layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
     constexpr auto sqrt_op = mathops::sqrt<TElem>();
     constexpr auto div_op = mathops::div<TElem>();
     constexpr auto sub_op = mathops::sub<TElem>();
+    constexpr auto vsum_op = vector_ops::sum<TElem>();
 
-    TElem finner_size = inner_size;
+    TElem finner_size = inner_size * TElem::shape_type::length();
 
     apply(domain, [&](auto index) {
         auto input_p = input.buffer().data() + linear_offset(index, strides);
@@ -69,10 +67,14 @@ void layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
         auto bias_p = bias.buffer().data();
         auto output_p = output.buffer().data() + linear_offset(index, strides);
 
-        // start compute
+        // compute mean
+        TElem mean1tmp = 0;
         TElem mean1 = 0;
-        for (size_t i = 0; i < inner_size; i++)
-            mean1 = mean1 + div_op(input_p[i], finner_size);
+        if (use_mean) {
+            for (size_t i = 0; i < inner_size; i++)
+                mean1tmp = mean1tmp + div_op(input_p[i], finner_size);
+            mean1 = vsum_op(mean1tmp);
+        }
 
         std::array<TElem, inner_size> sub;
         for (auto i = 0; i < inner_size; i++)
@@ -82,19 +84,37 @@ void layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
         for (auto i = 0; i < inner_size; i++)
             pow[i] = sub[i] * sub[i];
 
-        TElem mean2 = 0;
+        TElem mean2temp = 0;
         for (auto i = 0; i < inner_size; i++)
-            mean2 = mean2 + (pow[i] / finner_size);
+            mean2temp = mean2temp + (pow[i] / finner_size);
+        TElem mean2 = vsum_op(mean2temp);
 
         TElem add = mean2 + epsilon;
         TElem sqrt = sqrt_op(add);
 
-        std::array<TElem, inner_size> div;
+        std::array<TElem, inner_size> norm;
         for (auto i = 0; i < inner_size; i++)
-            div[i] = sub[i] / sqrt;
+            norm[i] = sub[i] / sqrt;
 
         for (auto i = 0; i < inner_size; i++)
-            output_p[i] = div[i] * scale_p[i] + bias_p[i];
+            output_p[i] = norm[i] * scale_p[i] + bias_p[i];
     });
+}
+} // namespace packed_layer_norm_detail
+
+template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TScale,
+          IsFixedTensor TBias, IsFixedTensor TOut, typename TEp,
+          typename PackedAxes, typename PadedNums>
+void packed_layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
+                       TOut &&output, const TEp &epsilon, const bool &use_mean,
+                       [[maybe_unused]] PackedAxes packedAxes,
+                       [[maybe_unused]] PadedNums padednums) {
+    static_assert(PackedAxes::rank() == 1, "currently not support 2d packing.");
+    if constexpr (PackedAxes::rank() == 1) {
+        static_assert(PackedAxes::at(0) >= Axis,
+                      "currently only support pack within axis.");
+        packed_layer_norm_detail::within_axis_pack_impl<Axis>(
+            input, scale, bias, output, epsilon, use_mean);
+    }
 }
 } // namespace nncase::ntt

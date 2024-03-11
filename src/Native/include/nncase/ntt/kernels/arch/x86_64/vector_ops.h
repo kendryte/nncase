@@ -13,13 +13,19 @@
  * limitations under the License.
  */
 #pragma once
-#include "kernels/binary.h"
-#include "kernels/copy.h"
-#include "kernels/matmul.h"
-#include "kernels/pack.h"
-#include "kernels/unary.h"
-#include "kernels/unpack.h"
-#include "kernels/packed_layer_norm.h"
-#include "tensor.h"
-#include "utility.h"
-#include "vector_type.h"
+#include <immintrin.h>
+
+namespace nncase::ntt::vector_ops {
+template <> struct sum<ntt::vector<float, 8>> {
+    float operator()(ntt::vector<float, 8> v) const noexcept {
+        // horizontal add top lane and bottom lane
+        auto res0 = _mm256_hadd_ps(v, v);
+        res0 = _mm256_hadd_ps(res0, res0);
+        __m128 acc1 = _mm256_extractf128_ps(res0, 0);
+        __m128 acc2 = _mm256_extractf128_ps(res0, 1);
+        acc1 = _mm_add_ss(acc1, acc2);
+        return _mm_cvtss_f32(acc1);
+    }
+};
+
+} // namespace nncase::ntt::vector_ops

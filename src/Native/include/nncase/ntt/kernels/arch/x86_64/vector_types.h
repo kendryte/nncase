@@ -8,5 +8,8 @@ template <> struct native_vector_type<float, 4> {
 
 template <> struct native_vector_type<float, 8> {
     using type = __m256;
+    static type from_element(const float &f) {
+        return _mm256_setr_ps(f, f, f, f, f, f, f, f);
+    }
 };
 } // namespace nncase::ntt

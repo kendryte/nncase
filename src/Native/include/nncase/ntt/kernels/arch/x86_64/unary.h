@@ -34,6 +34,7 @@ inline __m128 cos(__m128 v) {
 }
 
 inline __m128 sqrt(__m128 v) { return _mm_sqrt_ps(v); }
+inline __m256 sqrt(__m256 v) { return _mm256_sqrt_ps(v); }
 } // namespace std
 
 namespace nncase::ntt::arch {

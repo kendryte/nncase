@@ -61,12 +61,6 @@ template <class T, size_t... Lanes> struct vector {
 
     static constexpr auto strides() noexcept { return strides_type{}; }
 
-    // template<typename TOther>
-    // requires std::is_nothrow_convertible_v<TOther, element_type>
-    // static auto from(const TOther &other) {
-    //   return  ((element_type)other)
-    // }
-
     constexpr vector<T, Lanes...> operator+(const vector<T, Lanes...> &rhs) {
         return v_ + rhs.v_;
     }

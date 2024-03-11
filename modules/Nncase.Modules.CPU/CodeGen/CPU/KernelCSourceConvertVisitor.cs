@@ -362,6 +362,17 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     }
 
                     break;
+                case TIR.CPU.PackedLayerNorm packedLayerNorm:
+                    {
+                        IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedLayerNorm.cshtml", new TypedKernelTemplateModel<TIR.CPU.PackedLayerNorm>(packedLayerNorm)
+                        {
+                            Arguments = args.Select(x => new KernelArgument { Symbol = Visit(x) }).ToArray(),
+                            Args = args.ToArray(),
+                        }).Result);
+                    }
+
+                    break;
+
 #if false
                 case TIR.CPU.SwishB swishb:
                     IndentScope.Writer.Write($"swishb({Visit(args[0]).Name}, {Visit(args[1]).Name}, {swishb.Beta}, ctx)");

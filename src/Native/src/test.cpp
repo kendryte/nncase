@@ -156,19 +156,32 @@ int main() {
     }
     // layer_norm
     {
-        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 2, 3, 4>> ta;
-        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<4>> ts;
-        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<4>> tb;
-        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 2, 3, 4>> to;
-        // std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
-        // std::iota(ts.buffer().begin(), ts.buffer().end(), 0.f);
-        ntt::layer_norm<3>(ta, ts, tb, to, ntt::vector<float, 4>{1e-6f});
-        // assert(tc(0, 0) == 28.f);
-        // assert(tc(0, 1) == 34.f);
-        // assert(tc(1, 0) == 76.f);
-        // assert(tc(1, 1) == 98.f);
-        // assert(tc(2, 0) == 124.f);
-        // assert(tc(2, 1) == 162.f);
+        ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> buffer_1;
+        ntt::tensor<float, ntt::fixed_shape<16, 2>> buffer_4;
+        ntt::tensor<float, ntt::fixed_shape<16, 2>> buffer_7;
+        std::iota(buffer_1.buffer().begin(), buffer_1.buffer().end(), 0.f);
+        std::iota(buffer_4.buffer().begin(), buffer_4.buffer().end(), 0.f);
+        std::iota(buffer_7.buffer().begin(), buffer_7.buffer().end(), 0.f);
+
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<1, 2, 2>> buffer_2;
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<2, 2>> buffer_5;
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<2, 2>> buffer_8;
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<1, 2, 2>> buffer_9;
+        pack<1>(buffer_1, buffer_2);
+        pack<0>(buffer_4, buffer_5);
+        pack<0>(buffer_7, buffer_8);
+        packed_layer_norm<1>(buffer_2, buffer_5, buffer_8, buffer_9,
+                             ntt::vector<float, 8>{1E-06}, false,
+                             ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
+
+        ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> buffer_10;
+        unpack<1>(buffer_9, buffer_10);
+        assert(buffer_10(0, 0, 0) == 0.0f);
+        assert(std::abs(buffer_10(0, 0, 1) - (-0.57043804f)) < 1e-4f);
+        assert(std::abs(buffer_10(0, 1, 0) - (-0.92426393f)) < 1e-4f);
+        assert(std::abs(buffer_10(0, 1, 1) - (-1.06147768f)) < 1e-4f);
+        assert(std::abs(buffer_10(0, 15, 0) - (77.11314114f)) < 1e-4f);
+        assert(std::abs(buffer_10(0, 15, 1) - (83.04106739f)) < 1e-4f);
     }
 
     // // matmul

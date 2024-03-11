@@ -13,13 +13,14 @@
  * limitations under the License.
  */
 #pragma once
-#include "kernels/binary.h"
-#include "kernels/copy.h"
-#include "kernels/matmul.h"
-#include "kernels/pack.h"
-#include "kernels/unary.h"
-#include "kernels/unpack.h"
-#include "kernels/packed_layer_norm.h"
-#include "tensor.h"
-#include "utility.h"
 #include "vector_type.h"
+
+namespace nncase::ntt::vector_ops {
+template <class TVec> struct sum;
+} // namespace ntt::vector_ops
+
+#ifdef __ARM_NEON__
+#include "kernels/arch/arm/vector_ops.h"
+#else
+#include "kernels/arch/x86_64/vector_ops.h"
+#endif

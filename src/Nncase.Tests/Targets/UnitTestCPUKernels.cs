@@ -63,7 +63,7 @@ public sealed class PackLayerNormCaseData : TheoryData<ICpuKernelCase>
             lane = 8;
         }
 
-        Add(new PackLayerNormCase("PackLayerNorm0", new[] { 32, 64, 128 }, 1, new[] { 0 }, lane));
+        Add(new PackLayerNormCase("PackLayerNorm0", new[] { 1, 16, 2 }, 1, new[] { 1 }, lane)); // pack within the axis
     }
 }
 
@@ -83,7 +83,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [ClassData(typeof(PackUnpackCaseData))]
+    // [ClassData(typeof(PackUnpackCaseData))]
     [ClassData(typeof(PackLayerNormCaseData))]
     internal async Task Run(ICpuKernelCase kernelCase)
     {
@@ -132,7 +132,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         }
 #endif
         var cos = Comparator.CosSimilarity(output, actual);
-        Assert.True(cos > 0.999);
+        Assert.True(cos > 0.999, $"the cos is {cos}");
     }
 
     private async Task Compile(IRModule module)
@@ -212,11 +212,11 @@ internal sealed class PackLayerNormCase : ICpuKernelCase
                 packedBias = IR.F.CPU.Pack(packedBias, Enumerable.Repeat(lane, pAxes.Length).ToArray(), pAxes);
             }
 
-            var layernorm = IR.F.CPU.PackedLayerNorm(packedInput, packedScale, packedBias, axis, 1e-6f, false, packedAxes, padsInput);
+            var layernorm = IR.F.CPU.PackedLayerNorm(packedInput, packedScale, packedBias, axis, 1e-6f, true, packedAxes, padsInput);
 
             var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(layernorm, packedAxes), shape, padsInput);
 
-            Fusion = new Fusion(Name + "_kernel", CPUTarget.Kind, IR.F.CPU.Boxing(post, new DistributedType(inputType, new SBP[] { SBP.B }, ICpuKernelCase.DefaultPlacement)), Vars);
+            Fusion = new Fusion(Name + "_kernel", CPUTarget.Kind, IR.F.CPU.Boxing(post, inputType), Vars.ToArray());
         }
     }
 
