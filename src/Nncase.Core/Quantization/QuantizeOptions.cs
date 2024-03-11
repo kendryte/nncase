@@ -109,6 +109,11 @@ public class QuantizeOptions
     public bool SensitivityQuantEnabled { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets a value for cosine target.
+    /// </summary>
+    public float CosineTarget { get; set; } = 0.5f;
+
+    /// <summary>
     /// Gets or sets a value indicating whether enable the Auto bind quant method.
     /// </summary>
     public bool BindQuantMethod { get; set; }

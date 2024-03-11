@@ -46,6 +46,8 @@ internal partial class Quantizer
     {
         var ranges = new Dictionary<Expr, ValueRange<float>[]>(ReferenceEqualityComparer.Instance);
         var quantTypes = new Dictionary<Expr, Dictionary<ParameterInfo, DataType>>();
+        List<KeyValuePair<(Var Var, QuantConfig QuantConfig), float>> quantSensitivity = new();
+        Tensor groundTruth = default!;
 
         // 如果量化方式由json文件指定，那么直接从json文件中读取
         if (_quantizeOptions.QuantScheme != string.Empty)
@@ -85,7 +87,7 @@ internal partial class Quantizer
             else
             {
                 // 如果量化方式需要基于敏感度排序进行量化，则直接按照敏感度排序后的量化方式进行量化
-                UpdateQuantTypesBySensitivity(ranges, quantTypes);
+                (quantSensitivity, groundTruth) = await GetSensitivity(ranges, quantTypes);
             }
 
             if (_quantizeOptions.ExportQuantScheme == true)
@@ -96,12 +98,55 @@ internal partial class Quantizer
 
         FillQuantConfig(ranges, quantTypes);
 
+        await UpdateQuantConfigBySensitivity(quantSensitivity, groundTruth);
+
         AssignRanges();
     }
 
     private void UpdateQuantInfoFromJson()
     {
         throw new NotImplementedException();
+    }
+
+    private async Task UpdateQuantConfigBySensitivity(List<KeyValuePair<(Var Var, QuantConfig QuantConfig), float>> sensitivity, Tensor groundTruth)
+    {
+        if (sensitivity.Count == 0)
+        {
+            return;
+        }
+
+        var samples = await _quantizeOptions.CalibrationDataset!.Samples.ToListAsync();
+        var sampleFillVarWithConst = new Dictionary<Var, IValue>(samples.First());
+
+        foreach (var (var, config) in _fakeNodeConfigs!)
+        {
+            if (config.IsEmpty())
+            {
+                continue;
+            }
+
+            sampleFillVarWithConst.Add(var, Value.FromTensor(config.ToRaw()));
+        }
+
+        var outDefault = 0;
+
+        // debug:delete
+        int debugFakeNode = 0;
+        foreach (var (config, _) in sensitivity)
+        {
+            Console.WriteLine($"try opt: nodes:{sensitivity.Count} current:{++debugFakeNode}");
+
+            _fakeNodeConfigs![config.Var] = config.QuantConfig;
+            sampleFillVarWithConst[config.Var] = Value.FromTensor(config.QuantConfig.ToRaw());
+            var curentResults = CompilerServices.Evaluate(((Function)_expr).Body, sampleFillVarWithConst);
+            var currentResult = curentResults is TensorValue ? curentResults.AsTensor() : curentResults[outDefault].AsTensor();
+            var cosine = Utility.GetCosineSimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(currentResult.BytesBuffer));
+
+            if (cosine > _quantizeOptions.CosineTarget)
+            {
+                return;
+            }
+        }
     }
 
     private void UpdateQuantTypesByConfig(Dictionary<Expr, Dictionary<ParameterInfo, DataType>> quantTypes, DataType quantType, DataType wQuantType)
@@ -183,11 +228,11 @@ internal partial class Quantizer
         }
     }
 
-    private async void UpdateQuantTypesBySensitivity(IDictionary<Expr, ValueRange<float>[]> ranges, Dictionary<Expr, Dictionary<ParameterInfo, DataType>> quantTypes)
+    private async Task<(List<KeyValuePair<(Var Var, QuantConfig QuantConfig), float>> SensSorted, Tensor GroundTruth)> GetSensitivity(IDictionary<Expr, ValueRange<float>[]> ranges, Dictionary<Expr, Dictionary<ParameterInfo, DataType>> quantTypes)
     {
         UpdateQuantTypesByConfig(quantTypes, DataTypes.UInt8, DataTypes.UInt8);
 
-        var sensitivities = new Dictionary<Expr, Dictionary<QuantConfig, float>>();
+        var sensitivities = new Dictionary<(Var, QuantConfig), float>();
 
         var samples = await _quantizeOptions.CalibrationDataset!.Samples.ToListAsync();
         var sampleFillVarWithConst = new Dictionary<Var, IValue>(samples.First());
@@ -228,7 +273,7 @@ internal partial class Quantizer
             foreach (var quantType in quantTypeSupport)
             {
                 // debug:delete
-                Console.WriteLine($"nodes:{_fakeNodesVars.Count} current:{debugFakeNode} types:{quantTypeSupport.Count} current:{++debugQuantType}");
+                Console.WriteLine($"get sensitivity: nodes:{_fakeNodesVars.Count} current:{debugFakeNode} types:{quantTypeSupport.Count} current:{++debugQuantType}");
 
                 var configHeader = new float[] { parameters.Length, ranges[fakeNode].Length };
                 var inputConfigs = new List<QuantConfigData>();
@@ -264,14 +309,21 @@ internal partial class Quantizer
                 var quantConfig = QuantConfig.FromRaw(quantInfo);
 
                 sampleFillVarWithQuant[var] = Value.FromTensor(quantConfig.ToRaw());
-                var curentResults = CompilerServices.Evaluate(((Function)_expr).Body, sampleFillVarWithConst);
+                var curentResults = CompilerServices.Evaluate(((Function)_expr).Body, sampleFillVarWithQuant);
                 var currentResult = curentResults is TensorValue ? curentResults.AsTensor() : curentResults[outDefault].AsTensor();
-                var cosineError = Utility.GetCosineSimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(currentResult.BytesBuffer));
-                sensitivity[quantConfig] = cosineError;
+                var cosine = Utility.GetCosineSimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(currentResult.BytesBuffer));
+                sensitivities[(var, quantConfig)] = (float)((float)(cosine + (0.0001 * debugFakeNode) + (debugQuantType * 0.00001)) - 0.5);
             }
-
-            sensitivities[fakeNode] = sensitivity;
         }
+
+        // var sensSorted = sensitivities
+        // .OrderBy(entry => entry.Value.Values.Min())
+        // .ToDictionary(
+        //     entry => entry.Key,
+        //     entry => entry.Value.OrderBy(kv => kv.Value).ToDictionary(kv => kv.Key, kv => kv.Value));
+        var sensSorted = sensitivities.OrderBy(pair => pair.Value).ToList();
+
+        return (sensSorted, groundTruth);
     }
 
     private void ExportQuantScheme()
@@ -311,6 +363,10 @@ internal partial class Quantizer
         var expr = _graph.Extract(_graph.Root!, null, out _);
 
         ExprCollector.Collect(expr).OfType<Call>().Where(call => call.Target is QuantizeOp).ToList().ForEach(fakeCall => _fakeNodesVars![(Var)fakeCall.Arguments[^1]] = fakeCall);
+
+        var keys1 = _fakeNodesVars.Keys;
+        var keys2 = _fakeNodeConfigs!.Keys;
+        Trace.Assert(keys1.All(key => keys2.Contains(key)));
 
         return expr;
     }
