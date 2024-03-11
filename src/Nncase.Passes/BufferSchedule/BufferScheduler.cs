@@ -98,7 +98,7 @@ public class BufferScheduler
             throw new System.NotSupportedException();
         }
 
-        foreach (var (k, v) in bufferMap)
+        foreach (var (k, _) in bufferMap)
         {
             bufferMap[k].MemInterval.Start = checked((int)solver.Value(boxs[k].Y.StartExpr()));
             bufferMap[k].MemInterval.Stop = checked((int)solver.Value(boxs[k].Y.EndExpr()));
