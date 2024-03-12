@@ -34,6 +34,8 @@ public interface ICpuKernelCase
     IReadOnlyList<Tensor> Inputs { get; }
 
     public static Placement DefaultPlacement { get; } = new Placement(new[] { 1 }, "t");
+
+    public static int Lane => Vector256.IsHardwareAccelerated ? 8 : 4;
 }
 
 public sealed class PackUnpackCaseData : TheoryData<ICpuKernelCase>
@@ -57,13 +59,7 @@ public sealed class PackLayerNormCaseData : TheoryData<ICpuKernelCase>
 {
     public PackLayerNormCaseData()
     {
-        var lane = 4;
-        if (Vector256.IsHardwareAccelerated)
-        {
-            lane = 8;
-        }
-
-        Add(new PackLayerNormCase("PackLayerNorm0", new[] { 1, 16, 2 }, 1, new[] { 1 }, lane)); // pack within the axis
+        Add(new PackLayerNormCase("PackLayerNorm0", new[] { 1, 16, 2 }, 1, new[] { 1 }, ICpuKernelCase.Lane)); // pack within the axis
     }
 }
 
@@ -71,14 +67,17 @@ public sealed class PackSoftMaxCaseData : TheoryData<ICpuKernelCase>
 {
     public PackSoftMaxCaseData()
     {
-        var lane = 4;
-        if (Vector256.IsHardwareAccelerated)
-        {
-            lane = 8;
-        }
+        Add(new PackSoftMaxCase("PackSoftMax0", new[] { 1, 16, 2 }, 1, ICpuKernelCase.Lane, new[] { 1 })); // pack axis == axis
+        Add(new PackSoftMaxCase("PackSoftMax1", new[] { 1, 16, 32 }, 2, ICpuKernelCase.Lane, new[] { 2 })); // pack axis == axis
+    }
+}
 
-        Add(new PackSoftMaxCase("PackSoftMax0", new[] { 1, 16, 2 }, 1, lane, new[] { 1 })); // pack axis == axis
-        Add(new PackSoftMaxCase("PackSoftMax1", new[] { 1, 16, 32 }, 2, lane, new[] { 2 })); // pack axis == axis
+public sealed class PackReshapeCaseData : TheoryData<ICpuKernelCase>
+{
+    public PackReshapeCaseData()
+    {
+        Add(new PackSoftMaxCase("PackSoftMax0", new[] { 1, 16, 2 }, 1, ICpuKernelCase.Lane, new[] { 1 })); // pack axis == axis
+        Add(new PackSoftMaxCase("PackSoftMax1", new[] { 1, 16, 32 }, 2, ICpuKernelCase.Lane, new[] { 2 })); // pack axis == axis
     }
 }
 

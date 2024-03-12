@@ -32,19 +32,21 @@ public sealed partial class AutoPacking : IRewriteRule
             return null;
         }
 
+        var rank = 1;
+        var lane = System.Runtime.Intrinsics.Vector256.IsHardwareAccelerated ? 8 : 4;
         var newbody = CompilerServices.ERewrite(
             body,
             new IRewriteRule[] {
-                new Passes.Rules.CPU.PackSoftmax(),
-                new Passes.Rules.CPU.PackSwish(),
-                new Passes.Rules.CPU.PackLayerNorm(),
-                new Passes.Rules.CPU.PackMatMul(),
-                new Passes.Rules.CPU.PackUnary(),
-                new Passes.Rules.CPU.PackBinary(),
-                new Passes.Rules.CPU.PackTranspose(),
-                new Passes.Rules.CPU.PackUnsqueeze(),
-                new Passes.Rules.CPU.PackReshape(),
-                new Passes.Rules.CPU.PackSlice(),
+                new Passes.Rules.CPU.PackSoftmax() { Rank = rank, Lane = lane },
+                new Passes.Rules.CPU.PackSwish() { Rank = rank, Lane = lane },
+                new Passes.Rules.CPU.PackLayerNorm() { Rank = rank, Lane = lane },
+                new Passes.Rules.CPU.PackMatMul() { Rank = rank, Lane = lane },
+                new Passes.Rules.CPU.PackUnary() { Rank = rank, Lane = lane },
+                new Passes.Rules.CPU.PackBinary() { Rank = rank, Lane = lane },
+                new Passes.Rules.CPU.PackTranspose() { Rank = rank, Lane = lane },
+                new Passes.Rules.CPU.PackUnsqueeze() { Rank = rank, Lane = lane },
+                new Passes.Rules.CPU.PackReshape() { Rank = rank, Lane = lane },
+                new Passes.Rules.CPU.PackSlice() { Rank = rank, Lane = lane },
                 new Passes.Rules.Neutral.FoldConstCall(),
                 new Passes.Rules.CPU.FoldPackUnpack(),
                 new Passes.Rules.CPU.FoldPackConcatUnpack(),

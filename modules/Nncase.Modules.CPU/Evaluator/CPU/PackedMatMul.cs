@@ -19,11 +19,12 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
     {
         var lhs = context.GetOrtArgumentValue(target, PackedMatMul.Lhs); // [x,m/32,k/32,m',k']
         var rhs = context.GetOrtArgumentValue(target, PackedMatMul.Rhs); // [x,k/32,n/32,k',n']
-        var outLanes = new[] { (int)lhs.Shape[^2], (int)rhs.Shape[^1] };
-        var outshape = new[] { (int)lhs.Shape[^4], (int)rhs.Shape[^3] };
+
+        var outLanes = target.LhsPackedAxes.Count == 1 ? Array.Empty<int>() : new[] { (int)lhs.Shape[^2], (int)rhs.Shape[^1] };
+        var outshape = target.LhsPackedAxes.Count == 1 ? new[] { (int)lhs.Shape[^3], (int)rhs.Shape[^2] } : new[] { (int)lhs.Shape[^4], (int)rhs.Shape[^3] };
         var maxRank = System.Math.Max(lhs.Shape.Length, rhs.Shape.Length);
-        outshape = Enumerable.Repeat(1L, maxRank - lhs.Shape.Length).Concat(lhs.Shape.SkipLast(4)).
-         Zip(Enumerable.Repeat(1L, maxRank - rhs.Shape.Length).Concat(rhs.Shape.SkipLast(4))).
+        outshape = Enumerable.Repeat(1L, maxRank - lhs.Shape.Length).Concat(lhs.Shape.SkipLast(2 + target.LhsPackedAxes.Count)).
+         Zip(Enumerable.Repeat(1L, maxRank - rhs.Shape.Length).Concat(rhs.Shape.SkipLast(2 + target.RhsPackedAxes.Count))).
          Select(p => (int)System.Math.Max(p.First, p.Second)).
          Concat(outshape).ToArray();
 
@@ -42,12 +43,15 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
         // var matmul = OrtKI.Mul(lhs, rhs); // [x, m/32,k/32,n/32,m',k',n']
         // matmul = OrtKI.ReduceSum(matmul, new long[] { -2, -5 }, 0, 1);
         var matmul = OrtKI.MatMul(lhs, rhs);
-        foreach (var (lane, axis) in outLanes.Zip(new[] { -2 + outshape.Length, -1 + outshape.Length }))
+        if (target.LhsPackedAxes.Count == 2)
         {
-            matmul = matmul.Pack(lane, axis);
+            foreach (var (lane, axis) in outLanes.Zip(new[] { -2 + outshape.Length, -1 + outshape.Length }))
+            {
+                matmul = matmul.Pack(lane, axis);
+            }
         }
 
-        return Value.FromTensor(Tensor.FromBytes(new VectorType(DataTypes.Float32, outLanes), matmul.BytesBuffer.ToArray(), outshape));
+        return Value.FromTensor(Tensor.FromBytes(outLanes.Length == 0 ? DataTypes.Float32 : new VectorType(DataTypes.Float32, outLanes), matmul.BytesBuffer.ToArray(), outshape));
     }
 
     public IRType Visit(ITypeInferenceContext context, PackedMatMul target)
@@ -57,22 +61,34 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
 
         bool CheckPackAxes(Shape lhs, Shape rhs)
         {
-            if (target.LhsPackedAxes.Count != 2 || target.RhsPackedAxes.Count != 2)
+            bool valid = true;
+            switch (target.LhsPackedAxes.Count, target.RhsPackedAxes.Count)
             {
-                return false;
+                case (1, 1):
+                    if (target.LhsPackedAxes[0] != lhs.Rank - 1 || target.RhsPackedAxes[0] != rhs.Rank - 2)
+                    {
+                        valid = false;
+                    }
+
+                    break;
+                case (2, 2):
+                    if (target.LhsPackedAxes[0] != lhs.Rank - 2 || target.LhsPackedAxes[1] != lhs.Rank - 1)
+                    {
+                        valid = false;
+                    }
+
+                    if (target.RhsPackedAxes[0] != rhs.Rank - 2 || target.RhsPackedAxes[1] != rhs.Rank - 1)
+                    {
+                        valid = false;
+                    }
+
+                    break;
+                default:
+                    valid = false;
+                    break;
             }
 
-            if (target.LhsPackedAxes[0] != lhs.Rank - 2 || target.LhsPackedAxes[1] != lhs.Rank - 1)
-            {
-                return false;
-            }
-
-            if (target.RhsPackedAxes[0] != rhs.Rank - 2 || target.RhsPackedAxes[1] != rhs.Rank - 1)
-            {
-                return false;
-            }
-
-            return true;
+            return valid;
         }
 
         IRType rType;

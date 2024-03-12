@@ -23,6 +23,8 @@ public abstract class PackRule : RewriteRule<Pattern>
 {
     public int Lane { get; set; } = 32;
 
+    public int Rank { get; set; } = 2;
+
     public override Expr? GetReplace(IMatchResult result, RunPassContext options) => throw new NotImplementedException();
 }
 
@@ -56,7 +58,10 @@ public sealed class PackSoftmax : PackRule
             AddCandidate(new[] { i }, new[] { Lane });
             for (int j = i + 1; j < input.CheckedShape.Count; j++)
             {
-                AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                if (Rank > 1)
+                {
+                    AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                }
             }
         }
 
@@ -114,7 +119,10 @@ public sealed class PackLayerNorm : PackRule
             AddCandidate(new[] { i }, new[] { Lane });
             for (int j = i + 1; j < input.CheckedShape.Count; j++)
             {
-                AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                if (Rank > 1)
+                {
+                    AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                }
             }
         }
 
@@ -146,11 +154,20 @@ public sealed class PackMatMul : PackRule
             var matmul = IR.F.CPU.PackedMatMul(packedLhs, packedRhs, lhsPackedAxes, lhsPadNums, rhsPackedAxes, rhsPadNums);
             var lhsAlign = System.Math.Max(lhsShape.Length, rhsShape.Length) - lhsShape.Length;
             var rhsAlign = System.Math.Max(lhsShape.Length, rhsShape.Length) - rhsShape.Length;
-            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(matmul, new[] { lhsAlign + lhsPackedAxes[0], rhsAlign + rhsPackedAxes[1] }), candidate.CheckedShape.ToValueArray(), new[] { lhsPadNums[0], rhsPadNums[1] });
+            var post = matmul;
+            if (lhsPackedAxes.Length == 2 && rhsPackedAxes.Length == 2)
+            {
+                post = PackUtility.SliceForPack(IR.F.CPU.Unpack(matmul, new[] { lhsAlign + lhsPackedAxes[0], rhsAlign + rhsPackedAxes[1] }), candidate.CheckedShape.ToValueArray(), new[] { lhsPadNums[0], rhsPadNums[1] });
+            }
+
             rets.Add(post);
         }
 
-        AddCandidate(new[] { lhsShape.Length - 2, lhsShape.Length - 1 }, new[] { rhsShape.Length - 2, rhsShape.Length - 1 }, new[] { Lane, Lane }, new[] { Lane, Lane });
+        AddCandidate(new[] { lhsShape.Length - 1 }, new[] { rhsShape.Length - 2 }, new[] { Lane }, new[] { Lane });
+        if (Rank > 1)
+        {
+            AddCandidate(new[] { lhsShape.Length - 2, lhsShape.Length - 1 }, new[] { rhsShape.Length - 2, rhsShape.Length - 1 }, new[] { Lane, Lane }, new[] { Lane, Lane });
+        }
 
         return rets;
     }
@@ -186,7 +203,10 @@ public sealed class PackUnary : PackRule
             AddCandidate(new[] { i }, new[] { Lane });
             for (int j = i + 1; j < input.CheckedShape.Count; j++)
             {
-                AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                if (Rank > 1)
+                {
+                    AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                }
             }
         }
 
@@ -229,7 +249,10 @@ public sealed class PackBinary : PackRule
         {
             var lhsPackedAxes = arr.First();
             var rhsPackedAxes = arr.Skip(1).First();
-            AddCandidate(lhsPackedAxes, rhsPackedAxes, Enumerable.Repeat(Lane, lhsPackedAxes.Length).ToArray(), Enumerable.Repeat(Lane, rhsPackedAxes.Length).ToArray());
+            if (lhsPackedAxes.Length <= Rank && rhsPackedAxes.Length <= Rank)
+            {
+                AddCandidate(lhsPackedAxes, rhsPackedAxes, Enumerable.Repeat(Lane, lhsPackedAxes.Length).ToArray(), Enumerable.Repeat(Lane, rhsPackedAxes.Length).ToArray());
+            }
         }
 
         return rets;
@@ -282,7 +305,10 @@ public sealed class PackSwish : PackRule
             AddCandidate(new[] { i }, new[] { Lane });
             for (int j = i + 1; j < input.CheckedShape.Count; j++)
             {
-                AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                if (Rank > 1)
+                {
+                    AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                }
             }
         }
 
@@ -330,7 +356,10 @@ public sealed class PackTranspose : PackRule
             AddCandidate(new[] { i }, new[] { Lane });
             for (int j = i + 1; j < input.CheckedShape.Count; j++)
             {
-                AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                if (Rank > 1)
+                {
+                    AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                }
             }
         }
 
@@ -384,7 +413,10 @@ public sealed class PackUnsqueeze : PackRule
             AddCandidate(new[] { i }, new[] { Lane });
             for (int j = i + 1; j < input.CheckedShape.Count; j++)
             {
-                AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                if (Rank > 1)
+                {
+                    AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                }
             }
         }
 
@@ -477,7 +509,10 @@ public sealed class PackReshape : PackRule
             AddCandidate(new[] { i }, new[] { Lane });
             for (int j = i + 1; j < input.CheckedShape.Count; j++)
             {
-                AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                if (Rank > 1)
+                {
+                    AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                }
             }
         }
 
@@ -559,7 +594,10 @@ public sealed class PackSlice : PackRule
             AddCandidate(new[] { i }, new[] { Lane });
             for (int j = i + 1; j < input.CheckedShape.Count; j++)
             {
-                AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                if (Rank > 1)
+                {
+                    AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                }
             }
         }
 
