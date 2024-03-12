@@ -372,6 +372,16 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     }
 
                     break;
+                case TIR.CPU.PackedSoftmax packedsoftmax:
+                    {
+                        IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedSoftMax.cshtml", new TypedKernelTemplateModel<TIR.CPU.PackedSoftmax>(packedsoftmax)
+                        {
+                            Arguments = args.Select(x => new KernelArgument { Symbol = Visit(x) }).ToArray(),
+                            Args = args.ToArray(),
+                        }).Result);
+                    }
+
+                    break;
 
 #if false
                 case TIR.CPU.SwishB swishb:

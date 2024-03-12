@@ -110,15 +110,14 @@ void packed_softmax_1d(const TIn &input, TOut &&output, PackedAxes) {
  * @param input input tensor.
  * @param output output output.
  * @param packedAxes  packed axes
- * @param padednums packed axes's paded nums
  */
 template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TOut,
-          typename PackedAxes, typename PadedNums>
+          typename PackedAxes /* , typename PadedNums */>
 void packed_softmax(const TIn &input, TOut &&output,
-                    [[maybe_unused]] PackedAxes packedAxes,
-                    [[maybe_unused]] PadedNums padednums) noexcept {
+                    [[maybe_unused]] PackedAxes packedAxes
+                    /* , [[maybe_unused]] PadedNums padednums */) noexcept {
     static_assert(PackedAxes::rank() == 1, "currently not support 2d pack");
-    static_assert(PadedNums::at(0) == 0, "currently not support pad");
+    // static_assert(PadedNums::at(0) == 0, "currently not support pad");
     softmax_detail::packed_softmax_1d<Axis>(input, output, packedAxes);
 }
 } // namespace nncase::ntt

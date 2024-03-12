@@ -67,6 +67,21 @@ public sealed class PackLayerNormCaseData : TheoryData<ICpuKernelCase>
     }
 }
 
+public sealed class PackSoftMaxCaseData : TheoryData<ICpuKernelCase>
+{
+    public PackSoftMaxCaseData()
+    {
+        var lane = 4;
+        if (Vector256.IsHardwareAccelerated)
+        {
+            lane = 8;
+        }
+
+        Add(new PackSoftMaxCase("PackSoftMax0", new[] { 1, 16, 2 }, 1, lane, new[] { 1 })); // pack axis == axis
+        Add(new PackSoftMaxCase("PackSoftMax1", new[] { 1, 16, 32 }, 2, lane, new[] { 2 })); // pack axis == axis
+    }
+}
+
 [AutoSetupTestMethod(InitSession = true)]
 public sealed class UnitTestCPUKernels : TestClassBase
 {
@@ -83,8 +98,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    // [ClassData(typeof(PackUnpackCaseData))]
+    [ClassData(typeof(PackUnpackCaseData))]
     [ClassData(typeof(PackLayerNormCaseData))]
+    [ClassData(typeof(PackSoftMaxCaseData))]
     internal async Task Run(ICpuKernelCase kernelCase)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -159,6 +175,42 @@ internal sealed class PackUnpackCase : ICpuKernelCase
         }
 
         Vars = new[] { input };
+    }
+
+    public string Name { get; }
+
+    public Fusion Fusion { get; }
+
+    public IReadOnlyList<Var> Vars { get; }
+
+    public IReadOnlyList<Tensor> Inputs
+    {
+        get
+        {
+            return Vars.Select(v => IR.F.Random.Uniform(v.CheckedDataType, 30, 0, 1, v.CheckedShape).Evaluate().AsTensor()).ToArray();
+        }
+    }
+
+    public override string ToString() => Name;
+}
+
+internal sealed class PackSoftMaxCase : ICpuKernelCase
+{
+    public PackSoftMaxCase(string name, int[] shape, int axis, int lane, int[] packedAxes)
+    {
+        Name = name;
+        var inputType = new TensorType(DataTypes.Float32, shape);
+        var input = new Var(inputType);
+        Vars = new[] { input };
+        {
+            var finput = IR.F.CPU.Boxing(input, new DistributedType(inputType, new SBP[] { SBP.B }, ICpuKernelCase.DefaultPlacement));
+            var lanes = Enumerable.Repeat(lane, packedAxes.Length).ToArray();
+            var packed = IR.F.CPU.Pack(PackUtility.PadForPack(finput, shape, packedAxes, lanes, float.NegativeInfinity, out var pads), lanes, packedAxes);
+            var softmax = IR.F.CPU.PackedSoftmax(packed, axis, packedAxes);
+            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(softmax, packedAxes), shape, pads);
+
+            Fusion = new Fusion(Name + "_kernel", CPUTarget.Kind, IR.F.CPU.Boxing(post, inputType), Vars.ToArray());
+        }
     }
 
     public string Name { get; }

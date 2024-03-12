@@ -192,8 +192,7 @@ int main() {
 
         pack<1>(buffer_1, buffer_2);
         ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<1, 2, 2>> buffer_9;
-        packed_softmax<1>(buffer_2, buffer_9, ntt::fixed_shape<1>{},
-                          ntt::fixed_shape<0>{});
+        packed_softmax<1>(buffer_2, buffer_9, ntt::fixed_shape<1>{});
         ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> buffer_10;
         unpack<1>(buffer_9, buffer_10);
 
