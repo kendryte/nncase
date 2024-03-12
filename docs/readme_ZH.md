@@ -20,7 +20,8 @@ Telegram: [nncase community](https://t.me/joinchat/PPcEPZMLaTViNDI1)
 - [常见问题](./FAQ_ZH.md)
 - [示例](../examples/user_guide/k230_simulate-ZH.ipynb)
 - [Colab 在线示例](https://colab.research.google.com/drive/1m8TTree096m5VHmq-Uc60gXyltVCgnRb?usp=sharing)
-- [ *nncase与K230_SDK版本对应关系说明* ](https://developer.canaan-creative.com/k230/dev/zh/03_other/K230_SDK_%E7%89%88%E6%9C%AC%E8%AF%B4%E6%98%8E.html#ai-sdkcanmvnncase)
+- [ *nncase与K230_SDK版本对应关系说明* ](https://developer.canaan-creative.com/k230/dev/zh/03_other/K230_SDK_nncase%E7%89%88%E6%9C%AC%E5%AF%B9%E5%BA%94%E5%85%B3%E7%B3%BB.html#k230sdknncase)
+- [SDK中更新nncase运行时库](https://developer.canaan-creative.com/k230/dev/zh/03_other/K230_SDK%E6%9B%B4%E6%96%B0nncase%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BA%93%E6%8C%87%E5%8D%97.html)
 
 ### 安装
 
