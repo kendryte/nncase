@@ -372,14 +372,15 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new[] { 1, 32, 384, 128 }, new[] { 0, 1, 3, 2 } })]
-    [InlineData(new object[] { new[] { 1, 32, 384, 128 }, new[] { 0, 3, 1, 2 } })]
-    [InlineData(new object[] { new[] { 1, 32, 384, 128 }, new[] { 3, 0, 1, 2 } })]
-    [InlineData(new object[] { new[] { 1, 32, 384, 128 }, new[] { 1, 0, 3, 2 } })]
-    [InlineData(new object[] { new[] { 1, 32, 384, 128 }, new[] { 0, 3, 2, 1 } })]
-    [InlineData(new object[] { new[] { 1, 32, 384, 128 }, new[] { 3, 0, 2, 1 } })]
+    [InlineData(new object[] { new[] { 1, 32, 64, 96 }, new[] { 0, 1, 3, 2 } })]
+    [InlineData(new object[] { new[] { 1, 32, 64, 96 }, new[] { 0, 3, 1, 2 } })]
+    [InlineData(new object[] { new[] { 1, 32, 64, 96 }, new[] { 3, 0, 1, 2 } })]
+    [InlineData(new object[] { new[] { 1, 32, 64, 96 }, new[] { 1, 0, 3, 2 } })]
+    [InlineData(new object[] { new[] { 1, 32, 64, 96 }, new[] { 0, 3, 2, 1 } })]
+    [InlineData(new object[] { new[] { 1, 32, 64, 96 }, new[] { 3, 0, 2, 1 } })]
     public void TestPackTransposeRule(int[] shape, int[] perm)
     {
+        // NOTE the big shape will make ortki crash
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pre = IR.F.Tensors.Transpose(input, perm);
 
