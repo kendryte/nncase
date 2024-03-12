@@ -14,18 +14,12 @@
  */
 #pragma once
 #include "../apply.h"
+#include "../utility.h"
 #include "../vector_ops.h"
 #include "binary.h"
 #include "unary.h"
 
 namespace nncase::ntt {
-
-template <typename T>
-concept IsFixedTensor =
-    requires(T t) {
-        typename std::decay_t<T>::shape_type;
-        is_fixed_dims_v<typename std::decay_t<T>::shape_type>;
-    };
 
 namespace packed_layer_norm_detail {
 
@@ -67,7 +61,7 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
     constexpr auto sub_op = mathops::sub<TElem>();
     constexpr auto add_op = mathops::add<TElem>();
     constexpr auto mul_op = mathops::mul<TElem>();
-    constexpr auto vsum_op = vector_ops::sum<TElem>();
+    constexpr auto vsum_op = vector_ops::reduce_sum<TElem>();
 
     TElem finner_size = inner_size * TElem::shape_type::length();
 
@@ -78,12 +72,11 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
         auto output_p = output.buffer().data() + linear_offset(index, strides);
 
         // compute mean
-        TElem mean1tmp = 0;
         TElem mean1 = 0;
         if (use_mean) {
             for (size_t i = 0; i < inner_size; i++)
-                mean1tmp = add_op(mean1tmp, div_op(input_p[i], finner_size));
-            mean1 = vsum_op(mean1tmp);
+                mean1 = add_op(mean1, div_op(input_p[i], finner_size));
+            mean1 = vsum_op(mean1);
         }
 
         std::array<TElem, inner_size> sub;
@@ -94,10 +87,10 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
         for (auto i = 0; i < inner_size; i++)
             pow[i] = mul_op(sub[i], sub[i]);
 
-        TElem mean2temp = 0;
+        TElem mean2 = 0;
         for (auto i = 0; i < inner_size; i++)
-            mean2temp = add_op(mean2temp, div_op(pow[i], finner_size));
-        TElem mean2 = vsum_op(mean2temp);
+            mean2 = add_op(mean2, div_op(pow[i], finner_size));
+        mean2 = vsum_op(mean2);
 
         TElem add = add_op(mean2, epsilon);
         TElem sqrt = sqrt_op(add);

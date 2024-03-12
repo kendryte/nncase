@@ -16,7 +16,8 @@
 #include "vector_type.h"
 
 namespace nncase::ntt::vector_ops {
-template <class TVec> struct sum;
+template <class TVec> struct reduce_sum;
+template <class TVec> struct reduce_max;
 } // namespace ntt::vector_ops
 
 #ifdef __ARM_NEON__

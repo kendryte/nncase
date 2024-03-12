@@ -16,7 +16,7 @@
 #include <arm_neon.h>
 
 namespace nncase::ntt::vector_ops {
-template <> struct sum<ntt::vector<float, 4>> {
+template <> struct reduce_sum<ntt::vector<float, 4>> {
     float operator()(ntt::vector<float, 4> v) const noexcept {
         float32x2_t vec1 = vadd_f32(vget_low_f32(v), vget_high_f32(v));
         float32x2_t vec2 = vadd_f32(vec1, vrev64_f32(vec1));
@@ -27,23 +27,34 @@ template <> struct sum<ntt::vector<float, 4>> {
     }
 };
 
-template <> struct sum<ntt::vector<float, 8>> {
+template <> struct reduce_sum<ntt::vector<float, 8>> {
     float operator()(ntt::vector<float, 8> v) const noexcept {
         float32x4x2_t val = v;
         float result = 0;
         auto vec = val.val[0];
         float32x2_t vec1 = vadd_f32(vget_low_f32(vec), vget_high_f32(vec));
         float32x2_t vec2 = vadd_f32(vec1, vrev64_f32(vec1));
-        float32x2_t vec3 = vadd_f32(vec2, vrev64_f32(vec2));
-        result += vget_lane_f32(vec3, 0);
+        result += vget_lane_f32(vec2, 0);
 
         vec = val.val[1];
         vec1 = vadd_f32(vget_low_f32(vec), vget_high_f32(vec));
         vec2 = vadd_f32(vec1, vrev64_f32(vec1));
-        vec3 = vadd_f32(vec2, vrev64_f32(vec2));
-        result += vget_lane_f32(vec3, 0);
+        result += vget_lane_f32(vec2, 0);
 
         return result;
+    }
+};
+
+template <> struct reduce_max<ntt::vector<float, 4>> {
+    float operator()(ntt::vector<float, 4> v) const noexcept {
+        return vmaxvq_f32(v);
+    }
+};
+
+template <> struct reduce_max<ntt::vector<float, 8>> {
+    float operator()(ntt::vector<float, 8> v) const noexcept {
+        float32x4x2_t val = v;
+        return std::max(vmaxvq_f32(val.val[0]), vmaxvq_f32(val.val[1]));
     }
 };
 

@@ -184,6 +184,27 @@ int main() {
         assert(std::abs(buffer_10(0, 15, 1) - (83.04106739f)) < 1e-4f);
     }
 
+    // soft max
+    {
+        ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> buffer_1;
+        std::iota(buffer_1.buffer().begin(), buffer_1.buffer().end(), 0.f);
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<1, 2, 2>> buffer_2;
+
+        pack<1>(buffer_1, buffer_2);
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<1, 2, 2>> buffer_9;
+        packed_softmax<1>(buffer_2, buffer_9, ntt::fixed_shape<1>{},
+                          ntt::fixed_shape<0>{});
+        ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> buffer_10;
+        unpack<1>(buffer_9, buffer_10);
+
+        assert(std::abs(buffer_10(0, 13, 0) - (1.58368867e-02)) < 1e-6f);
+        assert(std::abs(buffer_10(0, 13, 1) - (1.58368867e-02)) < 1e-6f);
+        assert(std::abs(buffer_10(0, 14, 0) - (1.17019644e-01)) < 1e-6f);
+        assert(std::abs(buffer_10(0, 14, 1) - (1.17019644e-01)) < 1e-6f);
+        assert(std::abs(buffer_10(0, 15, 0) - (8.64664717e-01)) < 1e-6f);
+        assert(std::abs(buffer_10(0, 15, 1) - (8.64664717e-01)) < 1e-6f);
+    }
+
     // // matmul
     // {
     //     ntt::tensor<float, ntt::fixed_shape<3, 4>> ta;

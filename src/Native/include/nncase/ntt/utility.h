@@ -80,4 +80,11 @@ inline constexpr bool is_same_seq(const T<ADims...> &a, const T<BDims...> &b) {
                a, b, std::make_index_sequence<sizeof...(ADims)>{});
 }
 
+template <typename T>
+concept IsFixedTensor =
+    requires(T t) {
+        typename std::decay_t<T>::shape_type;
+        is_fixed_dims_v<typename std::decay_t<T>::shape_type>;
+    };
+
 } // namespace nncase::ntt

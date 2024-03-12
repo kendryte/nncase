@@ -21,6 +21,10 @@ inline nncase::ntt::vector<float32_t, 4>
 cos(nncase::ntt::vector<float32_t, 4> v) {
     return cos_ps(v);
 }
+
+inline float32x4x2_t exp(float32x4x2_t v) {
+    return float32x4x2_t{exp_ps(v.val[0]), exp_ps(v.val[1])};
+}
 } // namespace std
 
 namespace nncase::ntt {

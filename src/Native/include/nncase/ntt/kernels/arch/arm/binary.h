@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 #pragma once
-#include <nncase/ntt/vector_type.h>
 #include <arm_neon.h>
+#include <nncase/ntt/vector_type.h>
 
 namespace nncase::ntt::mathops {
 
@@ -57,4 +57,15 @@ template <> struct div<ntt::vector<float, 8>> {
         return r;
     }
 };
-} // namespace nncase::ntt::math_ops
+template <> struct max<ntt::vector<float, 8>> {
+    ntt::vector<float, 8> operator()(ntt::vector<float, 8> v1,
+                                     ntt::vector<float, 8> v2) const noexcept {
+        float32x4x2_t r;
+        r.val[0] =
+            vmaxq_f32(((float32x4x2_t)v1).val[0], ((float32x4x2_t)v2).val[0]);
+        r.val[1] =
+            vmaxq_f32(((float32x4x2_t)v1).val[1], ((float32x4x2_t)v2).val[1]);
+        return r;
+    }
+};
+} // namespace nncase::ntt::mathops
