@@ -14,27 +14,29 @@
  */
 #pragma once
 #include "../apply.h"
+#include "../vector_ops.h"
 #include "binary.h"
 
 namespace nncase::ntt {
-template <class TLhs, class TRhs, class TOut, typename LhsPackedAxes,
-          typename LhsPadedNums, typename RhsPackedAxes, typename RhsPadedNums>
-void packed_matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output,
-                   [[maybe_unused]] LhsPackedAxes lhsPackedAxes,
-                   [[maybe_unused]] LhsPadedNums lhsPadedNums,
-                   [[maybe_unused]] RhsPackedAxes rhsPackedAxes,
-                   [[maybe_unused]] RhsPadedNums rhsPadedNums) {
-    auto out_shape = output.shape();
+
+namespace packed_matmul_detail {
+
+template <class TLhs, class TRhs, class TOut, typename LhsPadedNums,
+          typename RhsPadedNums>
+void packed_1d_impl(const TLhs &lhs, const TRhs &rhs, TOut &&output,
+                    [[maybe_unused]] LhsPadedNums lhsPadedNums,
+                    [[maybe_unused]] RhsPadedNums rhsPadedNums) {
     using TElemt = typename TLhs::element_type;
     mathops::mul<TElemt> mul;
     mathops::add<TElemt> add;
-    apply(out_shape, [&](auto index) {
-        constexpr auto lrank = TLhs::shape_type::rank();
-        constexpr auto rrank = TRhs::shape_type::rank();
-        auto lhs_index = ranked_shape<lrank>{};
-        auto rhs_index = ranked_shape<rrank>{};
-        constexpr size_t lk = lhs_index.rank() - 1;
-        constexpr size_t rk = rhs_index.rank() - 2;
+    vector_ops::reduce_sum<TElemt> rvsum;
+    constexpr auto lrank = TLhs::shape_type::rank();
+    constexpr auto rrank = TRhs::shape_type::rank();
+    auto lhs_index = ranked_shape<lrank>{};
+    auto rhs_index = ranked_shape<rrank>{};
+    constexpr size_t lk = lhs_index.rank() - 1;
+    constexpr size_t rk = rhs_index.rank() - 2;
+    apply(output.shape(), [&](auto index) {
         for (size_t i = 0; i < lk; i++) {
             lhs_index[i] = index[i];
         }
@@ -49,7 +51,44 @@ void packed_matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output,
             TElemt val = mul(lhs(lhs_index), rhs(rhs_index));
             acc = add(acc, val);
         }
-        output(index) = acc;
+        output(index) = rvsum(acc);
     });
+}
+} // namespace packed_matmul_detail
+
+/**
+ * @brief packed matmul
+ *  have two case:
+ *   1. pack 1d on the A's k and B's k
+ *   2. pack 2d on the A's [m,k] and B's [k,n]
+ * @param lhs
+ * @param rhs
+ * @param output
+ * @param lhsPackedAxes
+ * @param lhsPadedNums
+ * @param rhsPackedAxes
+ * @param rhsPadedNums
+ */
+template <class TLhs, class TRhs, class TOut, typename LhsPackedAxes,
+          typename LhsPadedNums, typename RhsPackedAxes, typename RhsPadedNums>
+void packed_matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output,
+                   [[maybe_unused]] LhsPackedAxes lhsPackedAxes,
+                   [[maybe_unused]] LhsPadedNums lhsPadedNums,
+                   [[maybe_unused]] RhsPackedAxes rhsPackedAxes,
+                   [[maybe_unused]] RhsPadedNums rhsPadedNums) {
+    static_assert(LhsPackedAxes::rank() == RhsPackedAxes::rank(),
+                  "the pack rank must equal!");
+    static_assert(LhsPadedNums::rank() == RhsPadedNums::rank(),
+                  "the pad rank must equal!");
+    static_assert(LhsPackedAxes::rank() == 1,
+                  "currently only support 1d pack!");
+    static_assert(LhsPadedNums::rank() == 1, "currently only support 1d pack!");
+    static_assert(LhsPadedNums::at(0) == 0 && RhsPadedNums::at(0) == 0,
+                  "currently only support no pad!");
+
+    if constexpr (LhsPackedAxes::rank() == 1) {
+        packed_matmul_detail::packed_1d_impl(lhs, rhs, output, lhsPadedNums,
+                                             rhsPadedNums);
+    }
 }
 } // namespace nncase::ntt

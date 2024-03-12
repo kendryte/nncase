@@ -42,16 +42,8 @@ public sealed class PackUnpackCaseData : TheoryData<ICpuKernelCase>
 {
     public PackUnpackCaseData()
     {
-        if (RuntimeInformation.OSArchitecture == Architecture.Arm64 && RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            // Add(new PackUnpackCase("PackUnpack0", new[] { 1, 32, 128 }, new[] { 32, 32 }, new[] { 1, 2 }));
-            Add(new PackUnpackCase("PackUnpack0", new[] { 1, 32, 128 }, new[] { 4 }, new[] { 1 }));
-        }
-        else if (Vector256.IsHardwareAccelerated)
-        {
-            Add(new PackUnpackCase("PackUnpack0", new[] { 1, 32, 128 }, new[] { 8 }, new[] { 1 }));
-            Add(new PackUnpackCase("PackUnpack1", new[] { 1, 32, 128 }, new[] { 8 }, new[] { 2 }));
-        }
+        Add(new PackUnpackCase("PackUnpack0", new[] { 1, 32, 128 }, new[] { ICpuKernelCase.Lane }, new[] { 1 }));
+        Add(new PackUnpackCase("PackUnpack1", new[] { 1, 32, 128 }, new[] { ICpuKernelCase.Lane }, new[] { 2 }));
     }
 }
 

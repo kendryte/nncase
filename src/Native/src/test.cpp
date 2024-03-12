@@ -204,21 +204,43 @@ int main() {
         assert(std::abs(buffer_10(0, 15, 1) - (8.64664717e-01)) < 1e-6f);
     }
 
-    // // matmul
-    // {
-    //     ntt::tensor<float, ntt::fixed_shape<3, 4>> ta;
-    //     ntt::tensor<float, ntt::fixed_shape<4, 2>> tb;
-    //     ntt::tensor<float, ntt::fixed_shape<3, 2>> tc;
-    //     std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
-    //     std::iota(tb.buffer().begin(), tb.buffer().end(), 0.f);
-    //     ntt::matmul(ta, tb, tc);
-    //     assert(tc(0, 0) == 28.f);
-    //     assert(tc(0, 1) == 34.f);
-    //     assert(tc(1, 0) == 76.f);
-    //     assert(tc(1, 1) == 98.f);
-    //     assert(tc(2, 0) == 124.f);
-    //     assert(tc(2, 1) == 162.f);
-    // }
+    // packed matmul 1d on k
+    {
+        ntt::tensor<float, ntt::fixed_shape<3, 16>> ta;
+        ntt::tensor<float, ntt::fixed_shape<16, 2>> tb;
+        ntt::tensor<float, ntt::fixed_shape<3, 2>> tc;
+        std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        std::iota(tb.buffer().begin(), tb.buffer().end(), 0.f);
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 2>> pa;
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<2, 2>> pb;
+        ntt::pack<1>(ta, pa);
+        ntt::pack<0>(tb, pb);
+        ntt::packed_matmul(pa, pb, tc, ntt::fixed_shape<1>{},
+                           ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
+                           ntt::fixed_shape<0>{});
+        assert(tc(0, 0) == 2480.f);
+        assert(tc(0, 1) == 2600.f);
+        assert(tc(1, 0) == 6320.f);
+        assert(tc(1, 1) == 6696.f);
+        assert(tc(2, 0) == 10160.f);
+        assert(tc(2, 1) == 10792.f);
+    }
+    
+    // norm matmul
+    {
+        ntt::tensor<float, ntt::fixed_shape<3, 4>> ta;
+        ntt::tensor<float, ntt::fixed_shape<4, 2>> tb;
+        ntt::tensor<float, ntt::fixed_shape<3, 2>> tc;
+        std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        std::iota(tb.buffer().begin(), tb.buffer().end(), 0.f);
+        ntt::matmul(ta, tb, tc);
+        assert(tc(0, 0) == 28.f);
+        assert(tc(0, 1) == 34.f);
+        assert(tc(1, 0) == 76.f);
+        assert(tc(1, 1) == 98.f);
+        assert(tc(2, 0) == 124.f);
+        assert(tc(2, 1) == 162.f);
+    }
 
     auto kmodel = read_file(
         R"(/mnt/home-nas/work/repo/nncase/tests_output/UnitTestCPUTarget/TestSimpleUnary/TestSimpleUnary.kmodel)");
