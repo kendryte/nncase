@@ -42,6 +42,7 @@ Technical Discussion QQ Group: 790699378 .   Answer: 人工智能
 
 All version of `nncase` and `nncase-kpu` in [Release](https://github.com/kendryte/nncase/releases).
 
+
 ### Supported operators
 
 - [TFLite ops](./docs/tflite_ops.md)
@@ -143,13 +144,16 @@ make && make install
 ### Canaan developer community
 
 [Canaan developer community](https://developer.canaan-creative.com/resource) contains all resources related to K210, K510, and K230.
+
 - 资料下载 --> Pre-compiled images available for the development boards corresponding to the three chips.
 - 文档 --> Documents corresponding to the three chips.
 - 模型库 --> Examples and code for industrial, security, educational and other scenarios that can be run on the K210 and K230.
 - 模型训练 --> The model training platform for K210 and K230 supports the training of various scenarios.
 
 ### Bilibili
+
 - [Canaan AI tutorial and application demonstration](https://space.bilibili.com/677429436)
+
 
 ### K210 related repo
 

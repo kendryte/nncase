@@ -32,16 +32,16 @@ A：Need to install dotnet-sdk-7.0.
 
 - Linux:
 
-  ```shell
-  sudo apt-get update
-  sudo apt-get install dotnet-sdk-7.0
-  ```
+    ```shell
+    sudo apt-get update
+    sudo apt-get install dotnet-sdk-7.0
+    ```
+
 - Windows: Refer to MicroSoft official website.
 
 ### 2.4 "KeyNotFoundException: The given key 'K230' was not present in the dictionary"
 
 A: Need to install `nncase-kpu`.
-
 - Linux: `pip install nncase-kpu`
 - Windows: Sorry for that you need to download the `whl` package in [nncase github repo](https://github.com/kendryte/nncase/tags) and install it manually.
 
@@ -99,3 +99,4 @@ interp.load_model(ifs).expect("Invalid kmodel");
 ```
 
 A：The issue arises due to a mismatch between the nncase version used when compiling the kmodel and the current SDK version. Please refer to the [SDK-nncase Version Correspondence](https://developer.canaan-creative.com/k230/dev/zh/03_other/K230_SDK_nncase%E7%89%88%E6%9C%AC%E5%AF%B9%E5%BA%94%E5%85%B3%E7%B3%BB.html) for a lookup, and follow the [Update the nncase Runtime Library Guide](https://developer.canaan-creative.com/k230/dev/zh/03_other/K230_SDK%E6%9B%B4%E6%96%B0nncase%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BA%93%E6%8C%87%E5%8D%97.html) to resolve the problem.
+
