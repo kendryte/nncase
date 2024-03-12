@@ -49,6 +49,11 @@ public sealed class PackUnpackCaseData : TheoryData<ICpuKernelCase>
             Add(new PackUnpackCase("PackUnpack0", new[] { 1, 32, 128 }, new[] { 8 }, new[] { 1 }));
             Add(new PackUnpackCase("PackUnpack1", new[] { 1, 32, 128 }, new[] { 8 }, new[] { 2 }));
         }
+        else
+        {
+            Add(new PackUnpackCase("PackUnpack0", new[] { 1, 32, 128 }, new[] { 4 }, new[] { 1 }));
+            Add(new PackUnpackCase("PackUnpack1", new[] { 1, 32, 128 }, new[] { 4 }, new[] { 2 }));
+        }
     }
 }
 
@@ -71,7 +76,8 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [ClassData(typeof(PackUnpackCaseData))]
     internal async Task Run(ICpuKernelCase kernelCase)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
             return;
         }
 
