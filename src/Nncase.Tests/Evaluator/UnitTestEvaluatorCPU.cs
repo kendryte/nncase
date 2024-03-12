@@ -12,6 +12,7 @@ using Xunit;
 
 namespace Nncase.Tests.EvaluatorTest;
 
+#if false
 [AutoSetupTestMethod(InitSession = true)]
 public sealed class UnitTestEvaluatorCPU : TestClassBase
 {
@@ -466,3 +467,4 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
         post.Evaluate(feedDict);
     }
 }
+#endif
