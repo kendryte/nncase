@@ -290,8 +290,10 @@ public class MergeMultiUsersFusion : FunctionPass
             Op op => op.GetType().Name,
             _ => string.Empty,
         }));
+#if DEBUG
         Console.WriteLine($"Merge {fusion.Name}");
         Console.WriteLine(otherName);
+#endif
         var fusionDict = outerCall.Arguments.ToArray().Zip(fusion.Parameters.ToArray()).ToArray();
 
         // 这个vars用于确定output的args里面哪些要加入，哪些要消除，另外还要包含多个user的那个

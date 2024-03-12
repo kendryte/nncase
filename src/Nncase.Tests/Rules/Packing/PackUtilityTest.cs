@@ -21,7 +21,9 @@ public sealed class PackUtilityTest
         Assert.Equal(valid, PackUtility.TryGetShapeMapMatrix(inShape, newShape, out var mat));
         if (valid)
         {
+#if DEBUG
             DisplayMat(mat);
+#endif
         }
     }
 

@@ -62,10 +62,13 @@ public class CPUTarget : ITarget
         });
 #endif
 
-        passManager.AddWithName<DataflowPass>("CPUDeviceFusion").Configure(p =>
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            p.Add<Passes.Rules.CPUSingleKernelFusion>();
-        });
+            passManager.AddWithName<DataflowPass>("CPUDeviceFusion").Configure(p =>
+            {
+                p.Add<Passes.Rules.CPUSingleKernelFusion>();
+            });
+        }
     }
 
     /// <inheritdoc/>
