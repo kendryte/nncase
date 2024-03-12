@@ -35,4 +35,17 @@ public record class QuantScheme
     public string? Model { get; set; }
 
     public Output[]? Outputs { get; set; }
+
+    public Output GetInfoByName(string name)
+    {
+        foreach (var output in Outputs!)
+        {
+            if (output.Name == name)
+            {
+                return output;
+            }
+        }
+
+        return null!;
+    }
 }

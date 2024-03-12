@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using DryIoc;
+using Google.OrTools.Graph;
 using Microsoft.Extensions.Options;
 using NetFabric.Hyperlinq;
 using Newtonsoft.Json;
@@ -90,22 +91,85 @@ internal partial class Quantizer
                 (quantSensitivity, groundTruth) = await GetSensitivity(ranges, quantTypes);
             }
 
-            if (_quantizeOptions.ExportQuantScheme == true)
-            {
-                ExportQuantScheme();
-            }
+            FillQuantConfig(ranges, quantTypes);
+
+            await UpdateQuantConfigBySensitivity(quantSensitivity, groundTruth);
         }
 
-        FillQuantConfig(ranges, quantTypes);
-
-        await UpdateQuantConfigBySensitivity(quantSensitivity, groundTruth);
-
         AssignRanges();
+
+        if (_quantizeOptions.ExportQuantScheme == true)
+        {
+            ExportQuantScheme();
+        }
     }
 
     private void UpdateQuantInfoFromJson()
     {
-        throw new NotImplementedException();
+        string readJson = _quantizeOptions.QuantScheme;
+        using (var r = new StreamReader(readJson))
+        {
+            string json = r.ReadToEnd();
+            var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(json);
+            Output[] outputs = quantScheme!.Outputs!;
+
+            var nodeCounter = 0;
+            foreach (var (var, fakeNode) in _fakeNodesVars)
+            {
+                nodeCounter++;
+                float[] argRange = new float[2];
+
+                // 输入信息的填充
+                var parameters = ((Op)((Call)fakeNode).Target).Parameters.ToArray();
+
+                var inputConfigs = new List<QuantConfigData>();
+                var outConfigs = new List<QuantConfigData>();
+                for (int argIdx = 0; argIdx < ((Call)fakeNode).Arguments.Length; argIdx++)
+                {
+                    var inputName = ((Call)fakeNode).Arguments[argIdx].Metadata.OutputNames?[0] ?? $"fakeNode_{nodeCounter}_input_{argIdx}";
+                    var inputInfo = quantScheme.GetInfoByName(inputName);
+                    var dType = DataTypes.FromShortName(inputInfo.DataType!);
+                    List<float> inputRange = new();
+                    foreach (var range in inputInfo.DataRange!)
+                    {
+                        inputRange.Add(range.Min);
+                        inputRange.Add(range.Max);
+                    }
+
+                    inputConfigs.Add(new QuantConfigData(Tensor.From(inputRange.ToArray()), dType));
+                }
+
+                // 输出range: 这里的range以及量化方式在后续中不会实际使用到
+                int outCounter = 0;
+                int maxOutNum = 100;
+                for (int outIdx = 0; outIdx < maxOutNum; outIdx++)
+                {
+                    outCounter++;
+                    var outputName = ((Call)fakeNode).Metadata.OutputNames?[0] ?? $"fakeNode_{nodeCounter}_output_{outIdx}";
+                    var inputInfo = quantScheme.GetInfoByName(outputName);
+                    if (inputInfo == null)
+                    {
+                        break;
+                    }
+
+                    var dType = DataTypes.FromShortName(inputInfo.DataType!);
+                    List<float> outRange = new();
+                    foreach (var range in inputInfo.DataRange!)
+                    {
+                        outRange.Add(range.Min);
+                        outRange.Add(range.Max);
+                    }
+
+                    outConfigs.Add(new QuantConfigData(Tensor.From(outRange.ToArray()), dType));
+                }
+
+                var configHeader = new float[] { parameters.Length, outCounter };
+
+                var quantInfo = configHeader.Concat(inputConfigs.SelectMany(x => x.ToRaw())).Concat(outConfigs.SelectMany(x => x.ToRaw())).ToArray();
+                var quantConfig = QuantConfig.FromRaw(quantInfo);
+                _fakeNodeConfigs![var] = quantConfig;
+            }
+        }
     }
 
     private async Task UpdateQuantConfigBySensitivity(List<KeyValuePair<(Var Var, QuantConfig QuantConfig), float>> sensitivity, Tensor groundTruth)
@@ -328,7 +392,66 @@ internal partial class Quantizer
 
     private void ExportQuantScheme()
     {
-        throw new NotImplementedException();
+        var quantScheme = new QuantScheme();
+        quantScheme.Version = "1.0";
+        List<Output> outputs = new();
+        int nodeCounter = 0;
+        foreach (var (var, fakeNode) in _fakeNodesVars)
+        {
+            nodeCounter++;
+            var quantConfig = _fakeNodeConfigs![var];
+            var parameters = ((Op)((Call)fakeNode).Target).Parameters.ToArray();
+            for (int iPara = 0; iPara < quantConfig.GetInputNum(); iPara++)
+            {
+                var inputRange = quantConfig.GetInputRange(parameters[iPara]).ToArray();
+                var dataRange = Enumerable.Range(0, inputRange.Length / 2)
+                .Select(j => new ValueRange<float>
+                {
+                    Min = inputRange[j * 2],
+                    Max = inputRange[(j * 2) + 1],
+                }).ToList();
+
+                var output = new Output
+                {
+                    Name = ((Call)fakeNode).Arguments[iPara].Metadata.OutputNames?[0] ?? $"fakeNode_{nodeCounter}_input_{iPara}",
+                    DataType = quantConfig.GetInputQuantType(parameters[iPara]).ToString(),
+                    DataRangeMode = parameters[iPara].ParameterKind == ParameterKind.Weights ? "by_channel" : "by_tensor",
+                    DataRange = dataRange.ToArray(),
+                };
+
+                outputs.Add(output);
+            }
+
+            for (int iPara = 0; iPara < quantConfig.GetOutputNum(); iPara++)
+            {
+                var outputRange = quantConfig.GetOutputRange(iPara).ToArray();
+                var dataRange = Enumerable.Range(0, outputRange.Length / 2)
+                .Select(j => new ValueRange<float>
+                {
+                    Min = outputRange[j * 2],
+                    Max = outputRange[(j * 2) + 1],
+                }).ToList();
+
+                var output = new Output
+                {
+                    Name = ((Call)fakeNode).Metadata.OutputNames?[iPara] ?? $"fakeNode_{nodeCounter}_output_{iPara}",
+                    DataType = quantConfig.GetOutputQuantType(iPara).ToString(),
+                    DataRangeMode = "by_tensor",
+                    DataRange = dataRange.ToArray(),
+                };
+
+                outputs.Add(output);
+            }
+        }
+
+        quantScheme.Outputs = outputs.ToArray();
+
+        var quantSchemeString = JsonConvert.SerializeObject(quantScheme, Newtonsoft.Json.Formatting.Indented);
+        _quantizeOptions.QuantSchemeInnerCheck = quantSchemeString;
+        if (Path.Exists(DumpScope.Current.Directory))
+        {
+            File.WriteAllText(Path.Join(DumpScope.Current.Directory, "..", "..", "QuantScheme.json"), quantSchemeString);
+        }
     }
 
     private Expr ExtractExpr()

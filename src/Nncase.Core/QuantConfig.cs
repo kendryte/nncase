@@ -64,6 +64,11 @@ public struct QuantConfig : IEquatable<QuantConfig>
         return _inputConfig[info.Index].DType;
     }
 
+    public int GetInputNum()
+    {
+        return _inputConfig.Count;
+    }
+
     public Tensor<float> GetOutputRange(int outIndex = 0)
     {
         return _outputConfig[outIndex].Range;
@@ -72,6 +77,11 @@ public struct QuantConfig : IEquatable<QuantConfig>
     public DataType GetOutputQuantType(int outIndex = 0)
     {
         return _outputConfig[outIndex].DType;
+    }
+
+    public int GetOutputNum()
+    {
+        return _outputConfig.Count;
     }
 
     public override bool Equals(object? obj)
