@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "../apply.h"
+#include "../shape_infer/reduce_axis.h"
 #include "../utility.h"
 #include "../vector_ops.h"
 #include "binary.h"
@@ -23,18 +24,6 @@
 namespace nncase::ntt {
 
 namespace softmax_detail {
-
-template <size_t Axis, size_t... Dims, size_t... Ints>
-constexpr auto softmax_domain_impl(const fixed_shape<Dims...> shape,
-                                   const std::index_sequence<Ints...>) {
-    return fixed_shape<(Ints == Axis ? 1 : shape.at(Ints))...>{};
-}
-template <size_t Axis, size_t... Dims>
-constexpr auto softmax_domain(const fixed_shape<Dims...> shape) {
-    return softmax_domain_impl<Axis>(
-        shape, std::make_index_sequence<sizeof...(Dims)>{});
-}
-
 template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TOut>
 void packed_on_axis_impl(const TIn &input, TOut &&output) {
     using TElem = TIn::element_type;
@@ -56,7 +45,8 @@ void packed_on_axis_impl(const TIn &input, TOut &&output) {
     constexpr auto vrsum_op = vector_ops::reduce_sum<TElem>();
 
     // TElem finner_size = inner_size;
-    constexpr auto domain = softmax_domain<Axis>(input_shape);
+    constexpr auto domain =
+        shape_infer::reduced_shape_by_axis<Axis>(input_shape);
     apply(domain, [&](auto index) {
         // reduce_max
         TElem max_value = input(index);

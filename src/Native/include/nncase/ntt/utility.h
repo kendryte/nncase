@@ -62,13 +62,13 @@ slice_index(const ranked_shape<InRank> &index,
 }
 
 template <template <size_t...> class T, size_t... PreDims, size_t... PostDims>
-inline constexpr auto concat(T<PreDims...>, T<PostDims...>) noexcept {
+inline constexpr auto concat_fixed_dims(T<PreDims...>, T<PostDims...>) noexcept {
     return T<PreDims..., PostDims...>{};
 }
 
 template <size_t OutRank, size_t OffSet = 0, template <size_t...> class A,
           size_t... Dims>
-inline constexpr auto slice(const A<Dims...> &a) noexcept {
+inline constexpr auto slice_fixed_dims(const A<Dims...> &a) noexcept {
     return utility_detail::slice<OutRank, OffSet>(
         a, std::make_index_sequence<OutRank>{});
 }
@@ -86,5 +86,8 @@ concept IsFixedTensor =
         typename std::decay_t<T>::shape_type;
         is_fixed_dims_v<typename std::decay_t<T>::shape_type>;
     };
+
+template <typename T>
+concept IsFixedDims = is_fixed_dims_v<T>;
 
 } // namespace nncase::ntt

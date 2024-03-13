@@ -13,18 +13,20 @@
  * limitations under the License.
  */
 #pragma once
-#include "kernels/binary.h"
-#include "kernels/concat.h"
-#include "kernels/copy.h"
-#include "kernels/matmul.h"
-#include "kernels/pack.h"
-#include "kernels/packed_layer_norm.h"
-#include "kernels/packed_matmul.h"
-#include "kernels/packed_softmax.h"
-#include "kernels/slice.h"
-#include "kernels/transpose.h"
-#include "kernels/unary.h"
-#include "kernels/unpack.h"
-#include "tensor.h"
-#include "utility.h"
-#include "vector_type.h"
+#include "../apply.h"
+#include "../utility.h"
+#include <tuple>
+
+namespace nncase::ntt {
+
+template <IsFixedDims TPerm, IsFixedTensor TIn, IsFixedTensor TOut>
+void transpose(const TIn &input, TOut &&output) {
+    constexpr auto domain = typename TIn::shape_type{};
+    auto out_index = ranked_shape<domain.rank()>{};
+    apply(domain, [&](auto index) {
+        loop<domain.rank()>(
+            [&](auto i) { out_index[i] = index[TPerm::at(i)]; });
+        output(out_index) = input(index);
+    });
+}
+} // namespace nncase::ntt

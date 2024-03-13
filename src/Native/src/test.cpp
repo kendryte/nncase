@@ -225,7 +225,7 @@ int main() {
         assert(tc(2, 0) == 10160.f);
         assert(tc(2, 1) == 10792.f);
     }
-    
+
     // norm matmul
     {
         ntt::tensor<float, ntt::fixed_shape<3, 4>> ta;
@@ -240,6 +240,116 @@ int main() {
         assert(tc(1, 1) == 98.f);
         assert(tc(2, 0) == 124.f);
         assert(tc(2, 1) == 162.f);
+    }
+
+    // concat
+    {
+        ntt::tensor<float, ntt::fixed_shape<3, 8>> ta;
+        ntt::tensor<float, ntt::fixed_shape<3, 16>> tb;
+        ntt::tensor<float, ntt::fixed_shape<3, 24>> tc;
+        std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        std::iota(tb.buffer().begin(), tb.buffer().end(), 0.f);
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 1>> pa;
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 2>> pb;
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pc;
+        ntt::pack<1>(ta, pa);
+        ntt::pack<1>(tb, pb);
+        ntt::concat<1>(std::make_tuple(pa, pb), pc);
+        ntt::unpack<1>(pc, tc);
+
+        assert(tc(0, 0) == 0.f);
+        assert(tc(0, 1) == 1.f);
+        assert(tc(0, 2) == 2.f);
+        assert(tc(0, 3) == 3.f);
+        assert(tc(0, 4) == 4.f);
+        assert(tc(0, 5) == 5.f);
+        assert(tc(0, 6) == 6.f);
+        assert(tc(0, 7) == 7.f);
+        assert(tc(0, 8) == 0.f);
+        assert(tc(0, 9) == 1.f);
+        assert(tc(0, 10) == 2.f);
+        assert(tc(0, 11) == 3.f);
+        assert(tc(0, 12) == 4.f);
+        assert(tc(0, 13) == 5.f);
+        assert(tc(0, 14) == 6.f);
+        assert(tc(0, 15) == 7.f);
+        assert(tc(0, 16) == 8.f);
+        assert(tc(0, 17) == 9.f);
+        assert(tc(0, 18) == 10.f);
+        assert(tc(0, 19) == 11.f);
+        assert(tc(0, 20) == 12.f);
+        assert(tc(0, 21) == 13.f);
+        assert(tc(0, 22) == 14.f);
+        assert(tc(0, 23) == 15.f);
+    }
+
+    // slice
+    {
+        ntt::tensor<float, ntt::fixed_shape<3, 24>> ta;
+        ntt::tensor<float, ntt::fixed_shape<3, 8>> tb;
+        ntt::tensor<float, ntt::fixed_shape<3, 16>> tc;
+        std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        ntt::slice<ntt::fixed_shape<0>, ntt::fixed_shape<8>,
+                   ntt::fixed_shape<1>, ntt::fixed_shape<1>>(ta, tb);
+        ntt::slice<ntt::fixed_shape<8>, ntt::fixed_shape<24>,
+                   ntt::fixed_shape<1>, ntt::fixed_shape<1>>(ta, tc);
+        assert(tb(0, 0) == 0.f);
+        assert(tb(0, 1) == 1.f);
+        assert(tb(0, 2) == 2.f);
+        assert(tb(0, 3) == 3.f);
+        assert(tb(0, 4) == 4.f);
+        assert(tb(0, 5) == 5.f);
+        assert(tb(0, 6) == 6.f);
+        assert(tb(0, 7) == 7.f);
+        assert(tc(0, 0) == 8.f);
+        assert(tc(0, 1) == 9.f);
+        assert(tc(0, 2) == 10.f);
+        assert(tc(0, 3) == 11.f);
+        assert(tc(0, 4) == 12.f);
+        assert(tc(0, 5) == 13.f);
+        assert(tc(0, 6) == 14.f);
+        assert(tc(0, 7) == 15.f);
+    }
+
+    // transpose
+    {
+        ntt::tensor<float, ntt::fixed_shape<3, 24>> ta;
+        ntt::tensor<float, ntt::fixed_shape<24, 3>> tb;
+        std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        ntt::transpose<ntt::fixed_shape<1, 0>>(ta, tb);
+        assert(tb(0, 0) == 0.0f);
+        assert(tb(0, 1) == 24.f);
+        assert(tb(0, 2) == 48.f);
+
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pa;
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pb;
+        ntt::pack<1>(ta, pa);
+        ntt::transpose<ntt::fixed_shape<1, 0>>(pa, pb);
+        assert(pb(0, 0)(0) == 0.0f);
+        assert(pb(0, 0)(1) == 1.0f);
+        assert(pb(0, 0)(2) == 2.0f);
+        assert(pb(0, 0)(3) == 3.0f);
+        assert(pb(0, 1)(0) == 24.f);
+        assert(pb(0, 1)(1) == 25.f);
+        assert(pb(0, 1)(2) == 26.f);
+        assert(pb(0, 1)(3) == 27.f);
+        assert(pb(0, 2)(0) == 48.f);
+        assert(pb(0, 2)(1) == 49.f);
+        assert(pb(0, 2)(2) == 50.f);
+        assert(pb(0, 2)(3) == 51.f);
+    }
+
+    // swish
+    {
+        ntt::tensor<float, ntt::fixed_shape<3, 24>> ta;
+        ntt::tensor<float, ntt::fixed_shape<3, 24>> tb;
+        std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        ntt::unary<ntt::mathops::swish>(ta, tb);
+
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pa;
+        ntt::pack<1>(ta, pa);
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pb;
+        ntt::unary<ntt::mathops::swish>(pa, pb);
     }
 
     auto kmodel = read_file(

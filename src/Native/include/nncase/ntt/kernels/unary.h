@@ -103,11 +103,17 @@ template <class T> struct square {
 template <class T> struct tanh {
     T operator()(T v) const noexcept { return std::tanh(v); }
 };
+
+template <class T> struct swish {
+    T operator()(T v) const noexcept { return v / (1 + std::exp(-v)); }
+};
 } // namespace mathops
 } // namespace nncase::ntt
 
 #ifdef __ARM_NEON__
 #include "arch/arm/unary_mathops.h"
+#else
+#include "arch/x86_64/unary_mathops.h"
 #endif
 
 namespace nncase::ntt {

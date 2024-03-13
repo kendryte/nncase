@@ -52,10 +52,10 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
     static_assert(is_same_seq(input_shape, output_shape), "shape not match");
     static_assert(is_same_seq(input_strides, output_strides),
                   "strides not match");
-    constexpr auto domain = slice<Axis>(input_shape);
-    constexpr auto strides = slice<Axis>(input_strides);
+    constexpr auto domain = slice_fixed_dims<Axis>(input_shape);
+    constexpr auto strides = slice_fixed_dims<Axis>(input_strides);
     constexpr size_t inner_size =
-        slice<input_shape.rank() - Axis, Axis>(input_shape).length();
+        slice_fixed_dims<input_shape.rank() - Axis, Axis>(input_shape).length();
     constexpr auto sqrt_op = mathops::sqrt<TElem>();
     constexpr auto div_op = mathops::div<TElem>();
     constexpr auto sub_op = mathops::sub<TElem>();
