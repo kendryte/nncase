@@ -1,0 +1,4 @@
+@model Nncase.CodeGen.CPU.TypedKernelTemplateModel<Nncase.TIR.CPU.PackedTranspose>
+@{
+}
+transpose<fixed_shape<@string.Join(",", Model.Target.Perm)>>(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name));

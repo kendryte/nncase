@@ -23,63 +23,28 @@ using Xunit;
 
 namespace Nncase.Tests.Targets;
 
-public interface ICpuKernelCase
+public class CpuKernelCase
 {
-    string Name { get; }
-
-    Fusion Fusion { get; }
-
-    IReadOnlyList<Var> Vars { get; }
-
-    IReadOnlyList<Tensor> Inputs { get; }
-
-    public static Placement DefaultPlacement { get; } = new Placement(new[] { 1 }, "t");
-
-    public static int Lane => Vector256.IsHardwareAccelerated ? 8 : 4;
-}
-
-public sealed class PackUnpackCaseData : TheoryData<ICpuKernelCase>
-{
-    public PackUnpackCaseData()
+    public CpuKernelCase(string name, Fusion fusion, Var[] vars, Tensor[] inputs)
     {
-        Add(new PackUnpackCase("PackUnpack0", new[] { 1, 32, 128 }, new[] { ICpuKernelCase.Lane }, new[] { 1 }));
-        Add(new PackUnpackCase("PackUnpack1", new[] { 1, 32, 128 }, new[] { ICpuKernelCase.Lane }, new[] { 2 }));
+        Name = name;
+        Fusion = fusion;
+        Vars = vars;
+        Inputs = inputs;
     }
-}
 
-public sealed class PackLayerNormCaseData : TheoryData<ICpuKernelCase>
-{
-    public PackLayerNormCaseData()
-    {
-        Add(new PackLayerNormCase("PackLayerNorm0", new[] { 1, 16, 2 }, 1, new[] { 1 }, ICpuKernelCase.Lane)); // pack within the axis
-    }
-}
+    public string Name { get; }
 
-public sealed class PackSoftMaxCaseData : TheoryData<ICpuKernelCase>
-{
-    public PackSoftMaxCaseData()
-    {
-        Add(new PackSoftMaxCase("PackSoftMax0", new[] { 1, 16, 2 }, 1, ICpuKernelCase.Lane, new[] { 1 })); // pack axis == axis
-        Add(new PackSoftMaxCase("PackSoftMax1", new[] { 1, 16, 32 }, 2, ICpuKernelCase.Lane, new[] { 2 })); // pack axis == axis
-    }
-}
+    public Fusion Fusion { get; }
 
-public sealed class PackReshapeCaseData : TheoryData<ICpuKernelCase>
-{
-    public PackReshapeCaseData()
-    {
-        Add(new PackSoftMaxCase("PackSoftMax0", new[] { 1, 16, 2 }, 1, ICpuKernelCase.Lane, new[] { 1 })); // pack axis == axis
-        Add(new PackSoftMaxCase("PackSoftMax1", new[] { 1, 16, 32 }, 2, ICpuKernelCase.Lane, new[] { 2 })); // pack axis == axis
-    }
+    public IReadOnlyList<Var> Vars { get; }
+
+    public IReadOnlyList<Tensor> Inputs { get; }
 }
 
 [AutoSetupTestMethod(InitSession = true)]
 public sealed class UnitTestCPUKernels : TestClassBase
 {
-    public static readonly TheoryData<ICpuKernelCase> Cases = new()
-    {
-    };
-
     public UnitTestCPUKernels()
     {
         DefaultTargetName = CPUTarget.Kind;
@@ -88,11 +53,40 @@ public sealed class UnitTestCPUKernels : TestClassBase
 #endif
     }
 
+    public static Placement DefaultPlacement => new Placement(new[] { 1 }, "t");
+
+    public static int Lane => Vector256.IsHardwareAccelerated ? 8 : 4;
+
+    public static int Rank => 1;
+
     [Theory]
-    [ClassData(typeof(PackUnpackCaseData))]
-    [ClassData(typeof(PackLayerNormCaseData))]
-    [ClassData(typeof(PackSoftMaxCaseData))]
-    internal async Task Run(ICpuKernelCase kernelCase)
+    [InlineData(new object[] { BinaryOp.Add, new[] { 64, 768 }, new int[] { 64, 768 } })] // normal
+    public async void TestPackBinary(BinaryOp op, int[] lhsShape, int[] rhsShape)
+    {
+        var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
+        var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
+        var pre = IR.F.Math.Binary(op, lhs, rhs);
+
+        var feedDict = new Dictionary<Var, IValue>() {
+            { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
+            { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
+        };
+
+        var rule = new Passes.Rules.CPU.PackBinary() { Lane = Lane, Rank = Rank };
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
+        int count = 0;
+        foreach (var post in posts)
+        {
+#if DEBUG
+            System.Console.WriteLine(CompilerServices.Print(post));
+#endif
+            var kernelCase = new CpuKernelCase($"PackBinaryCase{count++}", new Fusion("kernel", CPUTarget.Kind, post, feedDict.Keys.ToArray()), feedDict.Keys.ToArray(), feedDict.Values.Select(v => v.AsTensor()).ToArray());
+            await Run(kernelCase);
+        }
+    }
+
+    internal async Task Run(CpuKernelCase kernelCase)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
@@ -150,353 +144,3 @@ public sealed class UnitTestCPUKernels : TestClassBase
         await pmgr.RunAsync(module);
     }
 }
-
-internal sealed class PackUnpackCase : ICpuKernelCase
-{
-    public PackUnpackCase(string name, int[] inShape, int[] lanes, int[] packAxes)
-    {
-        Name = name;
-        var type = new TensorType(DataTypes.Float32, inShape);
-        var input = new Var(type);
-        {
-            var l0 = IR.F.CPU.Boxing(input, new DistributedType(type, new SBP[] { SBP.B }, ICpuKernelCase.DefaultPlacement));
-            var packed = IR.F.CPU.Pack(l0, lanes, packAxes);
-            var unpacked = IR.F.CPU.Unpack(packed, packAxes);
-            Fusion = new Fusion(Name + "_kernel", CPUTarget.Kind, IR.F.CPU.Boxing(unpacked, type), new[] { input });
-        }
-
-        Vars = new[] { input };
-    }
-
-    public string Name { get; }
-
-    public Fusion Fusion { get; }
-
-    public IReadOnlyList<Var> Vars { get; }
-
-    public IReadOnlyList<Tensor> Inputs
-    {
-        get
-        {
-            return Vars.Select(v => IR.F.Random.Uniform(v.CheckedDataType, 30, 0, 1, v.CheckedShape).Evaluate().AsTensor()).ToArray();
-        }
-    }
-
-    public override string ToString() => Name;
-}
-
-internal sealed class PackSoftMaxCase : ICpuKernelCase
-{
-    public PackSoftMaxCase(string name, int[] shape, int axis, int lane, int[] packedAxes)
-    {
-        Name = name;
-        var inputType = new TensorType(DataTypes.Float32, shape);
-        var input = new Var(inputType);
-        Vars = new[] { input };
-        {
-            var finput = IR.F.CPU.Boxing(input, new DistributedType(inputType, new SBP[] { SBP.B }, ICpuKernelCase.DefaultPlacement));
-            var lanes = Enumerable.Repeat(lane, packedAxes.Length).ToArray();
-            var packed = IR.F.CPU.Pack(PackUtility.PadForPack(finput, shape, packedAxes, lanes, float.NegativeInfinity, out var pads), lanes, packedAxes);
-            var softmax = IR.F.CPU.PackedSoftmax(packed, axis, packedAxes);
-            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(softmax, packedAxes), shape, pads);
-
-            Fusion = new Fusion(Name + "_kernel", CPUTarget.Kind, IR.F.CPU.Boxing(post, inputType), Vars.ToArray());
-        }
-    }
-
-    public string Name { get; }
-
-    public Fusion Fusion { get; }
-
-    public IReadOnlyList<Var> Vars { get; }
-
-    public IReadOnlyList<Tensor> Inputs
-    {
-        get
-        {
-            return Vars.Select(v => IR.F.Random.Uniform(v.CheckedDataType, 30, 0, 1, v.CheckedShape).Evaluate().AsTensor()).ToArray();
-        }
-    }
-
-    public override string ToString() => Name;
-}
-
-internal sealed class PackLayerNormCase : ICpuKernelCase
-{
-    public PackLayerNormCase(string name, int[] shape, int axis, int[] packedAxes, int lane)
-    {
-        Name = name;
-        var inputType = new TensorType(DataTypes.Float32, shape);
-        Expr input = new Var(inputType);
-        var pshape = shape.Skip(axis).ToArray();
-        var scaleType = new TensorType(DataTypes.Float32, pshape);
-        Expr scale = new Var(scaleType);
-        var biasType = new TensorType(DataTypes.Float32, pshape);
-        Expr bias = new Var(biasType);
-        Vars = new[] { (Var)input, (Var)scale, (Var)bias };
-        {
-            input = IR.F.CPU.Boxing(input, new DistributedType(inputType, new SBP[] { SBP.B }, ICpuKernelCase.DefaultPlacement));
-            scale = IR.F.CPU.Boxing(scale, new DistributedType(scaleType, new SBP[] { SBP.B }, ICpuKernelCase.DefaultPlacement));
-            bias = IR.F.CPU.Boxing(bias, new DistributedType(biasType, new SBP[] { SBP.B }, ICpuKernelCase.DefaultPlacement));
-
-            var lanes = Enumerable.Repeat(lane, packedAxes.Length).ToArray();
-            var packedInput = IR.F.CPU.Pack(PackUtility.PadForPack(input, shape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
-
-            var pAxes = packedAxes.Where(i => i >= axis).Select(i => i - axis).ToArray();
-            var packedScale = PackUtility.PadForPack(scale, pshape, pAxes, lanes, 0f, out var padsScale);
-            if (pAxes.Length > 0)
-            {
-                packedScale = IR.F.CPU.Pack(packedScale, Enumerable.Repeat(lane, pAxes.Length).ToArray(), pAxes);
-            }
-
-            var packedBias = PackUtility.PadForPack(bias, pshape, pAxes, lanes, 0f, out var padsBias);
-            if (pAxes.Length > 0)
-            {
-                packedBias = IR.F.CPU.Pack(packedBias, Enumerable.Repeat(lane, pAxes.Length).ToArray(), pAxes);
-            }
-
-            var layernorm = IR.F.CPU.PackedLayerNorm(packedInput, packedScale, packedBias, axis, 1e-6f, true, packedAxes, padsInput);
-
-            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(layernorm, packedAxes), shape, padsInput);
-
-            Fusion = new Fusion(Name + "_kernel", CPUTarget.Kind, IR.F.CPU.Boxing(post, inputType), Vars.ToArray());
-        }
-    }
-
-    public string Name { get; }
-
-    public Fusion Fusion { get; }
-
-    public IReadOnlyList<Var> Vars { get; }
-
-    public IReadOnlyList<Tensor> Inputs
-    {
-        get
-        {
-            return Vars.Select(v => IR.F.Random.Uniform(v.CheckedDataType, 30, 0, 1, v.CheckedShape).Evaluate().AsTensor()).ToArray();
-        }
-    }
-
-    public override string ToString() => Name;
-}
-
-
-#if false
-
-public sealed class MatMulCaseGenerator : TheoryData<ICpuKernelCase>
-{
-    public MatMulCaseGenerator(int[] lhsShape, int[] rhsShape)
-    {
-        var lhs = new TensorType(DataTypes.Float32, lhsShape);
-        var rhs = new TensorType(DataTypes.Float32, rhsShape);
-        var outputType = new TensorType(DataTypes.Float32, lhsShape.SkipLast(1).Concat(rhsShape.TakeLast(1)).ToArray());
-        var place = new Placement(new[] { 8, 4 }, "bt");
-        var lhsTypes = DistributedUtility.GetLeafCandidateNDSBPs(lhs, place);
-        var rhsTypes = DistributedUtility.GetLeafCandidateNDSBPs(rhs, place);
-        int count = 0;
-        foreach (var lhsType in lhsTypes.Select(ndsbp => new DistributedType(lhs, ndsbp, place)))
-        {
-            foreach (var rhsType in rhsTypes.Select(ndsbp => new DistributedType(rhs, ndsbp, place)))
-            {
-                var isConsts = new[] { false, false };
-                Add(new MatMulCase($"gen_{count++}", lhsType, rhsType, isConsts, outputType));
-                foreach (var constIndex in new[] { 0, 1 })
-                {
-                    var tp = isConsts.ToArray();
-                    tp[constIndex] = true;
-                    Add(new MatMulCase($"gen_{count++}", lhsType, rhsType, tp, outputType));
-                }
-            }
-        }
-    }
-}
-
-internal sealed class MatMulCase : ICpuKernelCase
-{
-    private readonly string _name;
-    private readonly DistributedType _lhsType;
-    private readonly DistributedType _rhsType;
-    private readonly bool[] _isConsts;
-    private readonly TensorType _outputType;
-
-    public MatMulCase(string count, DistributedType lhsType, DistributedType rhsType, ReadOnlySpan<bool> isConsts, TensorType outputType)
-    {
-        _name = count;
-        _lhsType = lhsType;
-        _rhsType = rhsType;
-        _isConsts = isConsts.ToArray();
-        _outputType = outputType;
-        Vars = new Var[] { new Var(_lhsType.TensorType), new Var(_rhsType.TensorType) };
-    }
-
-    public string Name => $"MatmulCase_{_name}";
-
-    public Fusion Fusion
-    {
-        get
-        {
-            Expr l0 = IR.F.XPU.Boxing(_isConsts[0] ? Const.FromValue(IR.F.Random.Normal(_lhsType.TensorType.DType, 0, 1, 0, _lhsType.TensorType.Shape.ToValueArray()).Evaluate()) : Vars[0], _lhsType);
-            Expr r0 = IR.F.XPU.Boxing(_isConsts[1] ? Const.FromValue(IR.F.Random.Normal(_rhsType.TensorType.DType, 0, 1, 2, _rhsType.TensorType.Shape.ToValueArray()).Evaluate()) : Vars[1], _rhsType);
-
-            var body = IR.F.Math.MatMul(l0, r0);
-            var d = (DistributedType)body.CheckedType;
-            if (d.NdSBP.Any(s => s is SBPPartialSum))
-            {
-                body = IR.F.XPU.Boxing(body, new DistributedType(d.TensorType, d.NdSBP.Select(s => s is SBPPartialSum ? SBP.B : s).ToArray(), d.Placement));
-            }
-
-            var fusion = new Fusion(Name + "_kernel", XPUTarget.Kind, IR.F.XPU.Boxing(body, _outputType), Enumerable.Range(0, 2).Zip(Vars).Where(p => !_isConsts[p.First]).Select(p => p.Second).ToArray());
-
-            return fusion;
-        }
-    }
-
-    public IReadOnlyList<Var> Vars { get; }
-
-    public IReadOnlyList<Tensor> Inputs => Enumerable.Range(0, 2).
-        Zip(Vars).
-        Where(p => !_isConsts[p.First]).
-        Select(p => (p.Second.CheckedDataType, p.Second.CheckedShape)).
-        Select((p, i) => IR.F.Random.Normal(p.CheckedDataType, 0, 1, i, p.CheckedShape.ToValueArray()).Evaluate().AsTensor()).
-        ToArray();
-}
-
-
-internal sealed class SoftmaxCase1 : ICpuKernelCase
-{
-    public SoftmaxCase1()
-    {
-        var type = new TensorType(DataTypes.Float32, new[] { 16, 1024, 1024 });
-        var input = new Var(type);
-        Vars = new[] { input };
-    }
-
-    public string Name => "SoftmaxCase1";
-
-    public Fusion Fusion
-    {
-        get
-        {
-            var type = new TensorType(DataTypes.Float32, new[] { 16, 1024, 1024 });
-            var place = new Placement(new[] { 8, 4 }, "bt");
-            var axis = 2L;
-            {
-                var input0 = IR.F.XPU.Boxing(Vars[0], new DistributedType(type, new SBP[] { SBP.S(0), SBP.S(1) }, place));
-                return new Fusion(Name + "_kernel", XPUTarget.Kind, IR.F.XPU.Boxing(IR.F.NN.Softmax(input0, axis), type), new[] { Vars[0] });
-            }
-        }
-    }
-
-    public IReadOnlyList<Var> Vars { get; }
-
-    public IReadOnlyList<Tensor> Inputs
-    {
-        get
-        {
-            return Vars.Select(v => IR.F.Random.Uniform(v.CheckedDataType, 30, 0, 1, v.CheckedShape).Evaluate().AsTensor()).ToArray();
-        }
-    }
-
-    public override string ToString() => Name;
-}
-
-internal sealed class UnarySharedInputCase : ICpuKernelCase
-{
-    public UnarySharedInputCase()
-    {
-        var type = new TensorType(DataTypes.Float32, new[] { 1, 16, 768 });
-        var place = new Placement(new[] { 8, 4 }, "bt");
-        var lhs = new Var(type);
-        {
-            var l0 = IR.F.XPU.Boxing(lhs, new DistributedType(type, new SBP[] { SBP.S(2), SBP.B }, place));
-            Fusion = new Fusion(Name + "_kernel", XPUTarget.Kind, IR.F.XPU.Boxing(IR.F.Math.Cos(l0), type), new[] { lhs });
-        }
-
-        Vars = new[] { lhs };
-    }
-
-    public string Name => "BinaryCase1";
-
-    public Fusion Fusion { get; }
-
-    public IReadOnlyList<Var> Vars { get; }
-
-    public IReadOnlyList<Tensor> Inputs
-    {
-        get
-        {
-            return Vars.Select(v => IR.F.Random.Uniform(v.CheckedDataType, 30, 0, 1, v.CheckedShape).Evaluate().AsTensor()).ToArray();
-        }
-    }
-
-    public override string ToString() => Name;
-}
-
-internal sealed class UnaryNonUniformCase : ICpuKernelCase
-{
-    public UnaryNonUniformCase()
-    {
-        var type = new TensorType(DataTypes.Float32, new[] { 1, 49 });
-        var place = new Placement(new[] { 8, 4 }, "bt");
-        var lhs = new Var(type);
-        {
-            var l0 = IR.F.XPU.Boxing(lhs, new DistributedType(type, new SBP[] { SBP.B, SBP.S(1) }, place));
-            Fusion = new Fusion(Name + "_kernel", XPUTarget.Kind, IR.F.XPU.Boxing(IR.F.Math.Cos(l0), type), new[] { lhs });
-        }
-
-        Vars = new[] { lhs };
-    }
-
-    public string Name => "UnaryNonUniformCase";
-
-    public Fusion Fusion { get; }
-
-    public IReadOnlyList<Var> Vars { get; }
-
-    public IReadOnlyList<Tensor> Inputs
-    {
-        get
-        {
-            return Vars.Select(v => IR.F.Random.Uniform(v.CheckedDataType, 30, 0, 1, v.CheckedShape).Evaluate().AsTensor()).ToArray();
-        }
-    }
-
-    public override string ToString() => Name;
-}
-
-internal sealed class ReshapeNonUniformCase : ICpuKernelCase
-{
-    public ReshapeNonUniformCase()
-    {
-        var type = new TensorType(DataTypes.Float32, new[] { 77, 12, 64 });
-        var input = new Var(type);
-        Vars = new[] { input };
-    }
-
-    public string Name => "ReshapeNonUniformCase";
-
-    public Fusion Fusion
-    {
-        get
-        {
-            var type = new TensorType(DataTypes.Float32, new[] { 77, 12, 64 });
-            var place = new Placement(new[] { 8, 4 }, "bt");
-            var l0 = IR.F.XPU.Boxing(Vars[0], new DistributedType(type, new SBP[] { SBP.S(1), SBP.S(0) }, place));
-            var l2 = IR.F.XPU.Boxing(l0, new DistributedType(new TensorType(DataTypes.Float32, new[] { 1, 77, 768 }), new SBP[] { SBP.S(1), SBP.S(1) }, place));
-            return new Fusion(Name + "_kernel", XPUTarget.Kind, IR.F.XPU.Boxing(l2, new TensorType(DataTypes.Float32, new[] { 1, 77, 768 })), new[] { Vars[0] });
-        }
-    }
-
-    public IReadOnlyList<Var> Vars { get; }
-
-    public IReadOnlyList<Tensor> Inputs
-    {
-        get
-        {
-            return Vars.Select(v => IR.F.Random.Uniform(v.CheckedDataType, 30, 0, 1, v.CheckedShape).Evaluate().AsTensor()).ToArray();
-        }
-    }
-
-    public override string ToString() => Name;
-}
-#endif

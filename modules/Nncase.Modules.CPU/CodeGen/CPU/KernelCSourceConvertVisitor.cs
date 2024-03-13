@@ -382,6 +382,35 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     }
 
                     break;
+                case TIR.CPU.PackedBinary packedBinary:
+                    {
+                        IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
+                        {
+                            BinaryOp = packedBinary.BinaryOp,
+                            Arguments = args.Select(x => new KernelArgument { Symbol = Visit(x) }).ToArray(),
+                        }).Result);
+                    }
+
+                    break;
+                case TIR.CPU.PackedMatMul packedMatmul:
+                    {
+                        IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedMatmul.cshtml", new TypedKernelTemplateModel<TIR.CPU.PackedMatMul>(packedMatmul)
+                        {
+                            Arguments = args.Select(x => new KernelArgument { Symbol = Visit(x) }).ToArray(),
+                        }).Result);
+                    }
+
+                    break;
+                case TIR.CPU.PackedTranspose transpose:
+                    {
+                        IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedTranspose.cshtml", new TypedKernelTemplateModel<TIR.CPU.PackedTranspose>(transpose)
+                        {
+                            Arguments = args.Select(x => new KernelArgument { Symbol = Visit(x) }).ToArray(),
+                            Args = args.ToArray(),
+                        }).Result);
+                    }
+
+                    break;
 
 #if false
                 case TIR.CPU.SwishB swishb:

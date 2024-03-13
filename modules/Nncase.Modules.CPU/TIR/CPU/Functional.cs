@@ -79,8 +79,8 @@ public partial class CPU
         return new Call(new PackedBinary(binaryOp, lhsPackedAxes, lhsPadedNums, rhsPackedAxes, rhsPadedNums), lhs, rhs, output);
     }
 
-    public static Expr PackedTranspose(Expr input, Expr perm, Expr output, IRArray<int> packedAxes)
+    public static Expr PackedTranspose(Expr input, Expr output, IRArray<int> perm, IRArray<int> packedAxes)
     {
-        return new Call(new PackedTranspose(packedAxes), input, perm, output);
+        return new Call(new PackedTranspose(perm, packedAxes), input, output);
     }
 }
