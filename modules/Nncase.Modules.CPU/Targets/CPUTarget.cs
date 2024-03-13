@@ -62,10 +62,13 @@ public class CPUTarget : ITarget
         });
 #endif
 
-        passManager.AddWithName<DataflowPass>("CPUDeviceFusion").Configure(p =>
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            p.Add<Passes.Rules.CPUSingleKernelFusion>();
-        });
+            passManager.AddWithName<DataflowPass>("CPUKernelFusion").Configure(p =>
+            {
+                p.Add<Passes.Rules.CPUSingleKernelFusion>();
+            });
+        }
     }
 
     /// <inheritdoc/>
@@ -89,6 +92,14 @@ public class CPUTarget : ITarget
     /// <inheritdoc/>
     public void RegisterTargetDependentAfterQuantPass(IPassManager passManager, CompileOptions options)
     {
+        if (options.QuantizeOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
+        {
+            passManager.AddWithName<DataflowPass>("RemoveMarker").Configure(p =>
+            {
+                p.Add<Passes.Rules.Lower.RemoveMarker>();
+            });
+        }
+
 #if false
         passManager.AddWithName<DataflowPass>("AutoPacking").Configure(p =>
         {
@@ -103,6 +114,7 @@ public class CPUTarget : ITarget
 
         passManager.Add<CPUFusionToModulePass>();
 
+#if false
         // FIX ME: Disable macos as macho loader is buggy.
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
@@ -112,6 +124,7 @@ public class CPUTarget : ITarget
                 p.Add<Passes.Rules.CPUDeviceFusion>();
             });
         }
+#endif
 
         passManager.Add<AutoTilePass>();
 

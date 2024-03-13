@@ -30,9 +30,12 @@ public sealed class PackedLayerNormEvaluator : IEvaluator<PackedLayerNorm>, ITyp
         var unpackedBias = UnpackTensor(bias, packAxes, padedNums);
 
         var shape = unpackedInput.Shape.Select(i => (int)i).ToArray();
-        var inputSpan = MemoryMarshal.Cast<byte, float>(unpackedInput.BytesBuffer);
-        var scaleSpan = MemoryMarshal.Cast<byte, float>(unpackedScale.BytesBuffer);
-        var biasSpan = MemoryMarshal.Cast<byte, float>(unpackedBias.BytesBuffer);
+        var inputBuffer = unpackedInput.BytesBuffer.ToArray();
+        var inputSpan = MemoryMarshal.Cast<byte, float>(inputBuffer);
+        var scaleBuffer = unpackedScale.BytesBuffer.ToArray();
+        var scaleSpan = MemoryMarshal.Cast<byte, float>(scaleBuffer);
+        var biasBuffer = unpackedBias.BytesBuffer.ToArray();
+        var biasSpan = MemoryMarshal.Cast<byte, float>(biasBuffer);
 
         var output = NN.LayerNormEvaluator.LayerNormImpl(shape, inputSpan, scaleSpan, biasSpan, target.Axis, target.Epsilon, target.UseMean);
         var outputTensor = OrtKISharp.Tensor.MakeTensor(new Memory<float>(output), OrtDataType.Float, unpackedInput.Shape);

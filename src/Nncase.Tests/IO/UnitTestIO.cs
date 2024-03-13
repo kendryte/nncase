@@ -20,7 +20,9 @@ namespace Nncase.Tests.IOTest
             bw.Write(5, 3); // 10 | 1 011 1010
             bw.Flush();
             var bin = Convert.ToString(buf[0], 2);
+#if DEBUG
             Console.WriteLine(bin);
+#endif
             Assert.Equal("10111010", bin);
 
             bin = Convert.ToString(buf[1], 2);
