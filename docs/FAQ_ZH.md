@@ -85,3 +85,13 @@ A：通常是因为内存分配失败导致的，可做如下排查。
 
 - 检查生成的kmodel是否超过当前系统可用内存
 - 检查App是否存在内存泄露
+
+### 4.3 加载模型时抛出异常
+
+加载`kmodel`代码如下时，抛出异常 `terminate:Invalid kmodel`。
+
+```CPP
+interp.load_model(ifs).expect("Invalid kmodel");
+```
+
+A：是由于编译`kmodel`时的nncase版本与当前SDK版本不匹配导致，请按照[SDK、nncase版本对应关系](https://developer.canaan-creative.com/k230/dev/zh/03_other/K230_SDK_nncase%E7%89%88%E6%9C%AC%E5%AF%B9%E5%BA%94%E5%85%B3%E7%B3%BB.html)查询，并按照[更新nncase运行时库教程](https://developer.canaan-creative.com/k230/dev/zh/03_other/K230_SDK%E6%9B%B4%E6%96%B0nncase%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BA%93%E6%8C%87%E5%8D%97.html)解决。

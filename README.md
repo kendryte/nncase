@@ -21,8 +21,8 @@ Technical Discussion QQ Group: 790699378 .   Answer: 人工智能
 - [FAQ](./docs/FAQ_EN.md)
 - [Example](./examples/user_guide/k230_simulate-EN.ipynb)
 - [Colab run](https://colab.research.google.com/drive/1m8TTree096m5VHmq-Uc60gXyltVCgnRb?usp=sharing)
-- [ *Version relationship between `nncase` and `K230_SDK`* ](https://developer.canaan-creative.com/k230/dev/zh/03_other/K230_SDK_%E7%89%88%E6%9C%AC%E8%AF%B4%E6%98%8E.html#ai-sdkcanmvnncase)
-
+- [ *Version relationship between `nncase` and `K230_SDK`* ](https://developer.canaan-creative.com/k230/dev/zh/03_other/K230_SDK_nncase%E7%89%88%E6%9C%AC%E5%AF%B9%E5%BA%94%E5%85%B3%E7%B3%BB.html#k230sdknncase)
+- [update nncase runtime library in SDK](https://developer.canaan-creative.com/k230/dev/zh/03_other/K230_SDK%E6%9B%B4%E6%96%B0nncase%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BA%93%E6%8C%87%E5%8D%97.html)
 
 ### Install
 
@@ -41,6 +41,7 @@ Technical Discussion QQ Group: 790699378 .   Answer: 人工智能
     ```
 
 All version of `nncase` and `nncase-kpu` in [Release](https://github.com/kendryte/nncase/releases).
+
 
 ### Supported operators
 
@@ -140,16 +141,19 @@ make && make install
 
 ## Resources
 
-### Kendryte developer community
+### Canaan developer community
 
-[Kendryte developer community](https://developer.canaan-creative.com/resource) contains all resources related to K210, K510, and K230.
+[Canaan developer community](https://developer.canaan-creative.com/resource) contains all resources related to K210, K510, and K230.
+
 - 资料下载 --> Pre-compiled images available for the development boards corresponding to the three chips.
 - 文档 --> Documents corresponding to the three chips.
 - 模型库 --> Examples and code for industrial, security, educational and other scenarios that can be run on the K210 and K230.
 - 模型训练 --> The model training platform for K210 and K230 supports the training of various scenarios.
 
 ### Bilibili
-- [Kendryte AI tutorial and application demonstration](https://space.bilibili.com/677429436)
+
+- [Canaan AI tutorial and application demonstration](https://space.bilibili.com/677429436)
+
 
 ### K210 related repo
 

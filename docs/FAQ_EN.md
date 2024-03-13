@@ -29,6 +29,7 @@ A: Use `sudo gedit /proc/sys/fs/inotify/max_user_instances` to change 128 to a l
 ### 2.3 `RuntimeError: Failed to initialize hostfxr`
 
 A：Need to install dotnet-sdk-7.0.
+
 - Linux:
 
     ```shell
@@ -60,6 +61,7 @@ A: Need to install `nncase-kpu`.
 ### 3.1 When inferring, the error `nncase.simulator.k230.sc: not found` occurs.
 
 Or these situations:
+
 - `"nncase.simulator.k230.sc: Permision denied."`
 - `"Input/output error."`
 
@@ -87,3 +89,14 @@ A: Usually it is caused by memory allocation failure, you can do the following t
 
 - Check whether the generated `kmodel` exceeds the currently available system memory.
 - Check App for memory leaks.
+
+### 4.3 throw error when load model
+
+The exception `terminate: Invalid kmodel` is thrown when attempting to load a `kmodel` as bellow.
+
+```CPP
+interp.load_model(ifs).expect("Invalid kmodel");
+```
+
+A：The issue arises due to a mismatch between the nncase version used when compiling the kmodel and the current SDK version. Please refer to the [SDK-nncase Version Correspondence](https://developer.canaan-creative.com/k230/dev/zh/03_other/K230_SDK_nncase%E7%89%88%E6%9C%AC%E5%AF%B9%E5%BA%94%E5%85%B3%E7%B3%BB.html) for a lookup, and follow the [Update the nncase Runtime Library Guide](https://developer.canaan-creative.com/k230/dev/zh/03_other/K230_SDK%E6%9B%B4%E6%96%B0nncase%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BA%93%E6%8C%87%E5%8D%97.html) to resolve the problem.
+
