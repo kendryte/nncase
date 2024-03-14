@@ -75,7 +75,14 @@ internal sealed partial class CPUSingleKernelFusion : FusionMaker
         "call",
         IsOp<Op>(
             "op",
-            op => op is IR.Math.Unary or IR.Math.MatMul or IR.Tensors.Gather or IR.Math.Binary)) with
+            op => op switch
+            {
+                IR.Math.Unary u => u.UnaryOp is UnaryOp.Abs or UnaryOp.Acos or UnaryOp.Acosh or UnaryOp.Asin or UnaryOp.Asinh or UnaryOp.Ceil or UnaryOp.Cos or UnaryOp.Cosh or UnaryOp.Exp or UnaryOp.Floor or UnaryOp.Log or UnaryOp.Neg or UnaryOp.Round or UnaryOp.Rsqrt or UnaryOp.Sign or UnaryOp.Sin or UnaryOp.Sinh or UnaryOp.Sqrt or UnaryOp.Square or UnaryOp.Tanh,
+                IR.Math.MatMul => true,
+                IR.Tensors.Gather => true,
+                IR.Math.Binary b => b.BinaryOp is BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div or BinaryOp.Mod or BinaryOp.Min or BinaryOp.Max or BinaryOp.Pow,
+                _ => false,
+            })) with
     { TypePattern = TypePatternUtility.HasFixedShape() & TypePatternUtility.HasRank() };
 
     private Call? GetReplace(Call call, Op op, IReadOnlyList<Expr> callParams)
