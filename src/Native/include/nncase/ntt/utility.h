@@ -62,7 +62,8 @@ slice_index(const ranked_shape<InRank> &index,
 }
 
 template <template <size_t...> class T, size_t... PreDims, size_t... PostDims>
-inline constexpr auto concat_fixed_dims(T<PreDims...>, T<PostDims...>) noexcept {
+inline constexpr auto concat_fixed_dims(T<PreDims...>,
+                                        T<PostDims...>) noexcept {
     return T<PreDims..., PostDims...>{};
 }
 
@@ -81,13 +82,22 @@ inline constexpr bool is_same_seq(const T<ADims...> &a, const T<BDims...> &b) {
 }
 
 template <typename T>
-concept IsFixedTensor =
-    requires(T t) {
-        typename std::decay_t<T>::shape_type;
-        is_fixed_dims_v<typename std::decay_t<T>::shape_type>;
-    };
+concept IsFixedTensor = is_fixed_dims_v<typename std::decay_t<T>::shape_type> &&
+                        is_fixed_dims_v<typename std::decay_t<T>::strides_type>;
+
+template <typename T>
+concept IsRankedTensor =
+    is_ranked_dims_v<typename std::decay_t<T>::shape_type> &&
+    is_ranked_dims_v<typename std::decay_t<T>::strides_type>;
 
 template <typename T>
 concept IsFixedDims = is_fixed_dims_v<T>;
+
+template <class T> struct is_vector : std::false_type {};
+
+template <template <typename, size_t...> class V, typename T, size_t... Lanes>
+struct is_vector<V<T, Lanes...>> : std::true_type {};
+
+template <class T> inline constexpr bool is_vector_v = is_vector<T>::value;
 
 } // namespace nncase::ntt

@@ -29,7 +29,6 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
                            const TBias &bias, TOut &&output, const TEp &epsilon,
                            [[maybe_unused]] const bool &use_mean) {
     using TElem = TIn::element_type;
-    using TScalar = typename TIn::element_type::element_type;
     constexpr auto input_shape = typename TIn::shape_type{};
     constexpr auto input_strides = typename TIn::strides_type{};
     constexpr auto scale_shape = typename TScale::shape_type{};
@@ -61,9 +60,11 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
     constexpr auto sub_op = mathops::sub<TElem>();
     constexpr auto add_op = mathops::add<TElem>();
     constexpr auto mul_op = mathops::mul<TElem>();
-    constexpr auto vsum_op = vector_ops::reduce_sum<TElem>();
 
-    TElem finner_size = inner_size * TElem::shape_type::length();
+    TElem finner_size = inner_size;
+    if constexpr (is_vector_v<TElem>) {
+        finner_size = mul_op(finner_size, TElem::shape_type::length());
+    }
 
     apply(domain, [&](auto index) {
         auto input_p = input.buffer().data() + linear_offset(index, strides);
@@ -76,7 +77,9 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
         if (use_mean) {
             for (size_t i = 0; i < inner_size; i++)
                 mean1 = add_op(mean1, div_op(input_p[i], finner_size));
-            mean1 = vsum_op(mean1);
+            if constexpr (is_vector_v<TElem>) {
+                mean1 = vector_ops::reduce_sum<TElem>()(mean1);
+            }
         }
 
         std::array<TElem, inner_size> sub;
@@ -90,7 +93,9 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
         TElem mean2 = 0;
         for (auto i = 0; i < inner_size; i++)
             mean2 = add_op(mean2, div_op(pow[i], finner_size));
-        mean2 = vsum_op(mean2);
+        if constexpr (is_vector_v<TElem>) {
+            mean2 = vector_ops::reduce_sum<TElem>()(mean2);
+        }
 
         TElem add = add_op(mean2, epsilon);
         TElem sqrt = sqrt_op(add);
@@ -112,10 +117,13 @@ void packed_layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
                        TOut &&output, const TEp &epsilon, const bool &use_mean,
                        [[maybe_unused]] PackedAxes packedAxes,
                        [[maybe_unused]] PadedNums padednums) {
-    static_assert(PackedAxes::rank() == 1, "currently not support 2d packing.");
+    static_assert(PackedAxes::rank() < 2, "currently not support 2d packing.");
     if constexpr (PackedAxes::rank() == 1) {
         static_assert(PackedAxes::at(0) >= Axis,
                       "currently only support pack within axis.");
+        packed_layer_norm_detail::within_axis_pack_impl<Axis>(
+            input, scale, bias, output, epsilon, use_mean);
+    } else if (PackedAxes::rank() == 0) {
         packed_layer_norm_detail::within_axis_pack_impl<Axis>(
             input, scale, bias, output, epsilon, use_mean);
     }

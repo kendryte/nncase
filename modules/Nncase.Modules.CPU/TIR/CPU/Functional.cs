@@ -83,4 +83,24 @@ public partial class CPU
     {
         return new Call(new PackedTranspose(perm, packedAxes), input, output);
     }
+
+    public static Expr Slice(Buffer input, Buffer ret, int[] begin, int[] stop, int[] axes, int[] stride)
+    {
+        return new Call(new Slice(begin, stop, axes, stride), input, ret);
+    }
+
+    public static Expr Concat(Buffer[] inputs, Buffer ret, int axis)
+    {
+        return new Call(new Concat(axis), inputs.Concat(new[] { ret }).ToArray());
+    }
+
+    public static Expr Swish(Buffer buffer, Buffer ret, float v)
+    {
+        return new Call(new Swish(v), buffer, ret);
+    }
+
+    public static Expr Transpose(Buffer buffer, Buffer ret, int[] perm)
+    {
+        return new Call(new Transpose(perm), buffer, ret);
+    }
 }

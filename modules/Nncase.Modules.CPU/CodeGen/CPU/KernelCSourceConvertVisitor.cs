@@ -412,6 +412,9 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 
                     break;
 
+                case TIR.CPU.Memcopy copy:
+                    IndentScope.Writer.Write($"tensor_copy({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
+                    break;
 #if false
                 case TIR.CPU.SwishB swishb:
                     IndentScope.Writer.Write($"swishb({Visit(args[0]).Name}, {Visit(args[1]).Name}, {swishb.Beta}, ctx)");

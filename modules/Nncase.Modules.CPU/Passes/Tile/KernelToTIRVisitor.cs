@@ -81,8 +81,14 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 // _mainBody.Add(TIR.F.CPU.PackedMatMul(arguments[0], arguments[1], ret, packed_mat_mul.LhsPackedAxes, packed_mat_mul.LhsPadedNums, packed_mat_mul.RhsPackedAxes, packed_mat_mul.RhsPadedNums));
                 _mainBody.Add(TIR.F.CPU.Matmul(arguments[0], arguments[1], ret));
                 break;
+            case IR.Math.MatMul matmul:
+                _mainBody.Add(TIR.F.CPU.Matmul(arguments[0], arguments[1], ret));
+                break;
             case IR.CPU.PackedSoftmax packed_softmax:
                 _mainBody.Add(TIR.F.CPU.PackedSoftmax(arguments[0], ret, packed_softmax.Axis, packed_softmax.PackedAxes));
+                break;
+            case IR.NN.Softmax softmax:
+                _mainBody.Add(TIR.F.CPU.PackedSoftmax(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToScalar<int>(), Array.Empty<int>()));
                 break;
             case IR.CPU.PackedTranspose packed_transpose:
                 // _mainBody.Add(TIR.F.CPU.PackedTranspose(arguments[0], arguments[1], ret, packed_transpose.PackedAxes));
@@ -90,6 +96,27 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 break;
             case IR.CPU.PackedLayerNorm packed_layer_norm:
                 _mainBody.Add(TIR.F.CPU.PackedLayerNorm(arguments[0], arguments[1], arguments[2], ret, packed_layer_norm.Axis, packed_layer_norm.Epsilon, packed_layer_norm.UseMean, packed_layer_norm.PackedAxes, packed_layer_norm.PadedNums));
+                break;
+            case IR.NN.LayerNorm layernorm:
+                _mainBody.Add(TIR.F.CPU.PackedLayerNorm(arguments[0], arguments[1], arguments[2], ret, layernorm.Axis, layernorm.Epsilon, layernorm.UseMean, Array.Empty<int>(), Array.Empty<int>()));
+                break;
+            case IR.Tensors.Unsqueeze unsqueeze:
+                _mainBody.Add(TIR.F.CPU.Memcopy(arguments[0], ret));
+                break;
+            case IR.Tensors.Reshape reshape:
+                _mainBody.Add(TIR.F.CPU.Memcopy(arguments[0], ret));
+                break;
+            case IR.Tensors.Slice slice:
+                _mainBody.Add(TIR.F.CPU.Slice(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[3]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[4]).Value.ToArray<int>()));
+                break;
+            case IR.Tensors.Concat concat:
+                _mainBody.Add(TIR.F.CPU.Concat(((IR.Tuple)expr.Arguments[0]).Fields.AsValueEnumerable().Select(AllocOrGetBuffer).ToArray(), ret, concat.Axis));
+                break;
+            case IR.Tensors.Transpose trans:
+                _mainBody.Add(TIR.F.CPU.Transpose(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>()));
+                break;
+            case IR.NN.Swish swish:
+                _mainBody.Add(TIR.F.CPU.Swish(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToScalar<float>()));
                 break;
 #if false
             case MatMul matmul:

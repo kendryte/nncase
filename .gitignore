@@ -261,6 +261,7 @@ __pycache__/
 
 # vscode
 .vscode/
+.mono/
 
 # clangd
 .cache/

@@ -31,5 +31,9 @@ internal class CPUModule : IApplicationPart
         registrator.RegisterManyInterface<PackedBinaryEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<PackedTransposeEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<UnpackEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<SliceEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<ConcatEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<SwishEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<TransposeEvaluator>(reuse: Reuse.Singleton);
     }
 }

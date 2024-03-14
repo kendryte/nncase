@@ -77,6 +77,19 @@ int main() {
         assert(tc(0) == sinf(1.f));
     }
 
+    // viewd tensor
+    {
+        ntt::tensor<float, ntt::fixed_shape<2, 3>> ta;
+        ntt::tensor<float, ntt::fixed_shape<2, 1, 3>> tb;
+        ntt::tensor_copy(ta, tb);
+        assert(ta(0, 0) == tb(0, 0, 0));
+        assert(ta(0, 1) == tb(0, 0, 1));
+        assert(ta(0, 2) == tb(0, 0, 2));
+        assert(ta(1, 0) == tb(1, 0, 0));
+        assert(ta(1, 1) == tb(1, 0, 1));
+        assert(ta(1, 2) == tb(1, 0, 2));
+    }
+
     // fixed pack
     {
         ntt::tensor<float, ntt::fixed_shape<16, 64, 32>> ta;
@@ -163,6 +176,18 @@ int main() {
         std::iota(buffer_4.buffer().begin(), buffer_4.buffer().end(), 0.f);
         std::iota(buffer_7.buffer().begin(), buffer_7.buffer().end(), 0.f);
 
+        // no pack
+        ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> buffer_11;
+        packed_layer_norm<1>(buffer_1, buffer_4, buffer_7, buffer_11, 1e-06,
+                             true, ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        assert(buffer_11(0, 0, 0) == 0.0f);
+        assert(std::abs(buffer_11(0, 0, 1) - (-0.57043804f)) < 1e-4f);
+        assert(std::abs(buffer_11(0, 1, 0) - (-0.92426393f)) < 1e-4f);
+        assert(std::abs(buffer_11(0, 1, 1) - (-1.06147768f)) < 1e-4f);
+        assert(std::abs(buffer_11(0, 15, 0) - (77.11314114f)) < 1e-4f);
+        assert(std::abs(buffer_11(0, 15, 1) - (83.04106739f)) < 1e-4f);
+
+        // packed
         ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<1, 2, 2>> buffer_2;
         ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<2, 2>> buffer_5;
         ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<2, 2>> buffer_8;
