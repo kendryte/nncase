@@ -138,6 +138,114 @@ int main() {
         assert(tc(0, 0, 0)(3) == std::cos(0.0f));
     }
 
+    // pack(fixed_shape + fixed_shape)
+    {
+        ntt::tensor<float, ntt::fixed_shape<16, 64, 32>> ta;
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<16, 8, 32>> tb;
+        std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        ntt::pack<1>(ta, tb.view());
+        ntt::apply(tb.shape(), [&](auto index) {
+            ntt::ranked_shape<tb.shape().rank()> inIndex;
+            for (size_t i = 0; i < index.rank(); i++)
+                inIndex[i] = index[i];
+            auto b = tb(index);
+            auto start = index[1];
+            for (size_t i = 0; i < 8; i++)
+            {
+                index[1] = start * 8 + i;
+                auto va = ta(index);
+                auto vb = b(ntt::ranked_shape<1>{i});
+                if (va != vb)
+                {
+                    std::cerr << "va(" << va << ") != vb(" << vb << ")" << std::endl;
+                    std::abort();
+                }
+            }
+        });
+    }
+
+    // pack(ranked_shape + ranked_shape)
+    {
+        auto a_shape = ntt::make_ranked_shape(16, 64, 32);
+        auto b_shape = ntt::make_ranked_shape(16, 8, 32);
+        ntt::tensor<float, ntt::ranked_shape<3>> ta(a_shape);
+        ntt::tensor<ntt::vector<float, 8>, ntt::ranked_shape<3>> tb(b_shape);
+        std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        ntt::pack<1>(ta, tb.view());
+        ntt::apply(tb.shape(), [&](auto index) {
+            ntt::ranked_shape<tb.shape().rank()> inIndex;
+            for (size_t i = 0; i < index.rank(); i++)
+                inIndex[i] = index[i];
+            auto b = tb(index);
+            auto start = index[1];
+            for (size_t i = 0; i < 8; i++)
+            {
+                index[1] = start * 8 + i;
+                auto va = ta(index);
+                auto vb = b(ntt::ranked_shape<1>{i});
+                if (va != vb)
+                {
+                    std::cerr << "va(" << va << ") != vb(" << vb << ")" << std::endl;
+                    std::abort();
+                }
+            }
+        });
+    }
+
+    // pack(fixed_shape + ranked_shape)
+    {
+        ntt::tensor<float, ntt::fixed_shape<16, 64, 32>> ta;
+        auto shape = ntt::make_ranked_shape(16, 8, 32);
+        ntt::tensor<ntt::vector<float, 8>, ntt::ranked_shape<3>> tb(shape);
+        std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        ntt::pack<1>(ta, tb.view());
+        ntt::apply(tb.shape(), [&](auto index) {
+            ntt::ranked_shape<tb.shape().rank()> inIndex;
+            for (size_t i = 0; i < index.rank(); i++)
+                inIndex[i] = index[i];
+            auto b = tb(index);
+            auto start = index[1];
+            for (size_t i = 0; i < 8; i++)
+            {
+                index[1] = start * 8 + i;
+                auto va = ta(index);
+                auto vb = b(ntt::ranked_shape<1>{i});
+                if (va != vb)
+                {
+                    std::cerr << "va(" << va << ") != vb(" << vb << ")" << std::endl;
+                    std::abort();
+                }
+            }
+        });
+    }
+
+    // pack(ranked_shape + fixed_shape)
+    {
+        auto shape = ntt::make_ranked_shape(16, 64, 32);
+        ntt::tensor<float, ntt::ranked_shape<3>> ta(shape);
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<16, 8, 32>> tb;
+        std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        ntt::pack<1>(ta, tb.view());
+        ntt::apply(tb.shape(), [&](auto index) {
+            ntt::ranked_shape<tb.shape().rank()> inIndex;
+            for (size_t i = 0; i < index.rank(); i++)
+                inIndex[i] = index[i];
+            auto b = tb(index);
+            auto start = index[1];
+            for (size_t i = 0; i < 8; i++)
+            {
+                index[1] = start * 8 + i;
+                auto va = ta(index);
+                auto vb = b(ntt::ranked_shape<1>{i});
+                if (va != vb)
+                {
+                    std::cerr << "va(" << va << ") != vb(" << vb << ")" << std::endl;
+                    std::abort();
+                }
+            }
+        });
+    }
+
     // fixed unpack
     {
         ntt::tensor<float, ntt::fixed_shape<16, 64, 32>> ta;

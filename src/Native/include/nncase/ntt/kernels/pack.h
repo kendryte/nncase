@@ -25,10 +25,10 @@ template <class InShape, class OutShape, class OutElemShape, class InStrides,
           class OutStrides, size_t... Axes>
 class pack_impl;
 
-template <size_t... InDims, size_t... OutDims, size_t... OutElemDims,
-          size_t... InStrides, size_t... OutStrides, size_t... Axes>
-class pack_impl<fixed_shape<InDims...>, fixed_shape<OutDims...>,
-                fixed_shape<OutElemDims...>, fixed_strides<InStrides...>,
+template <class InShape, size_t... OutDims, size_t... OutElemDims,
+          class InStrides, size_t... OutStrides, size_t... Axes>
+class pack_impl<InShape, fixed_shape<OutDims...>,
+                fixed_shape<OutElemDims...>, InStrides,
                 fixed_strides<OutStrides...>, Axes...> {
   public:
     template <class TIn, class TOut>
@@ -40,6 +40,45 @@ class pack_impl<fixed_shape<InDims...>, fixed_shape<OutDims...>,
         constexpr auto in_rank = TIn::shape_type::rank();
         constexpr auto elem_rank = TVec::shape_type::rank();
         constexpr auto lanes = typename TVec::shape_type{};
+
+        apply(domain, [&](auto index) {
+            auto out_index = slice_index<out_rank>(index);
+            auto in_index = slice_index<in_rank>(index);
+            auto elem_index = slice_index<elem_rank>(index, out_rank);
+            bool skip = false;
+            loop<axes.size()>([&](auto i) {
+                in_index[axes[i]] =
+                    in_index[axes[i]] * lanes[i] + index[out_rank + i];
+                if (in_index[axes[i]] >= input.shape()[axes[i]]) {
+                    skip = true;
+                }
+            });
+            output(out_index)(elem_index) = skip ? 0 : input(in_index);
+        });
+    }
+};
+
+template <class InShape, size_t out_rank, size_t... OutElemDims,
+          class InStrides, class OutStrides, size_t... Axes>
+class pack_impl<InShape, ranked_shape<out_rank>,
+                fixed_shape<OutElemDims...>, InStrides,
+                OutStrides, Axes...> {
+  public:
+    template <class TIn, class TOut>
+    constexpr void operator()(const TIn &input, TOut &&output) {
+        using TVec = typename std::decay_t<TOut>::element_type;
+        constexpr auto axes = std::array<size_t, sizeof...(Axes)>{Axes...};
+        constexpr auto in_rank = TIn::shape_type::rank();
+        constexpr auto elem_rank = TVec::shape_type::rank();
+        constexpr auto lanes = typename TVec::shape_type{};
+        constexpr auto rank = out_rank + sizeof...(OutElemDims);
+        ranked_shape<rank> domain{};
+        for (size_t i = 0; i < out_rank; i++)
+            domain[i] = output.shape()[i];
+
+        auto OutElemShape = fixed_shape<OutElemDims...>{};
+        for (size_t i = out_rank, j = 0; i < rank; i++, j++)
+            domain[i] = OutElemShape[j];
 
         apply(domain, [&](auto index) {
             auto out_index = slice_index<out_rank>(index);
