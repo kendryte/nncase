@@ -221,6 +221,12 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
             }
         }
 
+        // not the squeeze or unsqueeze
+        if (!inputType.NdSBP.Any(sbp => sbp is SBPSplit))
+        {
+            return inputType with { TensorType = outTensorType, NdSBP = inputType.NdSBP };
+        }
+
         return invalid;
     }
 }

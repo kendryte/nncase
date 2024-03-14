@@ -17,7 +17,7 @@ public static class DistributedUtility
             var ndsbp = new List<SBP>();
             for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
             {
-                if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && IsDivideExactly(s, placement.Hierarchy[i]))
+                if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && placement.Hierarchy[i] > 1 && IsDivideExactly(s, placement.Hierarchy[i]))
                 {
                     ndsbp.Add(SBP.S(axis));
                 }
@@ -50,7 +50,7 @@ public static class DistributedUtility
                 candidateNdsbps[i].Add(SBP.B);
                 for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
                 {
-                    if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && IsDivideExactly(s, placement.Hierarchy[i]) && !innerSplitedAxes.Contains(axis))
+                    if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && placement.Hierarchy[i] > 1 && IsDivideExactly(s, placement.Hierarchy[i]) && !innerSplitedAxes.Contains(axis))
                     {
                         candidateNdsbps[i].Add(SBP.S(axis));
                     }

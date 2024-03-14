@@ -440,13 +440,13 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     IndentScope.Writer.Write($"unary<mathops::swish>({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
                     break;
                 case TIR.CPU.Slice slice:
-                    IndentScope.Writer.Write($"slice({Visit(args[0]).Name}, {Visit(args[1]).Name}, fixed_shape<{string.Join(",", slice.Begins)}>{{}}, fixed_shape<{string.Join(",", slice.Ends)}>{{}}, fixed_shape<{string.Join(",", slice.Axes)}>{{}}, fixed_shape<{string.Join(",", slice.Strides)}>{{}});\n");
+                    IndentScope.Writer.Write($"slice<fixed_shape<{string.Join(",", slice.Begins)}>, fixed_shape<{string.Join(",", slice.Ends)}>, fixed_shape<{string.Join(",", slice.Axes)}>, fixed_shape<{string.Join(",", slice.Strides)}>>({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
                     break;
                 case TIR.CPU.Concat concat:
                     IndentScope.Writer.Write($"concat<{concat.Axis}>(std::make_tuple({string.Join(",", args.SkipLast(1).Select(Visit).Select(s => s.Name))}), {Visit(args[^1]).Name});\n");
                     break;
                 case TIR.CPU.Transpose transpose:
-                    IndentScope.Writer.Write($"transpose({Visit(args[0]).Name}, {Visit(args[1]).Name}, fixed_shape<{string.Join(",", transpose.Perm)}>{{}});\n");
+                    IndentScope.Writer.Write($"transpose<fixed_shape<{string.Join(",", transpose.Perm)}>>({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
                     break;
                 default:
                     throw new NotSupportedException(xpuOp.ToString());
