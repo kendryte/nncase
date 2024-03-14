@@ -34,19 +34,22 @@ public sealed class BufferizePass : ModulePass
     private BaseFunction Bufferize(Function function, IRModule module)
     {
         // 1. Merge grids into new PrimFunctions
-        throw new NotImplementedException();
+        var merger = new GraphPartitioner(function);
+        merger.Partition(module);
+
+        return function;
     }
 
-    private sealed class GraphMerger
+    private sealed class GraphPartitioner
     {
         private readonly Function _function;
 
-        public GraphMerger(Function function)
+        public GraphPartitioner(Function function)
         {
             _function = function;
         }
 
-        public void Merge(IRModule module)
+        public void Partition(IRModule module)
         {
             CreateRegions();
         }
@@ -68,13 +71,17 @@ public sealed class BufferizePass : ModulePass
 
             public bool Add(Expr node)
             {
-                throw new NotImplementedException();
-#if false
                 if (_nodesSet.Add(node))
                 {
                     Nodes.Add(node);
                     _outputs.Add(node);
                     _nodeOutputUsers.Add(node, node.Users.Count);
+
+                    // Remove region input
+                    if (_inputs.Contains(node))
+                    {
+                        _inputs.Remove(node);
+                    }
 
                     if (_outputs.Contains(input))
                     {
@@ -94,7 +101,7 @@ public sealed class BufferizePass : ModulePass
                     foreach (var input in _inputs)
                     {
                     }
-#endif
+                }
             }
         }
     }
