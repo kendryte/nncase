@@ -28,7 +28,7 @@ template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TScale,
 void within_axis_pack_impl(const TIn &input, const TScale &scale,
                            const TBias &bias, TOut &&output, const TEp &epsilon,
                            [[maybe_unused]] const bool &use_mean) {
-    using TElem = TIn::element_type;
+    using TElem = typename TIn::element_type;
     constexpr auto input_shape = typename TIn::shape_type{};
     constexpr auto input_strides = typename TIn::strides_type{};
     constexpr auto scale_shape = typename TScale::shape_type{};

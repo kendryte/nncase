@@ -26,7 +26,7 @@ namespace nncase::ntt {
 namespace softmax_detail {
 template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TOut>
 void packed_on_axis_impl(const TIn &input, TOut &&output) {
-    using TElem = TIn::element_type;
+    using TElem = typename TIn::element_type;
     constexpr auto input_shape = typename TIn::shape_type{};
     // constexpr auto input_strides = typename TIn::strides_type{};
     constexpr auto output_shape = typename std::decay_t<TOut>::shape_type{};
