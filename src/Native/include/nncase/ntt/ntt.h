@@ -25,6 +25,7 @@
 #include "kernels/transpose.h"
 #include "kernels/unary.h"
 #include "kernels/unpack.h"
+#include "kernels/gather.h"
 #include "tensor.h"
 #include "utility.h"
 #include "vector_type.h"

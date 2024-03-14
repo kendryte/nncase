@@ -101,10 +101,10 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.PackedLayerNorm(arguments[0], arguments[1], arguments[2], ret, layernorm.Axis, layernorm.Epsilon, layernorm.UseMean, Array.Empty<int>(), Array.Empty<int>()));
                 break;
             case IR.Tensors.Unsqueeze unsqueeze:
-                _mainBody.Add(TIR.F.CPU.Memcopy(arguments[0], ret));
+                _mainBody.Add(TIR.F.CPU.Reshape(arguments[0], ret, expr.CheckedShape.ToValueArray()));
                 break;
             case IR.Tensors.Reshape reshape:
-                _mainBody.Add(TIR.F.CPU.Memcopy(arguments[0], ret));
+                _mainBody.Add(TIR.F.CPU.Reshape(arguments[0], ret, expr.CheckedShape.ToValueArray()));
                 break;
             case IR.Tensors.Slice slice:
                 _mainBody.Add(TIR.F.CPU.Slice(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[3]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[4]).Value.ToArray<int>()));
@@ -117,6 +117,9 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 break;
             case IR.NN.Swish swish:
                 _mainBody.Add(TIR.F.CPU.Swish(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToScalar<float>()));
+                break;
+            case IR.Tensors.Gather gather:
+                _mainBody.Add(TIR.F.CPU.Gather(arguments[0], arguments[1], ret, gather.Axis));
                 break;
 #if false
             case MatMul matmul:

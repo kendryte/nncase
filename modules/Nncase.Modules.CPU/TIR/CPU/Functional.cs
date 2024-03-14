@@ -94,9 +94,19 @@ public partial class CPU
         return new Call(new Concat(axis), inputs.Concat(new[] { ret }).ToArray());
     }
 
+    public static Expr Reshape(Buffer input, Buffer ret, int[] newShape)
+    {
+        return new Call(new Reshape(newShape), input, ret);
+    }
+
     public static Expr Swish(Buffer buffer, Buffer ret, float v)
     {
         return new Call(new Swish(v), buffer, ret);
+    }
+
+    public static Expr Gather(Buffer input, Buffer indcies, Buffer ret, int axis)
+    {
+        return new Call(new Gather(axis), input, indcies, ret);
     }
 
     public static Expr Transpose(Buffer buffer, Buffer ret, int[] perm)
