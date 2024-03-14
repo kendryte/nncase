@@ -18,6 +18,12 @@ public struct QuantConfig : IEquatable<QuantConfig>
     {
     }
 
+    // 没有实际意义，只是为了提供结构，构造空对象的时候可以区分，用于egraph搜索的时候不会被归结到同一个eclass。
+    public QuantConfig(int identity)
+    {
+        _header = new(identity, identity);
+    }
+
     public static QuantConfig FromRaw(Tensor rawTensor)
     {
         // header: sizeof input, sizeof output
@@ -91,7 +97,7 @@ public struct QuantConfig : IEquatable<QuantConfig>
 
     public bool Equals(QuantConfig other) => _inputConfig.Equals(other._inputConfig) && _outputConfig.Equals(other._outputConfig) && _header.Equals(other._header);
 
-    public bool IsEmpty() => _header == null || (_inputConfig.Count == 0 && _outputConfig.Count == 0);
+    public bool IsEmpty() => _header == null;
 
     public override int GetHashCode() => HashCode.Combine(_inputConfig, _outputConfig, _header);
 }

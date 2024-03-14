@@ -198,13 +198,17 @@ internal partial class Quantizer
         int debugFakeNode = 0;
         foreach (var (config, _) in sensitivity)
         {
-            Console.WriteLine($"try opt: nodes:{sensitivity.Count} current:{++debugFakeNode}");
-
             _fakeNodeConfigs![config.Var] = config.QuantConfig;
             sampleFillVarWithConst[config.Var] = Value.FromTensor(config.QuantConfig.ToRaw());
             var curentResults = CompilerServices.Evaluate(((Function)_expr).Body, sampleFillVarWithConst);
             var currentResult = curentResults is TensorValue ? curentResults.AsTensor() : curentResults[outDefault].AsTensor();
             var cosine = Utility.GetCosineSimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(currentResult.BytesBuffer));
+
+            Console.ResetColor();
+            Console.Write($"try opt: nodes:{sensitivity.Count} current:{++debugFakeNode} targetCosine:{_quantizeOptions.CosineTarget}");
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($" currentCosine:{cosine}");
+            Console.ResetColor();
 
             if (cosine > _quantizeOptions.CosineTarget)
             {
@@ -215,7 +219,7 @@ internal partial class Quantizer
 
     private void UpdateQuantTypesByConfig(Dictionary<Expr, Dictionary<ParameterInfo, DataType>> quantTypes, DataType quantType, DataType wQuantType)
     {
-        foreach (var (var, fakeNode) in _fakeNodesVars)
+        foreach (var (_, fakeNode) in _fakeNodesVars)
         {
             Dictionary<ParameterInfo, DataType> paraTypes = new();
             var parameters = ((Op)((Call)fakeNode).Target).Parameters.ToArray();
@@ -303,7 +307,7 @@ internal partial class Quantizer
 
         foreach (var (var, _) in _fakeNodeConfigs!)
         {
-            sampleFillVarWithConst.Add(var, IR.F.Random.Normal(DataTypes.Float32, new int[] { 1 }).Evaluate());
+            sampleFillVarWithConst.Add(var, Value.FromConst((float)Math.PI));
         }
 
         // 多输出的情况下，这里固定取了第一个，后面有更好的策略可以改进
@@ -336,9 +340,6 @@ internal partial class Quantizer
             Dictionary<QuantConfig, float> sensitivity = new();
             foreach (var quantType in quantTypeSupport)
             {
-                // debug:delete
-                Console.WriteLine($"get sensitivity: nodes:{_fakeNodesVars.Count} current:{debugFakeNode} types:{quantTypeSupport.Count} current:{++debugQuantType}");
-
                 var configHeader = new float[] { parameters.Length, ranges[fakeNode].Length };
                 var inputConfigs = new List<QuantConfigData>();
                 for (int argIdx = 0; argIdx < ((Call)fakeNode).Arguments.Length; argIdx++)
@@ -376,7 +377,12 @@ internal partial class Quantizer
                 var curentResults = CompilerServices.Evaluate(((Function)_expr).Body, sampleFillVarWithQuant);
                 var currentResult = curentResults is TensorValue ? curentResults.AsTensor() : curentResults[outDefault].AsTensor();
                 var cosine = Utility.GetCosineSimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(currentResult.BytesBuffer));
-                sensitivities[(var, quantConfig)] = (float)((float)(cosine + (0.0001 * debugFakeNode) + (debugQuantType * 0.00001)) - 0.5);
+
+                sensitivities[(var, quantConfig)] = cosine;
+
+                // debug:delete
+                // sensitivities[(var, quantConfig)] = (float)((float)(cosine + (0.0001 * debugFakeNode) + (debugQuantType * 0.00001)) - 0.5);
+                Console.WriteLine($"get sensitivity: nodes:{_fakeNodesVars.Count} current:{debugFakeNode} types:{quantTypeSupport.Count} current:{++debugQuantType} cosine:{cosine}");
             }
         }
 
@@ -386,8 +392,35 @@ internal partial class Quantizer
         //     entry => entry.Key,
         //     entry => entry.Value.OrderBy(kv => kv.Value).ToDictionary(kv => kv.Key, kv => kv.Value));
         var sensSorted = sensitivities.OrderBy(pair => pair.Value).ToList();
+        AddSensitivityForFallback(sensSorted);
 
         return (sensSorted, groundTruth);
+    }
+
+    private void AddSensitivityForFallback(List<KeyValuePair<(Var Var, QuantConfig QuantConfig), float>> sensSorted)
+    {
+        var ticketsforVar = new Dictionary<Var, int>();
+        int idx = 0;
+        foreach (var (var, _) in sensSorted)
+        {
+            idx++;
+            if (ticketsforVar.TryGetValue(var.Var, out var tickets))
+            {
+                ticketsforVar[var.Var] = idx + tickets;
+            }
+            else
+            {
+                ticketsforVar[var.Var] = idx;
+            }
+        }
+
+        var ticketsSorted = ticketsforVar.OrderBy(x => x.Value).ToList();
+
+        int identity = 0;
+        foreach (var (var, _) in ticketsSorted)
+        {
+            sensSorted.Add(new KeyValuePair<(Var, QuantConfig), float>((var, new QuantConfig(identity++)), 2.0f));
+        }
     }
 
     private void ExportQuantScheme()
@@ -638,7 +671,7 @@ internal partial class Quantizer
         {
             foreach (var (var, _) in _fakeNodeConfigs!)
             {
-                sample.Add(var, IR.F.Random.Normal(DataTypes.Float32, new int[] { 1 }).Evaluate());
+                sample.Add(var, Value.FromConst((float)Math.PI));
             }
         }
 
