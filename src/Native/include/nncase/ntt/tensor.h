@@ -25,7 +25,7 @@ using tensor_view = tensor_base<T, Shape, Strides, true>;
 
 namespace detail {
 template <class T, class Shape, class Strides, bool IsView,
-          bool FixedShape = is_fixed_dims_v<Shape> &&is_fixed_dims_v<Strides>>
+          bool FixedShape = is_fixed_dims_v<Shape> && is_fixed_dims_v<Strides>>
 class tensor_storage;
 
 template <class T, class Shape, class Strides>
@@ -150,6 +150,12 @@ class tensor_base : public detail::tensor_storage<T, Shape, Strides, IsView> {
                                      linear_size(shape, strides())),
                     shape, strides()};
         }
+    }
+
+    template <typename TNewShape>
+    constexpr tensor_view<T, TNewShape, default_strides_t<TNewShape>>
+    reshape(TNewShape shape) noexcept {
+        return {buffer(), shape, default_strides(shape)};
     }
 
     constexpr tensor_view<T, Shape, Strides> view() noexcept {

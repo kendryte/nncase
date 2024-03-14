@@ -415,273 +415,39 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                 case TIR.CPU.Memcopy copy:
                     IndentScope.Writer.Write($"tensor_copy({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
                     break;
-#if false
-                case TIR.CPU.SwishB swishb:
-                    IndentScope.Writer.Write($"swishb({Visit(args[0]).Name}, {Visit(args[1]).Name}, {swishb.Beta}, ctx)");
+                case TIR.CPU.Gather gather:
+                    IndentScope.Writer.Write($"gather<{gather.Axis}>({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name});\n");
+                    break;
+                case TIR.CPU.Reshape reshape:
+                    {
+                        IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Reshape.cshtml", new TypedKernelTemplateModel<TIR.CPU.Reshape>(reshape)
+                        {
+                            Arguments = args.Select(x => new KernelArgument { Symbol = Visit(x) }).ToArray(),
+                            Args = args.ToArray(),
+                        }).Result);
+                    }
+
                     break;
                 case TIR.CPU.Matmul matmul:
-                    IndentScope.Writer.Write($"matmul({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, ctx)");
+                    IndentScope.Writer.Write($"matmul({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name});\n");
                     break;
-                case TIR.CPU.LayerNorm layernorm:
-                    using (_ = new IndentScope())
+                case TIR.CPU.Swish swish:
+                    if (swish.Beta != 1.0f)
                     {
-                        IndentScope.Writer.IndWrite($"{{\n");
-
-                        // var dividedType = Utilities.DistributedUtility.GetDividedTensorType(layernorm.DistType);
-                        IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> sum({{{string.Join(",", args[0].Dimensions.ToArray().Take(layernorm.Axis).Select(e => Visit(e).Name))}}});\n");
-                        IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> sum_sqr({{{string.Join(",", args[0].Dimensions.ToArray().Take(layernorm.Axis).Select(e => Visit(e).Name))}}});\n");
-                        var sbpOnAxis = layernorm.DistType.NdSBP.Where(sbp => sbp is SBPSplit s && s.Axis >= layernorm.Axis).ToArray();
-                        switch (sbpOnAxis.Length)
-                        {
-                            case 0:
-                                IndentScope.Writer.IndWrite($"reduce_sum_sqr({Visit(args[0]).Name}, sum, sum_sqr);\n");
-                                IndentScope.Writer.IndWrite($"layernorm({Visit(args[0]).Name}, sum, sum_sqr,{Visit(args[3]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, static_cast<{args[0].CheckedDataType.ToC()}>({layernorm.Epsilon}), {layernorm.Axis}, {layernorm.DistType.TensorType.Shape[layernorm.Axis]}, {(!layernorm.UseMean).ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)});\n");
-                                break;
-                            case 1:
-                                IndentScope.Writer.IndWrite($"reduce_sum_sqr({Visit(args[0]).Name}, sum, sum_sqr);\n");
-                                if (sbpOnAxis[0] == layernorm.DistType.NdSBP[1])
-                                {
-                                    IndentScope.Writer.IndWrite($"tdma_thread_reduce_sync(sum, sum, reduce_op_t::sum, ctx);\n");
-                                    IndentScope.Writer.IndWrite($"tdma_thread_reduce_sync(sum_sqr, sum_sqr, reduce_op_t::sum, ctx);\n");
-                                }
-                                else
-                                {
-                                    IndentScope.Writer.IndWrite($"tdma_block_reduce_sync(sum, sum, reduce_op_t::sum, ctx);\n");
-                                    IndentScope.Writer.IndWrite($"tdma_block_reduce_sync(sum_sqr, sum_sqr, reduce_op_t::sum, ctx);\n");
-                                }
-
-                                IndentScope.Writer.IndWrite($"layernorm({Visit(args[0]).Name}, sum, sum_sqr,{Visit(args[3]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, static_cast<{args[0].CheckedDataType.ToC()}>({layernorm.Epsilon}), {layernorm.Axis}, {layernorm.DistType.TensorType.Shape[layernorm.Axis]}, {(!layernorm.UseMean).ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)});\n");
-                                break;
-                            case 2:
-                                IndentScope.Writer.IndWrite($"reduce_sum_sqr({Visit(args[0]).Name}, sum, sum_sqr);\n");
-                                IndentScope.Writer.IndWrite($"tdma_all_reduce_sync(sum, sum, reduce_op_t::sum, ctx);\n");
-                                IndentScope.Writer.IndWrite($"tdma_all_reduce_sync(sum_sqr, sum_sqr, reduce_op_t::sum, ctx);\n");
-                                IndentScope.Writer.IndWrite($"layernorm({Visit(args[0]).Name}, sum, sum_sqr,{Visit(args[3]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, static_cast<{args[0].CheckedDataType.ToC()}>({layernorm.Epsilon}), {layernorm.Axis}, {layernorm.DistType.TensorType.Shape[layernorm.Axis]}, {(!layernorm.UseMean).ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)});\n");
-                                break;
-                        }
-
-                        IndentScope.Writer.IndWrite("}\n");
+                        throw new NotSupportedException();
                     }
 
-                    break;
-                case TIR.CPU.InstanceNorm instancenorm:
-                    using (_ = new IndentScope())
-                    {
-                        IndentScope.Writer.IndWrite($"{{\n");
-
-                        // var dividedType = Utilities.DistributedUtility.GetDividedTensorType(instancenorm.DistType);
-                        var sbpOnAxis = instancenorm.DistType.NdSBP.Where(sbp => sbp is SBPSplit s && s.Axis > 1).ToArray();
-                        IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> sum({{{string.Join(",", args[0].Dimensions.ToArray().Take(2).Select(e => Visit(e).Name))}}});\n");
-                        IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> sum_sqr({{{string.Join(",", args[0].Dimensions.ToArray().Take(2).Select(e => Visit(e).Name))}}});\n");
-                        switch (sbpOnAxis.Length)
-                        {
-                            case 0:
-                                IndentScope.Writer.IndWrite($"reduce_sum_sqr({Visit(args[0]).Name}, sum, sum_sqr);\n");
-                                IndentScope.Writer.IndWrite($"instance_norm({Visit(args[0]).Name}, sum, sum_sqr,{Visit(args[3]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, static_cast<{args[0].CheckedDataType.ToC()}>({instancenorm.Epsilon}), {Visit(args[3].Dimensions[2]).Name});\n");
-                                break;
-                            case 1:
-                                IndentScope.Writer.IndWrite($"reduce_sum_sqr({Visit(args[0]).Name}, sum, sum_sqr);\n");
-                                if (sbpOnAxis[0] == instancenorm.DistType.NdSBP[1])
-                                {
-                                    IndentScope.Writer.IndWrite($"tdma_thread_reduce_sync(sum, sum, reduce_op_t::sum, ctx);\n");
-                                    IndentScope.Writer.IndWrite($"tdma_thread_reduce_sync(sum_sqr, sum_sqr, reduce_op_t::sum, ctx);\n");
-                                }
-                                else
-                                {
-                                    IndentScope.Writer.IndWrite($"tdma_block_reduce_sync(sum, sum, reduce_op_t::sum, ctx);\n");
-                                    IndentScope.Writer.IndWrite($"tdma_block_reduce_sync(sum_sqr, sum_sqr, reduce_op_t::sum, ctx);\n");
-                                }
-
-                                IndentScope.Writer.IndWrite($"instance_norm({Visit(args[0]).Name}, sum, sum_sqr,{Visit(args[3]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, static_cast<{args[0].CheckedDataType.ToC()}>({instancenorm.Epsilon}), {Visit(args[3].Dimensions[2]).Name});\n"); break;
-                            case 2:
-                                IndentScope.Writer.IndWrite($"tdma_all_reduce_sync(sum, sum, reduce_op_t::sum, ctx);\n");
-                                IndentScope.Writer.IndWrite($"tdma_all_reduce_sync(sum_sqr, sum_sqr, reduce_op_t::sum, ctx);\n");
-                                IndentScope.Writer.IndWrite($"instance_norm({Visit(args[0]).Name}, sum, sum_sqr,{Visit(args[3]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, static_cast<{args[0].CheckedDataType.ToC()}>({instancenorm.Epsilon}), {Visit(args[3].Dimensions[2]).Name});\n");
-                                break;
-                        }
-
-                        IndentScope.Writer.IndWrite("}\n");
-                    }
-
-                    break;
-                case TIR.CPU.Gather gather:
-                    IndentScope.Writer.Write($"gather({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, {gather.Axis})");
-                    break;
-                case TIR.CPU.Concat concat:
-                    var positiveAxis = concat.Axis > 0 ? concat.Axis : concat.Axis + ((TensorType)args[0].CheckedType).Shape.Rank;
-                    IndentScope.Writer.Write($"concat({{{string.Join(",", args.SkipLast(1).Select(Visit).Select(s => "&" + s.Name))}}}, {Visit(args[^1]).Name}, {positiveAxis})");
+                    IndentScope.Writer.Write($"unary<mathops::swish>({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
                     break;
                 case TIR.CPU.Slice slice:
-                    var begins = ((TensorConst)expr.Arguments[2]).Value.ToArray<int>();
-                    var ends = ((TensorConst)expr.Arguments[3]).Value.ToArray<int>();
-                    var axes = ((TensorConst)expr.Arguments[4]).Value.ToArray<int>().ToList();
-                    var retType = (TensorType)expr.Arguments[1].CheckedType;
-
-                    var newbegins = Enumerable.Repeat(0, retType.Shape.Rank).ToArray();
-                    var newends = retType.Shape.ToArray();
-                    for (int i = 0; i < slice.DistributedType.Placement.Rank; i++)
-                    {
-                        var sbp = slice.DistributedType.NdSBP[i];
-                        if (sbp is SBPSplit { Axis: int axis })
-                        {
-                            if (axes.IndexOf(axis) is int j && j != -1)
-                            {
-                                begins[j] /= slice.DistributedType.Placement.Hierarchy[i];
-                            }
-                        }
-                    }
-
-                    for (int i = 0; i < newbegins.Length; i++)
-                    {
-                        if (axes.IndexOf(i) is int j && j != -1)
-                        {
-                            newbegins[i] += begins[j];
-                        }
-                    }
-
-                    IndentScope.Writer.Write($"__tensor_copy_sync(std::move({Visit(expr.Arguments[1]).Name}), {Visit(expr.Arguments[0]).Name}({{{string.Join(',', newbegins.Select(e => e.ToString()))}}},{{{string.Join(',', newends.Select(e => e.ToString()))}}}))");
+                    IndentScope.Writer.Write($"slice<fixed_shape<{string.Join(",", slice.Begins)}>, fixed_shape<{string.Join(",", slice.Ends)}>, fixed_shape<{string.Join(",", slice.Axes)}>, fixed_shape<{string.Join(",", slice.Strides)}>>({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
                     break;
-                case TIR.CPU.Softmax softmax:
-                    {
-                        positiveAxis = softmax.Axis > 0 ? softmax.Axis : softmax.Axis + ((TensorType)args[0].CheckedType).Shape.Rank;
-                        var sbpOnAxis = softmax.DistType.NdSBP.Where(sbp => sbp is SBPSplit s && s.Axis == softmax.Axis).ToArray();
-                        switch (sbpOnAxis.Length)
-                        {
-                            case 0:
-                                IndentScope.Writer.IndWrite($"softmax({Visit(args[0]).Name}, {Visit(args[1]).Name}, {positiveAxis}, ctx, reduce_strategy_t::none)");
-                                break;
-                            case 1:
-                                if (sbpOnAxis[0] == softmax.DistType.NdSBP[1])
-                                {
-                                    IndentScope.Writer.IndWrite($"softmax({Visit(args[0]).Name}, {Visit(args[1]).Name}, {positiveAxis}, ctx, reduce_strategy_t::by_thread)");
-                                }
-                                else
-                                {
-                                    IndentScope.Writer.IndWrite($"softmax({Visit(args[0]).Name}, {Visit(args[1]).Name}, {positiveAxis}, ctx, reduce_strategy_t::by_block)");
-                                }
-
-                                break;
-                            case 2:
-                                IndentScope.Writer.IndWrite($"softmax({Visit(args[0]).Name}, {Visit(args[1]).Name}, {positiveAxis}, ctx, reduce_strategy_t::all)");
-                                break;
-                        }
-                    }
-
+                case TIR.CPU.Concat concat:
+                    IndentScope.Writer.Write($"concat<{concat.Axis}>(std::make_tuple({string.Join(",", args.SkipLast(1).Select(Visit).Select(s => s.Name))}), {Visit(args[^1]).Name});\n");
                     break;
                 case TIR.CPU.Transpose transpose:
-                    IndentScope.Writer.Write($"transpose({Visit(args[0]).Name}, {Visit(args[1]).Name}, {{{string.Join(",", transpose.Perm.Select(p => p.ToString()))}}})");
+                    IndentScope.Writer.Write($"transpose<fixed_shape<{string.Join(",", transpose.Perm)}>>({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
                     break;
-                case TIR.CPU.ReShape reshape:
-                    IndentScope.Writer.Write($"__tensor_copy_sync(std::move({Visit(args[1]).Name}),std::move(view({Visit(args[0]).Name},{{{args[1].CheckedShape.ToString()[1..^1]}}})))");
-                    break;
-                case TIR.CPU.GatherReduceScatter grs:
-                    var ret_name = Visit(args[1]).Name;
-                    bool reshard = args[0].CheckedType != args[1].CheckedType;
-
-                    var partialSumPos = Enumerable.Range(0, grs.InType.NdSBP.Count).Where(i => grs.InType.NdSBP[i] is SBPPartialSum).Select(i => (i, grs.OutType.NdSBP[i])).ToArray();
-                    var placement = grs.InType.Placement with
-                    {
-                        Hierarchy = new IRArray<int>(partialSumPos.Select(t => grs.InType.Placement.Hierarchy[t.i])),
-                        Name = new string(partialSumPos.Select(t => grs.InType.Placement.Name[t.i]).ToArray()),
-                    };
-
-                    if (reshard)
-                    {
-                        IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> {ret_name}_tmp({{{string.Join(",", args[0].Dimensions.ToArray().Select(e => Visit(e).Name))}}});\n");
-                    }
-                    else
-                    {
-                        IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local>& {ret_name}_tmp = {ret_name};\n");
-                    }
-
-                    if (partialSumPos.Length == 2)
-                    {
-                        IndentScope.Writer.IndWrite($"tdma_all_reduce_sync({Visit(args[0]).Name}, {ret_name}_tmp, reduce_op_t::sum, ctx);\n");
-                    }
-                    else if (partialSumPos[0].i == 0)
-                    {
-                        IndentScope.Writer.IndWrite($"tdma_block_reduce_sync({Visit(args[0]).Name}, {ret_name}_tmp, reduce_op_t::sum, ctx);\n");
-                    }
-                    else
-                    {
-                        IndentScope.Writer.IndWrite($"tdma_thread_reduce_sync({Visit(args[0]).Name}, {ret_name}_tmp, reduce_op_t::sum, ctx);\n");
-                    }
-
-                    if (reshard)
-                    {
-                        if (!ret_name.Contains("reshape", StringComparison.CurrentCulture))
-                        {
-                            IndentScope.Writer.IndWrite($"__tensor_copy_sync(std::move({ret_name}), {ret_name}_tmp{args[1].Dimensions.ToArray().Select(e => Visit(e).Name).ToSlicing(new IRArray<SBP>(partialSumPos.Select(t => t.Item2)), placement)});\n");
-                        }
-                        else
-                        {
-                            var fullShape = Enumerable.Repeat(1, args[1].Dimensions.Length).ToArray();
-                            var splitAxisAndScale = partialSumPos.Select((sbp, i) => sbp.Item2 is SBPSplit s ? (s.Axis, placement.Hierarchy[i]) : (0, 1)).ToArray();
-                            foreach (var s in splitAxisAndScale)
-                            {
-                                fullShape[s.Item1] *= s.Item2;
-                            }
-
-                            foreach (var (dimS, axis) in args[1].Dimensions.ToArray().Select((e, axis) => (Visit(e).Name, axis)))
-                            {
-                                if (int.TryParse(dimS, out var div))
-                                {
-                                    fullShape[axis] *= div;
-                                }
-                                else if (CSourceUtilities.TryGetDivRem(dimS, out div, out var rem))
-                                {
-                                    fullShape[axis] = (fullShape[axis] - 1) * div;
-                                    fullShape[axis] += rem;
-                                }
-                            }
-
-                            IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> {ret_name}_tmp_view = view({ret_name}_tmp, {{{string.Join(',', fullShape)}}});\n");
-                            IndentScope.Writer.IndWrite($"__tensor_copy_sync(std::move({ret_name}),std::move({ret_name}_tmp_view{args[1].Dimensions.ToArray().Select(e => Visit(e).Name).ToSlicing(new IRArray<SBP>(partialSumPos.Select(t => t.Item2)), placement)}));\n");
-                        }
-                    }
-
-                    break;
-                case TIR.CPU.Conv2D conv:
-                    var sbpOnInChannel = conv.DistType.NdSBP.Where(sbp => sbp is SBPPartialSum).ToArray();
-                    string strategy = sbpOnInChannel.Length switch
-                    {
-                        0 => "reduce_strategy_t::none",
-                        1 when sbpOnInChannel[0] == conv.DistType.NdSBP[1] => "reduce_strategy_t::by_thread",
-                        1 => "reduce_strategy_t::by_block",
-                        2 => "reduce_strategy_t::all",
-                        _ => throw new InvalidOperationException("Invalid length"),
-                    };
-
-                    IndentScope.Writer.Write($"conv2d(ctx, {Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, {Visit(args[3]).Name}, {{{string.Join(",", conv.Stride.Select(p => p.ToString()))}}}, {{{string.Join(",", conv.Padding.Select(p => p.ToString()))}}}, {{{string.Join(",", conv.Dilation.Select(p => p.ToString()))}}}, {conv.Groups}, {strategy})");
-                    break;
-                case TIR.CPU.ReduceArg reduceArg:
-                    IndentScope.Writer.Write($"reduce_arg({Visit(args[0]).Name}, {Visit(args[1]).Name}, {reduceArg.Axis}, {reduceArg.KeepDims.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}, {reduceArg.SelectLastIndex.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}, reduce_arg_op_t::{reduceArg.ReduceArgOp.ToC()})");
-                    break;
-                case TIR.CPU.Resize resize:
-                    using (_ = new IndentScope())
-                    {
-                        IndentScope.Writer.IndWrite($"{{\n");
-
-                        IndentScope.Writer.IndWrite($"float roi[{resize.Roi.Count}] = {{{string.Join(",", resize.Roi.Select(p => p.ToString()))}}};\n");
-                        IndentScope.Writer.IndWrite($"int32_t new_size[{resize.NewSize.Count}] = {{{string.Join(",", resize.NewSize.Select(p => p.ToString()))}}};\n");
-                        IndentScope.Writer.IndWrite($"resize({Visit(args[0]).Name}, {Visit(args[1]).Name}, roi, new_size, {resize.CubicCoeffA.ToString()}, {resize.ExcludeOutsideValue.ToString()}, {resize.ExtrapolationValue.ToString()}, image_resize_mode_t::{resize.ResizeMode.ToC()}, image_resize_transformation_mode_t::{resize.TransformationMode.ToC()}, image_resize_nearest_mode_t::{resize.NearestMode.ToC()}, {resize.IsTFResize.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)});\n");
-
-                        IndentScope.Writer.IndWrite("}\n");
-                    }
-
-                    break;
-                case TIR.CPU.Cast cast:
-                    IndentScope.Writer.Write($"cast({Visit(args[0]).Name}, {Visit(args[1]).Name})");
-                    break;
-                case TIR.CPU.Expand expand:
-                    IndentScope.Writer.Write($"expand({Visit(args[0]).Name}, {Visit(args[1]).Name})");
-                    break;
-                case TIR.CPU.Clamp clamp:
-                    string min = clamp.Min is float.NegativeInfinity ? float.MinValue.ToString() : clamp.Min.ToString();
-                    string max = clamp.Max is float.PositiveInfinity ? float.MaxValue.ToString() : clamp.Max.ToString();
-                    IndentScope.Writer.Write($"clamp({Visit(args[0]).Name}, {Visit(args[1]).Name}, (float){min}, (float){max})");
-                    break;
-#endif
                 default:
                     throw new NotSupportedException(xpuOp.ToString());
             }

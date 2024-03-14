@@ -320,6 +320,7 @@ int main() {
     // soft max
     {
         ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> buffer_1;
+        ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> buffer_3;
         std::iota(buffer_1.buffer().begin(), buffer_1.buffer().end(), 0.f);
         ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<1, 2, 2>> buffer_2;
 
@@ -335,6 +336,17 @@ int main() {
         assert(std::abs(buffer_10(0, 14, 1) - (1.17019644e-01)) < 1e-6f);
         assert(std::abs(buffer_10(0, 15, 0) - (8.64664717e-01)) < 1e-6f);
         assert(std::abs(buffer_10(0, 15, 1) - (8.64664717e-01)) < 1e-6f);
+
+        packed_softmax<1>(buffer_1, buffer_3, ntt::fixed_shape<>{});
+        assert(std::abs(buffer_3(0, 13, 0) - (1.58368867e-02)) < 1e-6f);
+        assert(std::abs(buffer_3(0, 13, 1) - (1.58368867e-02)) < 1e-6f);
+        assert(std::abs(buffer_3(0, 14, 0) - (1.17019644e-01)) < 1e-6f);
+        assert(std::abs(buffer_3(0, 14, 1) - (1.17019644e-01)) < 1e-6f);
+        assert(std::abs(buffer_3(0, 15, 0) - (8.64664717e-01)) < 1e-6f);
+        assert(std::abs(buffer_3(0, 15, 1) - (8.64664717e-01)) < 1e-6f);
+        ntt::apply(buffer_3.shape(), [&]([[maybe_unused]] auto index) {
+            assert(std::abs(buffer_3(index) - buffer_10(index)) < 1e-6f);
+        });
     }
 
     // packed matmul 1d on k
@@ -483,6 +495,38 @@ int main() {
         ntt::pack<1>(ta, pa);
         ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pb;
         ntt::unary<ntt::mathops::swish>(pa, pb);
+    }
+
+    // gather
+    {
+        ntt::tensor<float, ntt::fixed_shape<6, 3>> ta;
+        ntt::tensor<size_t, ntt::fixed_shape<1, 3>> tb;
+        ntt::tensor<size_t, ntt::fixed_shape<1, 3, 3>> tc;
+        std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        std::iota(tb.buffer().rbegin(), tb.buffer().rend(), 0.f);
+        ntt::gather<0>(ta, tb, tc);
+        assert(tc(0, 5, 0) == 0.0f);
+        assert(tc(0, 5, 1) == 1.0f);
+        assert(tc(0, 5, 2) == 2.0f);
+        assert(tc(0, 4, 0) == 3.0f);
+        assert(tc(0, 4, 1) == 4.0f);
+        assert(tc(0, 4, 2) == 5.0f);
+        assert(tc(0, 3, 0) == 6.0f);
+        assert(tc(0, 3, 1) == 7.0f);
+        assert(tc(0, 3, 2) == 8.0f);
+
+        ntt::tensor<float, ntt::fixed_shape<2, 3, 3>> td;
+        ntt::tensor<size_t, ntt::fixed_shape<1, 2>> te;
+        ntt::tensor<size_t, ntt::fixed_shape<2, 1, 2, 3>> tf;
+        std::iota(td.buffer().begin(), td.buffer().end(), 0.f);
+        std::iota(te.buffer().rbegin(), te.buffer().rend(), 0.f);
+        ntt::gather<1>(td, te, tf);
+        assert(tf(0, 0, 2, 0) == 0.0f);
+        assert(tf(0, 0, 2, 1) == 1.0f);
+        assert(tf(0, 0, 2, 2) == 2.0f);
+        assert(tf(0, 0, 1, 0) == 3.0f);
+        assert(tf(0, 0, 1, 1) == 4.0f);
+        assert(tf(0, 0, 1, 2) == 5.0f);
     }
 
     auto kmodel = read_file(

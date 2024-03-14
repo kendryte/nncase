@@ -41,8 +41,6 @@ void packed_on_axis_impl(const TIn &input, TOut &&output) {
     constexpr auto add_op = mathops::add<TElem>();
     constexpr auto sub_op = mathops::sub<TElem>();
     constexpr auto max_op = mathops::max<TElem>();
-    constexpr auto vrmax_op = vector_ops::reduce_max<TElem>();
-    constexpr auto vrsum_op = vector_ops::reduce_sum<TElem>();
 
     // TElem finner_size = inner_size;
     constexpr auto domain =
@@ -54,7 +52,9 @@ void packed_on_axis_impl(const TIn &input, TOut &&output) {
              index[Axis]++) {
             max_value = max_op(max_value, input(index));
         }
-        max_value = vrmax_op(max_value);
+        if constexpr (is_vector_v<TElem>) {
+            max_value = vector_ops::reduce_max<TElem>()(max_value);
+        }
 
         // (x - reduce_max) * beta
         for (index[Axis] = 0; index[Axis] < input_shape.at(Axis);
@@ -69,7 +69,9 @@ void packed_on_axis_impl(const TIn &input, TOut &&output) {
             output(index) = exp_op(output(index));
             sum = add_op(output(index), sum);
         }
-        sum = vrsum_op(sum);
+        if constexpr (is_vector_v<TElem>) {
+            sum = vector_ops::reduce_sum<TElem>()(sum);
+        }
 
         // div
         for (index[Axis] = 0; index[Axis] < input_shape.at(Axis);
@@ -82,9 +84,9 @@ void packed_on_axis_impl(const TIn &input, TOut &&output) {
 template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TOut,
           typename PackedAxes>
 void packed_softmax_1d(const TIn &input, TOut &&output, PackedAxes) {
-    static_assert(Axis == PackedAxes::at(0),
-                  "currently not support packed on reduce axis");
-    packed_on_axis_impl<Axis>(input, output);
+    if constexpr (PackedAxes::rank() == 0 || Axis == PackedAxes::at(0)) {
+        packed_on_axis_impl<Axis>(input, output);
+    }
 }
 
 } // namespace softmax_detail
@@ -106,7 +108,7 @@ template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TOut,
 void packed_softmax(const TIn &input, TOut &&output,
                     [[maybe_unused]] PackedAxes packedAxes
                     /* , [[maybe_unused]] PadedNums padednums */) noexcept {
-    static_assert(PackedAxes::rank() == 1, "currently not support 2d pack");
+    static_assert(PackedAxes::rank() < 2, "currently not support 2d pack");
     // static_assert(PadedNums::at(0) == 0, "currently not support pad");
     softmax_detail::packed_softmax_1d<Axis>(input, output, packedAxes);
 }
