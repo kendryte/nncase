@@ -25,11 +25,11 @@ template <class InShape, class InElemShape, class OutShape, class InStrides,
           class OutStrides, size_t... Axes>
 class unpack_impl;
 
-template <size_t... InDims, size_t... InElemDims, size_t... OutDims,
-          size_t... InStrides, size_t... OutStrides, size_t... Axes>
+template <size_t... InDims, size_t... InElemDims, class OutShape,
+          size_t... InStrides, class OutStrides, size_t... Axes>
 class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>,
-                  fixed_shape<OutDims...>, fixed_strides<InStrides...>,
-                  fixed_strides<OutStrides...>, Axes...> {
+                  OutShape, fixed_strides<InStrides...>,
+                  OutStrides, Axes...> {
   public:
     template <class TIn, class TOut>
     constexpr void operator()(const TIn &input, TOut &&output) {
@@ -38,6 +38,44 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>,
         constexpr auto rank = TIn::shape_type::rank();
         constexpr auto elem_rank = TVec::shape_type::rank();
         constexpr fixed_shape<InDims..., InElemDims...> domain{};
+
+        apply(domain, [&](auto index) {
+            auto in_index = slice_index<rank>(index);
+            auto elem_index = slice_index<elem_rank>(index, rank);
+            auto out_index = slice_index<rank>(index);
+            loop<axes.size()>([&](auto i) {
+                out_index[axes[i]] =
+                    out_index[axes[i]] * TVec::shape()[i] + index[rank + i];
+            });
+            output(out_index) = input(in_index)(elem_index);
+        });
+    }
+};
+
+template <size_t in_rank, size_t... InElemDims, class OutShape,
+          class InStrides, class OutStrides, size_t... Axes>
+class unpack_impl<ranked_shape<in_rank>, fixed_shape<InElemDims...>,
+                  OutShape, InStrides,
+                  OutStrides, Axes...> {
+  public:
+    template <class TIn, class TOut>
+    constexpr void operator()(const TIn &input, TOut &&output) {
+        using TVec = typename TIn::element_type;
+        constexpr auto axes = std::array<size_t, sizeof...(Axes)>{Axes...};
+        constexpr auto rank = in_rank;
+        constexpr auto elem_rank = TVec::shape_type::rank();
+
+        auto input_shape = input.shape();
+        fixed_shape<InElemDims...> elem_shape{};
+        constexpr auto domain_rank = in_rank + elem_rank;
+        ranked_shape<domain_rank> domain{};
+        for (size_t i = 0, j = 0; i < domain_rank; i++)
+        {
+            if (i < in_rank)
+                domain[i] = input_shape[i];
+            else
+                domain[i] = elem_shape[j++];
+        }
 
         apply(domain, [&](auto index) {
             auto in_index = slice_index<rank>(index);

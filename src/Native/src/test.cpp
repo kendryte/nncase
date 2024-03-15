@@ -246,11 +246,64 @@ int main() {
         });
     }
 
-    // fixed unpack
+
+    // unpack(fixed_shape + fixed_shape)
+    {
+        ntt::tensor<float, ntt::fixed_shape<16, 64, 32>> ta, tc;
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<16, 16, 32>> tb;
+        std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        ntt::pack<1>(ta, tb.view());
+        ntt::unpack<1>(tb, tc.view());
+        ntt::apply(tc.shape(), [&](auto index) {
+            NNCASE_UNUSED auto a = ta(index);
+            NNCASE_UNUSED auto c = tc(index);
+            assert(a == c);
+        });
+    }
+
+    // unpack(fixed_shape + ranked_shape)
     {
         ntt::tensor<float, ntt::fixed_shape<16, 64, 32>> ta;
         ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<16, 16, 32>> tb;
-        ntt::tensor<float, ntt::fixed_shape<16, 64, 32>> tc;
+        auto shape = ntt::make_ranked_shape(16, 64, 32);
+        ntt::tensor<float, ntt::ranked_shape<3>> tc(shape);
+
+        std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        ntt::pack<1>(ta, tb.view());
+        ntt::unpack<1>(tb, tc.view());
+        ntt::apply(tc.shape(), [&](auto index) {
+            NNCASE_UNUSED auto a = ta(index);
+            NNCASE_UNUSED auto c = tc(index);
+            assert(a == c);
+        });
+    }
+
+    // unpack(ranked_shape + fixed_shape)
+    {
+        ntt::tensor<float, ntt::fixed_shape<16, 64, 32>> ta, tc;
+        auto shape = ntt::make_ranked_shape(16, 16, 32);
+        ntt::tensor<ntt::vector<float, 4>, ntt::ranked_shape<3>> tb(shape);
+
+        std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        ntt::pack<1>(ta, tb.view());
+        ntt::unpack<1>(tb, tc.view());
+        ntt::apply(tc.shape(), [&](auto index) {
+            NNCASE_UNUSED auto a = ta(index);
+            NNCASE_UNUSED auto c = tc(index);
+            assert(a == c);
+        });
+    }
+
+    // unpack(ranked_shape + ranked_shape)
+    {
+        ntt::tensor<float, ntt::fixed_shape<16, 64, 32>> ta;
+
+        auto shape1 = ntt::make_ranked_shape(16, 16, 32);
+        ntt::tensor<ntt::vector<float, 4>, ntt::ranked_shape<3>> tb(shape1);
+
+        auto shape2 = ntt::make_ranked_shape(16, 64, 32);
+        ntt::tensor<float, ntt::ranked_shape<3>> tc(shape2);
+
         std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
         ntt::pack<1>(ta, tb.view());
         ntt::unpack<1>(tb, tc.view());

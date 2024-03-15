@@ -71,14 +71,18 @@ class pack_impl<InShape, ranked_shape<out_rank>,
         constexpr auto in_rank = TIn::shape_type::rank();
         constexpr auto elem_rank = TVec::shape_type::rank();
         constexpr auto lanes = typename TVec::shape_type{};
+
+        auto out_shape = output.shape();
+        auto OutElemShape = fixed_shape<OutElemDims...>{};
         constexpr auto rank = out_rank + sizeof...(OutElemDims);
         ranked_shape<rank> domain{};
-        for (size_t i = 0; i < out_rank; i++)
-            domain[i] = output.shape()[i];
-
-        auto OutElemShape = fixed_shape<OutElemDims...>{};
-        for (size_t i = out_rank, j = 0; i < rank; i++, j++)
-            domain[i] = OutElemShape[j];
+        for (size_t i = 0, j = 0; i < rank; i++)
+        {
+            if (i < out_rank)
+                domain[i] = out_shape[i];
+            else
+                domain[i] = OutElemShape[j++];
+        }
 
         apply(domain, [&](auto index) {
             auto out_index = slice_index<out_rank>(index);
