@@ -76,24 +76,25 @@ public sealed class UnitTestCPUKernels : TestClassBase
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
         int count = 0;
+        var dump_dir = CompileOptions.DumpDir.ToString();
         foreach (var post in posts)
         {
 #if DEBUG
             System.Console.WriteLine(CompilerServices.Print(post));
 #endif
             var kernelCase = new CpuKernelCase($"PackBinaryCase{count++}", new Fusion("kernel", CPUTarget.Kind, post, feedDict.Keys.ToArray()), feedDict.Keys.ToArray(), feedDict.Values.Select(v => v.AsTensor()).ToArray());
-            await Run(kernelCase);
+            await Run(dump_dir, kernelCase);
         }
     }
 
-    internal async Task Run(CpuKernelCase kernelCase)
+    internal async Task Run(string dumpDir, CpuKernelCase kernelCase)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             return;
         }
 
-        CompileOptions.DumpDir = Path.Join(CompileOptions.DumpDir, kernelCase.Name);
+        CompileOptions.DumpDir = Path.Join(dumpDir, kernelCase.Name);
         using var dumpScope = new Diagnostics.DumpScope(string.Empty, CompileOptions.DumpFlags);
 
         // convert fusion to prim func

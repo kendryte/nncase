@@ -558,15 +558,15 @@ int main() {
         std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
         std::iota(tb.buffer().rbegin(), tb.buffer().rend(), 0.f);
         ntt::gather<0>(ta, tb, tc);
-        assert(tc(0, 5, 0) == 0.0f);
-        assert(tc(0, 5, 1) == 1.0f);
-        assert(tc(0, 5, 2) == 2.0f);
-        assert(tc(0, 4, 0) == 3.0f);
-        assert(tc(0, 4, 1) == 4.0f);
-        assert(tc(0, 4, 2) == 5.0f);
-        assert(tc(0, 3, 0) == 6.0f);
-        assert(tc(0, 3, 1) == 7.0f);
-        assert(tc(0, 3, 2) == 8.0f);
+        assert(tc(0, 2, 0) == 0.0f);
+        assert(tc(0, 2, 1) == 1.0f);
+        assert(tc(0, 2, 2) == 2.0f);
+        assert(tc(0, 1, 0) == 3.0f);
+        assert(tc(0, 1, 1) == 4.0f);
+        assert(tc(0, 1, 2) == 5.0f);
+        assert(tc(0, 0, 0) == 6.0f);
+        assert(tc(0, 0, 1) == 7.0f);
+        assert(tc(0, 0, 2) == 8.0f);
 
         ntt::tensor<float, ntt::fixed_shape<2, 3, 3>> td;
         ntt::tensor<size_t, ntt::fixed_shape<1, 2>> te;
@@ -574,12 +574,12 @@ int main() {
         std::iota(td.buffer().begin(), td.buffer().end(), 0.f);
         std::iota(te.buffer().rbegin(), te.buffer().rend(), 0.f);
         ntt::gather<1>(td, te, tf);
-        assert(tf(0, 0, 2, 0) == 0.0f);
-        assert(tf(0, 0, 2, 1) == 1.0f);
-        assert(tf(0, 0, 2, 2) == 2.0f);
-        assert(tf(0, 0, 1, 0) == 3.0f);
-        assert(tf(0, 0, 1, 1) == 4.0f);
-        assert(tf(0, 0, 1, 2) == 5.0f);
+        assert(tf(0, 0, 1, 0) == 0.0f);
+        assert(tf(0, 0, 1, 1) == 1.0f);
+        assert(tf(0, 0, 1, 2) == 2.0f);
+        assert(tf(0, 0, 0, 0) == 3.0f);
+        assert(tf(0, 0, 0, 1) == 4.0f);
+        assert(tf(0, 0, 0, 2) == 5.0f);
     }
 
     auto kmodel = read_file(
