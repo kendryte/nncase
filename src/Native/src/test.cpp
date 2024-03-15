@@ -370,7 +370,7 @@ int main() {
         assert(std::abs(buffer_10(0, 15, 1) - (83.04106739f)) < 1e-4f);
     }
 
-    // soft max
+    // packed softmax(softmax axis == packed axis)
     {
         ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> buffer_1;
         ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> buffer_3;
@@ -399,6 +399,72 @@ int main() {
         assert(std::abs(buffer_3(0, 15, 1) - (8.64664717e-01)) < 1e-6f);
         ntt::apply(buffer_3.shape(), [&]([[maybe_unused]] auto index) {
             assert(std::abs(buffer_3(index) - buffer_10(index)) < 1e-6f);
+        });
+    }
+
+    // packed softmax1(softmax axis != packed axis)
+    {
+        ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>> buffer_1, buffer_2, buffer_3;
+        std::iota(buffer_1.buffer().begin(), buffer_1.buffer().end(), 0.f);
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<1, 3, 2, 16>> buffer_4, buffer_5;
+        pack<2>(buffer_1, buffer_4);
+        packed_softmax<1>(buffer_4, buffer_5, ntt::fixed_shape<2>{});
+        unpack<2>(buffer_5, buffer_3);
+
+        packed_softmax<1>(buffer_1, buffer_2, ntt::fixed_shape<>{});
+        ntt::apply(buffer_2.shape(), [&]([[maybe_unused]] auto index) {
+            if (std::abs(buffer_2(index) - buffer_3(index)) >= 1e-6f)
+            {
+                std::cout << "index: ";
+                for (size_t i = 0; i < index.rank(); i++)
+                    std::cout << index[i] << " ";
+                std::cout << ": buffer_2(index)="<< buffer_2(index) <<", buffer_3(index)=" << buffer_3(index);
+                std::cout << std::endl;
+            }
+        });
+    }
+
+    // packed softmax2(softmax axis != packed axis)
+    {
+        ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>> buffer_1, buffer_2, buffer_3;
+        std::iota(buffer_1.buffer().begin(), buffer_1.buffer().end(), 0.f);
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<1, 3, 16, 2>> buffer_4, buffer_5;
+        pack<3>(buffer_1, buffer_4);
+        packed_softmax<1>(buffer_4, buffer_5, ntt::fixed_shape<2>{});
+        unpack<3>(buffer_5, buffer_3);
+
+        packed_softmax<1>(buffer_1, buffer_2, ntt::fixed_shape<>{});
+        ntt::apply(buffer_2.shape(), [&]([[maybe_unused]] auto index) {
+            if (std::abs(buffer_2(index) - buffer_3(index)) >= 1e-6f)
+            {
+                std::cout << "index: ";
+                for (size_t i = 0; i < index.rank(); i++)
+                    std::cout << index[i] << " ";
+                std::cout << ": buffer_2(index)="<< buffer_2(index) <<", buffer_3(index)=" << buffer_3(index);
+                std::cout << std::endl;
+            }
+        });
+    }
+
+    // packed softmax3(softmax axis != packed axis)
+    {
+        ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>> buffer_1, buffer_2, buffer_3;
+        std::iota(buffer_1.buffer().begin(), buffer_1.buffer().end(), 0.f);
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<1, 3, 2, 16>> buffer_4, buffer_5;
+        pack<2>(buffer_1, buffer_4);
+        packed_softmax<3>(buffer_4, buffer_5, ntt::fixed_shape<2>{});
+        unpack<2>(buffer_5, buffer_3);
+
+        packed_softmax<3>(buffer_1, buffer_2, ntt::fixed_shape<>{});
+        ntt::apply(buffer_2.shape(), [&]([[maybe_unused]] auto index) {
+            if (std::abs(buffer_2(index) - buffer_3(index)) >= 1e-6f)
+            {
+                std::cout << "index: ";
+                for (size_t i = 0; i < index.rank(); i++)
+                    std::cout << index[i] << " ";
+                std::cout << ": buffer_2(index)="<< buffer_2(index) <<", buffer_3(index)=" << buffer_3(index);
+                std::cout << std::endl;
+            }
         });
     }
 

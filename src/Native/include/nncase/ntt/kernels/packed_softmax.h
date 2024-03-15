@@ -24,15 +24,11 @@
 namespace nncase::ntt {
 
 namespace softmax_detail {
-template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TOut>
-void packed_on_axis_impl(const TIn &input, TOut &&output) {
+template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TOut, typename PackedAxes>
+void packed_on_axis_impl(const TIn &input, TOut &&output, [[maybe_unused]] PackedAxes packedAxes) {
     using TElem = typename TIn::element_type;
     constexpr auto input_shape = typename TIn::shape_type{};
-    // constexpr auto input_strides = typename TIn::strides_type{};
     constexpr auto output_shape = typename std::decay_t<TOut>::shape_type{};
-    // constexpr auto output_strides = typename
-    // std::decay_t<TOut>::strides_type{};
-
     static_assert(is_same_seq(input_shape, output_shape),
                   "the input output shape not equal!");
 
@@ -42,17 +38,19 @@ void packed_on_axis_impl(const TIn &input, TOut &&output) {
     constexpr auto sub_op = mathops::sub<TElem>();
     constexpr auto max_op = mathops::max<TElem>();
 
-    // TElem finner_size = inner_size;
+    constexpr auto need_reduce = PackedAxes::rank() != 0 && Axis == PackedAxes::at(0) && is_vector_v<TElem>;
     constexpr auto domain =
         shape_infer::reduced_shape_by_axis<Axis>(input_shape);
     apply(domain, [&](auto index) {
-        // reduce_max
+        // max
         TElem max_value = input(index);
         for (index[Axis] = 0; index[Axis] < input_shape.at(Axis);
              index[Axis]++) {
             max_value = max_op(max_value, input(index));
         }
-        if constexpr (is_vector_v<TElem>) {
+
+        // reduce_max
+        if constexpr (need_reduce) {
             max_value = vector_ops::reduce_max<TElem>()(max_value);
         }
 
@@ -69,7 +67,9 @@ void packed_on_axis_impl(const TIn &input, TOut &&output) {
             output(index) = exp_op(output(index));
             sum = add_op(output(index), sum);
         }
-        if constexpr (is_vector_v<TElem>) {
+
+        // reduce sum
+        if constexpr (need_reduce) {
             sum = vector_ops::reduce_sum<TElem>()(sum);
         }
 
@@ -83,10 +83,8 @@ void packed_on_axis_impl(const TIn &input, TOut &&output) {
 
 template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TOut,
           typename PackedAxes>
-void packed_softmax_1d(const TIn &input, TOut &&output, PackedAxes) {
-    if constexpr (PackedAxes::rank() == 0 || Axis == PackedAxes::at(0)) {
-        packed_on_axis_impl<Axis>(input, output);
-    }
+void packed_softmax_1d(const TIn &input, TOut &&output, PackedAxes packedAxes) {
+    packed_on_axis_impl<Axis>(input, output, packedAxes);
 }
 
 } // namespace softmax_detail
