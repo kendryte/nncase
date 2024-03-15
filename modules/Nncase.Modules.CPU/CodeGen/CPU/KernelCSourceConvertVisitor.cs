@@ -130,13 +130,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 
     public KernelCSource GetCSource()
     {
-        _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.L2Data).ToList().ForEach(b =>
-        {
-            _sharedWriter.Write(_exprMemo[b]);
-            _sharedWriter.WriteLine(";");
-        });
-
-        var ctype = $"void {VisitEntry.Name}({string.Join(", ", VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}").ToArray().Concat(_exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.Rdata).Select(Visit).Select(s => $" {s.Type} {s.Name}").ToArray()))})";
+        var ctype = $"void {VisitEntry.Name}({string.Join(", ", VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}").ToArray().Concat(_exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.Rdata).Select(Visit).Select(s => $" {s.Type} {s.Name}").ToArray()))}, uint8_t* l1_data)";
         return new(
             CSourceBuiltn.MakeMain(VisitEntry, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.Rdata)),
             CSourceBuiltn.MakeKernel(ctype, _kernelBuilder.ToString()));
@@ -204,18 +198,18 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
         }
 
         var start = Visit(expr.Start);
-        _ = Visit(expr.Size);
-        string name = start.Name;
-        if (expr.Start is TensorConst or Call)
+        var size = Visit(expr.Size);
+        string loc = (expr.Location, expr.Hierarchy) switch
         {
-            var loc = expr.Location switch
-            {
-                MemoryLocation.Rdata => "rdata",
-                MemoryLocation.Data => "data",
-                _ => throw new NotSupportedException(),
-            };
-            name = $"({loc} + {start.Name})";
-        }
+            (MemoryLocation.Rdata, 0) => "rdata",
+            (MemoryLocation.Data, 0) => "data",
+            (MemoryLocation.Data, 1) => "l1_data",
+            _ => throw new NotSupportedException(),
+        };
+        var ptype = (PointerType)expr.CheckedDataType;
+        var ptypeName = ptype.ElemType.ToC();
+        var spanSize = ((TensorConst)expr.Size).Value.ToScalar<int>() / ptype.ElemType.SizeInBytes;
+        var name = $"std::span<{ptypeName}, {spanSize}> (reinterpret_cast<{ptypeName}*>({loc} + {start.Name}), {spanSize})";
 
         symbol = new(start.Type, name);
         _exprMemo.Add(expr, symbol);
@@ -229,7 +223,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
             return symbol;
         }
 
-        var type = VisitEntry.Parameters.AsValueEnumerable().Contains(expr) || expr.MemSpan.Location == MemoryLocation.Rdata
+        var type = VisitEntry.Parameters.AsValueEnumerable().Contains(expr) || expr.MemSpan.Location == MemoryLocation.Rdata || expr.MemSpan.Start is TensorConst
             ? $"tensor_view<{expr.ElemType.ToC()}, {KernelUtility.DimensionsToC(expr.Dimensions)}, {KernelUtility.StridesToC(expr.Strides)}> "
             : $"tensor<{expr.ElemType.ToC()}, {KernelUtility.DimensionsToC(expr.Dimensions)}> ";
 
@@ -523,7 +517,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 
             type = ptype.ToC();
         }
-        else if (expr is TensorConst { Value: Tensor { ElementType: PointerType { ElemType: PrimType }, Shape: { IsScalar: true } } pointer })
+        else if (expr is TensorConst { Value: Tensor { ElementType: PointerType { ElemType: DataType }, Shape: { IsScalar: true } } pointer })
         {
             str = pointer.ToScalar<ulong>().ToString();
             type = "uint8_t *";
@@ -577,6 +571,12 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
             return;
         }
 
-        IndentScope.Writer.IndWrite($"{symbol.Type} {symbol.Name};\n");
+        IndentScope.Writer.IndWrite($"{symbol.Type} {symbol.Name}");
+        if (buffer.MemSpan.Start is not None)
+        {
+            IndentScope.Writer.IndWrite($"({Visit(buffer.MemSpan).Name})");
+        }
+
+        IndentScope.Writer.Write($";\n");
     }
 }

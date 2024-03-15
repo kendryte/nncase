@@ -31,29 +31,32 @@ internal sealed class CPUFusionToTirPass : ModulePass
         {
             if (module.Functions[i] is Fusion { ModuleKind: CPUTarget.Kind } fusion && fusion.Name.EndsWith("kernel"))
             {
-                var analysis = new Dictionary<Type, IAnalysisResult>
-                {
-                    [typeof(IExprUserAnalysisResult)] = AnalyzerManager.GetAnaylsis<IExprUserAnalysisResult>(module.Functions[i]),
-                };
-                var rewriter = new DataFlowMergeRewriter();
+                // var analysis = new Dictionary<Type, IAnalysisResult>
+                // {
+                //     [typeof(IExprUserAnalysisResult)] = AnalyzerManager.GetAnaylsis<IExprUserAnalysisResult>(module.Functions[i]),
+                // };
+                // var rewriter = new DataFlowMergeRewriter();
                 var fusionCheckCache = new Dictionary<Fusion, FusionChecker>(ReferenceEqualityComparer.Instance);
-                var post = (Fusion)rewriter.Rewrite(
-                    fusion,
-                    new IMergeRewriteRule[] {
-                      new CPUSameInputFusionMergeRule(),
-                      new CPUMultiInputFusionMergeRule(),
-                    },
-                    (rule, option) => new CPUFusionGroupMutator(fusionCheckCache, rule, option),
-                    new() { AnalysisResults = analysis, MatchOptions = new FusionGroupMutator.GroupedMatchOptions() });
-                if (DumpScope.Current.IsEnabled(DumpFlags.PassIR))
-                {
-                    DumpScope.Current.DumpIR(post, string.Empty, "L2Tiled");
-                }
 
+                // var post = (Fusion)rewriter.Rewrite(
+                //     fusion,
+                //     new IMergeRewriteRule[] {
+                //       new CPUSameInputFusionMergeRule(),
+                //       new CPUMultiInputFusionMergeRule(),
+                //     },
+                //     (rule, option) => new CPUFusionGroupMutator(fusionCheckCache, rule, option),
+                //     new() { AnalysisResults = analysis, MatchOptions = new FusionGroupMutator.GroupedMatchOptions() });
+                // if (DumpScope.Current.IsEnabled(DumpFlags.PassIR))
+                // {
+                //     DumpScope.Current.DumpIR(post, string.Empty, "L2Tiled");
+                // }
+                var post = fusion;
                 var primBody = new List<Expr>();
-                var visitor = new Passes.Tile.KernelToTIRVisitor(primBody, deviceFuncs, fusionCheckCache);
+                var visitor = new KernelToTIRVisitor(primBody, deviceFuncs, fusionCheckCache);
                 visitor.Visit(post);
-                var primFunc = TIR.T.PrimFunc(post.Name, post.ModuleKind, visitor.InputBuffers.Concat(visitor.OutputBuffers).ToArray()).Body(primBody.ToArray()).Build();
+                var primFunc = T.PrimFunc(post.Name, post.ModuleKind, visitor.InputBuffers.Concat(visitor.OutputBuffers).ToArray()).Body(primBody.ToArray()).Build();
+                primFunc.SchedResult.IsScheduled = true;
+                primFunc.SchedResult.DataUsage = checked((long)visitor.DataUsage);
                 var primWrapper = new PrimFunctionWrapper(primFunc, visitor.InputBuffers.Count());
                 module.Replace(i, primWrapper);
                 kernelFuncs.Add(primWrapper);

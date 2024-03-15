@@ -229,7 +229,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         var start = Visit(expr.Start);
         var size = Visit(expr.Size);
         _scope.Push();
-        _scope.Append($"MemSpan({start}, {size})@{expr.Location}");
+        _scope.Append($"MemSpan({start}, {size})@<{expr.Hierarchy}, {expr.Location}>");
         doc = new(_scope.Pop());
         _exprMemo.Add(expr, doc);
         return doc;
