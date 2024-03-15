@@ -22,6 +22,7 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
     private readonly HashSet<PrimFunction> _devices;
     private readonly List<(int, TIR.Buffer)> _outputbuffers;
     private readonly Dictionary<Fusion, FusionChecker> _fusionCheckCache;
+    private ulong _l1DataCount;
 
     public KernelToTIRVisitor(List<Expr> mainBody, HashSet<PrimFunction> devices, Dictionary<Fusion, FusionChecker> fusionCheckCache)
     {
@@ -29,7 +30,10 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
         _devices = devices;
         _outputbuffers = new();
         _fusionCheckCache = fusionCheckCache;
+        _l1DataCount = 0;
     }
+
+    public ulong DataUsage => _l1DataCount;
 
     public Fusion VisitRootFusion => (Fusion)VisitRoot!;
 
@@ -333,7 +337,8 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             switch (expr)
             {
                 case Call c:
-                    var loc = GetMemLocation(c.CheckedType);
+                    var loc = MemoryLocation.Data;
+                    var hierarchy = 0;
                     var index = CheckRootCall(c, ref loc);
                     if (c.Target is Boxing box && box.NewType is DistributedType d && !d.TensorType.Shape.Equals(c.Arguments[0].CheckedShape))
                     {
@@ -347,23 +352,28 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                     }
                     else if (c.CheckedType is DistributedType distributedType)
                     {
+                        hierarchy = 1;
                         if (DistributedUtility.TryGetDividedTensorType(distributedType, out var type))
                         {
                             dividedType = type;
                         }
                     }
 
-                    if (dividedType is not null)
+                    if (dividedType is TensorType)
                     {
-                        buffer = T.AttachBuffer(dividedType, loc, out _, out _, name);
+                        // TIR.F.CPU.PtrOf("l1_data", new PointerType(dividedType.DType))
+                        T.AttachBuffer(Tensor.FromPointer(_l1DataCount, dividedType.DType), dividedType, loc, hierarchy, out buffer, name);
+                        _l1DataCount += (ulong)(dividedType.Shape.Size * dividedType.DType.SizeInBytes);
                     }
-                    else if (c.CheckedType is DistributedType distributedType)
+                    else if (c.CheckedType is DistributedType)
                     {
-                        var shape = DistributedUtility.TryGetNonUniformDividedShape(distributedType);
-                        var @var = new Var(TensorType.Pointer(distributedType.TensorType.DType));
-                        var strides = TensorUtilities.GetStrides(shape);
-                        var size = TensorUtilities.GetProduct(shape) * distributedType.TensorType.DType.SizeInBytes;
-                        buffer = new Buffer(name, distributedType.TensorType.DType, new MemSpan(@var, size, loc), shape, strides);
+                        // deal the not uinform sbp.
+                        // var shape = DistributedUtility.TryGetNonUniformDividedShape(distributedType);
+                        // var @var = new Var(TensorType.Pointer(distributedType.TensorType.DType));
+                        // var strides = TensorUtilities.GetStrides(shape);
+                        // var size = TensorUtilities.GetProduct(shape) * distributedType.TensorType.DType.SizeInBytes;
+                        // buffer = new Buffer(name, distributedType.TensorType.DType, new MemSpan(@var, size, loc, hierarchy), shape, strides);
+                        throw new NotSupportedException("not support non uniform sbp");
                     }
                     else
                     {
@@ -377,7 +387,7 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
 
                     break;
                 case Var v:
-                    buffer = T.AttachBuffer((TensorType)v.CheckedType, MemoryLocation.Input, out _, out _, name);
+                    buffer = T.AttachBuffer((TensorType)v.CheckedType, MemoryLocation.Input, 0, out _, out _, name);
                     break;
                 case TensorConst c:
                     buffer = T.AttachBuffer(c, out _, name);
@@ -417,16 +427,5 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
         }
 
         return index;
-    }
-
-    private MemoryLocation GetMemLocation(IRType type)
-    {
-        MemoryLocation location = MemoryLocation.Data;
-        if (type is DistributedType)
-        {
-            location = MemoryLocation.L1Data;
-        }
-
-        return location;
     }
 }

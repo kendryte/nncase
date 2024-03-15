@@ -39,11 +39,13 @@ public enum MemoryLocation
 
     /// <summary>
     /// l2 data.
+    /// todo remove it.
     /// </summary>
     L2Data = 1 << 6,
 
     /// <summary>
     /// L1 data.
+    /// todo remove it.
     /// </summary>
     L1Data = 1 << 7,
 
@@ -55,16 +57,18 @@ public enum MemoryLocation
 
 public sealed class MemSpan : Expr
 {
-    public MemSpan(Expr size, MemoryLocation location)
+    public MemSpan(Expr size, MemoryLocation location, int hierarchy = 0)
         : base(new[] { None.Default, size })
     {
         Location = location;
+        Hierarchy = hierarchy;
     }
 
-    public MemSpan(Expr start, Expr size, MemoryLocation location)
+    public MemSpan(Expr start, Expr size, MemoryLocation location, int hierarchy = 0)
         : base(new[] { start, size })
     {
         Location = location;
+        Hierarchy = hierarchy;
     }
 
     /// <summary>
@@ -81,6 +85,11 @@ public sealed class MemSpan : Expr
     /// Gets the memory location.
     /// </summary>
     public MemoryLocation Location { get; }
+
+    /// <summary>
+    /// Gets the memory hierarchy.
+    /// </summary>
+    public int Hierarchy { get; }
 
     public MemSpan SubSpan(Expr offset, Expr size) => new MemSpan((Start is None ? IR.F.Buffer.DDrOf(this) : Start) + offset, size, Location);
 

@@ -15,6 +15,12 @@ namespace Nncase.TIR.F;
 
 public partial class CPU
 {
+    /// <summary>
+    /// the ptr of can create the *PtrName in the c code.
+    /// </summary>
+    /// <param name="name">c pointer name.</param>
+    /// <param name="primType">type.</param>
+    /// <returns>call.</returns>
     public static Call PtrOf(string name, DataType primType) => new Call(new PtrOf(name, primType));
 
     public static Call SramPtr(Expr input, DataType primType) => new Call(new SramPtr(primType), input);

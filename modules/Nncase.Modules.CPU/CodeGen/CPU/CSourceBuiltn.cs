@@ -46,7 +46,7 @@ using namespace nncase::ntt;
 #include ""../device.h""
 #include ""kernel.h""
 
-extern ""C"" void kernel_entry(nncase_runtime_cpu_mt_t *cpu_mt, uint8_t **inputs, uint8_t *rdata) {{
+extern ""C"" void kernel_entry(nncase_runtime_cpu_mt_t *cpu_mt, uint8_t **inputs, uint8_t *rdata, uint8_t *l1_data) {{
 g_cpu_mt = cpu_mt;
 {init_tensors}
 

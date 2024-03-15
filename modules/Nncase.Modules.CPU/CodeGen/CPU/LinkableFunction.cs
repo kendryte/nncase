@@ -7,14 +7,14 @@ using Nncase.IR;
 namespace Nncase.CodeGen.CPU;
 internal sealed class LinkableKernelFunction : ILinkableFunction
 {
-    public LinkableKernelFunction(uint id, TIR.PrimFunction sourceFunction, KernelCSource funcCSource, Stream text)
+    public LinkableKernelFunction(uint id, TIR.PrimFunction sourceFunction, KernelCSource funcCSource, Stream text, params ILinkedSection[] sections)
     {
         Id = id;
         SourceFunction = sourceFunction;
         PrimFunction = sourceFunction;
         FunctionCSource = funcCSource;
         Text = text;
-        Sections = Array.Empty<ILinkedSection>();
+        Sections = sections;
     }
 
     public uint Id { get; }
