@@ -55,7 +55,6 @@ internal sealed class CPUFusionToTirPass : ModulePass
                 var visitor = new KernelToTIRVisitor(primBody, deviceFuncs, fusionCheckCache);
                 visitor.Visit(post);
                 var primFunc = T.PrimFunc(post.Name, post.ModuleKind, visitor.InputBuffers.Concat(visitor.OutputBuffers).ToArray()).Body(primBody.ToArray()).Build();
-                primFunc.SchedResult.IsScheduled = true;
                 primFunc.SchedResult.DataUsage = checked((long)visitor.DataUsage);
                 var primWrapper = new PrimFunctionWrapper(primFunc, visitor.InputBuffers.Count());
                 module.Replace(i, primWrapper);
