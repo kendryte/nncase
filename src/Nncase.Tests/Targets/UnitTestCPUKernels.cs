@@ -89,12 +89,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     internal async Task Run(string dumpDir, CpuKernelCase kernelCase)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            return;
-        }
-
-        CompileOptions.DumpDir = Path.Join(dumpDir, kernelCase.Name);
+        CompileOptions.DumpDir = Path.Join(CompileOptions.DumpDir, kernelCase.Name);
         using var dumpScope = new Diagnostics.DumpScope(string.Empty, CompileOptions.DumpFlags);
 
         // convert fusion to prim func

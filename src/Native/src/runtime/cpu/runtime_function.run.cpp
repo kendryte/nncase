@@ -65,6 +65,19 @@ nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
 } // namespace
 
 result<void> cpu_runtime_function::run(gsl::span<gsl::byte *> params) noexcept {
-    kernel_entry_(&nncase_cpu_mt_, params.data(), module().rdata().data());
+    size_t alignment = 16;
+    size_t space = data_pool_size_ + alignment;
+    auto alloced = new (std::nothrow) gsl::byte[space];
+    if (alloced == nullptr) {
+        return err(std::errc::not_enough_memory);
+    }
+    void *data = alloced;
+    std::align(alignment, data_pool_size_, data, space);
+    if (data == nullptr) {
+        return err(std::errc::not_enough_memory);
+    }
+    kernel_entry_(&nncase_cpu_mt_, params.data(), module().rdata().data(),
+                  reinterpret_cast<gsl::byte *>(data));
+    delete[] alloced;
     return ok();
 }
