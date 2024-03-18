@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
-#pragma warning disable
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,19 +12,13 @@ namespace Nncase.CodeGen.CPU;
 /// <summary>
 /// StackVM function builder.
 /// </summary>
-internal class FunctionBuilder : IDisposable
+internal class FunctionBuilder
 {
+    public const string KernelHeaderSectionName = ".desc";
     private readonly uint _id;
     private readonly SectionManager _sectionManager;
     private readonly BinaryWriter _textWriter;
     private readonly BinaryWriter _rdataWriter;
-    public const string KernelHeaderSectionName = ".desc";
-
-    [StructLayout(LayoutKind.Sequential)]
-    private unsafe struct DescHeader
-    {
-        public long DataPoolSize;
-    }
 
     public FunctionBuilder(uint id, BinaryWriter rdataWriter)
     {
@@ -43,11 +36,12 @@ internal class FunctionBuilder : IDisposable
             var visitor = new KernelCSourceConvertVisitor();
             visitor.Visit(function);
             var functionCSource = visitor.GetCSource();
+
             // 2. write the kernel header
             using (var writer = _sectionManager.GetWriter(KernelHeaderSectionName))
             {
                 var header = default(DescHeader);
-                header.DataPoolSize = (uint)function.SchedResult.DataUsage;
+                header.DataPoolSize = checked((ulong)function.SchedResult.DataUsage);
                 writer.Write(ref header);
             }
 
@@ -58,15 +52,14 @@ internal class FunctionBuilder : IDisposable
                 var size = range.Max - range.Min;
                 if ((uint)bytes.Length != size)
                 {
-                    throw new InvalidDataException("The Buffer Szie Not Equal!");
+                    throw new InvalidDataException("The Buffer Size Not Equal!");
                 }
 
                 _rdataWriter.Position(range.Min);
                 _rdataWriter.Write(bytes);
             }
 
-            return new LinkableKernelFunction(_id, function, functionCSource, _sectionManager.GetContent(WellknownSectionNames.Text),
-            new LinkedSection(_sectionManager.GetContent(KernelHeaderSectionName), KernelHeaderSectionName, 0, 8, (uint)sizeof(DescHeader)));
+            return new LinkableKernelFunction(_id, function, functionCSource, _sectionManager.GetContent(WellknownSectionNames.Text)!, new LinkedSection(_sectionManager.GetContent(KernelHeaderSectionName), KernelHeaderSectionName, 0, 8, (uint)sizeof(DescHeader)));
         }
         else if (function.Name.EndsWith("device"))
         {
@@ -74,13 +67,16 @@ internal class FunctionBuilder : IDisposable
             visitor.Visit(function);
             var header = visitor.GetHeader();
 
-            return new LinkableDeviceFunction(_id, function, header, _sectionManager.GetContent(WellknownSectionNames.Text));
+            return new LinkableDeviceFunction(_id, function, header, _sectionManager.GetContent(WellknownSectionNames.Text)!);
         }
 
-        throw new NotSupportedException();
+        throw new NotSupportedException("the function name is invalid");
     }
 
-    public void Dispose()
+    [StructLayout(LayoutKind.Sequential)]
+    private unsafe struct DescHeader
     {
+        [MarshalAs(UnmanagedType.U8)]
+        public ulong DataPoolSize;
     }
 }

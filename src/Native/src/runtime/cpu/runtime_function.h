@@ -33,7 +33,8 @@ BEGIN_NS_NNCASE_RT_MODULE(cpu)
 
 class cpu_runtime_function final : public runtime_function {
     typedef void (*kernel_entry_t)(nncase_runtime_cpu_mt_t *cpu_mt,
-                                   gsl::byte **inputs, const gsl::byte *rdata);
+                                   gsl::byte **inputs, const gsl::byte *rdata,
+                                   gsl::byte *data);
 
   public:
     cpu_runtime_function(runtime_module &rt_module);
@@ -60,6 +61,7 @@ class cpu_runtime_function final : public runtime_function {
 #endif
 
     kernel_entry_t kernel_entry_;
+    size_t data_pool_size_;
 };
 
 END_NS_NNCASE_RT_MODULE

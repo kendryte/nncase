@@ -19,16 +19,16 @@ BEGIN_NS_NNCASE_RUNTIME
 
 class macho_loader {
   public:
-    macho_loader() noexcept : image_(nullptr) {}
+    macho_loader() noexcept : ofi_(nullptr), mod_(nullptr), sym_(nullptr) {}
     ~macho_loader();
 
     void load(gsl::span<const gsl::byte> macho);
     void *entry() const noexcept;
 
   private:
-    gsl::byte *image_;
-    uint64_t image_size_;
-    uint64_t pc_;
+    void *ofi_;
+    void *mod_;
+    void *sym_;
 };
 
 END_NS_NNCASE_RUNTIME

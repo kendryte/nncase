@@ -27,8 +27,12 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
 
+typedef struct {
+    uint64_t DataPoolSize;
+} desc_header;
+
 cpu_runtime_function::cpu_runtime_function(runtime_module &rt_module)
-    : runtime_function(rt_module), kernel_entry_(nullptr) {}
+    : runtime_function(rt_module), kernel_entry_(nullptr), data_pool_size_(0) {}
 
 cpu_runtime_function::~cpu_runtime_function() {}
 
@@ -38,6 +42,12 @@ cpu_runtime_module &cpu_runtime_function::module() const noexcept {
 
 result<void> cpu_runtime_function::initialize_core(
     runtime_function_init_context &context) noexcept {
+    try_(context.read_section(
+        ".desc", [this](auto reader, size_t) -> result<void> {
+            auto header = reader.template read<desc_header>();
+            this->data_pool_size_ = header.DataPoolSize;
+            return ok();
+        }));
     auto text = module().text().subspan(context.header().entrypoint,
                                         context.header().text_size);
     loader_.load(text);
