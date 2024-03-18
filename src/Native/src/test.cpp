@@ -78,17 +78,17 @@ int main() {
     }
 
     // viewd tensor
-    // {
-    //     ntt::tensor<float, ntt::fixed_shape<2, 3>> ta;
-    //     ntt::tensor<float, ntt::fixed_shape<2, 1, 3>> tb;
-    //     ntt::tensor_copy(ta, tb.view());
-    //     assert(ta(0, 0) == tb(0, 0, 0));
-    //     assert(ta(0, 1) == tb(0, 0, 1));
-    //     assert(ta(0, 2) == tb(0, 0, 2));
-    //     assert(ta(1, 0) == tb(1, 0, 0));
-    //     assert(ta(1, 1) == tb(1, 0, 1));
-    //     assert(ta(1, 2) == tb(1, 0, 2));
-    // }
+    {
+        ntt::tensor<float, ntt::fixed_shape<2, 3>> ta;
+        ntt::tensor<float, ntt::fixed_shape<2, 1, 3>> tb;
+        ntt::tensor_copy(ta.reshape(ntt::fixed_shape<2, 1, 3>{}), tb.view());
+        assert(ta(0, 0) == tb(0, 0, 0));
+        assert(ta(0, 1) == tb(0, 0, 1));
+        assert(ta(0, 2) == tb(0, 0, 2));
+        assert(ta(1, 0) == tb(1, 0, 0));
+        assert(ta(1, 1) == tb(1, 0, 1));
+        assert(ta(1, 2) == tb(1, 0, 2));
+    }
 
     // fixed pack
     {
@@ -150,14 +150,13 @@ int main() {
                 inIndex[i] = index[i];
             auto b = tb(index);
             auto start = index[1];
-            for (size_t i = 0; i < 8; i++)
-            {
+            for (size_t i = 0; i < 8; i++) {
                 index[1] = start * 8 + i;
                 auto va = ta(index);
                 auto vb = b(ntt::ranked_shape<1>{i});
-                if (va != vb)
-                {
-                    std::cerr << "va(" << va << ") != vb(" << vb << ")" << std::endl;
+                if (va != vb) {
+                    std::cerr << "va(" << va << ") != vb(" << vb << ")"
+                              << std::endl;
                     std::abort();
                 }
             }
@@ -178,14 +177,13 @@ int main() {
                 inIndex[i] = index[i];
             auto b = tb(index);
             auto start = index[1];
-            for (size_t i = 0; i < 8; i++)
-            {
+            for (size_t i = 0; i < 8; i++) {
                 index[1] = start * 8 + i;
                 auto va = ta(index);
                 auto vb = b(ntt::ranked_shape<1>{i});
-                if (va != vb)
-                {
-                    std::cerr << "va(" << va << ") != vb(" << vb << ")" << std::endl;
+                if (va != vb) {
+                    std::cerr << "va(" << va << ") != vb(" << vb << ")"
+                              << std::endl;
                     std::abort();
                 }
             }
@@ -205,14 +203,13 @@ int main() {
                 inIndex[i] = index[i];
             auto b = tb(index);
             auto start = index[1];
-            for (size_t i = 0; i < 8; i++)
-            {
+            for (size_t i = 0; i < 8; i++) {
                 index[1] = start * 8 + i;
                 auto va = ta(index);
                 auto vb = b(ntt::ranked_shape<1>{i});
-                if (va != vb)
-                {
-                    std::cerr << "va(" << va << ") != vb(" << vb << ")" << std::endl;
+                if (va != vb) {
+                    std::cerr << "va(" << va << ") != vb(" << vb << ")"
+                              << std::endl;
                     std::abort();
                 }
             }
@@ -232,20 +229,18 @@ int main() {
                 inIndex[i] = index[i];
             auto b = tb(index);
             auto start = index[1];
-            for (size_t i = 0; i < 8; i++)
-            {
+            for (size_t i = 0; i < 8; i++) {
                 index[1] = start * 8 + i;
                 auto va = ta(index);
                 auto vb = b(ntt::ranked_shape<1>{i});
-                if (va != vb)
-                {
-                    std::cerr << "va(" << va << ") != vb(" << vb << ")" << std::endl;
+                if (va != vb) {
+                    std::cerr << "va(" << va << ") != vb(" << vb << ")"
+                              << std::endl;
                     std::abort();
                 }
             }
         });
     }
-
 
     // unpack(fixed_shape + fixed_shape)
     {
