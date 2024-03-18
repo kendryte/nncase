@@ -82,7 +82,7 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.Ncnn.LowerPooling>();
             p.Add<Passes.Rules.Ncnn.LowerPReLU>();
             p.Add<Passes.Rules.Ncnn.LowerReduction>();
-            p.Add<Passes.Rules.Ncnn.LowerReshape>();
+
             p.Add<Passes.Rules.Ncnn.LowerSELU>();
             p.Add<Passes.Rules.Ncnn.LowerSigmoid>();
             p.Add<Passes.Rules.Ncnn.LowerCrop>();
@@ -100,12 +100,15 @@ public class CPUTarget : ITarget
 
         passManager.AddWithName<DataflowPass>("RemoveGlueOp").Configure(p =>
         {
+            p.Add<Passes.Rules.Neutral.FoldConstCall>();
             p.Add<Passes.Rules.Neutral.FoldSqueezeUnsqueeze>();
             p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
+            p.Add<Passes.Rules.Neutral.FoldNopReshape>();
         });
 
         passManager.AddWithName<DataflowPass>("RemoveSingleSqueezeAndUnsqueeze").Configure(p =>
         {
+            p.Add<Passes.Rules.Ncnn.LowerReshape>();
             p.Add<Passes.Rules.Ncnn.LowerSqueeze>();
             p.Add<Passes.Rules.Ncnn.LowerUnsqueeze>();
         });

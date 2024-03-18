@@ -60,6 +60,20 @@ public class LinkedSection : ILinkedSection
         return new LinkedSection(ms, name, 0, 1, (ulong)ms.Length);
     }
 
+    public static LinkedSection FromData(IReadOnlyCollection<float> datas, string name)
+    {
+        var ms = new MemoryStream();
+        using (var bw = new BinaryWriter(ms, Encoding.UTF8, true))
+        {
+            foreach (float s in datas)
+            {
+                bw.Write(s);
+            }
+        }
+
+        return new LinkedSection(ms, name, 0, 1, (ulong)ms.Length);
+    }
+
     public void Serialize(Stream output)
     {
         if (_content != null)

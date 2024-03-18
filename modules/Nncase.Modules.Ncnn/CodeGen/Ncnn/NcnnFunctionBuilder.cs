@@ -36,7 +36,7 @@ internal class NcnnFunctionBuilder : FunctionBuilder
 
     protected override ILinkableFunction CreateLinkableFunction(uint id, BaseFunction callable, IReadOnlyList<FunctionRef> functionRefs, Stream text)
     {
-        return new NcnnLinkableFunction(id, callable, functionRefs, text, _inputs!, _outputs!);
+        return new NcnnLinkableFunction(id, callable, functionRefs, text, _inputs!, _outputs!, _emitter.RData!.ToArray()!);
     }
 
     protected override void Compile(BaseFunction callable)
@@ -49,14 +49,28 @@ internal class NcnnFunctionBuilder : FunctionBuilder
     protected override void WriteText()
     {
         _emitter.SaveParam(TextWriter.BaseStream);
+        string dumpPath = Path.Join(DumpScope.Current.Directory, "ncnn_param_dir");
+        if (!Directory.Exists(dumpPath))
+        {
+            Directory.CreateDirectory(dumpPath);
+        }
+        else if (Id == 0)
+        {
+            foreach (string filePath in Directory.GetFiles(dumpPath, "*", SearchOption.AllDirectories))
+            {
+                File.SetAttributes(filePath, FileAttributes.Normal); // 移除所有特殊属性以便删除
+                File.Delete(filePath);
+            }
+        }
 
-        using (var fileStream = File.Create(Directory.GetCurrentDirectory() + "/ncnn.param"))
+        // if (DumpScope.Current.IsEnabled(DumpFlags.CodeGen))
+        using (var fileStream = File.Create(Path.Join(dumpPath, $"ncnn_{Id}.param")))
         {
             TextWriter.BaseStream.Seek(0, SeekOrigin.Begin);
             TextWriter.BaseStream.CopyTo(fileStream);
         }
 
-        _emitter.SaveBin();
+        _emitter.SaveBin(dumpPath, Id);
     }
 
     private class CodeGenVisitor : ExprVisitor<string, Unit>

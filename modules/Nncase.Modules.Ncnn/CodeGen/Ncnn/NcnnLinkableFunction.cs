@@ -12,7 +12,7 @@ namespace Nncase.CodeGen.Ncnn;
 
 internal class NcnnLinkableFunction : ILinkableFunction
 {
-    public NcnnLinkableFunction(uint id, BaseFunction sourceFunction, IEnumerable<FunctionRef> functionRefs, Stream text, string[] inputs, string[] outputs)
+    public NcnnLinkableFunction(uint id, BaseFunction sourceFunction, IEnumerable<FunctionRef> functionRefs, Stream text, string[] inputs, string[] outputs, float[] rData)
     {
         Id = id;
         SourceFunction = sourceFunction;
@@ -24,6 +24,7 @@ internal class NcnnLinkableFunction : ILinkableFunction
         {
             LinkedSection.FromStrings(inputs, ".inputs"),
             LinkedSection.FromStrings(outputs, ".outputs"),
+            LinkedSection.FromData(rData, ".rdata"),
         };
     }
 

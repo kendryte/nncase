@@ -21,15 +21,32 @@
 #include <nncase/runtime/runtime_op_utility.h>
 #include <omp.h>
 
-typedef std::chrono::high_resolution_clock::time_point TimeVar;
+size_t rdata_offset = 0;
+
+typedef std::chrono::high_resolution_clock::time_point time_var;
 
 #define duration(name, a)                                                      \
     std::cout                                                                  \
         << name << " : "                                                       \
         << std::chrono::duration_cast<std::chrono::nanoseconds>(a).count() /   \
-               1000.0                                                          \
+               1e6                                                             \
         << " ms" << std::endl
 #define timeNow() std::chrono::high_resolution_clock::now()
+
+template <class T, class T1>
+void print_data(T1 *data, int size, int placeholde = 1, int changeline = 1)
+{
+    auto s = placeholde ? " " : "";
+    for (int i = 0; i < size; i++) {
+        if(i%10 == 0 && changeline)
+        {
+            std::cout<<std::endl;
+            std::cout << i / 10 << "\t" << std::flush;
+        }
+        std::cout << *((T)(data) + i) << s;
+    }
+    std::cout << std::endl;
+}
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -66,16 +83,29 @@ result<void> ncnn_runtime_function::initialize_core(
                                   return ok();
                               }));
 
+    NNCASE_UNUSED stream_reader* sr = nullptr;
+    section_header h;
+    try_set(sr, context.seek_section(".rdata", h));
+    // rdata_ = sr.template read<section_header>();
+    // std::cout << "start: " << h.body_start << "\t" << "size: " << h.body_size << std::endl;
+    // print_data<float *>(rdata_.data(), rdata_.size() / sizeof(float));
     auto param_mem = reinterpret_cast<const uint8_t *>(
         module().text().data() + context.header().entrypoint);
-    auto bin_mem = reinterpret_cast<const uint8_t *>(
-        module().rdata().data() + context.header().entrypoint);
+    if(context.header().entrypoint == 0)
+        rdata_offset = 0;
+    auto bin_mem = reinterpret_cast<const uint8_t *>(module().rdata().data() +
+                                                     rdata_offset);
+    // auto bin_mem = reinterpret_cast<const uint8_t *>(rdata_.data());
     ::ncnn::DataReaderFromMemory paramdr(param_mem);
     ::ncnn::DataReaderFromMemory bindr(bin_mem);
 
     CHECK_WITH_ERR(!net_.load_param(paramdr), std::errc::invalid_argument);
     CHECK_WITH_ERR(!net_.load_model(bindr), std::errc::invalid_argument);
-    net_.opt.num_threads = omp_get_num_devices();
+
+    net_.opt.num_threads = 1;
+
+    rdata_offset += h.memory_size;
+
 
     return ok();
 }
@@ -144,7 +174,7 @@ result<value_t> ncnn_runtime_function::invoke_core(
 
     // 2. Extract outputs
     std::vector<value_t> outputs;
-    TimeVar t = timeNow();
+    time_var t = timeNow();
     for (size_t i = 0; i < output_names_.size(); i++) {
         ::ncnn::Mat mat;
         CHECK_WITH_ERR(!ex.extract(output_names_[i].c_str(), mat),

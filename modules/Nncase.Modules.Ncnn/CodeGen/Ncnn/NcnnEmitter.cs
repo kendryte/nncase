@@ -17,6 +17,8 @@ namespace Nncase.CodeGen.Ncnn;
 
 internal class NcnnEmitter
 {
+    public List<float>? RData;
+
     private readonly NcnnModel _model;
     private readonly BinaryWriter _binWriter;
 
@@ -24,6 +26,7 @@ internal class NcnnEmitter
     {
         _model = new NcnnModel();
         _binWriter = binWriter;
+        RData = new List<float>();
     }
 
     public void SaveParam(Stream paramStream)
@@ -32,12 +35,14 @@ internal class NcnnEmitter
         _model.Serialize(sw);
     }
 
-    public void SaveBin()
+    public void SaveBin(string dumpPath, uint id)
     {
-        using (var fileStream = File.Create(Directory.GetCurrentDirectory() + "/ncnn.bin"))
+        using (var fileStream = File.Create(Path.Join(dumpPath, $"/ncnn_{id}.bin")))
         {
             _binWriter.BaseStream.Seek(0, SeekOrigin.Begin);
             _binWriter.BaseStream.CopyTo(fileStream);
+
+            // _binWriter.BaseStream.SetLength(0);
         }
     }
 
@@ -141,7 +146,7 @@ internal class NcnnEmitter
             [15] = new ParamValue { Kind = ParamKind.Int, IntValue = padBottom },
             [5] = new ParamValue { Kind = ParamKind.Int, IntValue = biasTerm },
             [6] = new ParamValue { Kind = ParamKind.Int, IntValue = weightsDataSize },
-            [7] = new ParamValue { Kind = ParamKind.Int, IntValue = 1 }, // Group
+            [7] = new ParamValue { Kind = ParamKind.Int, IntValue = 0 }, // Group
             [8] = new ParamValue { Kind = ParamKind.Int, IntValue = int8Flag },
 
             // [9] = new ParamValue { Kind = ParamKind.Int, IntValue = actType },
@@ -560,6 +565,7 @@ internal class NcnnEmitter
 
     private void WriteFloatArray(float[] data)
     {
+        RData.AddRange(data);
         foreach (float value in data)
         {
             _binWriter.Write(value);
