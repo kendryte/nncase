@@ -442,6 +442,9 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                 case TIR.CPU.Transpose transpose:
                     IndentScope.Writer.Write($"transpose<fixed_shape<{string.Join(",", transpose.Perm)}>>({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
                     break;
+                case TIR.CPU.Pad pad:
+                    IndentScope.Writer.Write($"pad<{string.Join(",", pad.Paddings)}>({Visit(args[0]).Name}, {Visit(args[1]).Name}, {args[0].CheckedDataType.ToC()} {{ {pad.PadValue} }} );\n");
+                    break;
                 default:
                     throw new NotSupportedException(xpuOp.ToString());
             }

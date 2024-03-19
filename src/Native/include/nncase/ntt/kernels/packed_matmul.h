@@ -16,45 +16,9 @@
 #include "../apply.h"
 #include "../vector_ops.h"
 #include "binary.h"
+#include "matmul.h"
 
 namespace nncase::ntt {
-
-namespace packed_matmul_detail {
-
-template <class TLhs, class TRhs, class TOut, typename LhsPadedNums,
-          typename RhsPadedNums>
-void packed_1d_impl(const TLhs &lhs, const TRhs &rhs, TOut &&output,
-                    [[maybe_unused]] LhsPadedNums lhsPadedNums,
-                    [[maybe_unused]] RhsPadedNums rhsPadedNums) {
-    using TElemt = typename TLhs::element_type;
-    mathops::mul<TElemt> mul;
-    mathops::add<TElemt> add;
-    vector_ops::reduce_sum<TElemt> rvsum;
-    constexpr auto lrank = TLhs::shape_type::rank();
-    constexpr auto rrank = TRhs::shape_type::rank();
-    auto lhs_index = ranked_shape<lrank>{};
-    auto rhs_index = ranked_shape<rrank>{};
-    constexpr size_t lk = lhs_index.rank() - 1;
-    constexpr size_t rk = rhs_index.rank() - 2;
-    apply(output.shape(), [&](auto index) {
-        for (size_t i = 0; i < lk; i++) {
-            lhs_index[i] = index[i];
-        }
-        for (size_t i = 0; i < rk; i++) {
-            rhs_index[i] = index[i];
-        }
-        rhs_index[rk + 1] = index[rk + 1];
-        TElemt acc = 0;
-        for (lhs_index[lk] = 0; lhs_index[lk] < lhs.shape()[lk];
-             lhs_index[lk]++) {
-            rhs_index[rk] = lhs_index[lk];
-            TElemt val = mul(lhs(lhs_index), rhs(rhs_index));
-            acc = add(acc, val);
-        }
-        output(index) = rvsum(acc);
-    });
-}
-} // namespace packed_matmul_detail
 
 /**
  * @brief packed matmul
@@ -86,9 +50,11 @@ void packed_matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output,
     static_assert(LhsPadedNums::at(0) == 0 && RhsPadedNums::at(0) == 0,
                   "currently only support no pad!");
 
-    if constexpr (LhsPackedAxes::rank() == 1) {
-        packed_matmul_detail::packed_1d_impl(lhs, rhs, output, lhsPadedNums,
-                                             rhsPadedNums);
+    if constexpr (LhsPackedAxes::rank() == 1 && RhsPackedAxes::rank() == 1) {
+        if constexpr (LhsPadedNums::at(0) == 0 && RhsPadedNums::at(0) == 0) {
+            matmul_detail::matmul_impl<TLhs, TRhs, std::decay_t<TOut>> impl;
+            impl(lhs, rhs, output);
+        }
     }
 }
 } // namespace nncase::ntt

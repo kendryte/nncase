@@ -119,4 +119,9 @@ public partial class CPU
     {
         return new Call(new Transpose(perm), buffer, ret);
     }
+
+    internal static Expr Pad(Buffer input, Buffer ret, int[] pads, float padValue)
+    {
+        return new Call(new Pad(pads, padValue), input, ret);
+    }
 }

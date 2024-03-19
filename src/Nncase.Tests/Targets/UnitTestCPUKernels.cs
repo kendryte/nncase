@@ -61,6 +61,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     [Theory]
     [InlineData(new object[] { BinaryOp.Add, new[] { 64, 768 }, new int[] { 64, 768 }, 0 })] // normal
+    [InlineData(new object[] { BinaryOp.Mul, new[] { 1, 64, 384, 16 * 8 }, new int[] { 1, 1, 384, 16 * 8 }, 0 })] // normal
     public async void TestPackBinary(BinaryOp op, int[] lhsShape, int[] rhsShape, int count)
     {
         var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
@@ -115,10 +116,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
         };
 
-        // var rule = new Passes.Rules.CPU.PackMatMul();
-        // CompilerServices.TryMatch(pre, rule.Pattern, out var result);
-        // var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
-        var posts = new[] { pre };
+        var rule = new Passes.Rules.CPU.PackMatMul() { Lane = Lane, Rank = Rank };
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
     }
 
@@ -138,9 +138,13 @@ public sealed class UnitTestCPUKernels : TestClassBase
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
     }
 
-    [Fact]
-    public async Task TestDecodeLayer()
+    [Theory]
+
+    // [InlineData(new object[] { true, 1 })]
+    [InlineData(new object[] { false, 0 })]
+    public async Task TestDecodeLayer(bool packing, int count)
     {
+        CompileOptions.TargetCompileOptions = CPUCompileOptions.Default with { Packing = packing };
         var vhidden_in = new Var("vhidden_in", new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 }));
         var vattn_mask = new Var("vattn_mask", new TensorType(DataTypes.Float32, new[] { 1, 1, 384, 384 }));
         var vposition_ids = new Var("vposition_ids", new TensorType(DataTypes.Int64, new[] { 1, 384 }));
@@ -204,7 +208,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         };
 
         var posts = new[] { pre };
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString()), feedDict, posts);
+        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
     }
 
     internal async Task RunCases(string dumpDir, Dictionary<Var, IValue> feedDict, IEnumerable<Expr> posts)
@@ -262,7 +266,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         }
 #endif
         var cos = Comparator.CosSimilarity(output, actual);
-        Assert.True(cos > 0.999, $"the cos is {cos}");
+        Assert.True(cos > 0.999, $"the {CompileOptions.DumpDir} cos is {cos}");
     }
 
     private async Task Compile(IRModule module)

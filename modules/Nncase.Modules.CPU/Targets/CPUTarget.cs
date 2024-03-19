@@ -97,12 +97,13 @@ public class CPUTarget : ITarget
             });
         }
 
-#if false
-        passManager.AddWithName<DataflowPass>("AutoPacking").Configure(p =>
+        if (options.TargetCompileOptions is CPUCompileOptions { Packing: true })
         {
-            p.Add<Passes.Rules.AutoPacking>();
-        });
-#endif
+            passManager.AddWithName<DataflowPass>("AutoPacking").Configure(p =>
+            {
+                p.Add<Passes.Rules.AutoPacking>();
+            });
+        }
 
         passManager.AddWithName<DataflowPass>("AutoDistributed").Configure(p =>
         {
@@ -168,6 +169,6 @@ public class CPUTarget : ITarget
 
     private static ITargetCompileOptions ParseTargetCompileOptions(InvocationContext context, Command command)
     {
-        return new CPUCompileOptions(string.Empty, Array.Empty<int>(), new[] { 1 }, "b", new[] { 3 * (int)MathF.Pow(2, 20) });
+        return new CPUCompileOptions(string.Empty, false, Array.Empty<int>(), new[] { 1 }, "b", new[] { 3 * (int)MathF.Pow(2, 20) });
     }
 }

@@ -552,6 +552,30 @@ int main() {
         assert(tc(2, 1) == 10792.f);
     }
 
+    // packed matmul 1d on k with broadcast
+    {
+        ntt::tensor<float, ntt::fixed_shape<1, 1, 3, 16>> ta;
+        ntt::tensor<float, ntt::fixed_shape<2, 16, 4>> tb;
+        ntt::tensor<float, ntt::fixed_shape<1, 2, 3, 4>> tc;
+        std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
+        std::iota(tb.buffer().begin(), tb.buffer().end(), 0.f);
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<1, 1, 3, 2>> pa;
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<2, 2, 4>> pb;
+        ntt::pack<3>(ta, pa);
+        ntt::pack<1>(tb, pb);
+        ntt::packed_matmul(pa, pb, tc, ntt::fixed_shape<3>{},
+                           ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
+                           ntt::fixed_shape<0>{});
+        assert(tc(0, 0, 0, 0) == 4960.f);
+        assert(tc(0, 0, 0, 1) == 5080.f);
+        assert(tc(0, 0, 0, 2) == 5200.f);
+        assert(tc(0, 0, 0, 3) == 5320.f);
+        assert(tc(0, 1, 0, 0) == 12640.f);
+        assert(tc(0, 1, 0, 1) == 12760.f);
+        assert(tc(0, 1, 0, 2) == 12880.f);
+        assert(tc(0, 1, 0, 3) == 13000.f);
+    }
+
     // norm matmul
     {
         ntt::tensor<float, ntt::fixed_shape<3, 4>> ta;
@@ -720,6 +744,18 @@ int main() {
         assert(tf(0, 0, 0, 0) == 3.0f);
         assert(tf(0, 0, 0, 1) == 4.0f);
         assert(tf(0, 0, 0, 2) == 5.0f);
+    }
+
+    // pad
+    {
+        ntt::tensor<float, ntt::fixed_shape<1, 2, 3>> td;
+        ntt::tensor<float, ntt::fixed_shape<8, 2, 3>> te;
+        std::iota(td.buffer().begin(), td.buffer().end(), 0.f);
+        ntt::pad<0, 7, 0, 0, 0, 0>(td, te, 1.3f);
+        assert(te(0, 0, 1) == 1.f);
+        assert(te(1, 0, 1) == 1.3f);
+        assert(te(2, 0, 1) == 1.3f);
+        assert(te(3, 0, 1) == 1.3f);
     }
 
     auto kmodel = read_file(

@@ -306,6 +306,10 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             doc = new(new(@const.Value.Length > 8 ? @const.CheckedShape.ToString() : $"{string.Join(",", @const.Value.ToArray<int>())}"));
         }
+        else if (@const.Value.ElementType is VectorType vtype)
+        {
+            doc = new(new($"{vtype.ElemType.GetDisplayName()}<{string.Join(",", vtype.Lanes)}>" + (@const.Value.Shape.IsScalar ? string.Empty : @const.Value.Shape.ToString())));
+        }
         else if (@const.Value.ElementType is PointerType p)
         {
             doc = new(new($"*{p.ElemType.GetDisplayName()}@{@const.Value.Shape}"));

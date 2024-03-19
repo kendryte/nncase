@@ -92,8 +92,7 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Binary(packed_binary.BinaryOp, arguments[0], arguments[1], ret));
                 break;
             case IR.CPU.PackedMatMul packed_mat_mul:
-                // _mainBody.Add(TIR.F.CPU.PackedMatMul(arguments[0], arguments[1], ret, packed_mat_mul.LhsPackedAxes, packed_mat_mul.LhsPadedNums, packed_mat_mul.RhsPackedAxes, packed_mat_mul.RhsPadedNums));
-                _mainBody.Add(TIR.F.CPU.Matmul(arguments[0], arguments[1], ret));
+                _mainBody.Add(TIR.F.CPU.PackedMatMul(arguments[0], arguments[1], ret, packed_mat_mul.LhsPackedAxes, packed_mat_mul.LhsPadedNums, packed_mat_mul.RhsPackedAxes, packed_mat_mul.RhsPadedNums));
                 break;
             case IR.Math.MatMul matmul:
                 _mainBody.Add(TIR.F.CPU.Matmul(arguments[0], arguments[1], ret));
@@ -134,6 +133,9 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 break;
             case IR.Tensors.Gather gather:
                 _mainBody.Add(TIR.F.CPU.Gather(arguments[0], arguments[1], ret, gather.Axis));
+                break;
+            case IR.NN.Pad pad:
+                _mainBody.Add(TIR.F.CPU.Pad(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToScalar<float>()));
                 break;
 #if false
             case MatMul matmul:
