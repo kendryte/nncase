@@ -23,10 +23,12 @@ using namespace nncase::kernels::stackvm;
 
 template <class T>
 static void layernorm_impl(int inner_size, const T *src, const T *scale,
-                           const T *bias, float epsilon, T *dst) {
+                           const T *bias, float epsilon, T *dst, bool use_mean) {
     T mean1 = 0;
+    if (use_mean) {
     for (auto i = 0; i < inner_size; i++)
         mean1 += src[i] / inner_size;
+    }
 
     std::vector<T> sub(inner_size, 0);
     for (auto i = 0; i < inner_size; i++)
@@ -54,7 +56,7 @@ static void layernorm_impl(int inner_size, const T *src, const T *scale,
 template <class T>
 result<void> layer_norm_impl2(const T *input, T *output, const T *scale,
                               const T *bias, gsl::span<const size_t> in_shape,
-                              int32_t axis, float epsilon) {
+                              int32_t axis, float epsilon, bool use_mean) {
 
     int ndim = in_shape.size();
     int positive_axis = axis < 0 ? ndim + axis : axis;
@@ -69,7 +71,7 @@ result<void> layer_norm_impl2(const T *input, T *output, const T *scale,
     }
 
     for (size_t i = 0; i < out_side; i++) {
-        layernorm_impl(axis_dim, input, scale, bias, epsilon, output);
+        layernorm_impl(axis_dim, input, scale, bias, epsilon, output, use_mean);
         input += axis_dim;
         output += axis_dim;
     }
@@ -79,7 +81,7 @@ result<void> layer_norm_impl2(const T *input, T *output, const T *scale,
 #define LAYER_NORM_IMPL(type)                                                  \
     return layer_norm_impl2(IN_CAST(type, input), OUT_CAST(type, output),      \
                             IN_CAST(type, scale), IN_CAST(type, bias),         \
-                            in_shape, axis, epsilon)
+                            in_shape, axis, epsilon, use_mean)
 
 #define TYPE_SELECT_LAYER_NORM(_typecode, _impl)                               \
     switch (_typecode) {                                                       \
@@ -114,6 +116,6 @@ result<void> layer_norm_impl2(const T *input, T *output, const T *scale,
 result<void> nncase::kernels::stackvm::reference::layer_norm(
     typecode_t typecode, const gsl::byte *input, gsl::byte *output,
     const gsl::byte *scale, const gsl::byte *bias,
-    gsl::span<const size_t> in_shape, int32_t axis, float epsilon) {
+    gsl::span<const size_t> in_shape, int32_t axis, float epsilon, bool use_mean) {
     TYPE_SELECT_LAYER_NORM(typecode, LAYER_NORM_IMPL);
 }

@@ -54,9 +54,15 @@ struct matmul_impl<TLhs, TRhs, TOut> {
             apply(domain, [&](auto index) {
                 loop<lhs_rank - 2>([&](auto i) {
                     lhs_index[i] = index[i + out_rank - lhs_rank];
+                    if (lhs_index[i] >= TLhs::shape().at(i)) {
+                        lhs_index[i] = TLhs::shape().at(i) - 1;
+                    }
                 });
                 loop<rhs_rank - 2>([&](auto i) {
                     rhs_index[i] = index[i + out_rank - rhs_rank];
+                    if (rhs_index[i] >= TRhs::shape().at(i)) {
+                        rhs_index[i] = TRhs::shape().at(i) - 1;
+                    }
                 });
 
                 auto lhs_p = lhs.buffer().data() +

@@ -58,11 +58,11 @@ result<value_t> nncase::kernels::stackvm::layer_norm(
     if (typecode == dt_float32) {
         CONTIGUOUS_KERNEL(layer_norm, input_tensor, typecode, input_mem,
                           output_mem, scale_mem, bias_mem,
-                          input_tensor->shape(), axis, epsilon);
+                          input_tensor->shape(), axis, epsilon, use_mean);
     } else {
         try_(reference::layer_norm(typecode, input_mem, output_mem, scale_mem,
                                    bias_mem, input_tensor->shape(), axis,
-                                   epsilon));
+                                   epsilon, use_mean));
     }
     KERNEL_FINISH;
 }

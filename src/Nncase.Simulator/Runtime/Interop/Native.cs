@@ -29,6 +29,9 @@ internal static class Native
     [DllImport(LibraryName, EntryPoint = "nncase_interp_load_model")]
     public static extern unsafe ErrorCode InterpLoadModel(RTInterpreter interp, void* modelBuffer, uint modelSize, bool copyBuffer);
 
+    [DllImport(LibraryName, EntryPoint = "nncase_interp_load_model_from_path")]
+    public static extern unsafe ErrorCode InterpLoadModel(RTInterpreter interp, [MarshalAs(UnmanagedType.LPStr)] string modelBuffer);
+
     [DllImport(LibraryName, EntryPoint = "nncase_interp_set_dump_root", CharSet = CharSet.Ansi)]
     public static extern unsafe ErrorCode InterpSetDumpRoot(RTInterpreter interp, [MarshalAs(UnmanagedType.LPStr)] string path);
 

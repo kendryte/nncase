@@ -108,6 +108,18 @@ int nncase_interp_load_model(nncase::runtime::interpreter *interp,
     return -EINVAL;
 }
 
+int nncase_interp_load_model_from_path(nncase::runtime::interpreter *interp,
+                                       const char *model_path) {
+    if (interp) {
+        std::ifstream ifs;
+        ifs.open(model_path);
+        c_try(interp->load_model(ifs));
+        ifs.close();
+        return 0;
+    }
+    return -EINVAL;
+}
+
 int nncase_interp_set_dump_root(nncase::runtime::interpreter *interp,
                                 const char *path) {
     if (interp && path) {

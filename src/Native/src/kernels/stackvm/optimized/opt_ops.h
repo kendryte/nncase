@@ -82,7 +82,7 @@ NNCASE_API result<void> layer_norm(typecode_t typecode, const gsl::byte *input,
                                    gsl::byte *output, const gsl::byte *scale,
                                    const gsl::byte *bias,
                                    gsl::span<const size_t> in_shape,
-                                   int32_t axis, float epsilon);
+                                   int32_t axis, float epsilon, bool use_mean);
 
 NNCASE_API result<void> one_hot(datatype_t type, datatype_t indices_type,
                                 const gsl::byte *indices, gsl::byte *output,
