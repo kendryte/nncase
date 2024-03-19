@@ -53,9 +53,10 @@ internal sealed class CPUFusionToTirPass : ModulePass
                 var post = fusion;
                 var primBody = new List<Expr>();
                 var visitor = new KernelToTIRVisitor(primBody, deviceFuncs, fusionCheckCache);
-                visitor.Visit(post);
+                visitor.Convert(post);
                 var primFunc = T.PrimFunc(post.Name, post.ModuleKind, visitor.InputBuffers.Concat(visitor.OutputBuffers).ToArray()).Body(primBody.ToArray()).Build();
-                primFunc.SchedResult.DataUsage = checked((long)visitor.DataUsage);
+                primFunc.SchedResult.DataUsage = visitor.DataUsage;
+                primFunc.SchedResult.DataAlign = visitor.MaxDTypeSize;
                 var primWrapper = new PrimFunctionWrapper(primFunc, visitor.InputBuffers.Count());
                 module.Replace(i, primWrapper);
                 kernelFuncs.Add(primWrapper);

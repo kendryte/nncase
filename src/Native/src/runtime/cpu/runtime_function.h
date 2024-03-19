@@ -61,7 +61,8 @@ class cpu_runtime_function final : public runtime_function {
 #endif
 
     kernel_entry_t kernel_entry_;
-    size_t data_pool_size_;
+    uint64_t data_pool_size_;
+    uint64_t data_align_;
 };
 
 END_NS_NNCASE_RT_MODULE

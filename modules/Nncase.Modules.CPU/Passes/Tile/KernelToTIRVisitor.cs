@@ -22,7 +22,6 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
     private readonly HashSet<PrimFunction> _devices;
     private readonly List<(int, TIR.Buffer)> _outputbuffers;
     private readonly Dictionary<Fusion, FusionChecker> _fusionCheckCache;
-    private ulong _l1DataCount;
 
     public KernelToTIRVisitor(List<Expr> mainBody, HashSet<PrimFunction> devices, Dictionary<Fusion, FusionChecker> fusionCheckCache)
     {
@@ -30,16 +29,27 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
         _devices = devices;
         _outputbuffers = new();
         _fusionCheckCache = fusionCheckCache;
-        _l1DataCount = 0;
+        VisitRootFusion = null!;
+        DataUsage = 0;
+        MaxDTypeSize = 0;
     }
 
-    public ulong DataUsage => _l1DataCount;
+    public ulong DataUsage { get; private set; }
 
-    public Fusion VisitRootFusion => (Fusion)VisitRoot!;
+    public ulong MaxDTypeSize { get; private set; }
+
+    public Fusion VisitRootFusion { get; private set; }
 
     public IEnumerable<TIR.Buffer> OutputBuffers => _outputbuffers.OrderBy(p => p.Item1).Select(p => p.Item2);
 
     public IEnumerable<TIR.Buffer> InputBuffers => VisitRootFusion.Parameters.ToArray().Select(p => _buffersMap[p]).OfType<TIR.Buffer>().Where(b => b.MemSpan.Location.HasFlag(MemoryLocation.Input));
+
+    public void Convert(Fusion post)
+    {
+        VisitRootFusion = post;
+        AllocBuffers(post);
+        Visit(post);
+    }
 
     protected override Unit DefaultVisitLeaf(Expr expr)
     {
@@ -48,8 +58,8 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
 
     protected override Unit VisitLeafCall(Call expr)
     {
-        var arguments = expr.Arguments.AsValueEnumerable().Select(AllocOrGetBuffer).ToArray();
-        var ret = AllocOrGetBuffer(expr);
+        var arguments = expr.Arguments.AsValueEnumerable().Select(GetBuffer).ToArray();
+        var ret = GetBuffer(expr);
         var op = expr.Target is IR.CPU.CPUKernelOp kop ? kop.Target : expr.Target;
         switch (op)
         {
@@ -114,7 +124,7 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Slice(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[3]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[4]).Value.ToArray<int>()));
                 break;
             case IR.Tensors.Concat concat:
-                _mainBody.Add(TIR.F.CPU.Concat(((IR.Tuple)expr.Arguments[0]).Fields.AsValueEnumerable().Select(AllocOrGetBuffer).ToArray(), ret, concat.Axis));
+                _mainBody.Add(TIR.F.CPU.Concat(((IR.Tuple)expr.Arguments[0]).Fields.AsValueEnumerable().Select(GetBuffer).ToArray(), ret, concat.Axis));
                 break;
             case IR.Tensors.Transpose trans:
                 _mainBody.Add(TIR.F.CPU.Transpose(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>()));
@@ -191,6 +201,84 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
         }
 
         return default;
+    }
+
+    private TIR.Buffer GetBuffer(Expr expr) => _buffersMap.GetValueOrDefault(expr, null!);
+
+    private void AllocBuffers(Fusion fusion)
+    {
+        var candidates = ExprCollector.Collect(fusion).Where(e => e is Call or Var or TensorConst);
+        MaxDTypeSize = (ulong)candidates.Select(e => e.CheckedDataType.SizeInBytes).Max();
+        foreach (var expr in candidates)
+        {
+            var name = $"buffer_{_buffersMap.Keys.Count}";
+            if (!_buffersMap.TryGetValue(expr, out var buffer))
+            {
+                switch (expr)
+                {
+                    case Call c:
+                        var loc = MemoryLocation.Data;
+                        var hierarchy = 0;
+                        var index = CheckRootCall(c, ref loc);
+                        if (c.Target is Boxing box && box.NewType is DistributedType d && !d.TensorType.Shape.Equals(c.Arguments[0].CheckedShape))
+                        {
+                            name += "_reshape";
+                        }
+
+                        TensorType? dividedType = null;
+                        if (c.CheckedType is TensorType tensorType)
+                        {
+                            dividedType = tensorType;
+                        }
+                        else if (c.CheckedType is DistributedType distributedType)
+                        {
+                            hierarchy = 1;
+                            if (DistributedUtility.TryGetDividedTensorType(distributedType, out var type))
+                            {
+                                dividedType = type;
+                            }
+                        }
+
+                        if (dividedType is TensorType)
+                        {
+                            T.AttachBuffer(Tensor.FromPointer(DataUsage, dividedType.DType), dividedType, loc, hierarchy, out buffer, name);
+                            DataUsage += (ulong)(dividedType.Shape.Size * dividedType.DType.SizeInBytes);
+                            DataUsage = MathUtility.AlignUp(DataUsage, MaxDTypeSize);
+                        }
+                        else if (c.CheckedType is DistributedType)
+                        {
+                            // deal the not uinform sbp.
+                            // var shape = DistributedUtility.TryGetNonUniformDividedShape(distributedType);
+                            // var @var = new Var(TensorType.Pointer(distributedType.TensorType.DType));
+                            // var strides = TensorUtilities.GetStrides(shape);
+                            // var size = TensorUtilities.GetProduct(shape) * distributedType.TensorType.DType.SizeInBytes;
+                            // buffer = new Buffer(name, distributedType.TensorType.DType, new MemSpan(@var, size, loc, hierarchy), shape, strides);
+                            throw new NotSupportedException("not support non uniform sbp");
+                        }
+                        else
+                        {
+                            throw new NotSupportedException();
+                        }
+
+                        if (index != -1)
+                        {
+                            _outputbuffers.Add((index, buffer));
+                        }
+
+                        break;
+                    case Var v:
+                        buffer = T.AttachBuffer((TensorType)v.CheckedType, MemoryLocation.Input, 0, out _, out _, name);
+                        break;
+                    case TensorConst c:
+                        buffer = T.AttachBuffer(c, out _, name);
+                        break;
+                    default:
+                        throw new NotSupportedException();
+                }
+
+                _buffersMap.Add(expr, buffer);
+            }
+        }
     }
 
     private void GenerateUnary(UnaryOp unaryOp, ReadOnlySpan<Buffer> arguments, Buffer ret)
@@ -328,83 +416,6 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
         _mainBody.Add(TIR.F.CPU.Where(arguments[0], arguments[1], arguments[2], ret, distributedType));
     }
 #endif
-
-    private TIR.Buffer AllocOrGetBuffer(Expr expr)
-    {
-        var name = $"buffer_{_buffersMap.Keys.Count}";
-        if (!_buffersMap.TryGetValue(expr, out var buffer))
-        {
-            switch (expr)
-            {
-                case Call c:
-                    var loc = MemoryLocation.Data;
-                    var hierarchy = 0;
-                    var index = CheckRootCall(c, ref loc);
-                    if (c.Target is Boxing box && box.NewType is DistributedType d && !d.TensorType.Shape.Equals(c.Arguments[0].CheckedShape))
-                    {
-                        name += "_reshape";
-                    }
-
-                    TensorType? dividedType = null;
-                    if (c.CheckedType is TensorType tensorType)
-                    {
-                        dividedType = tensorType;
-                    }
-                    else if (c.CheckedType is DistributedType distributedType)
-                    {
-                        hierarchy = 1;
-                        if (DistributedUtility.TryGetDividedTensorType(distributedType, out var type))
-                        {
-                            dividedType = type;
-                        }
-                    }
-
-                    if (dividedType is TensorType)
-                    {
-                        // TIR.F.CPU.PtrOf("l1_data", new PointerType(dividedType.DType))
-                        T.AttachBuffer(Tensor.FromPointer(_l1DataCount, dividedType.DType), dividedType, loc, hierarchy, out buffer, name);
-                        _l1DataCount += (ulong)(dividedType.Shape.Size * dividedType.DType.SizeInBytes);
-                    }
-                    else if (c.CheckedType is DistributedType)
-                    {
-                        // deal the not uinform sbp.
-                        // var shape = DistributedUtility.TryGetNonUniformDividedShape(distributedType);
-                        // var @var = new Var(TensorType.Pointer(distributedType.TensorType.DType));
-                        // var strides = TensorUtilities.GetStrides(shape);
-                        // var size = TensorUtilities.GetProduct(shape) * distributedType.TensorType.DType.SizeInBytes;
-                        // buffer = new Buffer(name, distributedType.TensorType.DType, new MemSpan(@var, size, loc, hierarchy), shape, strides);
-                        throw new NotSupportedException("not support non uniform sbp");
-                    }
-                    else
-                    {
-                        throw new NotSupportedException();
-                    }
-
-                    if (index != -1)
-                    {
-                        _outputbuffers.Add((index, buffer));
-                    }
-
-                    break;
-                case Var v:
-                    buffer = T.AttachBuffer((TensorType)v.CheckedType, MemoryLocation.Input, 0, out _, out _, name);
-                    break;
-                case TensorConst c:
-                    buffer = T.AttachBuffer(c, out _, name);
-                    break;
-                case IR.Tuple:
-                    return null!;
-                case IR.None:
-                    return null!;
-                default:
-                    throw new NotSupportedException();
-            }
-
-            _buffersMap.Add(expr, buffer);
-        }
-
-        return buffer;
-    }
 
     private int CheckRootCall(Call c, ref MemoryLocation loc)
     {

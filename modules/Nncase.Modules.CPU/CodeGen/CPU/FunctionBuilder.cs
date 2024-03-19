@@ -41,7 +41,8 @@ internal class FunctionBuilder
             using (var writer = _sectionManager.GetWriter(KernelHeaderSectionName))
             {
                 var header = default(DescHeader);
-                header.DataPoolSize = checked((ulong)function.SchedResult.DataUsage);
+                header.DataPoolSize = function.SchedResult.DataUsage;
+                header.DataAlign = function.SchedResult.DataAlign;
                 writer.Write(ref header);
             }
 
@@ -78,5 +79,8 @@ internal class FunctionBuilder
     {
         [MarshalAs(UnmanagedType.U8)]
         public ulong DataPoolSize;
+
+        [MarshalAs(UnmanagedType.U8)]
+        public ulong DataAlign;
     }
 }

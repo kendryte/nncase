@@ -29,6 +29,7 @@ using namespace nncase::runtime::cpu;
 
 typedef struct {
     uint64_t DataPoolSize;
+    uint64_t DataAlign;
 } desc_header;
 
 cpu_runtime_function::cpu_runtime_function(runtime_module &rt_module)
@@ -46,6 +47,7 @@ result<void> cpu_runtime_function::initialize_core(
         ".desc", [this](auto reader, size_t) -> result<void> {
             auto header = reader.template read<desc_header>();
             this->data_pool_size_ = header.DataPoolSize;
+            this->data_align_ = header.DataAlign;
             return ok();
         }));
     auto text = module().text().subspan(context.header().entrypoint,

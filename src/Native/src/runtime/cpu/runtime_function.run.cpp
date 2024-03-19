@@ -65,7 +65,7 @@ nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
 } // namespace
 
 result<void> cpu_runtime_function::run(gsl::span<gsl::byte *> params) noexcept {
-    size_t alignment = 16;
+    size_t alignment = data_align_;
     size_t space = data_pool_size_ + alignment;
     auto alloced = new (std::nothrow) gsl::byte[space];
     if (alloced == nullptr) {
