@@ -205,9 +205,13 @@ internal partial class Quantizer
             var cosine = Utility.GetCosineSimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(currentResult.BytesBuffer));
 
             Console.ResetColor();
-            Console.Write($"try opt: nodes:{sensitivity.Count} current:{++debugFakeNode} targetCosine:{_quantizeOptions.CosineTarget}");
+            Console.Write($"try opt: nodes:{sensitivity.Count} current:{++debugFakeNode} targetCosine:");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write($"{_quantizeOptions.CosineTarget}");
+            Console.ResetColor();
+            Console.Write($" currentCosine:");
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($" currentCosine:{cosine}");
+            Console.WriteLine($"{cosine}");
             Console.ResetColor();
 
             if (cosine > _quantizeOptions.CosineTarget)
