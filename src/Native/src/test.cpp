@@ -323,7 +323,7 @@ int main() {
             assert(a == c);
         });
     }
-    // layer_norm
+    // layer norm1
     {
         ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> buffer_1;
         ntt::tensor<float, ntt::fixed_shape<16, 2>> buffer_4;
@@ -363,6 +363,67 @@ int main() {
         assert(std::abs(buffer_10(0, 1, 1) - (-1.06147768f)) < 1e-4f);
         assert(std::abs(buffer_10(0, 15, 0) - (77.11314114f)) < 1e-4f);
         assert(std::abs(buffer_10(0, 15, 1) - (83.04106739f)) < 1e-4f);
+    }
+
+    // layer_norm2(layer_norm axis >= packed axis)
+    {
+        ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> buffer_1;
+        ntt::tensor<float, ntt::fixed_shape<16, 2>> buffer_4;
+        ntt::tensor<float, ntt::fixed_shape<16, 2>> buffer_7;
+        std::iota(buffer_1.buffer().begin(), buffer_1.buffer().end(), 0.f);
+        std::iota(buffer_4.buffer().begin(), buffer_4.buffer().end(), 0.f);
+        std::iota(buffer_7.buffer().begin(), buffer_7.buffer().end(), 0.f);
+
+        // packed
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<1, 2, 2>> buffer_2;
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<2, 2>> buffer_5;
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<2, 2>> buffer_8;
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<1, 2, 2>> buffer_9;
+        pack<1>(buffer_1, buffer_2);
+        pack<0>(buffer_4, buffer_5);
+        pack<0>(buffer_7, buffer_8);
+        packed_layer_norm<2>(buffer_2, buffer_5, buffer_8, buffer_9,
+                             ntt::vector<float, 8>{1E-06}, true,
+                             ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
+
+        ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> buffer_10;
+        unpack<1>(buffer_9, buffer_10);
+        assert(buffer_10(0, 0, 0) == 0.0f);
+        assert(std::abs(buffer_10(0, 0, 1) - (-0.410048f)) < 1e-4f);
+        assert(std::abs(buffer_10(0, 1, 0) - (-0.386235f)) < 1e-4f);
+        assert(std::abs(buffer_10(0, 1, 1) - (0.07143879f)) < 1e-4f);
+        assert(std::abs(buffer_10(0, 15, 0) - (72.30144f)) < 1e-4f);
+        assert(std::abs(buffer_10(0, 15, 1) - (81.436325f)) < 1e-4f);
+    }
+
+    // layer_norm3(layer_norm axis >= packed axis + broadcasting)
+    {
+        ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> input;
+        ntt::tensor<float, ntt::fixed_shape<8>> scale;
+        ntt::tensor<float, ntt::fixed_shape<1>> bias;
+        std::iota(input.buffer().begin(), input.buffer().end(), 0.f);
+        std::iota(scale.buffer().begin(), scale.buffer().end(), 0.f);
+        std::iota(bias.buffer().begin(), bias.buffer().end(), 1.f);
+
+        // packed
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<1, 2, 2>> packed_input;
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<1>> packed_scale;
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<1, 2, 2>> output;
+        pack<1>(input, packed_input);
+        pack<0>(scale, packed_scale);
+        packed_layer_norm<2>(packed_input, packed_scale, bias, output,
+                             ntt::vector<float, 8>{1E-06}, true,
+                             ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
+
+        ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> unpacked_output;
+        unpack<1>(output, unpacked_output);
+
+        assert(std::abs(unpacked_output(0, 0, 0) - (1.0f)) < 1e-4f);
+        assert(std::abs(unpacked_output(0, 0, 1) - (1.0f)) < 1e-4f);
+        assert(std::abs(unpacked_output(0, 1, 0) - (-0.1931175f)) < 1e-4f);
+        assert(std::abs(unpacked_output(0, 1, 1) - (0.02381295f)) < 1e-4f);
+        assert(std::abs(unpacked_output(0, 15, 0) - (10.870337f)) < 1e-4f);
+        assert(std::abs(unpacked_output(0, 15, 1) - (12.388849f)) < 1e-4f);
     }
 
     // packed softmax(softmax axis == packed axis)

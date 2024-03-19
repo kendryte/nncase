@@ -68,11 +68,9 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
 
     apply(domain, [&](auto index) {
         auto input_p = input.buffer().data() + linear_offset(index, strides);
-        auto scale_p = scale.buffer().data();
-        auto bias_p = bias.buffer().data();
         auto output_p = output.buffer().data() + linear_offset(index, strides);
 
-        // compute mean
+        // mean1
         TElem mean1 = 0;
         if (use_mean) {
             for (size_t i = 0; i < inner_size; i++)
@@ -82,30 +80,38 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
             }
         }
 
+        // input - mean
         std::array<TElem, inner_size> sub;
-        for (auto i = 0; i < inner_size; i++)
+        for (size_t i = 0; i < inner_size; i++)
             sub[i] = sub_op(input_p[i], mean1);
 
+        // square
         std::array<TElem, inner_size> pow;
-        for (auto i = 0; i < inner_size; i++)
+        for (size_t i = 0; i < inner_size; i++)
             pow[i] = mul_op(sub[i], sub[i]);
 
+        // mean2
         TElem mean2 = 0;
-        for (auto i = 0; i < inner_size; i++)
+        for (size_t i = 0; i < inner_size; i++)
             mean2 = add_op(mean2, div_op(pow[i], finner_size));
         if constexpr (is_vector_v<TElem>) {
             mean2 = vector_ops::reduce_sum<TElem>()(mean2);
         }
 
+        // std
         TElem add = add_op(mean2, epsilon);
         TElem sqrt = sqrt_op(add);
 
-        std::array<TElem, inner_size> norm;
-        for (auto i = 0; i < inner_size; i++)
-            norm[i] = div_op(sub[i], sqrt);
+        // Normalized
+        for (size_t i = 0; i < inner_size; i++)
+            output_p[i] = div_op(sub[i], sqrt);
+    });
 
-        for (auto i = 0; i < inner_size; i++)
-            output_p[i] = add_op(mul_op(norm[i], scale_p[i]), bias_p[i]);
+    // output = Normalized * scale + bias(support broadcasting)
+    apply(output_shape, [&](auto index) {
+        const auto scale_index = shape_infer::reduced_index_by_shape(index, scale_shape);
+        const auto bias_index = shape_infer::reduced_index_by_shape(index, bias_shape);
+        output(index) = add_op(mul_op(output(index), scale(scale_index)), bias(bias_index));
     });
 }
 } // namespace packed_layer_norm_detail
@@ -119,8 +125,6 @@ void packed_layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
                        [[maybe_unused]] PadedNums padednums) {
     static_assert(PackedAxes::rank() < 2, "currently not support 2d packing.");
     if constexpr (PackedAxes::rank() == 1) {
-        static_assert(PackedAxes::at(0) >= Axis,
-                      "currently only support pack within axis.");
         packed_layer_norm_detail::within_axis_pack_impl<Axis>(
             input, scale, bias, output, epsilon, use_mean);
     } else if (PackedAxes::rank() == 0) {
