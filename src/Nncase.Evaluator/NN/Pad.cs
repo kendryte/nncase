@@ -86,6 +86,7 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
         {
             DistributedType distributedType => Visit(distributedType, paddings, padValue),
             TensorType tensorType => TypeInference.PadType(tensorType, paddings, padValue),
+            AnyType anyType => anyType,
             _ => new InvalidType("The pad input type not support"),
         };
     }

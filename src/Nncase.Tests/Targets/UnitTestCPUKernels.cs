@@ -149,11 +149,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var vposition_ids = new Var("vposition_ids", new TensorType(DataTypes.Int64, new[] { 1, 384 }));
         Expr pre;
         {
-            var v0 = IR.F.NN.LayerNorm(2, 1E-05f, vhidden_in, IR.F.Random.Normal(new[] { 8192 }).Evaluate().AsTensor(), IR.F.Random.Normal(new[] { 8192 }).Evaluate().AsTensor(), false); // f32[1,384,8192]
-            var v1 = IR.F.Tensors.MatMul(v0, IR.F.Random.Normal(new[] { 8192, 8192 }).Evaluate().AsTensor()); // f32[1,384,8192]
+            var v0 = IR.F.NN.LayerNorm(2, 1E-05f, vhidden_in, IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 1, new[] { 8192 }).Evaluate().AsTensor(), IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 2, new[] { 8192 }).Evaluate().AsTensor(), false); // f32[1,384,8192]
+            var v1 = IR.F.Tensors.MatMul(v0, IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 3, new[] { 8192, 8192 }).Evaluate().AsTensor()); // f32[1,384,8192]
             var v2 = IR.F.Tensors.Reshape(v1, new long[] { 1L, 384L, 64L, 128L }); // f32[1,384,64,128]
             var v3 = IR.F.Tensors.Transpose(v2, new long[] { 0L, 2L, 1L, 3L }); // f32[1,64,384,128]
-            var v4 = IR.F.Tensors.Gather(IR.F.Random.Normal(new[] { 384, 128 }).Evaluate().AsTensor(), 0, vposition_ids); // f32[1,384,128]
+            var v4 = IR.F.Tensors.Gather(IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 4, new[] { 384, 128 }).Evaluate().AsTensor(), 0, vposition_ids); // f32[1,384,128]
             var v5 = IR.F.Tensors.Reshape(v4, new[] { 1, 1, 384, 128 }); // f32[1,1,384,128]
             var v6 = IR.F.Math.Binary(BinaryOp.Mul, v3, v5); // f32[1,64,384,128]
             var v7 = IR.F.Tensors.Slice(v3, new long[] { 64L }, new long[] { 128L }, new long[] { 3L }, new long[] { 1L }); // f32[1,64,384,64]
@@ -161,11 +161,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
             var v9 = IR.F.Tensors.Slice(v3, new long[] { 0L }, new long[] { 64L }, new long[] { 3L }, new long[] { 1L }); // f32[1,64,384,64]
             var v10 = new IR.Tuple(v8, v9); // (f32[1,64,384,64], f32[1,64,384,64])
             var v11 = IR.F.Tensors.Concat(v10, 3); // f32[1,64,384,128]
-            var v12 = IR.F.Tensors.Gather(IR.F.Random.Normal(new[] { 384, 128 }).Evaluate().AsTensor(), 0, vposition_ids); // f32[1,384,128]
+            var v12 = IR.F.Tensors.Gather(IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 5, new[] { 384, 128 }).Evaluate().AsTensor(), 0, vposition_ids); // f32[1,384,128]
             var v13 = IR.F.Tensors.Reshape(v12, new[] { 1, 1, 384, 128 }); // f32[1,1,384,128]
             var v14 = IR.F.Math.Binary(BinaryOp.Mul, v11, v13); // f32[1,64,384,128]
             var v15 = IR.F.Math.Binary(BinaryOp.Add, v6, v14); // f32[1,64,384,128]
-            var v16 = IR.F.Tensors.MatMul(v0, IR.F.Random.Normal(new[] { 8192, 8192 }).Evaluate().AsTensor()); // f32[1,384,8192]
+            var v16 = IR.F.Tensors.MatMul(v0, IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 6, new[] { 8192, 8192 }).Evaluate().AsTensor()); // f32[1,384,8192]
             var v17 = IR.F.Tensors.Reshape(v16, new long[] { 1L, 384L, 64L, 128L }); // f32[1,384,64,128]
             var v18 = IR.F.Tensors.Transpose(v17, new long[] { 0L, 2L, 1L, 3L }); // f32[1,64,384,128]
             var v19 = IR.F.Math.Binary(BinaryOp.Mul, v18, v5); // f32[1,64,384,128]
@@ -181,28 +181,28 @@ public sealed class UnitTestCPUKernels : TestClassBase
             var v29 = IR.F.Math.Binary(BinaryOp.Div, v28, new[] { 11.31370f }); // f32[1,64,384,384]
             var v30 = IR.F.Math.Binary(BinaryOp.Add, v29, vattn_mask); // f32[1,64,384,384]
             var v31 = IR.F.NN.Softmax(v30, 3); // f32[1,64,384,384]
-            var v32 = IR.F.Tensors.MatMul(v0, IR.F.Random.Normal(new[] { 8192, 8192 }).Evaluate().AsTensor()); // f32[1,384,8192]
+            var v32 = IR.F.Tensors.MatMul(v0, IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 7, new[] { 8192, 8192 }).Evaluate().AsTensor()); // f32[1,384,8192]
             var v33 = IR.F.Tensors.Reshape(v32, new long[] { 1L, 384L, 64L, 128L }); // f32[1,384,64,128]
             var v34 = IR.F.Tensors.Transpose(v33, new long[] { 0L, 2L, 1L, 3L }); // f32[1,64,384,128]
             var v35 = IR.F.Tensors.MatMul(v31, v34); // f32[1,64,384,128]
             var v36 = IR.F.Tensors.Transpose(v35, new long[] { 0L, 2L, 1L, 3L }); // f32[1,384,64,128]
             var v37 = IR.F.Tensors.Reshape(v36, new long[] { 1L, 384L, 8192L }); // f32[1,384,8192]
-            var v38 = IR.F.Tensors.MatMul(v37, IR.F.Random.Normal(new[] { 8192, 8192 }).Evaluate().AsTensor()); // f32[1,384,8192]
+            var v38 = IR.F.Tensors.MatMul(v37, IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 8, new[] { 8192, 8192 }).Evaluate().AsTensor()); // f32[1,384,8192]
             var v39 = IR.F.Math.Binary(BinaryOp.Add, vhidden_in, v38); // f32[1,384,8192]
-            var v40 = IR.F.NN.LayerNorm(2, 1E-05f, v39, IR.F.Random.Normal(new[] { 8192 }).Evaluate().AsTensor(), IR.F.Random.Normal(new[] { 8192 }).Evaluate().AsTensor(), false); // f32[1,384,8192]
-            var v41 = IR.F.Tensors.MatMul(v40, IR.F.Random.Normal(new[] { 8192, 22016 }).Evaluate().AsTensor()); // f32[1,384,22016]
+            var v40 = IR.F.NN.LayerNorm(2, 1E-05f, v39, IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 9, new[] { 8192 }).Evaluate().AsTensor(), IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 2, new[] { 8192 }).Evaluate().AsTensor(), false); // f32[1,384,8192]
+            var v41 = IR.F.Tensors.MatMul(v40, IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 10, new[] { 8192, 22016 }).Evaluate().AsTensor()); // f32[1,384,22016]
             var v42 = IR.F.NN.Swish(v41, 1.0f); // f32[1,384,22016]
-            var v43 = IR.F.Tensors.MatMul(v40, IR.F.Random.Normal(new[] { 8192, 22016 }).Evaluate().AsTensor()); // f32[1,384,22016]
+            var v43 = IR.F.Tensors.MatMul(v40, IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 11, new[] { 8192, 22016 }).Evaluate().AsTensor()); // f32[1,384,22016]
             var v44 = IR.F.Math.Binary(BinaryOp.Mul, v42, v43); // f32[1,384,22016]
-            var v45 = IR.F.Tensors.MatMul(v44, IR.F.Random.Normal(new[] { 22016, 8192 }).Evaluate().AsTensor()); // f32[1,384,8192]
+            var v45 = IR.F.Tensors.MatMul(v44, IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 12, new[] { 22016, 8192 }).Evaluate().AsTensor()); // f32[1,384,8192]
             var v46 = IR.F.Math.Binary(BinaryOp.Add, v39, v45); // f32[1,384,8192]
             pre = v46;
         }
 
         var feedDict = new Dictionary<Var, IValue>() {
-            { vhidden_in, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1,  new[] { 1, 384, 8192 }).Evaluate() },
-            { vattn_mask, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1,  new[] { 1, 1, 384, 384 }).Evaluate() },
-            { vposition_ids, IR.F.Random.Uniform(DataTypes.Int64, 383, 1, 1, new[] { 1, 384 }).Evaluate() },
+            { vhidden_in, IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 13,  new[] { 1, 384, 8192 }).Evaluate() },
+            { vattn_mask, IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 14,  new[] { 1, 1, 384, 384 }).Evaluate() },
+            { vposition_ids, IR.F.Random.Uniform(DataTypes.Int64, 383, 1, 15, new[] { 1, 384 }).Evaluate() },
         };
 
         var posts = new[] { pre };
@@ -238,7 +238,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var module = new IR.IRModule(main);
         var inputs = kernelCase.Inputs.ToArray();
-        var output = fusion.Body.Evaluate(kernelCase.Vars.Zip(inputs).ToDictionary(p => p.First, p => (IValue)Value.FromTensor(p.Second))).AsTensor();
+        var outputs = fusion.Body.Evaluate(kernelCase.Vars.Zip(inputs).ToDictionary(p => p.First, p => (IValue)Value.FromTensor(p.Second))).AsTensors();
 
 #if DEBUG
         for (var i = 0; i < inputs.Length; i++)
@@ -249,22 +249,31 @@ public sealed class UnitTestCPUKernels : TestClassBase
             }
         }
 
-        using (var fs = Diagnostics.DumpScope.Current.OpenFile($"output_0.bin"))
+        for (int i = 0; i < outputs.Length; i++)
         {
-            fs.Write(output.BytesBuffer);
+            using (var fs = Diagnostics.DumpScope.Current.OpenFile($"output_{i}.bin"))
+            {
+                fs.Write(outputs[i].BytesBuffer);
+            }
         }
 #endif
         await Compile(module);
         var (kmodel_path, _) = Testing.BuildKModel("test", module, CompileSession, false);
-        var actual = Testing.RunKModel(kmodel_path, Diagnostics.DumpScope.Current.Directory, inputs).AsTensor();
+        var actuals = Testing.RunKModel(kmodel_path, Diagnostics.DumpScope.Current.Directory, inputs).AsTensors();
 #if DEBUG
-        using (var fs = Diagnostics.DumpScope.Current.OpenFile($"actual_0.bin"))
+        for (int i = 0; i < actuals.Length; i++)
         {
-            fs.Write(actual.BytesBuffer);
+            using (var fs = Diagnostics.DumpScope.Current.OpenFile($"actual_{i}.bin"))
+            {
+                fs.Write(actuals[i].BytesBuffer);
+            }
         }
 #endif
-        var cos = Comparator.CosSimilarity(output, actual);
-        Assert.True(cos > 0.999, $"the {CompileOptions.DumpDir} cos is {cos}");
+        for (int i = 0; i < outputs.Length; i++)
+        {
+            var cos = Comparator.CosSimilarity(outputs[i], actuals[i]);
+            Assert.True(cos > 0.999, $"the {CompileOptions.DumpDir} output {i} cos: {cos} ");
+        }
     }
 
     private async Task Compile(IRModule module)
