@@ -61,7 +61,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     [Theory]
     [InlineData(new object[] { BinaryOp.Add, new[] { 64, 768 }, new int[] { 64, 768 }, 0 })] // normal
-    [InlineData(new object[] { BinaryOp.Mul, new[] { 1, 64, 384, 16 * 8 }, new int[] { 1, 1, 384, 16 * 8 }, 0 })] // normal
+    [InlineData(new object[] { BinaryOp.Mul, new[] { 1, 64, 384, 16 * 8 }, new int[] { 1, 1, 384, 16 * 8 }, 1 })] // broadcast
     public async void TestPackBinary(BinaryOp op, int[] lhsShape, int[] rhsShape, int count)
     {
         var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
@@ -139,9 +139,8 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-
-    // [InlineData(new object[] { true, 1 })]
     [InlineData(new object[] { false, 0 })]
+    [InlineData(new object[] { true, 1 })] // enable packing
     public async Task TestDecodeLayer(bool packing, int count)
     {
         CompileOptions.TargetCompileOptions = CPUCompileOptions.Default with { Packing = packing };
@@ -191,14 +190,13 @@ public sealed class UnitTestCPUKernels : TestClassBase
             var v38 = IR.F.Tensors.MatMul(v37, IR.F.Random.Normal(new[] { 8192, 8192 }).Evaluate().AsTensor()); // f32[1,384,8192]
             var v39 = IR.F.Math.Binary(BinaryOp.Add, vhidden_in, v38); // f32[1,384,8192]
             var v40 = IR.F.NN.LayerNorm(2, 1E-05f, v39, IR.F.Random.Normal(new[] { 8192 }).Evaluate().AsTensor(), IR.F.Random.Normal(new[] { 8192 }).Evaluate().AsTensor(), false); // f32[1,384,8192]
-
-            // var v41 = IR.F.Tensors.MatMul(v40, IR.F.Random.Normal(new[] { 8192, 22016 }).Evaluate().AsTensor()); // f32[1,384,22016]
-            // var v42 = IR.F.NN.Swish(v41, 1.0f); // f32[1,384,22016]
-            // var v43 = IR.F.Tensors.MatMul(v40, IR.F.Random.Normal(new[] { 8192, 22016 }).Evaluate().AsTensor()); // f32[1,384,22016]
-            // var v44 = IR.F.Math.Binary(BinaryOp.Mul, v42, v43); // f32[1,384,22016]
-            // var v45 = IR.F.Tensors.MatMul(v44, IR.F.Random.Normal(new[] { 22016, 8192 }).Evaluate().AsTensor()); // f32[1,384,8192]
-            // var v46 = IR.F.Math.Binary(BinaryOp.Add, v39, v45); // f32[1,384,8192]
-            pre = v40;
+            var v41 = IR.F.Tensors.MatMul(v40, IR.F.Random.Normal(new[] { 8192, 22016 }).Evaluate().AsTensor()); // f32[1,384,22016]
+            var v42 = IR.F.NN.Swish(v41, 1.0f); // f32[1,384,22016]
+            var v43 = IR.F.Tensors.MatMul(v40, IR.F.Random.Normal(new[] { 8192, 22016 }).Evaluate().AsTensor()); // f32[1,384,22016]
+            var v44 = IR.F.Math.Binary(BinaryOp.Mul, v42, v43); // f32[1,384,22016]
+            var v45 = IR.F.Tensors.MatMul(v44, IR.F.Random.Normal(new[] { 22016, 8192 }).Evaluate().AsTensor()); // f32[1,384,8192]
+            var v46 = IR.F.Math.Binary(BinaryOp.Add, v39, v45); // f32[1,384,8192]
+            pre = v46;
         }
 
         var feedDict = new Dictionary<Var, IValue>() {

@@ -32,7 +32,12 @@ public class CPUTarget : ITarget
 
     public (System.CommandLine.Command Command, Func<InvocationContext, System.CommandLine.Command, ITargetCompileOptions> Parser) RegisterCommandAndParser()
     {
-        return (new System.CommandLine.Command(Kind), ParseTargetCompileOptions);
+        var cmd = new System.CommandLine.Command(Kind);
+        cmd.AddOption(new Option<bool>(
+            name: "--packing",
+            description: "enable layout optimization.",
+            getDefaultValue: () => false));
+        return (cmd, ParseTargetCompileOptions);
     }
 
     /// <inheritdoc/>
