@@ -35,9 +35,15 @@ class tensor_storage<T, Shape, Strides, false, true> {
 
     static constexpr auto shape() noexcept { return Shape{}; }
     static constexpr auto strides() noexcept { return Strides{}; }
+    static constexpr size_t size() noexcept {
+        return linear_size(Shape{}, Strides{});
+    }
 
     constexpr auto buffer() const noexcept { return std::span(buffer_); }
     constexpr auto buffer() noexcept { return std::span(buffer_); }
+
+    constexpr auto elements() const noexcept { return buffer(); }
+    constexpr auto elements() noexcept { return buffer(); }
 
   private:
     buffer_type buffer_;
@@ -58,11 +64,17 @@ class tensor_storage<T, Shape, Strides, false, false> {
 
     constexpr const Shape &shape() const noexcept { return shape_; }
     constexpr const Strides &strides() const noexcept { return strides_; }
+    constexpr size_t size() noexcept { return linear_size(shape(), strides()); }
 
     constexpr const std::span<const T> buffer() const noexcept {
         return buffer_;
     }
     constexpr std::span<T> buffer() noexcept { return buffer_; }
+
+    constexpr const std::span<const T> elements() const noexcept {
+        return buffer_;
+    }
+    constexpr std::span<T> elements() noexcept { return buffer_; }
 
   private:
     buffer_type buffer_;
@@ -82,9 +94,15 @@ class tensor_storage<T, Shape, Strides, true, true> {
 
     static constexpr auto shape() noexcept { return Shape{}; }
     static constexpr auto strides() noexcept { return Strides{}; }
+    static constexpr size_t size() noexcept {
+        return linear_size(Shape{}, Strides{});
+    }
 
     constexpr const_buffer_type buffer() const noexcept { return buffer_; }
     constexpr buffer_type buffer() noexcept { return buffer_; }
+
+    constexpr const_buffer_type elements() const noexcept { return buffer_; }
+    constexpr buffer_type elements() noexcept { return buffer_; }
 
   private:
     buffer_type buffer_;
@@ -108,9 +126,13 @@ class tensor_storage<T, Shape, Strides, true, false> {
 
     constexpr const Shape &shape() const noexcept { return shape_; }
     constexpr const Strides &strides() const noexcept { return strides_; }
+    constexpr size_t size() noexcept { return linear_size(shape(), strides()); }
 
     constexpr const_buffer_type buffer() const noexcept { return buffer_; }
     constexpr buffer_type buffer() noexcept { return buffer_; }
+
+    constexpr const_buffer_type elements() const noexcept { return buffer_; }
+    constexpr buffer_type elements() noexcept { return buffer_; }
 
   private:
     buffer_type buffer_;
@@ -124,20 +146,26 @@ class tensor_base : public detail::tensor_storage<T, Shape, Strides, IsView> {
   public:
     using element_type = T;
     using storage_type = detail::tensor_storage<T, Shape, Strides, IsView>;
+    using buffer_type = storage_type::buffer_type;
     using shape_type = Shape;
     using strides_type = Strides;
 
     using storage_type::buffer;
+    using storage_type::elements;
     using storage_type::shape;
+    using storage_type::size;
     using storage_type::storage_type;
     using storage_type::strides;
+
+    operator const buffer_type &() const noexcept { return buffer(); }
+    operator buffer_type &() noexcept { return buffer(); }
 
     template <class Index, class UShape>
     constexpr tensor_view<T, UShape, Strides> view(Index index,
                                                    UShape shape) noexcept {
         if constexpr (is_fixed_dims_v<Strides>) {
             auto offset = linear_offset(index, strides());
-            auto begin = buffer().data() + offset;
+            auto begin = elements().data() + offset;
             if constexpr (is_fixed_dims_v<UShape>) {
                 constexpr size_t size = linear_size(shape, strides());
                 return {std::span<T, size>(begin, size), shape, strides()};
@@ -146,8 +174,8 @@ class tensor_base : public detail::tensor_storage<T, Shape, Strides, IsView> {
                 return {std::span(begin, size), shape, strides()};
             }
         } else {
-            return {buffer().subspan(linear_offset(index, strides()),
-                                     linear_size(shape, strides())),
+            return {elements().subspan(linear_offset(index, strides()),
+                                       linear_size(shape, strides())),
                     shape, strides()};
         }
     }
@@ -166,7 +194,7 @@ class tensor_base : public detail::tensor_storage<T, Shape, Strides, IsView> {
     constexpr const T &operator()(Indices &&...index) const noexcept {
         if constexpr (sizeof...(index) == 1 &&
                       (!std::is_integral_v<Indices> && ...)) {
-            return buffer()[linear_offset(index..., strides())];
+            return elements()[linear_offset(index..., strides())];
         } else {
             return this->operator()(
                 ranked_shape<sizeof...(index)>{static_cast<size_t>(index)...});
@@ -177,7 +205,7 @@ class tensor_base : public detail::tensor_storage<T, Shape, Strides, IsView> {
     constexpr T &operator()(Indices &&...index) noexcept {
         if constexpr (sizeof...(index) == 1 &&
                       (!std::is_integral_v<Indices> && ...)) {
-            return buffer()[linear_offset(index..., strides())];
+            return elements()[linear_offset(index..., strides())];
         } else {
             return this->operator()(
                 ranked_shape<sizeof...(index)>{static_cast<size_t>(index)...});

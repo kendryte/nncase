@@ -27,6 +27,13 @@
 #include "kernels/transpose.h"
 #include "kernels/unary.h"
 #include "kernels/unpack.h"
+#include "primitive_ops.h"
 #include "tensor.h"
 #include "utility.h"
-#include "vector_type.h"
+
+#ifdef __x86_64__
+#include "arch/x86_64/arch_types.h"
+#include "arch/x86_64/vector_ops.h"
+#elif __aarch64__
+#include "arch/aarch64/arch_types.h"
+#endif

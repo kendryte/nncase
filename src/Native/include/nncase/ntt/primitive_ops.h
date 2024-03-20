@@ -1,0 +1,147 @@
+/* Copyright 2019-2021 Canaan Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#pragma once
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <type_traits>
+
+namespace nncase::ntt::ops {
+// unary_ops ops
+
+template <class T> struct abs {
+    T operator()(T v) const noexcept { return std::abs(v); }
+};
+
+template <class T> struct acos {
+    T operator()(T v) const noexcept { return std::acos(v); }
+};
+
+template <class T> struct acosh {
+    T operator()(T v) const noexcept { return std::acosh(v); }
+};
+
+template <class T> struct asin {
+    T operator()(T v) const noexcept { return std::asin(v); }
+};
+
+template <class T> struct asinh {
+    T operator()(T v) const noexcept { return std::asinh(v); }
+};
+
+template <class T> struct ceil {
+    T operator()(T v) const noexcept { return std::ceil(v); }
+};
+
+template <class T> struct cos {
+    T operator()(T v) const noexcept { return std::cos(v); }
+};
+
+template <class T> struct cosh {
+    T operator()(T v) const noexcept { return std::cosh(v); }
+};
+
+template <class T> struct exp {
+    T operator()(T v) const noexcept { return std::exp(v); }
+};
+
+template <class T> struct floor {
+    T operator()(T v) const noexcept { return std::floor(v); }
+};
+
+template <class T> struct log {
+    T operator()(T v) const noexcept { return std::log(v); }
+};
+
+template <class T> struct neg {
+    T operator()(T v) const noexcept { return -v; }
+};
+
+template <class T> struct round {
+    T operator()(T v) const noexcept { return std::nearbyint(v); }
+};
+
+template <class T> struct rsqrt {
+    T operator()(T v) const noexcept { return (T)1 / std::sqrt(v); }
+};
+
+template <class T> struct sign {
+    T operator()(T v) const noexcept { return std::copysign((T)1, v); }
+};
+
+template <class T> struct sin {
+    T operator()(T v) const noexcept { return std::sin(v); }
+};
+
+template <class T> struct sinh {
+    T operator()(T v) const noexcept { return std::sinh(v); }
+};
+
+template <class T> struct sqrt {
+    T operator()(T v) const noexcept { return std::sqrt(v); }
+};
+
+template <class T> struct square {
+    T operator()(T v) const noexcept { return v * v; }
+};
+
+template <class T> struct tanh {
+    T operator()(T v) const noexcept { return std::tanh(v); }
+};
+
+template <class T> struct swish {
+    T operator()(T v) const noexcept { return v / (1 + std::exp(-v)); }
+};
+
+// binary ops
+
+template <class T> struct add {
+    T operator()(T v1, T v2) const noexcept { return v1 + v2; }
+};
+
+template <class T> struct sub {
+    T operator()(T v1, T v2) const noexcept { return v1 - v2; }
+};
+
+template <class T> struct mul {
+    T operator()(T v1, T v2) const noexcept { return v1 * v2; }
+};
+
+template <class T> struct div {
+    T operator()(T v1, T v2) const noexcept { return v1 / v2; }
+};
+
+template <class T> struct mod {
+    T operator()(T v1, T v2) const noexcept {
+        if constexpr (std::is_floating_point_v<std::decay_t<T>>) {
+            return std::fmod(v1, v2);
+        } else {
+            return v1 % v2;
+        }
+    }
+};
+
+template <class T> struct min {
+    T operator()(T v1, T v2) const noexcept { return std::min(v1, v2); }
+};
+
+template <class T> struct max {
+    T operator()(T v1, T v2) const noexcept { return std::max(v1, v2); }
+};
+
+template <class T> struct pow {
+    T operator()(T v1, T v2) const noexcept { return std::pow(v1, v2); }
+};
+} // namespace nncase::ntt::ops

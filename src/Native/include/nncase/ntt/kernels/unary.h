@@ -15,107 +15,6 @@
 #pragma once
 #include "../apply.h"
 
-#ifdef __ARM_NEON__
-#include "arch/arm/unary.h"
-#else
-#include "arch/x86_64/unary.h"
-#endif
-
-namespace nncase::ntt {
-// math ops
-namespace mathops {
-template <class T> struct abs {
-    T operator()(T v) const noexcept { return std::abs(v); }
-};
-
-template <class T> struct acos {
-    T operator()(T v) const noexcept { return std::acos(v); }
-};
-
-template <class T> struct acosh {
-    T operator()(T v) const noexcept { return std::acosh(v); }
-};
-
-template <class T> struct asin {
-    T operator()(T v) const noexcept { return std::asin(v); }
-};
-
-template <class T> struct asinh {
-    T operator()(T v) const noexcept { return std::asinh(v); }
-};
-
-template <class T> struct ceil {
-    T operator()(T v) const noexcept { return std::ceil(v); }
-};
-
-template <class T> struct cos {
-    T operator()(T v) const noexcept { return std::cos(v); }
-};
-
-template <class T> struct cosh {
-    T operator()(T v) const noexcept { return std::cosh(v); }
-};
-
-template <class T> struct exp {
-    T operator()(T v) const noexcept { return std::exp(v); }
-};
-
-template <class T> struct floor {
-    T operator()(T v) const noexcept { return std::floor(v); }
-};
-
-template <class T> struct log {
-    T operator()(T v) const noexcept { return std::log(v); }
-};
-
-template <class T> struct neg {
-    T operator()(T v) const noexcept { return -v; }
-};
-
-template <class T> struct round {
-    T operator()(T v) const noexcept { return std::nearbyint(v); }
-};
-
-template <class T> struct rsqrt {
-    T operator()(T v) const noexcept { return (T)1 / std::sqrt(v); }
-};
-
-template <class T> struct sign {
-    T operator()(T v) const noexcept { return std::copysign((T)1, v); }
-};
-
-template <class T> struct sin {
-    T operator()(T v) const noexcept { return std::sin(v); }
-};
-
-template <class T> struct sinh {
-    T operator()(T v) const noexcept { return std::sinh(v); }
-};
-
-template <class T> struct sqrt {
-    T operator()(T v) const noexcept { return std::sqrt(v); }
-};
-
-template <class T> struct square {
-    T operator()(T v) const noexcept { return v * v; }
-};
-
-template <class T> struct tanh {
-    T operator()(T v) const noexcept { return std::tanh(v); }
-};
-
-template <class T> struct swish {
-    T operator()(T v) const noexcept { return v / (1 + std::exp(-v)); }
-};
-} // namespace mathops
-} // namespace nncase::ntt
-
-#ifdef __ARM_NEON__
-#include "arch/arm/unary_mathops.h"
-#else
-#include "arch/x86_64/unary_mathops.h"
-#endif
-
 namespace nncase::ntt {
 namespace detail {
 template <class Shape, class InStrides, class OutStrides> class unary_impl;
@@ -148,7 +47,7 @@ class unary_impl<fixed_shape<Dims...>, fixed_strides<InStrides...>,
                 input.buffer().data() + linear_offset(index, input.strides());
             auto output_p =
                 output.buffer().data() + linear_offset(index, output.strides());
-            arch::unary<inner_size>(op, input_p, output_p);
+            unary_contiguous<inner_size>(op, input_p, output_p);
         } else {
             apply_next<Op, TIn, TOut, Axis, Rank, ContiguousDims, RestDims...>(
                 op, index, input, output);
@@ -162,6 +61,13 @@ class unary_impl<fixed_shape<Dims...>, fixed_strides<InStrides...>,
         for (index[Axis] = 0; index[Axis] < Dim; index[Axis]++) {
             apply<Op, TIn, TOut, Axis + 1, Rank, ContiguousDims, RestDims...>(
                 op, index, input, output);
+        }
+    }
+
+    template <size_t Extent, class T, class Op>
+    constexpr void unary_contiguous(Op &&op, const T *input_p, T *output_p) {
+        for (size_t i = 0; i < Extent; i++) {
+            output_p[i] = op(input_p[i]);
         }
     }
 };
@@ -191,13 +97,21 @@ class unary_impl<ranked_shape<Rank>, InStrides, OutStrides> {
                 input.buffer().data() + linear_offset(index, input.strides());
             auto output_p =
                 output.buffer().data() + linear_offset(index, output.strides());
-            arch::unary(op, input_p, output_p, inner_size);
+            unary_contiguous(op, input_p, output_p, inner_size);
         } else if constexpr (Axis < Rank - 1) {
             const auto dim = input.shape()[Axis];
             for (index[Axis] = 0; index[Axis] < dim; index[Axis]++) {
                 apply<Op, TIn, TOut, Axis + 1>(op, index, conti_dims, input,
                                                output);
             }
+        }
+    }
+
+    template <class T, class Op>
+    constexpr void unary_contiguous(Op &&op, const T *input_p, T *output_p,
+                                    size_t extent) {
+        for (size_t i = 0; i < extent; i++) {
+            output_p[i] = op(input_p[i]);
         }
     }
 };

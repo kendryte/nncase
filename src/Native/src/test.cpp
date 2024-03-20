@@ -47,9 +47,9 @@ int main() {
     {
         ntt::tensor<float, ntt::fixed_shape<1, 16>> ta, tb, tc;
         std::fill(ta.buffer().begin(), ta.buffer().end(), 1.f);
-        ntt::unary<ntt::mathops::sin>(ta, tb.view());
+        ntt::unary<ntt::ops::sin>(ta, tb.view());
         assert(tb(0, 0) == sinf(1.f));
-        ntt::binary<ntt::mathops::mul>(ta, tb, tc);
+        ntt::binary<ntt::ops::mul>(ta, tb, tc);
         assert(tc(0, 0) == sinf(1.f));
     }
 
@@ -59,9 +59,9 @@ int main() {
         ntt::tensor<float, ntt::ranked_shape<2>> ta(shape), tb(shape),
             tc(shape);
         std::fill(ta.buffer().begin(), ta.buffer().end(), 1.f);
-        ntt::unary<ntt::mathops::sin>(ta, tb.view());
+        ntt::unary<ntt::ops::sin>(ta, tb.view());
         assert(tb(0, 0) == sinf(1.f));
-        ntt::binary<ntt::mathops::mul>(ta, tb, tc);
+        ntt::binary<ntt::ops::mul>(ta, tb, tc);
         assert(tc(0, 0) == sinf(1.f));
     }
 
@@ -71,9 +71,9 @@ int main() {
         ntt::tensor<float, ntt::ranked_shape<1>> ta(shape), tb(shape),
             tc(shape);
         std::fill(ta.buffer().begin(), ta.buffer().end(), 1.f);
-        ntt::unary<ntt::mathops::sin>(ta, tb.view());
+        ntt::unary<ntt::ops::sin>(ta, tb.view());
         assert(tb(0) == sinf(1.f));
-        ntt::binary<ntt::mathops::mul>(ta, tb, tc);
+        ntt::binary<ntt::ops::mul>(ta, tb, tc);
         assert(tc(0) == sinf(1.f));
     }
 
@@ -142,7 +142,7 @@ int main() {
         std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
         ntt::pack<1>(ta, tb.view());
         ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 1, 4>> tc;
-        ntt::unary<ntt::mathops::cos>(tb, tc);
+        ntt::unary<ntt::ops::cos>(tb, tc);
         assert(tc(0, 0, 0)(0) == std::cos(ta(0, 0, 0)));
         assert(tc(0, 0, 0)(1) == std::cos(ta(0, 1, 0)));
         assert(tc(0, 0, 0)(2) == std::cos(ta(0, 2, 0)));
@@ -363,7 +363,7 @@ int main() {
         pack<0>(buffer_4, buffer_5);
         pack<0>(buffer_7, buffer_8);
         packed_layer_norm<1>(buffer_2, buffer_5, buffer_8, buffer_9,
-                             ntt::vector<float, 8>{1E-06}, true,
+                             ntt::vector<float, 8>::from_scalar(1E-06), true,
                              ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
 
         ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> buffer_10;
@@ -804,12 +804,12 @@ int main() {
         ntt::tensor<float, ntt::fixed_shape<3, 24>> ta;
         ntt::tensor<float, ntt::fixed_shape<3, 24>> tb;
         std::iota(ta.buffer().begin(), ta.buffer().end(), 0.f);
-        ntt::unary<ntt::mathops::swish>(ta, tb);
+        ntt::unary<ntt::ops::swish>(ta, tb);
 
         ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pa;
         ntt::pack<1>(ta, pa);
         ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pb;
-        ntt::unary<ntt::mathops::swish>(pa, pb);
+        ntt::unary<ntt::ops::swish>(pa, pb);
     }
 
     // gather
