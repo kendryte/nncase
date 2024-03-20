@@ -122,6 +122,17 @@ int main() {
         assert(tb(0, 0, 0)(1) == ta(0, 1, 0));
         assert(tb(0, 0, 0)(2) == ta(0, 2, 0));
         assert(tb(0, 0, 0)(3) == 0.f);
+
+        ntt::tensor<float, ntt::fixed_shape<16>> tc;
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<4>> td;
+        std::iota(tc.buffer().begin(), tc.buffer().end(), 0.f);
+        ntt::pack<0>(tc, td);
+        for (size_t i = 0; i < 4; i++) {
+            assert(td(ntt::ranked_shape<1>{i})(0) == tc(i * 4 + 0));
+            assert(td(ntt::ranked_shape<1>{i})(1) == tc(i * 4 + 1));
+            assert(td(ntt::ranked_shape<1>{i})(2) == tc(i * 4 + 2));
+            assert(td(ntt::ranked_shape<1>{i})(3) == tc(i * 4 + 3));
+        }
     }
 
     // fixed pack with pad, and unary
@@ -365,6 +376,49 @@ int main() {
         assert(std::abs(buffer_10(0, 15, 1) - (83.04106739f)) < 1e-4f);
     }
 
+    // layer norm2 (packed axis == layer norm axis)
+    {
+        ntt::tensor<float, ntt::fixed_shape<1, 2, 16>> input;
+        ntt::tensor<float, ntt::fixed_shape<16>> scale;
+        ntt::tensor<float, ntt::fixed_shape<16>> bias;
+        std::iota(input.buffer().begin(), input.buffer().end(), 0.f);
+        std::iota(scale.buffer().begin(), scale.buffer().end(), 0.f);
+        std::iota(bias.buffer().rbegin(), bias.buffer().rend(), 0.f);
+
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 2, 4>>
+            input_packed;
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<4>> scale_packed;
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<4>> bias_packed;
+        ntt::pack<2>(input, input_packed);
+        ntt::pack<0>(scale, scale_packed);
+        ntt::pack<0>(bias, bias_packed);
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 2, 4>>
+            output_packed;
+        packed_layer_norm<2>(input_packed, scale_packed, bias_packed,
+                             output_packed, ntt::vector<float, 4>{1E-06}, true,
+                             ntt::fixed_shape<2>{}, ntt::fixed_shape<0>{});
+
+        ntt::tensor<float, ntt::fixed_shape<1, 2, 16>> output;
+        unpack<2>(output_packed, output);
+
+        assert(std::abs(output(0, 0, 0) - (15.f)) < 1e-6f);
+        assert(std::abs(output(0, 0, 1) - (12.58995206f)) < 1e-6f);
+        assert(std::abs(output(0, 0, 2) - (10.61376502f)) < 1e-6f);
+        assert(std::abs(output(0, 0, 3) - (9.07143889f)) < 1e-6f);
+        assert(std::abs(output(0, 0, 4) - (7.96297366f)) < 1e-6f);
+        assert(std::abs(output(0, 0, 5) - (7.28836934f)) < 1e-6f);
+        assert(std::abs(output(0, 0, 6) - (7.04762593f)) < 1e-6f);
+        assert(std::abs(output(0, 0, 7) - (7.24074342f)) < 1e-6f);
+        assert(std::abs(output(0, 0, 8) - (7.86772181f)) < 1e-6f);
+        assert(std::abs(output(0, 0, 9) - (8.92856111f)) < 1e-6f);
+        assert(std::abs(output(0, 0, 10) - (10.42326132f)) < 1e-6f);
+        assert(std::abs(output(0, 0, 11) - (12.35182243f)) < 1e-6f);
+        assert(std::abs(output(0, 0, 12) - (14.71424445f)) < 1e-4f);
+        assert(std::abs(output(0, 0, 13) - (17.51052737f)) < 1e-4f);
+        assert(std::abs(output(0, 0, 14) - (20.7406712f)) < 1e-4f);
+        assert(std::abs(output(0, 0, 15) - (24.40467593f)) < 1e-4f);
+    }
+
     // layer_norm2 (packed axis >= layer norm axis, with padding)
     {
         ntt::tensor<float, ntt::fixed_shape<1, 13, 2>> buffer_1;
@@ -433,7 +487,7 @@ int main() {
         // });
     }
 
-    // layer_norm2 (packed axis < layer norm axis)
+    // layer_norm3 (packed axis < layer norm axis)
     {
         ntt::tensor<float, ntt::fixed_shape<1, 16, 8>> input;
         ntt::tensor<float, ntt::fixed_shape<8>> scale;

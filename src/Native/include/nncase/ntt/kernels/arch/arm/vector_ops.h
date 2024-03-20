@@ -19,11 +19,7 @@ namespace nncase::ntt::vector_ops {
 template <> struct reduce_sum<ntt::vector<float, 4>> {
     float operator()(ntt::vector<float, 4> v) const noexcept {
         float32x2_t vec1 = vadd_f32(vget_low_f32(v), vget_high_f32(v));
-        float32x2_t vec2 = vadd_f32(vec1, vrev64_f32(vec1));
-        float32x2_t vec3 = vadd_f32(vec2, vrev64_f32(vec2));
-        float result =
-            vget_lane_f32(vec3, 0); // 提取结果的低32位作为最终的float结果
-        return result;
+        return vaddv_f32(vec1);
     }
 };
 

@@ -85,9 +85,9 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
     // finner_size = sub_op(finner_size, paded_inner_size);
 
     apply(domain, [&](auto index) {
-        auto input_p = input.buffer().data() + linear_offset(index, strides);
-        auto scale_p = scale.buffer().data();
-        auto bias_p = bias.buffer().data();
+        const auto input_p = input.buffer().data() + linear_offset(index, strides);
+        const auto scale_p = scale.buffer().data();
+        const auto bias_p = bias.buffer().data();
         auto output_p = output.buffer().data() + linear_offset(index, strides);
 
         // compute mean
