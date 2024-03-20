@@ -24,21 +24,25 @@
 namespace nncase::ntt {
 
 namespace softmax_detail {
-template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TOut, typename PackedAxes>
-void packed_on_axis_impl(const TIn &input, TOut &&output, [[maybe_unused]] PackedAxes packedAxes) {
+template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TOut,
+          typename PackedAxes>
+void packed_on_axis_impl(const TIn &input, TOut &&output,
+                         [[maybe_unused]] PackedAxes packedAxes) {
     using TElem = typename TIn::element_type;
     constexpr auto input_shape = typename TIn::shape_type{};
     constexpr auto output_shape = typename std::decay_t<TOut>::shape_type{};
     static_assert(is_same_seq(input_shape, output_shape),
                   "the input output shape not equal!");
 
-    constexpr auto div_op = mathops::div<TElem>();
-    constexpr auto exp_op = mathops::exp<TElem>();
-    constexpr auto add_op = mathops::add<TElem>();
-    constexpr auto sub_op = mathops::sub<TElem>();
-    constexpr auto max_op = mathops::max<TElem>();
+    constexpr auto div_op = ops::div<TElem>();
+    constexpr auto exp_op = ops::exp<TElem>();
+    constexpr auto add_op = ops::add<TElem>();
+    constexpr auto sub_op = ops::sub<TElem>();
+    constexpr auto max_op = ops::max<TElem>();
 
-    constexpr auto need_reduce = PackedAxes::rank() != 0 && Axis == PackedAxes::at(0) && is_vector_v<TElem>;
+    constexpr auto need_reduce = PackedAxes::rank() != 0 &&
+                                 Axis == PackedAxes::at(0) &&
+                                 is_vector_v<TElem>;
     constexpr auto domain =
         shape_infer::reduced_shape_by_axis<Axis>(input_shape);
     apply(domain, [&](auto index) {

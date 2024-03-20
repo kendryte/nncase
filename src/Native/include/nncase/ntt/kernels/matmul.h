@@ -25,13 +25,13 @@ namespace matmul_detail {
 
 template <typename TElemtOut, typename TElemt>
 constexpr inline TElemtOut dot(const TElemt &lp, const TElemt &rp) {
-    constexpr mathops::mul<TElemt> mul;
+    constexpr ops::mul<TElemt> mul;
     return mul(lp, rp);
 }
 
 template <typename TElemtOut, IsVector TElemt>
 constexpr inline TElemtOut dot(const TElemt &lp, const TElemt &rp) {
-    constexpr mathops::mul<TElemt> mul;
+    constexpr ops::mul<TElemt> mul;
     constexpr vector_ops::reduce_sum<TElemt> rvsum;
     return rvsum(mul(lp, rp));
 }

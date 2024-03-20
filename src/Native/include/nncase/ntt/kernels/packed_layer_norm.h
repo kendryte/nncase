@@ -69,11 +69,11 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
     //   : PadedNums::at(0) * slice_fixed_dims<no_paded_rank,
     //   paded_axis>(input_shape).length();
     // // clang-format on
-    constexpr auto sqrt_op = mathops::sqrt<TElem>();
-    constexpr auto div_op = mathops::div<TElem>();
-    constexpr auto sub_op = mathops::sub<TElem>();
-    constexpr auto add_op = mathops::add<TElem>();
-    constexpr auto mul_op = mathops::mul<TElem>();
+    constexpr auto sqrt_op = ops::sqrt<TElem>();
+    constexpr auto div_op = ops::div<TElem>();
+    constexpr auto sub_op = ops::sub<TElem>();
+    constexpr auto add_op = ops::add<TElem>();
+    constexpr auto mul_op = ops::mul<TElem>();
     constexpr bool UseVectorReduce =
         PackedAxes::rank() == 1 && PackedAxes::at(0) >= Axis;
 
@@ -85,7 +85,8 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
     // finner_size = sub_op(finner_size, paded_inner_size);
 
     apply(domain, [&](auto index) {
-        const auto input_p = input.buffer().data() + linear_offset(index, strides);
+        const auto input_p =
+            input.buffer().data() + linear_offset(index, strides);
         const auto scale_p = scale.buffer().data();
         const auto bias_p = bias.buffer().data();
         auto output_p = output.buffer().data() + linear_offset(index, strides);
