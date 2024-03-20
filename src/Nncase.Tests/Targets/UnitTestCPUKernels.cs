@@ -80,14 +80,15 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new[] { 1, 384, 8192 }, 2, 1e-5, true, 0 })]
+    [InlineData(new object[] { new[] { 1, 2, 16 }, 2, 1e-6, true, 0 })]
+    [InlineData(new object[] { new[] { 1, 2, 16 }, 2, 1e-6, false, 1 })]
     public async Task TestLayerNorm(int[] shape, int axis, float epsion, bool useMean, int count)
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pshape = shape.Skip(axis).ToArray();
         var scale = new Var(new TensorType(DataTypes.Float32, pshape));
         var bias = new Var(new TensorType(DataTypes.Float32, pshape));
-        var pre = IR.F.NN.LayerNorm(axis, 1e-6f, input, scale, bias, false);
+        var pre = IR.F.NN.LayerNorm(axis, epsion, input, scale, bias, useMean);
 
         var feedDict = new Dictionary<Var, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
@@ -95,10 +96,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { bias, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, pshape).Evaluate() },
         };
 
-        // var rule = new Passes.Rules.CPU.PackLayerNorm() { Lane = Lane, Rank = Rank };
-        // CompilerServices.TryMatch(pre, rule.Pattern, out var result);
-        // var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
-        var posts = new[] { pre };
+        var rule = new Passes.Rules.CPU.PackLayerNorm() { Lane = Lane, Rank = Rank };
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext())).Where(e => e is not Call { Target: Slice });
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
     }
 
