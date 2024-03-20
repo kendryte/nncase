@@ -19,8 +19,9 @@
 namespace nncase::ntt::mathops {
 
 template <> struct add<ntt::vector<float, 8>> {
-    ntt::vector<float, 8> operator()(ntt::vector<float, 8> v1,
-                                     ntt::vector<float, 8> v2) const noexcept {
+    inline ntt::vector<float, 8>
+    operator()(ntt::vector<float, 8> v1,
+               ntt::vector<float, 8> v2) const noexcept {
         float32x4x2_t r;
         r.val[0] = ((float32x4x2_t)v1).val[0] + ((float32x4x2_t)v2).val[0];
         r.val[1] = ((float32x4x2_t)v1).val[1] + ((float32x4x2_t)v2).val[1];
@@ -29,8 +30,9 @@ template <> struct add<ntt::vector<float, 8>> {
 };
 
 template <> struct sub<ntt::vector<float, 8>> {
-    ntt::vector<float, 8> operator()(ntt::vector<float, 8> v1,
-                                     ntt::vector<float, 8> v2) const noexcept {
+    inline ntt::vector<float, 8>
+    operator()(ntt::vector<float, 8> v1,
+               ntt::vector<float, 8> v2) const noexcept {
         float32x4x2_t r;
         r.val[0] = ((float32x4x2_t)v1).val[0] - ((float32x4x2_t)v2).val[0];
         r.val[1] = ((float32x4x2_t)v1).val[1] - ((float32x4x2_t)v2).val[1];
@@ -39,8 +41,9 @@ template <> struct sub<ntt::vector<float, 8>> {
 };
 
 template <> struct mul<ntt::vector<float, 8>> {
-    ntt::vector<float, 8> operator()(ntt::vector<float, 8> v1,
-                                     ntt::vector<float, 8> v2) const noexcept {
+    inline ntt::vector<float, 8>
+    operator()(ntt::vector<float, 8> v1,
+               ntt::vector<float, 8> v2) const noexcept {
         float32x4x2_t r;
         r.val[0] = ((float32x4x2_t)v1).val[0] * ((float32x4x2_t)v2).val[0];
         r.val[1] = ((float32x4x2_t)v1).val[1] * ((float32x4x2_t)v2).val[1];
@@ -49,8 +52,9 @@ template <> struct mul<ntt::vector<float, 8>> {
 };
 
 template <> struct div<ntt::vector<float, 8>> {
-    ntt::vector<float, 8> operator()(ntt::vector<float, 8> v1,
-                                     ntt::vector<float, 8> v2) const noexcept {
+    inline ntt::vector<float, 8>
+    operator()(ntt::vector<float, 8> v1,
+               ntt::vector<float, 8> v2) const noexcept {
         float32x4x2_t r;
         r.val[0] = ((float32x4x2_t)v1).val[0] / ((float32x4x2_t)v2).val[0];
         r.val[1] = ((float32x4x2_t)v1).val[1] / ((float32x4x2_t)v2).val[1];
@@ -58,8 +62,9 @@ template <> struct div<ntt::vector<float, 8>> {
     }
 };
 template <> struct max<ntt::vector<float, 8>> {
-    ntt::vector<float, 8> operator()(ntt::vector<float, 8> v1,
-                                     ntt::vector<float, 8> v2) const noexcept {
+    inline ntt::vector<float, 8>
+    operator()(ntt::vector<float, 8> v1,
+               ntt::vector<float, 8> v2) const noexcept {
         float32x4x2_t r;
         r.val[0] =
             vmaxq_f32(((float32x4x2_t)v1).val[0], ((float32x4x2_t)v2).val[0]);
@@ -68,4 +73,64 @@ template <> struct max<ntt::vector<float, 8>> {
         return r;
     }
 };
+
+template <> struct add<ntt::vector<float, 4>> {
+    inline ntt::vector<float, 4>
+    operator()(ntt::vector<float, 4> v1,
+               ntt::vector<float, 4> v2) const noexcept {
+        return impl(v1, v2);
+    }
+
+    inline float32x4_t impl(float32x4_t v1, float32x4_t v2) const noexcept {
+        return v1 + v2;
+    }
+};
+
+template <> struct sub<ntt::vector<float, 4>> {
+    inline ntt::vector<float, 4>
+    operator()(ntt::vector<float, 4> v1,
+               ntt::vector<float, 4> v2) const noexcept {
+        return impl(v1, v2);
+    }
+
+    inline float32x4_t impl(float32x4_t v1, float32x4_t v2) const noexcept {
+        return v1 - v2;
+    }
+};
+
+template <> struct mul<ntt::vector<float, 4>> {
+    inline ntt::vector<float, 4>
+    operator()(ntt::vector<float, 4> v1,
+               ntt::vector<float, 4> v2) const noexcept {
+        return impl(v1, v2);
+    }
+
+    inline float32x4_t impl(float32x4_t v1, float32x4_t v2) const noexcept {
+        return v1 * v2;
+    }
+};
+
+template <> struct div<ntt::vector<float, 4>> {
+    inline ntt::vector<float, 4>
+    operator()(ntt::vector<float, 4> v1,
+               ntt::vector<float, 4> v2) const noexcept {
+        return impl(v1, v2);
+    }
+
+    inline float32x4_t impl(float32x4_t v1, float32x4_t v2) const noexcept {
+        return v1 / v2;
+    }
+};
+template <> struct max<ntt::vector<float, 4>> {
+    inline ntt::vector<float, 4>
+    operator()(ntt::vector<float, 4> v1,
+               ntt::vector<float, 4> v2) const noexcept {
+        return impl(v1, v2);
+    }
+
+    inline float32x4_t impl(float32x4_t v1, float32x4_t v2) const noexcept {
+        return vmaxq_f32(v1, v2);
+    }
+};
+
 } // namespace nncase::ntt::mathops

@@ -17,10 +17,11 @@
 #include <nncase/ntt/vector_type.h>
 
 namespace std {
-inline nncase::ntt::vector<float32_t, 4>
-cos(nncase::ntt::vector<float32_t, 4> v) {
-    return cos_ps(v);
-}
+inline float32x4_t cos(float32x4_t v) { return cos_ps(v); }
+
+inline float32x4_t exp(float32x4_t v) { return exp_ps(v); }
+
+inline float32x4_t sqrt(float32x4_t v) { return vsqrtq_f32(v); }
 
 inline float32x4x2_t exp(float32x4x2_t v) {
     return float32x4x2_t{exp_ps(v.val[0]), exp_ps(v.val[1])};
