@@ -123,7 +123,7 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                         0 => new string[] { ExprMemo[expr.Arguments[0]], ExprMemo[expr.Arguments[1]] },
                         1 => new string[] { string.Empty, ExprMemo[expr.Arguments[0]] },
                         2 => new string[] { ExprMemo[expr.Arguments[0]], string.Empty },
-                        _ => throw new NotImplementedException("Not found binary emmiter."),
+                        _ => throw new NotImplementedException("Never reach here."),
                     };
                     _emitter.Binary(names[0], inString[0], inString[1], op.OpType, op.LorR, op.ConstInput, op.ConstShape);
                     break;
@@ -144,7 +144,7 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                     _emitter.Concat(names[0], in_.ToArray(), op.Axis);
                     break;
                 case NcnnConv op:
-                    _emitter.Conv(names[0], ExprMemo[expr.Arguments[0]], op.WeightData, op.BiasData, op.NumOutput, op.KernelW, op.KernelH, op.DilationW, op.DilationH, op.StrideW, op.StrideH, op.PadLeft, op.PadTop, op.PadRight, op.PadBottom, op.BiasTerm, op.WeightDataSize, op.Int8ScaleTerm, op.ActivationType, op.ActivationParams, op.PadValue, op.DynamicWeight);
+                    _emitter.Conv(names[0], ExprMemo[expr.Arguments[0]], op.Args);
                     break;
                 case NcnnCumsum op:
                     _emitter.Cumsum(names[0], ExprMemo[expr.Arguments[0]], op.Axis);
@@ -219,7 +219,7 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                         0 => new string[] { ExprMemo[expr.Arguments[0]], ExprMemo[expr.Arguments[1]] },
                         1 => new string[] { string.Empty, ExprMemo[expr.Arguments[0]] },
                         2 => new string[] { ExprMemo[expr.Arguments[0]], string.Empty },
-                        _ => throw new NotImplementedException("Not found MatMul emmiter."),
+                        _ => throw new NotImplementedException("Never reach here."),
                     };
                     _emitter.Matmul(names.ToArray(), inString[0], inString[1], op.LorR, op.ConstInput, op.ConstShape);
                     break;
@@ -245,7 +245,7 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                     _emitter.Unsqueeze(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Dims);
                     break;
                 default:
-                    throw new NotSupportedException("Not support in Ncnn ops emitter");
+                    throw new NotSupportedException($"Not support {nameof(expr.Target)} in Ncnn ops emitter");
             }
 
             // serialize outputs to string.

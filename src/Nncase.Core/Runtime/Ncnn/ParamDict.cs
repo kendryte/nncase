@@ -136,7 +136,8 @@ public class ParamDict
 
             var paramValue = field.Value;
             var isArray = paramValue.Kind is ParamKind.ArrayOfFloat or ParamKind.ArrayOfIntOrFloat or ParamKind.ArrayOfInt;
-            var isFloat = paramValue.Kind is ParamKind.ArrayOfFloat or ParamKind.Float;
+            var isFloat = paramValue.Kind is ParamKind.ArrayOfFloat or ParamKind.ArrayOfIntOrFloat or ParamKind.Float;
+            var mixIntAndFloat = paramValue.Kind is ParamKind.ArrayOfIntOrFloat;
 
             if (isArray)
             {
@@ -149,7 +150,24 @@ public class ParamDict
             {
                 if (isFloat)
                 {
-                    writer.Write(string.Join(',', paramValue.TensorValue!.Cast<float>().Select(x => x.ToString("e"))));
+                    var sourceData = paramValue.TensorValue!.ToArray<float>();
+
+                    if (mixIntAndFloat)
+                    {
+                        int size = (int)sourceData[0];
+                        writer.Write($"{size},");
+                    }
+
+                    // Console.WriteLine($"{String.Join(",", sourceData[1..])}");
+                    writer.Write(string.Join(',', sourceData[1..].Select(x =>
+                    {
+                        return x switch
+                        {
+                            _ when float.IsPositiveInfinity(x) => "3.402823e+38",
+                            _ when float.IsNegativeInfinity(x) => "-3.402823e+38",
+                            _ => x.ToString("e"),
+                        };
+                    })));
                 }
                 else
                 {
