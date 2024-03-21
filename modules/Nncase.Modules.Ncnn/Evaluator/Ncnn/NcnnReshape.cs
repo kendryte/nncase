@@ -68,6 +68,7 @@ public class NcnnReshapeEvaluator : IEvaluator<NcnnReshape>, ITypeInferencer<Ncn
             if (newShape[i] == -1)
             {
                 negAxis = i;
+                break;
             }
         }
 
