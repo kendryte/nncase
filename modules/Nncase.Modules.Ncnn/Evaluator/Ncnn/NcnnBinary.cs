@@ -59,8 +59,13 @@ public class NcnnBinaryEvaluator : IEvaluator<NcnnBinary>, ITypeInferencer<NcnnB
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, NcnnBinary target)
     {
-        var inputA = context.CheckArgumentType<TensorType>(target, NcnnBinary.InputA);
-        return Visit(inputA);
+        return target.LorR switch
+        {
+            1 => Visit(context.CheckArgumentType<TensorType>(target, NcnnBinary.InputA), new TensorType(context.CheckArgumentType<TensorType>(target, NcnnBinary.InputA).DType, target.ConstShape)),
+            2 => Visit(new TensorType(context.CheckArgumentType<TensorType>(target, NcnnBinary.InputA).DType, target.ConstShape), context.CheckArgumentType<TensorType>(target, NcnnBinary.InputA)),
+            0 => Visit(context.CheckArgumentType<TensorType>(target, NcnnBinary.InputA), context.CheckArgumentType<TensorType>(target, NcnnBinary.InputB)),
+            _ => throw new NotSupportedException("Never reach here, LorR without fourth situation."),
+        };
     }
 
     /// <inheritdoc/>
@@ -125,8 +130,8 @@ public class NcnnBinaryEvaluator : IEvaluator<NcnnBinary>, ITypeInferencer<NcnnB
             // => BinaryOperationType.RATAN2,
         };
 
-    private IRType Visit(TensorType input)
+    private IRType Visit(TensorType inputA, TensorType inputB)
     {
-        return input;
+        return TypeInference.BroadcastType(inputA, inputB);
     }
 }

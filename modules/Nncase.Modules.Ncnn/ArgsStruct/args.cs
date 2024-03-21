@@ -227,3 +227,136 @@ public record ConvTransposeArgs
 
     public override string ToString() => $"{nameof(WeightData)}: {string.Join("_", WeightData.Shape.ToValueArray())}, {nameof(NumOutput)}: {NumOutput}, {nameof(KernelW)}: {KernelW}, {nameof(KernelH)}: {KernelH}, {nameof(DilationW)}: {DilationW}, {nameof(DilationH)}: {DilationH}, {nameof(StrideW)}: {StrideW}, {nameof(StrideH)}: {StrideH}, {nameof(PadLeft)}: {PadLeft}, {nameof(PadRight)}: {PadRight}, {nameof(PadTop)}: {PadTop}, {nameof(PadBottom)}: {PadBottom}, {nameof(BiasTerm)}: {BiasTerm}, {nameof(WeightDataSize)}: {WeightDataSize}, {nameof(OutputPadRight)}: {OutputPadRight}, {nameof(OutputPadBottom)}: {OutputPadBottom}, {nameof(OutputW)}: {OutputW}, {nameof(OutputH)}: {OutputH}";
 }
+
+public record ConvArgs
+{
+    public ConvArgs(float[] weightData, float[] biasData, int numOutput, int kernelW, int kernelH, int dilationW, int dilationH, int strideW, int strideH, int padLeft, int padRight, int padTop, int padBottom, float padValue, int biasTerm, int weightDataSize, int int8ScaleTerm, int activationType, float[] activationParams, int dynamicWeight, int groups)
+    {
+        WeightData = weightData;
+        BiasData = biasData;
+        NumOutput = numOutput;
+        KernelW = kernelW;
+        KernelH = kernelH;
+        DilationW = dilationW;
+        DilationH = dilationH;
+        StrideW = strideW;
+        StrideH = strideH;
+        PadLeft = padLeft;
+        PadRight = padRight;
+        PadTop = padTop;
+        PadBottom = padBottom;
+        PadValue = padValue;
+        BiasTerm = biasTerm;
+        WeightDataSize = weightDataSize;
+        Int8ScaleTerm = int8ScaleTerm;
+        ActivationType = activationType;
+        ActivationParams = activationParams;
+        DynamicWeight = dynamicWeight;
+        Groups = groups;
+    }
+
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public float[] WeightData { get; }
+
+    /// <summary>
+    /// Gets BiasData.
+    /// </summary>
+    public float[] BiasData { get; }
+
+    /// <summary>
+    /// Gets NumOutput.
+    /// </summary>
+    public int NumOutput { get; }
+
+    /// <summary>
+    /// Gets KernelW.
+    /// </summary>
+    public int KernelW { get; }
+
+    /// <summary>
+    /// Gets KernelH.
+    /// </summary>
+    public int KernelH { get; }
+
+    /// <summary>
+    /// Gets DilationW.
+    /// </summary>
+    public int DilationW { get; }
+
+    /// <summary>
+    /// Gets DilationH.
+    /// </summary>
+    public int DilationH { get; }
+
+    /// <summary>
+    /// Gets StrideW.
+    /// </summary>
+    public int StrideW { get; }
+
+    /// <summary>
+    /// Gets StrideH.
+    /// </summary>
+    public int StrideH { get; }
+
+    /// <summary>
+    /// Gets PadLeft.
+    /// </summary>
+    public int PadLeft { get; }
+
+    /// <summary>
+    /// Gets PadRight.
+    /// </summary>
+    public int PadRight { get; }
+
+    /// <summary>
+    /// Gets PadTop.
+    /// </summary>
+    public int PadTop { get; }
+
+    /// <summary>
+    /// Gets PadBottom.
+    /// </summary>
+    public int PadBottom { get; }
+
+    /// <summary>
+    /// Gets PadValue.
+    /// </summary>
+    public float PadValue { get; }
+
+    /// <summary>
+    /// Gets BiasTerm.
+    /// </summary>
+    public int BiasTerm { get; }
+
+    /// <summary>
+    /// Gets WeightDataSize.
+    /// </summary>
+    public int WeightDataSize { get; }
+
+    /// <summary>
+    /// Gets Int8ScaleTerm.
+    /// </summary>
+    public int Int8ScaleTerm { get; }
+
+    /// <summary>
+    /// Gets ActivationType.
+    /// </summary>
+    public int ActivationType { get; }
+
+    /// <summary>
+    /// Gets ActivationParams.
+    /// </summary>
+    public float[] ActivationParams { get; }
+
+    /// <summary>
+    /// Gets DynamicWeight.
+    /// </summary>
+    public int DynamicWeight { get; }
+
+    /// <summary>
+    /// Gets Groups.
+    /// </summary>
+    public int Groups { get; }
+}

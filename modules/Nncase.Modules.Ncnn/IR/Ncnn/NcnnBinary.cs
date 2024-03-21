@@ -70,6 +70,10 @@ public sealed partial class NcnnBinary : Op
     /// <inheritdoc/>
     public override string DisplayProperty()
     {
+        if (ConstShape != null)
+        {
+            return $"BinaryOp.{OpType}, Const Shape: {String.Join(",", ConstShape)}";
+        }
         return $"BinaryOp.{OpType}";
     }
 }

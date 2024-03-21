@@ -28,8 +28,8 @@ public partial class LowerBinary : RewriteRule<Pattern>
     public override Pattern Pattern { get; } = IsBinary(
       target_name: "binary",
       _ => true,
-      IsWildcard("inputA") with { TypePattern = IsFloat() & HasRank(x => x <= 3) },
-      IsWildcard("inputB") with { TypePattern = IsFloat() & HasRank(x => x <= 3) });
+      IsWildcard("inputA") with { TypePattern = IsFloat() },
+      IsWildcard("inputB") with { TypePattern = IsFloat() });
 
     private static BinaryOperationType? MapBinaryOp(BinaryOp binaryOp) =>
         binaryOp switch
@@ -62,11 +62,6 @@ public partial class LowerBinary : RewriteRule<Pattern>
 
     private int[] FixShape(int[] shape, int r)
     {
-        if (shape.Length == 1)
-        {
-            return shape;
-        }
-
         var newShape = shape.ToList();
         for (int i = r - shape.Length; i > 0; i--)
         {
@@ -80,28 +75,117 @@ public partial class LowerBinary : RewriteRule<Pattern>
     {
         if (MapBinaryOp(binary.BinaryOp) is BinaryOperationType op)
         {
-            var r = Math.Max(inputA.CheckedShape.Rank, inputB.CheckedShape.Rank);
+            int r = Math.Max(inputA.CheckedShape.Rank, inputB.CheckedShape.Rank);
+            if (r > 4)
+            {
+                return null;
+            }
+
+            Call b;
+
             if (inputA is Const)
             {
+                // A
                 var constA = ((TensorConst)inputA).Value;
-                var constShape = FixShape(inputA.CheckedShape.ToValueArray(), r);
+                var aShape = FixShape(inputA.CheckedShape.ToValueArray(), r).ToList();
+
+                // B
                 var newB = Reshape(inputB, FixShape(inputB.CheckedShape.ToValueArray(), r));
                 var newInputB = new Var(newB.CheckedType);
-                return new Call(new Fusion("ncnn", NcnnBinary(new Expr[] { newInputB }, op, 1, constA.ToArray<float>(), constShape), new[] { newInputB }), newB);
+
+                // Constant can not support 4D unless 0-D is 1.
+                if (r == 4)
+                {
+                    if (newB.CheckedShape[0].FixedValue != 1 || aShape[0] != 1)
+                    {
+                        return null;
+                    }
+
+                    newB = Squeeze(newB, new[] { 0 });
+                    newInputB = new Var(newB.CheckedType);
+                }
+
+                while (aShape[0] == 1 && aShape.Count > 3 && aShape.Count > newB.CheckedShape.Count)
+                {
+                    aShape.RemoveAt(0);
+                }
+
+                b = new Call(new Fusion("ncnn", NcnnBinary(new Expr[] { newInputB }, op, 1, constA.ToArray<float>(), aShape.ToArray()), new[] { newInputB }), newB);
             }
             else if (inputB is Const)
             {
+                // A
                 var newA = Reshape(inputA, FixShape(inputA.CheckedShape.ToValueArray(), r));
                 var newInputA = new Var(newA.CheckedType);
+
+                // B
                 var constB = ((TensorConst)inputB).Value;
-                var constShape = FixShape(inputB.CheckedShape.ToValueArray(), r);
-                return new Call(new Fusion("ncnn", NcnnBinary(new Expr[] { newInputA }, op, 2, constB.ToArray<float>(), constShape), newInputA), newA);
+                var bShape = FixShape(inputB.CheckedShape.ToValueArray(), r).ToList();
+
+                if (r == 4)
+                {
+                    if (newA.CheckedShape[0].FixedValue != 1 || bShape[0] != 1)
+                    {
+                        return null;
+                    }
+
+                    newA = Squeeze(newA, new[] { 0 });
+                    newInputA = new Var(newA.CheckedType);
+                }
+
+                while (bShape[0] == 1 && bShape.Count > 3 && bShape.Count > newA.CheckedShape.Count)
+                {
+                    bShape.RemoveAt(0);
+                }
+
+                b = new Call(new Fusion("ncnn", NcnnBinary(new Expr[] { newInputA }, op, 2, constB.ToArray<float>(), bShape.ToArray()), newInputA), newA);
             }
             else
             {
-                var newInputA = new Var(inputA.CheckedType);
-                var newInputB = new Var(inputB.CheckedType);
-                return new Call(new Fusion("ncnn", NcnnBinary(new Expr[] { newInputA, newInputB }, op, 0, null, null), new[] { newInputA, newInputB }), inputA, inputB);
+                if (r < 4)
+                {
+                    var newInputA = new Var(inputA.CheckedType);
+                    var newInputB = new Var(inputB.CheckedType);
+                    b = new Call(new Fusion("ncnn", NcnnBinary(new Expr[] { newInputA, newInputB }, op, 0, null, null), new[] { newInputA, newInputB }), inputA, inputB);
+                }
+                else
+                {
+                    var newA = inputA;
+                    var newB = inputB;
+                    var newInputA = new Var(newA.CheckedType);
+                    var newInputB = new Var(newB.CheckedType);
+                    if (inputA.CheckedShape[0].FixedValue != 1 && inputA.CheckedShape.Rank == r)
+                    {
+                        return null;
+                    }
+                    else
+                    {
+                        newA = Squeeze(inputA, new[] { 0 });
+                        newInputA = new Var(newA.CheckedType);
+                    }
+
+                    if (inputB.CheckedShape[0].FixedValue != 1 && inputB.CheckedShape.Rank == r)
+                    {
+                        var aa = inputB.CheckedShape.AsEnumerable().Select(x => x.FixedValue).ToArray();
+                        return null;
+                    }
+                    else
+                    {
+                        newB = Squeeze(inputB, new[] { 0 });
+                        newInputB = new Var(newB.CheckedType);
+                    }
+
+                    b = new Call(new Fusion("ncnn", NcnnBinary(new Expr[] { newInputA, newInputB }, op, 0, null, null), new[] { newInputA, newInputB }), newA, newB);
+                }
+            }
+
+            if (r == 4)
+            {
+                return Unsqueeze(b, new[] { 0 });
+            }
+            else
+            {
+                return b;
             }
         }
 
