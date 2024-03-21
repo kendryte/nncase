@@ -23,10 +23,10 @@ public class NcnnConvEvaluator : IEvaluator<NcnnConv>, ITypeInferencer<NcnnConv>
     public IValue Visit(IEvaluateContext context, NcnnConv conv)
     {
         var inputs = context.GetOrtArgumentValue(conv, NcnnConv.Input);
-        var weights = new Tensor<float>(conv.WeightData, new[] { conv.NumOutput, conv.WeightDataSize / (conv.KernelH * conv.KernelW), conv.KernelH, conv.KernelW }).ToOrtTensor();
-        var bias = new Tensor<float>(conv.BiasData, new[] { conv.NumOutput }).ToOrtTensor();
-        var result = OrtKI.Conv(inputs, weights, bias, "NOTSET", new long[] { conv.DilationH, conv.DilationW }, 1, new long[] { conv.KernelH, conv.KernelW }, new long[] { conv.PadLeft, conv.PadTop, conv.PadRight, conv.PadBottom }, new long[] { conv.StrideH, conv.StrideW });
-        return OrtKI.Clip(result, conv.ActivationParams[0], conv.ActivationParams[1]).ToValue();
+        var weights = new Tensor<float>(conv.Args.WeightData, new[] { conv.Args.NumOutput, conv.Args.WeightDataSize / (conv.Args.KernelH * conv.Args.KernelW), conv.Args.KernelH, conv.Args.KernelW }).ToOrtTensor();
+        var bias = new Tensor<float>(conv.Args.BiasData, new[] { conv.Args.NumOutput }).ToOrtTensor();
+        var result = OrtKI.Conv(inputs, weights, bias, "NOTSET", new long[] { conv.Args.DilationH, conv.Args.DilationW }, 1, new long[] { conv.Args.KernelH, conv.Args.KernelW }, new long[] { conv.Args.PadLeft, conv.Args.PadTop, conv.Args.PadRight, conv.Args.PadBottom }, new long[] { conv.Args.StrideH, conv.Args.StrideW });
+        return OrtKI.Clip(result, conv.Args.ActivationParams[0], conv.Args.ActivationParams[1]).ToValue();
     }
 
     /// <inheritdoc/>
@@ -40,9 +40,9 @@ public class NcnnConvEvaluator : IEvaluator<NcnnConv>, ITypeInferencer<NcnnConv>
     public Cost Visit(ICostEvaluateContext context, NcnnConv target)
     {
         var inputType = context.GetArgumentType<IRType>(target, NcnnConv.Input);
-        var weightsType = new TensorType(DataTypes.Float32, new[] { target.WeightDataSize });
-        var biasType = new TensorType(DataTypes.Float32, new[] { target.NumOutput });
-        var macPerElement = (2 * target.WeightDataSize / target.NumOutput) - 1;
+        var weightsType = new TensorType(DataTypes.Float32, new[] { target.Args.WeightDataSize });
+        var biasType = new TensorType(DataTypes.Float32, new[] { target.Args.NumOutput });
+        var macPerElement = (2 * target.Args.WeightDataSize / target.Args.NumOutput) - 1;
 
         var outputType = context.GetReturnType<IRType>();
 
@@ -68,20 +68,20 @@ public class NcnnConvEvaluator : IEvaluator<NcnnConv>, ITypeInferencer<NcnnConv>
     private IRType Visit(TensorType input, NcnnConv conv)
     {
         var outputShape = input.Shape.ToList();
-        var kernelShape = new[] { conv.NumOutput, conv.WeightDataSize / (conv.NumOutput * conv.KernelH * conv.KernelW), conv.KernelH, conv.KernelW };
-        outputShape[0] = conv.NumOutput;
+        var kernelShape = new[] { conv.Args.NumOutput, conv.Args.WeightDataSize / (conv.Args.NumOutput * conv.Args.KernelH * conv.Args.KernelW), conv.Args.KernelH, conv.Args.KernelW };
+        outputShape[0] = conv.Args.NumOutput;
 
         outputShape[1] = IR.TypePatternUtility.GetWindowedOutputSize(
-                input.Shape[1].FixedValue + conv.PadLeft + conv.PadRight,
+                input.Shape[1].FixedValue + conv.Args.PadLeft + conv.Args.PadRight,
                 kernelShape[2],
-                conv.StrideH,
-                conv.DilationH,
+                conv.Args.StrideH,
+                conv.Args.DilationH,
                 false);
         outputShape[2] = IR.TypePatternUtility.GetWindowedOutputSize(
-                input.Shape[2].FixedValue + conv.PadTop + conv.PadBottom,
+                input.Shape[2].FixedValue + conv.Args.PadTop + conv.Args.PadBottom,
                 kernelShape[3],
-                conv.StrideW,
-                conv.DilationW,
+                conv.Args.StrideW,
+                conv.Args.DilationW,
                 false);
         return new TensorType(GetTensorType(input).DType, outputShape.ToArray());
     }

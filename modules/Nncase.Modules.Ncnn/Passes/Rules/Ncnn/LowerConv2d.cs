@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
+using Nncase.ArgsStruct;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Ncnn;
@@ -53,9 +54,20 @@ public partial class LowerConv : RewriteRule<Pattern>
         int activationType = 3;
         int dynamicWeight = 0;
 
+        var args = new ConvArgs(weights.ToArray(), bias.ToArray(), numOutput.FixedValue,
+            kernelW.FixedValue, kernelH.FixedValue,
+            dilationW, dilationH,
+            strideW, strideH,
+            padLeft, padRight, padTop, padBottom, padValue,
+            biasTerm,
+            weightsDataSize.FixedValue,
+            int8ScaleTerm,
+            activationType, fusedClamp, dynamicWeight,
+            groups);
+
         var inRes = Squeeze(input, new[] { 0 });
         var inResO = new Var(inRes.CheckedType);
-        var conv = new Call(new Fusion("ncnn", NcnnConv(inResO, weights.ToArray(), bias.ToArray(), numOutput.FixedValue, new[] { kernelH.FixedValue, kernelW.FixedValue }, new[] { dilationH, dilationW }, new[] { strideH, strideW }, new[] { padLeft, padRight, padBottom, padTop }, biasTerm, weightsDataSize.FixedValue, int8ScaleTerm, activationType, fusedClamp, padValue, dynamicWeight), new[] { inResO }), inRes);
+        var conv = new Call(new Fusion("ncnn", NcnnConv(inResO, args), new[] { inResO }), inRes);
 
         var outRes = Unsqueeze(conv, new[] { 0 });
 

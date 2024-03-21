@@ -18,7 +18,6 @@ namespace Nncase.CodeGen.Ncnn;
 internal class NcnnEmitter
 {
     public List<float>? RData;
-
     private readonly NcnnModel _model;
     private readonly BinaryWriter _binWriter;
 
@@ -129,34 +128,44 @@ internal class NcnnEmitter
         });
     }
 
-    public void Conv(string name, string input, float[] weightsData, float[] biasData, int numOutput, int kernelW, int kernelH, int dilationW, int dilationH, int strideW, int strideH, int padLeft, int padRight, int padBottom, int padTop, int biasTerm, int weightsDataSize, int int8Flag, int actType, float[] actParams, float padValue, int dynamicFlag)
+    public void Conv(string name, string input, ConvArgs args)
     {
-        AddLayer("Convolution", name, new[] { input }, new[] { name }, new ParamDict
-        {
-            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = numOutput },
-            [1] = new ParamValue { Kind = ParamKind.Int, IntValue = kernelW },
-            [11] = new ParamValue { Kind = ParamKind.Int, IntValue = kernelH },
-            [2] = new ParamValue { Kind = ParamKind.Int, IntValue = dilationW },
-            [12] = new ParamValue { Kind = ParamKind.Int, IntValue = dilationH },
-            [3] = new ParamValue { Kind = ParamKind.Int, IntValue = strideW },
-            [13] = new ParamValue { Kind = ParamKind.Int, IntValue = strideH },
-            [4] = new ParamValue { Kind = ParamKind.Int, IntValue = padLeft },
-            [14] = new ParamValue { Kind = ParamKind.Int, IntValue = padTop },
-            [16] = new ParamValue { Kind = ParamKind.Int, IntValue = padRight },
-            [15] = new ParamValue { Kind = ParamKind.Int, IntValue = padBottom },
-            [5] = new ParamValue { Kind = ParamKind.Int, IntValue = biasTerm },
-            [6] = new ParamValue { Kind = ParamKind.Int, IntValue = weightsDataSize },
-            [7] = new ParamValue { Kind = ParamKind.Int, IntValue = 0 }, // Group
-            [8] = new ParamValue { Kind = ParamKind.Int, IntValue = int8Flag },
+        var actData = new List<float> { args.ActivationParams.Length };
+        actData.AddRange(args.ActivationParams);
 
-            // [9] = new ParamValue { Kind = ParamKind.Int, IntValue = actType },
-            // [10] = new ParamValue { Kind = ParamKind.ArrayOfFloat, TensorValue = actParams },
-            [18] = new ParamValue { Kind = ParamKind.Float, FloatValue = padValue },
-            [19] = new ParamValue { Kind = ParamKind.Int, IntValue = dynamicFlag },
-        });
+        var param = new ParamDict();
+        param.Add(0, new ParamValue { Kind = ParamKind.Int, IntValue = args.NumOutput });
+        param.Add(1, new ParamValue { Kind = ParamKind.Int, IntValue = args.KernelW });
+        param.Add(11, new ParamValue { Kind = ParamKind.Int, IntValue = args.KernelH });
+        param.Add(2, new ParamValue { Kind = ParamKind.Int, IntValue = args.DilationW });
+        param.Add(12, new ParamValue { Kind = ParamKind.Int, IntValue = args.DilationH });
+        param.Add(3, new ParamValue { Kind = ParamKind.Int, IntValue = args.StrideW });
+        param.Add(13, new ParamValue { Kind = ParamKind.Int, IntValue = args.StrideH });
+        param.Add(4, new ParamValue { Kind = ParamKind.Int, IntValue = args.PadLeft });
+        param.Add(15, new ParamValue { Kind = ParamKind.Int, IntValue = args.PadRight });
+        param.Add(14, new ParamValue { Kind = ParamKind.Int, IntValue = args.PadTop });
+        param.Add(16, new ParamValue { Kind = ParamKind.Int, IntValue = args.PadBottom });
+        param.Add(18, new ParamValue { Kind = ParamKind.Float, FloatValue = args.PadValue });
+        param.Add(5, new ParamValue { Kind = ParamKind.Int, IntValue = args.BiasTerm });
+        param.Add(6, new ParamValue { Kind = ParamKind.Int, IntValue = args.WeightDataSize });
+        param.Add(7, new ParamValue { Kind = ParamKind.Int, IntValue = args.Groups });
+        param.Add(8, new ParamValue { Kind = ParamKind.Int, IntValue = args.Int8ScaleTerm });
+        param.Add(9, new ParamValue { Kind = ParamKind.Int, IntValue = args.ActivationType });
+        param.Add(-10, new ParamValue { Kind = ParamKind.ArrayOfIntOrFloat, TensorValue = actData.ToArray() });
+        param.Add(19, new ParamValue { Kind = ParamKind.Int, IntValue = args.DynamicWeight });
+
+        if (args.Groups > 1)
+        {
+            AddLayer("ConvolutionDepthWise", name, new[] { input }, new[] { name }, param);
+        }
+        else
+        {
+            AddLayer("Convolution", name, new[] { input }, new[] { name }, param);
+        }
+
         WriteFloatArray(new float[] { 0 }); // quantize flag [Not exist in ncnn op.md]
-        WriteFloatArray(weightsData);
-        WriteFloatArray(biasData);
+        WriteFloatArray(args.WeightData);
+        WriteFloatArray(args.BiasData);
     }
 
     public void Cumsum(string name, string input, int axis)
@@ -326,9 +335,11 @@ internal class NcnnEmitter
 
         var args = new ParamDict();
         const int i = 0;
-        foreach (var item in newshape.Reverse())
+
+        // foreach (var item in newshape.Reverse())
+        foreach (var (index, value) in newshape.Reverse().Select((value, index) => (index, value)))
         {
-            args.Add(i, new ParamValue { Kind = ParamKind.Int, IntValue = item });
+            args.Add(index, new ParamValue { Kind = ParamKind.Int, IntValue = value });
         }
 
         AddLayer("Reshape", name[0], new[] { input }, name, args);
