@@ -255,4 +255,10 @@ constexpr size_t contiguous_dims(const Shape &shape, const Strides &strides) {
     }
     return shape.rank();
 }
+
+template <class Shape, class Strides>
+inline constexpr size_t max_size_v =
+    (is_fixed_dims_v<Shape> && is_fixed_dims_v<Strides>)
+        ? linear_size(Shape{}, Strides{})
+        : std::dynamic_extent;
 } // namespace nncase::ntt

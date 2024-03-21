@@ -18,7 +18,8 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace nncase::ntt::ops {
+namespace nncase::ntt {
+namespace ops {
 // unary_ops ops
 
 template <class T> struct abs {
@@ -144,4 +145,71 @@ template <class T> struct max {
 template <class T> struct pow {
     T operator()(T v1, T v2) const noexcept { return std::pow(v1, v2); }
 };
-} // namespace nncase::ntt::ops
+} // namespace ops
+
+#define NTT_DEFINE_UNARY_FUNC_IMPL(op)                                         \
+    template <class T> constexpr T op(T value) noexcept {                      \
+        return ops::op<T>()(value);                                            \
+    }
+#define NTT_DEFINE_BINARY_FUNC_IMPL(op)                                        \
+    template <class T> constexpr T op(T v1, T v2) noexcept {                   \
+        return ops::op<T>()(v1, v2);                                           \
+    }
+
+NTT_DEFINE_UNARY_FUNC_IMPL(abs);
+NTT_DEFINE_UNARY_FUNC_IMPL(acos);
+NTT_DEFINE_UNARY_FUNC_IMPL(acosh);
+NTT_DEFINE_UNARY_FUNC_IMPL(asin);
+NTT_DEFINE_UNARY_FUNC_IMPL(asinh);
+NTT_DEFINE_UNARY_FUNC_IMPL(ceil);
+NTT_DEFINE_UNARY_FUNC_IMPL(cos);
+NTT_DEFINE_UNARY_FUNC_IMPL(cosh);
+NTT_DEFINE_UNARY_FUNC_IMPL(exp);
+NTT_DEFINE_UNARY_FUNC_IMPL(floor);
+NTT_DEFINE_UNARY_FUNC_IMPL(log);
+NTT_DEFINE_UNARY_FUNC_IMPL(neg);
+NTT_DEFINE_UNARY_FUNC_IMPL(round);
+NTT_DEFINE_UNARY_FUNC_IMPL(rsqrt);
+NTT_DEFINE_UNARY_FUNC_IMPL(sign);
+NTT_DEFINE_UNARY_FUNC_IMPL(sin);
+NTT_DEFINE_UNARY_FUNC_IMPL(sinh);
+NTT_DEFINE_UNARY_FUNC_IMPL(sqrt);
+NTT_DEFINE_UNARY_FUNC_IMPL(square);
+NTT_DEFINE_UNARY_FUNC_IMPL(tanh);
+NTT_DEFINE_UNARY_FUNC_IMPL(swish);
+
+NTT_DEFINE_BINARY_FUNC_IMPL(add);
+NTT_DEFINE_BINARY_FUNC_IMPL(sub);
+NTT_DEFINE_BINARY_FUNC_IMPL(mul);
+NTT_DEFINE_BINARY_FUNC_IMPL(div);
+NTT_DEFINE_BINARY_FUNC_IMPL(mod);
+NTT_DEFINE_BINARY_FUNC_IMPL(min);
+NTT_DEFINE_BINARY_FUNC_IMPL(max);
+NTT_DEFINE_BINARY_FUNC_IMPL(pow);
+
+// operators
+
+template <class T> constexpr T operator-(T value) noexcept {
+    return neg(value);
+}
+
+template <class T> constexpr T operator+(T v1, T v2) noexcept {
+    return add(v1, v2);
+}
+
+template <class T> constexpr T operator-(T v1, T v2) noexcept {
+    return sub(v1, v2);
+}
+
+template <class T> constexpr T operator*(T v1, T v2) noexcept {
+    return mul(v1, v2);
+}
+
+template <class T> constexpr T operator/(T v1, T v2) noexcept {
+    return div(v1, v2);
+}
+
+template <class T> constexpr T operator%(T v1, T v2) noexcept {
+    return mod(v1, v2);
+}
+} // namespace nncase::ntt

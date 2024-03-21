@@ -14,8 +14,8 @@
  */
 #pragma once
 #include "../apply.h"
+#include "../tensor_ops.h"
 #include "../utility.h"
-#include "../vector_ops.h"
 #include "binary.h"
 #include "unary.h"
 
@@ -69,62 +69,58 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
     //   : PadedNums::at(0) * slice_fixed_dims<no_paded_rank,
     //   paded_axis>(input_shape).length();
     // // clang-format on
-    constexpr auto sqrt_op = ops::sqrt<TElem>();
-    constexpr auto div_op = ops::div<TElem>();
-    constexpr auto sub_op = ops::sub<TElem>();
-    constexpr auto add_op = ops::add<TElem>();
-    constexpr auto mul_op = ops::mul<TElem>();
     constexpr bool UseVectorReduce =
         PackedAxes::rank() == 1 && PackedAxes::at(0) >= Axis;
 
-    TElem finner_size = inner_size;
+    TElem finner_size = (TElem)inner_size;
     if constexpr (UseVectorReduce) {
-        finner_size = mul_op(finner_size, TElem::shape_type::length());
+        finner_size = finner_size * (TElem)TElem::shape_type::length();
     }
     // remove pad nums, NOTE after mul elem size
     // finner_size = sub_op(finner_size, paded_inner_size);
 
     apply(domain, [&](auto index) {
         const auto input_p =
-            input.buffer().data() + linear_offset(index, strides);
-        const auto scale_p = scale.buffer().data();
-        const auto bias_p = bias.buffer().data();
-        auto output_p = output.buffer().data() + linear_offset(index, strides);
+            input.elements().data() + linear_offset(index, strides);
+        const auto scale_p = scale.elements().data();
+        const auto bias_p = bias.elements().data();
+        auto output_p =
+            output.elements().data() + linear_offset(index, strides);
 
         // compute mean
-        TElem mean1 = 0;
+        TElem mean1 = (TElem)0;
         if (use_mean) {
             for (size_t i = 0; i < inner_size; i++)
-                mean1 = add_op(mean1, div_op(input_p[i], finner_size));
+                mean1 = mean1 + (input_p[i] / finner_size);
             if constexpr (UseVectorReduce) {
-                mean1 = vector_ops::reduce_sum<TElem>()(mean1);
+                mean1 = (TElem)reduce_sum(mean1);
             }
         }
 
         std::array<TElem, inner_size> sub;
         for (auto i = 0; i < inner_size; i++)
-            sub[i] = sub_op(input_p[i], mean1);
+            sub[i] = input_p[i] - mean1;
 
         std::array<TElem, inner_size> pow;
         for (auto i = 0; i < inner_size; i++)
-            pow[i] = mul_op(sub[i], sub[i]);
+            pow[i] = sub[i] * sub[i];
 
-        TElem mean2 = 0;
+        TElem mean2 = (TElem)0;
         for (auto i = 0; i < inner_size; i++)
-            mean2 = add_op(mean2, div_op(pow[i], finner_size));
+            mean2 = mean2 + (pow[i] / finner_size);
         if constexpr (UseVectorReduce) {
-            mean2 = vector_ops::reduce_sum<TElem>()(mean2);
+            mean2 = (TElem)reduce_sum(mean2);
         }
 
-        TElem add = add_op(mean2, epsilon);
-        TElem sqrt = sqrt_op(add);
+        TElem add = mean2 + epsilon;
+        TElem sqrt = ntt::sqrt(add);
 
         std::array<TElem, inner_size> norm;
         for (auto i = 0; i < inner_size; i++)
-            norm[i] = div_op(sub[i], sqrt);
+            norm[i] = sub[i] / sqrt;
 
         for (auto i = 0; i < inner_size; i++)
-            output_p[i] = add_op(mul_op(norm[i], scale_p[i]), bias_p[i]);
+            output_p[i] = (norm[i] * (TElem)scale_p[i]) + (TElem)bias_p[i];
     });
 }
 } // namespace packed_layer_norm_detail

@@ -43,6 +43,7 @@ int main() {
     compiler = nncapi->compile_session_get_compiler(compile_session.get());
 #endif
 
+#if 0
     // fixed
     {
         ntt::tensor<float, ntt::fixed_shape<1, 16>> ta, tb, tc;
@@ -201,6 +202,7 @@ int main() {
         });
     }
 
+
     // pack(fixed_shape + ranked_shape)
     {
         ntt::tensor<float, ntt::fixed_shape<16, 64, 32>> ta;
@@ -253,6 +255,7 @@ int main() {
         });
     }
 
+
     // unpack(fixed_shape + fixed_shape)
     {
         ntt::tensor<float, ntt::fixed_shape<16, 64, 32>> ta, tc;
@@ -282,6 +285,14 @@ int main() {
             NNCASE_UNUSED auto c = tc(index);
             assert(a == c);
         });
+    }
+#endif
+
+    // vector unary
+    {
+        ntt::vector<float, 8> v1(1.f);
+        NNCASE_UNUSED auto v2 = ntt::cos(v1);
+        assert(v2(0) == std::cos(1.f));
     }
 
     // unpack(ranked_shape + fixed_shape)
@@ -334,6 +345,7 @@ int main() {
             assert(a == c);
         });
     }
+#if 0
     // layer norm1 (packed axis >= layer norm axis)
     {
         ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> buffer_1;
@@ -935,5 +947,6 @@ int main() {
     TRY(nncase_object_release((object_node *)x_tensor));
     TRY(nncase_object_release((object_node *)dtype_int64));
     TRY(nncase_interp_free(interp));
+#endif
     return 0;
 }

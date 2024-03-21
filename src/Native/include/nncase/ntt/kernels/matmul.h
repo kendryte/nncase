@@ -16,8 +16,8 @@
 #include "../apply.h"
 #include "../loop.h"
 #include "../shape_infer/reduce_axis.h"
+#include "../tensor_ops.h"
 #include "../utility.h"
-#include "../vector_ops.h"
 #include "binary.h"
 
 namespace nncase::ntt {
@@ -25,15 +25,7 @@ namespace matmul_detail {
 
 template <typename TElemtOut, typename TElemt>
 constexpr inline TElemtOut dot(const TElemt &lp, const TElemt &rp) {
-    constexpr ops::mul<TElemt> mul;
-    return mul(lp, rp);
-}
-
-template <typename TElemtOut, IsVector TElemt>
-constexpr inline TElemtOut dot(const TElemt &lp, const TElemt &rp) {
-    constexpr ops::mul<TElemt> mul;
-    constexpr vector_ops::reduce_sum<TElemt> rvsum;
-    return rvsum(mul(lp, rp));
+    return reduce_sum(mul(lp, rp));
 }
 
 template <class TLhs, class TRhs, class TOut> struct matmul_impl;
@@ -58,7 +50,7 @@ struct matmul_impl<TLhs, TRhs, TOut> {
         constexpr size_t M = TLhs::shape().at(lhs_rank - 2),
                          K = TLhs::shape().at(lhs_rank - 1),
                          N = TRhs::shape().at(rhs_rank - 1);
-        constexpr mathops::add<TElemtOut> add;
+        constexpr ops::add<TElemtOut> add;
 
         if constexpr (lhs_cdim >= 2 && rhs_cdim >= 2 && out_cdim >= 2) {
             constexpr auto domain = shape_infer::reduced_shape_by_axes(
@@ -81,11 +73,11 @@ struct matmul_impl<TLhs, TRhs, TOut> {
                     }
                 });
 
-                auto lhs_p = lhs.buffer().data() +
+                auto lhs_p = lhs.elements().data() +
                              linear_offset(lhs_index, lhs.strides());
-                auto rhs_p = rhs.buffer().data() +
+                auto rhs_p = rhs.elements().data() +
                              linear_offset(rhs_index, rhs.strides());
-                auto output_p = output.buffer().data() +
+                auto output_p = output.elements().data() +
                                 linear_offset(index, output.strides());
 
                 for (size_t m = 0; m < M; m++) {

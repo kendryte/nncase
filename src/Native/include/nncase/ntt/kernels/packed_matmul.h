@@ -14,7 +14,7 @@
  */
 #pragma once
 #include "../apply.h"
-#include "../vector_ops.h"
+#include "../tensor_ops.h"
 #include "binary.h"
 #include "matmul.h"
 

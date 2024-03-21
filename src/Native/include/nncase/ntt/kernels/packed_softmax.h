@@ -15,8 +15,8 @@
 #pragma once
 #include "../apply.h"
 #include "../shape_infer/reduce_axis.h"
+#include "../tensor_ops.h"
 #include "../utility.h"
-#include "../vector_ops.h"
 #include "binary.h"
 #include "unary.h"
 #include <algorithm>
@@ -55,7 +55,7 @@ void packed_on_axis_impl(const TIn &input, TOut &&output,
 
         // reduce_max
         if constexpr (need_reduce) {
-            max_value = vector_ops::reduce_max<TElem>()(max_value);
+            max_value = reduce_max(max_value);
         }
 
         // (x - reduce_max) * beta
@@ -65,7 +65,7 @@ void packed_on_axis_impl(const TIn &input, TOut &&output,
         }
 
         // exp((x - reduce_max) * beta) and sum
-        TElem sum = 0;
+        TElem sum = (TElem)0;
         for (index[Axis] = 0; index[Axis] < input_shape.at(Axis);
              index[Axis]++) {
             output(index) = exp_op(output(index));
@@ -74,7 +74,7 @@ void packed_on_axis_impl(const TIn &input, TOut &&output,
 
         // reduce sum
         if constexpr (need_reduce) {
-            sum = vector_ops::reduce_sum<TElem>()(sum);
+            sum = reduce_sum(sum);
         }
 
         // div

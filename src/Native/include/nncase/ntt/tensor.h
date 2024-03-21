@@ -13,152 +13,127 @@
  * limitations under the License.
  */
 #pragma once
-#include "shape.h"
-#include <vector>
+#include "detail/shape_storage.h"
+#include "detail/tensor_storage.h"
 
 namespace nncase::ntt {
-template <class T, class Shape, class Strides, bool IsView> class tensor_base;
-template <class T, class Shape, class Strides = default_strides_t<Shape>>
-using tensor = tensor_base<T, Shape, Strides, false>;
-template <class T, class Shape, class Strides = default_strides_t<Shape>>
-using tensor_view = tensor_base<T, Shape, Strides, true>;
+template <class T, class Shape, class Strides, size_t MaxSize, bool IsView>
+class tensor_base;
+
+template <class T, class Shape, class Strides = default_strides_t<Shape>,
+          size_t MaxSize = max_size_v<Shape, Strides>>
+using tensor = tensor_base<T, Shape, Strides, MaxSize, false>;
+
+template <class T, class Shape, class Strides = default_strides_t<Shape>,
+          size_t MaxSize = max_size_v<Shape, Strides>>
+using tensor_view = tensor_base<T, Shape, Strides, MaxSize, true>;
+
+template <class T, size_t... Lanes>
+using fixed_tensor = tensor<T, fixed_shape<Lanes...>>;
+
+template <class T, size_t... Lanes> using vector = fixed_tensor<T, Lanes...>;
 
 namespace detail {
-template <class T, class Shape, class Strides, bool IsView,
-          bool FixedShape = is_fixed_dims_v<Shape> && is_fixed_dims_v<Strides>>
-class tensor_storage;
+template <class T, class Shape, class Strides, size_t MaxSize, bool IsView,
+          bool IsFixedShape = is_fixed_dims_v<Shape> &&is_fixed_dims_v<Strides>>
+class tensor_impl;
 
-template <class T, class Shape, class Strides>
-class tensor_storage<T, Shape, Strides, false, true> {
+// dynamic tensor
+template <class T, class Shape, class Strides, size_t MaxSize>
+class tensor_impl<T, Shape, Strides, MaxSize, false, false>
+    : public detail::tensor_storage<T, MaxSize, false>,
+      public detail::tensor_size_impl<Shape, Strides> {
+    using size_impl_type = detail::tensor_size_impl<Shape, Strides>;
+
   public:
-    using buffer_type = std::array<T, linear_size(Shape{}, Strides{})>;
+    using element_type = T;
+    using storage_type = detail::tensor_storage<T, MaxSize, false>;
 
-    static constexpr auto shape() noexcept { return Shape{}; }
-    static constexpr auto strides() noexcept { return Strides{}; }
-    static constexpr size_t size() noexcept {
-        return linear_size(Shape{}, Strides{});
-    }
-
-    constexpr auto buffer() const noexcept { return std::span(buffer_); }
-    constexpr auto buffer() noexcept { return std::span(buffer_); }
-
-    constexpr auto elements() const noexcept { return buffer(); }
-    constexpr auto elements() noexcept { return buffer(); }
-
-  private:
-    buffer_type buffer_;
+    tensor_impl(Shape shape, Strides strides)
+        : storage_type(linear_size(shape, strides)),
+          size_impl_type(shape, strides) {}
+    tensor_impl(Shape shape) : tensor_impl(shape, default_strides(shape)) {}
 };
 
-template <class T, class Shape, class Strides>
-class tensor_storage<T, Shape, Strides, false, false> {
+// fixed tensor
+template <class T, class Shape, class Strides, size_t MaxSize>
+class tensor_impl<T, Shape, Strides, MaxSize, false, true>
+    : public detail::tensor_storage<T, MaxSize, false>,
+      public detail::tensor_size_impl<Shape, Strides> {
+    using size_impl_type = detail::tensor_size_impl<Shape, Strides>;
+
   public:
-    using buffer_type = std::vector<T>;
+    using element_type = T;
+    using storage_type = detail::tensor_storage<T, MaxSize, false>;
+    using buffer_type = storage_type::buffer_type;
 
-    constexpr tensor_storage(Shape shape, Strides strides)
-        : buffer_(linear_size(shape, strides)),
-          shape_(std::move(shape)),
-          strides_(std::move(strides)) {}
+    tensor_impl(Shape = {}, Strides = {}) noexcept {}
+    tensor_impl(buffer_type buffer) noexcept
+        : storage_type(std::in_place, std::move(buffer)) {}
 
-    constexpr tensor_storage(Shape shape)
-        : tensor_storage(shape, default_strides(shape)) {}
-
-    constexpr const Shape &shape() const noexcept { return shape_; }
-    constexpr const Strides &strides() const noexcept { return strides_; }
-    constexpr size_t size() noexcept { return linear_size(shape(), strides()); }
-
-    constexpr const std::span<const T> buffer() const noexcept {
-        return buffer_;
-    }
-    constexpr std::span<T> buffer() noexcept { return buffer_; }
-
-    constexpr const std::span<const T> elements() const noexcept {
-        return buffer_;
-    }
-    constexpr std::span<T> elements() noexcept { return buffer_; }
-
-  private:
-    buffer_type buffer_;
-    Shape shape_;
-    Strides strides_;
+    explicit tensor_impl(T value) noexcept;
 };
 
-template <class T, class Shape, class Strides>
-class tensor_storage<T, Shape, Strides, true, true> {
+// dynamic view
+template <class T, class Shape, class Strides, size_t MaxSize>
+class tensor_impl<T, Shape, Strides, MaxSize, true, false>
+    : public detail::tensor_storage<T, MaxSize, true>,
+      public detail::tensor_size_impl<Shape, Strides> {
+    using size_impl_type = detail::tensor_size_impl<Shape, Strides>;
+
   public:
-    using const_buffer_type = std::span<T, linear_size(Shape{}, Strides{})>;
-    using buffer_type = std::span<T, linear_size(Shape{}, Strides{})>;
+    using storage_type = detail::tensor_storage<T, MaxSize, true>;
+    using buffer_type = storage_type::buffer_type;
 
-    constexpr tensor_storage(buffer_type buffer, Shape = {},
-                             Strides = {}) noexcept
-        : buffer_(std::move(buffer)) {}
-
-    static constexpr auto shape() noexcept { return Shape{}; }
-    static constexpr auto strides() noexcept { return Strides{}; }
-    static constexpr size_t size() noexcept {
-        return linear_size(Shape{}, Strides{});
-    }
-
-    constexpr const_buffer_type buffer() const noexcept { return buffer_; }
-    constexpr buffer_type buffer() noexcept { return buffer_; }
-
-    constexpr const_buffer_type elements() const noexcept { return buffer_; }
-    constexpr buffer_type elements() noexcept { return buffer_; }
-
-  private:
-    buffer_type buffer_;
+    tensor_impl(buffer_type buffer, Shape shape, Strides strides)
+        : storage_type(std::in_place, std::move(buffer)),
+          size_impl_type(shape, strides) {}
+    tensor_impl(buffer_type buffer, Shape shape)
+        : tensor_impl(shape, default_strides(shape)) {}
 };
 
-template <class T, class Shape, class Strides>
-class tensor_storage<T, Shape, Strides, true, false> {
+// fixed view
+template <class T, class Shape, class Strides, size_t MaxSize>
+class tensor_impl<T, Shape, Strides, MaxSize, true, true>
+    : public detail::tensor_storage<T, MaxSize, true>,
+      public detail::tensor_size_impl<Shape, Strides> {
+    using size_impl_type = detail::tensor_size_impl<Shape, Strides>;
+
   public:
-    using const_buffer_type = std::span<const T>;
-    using buffer_type = std::span<T>;
+    using element_type = T;
+    using storage_type = detail::tensor_storage<T, MaxSize, true>;
+    using buffer_type = storage_type::buffer_type;
 
-    constexpr tensor_storage(buffer_type buffer, Shape shape,
-                             Strides strides) noexcept
-        : buffer_(std::move(buffer)),
-          shape_(std::move(shape)),
-          strides_(std::move(strides)) {}
-
-    constexpr tensor_storage(buffer_type buffer, Shape shape) noexcept
-        : tensor_storage(std::move(buffer), std::move(shape),
-                         default_strides(shape)) {}
-
-    constexpr const Shape &shape() const noexcept { return shape_; }
-    constexpr const Strides &strides() const noexcept { return strides_; }
-    constexpr size_t size() noexcept { return linear_size(shape(), strides()); }
-
-    constexpr const_buffer_type buffer() const noexcept { return buffer_; }
-    constexpr buffer_type buffer() noexcept { return buffer_; }
-
-    constexpr const_buffer_type elements() const noexcept { return buffer_; }
-    constexpr buffer_type elements() noexcept { return buffer_; }
-
-  private:
-    buffer_type buffer_;
-    Shape shape_;
-    Strides strides_;
+    tensor_impl(buffer_type buffer, Shape = {}, Strides = {}) noexcept
+        : storage_type(std::in_place, std::move(buffer)) {}
 };
 } // namespace detail
 
-template <class T, class Shape, class Strides, bool IsView>
-class tensor_base : public detail::tensor_storage<T, Shape, Strides, IsView> {
+template <class T, class Shape, class Strides, size_t MaxSize, bool IsView>
+class tensor_base
+    : public detail::tensor_impl<T, Shape, Strides, MaxSize, IsView> {
+    using impl_type = detail::tensor_impl<T, Shape, Strides, MaxSize, IsView>;
+    using size_impl_type = detail::tensor_size_impl<Shape, Strides>;
+
   public:
     using element_type = T;
-    using storage_type = detail::tensor_storage<T, Shape, Strides, IsView>;
+    using storage_type = detail::tensor_storage<T, MaxSize, IsView>;
     using buffer_type = storage_type::buffer_type;
     using shape_type = Shape;
     using strides_type = Strides;
 
+    using size_impl_type::shape;
+    using size_impl_type::size;
+    using size_impl_type::strides;
     using storage_type::buffer;
     using storage_type::elements;
-    using storage_type::shape;
-    using storage_type::size;
-    using storage_type::storage_type;
-    using storage_type::strides;
+
+    using impl_type::impl_type;
 
     operator const buffer_type &() const noexcept { return buffer(); }
     operator buffer_type &() noexcept { return buffer(); }
+
+    static tensor_base<T, Shape, Strides, MaxSize, IsView> from_scalar(T value);
 
     template <class Index, class UShape>
     constexpr tensor_view<T, UShape, Strides> view(Index index,

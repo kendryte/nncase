@@ -15,51 +15,28 @@
 #pragma once
 #include "tensor.h"
 
-#define NTT_DEFINE_NATIVE_VECTOR(element_type, native_type, ...)               \
+#define NTT_DEFINE_NATIVE_TENSOR(element_type, native_type, max_size)          \
     namespace nncase::ntt::detail {                                            \
-    template <>                                                                \
-    class tensor_storage<element_type, fixed_shape<__VA_ARGS__>,               \
-                         default_strides_t<fixed_shape<__VA_ARGS__>>, false,   \
-                         true> {                                               \
-        using shape_type = fixed_shape<__VA_ARGS__>;                           \
-        using strides_type = default_strides_t<fixed_shape<__VA_ARGS__>>;      \
-                                                                               \
+    template <> class tensor_storage<element_type, max_size, false> {          \
       public:                                                                  \
         using buffer_type = native_type;                                       \
                                                                                \
         tensor_storage() = default;                                            \
-        tensor_storage(buffer_type value) : buffer_(value) {}                  \
-                                                                               \
-        static constexpr auto shape() noexcept { return shape_type{}; }        \
-        static constexpr auto strides() noexcept { return strides_type{}; }    \
-        static constexpr size_t size() noexcept {                              \
-            return linear_size(shape_type{}, strides_type{});                  \
-        }                                                                      \
+        tensor_storage(std::in_place_t, buffer_type value) : buffer_(value) {} \
                                                                                \
         const buffer_type &buffer() const noexcept { return buffer_; }         \
         buffer_type &buffer() noexcept { return buffer_; }                     \
                                                                                \
         auto elements() const noexcept {                                       \
-            return std::span<const element_type>(                              \
-                reinterpret_cast<const element_type *>(&buffer_), size());     \
+            return std::span<const element_type, max_size>(                    \
+                reinterpret_cast<const element_type *>(&buffer_), max_size);   \
         }                                                                      \
         auto elements() noexcept {                                             \
-            return std::span<element_type>(                                    \
-                reinterpret_cast<element_type *>(&buffer_), size());           \
+            return std::span<element_type, max_size>(                          \
+                reinterpret_cast<element_type *>(&buffer_), max_size);         \
         }                                                                      \
                                                                                \
       private:                                                                 \
         buffer_type buffer_;                                                   \
     };                                                                         \
     }
-
-namespace nncase::ntt {
-template <class T, size_t... Lanes>
-class vector : public tensor<T, fixed_shape<Lanes...>> {
-  public:
-    using tensor_type = tensor<T, fixed_shape<Lanes...>>;
-    using tensor_type::tensor_type;
-
-    static vector from_scalar(T v) noexcept;
-};
-} // namespace nncase::ntt
