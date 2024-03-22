@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         config:
-          - {name: x86_64-macos, os: macos-latest, cmakeArgs: -DENABLE_X86SIMD=OFF, buildType: Release}
+          - {name: aarch64-macos, os: macos-14, cmakeArgs: '', buildType: Release}
           - {name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release}
           - {name: x86_64-windows, os: windows-latest, arch: x64, cmakeArgs: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl, buildType: Release}
 
@@ -79,7 +79,7 @@ jobs:
       matrix:
         dotnet-version: ['7.0']
         config:
-          - {name: x86_64-macos, os: macos-latest, shell: bash, rid: osx-x64, buildType: Release}
+          - {name: aarch64-macos, os: macos-14, shell: bash, rid: osx-arm64, buildType: Release}
           - {name: x86_64-linux, os: ubuntu-latest, shell: bash, rid: linux-x64, buildType: Release}
           - {name: x86_64-windows, os: windows-latest, arch: x64, shell: bash, rid: win-x64, buildType: Release}
 
@@ -170,7 +170,7 @@ jobs:
       matrix:
         dotnet-version: ['7.0']
         config:
-          - {name: x86_64-macos, os: macos-latest, shell: bash}
+          - {name: aarch64-macos, os: macos-14, shell: bash}
           - {name: x86_64-linux, os: ubuntu-latest, shell: bash}
           - {name: x86_64-windows, os: windows-latest, arch: x64, shell: bash}
 
@@ -206,8 +206,6 @@ jobs:
           sudo /Volumes/vulkansdk-macos-*/InstallVulkan.app/Contents/MacOS/InstallVulkan --root $HOME/VulkanSDK --accept-licenses --default-answer --confirm-command install
           hdiutil detach /Volumes/vulkansdk-macos-*
           echo "VULKAN_SDK=$HOME/VulkanSDK/macOS" >> $GITHUB_ENV
-          wget https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-macos-10.15-x86_64.zip -O swiftshader.zip
-          unzip swiftshader.zip
           sudo cmake -E make_directory /usr/local/share/vulkan/icd.d
           sudo cp lib/* /usr/local/share/vulkan/icd.d
           cp install/lib/*.dylib install/
