@@ -80,18 +80,25 @@ public class NcnnReductionEvaluator : IEvaluator<NcnnReduction>, ITypeInferencer
 
     private IRType Visit(NcnnReduction reduction, TensorType input)
     {
-        var newInput = new TensorType(input.DType, input.Shape.InsertAndClone(0, 1));
-        var axis = reduction.Args.Axes;
+        var inputShape = input.Shape.ToList();
+        var axis = reduction.Args.Axes.ToList();
+        var keepDims = reduction.Args.Keepdims;
 
-        var newAxis = axis.Select(x => x > 0 ? x + 1 : x).ToArray();
-
-        var output_ = TypeInference.ReduceType(newInput, reduction.Args.Keepdims, newAxis);
-        if (output_ is TensorType t)
+        while (axis.Count > 0)
         {
-            var newShape = t.Shape.ToArray();
-            return new TensorType(t.DType, newShape[1..]);
+            var (maxValue, maxIndex) = (axis.Max(), axis.IndexOf(axis.Max()));
+            if (keepDims == 1)
+            {
+                inputShape[(int)maxValue] = 1;
+            }
+            else
+            {
+                inputShape.RemoveAt((int)maxValue);
+            }
+
+            axis.RemoveAt(maxIndex);
         }
 
-        return output_;
+        return new TensorType(input.DType, inputShape.ToArray());
     }
 }

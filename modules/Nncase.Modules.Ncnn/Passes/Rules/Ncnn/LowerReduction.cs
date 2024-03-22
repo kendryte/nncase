@@ -78,10 +78,9 @@ public partial class LowerReduction : RewriteRule<Pattern>
             newAxis[i] = newAxis[i] > 0 ? newAxis[i] - 1 : newAxis[i];
         }
 
-        var args = new ReductionArgs(reductionType, axis.Length > 0 ? 0 : 1, 0, newAxis, keepDims ? 1 : 0);
-
         var inRes = Squeeze(input, new[] { 0 });
         var inResO = new Var(inRes.CheckedType);
+        var args = new ReductionArgs(reductionType, newAxis.Length == inRes.CheckedShape.Rank ? 1 : 0, 0, newAxis, keepDims ? 1 : 0);
 
         var pool = new Call(new Fusion("ncnn", NcnnReduction(inResO, args), new[] { inResO }), inRes);
         return Unsqueeze(pool, new[] { 0 });
