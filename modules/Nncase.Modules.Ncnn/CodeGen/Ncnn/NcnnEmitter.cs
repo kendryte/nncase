@@ -333,10 +333,20 @@ internal class NcnnEmitter
     public void Reshape(string[] name, string input, int[] newshape)
     {
         var args = new ParamDict();
+        List<int> index;
+        if (newshape.Length < 4)
+        {
+            index = Enumerable.Range(0, newshape.Length).ToList();
+        }
+        else
+        {
+            index = new List<int> { 0, 1, 11, 2 };
+        }
+
         int i = 0;
         foreach (int item in newshape.Reverse())
         {
-            args.Add(i, new ParamValue { Kind = ParamKind.Int, IntValue = item });
+            args.Add(index[i], new ParamValue { Kind = ParamKind.Int, IntValue = item });
             i += 1;
         }
 

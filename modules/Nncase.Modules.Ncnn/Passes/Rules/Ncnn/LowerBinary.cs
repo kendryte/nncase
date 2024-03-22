@@ -71,12 +71,29 @@ public partial class LowerBinary : RewriteRule<Pattern>
         return newShape.ToArray();
     }
 
+    private bool HasGap(List<int> aShape, List<int> bShape)
+    {
+        if ((aShape.Count == 1 && bShape.Count != 1 && aShape[0] != bShape[^1]) || (bShape.Count == 1 && aShape.Count != 1 && bShape[0] != aShape[^1]))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     private Expr? GetReplace(Binary binary, Expr inputA, Expr inputB)
     {
         if (MapBinaryOp(binary.BinaryOp) is BinaryOperationType op)
         {
             int r = Math.Max(inputA.CheckedShape.Rank, inputB.CheckedShape.Rank);
             if (r > 4)
+            {
+                return null;
+            }
+
+            // ncnn [1, 3, 1, 1],  [3] --> [1,3,1,3]
+            // onnx [1, 3, 1, 1],  [3] --> [1,3,1,1]
+            if (HasGap(inputA.CheckedShape.ToValueArray().ToList(), inputB.CheckedShape.ToValueArray().ToList()))
             {
                 return null;
             }
