@@ -17,15 +17,20 @@ namespace Nncase.CodeGen.Ncnn;
 
 internal class NcnnEmitter
 {
-    public List<float>? RData;
     private readonly NcnnModel _model;
     private readonly BinaryWriter _binWriter;
+    private readonly List<float>? _rData;
 
     public NcnnEmitter(BinaryWriter binWriter)
     {
         _model = new NcnnModel();
         _binWriter = binWriter;
-        RData = new List<float>();
+        _rData = new List<float>();
+    }
+
+    public List<float>? GetRData()
+    {
+        return _rData;
     }
 
     public void SaveParam(Stream paramStream)
@@ -569,7 +574,7 @@ internal class NcnnEmitter
 
     private void WriteFloatArray(float[] data)
     {
-        RData.AddRange(data);
+        _rData!.AddRange(data);
         foreach (float value in data)
         {
             _binWriter.Write(value);

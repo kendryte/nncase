@@ -86,8 +86,7 @@ public class NcnnPoolingEvaluator : IEvaluator<NcnnPooling>, ITypeInferencer<Ncn
         var padData = new long[] { pooling.Args.PadTop, pooling.Args.PadBottom, pooling.Args.PadLeft, pooling.Args.PadRight };
         _ = pooling.Args.AvgPoolCountIncludePad ? 1 : 0;
         var newInput = new TensorType(input.DType, input.Shape.InsertAndClone(0, 1));
-        var output_ = TypeInference.ReduceWindow2DType(newInput, kernelSize, stride,
-            Tensor.From(padData, new[] { 2, 2, }), pooling.Args.CeilMode);
+        var output_ = TypeInference.ReduceWindow2DType(newInput, kernelSize, stride, Tensor.From(padData, new[] { 2, 2, }), pooling.Args.CeilMode);
         if (output_ is TensorType t)
         {
             var newShape = t.Shape.ToArray();

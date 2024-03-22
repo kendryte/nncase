@@ -54,8 +54,7 @@ public partial class LowerMatmul : RewriteRule<Pattern>
             var newInputA = new Var(inputA.CheckedType);
             var newInputB = new Var(inputB.CheckedType);
             return new Call(
-                new Fusion("ncnn", NcnnMatMul(new Expr[] { newInputA, newInputB }, 0, null, null),
-                    new[] { newInputA, newInputB }), inputA, inputB);
+                new Fusion("ncnn", NcnnMatMul(new Expr[] { newInputA, newInputB }, 0, null, null), new[] { newInputA, newInputB }), inputA, inputB);
         }
     }
 }

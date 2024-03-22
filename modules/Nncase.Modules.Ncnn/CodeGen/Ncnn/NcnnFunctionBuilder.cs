@@ -36,7 +36,7 @@ internal class NcnnFunctionBuilder : FunctionBuilder
 
     protected override ILinkableFunction CreateLinkableFunction(uint id, BaseFunction callable, IReadOnlyList<FunctionRef> functionRefs, Stream text)
     {
-        return new NcnnLinkableFunction(id, callable, functionRefs, text, _inputs!, _outputs!, _emitter.RData!.ToArray()!);
+        return new NcnnLinkableFunction(id, callable, functionRefs, text, _inputs!, _outputs!, _emitter.GetRData()!.ToArray()!);
     }
 
     protected override void Compile(BaseFunction callable)
@@ -125,7 +125,7 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                         2 => new string[] { ExprMemo[expr.Arguments[0]], string.Empty },
                         _ => throw new NotImplementedException("Never reach here."),
                     };
-                    _emitter.Binary(names[0], inString[0], inString[1], op.OpType, op.LorR, op.ConstInput, op.ConstShape);
+                    _emitter.Binary(names[0], inString[0], inString[1], op.OpType, op.LorR, op.ConstInput!, op.ConstShape!);
                     break;
                 case NcnnCelu op:
                     _emitter.Celu(names[0], ExprMemo[expr.Arguments[0]], op.Alpha);

@@ -58,9 +58,8 @@ public partial class LowerCrop : RewriteRule<Pattern>
                 tStart.RemoveAt(i);
                 tEnds.RemoveAt(i);
                 tAxes.RemoveAt(i);
+                break;
             }
-
-            break;
         }
 
         for (int i = 0; i < tAxes.Count; i++)

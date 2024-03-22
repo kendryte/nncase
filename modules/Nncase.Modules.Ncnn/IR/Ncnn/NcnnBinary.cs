@@ -22,11 +22,11 @@ public enum BinaryOperationType
     POW = 6,
 
     // Not support below
-    RSUB = 7,
-    RDIV = 8,
-    RPOW = 9,
-    ATAN2 = 10,
-    RATAN2 = 11,
+    // RSUB = 7,
+    // RDIV = 8,
+    // RPOW = 9,
+    // ATAN2 = 10,
+    // RATAN2 = 11,
 }
 
 /// <summary>
@@ -72,8 +72,9 @@ public sealed partial class NcnnBinary : Op
     {
         if (ConstShape != null)
         {
-            return $"BinaryOp.{OpType}, Const Shape: {String.Join(",", ConstShape)}";
+            return $"BinaryOp.{OpType}, Const Shape: {string.Join(",", ConstShape!)}";
         }
+
         return $"BinaryOp.{OpType}";
     }
 }

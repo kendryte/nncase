@@ -36,7 +36,8 @@ public partial class LowerSqueeze : RewriteRule<Pattern>
                 {
                     newDims.Add(item);
                 }
-                if(input.CheckedShape[item] != 1)
+
+                if (input.CheckedShape[item] != 1)
                 {
                     return null;
                 }

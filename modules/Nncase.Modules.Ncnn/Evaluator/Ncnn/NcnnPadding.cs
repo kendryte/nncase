@@ -26,13 +26,11 @@ public class NcnnPaddingEvaluator : IEvaluator<NcnnPadding>, ITypeInferencer<Ncn
 
         // ncnn not support N
         var pads = new Tensor<long>(new int[] { 0, 0, padding.Front, padding.Top, padding.Left, padding.Behind, padding.Bottom, padding.Right });
-        return OrtKI.Pad(input, pads.ToOrtTensor(), padding.Value, padding.Type switch
-        {
-            0 => "Constant",
-            1 => "Reflect",
-            2 => "Edge",
-            _ => "Symmetric",
-        }).ToValue();
+        return OrtKI.Pad(
+                        input,
+                        pads.ToOrtTensor(),
+                        padding.Value,
+                        padding.Type switch { 0 => "Constant", 1 => "Reflect", 2 => "Edge", _ => "Symmetric", }).ToValue();
     }
 
     /// <inheritdoc/>

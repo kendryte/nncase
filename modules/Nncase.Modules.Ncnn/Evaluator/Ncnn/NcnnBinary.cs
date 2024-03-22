@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DryIoc;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.Evaluator;
@@ -110,8 +111,7 @@ public class NcnnBinaryEvaluator : IEvaluator<NcnnBinary>, ITypeInferencer<NcnnB
             BinaryOperationType.MAX => BinaryOp.Max,
             BinaryOperationType.MIN => BinaryOp.Min,
             BinaryOperationType.POW => BinaryOp.Pow,
-
-            // _ => null,
+            _ => throw new ArgumentException("Invalid binary op type"),
 
             // unsupported Binary ops
             // BinaryOp.Mod =>

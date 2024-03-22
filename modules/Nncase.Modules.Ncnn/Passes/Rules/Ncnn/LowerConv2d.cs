@@ -54,15 +54,27 @@ public partial class LowerConv : RewriteRule<Pattern>
         int activationType = 3;
         int dynamicWeight = 0;
 
-        var args = new ConvArgs(weights.ToArray(), bias.ToArray(), numOutput.FixedValue,
-            kernelW.FixedValue, kernelH.FixedValue,
-            dilationW, dilationH,
-            strideW, strideH,
-            padLeft, padRight, padTop, padBottom, padValue,
+        var args = new ConvArgs(
+            weights.ToArray(),
+            bias.ToArray(),
+            numOutput.FixedValue,
+            kernelW.FixedValue,
+            kernelH.FixedValue,
+            dilationW,
+            dilationH,
+            strideW,
+            strideH,
+            padLeft,
+            padRight,
+            padTop,
+            padBottom,
+            padValue,
             biasTerm,
             weightsDataSize.FixedValue,
             int8ScaleTerm,
-            activationType, fusedClamp, dynamicWeight,
+            activationType,
+            fusedClamp,
+            dynamicWeight,
             groups);
 
         var inRes = Squeeze(input, new[] { 0 });

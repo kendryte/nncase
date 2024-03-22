@@ -8,9 +8,7 @@ namespace Nncase.ArgsStruct;
 /// </summary>
 public record PoolingArgs
 {
-    public PoolingArgs(int poolingType, int kernelW, int kernelH, int strideW, int strideH, int padLeft, int padRight,
-        int padTop, int padBottom, bool globalPooling, int padMode, bool avgPoolCountIncludePad, bool adaptivePooling,
-        int outW, int outH, bool ceilMode)
+    public PoolingArgs(int poolingType, int kernelW, int kernelH, int strideW, int strideH, int padLeft, int padRight, int padTop, int padBottom, bool globalPooling, int padMode, bool avgPoolCountIncludePad, bool adaptivePooling, int outW, int outH, bool ceilMode)
     {
         PoolingType = poolingType;
         KernelH = kernelH;
@@ -158,10 +156,10 @@ public record CropArgs
 
 public record ConvTransposeArgs
 {
-    public ConvTransposeArgs(Tensor weightData = null, float[] biasData = null, int numOutput = default, int kernelW = default, int kernelH = default, int dilationW = default, int dilationH = default, int strideW = default, int strideH = default, int padLeft = default, int padRight = default, int padTop = default, int padBottom = default, int biasTerm = default, int weightDataSize = default, int activationType = default, float[] activationParams = null, int outputPadRight = default, int outputPadBottom = default, int outputW = default, int outputH = default)
+    public ConvTransposeArgs(Tensor? weightData = null, float[]? biasData = null, int numOutput = default, int kernelW = default, int kernelH = default, int dilationW = default, int dilationH = default, int strideW = default, int strideH = default, int padLeft = default, int padRight = default, int padTop = default, int padBottom = default, int biasTerm = default, int weightDataSize = default, int activationType = default, float[]? activationParams = null, int outputPadRight = default, int outputPadBottom = default, int outputW = default, int outputH = default)
     {
-        WeightData = weightData;
-        BiasData = biasData;
+        WeightData = weightData!;
+        BiasData = biasData!;
         NumOutput = numOutput;
         KernelW = kernelW;
         KernelH = kernelH;
@@ -176,7 +174,7 @@ public record ConvTransposeArgs
         BiasTerm = biasTerm;
         WeightDataSize = weightDataSize;
         ActivationType = activationType;
-        ActivationParams = activationParams;
+        ActivationParams = activationParams!;
         OutputPadRight = outputPadRight;
         OutputPadBottom = outputPadBottom;
         OutputW = outputW;

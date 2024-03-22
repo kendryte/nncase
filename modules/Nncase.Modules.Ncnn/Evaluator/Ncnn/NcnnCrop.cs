@@ -63,10 +63,10 @@ public class NcnnCropEvaluator : IEvaluator<NcnnCrop>, ITypeInferencer<NcnnCrop>
     private IRType Visit(TensorType input, CropArgs args)
     {
         var outputShape = input.Shape.ToArray();
-        for (int i = 0; i < args.Axes.Length; i++)
+        for (int i = 0; i < args.Axes!.Length; i++)
         {
-            var tStart = args.Starts[i] >= 0 ? args.Starts[i] : args.Starts[i] + outputShape[args.Axes[i]].FixedValue;
-            var tEnd = args.Ends[i] >= 0 ? args.Ends[i] : args.Ends[i] + outputShape[args.Axes[i]].FixedValue;
+            int tStart = args.Starts![i] >= 0 ? args.Starts[i] : args.Starts[i] + outputShape[args.Axes[i]].FixedValue;
+            int tEnd = args.Ends![i] >= 0 ? args.Ends[i] : args.Ends[i] + outputShape[args.Axes[i]].FixedValue;
             outputShape[args.Axes[i] < 0 ? args.Axes[i] + outputShape.Length : args.Axes[i]] = System.Math.Abs(tEnd - tStart);
         }
 
