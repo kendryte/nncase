@@ -431,7 +431,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                         throw new NotSupportedException();
                     }
 
-                    IndentScope.Writer.Write($"unary<mathops::swish>({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
+                    IndentScope.Writer.Write($"unary<ops::swish>({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
                     break;
                 case TIR.CPU.Slice slice:
                     IndentScope.Writer.Write($"slice<fixed_shape<{string.Join(",", slice.Begins)}>, fixed_shape<{string.Join(",", slice.Ends)}>, fixed_shape<{string.Join(",", slice.Axes)}>, fixed_shape<{string.Join(",", slice.Strides)}>>({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");

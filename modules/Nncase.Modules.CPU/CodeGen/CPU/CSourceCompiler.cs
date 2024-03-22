@@ -164,6 +164,8 @@ public class CSourceCompiler
 
     private string ArgumentsSpecific(string sourcePath, string outPath)
     {
+        var archConfig = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "-DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl" : string.Empty;
+
 #if DEBUG
         var config = "Debug";
 #else
@@ -172,7 +174,7 @@ public class CSourceCompiler
         var script = $"""
             cd {sourcePath} &&
             cmake -E remove_directory build &&
-            cmake -G Ninja -S . -B build -DCMAKE_BUILD_TYPE={config} &&
+            cmake -G Ninja -S . -B build -DCMAKE_BUILD_TYPE={config} {archConfig} &&
             cmake --build build --config {config}
             """.Replace("\r\n", " ", StringComparison.Ordinal);
 

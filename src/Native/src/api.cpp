@@ -111,8 +111,7 @@ int nncase_interp_load_model(nncase::runtime::interpreter *interp,
 int nncase_interp_load_model_from_path(nncase::runtime::interpreter *interp,
                                        const char *model_path) {
     if (interp) {
-        std::ifstream ifs;
-        ifs.open(model_path);
+        std::ifstream ifs(model_path, std::ios::in | std::ios::binary);
         c_try(interp->load_model(ifs));
         ifs.close();
         return 0;

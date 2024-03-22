@@ -261,4 +261,19 @@ inline constexpr size_t max_size_v =
     (is_fixed_dims_v<Shape> && is_fixed_dims_v<Strides>)
         ? linear_size(Shape{}, Strides{})
         : std::dynamic_extent;
+
+template <class Index, class Shape>
+constexpr bool in_bound(const Index &index, const Shape &shape) {
+    if (index.rank() == shape.rank()) {
+        for (size_t i = 0; i < index.rank(); i++) {
+            if (index[i] >= shape[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    return false;
+}
 } // namespace nncase::ntt

@@ -27,9 +27,8 @@ class unpack_impl;
 
 template <size_t... InDims, size_t... InElemDims, class OutShape,
           size_t... InStrides, class OutStrides, size_t... Axes>
-class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>,
-                  OutShape, fixed_strides<InStrides...>,
-                  OutStrides, Axes...> {
+class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
+                  fixed_strides<InStrides...>, OutStrides, Axes...> {
   public:
     template <class TIn, class TOut>
     constexpr void operator()(const TIn &input, TOut &&output) {
@@ -47,16 +46,17 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>,
                 out_index[axes[i]] =
                     out_index[axes[i]] * TVec::shape()[i] + index[rank + i];
             });
-            output(out_index) = input(in_index)(elem_index);
+            if (in_bound(out_index, output.shape())) {
+                output(out_index) = input(in_index)(elem_index);
+            }
         });
     }
 };
 
-template <size_t in_rank, size_t... InElemDims, class OutShape,
-          class InStrides, class OutStrides, size_t... Axes>
-class unpack_impl<ranked_shape<in_rank>, fixed_shape<InElemDims...>,
-                  OutShape, InStrides,
-                  OutStrides, Axes...> {
+template <size_t in_rank, size_t... InElemDims, class OutShape, class InStrides,
+          class OutStrides, size_t... Axes>
+class unpack_impl<ranked_shape<in_rank>, fixed_shape<InElemDims...>, OutShape,
+                  InStrides, OutStrides, Axes...> {
   public:
     template <class TIn, class TOut>
     constexpr void operator()(const TIn &input, TOut &&output) {
@@ -69,8 +69,7 @@ class unpack_impl<ranked_shape<in_rank>, fixed_shape<InElemDims...>,
         fixed_shape<InElemDims...> elem_shape{};
         constexpr auto domain_rank = in_rank + elem_rank;
         ranked_shape<domain_rank> domain{};
-        for (size_t i = 0, j = 0; i < domain_rank; i++)
-        {
+        for (size_t i = 0, j = 0; i < domain_rank; i++) {
             if (i < in_rank)
                 domain[i] = input_shape[i];
             else
@@ -85,7 +84,9 @@ class unpack_impl<ranked_shape<in_rank>, fixed_shape<InElemDims...>,
                 out_index[axes[i]] =
                     out_index[axes[i]] * TVec::shape()[i] + index[rank + i];
             });
-            output(out_index) = input(in_index)(elem_index);
+            if (in_bound(out_index, output.shape())) {
+                output(out_index) = input(in_index)(elem_index);
+            }
         });
     }
 };

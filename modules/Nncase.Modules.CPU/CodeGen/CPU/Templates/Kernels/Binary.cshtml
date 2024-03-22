@@ -3,14 +3,14 @@
     string BinaryToCFunction(BinaryOp op) =>
                 op switch
                 {
-                    BinaryOp.Add => "mathops::add",
-                    BinaryOp.Sub => "mathops::sub",
-                    BinaryOp.Mul => "mathops::mul",
-                    BinaryOp.Div => "mathops::div",
-                    BinaryOp.Mod => "mathops::mod",
-                    BinaryOp.Min => "mathops::min",
-                    BinaryOp.Max => "mathops::max",
-                    BinaryOp.Pow => "mathops::pow",
+                    BinaryOp.Add => "ops::add",
+                    BinaryOp.Sub => "ops::sub",
+                    BinaryOp.Mul => "ops::mul",
+                    BinaryOp.Div => "ops::div",
+                    BinaryOp.Mod => "ops::mod",
+                    BinaryOp.Min => "ops::min",
+                    BinaryOp.Max => "ops::max",
+                    BinaryOp.Pow => "ops::pow",
                     _ => throw new NotSupportedException($"Unsupported binary: {op}."),
                 };
 }
