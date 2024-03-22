@@ -327,19 +327,12 @@ internal class NcnnEmitter
 
     public void Reshape(string[] name, string input, int[] newshape)
     {
-        if (newshape.Length == 4)
-        {
-            newshape[2] *= newshape[3];
-            newshape.RemoveAt(3);
-        }
-
         var args = new ParamDict();
-        const int i = 0;
-
-        // foreach (var item in newshape.Reverse())
-        foreach (var (index, value) in newshape.Reverse().Select((value, index) => (index, value)))
+        int i = 0;
+        foreach (int item in newshape.Reverse())
         {
-            args.Add(index, new ParamValue { Kind = ParamKind.Int, IntValue = value });
+            args.Add(i, new ParamValue { Kind = ParamKind.Int, IntValue = item });
+            i += 1;
         }
 
         AddLayer("Reshape", name[0], new[] { input }, name, args);
@@ -359,16 +352,16 @@ internal class NcnnEmitter
         var args = new ParamDict();
 
         // TODO: if need to fit torch crop, add other args into paramDict.
-        if (cropArgs.Axes.Length > 0)
+        if (cropArgs.Axes!.Length > 0)
         {
             var startData = new List<long> { cropArgs.Axes.Length };
             var endData = new List<long> { cropArgs.Axes.Length };
             var axisData = new List<long> { cropArgs.Axes.Length };
             for (int i = 0; i < cropArgs.Axes.Length; i++)
             {
-                startData.Add(cropArgs.Starts[i]);
-                endData.Add(cropArgs.Ends[i]);
-                axisData.Add(cropArgs.Axes[i]);
+                startData.Add(cropArgs.Starts![i]);
+                endData.Add(cropArgs.Ends![i]);
+                axisData.Add(cropArgs.Axes![i]);
             }
 
             args.Add(-9, new ParamValue { Kind = ParamKind.ArrayOfInt, TensorValue = startData.ToArray() });

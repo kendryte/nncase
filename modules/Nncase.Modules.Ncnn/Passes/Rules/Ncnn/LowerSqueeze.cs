@@ -24,8 +24,25 @@ public partial class LowerSqueeze : RewriteRule<Pattern>
         if (input.CheckedShape.Count < 5)
         {
             var inResO = new Var(input.CheckedType);
-            // var newDims = dims[0] == 0 ? dims[1..] : dims;
-            return new Call(new Fusion("ncnn", NcnnSqueeze(inResO, dims), new[] { inResO }), input);
+
+            var newDims = new List<int>();
+            foreach (int item in dims)
+            {
+                if (item > 4 || item < -3)
+                {
+                    return null;
+                }
+                else
+                {
+                    newDims.Add(item);
+                }
+                if(input.CheckedShape[item] != 1)
+                {
+                    return null;
+                }
+            }
+
+            return new Call(new Fusion("ncnn", NcnnSqueeze(inResO, newDims.ToArray()), new[] { inResO }), input);
         }
 
         return null;

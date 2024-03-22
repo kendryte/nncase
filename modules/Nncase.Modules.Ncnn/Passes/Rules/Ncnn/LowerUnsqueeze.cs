@@ -21,11 +21,9 @@ public partial class LowerUnsqueeze : RewriteRule<Pattern>
 
     private Expr? GetReplace(Expr input, int[] dims)
     {
-        if (input.CheckedShape.Count + dims.Length <= 5)
+        if (input.CheckedShape.Count + dims.Length < 5)
         {
             var inResO = new Var(input.CheckedType);
-
-            // var newDims = dims[0] == 0 ? dims[1..] : dims;
             return new Call(new Fusion("ncnn", NcnnUnsqueeze(inResO, dims), new[] { inResO }), input);
         }
 
