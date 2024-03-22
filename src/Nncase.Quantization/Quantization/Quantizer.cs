@@ -386,7 +386,9 @@ internal partial class Quantizer
 
                 // debug:delete
                 // sensitivities[(var, quantConfig)] = (float)((float)(cosine + (0.0001 * debugFakeNode) + (debugQuantType * 0.00001)) - 0.5);
-                Console.WriteLine($"get sensitivity: nodes:{_fakeNodesVars.Count} current:{debugFakeNode} types:{quantTypeSupport.Count} current:{++debugQuantType} cosine:{cosine}");
+                DateTime now = DateTime.Now;
+                string timestamp = now.ToString("HH:mm");
+                Console.WriteLine($"sensitivity: nodes:{debugFakeNode}/{_fakeNodesVars.Count} types:{++debugQuantType}/{quantTypeSupport.Count} time:{timestamp} cosine:{cosine}");
             }
         }
 
@@ -403,6 +405,33 @@ internal partial class Quantizer
 
     private void AddSensitivityForFallback(List<KeyValuePair<(Var Var, QuantConfig QuantConfig), float>> sensSorted)
     {
+        int identity = 0;
+
+        // 由于某些节点的量化损失很大，因此我们尽早把这些节点回退到cpu，否则会导致搜索速度很慢。这里创建了一个列表记录了需要在哪些位置插入回退到CPU的节点。这里之所以先记录节点，然后再倒叙插入节点，是因为插入节点的时候列表长度改变，导致InvalidOperationException
+        var toInsert = new List<(int, KeyValuePair<(Var, QuantConfig), float>)>();
+
+        // 遍历列表，记下需要插入新元素的位置
+        for (int i = 0; i < sensSorted.Count; i++)
+        {
+            if (sensSorted[i].Value < 1.8f)
+            {
+                // 构造新的KeyValuePair
+                var newPair = new KeyValuePair<(Var, QuantConfig), float>((sensSorted[i].Key.Var, new QuantConfig(identity++)), 2.0f);
+
+                // 记录位置和新元素
+                toInsert.Add((i + 1, newPair));
+            }
+        }
+
+        // 反向遍历toInsert列表，这样我们就不会因为插入操作改变索引而出错
+        for (int i = toInsert.Count - 1; i >= 0; i--)
+        {
+            var insertAt = toInsert[i].Item1;
+            var elementToInsert = toInsert[i].Item2;
+            sensSorted.Insert(insertAt, elementToInsert);
+        }
+
+        // 以下操作是最后的补刀：给所有节点回退到cpu的机会。
         var ticketsforVar = new Dictionary<Var, int>();
         int idx = 0;
         foreach (var (var, _) in sensSorted)
@@ -420,7 +449,6 @@ internal partial class Quantizer
 
         var ticketsSorted = ticketsforVar.OrderBy(x => x.Value).ToList();
 
-        int identity = 0;
         foreach (var (var, _) in ticketsSorted)
         {
             sensSorted.Add(new KeyValuePair<(Var, QuantConfig), float>((var, new QuantConfig(identity++)), 2.0f));
