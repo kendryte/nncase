@@ -83,13 +83,13 @@ class tensor_impl<T, Shape, Strides, MaxSize, true, false>
 
   public:
     using storage_type = detail::tensor_storage<T, MaxSize, true>;
-    using buffer_type = storage_type::buffer_type;
+    using buffer_type = typename storage_type::buffer_type;
 
     tensor_impl(buffer_type buffer, Shape shape, Strides strides)
         : storage_type(std::in_place, std::move(buffer)),
           size_impl_type(shape, strides) {}
     tensor_impl(buffer_type buffer, Shape shape)
-        : tensor_impl(shape, default_strides(shape)) {}
+        : tensor_impl(std::move(buffer), shape, default_strides(shape)) {}
 };
 
 // fixed view
@@ -102,7 +102,7 @@ class tensor_impl<T, Shape, Strides, MaxSize, true, true>
   public:
     using element_type = T;
     using storage_type = detail::tensor_storage<T, MaxSize, true>;
-    using buffer_type = storage_type::buffer_type;
+    using buffer_type = typename storage_type::buffer_type;
 
     tensor_impl(buffer_type buffer, Shape = {}, Strides = {}) noexcept
         : storage_type(std::in_place, std::move(buffer)) {}
@@ -118,7 +118,7 @@ class tensor_base
   public:
     using element_type = T;
     using storage_type = detail::tensor_storage<T, MaxSize, IsView>;
-    using buffer_type = storage_type::buffer_type;
+    using buffer_type = typename storage_type::buffer_type;
     using shape_type = Shape;
     using strides_type = Strides;
 

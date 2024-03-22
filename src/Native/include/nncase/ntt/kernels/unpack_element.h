@@ -20,8 +20,8 @@
 template <class TSclar, size_t Lanes, class TVec>
 void unpack_elemt(std::array<TSclar, Lanes> &arr, const TVec &vec);
 
-#ifdef __ARM_NEON__
-#include "arch/arm/unpack_element.h"
+#ifdef __aarch64__
+#include "arch/aarch64/unpack_element.h"
 #endif
 
 #ifdef __AVX__

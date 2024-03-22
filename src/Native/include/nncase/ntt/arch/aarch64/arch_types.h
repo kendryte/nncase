@@ -12,18 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #pragma once
-#include <array>
-#include <cstdint>
+#include "../../native_tensor.h"
+#include <arm_neon.h>
 
-template <class TScalar, size_t Lanes, class TVec>
-TVec pack_elemt(const std::array<TScalar, Lanes> &arr);
-
-#ifdef __aarch64__
-#include "arch/aarch64/pack_element.h"
-#endif
-
-#ifdef __AVX__
-#include "arch/x86_64/pack_element.h"
-#endif
+NTT_DEFINE_NATIVE_TENSOR(int8_t, int8x16_t, 16)
+NTT_DEFINE_NATIVE_TENSOR(uint8_t, uint8x16_t, 16)
+NTT_DEFINE_NATIVE_TENSOR(int16_t, int16x8_t, 8)
+NTT_DEFINE_NATIVE_TENSOR(uint16_t, uint16x8_t, 8)
+NTT_DEFINE_NATIVE_TENSOR(int32_t, int32x4_t, 4)
+NTT_DEFINE_NATIVE_TENSOR(uint32_t, uint32x4_t, 4)
+NTT_DEFINE_NATIVE_TENSOR(int64_t, int64x2_t, 2)
+NTT_DEFINE_NATIVE_TENSOR(uint64_t, uint64x2_t, 2)
+NTT_DEFINE_NATIVE_TENSOR(float, float32x4_t, 4)
+NTT_DEFINE_NATIVE_TENSOR(double, float64x2_t, 2)

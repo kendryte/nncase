@@ -12,18 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #pragma once
-#include <array>
-#include <cstdint>
+#include "../../tensor_ops.h"
+#include "arch_types.h"
+#include "arm_math.h"
 
-template <class TScalar, size_t Lanes, class TVec>
-TVec pack_elemt(const std::array<TScalar, Lanes> &arr);
-
-#ifdef __aarch64__
-#include "arch/aarch64/pack_element.h"
-#endif
-
-#ifdef __AVX__
-#include "arch/x86_64/pack_element.h"
-#endif
+namespace nncase::ntt::tensor_ops {
+template <> struct load_scalar<ntt::vector<float, 4>> {
+    ntt::vector<float, 4> operator()(float v) const noexcept {
+        return vdupq_n_f32(v);
+    }
+};
+} // namespace nncase::ntt::tensor_ops
