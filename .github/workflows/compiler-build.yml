@@ -54,6 +54,13 @@ jobs:
           echo "CXX=g++-10" >> $GITHUB_ENV
         if: runner.os == 'Linux'
 
+      - name: Configure Conan (Macos)
+        run: |
+          conan config init
+          sed -i '' 's/xtensalx7]/xtensalx7, arm64]/g' ~/.conan/settings.yml
+          sed -i '' 's/"14.0"]/"14.0", "15"]/g' ~/.conan/settings.yml
+        if: runner.os == 'Macos'
+
       - name: Configure CMake
         shell: bash
         run: |
