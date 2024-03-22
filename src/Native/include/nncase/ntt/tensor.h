@@ -65,7 +65,7 @@ class tensor_impl<T, Shape, Strides, MaxSize, false, true>
   public:
     using element_type = T;
     using storage_type = detail::tensor_storage<T, MaxSize, false>;
-    using buffer_type = storage_type::buffer_type;
+    using buffer_type = typename storage_type::buffer_type;
 
     tensor_impl(Shape = {}, Strides = {}) noexcept {}
     tensor_impl(buffer_type buffer) noexcept
