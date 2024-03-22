@@ -175,6 +175,10 @@ template <class TTensor> auto reduce_sum(const TTensor &tensor) {
     return reduce<ops::add>(tensor);
 }
 
+template <class TTensor> auto reduce_max(const TTensor &tensor) {
+    return reduce<ops::max>(tensor);
+}
+
 template <class TTensor> auto reduce_mean(const TTensor &tensor) {
     return div(reduce_sum(tensor), tensor.size());
 }

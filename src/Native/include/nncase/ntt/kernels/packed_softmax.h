@@ -40,9 +40,8 @@ void packed_on_axis_impl(const TIn &input, TOut &&output,
     constexpr auto sub_op = ops::sub<TElem>();
     constexpr auto max_op = ops::max<TElem>();
 
-    constexpr auto need_reduce = PackedAxes::rank() != 0 &&
-                                 Axis == PackedAxes::at(0) &&
-                                 is_vector_v<TElem>;
+    constexpr auto need_reduce =
+        PackedAxes::rank() != 0 && Axis == PackedAxes::at(0);
     constexpr auto domain =
         shape_infer::reduced_shape_by_axis<Axis>(input_shape);
     apply(domain, [&](auto index) {
@@ -55,7 +54,7 @@ void packed_on_axis_impl(const TIn &input, TOut &&output,
 
         // reduce_max
         if constexpr (need_reduce) {
-            max_value = reduce_max(max_value);
+            max_value = (TElem)reduce_max(max_value);
         }
 
         // (x - reduce_max) * beta
@@ -74,7 +73,7 @@ void packed_on_axis_impl(const TIn &input, TOut &&output,
 
         // reduce sum
         if constexpr (need_reduce) {
-            sum = reduce_sum(sum);
+            sum = (TElem)reduce_sum(sum);
         }
 
         // div

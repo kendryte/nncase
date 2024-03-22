@@ -93,15 +93,4 @@ concept IsRankedTensor =
 template <typename T>
 concept IsFixedDims = is_fixed_dims_v<T>;
 
-template <class T> struct is_vector : std::false_type {};
-
-template <template <typename, size_t...> class V, typename T, size_t... Lanes>
-struct is_vector<V<T, Lanes...>>
-    : std::integral_constant<bool, (sizeof...(Lanes) > 0)> {};
-
-template <class T> inline constexpr bool is_vector_v = is_vector<T>::value;
-
-template <typename T>
-concept IsVector = is_vector_v<T>;
-
 } // namespace nncase::ntt
