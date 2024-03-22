@@ -91,7 +91,6 @@ class nncaseConan(ConanFile):
         cmake.definitions['BUILDING_RUNTIME'] = self.options.runtime
         cmake.definitions['ENABLE_OPENMP'] = self.options.openmp
         cmake.definitions['ENABLE_VULKAN_RUNTIME'] = self.options.vulkan_runtime
-        cmake.definitions['ENABLE_HALIDE'] = self.options.halide
         cmake.definitions['BUILD_PYTHON_BINDING'] = self.options.python
         cmake.definitions['BUILD_TESTING'] = self.options.tests
         cmake.configure()
