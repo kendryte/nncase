@@ -56,7 +56,7 @@ struct tensor_size_impl : public shape_storage<Shape>,
     tensor_size_impl(Shape shape, Strides strides)
         : shape_storage<Shape>(shape), strides_storage<Strides>(strides) {}
 
-    constexpr size_t size() noexcept { return linear_size(shape(), strides()); }
+    constexpr size_t size() noexcept { return linear_size(this->shape(), this->strides()); }
 };
 
 template <size_t... Shapes, size_t... Strides>

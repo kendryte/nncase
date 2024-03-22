@@ -121,7 +121,7 @@ template <class TTensor> struct load {
     using T = typename TTensor::element_type;
 
     TTensor operator()(const T *src) const noexcept {
-        TVec vec;
+        TTensor vec;
         std::copy(src, src + vec.size(), vec.elements().data());
         return vec;
     }
