@@ -16,7 +16,3 @@ endif ()
 if (BUILD_TESTING)
     find_package(GTest REQUIRED)
 endif ()
-
-if (ENABLE_HALIDE)
-    find_package(hkg REQUIRED)
-endif ()
