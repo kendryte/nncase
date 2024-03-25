@@ -115,7 +115,7 @@ splits = [
     [1, 1, 2],
     [1, 2, 1],
     [3, 2, 2, 1],
-    [2, 1, 1, 1,3],
+    [2, 1, 1, 1, 3],
 ]
 
 output_sizes = [
@@ -143,7 +143,7 @@ op_versions_and_value_formats = [
 def test_split(in_shape, axis, split, output_size, op_versions_and_value_format, request):
     op_version, value_format = op_versions_and_value_format
     dim = axis if axis is not None else 0
-    if (split is None and in_shape[dim] % output_size == 0 ) or (split is not None and len(split) == output_size and sum(split) == in_shape[dim]):
+    if (split is None and in_shape[dim] % output_size == 0) or (split is not None and len(split) == output_size and sum(split) == in_shape[dim]):
         model_def = _make_module(in_shape, axis, split, output_size, op_version, value_format)
 
         runner = OnnxTestRunner(request.node.name)

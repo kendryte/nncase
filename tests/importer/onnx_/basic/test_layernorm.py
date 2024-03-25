@@ -20,7 +20,7 @@ import numpy as np
 from onnx_test_runner import OnnxTestRunner
 
 
-def _make_module(v_shape,axis):
+def _make_module(v_shape, axis):
     class LayerNormModule(torch.nn.Module):
         def __init__(self, channel_size=3):
             super(LayerNormModule, self).__init__()
@@ -29,13 +29,13 @@ def _make_module(v_shape,axis):
             self.bias = torch.from_numpy(np.random.rand(*reduce_dim).astype(np.float32))
             # torch.layernorm init scale and bias with [1,0] because they are learnable. When the model exports to onnx, scale and bias were eliminated.
             # So, random data are used to pretend parameters.
-            self.layernorm = nn.LayerNorm(normalized_shape=reduce_dim, elementwise_affine=True,eps=1e-03)
+            self.layernorm = nn.LayerNorm(normalized_shape=reduce_dim,
+                                          elementwise_affine=True, eps=1e-03)
 
         def forward(self, x):
             x = self.layernorm(x)
-            x = x *self.scale + self.bias
+            x = x * self.scale + self.bias
             return x
-
 
     return LayerNormModule()
 
