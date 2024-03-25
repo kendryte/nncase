@@ -90,9 +90,9 @@ class unary_impl<ranked_shape<Rank>, InStrides, OutStrides> {
                          const TIn &input, TOut &output) {
         const auto outer_dims = Rank - conti_dims;
         if (Axis >= outer_dims) {
-            const auto inner_size = std::accumulate(
-                input.shape().begin() + outer_dims, input.shape().end(),
-                size_t(1), std::multiplies<>());
+            size_t inner_size = 1;
+            for (size_t i = outer_dims; i < input.shape().rank(); i++)
+                inner_size *= input.shape()[i];
             auto input_p =
                 input.buffer().data() + linear_offset(index, input.strides());
             auto output_p =

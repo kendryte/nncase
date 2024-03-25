@@ -79,7 +79,7 @@ template <class T> struct rsqrt {
 };
 
 template <class T> struct sign {
-    T operator()(T v) const noexcept { return std::copysign((T)1, v); }
+    T operator()(T v) const noexcept { return (static_cast<T>(0) < v) - (v < static_cast<T>(0)); }
 };
 
 template <class T> struct sin {
