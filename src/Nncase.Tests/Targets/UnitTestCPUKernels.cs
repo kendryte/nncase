@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -143,6 +143,12 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { true, 1 })] // enable packing
     public async Task TestDecodeLayer(bool packing, int count)
     {
+        // Memory usage is too high for CI env
+        if (bool.TryParse(Environment.GetEnvironmentVariable("CI"), out var inCI) && inCI)
+        {
+            return;
+        }
+
         CompileOptions.TargetCompileOptions = CPUCompileOptions.Default with { Packing = packing };
         var vhidden_in = new Var("vhidden_in", new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 }));
         var vattn_mask = new Var("vattn_mask", new TensorType(DataTypes.Float32, new[] { 1, 1, 384, 384 }));
