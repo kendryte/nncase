@@ -23,38 +23,13 @@
 
 size_t rdata_offset = 0;
 
-typedef std::chrono::high_resolution_clock::time_point time_var;
-
-#define duration(name, a)                                                      \
-    std::cout                                                                  \
-        << name << " : "                                                       \
-        << std::chrono::duration_cast<std::chrono::nanoseconds>(a).count() /   \
-               1e6                                                             \
-        << " ms" << std::endl
-#define timeNow() std::chrono::high_resolution_clock::now()
-
-template <class T, class T1>
-void print_data(T1 *data, int size, int placeholde = 1, int changeline = 1)
-{
-    auto s = placeholde ? " " : "";
-    for (int i = 0; i < size; i++) {
-        if(i%10 == 0 && changeline)
-        {
-            std::cout<<std::endl;
-            std::cout << i / 10 << "\t" << std::flush;
-        }
-        std::cout << *((T)(data) + i) << s;
-    }
-    std::cout << std::endl;
-}
-
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::ncnn;
 
 namespace {
 class DataReaderFromEmpty : public ::ncnn::DataReader {
-  public:
+public:
     virtual int scan(const char *format, void *p) const { return 0; }
     virtual size_t read(void *buf, size_t size) const {
         memset(buf, 0, size);
@@ -86,15 +61,13 @@ result<void> ncnn_runtime_function::initialize_core(
     NNCASE_UNUSED stream_reader* sr = nullptr;
     section_header h;
     try_set(sr, context.seek_section(".rdata", h));
-    // rdata_ = sr.template read<section_header>();
-    // std::cout << "start: " << h.body_start << "\t" << "size: " << h.body_size << std::endl;
-    // print_data<float *>(rdata_.data(), rdata_.size() / sizeof(float));
     auto param_mem = reinterpret_cast<const uint8_t *>(
         module().text().data() + context.header().entrypoint);
     if(context.header().entrypoint == 0)
         rdata_offset = 0;
     auto bin_mem = reinterpret_cast<const uint8_t *>(module().rdata().data() +
                                                      rdata_offset);
+
     // auto bin_mem = reinterpret_cast<const uint8_t *>(rdata_.data());
     ::ncnn::DataReaderFromMemory paramdr(param_mem);
     ::ncnn::DataReaderFromMemory bindr(bin_mem);
@@ -102,7 +75,7 @@ result<void> ncnn_runtime_function::initialize_core(
     CHECK_WITH_ERR(!net_.load_param(paramdr), std::errc::invalid_argument);
     CHECK_WITH_ERR(!net_.load_model(bindr), std::errc::invalid_argument);
 
-    net_.opt.num_threads = 1;
+    net_.opt.num_threads = omp_get_thread_num();
 
     rdata_offset += h.memory_size;
 
@@ -174,7 +147,6 @@ result<value_t> ncnn_runtime_function::invoke_core(
 
     // 2. Extract outputs
     std::vector<value_t> outputs;
-    time_var t = timeNow();
     for (size_t i = 0; i < output_names_.size(); i++) {
         ::ncnn::Mat mat;
         CHECK_WITH_ERR(!ex.extract(output_names_[i].c_str(), mat),
@@ -195,8 +167,7 @@ result<value_t> ncnn_runtime_function::invoke_core(
             shape = {(size_t)mat.c, (size_t)mat.h, (size_t)mat.w};
             break;
         case 4:
-            shape = {(size_t)mat.c, (size_t)mat.d, (size_t)mat.h, (size_t)mat.w,
-                     1};
+            shape = {(size_t)mat.c, (size_t)mat.d, (size_t)mat.h, (size_t)mat.w};
             break;
         default:
             return err(std::errc::invalid_argument);
@@ -236,7 +207,6 @@ result<value_t> ncnn_runtime_function::invoke_core(
         tensor t(std::in_place, dt, shape, get_default_strides(shape), buf);
         outputs.emplace_back(t);
     }
-    duration("ncnn run", timeNow() - t);
     auto ret_val = output_names_.size() == 1
                        ? outputs[0]
                        : tuple(std::in_place, std::move(outputs));
