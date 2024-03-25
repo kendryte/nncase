@@ -126,7 +126,7 @@ jobs:
         conan profile update settings.compiler.libcxx=libstdc++11 default
         conan config init
         sed -i 's/xtensalx7]/xtensalx7, ${{matrix.config.arch}}]/g' ~/.conan/settings.yml
-        sed -i 's/'12.1', '12.2']/'12.1', '12.2', '13.2']/g' ~/.conan/settings.yml
+        sed -i 's/'12.1', '12.2']/'12.1', '12.2', '13', '13.1', '13.2']/g' ~/.conan/settings.yml
 
     - name: Configure CMake
       run: |
