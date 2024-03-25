@@ -19,7 +19,13 @@
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
+
+#ifdef ENABLE_OPENMP
 #include <omp.h>
+#define OMP_MAX_THREAD omp_get_max_threads()
+#else
+#define OMP_MAX_THREAD 1
+#endif // ENABLE_OPENMP
 
 size_t rdata_offset = 0;
 
@@ -75,8 +81,7 @@ result<void> ncnn_runtime_function::initialize_core(
     CHECK_WITH_ERR(!net_.load_param(paramdr), std::errc::invalid_argument);
     CHECK_WITH_ERR(!net_.load_model(bindr), std::errc::invalid_argument);
 
-    net_.opt.num_threads = omp_get_thread_num();
-
+    net_.opt.num_threads = OMP_MAX_THREAD;
     rdata_offset += h.memory_size;
 
 

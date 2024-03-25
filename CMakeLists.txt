@@ -59,6 +59,10 @@ if(ENABLE_DUMP_MEM)
     add_definitions(-DDUMP_MEM)
 endif()
 
+if(ENABLE_OPENMP)
+    add_definitions(-DENABLE_OPENMP)
+endif()
+
 if(NOT CMAKE_TOOLCHAIN_FILE)
    include(toolchains/native.toolchain.cmake)
 endif()
