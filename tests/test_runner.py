@@ -400,6 +400,12 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
             file_list.extend([os.path.join(args, p) for p in os.listdir(args)])
         elif method == 'constant_of_shape':
             assert len(args) != 0
+        elif method == 'numpy':
+            assert(os.path.isdir(args))
+            for file in os.listdir(args):
+                if file.endswith('.npy'):
+                    file_list.append(os.path.join(args, file))
+            file_list.sort()
         else:
             assert '{0} : not supported generator method'.format(method)
 
@@ -420,19 +426,19 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 input_shape[0] *= generator_cfg['batch']
 
             for batch_idx in range(batch_number):
+                idx = input_idx * batch_number + batch_idx
                 if method == 'random':
                     data = generator.from_random(input_shape, dtype, args)
                 elif method == 'bin':
-                    idx = input_idx * batch_number + batch_idx
                     assert(idx < len(file_list))
                     data = generator.from_bin(input_shape, dtype, file_list[idx])
                 elif method == 'image':
-                    idx = input_idx * batch_number + batch_idx
                     assert(idx < len(file_list))
                     data = generator.from_image(input_shape, dtype, file_list[idx])
                 elif method == 'constant_of_shape':
                     data = generator.from_constant_of_shape(args, dtype)
-
+                elif method == 'numpy':
+                    data = generator.from_numpy(file_list[idx])
                 if not test_utils.in_ci():
                     dump_bin_file(os.path.join(self.case_dir, name,
                                                f'{name}_{input_idx}_{batch_idx}.bin'), data)
