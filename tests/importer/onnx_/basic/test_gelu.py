@@ -23,11 +23,11 @@ def _make_module(v_shape):
     class GELUModule(torch.nn.Module):
         def __init__(self,):
             super(GELUModule, self).__init__()
-            self.gelu = nn.GELU();
+            self.gelu = nn.GELU()
+
         def forward(self, x):
             x = self.gelu(x)
             return x
-
 
     return GELUModule()
 

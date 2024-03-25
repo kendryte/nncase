@@ -20,6 +20,7 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
+
 def _make_module(in_shape, in_type, out_type, op_version):
     attributes_dict = {}
 

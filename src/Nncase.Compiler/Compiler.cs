@@ -100,7 +100,6 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.NormAxisReshape>();
             p.Add<Passes.Rules.Neutral.NormAxisReduceArg>();
             p.Add<Passes.Rules.Neutral.NormAxisSlice>();
-            p.Add<Passes.Rules.Neutral.SwapBinaryArgs>();
             p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
             p.Add<Passes.Rules.Neutral.Squeeze5DTranspose>();
             p.Add<Passes.Rules.Neutral.SqueezeBinaryShape>();
@@ -141,6 +140,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldNopReduce>();
             p.Add<Passes.Rules.Neutral.SliceToGetItem>();
             p.Add<Passes.Rules.Neutral.FoldTwoPads>();
+            p.Add<Passes.Rules.Neutral.SwapBinaryArgs>();
             p.Add<Passes.Rules.Neutral.FoldDilatedConv2D>();
         });
 
@@ -153,10 +153,17 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.WithMarker.FoldTransposeActTranspose>();
             p.Add<Passes.Rules.WithMarker.FoldTransposeBinaryActTranspose>();
             p.Add<Passes.Rules.WithMarker.CombineReshapePad>();
-            p.Add<Passes.Rules.WithMarker.CombineTransposePad>();
             p.Add<Passes.Rules.WithMarker.CombinePadTranspose>();
             p.Add<Passes.Rules.Neutral.CombineTransposeUnary>();
-            p.Add<Passes.Rules.Neutral.CombineTransposePad>();
+            if (_compileSession.CompileOptions.ShapeBucketOptions.Enable)
+            {
+                p.Add<Passes.Rules.WithMarker.CombineTransposePad>();
+            }
+            else
+            {
+                p.Add<Passes.Rules.Neutral.CombineTransposePad>();
+            }
+
             p.Add<Passes.Rules.Neutral.CombinePadTranspose>();
             p.Add<Passes.Rules.Neutral.CombineBinaryTranspose>();
             p.Add<Passes.Rules.Neutral.CombineConstBinaryTranspose>();

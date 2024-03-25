@@ -99,7 +99,7 @@ class Inference:
     def dump_kmodel_desc(self, file):
         input_shapes = data_shape_list_string(self.inputs)
         output_shapes = data_shape_list_string(self.outputs)
-        s = f"{len(self.inputs)} {len(self.outputs)}\n{input_shapes}\n{output_shapes}"
+        s = f"{len(self.inputs)} {len(self.outputs)}\n{input_shapes}\n{output_shapes}\n"
         with open(file, "w+") as f:
             f.write(s)
 

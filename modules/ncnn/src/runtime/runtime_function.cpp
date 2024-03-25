@@ -35,7 +35,7 @@ using namespace nncase::runtime::ncnn;
 
 namespace {
 class DataReaderFromEmpty : public ::ncnn::DataReader {
-public:
+  public:
     virtual int scan(const char *format, void *p) const { return 0; }
     virtual size_t read(void *buf, size_t size) const {
         memset(buf, 0, size);
@@ -64,12 +64,12 @@ result<void> ncnn_runtime_function::initialize_core(
                                   return ok();
                               }));
 
-    NNCASE_UNUSED stream_reader* sr = nullptr;
+    NNCASE_UNUSED stream_reader *sr = nullptr;
     section_header h;
     try_set(sr, context.seek_section(".rdata", h));
     auto param_mem = reinterpret_cast<const uint8_t *>(
         module().text().data() + context.header().entrypoint);
-    if(context.header().entrypoint == 0)
+    if (context.header().entrypoint == 0)
         rdata_offset = 0;
     auto bin_mem = reinterpret_cast<const uint8_t *>(module().rdata().data() +
                                                      rdata_offset);
@@ -83,7 +83,6 @@ result<void> ncnn_runtime_function::initialize_core(
 
     net_.opt.num_threads = OMP_MAX_THREAD;
     rdata_offset += h.memory_size;
-
 
     return ok();
 }
@@ -172,7 +171,8 @@ result<value_t> ncnn_runtime_function::invoke_core(
             shape = {(size_t)mat.c, (size_t)mat.h, (size_t)mat.w};
             break;
         case 4:
-            shape = {(size_t)mat.c, (size_t)mat.d, (size_t)mat.h, (size_t)mat.w};
+            shape = {(size_t)mat.c, (size_t)mat.d, (size_t)mat.h,
+                     (size_t)mat.w};
             break;
         default:
             return err(std::errc::invalid_argument);
