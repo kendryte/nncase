@@ -413,7 +413,7 @@ internal partial class Quantizer
         // 遍历列表，记下需要插入新元素的位置
         for (int i = 0; i < sensSorted.Count; i++)
         {
-            if (sensSorted[i].Value < 1.8f)
+            if (sensSorted[i].Value < 0.95f)
             {
                 // 构造新的KeyValuePair
                 var newPair = new KeyValuePair<(Var, QuantConfig), float>((sensSorted[i].Key.Var, new QuantConfig(identity++)), 2.0f);
