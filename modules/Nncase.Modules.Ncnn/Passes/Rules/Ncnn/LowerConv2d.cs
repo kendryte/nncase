@@ -39,6 +39,11 @@ public partial class LowerConv : RewriteRule<Pattern>
 
     private Expr? GetReplace(Expr input, Tensor<float> weights, Tensor<float> bias, int[] strides, int[] paddings, int[] dilation, int groups, float[] fusedClamp)
     {
+        if (input.CheckedShape.Rank != 4 || input.CheckedShape[0].FixedValue != 1)
+        {
+            return null;
+        }
+
         var (numOutput, kernelH, kernelW) = (weights.Shape[0], weights.Shape[2], weights.Shape[3]);
         var (dilationH, dilationW) = (dilation[0], dilation.Length == 2 ? dilation[1] : dilation[0]);
         var (strideH, strideW) = (strides[0], strides.Length == 2 ? strides[1] : strides[0]);

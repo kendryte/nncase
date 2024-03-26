@@ -466,6 +466,9 @@ internal class NcnnEmitter
 
     public void ConvTranspose(string[] name, string input, ConvTransposeArgs args)
     {
+        var actData = new List<float> { args.ActivationParams.Length };
+        actData.AddRange(args.ActivationParams);
+
         AddLayer("Deconvolution", name[0], new[] { input }, name, new ParamDict
         {
             [0] = new ParamValue { Kind = ParamKind.Int, IntValue = args.NumOutput },
@@ -480,18 +483,19 @@ internal class NcnnEmitter
             [15] = new ParamValue { Kind = ParamKind.Int, IntValue = args.PadRight },
             [16] = new ParamValue { Kind = ParamKind.Int, IntValue = args.PadBottom },
 
-            // [18] = new ParamValue { Kind = ParamKind.Int, IntValue = args.OutputPadRight },
-            // [19] = new ParamValue { Kind = ParamKind.Int, IntValue = args.OutputPadBottom },
-            // [20] = new ParamValue { Kind = ParamKind.Int, IntValue = args.OutputW },
-            // [21] = new ParamValue { Kind = ParamKind.Int, IntValue = args.OutputH },
             [5] = new ParamValue { Kind = ParamKind.Int, IntValue = args.BiasTerm },
             [6] = new ParamValue { Kind = ParamKind.Int, IntValue = args.WeightDataSize },
 
             // [9] = new ParamValue { Kind = ParamKind.Int, IntValue = args.ActivationType },
-            // [10] = new ParamValue { Kind = ParamKind.ArrayOfFloat, TensorValue = args.ActivationParams },
+            // [-10] = new ParamValue { Kind = ParamKind.ArrayOfIntOrFloat, TensorValue = actData.ToArray() },
+            //
+            // [18] = new ParamValue { Kind = ParamKind.Int, IntValue = args.OutputPadRight },
+            // [19] = new ParamValue { Kind = ParamKind.Int, IntValue = args.OutputPadBottom },
+            // [20] = new ParamValue { Kind = ParamKind.Int, IntValue = args.OutputW },
+            // [21] = new ParamValue { Kind = ParamKind.Int, IntValue = args.OutputH },
         });
         WriteFloatArray(new float[] { 0 }); // quantize flag [Not exist in ncnn op.md]
-        WriteFloatArray(args.WeightData.ToArray<float>());
+        WriteFloatArray(args.WeightData);
         WriteFloatArray(args.BiasData);
     }
 

@@ -156,7 +156,7 @@ public record CropArgs
 
 public record ConvTransposeArgs
 {
-    public ConvTransposeArgs(Tensor? weightData = null, float[]? biasData = null, int numOutput = default, int kernelW = default, int kernelH = default, int dilationW = default, int dilationH = default, int strideW = default, int strideH = default, int padLeft = default, int padRight = default, int padTop = default, int padBottom = default, int biasTerm = default, int weightDataSize = default, int activationType = default, float[]? activationParams = null, int outputPadRight = default, int outputPadBottom = default, int outputW = default, int outputH = default)
+    public ConvTransposeArgs(float[]? weightData = null, float[]? biasData = null, int numOutput = default, int kernelW = default, int kernelH = default, int dilationW = default, int dilationH = default, int strideW = default, int strideH = default, int padLeft = default, int padRight = default, int padTop = default, int padBottom = default, int biasTerm = default, int weightDataSize = default, int activationType = default, float[]? activationParams = null, int outputPadRight = default, int outputPadBottom = default, int outputW = default, int outputH = default)
     {
         WeightData = weightData!;
         BiasData = biasData!;
@@ -181,7 +181,7 @@ public record ConvTransposeArgs
         OutputH = outputH;
     }
 
-    public Tensor WeightData { get; }
+    public float[] WeightData { get; }
 
     public float[] BiasData { get; }
 
@@ -357,4 +357,6 @@ public record ConvArgs
     /// Gets Groups.
     /// </summary>
     public int Groups { get; }
+
+    public override string ToString() => $"{nameof(WeightData)}: {WeightData}, {nameof(BiasData)}: {BiasData}, {nameof(NumOutput)}: {NumOutput}, {nameof(KernelW)}: {KernelW}, {nameof(KernelH)}: {KernelH}, {nameof(DilationW)}: {DilationW}, {nameof(DilationH)}: {DilationH}, {nameof(StrideW)}: {StrideW}, {nameof(StrideH)}: {StrideH}, {nameof(PadLeft)}: {PadLeft}, {nameof(PadRight)}: {PadRight}, {nameof(PadTop)}: {PadTop}, {nameof(PadBottom)}: {PadBottom}, {nameof(PadValue)}: {PadValue}, {nameof(BiasTerm)}: {BiasTerm}, {nameof(WeightDataSize)}: {WeightDataSize}, {nameof(Int8ScaleTerm)}: {Int8ScaleTerm}, {nameof(ActivationType)}: {ActivationType}, {nameof(ActivationParams)}: {ActivationParams}, {nameof(DynamicWeight)}: {DynamicWeight}, {nameof(Groups)}: {Groups}";
 }

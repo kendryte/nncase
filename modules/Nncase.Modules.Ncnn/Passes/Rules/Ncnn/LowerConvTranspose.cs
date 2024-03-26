@@ -42,6 +42,11 @@ public partial class LowerConvTranspose : RewriteRule<Pattern>
 
     private Expr? GetReplace(Expr input, Tensor<float> weights, Tensor<float> bias, int[] outputShape, int[] strides, int[] paddings, int[] outputPadding, int[] dilation, int group, float[] fusedClamp)
     {
+        if (input.CheckedShape.Rank != 4 || input.CheckedShape[0].FixedValue != 1)
+        {
+            return null;
+        }
+
         int[] weightShape = weights.Shape.ToValueArray();
         var (numOutput, kernelH, kernelW) = (weights.Shape[0], weights.Shape[2], weights.Shape[3]);
         var (dilationH, dilationW) = (dilation[0], dilation.Length == 2 ? dilation[1] : dilation[0]);
@@ -59,7 +64,7 @@ public partial class LowerConvTranspose : RewriteRule<Pattern>
         // var newWeights = Transpose(weights, new int[] { 1, 0, 2, 3 }).Evaluate().AsTensor();
 
         // actType and actParams not used in ncnn: onnx2ncnn.
-        var args = new ConvTransposeArgs(weights, bias.ToArray(), numOutput.FixedValue, kernelW.FixedValue, kernelH.FixedValue, dilationW, dilationH, strideW, strideH, padLeft, padRight, padTop, padBottom, biasTerm, weightsDataSize, activationType, fusedClamp, outputPadding[1], outputPadding[0], outputShape[3], outputShape[2]);
+        var args = new ConvTransposeArgs(weights.ToArray(), bias.ToArray(), numOutput.FixedValue, kernelW.FixedValue, kernelH.FixedValue, dilationW, dilationH, strideW, strideH, padLeft, padRight, padTop, padBottom, biasTerm, weightsDataSize, activationType, fusedClamp, outputPadding[1], outputPadding[0], outputShape[3], outputShape[2]);
 
         var inRes = Squeeze(input, new[] { 0 });
         var inResO = new Var(inRes.CheckedType);

@@ -31,6 +31,6 @@ public sealed partial class NcnnConv : Op
     /// <inheritdoc/>
     public override string DisplayProperty()
     {
-        return $"";
+        return Args.ToString();
     }
 }

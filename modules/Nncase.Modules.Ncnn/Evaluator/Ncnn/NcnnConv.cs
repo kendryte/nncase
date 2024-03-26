@@ -72,13 +72,13 @@ public class NcnnConvEvaluator : IEvaluator<NcnnConv>, ITypeInferencer<NcnnConv>
         outputShape[0] = conv.Args.NumOutput;
 
         outputShape[1] = IR.TypePatternUtility.GetWindowedOutputSize(
-                input.Shape[1].FixedValue + conv.Args.PadLeft + conv.Args.PadRight,
+                input.Shape[1].FixedValue + conv.Args.PadTop + conv.Args.PadBottom,
                 kernelShape[2],
                 conv.Args.StrideH,
                 conv.Args.DilationH,
                 false);
         outputShape[2] = IR.TypePatternUtility.GetWindowedOutputSize(
-                input.Shape[2].FixedValue + conv.Args.PadTop + conv.Args.PadBottom,
+                input.Shape[2].FixedValue + conv.Args.PadLeft + conv.Args.PadRight,
                 kernelShape[3],
                 conv.Args.StrideW,
                 conv.Args.DilationW,
