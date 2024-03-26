@@ -46,9 +46,7 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
                 out_index[axes[i]] =
                     out_index[axes[i]] * TVec::shape()[i] + index[rank + i];
             });
-            if (in_bound(out_index, output.shape())) {
-                output(out_index) = input(in_index)(elem_index);
-            }
+            output(out_index) = input(in_index)(elem_index);
         });
     }
 };
@@ -84,9 +82,7 @@ class unpack_impl<ranked_shape<in_rank>, fixed_shape<InElemDims...>, OutShape,
                 out_index[axes[i]] =
                     out_index[axes[i]] * TVec::shape()[i] + index[rank + i];
             });
-            if (in_bound(out_index, output.shape())) {
-                output(out_index) = input(in_index)(elem_index);
-            }
+            output(out_index) = input(in_index)(elem_index);
         });
     }
 };

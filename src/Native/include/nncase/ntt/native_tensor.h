@@ -39,4 +39,8 @@
       private:                                                                 \
         buffer_type buffer_;                                                   \
     };                                                                         \
+                                                                               \
+    static_assert(sizeof(ntt::fixed_tensor<element_type, max_size>) ==         \
+                      sizeof(element_type) * max_size,                         \
+                  "Native tensor size mismatch.");                             \
     }

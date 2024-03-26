@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "../compiler_defs.h"
 #include "../shape.h"
 
 namespace nncase::ntt::detail {
@@ -51,16 +52,19 @@ template <size_t... Dims> class strides_storage<fixed_strides<Dims...>> {
 };
 
 template <class Shape, class Strides>
-struct tensor_size_impl : public shape_storage<Shape>,
-                          public strides_storage<Strides> {
+struct NTT_EMPTY_BASES tensor_size_impl : public shape_storage<Shape>,
+                                          public strides_storage<Strides> {
     tensor_size_impl(Shape shape, Strides strides)
         : shape_storage<Shape>(shape), strides_storage<Strides>(strides) {}
 
-    constexpr size_t size() noexcept { return linear_size(this->shape(), this->strides()); }
+    constexpr size_t size() noexcept {
+        return linear_size(this->shape(), this->strides());
+    }
 };
 
 template <size_t... Shapes, size_t... Strides>
-class tensor_size_impl<fixed_shape<Shapes...>, fixed_strides<Strides...>>
+class NTT_EMPTY_BASES
+    tensor_size_impl<fixed_shape<Shapes...>, fixed_strides<Strides...>>
     : public shape_storage<fixed_shape<Shapes...>>,
       public strides_storage<fixed_strides<Strides...>> {
   public:

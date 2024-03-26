@@ -331,6 +331,7 @@ int main() {
         });
     }
 
+#if 0
     // fixed unpack with pad
     {
         ntt::tensor<float, ntt::fixed_shape<16, 62, 32>> ta;
@@ -345,7 +346,7 @@ int main() {
             assert(a == c);
         });
     }
-#if 0
+
     // layer norm1 (packed axis >= layer norm axis)
     {
         ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> buffer_1;
