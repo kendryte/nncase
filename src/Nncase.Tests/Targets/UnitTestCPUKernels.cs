@@ -61,7 +61,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     [Theory]
     [InlineData(new object[] { BinaryOp.Add, new[] { 8, 2 }, new int[] { 8, 2 }, 0 })] // normal
-    //[InlineData(new object[] { BinaryOp.Mul, new[] { 1, 64, 384, 16 * 8 }, new int[] { 1, 1, 384, 16 * 8 }, 1 })] // broadcast
+    [InlineData(new object[] { BinaryOp.Mul, new[] { 1, 8, 64, 2 * 8 }, new int[] { 1, 1, 64, 2 * 8 }, 1 })] // broadcast
     public async void TestPackBinary(BinaryOp op, int[] lhsShape, int[] rhsShape, int count)
     {
         var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
