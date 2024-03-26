@@ -49,7 +49,6 @@ jobs:
           conan profile update settings.compiler.version=10 default
           echo "CC=gcc-10" >> $GITHUB_ENV
           echo "CXX=g++-10" >> $GITHUB_ENV
-          sed -i 's/"12.1", "12.2"]/"12.1", "12.2", "13", "13.1", "13.2"]/g' ~/.conan/settings.yml
         if: runner.os == 'Linux'
 
       - name: Configure CMake
