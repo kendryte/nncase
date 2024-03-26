@@ -156,7 +156,7 @@ public record CropArgs
 
 public record ConvTransposeArgs
 {
-    public ConvTransposeArgs(float[]? weightData = null, float[]? biasData = null, int numOutput = default, int kernelW = default, int kernelH = default, int dilationW = default, int dilationH = default, int strideW = default, int strideH = default, int padLeft = default, int padRight = default, int padTop = default, int padBottom = default, int biasTerm = default, int weightDataSize = default, int activationType = default, float[]? activationParams = null, int outputPadRight = default, int outputPadBottom = default, int outputW = default, int outputH = default)
+    public ConvTransposeArgs(Tensor? weightData = null, float[]? biasData = null, int numOutput = default, int kernelW = default, int kernelH = default, int dilationW = default, int dilationH = default, int strideW = default, int strideH = default, int padLeft = default, int padRight = default, int padTop = default, int padBottom = default, int biasTerm = default, int weightDataSize = default, int activationType = default, float[]? activationParams = null, int outputPadRight = default, int outputPadBottom = default, int outputW = default, int outputH = default)
     {
         WeightData = weightData!;
         BiasData = biasData!;
@@ -181,7 +181,7 @@ public record ConvTransposeArgs
         OutputH = outputH;
     }
 
-    public float[] WeightData { get; }
+    public Tensor WeightData { get; }
 
     public float[] BiasData { get; }
 

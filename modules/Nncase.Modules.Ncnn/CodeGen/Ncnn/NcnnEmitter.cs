@@ -495,7 +495,7 @@ internal class NcnnEmitter
             // [21] = new ParamValue { Kind = ParamKind.Int, IntValue = args.OutputH },
         });
         WriteFloatArray(new float[] { 0 }); // quantize flag [Not exist in ncnn op.md]
-        WriteFloatArray(args.WeightData);
+        WriteFloatArray(args.WeightData.ToArray<float>());
         WriteFloatArray(args.BiasData);
     }
 

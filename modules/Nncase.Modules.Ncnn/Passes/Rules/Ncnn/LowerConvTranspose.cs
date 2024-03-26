@@ -64,7 +64,7 @@ public partial class LowerConvTranspose : RewriteRule<Pattern>
         // var newWeights = Transpose(weights, new int[] { 1, 0, 2, 3 }).Evaluate().AsTensor();
 
         // actType and actParams not used in ncnn: onnx2ncnn.
-        var args = new ConvTransposeArgs(weights.ToArray(), bias.ToArray(), numOutput.FixedValue, kernelW.FixedValue, kernelH.FixedValue, dilationW, dilationH, strideW, strideH, padLeft, padRight, padTop, padBottom, biasTerm, weightsDataSize, activationType, fusedClamp, outputPadding[1], outputPadding[0], outputShape[3], outputShape[2]);
+        var args = new ConvTransposeArgs(weights, bias.ToArray(), numOutput.FixedValue, kernelW.FixedValue, kernelH.FixedValue, dilationW, dilationH, strideW, strideH, padLeft, padRight, padTop, padBottom, biasTerm, weightsDataSize, activationType, fusedClamp, outputPadding[1], outputPadding[0], outputShape[3], outputShape[2]);
 
         var inRes = Squeeze(input, new[] { 0 });
         var inResO = new Var(inRes.CheckedType);
