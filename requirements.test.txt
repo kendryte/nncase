@@ -4,7 +4,7 @@ pillow
 opencv-python
 onnx==1.12.0
 onnx-simplifier==0.3.6
-onnxoptimizer==0.2.6
+onnxoptimizer==0.2.7
 onnxruntime==1.12.0
 ncnn==1.0.20230816
 numpy==1.21.0
