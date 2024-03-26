@@ -27,7 +27,7 @@ def _make_module(v_shape, axis):
             reduce_dim = [v_shape[i] for i in range(len(v_shape)) if i > axis]
             self.scale = torch.from_numpy(np.random.rand(*reduce_dim).astype(np.float32))
             self.bias = torch.from_numpy(np.random.rand(*reduce_dim).astype(np.float32))
-            self.axis = [ i for i in range(len(v_shape)) if i > axis]
+            self.axis = [i for i in range(len(v_shape)) if i > axis]
 
         def forward(self, x):
             reduce_mean = torch.mean(x, self.axis, keepdim=True)
