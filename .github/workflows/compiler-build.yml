@@ -182,7 +182,7 @@ jobs:
           - {name: x86_64-windows, os: windows-latest, arch: x64, shell: bash}
 
     env:
-      VULKANSDK_VER: 1.3.268.0
+      VULKANSDK_VER: 1.3.280.0
 
     steps:
       - uses: actions/checkout@v3
