@@ -213,8 +213,6 @@ jobs:
           sudo /Volumes/vulkansdk-macos-*/InstallVulkan.app/Contents/MacOS/InstallVulkan --root $HOME/VulkanSDK --accept-licenses --default-answer --confirm-command install
           hdiutil detach /Volumes/vulkansdk-macos-*
           echo "VULKAN_SDK=$HOME/VulkanSDK/macOS" >> $GITHUB_ENV
-          sudo cmake -E make_directory /usr/local/share/vulkan/icd.d
-          sudo cp lib/* /usr/local/share/vulkan/icd.d
           cp install/lib/*.dylib install/
           echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
         if: runner.os == 'macOS'
