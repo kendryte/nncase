@@ -12,7 +12,6 @@ torch==1.13.0
 torchvision==0.14.0
 imageio==2.15.0
 protobuf==3.12.2
-kendryte-caffe
 pytest
 pytest-xdist
 pyyaml
