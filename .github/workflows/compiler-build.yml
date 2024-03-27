@@ -200,6 +200,12 @@ jobs:
           cache: 'pip'
           cache-dependency-path: '**/requirements.test.txt'
 
+      - name: Set up build environment (Windows, Visual Studio)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.config.arch}}
+        if: runner.os == 'Windows'
+
       - name: Install nncase native Artifact
         uses: actions/download-artifact@v3
         with:
