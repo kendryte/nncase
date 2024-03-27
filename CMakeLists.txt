@@ -39,7 +39,6 @@ project(nncase
   VERSION ${NNCASE_VERSION}
   LANGUAGES C CXX ASM)
 
-option(ENABLE_OPENMP "OpenMP support" ON)
 option(DOTNET_INIT_FOR_CONFIG "Initialize dotnet from runtimeconfig" OFF)
 option(BUILD_PYTHON_BINDING "Build python binding" ON)
 option(BUILD_CSHARP_BINDING "Build csharp binding" ON)

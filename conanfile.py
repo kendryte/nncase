@@ -25,8 +25,7 @@ class nncaseConan(ConanFile):
         "runtime": [True, False],
         "tests": [True, False],
         "python": [True, False],
-        "vulkan_runtime": [True, False],
-        "openmp": [True, False]
+        "vulkan_runtime": [True, False]
     }
     default_options = {
         "shared": False,
@@ -34,8 +33,7 @@ class nncaseConan(ConanFile):
         "runtime": False,
         "tests": False,
         "python": True,
-        "vulkan_runtime": False,
-        "openmp": True
+        "vulkan_runtime": False
     }
     
     def imports(self):
@@ -89,7 +87,6 @@ class nncaseConan(ConanFile):
     def cmake_configure(self):
         cmake = CMake(self)
         cmake.definitions['BUILDING_RUNTIME'] = self.options.runtime
-        cmake.definitions['ENABLE_OPENMP'] = self.options.openmp
         cmake.definitions['ENABLE_VULKAN_RUNTIME'] = self.options.vulkan_runtime
         cmake.definitions['BUILD_PYTHON_BINDING'] = self.options.python
         cmake.definitions['BUILD_TESTING'] = self.options.tests
