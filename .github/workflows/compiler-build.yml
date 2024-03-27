@@ -208,7 +208,7 @@ jobs:
       - name: Set up test environment (macOS)
         run: |
           brew install sunnycase/core/libomp@11.1.0
-          aria2c --parameterized-uri=true https://{sdk.lunarg.com/sdk/download/${VULKANSDK_VER}/mac,distfiles.macports.org/MoltenVK}/vulkansdk-macos-${VULKANSDK_VER}.dmg
+          aria2c --parameterized-uri=true https://sdk.lunarg.com/sdk/download/${VULKANSDK_VER}/mac/vulkansdk-macos-${VULKANSDK_VER}.dmg
           hdiutil attach ./vulkansdk-macos-*.dmg
           sudo /Volumes/vulkansdk-macos-*/InstallVulkan.app/Contents/MacOS/InstallVulkan --root $HOME/VulkanSDK --accept-licenses --default-answer --confirm-command install
           hdiutil detach /Volumes/vulkansdk-macos-*
