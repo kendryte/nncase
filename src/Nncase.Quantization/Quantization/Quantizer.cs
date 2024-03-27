@@ -405,8 +405,6 @@ internal partial class Quantizer
 
     private void AddSensitivityForFallback(List<KeyValuePair<(Var Var, QuantConfig QuantConfig), float>> sensSorted)
     {
-        int identity = 0;
-
         // 由于某些节点的量化损失很大，因此我们尽早把这些节点回退到cpu，否则会导致搜索速度很慢。这里创建了一个列表记录了需要在哪些位置插入回退到CPU的节点。这里之所以先记录节点，然后再倒叙插入节点，是因为插入节点的时候列表长度改变，导致InvalidOperationException
         var toInsert = new List<(int, KeyValuePair<(Var, QuantConfig), float>)>();
 
@@ -416,7 +414,7 @@ internal partial class Quantizer
             if (sensSorted[i].Value < 0.95f)
             {
                 // 构造新的KeyValuePair
-                var newPair = new KeyValuePair<(Var, QuantConfig), float>((sensSorted[i].Key.Var, new QuantConfig(identity++)), 2.0f);
+                var newPair = new KeyValuePair<(Var, QuantConfig), float>((sensSorted[i].Key.Var, new QuantConfig(-1)), 2.0f);
 
                 // 记录位置和新元素
                 toInsert.Add((i + 1, newPair));
@@ -451,7 +449,7 @@ internal partial class Quantizer
 
         foreach (var (var, _) in ticketsSorted)
         {
-            sensSorted.Add(new KeyValuePair<(Var, QuantConfig), float>((var, new QuantConfig(identity++)), 2.0f));
+            sensSorted.Add(new KeyValuePair<(Var, QuantConfig), float>((var, new QuantConfig(-1)), 2.0f));
         }
     }
 
@@ -565,21 +563,29 @@ internal partial class Quantizer
         {
             foreach (var (var, config) in _fakeNodeConfigs)
             {
-                if (config.IsEmpty())
+                if (!config.IsEmpty())
                 {
-                    continue;
+                    var eNode = ENode.Create(var, Array.Empty<EClass>());
+                    var rangeEclass = _graph.Add(config.ToRaw());
+                    var rangeOfEclass = _graph.Find(eNode);
+                    _graph.Union(rangeOfEclass, rangeEclass);
                 }
-
-                var eNode = ENode.Create(var, Array.Empty<EClass>());
-                var rangeEclass = _graph.Add(config.ToRaw());
-                var rangeOfEclass = _graph.Find(eNode);
-                _graph.Union(rangeOfEclass, rangeEclass);
+                else
+                {
+                    var eNode = ENode.Create(var, Array.Empty<EClass>());
+                    var rangeEclass = _graph.Add(new QuantConfig(-1).ToRaw());
+                    var rangeOfEclass = _graph.Find(eNode);
+                    _graph.Union(rangeOfEclass, rangeEclass);
+                }
             }
 
             _graph.Rebuild();
 
             // var debugExpr = _graph.Extract(_graph.Root!, null, out _);
         }
+
+        var dumpPath = Path.Join(DumpScope.Current.Directory, "..", "..", "..", "/");
+        EGraphPrinter.DumpEgraphAsDot(_graph, dumpPath + "_graph_after.dot");
     }
 
     private void UpdateFakeNodesList(IDictionary<Expr, ValueRange<float>[]> ranges)

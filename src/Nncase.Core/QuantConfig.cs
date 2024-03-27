@@ -9,6 +9,7 @@ namespace Nncase;
 
 public struct QuantConfig : IEquatable<QuantConfig>
 {
+    private static int _quantConfigID;
     private readonly List<QuantConfigData> _inputConfig = new();
     private readonly List<QuantConfigData> _outputConfig = new();
 
@@ -21,7 +22,15 @@ public struct QuantConfig : IEquatable<QuantConfig>
     // 没有实际意义，只是为了提供结构，构造空对象的时候可以区分，用于egraph搜索的时候不会被归结到同一个eclass。
     public QuantConfig(int identity)
     {
-        _header = new(identity, identity);
+        if (identity == -1)
+        {
+            _quantConfigID++;
+            _header = new(_quantConfigID, _quantConfigID);
+        }
+        else
+        {
+            _header = new(identity, identity);
+        }
     }
 
     public static QuantConfig FromRaw(Tensor rawTensor)
