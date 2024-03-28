@@ -186,6 +186,17 @@ PYBIND11_MODULE(_nncase, m) {
                       py::overload_cast<std::string_view>(
                           &quantize_options::quant_scheme))
         .def_property(
+            "sensitivity_quant_enable",
+            py::overload_cast<>(&quantize_options::sensitivity_quant_enable),
+            py::overload_cast<bool>(
+                &quantize_options::sensitivity_quant_enable))
+        .def_property(
+            "sensitivity_target",
+            py::overload_cast<>(&quantize_options::sensitivity_target),
+            py::overload_cast<float>(
+                &quantize_options::sensitivity_target))
+
+        .def_property(
             "quant_scheme_strict_mode",
             py::overload_cast<>(&quantize_options::quant_scheme_strict_mode),
             py::overload_cast<bool>(

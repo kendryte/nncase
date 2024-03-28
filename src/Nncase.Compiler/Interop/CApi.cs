@@ -86,6 +86,8 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetUseMixQuantPtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> QuantOptionsSetQuantSchemePtr;
     public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetQuantSchemeStrictModePtr;
+    public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetSensitivityQuantEnablePtr;
+    public delegate* unmanaged<IntPtr, float, void> QuantOptionsSetSensitivityTargetPtr;
     public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetExportQuantSchemePtr;
     public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetExportWeightRangeByChannelPtr;
     public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetDumpQuantErrorPtr;
@@ -158,6 +160,8 @@ public static unsafe class CApi
         mt->QuantOptionsSetUseMixQuantPtr = &QuantOptionsSetUseMixQuant;
         mt->QuantOptionsSetQuantSchemePtr = &QuantizeOptionsSetQuantScheme;
         mt->QuantOptionsSetQuantSchemeStrictModePtr = &QuantizeOptionsSetQuantSchemeStrictMode;
+        mt->QuantOptionsSetSensitivityQuantEnablePtr = &QuantizeOptionsSetSensitivityQuantEnable;
+        mt->QuantOptionsSetSensitivityTargetPtr = &QuantizeOptionsSetSensitivityTarget;
         mt->QuantOptionsSetExportQuantSchemePtr = &QuantizeOptionsSetExportQuantScheme;
         mt->QuantOptionsSetExportWeightRangeByChannelPtr = &QuantizeOptionsSetExportWeightRangeByChannel;
         mt->QuantOptionsSetDumpQuantErrorPtr = &QuantizeOptionsSetDumpQuantError;
@@ -627,6 +631,28 @@ public static unsafe class CApi
             default:
                 throw new ArgumentException("Invalid QuantSchemeStrictMode Flag");
         }
+    }
+
+    [UnmanagedCallersOnly]
+    private static void QuantizeOptionsSetSensitivityQuantEnable(IntPtr quantizeOptionsHandle, byte sensitivityQuantEnable)
+    {
+        switch (sensitivityQuantEnable)
+        {
+            case 0:
+                Get<QuantizeOptions>(quantizeOptionsHandle).SensitivityQuantEnabled = false;
+                break;
+            case 1:
+                Get<QuantizeOptions>(quantizeOptionsHandle).SensitivityQuantEnabled = true;
+                break;
+            default:
+                throw new ArgumentException("Invalid sensitivityQuantEnable Flag");
+        }
+    }
+
+    [UnmanagedCallersOnly]
+    private static void QuantizeOptionsSetSensitivityTarget(IntPtr quantizeOptionsHandle, float sensitivityTarget)
+    {
+        Get<QuantizeOptions>(quantizeOptionsHandle).CosineTarget = sensitivityTarget;
     }
 
     [UnmanagedCallersOnly]

@@ -15,12 +15,16 @@ compiler.use_ptq(ptq_options)
 ## 1. 混合量化相关的功能选项说明
 
 ```python
+ptq_options.sensitivity_quant_enable = false
+ptq_options.sensitivity_target = 0.5
 ptq_options.quant_scheme = ""
 ptq_options.quant_scheme_strict_mode = False
 ptq_options.export_quant_scheme = False
 ptq_options.export_weight_range_by_channel = False
 ```
 
+* **sensitivity_quant_enable：是否启动基于敏感度的量化**
+* **sensitivity_target：基于敏感度量化的目标值**
 * **quant_scheme：导入量化参数配置文件的路径**
 * **quant_scheme_strict_mode：是否严格按照quant_scheme执行量化**
 * **export_quant_scheme：是否导出量化参数配置文件**
@@ -37,6 +41,8 @@ compile_options.dump_ir = True
 ```
 
 ```python
+ptq_options.sensitivity_quant_enable = false
+ptq_options.sensitivity_target = 0.5
 ptq_options.quant_scheme = ""
 ptq_options.quant_scheme_strict_mode = False
 ptq_options.export_quant_scheme = True
@@ -110,6 +116,8 @@ ptq_options.export_weight_range_by_channel = True
 **需要在编译脚本中设置量化参数配置文件**
 
 ```python
+ptq_options.sensitivity_quant_enable = false
+ptq_options.sensitivity_target = 0.5
 ptq_options.quant_scheme = "./QuantScheme.json" # path to your 'QuantScheme.json'
 ptq_options.quant_scheme_strict_mode = False # Whether to strictly follow quant_scheme for quantification
 ptq_options.export_quant_scheme = False

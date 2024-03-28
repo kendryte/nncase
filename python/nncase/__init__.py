@@ -65,6 +65,8 @@ class PTQTensorOptions:
     finetune_weights_method: str
     input_mean: float
     input_std: float
+    sensitivity_quant_enable: bool
+    sensitivity_target: float
     quant_scheme: str
     quant_scheme_strict_mode: bool
     samples_count: int
@@ -73,6 +75,8 @@ class PTQTensorOptions:
     def __init__(self) -> None:
         self.use_mix_quant: bool = False
         self.use_mse_quant_w = False
+        self.sensitivity_quant_enable: bool = False
+        self.sensitivity_target = 0.5
         self.export_quant_scheme: bool = False
         self.export_weight_range_by_channel: bool = False
         self.dump_quant_error: bool = False
@@ -246,6 +250,8 @@ class Compiler:
 
         self._quantize_options.use_mix_quant = ptq_dataset_options.use_mix_quant
         self._quantize_options.quant_scheme = ptq_dataset_options.quant_scheme
+        self._quantize_options.sensitivity_quant_enable = ptq_dataset_options.sensitivity_quant_enable
+        self._quantize_options.sensitivity_target = ptq_dataset_options.sensitivity_target
         self._quantize_options.quant_scheme_strict_mode = ptq_dataset_options.quant_scheme_strict_mode
         self._quantize_options.export_quant_scheme = ptq_dataset_options.export_quant_scheme
         self._quantize_options.export_weight_range_by_channel = ptq_dataset_options.export_weight_range_by_channel

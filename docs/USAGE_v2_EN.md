@@ -223,10 +223,12 @@ PTQTensorOptions is used to configure PTQ options. The details of all attributes
 | quant_type                            | string    | N        | Type of data quantification,'uint8' by default. 'int8','int16' are optional.                                        |
 | w_quant_type                          | string    | N        | Type of weights quantification,'uint8' by default. 'int8','int16' are optional.                                     |
 |                                       |           |          |                                                                                                                     |
-| dump_quant_error                      | bool      | N        | Specify whether dump quantification error, False by default. The parameters following worked when `dump_ir=True`. |
+| dump_quant_error                      | bool      | N        | Specify whether dump quantification error, False by default. The parameters following worked when `dump_ir=True`.   |
 | dump_quant_error_symmetric_for_signed | bool      | N        | Specify whether dump quantification error by symmetric for signed number,True by default.                           |
+| sensitivity_quant_enable              | bool      | N        | specify whether enable/disable auto quant by sensitivity,false by default.                                          |
+| sensitivity_target                    | float     | N        | Specify sensitivity target, 0.5 by default.                                                                         |
 | quant_scheme                          | string    | N        | specify the path of quantification scheme file,"" by default.                                                       |
-| quant_scheme_strict_mode              | bool      | N        | Specify whether strictly follow quant_scheme for quantification, False by default.                                                     |
+| quant_scheme_strict_mode              | bool      | N        | Specify whether strictly follow quant_scheme for quantification, False by default.                                  |
 | export_quant_scheme                   | bool      | N        | Specify whether export quantification scheme, False by default.                                                     |
 | export_weight_range_by_channel        | bool      | N        | Specify whether export weights range by channel, False by default.                                                  |
 

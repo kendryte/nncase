@@ -106,7 +106,7 @@ public class QuantizeOptions
     /// <summary>
     /// Gets or sets a value indicating whether strict mode.
     /// </summary>
-    public bool SensitivityQuantEnabled { get; set; } = true;
+    public bool SensitivityQuantEnabled { get; set; }
 
     /// <summary>
     /// Gets or sets a value for cosine target.

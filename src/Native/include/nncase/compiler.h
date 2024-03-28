@@ -202,6 +202,10 @@ typedef struct {
         size_t quant_scheme_length);
     void (*quantize_options_set_quant_scheme_strict_mode)(
         clr_object_handle_t quantize_options, bool quant_scheme_strict_mode);
+    void (*quantize_options_set_sensitivity_quant_enable)(
+        clr_object_handle_t quantize_options, bool sensitivity_quant_enable);
+    void (*quantize_options_set_sensitivity_target)(
+        clr_object_handle_t quantize_options, float sensitivity_target);
     void (*quantize_options_set_export_quant_scheme)(
         clr_object_handle_t quantize_options, bool export_quant_scheme);
     void (*quantize_options_set_export_weight_range_by_channel)(
@@ -407,6 +411,18 @@ class quantize_options : public clr_object_base {
     bool quant_scheme_strict_mode() { return false; }
     void quant_scheme_strict_mode(bool value) {
         nncase_clr_api()->quantize_options_set_quant_scheme_strict_mode(
+            obj_.get(), value);
+    }
+
+    bool sensitivity_quant_enable() { return false; }
+    void sensitivity_quant_enable(bool value) {
+        nncase_clr_api()->quantize_options_set_sensitivity_quant_enable(
+            obj_.get(), value);
+    }
+
+    float sensitivity_target() { return 0.5; }
+    void sensitivity_target(float value) {
+        nncase_clr_api()->quantize_options_set_sensitivity_target(
             obj_.get(), value);
     }
 
