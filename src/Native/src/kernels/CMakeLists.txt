@@ -11,7 +11,6 @@ if (BUILDING_RUNTIME)
 
     add_library(kernels OBJECT ${SRCS})
     target_include_directories(kernels PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-    target_link_libraries(kernels PUBLIC gsl::gsl-lite)
     set_property(TARGET kernels PROPERTY POSITION_INDEPENDENT_CODE ON)
     install(TARGETS kernels EXPORT nncaseruntimeTargets)
 else()

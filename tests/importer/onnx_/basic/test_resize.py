@@ -49,8 +49,8 @@ sizes = [
 ]
 
 modes = [
-    0,  # PIL.Image.NEAREST
-    2,   # PIL.Image.BILINEAR
+    F.InterpolationMode.NEAREST,
+    #F.InterpolationMode.BILINEAR,
 ]
 
 

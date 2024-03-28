@@ -36,7 +36,7 @@ class OnnxTestRunner(TestRunner):
         dummy_input = torch.randn(*in_shape)
         model_file = os.path.join(self.case_dir, 'test.onnx')
         torch.onnx.export(module, dummy_input, model_file,
-                          operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK, opset_version=opset_version)
+                          operator_export_type=torch.onnx.OperatorExportTypes.ONNX, opset_version=opset_version)
         return model_file
 
     def from_onnx_helper(self, model_def):
