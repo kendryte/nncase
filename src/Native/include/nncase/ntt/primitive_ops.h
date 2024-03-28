@@ -124,13 +124,17 @@ template <class T> struct div {
     T operator()(T v1, T v2) const noexcept { return v1 / v2; }
 };
 
+// floor_mod is equivalent to % or mod() or remainder() function in Python.
+template <class T> struct floor_mod {
+    T operator()(T v1, T v2) const noexcept {
+        return v1 - std::floor(static_cast<double>(v1) / static_cast<double>(v2)) * v2;
+    }
+};
+
+// mod is equivalent to fmod() function in C/C++/Python.
 template <class T> struct mod {
     T operator()(T v1, T v2) const noexcept {
-        if constexpr (std::is_floating_point_v<std::decay_t<T>>) {
-            return std::fmod(v1, v2);
-        } else {
-            return v1 % v2;
-        }
+        return std::fmod(v1, v2);
     }
 };
 
@@ -182,6 +186,7 @@ NTT_DEFINE_BINARY_FUNC_IMPL(add)
 NTT_DEFINE_BINARY_FUNC_IMPL(sub)
 NTT_DEFINE_BINARY_FUNC_IMPL(mul)
 NTT_DEFINE_BINARY_FUNC_IMPL(div)
+NTT_DEFINE_BINARY_FUNC_IMPL(floor_mod)
 NTT_DEFINE_BINARY_FUNC_IMPL(mod)
 NTT_DEFINE_BINARY_FUNC_IMPL(min)
 NTT_DEFINE_BINARY_FUNC_IMPL(max)
