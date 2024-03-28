@@ -5,10 +5,10 @@ set(SRCS buffer.cpp
 		 error.cpp
 		 host_buffer.cpp
 		 host_runtime_tensor.cpp
-         interpreter.cpp
-         runtime_section_context.cpp
-         runtime_loader.cpp
-         runtime_module.cpp
+     interpreter.cpp
+     runtime_section_context.cpp
+     runtime_loader.cpp
+     runtime_module.cpp
 		 runtime_function.cpp
 		 section.cpp
 		 type_serializer.cpp
@@ -66,6 +66,9 @@ else()
     
     add_library(nncaseruntime SHARED dummy.cpp)
     target_link_libraries(nncaseruntime PRIVATE nncasebase kernels simulator compiler simulator_stackvm simulator_cpu cpu_loaders fmt::fmt)
+    if (NOT (WIN32 OR APPLE))
+      target_link_libraries(nncaseruntime PRIVATE dl)
+    endif()
     set_target_properties(nncaseruntime PROPERTIES
                                         OUTPUT_NAME "Nncase.Runtime.Native")
 

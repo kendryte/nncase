@@ -29,8 +29,11 @@ trilu_impl(const T *input, T *output, std::span<const size_t> in_shape,
            std::span<const size_t> in_strides,
            std::span<const size_t> out_strides, int64_t k, bool upper) {
     return apply(in_shape, [&](std::span<const size_t> index) -> result<void> {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
         int64_t h = index[index.size() - 2];
         int64_t w = index[index.size() - 1];
+#pragma GCC diagnostic pop
 
         if (upper) {
             auto wV = h + k;

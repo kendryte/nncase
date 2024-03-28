@@ -34,7 +34,10 @@ result<void> instance_norm_impl(const T *input, const T *scale, const T *bias,
                                 std::span<const size_t> out_strides,
                                 float epsilon) {
     return apply(in_shape, [&](std::span<const size_t> index) -> result<void> {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
         auto c = index[1];
+#pragma GCC diagnostic pop
         auto offi = index[0] * in_shape[1] + index[1];
         auto off = offset(in_strides, index);
         const auto x = input[off];

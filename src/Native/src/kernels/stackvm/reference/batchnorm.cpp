@@ -36,7 +36,10 @@ result<void> batchnorm_impl(const T *input, const T *scale, const T *bias,
                             std::span<const size_t> out_strides,
                             float epsilon) {
     return apply(in_shape, [&](std::span<const size_t> index) -> result<void> {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
         auto c = index[1];
+#pragma GCC diagnostic pop
         const auto x = input[offset(in_strides, index)];
         output[offset(out_strides, index)] = static_cast<T>(
             (static_cast<float>(x) - static_cast<float>(input_mean[c])) /
