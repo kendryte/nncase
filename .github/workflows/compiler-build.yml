@@ -17,8 +17,8 @@ jobs:
     strategy:
       matrix:
         config:
-          #- {name: aarch64-macos, os: macos-14, cmakeArgs: '', buildType: Release}
-          #- {name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release}
+          - {name: aarch64-macos, os: macos-14, cmakeArgs: '', buildType: Release}
+          - {name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release}
           - {name: x86_64-windows, os: windows-latest, arch: x64, cmakeArgs: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl, buildType: Release}
 
     steps:
@@ -81,8 +81,8 @@ jobs:
       matrix:
         dotnet-version: ['7.0']
         config:
-          #- {name: aarch64-macos, os: macos-14, shell: bash, rid: osx-arm64, buildType: Release}
-          #- {name: x86_64-linux, os: ubuntu-latest, shell: bash, rid: linux-x64, buildType: Release}
+          - {name: aarch64-macos, os: macos-14, shell: bash, rid: osx-arm64, buildType: Release}
+          - {name: x86_64-linux, os: ubuntu-latest, shell: bash, rid: linux-x64, buildType: Release}
           - {name: x86_64-windows, os: windows-latest, arch: x64, shell: bash, rid: win-x64, buildType: Release}
 
     steps:
@@ -167,8 +167,8 @@ jobs:
       matrix:
         dotnet-version: ['7.0']
         config:
-          #- {name: aarch64-macos, os: macos-14, shell: bash}
-          #- {name: x86_64-linux, os: ubuntu-latest, shell: bash}
+          - {name: aarch64-macos, os: macos-14, shell: bash}
+          - {name: x86_64-linux, os: ubuntu-latest, shell: bash}
           - {name: x86_64-windows, os: windows-latest, arch: x64, shell: bash}
 
     env:
@@ -236,7 +236,7 @@ jobs:
           Copy-Item swiftshader\lib\vk_swiftshader_icd.json swiftshader\bin\
           Copy-Item install/bin/*.dll install/
           echo "VK_ICD_FILENAMES=${env:GITHUB_WORKSPACE}/swiftshader/bin/vk_swiftshader_icd.json" >> $env:GITHUB_ENV
-          echo "PYTHONPATH=${env:GITHUB_WORKSPACE}/install/lib;${env:GITHUB_WORKSPACE}/install/python;${env:GITHUB_WORKSPACE}/tests" >> $env:GITHUB_ENV
+          echo "PYTHONPATH=${env:GITHUB_WORKSPACE}/install/lib;${env:GITHUB_WORKSPACE}/install/bin;${env:GITHUB_WORKSPACE}/install/python;${env:GITHUB_WORKSPACE}/tests" >> $env:GITHUB_ENV
           echo "PATH=${env:PATH};${env:GITHUB_WORKSPACE}/install/bin" >> $env:GITHUB_ENV
         if: runner.os == 'Windows'
 

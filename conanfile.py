@@ -42,7 +42,6 @@ class nncaseConan(ConanFile):
             self.copy("ortki.dll", "bin", "bin")
 
     def requirements(self):
-        self.requires('gsl-lite/0.37.0')
         if self.options.tests:
             self.requires('gtest/1.10.0')
             self.requires('ortki/0.0.2')
@@ -55,10 +54,6 @@ class nncaseConan(ConanFile):
             self.requires('nethost/7.0.5')
             self.requires('fmt/7.1.3')
             self.requires('nlohmann_json/3.9.1')
-
-        if (not self.options.runtime) or self.options.vulkan_runtime:
-            self.requires('vulkan-headers/1.2.182')
-            self.requires('vulkan-loader/1.2.182')
 
     def build_requirements(self):
         pass
@@ -73,13 +68,6 @@ class nncaseConan(ConanFile):
         if not self.options.runtime:
             if self.settings.os == 'Windows':
                 self.options["nethost"].shared = True
-
-        if (not self.options.runtime) or self.options.vulkan_runtime:
-            if self.settings.os == 'Linux':
-                self.options["vulkan-loader"].with_wsi_xcb = False
-                self.options["vulkan-loader"].with_wsi_xlib = False
-                self.options["vulkan-loader"].with_wsi_wayland = False
-                self.options["vulkan-loader"].with_wsi_directfb = False
 
         if self.options.tests:
             self.options["ortki"].shared = True
