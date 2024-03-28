@@ -100,7 +100,7 @@ TEST_P(LayerNormTest, layer_norm) {
     tensor_shape(tensor_seq_get_value(output_ort, 0),
                  reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 

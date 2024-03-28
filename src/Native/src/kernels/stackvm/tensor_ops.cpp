@@ -145,8 +145,7 @@ result<value_t> nncase::kernels::stackvm::concat(int32_t axis, value_t input,
     } else {
         concat_dims = dims_t(input_tuple->fields().size(), 1);
     }
-    auto inputs_mem_span =
-        gsl::make_span(inputs_mem).as_span<const gsl::byte *const>();
+    auto inputs_mem_span = std::span(inputs_mem);
 
     if (is_contiguous(input0) && axis_value < 4) {
         try_(optimized::concat(
@@ -806,12 +805,12 @@ result<value_t> nncase::kernels::stackvm::bucket_pad(
         return ok(input);
     }
     auto pads_shape = dims_t{rank, 2};
-    auto span = gsl::span(reinterpret_cast<gsl::byte *>(paddings.data()),
+    auto span = std::span(reinterpret_cast<std::byte *>(paddings.data()),
                           compute_size(pads_shape) * sizeof(int));
     try_var(pads, hrt::create(dt_int32, pads_shape, span, false,
                               host_runtime_tensor::pool_cpu_only));
 #define RUN_PAD                                                                \
-    auto data = gsl::span(reinterpret_cast<gsl::byte *>(&pad_value),           \
+    auto data = std::span(reinterpret_cast<std::byte *>(&pad_value),           \
                           in_tensor->dtype()->size_bytes());                   \
     try_var(pad_v, hrt::create(in_tensor->dtype()->typecode(), dims_t{}, data, \
                                false, host_runtime_tensor::pool_cpu_only));    \
@@ -1150,8 +1149,7 @@ result<value_t> nncase::kernels::stackvm::stack(value_t inputs, value_t axis,
     for (int i = 0; i < shapes.size(); ++i) {
         strides[i] = get_default_strides(shapes[i]);
     }
-    auto inputs_value_span =
-        gsl::make_span(inputs_value).as_span<const gsl::byte *const>();
+    auto inputs_value_span = std::span(inputs_value);
     try_(reference::stack(input0->dtype(), inputs_value_span, out_mem,
                           out_shape, strides, output_tensor->strides(),
                           axis_value, context));

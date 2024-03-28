@@ -29,11 +29,11 @@ using namespace nncase::kernels::stackvm;
 namespace {
 template <class T, class IndicesT>
 result<void>
-gather_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
-            gsl::span<const size_t> out_shape,
-            gsl::span<const size_t> in_strides,
-            gsl::span<const size_t> out_strides, const IndicesT *indices,
-            gsl::span<const size_t> indices_shape, size_t axis,
+gather_impl(const T *input, T *output, std::span<const size_t> in_shape,
+            std::span<const size_t> out_shape,
+            std::span<const size_t> in_strides,
+            std::span<const size_t> out_strides, const IndicesT *indices,
+            std::span<const size_t> indices_shape, size_t axis,
             NNCASE_UNUSED kernel_context &context) noexcept {
     // scalar
     if (out_shape.size() == 0) {
@@ -41,7 +41,7 @@ gather_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
         return ok();
     }
     return apply(
-        out_shape, [&](gsl::span<const size_t> out_index) -> result<void> {
+        out_shape, [&](std::span<const size_t> out_index) -> result<void> {
             // select batch
             // [out_index.begin(), out_index.begin() + axis]
             dims_t in_index(in_shape.size());
@@ -82,11 +82,11 @@ gather_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
         });
 
 result<void> nncase::kernels::stackvm::reference::gather(
-    datatype_t type, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> out_shape,
-    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
-    datatype_t indices_type, const gsl::byte *indices,
-    gsl::span<const size_t> indices_shape, size_t axis,
+    datatype_t type, const std::byte *input, std::byte *output,
+    std::span<const size_t> in_shape, std::span<const size_t> out_shape,
+    std::span<const size_t> in_strides, std::span<const size_t> out_strides,
+    datatype_t indices_type, const std::byte *indices,
+    std::span<const size_t> indices_shape, size_t axis,
     kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(type, GATHER_IMPL);
 }

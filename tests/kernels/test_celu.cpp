@@ -58,7 +58,7 @@ class CeluTest : public KernelTest,
             std::uniform_real_distribution<float> dis(-5.0f, 5.0f);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<half>(tensor, index) = static_cast<half>(dis(gen));
                     return ok();
                 });
@@ -70,7 +70,7 @@ class CeluTest : public KernelTest,
             std::uniform_real_distribution<float> dis(-5.0f, 5.0f);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<float>(tensor, index) = static_cast<float>(dis(gen));
                     return ok();
                 });
@@ -82,7 +82,7 @@ class CeluTest : public KernelTest,
             std::uniform_real_distribution<> dis(-5.0f, 5.0);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<bfloat16>(tensor, index) =
                         static_cast<bfloat16>(dis(gen));
                     return ok();
@@ -113,7 +113,7 @@ TEST_P(CeluTest, celu) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 

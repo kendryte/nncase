@@ -55,7 +55,7 @@ static void layernorm_impl(int inner_size, const T *src, const T *scale,
 
 template <class T>
 result<void> layer_norm_impl2(const T *input, T *output, const T *scale,
-                              const T *bias, gsl::span<const size_t> in_shape,
+                              const T *bias, std::span<const size_t> in_shape,
                               int32_t axis, float epsilon, bool use_mean) {
 
     int ndim = in_shape.size();
@@ -114,8 +114,8 @@ result<void> layer_norm_impl2(const T *input, T *output, const T *scale,
     }
 
 result<void> nncase::kernels::stackvm::reference::layer_norm(
-    typecode_t typecode, const gsl::byte *input, gsl::byte *output,
-    const gsl::byte *scale, const gsl::byte *bias,
-    gsl::span<const size_t> in_shape, int32_t axis, float epsilon, bool use_mean) {
+    typecode_t typecode, const std::byte *input, std::byte *output,
+    const std::byte *scale, const std::byte *bias,
+    std::span<const size_t> in_shape, int32_t axis, float epsilon, bool use_mean) {
     TYPE_SELECT_LAYER_NORM(typecode, LAYER_NORM_IMPL);
 }

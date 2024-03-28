@@ -29,11 +29,11 @@ namespace {
 template <typename T>
 result<void> instance_norm_impl(const T *input, const T *scale, const T *bias,
                                 const T *input_mean, const T *input_var,
-                                T *output, gsl::span<const size_t> in_shape,
-                                gsl::span<const size_t> in_strides,
-                                gsl::span<const size_t> out_strides,
+                                T *output, std::span<const size_t> in_shape,
+                                std::span<const size_t> in_strides,
+                                std::span<const size_t> out_strides,
                                 float epsilon) {
-    return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
+    return apply(in_shape, [&](std::span<const size_t> index) -> result<void> {
         auto c = index[1];
         auto offi = index[0] * in_shape[1] + index[1];
         auto off = offset(in_strides, index);
@@ -51,9 +51,9 @@ result<void> instance_norm_impl(const T *input, const T *scale, const T *bias,
 template <typename T>
 result<void>
 instance_norm_impl2(typecode_t type, const T *input, const T *scale,
-                    const T *bias, T *output, gsl::span<const size_t> in_shape,
-                    gsl::span<const size_t> in_strides,
-                    gsl::span<const size_t> out_strides, float epsilon) {
+                    const T *bias, T *output, std::span<const size_t> in_shape,
+                    std::span<const size_t> in_strides,
+                    std::span<const size_t> out_strides, float epsilon) {
     auto axes = dims_t{};
     for (size_t i = 2; i < in_shape.size(); ++i) {
         axes.push_back(i);
@@ -67,7 +67,7 @@ instance_norm_impl2(typecode_t type, const T *input, const T *scale,
 
     // square and get var
     T init_value = 0;
-    auto init_value_addr = IN_CAST(gsl::byte, &init_value);
+    auto init_value_addr = IN_CAST(std::byte, &init_value);
     auto tmp_out_strides = strides_t{in_shape[1], 1};
     auto tmp_out_shape = strides_t{in_shape[0], in_shape[1]};
     for (auto i = 0; i < in_shape.size() - 2; ++i) {
@@ -77,8 +77,8 @@ instance_norm_impl2(typecode_t type, const T *input, const T *scale,
     auto run_reduce = [&](auto &&input, auto &&output, auto &&in_shape,
                           auto &&in_strides) -> result<void> {
         try_(nncase::kernels::stackvm::reference::reduce(
-            type, reduce_op_t::mean, init_value_addr, IN_CAST(gsl::byte, input),
-            OUT_CAST(gsl::byte, output), in_shape, axes, in_strides,
+            type, reduce_op_t::mean, init_value_addr, IN_CAST(std::byte, input),
+            OUT_CAST(std::byte, output), in_shape, axes, in_strides,
             tmp_out_strides, true, kernels::default_kernel_context()));
         return ok();
     };
@@ -89,13 +89,13 @@ instance_norm_impl2(typecode_t type, const T *input, const T *scale,
         kernels::detail::get_binary_output_shape(in_shape, tmp_out_shape);
     auto sub_out_strides = runtime::get_default_strides(sub_out_shape);
     try_(nncase::kernels::stackvm::reference::binary(
-        type, runtime::stackvm::binary_op_t::sub, IN_CAST(gsl::byte, input),
-        IN_CAST(gsl::byte, mean.get()), OUT_CAST(gsl::byte, sub_output.get()),
+        type, runtime::stackvm::binary_op_t::sub, IN_CAST(std::byte, input),
+        IN_CAST(std::byte, mean.get()), OUT_CAST(std::byte, sub_output.get()),
         in_shape, in_strides, tmp_out_shape, tmp_out_strides, sub_out_shape,
         sub_out_strides));
     try_(nncase::kernels::stackvm::reference::unary(
-        type, unary_op_t::square, IN_CAST(gsl::byte, sub_output.get()),
-        OUT_CAST(gsl::byte, square_output.get()), sub_out_shape,
+        type, unary_op_t::square, IN_CAST(std::byte, sub_output.get()),
+        OUT_CAST(std::byte, square_output.get()), sub_out_shape,
         sub_out_strides, sub_out_shape, sub_out_strides,
         kernels::default_kernel_context()));
     // var = reduce_mean(square(input - mean))
@@ -143,9 +143,9 @@ instance_norm_impl2(typecode_t type, const T *input, const T *scale,
     }
 
 result<void> nncase::kernels::stackvm::reference::instance_norm(
-    typecode_t typecode, const gsl::byte *input, const gsl::byte *scale,
-    const gsl::byte *bias, gsl::byte *output, gsl::span<const size_t> in_shape,
-    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    typecode_t typecode, const std::byte *input, const std::byte *scale,
+    const std::byte *bias, std::byte *output, std::span<const size_t> in_shape,
+    std::span<const size_t> in_strides, std::span<const size_t> out_strides,
     float epsilon) {
     TYPE_SELECT_INSTANCE_NORM(typecode, INSTANCE_NORM_IMPL);
 }

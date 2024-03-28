@@ -14,6 +14,7 @@
  */
 #pragma once
 #include <nncase/compiler_defs.h>
+#include <span>
 
 BEGIN_NS_NNCASE_RUNTIME
 
@@ -22,11 +23,11 @@ class pe_loader {
     pe_loader() noexcept : image_(nullptr) {}
     ~pe_loader();
 
-    void load(gsl::span<const gsl::byte> pe);
+    void load(std::span<const std::byte> pe);
     void *entry() const noexcept;
 
   private:
-    gsl::byte *image_;
+    std::byte *image_;
 };
 
 END_NS_NNCASE_RUNTIME

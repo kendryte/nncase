@@ -28,12 +28,12 @@ using namespace nncase::kernels::stackvm;
 namespace {
 template <class T>
 result<void>
-slice_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
-           gsl::span<const size_t> in_strides,
-           gsl::span<const size_t> out_strides, const axes_t &begins,
+slice_impl(const T *input, T *output, std::span<const size_t> in_shape,
+           std::span<const size_t> in_strides,
+           std::span<const size_t> out_strides, const axes_t &begins,
            const axes_t &ends, const axes_t &strides,
            NNCASE_UNUSED kernel_context &context) noexcept {
-    return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
+    return apply(in_shape, [&](std::span<const size_t> index) -> result<void> {
         dims_t out_index(index.size());
         for (size_t i = 0; i < index.size(); i++) {
             const auto stride = strides[i];
@@ -69,9 +69,9 @@ slice_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
                           context)
 
 result<void> nncase::kernels::stackvm::reference::slice(
-    datatype_t type, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> out_strides, const axes_t &begins,
+    datatype_t type, const std::byte *input, std::byte *output,
+    std::span<const size_t> in_shape, std::span<const size_t> in_strides,
+    std::span<const size_t> out_strides, const axes_t &begins,
     const axes_t &ends, const axes_t &strides,
     kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(type, SLICE_IMPL);

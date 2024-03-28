@@ -44,7 +44,7 @@ class UniformTest : public KernelTest,
         high_value = value1;
         float high_array[] = {high_value};
         high = hrt::create(typecode, shape,
-                           {reinterpret_cast<gsl::byte *>(high_array),
+                           {reinterpret_cast<std::byte *>(high_array),
                             sizeof(high_array)},
                            true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
@@ -53,14 +53,14 @@ class UniformTest : public KernelTest,
         float low_array[] = {low_value};
         low = hrt::create(
                   typecode, shape,
-                  {reinterpret_cast<gsl::byte *>(low_array), sizeof(low_array)},
+                  {reinterpret_cast<std::byte *>(low_array), sizeof(low_array)},
                   true, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
 
         seed_value = value3;
         float seed_array[] = {seed_value};
         seed = hrt::create(typecode, shape,
-                           {reinterpret_cast<gsl::byte *>(seed_array),
+                           {reinterpret_cast<std::byte *>(seed_array),
                             sizeof(seed_array)},
                            true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
@@ -95,13 +95,13 @@ TEST_P(UniformTest, Uniform) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(dt_float32, shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     // actual
     auto shape_u = hrt::create(dt_int64, {4},
-                               {reinterpret_cast<gsl::byte *>(shape_u_array),
+                               {reinterpret_cast<std::byte *>(shape_u_array),
                                 sizeof(shape_u_array)},
                                true, host_runtime_tensor::pool_cpu_only)
                        .expect("create tensor failed");

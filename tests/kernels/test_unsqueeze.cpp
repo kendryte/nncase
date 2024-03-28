@@ -66,7 +66,7 @@ TEST_P(UnsqueezeTest, Unsqueeze) {
         int64_t *axis_array1 = (int64_t *)malloc(axis_size * sizeof(int64_t));
         std::copy(axis_array.begin(), axis_array.end(), axis_array1);
         auto axes = hrt::create(dt_int64, {axis_size},
-                                {reinterpret_cast<gsl::byte *>(axis_array1),
+                                {reinterpret_cast<std::byte *>(axis_array1),
                                  axis_size * sizeof(int64_t)},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
@@ -79,7 +79,7 @@ TEST_P(UnsqueezeTest, Unsqueeze) {
         tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
         auto expected =
             hrt::create(input.datatype(), shape,
-                        {reinterpret_cast<gsl::byte *>(ptr_ort), size}, true,
+                        {reinterpret_cast<std::byte *>(ptr_ort), size}, true,
                         host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
 

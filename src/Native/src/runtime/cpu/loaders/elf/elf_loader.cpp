@@ -40,13 +40,13 @@ elf_loader::~elf_loader() {
     }
 }
 
-void elf_loader::load(gsl::span<const gsl::byte> elf) {
+void elf_loader::load(std::span<const std::byte> elf) {
     ctx_.elf = (void *)elf.data();
     el_init(&ctx_);
 
-    buffer_ = (gsl::byte *)malloc(ctx_.memsz + ctx_.align);
+    buffer_ = (std::byte *)malloc(ctx_.memsz + ctx_.align);
     image_ =
-        (gsl::byte *)(((size_t)buffer_ + (ctx_.align - 1)) & ~(ctx_.align - 1));
+        (std::byte *)(((size_t)buffer_ + (ctx_.align - 1)) & ~(ctx_.align - 1));
 
 #if defined(__linux__)
     mprotect(image_, ctx_.memsz, PROT_READ | PROT_WRITE | PROT_EXEC);

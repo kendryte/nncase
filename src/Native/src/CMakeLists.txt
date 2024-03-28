@@ -19,7 +19,6 @@ if (DEFAULT_BUILTIN_RUNTIMES)
     target_compile_definitions(nncasebase PRIVATE -DNNCASE_DEFAULT_BUILTIN_RUNTIMES)
 endif ()
 set_property(TARGET nncasebase PROPERTY POSITION_INDEPENDENT_CODE ON)
-target_link_libraries(nncasebase PUBLIC gsl::gsl-lite)
 
 add_subdirectory(compiler)
 add_subdirectory(runtime)

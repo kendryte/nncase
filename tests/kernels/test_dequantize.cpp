@@ -61,21 +61,21 @@ TEST_P(DequantizeTest, dequantize) {
     if (input.datatype() == dt_uint8) {
         uint8_t zero_point[] = {(uint8_t)zero_point_value};
         zero_point_ptr = hrt::create(nncase::dt_uint8, {1},
-                                     {reinterpret_cast<gsl::byte *>(zero_point),
+                                     {reinterpret_cast<std::byte *>(zero_point),
                                       sizeof(zero_point)},
                                      true, host_runtime_tensor::pool_cpu_only)
                              .expect("create tensor failed");
     } else if (input.datatype() == dt_int8) {
         int8_t zero_point[] = {(int8_t)zero_point_value};
         zero_point_ptr = hrt::create(nncase::dt_int8, {1},
-                                     {reinterpret_cast<gsl::byte *>(zero_point),
+                                     {reinterpret_cast<std::byte *>(zero_point),
                                       sizeof(zero_point)},
                                      true, host_runtime_tensor::pool_cpu_only)
                              .expect("create tensor failed");
     } else {
         int16_t zero_point[] = {(int16_t)zero_point_value};
         zero_point_ptr = hrt::create(nncase::dt_int16, {1},
-                                     {reinterpret_cast<gsl::byte *>(zero_point),
+                                     {reinterpret_cast<std::byte *>(zero_point),
                                       sizeof(zero_point)},
                                      true, host_runtime_tensor::pool_cpu_only)
                              .expect("create tensor failed");
@@ -84,7 +84,7 @@ TEST_P(DequantizeTest, dequantize) {
     float scale[] = {scale_value};
     auto scale_ptr =
         hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(scale), sizeof(scale)}, true,
+                    {reinterpret_cast<std::byte *>(scale), sizeof(scale)}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
@@ -100,7 +100,7 @@ TEST_P(DequantizeTest, dequantize) {
         tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
         auto expected =
             hrt::create(dt_float32, shape,
-                        {reinterpret_cast<gsl::byte *>(ptr_ort), size}, true,
+                        {reinterpret_cast<std::byte *>(ptr_ort), size}, true,
                         host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
 
@@ -111,7 +111,7 @@ TEST_P(DequantizeTest, dequantize) {
         quant_param_t quant_param[] = {quantParam};
         auto quant_param_ptr =
             hrt::create(dt_int64, {1},
-                        {reinterpret_cast<gsl::byte *>(quant_param),
+                        {reinterpret_cast<std::byte *>(quant_param),
                          sizeof(quant_param)},
                         true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
@@ -140,7 +140,7 @@ TEST_P(DequantizeTest, dequantize) {
         quant_param_t quant_param[] = {quantParam};
         auto quant_param_ptr =
             hrt::create(dt_int64, {1},
-                        {reinterpret_cast<gsl::byte *>(quant_param),
+                        {reinterpret_cast<std::byte *>(quant_param),
                          sizeof(quant_param)},
                         true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");

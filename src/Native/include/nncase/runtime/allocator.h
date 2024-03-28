@@ -29,7 +29,7 @@ inline constexpr size_t HOST_BUFFER_ALLOCATE_SHARED = 2;
 struct buffer_attach_options {
     size_t flags;
     uintptr_t physical_address;
-    std::function<void(gsl::byte *)> deleter;
+    std::function<void(std::byte *)> deleter;
 };
 
 inline constexpr size_t HOST_BUFFER_ATTACH_SHARED = 1;
@@ -39,7 +39,7 @@ class NNCASE_API buffer_allocator {
     virtual result<buffer_t>
     allocate(size_t bytes, const buffer_allocate_options &options) = 0;
 
-    virtual result<buffer_t> attach(gsl::span<gsl::byte> data,
+    virtual result<buffer_t> attach(std::span<std::byte> data,
                                     const buffer_attach_options &options) = 0;
 
     static buffer_allocator &host();

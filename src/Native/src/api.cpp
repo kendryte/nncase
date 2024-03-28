@@ -101,7 +101,7 @@ int nncase_interp_load_model(nncase::runtime::interpreter *interp,
                              bool copy_buffer) {
     if (interp) {
         c_try(interp->load_model(
-            {reinterpret_cast<const gsl::byte *>(model_buffer), model_size},
+            {reinterpret_cast<const std::byte *>(model_buffer), model_size},
             copy_buffer));
         return 0;
     }
@@ -155,7 +155,7 @@ int nncase_func_invoke(nncase::runtime::runtime_function *func,
                        value_node **params, uint32_t params_size,
                        value_node **result) {
     if (func && (params || !params_size) && result) {
-        gsl::span<value_t> param_values{reinterpret_cast<value_t *>(params),
+        std::span<value_t> param_values{reinterpret_cast<value_t *>(params),
                                         params_size};
         c_try_var(retval, func->invoke(param_values));
         *result = retval.detach();

@@ -42,8 +42,8 @@ result<void> run_core(const std::string &arg_file_path) {
     std::getline(arg_file, output_pool_path);
 
     auto input_pool = read_file(input_pool_path);
-    gsl::span<gsl::byte> input_pool_span = {
-        reinterpret_cast<gsl::byte *>(input_pool.data()), input_pool.size()};
+    std::span<std::byte> input_pool_span = {
+        reinterpret_cast<std::byte *>(input_pool.data()), input_pool.size()};
     /* create the input parameters tensor */
     std::vector<value_t> parameters;
     int input_nums;
@@ -73,7 +73,7 @@ result<void> run_core(const std::string &arg_file_path) {
         std::filesystem::path(arg_file_path).parent_path().string();
     nncase_interp_set_dump_root(interp, dump_path.c_str());
     try_(interp->load_model(
-        {reinterpret_cast<const gsl::byte *>(kmodel.data()), kmodel.size()},
+        {reinterpret_cast<const std::byte *>(kmodel.data()), kmodel.size()},
         false));
 
     try_var(entry, interp->entry_function());

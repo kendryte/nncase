@@ -106,20 +106,20 @@ TEST_P(BatchNormalizationTest, batch_normalization) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     float epsilon_ptr[] = {eps};
     auto epsilon = hrt::create(nncase::dt_float32, {1},
-                               {reinterpret_cast<gsl::byte *>(epsilon_ptr),
+                               {reinterpret_cast<std::byte *>(epsilon_ptr),
                                 sizeof(epsilon_ptr)},
                                true, host_runtime_tensor::pool_cpu_only)
                        .expect("create tensor failed");
 
     float monentum_ptr[] = {momentum};
     auto monentum = hrt::create(nncase::dt_float32, {1},
-                                {reinterpret_cast<gsl::byte *>(monentum_ptr),
+                                {reinterpret_cast<std::byte *>(monentum_ptr),
                                  sizeof(monentum_ptr)},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");

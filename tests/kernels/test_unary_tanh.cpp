@@ -54,7 +54,7 @@ class UnaryTest : public KernelTest,
             std::uniform_int_distribution<> dis(-100000, 100000);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<int8_t>(tensor, index) = static_cast<int8_t>(dis(gen));
                     return ok();
                 });
@@ -66,7 +66,7 @@ class UnaryTest : public KernelTest,
             std::uniform_int_distribution<> dis(-100000, 100000);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<int16_t>(tensor, index) =
                         static_cast<int16_t>(dis(gen));
                     return ok();
@@ -79,7 +79,7 @@ class UnaryTest : public KernelTest,
             std::uniform_int_distribution<> dis(-100000, 100000);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<int32_t>(tensor, index) = dis(gen);
                     return ok();
                 });
@@ -91,7 +91,7 @@ class UnaryTest : public KernelTest,
             std::uniform_int_distribution<> dis(-100000, 100000);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<int64_t>(tensor, index) =
                         static_cast<int64_t>(dis(gen));
                     return ok();
@@ -104,7 +104,7 @@ class UnaryTest : public KernelTest,
             std::uniform_int_distribution<> dis(-100000, 100000);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<uint8_t>(tensor, index) =
                         static_cast<uint8_t>(dis(gen));
                     return ok();
@@ -117,7 +117,7 @@ class UnaryTest : public KernelTest,
             std::uniform_int_distribution<> dis(-100000, 100000);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<uint16_t>(tensor, index) =
                         static_cast<uint16_t>(dis(gen));
                     return ok();
@@ -130,7 +130,7 @@ class UnaryTest : public KernelTest,
             std::uniform_int_distribution<> dis(-100000, 100000);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<uint32_t>(tensor, index) =
                         static_cast<uint32_t>(dis(gen));
                     return ok();
@@ -143,7 +143,7 @@ class UnaryTest : public KernelTest,
             std::uniform_int_distribution<uint64_t> dis(-100000, 100000);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<uint64_t>(tensor, index) =
                         static_cast<uint64_t>(dis(gen));
                     return ok();
@@ -156,7 +156,7 @@ class UnaryTest : public KernelTest,
             std::uniform_real_distribution<float> dis(-10000.0f, 10000.0f);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<half>(tensor, index) = static_cast<half>(dis(gen));
                     return ok();
                 });
@@ -168,7 +168,7 @@ class UnaryTest : public KernelTest,
             std::uniform_real_distribution<float> dis(-100000.0f, 100000.0f);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<float>(tensor, index) = static_cast<float>(dis(gen));
                     return ok();
                 });
@@ -180,7 +180,7 @@ class UnaryTest : public KernelTest,
             std::uniform_real_distribution<double> dis(-100000.0, 100000.0);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<double>(tensor, index) = static_cast<double>(dis(gen));
                     return ok();
                 });
@@ -209,7 +209,7 @@ TEST_P(UnaryTest, tanh) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 

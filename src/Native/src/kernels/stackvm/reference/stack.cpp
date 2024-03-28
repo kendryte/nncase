@@ -29,13 +29,13 @@ using namespace nncase::kernels::stackvm;
 
 namespace {
 template <class T>
-result<void> stack_impl(gsl::span<const gsl::byte *const> inputs, T *output,
-                        gsl::span<const size_t> out_shape,
-                        gsl::span<const dims_t> &in_strides,
-                        gsl::span<const size_t> out_strides, size_t axis,
+result<void> stack_impl(std::span<const std::byte *const> inputs, T *output,
+                        std::span<const size_t> out_shape,
+                        std::span<const dims_t> &in_strides,
+                        std::span<const size_t> out_strides, size_t axis,
                         NNCASE_UNUSED kernel_context &context) noexcept {
     return apply(out_shape,
-                 [&](gsl::span<const size_t> out_index) -> result<void> {
+                 [&](std::span<const size_t> out_index) -> result<void> {
                      auto i = out_index[axis];
                      auto input = IN_CAST(T, inputs[i]);
                      dims_t in_index(out_index);
@@ -53,9 +53,9 @@ result<void> stack_impl(gsl::span<const gsl::byte *const> inputs, T *output,
                           in_strides, out_strides, axis, context)
 
 result<void> nncase::kernels::stackvm::reference::stack(
-    datatype_t type, gsl::span<const gsl::byte *const> inputs,
-    gsl::byte *output, gsl::span<const size_t> out_shape,
-    gsl::span<const dims_t> in_strides, gsl::span<const size_t> out_strides,
+    datatype_t type, std::span<const std::byte *const> inputs,
+    std::byte *output, std::span<const size_t> out_shape,
+    std::span<const dims_t> in_strides, std::span<const size_t> out_strides,
     size_t axis, kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(type, STACK_IMPL);
 }

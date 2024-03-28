@@ -49,7 +49,7 @@ pe_loader::~pe_loader() {
     }
 }
 
-void pe_loader::load(gsl::span<const gsl::byte> pe) {
+void pe_loader::load(std::span<const std::byte> pe) {
 #ifndef NDEBUG
     wchar_t temp_path[MAX_PATH];
     wchar_t temp_filename[MAX_PATH];
@@ -73,12 +73,12 @@ void pe_loader::load(gsl::span<const gsl::byte> pe) {
 
     auto func_mod = LoadLibraryW(temp_filename);
     THROW_WIN32_IF_NOT(func_mod);
-    image_ = (gsl::byte *)func_mod;
+    image_ = (std::byte *)func_mod;
 #else
     auto dos_header = reinterpret_cast<const IMAGE_DOS_HEADER *>(pe.data());
     auto nt_header = reinterpret_cast<const IMAGE_NT_HEADERS *>(
         pe.data() + dos_header->e_lfanew);
-    image_ = (gsl::byte *)VirtualAlloc(nullptr,
+    image_ = (std::byte *)VirtualAlloc(nullptr,
                                        nt_header->OptionalHeader.SizeOfImage,
                                        MEM_COMMIT, PAGE_READWRITE);
 

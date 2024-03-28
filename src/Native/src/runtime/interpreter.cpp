@@ -28,10 +28,11 @@ using namespace nncase::runtime;
 
 interpreter::interpreter() noexcept : entry_function_(nullptr) {}
 
-result<void> interpreter::load_model(gsl::span<const gsl::byte> buffer,
+result<void> interpreter::load_model(std::span<const std::byte> buffer,
                                      bool copy_buffer) noexcept {
     if (copy_buffer) {
-        char_array_buffer array_buffer(buffer.as_span<const char>());
+        char_array_buffer array_buffer(
+            {reinterpret_cast<const char *>(buffer.data()), buffer.size()});
         std::istream stream(&array_buffer);
         return load_model(stream);
     }

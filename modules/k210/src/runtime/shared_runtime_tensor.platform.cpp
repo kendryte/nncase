@@ -49,7 +49,7 @@ physical_memory_block::operator=(physical_memory_block &&other) noexcept {
 void physical_memory_block::free(
     NNCASE_UNUSED host_memory_block &block) noexcept {
     if (owned)
-        delete[] reinterpret_cast<gsl::byte *>(physical_address + IOMEM);
+        delete[] reinterpret_cast<std::byte *>(physical_address + IOMEM);
     physical_address = 0;
     owned = false;
 }
@@ -70,7 +70,7 @@ physical_memory_block::acknowledge(host_memory_block &block) noexcept {
 
 result<void>
 physical_memory_block::allocate(host_memory_block &block) noexcept {
-    auto buffer = new (std::nothrow) gsl::byte[block.size_bytes];
+    auto buffer = new (std::nothrow) std::byte[block.size_bytes];
     CHECK_WITH_ERR(buffer, std::errc::not_enough_memory);
     block.virtual_address = reinterpret_cast<uintptr_t>(buffer);
     block.physical_block.physical_address = block.virtual_address - IOMEM;

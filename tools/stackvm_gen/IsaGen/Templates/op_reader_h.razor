@@ -12,7 +12,7 @@
       false => field.CppType switch {
         "std::string" =>  $"reader.read_string()",
         "std::vector<std::string>" => $"reader.read_string_array()",
-        "gsl::span<const gsl::byte>" => $"reader.read_span(reader.read_unaligned<uint32_t>())",
+        "std::span<const std::byte>" => $"reader.read_span(reader.read_unaligned<uint32_t>())",
         _ => $"reader.read_unaligned<{field.CppType}>()",
         },
       };

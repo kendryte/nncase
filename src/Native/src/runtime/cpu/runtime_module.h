@@ -23,8 +23,8 @@ class cpu_runtime_module : public runtime_module {
   public:
     kernels::kernel_context &kernel_context() noexcept;
 
-    gsl::span<const gsl::byte> text() const noexcept { return text_; }
-    gsl::span<const gsl::byte> rdata() const noexcept { return rdata_; }
+    std::span<const std::byte> text() const noexcept { return text_; }
+    std::span<const std::byte> rdata() const noexcept { return rdata_; }
 
   protected:
     result<void> initialize_before_functions(
@@ -33,8 +33,8 @@ class cpu_runtime_module : public runtime_module {
     create_function() noexcept override;
 
   private:
-    gsl::span<const gsl::byte> text_;
-    gsl::span<const gsl::byte> rdata_;
+    std::span<const std::byte> text_;
+    std::span<const std::byte> rdata_;
     host_buffer_t text_storage_;
     host_buffer_t rdata_storage_;
 };

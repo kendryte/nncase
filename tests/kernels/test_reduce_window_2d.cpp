@@ -91,32 +91,32 @@ TEST_P(ReduceWindow2DTest, ReduceWindow2D) {
     tensor_shape(tensor_seq_get_value(output_ort, 0),
                  reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     // actual
     auto dilations_tensor =
         hrt::create(dt_int64, {dilations_size},
-                    {reinterpret_cast<gsl::byte *>(dilations),
+                    {reinterpret_cast<std::byte *>(dilations),
                      dilations_size * sizeof(int64_t)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
     auto filter_tensor = hrt::create(dt_int64, {filter_size},
-                                     {reinterpret_cast<gsl::byte *>(filter),
+                                     {reinterpret_cast<std::byte *>(filter),
                                       filter_size * sizeof(int64_t)},
                                      true, host_runtime_tensor::pool_cpu_only)
                              .expect("create tensor failed");
 
     auto stride_tensor = hrt::create(dt_int64, {stride_size},
-                                     {reinterpret_cast<gsl::byte *>(stride),
+                                     {reinterpret_cast<std::byte *>(stride),
                                       stride_size * sizeof(int64_t)},
                                      true, host_runtime_tensor::pool_cpu_only)
                              .expect("create tensor failed");
 
     auto onnxPads_tensor = hrt::create(dt_int64, {onnxPads_size},
-                                       {reinterpret_cast<gsl::byte *>(onnxPads),
+                                       {reinterpret_cast<std::byte *>(onnxPads),
                                         onnxPads_size * sizeof(int64_t)},
                                        true, host_runtime_tensor::pool_cpu_only)
                                .expect("create tensor failed");
@@ -125,14 +125,14 @@ TEST_P(ReduceWindow2DTest, ReduceWindow2D) {
     auto init_value_tensor =
         hrt::create(
             dt_float32, {1},
-            {reinterpret_cast<gsl::byte *>(init_value), sizeof(init_value)},
+            {reinterpret_cast<std::byte *>(init_value), sizeof(init_value)},
             true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
     bool ceil_mode_value[] = {false};
     auto ceil_mode_value_tensor =
         hrt::create(dt_boolean, {1},
-                    {reinterpret_cast<gsl::byte *>(ceil_mode_value),
+                    {reinterpret_cast<std::byte *>(ceil_mode_value),
                      sizeof(ceil_mode_value)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
@@ -140,7 +140,7 @@ TEST_P(ReduceWindow2DTest, ReduceWindow2D) {
     bool count_include_pad[] = {false};
     auto count_include_pad_tensor =
         hrt::create(dt_boolean, {1},
-                    {reinterpret_cast<gsl::byte *>(count_include_pad),
+                    {reinterpret_cast<std::byte *>(count_include_pad),
                      sizeof(count_include_pad)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");

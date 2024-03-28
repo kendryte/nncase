@@ -46,7 +46,7 @@
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));       \
     auto expected =                                                            \
         hrt::create(_typecode, shape,                                          \
-                    {reinterpret_cast<gsl::byte *>(ptr_ort), size}, true,      \
+                    {reinterpret_cast<std::byte *>(ptr_ort), size}, true,      \
                     host_runtime_tensor::pool_cpu_only)                        \
             .expect("create tensor failed");
 
@@ -58,7 +58,7 @@
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));       \
     auto expected =                                                            \
         hrt::create(dt_boolean, shape,                                         \
-                    {reinterpret_cast<gsl::byte *>(ptr_ort), size}, true,      \
+                    {reinterpret_cast<std::byte *>(ptr_ort), size}, true,      \
                     host_runtime_tensor::pool_cpu_only)                        \
             .expect("create expected tensor failed");
 
@@ -245,13 +245,13 @@
 
 #define CreateRtFromAttr_SCALAR(attr_rt_type, attr_shape, attr)                \
     hrt::create(attr_rt_type, attr_shape,                                      \
-                {reinterpret_cast<gsl::byte *>(&attr), _msize(attr)}, true,    \
+                {reinterpret_cast<std::byte *>(&attr), _msize(attr)}, true,    \
                 host_runtime_tensor::pool_cpu_only)                            \
         .expect("create tensor failed");
 
 #define CreateRtFromAttr_ARRAYONEDIM(attr_rt_type, attr_shape, attr)           \
     hrt::create(attr_rt_type, attr_shape,                                      \
-                {reinterpret_cast<gsl::byte *>(attr), _msize(attr)}, true,     \
+                {reinterpret_cast<std::byte *>(attr), _msize(attr)}, true,     \
                 host_runtime_tensor::pool_cpu_only)                            \
         .expect("create tensor failed");
 
@@ -293,7 +293,7 @@
 #define CONVERT_EXPECT_TO_RT(type)                                             \
     auto expected =                                                            \
         hrt::create(type, shape,                                               \
-                    {reinterpret_cast<gsl::byte *>(ptr_ort), size}, true,      \
+                    {reinterpret_cast<std::byte *>(ptr_ort), size}, true,      \
                     host_runtime_tensor::pool_cpu_only)                        \
             .expect("create expected tensor failed");
 

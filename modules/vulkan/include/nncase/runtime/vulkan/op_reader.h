@@ -25,7 +25,7 @@ class NNCASE_MODULES_VULKAN_API op_visitor {
 
     ~op_visitor() = default;
 
-    result<void> visit(gsl::span<const gsl::byte> text) noexcept;
+    result<void> visit(std::span<const std::byte> text) noexcept;
 
     virtual result<void> visit(NNCASE_UNUSED const ldbuf_op_t &op) noexcept {
         return ok();

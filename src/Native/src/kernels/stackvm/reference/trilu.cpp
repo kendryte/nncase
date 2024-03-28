@@ -25,10 +25,10 @@ using namespace nncase::kernels::stackvm;
 
 template <typename T>
 result<void>
-trilu_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
-           gsl::span<const size_t> in_strides,
-           gsl::span<const size_t> out_strides, int64_t k, bool upper) {
-    return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
+trilu_impl(const T *input, T *output, std::span<const size_t> in_shape,
+           std::span<const size_t> in_strides,
+           std::span<const size_t> out_strides, int64_t k, bool upper) {
+    return apply(in_shape, [&](std::span<const size_t> index) -> result<void> {
         int64_t h = index[index.size() - 2];
         int64_t w = index[index.size() - 1];
 
@@ -52,9 +52,9 @@ trilu_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
                           in_shape, in_strides, out_strides, k, upper)
 
 result<void> nncase::kernels::stackvm::reference::trilu(
-    datatype_t type, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> out_strides, int64_t k, bool upper) noexcept {
+    datatype_t type, const std::byte *input, std::byte *output,
+    std::span<const size_t> in_shape, std::span<const size_t> in_strides,
+    std::span<const size_t> out_strides, int64_t k, bool upper) noexcept {
     switch (runtime::get_bytes(type)) {
         TRILU_IMPL(1, uint8_t);
         TRILU_IMPL(2, uint16_t);

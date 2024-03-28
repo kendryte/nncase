@@ -41,7 +41,7 @@ class TriluTest
 
         int64_t k_ptr[] = {k_value};
         k = hrt::create(nncase::dt_int64, {1},
-                        {reinterpret_cast<gsl::byte *>(k_ptr), sizeof(k_ptr)},
+                        {reinterpret_cast<std::byte *>(k_ptr), sizeof(k_ptr)},
                         true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         upper = upper_value;
@@ -72,7 +72,7 @@ TEST_P(TriluTest, trilu) {
     //    dims_t shape(tensor_rank(output_ort));
     //    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     //    auto expected = hrt::create(input.datatype(), shape,
-    //                                {reinterpret_cast<gsl::byte *>(ptr_ort),
+    //                                {reinterpret_cast<std::byte *>(ptr_ort),
     //                                size}, true,
     //                                host_runtime_tensor::pool_cpu_only)
     //                        .expect("create tensor failed");
@@ -80,7 +80,7 @@ TEST_P(TriluTest, trilu) {
     // actual
     int32_t upper_ptr[] = {upper};
     auto upper = hrt::create(nncase::dt_int32, {1},
-                             {reinterpret_cast<gsl::byte *>(upper_ptr),
+                             {reinterpret_cast<std::byte *>(upper_ptr),
                               sizeof(upper_ptr)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");

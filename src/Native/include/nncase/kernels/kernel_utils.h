@@ -47,12 +47,12 @@ inline offset_type element_offset(const S &strides, It first,
     using difference_type = typename std::iterator_traits<It>::difference_type;
     auto size = static_cast<difference_type>((std::min)(
         static_cast<size_t>(std::distance(first, last)), strides.size()));
-    return std::inner_product(last - size, last, strides.cend() - size,
+    return std::inner_product(last - size, last, strides.end() - size,
                               offset_type(0));
 }
 
-inline size_t offset(gsl::span<const size_t> strides,
-                     gsl::span<const size_t> index) {
+inline size_t offset(std::span<const size_t> strides,
+                     std::span<const size_t> index) {
     // scalar
     if (strides.size() == 0 || index.size() == 0) {
         return 0;
@@ -92,8 +92,8 @@ inline size_t get_windowed_output_size(size_t size, int32_t filter,
            stride;
 }
 
-inline dims_t get_binary_output_shape(gsl::span<const size_t> input_a_shape,
-                                      gsl::span<const size_t> input_b_shape) {
+inline dims_t get_binary_output_shape(std::span<const size_t> input_a_shape,
+                                      std::span<const size_t> input_b_shape) {
     dims_t out_shape;
 
     const auto dest_dims =
@@ -129,8 +129,8 @@ inline T apply_activation(T value, value_range<T> activation) {
     return clamp(value, activation.min, activation.max);
 }
 
-inline dims_t get_reduced_offset(gsl::span<const size_t> in_offset,
-                                 gsl::span<const size_t> reduced_shape) {
+inline dims_t get_reduced_offset(std::span<const size_t> in_offset,
+                                 std::span<const size_t> reduced_shape) {
     dims_t off(reduced_shape.size());
     const auto dims_ext = in_offset.size() - reduced_shape.size();
     for (size_t i = 0; i < reduced_shape.size(); i++) {
@@ -143,8 +143,8 @@ inline dims_t get_reduced_offset(gsl::span<const size_t> in_offset,
     return off;
 }
 
-inline dims_t get_reduced_shape(gsl::span<const size_t> in_shape,
-                                gsl::span<const size_t> axis, bool keep_dims) {
+inline dims_t get_reduced_shape(std::span<const size_t> in_shape,
+                                std::span<const size_t> axis, bool keep_dims) {
     dims_t shape;
     shape.reserve(in_shape.size() - (keep_dims ? 0 : axis.size()));
     for (size_t i = 0; i < in_shape.size(); i++) {
@@ -170,8 +170,8 @@ size_t get_reduce_block_size(const TShape &in_shape, const TShape &axis) {
     return size;
 }
 
-inline dims_t get_reduced_offset(gsl::span<const size_t> in_offset,
-                                 gsl::span<const size_t> axis, bool keep_dims) {
+inline dims_t get_reduced_offset(std::span<const size_t> in_offset,
+                                 std::span<const size_t> axis, bool keep_dims) {
     if (in_offset.size() == 0) {
         return in_offset;
     }
@@ -221,7 +221,7 @@ constexpr T quantize(float value, const quant_param_t &param) noexcept {
 }
 
 inline std::pair<float, float>
-get_resize_scales(gsl::span<const size_t> in_shape, int32_t out_h,
+get_resize_scales(std::span<const size_t> in_shape, int32_t out_h,
                   int32_t out_w, bool align_corners) {
     auto height_scale = (float)in_shape[2] / out_h;
     auto width_scale = (float)in_shape[3] / out_w;

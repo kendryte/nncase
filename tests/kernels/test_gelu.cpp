@@ -58,7 +58,7 @@ class GeluTest : public KernelTest,
             std::uniform_real_distribution<float> dis(0.0f, 2.0f);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<half>(tensor, index) = static_cast<half>(dis(gen));
                     return ok();
                 });
@@ -70,7 +70,7 @@ class GeluTest : public KernelTest,
             std::uniform_real_distribution<float> dis(0.0f, 2.0f);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<float>(tensor, index) = static_cast<float>(dis(gen));
                     return ok();
                 });
@@ -82,7 +82,7 @@ class GeluTest : public KernelTest,
             std::uniform_real_distribution<double> dis(0.0, 2.0);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<double>(tensor, index) = static_cast<double>(dis(gen));
                     return ok();
                 });
@@ -94,7 +94,7 @@ class GeluTest : public KernelTest,
             std::uniform_real_distribution<> dis(0.0, 2.0);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<bfloat16>(tensor, index) =
                         static_cast<bfloat16>(dis(gen));
                     return ok();
@@ -125,37 +125,37 @@ TEST_P(GeluTest, gelu) {
     if (input.datatype() == dt_float16) {
         half b_ptr[] = {(half)2.0f};
         b = hrt::create(nncase::dt_float16, {1},
-                        {reinterpret_cast<gsl::byte *>(b_ptr), sizeof(b_ptr)},
+                        {reinterpret_cast<std::byte *>(b_ptr), sizeof(b_ptr)},
                         true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
 
         half c_ptr[] = {(half)1.0f};
         c = hrt::create(nncase::dt_float16, {1},
-                        {reinterpret_cast<gsl::byte *>(c_ptr), sizeof(c_ptr)},
+                        {reinterpret_cast<std::byte *>(c_ptr), sizeof(c_ptr)},
                         true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
     } else if (input.datatype() == dt_float32) {
         float b_ptr[] = {2.0f};
         b = hrt::create(nncase::dt_float32, {1},
-                        {reinterpret_cast<gsl::byte *>(b_ptr), sizeof(b_ptr)},
+                        {reinterpret_cast<std::byte *>(b_ptr), sizeof(b_ptr)},
                         true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
 
         float c_ptr[] = {1.0f};
         c = hrt::create(nncase::dt_float32, {1},
-                        {reinterpret_cast<gsl::byte *>(c_ptr), sizeof(c_ptr)},
+                        {reinterpret_cast<std::byte *>(c_ptr), sizeof(c_ptr)},
                         true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
     } else if (input.datatype() == dt_float64) {
         double b_ptr[] = {2.0f};
         b = hrt::create(nncase::dt_float64, {1},
-                        {reinterpret_cast<gsl::byte *>(b_ptr), sizeof(b_ptr)},
+                        {reinterpret_cast<std::byte *>(b_ptr), sizeof(b_ptr)},
                         true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
 
         double c_ptr[] = {1.0f};
         c = hrt::create(nncase::dt_float64, {1},
-                        {reinterpret_cast<gsl::byte *>(c_ptr), sizeof(c_ptr)},
+                        {reinterpret_cast<std::byte *>(c_ptr), sizeof(c_ptr)},
                         true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
     }
@@ -174,7 +174,7 @@ TEST_P(GeluTest, gelu) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 

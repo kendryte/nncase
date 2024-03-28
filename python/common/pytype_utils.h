@@ -127,7 +127,7 @@ strides_t to_rt_strides(size_t elemsize,
     return strides;
 }
 
-std::vector<pybind11::ssize_t> to_py_shape(gsl::span<const size_t> value) {
+std::vector<pybind11::ssize_t> to_py_shape(std::span<const size_t> value) {
     namespace py = pybind11;
 
     std::vector<py::ssize_t> shape(value.size());
@@ -137,7 +137,7 @@ std::vector<pybind11::ssize_t> to_py_shape(gsl::span<const size_t> value) {
 }
 
 std::vector<pybind11::ssize_t> to_py_strides(size_t elemsize,
-                                             gsl::span<const size_t> value) {
+                                             std::span<const size_t> value) {
     namespace py = pybind11;
 
     std::vector<py::ssize_t> strides(value.size());

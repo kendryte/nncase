@@ -23,12 +23,12 @@ class elf_loader {
     elf_loader() noexcept;
     ~elf_loader();
 
-    void load(gsl::span<const gsl::byte> pe);
+    void load(std::span<const std::byte> pe);
     void *entry() const noexcept;
 
   private:
-    gsl::byte *buffer_;
-    gsl::byte *image_;
+    std::byte *buffer_;
+    std::byte *image_;
     el_ctx ctx_;
 };
 

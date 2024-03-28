@@ -121,7 +121,7 @@ TEST_P(Conv2DTransposeTest, conv2d_transpose) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(dt_float32, shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
@@ -129,7 +129,7 @@ TEST_P(Conv2DTransposeTest, conv2d_transpose) {
     int64_t group[] = {group_value};
     float fused_clamp[] = {-FLT_MAX, FLT_MAX};
     auto dilations_ptr = hrt::create(nncase::dt_int64, {2},
-                                     {reinterpret_cast<gsl::byte *>(dilations),
+                                     {reinterpret_cast<std::byte *>(dilations),
                                       dilations_size * sizeof(int64_t)},
                                      true, host_runtime_tensor::pool_cpu_only)
                              .expect("create tensor failed");
@@ -137,45 +137,45 @@ TEST_P(Conv2DTransposeTest, conv2d_transpose) {
     auto kernel_shape_ptr =
         hrt::create(
             nncase::dt_int64, {2},
-            {reinterpret_cast<gsl::byte *>(kernel_shape), sizeof(kernel_shape)},
+            {reinterpret_cast<std::byte *>(kernel_shape), sizeof(kernel_shape)},
             true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
     auto pad_ptr = hrt::create(nncase::dt_int64, {4},
-                               {reinterpret_cast<gsl::byte *>(pad),
+                               {reinterpret_cast<std::byte *>(pad),
                                 pad_size * sizeof(int64_t)},
                                true, host_runtime_tensor::pool_cpu_only)
                        .expect("create tensor failed");
 
     auto strides_ptr = hrt::create(nncase::dt_int64, {2},
-                                   {reinterpret_cast<gsl::byte *>(strides),
+                                   {reinterpret_cast<std::byte *>(strides),
                                     strides_size * sizeof(int64_t)},
                                    true, host_runtime_tensor::pool_cpu_only)
                            .expect("create tensor failed");
 
     auto group_ptr =
         hrt::create(nncase::dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(group), sizeof(group)}, true,
+                    {reinterpret_cast<std::byte *>(group), sizeof(group)}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
     auto fused_clamp_ptr =
         hrt::create(
             nncase::dt_float32, {2},
-            {reinterpret_cast<gsl::byte *>(fused_clamp), sizeof(fused_clamp)},
+            {reinterpret_cast<std::byte *>(fused_clamp), sizeof(fused_clamp)},
             true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
     auto output_padding_ptr =
         hrt::create(nncase::dt_int64, {2},
-                    {reinterpret_cast<gsl::byte *>(output_padding),
+                    {reinterpret_cast<std::byte *>(output_padding),
                      output_padding_size * sizeof(int64_t)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
     auto output_shape_ptr =
         hrt::create(nncase::dt_int64, {4},
-                    {reinterpret_cast<gsl::byte *>(output_shape),
+                    {reinterpret_cast<std::byte *>(output_shape),
                      output_shape_size * sizeof(int64_t)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");

@@ -58,7 +58,7 @@ TEST_P(RequireTest, Require) {
     bool predicate_array[] = {true};
     auto predicate =
         hrt::create(dt_boolean, {1},
-                    {reinterpret_cast<gsl::byte *>(predicate_array),
+                    {reinterpret_cast<std::byte *>(predicate_array),
                      sizeof(predicate_array)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");

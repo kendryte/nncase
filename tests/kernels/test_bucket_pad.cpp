@@ -44,7 +44,7 @@ class BucketPadTest : public KernelTest,
 
         float value_array[] = {0};
         value = hrt::create(dt_float32, {1},
-                            {reinterpret_cast<gsl::byte *>(value_array),
+                            {reinterpret_cast<std::byte *>(value_array),
                              sizeof(value_array)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
@@ -67,7 +67,7 @@ TEST_P(BucketPadTest, BucketPad) {
     int64_t pad_ptr[] = {0, 0, 0, 0, 0, 0, 0, 0};
     auto pad =
         hrt::create(dt_int64, {8},
-                    {reinterpret_cast<gsl::byte *>(pad_ptr), sizeof(pad_ptr)},
+                    {reinterpret_cast<std::byte *>(pad_ptr), sizeof(pad_ptr)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
@@ -79,7 +79,7 @@ TEST_P(BucketPadTest, BucketPad) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
@@ -87,7 +87,7 @@ TEST_P(BucketPadTest, BucketPad) {
     int64_t new_shape_array[] = {1, 3, 16, 16};
     auto new_shape =
         hrt::create(dt_int64, {4},
-                    {reinterpret_cast<gsl::byte *>(new_shape_array),
+                    {reinterpret_cast<std::byte *>(new_shape_array),
                      sizeof(new_shape_array)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");

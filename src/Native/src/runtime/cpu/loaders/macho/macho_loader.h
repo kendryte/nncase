@@ -22,7 +22,7 @@ class macho_loader {
     macho_loader() noexcept : ofi_(nullptr), mod_(nullptr), sym_(nullptr) {}
     ~macho_loader();
 
-    void load(gsl::span<const gsl::byte> macho);
+    void load(std::span<const std::byte> macho);
     void *entry() const noexcept;
 
   private:

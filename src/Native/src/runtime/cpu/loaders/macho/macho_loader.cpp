@@ -32,7 +32,7 @@ macho_loader::~macho_loader() {
     }
 }
 
-void macho_loader::load(gsl::span<const gsl::byte> macho) {
+void macho_loader::load(std::span<const std::byte> macho) {
     if (NSCreateObjectFileImageFromMemory(
             macho.data(), macho.size_bytes(),
             reinterpret_cast<NSObjectFileImage *>(&ofi_)) !=

@@ -30,10 +30,10 @@
 
 BEGIN_NS_NNCASE_KERNELS_MODULE(stackvm)
 
-inline dims_t conv2d_infer_shape(gsl::span<const size_t> in_shape,
-                                 gsl::span<const size_t> weights_shape,
-                                 gsl::span<const size_t> stride,
-                                 gsl::span<const size_t> dilation,
+inline dims_t conv2d_infer_shape(std::span<const size_t> in_shape,
+                                 std::span<const size_t> weights_shape,
+                                 std::span<const size_t> stride,
+                                 std::span<const size_t> dilation,
                                  const paddings_t &paddings) {
     dims_t new_shape(in_shape);
     new_shape[1] = weights_shape[0];
@@ -52,8 +52,8 @@ inline dims_t concat_infer_shape(std::vector<dims_t> shapes, int axis) {
     return new_shape;
 }
 
-inline dims_t gather_infer_shape(gsl::span<const size_t> in_shape,
-                                 gsl::span<const size_t> index_shape,
+inline dims_t gather_infer_shape(std::span<const size_t> in_shape,
+                                 std::span<const size_t> index_shape,
                                  int axis) {
     if (in_shape.size() == 1 && index_shape.size() == 0) {
         // scalar
@@ -73,8 +73,8 @@ inline dims_t gather_infer_shape(gsl::span<const size_t> in_shape,
     return new_shape;
 }
 
-inline dims_t gather_nd_infer_shape(gsl::span<const size_t> in_shape,
-                                    gsl::span<const size_t> index_shape,
+inline dims_t gather_nd_infer_shape(std::span<const size_t> in_shape,
+                                    std::span<const size_t> index_shape,
                                     size_t batch_dims) {
     dims_t new_shape(index_shape);
     new_shape.pop_back();
@@ -87,7 +87,7 @@ inline dims_t gather_nd_infer_shape(gsl::span<const size_t> in_shape,
     return new_shape;
 }
 
-inline dims_t slice_infer_shape(gsl::span<const size_t> in_shape,
+inline dims_t slice_infer_shape(std::span<const size_t> in_shape,
                                 const axes_t &begins, const axes_t &ends,
                                 const axes_t &strides) {
     auto new_shape = dims_t();
@@ -103,9 +103,9 @@ inline dims_t slice_infer_shape(gsl::span<const size_t> in_shape,
     return new_shape.size() ? new_shape : dims_t{1};
 }
 
-inline std::vector<dims_t> split_shape_infer(gsl::span<const size_t> in_shape,
+inline std::vector<dims_t> split_shape_infer(std::span<const size_t> in_shape,
                                              size_t axis,
-                                             gsl::span<const size_t> sections) {
+                                             std::span<const size_t> sections) {
     auto result = std::vector<dims_t>();
     for (size_t i = 0; i < sections.size(); ++i) {
         dims_t shape(in_shape);
@@ -115,7 +115,7 @@ inline std::vector<dims_t> split_shape_infer(gsl::span<const size_t> in_shape,
     return result;
 }
 
-inline dims_t reshape_shape_infer(gsl::span<const size_t> in_shape,
+inline dims_t reshape_shape_infer(std::span<const size_t> in_shape,
                                   const axes_t &new_shape) {
     auto neg_index = -1;
     auto sum = 1;
@@ -142,7 +142,7 @@ inline dims_t stack_infer_shape(dims_t shape0, int input_count, int axis) {
     return shape0;
 }
 
-inline dims_t unsqueeze_infer_shape(gsl::span<const size_t> in_shape,
+inline dims_t unsqueeze_infer_shape(std::span<const size_t> in_shape,
                                     const axes_t &axes) {
     if (in_shape.size() == 0 && axes.size() == 1) {
         return dims_t{1};
@@ -158,7 +158,7 @@ inline dims_t unsqueeze_infer_shape(gsl::span<const size_t> in_shape,
     return new_shape;
 }
 
-inline dims_t flatten_infer_shape(gsl::span<const size_t> in_shape,
+inline dims_t flatten_infer_shape(std::span<const size_t> in_shape,
                                   size_t axis) {
     auto first =
         (size_t)std::accumulate(in_shape.begin(), in_shape.begin() + axis, 1,
@@ -168,8 +168,8 @@ inline dims_t flatten_infer_shape(gsl::span<const size_t> in_shape,
     return dims_t{first, second};
 }
 
-inline dims_t squeeze_infer_shape(gsl::span<const size_t> in_shape,
-                                  gsl::span<const size_t> axes) {
+inline dims_t squeeze_infer_shape(std::span<const size_t> in_shape,
+                                  std::span<const size_t> axes) {
     auto result_rank = in_shape.size() - axes.size();
     if (result_rank == 0) {
         return dims_t();
@@ -189,15 +189,15 @@ inline dims_t squeeze_infer_shape(gsl::span<const size_t> in_shape,
     return out_shape;
 }
 
-inline dims_t where_infer_shape(gsl::span<const size_t> cond_shape,
-                                gsl::span<const size_t> x_shape,
-                                gsl::span<const size_t> y_shape) {
+inline dims_t where_infer_shape(std::span<const size_t> cond_shape,
+                                std::span<const size_t> x_shape,
+                                std::span<const size_t> y_shape) {
     return kernels::detail::get_binary_output_shape(
         kernels::detail::get_binary_output_shape(cond_shape, x_shape), y_shape);
 }
 
-inline dims_t tile_infer_shape(gsl::span<const size_t> in_shape,
-                               gsl::span<const size_t> repeats) {
+inline dims_t tile_infer_shape(std::span<const size_t> in_shape,
+                               std::span<const size_t> repeats) {
     auto out_shape = dims_t(in_shape.size());
     for (size_t i = 0; i < out_shape.size(); ++i) {
         out_shape[i] = in_shape[i] * repeats[i];
@@ -205,8 +205,8 @@ inline dims_t tile_infer_shape(gsl::span<const size_t> in_shape,
     return out_shape;
 }
 
-inline dims_t reduce_infer_shape(gsl::span<const size_t> in_shape,
-                                 gsl::span<const size_t> axes, bool keep_dims) {
+inline dims_t reduce_infer_shape(std::span<const size_t> in_shape,
+                                 std::span<const size_t> axes, bool keep_dims) {
     dims_t tmp_shape(in_shape);
     for (size_t i = 0; i < axes.size(); ++i) {
         auto d = keep_dims ? 1 : 0;
@@ -222,9 +222,9 @@ inline dims_t reduce_infer_shape(gsl::span<const size_t> in_shape,
 }
 
 inline std::vector<dims_t>
-lstm_infer_shape(gsl::span<const size_t> x_shape,
-                 gsl::span<const size_t> init_h_shape,
-                 gsl::span<const size_t> init_c_shape,
+lstm_infer_shape(std::span<const size_t> x_shape,
+                 std::span<const size_t> init_h_shape,
+                 std::span<const size_t> init_c_shape,
                  runtime::stackvm::lstmdirection_t direction,
                  runtime::stackvm::lstmlayout_t layout, size_t hidden_size,
                  size_t out_size) {
@@ -243,8 +243,8 @@ lstm_infer_shape(gsl::span<const size_t> x_shape,
     }
 }
 
-inline dims_t transpose_infer_shape(gsl::span<const size_t> in_shape,
-                                    gsl::span<const size_t> perm) {
+inline dims_t transpose_infer_shape(std::span<const size_t> in_shape,
+                                    std::span<const size_t> perm) {
     dims_t new_shape(in_shape);
     for (size_t i = 0; i < in_shape.size(); ++i) {
         new_shape[i] = in_shape[perm[i]];
@@ -252,7 +252,7 @@ inline dims_t transpose_infer_shape(gsl::span<const size_t> in_shape,
     return new_shape;
 }
 
-inline dims_t pad_infer_shape(gsl::span<const size_t> in_shape,
+inline dims_t pad_infer_shape(std::span<const size_t> in_shape,
                               const paddings_t &pads) {
     auto d = pads.size();
     dims_t new_shape(in_shape);
@@ -262,8 +262,8 @@ inline dims_t pad_infer_shape(gsl::span<const size_t> in_shape,
     return new_shape;
 }
 
-inline dims_t space_to_batch_shape_infer(gsl::span<const size_t> in_shape,
-                                         gsl::span<const size_t> block_shape,
+inline dims_t space_to_batch_shape_infer(std::span<const size_t> in_shape,
+                                         std::span<const size_t> block_shape,
                                          const paddings_t &paddings) {
     auto batch = in_shape[0] * runtime::compute_size(block_shape);
     auto out_shape = dims_t{batch};
@@ -280,15 +280,15 @@ inline dims_t space_to_batch_shape_infer(gsl::span<const size_t> in_shape,
     return out_shape;
 }
 
-inline dims_t onehot_infer_shape(gsl::span<const size_t> indices_shape,
+inline dims_t onehot_infer_shape(std::span<const size_t> indices_shape,
                                  size_t depth, size_t axis) {
     dims_t new_shape(indices_shape);
     new_shape.insert(new_shape.begin() + axis, depth);
     return new_shape;
 }
 
-inline result<dims_t> matmul_infer_shape(gsl::span<const size_t> lhs_shape_,
-                                         gsl::span<const size_t> rhs_shape_) {
+inline result<dims_t> matmul_infer_shape(std::span<const size_t> lhs_shape_,
+                                         std::span<const size_t> rhs_shape_) {
     dims_t lhs_shape = lhs_shape_;
     dims_t rhs_shape = rhs_shape_;
 
@@ -326,7 +326,7 @@ inline result<dims_t> matmul_infer_shape(gsl::span<const size_t> lhs_shape_,
     return ok(new_shape);
 }
 
-inline dims_t topk_infer_shape(gsl::span<const size_t> x, int k, int axis) {
+inline dims_t topk_infer_shape(std::span<const size_t> x, int k, int axis) {
     dims_t result(x);
     result[axis] = k;
     return result;

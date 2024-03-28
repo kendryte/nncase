@@ -125,7 +125,7 @@ void log_softmax_step_not1(int32_t len, const float *x, float *dx, int step) {
 }
 
 static void log_softmax_impl(const float *input, float *output,
-                             gsl::span<const size_t> in_shape, int axis) {
+                             std::span<const size_t> in_shape, int axis) {
     size_t ndim = in_shape.size();
     size_t positive_axis = axis < 0 ? ndim + axis : axis;
     size_t axis_dim = in_shape[positive_axis];
@@ -170,18 +170,18 @@ static void log_softmax_impl(const float *input, float *output,
 #define OUT_CAST(_ty, _name) reinterpret_cast<_ty *>(_name)
 
 // template result<void> optimized::log_softmax<float>(
-//     const float *input, float *output, gsl::span<const size_t> in_shape,
-//     [[maybe_unused]] gsl::span<const size_t> in_strides,
-//     [[maybe_unused]] gsl::span<const size_t> out_strides,
+//     const float *input, float *output, std::span<const size_t> in_shape,
+//     [[maybe_unused]] std::span<const size_t> in_strides,
+//     [[maybe_unused]] std::span<const size_t> out_strides,
 //     int32_t axis) noexcept;
 
 // template <typename T>
 result<void>
 optimized::log_softmax([[maybe_unused]] typecode_t typecode,
-                       const gsl::byte *input, gsl::byte *output,
-                       gsl::span<const size_t> in_shape,
-                       [[maybe_unused]] gsl::span<const size_t> in_strides,
-                       [[maybe_unused]] gsl::span<const size_t> out_strides,
+                       const std::byte *input, std::byte *output,
+                       std::span<const size_t> in_shape,
+                       [[maybe_unused]] std::span<const size_t> in_strides,
+                       [[maybe_unused]] std::span<const size_t> out_strides,
                        int32_t axis) noexcept {
     result<void> ret_value = ok();
 #if __riscv_vector

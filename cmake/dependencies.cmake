@@ -1,10 +1,5 @@
-find_package(gsl-lite REQUIRED)
 if (ENABLE_OPENMP)
     find_package(OpenMP COMPONENTS CXX REQUIRED)
-endif ()
-
-if ((NOT BUILDING_RUNTIME) OR ENABLE_VULKAN_RUNTIME)
-    find_package(Vulkan REQUIRED)
 endif ()
 
 if (NOT BUILDING_RUNTIME)

@@ -33,8 +33,8 @@ BEGIN_NS_NNCASE_RT_MODULE(cpu)
 
 class cpu_runtime_function final : public runtime_function {
     typedef void (*kernel_entry_t)(nncase_runtime_cpu_mt_t *cpu_mt,
-                                   gsl::byte **inputs, const gsl::byte *rdata,
-                                   gsl::byte *data);
+                                   std::byte **inputs, const std::byte *rdata,
+                                   std::byte *data);
 
   public:
     cpu_runtime_function(runtime_module &rt_module);
@@ -45,11 +45,11 @@ class cpu_runtime_function final : public runtime_function {
   protected:
     result<void>
     initialize_core(runtime_function_init_context &context) noexcept override;
-    result<value_t> invoke_core(gsl::span<value_t> parameters,
+    result<value_t> invoke_core(std::span<value_t> parameters,
                                 value_t return_value) noexcept override;
 
   private:
-    result<void> run(gsl::span<gsl::byte *> params) noexcept;
+    result<void> run(std::span<std::byte *> params) noexcept;
 
   private:
 #if WIN32

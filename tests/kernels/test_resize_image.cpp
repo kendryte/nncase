@@ -46,7 +46,7 @@ class ResizeImageTest : public KernelTest,
         new_shape_array = GetDataArray("o_shape");
         new_shape =
             hrt::create(dt_int64, {4},
-                        {reinterpret_cast<gsl::byte *>(new_shape_array.data()),
+                        {reinterpret_cast<std::byte *>(new_shape_array.data()),
                          sizeof(new_shape_array[0]) * new_shape_array.size()},
                         true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
@@ -101,7 +101,7 @@ INSTANTIATE_TEST_SUITE_P(ResizeImage, ResizeImageTest,
 TEST_P(ResizeImageTest, ResizeImage) {
     float roi_array[1];
     auto roi = hrt::create(dt_float32, {1},
-                           {reinterpret_cast<gsl::byte *>(roi_array),
+                           {reinterpret_cast<std::byte *>(roi_array),
                             sizeof(roi_array)},
                            true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
@@ -109,7 +109,7 @@ TEST_P(ResizeImageTest, ResizeImage) {
 
     auto exclude_outside =
         hrt::create(dt_int32, {1},
-                    {reinterpret_cast<gsl::byte *>(exclude_outside_array),
+                    {reinterpret_cast<std::byte *>(exclude_outside_array),
                      sizeof(exclude_outside_array)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
@@ -117,7 +117,7 @@ TEST_P(ResizeImageTest, ResizeImage) {
     float cubic_coeff_a_array[] = {-0.75f};
     auto cubic_coeff_a =
         hrt::create(dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(cubic_coeff_a_array),
+                    {reinterpret_cast<std::byte *>(cubic_coeff_a_array),
                      sizeof(cubic_coeff_a_array)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
@@ -125,7 +125,7 @@ TEST_P(ResizeImageTest, ResizeImage) {
     float extrapolation_value_array[] = {0.0f};
     auto extrapolation_value =
         hrt::create(dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(extrapolation_value_array),
+                    {reinterpret_cast<std::byte *>(extrapolation_value_array),
                      sizeof(extrapolation_value_array)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
@@ -149,7 +149,7 @@ TEST_P(ResizeImageTest, ResizeImage) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(lhs.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
     bool result = is_same_tensor(expected, actual) ||

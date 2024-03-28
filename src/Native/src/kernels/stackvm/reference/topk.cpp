@@ -110,11 +110,11 @@ void topK(const T *input, T *output, int64_t *indices, size_t length,
 template <typename T>
 result<void>
 topk_impl(const T *input, T *output_values, int64_t *output_indices,
-          gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-          gsl::span<const size_t> output_values_shape,
-          gsl::span<const size_t> output_values_strides,
-          gsl::span<const size_t> output_indices_shape,
-          gsl::span<const size_t> output_indices_strides, const int64_t k,
+          std::span<const size_t> in_shape, std::span<const size_t> in_strides,
+          std::span<const size_t> output_values_shape,
+          std::span<const size_t> output_values_strides,
+          std::span<const size_t> output_indices_shape,
+          std::span<const size_t> output_indices_strides, const int64_t k,
           const int32_t axis, const bool largest, const bool sorted) noexcept {
     (void)output_values_shape;
     (void)output_indices_shape;
@@ -137,7 +137,7 @@ topk_impl(const T *input, T *output_values, int64_t *output_indices,
 
     std::map<size_t, std::vector<std::pair<T, size_t>>> map;
 
-    try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
+    try_(apply(in_shape, [&](std::span<const size_t> index) -> result<void> {
         auto in_idx = offset(in_strides, index);
         dims_t axes{static_cast<size_t>(axis)};
         auto out_idx =
@@ -231,13 +231,13 @@ topk_impl(const T *input, T *output_values, int64_t *output_indices,
                      largest, sorted)
 
 result<void> kernels::stackvm::reference::topk(
-    typecode_t typecode, const gsl::byte *input, gsl::byte *output_values,
-    int64_t *output_indices, gsl::span<const size_t> in_shape,
-    gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> output_values_shape,
-    gsl::span<const size_t> output_values_strides,
-    gsl::span<const size_t> output_indices_shape,
-    gsl::span<const size_t> output_indices_strides, const int64_t k,
+    typecode_t typecode, const std::byte *input, std::byte *output_values,
+    int64_t *output_indices, std::span<const size_t> in_shape,
+    std::span<const size_t> in_strides,
+    std::span<const size_t> output_values_shape,
+    std::span<const size_t> output_values_strides,
+    std::span<const size_t> output_indices_shape,
+    std::span<const size_t> output_indices_strides, const int64_t k,
     const int32_t axis, const bool largest, const bool sorted) noexcept {
     TYPE_SELECT(typecode, TOPK_IMPL);
 }

@@ -25,9 +25,9 @@ using namespace nncase::kernels::stackvm;
 using namespace nncase::kernels::stackvm::optimized;
 
 result<void> nncase::kernels::stackvm::optimized::layer_norm(
-    typecode_t typecode, const gsl::byte *input, gsl::byte *output,
-    const gsl::byte *scale, const gsl::byte *bias,
-    gsl::span<const size_t> in_shape, int32_t axis, float epsilon, bool use_mean) {
+    typecode_t typecode, const std::byte *input, std::byte *output,
+    const std::byte *scale, const std::byte *bias,
+    std::span<const size_t> in_shape, int32_t axis, float epsilon, bool use_mean) {
     return reference::layer_norm(typecode, input, output, scale, bias, in_shape,
                                  axis, epsilon, use_mean);
 }

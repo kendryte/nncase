@@ -17,7 +17,6 @@ if (BUILDING_RUNTIME)
 else()
     add_library(kernels OBJECT ${SRCS})
     target_include_directories(kernels PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-    target_link_libraries(kernels PUBLIC gsl::gsl-lite)
     
     target_compile_definitions(kernels PUBLIC -DNNCASE_DLL -DNNCASE_SIMULATOR)
     set_property(TARGET kernels PROPERTY POSITION_INDEPENDENT_CODE ON)

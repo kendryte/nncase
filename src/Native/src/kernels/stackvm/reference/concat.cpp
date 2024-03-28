@@ -30,7 +30,7 @@ using namespace nncase::kernels::stackvm;
 namespace {
 std::pair<size_t, size_t>
 find_input_id_and_index(size_t index,
-                        gsl::span<const size_t> concat_dims) noexcept {
+                        std::span<const size_t> concat_dims) noexcept {
     size_t input_id;
     for (input_id = 0;; input_id++) {
         auto input_dim = concat_dims[input_id];
@@ -43,14 +43,14 @@ find_input_id_and_index(size_t index,
 }
 
 template <class T>
-result<void> concat_impl(gsl::span<const gsl::byte *const> inputs, T *output,
-                         gsl::span<const size_t> out_shape,
-                         gsl::span<const dims_t> &in_strides,
-                         gsl::span<const size_t> out_strides, size_t axis,
-                         gsl::span<const size_t> concat_dims,
+result<void> concat_impl(std::span<const std::byte *const> inputs, T *output,
+                         std::span<const size_t> out_shape,
+                         std::span<const dims_t> &in_strides,
+                         std::span<const size_t> out_strides, size_t axis,
+                         std::span<const size_t> concat_dims,
                          NNCASE_UNUSED kernel_context &context) noexcept {
     return apply(
-        out_shape, [&](gsl::span<const size_t> out_index) -> result<void> {
+        out_shape, [&](std::span<const size_t> out_index) -> result<void> {
             auto in_id_index =
                 find_input_id_and_index(out_index[axis], concat_dims);
             auto input = reinterpret_cast<const T *>(inputs[in_id_index.first]);
@@ -72,10 +72,10 @@ result<void> concat_impl(gsl::span<const gsl::byte *const> inputs, T *output,
                            concat_dims, context)
 
 result<void> nncase::kernels::stackvm::reference::concat(
-    datatype_t type, gsl::span<const gsl::byte *const> inputs,
-    gsl::byte *output, gsl::span<const size_t> out_shape,
-    gsl::span<const dims_t> in_strides, gsl::span<const size_t> out_strides,
-    size_t axis, gsl::span<const size_t> concat_dims,
+    datatype_t type, std::span<const std::byte *const> inputs,
+    std::byte *output, std::span<const size_t> out_shape,
+    std::span<const dims_t> in_strides, std::span<const size_t> out_strides,
+    size_t axis, std::span<const size_t> concat_dims,
     kernel_context &context) noexcept {
     switch (runtime::get_bytes(type)) {
         CONCAT_IMPL(1, uint8_t);

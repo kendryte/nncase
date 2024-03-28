@@ -21,9 +21,9 @@
 using namespace nncase;
 using namespace nncase::runtime;
 
-result<gsl::span<const gsl::byte>> runtime_section_context::get_or_read_section(
+result<std::span<const std::byte>> runtime_section_context::get_or_read_section(
     const char *name, host_buffer_t &storage, bool allocate_shared) noexcept {
-    gsl::span<const gsl::byte> src_span;
+    std::span<const std::byte> src_span;
     stream_reader *sr = nullptr;
     size_t body_size;
 
@@ -37,7 +37,7 @@ result<gsl::span<const gsl::byte>> runtime_section_context::get_or_read_section(
             buffer_attach_options options{};
             options.flags = allocate_shared ? HOST_BUFFER_ATTACH_SHARED : 0;
             auto buffer_r = buffer_allocator::host().attach(
-                {const_cast<gsl::byte *>(src_span.data()), src_span.size()},
+                {const_cast<std::byte *>(src_span.data()), src_span.size()},
                 options);
 
             if (buffer_r.is_ok()) {
@@ -61,7 +61,7 @@ result<gsl::span<const gsl::byte>> runtime_section_context::get_or_read_section(
                                     : HOST_BUFFER_ALLOCATE_CPU_ONLY;
     try_var(buffer, buffer_allocator::host().allocate(body_size, options));
     storage = buffer.as<host_buffer_t>().unwrap();
-    gsl::span<const gsl::byte> span;
+    std::span<const std::byte> span;
 
     // Read section into buffer
     {
@@ -73,9 +73,9 @@ result<gsl::span<const gsl::byte>> runtime_section_context::get_or_read_section(
         }
 
         span = allocate_shared
-                   ? gsl::make_span(reinterpret_cast<const gsl::byte *>(
-                                        storage->physical_address().unwrap()),
-                                    body_size)
+                   ? std::span(reinterpret_cast<const std::byte *>(
+                                   storage->physical_address().unwrap()),
+                               body_size)
                    : mapped.buffer();
     }
 

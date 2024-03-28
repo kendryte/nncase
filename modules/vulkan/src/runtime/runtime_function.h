@@ -71,7 +71,7 @@ class vulkan_runtime_function : public runtime_function, private op_visitor {
   private:
     uint32_t input_pool_size_;
     uint32_t output_pool_size_;
-    gsl::span<const gsl::byte> text_;
+    std::span<const std::byte> text_;
     vk::Buffer input_buffer_;
     vk::Buffer output_buffer_;
     vk::DeviceMemory input_mem_;

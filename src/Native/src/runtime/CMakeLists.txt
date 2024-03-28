@@ -53,7 +53,6 @@ if (BUILDING_RUNTIME)
 else()
     add_library(simulator OBJECT ${SRCS})
     target_include_directories(simulator PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-    target_link_libraries(simulator PUBLIC gsl::gsl-lite)
     target_link_libraries(simulator PUBLIC fmt::fmt)
     target_link_libraries(simulator PRIVATE kernels)
     target_compile_definitions(simulator PUBLIC -DNNCASE_DLL -DNNCASE_SIMULATOR)
@@ -67,7 +66,6 @@ else()
     
     add_library(nncaseruntime SHARED dummy.cpp)
     target_link_libraries(nncaseruntime PRIVATE nncasebase kernels simulator compiler simulator_stackvm simulator_cpu cpu_loaders fmt::fmt)
-    target_link_libraries(nncaseruntime PUBLIC gsl::gsl-lite)
     set_target_properties(nncaseruntime PROPERTIES
                                         OUTPUT_NAME "Nncase.Runtime.Native")
 

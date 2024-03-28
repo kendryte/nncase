@@ -23,7 +23,7 @@
 namespace nncase::runtime {
 class bitreader {
   public:
-    bitreader(gsl::span<const uint8_t> data)
+    bitreader(std::span<const uint8_t> data)
         : data_(data), buffer_(0), avail_(0) {}
 
     void read(uint8_t *dest, size_t bits) {
@@ -66,14 +66,14 @@ class bitreader {
     }
 
   private:
-    gsl::span<const uint8_t> data_;
+    std::span<const uint8_t> data_;
     uint64_t buffer_;
     size_t avail_;
 };
 
 class bitwriter {
   public:
-    bitwriter(gsl::span<uint8_t> data, size_t bitoffset = 0)
+    bitwriter(std::span<uint8_t> data, size_t bitoffset = 0)
         : data_(data), buffer_(0), avail_(sizeof(buffer_) * 8) {
         if (bitoffset) {
             data_ = data_.subspan(bitoffset / 8);
@@ -139,7 +139,7 @@ class bitwriter {
     }
 
   private:
-    gsl::span<uint8_t> data_;
+    std::span<uint8_t> data_;
     uint64_t buffer_;
     size_t avail_;
 };

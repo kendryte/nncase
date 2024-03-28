@@ -27,11 +27,11 @@ using namespace nncase::kernels::stackvm;
 
 namespace {
 template <class T>
-result<void> split_impl(const T *input, gsl::span<gsl::byte *> outputs,
-                        gsl::span<const size_t> in_shape,
-                        gsl::span<const size_t> in_strides,
-                        const gsl::span<strides_t> out_strides, size_t axis,
-                        gsl::span<const size_t> sections,
+result<void> split_impl(const T *input, std::span<std::byte *> outputs,
+                        std::span<const size_t> in_shape,
+                        std::span<const size_t> in_strides,
+                        const std::span<strides_t> out_strides, size_t axis,
+                        std::span<const size_t> sections,
                         NNCASE_UNUSED kernel_context &context) noexcept {
     for (size_t i = 0; i < outputs.size(); ++i) {
         dims_t out_shape(in_shape);
@@ -42,7 +42,7 @@ result<void> split_impl(const T *input, gsl::span<gsl::byte *> outputs,
             sections_sum += sections[j];
         }
         try_(kernels::stackvm::apply(
-            out_shape, [&](gsl::span<const size_t> out_index) -> result<void> {
+            out_shape, [&](std::span<const size_t> out_index) -> result<void> {
                 dims_t in_index(out_index);
                 in_index[axis] = sections_sum + out_index[axis];
                 output[offset(out_strides[i], out_index)] =
@@ -61,9 +61,9 @@ result<void> split_impl(const T *input, gsl::span<gsl::byte *> outputs,
                           context)
 
 result<void> nncase::kernels::stackvm::reference::split(
-    datatype_t type, const gsl::byte *input, gsl::span<gsl::byte *> output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-    gsl::span<strides_t> out_strides, size_t axis,
-    gsl::span<const size_t> sections, kernel_context &context) noexcept {
+    datatype_t type, const std::byte *input, std::span<std::byte *> output,
+    std::span<const size_t> in_shape, std::span<const size_t> in_strides,
+    std::span<strides_t> out_strides, size_t axis,
+    std::span<const size_t> sections, kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(type, SPLIT_IMPL);
 }

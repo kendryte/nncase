@@ -23,28 +23,27 @@ py::class_<tensor_desc>(m, "TensorDesc")
     .def_readwrite("size", &tensor_desc::size);
 
 py::class_<runtime_tensor>(m, "RuntimeTensor")
-    .def_static("from_numpy",
-                [](py::array arr) {
-                    auto src_buffer = arr.request();
-                    auto datatype = from_dtype(arr);
-                    auto tensor =
-                        host_runtime_tensor::create(
-                            datatype, to_rt_shape(src_buffer.shape),
-                            to_rt_strides(src_buffer.itemsize,
-                                          src_buffer.strides),
-                            gsl::make_span(
-                                reinterpret_cast<gsl::byte *>(src_buffer.ptr),
-                                src_buffer.size * src_buffer.itemsize),
-                            [=](gsl::byte *) {
-                                if (!py::detail::is_py_shutdown()) {
-                                    py::gil_scoped_acquire gil;
-                                    arr.dec_ref();
-                                }
-                            })
-                            .unwrap_or_throw();
-                    arr.inc_ref();
-                    return tensor;
-                })
+    .def_static(
+        "from_numpy",
+        [](py::array arr) {
+            auto src_buffer = arr.request();
+            auto datatype = from_dtype(arr);
+            auto tensor =
+                host_runtime_tensor::create(
+                    datatype, to_rt_shape(src_buffer.shape),
+                    to_rt_strides(src_buffer.itemsize, src_buffer.strides),
+                    std::span(reinterpret_cast<std::byte *>(src_buffer.ptr),
+                              src_buffer.size * src_buffer.itemsize),
+                    [=](std::byte *) {
+                        if (!py::detail::is_py_shutdown()) {
+                            py::gil_scoped_acquire gil;
+                            arr.dec_ref();
+                        }
+                    })
+                    .unwrap_or_throw();
+            arr.inc_ref();
+            return tensor;
+        })
     .def("copy_to",
          [](runtime_tensor &from, runtime_tensor &to) {
              from.copy_to(to).unwrap_or_throw();

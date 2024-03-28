@@ -58,9 +58,9 @@ result<void> cpu_runtime_function::initialize_core(
 }
 
 result<value_t> cpu_runtime_function::invoke_core(
-    gsl::span<value_t> parameters,
+    std::span<value_t> parameters,
     [[maybe_unused]] value_t return_value) noexcept {
-    std::vector<gsl::byte *> param_ptrs;
+    std::vector<std::byte *> param_ptrs;
     for (auto arg : parameters) {
         try_var(t, arg.as<tensor>());
         try_var(hb, t->buffer().as_host());

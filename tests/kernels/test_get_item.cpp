@@ -60,7 +60,7 @@ TEST_P(GetItemTest, get_item) {
     // actual
     int64_t index_ptr[] = {0};
     auto index = hrt::create(nncase::dt_int64, {1},
-                             {reinterpret_cast<gsl::byte *>(index_ptr),
+                             {reinterpret_cast<std::byte *>(index_ptr),
                               sizeof(index_ptr)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
