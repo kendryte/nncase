@@ -111,7 +111,7 @@ public class QuantizeOptions
     /// <summary>
     /// Gets or sets a value for cosine target.
     /// </summary>
-    public float CosineTarget { get; set; } = 0.5f;
+    public float CosineTarget { get; set; } = 0.50f;
 
     /// <summary>
     /// Gets or sets a value indicating whether enable the Auto bind quant method.

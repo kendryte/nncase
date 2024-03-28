@@ -124,10 +124,17 @@ internal partial class Quantizer
 
                 var inputConfigs = new List<QuantConfigData>();
                 var outConfigs = new List<QuantConfigData>();
+                bool fallbackToCPU = false;
                 for (int argIdx = 0; argIdx < ((Call)fakeNode).Arguments.Length; argIdx++)
                 {
-                    var inputName = ((Call)fakeNode).Arguments[argIdx].Metadata.OutputNames?[0] ?? $"fakeNode_{nodeCounter}_input_{argIdx}";
+                    var inputName = (((Call)fakeNode).Arguments[argIdx].Metadata.OutputNames?[0] ?? $"fakeNode_{nodeCounter}_input_{argIdx}") + $"_id_{(nodeCounter * parameters.Length) + argIdx}";
                     var inputInfo = quantScheme.GetInfoByName(inputName);
+                    if (inputInfo == null)
+                    {
+                        fallbackToCPU = true;
+                        break;
+                    }
+
                     var dType = DataTypes.FromShortName(inputInfo.DataType!);
                     List<float> inputRange = new();
                     foreach (var range in inputInfo.DataRange!)
@@ -137,6 +144,12 @@ internal partial class Quantizer
                     }
 
                     inputConfigs.Add(new QuantConfigData(Tensor.From(inputRange.ToArray()), dType));
+                }
+
+                if (fallbackToCPU)
+                {
+                    _fakeNodeConfigs![var] = new QuantConfig(-1);
+                    continue;
                 }
 
                 // 输出range: 这里的range以及量化方式在后续中不会实际使用到
@@ -476,7 +489,8 @@ internal partial class Quantizer
 
                 var output = new Output
                 {
-                    Name = ((Call)fakeNode).Arguments[iPara].Metadata.OutputNames?[0] ?? $"fakeNode_{nodeCounter}_input_{iPara}",
+                    // 这里之所以再加一个ID，是因为同一个OP有可能会作为多个OP的输入，并且量化方式不一定一致，因此这里加ID以便区分。
+                    Name = (((Call)fakeNode).Arguments[iPara].Metadata.OutputNames?[0] ?? $"fakeNode_{nodeCounter}_input_{iPara}") + $"_id_{(nodeCounter * parameters.Length) + iPara}",
                     DataType = quantConfig.GetInputQuantType(parameters[iPara]).ToString(),
                     DataRangeMode = parameters[iPara].ParameterKind == ParameterKind.Weights ? "by_channel" : "by_tensor",
                     DataRange = dataRange.ToArray(),
@@ -586,80 +600,6 @@ internal partial class Quantizer
 
         var dumpPath = Path.Join(DumpScope.Current.Directory, "..", "..", "..", "/");
         EGraphPrinter.DumpEgraphAsDot(_graph, dumpPath + "_graph_after.dot");
-    }
-
-    private void UpdateFakeNodesList(IDictionary<Expr, ValueRange<float>[]> ranges)
-    {
-        foreach (var (key, _) in ranges)
-        {
-            if (key is Call &&
-                (((Call)key).Target is QuantizeOp))
-            {
-                // 记录量化节点，以便后续进行量化
-                _fakeNodesVars![(Var)((Call)key).Arguments[^1]] = key;
-            }
-        }
-    }
-
-    private void UpdateFakeNodesWithRange(IDictionary<Expr, ValueRange<float>[]> ranges)
-    {
-        float[] argRange = new float[2];
-        foreach (var (key, range) in ranges)
-        {
-            if (key is Call &&
-                (((Call)key).Target is QuantizeOp))
-            {
-                // 输入信息的填充
-                var parameters = ((Op)((Call)key).Target).Parameters.ToArray();
-                var configHeader = new float[] { parameters.Length, range.Length };
-                var inputConfigs = new List<QuantConfigData>();
-                var outConfigs = new List<QuantConfigData>();
-                for (int argIdx = 0; argIdx < ((Call)key).Arguments.Length; argIdx++)
-                {
-                    var arg = ((Call)key).Arguments[argIdx];
-                    if (arg is not Nncase.IR.None)
-                    {
-                        if (parameters[argIdx].ParameterKind == ParameterKind.Weights)
-                        {
-                            var dType = DataTypes.UInt8;
-                            var weights = (TensorConst)((Call)key).Arguments[argIdx];
-                            var weightsValue = weights.Value.ToArray<float>();
-                            var oc = weights.CheckedShape[0].FixedValue;
-                            var minMaxArr = QuantUtility.GetWeightsRangesByChannel(weightsValue, oc);
-                            inputConfigs.Add(new QuantConfigData(Tensor.From(minMaxArr.ToArray(), new[] { oc, 2 }), dType));
-                        }
-                        else
-                        {
-                            // 每个parameter的range只有一个，所以这里固定索引为0
-                            var dType = DataTypes.UInt8;
-                            argRange = new float[] { ranges[arg][0].Min, ranges[arg][0].Max };
-                            inputConfigs.Add(new QuantConfigData(new Tensor<float>(argRange, new[] { 1, 2 }), dType));
-                        }
-                    }
-                    else
-                    {
-                        var dType = DataTypes.UInt8;
-                        argRange = new float[] { float.MinValue, float.MaxValue };
-                        inputConfigs.Add(new QuantConfigData(new Tensor<float>(argRange, new[] { 1, 2 }), dType));
-                    }
-                }
-
-                // 输出range: 这里的range以及量化方式可能在后续中不会实际使用到
-                foreach (var outRange in range)
-                {
-                    var dType = DataTypes.UInt8;
-                    argRange = new float[] { outRange.Min, outRange.Max };
-                    outConfigs.Add(new QuantConfigData(new Tensor<float>(argRange, new[] { 1, 2 }), dType));
-                }
-
-                var quantInfo = configHeader.Concat(inputConfigs.SelectMany(x => x.ToRaw())).Concat(outConfigs.SelectMany(x => x.ToRaw())).ToArray();
-                var quantConfig = QuantConfig.FromRaw(quantInfo);
-                _fakeNodeConfigs![(Var)((Call)key).Arguments[^1]] = quantConfig;
-
-                // 记录量化节点，以便后续进行量化
-                _fakeNodesVars![(Var)((Call)key).Arguments[^1]] = key;
-            }
-        }
     }
 
     private async Task<IDictionary<Expr, ValueRange<float>[]>> GetRangesAsync(ICalibrationDatasetProvider calibrationDataset)
