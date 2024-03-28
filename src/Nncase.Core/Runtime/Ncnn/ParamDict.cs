@@ -133,7 +133,6 @@ public class ParamDict
         foreach (var field in _values)
         {
             var id = field.Key;
-
             var paramValue = field.Value;
             var isArray = paramValue.Kind is ParamKind.ArrayOfFloat or ParamKind.ArrayOfIntOrFloat or ParamKind.ArrayOfInt;
             var isFloat = paramValue.Kind is ParamKind.ArrayOfFloat or ParamKind.ArrayOfIntOrFloat or ParamKind.Float;
@@ -190,6 +189,8 @@ public class ParamDict
             {
                 writer.Write(' ');
             }
+
+            writer.Write('\n');
         }
     }
 }
