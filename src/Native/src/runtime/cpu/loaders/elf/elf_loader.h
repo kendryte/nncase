@@ -15,6 +15,7 @@
 #pragma once
 #include "elfload.h"
 #include <nncase/compiler_defs.h>
+#include <span>
 
 BEGIN_NS_NNCASE_RUNTIME
 
