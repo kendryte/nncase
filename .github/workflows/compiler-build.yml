@@ -235,8 +235,9 @@ jobs:
           Expand-Archive swiftshader.zip
           Copy-Item swiftshader\lib\vk_swiftshader_icd.json swiftshader\bin\
           Copy-Item install/bin/*.dll install/
+          Copy-Item install/bin/*.dll install/lib/
           echo "VK_ICD_FILENAMES=${env:GITHUB_WORKSPACE}/swiftshader/bin/vk_swiftshader_icd.json" >> $env:GITHUB_ENV
-          echo "PYTHONPATH=${env:GITHUB_WORKSPACE}/install/lib;${env:GITHUB_WORKSPACE}/install/bin;${env:GITHUB_WORKSPACE}/install/python;${env:GITHUB_WORKSPACE}/tests" >> $env:GITHUB_ENV
+          echo "PYTHONPATH=${env:GITHUB_WORKSPACE}/install/lib;${env:GITHUB_WORKSPACE}/install/python;${env:GITHUB_WORKSPACE}/tests" >> $env:GITHUB_ENV
           echo "PATH=${env:PATH};${env:GITHUB_WORKSPACE}/install/bin" >> $env:GITHUB_ENV
         if: runner.os == 'Windows'
 
