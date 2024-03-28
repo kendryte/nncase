@@ -27,13 +27,13 @@ public sealed class Function : BaseFunction
     /// Initializes a new instance of the <see cref="Function"/> class.
     /// build function.
     /// </summary>
-    public Function(string name, Expr body, ReadOnlySpan<Var> parameters)
-        : this(name, body, parameters, new Dictionary<Var, Expr[]>())
+    public Function(string name, Expr body, ReadOnlySpan<Var> parameters, string? moduleKind = null)
+        : this(name, body, parameters, new Dictionary<Var, Expr[]>(), moduleKind)
     {
     }
 
-    public Function(string name, Expr body, ReadOnlySpan<Var> parameters, Dictionary<Var, Expr[]>? varMap)
-        : base(name, StackVMModuleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<Var, Expr>(parameters)))
+    public Function(string name, Expr body, ReadOnlySpan<Var> parameters, Dictionary<Var, Expr[]>? varMap, string? moduleKind = null)
+        : base(name, moduleKind ?? StackVMModuleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<Var, Expr>(parameters)))
     {
         VarMap = varMap ?? new();
         var dynamicDims = VarMap.Values.SelectMany(x => x).ToArray();
@@ -44,8 +44,8 @@ public sealed class Function : BaseFunction
     /// Initializes a new instance of the <see cref="Function"/> class.
     /// build function.
     /// </summary>
-    public Function(Expr body, ReadOnlySpan<Var> parameters)
-        : this($"func_{_globalFuncIndex++}", body, parameters, new Dictionary<Var, Expr[]>())
+    public Function(Expr body, ReadOnlySpan<Var> parameters, string? moduleKind = null)
+        : this($"func_{_globalFuncIndex++}", body, parameters, new Dictionary<Var, Expr[]>(), moduleKind)
     {
     }
 

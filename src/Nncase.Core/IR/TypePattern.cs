@@ -133,8 +133,8 @@ public static partial class TypePatternUtility
     /// <summary>
     /// is custom rank.
     /// </summary>
-    public static TypePattern HasRank(Func<int, bool> cond, string reason) => HasShape(
-      inshape => cond(inshape.Rank), reason);
+    public static TypePattern HasRank(Func<int, bool> cond, [CallerArgumentExpression(nameof(cond))] string? reason = null) => HasShape(
+      inshape => cond(inshape.Rank), reason!);
 
     /// <summary>
     /// is target rank.

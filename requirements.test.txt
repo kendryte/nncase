@@ -6,7 +6,7 @@ onnx==1.12.0
 onnx-simplifier==0.3.6
 onnxoptimizer==0.2.6
 onnxruntime==1.12.0
-ncnn==1.0.20230816
+ncnn==1.0.20240102
 numpy==1.21.0
 torch==1.9.0
 torchvision==0.10.0

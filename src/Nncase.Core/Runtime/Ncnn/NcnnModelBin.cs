@@ -11,9 +11,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Toolkit.HighPerformance;
 
-namespace Nncase.Importer.Ncnn;
+namespace Nncase.Runtime.Ncnn;
 
-internal class NcnnModelBin
+public class NcnnModelBin
 {
     private readonly Stream _stream;
 

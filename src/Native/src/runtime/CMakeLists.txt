@@ -56,7 +56,7 @@ else()
     target_link_libraries(simulator PUBLIC gsl::gsl-lite)
     target_link_libraries(simulator PUBLIC fmt::fmt)
     target_link_libraries(simulator PRIVATE kernels)
-    target_compile_definitions(simulator PUBLIC -DNNCASE_DLL -DNNCASE_SIMULATOR)
+    target_compile_definitions(simulator PUBLIC -DNNCASE_DLL -DNNCASE_SIMULATOR -DNNCASE_SHARED_LIBS)
     if (DEFAULT_BUILTIN_RUNTIMES)
       target_compile_definitions(simulator PRIVATE -DNNCASE_DEFAULT_BUILTIN_RUNTIMES)
     endif()
@@ -70,6 +70,7 @@ else()
     target_link_libraries(nncaseruntime PUBLIC gsl::gsl-lite)
     set_target_properties(nncaseruntime PROPERTIES
                                         OUTPUT_NAME "Nncase.Runtime.Native")
+    target_compile_definitions(nncaseruntime PUBLIC -DNNCASE_SIMULATOR -DNNCASE_SHARED_LIBS)
 
     install(TARGETS nncaseruntime EXPORT nncaseTargets
         COMPONENT nncase-runtime

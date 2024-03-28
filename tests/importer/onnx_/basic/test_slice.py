@@ -158,19 +158,15 @@ def _make_module(in_shape, start, end, axes, step, outshape, op_version, value_f
     return model_def
 
 
-in_shapes = [
-    [20, 10, 5]
-]
-
-starts_ends_axes_steps_outshapes = [
-    [[0, 0], [3, 10], [0, 1], [1, 1], [3, 10, 5]],
-    [[0, 0, 3], [20, 10, 4], None, None, [20, 10, 1]],
-    [[0, 0, 3], [20, 10, 4], [0, 1, 2], None, [20, 10, 1]],
-    [[1], [1000], [1], [1], [20, 9, 5]],
-    [[0], [-1], [1], [1], [20, 9, 5]],
-    [[0, 0, 3], [20, 10, 4], [0, -2, -1], None, [20, 10, 1]],
-    [[20, 10, 4], [0, 0, 1], [0, 1, 2], [-1, -3, -2], [19, 3, 2]],
-    [[-1], [-9223372036854775807], [0], [-1], [20, 10, 5]]
+in_shapes_starts_ends_axes_steps_outshapes = [
+    [[1, 20, 10, 5], [0, 0], [3, 10], [1, 2], [1, 1], [1, 3, 10, 5]],
+    [[1, 20, 10, 5], [0, 0, 0, 3], [1, 20, 10, 4], None, None, [1, 20, 10, 1]],
+    [[1, 20, 10, 5], [0, 0, 0, 3], [1, 20, 10, 4], [0, 1, 2, 3], None, [1, 20, 10, 1]],
+    [[1, 20, 10, 5], [1], [1000], [2], [1], [1, 20, 9, 5]],
+    [[1, 20, 10, 5], [0], [-1], [1], [1], [1, 19, 10, 5]],
+    [[1, 20, 10, 5], [0, 0, 3], [20, 10, 4], [-3, -2, -1], None, [1, 20, 10, 1]],
+    [[1, 20, 10, 5], [20, 10, 4], [0, 0, 1], [1, 2, 3], [-1, -3, -2], [1, 20, 4, 2]],
+    [[1, 20, 10, 5], [-1], [-9223372036854775807], [1], [-1], [1, 20, 10, 5]]
 ]
 
 
@@ -185,11 +181,10 @@ op_versions_and_value_formats = [
 ]
 
 
-@pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('start_end_axes_step_outshape', starts_ends_axes_steps_outshapes)
+@pytest.mark.parametrize('in_shape_start_end_axis_step_outshape', in_shapes_starts_ends_axes_steps_outshapes)
 @pytest.mark.parametrize('op_versions_and_value_format', op_versions_and_value_formats)
-def test_slice(in_shape, start_end_axes_step_outshape, op_versions_and_value_format, request):
-    start, end, axes, step, outshape = start_end_axes_step_outshape
+def test_slice(in_shape_start_end_axis_step_outshape, op_versions_and_value_format, request):
+    in_shape, start, end, axes, step, outshape = in_shape_start_end_axis_step_outshape
     op_version, value_format = op_versions_and_value_format
     if op_version != 1 or (op_version == 1 and step is not None and all([x == 1 for x in step])):
         model_def = _make_module(in_shape, start, end, axes, step,
