@@ -132,10 +132,15 @@ public sealed partial class FoldReduceWindow2DPads : IRewriteRule
         IsWildcard("ceilMode"),
         IsWildcard("countIncludePad"));
 
-    private Expr? GetReplace(ReduceWindow2D pdp, Expr input, Expr initValue, Expr filter, Expr stride, Tensor<int> padding, Expr dilation, Expr ceilMode, Expr countIncludePad, Tensor<int> ext_pad, float ext_pad_init)
+    private Expr? GetReplace(ReduceWindow2D pdp, Expr input, Expr initValue, Expr filter, Expr stride, Tensor<int> padding, Expr dilation, Expr ceilMode, bool countIncludePad, Tensor<int> ext_pad, float ext_pad_init)
     {
         if (!(ext_pad[0, 0] == 0 && ext_pad[0, 1] == 0 &&
               ext_pad[1, 0] == 0 && ext_pad[1, 1] == 0))
+        {
+            return null;
+        }
+
+        if (countIncludePad || pdp.ReduceOp != ReduceOp.Max)
         {
             return null;
         }
