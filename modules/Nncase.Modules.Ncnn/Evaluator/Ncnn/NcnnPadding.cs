@@ -38,8 +38,8 @@ public class NcnnPaddingEvaluator : IEvaluator<NcnnPadding>, ITypeInferencer<Ncn
     {
         var input = context.CheckArgumentType<TensorType>(target, NcnnPadding.Input);
         var c = target.Front + target.Behind;
-        var h = target.Left + target.Right;
-        var w = target.Top + target.Bottom;
+        var h = target.Top + target.Bottom;
+        var w = target.Left + target.Right;
         return Visit(input, c, h, w);
     }
 

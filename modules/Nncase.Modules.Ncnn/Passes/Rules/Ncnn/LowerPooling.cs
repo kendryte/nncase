@@ -27,7 +27,7 @@ public partial class LowerPooling : RewriteRule<Pattern>
     public override Pattern Pattern { get; } = IsReduceWindow2D(
         "pdp",
         _ => true,
-        IsWildcard("input"),
+        IsWildcard("input") with { TypePattern = HasFixedShape() },
         IsWildcard("initValue"),
         IsWildcard("filter"),
         IsWildcard("stride"),
@@ -58,10 +58,10 @@ public partial class LowerPooling : RewriteRule<Pattern>
         var (strideW, strideH) = (stride_[1], stride_[0]);
 
         var padding_ = padding.Evaluate().AsTensor().ToArray<int>();
-        var (padLeft, padTop, padRight, padBottom) = (padding_[2], padding_[3], padding_[0], padding_[1]);
+        var (padLeft, padRight, padTop, padBottom) = (padding_[2], padding_[3], padding_[0], padding_[1]);
 
         // Globalpool has been converted to pool, reflected in the size of the kernel.
-        var args = new PoolingArgs(poolingType, kernelW, kernelH, strideW, strideH, padLeft, padRight, padTop, padBottom, false, ceilMode ? 0 : 1, countIncludePad, false, 0, 0, ceilMode);
+        var args = new PoolingArgs(poolingType, kernelW, kernelH, strideW, strideH, padLeft, padRight, padTop, padBottom, false, countIncludePad ? 1 : 0, countIncludePad, false, 0, 0, ceilMode);
 
         var inRes = Squeeze(input, new[] { 0 });
         var inResO = new Var(inRes.CheckedType);
