@@ -24,7 +24,7 @@ public partial class LowerLRN : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsLRN(
-      IsWildcard("input"),
+      IsWildcard("input") with { TypePattern = HasFixedShape() },
       IsTensorConst("alpha") with { TypePattern = IsScalar() },
       IsTensorConst("beta") with { TypePattern = IsScalar() },
       IsTensorConst("bias") with { TypePattern = IsScalar() },

@@ -24,7 +24,7 @@ public partial class LowerSigmoid : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsSigmoid(
-      IsWildcard("input"));
+      IsWildcard("input") with { TypePattern = HasFixedShape() });
 
     private Expr? GetReplace(Expr input)
     {

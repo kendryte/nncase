@@ -24,7 +24,7 @@ public partial class LowerSoftplus : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsSoftplus(
-      IsWildcard("input"));
+      IsWildcard("input") with { TypePattern = HasFixedShape() });
 
     private Expr? GetReplace(Expr input)
     {

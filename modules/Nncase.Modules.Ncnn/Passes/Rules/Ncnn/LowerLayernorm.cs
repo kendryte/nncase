@@ -28,7 +28,7 @@ public partial class LowerLayerNorm : RewriteRule<Pattern>
     public override Pattern Pattern { get; } = IsLayerNorm(
         "op",
         _ => true,
-        IsWildcard("input"),
+        IsWildcard("input") with { TypePattern = HasFixedShape() },
         IsTensorConst("gamma"),
         IsTensorConst("beta"));
 

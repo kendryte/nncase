@@ -6,6 +6,7 @@ using Nncase.IR;
 using Nncase.PatternMatch;
 using static Nncase.IR.F.Ncnn;
 using static Nncase.IR.F.Tensors;
+using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 
@@ -16,7 +17,7 @@ public partial class LowerUnsqueeze : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsUnsqueeze(
-        IsWildcard("input"),
+        IsWildcard("input") with { TypePattern = HasFixedShape() & !IsScalar() },
         IsTensorConst("dims"));
 
     private Expr? GetReplace(Expr input, int[] dims)

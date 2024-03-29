@@ -24,7 +24,7 @@ public partial class LowerElu : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsElu(
-      IsWildcard("input") with { TypePattern = IsFloat() },
+      IsWildcard("input") with { TypePattern = IsFloat() & HasFixedShape() },
       IsTensorConst("alpha") with { TypePattern = IsFloatScalar() });
 
     private Expr? GetReplace(Expr input, float alpha)

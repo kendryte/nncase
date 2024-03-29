@@ -7,6 +7,7 @@ using Nncase.IR;
 using Nncase.PatternMatch;
 using static Nncase.IR.F.Ncnn;
 using static Nncase.IR.F.Tensors;
+using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 
@@ -17,7 +18,7 @@ public partial class LowerReshape : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsReshape(
-        IsWildcard("input"),
+        IsWildcard("input") with { TypePattern = HasFixedShape() & !IsScalar() },
         IsTensorConst("shape"));
 
     private Expr? GetReplace(Expr input, Expr shape)
@@ -51,6 +52,11 @@ public partial class LowerReshape : RewriteRule<Pattern>
                 outputShape.RemoveAt(0); // Avoid reshape input to 4D with multi batchsize.
                 needSqueeze += 2;
             } // left 3D shape.
+
+            if (outputShape.Count == 0)
+            {
+                return null;
+            }
 
             r = new Call(new Fusion("ncnn", NcnnReshape(newInputVar, outputShape.ToArray()), new[] { newInputVar }), newInput);
 

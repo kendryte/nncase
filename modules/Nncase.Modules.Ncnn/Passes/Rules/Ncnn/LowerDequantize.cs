@@ -28,7 +28,7 @@ public partial class LowerDequantize : RewriteRule<Pattern>
         "deq",
         "output",
         _ => true,
-        IsWildcard("input"),
+        IsWildcard("input") with { TypePattern = HasFixedShape() },
         IsTensorConst("param"));
 
     private Expr? GetReplace(Expr input, Dequantize deq, QuantParam[] param)

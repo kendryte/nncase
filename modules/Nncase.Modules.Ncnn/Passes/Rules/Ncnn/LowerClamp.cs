@@ -23,7 +23,7 @@ public partial class LowerClamp : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsClamp(
-      IsWildcard("input"),
+      IsWildcard("input") with { TypePattern = HasFixedShape() },
       IsTensorConst("min", t => t.Value.ElementType == DataTypes.Float32),
       IsTensorConst("max", t => t.Value.ElementType == DataTypes.Float32));
 

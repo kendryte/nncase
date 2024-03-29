@@ -27,7 +27,7 @@ public partial class LowerCrop : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsSlice(
-      IsWildcard("input"),
+      IsWildcard("input") with { TypePattern = HasFixedShape() },
       IsTensorConst("starts"),
       IsTensorConst("ends"),
       IsTensorConst("axes"),

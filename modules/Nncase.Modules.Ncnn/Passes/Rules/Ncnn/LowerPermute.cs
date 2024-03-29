@@ -25,7 +25,7 @@ public partial class LowerPermute : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsTranspose(
-        IsWildcard("input"),
+        IsWildcard("input") with { TypePattern = HasFixedShape() },
         IsTensorConst("perm"));
 
     private Expr? GetReplace(Expr input, int[] perm)

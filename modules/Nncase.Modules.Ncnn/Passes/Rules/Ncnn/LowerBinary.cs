@@ -28,8 +28,8 @@ public partial class LowerBinary : RewriteRule<Pattern>
     public override Pattern Pattern { get; } = IsBinary(
       target_name: "binary",
       _ => true,
-      IsWildcard("inputA") with { TypePattern = IsFloat() },
-      IsWildcard("inputB") with { TypePattern = IsFloat() });
+      IsWildcard("inputA") with { TypePattern = IsFloat() & HasFixedShape() },
+      IsWildcard("inputB") with { TypePattern = IsFloat() & HasFixedShape() });
 
     private static BinaryOperationType? MapBinaryOp(BinaryOp binaryOp) =>
         binaryOp switch

@@ -24,7 +24,7 @@ public partial class LowerSELU : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsSelu(
-      IsWildcard("input"),
+      IsWildcard("input") with { TypePattern = HasFixedShape() },
       IsTensorConst("alpha"),
       IsTensorConst("gamma"));
 

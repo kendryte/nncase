@@ -28,7 +28,7 @@ public partial class LowerPadding : RewriteRule<Pattern>
         "pad",
         "padCall",
         x => true,
-        IsWildcard("input"),
+        IsWildcard("input") with { TypePattern = HasFixedShape() },
         IsTensorConst("pads"),
         IsTensorConst("padValue"));
 

@@ -28,7 +28,7 @@ public partial class LowerSlice : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsSplit(
-      IsWildcard("input"),
+      IsWildcard("input") with { TypePattern = HasFixedShape() },
       IsTensorConst("axis") with { TypePattern = IsScalar() },
       IsTensorConst("slices"));
 

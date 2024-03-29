@@ -25,7 +25,7 @@ public partial class LowerTile : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsTile(
-        IsWildcard("input"),
+        IsWildcard("input") with { TypePattern = HasFixedShape() },
         IsTensorConst("repeats"));
 
     private Expr? GetReplace(Expr input, int[] repeats)

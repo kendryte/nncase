@@ -25,7 +25,7 @@ public partial class LowerConcat : RewriteRule<Pattern>
     public override Pattern Pattern { get; } = IsConcat(
         "concat",
         _ => true,
-        IsTuple("tuple", IsVArgsRepeat("tupleInputs", () => IsWildcard())));
+        IsTuple("tuple", IsVArgsRepeat("tupleInputs", () => IsWildcard() with { TypePattern = HasFixedShape() })));
 
     // squeeze concat to 3D, get outputShape，set new axis as 1
     private static (List<List<int>> NewShape, List<int> OldOutputShape) GetFixedShapeAndOldOutputShape(IReadOnlyList<Expr> tupleInputs, int oldAxis)

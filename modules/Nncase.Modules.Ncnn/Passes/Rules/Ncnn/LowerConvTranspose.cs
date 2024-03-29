@@ -29,7 +29,7 @@ public partial class LowerConvTranspose : RewriteRule<Pattern>
     public override Pattern Pattern { get; } = IsConv2DTranspose(
     "conv",
     conv => conv.PadMode == PadMode.Constant,
-    IsWildcard("input"),
+    IsWildcard("input") with { TypePattern = HasFixedShape() },
     IsTensorConst("weights"),
     IsTensorConst("bias"),
     IsTensorConst("outputShape"),

@@ -24,7 +24,7 @@ public partial class LowerInstanceNorm : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsInstanceNormalization(
-      IsWildcard("input"),
+      IsWildcard("input") with { TypePattern = HasFixedShape() },
       IsTensorConst("gamma"),
       IsTensorConst("beta"),
       IsTensorConst("epsilon") with { TypePattern = IsFloatScalar() });

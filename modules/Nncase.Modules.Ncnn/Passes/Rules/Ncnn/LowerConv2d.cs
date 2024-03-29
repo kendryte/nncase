@@ -28,7 +28,7 @@ public partial class LowerConv : RewriteRule<Pattern>
     public override Pattern Pattern { get; } = IsConv2D(
     "conv",
     conv => conv.PadMode == PadMode.Constant,
-    IsWildcard("input"),
+    IsWildcard("input") with { TypePattern = HasFixedShape() },
     IsTensorConst("weights"),
     IsTensorConst("bias"),
     IsTensorConst("strides"),

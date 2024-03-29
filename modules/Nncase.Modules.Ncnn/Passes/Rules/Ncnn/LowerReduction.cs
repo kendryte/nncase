@@ -29,7 +29,7 @@ public partial class LowerReduction : RewriteRule<Pattern>
         "reduce",
         "reduceCall",
         _ => true,
-        IsWildcard("input") with { TypePattern = IsFloat() },
+        IsWildcard("input") with { TypePattern = IsFloat() & HasFixedShape() },
         IsTensorConst("axis"),
         IsTensorConst("initValue"),
         IsTensorConst("keepDims"));
@@ -99,7 +99,7 @@ public partial class LowerReductionSumSquare : LowerReduction
                 IsUnary(
                     "square",
                     UnaryOp.Square,
-                    IsWildcard("input") with { TypePattern = IsFloat() }),
+                    IsWildcard("input") with { TypePattern = IsFloat() & HasFixedShape() }),
                 IsTensorConst("axis"),
                 IsTensorConst("initValue"),
                 IsTensorConst("keepDims"));
@@ -122,7 +122,7 @@ public partial class LowerReductionL1 : LowerReduction
             IsUnary(
                 "abs",
                 UnaryOp.Abs,
-                IsWildcard("input") with { TypePattern = IsFloat() }),
+                IsWildcard("input") with { TypePattern = IsFloat() & HasFixedShape() }),
             IsTensorConst("axis"),
             IsTensorConst("initValue"),
             IsTensorConst("keepDims"));
@@ -148,7 +148,7 @@ public class LowerReductionL2 : LowerReduction
                 IsUnary(
                     "square",
                     UnaryOp.Square,
-                    IsWildcard("input") with { TypePattern = IsFloat() }),
+                    IsWildcard("input") with { TypePattern = IsFloat() & HasFixedShape() }),
                 IsTensorConst("axis"),
                 IsTensorConst("initValue"),
                 IsTensorConst("keepDims")));
@@ -171,7 +171,7 @@ public partial class LowerReductionLogSum : LowerReduction
                 "reduce",
                 "reduceCall",
                 ReduceOp.Sum,
-                IsWildcard("input") with { TypePattern = IsFloat() },
+                IsWildcard("input") with { TypePattern = IsFloat() & HasFixedShape() },
                 IsTensorConst("axis"),
                 IsTensorConst("initValue"),
                 IsTensorConst("keepDims")));
@@ -197,7 +197,7 @@ public partial class LowerReductionLogSumExp : LowerReduction
                 IsUnary(
                     "exp",
                     UnaryOp.Exp,
-                    IsWildcard("input") with { TypePattern = IsFloat() }),
+                    IsWildcard("input") with { TypePattern = IsFloat() & HasFixedShape() }),
                 IsTensorConst("axis"),
                 IsTensorConst("initValue"),
                 IsTensorConst("keepDims")));

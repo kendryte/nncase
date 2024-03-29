@@ -24,7 +24,7 @@ public partial class LowerHardSigmoid : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsHardSigmoid(
-      IsWildcard("input") with { TypePattern = IsFloat() },
+      IsWildcard("input") with { TypePattern = IsFloat() & HasFixedShape() },
       IsTensorConst("alpha") with { TypePattern = IsScalar() },
       IsTensorConst("beta") with { TypePattern = IsScalar() });
 

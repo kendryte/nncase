@@ -25,7 +25,7 @@ public partial class LowerCumsum : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsCumSum(
-      IsWildcard("input"),
+      IsWildcard("input") with { TypePattern = HasFixedShape() },
       IsTensorConst("axis"),
       IsTensorConst("exclusive"),
       IsTensorConst("reverse"));

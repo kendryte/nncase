@@ -30,7 +30,7 @@ public partial class LowerCast : RewriteRule<Pattern>
     public override Pattern Pattern { get; } = IsCast(
         "cast",
         _ => true,
-        IsWildcard("input"));
+        IsWildcard("input") with { TypePattern = HasFixedShape() });
 
     private int GetNcnnType(DataType inType)
     {

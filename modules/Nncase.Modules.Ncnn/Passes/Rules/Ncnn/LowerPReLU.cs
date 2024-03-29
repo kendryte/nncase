@@ -25,7 +25,7 @@ public partial class LowerPReLU : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsPRelu(
-        IsWildcard("input"),
+        IsWildcard("input") with { TypePattern = HasFixedShape() },
         IsTensorConst("slope"));
 
     private Expr? GetReplace(Expr input, Tensor<float> slope)

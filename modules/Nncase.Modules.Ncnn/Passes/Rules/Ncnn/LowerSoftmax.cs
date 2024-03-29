@@ -24,7 +24,7 @@ public partial class LowerSoftmax : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsSoftmax(
-      IsWildcard("input") with { TypePattern = IsFloat() },
+      IsWildcard("input") with { TypePattern = IsFloat() & HasFixedShape() },
       IsTensorConst("axis"));
 
     // squeeze softmax to 3D，set axis to 1

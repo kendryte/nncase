@@ -31,7 +31,7 @@ public partial class LowerLSTM : RewriteRule<Pattern>
         target_name: "lstm",
         call_name: "call",
         _ => true,
-        IsWildcard("input"),
+        IsWildcard("input") with { TypePattern = HasFixedShape() },
         IsTensorConst("w"),
         IsTensorConst("r"),
         IsTensorConst("b"),

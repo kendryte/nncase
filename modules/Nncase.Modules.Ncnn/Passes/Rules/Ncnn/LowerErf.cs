@@ -24,7 +24,7 @@ public partial class LowerErf : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsErf(
-      IsWildcard("input") with { TypePattern = IsFloat() });
+      IsWildcard("input") with { TypePattern = IsFloat() & HasFixedShape() });
 
     private Expr? GetReplace(Expr input)
     {

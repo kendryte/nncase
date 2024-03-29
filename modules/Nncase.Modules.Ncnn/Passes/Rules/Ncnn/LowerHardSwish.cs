@@ -24,7 +24,7 @@ public partial class LowerHardSwish : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsHardSwish(
-      IsWildcard("input"));
+      IsWildcard("input") with { TypePattern = HasFixedShape() });
 
     private Expr? GetReplace(Expr input)
     {

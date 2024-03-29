@@ -28,7 +28,7 @@ public partial class LowerGELU : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsGelu(
-        IsWildcard("input"),
+        IsWildcard("input") with { TypePattern = HasFixedShape() },
         IsTensorConst("alpha"));
 
     private Expr? GetReplace(Expr input, float alpha)
