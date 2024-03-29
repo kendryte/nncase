@@ -18,6 +18,8 @@ namespace Nncase.Importer.TFLite
         private Expr VisitPad(in tflite.Operator op)
         {
             var (input, paddings) = GetInputExprs(op, 0, 1);
+            input = F.Tensors.NHWCToNCHW(input);
+            paddings = F.Tensors.PaddingNHWCToNCHW(paddings);
             var padValue = GetInputTensor(op, 0).Type switch
             {
                 TensorType.FLOAT32 => 0.0f,
@@ -26,20 +28,23 @@ namespace Nncase.Importer.TFLite
                 _ => throw new NotSupportedException("Unsupported Constant Pad Value"),
             };
 
-            return F.NN.Pad(input, paddings, PadMode.Constant, padValue);
+            return F.Tensors.NCHWToNHWC(F.NN.Pad(input, paddings, PadMode.Constant, padValue));
         }
 
         private Expr VisitPadV2(in tflite.Operator op)
         {
             var (input, paddings) = GetInputExprs(op, 0, 1);
+            input = F.Tensors.NHWCToNCHW(input);
+            paddings = F.Tensors.PaddingNHWCToNCHW(paddings);
             var padValue = GetInputExprs(op, 2);
-            return F.NN.Pad(input, paddings, PadMode.Constant, padValue);
+            return F.Tensors.NCHWToNHWC(F.NN.Pad(input, paddings, PadMode.Constant, padValue));
         }
 
         private Expr VisitMirrorPad(in tflite.Operator op)
         {
             var (input, paddings) = GetInputExprs(op, 0, 1);
-
+            input = F.Tensors.NHWCToNCHW(input);
+            paddings = F.Tensors.PaddingNHWCToNCHW(paddings);
             var padMode = op.BuiltinOptionsAsMirrorPadOptions().Mode switch
             {
                 tflite.MirrorPadMode.REFLECT => PadMode.Reflect,
@@ -47,7 +52,7 @@ namespace Nncase.Importer.TFLite
                 _ => throw new NotSupportedException("Unsupported Mirror Pad Mode"),
             };
 
-            return F.NN.Pad(input, paddings, padMode, 0.0f);
+            return F.Tensors.NCHWToNHWC(F.NN.Pad(input, paddings, padMode, 0.0f));
         }
     }
 }
