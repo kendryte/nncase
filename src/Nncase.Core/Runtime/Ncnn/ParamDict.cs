@@ -189,8 +189,8 @@ public class ParamDict
             {
                 writer.Write(' ');
             }
-
-            writer.Write('\n');
         }
+
+        writer.Write('\n');
     }
 }
