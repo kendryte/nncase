@@ -187,4 +187,19 @@ public static class Tensors
     public static Call IndexOf(Expr input, Expr value) => new Call(new IndexOf(), input, value);
 
     public static Call Trilu(Expr input, Expr k, Expr upper) => new Call(new Trilu(), input, k, upper);
+
+    public static Call PaddingNHWCToNCHW(Expr paddings)
+    {
+        var strides = new int[1] { 1 };
+        var newPaddings = Concat(
+                        new IR.Tuple(new[]
+                        {
+                            Slice(paddings, new int[] { 0 }, new int[] { 1 }, new int[] { 0 }, strides),
+                            Slice(paddings, new int[] { 3 }, new int[] { 4 }, new int[] { 0 }, strides),
+                            Slice(paddings, new int[] { 1 }, new int[] { 2 }, new int[] { 0 }, strides),
+                            Slice(paddings, new int[] { 2 }, new int[] { 3 }, new int[] { 0 }, strides),
+                        }),
+                        0);
+        return newPaddings;
+    }
 }
