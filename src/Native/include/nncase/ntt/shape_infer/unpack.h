@@ -40,7 +40,8 @@ unpacked_index_by_shape_impl(const ranked_shape<Rank> &input_index,
 
 } // namespace detail
 template <size_t Lanes, size_t Axis, size_t Rank>
-static constexpr auto unpacked_index_by_shape(const ranked_shape<Rank> &input_index) {
+static constexpr auto
+unpacked_index_by_shape(const ranked_shape<Rank> &input_index) {
     return detail::unpacked_index_by_shape_impl<Lanes, Axis>(
         input_index, std::make_index_sequence<Rank>{});
 }

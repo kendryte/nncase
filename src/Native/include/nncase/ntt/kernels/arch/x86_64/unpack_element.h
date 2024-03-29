@@ -14,8 +14,8 @@
  */
 
 #pragma once
-#include <immintrin.h>
 #include <array>
+#include <immintrin.h>
 
 inline void unpack_elemt(std::array<float, 4> &arr, const __m128 &vec) {
     _mm_store_ps(&arr[0], vec);

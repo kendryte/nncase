@@ -14,8 +14,8 @@
  */
 
 #pragma once
-#include <immintrin.h>
 #include <array>
+#include <immintrin.h>
 
 inline __m128 pack_elemt(const std::array<float, 4> &vec) {
     return _mm_load_ps(&vec[0]);

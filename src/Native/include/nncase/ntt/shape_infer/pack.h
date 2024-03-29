@@ -71,7 +71,6 @@ struct packed_index_by_shape_impl<fixed_shape<Indices...>, Axis, Lanes, OffSet>
 
 } // namespace detail
 
-
 template <size_t Lanes, size_t Axis, size_t OffSet, class Indices>
 constexpr auto packed_index_by_shape(const Indices &out_indices) {
     return detail::packed_index_by_shape_impl<Indices, Lanes, Axis,

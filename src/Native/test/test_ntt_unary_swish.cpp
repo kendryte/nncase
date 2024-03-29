@@ -12,10 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <ortki/operators.h>
+#include "ntt_test.h"
 #include <gtest/gtest.h>
 #include <nncase/ntt/ntt.h>
-#include "ntt_test.h"
+#include <ortki/operators.h>
 
 using namespace nncase;
 using namespace ortki;
@@ -33,9 +33,11 @@ TEST(UnaryTestSwishFloat, fixed_fixed) {
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
-    float data[1] = { 1.f };
+    float data[1] = {1.f};
     int64_t one_shape[1] = {1};
-    auto one_tensor = make_tensor(reinterpret_cast<void *>(data), ortki::DataType_FLOAT, one_shape, sizeof(one_shape) / sizeof(one_shape[0]));
+    auto one_tensor =
+        make_tensor(reinterpret_cast<void *>(data), ortki::DataType_FLOAT,
+                    one_shape, sizeof(one_shape) / sizeof(one_shape[0]));
     auto ort_neg = ortki_Neg(ort_input);
     auto ort_exp = ortki_Exp(ort_neg);
     auto ort_add = ortki_Add(one_tensor, ort_exp);
@@ -64,7 +66,9 @@ TEST(UnaryTestSwishFloat, fixed_ranked) {
     auto ort_input = NttTest::ntt2ort(*ntt_input);
     float data[1] = {1.f};
     int64_t one_shape[1] = {1};
-    auto one_tensor = make_tensor(reinterpret_cast<void *>(data), ortki::DataType_FLOAT, one_shape, sizeof(one_shape) / sizeof(one_shape[0]));
+    auto one_tensor =
+        make_tensor(reinterpret_cast<void *>(data), ortki::DataType_FLOAT,
+                    one_shape, sizeof(one_shape) / sizeof(one_shape[0]));
     auto ort_neg = ortki_Neg(ort_input);
     auto ort_exp = ortki_Exp(ort_neg);
     auto ort_add = ortki_Add(one_tensor, ort_exp);
@@ -91,7 +95,9 @@ TEST(UnaryTestSwishFloat, ranked_ranked) {
     auto ort_input = NttTest::ntt2ort(*ntt_input);
     float data[1] = {1.f};
     int64_t one_shape[1] = {1};
-    auto one_tensor = make_tensor(reinterpret_cast<void *>(data), ortki::DataType_FLOAT, one_shape, sizeof(one_shape) / sizeof(one_shape[0]));
+    auto one_tensor =
+        make_tensor(reinterpret_cast<void *>(data), ortki::DataType_FLOAT,
+                    one_shape, sizeof(one_shape) / sizeof(one_shape[0]));
     auto ort_neg = ortki_Neg(ort_input);
     auto ort_exp = ortki_Exp(ort_neg);
     auto ort_add = ortki_Add(one_tensor, ort_exp);
@@ -120,7 +126,9 @@ TEST(UnaryTestSwishFloat, ranked_fixed) {
     auto ort_input = NttTest::ntt2ort(*ntt_input);
     float data[1] = {1.f};
     int64_t one_shape[1] = {1};
-    auto one_tensor = make_tensor(reinterpret_cast<void *>(data), ortki::DataType_FLOAT, one_shape, sizeof(one_shape) / sizeof(one_shape[0]));
+    auto one_tensor =
+        make_tensor(reinterpret_cast<void *>(data), ortki::DataType_FLOAT,
+                    one_shape, sizeof(one_shape) / sizeof(one_shape[0]));
     auto ort_neg = ortki_Neg(ort_input);
     auto ort_exp = ortki_Exp(ort_neg);
     auto ort_add = ortki_Add(one_tensor, ort_exp);
@@ -132,6 +140,31 @@ TEST(UnaryTestSwishFloat, ranked_fixed) {
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
+TEST(UnaryTestSwishFloat, vector_8) {
+    // init
+    ntt::vector<float, 8> ntt_input;
+    NttTest::init_tensor(ntt_input, -10.f, 10.f);
+
+    // ntt
+    auto ntt_output1 = ntt::swish(ntt_input);
+
+    // ort
+    auto ort_input = NttTest::ntt2ort(ntt_input);
+    float data[1] = {1.f};
+    int64_t one_shape[1] = {1};
+    auto one_tensor =
+        make_tensor(reinterpret_cast<void *>(data), ortki::DataType_FLOAT,
+                    one_shape, sizeof(one_shape) / sizeof(one_shape[0]));
+    auto ort_neg = ortki_Neg(ort_input);
+    auto ort_exp = ortki_Exp(ort_neg);
+    auto ort_add = ortki_Add(one_tensor, ort_exp);
+    auto ort_output = ortki_Div(ort_input, ort_add);
+
+    // compare
+    ntt::vector<float, 8> ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+}
 
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);

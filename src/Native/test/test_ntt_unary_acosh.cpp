@@ -12,10 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <ortki/operators.h>
+#include "ntt_test.h"
 #include <gtest/gtest.h>
 #include <nncase/ntt/ntt.h>
-#include "ntt_test.h"
+#include <ortki/operators.h>
 
 using namespace nncase;
 using namespace ortki;
@@ -108,6 +108,23 @@ TEST(UnaryTestAcoshFloat, ranked_fixed) {
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
+TEST(UnaryTestAcoshFloat, vector_8) {
+    // init
+    ntt::vector<float, 8> ntt_input;
+    NttTest::init_tensor(ntt_input, 1.f, 10.f);
+
+    // ntt
+    auto ntt_output1 = ntt::acosh(ntt_input);
+
+    // ort
+    auto ort_input = NttTest::ntt2ort(ntt_input);
+    auto ort_output = ortki_Acosh(ort_input);
+
+    // compare
+    ntt::vector<float, 8> ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+}
 
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);

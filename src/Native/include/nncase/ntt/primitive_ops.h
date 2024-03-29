@@ -79,7 +79,9 @@ template <class T> struct rsqrt {
 };
 
 template <class T> struct sign {
-    T operator()(T v) const noexcept { return (static_cast<T>(0) < v) - (v < static_cast<T>(0)); }
+    T operator()(T v) const noexcept {
+        return (static_cast<T>(0) < v) - (v < static_cast<T>(0));
+    }
 };
 
 template <class T> struct sin {
@@ -127,15 +129,15 @@ template <class T> struct div {
 // floor_mod is equivalent to % or mod() or remainder() function in Python.
 template <class T> struct floor_mod {
     T operator()(T v1, T v2) const noexcept {
-        return v1 - std::floor(static_cast<double>(v1) / static_cast<double>(v2)) * v2;
+        return v1 -
+               std::floor(static_cast<double>(v1) / static_cast<double>(v2)) *
+                   v2;
     }
 };
 
 // mod is equivalent to fmod() function in C/C++/Python.
 template <class T> struct mod {
-    T operator()(T v1, T v2) const noexcept {
-        return std::fmod(v1, v2);
-    }
+    T operator()(T v1, T v2) const noexcept { return std::fmod(v1, v2); }
 };
 
 template <class T> struct min {

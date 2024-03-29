@@ -208,14 +208,14 @@ template <class T> class NNCASE_NODISCARD result {
         return type_ == detail::result_type::err;
     }
 
-    constexpr T &unwrap() & noexcept {
+    constexpr T &unwrap() &noexcept {
         if (is_ok())
             return ok_;
         else
             std::terminate();
     }
 
-    constexpr T &&unwrap() && noexcept {
+    constexpr T &&unwrap() &&noexcept {
         if (is_ok())
             return std::move(ok_);
         else
@@ -243,7 +243,7 @@ template <class T> class NNCASE_NODISCARD result {
             return err_;
     }
 
-    constexpr T &expect(const char *message) & noexcept {
+    constexpr T &expect(const char *message) &noexcept {
         if (is_ok())
             return ok_;
         else {
@@ -251,7 +251,7 @@ template <class T> class NNCASE_NODISCARD result {
         }
     }
 
-    constexpr T &&expect(const char *message) && noexcept {
+    constexpr T &&expect(const char *message) &&noexcept {
         if (is_ok())
             return std::move(ok_);
         else {
@@ -260,7 +260,7 @@ template <class T> class NNCASE_NODISCARD result {
     }
 
     template <class Func, class Traits = detail::map_traits<T, Func>>
-    constexpr typename Traits::result_t &&map(Func &&func) && noexcept {
+    constexpr typename Traits::result_t &&map(Func &&func) &&noexcept {
         if (is_ok())
             return Traits()(std::forward<Func>(func), std::move(ok_));
         else
@@ -268,7 +268,7 @@ template <class T> class NNCASE_NODISCARD result {
     }
 
     template <class Func, class Traits = detail::map_err_traits<T, Func>>
-    constexpr typename Traits::result_t &&map_err(Func &&func) && noexcept {
+    constexpr typename Traits::result_t &&map_err(Func &&func) &&noexcept {
         if (is_ok())
             return std::move(*this);
         else
@@ -276,7 +276,7 @@ template <class T> class NNCASE_NODISCARD result {
     }
 
     template <class Func, class Traits = detail::and_then_traits<T, Func>>
-    constexpr typename Traits::result_t &&and_then(Func &&func) && noexcept {
+    constexpr typename Traits::result_t &&and_then(Func &&func) &&noexcept {
         if (is_ok())
             return Traits()(std::forward<Func>(func), ok_);
         else
@@ -336,7 +336,7 @@ template <> class NNCASE_NODISCARD result<void> {
     }
 
     template <class Func, class Traits = detail::map_traits<void, Func>>
-    typename Traits::result_t &&map(Func &&func) && noexcept {
+    typename Traits::result_t &&map(Func &&func) &&noexcept {
         if (is_ok())
             return Traits()(std::forward<Func>(func));
         else
@@ -344,7 +344,7 @@ template <> class NNCASE_NODISCARD result<void> {
     }
 
     template <class Func, class Traits = detail::map_err_traits<void, Func>>
-    typename Traits::result_t &&map_err(Func &&func) && noexcept {
+    typename Traits::result_t &&map_err(Func &&func) &&noexcept {
         if (is_ok())
             return std::move(*this);
         else
@@ -352,7 +352,7 @@ template <> class NNCASE_NODISCARD result<void> {
     }
 
     template <class Func, class Traits = detail::and_then_traits<void, Func>>
-    typename Traits::result_t &&and_then(Func &&func) && noexcept {
+    typename Traits::result_t &&and_then(Func &&func) &&noexcept {
         if (is_ok())
             return Traits()(std::forward<Func>(func));
         else

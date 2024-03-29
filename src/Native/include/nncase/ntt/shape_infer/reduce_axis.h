@@ -59,12 +59,12 @@ inline constexpr auto reduced_shape_by_axis(const fixed_shape<Dims...> shape) {
 
 /**
  * @brief [shape[axis] = 1 for axis in axes]
- * 
- * @tparam Axes 
- * @tparam Dims 
- * @param shape 
- * @param axes 
- * @return constexpr auto 
+ *
+ * @tparam Axes
+ * @tparam Dims
+ * @param shape
+ * @param axes
+ * @return constexpr auto
  */
 template <size_t... Axes, size_t... Dims>
 inline constexpr auto reduced_shape_by_axes(const fixed_shape<Dims...> shape,

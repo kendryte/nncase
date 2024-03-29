@@ -27,9 +27,8 @@ class pack_impl;
 
 template <class InShape, size_t... OutDims, size_t... OutElemDims,
           class InStrides, size_t... OutStrides, size_t... Axes>
-class pack_impl<InShape, fixed_shape<OutDims...>,
-                fixed_shape<OutElemDims...>, InStrides,
-                fixed_strides<OutStrides...>, Axes...> {
+class pack_impl<InShape, fixed_shape<OutDims...>, fixed_shape<OutElemDims...>,
+                InStrides, fixed_strides<OutStrides...>, Axes...> {
   public:
     template <class TIn, class TOut>
     constexpr void operator()(const TIn &input, TOut &&output) {
@@ -60,9 +59,8 @@ class pack_impl<InShape, fixed_shape<OutDims...>,
 
 template <class InShape, size_t out_rank, size_t... OutElemDims,
           class InStrides, class OutStrides, size_t... Axes>
-class pack_impl<InShape, ranked_shape<out_rank>,
-                fixed_shape<OutElemDims...>, InStrides,
-                OutStrides, Axes...> {
+class pack_impl<InShape, ranked_shape<out_rank>, fixed_shape<OutElemDims...>,
+                InStrides, OutStrides, Axes...> {
   public:
     template <class TIn, class TOut>
     constexpr void operator()(const TIn &input, TOut &&output) {
@@ -76,8 +74,7 @@ class pack_impl<InShape, ranked_shape<out_rank>,
         auto OutElemShape = fixed_shape<OutElemDims...>{};
         constexpr auto rank = out_rank + sizeof...(OutElemDims);
         ranked_shape<rank> domain{};
-        for (size_t i = 0, j = 0; i < rank; i++)
-        {
+        for (size_t i = 0, j = 0; i < rank; i++) {
             if (i < out_rank)
                 domain[i] = out_shape[i];
             else

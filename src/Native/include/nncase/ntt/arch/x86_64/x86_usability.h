@@ -1,16 +1,19 @@
-// Tencent is pleased to support the open source community by making ncnn available.
+// Tencent is pleased to support the open source community by making ncnn
+// available.
 //
 // Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
 //
-// Licensed under the BSD 3-Clause License (the "License"); you may not use this file except
-// in compliance with the License. You may obtain a copy of the License at
+// Licensed under the BSD 3-Clause License (the "License"); you may not use this
+// file except in compliance with the License. You may obtain a copy of the
+// License at
 //
 // https://opensource.org/licenses/BSD-3-Clause
 //
-// Unless required by applicable law or agreed to in writing, software distributed
-// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-// CONDITIONS OF ANY KIND, either express or implied. See the License for the
-// specific language governing permissions and limitations under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations under
+// the License.
 
 #ifndef X86_USABILITY_H
 #define X86_USABILITY_H
@@ -33,17 +36,19 @@
 #endif
 #endif // __SSE2__
 
-static inline signed char float2int8(float v)
-{
+static inline signed char float2int8(float v) {
     int int32 = (int)round(v);
-    if (int32 > 127) return 127;
-    if (int32 < -127) return -127;
+    if (int32 > 127)
+        return 127;
+    if (int32 < -127)
+        return -127;
     return (signed char)int32;
 }
 
 #if __SSE2__
-static inline void transpose4x8_epi32(__m128i& _r0, __m128i& _r1, __m128i& _r2, __m128i& _r3, __m128i& _r4, __m128i& _r5, __m128i& _r6, __m128i& _r7)
-{
+static inline void transpose4x8_epi32(__m128i &_r0, __m128i &_r1, __m128i &_r2,
+                                      __m128i &_r3, __m128i &_r4, __m128i &_r5,
+                                      __m128i &_r6, __m128i &_r7) {
     __m128i _tmp0 = _mm_unpacklo_epi32(_r0, _r1);
     __m128i _tmp1 = _mm_unpackhi_epi32(_r0, _r1);
     __m128i _tmp2 = _mm_unpacklo_epi32(_r2, _r3);
@@ -63,8 +68,8 @@ static inline void transpose4x8_epi32(__m128i& _r0, __m128i& _r1, __m128i& _r2, 
     _r7 = _mm_unpackhi_epi64(_tmp5, _tmp7);
 }
 
-static inline void transpose4x4_epi32(__m128i& _r0, __m128i& _r1, __m128i& _r2, __m128i& _r3)
-{
+static inline void transpose4x4_epi32(__m128i &_r0, __m128i &_r1, __m128i &_r2,
+                                      __m128i &_r3) {
     __m128i _tmp0 = _mm_unpacklo_epi32(_r0, _r1);
     __m128i _tmp1 = _mm_unpackhi_epi32(_r0, _r1);
     __m128i _tmp2 = _mm_unpacklo_epi32(_r2, _r3);
@@ -76,8 +81,9 @@ static inline void transpose4x4_epi32(__m128i& _r0, __m128i& _r1, __m128i& _r2, 
     _r3 = _mm_unpackhi_epi64(_tmp1, _tmp3);
 }
 
-static inline void transpose8x8_epi16(__m128i& _r0, __m128i& _r1, __m128i& _r2, __m128i& _r3, __m128i& _r4, __m128i& _r5, __m128i& _r6, __m128i& _r7)
-{
+static inline void transpose8x8_epi16(__m128i &_r0, __m128i &_r1, __m128i &_r2,
+                                      __m128i &_r3, __m128i &_r4, __m128i &_r5,
+                                      __m128i &_r6, __m128i &_r7) {
     __m128i _tmp0 = _mm_unpacklo_epi16(_r0, _r1);
     __m128i _tmp1 = _mm_unpackhi_epi16(_r0, _r1);
     __m128i _tmp2 = _mm_unpacklo_epi16(_r2, _r3);
@@ -106,8 +112,8 @@ static inline void transpose8x8_epi16(__m128i& _r0, __m128i& _r1, __m128i& _r2, 
     _r7 = _mm_unpackhi_epi64(_tmpb, _tmpf);
 }
 
-static inline void transpose8x4_epi16(__m128i& _r0, __m128i& _r1, __m128i& _r2, __m128i& _r3)
-{
+static inline void transpose8x4_epi16(__m128i &_r0, __m128i &_r1, __m128i &_r2,
+                                      __m128i &_r3) {
     __m128i _tmp0 = _mm_unpacklo_epi16(_r0, _r1);
     __m128i _tmp1 = _mm_unpackhi_epi16(_r0, _r1);
     __m128i _tmp2 = _mm_unpacklo_epi16(_r2, _r3);
@@ -119,22 +125,19 @@ static inline void transpose8x4_epi16(__m128i& _r0, __m128i& _r1, __m128i& _r2, 
     _r3 = _mm_unpackhi_epi32(_tmp1, _tmp3);
 }
 
-static inline float _mm_reduce_add_ps(__m128 x128)
-{
+static inline float _mm_reduce_add_ps(__m128 x128) {
     const __m128 x64 = _mm_add_ps(x128, _mm_movehl_ps(x128, x128));
     const __m128 x32 = _mm_add_ss(x64, _mm_shuffle_ps(x64, x64, 0x55));
     return _mm_cvtss_f32(x32);
 }
 
-static inline float _mm_reduce_max_ps(__m128 x128)
-{
+static inline float _mm_reduce_max_ps(__m128 x128) {
     const __m128 x64 = _mm_max_ps(x128, _mm_movehl_ps(x128, x128));
     const __m128 x32 = _mm_max_ss(x64, _mm_shuffle_ps(x64, x64, 0x55));
     return _mm_cvtss_f32(x32);
 }
 
-static inline int _mm_reduce_add_epi32(__m128i x)
-{
+static inline int _mm_reduce_add_epi32(__m128i x) {
     __m128i hi64 = _mm_unpackhi_epi64(x, x);
     __m128i sum64 = _mm_add_epi32(hi64, x);
     __m128i hi32 = _mm_shuffle_epi32(sum64, _MM_SHUFFLE(2, 3, 0, 1));
@@ -142,8 +145,7 @@ static inline int _mm_reduce_add_epi32(__m128i x)
     return _mm_cvtsi128_si32(sum32);
 }
 
-static inline int32_t float2int8_sse(const __m128& _v0)
-{
+static inline int32_t float2int8_sse(const __m128 &_v0) {
     // _MM_ROUND_NEAREST round to even
     // simulate round to nearest via +/-0.5 with round to zero
     __m128 _p5 = _mm_set1_ps(0.5f);
@@ -167,8 +169,7 @@ static inline int32_t float2int8_sse(const __m128& _v0)
 #endif
 }
 
-static inline int64_t float2int8_sse(const __m128& _v0, const __m128& _v1)
-{
+static inline int64_t float2int8_sse(const __m128 &_v0, const __m128 &_v1) {
     // _MM_ROUND_NEAREST round to even
     // simulate round to nearest via +/-0.5 with round to zero
     __m128 _p5 = _mm_set1_ps(0.5f);
@@ -193,13 +194,13 @@ static inline int64_t float2int8_sse(const __m128& _v0, const __m128& _v1)
     return _mm_cvtsi128_si64(_v8);
 #else
     int64_t v8[2];
-    _mm_storeu_si128((__m128i*)v8, _v8);
+    _mm_storeu_si128((__m128i *)v8, _v8);
     return v8[0];
 #endif
 }
 
-static inline __m128i float2int8_sse(const __m128& _v0, const __m128& _v1, const __m128& _v2, const __m128& _v3)
-{
+static inline __m128i float2int8_sse(const __m128 &_v0, const __m128 &_v1,
+                                     const __m128 &_v2, const __m128 &_v3) {
     // _MM_ROUND_NEAREST round to even
     // simulate round to nearest via +/-0.5 with round to zero
     __m128 _p5 = _mm_set1_ps(0.5f);
@@ -234,18 +235,17 @@ static inline __m128i float2int8_sse(const __m128& _v0, const __m128& _v1, const
     return _v8;
 }
 
-static inline __m128 bfloat2float_sse(const __m128i& v0)
-{
+static inline __m128 bfloat2float_sse(const __m128i &v0) {
     __m128i _zero = _mm_setzero_si128();
     __m128i _a = _mm_unpacklo_epi16(_zero, v0);
     __m128 _v = _mm_castsi128_ps(_a);
     return _v;
 }
 
-static inline __m128i float2bfloat_sse(const __m128& v0, const __m128& v1)
-{
+static inline __m128i float2bfloat_sse(const __m128 &v0, const __m128 &v1) {
 #if __AVX512BF16__
-    __m128i _v = (__m128i)_mm256_cvtneps_pbh(_mm256_insertf128_ps(_mm256_castps128_ps256(v0), v1, 1));
+    __m128i _v = (__m128i)_mm256_cvtneps_pbh(
+        _mm256_insertf128_ps(_mm256_castps128_ps256(v0), v1, 1));
 #else
     __m128i _a = _mm_castps_si128(v0);
     __m128i _b = _mm_castps_si128(v1);
@@ -258,104 +258,107 @@ static inline __m128i float2bfloat_sse(const __m128& v0, const __m128& v1)
     _b = _mm_shufflelo_epi16(_b, _MM_SHUFFLE(2, 0, 3, 1));
     _a = _mm_shufflehi_epi16(_a, _MM_SHUFFLE(2, 0, 3, 1));
     _b = _mm_shufflehi_epi16(_b, _MM_SHUFFLE(2, 0, 3, 1));
-    __m128i _v = _mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(_a), _mm_castsi128_ps(_b), _MM_SHUFFLE(2, 0, 2, 0)));
+    __m128i _v = _mm_castps_si128(_mm_shuffle_ps(
+        _mm_castsi128_ps(_a), _mm_castsi128_ps(_b), _MM_SHUFFLE(2, 0, 2, 0)));
 #endif
 #endif
     return _v;
 }
 
 #ifndef __FMA__
-static inline __m128 _mm_comp_fmadd_ps(const __m128& _a, const __m128& _b, const __m128& _c)
-{
+static inline __m128 _mm_comp_fmadd_ps(const __m128 &_a, const __m128 &_b,
+                                       const __m128 &_c) {
     return _mm_add_ps(_mm_mul_ps(_a, _b), _c);
 }
-static inline __m128 _mm_comp_fnmadd_ps(const __m128& _a, const __m128& _b, const __m128& _c)
-{
+static inline __m128 _mm_comp_fnmadd_ps(const __m128 &_a, const __m128 &_b,
+                                        const __m128 &_c) {
     return _mm_sub_ps(_c, _mm_mul_ps(_a, _b));
 }
-static inline __m128 _mm_comp_fmsub_ps(const __m128& _a, const __m128& _b, const __m128& _c)
-{
+static inline __m128 _mm_comp_fmsub_ps(const __m128 &_a, const __m128 &_b,
+                                       const __m128 &_c) {
     return _mm_sub_ps(_mm_mul_ps(_a, _b), _c);
 }
-static inline __m128 _mm_comp_fnmsub_ps(const __m128& _a, const __m128& _b, const __m128& _c)
-{
+static inline __m128 _mm_comp_fnmsub_ps(const __m128 &_a, const __m128 &_b,
+                                        const __m128 &_c) {
     return _mm_sub_ps(_c, _mm_mul_ps(_mm_mul_ps(_a, _b), _mm_set1_ps(-1)));
 }
 #else
-static inline __m128 _mm_comp_fmadd_ps(const __m128& _a, const __m128& _b, const __m128& _c)
-{
+static inline __m128 _mm_comp_fmadd_ps(const __m128 &_a, const __m128 &_b,
+                                       const __m128 &_c) {
     return _mm_fmadd_ps(_a, _b, _c);
 }
-static inline __m128 _mm_comp_fnmadd_ps(const __m128& _a, const __m128& _b, const __m128& _c)
-{
+static inline __m128 _mm_comp_fnmadd_ps(const __m128 &_a, const __m128 &_b,
+                                        const __m128 &_c) {
     // return -a * b + c
     return _mm_fnmadd_ps(_a, _b, _c);
 }
-static inline __m128 _mm_comp_fmsub_ps(const __m128& _a, const __m128& _b, const __m128& _c)
-{
+static inline __m128 _mm_comp_fmsub_ps(const __m128 &_a, const __m128 &_b,
+                                       const __m128 &_c) {
     return _mm_fmsub_ps(_a, _b, _c);
 }
-static inline __m128 _mm_comp_fnmsub_ps(const __m128& _a, const __m128& _b, const __m128& _c)
-{
+static inline __m128 _mm_comp_fnmsub_ps(const __m128 &_a, const __m128 &_b,
+                                        const __m128 &_c) {
     return _mm_fnmsub_ps(_a, _b, _c);
 }
 #endif // !__FMA__
 
 #if __AVX__
 #ifndef __FMA__
-static inline __m256 _mm256_comp_fmadd_ps(const __m256& _a, const __m256& _b, const __m256& _c)
-{
+static inline __m256 _mm256_comp_fmadd_ps(const __m256 &_a, const __m256 &_b,
+                                          const __m256 &_c) {
     return _mm256_add_ps(_mm256_mul_ps(_a, _b), _c);
 }
-static inline __m256 _mm256_comp_fnmadd_ps(const __m256& _a, const __m256& _b, const __m256& _c)
-{
+static inline __m256 _mm256_comp_fnmadd_ps(const __m256 &_a, const __m256 &_b,
+                                           const __m256 &_c) {
     return _mm256_sub_ps(_c, _mm256_mul_ps(_a, _b));
 }
-static inline __m256 _mm256_comp_fmsub_ps(const __m256& _a, const __m256& _b, const __m256& _c)
-{
+static inline __m256 _mm256_comp_fmsub_ps(const __m256 &_a, const __m256 &_b,
+                                          const __m256 &_c) {
     return _mm256_sub_ps(_mm256_mul_ps(_a, _b), _c);
 }
-static inline __m256 _mm256_comp_fnmsub_ps(const __m256& _a, const __m256& _b, const __m256& _c)
-{
-    return _mm256_sub_ps(_c, _mm256_mul_ps(_mm256_mul_ps(_a, _b), _mm256_set1_ps(-1)));
+static inline __m256 _mm256_comp_fnmsub_ps(const __m256 &_a, const __m256 &_b,
+                                           const __m256 &_c) {
+    return _mm256_sub_ps(
+        _c, _mm256_mul_ps(_mm256_mul_ps(_a, _b), _mm256_set1_ps(-1)));
 }
 #else
-static inline __m256 _mm256_comp_fmadd_ps(const __m256& _a, const __m256& _b, const __m256& _c)
-{
+static inline __m256 _mm256_comp_fmadd_ps(const __m256 &_a, const __m256 &_b,
+                                          const __m256 &_c) {
     // return a * b + c
     return _mm256_fmadd_ps(_a, _b, _c);
 }
-static inline __m256 _mm256_comp_fnmadd_ps(const __m256& _a, const __m256& _b, const __m256& _c)
-{
+static inline __m256 _mm256_comp_fnmadd_ps(const __m256 &_a, const __m256 &_b,
+                                           const __m256 &_c) {
     // return -a * b + c
     return _mm256_fnmadd_ps(_a, _b, _c);
 }
-static inline __m256 _mm256_comp_fmsub_ps(const __m256& _a, const __m256& _b, const __m256& _c)
-{
+static inline __m256 _mm256_comp_fmsub_ps(const __m256 &_a, const __m256 &_b,
+                                          const __m256 &_c) {
     // return a * b - c
     return _mm256_fmsub_ps(_a, _b, _c);
 }
-static inline __m256 _mm256_comp_fnmsub_ps(const __m256& _a, const __m256& _b, const __m256& _c)
-{
+static inline __m256 _mm256_comp_fnmsub_ps(const __m256 &_a, const __m256 &_b,
+                                           const __m256 &_c) {
     // return -(a * b) - c
     return _mm256_fnmsub_ps(_a, _b, _c);
 }
 #endif
 
-static inline __m256 _mm256_fmadd_1_ps(const __m256& a, const __m256& b, float c)
-{
+static inline __m256 _mm256_fmadd_1_ps(const __m256 &a, const __m256 &b,
+                                       float c) {
     return _mm256_comp_fmadd_ps(b, _mm256_set1_ps(c), a);
 }
 
-static inline __m256 _mm256_fmrsub_1_ps(const __m256& a, const __m256& b, float c)
-{
+static inline __m256 _mm256_fmrsub_1_ps(const __m256 &a, const __m256 &b,
+                                        float c) {
     // return a - b * c
     return _mm256_comp_fnmadd_ps(b, _mm256_set1_ps(c), a);
 }
 
-static inline void transpose8x12_ps(__m256& _r0, __m256& _r1, __m256& _r2, __m256& _r3, __m256& _r4, __m256& _r5, __m256& _r6, __m256& _r7,
-        __m256& _r8, __m256& _r9, __m256& _ra, __m256& _rb)
-{
+static inline void transpose8x12_ps(__m256 &_r0, __m256 &_r1, __m256 &_r2,
+                                    __m256 &_r3, __m256 &_r4, __m256 &_r5,
+                                    __m256 &_r6, __m256 &_r7, __m256 &_r8,
+                                    __m256 &_r9, __m256 &_ra, __m256 &_rb) {
     __m256 _tmp0 = _mm256_unpacklo_ps(_r0, _r1);
     __m256 _tmp1 = _mm256_unpackhi_ps(_r0, _r1);
     __m256 _tmp2 = _mm256_unpacklo_ps(_r2, _r3);
@@ -396,8 +399,9 @@ static inline void transpose8x12_ps(__m256& _r0, __m256& _r1, __m256& _r2, __m25
     _rb = _mm256_permute2f128_ps(_tmpj, _tmpn, _MM_SHUFFLE(0, 3, 0, 1));
 }
 
-static inline void transpose8x8_ps(__m256& _r0, __m256& _r1, __m256& _r2, __m256& _r3, __m256& _r4, __m256& _r5, __m256& _r6, __m256& _r7)
-{
+static inline void transpose8x8_ps(__m256 &_r0, __m256 &_r1, __m256 &_r2,
+                                   __m256 &_r3, __m256 &_r4, __m256 &_r5,
+                                   __m256 &_r6, __m256 &_r7) {
     __m256 _tmp0 = _mm256_unpacklo_ps(_r0, _r1);
     __m256 _tmp1 = _mm256_unpackhi_ps(_r0, _r1);
     __m256 _tmp2 = _mm256_unpacklo_ps(_r2, _r3);
@@ -426,8 +430,8 @@ static inline void transpose8x8_ps(__m256& _r0, __m256& _r1, __m256& _r2, __m256
     _r7 = _mm256_permute2f128_ps(_tmpb, _tmpf, _MM_SHUFFLE(0, 3, 0, 1));
 }
 
-static inline void transpose8x4_ps(__m256& _r0, __m256& _r1, __m256& _r2, __m256& _r3)
-{
+static inline void transpose8x4_ps(__m256 &_r0, __m256 &_r1, __m256 &_r2,
+                                   __m256 &_r3) {
     __m256 _tmp0 = _mm256_unpacklo_ps(_r0, _r1);
     __m256 _tmp1 = _mm256_unpackhi_ps(_r0, _r1);
     __m256 _tmp2 = _mm256_unpacklo_ps(_r2, _r3);
@@ -444,8 +448,7 @@ static inline void transpose8x4_ps(__m256& _r0, __m256& _r1, __m256& _r2, __m256
     _r3 = _mm256_permute2f128_ps(_tmp6, _tmp7, _MM_SHUFFLE(0, 3, 0, 1));
 }
 
-static inline void transpose8x2_ps(__m256& _r0, __m256& _r1)
-{
+static inline void transpose8x2_ps(__m256 &_r0, __m256 &_r1) {
     __m256 _tmp0 = _mm256_unpacklo_ps(_r0, _r1);
     __m256 _tmp1 = _mm256_unpackhi_ps(_r0, _r1);
 
@@ -453,8 +456,7 @@ static inline void transpose8x2_ps(__m256& _r0, __m256& _r1)
     _r1 = _mm256_permute2f128_ps(_tmp0, _tmp1, _MM_SHUFFLE(0, 3, 0, 1));
 }
 
-static inline void transpose2x8_ps(__m256& _r0, __m256& _r1)
-{
+static inline void transpose2x8_ps(__m256 &_r0, __m256 &_r1) {
     __m256 _tmp0 = _mm256_permute2f128_ps(_r0, _r1, _MM_SHUFFLE(0, 2, 0, 0));
     __m256 _tmp1 = _mm256_permute2f128_ps(_r0, _r1, _MM_SHUFFLE(0, 3, 0, 1));
 
@@ -462,8 +464,7 @@ static inline void transpose2x8_ps(__m256& _r0, __m256& _r1)
     _r1 = _mm256_shuffle_ps(_tmp0, _tmp1, _MM_SHUFFLE(3, 1, 3, 1));
 }
 
-static inline void transpose3x8_ps(__m256& _r0, __m256& _r1, __m256& _r2)
-{
+static inline void transpose3x8_ps(__m256 &_r0, __m256 &_r1, __m256 &_r2) {
     __m256 _tmp0 = _mm256_permute2f128_ps(_r0, _r1, _MM_SHUFFLE(0, 3, 0, 0));
     __m256 _tmp1 = _mm256_permute2f128_ps(_r0, _r2, _MM_SHUFFLE(0, 2, 0, 1));
     __m256 _tmp2 = _mm256_permute2f128_ps(_r1, _r2, _MM_SHUFFLE(0, 3, 0, 0));
@@ -476,8 +477,8 @@ static inline void transpose3x8_ps(__m256& _r0, __m256& _r1, __m256& _r2)
     _r2 = _mm256_shuffle_ps(_tmp4, _tmp2, _MM_SHUFFLE(3, 0, 3, 1));
 }
 
-static inline void transpose8x6_ps(__m256& _r0, __m256& _r1, __m256& _r2, __m256& _r3, __m256& _r4, __m256& _r5)
-{
+static inline void transpose8x6_ps(__m256 &_r0, __m256 &_r1, __m256 &_r2,
+                                   __m256 &_r3, __m256 &_r4, __m256 &_r5) {
     __m256 _tmp0 = _mm256_unpacklo_ps(_r0, _r1);
     __m256 _tmp1 = _mm256_unpackhi_ps(_r0, _r1);
     __m256 _tmp2 = _mm256_unpacklo_ps(_r2, _r3);
@@ -500,8 +501,10 @@ static inline void transpose8x6_ps(__m256& _r0, __m256& _r1, __m256& _r2, __m256
     _r5 = _mm256_permute2f128_ps(_tmpa, _tmpb, _MM_SHUFFLE(0, 3, 0, 1));
 }
 
-static inline void transpose8x11_ps(__m256& _r0, __m256& _r1, __m256& _r2, __m256& _r3, __m256& _r4, __m256& _r5, __m256& _r6, __m256& _r7, __m256& _r8, __m256& _r9, __m256& _ra)
-{
+static inline void transpose8x11_ps(__m256 &_r0, __m256 &_r1, __m256 &_r2,
+                                    __m256 &_r3, __m256 &_r4, __m256 &_r5,
+                                    __m256 &_r6, __m256 &_r7, __m256 &_r8,
+                                    __m256 &_r9, __m256 &_ra) {
     __m256 _tmp0 = _mm256_unpacklo_ps(_r0, _r1);
     __m256 _tmp1 = _mm256_unpackhi_ps(_r0, _r1);
     __m256 _tmp2 = _mm256_unpacklo_ps(_r2, _r3);
@@ -550,8 +553,11 @@ static inline void transpose8x11_ps(__m256& _r0, __m256& _r1, __m256& _r2, __m25
     _ra = _mm256_permute2f128_ps(_tmpv, _tmpw, _MM_SHUFFLE(0, 3, 0, 1));
 }
 
-static void transpose8x18_ps(__m256& _r0, __m256& _r1, __m256& _r2, __m256& _r3, __m256& _r4, __m256& _r5, __m256& _r6, __m256& _r7, __m256& _r8, __m256& _r9, __m256& _ra, __m256& _rb, __m256& _rc, __m256& _rd, __m256& _re, __m256& _rf, __m256& _rg, __m256& _rh)
-{
+static void transpose8x18_ps(__m256 &_r0, __m256 &_r1, __m256 &_r2, __m256 &_r3,
+                             __m256 &_r4, __m256 &_r5, __m256 &_r6, __m256 &_r7,
+                             __m256 &_r8, __m256 &_r9, __m256 &_ra, __m256 &_rb,
+                             __m256 &_rc, __m256 &_rd, __m256 &_re, __m256 &_rf,
+                             __m256 &_rg, __m256 &_rh) {
     __m256 _tmp0 = _mm256_unpacklo_ps(_r0, _r1);
     __m256 _tmp1 = _mm256_unpackhi_ps(_r0, _r1);
     __m256 _tmp2 = _mm256_unpacklo_ps(_r2, _r3);
@@ -610,8 +616,9 @@ static void transpose8x18_ps(__m256& _r0, __m256& _r1, __m256& _r2, __m256& _r3,
     _rh = _mm256_permute2f128_ps(_tmpy, _tmpz, _MM_SHUFFLE(0, 3, 0, 1));
 }
 
-static inline __m256 HorizontalSums(__m256& v0, __m256& v1, __m256& v2, __m256& v3, __m256& v4, __m256& v5, __m256& v6, __m256& v7)
-{
+static inline __m256 HorizontalSums(__m256 &v0, __m256 &v1, __m256 &v2,
+                                    __m256 &v3, __m256 &v4, __m256 &v5,
+                                    __m256 &v6, __m256 &v7) {
     const __m256 s01 = _mm256_hadd_ps(v0, v1);
     const __m256 s23 = _mm256_hadd_ps(v2, v3);
     const __m256 s45 = _mm256_hadd_ps(v4, v5);
@@ -626,8 +633,8 @@ static inline __m256 HorizontalSums(__m256& v0, __m256& v1, __m256& v2, __m256& 
     return _mm256_add_ps(vb0, vb1);
 }
 
-static inline __m128 HorizontalSums(__m256& v0, __m256& v1, __m256& v2, __m256& v3)
-{
+static inline __m128 HorizontalSums(__m256 &v0, __m256 &v1, __m256 &v2,
+                                    __m256 &v3) {
     const __m256 s01 = _mm256_hadd_ps(v0, v1);
     const __m256 s23 = _mm256_hadd_ps(v2, v3);
     const __m256 s0123 = _mm256_hadd_ps(s01, s23);
@@ -636,8 +643,7 @@ static inline __m128 HorizontalSums(__m256& v0, __m256& v1, __m256& v2, __m256& 
                       _mm256_castps256_ps128(s0123));
 }
 
-static inline __m128 HorizontalSums(__m256& v0, __m256& v1, __m256& v2)
-{
+static inline __m128 HorizontalSums(__m256 &v0, __m256 &v1, __m256 &v2) {
     const __m256 v3 = _mm256_set1_ps(0.0f);
     const __m256 s01 = _mm256_hadd_ps(v0, v1);
     const __m256 s23 = _mm256_hadd_ps(v2, v3);
@@ -647,10 +653,10 @@ static inline __m128 HorizontalSums(__m256& v0, __m256& v1, __m256& v2)
                       _mm256_castps256_ps128(s0123));
 }
 
-static inline float _mm256_reduce_add_ps(__m256 x)
-{
+static inline float _mm256_reduce_add_ps(__m256 x) {
     /* ( x3+x7, x2+x6, x1+x5, x0+x4 ) */
-    const __m128 x128 = _mm_add_ps(_mm256_extractf128_ps(x, 1), _mm256_castps256_ps128(x));
+    const __m128 x128 =
+        _mm_add_ps(_mm256_extractf128_ps(x, 1), _mm256_castps256_ps128(x));
     /* ( -, -, x1+x3+x5+x7, x0+x2+x4+x6 ) */
     const __m128 x64 = _mm_add_ps(x128, _mm_movehl_ps(x128, x128));
     /* ( -, -, -, x0+x1+x2+x3+x4+x5+x6+x7 ) */
@@ -659,16 +665,15 @@ static inline float _mm256_reduce_add_ps(__m256 x)
     return _mm_cvtss_f32(x32);
 }
 
-static inline float _mm256_reduce_max_ps(__m256 x)
-{
-    const __m128 x128 = _mm_max_ps(_mm256_extractf128_ps(x, 1), _mm256_castps256_ps128(x));
+static inline float _mm256_reduce_max_ps(__m256 x) {
+    const __m128 x128 =
+        _mm_max_ps(_mm256_extractf128_ps(x, 1), _mm256_castps256_ps128(x));
     const __m128 x64 = _mm_max_ps(x128, _mm_movehl_ps(x128, x128));
     const __m128 x32 = _mm_max_ss(x64, _mm_shuffle_ps(x64, x64, 0x55));
     return _mm_cvtss_f32(x32);
 }
 
-static inline int64_t float2int8_avx(const __m256& _v0)
-{
+static inline int64_t float2int8_avx(const __m256 &_v0) {
     // _MM_FROUND_TO_NEAREST_INT round to even
     // simulate round to nearest via +/-0.5 with round to zero
     __m256 _p5 = _mm256_set1_ps(0.5f);
@@ -699,13 +704,12 @@ static inline int64_t float2int8_avx(const __m256& _v0)
     return _mm_cvtsi128_si64(_v8);
 #else
     int64_t v8[2];
-    _mm_storeu_si128((__m128i*)v8, _v8);
+    _mm_storeu_si128((__m128i *)v8, _v8);
     return v8[0];
 #endif
 }
 
-static inline __m128i float2int8_avx(const __m256& _v0, const __m256& _v1)
-{
+static inline __m128i float2int8_avx(const __m256 &_v0, const __m256 &_v1) {
     // _MM_FROUND_TO_NEAREST_INT round to even
     // simulate round to nearest via +/-0.5 with round to zero
     __m256 _p5 = _mm256_set1_ps(0.5f);
@@ -749,10 +753,11 @@ static inline __m128i float2int8_avx(const __m256& _v0, const __m256& _v1)
 #endif // __AVX2__
 }
 
-static inline void _mm256_comp_fmadd_ps4(__m256& _sum,
-        const __m256& _w0, const __m256& _w1, const __m256& _w2, const __m256& _w3,
-        const __m256& _v0, const __m256& _v1, const __m256& _v2, const __m256& _v3)
-{
+static inline void _mm256_comp_fmadd_ps4(__m256 &_sum, const __m256 &_w0,
+                                         const __m256 &_w1, const __m256 &_w2,
+                                         const __m256 &_w3, const __m256 &_v0,
+                                         const __m256 &_v1, const __m256 &_v2,
+                                         const __m256 &_v3) {
     __m256 _mul0 = _mm256_mul_ps(_w0, _v0);
     __m256 _mul1 = _mm256_mul_ps(_w1, _v1);
     __m256 _sum01 = _mm256_add_ps(_mul0, _mul1);
@@ -763,30 +768,32 @@ static inline void _mm256_comp_fmadd_ps4(__m256& _sum,
     _sum = _mm256_add_ps(_sum, _sum0123);
 }
 
-static inline void _mm256_comp_fmadd_ps8(__m256& _sum,
-        const __m256& _w0, const __m256& _w1, const __m256& _w2, const __m256& _w3, const __m256& _w4, const __m256& _w5, const __m256& _w6, const __m256& _w7,
-        const __m256& _v0, const __m256& _v1, const __m256& _v2, const __m256& _v3, const __m256& _v4, const __m256& _v5, const __m256& _v6, const __m256& _v7)
-{
+static inline void
+_mm256_comp_fmadd_ps8(__m256 &_sum, const __m256 &_w0, const __m256 &_w1,
+                      const __m256 &_w2, const __m256 &_w3, const __m256 &_w4,
+                      const __m256 &_w5, const __m256 &_w6, const __m256 &_w7,
+                      const __m256 &_v0, const __m256 &_v1, const __m256 &_v2,
+                      const __m256 &_v3, const __m256 &_v4, const __m256 &_v5,
+                      const __m256 &_v6, const __m256 &_v7) {
     _mm256_comp_fmadd_ps4(_sum, _w0, _w1, _w2, _w3, _v0, _v1, _v2, _v3);
 
     _mm256_comp_fmadd_ps4(_sum, _w4, _w5, _w6, _w7, _v4, _v5, _v6, _v7);
 }
 
-static inline __m256 bfloat2float_avx(const __m128i& v0)
-{
+static inline __m256 bfloat2float_avx(const __m128i &v0) {
 #if __AVX512BF16__
     __m256 _v = _mm256_cvtpbh_ps((__m128bh)v0);
 #else
     __m128i _zero = _mm_setzero_si128();
     __m128i _a = _mm_unpacklo_epi16(_zero, v0);
     __m128i _b = _mm_unpackhi_epi16(_zero, v0);
-    __m256 _v = _mm256_castsi256_ps(_mm256_insertf128_si256(_mm256_castsi128_si256(_a), _b, 1));
+    __m256 _v = _mm256_castsi256_ps(
+        _mm256_insertf128_si256(_mm256_castsi128_si256(_a), _b, 1));
 #endif
     return _v;
 }
 
-static inline __m128i float2bfloat_avx(const __m256& v0)
-{
+static inline __m128i float2bfloat_avx(const __m256 &v0) {
 #if __AVX512BF16__
     __m128i _v = (__m128i)_mm256_cvtneps_pbh(v0);
 #else
@@ -806,8 +813,7 @@ static inline __m128i float2bfloat_avx(const __m256& v0)
     return _v;
 }
 
-static inline __m256i float2bfloat_avx(const __m256& v0, const __m256& v1)
-{
+static inline __m256i float2bfloat_avx(const __m256 &v0, const __m256 &v1) {
 #if __AVX512BF16__
     __m128i _v0 = (__m128i)_mm256_cvtneps_pbh(v0);
     __m128i _v1 = (__m128i)_mm256_cvtneps_pbh(v1);
@@ -838,8 +844,7 @@ static inline __m256i float2bfloat_avx(const __m256& v0, const __m256& v1)
 }
 
 #if __AVX2__
-static inline void transpose8x2_epi32(__m256i& _r0, __m256i& _r1)
-{
+static inline void transpose8x2_epi32(__m256i &_r0, __m256i &_r1) {
     __m256i _tmp0 = _mm256_unpacklo_epi32(_r0, _r1);
     __m256i _tmp1 = _mm256_unpackhi_epi32(_r0, _r1);
 
@@ -847,8 +852,9 @@ static inline void transpose8x2_epi32(__m256i& _r0, __m256i& _r1)
     _r1 = _mm256_permute2x128_si256(_tmp0, _tmp1, _MM_SHUFFLE(0, 3, 0, 1));
 }
 
-static inline void transpose16x8_epi16(__m256i& _r0, __m256i& _r1, __m256i& _r2, __m256i& _r3, __m256i& _r4, __m256i& _r5, __m256i& _r6, __m256i& _r7)
-{
+static inline void transpose16x8_epi16(__m256i &_r0, __m256i &_r1, __m256i &_r2,
+                                       __m256i &_r3, __m256i &_r4, __m256i &_r5,
+                                       __m256i &_r6, __m256i &_r7) {
     __m256i _tmp0 = _mm256_unpacklo_epi16(_r0, _r1);
     __m256i _tmp1 = _mm256_unpackhi_epi16(_r0, _r1);
     __m256i _tmp2 = _mm256_unpacklo_epi16(_r2, _r3);
@@ -887,9 +893,12 @@ static inline void transpose16x8_epi16(__m256i& _r0, __m256i& _r1, __m256i& _r2,
 }
 
 #if __AVX512F__
-static inline void transpose16x16_ps(__m512& _r0, __m512& _r1, __m512& _r2, __m512& _r3, __m512& _r4, __m512& _r5, __m512& _r6, __m512& _r7,
-        __m512& _r8, __m512& _r9, __m512& _ra, __m512& _rb, __m512& _rc, __m512& _rd, __m512& _re, __m512& _rf)
-{
+static inline void transpose16x16_ps(__m512 &_r0, __m512 &_r1, __m512 &_r2,
+                                     __m512 &_r3, __m512 &_r4, __m512 &_r5,
+                                     __m512 &_r6, __m512 &_r7, __m512 &_r8,
+                                     __m512 &_r9, __m512 &_ra, __m512 &_rb,
+                                     __m512 &_rc, __m512 &_rd, __m512 &_re,
+                                     __m512 &_rf) {
     __m512 _tmp0 = _mm512_unpacklo_ps(_r0, _r1);
     __m512 _tmp1 = _mm512_unpackhi_ps(_r0, _r1);
     __m512 _tmp2 = _mm512_unpacklo_ps(_r2, _r3);
@@ -959,9 +968,10 @@ static inline void transpose16x16_ps(__m512& _r0, __m512& _r1, __m512& _r2, __m5
     _rf = _mm512_shuffle_f32x4(_tmpe, _tmpf, _MM_SHUFFLE(3, 1, 3, 1));
 }
 
-static inline void transpose16x12_ps(__m512& _r0, __m512& _r1, __m512& _r2, __m512& _r3, __m512& _r4, __m512& _r5, __m512& _r6, __m512& _r7,
-        __m512& _r8, __m512& _r9, __m512& _ra, __m512& _rb)
-{
+static inline void transpose16x12_ps(__m512 &_r0, __m512 &_r1, __m512 &_r2,
+                                     __m512 &_r3, __m512 &_r4, __m512 &_r5,
+                                     __m512 &_r6, __m512 &_r7, __m512 &_r8,
+                                     __m512 &_r9, __m512 &_ra, __m512 &_rb) {
     __m512 _tmp0 = _mm512_unpacklo_ps(_r0, _r1);
     __m512 _tmp1 = _mm512_unpackhi_ps(_r0, _r1);
     __m512 _tmp2 = _mm512_unpacklo_ps(_r2, _r3);
@@ -1015,8 +1025,9 @@ static inline void transpose16x12_ps(__m512& _r0, __m512& _r1, __m512& _r2, __m5
     _rb = _mm512_shuffle_f32x4(_tmpa, _tmpb, _MM_SHUFFLE(3, 1, 3, 1));
 }
 
-static inline void transpose16x8_ps(__m512& _r0, __m512& _r1, __m512& _r2, __m512& _r3, __m512& _r4, __m512& _r5, __m512& _r6, __m512& _r7)
-{
+static inline void transpose16x8_ps(__m512 &_r0, __m512 &_r1, __m512 &_r2,
+                                    __m512 &_r3, __m512 &_r4, __m512 &_r5,
+                                    __m512 &_r6, __m512 &_r7) {
     __m512 _tmp0 = _mm512_unpacklo_ps(_r0, _r1);
     __m512 _tmp1 = _mm512_unpackhi_ps(_r0, _r1);
     __m512 _tmp2 = _mm512_unpacklo_ps(_r2, _r3);
@@ -1054,8 +1065,8 @@ static inline void transpose16x8_ps(__m512& _r0, __m512& _r1, __m512& _r2, __m51
     _r7 = _mm512_shuffle_f32x4(_tmp6, _tmp7, _MM_SHUFFLE(3, 1, 3, 1));
 }
 
-static inline void transpose16x4_ps(__m512& _r0, __m512& _r1, __m512& _r2, __m512& _r3)
-{
+static inline void transpose16x4_ps(__m512 &_r0, __m512 &_r1, __m512 &_r2,
+                                    __m512 &_r3) {
     __m512 _tmp0 = _mm512_unpacklo_ps(_r0, _r1);
     __m512 _tmp1 = _mm512_unpackhi_ps(_r0, _r1);
     __m512 _tmp2 = _mm512_unpacklo_ps(_r2, _r3);
@@ -1077,8 +1088,7 @@ static inline void transpose16x4_ps(__m512& _r0, __m512& _r1, __m512& _r2, __m51
     _r3 = _mm512_shuffle_f32x4(_tmp2, _tmp3, _MM_SHUFFLE(3, 1, 3, 1));
 }
 
-static inline void transpose16x2_ps(__m512& _r0, __m512& _r1)
-{
+static inline void transpose16x2_ps(__m512 &_r0, __m512 &_r1) {
     __m512 _tmp0 = _mm512_unpacklo_ps(_r0, _r1);
     __m512 _tmp1 = _mm512_unpackhi_ps(_r0, _r1);
 
@@ -1089,9 +1099,12 @@ static inline void transpose16x2_ps(__m512& _r0, __m512& _r1)
     _r1 = _mm512_shuffle_f32x4(_tmp2, _tmp3, _MM_SHUFFLE(3, 1, 3, 1));
 }
 
-static inline void transpose8x16_ps(__m256& _r0, __m256& _r1, __m256& _r2, __m256& _r3, __m256& _r4, __m256& _r5, __m256& _r6, __m256& _r7,
-        __m256& _r8, __m256& _r9, __m256& _ra, __m256& _rb, __m256& _rc, __m256& _rd, __m256& _re, __m256& _rf)
-{
+static inline void transpose8x16_ps(__m256 &_r0, __m256 &_r1, __m256 &_r2,
+                                    __m256 &_r3, __m256 &_r4, __m256 &_r5,
+                                    __m256 &_r6, __m256 &_r7, __m256 &_r8,
+                                    __m256 &_r9, __m256 &_ra, __m256 &_rb,
+                                    __m256 &_rc, __m256 &_rd, __m256 &_re,
+                                    __m256 &_rf) {
     __m256 _tmp0 = _mm256_unpacklo_ps(_r0, _r1);
     __m256 _tmp1 = _mm256_unpackhi_ps(_r0, _r1);
     __m256 _tmp2 = _mm256_unpacklo_ps(_r2, _r3);
@@ -1144,9 +1157,11 @@ static inline void transpose8x16_ps(__m256& _r0, __m256& _r1, __m256& _r2, __m25
     _rf = _mm256_permute2f128_ps(_tmpr, _tmpv, _MM_SHUFFLE(0, 3, 0, 1));
 }
 
-static inline void transpose16x16_epi16(__m256i& _r0, __m256i& _r1, __m256i& _r2, __m256i& _r3, __m256i& _r4, __m256i& _r5, __m256i& _r6, __m256i& _r7,
-        __m256i& _r8, __m256i& _r9, __m256i& _ra, __m256i& _rb, __m256i& _rc, __m256i& _rd, __m256i& _re, __m256i& _rf)
-{
+static inline void
+transpose16x16_epi16(__m256i &_r0, __m256i &_r1, __m256i &_r2, __m256i &_r3,
+                     __m256i &_r4, __m256i &_r5, __m256i &_r6, __m256i &_r7,
+                     __m256i &_r8, __m256i &_r9, __m256i &_ra, __m256i &_rb,
+                     __m256i &_rc, __m256i &_rd, __m256i &_re, __m256i &_rf) {
     __m256i _tmp0 = _mm256_unpacklo_epi16(_r0, _r1);
     __m256i _tmp1 = _mm256_unpackhi_epi16(_r0, _r1);
     __m256i _tmp2 = _mm256_unpacklo_epi16(_r2, _r3);
@@ -1216,8 +1231,12 @@ static inline void transpose16x16_epi16(__m256i& _r0, __m256i& _r1, __m256i& _r2
     _rf = _mm256_permute2x128_si256(_tmp7, _tmpf, _MM_SHUFFLE(0, 3, 0, 1));
 }
 
-static inline void transpose8x16_epi16(__m128i& _r0, __m128i& _r1, __m128i& _r2, __m128i& _r3, __m128i& _r4, __m128i& _r5, __m128i& _r6, __m128i& _r7, __m128i& _r8, __m128i& _r9, __m128i& _ra, __m128i& _rb, __m128i& _rc, __m128i& _rd, __m128i& _re, __m128i& _rf)
-{
+static inline void transpose8x16_epi16(__m128i &_r0, __m128i &_r1, __m128i &_r2,
+                                       __m128i &_r3, __m128i &_r4, __m128i &_r5,
+                                       __m128i &_r6, __m128i &_r7, __m128i &_r8,
+                                       __m128i &_r9, __m128i &_ra, __m128i &_rb,
+                                       __m128i &_rc, __m128i &_rd, __m128i &_re,
+                                       __m128i &_rf) {
     __m128i _tmp0 = _mm_unpacklo_epi16(_r0, _r1);
     __m128i _tmp1 = _mm_unpackhi_epi16(_r0, _r1);
     __m128i _tmp2 = _mm_unpacklo_epi16(_r2, _r3);
@@ -1270,26 +1289,27 @@ static inline void transpose8x16_epi16(__m128i& _r0, __m128i& _r1, __m128i& _r2,
     _rf = _mm_unpackhi_epi64(_tmpr, _tmpv);
 }
 
-static inline float _mm512_comp_reduce_add_ps(__m512 x)
-{
-    const __m256 x256 = _mm256_add_ps(_mm512_castps512_ps256(x), _mm512_extractf32x8_ps(x, 1));
-    const __m128 x128 = _mm_add_ps(_mm256_castps256_ps128(x256), _mm256_extractf128_ps(x256, 1));
+static inline float _mm512_comp_reduce_add_ps(__m512 x) {
+    const __m256 x256 =
+        _mm256_add_ps(_mm512_castps512_ps256(x), _mm512_extractf32x8_ps(x, 1));
+    const __m128 x128 = _mm_add_ps(_mm256_castps256_ps128(x256),
+                                   _mm256_extractf128_ps(x256, 1));
     const __m128 x64 = _mm_add_ps(x128, _mm_movehl_ps(x128, x128));
     const __m128 x32 = _mm_add_ss(x64, _mm_shuffle_ps(x64, x64, 0x55));
     return _mm_cvtss_f32(x32);
 }
 
-static inline float _mm512_comp_reduce_max_ps(__m512 x)
-{
-    const __m256 x256 = _mm256_max_ps(_mm512_castps512_ps256(x), _mm512_extractf32x8_ps(x, 1));
-    const __m128 x128 = _mm_max_ps(_mm256_castps256_ps128(x256), _mm256_extractf128_ps(x256, 1));
+static inline float _mm512_comp_reduce_max_ps(__m512 x) {
+    const __m256 x256 =
+        _mm256_max_ps(_mm512_castps512_ps256(x), _mm512_extractf32x8_ps(x, 1));
+    const __m128 x128 = _mm_max_ps(_mm256_castps256_ps128(x256),
+                                   _mm256_extractf128_ps(x256, 1));
     const __m128 x64 = _mm_max_ps(x128, _mm_movehl_ps(x128, x128));
     const __m128 x32 = _mm_max_ss(x64, _mm_shuffle_ps(x64, x64, 0x55));
     return _mm_cvtss_f32(x32);
 }
 
-static inline __m512 bfloat2float_avx512(const __m256i& v0)
-{
+static inline __m512 bfloat2float_avx512(const __m256i &v0) {
 #if __AVX512BF16__
     __m512 _v = _mm512_cvtpbh_ps((__m256bh)v0);
 #else
@@ -1298,13 +1318,13 @@ static inline __m512 bfloat2float_avx512(const __m256i& v0)
     __m256i _b = _mm256_unpackhi_epi16(_zero, v0);
     __m256i _c = _mm256_permute2x128_si256(_a, _b, _MM_SHUFFLE(0, 2, 0, 0));
     __m256i _d = _mm256_permute2x128_si256(_a, _b, _MM_SHUFFLE(0, 3, 0, 1));
-    __m512 _v = _mm512_castsi512_ps(_mm512_inserti32x8(_mm512_castsi256_si512(_c), _d, 1));
+    __m512 _v = _mm512_castsi512_ps(
+        _mm512_inserti32x8(_mm512_castsi256_si512(_c), _d, 1));
 #endif
     return _v;
 }
 
-static inline __m256i float2bfloat_avx512(const __m512& v0)
-{
+static inline __m256i float2bfloat_avx512(const __m512 &v0) {
 #if __AVX512BF16__
     __m256i _v = (__m256i)_mm512_cvtneps_pbh(v0);
 #else
@@ -1318,12 +1338,12 @@ static inline __m256i float2bfloat_avx512(const __m512& v0)
     return _v;
 }
 
-static inline __m512i float2bfloat_avx512(const __m512& v0, const __m512& v1)
-{
+static inline __m512i float2bfloat_avx512(const __m512 &v0, const __m512 &v1) {
 #if __AVX512BF16__
     __m256bh _v0 = _mm512_cvtneps_pbh(v0);
     __m256bh _v1 = _mm512_cvtneps_pbh(v1);
-    __m512i _v = _mm512_inserti32x8(_mm512_castsi256_si512((__m256i)_v0), (__m256i)_v1, 1);
+    __m512i _v = _mm512_inserti32x8(_mm512_castsi256_si512((__m256i)_v0),
+                                    (__m256i)_v1, 1);
 #else
     __m512i _a = _mm512_castps_si512(v0);
     __m512i _b = _mm512_castps_si512(v1);

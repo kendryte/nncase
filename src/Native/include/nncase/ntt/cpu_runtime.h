@@ -12,9 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <cstdarg>
 #include <cstddef>
 #include <cstdint>
-#include <cstdarg>
 
 extern "C" {
 struct nncase_runtime_cpu_mt_t {

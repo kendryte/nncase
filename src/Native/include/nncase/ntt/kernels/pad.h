@@ -51,7 +51,7 @@ void pad_impl(const TIn &input, TOut &&output, const TElem &padValue,
 
 /**
  * @brief pad
- * 
+ *
  * @tparam Paddings   (dim 0 before, after, dim 1 before, after,...)
  * @param input input tensor.
  * @param output output tensor.

@@ -48,8 +48,7 @@ cpu_runtime_module::create_function() noexcept {
     return err(std::errc::not_enough_memory);
 }
 
-result<std::unique_ptr<runtime_module>>
-cpu::create_cpu_runtime_module() {
+result<std::unique_ptr<runtime_module>> cpu::create_cpu_runtime_module() {
     std::unique_ptr<runtime_module> mod(new (std::nothrow)
                                             cpu_runtime_module());
     if (mod)

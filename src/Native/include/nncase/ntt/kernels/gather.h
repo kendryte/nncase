@@ -27,7 +27,6 @@ void gather(const TA &input, const TB &indices, TC &&output) noexcept {
         // in_index[:axis] = out_index[:axis]
         loop<Axis>([&](auto i) { in_index[i] = out_index[i]; });
 
-
         // in_index[axis] = indices(indices_index)
         loop<indices_rank>(
             [&](auto i) { indices_index[i] = out_index[i + Axis]; });

@@ -23,11 +23,12 @@ using namespace nncase::kernels::stackvm;
 
 template <class T>
 static void layernorm_impl(int inner_size, const T *src, const T *scale,
-                           const T *bias, float epsilon, T *dst, bool use_mean) {
+                           const T *bias, float epsilon, T *dst,
+                           bool use_mean) {
     T mean1 = 0;
     if (use_mean) {
-    for (auto i = 0; i < inner_size; i++)
-        mean1 += src[i] / inner_size;
+        for (auto i = 0; i < inner_size; i++)
+            mean1 += src[i] / inner_size;
     }
 
     std::vector<T> sub(inner_size, 0);
@@ -116,6 +117,7 @@ result<void> layer_norm_impl2(const T *input, T *output, const T *scale,
 result<void> nncase::kernels::stackvm::reference::layer_norm(
     typecode_t typecode, const std::byte *input, std::byte *output,
     const std::byte *scale, const std::byte *bias,
-    std::span<const size_t> in_shape, int32_t axis, float epsilon, bool use_mean) {
+    std::span<const size_t> in_shape, int32_t axis, float epsilon,
+    bool use_mean) {
     TYPE_SELECT_LAYER_NORM(typecode, LAYER_NORM_IMPL);
 }

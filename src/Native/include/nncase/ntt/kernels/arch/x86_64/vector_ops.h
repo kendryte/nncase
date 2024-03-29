@@ -18,7 +18,7 @@
 namespace nncase::ntt::vector_ops {
 template <> struct reduce_sum<ntt::vector<float, 4>> {
     float operator()(ntt::vector<float, 4> v) const noexcept {
-        auto res0 = _mm_hadd_ps(v, v);       // a,b,c,d -> (a+b, c+d, a+b, c+d)
+        auto res0 = _mm_hadd_ps(v, v);  // a,b,c,d -> (a+b, c+d, a+b, c+d)
         res0 = _mm_hadd_ps(res0, res0); // (a+b, c+d, a+b, c+d)
         return _mm_cvtss_f32(res0);
     }
@@ -28,7 +28,7 @@ template <> struct reduce_max<ntt::vector<float, 4>> {
     float operator()(ntt::vector<float, 4> v) const noexcept {
         __m128 h = _mm_unpackhi_ps(v, v); // c,d,c,d
         __m128 l = _mm_unpacklo_ps(v, v); // a,b,a,b
-        auto r = _mm_max_ps(l, h);             // max(a,c),max(b,d), ...
+        auto r = _mm_max_ps(l, h);        // max(a,c),max(b,d), ...
         return std::max(r[0], r[1]);
     }
 };

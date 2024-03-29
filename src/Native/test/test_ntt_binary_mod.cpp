@@ -12,19 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "ntt_test.h"
 #include <gtest/gtest.h>
 #include <iostream>
-#include <ortki/operators.h>
 #include <nncase/ntt/ntt.h>
+#include <ortki/operators.h>
 #include <string_view>
-#include "ntt_test.h"
-
 
 using namespace nncase;
 using namespace ortki;
 
-TEST(BinaryTestModFloat, fixed_fixed_fixed)
-{
+TEST(BinaryTestModFloat, fixed_fixed_fixed) {
     // init
     using tensor_type = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
     std::unique_ptr<tensor_type> ntt_lhs(new tensor_type);
@@ -47,8 +45,7 @@ TEST(BinaryTestModFloat, fixed_fixed_fixed)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestModFloat, fixed_fixed_fixed_broadcast_lhs_scalar)
-{
+TEST(BinaryTestModFloat, fixed_fixed_fixed_broadcast_lhs_scalar) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<1>>;
     std::unique_ptr<tensor_type1> ntt_rhs(new tensor_type1);
@@ -73,8 +70,7 @@ TEST(BinaryTestModFloat, fixed_fixed_fixed_broadcast_lhs_scalar)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestModFloat, fixed_fixed_fixed_broadcast_rhs_scalar)
-{
+TEST(BinaryTestModFloat, fixed_fixed_fixed_broadcast_rhs_scalar) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
@@ -99,9 +95,7 @@ TEST(BinaryTestModFloat, fixed_fixed_fixed_broadcast_rhs_scalar)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-
-TEST(BinaryTestModFloat, fixed_fixed_fixed_broadcast_lhs_vector)
-{
+TEST(BinaryTestModFloat, fixed_fixed_fixed_broadcast_lhs_vector) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<16>>;
     std::unique_ptr<tensor_type1> ntt_rhs(new tensor_type1);
@@ -126,8 +120,7 @@ TEST(BinaryTestModFloat, fixed_fixed_fixed_broadcast_lhs_vector)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestModFloat, fixed_fixed_fixed_broadcast_rhs_vector)
-{
+TEST(BinaryTestModFloat, fixed_fixed_fixed_broadcast_rhs_vector) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
@@ -152,8 +145,7 @@ TEST(BinaryTestModFloat, fixed_fixed_fixed_broadcast_rhs_vector)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestModFloat, fixed_fixed_fixed_broadcast_multidirectional)
-{
+TEST(BinaryTestModFloat, fixed_fixed_fixed_broadcast_multidirectional) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<1, 3, 1, 16>>;
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
@@ -179,9 +171,7 @@ TEST(BinaryTestModFloat, fixed_fixed_fixed_broadcast_multidirectional)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-
-TEST(BinaryTestModFloat, fixed_ranked_ranked)
-{
+TEST(BinaryTestModFloat, fixed_ranked_ranked) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
@@ -207,8 +197,7 @@ TEST(BinaryTestModFloat, fixed_ranked_ranked)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestModFloat, fixed_ranked_ranked_broadcast_lhs_scalar)
-{
+TEST(BinaryTestModFloat, fixed_ranked_ranked_broadcast_lhs_scalar) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<1>>;
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
@@ -234,8 +223,7 @@ TEST(BinaryTestModFloat, fixed_ranked_ranked_broadcast_lhs_scalar)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestModFloat, fixed_ranked_ranked_broadcast_rhs_scalar)
-{
+TEST(BinaryTestModFloat, fixed_ranked_ranked_broadcast_rhs_scalar) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
@@ -263,8 +251,7 @@ TEST(BinaryTestModFloat, fixed_ranked_ranked_broadcast_rhs_scalar)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestModFloat, fixed_ranked_ranked_broadcast_lhs_vector)
-{
+TEST(BinaryTestModFloat, fixed_ranked_ranked_broadcast_lhs_vector) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<16>>;
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
@@ -290,8 +277,7 @@ TEST(BinaryTestModFloat, fixed_ranked_ranked_broadcast_lhs_vector)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestModFloat, fixed_ranked_ranked_broadcast_rhs_vector)
-{
+TEST(BinaryTestModFloat, fixed_ranked_ranked_broadcast_rhs_vector) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
@@ -319,8 +305,7 @@ TEST(BinaryTestModFloat, fixed_ranked_ranked_broadcast_rhs_vector)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestModFloat, fixed_ranked_ranked_broadcast_multidirectional)
-{
+TEST(BinaryTestModFloat, fixed_ranked_ranked_broadcast_multidirectional) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<1, 3, 1, 16>>;
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
@@ -348,8 +333,7 @@ TEST(BinaryTestModFloat, fixed_ranked_ranked_broadcast_multidirectional)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestModFloat, ranked_fixed_ranked)
-{
+TEST(BinaryTestModFloat, ranked_fixed_ranked) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<4>>;
     auto shape = ntt::make_ranked_shape(1, 3, 16, 16);
@@ -375,8 +359,7 @@ TEST(BinaryTestModFloat, ranked_fixed_ranked)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestModFloat, ranked_fixed_ranked_broadcast_lhs_scalar)
-{
+TEST(BinaryTestModFloat, ranked_fixed_ranked_broadcast_lhs_scalar) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<1>>;
     auto shape1 = ntt::make_ranked_shape(1);
@@ -404,8 +387,7 @@ TEST(BinaryTestModFloat, ranked_fixed_ranked_broadcast_lhs_scalar)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestModFloat, ranked_fixed_ranked_broadcast_rhs_scalar)
-{
+TEST(BinaryTestModFloat, ranked_fixed_ranked_broadcast_rhs_scalar) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<4>>;
     auto shape1 = ntt::make_ranked_shape(1, 3, 16, 16);
@@ -433,8 +415,7 @@ TEST(BinaryTestModFloat, ranked_fixed_ranked_broadcast_rhs_scalar)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestModFloat, ranked_fixed_ranked_broadcast_lhs_vector)
-{
+TEST(BinaryTestModFloat, ranked_fixed_ranked_broadcast_lhs_vector) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<1>>;
     auto shape1 = ntt::make_ranked_shape(16);
@@ -462,8 +443,7 @@ TEST(BinaryTestModFloat, ranked_fixed_ranked_broadcast_lhs_vector)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestModFloat, ranked_fixed_ranked_broadcast_rhs_vector)
-{
+TEST(BinaryTestModFloat, ranked_fixed_ranked_broadcast_rhs_vector) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<4>>;
     auto shape1 = ntt::make_ranked_shape(1, 3, 16, 16);
@@ -491,8 +471,7 @@ TEST(BinaryTestModFloat, ranked_fixed_ranked_broadcast_rhs_vector)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestModFloat, ranked_fixed_ranked_broadcast_multidirectional)
-{
+TEST(BinaryTestModFloat, ranked_fixed_ranked_broadcast_multidirectional) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<4>>;
     auto shape1 = ntt::make_ranked_shape(1, 3, 1, 16);
@@ -520,9 +499,7 @@ TEST(BinaryTestModFloat, ranked_fixed_ranked_broadcast_multidirectional)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-
-TEST(BinaryTestModFloat, ranked_ranked_ranked)
-{
+TEST(BinaryTestModFloat, ranked_ranked_ranked) {
     // init
     using tensor_type = ntt::tensor<float, ntt::ranked_shape<4>>;
     auto shape = ntt::make_ranked_shape(1, 3, 16, 16);
@@ -547,8 +524,7 @@ TEST(BinaryTestModFloat, ranked_ranked_ranked)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestModFloat, ranked_ranked_ranked_broadcast_lhs_scalar)
-{
+TEST(BinaryTestModFloat, ranked_ranked_ranked_broadcast_lhs_scalar) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<1>>;
     auto shape1 = ntt::make_ranked_shape(1);
@@ -575,8 +551,7 @@ TEST(BinaryTestModFloat, ranked_ranked_ranked_broadcast_lhs_scalar)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestModFloat, ranked_ranked_ranked_broadcast_rhs_scalar)
-{
+TEST(BinaryTestModFloat, ranked_ranked_ranked_broadcast_rhs_scalar) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<4>>;
     auto shape1 = ntt::make_ranked_shape(1, 3, 16, 16);
@@ -603,8 +578,7 @@ TEST(BinaryTestModFloat, ranked_ranked_ranked_broadcast_rhs_scalar)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestModFloat, ranked_ranked_ranked_broadcast_lhs_vector)
-{
+TEST(BinaryTestModFloat, ranked_ranked_ranked_broadcast_lhs_vector) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<1>>;
     auto shape1 = ntt::make_ranked_shape(16);
@@ -631,8 +605,7 @@ TEST(BinaryTestModFloat, ranked_ranked_ranked_broadcast_lhs_vector)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestModFloat, ranked_ranked_ranked_broadcast_rhs_vector)
-{
+TEST(BinaryTestModFloat, ranked_ranked_ranked_broadcast_rhs_vector) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<4>>;
     auto shape1 = ntt::make_ranked_shape(1, 3, 16, 16);
@@ -659,8 +632,7 @@ TEST(BinaryTestModFloat, ranked_ranked_ranked_broadcast_rhs_vector)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestModFloat, ranked_ranked_ranked_broadcast_multidirectional)
-{
+TEST(BinaryTestModFloat, ranked_ranked_ranked_broadcast_multidirectional) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<4>>;
     auto shape1 = ntt::make_ranked_shape(1, 3, 1, 16);
@@ -689,9 +661,7 @@ TEST(BinaryTestModFloat, ranked_ranked_ranked_broadcast_multidirectional)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-
-TEST(BinaryTestModInt32, fixed_fixed_fixed)
-{
+TEST(BinaryTestModInt32, fixed_fixed_fixed) {
     // init
     using tensor_type = ntt::tensor<int32_t, ntt::fixed_shape<1, 3, 16, 16>>;
     std::unique_ptr<tensor_type> ntt_lhs(new tensor_type);
@@ -714,8 +684,7 @@ TEST(BinaryTestModInt32, fixed_fixed_fixed)
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
