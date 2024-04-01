@@ -35,26 +35,31 @@ public static class Tensors
         }
         else
         {
-            throw new InvalidOperationException();
+            return input;
         }
 
         return Transpose(input, perm);
     }
 
-    public static Expr NCHWToNHWC(Expr input)
+    public static Expr NCHWToNHWC(Expr input, int rank = 0)
     {
+        if (rank == 0)
+        {
+            rank = input.CheckedShape.Rank;
+        }
+
         int[] perm;
-        if (input.CheckedShape.Rank == 4)
+        if (rank == 4)
         {
             perm = new[] { 0, 2, 3, 1 };
         }
-        else if (input.CheckedShape.Rank == 3)
+        else if (rank == 3)
         {
             perm = new[] { 0, 2, 1 };
         }
         else
         {
-            throw new InvalidOperationException();
+            return input;
         }
 
         return Transpose(input, perm);
@@ -188,18 +193,34 @@ public static class Tensors
 
     public static Call Trilu(Expr input, Expr k, Expr upper) => new Call(new Trilu(), input, k, upper);
 
-    public static Call PaddingNHWCToNCHW(Expr paddings)
+    public static Expr PaddingNHWCToNCHW(Expr paddings, int rank)
     {
-        var strides = new int[1] { 1 };
-        var newPaddings = Concat(
-                        new IR.Tuple(new[]
-                        {
-                            Slice(paddings, new int[] { 0 }, new int[] { 1 }, new int[] { 0 }, strides),
-                            Slice(paddings, new int[] { 3 }, new int[] { 4 }, new int[] { 0 }, strides),
-                            Slice(paddings, new int[] { 1 }, new int[] { 2 }, new int[] { 0 }, strides),
-                            Slice(paddings, new int[] { 2 }, new int[] { 3 }, new int[] { 0 }, strides),
-                        }),
-                        0);
-        return newPaddings;
+        switch (rank)
+        {
+            case 1:
+            case 2:
+                return paddings;
+            case 3:
+                return Concat(
+                            new IR.Tuple(
+                                        new[] {
+                                            Slice(paddings, new int[] { 0 }, new int[] { 1 }, new int[] { 0 }, new int[] { 1 }),
+                                            Slice(paddings, new int[] { 2 }, new int[] { 3 }, new int[] { 0 }, new int[] { 1 }),
+                                            Slice(paddings, new int[] { 1 }, new int[] { 2 }, new int[] { 0 }, new int[] { 1 }),
+                                        }),
+                            0);
+            case 4:
+                return Concat(
+                            new IR.Tuple(
+                                        new[] {
+                                            Slice(paddings, new int[] { 0 }, new int[] { 1 }, new int[] { 0 }, new int[] { 1 }),
+                                            Slice(paddings, new int[] { 3 }, new int[] { 4 }, new int[] { 0 }, new int[] { 1 }),
+                                            Slice(paddings, new int[] { 1 }, new int[] { 2 }, new int[] { 0 }, new int[] { 1 }),
+                                            Slice(paddings, new int[] { 2 }, new int[] { 3 }, new int[] { 0 }, new int[] { 1 }),
+                                        }),
+                            0);
+            default:
+                return paddings;
+        }
     }
 }
