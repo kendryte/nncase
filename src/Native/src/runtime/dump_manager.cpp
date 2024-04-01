@@ -81,8 +81,7 @@ void dump_output_impl(dump_manager &dump_manager_, nncase::value_t value,
         dump_data(stream, IN_CAST(_in_type, data), value_tensor);              \
         return;                                                                \
     }
-
-    dump(
+    dump_by_path(
         dump_manager_, value,
         [incr, &dump_manager_](auto &stream, auto &&value_tensor) {
             auto *data = force_get_data(value_tensor);
@@ -98,9 +97,6 @@ void dump_output_impl(dump_manager &dump_manager_, nncase::value_t value,
                 dump_data(stream, IN_CAST(nncase::half, data), value_tensor);
                 return;
             }
-            //            std::cout << "unsupported type:"
-            //                      << (int)value_tensor->dtype()->typecode() <<
-            //                      std::endl;
         },
         path);
     if (incr) {

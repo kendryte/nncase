@@ -11,18 +11,20 @@ using Nncase.CostModel;
 using Nncase.Diagnostics;
 using Nncase.IR;
 
-namespace Nncase.Passes.EGraphExtractors;
+namespace Nncase.Passes;
 
-internal class SatExtractor : IExtractor
+public delegate void EGraphExtractConstrains(CpModel model, IReadOnlyDictionary<ENode, BoolVar> vars);
+
+internal class EGraphExtractor
 {
     private readonly EGraphCostModel _costModel;
 
-    public SatExtractor(EGraphCostModel costModel)
+    public EGraphExtractor(EGraphCostModel costModel)
     {
         _costModel = costModel;
     }
 
-    public Expr Extract(EClass root, IEGraph eGraph, out IReadOnlyDictionary<ENode, bool> picks)
+    public Expr Extract(EClass root, IEGraph eGraph, EGraphExtractConstrains[] constrains)
     {
         var cpmodel = new CpModel();
 
@@ -68,6 +70,11 @@ internal class SatExtractor : IExtractor
             EliminateAllCycles(root, new(), new(), visited, cpmodel, vars);
         }
 
+        foreach (var constrain in constrains)
+        {
+            constrain(cpmodel, vars);
+        }
+
         // 3. add pick weights for all enode.
         cpmodel.Minimize(LinearExpr.WeightedSum(eGraph.Nodes.Select(n => vars[n]), eGraph.Nodes.Select(n => checked((long)_costModel[n].Score))));
 
@@ -91,6 +98,18 @@ internal class SatExtractor : IExtractor
         }
 
         int processorCount = Math.Max(System.Environment.ProcessorCount / 2, 1);
+        if (System.Environment.GetEnvironmentVariable("SOLVE_PROCESSOR_COUNT") is string s_solve_processor_count)
+        {
+            try
+            {
+                var solve_processor_count = int.Parse(s_solve_processor_count);
+                processorCount = solve_processor_count;
+            }
+            catch (System.Exception)
+            {
+            }
+        }
+
         solver.StringParameters = $"max_time_in_seconds:{max_time},num_workers:{processorCount}";
 
         var enableDump = DumpScope.Current.IsEnabled(DumpFlags.EGraphCost);
@@ -109,7 +128,7 @@ internal class SatExtractor : IExtractor
             throw new InvalidProgramException("SatExtract Failed!");
         }
 
-        picks = eGraph.Nodes.ToDictionary(e => e, e => solver.BooleanValue(vars[e]));
+        var picks = eGraph.Nodes.ToDictionary(e => e, e => solver.BooleanValue(vars[e]));
         using (var dumpStream = enableDump ? DumpScope.Current.OpenFile("Costs/Pick.dot") : Stream.Null)
         {
             EGraphPrinter.DumpEgraphAsDot(eGraph, _costModel, picks, root.Find(), dumpStream);

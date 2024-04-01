@@ -146,6 +146,7 @@ public class RecordFusionShape : FunctionPass
                 var memo = EvaluatorUtil.GetMemo(body, ConcatDictionary(input, varValues));
                 var f = new FusionShapeUpdater(ConcatDictionary(memo, exprValues));
                 f.Visit(main);
+                GC.Collect();
                 return f.FusionShape;
             }).SelectMany(x => x)
             .ToLookup(x => x.Key, x => x.Value)

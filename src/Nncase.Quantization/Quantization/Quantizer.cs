@@ -560,7 +560,7 @@ internal partial class Quantizer
 
         _graph.Rebuild();
 
-        var expr = _graph.Extract(_graph.Root!, null, out _);
+        var expr = _graph.Extract(_graph.Root!, null, Array.Empty<EGraphExtractConstrains>());
 
         ExprCollector.Collect(expr).OfType<Call>().Where(call => call.Target is QuantizeOp).ToList().ForEach(fakeCall => _fakeNodesVars![(Var)fakeCall.Arguments[^1]] = fakeCall);
 
