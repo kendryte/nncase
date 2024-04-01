@@ -211,11 +211,16 @@ internal partial class Quantizer
         int debugFakeNode = 0;
         foreach (var (config, _) in sensitivity)
         {
-            _fakeNodeConfigs![config.Var] = config.QuantConfig;
-            sampleFillVarWithConst[config.Var] = Value.FromTensor(config.QuantConfig.ToRaw());
             var curentResults = CompilerServices.Evaluate(((Function)_expr).Body, sampleFillVarWithConst);
             var currentResult = curentResults is TensorValue ? curentResults.AsTensor() : curentResults[outDefault].AsTensor();
             var cosine = Utility.GetCosineSimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(currentResult.BytesBuffer));
+            if (cosine > _quantizeOptions.CosineTarget)
+            {
+                return;
+            }
+
+            _fakeNodeConfigs![config.Var] = config.QuantConfig;
+            sampleFillVarWithConst[config.Var] = Value.FromTensor(config.QuantConfig.ToRaw());
 
             Console.ResetColor();
             Console.Write($"try opt: nodes:{sensitivity.Count} current:{++debugFakeNode} targetCosine:");
@@ -226,11 +231,6 @@ internal partial class Quantizer
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"{cosine}");
             Console.ResetColor();
-
-            if (cosine > _quantizeOptions.CosineTarget)
-            {
-                return;
-            }
         }
     }
 
