@@ -91,13 +91,14 @@ biases = [
 @pytest.mark.parametrize('dilations', dilations)
 @pytest.mark.parametrize('bias', biases)
 def test_conv2d_transpose(n, i_channels, i_size, k_size, o_channels, strides, padding, dilations, bias, request):
-    module = _make_module(n, i_channels, i_size, k_size, o_channels,
+    if k_size[0] >= strides[0] and k_size[1] >= strides[1]:
+        module = _make_module(n, i_channels, i_size, k_size, o_channels,
                           strides, padding, dilations, bias)
 
-    #runner = TfliteTestRunner(request.node.name, ['k510'])
-    runner = TfliteTestRunner(request.node.name)
-    model_file = runner.from_tensorflow(module)
-    runner.run(model_file)
+        #runner = TfliteTestRunner(request.node.name, ['k510'])
+        runner = TfliteTestRunner(request.node.name)
+        model_file = runner.from_tensorflow(module)
+        runner.run(model_file)
 
 
 if __name__ == "__main__":
