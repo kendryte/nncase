@@ -47,6 +47,7 @@ public partial class LowerReduction : RewriteRule<Pattern>
             return null;
         }
 
+        // Support other reduction ops combined with several ops.
         var otherOpType = GetOpT();
         var reductionType = otherOpType == -1
             ? reduce.ReduceOp switch
@@ -56,34 +57,53 @@ public partial class LowerReduction : RewriteRule<Pattern>
                 ReduceOp.Max => 4,
                 ReduceOp.Min => 5,
                 ReduceOp.Prod => 6,
-                _ => throw new NotImplementedException($"{reduce.ReduceOp} not support in ncnn!"),
+                _ => -1,
             }
             : otherOpType;
+        if (reductionType == -1)
+        {
+            return null;
+        }
 
         var newAxis = axis;
-        if (axis.Length == input.CheckedShape.Rank)
-        {
-            // 排除batch维度
-            newAxis = newAxis.Remove(0);
-            newAxis = newAxis.Remove(-input.CheckedShape.Rank);
-        }
 
-        for (int i = 0; i < newAxis.Length; i++)
+        var newInput = input;
+        var newInputVar = new Var(newInput.CheckedType);
+        if (input.CheckedShape.Rank == 4)
         {
-            if (newAxis[i] == 0 || newAxis[i] > 4 || newAxis[i] < -3)
+            if (axis.Length == input.CheckedShape.Rank)
             {
-                return null;
+                // 排除batch维度
+                newAxis = newAxis.Remove(0);
+                newAxis = newAxis.Remove(-input.CheckedShape.Rank);
             }
 
-            newAxis[i] = newAxis[i] > 0 ? newAxis[i] - 1 : newAxis[i];
+            for (int i = 0; i < newAxis.Length; i++)
+            {
+                if (newAxis[i] == 0 || newAxis[i] > 4 || newAxis[i] < -3)
+                {
+                    return null;
+                }
+
+                newAxis[i] = newAxis[i] > 0 ? newAxis[i] - 1 : newAxis[i];
+            }
+
+            newInput = Squeeze(input, new[] { 0 });
+            newInputVar = new Var(newInput.CheckedType);
         }
 
-        var inRes = Squeeze(input, new[] { 0 });
-        var inResO = new Var(inRes.CheckedType);
-        var args = new ReductionArgs(reductionType, newAxis.Length == inRes.CheckedShape.Rank ? 1 : 0, 0, newAxis, keepDims ? 1 : 0);
+        var args = new ReductionArgs(reductionType, newAxis.Length == newInput.CheckedShape.Rank ? 1 : 0, 0, newAxis, keepDims ? 1 : 0);
 
-        var pool = new Call(new Fusion("ncnn", NcnnReduction(inResO, args), new[] { inResO }), inRes);
-        return Unsqueeze(pool, new[] { 0 });
+        var pool = new Call(new Fusion("ncnn", NcnnReduction(newInputVar, args), new[] { newInputVar }), newInput);
+
+        if (input.CheckedShape.Rank == 4)
+        {
+            return Unsqueeze(pool, new[] { 0 });
+        }
+        else
+        {
+            return pool;
+        }
     }
 }
 

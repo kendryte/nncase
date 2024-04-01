@@ -28,17 +28,29 @@ public partial class LowerSigmoid : RewriteRule<Pattern>
 
     private Expr? GetReplace(Expr input)
     {
-        if (input.CheckedShape.Count > 3)
+        if (input.CheckedShape.Rank > 4 || (input.CheckedShape.Rank == 4 && input.CheckedShape[0].FixedValue != 1))
         {
-            var inRes = Squeeze(input, new[] { 0 });
-            var inResO = new Var(inRes.CheckedType);
-
-            var sigmoid = new Call(new Fusion("ncnn", NcnnSigmoid(inResO), new[] { inResO }), inRes);
-            return Unsqueeze(sigmoid, new[] { 0 });
+            return null;
         }
 
-        // if input has shape [1]
-        var newInput = new Var(input.CheckedType);
-        return new Call(new Fusion("ncnn", NcnnSigmoid(newInput), new[] { newInput }), input);
+        var newInput = input;
+        var newInputVar = new Var(newInput.CheckedType);
+
+        if (input.CheckedShape.Count == 4 && input.CheckedShape[0].FixedValue == 1)
+        {
+            newInput = Squeeze(input, new[] { 0 });
+            newInputVar = new Var(newInput.CheckedType);
+        }
+
+        var sigmoid = new Call(new Fusion("ncnn", NcnnSigmoid(newInputVar), new[] { newInputVar }), newInput);
+
+        if (input.CheckedShape.Count == 4 && input.CheckedShape[0].FixedValue == 1)
+        {
+            return Unsqueeze(sigmoid, new int[] { 0 });
+        }
+        else
+        {
+            return sigmoid;
+        }
     }
 }
