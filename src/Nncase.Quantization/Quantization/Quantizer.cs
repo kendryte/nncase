@@ -127,7 +127,7 @@ internal partial class Quantizer
                 bool fallbackToCPU = false;
                 for (int argIdx = 0; argIdx < ((Call)fakeNode).Arguments.Length; argIdx++)
                 {
-                    var inputName = (((Call)fakeNode).Arguments[argIdx].Metadata.OutputNames?[0] ?? $"fakeNode_{nodeCounter}_input_{argIdx}") + $"_id_{(nodeCounter * parameters.Length) + argIdx}";
+                    var inputName = (fakeNode.Metadata.OutputNames?[0] ?? $"fakeNode_{nodeCounter}") + $"_input_{argIdx}";
                     var inputInfo = quantScheme.GetInfoByName(inputName);
                     if (inputInfo == null)
                     {
@@ -158,7 +158,7 @@ internal partial class Quantizer
                 for (int outIdx = 0; outIdx < maxOutNum; outIdx++)
                 {
                     outCounter++;
-                    var outputName = ((Call)fakeNode).Metadata.OutputNames?[0] ?? $"fakeNode_{nodeCounter}_output_{outIdx}";
+                    var outputName = (fakeNode.Metadata.OutputNames?[0] ?? $"fakeNode_{nodeCounter}") + $"_output_{outIdx}";
                     var inputInfo = quantScheme.GetInfoByName(outputName);
                     if (inputInfo == null)
                     {
@@ -490,7 +490,7 @@ internal partial class Quantizer
                 var output = new Output
                 {
                     // 这里之所以再加一个ID，是因为同一个OP有可能会作为多个OP的输入，并且量化方式不一定一致，因此这里加ID以便区分。
-                    Name = (((Call)fakeNode).Arguments[iPara].Metadata.OutputNames?[0] ?? $"fakeNode_{nodeCounter}_input_{iPara}") + $"_id_{(nodeCounter * parameters.Length) + iPara}",
+                    Name = (fakeNode.Metadata.OutputNames?[0] ?? $"fakeNode_{nodeCounter}") + $"_input_{iPara}",
                     DataType = quantConfig.GetInputQuantType(parameters[iPara]).ToString(),
                     DataRangeMode = parameters[iPara].ParameterKind == ParameterKind.Weights ? "by_channel" : "by_tensor",
                     DataRange = dataRange.ToArray(),
@@ -511,7 +511,7 @@ internal partial class Quantizer
 
                 var output = new Output
                 {
-                    Name = ((Call)fakeNode).Metadata.OutputNames?[iPara] ?? $"fakeNode_{nodeCounter}_output_{iPara}",
+                    Name = (fakeNode.Metadata.OutputNames?[iPara] ?? $"fakeNode_{nodeCounter}") + $"_output_{iPara}",
                     DataType = quantConfig.GetOutputQuantType(iPara).ToString(),
                     DataRangeMode = "by_tensor",
                     DataRange = dataRange.ToArray(),
@@ -543,7 +543,7 @@ internal partial class Quantizer
         {
             var parameters = ((Call)node.Expr).Arguments.ToArray();
             parameters[^1] = new Var("placeholder", new TensorType(DataTypes.Float32, Shape.Unknown(1)));
-            var newCall = ((Call)node.Expr).With(arguments: parameters);
+            var newCall = ((Call)node.Expr).With(arguments: parameters, metadata: ((Call)node.Expr).Metadata);
             var newEnode = ENode.Create(newCall, Array.Empty<EClass>());
             _fakeNodeConfigs?.Add((Var)parameters[^1], default!); // config detail info will be update later.
             return new Tuple<ENode, ENode>(node, newEnode);
