@@ -391,8 +391,8 @@ internal partial class Quantizer
                 var quantConfig = QuantConfig.FromRaw(quantInfo);
 
                 sampleFillVarWithQuant[var] = Value.FromTensor(quantConfig.ToRaw());
-                var curentResults = CompilerServices.Evaluate(((Function)_expr).Body, sampleFillVarWithQuant);
-                var currentResult = curentResults is TensorValue ? curentResults.AsTensor() : curentResults[outDefault].AsTensor();
+                var currentResults = CompilerServices.Evaluate(((Function)_expr).Body, sampleFillVarWithQuant);
+                var currentResult = currentResults is TensorValue ? currentResults.AsTensor() : currentResults[outDefault].AsTensor();
                 var cosine = Utility.GetCosineSimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(currentResult.BytesBuffer));
 
                 sensitivities[(var, quantConfig)] = cosine;
