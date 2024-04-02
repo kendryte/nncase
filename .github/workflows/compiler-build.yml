@@ -259,7 +259,7 @@ jobs:
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_basic.xml pytest tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/tflite_basic.xml
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_combine.xml pytest tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/tflite_combine.xml
           #dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_model.xml pytest tests/importer/tflite_/model/ --doctest-modules --junitxml=test_results/tflite_model.xml
-          #dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/ncnn_basic.xml pytest tests/importer/ncnn_/basic/ --doctest-modules --junitxml=test_results/ncnn_basic.xml
+          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/ncnn_basic.xml pytest tests/importer/ncnn_/basic/ --doctest-modules --junitxml=test_results/ncnn_basic.xml
           dotnet-coverage merge -o coverage.integration.xml -f cobertura -r coverage/*.xml
 
       - name: Upload Coverage

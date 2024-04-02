@@ -4,7 +4,7 @@ torchvision==0.17.1
 onnx==1.15.0
 onnx-simplifier==0.4.36
 onnxruntime==1.17.1
-ncnn==1.0.20230816
+ncnn==1.0.20240102
 toml==0.10.2
 numpy
 imageio
