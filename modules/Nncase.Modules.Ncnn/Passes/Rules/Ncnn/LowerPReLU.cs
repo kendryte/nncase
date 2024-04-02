@@ -31,7 +31,7 @@ public partial class LowerPReLU : RewriteRule<Pattern>
     private Expr? GetReplace(Expr input, Tensor<float> slope)
     {
         // TODO: split input
-        if (input.CheckedShape.ToList()[0] != 1)
+        if (input.CheckedShape.ToList()[0] != 1 || input.CheckedShape.Rank > 4)
         {
             return null;
         }
@@ -39,7 +39,7 @@ public partial class LowerPReLU : RewriteRule<Pattern>
         var inRes = Squeeze(input, new[] { 0 });
         var inResO = new Var(inRes.CheckedType);
 
-        var pReLU = new Call(new Fusion("ncnn", NcnnPReLU(inResO, slope.ToArray()), new[] { inResO }), input);
+        var pReLU = new Call(new Fusion("ncnn", NcnnPReLU(inResO, slope.ToArray()), new[] { inResO }), inRes);
         return Unsqueeze(pReLU, new[] { 0 });
     }
 }

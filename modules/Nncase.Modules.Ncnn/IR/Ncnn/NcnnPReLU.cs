@@ -30,6 +30,6 @@ public sealed partial class NcnnPReLU : Op
     /// <inheritdoc/>
     public override string DisplayProperty()
     {
-        return $"";
+        return $"{string.Join(", ", Slope)}";
     }
 }
