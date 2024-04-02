@@ -93,7 +93,7 @@ biases = [
 def test_conv2d_transpose(n, i_channels, i_size, k_size, o_channels, strides, padding, dilations, bias, request):
     if k_size[0] >= strides[0] and k_size[1] >= strides[1]:
         module = _make_module(n, i_channels, i_size, k_size, o_channels,
-                          strides, padding, dilations, bias)
+                              strides, padding, dilations, bias)
 
         #runner = TfliteTestRunner(request.node.name, ['k510'])
         runner = TfliteTestRunner(request.node.name)
