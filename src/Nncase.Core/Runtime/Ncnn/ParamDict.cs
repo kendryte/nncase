@@ -191,6 +191,6 @@ public class ParamDict
             }
         }
 
-        writer.Write('\n');
+        writer.Write(' ');
     }
 }

@@ -434,11 +434,11 @@ internal class NcnnEmitter
         {
             if (lOrR == 1)
             {
-                inputList[0] = name + "_memorydata";
+                inputList[0] = name[0] + "_memorydata";
             }
             else
             {
-                inputList[1] = name + "_memorydata";
+                inputList[1] = name[0] + "_memorydata";
             }
 
             var paramDict = new ParamDict();
@@ -456,7 +456,7 @@ internal class NcnnEmitter
                 paramDict[index] = new ParamValue { Kind = ParamKind.Int, IntValue = constShape[constShape.Length - 1 - i] };
             }
 
-            AddLayer("MemoryData", name + "_memorydata", Array.Empty<string>(), new[] { name + "_memorydata" }, paramDict);
+            AddLayer("MemoryData", name[0] + "_memorydata", Array.Empty<string>(), new[] { name[0] + "_memorydata" }, paramDict);
 
             WriteFloatArray(constInput);
         }
