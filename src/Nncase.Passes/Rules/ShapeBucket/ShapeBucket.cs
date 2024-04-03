@@ -15,7 +15,6 @@ using DryIoc;
 using DryIoc.ImTools;
 using GiGraph.Dot.Types.Geometry;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
 using Nncase.CodeGen;
 using Nncase.Diagnostics;

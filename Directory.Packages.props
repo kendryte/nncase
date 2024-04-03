@@ -12,13 +12,12 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Avalonia" Version="11.0.2"/>
-    <PackageVersion Include="Avalonia.Desktop" Version="11.0.2"/>
-    <PackageVersion Include="Avalonia.Themes.Fluent" Version="11.0.2"/>
-    <PackageVersion Include="Avalonia.Fonts.Inter" Version="11.0.2"/>
-    <PackageVersion Include="Avalonia.ReactiveUI" Version="11.0.2"/>
+    <PackageVersion Include="Avalonia" Version="11.0.2" />
+    <PackageVersion Include="Avalonia.Desktop" Version="11.0.2" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="11.0.2" />
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="11.0.2" />
+    <PackageVersion Include="Avalonia.ReactiveUI" Version="11.0.2" />
     <PackageVersion Include="MessageBox.Avalonia" Version="3.1.2" />
-
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.2.1" />
     <PackageVersion Include="Google.OrTools" Version="9.4.1874" />
     <PackageVersion Include="AnyTensorFlow.NET" Version="0.70.1" />
@@ -43,16 +42,16 @@
     <PackageVersion Include="MethodDecorator.Fody">
       <Version>1.1.1</Version>
     </PackageVersion>
-    <PackageVersion Include="Microsoft.AspNetCore.Components" Version="7.0.14" />
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Razor.Extensions" Version="6.0.25" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.0.1" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
-    <PackageVersion Include="Microsoft.Extensions.Options" Version="7.0.1" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
-    <PackageVersion Include="Microsoft.Toolkit.HighPerformance" Version="7.1.1" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components" Version="7.0.17" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Razor.Extensions" Version="6.0.28" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="8.0.2" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+    <PackageVersion Include="CommunityToolkit.HighPerformance" Version="8.2.2" />
     <PackageVersion Include="NetFabric.Hyperlinq" Version="3.0.0-beta48" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageVersion Include="Nncase.FlatBuffers" Version="2.0.0" />
@@ -65,7 +64,7 @@
     <PackageVersion Include="System.CommandLine.Hosting" Version="0.4.0-alpha.22272.1" />
     <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
-    <PackageVersion Include="System.Reactive" Version="5.0.0" />
+    <PackageVersion Include="System.Reactive" Version="6.0.0" />
     <PackageVersion Include="Tomlyn.Extensions.Configuration" Version="1.0.5" />
     <PackageVersion Include="xunit" Version="2.5.0" />
     <PackageVersion Include="xunit.analyzers" Version="1.2.0" />

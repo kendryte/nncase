@@ -8,7 +8,6 @@ using System.Reactive;
 using System.Threading.Tasks;
 using Google.OrTools.Algorithms;
 using Google.OrTools.Graph;
-using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.Evaluator;
