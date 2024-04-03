@@ -139,6 +139,39 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
+    [InlineData(new object[] { new int[] { 1, 1, 4, 4 }, new int[] { 8, 1, 3, 3 }, new int[] { 1, 1, 1, 1 }, new int[] { 1, 1 }, 0 })]
+    [InlineData(new object[] { new int[] { 3, 2, 4, 4 }, new int[] { 8, 2, 3, 3 }, new int[] { 0, 0, 1, 1 }, new int[] { 1, 2 }, 1 })]
+    [InlineData(new object[] { new int[] { 3, 2, 4, 4 }, new int[] { 8, 2, 3, 3 }, new int[] { 1, 0, 1, 1 }, new int[] { 2, 1 }, 2 })]
+    public async Task TestIm2col(int[] inputShape, int[] weightShape, int[] padding, int[] strides, int count)
+    {
+        var dilation = new[] { 1, 1 };
+        var groups = 1;
+        var input = new Var(new TensorType(DataTypes.Float32, inputShape));
+        var weights = new Var(new TensorType(DataTypes.Float32, weightShape));
+        var bias = IR.F.Random.Normal(DataTypes.Float32, new[] { weightShape[0] }).Evaluate().AsTensor();
+        var pre = IR.F.NN.Conv2D(input, weights, bias, strides, new[,] { { padding[0], padding[1] }, { padding[2], padding[3] } }, dilation, PadMode.Constant, groups);
+        var outShape = pre.CheckedShape.ToValueArray();
+
+        var feedDict = new Dictionary<Var, IValue>() {
+            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inputShape).Evaluate() },
+            { weights, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, weightShape).Evaluate() },
+        };
+
+        Expr post;
+        {
+            var col = IR.F.CPU.Im2col(input, new[] { weightShape[2], weightShape[3] }, strides, padding);
+            var newW = IR.F.Tensors.Reshape(weights, new[] { weightShape[0], weightShape[1] * weightShape[2] * weightShape[3] });
+            var matmul = IR.F.Tensors.MatMul(newW, col); // [oc, b*oh*ow]
+            var newBias = IR.F.Tensors.Reshape(bias, new[] { weightShape[0], 1 });
+            var add = IR.F.Tensors.Reshape(matmul + newBias, new[] { outShape[1], outShape[0], outShape[2], outShape[3] });
+            post = IR.F.Tensors.Transpose(add, new[] { 1, 0, 2, 3 });
+        }
+
+        var posts = new[] { post };
+        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+    }
+
+    [Theory]
     [InlineData(new object[] { false, 0 })]
     [InlineData(new object[] { true, 1 })] // enable packing
     public async Task TestDecodeLayer(bool packing, int count)

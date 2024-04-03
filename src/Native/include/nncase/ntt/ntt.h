@@ -17,6 +17,7 @@
 #include "kernels/concat.h"
 #include "kernels/copy.h"
 #include "kernels/gather.h"
+#include "kernels/im2col.h"
 #include "kernels/matmul.h"
 #include "kernels/pack.h"
 #include "kernels/packed_layer_norm.h"

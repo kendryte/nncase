@@ -124,4 +124,9 @@ public partial class CPU
     {
         return new Call(new Pad(pads, padValue), input, ret);
     }
+
+    public static Expr Im2col(Buffer input, Buffer output, IRArray<int> kernel, IRArray<int> stride, IRArray<int> padding)
+    {
+        return new Call(new Im2col(kernel, stride, padding), input, output);
+    }
 }

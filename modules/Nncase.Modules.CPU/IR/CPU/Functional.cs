@@ -87,4 +87,9 @@ public partial class CPU
     {
         return new Call(new PackedTranspose(packedAxes), input, perm);
     }
+
+    public static Expr Im2col(Expr input, int[] kernel, int[] stride, int[] padding)
+    {
+        return new Call(new Im2col(kernel, stride, padding), input);
+    }
 }

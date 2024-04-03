@@ -337,6 +337,9 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     }
 
                     break;
+                case TIR.CPU.Im2col im2col:
+                    IndentScope.Writer.IndWrite($"im2col({Visit(args[0]).Name}, fixed_shape<{string.Join(",", im2col.Kernel)}>{{}}, fixed_shape<{string.Join(",", im2col.Stride)}>{{}}, fixed_shape<{string.Join(",", im2col.Padding)}>{{}}, {Visit(args[1]).Name});\n");
+                    break;
                 case TIR.CPU.Pack pack:
                     {
                         IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Pack.cshtml", new TypedKernelTemplateModel<TIR.CPU.Pack>(pack)

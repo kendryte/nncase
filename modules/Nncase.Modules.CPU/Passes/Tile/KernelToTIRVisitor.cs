@@ -97,6 +97,9 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             case IR.Math.MatMul matmul:
                 _mainBody.Add(TIR.F.CPU.Matmul(arguments[0], arguments[1], ret));
                 break;
+            case IR.CPU.Im2col im2col:
+                _mainBody.Add(TIR.F.CPU.Im2col(arguments[0], ret, im2col.Kernel, im2col.Stride, im2col.Padding));
+                break;
             case IR.CPU.PackedSoftmax packed_softmax:
                 _mainBody.Add(TIR.F.CPU.PackedSoftmax(arguments[0], ret, packed_softmax.Axis, packed_softmax.PackedAxes));
                 break;
