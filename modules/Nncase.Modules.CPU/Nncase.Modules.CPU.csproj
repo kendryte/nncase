@@ -30,6 +30,10 @@
     <Folder Include="Runtime\include\nncase\" />
     <Folder Include="Runtime\src\" />
   </ItemGroup>
+    
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Include="..\..\src\Native\include\nncase\ntt\**\*" Link="Runtime\include\nncase\ntt\%(RecursiveDir)\%(FileName)%(Extension)">
