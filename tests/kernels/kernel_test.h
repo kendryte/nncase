@@ -52,7 +52,7 @@ class KernelTest {
     T &get(runtime::runtime_tensor &t, std::span<const size_t> index) {
         auto map = std::move(
             runtime::hrt::map(t, runtime::map_read).unwrap_or_throw());
-        auto data = map.buffer().as_span<T>();
+        auto data = as_span<T>(map.buffer());
         return data[kernels::offset(t.strides(), index)];
     }
 

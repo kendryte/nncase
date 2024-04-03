@@ -64,12 +64,12 @@
 
 #define GET_ACTUAL(op_fn, op_name)                                             \
     auto output = op_fn(op_name, lhs.impl(), rhs.impl())                       \
-                      .expect(std::string(#op_fn).append(" failed"));          \
+                      .expect(std::string(#op_fn).append(" failed").c_str());  \
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
 #define GET_ACTUAL_4(op_fn, op_name)                                           \
     auto output = op_fn(op_name, a.impl(), b.impl(), c.impl(), d.impl())       \
-                      .expect(std::string(#op_fn).append(" failed"));          \
+                      .expect(std::string(#op_fn).append(" failed").c_str());  \
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
 #define CHECK_RESULT()                                                         \

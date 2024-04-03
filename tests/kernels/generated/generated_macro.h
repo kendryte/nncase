@@ -43,7 +43,7 @@
     auto a1_ort = runtime_tensor_2_ort_tensor(a1);
 #define GET_ACTUAL_ARGS_2_ATTR_0(op_fn, op_name)                               \
     auto output = op_fn(op_name, a0.impl(), a1.impl())                         \
-                      .expect(std::string(#op_fn).append(" failed"));          \
+                      .expect(std::string(#op_fn).append(" failed").c_str());  \
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 #define GET_EXPECT_ARGS_2_ATTR_0(op)                                           \
     auto output_ort = op(a0_ort, a1_ort);                                      \
