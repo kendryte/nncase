@@ -50,7 +50,7 @@ sizes = [
 
 modes = [
     F.InterpolationMode.NEAREST,
-    #F.InterpolationMode.BILINEAR,
+    # F.InterpolationMode.BILINEAR,
 ]
 
 

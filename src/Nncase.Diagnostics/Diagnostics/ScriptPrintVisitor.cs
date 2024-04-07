@@ -578,7 +578,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
             return doc;
         }
 
-        var buffer = Visit(expr.Input);
+        _ = Visit(expr.Input);
         doc = new ScriptSymobl(new("BufferOf"), "BufferOf", false);
         _exprMemo.Add(expr, doc);
         return doc;
