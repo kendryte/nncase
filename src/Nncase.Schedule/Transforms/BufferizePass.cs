@@ -71,6 +71,7 @@ public sealed class BufferizePass : ModulePass
 
             public bool Add(Expr node)
             {
+#if false
                 if (_nodesSet.Add(node))
                 {
                     Nodes.Add(node);
@@ -102,6 +103,8 @@ public sealed class BufferizePass : ModulePass
                     {
                     }
                 }
+#endif
+                throw new NotImplementedException();
             }
         }
     }
