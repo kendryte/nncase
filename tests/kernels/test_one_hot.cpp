@@ -42,7 +42,7 @@ class OneHotTest : public KernelTest,
 
         int64_t a[] = {3, 2, 4, 0};
         indices = hrt::create(index_typecode, l_shape,
-                              {reinterpret_cast<gsl::byte *>(a), sizeof(a)},
+                              {reinterpret_cast<std::byte *>(a), sizeof(a)},
                               true, host_runtime_tensor::pool_cpu_only)
                       .expect("create tensor failed");
 
@@ -53,7 +53,7 @@ class OneHotTest : public KernelTest,
 
         int32_t depth_ptr[] = {5};
         depth = hrt::create(dt_int32, {1},
-                            {reinterpret_cast<gsl::byte *>(depth_ptr),
+                            {reinterpret_cast<std::byte *>(depth_ptr),
                              sizeof(depth_ptr)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
@@ -85,7 +85,7 @@ TEST_P(OneHotTest, OneHot) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(values.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
@@ -93,7 +93,7 @@ TEST_P(OneHotTest, OneHot) {
     int axis_ptr[] = {axis};
     auto axis =
         hrt::create(dt_int32, {1},
-                    {reinterpret_cast<gsl::byte *>(axis_ptr), sizeof(axis_ptr)},
+                    {reinterpret_cast<std::byte *>(axis_ptr), sizeof(axis_ptr)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output = kernels::stackvm::one_hot(

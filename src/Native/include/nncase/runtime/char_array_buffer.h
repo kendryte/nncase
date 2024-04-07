@@ -14,14 +14,16 @@
  */
 #pragma once
 #include <cassert>
-#include <gsl/gsl-lite.hpp>
 #include <iostream>
+#include <span>
 
 namespace nncase {
 class char_array_buffer : public std::streambuf {
   public:
-    char_array_buffer(gsl::span<const char> data)
-        : begin_(data.begin()), end_(data.end()), current_(data.data()) {}
+    char_array_buffer(std::span<const char> data)
+        : begin_(data.data()),
+          end_(data.data() + data.size()),
+          current_(data.data()) {}
 
   private:
     int_type underflow() {

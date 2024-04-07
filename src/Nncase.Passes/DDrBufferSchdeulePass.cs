@@ -63,11 +63,11 @@ public sealed class DDrBufferSchdeulePass : ModulePass
             {
                 if (!prim_func.SchedResult.IsScheduled)
                 {
+                    // NOTE we just schedule the input/output/rdata, because of the data section schedule depends on the specific target.
                     var rewriter = new DDrBufferRewriter(_moduleUsage, _moduleRdataMaps);
                     var post = (TIR.PrimFunction)rewriter.Rewrite(prim_func); // changed ddr buffer.
                     if (rewriter.IsMutated)
                     {
-                        post.SchedResult.DataUsage = rewriter.DataUsage;
                         post.SchedResult.IsScheduled = true;
                     }
 
@@ -109,8 +109,6 @@ internal sealed class DDrBufferRewriter : ExprRewriter
     public Dictionary<string, Dictionary<Const, ValueRange<long>>> ModuleRdataMaps { get; }
 
     public bool Changed { get; private set; }
-
-    public long DataUsage => _functionUsage.GetValueOrDefault(MemoryLocation.Data, 0);
 
     public PrimFunction Entry => (PrimFunction)VisitRoot!;
 

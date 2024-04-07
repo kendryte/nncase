@@ -31,7 +31,7 @@ class runtime_function_init_context_span_impl
     runtime_function_init_context_span_impl(
         const function_header &header,
         runtime_module_init_context &module_init_context,
-        gsl::span<const gsl::byte> sections) noexcept
+        std::span<const std::byte> sections) noexcept
         : header_(header),
           module_init_context_(module_init_context),
           sections_(sections) {}
@@ -44,7 +44,7 @@ class runtime_function_init_context_span_impl
 
     bool is_section_pinned() const noexcept override { return true; }
 
-    result<gsl::span<const gsl::byte>>
+    result<std::span<const std::byte>>
     section(const char *name) noexcept override {
         return ok(find_section(name, sections_));
     }
@@ -58,7 +58,7 @@ class runtime_function_init_context_span_impl
   private:
     const function_header &header_;
     runtime_module_init_context &module_init_context_;
-    gsl::span<const gsl::byte> sections_;
+    std::span<const std::byte> sections_;
 };
 
 class runtime_function_init_context_stream_impl
@@ -81,7 +81,7 @@ class runtime_function_init_context_stream_impl
 
     bool is_section_pinned() const noexcept override { return false; }
 
-    result<gsl::span<const gsl::byte>>
+    result<std::span<const std::byte>>
     section([[maybe_unused]] const char *name) noexcept override {
         return err(std::errc::not_supported);
     }
@@ -122,7 +122,7 @@ const type &runtime_function::return_type() const noexcept {
 }
 
 result<void> runtime_function::initialize(
-    gsl::span<const gsl::byte> payload,
+    std::span<const std::byte> payload,
     runtime_module_init_context &module_init_context) noexcept {
     span_reader reader(payload);
     reader.read(header_);
@@ -171,7 +171,7 @@ result<void> runtime_function::initialize(
     return initialize_core(init_context);
 }
 
-result<value_t> runtime_function::invoke(gsl::span<value_t> parameters,
+result<value_t> runtime_function::invoke(std::span<value_t> parameters,
                                          value_t return_value) noexcept {
     checked_try_var(retval, invoke_core(parameters, return_value));
 #ifdef ENABLE_OP_PROFILE

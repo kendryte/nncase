@@ -30,16 +30,16 @@ using namespace nncase::kernels::stackvm;
 namespace {
 template <class T>
 result<void>
-batch_to_space_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
-                    gsl::span<const size_t> block_shape,
-                    const paddings_t &crops, gsl::span<const size_t> in_strides,
-                    gsl::span<const size_t> out_strides,
+batch_to_space_impl(const T *input, T *output, std::span<const size_t> in_shape,
+                    std::span<const size_t> block_shape,
+                    const paddings_t &crops, std::span<const size_t> in_strides,
+                    std::span<const size_t> out_strides,
                     NNCASE_UNUSED kernel_context &context) noexcept {
     const auto spatial_dim_start = in_shape.size() - block_shape.size();
     const auto block_size = compute_size(block_shape);
     dims_t batch_reshaped_shape = block_shape;
     batch_reshaped_shape.push_back(in_shape[0] / block_size);
-    return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
+    return apply(in_shape, [&](std::span<const size_t> index) -> result<void> {
         // 1. batch reshaped to block_shape[0], ..., block_shape[M-1], batch /
         // prod(block_shape)
         const auto batch_reshaped_index =
@@ -84,11 +84,11 @@ batch_to_space_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
                                    out_strides, context)
 
 result<void>
-batch_to_space_impl(datatype_t type, const gsl::byte *input, gsl::byte *output,
-                    gsl::span<const size_t> in_shape,
-                    gsl::span<const size_t> block_shape,
-                    const paddings_t &crops, gsl::span<const size_t> in_strides,
-                    gsl::span<const size_t> out_strides,
+batch_to_space_impl(datatype_t type, const std::byte *input, std::byte *output,
+                    std::span<const size_t> in_shape,
+                    std::span<const size_t> block_shape,
+                    const paddings_t &crops, std::span<const size_t> in_strides,
+                    std::span<const size_t> out_strides,
                     NNCASE_UNUSED kernel_context &context) noexcept {
     switch (runtime::get_bytes(type)) {
         BATCH_TO_SPACE_IMPL(1, uint8_t);
@@ -100,14 +100,14 @@ batch_to_space_impl(datatype_t type, const gsl::byte *input, gsl::byte *output,
     }
 }
 
-dims_t infer_shape(gsl::span<const size_t> origin_in_shape,
-                   gsl::span<const size_t> block_shape,
+dims_t infer_shape(std::span<const size_t> origin_in_shape,
+                   std::span<const size_t> block_shape,
                    const paddings_t &crops) {
     auto d4 = fixed_dims(0, 2, 3, 1);
     auto d3 = fixed_dims(0, 2, 1);
     auto inPerm = origin_in_shape.size() == 4
-                      ? gsl::span<const size_t>{d4.data(), d4.size()}
-                      : gsl::span<const size_t>{d3.data(), d3.size()};
+                      ? std::span<const size_t>{d4.data(), d4.size()}
+                      : std::span<const size_t>{d3.data(), d3.size()};
     auto in_shape =
         kernels::stackvm::transpose_infer_shape(origin_in_shape, inPerm);
     auto batch = in_shape[0] / compute_size(block_shape);
@@ -125,8 +125,8 @@ dims_t infer_shape(gsl::span<const size_t> origin_in_shape,
     auto outd4 = fixed_dims(0, 3, 1, 2);
     auto outd3 = fixed_dims(0, 2, 1);
     auto outPerm = origin_in_shape.size() == 4
-                       ? gsl::span<const size_t>{outd4.data(), outd4.size()}
-                       : gsl::span<const size_t>{outd3.data(), outd3.size()};
+                       ? std::span<const size_t>{outd4.data(), outd4.size()}
+                       : std::span<const size_t>{outd3.data(), outd3.size()};
     return kernels::stackvm::transpose_infer_shape(out_shape, outPerm);
 }
 

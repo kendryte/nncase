@@ -65,7 +65,7 @@ TEST_P(StackTest, Stack) {
     auto output_tuple = tuple(std::in_place, std::move(fields));
     int64_t axes_array[] = {axes_value};
     auto axes = hrt::create(dt_int64, {1},
-                            {reinterpret_cast<gsl::byte *>(axes_array),
+                            {reinterpret_cast<std::byte *>(axes_array),
                              sizeof(axes_array)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
@@ -76,7 +76,7 @@ TEST_P(StackTest, Stack) {
     int64_t output_shape_array[] = {1, 1};
     auto output_shape =
         hrt::create(dt_int64, {2},
-                    {reinterpret_cast<gsl::byte *>(output_shape_array),
+                    {reinterpret_cast<std::byte *>(output_shape_array),
                      sizeof(output_shape_array)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");

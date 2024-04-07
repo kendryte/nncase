@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         config:
-          - { name: x86_64-macos, os: macos-latest, cmakeArgs: '', buildType: Release }
+          #- { name: aarch64-macos, os: macos-14, cmakeArgs: '', buildType: Release }
           - { name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release }
           - { name: x86_64-windows, os: windows-latest, arch: x64, cmakeArgs: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl, buildType: Release }
 
@@ -27,15 +27,10 @@ jobs:
           arch: ${{matrix.config.arch}}
         if: runner.os == 'Windows'
 
-      - name: Set up build environment (Macos)
-        run: |
-          brew install sunnycase/core/libomp@11.1.0
-        if: runner.os == 'Macos'
-
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.7
+          python-version: '3.10'
 
       - name: Install Conan
         run: |
@@ -51,10 +46,17 @@ jobs:
           echo "CXX=g++-10" >> $GITHUB_ENV
         if: runner.os == 'Linux'
 
+      - name: Configure Conan (Macos)
+        run: |
+          conan config init
+          sed -i '' 's/xtensalx7]/xtensalx7, arm64]/g' ~/.conan/settings.yml
+          sed -i '' 's/"14.0"]/"14.0", "15"]/g' ~/.conan/settings.yml
+        if: runner.os == 'Macos'
+
       - name: Configure CMake
         shell: bash
         run: |
-          conan install . -if build --build=missing -s build_type=${{matrix.config.buildType}} --profile=default -o runtime=True -o python=False -o tests=True -s compiler.cppstd=17
+          conan install . -if build --build=missing -s build_type=${{matrix.config.buildType}} --profile=default -o runtime=True -o python=False -o tests=True -s compiler.cppstd=20
 
       - name: Build & Install
         run: |
@@ -101,7 +103,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.7
+          python-version: '3.10'
 
       - name: Install toolchain and QEMU
         shell: bash
@@ -129,7 +131,7 @@ jobs:
 
       - name: Configure CMake
         run: |
-          conan install . -if build --build=missing -s build_type=${{matrix.config.buildType}} --profile:host=toolchains/riscv64-unknown-linux.profile.jinja --profile:build=default -o runtime=True -o python=False -o tests=True -s compiler.cppstd=17
+          conan install . -if build --build=missing -s build_type=${{matrix.config.buildType}} --profile:host=toolchains/riscv64-unknown-linux.profile.jinja --profile:build=default -o runtime=True -o python=False -o tests=True -s compiler.cppstd=20
 
       - name: Build & Install
         run: |

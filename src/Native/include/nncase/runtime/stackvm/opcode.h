@@ -381,7 +381,7 @@ struct extcall_op_t {
 
 struct cuscall_op_t {
     std::string registered_name;
-    gsl::span<const gsl::byte> fields_span;
+    std::span<const std::byte> fields_span;
     uint16_t args;
 };
 

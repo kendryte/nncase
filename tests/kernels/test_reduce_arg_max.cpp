@@ -51,14 +51,14 @@ class ReduceArgMaxTest : public KernelTest,
                                                          : value1;
         int64_t axis_array[] = {axis_value};
         axis = hrt::create(typecode2, r_shape,
-                           {reinterpret_cast<gsl::byte *>(axis_array),
+                           {reinterpret_cast<std::byte *>(axis_array),
                             sizeof(axis_array)},
                            true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
         keepDims_value = value2;
         int64_t keepDims_array[] = {keepDims_value};
         keepDims = hrt::create(typecode2, r_shape,
-                               {reinterpret_cast<gsl::byte *>(keepDims_array),
+                               {reinterpret_cast<std::byte *>(keepDims_array),
                                 sizeof(keepDims_array)},
                                true, host_runtime_tensor::pool_cpu_only)
                        .expect("create tensor failed");
@@ -66,7 +66,7 @@ class ReduceArgMaxTest : public KernelTest,
         int64_t select_last_idx_array[] = {select_last_idx_value};
         select_last_idx =
             hrt::create(typecode2, r_shape,
-                        {reinterpret_cast<gsl::byte *>(select_last_idx_array),
+                        {reinterpret_cast<std::byte *>(select_last_idx_array),
                          sizeof(select_last_idx_array)},
                         true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
@@ -97,7 +97,7 @@ TEST_P(ReduceArgMaxTest, ReduceArgMax) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(dt_int64, shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 

@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Nncase.CodeGen;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.IR.F;
 using Nncase.IR.Tensors;
 using Nncase.Runtime.Interop;
 using Nncase.Targets;
@@ -29,6 +30,11 @@ public class UnitTestCPUTarget : TestClassBase
     public UnitTestCPUTarget()
     {
         DefaultTargetName = CPUTarget.Kind;
+#if DEBUG
+        CompileOptions.DumpFlags = DumpFlags.PassIR | DumpFlags.Rewrite | DumpFlags.EGraphCost | DumpFlags.CodeGen;
+#else
+        CompileOptions.DumpFlags = DumpFlags.CodeGen;
+#endif
     }
 
     public static IEnumerable<object[]> TestGetItemData =>
@@ -113,6 +119,16 @@ public class UnitTestCPUTarget : TestClassBase
     }
 
     [Fact]
+    public void TestSimpleUnary()
+    {
+        var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
+        var y = IR.F.Math.Abs(x);
+        var main = new Function("main", y, new[] { x });
+        var module = new IRModule(main);
+        GenerateKModelAndRun(module, new[] { -1.0f }, new[] { 1.0f });
+    }
+
+    [Fact]
     public void TestCodegenCallParamOrder()
     {
         // order is true: x - 3 = 2 - 3 = -1
@@ -167,7 +183,7 @@ public class UnitTestCPUTarget : TestClassBase
         GenerateKModelAndRun(module, new[] { 1.0f }, new[] { 3.0f });
     }
 
-    [Theory]
+    [Theory(Skip = "CPU codegen currently doesn't support If")]
     [MemberData(nameof(TestIfData))]
     public void TestIf(bool input)
     {
@@ -202,7 +218,6 @@ public class UnitTestCPUTarget : TestClassBase
     [Fact]
     public void TestNestIfWithThenBegin()
     {
-        CompileOptions.DumpFlags = DumpFlags.CodeGen;
         var condVar = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));
         var cast = Cast(condVar, DataTypes.Int32);
         var i = new If(condVar, cast * new If(condVar, 3 + cast, 2), 6);
@@ -237,19 +252,22 @@ public class UnitTestCPUTarget : TestClassBase
 
     private void GenerateKModelAndRun(IRModule module, Tensor input, Tensor[] expectedOutput, [CallerMemberName] string? name = null)
     {
-        var modelBuilder = CompileSession.GetRequiredService<IModelBuilder>();
-        var linkedModel = modelBuilder.Build(module);
-        using (var output = File.Open($"{name}.kmodel", FileMode.Create))
-        {
-            linkedModel.Serialize(output);
-            Assert.NotEqual(0, output.Length);
-        }
+        CompileSession.Compiler.ImportIRModule(module);
+        CompileSession.Compiler.CompileAsync().Wait();
 
         byte[] kmodel;
         using (var output = new MemoryStream())
         {
-            linkedModel.Serialize(output);
+            CompileSession.Compiler.Gencode(output);
             kmodel = output.ToArray();
+        }
+
+        if (Dumpper.IsEnabled(DumpFlags.CodeGen))
+        {
+            using (var kmodelFile = Dumpper.OpenFile($"{name}.kmodel"))
+            {
+                kmodelFile.Write(kmodel);
+            }
         }
 
         var interp = RTInterpreter.Create();

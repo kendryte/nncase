@@ -37,7 +37,7 @@ result<void> op_visitor::next() noexcept {
     return err(nncase_k210_errc::k210_illegal_instruction);
 }
 
-result<void> op_visitor::visit(gsl::span<const gsl::byte> text) noexcept {
+result<void> op_visitor::visit(std::span<const std::byte> text) noexcept {
     reader_ = span_reader(text);
     interrupted_ = false;
 

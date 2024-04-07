@@ -28,11 +28,11 @@ using namespace nncase::kernels::stackvm;
 namespace {
 template <class T, class IndicesT>
 result<void>
-scatter_nd_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+scatter_nd_impl(const T *input, T *output, std::span<const size_t> in_shape,
                 [[maybe_unused]] const IndicesT *indices,
-                gsl::span<const size_t> indices_shape,
+                std::span<const size_t> indices_shape,
                 [[maybe_unused]] const T *updates,
-                [[maybe_unused]] gsl::span<const size_t> updates_shape,
+                [[maybe_unused]] std::span<const size_t> updates_shape,
                 NNCASE_UNUSED kernel_context &context) noexcept {
 
     std::copy(input, input + compute_size(in_shape), output);
@@ -60,8 +60,8 @@ scatter_nd_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
     //     data_size *= in_shape[i];
     // }
     return apply(
-        (gsl::span<const size_t>)update_indices,
-        [&]([[maybe_unused]] gsl::span<const size_t> idx) -> result<void> {
+        (std::span<const size_t>)update_indices,
+        [&]([[maybe_unused]] std::span<const size_t> idx) -> result<void> {
             auto updates_begin = updates + offset(updates_strides, idx);
 
             auto data_indices_begin = indices + offset(indices_strides, idx);
@@ -90,10 +90,10 @@ scatter_nd_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
         });
 
 result<void> nncase::kernels::stackvm::reference::scatter_nd(
-    datatype_t type, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> in_shape, datatype_t indices_type,
-    const gsl::byte *indices, gsl::span<const size_t> indices_shape,
-    const gsl::byte *updates, gsl::span<const size_t> updates_shape,
+    datatype_t type, const std::byte *input, std::byte *output,
+    std::span<const size_t> in_shape, datatype_t indices_type,
+    const std::byte *indices, std::span<const size_t> indices_shape,
+    const std::byte *updates, std::span<const size_t> updates_shape,
     kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(type, SCATTER_ND_IMPL);
 }

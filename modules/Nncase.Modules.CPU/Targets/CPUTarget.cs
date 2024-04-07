@@ -3,16 +3,20 @@
 
 using System;
 using System.Collections.Generic;
+using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Nncase.CodeGen;
+using Nncase.CodeGen.CPU;
 using Nncase.CodeGen.StackVM;
 using Nncase.IR;
 using Nncase.Passes;
+using Nncase.Passes.Transforms;
 using Nncase.Quantization;
 
 namespace Nncase.Targets;
@@ -28,7 +32,12 @@ public class CPUTarget : ITarget
 
     public (System.CommandLine.Command Command, Func<InvocationContext, System.CommandLine.Command, ITargetCompileOptions> Parser) RegisterCommandAndParser()
     {
-        return (new System.CommandLine.Command(Kind), (_, _) => DefaultTargetCompileOptions.Instance);
+        var cmd = new System.CommandLine.Command(Kind);
+        cmd.AddOption(new Option<bool>(
+            name: "--packing",
+            description: "enable layout optimization.",
+            getDefaultValue: () => false));
+        return (cmd, ParseTargetCompileOptions);
     }
 
     /// <inheritdoc/>
@@ -44,6 +53,24 @@ public class CPUTarget : ITarget
     /// <inheritdoc/>
     public void RegisterTargetDependentPass(IPassManager passManager, CompileOptions options)
     {
+        passManager.AddWithName<DataflowPass>("MakeFusion").Configure(p =>
+        {
+            p.Add<Passes.Rules.CombineMHA>();
+            p.Add<Passes.Rules.Neutral.FoldConstCall>();
+            p.Add<Passes.Rules.FuseMHA2>();
+        });
+
+#if false
+        passManager.AddWithName<DataflowPass>("CPUDeviceFusion").Configure(p =>
+        {
+            p.Add<Passes.Rules.CPU.Affine.LowerUnary>();
+        });
+#endif
+
+        passManager.AddWithName<DataflowPass>("CPUKernelFusion").Configure(p =>
+        {
+            p.Add<Passes.Rules.CPUSingleKernelFusion>();
+        });
     }
 
     /// <inheritdoc/>
@@ -74,6 +101,54 @@ public class CPUTarget : ITarget
                 p.Add<Passes.Rules.Lower.RemoveMarker>();
             });
         }
+
+        if (options.TargetCompileOptions is CPUCompileOptions { Packing: true })
+        {
+            passManager.AddWithName<DataflowPass>("AutoPacking").Configure(p =>
+            {
+                p.Add<Passes.Rules.AutoPacking>();
+            });
+        }
+
+        passManager.AddWithName<DataflowPass>("AutoDistributed").Configure(p =>
+        {
+            p.Add<Passes.Rules.AutoDistributed>();
+        });
+
+        passManager.Add<CPUFusionToModulePass>();
+
+#if false
+        // FIX ME: Disable macos as macho loader is buggy.
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            passManager.AddWithName<DataflowPass>("CPUDeviceFusion").Configure(p =>
+            {
+                p.AddAnalysis<Passes.Analysis.IExprUserAnalysisResult>();
+                p.Add<Passes.Rules.CPUDeviceFusion>();
+            });
+        }
+#endif
+
+        passManager.Add<AutoTilePass>();
+
+        passManager.Add<CPUFusionToTirPass>();
+
+        passManager.Add<PrimFuncPass>().Configure(p =>
+        {
+            p.Add<Passes.Mutators.UnFoldBlock>();
+            p.Add<Passes.Mutators.FlattenSequential>();
+            p.Add<Passes.Mutators.TailLoopStripping>();
+            p.Add<Passes.Mutators.FoldConstCall>();
+        });
+
+        passManager.AddWithName<DDrBufferSchdeulePass>("DDrBufferSchdeule");
+
+        passManager.AddWithName<PrimFuncPass>("InstStage").Configure(p =>
+        {
+            p.Add<Passes.Mutators.FlattenBuffer>();
+            p.Add<Passes.Mutators.FoldConstCall>();
+            p.Add<Passes.Mutators.RemoveNop>();
+        });
     }
 
     public void RegisterTargetDependentBeforeCodeGen(IPassManager passManager, CompileOptions options)
@@ -87,9 +162,18 @@ public class CPUTarget : ITarget
         {
             return new StackVMModuleBuilder();
         }
+        else if (moduleKind == "cpu")
+        {
+            return new CPUModuleBuilder(options);
+        }
         else
         {
             throw new NotSupportedException($"{moduleKind} module is not supported.");
         }
+    }
+
+    private static ITargetCompileOptions ParseTargetCompileOptions(InvocationContext context, Command command)
+    {
+        return new CPUCompileOptions(string.Empty, false, Array.Empty<int>(), new[] { 1 }, "b", new[] { 3 * (int)MathF.Pow(2, 20) });
     }
 }

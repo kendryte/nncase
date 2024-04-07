@@ -25,7 +25,7 @@ using host_buffer_t = object_t<host_buffer_node>;
 class NNCASE_API mapped_buffer {
   public:
     mapped_buffer() noexcept;
-    mapped_buffer(host_buffer_t buffer, gsl::span<gsl::byte> span) noexcept;
+    mapped_buffer(host_buffer_t buffer, std::span<std::byte> span) noexcept;
     mapped_buffer(mapped_buffer &&other) noexcept;
     mapped_buffer(const mapped_buffer &) = delete;
     ~mapped_buffer();
@@ -36,11 +36,11 @@ class NNCASE_API mapped_buffer {
     result<void> unmap() noexcept;
     void release() noexcept;
 
-    gsl::span<gsl::byte> buffer() const noexcept { return span_; }
+    std::span<std::byte> buffer() const noexcept { return span_; }
 
   private:
     host_buffer_t buffer_;
-    gsl::span<gsl::byte> span_;
+    std::span<std::byte> span_;
 };
 
 class NNCASE_API host_buffer_node : public buffer_node {
@@ -68,12 +68,12 @@ class NNCASE_API host_buffer_node : public buffer_node {
 
     result<void>
     copy_to(buffer_t dest, size_t src_start, size_t dest_start,
-            datatype_t datatype, gsl::span<const size_t> shape,
-            gsl::span<const size_t> src_strides,
-            gsl::span<const size_t> dest_strides) noexcept override;
+            datatype_t datatype, std::span<const size_t> shape,
+            std::span<const size_t> src_strides,
+            std::span<const size_t> dest_strides) noexcept override;
 
   protected:
-    virtual result<gsl::span<gsl::byte>> map_core(map_access_t access) = 0;
+    virtual result<std::span<std::byte>> map_core(map_access_t access) = 0;
     virtual result<void> unmap_core(map_access_t access) = 0;
     virtual result<void> sync_core(sync_op_t op) = 0;
 

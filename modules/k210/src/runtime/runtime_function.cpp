@@ -77,10 +77,10 @@ result<void> k210_runtime_function::invoke_core() noexcept {
     return ok();
 }
 
-result<gsl::span<gsl::byte>>
+result<std::span<std::byte>>
 k210_runtime_function::memory_at(const memory_range &mrange) noexcept {
 #define ID_NOT_FOUND ((size_t)-1)
-    gsl::byte *base;
+    std::byte *base;
     switch (mrange.memory_location) {
     case mem_input: {
         size_t id = ID_NOT_FOUND;
@@ -93,7 +93,7 @@ k210_runtime_function::memory_at(const memory_range &mrange) noexcept {
 
         if (id != ID_NOT_FOUND) {
             try_var(tensor, device_input_tensor(id));
-            base = reinterpret_cast<gsl::byte *>(
+            base = reinterpret_cast<std::byte *>(
                 static_cast<host_runtime_tensor_impl *>(tensor.impl())
                     ->memory_block()
                     .virtual_address -
@@ -122,7 +122,7 @@ k210_runtime_function::memory_at(const memory_range &mrange) noexcept {
         break;
     }
     case mem_rdata:
-        base = const_cast<gsl::byte *>(module().rdata().data());
+        base = const_cast<std::byte *>(module().rdata().data());
         break;
     case mem_data:
         base = module().data().data();

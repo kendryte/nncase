@@ -117,7 +117,7 @@ class NNCASE_API tuple_type_node : public type_node {
         : fields_(std::move(fields)) {}
 
     /** @brief Get fields */
-    gsl::span<const type> fields() const noexcept { return fields_; }
+    std::span<const type> fields() const noexcept { return fields_; }
     /** @brief Get mutable fields */
     itlib::small_vector<type> &shape() noexcept { return fields_; }
     /** @brief Set fields */
@@ -142,7 +142,7 @@ class NNCASE_API callable_type_node : public type_node {
         : parameters_(std::move(parameters)), return_type_(return_type) {}
 
     /** @brief Get parameters */
-    gsl::span<const type> parameters() const noexcept { return parameters_; }
+    std::span<const type> parameters() const noexcept { return parameters_; }
     /** @brief Get parameters */
     itlib::small_vector<type> &parameters() noexcept { return parameters_; }
     /** @brief Set parameters */

@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.IR.Affine;
 using Nncase.TIR;
 
 namespace Nncase.Evaluator;

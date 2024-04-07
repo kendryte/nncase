@@ -103,11 +103,17 @@ public sealed partial class NormAxisSlice : RewriteRule<CallPattern>
     /// <inheritdoc/>
     public override CallPattern Pattern { get; } = IsSlice("slice", "call", IsWildcard("input") with { TypePattern = HasFixedShape() }, IsTensorConst("begins"), IsTensorConst("ends"), IsTensorConst("axes"), IsTensorConst("strides")) with { TypePattern = HasFixedShape() };
 
-    private Expr? GetReplace(Call call, Expr input, Expr begins, Expr ends, int[] axes, Expr strides)
+    private Expr? GetReplace(Call call, Expr input, Expr begins, long[] ends, long[] axes, Expr strides)
     {
-        if (axes.Any(dim => dim < 0))
+        if (axes.Any(dim => dim < 0) || ends.Any(i => i > int.MaxValue))
         {
-            return IR.F.Tensors.Slice(input, begins, ends, axes.Select(dim => dim < 0 ? dim + input.CheckedShape.Rank : dim).ToArray(), strides);
+            axes = axes.Select(dim => dim < 0 ? dim + input.CheckedShape.Rank : dim).ToArray();
+            for (int i = 0; i < axes.Length; i++)
+            {
+                ends[i] = ends[i] > int.MaxValue ? input.CheckedShape[(int)axes[i]].FixedValue : ends[i];
+            }
+
+            return IR.F.Tensors.Slice(input, begins, ends, axes, strides);
         }
 
         return null;

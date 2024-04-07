@@ -40,7 +40,7 @@ class NNCASE_API runtime_function {
     runtime_function &operator=(const runtime_function &) = delete;
 
     result<void>
-    initialize(gsl::span<const gsl::byte> payload,
+    initialize(std::span<const std::byte> payload,
                runtime_module_init_context &module_init_context) noexcept;
     result<void>
     initialize(stream_reader &reader,
@@ -52,14 +52,14 @@ class NNCASE_API runtime_function {
     result<type> parameter_type(size_t index) const noexcept;
     const type &return_type() const noexcept;
 
-    result<value_t> invoke(gsl::span<value_t> parameters,
+    result<value_t> invoke(std::span<value_t> parameters,
                            value_t return_value = nullptr) noexcept;
 
   protected:
     virtual result<void>
     initialize_core(runtime_function_init_context &context) noexcept = 0;
 
-    virtual result<value_t> invoke_core(gsl::span<value_t> parameters,
+    virtual result<value_t> invoke_core(std::span<value_t> parameters,
                                         value_t return_value) noexcept = 0;
 
   private:

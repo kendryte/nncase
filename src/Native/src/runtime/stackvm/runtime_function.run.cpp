@@ -32,7 +32,7 @@ using namespace nncase::runtime::stackvm;
     }
 
 result<void>
-stackvm_runtime_function::run(gsl::span<const gsl::byte> text) noexcept {
+stackvm_runtime_function::run(std::span<const std::byte> text) noexcept {
     reader_ = {text};
 
     while (!reader_.empty()) {
@@ -68,19 +68,19 @@ stackvm_runtime_function::run(gsl::span<const gsl::byte> text) noexcept {
 #undef NNCASE_STACKVM_DISPATCH_END
 
 uintptr_t stackvm_runtime_function::pc() const noexcept {
-    return pc_ - text_.begin();
+    return pc_ - text_.data();
 }
 
 result<void> stackvm_runtime_function::pc(uintptr_t value) noexcept {
     CHECK_WITH_ERR(value >= text_.size_bytes(),
                    nncase_errc::stackvm_illegal_target);
-    reader_.seek(text_.begin() + value);
+    reader_.seek(text_.data() + value);
     return ok();
 }
 
 result<void> stackvm_runtime_function::pc_relative(intptr_t offset) noexcept {
     auto pc = pc_ + offset;
-    CHECK_WITH_ERR(pc >= text_.begin() && pc <= text_.end(),
+    CHECK_WITH_ERR(pc >= text_.data() && pc <= (text_.data() + text_.size()),
                    nncase_errc::stackvm_illegal_target);
     reader_.seek(pc);
     return ok();

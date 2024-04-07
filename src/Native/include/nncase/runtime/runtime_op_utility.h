@@ -72,7 +72,7 @@ inline std::size_t compute_strides(const shape_type &shape,
     return detail::compute_strides(shape, strides, nullptr);
 }
 
-inline strides_t get_default_strides(gsl::span<const size_t> shape) {
+inline strides_t get_default_strides(std::span<const size_t> shape) {
     strides_t strides(shape.size());
     compute_strides(shape, strides);
     return strides;
@@ -207,8 +207,8 @@ template <uint8_t Bits> inline int32_t clamp(int32_t value) {
     return clamp(value, min, max);
 }
 
-inline bool is_contiguous(gsl::span<const size_t> shape,
-                          gsl::span<const size_t> strides) {
+inline bool is_contiguous(std::span<const size_t> shape,
+                          std::span<const size_t> strides) {
     size_t data_size = 1;
     for (std::size_t i = shape.size(); i != 0; --i) {
         if (strides[i - 1] != data_size) {
@@ -220,8 +220,8 @@ inline bool is_contiguous(gsl::span<const size_t> shape,
 }
 
 inline int
-get_last_not_contiguous_index(gsl::span<const size_t> strides,
-                              gsl::span<const size_t> default_strides) {
+get_last_not_contiguous_index(std::span<const size_t> strides,
+                              std::span<const size_t> default_strides) {
     for (int i = strides.size() - 1; i >= 0; --i) {
         if (strides[i] != default_strides[i]) {
             return i + 1;

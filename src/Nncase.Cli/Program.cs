@@ -34,7 +34,7 @@ internal partial class Program
         var target = CompilerServices.GetTarget(targetKind);
         using var compileSession = CompileSession.Create(target, compileOptions);
         var compiler = compileSession.Compiler;
-        IR.IRModule module = await compiler.ImportModuleAsync(Path.GetExtension(compileOptions.InputFile).Trim('.'), compileOptions.InputFile);
+        IR.IRModule module = await compiler.ImportModuleAsync(Path.GetExtension(compileOptions.InputFile).Trim('.'), compileOptions.InputFile, compileOptions.IsBenchmarkOnly);
 
         // 3. create the calib dataset
         if (compileOptions.QuantizeOptions.ModelQuantMode == Quantization.ModelQuantMode.UsePTQ)
@@ -102,6 +102,7 @@ internal partial class Program
             Mean = context.ParseResult.GetValueForOption(compilecmd.Mean)!.ToArray(),
             Std = context.ParseResult.GetValueForOption(compilecmd.Std)!.ToArray(),
             ModelLayout = context.ParseResult.GetValueForOption(compilecmd.ModelLayout)!,
+            IsBenchmarkOnly = context.ParseResult.GetValueForOption(compilecmd.BenchmarkOnly)!,
             QuantizeOptions = new()
             {
                 CalibrationMethod = context.ParseResult.GetValueForOption(compilecmd.CalibMethod),

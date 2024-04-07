@@ -40,4 +40,16 @@ public abstract class RewriteRule<TPattern> : IRewriteRule
 
     /// <inheritdoc/>
     public abstract Expr? GetReplace(IMatchResult result, RunPassContext options);
+
+    public virtual List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
+    {
+        var candidates = new List<Expr> { };
+        var expr = GetReplace(result, context);
+        if (expr is not null)
+        {
+            candidates.Add(expr);
+        }
+
+        return candidates;
+    }
 }

@@ -49,7 +49,7 @@ class ReduceMinTest : public KernelTest,
         keepDims_value = value;
         int64_t keepDims_array[] = {keepDims_value};
         keepDims = hrt::create(typecode2, r_shape,
-                               {reinterpret_cast<gsl::byte *>(keepDims_array),
+                               {reinterpret_cast<std::byte *>(keepDims_array),
                                 sizeof(keepDims_array)},
                                true, host_runtime_tensor::pool_cpu_only)
                        .expect("create tensor failed");
@@ -70,7 +70,7 @@ class ReduceMinTest : public KernelTest,
         case dt_int8: {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<int8_t>(tensor, index) = static_cast<int8_t>(-6);
                     return ok();
                 });
@@ -79,7 +79,7 @@ class ReduceMinTest : public KernelTest,
         case dt_int16: {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<int16_t>(tensor, index) = static_cast<int16_t>(-6);
                     return ok();
                 });
@@ -88,7 +88,7 @@ class ReduceMinTest : public KernelTest,
         case dt_int32: {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<int32_t>(tensor, index) = -6;
                     return ok();
                 });
@@ -97,7 +97,7 @@ class ReduceMinTest : public KernelTest,
         case dt_int64: {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<int64_t>(tensor, index) = static_cast<int64_t>(-6);
                     return ok();
                 });
@@ -106,7 +106,7 @@ class ReduceMinTest : public KernelTest,
         case dt_uint8: {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<uint8_t>(tensor, index) = static_cast<uint8_t>(0);
                     return ok();
                 });
@@ -115,7 +115,7 @@ class ReduceMinTest : public KernelTest,
         case dt_uint16: {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<uint16_t>(tensor, index) = static_cast<uint16_t>(0);
                     return ok();
                 });
@@ -124,7 +124,7 @@ class ReduceMinTest : public KernelTest,
         case dt_uint32: {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<uint32_t>(tensor, index) = static_cast<uint32_t>(0);
                     return ok();
                 });
@@ -133,7 +133,7 @@ class ReduceMinTest : public KernelTest,
         case dt_uint64: {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<uint64_t>(tensor, index) = static_cast<uint64_t>(0);
                     return ok();
                 });
@@ -142,7 +142,7 @@ class ReduceMinTest : public KernelTest,
         case dt_float16: {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<half>(tensor, index) = static_cast<half>(-1);
                     return ok();
                 });
@@ -151,7 +151,7 @@ class ReduceMinTest : public KernelTest,
         case dt_float32: {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<float>(tensor, index) = static_cast<float>(-1);
                     return ok();
                 });
@@ -160,7 +160,7 @@ class ReduceMinTest : public KernelTest,
         case dt_float64: {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<double>(tensor, index) = static_cast<double>(-1);
                     return ok();
                 });
@@ -169,7 +169,7 @@ class ReduceMinTest : public KernelTest,
         case dt_bfloat16: {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<bfloat16>(tensor, index) = static_cast<bfloat16>(-1);
                     return ok();
                 });
@@ -178,7 +178,7 @@ class ReduceMinTest : public KernelTest,
         case dt_boolean: {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
+                [&](std::span<const size_t> index) -> result<void> {
                     get<bool>(tensor, index) = false;
                     return ok();
                 });
@@ -207,7 +207,7 @@ TEST_P(ReduceMinTest, ReduceMin) {
         int64_t *axis_array = (int64_t *)malloc(axis_size * sizeof(int64_t));
         std::copy(axis_value_array.begin(), axis_value_array.end(), axis_array);
         auto axis = hrt::create(dt_int64, {axis_size},
-                                {reinterpret_cast<gsl::byte *>(axis_array),
+                                {reinterpret_cast<std::byte *>(axis_array),
                                  axis_size * sizeof(int64_t)},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
@@ -222,7 +222,7 @@ TEST_P(ReduceMinTest, ReduceMin) {
         tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
         auto expected =
             hrt::create(a.datatype(), shape,
-                        {reinterpret_cast<gsl::byte *>(ptr_ort), size}, true,
+                        {reinterpret_cast<std::byte *>(ptr_ort), size}, true,
                         host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
 

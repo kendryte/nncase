@@ -34,10 +34,10 @@ class NNCASE_API tensor_node : public value_node {
     const datatype_t &dtype() const noexcept { return dtype_; }
 
     /** @brief Gets shape. */
-    gsl::span<const size_t> shape() const noexcept { return shape_; }
+    std::span<const size_t> shape() const noexcept { return shape_; }
 
     /** @brief Gets strides. */
-    gsl::span<const size_t> strides() const noexcept { return strides_; }
+    std::span<const size_t> strides() const noexcept { return strides_; }
 
     /** @brief Gets length. */
     size_t length() const noexcept { return length_; }

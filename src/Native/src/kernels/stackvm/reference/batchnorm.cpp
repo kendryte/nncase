@@ -31,12 +31,15 @@ namespace {
 template <class T>
 result<void> batchnorm_impl(const T *input, const T *scale, const T *bias,
                             const T *input_mean, const T *input_var, T *output,
-                            gsl::span<const size_t> in_shape,
-                            gsl::span<const size_t> in_strides,
-                            gsl::span<const size_t> out_strides,
+                            std::span<const size_t> in_shape,
+                            std::span<const size_t> in_strides,
+                            std::span<const size_t> out_strides,
                             float epsilon) {
-    return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
+    return apply(in_shape, [&](std::span<const size_t> index) -> result<void> {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
         auto c = index[1];
+#pragma GCC diagnostic pop
         const auto x = input[offset(in_strides, index)];
         output[offset(out_strides, index)] = static_cast<T>(
             (static_cast<float>(x) - static_cast<float>(input_mean[c])) /
@@ -57,10 +60,10 @@ result<void> batchnorm_impl(const T *input, const T *scale, const T *bias,
 } // namespace
 
 result<void> nncase::kernels::stackvm::reference::batchnorm(
-    typecode_t typecode, const gsl::byte *input, const gsl::byte *scale,
-    const gsl::byte *bias, const gsl::byte *input_mean,
-    const gsl::byte *input_var, gsl::byte *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> out_strides, float epsilon) {
+    typecode_t typecode, const std::byte *input, const std::byte *scale,
+    const std::byte *bias, const std::byte *input_mean,
+    const std::byte *input_var, std::byte *output,
+    std::span<const size_t> in_shape, std::span<const size_t> in_strides,
+    std::span<const size_t> out_strides, float epsilon) {
     TYPE_SELECT(typecode, BATCHNORM_IMPL);
 }

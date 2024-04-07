@@ -31,11 +31,11 @@ template <typename T> static void copy_data(T *dst, const T *src, int n) {
 
 template <typename T>
 result<void> tile_apply_impl(const T *input, T *output,
-                             gsl::span<const size_t> in_shape,
-                             gsl::span<const size_t> out_shape,
-                             gsl::span<const size_t> in_strides,
-                             gsl::span<const size_t> out_strides,
-                             [[maybe_unused]] gsl::span<const size_t> repeats) {
+                             std::span<const size_t> in_shape,
+                             std::span<const size_t> out_shape,
+                             std::span<const size_t> in_strides,
+                             std::span<const size_t> out_strides,
+                             [[maybe_unused]] std::span<const size_t> repeats) {
     return apply(out_shape, [&](const auto &out_index) -> result<void> {
         auto in_index = dims_t(out_index.size());
         for (size_t i = 0; i < in_shape.size(); ++i) {
@@ -49,11 +49,11 @@ result<void> tile_apply_impl(const T *input, T *output,
 
 template <typename T>
 result<void> tile_impl(const T *input, T *output,
-                       gsl::span<const size_t> in_shape,
-                       gsl::span<const size_t> out_shape,
-                       [[maybe_unused]] gsl::span<const size_t> in_strides,
-                       [[maybe_unused]] gsl::span<const size_t> out_strides,
-                       [[maybe_unused]] gsl::span<const size_t> &repeats) {
+                       std::span<const size_t> in_shape,
+                       std::span<const size_t> out_shape,
+                       [[maybe_unused]] std::span<const size_t> in_strides,
+                       [[maybe_unused]] std::span<const size_t> out_strides,
+                       [[maybe_unused]] std::span<const size_t> &repeats) {
     size_t shape_size_in[4] = {1, 1, 1, 1};
     size_t shape_size_out[4] = {1, 1, 1, 1};
     size_t repeat_size[4] = {1, 1, 1, 1};
@@ -131,10 +131,10 @@ result<void> tile_impl(const T *input, T *output,
                      out_shape, in_strides, out_strides, repeats);
 
 result<void> nncase::kernels::stackvm::reference::tile(
-    datatype_t dt, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> out_shape,
-    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
-    gsl::span<const size_t> repeats) {
+    datatype_t dt, const std::byte *input, std::byte *output,
+    std::span<const size_t> in_shape, std::span<const size_t> out_shape,
+    std::span<const size_t> in_strides, std::span<const size_t> out_strides,
+    std::span<const size_t> repeats) {
     if (in_shape.size() > 4) {
         return tile_apply_impl(input, output, in_shape, out_shape, in_strides,
                                out_strides, repeats);

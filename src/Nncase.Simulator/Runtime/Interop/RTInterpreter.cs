@@ -86,6 +86,12 @@ public sealed class RTInterpreter : SafeHandle
         Native.InterpLoadModel(this, _pinnedModelBuffer.Pointer, (uint)modelBuffer.Length, false).ThrowIfFailed();
     }
 
+    public unsafe void LoadModel(string modelPath)
+    {
+        _pinnedModelBuffer.Dispose();
+        Native.InterpLoadModel(this, modelPath).ThrowIfFailed();
+    }
+
     /// <inheritdoc/>
     protected override bool ReleaseHandle()
     {

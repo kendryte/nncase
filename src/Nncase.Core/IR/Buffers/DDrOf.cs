@@ -16,7 +16,7 @@ public sealed partial class DDrOf : Op
     /// <summary>
     /// Get the input parameter.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(DDrOf), 0, "input", IsTensor());
+    public static readonly ParameterInfo Input = new(typeof(DDrOf), 0, "input");
 
     /// <inheritdoc/>
     public override bool CanFoldConstCall => false;

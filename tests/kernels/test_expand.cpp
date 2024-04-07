@@ -47,7 +47,7 @@ class ExpandTest : public KernelTest,
         int64_t *shape_array = (int64_t *)malloc(shape_size * sizeof(int64_t));
         std::copy(shape.begin(), shape.end(), shape_array);
         new_shape = hrt::create(dt_int64, {shape_size},
-                                {reinterpret_cast<gsl::byte *>(shape_array),
+                                {reinterpret_cast<std::byte *>(shape_array),
                                  shape_size * sizeof(int64_t)},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
@@ -74,7 +74,7 @@ TEST_P(ExpandTest, expand) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 

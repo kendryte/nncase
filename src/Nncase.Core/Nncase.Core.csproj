@@ -20,7 +20,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options" />
-    <PackageReference Include="Microsoft.Toolkit.HighPerformance" />
+    <PackageReference Include="CommunityToolkit.HighPerformance" />
     <PackageReference Include="System.CommandLine" />
     <PackageReference Include="NetFabric.Hyperlinq" />
     <PackageReference Include="System.Reactive" />
@@ -51,9 +51,20 @@
     <None Update="IR\IRListParser.tt">
       <Generator></Generator>
     </None>
+    <None Update="IR\Affine\AffineExprListParser.tt">
+      <Generator></Generator>
+    </None>
+    <None Update="IR\Affine\AffineExprVisitor.g.tt">
+      <LastGenOutput>AffineExprVisitor.g.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
     <None Update="TIR\Range.Conversions.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>Range.Conversions.cs</LastGenOutput>
+    </None>
+    <None Update="VectorTypes\Vectors.g.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Vectors.g.cs</LastGenOutput>
     </None>
   </ItemGroup>
 
@@ -62,6 +73,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="IR\Affine\AffineExprVisitor.g.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>AffineExprVisitor.g.tt</DependentUpon>
+    </Compile>
     <Compile Update="IR\ExprCloner.g.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -87,6 +103,15 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Range.Conversions.tt</DependentUpon>
     </Compile>
+    <Compile Update="VectorTypes\Vectors.g.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Vectors.g.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Tiling\" />
   </ItemGroup>
 
 </Project>

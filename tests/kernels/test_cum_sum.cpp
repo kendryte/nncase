@@ -58,7 +58,7 @@ TEST_P(CumSumTest, cum_sum) {
     // expected
     int64_t axis[] = {1};
     auto axis_ptr = hrt::create(nncase::dt_int64, {1},
-                                {reinterpret_cast<gsl::byte *>(axis), 8}, true,
+                                {reinterpret_cast<std::byte *>(axis), 8}, true,
                                 host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
     auto axis_ort = runtime_tensor_2_ort_tensor(axis_ptr);
@@ -68,21 +68,21 @@ TEST_P(CumSumTest, cum_sum) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     // actual
     float exclusive[] = {0};
     auto exclusive_ptr = hrt::create(nncase::dt_float32, {1},
-                                     {reinterpret_cast<gsl::byte *>(exclusive),
+                                     {reinterpret_cast<std::byte *>(exclusive),
                                       sizeof(exclusive)},
                                      true, host_runtime_tensor::pool_cpu_only)
                              .expect("create tensor failed");
     float reverse[] = {0};
     auto reverse_ptr =
         hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(reverse), sizeof(reverse)},
+                    {reinterpret_cast<std::byte *>(reverse), sizeof(reverse)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output =

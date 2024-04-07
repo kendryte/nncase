@@ -34,8 +34,8 @@ struct identity_window {
 template <class TBinaryOp, class TWindowOp>
 result<void> reduce_window2d_impl(
     const float *input, float init_value, float *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> out_strides, const padding &padding_h,
+    std::span<const size_t> in_shape, std::span<const size_t> in_strides,
+    std::span<const size_t> out_strides, const padding &padding_h,
     const padding &padding_w, int32_t filter_h, int32_t filter_w,
     int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
     value_range<float> fused_activation, TBinaryOp &&binary_op,
@@ -123,8 +123,8 @@ result<void> reduce_window2d_impl(
 
 result<void> reduce_window2d_impl(
     reduce_op_t op, const float *input, float init_value, float *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> out_strides, const padding &padding_h,
+    std::span<const size_t> in_shape, std::span<const size_t> in_strides,
+    std::span<const size_t> out_strides, const padding &padding_h,
     const padding &padding_w, int32_t filter_h, int32_t filter_w,
     int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
     value_range<float> fused_activation, bool count_include_pad,
@@ -143,10 +143,10 @@ result<void> reduce_window2d_impl(
     }
 }
 
-dims_t infer_shape(gsl::span<const size_t> in_shape,
-                   gsl::span<const size_t> filter,
-                   gsl::span<const size_t> stride,
-                   gsl::span<const size_t> dilation,
+dims_t infer_shape(std::span<const size_t> in_shape,
+                   std::span<const size_t> filter,
+                   std::span<const size_t> stride,
+                   std::span<const size_t> dilation,
                    const paddings_t &paddings) {
     dims_t new_shape(in_shape);
     new_shape[2] = kernels::detail::get_windowed_output_size(

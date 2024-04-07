@@ -324,8 +324,8 @@ void binary_impl_fv_i64(int64_t input_a, const int64_t *input_b, int64_t *out,
     }
 }
 
-static int verify_shape_impl(gsl::span<const size_t> in_a_shape,
-                             gsl::span<const size_t> in_b_shape,
+static int verify_shape_impl(std::span<const size_t> in_a_shape,
+                             std::span<const size_t> in_b_shape,
                              int *outter_front_size_ptr,
                              int *outter_current_size_ptr) {
     int size_diff = in_a_shape.size() - in_b_shape.size();
@@ -364,9 +364,9 @@ static int verify_shape_impl(gsl::span<const size_t> in_a_shape,
     return -1;
 }
 
-static int verify_shape(gsl::span<const size_t> in_a_shape,
-                        gsl::span<const size_t> in_b_shape, int a_len,
-                        int b_len, gsl::span<const size_t> out_shape,
+static int verify_shape(std::span<const size_t> in_a_shape,
+                        std::span<const size_t> in_b_shape, int a_len,
+                        int b_len, std::span<const size_t> out_shape,
                         int *outter_front_size, int *outter_current_size) {
     if ((in_a_shape != out_shape) && (in_b_shape != out_shape)) {
         return -1;
@@ -389,8 +389,8 @@ static int verify_shape(gsl::span<const size_t> in_a_shape,
                              outter_current_size);
 }
 
-static gsl::span<const size_t>
-get_sample_span(gsl::span<const size_t> in_shape) {
+static std::span<const size_t>
+get_sample_span(std::span<const size_t> in_shape) {
     int not_one_index = 0;
     for (int i = 0; i < in_shape.size(); ++i) {
         if (in_shape[i] != 1) {
@@ -399,7 +399,7 @@ get_sample_span(gsl::span<const size_t> in_shape) {
         }
     }
     if (not_one_index != 0) {
-        return gsl::span<const size_t>(in_shape.begin() + not_one_index,
+        return std::span<const size_t>(in_shape.begin() + not_one_index,
                                        in_shape.end());
     } else {
         return in_shape;
@@ -411,9 +411,9 @@ get_sample_span(gsl::span<const size_t> in_shape) {
     template <typename Top>                                                    \
     int optimized_binary_impl(                                                 \
         const data_type *input_a, const data_type *input_b, data_type *output, \
-        gsl::span<const size_t> in_a_shape,                                    \
-        gsl::span<const size_t> in_b_shape,                                    \
-        [[maybe_unused]] gsl::span<const size_t> out_shape) noexcept {         \
+        std::span<const size_t> in_a_shape,                                    \
+        std::span<const size_t> in_b_shape,                                    \
+        [[maybe_unused]] std::span<const size_t> out_shape) noexcept {         \
         in_a_shape = get_sample_span(in_a_shape);                              \
         in_b_shape = get_sample_span(in_b_shape);                              \
         out_shape = get_sample_span(out_shape);                                \
@@ -508,11 +508,11 @@ REGISTER_BINARY_IMPL(int64_t, binary_impl_vf_i64, binary_impl_fv_i64,
 } // namespace
 
 result<void> optimized::binary(
-    typecode_t typecode, runtime::stackvm::binary_op_t op, const gsl::byte *lhs,
-    const gsl::byte *rhs, gsl::byte *out, gsl::span<const size_t> in_a_shape,
-    gsl::span<const size_t> lhs_strides, gsl::span<const size_t> in_b_shape,
-    gsl::span<const size_t> rhs_strides, gsl::span<const size_t> out_shape,
-    gsl::span<const size_t> out_strides,
+    typecode_t typecode, runtime::stackvm::binary_op_t op, const std::byte *lhs,
+    const std::byte *rhs, std::byte *out, std::span<const size_t> in_a_shape,
+    std::span<const size_t> lhs_strides, std::span<const size_t> in_b_shape,
+    std::span<const size_t> rhs_strides, std::span<const size_t> out_shape,
+    std::span<const size_t> out_strides,
     NNCASE_UNUSED kernel_context &context) noexcept {
     int ret_value = -1;
 #if __riscv_vector

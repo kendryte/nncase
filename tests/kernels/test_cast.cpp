@@ -88,7 +88,7 @@ TEST_P(CastTest, cast) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(actual.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
@@ -121,7 +121,7 @@ TEST_P(CastTest, cast) {
     tensor_shape(output_ort1, reinterpret_cast<int64_t *>(shape1.data()));
     auto expected1 =
         hrt::create(actual1.datatype(), shape1,
-                    {reinterpret_cast<gsl::byte *>(ptr_ort1), size1}, true,
+                    {reinterpret_cast<std::byte *>(ptr_ort1), size1}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 

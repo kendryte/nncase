@@ -67,14 +67,14 @@ TEST_P(LrnTest, lrn) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     // actual
     float alpha_ptr[] = {alpha_value};
     auto alpha = hrt::create(dt_float32, {1},
-                             {reinterpret_cast<gsl::byte *>(alpha_ptr),
+                             {reinterpret_cast<std::byte *>(alpha_ptr),
                               sizeof(alpha_ptr)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
@@ -82,21 +82,21 @@ TEST_P(LrnTest, lrn) {
     float beta_ptr[] = {beta_value};
     auto beta =
         hrt::create(dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(beta_ptr), sizeof(beta_ptr)},
+                    {reinterpret_cast<std::byte *>(beta_ptr), sizeof(beta_ptr)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
     float bias_ptr[] = {bias_value};
     auto bias =
         hrt::create(dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(bias_ptr), sizeof(bias_ptr)},
+                    {reinterpret_cast<std::byte *>(bias_ptr), sizeof(bias_ptr)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
     int64_t size_ptr[] = {output_size_value};
     auto output_size =
         hrt::create(dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(size_ptr), sizeof(size_ptr)},
+                    {reinterpret_cast<std::byte *>(size_ptr), sizeof(size_ptr)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 

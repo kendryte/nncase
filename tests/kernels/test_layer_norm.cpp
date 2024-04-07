@@ -100,13 +100,13 @@ TEST_P(LayerNormTest, layer_norm) {
     tensor_shape(tensor_seq_get_value(output_ort, 0),
                  reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     // actual
     auto output =
-        kernels::stackvm::layer_norm((int32_t)axis_value, eps, false,
+        kernels::stackvm::layer_norm((int32_t)axis_value, eps, true,
                                      input.impl(), scale.impl(), b.impl())
             .expect("layer_norm failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));

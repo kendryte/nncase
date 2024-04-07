@@ -30,13 +30,13 @@ namespace {
 template <class T, class IndicesT>
 result<void> gather_elements_impl(
     const T *input, T *output,
-    [[maybe_unused]] gsl::span<const size_t> in_shape,
-    gsl::span<const size_t> out_shape, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> out_strides, const IndicesT *indices,
-    gsl::span<const size_t> indices_shape, size_t axis,
+    [[maybe_unused]] std::span<const size_t> in_shape,
+    std::span<const size_t> out_shape, std::span<const size_t> in_strides,
+    std::span<const size_t> out_strides, const IndicesT *indices,
+    std::span<const size_t> indices_shape, size_t axis,
     NNCASE_UNUSED kernel_context &context) noexcept {
     return apply(out_shape,
-                 [&](gsl::span<const size_t> out_index) -> result<void> {
+                 [&](std::span<const size_t> out_index) -> result<void> {
                      dims_t in_index(out_index);
 
                      auto indices_offset =
@@ -61,11 +61,11 @@ result<void> gather_elements_impl(
         });
 
 result<void> nncase::kernels::stackvm::reference::gather_elements(
-    datatype_t type, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> out_shape,
-    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
-    datatype_t indices_type, const gsl::byte *indices,
-    gsl::span<const size_t> indices_shape, size_t axis,
+    datatype_t type, const std::byte *input, std::byte *output,
+    std::span<const size_t> in_shape, std::span<const size_t> out_shape,
+    std::span<const size_t> in_strides, std::span<const size_t> out_strides,
+    datatype_t indices_type, const std::byte *indices,
+    std::span<const size_t> indices_shape, size_t axis,
     kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(type, GATHER_ELEMENTS_IMPL);
 }

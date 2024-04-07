@@ -8,7 +8,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Toolkit.HighPerformance;
 using Nncase.Collections;
 using Nncase.IR;
 using Nncase.TIR.Builders;

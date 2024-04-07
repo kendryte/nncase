@@ -27,8 +27,8 @@ static uint64_t max_mem = 0;
 namespace {
 class host_buffer_impl : public host_buffer_node {
   public:
-    host_buffer_impl(gsl::byte *data, size_t bytes,
-                     std::function<void(gsl::byte *)> deleter,
+    host_buffer_impl(std::byte *data, size_t bytes,
+                     std::function<void(std::byte *)> deleter,
                      uintptr_t physical_address, buffer_allocator &allocator,
                      host_sync_status_t host_sync_status,
                      [[maybe_unused]] bool collect = false)
@@ -66,9 +66,9 @@ class host_buffer_impl : public host_buffer_node {
                                       : err(std::errc::not_supported);
     }
 
-    result<gsl::span<gsl::byte>>
+    result<std::span<std::byte>>
     map_core([[maybe_unused]] map_access_t access) override {
-        return ok(gsl::span<gsl::byte>(data_, size_bytes()));
+        return ok(std::span<std::byte>(data_, size_bytes()));
     }
 
     result<void> unmap_core([[maybe_unused]] map_access_t access) override {
@@ -80,9 +80,9 @@ class host_buffer_impl : public host_buffer_node {
     }
 
   private:
-    gsl::byte *data_;
+    std::byte *data_;
     uintptr_t physical_address_;
-    std::function<void(gsl::byte *)> deleter_;
+    std::function<void(std::byte *)> deleter_;
 #ifdef DUMP_MEM
     size_t bytes_size_;
     bool collect_;
@@ -100,18 +100,18 @@ class host_buffer_allocator : public buffer_allocator {
                   << std::setfill(' ') << bytes << std::endl;
         used_mem += bytes;
 #endif
-        auto data = new (std::nothrow) gsl::byte[bytes];
+        auto data = new (std::nothrow) std::byte[bytes];
         if (!data)
             return err(std::errc::not_enough_memory);
         auto paddr =
             options.flags & HOST_BUFFER_ALLOCATE_SHARED ? (uintptr_t)data : 0;
         return ok<buffer_t>(object_t<host_buffer_impl>(
-            std::in_place, data, bytes, [](gsl::byte *p) { delete[] p; }, paddr,
+            std::in_place, data, bytes, [](std::byte *p) { delete[] p; }, paddr,
             *this, host_sync_status_t::valid, true));
     }
 
     result<buffer_t>
-    attach([[maybe_unused]] gsl::span<gsl::byte> data,
+    attach([[maybe_unused]] std::span<std::byte> data,
            [[maybe_unused]] const buffer_attach_options &options) override {
         auto paddr = options.flags & HOST_BUFFER_ATTACH_SHARED
                          ? (options.physical_address ? options.physical_address
@@ -119,7 +119,7 @@ class host_buffer_allocator : public buffer_allocator {
                          : 0;
         return ok<buffer_t>(object_t<host_buffer_impl>(
             std::in_place, data.data(), data.size_bytes(),
-            []([[maybe_unused]] gsl::byte *p) {}, paddr, *this,
+            []([[maybe_unused]] std::byte *p) {}, paddr, *this,
             host_sync_status_t::valid));
     }
 

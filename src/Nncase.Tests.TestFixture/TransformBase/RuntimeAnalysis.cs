@@ -62,7 +62,10 @@ public static class RuntimeResultAnalysis
         var e = new TextDataExtractor();
         var data = e.MatmulExtract(dir);
         var cosList = data.Select(d => RuntimeResultAnalysis.Run(d.FileName, dir, ctor).First()).ToArray();
-        DumpUtility.WriteResult(resultPath, cosList);
+        using (var stream = File.OpenWrite(resultPath))
+        {
+            DumpUtility.WriteResult(stream, cosList);
+        }
     }
 
     public static float[] Run(string fileName, string dir, Func<Expr[], Call> f)

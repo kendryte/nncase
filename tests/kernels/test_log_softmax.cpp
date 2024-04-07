@@ -48,7 +48,7 @@ class LogSoftmaxTest : public KernelTest,
         int64_t axis_ptr[] = {axis_value};
         axis = hrt::create(
                    dt_int64, {1},
-                   {reinterpret_cast<gsl::byte *>(axis_ptr), sizeof(axis_ptr)},
+                   {reinterpret_cast<std::byte *>(axis_ptr), sizeof(axis_ptr)},
                    true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
     }
@@ -74,7 +74,7 @@ TEST_P(LogSoftmaxTest, log_softmax) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 

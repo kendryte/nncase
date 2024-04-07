@@ -28,11 +28,11 @@ using namespace nncase::kernels::stackvm;
 namespace {
 template <class T>
 result<void>
-transpose_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
-               gsl::span<const size_t> perm, gsl::span<const size_t> in_strides,
-               gsl::span<const size_t> out_strides,
+transpose_impl(const T *input, T *output, std::span<const size_t> in_shape,
+               std::span<const size_t> perm, std::span<const size_t> in_strides,
+               std::span<const size_t> out_strides,
                NNCASE_UNUSED kernel_context &context) noexcept {
-    return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
+    return apply(in_shape, [&](std::span<const size_t> index) -> result<void> {
         dims_t out_index(index.size());
         for (size_t i = 0; i < index.size(); i++)
             out_index[i] = index[perm[i]];
@@ -50,9 +50,9 @@ transpose_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
 } // namespace
 
 result<void> nncase::kernels::stackvm::reference::transpose(
-    datatype_t type, const gsl::byte *src, gsl::byte *dest,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> perm,
-    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    datatype_t type, const std::byte *src, std::byte *dest,
+    std::span<const size_t> in_shape, std::span<const size_t> perm,
+    std::span<const size_t> in_strides, std::span<const size_t> out_strides,
     kernel_context &context) noexcept {
     switch (runtime::get_bytes(type)) {
         TRANSPOSE_IMPL(1, uint8_t);

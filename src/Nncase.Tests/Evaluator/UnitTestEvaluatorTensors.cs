@@ -43,6 +43,16 @@ public class UnitTestEvaluatorTensors : TestClassBase
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
 
+    [Fact(Skip = "OnnxBug")]
+    public void TestBinary()
+    {
+        var lhsShape = new long[] { 1, 1, 12, 256, 1, 32, 32, 1 };
+        var rhsShape = new long[] { 64, 1, 256, 4, 1, 32, 32 };
+        var lhs = OrtKI.Random(lhsShape);
+        var rhs = OrtKI.Random(rhsShape);
+        _ = OrtKI.Mul(lhs, rhs);
+    }
+
     [Fact]
     public void TestBroadcast()
     {

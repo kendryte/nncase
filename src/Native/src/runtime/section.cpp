@@ -18,14 +18,14 @@
 using namespace nncase;
 using namespace nncase::runtime;
 
-gsl::span<const gsl::byte>
+std::span<const std::byte>
 runtime::find_section(const char *name,
-                      gsl::span<const gsl::byte> sections) noexcept {
+                      std::span<const std::byte> sections) noexcept {
     span_reader reader(sections);
     while (!reader.empty()) {
         auto header = reader.peek_ref<section_header>();
         if (!strncmp(header->name, name, MAX_SECTION_NAME_LENGTH)) {
-            gsl::span<const gsl::byte> result;
+            std::span<const std::byte> result;
             if (header->flags & SECTION_MERGED_INTO_RDATA) {
                 auto rdata_span = find_section(".rdata", sections);
                 result =
@@ -45,7 +45,7 @@ runtime::find_section(const char *name,
     return {};
 }
 
-gsl::span<const gsl::byte> runtime::read_sections(span_reader &sr,
+std::span<const std::byte> runtime::read_sections(span_reader &sr,
                                                   size_t sections) noexcept {
     auto nest_sr = sr;
     size_t size = 0;

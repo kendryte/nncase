@@ -146,6 +146,7 @@ public sealed record TensorType(DataType DType, Shape Shape) : IRType
         PrimType ptype => ptype.GetDisplayName() + (Shape.IsScalar ? string.Empty : Shape.ToString()),
         PointerType { ElemType: PrimType etype } => $"*{etype.GetDisplayName()}",
         ValueType => $"{DType}",
+        VectorType vtype => $"{vtype.ElemType}<{string.Join(",", vtype.Lanes)}>" + (Shape.IsScalar ? string.Empty : Shape.ToString()),
         _ => throw new NotSupportedException(DType.GetType().Name),
     };
 }

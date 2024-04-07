@@ -242,7 +242,7 @@ NNCASE_STACKVM_DISPATCH_END()
 
 NNCASE_STACKVM_DISPATCH_BEGIN(LDDATATYPE)
 auto addr = pop_addr();
-span_reader sr({reinterpret_cast<const gsl::byte *>(addr), MAX_SIGNATURE_SIZE});
+span_reader sr({reinterpret_cast<const std::byte *>(addr), MAX_SIGNATURE_SIZE});
 try_var(dtype, deserialize_datatype(sr));
 stack_.push(std::move(dtype));
 NNCASE_STACKVM_DISPATCH_END()
@@ -253,7 +253,7 @@ auto shape = pop_shape();
 auto strides = pop_shape();
 auto addr = pop_addr();
 
-gsl::span<gsl::byte> data(reinterpret_cast<gsl::byte *>(addr),
+std::span<std::byte> data(reinterpret_cast<std::byte *>(addr),
                           get_bytes(dtype, shape, strides));
 buffer_attach_options options{};
 try_var(buffer, buffer_allocator::host().attach(data, options));

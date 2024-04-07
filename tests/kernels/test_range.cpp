@@ -42,7 +42,7 @@ class RangeTest : public KernelTest,
 
         float begin_array[] = {begin_value};
         begin = hrt::create(typecode, shape,
-                            {reinterpret_cast<gsl::byte *>(begin_array),
+                            {reinterpret_cast<std::byte *>(begin_array),
                              sizeof(begin_array)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
@@ -50,13 +50,13 @@ class RangeTest : public KernelTest,
         float end_array[] = {end_value};
         end = hrt::create(
                   typecode, shape,
-                  {reinterpret_cast<gsl::byte *>(end_array), sizeof(end_array)},
+                  {reinterpret_cast<std::byte *>(end_array), sizeof(end_array)},
                   true, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
 
         float step_array[] = {step_value};
         step = hrt::create(typecode, shape,
-                           {reinterpret_cast<gsl::byte *>(step_array),
+                           {reinterpret_cast<std::byte *>(step_array),
                             sizeof(step_array)},
                            true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
@@ -85,7 +85,7 @@ TEST_P(RangeTest, Range) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(begin.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 

@@ -21,6 +21,8 @@ public static class Buffer
     public static Call DDrOf(Expr input) =>
         new Call(new DDrOf(), input);
 
+    public static BufferOf BufferOf(Expr input) => new BufferOf(input);
+
     /// <summary>
     /// the placeholder for this expr's index.
     /// </summary>
@@ -44,4 +46,8 @@ public static class Buffer
     public static Call Uninitialized(DataType dataType, TIR.MemoryLocation memoryLocation, Expr shape) => new Call(new Uninitialized(dataType, memoryLocation), shape);
 
     public static Call Allocate(Expr size, DataType dataType, TIR.MemoryLocation location) => new Call(new Allocate(dataType, location), size);
+
+    public static Call AllocateBufferView(Expr buffer) => new Call(new AllocateBufferView(), buffer);
+
+    public static Call BufferSubview(Expr buffer, Expr offset, Expr shape) => new Call(new BufferSubview(), buffer, offset, shape);
 }

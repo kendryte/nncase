@@ -49,14 +49,14 @@ class NormalLikeTest : public KernelTest,
         float mean_ptr[] = {mean_value};
         mean = hrt::create(
                    typecode, {1},
-                   {reinterpret_cast<gsl::byte *>(mean_ptr), sizeof(mean_ptr)},
+                   {reinterpret_cast<std::byte *>(mean_ptr), sizeof(mean_ptr)},
                    true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
 
         scale_value = value2;
         float scale_ptr[] = {scale_value};
         scale = hrt::create(typecode, {1},
-                            {reinterpret_cast<gsl::byte *>(scale_ptr),
+                            {reinterpret_cast<std::byte *>(scale_ptr),
                              sizeof(scale_ptr)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
@@ -65,7 +65,7 @@ class NormalLikeTest : public KernelTest,
         float seed_ptr[] = {seed_value};
         seed = hrt::create(
                    typecode, {1},
-                   {reinterpret_cast<gsl::byte *>(seed_ptr), sizeof(seed_ptr)},
+                   {reinterpret_cast<std::byte *>(seed_ptr), sizeof(seed_ptr)},
                    true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
     }
@@ -97,7 +97,7 @@ TEST_P(NormalLikeTest, normal_like) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 

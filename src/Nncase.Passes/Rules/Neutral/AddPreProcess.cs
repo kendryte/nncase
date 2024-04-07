@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Toolkit.HighPerformance;
 using Nncase.IR;
 using Nncase.IR.Imaging;
 using Nncase.IR.Math;

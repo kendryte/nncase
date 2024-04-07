@@ -20,9 +20,9 @@ BEGIN_NS_NNCASE_RT_MODULE(k210)
 
 class k210_runtime_module : public runtime_module {
   public:
-    gsl::span<gsl::byte> data() const noexcept;
-    gsl::span<const gsl::byte> rdata() const noexcept;
-    gsl::span<gsl::byte> kpu_ram() noexcept;
+    std::span<std::byte> data() const noexcept;
+    std::span<const std::byte> rdata() const noexcept;
+    std::span<std::byte> kpu_ram() noexcept;
 
 #if !NNCASE_SIMULATOR
     uint32_t dma_ch() const noexcept { return dma_ch_; }
@@ -35,11 +35,11 @@ class k210_runtime_module : public runtime_module {
     create_function() noexcept override;
 
   private:
-    std::unique_ptr<gsl::byte[]> data_;
-    gsl::span<const gsl::byte> rdata_;
-    gsl::span<const gsl::byte> text_;
+    std::unique_ptr<std::byte[]> data_;
+    std::span<const std::byte> rdata_;
+    std::span<const std::byte> text_;
 #ifdef NNCASE_SIMULATOR
-    std::array<gsl::byte, KPU_RAM_SIZE> kpu_ram_;
+    std::array<std::byte, KPU_RAM_SIZE> kpu_ram_;
 #else
     uint32_t dma_ch_;
 #endif

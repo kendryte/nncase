@@ -4,6 +4,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Nncase.IR;
@@ -55,16 +56,22 @@ public static class OrtKIExtensions
         return Tensor.FromBytes(tensor.DataType.ToDataType(), tensor.BytesBuffer.ToArray(), tensor.Shape.ToInts());
     }
 
+    public static Tensor ToTensor(this OrtKISharp.Tensor tensor, TensorType tensorType)
+    {
+        return Tensor.FromBytes(tensorType.DType, tensor.BytesBuffer.ToArray(), tensorType.Shape.IsFixed ? tensorType.Shape : tensor.Shape.ToInts());
+    }
+
     public static TensorValue ToValue(this OrtKISharp.Tensor tensor)
     {
         return tensor.ToTensor();
     }
 
-    public static OrtKISharp.Tensor ToOrtTensor(this Tensor tensor)
+    public static OrtKISharp.Tensor ToOrtTensor(this Tensor tensor) => tensor.ElementType switch
     {
-        var shape = tensor.Dimensions.ToArray();
-        return tensor.ToOrtTensor(shape);
-    }
+        VectorType vectorType => ToOrtTensor(tensor, vectorType.ElemType.ToOrtType(), tensor.Dimensions.ToArray().Concat(vectorType.Lanes.ToArray()).ToArray()),
+        PrimType primType => ToOrtTensor(tensor, primType.ToOrtType(), tensor.Dimensions.ToArray()),
+        _ => throw new NotSupportedException(),
+    };
 
     public static OrtKISharp.Tensor ScalarToOrtTensor(this Tensor tensor)
     {
@@ -73,7 +80,7 @@ public static class OrtKIExtensions
             throw new InvalidOperationException("Tensor is not a scala in ScalarToOrtTensor");
         }
 
-        return tensor.ToOrtTensor(new[] { 1 });
+        return ToOrtTensor(tensor, tensor.ElementType.ToOrtType(), new[] { 1 });
     }
 
     public static OrtDataType ToOrtType(this DataType dt)
@@ -98,8 +105,32 @@ public static class OrtKIExtensions
 
     public static OrtKISharp.Tensor BroadcastTo(this OrtKISharp.Tensor tensor, long[] shape, OrtDataType dtype = OrtDataType.Float) => tensor + OrtKISharp.Tensor.Empty(shape, dtype);
 
-    private static OrtKISharp.Tensor ToOrtTensor(this Tensor tensor, int[] shape)
+    public static OrtKISharp.Tensor Pack(this OrtKISharp.Tensor tensor, int lanes, int axis)
     {
-        return OrtKISharp.Tensor.MakeTensor(tensor.PinBuffer(), tensor.ElementType.ToOrtType(), shape.ToLongs());
+        if (axis < 0)
+        {
+            return tensor;
+        }
+
+        var shape = tensor.Shape;
+        var dividedShape = shape.Take(axis).Concat(new[] { shape[axis] / lanes, lanes }).Concat(shape.Skip(axis + 1)).ToArray();
+        var perm = Enumerable.Range(0, axis + 1).Concat(Enumerable.Range(axis + 2, dividedShape.Length - (axis + 2))).Concat(new[] { axis + 1 }).Select(i => (long)i).ToArray();
+        return OrtKI.Transpose(OrtKI.Reshape(tensor, dividedShape, 0), perm);
+    }
+
+    public static OrtKISharp.Tensor Unpack(this OrtKISharp.Tensor tensor, int axis)
+    {
+        var perm = Enumerable.Range(0, tensor.Shape.Length);
+        perm = perm.Take(axis + 1).Concat(new[] { perm.Last() }).Concat(perm.Skip(axis + 1).SkipLast(1));
+        var unpacked = OrtKI.Transpose(tensor, perm.Select(i => (long)i).ToArray());
+        var shape = unpacked.Shape.ToList();
+        shape[axis] = shape[axis] * shape[axis + 1];
+        shape.RemoveAt(axis + 1);
+        return OrtKI.Reshape(unpacked, shape.ToArray(), 0);
+    }
+
+    private static OrtKISharp.Tensor ToOrtTensor(Tensor tensor, OrtDataType ortDataType, int[] shape)
+    {
+        return OrtKISharp.Tensor.MakeTensor(tensor.PinBuffer(), ortDataType, shape.ToLongs());
     }
 }

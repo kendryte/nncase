@@ -30,17 +30,17 @@ BEGIN_NS_NNCASE_KERNELS_MODULE(stackvm)
 namespace reference {
 
 NNCASE_API result<void>
-batchnorm(typecode_t typecode, const gsl::byte *input, const gsl::byte *scale,
-          const gsl::byte *bias, const gsl::byte *input_mean,
-          const gsl::byte *input_var, gsl::byte *output,
-          gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-          gsl::span<const size_t> out_strides, float epsilon);
+batchnorm(typecode_t typecode, const std::byte *input, const std::byte *scale,
+          const std::byte *bias, const std::byte *input_mean,
+          const std::byte *input_var, std::byte *output,
+          std::span<const size_t> in_shape, std::span<const size_t> in_strides,
+          std::span<const size_t> out_strides, float epsilon);
 
-NNCASE_API result<void> layer_norm(typecode_t type, const gsl::byte *input,
-                                   gsl::byte *output, const gsl::byte *scale,
-                                   const gsl::byte *bias,
-                                   gsl::span<const size_t> in_shape,
-                                   int32_t axis, float epsilon);
+NNCASE_API result<void> layer_norm(typecode_t type, const std::byte *input,
+                                   std::byte *output, const std::byte *scale,
+                                   const std::byte *bias,
+                                   std::span<const size_t> in_shape,
+                                   int32_t axis, float epsilon, bool use_mean);
 
 NNCASE_API result<void>
 batch_to_space(tensor input, tensor block_shape, tensor crops,
@@ -49,16 +49,16 @@ batch_to_space(tensor input, tensor block_shape, tensor crops,
 
 NNCASE_API result<void> binary(
     typecode_t typecode, nncase::runtime::stackvm::binary_op_t op,
-    const gsl::byte *lhs, const gsl::byte *rhs, gsl::byte *output,
-    gsl::span<const size_t> lhs_shape, gsl::span<const size_t> lhs_strides,
-    gsl::span<const size_t> rhs_shape, gsl::span<const size_t> rhs_strides,
-    gsl::span<const size_t> out_shape, gsl::span<const size_t> out_strides,
+    const std::byte *lhs, const std::byte *rhs, std::byte *output,
+    std::span<const size_t> lhs_shape, std::span<const size_t> lhs_strides,
+    std::span<const size_t> rhs_shape, std::span<const size_t> rhs_strides,
+    std::span<const size_t> out_shape, std::span<const size_t> out_strides,
     NNCASE_UNUSED kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void> broadcast(
-    typecode_t typecode, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> input_shape, gsl::span<const size_t> input_strides,
-    gsl::span<const size_t> out_shape, gsl::span<const size_t> out_strides,
+    typecode_t typecode, const std::byte *input, std::byte *output,
+    std::span<const size_t> input_shape, std::span<const size_t> input_strides,
+    std::span<const size_t> out_shape, std::span<const size_t> out_strides,
     kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
@@ -70,46 +70,46 @@ celu(tensor input, tensor alpha, tensor output = nullptr,
      kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void> clamp(
-    typecode_t type, const gsl::byte *input, const gsl::byte *min,
-    const gsl::byte *max, gsl::byte *output, gsl::span<const size_t> in_shape,
-    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    typecode_t type, const std::byte *input, const std::byte *min,
+    const std::byte *max, std::byte *output, std::span<const size_t> in_shape,
+    std::span<const size_t> in_strides, std::span<const size_t> out_strides,
     NNCASE_UNUSED kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void> compare_impl(
     typecode_t typecode, nncase::runtime::stackvm::compare_op_t op,
-    const gsl::byte *lhs, const gsl::byte *rhs, gsl::byte *output,
-    gsl::span<const size_t> lhs_shape, gsl::span<const size_t> lhs_strides,
-    gsl::span<const size_t> rhs_shape, gsl::span<const size_t> rhs_strides,
-    gsl::span<const size_t> out_shape, gsl::span<const size_t> out_strides,
+    const std::byte *lhs, const std::byte *rhs, std::byte *output,
+    std::span<const size_t> lhs_shape, std::span<const size_t> lhs_strides,
+    std::span<const size_t> rhs_shape, std::span<const size_t> rhs_strides,
+    std::span<const size_t> out_shape, std::span<const size_t> out_strides,
     NNCASE_UNUSED kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
-concat(datatype_t type, gsl::span<const gsl::byte *const> inputs,
-       gsl::byte *output, gsl::span<const size_t> out_shape,
-       gsl::span<const dims_t> in_strides, gsl::span<const size_t> out_strides,
-       size_t axis, gsl::span<const size_t> concat_dims,
+concat(datatype_t type, std::span<const std::byte *const> inputs,
+       std::byte *output, std::span<const size_t> out_shape,
+       std::span<const dims_t> in_strides, std::span<const size_t> out_strides,
+       size_t axis, std::span<const size_t> concat_dims,
        kernel_context &context = default_kernel_context()) noexcept;
 
-NNCASE_API result<void> constant_of_shape(datatype_t dt, const gsl::byte *value,
-                                          gsl::byte *output,
-                                          gsl::span<const size_t> shape);
+NNCASE_API result<void> constant_of_shape(datatype_t dt, const std::byte *value,
+                                          std::byte *output,
+                                          std::span<const size_t> shape);
 
 NNCASE_API result<void> conv2d(
-    typecode_t typecode, const gsl::byte *input, const gsl::byte *weights,
-    const gsl::byte *bias, gsl::byte *output, gsl::span<const size_t> in_shape,
-    gsl::span<const size_t> in_strides, gsl::span<const size_t> w_shape,
-    gsl::span<const size_t> w_strides, gsl::span<const size_t> bias_strides,
-    gsl::span<const size_t> out_strides, const padding &padding_h,
+    typecode_t typecode, const std::byte *input, const std::byte *weights,
+    const std::byte *bias, std::byte *output, std::span<const size_t> in_shape,
+    std::span<const size_t> in_strides, std::span<const size_t> w_shape,
+    std::span<const size_t> w_strides, std::span<const size_t> bias_strides,
+    std::span<const size_t> out_strides, const padding &padding_h,
     const padding &padding_w, int32_t groups, int32_t stride_h,
     int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
     value_range<float> fused_activation,
     NNCASE_UNUSED kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void> conv2d_transpose(
-    typecode_t typecode, const gsl::byte *input, gsl::byte *output,
-    const gsl::byte *weights, const gsl::byte *bias,
-    gsl::span<const size_t> in_shape, int32_t groups,
-    gsl::span<const size_t> out_shape, int32_t filter_h, int32_t filter_w,
+    typecode_t typecode, const std::byte *input, std::byte *output,
+    const std::byte *weights, const std::byte *bias,
+    std::span<const size_t> in_shape, int32_t groups,
+    std::span<const size_t> out_shape, int32_t filter_h, int32_t filter_w,
     int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
     const padding &padding_h, const padding &padding_w,
     [[maybe_unused]] const value_range<float> &fused_activation) noexcept;
@@ -120,10 +120,10 @@ cum_sum(tensor input, tensor axis, tensor exclusive, tensor reverse,
         kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void> dequantize(datatype_t in_type, datatype_t out_type,
-                                   const gsl::byte *input, gsl::byte *output,
-                                   gsl::span<const size_t> in_shape,
-                                   gsl::span<const size_t> in_strides,
-                                   gsl::span<const size_t> out_strides,
+                                   const std::byte *input, std::byte *output,
+                                   std::span<const size_t> in_shape,
+                                   std::span<const size_t> in_strides,
+                                   std::span<const size_t> out_strides,
                                    float scale, float bias,
                                    kernel_context &context) noexcept;
 
@@ -131,9 +131,9 @@ NNCASE_API result<void> elu(tensor input, tensor alpha, tensor output = nullptr,
                             kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void> expand(
-    typecode_t typecode, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> input_shape, gsl::span<const size_t> input_strides,
-    gsl::span<const size_t> out_shape, gsl::span<const size_t> out_strides,
+    typecode_t typecode, const std::byte *input, std::byte *output,
+    std::span<const size_t> input_shape, std::span<const size_t> input_strides,
+    std::span<const size_t> out_shape, std::span<const size_t> out_strides,
     NNCASE_UNUSED kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
@@ -141,37 +141,37 @@ flatten(tensor input, tensor axis, tensor output = nullptr,
         kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void>
-gather(datatype_t type, const gsl::byte *input, gsl::byte *output,
-       gsl::span<const size_t> in_shape, gsl::span<const size_t> out_shape,
-       gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
-       datatype_t indices_type, const gsl::byte *indices,
-       gsl::span<const size_t> indices_shape, size_t axis,
+gather(datatype_t type, const std::byte *input, std::byte *output,
+       std::span<const size_t> in_shape, std::span<const size_t> out_shape,
+       std::span<const size_t> in_strides, std::span<const size_t> out_strides,
+       datatype_t indices_type, const std::byte *indices,
+       std::span<const size_t> indices_shape, size_t axis,
        kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void> gather_elements(
-    datatype_t type, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> out_shape,
-    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
-    datatype_t indices_type, const gsl::byte *indices,
-    gsl::span<const size_t> indices_shape, size_t axis,
+    datatype_t type, const std::byte *input, std::byte *output,
+    std::span<const size_t> in_shape, std::span<const size_t> out_shape,
+    std::span<const size_t> in_strides, std::span<const size_t> out_strides,
+    datatype_t indices_type, const std::byte *indices,
+    std::span<const size_t> indices_shape, size_t axis,
     kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API
 result<void>
-gather_nd(datatype_t type, const gsl::byte *input, gsl::byte *output,
-          gsl::span<const size_t> in_shape, gsl::span<const size_t> out_shape,
-          gsl::span<const size_t> in_strides,
-          gsl::span<const size_t> out_strides, datatype_t indices_type,
-          const gsl::byte *indices, gsl::span<const size_t> indices_shape,
+gather_nd(datatype_t type, const std::byte *input, std::byte *output,
+          std::span<const size_t> in_shape, std::span<const size_t> out_shape,
+          std::span<const size_t> in_strides,
+          std::span<const size_t> out_strides, datatype_t indices_type,
+          const std::byte *indices, std::span<const size_t> indices_shape,
           size_t batch_dims,
           kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API
 result<void>
-scatter_nd(datatype_t type, const gsl::byte *input, gsl::byte *output,
-           gsl::span<const size_t> in_shape, datatype_t indices_type,
-           const gsl::byte *indices, gsl::span<const size_t> indices_shape,
-           const gsl::byte *updates, gsl::span<const size_t> updates_shape,
+scatter_nd(datatype_t type, const std::byte *input, std::byte *output,
+           std::span<const size_t> in_shape, datatype_t indices_type,
+           const std::byte *indices, std::span<const size_t> indices_shape,
+           const std::byte *updates, std::span<const size_t> updates_shape,
            kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
@@ -191,11 +191,11 @@ hardmax(tensor input, tensor axis, tensor output = nullptr,
         kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void>
-instance_norm(typecode_t typecode, const gsl::byte *input,
-              const gsl::byte *scale, const gsl::byte *bias, gsl::byte *output,
-              gsl::span<const size_t> in_shape,
-              gsl::span<const size_t> in_strides,
-              gsl::span<const size_t> out_strides, float epsilon);
+instance_norm(typecode_t typecode, const std::byte *input,
+              const std::byte *scale, const std::byte *bias, std::byte *output,
+              std::span<const size_t> in_shape,
+              std::span<const size_t> in_strides,
+              std::span<const size_t> out_strides, float epsilon);
 
 NNCASE_API result<void>
 l2_normalization(tensor input, tensor output = nullptr,
@@ -209,26 +209,26 @@ NNCASE_API result<void>
 lp_normalization(tensor input, tensor axis, tensor p, tensor output = nullptr,
                  kernel_context &context = default_kernel_context());
 
-NNCASE_API result<void> lrn(typecode_t typecode, const gsl::byte *input,
+NNCASE_API result<void> lrn(typecode_t typecode, const std::byte *input,
                             float alpha, float beta, float bias, int size,
-                            gsl::byte *output, gsl::span<const size_t> in_shape,
-                            gsl::span<const size_t> in_strides,
-                            gsl::span<const size_t> out_strides);
+                            std::byte *output, std::span<const size_t> in_shape,
+                            std::span<const size_t> in_strides,
+                            std::span<const size_t> out_strides);
 
 NNCASE_API result<void>
-lstm(typecode_t typecode, const gsl::byte *input, const gsl::byte *w_xc,
-     const gsl::byte *w_rc, const gsl::byte *bias, const gsl::byte *init_h,
-     const gsl::byte *init_c, gsl::byte *output, gsl::byte *output_h,
-     gsl::byte *output_c, gsl::span<const size_t> in_shape,
-     gsl::span<const size_t> init_h_shape, gsl::span<const size_t> init_c_shape,
-     gsl::span<const size_t> out_shape, gsl::span<const size_t> w_xc_shape,
-     gsl::span<const size_t> w_rc_shape,
+lstm(typecode_t typecode, const std::byte *input, const std::byte *w_xc,
+     const std::byte *w_rc, const std::byte *bias, const std::byte *init_h,
+     const std::byte *init_c, std::byte *output, std::byte *output_h,
+     std::byte *output_c, std::span<const size_t> in_shape,
+     std::span<const size_t> init_h_shape, std::span<const size_t> init_c_shape,
+     std::span<const size_t> out_shape, std::span<const size_t> w_xc_shape,
+     std::span<const size_t> w_rc_shape,
      runtime::stackvm::lstmdirection_t direction);
 
 NNCASE_API result<void>
-matmul(typecode_t typecode, const gsl::byte *input_a, const gsl::byte *input_b,
-       gsl::byte *output, gsl::span<const size_t> in_a_shape,
-       gsl::span<const size_t> in_b_shape,
+matmul(typecode_t typecode, const std::byte *input_a, const std::byte *input_b,
+       std::byte *output, std::span<const size_t> in_a_shape,
+       std::span<const size_t> in_b_shape,
        kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
@@ -242,28 +242,28 @@ normal_like(typecode_t type, tensor input, tensor mean, tensor scale,
             kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void> one_hot(datatype_t type, datatype_t indices_type,
-                                const gsl::byte *indices, gsl::byte *output,
-                                gsl::span<const size_t> indices_shape,
-                                gsl::span<const size_t> out_shape,
-                                gsl::span<const size_t> out_strides,
-                                size_t depth, gsl::byte *values, size_t axis,
+                                const std::byte *indices, std::byte *output,
+                                std::span<const size_t> indices_shape,
+                                std::span<const size_t> out_shape,
+                                std::span<const size_t> out_strides,
+                                size_t depth, std::byte *values, size_t axis,
                                 runtime::stackvm::one_hot_mode_t mode,
                                 kernel_context &context) noexcept;
 
 NNCASE_API result<void>
-pad(datatype_t type, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> out_strides, const paddings_t &paddings,
-    runtime::stackvm::pad_mode_t mode, const gsl::byte *pad_value,
+pad(datatype_t type, const std::byte *input, std::byte *output,
+    std::span<const size_t> in_shape, std::span<const size_t> in_strides,
+    std::span<const size_t> out_strides, const paddings_t &paddings,
+    runtime::stackvm::pad_mode_t mode, const std::byte *pad_value,
     kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
-prelu(typecode_t type, const gsl::byte *input, const gsl::byte *slope,
-      gsl::byte *output, gsl::span<const size_t> in_shape,
-      gsl::span<const size_t> input_strides,
-      gsl::span<const size_t> slope_shape,
-      gsl::span<const size_t> slope_strides, gsl::span<const size_t> out_shape,
-      gsl::span<const size_t> out_strides,
+prelu(typecode_t type, const std::byte *input, const std::byte *slope,
+      std::byte *output, std::span<const size_t> in_shape,
+      std::span<const size_t> input_strides,
+      std::span<const size_t> slope_shape,
+      std::span<const size_t> slope_strides, std::span<const size_t> out_shape,
+      std::span<const size_t> out_strides,
       kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void>
@@ -276,20 +276,20 @@ quant_param_of(runtime::stackvm::quant_mode_t quant_mode, tensor range,
                kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void> quantize(datatype_t in_type, datatype_t out_type,
-                                 const gsl::byte *input, gsl::byte *output,
-                                 gsl::span<const size_t> in_shape,
-                                 gsl::span<const size_t> in_strides,
-                                 gsl::span<const size_t> out_strides,
+                                 const std::byte *input, std::byte *output,
+                                 std::span<const size_t> in_shape,
+                                 std::span<const size_t> in_strides,
+                                 std::span<const size_t> out_strides,
                                  float scale, float bias,
                                  kernel_context &context) noexcept;
 
-NNCASE_API result<void> random_normal(typecode_t type, gsl::byte *output,
-                                      gsl::span<const size_t> out_shape,
+NNCASE_API result<void> random_normal(typecode_t type, std::byte *output,
+                                      std::span<const size_t> out_shape,
                                       float mean, float std,
                                       float seed) noexcept;
 
-NNCASE_API result<void> random_uniform(typecode_t type, gsl::byte *output,
-                                       gsl::span<const size_t> out_shape,
+NNCASE_API result<void> random_uniform(typecode_t type, std::byte *output,
+                                       std::span<const size_t> out_shape,
                                        float low, float high,
                                        float seed) noexcept;
 
@@ -303,9 +303,9 @@ range_of(tensor input, tensor output = nullptr,
 
 NNCASE_API result<void>
 reduce(typecode_t typecode, nncase::runtime::stackvm::reduce_op_t op,
-       const gsl::byte *init_value, const gsl::byte *input, gsl::byte *output,
-       gsl::span<const size_t> in_shape, gsl::span<const size_t> axis,
-       gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+       const std::byte *init_value, const std::byte *input, std::byte *output,
+       std::span<const size_t> in_shape, std::span<const size_t> axis,
+       std::span<const size_t> in_strides, std::span<const size_t> out_strides,
        bool keep_dims,
        kernel_context &context = default_kernel_context()) noexcept;
 
@@ -340,27 +340,27 @@ reshape(tensor input, tensor shape, tensor output = nullptr,
         kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void>
-resize_bilinear(typecode_t type, const gsl::byte *input, gsl::byte *output,
-                gsl::span<const size_t> in_shape,
-                gsl::span<const size_t> in_strides,
-                gsl::span<const size_t> out_strides, int32_t out_h,
+resize_bilinear(typecode_t type, const std::byte *input, std::byte *output,
+                std::span<const size_t> in_shape,
+                std::span<const size_t> in_strides,
+                std::span<const size_t> out_strides, int32_t out_h,
                 int32_t out_w, bool align_corners, bool half_pixel_centers,
                 kernel_context &context) noexcept;
 
 NNCASE_API result<void> resize_nearest_neighbor(
-    typecode_t type, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> out_strides, int32_t out_h, int32_t out_w,
+    typecode_t type, const std::byte *input, std::byte *output,
+    std::span<const size_t> in_shape, std::span<const size_t> in_strides,
+    std::span<const size_t> out_strides, int32_t out_h, int32_t out_w,
     bool align_corners, bool half_pixel_centers,
     get_coordinate_func_t get_coordinate_func,
     get_nearest_pixel_func_t get_nearset_func,
     kernel_context &context) noexcept;
 
 NNCASE_API result<void> reverse_sequence(
-    datatype_t dt, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> sequence_lens,
-    int64_t batch_axis, int64_t time_axis, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> out_strides,
+    datatype_t dt, const std::byte *input, std::byte *output,
+    std::span<const size_t> in_shape, std::span<const size_t> sequence_lens,
+    int64_t batch_axis, int64_t time_axis, std::span<const size_t> in_strides,
+    std::span<const size_t> out_strides,
     NNCASE_UNUSED kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
@@ -385,23 +385,23 @@ size_of(tensor input, tensor output = nullptr,
         kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void>
-slice(datatype_t type, const gsl::byte *input, gsl::byte *output,
-      gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-      gsl::span<const size_t> out_strides, const axes_t &begins,
+slice(datatype_t type, const std::byte *input, std::byte *output,
+      std::span<const size_t> in_shape, std::span<const size_t> in_strides,
+      std::span<const size_t> out_strides, const axes_t &begins,
       const axes_t &ends, const axes_t &strides,
       kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
-softmax(typecode_t type, const gsl::byte *input, gsl::byte *output,
-        gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-        gsl::span<const size_t> out_strides, int64_t axis, float beta,
+softmax(typecode_t type, const std::byte *input, std::byte *output,
+        std::span<const size_t> in_shape, std::span<const size_t> in_strides,
+        std::span<const size_t> out_strides, int64_t axis, float beta,
         bool needLog = false) noexcept;
 
-NNCASE_API result<void> log_softmax(typecode_t typecode, const gsl::byte *input,
-                                    gsl::byte *output,
-                                    gsl::span<const size_t> in_shape,
-                                    gsl::span<const size_t> in_strides,
-                                    gsl::span<const size_t> out_strides,
+NNCASE_API result<void> log_softmax(typecode_t typecode, const std::byte *input,
+                                    std::byte *output,
+                                    std::span<const size_t> in_shape,
+                                    std::span<const size_t> in_strides,
+                                    std::span<const size_t> out_strides,
                                     int32_t axis) noexcept;
 
 NNCASE_API result<void>
@@ -413,19 +413,19 @@ softsign(tensor input, tensor output = nullptr,
          kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void> space_to_batch(
-    datatype_t dt, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> block_shape,
-    const paddings_t &paddings, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> out_shape, gsl::span<const size_t> out_strides,
+    datatype_t dt, const std::byte *input, std::byte *output,
+    std::span<const size_t> in_shape, std::span<const size_t> block_shape,
+    const paddings_t &paddings, std::span<const size_t> in_strides,
+    std::span<const size_t> out_shape, std::span<const size_t> out_strides,
     NNCASE_UNUSED kernel_context &context = default_kernel_context());
 
 NNCASE_API
-result<void> split(datatype_t type, const gsl::byte *input,
-                   gsl::span<gsl::byte *> output,
-                   gsl::span<const size_t> in_shape,
-                   gsl::span<const size_t> in_strides,
-                   gsl::span<strides_t> out_strides, size_t axis,
-                   gsl::span<const size_t> sections,
+result<void> split(datatype_t type, const std::byte *input,
+                   std::span<std::byte *> output,
+                   std::span<const size_t> in_shape,
+                   std::span<const size_t> in_strides,
+                   std::span<strides_t> out_strides, size_t axis,
+                   std::span<const size_t> sections,
                    kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
@@ -433,46 +433,46 @@ squeeze(tensor input, tensor dim, tensor output = nullptr,
         kernel_context &context = default_kernel_context());
 
 NNCASE_API
-result<void> stack(datatype_t type, gsl::span<const gsl::byte *const> inputs,
-                   gsl::byte *output, gsl::span<const size_t> out_shape,
-                   gsl::span<const dims_t> in_strides,
-                   gsl::span<const size_t> out_strides, size_t axis,
+result<void> stack(datatype_t type, std::span<const std::byte *const> inputs,
+                   std::byte *output, std::span<const size_t> out_shape,
+                   std::span<const dims_t> in_strides,
+                   std::span<const size_t> out_strides, size_t axis,
                    kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
-tile(datatype_t dt, const gsl::byte *input, gsl::byte *output,
-     gsl::span<const size_t> in_shape, gsl::span<const size_t> out_shape,
-     gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
-     gsl::span<const size_t> repeats);
+tile(datatype_t dt, const std::byte *input, std::byte *output,
+     std::span<const size_t> in_shape, std::span<const size_t> out_shape,
+     std::span<const size_t> in_strides, std::span<const size_t> out_strides,
+     std::span<const size_t> repeats);
 
-NNCASE_API result<void> topk(typecode_t typecode, const gsl::byte *input,
-                             gsl::byte *output_values, int64_t *output_indices,
-                             gsl::span<const size_t> in_shape,
-                             gsl::span<const size_t> in_strides,
-                             gsl::span<const size_t> output_values_shape,
-                             gsl::span<const size_t> output_values_strides,
-                             gsl::span<const size_t> output_indices_shape,
-                             gsl::span<const size_t> output_indices_strides,
+NNCASE_API result<void> topk(typecode_t typecode, const std::byte *input,
+                             std::byte *output_values, int64_t *output_indices,
+                             std::span<const size_t> in_shape,
+                             std::span<const size_t> in_strides,
+                             std::span<const size_t> output_values_shape,
+                             std::span<const size_t> output_values_strides,
+                             std::span<const size_t> output_indices_shape,
+                             std::span<const size_t> output_indices_strides,
                              const int64_t k, const int32_t axis,
                              const bool largest, const bool sorted) noexcept;
 
 NNCASE_API result<void>
-transpose(datatype_t type, const gsl::byte *src, gsl::byte *dest,
-          gsl::span<const size_t> in_shape, gsl::span<const size_t> perm,
-          gsl::span<const size_t> in_strides,
-          gsl::span<const size_t> out_strides,
+transpose(datatype_t type, const std::byte *src, std::byte *dest,
+          std::span<const size_t> in_shape, std::span<const size_t> perm,
+          std::span<const size_t> in_strides,
+          std::span<const size_t> out_strides,
           kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
-trilu(datatype_t type, const gsl::byte *input, gsl::byte *output,
-      gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-      gsl::span<const size_t> out_strides, int64_t k, bool upper) noexcept;
+trilu(datatype_t type, const std::byte *input, std::byte *output,
+      std::span<const size_t> in_shape, std::span<const size_t> in_strides,
+      std::span<const size_t> out_strides, int64_t k, bool upper) noexcept;
 
 NNCASE_API result<void>
-unary(typecode_t dtype, runtime::stackvm::unary_op_t op, const gsl::byte *input,
-      gsl::byte *output, gsl::span<const size_t> input_shape,
-      gsl::span<const size_t> input_strides, gsl::span<const size_t> out_shape,
-      gsl::span<const size_t> out_strides,
+unary(typecode_t dtype, runtime::stackvm::unary_op_t op, const std::byte *input,
+      std::byte *output, std::span<const size_t> input_shape,
+      std::span<const size_t> input_strides, std::span<const size_t> out_shape,
+      std::span<const size_t> out_strides,
       kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
@@ -490,11 +490,11 @@ unsqueeze(tensor input, tensor dim, tensor output = nullptr,
           kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void>
-where(datatype_t dt, const bool *cond, const gsl::byte *x, const gsl::byte *y,
-      gsl::byte *output, gsl::span<const size_t> cond_shape,
-      gsl::span<const size_t> x_shape, gsl::span<const size_t> y_shape,
-      gsl::span<const size_t> out_shape, gsl::span<const size_t> cond_strides,
-      gsl::span<const size_t> x_strides, gsl::span<const size_t> y_strides,
-      gsl::span<const size_t> out_strides);
+where(datatype_t dt, const bool *cond, const std::byte *x, const std::byte *y,
+      std::byte *output, std::span<const size_t> cond_shape,
+      std::span<const size_t> x_shape, std::span<const size_t> y_shape,
+      std::span<const size_t> out_shape, std::span<const size_t> cond_strides,
+      std::span<const size_t> x_strides, std::span<const size_t> y_strides,
+      std::span<const size_t> out_strides);
 } // namespace reference
 END_NS_NNCASE_KERNELS_MODULE

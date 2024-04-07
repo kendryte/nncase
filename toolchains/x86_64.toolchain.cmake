@@ -1,5 +1,6 @@
 if (MSVC)
-    add_compile_options(/arch:AVX)
+    add_compile_options(/arch:AVX2)
+    add_compile_definitions(__SSE2__ __SSE4_1__ __FMA__ __AVX__ __AVX2__)
 else()
-    add_compile_options(-mavx)
+    add_compile_options(-mavx2)
 endif()

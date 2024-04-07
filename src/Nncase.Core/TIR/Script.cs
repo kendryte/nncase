@@ -259,7 +259,7 @@ public static class T
         return buffer;
     }
 
-    public static Buffer AttachBuffer(Expr start, TensorType tensorType, MemoryLocation location, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    public static Buffer AttachBuffer(Expr start, TensorType tensorType, MemoryLocation location, int hierarchy, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
     {
         if (name.StartsWith("var "))
         {
@@ -269,7 +269,7 @@ public static class T
         var dimensions = tensorType.Shape.ToValueArray();
         var strides = TensorUtilities.GetStrides(dimensions);
         var size = (int)TensorUtilities.GetProduct(dimensions.ToArray()) * tensorType.DType.SizeInBytes;
-        var memspan = new MemSpan(start, size, location);
+        var memspan = new MemSpan(start, size, location, hierarchy);
         buffer = new Buffer(name, tensorType.DType, memspan, dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray());
         return buffer;
     }
@@ -312,7 +312,7 @@ public static class T
     /// <summary>
     /// attach the buffer.
     /// </summary>
-    public static Buffer AttachBuffer(TensorType tensorType, MemoryLocation location, out Var @var, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    public static Buffer AttachBuffer(TensorType tensorType, MemoryLocation location, int hierarchy, out Var @var, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
     {
         if (name.StartsWith("var "))
         {
@@ -323,7 +323,7 @@ public static class T
         var dimensions = tensorType.Shape.ToValueArray();
         var strides = TensorUtilities.GetStrides(dimensions);
         var size = (int)TensorUtilities.GetProduct(dimensions.ToArray()) * tensorType.DType.SizeInBytes;
-        buffer = new Buffer(name, tensorType.DType, new MemSpan(@var, size, location), dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray());
+        buffer = new Buffer(name, tensorType.DType, new MemSpan(@var, size, location, hierarchy), dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray());
         return buffer;
     }
 

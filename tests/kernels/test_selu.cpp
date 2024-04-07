@@ -68,42 +68,42 @@ TEST_P(SeluTest, Selu) {
     if (input.datatype() == dt_float32) {
         float alpha_ptr[] = {alpha_value};
         alpha = hrt::create(nncase::dt_float32, {1},
-                            {reinterpret_cast<gsl::byte *>(alpha_ptr),
+                            {reinterpret_cast<std::byte *>(alpha_ptr),
                              sizeof(alpha_ptr)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
 
         float gamma_ptr[] = {gamma_value};
         gamma = hrt::create(nncase::dt_float32, {1},
-                            {reinterpret_cast<gsl::byte *>(gamma_ptr),
+                            {reinterpret_cast<std::byte *>(gamma_ptr),
                              sizeof(gamma_ptr)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     } else if (input.datatype() == dt_float16) {
         half alpha_ptr[] = {(half)alpha_value};
         alpha = hrt::create(nncase::dt_float16, {1},
-                            {reinterpret_cast<gsl::byte *>(alpha_ptr),
+                            {reinterpret_cast<std::byte *>(alpha_ptr),
                              sizeof(alpha_ptr)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
 
         half gamma_ptr[] = {(half)gamma_value};
         gamma = hrt::create(nncase::dt_float16, {1},
-                            {reinterpret_cast<gsl::byte *>(gamma_ptr),
+                            {reinterpret_cast<std::byte *>(gamma_ptr),
                              sizeof(gamma_ptr)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     } else {
         double alpha_ptr[] = {(double)alpha_value};
         alpha = hrt::create(nncase::dt_float64, {1},
-                            {reinterpret_cast<gsl::byte *>(alpha_ptr),
+                            {reinterpret_cast<std::byte *>(alpha_ptr),
                              sizeof(alpha_ptr)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
 
         double gamma_ptr[] = {(double)gamma_value};
         gamma = hrt::create(nncase::dt_float64, {1},
-                            {reinterpret_cast<gsl::byte *>(gamma_ptr),
+                            {reinterpret_cast<std::byte *>(gamma_ptr),
                              sizeof(gamma_ptr)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
@@ -114,7 +114,7 @@ TEST_P(SeluTest, Selu) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 

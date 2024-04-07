@@ -2,7 +2,6 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
-using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Xunit;

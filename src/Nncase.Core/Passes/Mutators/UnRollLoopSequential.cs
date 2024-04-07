@@ -121,94 +121,94 @@ public sealed class UnRollLoopSequential : ExprRewriter
 
         return Sequential.Flatten(unrolled.ToArray());
     }
+}
 
-    /// <summary>
-    /// clone loop body and fold the math call.
-    /// </summary>
-    private sealed class LoopBodyCloner : ExprCloner<Unit>
+/// <summary>
+/// clone loop body and fold the math call.
+/// </summary>
+internal sealed class LoopBodyCloner : ExprCloner<Unit>
+{
+    private readonly IReadOnlyDictionary<Var, TensorConst> _vmap;
+    private readonly Dictionary<Var, IValue> _cmap;
+    private readonly Dictionary<Type, Evaluator.IEvaluator> _evaluator_cache;
+    private readonly IDictionary<Expr, Expr> _cseMemo;
+
+    public LoopBodyCloner(IReadOnlyDictionary<Var, TensorConst> vmap, Dictionary<Type, Evaluator.IEvaluator> evaluator_cache, IDictionary<Expr, Expr> cseMemo)
     {
-        private readonly IReadOnlyDictionary<Var, TensorConst> _vmap;
-        private readonly Dictionary<Var, IValue> _cmap;
-        private readonly Dictionary<Type, Evaluator.IEvaluator> _evaluator_cache;
-        private readonly IDictionary<Expr, Expr> _cseMemo;
-
-        public LoopBodyCloner(IReadOnlyDictionary<Var, TensorConst> vmap, Dictionary<Type, Evaluator.IEvaluator> evaluator_cache, IDictionary<Expr, Expr> cseMemo)
+        _vmap = vmap;
+        _cmap = new(ReferenceEqualityComparer.Instance);
+        _evaluator_cache = evaluator_cache;
+        _cseMemo = cseMemo;
+        foreach (var p in vmap)
         {
-            _vmap = vmap;
-            _cmap = new(ReferenceEqualityComparer.Instance);
-            _evaluator_cache = evaluator_cache;
-            _cseMemo = cseMemo;
-            foreach (var p in vmap)
-            {
-                _cmap.Add(p.Key, Value.FromConst(p.Value));
-            }
+            _cmap.Add(p.Key, Value.FromConst(p.Value));
         }
+    }
 
-        protected override Expr VisitLeafMemSpan(MemSpan expr, Unit context)
+    protected override Expr VisitLeafMemSpan(MemSpan expr, Unit context)
+    {
+        return expr.With(Clone(expr.Start, context), Clone(expr.Size, context));
+    }
+
+    protected override Expr VisitLeafVar(Var expr, Unit context)
+    {
+        if (_vmap.TryGetValue(expr, out var result))
         {
-            return expr.With(Clone(expr.Start, context), Clone(expr.Size, context));
-        }
-
-        protected override Expr VisitLeafVar(Var expr, Unit context)
-        {
-            if (_vmap.TryGetValue(expr, out var result))
-            {
-                return result;
-            }
-
-            return expr;
-        }
-
-        protected override Expr VisitLeafCall(Call expr, Unit context)
-        {
-            var target = Clone(expr.Target, context);
-            var arguments = CloneArray(expr.Arguments, context);
-            if (target is Op op && op.CanFoldConstCall && arguments.AsValueEnumerable().All(e => e is Const))
-            {
-                return CSE(Const.FromValue(CompilerServices.Evaluate(expr.With(target, arguments), _cmap, _evaluator_cache)));
-            }
-
-            if (target is Function fn)
-            {
-                var feedDict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance);
-                foreach (var (v, arg) in fn.Parameters.ToArray().Zip(arguments.ToArray()))
-                {
-                    if (arg is not Const constArg)
-                    {
-                        return expr.With(target, arguments);
-                    }
-
-                    feedDict.Add(v, Value.FromConst(constArg));
-                }
-
-                return CSE(Const.FromValue(CompilerServices.Evaluate(fn.Body, feedDict, _evaluator_cache)));
-            }
-
-            return expr.With(target, arguments);
-        }
-
-        protected override Expr VisitLeafRange(TIR.Range expr, Unit context)
-        {
-            return CSE(expr.With(start: Clone(expr.Start, context), stop: Clone(expr.Stop, context), step: Clone(expr.Step, context)));
-        }
-
-        protected override Expr VisitLeafBuffer(TIR.Buffer expr, Unit context)
-        {
-            return expr.With(
-                memSpan: Clone<MemSpan>(expr.MemSpan, context),
-                dimensions: CloneArray(expr.Dimensions, context).Select(e => CSE(e)).ToArray(),
-                strides: CloneArray(expr.Strides, context));
-        }
-
-        private Expr CSE(Expr c)
-        {
-            if (!_cseMemo.TryGetValue(c, out var result))
-            {
-                result = c;
-                _cseMemo.Add(c, result);
-            }
-
             return result;
         }
+
+        return expr;
+    }
+
+    protected override Expr VisitLeafCall(Call expr, Unit context)
+    {
+        var target = Clone(expr.Target, context);
+        var arguments = CloneArray(expr.Arguments, context);
+        if (target is Op op && op.CanFoldConstCall && arguments.AsValueEnumerable().All(e => e is Const))
+        {
+            return CSE(Const.FromValue(CompilerServices.Evaluate(expr.With(target, arguments), _cmap, _evaluator_cache)));
+        }
+
+        if (target is Function fn)
+        {
+            var feedDict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance);
+            foreach (var (v, arg) in fn.Parameters.ToArray().Zip(arguments.ToArray()))
+            {
+                if (arg is not Const constArg)
+                {
+                    return expr.With(target, arguments);
+                }
+
+                feedDict.Add(v, Value.FromConst(constArg));
+            }
+
+            return CSE(Const.FromValue(CompilerServices.Evaluate(fn.Body, feedDict, _evaluator_cache)));
+        }
+
+        return expr.With(target, arguments);
+    }
+
+    protected override Expr VisitLeafRange(TIR.Range expr, Unit context)
+    {
+        return CSE(expr.With(start: Clone(expr.Start, context), stop: Clone(expr.Stop, context), step: Clone(expr.Step, context)));
+    }
+
+    protected override Expr VisitLeafBuffer(TIR.Buffer expr, Unit context)
+    {
+        return expr.With(
+            memSpan: Clone<MemSpan>(expr.MemSpan, context),
+            dimensions: CloneArray(expr.Dimensions, context).Select(e => CSE(e)).ToArray(),
+            strides: CloneArray(expr.Strides, context));
+    }
+
+    private Expr CSE(Expr c)
+    {
+        if (!_cseMemo.TryGetValue(c, out var result))
+        {
+            result = c;
+            _cseMemo.Add(c, result);
+        }
+
+        return result;
     }
 }

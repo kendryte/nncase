@@ -14,8 +14,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Nncase.CostModel;
 using Nncase.Evaluator;
 using Nncase.IR;
+using Nncase.IR.Affine;
 using Nncase.Passes;
 using Nncase.PatternMatch;
+using Nncase.Schedule;
 using Nncase.Targets;
 
 namespace Nncase;

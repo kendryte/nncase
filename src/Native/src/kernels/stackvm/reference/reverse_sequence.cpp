@@ -39,10 +39,10 @@ dims_t get_concat_dims(const std::vector<dims_t> &input_dims, int axis) {
 template <class T>
 result<void>
 reverse_sequence_impl([[maybe_unused]] datatype_t dt, const T *input, T *output,
-                      gsl::span<const size_t> in_shape,
-                      gsl::span<const size_t> sequence_lens, int64_t batch_axis,
-                      int64_t time_axis, gsl::span<const size_t> in_strides,
-                      gsl::span<const size_t> out_strides,
+                      std::span<const size_t> in_shape,
+                      std::span<const size_t> sequence_lens, int64_t batch_axis,
+                      int64_t time_axis, std::span<const size_t> in_strides,
+                      std::span<const size_t> out_strides,
                       NNCASE_UNUSED kernel_context &context) noexcept {
     return apply(in_shape, [&](auto &&out_index) -> result<void> {
         dims_t in_index(out_index);
@@ -67,10 +67,10 @@ reverse_sequence_impl([[maybe_unused]] datatype_t dt, const T *input, T *output,
                                      in_strides, out_strides, context)
 
 result<void> nncase::kernels::stackvm::reference::reverse_sequence(
-    datatype_t dt, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> sequence_lens,
-    int64_t batch_axis, int64_t time_axis, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> out_strides,
+    datatype_t dt, const std::byte *input, std::byte *output,
+    std::span<const size_t> in_shape, std::span<const size_t> sequence_lens,
+    int64_t batch_axis, int64_t time_axis, std::span<const size_t> in_strides,
+    std::span<const size_t> out_strides,
     NNCASE_UNUSED kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(dt, REVERSE_SEQUENCE_IMPL);
 }

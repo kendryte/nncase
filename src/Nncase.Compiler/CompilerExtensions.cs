@@ -22,7 +22,7 @@ public static class CompilerExtensions
                 return await compiler.ImportTFLiteModuleAsync(fileStream);
             case "ONNX":
                 return await compiler.ImportOnnxModuleAsync(fileStream);
-            case "NCNN":
+            case "PARAM":
                 {
                     using var binStream = isBenchmarkOnly ? (Stream)new ZeroStream() : File.OpenRead(Path.ChangeExtension(fileName, "bin"));
                     return await compiler.ImportNcnnModuleAsync(fileStream, binStream);

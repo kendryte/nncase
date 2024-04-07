@@ -39,7 +39,7 @@ public sealed class BufferRegion : Expr
     public (Expr Before, Expr After) Padding(int dim) => (IR.F.Math.Max(-Region[dim].Start, 0), IR.F.Math.Max(Region[dim].Stop - Buffer.Dimensions[dim], 0));
 #endif
 
-    public BufferRegion(Buffer buffer, ReadOnlySpan<Range> region)
+    public BufferRegion(Expr buffer, ReadOnlySpan<Range> region)
         : base(ArrayUtility.Concat(buffer, SpanUtility.UnsafeCast<Range, Expr>(region)))
     {
     }
@@ -47,7 +47,7 @@ public sealed class BufferRegion : Expr
     /// <summary>
     /// Gets the buffer of the buffer region.
     /// </summary>
-    public Buffer Buffer => (Buffer)Operands[0];
+    public Expr Buffer => Operands[0];
 
     /// <summary>
     /// Gets the region array of the buffer region.
@@ -76,6 +76,6 @@ public sealed class BufferRegion : Expr
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitBufferRegion(this, context);
 
-    public BufferRegion With(Buffer? buffer, Range[]? region = null)
+    public BufferRegion With(Expr? buffer, Range[]? region = null)
         => new BufferRegion(buffer ?? Buffer, region ?? Region);
 }
