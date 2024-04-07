@@ -207,30 +207,49 @@ internal partial class Quantizer
 
         var outDefault = 0;
 
-        // debug:delete
-        int debugFakeNode = 0;
-        foreach (var (config, _) in sensitivity)
+        var curentResults = CompilerServices.Evaluate(((Function)_expr).Body, sampleFillVarWithConst);
+        var currentResult = curentResults is TensorValue ? curentResults.AsTensor() : curentResults[outDefault].AsTensor();
+        var cosine = Utility.GetCosineSimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(currentResult.BytesBuffer));
+        if (cosine > _quantizeOptions.CosineTarget)
         {
-            var curentResults = CompilerServices.Evaluate(((Function)_expr).Body, sampleFillVarWithConst);
-            var currentResult = curentResults is TensorValue ? curentResults.AsTensor() : curentResults[outDefault].AsTensor();
-            var cosine = Utility.GetCosineSimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(currentResult.BytesBuffer));
-            if (cosine > _quantizeOptions.CosineTarget)
-            {
-                return;
-            }
-
-            _fakeNodeConfigs![config.Var] = config.QuantConfig;
-            sampleFillVarWithConst[config.Var] = Value.FromTensor(config.QuantConfig.ToRaw());
-
             Console.ResetColor();
-            Console.Write($"try opt: nodes:{sensitivity.Count} current:{++debugFakeNode} targetCosine:");
+            Console.Write($"There is no need to Optimize, targetCosine:");
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write($"{_quantizeOptions.CosineTarget}");
             Console.ResetColor();
-            Console.Write($" currentCosine:");
+            Console.Write($" defaultCosine:");
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"{cosine}");
             Console.ResetColor();
+            return;
+        }
+        else
+        {
+            // debug:delete
+            int debugFakeNode = 0;
+            foreach (var (config, _) in sensitivity)
+            {
+                _fakeNodeConfigs![config.Var] = config.QuantConfig;
+                sampleFillVarWithConst[config.Var] = Value.FromTensor(config.QuantConfig.ToRaw());
+                curentResults = CompilerServices.Evaluate(((Function)_expr).Body, sampleFillVarWithConst);
+                currentResult = curentResults is TensorValue ? curentResults.AsTensor() : curentResults[outDefault].AsTensor();
+                cosine = Utility.GetCosineSimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(currentResult.BytesBuffer));
+
+                Console.ResetColor();
+                Console.Write($"try opt: nodes:{sensitivity.Count} current:{++debugFakeNode} targetCosine:");
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Write($"{_quantizeOptions.CosineTarget}");
+                Console.ResetColor();
+                Console.Write($" currentCosine:");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"{cosine}");
+                Console.ResetColor();
+
+                if (cosine > _quantizeOptions.CosineTarget)
+                {
+                    return;
+                }
+            }
         }
     }
 
@@ -401,7 +420,7 @@ internal partial class Quantizer
                 // sensitivities[(var, quantConfig)] = (float)((float)(cosine + (0.0001 * debugFakeNode) + (debugQuantType * 0.00001)) - 0.5);
                 DateTime now = DateTime.Now;
                 string timestamp = now.ToString("HH:mm");
-                Console.WriteLine($"sensitivity: nodes:{debugFakeNode}/{_fakeNodesVars.Count} types:{++debugQuantType}/{quantTypeSupport.Count} time:{timestamp} cosine:{cosine}");
+                Console.WriteLine($"sensitivity: nodes:{debugFakeNode}/{_fakeNodesVars.Count} types:{++debugQuantType}/{quantTypeSupport.Count} time:{timestamp} cosine:{cosine,10:0.00000000} node:{fakeNode.Metadata.OutputNames?[0]}");
             }
         }
 
@@ -424,7 +443,7 @@ internal partial class Quantizer
         // 遍历列表，记下需要插入新元素的位置
         for (int i = 0; i < sensSorted.Count; i++)
         {
-            if (sensSorted[i].Value < 0.95f)
+            if (sensSorted[i].Value < Math.Max(_quantizeOptions.CosineTarget, 0.95f))
             {
                 // 构造新的KeyValuePair
                 var newPair = new KeyValuePair<(Var, QuantConfig), float>((sensSorted[i].Key.Var, new QuantConfig(-1)), 2.0f);
