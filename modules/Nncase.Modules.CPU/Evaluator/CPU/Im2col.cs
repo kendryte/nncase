@@ -25,6 +25,80 @@ public sealed class Im2colEvaluator : ITypeInferencer<Im2col>, ICostEvaluator<Im
         };
     }
 
+    public Cost Visit(ICostEvaluateContext context, Im2col target) => new Cost()
+    {
+        [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(context.GetArgumentType<IRType>(target, Im2col.Input)),
+        [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(context.GetArgumentType<IRType>(target, Im2col.Input)),
+    };
+
+    public IValue Visit(IEvaluateContext context, Im2col target)
+    {
+        var inputTensor = context.GetArgumentValueAsTensor(target, Im2col.Input);
+        var lanes = inputTensor.ElementType.SizeInBytes / 4;
+        int batch = inputTensor.Shape[0].FixedValue;
+        int inChannel = inputTensor.Shape[1].FixedValue;
+        int height = inputTensor.Shape[2].FixedValue;
+        int width = inputTensor.Shape[3].FixedValue;
+        int pad_h_before = target.Padding[0];
+        int pad_h_after = target.Padding[1];
+        int pad_w_before = target.Padding[2];
+        int pad_w_after = target.Padding[3];
+        int kernel_h = target.Kernel[0];
+        int kernel_w = target.Kernel[1];
+        int stride_h = target.Stride[0];
+        int stride_w = target.Stride[1];
+        int output_h = ((height + pad_h_before + pad_h_after -
+                ((1 * (kernel_h - 1)) + 1)) / stride_h) + 1;
+        int output_w = ((width + pad_w_before + pad_w_after -
+         ((1 * (kernel_w - 1)) + 1)) / stride_w) + 1;
+        var outputTensor = new float[inChannel * kernel_h * kernel_w * batch * output_h * output_w * lanes];
+
+        var inputSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, float>(inputTensor.BytesBuffer);
+        var outputSpan = new Span<float>(outputTensor);
+        var data_col = 0;
+        for (int ic = 0; ic < inChannel; ic++)
+        {
+            for (int kh = 0; kh < kernel_h; kh++)
+            {
+                for (int kw = 0; kw < kernel_w; kw++)
+                {
+                    for (int b = 0; b < batch; b++)
+                    {
+                        var data_im = inputSpan.Slice((b * inChannel * height * width * lanes) + (ic * height * width * lanes));
+                        int ih = -pad_h_before + kh;
+                        for (int oh = 0; oh < output_h; oh++)
+                        {
+                            int iw = -pad_w_before + kw;
+                            for (int ow = 0; ow < output_w; ow++)
+                            {
+                                if (iw >= 0 && iw < width && ih >= 0 && ih < height)
+                                {
+                                    for (int i = 0; i < lanes; i++)
+                                    {
+                                        outputSpan[data_col++] = data_im[(ih * width * lanes) + (iw * lanes) + i];
+                                    }
+                                }
+                                else
+                                {
+                                    for (int i = 0; i < lanes; i++)
+                                    {
+                                        outputSpan[data_col++] = 0;
+                                    }
+                                }
+
+                                iw += stride_w;
+                            }
+
+                            ih += stride_h;
+                        }
+                    }
+                }
+            }
+        }
+
+        return Value.FromTensor(Tensor.FromBytes(inputTensor.ElementType, System.Runtime.InteropServices.MemoryMarshal.Cast<float, byte>(outputTensor).ToArray(), new[] { inChannel * kernel_h * kernel_w, batch * output_h * output_w }));
+    }
+
     private IRType Visit(DistributedType dt, Im2col target)
     {
         if (Visit(dt.TensorType, target) is not TensorType tensorType)
@@ -84,72 +158,5 @@ public sealed class Im2colEvaluator : ITypeInferencer<Im2col>, ICostEvaluator<Im
         int output_w = ((width + pad_w_before + pad_w_after -
          ((1 * (kernel_w - 1)) + 1)) / stride_w) + 1;
         return tt with { Shape = new Dimension[] { tt.Shape[1] * kernel_h * kernel_w, tt.Shape[0] * output_h * output_w } };
-    }
-
-    public Cost Visit(ICostEvaluateContext context, Im2col target) => new Cost()
-    {
-        [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(context.GetArgumentType<IRType>(target, Im2col.Input)),
-        [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(context.GetArgumentType<IRType>(target, Im2col.Input)),
-    };
-
-    public IValue Visit(IEvaluateContext context, Im2col target)
-    {
-        var inputTensor = context.GetArgumentValueAsTensor<float>(target, Im2col.Input);
-        int batch = inputTensor.Shape[0].FixedValue;
-        int inChannel = inputTensor.Shape[1].FixedValue;
-        int height = inputTensor.Shape[2].FixedValue;
-        int width = inputTensor.Shape[3].FixedValue;
-        int pad_h_before = target.Padding[0];
-        int pad_h_after = target.Padding[1];
-        int pad_w_before = target.Padding[2];
-        int pad_w_after = target.Padding[3];
-        int kernel_h = target.Kernel[0];
-        int kernel_w = target.Kernel[1];
-        int stride_h = target.Stride[0];
-        int stride_w = target.Stride[1];
-        int output_h = ((height + pad_h_before + pad_h_after -
-                ((1 * (kernel_h - 1)) + 1)) / stride_h) + 1;
-        int output_w = ((width + pad_w_before + pad_w_after -
-         ((1 * (kernel_w - 1)) + 1)) / stride_w) + 1;
-        var outputTensor = Tensor.FromScalar<float>(0, new[] { inChannel * kernel_h * kernel_w, batch * output_h * output_w });
-
-        var inputSpan = inputTensor.Buffer.Span;
-        var outputSpan = outputTensor.Buffer.Span;
-        var data_col = 0;
-        for (int ic = 0; ic < inChannel; ic++)
-        {
-            for (int kh = 0; kh < kernel_h; kh++)
-            {
-                for (int kw = 0; kw < kernel_w; kw++)
-                {
-                    for (int b = 0; b < batch; b++)
-                    {
-                        var data_im = inputSpan.Slice((b * inChannel * height * width) + (ic * height * width));
-                        int ih = -pad_h_before + kh;
-                        for (int oh = 0; oh < output_h; oh++)
-                        {
-                            int iw = -pad_w_before + kw;
-                            for (int ow = 0; ow < output_w; ow++)
-                            {
-                                if (iw >= 0 && iw < width && ih >= 0 && ih < height)
-                                {
-                                    outputSpan[data_col++] = data_im[(ih * width) + iw];
-                                }
-                                else
-                                {
-                                    outputSpan[data_col++] = 0;
-                                }
-
-                                iw += stride_w;
-                            }
-
-                            ih += stride_h;
-                        }
-                    }
-                }
-            }
-        }
-
-        return Value.FromTensor(outputTensor);
     }
 }

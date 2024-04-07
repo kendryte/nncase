@@ -24,4 +24,8 @@ public sealed partial class Im2col : Op
     public IRArray<int> Stride { get; }
 
     public IRArray<int> Padding { get; }
+
+    public IRArray<int> PackedAxes { get; }
+
+    public IRArray<int> PadedNums { get; }
 }

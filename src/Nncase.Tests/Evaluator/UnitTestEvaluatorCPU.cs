@@ -23,10 +23,13 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
     };
 
     [Theory]
-    [InlineData(new object[] { new int[] { 1, 1, 4, 4 }, new int[] { 8, 1, 3, 3 }, new int[] { 1, 1, 1, 1 }, new int[] { 1, 1 } })]
-    [InlineData(new object[] { new int[] { 3, 2, 4, 4 }, new int[] { 8, 2, 3, 3 }, new int[] { 0, 0, 1, 1 }, new int[] { 1, 2 } })]
-    [InlineData(new object[] { new int[] { 3, 2, 4, 4 }, new int[] { 8, 2, 3, 3 }, new int[] { 1, 0, 1, 1 }, new int[] { 2, 1 } })]
-    public void TestIm2colConv(int[] inputShape, int[] weightShape, int[] padding, int[] strides)
+    [InlineData(new object[] { false, new int[] { 1, 1, 4, 4 }, new int[] { 8, 1, 3, 3 }, new int[] { 1, 1, 1, 1 }, new int[] { 1, 1 } })]
+    [InlineData(new object[] { false, new int[] { 3, 2, 4, 4 }, new int[] { 8, 2, 3, 3 }, new int[] { 0, 0, 1, 1 }, new int[] { 1, 2 } })]
+    [InlineData(new object[] { false, new int[] { 3, 2, 4, 4 }, new int[] { 8, 2, 3, 3 }, new int[] { 1, 0, 1, 1 }, new int[] { 2, 1 } })]
+    [InlineData(new object[] { true, new int[] { 1, 4, 4, 4 }, new int[] { 8, 4, 3, 3 }, new int[] { 1, 1, 1, 1 }, new int[] { 1, 1 } })]
+    [InlineData(new object[] { true, new int[] { 3, 8, 4, 4 }, new int[] { 8, 8, 3, 3 }, new int[] { 0, 0, 1, 1 }, new int[] { 1, 2 } })]
+    [InlineData(new object[] { true, new int[] { 3, 8, 4, 4 }, new int[] { 8, 8, 3, 3 }, new int[] { 1, 0, 1, 1 }, new int[] { 2, 1 } })]
+    public void TestIm2colConv(bool pack, int[] inputShape, int[] weightShape, int[] padding, int[] strides)
     {
         var dilation = new[] { 1, 1 };
         var groups = 1;
@@ -43,12 +46,24 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
 
         Expr post;
         {
-            var col = IR.F.CPU.Im2col(input, new[] { weightShape[2], weightShape[3] }, strides, padding);
-            var newW = IR.F.Tensors.Reshape(weights, new[] { weightShape[0], weightShape[1] * weightShape[2] * weightShape[3] });
-            var matmul = IR.F.Tensors.MatMul(newW, col); // [oc, b*oh*ow]
-            var newBias = IR.F.Tensors.Reshape(bias, new[] { weightShape[0], 1 });
-            var add = IR.F.Tensors.Reshape(matmul + newBias, new[] { outShape[1], outShape[0], outShape[2], outShape[3] });
-            post = IR.F.Tensors.Transpose(add, new[] { 1, 0, 2, 3 });
+            if (pack)
+            {
+                var col = IR.F.CPU.Im2col(IR.F.CPU.Pack(input, new[] { 4 }, new[] { 1 }), new[] { weightShape[2], weightShape[3] }, strides, padding, new[] { 1 }, new[] { 0 });
+                var newW = IR.F.Tensors.Reshape(IR.F.CPU.Pack(weights, new[] { 4 }, new[] { 1 }), new[] { weightShape[0], weightShape[1] / 4 * weightShape[2] * weightShape[3] });
+                var matmul = IR.F.CPU.PackedMatMul(newW, col, new[] { 1 }, new[] { 0 }, new[] { 0 }, new[] { 0 }); // [oc, b*oh*ow]
+                var newBias = IR.F.Tensors.Reshape(bias, new[] { weightShape[0], 1 });
+                var add = IR.F.Tensors.Reshape(matmul + newBias, new[] { outShape[1], outShape[0], outShape[2], outShape[3] });
+                post = IR.F.Tensors.Transpose(add, new[] { 1, 0, 2, 3 });
+            }
+            else
+            {
+                var col = IR.F.CPU.Im2col(input, new[] { weightShape[2], weightShape[3] }, strides, padding);
+                var newW = IR.F.Tensors.Reshape(weights, new[] { weightShape[0], weightShape[1] * weightShape[2] * weightShape[3] });
+                var matmul = IR.F.Tensors.MatMul(newW, col); // [oc, b*oh*ow]
+                var newBias = IR.F.Tensors.Reshape(bias, new[] { weightShape[0], 1 });
+                var add = IR.F.Tensors.Reshape(matmul + newBias, new[] { outShape[1], outShape[0], outShape[2], outShape[3] });
+                post = IR.F.Tensors.Transpose(add, new[] { 1, 0, 2, 3 });
+            }
         }
 
         Comparator.Compare(pre.Evaluate(feedDict), post.Evaluate(feedDict), 0.999f);

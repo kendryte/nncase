@@ -98,7 +98,7 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Matmul(arguments[0], arguments[1], ret));
                 break;
             case IR.CPU.Im2col im2col:
-                _mainBody.Add(TIR.F.CPU.Im2col(arguments[0], ret, im2col.Kernel, im2col.Stride, im2col.Padding));
+                _mainBody.Add(TIR.F.CPU.Im2col(arguments[0], ret, im2col.Kernel, im2col.Stride, im2col.Padding, im2col.PackedAxes, im2col.PadedNums));
                 break;
             case IR.CPU.PackedSoftmax packed_softmax:
                 _mainBody.Add(TIR.F.CPU.PackedSoftmax(arguments[0], ret, packed_softmax.Axis, packed_softmax.PackedAxes));
@@ -115,6 +115,12 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 break;
             case IR.NN.LayerNorm layernorm:
                 _mainBody.Add(TIR.F.CPU.PackedLayerNorm(arguments[0], arguments[1], arguments[2], ret, layernorm.Axis, layernorm.Epsilon, layernorm.UseMean, Array.Empty<int>(), Array.Empty<int>()));
+                break;
+            case IR.NN.InstanceNormalization instancenorm:
+                _mainBody.Add(TIR.F.CPU.InstanceNorm(arguments[0], arguments[1], arguments[2], ret, ((TensorConst)expr.Arguments[3]).Value.ToScalar<int>(), Array.Empty<int>(), Array.Empty<int>()));
+                break;
+            case IR.CPU.InstacneNorm instancenorm:
+                _mainBody.Add(TIR.F.CPU.InstanceNorm(arguments[0], arguments[1], arguments[2], ret, instancenorm.Epsilon, instancenorm.PackedAxes, instancenorm.PadedNums));
                 break;
             case IR.Tensors.Unsqueeze unsqueeze:
                 _mainBody.Add(TIR.F.CPU.Reshape(arguments[0], ret, expr.CheckedShape.ToValueArray()));

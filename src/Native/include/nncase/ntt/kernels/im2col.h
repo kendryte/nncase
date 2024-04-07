@@ -20,17 +20,26 @@
 #include "../utility.h"
 
 namespace nncase::ntt {
+
+namespace im2col_details {
+
 /**
- * @brief im2col
- *
- * @param image [n,c,h,w]
- * @param output [ic * kh * kw, n * oh * ow]
+ * @brief
+ *  support:
+ *   1. no pack
+ *   2. packed on the input channel.
  */
 template <IsFixedTensor TIn, IsFixedDims TKernel, IsFixedDims TStrides,
-          IsFixedDims TPadding, IsFixedTensor TOut>
-void im2col(const TIn &input, [[maybe_unused]] const TKernel &kernel,
-            [[maybe_unused]] const TStrides &strides,
-            [[maybe_unused]] const TPadding &padding, TOut &&output) {
+          IsFixedDims PackedAxes, IsFixedDims PadedNums, IsFixedDims TPadding,
+          IsFixedTensor TOut>
+    requires(PackedAxes::rank() == 0 ||
+             (PackedAxes::rank() == 1 && PackedAxes::at(0) == 1))
+void im2col_impl(const TIn &input, [[maybe_unused]] const TKernel &kernel,
+                 [[maybe_unused]] const TStrides &strides,
+                 [[maybe_unused]] const TPadding &padding,
+                 [[maybe_unused]] const PackedAxes packedAxes,
+                 [[maybe_unused]] const PadedNums padedNums, TOut &&output) {
+    using TElem = typename TIn::element_type;
     constexpr auto input_shape = typename TIn::shape_type{};
     constexpr auto input_strides = typename TIn::strides_type{};
     constexpr auto output_shape = typename std::decay_t<TOut>::shape_type{};
@@ -52,8 +61,9 @@ void im2col(const TIn &input, [[maybe_unused]] const TKernel &kernel,
     constexpr size_t kernel_w = TKernel::at(1);
     constexpr size_t stride_h = TStrides::at(0);
     constexpr size_t stride_w = TStrides::at(1);
-    static_assert(contiguous_dims(input_shape, input_strides) == 4, "");
-    static_assert(contiguous_dims(output_shape, output_strides) == 2, "");
+    static_assert(contiguous_dims(input_shape, input_strides) == 4 &&
+                      contiguous_dims(output_shape, output_strides) == 2,
+                  "only support contiguous");
 
     auto inputSpan = input.elements().begin();
     auto outputSpan = output.elements().begin();
@@ -72,7 +82,7 @@ void im2col(const TIn &input, [[maybe_unused]] const TKernel &kernel,
                                 outputSpan[data_col++] =
                                     data_im[(ih * IW) + iw];
                             } else {
-                                outputSpan[data_col++] = 0;
+                                outputSpan[data_col++] = (TElem)0;
                             }
 
                             iw += stride_w;
@@ -84,5 +94,20 @@ void im2col(const TIn &input, [[maybe_unused]] const TKernel &kernel,
             }
         }
     }
+}
+} // namespace im2col_details
+/**
+ * @brief im2col
+ *
+ * @param image [n,c,h,w]
+ * @param output [ic * kh * kw, n * oh * ow]
+ */
+template <typename TIn, typename TKernel, typename TStrides, typename TPadding,
+          IsFixedDims PackedAxes, IsFixedDims PadedNums, typename TOut>
+void im2col(const TIn &input, const TKernel &kernel, const TStrides &strides,
+            const TPadding &padding, const PackedAxes packedAxes,
+            const PadedNums padedNums, TOut &&output) {
+    im2col_details::im2col_impl(input, kernel, strides, padding, packedAxes,
+                                padedNums, output);
 }
 } // namespace nncase::ntt

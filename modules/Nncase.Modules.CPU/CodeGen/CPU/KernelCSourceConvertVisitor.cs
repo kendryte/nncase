@@ -338,7 +338,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 
                     break;
                 case TIR.CPU.Im2col im2col:
-                    IndentScope.Writer.IndWrite($"im2col({Visit(args[0]).Name}, fixed_shape<{string.Join(",", im2col.Kernel)}>{{}}, fixed_shape<{string.Join(",", im2col.Stride)}>{{}}, fixed_shape<{string.Join(",", im2col.Padding)}>{{}}, {Visit(args[1]).Name});\n");
+                    IndentScope.Writer.IndWrite($"im2col({Visit(args[0]).Name}, fixed_shape<{string.Join(",", im2col.Kernel)}>{{}}, fixed_shape<{string.Join(",", im2col.Stride)}>{{}}, fixed_shape<{string.Join(",", im2col.Padding)}>{{}}, fixed_shape<{string.Join(",", im2col.PackedAxes)}>{{}}, fixed_shape<{string.Join(",", im2col.PadedNums)}>{{}}, {Visit(args[1]).Name});\n");
                     break;
                 case TIR.CPU.Pack pack:
                     {
@@ -367,6 +367,10 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                             Args = args.ToArray(),
                         }).Result);
                     }
+
+                    break;
+                case TIR.CPU.InstanceNorm instanceNorm:
+                    IndentScope.Writer.Write($"instance_norm({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, {Visit(args[3]).Name}, {args[0].ElemType.ToC()} {{ {instanceNorm.Epsilon} }}, fixed_shape<{string.Join(",", instanceNorm.PackedAxes)}>{{}}, fixed_shape<{string.Join(",", instanceNorm.PadedNums)}>{{}} );\n");
 
                     break;
                 case TIR.CPU.PackedSoftmax packedsoftmax:

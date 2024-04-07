@@ -21,6 +21,7 @@
 #include "kernels/matmul.h"
 #include "kernels/pack.h"
 #include "kernels/packed_layer_norm.h"
+#include "kernels/instance_norm.h"
 #include "kernels/packed_matmul.h"
 #include "kernels/packed_softmax.h"
 #include "kernels/pad.h"

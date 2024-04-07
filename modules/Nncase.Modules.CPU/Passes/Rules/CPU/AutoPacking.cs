@@ -41,6 +41,7 @@ public sealed partial class AutoPacking : IRewriteRule
                 new Passes.Rules.CPU.PackSwish() { Rank = rank, Lane = lane },
                 new Passes.Rules.CPU.PackLayerNorm() { Rank = rank, Lane = lane },
                 new Passes.Rules.CPU.PackMatMul() { Rank = rank, Lane = lane },
+                new Passes.Rules.CPU.PackConv2D() { Rank = rank, Lane = lane },
                 new Passes.Rules.CPU.PackUnary() { Rank = rank, Lane = lane },
                 new Passes.Rules.CPU.PackBinary() { Rank = rank, Lane = lane },
                 new Passes.Rules.CPU.PackTranspose() { Rank = rank, Lane = lane },

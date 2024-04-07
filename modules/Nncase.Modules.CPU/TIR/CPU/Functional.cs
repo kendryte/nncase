@@ -75,6 +75,11 @@ public partial class CPU
         return new Call(new PackedLayerNorm(axis, epsilon, usemean, packedAxes, padedNums), input, scale, bias, output);
     }
 
+    public static Expr InstanceNorm(Expr input, Expr scale, Expr bias, Expr output, float epsilon, IRArray<int> packedAxes, IRArray<int> padedNums)
+    {
+        return new Call(new InstanceNorm(epsilon, packedAxes, padedNums), input, scale, bias, output);
+    }
+
     public static Expr PackedMatMul(Expr lhs, Expr rhs, Expr output, IRArray<int> lhsPackedAxes, IRArray<int> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<int> rhsPadedNums)
     {
         return new Call(new PackedMatMul(lhsPackedAxes, lhsPadedNums, rhsPackedAxes, rhsPadedNums), lhs, rhs, output);
@@ -120,13 +125,13 @@ public partial class CPU
         return new Call(new Transpose(perm), buffer, ret);
     }
 
-    internal static Expr Pad(Buffer input, Buffer ret, int[] pads, float padValue)
+    public static Expr Pad(Buffer input, Buffer ret, int[] pads, float padValue)
     {
         return new Call(new Pad(pads, padValue), input, ret);
     }
 
-    public static Expr Im2col(Buffer input, Buffer output, IRArray<int> kernel, IRArray<int> stride, IRArray<int> padding)
+    public static Expr Im2col(Buffer input, Buffer output, IRArray<int> kernel, IRArray<int> stride, IRArray<int> padding, IRArray<int> packedAxes, IRArray<int> padedNums)
     {
-        return new Call(new Im2col(kernel, stride, padding), input, output);
+        return new Call(new Im2col(kernel, stride, padding, packedAxes, padedNums), input, output);
     }
 }

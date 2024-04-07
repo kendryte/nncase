@@ -73,6 +73,11 @@ public partial class CPU
         return new Call(new PackedLayerNorm(axis, epsilon, usemean, packedAxes, padedNums), input, scale, bias);
     }
 
+    public static Expr InstacneNorm(Expr input, Expr scale, Expr bias, float epsilon, IRArray<int> packedAxes, IRArray<int> padedNums)
+    {
+        return new Call(new InstacneNorm(epsilon, packedAxes, padedNums), input, scale, bias);
+    }
+
     public static Expr PackedMatMul(Expr lhs, Expr rhs, IRArray<int> lhsPackedAxes, IRArray<int> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<int> rhsPadedNums)
     {
         return new Call(new PackedMatMul(lhsPackedAxes, lhsPadedNums, rhsPackedAxes, rhsPadedNums), lhs, rhs);
@@ -90,6 +95,11 @@ public partial class CPU
 
     public static Expr Im2col(Expr input, int[] kernel, int[] stride, int[] padding)
     {
-        return new Call(new Im2col(kernel, stride, padding), input);
+        return new Call(new Im2col(kernel, stride, padding, Array.Empty<int>(), Array.Empty<int>()), input);
+    }
+
+    public static Expr Im2col(Expr input, int[] kernel, int[] stride, int[] padding, int[] packedAxes, int[] padedNums)
+    {
+        return new Call(new Im2col(kernel, stride, padding, packedAxes, padedNums), input);
     }
 }

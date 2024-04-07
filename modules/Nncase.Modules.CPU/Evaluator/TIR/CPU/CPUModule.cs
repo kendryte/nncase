@@ -39,5 +39,6 @@ internal class CPUModule : IApplicationPart
         registrator.RegisterManyInterface<ReshapeEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<PadEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<Im2colEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<InstanceNormEvaluator>(reuse: Reuse.Singleton);
     }
 }

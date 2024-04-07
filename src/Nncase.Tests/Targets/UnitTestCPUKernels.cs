@@ -103,6 +103,28 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
+    [InlineData(new object[] { new[] { 1, 2, 16, 32 }, 1e-5, 0 })]
+    public async Task TestInstanceNorm(int[] shape, float epsion, int count)
+    {
+        var input = new Var(new TensorType(DataTypes.Float32, shape));
+        var pshape = new[] { shape[1] };
+        var scale = new Var(new TensorType(DataTypes.Float32, pshape));
+        var bias = new Var(new TensorType(DataTypes.Float32, pshape));
+        var pre = IR.F.NN.InstanceNormalization(input, scale, bias, epsion);
+
+        var feedDict = new Dictionary<Var, IValue>() {
+            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
+            { scale, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, pshape).Evaluate() },
+            { bias, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, pshape).Evaluate() },
+        };
+
+        var rule = new Passes.Rules.CPU.PackInstanceNorm() { Lane = Lane, Rank = Rank };
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext())).Where(e => e is not Call { Target: Slice });
+        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+    }
+
+    [Theory]
     [InlineData(new object[] { new[] { 1, 384, 512 }, new[] { 512, 512 }, 0 })]
     [InlineData(new object[] { new[] { 1, 1, 384, 256 }, new[] { 32, 256, 512 }, 1 })]
     public async Task TestMatMul(int[] lhsShape, int[] rhsShape, int count)

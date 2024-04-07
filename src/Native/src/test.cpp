@@ -337,7 +337,8 @@ int main() {
         std::iota(input.elements().begin(), input.elements().end(), 0.f);
         ntt::tensor<float, ntt::fixed_shape<9, 16>> output;
         ntt::im2col(input, ntt::fixed_shape<3, 3>{}, ntt::fixed_shape<1, 1>{},
-                    ntt::fixed_shape<1, 1, 1, 1>{}, output);
+                    ntt::fixed_shape<1, 1, 1, 1>{}, ntt::fixed_shape<>{},
+                    ntt::fixed_shape<>{}, output);
         // clang-format off
       assert(output(0,0) == 0.f); assert(output(0,1) == 0.f); assert(output(0,2) == 0.f); assert(output(0,3) == 0.f); assert(output(0,4) == 0.f); assert(output(0,5) == 0.f); assert(output(0,6) == 1.f); assert(output(0,7) == 2.f); assert(output(0,8) == 0.f); assert(output(0,9) == 4.f); assert(output(0,10) == 5.f); assert(output(0,11) == 6.f); assert(output(0,12) == 0.f); assert(output(0,13) == 8.f); assert(output(0,14) == 9.f); assert(output(0,15) == 10.f);
       assert(output(1,0) == 0.f); assert(output(1,1) == 0.f); assert(output(1,2) == 0.f); assert(output(1,3) == 0.f); assert(output(1,4) == 0.f); assert(output(1,5) == 1.f); assert(output(1,6) == 2.f); assert(output(1,7) == 3.f); assert(output(1,8) == 4.f); assert(output(1,9) == 5.f); assert(output(1,10) == 6.f); assert(output(1,11) == 7.f); assert(output(1,12) == 8.f); assert(output(1,13) == 9.f); assert(output(1,14) == 10.f); assert(output(1,15) == 11.f); 
@@ -349,6 +350,35 @@ int main() {
       assert(output(7,0) == 4.f); assert(output(7,1) == 5.f); assert(output(7,2) == 6.f); assert(output(7,3) == 7.f); assert(output(7,4) == 8.f); assert(output(7,5) == 9.f); assert(output(7,6) == 10.f); assert(output(7,7) == 11.f); assert(output(7,8) == 12.f); assert(output(7,9) == 13.f); assert(output(7,10) == 14.f); assert(output(7,11) == 15.f); assert(output(7,12) == 0.f); assert(output(7,13) == 0.f); assert(output(7,14) == 0.f); assert(output(7,15) == 0.f); 
       assert(output(8,0) == 5.f); assert(output(8,1) == 6.f); assert(output(8,2) == 7.f); assert(output(8,3) == 0.f); assert(output(8,4) == 9.f); assert(output(8,5) == 10.f); assert(output(8,6) == 11.f); assert(output(8,7) == 0.f); assert(output(8,8) == 13.f); assert(output(8,9) == 14.f); assert(output(8,10) == 15.f); assert(output(8,11) == 0.f); assert(output(8,12) == 0.f); assert(output(8,13) == 0.f); assert(output(8,14) == 0.f); assert(output(8,15) == 0.f);
         // clang-format on
+    }
+
+    // im2col packed on ic
+    {
+        ntt::tensor<float, ntt::fixed_shape<1, 4, 4, 4>> input;
+        std::iota(input.elements().begin(), input.elements().end(), 0.f);
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 1, 4, 4>>
+            packed_input;
+        ntt::pack<1>(input, packed_input);
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<9, 16>>
+            packed_output;
+        ntt::im2col(packed_input, ntt::fixed_shape<3, 3>{},
+                    ntt::fixed_shape<1, 1>{}, ntt::fixed_shape<1, 1, 1, 1>{},
+                    ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{},
+                    packed_output);
+        ntt::tensor<float, ntt::fixed_shape<36, 16>> unpacked_output;
+        // packed [n,c/4,h,w,4] => [c/4 * h * w, b * oh * ow] 
+        // so unpack should after reshape
+        ntt::unpack<0>(packed_output.reshape(ntt::fixed_shape<1, 9, 16>{}),
+                       unpacked_output.reshape(ntt::fixed_shape<4, 9, 16>{}));
+        ntt::tensor<float, ntt::fixed_shape<36, 16>> output;
+        ntt::im2col(input, ntt::fixed_shape<3, 3>{}, ntt::fixed_shape<1, 1>{},
+                    ntt::fixed_shape<1, 1, 1, 1>{}, ntt::fixed_shape<>{},
+                    ntt::fixed_shape<>{}, output);
+        ntt::apply(output.shape(), [&](auto index) {
+            NNCASE_UNUSED auto a = output(index);
+            NNCASE_UNUSED auto c = unpacked_output(index);
+            assert(a == c);
+        });
     }
 
 #if 0

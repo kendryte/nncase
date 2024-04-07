@@ -58,6 +58,7 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.CombineMHA>();
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
             p.Add<Passes.Rules.FuseMHA2>();
+            p.Add<Passes.Rules.FuseVAEDecRes>();
         });
 
 #if false
