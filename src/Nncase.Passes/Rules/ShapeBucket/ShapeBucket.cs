@@ -1019,26 +1019,47 @@ public partial class FusionBucket : RewriteRule<Pattern>
                 x.InputShapes.Select(iShape => iShape.AsTensor().ToArray<int>().ToArray()).ToArray()).ToArray();
         if (!SingleDimVar(options))
         {
-            for (int i = 0; i < shapeInfos.Length; i++)
+            for (int j = 0; j < allFixedShapes.Length; j++)
             {
-                for (int j = 0; j < allFixedShapes.Length; j++)
-                {
-                    context.FixedShapeCache[j] = allFixedShapes[j];
-                }
+                context.FixedShapeCache[j] = allFixedShapes[j];
             }
         }
         else
         {
-            allFixedShapes = new[] { allFixedShapes[0] }.Concat(allFixedShapes.Reverse()).ToArray();
+            var tmpAllFixedShapes = new[] { allFixedShapes[0] }.Concat(allFixedShapes.Reverse()).ToArray();
             var segments = context.DimVarValues.First().Value.Reverse().ToArray();
 
             for (int i = 0; i < segments.Length; i++)
             {
-                context.FixedShapeCache[segments.Length - 1 - i] = allFixedShapes[segments[i]];
+                context.FixedShapeCache[segments.Length - 1 - i] = tmpAllFixedShapes[segments[i]];
             }
         }
 
         return allFixedShapes;
+    }
+
+    public static bool ShouldRestore(Call outerCall, BucketFusion fusion)
+    {
+        if (CallValidator.IsSimple(fusion))
+        {
+            return true;
+        }
+
+        if (outerCall.CheckedType is TupleType tt)
+        {
+            if (tt.Fields.All(f => f is TensorType t && t.Shape.Rank < 2))
+            {
+                return true;
+            }
+        }
+
+        if (outerCall.Arguments.ToArray().Any(arg =>
+                arg.CheckedType is TupleType))
+        {
+            return true;
+        }
+
+        return false;
     }
 
     public Expr? GetReplace(Call outerCall, BucketFusion fusion, Expr fusionBody)
@@ -1072,7 +1093,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         int[][][] allFixedShapes = UpdateShapeCache(shapeInfos, options, context);
 
         var minFixedShapeList = allFixedShapes[^1];
-        var maxFixedShapeList = allFixedShapes[1];
+        var maxFixedShapeList = allFixedShapes[0];
 
         // PrintMinMaxShape(minFixedShapeList, maxFixedShapeList, _relPath);
 
@@ -1182,30 +1203,6 @@ public partial class FusionBucket : RewriteRule<Pattern>
         totalCount == 0 || (minFixedShapeList[0].SequenceEqual(maxFixedShapeList[0]) &&
                             minFixedShapeList[1].SequenceEqual(maxFixedShapeList[1]));
 
-    private static bool ShouldRestore(Call outerCall, BucketFusion fusion)
-    {
-        if (CallValidator.IsSimple(fusion))
-        {
-            return true;
-        }
-
-        if (outerCall.CheckedType is TupleType tt)
-        {
-            if (tt.Fields.All(f => f is TensorType t && t.Shape.Rank < 2))
-            {
-                return true;
-            }
-        }
-
-        if (outerCall.Arguments.ToArray().Any(arg =>
-                arg.CheckedType is TupleType))
-        {
-            return true;
-        }
-
-        return false;
-    }
-
     private static void PrintMinMaxShape(int[][] minFixedShapeList, int[][] maxFixedShapeList, string relPath)
     {
         string str = string.Empty;
@@ -1302,10 +1299,16 @@ public partial class RebuildBucket : RewriteRule<Pattern>
         _shapeInfo = shapeInfo;
     }
 
+    // todo: pattern not match??
     public override Pattern Pattern => FusionBucket.BucketFusionPattern;
 
     public Expr? GetReplace(Call outerCall, BucketFusion fusion, Expr fusionBody)
     {
+        if (FusionBucket.ShouldRestore(outerCall, fusion))
+        {
+            return FusionBucket.RestoreBodyWithArgs(outerCall.Arguments.ToArray(), fusion.Parameters.ToArray(), fusion.Body);
+        }
+
         // only once RecordShape
         var options = CompileSession.CompileOptions.ShapeBucketOptions;
 
@@ -1391,6 +1394,15 @@ public partial class RebuildBucket : RewriteRule<Pattern>
             if (CallValidator.ForceConvert.Contains(expr.Target.GetType().TypeHandle))
             {
                 if (!expr.CheckedShape.IsFixed)
+                {
+                    _hasDynamic = true;
+                }
+            }
+
+            if (expr.Target is Call { Target: IR.Tensors.Reshape })
+            {
+                var type = expr.Arguments[IR.Tensors.Reshape.Shape.Index].CheckedType;
+                if (type is TensorType { Shape.IsFixed: false })
                 {
                     _hasDynamic = true;
                 }

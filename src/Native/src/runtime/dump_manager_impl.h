@@ -27,30 +27,30 @@ void dump_append(dump_manager &dump_manager_, F &&f, const std::string &path) {
 }
 
 template <typename F>
-void dump(dump_manager &dump_manager_, nncase::value_t value, F &&f) {
-    dump(dump_manager_, value, f, dump_manager_.dump_path());
-}
-
-template <typename F>
-void dump(dump_manager &dump_manager_, nncase::value_t value, F &&f,
-          const std::string &path) {
-    auto stream = dump_manager_.get_stream(path);
+void dump_by_steam(dump_manager &dump_manager_, nncase::value_t value, F &&f,
+                   std::ofstream &stream) {
     if (value.is_a<nncase::tensor>()) {
         auto value_tensor = value.as<nncase::tensor>().unwrap();
         f(stream, value_tensor);
-        stream.close();
     } else if (value.is_a<nncase::tuple>()) {
-        //        stream << "tuple" << "\n";
-        stream.close();
         auto value_tuple = value.as<nncase::tuple>().unwrap();
         for (auto &field : value_tuple->fields()) {
-            dump(dump_manager_, field, f, path);
+            dump_by_steam(dump_manager_, field, f, stream);
+            std::cout << std::endl;
         }
     } else {
         std::cout << "unknown in dump" << std::endl;
         stream << "unknown in dump\n";
-        return;
     }
+}
+
+// dump_by_path create a new steam by path and close steam after dump_by_stream.
+template <typename F>
+void dump_by_path(dump_manager &dump_manager_, nncase::value_t value, F &&f,
+                  const std::string &path) {
+    auto stream = dump_manager_.get_stream(path);
+    dump_by_steam(dump_manager_, value, f, stream);
+    stream.close();
 }
 
 inline std::string to_str(const nncase::dims_t &shape) {
@@ -69,10 +69,6 @@ inline std::string to_str(const nncase::dims_t &shape) {
 template <typename T>
 void dump_data(std::ostream &stream, const T *data,
                nncase::tensor value_tensor) {
-    //    std::cout << "out_shape:";
-    //    for (auto d : value_tensor->shape()) {
-    //        std::cout << d << " ";
-    //    }
     stream << "type:"
            << std::to_string(to_typecode(value_tensor->dtype()).unwrap())
            << std::endl;

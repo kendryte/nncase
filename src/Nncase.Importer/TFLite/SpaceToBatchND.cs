@@ -1,5 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using static Nncase.IR.F.NN;
@@ -14,7 +16,8 @@ namespace Nncase.Importer.TFLite
         {
             var (input, blockShape) = GetInputExprs(op, 0, 1);
             var paddings = GetInputExprs(op, 2);
-            if (input.CheckedShape.Rank == 3)
+            bool needUnsqueeze = input.CheckedShape.Rank == 3;
+            if (needUnsqueeze)
             {
                 blockShape = Concat(new IR.Tuple(new[] { new[] { 1 }, blockShape }), 0);
                 paddings = Concat(new IR.Tuple(new[] { new[,] { { 0, 0 } }, paddings }), 0);
@@ -22,7 +25,7 @@ namespace Nncase.Importer.TFLite
             }
 
             var stb = NCHWToNHWC(SpaceToBatch(NHWCToNCHW(input), blockShape, paddings));
-            if (input.CheckedShape.Rank == 3)
+            if (needUnsqueeze)
             {
                 return Squeeze(stb, new[] { 1 });
             }
@@ -34,7 +37,8 @@ namespace Nncase.Importer.TFLite
         {
             var (input, blockShape) = GetInputExprs(op, 0, 1);
             var crops = GetInputExprs(op, 2);
-            if (input.CheckedShape.Rank == 3)
+            bool needUnsqueeze = input.CheckedShape.Rank == 3;
+            if (needUnsqueeze)
             {
                 blockShape = Concat(new IR.Tuple(new[] { new[] { 1 }, blockShape }), 0);
                 crops = Concat(new IR.Tuple(new[] { new[,] { { 0, 0 } }, crops }), 0);
@@ -42,7 +46,7 @@ namespace Nncase.Importer.TFLite
             }
 
             var bts = NCHWToNHWC(BatchToSpace(NHWCToNCHW(input), blockShape, crops));
-            if (input.CheckedShape.Rank == 3)
+            if (needUnsqueeze)
             {
                 return Squeeze(bts, new[] { 1 });
             }
