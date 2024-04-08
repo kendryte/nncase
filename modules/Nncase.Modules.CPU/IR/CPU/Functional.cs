@@ -88,6 +88,11 @@ public partial class CPU
         return new Call(new PackedBinary(binaryOp, lhsPackedAxes, lhsPadedNums, rhsPackedAxes, rhsPadedNums), lhs, rhs);
     }
 
+    public static Call ResizeImage(Expr input, int[] packedAxes, int[] padedNums, int[] newSize, ImageResizeMode resizeMode, ImageResizeTransformationMode transformationMode, ImageResizeNearestMode nearestMode)
+    {
+        return new Call(new ResizeImage(packedAxes, padedNums, newSize, resizeMode, transformationMode, nearestMode), input);
+    }
+
     public static Expr PackedTranspose(Expr input, Expr perm, IRArray<int> packedAxes)
     {
         return new Call(new PackedTranspose(packedAxes), input, perm);

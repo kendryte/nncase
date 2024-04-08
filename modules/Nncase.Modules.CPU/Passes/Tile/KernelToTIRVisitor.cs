@@ -122,6 +122,17 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             case IR.CPU.InstacneNorm instancenorm:
                 _mainBody.Add(TIR.F.CPU.InstanceNorm(arguments[0], arguments[1], arguments[2], ret, instancenorm.Epsilon, instancenorm.PackedAxes, instancenorm.PadedNums));
                 break;
+            case IR.Imaging.ResizeImage resize:
+                if (expr.Arguments[1] is not None || resize.IsTFResize)
+                {
+                    throw new NotSupportedException("not support tf resize");
+                }
+
+                _mainBody.Add(TIR.F.CPU.ResizeImage(arguments[0], ret, Array.Empty<int>(), Array.Empty<int>(), ((TensorConst)expr.Arguments[2]).Value.ToArray<int>(), resize.ResizeMode, resize.TransformationMode, resize.NearestMode));
+                break;
+            case IR.CPU.ResizeImage resize:
+                _mainBody.Add(TIR.F.CPU.ResizeImage(arguments[0], ret, resize.PackedAxes.ToArray(), resize.PadedNums.ToArray(), resize.NewSize.ToArray(), resize.ResizeMode, resize.TransformationMode, resize.NearestMode));
+                break;
             case IR.Tensors.Unsqueeze unsqueeze:
                 _mainBody.Add(TIR.F.CPU.Reshape(arguments[0], ret, expr.CheckedShape.ToValueArray()));
                 break;

@@ -16,6 +16,7 @@ public sealed class PackUtilityTest
     [Theory]
     [InlineData(new object[] { new int[] { 1, 3, 2, 3, 1, 1, 7 }, new int[] { 1, 1, 3, 6, 1, 7 }, true })]
     [InlineData(new object[] { new int[] { 2, 3, 4 }, new int[] { 4, 3, 2 }, false })]
+    [InlineData(new object[] { new int[] { 4, 4096 }, new int[] { 1, 4, 64, 64 }, true })]
     public void TestComputeReshapeMapping(int[] inShape, int[] newShape, bool valid)
     {
         Assert.Equal(valid, PackUtility.TryGetShapeMapMatrix(inShape, newShape, out var mat));

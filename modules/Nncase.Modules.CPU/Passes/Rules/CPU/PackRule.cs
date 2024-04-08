@@ -13,6 +13,7 @@ using Nncase.Utilities;
 
 using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Math;
+using static Nncase.PatternMatch.F.Imaging;
 using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
@@ -65,6 +66,36 @@ public sealed class PackSoftmax : PackRule
             }
         }
 
+        return rets;
+    }
+}
+
+public sealed class PackResizeImage : PackRule
+{
+    public override Pattern Pattern { get; } = IsResizeImage("target", op => op.TransformationMode == ImageResizeTransformationMode.Asymmetric && op.IsTFResize == false, IsWildcard("input"), IsNone(), IsTensorConst("newSize"), IsTensorConst("cubicCoeffA"), IsTensorConst("excludeOutside"), IsTensorConst("extrapolationValue"));
+
+    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
+    {
+        var rets = new List<Expr>();
+        var op = (IR.Imaging.ResizeImage)result["target"];
+        var input = (Expr)result["input"];
+        var newSize = ((TensorConst)result["newSize"]).Value.ToArray<int>();
+        var inShape = input.CheckedShape.ToValueArray();
+
+        void AddCandidate(int[] packedAxes, int[] lanes)
+        {
+            var packedInput = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+
+            var resized = IR.F.CPU.ResizeImage(packedInput, packedAxes, padsInput, newSize, op.ResizeMode, op.TransformationMode, op.NearestMode);
+
+            if (resized.CheckedType is not InvalidType)
+            {
+                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(resized, packedAxes), inShape, padsInput);
+                rets.Add(post);
+            }
+        }
+
+        AddCandidate(new[] { 1 }, new[] { Lane });
         return rets;
     }
 }
@@ -499,7 +530,7 @@ public sealed class PackConv2D : PackRule
         IsTensorConst("padding"),
         IsTensorConst("dilation"),
         IsTensorConst("groups"),
-        IsWildcard("fusedClamp"));
+        IsTensorConst("fusedClamp"));
 
     public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
@@ -515,7 +546,7 @@ public sealed class PackConv2D : PackRule
         var fusedClamp = ((TensorConst)result["fusedClamp"]).Value.ToArray<float>();
         var wShape = weights.CheckedShape.ToValueArray();
         var outShape = ((Expr)result[Pattern]).CheckedShape.ToValueArray();
-        if (groups != 1 || wShape[1] % Lane != 0 || dilation[0] != 1 || dilation[1] != 1 || fusedClamp[0] != float.MinValue || fusedClamp[1] != float.MaxValue)
+        if (groups != 1 || wShape[1] % Lane != 0 || dilation[0] != 1 || dilation[1] != 1 || fusedClamp[0] != float.NegativeInfinity || fusedClamp[1] != float.PositiveInfinity)
         {
             return rets;
         }
@@ -526,9 +557,17 @@ public sealed class PackConv2D : PackRule
             var newW = IR.F.Tensors.Reshape(IR.F.CPU.Pack(weights, new[] { Lane }, new[] { 1 }), new[] { wShape[0], wShape[1] / Lane * wShape[2] * wShape[3] });
             var matmul = IR.F.CPU.PackedMatMul(newW, col, new[] { 1 }, new[] { 0 }, new[] { 0 }, new[] { 0 }); // [oc, b*oh*ow]
             var newBias = IR.F.Tensors.Reshape(bias, new[] { wShape[0], 1 });
-            var add = IR.F.Tensors.Reshape(matmul + newBias, new[] { outShape[1], outShape[0], outShape[2], outShape[3] });
-            var post = IR.F.Tensors.Transpose(add, new[] { 1, 0, 2, 3 });
-            rets.Add(post);
+            var add = matmul + newBias;
+            if (outShape[0] == 1)
+            {
+                var post = IR.F.Tensors.Reshape(add, outShape);
+                rets.Add(post);
+            }
+            else
+            {
+                var post = IR.F.Tensors.Transpose(IR.F.Tensors.Reshape(add, new[] { outShape[1], outShape[0], outShape[2], outShape[3] }), new[] { 1, 0, 2, 3 });
+                rets.Add(post);
+            }
         }
 
         void AddCandidate()
@@ -537,9 +576,17 @@ public sealed class PackConv2D : PackRule
             var newW = IR.F.Tensors.Reshape(weights, new[] { wShape[0], wShape[1] * wShape[2] * wShape[3] });
             var matmul = IR.F.Tensors.MatMul(newW, col); // [oc, b*oh*ow]
             var newBias = IR.F.Tensors.Reshape(bias, new[] { wShape[0], 1 });
-            var add = IR.F.Tensors.Reshape(matmul + newBias, new[] { outShape[1], outShape[0], outShape[2], outShape[3] });
-            var post = IR.F.Tensors.Transpose(add, new[] { 1, 0, 2, 3 });
-            rets.Add(post);
+            var add = matmul + newBias;
+            if (outShape[0] == 1)
+            {
+                var post = IR.F.Tensors.Reshape(add, outShape);
+                rets.Add(post);
+            }
+            else
+            {
+                var post = IR.F.Tensors.Transpose(IR.F.Tensors.Reshape(add, new[] { outShape[1], outShape[0], outShape[2], outShape[3] }), new[] { 1, 0, 2, 3 });
+                rets.Add(post);
+            }
         }
 
         // only pack on in channels

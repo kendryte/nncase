@@ -16,51 +16,6 @@ namespace Nncase.Evaluator.IR.CPU;
 public sealed class PackedLayerNormEvaluator : IEvaluator<PackedLayerNorm>, ITypeInferencer<PackedLayerNorm>, ICostEvaluator<PackedLayerNorm>,
     IShapeEvaluator<PackedLayerNorm>, IMetricEvaluator<PackedLayerNorm>
 {
-    public static OrtKISharp.Tensor UnpackTensor(OrtKISharp.Tensor input, IRArray<int> packedAxes, IRArray<int> padNums)
-    {
-        OrtKISharp.Tensor unpacked = input;
-        foreach (var axis in packedAxes.Reverse())
-        {
-            unpacked = unpacked.Unpack(axis);
-        }
-
-        var shape = unpacked.Shape.ToArray();
-
-        OrtKISharp.Tensor sliced = unpacked;
-        if (padNums.Any(i => i > 0))
-        {
-            sliced = OrtKI.Slice(unpacked, Enumerable.Repeat(0L, padNums.Count).ToArray(), Enumerable.Range(0, padNums.Count).Select(i => shape[packedAxes[i]] - padNums[i]).ToArray(), packedAxes.Select(i => (long)i).ToArray(), Enumerable.Range(0, padNums.Count).Select(i => 1L).ToArray());
-        }
-
-        return sliced;
-    }
-
-    public static OrtKISharp.Tensor RepackTensor(OrtKISharp.Tensor input, IRArray<int> lanes, IRArray<int> packedAxes, IRArray<int> padNums)
-    {
-        OrtKISharp.Tensor paded = input;
-        var shape = input.Shape;
-
-        if (padNums.Any(i => i > 0))
-        {
-            var pads = Enumerable.Repeat(0L, shape.Length * 2).ToArray();
-            for (int i = 0; i < packedAxes.Count; i++)
-            {
-                pads[shape.Length + packedAxes[i]] = padNums[i];
-            }
-
-            // bottom_0,bottom_1,..., top_0, top_1, ...
-            paded = OrtKI.Pad(paded, pads, 0f, "constant");
-        }
-
-        OrtKISharp.Tensor packed = paded;
-        foreach (var (lane, axis) in lanes.Zip(packedAxes))
-        {
-            packed = packed.Pack(lane, axis);
-        }
-
-        return packed;
-    }
-
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, PackedLayerNorm target)
     {
@@ -68,11 +23,11 @@ public sealed class PackedLayerNormEvaluator : IEvaluator<PackedLayerNorm>, ITyp
         var scale = context.GetOrtArgumentValue(target, PackedLayerNorm.Scale);
         var bias = context.GetOrtArgumentValue(target, PackedLayerNorm.Bias);
         var lanes = input.Shape.TakeLast(target.PackedAxes.Count).Select(i => (int)i).ToArray();
-        var unpackedInput = UnpackTensor(input, target.PackedAxes, target.PadedNums);
+        var unpackedInput = CPUEvaluatorUtility.UnpackTensor(input, target.PackedAxes, target.PadedNums, out _);
         var packAxes = target.PackedAxes.Where(axis => axis >= target.Axis).Select(axis => axis - target.Axis).ToArray();
         var padedNums = target.PadedNums.Skip(target.PackedAxes.Count - packAxes.Length).ToArray();
-        var unpackedScale = UnpackTensor(scale, packAxes, padedNums);
-        var unpackedBias = UnpackTensor(bias, packAxes, padedNums);
+        var unpackedScale = CPUEvaluatorUtility.UnpackTensor(scale, packAxes, padedNums, out _);
+        var unpackedBias = CPUEvaluatorUtility.UnpackTensor(bias, packAxes, padedNums, out _);
 
         var shape = unpackedInput.Shape.Select(i => (int)i).ToArray();
         var inputBuffer = unpackedInput.BytesBuffer.ToArray();
@@ -84,7 +39,7 @@ public sealed class PackedLayerNormEvaluator : IEvaluator<PackedLayerNorm>, ITyp
 
         var output = NN.LayerNormEvaluator.LayerNormImpl(shape, inputSpan, scaleSpan, biasSpan, target.Axis, target.Epsilon, target.UseMean);
         var outputTensor = OrtKISharp.Tensor.MakeTensor(new Memory<float>(output), OrtDataType.Float, unpackedInput.Shape);
-        outputTensor = RepackTensor(outputTensor, lanes, target.PackedAxes, target.PadedNums);
+        outputTensor = CPUEvaluatorUtility.RepackTensor(outputTensor, lanes, target.PackedAxes, target.PadedNums);
 
         return Value.FromTensor(Tensor.FromBytes(new VectorType(DataTypes.Float32, lanes), outputTensor.BytesBuffer.ToArray(), outputTensor.Shape.SkipLast(target.PackedAxes.Count).Select(i => (int)i).ToArray()));
     }

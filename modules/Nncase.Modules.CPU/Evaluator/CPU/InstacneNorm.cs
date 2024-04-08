@@ -71,7 +71,7 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
             }
 
             var norm = OrtKI.InstanceNormalization(input, scale, bias, target.Epsilon);
-            var output = PackedLayerNormEvaluator.RepackTensor(norm, lanes, target.PackedAxes, target.PadedNums);
+            var output = CPUEvaluatorUtility.RepackTensor(norm, lanes, target.PackedAxes, target.PadedNums);
             return Value.FromTensor(Tensor.FromBytes(new TensorType(new VectorType(norm.DataType.ToDataType(), lanes), output.Shape.Take(4).Select(i => (int)i).ToArray()), output.BytesBuffer.ToArray()));
         }
     }
