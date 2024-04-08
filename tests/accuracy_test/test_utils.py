@@ -66,7 +66,7 @@ def dump_dict_to_json(dict, json_file):
 
 
 def in_ci():
-    return os.getenv('CI', False)
+    return os.getenv('CI', 'False').lower() == 'true'
 
 
 def kpu_targets():

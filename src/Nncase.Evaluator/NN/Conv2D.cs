@@ -42,7 +42,8 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
             new long[] { kernelShape[2], kernelShape[3] },
             ToOnnxPadFormat(pad),
             stride);
-        return OrtKI.Clip(result, fusedClamp[0], fusedClamp[1]).ToValue();
+        var outType = input.ToTensor().ElementType;
+        return Value.FromTensor(OrtKI.Clip(result.ToTensor().Cast<float>().ToOrtTensor(), fusedClamp[0], fusedClamp[1]).ToTensor().CastTo(outType));
     }
 
     /// <inheritdoc/>
