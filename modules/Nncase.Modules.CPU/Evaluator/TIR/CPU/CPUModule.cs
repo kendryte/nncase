@@ -41,5 +41,6 @@ internal class CPUModule : IApplicationPart
         registrator.RegisterManyInterface<Im2colEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<InstanceNormEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<ResizeImageEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<Conv2DEvaluator>(reuse: Reuse.Singleton);
     }
 }

@@ -19,6 +19,7 @@
 #include "kernels/gather.h"
 #include "kernels/im2col.h"
 #include "kernels/matmul.h"
+#include "kernels/conv2d.h"
 #include "kernels/pack.h"
 #include "kernels/packed_layer_norm.h"
 #include "kernels/instance_norm.h"

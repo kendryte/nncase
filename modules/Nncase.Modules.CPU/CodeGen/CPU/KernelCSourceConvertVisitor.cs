@@ -396,6 +396,9 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     }
 
                     break;
+                case TIR.CPU.Conv2D conv:
+                    IndentScope.Writer.IndWrite($"conv2d({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, {Visit(args[3]).Name}, fixed_shape<{string.Join(",", conv.Stride)}>{{}}, fixed_shape<{string.Join(",", conv.Padding)}>{{}}, fixed_shape<{string.Join(",", conv.Dilation)}>{{}}, {conv.Groups});\n");
+                    break;
                 case TIR.CPU.PackedMatMul packedMatmul:
                     {
                         IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedMatmul.cshtml", new TypedKernelTemplateModel<TIR.CPU.PackedMatMul>(packedMatmul)

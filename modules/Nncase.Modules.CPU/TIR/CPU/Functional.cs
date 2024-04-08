@@ -60,6 +60,8 @@ public partial class CPU
         return new Call(new Pack(lanes, axes), input, output);
     }
 
+    public static Call Conv2D(Buffer input, Buffer weights, Buffer bias, Buffer output, int[] stride, int[] padding, int[] dilation, int groups, PadMode padMode) => new Call(new Conv2D(stride, padding, dilation, groups, padMode), input, weights, bias, output);
+
     public static Expr Unpack(Expr input, Expr output, IRArray<int> axes)
     {
         return new Call(new Unpack(axes), input, output);

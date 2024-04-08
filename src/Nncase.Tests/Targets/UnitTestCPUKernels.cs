@@ -182,7 +182,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new int[] { 1, 1, 4, 4 }, new int[] { 8, 1, 3, 3 }, new int[] { 1, 1, 1, 1 }, new int[] { 1, 1 }, 0 })]
     [InlineData(new object[] { new int[] { 3, 2, 4, 4 }, new int[] { 8, 2, 3, 3 }, new int[] { 0, 0, 1, 1 }, new int[] { 1, 2 }, 1 })]
     [InlineData(new object[] { new int[] { 3, 2, 4, 4 }, new int[] { 8, 2, 3, 3 }, new int[] { 1, 0, 1, 1 }, new int[] { 2, 1 }, 2 })]
-    public async Task TestIm2col(int[] inputShape, int[] weightShape, int[] padding, int[] strides, int count)
+    public async Task TestConv2DAndIm2col(int[] inputShape, int[] weightShape, int[] padding, int[] strides, int count)
     {
         var dilation = new[] { 1, 1 };
         var groups = 1;
@@ -207,7 +207,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             post = IR.F.Tensors.Transpose(add, new[] { 1, 0, 2, 3 });
         }
 
-        var posts = new[] { post };
+        var posts = new[] { pre, post };
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
     }
 
