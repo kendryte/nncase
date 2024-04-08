@@ -28,16 +28,17 @@
         buffer_type &buffer() noexcept { return buffer_; }                     \
                                                                                \
         auto elements() const noexcept {                                       \
-            return std::span<const element_type, max_size>(                    \
-                reinterpret_cast<const element_type *>(&buffer_), max_size);   \
+            return std::span<const element_type, max_size>(elems_);            \
         }                                                                      \
         auto elements() noexcept {                                             \
-            return std::span<element_type, max_size>(                          \
-                reinterpret_cast<element_type *>(&buffer_), max_size);         \
+            return std::span<element_type, max_size>(elems_);                  \
         }                                                                      \
                                                                                \
       private:                                                                 \
-        buffer_type buffer_;                                                   \
+        union {                                                                \
+            buffer_type buffer_;                                               \
+            element_type elems_[max_size];                                     \
+        };                                                                     \
     };                                                                         \
                                                                                \
     static_assert(sizeof(ntt::fixed_tensor<element_type, max_size>) ==         \
