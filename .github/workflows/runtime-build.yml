@@ -34,7 +34,7 @@ jobs:
 
       - name: Install Conan
         run: |
-          pip install conan==1.58
+          pip install conan==1.64
           conan remote add -i 0 sunnycase https://conan.sunnycase.moe
 
       - name: Configure Conan (Linux)
@@ -118,7 +118,7 @@ jobs:
 
       - name: Install Conan
         run: |
-          pip install conan==1.58
+          pip install conan==1.64
           conan remote add -i 0 sunnycase https://conan.sunnycase.moe
 
       - name: Configure Conan
