@@ -30,7 +30,7 @@ public class CPUTarget : ITarget
 
     string ITarget.Kind => Kind;
 
-    public (System.CommandLine.Command Command, Func<InvocationContext, System.CommandLine.Command, ITargetCompileOptions> Parser) RegisterCommandAndParser()
+    public (System.CommandLine.Command Command, Func<InvocationContext, System.CommandLine.Command, ITargetOptions> Parser) RegisterCommandAndParser()
     {
         var cmd = new System.CommandLine.Command(Kind);
         var packingOption = new Option<bool>(
@@ -39,10 +39,10 @@ public class CPUTarget : ITarget
             getDefaultValue: () => false);
         cmd.AddOption(packingOption);
 
-        ITargetCompileOptions ParseTargetCompileOptions(InvocationContext context, Command command)
+        ITargetOptions ParseTargetCompileOptions(InvocationContext context, Command command)
         {
             var packing = context.ParseResult.GetValueForOption<bool>(packingOption);
-            return new CPUCompileOptions(string.Empty, packing, Array.Empty<int>(), new[] { 1 }, "b", new[] { 3 * (int)MathF.Pow(2, 20) });
+            return new CpuTargetOptions() { Packing = packing };
         }
 
         return (cmd, ParseTargetCompileOptions);
@@ -111,7 +111,7 @@ public class CPUTarget : ITarget
             });
         }
 
-        if (options.TargetCompileOptions is CPUCompileOptions { Packing: true })
+        if (options.TargetCompileOptions is CpuTargetOptions { Packing: true })
         {
             passManager.AddWithName<DataflowPass>("AutoPacking").Configure(p =>
             {

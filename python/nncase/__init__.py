@@ -143,6 +143,7 @@ class Compiler:
     _session: _nncase.CompileSession
     _compiler: _nncase.Compiler
     _compile_options: _nncase.CompileOptions
+    _target_options: object
     _quantize_options: _nncase.QuantizeOptions
     _shape_bucket_options: _nncase.ShapeBucketOptions
     _module: IRModule
@@ -155,6 +156,7 @@ class Compiler:
         self._quantize_options = None
         self._shape_bucket_options = _nncase.ShapeBucketOptions()
         self.init_shape_bucket_options(compile_options)
+        self.init_target_options(compile_options)
 
     def init_shape_bucket_options(self, compile_options: CompileOptions) -> None:
         self._shape_bucket_options = _nncase.ShapeBucketOptions()
@@ -164,6 +166,13 @@ class Compiler:
         self._shape_bucket_options.segments_count = compile_options.shape_bucket_segments_count
         self._shape_bucket_options.fix_var_map = compile_options.shape_bucket_fix_var_map
         self._compile_options.shape_bucket_options = self._shape_bucket_options
+
+    def init_target_options(self, compile_options: CompileOptions) -> None:
+        if (hasattr(compile_options, "target_options") and isinstance(compile_options.target_options, CpuTargetOptions)):
+            option: CpuTargetOptions = compile_options.target_options;
+            self._target_options = _nncase.CpuTargetOptions()
+            self._target_options.packing = option.packing
+            self._compile_options.set_cpu_target_options(self._target_options)
 
     def compile(self) -> None:
         self._compiler.compile()
@@ -377,6 +386,7 @@ class CompileOptions:
     shape_bucket_range_info: dict
     shape_bucket_segments_count: int
     shape_bucket_fix_var_map: dict
+    target_options: object
 
     def __init__(self) -> None:
 
@@ -399,6 +409,24 @@ class CompileOptions:
         self.shape_bucket_range_info = {}
         self.shape_bucket_segments_count = 2
         self.shape_bucket_fix_var_map = {}
+        self.target_options = None
+
+
+class CpuTargetOptions:
+    model_name: str
+    packing: bool
+    target_tile_size: List[int]
+    hierarchy: List[int]
+    hierarchy_names: str
+    hierarchy_sizes: List[int]
+
+    def __init__(self) -> None:
+        self.model_name = ""
+        self.packing = False
+        self.target_tile_size = []
+        self.hierarchy = [1]
+        self.hierarchy_names = "b"
+        self.hierarchy_sizes = [3 * (2 ** 20)]
 
 
 class ShapeBucketOptions:

@@ -222,7 +222,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             return;
         }
 
-        CompileOptions.TargetCompileOptions = CPUCompileOptions.Default with { Packing = packing };
+        CompileOptions.TargetCompileOptions = new CpuTargetOptions() { Packing = packing };
         var vhidden_in = new Var("vhidden_in", new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 }));
         var vattn_mask = new Var("vattn_mask", new TensorType(DataTypes.Float32, new[] { 1, 1, 384, 384 }));
         var vposition_ids = new Var("vposition_ids", new TensorType(DataTypes.Int64, new[] { 1, 384 }));

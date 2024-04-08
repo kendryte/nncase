@@ -208,8 +208,8 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
         };
         var ptype = (PointerType)expr.CheckedDataType;
         var ptypeName = ptype.ElemType.ToC();
-        var spanSize = ((TensorConst)expr.Size).Value.ToScalar<int>() / ptype.ElemType.SizeInBytes;
-        var name = $"std::span<{ptypeName}, {spanSize}> (reinterpret_cast<{ptypeName}*>({loc} + {start.Name}), {spanSize})";
+        var spanSize = ((TensorConst)expr.Size).Value.ToScalar<ulong>() / (ulong)ptype.ElemType.SizeInBytes;
+        var name = $"std::span<{ptypeName}, {spanSize}> (reinterpret_cast<{ptypeName}*>({loc} + {start.Name}UL), {spanSize})";
 
         symbol = new(start.Type, name);
         _exprMemo.Add(expr, symbol);

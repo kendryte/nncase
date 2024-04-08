@@ -224,7 +224,7 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                         if (dividedType is TensorType)
                         {
                             T.AttachBuffer(Tensor.FromPointer(DataUsage, dividedType.DType), dividedType, loc, hierarchy, out buffer, name);
-                            DataUsage += (ulong)(dividedType.Shape.Size * dividedType.DType.SizeInBytes);
+                            DataUsage += Enumerable.Range(0, dividedType.Shape.Rank).Aggregate(1ul, (size, i) => size * (ulong)dividedType.Shape[i].FixedValue) * (ulong)dividedType.DType.SizeInBytes;
                             DataUsage = MathUtility.AlignUp(DataUsage, MaxDTypeSize);
                         }
                         else if (c.CheckedType is DistributedType)

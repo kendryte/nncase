@@ -154,6 +154,9 @@ typedef struct {
     void (*compile_options_set_shape_bucket_options)(
         clr_object_handle_t compile_options,
         clr_object_handle_t shape_bucket_options);
+    void (*compile_options_set_cpu_target_options)(
+        clr_object_handle_t compile_options,
+        clr_object_handle_t target_options);
     clr_object_handle_t (*compile_session_create)(
         clr_object_handle_t target, clr_object_handle_t compile_options);
     clr_object_handle_t (*compile_session_get_compiler)(
@@ -180,6 +183,7 @@ typedef struct {
     void (*luanch_debugger)();
     clr_object_handle_t (*quantize_options_create)();
     clr_object_handle_t (*shape_bucket_options_create)();
+    clr_object_handle_t (*cpu_target_options_create)();
     void (*quantize_options_set_calibration_dataset)(
         clr_object_handle_t quantize_options, clr_object_handle_t dataset);
     void (*quantize_options_set_calibration_method)(
@@ -221,7 +225,8 @@ typedef struct {
     void (*shape_bucket_options_set_fix_var_map)(
         clr_object_handle_t shape_bucket_options, const char *fix_var_map,
         size_t fix_var_map_size);
-
+    void (*cpu_target_options_set_packing)(
+        clr_object_handle_t cpu_target_options, bool packing);
     clr_object_handle_t (*rtvalue_from_handle)(nncase::value_node *value);
     nncase::value_node *(*rtvalue_get_handle)(clr_object_handle_t rtvalue);
     clr_object_handle_t (*stream_create)(const nncase_stream_mt_t *mt,
@@ -468,6 +473,21 @@ class shape_bucket_options : public clr_object_base {
         std::string s = j.dump();
         nncase_clr_api()->shape_bucket_options_set_fix_var_map(
             obj_.get(), s.c_str(), s.length());
+    }
+};
+
+class cpu_target_options : public clr_object_base {
+  public:
+    using clr_object_base::clr_object_base;
+
+    cpu_target_options() {
+        obj_ = nncase_clr_api()->cpu_target_options_create();
+    }
+
+    bool packing() { return false; }
+
+    void packing(bool value) {
+        nncase_clr_api()->cpu_target_options_set_packing(obj_.get(), value);
     }
 };
 

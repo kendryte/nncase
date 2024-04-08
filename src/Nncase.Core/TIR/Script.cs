@@ -268,7 +268,7 @@ public static class T
 
         var dimensions = tensorType.Shape.ToValueArray();
         var strides = TensorUtilities.GetStrides(dimensions);
-        var size = (int)TensorUtilities.GetProduct(dimensions.ToArray()) * tensorType.DType.SizeInBytes;
+        var size = (ulong)TensorUtilities.GetProduct(dimensions.ToArray()) * (ulong)tensorType.DType.SizeInBytes;
         var memspan = new MemSpan(start, size, location, hierarchy);
         buffer = new Buffer(name, tensorType.DType, memspan, dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray());
         return buffer;

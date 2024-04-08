@@ -20,9 +20,9 @@
 #include <nncase/ntt/cpu_runtime.h>
 
 extern "C" {
-nncase_runtime_cpu_mt_t *g_cpu_mt;
-size_t bid;
-size_t tid;
+nncase_runtime_cpu_mt_t *g_cpu_mt = NULL;
+size_t bid = 0;
+size_t tid = 0;
 
 // compiler support
 #if defined(_MSC_VER)
