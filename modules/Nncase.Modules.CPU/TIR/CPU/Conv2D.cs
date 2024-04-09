@@ -45,6 +45,5 @@ public sealed partial class Conv2D : CPUKernelOp
     /// </summary>
     public int Groups { get; }
 
-
     public PadMode PadMode { get; }
 }

@@ -18,7 +18,9 @@ using namespace nncase::ntt;
     public static string CMakeDef(string name)
     {
         var cmakePath = CMakePath(Path.Combine(Path.GetDirectoryName(typeof(CSourceBuiltn).Assembly.Location)!, "Runtime", "src", "cpu_runtime.cmake"));
-        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/CMakeLists.txt.cshtml", new { CMakePath = cmakePath }).Result;
+        var includePath = CMakePath(Path.Combine(Path.GetDirectoryName(typeof(CSourceBuiltn).Assembly.Location)!, "Runtime", "include"));
+        var sourcePath = CMakePath(Path.Combine(Path.GetDirectoryName(typeof(CSourceBuiltn).Assembly.Location)!, "Runtime", "src", "cpu_runtime.cpp"));
+        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/CMakeLists.txt.cshtml", new { CMakePath = cmakePath, IncludePath = includePath, SourcePath = sourcePath }).Result;
         return content;
     }
 
@@ -42,16 +44,9 @@ using namespace nncase::ntt;
             return $@"    std::span<{b.ElemType.ToC()}, {size}> p{b.Name}(({b.ElemType.ToC()}*)(rdata + {((IR.TensorConst)b.MemSpan.Start).Value.ToScalar<ulong>()}), {size});
     tensor_view<{b.ElemType.ToC()}, {KernelUtility.DimensionsToC(b.Dimensions)}, {KernelUtility.StridesToC(b.Strides)}> {b.Name}(p{b.Name});";
         })));
-        return @$"#include <nncase/ntt/cpu_runtime.h>
-#include ""../device.h""
-#include ""kernel.h""
 
-extern ""C"" void kernel_entry(nncase_runtime_cpu_mt_t *cpu_mt, uint8_t **inputs, uint8_t *rdata, uint8_t *l1_data) {{
-g_cpu_mt = cpu_mt;
-{init_tensors}
-
-    {primFunction.Name}({string.Join(", ", primFunction.Parameters.AsValueEnumerable().Select(b => ((TIR.Buffer)b).Name).ToArray().Concat(rdataBuffers.Select(b => b.Name)).ToArray())}, l1_data);
-}}";
+        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Main.cpp.cshtml", new { InitTensors = init_tensors, FuncName = primFunction.Name, FuncParams = string.Join(", ", primFunction.Parameters.AsValueEnumerable().Select(b => ((TIR.Buffer)b).Name).ToArray().Concat(rdataBuffers.Select(b => b.Name)).ToArray()) }).Result;
+        return content;
     }
 
     private static string CMakePath(string path) =>

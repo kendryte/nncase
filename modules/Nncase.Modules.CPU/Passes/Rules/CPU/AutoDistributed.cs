@@ -99,7 +99,7 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRT
         }
 
         var root = Unions(graph, equivalents);
-        return graph.Extract(root, null, out _);
+        return graph.Extract(root, null, Array.Empty<EGraphExtractConstrains>());
     }
 
     protected override Dictionary<IRType, List<Expr>> DefaultVisitLeaf(Expr expr)
