@@ -205,5 +205,99 @@ template <> struct swish<ntt::vector<float, 8>> {
     }
 };
 
+// binary
+
+// add
+template <> struct add<ntt::vector<float, 8>> {
+    ntt::vector<float, 8> operator()(ntt::vector<float, 8> v1,
+                                     ntt::vector<float, 8> v2) const noexcept {
+        return _mm256_add_ps(v1, v2);
+    }
+};
+
+// sub
+template <> struct sub<ntt::vector<float, 8>> {
+    ntt::vector<float, 8> operator()(ntt::vector<float, 8> v1,
+                                     ntt::vector<float, 8> v2) const noexcept {
+        return _mm256_sub_ps(v1, v2);
+    }
+};
+
+// mul
+template <> struct mul<ntt::vector<float, 8>> {
+    ntt::vector<float, 8> operator()(ntt::vector<float, 8> v1,
+                                     ntt::vector<float, 8> v2) const noexcept {
+        return _mm256_mul_ps(v1, v2);
+    }
+};
+
+// div
+template <> struct div<ntt::vector<float, 8>> {
+    ntt::vector<float, 8> operator()(ntt::vector<float, 8> v1,
+                                     ntt::vector<float, 8> v2) const noexcept {
+        return _mm256_div_ps(v1, v2);
+    }
+};
+
+// floor_mod
+template <> struct floor_mod<ntt::vector<int32_t, 8>> {
+    ntt::vector<int32_t, 8>
+    operator()(ntt::vector<int32_t, 8> v1,
+               ntt::vector<int32_t, 8> v2) const noexcept {
+
+        auto f1 = _mm256_cvtepi32_ps(v1);
+        auto f2 = _mm256_cvtepi32_ps(v2);
+        auto quotient = _mm256_floor_ps(_mm256_div_ps(f1, f2));
+        auto remainder = _mm256_sub_ps(f1, _mm256_mul_ps(quotient, f2));
+        return _mm256_cvtps_epi32(remainder);
+    }
+};
+
+// mod
+template <> struct mod<ntt::vector<float, 8>> {
+    ntt::vector<float, 8> operator()(ntt::vector<float, 8> v1,
+                                     ntt::vector<float, 8> v2) const noexcept {
+        auto quotient = _mm256_round_ps(_mm256_div_ps(v1, v2),
+                                        _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
+        return _mm256_sub_ps(v1, _mm256_mul_ps(quotient, v2));
+    }
+};
+
+template <> struct mod<ntt::vector<int32_t, 8>> {
+    ntt::vector<int32_t, 8>
+    operator()(ntt::vector<int32_t, 8> v1,
+               ntt::vector<int32_t, 8> v2) const noexcept {
+        auto f1 = _mm256_cvtepi32_ps(v1);
+        auto f2 = _mm256_cvtepi32_ps(v2);
+        auto quotient = _mm256_round_ps(_mm256_div_ps(f1, f2),
+                                        _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
+        auto remainder = _mm256_sub_ps(f1, _mm256_mul_ps(quotient, f2));
+        return _mm256_cvtps_epi32(remainder);
+    }
+};
+
+// min
+template <> struct min<ntt::vector<float, 8>> {
+    ntt::vector<float, 8> operator()(ntt::vector<float, 8> v1,
+                                     ntt::vector<float, 8> v2) const noexcept {
+        return _mm256_min_ps(v1, v2);
+    }
+};
+
+// max
+template <> struct max<ntt::vector<float, 8>> {
+    ntt::vector<float, 8> operator()(ntt::vector<float, 8> v1,
+                                     ntt::vector<float, 8> v2) const noexcept {
+        return _mm256_max_ps(v1, v2);
+    }
+};
+
+// pow
+template <> struct pow<ntt::vector<float, 8>> {
+    ntt::vector<float, 8> operator()(ntt::vector<float, 8> v1,
+                                     ntt::vector<float, 8> v2) const noexcept {
+        return pow256_ps(v1, v2);
+    }
+};
 #endif
 } // namespace nncase::ntt::ops
