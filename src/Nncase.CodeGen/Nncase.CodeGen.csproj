@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <PackageReference Include="Extension.Mathematics" />
-    <PackageReference Include="Razor.Templating.Core" />
   </ItemGroup>
 
   <ItemGroup>
