@@ -3,6 +3,7 @@
 
 #define MULTI_CORE_CPU
 
+// #define PROFILE_CALL
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -127,6 +128,8 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
     }
 
     public PrimFunction VisitEntry => (TIR.PrimFunction)VisitRoot!;
+
+    public int CallCount { get; private set; }
 
     public KernelCSource GetCSource()
     {
@@ -254,7 +257,9 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
             {
                 DeclBuffer(item);
             }
-
+#if PROFILE_CALL
+            IndentScope.Writer.Write($"auto start_{CallCount} = get_ms_time();\n");
+#endif
             var args = expr.Arguments.ToArray().OfType<TIR.Buffer>().ToArray();
             switch (xpuOp)
             {
@@ -461,6 +466,9 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                 default:
                     throw new NotSupportedException(xpuOp.ToString());
             }
+#if PROFILE_CALL
+            IndentScope.Writer.Write($"printf(\"{expr.Target.GetType().Name} cost: %f\\n\", get_ms_time() - start_{CallCount++});\n");
+#endif
         }
         else if (expr.Target is PrimFunction deviceFunc)
         {

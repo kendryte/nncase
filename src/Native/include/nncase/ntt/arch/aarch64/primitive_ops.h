@@ -23,7 +23,8 @@ namespace nncase::ntt::ops {
 
 // abs
 // template <> struct abs<ntt::vector<float, 8>> {
-//     ntt::vector<float, 8> operator()(ntt::vector<float, 8> v) const noexcept
+//     ntt::vector<float, 8> operator()(const ntt::vector<float, 8>& v) const
+//     noexcept
 //     {
 //         return (v);
 //     }
@@ -31,7 +32,8 @@ namespace nncase::ntt::ops {
 
 // acos
 // template <> struct acos<ntt::vector<float, 8>> {
-//     ntt::vector<float, 8> operator()(ntt::vector<float, 8> v) const noexcept
+//     ntt::vector<float, 8> operator()(const ntt::vector<float, 8>& v) const
+//     noexcept
 //     {
 //         return acos256_ps(v);
 //     }
@@ -39,7 +41,8 @@ namespace nncase::ntt::ops {
 
 // acosh(v) = ln(v + sqrt(v^2 - 1)), v >= 1
 // template <> struct acosh<ntt::vector<float, 8>> {
-//     ntt::vector<float, 8> operator()(ntt::vector<float, 8> v) const noexcept
+//     ntt::vector<float, 8> operator()(const ntt::vector<float, 8>& v) const
+//     noexcept
 //     {
 //         auto ones = _mm256_set1_ps(1.0f);
 //         return log256_ps(_mm256_add_ps(
@@ -49,7 +52,8 @@ namespace nncase::ntt::ops {
 
 // asin
 // template <> struct asin<ntt::vector<float, 8>> {
-//     ntt::vector<float, 8> operator()(ntt::vector<float, 8> v) const noexcept
+//     ntt::vector<float, 8> operator()(const ntt::vector<float, 8>& v) const
+//     noexcept
 //     {
 //         return asin256_ps(v);
 //     }
@@ -57,7 +61,8 @@ namespace nncase::ntt::ops {
 
 // asinh(v) = ln(v + sqrt(v^2 + 1))
 // template <> struct asinh<ntt::vector<float, 8>> {
-//     ntt::vector<float, 8> operator()(ntt::vector<float, 8> v) const noexcept
+//     ntt::vector<float, 8> operator()(const ntt::vector<float, 8>& v) const
+//     noexcept
 //     {
 //         auto ones = _mm256_set1_ps(1.0f);
 //         return log256_ps(_mm256_add_ps(
@@ -67,7 +72,8 @@ namespace nncase::ntt::ops {
 
 // ceil
 // template <> struct ceil<ntt::vector<float, 8>> {
-//     ntt::vector<float, 8> operator()(ntt::vector<float, 8> v) const noexcept
+//     ntt::vector<float, 8> operator()(const ntt::vector<float, 8>& v) const
+//     noexcept
 //     {
 //         return _mm256_ceil_ps(v);
 //     }
@@ -75,7 +81,8 @@ namespace nncase::ntt::ops {
 
 // cos
 template <> struct cos<ntt::vector<float, 8>> {
-    ntt::vector<float, 8> operator()(ntt::vector<float, 8> v) const noexcept {
+    inline ntt::vector<float, 8>
+    operator()(const ntt::vector<float, 8> &v) const noexcept {
         return impl(v);
     }
 
@@ -86,7 +93,8 @@ template <> struct cos<ntt::vector<float, 8>> {
 
 // cosh(v) = (exp(v) + exp(-v)) / 2
 // template <> struct cosh<ntt::vector<float, 8>> {
-//     ntt::vector<float, 8> operator()(ntt::vector<float, 8> v) const noexcept
+//     ntt::vector<float, 8> operator()(const ntt::vector<float, 8>& v) const
+//     noexcept
 //     {
 //         auto zeros = _mm256_setzero_ps();
 //         auto twos = _mm256_set1_ps(2.0f);
@@ -98,7 +106,8 @@ template <> struct cos<ntt::vector<float, 8>> {
 
 // exp
 template <> struct exp<ntt::vector<float, 8>> {
-    ntt::vector<float, 8> operator()(ntt::vector<float, 8> v) const noexcept {
+    inline ntt::vector<float, 8>
+    operator()(const ntt::vector<float, 8> &v) const noexcept {
         return impl(v);
     }
 
@@ -109,7 +118,8 @@ template <> struct exp<ntt::vector<float, 8>> {
 
 // floor
 // template <> struct floor<ntt::vector<float, 8>> {
-//     ntt::vector<float, 8> operator()(ntt::vector<float, 8> v) const noexcept
+//     ntt::vector<float, 8> operator()(const ntt::vector<float, 8>& v) const
+//     noexcept
 //     {
 //         return _mm256_floor_ps(v);
 //     }
@@ -117,7 +127,8 @@ template <> struct exp<ntt::vector<float, 8>> {
 
 // log
 // template <> struct log<ntt::vector<float, 8>> {
-//     ntt::vector<float, 8> operator()(ntt::vector<float, 8> v) const noexcept
+//     ntt::vector<float, 8> operator()(const ntt::vector<float, 8>& v) const
+//     noexcept
 //     {
 //         return log256_ps(v);
 //     }
@@ -125,7 +136,8 @@ template <> struct exp<ntt::vector<float, 8>> {
 
 // neg
 template <> struct neg<ntt::vector<float, 8>> {
-    ntt::vector<float, 8> operator()(ntt::vector<float, 8> v) const noexcept {
+    inline ntt::vector<float, 8>
+    operator()(const ntt::vector<float, 8> &v) const noexcept {
         return impl(v);
     }
 
@@ -137,7 +149,8 @@ template <> struct neg<ntt::vector<float, 8>> {
 
 // round
 // template <> struct round<ntt::vector<float, 8>> {
-//     ntt::vector<float, 8> operator()(ntt::vector<float, 8> v) const noexcept
+//     ntt::vector<float, 8> operator()(const ntt::vector<float, 8>& v) const
+//     noexcept
 //     {
 //         return _mm256_round_ps(v,
 //                                _MM_FROUND_TO_NEAREST_INT |
@@ -147,7 +160,8 @@ template <> struct neg<ntt::vector<float, 8>> {
 
 // rsqrt
 // template <> struct rsqrt<ntt::vector<float, 8>> {
-//     ntt::vector<float, 8> operator()(ntt::vector<float, 8> v) const noexcept
+//     ntt::vector<float, 8> operator()(const ntt::vector<float, 8>& v) const
+//     noexcept
 //     {
 //         return _mm256_rsqrt_ps(v);
 //     }
@@ -155,7 +169,8 @@ template <> struct neg<ntt::vector<float, 8>> {
 
 // sign
 // template <> struct sign<ntt::vector<float, 8>> {
-//     ntt::vector<float, 8> operator()(ntt::vector<float, 8> v) const noexcept
+//     ntt::vector<float, 8> operator()(const ntt::vector<float, 8>& v) const
+//     noexcept
 //     {
 // #if 0
 //         auto sign_mask = _mm256_set1_ps(-0.0f);
@@ -182,7 +197,8 @@ template <> struct neg<ntt::vector<float, 8>> {
 
 // sin
 // template <> struct sin<ntt::vector<float, 8>> {
-//     ntt::vector<float, 8> operator()(ntt::vector<float, 8> v) const noexcept
+//     ntt::vector<float, 8> operator()(const ntt::vector<float, 8>& v) const
+//     noexcept
 //     {
 //         return sin256_ps(v);
 //     }
@@ -190,7 +206,8 @@ template <> struct neg<ntt::vector<float, 8>> {
 
 // sinh(v) = (exp(v) - exp(-v)) / 2
 // template <> struct sinh<ntt::vector<float, 8>> {
-//     ntt::vector<float, 8> operator()(ntt::vector<float, 8> v) const noexcept
+//     ntt::vector<float, 8> operator()(const ntt::vector<float, 8>& v) const
+//     noexcept
 //     {
 //         auto zeros = _mm256_setzero_ps();
 //         auto twos = _mm256_set1_ps(2.0f);
@@ -202,7 +219,8 @@ template <> struct neg<ntt::vector<float, 8>> {
 
 // sqrt
 template <> struct sqrt<ntt::vector<float, 8>> {
-    ntt::vector<float, 8> operator()(ntt::vector<float, 8> v) const noexcept {
+    inline ntt::vector<float, 8>
+    operator()(const ntt::vector<float, 8> &v) const noexcept {
         return impl(v);
     }
 
@@ -213,7 +231,8 @@ template <> struct sqrt<ntt::vector<float, 8>> {
 
 // square
 template <> struct square<ntt::vector<float, 8>> {
-    ntt::vector<float, 8> operator()(ntt::vector<float, 8> v) const noexcept {
+    inline ntt::vector<float, 8>
+    operator()(const ntt::vector<float, 8> &v) const noexcept {
         return impl(v);
     }
 
@@ -224,7 +243,8 @@ template <> struct square<ntt::vector<float, 8>> {
 
 // tanh
 // template <> struct tanh<ntt::vector<float, 8>> {
-//     ntt::vector<float, 8> operator()(ntt::vector<float, 8> v) const noexcept
+//     ntt::vector<float, 8> operator()(const ntt::vector<float, 8>& v) const
+//     noexcept
 //     {
 //         return tanh256_ps(v);
 //     }
@@ -232,7 +252,8 @@ template <> struct square<ntt::vector<float, 8>> {
 
 // swish(v) = v / (1 + std::exp(-v))
 template <> struct swish<ntt::vector<float, 8>> {
-    ntt::vector<float, 8> operator()(ntt::vector<float, 8> v) const noexcept {
+    inline ntt::vector<float, 8>
+    operator()(const ntt::vector<float, 8> &v) const noexcept {
         return impl(v);
     }
 
@@ -248,103 +269,120 @@ template <> struct swish<ntt::vector<float, 8>> {
 };
 
 template <> struct swish<ntt::vector<float, 4>> {
-    ntt::vector<float, 4> operator()(ntt::vector<float, 4> v) const noexcept {
+    inline ntt::vector<float, 4>
+    operator()(const ntt::vector<float, 4> &v) const noexcept {
         return impl(v);
     }
 
     inline float32x4_t impl(const float32x4_t &v) const noexcept {
         auto zero = vdupq_n_f32(0);
         auto one = vdupq_n_f32(1);
-        return v / exp_ps(zero - v) + one;
+        return v / (one + exp_ps(zero - v));
     }
 };
 
 // binary
 template <> struct add<ntt::vector<float, 4>> {
-    ntt::vector<float, 4> operator()(ntt::vector<float, 4> lhs,
-                                     ntt::vector<float, 4> rhs) const noexcept {
+    inline ntt::vector<float, 4>
+    operator()(const ntt::vector<float, 4> &lhs,
+               const ntt::vector<float, 4> &rhs) const noexcept {
         return vaddq_f32(lhs, rhs);
     }
 };
 
 template <> struct add<ntt::vector<float, 8>> {
-    ntt::vector<float, 8> operator()(ntt::vector<float, 8> lhs,
-                                     ntt::vector<float, 8> rhs) const noexcept {
+    inline ntt::vector<float, 8>
+    operator()(ntt::vector<float, 8> lhs,
+               ntt::vector<float, 8> rhs) const noexcept {
         return impl(lhs, rhs);
     }
-    inline float32x4x2_t impl(float32x4x2_t lhs, float32x4x2_t rhs) const {
+    inline float32x4x2_t impl(const float32x4x2_t &lhs,
+                              const float32x4x2_t &rhs) const {
         return float32x4x2_t{vaddq_f32(lhs.val[0], rhs.val[0]),
                              vaddq_f32(lhs.val[1], rhs.val[1])};
     }
 };
 
 template <> struct sub<ntt::vector<float, 4>> {
-    ntt::vector<float, 4> operator()(ntt::vector<float, 4> lhs,
-                                     ntt::vector<float, 4> rhs) const noexcept {
+    inline ntt::vector<float, 4>
+    operator()(const ntt::vector<float, 4> &lhs,
+               const ntt::vector<float, 4> &rhs) const noexcept {
         return vsubq_f32(lhs, rhs);
     }
 };
 
 template <> struct sub<ntt::vector<float, 8>> {
-    ntt::vector<float, 8> operator()(ntt::vector<float, 8> lhs,
-                                     ntt::vector<float, 8> rhs) const noexcept {
+    inline ntt::vector<float, 8>
+    operator()(ntt::vector<float, 8> lhs,
+               ntt::vector<float, 8> rhs) const noexcept {
         return impl(lhs, rhs);
     }
-    inline float32x4x2_t impl(float32x4x2_t lhs, float32x4x2_t rhs) const {
+    inline float32x4x2_t impl(const float32x4x2_t &lhs,
+                              const float32x4x2_t &rhs) const {
         return float32x4x2_t{vsubq_f32(lhs.val[0], rhs.val[0]),
                              vsubq_f32(lhs.val[1], rhs.val[1])};
     }
 };
 
 template <> struct mul<ntt::vector<float, 4>> {
-    ntt::vector<float, 4> operator()(ntt::vector<float, 4> lhs,
-                                     ntt::vector<float, 4> rhs) const noexcept {
+    inline ntt::vector<float, 4>
+    operator()(const ntt::vector<float, 4> &lhs,
+               const ntt::vector<float, 4> &rhs) const noexcept {
         return vmulq_f32(lhs, rhs);
     }
 };
 
 template <> struct mul<ntt::vector<float, 8>> {
-    ntt::vector<float, 8> operator()(ntt::vector<float, 8> lhs,
-                                     ntt::vector<float, 8> rhs) const noexcept {
+    inline ntt::vector<float, 8>
+    operator()(ntt::vector<float, 8> lhs,
+               ntt::vector<float, 8> rhs) const noexcept {
         return impl(lhs, rhs);
     }
-    inline float32x4x2_t impl(float32x4x2_t lhs, float32x4x2_t rhs) const {
+
+    inline float32x4x2_t impl(const float32x4x2_t &lhs,
+                              const float32x4x2_t &rhs) const {
         return float32x4x2_t{vmulq_f32(lhs.val[0], rhs.val[0]),
                              vmulq_f32(lhs.val[1], rhs.val[1])};
     }
 };
 
 template <> struct div<ntt::vector<float, 4>> {
-    ntt::vector<float, 4> operator()(ntt::vector<float, 4> lhs,
-                                     ntt::vector<float, 4> rhs) const noexcept {
+    inline ntt::vector<float, 4>
+    operator()(const ntt::vector<float, 4> &lhs,
+               const ntt::vector<float, 4> &rhs) const noexcept {
         return vdivq_f32(lhs, rhs);
     }
 };
 
 template <> struct div<ntt::vector<float, 8>> {
-    ntt::vector<float, 8> operator()(ntt::vector<float, 8> lhs,
-                                     ntt::vector<float, 8> rhs) const noexcept {
+    inline ntt::vector<float, 8>
+    operator()(ntt::vector<float, 8> lhs,
+               ntt::vector<float, 8> rhs) const noexcept {
         return impl(lhs, rhs);
     }
-    inline float32x4x2_t impl(float32x4x2_t lhs, float32x4x2_t rhs) const {
+    inline float32x4x2_t impl(const float32x4x2_t &lhs,
+                              const float32x4x2_t &rhs) const {
         return float32x4x2_t{vdivq_f32(lhs.val[0], rhs.val[0]),
                              vdivq_f32(lhs.val[1], rhs.val[1])};
     }
 };
 
 template <> struct max<ntt::vector<float, 4>> {
-    ntt::vector<float, 4> operator()(ntt::vector<float, 4> lhs,
-                                     ntt::vector<float, 4> rhs) const noexcept {
+    inline ntt::vector<float, 4>
+    operator()(const ntt::vector<float, 4> &lhs,
+               const ntt::vector<float, 4> &rhs) const noexcept {
         return vmaxq_f32(lhs, rhs);
     }
 };
 
 template <> struct max<ntt::vector<float, 8>> {
-    ntt::vector<float, 8> operator()(ntt::vector<float, 8> lhs,
-                                     ntt::vector<float, 8> rhs) const noexcept {
+    inline ntt::vector<float, 8>
+    operator()(ntt::vector<float, 8> lhs,
+               ntt::vector<float, 8> rhs) const noexcept {
         return impl(lhs, rhs);
     }
-    inline float32x4x2_t impl(float32x4x2_t lhs, float32x4x2_t rhs) const {
+    inline float32x4x2_t impl(const float32x4x2_t &lhs,
+                              const float32x4x2_t &rhs) const {
         return float32x4x2_t{vmaxq_f32(lhs.val[0], rhs.val[0]),
                              vmaxq_f32(lhs.val[1], rhs.val[1])};
     }

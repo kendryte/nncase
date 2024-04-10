@@ -547,6 +547,23 @@ public sealed class PackConv2D : PackRule
         return IR.F.Tensors.Transpose(IR.F.Tensors.Reshape(add, new[] { outShape[1], outShape[0], outShape[2], outShape[3] }), new[] { 1, 0, 2, 3 });
     }
 
+    public static Expr AddPackedCandidate(Expr input, Expr weights, Expr bias, int[] strides, int[] padding, int[] wShape, int[] outShape, int lane)
+    {
+        var col = IR.F.CPU.Im2col(IR.F.CPU.Pack(input, new[] { lane }, new[] { 1 }), new[] { wShape[2], wShape[3] }, strides, padding, new[] { 1 }, new[] { 0 });
+        var newW = IR.F.Tensors.Reshape(IR.F.CPU.Pack(weights, new[] { lane }, new[] { 1 }), new[] { wShape[0], wShape[1] / lane * wShape[2] * wShape[3] });
+        var matmul = IR.F.CPU.PackedMatMul(newW, col, new[] { 1 }, new[] { 0 }, new[] { 0 }, new[] { 0 }); // [oc, b*oh*ow]
+        var newBias = IR.F.Tensors.Reshape(bias, new[] { wShape[0], 1 });
+        var add = matmul + newBias;
+        if (outShape[0] == 1)
+        {
+            return IR.F.Tensors.Reshape(add, outShape);
+        }
+        else
+        {
+            return IR.F.Tensors.Transpose(IR.F.Tensors.Reshape(add, new[] { outShape[1], outShape[0], outShape[2], outShape[3] }), new[] { 1, 0, 2, 3 });
+        }
+    }
+
     public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
@@ -566,28 +583,9 @@ public sealed class PackConv2D : PackRule
             return rets;
         }
 
-        void AddPackCandidate()
-        {
-            var col = IR.F.CPU.Im2col(IR.F.CPU.Pack(input, new[] { Lane }, new[] { 1 }), new[] { wShape[2], wShape[3] }, strides, padding, new[] { 1 }, new[] { 0 });
-            var newW = IR.F.Tensors.Reshape(IR.F.CPU.Pack(weights, new[] { Lane }, new[] { 1 }), new[] { wShape[0], wShape[1] / Lane * wShape[2] * wShape[3] });
-            var matmul = IR.F.CPU.PackedMatMul(newW, col, new[] { 1 }, new[] { 0 }, new[] { 0 }, new[] { 0 }); // [oc, b*oh*ow]
-            var newBias = IR.F.Tensors.Reshape(bias, new[] { wShape[0], 1 });
-            var add = matmul + newBias;
-            if (outShape[0] == 1)
-            {
-                var post = IR.F.Tensors.Reshape(add, outShape);
-                rets.Add(post);
-            }
-            else
-            {
-                var post = IR.F.Tensors.Transpose(IR.F.Tensors.Reshape(add, new[] { outShape[1], outShape[0], outShape[2], outShape[3] }), new[] { 1, 0, 2, 3 });
-                rets.Add(post);
-            }
-        }
-
         // only pack on in channels
-        AddPackCandidate();
         rets.Add(AddCandidate(input, weights, bias, strides, padding, wShape, outShape));
+        rets.Add(AddPackedCandidate(input, weights, bias, strides, padding, wShape, outShape, Lane));
         return rets;
     }
 }
