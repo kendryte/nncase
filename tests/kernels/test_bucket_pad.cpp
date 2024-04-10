@@ -74,7 +74,7 @@ TEST_P(BucketPadTest, BucketPad) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
     auto pad_ort = runtime_tensor_2_ort_tensor(pad);
     auto value_ort = runtime_tensor_2_ort_tensor(value);
-    auto output_ort = ortki_Pad(l_ort, pad_ort, value_ort, "constant");
+    auto output_ort = ortki_Pad(l_ort, pad_ort, value_ort, nullptr, "constant");
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
