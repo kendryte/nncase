@@ -1049,8 +1049,6 @@ static inline __m256 atan2256_ps(__m256 y, __m256 x) {
 static inline __m256 abs256_ps(__m256 x) {
     // Use negative zero as the sign bit mask.
     const __m256 magic_negative_zero = _mm256_set1_ps(-0.0f);
-
-    // return (!magic_negative_zero && x);
     return _mm256_andnot_ps(magic_negative_zero, x);
 }
 
