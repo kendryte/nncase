@@ -50,7 +50,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
         var rhsShape = new long[] { 64, 1, 256, 4, 1, 32, 32 };
         var lhs = OrtKI.Random(lhsShape);
         var rhs = OrtKI.Random(rhsShape);
-        var expect = OrtKI.Mul(lhs, rhs);
+        _ = OrtKI.Mul(lhs, rhs);
     }
 
     [Fact]

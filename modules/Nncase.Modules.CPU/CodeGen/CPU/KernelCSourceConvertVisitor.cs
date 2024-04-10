@@ -13,7 +13,6 @@ using System.Reactive;
 using System.Runtime.InteropServices;
 using System.Text;
 using DryIoc.ImTools;
-using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
 using Nncase.CodeGen.CPU;
 using Nncase.IR;

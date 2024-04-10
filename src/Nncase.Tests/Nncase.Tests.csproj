@@ -17,7 +17,7 @@
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="Microsoft.Toolkit.HighPerformance" />
+    <PackageReference Include="CommunityToolkit.HighPerformance" />
     <PackageReference Include="xunit.analyzers" />
     <PackageReference Include="Xunit.Combinatorial" />
     <PackageReference Include="xunit.core" />

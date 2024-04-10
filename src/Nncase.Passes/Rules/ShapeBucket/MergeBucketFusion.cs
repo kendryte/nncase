@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using DryIoc.FastExpressionCompiler.LightExpression;
 using DryIoc.ImTools;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Tensors;

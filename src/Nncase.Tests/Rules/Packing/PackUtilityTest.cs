@@ -4,7 +4,6 @@
 using System;
 using System.Linq;
 using Google.OrTools.Sat;
-using Microsoft.Toolkit.HighPerformance;
 using Nncase.IR;
 using Nncase.Utilities;
 using Xunit;

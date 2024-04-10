@@ -83,8 +83,7 @@ class InstallCMakeLibs(install_lib):
                 os.walk(os.path.join(bin_dir, 'sharplibs')) for _lib in files if
                 os.path.isfile(os.path.join(root, _lib)) and
                 (os.path.splitext(_lib)[-1] in [".dll", ".so", ".dylib", ".json"] or
-                _lib.startswith("lib"))
-                and not _lib.endswith(".deps.json")]
+                _lib.startswith("lib"))]
 
         for lib in sharp_libs:
             shutil.move(lib, os.path.join(self.build_dir,
@@ -204,7 +203,7 @@ class BuildCMakeExt(build_ext):
             extdir += os.path.sep
 
         bin_dir = os.path.abspath(os.path.join(self.build_temp, 'install'))
-        cmake_args = ['-G', 'Ninja', '-DDOTNET_INIT_FOR_CONFIG=ON']
+        cmake_args = ['-G', 'Ninja', '-DDOTNET_INIT_FOR_CONFIG=OFF']
         if platform.system() == 'Windows':
             cmake_args += ['-DCMAKE_C_COMPILER=clang-cl']
             cmake_args += ['-DCMAKE_CXX_COMPILER=clang-cl']

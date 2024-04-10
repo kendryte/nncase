@@ -111,24 +111,24 @@ template <class T> struct swish {
 // binary ops
 
 template <class T> struct add {
-    T operator()(T v1, T v2) const noexcept { return v1 + v2; }
+    T operator()(const T &v1, const T &v2) const noexcept { return v1 + v2; }
 };
 
 template <class T> struct sub {
-    T operator()(T v1, T v2) const noexcept { return v1 - v2; }
+    T operator()(const T &v1, const T &v2) const noexcept { return v1 - v2; }
 };
 
 template <class T> struct mul {
-    T operator()(T v1, T v2) const noexcept { return v1 * v2; }
+    T operator()(const T &v1, const T &v2) const noexcept { return v1 * v2; }
 };
 
 template <class T> struct div {
-    T operator()(T v1, T v2) const noexcept { return v1 / v2; }
+    T operator()(const T &v1, const T &v2) const noexcept { return v1 / v2; }
 };
 
 // floor_mod is equivalent to % or mod() or remainder() function in Python.
 template <class T> struct floor_mod {
-    T operator()(T v1, T v2) const noexcept {
+    T operator()(const T &v1, const T &v2) const noexcept {
         return v1 -
                std::floor(static_cast<double>(v1) / static_cast<double>(v2)) *
                    v2;
@@ -137,28 +137,36 @@ template <class T> struct floor_mod {
 
 // mod is equivalent to fmod() function in C/C++/Python.
 template <class T> struct mod {
-    T operator()(T v1, T v2) const noexcept { return std::fmod(v1, v2); }
+    T operator()(const T &v1, const T &v2) const noexcept {
+        return std::fmod(v1, v2);
+    }
 };
 
 template <class T> struct min {
-    T operator()(T v1, T v2) const noexcept { return std::min(v1, v2); }
+    T operator()(const T &v1, const T &v2) const noexcept {
+        return std::min(v1, v2);
+    }
 };
 
 template <class T> struct max {
-    T operator()(T v1, T v2) const noexcept { return std::max(v1, v2); }
+    T operator()(const T &v1, const T &v2) const noexcept {
+        return std::max(v1, v2);
+    }
 };
 
 template <class T> struct pow {
-    T operator()(T v1, T v2) const noexcept { return std::pow(v1, v2); }
+    T operator()(const T &v1, const T &v2) const noexcept {
+        return std::pow(v1, v2);
+    }
 };
 } // namespace ops
 
 #define NTT_DEFINE_UNARY_FUNC_IMPL(op)                                         \
-    template <class T> constexpr T op(T value) noexcept {                      \
-        return ops::op<T>()(value);                                            \
+    template <class T> constexpr T op(const T &v) noexcept {                   \
+        return ops::op<T>()(v);                                                \
     }
 #define NTT_DEFINE_BINARY_FUNC_IMPL(op)                                        \
-    template <class T> constexpr T op(T v1, T v2) noexcept {                   \
+    template <class T> constexpr T op(const T &v1, const T &v2) noexcept {     \
         return ops::op<T>()(v1, v2);                                           \
     }
 
@@ -196,27 +204,27 @@ NTT_DEFINE_BINARY_FUNC_IMPL(pow)
 
 // operators
 
-template <class T> constexpr T operator-(T value) noexcept {
+template <class T> constexpr T operator-(const T &value) noexcept {
     return neg(value);
 }
 
-template <class T> constexpr T operator+(T v1, T v2) noexcept {
+template <class T> constexpr T operator+(const T &v1, const T &v2) noexcept {
     return add(v1, v2);
 }
 
-template <class T> constexpr T operator-(T v1, T v2) noexcept {
+template <class T> constexpr T operator-(const T &v1, const T &v2) noexcept {
     return sub(v1, v2);
 }
 
-template <class T> constexpr T operator*(T v1, T v2) noexcept {
+template <class T> constexpr T operator*(const T &v1, const T &v2) noexcept {
     return mul(v1, v2);
 }
 
-template <class T> constexpr T operator/(T v1, T v2) noexcept {
+template <class T> constexpr T operator/(const T &v1, const T &v2) noexcept {
     return div(v1, v2);
 }
 
-template <class T> constexpr T operator%(T v1, T v2) noexcept {
+template <class T> constexpr T operator%(const T &v1, const T &v2) noexcept {
     return mod(v1, v2);
 }
 } // namespace nncase::ntt

@@ -642,7 +642,7 @@ TEST(BinaryTestPowFloat, ranked_ranked_ranked_broadcast_multidirectional) {
     using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
     auto shape2 = ntt::make_ranked_shape(3, 1, 16, 1);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape2));
-    NttTest::init_tensor(*ntt_lhs, 0.f, 3.f);
+    NttTest::init_tensor(*ntt_rhs, 0.f, 3.f);
 
     // ntt
     using tensor_type3 = ntt::tensor<float, ntt::ranked_shape<4>>;
@@ -659,6 +659,26 @@ TEST(BinaryTestPowFloat, ranked_ranked_ranked_broadcast_multidirectional) {
     std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape3));
     NttTest::ort2ntt(ort_output, *ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(BinaryTestPowFloat, vecotor_8) {
+    // init
+    ntt::vector<float, 8> ntt_lhs, ntt_rhs;
+    NttTest::init_tensor(ntt_lhs, 0.f, 3.f);
+    NttTest::init_tensor(ntt_rhs, 0.f, 3.f);
+
+    // ntt
+    auto ntt_output1 = ntt::pow(ntt_lhs, ntt_rhs);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(ntt_rhs);
+    auto ort_output = ortki_Pow(ort_lhs, ort_rhs);
+
+    // compare
+    ntt::vector<float, 8> ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
 int main(int argc, char *argv[]) {

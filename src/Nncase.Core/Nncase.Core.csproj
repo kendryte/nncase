@@ -20,7 +20,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options" />
-    <PackageReference Include="Microsoft.Toolkit.HighPerformance" />
+    <PackageReference Include="CommunityToolkit.HighPerformance" />
     <PackageReference Include="System.CommandLine" />
     <PackageReference Include="NetFabric.Hyperlinq" />
     <PackageReference Include="System.Reactive" />
@@ -62,6 +62,10 @@
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>Range.Conversions.cs</LastGenOutput>
     </None>
+    <None Update="VectorTypes\Vectors.g.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Vectors.g.cs</LastGenOutput>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -99,6 +103,15 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Range.Conversions.tt</DependentUpon>
     </Compile>
+    <Compile Update="VectorTypes\Vectors.g.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Vectors.g.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Tiling\" />
   </ItemGroup>
 
   <ItemGroup>

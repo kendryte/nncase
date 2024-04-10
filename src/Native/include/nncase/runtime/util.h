@@ -587,6 +587,14 @@ inline dims_t to_4d(dims_t in_a_shape) {
     return in_a_shape;
 }
 
+template <class U, class T, size_t Extent>
+constexpr std::span<U, Extent == std::dynamic_extent
+                           ? std::dynamic_extent
+                           : Extent * sizeof(T) / sizeof(U)>
+as_span(std::span<T, Extent> src) noexcept {
+    return {(U *)src.data(), src.size_bytes() / sizeof(U)};
+}
+
 inline void shrink_memory_pool() {
     buffer_allocator::host().shrink_memory_pool();
 }

@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Toolkit.HighPerformance;
+using CommunityToolkit.HighPerformance;
 using Nncase.IR;
 using Nncase.Tests.TestFixture;
 using Nncase.Utilities;

@@ -24,7 +24,7 @@ internal class EGraphExtractor
         _costModel = costModel;
     }
 
-    public Expr Extract(EClass root, IEGraph eGraph, EGraphExtractConstrains[] constrains)
+    public Expr Extract(EClass root, IEGraph eGraph, EGraphExtractConstrains[]? constrains)
     {
         var cpmodel = new CpModel();
 
@@ -70,9 +70,12 @@ internal class EGraphExtractor
             EliminateAllCycles(root, new(), new(), visited, cpmodel, vars);
         }
 
-        foreach (var constrain in constrains)
+        if (constrains != null)
         {
-            constrain(cpmodel, vars);
+            foreach (var constrain in constrains)
+            {
+                constrain(cpmodel, vars);
+            }
         }
 
         // 3. add pick weights for all enode.
