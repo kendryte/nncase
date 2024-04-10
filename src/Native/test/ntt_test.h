@@ -20,9 +20,24 @@
 #include <ortki/c_api.h>
 #include <random>
 #include <string>
+#ifdef __AVX2__
+#include <x86intrin.h>
+#endif
+
 
 namespace nncase {
 namespace NttTest {
+
+__inline__ uint64_t get_cycle(void) {
+#if defined __AVX2__
+    __asm__ __volatile__("" : : : "memory");
+    uint64_t r = __rdtsc();
+    __asm__ __volatile__("" : : : "memory");
+    return r;
+#endif
+}
+
+
 template <typename T, typename Shape,
           typename Stride = ntt::default_strides_t<Shape>>
 void init_tensor(ntt::tensor<T, Shape, Stride> &tensor,
@@ -96,6 +111,14 @@ void init_tensor(ntt::tensor<T, Shape, Stride> &tensor,
         std::cerr << "unsupported data type" << std::endl;
         std::abort();
     }
+}
+
+template <typename T, typename Shape,
+          typename Stride = ntt::default_strides_t<Shape>>
+void init_tensor(ntt::tensor<ntt::vector<T, 8>, Shape, Stride> &tensor,
+                 T start = static_cast<T>(0), T stop = static_cast<T>(1)) {
+    ntt::apply(tensor.shape(),
+               [&](auto &index) { init_tensor(tensor(index), start, stop); });
 }
 
 template <typename T, typename Shape,
@@ -174,11 +197,11 @@ bool compare_tensor(ntt::tensor<T, Shape, Stride> &lhs,
         v2.push_back(static_cast<double>(rvalue));
 
         if (lvalue != rvalue) {
-            std::cout << "index = (";
-            for (size_t i = 0; i < index.rank(); i++)
-                std::cout << index[i] << " ";
-            std::cout << "): lhs = " << lvalue << ", rhs = " << rvalue
-                      << std::endl;
+            // std::cout << "index = (";
+            // for (size_t i = 0; i < index.rank(); i++)
+            //     std::cout << index[i] << " ";
+            // std::cout << "): lhs = " << lvalue << ", rhs = " << rvalue
+            //           << std::endl;
             pass = false;
         }
     });

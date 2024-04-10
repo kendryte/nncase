@@ -154,11 +154,11 @@ template <class T> struct pow {
 } // namespace ops
 
 #define NTT_DEFINE_UNARY_FUNC_IMPL(op)                                         \
-    template <class T> constexpr T op(T value) noexcept {                      \
-        return ops::op<T>()(value);                                            \
+    template <class T> constexpr T op(const T &v) noexcept {                   \
+        return ops::op<T>()(v);                                                \
     }
 #define NTT_DEFINE_BINARY_FUNC_IMPL(op)                                        \
-    template <class T> constexpr T op(T v1, T v2) noexcept {                   \
+    template <class T> constexpr T op(const T &v1, const T &v2) noexcept {     \
         return ops::op<T>()(v1, v2);                                           \
     }
 
