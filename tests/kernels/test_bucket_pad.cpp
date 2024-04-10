@@ -71,10 +71,19 @@ TEST_P(BucketPadTest, BucketPad) {
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
+    int64_t axis_ptr[] = {0, 1, 2, 3};
+    auto axis =
+        hrt::create(dt_int64, {4},
+                    {reinterpret_cast<std::byte *>(axis_ptr), sizeof(axis_ptr)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
     auto l_ort = runtime_tensor_2_ort_tensor(input);
     auto pad_ort = runtime_tensor_2_ort_tensor(pad);
     auto value_ort = runtime_tensor_2_ort_tensor(value);
-    auto output_ort = ortki_Pad(l_ort, pad_ort, value_ort, nullptr, "constant");
+    auto axis_ort = runtime_tensor_2_ort_tensor(axis);
+    auto output_ort =
+        ortki_Pad(l_ort, pad_ort, value_ort, axis_ort, "constant");
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));

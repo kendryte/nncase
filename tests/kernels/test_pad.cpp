@@ -99,11 +99,20 @@ TEST_P(PadTest, Pad) {
                             sizeof(padding[0]) * padding.size()},
                            true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
+    std::vector<int64_t> axis_v(padding.size() / 2);
+    std::iota(axis_v.begin(), axis_v.end(), 0);
+    auto axis = hrt::create(dt_int64, {axis_v.size()},
+                            {reinterpret_cast<std::byte *>(axis_v.data()),
+                             sizeof(axis_v[0]) * axis_v.size()},
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
 
     auto l_ort = runtime_tensor_2_ort_tensor(input);
     auto pad_ort = runtime_tensor_2_ort_tensor(pad);
     auto value_ort = runtime_tensor_2_ort_tensor(value);
-    auto output_ort = ortki_Pad(l_ort, pad_ort, value_ort, nullptr, mode_str.c_str());
+    auto axis_ort = runtime_tensor_2_ort_tensor(axis);
+    auto output_ort =
+        ortki_Pad(l_ort, pad_ort, value_ort, axis_ort, mode_str.c_str());
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
