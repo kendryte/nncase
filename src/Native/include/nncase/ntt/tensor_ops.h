@@ -25,8 +25,7 @@ template <template <class T> class Op, class TTensor> struct tensor_unary_impl {
     TTensor operator()(const TTensor &v) const noexcept {
         Op<element_type> op;
         TTensor value;
-        apply(v.shape(),
-              [&](auto index) { value(index) = op(v(index)); });
+        apply(v.shape(), [&](auto index) { value(index) = op(v(index)); });
         return value;
     }
 };

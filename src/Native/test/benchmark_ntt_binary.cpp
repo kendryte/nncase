@@ -17,23 +17,23 @@
 
 using namespace nncase;
 
-#define BENCHMARMK_NTT_BINARY(op, dtype, lhs_low, lhs_high, rhs_low, rhs_high)                                  \
-void benchmark_ntt_binary_##op()                                                                         \
-{                                                                                                        \
-    constexpr size_t size = 10000;                                                                       \
-    ntt::tensor<ntt::vector<dtype, 8>, ntt::fixed_shape<size>> ntt_lhs;                                  \
-    NttTest::init_tensor(ntt_lhs, lhs_low, lhs_high);                                                    \
-                                                                                                         \
-    ntt::tensor<ntt::vector<dtype, 8>, ntt::fixed_shape<size>> ntt_rhs;                                  \
-    NttTest::init_tensor(ntt_rhs, rhs_low, rhs_high);                                                    \
-                                                                                                         \
-    auto t1 = NttTest::get_cycle();                                                                      \
-    for (size_t i = 0; i < size; i++)                                                                    \
-        ntt::op(ntt_lhs, ntt_rhs);                                                                       \
-    auto t2 = NttTest::get_cycle();                                                                      \
-    std::cout << __FUNCTION__ << " took " << static_cast<float>(t2 - t1) / size / size << " cycles"      \
-                << std::endl;                                                                            \
-}
+#define BENCHMARMK_NTT_BINARY(op, dtype, lhs_low, lhs_high, rhs_low, rhs_high) \
+    void benchmark_ntt_binary_##op() {                                         \
+        constexpr size_t size = 10000;                                         \
+        ntt::tensor<ntt::vector<dtype, 8>, ntt::fixed_shape<size>> ntt_lhs;    \
+        NttTest::init_tensor(ntt_lhs, lhs_low, lhs_high);                      \
+                                                                               \
+        ntt::tensor<ntt::vector<dtype, 8>, ntt::fixed_shape<size>> ntt_rhs;    \
+        NttTest::init_tensor(ntt_rhs, rhs_low, rhs_high);                      \
+                                                                               \
+        auto t1 = NttTest::get_cpu_cycle();                                    \
+        for (size_t i = 0; i < size; i++)                                      \
+            ntt::op(ntt_lhs, ntt_rhs);                                         \
+        auto t2 = NttTest::get_cpu_cycle();                                    \
+        std::cout << __FUNCTION__ << " took "                                  \
+                  << static_cast<float>(t2 - t1) / size / size << " cycles"    \
+                  << std::endl;                                                \
+    }
 
 BENCHMARMK_NTT_BINARY(add, float, -10.f, 10.f, -10.f, 10.f)
 BENCHMARMK_NTT_BINARY(sub, float, -10.f, 10.f, -10.f, 10.f)

@@ -20,23 +20,28 @@
 #include <ortki/c_api.h>
 #include <random>
 #include <string>
+
 #ifdef __AVX2__
+#ifdef _WIN32
+#include <intrin.h>
+#else
 #include <x86intrin.h>
 #endif
-
+#endif
 
 namespace nncase {
 namespace NttTest {
 
-__inline__ uint64_t get_cycle(void) {
+__inline__ uint64_t get_cpu_cycle(void) {
 #if defined __AVX2__
     __asm__ __volatile__("" : : : "memory");
     uint64_t r = __rdtsc();
     __asm__ __volatile__("" : : : "memory");
     return r;
+#else
+    return 0;
 #endif
 }
-
 
 template <typename T, typename Shape,
           typename Stride = ntt::default_strides_t<Shape>>

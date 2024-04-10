@@ -17,21 +17,20 @@
 
 using namespace nncase;
 
-
-#define BENCHMARMK_NTT_UNARY(op, dtype, low, high)                                                       \
-void benchmark_ntt_unary_##op()                                                                          \
-{                                                                                                        \
-    constexpr size_t size = 10000;                                                                       \
-    ntt::tensor<ntt::vector<dtype, 8>, ntt::fixed_shape<size>> ntt_input;                                \
-    NttTest::init_tensor(ntt_input, low, high);                                                          \
-                                                                                                         \
-    auto t1 = NttTest::get_cycle();                                                                      \
-    for (size_t i = 0; i < size; i++)                                                                    \
-        ntt::op(ntt_input);                                                                              \
-    auto t2 = NttTest::get_cycle();                                                                      \
-    std::cout << __FUNCTION__ << " took " << static_cast<float>(t2 - t1) / size / size << " cycles"      \
-                << std::endl;                                                                            \
-}
+#define BENCHMARMK_NTT_UNARY(op, dtype, low, high)                             \
+    void benchmark_ntt_unary_##op() {                                          \
+        constexpr size_t size = 10000;                                         \
+        ntt::tensor<ntt::vector<dtype, 8>, ntt::fixed_shape<size>> ntt_input;  \
+        NttTest::init_tensor(ntt_input, low, high);                            \
+                                                                               \
+        auto t1 = NttTest::get_cpu_cycle();                                    \
+        for (size_t i = 0; i < size; i++)                                      \
+            ntt::op(ntt_input);                                                \
+        auto t2 = NttTest::get_cpu_cycle();                                    \
+        std::cout << __FUNCTION__ << " took "                                  \
+                  << static_cast<float>(t2 - t1) / size / size << " cycles"    \
+                  << std::endl;                                                \
+    }
 
 BENCHMARMK_NTT_UNARY(abs, float, -10.f, 10.f)
 BENCHMARMK_NTT_UNARY(acos, float, -1.f, 1.f)
