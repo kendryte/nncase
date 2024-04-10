@@ -37,7 +37,7 @@ void impl(const TInput &input, const TWeights &weights, const TBias &bias,
           [[maybe_unused]] const TPadding padding,
           [[maybe_unused]] const TDilation dilation,
           const size_t groups) noexcept {
-    using TElem = TInput::element_type;
+    using TElem = typename TInput::element_type;
     constexpr auto in_shape = typename TInput::shape_type{};
     constexpr int32_t out_channels = TWeights::shape_type::at(0);
     constexpr int32_t filter_h = TWeights::shape_type::at(2);

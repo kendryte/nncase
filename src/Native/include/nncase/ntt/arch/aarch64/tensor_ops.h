@@ -23,4 +23,30 @@ template <> struct load_scalar<ntt::vector<float, 4>> {
         return vdupq_n_f32(v);
     }
 };
+
+template <> struct reduce<ntt::vector<float, 4>, ops::add> {
+    float operator()(const ntt::vector<float, 4> &tensor) {
+        return vaddvq_f32(tensor);
+    }
+};
+
+template <> struct reduce<ntt::vector<float, 8>, ops::add> {
+    float operator()(const ntt::vector<float, 8> &tensor) {
+        float32x4x2_t val = tensor;
+        return vaddvq_f32(val.val[0]) + vaddvq_f32(val.val[1]);
+    }
+};
+
+template <> struct reduce<ntt::vector<float, 4>, ops::max> {
+    float operator()(const ntt::vector<float, 4> &tensor) {
+        return vmaxvq_f32(tensor);
+    }
+};
+
+template <> struct reduce<ntt::vector<float, 8>, ops::max> {
+    float operator()(const ntt::vector<float, 8> &tensor) {
+        float32x4x2_t val = tensor;
+        return std::max(vmaxvq_f32(val.val[0]), vmaxvq_f32(val.val[1]));
+    }
+};
 } // namespace nncase::ntt::tensor_ops

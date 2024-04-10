@@ -27,7 +27,7 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
         }
         else
         {
-            var lanes = input.Shape.Skip(4).Select(i => (int)i).ToArray();
+            var lanes = input.Shape.TakeLast(target.PackedAxes.Count).Select(i => (int)i).ToArray();
             var channelPadNums = 0;
             for (int i = target.PackedAxes.Count - 1; i >= 0; i--)
             {
@@ -63,16 +63,16 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
 
             if (bias.Shape.Length == 2)
             {
-                bias = scale.Unpack(0);
+                bias = bias.Unpack(0);
                 if (channelPadNums > 0)
                 {
-                    bias = OrtKI.Slice(bias, new[] { 0L }, new[] { scale.Shape[0] - channelPadNums }, new[] { 0L }, new[] { 1L });
+                    bias = OrtKI.Slice(bias, new[] { 0L }, new[] { bias.Shape[0] - channelPadNums }, new[] { 0L }, new[] { 1L });
                 }
             }
 
             var norm = OrtKI.InstanceNormalization(input, scale, bias, target.Epsilon);
             var output = CPUEvaluatorUtility.RepackTensor(norm, lanes, target.PackedAxes, target.PadedNums);
-            return Value.FromTensor(Tensor.FromBytes(new TensorType(new VectorType(norm.DataType.ToDataType(), lanes), output.Shape.Take(4).Select(i => (int)i).ToArray()), output.BytesBuffer.ToArray()));
+            return Value.FromTensor(Tensor.FromBytes(new TensorType(new VectorType(norm.DataType.ToDataType(), lanes), output.Shape.SkipLast(target.PackedAxes.Count).Select(i => (int)i).ToArray()), output.BytesBuffer.ToArray()));
         }
     }
 
@@ -128,12 +128,9 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
             return input;
         }
 
-        for (int i = 0; i < target.PackedAxes.Count; i++)
+        if (!(target.PackedAxes.Count == 1 && target.PackedAxes[0] == 1 && scale.DType is VectorType && bias.DType is VectorType))
         {
-            if (target.PackedAxes[i] == 1 && (scale.DType is not VectorType || bias.DType is not VectorType))
-            {
-                return new InvalidType("when packed on channel, the scale and bias must be packed");
-            }
+            return new InvalidType("when packed on channel, the scale and bias must be packed");
         }
 
         return input;

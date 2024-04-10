@@ -82,13 +82,16 @@ inline constexpr bool is_same_seq(const T<ADims...> &a, const T<BDims...> &b) {
 }
 
 template <typename T>
-concept IsFixedTensor = is_fixed_dims_v<typename std::decay_t<T>::shape_type>
-    &&is_fixed_dims_v<typename std::decay_t<T>::strides_type>;
+concept IsFixedTensor = is_fixed_dims_v<typename std::decay_t<T>::shape_type> &&
+                        is_fixed_dims_v<typename std::decay_t<T>::strides_type>;
 
 template <typename T>
-concept IsRankedTensor = is_ranked_dims_v<typename std::decay_t<T>::shape_type>
-    &&is_ranked_dims_v<typename std::decay_t<T>::strides_type>;
+concept IsRankedTensor =
+    is_ranked_dims_v<typename std::decay_t<T>::shape_type> &&
+    is_ranked_dims_v<typename std::decay_t<T>::strides_type>;
 
-template <typename T> concept IsFixedDims = is_fixed_dims_v<T>;
+template <typename T>
+concept IsFixedDims = is_fixed_dims_v<T>;
 
+inline double get_ms_time() noexcept { return (double)clock() / 1000; }
 } // namespace nncase::ntt

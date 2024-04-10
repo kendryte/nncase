@@ -42,4 +42,6 @@
 #include "arch/x86_64/tensor_ops.h"
 #elif __aarch64__
 #include "arch/aarch64/arch_types.h"
+#include "arch/aarch64/primitive_ops.h"
+#include "arch/aarch64/tensor_ops.h"
 #endif

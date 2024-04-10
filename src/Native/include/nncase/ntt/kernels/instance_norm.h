@@ -23,6 +23,15 @@ namespace nncase::ntt {
 
 namespace instance_norm_detail {
 
+template <typename TElem>
+inline void welford_update(size_t &count, TElem &mean, TElem &m2, TElem v) {
+    count++;
+    auto delta = v - mean;
+    mean += delta / (TElem)count;
+    auto delta2 = v - mean;
+    m2 += delta * delta2;
+};
+
 template <IsFixedTensor TIn, IsFixedTensor TScale, IsFixedTensor TBias,
           IsFixedTensor TOut, typename TEp, IsFixedDims PackedAxes,
           IsFixedDims PadedNums>
@@ -57,12 +66,9 @@ void impl(const TIn &input, const TScale &scale, const TBias &bias,
 
     constexpr size_t inner_size =
         slice_fixed_dims<input_shape.rank() - Axis, Axis>(input_shape).length();
-    constexpr bool UseVectorReduce = PackedAxes::rank() == 1;
+    // constexpr bool UseVectorReduce = PackedAxes::rank() == 1;
 
-    TElem finner_size = (TElem)inner_size;
-    if constexpr (UseVectorReduce) {
-        finner_size = finner_size * (TElem)TElem::shape_type::length();
-    }
+    // TElem finner_size = (TElem)inner_size;
     // remove pad nums, NOTE after mul elem size
     // finner_size = sub_op(finner_size, paded_inner_size);
 
@@ -72,55 +78,40 @@ void impl(const TIn &input, const TScale &scale, const TBias &bias,
         auto output_p =
             output.elements().data() + linear_offset(index, strides);
 
-        // compute mean
-        TElem mean1 = (TElem)0;
-        for (size_t i = 0; i < inner_size; i++)
-            mean1 = mean1 + (input_p[i] / finner_size);
-        if constexpr (UseVectorReduce) {
-            mean1 = (TElem)reduce_sum(mean1);
+        TElem welford_mean = (TElem)0;
+        TElem welford_m2 = (TElem)0;
+        size_t welford_count = 0;
+        for (size_t i = 0; i < inner_size; i++) {
+            welford_update(welford_count, welford_mean, welford_m2, input_p[i]);
         }
-
-        std::array<TElem, inner_size> sub;
-        for (auto i = 0; i < inner_size; i++)
-            sub[i] = input_p[i] - mean1;
-
-        std::array<TElem, inner_size> pow;
-        for (auto i = 0; i < inner_size; i++)
-            pow[i] = sub[i] * sub[i];
-
-        TElem mean2 = (TElem)0;
-        for (auto i = 0; i < inner_size; i++)
-            mean2 = mean2 + (pow[i] / finner_size);
-        if constexpr (UseVectorReduce) {
-            mean2 = (TElem)reduce_sum(mean2);
-        }
-
-        TElem add = mean2 + epsilon;
-        TElem sqrt = ntt::sqrt(add);
-
-        std::array<TElem, inner_size> norm;
-        for (auto i = 0; i < inner_size; i++)
-            norm[i] = sub[i] / sqrt;
+        TElem welford_var = welford_m2 / (TElem)welford_count;
 
         for (auto i = 0; i < inner_size; i++)
-            output_p[i] = (norm[i] * (TElem)scale(ranked_shape<1>{index[1]})) +
+            output_p[i] = (((sub(input_p[i], welford_mean)) /
+                            sqrt(add(welford_var, epsilon))) *
+                           (TElem)scale(ranked_shape<1>{index[1]})) +
                           (TElem)bias(ranked_shape<1>{index[1]});
     });
 }
 } // namespace instance_norm_detail
 
+/**
+ * @brief
+ *  1. no pack
+ *  2. pack on axis 1
+ */
 template <typename TIn, typename TScale, typename TBias, typename TOut,
           typename TEp, IsFixedDims PackedAxes, IsFixedDims PadedNums>
 void instance_norm(const TIn &input, const TScale &scale, const TBias &bias,
                    TOut &&output, const TEp &epsilon, PackedAxes packedAxes,
                    PadedNums padedNums) {
-    static_assert(PackedAxes::rank() < 2, "currently not support 2d packing.");
-    if constexpr (PackedAxes::rank() <= 1) {
-        static_assert(PadedNums::rank() == 0 ||
-                          (PadedNums::rank() == 1 && PadedNums::at(0) == 0),
-                      "not support padding");
-        instance_norm_detail::impl(input, scale, bias, output, epsilon,
-                                   packedAxes, padedNums);
-    }
+    static_assert(PackedAxes::rank() == 0 ||
+                      (PackedAxes::rank() == 1 && PackedAxes::at(0) == 1),
+                  "currently not support 2d packing.");
+    static_assert(PadedNums::rank() == 0 ||
+                      (PadedNums::rank() == 1 && PadedNums::at(0) == 0),
+                  "not support padding");
+    instance_norm_detail::impl(input, scale, bias, output, epsilon, packedAxes,
+                               padedNums);
 }
 } // namespace nncase::ntt

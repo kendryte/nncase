@@ -104,6 +104,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     [Theory]
     [InlineData(new object[] { new[] { 1, 2, 16, 32 }, 1e-5, 0 })]
+    [InlineData(new object[] { new[] { 1, 32, 2048 }, 1e-6, 1 })]
     public async Task TestInstanceNorm(int[] shape, float epsion, int count)
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));

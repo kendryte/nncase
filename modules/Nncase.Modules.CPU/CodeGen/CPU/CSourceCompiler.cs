@@ -167,7 +167,7 @@ public class CSourceCompiler
         var archConfig = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "-DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl" : string.Empty;
 
 #if DEBUG
-        var config = "Debug";
+        var config = "RelWithDebInfo";
 #else
         var config = "Release";
 #endif

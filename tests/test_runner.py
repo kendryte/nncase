@@ -353,6 +353,13 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
             # TODO: support model with unusual layout e.g.: onnx->NHWC
             if k == "model_layout" or k == "model_shape":
                 continue
+            if k == "target_options":
+                target_options = nncase.CpuTargetOptions() if target == 'cpu' else None
+                if target_options is not None:
+                  for subk, subv in v.items():
+                    exec(f"target_options.{subk} = {e + subv + e if isinstance(v, str) else subv}")
+                  compile_options.target_options = target_options
+                continue
             exec(f"compile_options.{k} = {e + v + e if isinstance(v, str) else v}")
 
         compile_options.target = target
