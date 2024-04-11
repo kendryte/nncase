@@ -264,7 +264,7 @@ template <> struct swish<ntt::vector<float, 8>> {
     inline float32x4_t impl2(const float32x4_t &v) const noexcept {
         auto zero = vdupq_n_f32(0);
         auto one = vdupq_n_f32(1);
-        return v / exp_ps(zero - v) + one;
+        return v / (one + exp_ps(zero - v));
     }
 };
 
