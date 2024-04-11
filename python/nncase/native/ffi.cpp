@@ -145,11 +145,12 @@ PYBIND11_MODULE(_nncase, m) {
             py::overload_cast<>(&compile_options::shape_bucket_options),
             py::overload_cast<const shape_bucket_options &>(
                 &compile_options::shape_bucket_options))
-        .def("set_cpu_target_options",
-             [](compile_options &obj, const cpu_target_options &target_options) {
-                 nncase_clr_api()->compile_options_set_cpu_target_options(
-                     obj.get(), target_options.get());
-             });
+        .def(
+            "set_cpu_target_options",
+            [](compile_options &obj, const cpu_target_options &target_options) {
+                nncase_clr_api()->compile_options_set_cpu_target_options(
+                    obj.get(), target_options.get());
+            });
 
     py::class_<target>(m, "Target")
         .def(py::init<std::string_view>())

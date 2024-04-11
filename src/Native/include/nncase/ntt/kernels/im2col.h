@@ -32,13 +32,16 @@ namespace im2col_details {
 template <IsFixedTensor TIn, IsFixedDims TKernel, IsFixedDims TStrides,
           IsFixedDims PackedAxes, IsFixedDims PadedNums, IsFixedDims TPadding,
           IsFixedTensor TOut>
-    requires(PackedAxes::rank() == 0 ||
-             (PackedAxes::rank() == 1 && PackedAxes::at(0) == 1))
-void im2col_impl(const TIn &input, [[maybe_unused]] const TKernel &kernel,
-                 [[maybe_unused]] const TStrides &strides,
-                 [[maybe_unused]] const TPadding &padding,
-                 [[maybe_unused]] const PackedAxes packedAxes,
-                 [[maybe_unused]] const PadedNums padedNums, TOut &&output) {
+requires(PackedAxes::rank() == 0 ||
+         (PackedAxes::rank() == 1 &&
+          PackedAxes::at(0) ==
+              1)) void im2col_impl(const TIn &input,
+                                   [[maybe_unused]] const TKernel &kernel,
+                                   [[maybe_unused]] const TStrides &strides,
+                                   [[maybe_unused]] const TPadding &padding,
+                                   [[maybe_unused]] const PackedAxes packedAxes,
+                                   [[maybe_unused]] const PadedNums padedNums,
+                                   TOut &&output) {
     using TElem = typename TIn::element_type;
     constexpr auto input_shape = typename TIn::shape_type{};
     constexpr auto input_strides = typename TIn::strides_type{};

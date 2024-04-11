@@ -200,7 +200,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
         }
 
         var start = Visit(expr.Start);
-        var size = Visit(expr.Size);
+        _ = Visit(expr.Size);
         string loc = (expr.Location, expr.Hierarchy) switch
         {
             (MemoryLocation.Rdata, 0) => "rdata",

@@ -366,7 +366,7 @@ int main() {
                     ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{},
                     packed_output);
         ntt::tensor<float, ntt::fixed_shape<36, 16>> unpacked_output;
-        // packed [n,c/4,h,w,4] => [c/4 * h * w, b * oh * ow] 
+        // packed [n,c/4,h,w,4] => [c/4 * h * w, b * oh * ow]
         // so unpack should after reshape
         ntt::unpack<0>(packed_output.reshape(ntt::fixed_shape<1, 9, 16>{}),
                        unpacked_output.reshape(ntt::fixed_shape<4, 9, 16>{}));

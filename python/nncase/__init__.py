@@ -169,7 +169,7 @@ class Compiler:
 
     def init_target_options(self, compile_options: CompileOptions) -> None:
         if (hasattr(compile_options, "target_options") and isinstance(compile_options.target_options, CpuTargetOptions)):
-            option: CpuTargetOptions = compile_options.target_options;
+            option: CpuTargetOptions = compile_options.target_options
             self._target_options = _nncase.CpuTargetOptions()
             self._target_options.packing = option.packing
             self._compile_options.set_cpu_target_options(self._target_options)
