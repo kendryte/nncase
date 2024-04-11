@@ -92,6 +92,4 @@ concept IsRankedTensor =
 
 template <typename T>
 concept IsFixedDims = is_fixed_dims_v<T>;
-
-inline double get_ms_time() noexcept { return (double)clock() / 1000; }
 } // namespace nncase::ntt
