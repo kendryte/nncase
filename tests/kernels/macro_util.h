@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <filesystem>
+
 #define ORTKI_COMPUTE(op, ...) op(__VA_ARGS__)
 #define ORTKI_OP_1(op, ...) ORTKI_COMPUTE(op, __VA_ARGS__)
 #define ORTKI_OP_2(op_a, op_b, ...)                                            \
@@ -299,8 +301,6 @@
 
 #define MAX_CASE_NUM 10000
 #define ENDFIX ".json"
-#define PARENT_DIR_1 "../../../tests/kernels/"
-#define PARENT_DIR_2 "../../../../tests/kernels/"
 
 #define SPLIT_ELEMENT(key, idx)                                                \
     rapidjson::Value copiedArray##key(rapidjson::kArrayType);                  \
@@ -315,8 +315,7 @@
 
 #define FOR_LOOP_END() }
 
-#define FILE_NAME_GEN(PARENT_DIR, name)                                        \
-    std::string(PARENT_DIR) + std::string(name) + std::string(ENDFIX)
+#define FILE_NAME_GEN(name) name ENDFIX
 
 #define FILE_NAME_GEN_SUBCASE(case_name, filename, idx)                        \
     std::string(case_name) + "_" + std::string(filename) + "_" +               \
@@ -324,22 +323,15 @@
 
 #define READY_TEST_CASE_GENERATE()                                             \
     std::string content;                                                       \
-    auto filename1 = FILE_NAME_GEN(PARENT_DIR_1, TEST_CASE_NAME);              \
-    std::ifstream file1(filename1);                                            \
+    auto parent_dir = std::filesystem::path(__FILE__).parent_path();           \
+    auto filename = (parent_dir / FILE_NAME_GEN(TEST_CASE_NAME)).string();     \
+    std::ifstream file1(filename);                                             \
     if (file1.fail()) {                                                        \
         file1.close();                                                         \
-        auto filename2 = FILE_NAME_GEN(PARENT_DIR_2, TEST_CASE_NAME);          \
-        std::ifstream file2(filename2);                                        \
-        if (file2.fail()) {                                                    \
-            file2.close();                                                     \
-            std::cout << "File does not exist: " << filename2 << std::endl;    \
-        } else {                                                               \
-            content = KernelTest::ReadFromJsonFile(file2);                     \
-            std::cout << "File exists: " << filename2 << std::endl;            \
-        }                                                                      \
+        std::cout << "File does not exist: " << filename << std::endl;         \
     } else {                                                                   \
         content = KernelTest::ReadFromJsonFile(file1);                         \
-        std::cout << "File exists: " << filename1 << std::endl;                \
+        std::cout << "File exists: " << filename << std::endl;                 \
     }                                                                          \
     Document document;                                                         \
     KernelTest::ParseJson(document, content);                                  \

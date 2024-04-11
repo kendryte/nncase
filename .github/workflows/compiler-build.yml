@@ -39,7 +39,7 @@ jobs:
       - name: Install Conan
         shell: bash
         run: |
-          pip install conan==1.58
+          pip install conan==1.64
 
       - name: Configure Conan (Linux)
         run: |
