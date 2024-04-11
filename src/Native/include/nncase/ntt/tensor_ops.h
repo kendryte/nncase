@@ -22,12 +22,11 @@ namespace detail {
 template <template <class T> class Op, class TTensor> struct tensor_unary_impl {
     using element_type = typename TTensor::element_type;
 
-    TTensor operator()(TTensor v) const noexcept {
+    TTensor operator()(const TTensor &v) const noexcept {
         Op<element_type> op;
-        for (auto &elem : v.elements()) {
-            elem = op(elem);
-        }
-        return v;
+        TTensor value;
+        apply(v.shape(), [&](auto index) { value(index) = op(v(index)); });
+        return value;
     }
 };
 
