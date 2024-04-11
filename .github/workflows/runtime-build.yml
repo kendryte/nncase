@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         config:
-          #- { name: aarch64-macos, os: macos-14, cmakeArgs: '', buildType: Release }
+          - { name: aarch64-macos, os: macos-14, cmakeArgs: '', buildType: Release }
           - { name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release }
           - { name: x86_64-windows, os: windows-latest, arch: x64, cmakeArgs: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl, buildType: Release }
 
@@ -34,7 +34,7 @@ jobs:
 
       - name: Install Conan
         run: |
-          pip install conan==1.58
+          pip install conan==1.64
           conan remote add -i 0 sunnycase https://conan.sunnycase.moe
 
       - name: Configure Conan (Linux)
@@ -68,7 +68,7 @@ jobs:
           cd build
           ctest -C ${{matrix.config.buildType}} --test-dir tests/kernels --output-on-failure -j4
           ctest -C ${{matrix.config.buildType}} --test-dir src/Native/test --output-on-failure -j4
-        if: runner.os != 'Macos' && runner.os != 'Windows'
+        if: runner.os != 'Windows'
 
       #- name: Benchmark
       #  run: |
@@ -120,7 +120,7 @@ jobs:
 
       - name: Install Conan
         run: |
-          pip install conan==1.58
+          pip install conan==1.64
           conan remote add -i 0 sunnycase https://conan.sunnycase.moe
 
       - name: Configure Conan
