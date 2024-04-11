@@ -27,10 +27,10 @@ template <typename TElem>
 inline void welford_update(size_t &count, TElem &mean, TElem &m2, TElem v) {
     count++;
     auto delta = v - mean;
-    mean += delta / (TElem)count;
+    mean = mean + (delta / (TElem)count);
     auto delta2 = v - mean;
-    m2 += delta * delta2;
-};
+    m2 = m2 + (delta * delta2);
+}
 
 template <IsFixedTensor TIn, IsFixedTensor TScale, IsFixedTensor TBias,
           IsFixedTensor TOut, typename TEp, IsFixedDims PackedAxes,
