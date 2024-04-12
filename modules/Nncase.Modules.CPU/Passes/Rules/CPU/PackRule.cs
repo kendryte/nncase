@@ -11,6 +11,7 @@ using Nncase.PatternMatch;
 using Nncase.Utilities;
 
 using static Nncase.IR.TypePatternUtility;
+using static Nncase.PatternMatch.F.Imaging;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.F.Tensors;
@@ -68,6 +69,99 @@ public sealed class PackSoftmax : PackRule
     }
 }
 
+public sealed class PackResizeImage : PackRule
+{
+    public override Pattern Pattern { get; } = IsResizeImage("target", op => op.TransformationMode == ImageResizeTransformationMode.Asymmetric && op.IsTFResize == false, IsWildcard("input"), IsNone(), IsTensorConst("newSize"), IsTensorConst("cubicCoeffA"), IsTensorConst("excludeOutside"), IsTensorConst("extrapolationValue"));
+
+    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
+    {
+        var rets = new List<Expr>();
+        var op = (IR.Imaging.ResizeImage)result["target"];
+        var input = (Expr)result["input"];
+        var newSize = ((TensorConst)result["newSize"]).Value.ToArray<int>();
+        var inShape = input.CheckedShape.ToValueArray();
+
+        void AddCandidate(int[] packedAxes, int[] lanes)
+        {
+            var packedInput = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+
+            var resized = IR.F.CPU.ResizeImage(packedInput, packedAxes, padsInput, newSize, op.ResizeMode, op.TransformationMode, op.NearestMode);
+
+            if (resized.CheckedType is not InvalidType)
+            {
+                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(resized, packedAxes), inShape, padsInput);
+                rets.Add(post);
+            }
+        }
+
+        AddCandidate(new[] { 1 }, new[] { Lane });
+        return rets;
+    }
+}
+
+public sealed class PackInstanceNorm : PackRule
+{
+    public override Pattern Pattern { get; } = IsInstanceNormalization(
+      "target",
+      _ => true,
+      IsWildcard("input") with { TypePattern = IsFloat() },
+      IsWildcard("scale") with { TypePattern = IsFloat() },
+      IsWildcard("bias") with { TypePattern = IsFloat() },
+      IsTensorConst("eps") with { TypePattern = IsFloat() });
+
+    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
+    {
+        var rets = new List<Expr>();
+        var op = (IR.NN.InstanceNormalization)result["target"];
+        var input = (Expr)result["input"];
+        var scale = (Expr)result["scale"];
+        var bias = (Expr)result["bias"];
+        var eps = ((TensorConst)result["eps"]).Value.ToScalar<float>();
+        var inShape = input.CheckedShape.ToValueArray();
+        var pshape = scale.CheckedShape.ToValueArray();
+
+        void AddCandidate(int[] packedAxes, int[] lanes)
+        {
+            var packedInput = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+
+            var pAxes = packedAxes.Where(i => i == 1).Select(i => 0).ToArray();
+            var packedScale = PackUtility.PadForPack(scale, pshape, pAxes, lanes, 0f, out var padsScale);
+            if (pAxes.Length > 0)
+            {
+                packedScale = IR.F.CPU.Pack(packedScale, Enumerable.Repeat(Lane, pAxes.Length).ToArray(), pAxes);
+            }
+
+            var packedBias = PackUtility.PadForPack(bias, pshape, pAxes, lanes, 0f, out var padsBias);
+            if (pAxes.Length > 0)
+            {
+                packedBias = IR.F.CPU.Pack(packedBias, Enumerable.Repeat(Lane, pAxes.Length).ToArray(), pAxes);
+            }
+
+            var layernorm = IR.F.CPU.InstacneNorm(packedInput, packedScale, packedBias, eps, packedAxes, padsInput);
+
+            if (layernorm.CheckedType is not InvalidType)
+            {
+                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(layernorm, packedAxes), inShape, padsInput);
+                rets.Add(post);
+            }
+        }
+
+        for (int i = 0; i < input.CheckedShape.Count; i++)
+        {
+            AddCandidate(new[] { i }, new[] { Lane });
+            for (int j = i + 1; j < input.CheckedShape.Count; j++)
+            {
+                if (Rank > 1)
+                {
+                    AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                }
+            }
+        }
+
+        return rets;
+    }
+}
+
 public sealed class PackLayerNorm : PackRule
 {
     public override Pattern Pattern { get; } = IsLayerNorm(
@@ -85,7 +179,7 @@ public sealed class PackLayerNorm : PackRule
         var scale = (Expr)result["scale"];
         var bias = (Expr)result["bias"];
         var inShape = input.CheckedShape.ToValueArray();
-        var pshape = inShape.Skip(op.Axis).ToArray();
+        var pshape = scale.CheckedShape.ToValueArray();
 
         void AddCandidate(int[] packedAxes, int[] lanes)
         {
@@ -419,6 +513,78 @@ public sealed class PackUnsqueeze : PackRule
             }
         }
 
+        return rets;
+    }
+}
+
+public sealed class PackConv2D : PackRule
+{
+    public override Pattern Pattern { get; } = IsConv2D(
+        "conv",
+        conv => conv.PadMode == PadMode.Constant,
+        IsWildcard("input"),
+        IsWildcard("weights"),
+        IsWildcard("bias"),
+        IsTensorConst("stride"),
+        IsTensorConst("padding"),
+        IsTensorConst("dilation"),
+        IsTensorConst("groups"),
+        IsTensorConst("fusedClamp"));
+
+    public static Expr AddCandidate(Expr input, Expr weights, Expr bias, int[] strides, int[] padding, int[] wShape, int[] outShape)
+    {
+        var col = IR.F.CPU.Im2col(input, new[] { wShape[2], wShape[3] }, strides, padding);
+        var newW = IR.F.Tensors.Reshape(weights, new[] { wShape[0], wShape[1] * wShape[2] * wShape[3] });
+        var matmul = IR.F.Tensors.MatMul(newW, col); // [oc, b*oh*ow]
+        var newBias = IR.F.Tensors.Reshape(bias, new[] { wShape[0], 1 });
+        var add = matmul + newBias;
+        if (outShape[0] == 1)
+        {
+            return IR.F.Tensors.Reshape(add, outShape);
+        }
+
+        return IR.F.Tensors.Transpose(IR.F.Tensors.Reshape(add, new[] { outShape[1], outShape[0], outShape[2], outShape[3] }), new[] { 1, 0, 2, 3 });
+    }
+
+    public static Expr AddPackedCandidate(Expr input, Expr weights, Expr bias, int[] strides, int[] padding, int[] wShape, int[] outShape, int lane)
+    {
+        var col = IR.F.CPU.Im2col(IR.F.CPU.Pack(input, new[] { lane }, new[] { 1 }), new[] { wShape[2], wShape[3] }, strides, padding, new[] { 1 }, new[] { 0 });
+        var newW = IR.F.Tensors.Reshape(IR.F.CPU.Pack(weights, new[] { lane }, new[] { 1 }), new[] { wShape[0], wShape[1] / lane * wShape[2] * wShape[3] });
+        var matmul = IR.F.CPU.PackedMatMul(newW, col, new[] { 1 }, new[] { 0 }, new[] { 0 }, new[] { 0 }); // [oc, b*oh*ow]
+        var newBias = IR.F.Tensors.Reshape(bias, new[] { wShape[0], 1 });
+        var add = matmul + newBias;
+        if (outShape[0] == 1)
+        {
+            return IR.F.Tensors.Reshape(add, outShape);
+        }
+        else
+        {
+            return IR.F.Tensors.Transpose(IR.F.Tensors.Reshape(add, new[] { outShape[1], outShape[0], outShape[2], outShape[3] }), new[] { 1, 0, 2, 3 });
+        }
+    }
+
+    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
+    {
+        var rets = new List<Expr>();
+
+        var input = (Expr)result["input"];
+        var weights = (Expr)result["weights"];
+        var bias = (Expr)result["bias"];
+        var strides = ((TensorConst)result["stride"]).Value.ToArray<int>();
+        var padding = ((TensorConst)result["padding"]).Value.ToArray<int>();
+        var dilation = ((TensorConst)result["dilation"]).Value.ToArray<int>();
+        var groups = ((TensorConst)result["groups"]).Value.ToScalar<int>();
+        var fusedClamp = ((TensorConst)result["fusedClamp"]).Value.ToArray<float>();
+        var wShape = weights.CheckedShape.ToValueArray();
+        var outShape = ((Expr)result[Pattern]).CheckedShape.ToValueArray();
+        if (groups != 1 || wShape[1] % Lane != 0 || dilation[0] != 1 || dilation[1] != 1 || fusedClamp[0] != float.NegativeInfinity || fusedClamp[1] != float.PositiveInfinity)
+        {
+            return rets;
+        }
+
+        // only pack on in channels
+        rets.Add(AddCandidate(input, weights, bias, strides, padding, wShape, outShape));
+        rets.Add(AddPackedCandidate(input, weights, bias, strides, padding, wShape, outShape, Lane));
         return rets;
     }
 }

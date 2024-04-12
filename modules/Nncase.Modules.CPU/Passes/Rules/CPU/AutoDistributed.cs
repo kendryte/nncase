@@ -39,7 +39,7 @@ public sealed partial class AutoDistributed : IRewriteRule
             return null;
         }
 
-        var distConverter = new AutoDistributedConvertVisitor(_compileOptions.TargetCompileOptions is CPUCompileOptions options ? options : CPUCompileOptions.Default);
+        var distConverter = new AutoDistributedConvertVisitor(_compileOptions.TargetCompileOptions is CpuTargetOptions options ? options : new CpuTargetOptions());
         var newbody = distConverter.Convert(body);
         var newFusion = fusion.With(moduleKind: CPUTarget.Kind, body: newbody, parameters: parameters.Cast<Var>().ToArray());
         return new Call(newFusion, callParams.ToArray());
@@ -48,7 +48,7 @@ public sealed partial class AutoDistributed : IRewriteRule
 
 internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRType, List<Expr>>, Unit>
 {
-    public AutoDistributedConvertVisitor(CPUCompileOptions compileOptions)
+    public AutoDistributedConvertVisitor(CpuTargetOptions compileOptions)
     {
         Placement = new Placement(compileOptions.Hierarchy, compileOptions.HierarchyNames);
         CompileOptions = compileOptions;
@@ -56,7 +56,7 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRT
 
     public Placement Placement { get; }
 
-    public CPUCompileOptions CompileOptions { get; }
+    public CpuTargetOptions CompileOptions { get; }
 
     public static IReadOnlyList<Expr> GetLeafCandidateBoxings(Expr expr, Placement placement)
     {
@@ -99,7 +99,7 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRT
         }
 
         var root = Unions(graph, equivalents);
-        return graph.Extract(root, null);
+        return graph.Extract(root, null, Array.Empty<EGraphExtractConstrains>());
     }
 
     protected override Dictionary<IRType, List<Expr>> DefaultVisitLeaf(Expr expr)

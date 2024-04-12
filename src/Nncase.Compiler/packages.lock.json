@@ -674,8 +674,7 @@
         "dependencies": {
           "Extension.Mathematics": "[1.2.12, )",
           "Nncase.Core": "[1.0.0, )",
-          "Nncase.IO": "[1.0.0, )",
-          "Razor.Templating.Core": "[1.9.0, )"
+          "Nncase.IO": "[1.0.0, )"
         }
       },
       "nncase.core": {

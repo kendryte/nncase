@@ -3,6 +3,7 @@
 
 #define MULTI_CORE_CPU
 
+// #define PROFILE_CALL
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -127,6 +128,8 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 
     public PrimFunction VisitEntry => (TIR.PrimFunction)VisitRoot!;
 
+    public int CallCount { get; private set; }
+
     public KernelCSource GetCSource()
     {
         var ctype = $"void {VisitEntry.Name}({string.Join(", ", VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}").ToArray().Concat(_exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.Rdata).Select(Visit).Select(s => $" {s.Type} {s.Name}").ToArray()))}, uint8_t* l1_data)";
@@ -207,8 +210,8 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
         };
         var ptype = (PointerType)expr.CheckedDataType;
         var ptypeName = ptype.ElemType.ToC();
-        var spanSize = ((TensorConst)expr.Size).Value.ToScalar<int>() / ptype.ElemType.SizeInBytes;
-        var name = $"std::span<{ptypeName}, {spanSize}> (reinterpret_cast<{ptypeName}*>({loc} + {start.Name}), {spanSize})";
+        var spanSize = ((TensorConst)expr.Size).Value.ToScalar<ulong>() / (ulong)ptype.ElemType.SizeInBytes;
+        var name = $"std::span<{ptypeName}, {spanSize}> (reinterpret_cast<{ptypeName}*>({loc} + {start.Name}UL), {spanSize})";
 
         symbol = new(start.Type, name);
         _exprMemo.Add(expr, symbol);
@@ -253,7 +256,9 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
             {
                 DeclBuffer(item);
             }
-
+#if PROFILE_CALL
+            IndentScope.Writer.Write($"auto start_{CallCount} = get_ms_time();\n");
+#endif
             var args = expr.Arguments.ToArray().OfType<TIR.Buffer>().ToArray();
             switch (xpuOp)
             {
@@ -336,6 +341,9 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     }
 
                     break;
+                case TIR.CPU.Im2col im2col:
+                    IndentScope.Writer.IndWrite($"im2col({Visit(args[0]).Name}, fixed_shape<{string.Join(",", im2col.Kernel)}>{{}}, fixed_shape<{string.Join(",", im2col.Stride)}>{{}}, fixed_shape<{string.Join(",", im2col.Padding)}>{{}}, fixed_shape<{string.Join(",", im2col.PackedAxes)}>{{}}, fixed_shape<{string.Join(",", im2col.PadedNums)}>{{}}, {Visit(args[1]).Name});\n");
+                    break;
                 case TIR.CPU.Pack pack:
                     {
                         IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Pack.cshtml", new TypedKernelTemplateModel<TIR.CPU.Pack>(pack)
@@ -365,6 +373,13 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     }
 
                     break;
+                case TIR.CPU.InstanceNorm instanceNorm:
+                    IndentScope.Writer.Write($"instance_norm({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, {Visit(args[3]).Name}, {args[0].ElemType.ToC()} {{ {instanceNorm.Epsilon} }}, fixed_shape<{string.Join(",", instanceNorm.PackedAxes)}>{{}}, fixed_shape<{string.Join(",", instanceNorm.PadedNums)}>{{}} );\n");
+
+                    break;
+                case TIR.CPU.ResizeImage resize:
+                    IndentScope.Writer.IndWrite($"resize({Visit(args[0]).Name}, {Visit(args[1]).Name}, fixed_shape<{string.Join(",", resize.PackedAxes)}>{{}}, fixed_shape<{string.Join(",", resize.PadedNums)}>{{}}, fixed_shape<{string.Join(",", resize.NewSize)}>{{}}, image_resize_mode_t::{resize.ResizeMode.ToC()}, image_resize_transformation_mode_t::{resize.TransformationMode.ToC()}, image_resize_nearest_mode_t::{resize.NearestMode.ToC()});\n");
+                    break;
                 case TIR.CPU.PackedSoftmax packedsoftmax:
                     {
                         IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedSoftMax.cshtml", new TypedKernelTemplateModel<TIR.CPU.PackedSoftmax>(packedsoftmax)
@@ -384,6 +399,9 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                         }).Result);
                     }
 
+                    break;
+                case TIR.CPU.Conv2D conv:
+                    IndentScope.Writer.IndWrite($"conv2d({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, {Visit(args[3]).Name}, fixed_shape<{string.Join(",", conv.Stride)}>{{}}, fixed_shape<{string.Join(",", conv.Padding)}>{{}}, fixed_shape<{string.Join(",", conv.Dilation)}>{{}}, {conv.Groups});\n");
                     break;
                 case TIR.CPU.PackedMatMul packedMatmul:
                     {
@@ -447,6 +465,9 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                 default:
                     throw new NotSupportedException(xpuOp.ToString());
             }
+#if PROFILE_CALL
+            IndentScope.Writer.Write($"printf(\"{expr.Target.GetType().Name} cost: %f\\n\", get_ms_time() - start_{CallCount++});\n");
+#endif
         }
         else if (expr.Target is PrimFunction deviceFunc)
         {

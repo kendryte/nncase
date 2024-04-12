@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using CommunityToolkit.HighPerformance;
 using Nncase.IR;
 using Nncase.Tests.TestFixture;
 using Nncase.Utilities;
@@ -11,7 +12,6 @@ using Xunit;
 
 namespace Nncase.Tests.EvaluatorTest;
 
-#if false
 [AutoSetupTestMethod(InitSession = true)]
 public sealed class UnitTestEvaluatorCPU : TestClassBase
 {
@@ -22,6 +22,54 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
         { new[] { new[] { 1, 64, 384, 64 }, new[] { 1, 64, 384, 64 } }, new[] { new[] { 2, 3 }, new[] { 2, 3 } }, 1 },
     };
 
+    [Theory]
+    [InlineData(new object[] { false, new int[] { 1, 1, 4, 4 }, new int[] { 8, 1, 3, 3 }, new int[] { 1, 1, 1, 1 }, new int[] { 1, 1 } })]
+    [InlineData(new object[] { false, new int[] { 3, 2, 4, 4 }, new int[] { 8, 2, 3, 3 }, new int[] { 0, 0, 1, 1 }, new int[] { 1, 2 } })]
+    [InlineData(new object[] { false, new int[] { 3, 2, 4, 4 }, new int[] { 8, 2, 3, 3 }, new int[] { 1, 0, 1, 1 }, new int[] { 2, 1 } })]
+    [InlineData(new object[] { true, new int[] { 1, 4, 4, 4 }, new int[] { 8, 4, 3, 3 }, new int[] { 1, 1, 1, 1 }, new int[] { 1, 1 } })]
+    [InlineData(new object[] { true, new int[] { 3, 8, 4, 4 }, new int[] { 8, 8, 3, 3 }, new int[] { 0, 0, 1, 1 }, new int[] { 1, 2 } })]
+    [InlineData(new object[] { true, new int[] { 3, 8, 4, 4 }, new int[] { 8, 8, 3, 3 }, new int[] { 1, 0, 1, 1 }, new int[] { 2, 1 } })]
+    public void TestIm2colConv(bool pack, int[] inputShape, int[] weightShape, int[] padding, int[] strides)
+    {
+        var dilation = new[] { 1, 1 };
+        var groups = 1;
+        var input = new Var(new TensorType(DataTypes.Float32, inputShape));
+        var weights = new Var(new TensorType(DataTypes.Float32, weightShape));
+        var bias = IR.F.Random.Normal(DataTypes.Float32, new[] { weightShape[0] });
+        var pre = IR.F.NN.Conv2D(input, weights, bias, strides, new[,] { { padding[0], padding[1] }, { padding[2], padding[3] } }, dilation, PadMode.Constant, groups);
+        var outShape = pre.CheckedShape.ToValueArray();
+
+        var feedDict = new Dictionary<Var, IValue>() {
+            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inputShape).Evaluate() },
+            { weights, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, weightShape).Evaluate() },
+        };
+
+        Expr post;
+        {
+            if (pack)
+            {
+                var col = IR.F.CPU.Im2col(IR.F.CPU.Pack(input, new[] { 4 }, new[] { 1 }), new[] { weightShape[2], weightShape[3] }, strides, padding, new[] { 1 }, new[] { 0 });
+                var newW = IR.F.Tensors.Reshape(IR.F.CPU.Pack(weights, new[] { 4 }, new[] { 1 }), new[] { weightShape[0], weightShape[1] / 4 * weightShape[2] * weightShape[3] });
+                var matmul = IR.F.CPU.PackedMatMul(newW, col, new[] { 1 }, new[] { 0 }, new[] { 0 }, new[] { 0 }); // [oc, b*oh*ow]
+                var newBias = IR.F.Tensors.Reshape(bias, new[] { weightShape[0], 1 });
+                var add = IR.F.Tensors.Reshape(matmul + newBias, new[] { outShape[1], outShape[0], outShape[2], outShape[3] });
+                post = IR.F.Tensors.Transpose(add, new[] { 1, 0, 2, 3 });
+            }
+            else
+            {
+                var col = IR.F.CPU.Im2col(input, new[] { weightShape[2], weightShape[3] }, strides, padding);
+                var newW = IR.F.Tensors.Reshape(weights, new[] { weightShape[0], weightShape[1] * weightShape[2] * weightShape[3] });
+                var matmul = IR.F.Tensors.MatMul(newW, col); // [oc, b*oh*ow]
+                var newBias = IR.F.Tensors.Reshape(bias, new[] { weightShape[0], 1 });
+                var add = IR.F.Tensors.Reshape(matmul + newBias, new[] { outShape[1], outShape[0], outShape[2], outShape[3] });
+                post = IR.F.Tensors.Transpose(add, new[] { 1, 0, 2, 3 });
+            }
+        }
+
+        Comparator.Compare(pre.Evaluate(feedDict), post.Evaluate(feedDict), 0.999f);
+    }
+
+#if false
     [Theory]
     [InlineData(new object[] { new[] { 32, 64, 128 }, 0, new[] { 2 } })] // unrelated with axis
     [InlineData(new object[] { new[] { 32, 64, 128 }, 1, new[] { 0 } })]
@@ -470,5 +518,5 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
         var post = IR.F.Tensors.Concat(new IR.Tuple(inputs.Zip(packedAxes).Select(p => IR.F.CPU.Pack(p.First, Enumerable.Repeat(Lanes, p.Second.Length).ToArray(), p.Second)).ToArray()), axis);
         post.Evaluate(feedDict);
     }
-}
 #endif
+}

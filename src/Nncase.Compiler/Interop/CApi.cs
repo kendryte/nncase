@@ -61,6 +61,7 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetMeanPtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetStdPtr;
     public delegate* unmanaged<IntPtr, IntPtr, void> CompileOptionsSetShapeBucketOptionsPtr;
+    public delegate* unmanaged<IntPtr, IntPtr, void> CompileOptionsSetCpuTargetOptionsPtr;
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr> CompileSessionCreatePtr;
     public delegate* unmanaged<IntPtr, IntPtr> CompileSessionGetCompilerPtr;
     public delegate* unmanaged<void> CompilerInitializePtr;
@@ -77,6 +78,7 @@ public unsafe struct CApiMT
     public delegate* unmanaged<void> LaunchDebuggerPtr;
     public delegate* unmanaged<IntPtr> QuantizeOptionsCreatePtr;
     public delegate* unmanaged<IntPtr> ShapeBucketOptionsCreatePtr;
+    public delegate* unmanaged<IntPtr> CpuTargetOptionsCreatePtr;
     public delegate* unmanaged<IntPtr, IntPtr, void> QuantizeOptionsSetCalibrationDatasetPtr;
     public delegate* unmanaged<IntPtr, CalibMethod, void> QuantizeOptionsSetCalibrationMethodPtr;
     public delegate* unmanaged<IntPtr, ModelQuantMode, void> QuantizeOptionsSetModelQuantModePtr;
@@ -94,6 +96,7 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, byte*, nuint, void> ShapeBucketOptionsSetRangeInfoPtr;
     public delegate* unmanaged<IntPtr, nuint, void> ShapeBucketOptionsSetSegmentsCountPtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> ShapeBucketOptionsSetFixVarMapPtr;
+    public delegate* unmanaged<IntPtr, byte, void> CpuTargetOptionsSetPackingPtr;
     public delegate* unmanaged<IntPtr, IntPtr> RTValueFromHandlePtr;
     public delegate* unmanaged<IntPtr, IntPtr> RTValueGetHandlePtr;
     public delegate* unmanaged<CStreamMT*, IntPtr, IntPtr> StreamCreatePtr;
@@ -133,6 +136,7 @@ public static unsafe class CApi
         mt->CompileOptionsSetMeanPtr = &CompileOptionsSetMean;
         mt->CompileOptionsSetStdPtr = &CompileOptionsSetStd;
         mt->CompileOptionsSetShapeBucketOptionsPtr = &CompileOptionsSetShapeBucketOptions;
+        mt->CompileOptionsSetCpuTargetOptionsPtr = &CompileOptionsSetCpuTargetOptions;
         mt->CompileSessionCreatePtr = &CompileSessionCreate;
         mt->CompileSessionGetCompilerPtr = &CompileSessionGetCompiler;
         mt->CompilerInitializePtr = &CompilerInitialize;
@@ -149,6 +153,7 @@ public static unsafe class CApi
         mt->LaunchDebuggerPtr = &LaunchDebugger;
         mt->QuantizeOptionsCreatePtr = &QuantizeOptionsCreate;
         mt->ShapeBucketOptionsCreatePtr = &ShapeBucketOptionsCreate;
+        mt->CpuTargetOptionsCreatePtr = &CpuTargetOptionsCreate;
         mt->QuantizeOptionsSetCalibrationDatasetPtr = &QuantizeOptionsSetCalibrationDataset;
         mt->QuantizeOptionsSetCalibrationMethodPtr = &QuantizeOptionsSetCalibrationMethod;
         mt->QuantizeOptionsSetModelQuantModePtr = &QuantizeOptionsSetModelQuantMode;
@@ -166,6 +171,7 @@ public static unsafe class CApi
         mt->ShapeBucketOptionsSetRangeInfoPtr = &ShapeBucketOptionsSetRangeInfo;
         mt->ShapeBucketOptionsSetSegmentsCountPtr = &ShapeBucketOptionsSetSegmentsCount;
         mt->ShapeBucketOptionsSetFixVarMapPtr = &ShapeBucketOptionsSetFixVarMap;
+        mt->CpuTargetOptionsSetPackingPtr = &CpuTargetOptionsSetPacking;
         mt->RTValueFromHandlePtr = &RTValueFromHandle;
         mt->RTValueGetHandlePtr = &RTValueGetHandle;
         mt->StreamCreatePtr = &StreamCreate;
@@ -385,6 +391,12 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
+    private static void CompileOptionsSetCpuTargetOptions(IntPtr compileOptionsHandle, IntPtr targetOptionsHandle)
+    {
+        Get<CompileOptions>(compileOptionsHandle).TargetCompileOptions = Get<Targets.CpuTargetOptions>(targetOptionsHandle);
+    }
+
+    [UnmanagedCallersOnly]
     private static IntPtr CompileSessionCreate(IntPtr targetHandle, IntPtr compileOptionsHandle)
     {
         var target = Get<ITarget>(targetHandle);
@@ -511,6 +523,12 @@ public static unsafe class CApi
     private static IntPtr ShapeBucketOptionsCreate()
     {
         return GCHandle.ToIntPtr(GCHandle.Alloc(ShapeBucketOptions.Default));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr CpuTargetOptionsCreate()
+    {
+        return GCHandle.ToIntPtr(GCHandle.Alloc(new Targets.CpuTargetOptions()));
     }
 
     [UnmanagedCallersOnly]
@@ -739,6 +757,12 @@ public static unsafe class CApi
         string jsonStr = Encoding.UTF8.GetString(fixVarMapByte);
         Dictionary<string, int> fixVarMapStruct = JsonConvert.DeserializeObject<Dictionary<string, int>>(jsonStr)!;
         Get<ShapeBucketOptions>(shapeBucketOptionsHandle).FixVarMap = fixVarMapStruct;
+    }
+
+    [UnmanagedCallersOnly]
+    private static void CpuTargetOptionsSetPacking(IntPtr handle, byte packing)
+    {
+        Get<Targets.CpuTargetOptions>(handle).Packing = packing != 0;
     }
 
     [UnmanagedCallersOnly]

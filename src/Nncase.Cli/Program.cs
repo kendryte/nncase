@@ -179,8 +179,8 @@ internal partial class Program
 
     private static void ConfigureAppConfiguration(HostBuilderContext context, IConfigurationBuilder builder)
     {
-        var baseDirectory = Path.GetDirectoryName(typeof(Program).Assembly.Location);
-        builder.SetBasePath(baseDirectory!)
+        var baseDirectory = Path.GetDirectoryName(typeof(Program).Assembly.Location)!;
+        builder.SetBasePath(baseDirectory)
             .AddJsonFile("config.json", true, false);
     }
 }

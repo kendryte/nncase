@@ -56,7 +56,7 @@ public static class PackUtility
     /// <returns>bool.</returns>
     public static bool TryGetShapeMapMatrix(int[] inShape, int[] newShape, out int[,] mat)
     {
-        int Dot(int[,] cmat, int i)
+        int ProdIn(int[,] cmat, int i)
         {
             var prod = 1;
             for (int j = 0; j < inShape.Length; j++)
@@ -71,10 +71,25 @@ public static class PackUtility
             return prod;
         }
 
+        int ProdOut(int[,] cmat, int j)
+        {
+            var prod = 1;
+            for (int i = 0; i < newShape.Length; i++)
+            {
+                var v = cmat[i, j] * newShape[i];
+                if (v != 0)
+                {
+                    prod *= v;
+                }
+            }
+
+            return prod;
+        }
+
         mat = new int[newShape.Length, inShape.Length];
         int i = 0, j = 0;
         var paths = new List<(int, int)>();
-        while (i < newShape.Length)
+        while (i < newShape.Length && j < inShape.Length)
         {
             if (paths.IndexOf((i, j)) != -1)
             {
@@ -83,8 +98,9 @@ public static class PackUtility
 
             mat[i, j] = 1;
             paths.Add((i, j));
-            var newDim = Dot(mat, i);
-            switch (newDim - newShape[i])
+            var inDim = ProdIn(mat, i);
+            var outDim = ProdOut(mat, j);
+            switch (inDim - outDim)
             {
                 case 0:
                     i++; j++;
@@ -93,9 +109,17 @@ public static class PackUtility
                     j++;
                     break;
                 case > 0:
-                    mat[i, j] = 0;
-                    j--;
-                    paths.RemoveAt(paths.Count - 1);
+                    if (inDim % newShape[i] == 0)
+                    {
+                        i++;
+                    }
+                    else
+                    {
+                        mat[i, j] = 0;
+                        j--;
+                        paths.RemoveAt(paths.Count - 1);
+                    }
+
                     break;
             }
         }

@@ -24,7 +24,7 @@
 
   (this is the zlib license)
 */
-
+#pragma once
 #include <arm_neon.h>
 
 typedef float32x4_t v4sf; // vector of 4 float

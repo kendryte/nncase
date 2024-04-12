@@ -15,14 +15,18 @@
 #pragma once
 #include "kernels/binary.h"
 #include "kernels/concat.h"
+#include "kernels/conv2d.h"
 #include "kernels/copy.h"
 #include "kernels/gather.h"
+#include "kernels/im2col.h"
+#include "kernels/instance_norm.h"
 #include "kernels/matmul.h"
 #include "kernels/pack.h"
 #include "kernels/packed_layer_norm.h"
 #include "kernels/packed_matmul.h"
 #include "kernels/packed_softmax.h"
 #include "kernels/pad.h"
+#include "kernels/resize_image.h"
 #include "kernels/slice.h"
 #include "kernels/transpose.h"
 #include "kernels/unary.h"
@@ -38,4 +42,6 @@
 #include "arch/x86_64/tensor_ops.h"
 #elif __aarch64__
 #include "arch/aarch64/arch_types.h"
+#include "arch/aarch64/primitive_ops.h"
+#include "arch/aarch64/tensor_ops.h"
 #endif

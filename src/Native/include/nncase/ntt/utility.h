@@ -90,5 +90,4 @@ concept IsRankedTensor = is_ranked_dims_v<typename std::decay_t<T>::shape_type>
     &&is_ranked_dims_v<typename std::decay_t<T>::strides_type>;
 
 template <typename T> concept IsFixedDims = is_fixed_dims_v<T>;
-
 } // namespace nncase::ntt

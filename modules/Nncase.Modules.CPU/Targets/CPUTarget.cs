@@ -30,13 +30,21 @@ public class CPUTarget : ITarget
 
     string ITarget.Kind => Kind;
 
-    public (System.CommandLine.Command Command, Func<InvocationContext, System.CommandLine.Command, ITargetCompileOptions> Parser) RegisterCommandAndParser()
+    public (System.CommandLine.Command Command, Func<InvocationContext, System.CommandLine.Command, ITargetOptions> Parser) RegisterCommandAndParser()
     {
         var cmd = new System.CommandLine.Command(Kind);
-        cmd.AddOption(new Option<bool>(
+        var packingOption = new Option<bool>(
             name: "--packing",
             description: "enable layout optimization.",
-            getDefaultValue: () => false));
+            getDefaultValue: () => false);
+        cmd.AddOption(packingOption);
+
+        ITargetOptions ParseTargetCompileOptions(InvocationContext context, Command command)
+        {
+            var packing = context.ParseResult.GetValueForOption<bool>(packingOption);
+            return new CpuTargetOptions() { Packing = packing };
+        }
+
         return (cmd, ParseTargetCompileOptions);
     }
 
@@ -58,6 +66,7 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.CombineMHA>();
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
             p.Add<Passes.Rules.FuseMHA2>();
+            p.Add<Passes.Rules.FuseVAEDecRes>();
         });
 
 #if false
@@ -102,7 +111,7 @@ public class CPUTarget : ITarget
             });
         }
 
-        if (options.TargetCompileOptions is CPUCompileOptions { Packing: true })
+        if (options.TargetCompileOptions is CpuTargetOptions { Packing: true })
         {
             passManager.AddWithName<DataflowPass>("AutoPacking").Configure(p =>
             {
@@ -170,10 +179,5 @@ public class CPUTarget : ITarget
         {
             throw new NotSupportedException($"{moduleKind} module is not supported.");
         }
-    }
-
-    private static ITargetCompileOptions ParseTargetCompileOptions(InvocationContext context, Command command)
-    {
-        return new CPUCompileOptions(string.Empty, false, Array.Empty<int>(), new[] { 1 }, "b", new[] { 3 * (int)MathF.Pow(2, 20) });
     }
 }

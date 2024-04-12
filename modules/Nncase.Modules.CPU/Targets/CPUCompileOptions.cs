@@ -9,7 +9,17 @@ using System.Threading.Tasks;
 
 namespace Nncase.Targets;
 
-public sealed record CPUCompileOptions(string ModelName, bool Packing, int[] TargetTileSize, int[] Hierarchy, string HierarchyNames, int[] HierarchySizes) : ITargetCompileOptions
+public sealed class CpuTargetOptions : ITargetOptions
 {
-    public static CPUCompileOptions Default { get; } = new(string.Empty, false, Array.Empty<int>(), new[] { 1 }, "b", new[] { 3 * (int)MathF.Pow(2, 20) });
+    public string ModelName { get; set; } = string.Empty;
+
+    public bool Packing { get; set; }
+
+    public int[] TargetTileSize { get; set; } = Array.Empty<int>();
+
+    public int[] Hierarchy { get; set; } = new[] { 1 };
+
+    public string HierarchyNames { get; set; } = "b";
+
+    public int[] HierarchySizes { get; set; } = new[] { 3 * (int)MathF.Pow(2, 20) };
 }

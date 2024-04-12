@@ -28,6 +28,11 @@ constexpr inline TElemtOut dot(const TElemt &lp, const TElemt &rp) {
     return reduce_sum(mul(lp, rp));
 }
 
+template <>
+constexpr inline float dot<float, float>(const float &lp, const float &rp) {
+    return lp * rp;
+}
+
 template <class TLhs, class TRhs, class TOut> struct matmul_impl;
 
 /**
@@ -82,17 +87,20 @@ struct matmul_impl<TLhs, TRhs, TOut> {
 
                 for (size_t m = 0; m < M; m++) {
                     for (size_t k = 0; k < 1; k++) {
+                        auto opp = output_p + m * N;
+                        auto rpp = rhs_p + k * N;
+                        auto lpp = lhs_p + m * K + k;
                         for (size_t n = 0; n < N; n++) {
-                            *(output_p + m * N + n) = dot<TElemtOut>(
-                                *(lhs_p + m * K + k), *(rhs_p + k * N + n));
+                            *(opp++) = dot<TElemtOut>(*(lpp), *(rpp++));
                         }
                     }
                     for (size_t k = 1; k < K; k++) {
+                        auto opp = output_p + m * N;
+                        auto rpp = rhs_p + k * N;
+                        auto lpp = lhs_p + m * K + k;
                         for (size_t n = 0; n < N; n++) {
-                            *(output_p + m * N + n) =
-                                add(*(output_p + m * N + n),
-                                    dot<TElemtOut>(*(lhs_p + m * K + k),
-                                                   *(rhs_p + k * N + n)));
+                            *(opp++) =
+                                add(*(opp), dot<TElemtOut>(*(lpp), *(rpp++)));
                         }
                     }
                 }

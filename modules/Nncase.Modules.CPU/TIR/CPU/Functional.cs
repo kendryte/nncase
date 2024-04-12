@@ -60,6 +60,8 @@ public partial class CPU
         return new Call(new Pack(lanes, axes), input, output);
     }
 
+    public static Call Conv2D(Buffer input, Buffer weights, Buffer bias, Buffer output, int[] stride, int[] padding, int[] dilation, int groups, PadMode padMode) => new Call(new Conv2D(stride, padding, dilation, groups, padMode), input, weights, bias, output);
+
     public static Expr Unpack(Expr input, Expr output, IRArray<int> axes)
     {
         return new Call(new Unpack(axes), input, output);
@@ -75,6 +77,11 @@ public partial class CPU
         return new Call(new PackedLayerNorm(axis, epsilon, usemean, packedAxes, padedNums), input, scale, bias, output);
     }
 
+    public static Expr InstanceNorm(Expr input, Expr scale, Expr bias, Expr output, float epsilon, IRArray<int> packedAxes, IRArray<int> padedNums)
+    {
+        return new Call(new InstanceNorm(epsilon, packedAxes, padedNums), input, scale, bias, output);
+    }
+
     public static Expr PackedMatMul(Expr lhs, Expr rhs, Expr output, IRArray<int> lhsPackedAxes, IRArray<int> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<int> rhsPadedNums)
     {
         return new Call(new PackedMatMul(lhsPackedAxes, lhsPadedNums, rhsPackedAxes, rhsPadedNums), lhs, rhs, output);
@@ -83,6 +90,11 @@ public partial class CPU
     public static Expr PackedBinary(Expr lhs, Expr rhs, Expr output, BinaryOp binaryOp, IRArray<int> lhsPackedAxes, IRArray<int> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<int> rhsPadedNums)
     {
         return new Call(new PackedBinary(binaryOp, lhsPackedAxes, lhsPadedNums, rhsPackedAxes, rhsPadedNums), lhs, rhs, output);
+    }
+
+    public static Call ResizeImage(Buffer input, Buffer output, int[] packedAxes, int[] padedNums, int[] newSize, ImageResizeMode resizeMode, ImageResizeTransformationMode transformationMode, ImageResizeNearestMode nearestMode)
+    {
+        return new Call(new ResizeImage(packedAxes, padedNums, newSize, resizeMode, transformationMode, nearestMode), input, output);
     }
 
     public static Expr PackedTranspose(Expr input, Expr output, IRArray<int> perm, IRArray<int> packedAxes)
@@ -120,8 +132,13 @@ public partial class CPU
         return new Call(new Transpose(perm), buffer, ret);
     }
 
-    internal static Expr Pad(Buffer input, Buffer ret, int[] pads, float padValue)
+    public static Expr Pad(Buffer input, Buffer ret, int[] pads, float padValue)
     {
         return new Call(new Pad(pads, padValue), input, ret);
+    }
+
+    public static Expr Im2col(Buffer input, Buffer output, IRArray<int> kernel, IRArray<int> stride, IRArray<int> padding, IRArray<int> packedAxes, IRArray<int> padedNums)
+    {
+        return new Call(new Im2col(kernel, stride, padding, packedAxes, padedNums), input, output);
     }
 }

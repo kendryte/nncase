@@ -127,11 +127,6 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             return new InvalidType("MatMul lhs and rhs have not compatiable shape");
         }
 
-        if (lhs.Shape.Count == 2 && rhs.Shape.Count == 2)
-        {
-            return new TensorType(lhs.DType, new[] { lhs.Shape[0], rhs.Shape[1] });
-        }
-
         if (lhs.DType is VectorType vl && rhs.DType is VectorType vr)
         {
             if (vl.Lanes.Count != vr.Lanes.Count)

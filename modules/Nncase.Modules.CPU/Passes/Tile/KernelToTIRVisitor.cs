@@ -97,6 +97,30 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             case IR.Math.MatMul matmul:
                 _mainBody.Add(TIR.F.CPU.Matmul(arguments[0], arguments[1], ret));
                 break;
+            case IR.NN.Conv2D conv:
+                {
+                    var input = expr[IR.NN.Conv2D.Input];
+                    var weights = expr[IR.NN.Conv2D.Weights];
+                    var bias = expr[IR.NN.Conv2D.Bias];
+                    var strides = ((TensorConst)expr[IR.NN.Conv2D.Stride]).Value.ToArray<int>();
+                    var padding = ((TensorConst)expr[IR.NN.Conv2D.Padding]).Value.ToArray<int>();
+                    var dilation = ((TensorConst)expr[IR.NN.Conv2D.Dilation]).Value.ToArray<int>();
+                    var groups = ((TensorConst)expr[IR.NN.Conv2D.Groups]).Value.ToScalar<int>();
+                    var fusedClamp = ((TensorConst)expr[IR.NN.Conv2D.FusedClamp]).Value.ToArray<float>();
+                    var wShape = weights.CheckedShape.ToValueArray();
+                    var outShape = expr.CheckedShape.ToValueArray();
+                    if (fusedClamp[0] != float.NegativeInfinity || fusedClamp[1] != float.PositiveInfinity || conv.PadMode != PadMode.Constant)
+                    {
+                        throw new NotSupportedException("not support this conv2d");
+                    }
+
+                    _mainBody.Add(TIR.F.CPU.Conv2D(arguments[0], arguments[1], arguments[2], ret, strides, padding, dilation, groups, conv.PadMode));
+                }
+
+                break;
+            case IR.CPU.Im2col im2col:
+                _mainBody.Add(TIR.F.CPU.Im2col(arguments[0], ret, im2col.Kernel, im2col.Stride, im2col.Padding, im2col.PackedAxes, im2col.PadedNums));
+                break;
             case IR.CPU.PackedSoftmax packed_softmax:
                 _mainBody.Add(TIR.F.CPU.PackedSoftmax(arguments[0], ret, packed_softmax.Axis, packed_softmax.PackedAxes));
                 break;
@@ -112,6 +136,23 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 break;
             case IR.NN.LayerNorm layernorm:
                 _mainBody.Add(TIR.F.CPU.PackedLayerNorm(arguments[0], arguments[1], arguments[2], ret, layernorm.Axis, layernorm.Epsilon, layernorm.UseMean, Array.Empty<int>(), Array.Empty<int>()));
+                break;
+            case IR.NN.InstanceNormalization instancenorm:
+                _mainBody.Add(TIR.F.CPU.InstanceNorm(arguments[0], arguments[1], arguments[2], ret, ((TensorConst)expr.Arguments[3]).Value.ToScalar<int>(), Array.Empty<int>(), Array.Empty<int>()));
+                break;
+            case IR.CPU.InstacneNorm instancenorm:
+                _mainBody.Add(TIR.F.CPU.InstanceNorm(arguments[0], arguments[1], arguments[2], ret, instancenorm.Epsilon, instancenorm.PackedAxes, instancenorm.PadedNums));
+                break;
+            case IR.Imaging.ResizeImage resize:
+                if (expr.Arguments[1] is not None || resize.IsTFResize)
+                {
+                    throw new NotSupportedException("not support tf resize");
+                }
+
+                _mainBody.Add(TIR.F.CPU.ResizeImage(arguments[0], ret, Array.Empty<int>(), Array.Empty<int>(), ((TensorConst)expr.Arguments[2]).Value.ToArray<int>(), resize.ResizeMode, resize.TransformationMode, resize.NearestMode));
+                break;
+            case IR.CPU.ResizeImage resize:
+                _mainBody.Add(TIR.F.CPU.ResizeImage(arguments[0], ret, resize.PackedAxes.ToArray(), resize.PadedNums.ToArray(), resize.NewSize.ToArray(), resize.ResizeMode, resize.TransformationMode, resize.NearestMode));
                 break;
             case IR.Tensors.Unsqueeze unsqueeze:
                 _mainBody.Add(TIR.F.CPU.Reshape(arguments[0], ret, expr.CheckedShape.ToValueArray()));
@@ -137,67 +178,6 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             case IR.NN.Pad pad:
                 _mainBody.Add(TIR.F.CPU.Pad(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToScalar<float>()));
                 break;
-#if false
-            case MatMul matmul:
-                GenerateMatmul(matmul, arguments, ret);
-                break;
-            case LayerNorm layernorm:
-                GenerateLayerNorm(layernorm, arguments, ret, (DistributedType)expr.Arguments[0].CheckedType);
-                break;
-            case InstanceNormalization instnorm:
-                GenerateInstanceNorm(instnorm, ((TensorConst)expr.Arguments[3]).Value.ToScalar<float>(), arguments, ret, (DistributedType)expr.Arguments[0].CheckedType);
-                break;
-            case Gather gather:
-                GenerateGather(gather, arguments, ret);
-                break;
-            case Concat concat:
-                GenerateConcat(concat, ((IR.Tuple)expr.Arguments[0]).Fields.AsValueEnumerable().Select(AllocOrGetBuffer).ToArray(), ret);
-                break;
-            case Slice slice:
-                GenerateSlice(slice, arguments[0], ret, expr.Arguments[1], expr.Arguments[2], expr.Arguments[3], (DistributedType)expr.CheckedType);
-                break;
-            case Softmax softmax:
-                GenerateSoftmax(softmax, ((TensorConst)expr.Arguments[1]).Value.ToScalar<int>(), arguments, ret, (DistributedType)expr.CheckedType);
-                break;
-            case Transpose transpose:
-                GenerateTranspose(transpose, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), arguments, ret);
-                break;
-            case Reshape or Unsqueeze:
-                GenerateReshape(arguments[0], ret);
-                break;
-            case Swish:
-                GenerateSwishB(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToScalar<float>());
-                break;
-            case Gelu:
-                GenerateUnary("gelu", arguments, ret);
-                break;
-            case Conv2D conv:
-                GenerateConv2D(conv, arguments, ret, ((TensorConst)expr.Arguments[3]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[4]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[5]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[6]).Value.ToScalar<int>(), (TensorConst)expr.Arguments[7], (DistributedType)expr.CheckedType);
-                break;
-            case ReduceArg reduceArg:
-                GenerateReduceArg(reduceArg, arguments, ret, ((TensorConst)expr.Arguments[1]).Value.ToScalar<int>(), ((TensorConst)expr.Arguments[2]).Value.ToScalar<bool>(), ((TensorConst)expr.Arguments[3]).Value.ToScalar<bool>(), reduceArg.ReduceArgOp, reduceArg.DestType);
-                break;
-            case ResizeImage resize:
-                float[] roi = expr.Arguments[1] is TensorConst tc ? tc.Value.ToArray<float>() : new[] { 0f, 0f, 1f, 1f };
-                int[] newSize = ((TensorConst)expr.Arguments[2]).Value.ToArray<int>();
-                float cubicCoeffA = expr.Arguments[3] is TensorConst tc1 ? tc1.Value.ToScalar<float>() : -0.75f;
-                int excludeOutside = expr.Arguments[4] is TensorConst tc2 ? tc2.Value.ToScalar<int>() : 0;
-                float extrapolationValue = expr.Arguments[5] is TensorConst tc3 ? tc3.Value.ToScalar<float>() : 0f;
-                GenerateResize(resize, arguments, ret, roi, newSize, cubicCoeffA, excludeOutside, extrapolationValue, (DistributedType)expr.CheckedType);
-                break;
-            case Cast cast:
-                GenerateCast(cast.NewType, cast.CastMode, arguments, ret);
-                break;
-            case Expand expand:
-                GenerateExpand(((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), (DistributedType)expr.CheckedType, arguments, ret);
-                break;
-            case Clamp clamp:
-                GenerateClamp(arguments, ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<float>()[0], ((TensorConst)expr.Arguments[2]).Value.ToArray<float>()[0]);
-                break;
-            case Where where:
-                GenerateWhere(arguments, ret, (DistributedType)expr.CheckedType);
-                break;
-#endif
             default:
                 throw new NotSupportedException();
         }
@@ -244,7 +224,7 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                         if (dividedType is TensorType)
                         {
                             T.AttachBuffer(Tensor.FromPointer(DataUsage, dividedType.DType), dividedType, loc, hierarchy, out buffer, name);
-                            DataUsage += (ulong)(dividedType.Shape.Size * dividedType.DType.SizeInBytes);
+                            DataUsage += Enumerable.Range(0, dividedType.Shape.Rank).Aggregate(1ul, (size, i) => size * (ulong)dividedType.Shape[i].FixedValue) * (ulong)dividedType.DType.SizeInBytes;
                             DataUsage = MathUtility.AlignUp(DataUsage, MaxDTypeSize);
                         }
                         else if (c.CheckedType is DistributedType)
