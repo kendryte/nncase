@@ -68,7 +68,8 @@ PYBIND11_MODULE(_nncase, m) {
         .value("Compile", nncase_dump_flags_compile)
         .value("Tiling", nncase_dump_flags_tiling)
         .value("Schedule", nncase_dump_flags_schedule)
-        .value("CodeGen", nncase_dump_flags_codegen);
+        .value("CodeGen", nncase_dump_flags_codegen)
+        .value("QuantLog", nncase_dump_flags_quantlog);
 
     py::enum_<nncase_calib_method_t>(m, "CalibMethod")
         .value("NoClip", nncase_calib_noclip)

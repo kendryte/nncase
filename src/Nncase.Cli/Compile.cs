@@ -44,7 +44,7 @@ internal sealed class CompileCommand : Command
           getDefaultValue: () => "tflite");
         DumpFlags = new Option<IEnumerable<DumpFlags>>(
           name: "--dump-flags",
-          description: "dump ir flags. \navailable value: None,ImportOps,PassIR,EGraphCost,Rewrite,Calibration,Evaluator,Compile,Tiling,Schedule,CodeGen.")
+          description: "dump ir flags. \navailable value: None,ImportOps,PassIR,EGraphCost,Rewrite,Calibration,Evaluator,Compile,Tiling,Schedule,CodeGen,QuantLog.")
         {
             AllowMultipleArgumentsPerToken = true,
         };

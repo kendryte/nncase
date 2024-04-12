@@ -73,7 +73,8 @@ typedef enum {
     nncase_dump_flags_compile = 1 << 7,
     nncase_dump_flags_tiling = 1 << 8,
     nncase_dump_flags_schedule = 1 << 9,
-    nncase_dump_flags_codegen = 1 << 10
+    nncase_dump_flags_codegen = 1 << 10,
+    nncase_dump_flags_quantlog = 1 << 11
 } nncase_dump_flags_t;
 
 typedef enum {

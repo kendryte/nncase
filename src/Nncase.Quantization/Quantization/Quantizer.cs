@@ -38,9 +38,12 @@ internal partial class Quantizer
         _expr = ExtractExpr();
         _quantizeOptions = quantizeOptions;
 
-        var dumpPath = Path.Join(DumpScope.Current.Directory, "..", "..", "..", "/");
-        EGraphPrinter.DumpEgraphAsDot(_graph, dumpPath + "_graph.dot");
-        CompilerServices.DumpIR(_expr, "_expr", dumpPath);
+        if (DumpScope.Current.IsEnabled(DumpFlags.QuantLog))
+        {
+            var dumpPath = Path.Join(DumpScope.Current.Directory, "/");
+            EGraphPrinter.DumpEgraphAsDot(_graph, dumpPath + "_graph.dot");
+            CompilerServices.DumpIR(_expr, "_expr", dumpPath);
+        }
     }
 
     public async Task RunAsync(RunPassContext options)
@@ -209,43 +212,51 @@ internal partial class Quantizer
 
         var curentResults = CompilerServices.Evaluate(((Function)_expr).Body, sampleFillVarWithConst);
         var currentResult = curentResults is TensorValue ? curentResults.AsTensor() : curentResults[outDefault].AsTensor();
-        var cosine = Utility.GetCosineSimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(currentResult.BytesBuffer));
-        if (cosine > _quantizeOptions.CosineTarget)
+        var cosineBest = Utility.GetCosineSimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(currentResult.BytesBuffer));
+        if (cosineBest > _quantizeOptions.CosineTarget)
         {
-            Console.ResetColor();
-            Console.Write($"There is no need to Optimize, targetCosine:");
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write($"{_quantizeOptions.CosineTarget}");
-            Console.ResetColor();
-            Console.Write($" defaultCosine:");
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"{cosine}");
-            Console.ResetColor();
+            if (DumpScope.Current.IsEnabled(DumpFlags.QuantLog))
+            {
+                var filePath = Path.Join(DumpScope.Current.Directory, "/cosine-curve.txt");
+                using (var writer = new StreamWriter(filePath, true)) // 设置为true以启用追加模式
+                {
+                    writer.WriteLine($"cosine:{cosineBest,10:0.00000000} target:{_quantizeOptions.CosineTarget}, there is no need to optimize!"); // 写入float值，后跟换行符
+                }
+            }
+
             return;
         }
         else
         {
             // debug:delete
             int debugFakeNode = 0;
-            foreach (var (config, _) in sensitivity)
+            foreach (var (config, nodeCosine) in sensitivity)
             {
-                _fakeNodeConfigs![config.Var] = config.QuantConfig;
+                var configCache = sampleFillVarWithConst[config.Var];
                 sampleFillVarWithConst[config.Var] = Value.FromTensor(config.QuantConfig.ToRaw());
                 curentResults = CompilerServices.Evaluate(((Function)_expr).Body, sampleFillVarWithConst);
                 currentResult = curentResults is TensorValue ? curentResults.AsTensor() : curentResults[outDefault].AsTensor();
-                cosine = Utility.GetCosineSimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(currentResult.BytesBuffer));
+                var cosine = Utility.GetCosineSimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(currentResult.BytesBuffer));
+                if (cosine > cosineBest)
+                {
+                    _fakeNodeConfigs![config.Var] = config.QuantConfig;
+                    cosineBest = cosine;
+                }
+                else
+                {
+                    sampleFillVarWithConst[config.Var] = configCache;
+                }
 
-                Console.ResetColor();
-                Console.Write($"try opt: nodes:{sensitivity.Count} current:{++debugFakeNode} targetCosine:");
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write($"{_quantizeOptions.CosineTarget}");
-                Console.ResetColor();
-                Console.Write($" currentCosine:");
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"{cosine}");
-                Console.ResetColor();
+                if (DumpScope.Current.IsEnabled(DumpFlags.QuantLog))
+                {
+                    var filePath = Path.Join(DumpScope.Current.Directory, "/cosine-curve.txt");
+                    using (var writer = new StreamWriter(filePath, true)) // 设置为true以启用追加模式
+                    {
+                        writer.WriteLine($"bestModel:{cosineBest,10:0.00000000} curModel:{cosine,10:0.00000000}  curNode:{nodeCosine,10:0.00000000} cnt:{++debugFakeNode}/{sensitivity.Count} target:{_quantizeOptions.CosineTarget} fakeTpye:{((Call)_fakeNodesVars![config.Var]).Target.ToString()} node:{_fakeNodesVars![config.Var].Metadata.OutputNames?[0] ?? "name is null!"}"); // 写入float值，后跟换行符
+                    }
+                }
 
-                if (cosine > _quantizeOptions.CosineTarget)
+                if (cosineBest > _quantizeOptions.CosineTarget)
                 {
                     return;
                 }
@@ -417,10 +428,16 @@ internal partial class Quantizer
                 sensitivities[(var, quantConfig)] = cosine;
 
                 // debug:delete
-                // sensitivities[(var, quantConfig)] = (float)((float)(cosine + (0.0001 * debugFakeNode) + (debugQuantType * 0.00001)) - 0.5);
-                DateTime now = DateTime.Now;
-                string timestamp = now.ToString("HH:mm");
-                Console.WriteLine($"sensitivity: nodes:{debugFakeNode}/{_fakeNodesVars.Count} types:{++debugQuantType}/{quantTypeSupport.Count} time:{timestamp} cosine:{cosine,10:0.00000000} node:{fakeNode.Metadata.OutputNames?[0]}");
+                if (DumpScope.Current.IsEnabled(DumpFlags.QuantLog))
+                {
+                    DateTime now = DateTime.Now;
+                    string timestamp = now.ToString("HH:mm");
+                    var filePath = Path.Join(DumpScope.Current.Directory, "/node-sensitivity.txt");
+                    using (var writer = new StreamWriter(filePath, true)) // 设置为true以启用追加模式
+                    {
+                        writer.WriteLine($"sensitivity: nodes:{debugFakeNode}/{_fakeNodesVars.Count} quantType:{++debugQuantType}/{quantTypeSupport.Count} time:{timestamp} cosine:{cosine,10:0.00000000} fakeTpye:{((Call)fakeNode).Target.ToString()} node:{fakeNode.Metadata.OutputNames?[0]}");
+                    }
+                }
             }
         }
 
@@ -483,6 +500,30 @@ internal partial class Quantizer
         {
             sensSorted.Add(new KeyValuePair<(Var, QuantConfig), float>((var, new QuantConfig(-1)), 2.0f));
         }
+
+        // List<KeyValuePair<(Var Var, QuantConfig QuantConfig), float>> tempList = new();
+        // foreach (var (var, sensitivity) in sensSorted)
+        // {
+        //     var node = _fakeNodesVars[var.Var];
+        //     if (node.Metadata.OutputNames![0] == "/layers.2/fc1/Add_output_0")
+        //     {
+        //         tempList.Add(new KeyValuePair<(Var Var, QuantConfig QuantConfig), float>(var, sensitivity));
+        //     }
+        // }
+
+        // var lastElement = tempList[tempList.Count - 1];
+        // tempList.RemoveAt(tempList.Count - 1);
+        // tempList.Insert(0, lastElement);
+
+        // for (int i = sensSorted.Count - 1; i >= 0; i--)
+        // {
+        //     var node = _fakeNodesVars[sensSorted[i].Key.Var];
+        //     if (node.Metadata.OutputNames![0] == "/layers.2/fc1/Add_output_0")
+        //     {
+        //         sensSorted.InsertRange(i + 1, tempList);
+        //     }
+        // }
+        sensSorted.RemoveAll(item => item.Value < _quantizeOptions.CosineTarget);
     }
 
     private void ExportQuantScheme()
@@ -617,7 +658,7 @@ internal partial class Quantizer
             // var debugExpr = _graph.Extract(_graph.Root!, null, out _);
         }
 
-        var dumpPath = Path.Join(DumpScope.Current.Directory, "..", "..", "..", "/");
+        var dumpPath = Path.Join(DumpScope.Current.Directory, "/");
         EGraphPrinter.DumpEgraphAsDot(_graph, dumpPath + "_graph_after.dot");
     }
 
