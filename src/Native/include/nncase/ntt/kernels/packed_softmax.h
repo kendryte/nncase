@@ -34,12 +34,6 @@ void packed_on_axis_impl(const TIn &input, TOut &&output,
     static_assert(is_same_seq(input_shape, output_shape),
                   "the input output shape not equal!");
 
-    constexpr auto div_op = ops::div<TElem>();
-    constexpr auto exp_op = ops::exp<TElem>();
-    constexpr auto add_op = ops::add<TElem>();
-    constexpr auto sub_op = ops::sub<TElem>();
-    constexpr auto max_op = ops::max<TElem>();
-
     constexpr auto need_reduce =
         PackedAxes::rank() != 0 && Axis == PackedAxes::at(0);
     constexpr auto domain =
@@ -49,7 +43,7 @@ void packed_on_axis_impl(const TIn &input, TOut &&output,
         TElem max_value = input(index);
         for (index[Axis] = 0; index[Axis] < input_shape.at(Axis);
              index[Axis]++) {
-            max_value = max_op(max_value, input(index));
+            max_value = max(max_value, input(index));
         }
 
         // reduce_max
@@ -60,15 +54,15 @@ void packed_on_axis_impl(const TIn &input, TOut &&output,
         // (x - reduce_max) * beta
         for (index[Axis] = 0; index[Axis] < input_shape.at(Axis);
              index[Axis]++) {
-            output(index) = sub_op(input(index), max_value);
+            output(index) = input(index) - max_value;
         }
 
         // exp((x - reduce_max) * beta) and sum
         TElem sum = (TElem)0;
         for (index[Axis] = 0; index[Axis] < input_shape.at(Axis);
              index[Axis]++) {
-            output(index) = exp_op(output(index));
-            sum = add_op(output(index), sum);
+            output(index) = exp(output(index));
+            sum += output(index);
         }
 
         // reduce sum
@@ -79,7 +73,7 @@ void packed_on_axis_impl(const TIn &input, TOut &&output,
         // div
         for (index[Axis] = 0; index[Axis] < input_shape.at(Axis);
              index[Axis]++) {
-            output(index) = div_op(output(index), sum);
+            output(index) = output(index) / sum;
         }
     });
 }

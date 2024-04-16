@@ -55,7 +55,6 @@ struct matmul_impl<TLhs, TRhs, TOut> {
         constexpr size_t M = TLhs::shape().at(lhs_rank - 2),
                          K = TLhs::shape().at(lhs_rank - 1),
                          N = TRhs::shape().at(rhs_rank - 1);
-        constexpr ops::add<TElemtOut> add;
 
         if constexpr (lhs_cdim >= 2 && rhs_cdim >= 2 && out_cdim >= 2) {
             constexpr auto domain = shape_infer::reduced_shape_by_axes(
