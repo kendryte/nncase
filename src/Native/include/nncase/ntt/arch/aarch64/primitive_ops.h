@@ -96,7 +96,6 @@ template <> struct max<ntt::vector<float, 4>, ntt::vector<float, 4>> {
     }
 };
 
-
 template <> struct reduce<ops::add, float, ntt::vector<float, 4>> {
     float operator()(const ntt::vector<float, 4> &tensor) {
         return vaddvq_f32(tensor);
