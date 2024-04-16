@@ -268,6 +268,36 @@ constexpr auto operator%(const T1 &v1, const T2 &v2) noexcept {
     return mod(v1, v2);
 }
 
+template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+constexpr T1 &operator+=(T1 &v1, const T2 &v2) noexcept {
+    v1 = add(v1, v2);
+    return v1;
+}
+
+template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+constexpr T1 &operator-=(T1 &v1, const T2 &v2) noexcept {
+    v1 = sub(v1, v2);
+    return v1;
+}
+
+template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+constexpr T1 &operator*=(T1 &v1, const T2 &v2) noexcept {
+    v1 = mul(v1, v2);
+    return v1;
+}
+
+template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+constexpr T1 &operator/=(T1 &v1, const T2 &v2) noexcept {
+    v1 = div(v1, v2);
+    return v1;
+}
+
+template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+constexpr T1 &operator%=(T1 &v1, const T2 &v2) noexcept {
+    v1 = mod(v1, v2);
+    return v1;
+}
+
 /**@}*/
 
 // complex ops
