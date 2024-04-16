@@ -16,20 +16,54 @@
 #include "../apply.h"
 #include "../shape_infer/binary.h"
 #include "../shape_infer/reduce.h"
+#include "../tensor_traits.h"
 #include <type_traits>
 
 namespace nncase::ntt {
-template <template <class T> class Op, class TLhs, class TRhs, class TOut>
-void binary(const TLhs &lhs, const TRhs &rhs, TOut &&output) {
-    Op<typename TLhs::element_type> op;
-    auto out_shape = shape_infer::binary_output_shape(lhs.shape(), rhs.shape());
+namespace detail {
+template <class TLhs, class TRhs, class TOut> class binary_impl {
+  public:
+    template <class Op>
+    constexpr void operator()(Op &op, const TLhs &lhs, const TRhs &rhs,
+                              TOut &output) {
+        auto out_shape =
+            shape_infer::binary_output_shape(lhs.shape(), rhs.shape());
 
-    apply(out_shape, [&](auto index) {
-        const auto lhs_index =
-            shape_infer::reduced_index_by_shape(index, lhs.shape());
-        const auto rhs_index =
-            shape_infer::reduced_index_by_shape(index, rhs.shape());
-        output(index) = op(lhs(lhs_index), rhs(rhs_index));
-    });
+        apply(out_shape, [&](auto index) {
+            const auto lhs_index =
+                shape_infer::reduced_index_by_shape(index, lhs.shape());
+            const auto rhs_index =
+                shape_infer::reduced_index_by_shape(index, rhs.shape());
+            output(index) = op(lhs(lhs_index), rhs(rhs_index));
+        });
+    }
+};
+
+template <IsFixedTensor TLhs, IsFixedTensor TRhs, IsFixedTensor TOut>
+class binary_impl<TLhs, TRhs, TOut> {
+  public:
+    template <class Op>
+    constexpr void operator()(Op &op, const TLhs &lhs, const TRhs &rhs,
+                              TOut &output) {
+        auto out_shape =
+            shape_infer::binary_output_shape(lhs.shape(), rhs.shape());
+
+        apply(out_shape, [&](auto index) {
+            const auto lhs_index =
+                shape_infer::reduced_index_by_shape(index, lhs.shape());
+            const auto rhs_index =
+                shape_infer::reduced_index_by_shape(index, rhs.shape());
+            output(index) = op(lhs(lhs_index), rhs(rhs_index));
+        });
+    }
+};
+} // namespace detail
+
+template <template <class T1, class T2> class Op, class TLhs, class TRhs,
+          class TOut>
+void binary(const TLhs &lhs, const TRhs &rhs, TOut &output) {
+    Op<typename TLhs::element_type, typename TRhs::element_type> op;
+    detail::binary_impl<std::decay_t<TLhs>, std::decay_t<TRhs>,
+                        std::decay_t<TOut>>()(op, lhs, rhs, output);
 }
 } // namespace nncase::ntt

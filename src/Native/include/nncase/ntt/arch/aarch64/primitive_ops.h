@@ -55,20 +55,6 @@ template <> struct sqrt<ntt::vector<float, 4>> {
     }
 };
 
-// swish(v) = v / (1 + std::exp(-v))
-template <> struct swish<ntt::vector<float, 4>> {
-    inline ntt::vector<float, 4>
-    operator()(const ntt::vector<float, 4> &v) const noexcept {
-        return impl(v);
-    }
-
-    inline float32x4_t impl(const float32x4_t &v) const noexcept {
-        auto zero = vdupq_n_f32(0);
-        auto one = vdupq_n_f32(1);
-        return v / (one + exp_ps(zero - v));
-    }
-};
-
 // binary
 template <> struct add<ntt::vector<float, 4>> {
     inline ntt::vector<float, 4>
