@@ -35,13 +35,17 @@ template <class T> struct acos {
     T operator()(const T &v) const noexcept { return std::acos(v); }
 };
 
-template <class T> struct acosh { T operator()(const T &v) const noexcept; };
+template <class T> struct acosh {
+    T operator()(const T &v) const noexcept;
+};
 
 template <class T> struct asin {
     T operator()(const T &v) const noexcept { return std::asin(v); }
 };
 
-template <class T> struct asinh { T operator()(const T &v) const noexcept; };
+template <class T> struct asinh {
+    T operator()(const T &v) const noexcept;
+};
 
 template <class T> struct ceil {
     T operator()(const T &v) const noexcept { return std::ceil(v); }
@@ -51,7 +55,9 @@ template <class T> struct cos {
     T operator()(const T &v) const noexcept { return std::cos(v); }
 };
 
-template <class T> struct cosh { T operator()(const T &v) const noexcept; };
+template <class T> struct cosh {
+    T operator()(const T &v) const noexcept;
+};
 
 template <class T> struct exp {
     T operator()(const T &v) const noexcept { return std::exp(v); }
@@ -87,7 +93,9 @@ template <class T> struct sin {
     T operator()(const T &v) const noexcept { return std::sin(v); }
 };
 
-template <class T> struct sinh { T operator()(const T &v) const noexcept; };
+template <class T> struct sinh {
+    T operator()(const T &v) const noexcept;
+};
 
 template <class T> struct sqrt {
     T operator()(const T &v) const noexcept { return std::sqrt(v); }
@@ -101,7 +109,9 @@ template <class T> struct tanh {
     T operator()(const T &v) const noexcept { return std::tanh(v); }
 };
 
-template <class T> struct swish { T operator()(const T &v) const noexcept; };
+template <class T> struct swish {
+    T operator()(const T &v) const noexcept;
+};
 
 /**@}*/
 
@@ -191,8 +201,11 @@ struct reduce {
         return ops::op<T1, T2>()(v1, v2);                                      \
     }
 #define NTT_DEFINE_REDUCE_FUNC_IMPL(name, op)                                  \
-    template <class TResult = void, IsTensorOrScalar T>                        \
+    template <class TResultOrVoid = void, IsTensorOrScalar T>                  \
     constexpr auto name(const T &v) noexcept {                                 \
+        using TResult =                                                        \
+            std::conditional_t<std::is_same_v<TResultOrVoid, void>,            \
+                               element_or_scalar_t<T>, TResultOrVoid>;         \
         return ops::reduce<op, TResult, T>()(v);                               \
     }
 
