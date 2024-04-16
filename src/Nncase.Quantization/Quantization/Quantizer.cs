@@ -208,8 +208,10 @@ internal partial class Quantizer
             sampleFillVarWithConst.Add(var, Value.FromTensor(config.ToRaw()));
         }
 
-        var outDefault = 0;
+        var casheNum = 1; // casheNum 或者等于1，或者等于偶数，等于1的情况下就退化为非beamSearch
+        List<(Dictionary<Var, IValue>, float)> modelQuantSchemeCache = Enumerable.Range(0, casheNum).Select(i => (sampleFillVarWithConst, -1.0f)).ToList();
 
+        var outDefault = 0;
         var curentResults = CompilerServices.Evaluate(((Function)_expr).Body, sampleFillVarWithConst);
         var currentResult = curentResults is TensorValue ? curentResults.AsTensor() : curentResults[outDefault].AsTensor();
         var cosineBest = Utility.GetCosineSimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(currentResult.BytesBuffer));
@@ -232,32 +234,67 @@ internal partial class Quantizer
             int debugFakeNode = 0;
             foreach (var (config, nodeCosine) in sensitivity)
             {
-                var configCache = sampleFillVarWithConst[config.Var];
-                sampleFillVarWithConst[config.Var] = Value.FromTensor(config.QuantConfig.ToRaw());
-                curentResults = CompilerServices.Evaluate(((Function)_expr).Body, sampleFillVarWithConst);
-                currentResult = curentResults is TensorValue ? curentResults.AsTensor() : curentResults[outDefault].AsTensor();
-                var cosine = Utility.GetCosineSimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(currentResult.BytesBuffer));
-                if (cosine > cosineBest)
+                for (int iCache = 0; iCache < Math.Max(casheNum / 2, 1); iCache++)
                 {
-                    _fakeNodeConfigs![config.Var] = config.QuantConfig;
-                    cosineBest = cosine;
-                }
-                else
-                {
-                    sampleFillVarWithConst[config.Var] = configCache;
+                    var currentScheme = modelQuantSchemeCache[iCache];
+                    var configCache = currentScheme.Item1[config.Var];
+                    currentScheme.Item1[config.Var] = Value.FromTensor(config.QuantConfig.ToRaw());
+                    curentResults = CompilerServices.Evaluate(((Function)_expr).Body, currentScheme.Item1);
+                    currentResult = curentResults is TensorValue ? curentResults.AsTensor() : curentResults[outDefault].AsTensor();
+                    var cosine = Utility.GetCosineSimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(currentResult.BytesBuffer));
+                    currentScheme.Item2 = cosine;
+                    modelQuantSchemeCache[iCache] = currentScheme;
+
+                    if (DumpScope.Current.IsEnabled(DumpFlags.QuantLog))
+                    {
+                        var filePath = Path.Join(DumpScope.Current.Directory, "/cosine-curve.txt");
+                        using (var writer = new StreamWriter(filePath, true)) // 设置为true以启用追加模式
+                        {
+                            writer.WriteLine($"historyBest:{cosineBest,10:0.00000000} curModel{iCache}:{cosine,10:0.00000000}  curNode:{nodeCosine,10:0.00000000} cnt:{++debugFakeNode}/{sensitivity.Count * Math.Max(casheNum / 2, 1)} target:{_quantizeOptions.CosineTarget} fakeTpye:{((Call)_fakeNodesVars![config.Var]).Target.ToString()} node:{_fakeNodesVars![config.Var].Metadata.OutputNames?[0] ?? "name is null!"}"); // 写入float值，后跟换行符
+                        }
+                    }
                 }
 
+                if (casheNum > 1)
+                {
+                    // 首先，按照float值从大到小对List进行排序
+                    modelQuantSchemeCache.Sort((a, b) => b.Item2.CompareTo(a.Item2));
+
+                    // 计算前一半的数量
+                    int halfCount = casheNum / 2;
+
+                    // 取前一半的元素
+                    var firstHalf = modelQuantSchemeCache.Take(halfCount).ToList();
+
+                    // 清除后一半的元素
+                    modelQuantSchemeCache.RemoveRange(halfCount, modelQuantSchemeCache.Count - halfCount);
+
+                    // 将前一半的元素复制到后一半
+                    modelQuantSchemeCache.AddRange(firstHalf);
+                }
+
+                cosineBest = modelQuantSchemeCache[0].Item2;
                 if (DumpScope.Current.IsEnabled(DumpFlags.QuantLog))
                 {
                     var filePath = Path.Join(DumpScope.Current.Directory, "/cosine-curve.txt");
                     using (var writer = new StreamWriter(filePath, true)) // 设置为true以启用追加模式
                     {
-                        writer.WriteLine($"bestModel:{cosineBest,10:0.00000000} curModel:{cosine,10:0.00000000}  curNode:{nodeCosine,10:0.00000000} cnt:{++debugFakeNode}/{sensitivity.Count} target:{_quantizeOptions.CosineTarget} fakeTpye:{((Call)_fakeNodesVars![config.Var]).Target.ToString()} node:{_fakeNodesVars![config.Var].Metadata.OutputNames?[0] ?? "name is null!"}"); // 写入float值，后跟换行符
+                        writer.WriteLine($"Update BestCosine:{cosineBest,10:0.00000000}"); // 写入float值,后跟换行符
                     }
                 }
 
                 if (cosineBest > _quantizeOptions.CosineTarget)
                 {
+                    foreach (var (var, configBest) in _fakeNodeConfigs!)
+                    {
+                        if (configBest.IsEmpty())
+                        {
+                            continue;
+                        }
+
+                        _fakeNodeConfigs[var] = QuantConfig.FromRaw(modelQuantSchemeCache[0].Item1[var].AsTensor());
+                    }
+
                     return;
                 }
             }
