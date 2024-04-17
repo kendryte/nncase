@@ -46,11 +46,11 @@ class binary_impl<TLhs, TRhs, TOut> {
     constexpr void operator()(Op &op, const TLhs &lhs, const TRhs &rhs,
                               TOut &output) {
         constexpr auto conti_dims =
-            std::min({contiguous_dims(lhs.shape(), lhs.strides()),
-                      contiguous_dims(rhs.shape(), rhs.strides()),
-                      contiguous_dims(output.shape(), output.strides())});
+            std::min({contiguous_dims(TLhs::shape(), TLhs::strides()),
+                      contiguous_dims(TRhs::shape(), TRhs::strides()),
+                      contiguous_dims(TOut::shape(), TOut::strides())});
         constexpr auto out_shape =
-            shape_infer::binary_output_shape(lhs.shape(), rhs.shape());
+            shape_infer::binary_output_shape(TLhs::shape(), TRhs::shape());
         auto lhs_p = lhs.buffer().data();
         auto rhs_p = rhs.buffer().data();
         auto out_p = output.buffer().data();
@@ -65,14 +65,14 @@ class binary_impl<TLhs, TRhs, TOut> {
                          const TRhs &rhs, TOut &output, TLhsP lhs_p,
                          TRhsP rhs_p, TOutP out_p) {
         // 1. In contiguous axes
-        if constexpr (Axis + ContiguousDims >= out_shape.rank()) {
-            constexpr auto rest_rank = out_shape.rank() - Axis;
+        if constexpr (Axis + ContiguousDims >= TOut::rank()) {
+            constexpr auto rest_rank = TOut::rank() - Axis;
             constexpr auto lhs_rest_dims =
-                slice_fixed_dims<rest_rank, lhs.rank() - rest_rank>(
-                    lhs.shape());
+                slice_fixed_dims<rest_rank, TLhs::rank() - rest_rank>(
+                    TLhs::shape());
             constexpr auto rhs_rest_dims =
-                slice_fixed_dims<rest_rank, rhs.rank() - rest_rank>(
-                    rhs.shape());
+                slice_fixed_dims<rest_rank, TRhs::rank() - rest_rank>(
+                    TRhs::shape());
 
             // 1.1 Non broadcast
             if constexpr (is_same_seq(lhs_rest_dims, rhs_rest_dims)) {
