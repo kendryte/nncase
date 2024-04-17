@@ -80,14 +80,4 @@ inline constexpr bool is_same_seq(const T<ADims...> &a, const T<BDims...> &b) {
            utility_detail::is_same_seq(
                a, b, std::make_index_sequence<sizeof...(ADims)>{});
 }
-
-template <typename T>
-concept IsFixedTensor = is_fixed_dims_v<typename std::decay_t<T>::shape_type>
-    &&is_fixed_dims_v<typename std::decay_t<T>::strides_type>;
-
-template <typename T>
-concept IsRankedTensor = is_ranked_dims_v<typename std::decay_t<T>::shape_type>
-    &&is_ranked_dims_v<typename std::decay_t<T>::strides_type>;
-
-template <typename T> concept IsFixedDims = is_fixed_dims_v<T>;
 } // namespace nncase::ntt

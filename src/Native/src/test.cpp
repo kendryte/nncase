@@ -381,22 +381,6 @@ int main() {
         });
     }
 
-#if 0
-    // fixed unpack with pad
-    {
-        ntt::tensor<float, ntt::fixed_shape<16, 62, 32>> ta;
-        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<16, 16, 32>> tb;
-        ntt::tensor<float, ntt::fixed_shape<16, 62, 32>> tc;
-        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-        ntt::pack<1>(ta, tb);
-        ntt::unpack<1>(tb, tc);
-        ntt::apply(tc.shape(), [&](auto index) {
-            NNCASE_UNUSED auto a = ta(index);
-            NNCASE_UNUSED auto c = tc(index);
-            assert(a == c);
-        });
-    }
-
     // layer norm1 (packed axis >= layer norm axis)
     {
         ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> buffer_1;
@@ -920,6 +904,7 @@ int main() {
         assert(te(3, 0, 1) == 1.3f);
     }
 
+#if 0
     auto kmodel = read_file(
         R"(/mnt/home-nas/work/repo/nncase/tests_output/UnitTestCPUTarget/TestSimpleUnary/TestSimpleUnary.kmodel)");
 

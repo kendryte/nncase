@@ -55,7 +55,6 @@ struct matmul_impl<TLhs, TRhs, TOut> {
         constexpr size_t M = TLhs::shape().at(lhs_rank - 2),
                          K = TLhs::shape().at(lhs_rank - 1),
                          N = TRhs::shape().at(rhs_rank - 1);
-        constexpr ops::add<TElemtOut> add;
 
         if constexpr (lhs_cdim >= 2 && rhs_cdim >= 2 && out_cdim >= 2) {
             constexpr auto domain = shape_infer::reduced_shape_by_axes(
@@ -99,8 +98,7 @@ struct matmul_impl<TLhs, TRhs, TOut> {
                         auto rpp = rhs_p + k * N;
                         auto lpp = lhs_p + m * K + k;
                         for (size_t n = 0; n < N; n++) {
-                            *(opp++) =
-                                add(*(opp), dot<TElemtOut>(*(lpp), *(rpp++)));
+                            *(opp++) += dot<TElemtOut>(*(lpp), *(rpp++));
                         }
                     }
                 }
@@ -132,7 +130,7 @@ struct matmul_impl<TLhs, TRhs, TOut> {
                      lhs_index[lk]++) {
                     rhs_index[rk] = lhs_index[lk];
                     TElemt val = mul(lhs(lhs_index), rhs(rhs_index));
-                    acc = add(acc, val);
+                    acc += val;
                 }
                 output(index) = acc;
             });

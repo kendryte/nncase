@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "tensor_traits.h"
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -20,154 +21,182 @@
 
 namespace nncase::ntt {
 namespace ops {
-// unary_ops ops
+
+/**
+ * @defgroup Unary operation functors
+ * @{
+ */
 
 template <class T> struct abs {
-    T operator()(T v) const noexcept { return std::abs(v); }
+    T operator()(const T &v) const noexcept { return std::abs(v); }
 };
 
 template <class T> struct acos {
-    T operator()(T v) const noexcept { return std::acos(v); }
+    T operator()(const T &v) const noexcept { return std::acos(v); }
 };
 
-template <class T> struct acosh {
-    T operator()(T v) const noexcept { return std::acosh(v); }
-};
+template <class T> struct acosh { T operator()(const T &v) const noexcept; };
 
 template <class T> struct asin {
-    T operator()(T v) const noexcept { return std::asin(v); }
+    T operator()(const T &v) const noexcept { return std::asin(v); }
 };
 
-template <class T> struct asinh {
-    T operator()(T v) const noexcept { return std::asinh(v); }
-};
+template <class T> struct asinh { T operator()(const T &v) const noexcept; };
 
 template <class T> struct ceil {
-    T operator()(T v) const noexcept { return std::ceil(v); }
+    T operator()(const T &v) const noexcept { return std::ceil(v); }
 };
 
 template <class T> struct cos {
-    T operator()(T v) const noexcept { return std::cos(v); }
+    T operator()(const T &v) const noexcept { return std::cos(v); }
 };
 
-template <class T> struct cosh {
-    T operator()(T v) const noexcept { return std::cosh(v); }
-};
+template <class T> struct cosh { T operator()(const T &v) const noexcept; };
 
 template <class T> struct exp {
-    T operator()(T v) const noexcept { return std::exp(v); }
+    T operator()(const T &v) const noexcept { return std::exp(v); }
 };
 
 template <class T> struct floor {
-    T operator()(T v) const noexcept { return std::floor(v); }
+    T operator()(const T &v) const noexcept { return std::floor(v); }
 };
 
 template <class T> struct log {
-    T operator()(T v) const noexcept { return std::log(v); }
+    T operator()(const T &v) const noexcept { return std::log(v); }
 };
 
 template <class T> struct neg {
-    T operator()(T v) const noexcept { return -v; }
+    T operator()(const T &v) const noexcept { return -v; }
 };
 
 template <class T> struct round {
-    T operator()(T v) const noexcept { return std::nearbyint(v); }
+    T operator()(const T &v) const noexcept { return std::nearbyint(v); }
 };
 
 template <class T> struct rsqrt {
-    T operator()(T v) const noexcept { return (T)1 / std::sqrt(v); }
+    T operator()(const T &v) const noexcept { return (T)1 / std::sqrt(v); }
 };
 
 template <class T> struct sign {
-    T operator()(T v) const noexcept {
+    T operator()(const T &v) const noexcept {
         return (static_cast<T>(0) < v) - (v < static_cast<T>(0));
     }
 };
 
 template <class T> struct sin {
-    T operator()(T v) const noexcept { return std::sin(v); }
+    T operator()(const T &v) const noexcept { return std::sin(v); }
 };
 
-template <class T> struct sinh {
-    T operator()(T v) const noexcept { return std::sinh(v); }
-};
+template <class T> struct sinh { T operator()(const T &v) const noexcept; };
 
 template <class T> struct sqrt {
-    T operator()(T v) const noexcept { return std::sqrt(v); }
+    T operator()(const T &v) const noexcept { return std::sqrt(v); }
 };
 
 template <class T> struct square {
-    T operator()(T v) const noexcept { return v * v; }
+    T operator()(const T &v) const noexcept { return v * v; }
 };
 
 template <class T> struct tanh {
-    T operator()(T v) const noexcept { return std::tanh(v); }
+    T operator()(const T &v) const noexcept { return std::tanh(v); }
 };
 
-template <class T> struct swish {
-    T operator()(T v) const noexcept { return v / (1 + std::exp(-v)); }
+template <class T> struct swish { T operator()(const T &v) const noexcept; };
+
+/**@}*/
+
+/**
+ * @defgroup Binary operation functors
+ * @{
+ */
+
+template <class T1, class T2> struct add {
+    auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+        return v1 + v2;
+    }
 };
 
-// binary ops
-
-template <class T> struct add {
-    T operator()(const T &v1, const T &v2) const noexcept { return v1 + v2; }
+template <class T1, class T2> struct sub {
+    auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+        return v1 - v2;
+    }
 };
 
-template <class T> struct sub {
-    T operator()(const T &v1, const T &v2) const noexcept { return v1 - v2; }
+template <class T1, class T2> struct mul {
+    auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+        return v1 * v2;
+    }
 };
 
-template <class T> struct mul {
-    T operator()(const T &v1, const T &v2) const noexcept { return v1 * v2; }
+template <class T1, class T2> struct div {
+    auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+        return v1 / v2;
+    }
 };
 
-template <class T> struct div {
-    T operator()(const T &v1, const T &v2) const noexcept { return v1 / v2; }
-};
-
-// floor_mod is equivalent to % or mod() or remainder() function in Python.
-template <class T> struct floor_mod {
-    T operator()(const T &v1, const T &v2) const noexcept {
+/**
+ * @remarks floor_mod is equivalent to % or mod() or remainder() function in
+ * Python.
+ */
+template <class T1, class T2> struct floor_mod {
+    auto operator()(const T1 &v1, const T2 &v2) const noexcept {
         return v1 -
                std::floor(static_cast<double>(v1) / static_cast<double>(v2)) *
                    v2;
     }
 };
 
-// mod is equivalent to fmod() function in C/C++/Python.
-template <class T> struct mod {
-    T operator()(const T &v1, const T &v2) const noexcept {
+/**
+ * @remarks mod is equivalent to fmod() function in C/C++/Python.
+ */
+template <class T1, class T2> struct mod {
+    auto operator()(const T1 &v1, const T2 &v2) const noexcept {
         return std::fmod(v1, v2);
     }
 };
 
-template <class T> struct min {
-    T operator()(const T &v1, const T &v2) const noexcept {
+template <class T1, class T2> struct min {
+    auto operator()(const T1 &v1, const T2 &v2) const noexcept {
         return std::min(v1, v2);
     }
 };
 
-template <class T> struct max {
-    T operator()(const T &v1, const T &v2) const noexcept {
+template <class T1, class T2> struct max {
+    auto operator()(const T1 &v1, const T2 &v2) const noexcept {
         return std::max(v1, v2);
     }
 };
 
-template <class T> struct pow {
-    T operator()(const T &v1, const T &v2) const noexcept {
+template <class T1, class T2> struct pow {
+    auto operator()(const T1 &v1, const T2 &v2) const noexcept {
         return std::pow(v1, v2);
     }
+};
+
+/**@}*/
+
+template <template <class T1, class T2> class BinaryOp, class TResult, class T>
+struct reduce {
+    TResult operator()(const T &v) const noexcept { return TResult(v); }
 };
 } // namespace ops
 
 #define NTT_DEFINE_UNARY_FUNC_IMPL(op)                                         \
-    template <class T> constexpr T op(const T &v) noexcept {                   \
+    template <IsTensorOrScalar T> constexpr T op(const T &v) noexcept {        \
         return ops::op<T>()(v);                                                \
     }
 #define NTT_DEFINE_BINARY_FUNC_IMPL(op)                                        \
-    template <class T> constexpr T op(const T &v1, const T &v2) noexcept {     \
-        return ops::op<T>()(v1, v2);                                           \
+    template <IsTensorOrScalar T1, IsTensorOrScalar T2>                        \
+    constexpr auto op(const T1 &v1, const T2 &v2) noexcept {                   \
+        return ops::op<T1, T2>()(v1, v2);                                      \
+    }
+#define NTT_DEFINE_REDUCE_FUNC_IMPL(name, op)                                  \
+    template <class TResultOrVoid = void, IsTensorOrScalar T>                  \
+    constexpr auto name(const T &v) noexcept {                                 \
+        using TResult =                                                        \
+            std::conditional_t<std::is_same_v<TResultOrVoid, void>,            \
+                               element_or_scalar_t<T>, TResultOrVoid>;         \
+        return ops::reduce<op, TResult, T>()(v);                               \
     }
 
 NTT_DEFINE_UNARY_FUNC_IMPL(abs)
@@ -202,29 +231,101 @@ NTT_DEFINE_BINARY_FUNC_IMPL(min)
 NTT_DEFINE_BINARY_FUNC_IMPL(max)
 NTT_DEFINE_BINARY_FUNC_IMPL(pow)
 
-// operators
+NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_sum, ops::add)
+NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_max, ops::max)
 
-template <class T> constexpr T operator-(const T &value) noexcept {
+/**
+ * @defgroup Builtin operators
+ * @{
+ */
+
+template <IsTensorOrScalar T> constexpr T operator-(const T &value) noexcept {
     return neg(value);
 }
 
-template <class T> constexpr T operator+(const T &v1, const T &v2) noexcept {
+template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+constexpr auto operator+(const T1 &v1, const T2 &v2) noexcept {
     return add(v1, v2);
 }
 
-template <class T> constexpr T operator-(const T &v1, const T &v2) noexcept {
+template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+constexpr auto operator-(const T1 &v1, const T2 &v2) noexcept {
     return sub(v1, v2);
 }
 
-template <class T> constexpr T operator*(const T &v1, const T &v2) noexcept {
+template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+constexpr auto operator*(const T1 &v1, const T2 &v2) noexcept {
     return mul(v1, v2);
 }
 
-template <class T> constexpr T operator/(const T &v1, const T &v2) noexcept {
+template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+constexpr auto operator/(const T1 &v1, const T2 &v2) noexcept {
     return div(v1, v2);
 }
 
-template <class T> constexpr T operator%(const T &v1, const T &v2) noexcept {
+template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+constexpr auto operator%(const T1 &v1, const T2 &v2) noexcept {
     return mod(v1, v2);
 }
+
+template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+constexpr T1 &operator+=(T1 &v1, const T2 &v2) noexcept {
+    v1 = add(v1, v2);
+    return v1;
+}
+
+template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+constexpr T1 &operator-=(T1 &v1, const T2 &v2) noexcept {
+    v1 = sub(v1, v2);
+    return v1;
+}
+
+template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+constexpr T1 &operator*=(T1 &v1, const T2 &v2) noexcept {
+    v1 = mul(v1, v2);
+    return v1;
+}
+
+template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+constexpr T1 &operator/=(T1 &v1, const T2 &v2) noexcept {
+    v1 = div(v1, v2);
+    return v1;
+}
+
+template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+constexpr T1 &operator%=(T1 &v1, const T2 &v2) noexcept {
+    v1 = mod(v1, v2);
+    return v1;
+}
+
+/**@}*/
+
+// complex ops
+
+namespace ops {
+// acosh(v) = ln(v + sqrt(v^2 - 1)), v >= 1
+template <class T> T acosh<T>::operator()(const T &v) const noexcept {
+    return ntt::log(v + ntt::sqrt(v * v - 1));
+}
+
+// asinh(v) = ln(v + sqrt(v^2 + 1))
+template <class T> T asinh<T>::operator()(const T &v) const noexcept {
+    return ntt::log(v + ntt::sqrt(v * v + 1));
+}
+
+// cosh(v) = (exp(v) + exp(-v)) / 2
+template <class T> T cosh<T>::operator()(const T &v) const noexcept {
+    return (ntt::exp(v) + ntt::exp(-v)) / 2;
+}
+
+// sinh(v) = (exp(v) - exp(-v)) / 2
+template <class T> T sinh<T>::operator()(const T &v) const noexcept {
+    return (ntt::exp(v) - ntt::exp(-v)) / 2;
+}
+
+// swish(v) = v / (exp(-v) + 1)
+template <class T> T swish<T>::operator()(const T &v) const noexcept {
+    return v / (ntt::exp(-v) + 1);
+}
+} // namespace ops
 } // namespace nncase::ntt
