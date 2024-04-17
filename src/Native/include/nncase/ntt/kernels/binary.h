@@ -45,16 +45,97 @@ class binary_impl<TLhs, TRhs, TOut> {
     template <class Op>
     constexpr void operator()(Op &op, const TLhs &lhs, const TRhs &rhs,
                               TOut &output) {
-        auto out_shape =
+        constexpr auto conti_dims =
+            std::min({contiguous_dims(lhs.shape(), lhs.strides()),
+                      contiguous_dims(rhs.shape(), rhs.strides()),
+                      contiguous_dims(output.shape(), output.strides())});
+        constexpr auto out_shape =
             shape_infer::binary_output_shape(lhs.shape(), rhs.shape());
+        auto lhs_p = lhs.buffer().data();
+        auto rhs_p = rhs.buffer().data();
+        auto out_p = output.buffer().data();
+        apply<Op, 0, conti_dims>(op, out_shape, lhs, rhs, output, lhs_p, rhs_p,
+                                 out_p);
+    }
 
-        apply(out_shape, [&](auto index) {
-            const auto lhs_index =
-                shape_infer::reduced_index_by_shape(index, lhs.shape());
-            const auto rhs_index =
-                shape_infer::reduced_index_by_shape(index, rhs.shape());
-            output(index) = op(lhs(lhs_index), rhs(rhs_index));
-        });
+  private:
+    template <class Op, size_t Axis, size_t ContiguousDims, class TOutShape,
+              class TLhsP, class TRhsP, class TOutP>
+    constexpr void apply(Op &op, const TOutShape &out_shape, const TLhs &lhs,
+                         const TRhs &rhs, TOut &output, TLhsP lhs_p,
+                         TRhsP rhs_p, TOutP out_p) {
+        // 1. In contiguous axes
+        if constexpr (Axis + ContiguousDims >= out_shape.rank()) {
+            constexpr auto rest_rank = out_shape.rank() - Axis;
+            constexpr auto lhs_rest_dims =
+                slice_fixed_dims<rest_rank, lhs.rank() - rest_rank>(
+                    lhs.shape());
+            constexpr auto rhs_rest_dims =
+                slice_fixed_dims<rest_rank, rhs.rank() - rest_rank>(
+                    rhs.shape());
+
+            // 1.1 Non broadcast
+            if constexpr (is_same_seq(lhs_rest_dims, rhs_rest_dims)) {
+                return binary_non_broadcast(op, lhs_p, rhs_p, out_p,
+                                            lhs_rest_dims.length());
+            } else if constexpr (lhs_rest_dims.length() == 1) {
+                return binary_left_broadcast(op, *lhs_p, rhs_p, out_p,
+                                             rhs_rest_dims.length());
+            } else if constexpr (rhs_rest_dims.length() == 1) {
+                return binary_right_broadcast(op, lhs_p, *rhs_p, out_p,
+                                              lhs_rest_dims.length());
+            }
+        }
+
+        // 2. Out of contiguous axes
+        if constexpr (Axis < out_shape.rank()) {
+            for (size_t i = 0; i < out_shape[Axis]; i++) {
+                apply<Op, Axis + 1, ContiguousDims>(
+                    op, out_shape, lhs, rhs, output, lhs_p, rhs_p, out_p);
+                lhs_p += get_safe_stride(lhs, Axis, out_shape);
+                rhs_p += get_safe_stride(rhs, Axis, out_shape);
+                out_p += output.strides()[Axis];
+            }
+        }
+    }
+
+    template <class TTensor, class TOutShape>
+    static constexpr size_t
+    get_safe_stride(const TTensor &tensor, size_t axis,
+                    const TOutShape &out_shape) noexcept {
+        auto dim_ext = out_shape.rank() - tensor.rank();
+        if (axis < dim_ext) {
+            return 0;
+        }
+
+        auto actual_axis = axis - dim_ext;
+        return tensor.shape()[actual_axis] == 1 ? 0 // broadcast
+                                                : tensor.strides()[actual_axis];
+    }
+
+    template <class Op, class TLhsElem, class TRhsElem, class TOutElem>
+    void binary_non_broadcast(Op &op, const TLhsElem *lhs, const TRhsElem *rhs,
+                              TOutElem *output, size_t extent) {
+        for (size_t i = 0; i < extent; i++) {
+            *output++ = op(*lhs++, *rhs++);
+        }
+    }
+
+    template <class Op, class TLhsElem, class TRhsElem, class TOutElem>
+    void binary_left_broadcast(Op &op, const TLhsElem &lhs, const TRhsElem *rhs,
+                               TOutElem *output, size_t extent) {
+        for (size_t i = 0; i < extent; i++) {
+            *output++ = op(lhs, *rhs++);
+        }
+    }
+
+    template <class Op, class TLhsElem, class TRhsElem, class TOutElem>
+    void binary_right_broadcast(Op &op, const TLhsElem *lhs,
+                                const TRhsElem &rhs, TOutElem *output,
+                                size_t extent) {
+        for (size_t i = 0; i < extent; i++) {
+            *output++ = op(*lhs++, rhs);
+        }
     }
 };
 } // namespace detail

@@ -122,6 +122,7 @@ class tensor_base
     using shape_type = Shape;
     using strides_type = Strides;
 
+    using size_impl_type::rank;
     using size_impl_type::shape;
     using size_impl_type::size;
     using size_impl_type::strides;
