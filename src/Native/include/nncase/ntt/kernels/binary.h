@@ -49,21 +49,17 @@ class binary_impl<TLhs, TRhs, TOut> {
             std::min({contiguous_dims(TLhs::shape(), TLhs::strides()),
                       contiguous_dims(TRhs::shape(), TRhs::strides()),
                       contiguous_dims(TOut::shape(), TOut::strides())});
-        constexpr auto out_shape =
-            shape_infer::binary_output_shape(TLhs::shape(), TRhs::shape());
         auto lhs_p = lhs.buffer().data();
         auto rhs_p = rhs.buffer().data();
         auto out_p = output.buffer().data();
-        apply<Op, 0, conti_dims>(op, out_shape, lhs, rhs, output, lhs_p, rhs_p,
-                                 out_p);
+        apply<Op, 0, conti_dims>(op, lhs, rhs, output, lhs_p, rhs_p, out_p);
     }
 
   private:
-    template <class Op, size_t Axis, size_t ContiguousDims, class TOutShape,
-              class TLhsP, class TRhsP, class TOutP>
-    constexpr void apply(Op &op, const TOutShape &out_shape, const TLhs &lhs,
-                         const TRhs &rhs, TOut &output, TLhsP lhs_p,
-                         TRhsP rhs_p, TOutP out_p) {
+    template <class Op, size_t Axis, size_t ContiguousDims, class TLhsP,
+              class TRhsP, class TOutP>
+    constexpr void apply(Op &op, const TLhs &lhs, const TRhs &rhs, TOut &output,
+                         TLhsP lhs_p, TRhsP rhs_p, TOutP out_p) {
         // 1. In contiguous axes
         if constexpr (Axis + ContiguousDims >= TOut::rank()) {
             constexpr auto rest_rank = TOut::rank() - Axis;
@@ -88,12 +84,12 @@ class binary_impl<TLhs, TRhs, TOut> {
         }
 
         // 2. Out of contiguous axes
-        if constexpr (Axis < out_shape.rank()) {
-            for (size_t i = 0; i < out_shape[Axis]; i++) {
-                apply<Op, Axis + 1, ContiguousDims>(
-                    op, out_shape, lhs, rhs, output, lhs_p, rhs_p, out_p);
-                lhs_p += get_safe_stride(lhs, Axis, out_shape);
-                rhs_p += get_safe_stride(rhs, Axis, out_shape);
+        if constexpr (Axis < TOut::shape().rank()) {
+            for (size_t i = 0; i < TOut::shape()[Axis]; i++) {
+                apply<Op, Axis + 1, ContiguousDims>(op, lhs, rhs, output, lhs_p,
+                                                    rhs_p, out_p);
+                lhs_p += get_safe_stride(lhs, Axis, TOut::shape());
+                rhs_p += get_safe_stride(rhs, Axis, TOut::shape());
                 out_p += output.strides()[Axis];
             }
         }
