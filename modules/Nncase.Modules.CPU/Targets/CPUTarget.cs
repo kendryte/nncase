@@ -140,6 +140,7 @@ public class CPUTarget : ITarget
         });
 
         // merge sub functions, merge stackvm memory operation(convert to affine)
+        passManager.Add<CPUFunctionPartitionPass>();
 
         // concat/reshape lower
         // tile and lower to tir.
