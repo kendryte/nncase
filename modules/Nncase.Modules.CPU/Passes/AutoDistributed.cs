@@ -195,7 +195,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         {
             if (isSupported)
             {
-                if (buckets.Keys.Any(IsDistributed))
+                if (!buckets.Keys.Any(IsDistributed))
                 {
                     var results = buckets.Select(kv => GetLeafCandidateBoxings(kv.Value[0], Placement)).SelectMany(i => i).ToArray();
                     updateBuckets(buckets, results);
