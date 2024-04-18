@@ -21,15 +21,26 @@ namespace Nncase.Passes.Rules.CPU;
 
 public abstract class PackRule : RewriteRule<Pattern>
 {
-    public int Lane { get; set; } = 32;
+    public PackRule(int rank, int lane)
+    {
+        Rank = rank;
+        Lane = lane;
+    }
 
-    public int Rank { get; set; } = 2;
+    public int Lane { get; }
+
+    public int Rank { get; }
 
     public override Expr? GetReplace(IMatchResult result, RunPassContext options) => throw new NotImplementedException();
 }
 
 public sealed class PackSoftmax : PackRule
 {
+    public PackSoftmax(int rank, int lane)
+        : base(rank, lane)
+    {
+    }
+
     public override Pattern Pattern { get; } = IsSoftmax(
       "target",
       IsWildcard("input") with { TypePattern = IsFloat() },
@@ -71,6 +82,11 @@ public sealed class PackSoftmax : PackRule
 
 public sealed class PackResizeImage : PackRule
 {
+    public PackResizeImage(int rank, int lane)
+        : base(rank, lane)
+    {
+    }
+
     public override Pattern Pattern { get; } = IsResizeImage("target", op => op.TransformationMode == ImageResizeTransformationMode.Asymmetric && op.IsTFResize == false, IsWildcard("input"), IsNone(), IsTensorConst("newSize"), IsTensorConst("cubicCoeffA"), IsTensorConst("excludeOutside"), IsTensorConst("extrapolationValue"));
 
     public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
@@ -101,6 +117,11 @@ public sealed class PackResizeImage : PackRule
 
 public sealed class PackInstanceNorm : PackRule
 {
+    public PackInstanceNorm(int rank, int lane)
+        : base(rank, lane)
+    {
+    }
+
     public override Pattern Pattern { get; } = IsInstanceNormalization(
       "target",
       _ => true,
@@ -164,6 +185,11 @@ public sealed class PackInstanceNorm : PackRule
 
 public sealed class PackLayerNorm : PackRule
 {
+    public PackLayerNorm(int rank, int lane)
+        : base(rank, lane)
+    {
+    }
+
     public override Pattern Pattern { get; } = IsLayerNorm(
       "target",
       _ => true,
@@ -225,6 +251,11 @@ public sealed class PackLayerNorm : PackRule
 
 public sealed class PackMatMul : PackRule
 {
+    public PackMatMul(int rank, int lane)
+        : base(rank, lane)
+    {
+    }
+
     public override Pattern Pattern { get; } = IsMatMul(
       "target",
       IsWildcard("lhs") with { TypePattern = IsFloat() },
@@ -268,6 +299,11 @@ public sealed class PackMatMul : PackRule
 
 public sealed class PackUnary : PackRule
 {
+    public PackUnary(int rank, int lane)
+        : base(rank, lane)
+    {
+    }
+
     public override Pattern Pattern { get; } = IsUnary(
       "target",
       _ => true,
@@ -309,6 +345,11 @@ public sealed class PackUnary : PackRule
 
 public sealed class PackBinary : PackRule
 {
+    public PackBinary(int rank, int lane)
+        : base(rank, lane)
+    {
+    }
+
     public override Pattern Pattern { get; } = IsBinary(
       "target",
       _ => true,
@@ -373,6 +414,11 @@ public sealed class PackBinary : PackRule
 
 public sealed class PackSwish : PackRule
 {
+    public PackSwish(int rank, int lane)
+        : base(rank, lane)
+    {
+    }
+
     public override Pattern Pattern { get; } = IsSwish(
       "target",
       IsWildcard("input") with { TypePattern = IsFloat() },
@@ -411,6 +457,11 @@ public sealed class PackSwish : PackRule
 
 public sealed class PackTranspose : PackRule
 {
+    public PackTranspose(int rank, int lane)
+        : base(rank, lane)
+    {
+    }
+
     public override Pattern Pattern { get; } = IsTranspose(
       "trans",
       IsWildcard("input") with { TypePattern = IsFloat() },
@@ -462,6 +513,11 @@ public sealed class PackTranspose : PackRule
 
 public sealed class PackUnsqueeze : PackRule
 {
+    public PackUnsqueeze(int rank, int lane)
+        : base(rank, lane)
+    {
+    }
+
     public override Pattern Pattern { get; } = IsUnsqueeze(
       "unsq",
       IsWildcard("input") with { TypePattern = IsFloat() },
@@ -519,6 +575,11 @@ public sealed class PackUnsqueeze : PackRule
 
 public sealed class PackConv2D : PackRule
 {
+    public PackConv2D(int rank, int lane)
+        : base(rank, lane)
+    {
+    }
+
     public override Pattern Pattern { get; } = IsConv2D(
         "conv",
         conv => conv.PadMode == PadMode.Constant,
@@ -591,6 +652,11 @@ public sealed class PackConv2D : PackRule
 
 public sealed class PackReshape : PackRule
 {
+    public PackReshape(int rank, int lane)
+        : base(rank, lane)
+    {
+    }
+
     public override Pattern Pattern { get; } = IsReshape(
       "target",
       IsWildcard("input") with { TypePattern = IsFloat() },
@@ -687,6 +753,11 @@ public sealed class PackReshape : PackRule
 
 public sealed class PackSlice : PackRule
 {
+    public PackSlice(int rank, int lane)
+        : base(rank, lane)
+    {
+    }
+
     public override Pattern Pattern { get; } = IsSlice(
       "target",
       IsWildcard("input") with { TypePattern = IsFloat() },

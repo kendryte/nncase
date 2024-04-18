@@ -12,17 +12,6 @@ namespace Nncase.IR.F;
 
 public partial class CPU
 {
-    /// <summary>
-    /// Call cpu kernel.
-    /// </summary>
-    /// <param name="target">Unary operator.</param>
-    /// <param name="inputs">Source inputs.</param>
-    /// <returns>Result expression.</returns>
-    public static Call CPUKernel(Op target, params Expr[] inputs)
-    {
-        return new Call(new CPUKernelOp(target), inputs);
-    }
-
     public static Call Boxing(Expr input, IRType type)
     {
         return new Call(new Boxing(type), input);

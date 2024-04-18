@@ -35,7 +35,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         var ends = context.GetInt64OrtTensorArgumentValue(sl, Slice.Ends);
         var axes = context.GetInt64OrtTensorArgumentValue(sl, Slice.Axes);
         var strides = context.GetInt64OrtTensorArgumentValue(sl, Slice.Strides);
-        return OrtKI.Slice(input, begins, ends, axes, strides).ToValue();
+        return Value.FromTensor(OrtKI.Slice(input, begins, ends, axes, strides).ToTensor(context.CurrentCall.CheckedTensorType));
     }
 
     /// <inheritdoc/>

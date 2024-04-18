@@ -14,49 +14,42 @@ using static Nncase.PatternMatch.Utility;
 
 [assembly: InternalsVisibleTo("Nncase.Tests")]
 
-namespace Nncase.Passes.Rules;
+namespace Nncase.Passes;
 
 /// <summary>
 /// auto distributed the xpu fusion.
 /// </summary>
 [RuleGenerator]
-public sealed partial class AutoDistributed : IRewriteRule
+public sealed partial class AutoDistributedPass : FunctionPass
 {
     private readonly CompileOptions _compileOptions;
 
-    public AutoDistributed(CompileOptions compileOptions)
+    public AutoDistributedPass(CompileOptions compileOptions)
     {
         _compileOptions = compileOptions;
     }
 
-    public IPattern Pattern { get; } = IsCallWildcard("call", IsFusion("fusion", CPUTarget.Kind, IsWildcard("body"), IsVArgsRepeat("parameters", () => IsVar())));
-
-    private Expr? GetReplace(Call call, Fusion fusion, Expr body, IReadOnlyList<Expr> parameters, IReadOnlyList<Expr> callParams)
+    protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
     {
-        // 1. convert to distribute graph
-        if (body is Call { Target: Boxing } || (body is IR.Tuple tp && tp.Fields.AsValueEnumerable().Any(e => e is Call { Target: Boxing })))
-        {
-            return null;
-        }
-
-        var distConverter = new AutoDistributedConvertVisitor(_compileOptions.TargetCompileOptions is CpuTargetOptions options ? options : new CpuTargetOptions());
-        var newbody = distConverter.Convert(body);
-        var newFusion = fusion.With(moduleKind: CPUTarget.Kind, body: newbody, parameters: parameters.Cast<Var>().ToArray());
-        return new Call(newFusion, callParams.ToArray());
+        var rewriter = new AutoDistributedRewriter(_compileOptions, _compileOptions.TargetCompileOptions is CpuTargetOptions options ? options : new CpuTargetOptions());
+        return Task.FromResult(rewriter.Rewirte(input));
     }
 }
 
-internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRType, List<Expr>>, Unit>
+internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, List<Expr>>, Unit>
 {
-    public AutoDistributedConvertVisitor(CpuTargetOptions compileOptions)
+    public AutoDistributedRewriter(CompileOptions compileOptions, CpuTargetOptions targetOptions)
     {
-        Placement = new Placement(compileOptions.Hierarchy, compileOptions.HierarchyNames);
+        Placement = new Placement(targetOptions.Hierarchy, targetOptions.HierarchyNames);
         CompileOptions = compileOptions;
+        TargetOptions = targetOptions;
     }
 
     public Placement Placement { get; }
 
-    public CpuTargetOptions CompileOptions { get; }
+    public CompileOptions CompileOptions { get; }
+
+    public CpuTargetOptions TargetOptions { get; }
 
     public static IReadOnlyList<Expr> GetLeafCandidateBoxings(Expr expr, Placement placement)
     {
@@ -65,41 +58,31 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRT
             ToArray();
     }
 
-    public Expr Convert(Expr body)
+    public BaseFunction Rewirte(BaseFunction input)
     {
-        var createFinalBoxing = (Expr e, TensorType type) =>
+        if (input is Function function)
         {
-            var d = (DistributedType)e.CheckedType;
-            if (d.NdSBP.Any(s => s is SBPPartialSum))
+            var equivalents = Visit(function.Body).Select(g => InstertTerminator(g.Value[0])).ToArray();
+            using (new ExprPinner(equivalents))
             {
-                var boxingP2B = IR.F.CPU.Boxing(e, new DistributedType(type, d.NdSBP.Select(s => s is SBPPartialSum ? SBP.B : s).ToArray(), Placement));
-                return IR.F.CPU.Boxing(boxingP2B, type);
+                BranchCut();
             }
 
-            return IR.F.CPU.Boxing(e, type);
-        };
-
-        var equivalents = Visit(body).Select(g => g.Value[0] switch
-        {
-            IR.Tuple tp => new IR.Tuple(tp.Fields.ToArray().Select((f, i) => createFinalBoxing(f, (TensorType)((IR.Tuple)body).Fields[i].CheckedType)).ToArray()),
-            Expr e => (Expr)createFinalBoxing(e, (TensorType)body.CheckedType),
-        }).ToArray();
-        using (new ExprPinner(equivalents))
-        {
-            BranchCut();
-        }
-
-        var graph = new EGraph();
-        foreach (var (exprKey, buckets) in ExprMemo.Where(kv => kv.Key is not Op))
-        {
-            foreach (var (typeKey, bucket) in buckets.Where(kv => kv.Value.Any()))
+            var graph = new EGraph();
+            foreach (var (exprKey, buckets) in ExprMemo.Where(kv => kv.Key is not Op))
             {
-                Unions(graph, bucket);
+                foreach (var (typeKey, bucket) in buckets.Where(kv => kv.Value.Any()))
+                {
+                    Unions(graph, bucket);
+                }
             }
+
+            var root = Unions(graph, equivalents);
+            var post = graph.Extract(root, CompileOptions, null, Array.Empty<EGraphExtractConstrains>());
+            return function.With(body: post);
         }
 
-        var root = Unions(graph, equivalents);
-        return graph.Extract(root, null, Array.Empty<EGraphExtractConstrains>());
+        return input;
     }
 
     protected override Dictionary<IRType, List<Expr>> DefaultVisitLeaf(Expr expr)
@@ -124,16 +107,18 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRT
             throw new NotSupportedException("not support auto distributed call function");
         }
 
+        var isSupported = PassUtility.IsCpuSupported(op);
         foreach (var param in op.Parameters)
         {
-            VisitLeafArgument(param.ParameterKind, expr.Arguments[param.Index]);
+            VisitLeafArgument(param.ParameterKind, expr.Arguments[param.Index], isSupported);
         }
 
         var results = expr.Arguments.ToArray().
                     Select(Visit).
                     CartesianProduct().
                     Select(args => args.ToArray()).
-                    Select(args => BuildEquivalCalls(op, args.Select(kv => kv.Value[0]).ToArray()).ToArray()).
+                    Select(args => isSupported ? BuildEquivalCalls(op, args.Select(kv => kv.Value[0]).ToArray()).ToArray() :
+                                    BuildNotSupportedCalls(op, args.Select(kv => kv.Value[0]).ToArray())).
                     SelectMany(i => i).
                     GroupBy(c => c.CheckedType).
                     ToDictionary(g => g.Key, g => new List<Expr>(g.ToList<Expr>()));
@@ -157,7 +142,7 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRT
         return results;
     }
 
-    private Dictionary<IRType, List<Expr>> VisitLeafArgument(ParameterKind parameterKind, Expr expr)
+    private Dictionary<IRType, List<Expr>> VisitLeafArgument(ParameterKind parameterKind, Expr expr, bool isSupported)
     {
         var updateBuckets = (Dictionary<IRType, List<Expr>> buckets, IEnumerable<Expr> equivalents) =>
         {
@@ -179,12 +164,12 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRT
             switch (parameterKind, expr)
             {
                 case (ParameterKind.Input, Expr e) when e is Const or Var:
-                    updateBuckets(buckets, GetLeafCandidateBoxings(e, Placement));
+                    updateBuckets(buckets, isSupported ? GetLeafCandidateBoxings(e, Placement) : new[] { e });
                     break;
                 case (ParameterKind.Input, Expr e) when e is IR.Tuple tp:
                     foreach (var f in tp.Fields)
                     {
-                        VisitLeafArgument(parameterKind, f);
+                        VisitLeafArgument(parameterKind, f, isSupported);
                     }
 
                     foreach (var (k, v) in VisitLeafTuple(tp))
@@ -206,15 +191,43 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRT
                     throw new InvalidOperationException();
             }
         }
+        else if (parameterKind == ParameterKind.Input)
+        {
+            if (isSupported)
+            {
+                if (!buckets.Keys.Any(IsDistributed))
+                {
+                    updateBuckets(buckets, GetLeafCandidateBoxings(expr, Placement));
+                }
+            }
+            else
+            {
+                if (buckets.Keys.All(IsDistributed))
+                {
+                    var results = buckets.Where(kv => IsDistributed(kv.Key)).Select(kv => InstertTerminator(kv.Value[0])).ToArray();
+                    updateBuckets(buckets, results);
+                }
+            }
+        }
 
         return buckets;
+    }
+
+    private Call[] BuildNotSupportedCalls(Op target, Expr[] args)
+    {
+        if (target.Parameters.Where(p => p.ParameterKind == ParameterKind.Input).All(p => IsDistributed(args[p.Index].CheckedType)))
+        {
+            return Array.Empty<Call>();
+        }
+
+        return new[] { new Call(target, args) };
     }
 
     private IEnumerable<Call> BuildEquivalCalls(Op target, Expr[] args)
     {
         if (!target.Parameters.Where(p => p.ParameterKind == ParameterKind.Input).All(p => IsDistributed(args[p.Index].CheckedType)))
         {
-            throw new ArgumentException("the some arg have no distributed type.", nameof(args));
+            return Array.Empty<Call>();
         }
 
         var calls = new List<Call>();
@@ -226,7 +239,7 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRT
             using var pinner = new ExprPinner(args);
             call.Dispose();
 
-            if (target is CPUKernelOp { Target: Reshape } || target is Reshape)
+            if (target is Reshape)
             {
                 // the reshape need force boxing.
                 var newShape = ((TensorConst)args[1]).Value.ToArray<int>();
@@ -306,6 +319,28 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRT
         _ => false,
     };
 
+    private Expr InstertTerminator(Expr expr)
+    {
+        Expr CreateFinalBoxing(Expr e, DistributedType type)
+        {
+            if (type.NdSBP.Any(s => s is SBPPartialSum))
+            {
+                var boxingP2B = IR.F.CPU.Boxing(e, new DistributedType(type.TensorType, type.NdSBP.Select(s => s is SBPPartialSum ? SBP.B : s).ToArray(), Placement));
+                return IR.F.CPU.Boxing(boxingP2B, type.TensorType);
+            }
+
+            return IR.F.CPU.Boxing(e, type.TensorType);
+        }
+
+        return (expr, expr.CheckedType) switch
+        {
+            (IR.Tuple tp, TupleType tptype) => new IR.Tuple(tp.Fields.ToArray().Select(InstertTerminator).ToArray()),
+            (Expr e, DistributedType type) => CreateFinalBoxing(e, type),
+            (Expr e, TensorType type) => e,
+            (_, _) => throw new NotSupportedException(),
+        };
+    }
+
     private EClass Unions(EGraph graph, IEnumerable<Expr> equivalents)
     {
         var eids = equivalents.Select(graph.Add).ToArray();
@@ -328,6 +363,11 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRT
             {
                 foreach (var (_, buket) in bukets.Where(kv => kv.Value.Any()))
                 {
+                    if (buket[0] is Call { Target: IR.CPU.Boxing { NewType: TensorType tensorType } } && tensorType.DType == DataTypes.Float32 && tensorType.Shape[0].FixedValue == 128 && tensorType.Shape[1].FixedValue == 262144)
+                    {
+                        System.Console.WriteLine("fuck!");
+                    }
+
                     if (!buket[0].Users.Any())
                     {
                         foreach (var item in buket)

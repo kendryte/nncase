@@ -17,7 +17,7 @@ using Nncase.TIR;
 
 namespace Nncase.Passes;
 
-internal sealed class CPUFusionToTirPass : ModulePass
+internal sealed class CPUFunctionToTirPass : ModulePass
 {
     private IAnalyzerManager AnalyzerManager => CompileSession.GetRequiredService<IAnalyzerManager>();
 
@@ -29,7 +29,7 @@ internal sealed class CPUFusionToTirPass : ModulePass
 
         for (int i = 0; i < module.Functions.Count; i++)
         {
-            if (module.Functions[i] is Fusion { ModuleKind: CPUTarget.Kind } fusion && fusion.Name.EndsWith("kernel"))
+            if (module.Functions[i] is Function { ModuleKind: CPUTarget.Kind } fusion && fusion.Name.EndsWith("kernel"))
             {
                 // var analysis = new Dictionary<Type, IAnalysisResult>
                 // {

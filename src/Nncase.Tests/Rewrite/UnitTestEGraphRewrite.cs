@@ -48,7 +48,7 @@ public class UnitTestEGraphRewrite : TestClassBase
     {
         Expr pre = (Const)10 * 11 * 12;
         var rule = new Passes.Rules.Neutral.ReassociateMul();
-        CompilerServices.ERewrite(pre, new[] { rule }, new());
+        CompilerServices.ERewrite(pre, new[] { rule }, new(), CompileOptions);
 
         // Assert.Equal(newExpr, 10 * ((Const)11 * 12));
     }
@@ -76,7 +76,7 @@ public class UnitTestEGraphRewrite : TestClassBase
 
         Assert.True(pre.InferenceType());
 
-        var post = CompilerServices.ERewrite(pre, new[] { new Passes.Rules.Neutral.CombineBinaryTranspose() }, new());
+        var post = CompilerServices.ERewrite(pre, new[] { new Passes.Rules.Neutral.CombineBinaryTranspose() }, new(), CompileOptions);
 
         Assert.True(post.InferenceType());
         Assert.Equal(pre.Evaluate(), post.Evaluate());
@@ -106,7 +106,8 @@ public class UnitTestEGraphRewrite : TestClassBase
                   new Passes.Rules.Lower.RemoveMarker(),
                   new TestMulToAdd(),
             },
-            new());
+            new(),
+            CompileOptions);
 
         Assert.True(post.InferenceType());
 

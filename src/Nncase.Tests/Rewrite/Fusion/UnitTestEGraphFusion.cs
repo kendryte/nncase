@@ -51,7 +51,10 @@ public class UnitTestEGraphFusion : TestClassBase
         {
             p.Add<SingleInputFusionMergeRule>();
         });
-        pmgr.Add<EGraphExtractPass>(new FusionCostEvaluator());
+        pmgr.Add<EGraphExtractPass>().Configure(p =>
+        {
+            p.AddBaseFuncCostEvaluator<FusionCostEvaluator>();
+        });
 
         await pmgr.RunAsync(module);
 
@@ -81,7 +84,10 @@ public class UnitTestEGraphFusion : TestClassBase
             p.Add<SingleInputFusionMergeRule>();
             p.Add<TwoInputFusionMergeRule>();
         });
-        pmgr.Add<EGraphExtractPass>(new FusionCostEvaluator());
+        pmgr.Add<EGraphExtractPass>().Configure(p =>
+        {
+            p.AddBaseFuncCostEvaluator<FusionCostEvaluator>();
+        });
 
         await pmgr.RunAsync(module);
 
@@ -183,7 +189,10 @@ public class UnitTestEGraphFusion : TestClassBase
         {
             p.Add<SingleInputFusionMergeRule>();
         });
-        prmg.Add<EGraphExtractPass>(new FusionCostEvaluator());
+        prmg.Add<EGraphExtractPass>().Configure(p =>
+        {
+            p.AddBaseFuncCostEvaluator<FusionCostEvaluator>();
+        });
 
         await prmg.RunAsync(module);
 
@@ -198,11 +207,18 @@ public class UnitTestEGraphFusion : TestClassBase
 
 internal sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
 {
+    private readonly CompileOptions _compileOptions;
+
+    public FusionCostEvaluator(CompileOptions compileOptions)
+    {
+        _compileOptions = compileOptions;
+    }
+
     public Cost VisitLeaf(BaseFunction target)
     {
         if (target is Fusion fusion && fusion.ModuleKind == Callable.StackVMModuleKind)
         {
-            return new FusionGraphCostVisitor().Visit(fusion);
+            return new FusionGraphCostVisitor(_compileOptions).Visit(fusion);
         }
         else
         {
@@ -216,12 +232,15 @@ internal sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
         private readonly IRType?[] _argumentTypes;
         private readonly Expr[] _arguments;
 
-        public GraphOpCostEvaluateContext(IRType? returnType, IRType?[] argumentTypes, ReadOnlySpan<Expr> arguments)
+        public GraphOpCostEvaluateContext(IRType? returnType, IRType?[] argumentTypes, ReadOnlySpan<Expr> arguments, CompileOptions compileOptions)
         {
             _returnType = returnType;
             _argumentTypes = argumentTypes;
+            CompileOptions = compileOptions;
             _arguments = arguments.ToArray();
         }
+
+        public CompileOptions CompileOptions { get; }
 
         public T GetArgument<T>(Op op, ParameterInfo parameter)
           where T : BaseFunction
@@ -251,6 +270,13 @@ internal sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
 
     private sealed class FusionGraphCostVisitor : ExprVisitor<Cost, IRType>
     {
+        public FusionGraphCostVisitor(CompileOptions compileOptions)
+        {
+            CompileOptions = compileOptions;
+        }
+
+        public CompileOptions CompileOptions { get; }
+
         protected override Cost VisitLeafVar(Var var)
         {
             return new Cost()
@@ -269,7 +295,7 @@ internal sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
             Cost cost;
             if (call.Target is Op op)
             {
-                var context = new GraphOpCostEvaluateContext(call.CheckedType, call.Arguments.AsValueEnumerable().Select(p => p.CheckedType).ToArray(), call.Arguments);
+                var context = new GraphOpCostEvaluateContext(call.CheckedType, call.Arguments.AsValueEnumerable().Select(p => p.CheckedType).ToArray(), call.Arguments, CompileOptions);
                 cost = CompilerServices.EvaluateOpCost(op, context) ?? Cost.Zero;
             }
             else

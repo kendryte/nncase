@@ -69,7 +69,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.CPU.PackSwish() { Lane = Lane, Rank = Rank };
+        var rule = new Passes.Rules.CPU.PackSwish(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()).Where(e => e is not Call { Target: Slice }));
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
@@ -89,7 +89,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.CPU.PackBinary() { Lane = Lane, Rank = Rank };
+        var rule = new Passes.Rules.CPU.PackBinary(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
@@ -112,7 +112,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { bias, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, pshape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.CPU.PackLayerNorm() { Lane = Lane, Rank = Rank };
+        var rule = new Passes.Rules.CPU.PackLayerNorm(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext())).Where(e => e is not Call { Target: Slice });
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
@@ -135,7 +135,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { bias, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, pshape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.CPU.PackInstanceNorm() { Lane = Lane, Rank = Rank };
+        var rule = new Passes.Rules.CPU.PackInstanceNorm(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext())).Where(e => e is not Call { Target: Slice });
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
@@ -153,7 +153,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.CPU.PackResizeImage() { Lane = Lane, Rank = Rank };
+        var rule = new Passes.Rules.CPU.PackResizeImage(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext())).Where(e => e is not Call { Target: Slice });
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
@@ -173,7 +173,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.CPU.PackMatMul() { Lane = Lane, Rank = Rank };
+        var rule = new Passes.Rules.CPU.PackMatMul(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
