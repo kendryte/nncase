@@ -195,16 +195,17 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         {
             if (isSupported)
             {
-                if (!buckets.Keys.Any(IsDistributed))
+                if (buckets.Keys.Any(IsDistributed))
                 {
-                    updateBuckets(buckets, GetLeafCandidateBoxings(expr, Placement));
+                    var results = buckets.Select(kv => GetLeafCandidateBoxings(kv.Value[0], Placement)).SelectMany(i => i).ToArray();
+                    updateBuckets(buckets, results);
                 }
             }
             else
             {
                 if (buckets.Keys.All(IsDistributed))
                 {
-                    var results = buckets.Where(kv => IsDistributed(kv.Key)).Select(kv => InstertTerminator(kv.Value[0])).ToArray();
+                    var results = buckets.Select(kv => InstertTerminator(kv.Value[0])).ToArray();
                     updateBuckets(buckets, results);
                 }
             }
@@ -215,7 +216,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
 
     private Call[] BuildNotSupportedCalls(Op target, Expr[] args)
     {
-        if (target.Parameters.Where(p => p.ParameterKind == ParameterKind.Input).All(p => IsDistributed(args[p.Index].CheckedType)))
+        if (target.Parameters.Where(p => p.ParameterKind == ParameterKind.Input).Any(p => IsDistributed(args[p.Index].CheckedType)))
         {
             return Array.Empty<Call>();
         }
@@ -363,11 +364,6 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             {
                 foreach (var (_, buket) in bukets.Where(kv => kv.Value.Any()))
                 {
-                    if (buket[0] is Call { Target: IR.CPU.Boxing { NewType: TensorType tensorType } } && tensorType.DType == DataTypes.Float32 && tensorType.Shape[0].FixedValue == 128 && tensorType.Shape[1].FixedValue == 262144)
-                    {
-                        System.Console.WriteLine("fuck!");
-                    }
-
                     if (!buket[0].Users.Any())
                     {
                         foreach (var item in buket)
