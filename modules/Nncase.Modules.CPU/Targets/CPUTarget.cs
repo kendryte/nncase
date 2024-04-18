@@ -118,6 +118,20 @@ public class CPUTarget : ITarget
         // 改变他的实现逻辑, 支持分散的ir
         passManager.Add<AutoDistributedPass>();
 
+        passManager.AddWithName<DataflowPass>("MakeSingleFusion").Configure(p =>
+        {
+            p.Add<Passes.Rules.CPU.CPUOutputBoxingFusion>();
+            p.Add<Passes.Rules.CPU.CPUSingleFusion>();
+        });
+        passManager.AddWithName<EGraphRulesPass>("PartitionConstruct").Configure(p =>
+        {
+            p.Add<Passes.Rules.CPU.GeneralFusionMergeRule>();
+        });
+        passManager.AddWithName<EGraphExtractPass>("PartitionExtract").Configure(p =>
+        {
+            p.AddBaseFuncCostEvaluator<Passes.Rules.CPU.FusionCostEvaluator>();
+        });
+
         // 只支持cpu的op. `unknown target's reshape/concat`, skip in here. but process cpu's reshape/concat
         passManager.AddWithName<DataflowPass>("LowerToAffine").Configure(p =>
         {
