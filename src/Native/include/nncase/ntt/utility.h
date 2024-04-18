@@ -30,9 +30,8 @@ slice_index(const ranked_shape<InRank> &index, const size_t offset,
 
 template <size_t OutRank, size_t OffSet = 0, template <size_t...> class A,
           size_t... Dims, size_t... Ints>
-inline constexpr auto slice(const A<Dims...> a,
-                            std::index_sequence<Ints...>) noexcept {
-    return A<a.at(Ints + OffSet)...>{};
+inline constexpr auto slice(A<Dims...>, std::index_sequence<Ints...>) noexcept {
+    return A<A<Dims...>::at(Ints + OffSet)...>{};
 }
 
 template <template <size_t...> class T, size_t... ADims, size_t... BDims,
@@ -69,7 +68,7 @@ inline constexpr auto concat_fixed_dims(T<PreDims...>,
 
 template <size_t OutRank, size_t OffSet = 0, template <size_t...> class A,
           size_t... Dims>
-inline constexpr auto slice_fixed_dims(const A<Dims...> &a) noexcept {
+inline constexpr auto slice_fixed_dims(A<Dims...> a) noexcept {
     return utility_detail::slice<OutRank, OffSet>(
         a, std::make_index_sequence<OutRank>{});
 }
