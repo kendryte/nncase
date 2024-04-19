@@ -661,34 +661,33 @@ TEST(BinaryTestDivFloat, ranked_ranked_ranked_broadcast_multidirectional) {
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-#define TEST_DIV_VECTOR(dtype, lmul, vl)                                       \
-    TEST(BinaryTestDiv_##dtype, vecotor_##lmul) {                              \
-        ntt::vector<dtype, vl> ntt_lhs, ntt_rhs;                               \
-        NttTest::init_tensor(ntt_lhs, static_cast<dtype>(-10),                 \
-                             static_cast<dtype>(10));                          \
-        NttTest::init_tensor(ntt_rhs, static_cast<dtype>(1),                   \
-                             static_cast<dtype>(10));                          \
-        auto ntt_output1 = ntt::div(ntt_lhs, ntt_rhs);                         \
-        auto ort_lhs = NttTest::ntt2ort(ntt_lhs);                              \
-        auto ort_rhs = NttTest::ntt2ort(ntt_rhs);                              \
-        auto ort_output = ortki_Div(ort_lhs, ort_rhs);                         \
-        ntt::vector<dtype, vl> ntt_output2;                                    \
-        NttTest::ort2ntt(ort_output, ntt_output2);                             \
-        EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));        \
-    }
+template <typename T, size_t vl> void test_vector() {
+    ntt::vector<T, vl> ntt_lhs, ntt_rhs;
+    NttTest::init_tensor(ntt_lhs, static_cast<T>(-10), static_cast<T>(10));
+    NttTest::init_tensor(ntt_rhs, static_cast<T>(1), static_cast<T>(10));
+    auto ntt_output1 = ntt::div(ntt_lhs, ntt_rhs);
+    auto ort_lhs = NttTest::ntt2ort(ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(ntt_rhs);
+    auto ort_output = ortki_Div(ort_lhs, ort_rhs);
+    ntt::vector<T, vl> ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+}
 
-#define _TEST_VECTOR(dtype, lmul)                                              \
-    TEST_DIV_VECTOR(dtype, lmul, (NTT_VLEN) / (sizeof(dtype) * 8) * lmul)
+#define _TEST_VECTOR(T, lmul)                                                  \
+    test_vector<T, (NTT_VLEN) / (sizeof(T) * 8) * lmul>();
 
-#define TEST_VECTOR(dtype)                                                     \
-    _TEST_VECTOR(dtype, 1)                                                     \
-    _TEST_VECTOR(dtype, 2)                                                     \
-    _TEST_VECTOR(dtype, 4)                                                     \
-    _TEST_VECTOR(dtype, 8)
+#define TEST_VECTOR(T)                                                         \
+    _TEST_VECTOR(T, 1)                                                         \
+    _TEST_VECTOR(T, 2)                                                         \
+    _TEST_VECTOR(T, 4)                                                         \
+    _TEST_VECTOR(T, 8)
 
-TEST_VECTOR(float)
-TEST_VECTOR(int32_t)
-TEST_VECTOR(int64_t)
+TEST(UnaryTestDiv, vector) {
+    TEST_VECTOR(float)
+    TEST_VECTOR(int32_t)
+    TEST_VECTOR(int64_t)
+}
 
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
