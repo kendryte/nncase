@@ -36,12 +36,14 @@ internal class GridBuilder : IGridBuilder
     private readonly List<Expr> _reads = new();
     private readonly List<Expr> _readBuffers = new();
     private readonly List<AffineMap> _readMaps = new();
+    private readonly IRType _returnType;
     private readonly string _moduleKind;
     private Expr? _writeBuffer;
     private AffineMap? _writeMap;
 
-    public GridBuilder(string moduleKind = "")
+    public GridBuilder(IRType outputType, string moduleKind = Callable.StackVMModuleKind)
     {
+        _returnType = outputType;
         _moduleKind = moduleKind;
     }
 
@@ -54,6 +56,7 @@ internal class GridBuilder : IGridBuilder
     public Grid Build()
     {
         return new Grid(
+            _returnType,
             _moduleKind,
             CollectionsMarshal.AsSpan(_bodyParameters),
             _readMaps.Append(_writeMap ?? throw new InvalidOperationException("Write map is not set.")).ToArray(),

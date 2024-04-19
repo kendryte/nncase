@@ -278,16 +278,38 @@ public sealed class PackMatMul : PackRule
             var matmul = IR.F.CPU.PackedMatMul(packedLhs, packedRhs, lhsPackedAxes, lhsPadNums, rhsPackedAxes, rhsPadNums);
             var lhsAlign = System.Math.Max(lhsShape.Length, rhsShape.Length) - lhsShape.Length;
             var rhsAlign = System.Math.Max(lhsShape.Length, rhsShape.Length) - rhsShape.Length;
-            var post = matmul;
-            if (lhsPackedAxes.Length == 2 && rhsPackedAxes.Length == 2)
+
+
+            var mPackIndex = Array.IndexOf(lhsPackedAxes, lhsShape.Length - 2);
+            var nPackIndex = Array.IndexOf(rhsPackedAxes, rhsShape.Length - 1);
+            var unpackAxes = new List<int>();
+            var unpadNums = new List<int>();
+            if (mPackIndex != -1)
             {
-                post = PackUtility.SliceForPack(IR.F.CPU.Unpack(matmul, new[] { lhsAlign + lhsPackedAxes[0], rhsAlign + rhsPackedAxes[1] }), candidate.CheckedShape.ToValueArray(), new[] { lhsPadNums[0], rhsPadNums[1] });
+                unpackAxes.Add(lhsAlign + lhsPackedAxes[mPackIndex]);
+                unpadNums.Add(lhsPadNums[mPackIndex]);
+            }
+
+            if (nPackIndex != -1)
+            {
+                unpackAxes.Add(rhsAlign + rhsPackedAxes[nPackIndex]);
+                unpadNums.Add(rhsPadNums[nPackIndex]);
+            }
+
+            Expr post = matmul;
+            if (unpackAxes.Any())
+            {
+                post = PackUtility.SliceForPack(IR.F.CPU.Unpack(matmul, unpackAxes.ToArray()), candidate.CheckedShape.ToValueArray(), unpadNums.ToArray());
             }
 
             rets.Add(post);
         }
 
+        // pack A's k and B's k
         AddCandidate(new[] { lhsShape.Length - 1 }, new[] { rhsShape.Length - 2 }, new[] { Lane }, new[] { Lane });
+
+        // only pack A's m
+        // AddCandidate(new[] { lhsShape.Length - 2 }, Array.Empty<int>(), new[] { Lane }, Array.Empty<int>());
         if (Rank > 1)
         {
             AddCandidate(new[] { lhsShape.Length - 2, lhsShape.Length - 1 }, new[] { rhsShape.Length - 2, rhsShape.Length - 1 }, new[] { Lane, Lane }, new[] { Lane, Lane });

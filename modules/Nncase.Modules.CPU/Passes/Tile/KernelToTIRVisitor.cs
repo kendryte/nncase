@@ -38,13 +38,13 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
 
     public ulong MaxDTypeSize { get; private set; }
 
-    public Function VisitRootFusion { get; private set; }
+    public Fusion VisitRootFusion { get; private set; }
 
     public IEnumerable<TIR.Buffer> OutputBuffers => _outputbuffers.OrderBy(p => p.Item1).Select(p => p.Item2);
 
     public IEnumerable<TIR.Buffer> InputBuffers => VisitRootFusion.Parameters.ToArray().Select(p => _buffersMap[p]).OfType<TIR.Buffer>().Where(b => b.MemSpan.Location.HasFlag(MemoryLocation.Input));
 
-    public void Convert(Function post)
+    public void Convert(Fusion post)
     {
         VisitRootFusion = post;
         AllocBuffers(post);
@@ -187,7 +187,7 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
 
     private TIR.Buffer GetBuffer(Expr expr) => _buffersMap.GetValueOrDefault(expr, null!);
 
-    private void AllocBuffers(Function fusion)
+    private void AllocBuffers(Fusion fusion)
     {
         var candidates = ExprCollector.Collect(fusion).Where(e => e is Call or Var or TensorConst);
         MaxDTypeSize = (ulong)candidates.Select(e => e.CheckedDataType.SizeInBytes).Max();

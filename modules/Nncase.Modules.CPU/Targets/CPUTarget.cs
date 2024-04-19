@@ -115,8 +115,13 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
         });
 
-        // 改变他的实现逻辑, 支持分散的ir
         passManager.Add<AutoDistributedPass>();
+
+        passManager.AddWithName<DataflowPass>("LowerToAffine").Configure(p =>
+        {
+            p.Add<Passes.Rules.CPU.Affine.LowerUnary>();
+            p.Add<Passes.Rules.CPU.Affine.LowerSwish>();
+        });
 
         passManager.AddWithName<DataflowPass>("MakeSingleFusion").Configure(p =>
         {
@@ -132,21 +137,13 @@ public class CPUTarget : ITarget
             p.AddBaseFuncCostEvaluator<Passes.Rules.CPU.FusionCostEvaluator>();
         });
 
-        // 只支持cpu的op. `unknown target's reshape/concat`, skip in here. but process cpu's reshape/concat
-        passManager.AddWithName<DataflowPass>("LowerToAffine").Configure(p =>
-        {
-            // packed axes 和 padednum 怎么体现在affine ir里面
-            p.Add<Passes.Rules.CPU.Affine.LowerUnary>();
-        });
-
-        // merge sub functions, merge stackvm memory operation(convert to affine)
-        passManager.Add<CPUFunctionPartitionPass>();
-
+        // passManager.Add<CPUFunctionPartitionPass>();
+        passManager.Add<CPUFusionToModulePass>();
         // concat/reshape lower
         // tile and lower to tir.
         passManager.Add<AutoTilePass>();
 
-        passManager.Add<CPUFunctionToTirPass>();
+        passManager.Add<CPUFusionToTirPass>();
 
         // todo add auto fusion merge pass here.
         passManager.Add<PrimFuncPass>().Configure(p =>

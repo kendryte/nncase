@@ -19,15 +19,17 @@ public sealed class Grid : Expr
     /// <summary>
     /// Initializes a new instance of the <see cref="Grid"/> class.
     /// </summary>
+    /// <param name="returnType">returned type.</param>
     /// <param name="moduleKind">module kind.</param>
     /// <param name="bodyParameters">Body parameters.</param>
     /// <param name="accessMaps">Access maps.</param>
     /// <param name="buffers">Buffers.</param>
     /// <param name="reads">Reads.</param>
     /// <param name="body">The body sequence.</param>
-    public Grid(string moduleKind, ReadOnlySpan<Var> bodyParameters, ReadOnlySpan<AffineMap> accessMaps, ReadOnlySpan<Expr> buffers, ReadOnlySpan<Expr> reads, Sequential body)
+    public Grid(IRType returnType, string moduleKind, ReadOnlySpan<Var> bodyParameters, ReadOnlySpan<AffineMap> accessMaps, ReadOnlySpan<Expr> buffers, ReadOnlySpan<Expr> reads, Sequential body)
         : base(bodyParameters.ToArray().AsEnumerable<Expr>().Concat(accessMaps.ToArray()).Concat(buffers.ToArray()).Concat(reads.ToArray()).Append(body))
     {
+        ReturnType = returnType;
         ModuleKind = moduleKind;
         _bodyParametersCount = bodyParameters.Length;
         _accessMapsCount = accessMaps.Length;
@@ -43,6 +45,8 @@ public sealed class Grid : Expr
             throw new ArgumentException("Invalid reads count.");
         }
     }
+
+    public IRType ReturnType { get; }
 
     public string ModuleKind { get; }
 
@@ -60,6 +64,6 @@ public sealed class Grid : Expr
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitGrid(this, context);
 
-    public Grid With(string? moduleKind = null, Var[]? bodyParameters = null, AffineMap[]? accessMaps = null, Expr[]? buffers = null, Expr[]? reads = null, Sequential? body = null)
-        => new Grid(moduleKind ?? ModuleKind, bodyParameters ?? BodyParameters, accessMaps ?? AccessMaps, buffers ?? Buffers, reads ?? Reads, body ?? Body);
+    public Grid With(IRType? returnType = null, string? moduleKind = null, Var[]? bodyParameters = null, AffineMap[]? accessMaps = null, Expr[]? buffers = null, Expr[]? reads = null, Sequential? body = null)
+        => new Grid(returnType ?? ReturnType, moduleKind ?? ModuleKind, bodyParameters ?? BodyParameters, accessMaps ?? AccessMaps, buffers ?? Buffers, reads ?? Reads, body ?? Body);
 }
