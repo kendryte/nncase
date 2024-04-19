@@ -96,8 +96,8 @@ template <IsTensor TTensor> struct inner_product<TTensor, TTensor> {
     using element_type = typename TTensor::element_type;
 
     auto operator()(const TTensor &v1, const TTensor &v2) const noexcept {
-        using result_type = decltype(op_(std::declval<element_type>(),
-                                         std::declval<element_type>()));
+        using result_type = decltype(
+            op_(std::declval<element_type>(), std::declval<element_type>()));
         result_type value{};
         apply(v1.shape(),
               [&](auto index) { value += op_(v1(index), v2(index)); });
