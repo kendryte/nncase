@@ -40,6 +40,19 @@ inline constexpr bool is_same_seq(const T<ADims...> &a, const T<BDims...> &b,
                                   std::index_sequence<I...>) {
     return ((a[I] == b[I]) && ...);
 }
+
+template <class TTensor, class TOutShape>
+static constexpr size_t get_safe_stride(const TTensor &tensor, size_t axis,
+                                        const TOutShape &out_shape) noexcept {
+    auto dim_ext = out_shape.rank() - tensor.rank();
+    if (axis < dim_ext) {
+        return 0;
+    }
+
+    auto actual_axis = axis - dim_ext;
+    return tensor.shape()[actual_axis] == 1 ? 0 // broadcast
+                                            : tensor.strides()[actual_axis];
+}
 } // namespace utility_detail
 
 template <class U, class T, size_t Extent>

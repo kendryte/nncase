@@ -92,6 +92,22 @@ NTT_DEFINE_TENSOR_BINARY_IMPL(min);
 NTT_DEFINE_TENSOR_BINARY_IMPL(max);
 NTT_DEFINE_TENSOR_BINARY_IMPL(pow);
 
+template <IsTensor TTensor> struct inner_product<TTensor, TTensor> {
+    using element_type = typename TTensor::element_type;
+
+    auto operator()(const TTensor &v1, const TTensor &v2) const noexcept {
+        using result_type = decltype(
+            op_(std::declval<element_type>(), std::declval<element_type>()));
+        result_type value{};
+        apply(v1.shape(),
+              [&](auto index) { value += op_(v1(index), v2(index)); });
+        return value;
+    }
+
+  private:
+    ops::inner_product<element_type, element_type> op_;
+};
+
 template <template <class T1, class T2> class Op, class TResult,
           IsTensor TTensor>
 struct reduce<Op, TResult, TTensor> {
