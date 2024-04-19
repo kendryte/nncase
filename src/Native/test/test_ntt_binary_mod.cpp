@@ -684,67 +684,31 @@ TEST(BinaryTestModInt32, fixed_fixed_fixed) {
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestModInt32, vecotor_8) {
-    // init
-    ntt::vector<int32_t, 8> ntt_lhs, ntt_rhs;
-    NttTest::init_tensor(ntt_lhs, -10, 10);
-    NttTest::init_tensor(ntt_rhs, 1, 10);
+#define TEST_MOD_VECTOR(dtype, lmul, vl)                                       \
+    TEST(BinaryTestMod_##dtype, vecotor_##lmul) {                              \
+        ntt::vector<dtype, vl> ntt_lhs, ntt_rhs;                               \
+        NttTest::init_tensor(ntt_lhs, static_cast<dtype>(-10),                 \
+                             static_cast<dtype>(10));                          \
+        NttTest::init_tensor(ntt_rhs, static_cast<dtype>(1),                   \
+                             static_cast<dtype>(10));                          \
+        auto ntt_output1 = ntt::mod(ntt_lhs, ntt_rhs);                         \
+        auto ort_lhs = NttTest::ntt2ort(ntt_lhs);                              \
+        auto ort_rhs = NttTest::ntt2ort(ntt_rhs);                              \
+        auto ort_output = ortki_Mod(ort_lhs, ort_rhs, 1);                      \
+        ntt::vector<dtype, vl> ntt_output2;                                    \
+        NttTest::ort2ntt(ort_output, ntt_output2);                             \
+        EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));        \
+    }
 
-    // ntt
-    auto ntt_output1 = ntt::mod(ntt_lhs, ntt_rhs);
+#define _TEST_VECTOR(dtype, lmul)                                              \
+    TEST_MOD_VECTOR(dtype, lmul, (NTT_VLEN) / (sizeof(dtype) * 8) * lmul)
 
-    // ort
-    auto ort_lhs = NttTest::ntt2ort(ntt_lhs);
-    auto ort_rhs = NttTest::ntt2ort(ntt_rhs);
-    auto ort_output = ortki_Mod(ort_lhs, ort_rhs, 1);
+#define TEST_VECTOR(dtype)                                                     \
+    _TEST_VECTOR(dtype, 1)                                                     \
+    _TEST_VECTOR(dtype, 2)                                                     \
+    _TEST_VECTOR(dtype, 4)                                                     \
+    _TEST_VECTOR(dtype, 8)
 
-    // compare
-    ntt::vector<int32_t, 8> ntt_output2;
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
-}
-
-TEST(BinaryTestModFloat, vecotor_8) {
-    // init
-    ntt::vector<float, 8> ntt_lhs, ntt_rhs;
-    NttTest::init_tensor(ntt_lhs, -10.0f, 10.0f);
-    NttTest::init_tensor(ntt_rhs, 1.0f, 10.0f);
-
-    // ntt
-    auto ntt_output1 = ntt::mod(ntt_lhs, ntt_rhs);
-
-    // ort
-    auto ort_lhs = NttTest::ntt2ort(ntt_lhs);
-    auto ort_rhs = NttTest::ntt2ort(ntt_rhs);
-    auto ort_output = ortki_Mod(ort_lhs, ort_rhs, 1);
-
-    // compare
-    ntt::vector<float, 8> ntt_output2;
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
-}
-
-TEST(BinaryTestModDouble, vecotor_8) {
-    // init
-    ntt::vector<double, 8> ntt_lhs, ntt_rhs;
-    NttTest::init_tensor(ntt_lhs, -10., 10.);
-    NttTest::init_tensor(ntt_rhs, 1., 10.);
-
-    // ntt
-    auto ntt_output1 = ntt::mod(ntt_lhs, ntt_rhs);
-
-    // ort
-    auto ort_lhs = NttTest::ntt2ort(ntt_lhs);
-    auto ort_rhs = NttTest::ntt2ort(ntt_rhs);
-    auto ort_output = ortki_Mod(ort_lhs, ort_rhs, 1);
-
-    // compare
-    ntt::vector<double, 8> ntt_output2;
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
-}
-
-int main(int argc, char *argv[]) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
+TEST_VECTOR(float)
+TEST_VECTOR(double)
+TEST_VECTOR(int32_t)

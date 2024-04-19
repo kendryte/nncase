@@ -140,31 +140,39 @@ TEST(UnaryTestSwishFloat, ranked_fixed) {
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(UnaryTestSwishFloat, vector_8) {
-    // init
-    ntt::vector<float, 8> ntt_input;
-    NttTest::init_tensor(ntt_input, -10.f, 10.f);
+#define TEST_SWISH_VECTOR(dtype, lmul, vl)                                     \
+    TEST(UnaryTestSwish_##dtype, vector_##lmul) {                              \
+        ntt::vector<dtype, vl> ntt_input;                                      \
+        NttTest::init_tensor(ntt_input, static_cast<dtype>(-10),               \
+                             static_cast<dtype>(10));                          \
+        auto ntt_output1 = ntt::swish(ntt_input);                              \
+        auto ort_input = NttTest::ntt2ort(ntt_input);                          \
+        dtype data[1] = {static_cast<dtype>(1)};                               \
+        int64_t one_shape[1] = {1};                                            \
+        auto one_tensor =                                                      \
+            make_tensor(reinterpret_cast<void *>(data),                        \
+                        NttTest::primitive_type2ort_type<dtype>(), one_shape,  \
+                        sizeof(one_shape) / sizeof(one_shape[0]));             \
+        auto ort_neg = ortki_Neg(ort_input);                                   \
+        auto ort_exp = ortki_Exp(ort_neg);                                     \
+        auto ort_add = ortki_Add(one_tensor, ort_exp);                         \
+        auto ort_output = ortki_Div(ort_input, ort_add);                       \
+        ntt::vector<dtype, vl> ntt_output2;                                    \
+        NttTest::ort2ntt(ort_output, ntt_output2);                             \
+        EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));        \
+    }
 
-    // ntt
-    auto ntt_output1 = ntt::swish(ntt_input);
+#define _TEST_VECTOR(dtype, lmul)                                              \
+    TEST_SWISH_VECTOR(dtype, lmul, (NTT_VLEN) / (sizeof(dtype) * 8) * lmul)
 
-    // ort
-    auto ort_input = NttTest::ntt2ort(ntt_input);
-    float data[1] = {1.f};
-    int64_t one_shape[1] = {1};
-    auto one_tensor =
-        make_tensor(reinterpret_cast<void *>(data), ortki::DataType_FLOAT,
-                    one_shape, sizeof(one_shape) / sizeof(one_shape[0]));
-    auto ort_neg = ortki_Neg(ort_input);
-    auto ort_exp = ortki_Exp(ort_neg);
-    auto ort_add = ortki_Add(one_tensor, ort_exp);
-    auto ort_output = ortki_Div(ort_input, ort_add);
+#define TEST_VECTOR(dtype)                                                     \
+    _TEST_VECTOR(dtype, 1)                                                     \
+    _TEST_VECTOR(dtype, 2)                                                     \
+    _TEST_VECTOR(dtype, 4)                                                     \
+    _TEST_VECTOR(dtype, 8)
 
-    // compare
-    ntt::vector<float, 8> ntt_output2;
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
-}
+TEST_VECTOR(float)
+TEST_VECTOR(double)
 
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);

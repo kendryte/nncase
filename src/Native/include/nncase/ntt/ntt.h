@@ -36,7 +36,7 @@
 #include "tensor_ops.h"
 #include "utility.h"
 
-#ifdef __x86_64__
+#ifdef __AVX2__
 #include "arch/x86_64/arch_types.h"
 #include "arch/x86_64/primitive_ops.h"
 #include "arch/x86_64/tensor_ops.h"
@@ -44,4 +44,7 @@
 #include "arch/aarch64/arch_types.h"
 #include "arch/aarch64/primitive_ops.h"
 #include "arch/aarch64/tensor_ops.h"
+#elif __riscv_vector
+#include "arch/riscv64/arch_types.h"
+#include "arch/riscv64/primitive_ops.h"
 #endif

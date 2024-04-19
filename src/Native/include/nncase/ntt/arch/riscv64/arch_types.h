@@ -1,4 +1,4 @@
-/* Copyright 2019-2021 Canaan Inc.
+/* Copyright 2019-2024 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,13 @@
  * limitations under the License.
  */
 #pragma once
-#include "../../native_tensor.h"
-#include <immintrin.h>
+
+#ifdef __riscv_vector
+#include <riscv_vector.h>
 
 #ifndef NTT_VLEN
-#define NTT_VLEN (sizeof(__m256i))
+#define NTT_VLEN (__riscv_v_min_vlen)
 #endif
 
-NTT_DEFINE_NATIVE_TENSOR(int8_t, __m256i, 32)
-NTT_DEFINE_NATIVE_TENSOR(uint8_t, __m256i, 32)
-NTT_DEFINE_NATIVE_TENSOR(int16_t, __m256i, 16)
-NTT_DEFINE_NATIVE_TENSOR(uint16_t, __m256i, 16)
-NTT_DEFINE_NATIVE_TENSOR(int32_t, __m256i, 8)
-NTT_DEFINE_NATIVE_TENSOR(uint32_t, __m256i, 8)
-NTT_DEFINE_NATIVE_TENSOR(int64_t, __m256i, 4)
-NTT_DEFINE_NATIVE_TENSOR(uint64_t, __m256i, 4)
-NTT_DEFINE_NATIVE_TENSOR(float, __m256, 8)
-NTT_DEFINE_NATIVE_TENSOR(double, __m256d, 4)
+#define NTT_VL(sew, lmul) ((NTT_VLEN) / (sew) * (lmul))
+#endif

@@ -108,23 +108,29 @@ TEST(UnaryTestSqrtFloat, ranked_fixed) {
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(UnaryTestSqrtFloat, vector_8) {
-    // init
-    ntt::vector<float, 8> ntt_input;
-    NttTest::init_tensor(ntt_input, 1.f, 10.f);
+#define TEST_SQRT_VECTOR(dtype, lmul, vl)                                      \
+    TEST(UnaryTestSqrt_##dtype, vector_##lmul) {                               \
+        ntt::vector<dtype, vl> ntt_input;                                      \
+        NttTest::init_tensor(ntt_input, static_cast<dtype>(1),                 \
+                             static_cast<dtype>(10));                          \
+        auto ntt_output1 = ntt::sqrt(ntt_input);                               \
+        auto ort_input = NttTest::ntt2ort(ntt_input);                          \
+        auto ort_output = ortki_Sqrt(ort_input);                               \
+        ntt::vector<dtype, vl> ntt_output2;                                    \
+        NttTest::ort2ntt(ort_output, ntt_output2);                             \
+        EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));        \
+    }
 
-    // ntt
-    auto ntt_output1 = ntt::sqrt(ntt_input);
+#define _TEST_VECTOR(dtype, lmul)                                              \
+    TEST_SQRT_VECTOR(dtype, lmul, (NTT_VLEN) / (sizeof(dtype) * 8) * lmul)
 
-    // ort
-    auto ort_input = NttTest::ntt2ort(ntt_input);
-    auto ort_output = ortki_Sqrt(ort_input);
+#define TEST_VECTOR(dtype)                                                     \
+    _TEST_VECTOR(dtype, 1)                                                     \
+    _TEST_VECTOR(dtype, 2)                                                     \
+    _TEST_VECTOR(dtype, 4)                                                     \
+    _TEST_VECTOR(dtype, 8)
 
-    // compare
-    ntt::vector<float, 8> ntt_output2;
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
-}
+TEST_VECTOR(float)
 
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
