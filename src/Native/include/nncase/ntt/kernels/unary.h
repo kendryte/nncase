@@ -44,9 +44,9 @@ class unary_impl<fixed_shape<Dims...>, fixed_strides<InStrides...>,
         if constexpr (ContiguousDims == sizeof...(RestDims)) {
             constexpr auto inner_size = fixed_shape<RestDims...>::length();
             auto input_p =
-                input.buffer().data() + linear_offset(index, input.strides());
-            auto output_p =
-                output.buffer().data() + linear_offset(index, output.strides());
+                input.elements().data() + linear_offset(index, input.strides());
+            auto output_p = output.elements().data() +
+                            linear_offset(index, output.strides());
             unary_contiguous<inner_size>(op, input_p, output_p);
         } else {
             apply_next<Op, TIn, TOut, Axis, Rank, ContiguousDims, RestDims...>(

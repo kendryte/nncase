@@ -35,13 +35,17 @@ template <class T> struct acos {
     T operator()(const T &v) const noexcept { return std::acos(v); }
 };
 
-template <class T> struct acosh { T operator()(const T &v) const noexcept; };
+template <class T> struct acosh {
+    T operator()(const T &v) const noexcept;
+};
 
 template <class T> struct asin {
     T operator()(const T &v) const noexcept { return std::asin(v); }
 };
 
-template <class T> struct asinh { T operator()(const T &v) const noexcept; };
+template <class T> struct asinh {
+    T operator()(const T &v) const noexcept;
+};
 
 template <class T> struct ceil {
     T operator()(const T &v) const noexcept { return std::ceil(v); }
@@ -51,7 +55,9 @@ template <class T> struct cos {
     T operator()(const T &v) const noexcept { return std::cos(v); }
 };
 
-template <class T> struct cosh { T operator()(const T &v) const noexcept; };
+template <class T> struct cosh {
+    T operator()(const T &v) const noexcept;
+};
 
 template <class T> struct exp {
     T operator()(const T &v) const noexcept { return std::exp(v); }
@@ -87,7 +93,9 @@ template <class T> struct sin {
     T operator()(const T &v) const noexcept { return std::sin(v); }
 };
 
-template <class T> struct sinh { T operator()(const T &v) const noexcept; };
+template <class T> struct sinh {
+    T operator()(const T &v) const noexcept;
+};
 
 template <class T> struct sqrt {
     T operator()(const T &v) const noexcept { return std::sqrt(v); }
@@ -101,7 +109,9 @@ template <class T> struct tanh {
     T operator()(const T &v) const noexcept { return std::tanh(v); }
 };
 
-template <class T> struct swish { T operator()(const T &v) const noexcept; };
+template <class T> struct swish {
+    T operator()(const T &v) const noexcept;
+};
 
 /**@}*/
 
@@ -146,6 +156,12 @@ template <class T1, class T2> struct floor_mod {
     }
 };
 
+template <class T1, class T2> struct inner_product {
+    auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+        return v1 * v2;
+    }
+};
+
 /**
  * @remarks mod is equivalent to fmod() function in C/C++/Python.
  */
@@ -178,6 +194,11 @@ template <class T1, class T2> struct pow {
 template <template <class T1, class T2> class BinaryOp, class TResult, class T>
 struct reduce {
     TResult operator()(const T &v) const noexcept { return TResult(v); }
+};
+
+template <class T1, class T2, class TResult> struct mul_add {
+    TResult operator()(const T1 &v1, const T2 &v2,
+                       const TResult &v3) const noexcept;
 };
 } // namespace ops
 
@@ -226,6 +247,7 @@ NTT_DEFINE_BINARY_FUNC_IMPL(sub)
 NTT_DEFINE_BINARY_FUNC_IMPL(mul)
 NTT_DEFINE_BINARY_FUNC_IMPL(div)
 NTT_DEFINE_BINARY_FUNC_IMPL(floor_mod)
+NTT_DEFINE_BINARY_FUNC_IMPL(inner_product)
 NTT_DEFINE_BINARY_FUNC_IMPL(mod)
 NTT_DEFINE_BINARY_FUNC_IMPL(min)
 NTT_DEFINE_BINARY_FUNC_IMPL(max)
@@ -233,6 +255,12 @@ NTT_DEFINE_BINARY_FUNC_IMPL(pow)
 
 NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_sum, ops::add)
 NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_max, ops::max)
+
+template <IsTensorOrScalar T1, IsTensorOrScalar T2, IsTensorOrScalar TResult>
+constexpr TResult mul_add(const T1 &v1, const T2 &v2,
+                          const TResult &v3) noexcept {
+    return ops::mul_add<T1, T2, TResult>()(v1, v2, v3);
+}
 
 /**
  * @defgroup Builtin operators
@@ -326,6 +354,12 @@ template <class T> T sinh<T>::operator()(const T &v) const noexcept {
 // swish(v) = v / (exp(-v) + 1)
 template <class T> T swish<T>::operator()(const T &v) const noexcept {
     return v / (ntt::exp(-v) + 1);
+}
+
+template <class T1, class T2, class TResult>
+TResult mul_add<T1, T2, TResult>::operator()(const T1 &v1, const T2 &v2,
+                                             const TResult &v3) const noexcept {
+    return v1 * v2 + v3;
 }
 } // namespace ops
 } // namespace nncase::ntt

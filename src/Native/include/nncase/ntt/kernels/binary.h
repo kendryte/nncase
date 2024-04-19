@@ -17,6 +17,7 @@
 #include "../shape_infer/binary.h"
 #include "../shape_infer/reduce.h"
 #include "../tensor_traits.h"
+#include "../utility.h"
 #include <type_traits>
 
 namespace nncase::ntt {
@@ -49,9 +50,9 @@ class binary_impl<TLhs, TRhs, TOut> {
             std::min({contiguous_dims(TLhs::shape(), TLhs::strides()),
                       contiguous_dims(TRhs::shape(), TRhs::strides()),
                       contiguous_dims(TOut::shape(), TOut::strides())});
-        auto lhs_p = lhs.buffer().data();
-        auto rhs_p = rhs.buffer().data();
-        auto out_p = output.buffer().data();
+        auto lhs_p = lhs.elements().data();
+        auto rhs_p = rhs.elements().data();
+        auto out_p = output.elements().data();
         apply<Op, 0, conti_dims>(op, lhs, rhs, output, lhs_p, rhs_p, out_p);
     }
 
@@ -88,25 +89,13 @@ class binary_impl<TLhs, TRhs, TOut> {
             for (size_t i = 0; i < TOut::shape()[Axis]; i++) {
                 apply<Op, Axis + 1, ContiguousDims>(op, lhs, rhs, output, lhs_p,
                                                     rhs_p, out_p);
-                lhs_p += get_safe_stride(lhs, Axis, TOut::shape());
-                rhs_p += get_safe_stride(rhs, Axis, TOut::shape());
+                lhs_p +=
+                    utility_detail::get_safe_stride(lhs, Axis, TOut::shape());
+                rhs_p +=
+                    utility_detail::get_safe_stride(rhs, Axis, TOut::shape());
                 out_p += output.strides()[Axis];
             }
         }
-    }
-
-    template <class TTensor, class TOutShape>
-    static constexpr size_t
-    get_safe_stride(const TTensor &tensor, size_t axis,
-                    const TOutShape &out_shape) noexcept {
-        auto dim_ext = out_shape.rank() - tensor.rank();
-        if (axis < dim_ext) {
-            return 0;
-        }
-
-        auto actual_axis = axis - dim_ext;
-        return tensor.shape()[actual_axis] == 1 ? 0 // broadcast
-                                                : tensor.strides()[actual_axis];
     }
 
     template <class Op, class TLhsElem, class TRhsElem, class TOutElem>
