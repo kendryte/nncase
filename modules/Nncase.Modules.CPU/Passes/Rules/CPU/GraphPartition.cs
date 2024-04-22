@@ -438,3 +438,86 @@ internal sealed class TupleFusionMergeRule : IRewriteRule
         return new_call;
     }
 }
+
+internal sealed class ConcatFusionMergeRule : IRewriteRule
+{
+    private readonly Dictionary<int, Call> _mergedCache = new();
+
+    public IPattern Pattern { get; } =
+    IsConcat(
+        "concat",
+        _ => true,
+        IsTuple(
+        "tuple",
+        IsVArgsRepeat("tupleInputs", exprs =>
+        {
+            var patterns = new Pattern[exprs.Length];
+            for (var i = 0; i < patterns.Length; i++)
+            {
+                patterns[i] = IsCallWildcard($"call_{i}", IsWildcard());
+            }
+
+            return patterns;
+        })));
+
+    public Expr? GetReplace(IMatchResult result, RunPassContext options)
+    {
+        var concat = (IR.Tensors.Concat)result["concat"];
+        var tuple = (IR.Tuple)result["tuple"];
+        var tupleInputs = (IReadOnlyList<Expr>)result["tupleInputs"];
+        var callees = new List<Call>();
+        var callee_fusions = new List<Fusion>();
+        for (var i = 0; i < tupleInputs.Count; i++)
+        {
+            if (result[$"call_{i}"] is Call { Target: Fusion } callee)
+            {
+                callees.Add(callee);
+                callee_fusions.Add((Fusion)callee.Target);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        if (callee_fusions.Select(f => f.ModuleKind).Distinct().Count() > 1)
+        {
+            return null;
+        }
+
+        var hashCodes = new List<int>
+        {
+            ReferenceEqualityComparer.Instance.GetHashCode(tuple),
+        };
+        foreach (var fusion in callee_fusions)
+        {
+            hashCodes.Add(ReferenceEqualityComparer.Instance.GetHashCode(fusion));
+        }
+
+        var hash = default(HashCode);
+        foreach (var subHash in hashCodes)
+        {
+            hash.Add(subHash);
+        }
+
+        var hashcode = hash.ToHashCode();
+        if (!_mergedCache.TryGetValue(hashcode, out var new_call))
+        {
+            var new_fusion_body = new Call(new Concat(concat.Axis), new IR.Tuple(callee_fusions.Select(f => f.Body).ToArray()));
+            var name = $"concat_" + string.Join("_", callee_fusions.Select(f => f.Name).ToArray());
+
+            var parameters = callee_fusions.Select(f => f.Parameters.ToArray()).SelectMany(e => e).ToArray();
+            var merged_fusion = new Fusion(name, callee_fusions[0].ModuleKind, new_fusion_body, parameters);
+
+            var calleeInputs = callees.Select(c => c.Arguments.ToArray()).SelectMany(e => e).ToArray();
+            new_call = new Call(merged_fusion, calleeInputs.ToArray());
+            _mergedCache.Add(hashcode, new_call);
+        }
+        else
+        {
+            // System.Console.WriteLine("Re Add Merged Two Fusion Call");
+        }
+
+        return new_call;
+    }
+}
