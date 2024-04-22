@@ -18,7 +18,7 @@
 #include "avx_mathfun.h"
 
 namespace nncase::ntt::tensor_ops {
-template <> struct load_scalar<ntt::vector<float, 8>> {
+template <> struct tload_scalar<ntt::vector<float, 8>> {
     ntt::vector<float, 8> operator()(float v) const noexcept {
         return _mm256_set1_ps(v);
     }

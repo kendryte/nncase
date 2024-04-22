@@ -96,8 +96,8 @@ template <IsTensor TTensor> struct inner_product<TTensor, TTensor> {
     using element_type = typename TTensor::element_type;
 
     auto operator()(const TTensor &v1, const TTensor &v2) const noexcept {
-        using result_type = decltype(
-            op_(std::declval<element_type>(), std::declval<element_type>()));
+        using result_type = decltype(op_(std::declval<element_type>(),
+                                         std::declval<element_type>()));
         result_type value{};
         apply(v1.shape(),
               [&](auto index) { value += op_(v1(index), v2(index)); });
@@ -127,8 +127,7 @@ struct reduce<Op, TResult, TTensor> {
 } // namespace nncase::ntt::ops
 
 namespace nncase::ntt::tensor_ops {
-
-template <class TTensor> struct load {
+template <class TTensor> struct tload {
     using T = typename TTensor::element_type;
 
     TTensor operator()(const T *src) const noexcept {
@@ -138,7 +137,7 @@ template <class TTensor> struct load {
     }
 };
 
-template <class TTensor> struct load_scalar {
+template <class TTensor> struct tload_scalar {
     using T = typename TTensor::element_type;
 
     TTensor operator()(const T &value) const noexcept {
@@ -153,13 +152,18 @@ namespace nncase::ntt {
 template <class T, class Shape, class Strides, size_t MaxSize>
 detail::tensor_impl<T, Shape, Strides, MaxSize, false, true>::tensor_impl(
     T value) noexcept
-    : tensor_impl(tensor_ops::load_scalar<
+    : tensor_impl(tensor_ops::tload_scalar<
                   tensor_base<T, Shape, Strides, MaxSize, false>>()(value)) {}
 
 template <class T, class Shape, class Strides, size_t MaxSize, bool IsView>
 tensor_base<T, Shape, Strides, MaxSize, IsView>
 tensor_base<T, Shape, Strides, MaxSize, IsView>::from_scalar(T v) {
-    return tensor_ops::load_scalar<
+    return tensor_ops::tload_scalar<
         tensor_base<T, Shape, Strides, MaxSize, IsView>>()(v);
+}
+
+template <IsTensor TTensor, IsTensorOrScalar T>
+constexpr TTensor tload(const T *src) noexcept {
+    return tensor_ops::tload<TTensor>()(src);
 }
 } // namespace nncase::ntt
