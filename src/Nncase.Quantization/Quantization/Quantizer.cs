@@ -474,6 +474,15 @@ internal partial class Quantizer
                     {
                         writer.WriteLine($"sensitivity: nodes:{debugFakeNode}/{_fakeNodesVars.Count} quantType:{++debugQuantType}/{quantTypeSupport.Count} time:{timestamp} cosine:{cosine,10:0.00000000} fakeTpye:{((Call)fakeNode).Target.ToString()} node:{fakeNode.Metadata.OutputNames?[0]}");
                     }
+
+                    filePath = Path.Join(DumpScope.Current.Directory, "/node-range.txt");
+                    using (var writer = new StreamWriter(filePath, true)) // 设置为true以启用追加模式
+                    {
+                        for (int iOutput = 0; iOutput < ranges[fakeNode].Length; iOutput++)
+                        {
+                            writer.WriteLine($"oRange{iOutput}:{ranges[fakeNode][iOutput]} nodes:{debugFakeNode}/{_fakeNodesVars.Count} quantType:{debugQuantType}/{quantTypeSupport.Count} fakeTpye:{((Call)fakeNode).Target.ToString()} node:{fakeNode.Metadata.OutputNames?[0]}");
+                        }
+                    }
                 }
             }
         }
