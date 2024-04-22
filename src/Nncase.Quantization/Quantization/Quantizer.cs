@@ -506,7 +506,7 @@ internal partial class Quantizer
         // 遍历列表，记下需要插入新元素的位置
         for (int i = 0; i < sensSorted.Count; i++)
         {
-            if (sensSorted[i].Value < Math.Max(_quantizeOptions.CosineTarget, 0.95f))
+            if (sensSorted[i].Value < Math.Max(_quantizeOptions.CosineTarget, 0.95f) || float.IsNaN(sensSorted[i].Value))
             {
                 // 构造新的KeyValuePair
                 var newPair = new KeyValuePair<(Var, QuantConfig), float>((sensSorted[i].Key.Var, new QuantConfig(-1)), 2.0f);
@@ -569,7 +569,7 @@ internal partial class Quantizer
         //         sensSorted.InsertRange(i + 1, tempList);
         //     }
         // }
-        sensSorted.RemoveAll(item => item.Value < _quantizeOptions.CosineTarget);
+        sensSorted.RemoveAll(item => item.Value < _quantizeOptions.CosineTarget || float.IsNaN(item.Value));
     }
 
     private void ExportQuantScheme()
