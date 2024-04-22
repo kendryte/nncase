@@ -13,12 +13,14 @@ namespace Nncase.Passes.Rules.CPU.Affine;
 [RuleGenerator]
 public partial class LowerSwish : RewriteRule<Pattern>
 {
+    private int _count;
+
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = PatternMatch.F.NN.IsSwish(
       "swish",
       "call",
       IsWildcard("input") with { TypePattern = HasFixedShape() },
-      IsTensorConst("beta") with { TypePattern = IsFloatScalar() });
+      IsTensorConst("beta") with { TypePattern = IsFloat() & (IsScalar() | HasShape(s => s.Rank == 1 && s[0].FixedValue == 1, "scalar")) });
 
     private Expr GetReplace(Call call, Expr input, float beta)
     {
@@ -29,9 +31,9 @@ public partial class LowerSwish : RewriteRule<Pattern>
             DistributedType dt => Utilities.DistributedUtility.GetDividedTensorType(dt),
             _ => throw new ArgumentOutOfRangeException(nameof(input)),
         };
-        return IR.F.Affine.Grid(call.CheckedType, CPUTarget.Kind)
+        return IR.F.Affine.Grid(CPUTarget.Kind)
             .Read(input, AffineMap.Identity(rank), out var inTile)
-            .Write(TIR.T.CreateBuffer(bufferType, TIR.MemoryLocation.Data, out _), AffineMap.Identity(rank), out var outTile)
+            .Write(TIR.T.CreateBuffer(bufferType, TIR.MemoryLocation.Data, out _, $"swish_{_count++}"), AffineMap.Identity(rank), out var outTile)
             .Body(TIR.F.CPU.Swish(inTile, outTile, beta))
             .Build();
     }

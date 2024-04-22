@@ -108,7 +108,7 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
                 rType = Math.MatMulEvaluator.VisitTensorType(a, b);
                 break;
             default:
-            ERROR: rType = new InvalidType($"{lhs} {rhs} not support");
+            ERROR: rType = new InvalidType($"lhs: {lhs}, rhs: {rhs} not support");
                 break;
         }
 

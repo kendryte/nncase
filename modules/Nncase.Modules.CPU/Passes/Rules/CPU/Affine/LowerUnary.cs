@@ -36,7 +36,7 @@ public partial class LowerUnary : RewriteRule<Pattern>
             _ => throw new ArgumentOutOfRangeException(nameof(input)),
         };
         var rank = input.CheckedShape.Rank;
-        return IR.F.Affine.Grid(call.CheckedType, CPUTarget.Kind)
+        return IR.F.Affine.Grid(CPUTarget.Kind)
             .Read(input, AffineMap.Identity(rank), out var inTile)
             .Write(TIR.T.CreateBuffer(bufferType, TIR.MemoryLocation.Data, out _), AffineMap.Identity(rank), out var outTile)
             .Body(TIR.F.CPU.Unary(unary.UnaryOp, inTile, outTile))

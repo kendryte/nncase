@@ -266,7 +266,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
 
         VerifySubField(expr, expr.Body);
 
-        return expr.ReturnType;
+        return expr.Buffers[^1].CheckedType;
     }
 
     protected override IRType VisitLeafAffineExpr(AffineExpr expr) => TensorType.Scalar(DataTypes.Int64);

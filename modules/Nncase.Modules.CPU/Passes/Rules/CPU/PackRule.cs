@@ -279,7 +279,6 @@ public sealed class PackMatMul : PackRule
             var lhsAlign = System.Math.Max(lhsShape.Length, rhsShape.Length) - lhsShape.Length;
             var rhsAlign = System.Math.Max(lhsShape.Length, rhsShape.Length) - rhsShape.Length;
 
-
             var mPackIndex = Array.IndexOf(lhsPackedAxes, lhsShape.Length - 2);
             var nPackIndex = Array.IndexOf(rhsPackedAxes, rhsShape.Length - 1);
             var unpackAxes = new List<int>();

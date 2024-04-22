@@ -115,14 +115,8 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
         });
 
-        passManager.Add<AutoDistributedPass>();
-
-        passManager.AddWithName<DataflowPass>("LowerToAffine").Configure(p =>
-        {
-            p.Add<Passes.Rules.CPU.Affine.LowerUnary>();
-            p.Add<Passes.Rules.CPU.Affine.LowerSwish>();
-        });
-
+        // need refactor tiling.
+        // passManager.Add<AutoDistributedPass>();
         passManager.AddWithName<DataflowPass>("MakeSingleFusion").Configure(p =>
         {
             p.Add<Passes.Rules.CPU.CPUOutputBoxingFusion>();
@@ -139,6 +133,13 @@ public class CPUTarget : ITarget
 
         // passManager.Add<CPUFunctionPartitionPass>();
         passManager.Add<CPUFusionToModulePass>();
+
+        passManager.AddWithName<DataflowPass>("LowerToAffine").Configure(p =>
+        {
+            p.Add<Passes.Rules.CPU.Affine.LowerUnary>();
+            p.Add<Passes.Rules.CPU.Affine.LowerSwish>();
+        });
+
         // concat/reshape lower
         // tile and lower to tir.
         passManager.Add<AutoTilePass>();

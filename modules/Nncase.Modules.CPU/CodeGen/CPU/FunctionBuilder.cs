@@ -30,47 +30,47 @@ internal class FunctionBuilder
 
     public unsafe ILinkableFunction Build(TIR.PrimFunction function)
     {
-        // if (function.Name.EndsWith("kernel"))
-        // {
-        // 1. convert func to csource
-        var visitor = new KernelCSourceConvertVisitor();
-        visitor.Visit(function);
-        var functionCSource = visitor.GetCSource();
-
-        // 2. write the kernel header
-        using (var writer = _sectionManager.GetWriter(KernelHeaderSectionName))
+        if (function.Name.EndsWith("kernel"))
         {
-            var header = default(DescHeader);
-            header.DataPoolSize = function.SchedResult.DataUsage;
-            header.DataAlign = function.SchedResult.DataAlign;
-            writer.Write(ref header);
-        }
+            // 1. convert func to csource
+            var visitor = new KernelCSourceConvertVisitor();
+            visitor.Visit(function);
+            var functionCSource = visitor.GetCSource();
 
-        // 3. write the rdata
-        foreach (var (@const, range) in function.SchedResult.Rdatas)
-        {
-            var bytes = ((TensorConst)@const).Value.BytesBuffer;
-            var size = range.Max - range.Min;
-            if ((uint)bytes.Length != size)
+            // 2. write the kernel header
+            using (var writer = _sectionManager.GetWriter(KernelHeaderSectionName))
             {
-                throw new InvalidDataException("The Buffer Size Not Equal!");
+                var header = default(DescHeader);
+                header.DataPoolSize = function.SchedResult.DataUsage;
+                header.DataAlign = function.SchedResult.DataAlign;
+                writer.Write(ref header);
             }
 
-            _rdataWriter.Position(range.Min);
-            _rdataWriter.Write(bytes);
+            // 3. write the rdata
+            foreach (var (@const, range) in function.SchedResult.Rdatas)
+            {
+                var bytes = ((TensorConst)@const).Value.BytesBuffer;
+                var size = range.Max - range.Min;
+                if ((uint)bytes.Length != size)
+                {
+                    throw new InvalidDataException("The Buffer Size Not Equal!");
+                }
+
+                _rdataWriter.Position(range.Min);
+                _rdataWriter.Write(bytes);
+            }
+
+            return new LinkableKernelFunction(_id, function, functionCSource, _sectionManager.GetContent(WellknownSectionNames.Text)!, new LinkedSection(_sectionManager.GetContent(KernelHeaderSectionName), KernelHeaderSectionName, 0, 8, (uint)sizeof(DescHeader)));
+        }
+        else
+        {
+            var visitor = new DeviceCSourceConvertVisitor();
+            visitor.Visit(function);
+            var header = visitor.GetHeader();
+            return new LinkableDeviceFunction(_id, function, header, _sectionManager.GetContent(WellknownSectionNames.Text)!);
         }
 
-        return new LinkableKernelFunction(_id, function, functionCSource, _sectionManager.GetContent(WellknownSectionNames.Text)!, new LinkedSection(_sectionManager.GetContent(KernelHeaderSectionName), KernelHeaderSectionName, 0, 8, (uint)sizeof(DescHeader)));
-
-        // }
-        // else if (function.Name.EndsWith("device"))
-        // {
-        //     var visitor = new DeviceCSourceConvertVisitor();
-        //     visitor.Visit(function);
-        //     var header = visitor.GetHeader();
-        //     return new LinkableDeviceFunction(_id, function, header, _sectionManager.GetContent(WellknownSectionNames.Text)!);
-        // }
-        // throw new NotSupportedException("the function name is invalid");
+        throw new NotSupportedException("the function name is invalid");
     }
 
     [StructLayout(LayoutKind.Sequential)]

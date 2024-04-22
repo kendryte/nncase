@@ -13,7 +13,6 @@ using System.Reactive;
 using System.Runtime.InteropServices;
 using System.Text;
 using DryIoc;
-using Google.OrTools.Sat;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.Runtime;
@@ -176,7 +175,7 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             TensorType { Shape: { IsRanked: true } } x => x.Shape.IsFixed switch
             {
                 true => $"tensor_view<{x.DType.ToC()}, fixed_shape<{x.Shape.ToString()[1..^1]}>>",
-                false => $"tensor_view<{x.DType.ToC()}, ranked_shape<{x.Shape.Rank}>>",
+                false => "auto",
             },
             _ => throw new NotSupportedException(),
         };
@@ -218,6 +217,26 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             case IR.Buffers.Allocate op:
                 str = $"({type})runtime_util->malloc({arguments[0].Name})";
                 break;
+            case IR.Buffers.BufferSubview op:
+                {
+                    var arg0 = expr.Arguments[1] switch
+                    {
+                        TupleConst => $"fixed_shape<{arguments[1].Name}>{{}}",
+                        IR.Tuple tc => $"ranked_shape<{tc.Count}>{{{arguments[1].Name}}}",
+                        _ => throw new ArgumentOutOfRangeException(nameof(expr)),
+                    };
+
+                    var arg1 = expr.Arguments[2] switch
+                    {
+                        TupleConst => $"fixed_shape<{arguments[2].Name}>{{}}",
+                        IR.Tuple tc => $"ranked_shape<{tc.Count}>{{{arguments[2].Name}}}",
+                        _ => throw new ArgumentOutOfRangeException(nameof(expr)),
+                    };
+
+                    str = $"{arguments[0].Name}.view({arg0}, {arg1})";
+                }
+
+                break;
             case IR.Buffers.AllocateBufferView op:
                 {
                     var buffer = (TIR.Buffer)expr.Arguments[0];
@@ -251,6 +270,14 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
                     BinaryOp = op.BinaryOp,
                 }).Result);
+                break;
+            case TIR.CPU.Swish swish:
+                if (swish.Beta != 1.0f)
+                {
+                    throw new NotSupportedException();
+                }
+
+                IndentScope.Writer.IndWrite($"unary<ops::swish>({arguments[0].Name}, {arguments[1].Name});\n");
                 break;
             default:
                 throw new NotSupportedException();
@@ -295,6 +322,34 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
         symbol = new(type, str);
         _exprMemo.Add(expr, symbol);
+        return symbol;
+    }
+
+    protected override CSymbol VisitTupleConst(TupleConst tp)
+    {
+        if (_exprMemo.TryGetValue(tp, out var symbol))
+        {
+            return symbol;
+        }
+
+        string type = string.Empty;
+        string str = $"{string.Join(",", tp.Value.Select(x => Visit(Const.FromValue(x)).Name))}";
+        symbol = new(type, str);
+        _exprMemo.Add(tp, symbol);
+        return symbol;
+    }
+
+    protected override CSymbol VisitTuple(IR.Tuple tp)
+    {
+        if (_exprMemo.TryGetValue(tp, out var symbol))
+        {
+            return symbol;
+        }
+
+        string type = string.Empty;
+        string str = $"{string.Join(",", tp.Fields.AsValueEnumerable().Select(x => Visit(x).Name).ToArray())}";
+        symbol = new(type, str);
+        _exprMemo.Add(tp, symbol);
         return symbol;
     }
 

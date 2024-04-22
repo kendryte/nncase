@@ -239,6 +239,7 @@ internal sealed class FusionMerger : ExprCloner<Unit>
 internal sealed class GeneralFusionMergeRule : IRewriteRule
 {
     private readonly Dictionary<int, Call> _mergedCache = new();
+    private int _count;
 
     public IPattern Pattern { get; } =
     IsCall(
@@ -328,7 +329,8 @@ internal sealed class GeneralFusionMergeRule : IRewriteRule
             }
 
             var new_fusion_body = new FusionMerger(multiVarMap).Clone(caller_fusion.Body, default);
-            var name = $"fusion_{caller_fusion.Name}_" + string.Join("_", callee_fusions.Select(f => f.Name).ToArray());
+            var parameters = callee_fusions.Select(fusion => fusion.Parameters.ToArray()).SelectMany(e => e).Distinct().ToArray();
+            var merged_fusion = new Fusion($"mfusion_{_count++}_kernel", caller_fusion.ModuleKind, new_fusion_body, parameters);
 
             // remove duplicate callees
             var seen = new HashSet<Expr>();
