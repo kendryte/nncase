@@ -92,28 +92,31 @@ public class CPUTarget : ITarget
             });
         }
 
-        passManager.AddWithName<EGraphRulesPass>("AutoPacking").Configure(p =>
+        if (options.TargetCompileOptions is CpuTargetOptions { Packing: true })
         {
-            // todo config it in the target options.
-            var rank = 1;
-            var lane = System.Runtime.Intrinsics.Vector256.IsHardwareAccelerated ? 8 : 4;
-            p.Add<Passes.Rules.CPU.PackSoftmax>(rank, lane);
-            p.Add<Passes.Rules.CPU.PackSwish>(rank, lane);
-            p.Add<Passes.Rules.CPU.PackLayerNorm>(rank, lane);
-            p.Add<Passes.Rules.CPU.PackResizeImage>(rank, lane);
-            p.Add<Passes.Rules.CPU.PackMatMul>(rank, lane);
-            p.Add<Passes.Rules.CPU.PackConv2D>(rank, lane);
-            p.Add<Passes.Rules.CPU.PackUnary>(rank, lane);
-            p.Add<Passes.Rules.CPU.PackBinary>(rank, lane);
-            p.Add<Passes.Rules.CPU.PackTranspose>(rank, lane);
-            p.Add<Passes.Rules.CPU.PackUnsqueeze>(rank, lane);
-            p.Add<Passes.Rules.CPU.PackReshape>(rank, lane);
-            p.Add<Passes.Rules.CPU.PackSlice>(rank, lane);
-            p.Add<Passes.Rules.Neutral.FoldConstCall>();
-            p.Add<Passes.Rules.CPU.FoldPackUnpack>();
-            p.Add<Passes.Rules.CPU.FoldPackConcatUnpack>();
-            p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
-        });
+            passManager.AddWithName<EGraphRulesPass>("AutoPacking").Configure(p =>
+            {
+                // todo config it in the target options.
+                var rank = 1;
+                var lane = System.Runtime.Intrinsics.Vector256.IsHardwareAccelerated ? 8 : 4;
+                p.Add<Passes.Rules.CPU.PackSoftmax>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackSwish>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackLayerNorm>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackResizeImage>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackMatMul>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackConv2D>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackUnary>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackBinary>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackTranspose>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackUnsqueeze>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackReshape>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackSlice>(rank, lane);
+                p.Add<Passes.Rules.Neutral.FoldConstCall>();
+                p.Add<Passes.Rules.CPU.FoldPackUnpack>();
+                p.Add<Passes.Rules.CPU.FoldPackConcatUnpack>();
+                p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
+            });
+        }
 
         // need refactor tiling.
         // passManager.Add<AutoDistributedPass>();

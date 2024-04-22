@@ -329,8 +329,6 @@ internal sealed class GeneralFusionMergeRule : IRewriteRule
             }
 
             var new_fusion_body = new FusionMerger(multiVarMap).Clone(caller_fusion.Body, default);
-            var parameters = callee_fusions.Select(fusion => fusion.Parameters.ToArray()).SelectMany(e => e).Distinct().ToArray();
-            var merged_fusion = new Fusion($"mfusion_{_count++}_kernel", caller_fusion.ModuleKind, new_fusion_body, parameters);
 
             // remove duplicate callees
             var seen = new HashSet<Expr>();
@@ -347,7 +345,7 @@ internal sealed class GeneralFusionMergeRule : IRewriteRule
             }
 
             var parameters = remindIndex.Select(i => fusion_index.Contains(i) ? callee_fusions[fusion_index.IndexOf(i)].Parameters.ToArray() : new[] { caller_fusion.Parameters[i] }).SelectMany(e => e).ToArray();
-            var merged_fusion = new Fusion(name, caller_fusion.ModuleKind, new_fusion_body, parameters);
+            var merged_fusion = new Fusion($"mfusion_{_count++}_kernel", caller_fusion.ModuleKind, new_fusion_body, parameters);
 
             var calleeInputs = remindIndex.Select(i => fusion_index.Contains(i) ? callees[fusion_index.IndexOf(i)].Arguments.ToArray() : new[] { callerInputs[i] }).SelectMany(a => a).ToArray();
             new_call = new Call(merged_fusion, calleeInputs.ToArray());

@@ -275,9 +275,6 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
 
     private void GenerateBinary(Binary binary, Buffer[] arguments, Buffer ret, Call expr)
     {
-        _ = (DistributedType)expr.Arguments[0].CheckedType;
-        _ = (DistributedType)expr.Arguments[1].CheckedType;
-        _ = (DistributedType)expr.CheckedType;
         _mainBody.Add(TIR.F.CPU.Binary(binary.BinaryOp, arguments[0], arguments[1], ret));
     }
 

@@ -35,7 +35,8 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         var ends = context.GetInt64OrtTensorArgumentValue(sl, Slice.Ends);
         var axes = context.GetInt64OrtTensorArgumentValue(sl, Slice.Axes);
         var strides = context.GetInt64OrtTensorArgumentValue(sl, Slice.Strides);
-        return Value.FromTensor(OrtKI.Slice(input, begins, ends, axes, strides).ToTensor(context.CurrentCall.CheckedTensorType));
+        var sliced = OrtKI.Slice(input, begins, ends, axes, strides);
+        return Value.FromTensor(context.CurrentCall.CheckedType is AnyType ? sliced.ToTensor() : sliced.ToTensor(context.CurrentCall.CheckedTensorType));
     }
 
     /// <inheritdoc/>
@@ -185,6 +186,11 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
                     if (ts_begins.Length != ts_ends.Length || ts_begins.Length != ts_strides.Length)
                     {
                         return new InvalidType("Slice begin, end, strides should be same length");
+                    }
+
+                    if (ts_strides.Any(x => x < 0))
+                    {
+                        return new InvalidType("slice not support neg strides!");
                     }
 
                     outShape = ApplyAxis(axes_con, input, (i, axis, inDim) =>

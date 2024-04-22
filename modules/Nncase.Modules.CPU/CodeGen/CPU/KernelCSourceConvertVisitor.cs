@@ -133,7 +133,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
     public KernelCSource GetCSource()
     {
         var ctype = $"void {VisitEntry.Name}({string.Join(", ", VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}").ToArray().Concat(_exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.Rdata).Select(Visit).Select(s => $" {s.Type} {s.Name}").ToArray()))}, uint8_t* data)";
-        return new(´
+        return new(
             CSourceBuiltn.MakeMain(VisitEntry, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.Rdata)),
             CSourceBuiltn.MakeKernel(ctype, _kernelBuilder.ToString()));
     }

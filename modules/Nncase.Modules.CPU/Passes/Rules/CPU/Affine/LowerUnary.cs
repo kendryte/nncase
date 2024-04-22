@@ -20,14 +20,16 @@ namespace Nncase.Passes.Rules.CPU.Affine;
 [RuleGenerator]
 public partial class LowerUnary : RewriteRule<Pattern>
 {
+    private int _count;
+
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = PatternMatch.F.Math.IsUnary(
-      "call",
       "unary",
+      "call",
       _ => true,
       IsWildcard("input") with { TypePattern = HasFixedShape() });
 
-    private Expr GetReplace(Call call, Unary unary, Expr input)
+    private Expr GetReplace(Unary unary, Expr input)
     {
         var bufferType = input.CheckedType switch
         {
@@ -38,7 +40,7 @@ public partial class LowerUnary : RewriteRule<Pattern>
         var rank = input.CheckedShape.Rank;
         return IR.F.Affine.Grid(CPUTarget.Kind)
             .Read(input, AffineMap.Identity(rank), out var inTile)
-            .Write(TIR.T.CreateBuffer(bufferType, TIR.MemoryLocation.Data, out _), AffineMap.Identity(rank), out var outTile)
+            .Write(TIR.T.CreateBuffer(bufferType, TIR.MemoryLocation.Data, out _, $"unary_{_count++}"), AffineMap.Identity(rank), out var outTile)
             .Body(TIR.F.CPU.Unary(unary.UnaryOp, inTile, outTile))
             .Build();
     }

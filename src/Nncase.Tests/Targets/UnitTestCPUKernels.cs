@@ -60,7 +60,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     public static int Rank => 1;
 
     [Theory]
-    [InlineData(new object[] { new[] { 1, 512, 64, 64 }, 0 })]
+    [InlineData(new object[] { new[] { 32, 512, 64, 64 }, 0 })]
     public async Task TestSwish(int[] shape, int count)
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));
@@ -336,13 +336,14 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     internal async Task RunCases(string dumpDir, Dictionary<Var, IValue> feedDict, IEnumerable<Expr> posts)
     {
-        int count = 0;
-        foreach (var post in posts)
+        var postArray = posts.ToArray();
+        using var pinner = new ExprPinner(postArray);
+        for (int i = 0; i < postArray.Length; i++)
         {
 #if DEBUG
-            System.Console.WriteLine(CompilerServices.Print(post));
+            System.Console.WriteLine(CompilerServices.Print(postArray[i]));
 #endif
-            var kernelCase = new CpuKernelCase($"Case{count++}", new Fusion("kernel", CPUTarget.Kind, post, feedDict.Keys.ToArray()), feedDict.Keys.ToArray(), feedDict.Values.Select(v => v.AsTensor()).ToArray());
+            var kernelCase = new CpuKernelCase($"Case{i}", new Fusion("kernel", CPUTarget.Kind, postArray[i], feedDict.Keys.ToArray()), feedDict.Keys.ToArray(), feedDict.Values.Select(v => v.AsTensor()).ToArray());
             await Run(dumpDir, kernelCase);
         }
     }
