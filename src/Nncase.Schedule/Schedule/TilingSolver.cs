@@ -557,8 +557,11 @@ public class TilingSolver
                 }
             }
 
-            var constraint = placeVar * (anyOrder ?? _solver.MakeIntConst(1)) == 0;
-            _solver.Add(constraint);
+            if (anyOrder != null)
+            {
+                var constraint = placeVar * (anyOrder ?? _solver.MakeIntConst(1)) == 0;
+                _solver.Add(constraint);
+            }
         }
     }
 
