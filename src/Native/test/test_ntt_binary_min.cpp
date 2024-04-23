@@ -38,8 +38,7 @@ TEST(BinaryTestMinFloat, fixed_fixed_fixed) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type> ntt_output2(new tensor_type);
@@ -65,8 +64,7 @@ TEST(BinaryTestMinFloat, fixed_fixed_fixed_broadcast_lhs_scalar) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
@@ -92,8 +90,7 @@ TEST(BinaryTestMinFloat, fixed_fixed_fixed_broadcast_rhs_scalar) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type1> ntt_output2(new tensor_type1);
@@ -119,8 +116,7 @@ TEST(BinaryTestMinFloat, fixed_fixed_fixed_broadcast_lhs_vector) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
@@ -146,8 +142,7 @@ TEST(BinaryTestMinFloat, fixed_fixed_fixed_broadcast_rhs_vector) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type1> ntt_output2(new tensor_type1);
@@ -174,8 +169,7 @@ TEST(BinaryTestMinFloat, fixed_fixed_fixed_broadcast_multidirectional) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3);
@@ -202,8 +196,7 @@ TEST(BinaryTestMinFloat, fixed_ranked_ranked) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2(shape));
@@ -230,8 +223,7 @@ TEST(BinaryTestMinFloat, fixed_ranked_ranked_broadcast_lhs_scalar) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2(shape));
@@ -260,8 +252,7 @@ TEST(BinaryTestMinFloat, fixed_ranked_ranked_broadcast_rhs_scalar) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape3));
@@ -288,8 +279,7 @@ TEST(BinaryTestMinFloat, fixed_ranked_ranked_broadcast_lhs_vector) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2(shape));
@@ -318,8 +308,7 @@ TEST(BinaryTestMinFloat, fixed_ranked_ranked_broadcast_rhs_vector) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape3));
@@ -348,8 +337,7 @@ TEST(BinaryTestMinFloat, fixed_ranked_ranked_broadcast_multidirectional) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape3));
@@ -376,8 +364,7 @@ TEST(BinaryTestMinFloat, ranked_fixed_ranked) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type1> ntt_output2(new tensor_type1(shape));
@@ -406,8 +393,7 @@ TEST(BinaryTestMinFloat, ranked_fixed_ranked_broadcast_lhs_scalar) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape3));
@@ -436,8 +422,7 @@ TEST(BinaryTestMinFloat, ranked_fixed_ranked_broadcast_rhs_scalar) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape3));
@@ -466,8 +451,7 @@ TEST(BinaryTestMinFloat, ranked_fixed_ranked_broadcast_lhs_vector) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape3));
@@ -496,8 +480,7 @@ TEST(BinaryTestMinFloat, ranked_fixed_ranked_broadcast_rhs_vector) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape3));
@@ -526,8 +509,7 @@ TEST(BinaryTestMinFloat, ranked_fixed_ranked_broadcast_multidirectional) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape3));
@@ -553,8 +535,7 @@ TEST(BinaryTestMinFloat, ranked_ranked_ranked) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type> ntt_output2(new tensor_type(shape));
@@ -582,8 +563,7 @@ TEST(BinaryTestMinFloat, ranked_ranked_ranked_broadcast_lhs_scalar) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2(shape2));
@@ -611,8 +591,7 @@ TEST(BinaryTestMinFloat, ranked_ranked_ranked_broadcast_rhs_scalar) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type1> ntt_output2(new tensor_type1(shape1));
@@ -640,8 +619,7 @@ TEST(BinaryTestMinFloat, ranked_ranked_ranked_broadcast_lhs_vector) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2(shape2));
@@ -669,8 +647,7 @@ TEST(BinaryTestMinFloat, ranked_ranked_ranked_broadcast_rhs_vector) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type1> ntt_output2(new tensor_type1(shape1));
@@ -700,8 +677,7 @@ TEST(BinaryTestMinFloat, ranked_ranked_ranked_broadcast_multidirectional) {
     auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
 
     // compare
     std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape3));
@@ -717,8 +693,7 @@ template <typename T, size_t vl> void test_vector() {
     auto ort_lhs = NttTest::ntt2ort(ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(ntt_rhs);
     ortki::OrtKITensor *ort_array[] = {ort_lhs, ort_rhs};
-    auto ort_output =
-        ortki_Min(ort_array, sizeof(ort_array) / sizeof(ort_array[0]));
+    auto ort_output = ortki_Min(ort_array, std::size(ort_array));
     ntt::vector<T, vl> ntt_output2;
     NttTest::ort2ntt(ort_output, ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));

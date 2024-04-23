@@ -37,7 +37,7 @@ TEST(UnaryTestSwishFloat, fixed_fixed) {
     int64_t one_shape[1] = {1};
     auto one_tensor =
         make_tensor(reinterpret_cast<void *>(data), ortki::DataType_FLOAT,
-                    one_shape, sizeof(one_shape) / sizeof(one_shape[0]));
+                    one_shape, std::size(one_shape));
     auto ort_neg = ortki_Neg(ort_input);
     auto ort_exp = ortki_Exp(ort_neg);
     auto ort_add = ortki_Add(one_tensor, ort_exp);
@@ -68,7 +68,7 @@ TEST(UnaryTestSwishFloat, fixed_ranked) {
     int64_t one_shape[1] = {1};
     auto one_tensor =
         make_tensor(reinterpret_cast<void *>(data), ortki::DataType_FLOAT,
-                    one_shape, sizeof(one_shape) / sizeof(one_shape[0]));
+                    one_shape, std::size(one_shape));
     auto ort_neg = ortki_Neg(ort_input);
     auto ort_exp = ortki_Exp(ort_neg);
     auto ort_add = ortki_Add(one_tensor, ort_exp);
@@ -97,7 +97,7 @@ TEST(UnaryTestSwishFloat, ranked_ranked) {
     int64_t one_shape[1] = {1};
     auto one_tensor =
         make_tensor(reinterpret_cast<void *>(data), ortki::DataType_FLOAT,
-                    one_shape, sizeof(one_shape) / sizeof(one_shape[0]));
+                    one_shape, std::size(one_shape));
     auto ort_neg = ortki_Neg(ort_input);
     auto ort_exp = ortki_Exp(ort_neg);
     auto ort_add = ortki_Add(one_tensor, ort_exp);
@@ -128,7 +128,7 @@ TEST(UnaryTestSwishFloat, ranked_fixed) {
     int64_t one_shape[1] = {1};
     auto one_tensor =
         make_tensor(reinterpret_cast<void *>(data), ortki::DataType_FLOAT,
-                    one_shape, sizeof(one_shape) / sizeof(one_shape[0]));
+                    one_shape, std::size(one_shape));
     auto ort_neg = ortki_Neg(ort_input);
     auto ort_exp = ortki_Exp(ort_neg);
     auto ort_add = ortki_Add(one_tensor, ort_exp);
@@ -147,9 +147,9 @@ template <typename T, size_t vl> void test_vector() {
     auto ort_input = NttTest::ntt2ort(ntt_input);
     T data[1] = {static_cast<T>(1)};
     int64_t one_shape[1] = {1};
-    auto one_tensor = make_tensor(
-        reinterpret_cast<void *>(data), NttTest::primitive_type2ort_type<T>(),
-        one_shape, sizeof(one_shape) / sizeof(one_shape[0]));
+    auto one_tensor = make_tensor(reinterpret_cast<void *>(data),
+                                  NttTest::primitive_type2ort_type<T>(),
+                                  one_shape, std::size(one_shape));
     auto ort_neg = ortki_Neg(ort_input);
     auto ort_exp = ortki_Exp(ort_neg);
     auto ort_add = ortki_Add(one_tensor, ort_exp);
