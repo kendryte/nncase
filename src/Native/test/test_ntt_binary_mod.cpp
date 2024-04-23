@@ -706,7 +706,7 @@ template <typename T, size_t vl> void test_vector() {
     _TEST_VECTOR(T, 4)                                                         \
     _TEST_VECTOR(T, 8)
 
-TEST(UnaryTestPow, vector) {
+TEST(UnaryTestMod, vector) {
     TEST_VECTOR(float)
     TEST_VECTOR(double)
     TEST_VECTOR(int32_t)

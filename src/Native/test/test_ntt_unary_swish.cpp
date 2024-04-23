@@ -145,8 +145,8 @@ template <typename T, size_t vl> void test_vector() {
     NttTest::init_tensor(ntt_input, static_cast<T>(-10), static_cast<T>(10));
     auto ntt_output1 = ntt::swish(ntt_input);
     auto ort_input = NttTest::ntt2ort(ntt_input);
-    T data[1] = {static_cast<T>(1)};
-    int64_t one_shape[1] = {1};
+    T data[] = {static_cast<T>(1)};
+    int64_t one_shape[] = {1};
     auto one_tensor = make_tensor(reinterpret_cast<void *>(data),
                                   NttTest::primitive_type2ort_type<T>(),
                                   one_shape, std::size(one_shape));
