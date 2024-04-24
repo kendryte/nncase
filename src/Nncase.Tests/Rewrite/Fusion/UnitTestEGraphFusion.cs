@@ -1032,6 +1032,59 @@ public class UnitTestEGraphFusion : TestClassBase
         Assert.Equal(3, pre_number);
         Assert.Equal(1, post_number);
     }
+
+    [Fact]
+    public async Task TestConcat3SameModule()
+    {
+        // step 1. import
+        var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
+        Function main;
+        {
+            var v_0 = new Call(new IR.Tensors.Concat(0), new IR.Tuple(input, input, input));
+            main = new Function("main", v_0, input);
+        }
+
+        Assert.True(CompilerServices.InferenceType(main));
+
+        var tv = new TestVisitor(true);
+        tv.Visit(main);
+        var pre_number = tv.CountCallFusion<Fusion>();
+
+        var input_tensor = Testing.Rand<float>(1, 32, 32);
+        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        {
+            { input, Value.FromTensor(input_tensor) },
+        };
+        var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
+        var test_visitor = new TestVisitor(true);
+        var module = new IRModule(main);
+
+        var prmg = CompileSession.CreatePassManager("prmg");
+        prmg.Add<DataflowPass>().Configure(p =>
+        {
+            p.Add<CPUSingleFusion>();
+            p.Add<CPUOutputBoxingFusion>();
+        });
+        prmg.Add<EGraphRulesPass>().Configure(p =>
+        {
+            p.Add<GeneralFusionMergeRule>();
+            p.Add<TupleFusionMergeRule>();
+            p.Add<ConcatFusionMergeRule>();
+        });
+        prmg.Add<EGraphExtractPass>().Configure(p =>
+        {
+            p.AddBaseFuncCostEvaluator<FusionCostEvaluator>();
+        });
+
+        await prmg.RunAsync(module);
+
+        tv.Clear();
+        tv.Visit(module.Entry!);
+        var post_number = tv.CountCallFusion<Fusion>();
+
+        Assert.Equal(0, pre_number);
+        Assert.Equal(1, post_number);
+    }
 }
 
 internal sealed class SingleInputFusionMergeRule : IRewriteRule

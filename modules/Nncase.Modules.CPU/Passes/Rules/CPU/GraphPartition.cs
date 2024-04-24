@@ -77,29 +77,51 @@ internal sealed partial class CPUSingleFusion : FusionMaker
 
     private Call? GetReplace(Call call, Op op, IReadOnlyList<Expr> callParams)
     {
-        var newInputs = new List<Expr>();
-        for (int i = 0; i < callParams.Count; i++)
+        if (op is Concat concat)
         {
-            if (callParams[i] is Call or Var)
+            var tuple = (IR.Tuple)call.Arguments[0];
+            var tupleInputs = tuple.Fields.ToArray();
+            if (!tupleInputs.All(e => e is Var))
             {
-                newInputs.Add(new Var(callParams[i].CheckedType!));
+                return null;
             }
-            else
+
+            var newInputs = new List<Expr>();
+            for (int i = 0; i < tupleInputs.Length; i++)
             {
-                if (callParams[i] is TensorConst { Value: Tensor { Shape.IsScalar: true } } tc)
+                newInputs.Add(new Var(tupleInputs[i].CheckedType!));
+            }
+
+            var newCall = new Call(new IR.Tensors.Concat(concat.Axis), new IR.Tuple(newInputs.ToArray()));
+            var callFusion = new Call(new Fusion($"{op.GetType().Name}_{Count++}_kernel", ModuleKind, newCall, newInputs.OfType<Var>().ToArray()), newInputs.Select((e, i) => (e, i)).Where(p => p.e is Var).Select(p => tupleInputs[p.i]).ToArray());
+            return callFusion;
+        }
+        else
+        {
+            var newInputs = new List<Expr>();
+            for (int i = 0; i < callParams.Count; i++)
+            {
+                if (callParams[i] is Call or Var)
                 {
-                    newInputs.Add(Const.FromTensor(Tensor.FromBytes(tc.CheckedDataType, tc.Value.BytesBuffer.ToArray(), new[] { 1 })));
+                    newInputs.Add(new Var(callParams[i].CheckedType!));
                 }
                 else
                 {
-                    newInputs.Add(callParams[i]);
+                    if (callParams[i] is TensorConst { Value: Tensor { Shape.IsScalar: true } } tc)
+                    {
+                        newInputs.Add(Const.FromTensor(Tensor.FromBytes(tc.CheckedDataType, tc.Value.BytesBuffer.ToArray(), new[] { 1 })));
+                    }
+                    else
+                    {
+                        newInputs.Add(callParams[i]);
+                    }
                 }
             }
-        }
 
-        var newCall = new Call(op, newInputs.ToArray());
-        var callFusion = new Call(new Fusion($"{op.GetType().Name}_{Count++}_kernel", ModuleKind, newCall, newInputs.OfType<Var>().ToArray()), newInputs.Select((e, i) => (e, i)).Where(p => p.e is Var).Select(p => callParams[p.i]).ToArray());
-        return callFusion;
+            var newCall = new Call(op, newInputs.ToArray());
+            var callFusion = new Call(new Fusion($"{op.GetType().Name}_{Count++}_kernel", ModuleKind, newCall, newInputs.OfType<Var>().ToArray()), newInputs.Select((e, i) => (e, i)).Where(p => p.e is Var).Select(p => callParams[p.i]).ToArray());
+            return callFusion;
+        }
     }
 }
 
