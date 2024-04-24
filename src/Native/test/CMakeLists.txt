@@ -14,11 +14,3 @@ foreach(test_name ${TEST_NAMES})
     get_filename_component(tname ${test_name} NAME_WE)
     add_test_exec(${tname})
 endforeach()
-
-
-file(GLOB TEST_NAMES CONFIGURE_DEPENDS benchmark_*.cpp)
-foreach(test_name ${TEST_NAMES})
-    get_filename_component(tname ${test_name} NAME_WE)
-    add_executable(${tname} ${tname}.cpp)
-    target_link_libraries(${tname} PRIVATE GTest::gtest_main nncaseruntime ortki::ortki)
-endforeach()

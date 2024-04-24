@@ -108,23 +108,27 @@ TEST(UnaryTestSquareFloat, ranked_fixed) {
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(UnaryTestSquareFloat, vector_8) {
-    // init
-    ntt::vector<float, 8> ntt_input;
-    NttTest::init_tensor(ntt_input, -10.f, 10.f);
-
-    // ntt
+template <typename T, size_t vl> void test_vector() {
+    ntt::vector<T, vl> ntt_input;
+    NttTest::init_tensor(ntt_input, static_cast<T>(-10), static_cast<T>(10));
     auto ntt_output1 = ntt::square(ntt_input);
-
-    // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
     auto ort_output = ortki_Mul(ort_input, ort_input);
-
-    // compare
-    ntt::vector<float, 8> ntt_output2;
+    ntt::vector<T, vl> ntt_output2;
     NttTest::ort2ntt(ort_output, ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
+
+#define _TEST_VECTOR(T, lmul)                                                  \
+    test_vector<T, (NTT_VLEN) / (sizeof(T) * 8) * lmul>();
+
+#define TEST_VECTOR(T)                                                         \
+    _TEST_VECTOR(T, 1)                                                         \
+    _TEST_VECTOR(T, 2)                                                         \
+    _TEST_VECTOR(T, 4)                                                         \
+    _TEST_VECTOR(T, 8)
+
+TEST(UnaryTestSquare, vector) { TEST_VECTOR(float) }
 
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
