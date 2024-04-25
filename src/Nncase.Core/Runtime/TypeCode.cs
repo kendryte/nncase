@@ -93,4 +93,9 @@ public enum TypeCode : byte
     /// <see cref="Nncase.ValueType"/>.
     /// </summary>
     ValueType = 0xF1,
+
+    /// <summary>
+    /// <see cref="Nncase.VectorType"/>.
+    /// </summary>
+    VectorType = 0xF2,
 }

@@ -120,10 +120,15 @@ public class CPUTarget : ITarget
 
         // need refactor tiling.
         // passManager.Add<AutoDistributedPass>();
-        passManager.AddWithName<DataflowPass>("MakeSingleFusion").Configure(p =>
+        passManager.Add<DataflowPass>().Configure(p =>
         {
             p.Add<Passes.Rules.CPU.CPUOutputBoxingFusion>();
             p.Add<Passes.Rules.CPU.CPUSingleFusion>();
+        });
+        passManager.Add<DataflowPass>().Configure(p =>
+        {
+            p.AddAnalysis<Passes.Analysis.IExprUserAnalysisResult>();
+            p.Add<Passes.Rules.CPU.DeterminedFusionMergeRule>();
         });
         passManager.AddWithName<EGraphRulesPass>("PartitionConstruct").Configure(p =>
         {

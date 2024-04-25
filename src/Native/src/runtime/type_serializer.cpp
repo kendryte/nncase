@@ -83,6 +83,15 @@ result<datatype_t> deserialize_datatype_impl(TReader &sr) noexcept {
         auto size_bytes = sr.template read_unaligned<uint32_t>();
         return ok<datatype_t>(value_type_t(std::in_place, uuid, size_bytes));
     }
+    case dt_vectortype: {
+        checked_try_var(elem_type, deserialize_datatype(sr));
+        auto rank = sr.template read_unaligned<int>();
+        dims_t lanes(rank);
+        for (size_t i = 0; i < rank; i++) {
+            lanes[i] = sr.template read_unaligned<int>();
+        }
+        return ok<datatype_t>(vector_type_t(std::in_place, elem_type, lanes));
+    }
         // prim types
     default: {
         if (typecode >= dt_boolean && typecode <= dt_bfloat16) {
