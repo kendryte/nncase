@@ -14,6 +14,7 @@ using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.NN;
 using Nncase.Passes;
+using Nncase.Passes.Analysis;
 using Nncase.Passes.Rules.CPU;
 using Nncase.PatternMatch;
 using Nncase.Targets;
@@ -49,9 +50,16 @@ public class UnitTestEGraphFusion : TestClassBase
 
         var module = new IRModule(main);
         var pmgr = CompileSession.CreatePassManager("pmgr");
-        pmgr.AddWithName<EGraphRulesPass>("AutoMergeFusion").Configure(p =>
+        pmgr.Add<DataflowPass>().Configure(p =>
         {
-            p.Add<SingleInputFusionMergeRule>();
+            p.AddAnalysis<IExprUserAnalysisResult>();
+            p.Add<DeterminedFusionMergeRule>();
+        });
+        pmgr.Add<EGraphRulesPass>().Configure(p =>
+        {
+            p.Add<GeneralFusionMergeRule>();
+            p.Add<TupleFusionMergeRule>();
+            p.Add<ConcatFusionMergeRule>();
         });
         pmgr.Add<EGraphExtractPass>().Configure(p =>
         {
@@ -62,8 +70,8 @@ public class UnitTestEGraphFusion : TestClassBase
 
         tv.Clear();
         tv.Visit(module.Entry!);
-        var post_number = tv.CountCallOp<Conv2D>();
-        Assert.Equal(pre_number, post_number);
+        var post_number = tv.CountCallFusion<Fusion>();
+        Assert.Equal(1, post_number);
     }
 
     [Fact]
@@ -81,10 +89,16 @@ public class UnitTestEGraphFusion : TestClassBase
 
         var module = new IRModule(main);
         var pmgr = CompileSession.CreatePassManager("pmgr");
+        pmgr.Add<DataflowPass>().Configure(p =>
+        {
+            p.AddAnalysis<IExprUserAnalysisResult>();
+            p.Add<DeterminedFusionMergeRule>();
+        });
         pmgr.AddWithName<EGraphRulesPass>("AutoMergeFusion").Configure(p =>
         {
-            p.Add<SingleInputFusionMergeRule>();
-            p.Add<TwoInputFusionMergeRule>();
+            p.Add<GeneralFusionMergeRule>();
+            p.Add<TupleFusionMergeRule>();
+            p.Add<ConcatFusionMergeRule>();
         });
         pmgr.Add<EGraphExtractPass>().Configure(p =>
         {
@@ -95,10 +109,10 @@ public class UnitTestEGraphFusion : TestClassBase
 
         tv.Clear();
         tv.Visit(module.Entry!);
-        var post_number = tv.CountCallOp<Conv2D>();
+        var post_number = tv.CountCallFusion<Fusion>();
 
         // note when the load store cost > recompute, so the post number will > pre number!.
-        // Assert.Equal(pre_number, post_number);
+        Assert.Equal(1, post_number);
     }
 
     /// <summary>
@@ -189,7 +203,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var prmg = CompileSession.CreatePassManager("prmg");
         prmg.Add<EGraphRulesPass>().Configure(p =>
         {
-            p.Add<SingleInputFusionMergeRule>();
+            // p.Add<SingleInputFusionMergeRule>();
         });
         prmg.Add<EGraphExtractPass>().Configure(p =>
         {

@@ -14,6 +14,7 @@ using Nncase.IR.CPU;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
+using Nncase.Passes.Analysis;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.PatternMatch;
 using Nncase.Targets;
@@ -148,7 +149,9 @@ internal sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
     {
         if (target is Fusion fusion)
         {
-            return new FusionGraphCostVisitor(_compileOptions).Visit(fusion);
+            var vistor = new FusionGraphCostVisitor(_compileOptions);
+            vistor.Visit(fusion);
+            return vistor.ExprMemo.Values.Aggregate(Cost.Zero, (a, b) => a + b);
         }
         else
         {
@@ -271,7 +274,6 @@ internal sealed class FusionMerger : ExprCloner<Unit>
 internal sealed class GeneralFusionMergeRule : IRewriteRule
 {
     private readonly Dictionary<int, Call> _mergedCache = new();
-    private int _count;
 
     public IPattern Pattern { get; } =
     IsCall(
@@ -377,9 +379,15 @@ internal sealed class GeneralFusionMergeRule : IRewriteRule
             }
 
             var parameters = remindIndex.Select(i => fusion_index.Contains(i) ? callee_fusions[fusion_index.IndexOf(i)].Parameters.ToArray() : new[] { caller_fusion.Parameters[i] }).SelectMany(e => e).ToArray();
-            var merged_fusion = new Fusion($"mfusion_{_count++}_kernel", caller_fusion.ModuleKind, new_fusion_body, parameters);
-
             var calleeInputs = remindIndex.Select(i => fusion_index.Contains(i) ? callees[fusion_index.IndexOf(i)].Arguments.ToArray() : new[] { callerInputs[i] }).SelectMany(a => a).ToArray();
+            if (parameters.Distinct().Count() != parameters.Length)
+            {
+                parameters = parameters.Distinct().ToArray();
+                calleeInputs = calleeInputs.Distinct().ToArray();
+            }
+
+            var merged_fusion = new Fusion($"mfusion_{hashcode}_kernel", caller_fusion.ModuleKind, new_fusion_body, parameters);
+
             new_call = new Call(merged_fusion, calleeInputs.ToArray());
             _mergedCache.Add(hashcode, new_call);
         }
@@ -486,7 +494,7 @@ internal sealed class ConcatFusionMergeRule : IRewriteRule
             var patterns = new Pattern[exprs.Length];
             for (var i = 0; i < patterns.Length; i++)
             {
-                patterns[i] = IsCallWildcard($"call_{i}", IsWildcard());
+                patterns[i] = IsCallWildcard($"callee_{i}", IsWildcard());
             }
 
             return patterns;
@@ -501,7 +509,7 @@ internal sealed class ConcatFusionMergeRule : IRewriteRule
         var callee_fusions = new List<Fusion>();
         for (var i = 0; i < tupleInputs.Count; i++)
         {
-            if (result[$"call_{i}"] is Call { Target: Fusion } callee)
+            if (result[$"callee_{i}"] is Call { Target: Fusion } callee)
             {
                 callees.Add(callee);
                 callee_fusions.Add((Fusion)callee.Target);
@@ -549,6 +557,98 @@ internal sealed class ConcatFusionMergeRule : IRewriteRule
         {
             // System.Console.WriteLine("Re Add Merged Two Fusion Call");
         }
+
+        return new_call;
+    }
+}
+
+internal sealed class DeterminedFusionMergeRule : IRewriteRule
+{
+    private static readonly Pattern _input = IsWildcard("input");
+
+    private readonly Dictionary<int, Call> _mergedCache = new();
+
+    private int _count;
+
+    public IPattern Pattern { get; } =
+      IsCall(
+        "caller",
+        IsFusion("caller_fusion", _ => true, IsWildcard(), IsVArgsRepeat("inputs", exprs =>
+        {
+            var patterns = new Pattern[exprs.Length];
+            for (var i = 0; i < patterns.Length; i++)
+            {
+                patterns[i] = IsVar($"input_{i}");
+            }
+
+            return patterns;
+        })),
+        IsVArgsRepeat("callerInputs", exprs =>
+        {
+            var patterns = new Pattern[exprs.Length];
+            for (var i = 0; i < patterns.Length; i++)
+            {
+                patterns[i] = IsCallWildcard($"callee_{i}", IsWildcard());
+            }
+
+            return patterns;
+        }));
+
+    public Expr? GetReplace(IMatchResult result, RunPassContext options)
+    {
+        var userAnalysis = options.GetAnalysis<IExprUserAnalysisResult>();
+        var caller = (Call)result["caller"];
+        var caller_fusion = (Fusion)result["caller_fusion"];
+        var callerInputs = (IReadOnlyList<Expr>)result["callerInputs"];
+        var callees = new List<Call>();
+        var callee_fusions = new List<Fusion>();
+        var fusion_index = new List<int>();
+        for (var i = 0; i < callerInputs.Count; i++)
+        {
+            if (result[$"callee_{i}"] is Call { Target: Fusion } callee)
+            {
+                var callee_fusion = callee.Target as Fusion;
+                if (callee_fusion!.ModuleKind == caller_fusion.ModuleKind && !userAnalysis[callee].Except(new[] { caller }).Any())
+                {
+                    callees.Add(callee);
+                    callee_fusions.Add(callee_fusion);
+                    fusion_index.Add(i);
+                }
+            }
+        }
+
+        if (callees.Count == 0)
+        {
+            return null;
+        }
+
+        var multiVarMap = new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance);
+        for (var index = 0; index < fusion_index.Count; index++)
+        {
+            multiVarMap.Add(caller_fusion.Parameters[fusion_index[index]], callee_fusions[index].Body);
+        }
+
+        var new_fusion_body = new FusionMerger(multiVarMap).Clone(caller_fusion.Body, default);
+
+        // remove duplicate callees
+        var seen = new HashSet<Expr>();
+        var remindIndex = Enumerable.Range(0, callerInputs.Count).ToList();
+        for (var i = callees.Count - 1; i >= 0; i--)
+        {
+            if (!seen.Add(callees[i]))
+            {
+                callees.RemoveAt(i);
+                callee_fusions.RemoveAt(i);
+                remindIndex.RemoveAt(fusion_index[i]);
+                fusion_index.RemoveAt(i);
+            }
+        }
+
+        var parameters = remindIndex.Select(i => fusion_index.Contains(i) ? callee_fusions[fusion_index.IndexOf(i)].Parameters.ToArray() : new[] { caller_fusion.Parameters[i] }).SelectMany(e => e).ToArray();
+        var merged_fusion = new Fusion($"determined_fusion_{_count++}_kernel", caller_fusion.ModuleKind, new_fusion_body, parameters);
+
+        var calleeInputs = remindIndex.Select(i => fusion_index.Contains(i) ? callees[fusion_index.IndexOf(i)].Arguments.ToArray() : new[] { callerInputs[i] }).SelectMany(a => a).ToArray();
+        var new_call = new Call(merged_fusion, calleeInputs.ToArray());
 
         return new_call;
     }
