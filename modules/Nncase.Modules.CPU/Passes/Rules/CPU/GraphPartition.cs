@@ -309,13 +309,24 @@ internal sealed class GeneralFusionMergeRule : IRewriteRule
         var fusion_index = new List<int>();
         for (var i = 0; i < callerInputs.Count; i++)
         {
-            if (result[$"callee_{i}"] is Call { Target: Fusion } callee)
+            if (result[$"callee_{i}"] is Call { Target: Fusion })
             {
+                var callee = (Call)result[$"callee_{i}"];
                 var callee_fusion = callee.Target as Fusion;
                 if (callee_fusion!.ModuleKind == caller_fusion.ModuleKind)
                 {
                     callees.Add(callee);
                     callee_fusions.Add(callee_fusion);
+                    fusion_index.Add(i);
+                }
+            }
+            else if (result[$"callee_{i}"] is Call { Target: GetItem })
+            {
+                var expr = ((Call)result[$"callee_{i}"]).Arguments[0];
+                if (expr is Call { Target: Fusion } callee && ((Fusion)callee.Target)!.ModuleKind == caller_fusion.ModuleKind)
+                {
+                    callees.Add(callee);
+                    callee_fusions.Add((Fusion)callee.Target);
                     fusion_index.Add(i);
                 }
             }
@@ -359,7 +370,16 @@ internal sealed class GeneralFusionMergeRule : IRewriteRule
             var multiVarMap = new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance);
             for (var index = 0; index < fusion_index.Count; index++)
             {
-                multiVarMap.Add(caller_fusion.Parameters[fusion_index[index]], callee_fusions[index].Body);
+                var callee = (Call)caller.Arguments[fusion_index[index]];
+                if (callee is Call { Target: Fusion })
+                {
+                    multiVarMap.Add(caller_fusion.Parameters[fusion_index[index]], callee_fusions[index].Body);
+                }
+                else
+                {
+                    var newCallee = IR.F.Tensors.GetItem(callee_fusions[index].Body, callee.Arguments[1]);
+                    multiVarMap.Add(caller_fusion.Parameters[fusion_index[index]], newCallee);
+                }
             }
 
             var new_fusion_body = new FusionMerger(multiVarMap).Clone(caller_fusion.Body, default);
