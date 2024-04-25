@@ -19,7 +19,7 @@ public static class PassUtility
             return true;
         }
 
-        return op is IR.Math.Unary or IR.Math.MatMul or IR.NN.Conv2D or IR.NN.Softmax or IR.NN.LayerNorm or IR.NN.InstanceNormalization or IR.Imaging.ResizeImage or IR.Tensors.Unsqueeze or IR.Tensors.Reshape or IR.Tensors.Slice or IR.Tensors.Concat or IR.Tensors.Transpose or IR.NN.Swish or IR.Tensors.Gather or IR.NN.Pad { PadMode: PadMode.Constant };
+        return op is IR.Math.Unary or IR.Math.MatMul or IR.NN.Conv2D or IR.NN.Softmax or IR.NN.LayerNorm or IR.NN.InstanceNormalization or IR.Imaging.ResizeImage { IsTFResize: false } or IR.Tensors.Unsqueeze or IR.Tensors.Reshape or IR.Tensors.Slice or IR.Tensors.Concat or IR.Tensors.Transpose or IR.NN.Swish or IR.Tensors.Gather or IR.NN.Pad { PadMode: PadMode.Constant };
     }
 
     public static bool IsCpuSupported(Op op, IEnumerable<Expr> arguments)
@@ -36,6 +36,13 @@ public static class PassUtility
 
         switch (op)
         {
+            case IR.Imaging.ResizeImage:
+                if (arguments.Skip(IR.Imaging.ResizeImage.Roi.Index).First() is not IR.None)
+                {
+                    return false;
+                }
+
+                break;
             case IR.Tensors.Slice slice:
                 if (((TensorConst)arguments.Skip(IR.Tensors.Slice.Strides.Index).First()).Value.ToArray<int>().Any(s => s < 0))
                 {
