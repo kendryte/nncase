@@ -18,7 +18,7 @@
 #include "arm_math.h"
 
 namespace nncase::ntt::tensor_ops {
-template <> struct load_scalar<ntt::vector<float, 4>> {
+template <> struct tload_scalar<ntt::vector<float, 4>> {
     ntt::vector<float, 4> operator()(const float &v) const noexcept {
         return vdupq_n_f32(v);
     }
