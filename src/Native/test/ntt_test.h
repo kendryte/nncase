@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "nncase/ntt/apply.h"
+#include "nncase/ntt/ntt.h"
 #include "nncase/ntt/shape.h"
 #include <assert.h>
 #include <iostream>
@@ -33,14 +34,15 @@ namespace nncase {
 namespace NttTest {
 
 __inline__ uint64_t get_cpu_cycle(void) {
-#if defined __AVX2__
+    uint64_t cycles = 0;
+#if defined __x86_64
     __asm__ __volatile__("" : : : "memory");
-    uint64_t r = __rdtsc();
+    cycles = __rdtsc();
     __asm__ __volatile__("" : : : "memory");
-    return r;
-#else
-    return 0;
+#elif defined __riscv
+    asm volatile("rdcycle %0" : "=r"(cycles));
 #endif
+    return cycles;
 }
 
 template <typename T, typename Shape,
@@ -126,11 +128,7 @@ void init_tensor(ntt::tensor<ntt::vector<T, 8>, Shape, Stride> &tensor,
                [&](auto &index) { init_tensor(tensor(index), start, stop); });
 }
 
-template <typename T, typename Shape,
-          typename Stride = ntt::default_strides_t<Shape>>
-ortki::OrtKITensor *ntt2ort(ntt::tensor<T, Shape, Stride> &tensor) {
-    void *buffer = reinterpret_cast<void *>(tensor.elements().data());
-
+template <typename T> ortki::DataType primitive_type2ort_type() {
     ortki::DataType ort_type = ortki::DataType_FLOAT;
     if (std::is_same_v<T, int8_t>)
         ort_type = ortki::DataType_INT8;
@@ -157,6 +155,14 @@ ortki::OrtKITensor *ntt2ort(ntt::tensor<T, Shape, Stride> &tensor) {
         std::abort();
     }
 
+    return ort_type;
+}
+
+template <typename T, typename Shape,
+          typename Stride = ntt::default_strides_t<Shape>>
+ortki::OrtKITensor *ntt2ort(ntt::tensor<T, Shape, Stride> &tensor) {
+    void *buffer = reinterpret_cast<void *>(tensor.elements().data());
+    auto ort_type = primitive_type2ort_type<T>();
     auto rank = tensor.shape().rank();
     std::vector<size_t> v(rank);
     for (size_t i = 0; i < rank; i++)
