@@ -21,10 +21,12 @@
 namespace nncase::ntt {
 namespace slice_detail {
 template <IsFixedDims TStart, IsFixedDims TStop, IsFixedDims TStride,
-          size_t... Ints>
+          IsFixedDims TAxes, IsFixedDims TShape, size_t... Ints>
 inline constexpr auto compute_inner_domain(std::index_sequence<Ints...>) {
-    return fixed_shape<((TStop::at(Ints) - TStart::at(Ints)) /
-                        TStride::at(Ints))...>{};
+    return fixed_shape<(
+        (std::min(TShape::at(TAxes::at(Ints)), TStop::at(Ints)) -
+         TStart::at(Ints)) /
+        TStride::at(Ints))...>{};
 }
 } // namespace slice_detail
 
@@ -41,11 +43,11 @@ inline constexpr auto compute_inner_domain(std::index_sequence<Ints...>) {
 template <IsFixedDims TStart, IsFixedDims TStop, IsFixedDims TAxes,
           IsFixedDims TStride, IsFixedTensor TIn, IsFixedTensor TOut>
 void slice(const TIn &input, TOut &&output) {
-
     constexpr auto domain = shape_infer::reduced_shape_by_axes(
         typename std::decay_t<TOut>::shape_type{}, TAxes{});
     constexpr auto inner_domain =
-        slice_detail::compute_inner_domain<TStart, TStop, TStride>(
+        slice_detail::compute_inner_domain<TStart, TStop, TStride, TAxes,
+                                           typename TIn::shape_type>(
             std::make_index_sequence<TAxes::rank()>{});
 
     auto in_index = ranked_shape<domain.rank()>{};

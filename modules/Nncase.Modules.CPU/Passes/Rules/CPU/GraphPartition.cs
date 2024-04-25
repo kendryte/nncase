@@ -39,6 +39,11 @@ internal sealed partial class CPUOutputBoxingFusion : FusionMaker
 
     private Call? GetReplace(Call call, Op op, Boxing boxing, IReadOnlyList<Expr> callParams)
     {
+        if (!PassUtility.IsCpuSupported(op, callParams))
+        {
+            return null;
+        }
+
         var newInputs = new List<Expr>();
         for (int i = 0; i < callParams.Count; i++)
         {
@@ -77,6 +82,11 @@ internal sealed partial class CPUSingleFusion : FusionMaker
 
     private Call? GetReplace(Call call, Op op, IReadOnlyList<Expr> callParams)
     {
+        if (!PassUtility.IsCpuSupported(op, callParams))
+        {
+            return null;
+        }
+
         if (op is Concat concat)
         {
             var tuple = (IR.Tuple)call.Arguments[0];

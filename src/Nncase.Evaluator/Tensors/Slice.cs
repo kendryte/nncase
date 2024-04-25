@@ -188,11 +188,6 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
                         return new InvalidType("Slice begin, end, strides should be same length");
                     }
 
-                    if (ts_strides.Any(x => x < 0))
-                    {
-                        return new InvalidType("slice not support neg strides!");
-                    }
-
                     outShape = ApplyAxis(axes_con, input, (i, axis, inDim) =>
                     {
                         var stride = ts_strides[i];

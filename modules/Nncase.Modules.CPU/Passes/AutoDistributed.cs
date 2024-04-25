@@ -107,7 +107,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             throw new NotSupportedException("not support auto distributed call function");
         }
 
-        var isSupported = PassUtility.IsCpuSupported(op);
+        var isSupported = PassUtility.IsCpuSupported(op, expr.Arguments.ToArray());
         foreach (var param in op.Parameters)
         {
             VisitLeafArgument(param.ParameterKind, expr.Arguments[param.Index], isSupported);
