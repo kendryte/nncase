@@ -27,7 +27,7 @@ public partial class LowerUnary : RewriteRule<Pattern>
       "unary",
       "call",
       _ => true,
-      IsWildcard("input") with { TypePattern = HasFixedShape() });
+      IsWildcard("input") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") });
 
     private Expr GetReplace(Unary unary, Expr input)
     {

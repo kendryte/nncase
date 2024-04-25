@@ -180,7 +180,7 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Gather(arguments[0], arguments[1], ret, gather.Axis));
                 break;
             case IR.NN.Pad pad:
-                _mainBody.Add(TIR.F.CPU.Pad(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToScalar<float>()));
+                _mainBody.Add(TIR.F.CPU.Pad(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToArray<float>()[0]));
                 break;
             default:
                 throw new NotSupportedException();
