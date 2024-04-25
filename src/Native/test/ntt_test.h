@@ -18,7 +18,6 @@
 #include "nncase/ntt/shape.h"
 #include <assert.h>
 #include <iostream>
-#include <ortki/c_api.h>
 #include <random>
 #include <string>
 
@@ -120,67 +119,21 @@ void init_tensor(ntt::tensor<T, Shape, Stride> &tensor,
     }
 }
 
-template <typename T, typename Shape,
-          typename Stride = ntt::default_strides_t<Shape>>
-void init_tensor(ntt::tensor<ntt::vector<T, 8>, Shape, Stride> &tensor,
-                 T start = static_cast<T>(0), T stop = static_cast<T>(1)) {
-    ntt::apply(tensor.shape(),
-               [&](auto &index) { init_tensor(tensor(index), start, stop); });
-}
-
-template <typename T> ortki::DataType primitive_type2ort_type() {
-    ortki::DataType ort_type = ortki::DataType_FLOAT;
-    if (std::is_same_v<T, int8_t>)
-        ort_type = ortki::DataType_INT8;
-    else if (std::is_same_v<T, int16_t>)
-        ort_type = ortki::DataType_INT16;
-    else if (std::is_same_v<T, int32_t>)
-        ort_type = ortki::DataType_INT32;
-    else if (std::is_same_v<T, int64_t>)
-        ort_type = ortki::DataType_INT64;
-    else if (std::is_same_v<T, uint8_t>)
-        ort_type = ortki::DataType_UINT8;
-    else if (std::is_same_v<T, uint16_t>)
-        ort_type = ortki::DataType_UINT16;
-    else if (std::is_same_v<T, uint32_t>)
-        ort_type = ortki::DataType_UINT32;
-    else if (std::is_same_v<T, uint64_t>)
-        ort_type = ortki::DataType_UINT64;
-    else if (std::is_same_v<T, float>)
-        ort_type = ortki::DataType_FLOAT;
-    else if (std::is_same_v<T, double>)
-        ort_type = ortki::DataType_DOUBLE;
-    else {
-        std::cerr << "unsupported data type" << std::endl;
-        std::abort();
+#define INIT_TENSOR(N)                                                         \
+    template <typename T, typename Shape,                                      \
+              typename Stride = ntt::default_strides_t<Shape>>                 \
+    void init_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &tensor,    \
+                     T start = static_cast<T>(0),                              \
+                     T stop = static_cast<T>(1)) {                             \
+        ntt::apply(tensor.shape(), [&](auto &index) {                          \
+            init_tensor(tensor(index), start, stop);                           \
+        });                                                                    \
     }
 
-    return ort_type;
-}
-
-template <typename T, typename Shape,
-          typename Stride = ntt::default_strides_t<Shape>>
-ortki::OrtKITensor *ntt2ort(ntt::tensor<T, Shape, Stride> &tensor) {
-    void *buffer = reinterpret_cast<void *>(tensor.elements().data());
-    auto ort_type = primitive_type2ort_type<T>();
-    auto rank = tensor.shape().rank();
-    std::vector<size_t> v(rank);
-    for (size_t i = 0; i < rank; i++)
-        v[i] = tensor.shape()[i];
-
-    const int64_t *shape = reinterpret_cast<const int64_t *>(v.data());
-    return make_tensor(buffer, ort_type, shape, rank);
-}
-
-template <typename T, typename Shape,
-          typename Stride = ntt::default_strides_t<Shape>>
-void ort2ntt(ortki::OrtKITensor *ort_tensor,
-             ntt::tensor<T, Shape, Stride> &ntt_tensor) {
-    size_t size = 0;
-    void *ort_ptr = tensor_buffer(ort_tensor, &size);
-    assert(tensor_length(ort_tensor) == ntt_tensor.shape().length());
-    memcpy((void *)ntt_tensor.elements().data(), ort_ptr, size);
-}
+INIT_TENSOR(4)
+INIT_TENSOR(8)
+INIT_TENSOR(16)
+INIT_TENSOR(32)
 
 template <typename T, typename Shape,
           typename Stride = ntt::default_strides_t<Shape>>
