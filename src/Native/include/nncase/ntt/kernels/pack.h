@@ -16,7 +16,9 @@
 #include "../apply.h"
 #include "../loop.h"
 #include "../shape_infer/pack.h"
+#include "../tensor_ops.h"
 #include "../tensor_traits.h"
+#include "../ukernels.h"
 
 namespace nncase::ntt {
 namespace detail {
@@ -59,55 +61,71 @@ template <class TIn, class TOut, size_t... Axes> class pack_impl {
 };
 
 // 1D packing
-template <IsFixedTensor TIn, IsFixedTensor TOut, size_t Axis>
-class pack_impl<TIn, TOut, Axis> {
+template <IsFixedTensor TIn, IsFixedTensor TOut, size_t PackAxis>
+class pack_impl<TIn, TOut, PackAxis> {
   public:
     using TVec = typename std::decay_t<TOut>::element_type;
 
-    constexpr void operator()(const TIn &input, TOut &output) {
-        // 1. Last axis, no transpose
-        if constexpr (Axis == TIn::rank() - 1) {
-            constexpr auto conti_dims =
-                std::min({contiguous_dims(TIn::shape(), TIn::strides()),
-                          contiguous_dims(TOut::shape(), TOut::strides())});
-            auto in_p = input.elements().data();
-            auto out_p = output.elements().data();
-            apply_no_transpose<0, conti_dims>(input, output, in_p, out_p);
-        } else {
+    static inline constexpr size_t VecLen = TVec::shape().length();
 
-        }
+    constexpr void operator()(const TIn &input, TOut &output) {
+        auto in_p = input.elements().data();
+        auto out_p = output.elements().data();
+        apply<0>(input, output, in_p, out_p);
     }
 
   private:
-    template <size_t CntAxis, size_t ContiguousDims, class TInP, class TOutP>
-    constexpr void apply_no_transpose(const TIn &input, TOut &output, TInP in_p,
-                                      TOutP out_p) {
-        // 1. In contiguous axes
-        if constexpr (CntAxis + ContiguousDims >= TOut::rank()) {
-            constexpr auto rest_rank = TIn::rank() - Axis;
-            constexpr auto in_rest_dims =
-                slice_fixed_dims<rest_rank, TIn::rank() - rest_rank>(
-                    TIn::shape());
-            load_contiguous(in_p, out_p, in_rest_dims.length());
-        } else {
+    template <size_t Axis, class TInP, class TOutP>
+    constexpr void apply(const TIn &input, TOut &output, TInP in_p,
+                         TOutP out_p) {
+        if constexpr (Axis < PackAxis) {
             for (size_t i = 0; i < TOut::shape()[Axis]; i++) {
-                apply_no_transpose<CntAxis + 1, ContiguousDims>(input, output,
-                                                                in_p, out_p);
-                in_p += input.strides()[CntAxis];
-                out_p += output.strides()[CntAxis];
+                apply<Axis + 1>(input, output, in_p, out_p);
+                in_p += input.strides()[Axis];
+                out_p += output.strides()[Axis];
+            }
+        } else {
+            constexpr auto rest_rank = TIn::rank() - Axis - 1;
+            constexpr auto conti_dims = std::min(
+                {rest_rank, contiguous_dims(TIn::shape(), TIn::strides()),
+                 contiguous_dims(TOut::shape(), TOut::strides())});
+            constexpr auto m_strides = TIn::strides()[Axis];
+
+            for (size_t i = 0; i < TIn::shape()[Axis] / VecLen; i++) {
+                apply_transpose<Axis + 1, conti_dims, VecLen, m_strides>(
+                    input, output, in_p, out_p);
+
+                in_p += input.strides()[Axis] * VecLen;
+                out_p += output.strides()[Axis];
+            }
+
+            // Tail
+            constexpr const auto tail_m = TIn::shape()[Axis] % VecLen;
+            if constexpr (tail_m) {
+                apply_transpose<Axis + 1, conti_dims, tail_m, m_strides>(
+                    input, output, in_p, out_p);
             }
         }
     }
 
-    template <class TInElem, class TOutElem>
-    void load_contiguous(const TInElem *input, TOutElem *output,
-                         size_t extent) {
-        constexpr auto vec_len = TVec::shape().length();
-        while (extent) {
-            const auto len = std::min(extent, vec_len);
-            *output++ = ntt::tload<TVec>(input);
-            input += len;
-            extent -= len;
+    template <size_t Axis, size_t ContiguousDims, size_t M, size_t MStrides,
+              class TInP, class TOutP>
+    constexpr void apply_transpose(const TIn &input, TOut &output, TInP in_p,
+                                   TOutP out_p) {
+        if constexpr (Axis + ContiguousDims == TOut::rank()) {
+            constexpr auto rest_rank = TOut::rank() - Axis;
+            constexpr auto rest_dims =
+                slice_fixed_dims<rest_rank, TOut::rank() - rest_rank>(
+                    TOut::shape());
+            constexpr auto N = rest_dims.length();
+            ntt::upack<M, N, MStrides>(in_p, out_p);
+        } else {
+            for (size_t i = 0; i < TOut::shape()[Axis]; i++) {
+                apply_transpose<Axis + 1, ContiguousDims, M, MStrides>(
+                    input, output, in_p, out_p);
+                in_p += input.strides()[Axis];
+                out_p += output.strides()[Axis];
+            }
         }
     }
 };
