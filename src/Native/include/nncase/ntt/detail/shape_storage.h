@@ -21,7 +21,7 @@ template <class Shape> class shape_storage {
   public:
     shape_storage(Shape shape) : shape_(shape) {}
 
-    constexpr size_t rank() noexcept { return shape_.rank(); }
+    static constexpr size_t rank() noexcept { return Shape::rank(); }
     constexpr const Shape &shape() const noexcept { return shape_; }
 
   private:

@@ -28,80 +28,94 @@ namespace ops {
  */
 
 template <class T> struct abs {
-    T operator()(const T &v) const noexcept { return std::abs(v); }
+    constexpr T operator()(const T &v) const noexcept { return std::abs(v); }
 };
 
 template <class T> struct acos {
-    T operator()(const T &v) const noexcept { return std::acos(v); }
+    constexpr T operator()(const T &v) const noexcept { return std::acos(v); }
 };
 
-template <class T> struct acosh { T operator()(const T &v) const noexcept; };
+template <class T> struct acosh {
+    constexpr T operator()(const T &v) const noexcept;
+};
 
 template <class T> struct asin {
-    T operator()(const T &v) const noexcept { return std::asin(v); }
+    constexpr T operator()(const T &v) const noexcept { return std::asin(v); }
 };
 
-template <class T> struct asinh { T operator()(const T &v) const noexcept; };
+template <class T> struct asinh {
+    constexpr T operator()(const T &v) const noexcept;
+};
 
 template <class T> struct ceil {
-    T operator()(const T &v) const noexcept { return std::ceil(v); }
+    constexpr T operator()(const T &v) const noexcept { return std::ceil(v); }
 };
 
 template <class T> struct cos {
-    T operator()(const T &v) const noexcept { return std::cos(v); }
+    constexpr T operator()(const T &v) const noexcept { return std::cos(v); }
 };
 
-template <class T> struct cosh { T operator()(const T &v) const noexcept; };
+template <class T> struct cosh {
+    constexpr T operator()(const T &v) const noexcept;
+};
 
 template <class T> struct exp {
-    T operator()(const T &v) const noexcept { return std::exp(v); }
+    constexpr T operator()(const T &v) const noexcept { return std::exp(v); }
 };
 
 template <class T> struct floor {
-    T operator()(const T &v) const noexcept { return std::floor(v); }
+    constexpr T operator()(const T &v) const noexcept { return std::floor(v); }
 };
 
 template <class T> struct log {
-    T operator()(const T &v) const noexcept { return std::log(v); }
+    constexpr T operator()(const T &v) const noexcept { return std::log(v); }
 };
 
 template <class T> struct neg {
-    T operator()(const T &v) const noexcept { return -v; }
+    constexpr T operator()(const T &v) const noexcept { return -v; }
 };
 
 template <class T> struct round {
-    T operator()(const T &v) const noexcept { return std::nearbyint(v); }
+    constexpr T operator()(const T &v) const noexcept {
+        return std::nearbyint(v);
+    }
 };
 
 template <class T> struct rsqrt {
-    T operator()(const T &v) const noexcept { return (T)1 / std::sqrt(v); }
+    constexpr T operator()(const T &v) const noexcept {
+        return (T)1 / std::sqrt(v);
+    }
 };
 
 template <class T> struct sign {
-    T operator()(const T &v) const noexcept {
+    constexpr T operator()(const T &v) const noexcept {
         return (static_cast<T>(0) < v) - (v < static_cast<T>(0));
     }
 };
 
 template <class T> struct sin {
-    T operator()(const T &v) const noexcept { return std::sin(v); }
+    constexpr T operator()(const T &v) const noexcept { return std::sin(v); }
 };
 
-template <class T> struct sinh { T operator()(const T &v) const noexcept; };
+template <class T> struct sinh {
+    constexpr T operator()(const T &v) const noexcept;
+};
 
 template <class T> struct sqrt {
-    T operator()(const T &v) const noexcept { return std::sqrt(v); }
+    constexpr T operator()(const T &v) const noexcept { return std::sqrt(v); }
 };
 
 template <class T> struct square {
-    T operator()(const T &v) const noexcept { return v * v; }
+    constexpr T operator()(const T &v) const noexcept { return v * v; }
 };
 
 template <class T> struct tanh {
-    T operator()(const T &v) const noexcept { return std::tanh(v); }
+    constexpr T operator()(const T &v) const noexcept { return std::tanh(v); }
 };
 
-template <class T> struct swish { T operator()(const T &v) const noexcept; };
+template <class T> struct swish {
+    constexpr T operator()(const T &v) const noexcept;
+};
 
 /**@}*/
 
@@ -111,26 +125,32 @@ template <class T> struct swish { T operator()(const T &v) const noexcept; };
  */
 
 template <class T1, class T2> struct add {
-    auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+    constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
         return v1 + v2;
     }
 };
 
 template <class T1, class T2> struct sub {
-    auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+    constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
         return v1 - v2;
     }
 };
 
 template <class T1, class T2> struct mul {
-    auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+    constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
         return v1 * v2;
     }
 };
 
 template <class T1, class T2> struct div {
-    auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+    constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
         return v1 / v2;
+    }
+};
+
+template <class T1, class T2> struct ceil_div {
+    constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+        return (v1 + (v2 - 1)) / v2;
     }
 };
 
@@ -139,7 +159,7 @@ template <class T1, class T2> struct div {
  * Python.
  */
 template <class T1, class T2> struct floor_mod {
-    auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+    constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
         return v1 -
                std::floor(static_cast<double>(v1) / static_cast<double>(v2)) *
                    v2;
@@ -147,7 +167,7 @@ template <class T1, class T2> struct floor_mod {
 };
 
 template <class T1, class T2> struct inner_product {
-    auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+    constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
         return v1 * v2;
     }
 };
@@ -156,25 +176,25 @@ template <class T1, class T2> struct inner_product {
  * @remarks mod is equivalent to fmod() function in C/C++/Python.
  */
 template <class T1, class T2> struct mod {
-    auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+    constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
         return std::fmod(v1, v2);
     }
 };
 
 template <class T1, class T2> struct min {
-    auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+    constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
         return std::min(v1, v2);
     }
 };
 
 template <class T1, class T2> struct max {
-    auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+    constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
         return std::max(v1, v2);
     }
 };
 
 template <class T1, class T2> struct pow {
-    auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+    constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
         return std::pow(v1, v2);
     }
 };
@@ -183,12 +203,14 @@ template <class T1, class T2> struct pow {
 
 template <template <class T1, class T2> class BinaryOp, class TResult, class T>
 struct reduce {
-    TResult operator()(const T &v) const noexcept { return TResult(v); }
+    constexpr TResult operator()(const T &v) const noexcept {
+        return TResult(v);
+    }
 };
 
 template <class T1, class T2, class TResult> struct mul_add {
-    TResult operator()(const T1 &v1, const T2 &v2,
-                       const TResult &v3) const noexcept;
+    constexpr TResult operator()(const T1 &v1, const T2 &v2,
+                                 const TResult &v3) const noexcept;
 };
 } // namespace ops
 
@@ -235,6 +257,7 @@ NTT_DEFINE_UNARY_FUNC_IMPL(swish)
 NTT_DEFINE_BINARY_FUNC_IMPL(add)
 NTT_DEFINE_BINARY_FUNC_IMPL(sub)
 NTT_DEFINE_BINARY_FUNC_IMPL(mul)
+NTT_DEFINE_BINARY_FUNC_IMPL(ceil_div)
 NTT_DEFINE_BINARY_FUNC_IMPL(div)
 NTT_DEFINE_BINARY_FUNC_IMPL(floor_mod)
 NTT_DEFINE_BINARY_FUNC_IMPL(inner_product)
@@ -322,33 +345,34 @@ constexpr T1 &operator%=(T1 &v1, const T2 &v2) noexcept {
 
 namespace ops {
 // acosh(v) = ln(v + sqrt(v^2 - 1)), v >= 1
-template <class T> T acosh<T>::operator()(const T &v) const noexcept {
+template <class T> constexpr T acosh<T>::operator()(const T &v) const noexcept {
     return ntt::log(v + ntt::sqrt(v * v - 1));
 }
 
 // asinh(v) = ln(v + sqrt(v^2 + 1))
-template <class T> T asinh<T>::operator()(const T &v) const noexcept {
+template <class T> constexpr T asinh<T>::operator()(const T &v) const noexcept {
     return ntt::log(v + ntt::sqrt(v * v + 1));
 }
 
 // cosh(v) = (exp(v) + exp(-v)) / 2
-template <class T> T cosh<T>::operator()(const T &v) const noexcept {
+template <class T> constexpr T cosh<T>::operator()(const T &v) const noexcept {
     return (ntt::exp(v) + ntt::exp(-v)) / 2;
 }
 
 // sinh(v) = (exp(v) - exp(-v)) / 2
-template <class T> T sinh<T>::operator()(const T &v) const noexcept {
+template <class T> constexpr T sinh<T>::operator()(const T &v) const noexcept {
     return (ntt::exp(v) - ntt::exp(-v)) / 2;
 }
 
 // swish(v) = v / (exp(-v) + 1)
-template <class T> T swish<T>::operator()(const T &v) const noexcept {
+template <class T> constexpr T swish<T>::operator()(const T &v) const noexcept {
     return v / (ntt::exp(-v) + 1);
 }
 
 template <class T1, class T2, class TResult>
-TResult mul_add<T1, T2, TResult>::operator()(const T1 &v1, const T2 &v2,
-                                             const TResult &v3) const noexcept {
+constexpr TResult
+mul_add<T1, T2, TResult>::operator()(const T1 &v1, const T2 &v2,
+                                     const TResult &v3) const noexcept {
     return v1 * v2 + v3;
 }
 } // namespace ops

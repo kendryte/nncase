@@ -33,12 +33,14 @@
 #include "primitive_ops.h"
 #include "tensor.h"
 #include "tensor_ops.h"
+#include "ukernels.h"
 #include "utility.h"
 
 #ifdef __AVX2__
 #include "arch/x86_64/arch_types.h"
 #include "arch/x86_64/primitive_ops.h"
 #include "arch/x86_64/tensor_ops.h"
+#include "arch/x86_64/ukernels.h"
 #elif __aarch64__
 #include "arch/aarch64/arch_types.h"
 #include "arch/aarch64/primitive_ops.h"

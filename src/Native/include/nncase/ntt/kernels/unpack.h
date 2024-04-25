@@ -16,7 +16,6 @@
 #include "../apply.h"
 #include "../loop.h"
 #include "../shape_infer/unpack.h"
-#include "unpack_element.h"
 
 namespace nncase::ntt {
 namespace detail {

@@ -24,7 +24,7 @@ template <template <class T> class Op, IsTensor TTensor>
 struct tensor_unary_impl {
     using element_type = typename TTensor::element_type;
 
-    TTensor operator()(const TTensor &v) const noexcept {
+    constexpr TTensor operator()(const TTensor &v) const noexcept {
         TTensor value;
         apply(v.shape(), [&](auto index) { value(index) = op_(v(index)); });
         return value;
@@ -39,7 +39,8 @@ struct tensor_binary_impl {
     using element_type1 = typename TTensor::element_type;
     using element_type2 = element_or_scalar_t<T2>;
 
-    TTensor operator()(const TTensor &v1, const T2 &v2) const noexcept {
+    constexpr TTensor operator()(const TTensor &v1,
+                                 const T2 &v2) const noexcept {
         TTensor value;
         if constexpr (IsTensor<T2>) {
             apply(v1.shape(), [&](auto index) {
@@ -85,6 +86,7 @@ NTT_DEFINE_TENSOR_UNARY_IMPL(tanh);
 NTT_DEFINE_TENSOR_BINARY_IMPL(add);
 NTT_DEFINE_TENSOR_BINARY_IMPL(sub);
 NTT_DEFINE_TENSOR_BINARY_IMPL(mul);
+NTT_DEFINE_TENSOR_BINARY_IMPL(ceil_div);
 NTT_DEFINE_TENSOR_BINARY_IMPL(div);
 NTT_DEFINE_TENSOR_BINARY_IMPL(floor_mod);
 NTT_DEFINE_TENSOR_BINARY_IMPL(mod);
@@ -95,7 +97,8 @@ NTT_DEFINE_TENSOR_BINARY_IMPL(pow);
 template <IsTensor TTensor> struct inner_product<TTensor, TTensor> {
     using element_type = typename TTensor::element_type;
 
-    auto operator()(const TTensor &v1, const TTensor &v2) const noexcept {
+    constexpr auto operator()(const TTensor &v1,
+                              const TTensor &v2) const noexcept {
         using result_type = decltype(
             op_(std::declval<element_type>(), std::declval<element_type>()));
         result_type value{};
@@ -113,7 +116,7 @@ template <template <class T1, class T2> class Op, class TResult,
 struct reduce<Op, TResult, TTensor> {
     using element_type = typename TTensor::element_type;
 
-    TResult operator()(const TTensor &v) const noexcept {
+    constexpr TResult operator()(const TTensor &v) const noexcept {
         Op<TResult, element_type> op;
         auto elements = v.elements();
         auto it = elements.begin();
@@ -127,21 +130,20 @@ struct reduce<Op, TResult, TTensor> {
 } // namespace nncase::ntt::ops
 
 namespace nncase::ntt::tensor_ops {
-
-template <class TTensor> struct load {
+template <class TTensor> struct tload {
     using T = typename TTensor::element_type;
 
-    TTensor operator()(const T *src) const noexcept {
+    constexpr TTensor operator()(const T *src) const noexcept {
         TTensor vec;
         std::copy(src, src + vec.size(), vec.elements().data());
         return vec;
     }
 };
 
-template <class TTensor> struct load_scalar {
+template <class TTensor> struct tload_scalar {
     using T = typename TTensor::element_type;
 
-    TTensor operator()(const T &value) const noexcept {
+    constexpr TTensor operator()(const T &value) const noexcept {
         TTensor vec;
         std::fill_n(vec.elements().data(), vec.size(), value);
         return vec;
@@ -153,13 +155,18 @@ namespace nncase::ntt {
 template <class T, class Shape, class Strides, size_t MaxSize>
 detail::tensor_impl<T, Shape, Strides, MaxSize, false, true>::tensor_impl(
     T value) noexcept
-    : tensor_impl(tensor_ops::load_scalar<
+    : tensor_impl(tensor_ops::tload_scalar<
                   tensor_base<T, Shape, Strides, MaxSize, false>>()(value)) {}
 
 template <class T, class Shape, class Strides, size_t MaxSize, bool IsView>
 tensor_base<T, Shape, Strides, MaxSize, IsView>
 tensor_base<T, Shape, Strides, MaxSize, IsView>::from_scalar(T v) {
-    return tensor_ops::load_scalar<
+    return tensor_ops::tload_scalar<
         tensor_base<T, Shape, Strides, MaxSize, IsView>>()(v);
+}
+
+template <IsTensor TTensor, IsTensorOrScalar T>
+constexpr TTensor tload(const T *src) noexcept {
+    return tensor_ops::tload<TTensor>()(src);
 }
 } // namespace nncase::ntt

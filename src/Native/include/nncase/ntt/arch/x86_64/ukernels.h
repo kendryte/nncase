@@ -12,15 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #pragma once
-#include <array>
-#include <immintrin.h>
+#include "../../ukernels.h"
+#include "arch_types.h"
 
-inline __m128 pack_elemt(const std::array<float, 4> &vec) {
-    return _mm_load_ps(&vec[0]);
-}
-
-inline __m256 pack_elemt(const std::array<float, 8> &vec) {
-    return _mm256_load_ps(&vec[0]);
-}
+namespace nncase::ntt::ukernels {
+template <size_t M, size_t N, size_t MStrides>
+class upack<M, N, MStrides, true, float, vector<float, 8>> {
+  public:
+    constexpr void operator()(const float *input,
+                              vector<float, 8> *output) noexcept {
+        for (size_t j = 0; j < N; j++) {
+            for (size_t i = 0; i < M; i++) {
+                output[j](i) = input[i * MStrides + j];
+            }
+        }
+    }
+};
+} // namespace nncase::ntt::ukernels
