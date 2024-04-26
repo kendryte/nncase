@@ -8,17 +8,22 @@ import json
 import time
 from html import escape
 
+
 def kpu_targets():
     return os.getenv('KPU_TARGETS', "").split(',')
+
 
 def nuc_ip():
     return os.getenv('NUC_PROXY_IP')
 
+
 def nuc_port():
     return os.getenv('NUC_PROXY_PORT')
 
+
 def report_file(default: str):
     return os.getenv('BENCHMARK_NTT_REPORT_FILE', default)
+
 
 def generate_markdown(benchmark_list: list, md_file: str):
     # generate dict after sorting
@@ -61,6 +66,7 @@ def generate_markdown(benchmark_list: list, md_file: str):
     with open(md_file, 'w') as f:
         f.write(md)
 
+
 class BenchmarkNTT():
     def __init__(self, arch: str, target: str, bin_path: str):
         self.arch = arch
@@ -89,6 +95,7 @@ class BenchmarkNTT():
     def run():
         pass
 
+
 class BenchmarkNTT_x86_64(BenchmarkNTT):
     def __init__(self, target: str, bin_path: str):
         BenchmarkNTT.__init__(self, 'x86_64', target, bin_path)
@@ -98,6 +105,7 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
             cmd_status, cmd_result = subprocess.getstatusoutput(f'{bin}')
             assert(cmd_status == 0)
             self.parse_result(cmd_result)
+
 
 class BenchmarkNTT_riscv64(BenchmarkNTT):
     def __init__(self, target: str, bin_path: str):
@@ -188,13 +196,18 @@ class BenchmarkNTT_riscv64(BenchmarkNTT):
             new_cmd_result = '\n'.join(new_lines)
             self.parse_result(new_cmd_result)
 
+
 if __name__ == '__main__':
     # parse
     parser = argparse.ArgumentParser(prog="benchmark_ntt")
-    parser.add_argument("--x86_64_target", help='x86_64 target to run on', type=str, default='local')
-    parser.add_argument("--x86_64_path", help='bin path for x86_64', type=str, default='x86_64_build/bin')
-    parser.add_argument("--riscv64_target", help='riscv64 target to run on', type=str, default='k230')
-    parser.add_argument("--riscv64_path", help='bin path for riscv64', type=str, default='riscv64_build/bin')
+    parser.add_argument("--x86_64_target", help='x86_64 target to run on',
+                        type=str, default='local')
+    parser.add_argument("--x86_64_path", help='bin path for x86_64',
+                        type=str, default='x86_64_build/bin')
+    parser.add_argument("--riscv64_target", help='riscv64 target to run on',
+                        type=str, default='k230')
+    parser.add_argument("--riscv64_path", help='bin path for riscv64',
+                        type=str, default='riscv64_build/bin')
     args = parser.parse_args()
 
     # x86_64
