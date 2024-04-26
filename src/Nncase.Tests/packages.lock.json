@@ -1123,12 +1123,6 @@
           "libortki": "0.0.2"
         }
       },
-      "Razor.Templating.Core": {
-        "type": "CentralTransitive",
-        "requested": "[1.9.0, )",
-        "resolved": "1.9.0",
-        "contentHash": "eHNqkpmNcPr5rvP/8/FFkddnvzVMH0BSyrq03H0VLZK2r1GUe3RgIgsoIXnImHMIrBzUS8gOwV65MfRPdYRi6g=="
-      },
       "Singulink.Collections.Weak": {
         "type": "CentralTransitive",
         "requested": "[1.0.2, )",
