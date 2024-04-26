@@ -24,9 +24,10 @@ template <IsFixedDims TStart, IsFixedDims TStop, IsFixedDims TStride,
           IsFixedDims TAxes, IsFixedDims TShape, size_t... Ints>
 inline constexpr auto compute_inner_domain(std::index_sequence<Ints...>) {
     return fixed_shape<(
-        (std::min(TShape::at(TAxes::at(Ints)), TStop::at(Ints)) -
-         TStart::at(Ints)) /
-        TStride::at(Ints))...>{};
+        ((std::min(TShape::at(TAxes::at(Ints)), TStop::at(Ints)) - 1 -
+          TStart::at(Ints)) /
+         TStride::at(Ints)) +
+        1)...>{};
 }
 } // namespace slice_detail
 
