@@ -17,7 +17,7 @@
 #include <immintrin.h>
 
 #ifndef NTT_VLEN
-#define NTT_VLEN (sizeof(__m256i))
+#define NTT_VLEN (sizeof(__m256i) * 8)
 #endif
 
 NTT_DEFINE_NATIVE_TENSOR(int8_t, __m256i, 32)
