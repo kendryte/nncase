@@ -274,6 +274,7 @@ internal sealed class FusionMerger : ExprCloner<Unit>
 internal sealed class GeneralFusionMergeRule : IRewriteRule
 {
     private readonly Dictionary<int, Call> _mergedCache = new();
+    private int _count;
 
     public IPattern Pattern { get; } =
     IsCall(
@@ -406,7 +407,12 @@ internal sealed class GeneralFusionMergeRule : IRewriteRule
                 calleeInputs = calleeInputs.Distinct().ToArray();
             }
 
-            var merged_fusion = new Fusion($"mfusion_{hashcode}_kernel", caller_fusion.ModuleKind, new_fusion_body, parameters);
+            using (new Diagnostics.DumpScope(new Diagnostics.NullDumpper()))
+            {
+                new_fusion_body = CompilerServices.ERewrite(new_fusion_body, Array.Empty<IRewriteRule>(), new(), new());
+            }
+
+            var merged_fusion = new Fusion($"mfusion_{_count++}_kernel", caller_fusion.ModuleKind, new_fusion_body, parameters);
 
             new_call = new Call(merged_fusion, calleeInputs.ToArray());
             _mergedCache.Add(hashcode, new_call);

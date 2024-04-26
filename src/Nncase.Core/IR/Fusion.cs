@@ -65,6 +65,4 @@ public class Fusion : BaseFunction
 
     public Fusion With(string? name = null, string? moduleKind = null, Expr? body = null, Var[]? parameters = null)
         => new Fusion(name ?? Name, moduleKind ?? ModuleKind, body ?? Body, parameters ?? Parameters);
-
-    protected override int GetHashCodeCore() => HashCode.Combine(Name, base.GetHashCodeCore());
 }
