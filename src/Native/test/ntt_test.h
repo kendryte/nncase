@@ -119,7 +119,7 @@ void init_tensor(ntt::tensor<T, Shape, Stride> &tensor,
     }
 }
 
-#define INIT_TENSOR(N)                                                         \
+#define _INIT_TENSOR(N)                                                        \
     template <typename T, typename Shape,                                      \
               typename Stride = ntt::default_strides_t<Shape>>                 \
     void init_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &tensor,    \
@@ -130,10 +130,13 @@ void init_tensor(ntt::tensor<T, Shape, Stride> &tensor,
         });                                                                    \
     }
 
-INIT_TENSOR(4)
-INIT_TENSOR(8)
-INIT_TENSOR(16)
-INIT_TENSOR(32)
+#define INIT_TENSOR(T)                                                         \
+    _INIT_TENSOR((NTT_VLEN) / (sizeof(T) * 8) * 1)                             \
+    _INIT_TENSOR((NTT_VLEN) / (sizeof(T) * 8) * 2)                             \
+    _INIT_TENSOR((NTT_VLEN) / (sizeof(T) * 8) * 4)                             \
+    _INIT_TENSOR((NTT_VLEN) / (sizeof(T) * 8) * 8)
+
+INIT_TENSOR(float)
 
 template <typename T, typename Shape,
           typename Stride = ntt::default_strides_t<Shape>>

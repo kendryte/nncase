@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "ntt_test.h"
+#include <iomanip>
 #include <nncase/ntt/ntt.h>
 
 using namespace nncase;
@@ -31,9 +32,9 @@ using namespace nncase;
         for (size_t i = 0; i < size; i++)                                      \
             ntt::op(ntt_lhs, ntt_rhs);                                         \
         auto t2 = NttTest::get_cpu_cycle();                                    \
-        std::cout << __FUNCTION__ << " took "                                  \
-                  << static_cast<float>(t2 - t1) / size / size << " cycles"    \
-                  << std::endl;                                                \
+        std::cout << __FUNCTION__ << " took " << std::setprecision(1)          \
+                  << std::fixed << static_cast<float>(t2 - t1) / size / size   \
+                  << " cycles" << std::endl;                                   \
     }
 
 #define REGISTER_NTT_BINARY                                                    \
