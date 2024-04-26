@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         config:
-          - {name: x86_64-macos, os: macos-latest, cmakeArgs: -DENABLE_X86SIMD=OFF, buildType: Release}
+          - {name: x86_64-macos, os: macos-12, cmakeArgs: -DENABLE_X86SIMD=OFF, buildType: Release}
           - {name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release}
           - {name: x86_64-windows, os: windows-latest, arch: x64, cmakeArgs: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl, buildType: Release}
 
@@ -79,7 +79,7 @@ jobs:
       matrix:
         dotnet-version: ['7.0']
         config:
-          - {name: x86_64-macos, os: macos-latest, shell: bash, rid: osx-x64, buildType: Release}
+          - {name: x86_64-macos, os: macos-12, shell: bash, rid: osx-x64, buildType: Release}
           - {name: x86_64-linux, os: ubuntu-latest, shell: bash, rid: linux-x64, buildType: Release}
           - {name: x86_64-windows, os: windows-latest, shell: bash, rid: win-x64, buildType: Release}
 
@@ -168,7 +168,7 @@ jobs:
       matrix:
         dotnet-version: ['7.0']
         config:
-          - {name: x86_64-macos, os: macos-latest, shell: bash}
+          - {name: x86_64-macos, os: macos-12, shell: bash}
           - {name: x86_64-linux, os: ubuntu-latest, shell: bash}
           - {name: x86_64-windows, os: windows-latest, shell: bash}
 
@@ -245,7 +245,7 @@ jobs:
           cache-dependency-path: '**/requirements.test.txt'
 
       - name: Install Python Packages
-        run: 
+        run:
           python -m pip install --upgrade pip
           pip install -r requirements.test.txt
 
