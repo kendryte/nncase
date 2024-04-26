@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         config:
-          - { name: x86_64-macos, os: macos-13, cmakeArgs: '', buildType: Release }
+          - { name: x86_64-macos, os: macos-12, cmakeArgs: '', buildType: Release }
           - { name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release }
           - { name: x86_64-windows, os: windows-latest, arch: x64, cmakeArgs: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl, buildType: Release }
 
