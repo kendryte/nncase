@@ -400,11 +400,15 @@ internal sealed class GeneralFusionMergeRule : IRewriteRule
             }
 
             var parameters = remindIndex.Select(i => fusion_index.Contains(i) ? callee_fusions[fusion_index.IndexOf(i)].Parameters.ToArray() : new[] { caller_fusion.Parameters[i] }).SelectMany(e => e).ToArray();
-            var calleeInputs = remindIndex.Select(i => fusion_index.Contains(i) ? callees[fusion_index.IndexOf(i)].Arguments.ToArray() : new[] { callerInputs[i] }).SelectMany(a => a).ToArray();
-            if (parameters.Distinct().Count() != parameters.Length)
+            var calleeInputs = remindIndex.Select(i => fusion_index.Contains(i) ? callees[fusion_index.IndexOf(i)].Arguments.ToArray() : new[] { callerInputs[i] }).SelectMany(a => a).ToList();
+            var indexedParameters = parameters.Select((value, index) => new { value, index }).ToList();
+            parameters = parameters.Distinct().ToArray();
+            var distinctedList = parameters.Select(x => new { value = x, index = indexedParameters.First(i => i.value == x).index }).ToList();
+            var removedIndexes = indexedParameters.Where(x => !distinctedList.Any(d => d.index == x.index)).Select(x => x.index).ToList();
+            removedIndexes.Sort((a, b) => b.CompareTo(a));
+            foreach (var index in removedIndexes)
             {
-                parameters = parameters.Distinct().ToArray();
-                calleeInputs = calleeInputs.Distinct().ToArray();
+                calleeInputs.RemoveAt(index);
             }
 
             using (new Diagnostics.DumpScope(new Diagnostics.NullDumpper()))
