@@ -146,6 +146,8 @@ public class CPUTarget : ITarget
         {
             p.Add<Passes.Rules.CPU.Affine.LowerUnary>();
             p.Add<Passes.Rules.CPU.Affine.LowerSwish>();
+            p.Add<Passes.Rules.CPU.Affine.LowerBinary>();
+            p.Add<Passes.Rules.CPU.Affine.LowerPackedBinary>();
         });
 
         // concat/reshape lower

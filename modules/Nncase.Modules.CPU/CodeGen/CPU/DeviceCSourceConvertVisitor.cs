@@ -271,6 +271,13 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     BinaryOp = op.BinaryOp,
                 }).Result);
                 break;
+            case TIR.CPU.PackedBinary op:
+                IndentScope.Writer.IndWrite(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
+                {
+                    Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
+                    BinaryOp = op.BinaryOp,
+                }).Result);
+                break;
             case TIR.CPU.Swish swish:
                 if (swish.Beta != 1.0f)
                 {
