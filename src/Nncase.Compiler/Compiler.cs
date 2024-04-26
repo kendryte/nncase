@@ -100,7 +100,6 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.NormAxisReshape>();
             p.Add<Passes.Rules.Neutral.NormAxisReduceArg>();
             p.Add<Passes.Rules.Neutral.NormAxisSlice>();
-            p.Add<Passes.Rules.Neutral.SwapBinaryArgs>();
             p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
             p.Add<Passes.Rules.Neutral.Squeeze5DTranspose>();
             p.Add<Passes.Rules.Neutral.SqueezeBinaryShape>();
@@ -141,6 +140,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldNopReduce>();
             p.Add<Passes.Rules.Neutral.SliceToGetItem>();
             p.Add<Passes.Rules.Neutral.FoldTwoPads>();
+            p.Add<Passes.Rules.Neutral.SwapBinaryArgs>();
             p.Add<Passes.Rules.Neutral.FoldDilatedConv2D>();
         });
 
