@@ -1,4 +1,4 @@
-/* Copyright 2019-2021 Canaan Inc.
+/* Copyright 2019-2024 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,15 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #pragma once
-#include <array>
-#include <immintrin.h>
 
-inline void unpack_elemt(std::array<float, 4> &arr, const __m128 &vec) {
-    _mm_store_ps(&arr[0], vec);
-}
+#ifdef __riscv_vector
+#include <riscv_vector.h>
 
-inline void unpack_elemt(std::array<float, 8> &arr, const __m256 &vec) {
-    _mm256_store_ps(&arr[0], vec);
-}
+#ifndef NTT_VLEN
+#define NTT_VLEN (__riscv_v_min_vlen)
+#endif
+
+#define NTT_VL(sew, lmul) ((NTT_VLEN) / (sew) * (lmul))
+#endif

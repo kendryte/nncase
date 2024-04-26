@@ -61,6 +61,12 @@ if(NOT CMAKE_TOOLCHAIN_FILE)
    include(toolchains/native.toolchain.cmake)
 endif()
 
+# Workaroud for riscv toolchain auto vectorization bugs in O3
+if (${CMAKE_SYSTEM_PROCESSOR} MATCHES
+   "(riscv32)|(riscv64)")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
+endif()
+
 if (BUILDING_RUNTIME)
     option(ENABLE_VULKAN_RUNTIME "Enable Vulkan runtime" OFF)
     option(ENABLE_K210_RUNTIME "Enable k210 runtime" OFF)

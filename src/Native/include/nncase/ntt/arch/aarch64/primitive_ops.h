@@ -55,22 +55,8 @@ template <> struct sqrt<ntt::vector<float, 4>> {
     }
 };
 
-// swish(v) = v / (1 + std::exp(-v))
-template <> struct swish<ntt::vector<float, 4>> {
-    inline ntt::vector<float, 4>
-    operator()(const ntt::vector<float, 4> &v) const noexcept {
-        return impl(v);
-    }
-
-    inline float32x4_t impl(const float32x4_t &v) const noexcept {
-        auto zero = vdupq_n_f32(0);
-        auto one = vdupq_n_f32(1);
-        return v / (one + exp_ps(zero - v));
-    }
-};
-
 // binary
-template <> struct add<ntt::vector<float, 4>> {
+template <> struct add<ntt::vector<float, 4>, ntt::vector<float, 4>> {
     inline ntt::vector<float, 4>
     operator()(const ntt::vector<float, 4> &lhs,
                const ntt::vector<float, 4> &rhs) const noexcept {
@@ -78,7 +64,7 @@ template <> struct add<ntt::vector<float, 4>> {
     }
 };
 
-template <> struct sub<ntt::vector<float, 4>> {
+template <> struct sub<ntt::vector<float, 4>, ntt::vector<float, 4>> {
     inline ntt::vector<float, 4>
     operator()(const ntt::vector<float, 4> &lhs,
                const ntt::vector<float, 4> &rhs) const noexcept {
@@ -86,7 +72,7 @@ template <> struct sub<ntt::vector<float, 4>> {
     }
 };
 
-template <> struct mul<ntt::vector<float, 4>> {
+template <> struct mul<ntt::vector<float, 4>, ntt::vector<float, 4>> {
     inline ntt::vector<float, 4>
     operator()(const ntt::vector<float, 4> &lhs,
                const ntt::vector<float, 4> &rhs) const noexcept {
@@ -94,7 +80,7 @@ template <> struct mul<ntt::vector<float, 4>> {
     }
 };
 
-template <> struct div<ntt::vector<float, 4>> {
+template <> struct div<ntt::vector<float, 4>, ntt::vector<float, 4>> {
     inline ntt::vector<float, 4>
     operator()(const ntt::vector<float, 4> &lhs,
                const ntt::vector<float, 4> &rhs) const noexcept {
@@ -102,7 +88,7 @@ template <> struct div<ntt::vector<float, 4>> {
     }
 };
 
-template <> struct max<ntt::vector<float, 4>> {
+template <> struct max<ntt::vector<float, 4>, ntt::vector<float, 4>> {
     inline ntt::vector<float, 4>
     operator()(const ntt::vector<float, 4> &lhs,
                const ntt::vector<float, 4> &rhs) const noexcept {
@@ -110,4 +96,15 @@ template <> struct max<ntt::vector<float, 4>> {
     }
 };
 
+template <> struct reduce<ops::add, float, ntt::vector<float, 4>> {
+    float operator()(const ntt::vector<float, 4> &tensor) {
+        return vaddvq_f32(tensor);
+    }
+};
+
+template <> struct reduce<ops::max, float, ntt::vector<float, 4>> {
+    float operator()(const ntt::vector<float, 4> &tensor) {
+        return vmaxvq_f32(tensor);
+    }
+};
 } // namespace nncase::ntt::ops

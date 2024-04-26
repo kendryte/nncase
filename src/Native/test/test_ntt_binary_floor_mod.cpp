@@ -661,24 +661,31 @@ TEST(BinaryTestFloorModInt32, ranked_ranked_ranked_broadcast_multidirectional) {
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(BinaryTestFloorModInt32, vecotor_8) {
-    // init
-    ntt::vector<int32_t, 8> ntt_lhs, ntt_rhs;
-    NttTest::init_tensor(ntt_lhs, -10, 10);
-    NttTest::init_tensor(ntt_rhs, 1, 10);
-
-    // ntt
+template <typename T, size_t vl> void test_vector() {
+    ntt::vector<T, vl> ntt_lhs, ntt_rhs;
+    NttTest::init_tensor(ntt_lhs, static_cast<T>(-10), static_cast<T>(10));
+    NttTest::init_tensor(ntt_rhs, static_cast<T>(1), static_cast<T>(10));
     auto ntt_output1 = ntt::floor_mod(ntt_lhs, ntt_rhs);
-
-    // ort
     auto ort_lhs = NttTest::ntt2ort(ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(ntt_rhs);
     auto ort_output = ortki_Mod(ort_lhs, ort_rhs, 0);
-
-    // compare
-    ntt::vector<int32_t, 8> ntt_output2;
+    ntt::vector<T, vl> ntt_output2;
     NttTest::ort2ntt(ort_output, ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+}
+
+#define _TEST_VECTOR(T, lmul)                                                  \
+    test_vector<T, (NTT_VLEN) / (sizeof(T) * 8) * lmul>();
+
+#define TEST_VECTOR(T)                                                         \
+    _TEST_VECTOR(T, 1)                                                         \
+    _TEST_VECTOR(T, 2)                                                         \
+    _TEST_VECTOR(T, 4)                                                         \
+    _TEST_VECTOR(T, 8)
+
+TEST(UnaryTestFloorMod, vector) {
+    TEST_VECTOR(int32_t)
+    TEST_VECTOR(int64_t)
 }
 
 int main(int argc, char *argv[]) {

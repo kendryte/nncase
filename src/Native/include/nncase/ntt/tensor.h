@@ -122,6 +122,7 @@ class tensor_base
     using shape_type = Shape;
     using strides_type = Strides;
 
+    using size_impl_type::rank;
     using size_impl_type::shape;
     using size_impl_type::size;
     using size_impl_type::strides;
@@ -168,7 +169,7 @@ class tensor_base
     template <class... Indices>
     constexpr const T &operator()(Indices &&...index) const noexcept {
         if constexpr (sizeof...(index) == 1 &&
-                      (!std::is_integral_v<Indices> && ...)) {
+                      (!std::is_integral_v<std::decay_t<Indices>> && ...)) {
             return elements()[linear_offset(index..., strides())];
         } else {
             return this->operator()(
@@ -179,7 +180,7 @@ class tensor_base
     template <class... Indices>
     constexpr T &operator()(Indices &&...index) noexcept {
         if constexpr (sizeof...(index) == 1 &&
-                      (!std::is_integral_v<Indices> && ...)) {
+                      (!std::is_integral_v<std::decay_t<Indices>> && ...)) {
             return elements()[linear_offset(index..., strides())];
         } else {
             return this->operator()(

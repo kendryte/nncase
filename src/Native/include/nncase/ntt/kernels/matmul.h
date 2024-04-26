@@ -14,137 +14,155 @@
  */
 #pragma once
 #include "../apply.h"
-#include "../loop.h"
-#include "../shape_infer/reduce_axis.h"
 #include "../tensor_ops.h"
-#include "../utility.h"
 #include "binary.h"
+#include "matmul.h"
 
 namespace nncase::ntt {
-namespace matmul_detail {
-
-template <typename TElemtOut, typename TElemt>
-constexpr inline TElemtOut dot(const TElemt &lp, const TElemt &rp) {
-    return reduce_sum(mul(lp, rp));
-}
-
-template <>
-constexpr inline float dot<float, float>(const float &lp, const float &rp) {
-    return lp * rp;
-}
-
-template <class TLhs, class TRhs, class TOut> struct matmul_impl;
+namespace detail {
+template <bool TransposedA, bool TransposedB, bool AccumulateC, class TLhs,
+          class TRhs, class TOut, typename LhsPackedAxes, typename LhsPadedNums,
+          typename RhsPackedAxes, typename RhsPadedNums>
+class matmul_impl;
 
 /**
- * @brief fixed version
+ * @brief Fixed 1D-packed matmul with non transposed A/B
+ * @remarks Loop orders: (k, m, n)
  */
-template <IsFixedTensor TLhs, IsFixedTensor TRhs, IsFixedTensor TOut>
-struct matmul_impl<TLhs, TRhs, TOut> {
+template <bool AccumulateC, IsFixedTensor TLhs, IsFixedTensor TRhs,
+          IsFixedTensor TOut, typename LhsPackedAxes, typename LhsPadedNums,
+          typename RhsPackedAxes, typename RhsPadedNums>
+class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
+                  LhsPadedNums, RhsPackedAxes, RhsPadedNums> {
+  public:
     void operator()(const TLhs &lhs, const TRhs &rhs, TOut &output) {
-        using TElemt = typename TLhs::element_type;
-        using TElemtOut = typename TOut::element_type;
-        constexpr auto lhs_cdim =
-            contiguous_dims(TLhs::shape(), TLhs::strides());
-        constexpr auto rhs_cdim =
-            contiguous_dims(TRhs::shape(), TRhs::strides());
-        constexpr auto out_cdim = contiguous_dims(
-            std::decay_t<TOut>::shape(), std::decay_t<TOut>::strides());
-        constexpr size_t lhs_rank = TLhs::shape().rank();
-        constexpr size_t rhs_rank = TRhs::shape().rank();
-        constexpr size_t out_rank = std::decay_t<TOut>::shape().rank();
-        constexpr size_t M = TLhs::shape().at(lhs_rank - 2),
-                         K = TLhs::shape().at(lhs_rank - 1),
-                         N = TRhs::shape().at(rhs_rank - 1);
-        constexpr ops::add<TElemtOut> add;
+        auto lhs_p = lhs.elements().data();
+        auto rhs_p = rhs.elements().data();
+        auto out_p = output.elements().data();
+        apply<0>(lhs, rhs, output, lhs_p, rhs_p, out_p);
+    }
 
-        if constexpr (lhs_cdim >= 2 && rhs_cdim >= 2 && out_cdim >= 2) {
-            constexpr auto domain = shape_infer::reduced_shape_by_axes(
-                std::decay_t<TOut>::shape(),
-                fixed_shape<out_rank - 1, out_rank - 2>{});
-
-            auto lhs_index = ranked_shape<lhs_rank>{};
-            auto rhs_index = ranked_shape<rhs_rank>{};
-            apply(domain, [&](auto index) {
-                loop<lhs_rank - 2>([&](auto i) {
-                    lhs_index[i] = index[i + out_rank - lhs_rank];
-                    if (lhs_index[i] >= TLhs::shape().at(i)) {
-                        lhs_index[i] = TLhs::shape().at(i) - 1;
-                    }
-                });
-                loop<rhs_rank - 2>([&](auto i) {
-                    rhs_index[i] = index[i + out_rank - rhs_rank];
-                    if (rhs_index[i] >= TRhs::shape().at(i)) {
-                        rhs_index[i] = TRhs::shape().at(i) - 1;
-                    }
-                });
-
-                auto lhs_p = lhs.elements().data() +
-                             linear_offset(lhs_index, lhs.strides());
-                auto rhs_p = rhs.elements().data() +
-                             linear_offset(rhs_index, rhs.strides());
-                auto output_p = output.elements().data() +
-                                linear_offset(index, output.strides());
-
-                for (size_t m = 0; m < M; m++) {
-                    for (size_t k = 0; k < 1; k++) {
-                        auto opp = output_p + m * N;
-                        auto rpp = rhs_p + k * N;
-                        auto lpp = lhs_p + m * K + k;
-                        for (size_t n = 0; n < N; n++) {
-                            *(opp++) = dot<TElemtOut>(*(lpp), *(rpp++));
-                        }
-                    }
-                    for (size_t k = 1; k < K; k++) {
-                        auto opp = output_p + m * N;
-                        auto rpp = rhs_p + k * N;
-                        auto lpp = lhs_p + m * K + k;
-                        for (size_t n = 0; n < N; n++) {
-                            *(opp++) =
-                                add(*(opp), dot<TElemtOut>(*(lpp), *(rpp++)));
-                        }
-                    }
-                }
-            });
+  private:
+    template <size_t Axis, class TLhsP, class TRhsP, class TOutP>
+    constexpr void apply(const TLhs &lhs, const TRhs &rhs, TOut &output,
+                         TLhsP lhs_p, TRhsP rhs_p, TOutP out_p) {
+        // 1. Inner matmul ranks
+        if constexpr (Axis == TOut::rank() - 2) {
+            matmul_2d(lhs, rhs, output, lhs_p, rhs_p, out_p);
         } else {
-            auto out_shape = output.shape();
-            apply(out_shape, [&](auto index) {
-                constexpr auto lrank = TLhs::shape_type::rank();
-                constexpr auto rrank = TRhs::shape_type::rank();
-                auto lhs_index = ranked_shape<lrank>{};
-                auto rhs_index = ranked_shape<rrank>{};
-                constexpr size_t lk = lhs_index.rank() - 1;
-                constexpr size_t rk = rhs_index.rank() - 2;
-                for (size_t i = 0; i < lk; i++) {
-                    lhs_index[i] = index[i];
-                    if (lhs_index[i] >= TLhs::shape().at(i)) {
-                        lhs_index[i] = TLhs::shape().at(i) - 1;
-                    }
-                }
-                for (size_t i = 0; i < rk; i++) {
-                    rhs_index[i] = index[i];
-                    if (rhs_index[i] >= TRhs::shape().at(i)) {
-                        rhs_index[i] = TRhs::shape().at(i) - 1;
-                    }
-                }
-                rhs_index[rk + 1] = index[rk + 1];
-                TElemt acc = 0;
-                for (lhs_index[lk] = 0; lhs_index[lk] < lhs.shape()[lk];
-                     lhs_index[lk]++) {
-                    rhs_index[rk] = lhs_index[lk];
-                    TElemt val = mul(lhs(lhs_index), rhs(rhs_index));
-                    acc = add(acc, val);
-                }
-                output(index) = acc;
-            });
+            for (size_t i = 0; i < TOut::shape()[Axis]; i++) {
+                apply<Axis + 1>(lhs, rhs, output, lhs_p, rhs_p, out_p);
+                lhs_p +=
+                    utility_detail::get_safe_stride(lhs, Axis, TOut::shape());
+                rhs_p +=
+                    utility_detail::get_safe_stride(rhs, Axis, TOut::shape());
+                out_p += output.strides()[Axis];
+            }
+        }
+    }
+
+    template <class TLhsP, class TRhsP, class TOutP>
+    constexpr void matmul_2d(const TLhs &lhs, const TRhs &rhs, TOut &output,
+                             TLhsP lhs_p, TRhsP rhs_p, TOutP out_p) {
+        const size_t M = output.shape()[output.rank() - 2];
+        const size_t K = lhs.shape()[lhs.rank() - 1];
+        const size_t N = output.shape()[output.rank() - 1];
+        const size_t lhs_stride = lhs.strides()[lhs.rank() - 2];
+        const size_t rhs_stride = rhs.strides()[rhs.rank() - 2];
+        const size_t out_stride = output.strides()[output.rank() - 2];
+
+        outer_product<AccumulateC>(lhs_p, rhs_p, out_p, M, N, lhs_stride,
+                                   rhs_stride, out_stride);
+        for (size_t k = 1; k < K; k++) {
+            outer_product<true>(lhs_p, rhs_p, out_p, M, N, lhs_stride,
+                                rhs_stride, out_stride);
+        }
+    }
+
+    template <bool AccC, class TLhsElem, class TRhsElem, class TOutElem>
+    void outer_product(const TLhsElem *&lhs, const TRhsElem *&rhs,
+                       TOutElem *output, size_t M, size_t N, size_t lhs_stride,
+                       size_t rhs_stride, size_t out_stride) {
+        auto lhs_mp = lhs;
+        for (size_t m = 0; m < M; m++) {
+            // N of B/C is always contiguous
+            outer_product<AccC>(*lhs_mp, rhs, output, N);
+            lhs_mp += lhs_stride;
+            output += out_stride;
+        }
+
+        lhs += 1;
+        rhs += rhs_stride;
+    }
+
+    template <bool AccC, class TLhsElem, class TRhsElem, class TOutElem>
+    void outer_product(const TLhsElem &lhs, const TRhsElem *rhs,
+                       TOutElem *output, size_t extent) {
+        for (size_t i = 0; i < extent; i++) {
+            mul_add<AccC>(lhs, *rhs++, *output++);
+        }
+    }
+
+    template <bool AccC, class TLhsElem, class TRhsElem, class TOutElem>
+    void mul_add(const TLhsElem &lhs, const TRhsElem &rhs, TOutElem &output) {
+        // 1. 0D-packing
+        if constexpr (LhsPackedAxes::rank() == 0) {
+            output = AccC ? ntt::mul_add(lhs, rhs, output) : ntt::mul(lhs, rhs);
+        }
+        // 2. 1D-packing
+        // 2.1. pack K
+        else if constexpr (LhsPackedAxes::rank() == 1 &&
+                           LhsPackedAxes::at(0) == TLhs::rank() - 1) {
+            static_assert(RhsPackedAxes::at(0) == TRhs::rank() - 2,
+                          "B should also pack K.");
+            auto value = ntt::inner_product(lhs, rhs);
+            output = AccC ? output + value : value;
+        } else {
+            static_assert(LhsPackedAxes::rank() != 0 &&
+                              LhsPackedAxes::rank() != 1,
+                          "Unsupported packing.");
         }
     }
 };
-// matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output) {}
-} // namespace matmul_detail
+} // namespace detail
 
-template <class TLhs, class TRhs, class TOut>
-void matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output) {
-    matmul_detail::matmul_impl<TLhs, TRhs, std::decay_t<TOut>> impl;
+/**
+ * @brief packed matmul
+ *  have two case:
+ *   1. pack 1d on the A's k and B's k
+ *   2. pack 2d on the A's [m,k] and B's [k,n]
+ * @param lhs
+ * @param rhs
+ * @param output
+ * @param lhsPackedAxes
+ * @param lhsPadedNums
+ * @param rhsPackedAxes
+ * @param rhsPadedNums
+ */
+template <class TLhs, class TRhs, class TOut,
+          typename LhsPackedAxes = fixed_shape<>,
+          typename LhsPadedNums = fixed_shape<>,
+          typename RhsPackedAxes = fixed_shape<>,
+          typename RhsPadedNums = fixed_shape<>>
+void matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output,
+            [[maybe_unused]] LhsPackedAxes lhsPackedAxes = {},
+            [[maybe_unused]] LhsPadedNums lhsPadedNums = {},
+            [[maybe_unused]] RhsPackedAxes rhsPackedAxes = {},
+            [[maybe_unused]] RhsPadedNums rhsPadedNums = {}) {
+    static_assert(LhsPackedAxes::rank() == RhsPackedAxes::rank(),
+                  "the pack rank must equal!");
+    static_assert(LhsPadedNums::rank() == RhsPadedNums::rank(),
+                  "the pad rank must equal!");
+    static_assert(LhsPackedAxes::rank() == 0 || LhsPackedAxes::rank() == 1,
+                  "currently only support 0~1d pack!");
+    static_assert(LhsPadedNums::rank() == 0 ||
+                      (LhsPadedNums::at(0) == 0 && RhsPadedNums::at(0) == 0),
+                  "currently only support no pad!");
+
+    detail::matmul_impl<false, false, false, TLhs, TRhs, std::decay_t<TOut>,
+                        LhsPackedAxes, LhsPadedNums, RhsPackedAxes,
+                        RhsPadedNums>
+        impl;
     impl(lhs, rhs, output);
 }
 } // namespace nncase::ntt

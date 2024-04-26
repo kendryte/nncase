@@ -21,7 +21,7 @@ template <class Shape> class shape_storage {
   public:
     shape_storage(Shape shape) : shape_(shape) {}
 
-    constexpr Shape &shape() noexcept { return shape_; }
+    static constexpr size_t rank() noexcept { return Shape::rank(); }
     constexpr const Shape &shape() const noexcept { return shape_; }
 
   private:
@@ -30,6 +30,7 @@ template <class Shape> class shape_storage {
 
 template <size_t... Dims> class shape_storage<fixed_shape<Dims...>> {
   public:
+    static constexpr size_t rank() noexcept { return sizeof...(Dims); }
     static constexpr auto shape() noexcept { return fixed_shape<Dims...>{}; }
 };
 

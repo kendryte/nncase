@@ -68,7 +68,7 @@ struct fixed_shape : detail::fixed_dims_base<Dims...> {
 };
 
 template <size_t Rank> struct ranked_shape : detail::ranked_dims_base<Rank> {
-    constexpr size_t length() noexcept {
+    constexpr size_t length() const noexcept {
         return std::accumulate(this->begin(), this->end(), 1,
                                std::multiplies<>());
     }

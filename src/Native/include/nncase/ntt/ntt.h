@@ -23,7 +23,6 @@
 #include "kernels/matmul.h"
 #include "kernels/pack.h"
 #include "kernels/packed_layer_norm.h"
-#include "kernels/packed_matmul.h"
 #include "kernels/packed_softmax.h"
 #include "kernels/pad.h"
 #include "kernels/resize_image.h"
@@ -34,14 +33,19 @@
 #include "primitive_ops.h"
 #include "tensor.h"
 #include "tensor_ops.h"
+#include "ukernels.h"
 #include "utility.h"
 
-#ifdef __x86_64__
+#ifdef __AVX2__
 #include "arch/x86_64/arch_types.h"
 #include "arch/x86_64/primitive_ops.h"
 #include "arch/x86_64/tensor_ops.h"
+#include "arch/x86_64/ukernels.h"
 #elif __aarch64__
 #include "arch/aarch64/arch_types.h"
 #include "arch/aarch64/primitive_ops.h"
 #include "arch/aarch64/tensor_ops.h"
+#elif __riscv_vector
+#include "arch/riscv64/arch_types.h"
+#include "arch/riscv64/primitive_ops.h"
 #endif

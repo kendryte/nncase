@@ -16,6 +16,10 @@
 #include "../../native_tensor.h"
 #include <immintrin.h>
 
+#ifndef NTT_VLEN
+#define NTT_VLEN (sizeof(__m256i))
+#endif
+
 NTT_DEFINE_NATIVE_TENSOR(int8_t, __m256i, 32)
 NTT_DEFINE_NATIVE_TENSOR(uint8_t, __m256i, 32)
 NTT_DEFINE_NATIVE_TENSOR(int16_t, __m256i, 16)
