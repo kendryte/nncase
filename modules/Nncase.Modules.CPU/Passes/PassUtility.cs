@@ -19,7 +19,7 @@ public static class PassUtility
             return true;
         }
 
-        return op is IR.Math.Unary or IR.Math.MatMul or IR.NN.Conv2D or IR.NN.Softmax or IR.NN.LayerNorm or IR.NN.InstanceNormalization or IR.Imaging.ResizeImage { IsTFResize: false } or IR.Tensors.Unsqueeze or IR.Tensors.Reshape or IR.Tensors.Slice or IR.Tensors.Concat or IR.Tensors.Transpose or IR.NN.Swish or IR.Tensors.Gather or IR.NN.Pad { PadMode: PadMode.Constant } or IR.Tensors.Split;
+        return op is IR.Math.Unary or IR.Math.MatMul or IR.NN.Conv2D or IR.NN.Softmax or IR.NN.LayerNorm or IR.NN.InstanceNormalization or IR.Imaging.ResizeImage { IsTFResize: false } or IR.Tensors.Unsqueeze or IR.Tensors.Reshape or IR.Tensors.Slice or IR.Tensors.Concat or IR.Tensors.Transpose or IR.NN.Swish or IR.Tensors.Gather or IR.NN.Pad { PadMode: PadMode.Constant };
     }
 
     public static bool IsCpuSupported(Op op, IEnumerable<Expr> arguments)
