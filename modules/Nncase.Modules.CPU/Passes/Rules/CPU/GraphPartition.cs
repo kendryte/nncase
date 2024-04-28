@@ -36,7 +36,7 @@ internal sealed partial class CPUOutputBoxingFusion : FusionMaker
     public override Pattern Pattern { get; } = IsBoxing(
         target_name: "boxing",
         op => op.NewType is TensorType,
-        IsCallWildcard("call", IsOp<Op>("op", PassUtility.IsCpuSupported)));
+        IsCallWildcard("call", IsOp<Op>("op", PassUtility.IsCpuSupported))) with { TypePattern = HasFixedShape() };
 
     private Call? GetReplace(Call call, Op op, Boxing boxing, IReadOnlyList<Expr> callParams)
     {
@@ -79,7 +79,7 @@ internal sealed partial class CPUSingleFusion : FusionMaker
 
     public override Pattern Pattern { get; } = IsCallWildcard(
         "call",
-        IsOp<Op>("op", PassUtility.IsCpuSupported));
+        IsOp<Op>("op", PassUtility.IsCpuSupported)) with { TypePattern = HasFixedShape() };
 
     private Call? GetReplace(Call call, Op op, IReadOnlyList<Expr> callParams)
     {
