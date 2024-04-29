@@ -35,10 +35,10 @@ public static class TypeSerializer
             case VectorType t:
                 writer.Write((byte)Runtime.TypeCode.VectorType);
                 Serialize(writer, t.ElemType);
-                writer.Write(t.Lanes.Count);
+                writer.Write(checked((byte)t.Lanes.Count));
                 for (int i = 0; i < t.Lanes.Count; i++)
                 {
-                    writer.Write(t.Lanes[i]);
+                    writer.Write(checked((byte)t.Lanes[i]));
                 }
 
                 break;

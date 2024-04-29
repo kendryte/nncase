@@ -85,10 +85,10 @@ result<datatype_t> deserialize_datatype_impl(TReader &sr) noexcept {
     }
     case dt_vectortype: {
         checked_try_var(elem_type, deserialize_datatype(sr));
-        auto rank = sr.template read_unaligned<int>();
+        auto rank = (int32_t)sr.template read_unaligned<uint8_t>();
         dims_t lanes(rank);
-        for (int i = 0; i < rank; i++) {
-            lanes[i] = sr.template read_unaligned<int>();
+        for (int32_t i = 0; i < rank; i++) {
+            lanes[i] = (size_t)sr.template read_unaligned<uint8_t>();
         }
         return ok<datatype_t>(vector_type_t(std::in_place, elem_type, lanes));
     }
