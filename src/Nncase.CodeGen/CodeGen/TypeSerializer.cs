@@ -38,7 +38,7 @@ public static class TypeSerializer
                 writer.Write(checked((byte)t.Lanes.Count));
                 for (int i = 0; i < t.Lanes.Count; i++)
                 {
-                    writer.Write(checked((byte)t.Lanes[i]));
+                    writer.Write(checked((ulong)t.Lanes[i]));
                 }
 
                 break;
