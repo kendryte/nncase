@@ -88,7 +88,7 @@ result<datatype_t> deserialize_datatype_impl(TReader &sr) noexcept {
         auto rank = (int32_t)sr.template read_unaligned<uint8_t>();
         dims_t lanes(rank);
         for (int32_t i = 0; i < rank; i++) {
-            lanes[i] = sr.template read_unaligned<size_t>();
+            lanes[i] = sr.template read_unaligned<uint32_t>();
         }
         return ok<datatype_t>(vector_type_t(std::in_place, elem_type, lanes));
     }
