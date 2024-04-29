@@ -163,6 +163,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [Theory]
     [InlineData(new object[] { new[] { 1, 384, 512 }, new[] { 512, 512 }, 0 })]
     [InlineData(new object[] { new[] { 1, 1, 384, 256 }, new[] { 32, 256, 512 }, 1 })]
+    [InlineData(new object[] { new[] { 384, 512 }, new[] { 512, 512 }, 2 })]
     public async Task TestMatMul(int[] lhsShape, int[] rhsShape, int count)
     {
         var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
