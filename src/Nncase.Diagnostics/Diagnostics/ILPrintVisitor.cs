@@ -613,10 +613,10 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
             AppendCheckedType(expr.Body.CheckedType, " {", hasNewLine: true);
             using (_scope.IndentUp())
             {
-                foreach (var item in expr.Body.Fields)
-                {
-                    Visit(item);
-                }
+                // foreach (var item in expr.Body.Fields)
+                // {
+                //     Visit(item);
+                // }
             }
 
             _scope.IndWriteLine("}");

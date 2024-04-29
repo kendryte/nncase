@@ -189,7 +189,7 @@ internal sealed class AffineTiler
         {
             if (!_extents.TryGetValue(expr.Position, out var v))
             {
-                v = _solver.MakeIntVar(1, int.MaxValue);
+                v = _solver.MakeIntVar(1, int.MaxValue, $"d{expr.Position}_v");
                 _extents.Add(expr.Position, v);
             }
 

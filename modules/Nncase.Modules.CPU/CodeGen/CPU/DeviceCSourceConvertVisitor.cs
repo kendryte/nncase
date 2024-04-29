@@ -286,6 +286,9 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
                 IndentScope.Writer.IndWrite($"unary<ops::swish>({arguments[0].Name}, {arguments[1].Name});\n");
                 break;
+            case TIR.CPU.Matmul matmul:
+                IndentScope.Writer.IndWrite($"matmul({arguments[0].Name}, {arguments[1].Name}, {arguments[2].Name});\n");
+                break;
             default:
                 throw new NotSupportedException();
         }
