@@ -50,9 +50,9 @@ public partial class CPU
         return new Call(new TIR.CPU.Binary(binaryOp), lhs, rhs, output);
     }
 
-    public static Call Matmul(Expr lhs, Expr rhs, Expr output)
+    public static Call Matmul(Expr lhs, Expr rhs, Expr output, bool accC = false)
     {
-        return new Call(new Matmul(), lhs, rhs, output);
+        return new Call(new Matmul(accC), lhs, rhs, output);
     }
 
     public static Expr Pack(Expr input, Expr output, IRArray<int> lanes, IRArray<int> axes)

@@ -287,7 +287,7 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 IndentScope.Writer.IndWrite($"unary<ops::swish>({arguments[0].Name}, {arguments[1].Name});\n");
                 break;
             case TIR.CPU.Matmul matmul:
-                IndentScope.Writer.IndWrite($"matmul({arguments[0].Name}, {arguments[1].Name}, {arguments[2].Name});\n");
+                IndentScope.Writer.IndWrite($"matmul<{matmul.AccumulateC.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}>({arguments[0].Name}, {arguments[1].Name}, {arguments[2].Name});\n");
                 break;
             default:
                 throw new NotSupportedException();
@@ -420,6 +420,7 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             expr.CheckedType switch
             {
                 TensorType t => t.DType.ToC(),
+                AnyType => "auto",
                 _ => throw new ArgumentOutOfRangeException(nameof(expr)),
             },
             expr.Name + expr.GlobalVarIndex.ToString());

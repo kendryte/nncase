@@ -128,7 +128,7 @@ public class TilingSolver
         var loops = new GridSchedule.Loop[_loopsCount];
         for (int loop = 0; loop < loops.Length; loop++)
         {
-            var domain = GetDomainLoop(solution, loop);
+            var domain = GetLoopDomain(solution, loop);
             var tileSize = (int)_solutionCollector.Value(solution, _tiles[domain]);
             loops[loop] = new GridSchedule.Loop(_accessMaps[0].Domains[domain], tileSize);
         }
@@ -200,7 +200,7 @@ public class TilingSolver
         {
             for (int j = 0; j < _loopsCount; j++)
             {
-                orders[i, j] = _solver.MakeBoolVar($"order_d{i}_l{j}");
+                orders[i, j] = _solver.MakeBoolVar($"order_l{i}_d{j}");
             }
         }
 

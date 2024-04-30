@@ -11,4 +11,6 @@ public sealed partial class Matmul : CPUKernelOp
     public static readonly ParameterInfo Rhs = new(typeof(Matmul), 1, "rhs");
 
     public static readonly ParameterInfo Output = new(typeof(Matmul), 2, "output");
+
+    public bool AccumulateC { get; }
 }

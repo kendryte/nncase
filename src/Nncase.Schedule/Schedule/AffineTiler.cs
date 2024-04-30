@@ -88,14 +88,17 @@ internal sealed class AffineTiler
 
         bufferOfVars[^1] = _grid.Buffers[^1];
 
-        var cloner = new ReplacingExprCloner(bodyVarReplaces);
-        var nestBody = cloner.Clone(_grid.Body, default);
+        foreach (var d in schedule.Loops)
+        {
+            bodyVarReplaces.Add(d.Domain.Offset, IR.F.Tensors.Cast(_domainOffsets[d.Domain.Offset.Position], DataTypes.Int64));
+        }
+
+        var nestBody = new ReplacingExprCloner(bodyVarReplaces).Clone(_grid.Body, default);
         cntBlock.Body(nestBody);
 
         // 4. Create PrimFunction
         var body = root.Build();
-        cloner = new ReplacingExprCloner(bufferOfReplaces);
-        body = cloner.Clone(body, default);
+        body = new ReplacingExprCloner(bufferOfReplaces).Clone(body, default);
         var primFunc = new PrimFunction(_grid.ModuleKind, body, bufferOfVars);
         var wrapper = new PrimFunctionWrapper(primFunc, _grid.Buffers.Length - 1);
 
