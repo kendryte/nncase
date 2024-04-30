@@ -53,8 +53,9 @@ class char_array_buffer : public std::streambuf {
         return end_ - current_;
     }
 
-    std::streampos seekoff(std::streamoff off, std::ios_base::seekdir way,
-                           [[maybe_unused]] std::ios_base::openmode which) override {
+    std::streampos
+    seekoff(std::streamoff off, std::ios_base::seekdir way,
+            [[maybe_unused]] std::ios_base::openmode which) override {
         if (way == std::ios_base::beg) {
             current_ = begin_ + off;
         } else if (way == std::ios_base::cur) {
@@ -69,8 +70,9 @@ class char_array_buffer : public std::streambuf {
         return current_ - begin_;
     }
 
-    std::streampos seekpos(std::streampos sp,
-                           [[maybe_unused]] std::ios_base::openmode which) override {
+    std::streampos
+    seekpos(std::streampos sp,
+            [[maybe_unused]] std::ios_base::openmode which) override {
         current_ = begin_ + sp;
 
         if (current_ < begin_ || current_ > end_)
