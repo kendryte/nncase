@@ -79,8 +79,9 @@ class char_array_buffer : public std::streambuf {
         return current_ - begin_;
     }
 
-    std::streamsize xsgetn(char_type* s, std::streamsize count) override {
-        std::streamsize available = static_cast<std::streamsize>(end_ - current_);
+    std::streamsize xsgetn(char_type *s, std::streamsize count) override {
+        std::streamsize available =
+            static_cast<std::streamsize>(end_ - current_);
         std::streamsize n = (count > available) ? available : count;
         if (n > 0) {
             traits_type::copy(s, current_, static_cast<size_t>(n));
