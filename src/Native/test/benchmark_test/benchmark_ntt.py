@@ -88,7 +88,7 @@ class BenchmarkNTT():
             items = line.split(' ')
             dict = {}
             dict['kind'], dict['op'] = items[0].split(self.bin_prefix)[1].split('_', 1)
-            dict[f'{self.arch}_roofline'] = 'N/A'
+            dict[f'{self.arch}_roofline'] = self.roofline_dict[dict['kind']][dict['op']]
             dict[f'{self.arch}_actual'] = items[-2]
             self.benchmark_list.append(dict)
 
@@ -99,6 +99,39 @@ class BenchmarkNTT():
 class BenchmarkNTT_x86_64(BenchmarkNTT):
     def __init__(self, target: str, bin_path: str):
         BenchmarkNTT.__init__(self, 'x86_64', target, bin_path)
+        self.roofline_dict = {'binary': {'add': 'N/A',
+                                         'sub': 'N/A',
+                                         'mul': 'N/A',
+                                         'div': 'N/A',
+                                         'max': 'N/A',
+                                         'min': 'N/A',
+                                         'floor_mod': 'N/A',
+                                         'mod': 'N/A',
+                                         'pow': 'N/A',
+                                         },
+                              'unary': {'abs': 'N/A',
+                                        'acos': 'N/A',
+                                        'acosh': 'N/A',
+                                        'asin': 'N/A',
+                                        'asinh': 'N/A',
+                                        'ceil': 'N/A',
+                                        'cos': 'N/A',
+                                        'cosh': 'N/A',
+                                        'exp': 'N/A',
+                                        'floor': 'N/A',
+                                        'log': 'N/A',
+                                        'neg': 'N/A',
+                                        'round': 'N/A',
+                                        'rsqrt': 'N/A',
+                                        'sign': 'N/A',
+                                        'sin': 'N/A',
+                                        'sinh': 'N/A',
+                                        'sqrt': 'N/A',
+                                        'square': 'N/A',
+                                        'swish': 'N/A',
+                                        'tanh': 'N/A',
+                                        },
+                              }
 
     def run(self):
         for bin in self.bin_list:
@@ -110,6 +143,39 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
 class BenchmarkNTT_riscv64(BenchmarkNTT):
     def __init__(self, target: str, bin_path: str):
         BenchmarkNTT.__init__(self, 'riscv64', target, bin_path)
+        self.roofline_dict = {'binary': {'add': 'N/A',
+                                         'sub': 'N/A',
+                                         'mul': 'N/A',
+                                         'div': 'N/A',
+                                         'max': 'N/A',
+                                         'min': 'N/A',
+                                         'floor_mod': 'N/A',
+                                         'mod': 'N/A',
+                                         'pow': 'N/A'
+                                         },
+                              'unary': {'abs': 'N/A',
+                                        'acos': 'N/A',
+                                        'acosh': 'N/A',
+                                        'asin': 'N/A',
+                                        'asinh': 'N/A',
+                                        'ceil': 'N/A',
+                                        'cos': 'N/A',
+                                        'cosh': 'N/A',
+                                        'exp': 'N/A',
+                                        'floor': 'N/A',
+                                        'log': 'N/A',
+                                        'neg': 'N/A',
+                                        'round': 'N/A',
+                                        'rsqrt': 'N/A',
+                                        'sign': 'N/A',
+                                        'sin': 'N/A',
+                                        'sinh': 'N/A',
+                                        'sqrt': 'N/A',
+                                        'square': 'N/A',
+                                        'swish': 'N/A',
+                                        'tanh': 'N/A',
+                                        },
+                              }
 
     def send_msg(self, sock, msg):
         # Prefix each message with a 4-byte length (network byte order)
