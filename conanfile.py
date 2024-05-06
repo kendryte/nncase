@@ -54,7 +54,7 @@ class nncaseConan(ConanFile):
             self.requires('rapidjson/1.1.x')
 
         if self.options.python:
-            self.requires('pybind11/2.6.1')
+            self.requires('pybind11/2.12.0')
 
         if not self.options.runtime:
             self.requires('abseil/20220623.1')
