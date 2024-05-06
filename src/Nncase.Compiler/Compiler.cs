@@ -140,8 +140,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldNopReduce>();
             p.Add<Passes.Rules.Neutral.SliceToGetItem>();
             p.Add<Passes.Rules.Neutral.FoldTwoPads>();
-
-            // p.Add<Passes.Rules.Neutral.SwapBinaryArgs>();
+            p.Add<Passes.Rules.Neutral.SwapBinaryArgs>();
             p.Add<Passes.Rules.Neutral.FoldDilatedConv2D>();
         });
 
