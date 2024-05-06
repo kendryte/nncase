@@ -309,3 +309,4 @@ cmake-build-*
 # generated/
 
 .mono/
+.history/

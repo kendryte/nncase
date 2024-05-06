@@ -58,10 +58,10 @@ class OnnxTestRunner(TestRunner):
         elif model_file.startswith('onnx-models'):
             model_file = os.path.join(os.getenv('ONNX_MODELS_DIR'),
                                       model_file[len('onnx-models/'):])
+        has_external_data = False
         if self.case_dir != os.path.dirname(model_file):
             new_file = os.path.join(self.case_dir, 'test.onnx')
             shutil.copy(model_file, new_file)
-            has_external_data = False
             for tensor in external_data_helper._get_all_tensors(onnx.load(model_file, load_external_data=False)):
                 if external_data_helper.uses_external_data(tensor):
                     has_external_data = True
