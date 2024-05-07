@@ -32,4 +32,6 @@ public sealed partial class Swish : CPUKernelOp
     /// Gets begins.
     /// </summary>
     public float Beta { get; }
+
+    public override string DisplayProperty() => $"Beta: {Beta}";
 }

@@ -38,10 +38,6 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
             rhs = rhs.Unpack(axis);
         }
 
-        // lhs = OrtKI.Unsqueeze(lhs, new long[] { -4, -1 }); // [x,m/32,k/32, 1  , m' ,k', 1 ]
-        // rhs = OrtKI.Unsqueeze(rhs, new long[] { -6, -3 }); // [x, 1  ,k/32,n/32, 1  ,k', n']
-        // var matmul = OrtKI.Mul(lhs, rhs); // [x, m/32,k/32,n/32,m',k',n']
-        // matmul = OrtKI.ReduceSum(matmul, new long[] { -2, -5 }, 0, 1);
         var matmul = OrtKI.MatMul(lhs, rhs);
         if (target.LhsPackedAxes.Count == 2)
         {
@@ -112,7 +108,7 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
                 rType = Math.MatMulEvaluator.VisitTensorType(a, b);
                 break;
             default:
-            ERROR: rType = new InvalidType($"{lhs} {rhs} not support");
+            ERROR: rType = new InvalidType($"lhs: {lhs}, rhs: {rhs} not support");
                 break;
         }
 

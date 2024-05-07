@@ -118,8 +118,9 @@ public interface ICompilerServicesProvider
     /// Evaluate cost of the expression tree.
     /// </summary>
     /// <param name="expr">Expression.</param>
+    /// <param name="compileOptions">options.</param>
     /// <returns>Evaluate result.</returns>
-    Cost EvaluateCost(Expr expr);
+    Cost EvaluateCost(Expr expr, CompileOptions compileOptions);
 
     /// <summary>
     /// Evaluate metric of the expression tree.
@@ -208,8 +209,9 @@ public interface ICompilerServicesProvider
     /// <param name="expr">Expression.</param>
     /// <param name="rules">Rewrite rules.</param>
     /// <param name="options">Options.</param>
+    /// <param name="compileOptions">compileOptions.</param>
     /// <returns>Rewrited expression.</returns>
-    Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options);
+    Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options, CompileOptions compileOptions);
 
     /// <summary>
     /// Using EGraph rewrite expression.
@@ -304,10 +306,11 @@ public static class CompilerServices
     /// Evaluate cost of the expression tree.
     /// </summary>
     /// <param name="expr">Expression.</param>
+    /// <param name="compileOptions">compileOptions.</param>
     /// <returns>Evaluate result.</returns>
-    public static Cost EvaluateCost(Expr expr)
+    public static Cost EvaluateCost(Expr expr, CompileOptions compileOptions)
     {
-        return Provider.EvaluateCost(expr);
+        return Provider.EvaluateCost(expr, compileOptions);
     }
 
     /// <summary>
@@ -414,10 +417,11 @@ public static class CompilerServices
     /// <param name="expr">Expression.</param>
     /// <param name="rules">Rewrite rules.</param>
     /// <param name="options">Options.</param>
+    /// <param name="compileOptions">compileOptions.</param>
     /// <returns>Rewrited expression.</returns>
-    public static Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options)
+    public static Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options, CompileOptions compileOptions)
     {
-        return Provider.ERewrite(expr, rules, options);
+        return Provider.ERewrite(expr, rules, options, compileOptions);
     }
 
     /// <summary>
@@ -652,9 +656,9 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     }
 
     /// <inheritdoc/>
-    public Cost EvaluateCost(Expr expr)
+    public Cost EvaluateCost(Expr expr, CompileOptions compileOptions)
     {
-        return _costEvaluateProvider.EvaluateCost(expr);
+        return _costEvaluateProvider.EvaluateCost(expr, compileOptions);
     }
 
     /// <inheritdoc/>
@@ -696,9 +700,9 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         return _targetProvider.GetTarget(name);
     }
 
-    public Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options)
+    public Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options, CompileOptions compileOptions)
     {
-        return _eGraphrewriteProvider.ERewrite(expr, rules, options);
+        return _eGraphrewriteProvider.ERewrite(expr, rules, options, compileOptions);
     }
 
     public IEGraph ERewrite(IEGraph graph, IEnumerable<IRewriteRule> rules, RunPassContext options)

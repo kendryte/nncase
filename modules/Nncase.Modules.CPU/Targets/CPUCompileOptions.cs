@@ -9,6 +9,25 @@ using System.Threading.Tasks;
 
 namespace Nncase.Targets;
 
+public enum MemoryArch : byte
+{
+    /// <summary>
+    /// Unified Memory Access.
+    /// </summary>
+    UMA = 0,
+
+    /// <summary>
+    /// Non-Unified Memory Access.
+    /// </summary>
+    NUMA = 1,
+}
+
+public enum NocArch : byte
+{
+    Mesh = 0,
+    CrossBar = 1,
+}
+
 public sealed class CpuTargetOptions : ITargetOptions
 {
     public string ModelName { get; set; } = string.Empty;
@@ -16,6 +35,15 @@ public sealed class CpuTargetOptions : ITargetOptions
     public bool Packing { get; set; }
 
     public int[] TargetTileSize { get; set; } = Array.Empty<int>();
+
+    /// <summary>
+    /// Gets or sets a value indicating whether Unified Memory Architecture. see https://en.wikipedia.org/wiki/Unified_Memory_Access.
+    /// </summary>
+    public bool UnifiedMemoryArchitecture { get; set; } = true;
+
+    public MemoryArch MemoryArch { get; set; } = MemoryArch.UMA;
+
+    public NocArch NocArch { get; set; } = NocArch.Mesh;
 
     public int[] Hierarchy { get; set; } = new[] { 1 };
 

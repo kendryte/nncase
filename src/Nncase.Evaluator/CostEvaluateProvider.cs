@@ -22,7 +22,7 @@ internal sealed class CostEvaluateProvider : ICostEvaluateProvider
         _serviceProvider = serviceProvider;
     }
 
-    public Cost EvaluateCost(Expr expr)
+    public Cost EvaluateCost(Expr expr, CompileOptions compileOptions)
     {
         if (expr.CheckedType is null)
         {
@@ -34,7 +34,7 @@ internal sealed class CostEvaluateProvider : ICostEvaluateProvider
             throw new InvalidOperationException("Expr in Cost Evaluator need a valid type");
         }
 
-        var evaluatorVisitor = new CostEvaluateVisitor();
+        var evaluatorVisitor = new CostEvaluateVisitor(compileOptions);
         return evaluatorVisitor.Visit(expr);
     }
 

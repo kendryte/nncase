@@ -20,8 +20,9 @@ public interface ICostEvaluateProvider
     /// Evaluate cost of the expression tree.
     /// </summary>
     /// <param name="expr">Expression.</param>
+    /// <param name="compileOptions">options.</param>
     /// <returns>Evaluate result.</returns>
-    Cost EvaluateCost(Expr expr);
+    Cost EvaluateCost(Expr expr, CompileOptions compileOptions);
 
     /// <summary>
     /// Evaluate cost of operator.

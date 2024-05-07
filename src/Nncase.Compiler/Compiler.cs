@@ -251,11 +251,6 @@ internal class Compiler : ICompiler
 
     public void ClearFixShape(IPassManager p)
     {
-        if (!_compileSession.CompileOptions.ShapeBucketOptions.Enable)
-        {
-            return;
-        }
-
         p.AddWithName<DataflowPass>("ClearUnused").Configure(c =>
         {
             c.Add<FoldFixShape>();
@@ -285,7 +280,12 @@ internal class Compiler : ICompiler
             "TargetDependentAfterQuantPass",
             progress,
             token);
-        await RunPassAsync(p => ClearFixShape(p), "ClearFixShape", progress, token);
+
+        if (_compileSession.CompileOptions.ShapeBucketOptions.Enable)
+        {
+            await RunPassAsync(ClearFixShape, "ClearFixShape", progress, token);
+        }
+
         await RunPassAsync(
             p => target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions),
             "TargetDependentBeforeCodeGen",

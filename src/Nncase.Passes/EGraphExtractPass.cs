@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.IR;
@@ -15,16 +16,25 @@ namespace Nncase.Passes;
 
 public sealed class EGraphExtractPass : Pass<IEGraph, BaseFunction>
 {
-    private readonly IBaseFuncCostEvaluator? _costEvaluator;
+    private readonly CompileOptions _compileOptions;
+    private IBaseFuncCostEvaluator? _costEvaluator;
 
-    public EGraphExtractPass(IBaseFuncCostEvaluator? costEvaluator = null)
+    public EGraphExtractPass(CompileOptions compileOptions)
     {
-        _costEvaluator = costEvaluator;
+        _compileOptions = compileOptions;
+    }
+
+    public void AddBaseFuncCostEvaluator<T>(params object[] parameters)
+        where T : IBaseFuncCostEvaluator
+    {
+        var compileSession = ((IPassIntern)this).CompileSession;
+        using var scope = new CompileSessionScope(compileSession);
+        _costEvaluator = ActivatorUtilities.CreateInstance<T>(compileSession, parameters);
     }
 
     protected override Task<BaseFunction> RunCoreAsync(IEGraph input, RunPassContext context)
     {
-        var post = (BaseFunction)input.Extract(input.Root!, _costEvaluator, Array.Empty<EGraphExtractConstrains>());
+        var post = (BaseFunction)input.Extract(input.Root!, _compileOptions, _costEvaluator, Array.Empty<EGraphExtractConstrains>());
         IRHelpers.DCE(post);
         return Task.FromResult(post);
     }
