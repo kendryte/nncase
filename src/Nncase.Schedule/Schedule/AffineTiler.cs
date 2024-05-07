@@ -46,9 +46,9 @@ internal sealed class AffineTiler
         for (int loop = 0; loop < _loopBuilders.Length; loop++)
         {
             var domain = schedule.Loops[loop].Domain.Offset.Position;
-            var begin = 0;
-            var end = begin + _dims[domain];
-            var stride = schedule.Loops[loop].TileSize;
+            var begin = 0ul;
+            var end = begin + (ulong)_dims[domain];
+            var stride = (ulong)schedule.Loops[loop].TileSize;
             _domainExtents[domain] = stride;
             _loopBuilders[loop] = T.ForLoop(out _domainOffsets[domain], (begin, end, stride), LoopMode.Serial, $"l{loop}");
         }
@@ -71,12 +71,22 @@ internal sealed class AffineTiler
 
         // 3. Nest compute body
         var bodyBuffers = new Expr[_grid.Buffers.Length];
+        var bufferOfVars = new Expr[_grid.Reads.Length + 1];
         var bodyVarReplaces = new Dictionary<Expr, Expr>();
+        var bufferOfReplaces = new Dictionary<Expr, Expr>();
         for (int i = 0; i < bodyBuffers.Length; i++)
         {
             (bodyBuffers[i], cntBlock) = AllocateSubBuffer(cntBlock, _tempBuffers[i], schedule.BodyBufferViews[i]);
             bodyVarReplaces.Add(_grid.BodyParameters[i], bodyBuffers[i]);
         }
+
+        for (int i = 0; i < _grid.Reads.Length; i++)
+        {
+            bufferOfVars[i] = AllocateBufferOf(_grid.Buffers[i], i);
+            bufferOfReplaces.Add(_grid.Buffers[i], bufferOfVars[i]);
+        }
+
+        bufferOfVars[^1] = _grid.Buffers[^1];
 
         var cloner = new ReplacingExprCloner(bodyVarReplaces);
         var nestBody = cloner.Clone(_grid.Body, default);
@@ -84,11 +94,24 @@ internal sealed class AffineTiler
 
         // 4. Create PrimFunction
         var body = root.Build();
-        var primFunc = new PrimFunction(_grid.ModuleKind, body, _grid.Buffers);
+        cloner = new ReplacingExprCloner(bufferOfReplaces);
+        body = cloner.Clone(body, default);
+        var primFunc = new PrimFunction(_grid.ModuleKind, body, bufferOfVars);
         var wrapper = new PrimFunctionWrapper(primFunc, _grid.Buffers.Length - 1);
-        module.Add(primFunc);
-        module.Add(wrapper);
-        return new Call(wrapper, _grid.Buffers);
+
+        // module.Add(primFunc);
+        // module.Add(wrapper);
+        return new Call(wrapper, _grid.Reads);
+    }
+
+    private TIR.Buffer AllocateBufferOf(Expr expr, int i)
+    {
+        if (expr is IR.Buffers.BufferOf bufof)
+        {
+            return T.CreateBuffer(bufof.Input.CheckedTensorType, MemoryLocation.Input, out _, "buffer_" + i.ToString());
+        }
+
+        throw new NotSupportedException();
     }
 
     private ISequentialBuilder<Expr> AllocateTempBuffers(GridSchedule.Place place, ISequentialBuilder<Expr> sequential)

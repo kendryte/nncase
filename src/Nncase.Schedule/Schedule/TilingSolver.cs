@@ -112,7 +112,7 @@ public class TilingSolver
         var objeciveMonitor = _solver.MakeMinimize(_objective, 1);
         var searchLog = _solver.MakeSearchLog(100000, objeciveMonitor);
         var searchLimit = _solver.MakeImprovementLimit(_objective, false, 1, 0, 1, 2);
-        var timeLimit = _solver.MakeTimeLimit(5000);
+        var timeLimit = _solver.MakeTimeLimit(50000);
 
         _solver.Solve(_decisionBuilder, new SearchMonitor[] { objeciveMonitor, searchLimit, timeLimit, searchLog, _solutionCollector });
 
@@ -557,8 +557,11 @@ public class TilingSolver
                 }
             }
 
-            var constraint = placeVar * (anyOrder ?? _solver.MakeIntConst(1)) == 0;
-            _solver.Add(constraint);
+            if (anyOrder != null)
+            {
+                var constraint = placeVar * (anyOrder ?? _solver.MakeIntConst(1)) == 0;
+                _solver.Add(constraint);
+            }
         }
     }
 

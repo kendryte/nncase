@@ -107,6 +107,28 @@ class NNCASE_API value_type_node : public datatype_node {
 
 using value_type_t = object_t<value_type_node>;
 
+class NNCASE_API vector_type_node : public datatype_node {
+    DEFINE_OBJECT_KIND(datatype_node, object_value_type)
+  public:
+    vector_type_node(datatype_t elemtype, dims_t lanes) noexcept
+        : elemtype_(elemtype), lanes_(lanes) {}
+
+    size_t size_bytes() const noexcept override {
+        auto acc = elemtype_->size_bytes();
+        for (size_t i = 0; i < lanes_.size(); i++) {
+            acc *= lanes_[i];
+        }
+        return acc;
+    }
+    typecode_t typecode() const noexcept override { return dt_vectortype; }
+
+  private:
+    datatype_t elemtype_;
+    dims_t lanes_;
+};
+
+using vector_type_t = object_t<vector_type_node>;
+
 namespace detail {
 template <class T> struct datatype_of {};
 

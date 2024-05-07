@@ -117,7 +117,7 @@ public partial class CPU
         return new Call(new Reshape(newShape), input, ret);
     }
 
-    public static Expr Swish(Buffer buffer, Buffer ret, float v)
+    public static Expr Swish(Expr buffer, Expr ret, float v)
     {
         return new Call(new Swish(v), buffer, ret);
     }

@@ -15,9 +15,9 @@ internal sealed class CostEvaluateVisitor : ExprVisitor<Cost, Unit>
 {
     private readonly CostEvaluateContext _context;
 
-    public CostEvaluateVisitor()
+    public CostEvaluateVisitor(CompileOptions compileOptions)
     {
-        _context = new CostEvaluateContext(ExprMemo);
+        _context = new CostEvaluateContext(ExprMemo, compileOptions);
     }
 
     /// <inheritdoc/>
@@ -41,7 +41,7 @@ internal sealed class CostEvaluateVisitor : ExprVisitor<Cost, Unit>
         var targetCost = expr.Target switch
         {
             Op op => CompilerServices.EvaluateOpCost(op, _context),
-            Function func => CompilerServices.EvaluateCost(func.Body),
+            Function func => CompilerServices.EvaluateCost(func.Body, _context.CompileOptions),
             _ => throw new NotImplementedException(expr.Target.ToString()),
         };
         return argumentsCost + targetCost;

@@ -17,6 +17,11 @@ namespace Nncase.Evaluator;
 public interface ICostEvaluateContext
 {
     /// <summary>
+    /// Gets the CompileOptions.
+    /// </summary>
+    public CompileOptions CompileOptions { get; }
+
+    /// <summary>
     /// Get return type.
     /// </summary>
     /// <typeparam name="T">Return type.</typeparam>

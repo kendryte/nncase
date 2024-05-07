@@ -19,8 +19,6 @@ namespace Nncase.Passes;
 
 internal sealed class CPUFusionToTirPass : ModulePass
 {
-    private IAnalyzerManager AnalyzerManager => CompileSession.GetRequiredService<IAnalyzerManager>();
-
     /// <inheritdoc/>
     protected override Task<IRModule> RunCoreAsync(IRModule module, RunPassContext options)
     {
@@ -29,7 +27,7 @@ internal sealed class CPUFusionToTirPass : ModulePass
 
         for (int i = 0; i < module.Functions.Count; i++)
         {
-            if (module.Functions[i] is Fusion { ModuleKind: CPUTarget.Kind } fusion && fusion.Name.EndsWith("kernel"))
+            if (module.Functions[i] is Fusion { ModuleKind: CPUTarget.Kind } fusion)
             {
                 // var analysis = new Dictionary<Type, IAnalysisResult>
                 // {

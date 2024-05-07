@@ -60,9 +60,13 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
     {
         var arguments = expr.Arguments.AsValueEnumerable().Select(GetBuffer).ToArray();
         var ret = GetBuffer(expr);
-        var op = expr.Target is IR.CPU.CPUKernelOp kop ? kop.Target : expr.Target;
+        var op = expr.Target;
         switch (op)
         {
+            case PrimFunctionWrapper { Target: TIR.PrimFunction { ModuleKind: string mkind } deviceFunc } when mkind == Targets.CPUTarget.Kind:
+                _devices.Add(deviceFunc);
+                _mainBody.Add(new Call(deviceFunc, arguments.Concat(new[] { ret }).ToArray()));
+                break;
             case Fusion deviceFunc:
                 {
                     var r = new DeviceFusionToPrimFuncRewriter(_fusionCheckCache);
@@ -176,7 +180,7 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Gather(arguments[0], arguments[1], ret, gather.Axis));
                 break;
             case IR.NN.Pad pad:
-                _mainBody.Add(TIR.F.CPU.Pad(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToScalar<float>()));
+                _mainBody.Add(TIR.F.CPU.Pad(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToArray<float>()[0]));
                 break;
             default:
                 throw new NotSupportedException();
@@ -271,9 +275,6 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
 
     private void GenerateBinary(Binary binary, Buffer[] arguments, Buffer ret, Call expr)
     {
-        _ = (DistributedType)expr.Arguments[0].CheckedType;
-        _ = (DistributedType)expr.Arguments[1].CheckedType;
-        _ = (DistributedType)expr.CheckedType;
         _mainBody.Add(TIR.F.CPU.Binary(binary.BinaryOp, arguments[0], arguments[1], ret));
     }
 

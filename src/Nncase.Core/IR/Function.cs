@@ -32,12 +32,17 @@ public sealed class Function : BaseFunction
     {
     }
 
-    public Function(string name, Expr body, ReadOnlySpan<Var> parameters, Dictionary<Var, Expr[]>? varMap)
-        : base(name, StackVMModuleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<Var, Expr>(parameters)))
+    public Function(string name, string moduleKind, Expr body, ReadOnlySpan<Var> parameters, Dictionary<Var, Expr[]>? varMap)
+        : base(name, moduleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<Var, Expr>(parameters)))
     {
         VarMap = varMap ?? new();
         var dynamicDims = VarMap.Values.SelectMany(x => x).ToArray();
         _pinner = new ExprPinner(dynamicDims);
+    }
+
+    public Function(string name, Expr body, ReadOnlySpan<Var> parameters, Dictionary<Var, Expr[]>? varMap)
+        : this(name, StackVMModuleKind, body, parameters, varMap)
+    {
     }
 
     /// <summary>
@@ -82,6 +87,6 @@ public sealed class Function : BaseFunction
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitFunction(this, context);
 
-    public Function With(string? name = null, Expr? body = null, Var[]? parameters = null)
-        => new Function(name ?? Name, body ?? Body, parameters ?? Parameters, VarMap);
+    public Function With(string? name = null, string? moduleKind = null, Expr? body = null, Var[]? parameters = null)
+        => new Function(name ?? Name, moduleKind ?? ModuleKind, body ?? Body, parameters ?? Parameters, VarMap);
 }

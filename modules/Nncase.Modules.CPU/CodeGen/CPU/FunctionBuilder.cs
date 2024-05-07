@@ -62,12 +62,11 @@ internal class FunctionBuilder
 
             return new LinkableKernelFunction(_id, function, functionCSource, _sectionManager.GetContent(WellknownSectionNames.Text)!, new LinkedSection(_sectionManager.GetContent(KernelHeaderSectionName), KernelHeaderSectionName, 0, 8, (uint)sizeof(DescHeader)));
         }
-        else if (function.Name.EndsWith("device"))
+        else
         {
             var visitor = new DeviceCSourceConvertVisitor();
             visitor.Visit(function);
             var header = visitor.GetHeader();
-
             return new LinkableDeviceFunction(_id, function, header, _sectionManager.GetContent(WellknownSectionNames.Text)!);
         }
 

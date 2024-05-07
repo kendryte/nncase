@@ -88,7 +88,7 @@ public static class T
     /// <returns> for builder. </returns>
     public static ISequentialBuilder<For> ForLoop(out Var loopVar, Range domain, LoopMode mode, [CallerArgumentExpression("loopVar")] string var_name = "v")
     {
-        var newLoopVar = loopVar = new Var(var_name.StartsWith("var ") ? var_name[4..] : var_name, TensorType.Scalar(DataTypes.Int32));
+        var newLoopVar = loopVar = new Var(var_name.StartsWith("var ") ? var_name[4..] : var_name, domain.Start.CheckedType);
         return new SequentialBuilder<For>(body => new For(newLoopVar, domain, mode, body));
     }
 
