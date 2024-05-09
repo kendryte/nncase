@@ -29,7 +29,7 @@ public:
     output_connector &output() { return output_at(0); }
     int32_t axis() const noexcept { return axis_; }
     float epsilon() const noexcept { return epsilon_; }
-    layernorm(datatype_t input_type, shape_t input_shape, int32_t axis, float epsilon);
+    layernorm(datatype_t input_type, shape_t input_shape, int32_t axis, float epsilon, shape_t const_shape = shape_t {});
 
 protected:
     bool properties_equal(node &other) const override;

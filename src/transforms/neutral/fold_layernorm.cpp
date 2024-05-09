@@ -14,8 +14,10 @@
  */
 #include <nncase/ir/ops/binary.h>
 #include <nncase/ir/ops/bitcast.h>
+#include <nncase/ir/ops/broadcast.h>
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/layernorm.h>
+#include <nncase/ir/ops/transpose.h>
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/unary.h>
 #include <nncase/ir/visitor.h>
@@ -49,18 +51,22 @@ bool fold_layernorm_pattern1_transform::on_try_match(node &node, transform_conte
     {
         context.inputs.emplace_back(&rshape1->input());
         context.outputs.emplace_back(&add_beta->output());
-
-        context.matched_nodes.emplace_back(rshape1);
-        context.matched_nodes.emplace_back(rd1);
-        context.matched_nodes.emplace_back(sub);
-        context.matched_nodes.emplace_back(pow);
-        context.matched_nodes.emplace_back(rd2);
-        context.matched_nodes.emplace_back(add_eps);
-        context.matched_nodes.emplace_back(sqrt);
-        context.matched_nodes.emplace_back(div);
-        context.matched_nodes.emplace_back(rshape2);
-        context.matched_nodes.emplace_back(mul);
-        context.matched_nodes.emplace_back(add_beta);
+        
+        if(auto esp_const = try_get_direct_parent<constant>(*add_eps))
+            context.matched_nodes.emplace_back(esp_const);
+        else
+            return false;
+        
+        if(auto mul_const = try_get_direct_parent<constant>(*mul))
+            context.matched_nodes.emplace_back(mul_const);
+        else
+            return false;
+        
+        if (auto add_beta_const = try_get_direct_parent<constant>(*add_beta))
+            context.matched_nodes.emplace_back(add_beta_const);
+        else
+            return false;       
+        
 
         return true;
     }
@@ -73,9 +79,9 @@ void fold_layernorm_pattern1_transform::process(transform_context &context)
     auto &output = *context.inputs[0]->connection();
     auto inputs = context.outputs[0]->connections();
 
-    auto eps = node_cast<constant>(context.matched_nodes[5]->input_at(1).connection()->owner());
-    auto gamma = node_cast<constant>(context.matched_nodes[9]->input_at(1).connection()->owner());
-    auto beta = node_cast<constant>(context.matched_nodes[10]->input_at(1).connection()->owner());
+    auto eps = node_cast<constant>(*context.matched_nodes[0]);
+    auto gamma = node_cast<constant>(*context.matched_nodes[1]);
+    auto beta = node_cast<constant>(*context.matched_nodes[2]);
 
     auto axis = output.shape().size() - gamma->output().shape().size();
     auto ln = context.graph.emplace<layernorm>(output.type(), output.shape(), axis, *reinterpret_cast<const float *>(eps->data().data()));
@@ -111,15 +117,22 @@ bool fold_layernorm_pattern2_transform::on_try_match(node &node, transform_conte
         context.outputs.emplace_back(&add_beta->output());
 
         context.matched_nodes.emplace_back(rd1);
-        context.matched_nodes.emplace_back(sub);
-        context.matched_nodes.emplace_back(pow);
-        context.matched_nodes.emplace_back(rd2);
-        context.matched_nodes.emplace_back(add_eps);
-        context.matched_nodes.emplace_back(sqrt);
-        context.matched_nodes.emplace_back(div);
-        context.matched_nodes.emplace_back(mul);
-        context.matched_nodes.emplace_back(add_beta);
-
+        
+        if(auto esp_const = try_get_direct_parent<constant>(*add_eps))
+            context.matched_nodes.emplace_back(esp_const);
+        else
+            return false;
+        
+        if(auto mul_const = try_get_direct_parent<constant>(*mul))
+            context.matched_nodes.emplace_back(mul_const);
+        else
+            return false;
+        
+        if (auto add_beta_const = try_get_direct_parent<constant>(*add_beta))
+            context.matched_nodes.emplace_back(add_beta_const);
+        else
+            return false;       
+            
         return true;
     }
 
@@ -131,12 +144,14 @@ void fold_layernorm_pattern2_transform::process(transform_context &context)
     auto &output = *context.inputs[0]->connection();
     auto inputs = context.outputs[0]->connections();
 
-    auto eps = node_cast<constant>(context.matched_nodes[4]->input_at(1).connection()->owner());
-    auto gamma = node_cast<constant>(context.matched_nodes[7]->input_at(1).connection()->owner());
-    auto beta = node_cast<constant>(context.matched_nodes[8]->input_at(1).connection()->owner());
+    auto input_shape = output.shape();
+    int axis = node_cast<reduce>(*context.matched_nodes[0])->axis()[0]; // Here axis is a scalar
 
-    auto axis = output.shape().size() - gamma->output().shape().size();
-    auto ln = context.graph.emplace<layernorm>(output.type(), output.shape(), axis, *reinterpret_cast<const float *>(eps->data().data()));
+    auto eps = node_cast<constant>(*context.matched_nodes[1]);
+    auto gamma = node_cast<constant>(*context.matched_nodes[2]);
+    auto beta = node_cast<constant>(*context.matched_nodes[3]);
+
+    auto ln = context.graph.emplace<layernorm>(output.type(), output.shape(), axis, *reinterpret_cast<const float *>(eps->data().data()), gamma->output().shape());
     ln->name(output.name() + "/layernorm");
 
     ln->input().connect(output);
@@ -209,4 +224,94 @@ void fold_layernorm_pattern3_transform::process(transform_context &context)
 
     for (auto &in : dup(inputs))
         in->connect(ln->output());
+}
+
+bool convert_layernorm_to_channel_last::on_try_match(node &node, transform_context &context)
+{
+    if (auto ln = node_cast<layernorm>(node))
+    {
+        // if channel is last, skip.
+        if(ln->axis() == ln->output().shape().size() - 1)
+            return false;
+
+        context.inputs.emplace_back(&ln->input());
+        context.outputs.emplace_back(&ln->output());
+
+        context.matched_nodes.emplace_back(ln);
+        if (auto scale = try_get_direct_parent<constant>(*ln, 1))
+            context.matched_nodes.emplace_back(scale);
+        else
+            return false;
+            
+        if (auto bias = try_get_direct_parent<constant>(*ln, 2))
+            context.matched_nodes.emplace_back(bias);
+        else
+            return false;
+
+        return true;
+    }
+
+    return false;
+}
+
+void convert_layernorm_to_channel_last::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto inputs = context.outputs[0]->connections();
+
+    auto input_shape = output.shape();
+    auto ln = node_cast<layernorm>(*context.matched_nodes[0]);
+    auto gamma = node_cast<constant>(*context.matched_nodes[1]);
+    auto beta = node_cast<constant>(*context.matched_nodes[2]);
+    
+    int axis = ln->axis();
+
+    auto get_perm_with_axis = [&](std::vector<int> &perm, int axis, int shape_size) {
+        for(int i = 0; i < shape_size; i++)
+        {
+            if(i != axis)
+                perm.push_back(i);
+        }
+        perm.push_back(axis);
+    };
+
+    std::vector<int> in_perm, out_perm;
+
+    get_perm_with_axis(in_perm, axis, input_shape.size());
+
+    for(int i = 0; i < output.shape().size(); i++)
+    {
+        out_perm.emplace_back(in_perm[in_perm[i]]);
+    }
+    
+    output_connector *tp_gamma = &gamma->output(), *tp_beta = &beta->output();
+    if(gamma->output().shape().size() != 1)
+    {
+        std::vector<int> const_perm;
+        int axis_gap = input_shape.size() - gamma->output().shape().size();
+        get_perm_with_axis(const_perm, axis - axis_gap, gamma->output().shape().size());
+        auto new_gamma = context.graph.emplace<transpose>(tp_gamma->type(), tp_gamma->shape(), axis_t { const_perm.begin(), const_perm.end() });
+        auto new_beta = context.graph.emplace<transpose>(tp_beta->type(), tp_beta->shape(), axis_t { const_perm.begin(), const_perm.end() });
+        
+        new_gamma->input().connect(gamma->output());
+        new_beta->input().connect(beta->output());
+        
+        tp_gamma = &new_gamma->output();
+        tp_beta = &new_beta->output();
+    }
+
+    auto tp_in = context.graph.emplace<transpose>(output.type(), output.shape(), axis_t { in_perm.begin(), in_perm.end()});
+    auto new_ln = context.graph.emplace<layernorm>(output.type(), tp_in->output().shape(), tp_in->output().shape().size()-1, ln->epsilon(), tp_gamma->shape());
+    auto tp_out = context.graph.emplace<transpose>(output.type(), new_ln->output().shape(), axis_t { out_perm.begin(), out_perm.end()});
+    new_ln->name(ln->name());
+
+    tp_in->input().connect(output);
+    tp_out->input().connect(new_ln->output());
+
+    new_ln->input().connect(tp_in->output());
+    new_ln->scale().connect(*tp_gamma);
+    new_ln->bias().connect(*tp_beta);
+
+    for (auto &in : dup(inputs))
+        in->connect(tp_out->output());
 }

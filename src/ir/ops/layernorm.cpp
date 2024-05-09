@@ -20,12 +20,20 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-layernorm::layernorm(datatype_t input_type, shape_t input_shape, int32_t axis, float epsilon)
+layernorm::layernorm(datatype_t input_type, shape_t input_shape, int32_t axis, float epsilon, shape_t const_shape)
     : axis_(normalize_axis(input_shape, axis)), epsilon_(epsilon)
 {
     add_input("input", input_type, input_shape);
-    add_input("scale", input_type, shape_t { input_shape.begin() + axis_, input_shape.end() });
-    add_input("bias", input_type, shape_t { input_shape.begin() + axis_, input_shape.end() });
+    if ( const_shape == shape_t {})
+    {
+        add_input("scale", input_type, shape_t { input_shape.begin() + axis_, input_shape.end() });
+        add_input("bias", input_type, shape_t { input_shape.begin() + axis_, input_shape.end() });
+    }
+    else
+    {
+        add_input("scale", input_type, const_shape);
+        add_input("bias", input_type, const_shape);
+    }
     add_output("output", input_type, input_shape);
 }
 
