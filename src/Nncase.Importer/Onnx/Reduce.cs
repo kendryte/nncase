@@ -20,7 +20,7 @@ namespace Nncase.Importer
         {
             var input = GetInputExpr(op, 0);
             Expr axis;
-            if ((reduceOp == ReduceOp.Sum && GetOpSet(op) < 13) || (reduceOp != ReduceOp.Sum && GetOpSet(op) < 18))
+            if ((reduceOp == ReduceOp.Sum && GetOpSet(op) < 13) || GetOpSet(op) < 18)
             {
                 axis = GetAxesAttribute(op, input);
             }
