@@ -41,7 +41,7 @@ public class CPUTarget : ITarget
 
         ITargetOptions ParseTargetCompileOptions(InvocationContext context, Command command)
         {
-            var packing = context.ParseResult.GetValueForOption<bool>(packingOption);
+            var packing = context.ParseResult.GetValueForOption(packingOption);
             return new CpuTargetOptions() { Packing = packing };
         }
 
@@ -61,25 +61,6 @@ public class CPUTarget : ITarget
     /// <inheritdoc/>
     public void RegisterTargetDependentPass(IPassManager passManager, CompileOptions options)
     {
-        passManager.AddWithName<DataflowPass>("MakeFusion").Configure(p =>
-        {
-            p.Add<Passes.Rules.CombineMHA>();
-            p.Add<Passes.Rules.Neutral.FoldConstCall>();
-            p.Add<Passes.Rules.FuseMHA2>();
-            p.Add<Passes.Rules.FuseVAEDecRes>();
-        });
-
-#if false
-        passManager.AddWithName<DataflowPass>("CPUDeviceFusion").Configure(p =>
-        {
-            p.Add<Passes.Rules.CPU.Affine.LowerUnary>();
-        });
-#endif
-
-        passManager.AddWithName<DataflowPass>("CPUKernelFusion").Configure(p =>
-        {
-            p.Add<Passes.Rules.CPUSingleKernelFusion>();
-        });
     }
 
     /// <inheritdoc/>
@@ -113,35 +94,67 @@ public class CPUTarget : ITarget
 
         if (options.TargetCompileOptions is CpuTargetOptions { Packing: true })
         {
-            passManager.AddWithName<DataflowPass>("AutoPacking").Configure(p =>
+            passManager.AddWithName<EGraphRulesPass>("AutoPacking").Configure(p =>
             {
-                p.Add<Passes.Rules.AutoPacking>();
+                // todo config it in the target options.
+                var rank = 1;
+                var lane = System.Runtime.Intrinsics.Vector256.IsHardwareAccelerated ? 8 : 4;
+                p.Add<Passes.Rules.CPU.PackSoftmax>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackSwish>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackLayerNorm>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackResizeImage>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackMatMul>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackConv2D>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackUnary>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackBinary>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackTranspose>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackUnsqueeze>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackReshape>(rank, lane);
+                p.Add<Passes.Rules.CPU.PackSlice>(rank, lane);
+                p.Add<Passes.Rules.Neutral.FoldConstCall>();
+                p.Add<Passes.Rules.CPU.FoldPackUnpack>();
+                p.Add<Passes.Rules.CPU.FoldPackConcatUnpack>();
+                p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
             });
         }
 
-        passManager.AddWithName<DataflowPass>("AutoDistributed").Configure(p =>
+        // need refactor tiling.
+        // passManager.Add<AutoDistributedPass>();
+        passManager.Add<DataflowPass>().Configure(p =>
         {
-            p.Add<Passes.Rules.AutoDistributed>();
+            p.Add<Passes.Rules.CPU.CPUOutputBoxingFusion>();
+            p.Add<Passes.Rules.CPU.CPUSingleFusion>();
+        });
+        passManager.Add<DataflowPass>().Configure(p =>
+        {
+            p.AddAnalysis<Passes.Analysis.IExprUserAnalysisResult>();
+            p.Add<Passes.Rules.CPU.DeterminedFusionMergeRule>();
+        });
+        passManager.AddWithName<EGraphRulesPass>("PartitionConstruct").Configure(p =>
+        {
+            p.Add<Passes.Rules.CPU.GeneralFusionMergeRule>();
+        });
+        passManager.AddWithName<EGraphExtractPass>("PartitionExtract").Configure(p =>
+        {
+            p.AddBaseFuncCostEvaluator<Passes.Rules.CPU.FusionCostEvaluator>();
         });
 
+        // passManager.Add<CPUFunctionPartitionPass>();
         passManager.Add<CPUFusionToModulePass>();
 
-#if false
-        // FIX ME: Disable macos as macho loader is buggy.
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        passManager.AddWithName<DataflowPass>("LowerToAffine").Configure(p =>
         {
-            passManager.AddWithName<DataflowPass>("CPUDeviceFusion").Configure(p =>
-            {
-                p.AddAnalysis<Passes.Analysis.IExprUserAnalysisResult>();
-                p.Add<Passes.Rules.CPUDeviceFusion>();
-            });
-        }
-#endif
+            p.Add<Passes.Rules.CPU.Affine.LowerUnary>();
+            p.Add<Passes.Rules.CPU.Affine.LowerSwish>();
+        });
 
+        // concat/reshape lower
+        // tile and lower to tir.
         passManager.Add<AutoTilePass>();
 
         passManager.Add<CPUFusionToTirPass>();
 
+        // todo add auto fusion merge pass here.
         passManager.Add<PrimFuncPass>().Configure(p =>
         {
             p.Add<Passes.Mutators.UnFoldBlock>();
