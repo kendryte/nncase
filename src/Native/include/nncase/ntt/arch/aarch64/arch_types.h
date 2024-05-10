@@ -17,7 +17,7 @@
 #include <arm_neon.h>
 
 #ifndef NTT_VLEN
-#define NTT_VLEN (sizeof(int8x16_t))
+#define NTT_VLEN (sizeof(int8x16_t) * 8)
 #endif
 
 NTT_DEFINE_NATIVE_TENSOR(int8_t, int8x16_t, 16)

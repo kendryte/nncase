@@ -67,7 +67,7 @@ jobs:
         run: |
           cd build
           ctest -C ${{matrix.config.buildType}} --test-dir tests/kernels --output-on-failure -j4
-          ctest -C ${{matrix.config.buildType}} --test-dir src/Native/test --output-on-failure -j4
+          ctest -C ${{matrix.config.buildType}} --test-dir src/Native/test/ctest --output-on-failure -j4
         if: runner.os != 'Windows'
 
       #- name: Benchmark
@@ -144,7 +144,7 @@ jobs:
         run: |
           cd build
           ctest --test-dir tests/kernels --output-on-failure -j4
-          ctest --test-dir src/Native/test --output-on-failure -j4
+          ctest --test-dir src/Native/test/ctest --output-on-failure -j4
 
       - name: Upload nncaseruntime Build Artifact
         uses: actions/upload-artifact@v3
