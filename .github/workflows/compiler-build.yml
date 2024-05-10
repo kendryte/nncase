@@ -129,7 +129,9 @@ jobs:
         python-version: 3.7
 
     - name: Install Python Packages
-      run: pip install -r requirements.test.txt
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements.test.txt
 
     - name: Create Test Environment
       run: mkdir test_results
