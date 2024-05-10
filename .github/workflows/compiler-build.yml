@@ -34,7 +34,9 @@ jobs:
         python-version: 3.7
 
     - name: Install Conan
-      run: pip install conan==1.59.0
+      run: |
+        pip install --upgrade pip
+        pip install conan==1.59.0
 
     - name: Configure Conan (Linux)
       run: |
