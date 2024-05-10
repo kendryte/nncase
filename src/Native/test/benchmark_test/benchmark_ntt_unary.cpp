@@ -18,73 +18,48 @@
 
 using namespace nncase;
 
-#define BENCHMARMK_NTT_UNARY(op)                                               \
-    template <typename T, size_t N>                                            \
-    void benchmark_ntt_unary_##op(T low, T high) {                             \
-        constexpr size_t size = 2000;                                          \
-        ntt::tensor<ntt::vector<T, N>, ntt::fixed_shape<size>> ntt_input;      \
-        NttTest::init_tensor(ntt_input, low, high);                            \
-                                                                               \
-        auto t1 = NttTest::get_cpu_cycle();                                    \
-        for (size_t i = 0; i < size; i++)                                      \
-            ntt::op(ntt_input);                                                \
-        auto t2 = NttTest::get_cpu_cycle();                                    \
-        std::cout << __FUNCTION__ << " took " << std::setprecision(1)          \
-                  << std::fixed << static_cast<float>(t2 - t1) / size / size   \
-                  << " cycles" << std::endl;                                   \
-    }
+template <template <typename T1> class Op, typename T2, size_t N>
+void benchmark_ntt_unary(std::string op_name, T2 low, T2 high) {
+    constexpr size_t size = 2000;
+    using tensor_type = ntt::tensor<ntt::vector<T2, N>, ntt::fixed_shape<size>>;
+    tensor_type ntt_input;
+    NttTest::init_tensor(ntt_input, low, high);
 
-#define REGISTER_NTT_UNARY                                                     \
-    BENCHMARMK_NTT_UNARY(abs)                                                  \
-    BENCHMARMK_NTT_UNARY(acos)                                                 \
-    BENCHMARMK_NTT_UNARY(acosh)                                                \
-    BENCHMARMK_NTT_UNARY(asin)                                                 \
-    BENCHMARMK_NTT_UNARY(asinh)                                                \
-    BENCHMARMK_NTT_UNARY(ceil)                                                 \
-    BENCHMARMK_NTT_UNARY(cos)                                                  \
-    BENCHMARMK_NTT_UNARY(cosh)                                                 \
-    BENCHMARMK_NTT_UNARY(exp)                                                  \
-    BENCHMARMK_NTT_UNARY(floor)                                                \
-    BENCHMARMK_NTT_UNARY(log)                                                  \
-    BENCHMARMK_NTT_UNARY(neg)                                                  \
-    BENCHMARMK_NTT_UNARY(round)                                                \
-    BENCHMARMK_NTT_UNARY(rsqrt)                                                \
-    BENCHMARMK_NTT_UNARY(sign)                                                 \
-    BENCHMARMK_NTT_UNARY(sin)                                                  \
-    BENCHMARMK_NTT_UNARY(sinh)                                                 \
-    BENCHMARMK_NTT_UNARY(sqrt)                                                 \
-    BENCHMARMK_NTT_UNARY(square)                                               \
-    BENCHMARMK_NTT_UNARY(swish)                                                \
-    BENCHMARMK_NTT_UNARY(tanh)
-
-REGISTER_NTT_UNARY
-
-#define RUN_NTT_UNARY(N)                                                       \
-    benchmark_ntt_unary_abs<float, N>(-10.f, 10.f);                            \
-    benchmark_ntt_unary_acos<float, N>(-1.f, 1.f);                             \
-    benchmark_ntt_unary_acosh<float, N>(1.f, 10.f);                            \
-    benchmark_ntt_unary_asin<float, N>(-1.f, 1.f);                             \
-    benchmark_ntt_unary_asinh<float, N>(-10.f, 10.f);                          \
-    benchmark_ntt_unary_ceil<float, N>(-10.f, 10.f);                           \
-    benchmark_ntt_unary_cos<float, N>(-10.f, 10.f);                            \
-    benchmark_ntt_unary_cosh<float, N>(-10.f, 10.f);                           \
-    benchmark_ntt_unary_exp<float, N>(-10.f, 10.f);                            \
-    benchmark_ntt_unary_floor<float, N>(-10.f, 10.f);                          \
-    benchmark_ntt_unary_log<float, N>(-10.f, 10.f);                            \
-    benchmark_ntt_unary_neg<float, N>(-10.f, 10.f);                            \
-    benchmark_ntt_unary_round<float, N>(-10.f, 10.f);                          \
-    benchmark_ntt_unary_rsqrt<float, N>(1.f, 10.f);                            \
-    benchmark_ntt_unary_sign<float, N>(-10.f, 10.f);                           \
-    benchmark_ntt_unary_sin<float, N>(-10.f, 10.f);                            \
-    benchmark_ntt_unary_sinh<float, N>(-10.f, 10.f);                           \
-    benchmark_ntt_unary_sqrt<float, N>(1.f, 10.f);                             \
-    benchmark_ntt_unary_square<float, N>(-10.f, 10.f);                         \
-    benchmark_ntt_unary_swish<float, N>(-10.f, 10.f);                          \
-    benchmark_ntt_unary_tanh<float, N>(-10.f, 10.f);
+    Op<tensor_type> op;
+    auto t1 = NttTest::get_cpu_cycle();
+    for (size_t i = 0; i < size; i++)
+        op(ntt_input);
+    auto t2 = NttTest::get_cpu_cycle();
+    std::cout << __FUNCTION__ << "_" << op_name << " took "
+              << std::setprecision(1) << std::fixed
+              << static_cast<float>(t2 - t1) / size / size << " cycles"
+              << std::endl;
+}
 
 int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
 
-    RUN_NTT_UNARY(NTT_VLEN / (sizeof(float) * 8))
+    constexpr size_t N = NTT_VLEN / (sizeof(float) * 8);
+    benchmark_ntt_unary<ntt::ops::abs, float, N>("abs", -10.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::acos, float, N>("acos", -1.f, 1.f);
+    benchmark_ntt_unary<ntt::ops::acosh, float, N>("acosh", 1.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::asin, float, N>("asin", -1.f, 1.f);
+    benchmark_ntt_unary<ntt::ops::asinh, float, N>("asinh", -10.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::ceil, float, N>("ceil", -10.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::cos, float, N>("cos", -10.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::cosh, float, N>("cosh", -10.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::exp, float, N>("exp", -10.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::floor, float, N>("floor", -10.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::log, float, N>("log", -10.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::neg, float, N>("neg", -10.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::round, float, N>("round", -10.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::rsqrt, float, N>("rsqrt", 1.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::sign, float, N>("sign", -10.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::sin, float, N>("sin", -10.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::sinh, float, N>("sinh", -10.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::sqrt, float, N>("sqrt", 1.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::square, float, N>("square", -10.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::swish, float, N>("swish", -10.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::tanh, float, N>("tanh", -10.f, 10.f);
 }
