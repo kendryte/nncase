@@ -17,8 +17,8 @@
 #include <nncase/ir/ops/broadcast.h>
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/layernorm.h>
-#include <nncase/ir/ops/transpose.h>
 #include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/transpose.h>
 #include <nncase/ir/ops/unary.h>
 #include <nncase/ir/visitor.h>
 #include <nncase/runtime/datatypes.h>
@@ -51,22 +51,21 @@ bool fold_layernorm_pattern1_transform::on_try_match(node &node, transform_conte
     {
         context.inputs.emplace_back(&rshape1->input());
         context.outputs.emplace_back(&add_beta->output());
-        
-        if(auto esp_const = try_get_direct_parent<constant>(*add_eps))
+
+        if (auto esp_const = try_get_direct_parent<constant>(*add_eps))
             context.matched_nodes.emplace_back(esp_const);
         else
             return false;
-        
-        if(auto mul_const = try_get_direct_parent<constant>(*mul))
+
+        if (auto mul_const = try_get_direct_parent<constant>(*mul))
             context.matched_nodes.emplace_back(mul_const);
         else
             return false;
-        
+
         if (auto add_beta_const = try_get_direct_parent<constant>(*add_beta))
             context.matched_nodes.emplace_back(add_beta_const);
         else
-            return false;       
-        
+            return false;
 
         return true;
     }
@@ -117,22 +116,22 @@ bool fold_layernorm_pattern2_transform::on_try_match(node &node, transform_conte
         context.outputs.emplace_back(&add_beta->output());
 
         context.matched_nodes.emplace_back(rd1);
-        
-        if(auto esp_const = try_get_direct_parent<constant>(*add_eps))
+
+        if (auto esp_const = try_get_direct_parent<constant>(*add_eps))
             context.matched_nodes.emplace_back(esp_const);
         else
             return false;
-        
-        if(auto mul_const = try_get_direct_parent<constant>(*mul))
+
+        if (auto mul_const = try_get_direct_parent<constant>(*mul))
             context.matched_nodes.emplace_back(mul_const);
         else
             return false;
-        
+
         if (auto add_beta_const = try_get_direct_parent<constant>(*add_beta))
             context.matched_nodes.emplace_back(add_beta_const);
         else
-            return false;       
-            
+            return false;
+
         return true;
     }
 
@@ -231,7 +230,7 @@ bool convert_layernorm_to_channel_last::on_try_match(node &node, transform_conte
     if (auto ln = node_cast<layernorm>(node))
     {
         // if channel is last, skip.
-        if(ln->axis() == ln->output().shape().size() - 1)
+        if (ln->axis() == ln->output().shape().size() - 1)
             return false;
 
         context.inputs.emplace_back(&ln->input());
@@ -242,7 +241,7 @@ bool convert_layernorm_to_channel_last::on_try_match(node &node, transform_conte
             context.matched_nodes.emplace_back(scale);
         else
             return false;
-            
+
         if (auto bias = try_get_direct_parent<constant>(*ln, 2))
             context.matched_nodes.emplace_back(bias);
         else
@@ -263,13 +262,13 @@ void convert_layernorm_to_channel_last::process(transform_context &context)
     auto ln = node_cast<layernorm>(*context.matched_nodes[0]);
     auto gamma = node_cast<constant>(*context.matched_nodes[1]);
     auto beta = node_cast<constant>(*context.matched_nodes[2]);
-    
+
     int axis = ln->axis();
 
     auto get_perm_with_axis = [&](std::vector<int> &perm, int axis, int shape_size) {
-        for(int i = 0; i < shape_size; i++)
+        for (int i = 0; i < shape_size; i++)
         {
-            if(i != axis)
+            if (i != axis)
                 perm.push_back(i);
         }
         perm.push_back(axis);
@@ -279,30 +278,30 @@ void convert_layernorm_to_channel_last::process(transform_context &context)
 
     get_perm_with_axis(in_perm, axis, input_shape.size());
 
-    for(int i = 0; i < output.shape().size(); i++)
+    for (int i = 0; i < output.shape().size(); i++)
     {
         out_perm.emplace_back(in_perm[in_perm[i]]);
     }
-    
+
     output_connector *tp_gamma = &gamma->output(), *tp_beta = &beta->output();
-    if(gamma->output().shape().size() != 1)
+    if (gamma->output().shape().size() != 1)
     {
         std::vector<int> const_perm;
         int axis_gap = input_shape.size() - gamma->output().shape().size();
         get_perm_with_axis(const_perm, axis - axis_gap, gamma->output().shape().size());
         auto new_gamma = context.graph.emplace<transpose>(tp_gamma->type(), tp_gamma->shape(), axis_t { const_perm.begin(), const_perm.end() });
         auto new_beta = context.graph.emplace<transpose>(tp_beta->type(), tp_beta->shape(), axis_t { const_perm.begin(), const_perm.end() });
-        
+
         new_gamma->input().connect(gamma->output());
         new_beta->input().connect(beta->output());
-        
+
         tp_gamma = &new_gamma->output();
         tp_beta = &new_beta->output();
     }
 
-    auto tp_in = context.graph.emplace<transpose>(output.type(), output.shape(), axis_t { in_perm.begin(), in_perm.end()});
-    auto new_ln = context.graph.emplace<layernorm>(output.type(), tp_in->output().shape(), tp_in->output().shape().size()-1, ln->epsilon(), tp_gamma->shape());
-    auto tp_out = context.graph.emplace<transpose>(output.type(), new_ln->output().shape(), axis_t { out_perm.begin(), out_perm.end()});
+    auto tp_in = context.graph.emplace<transpose>(output.type(), output.shape(), axis_t { in_perm.begin(), in_perm.end() });
+    auto new_ln = context.graph.emplace<layernorm>(output.type(), tp_in->output().shape(), tp_in->output().shape().size() - 1, ln->epsilon(), tp_gamma->shape());
+    auto tp_out = context.graph.emplace<transpose>(output.type(), new_ln->output().shape(), axis_t { out_perm.begin(), out_perm.end() });
     new_ln->name(ln->name());
 
     tp_in->input().connect(output);

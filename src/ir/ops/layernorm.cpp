@@ -24,7 +24,7 @@ layernorm::layernorm(datatype_t input_type, shape_t input_shape, int32_t axis, f
     : axis_(normalize_axis(input_shape, axis)), epsilon_(epsilon)
 {
     add_input("input", input_type, input_shape);
-    if ( const_shape == shape_t {})
+    if (const_shape == shape_t {})
     {
         add_input("scale", input_type, shape_t { input_shape.begin() + axis_, input_shape.end() });
         add_input("bias", input_type, shape_t { input_shape.begin() + axis_, input_shape.end() });
