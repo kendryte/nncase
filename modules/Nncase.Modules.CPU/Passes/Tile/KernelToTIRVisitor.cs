@@ -15,7 +15,7 @@ using Buffer = Nncase.TIR.Buffer;
 
 namespace Nncase.Passes.Tile;
 
-internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
+public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
 {
     private readonly Dictionary<Expr, TIR.Buffer> _buffersMap = new(ReferenceEqualityComparer.Instance);
     private readonly List<Expr> _mainBody;
