@@ -11,9 +11,10 @@ public static class MatmulTiler
 {
     public static void Solve()
     {
-        const int TotalLevel = 2;
+        const int TotalLevel = 3;
         var dimValues = new int[3] { 2048, 384, 8192 };
         var domain = new char[3] { 'm', 'n', 'k' };
+        var primtives = new int[3] { 32, 32, 32 };
         var tensors = new VTensor[3] {
             new VTensor("A", new[] { 'm', 'k' }),
             new VTensor("B", new[] { 'k', 'n' }),
@@ -39,7 +40,7 @@ public static class MatmulTiler
             var mul = one;
             for (int i = 0; i < domain.Length; i++)
             {
-                tileVars[l, i] = model.MakeIntVar(1, dimValues[i], $"T_{domain[i]}{l + 1}");
+                tileVars[l, i] = model.MakeIntVar(1, dimValues[i] / primtives[i], $"T_{domain[i]}{l + 1}");
                 allVars.Add(tileVars[l, i]);
                 mul *= tileVars[l, i];
             }
@@ -57,7 +58,7 @@ public static class MatmulTiler
         // we save the statement level tile size var in the last row.
         for (int i = 0; i < domain.Length; i++)
         {
-            tileVars[TotalLevel, i] = model.MakeIntVar(1, dimValues[i], $"T_{domain[i]}");
+            tileVars[TotalLevel, i] = model.MakeIntVar(1, dimValues[i] / primtives[i], $"T_{domain[i]}");
             allVars.Add(tileVars[TotalLevel, i]);
 
             for (int a = 0; a < tensors.Length; a++)
@@ -81,7 +82,7 @@ public static class MatmulTiler
             {
                 if (tensors[a].Dims.Contains(domain[i]))
                 {
-                    primitiveBufferSizes[a] *= tileVars[TotalLevel, i];
+                    primitiveBufferSizes[a] *= tileVars[TotalLevel, i] * primtives[i];
                 }
             }
         }
@@ -216,7 +217,7 @@ public static class MatmulTiler
                 prod *= column[l];
             }
 
-            tileVarConstraints[i] = model.MakeEquality(prod, dimValues[i]);
+            tileVarConstraints[i] = model.MakeEquality(prod, dimValues[i] / primtives[i]);
             model.Add(tileVarConstraints[i]);
         }
 
@@ -231,7 +232,7 @@ public static class MatmulTiler
                     // we can create buffer size by high loop level, but put it into low loop level.
                     for (int sl = 0; sl < l + 1; sl++)
                     {
-                        levelBufferSizes[sl] += placeGates[a, l, i][sl] * bufferSizes[a, sl, i];
+                        levelBufferSizes[sl] += placeGates[a, l, i][sl] * bufferSizes[a, l, i];
                     }
                 }
             }
@@ -246,6 +247,8 @@ public static class MatmulTiler
 
         // compute the cycles as objective
         var levelCycles = Enumerable.Range(0, TotalLevel).Select(i => (IntExpr)model.MakeIntConst(0, "zero")).ToArray();
+        var levelDataReads = Enumerable.Range(0, TotalLevel).Select(i => (IntExpr)model.MakeIntConst(0, "zero")).ToArray();
+        var levelDataWrites = Enumerable.Range(0, TotalLevel).Select(i => (IntExpr)model.MakeIntConst(0, "zero")).ToArray();
         for (int a = 0; a < tensors.Length; a++)
         {
             for (int l = 0; l < TotalLevel; l++)
@@ -255,6 +258,8 @@ public static class MatmulTiler
                     // we can create buffer size by high loop level, but put it into low loop level.
                     for (int sl = 0; sl < l + 1; sl++)
                     {
+                        levelDataReads[sl] += placeGates[a, l, i][sl] * dataReads[a, l, i][sl];
+                        levelDataWrites[sl] += placeGates[a, l, i][sl] * dataWrites[a, l, i][sl];
                         levelCycles[sl] += placeGates[a, l, i][sl] * (dataWrites[a, l, i][sl] + dataReads[a, l, i][sl]);
                     }
                 }
@@ -277,10 +282,11 @@ public static class MatmulTiler
 
         var objectiveMonitor = model.MakeMinimize(totalCyclesVar, 1);
         var logger = model.MakeSearchTrace("tiling:");
-        var collector = model.MakeLastSolutionCollector();
+        var collector = model.MakeNBestValueSolutionCollector(5, false);
         collector.Add(allVars.ToArray());
         collector.Add(levelBufferSizes.Select(c => c.Var()).ToArray());
-        collector.Add(capacityConstraints.Select(c => c.Var()).ToArray());
+        collector.Add(levelDataReads.Select(c => c.Var()).ToArray());
+        collector.Add(levelDataWrites.Select(c => c.Var()).ToArray());
         for (int ts = 0; ts < tensors.Length; ts++)
         {
             for (int l = 0; l < TotalLevel; l++)
@@ -298,8 +304,8 @@ public static class MatmulTiler
         }
 
         collector.AddObjective(totalCyclesVar);
-        var decisionBuilder = model.MakePhase(allVars.ToArray(), Solver.CHOOSE_LOWEST_MIN, Solver.ASSIGN_MIN_VALUE);
-        var status = model.Solve(decisionBuilder, new SearchMonitor[] { collector, objectiveMonitor });
+        var decisionBuilder = model.MakePhase(allVars.ToArray(), Solver.INT_VAR_DEFAULT, Solver.INT_VALUE_DEFAULT);
+        var status = model.Solve(decisionBuilder, new SearchMonitor[] { collector, objectiveMonitor, model.MakeTimeLimit(5000) });
         System.Console.WriteLine($"solve status: {status}");
 
         if (status)
@@ -320,9 +326,9 @@ public static class MatmulTiler
                             for (int d = 0; d < tensor.Dims.Length; d++)
                             {
                                 var ss = new List<string>();
-                                for (int l = 0; l <= sl; l++)
+                                for (int l = 0; l <= level; l++)
                                 {
-                                    for (int i = 0; i < ((l == sl) ? loop + 1 : domain.Length); i++)
+                                    for (int i = 0; i < ((l == level) ? loop + 1 : domain.Length); i++)
                                     {
                                         if (tileVars[l, i].Name().Contains(tensor.Dims[d], StringComparison.CurrentCulture))
                                         {
@@ -342,7 +348,8 @@ public static class MatmulTiler
                                 sizeSS.Add(string.Join("*", ss));
                             }
 
-                            writer.WriteLine($"{indent}sub_{tensor.Name} = {tensor.Name}[{string.Join(",", sizeSS)}] @ L{sl + 1}");
+                            writer.Write($"{indent}sub_{tensor.Name} = {tensor.Name}[{string.Join(",", sizeSS)}] @ L{sl + 1}");
+                            writer.WriteLine($" # size: {sol.Value(bufferSizes[a, level, loop].Var())}");
                         }
                     }
                 }
@@ -351,7 +358,10 @@ public static class MatmulTiler
             string indent = string.Empty;
             for (int l = TotalLevel - 1; l >= 0; l--)
             {
-                writer.WriteLine($"{indent}L{l + 1}:");
+                writer.WriteLine($"{indent}L{l + 1}: ");
+                writer.WriteLine($"{indent}# stored buffer size: {sol.Value(levelBufferSizes[l].Var())}");
+                writer.WriteLine($"{indent}# data reads: {sol.Value(levelDataReads[l].Var())}");
+                writer.WriteLine($"{indent}# data writes: {sol.Value(levelDataWrites[l].Var())}");
                 for (int i = domain.Length - 1; i >= 0; i--)
                 {
                     DisplayAlloc(indent, l, i);
@@ -361,15 +371,9 @@ public static class MatmulTiler
             }
 
             // k,n,m
-            writer.WriteLine($"{indent} C[{sol.Value(tileVars[TotalLevel, 2])},{sol.Value(tileVars[TotalLevel, 1])}] += A[{sol.Value(tileVars[TotalLevel, 2])},{sol.Value(tileVars[TotalLevel, 0])}] * B[{sol.Value(tileVars[TotalLevel, 0])},{sol.Value(tileVars[TotalLevel, 1])}]");
+            writer.WriteLine($"{indent} C[{sol.Value(tileVars[TotalLevel, 2]) * primtives[2]},{sol.Value(tileVars[TotalLevel, 1]) * primtives[1]}] += A[{sol.Value(tileVars[TotalLevel, 2]) * primtives[2]},{sol.Value(tileVars[TotalLevel, 0]) * primtives[0]}] * B[{sol.Value(tileVars[TotalLevel, 0]) * primtives[0]},{sol.Value(tileVars[TotalLevel, 1]) * primtives[1]}]");
 
             writer.Close();
-
-            // check constrains
-            for (int l = 0; l < TotalLevel; l++)
-            {
-                System.Console.WriteLine($"L{l + 1} used : {sol.Value(capacityConstraints[0])}");
-            }
         }
     }
 }
