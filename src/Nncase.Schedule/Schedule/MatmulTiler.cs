@@ -11,7 +11,7 @@ public static class MatmulTiler
 {
     public static void Solve()
     {
-        const int TotalLevel = 3;
+        const int TotalLevel = 2;
         var dimValues = new int[3] { 2048, 384, 8192 };
         var domain = new char[3] { 'm', 'n', 'k' };
         var primtives = new int[3] { 32, 32, 32 };
@@ -32,26 +32,14 @@ public static class MatmulTiler
         var memoryBandWidths = new int[] { 128 /* b/cycle */, 16 /* b/cycle */, 4 };
 
         // create tilesize vars.
-        // the reads table save the buffer read times, we can use it directly.
-        var readsTable = new IntExpr[tensors.Length, TotalLevel];
         IntExpr one = model.MakeIntConst(1, "one");
+        IntExpr zero = model.MakeIntConst(0, "zero");
         for (int l = 0; l < TotalLevel; l++)
         {
-            var mul = one;
             for (int i = 0; i < domain.Length; i++)
             {
                 tileVars[l, i] = model.MakeIntVar(1, dimValues[i] / primtives[i], $"T_{domain[i]}{l + 1}");
                 allVars.Add(tileVars[l, i]);
-                mul *= tileVars[l, i];
-            }
-
-            for (int i = 0; i < tensors.Length; i++)
-            {
-                readsTable[i, l] = mul;
-                if (l > 0)
-                {
-                    readsTable[i, l] *= readsTable[i, l - 1];
-                }
             }
         }
 
@@ -60,19 +48,9 @@ public static class MatmulTiler
         {
             tileVars[TotalLevel, i] = model.MakeIntVar(1, dimValues[i] / primtives[i], $"T_{domain[i]}");
             allVars.Add(tileVars[TotalLevel, i]);
-
-            for (int a = 0; a < tensors.Length; a++)
-            {
-                for (int l = 0; l < TotalLevel; l++)
-                {
-                    if (tensors[a].Dims.Contains(domain[i]))
-                    {
-                        readsTable[a, l] *= tileVars[TotalLevel, i];
-                    }
-                }
-            }
         }
 
+        // and the reads table save the buffer read times, we can use it directly.
         IntExpr elem = model.MakeIntConst(sizeof(float), "elem");
         var primitiveBufferSizes = new IntExpr[tensors.Length];
         for (int a = 0; a < tensors.Length; a++)
@@ -87,9 +65,11 @@ public static class MatmulTiler
             }
         }
 
+        IntExpr totalLoopTimes = Enumerable.Range(0, TotalLevel).Select(i => Enumerable.Range(0, domain.Length).Select(j => tileVars[i, j])).SelectMany(i => i).Aggregate(one, (acc, tileVar) => acc * tileVar);
+        var readsTable = Enumerable.Range(0, tensors.Length).Select(a => primitiveBufferSizes[a] * totalLoopTimes).ToArray();
+
         // create buffer placement: gates(l,i,sl) mean create buffer size by memory level l, loop i, then store it into memory level sl.
         var placeGates = new IntVar[tensors.Length, TotalLevel, domain.Length][];
-        var dataReads = new IntExpr[tensors.Length, TotalLevel, domain.Length][];
         var dataWrites = new IntExpr[tensors.Length, TotalLevel, domain.Length][];
         var bufferSizes = new IntExpr[tensors.Length, TotalLevel, domain.Length];
         for (int ts = 0; ts < tensors.Length; ts++)
@@ -105,39 +85,52 @@ public static class MatmulTiler
 
                     // we can create buffer size by high loop level, but put it into low loop level.
                     var subLevelPlace = placeGates[ts, l, i] = new IntVar[l + 1];
-                    var subLevelReads = dataReads[ts, l, i] = new IntExpr[l + 1];
                     var subLevelWrites = dataWrites[ts, l, i] = new IntExpr[l + 1];
                     for (int sl = 0; sl < l + 1; sl++)
                     {
                         subLevelPlace[sl] = model.MakeBoolVar($"place({tensors[ts].Name}, {l + 1}, {domain[i]}, {sl + 1})");
                         allVars.Add(subLevelPlace[sl]);
 
-                        // 1. compute data reads
-                        if (sl == 0)
-                        {
-                            // get reads from table when store buffer at lowest level.
-                            subLevelReads[sl] = readsTable[ts, l];
-                        }
-                        else
-                        {
-                            // currently reads need multiply the lower level write times
-                            subLevelReads[sl] = one;
-                            for (int ci = 0; ci < domain.Length; ci++)
-                            {
-                                subLevelReads[sl] *= tileVars[l, ci];
-                            }
-
-                            for (int ci = 0; ci < domain.Length; ci++)
-                            {
-                                subLevelReads[sl] *= placeGates[ts, l - 1, ci][l - 1] * dataWrites[ts, l - 1, ci][l - 1];
-                            }
-                        }
-
                         // 2. compute data writes
                         subLevelWrites[sl] = bufferSizes[ts, l, i];
-                        for (int ni = i + 1; ni < domain.Length; ni++)
+                        for (int nl = l; nl < TotalLevel; nl++)
                         {
-                            subLevelWrites[sl] *= tileVars[l, ni];
+                            for (int ci = 0; ci < domain.Length; ci++)
+                            {
+                                if (nl == l && ci <= i)
+                                {
+                                    continue;
+                                }
+
+                                subLevelWrites[sl] *= tileVars[nl, ci];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // in each create level create data reads.
+        var dataReads = new IntExpr[tensors.Length, TotalLevel];
+        for (int a = 0; a < tensors.Length; a++)
+        {
+            for (int l = 0; l < TotalLevel; l++)
+            {
+                if (l == 0)
+                {
+                    // l0 reads should follow the computation.
+                    dataReads[a, l] = readsTable[a];
+                }
+                else
+                {
+                    dataReads[a, l] = zero;
+                    for (int i = 0; i < domain.Length; i++)
+                    {
+                        var lowerLevelWrites = dataWrites[a, l - 1, i];
+                        var lowerLevelGates = placeGates[a, l - 1, i];
+                        for (int sl = 0; sl < lowerLevelWrites.Length; sl++)
+                        {
+                            dataReads[a, l] += lowerLevelGates[sl] * lowerLevelWrites[sl];
                         }
                     }
                 }
@@ -149,7 +142,7 @@ public static class MatmulTiler
         var lowestLevelBufferConstraints = new Constraint[tensors.Length];
         for (int a = 0; a < tensors.Length; a++)
         {
-            IntExpr lowestBufferNums = model.MakeIntConst(0, "zero");
+            IntExpr lowestBufferNums = zero;
             for (int l = 0; l < TotalLevel; l++)
             {
                 for (int i = 0; i < domain.Length; i++)
@@ -169,7 +162,7 @@ public static class MatmulTiler
         {
             for (int l = 0; l < TotalLevel; l++)
             {
-                IntExpr bufferNums = model.MakeIntConst(0, "zero");
+                IntExpr bufferNums = zero;
                 for (int i = 0; i < domain.Length; i++)
                 {
                     var slGates = placeGates[a, l, i];
@@ -191,7 +184,7 @@ public static class MatmulTiler
         {
             for (int l = 0; l < TotalLevel - 1; l++)
             {
-                IntExpr previousLevelStoreBufferNums = model.MakeIntConst(0, "zero");
+                IntExpr previousLevelStoreBufferNums = zero;
                 for (int pl = l + 1; pl < TotalLevel; pl++)
                 {
                     for (int i = 0; i < domain.Length; i++)
@@ -246,21 +239,21 @@ public static class MatmulTiler
         }
 
         // compute the cycles as objective
-        var levelCycles = Enumerable.Range(0, TotalLevel).Select(i => (IntExpr)model.MakeIntConst(0, "zero")).ToArray();
-        var levelDataReads = Enumerable.Range(0, TotalLevel).Select(i => (IntExpr)model.MakeIntConst(0, "zero")).ToArray();
-        var levelDataWrites = Enumerable.Range(0, TotalLevel).Select(i => (IntExpr)model.MakeIntConst(0, "zero")).ToArray();
+        var levelCycles = Enumerable.Range(0, TotalLevel).Select(i => zero).ToArray();
+        var levelDataReads = Enumerable.Range(0, TotalLevel).Select(i => zero).ToArray();
+        var levelDataWrites = Enumerable.Range(0, TotalLevel).Select(i => zero).ToArray();
         for (int a = 0; a < tensors.Length; a++)
         {
             for (int l = 0; l < TotalLevel; l++)
             {
+                levelDataReads[l] += dataReads[a, l];
                 for (int i = 0; i < domain.Length; i++)
                 {
                     // we can create buffer size by high loop level, but put it into low loop level.
                     for (int sl = 0; sl < l + 1; sl++)
                     {
-                        levelDataReads[sl] += placeGates[a, l, i][sl] * dataReads[a, l, i][sl];
                         levelDataWrites[sl] += placeGates[a, l, i][sl] * dataWrites[a, l, i][sl];
-                        levelCycles[sl] += placeGates[a, l, i][sl] * (dataWrites[a, l, i][sl] + dataReads[a, l, i][sl]);
+                        levelCycles[sl] += (placeGates[a, l, i][sl] * dataWrites[a, l, i][sl]) + dataReads[a, l];
                     }
                 }
             }
@@ -291,12 +284,12 @@ public static class MatmulTiler
         {
             for (int l = 0; l < TotalLevel; l++)
             {
+                collector.Add(dataReads[ts, l].Var());
                 for (int i = 0; i < domain.Length; i++)
                 {
                     collector.Add(bufferSizes[ts, l, i].Var());
                     for (int sl = 0; sl < l - 1; sl++)
                     {
-                        collector.Add(dataReads[ts, l, i][sl].Var());
                         collector.Add(dataWrites[ts, l, i][sl].Var());
                     }
                 }
@@ -305,12 +298,12 @@ public static class MatmulTiler
 
         collector.AddObjective(totalCyclesVar);
         var decisionBuilder = model.MakePhase(allVars.ToArray(), Solver.INT_VAR_DEFAULT, Solver.INT_VALUE_DEFAULT);
-        var status = model.Solve(decisionBuilder, new SearchMonitor[] { collector, objectiveMonitor, model.MakeTimeLimit(5000) });
+        var status = model.Solve(decisionBuilder, new SearchMonitor[] { collector, objectiveMonitor });
         System.Console.WriteLine($"solve status: {status}");
 
         if (status)
         {
-            var sol = collector.Solution(0);
+            var sol = collector.Solution(collector.SolutionCount() - 1);
             StreamWriter writer = new(Diagnostics.DumpScope.Current.OpenFile("tiled.py"));
             void DisplayAlloc(string indent, int level, int loop)
             {
