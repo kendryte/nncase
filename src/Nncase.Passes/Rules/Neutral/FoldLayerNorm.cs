@@ -1,11 +1,16 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Generic;
 using Nncase.IR;
+using Nncase.IR.F;
 using Nncase.IR.Math;
+using Nncase.IR.NN;
+using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using static Nncase.IR.F.NN;
 using static Nncase.PatternMatch.F.Math;
+using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 
@@ -331,5 +336,65 @@ public sealed partial class FoldLayerNormPattern5 : RewriteRule<CallPattern>
         }
 
         return null;
+    }
+}
+
+[RuleGenerator]
+public sealed partial class ConvertLayerNormChannelFirstToLast : RewriteRule<CallPattern>
+{
+    public override CallPattern Pattern { get; } =
+        IsLayerNorm(
+            "ln",
+            "_",
+            _ => true,
+            IsWildcard("x"),
+            IsWildcard("scale"),
+            IsWildcard("bias"));
+
+    private static List<int> GetPermWithAxis(long axis, int shapeSize)
+    {
+        var perm = new List<int>();
+        for (int i = 0; i < shapeSize; i++)
+        {
+            if (i != axis)
+            {
+                perm.Add(i);
+            }
+        }
+
+        perm.Add((int)axis);
+        return perm;
+    }
+
+    private Expr? GetReplace(LayerNorm ln, Expr x, Expr scale, Expr bias)
+    {
+        int axis = ln.Axis;
+        float eps = ln.Epsilon;
+        bool useMean = ln.UseMean;
+        if (axis == x.CheckedShape.Count - 1)
+        {
+            return null;
+        }
+
+        var inPerm = GetPermWithAxis(axis, x.CheckedShape.Count);
+        var outPerm = new List<int>();
+        for (int i = 0; i < inPerm.Count; i++)
+        {
+            outPerm.Add(inPerm[inPerm[i]]);
+        }
+
+        var newScale = scale;
+        var newBias = bias;
+
+        if (scale.CheckedShape.Count != 1 && bias.CheckedShape.Count != 1)
+        {
+            int axisGap = x.CheckedShape.Count - scale.CheckedShape.Count;
+            var constPerm = GetPermWithAxis(axisGap, scale.CheckedShape.Count);
+
+            newScale = Tensors.Transpose(scale, constPerm.ToArray());
+            newBias = Tensors.Transpose(bias, constPerm.ToArray());
+        }
+
+        return Tensors.Transpose(LayerNorm(x.CheckedShape.Count - 1, eps, Tensors.Transpose(x, inPerm.ToArray()), newScale, newBias, useMean), outPerm.ToArray());
     }
 }
