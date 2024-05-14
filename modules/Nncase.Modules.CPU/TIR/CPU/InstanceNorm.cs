@@ -31,5 +31,7 @@ public sealed partial class InstanceNorm : CPUKernelOp
 
     public IRArray<int> PadedNums { get; }
 
+    public DistributedType DistType { get; }
+
     public override string DisplayProperty() => $"Epsilon: {Epsilon}, PackedAxes: {PackedAxes}, PadedNums: {PadedNums}";
 }
