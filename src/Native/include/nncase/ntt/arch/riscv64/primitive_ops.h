@@ -402,5 +402,38 @@ REGISTER_RVV_BINARY_OP_FLOAT32(pow)
 IMPL_RVV_WITH_LMULS(FLOOR_MOD_INT32)
 REGISTER_RVV_BINARY_OP_INT32(floor_mod)
 
+#define RVV_SWISH_OP(op, dtype, dtype_prefix, sew, lmul, kernel)               \
+    template <> struct op<ntt::vector<dtype, NTT_VL(sew, lmul)>> {             \
+        ntt::vector<dtype, NTT_VL(sew, lmul)>                                  \
+        operator()(const ntt::vector<dtype, NTT_VL(sew, lmul)> &v,             \
+                   dtype beta) const noexcept {                                \
+            ntt::vector<dtype, NTT_VL(sew, lmul)> vout;                        \
+            auto pin = reinterpret_cast<const dtype *>(v.elements().data());   \
+            auto pout = reinterpret_cast<dtype *>(vout.elements().data());     \
+            auto input = vle##sew##_v_##dtype_prefix##sew##m##lmul(            \
+                pin, NTT_VL(sew, lmul));                                       \
+            auto output = kernel(input, NTT_VL(sew, lmul), beta);              \
+            vse##sew##_v_##dtype_prefix##sew##m##lmul(pout, output,            \
+                                                      NTT_VL(sew, lmul));      \
+            return vout;                                                       \
+        }                                                                      \
+    };
+
+#define REGISTER_RVV_SWISH_OP_FLOAT32(OP)                                      \
+    RVV_SWISH_OP(OP, float, f, 32, 1, OP##_float32)                            \
+    RVV_SWISH_OP(OP, float, f, 32, 2, OP##_float32)                            \
+    RVV_SWISH_OP(OP, float, f, 32, 4, OP##_float32)                            \
+    RVV_SWISH_OP(OP, float, f, 32, 8, OP##_float32)
+
+// swish
+#define SWISH_FLOAT32(LMUL, MLEN)                                              \
+    inline vfloat32m##LMUL##_t swish_float32(const vfloat32m##LMUL##_t &v,     \
+                                             const size_t vl, float beta) {    \
+        return swish_op(v, vl, beta);                                          \
+    }
+
+IMPL_RVV_WITH_LMULS(SWISH_FLOAT32)
+REGISTER_RVV_SWISH_OP_FLOAT32(swish)
+
 #endif
 } // namespace nncase::ntt::ops
