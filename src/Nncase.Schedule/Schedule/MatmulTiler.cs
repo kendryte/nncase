@@ -29,7 +29,7 @@ public static class MatmulTiler
         var tileVars = new IntVar[TotalLevel + 1, domain.Length];
         var allVars = new List<IntVar>();
         var memoryCapacitys = new int[] { 65536, 4194304, int.MaxValue };
-        var memoryBandWidths = new int[] { 128 /* b/cycle */, 16 /* b/cycle */, 4 };
+        var memoryBandWidths = new int[] { 1024 /* b/cycle */, 256 /* b/cycle */, 64 /* 204GB/s / 3.49GHz/s */ };
 
         // create tilesize vars.
         IntExpr one = model.MakeIntConst(1, "one");
@@ -88,7 +88,7 @@ public static class MatmulTiler
                     var subLevelWrites = dataWrites[ts, l, i] = new IntExpr[l + 1];
                     for (int sl = 0; sl < l + 1; sl++)
                     {
-                        subLevelPlace[sl] = model.MakeBoolVar($"place({tensors[ts].Name}, {l + 1}, {domain[i]}, {sl + 1})");
+                        subLevelPlace[sl] = model.MakeBoolVar($"place({tensors[ts].Name}, {l}, {domain[i]}, {sl})");
                         allVars.Add(subLevelPlace[sl]);
 
                         // 2. compute data writes
@@ -139,7 +139,7 @@ public static class MatmulTiler
 
         // add placement constraints.
         // 1. must store one buffer at lowest level.
-        var lowestLevelBufferConstraints = new Constraint[tensors.Length];
+        var lowestStoredBufferNums = new IntExpr[tensors.Length];
         for (int a = 0; a < tensors.Length; a++)
         {
             IntExpr lowestBufferNums = zero;
@@ -151,8 +151,10 @@ public static class MatmulTiler
                 }
             }
 
-            lowestLevelBufferConstraints[a] = model.MakeEquality(lowestBufferNums, 1);
-            model.Add(lowestLevelBufferConstraints[a]);
+            lowestStoredBufferNums[a] = lowestBufferNums;
+            var c = model.MakeEquality(lowestStoredBufferNums[a], 1);
+            c.SetName($"lowestStoredBufferNums[{tensors[a].Name}]");
+            model.Add(c);
         }
 
         // 2. each tensor only can create one or zero buffer at each create level.
@@ -174,6 +176,7 @@ public static class MatmulTiler
 
                 eachlevelCreateBufferNums[a, l] = bufferNums;
                 eachlevelCreateBufferConstraints[a, l] = model.MakeLessOrEqual(bufferNums, one);
+                eachlevelCreateBufferConstraints[a, l].SetName($"eachlevelCreateBufferConstraints[{tensors[a].Name}, {l}]");
                 model.Add(eachlevelCreateBufferConstraints[a, l]);
             }
         }
@@ -189,11 +192,12 @@ public static class MatmulTiler
                 {
                     for (int i = 0; i < domain.Length; i++)
                     {
-                        previousLevelStoreBufferNums += placeGates[a, pl, i][l];
+                        previousLevelStoreBufferNums += placeGates[a, pl, i][pl];
                     }
                 }
 
                 depLevelBufferConstraints[a, l] = model.MakeGreaterOrEqual(previousLevelStoreBufferNums, model.MakeIsEqualVar(eachlevelCreateBufferNums[a, l], one));
+                depLevelBufferConstraints[a, l].SetName($"depLevelBufferConstraints[{tensors[a].Name}, {l}]");
                 model.Add(depLevelBufferConstraints[a, l]);
             }
         }
@@ -259,9 +263,21 @@ public static class MatmulTiler
             }
         }
 
+        // divide the bandwidth.
         for (int l = 0; l < TotalLevel; l++)
         {
             levelCycles[l] = model.MakeDiv(levelCycles[l] + (memoryBandWidths[l] - 1), memoryBandWidths[l]);
+        }
+
+        // custom the computation level cycles
+        {
+            // 1. load a and b, 476 GB/s
+            var computationLoadAB = totalLoopTimes * (primitiveBufferSizes[0] + primitiveBufferSizes[1]);
+            levelCycles[0] += model.MakeDiv(computationLoadAB + (memoryBandWidths[0] - 1), memoryBandWidths[0]);
+
+            // 2. load c and store c, 10 GB/s
+            var computationLoadStoreC = totalLoopTimes * (primitiveBufferSizes[2] + primitiveBufferSizes[2]);
+            levelCycles[0] += model.MakeDiv(computationLoadStoreC + (memoryBandWidths[2] - 1), memoryBandWidths[2]);
         }
 
         var totalCycles = levelCycles[0];
@@ -277,6 +293,8 @@ public static class MatmulTiler
         var logger = model.MakeSearchTrace("tiling:");
         var collector = model.MakeNBestValueSolutionCollector(5, false);
         collector.Add(allVars.ToArray());
+        collector.Add(lowestStoredBufferNums.Select(c => c.Var()).ToArray());
+        collector.Add(eachlevelCreateBufferNums.AsSpan().ToArray().Select(c => c.Var()).ToArray());
         collector.Add(levelBufferSizes.Select(c => c.Var()).ToArray());
         collector.Add(levelDataReads.Select(c => c.Var()).ToArray());
         collector.Add(levelDataWrites.Select(c => c.Var()).ToArray());
@@ -297,7 +315,7 @@ public static class MatmulTiler
         }
 
         collector.AddObjective(totalCyclesVar);
-        var decisionBuilder = model.MakePhase(allVars.ToArray(), Solver.INT_VAR_DEFAULT, Solver.INT_VALUE_DEFAULT);
+        var decisionBuilder = model.MakeDefaultPhase(allVars.ToArray());
         var status = model.Solve(decisionBuilder, new SearchMonitor[] { collector, objectiveMonitor });
         System.Console.WriteLine($"solve status: {status}");
 
