@@ -11,7 +11,7 @@ numpy==1.21.0
 torch==1.9.0
 torchvision==0.10.0
 imageio==2.15.0
-protobuf==3.12.2
+protobuf==3.18.3
 kendryte-caffe
 pytest
 pytest-xdist
