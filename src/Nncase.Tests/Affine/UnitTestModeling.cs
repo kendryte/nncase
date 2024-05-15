@@ -189,7 +189,6 @@ public sealed class UnitTestModeling : TestClassBase
         //     }
         //     System.Console.WriteLine("fuck");
         // }
-
         model.Solve(decisionBuilder, new SearchMonitor[] { objeciveMonitor, timeLimit, searchLog, searchLimit, solutionCollector });
         if (solutionCollector.SolutionCount() < 1)
         {
