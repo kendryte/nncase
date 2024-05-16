@@ -846,12 +846,27 @@ int main() {
         ntt::tensor<float, ntt::fixed_shape<3, 24>> ta;
         ntt::tensor<float, ntt::fixed_shape<3, 24>> tb;
         std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-        tb = ntt::ops::swish<ntt::tensor<float, ntt::fixed_shape<3, 24>>, float>{}(ta, 1.f);
+        ntt::unary<ntt::ops::swish>(ta, tb);
 
         ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pa;
         ntt::pack<1>(ta, pa);
         ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pb;
-        pb = ntt::ops::swish<ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>>, float>{}(pa, 1.f);
+        ntt::unary<ntt::ops::swish>(pa, pb);
+    }
+
+    // swishb
+    {
+        ntt::tensor<float, ntt::fixed_shape<3, 24>> ta;
+        ntt::tensor<float, ntt::fixed_shape<1>> tb;
+        ntt::tensor<float, ntt::fixed_shape<3, 24>> tc;
+        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+        std::iota(tb.elements().begin(), tb.elements().end(), 1.f);
+        ntt::binary<ntt::ops::swishb>(ta, tb, tc);
+
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pa;
+        ntt::pack<1>(ta, pa);
+        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pc;
+        ntt::binary<ntt::ops::swishb>(pa, tb, pc);
     }
 
     // gather
