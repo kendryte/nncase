@@ -71,7 +71,7 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
 
     private IRType Visit(ITypeInferenceContext context, Pack target, DistributedType input)
     {
-        if (Visit(context, target, input.TensorType) is not TensorType)
+        if (Visit(context, target, input.TensorType) is not TensorType tensorType)
         {
             throw new InvalidOperationException();
         }
@@ -106,6 +106,6 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
             }
         }
 
-        return new DistributedType(input.TensorType, ndsbp, input.Placement);
+        return new DistributedType(tensorType, ndsbp, input.Placement);
     }
 }
