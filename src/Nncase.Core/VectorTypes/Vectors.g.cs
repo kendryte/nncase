@@ -590,6 +590,208 @@ public unsafe struct Vector64<T> : IEquatable<Vector64<T>>, IAdditionOperators<V
 
 }
 
+public unsafe struct Vector128<T> : IEquatable<Vector128<T>>, IAdditionOperators<Vector128<T>, Vector128<T>, Vector128<T>>, ISubtractionOperators<Vector128<T>, Vector128<T>, Vector128<T>>, IMultiplyOperators<Vector128<T>, Vector128<T>, Vector128<T>>, IDivisionOperators<Vector128<T>, Vector128<T>, Vector128<T>>
+    where T : unmanaged, IEquatable<T>, INumber<T>
+{
+    private T _item_0_0;
+    private T _item_0_1;
+    private T _item_0_2;
+    private T _item_0_3;
+    private T _item_0_4;
+    private T _item_0_5;
+    private T _item_0_6;
+    private T _item_0_7;
+    private T _item_0_8;
+    private T _item_0_9;
+    private T _item_0_10;
+    private T _item_0_11;
+    private T _item_0_12;
+    private T _item_0_13;
+    private T _item_0_14;
+    private T _item_0_15;
+    private T _item_0_16;
+    private T _item_0_17;
+    private T _item_0_18;
+    private T _item_0_19;
+    private T _item_0_20;
+    private T _item_0_21;
+    private T _item_0_22;
+    private T _item_0_23;
+    private T _item_0_24;
+    private T _item_0_25;
+    private T _item_0_26;
+    private T _item_0_27;
+    private T _item_0_28;
+    private T _item_0_29;
+    private T _item_0_30;
+    private T _item_0_31;
+    private T _item_0_32;
+    private T _item_0_33;
+    private T _item_0_34;
+    private T _item_0_35;
+    private T _item_0_36;
+    private T _item_0_37;
+    private T _item_0_38;
+    private T _item_0_39;
+    private T _item_0_40;
+    private T _item_0_41;
+    private T _item_0_42;
+    private T _item_0_43;
+    private T _item_0_44;
+    private T _item_0_45;
+    private T _item_0_46;
+    private T _item_0_47;
+    private T _item_0_48;
+    private T _item_0_49;
+    private T _item_0_50;
+    private T _item_0_51;
+    private T _item_0_52;
+    private T _item_0_53;
+    private T _item_0_54;
+    private T _item_0_55;
+    private T _item_0_56;
+    private T _item_0_57;
+    private T _item_0_58;
+    private T _item_0_59;
+    private T _item_0_60;
+    private T _item_0_61;
+    private T _item_0_62;
+    private T _item_0_63;
+    private T _item_0_64;
+    private T _item_0_65;
+    private T _item_0_66;
+    private T _item_0_67;
+    private T _item_0_68;
+    private T _item_0_69;
+    private T _item_0_70;
+    private T _item_0_71;
+    private T _item_0_72;
+    private T _item_0_73;
+    private T _item_0_74;
+    private T _item_0_75;
+    private T _item_0_76;
+    private T _item_0_77;
+    private T _item_0_78;
+    private T _item_0_79;
+    private T _item_0_80;
+    private T _item_0_81;
+    private T _item_0_82;
+    private T _item_0_83;
+    private T _item_0_84;
+    private T _item_0_85;
+    private T _item_0_86;
+    private T _item_0_87;
+    private T _item_0_88;
+    private T _item_0_89;
+    private T _item_0_90;
+    private T _item_0_91;
+    private T _item_0_92;
+    private T _item_0_93;
+    private T _item_0_94;
+    private T _item_0_95;
+    private T _item_0_96;
+    private T _item_0_97;
+    private T _item_0_98;
+    private T _item_0_99;
+    private T _item_0_100;
+    private T _item_0_101;
+    private T _item_0_102;
+    private T _item_0_103;
+    private T _item_0_104;
+    private T _item_0_105;
+    private T _item_0_106;
+    private T _item_0_107;
+    private T _item_0_108;
+    private T _item_0_109;
+    private T _item_0_110;
+    private T _item_0_111;
+    private T _item_0_112;
+    private T _item_0_113;
+    private T _item_0_114;
+    private T _item_0_115;
+    private T _item_0_116;
+    private T _item_0_117;
+    private T _item_0_118;
+    private T _item_0_119;
+    private T _item_0_120;
+    private T _item_0_121;
+    private T _item_0_122;
+    private T _item_0_123;
+    private T _item_0_124;
+    private T _item_0_125;
+    private T _item_0_126;
+    private T _item_0_127;
+
+    public static Vector128<T> Create(T[] array) {
+      Vector128<T> vec = default;
+      var src = array.AsSpan();
+      var dest = vec.AsSpan();
+      src.CopyTo(dest);
+      return vec;
+    }
+
+    public T this[int i]
+    {
+        get => Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i);
+        set => Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i) = value;
+    }
+
+    public bool Equals(Vector128<T> other) => AsSpan().SequenceEqual(other.AsSpan());
+
+    public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
+
+    public int Count => 64;
+
+    public static Vector128<T> operator +(Vector128<T> left, Vector128<T> right) {
+        Vector128<T> res = default;
+        var lhs = left.AsSpan();
+        var rhs = right.AsSpan();
+        var span = res.AsSpan();
+        for (int i = 0; i < span.Length; i++)
+        {
+            span[i] = lhs[i] + rhs[i];
+        }
+        return res;
+    }
+
+    public static Vector128<T> operator -(Vector128<T> left, Vector128<T> right) {
+        Vector128<T> res = default;
+        var lhs = left.AsSpan();
+        var rhs = right.AsSpan();
+        var span = res.AsSpan();
+        for (int i = 0; i < span.Length; i++)
+        {
+            span[i] = lhs[i] - rhs[i];
+        }
+        return res;
+    }
+
+    public static Vector128<T> operator *(Vector128<T> left, Vector128<T> right) {
+        Vector128<T> res = default;
+        var lhs = left.AsSpan();
+        var rhs = right.AsSpan();
+        var span = res.AsSpan();
+        for (int i = 0; i < span.Length; i++)
+        {
+            span[i] = lhs[i] * rhs[i];
+        }
+        return res;
+    }
+
+    public static Vector128<T> operator /(Vector128<T> left, Vector128<T> right) {
+        Vector128<T> res = default;
+        var lhs = left.AsSpan();
+        var rhs = right.AsSpan();
+        var span = res.AsSpan();
+        for (int i = 0; i < span.Length; i++)
+        {
+            span[i] = lhs[i] / rhs[i];
+        }
+        return res;
+    }
+
+}
+
 [StructLayout(LayoutKind.Sequential)]
 public unsafe struct Vector16x2<T> : IEquatable<Vector16x2<T>>, IAdditionOperators<Vector16x2<T>, Vector16x2<T>, Vector16x2<T>>, ISubtractionOperators<Vector16x2<T>, Vector16x2<T>, Vector16x2<T>>, IMultiplyOperators<Vector16x2<T>, Vector16x2<T>, Vector16x2<T>>, IDivisionOperators<Vector16x2<T>, Vector16x2<T>, Vector16x2<T>>
     where T : unmanaged, IEquatable<T>, INumber<T>
