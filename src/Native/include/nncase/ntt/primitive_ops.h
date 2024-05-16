@@ -113,8 +113,8 @@ template <class T> struct tanh {
     constexpr T operator()(const T &v) const noexcept { return std::tanh(v); }
 };
 
-template <class T> struct swish {
-    constexpr T operator()(const T &v) const noexcept;
+template <class T, class B> struct swish {
+    constexpr T operator()(const T &v, B beta = (B)1) const noexcept;
 };
 
 /**@}*/
@@ -252,7 +252,9 @@ NTT_DEFINE_UNARY_FUNC_IMPL(sinh)
 NTT_DEFINE_UNARY_FUNC_IMPL(sqrt)
 NTT_DEFINE_UNARY_FUNC_IMPL(square)
 NTT_DEFINE_UNARY_FUNC_IMPL(tanh)
-NTT_DEFINE_UNARY_FUNC_IMPL(swish)
+template <IsTensorOrScalar T, class B> constexpr T swish(const T &v, B beta) noexcept {
+    return ops::swish<T, B>()(v, beta);
+}
 
 NTT_DEFINE_BINARY_FUNC_IMPL(add)
 NTT_DEFINE_BINARY_FUNC_IMPL(sub)
@@ -365,8 +367,8 @@ template <class T> constexpr T sinh<T>::operator()(const T &v) const noexcept {
 }
 
 // swish(v) = v / (exp(-v) + 1)
-template <class T> constexpr T swish<T>::operator()(const T &v) const noexcept {
-    return v / (ntt::exp(-v) + 1);
+template <class T, class B> constexpr T swish<T, B>::operator()(const T &v, B beta) const noexcept {
+    return v / (ntt::exp(-v) + beta);
 }
 
 template <class T1, class T2, class TResult>

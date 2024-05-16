@@ -24,29 +24,31 @@ namespace nncase::ntt::ops {
 
 #ifdef __riscv_vector
 #define IMPL_RVV_WITH_LMULS(func) func(1, 32) func(2, 16) func(4, 8) func(8, 4)
+#define REGISTER_RVV_WITH_VLENS(func, op) func(op, 128) func(op, 4096)
 
-#define RVV_UNARY_OP(op, dtype, dtype_prefix, sew, lmul, kernel)               \
-    template <> struct op<ntt::vector<dtype, NTT_VL(sew, lmul)>> {             \
-        ntt::vector<dtype, NTT_VL(sew, lmul)> operator()(                      \
-            const ntt::vector<dtype, NTT_VL(sew, lmul)> &v) const noexcept {   \
-            ntt::vector<dtype, NTT_VL(sew, lmul)> vout;                        \
+#define RVV_UNARY_OP(op, dtype, dtype_prefix, vlen, sew, lmul, kernel)         \
+    template <> struct op<ntt::vector<dtype, NTT_VL(vlen, sew, lmul)>> {       \
+        ntt::vector<dtype, NTT_VL(vlen, sew, lmul)>                            \
+        operator()(const ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> &v)       \
+            const noexcept {                                                   \
+            ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> vout;                  \
             auto pin = reinterpret_cast<const dtype *>(v.elements().data());   \
             auto pout = reinterpret_cast<dtype *>(vout.elements().data());     \
             auto input = vle##sew##_v_##dtype_prefix##sew##m##lmul(            \
-                pin, NTT_VL(sew, lmul));                                       \
-            auto output = kernel(input, NTT_VL(sew, lmul));                    \
-            vse##sew##_v_##dtype_prefix##sew##m##lmul(pout, output,            \
-                                                      NTT_VL(sew, lmul));      \
+                pin, NTT_VL(vlen, sew, lmul));                                 \
+            auto output = kernel(input, NTT_VL(vlen, sew, lmul));              \
+            vse##sew##_v_##dtype_prefix##sew##m##lmul(                         \
+                pout, output, NTT_VL(vlen, sew, lmul));                        \
             return vout;                                                       \
         }                                                                      \
     };
 
 // unary with float
-#define REGISTER_RVV_UNARY_OP_FLOAT32(OP)                                      \
-    RVV_UNARY_OP(OP, float, f, 32, 1, OP##_float32)                            \
-    RVV_UNARY_OP(OP, float, f, 32, 2, OP##_float32)                            \
-    RVV_UNARY_OP(OP, float, f, 32, 4, OP##_float32)                            \
-    RVV_UNARY_OP(OP, float, f, 32, 8, OP##_float32)
+#define REGISTER_RVV_UNARY_OP_FLOAT32(OP, vlen)                                \
+    RVV_UNARY_OP(OP, float, f, vlen, 32, 1, OP##_float32)                      \
+    RVV_UNARY_OP(OP, float, f, vlen, 32, 2, OP##_float32)                      \
+    RVV_UNARY_OP(OP, float, f, vlen, 32, 4, OP##_float32)                      \
+    RVV_UNARY_OP(OP, float, f, vlen, 32, 8, OP##_float32)
 
 // abs
 #define ABS_FLOAT32(LMUL, MLEN)                                                \
@@ -56,7 +58,7 @@ namespace nncase::ntt::ops {
     }
 
 IMPL_RVV_WITH_LMULS(ABS_FLOAT32)
-REGISTER_RVV_UNARY_OP_FLOAT32(abs)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, abs)
 
 // acos
 // porting from https://developer.download.nvidia.cn/cg/acos.html
@@ -82,7 +84,7 @@ REGISTER_RVV_UNARY_OP_FLOAT32(abs)
     }
 
 IMPL_RVV_WITH_LMULS(ACOS_FLOAT32)
-REGISTER_RVV_UNARY_OP_FLOAT32(acos)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, acos)
 
 // asin
 // porting from https://developer.download.nvidia.cn/cg/asin.html
@@ -109,7 +111,7 @@ REGISTER_RVV_UNARY_OP_FLOAT32(acos)
     }
 
 IMPL_RVV_WITH_LMULS(ASIN_FLOAT32)
-REGISTER_RVV_UNARY_OP_FLOAT32(asin)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, asin)
 
 // ceil
 #define CEIL_FLOAT32(LMUL, MLEN)                                               \
@@ -123,7 +125,7 @@ REGISTER_RVV_UNARY_OP_FLOAT32(asin)
     }
 
 IMPL_RVV_WITH_LMULS(CEIL_FLOAT32)
-REGISTER_RVV_UNARY_OP_FLOAT32(ceil)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, ceil)
 
 // cos
 #define COS_FLOAT32(LMUL, MLEN)                                                \
@@ -133,7 +135,7 @@ REGISTER_RVV_UNARY_OP_FLOAT32(ceil)
     }
 
 IMPL_RVV_WITH_LMULS(COS_FLOAT32)
-REGISTER_RVV_UNARY_OP_FLOAT32(cos)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, cos)
 
 // exp
 #define EXP_FLOAT32(LMUL, MLEN)                                                \
@@ -143,7 +145,7 @@ REGISTER_RVV_UNARY_OP_FLOAT32(cos)
     }
 
 IMPL_RVV_WITH_LMULS(EXP_FLOAT32)
-REGISTER_RVV_UNARY_OP_FLOAT32(exp)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, exp)
 
 // floor
 #define FLOOR_FLOAT32(LMUL, MLEN)                                              \
@@ -157,7 +159,7 @@ REGISTER_RVV_UNARY_OP_FLOAT32(exp)
     }
 
 IMPL_RVV_WITH_LMULS(FLOOR_FLOAT32)
-REGISTER_RVV_UNARY_OP_FLOAT32(floor)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, floor)
 
 // log
 #define LOG_FLOAT32(LMUL, MLEN)                                                \
@@ -167,7 +169,7 @@ REGISTER_RVV_UNARY_OP_FLOAT32(floor)
     }
 
 IMPL_RVV_WITH_LMULS(LOG_FLOAT32)
-REGISTER_RVV_UNARY_OP_FLOAT32(log)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, log)
 
 // neg
 #define NEG_FLOAT32(LMUL, MLEN)                                                \
@@ -177,7 +179,7 @@ REGISTER_RVV_UNARY_OP_FLOAT32(log)
     }
 
 IMPL_RVV_WITH_LMULS(NEG_FLOAT32)
-REGISTER_RVV_UNARY_OP_FLOAT32(neg)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, neg)
 
 // round
 #define ROUND_FLOAT32(LMUL, MLEN)                                              \
@@ -187,7 +189,7 @@ REGISTER_RVV_UNARY_OP_FLOAT32(neg)
     }
 
 IMPL_RVV_WITH_LMULS(ROUND_FLOAT32)
-REGISTER_RVV_UNARY_OP_FLOAT32(round)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, round)
 
 // rsqrt
 #define RSQRT_FLOAT32(LMUL, MLEN)                                              \
@@ -197,7 +199,7 @@ REGISTER_RVV_UNARY_OP_FLOAT32(round)
     }
 
 IMPL_RVV_WITH_LMULS(RSQRT_FLOAT32)
-REGISTER_RVV_UNARY_OP_FLOAT32(rsqrt)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, rsqrt)
 
 // sign
 #define SIGN_FLOAT32(LMUL, MLEN)                                               \
@@ -211,7 +213,7 @@ REGISTER_RVV_UNARY_OP_FLOAT32(rsqrt)
     }
 
 IMPL_RVV_WITH_LMULS(SIGN_FLOAT32)
-REGISTER_RVV_UNARY_OP_FLOAT32(sign)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, sign)
 
 // sin
 #define SIN_FLOAT32(LMUL, MLEN)                                                \
@@ -221,7 +223,7 @@ REGISTER_RVV_UNARY_OP_FLOAT32(sign)
     }
 
 IMPL_RVV_WITH_LMULS(SIN_FLOAT32)
-REGISTER_RVV_UNARY_OP_FLOAT32(sin)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, sin)
 
 // sqrt
 #define SQRT_FLOAT32(LMUL, MLEN)                                               \
@@ -231,7 +233,7 @@ REGISTER_RVV_UNARY_OP_FLOAT32(sin)
     }
 
 IMPL_RVV_WITH_LMULS(SQRT_FLOAT32)
-REGISTER_RVV_UNARY_OP_FLOAT32(sqrt)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, sqrt)
 
 // square
 #define SQUARE_FLOAT32(LMUL, MLEN)                                             \
@@ -241,7 +243,7 @@ REGISTER_RVV_UNARY_OP_FLOAT32(sqrt)
     }
 
 IMPL_RVV_WITH_LMULS(SQUARE_FLOAT32)
-REGISTER_RVV_UNARY_OP_FLOAT32(square)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, square)
 
 // tanh
 #define TANH_FLOAT32(LMUL, MLEN)                                               \
@@ -251,45 +253,46 @@ REGISTER_RVV_UNARY_OP_FLOAT32(square)
     }
 
 IMPL_RVV_WITH_LMULS(TANH_FLOAT32)
-REGISTER_RVV_UNARY_OP_FLOAT32(tanh)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, tanh)
 
 // binary
-#define RVV_BINARY_OP(op, dtype, dtype_prefix, sew, lmul, kernel)              \
+#define RVV_BINARY_OP(op, dtype, dtype_prefix, vlen, sew, lmul, kernel)        \
     template <>                                                                \
-    struct op<ntt::vector<dtype, NTT_VL(sew, lmul)>,                           \
-              ntt::vector<dtype, NTT_VL(sew, lmul)>> {                         \
-        ntt::vector<dtype, NTT_VL(sew, lmul)> operator()(                      \
-            const ntt::vector<dtype, NTT_VL(sew, lmul)> &v1,                   \
-            const ntt::vector<dtype, NTT_VL(sew, lmul)> &v2) const noexcept {  \
-            ntt::vector<dtype, NTT_VL(sew, lmul)> vout;                        \
+    struct op<ntt::vector<dtype, NTT_VL(vlen, sew, lmul)>,                     \
+              ntt::vector<dtype, NTT_VL(vlen, sew, lmul)>> {                   \
+        ntt::vector<dtype, NTT_VL(vlen, sew, lmul)>                            \
+        operator()(const ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> &v1,      \
+                   const ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> &v2)      \
+            const noexcept {                                                   \
+            ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> vout;                  \
             auto p1 = reinterpret_cast<const dtype *>(v1.elements().data());   \
             auto p2 = reinterpret_cast<const dtype *>(v2.elements().data());   \
             auto pout = reinterpret_cast<dtype *>(vout.elements().data());     \
             auto input1 = vle##sew##_v_##dtype_prefix##sew##m##lmul(           \
-                p1, NTT_VL(sew, lmul));                                        \
+                p1, NTT_VL(vlen, sew, lmul));                                  \
             auto input2 = vle##sew##_v_##dtype_prefix##sew##m##lmul(           \
-                p2, NTT_VL(sew, lmul));                                        \
-            auto output = kernel(input1, input2, NTT_VL(sew, lmul));           \
-            vse##sew##_v_##dtype_prefix##sew##m##lmul(pout, output,            \
-                                                      NTT_VL(sew, lmul));      \
+                p2, NTT_VL(vlen, sew, lmul));                                  \
+            auto output = kernel(input1, input2, NTT_VL(vlen, sew, lmul));     \
+            vse##sew##_v_##dtype_prefix##sew##m##lmul(                         \
+                pout, output, NTT_VL(vlen, sew, lmul));                        \
                                                                                \
             return vout;                                                       \
         }                                                                      \
     };
 
 // binary with float
-#define REGISTER_RVV_BINARY_OP_FLOAT32(OP)                                     \
-    RVV_BINARY_OP(OP, float, f, 32, 1, OP##_float32)                           \
-    RVV_BINARY_OP(OP, float, f, 32, 2, OP##_float32)                           \
-    RVV_BINARY_OP(OP, float, f, 32, 4, OP##_float32)                           \
-    RVV_BINARY_OP(OP, float, f, 32, 8, OP##_float32)
+#define REGISTER_RVV_BINARY_OP_FLOAT32(OP, vlen)                               \
+    RVV_BINARY_OP(OP, float, f, vlen, 32, 1, OP##_float32)                     \
+    RVV_BINARY_OP(OP, float, f, vlen, 32, 2, OP##_float32)                     \
+    RVV_BINARY_OP(OP, float, f, vlen, 32, 4, OP##_float32)                     \
+    RVV_BINARY_OP(OP, float, f, vlen, 32, 8, OP##_float32)
 
 // binary with int32_t
-#define REGISTER_RVV_BINARY_OP_INT32(OP)                                       \
-    RVV_BINARY_OP(OP, int32_t, i, 32, 1, OP##_int32)                           \
-    RVV_BINARY_OP(OP, int32_t, i, 32, 2, OP##_int32)                           \
-    RVV_BINARY_OP(OP, int32_t, i, 32, 4, OP##_int32)                           \
-    RVV_BINARY_OP(OP, int32_t, i, 32, 8, OP##_int32)
+#define REGISTER_RVV_BINARY_OP_INT32(OP, vlen)                                 \
+    RVV_BINARY_OP(OP, int32_t, i, vlen, 32, 1, OP##_int32)                     \
+    RVV_BINARY_OP(OP, int32_t, i, vlen, 32, 2, OP##_int32)                     \
+    RVV_BINARY_OP(OP, int32_t, i, vlen, 32, 4, OP##_int32)                     \
+    RVV_BINARY_OP(OP, int32_t, i, vlen, 32, 8, OP##_int32)
 
 // add
 #define ADD_FLOAT32(LMUL, MLEN)                                                \
@@ -300,7 +303,7 @@ REGISTER_RVV_UNARY_OP_FLOAT32(tanh)
     }
 
 IMPL_RVV_WITH_LMULS(ADD_FLOAT32)
-REGISTER_RVV_BINARY_OP_FLOAT32(add)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_BINARY_OP_FLOAT32, add)
 
 // sub
 #define SUB_FLOAT32(LMUL, MLEN)                                                \
@@ -311,7 +314,7 @@ REGISTER_RVV_BINARY_OP_FLOAT32(add)
     }
 
 IMPL_RVV_WITH_LMULS(SUB_FLOAT32)
-REGISTER_RVV_BINARY_OP_FLOAT32(sub)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_BINARY_OP_FLOAT32, sub)
 
 // mul
 #define MUL_FLOAT32(LMUL, MLEN)                                                \
@@ -322,7 +325,7 @@ REGISTER_RVV_BINARY_OP_FLOAT32(sub)
     }
 
 IMPL_RVV_WITH_LMULS(MUL_FLOAT32)
-REGISTER_RVV_BINARY_OP_FLOAT32(mul)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_BINARY_OP_FLOAT32, mul)
 
 // div
 #define DIV_FLOAT32(LMUL, MLEN)                                                \
@@ -333,7 +336,7 @@ REGISTER_RVV_BINARY_OP_FLOAT32(mul)
     }
 
 IMPL_RVV_WITH_LMULS(DIV_FLOAT32)
-REGISTER_RVV_BINARY_OP_FLOAT32(div)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_BINARY_OP_FLOAT32, div)
 
 // mod
 #define MOD_FLOAT32(LMUL, MLEN)                                                \
@@ -347,7 +350,7 @@ REGISTER_RVV_BINARY_OP_FLOAT32(div)
                                    vl);                                        \
     }
 IMPL_RVV_WITH_LMULS(MOD_FLOAT32)
-REGISTER_RVV_BINARY_OP_FLOAT32(mod)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_BINARY_OP_FLOAT32, mod)
 
 // min
 #define MIN_FLOAT32(LMUL, MLEN)                                                \
@@ -358,7 +361,7 @@ REGISTER_RVV_BINARY_OP_FLOAT32(mod)
     }
 
 IMPL_RVV_WITH_LMULS(MIN_FLOAT32)
-REGISTER_RVV_BINARY_OP_FLOAT32(min)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_BINARY_OP_FLOAT32, min)
 
 // max
 #define MAX_FLOAT32(LMUL, MLEN)                                                \
@@ -369,7 +372,7 @@ REGISTER_RVV_BINARY_OP_FLOAT32(min)
     }
 
 IMPL_RVV_WITH_LMULS(MAX_FLOAT32)
-REGISTER_RVV_BINARY_OP_FLOAT32(max)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_BINARY_OP_FLOAT32, max)
 
 // pow
 #define POW_FLOAT32(LMUL, MLEN)                                                \
@@ -380,7 +383,7 @@ REGISTER_RVV_BINARY_OP_FLOAT32(max)
     }
 
 IMPL_RVV_WITH_LMULS(POW_FLOAT32)
-REGISTER_RVV_BINARY_OP_FLOAT32(pow)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_BINARY_OP_FLOAT32, pow)
 
 // floor_mod
 #define FLOOR_MOD_INT32(LMUL, MLEN)                                            \
@@ -400,30 +403,31 @@ REGISTER_RVV_BINARY_OP_FLOAT32(pow)
     }
 
 IMPL_RVV_WITH_LMULS(FLOOR_MOD_INT32)
-REGISTER_RVV_BINARY_OP_INT32(floor_mod)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_BINARY_OP_INT32, floor_mod)
 
-#define RVV_SWISH_OP(op, dtype, dtype_prefix, sew, lmul, kernel)               \
-    template <> struct op<ntt::vector<dtype, NTT_VL(sew, lmul)>> {             \
-        ntt::vector<dtype, NTT_VL(sew, lmul)>                                  \
-        operator()(const ntt::vector<dtype, NTT_VL(sew, lmul)> &v,             \
+#define RVV_SWISH_OP(op, dtype, dtype_prefix, vlen, sew, lmul, kernel)         \
+    template <>                                                                \
+    struct op<ntt::vector<dtype, NTT_VL(vlen, sew, lmul)>, dtype> {            \
+        ntt::vector<dtype, NTT_VL(vlen, sew, lmul)>                            \
+        operator()(const ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> &v,       \
                    dtype beta) const noexcept {                                \
-            ntt::vector<dtype, NTT_VL(sew, lmul)> vout;                        \
+            ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> vout;                  \
             auto pin = reinterpret_cast<const dtype *>(v.elements().data());   \
             auto pout = reinterpret_cast<dtype *>(vout.elements().data());     \
             auto input = vle##sew##_v_##dtype_prefix##sew##m##lmul(            \
-                pin, NTT_VL(sew, lmul));                                       \
-            auto output = kernel(input, NTT_VL(sew, lmul), beta);              \
-            vse##sew##_v_##dtype_prefix##sew##m##lmul(pout, output,            \
-                                                      NTT_VL(sew, lmul));      \
+                pin, NTT_VL(vlen, sew, lmul));                                 \
+            auto output = kernel(input, NTT_VL(vlen, sew, lmul), beta);        \
+            vse##sew##_v_##dtype_prefix##sew##m##lmul(                         \
+                pout, output, NTT_VL(vlen, sew, lmul));                        \
             return vout;                                                       \
         }                                                                      \
     };
 
-#define REGISTER_RVV_SWISH_OP_FLOAT32(OP)                                      \
-    RVV_SWISH_OP(OP, float, f, 32, 1, OP##_float32)                            \
-    RVV_SWISH_OP(OP, float, f, 32, 2, OP##_float32)                            \
-    RVV_SWISH_OP(OP, float, f, 32, 4, OP##_float32)                            \
-    RVV_SWISH_OP(OP, float, f, 32, 8, OP##_float32)
+#define REGISTER_RVV_SWISH_OP_FLOAT32(OP, vlen)                                \
+    RVV_SWISH_OP(OP, float, f, vlen, 32, 1, OP##_float32)                      \
+    RVV_SWISH_OP(OP, float, f, vlen, 32, 2, OP##_float32)                      \
+    RVV_SWISH_OP(OP, float, f, vlen, 32, 4, OP##_float32)                      \
+    RVV_SWISH_OP(OP, float, f, vlen, 32, 8, OP##_float32)
 
 // swish
 #define SWISH_FLOAT32(LMUL, MLEN)                                              \
@@ -433,7 +437,7 @@ REGISTER_RVV_BINARY_OP_INT32(floor_mod)
     }
 
 IMPL_RVV_WITH_LMULS(SWISH_FLOAT32)
-REGISTER_RVV_SWISH_OP_FLOAT32(swish)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_SWISH_OP_FLOAT32, swish)
 
 #endif
 } // namespace nncase::ntt::ops
