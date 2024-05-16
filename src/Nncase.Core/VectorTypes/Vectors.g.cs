@@ -590,6 +590,7 @@ public unsafe struct Vector64<T> : IEquatable<Vector64<T>>, IAdditionOperators<V
 
 }
 
+[StructLayout(LayoutKind.Sequential)]
 public unsafe struct Vector128<T> : IEquatable<Vector128<T>>, IAdditionOperators<Vector128<T>, Vector128<T>, Vector128<T>>, ISubtractionOperators<Vector128<T>, Vector128<T>, Vector128<T>>, IMultiplyOperators<Vector128<T>, Vector128<T>, Vector128<T>>, IDivisionOperators<Vector128<T>, Vector128<T>, Vector128<T>>
     where T : unmanaged, IEquatable<T>, INumber<T>
 {
@@ -740,7 +741,7 @@ public unsafe struct Vector128<T> : IEquatable<Vector128<T>>, IAdditionOperators
 
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
-    public int Count => 64;
+    public int Count => 128;
 
     public static Vector128<T> operator +(Vector128<T> left, Vector128<T> right) {
         Vector128<T> res = default;
