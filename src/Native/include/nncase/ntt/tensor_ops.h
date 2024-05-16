@@ -34,6 +34,20 @@ struct tensor_unary_impl {
     Op<element_type> op_;
 };
 
+template <template <class T, class TBeta> class Op, IsTensor TTensor, class TBeta>
+struct tensor_swish_impl {
+    using element_type = typename TTensor::element_type;
+
+    constexpr TTensor operator()(const TTensor &v, TBeta beta) const noexcept {
+        TTensor value;
+        apply(v.shape(), [&](auto index) { value(index) = op_(v(index), beta); });
+        return value;
+    }
+
+  private:
+    Op<element_type, TBeta> op_;
+};
+
 template <template <class T1, class T2> class Op, IsTensor TTensor, class T2>
 struct tensor_binary_impl {
     using element_type1 = typename TTensor::element_type;
@@ -82,6 +96,8 @@ NTT_DEFINE_TENSOR_UNARY_IMPL(sign);
 NTT_DEFINE_TENSOR_UNARY_IMPL(sin);
 NTT_DEFINE_TENSOR_UNARY_IMPL(sqrt);
 NTT_DEFINE_TENSOR_UNARY_IMPL(tanh);
+template <IsTensor TTensor, class TBeta>
+struct swish<TTensor, TBeta> : detail::tensor_swish_impl<swish, TTensor, TBeta> {};
 
 NTT_DEFINE_TENSOR_BINARY_IMPL(add);
 NTT_DEFINE_TENSOR_BINARY_IMPL(sub);

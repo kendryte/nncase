@@ -114,7 +114,7 @@ template <class T> struct tanh {
 };
 
 template <class T, class B> struct swish {
-    constexpr T operator()(const T &v, B beta = (B)1) const noexcept;
+    constexpr T operator()(const T &v, B beta) const noexcept;
 };
 
 /**@}*/
