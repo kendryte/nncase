@@ -29,7 +29,7 @@ TEST(UnaryTestSwishFloat, fixed_fixed) {
 
     // ntt
     std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
-    ntt::unary<ntt::ops::swish>(*ntt_input, *ntt_output1);
+    *ntt_output1 = ntt::ops::swish<tensor_type, float>{}(*ntt_input, 1.f);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -60,7 +60,7 @@ TEST(UnaryTestSwishFloat, fixed_ranked) {
     auto shape2 = ntt::make_ranked_shape(1, 3, 16, 16);
     using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2(shape2));
-    ntt::unary<ntt::ops::swish>(*ntt_input, *ntt_output1);
+    *ntt_output1 = ntt::ops::swish<tensor_type1, float>{}(*ntt_input, 1.f);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -89,7 +89,7 @@ TEST(UnaryTestSwishFloat, ranked_ranked) {
 
     // ntt
     std::unique_ptr<tensor_type> ntt_output1(new tensor_type(shape));
-    ntt::unary<ntt::ops::swish>(*ntt_input, *ntt_output1);
+    *ntt_output1 = ntt::ops::swish<tensor_type, float>{}(*ntt_input, 1.f);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -120,7 +120,7 @@ TEST(UnaryTestSwishFloat, ranked_fixed) {
     using shape2 = ntt::fixed_shape<1, 3, 16, 16>;
     using tensor_type2 = ntt::tensor<float, shape2>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::unary<ntt::ops::swish>(*ntt_input, *ntt_output1);
+    *ntt_output1 = ntt::ops::swish<tensor_type1, float>{}(*ntt_input, 1.f);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
