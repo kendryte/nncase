@@ -113,8 +113,8 @@ template <class T> struct tanh {
     constexpr T operator()(const T &v) const noexcept { return std::tanh(v); }
 };
 
-template <class T, class B> struct swish {
-    constexpr T operator()(const T &v, B beta) const noexcept;
+template <class T> struct swish {
+    constexpr T operator()(const T &v) const noexcept;
 };
 
 /**@}*/
@@ -199,6 +199,10 @@ template <class T1, class T2> struct pow {
     }
 };
 
+template <class T, class B> struct swishb {
+    constexpr T operator()(const T &v, const B &beta) const noexcept;
+};
+
 /**@}*/
 
 template <template <class T1, class T2> class BinaryOp, class TResult, class T>
@@ -252,9 +256,7 @@ NTT_DEFINE_UNARY_FUNC_IMPL(sinh)
 NTT_DEFINE_UNARY_FUNC_IMPL(sqrt)
 NTT_DEFINE_UNARY_FUNC_IMPL(square)
 NTT_DEFINE_UNARY_FUNC_IMPL(tanh)
-template <IsTensorOrScalar T, class B> constexpr T swish(const T &v, B beta) noexcept {
-    return ops::swish<T, B>()(v, beta);
-}
+NTT_DEFINE_UNARY_FUNC_IMPL(swish)
 
 NTT_DEFINE_BINARY_FUNC_IMPL(add)
 NTT_DEFINE_BINARY_FUNC_IMPL(sub)
@@ -267,6 +269,7 @@ NTT_DEFINE_BINARY_FUNC_IMPL(mod)
 NTT_DEFINE_BINARY_FUNC_IMPL(min)
 NTT_DEFINE_BINARY_FUNC_IMPL(max)
 NTT_DEFINE_BINARY_FUNC_IMPL(pow)
+NTT_DEFINE_BINARY_FUNC_IMPL(swishb)
 
 NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_sum, ops::add)
 NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_max, ops::max)
@@ -367,8 +370,13 @@ template <class T> constexpr T sinh<T>::operator()(const T &v) const noexcept {
 }
 
 // swish(v) = v / (exp(-v) + 1)
-template <class T, class B> constexpr T swish<T, B>::operator()(const T &v, B beta) const noexcept {
-    return v / (ntt::exp(-v) + beta);
+template <class T> constexpr T swish<T>::operator()(const T &v) const noexcept {
+    return v / (ntt::exp(-v) + 1);
+}
+
+// swishb(v) = v / (exp(-v*beta) + 1)
+template <class T, class B> constexpr T swishb<T, B>::operator()(const T &v, const B &beta) const noexcept {
+    return v / (ntt::exp(-v * beta) + 1);
 }
 
 template <class T1, class T2, class TResult>

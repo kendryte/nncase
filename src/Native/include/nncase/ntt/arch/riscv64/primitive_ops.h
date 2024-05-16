@@ -405,7 +405,17 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_BINARY_OP_FLOAT32, pow)
 IMPL_RVV_WITH_LMULS(FLOOR_MOD_INT32)
 REGISTER_RVV_WITH_VLENS(REGISTER_RVV_BINARY_OP_INT32, floor_mod)
 
-#define RVV_SWISH_OP(op, dtype, dtype_prefix, vlen, sew, lmul, kernel)         \
+// swish
+#define SWISH_FLOAT32(LMUL, MLEN)                                              \
+    inline vfloat32m##LMUL##_t swish_float32(const vfloat32m##LMUL##_t &v,     \
+                                             const size_t vl) {                \
+        return swish_op(v, vl, 1.f);                                           \
+    }
+
+IMPL_RVV_WITH_LMULS(SWISH_FLOAT32)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, swish)
+
+#define RVV_SWISHB_OP(op, dtype, dtype_prefix, vlen, sew, lmul, kernel)        \
     template <>                                                                \
     struct op<ntt::vector<dtype, NTT_VL(vlen, sew, lmul)>, dtype> {            \
         ntt::vector<dtype, NTT_VL(vlen, sew, lmul)>                            \
@@ -423,21 +433,21 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_BINARY_OP_INT32, floor_mod)
         }                                                                      \
     };
 
-#define REGISTER_RVV_SWISH_OP_FLOAT32(OP, vlen)                                \
-    RVV_SWISH_OP(OP, float, f, vlen, 32, 1, OP##_float32)                      \
-    RVV_SWISH_OP(OP, float, f, vlen, 32, 2, OP##_float32)                      \
-    RVV_SWISH_OP(OP, float, f, vlen, 32, 4, OP##_float32)                      \
-    RVV_SWISH_OP(OP, float, f, vlen, 32, 8, OP##_float32)
+#define REGISTER_RVV_SWISHB_OP_FLOAT32(OP, vlen)                               \
+    RVV_SWISHB_OP(OP, float, f, vlen, 32, 1, OP##_float32)                     \
+    RVV_SWISHB_OP(OP, float, f, vlen, 32, 2, OP##_float32)                     \
+    RVV_SWISHB_OP(OP, float, f, vlen, 32, 4, OP##_float32)                     \
+    RVV_SWISHB_OP(OP, float, f, vlen, 32, 8, OP##_float32)
 
-// swish
-#define SWISH_FLOAT32(LMUL, MLEN)                                              \
-    inline vfloat32m##LMUL##_t swish_float32(const vfloat32m##LMUL##_t &v,     \
-                                             const size_t vl, float beta) {    \
+// swishb
+#define SWISHB_FLOAT32(LMUL, MLEN)                                             \
+    inline vfloat32m##LMUL##_t swishb_float32(const vfloat32m##LMUL##_t &v,    \
+                                              const size_t vl, float beta) {   \
         return swish_op(v, vl, beta);                                          \
     }
 
-IMPL_RVV_WITH_LMULS(SWISH_FLOAT32)
-REGISTER_RVV_WITH_VLENS(REGISTER_RVV_SWISH_OP_FLOAT32, swish)
+IMPL_RVV_WITH_LMULS(SWISHB_FLOAT32)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_SWISHB_OP_FLOAT32, swishb)
 
 #endif
 } // namespace nncase::ntt::ops
