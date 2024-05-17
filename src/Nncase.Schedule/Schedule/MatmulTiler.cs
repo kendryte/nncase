@@ -417,7 +417,7 @@ public static class MatmulTiler
                                 {
                                     for (int i = (nl == level) ? (loop + 1) : 0; i < ((nl == lastLevel) ? lastLoop + 1 : domain.GetLength(1)); i++)
                                     {
-                                        if (tileVars[nl, i].Name().Contains(tensor.Dims[d], StringComparison.CurrentCulture))
+                                        if (tileVars[nl, i].Name().Contains(tensor.Dims[d], StringComparison.CurrentCulture) && !finded)
                                         {
                                             offsets.Add($"{tensor.Dims[d]}{nl + 1}");
                                             finded = true;

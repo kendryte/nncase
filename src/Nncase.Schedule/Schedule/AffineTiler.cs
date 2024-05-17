@@ -20,63 +20,78 @@ namespace Nncase.Schedule;
 internal sealed class AffineTiler
 {
     private readonly Grid _grid;
-    private readonly int[] _dims;
-    private readonly Expr[] _tempBuffers;
-    private readonly ISequentialBuilder<TIR.For>[] _loopBuilders;
-    private readonly Var[] _domainOffsets;
-    private readonly Expr[] _domainExtents;
+    private readonly int[] _domainBounds;
 
-    public AffineTiler(Grid grid)
+    public AffineTiler(Grid grid, ITargetOptions targetOptions)
     {
         _grid = grid;
-        _dims = InferDims();
-        _tempBuffers = new Expr[grid.Buffers.Length];
-
-        _loopBuilders = new ISequentialBuilder<TIR.For>[_dims.Length];
-        _domainOffsets = new Var[_dims.Length];
-        _domainExtents = new Expr[_dims.Length];
+        TargetOptions = targetOptions;
+        _domainBounds = InferDomainBounds();
     }
+
+    public ITargetOptions TargetOptions { get; }
 
     public Call Tile(IRModule module)
     {
         // 1. Solve schedule
-        var schedule = SolveSchedule();
+        if (_grid.Body[0] is not Call { Target: Op op })
+        {
+            throw new InvalidOperationException("body is not call");
+        }
 
-        // 2. Create loop builders
-        for (int loop = 0; loop < _loopBuilders.Length; loop++)
+        var schedule = SolveSchedule(op);
+        var loopBuilders = new ISequentialBuilder<TIR.For>[schedule.Loops.Length];
+        var domainOffsets = new Var[schedule.Loops.Length];
+        var domainExtents = new Expr[schedule.Loops.Length];
+
+        // 2. Create nested loop builders
+        for (int loop = 0; loop < loopBuilders.Length; loop++)
         {
             var domain = schedule.Loops[loop].Domain.Offset.Position;
             var begin = 0ul;
-            var end = begin + (ulong)_dims[domain];
-            var stride = (ulong)schedule.Loops[loop].TileSize;
-            _domainExtents[domain] = stride;
-            _loopBuilders[loop] = T.ForLoop(out _domainOffsets[domain], (begin, end, stride), LoopMode.Serial, $"l{loop}");
+            var end = begin + (ulong)schedule.Loops[loop].TileSize;
+            var stride = 1ul;
+            loopBuilders[loop] = T.ForLoop(out domainOffsets[domain], (begin, end, stride), LoopMode.Serial, $"l{loop}");
+            domainExtents[loop] = stride;
         }
 
-        var root = T.Sequential();
-        ISequentialBuilder<Expr> cntBlock = root;
+        var rootBuilder = T.Sequential();
+        ISequentialBuilder<Expr> cntBuilder = rootBuilder;
 
-        // 2. Allocate temporal buffers
-        // 2.1. Place 0
-        cntBlock = AllocateTempBuffers(schedule.Places[0], cntBlock);
+        // 3. Allocate temporal buffers
+        // 3.1. Place at root
+        var bufferScope = new Dictionary<int, List<Expr>>();
+        for (int i = 0; i < _grid.Buffers.Length; i++)
+        {
+            bufferScope[i] = new() { _grid.Buffers[i] };
+        }
+
+        cntBuilder = AllocateTempBuffers(schedule.Places[0], cntBuilder, bufferScope, domainOffsets, domainExtents);
 
         // 2.2. Place 1..
-        for (int loop = 0; loop < _loopBuilders.Length; loop++)
+        for (int loop = 0; loop < loopBuilders.Length; loop++)
         {
             var place = loop + 1;
-            var loopBuilder = _loopBuilders[loop];
-            cntBlock.Body(loopBuilder);
-            cntBlock = AllocateTempBuffers(schedule.Places[place], loopBuilder);
+            var loopBuilder = loopBuilders[loop];
+            cntBuilder.Body(loopBuilder);
+            if (place < schedule.Places.Length)
+            {
+                cntBuilder = AllocateTempBuffers(schedule.Places[place], loopBuilder, bufferScope, domainOffsets, domainExtents);
+            }
+            else
+            {
+                cntBuilder = loopBuilder;
+            }
         }
 
-        // 3. Nest compute body
+        // 3. inner computation.
         var bodyBuffers = new Expr[_grid.Buffers.Length];
         var bufferOfVars = new Expr[_grid.Reads.Length + 1];
         var bodyVarReplaces = new Dictionary<Expr, Expr>();
         var bufferOfReplaces = new Dictionary<Expr, Expr>();
         for (int i = 0; i < bodyBuffers.Length; i++)
         {
-            (bodyBuffers[i], cntBlock) = AllocateSubBuffer(cntBlock, _tempBuffers[i], schedule.BodyBufferViews[i]);
+            (bodyBuffers[i], cntBuilder) = AllocateSubBuffer(cntBuilder, bufferScope[i].Last(), schedule.BodyBufferViews[i], domainOffsets, domainExtents);
             bodyVarReplaces.Add(_grid.BodyParameters[i], bodyBuffers[i]);
         }
 
@@ -90,14 +105,14 @@ internal sealed class AffineTiler
 
         foreach (var d in schedule.Loops)
         {
-            bodyVarReplaces.Add(d.Domain.Offset, IR.F.Tensors.Cast(_domainOffsets[d.Domain.Offset.Position], DataTypes.Int64));
+            bodyVarReplaces.Add(d.Domain.Offset, IR.F.Tensors.Cast(domainOffsets[d.Domain.Offset.Position], DataTypes.Int64));
         }
 
         var nestBody = new ReplacingExprCloner(bodyVarReplaces).Clone(_grid.Body, default);
-        cntBlock.Body(nestBody);
+        cntBuilder.Body(nestBody);
 
         // 4. Create PrimFunction
-        var body = root.Build();
+        var body = rootBuilder.Build();
         body = new ReplacingExprCloner(bufferOfReplaces).Clone(body, default);
         var primFunc = new PrimFunction(_grid.ModuleKind, body, bufferOfVars);
         var wrapper = new PrimFunctionWrapper(primFunc, _grid.Buffers.Length - 1);
@@ -117,37 +132,38 @@ internal sealed class AffineTiler
         throw new NotSupportedException();
     }
 
-    private ISequentialBuilder<Expr> AllocateTempBuffers(GridSchedule.Place place, ISequentialBuilder<Expr> sequential)
+    private ISequentialBuilder<Expr> AllocateTempBuffers(GridSchedule.Place place, ISequentialBuilder<Expr> sequential, Dictionary<int, List<Expr>> bufferScope, Var[] domainOffsets, Expr[] domainExtents)
     {
         for (int i = 0; i < place.TemporalBuffers.Length; i++)
         {
             var tempBuffer = place.TemporalBuffers[i];
-            (var bufferExpr, sequential) = AllocateSubBuffer(sequential, _grid.Buffers[tempBuffer.Buffer], tempBuffer.Subview);
-            _tempBuffers[tempBuffer.Buffer] = bufferExpr;
+            (var subBuffer, sequential) = AllocateSubBuffer(sequential, bufferScope[tempBuffer.Buffer].Last(), tempBuffer.Subview, domainOffsets, domainExtents);
+            bufferScope[tempBuffer.Buffer].Add(subBuffer);
         }
 
         return sequential;
     }
 
-    private (Expr Buffer, ISequentialBuilder<Expr> NewSeq) AllocateSubBuffer(ISequentialBuilder<Expr> parentSeq, Expr parentBuffer, AffineMap accessMap)
+    private (Expr Buffer, ISequentialBuilder<Expr> NewSeq) AllocateSubBuffer(ISequentialBuilder<Expr> builder, Expr parentBuffer, AffineMap accessMap, Var[] domainOffsets, Expr[] domainExtents)
     {
-        var regions = accessMap.Results.AsValueEnumerable().Select(x => x.Apply(_domainOffsets, _domainExtents, null));
-        var offset = new IR.Tuple(regions.Select(x => x.Offset).ToArray());
+        var regions = accessMap.Results.AsValueEnumerable().Select(x => x.Apply(domainOffsets.Select(d => IR.F.Tensors.Cast(d, DataTypes.Int64)).ToArray(), domainExtents)).ToArray();
+        var offset = new IR.Tuple(regions.Select(x => IR.F.Tensors.Cast(x.Offset, DataTypes.UInt64)).ToArray());
         var shape = new IR.Tuple(regions.Select(x => x.Extent).ToArray());
         var bufferExpr = IR.F.Buffer.BufferSubview(parentBuffer, offset, shape);
-        var letExpr = T.Let(out var letVar, bufferExpr);
-        parentSeq.Body(letExpr);
-        return (letVar, letExpr);
+        var letBuilder = T.Let(out var letVar, bufferExpr);
+        builder.Body(letBuilder);
+        return (letVar, letBuilder);
     }
 
-    private GridSchedule SolveSchedule()
+    private GridSchedule SolveSchedule(Op op)
     {
         var bufferShapes = _grid.Buffers.AsValueEnumerable().Select(x => x.CheckedShape.ToValueArray()).ToArray();
-        var solver = new TilingSolver(_dims, bufferShapes, _grid.AccessMaps.ToArray());
-        return solver.Solve();
+        var solver = new TilingSolver(TargetOptions);
+        var originalDomain = _grid.AccessMaps[0].Domains.ToArray().Select(d => d.Offset).ToArray();
+        return solver.Solve(_domainBounds, bufferShapes, originalDomain, _grid.AccessMaps.ToArray(), op);
     }
 
-    private int[] InferDims()
+    private int[] InferDomainBounds()
     {
         var solver = new Solver("affineSolver");
         var converter = new AffineExprToIntExprConverter(solver);

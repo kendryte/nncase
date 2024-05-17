@@ -50,4 +50,8 @@ public sealed class CpuTargetOptions : ITargetOptions
     public string HierarchyNames { get; set; } = "b";
 
     public int[] HierarchySizes { get; set; } = new[] { 3 * (int)MathF.Pow(2, 20) };
+
+    public int[] MemoryCapacity { get; set; } = Array.Empty<int>();
+
+    public int[] MemoryBandWidth { get; set; } = Array.Empty<int>();
 }

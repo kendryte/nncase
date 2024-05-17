@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
+using CommunityToolkit.HighPerformance;
 using Google.OrTools.ConstraintSolver;
 using Nncase.IR;
 using Nncase.IR.Affine;
@@ -15,8 +16,551 @@ using Nncase.Utilities;
 
 namespace Nncase.Schedule;
 
-#pragma warning disable
+public sealed class TilingSolver
+{
+    public ITargetOptions TargetOptions { get; }
 
+    public TilingSolver(ITargetOptions targetOptions)
+    {
+        TargetOptions = targetOptions;
+    }
+
+    public GridSchedule Solve(int[] domainBounds, int[][] bufferShapes, AffineDim[] domain, AffineMap[] accessMaps, Op computation)
+    {
+        int[] memoryCapacitys = new[] { 2 * 1024 * 1024, int.MaxValue };
+        int[] memoryBandWidths = new[] { 128, 4 };
+
+        // string prefix, long bestObjective
+        var defaultPerms = Enumerable.Range(0, domain.Length).ToArray();
+        var singleLevelPerms = Enumerable.Repeat(defaultPerms, domain.Length).CartesianProduct().Where(arr => new HashSet<int>(arr).Count == domain.Length).Select(arr => arr.ToArray()).ToArray();
+        long bestObjective = long.MaxValue;
+        GridSchedule? result = null;
+        var loopMasks = accessMaps.Select(GetLoopMasks).ToArray();
+        foreach (var multiLevelPerms in Enumerable.Repeat(singleLevelPerms, memoryCapacitys.Length).CartesianProduct())
+        {
+            // note we revese the loop domain to inner first.
+            var newDomain = domain.Reverse().ToArray();
+            var perms = multiLevelPerms.ToArray();
+            var newFullDomain = new AffineDim[memoryCapacitys.Length + 1, newDomain.Length];
+            for (int l = 0; l < memoryCapacitys.Length; l++)
+            {
+                for (int i = 0; i < newDomain.Length; i++)
+                {
+                    newFullDomain[l, i] = newDomain[perms[l][i]];
+                }
+            }
+
+            // but we keep the buffer shapes/domain dounds order.
+            for (int i = 0; i < newDomain.Length; i++)
+            {
+                newFullDomain[memoryCapacitys.Length, i] = domain[i];
+            }
+
+            result = SolveWithPermutation(domainBounds, bufferShapes, newFullDomain, accessMaps, loopMasks, memoryCapacitys, memoryBandWidths, $"dd", ref bestObjective, computation);
+            if (result is not null)
+            {
+                return result;
+            }
+        }
+
+        return result!;
+    }
+
+    private GridSchedule? SolveWithPermutation(int[] domainBounds, int[][] bufferShapes, AffineDim[,] fullDomain, AffineMap[] accessMaps, LoopMasks[] loopMasks, int[] memoryCapacitys, int[] memoryBandWidths, string prefix, ref long bestObjective, Op computation)
+    {
+        var totalLevel = memoryCapacitys.Length;
+        var model = new Solver("tiling");
+        IntExpr one = model.MakeIntConst(1, "one");
+        IntExpr zero = model.MakeIntConst(0, "zero");
+        IntExpr elem = model.MakeIntConst(sizeof(float), "elem");
+        var info = CompilerServices.GetOpMicroKernelInfo(computation, fullDomain.GetRow(totalLevel).ToArray(), accessMaps, bufferShapes, TargetOptions);
+        var primitiveSizes = info.Primitives;
+        var primitiveMultiplier = info.Multiplier;
+
+        // 1. create tilesize vars, and we save the statement level tile size var in the last row.
+        var tileVars = new IntVar[totalLevel + 1, fullDomain.GetLength(1)];
+        for (int l = 0; l < totalLevel; l++)
+        {
+            for (int i = 0; i < fullDomain.GetLength(1); i++)
+            {
+                // the minimal tile size might be search from the reversed access map.
+                // now we according to the output access map
+                tileVars[l, i] = model.MakeIntVar(1, domainBounds[i] / primitiveSizes[i], $"T_{fullDomain[l, i]}_{l + 1}");
+            }
+        }
+
+        for (int i = 0; i < fullDomain.GetLength(1); i++)
+        {
+            tileVars[totalLevel, i] = model.MakeIntVar(1, domainBounds[i] / primitiveSizes[i], $"T_{fullDomain[totalLevel, i]}");
+            tileVars[totalLevel, i].SetRange(primitiveMultiplier[i].Min, primitiveMultiplier[i].Max);
+        }
+
+        // 2. the reads table save the buffer read times, we can use it directly.
+        var primitiveBufferSizes = new IntExpr[bufferShapes.Length];
+        for (int a = 0; a < bufferShapes.Length; a++)
+        {
+            primitiveBufferSizes[a] = elem;
+            for (int i = 0; i < fullDomain.GetLength(1); i++)
+            {
+                if (loopMasks[a].IsRelated(fullDomain[totalLevel, i]))
+                {
+                    primitiveBufferSizes[a] *= tileVars[totalLevel, i] * primitiveSizes[i];
+                }
+            }
+        }
+
+        IntExpr totalLoopTimes = Enumerable.Range(0, totalLevel).Select(i => Enumerable.Range(0, fullDomain.GetLength(1)).Select(j => tileVars[i, j])).SelectMany(i => i).Aggregate(one, (acc, tileVar) => acc * tileVar);
+
+        // 3. create buffer placement vars: gates(l,i,sl) mean create buffer size by memory level l, loop i, then store it into memory level sl.
+        var placeGates = new IntVar[bufferShapes.Length, totalLevel, fullDomain.GetLength(1)][];
+        var dataWrites = new IntExpr[bufferShapes.Length, totalLevel, fullDomain.GetLength(1)][];
+        var bufferSizes = new IntExpr[bufferShapes.Length, totalLevel, fullDomain.GetLength(1)];
+        for (int ts = 0; ts < bufferShapes.Length; ts++)
+        {
+            for (int l = 0; l < totalLevel; l++)
+            {
+                for (int i = 0; i < fullDomain.GetLength(1); i++)
+                {
+                    {
+                        var lastLevelSize = (l == 0 && i == 0) ? primitiveBufferSizes[ts] : (i == 0 ? bufferSizes[ts, l - 1, fullDomain.GetLength(1) - 1] : bufferSizes[ts, l, i - 1]);
+                        bufferSizes[ts, l, i] = loopMasks[ts].IsRelated(fullDomain[l, i]) ? lastLevelSize * tileVars[l, i] : lastLevelSize;
+                    }
+
+                    // we can create buffer size by high loop level, but put it into low loop level.
+                    var subLevelPlace = placeGates[ts, l, i] = new IntVar[l + 1];
+                    var subLevelWrites = dataWrites[ts, l, i] = new IntExpr[l + 1];
+                    for (int sl = 0; sl < l + 1; sl++)
+                    {
+                        subLevelPlace[sl] = model.MakeBoolVar($"place(b{ts}, {l}, {fullDomain[l, i]}, {sl})");
+
+                        // 2. compute data writes
+                        subLevelWrites[sl] = bufferSizes[ts, l, i];
+                        for (int nl = l; nl < totalLevel; nl++)
+                        {
+                            for (int ci = 0; ci < fullDomain.GetLength(1); ci++)
+                            {
+                                if (nl == l && ci <= i)
+                                {
+                                    continue;
+                                }
+
+                                subLevelWrites[sl] *= tileVars[nl, ci];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4. in each create level create data reads.
+        var dataReads = new IntExpr[bufferShapes.Length, totalLevel];
+        for (int a = 0; a < bufferShapes.Length; a++)
+        {
+            for (int l = 0; l < totalLevel; l++)
+            {
+                if (l == 0)
+                {
+                    // note l0 read should compute by computation
+                    dataReads[a, l] = zero;
+                }
+                else
+                {
+                    dataReads[a, l] = zero;
+                    for (int i = 0; i < fullDomain.GetLength(1); i++)
+                    {
+                        var lowerLevelWrites = dataWrites[a, l - 1, i];
+                        var lowerLevelGates = placeGates[a, l - 1, i];
+                        for (int sl = 0; sl < lowerLevelWrites.Length; sl++)
+                        {
+                            dataReads[a, l] += lowerLevelGates[sl] * lowerLevelWrites[sl];
+                        }
+                    }
+                }
+            }
+        }
+
+        // start add constraints.
+        // 1. must store one buffer at lowest level.
+        var lowestStoredBufferNums = new IntExpr[bufferShapes.Length];
+        for (int a = 0; a < bufferShapes.Length; a++)
+        {
+            IntExpr lowestBufferNums = zero;
+            for (int l = 0; l < totalLevel; l++)
+            {
+                for (int i = 0; i < fullDomain.GetLength(1); i++)
+                {
+                    lowestBufferNums += placeGates[a, l, i][0];
+                }
+            }
+
+            lowestStoredBufferNums[a] = lowestBufferNums;
+            var c = model.MakeEquality(lowestStoredBufferNums[a], 1);
+            c.SetName($"lowestStoredBufferNums[b{a}]");
+            model.Add(c);
+        }
+
+        // 2. each tensor only can create one or zero buffer at each create level.
+        var eachlevelCreateBufferConstraints = new Constraint[bufferShapes.Length, totalLevel];
+        var eachlevelCreateBufferNums = new IntExpr[bufferShapes.Length, totalLevel];
+        for (int a = 0; a < bufferShapes.Length; a++)
+        {
+            for (int l = 0; l < totalLevel; l++)
+            {
+                IntExpr bufferNums = zero;
+                for (int i = 0; i < fullDomain.GetLength(1); i++)
+                {
+                    var slGates = placeGates[a, l, i];
+                    for (int sl = 0; sl < slGates.Length; sl++)
+                    {
+                        bufferNums += slGates[sl];
+                    }
+                }
+
+                eachlevelCreateBufferNums[a, l] = bufferNums;
+                eachlevelCreateBufferConstraints[a, l] = model.MakeLessOrEqual(bufferNums, one);
+                eachlevelCreateBufferConstraints[a, l].SetName($"eachlevelCreateBufferConstraints[b{a}, {l}]");
+                model.Add(eachlevelCreateBufferConstraints[a, l]);
+            }
+        }
+
+        // 3. if current level has create a buffer, it's requires previous level store a buffer.
+        var depLevelBufferConstraints = new Constraint[bufferShapes.Length, totalLevel - 1];
+        for (int a = 0; a < bufferShapes.Length; a++)
+        {
+            for (int l = 0; l < totalLevel - 1; l++)
+            {
+                IntExpr previousLevelStoreBufferNums = zero;
+                for (int pl = l + 1; pl < totalLevel; pl++)
+                {
+                    for (int i = 0; i < fullDomain.GetLength(1); i++)
+                    {
+                        previousLevelStoreBufferNums += placeGates[a, pl, i][pl];
+                    }
+                }
+
+                depLevelBufferConstraints[a, l] = model.MakeGreaterOrEqual(previousLevelStoreBufferNums, model.MakeIsEqualVar(eachlevelCreateBufferNums[a, l], one));
+                depLevelBufferConstraints[a, l].SetName($"depLevelBufferConstraints[b{a}, {l}]");
+                model.Add(depLevelBufferConstraints[a, l]);
+            }
+        }
+
+        // 4. add tile vars equal to domain value constraints
+        var tileVarConstraints = new Constraint[fullDomain.GetLength(1)];
+        for (int i = 0; i < fullDomain.GetLength(1); i++)
+        {
+            IntExpr prod = tileVars[totalLevel, i];
+
+            for (int l = 0; l < totalLevel; l++)
+            {
+                for (int j = 0; j < fullDomain.GetLength(1); j++)
+                {
+                    if (fullDomain[l, j] == fullDomain[totalLevel, i])
+                    {
+                        prod *= tileVars[l, j];
+                    }
+                }
+            }
+
+            tileVarConstraints[i] = model.MakeEquality(prod, domainBounds[i] / primitiveSizes[i]);
+            model.Add(tileVarConstraints[i]);
+        }
+
+        // 5. add the memory capacity constraints
+        var levelBufferSizes = Enumerable.Range(0, totalLevel).Select(i => (IntExpr)model.MakeIntConst(0, "zero")).ToArray();
+        for (int a = 0; a < bufferShapes.Length; a++)
+        {
+            for (int l = 0; l < totalLevel; l++)
+            {
+                for (int i = 0; i < fullDomain.GetLength(1); i++)
+                {
+                    // we can create buffer size by high loop level, but put it into low loop level.
+                    for (int sl = 0; sl < l + 1; sl++)
+                    {
+                        levelBufferSizes[sl] += placeGates[a, l, i][sl] * bufferSizes[a, l, i];
+                    }
+                }
+            }
+        }
+
+        var capacityConstraints = new Constraint[totalLevel];
+        for (int l = 0; l < totalLevel; l++)
+        {
+            capacityConstraints[l] = model.MakeLessOrEqual(levelBufferSizes[l], memoryCapacitys[l]);
+            model.Add(capacityConstraints[l]);
+        }
+
+        // compute the cycles as objective
+        var levelCycles = Enumerable.Range(0, totalLevel).Select(i => zero).ToArray();
+        var levelDataReads = Enumerable.Range(0, totalLevel).Select(i => zero).ToArray();
+        var levelDataWrites = Enumerable.Range(0, totalLevel).Select(i => zero).ToArray();
+        {
+            for (int a = 0; a < bufferShapes.Length; a++)
+            {
+                for (int l = 0; l < totalLevel; l++)
+                {
+                    levelDataReads[l] += dataReads[a, l];
+                    for (int i = 0; i < fullDomain.GetLength(1); i++)
+                    {
+                        // we can create buffer size by high loop level, but put it into low loop level.
+                        for (int sl = 0; sl < l + 1; sl++)
+                        {
+                            // note we assume the top cache level is DDR, it's no need to count the data writes.
+                            IntExpr writes;
+                            if (sl != totalLevel - 1)
+                            {
+                                writes = placeGates[a, l, i][sl] * dataWrites[a, l, i][sl];
+                            }
+                            else
+                            {
+                                writes = zero;
+                            }
+
+                            levelDataWrites[sl] += writes;
+                            levelCycles[sl] += writes + dataReads[a, l];
+                        }
+                    }
+                }
+            }
+
+            // divide the bandwidth.
+            for (int l = 0; l < totalLevel; l++)
+            {
+                levelCycles[l] = levelCycles[l].CeilDiv(memoryBandWidths[l]);
+            }
+
+            // custom the computation level cycles
+            {
+                var computationLoad = totalLoopTimes * primitiveBufferSizes.SkipLast(1).Aggregate(zero, (acc, s) => acc + s);
+                levelCycles[0] += computationLoad.CeilDiv(info.ReadBandWidth);
+                var computationStore = totalLoopTimes * primitiveBufferSizes[^1];
+                levelCycles[0] += computationStore.CeilDiv(info.WriteBandWidth);
+            }
+        }
+
+        var totalCycles = levelCycles[0];
+        for (int l = 1; l < totalLevel; l++)
+        {
+            // todo max or sum?
+            totalCycles = model.MakeMax(totalCycles, levelCycles[l]);
+        }
+
+        var totalCyclesVar = totalCycles.Var();
+        totalCyclesVar.SetRange(1, long.MaxValue / memoryBandWidths[0]); /* avoid crash. */
+
+        var objectiveMonitor = model.MakeMinimize(totalCyclesVar, 1);
+        var logger = model.MakeSearchTrace($"{prefix}_tiling:");
+        var collector = model.MakeNBestValueSolutionCollector(5, false);
+        var searchAbleVars = new List<IntVar>();
+        searchAbleVars.AddRange(tileVars.AsSpan().ToArray());
+        searchAbleVars.AddRange(placeGates.AsSpan().ToArray().SelectMany(i => i).ToArray());
+        collector.Add(searchAbleVars.ToArray());
+        collector.Add(lowestStoredBufferNums.Select(c => c.Var()).ToArray());
+        collector.Add(eachlevelCreateBufferNums.AsSpan().ToArray().Select(c => c.Var()).ToArray());
+        collector.Add(levelBufferSizes.Select(c => c.Var()).ToArray());
+        collector.Add(levelDataReads.Select(c => c.Var()).ToArray());
+        collector.Add(levelDataWrites.Select(c => c.Var()).ToArray());
+        for (int ts = 0; ts < bufferShapes.Length; ts++)
+        {
+            for (int l = 0; l < totalLevel; l++)
+            {
+                collector.Add(dataReads[ts, l].Var());
+                for (int i = 0; i < fullDomain.GetLength(1); i++)
+                {
+                    collector.Add(bufferSizes[ts, l, i].Var());
+                    for (int sl = 0; sl < l - 1; sl++)
+                    {
+                        collector.Add(dataWrites[ts, l, i][sl].Var());
+                    }
+                }
+            }
+        }
+
+        collector.AddObjective(totalCyclesVar);
+        var decisionBuilder = model.MakeDefaultPhase(searchAbleVars.ToArray());
+        var status = model.Solve(decisionBuilder, new SearchMonitor[] { collector, objectiveMonitor });
+        {
+            if (!status)
+            {
+                return null;
+            }
+        }
+
+        var sol = collector.Solution(collector.SolutionCount() - 1);
+        if (sol.ObjectiveValue() < bestObjective)
+        {
+            var bufferScope = new Dictionary<int, List<(GridSchedule.TemporalBuffer? Parent, int Level, int Loop)>>();
+            for (int a = 0; a < bufferShapes.Length; a++)
+            {
+                bufferScope[a] = new();
+            }
+
+            var finalLoops = new GridSchedule.Loop[totalLevel, fullDomain.GetLength(1)];
+            var finalPlaces = new GridSchedule.Place[totalLevel, fullDomain.GetLength(1)];
+            void CreateTemporalBuffer(int level, int loop)
+            {
+                var createds = new List<GridSchedule.TemporalBuffer>();
+                for (int a = 0; a < bufferShapes.Length; a++)
+                {
+                    var storeGates = placeGates[a, level, loop];
+                    for (int sl = 0; sl < storeGates.Length; sl++)
+                    {
+                        if (sol.Value(storeGates[sl]) == 1)
+                        {
+                            var (parent, lastLevel, lastLoop) = bufferScope[a].Count == 0 ? (null, -1, -1) : bufferScope[a].Last();
+                            var extents = new List<int>(); /* buffer tile size */
+                            var offsets = new List<AffineExpr>(); /* index start */
+
+                            for (int d = 0; d < bufferShapes[a].Length; d++)
+                            {
+                                // note need using affine map revese it.
+                                long extent = primitiveSizes[d];
+                                for (int l = 0; l <= level; l++)
+                                {
+                                    for (int i = 0; i < ((l == level) ? loop + 1 : fullDomain.GetLength(1)); i++)
+                                    {
+                                        if (loopMasks[a][d].IsRelated(fullDomain[l, i]))
+                                        {
+                                            extent *= sol.Value(tileVars[l, i]);
+                                        }
+                                    }
+                                }
+
+                                for (int i = 0; i < fullDomain.GetLength(1); i++)
+                                {
+                                    if (loopMasks[a][d].IsRelated(fullDomain[totalLevel, i]))
+                                    {
+                                        extent *= sol.Value(tileVars[totalLevel, i]);
+                                    }
+                                }
+
+                                extents.Add(checked((int)extent));
+
+                                // from this buffer reside position to last buffer reside position find the first related loop.
+                                var finded = false;
+                                for (int nl = level; nl < totalLevel; nl++)
+                                {
+                                    for (int i = (nl == level) ? (loop + 1) : 0; i < ((nl == lastLevel) ? lastLoop + 1 : fullDomain.GetLength(1)); i++)
+                                    {
+                                        if (loopMasks[a][d].IsRelated(fullDomain[nl, i]) && !finded)
+                                        {
+                                            offsets.Add(finalLoops[nl, i].Domain.Offset);
+                                            finded = true;
+                                        }
+                                    }
+                                }
+
+                                if (!finded)
+                                {
+                                    offsets.Add(0);
+                                }
+                            }
+
+                            // var subTensorName = $"L{sl + 1}_{tensor.Name}";
+                            var subBufferDomains = new List<AffineDomain>();
+                            for (int nl = level; nl < totalLevel; nl++)
+                            {
+                                for (int i = (nl == level) ? (loop + 1) : 0; i < fullDomain.GetLength(1); i++)
+                                {
+                                    subBufferDomains.Add(finalLoops[nl, i].Domain);
+                                }
+                            }
+
+                            var subBuffer = new GridSchedule.TemporalBuffer(a, new AffineMap(subBufferDomains.ToArray(), Array.Empty<AffineSymbol>(), offsets.Zip(extents).Select(p => new AffineRange(new AffineConstant(p.Second) * p.First, p.Second)).ToArray()), parent);
+                            bufferScope[a].Add((subBuffer, level, loop));
+                            createds.Add(subBuffer);
+                        }
+                    }
+                }
+
+                finalPlaces[level, loop] = new GridSchedule.Place(createds.ToArray());
+            }
+
+            // GridSchedule result;
+            var newDominCount = 0;
+            for (int l = totalLevel - 1; l >= 0; l--)
+            {
+                for (int i = fullDomain.GetLength(1) - 1; i >= 0; i--)
+                {
+                    // create sub buffer.
+                    CreateTemporalBuffer(l, i);
+
+                    // create loop
+                    for (int k = 0; k < fullDomain.GetLength(1) - 1; k++)
+                    {
+                        if (loopMasks[0].IsRelated(fullDomain[l, i]))
+                        {
+                            finalLoops[l, i] = new GridSchedule.Loop(new AffineDomain(new AffineDim(newDominCount), new AffineExtent(newDominCount)), checked((int)sol.Value(tileVars[l, i])));
+                            newDominCount++;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // computation
+            var finalBodyView = new AffineMap[bufferShapes.Length];
+            for (int a = 0; a < bufferShapes.Length; a++)
+            {
+                var results = new List<AffineRange>();
+                for (int d = 0; d < bufferShapes[a].Length; d++)
+                {
+                    for (int i = 0; i < fullDomain.GetLength(1); i++)
+                    {
+                        if (loopMasks[a][d].IsRelated(fullDomain[0, i]))
+                        {
+                            var stride = checked((int)sol.Value(tileVars[totalLevel, d])) * primitiveSizes[d];
+                            results.Add(new(new AffineConstant(stride) * finalLoops[0, i].Domain.Offset, stride));
+                        }
+                    }
+                }
+
+                finalBodyView[a] = new(finalLoops.AsSpan().ToArray().Reverse().Select(l => l.Domain).ToArray(), Array.Empty<AffineSymbol>(), results.ToArray());
+            }
+
+            bestObjective = sol.ObjectiveValue();
+            return new GridSchedule(finalLoops.AsSpan().ToArray().Reverse().ToArray(), finalPlaces.AsSpan().ToArray().Reverse().ToArray(), finalBodyView);
+        }
+
+        return null;
+    }
+
+    private static LoopMasks GetLoopMasks(AffineMap map)
+    {
+        var masks = new LoopMask[map.Results.Length];
+        for (int i = 0; i < map.Results.Length; i++)
+        {
+            var dimsCollector = new AffineDimCollector();
+            dimsCollector.Visit(map.Results[i]);
+
+            uint mask = 0;
+            for (int j = 0; j < map.Domains.Length; j++)
+            {
+                if (dimsCollector.AffineDims.Contains(map.Domains[j].Offset))
+                {
+                    mask |= 1U << map.Domains[j].Offset.Position;
+                }
+            }
+
+            masks[i] = new LoopMask(mask);
+        }
+
+        return new(masks);
+    }
+}
+
+internal sealed class AffineDimCollector : ExprWalker
+{
+    public HashSet<AffineDim> AffineDims { get; } = new(ReferenceEqualityComparer.Instance);
+
+    protected override Unit VisitAffineDim(AffineDim expr)
+    {
+        AffineDims.Add(expr);
+        return default;
+    }
+}
+
+
+#if false
 public class TilingSolver
 {
     // 1. Constants
@@ -612,4 +1156,4 @@ public class TilingSolver
     }
 }
 
-#pragma warning restore
+#endif

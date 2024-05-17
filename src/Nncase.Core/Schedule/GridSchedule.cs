@@ -14,7 +14,7 @@ public sealed record GridSchedule(GridSchedule.Loop[] Loops, GridSchedule.Place[
 {
     public sealed record Loop(AffineDomain Domain, int TileSize);
 
-    public sealed record TemporalBuffer(int Buffer, AffineMap Subview);
+    public sealed record TemporalBuffer(int Buffer, AffineMap Subview, TemporalBuffer? Parent);
 
     public sealed record Place(TemporalBuffer[] TemporalBuffers);
 }

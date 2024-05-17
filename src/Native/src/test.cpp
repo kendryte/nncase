@@ -683,8 +683,9 @@ int main() {
         ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<2, 2>> pb;
         ntt::pack<1>(ta, pa);
         ntt::pack<0>(tb, pb);
-        ntt::matmul<false>(pa, pb, tc, ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{},
-                    ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{});
+        ntt::matmul<false>(pa, pb, tc, ntt::fixed_shape<1>{},
+                           ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
+                           ntt::fixed_shape<0>{});
         assert(tc(0, 0) == 2480.f);
         assert(tc(0, 1) == 2600.f);
         assert(tc(1, 0) == 6320.f);
@@ -704,8 +705,9 @@ int main() {
         ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<2, 2, 4>> pb;
         ntt::pack<3>(ta, pa);
         ntt::pack<1>(tb, pb);
-        ntt::matmul<false>(pa, pb, tc, ntt::fixed_shape<3>{}, ntt::fixed_shape<0>{},
-                    ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
+        ntt::matmul<false>(pa, pb, tc, ntt::fixed_shape<3>{},
+                           ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
+                           ntt::fixed_shape<0>{});
         assert(tc(0, 0, 0, 0) == 4960.f);
         assert(tc(0, 0, 0, 1) == 5080.f);
         assert(tc(0, 0, 0, 2) == 5200.f);

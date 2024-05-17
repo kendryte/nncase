@@ -18,5 +18,6 @@ internal class EvaluatorModule : IApplicationPart
         registrator.Register<ICostEvaluateProvider, CostEvaluateProvider>(reuse: Reuse.Singleton);
         registrator.Register<IShapeEvaluateProvider, ShapeEvaluateProvider>(reuse: Reuse.Singleton);
         registrator.Register<IMetricEvaluateProvider, MetricEvaluateProvider>(reuse: Reuse.Singleton);
+        registrator.Register<Schedule.IMicroKernelInfoProvider, MicroKernelInfoProvider>(reuse: Reuse.Singleton);
     }
 }
