@@ -423,7 +423,7 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 AnyType => "auto",
                 _ => throw new ArgumentOutOfRangeException(nameof(expr)),
             },
-            expr.Name + expr.GlobalVarIndex.ToString());
+            expr.Name + "_" + expr.GlobalVarIndex.ToString());
         _exprMemo.Add(expr, symbol);
         return symbol;
     }

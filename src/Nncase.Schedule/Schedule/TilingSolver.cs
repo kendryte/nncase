@@ -16,7 +16,7 @@ using Nncase.Utilities;
 
 namespace Nncase.Schedule;
 
-public sealed class TilingSolver
+internal sealed class TilingSolver
 {
     public ITargetOptions TargetOptions { get; }
 
@@ -83,9 +83,14 @@ public sealed class TilingSolver
         {
             for (int i = 0; i < fullDomain.GetLength(1); i++)
             {
-                // the minimal tile size might be search from the reversed access map.
-                // now we according to the output access map
-                tileVars[l, i] = model.MakeIntVar(1, domainBounds[i] / primitiveSizes[i], $"T_{fullDomain[l, i]}_{l + 1}");
+                for (int j = 0; j < fullDomain.GetLength(1); j++)
+                {
+                    if (fullDomain[l, i] == fullDomain[totalLevel, j])
+                    {
+                        tileVars[l, i] = model.MakeIntVar(1, domainBounds[j] / primitiveSizes[j], $"T_{fullDomain[l, i]}_{l + 1}");
+                        break;
+                    }
+                }
             }
         }
 
@@ -96,16 +101,18 @@ public sealed class TilingSolver
         }
 
         // 2. the reads table save the buffer read times, we can use it directly.
+        var primitiveBufferShapes = new IntExpr[bufferShapes.Length][];
         var primitiveBufferSizes = new IntExpr[bufferShapes.Length];
         for (int a = 0; a < bufferShapes.Length; a++)
         {
             primitiveBufferSizes[a] = elem;
-            for (int i = 0; i < fullDomain.GetLength(1); i++)
+            primitiveBufferShapes[a] = new IntVar[bufferShapes[a].Length];
+            var extentVars = tileVars.GetRow(totalLevel).ToArray();
+            var converter = new AffineExprToIntExprConverter(model, extentVars);
+            for (int i = 0; i < bufferShapes[a].Length; i++)
             {
-                if (loopMasks[a].IsRelated(fullDomain[totalLevel, i]))
-                {
-                    primitiveBufferSizes[a] *= tileVars[totalLevel, i] * primitiveSizes[i];
-                }
+                primitiveBufferShapes[a][i] = converter.Visit(accessMaps[a].Results[i].Extent);
+                primitiveBufferSizes[a] *= primitiveBufferShapes[a][i];
             }
         }
 
@@ -356,6 +363,7 @@ public sealed class TilingSolver
         collector.Add(searchAbleVars.ToArray());
         collector.Add(lowestStoredBufferNums.Select(c => c.Var()).ToArray());
         collector.Add(eachlevelCreateBufferNums.AsSpan().ToArray().Select(c => c.Var()).ToArray());
+        collector.Add(primitiveBufferShapes.SelectMany(i => i).Select(i => i.Var()).ToArray());
         collector.Add(levelBufferSizes.Select(c => c.Var()).ToArray());
         collector.Add(levelDataReads.Select(c => c.Var()).ToArray());
         collector.Add(levelDataWrites.Select(c => c.Var()).ToArray());
@@ -394,7 +402,38 @@ public sealed class TilingSolver
                 bufferScope[a] = new();
             }
 
+            var tileSizes = new long[totalLevel + 1, domainBounds.Length];
+            for (int l = 0; l < totalLevel + 1; l++)
+            {
+                for (int i = 0; i < domainBounds.Length; i++)
+                {
+                    tileSizes[l, i] = sol.Value(tileVars[l, i]);
+                }
+            }
+
             var finalLoops = new GridSchedule.Loop[totalLevel, fullDomain.GetLength(1)];
+            {
+                var loopStops = tileSizes.GetRow(totalLevel).ToArray();
+                var newDominCount = 0;
+                for (int l = 0; l < totalLevel; l++)
+                {
+                    for (int i = 0; i < domainBounds.Length; i++)
+                    {
+                        for (int j = 0; j < domainBounds.Length; j++)
+                        {
+                            if (fullDomain[l, i] == fullDomain[totalLevel, j])
+                            {
+                                var stop = loopStops[j] * tileSizes[l, i];
+                                finalLoops[l, i] = new GridSchedule.Loop(new AffineDomain(new AffineDim(newDominCount), new AffineExtent(newDominCount)), stop, loopStops[j], $"{fullDomain[l, i]}_{l + 1}");
+                                loopStops[j] = stop;
+                                newDominCount++;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
             var finalPlaces = new GridSchedule.Place[totalLevel, fullDomain.GetLength(1)];
             void CreateTemporalBuffer(int level, int loop)
             {
@@ -465,7 +504,7 @@ public sealed class TilingSolver
                                 }
                             }
 
-                            var subBuffer = new GridSchedule.TemporalBuffer(a, new AffineMap(subBufferDomains.ToArray(), Array.Empty<AffineSymbol>(), offsets.Zip(extents).Select(p => new AffineRange(new AffineConstant(p.Second) * p.First, p.Second)).ToArray()), parent);
+                            var subBuffer = new GridSchedule.TemporalBuffer(a, new AffineMap(subBufferDomains.ToArray(), Array.Empty<AffineSymbol>(), offsets.Zip(extents).Select(p => new AffineRange(p.First, p.Second)).ToArray()), parent);
                             bufferScope[a].Add((subBuffer, level, loop));
                             createds.Add(subBuffer);
                         }
@@ -476,24 +515,12 @@ public sealed class TilingSolver
             }
 
             // GridSchedule result;
-            var newDominCount = 0;
             for (int l = totalLevel - 1; l >= 0; l--)
             {
                 for (int i = fullDomain.GetLength(1) - 1; i >= 0; i--)
                 {
                     // create sub buffer.
                     CreateTemporalBuffer(l, i);
-
-                    // create loop
-                    for (int k = 0; k < fullDomain.GetLength(1) - 1; k++)
-                    {
-                        if (loopMasks[0].IsRelated(fullDomain[l, i]))
-                        {
-                            finalLoops[l, i] = new GridSchedule.Loop(new AffineDomain(new AffineDim(newDominCount), new AffineExtent(newDominCount)), checked((int)sol.Value(tileVars[l, i])));
-                            newDominCount++;
-                            break;
-                        }
-                    }
                 }
             }
 
@@ -501,20 +528,28 @@ public sealed class TilingSolver
             var finalBodyView = new AffineMap[bufferShapes.Length];
             for (int a = 0; a < bufferShapes.Length; a++)
             {
-                var results = new List<AffineRange>();
+                // note assume the domain only map to one dimension.
+                var extents = primitiveBufferShapes[a].Select(i => sol.Value(i.Var())).ToArray();
+                var offsets = new List<AffineExpr>();
                 for (int d = 0; d < bufferShapes[a].Length; d++)
                 {
-                    for (int i = 0; i < fullDomain.GetLength(1); i++)
+                    var offsetVars = new List<AffineDim>();
+                    var (_, lastLevel, lastLoop) = bufferScope[a].Last();
+                    for (int nl = 0; nl < totalLevel; nl++)
                     {
-                        if (loopMasks[a][d].IsRelated(fullDomain[0, i]))
+                        for (int i = 0; i < ((nl == lastLevel) ? lastLoop + 1 : fullDomain.GetLength(1)); i++)
                         {
-                            var stride = checked((int)sol.Value(tileVars[totalLevel, d])) * primitiveSizes[d];
-                            results.Add(new(new AffineConstant(stride) * finalLoops[0, i].Domain.Offset, stride));
+                            if (loopMasks[a][d].IsRelated(fullDomain[nl, i]))
+                            {
+                                offsetVars.Add(finalLoops[nl, i].Domain.Offset);
+                            }
                         }
                     }
+
+                    offsets.Add(offsetVars.Count == 0 ? new AffineConstant(0) : offsetVars.Skip(1).Aggregate((AffineExpr)offsetVars[0], (acc, v) => new AffineAddBinary(acc, v)));
                 }
 
-                finalBodyView[a] = new(finalLoops.AsSpan().ToArray().Reverse().Select(l => l.Domain).ToArray(), Array.Empty<AffineSymbol>(), results.ToArray());
+                finalBodyView[a] = new(finalLoops.AsSpan().ToArray().Reverse().Select(l => l.Domain).ToArray(), Array.Empty<AffineSymbol>(), offsets.Zip(extents).Select(p => new AffineRange(p.First, p.Second)).ToArray());
             }
 
             bestObjective = sol.ObjectiveValue();
@@ -546,6 +581,41 @@ public sealed class TilingSolver
 
         return new(masks);
     }
+}
+
+internal sealed class AffineExprToIntExprConverter : ExprVisitor<IntExpr, Unit>
+{
+    private readonly Solver _solver;
+    private readonly IntVar[] _extents;
+
+    public AffineExprToIntExprConverter(Solver solver, IntVar[] extentVars)
+    {
+        _solver = solver;
+        _extents = extentVars;
+    }
+
+    protected override IntExpr VisitLeafAffineExtent(AffineExtent expr)
+    {
+        return _extents[expr.Position];
+    }
+
+    protected override IntExpr VisitLeafAffineConstant(AffineConstant expr) =>
+        _solver.MakeIntConst(expr.Value);
+
+    protected override IntExpr VisitLeafAffineAddBinary(AffineAddBinary expr) =>
+        ExprMemo[expr.Lhs] + ExprMemo[expr.Rhs];
+
+    protected override IntExpr VisitLeafAffineMulBinary(AffineMulBinary expr) =>
+        ExprMemo[expr.Lhs] * ExprMemo[expr.Rhs];
+
+    protected override IntExpr VisitLeafAffineDivBinary(AffineDivBinary expr) =>
+        expr.BinaryOp switch
+        {
+            AffineDivBinaryOp.FloorDiv => _solver.MakeDiv(ExprMemo[expr.Lhs], ExprMemo[expr.Rhs]),
+            AffineDivBinaryOp.CeilDiv => ExprMemo[expr.Lhs].CeilDiv(ExprMemo[expr.Rhs]),
+            AffineDivBinaryOp.Mod => _solver.MakeModulo(ExprMemo[expr.Lhs], ExprMemo[expr.Rhs]),
+            _ => throw new UnreachableException(),
+        };
 }
 
 internal sealed class AffineDimCollector : ExprWalker

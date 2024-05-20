@@ -49,9 +49,9 @@ internal sealed class AffineTiler
         {
             var domain = schedule.Loops[loop].Domain.Offset.Position;
             var begin = 0ul;
-            var end = begin + (ulong)schedule.Loops[loop].TileSize;
-            var stride = 1ul;
-            loopBuilders[loop] = T.ForLoop(out domainOffsets[domain], (begin, end, stride), LoopMode.Serial, $"l{loop}");
+            var end = begin + (ulong)schedule.Loops[loop].Stop;
+            var stride = (ulong)schedule.Loops[loop].Stride;
+            loopBuilders[loop] = T.ForLoop(out domainOffsets[domain], (begin, end, stride), LoopMode.Serial, schedule.Loops[loop].Name);
             domainExtents[loop] = stride;
         }
 
@@ -146,11 +146,19 @@ internal sealed class AffineTiler
 
     private (Expr Buffer, ISequentialBuilder<Expr> NewSeq) AllocateSubBuffer(ISequentialBuilder<Expr> builder, Expr parentBuffer, AffineMap accessMap, Var[] domainOffsets, Expr[] domainExtents)
     {
-        var regions = accessMap.Results.AsValueEnumerable().Select(x => x.Apply(domainOffsets.Select(d => IR.F.Tensors.Cast(d, DataTypes.Int64)).ToArray(), domainExtents)).ToArray();
-        var offset = new IR.Tuple(regions.Select(x => IR.F.Tensors.Cast(x.Offset, DataTypes.UInt64)).ToArray());
+        var regions = accessMap.Results.AsValueEnumerable().Select(x => x.Apply(domainOffsets.ToArray(), domainExtents)).ToArray();
+        var offset = new IR.Tuple(regions.Select(x => x.Offset).ToArray());
         var shape = new IR.Tuple(regions.Select(x => x.Extent).ToArray());
         var bufferExpr = IR.F.Buffer.BufferSubview(parentBuffer, offset, shape);
-        var letBuilder = T.Let(out var letVar, bufferExpr);
+        string name = parentBuffer switch
+        {
+            IR.Buffers.BufferOf { Input: Var v } => v.Name + "_sub",
+            TIR.Buffer b => b.Name + "_sub",
+            Var v => v.Name + "_sub",
+            _ => "let",
+        };
+
+        var letBuilder = T.Let(out var letVar, bufferExpr, name);
         builder.Body(letBuilder);
         return (letVar, letBuilder);
     }
