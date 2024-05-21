@@ -99,7 +99,7 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.PackedMatMul(arguments[0], arguments[1], ret, packed_mat_mul.LhsPackedAxes, packed_mat_mul.LhsPadedNums, packed_mat_mul.RhsPackedAxes, packed_mat_mul.RhsPadedNums));
                 break;
             case IR.Math.MatMul matmul:
-                _mainBody.Add(TIR.F.CPU.Matmul(arguments[0], arguments[1], ret));
+                _mainBody.Add(TIR.F.CPU.Matmul(arguments[0], arguments[1], ret, None.Default));
                 break;
             case IR.NN.Conv2D conv:
                 {

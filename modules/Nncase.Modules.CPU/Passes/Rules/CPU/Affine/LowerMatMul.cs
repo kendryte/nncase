@@ -83,9 +83,7 @@ public partial class LowerMatmul : RewriteRule<Pattern>
             .Read(lhs, lhsMap, out var lhsTile)
             .Read(rhs, rhsMap, out var rhsTile)
             .Write(TIR.T.CreateBuffer(call.CheckedTensorType, TIR.MemoryLocation.Data, out _, $"matmul_{_count++}"), new AffineMap(domains, default, domains.SkipLast(2).Concat(domains.TakeLast(1)).Select(x => new AffineRange(x.Offset, x.Extent)).ToArray()), out var outTile)
-            .Body(TIR.T.If(IR.F.Math.Equal(domains[^2].Offset, 0L)).
-                Then(TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile)).
-                Else(TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, true)))
+            .Body(TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.Equal(domains[^2].Offset, 0L)))
             .Build();
     }
 }

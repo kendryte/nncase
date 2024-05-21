@@ -304,7 +304,7 @@ internal sealed class DeviceToTIRConverter
                 Visit(call.Arguments[1], rhsMap, rhsRegion, out var rhsInputMaps),
                 block);
 #if USE_KERNEL_LIB
-            block.Body(TIR.F.CPU.Matmul(lhsRegion, rhsRegion, outRegion));
+            block.Body(TIR.F.CPU.Matmul(lhsRegion, rhsRegion, outRegion, None.Default));
 #else
             // var lhsStarts = lhsRegion.Region.ToArray().Select(r => (T.Let(out var start, r.Start), start)).ToArray();
             // var rhsStarts = rhsRegion.Region.ToArray().Select(r => (T.Let(out var start, r.Start), start)).ToArray();

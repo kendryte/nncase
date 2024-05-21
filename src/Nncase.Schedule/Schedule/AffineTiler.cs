@@ -47,11 +47,10 @@ internal sealed class AffineTiler
         // 2. Create nested loop builders
         for (int loop = 0; loop < loopBuilders.Length; loop++)
         {
-            var domain = schedule.Loops[loop].Domain.Offset.Position;
             var begin = 0ul;
             var end = begin + (ulong)schedule.Loops[loop].Stop;
             var stride = (ulong)schedule.Loops[loop].Stride;
-            loopBuilders[loop] = T.ForLoop(out domainOffsets[domain], (begin, end, stride), LoopMode.Serial, schedule.Loops[loop].Name);
+            loopBuilders[loop] = T.ForLoop(out domainOffsets[schedule.Loops[loop].Domain.Offset.Position], (begin, end, stride), LoopMode.Serial, schedule.Loops[loop].Name);
             domainExtents[loop] = stride;
         }
 
@@ -102,10 +101,12 @@ internal sealed class AffineTiler
         }
 
         bufferOfVars[^1] = _grid.Buffers[^1];
-
-        foreach (var d in schedule.Loops)
         {
-            bodyVarReplaces.Add(d.Domain.Offset, IR.F.Tensors.Cast(domainOffsets[d.Domain.Offset.Position], DataTypes.Int64));
+            var results = schedule.DomainMap.Apply(domainOffsets.Select(o => IR.F.Tensors.Cast(o, DataTypes.Int64)).ToArray(), domainExtents, default);
+            for (int i = 0; i < schedule.DomainMap.Results.Length; i++)
+            {
+                bodyVarReplaces.Add(new AffineDim(i), results[i].Start);
+            }
         }
 
         var nestBody = new ReplacingExprCloner(bodyVarReplaces).Clone(_grid.Body, default);

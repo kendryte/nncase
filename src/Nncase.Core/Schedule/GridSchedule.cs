@@ -10,7 +10,7 @@ using Nncase.IR.Affine;
 
 namespace Nncase.Schedule;
 
-public sealed record GridSchedule(GridSchedule.Loop[] Loops, GridSchedule.Place[] Places, AffineMap[] BodyBufferViews)
+public sealed record GridSchedule(AffineMap DomainMap, GridSchedule.Loop[] Loops, GridSchedule.Place[] Places, AffineMap[] BodyBufferViews)
 {
     public sealed record Loop(AffineDomain Domain, long Stop, long Stride, string Name);
 
