@@ -200,9 +200,7 @@ template <class T1, class T2> struct pow {
 };
 
 template <class T1, class T2> struct mean {
-    constexpr auto operator()(const T1 &v1) const noexcept {
-        return v1;
-    }
+    constexpr auto operator()(const T1 &v1) const noexcept { return v1; }
 };
 
 template <class T, class B> struct swishb {
@@ -381,7 +379,8 @@ template <class T> constexpr T swish<T>::operator()(const T &v) const noexcept {
 }
 
 // swishb(v) = v / (exp(-v*beta) + 1)
-template <class T, class B> constexpr T swishb<T, B>::operator()(const T &v, const B &beta) const noexcept {
+template <class T, class B>
+constexpr T swishb<T, B>::operator()(const T &v, const B &beta) const noexcept {
     return v / (ntt::exp(-v * beta) + 1);
 }
 
