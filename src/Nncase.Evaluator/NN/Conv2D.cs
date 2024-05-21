@@ -129,7 +129,7 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
             return new InvalidType(string.Empty);
         }
 
-        if (input.Placement != weights.Placement)
+        if (input.Placement != weights.Placement || input.Placement != bias.Placement)
         {
             return new InvalidType("placement not equal");
         }
