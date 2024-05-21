@@ -199,6 +199,12 @@ template <class T1, class T2> struct pow {
     }
 };
 
+template <class T1, class T2> struct mean {
+    constexpr auto operator()(const T1 &v1) const noexcept {
+        return v1;
+    }
+};
+
 template <class T, class B> struct swishb {
     constexpr T operator()(const T &v, const B &beta) const noexcept;
 };

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <chrono>
+#include <cmath>
 #include <cstring>
 #include <iostream>
 #include <nncase/api.h>
@@ -25,6 +26,10 @@ using namespace nncase;
 using namespace nncase::clr;
 using namespace nncase::runtime;
 using namespace std::string_view_literals;
+
+bool are_floats_equal(float a, float b, float epsilon = 1e-6) {
+    return std::fabs(a - b) < epsilon;
+}
 
 #define TRY(x)                                                                 \
     if (x)                                                                     \
@@ -121,7 +126,7 @@ int main() {
         assert(tb(0, 0, 0)(0) == ta(0, 0, 0));
         assert(tb(0, 0, 0)(1) == ta(0, 1, 0));
         assert(tb(0, 0, 0)(2) == ta(0, 2, 0));
-        assert(tb(0, 0, 0)(3) == 0.f);
+        assert(are_floats_equal(tb(0, 0, 0)(3), 0.f));
 
         ntt::tensor<float, ntt::fixed_shape<16>> tc;
         ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<4>> td;
@@ -140,13 +145,13 @@ int main() {
         ntt::tensor<float, ntt::fixed_shape<1, 3, 4>> ta;
         ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 1, 4>> tb;
         std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-        ntt::pack<1>(ta, tb.view());
+        ntt::pack<1>(ta, tb);
         ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 1, 4>> tc;
         ntt::unary<ntt::ops::cos>(tb, tc);
         assert(tc(0, 0, 0)(0) == std::cos(ta(0, 0, 0)));
         assert(tc(0, 0, 0)(1) == std::cos(ta(0, 1, 0)));
         assert(tc(0, 0, 0)(2) == std::cos(ta(0, 2, 0)));
-        assert(tc(0, 0, 0)(3) == std::cos(0.0f));
+        assert(are_floats_equal(tc(0, 0, 0)(3), std::cos(0.0f)));
     }
 
     // pack(fixed_shape + fixed_shape)
@@ -911,6 +916,20 @@ int main() {
         assert(te(1, 0, 1) == 1.3f);
         assert(te(2, 0, 1) == 1.3f);
         assert(te(3, 0, 1) == 1.3f);
+    }
+
+    {
+        ntt::tensor<float, ntt::fixed_shape<2, 8>> ta;
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<2, 2>> tav;
+        std::fill(ta.elements().begin(), ta.elements().begin() + 8, 1.f);
+        std::fill(ta.elements().begin() + 8, ta.elements().end(), 3.2f);
+        ntt::pack<1>(ta, tav.view());
+
+        ntt::tensor<float, ntt::fixed_shape<2, 1>> tb;
+        ntt::reduce<ntt::ops::add>(tav, tb, ntt::fixed_shape<1>{},
+                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
+        assert(are_floats_equal(tb(0, 0), 8.f));
+        assert(are_floats_equal(tb(1, 0), 25.6f));
     }
 
 #if 0

@@ -4,6 +4,7 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
@@ -73,18 +74,35 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Reduce target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Reduce.Input);
-        context.CheckArgumentType<TensorType>(target, Reduce.Axis);
-        return Visit(context, target, input);
+        var input = context.CheckArgumentType<IRType>(target, Reduce.Input);
+
+        return input switch
+        {
+            DistributedType d => Visit(context, target, d),
+            TensorType t => Visit(context, target, t),
+            _ => new InvalidType(input.GetType().ToString()),
+        };
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Reduce target)
     {
-        var input = context.GetArgumentType<TensorType>(target, Reduce.Input);
-        var ret = context.GetReturnType<TensorType>();
-        uint input_elem = input.Shape.Aggregate(1U, (acc, d) => acc * (d.IsFixed ? (uint)d.FixedValue : 1U));
-        uint ret_elem = ret.Shape.Aggregate(1U, (acc, d) => acc * (d.IsFixed ? (uint)d.FixedValue : 1U));
+        var input = context.GetArgumentType<IRType>(target, Reduce.Input);
+        var ret = context.GetReturnType<IRType>();
+        var inputShape = input switch
+        {
+            TensorType t => t.Shape,
+            DistributedType d => d.TensorType.Shape,
+            _ => throw new NotSupportedException(string.Empty),
+        };
+        var retShape = ret switch
+        {
+            TensorType t => t.Shape,
+            DistributedType d => d.TensorType.Shape,
+            _ => throw new NotSupportedException(string.Empty),
+        };
+        uint input_elem = inputShape.Aggregate(1U, (acc, d) => acc * (d.IsFixed ? (uint)d.FixedValue : 1U));
+        uint ret_elem = retShape.Aggregate(1U, (acc, d) => acc * (d.IsFixed ? (uint)d.FixedValue : 1U));
         uint macPerElement = input_elem / ret_elem;
         return new()
         {
@@ -150,7 +168,35 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
 
     private IRType Visit(ITypeInferenceContext context, Reduce target, TensorType input)
     {
+        context.CheckArgumentType<TensorType>(target, Reduce.Axis);
         var args = context.GetArguments(target, Reduce.KeepDims, Reduce.Axis);
         return TypeInference.ReduceType(input, args[0], args[1]);
+    }
+
+    private IRType Visit(ITypeInferenceContext context, Reduce target, DistributedType input)
+    {
+        if (Visit(context, target, input.TensorType) is not TensorType tensorType)
+        {
+            throw new InvalidOperationException();
+        }
+
+        var axis = ((TensorConst)context.GetArgument(target, Reduce.Axis)).Value.ToArray<int>();
+        var invalid = new InvalidType($"{input}, not support");
+
+        var ndsbp = new SBP[input.Placement.Rank];
+
+        for (int i = 0; i < input.Placement.Rank; i++)
+        {
+            switch (input.NdSBP[i])
+            {
+                case SBPSplit { Axis: int ix } when axis.Contains(ix):
+                    return invalid;
+                default:
+                    ndsbp[i] = input.NdSBP[i];
+                    break;
+            }
+        }
+
+        return new DistributedType(tensorType, ndsbp, input.Placement);
     }
 }

@@ -1076,8 +1076,8 @@ public class UnitTestEGraphFusion : TestClassBase
         var prmg = CompileSession.CreatePassManager("prmg");
         prmg.Add<DataflowPass>().Configure(p =>
         {
-            p.Add<CPUSingleFusion>();
-            p.Add<CPUOutputBoxingFusion>();
+            p.Add<CPUSingleFusion>(CPUTarget.Kind);
+            p.Add<CPUOutputBoxingFusion>(CPUTarget.Kind);
         });
         prmg.Add<EGraphRulesPass>().Configure(p =>
         {
@@ -1139,8 +1139,8 @@ public class UnitTestEGraphFusion : TestClassBase
         var prmg = CompileSession.CreatePassManager("prmg");
         prmg.Add<DataflowPass>().Configure(p =>
         {
-            p.Add<CPUSingleFusion>();
-            p.Add<CPUOutputBoxingFusion>();
+            p.Add<CPUSingleFusion>(CPUTarget.Kind);
+            p.Add<CPUOutputBoxingFusion>(CPUTarget.Kind);
         });
         DumpScope.Current.DumpIR(main, "pre");
         prmg.Add<EGraphRulesPass>().Configure(p =>
