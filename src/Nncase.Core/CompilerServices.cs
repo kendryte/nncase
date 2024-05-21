@@ -718,5 +718,4 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     }
 
     public MicroKernelInfo GetOpMicroKernelInfo(Op op, AffineDim[] domain, AffineMap[] accessMaps, int[][] bufferShapes, ITargetOptions targetOptions) => _microKernelInfoGetter.GetInfo(op, domain, accessMaps, bufferShapes, targetOptions);
-
 }

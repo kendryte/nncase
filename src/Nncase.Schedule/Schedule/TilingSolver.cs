@@ -18,12 +18,12 @@ namespace Nncase.Schedule;
 
 internal sealed class TilingSolver
 {
-    public ITargetOptions TargetOptions { get; }
-
     public TilingSolver(ITargetOptions targetOptions)
     {
         TargetOptions = targetOptions;
     }
+
+    public ITargetOptions TargetOptions { get; }
 
     public GridSchedule Solve(int[] domainBounds, int[][] bufferShapes, AffineDim[] domain, AffineMap[] accessMaps, Op computation)
     {
@@ -64,6 +64,29 @@ internal sealed class TilingSolver
         }
 
         return result!;
+    }
+
+    private static LoopMasks GetLoopMasks(AffineMap map)
+    {
+        var masks = new LoopMask[map.Results.Length];
+        for (int i = 0; i < map.Results.Length; i++)
+        {
+            var dimsCollector = new AffineDimCollector();
+            dimsCollector.Visit(map.Results[i]);
+
+            uint mask = 0;
+            for (int j = 0; j < map.Domains.Length; j++)
+            {
+                if (dimsCollector.AffineDims.Contains(map.Domains[j].Offset))
+                {
+                    mask |= 1U << map.Domains[j].Offset.Position;
+                }
+            }
+
+            masks[i] = new LoopMask(mask);
+        }
+
+        return new(masks);
     }
 
     private GridSchedule? SolveWithPermutation(int[] domainBounds, int[][] bufferShapes, AffineDim[,] fullDomain, AffineMap[] accessMaps, LoopMasks[] loopMasks, int[] memoryCapacitys, int[] memoryBandWidths, string prefix, ref long bestObjective, Op computation)
@@ -573,29 +596,6 @@ internal sealed class TilingSolver
         }
 
         return null;
-    }
-
-    private static LoopMasks GetLoopMasks(AffineMap map)
-    {
-        var masks = new LoopMask[map.Results.Length];
-        for (int i = 0; i < map.Results.Length; i++)
-        {
-            var dimsCollector = new AffineDimCollector();
-            dimsCollector.Visit(map.Results[i]);
-
-            uint mask = 0;
-            for (int j = 0; j < map.Domains.Length; j++)
-            {
-                if (dimsCollector.AffineDims.Contains(map.Domains[j].Offset))
-                {
-                    mask |= 1U << map.Domains[j].Offset.Position;
-                }
-            }
-
-            masks[i] = new LoopMask(mask);
-        }
-
-        return new(masks);
     }
 }
 
