@@ -80,6 +80,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
         {
             DistributedType d => Visit(context, target, d),
             TensorType t => Visit(context, target, t),
+            AnyType a => a,
             _ => new InvalidType(input.GetType().ToString()),
         };
     }
