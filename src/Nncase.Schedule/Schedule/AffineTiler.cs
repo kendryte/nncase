@@ -102,7 +102,7 @@ internal sealed class AffineTiler
 
         bufferOfVars[^1] = _grid.Buffers[^1];
         {
-            var results = schedule.DomainMap.Apply(domainOffsets.Select(o => IR.F.Tensors.Cast(o, DataTypes.Int64)).ToArray(), domainExtents, default);
+            var results = schedule.DomainMap.Apply(domainOffsets.Select(o => IR.F.Tensors.Cast(o, DataTypes.Int64)).ToArray(), domainExtents);
             for (int i = 0; i < schedule.DomainMap.Results.Length; i++)
             {
                 bodyVarReplaces.Add(new AffineDim(i), results[i].Start);
