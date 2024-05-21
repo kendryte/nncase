@@ -18,7 +18,7 @@
 #include <riscv_vector.h>
 
 #ifndef NTT_VLEN
-#define NTT_VLEN (__riscv_v_min_vlen)
+#define NTT_VLEN __riscv_v_min_vlen
 #endif
 
 #define NTT_VL(vlen, sew, lmul) ((vlen) / (sew) * (lmul))
