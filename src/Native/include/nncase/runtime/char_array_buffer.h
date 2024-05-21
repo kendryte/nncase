@@ -26,21 +26,21 @@ class char_array_buffer : public std::streambuf {
           current_(data.data()) {}
 
   private:
-    int_type underflow() {
+    int_type underflow() override {
         if (current_ == end_)
             return traits_type::eof();
 
         return traits_type::to_int_type(*current_);
     }
 
-    int_type uflow() {
+    int_type uflow() override {
         if (current_ == end_)
             return traits_type::eof();
 
         return traits_type::to_int_type(*current_++);
     }
 
-    int_type pbackfail(int_type ch) {
+    int_type pbackfail(int_type ch) override {
         if (current_ == begin_ ||
             (ch != traits_type::eof() && ch != current_[-1]))
             return traits_type::eof();
@@ -48,13 +48,14 @@ class char_array_buffer : public std::streambuf {
         return traits_type::to_int_type(*--current_);
     }
 
-    std::streamsize showmanyc() {
+    std::streamsize showmanyc() override {
         assert(std::less_equal<const char *>()(current_, end_));
         return end_ - current_;
     }
 
-    std::streampos seekoff(std::streamoff off, std::ios_base::seekdir way,
-                           [[maybe_unused]] std::ios_base::openmode which) {
+    std::streampos
+    seekoff(std::streamoff off, std::ios_base::seekdir way,
+            [[maybe_unused]] std::ios_base::openmode which) override {
         if (way == std::ios_base::beg) {
             current_ = begin_ + off;
         } else if (way == std::ios_base::cur) {
@@ -69,14 +70,26 @@ class char_array_buffer : public std::streambuf {
         return current_ - begin_;
     }
 
-    std::streampos seekpos(std::streampos sp,
-                           [[maybe_unused]] std::ios_base::openmode which) {
+    std::streampos
+    seekpos(std::streampos sp,
+            [[maybe_unused]] std::ios_base::openmode which) override {
         current_ = begin_ + sp;
 
         if (current_ < begin_ || current_ > end_)
             return -1;
 
         return current_ - begin_;
+    }
+
+    std::streamsize xsgetn(char_type *s, std::streamsize count) override {
+        std::streamsize available =
+            static_cast<std::streamsize>(end_ - current_);
+        std::streamsize n = (count > available) ? available : count;
+        if (n > 0) {
+            traits_type::copy(s, current_, static_cast<size_t>(n));
+            current_ += n;
+        }
+        return n;
     }
 
     const char *const begin_;
