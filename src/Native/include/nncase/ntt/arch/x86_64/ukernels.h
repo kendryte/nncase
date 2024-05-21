@@ -27,6 +27,14 @@ class upack<M, N, MStrides, true, float, vector<float, 8>> {
                 output[j](i) = input[i * MStrides + j];
             }
         }
+
+        if constexpr (M < 8) {
+            for (size_t j = 0; j < N; j++) {
+                for (size_t i = M; i < 8; i++) {
+                    output[j](i) = 0.f;
+                }
+            }
+        }
     }
 };
 } // namespace nncase::ntt::ukernels
