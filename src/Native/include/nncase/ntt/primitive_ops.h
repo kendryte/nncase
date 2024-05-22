@@ -277,6 +277,7 @@ NTT_DEFINE_BINARY_FUNC_IMPL(swishb)
 
 NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_sum, ops::add)
 NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_max, ops::max)
+NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_min, ops::min)
 
 template <IsTensorOrScalar T1, IsTensorOrScalar T2, IsTensorOrScalar TResult>
 constexpr TResult mul_add(const T1 &v1, const T2 &v2,

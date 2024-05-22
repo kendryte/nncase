@@ -59,6 +59,11 @@ inline constexpr auto
 make_index_sequence(std::index_sequence<Ints...>) noexcept {
     return A<Ints...>{};
 }
+
+template <int32_t Offset, template <size_t...> class A, size_t... Dims>
+inline constexpr auto shift_fixed_dims(A<Dims...>) {
+    return A<(Dims - Offset)...>{};
+}
 } // namespace utility_detail
 
 template <class U, class T, size_t Extent>
@@ -103,5 +108,10 @@ template <template <size_t...> class A, size_t... Dims>
 inline constexpr auto make_index_sequence(A<Dims...>) {
     return utility_detail::make_index_sequence<A>(
         std::make_index_sequence<sizeof...(Dims)>{});
+}
+
+template <int32_t Offset, template <size_t...> class A, size_t... Dims>
+inline constexpr auto shift_fixed_dims(A<Dims...> a) {
+    return utility_detail::shift_fixed_dims<Offset>(a);
 }
 } // namespace nncase::ntt
