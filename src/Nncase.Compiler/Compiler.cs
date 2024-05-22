@@ -142,6 +142,8 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldTwoPads>();
             p.Add<Passes.Rules.Neutral.SwapBinaryArgs>();
             p.Add<Passes.Rules.Neutral.FoldDilatedConv2D>();
+            p.Add<Passes.Rules.Neutral.DecomposeSoftmax>();
+            p.Add<Passes.Rules.Neutral.DecomposeLayerNorm>();
         });
 
         passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>

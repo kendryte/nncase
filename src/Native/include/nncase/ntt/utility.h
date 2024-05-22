@@ -53,6 +53,12 @@ static constexpr size_t get_safe_stride(const TTensor &tensor, size_t axis,
     return tensor.shape()[actual_axis] == 1 ? 0 // broadcast
                                             : tensor.strides()[actual_axis];
 }
+
+template <template <size_t...> class A, size_t... Ints>
+inline constexpr auto
+make_index_sequence(std::index_sequence<Ints...>) noexcept {
+    return A<Ints...>{};
+}
 } // namespace utility_detail
 
 template <class U, class T, size_t Extent>
@@ -91,5 +97,11 @@ inline constexpr bool is_same_seq(const T<ADims...> &a, const T<BDims...> &b) {
     return sizeof...(ADims) == sizeof...(BDims) &&
            utility_detail::is_same_seq(
                a, b, std::make_index_sequence<sizeof...(ADims)>{});
+}
+
+template <template <size_t...> class A, size_t... Dims>
+inline constexpr auto make_index_sequence(A<Dims...>) {
+    return utility_detail::make_index_sequence<A>(
+        std::make_index_sequence<sizeof...(Dims)>{});
 }
 } // namespace nncase::ntt

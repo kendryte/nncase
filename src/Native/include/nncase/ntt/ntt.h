@@ -25,6 +25,7 @@
 #include "kernels/packed_layer_norm.h"
 #include "kernels/packed_softmax.h"
 #include "kernels/pad.h"
+#include "kernels/reduce.h"
 #include "kernels/resize_image.h"
 #include "kernels/slice.h"
 #include "kernels/transpose.h"

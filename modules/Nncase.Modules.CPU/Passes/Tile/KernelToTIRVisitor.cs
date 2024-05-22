@@ -15,7 +15,7 @@ using Buffer = Nncase.TIR.Buffer;
 
 namespace Nncase.Passes.Tile;
 
-internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
+public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
 {
     private readonly Dictionary<Expr, TIR.Buffer> _buffersMap = new(ReferenceEqualityComparer.Instance);
     private readonly List<Expr> _mainBody;
@@ -181,6 +181,9 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 break;
             case IR.NN.Pad pad:
                 _mainBody.Add(TIR.F.CPU.Pad(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToArray<float>()[0]));
+                break;
+            case IR.Math.Reduce reduce:
+                _mainBody.Add(TIR.F.CPU.Reduce(arguments[0], arguments[2], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[3]).Value.ToArray<bool>()[0], reduce.ReduceOp));
                 break;
             default:
                 throw new NotSupportedException();
