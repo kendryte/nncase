@@ -513,15 +513,16 @@ internal sealed class TilingSolver
                                     }
                                 }
 
-                                // from this buffer reside position to last buffer reside position find the first related loop.
+                                // from this buffer reside position to last buffer reside position collect all related loop vars.
                                 var finded = false;
-                                for (int nl = level; nl < totalLevel; nl++)
+                                AffineExpr offset = null!;
+                                for (int nl = level; nl <= ((lastLevel == -1) ? totalLevel - 1 : lastLevel); nl++)
                                 {
                                     for (int i = (nl == level) ? (loop + 1) : 0; i < ((nl == lastLevel) ? lastLoop + 1 : fullDomain.GetLength(1)); i++)
                                     {
-                                        if (loopMasks[a][d].IsRelated(fullDomain[nl, i]) && !finded)
+                                        if (loopMasks[a][d].IsRelated(fullDomain[nl, i]))
                                         {
-                                            offsets.Add(finalLoops[nl, i].Domain.Offset);
+                                            offset = offset is null ? finalLoops[nl, i].Domain.Offset : new AffineAddBinary(offset, finalLoops[nl, i].Domain.Offset);
                                             finded = true;
                                         }
                                     }
@@ -530,6 +531,10 @@ internal sealed class TilingSolver
                                 if (!finded)
                                 {
                                     offsets.Add(0);
+                                }
+                                else
+                                {
+                                    offsets.Add(offset);
                                 }
                             }
 
