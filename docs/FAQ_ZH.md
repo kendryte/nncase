@@ -25,13 +25,20 @@ A：该异常表明 `XXX`算子尚未支持，可以在[nncase Github Issue](htt
 A：使用 `sudo gedit /proc/sys/fs/inotify/max_user_instances`修改128为更大的值即可。
 
 ### 2.3 `RuntimeError: Failed to initialize hostfxr`
+> `RuntimeError: Failed to get hostfxr path.`
 
-A：需要安装dotnet-sdk-7.0
+A：需要安装dotnet-sdk-7.0，不要在`anaconda`的虚拟环境中安装。
 - Linux:
 
     ```shell
     sudo apt-get update
     sudo apt-get install dotnet-sdk-7.0
+    ```
+
+    如果安装完毕后仍然报类似的错误，配置`dotnet`环境变量。 [dotnet error](https://stackoverflow.com/questions/52695238/whats-the-expected-value-for-dotnet-root-variable-when-installing-dotnet-core-f)
+
+    ```shell
+    export DOTNET_ROOT=/usr/share/dotnet
     ```
 
 - Windows: 请自行查阅微软官方文档。
@@ -49,14 +56,6 @@ A：需要安装nncase-kpu
  Version: 2.8.0
 (Linux)  > pip install nncase-kpu==2.8.0
 (Windows)> pip install nncase_kpu-2.8.0-py2.py3-none-win_amd64.whl
-```
-
-### 2.5 `RuntimeError: Failed to get hostfxr path.`
-
-A: 配置`dotnet`环境变量。 [dotnet issue #79237](https://github.com/dotnet/runtime/issues/79237)
-
-```shell
-export DOTNET_ROOT=/usr/share/dotnet
 ```
 
 ---
