@@ -410,7 +410,7 @@ internal sealed class TilingSolver
 
         collector.AddObjective(totalCyclesVar);
         var decisionBuilder = model.MakeDefaultPhase(searchAbleVars.ToArray());
-        var status = model.Solve(decisionBuilder, new SearchMonitor[] { collector, objectiveMonitor, model.MakeTimeLimit(50000) });
+        var status = model.Solve(decisionBuilder, new SearchMonitor[] { collector, objectiveMonitor, model.MakeTimeLimit(5000) });
         {
             if (!status)
             {
@@ -574,7 +574,7 @@ internal sealed class TilingSolver
                 {
                     var offsetVars = new List<AffineDim>();
                     var (_, lastLevel, lastLoop) = bufferScope[a].Last();
-                    for (int nl = 0; nl < totalLevel; nl++)
+                    for (int nl = 0; nl <= lastLevel; nl++)
                     {
                         for (int i = 0; i < ((nl == lastLevel) ? lastLoop + 1 : fullDomain.GetLength(1)); i++)
                         {

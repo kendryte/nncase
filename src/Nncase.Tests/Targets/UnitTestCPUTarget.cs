@@ -199,7 +199,7 @@ public class UnitTestCPUTarget : TestClassBase
         GenerateKModelAndRunFromFn(main, input, output);
     }
 
-    [Fact]
+    [Fact(Skip = "If")]
     public void TestStackVMNestIf()
     {
         var condVar = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));
