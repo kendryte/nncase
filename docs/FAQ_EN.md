@@ -54,6 +54,14 @@ A: Need to install `nncase-kpu`.
 (Windows)> pip install nncase_kpu-2.8.0-py2.py3-none-win_amd64.whl
 ```
 
+### 2.5 `RuntimeError: Failed to get hostfxr path.`
+
+A: Set `dotnet` enviroment. [dotnet issue #79237](https://github.com/dotnet/runtime/issues/79237)
+
+```shell
+export DOTNET_ROOT=/usr/share/dotnet
+```
+
 ---
 
 ## 3. Runtime errors
