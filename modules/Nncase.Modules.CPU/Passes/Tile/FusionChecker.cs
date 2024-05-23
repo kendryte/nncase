@@ -54,11 +54,11 @@ public sealed class NodeInfo : IDisposable
     public void Dispose() => _pinner.Dispose();
 }
 
-internal sealed record TileFragment(BucketCondition Condition, IReadOnlyDictionary<Expr, NodeInfo> TileMap)
+public sealed record TileFragment(BucketCondition Condition, IReadOnlyDictionary<Expr, NodeInfo> TileMap)
 {
 }
 
-internal sealed class FusionChecker
+public sealed class FusionChecker
 {
     private readonly List<KeyValuePair<Expr, int[]>> _initTileList;
     private IReadOnlyList<TileFragment>? _checkedResult;

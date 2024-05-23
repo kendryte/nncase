@@ -34,7 +34,7 @@ public abstract class PackRule : RewriteRule<Pattern>
     public override Expr? GetReplace(IMatchResult result, RunPassContext options) => throw new NotImplementedException();
 }
 
-public sealed class PackSoftmax : PackRule
+public class PackSoftmax : PackRule
 {
     public PackSoftmax(int rank, int lane)
         : base(rank, lane)

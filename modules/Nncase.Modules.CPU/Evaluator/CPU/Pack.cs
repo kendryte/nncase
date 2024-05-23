@@ -76,6 +76,36 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
             throw new InvalidOperationException();
         }
 
-        return new DistributedType(tensorType, input.NdSBP, input.Placement);
+        var divisor = Enumerable.Repeat(1, input.TensorType.Shape.Rank).ToList();
+        for (int i = 0; i < input.Placement.Rank; i++)
+        {
+            if (input.NdSBP[i] is SBPSplit { Axis: int axis })
+            {
+                divisor[axis] *= input.Placement.Hierarchy[i];
+            }
+        }
+
+        var ndsbp = new SBP[input.Placement.Rank];
+        for (int i = 0; i < input.Placement.Rank; i++)
+        {
+            if (input.NdSBP[i] is SBPSplit { Axis: int axis } && target.Axes.Contains(axis))
+            {
+                var lane = target.Lanes[target.Axes.IndexOf(axis)];
+                if (input.TensorType.Shape[axis].FixedValue / lane % divisor[axis] == 0)
+                {
+                    ndsbp[i] = input.NdSBP[i];
+                }
+                else
+                {
+                    return new InvalidType($"{input}, not support");
+                }
+            }
+            else
+            {
+                ndsbp[i] = input.NdSBP[i];
+            }
+        }
+
+        return new DistributedType(tensorType, ndsbp, input.Placement);
     }
 }

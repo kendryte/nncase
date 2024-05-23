@@ -122,8 +122,8 @@ public class CPUTarget : ITarget
         // passManager.Add<AutoDistributedPass>();
         passManager.Add<DataflowPass>().Configure(p =>
         {
-            p.Add<Passes.Rules.CPU.CPUOutputBoxingFusion>();
-            p.Add<Passes.Rules.CPU.CPUSingleFusion>();
+            p.Add<Passes.Rules.CPU.CPUOutputBoxingFusion>(CPUTarget.Kind);
+            p.Add<Passes.Rules.CPU.CPUSingleFusion>(CPUTarget.Kind);
         });
         passManager.Add<DataflowPass>().Configure(p =>
         {

@@ -27,6 +27,14 @@ class upack {
                 output[j](i) = input[i * MStrides + j];
             }
         }
+
+        if constexpr (M < TOut::shape_type::length()) {
+            for (size_t j = 0; j < N; j++) {
+                for (size_t i = M; i < TOut::shape_type::length(); i++) {
+                    output[j](i) = (TIn)0;
+                }
+            }
+        }
     }
 };
 } // namespace nncase::ntt::ukernels

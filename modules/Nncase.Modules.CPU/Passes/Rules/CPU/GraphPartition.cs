@@ -29,9 +29,14 @@ using static Nncase.Utilities.ReplaceUtility;
 namespace Nncase.Passes.Rules.CPU;
 
 [RuleGenerator]
-internal sealed partial class CPUOutputBoxingFusion : FusionMaker
+public sealed partial class CPUOutputBoxingFusion : FusionMaker
 {
-    public override string ModuleKind { get; } = CPUTarget.Kind;
+    public CPUOutputBoxingFusion(string moduleKind)
+    {
+        ModuleKind = moduleKind;
+    }
+
+    public override string ModuleKind { get; }
 
     public override Pattern Pattern { get; } = IsBoxing(
         target_name: "boxing",
@@ -74,9 +79,14 @@ internal sealed partial class CPUOutputBoxingFusion : FusionMaker
 }
 
 [RuleGenerator]
-internal sealed partial class CPUSingleFusion : FusionMaker
+public sealed partial class CPUSingleFusion : FusionMaker
 {
-    public override string ModuleKind { get; } = CPUTarget.Kind;
+    public CPUSingleFusion(string moduleKind)
+    {
+        ModuleKind = moduleKind;
+    }
+
+    public override string ModuleKind { get; }
 
     public override Pattern Pattern { get; } = IsCallWildcard(
         "call",
@@ -138,7 +148,7 @@ internal sealed partial class CPUSingleFusion : FusionMaker
     }
 }
 
-internal sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
+public sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
 {
     private readonly CompileOptions _compileOptions;
 
@@ -253,7 +263,7 @@ internal sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
     }
 }
 
-internal sealed class FusionMerger : ExprCloner<Unit>
+public sealed class FusionMerger : ExprCloner<Unit>
 {
     private readonly Dictionary<Var, Expr> _varMap;
 
@@ -273,7 +283,7 @@ internal sealed class FusionMerger : ExprCloner<Unit>
     }
 }
 
-internal sealed class GeneralFusionMergeRule : IRewriteRule
+public sealed class GeneralFusionMergeRule : IRewriteRule
 {
     private readonly Dictionary<int, Call> _mergedCache = new();
     private int _count;
@@ -432,7 +442,7 @@ internal sealed class GeneralFusionMergeRule : IRewriteRule
     }
 }
 
-internal sealed class TupleFusionMergeRule : IRewriteRule
+public sealed class TupleFusionMergeRule : IRewriteRule
 {
     private readonly Dictionary<int, Call> _mergedCache = new();
 
@@ -511,7 +521,7 @@ internal sealed class TupleFusionMergeRule : IRewriteRule
     }
 }
 
-internal sealed class ConcatFusionMergeRule : IRewriteRule
+public sealed class ConcatFusionMergeRule : IRewriteRule
 {
     private readonly Dictionary<int, Call> _mergedCache = new();
 
@@ -594,7 +604,7 @@ internal sealed class ConcatFusionMergeRule : IRewriteRule
     }
 }
 
-internal sealed class DeterminedFusionMergeRule : IRewriteRule
+public sealed class DeterminedFusionMergeRule : IRewriteRule
 {
     private static readonly Pattern _input = IsWildcard("input");
 
