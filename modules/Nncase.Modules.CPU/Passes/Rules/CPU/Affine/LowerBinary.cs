@@ -20,7 +20,7 @@ public partial class LowerBinary : RewriteRule<Pattern>
     public override Pattern Pattern { get; } = PatternMatch.F.Math.IsBinary(
       "binary",
       "call",
-      _ => true,
+      op => PassUtility.IsCpuSupported(op),
       IsWildcard("lhs") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") },
       IsWildcard("rhs") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") });
 
@@ -93,7 +93,7 @@ public partial class LowerPackedBinary : RewriteRule<Pattern>
     public override Pattern Pattern { get; } = PatternMatch.F.CPU.IsPackedBinary(
       "binary",
       "call",
-      _ => true,
+      op => PassUtility.IsCpuSupported(op),
       IsWildcard("lhs") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") },
       IsWildcard("rhs") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") });
 
