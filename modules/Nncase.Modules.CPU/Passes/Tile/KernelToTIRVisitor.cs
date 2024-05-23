@@ -207,7 +207,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 {
                     case Call c:
                         var loc = MemoryLocation.Data;
-                        var hierarchy = 0;
+                        var hierarchy = 1;
                         var index = CheckRootCall(c, ref loc);
                         if (c.Target is Boxing box && box.NewType is DistributedType d && !d.TensorType.Shape.Equals(c.Arguments[0].CheckedShape))
                         {
@@ -256,7 +256,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
 
                         break;
                     case Var v:
-                        buffer = T.AttachBuffer((TensorType)v.CheckedType, MemoryLocation.Input, 0, out _, out _, name);
+                        buffer = T.AttachBuffer((TensorType)v.CheckedType, MemoryLocation.Input, 1, out _, out _, name);
                         break;
                     case TensorConst c:
                         buffer = T.AttachBuffer(c, out _, name);

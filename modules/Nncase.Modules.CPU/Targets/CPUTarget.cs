@@ -119,7 +119,7 @@ public class CPUTarget : ITarget
         }
 
         // need refactor tiling.
-        // passManager.Add<AutoDistributedPass>();
+        passManager.Add<AutoDistributedPass>();
         passManager.Add<DataflowPass>().Configure(p =>
         {
             p.Add<Passes.Rules.CPU.CPUOutputBoxingFusion>(CPUTarget.Kind);

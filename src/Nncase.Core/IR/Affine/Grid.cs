@@ -22,7 +22,7 @@ public sealed class Grid : Expr
     /// <param name="moduleKind">module kind.</param>
     /// <param name="bodyParameters">Body parameters.</param>
     /// <param name="accessMaps">Access maps.</param>
-    /// <param name="buffers">Buffers.</param>
+    /// <param name="buffers">output buffers.</param>
     /// <param name="reads">Reads.</param>
     /// <param name="body">The body sequence.</param>
     public Grid(string moduleKind, ReadOnlySpan<Var> bodyParameters, ReadOnlySpan<AffineMap> accessMaps, ReadOnlySpan<Expr> buffers, ReadOnlySpan<Expr> reads, Sequential body)

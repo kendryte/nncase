@@ -117,6 +117,7 @@ public static class DataTypes
         PointerType pointerType => $"({GetDisplayName(pointerType.ElemType)} *)",
         PrimType primType => primType.ShortName,
         ValueType => dataType.ToString(),
+        VectorType vtype => $"{GetDisplayName(vtype.ElemType)}<{string.Join(",", vtype.Lanes)}>",
         _ => throw new ArgumentOutOfRangeException(dataType.GetType().Name),
     };
 
@@ -130,6 +131,7 @@ public static class DataTypes
         PrimType primType => $"DataTypes.{primType.FullName}",
         PointerType pointerType => $"new PointerType({pointerType.ElemType.GetCSharpName()})",
         ValueType valueType => $"new {valueType.GetType().Name}()",
+        VectorType vtype => $"{GetCSharpName(vtype.ElemType)}<{string.Join(",", vtype.Lanes)}>",
         _ => throw new ArgumentOutOfRangeException(dataType.GetType().Name),
     };
 

@@ -378,7 +378,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             return;
         }
 
-        var main = new Function(new Call(fusion, kernelCase.Vars.ToArray()), kernelCase.Vars.ToArray());
+        var main = new Function(fusion.Body, kernelCase.Vars.ToArray());
 
         var module = new IR.IRModule(main);
         var inputs = kernelCase.Inputs.ToArray();

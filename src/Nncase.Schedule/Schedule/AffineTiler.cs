@@ -86,6 +86,7 @@ internal sealed class AffineTiler
         // 3. inner computation.
         var bodyBuffers = new Expr[_grid.Buffers.Length];
         var bufferOfVars = new Expr[_grid.Reads.Length + 1];
+        var typehints = new IRType[_grid.Reads.Length + 1];
         var bodyVarReplaces = new Dictionary<Expr, Expr>();
         var bufferOfReplaces = new Dictionary<Expr, Expr>();
         for (int i = 0; i < bodyBuffers.Length; i++)
@@ -97,10 +98,13 @@ internal sealed class AffineTiler
         for (int i = 0; i < _grid.Reads.Length; i++)
         {
             bufferOfVars[i] = AllocateBufferOf(_grid.Buffers[i], i);
+            typehints[i] = _grid.Buffers[i].CheckedType;
             bufferOfReplaces.Add(_grid.Buffers[i], bufferOfVars[i]);
         }
 
-        bufferOfVars[^1] = _grid.Buffers[^1];
+        bufferOfVars[^1] = AllocateOutputBuffer(_grid.Buffers[^1]);
+        bufferOfReplaces.Add(_grid.Buffers[^1], bufferOfVars[^1]);
+        typehints[^1] = _grid.Buffers[^1].CheckedType;
         {
             var results = schedule.DomainMap.Apply(domainOffsets.Select(o => IR.F.Tensors.Cast(o, DataTypes.Int64)).ToArray(), domainExtents);
             for (int i = 0; i < schedule.DomainMap.Results.Length; i++)
@@ -116,7 +120,7 @@ internal sealed class AffineTiler
         var body = rootBuilder.Build();
         body = new ReplacingExprCloner(bufferOfReplaces).Clone(body, default);
         var primFunc = new PrimFunction(_grid.ModuleKind, body, bufferOfVars);
-        var wrapper = new PrimFunctionWrapper(primFunc, _grid.Buffers.Length - 1);
+        var wrapper = new PrimFunctionWrapper(primFunc, _grid.Buffers.Length - 1, typehints);
 
         // module.Add(primFunc);
         // module.Add(wrapper);
@@ -127,7 +131,31 @@ internal sealed class AffineTiler
     {
         if (expr is IR.Buffers.BufferOf bufof)
         {
-            return T.CreateBuffer(bufof.Input.CheckedTensorType, MemoryLocation.Input, out _, "buffer_" + i.ToString());
+            var ttype = bufof.Input.CheckedType switch
+            {
+                TensorType t => t,
+                DistributedType dt => Utilities.DistributedUtility.GetDividedTensorType(dt),
+                _ => throw new NotSupportedException(),
+            };
+
+            return T.AttachBuffer(None.Default, ttype, MemoryLocation.Input, 1, out _, "buffer_" + i.ToString());
+        }
+
+        throw new NotSupportedException();
+    }
+
+    private TIR.Buffer AllocateOutputBuffer(Expr expr)
+    {
+        if (expr is Call { Target: IR.Buffers.Uninitialized } c)
+        {
+            var ttype = c.CheckedType switch
+            {
+                TensorType t => t,
+                DistributedType dt => Utilities.DistributedUtility.GetDividedTensorType(dt),
+                _ => throw new NotSupportedException(),
+            };
+
+            return T.AttachBuffer(None.Default, ttype, MemoryLocation.Data, 1, out _, "buffer_out");
         }
 
         throw new NotSupportedException();
@@ -156,6 +184,7 @@ internal sealed class AffineTiler
             IR.Buffers.BufferOf { Input: Var v } => v.Name + "_sub",
             TIR.Buffer b => b.Name + "_sub",
             Var v => v.Name + "_sub",
+            Call { Target: IR.Buffers.Uninitialized } => "out",
             _ => "let",
         };
 
@@ -178,7 +207,12 @@ internal sealed class AffineTiler
         var converter = new AffineExprToIntExprConverter(solver);
         for (int i = 0; i < _grid.Buffers.Length; i++)
         {
-            var shape = _grid.Buffers[i].CheckedShape.ToValueArray();
+            var shape = _grid.Buffers[i].CheckedType switch
+            {
+                TensorType t => t.Shape.ToValueArray(),
+                DistributedType dt => Utilities.DistributedUtility.GetDividedTensorType(dt).Shape.ToValueArray(),
+                _ => throw new NotSupportedException(),
+            };
             var results = _grid.AccessMaps[i].Results;
             for (int j = 0; j < results.Length; j++)
             {

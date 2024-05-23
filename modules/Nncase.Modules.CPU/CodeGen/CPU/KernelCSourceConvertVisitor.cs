@@ -205,7 +205,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
         {
             (MemoryLocation.Rdata, 0) => "rdata",
             (MemoryLocation.Data, 0) => "data",
-            (MemoryLocation.Data, 1) => "l1_data",
+            (MemoryLocation.Data, 1) => "data",
             _ => throw new NotSupportedException(),
         };
         var ptype = (PointerType)expr.CheckedDataType;
