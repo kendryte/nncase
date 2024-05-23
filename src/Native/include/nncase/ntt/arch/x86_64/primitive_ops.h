@@ -234,7 +234,7 @@ template <> struct mod<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     }
 };
 
-template <> struct mod<ntt::vector<int32_t, 8>, ntt::vector<float, 8>> {
+template <> struct mod<ntt::vector<int32_t, 8>, ntt::vector<int32_t, 8>> {
     ntt::vector<int32_t, 8>
     operator()(ntt::vector<int32_t, 8> v1,
                ntt::vector<int32_t, 8> v2) const noexcept {
