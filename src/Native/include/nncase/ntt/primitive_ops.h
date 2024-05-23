@@ -199,6 +199,14 @@ template <class T1, class T2> struct pow {
     }
 };
 
+template <class T1, class T2> struct mean {
+    constexpr auto operator()(const T1 &v1) const noexcept { return v1; }
+};
+
+template <class T, class B> struct swishb {
+    constexpr T operator()(const T &v, const B &beta) const noexcept;
+};
+
 /**@}*/
 
 template <template <class T1, class T2> class BinaryOp, class TResult, class T>
@@ -265,6 +273,7 @@ NTT_DEFINE_BINARY_FUNC_IMPL(mod)
 NTT_DEFINE_BINARY_FUNC_IMPL(min)
 NTT_DEFINE_BINARY_FUNC_IMPL(max)
 NTT_DEFINE_BINARY_FUNC_IMPL(pow)
+NTT_DEFINE_BINARY_FUNC_IMPL(swishb)
 
 NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_sum, ops::add)
 NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_max, ops::max)
@@ -367,6 +376,12 @@ template <class T> constexpr T sinh<T>::operator()(const T &v) const noexcept {
 // swish(v) = v / (exp(-v) + 1)
 template <class T> constexpr T swish<T>::operator()(const T &v) const noexcept {
     return v / (ntt::exp(-v) + 1);
+}
+
+// swishb(v) = v / (exp(-v*beta) + 1)
+template <class T, class B>
+constexpr T swishb<T, B>::operator()(const T &v, const B &beta) const noexcept {
+    return v / (ntt::exp(-v * beta) + 1);
 }
 
 template <class T1, class T2, class TResult>

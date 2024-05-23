@@ -35,5 +35,7 @@ public sealed partial class PackedLayerNorm : CPUKernelOp
 
     public IRArray<int> PadedNums { get; }
 
+    public DistributedType DistType { get; }
+
     public override string DisplayProperty() => $"Axis: {Axis}, Epsilon: {Epsilon}, UseMean: {UseMean}, PackedAxes: {PackedAxes}, PadedNums: {PadedNums}";
 }

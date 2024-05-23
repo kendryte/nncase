@@ -24,7 +24,7 @@ namespace Nncase;
 <# 
 foreach (var lanesA in new[] { 0, 16, 32, 64 })
 {
-foreach (var lanesB in new[] { 2, 4, 8, 16, 32, 64 })
+foreach (var lanesB in new[] { 2, 4, 8, 16, 32, 64, 128 })
 {
 var typeName = lanesA == 0 ? $"Vector{lanesB.ToString()}<T>" : $"Vector{lanesA.ToString()}x{lanesB.ToString()}<T>";
 #>

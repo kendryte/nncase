@@ -20,7 +20,7 @@ public sealed partial class Boxing : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Boxing), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Boxing), 0, "input", ParameterKind.Input);
 
     public IRType NewType { get; }
 

@@ -47,4 +47,6 @@ public sealed partial class Slice : CPUKernelOp
     /// Gets strides.
     /// </summary>
     public IRArray<int> Strides { get; }
+
+    public DistributedType DistType { get; }
 }

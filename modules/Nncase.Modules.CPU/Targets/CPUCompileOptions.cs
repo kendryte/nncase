@@ -28,7 +28,7 @@ public enum NocArch : byte
     CrossBar = 1,
 }
 
-public sealed class CpuTargetOptions : ITargetOptions
+public class CpuTargetOptions : ITargetOptions
 {
     public string ModelName { get; set; } = string.Empty;
 
