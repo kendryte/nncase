@@ -210,7 +210,7 @@ template <> struct div<ntt::vector<float, 8>, ntt::vector<float, 8>> {
 };
 
 // floor_mod
-template <> struct floor_mod<ntt::vector<int32_t, 8>, ntt::vector<float, 8>> {
+template <> struct floor_mod<ntt::vector<int32_t, 8>, ntt::vector<int32_t, 8>> {
     ntt::vector<int32_t, 8>
     operator()(ntt::vector<int32_t, 8> v1,
                ntt::vector<int32_t, 8> v2) const noexcept {
