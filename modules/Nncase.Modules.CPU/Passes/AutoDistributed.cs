@@ -90,6 +90,11 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         return new();
     }
 
+    protected override Dictionary<IRType, List<Expr>> VisitLeafIf(If expr)
+    {
+        return new() { { expr.CheckedType, new() { expr } } };
+    }
+
     protected override Dictionary<IRType, List<Expr>> VisitLeafTuple(IR.Tuple expr)
     {
         return expr.Fields.ToArray().
@@ -104,7 +109,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
     {
         if (expr.Target is not Op op)
         {
-            throw new NotSupportedException("not support auto distributed call function");
+            return new Dictionary<IRType, List<Expr>> { { expr.CheckedType, new() { expr } } };
         }
 
         var isSupported = PassUtility.IsCpuSupported(op, expr.Arguments.ToArray());
@@ -338,6 +343,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             (IR.Tuple tp, TupleType tptype) => new IR.Tuple(tp.Fields.ToArray().Select(InstertTerminator).ToArray()),
             (Expr e, DistributedType type) => CreateFinalBoxing(e, type),
             (Expr e, TensorType type) => e,
+            (Expr e, AnyType type) => e,
             (_, _) => throw new NotSupportedException(),
         };
     }

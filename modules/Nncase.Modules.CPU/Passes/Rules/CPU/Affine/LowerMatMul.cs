@@ -14,8 +14,6 @@ namespace Nncase.Passes.Rules.CPU.Affine;
 [RuleGenerator]
 public partial class LowerMatmul : RewriteRule<Pattern>
 {
-    private int _count;
-
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = PatternMatch.F.Math.IsMatMul(
       "matmul",
@@ -78,11 +76,16 @@ public partial class LowerMatmul : RewriteRule<Pattern>
 
         var lhsMap = new AffineMap(domains, default, lhsRes);
         var rhsMap = new AffineMap(domains, default, rhsRes);
-
+        var outBuffer = call.CheckedType switch
+        {
+            TensorType t => IR.F.Buffer.Uninitialized(t.DType, TIR.MemoryLocation.Data, t.Shape.ToValueArray()),
+            DistributedType dt => IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape.ToValueArray(), dt.NdSBP, dt.Placement),
+            _ => throw new ArgumentOutOfRangeException(nameof(call)),
+        };
         return IR.F.Affine.Grid(CPUTarget.Kind)
             .Read(lhs, lhsMap, out var lhsTile)
             .Read(rhs, rhsMap, out var rhsTile)
-            .Write(TIR.T.CreateBuffer(call.CheckedTensorType, TIR.MemoryLocation.Data, out _, $"matmul_{_count++}"), new AffineMap(domains, default, domains.SkipLast(2).Concat(domains.TakeLast(1)).Select(x => new AffineRange(x.Offset, x.Extent)).ToArray()), out var outTile)
+            .Write(outBuffer, new AffineMap(domains, default, domains.SkipLast(2).Concat(domains.TakeLast(1)).Select(x => new AffineRange(x.Offset, x.Extent)).ToArray()), out var outTile)
             .Body(TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.Equal(domains[^2].Offset, 0L)))
             .Build();
     }

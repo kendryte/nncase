@@ -20,8 +20,6 @@ namespace Nncase.Passes.Rules.CPU.Affine;
 [RuleGenerator]
 public partial class LowerUnary : RewriteRule<Pattern>
 {
-    private int _count;
-
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = PatternMatch.F.Math.IsUnary(
       "unary",

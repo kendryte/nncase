@@ -238,7 +238,11 @@ public sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
         protected override Cost VisitLeafCall(Call call)
         {
             Cost cost;
-            if (call.Target is Op op)
+            if (call.Target is Boxing { NewType: DistributedType })
+            {
+                cost = Cost.Zero;
+            }
+            else if (call.Target is Op op)
             {
                 var context = new GraphOpCostEvaluateContext(call.CheckedType, call.Arguments.AsValueEnumerable().Select(p => p.CheckedType).ToArray(), call.Arguments, CompileOptions);
                 cost = CompilerServices.EvaluateOpCost(op, context) ?? Cost.Zero;
