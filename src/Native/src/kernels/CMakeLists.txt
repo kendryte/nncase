@@ -27,9 +27,10 @@ if(ENABLE_OPENMP)
 endif()
 
 if(APPLE)
-  target_compile_options(kernels PRIVATE -Wno-gnu-zero-variadic-macro-arguments)  
+  target_compile_options(kernels PRIVATE -Wno-gnu-zero-variadic-macro-arguments -Wno-array-bounds)  
+else()
+  target_compile_options(kernels PRIVATE -Wno-array-bounds -Wno-stringop-overread)
 endif(APPLE)
 
-target_compile_options(kernels PRIVATE -Wno-array-bounds -Wno-stringop-overread)
 
 add_subdirectory(stackvm)

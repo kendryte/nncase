@@ -176,7 +176,7 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                            RhsPackedAxes::at(1) == TRhs::rank() - 1) {
             ntt::mma<AccC>(lhs, rhs, output);
         } else {
-            static_assert(false, "Unsupported packing.");
+            static_assert(sizeof(TLhsElem) == 0, "Unsupported packing.");
         }
     }
 };
