@@ -226,6 +226,11 @@ template <class T1, class T2, class TResult> struct mul_add {
     constexpr TResult operator()(const T1 &v1, const T2 &v2,
                                  const TResult &v3) const noexcept;
 };
+
+template <bool AccC, IsTensor T1, IsTensor T2, IsTensor TResult> struct mma {
+    constexpr TResult operator()(const T1 &v1, const T2 &v2,
+                                 const TResult &v3) const noexcept;
+};
 } // namespace ops
 
 #define NTT_DEFINE_UNARY_FUNC_IMPL(op)                                         \
@@ -290,6 +295,11 @@ template <IsTensorOrScalar T1, IsTensorOrScalar T2, IsTensorOrScalar TResult>
 constexpr TResult mul_add(const T1 &v1, const T2 &v2,
                           const TResult &v3) noexcept {
     return ops::mul_add<T1, T2, TResult>()(v1, v2, v3);
+}
+
+template <bool AccC, IsTensor T1, IsTensor T2, IsTensor TResult>
+constexpr TResult mma(const T1 &v1, const T2 &v2, const TResult &v3) noexcept {
+    return ops::mma<AccC, T1, T2, TResult>()(v1, v2, v3);
 }
 
 /**
@@ -397,6 +407,34 @@ constexpr TResult
 mul_add<T1, T2, TResult>::operator()(const T1 &v1, const T2 &v2,
                                      const TResult &v3) const noexcept {
     return v1 * v2 + v3;
+}
+
+template <bool AccC, IsTensor T1, IsTensor T2, IsTensor TResult>
+constexpr TResult
+mma<AccC, T1, T2, TResult>::operator()(const T1 &v1, const T2 &v2,
+                                       const TResult &v3) const noexcept {
+    static_assert(v1.shape().rank() == v2.shape().rank() &&
+                      v2.shape().rank() == v3.shape().rank() &&
+                      v3.shape().rank() == 2,
+                  "only support 2d mma");
+    auto lhs_v = (typename T1::element_type *)(v1.elements().data());
+    auto rhs_v =
+        (vector<typename T2::element_type, v2.shape().at(1)> *)(v2.elements()
+                                                                    .data());
+    auto output_v =
+        (vector<typename TResult::element_type, TResult::shape().at(1)>
+             *)(v3.elements().data());
+    for (size_t m = 0; m < v1.shape().at(0); m++) {
+        for (size_t k = 0; k < v2.shape().at(0); k++) {
+            output_v[m] =
+                (k != 0 || AccC)
+                    ? ntt::mul_add(lhs_v[m * v2.shape().at(0) + k], rhs_v[k],
+                                   output_v[m])
+                    : ntt::mul(lhs_v[m * v2.shape().at(0) + k], rhs_v[k]);
+        }
+    }
+
+    return v3;
 }
 } // namespace ops
 } // namespace nncase::ntt

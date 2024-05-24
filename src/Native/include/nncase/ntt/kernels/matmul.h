@@ -159,16 +159,13 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                            RhsPackedAxes::rank() == 2 &&
                            RhsPackedAxes::at(0) == TRhs::rank() - 2 &&
                            RhsPackedAxes::at(1) == TRhs::rank() - 1) {
-            auto lhs_v =
-                (typename TLhsElem::element_type *)(lhs.elements().data());
-            auto rhs_v =
-                (vector<typename TRhsElem::element_type,
-                        TRhsElem::shape().at(1)> *)(rhs.elements().data());
-            for (size_t k = 0; k < TRhsElem::shape().at(0); k++) {
-                output = (k != 0 || AccC)
-                             ? ntt::mul_add(lhs_v[k], rhs_v[k], output)
-                             : ntt::mul(lhs_v[k], rhs_v[k]);
-            }
+            auto lhs_2d =
+                (vector<typename TLhsElem::element_type, 1,
+                        TLhsElem::shape().at(0)> *)(lhs.elements().data());
+            auto output_2d =
+                (vector<typename TOutElem::element_type, 1,
+                        TOutElem::shape().at(0)> *)(output.elements().data());
+            ntt::mma<AccC>(*lhs_2d, rhs, *output_2d);
         }
         // 3.3. pack MK & KN
         else if constexpr (LhsPackedAxes::rank() == 2 &&
@@ -177,25 +174,7 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                            RhsPackedAxes::rank() == 2 &&
                            RhsPackedAxes::at(0) == TRhs::rank() - 2 &&
                            RhsPackedAxes::at(1) == TRhs::rank() - 1) {
-            auto lhs_v =
-                (typename TLhsElem::element_type *)(lhs.elements().data());
-            auto rhs_v =
-                (vector<typename TRhsElem::element_type,
-                        TRhsElem::shape().at(1)> *)(rhs.elements().data());
-            auto output_v =
-                (vector<typename TOutElem::element_type,
-                        TOutElem::shape().at(1)> *)(output.elements().data());
-            for (size_t m = 0; m < TLhsElem::shape().at(0); m++) {
-                for (size_t k = 0; k < TRhsElem::shape().at(0); k++) {
-                    output_v[m] =
-                        (k != 0 || AccC)
-                            ? ntt::mul_add(
-                                  lhs_v[m * TRhsElem::shape().at(0) + k],
-                                  rhs_v[k], output_v[m])
-                            : ntt::mul(lhs_v[m * TRhsElem::shape().at(0) + k],
-                                       rhs_v[k]);
-                }
-            }
+            ntt::mma<AccC>(lhs, rhs, output);
         } else {
             static_assert(false, "Unsupported packing.");
         }
