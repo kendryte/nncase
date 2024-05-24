@@ -30,5 +30,6 @@ if(APPLE)
   target_compile_options(kernels PRIVATE -Wno-gnu-zero-variadic-macro-arguments)  
 endif(APPLE)
 
+target_compile_options(kernels PRIVATE -Wno-array-bounds -Wno-stringop-overread)
 
 add_subdirectory(stackvm)
