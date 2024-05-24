@@ -172,6 +172,12 @@ template <class T1, class T2> struct inner_product {
     }
 };
 
+template <class T1, class T2> struct outer_product {
+    constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+        return v1 * v2;
+    }
+};
+
 /**
  * @remarks mod is equivalent to fmod() function in C/C++/Python.
  */
@@ -269,6 +275,7 @@ NTT_DEFINE_BINARY_FUNC_IMPL(ceil_div)
 NTT_DEFINE_BINARY_FUNC_IMPL(div)
 NTT_DEFINE_BINARY_FUNC_IMPL(floor_mod)
 NTT_DEFINE_BINARY_FUNC_IMPL(inner_product)
+NTT_DEFINE_BINARY_FUNC_IMPL(outer_product)
 NTT_DEFINE_BINARY_FUNC_IMPL(mod)
 NTT_DEFINE_BINARY_FUNC_IMPL(min)
 NTT_DEFINE_BINARY_FUNC_IMPL(max)
