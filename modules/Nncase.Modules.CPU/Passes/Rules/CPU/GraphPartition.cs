@@ -223,6 +223,14 @@ public sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
             };
         }
 
+        protected override Cost VisitLeafConst(Const expr)
+        {
+            return new Cost()
+            {
+                [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(expr.CheckedType!),
+            };
+        }
+
         protected override Cost DefaultVisitLeaf(Expr expr)
         {
             return Cost.Zero;
