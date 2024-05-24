@@ -421,9 +421,8 @@ mma<AccC, T1, T2, TResult>::operator()(const T1 &v1, const T2 &v2,
     auto rhs_v =
         (vector<typename T2::element_type, v2.shape().at(1)> *)(v2.elements()
                                                                     .data());
-    auto output_v =
-        (vector<typename TResult::element_type, v3.shape().at(1)>
-             *)(v3.elements().data());
+    auto output_v = (vector<typename TResult::element_type, v3.shape().at(1)>
+                         *)(v3.elements().data());
     for (size_t m = 0; m < v1.shape().at(0); m++) {
         for (size_t k = 0; k < v2.shape().at(0); k++) {
             output_v[m] =

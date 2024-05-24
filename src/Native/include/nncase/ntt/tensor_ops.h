@@ -145,8 +145,9 @@ struct outer_product<TTensor1, TTensor2> {
     constexpr auto operator()(const TTensor1 &v1,
                               const TTensor2 &v2) const noexcept {
 
-        using result_type = fixed_tensor<element_type, TTensor1::shape().length(),
-                                         TTensor2::shape().length()>;
+        using result_type =
+            fixed_tensor<element_type, TTensor1::shape().length(),
+                         TTensor2::shape().length()>;
         result_type value{};
         apply(value.shape(), [&](auto index) {
             value(index) = op_(v1(index[0]), v2(index[1]));
