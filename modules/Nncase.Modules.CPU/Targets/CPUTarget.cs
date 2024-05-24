@@ -138,6 +138,11 @@ public class CPUTarget : ITarget
         {
             p.AddBaseFuncCostEvaluator<Passes.Rules.CPU.FusionCostEvaluator>();
         });
+        passManager.Add<DataflowPass>().Configure(p =>
+        {
+            p.AddAnalysis<Passes.Analysis.IExprUserAnalysisResult>();
+            p.Add<Passes.Rules.CPU.DeterminedFusionMergeRule>();
+        });
 
         // passManager.Add<CPUFunctionPartitionPass>();
         passManager.Add<CPUFusionToModulePass>();

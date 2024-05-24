@@ -239,11 +239,7 @@ public sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
         protected override Cost VisitLeafCall(Call call)
         {
             Cost cost;
-            if (call.Target is Boxing { NewType: DistributedType })
-            {
-                cost = Cost.Zero;
-            }
-            else if (call.Target is Op op)
+            if (call.Target is Op op)
             {
                 var context = new GraphOpCostEvaluateContext(call.CheckedType, call.Arguments.AsValueEnumerable().Select(p => p.CheckedType).ToArray(), call.Arguments, CompileOptions);
                 cost = CompilerServices.EvaluateOpCost(op, context) ?? Cost.Zero;
@@ -262,7 +258,6 @@ public sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
             {
                 [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(fusion.Body.CheckedType!),
             };
-            cost += fusion.Parameters.AsValueEnumerable().Select(Visit).Sum() ?? Cost.Zero;
             return cost;
         }
     }
@@ -625,7 +620,7 @@ public sealed class DeterminedFusionMergeRule : IRewriteRule
             var patterns = new Pattern[exprs.Length];
             for (var i = 0; i < patterns.Length; i++)
             {
-                patterns[i] = IsVar($"input_{i}");
+                patterns[i] = IsWildcard($"input_{i}");
             }
 
             return patterns;
@@ -635,7 +630,7 @@ public sealed class DeterminedFusionMergeRule : IRewriteRule
             var patterns = new Pattern[exprs.Length];
             for (var i = 0; i < patterns.Length; i++)
             {
-                patterns[i] = IsCallWildcard($"callee_{i}", IsWildcard());
+                patterns[i] = IsWildcard($"callee_{i}");
             }
 
             return patterns;
