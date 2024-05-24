@@ -28,7 +28,7 @@ endif()
 
 if(APPLE)
   target_compile_options(kernels PRIVATE -Wno-gnu-zero-variadic-macro-arguments -Wno-array-bounds)  
-else()
+elseif(LINUX)
   target_compile_options(kernels PRIVATE -Wno-array-bounds -Wno-stringop-overread)
 endif(APPLE)
 
