@@ -227,7 +227,8 @@ template <class T1, class T2, class TResult> struct mul_add {
                                  const TResult &v3) const noexcept;
 };
 
-template <bool AccC, IsFixedTensor T1, IsFixedTensor T2, IsFixedTensor TResult> struct mma {
+template <bool AccC, IsFixedTensor T1, IsFixedTensor T2, IsFixedTensor TResult>
+struct mma {
     constexpr TResult operator()(const T1 &v1, const T2 &v2,
                                  const TResult &v3) const noexcept;
 };
@@ -419,7 +420,7 @@ mma<AccC, T1, T2, TResult>::operator()(const T1 &v1, const T2 &v2,
     auto lhs_v = (typename T1::element_type *)(v1.elements().data());
     auto rhs_v =
         (vector<typename T2::element_type, T2::shape().at(1)> *)(v2.elements()
-                                                                    .data());
+                                                                     .data());
     auto output_v =
         (vector<typename TResult::element_type, TResult::shape().at(1)>
              *)(v3.elements().data());
