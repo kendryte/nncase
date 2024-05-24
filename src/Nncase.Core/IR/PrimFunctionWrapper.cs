@@ -59,7 +59,7 @@ public sealed class PrimFunctionWrapper : BaseFunction
         {
             var outputParams = Target.Parameters.AsValueEnumerable().Skip(ParametersCount).ToArray();
             return outputParams.Length == 1
-                ? (TypeHints.Count <= ParametersCount ? outputParams[0].CheckedType : TypeHints[0])
+                ? (TypeHints.Count <= ParametersCount ? outputParams[0].CheckedType : TypeHints[ParametersCount])
                 : new TupleType(outputParams.Select((x, i) => TypeHints.Count <= ParametersCount ? x.CheckedType! : TypeHints[ParametersCount + i]));
         }
     }

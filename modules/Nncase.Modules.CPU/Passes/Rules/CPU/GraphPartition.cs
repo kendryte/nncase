@@ -130,14 +130,7 @@ public sealed partial class CPUSingleFusion : FusionMaker
                 }
                 else
                 {
-                    if (callParams[i] is TensorConst { Value: Tensor { Shape.IsScalar: true } } tc)
-                    {
-                        newInputs.Add(Const.FromTensor(Tensor.FromBytes(tc.CheckedDataType, tc.Value.BytesBuffer.ToArray(), new[] { 1 })));
-                    }
-                    else
-                    {
-                        newInputs.Add(callParams[i]);
-                    }
+                    newInputs.Add(callParams[i]);
                 }
             }
 
