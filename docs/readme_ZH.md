@@ -44,9 +44,9 @@ Telegram: [nncase community](https://t.me/joinchat/PPcEPZMLaTViNDI1)
 
 ### 支持的算子
 
-- [TFLite ops](./docs/tflite_ops.md)
-- [Caffe ops](./docs/caffe_ops.md)
-- [ONNX ops](./docs/onnx_ops.md)
+- [TFLite ops](https://github.com/kendryte/nncase/blob/release/2.0/docs/tflite_ops.md)
+- [Caffe ops](https://github.com/kendryte/nncase/blob/release/2.0/docs/caffe_ops.md)
+- [ONNX ops](https://github.com/kendryte/nncase/blob/release/2.0/docs/onnx_ops.md)
 
 ### benchmark test
 
