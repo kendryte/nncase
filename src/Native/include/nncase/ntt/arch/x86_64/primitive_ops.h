@@ -163,6 +163,16 @@ template <> struct square<ntt::vector<float, 8>> {
     }
 };
 
+// swish(v) = v / (exp(-v) + 1)
+template <> struct swish<ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const ntt::vector<float, 8> &v) const noexcept {
+        return _mm256_div_ps(
+            v, _mm256_add_ps(exp256_ps(_mm256_sub_ps(_mm256_setzero_ps(), v)),
+                             _mm256_set1_ps(1.0f)));
+    }
+};
+
 // tanh
 template <> struct tanh<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
