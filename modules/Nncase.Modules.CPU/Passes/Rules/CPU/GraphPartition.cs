@@ -525,6 +525,8 @@ public sealed class ConcatFusionMergeRule : IRewriteRule
 {
     private readonly Dictionary<int, Call> _mergedCache = new();
 
+    private int _count;
+
     public IPattern Pattern { get; } =
     IsConcat(
         "concat",
@@ -586,7 +588,7 @@ public sealed class ConcatFusionMergeRule : IRewriteRule
         if (!_mergedCache.TryGetValue(hashcode, out var new_call))
         {
             var new_fusion_body = new Call(new Concat(concat.Axis), new IR.Tuple(callee_fusions.Select(f => f.Body).ToArray()));
-            var name = $"concat_" + string.Join("_", callee_fusions.Select(f => f.Name).ToArray());
+            var name = $"concat_fusion_{_count++}_";
 
             var parameters = callee_fusions.Select(f => f.Parameters.ToArray()).SelectMany(e => e).ToArray();
             var merged_fusion = new Fusion(name, callee_fusions[0].ModuleKind, new_fusion_body, parameters);

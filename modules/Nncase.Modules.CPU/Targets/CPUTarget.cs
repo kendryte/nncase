@@ -129,6 +129,8 @@ public class CPUTarget : ITarget
         {
             p.AddAnalysis<Passes.Analysis.IExprUserAnalysisResult>();
             p.Add<Passes.Rules.CPU.DeterminedFusionMergeRule>();
+            p.Add<Passes.Rules.CPU.ConcatFusionMergeRule>();
+            p.Add<Passes.Rules.CPU.TupleFusionMergeRule>();
         });
         passManager.AddWithName<EGraphRulesPass>("PartitionConstruct").Configure(p =>
         {
