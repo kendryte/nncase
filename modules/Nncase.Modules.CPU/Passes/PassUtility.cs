@@ -69,7 +69,11 @@ public static class PassUtility
                 break;
 
             case IR.Math.Reduce reduce:
-                if (reduce.ReduceOp == ReduceOp.Prod || arguments.ToArray()[0].CheckedDataType == DataTypes.Float16)
+                var axis = ((TensorConst)arguments.ToArray()[1]).Value.ToArray<int>().OrderBy(x => x).ToArray();
+                bool consecutiveAixs = axis.Length <= 1 || axis.Zip(axis.Skip(1)).All(p => p.First == p.Second - 1);
+                if (reduce.ReduceOp == ReduceOp.Prod ||
+                 arguments.ToArray()[0].CheckedDataType == DataTypes.Float16 ||
+                 !consecutiveAixs)
                 {
                     return false;
                 }
