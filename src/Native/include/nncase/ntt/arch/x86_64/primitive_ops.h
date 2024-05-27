@@ -151,7 +151,7 @@ template <> struct sin<ntt::vector<float, 8>> {
 template <> struct sqrt<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
-        return _mm256_sqrt_ps(v);
+        return _mm256_rcp_ps(_mm256_rsqrt_ps(v));
     }
 };
 
