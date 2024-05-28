@@ -68,7 +68,7 @@ public static class PassUtility
 
                 break;
             case IR.Math.Binary binary:
-                if (arguments.Any(x => x.CheckedType is AnyType))
+                if (arguments.Any(x => x.CheckedType is AnyType || x is If))
                 {
                     return false;
                 }
