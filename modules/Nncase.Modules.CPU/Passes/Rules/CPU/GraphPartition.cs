@@ -243,6 +243,8 @@ public sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
             {
                 var context = new GraphOpCostEvaluateContext(call.CheckedType, call.Arguments.AsValueEnumerable().Select(p => p.CheckedType).ToArray(), call.Arguments, CompileOptions);
                 cost = CompilerServices.EvaluateOpCost(op, context) ?? Cost.Zero;
+                cost.Factors[CostFactorNames.MemoryLoad] = 0;
+                cost.Factors[CostFactorNames.MemoryStore] = 0;
             }
             else
             {
