@@ -51,29 +51,76 @@ public sealed partial class CPUOutputBoxingFusion : FusionMaker
             return null;
         }
 
+        var inputDict = new Dictionary<Expr, List<KeyValuePair<Var, Expr>>>(ReferenceEqualityComparer.Instance);
         var newInputs = new List<Expr>();
+
+        Expr BuildNewInput(Expr parameter)
+        {
+            Expr newInput;
+            switch (parameter)
+            {
+                case Call or Var:
+                    var v = new Var(parameter.CheckedType!);
+                    newInput = v;
+                    if (!inputDict.TryGetValue(newInput, out var _))
+                    {
+                        inputDict.Add(newInput, new() { new(v, parameter) });
+                    }
+
+                    break;
+                case IR.Tuple tp:
+                    var fileds = new Expr[tp.Fields.Length];
+                    for (int i = 0; i < tp.Fields.Length; i++)
+                    {
+                        fileds[i] = BuildNewInput(tp.Fields[i]);
+                    }
+
+                    newInput = new IR.Tuple(fileds);
+
+                    if (!inputDict.TryGetValue(newInput, out var tpl))
+                    {
+                        tpl = new() { };
+                        foreach (var filed in fileds)
+                        {
+                            tpl.AddRange(inputDict[filed]);
+                        }
+
+                        inputDict.Add(newInput, tpl);
+                    }
+
+                    break;
+                case Const c:
+                    if (parameter is TensorConst { Value: Tensor { Shape.IsScalar: true } } tc)
+                    {
+                        newInput = Const.FromTensor(Tensor.FromBytes(tc.CheckedDataType, tc.Value.BytesBuffer.ToArray(), new[] { 1 }));
+                    }
+                    else
+                    {
+                        newInput = parameter;
+                    }
+
+                    if (!inputDict.TryGetValue(newInput, out var _))
+                    {
+                        inputDict.Add(newInput, new() { });
+                    }
+
+                    break;
+
+                default:
+                    throw new NotSupportedException();
+            }
+
+            return newInput;
+        }
+
         for (int i = 0; i < callParams.Count; i++)
         {
-            if (callParams[i] is Call or Var)
-            {
-                newInputs.Add(new Var(callParams[i].CheckedType!));
-            }
-            else
-            {
-                if (callParams[i] is TensorConst { Value: Tensor { Shape.IsScalar: true } } tc)
-                {
-                    newInputs.Add(Const.FromTensor(Tensor.FromBytes(tc.CheckedDataType, tc.Value.BytesBuffer.ToArray(), new[] { 1 })));
-                }
-                else
-                {
-                    newInputs.Add(callParams[i]);
-                }
-            }
+            newInputs.Add(BuildNewInput(callParams[i]));
         }
 
         var newCall = new Call(op, newInputs.ToArray());
         var newBoxingCall = new Call(boxing, newCall);
-        var callFusion = new Call(new Fusion($"{op.GetType().Name}_{Count++}_kernel", ModuleKind, newBoxingCall, newInputs.OfType<Var>().ToArray()), newInputs.Select((e, i) => (e, i)).Where(p => p.e is Var).Select(p => callParams[p.i]).ToArray());
+        var callFusion = new Call(new Fusion($"{op.GetType().Name}_{Count++}_kernel", ModuleKind, newBoxingCall, newInputs.Select(e => inputDict[e]).SelectMany(i => i).Select(p => p.Key).ToArray()), newInputs.Select(e => inputDict[e]).SelectMany(i => i).Select(p => p.Value).ToArray());
         return callFusion;
     }
 }
