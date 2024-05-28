@@ -16,22 +16,22 @@ public sealed partial class LSTM : Op
     /// <summary>
     /// Gets x.
     /// </summary>
-    public static readonly ParameterInfo X = new(typeof(LSTM), 0, "x");
+    public static readonly ParameterInfo X = new(typeof(LSTM), 0, "x", ParameterKind.Input);
 
     /// <summary>
     /// Gets w.
     /// </summary>
-    public static readonly ParameterInfo W = new(typeof(LSTM), 1, "w");
+    public static readonly ParameterInfo W = new(typeof(LSTM), 1, "w", ParameterKind.Input);
 
     /// <summary>
     /// Gets r.
     /// </summary>
-    public static readonly ParameterInfo R = new(typeof(LSTM), 2, "r");
+    public static readonly ParameterInfo R = new(typeof(LSTM), 2, "r", ParameterKind.Input);
 
     /// <summary>
     /// Gets b.
     /// </summary>
-    public static readonly ParameterInfo B = new(typeof(LSTM), 3, "b");
+    public static readonly ParameterInfo B = new(typeof(LSTM), 3, "b", ParameterKind.Input);
 
     /// <summary>
     /// Gets sequence_lens.
@@ -41,12 +41,12 @@ public sealed partial class LSTM : Op
     /// <summary>
     /// Gets initial_h.
     /// </summary>
-    public static readonly ParameterInfo InitialH = new(typeof(LSTM), 5, "initial_h");
+    public static readonly ParameterInfo InitialH = new(typeof(LSTM), 5, "initial_h", ParameterKind.Input);
 
     /// <summary>
     /// Gets initial_c.
     /// </summary>
-    public static readonly ParameterInfo InitialC = new(typeof(LSTM), 6, "initial_c");
+    public static readonly ParameterInfo InitialC = new(typeof(LSTM), 6, "initial_c", ParameterKind.Input);
 
     /// <summary>
     /// Gets p.
