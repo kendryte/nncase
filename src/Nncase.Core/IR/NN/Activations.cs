@@ -28,7 +28,7 @@ public sealed partial class Sigmoid : ActivationOp
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Sigmoid), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Sigmoid), 0, "input", ParameterKind.Input);
 }
 
 /// <summary>
@@ -40,7 +40,7 @@ public sealed partial class Relu : ActivationOp
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Relu), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Relu), 0, "input", ParameterKind.Input);
 }
 
 /// <summary>
@@ -52,7 +52,7 @@ public sealed partial class Relu6 : ActivationOp
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Relu6), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Relu6), 0, "input", ParameterKind.Input);
 }
 
 /// <summary>
@@ -64,7 +64,7 @@ public sealed partial class PRelu : ActivationOp
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(PRelu), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(PRelu), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets Slope.
@@ -81,7 +81,7 @@ public sealed partial class LeakyRelu : ActivationOp
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(LeakyRelu), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(LeakyRelu), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets Alpha.
@@ -98,7 +98,7 @@ public sealed partial class Celu : ActivationOp
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Celu), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Celu), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets Alpha.
@@ -115,7 +115,7 @@ public sealed partial class Selu : ActivationOp
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Selu), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Selu), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets Alpha.
@@ -137,7 +137,7 @@ public sealed partial class Elu : ActivationOp
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Elu), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Elu), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets Alpha.
@@ -171,7 +171,7 @@ public sealed partial class HardSwish : ActivationOp
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(HardSwish), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(HardSwish), 0, "input", ParameterKind.Input);
 }
 
 /// <summary>
@@ -183,7 +183,7 @@ public sealed partial class HardSigmoid : ActivationOp
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(HardSigmoid), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(HardSigmoid), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets alpha.
@@ -205,7 +205,7 @@ public sealed partial class Erf : ActivationOp
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Erf), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Erf), 0, "input", ParameterKind.Input);
 }
 
 /// <summary>
@@ -217,7 +217,7 @@ public sealed partial class Gelu : ActivationOp
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Gelu), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Gelu), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets alpha.
