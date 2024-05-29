@@ -121,7 +121,9 @@ op_version_lists = [
 @pytest.mark.parametrize('op_version', op_version_lists)
 def test_reduce(in_shape, in_datatype, reduce_op, axes, keepdims, request, op_version):
     if len(axes) <= len(in_shape):
-        if reduce_op == 'ReduceSum' and op_version < 13:
+        if reduce_op == 'ReduceSum' and op_version >= 13:
+            pass
+        else:
             model_def = _make_module(in_shape, in_datatype, reduce_op, axes, keepdims, op_version)
 
             runner = OnnxTestRunner(request.node.name)
