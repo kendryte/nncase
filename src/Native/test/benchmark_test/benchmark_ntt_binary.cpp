@@ -27,6 +27,9 @@ void benchmark_ntt_binary(std::string op_name, T lhs_low, T lhs_high, T rhs_low,
 #elif __x86_64__
     constexpr size_t size1 = 2000;
     constexpr size_t size2 = 2000;
+#else
+    constexpr size_t size1 = 2000;
+    constexpr size_t size2 = 2000;
 #endif
     using tensor_type = ntt::tensor<ntt::vector<T, N>, ntt::fixed_shape<size2>>;
     tensor_type ntt_lhs, ntt_rhs, ntt_result;
