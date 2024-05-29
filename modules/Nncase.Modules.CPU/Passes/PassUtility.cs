@@ -29,7 +29,7 @@ public static class PassUtility
             return false;
         }
 
-        if (!op.Parameters.Zip(arguments).All(p => p.First.ParameterKind == ParameterKind.Input || (p.First.ParameterKind == ParameterKind.Attribute && p.Second is TensorConst)))
+        if (!op.Parameters.Zip(arguments).All(p => (p.First.ParameterKind == ParameterKind.Input && p.Second.CheckedType switch { TensorType t => t.Shape.IsRanked, _ => true }) || (p.First.ParameterKind == ParameterKind.Attribute && p.Second is TensorConst)))
         {
             return false;
         }

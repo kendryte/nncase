@@ -21,7 +21,7 @@ public sealed partial class Squeeze : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Squeeze), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Squeeze), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets dimension.
