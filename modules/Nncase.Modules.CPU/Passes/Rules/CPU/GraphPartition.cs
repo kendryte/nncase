@@ -266,7 +266,12 @@ public sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
         {
             return new Cost()
             {
-                [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(var.CheckedType!),
+                [CostFactorNames.MemoryLoad] = var.CheckedType switch
+                {
+                    DistributedType => UInt128.One * int.MaxValue,
+                    IRType t => CostUtility.GetMemoryAccess(t),
+                    _ => throw new ArgumentOutOfRangeException(nameof(var)),
+                },
             };
         }
 

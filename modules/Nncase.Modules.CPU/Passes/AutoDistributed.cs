@@ -63,6 +63,11 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         if (input is Function function)
         {
             var equivalents = Visit(function.Body).Select(g => InstertTerminator(g.Value[0])).ToArray();
+            if (!equivalents.Any())
+            {
+                return input;
+            }
+
             using (new ExprPinner(equivalents))
             {
                 BranchCut();
