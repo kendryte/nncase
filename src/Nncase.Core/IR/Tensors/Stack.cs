@@ -21,7 +21,7 @@ public sealed partial class Stack : Op
     /// <summary>
     /// Gets inputs.
     /// </summary>
-    public static readonly ParameterInfo Inputs = new(typeof(Stack), 0, "inputs", IsTuple());
+    public static readonly ParameterInfo Inputs = new(typeof(Stack), 0, "inputs", IsTuple(), ParameterKind.Input);
 
     /// <summary>
     /// Gets axis.
