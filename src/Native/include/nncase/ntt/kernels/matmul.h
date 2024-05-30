@@ -106,21 +106,77 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
     template <bool AccC, class TLhsElem, class TRhsElem, class TOutElem>
     void mul_add(const TLhsElem &lhs, const TRhsElem &rhs, TOutElem &output) {
         // 1. 0D-packing
-        if constexpr (LhsPackedAxes::rank() == 0) {
+        if constexpr (LhsPackedAxes::rank() == 0 &&
+                      RhsPackedAxes::rank() == 0) {
             output = AccC ? ntt::mul_add(lhs, rhs, output) : ntt::mul(lhs, rhs);
         }
         // 2. 1D-packing
         // 2.1. pack K
         else if constexpr (LhsPackedAxes::rank() == 1 &&
-                           LhsPackedAxes::at(0) == TLhs::rank() - 1) {
-            static_assert(RhsPackedAxes::at(0) == TRhs::rank() - 2,
-                          "B should also pack K.");
+                           LhsPackedAxes::at(0) == TLhs::rank() - 1 &&
+                           RhsPackedAxes::rank() == 1 &&
+                           RhsPackedAxes::at(0) == TRhs::rank() - 2) {
             auto value = ntt::inner_product(lhs, rhs);
             output = AccC ? output + value : value;
+        }
+        // 2.2. pack M
+        else if constexpr (LhsPackedAxes::rank() == 1 &&
+                           LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
+                           RhsPackedAxes::rank() == 0) {
+            output = AccC ? ntt::mul_add(lhs, rhs, output) : ntt::mul(lhs, rhs);
+        }
+        // 2.3. pack N
+        else if constexpr (LhsPackedAxes::rank() == 0 &&
+                           RhsPackedAxes::rank() == 1 &&
+                           RhsPackedAxes::at(0) == TRhs::rank() - 1) {
+            output = AccC ? ntt::mul_add(lhs, rhs, output) : ntt::mul(lhs, rhs);
+        }
+        // 2.4. pack M & N
+        else if constexpr (LhsPackedAxes::rank() == 1 &&
+                           LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
+                           RhsPackedAxes::rank() == 1 &&
+                           RhsPackedAxes::at(0) == TRhs::rank() - 1) {
+            auto value = ntt::outer_product(lhs, rhs);
+            output = AccC ? output + value : value;
+        }
+        // 3.1. pack MK & K
+        else if constexpr (LhsPackedAxes::rank() == 2 &&
+                           LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
+                           LhsPackedAxes::at(1) == TLhs::rank() - 1 &&
+                           RhsPackedAxes::rank() == 1 &&
+                           RhsPackedAxes::at(0) == TRhs::rank() - 2) {
+            auto lhs_v =
+                (vector<typename TLhsElem::element_type,
+                        TLhsElem::shape().at(1)> *)(lhs.elements().data());
+            for (size_t m = 0; m < TLhsElem::shape().at(0); m++) {
+                auto value = ntt::inner_product(lhs_v[m], rhs);
+                output(m) = AccC ? output(m) + value : value;
+            }
+        }
+        // 3.2. pack K & KN
+        else if constexpr (LhsPackedAxes::rank() == 1 &&
+                           LhsPackedAxes::at(0) == TLhs::rank() - 1 &&
+                           RhsPackedAxes::rank() == 2 &&
+                           RhsPackedAxes::at(0) == TRhs::rank() - 2 &&
+                           RhsPackedAxes::at(1) == TRhs::rank() - 1) {
+            auto lhs_2d =
+                (vector<typename TLhsElem::element_type, 1,
+                        TLhsElem::shape().at(0)> *)(lhs.elements().data());
+            auto output_2d =
+                (vector<typename TOutElem::element_type, 1,
+                        TOutElem::shape().at(0)> *)(output.elements().data());
+            ntt::mma<AccC>(*lhs_2d, rhs, *output_2d);
+        }
+        // 3.3. pack MK & KN
+        else if constexpr (LhsPackedAxes::rank() == 2 &&
+                           LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
+                           LhsPackedAxes::at(1) == TLhs::rank() - 1 &&
+                           RhsPackedAxes::rank() == 2 &&
+                           RhsPackedAxes::at(0) == TRhs::rank() - 2 &&
+                           RhsPackedAxes::at(1) == TRhs::rank() - 1) {
+            ntt::mma<AccC>(lhs, rhs, output);
         } else {
-            static_assert(LhsPackedAxes::rank() != 0 &&
-                              LhsPackedAxes::rank() != 1,
-                          "Unsupported packing.");
+            static_assert(sizeof(TLhsElem) == 0, "Unsupported packing.");
         }
     }
 };
@@ -149,14 +205,15 @@ void matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output,
             [[maybe_unused]] LhsPadedNums lhsPadedNums = {},
             [[maybe_unused]] RhsPackedAxes rhsPackedAxes = {},
             [[maybe_unused]] RhsPadedNums rhsPadedNums = {}) {
-    static_assert(LhsPackedAxes::rank() == RhsPackedAxes::rank(),
-                  "the pack rank must equal!");
-    static_assert(LhsPadedNums::rank() == RhsPadedNums::rank(),
-                  "the pad rank must equal!");
-    static_assert(LhsPackedAxes::rank() == 0 || LhsPackedAxes::rank() == 1,
-                  "currently only support 0~1d pack!");
-    static_assert(LhsPadedNums::rank() == 0 ||
-                      (LhsPadedNums::at(0) == 0 && RhsPadedNums::at(0) == 0),
+    static_assert(LhsPackedAxes::rank() == 0 || LhsPackedAxes::rank() == 1 ||
+                      LhsPackedAxes::rank() == 2,
+                  "currently only support 0~2d pack!");
+    static_assert(RhsPackedAxes::rank() == 0 || RhsPackedAxes::rank() == 1 ||
+                      RhsPackedAxes::rank() == 2,
+                  "currently only support 0~2d pack!");
+    static_assert(LhsPadedNums::rank() == 0 || LhsPadedNums::length() == 0,
+                  "currently only support no pad!");
+    static_assert(RhsPadedNums::rank() == 0 || RhsPadedNums::length() == 0,
                   "currently only support no pad!");
 
     detail::matmul_impl<false, false, false, TLhs, TRhs, std::decay_t<TOut>,

@@ -183,7 +183,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Pad(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToArray<float>()[0]));
                 break;
             case IR.Math.Reduce reduce:
-                _mainBody.Add(TIR.F.CPU.Reduce(arguments[0], arguments[2], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[3]).Value.ToArray<bool>()[0], reduce.ReduceOp));
+                _mainBody.Add(TIR.F.CPU.Reduce(arguments[0], arguments[2], ret, Array.Empty<int>(), Array.Empty<int>(), ((TensorConst)expr.Arguments[1]).Value.ToArray<int>().OrderBy(a => a).ToArray(), ((TensorConst)expr.Arguments[3]).Value.ToArray<bool>()[0], reduce.ReduceOp));
                 break;
             default:
                 throw new NotSupportedException();
