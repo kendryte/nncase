@@ -699,6 +699,176 @@ int main() {
         assert(tc(2, 1) == 10792.f);
     }
 
+    // packed matmul 1d on m
+    {
+        ntt::tensor<float, ntt::fixed_shape<4, 8>> ta;
+        ntt::tensor<float, ntt::fixed_shape<8, 2>> tb;
+        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+        std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 8>> pa;
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 2>> pc;
+        ntt::pack<0>(ta, pa);
+        ntt::matmul(pa, tb, pc, ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
+                    ntt::fixed_shape<>{}, ntt::fixed_shape<0>{});
+        assert(are_floats_equal(pc(0, 0)(0), 280.f));
+        assert(are_floats_equal(pc(0, 1)(0), 308.f));
+        assert(are_floats_equal(pc(0, 0)(1), 728.f));
+        assert(are_floats_equal(pc(0, 1)(1), 820.f));
+        assert(are_floats_equal(pc(0, 0)(2), 1176.f));
+        assert(are_floats_equal(pc(0, 1)(2), 1332.f));
+        assert(are_floats_equal(pc(0, 0)(3), 1624.f));
+        assert(are_floats_equal(pc(0, 1)(3), 1844.f));
+    }
+
+    // packed matmul 1d on n
+    {
+        ntt::tensor<float, ntt::fixed_shape<3, 8>> ta;
+        ntt::tensor<float, ntt::fixed_shape<8, 4>> tb;
+        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+        std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<8, 1>> pb;
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<3, 1>> pc;
+        ntt::pack<1>(tb, pb);
+        ntt::matmul(ta, pb, pc, ntt::fixed_shape<>{}, ntt::fixed_shape<0>{},
+                    ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
+        assert(are_floats_equal(pc(0, 0)(0), 560.f));
+        assert(are_floats_equal(pc(0, 0)(1), 588.f));
+        assert(are_floats_equal(pc(0, 0)(2), 616.f));
+        assert(are_floats_equal(pc(0, 0)(3), 644.f));
+        assert(are_floats_equal(pc(1, 0)(0), 1456.f));
+        assert(are_floats_equal(pc(1, 0)(1), 1548.f));
+        assert(are_floats_equal(pc(1, 0)(2), 1640.f));
+        assert(are_floats_equal(pc(1, 0)(3), 1732.f));
+        assert(are_floats_equal(pc(2, 0)(0), 2352.f));
+        assert(are_floats_equal(pc(2, 0)(1), 2508.f));
+        assert(are_floats_equal(pc(2, 0)(2), 2664.f));
+        assert(are_floats_equal(pc(2, 0)(3), 2820.f));
+    }
+
+    // packed matmul 1d on m(A) and n(B)
+    {
+        ntt::tensor<float, ntt::fixed_shape<4, 8>> ta;
+        ntt::tensor<float, ntt::fixed_shape<8, 4>> tb;
+        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+        std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 8>> pa;
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<8, 1>> pb;
+        ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<1, 1>> pc;
+        ntt::pack<0>(ta, pa);
+        ntt::pack<1>(tb, pb);
+        ntt::matmul(pa, pb, pc, ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
+                    ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
+        assert(are_floats_equal(pc(0, 0)(0, 0), 560.f));
+        assert(are_floats_equal(pc(0, 0)(0, 1), 588.f));
+        assert(are_floats_equal(pc(0, 0)(0, 2), 616.f));
+        assert(are_floats_equal(pc(0, 0)(0, 3), 644.f));
+        assert(are_floats_equal(pc(0, 0)(1, 0), 1456.f));
+        assert(are_floats_equal(pc(0, 0)(1, 1), 1548.f));
+        assert(are_floats_equal(pc(0, 0)(1, 2), 1640.f));
+        assert(are_floats_equal(pc(0, 0)(1, 3), 1732.f));
+        assert(are_floats_equal(pc(0, 0)(2, 0), 2352.f));
+        assert(are_floats_equal(pc(0, 0)(2, 1), 2508.f));
+        assert(are_floats_equal(pc(0, 0)(2, 2), 2664.f));
+        assert(are_floats_equal(pc(0, 0)(2, 3), 2820.f));
+        assert(are_floats_equal(pc(0, 0)(3, 0), 3248.f));
+        assert(are_floats_equal(pc(0, 0)(3, 1), 3468.f));
+        assert(are_floats_equal(pc(0, 0)(3, 2), 3688.f));
+        assert(are_floats_equal(pc(0, 0)(3, 3), 3908.f));
+    }
+
+    // packed matmul 2d on mk(A) and k(B)
+    {
+        ntt::tensor<float, ntt::fixed_shape<4, 8>> ta;
+        ntt::tensor<float, ntt::fixed_shape<8, 4>> tb;
+        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+        std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
+        ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<1, 2>> pa;
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<2, 4>> pb;
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 4>> pc;
+        ntt::pack<0, 1>(ta, pa);
+        ntt::pack<0>(tb, pb);
+        ntt::matmul(pa, pb, pc, ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0>{},
+                    ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{});
+        assert(are_floats_equal(pc(0, 0)(0), 560.f));
+        assert(are_floats_equal(pc(0, 1)(0), 588.f));
+        assert(are_floats_equal(pc(0, 2)(0), 616.f));
+        assert(are_floats_equal(pc(0, 3)(0), 644.f));
+        assert(are_floats_equal(pc(0, 0)(1), 1456.f));
+        assert(are_floats_equal(pc(0, 1)(1), 1548.f));
+        assert(are_floats_equal(pc(0, 2)(1), 1640.f));
+        assert(are_floats_equal(pc(0, 3)(1), 1732.f));
+        assert(are_floats_equal(pc(0, 0)(2), 2352.f));
+        assert(are_floats_equal(pc(0, 1)(2), 2508.f));
+        assert(are_floats_equal(pc(0, 2)(2), 2664.f));
+        assert(are_floats_equal(pc(0, 3)(2), 2820.f));
+        assert(are_floats_equal(pc(0, 0)(3), 3248.f));
+        assert(are_floats_equal(pc(0, 1)(3), 3468.f));
+        assert(are_floats_equal(pc(0, 2)(3), 3688.f));
+        assert(are_floats_equal(pc(0, 3)(3), 3908.f));
+    }
+
+    // packed matmul 2d on k(A) and kn(B)
+    {
+        ntt::tensor<float, ntt::fixed_shape<4, 8>> ta;
+        ntt::tensor<float, ntt::fixed_shape<8, 4>> tb;
+        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+        std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<4, 2>> pa;
+        ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 1>> pb;
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<4, 1>> pc;
+        ntt::pack<1>(ta, pa);
+        ntt::pack<0, 1>(tb, pb);
+        ntt::matmul(pa, pb, pc, ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{},
+                    ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0>{});
+        assert(are_floats_equal(pc(0, 0)(0), 560.f));
+        assert(are_floats_equal(pc(0, 0)(1), 588.f));
+        assert(are_floats_equal(pc(0, 0)(2), 616.f));
+        assert(are_floats_equal(pc(0, 0)(3), 644.f));
+        assert(are_floats_equal(pc(1, 0)(0), 1456.f));
+        assert(are_floats_equal(pc(1, 0)(1), 1548.f));
+        assert(are_floats_equal(pc(1, 0)(2), 1640.f));
+        assert(are_floats_equal(pc(1, 0)(3), 1732.f));
+        assert(are_floats_equal(pc(2, 0)(0), 2352.f));
+        assert(are_floats_equal(pc(2, 0)(1), 2508.f));
+        assert(are_floats_equal(pc(2, 0)(2), 2664.f));
+        assert(are_floats_equal(pc(2, 0)(3), 2820.f));
+        assert(are_floats_equal(pc(3, 0)(0), 3248.f));
+        assert(are_floats_equal(pc(3, 0)(1), 3468.f));
+        assert(are_floats_equal(pc(3, 0)(2), 3688.f));
+        assert(are_floats_equal(pc(3, 0)(3), 3908.f));
+    }
+
+    // packed matmul 2d on mk(A) and kn(B)
+    {
+        ntt::tensor<float, ntt::fixed_shape<4, 8>> ta;
+        ntt::tensor<float, ntt::fixed_shape<8, 4>> tb;
+        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+        std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
+        ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<1, 2>> pa;
+        ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 1>> pb;
+        ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<1, 1>> pc;
+        ntt::pack<0, 1>(ta, pa);
+        ntt::pack<0, 1>(tb, pb);
+        ntt::matmul(pa, pb, pc, ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0>{},
+                    ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0>{});
+        assert(are_floats_equal(pc(0, 0)(0, 0), 560.f));
+        assert(are_floats_equal(pc(0, 0)(0, 1), 588.f));
+        assert(are_floats_equal(pc(0, 0)(0, 2), 616.f));
+        assert(are_floats_equal(pc(0, 0)(0, 3), 644.f));
+        assert(are_floats_equal(pc(0, 0)(1, 0), 1456.f));
+        assert(are_floats_equal(pc(0, 0)(1, 1), 1548.f));
+        assert(are_floats_equal(pc(0, 0)(1, 2), 1640.f));
+        assert(are_floats_equal(pc(0, 0)(1, 3), 1732.f));
+        assert(are_floats_equal(pc(0, 0)(2, 0), 2352.f));
+        assert(are_floats_equal(pc(0, 0)(2, 1), 2508.f));
+        assert(are_floats_equal(pc(0, 0)(2, 2), 2664.f));
+        assert(are_floats_equal(pc(0, 0)(2, 3), 2820.f));
+        assert(are_floats_equal(pc(0, 0)(3, 0), 3248.f));
+        assert(are_floats_equal(pc(0, 0)(3, 1), 3468.f));
+        assert(are_floats_equal(pc(0, 0)(3, 2), 3688.f));
+        assert(are_floats_equal(pc(0, 0)(3, 3), 3908.f));
+    }
+
     // packed matmul 1d on k with broadcast
     {
         ntt::tensor<float, ntt::fixed_shape<1, 1, 3, 16>> ta;

@@ -34,8 +34,11 @@ struct tensor_unary_impl {
     Op<element_type> op_;
 };
 
+template <template <class T1, class T2> class Op, class T1, class T2>
+struct tensor_binary_impl;
+
 template <template <class T1, class T2> class Op, IsTensor TTensor, class T2>
-struct tensor_binary_impl {
+struct tensor_binary_impl<Op, TTensor, T2> {
     using element_type1 = typename TTensor::element_type;
     using element_type2 = element_or_scalar_t<T2>;
 
@@ -57,6 +60,24 @@ struct tensor_binary_impl {
   private:
     Op<element_type1, element_type2> op_;
 };
+
+template <template <class T1, class T2> class Op, IsScalar TScalar,
+          IsTensor TTensor>
+struct tensor_binary_impl<Op, TScalar, TTensor> {
+    using element_type2 = typename TTensor::element_type;
+
+    constexpr TTensor operator()(const TScalar &v1,
+                                 const TTensor &v2) const noexcept {
+        TTensor value;
+        apply(v2.shape(),
+              [&](auto index) { value(index) = op_(v1, v2(index)); });
+        return value;
+    }
+
+  private:
+    Op<TScalar, element_type2> op_;
+};
+
 } // namespace detail
 
 #define NTT_DEFINE_TENSOR_UNARY_IMPL(op)                                       \
@@ -64,8 +85,10 @@ struct tensor_binary_impl {
     struct op<TTensor> : detail::tensor_unary_impl<op, TTensor> {}
 
 #define NTT_DEFINE_TENSOR_BINARY_IMPL(op)                                      \
-    template <IsTensor TTensor, class T2>                                      \
-    struct op<TTensor, T2> : detail::tensor_binary_impl<op, TTensor, T2> {}
+    template <IsTensor T1, class T2>                                           \
+    struct op<T1, T2> : detail::tensor_binary_impl<op, T1, T2> {};             \
+    template <IsScalar T1, IsTensor T2>                                        \
+    struct op<T1, T2> : detail::tensor_binary_impl<op, T1, T2> {}
 
 NTT_DEFINE_TENSOR_UNARY_IMPL(abs);
 NTT_DEFINE_TENSOR_UNARY_IMPL(acos);
@@ -111,6 +134,29 @@ template <IsTensor TTensor> struct inner_product<TTensor, TTensor> {
 
   private:
     ops::inner_product<element_type, element_type> op_;
+};
+
+template <IsFixedTensor TTensor1, IsFixedTensor TTensor2>
+struct outer_product<TTensor1, TTensor2> {
+    using element_type = typename TTensor1::element_type;
+    static_assert(std::is_same_v<element_type, typename TTensor2::element_type>,
+                  "element type not match");
+
+    constexpr auto operator()(const TTensor1 &v1,
+                              const TTensor2 &v2) const noexcept {
+
+        using result_type =
+            fixed_tensor<element_type, TTensor1::shape().length(),
+                         TTensor2::shape().length()>;
+        result_type value{};
+        apply(value.shape(), [&](auto index) {
+            value(index) = op_(v1(index[0]), v2(index[1]));
+        });
+        return value;
+    }
+
+  private:
+    ops::outer_product<element_type, element_type> op_;
 };
 
 template <template <class T1, class T2> class Op, class TResult,

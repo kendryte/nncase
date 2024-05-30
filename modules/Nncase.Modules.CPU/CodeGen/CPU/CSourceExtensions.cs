@@ -22,6 +22,7 @@ internal static class CSourceExtensions
         { DataTypes.UInt16, "uint16_t" },
         { DataTypes.UInt32, "uint32_t" },
         { DataTypes.UInt64, "uint64_t" },
+        { DataTypes.Float16, "half" },
         { DataTypes.Float32, "float" },
         { DataTypes.Float64, "double" },
     };
@@ -33,6 +34,16 @@ internal static class CSourceExtensions
     {
         ReduceArgOp.ArgMin => "arg_min",
         ReduceArgOp.ArgMax => "arg_max",
+        _ => throw new NotImplementedException(),
+    };
+
+    public static string ToC(this ReduceOp op) => op switch
+    {
+        ReduceOp.Min => "min",
+        ReduceOp.Max => "max",
+        ReduceOp.Sum => "add",
+        ReduceOp.Mean => "mean",
+        ReduceOp.Prod => "mul",
         _ => throw new NotImplementedException(),
     };
 
