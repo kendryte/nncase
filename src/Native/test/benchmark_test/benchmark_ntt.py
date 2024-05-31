@@ -149,8 +149,8 @@ class BenchmarkNTT_riscv64(BenchmarkNTT):
                                          'div': '40.3',
                                          'max': '10.5',
                                          'min': '10.5',
-                                         'floor_mod': '46',
-                                         'mod': '57',
+                                         'floor_mod': '43',
+                                         'mod': '54',
                                          'pow': 'N/A'
                                          },
                               'unary': {'abs': 'N/A',

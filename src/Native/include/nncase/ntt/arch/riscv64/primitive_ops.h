@@ -346,8 +346,7 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_BINARY_OP_FLOAT32, div)
         auto quotient = vfcvt_f_x_v_f32m##LMUL(                                \
             vfcvt_rtz_x_f_v_i32m##LMUL(vfdiv_vv_f32m##LMUL(v1, v2, vl), vl),   \
             vl);                                                               \
-        return vfsub_vv_f32m##LMUL(v1, vfmul_vv_f32m##LMUL(v2, quotient, vl),  \
-                                   vl);                                        \
+        return vfnmsub_vv_f32m##LMUL(quotient, v2, v1, vl);                    \
     }
 IMPL_RVV_WITH_LMULS(MOD_FLOAT32)
 REGISTER_RVV_WITH_VLENS(REGISTER_RVV_BINARY_OP_FLOAT32, mod)
@@ -392,9 +391,9 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_BINARY_OP_FLOAT32, pow)
                                              const size_t vl) {                \
         auto remainder = vrem_vv_i32m##LMUL(v1, v2, vl);                       \
         auto cond1 = vmsne_vx_i32m##LMUL##_b##MLEN(remainder, 0, vl);          \
-        auto cond2 =                                                           \
-            vmsne_vv_i32m##LMUL##_b##MLEN(vsra_vx_i32m##LMUL(v1, 31, vl),      \
-                                          vsra_vx_i32m##LMUL(v2, 31, vl), vl); \
+        auto sign1 = vsra_vx_i32m##LMUL(v1, 31, vl);                           \
+        auto sign2 = vsra_vx_i32m##LMUL(v2, 31, vl);                           \
+        auto cond2 = vmsne_vv_i32m##LMUL##_b##MLEN(sign1, sign2, vl);          \
         cond1 = vmand_mm_b##MLEN(cond1, cond2, vl);                            \
         return vadd_vv_i32m##LMUL##_m(cond1, remainder, remainder, v2, vl);    \
     }
