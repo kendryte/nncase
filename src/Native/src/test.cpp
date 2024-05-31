@@ -708,8 +708,9 @@ int main() {
         ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 8>> pa;
         ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 2>> pc;
         ntt::pack<0>(ta, pa);
-        ntt::matmul<false>(pa, tb, pc, ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
-                    ntt::fixed_shape<>{}, ntt::fixed_shape<0>{});
+        ntt::matmul<false>(pa, tb, pc, ntt::fixed_shape<0>{},
+                           ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
+                           ntt::fixed_shape<0>{});
         assert(are_floats_equal(pc(0, 0)(0), 280.f));
         assert(are_floats_equal(pc(0, 1)(0), 308.f));
         assert(are_floats_equal(pc(0, 0)(1), 728.f));
@@ -729,8 +730,9 @@ int main() {
         ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<8, 1>> pb;
         ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<3, 1>> pc;
         ntt::pack<1>(tb, pb);
-        ntt::matmul<false>(ta, pb, pc, ntt::fixed_shape<>{}, ntt::fixed_shape<0>{},
-                    ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
+        ntt::matmul<false>(ta, pb, pc, ntt::fixed_shape<>{},
+                           ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
+                           ntt::fixed_shape<0>{});
         assert(are_floats_equal(pc(0, 0)(0), 560.f));
         assert(are_floats_equal(pc(0, 0)(1), 588.f));
         assert(are_floats_equal(pc(0, 0)(2), 616.f));
@@ -756,8 +758,9 @@ int main() {
         ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<1, 1>> pc;
         ntt::pack<0>(ta, pa);
         ntt::pack<1>(tb, pb);
-        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
-                    ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
+        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0>{},
+                           ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
+                           ntt::fixed_shape<0>{});
         assert(are_floats_equal(pc(0, 0)(0, 0), 560.f));
         assert(are_floats_equal(pc(0, 0)(0, 1), 588.f));
         assert(are_floats_equal(pc(0, 0)(0, 2), 616.f));
@@ -787,8 +790,9 @@ int main() {
         ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 4>> pc;
         ntt::pack<0, 1>(ta, pa);
         ntt::pack<0>(tb, pb);
-        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0>{},
-                    ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{});
+        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0, 1>{},
+                           ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
+                           ntt::fixed_shape<0>{});
         assert(are_floats_equal(pc(0, 0)(0), 560.f));
         assert(are_floats_equal(pc(0, 1)(0), 588.f));
         assert(are_floats_equal(pc(0, 2)(0), 616.f));
@@ -818,8 +822,9 @@ int main() {
         ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<4, 1>> pc;
         ntt::pack<1>(ta, pa);
         ntt::pack<0, 1>(tb, pb);
-        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{},
-                    ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0>{});
+        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<1>{},
+                           ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
+                           ntt::fixed_shape<0>{});
         assert(are_floats_equal(pc(0, 0)(0), 560.f));
         assert(are_floats_equal(pc(0, 0)(1), 588.f));
         assert(are_floats_equal(pc(0, 0)(2), 616.f));
@@ -849,8 +854,9 @@ int main() {
         ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<1, 1>> pc;
         ntt::pack<0, 1>(ta, pa);
         ntt::pack<0, 1>(tb, pb);
-        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0>{},
-                    ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0>{});
+        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0, 1>{},
+                           ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
+                           ntt::fixed_shape<0>{});
         assert(are_floats_equal(pc(0, 0)(0, 0), 560.f));
         assert(are_floats_equal(pc(0, 0)(0, 1), 588.f));
         assert(are_floats_equal(pc(0, 0)(0, 2), 616.f));
