@@ -46,7 +46,7 @@ internal class NcnnEmitter
             _binWriter.BaseStream.Seek(0, SeekOrigin.Begin);
             _binWriter.BaseStream.CopyTo(fileStream);
 
-            // _binWriter.BaseStream.SetLength(0);
+            _binWriter.BaseStream.SetLength(0);
         }
     }
 
