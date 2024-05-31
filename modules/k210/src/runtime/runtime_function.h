@@ -47,10 +47,10 @@ class k210_runtime_function : public runtime_function, private op_visitor {
     result<void> visit(const copy_options &op) noexcept override;
 
   private:
-    result<gsl::span<gsl::byte>> memory_at(const memory_range &mrange) noexcept;
+    result<std::span<std::byte>> memory_at(const memory_range &mrange) noexcept;
 
   private:
-    gsl::span<const gsl::byte> text_;
+    std::span<const std::byte> text_;
 };
 
 END_NS_NNCASE_RT_MODULE

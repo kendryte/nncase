@@ -14,7 +14,6 @@
  */
 #pragma once
 #include <cstring>
-#include <gsl/gsl-lite.hpp>
 #include <istream>
 #include <iterator>
 #include <nncase/compiler_defs.h>
@@ -55,15 +54,8 @@ class stream_reader {
         stream_.read(reinterpret_cast<char *>(&value), sizeof(value));
     }
 
-    template <class T> void read_span(gsl::span<T> span) {
-        size_t sub_data_size = 8388608;
-        for (size_t pos = 0; pos < span.size_bytes();) {
-            if (pos + sub_data_size >= span.size_bytes())
-                sub_data_size = span.size_bytes() - pos;
-            stream_.read(reinterpret_cast<char *>(span.data()) + pos,
-                         sub_data_size);
-            pos += sub_data_size;
-        }
+    template <class T> void read_span(std::span<T> span) {
+        stream_.read(reinterpret_cast<char *>(span.data()), span.size_bytes());
     }
 
     std::string read_string() {

@@ -37,9 +37,9 @@ class NNCASE_API buffer_node : public object_node {
 
     virtual result<void>
     copy_to(buffer_t dest, size_t src_start, size_t dest_start,
-            datatype_t datatype, gsl::span<const size_t> shape,
-            gsl::span<const size_t> strides,
-            gsl::span<const size_t> dest_strides) noexcept = 0;
+            datatype_t datatype, std::span<const size_t> shape,
+            std::span<const size_t> strides,
+            std::span<const size_t> dest_strides) noexcept = 0;
 
   private:
     size_t size_bytes_;
@@ -68,9 +68,9 @@ class NNCASE_API buffer_slice {
 
     result<host_buffer_slice> as_host() const noexcept;
     result<void> copy_to(const buffer_slice &dest, datatype_t datatype,
-                         gsl::span<const size_t> shape,
-                         gsl::span<const size_t> src_strides,
-                         gsl::span<const size_t> dest_strides) const noexcept;
+                         std::span<const size_t> shape,
+                         std::span<const size_t> src_strides,
+                         std::span<const size_t> dest_strides) const noexcept;
 
   private:
     buffer_t buffer_;

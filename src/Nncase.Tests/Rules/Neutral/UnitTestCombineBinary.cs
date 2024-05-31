@@ -7,7 +7,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Toolkit.HighPerformance;
 using Nncase.IR;
 using Nncase.Passes;
 using Xunit;

@@ -6,7 +6,7 @@
 <#@ import namespace="System.Diagnostics" #>
 <#
 var irs = (from l in File.ReadAllLines("src/Nncase.Core/IR/IRList.csv")
-          where !string.IsNullOrWhiteSpace(l)
+          where !string.IsNullOrWhiteSpace(l) && !l.StartsWith("#")
           let columns = l.Split(',')
           let isDerived = bool.Parse(columns[1])
           select new IRDef
@@ -18,8 +18,7 @@ var irs = (from l in File.ReadAllLines("src/Nncase.Core/IR/IRList.csv")
               Namespace = columns[4],
               Fields = isDerived ? columns[5].Split(new[]{';'}, StringSplitOptions.RemoveEmptyEntries) : Array.Empty<string>()
           }).ToArray();
-#>
-<#+
+#><#+
 struct IRDef
 {
     public string Name;

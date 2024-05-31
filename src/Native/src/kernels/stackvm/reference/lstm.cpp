@@ -31,12 +31,12 @@ template <typename T>
 result<void> lstm_impl(const T *input, const T *w_xc, const T *w_rc,
                        [[maybe_unused]] const T *bias, const T *init_h,
                        const T *init_c, T *output, T *output_h, T *output_c,
-                       gsl::span<const size_t> in_shape_3,
-                       gsl::span<const size_t> init_h_shape_3,
-                       gsl::span<const size_t> init_c_shape_3,
-                       gsl::span<const size_t> out_shape_3,
-                       gsl::span<const size_t> w_xc_shape_3,
-                       gsl::span<const size_t> w_rc_shape_3,
+                       std::span<const size_t> in_shape_3,
+                       std::span<const size_t> init_h_shape_3,
+                       std::span<const size_t> init_c_shape_3,
+                       std::span<const size_t> out_shape_3,
+                       std::span<const size_t> w_xc_shape_3,
+                       std::span<const size_t> w_rc_shape_3,
                        lstmdirection_t direction) {
     auto in_shape = to_4d(in_shape_3);
     auto init_h_shape = to_4d(init_h_shape_3);
@@ -201,13 +201,13 @@ result<void> lstm_impl(const T *input, const T *w_xc, const T *w_rc,
     }
 
 result<void> nncase::kernels::stackvm::reference::lstm(
-    typecode_t type, const gsl::byte *input, const gsl::byte *w_xc,
-    const gsl::byte *w_rc, [[maybe_unused]] const gsl::byte *bias,
-    const gsl::byte *init_h, const gsl::byte *init_c, gsl::byte *output,
-    gsl::byte *output_h, gsl::byte *output_c,
-    gsl::span<const size_t> in_shape_3, gsl::span<const size_t> init_h_shape_3,
-    gsl::span<const size_t> init_c_shape_3, gsl::span<const size_t> out_shape_3,
-    gsl::span<const size_t> w_xc_shape_3, gsl::span<const size_t> w_rc_shape_3,
+    typecode_t type, const std::byte *input, const std::byte *w_xc,
+    const std::byte *w_rc, [[maybe_unused]] const std::byte *bias,
+    const std::byte *init_h, const std::byte *init_c, std::byte *output,
+    std::byte *output_h, std::byte *output_c,
+    std::span<const size_t> in_shape_3, std::span<const size_t> init_h_shape_3,
+    std::span<const size_t> init_c_shape_3, std::span<const size_t> out_shape_3,
+    std::span<const size_t> w_xc_shape_3, std::span<const size_t> w_rc_shape_3,
     lstmdirection_t direction) {
     TYPE_SELECT_LSTM(type, LSTM_IMPL);
 }

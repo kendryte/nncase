@@ -25,9 +25,9 @@ inline bool is_py_shutdown() {
            g_python_shutdown.load(std::memory_order_acquire);
 }
 
-template <> struct type_caster<gsl::span<const gsl::byte>> {
+template <> struct type_caster<std::span<const std::byte>> {
   public:
-    PYBIND11_TYPE_CASTER(gsl::span<const gsl::byte>, _("bytes"));
+    PYBIND11_TYPE_CASTER(std::span<const std::byte>, _("bytes"));
 
     bool load(handle src, bool) {
         if (!py::isinstance<py::bytes>(src))
@@ -38,7 +38,7 @@ template <> struct type_caster<gsl::span<const gsl::byte>> {
         if (PyBytes_AsStringAndSize(
                 src.ptr(), reinterpret_cast<char **>(&buffer), &length))
             return false;
-        value = {(const gsl::byte *)buffer, (size_t)length};
+        value = {(const std::byte *)buffer, (size_t)length};
         loader_life_support::add_patient(src);
         return true;
     }

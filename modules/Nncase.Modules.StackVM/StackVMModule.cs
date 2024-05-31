@@ -14,6 +14,5 @@ internal class StackVMModule : IApplicationPart
 {
     public void ConfigureServices(IRegistrator registrator)
     {
-        registrator.Register<ITarget, CPUTarget>(reuse: Reuse.Singleton);
     }
 }

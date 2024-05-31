@@ -185,8 +185,9 @@ public static class Testing
     /// <param name="name">the dumped kmodel name.</param>
     /// <param name="module">Module.</param>
     /// <param name="compileSession">Compile session.</param>
+    /// <param name="readBytes">bool for readbytes.</param>
     /// <returns>kmodel_path and kmodel bytes.</returns>
-    public static (string KModelPath, byte[] KModel) BuildKModel(string name, IR.IRModule module, CompileSession compileSession)
+    public static (string KModelPath, byte[] KModel) BuildKModel(string name, IR.IRModule module, CompileSession compileSession, bool readBytes = true)
     {
         var modelBuilder = compileSession.GetRequiredService<IModelBuilder>();
         var linkedModel = modelBuilder.Build(module);
@@ -198,7 +199,7 @@ public static class Testing
             linkedModel.Serialize(output);
         }
 
-        return (kmodel_path, File.ReadAllBytes(kmodel_path));
+        return (kmodel_path, readBytes ? File.ReadAllBytes(kmodel_path) : Array.Empty<byte>());
     }
 
     /// <summary>
@@ -259,6 +260,19 @@ public static class Testing
         {
             interp.SetDumpRoot(dump_path);
             interp.LoadModel(kmodel);
+            var entry = interp.Entry!;
+
+            var rtInputs = input_tensors.Select(Nncase.Runtime.Interop.RTTensor.FromTensor).ToArray();
+            return entry.Invoke(rtInputs).ToValue();
+        }
+    }
+
+    public static IValue RunKModel(string kmodel_path, string dump_path, Tensor[] input_tensors)
+    {
+        using (var interp = Nncase.Runtime.Interop.RTInterpreter.Create())
+        {
+            interp.SetDumpRoot(dump_path);
+            interp.LoadModel(kmodel_path);
             var entry = interp.Entry!;
 
             var rtInputs = input_tensors.Select(Nncase.Runtime.Interop.RTTensor.FromTensor).ToArray();

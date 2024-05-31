@@ -204,7 +204,7 @@ struct unary_op_tanh {
 template <typename Top>
 result<void> optimized_unary_impl(const float *CXX_RESTRICT input,
                                   float *CXX_RESTRICT output,
-                                  gsl::span<const size_t> shape) noexcept {
+                                  std::span<const size_t> shape) noexcept {
     Top op;
     size_t n = compute_size(shape);
     size_t n8 = (n >> 3);
@@ -223,11 +223,11 @@ result<void> optimized_unary_impl(const float *CXX_RESTRICT input,
 }
 
 result<void> optimized::unary(typecode_t dtype, runtime::stackvm::unary_op_t op,
-                              const gsl::byte *in, gsl::byte *out,
-                              gsl::span<const size_t> shape,
-                              gsl::span<const size_t> in_strides,
-                              gsl::span<const size_t> out_shape,
-                              gsl::span<const size_t> out_strides,
+                              const std::byte *in, std::byte *out,
+                              std::span<const size_t> shape,
+                              std::span<const size_t> in_strides,
+                              std::span<const size_t> out_shape,
+                              std::span<const size_t> out_strides,
                               kernel_context &context) noexcept {
     auto *input = IN_CAST(float, in);
     auto *output = OUT_CAST(float, out);

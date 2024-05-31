@@ -23,3 +23,21 @@ PrimFunction,true,true,Default,TIR.,@Parameters;Body
 Sequential,true,false,Default,TIR.,@Fields
 Range,true,false,Default,TIR.,Start;Stop;Step
 IterVar,true,false,Default,TIR.,Value;Dom
+# Affine
+AffineExpr,false,false,Default,Affine.,
+AffineSymbolBase,false,false,AffineExpr,Affine.,
+AffineDim,true,false,AffineExpr,Affine.,
+AffineExtent,true,false,AffineSymbolBase,Affine.,
+AffineSymbol,true,false,AffineSymbolBase,Affine.,
+AffineConstant,true,false,AffineSymbolBase,Affine.,
+AffineAddBinary,true,false,AffineExpr,Affine.,Lhs;Rhs
+AffineMulBinary,true,false,AffineExpr,Affine.,Lhs;Rhs
+AffineDivBinary,true,false,AffineExpr,Affine.,Lhs;Rhs
+AffineDomain,true,false,Default,Affine.,Offset;Extent
+AffineRange,true,false,Default,Affine.,Offset;Extent
+AffineMap,true,false,Default,Affine.,@Domains;@Symbols;@Results
+Grid,true,false,Default,Affine.,@BodyParameters;@AccessMaps;@Buffers;@Reads;Body
+Load,true,false,Default,Affine.,Source;Region
+For,true,false,Default,Affine.,Domain;Body
+# Buffers
+BufferOf,true,false,Default,Buffers.,Input

@@ -141,7 +141,7 @@ struct unary_op_tanh_rvv {
 // float
 template <typename Top>
 result<void> optimized_unary_impl(const float *input, float *output,
-                                  gsl::span<const size_t> shape) noexcept {
+                                  std::span<const size_t> shape) noexcept {
     Top op;
     int32_t n = compute_size(shape);
     while (n > 0) {
@@ -161,15 +161,15 @@ result<void> optimized_unary_impl(const float *input, float *output,
 } // namespace
 
 // result<void> optimized::unary(runtime::stackvm::unary_op_t op, const float
-// *input, float *output, gsl::span<const size_t> shape,
-//    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+// *input, float *output, std::span<const size_t> shape,
+//    std::span<const size_t> in_strides, std::span<const size_t> out_strides,
 //    kernel_context &context) noexcept
 result<void> optimized::unary(typecode_t dtype, runtime::stackvm::unary_op_t op,
-                              const gsl::byte *in, gsl::byte *out,
-                              gsl::span<const size_t> shape,
-                              gsl::span<const size_t> in_strides,
-                              gsl::span<const size_t> out_shape,
-                              gsl::span<const size_t> out_strides,
+                              const std::byte *in, std::byte *out,
+                              std::span<const size_t> shape,
+                              std::span<const size_t> in_strides,
+                              std::span<const size_t> out_shape,
+                              std::span<const size_t> out_strides,
                               kernel_context &context) noexcept {
     if (dtype == dt_float32) {
 #if __riscv_vector

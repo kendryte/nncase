@@ -144,6 +144,10 @@ internal sealed class CompileCommand : Command
             name: "--model-layout",
             description: "the model's input layout.",
             getDefaultValue: () => string.Empty).FromAmong("NCHW", "NHWC");
+        BenchmarkOnly = new Option<bool>(
+            name: "--benchmark-only",
+            description: "whether to generate benchmark only model",
+            getDefaultValue: () => false);
         AddArgument(InputFile);
         AddArgument(OutputFile);
         AddGlobalOption(InputFormat);
@@ -167,6 +171,7 @@ internal sealed class CompileCommand : Command
         AddGlobalOption(Mean);
         AddGlobalOption(Std);
         AddGlobalOption(ModelLayout);
+        AddGlobalOption(BenchmarkOnly);
     }
 
     public Argument<string> InputFile { get; }
@@ -214,4 +219,6 @@ internal sealed class CompileCommand : Command
     public Option<IEnumerable<float>> Std { get; }
 
     public Option<string> ModelLayout { get; }
+
+    public Option<bool> BenchmarkOnly { get; }
 }

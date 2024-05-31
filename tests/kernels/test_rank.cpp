@@ -45,7 +45,7 @@ class RankTest : public KernelTest,
 
         int64_t expected_array[] = {(int64_t)l_shape.size()};
         expected = hrt::create(dt_int64, {1},
-                               {reinterpret_cast<gsl::byte *>(expected_array),
+                               {reinterpret_cast<std::byte *>(expected_array),
                                 sizeof(expected_array)},
                                true, host_runtime_tensor::pool_cpu_only)
                        .expect("create tensor failed");
@@ -65,7 +65,7 @@ TEST_P(RankTest, rank) {
     // actual
     int64_t shape_array[] = {1};
     auto shape = hrt::create(dt_int64, {1},
-                             {reinterpret_cast<gsl::byte *>(shape_array),
+                             {reinterpret_cast<std::byte *>(shape_array),
                               sizeof(shape_array)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");

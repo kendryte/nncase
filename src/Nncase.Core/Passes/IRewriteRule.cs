@@ -24,6 +24,24 @@ public interface IRewriteRule
     /// <param name="context">Run pass context.</param>
     /// <returns>Replace expression or null if nothing changed.</returns>
     Expr? GetReplace(IMatchResult result, RunPassContext context);
+
+    /// <summary>
+    /// Get replaced experssions.
+    /// </summary>
+    /// <param name="result">Match result.</param>
+    /// <param name="context">Run pass context.</param>
+    /// <returns>Replace expression or null if nothing changed.</returns>
+    List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
+    {
+        var candidates = new List<Expr> { };
+        var expr = GetReplace(result, context);
+        if (expr is not null)
+        {
+            candidates.Add(expr);
+        }
+
+        return candidates;
+    }
 }
 
 /// <summary>

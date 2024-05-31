@@ -28,7 +28,7 @@ namespace {
 
 template <typename T>
 result<void> cumsum_impl(const T *input, T *output,
-                         gsl::span<const size_t> in_shape, int32_t axis,
+                         std::span<const size_t> in_shape, int32_t axis,
                          bool exclusive, bool reverse) noexcept {
     const int32_t rank = in_shape.size();
     assert(rank >= 1);
@@ -90,8 +90,8 @@ result<void> cumsum_impl(const T *input, T *output,
     return cumsum_impl(IN_CAST(_ty, input), OUT_CAST(_ty, output), in_shape,   \
                        axis, exclusive, reverse);
 
-result<void> cumsum_impl(typecode_t typecode, const gsl::byte *input,
-                         gsl::byte *output, gsl::span<const size_t> in_shape,
+result<void> cumsum_impl(typecode_t typecode, const std::byte *input,
+                         std::byte *output, std::span<const size_t> in_shape,
                          int32_t axis, bool exclusive, bool reverse) noexcept {
     TYPE_SELECT(typecode, CUMSUM_IMPL)
 }

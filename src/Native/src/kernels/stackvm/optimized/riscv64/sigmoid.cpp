@@ -33,12 +33,12 @@ namespace {
 
 result<void>
 optimized_sigmoid_impl(const float *input, float *output,
-                       gsl::span<const size_t> in_shape,
-                       gsl::span<const size_t> in_strides,
-                       gsl::span<const size_t> out_strides) noexcept {
+                       std::span<const size_t> in_shape,
+                       std::span<const size_t> in_strides,
+                       std::span<const size_t> out_strides) noexcept {
 
     auto strides = get_default_strides(in_shape);
-    auto strides_span = gsl::span<const size_t>{strides.begin(), strides.end()};
+    auto strides_span = std::span<const size_t>{strides.begin(), strides.end()};
     if (std::equal(strides_span.begin(), strides_span.end(),
                    in_strides.begin())) {
         size_t ndim = in_shape.size();
@@ -105,10 +105,10 @@ optimized_sigmoid_impl(const float *input, float *output,
 
 template <typename T>
 result<void> optimized::sigmoid(const T *input, T *output,
-                                gsl::span<const size_t> in_shape,
-                                gsl::span<const size_t> in_strides,
-                                gsl::span<const size_t> out_shape,
-                                gsl::span<const size_t> out_strides,
+                                std::span<const size_t> in_shape,
+                                std::span<const size_t> in_strides,
+                                std::span<const size_t> out_shape,
+                                std::span<const size_t> out_strides,
                                 kernel_context &context) noexcept {
 #if __riscv_vector
     return optimized_sigmoid_impl(input, output, in_shape, in_strides,

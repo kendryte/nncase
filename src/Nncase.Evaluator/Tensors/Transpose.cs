@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using DryIoc.ImTools;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
@@ -21,6 +20,42 @@ namespace Nncase.Evaluator.Tensors;
 public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpose>, ICostEvaluator<Transpose>,
     IShapeEvaluator<Transpose>, IMetricEvaluator<Transpose>
 {
+    public static IRType Visit(TensorType input, Expr permExpr)
+    {
+        return TypeInference.TransposeType(input, permExpr);
+    }
+
+    public static IRType Visit(DistributedType input, Expr permExpr)
+    {
+        if (Visit(input.TensorType, permExpr) is not TensorType tensorType)
+        {
+            throw new InvalidOperationException();
+        }
+
+        if (permExpr is TensorConst permValue)
+        {
+            var perm = permValue.Value.ToArray<int>();
+            var ndsbp = new SBP[input.Placement.Rank];
+
+            for (int i = 0; i < input.Placement.Rank; i++)
+            {
+                switch (input.NdSBP[i])
+                {
+                    case SBPSplit { Axis: int ix }:
+                        ndsbp[i] = SBP.S(perm.IndexOf(ix));
+                        break;
+                    default:
+                        ndsbp[i] = input.NdSBP[i];
+                        break;
+                }
+            }
+
+            return new DistributedType(tensorType, ndsbp, input.Placement);
+        }
+
+        return new InvalidType(input.ToString());
+    }
+
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Transpose tr)
     {
@@ -66,11 +101,12 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
     public IRType Visit(ITypeInferenceContext context, Transpose target)
     {
         var input = context.CheckArgumentType<IRType>(target, Transpose.Input);
+        var permExpr = context.GetArgument(target, Transpose.Perm);
 
         return input switch
         {
-            DistributedType d => Visit(context, target, d),
-            TensorType t => Visit(context, target, t),
+            DistributedType d => Visit(d, permExpr),
+            TensorType t => Visit(t, permExpr),
             AnyType => AnyType.Default,
             _ => new InvalidType(input.GetType().ToString()),
         };
@@ -103,43 +139,5 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
         var inShape = context.GetArgumentShape(target, Transpose.Input);
         var perm = context.GetArgument(target, Transpose.Perm);
         return IR.F.ShapeExpr.TransposeShape(inShape, perm);
-    }
-
-    private IRType Visit(ITypeInferenceContext context, Transpose target, TensorType input)
-    {
-        var permExpr = context.GetArgument(target, Transpose.Perm);
-        return TypeInference.TransposeType(input, permExpr);
-    }
-
-    private IRType Visit(ITypeInferenceContext context, Transpose target, DistributedType input)
-    {
-        if (Visit(context, target, input.TensorType) is not TensorType tensorType)
-        {
-            throw new InvalidOperationException();
-        }
-
-        var permExpr = context.GetArgument(target, Transpose.Perm);
-        if (permExpr is TensorConst permValue)
-        {
-            var perm = permValue.Value.ToArray<int>();
-            var ndsbp = new SBP[input.Placement.Rank];
-
-            for (int i = 0; i < input.Placement.Rank; i++)
-            {
-                switch (input.NdSBP[i])
-                {
-                    case SBPSplit { Axis: int ix }:
-                        ndsbp[i] = SBP.S(perm.IndexOf(ix));
-                        break;
-                    default:
-                        ndsbp[i] = input.NdSBP[i];
-                        break;
-                }
-            }
-
-            return new DistributedType(tensorType, ndsbp, input.Placement);
-        }
-
-        return new InvalidType(input.ToString());
     }
 }

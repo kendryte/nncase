@@ -25,7 +25,7 @@ class NNCASE_MODULES_K210_API op_visitor {
 
     ~op_visitor() = default;
 
-    result<void> visit(gsl::span<const gsl::byte> text) noexcept;
+    result<void> visit(std::span<const std::byte> text) noexcept;
 
     virtual result<void>
     visit(NNCASE_UNUSED const kpu_download_options &op) noexcept {

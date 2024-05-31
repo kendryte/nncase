@@ -30,10 +30,10 @@ namespace {
 template <typename T>
 result<void> lrn_impl(const T *input, float alpha, float beta, float bias,
                       int64_t size, T *output, const T *square_sum,
-                      gsl::span<const size_t> in_shape,
-                      gsl::span<const size_t> in_strides,
-                      gsl::span<const size_t> out_strides) {
-    return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
+                      std::span<const size_t> in_shape,
+                      std::span<const size_t> in_strides,
+                      std::span<const size_t> out_strides) {
+    return apply(in_shape, [&](std::span<const size_t> index) -> result<void> {
         auto off = offset(in_strides, index);
         const auto x = input[off];
         const auto num = square_sum[off];
@@ -48,9 +48,9 @@ result<void> lrn_impl(const T *input, float alpha, float beta, float bias,
 template <typename T>
 result<void> lrn_impl2(typecode_t type, const T *input, float alpha, float beta,
                        float bias, int size, T *output,
-                       gsl::span<const size_t> in_shape,
-                       gsl::span<const size_t> in_strides,
-                       gsl::span<const size_t> out_strides) {
+                       std::span<const size_t> in_shape,
+                       std::span<const size_t> in_strides,
+                       std::span<const size_t> out_strides) {
     std::vector<std::unique_ptr<T[]>> tmpData;
     std::vector<dims_t> tmpShapes;
     std::vector<dims_t> tmpStrides;
@@ -78,7 +78,7 @@ result<void> lrn_impl2(typecode_t type, const T *input, float alpha, float beta,
         auto slice_out =
             std::make_unique<T[]>(runtime::compute_size(tmp_out_shape));
         try_(slice(type, IN_BYTE_CAST(square_data.get()),
-                   OUT_CAST(gsl::byte, slice_out.get()), in_shape, in_strides,
+                   OUT_CAST(std::byte, slice_out.get()), in_shape, in_strides,
                    out_strides, begins, ends, strides,
                    default_kernel_context()));
 
@@ -93,9 +93,9 @@ result<void> lrn_impl2(typecode_t type, const T *input, float alpha, float beta,
         tmpStrides.push_back(reduce_out_strides);
         auto init_value = 0;
         try_(nncase::kernels::stackvm::reference::reduce(
-            type, reduce_op_t::sum, IN_CAST(gsl::byte, &init_value),
-            IN_CAST(gsl::byte, slice_out.get()),
-            OUT_CAST(gsl::byte, tmpData[i].get()), tmp_out_shape, axes,
+            type, reduce_op_t::sum, IN_CAST(std::byte, &init_value),
+            IN_CAST(std::byte, slice_out.get()),
+            OUT_CAST(std::byte, tmpData[i].get()), tmp_out_shape, axes,
             tmp_out_strides, reduce_out_strides, keep_dims));
     }
 
@@ -107,12 +107,12 @@ result<void> lrn_impl2(typecode_t type, const T *input, float alpha, float beta,
     for (auto &tmpShape : tmpShapes) {
         concat_dims.push_back(tmpShape[axis]);
     }
-    std::vector<const gsl::byte *> concat_inputs;
+    std::vector<const std::byte *> concat_inputs;
     for (auto &i : tmpData) {
-        concat_inputs.push_back(IN_CAST(gsl::byte, i.get()));
+        concat_inputs.push_back(IN_CAST(std::byte, i.get()));
     }
     try_(nncase::kernels::stackvm::reference::concat(
-        type, concat_inputs, OUT_CAST(gsl::byte, concat_output.get()),
+        type, concat_inputs, OUT_CAST(std::byte, concat_output.get()),
         concat_shape, tmpStrides, concat_strides, axis, concat_dims))
         try_(lrn_impl(input, alpha, beta, bias, size, output,
                       concat_output.get(), in_shape, in_strides, out_strides));
@@ -139,8 +139,8 @@ result<void> lrn_impl2(typecode_t type, const T *input, float alpha, float beta,
     }
 
 result<void> nncase::kernels::stackvm::reference::lrn(
-    typecode_t typecode, const gsl::byte *input, float alpha, float beta,
-    float bias, int size, gsl::byte *output, gsl::span<const size_t> in_shape,
-    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides) {
+    typecode_t typecode, const std::byte *input, float alpha, float beta,
+    float bias, int size, std::byte *output, std::span<const size_t> in_shape,
+    std::span<const size_t> in_strides, std::span<const size_t> out_strides) {
     TYPE_SELECT_LRN(typecode, LRN_IMPL)
 }

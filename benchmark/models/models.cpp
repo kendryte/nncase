@@ -23,7 +23,7 @@ using namespace nncase;
 
 namespace
 {
-gsl::span<const gsl::byte> get_model_impl(const std::string &name, size_t id)
+std::span<const std::byte> get_model_impl(const std::string &name, size_t id)
 {
     auto hres = FindResourceW(NULL, MAKEINTRESOURCEW(id), L"Binary");
     if (!hres)
@@ -33,7 +33,7 @@ gsl::span<const gsl::byte> get_model_impl(const std::string &name, size_t id)
     if (!hmem)
         return {};
     auto res_data = LockResource(hmem);
-    return { reinterpret_cast<const gsl::byte *>(res_data), (size_t)size };
+    return { reinterpret_cast<const std::byte *>(res_data), (size_t)size };
 }
 }
 
@@ -41,7 +41,7 @@ gsl::span<const gsl::byte> get_model_impl(const std::string &name, size_t id)
     if (name == #model)       \
     return get_model_impl(name, IDR_cpu_##model)
 
-gsl::span<const gsl::byte> nncase::get_model(const std::string &name)
+std::span<const std::byte> nncase::get_model(const std::string &name)
 {
     GET_MODEL_IMPL(mnist);
     GET_MODEL_IMPL(mobilenet_v2);
@@ -55,9 +55,9 @@ INCBIN(mobilenet_v2, "cpu/mobilenet_v2.kmodel");
 
 #define GET_MODEL_IMPL(model) \
     if (name == #model)       \
-        return { reinterpret_cast<const gsl::byte *>(g##model##_data), g##model##_size }
+        return { reinterpret_cast<const std::byte *>(g##model##_data), g##model##_size }
 
-gsl::span<const gsl::byte> nncase::get_model(const std::string &name)
+std::span<const std::byte> nncase::get_model(const std::string &name)
 {
     GET_MODEL_IMPL(mnist);
     GET_MODEL_IMPL(mobilenet_v2);

@@ -36,8 +36,9 @@ public interface IEGraphRewriteProvider
     /// <param name="expr">Expression.</param>
     /// <param name="rules">Rewrite rules.</param>
     /// <param name="options">Options.</param>
+    /// <param name="compileOptions">compileOptions.</param>
     /// <returns>Rewrited expression.</returns>
-    Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options);
+    Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options, CompileOptions compileOptions);
 
     /// <summary>
     /// Rewrite egraph.

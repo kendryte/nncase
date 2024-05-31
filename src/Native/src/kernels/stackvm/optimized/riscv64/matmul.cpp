@@ -33,9 +33,9 @@
 //// float
 // result<void> optimized_matmul_impl(const float *input_a, const float
 // *input_b, const float *bias, float *output,
-//    gsl::span<const size_t> in_a_shape, gsl::span<const size_t> in_a_strides,
-//    const dims_t &in_b_shape, gsl::span<const size_t> in_b_strides,
-//    gsl::span<const size_t> out_shape, const dims_t out_strides,
+//    std::span<const size_t> in_a_shape, std::span<const size_t> in_a_strides,
+//    const dims_t &in_b_shape, std::span<const size_t> in_b_strides,
+//    std::span<const size_t> out_shape, const dims_t out_strides,
 //    value_range<float> fused_activation) noexcept
 //{
 //    size_t M = in_a_shape[in_a_shape.size() - 2];
@@ -115,16 +115,16 @@
 //
 ////template <typename T>
 ////result<void> optimized::matmul(const T *input_a, const T *input_b, const T
-///*bias, T *output, /    gsl::span<const size_t> in_a_shape, gsl::span<const
+///*bias, T *output, /    std::span<const size_t> in_a_shape, std::span<const
 /// size_t> in_a_strides,
-/// gsl::span<const size_t> in_b_shape, /    gsl::span<const size_t>
+/// std::span<const size_t> in_b_shape, /    std::span<const size_t>
 /// in_b_strides, const dims_t
-///&out_shape, gsl::span<const size_t> out_strides, /    value_range<float>
+///&out_shape, std::span<const size_t> out_strides, /    value_range<float>
 /// fused_activation) noexcept
-// result<void> matmul_impl(typecode_t typecode, const gsl::byte *input_a, const
-// gsl::byte *input_b, gsl::byte *output,
-//                         gsl::span<const size_t> in_a_shape,
-//                         gsl::span<const size_t> in_b_shape) noexcept
+// result<void> matmul_impl(typecode_t typecode, const std::byte *input_a, const
+// std::byte *input_b, std::byte *output,
+//                         std::span<const size_t> in_a_shape,
+//                         std::span<const size_t> in_b_shape) noexcept
 //{
 // #if __riscv_vector
 //    return optimized_matmul_impl(input_a, input_b, bias, output, in_a_shape,

@@ -71,7 +71,7 @@ public sealed class UnitTestMutators : TestClassBase
             var getBuffer = (int i, ParameterInfo info) =>
             {
                 var bufferRegion = (BufferRegion)((Call)post.Body.Fields[i])[info];
-                return bufferRegion.Buffer;
+                return (TIR.Buffer)bufferRegion.Buffer;
             };
             int count = 0;
             for (int w = 0; w < 48; w += 9)

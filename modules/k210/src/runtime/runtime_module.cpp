@@ -42,7 +42,7 @@ result<void> k210_runtime_module::initialize_before_functions(
     assert(context.is_section_pinned());
     auto data_pool = mempool(mem_data);
     if (data_pool.size) {
-        data_.reset(new (std::nothrow) gsl::byte[data_pool.size]);
+        data_.reset(new (std::nothrow) std::byte[data_pool.size]);
         if (!data_)
             return err(std::errc::not_enough_memory);
     }
@@ -57,21 +57,21 @@ result<void> k210_runtime_module::initialize_before_functions(
     return ok();
 }
 
-gsl::span<gsl::byte> k210_runtime_module::data() const noexcept {
+std::span<std::byte> k210_runtime_module::data() const noexcept {
     return {data_.get(), mempool(mem_data).size};
 }
 
-gsl::span<gsl::byte> k210_runtime_module::kpu_ram() noexcept {
-    gsl::byte *base;
+std::span<std::byte> k210_runtime_module::kpu_ram() noexcept {
+    std::byte *base;
 #ifdef NNCASE_SIMULATOR
     base = kpu_ram_.data();
 #else
-    base = reinterpret_cast<gsl::byte *>(AI_IO_BASE_ADDR);
+    base = reinterpret_cast<std::byte *>(AI_IO_BASE_ADDR);
 #endif
     return {base, KPU_RAM_SIZE};
 }
 
-gsl::span<const gsl::byte> k210_runtime_module::rdata() const noexcept {
+std::span<const std::byte> k210_runtime_module::rdata() const noexcept {
     return rdata_;
 }
 

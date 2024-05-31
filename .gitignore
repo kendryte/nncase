@@ -261,6 +261,7 @@ __pycache__/
 
 # vscode
 .vscode/
+.mono/
 
 # clangd
 .cache/
@@ -307,3 +308,4 @@ cmake-build-*
 *.ipynb_checkpoints*
 # Auto generated files
 # generated/
+.history/

@@ -116,6 +116,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         // {
         //     return new TensorType(lhs.DType, Shape.Unranked);
         // }
+        DataType dtype = lhs.DType;
         if (lhs.DType != rhs.DType)
         {
             return new InvalidType("MatMul lhs and rhs have different DType");
@@ -126,9 +127,17 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             return new InvalidType("MatMul lhs and rhs have not compatiable shape");
         }
 
-        if (lhs.Shape.Count == 2 && rhs.Shape.Count == 2)
+        if (lhs.DType is VectorType vl && rhs.DType is VectorType vr)
         {
-            return new TensorType(lhs.DType, new[] { lhs.Shape[0], rhs.Shape[1] });
+            if (vl.Lanes.Count != vr.Lanes.Count)
+            {
+                return new InvalidType("MatMul lhs and rhs have different lanes vector type.");
+            }
+
+            if (vl.Lanes.Count == 1)
+            {
+                dtype = vl.ElemType;
+            }
         }
 
         var lhsShape = lhs.Shape.Rank >= rhs.Shape.Rank ? lhs.Shape.ToArray() : Enumerable.Repeat((Dimension)1, rhs.Shape.Rank - lhs.Shape.Rank).Concat(lhs.Shape).ToArray();
@@ -142,7 +151,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         // batch and channel
         var front = bigShape;
         var end = new[] { lhs.Shape[^2], rhs.Shape[^1] };
-        return new TensorType(lhs.DType, front.Concat(end).ToArray());
+        return new TensorType(dtype, front.Concat(end).ToArray());
     }
 
     /// <inheritdoc/>

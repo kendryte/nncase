@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "../shape.h"
 #include "../tensor.h"
 #include "allocator.h"
 #include "buffer.h"
@@ -29,8 +30,8 @@ BEGIN_NS_NNCASE_RUNTIME
 #define IN_CAST(_ty, _name) reinterpret_cast<const _ty *>(_name)
 #define OUT_CAST(_ty, _name) reinterpret_cast<_ty *>(_name)
 #define SCALAR_CAST(_ty, _name) *reinterpret_cast<const _ty *>(_name)
-#define IN_BYTE_CAST(_var) IN_CAST(gsl::byte, _var)
-#define OUT_BYTE_CAST(_var) OUT_CAST(gsl::byte, _var)
+#define IN_BYTE_CAST(_var) IN_CAST(std::byte, _var)
+#define OUT_BYTE_CAST(_var) OUT_CAST(std::byte, _var)
 
 // compare type
 // for typecode, datatype_t, tensor(tensor->dtype())
@@ -104,18 +105,16 @@ inline result<std::vector<dims_t>> get_strides(tuple inputs) {
 
 // get input and output
 inline result<void> alloc_output(value_t &output, datatype_t dtype,
-                                 gsl::span<const size_t> out_shape) {
+                                 std::span<const size_t> out_shape) {
     // TODO: copy back output
     if (output.empty()) {
         try_var(typecode, to_typecode(dtype));
         try_var(out_tensor, hrt::create(typecode, dims_t(out_shape)));
         output = out_tensor.impl();
     } else {
-        try_var(
-            out_tensor,
-            output.as<tensor>()) if (out_tensor->shape() !=
-                                     out_shape) return err(nncase_errc::
-                                                               shape_mismatch);
+        try_var(out_tensor, output.as<tensor>());
+        if (nncase::operator!=(out_tensor->shape(), out_shape))
+            return err(nncase_errc::shape_mismatch);
     }
     return ok();
 }
@@ -126,7 +125,8 @@ inline result<void> check_tuple_shape(value_t &outputs,
     try_(tuple_for_each_with_i(
         output_tuple, [&](auto &output, auto i) -> result<void> {
             try_var(out_tensor, output.template as<tensor>());
-            if (out_tensor->shape() != gsl::span(out_shapes[i])) {
+            if (nncase::operator!=(out_tensor->shape(),
+                                   std::span(out_shapes[i]))) {
                 return err(nncase_errc::shape_mismatch);
             } else {
                 return ok();
@@ -176,50 +176,50 @@ inline result<host_buffer_slice> get_host_buffer(tensor tensor) {
     return ok(tensor_buffer);
 }
 
-inline result<gsl::span<gsl::byte>> get_output_span(tensor output) {
+inline result<std::span<std::byte>> get_output_span(tensor output) {
     try_var(output_buffer, get_host_buffer(output));
     try_var(output_map, output_buffer.map(map_write));
     return ok(output_map.buffer());
 }
 
-inline result<gsl::byte *> get_output_data(tensor output) {
+inline result<std::byte *> get_output_data(tensor output) {
     try_var(output_buffer, get_output_span(output));
     return ok(output_buffer.data());
 }
 
-inline result<std::vector<gsl::byte *>> get_output_data(tuple outputs) {
-    return get_from_tuple_with_result<gsl::byte *, true>(
+inline result<std::vector<std::byte *>> get_output_data(tuple outputs) {
+    return get_from_tuple_with_result<std::byte *, true>(
         outputs, [](tensor &input) { return get_output_data(input); });
 }
 
-inline result<gsl::span<gsl::byte>> get_input_span(tensor input) {
+inline result<std::span<std::byte>> get_input_span(tensor input) {
     try_var(input_buffer, get_host_buffer(input));
     try_var(input_map, input_buffer.map(map_read));
     return ok(input_map.buffer());
 }
 
-inline result<gsl::byte *> get_input_data(tensor input) {
+inline result<std::byte *> get_input_data(tensor input) {
     try_var(input_buffer, get_input_span(input));
     return ok(input_buffer.data());
 }
 
-inline result<std::vector<gsl::byte *>> get_input_data(tuple inputs) {
-    return get_from_tuple_with_result<gsl::byte *, true>(
+inline result<std::vector<std::byte *>> get_input_data(tuple inputs) {
+    return get_from_tuple_with_result<std::byte *, true>(
         inputs, [](tensor &input) { return get_input_data(input); });
 }
 
-inline result<std::vector<gsl::byte *>> get_readonly_span(tuple inputs) {
+inline result<std::vector<std::byte *>> get_readonly_span(tuple inputs) {
     return get_input_data(inputs);
 }
 
-inline result<gsl::byte *> get_readonly_span(tensor input) {
+inline result<std::byte *> get_readonly_span(tensor input) {
     return get_input_data(input);
 }
 
 // some macro about get value for tensor_ops.cpp
 // implicit define tensor/tuple for try_input[xxx] and try_output[xxx]
 // e.g. try_input(in_mem, input) ->
-// 1. in_mem: const gsl::byte*
+// 1. in_mem: const std::byte*
 // 2. input_tensor: tensor
 #define try_alloc_output(_out_tensor, _dt, _shape, _is_tuple)                  \
     try_(alloc_output(_out_tensor, _dt, _shape));
@@ -338,7 +338,7 @@ inline result<gsl::byte *> get_readonly_span(tensor input) {
 
 // get data from value
 template <typename TI, typename TO>
-itlib::small_vector<TO, 8> to_vec(const gsl::byte *input, size_t size) {
+itlib::small_vector<TO, 8> to_vec(const std::byte *input, size_t size) {
     auto in_ptr = reinterpret_cast<const TI *>(input);
     auto vec = itlib::small_vector<TO, 8>(size);
     for (size_t i = 0; i < size; ++i) {
@@ -506,17 +506,17 @@ inline bool is_contiguous(tensor tensor) {
 
 // used for op only do reshape
 inline tensor tensor_reshape(tensor in_tensor,
-                             gsl::span<const size_t> new_shape) {
+                             std::span<const size_t> new_shape) {
     auto strides = get_default_strides(new_shape);
     return tensor(std::in_place, in_tensor->dtype(), new_shape, strides,
                   in_tensor->buffer());
 }
 
 inline bool is_scalar(tensor t) noexcept { return t->shape().empty(); }
-inline bool is_scalar(gsl::span<const size_t> t) noexcept { return t.empty(); }
+inline bool is_scalar(std::span<const size_t> t) noexcept { return t.empty(); }
 
 template <typename F>
-inline result<void> integer_cast(datatype_t type, const gsl::byte *input,
+inline result<void> integer_cast(datatype_t type, const std::byte *input,
                                  F &&f) {
     if (cmp_type<int32_t>(type)) {
         try_(f(IN_CAST(int32_t, input)));
@@ -530,7 +530,7 @@ inline result<void> integer_cast(datatype_t type, const gsl::byte *input,
 
 // used for slice args
 inline std::tuple<axes_t, axes_t, axes_t>
-slice_fill(gsl::span<const size_t> in_shape, axes_t &begins_value,
+slice_fill(std::span<const size_t> in_shape, axes_t &begins_value,
            axes_t &ends_value, axes_t &strides_value, axes_t axes_value) {
     auto ndim = in_shape.size();
     axes_t begin_values(ndim, 0);
@@ -585,6 +585,14 @@ inline dims_t to_4d(dims_t in_a_shape) {
         in_a_shape.insert(in_a_shape.begin(), 1);
     }
     return in_a_shape;
+}
+
+template <class U, class T, size_t Extent>
+constexpr std::span<U, Extent == std::dynamic_extent
+                           ? std::dynamic_extent
+                           : Extent * sizeof(T) / sizeof(U)>
+as_span(std::span<T, Extent> src) noexcept {
+    return {(U *)src.data(), src.size_bytes() / sizeof(U)};
 }
 
 inline void shrink_memory_pool() {

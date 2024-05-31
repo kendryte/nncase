@@ -51,3 +51,23 @@ public partial class ExprCloner<TContext> : ExprVisitor<Expr, IRType, TContext>
         return array;
     }
 }
+
+public sealed class ReplacingExprCloner : ExprCloner<Unit>
+{
+    private readonly IReadOnlyDictionary<Expr, Expr> _replaces;
+
+    public ReplacingExprCloner(IReadOnlyDictionary<Expr, Expr> replaces)
+    {
+        _replaces = replaces;
+    }
+
+    protected override Expr DispatchVisit(Expr expr, Unit context)
+    {
+        if (_replaces.TryGetValue(expr, out var replacement))
+        {
+            return replacement;
+        }
+
+        return base.DispatchVisit(expr, context);
+    }
+}

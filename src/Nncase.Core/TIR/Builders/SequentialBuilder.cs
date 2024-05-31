@@ -11,12 +11,6 @@ using Nncase.IR;
 
 namespace Nncase.TIR.Builders;
 
-public interface IExprBuilder<out T>
-    where T : Expr
-{
-    T Build();
-}
-
 /// <summary>
 /// Build the sequential.
 /// </summary>

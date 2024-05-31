@@ -27,7 +27,7 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
         _logger = logger;
     }
 
-    public Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options)
+    public Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options, CompileOptions compileOptions)
     {
         if (expr.CheckedType is null)
         {
@@ -36,7 +36,7 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
 
         var graph = new EGraph(expr);
         ERewrite(graph, rules, options);
-        var post = graph.Extract(graph.Root!, null, Array.Empty<EGraphExtractConstrains>());
+        var post = graph.Extract(graph.Root!, compileOptions, null, Array.Empty<EGraphExtractConstrains>());
         return post;
     }
 
@@ -70,9 +70,9 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
             {
                 var replacedExprs = (from result in results
                                      let oldExpr = ((ENode)result.Root).Expr
-                                     let newExpr = rule.GetReplace(result, context)?.InheritMetaData(oldExpr)
+                                     from newExpr in rule.GetReplaceCandidates(result, context)
                                      where newExpr != null
-                                     select (oldExpr, eGraph.Find((ENode)result.Root), newExpr)).ToList();
+                                     select (oldExpr, eGraph.Find((ENode)result.Root), newExpr.InheritMetaData(oldExpr))).ToList();
 
                 foreach (var (oldExpr, oldEClass, newExpr) in replacedExprs)
                 {

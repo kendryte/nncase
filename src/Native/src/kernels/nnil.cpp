@@ -22,7 +22,7 @@ using namespace nncase::kernels;
 
 result<void> kernels::nnil_unary_method(const float *input, float *output,
                                         size_t count,
-                                        gsl::span<const gsl::byte> body,
+                                        std::span<const std::byte> body,
                                         kernel_context &context) noexcept {
     return cpu::reference::nnil_unary_method(input, output, count, body,
                                              context);

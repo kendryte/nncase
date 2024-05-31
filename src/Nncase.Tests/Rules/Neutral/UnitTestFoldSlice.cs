@@ -53,14 +53,14 @@ public class UnitTestFoldSlice : TransformTestBase
             new object[]
             {
                 new[] { 4, 4, 6, 8 },
-                new[] { 0 }, new[] { 6 }, new[] { 3 }, new[] { -3 },
-                new[] { 0 }, new[] { 4 }, new[] { 2 }, new[] { -2 },
+                new[] { 0 }, new[] { 6 }, new[] { 3 }, new[] { 3 },
+                new[] { 0 }, new[] { 4 }, new[] { 2 }, new[] { 2 },
             }, // negative axis
             new object[]
             {
                 new[] { 3, 4, 6, 8 },
-                new[] { 0 }, new[] { -1 }, new[] { 3 }, new[] { -3 },
-                new[] { -5 }, new[] { 4 }, new[] { 2 }, new[] { -2 },
+                new[] { 0 }, new[] { -1 }, new[] { 3 }, new[] { 3 },
+                new[] { -5 }, new[] { 4 }, new[] { 2 }, new[] { 2 },
             }, // negative begin|end
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 

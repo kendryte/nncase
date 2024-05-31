@@ -35,8 +35,8 @@ size_t compute_out_size(int input_size, int weights_size,
            paddings[offset].before - paddings[offset].after;
 }
 
-dims_t conv2d_transpose_infer_shape(gsl::span<const size_t> in_shape,
-                                    gsl::span<const size_t> w_shape,
+dims_t conv2d_transpose_infer_shape(std::span<const size_t> in_shape,
+                                    std::span<const size_t> w_shape,
                                     const strides_t &strides,
                                     paddings_t paddings,
                                     const dims_t &outPadding,

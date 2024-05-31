@@ -274,6 +274,14 @@ public static class Math
     public static Call BitwiseXor(Expr lhs, Expr rhs) => Binary(BinaryOp.BitwiseXor, lhs, rhs);
 
     /// <summary>
+    /// Call ceil div.
+    /// </summary>
+    /// <param name="lhs">Left operand.</param>
+    /// <param name="rhs">Right operand.</param>
+    /// <returns>Result expression.</returns>
+    public static Call CeilDiv(Expr lhs, Expr rhs) => Binary(BinaryOp.CeilDiv, lhs, rhs);
+
+    /// <summary>
     /// Call logical and.
     /// </summary>
     /// <param name="lhs">Left operand.</param>
@@ -319,7 +327,7 @@ public static class Math
     /// <param name="lhs">Left operand.</param>
     /// <param name="rhs">Right operand.</param>
     /// <returns>Result expression.</returns>
-    public static Call FloorDiv(Expr lhs, Expr rhs) => Floor(lhs / rhs);
+    public static Call FloorDiv(Expr lhs, Expr rhs) => Binary(BinaryOp.FloorDiv, lhs, rhs);
 
     /// <summary>
     /// Call floor mod.

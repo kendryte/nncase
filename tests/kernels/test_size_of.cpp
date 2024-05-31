@@ -59,14 +59,14 @@ TEST_P(SizeOfTest, SizeOf) {
     int64_t ptr_ort[] = {sizeof(input.shape())};
     auto expected =
         hrt::create(dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(ptr_ort), sizeof(ptr_ort)},
+                    {reinterpret_cast<std::byte *>(ptr_ort), sizeof(ptr_ort)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
     // actual
     int64_t shape_ort[] = {1};
     auto shape = hrt::create(dt_int64, {1},
-                             {reinterpret_cast<gsl::byte *>(shape_ort),
+                             {reinterpret_cast<std::byte *>(shape_ort),
                               sizeof(shape_ort)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");

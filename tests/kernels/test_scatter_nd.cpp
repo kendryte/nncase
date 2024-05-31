@@ -47,7 +47,7 @@ class ScatterNDTest : public KernelTest,
 
         int64_t indices_array[] = {0, 0, 1, 1, 0, 1};
         indices = hrt::create(typecode2, indices_shape,
-                              {reinterpret_cast<gsl::byte *>(indices_array),
+                              {reinterpret_cast<std::byte *>(indices_array),
                                sizeof(indices_array)},
                               true, host_runtime_tensor::pool_cpu_only)
                       .expect("create tensor failed");
@@ -82,7 +82,7 @@ TEST_P(ScatterNDTest, ScatterND) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 

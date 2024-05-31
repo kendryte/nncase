@@ -1,0 +1,4 @@
+@model Nncase.CodeGen.CPU.TypedKernelTemplateModel<Nncase.TIR.CPU.Reshape>
+@{
+}
+tensor_copy(@(Html.Raw(Model.Arguments[0].Symbol.Name)).reshape(fixed_shape<@string.Join(",", Model.Target.NewShape)>{}), @Html.Raw(Model.Arguments[1].Symbol.Name));

@@ -28,8 +28,12 @@ public sealed class UnitTestDumpUtility
     [Fact]
     public void TestDumpUtility()
     {
-        DumpUtility.WriteResult("./test3", "1");
-        DumpUtility.WriteResult<int>("./test3", new[] { 1 });
+        using (var stream = File.OpenWrite("./test3"))
+        {
+            DumpUtility.WriteResult(stream, "1");
+            DumpUtility.WriteResult<int>(stream, new[] { 1 });
+        }
+
         DumpUtility.SerializeShape(new[] { 1, 1, 1 });
         DumpUtility.PathJoinByCreate("./", "test4");
         DumpUtility.WriteBinFile("./test5", new Tensor<int>(new[] { 1 }));

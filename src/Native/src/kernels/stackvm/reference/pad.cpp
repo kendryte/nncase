@@ -27,7 +27,7 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 
 namespace {
-dims_t get_padded_shape(gsl::span<const size_t> in_shape,
+dims_t get_padded_shape(std::span<const size_t> in_shape,
                         const paddings_t &paddings) {
     dims_t out_shape(in_shape.size());
     for (size_t i = 0; i < in_shape.size(); i++)
@@ -36,8 +36,8 @@ dims_t get_padded_shape(gsl::span<const size_t> in_shape,
     return out_shape;
 }
 
-dims_t get_in_index(gsl::span<const size_t> index,
-                    gsl::span<const size_t> in_shape,
+dims_t get_in_index(std::span<const size_t> index,
+                    std::span<const size_t> in_shape,
                     const paddings_t &paddings, pad_mode_t mode,
                     bool &pad_element) {
     dims_t in_index(index.size());
@@ -80,12 +80,12 @@ dims_t get_in_index(gsl::span<const size_t> index,
 
 template <class T>
 result<void>
-pad_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
-         gsl::span<const size_t> out_shape, gsl::span<const size_t> in_strides,
-         gsl::span<const size_t> out_strides, const paddings_t &paddings,
+pad_impl(const T *input, T *output, std::span<const size_t> in_shape,
+         std::span<const size_t> out_shape, std::span<const size_t> in_strides,
+         std::span<const size_t> out_strides, const paddings_t &paddings,
          pad_mode_t mode, T pad_value,
          NNCASE_UNUSED kernel_context &context) noexcept {
-    return apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {
+    return apply(out_shape, [&](std::span<const size_t> index) -> result<void> {
         bool pad_element = false;
         auto in_index =
             get_in_index(index, in_shape, paddings, mode, pad_element);
@@ -148,8 +148,8 @@ void pad_data2(T *in, T *out, int cl, int dl, int hl, int wl, int ch, int dh,
 }
 
 template <class T>
-void padding_impl_opt(T *in, T *out, gsl::span<const size_t> in_shape,
-                      gsl::span<const size_t> out_shape, T value) {
+void padding_impl_opt(T *in, T *out, std::span<const size_t> in_shape,
+                      std::span<const size_t> out_shape, T value) {
     int cl, dl, hl, wl;
     int ch, dh, hh, wh;
     if (in_shape.size() == 3 ||
@@ -196,10 +196,10 @@ void padding_impl_opt(T *in, T *out, gsl::span<const size_t> in_shape,
 
 template <class T>
 result<void> interior_pad_impl(const T *input, T *output,
-                               NNCASE_UNUSED gsl::span<const size_t> in_shape,
-                               gsl::span<const size_t> out_shape,
-                               NNCASE_UNUSED gsl::span<const size_t> in_strides,
-                               gsl::span<const size_t> out_strides,
+                               NNCASE_UNUSED std::span<const size_t> in_shape,
+                               std::span<const size_t> out_shape,
+                               NNCASE_UNUSED std::span<const size_t> in_strides,
+                               std::span<const size_t> out_strides,
                                const paddings_t &paddings, T pad_value,
                                NNCASE_UNUSED kernel_context &context) noexcept {
     size_t idx = 0;
@@ -210,7 +210,7 @@ result<void> interior_pad_impl(const T *input, T *output,
     bool h_pad = paddings[h_axis].interior != 0 ? true : false;
     bool w_pad = paddings[w_axis].interior != 0 ? true : false;
 
-    return apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {
+    return apply(out_shape, [&](std::span<const size_t> index) -> result<void> {
         bool pad_element =
             (h_pad && (index[h_axis] % (paddings[h_axis].interior + 1) != 0)) ||
             (w_pad && (index[w_axis] % (paddings[w_axis].interior + 1) != 0));
@@ -224,10 +224,10 @@ result<void> interior_pad_impl(const T *input, T *output,
 } // namespace
 
 result<void> nncase::kernels::stackvm::reference::pad(
-    datatype_t type, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> out_strides, const paddings_t &paddings,
-    pad_mode_t mode, const gsl::byte *pad_value,
+    datatype_t type, const std::byte *input, std::byte *output,
+    std::span<const size_t> in_shape, std::span<const size_t> in_strides,
+    std::span<const size_t> out_strides, const paddings_t &paddings,
+    pad_mode_t mode, const std::byte *pad_value,
     kernel_context &context) noexcept {
     auto unit = runtime::get_bytes(type);
     bool padding_before_is_zero =

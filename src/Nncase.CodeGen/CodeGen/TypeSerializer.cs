@@ -32,6 +32,16 @@ public static class TypeSerializer
                 writer.Write(t.Uuid.ToByteArray());
                 writer.Write(t.SizeInBytes);
                 break;
+            case VectorType t:
+                writer.Write((byte)Runtime.TypeCode.VectorType);
+                Serialize(writer, t.ElemType);
+                writer.Write(checked((byte)t.Lanes.Count));
+                for (int i = 0; i < t.Lanes.Count; i++)
+                {
+                    writer.Write(t.Lanes[i]);
+                }
+
+                break;
             default:
                 throw new ArgumentException($"Unsupported datatype: {dataType}");
         }

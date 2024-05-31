@@ -66,29 +66,29 @@ TEST_P(ClampTest, clamp) {
     float min[] = {min_value};
     auto min_tensor_float =
         hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(min), sizeof(min)}, true,
+                    {reinterpret_cast<std::byte *>(min), sizeof(min)}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
     float max[] = {max_value};
     auto max_tensor_float =
         hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(max), sizeof(max)}, true,
+                    {reinterpret_cast<std::byte *>(max), sizeof(max)}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
     auto output_ort =
         ortki_Clip(runtime_tensor_2_ort_tensor(input),
                    ortki_CastLike(runtime_tensor_2_ort_tensor(min_tensor_float),
-                                  runtime_tensor_2_ort_tensor(input)),
+                                  runtime_tensor_2_ort_tensor(input), 1),
                    ortki_CastLike(runtime_tensor_2_ort_tensor(max_tensor_float),
-                                  runtime_tensor_2_ort_tensor(input)));
+                                  runtime_tensor_2_ort_tensor(input), 1));
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 

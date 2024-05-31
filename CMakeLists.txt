@@ -39,8 +39,6 @@ project(nncase
   VERSION ${NNCASE_VERSION}
   LANGUAGES C CXX ASM)
 
-option(ENABLE_OPENMP "OpenMP support" ON)
-option(ENABLE_HALIDE "halide kernels support" ON)
 option(DOTNET_INIT_FOR_CONFIG "Initialize dotnet from runtimeconfig" OFF)
 option(BUILD_PYTHON_BINDING "Build python binding" ON)
 option(BUILD_CSHARP_BINDING "Build csharp binding" ON)
@@ -65,6 +63,12 @@ endif()
 
 if(NOT CMAKE_TOOLCHAIN_FILE)
    include(toolchains/native.toolchain.cmake)
+endif()
+
+# Workaroud for riscv toolchain auto vectorization bugs in O3
+if (${CMAKE_SYSTEM_PROCESSOR} MATCHES
+   "(riscv32)|(riscv64)")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
 endif()
 
 if (BUILDING_RUNTIME)
@@ -110,7 +114,7 @@ if (BUILDING_RUNTIME)
     else()
         add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-type-limits)
         if (APPLE)
-            add_compile_options(-Wno-four-char-constants -Wno-sometimes-uninitialized)
+            add_compile_options(-Wno-four-char-constants -Wno-sometimes-uninitialized -Wno-deprecated-declarations)
         elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
             add_compile_options(-Wno-uninitialized -Wno-unused-private-field)
         else()
@@ -128,9 +132,13 @@ if (BUILDING_RUNTIME)
     #    add_subdirectory(src/Native/src/kernels)
     #    add_subdirectory(src/Native/src/runtime)
     add_subdirectory(src/Native/src)
+    if(BUILD_TESTING)
+        add_subdirectory(src/Native/test/ctest)
+    endif()
 #    add_subdirectory(src/Native/src/functional)
     if(BUILD_BENCHMARK)
 #        add_subdirectory(benchmark)
+        add_subdirectory(src/Native/test/benchmark_test)
     endif()
 
     # Python binding
@@ -218,7 +226,9 @@ else()
 
     add_subdirectory(src/Native/include/nncase)
     add_subdirectory(src/Native/src)
-
+if(BUILD_TESTING)
+    add_subdirectory(src/Native/test/ctest)
+endif()
     # Python binding
     if(BUILD_PYTHON_BINDING)
         add_subdirectory(python/nncase/native)

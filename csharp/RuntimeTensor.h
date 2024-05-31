@@ -94,8 +94,8 @@ RuntimeTensor_from_buffer(const uint8_t *buffer_ptr, datatype_t datatype,
         host_runtime_tensor::create(
             (datatype_t)datatype, to_shape(shape_ptr, shape_size),
             to_strides(stride_ptr, shape_size),
-            gsl::make_span((gsl::byte *)(buffer_ptr), total_items * item_size),
-            [=](gsl::byte *) {})
+            gsl::make_span((std::byte *)(buffer_ptr), total_items * item_size),
+            [=](std::byte *) {})
             .unwrap_or_throw();
     auto rt = new runtime_tensor(std::move(hostrt));
     return rt;

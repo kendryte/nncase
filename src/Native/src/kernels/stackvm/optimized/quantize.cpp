@@ -81,10 +81,10 @@ result<void> quantize(const float *CXX_RESTRICT input, TQ *CXX_RESTRICT output,
     }
 
 result<void> optimized::quantize(
-    datatype_t in_type, datatype_t out_type, const gsl::byte *input,
-    gsl::byte *output, gsl::span<const size_t> in_shape,
-    NNCASE_UNUSED gsl::span<const size_t> in_strides,
-    NNCASE_UNUSED gsl::span<const size_t> out_strides, float scale, float bias,
+    datatype_t in_type, datatype_t out_type, const std::byte *input,
+    std::byte *output, std::span<const size_t> in_shape,
+    NNCASE_UNUSED std::span<const size_t> in_strides,
+    NNCASE_UNUSED std::span<const size_t> out_strides, float scale, float bias,
     NNCASE_UNUSED kernel_context &context) noexcept {
     QUANTIZE_IMPL(float, uint8_t)
     QUANTIZE_IMPL(float, int8_t)

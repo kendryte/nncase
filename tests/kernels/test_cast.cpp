@@ -82,13 +82,13 @@ TEST_P(CastTest, cast) {
     // expected
     //    cast_copy_tensor(input, expected);
     auto output_ort = ortki_CastLike(runtime_tensor_2_ort_tensor(input),
-                                     runtime_tensor_2_ort_tensor(actual));
+                                     runtime_tensor_2_ort_tensor(actual), 1);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(actual.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
@@ -114,14 +114,14 @@ TEST_P(CastTest, cast) {
 
     // expected
     auto output_ort1 = ortki_CastLike(runtime_tensor_2_ort_tensor(input1),
-                                      runtime_tensor_2_ort_tensor(actual1));
+                                      runtime_tensor_2_ort_tensor(actual1), 1);
     size_t size1 = 0;
     void *ptr_ort1 = tensor_buffer(output_ort1, &size1);
     dims_t shape1(tensor_rank(output_ort1));
     tensor_shape(output_ort1, reinterpret_cast<int64_t *>(shape1.data()));
     auto expected1 =
         hrt::create(actual1.datatype(), shape1,
-                    {reinterpret_cast<gsl::byte *>(ptr_ort1), size1}, true,
+                    {reinterpret_cast<std::byte *>(ptr_ort1), size1}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 

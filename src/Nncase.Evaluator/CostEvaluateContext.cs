@@ -17,9 +17,10 @@ internal sealed class CostEvaluateContext : ICostEvaluateContext
     private readonly Dictionary<Expr, Cost> _exprMemo;
     private Call? _currentCall;
 
-    public CostEvaluateContext(Dictionary<Expr, Cost> exprMemo)
+    public CostEvaluateContext(Dictionary<Expr, Cost> exprMemo, CompileOptions compileOptions)
     {
         _exprMemo = exprMemo;
+        CompileOptions = compileOptions;
     }
 
     public Call CurrentCall
@@ -27,6 +28,8 @@ internal sealed class CostEvaluateContext : ICostEvaluateContext
         get => _currentCall ?? throw new InvalidOperationException("Current call is not set in evaluator.");
         set => _currentCall = value;
     }
+
+    public CompileOptions CompileOptions { get; }
 
     public T GetArgument<T>(Op op, ParameterInfo parameter)
       where T : BaseFunction

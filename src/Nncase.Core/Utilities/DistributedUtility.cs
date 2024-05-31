@@ -17,7 +17,7 @@ public static class DistributedUtility
             var ndsbp = new List<SBP>();
             for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
             {
-                if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && IsDivideBy(s, placement.Hierarchy[i]))
+                if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && placement.Hierarchy[i] > 1 && IsDivideExactly(s, placement.Hierarchy[i]))
                 {
                     ndsbp.Add(SBP.S(axis));
                 }
@@ -50,7 +50,7 @@ public static class DistributedUtility
                 candidateNdsbps[i].Add(SBP.B);
                 for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
                 {
-                    if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && IsDivideBy(s, placement.Hierarchy[i]) && !innerSplitedAxes.Contains(axis))
+                    if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && placement.Hierarchy[i] > 1 && IsDivideExactly(s, placement.Hierarchy[i]) && !innerSplitedAxes.Contains(axis))
                     {
                         candidateNdsbps[i].Add(SBP.S(axis));
                     }
@@ -73,7 +73,7 @@ public static class DistributedUtility
         }
 
         var divisors = GetDivisors(new DistributedType(tensorType, new IRArray<SBP>(ndsbp.ToArray()), placement));
-        return divisors.Select((d, axis) => (d, axis)).All(p => p.d == 0 ? true : IsDivideBy(tensorType.Shape[p.axis].FixedValue, p.d));
+        return divisors.Select((d, axis) => (d, axis)).All(p => p.d == 0 ? true : IsDivideExactly(tensorType.Shape[p.axis].FixedValue, p.d));
     }
 
     public static IReadOnlyList<int> GetDivisors(DistributedType distributedType)

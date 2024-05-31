@@ -25,7 +25,7 @@ public sealed class UnFoldBlock : ExprRewriter
             {
                 if (expr.AllocBuffers.Length > 0)
                 {
-                    var lets = expr.AllocBuffers.ToArray().Select(b => (T.Let(out var v, b.MemSpan.Start, b.Name + "_ptr"), v)).ToArray();
+                    var lets = expr.AllocBuffers.ToArray().Select(b => (T.Let(out var v, IR.F.Buffer.AllocateBufferView(b), b.Name), v)).ToArray();
                     for (int i = 0; i < lets.Length - 1; i++)
                     {
                         lets[i].Item1.Body(lets[i + 1].Item1);
@@ -34,7 +34,7 @@ public sealed class UnFoldBlock : ExprRewriter
                     var map = new Dictionary<Expr, Expr>(ReferenceEqualityComparer.Instance);
                     for (int i = 0; i < expr.AllocBuffers.Length; i++)
                     {
-                        map.Add(expr.AllocBuffers[i].MemSpan.Start, lets[i].v);
+                        map.Add(expr.AllocBuffers[i], lets[i].v);
                     }
 
                     var mutator = new Substitutor(e =>

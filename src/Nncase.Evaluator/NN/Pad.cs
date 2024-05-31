@@ -79,22 +79,38 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Pad target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Pad.Input);
+        var input = context.CheckArgumentType<IRType>(target, Pad.Input);
         var paddings = context.GetArgument(target, Pad.Pads);
         var padValue = context.GetArgument(target, Pad.Value);
-        return TypeInference.PadType(input, paddings, padValue);
+        return input switch
+        {
+            DistributedType distributedType => Visit(distributedType, paddings, padValue),
+            TensorType tensorType => TypeInference.PadType(tensorType, paddings, padValue),
+            AnyType anyType => anyType,
+            _ => new InvalidType("The pad input type not support"),
+        };
+    }
+
+    public IRType Visit(DistributedType input, Expr paddings, Expr padValue)
+    {
+        if (TypeInference.PadType(input.TensorType, paddings, padValue) is not TensorType tensorType)
+        {
+            return new InvalidType("pad infer type failed");
+        }
+
+        return new DistributedType(tensorType, input.NdSBP, input.Placement);
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Pad target)
     {
-        var inputType = context.GetArgumentType<TensorType>(target, Pad.Input);
+        var inputType = context.GetArgumentType<IRType>(target, Pad.Input);
         var outputType = context.GetReturnType<IRType>();
 
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
-            [CostFactorNames.MemoryStore] = outputType is TensorType outT ? CostUtility.GetMemoryAccess(outT) : CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
         };
     }
 

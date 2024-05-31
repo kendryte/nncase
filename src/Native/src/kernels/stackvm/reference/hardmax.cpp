@@ -30,8 +30,8 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 
 template <typename T>
-result<void> hardmax_impl(const T *input, gsl::span<const size_t> in_shape,
-                          gsl::span<const size_t> in_strides, T *output,
+result<void> hardmax_impl(const T *input, std::span<const size_t> in_shape,
+                          std::span<const size_t> in_strides, T *output,
                           int32_t axis) noexcept {
     // init with init_value
     auto cmp = [](T a, T b) { return a > b; };
@@ -43,14 +43,14 @@ result<void> hardmax_impl(const T *input, gsl::span<const size_t> in_shape,
     auto max_stride = get_default_strides(max_shape);
     std::unique_ptr<T[]> ptr(new T[compute_size(max_shape)]);
     try_(kernels::stackvm::apply(
-        max_shape, [&](gsl::span<const size_t> index) -> result<void> {
+        max_shape, [&](std::span<const size_t> index) -> result<void> {
             ptr[offset(max_stride, index)] = init_value;
             return ok();
         }));
 
     // collact all max indices
     std::unordered_map<size_t, size_t> out_map;
-    try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
+    try_(apply(in_shape, [&](std::span<const size_t> index) -> result<void> {
         size_t src_idx = offset(in_strides, index);
         const auto src = input[src_idx];
         auto out_idx =
@@ -78,9 +78,9 @@ result<void> hardmax_impl(const T *input, gsl::span<const size_t> in_shape,
     return hardmax_impl(IN_CAST(_ty, input), in_shape, in_strides,             \
                         OUT_CAST(_ty, output), axis);
 
-result<void> hardmax_impl(typecode_t typecode, const gsl::byte *input,
-                          gsl::span<const size_t> in_shape,
-                          gsl::span<const size_t> in_strides, gsl::byte *output,
+result<void> hardmax_impl(typecode_t typecode, const std::byte *input,
+                          std::span<const size_t> in_shape,
+                          std::span<const size_t> in_strides, std::byte *output,
                           int32_t axis) noexcept {
     TYPE_SELECT(typecode, HARDMAX_IMPL)} // namespace
 

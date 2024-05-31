@@ -22,7 +22,7 @@ using namespace nncase::runtime;
 using namespace nncase::kernels;
 
 result<void> kernels::batch_to_space(
-    datatype_t type, const gsl::byte *input, gsl::byte *output,
+    datatype_t type, const std::byte *input, std::byte *output,
     const runtime_shape_t &in_shape, const runtime_shape_t &block_shape,
     const runtime_paddings_t &crops, const runtime_shape_t &in_strides,
     const runtime_shape_t &out_strides, kernel_context &context) noexcept {
@@ -31,8 +31,8 @@ result<void> kernels::batch_to_space(
                                           out_strides, context);
 }
 
-result<void> kernels::broadcast(datatype_t type, const gsl::byte *input,
-                                gsl::byte *output,
+result<void> kernels::broadcast(datatype_t type, const std::byte *input,
+                                std::byte *output,
                                 const runtime_shape_t &in_shape,
                                 const runtime_shape_t &in_strides,
                                 const runtime_shape_t &out_shape,
@@ -43,10 +43,10 @@ result<void> kernels::broadcast(datatype_t type, const gsl::byte *input,
 }
 
 result<void> kernels::concat(datatype_t type,
-                             gsl::span<const gsl::byte *const> inputs,
-                             gsl::byte *output,
+                             std::span<const std::byte *const> inputs,
+                             std::byte *output,
                              const runtime_shape_t &out_shape,
-                             gsl::span<const runtime_shape_t> in_strides,
+                             std::span<const runtime_shape_t> in_strides,
                              const runtime_shape_t &out_strides, size_t axis,
                              const runtime_shape_t &concat_dims,
                              kernel_context &context) noexcept {
@@ -62,7 +62,7 @@ result<void> kernels::concat(datatype_t type,
 }
 
 result<void> kernels::convert(datatype_t in_type, datatype_t out_type,
-                              const gsl::byte *input, gsl::byte *output,
+                              const std::byte *input, std::byte *output,
                               const runtime_shape_t &in_shape,
                               const runtime_shape_t &in_strides,
                               const runtime_shape_t &out_strides,
@@ -71,8 +71,8 @@ result<void> kernels::convert(datatype_t in_type, datatype_t out_type,
                                    in_strides, out_strides, context);
 }
 
-result<void> kernels::copy(datatype_t type, const gsl::byte *src,
-                           gsl::byte *dest, const runtime_shape_t &shape,
+result<void> kernels::copy(datatype_t type, const std::byte *src,
+                           std::byte *dest, const runtime_shape_t &shape,
                            const runtime_shape_t &src_strides,
                            const runtime_shape_t &dest_strides,
                            kernel_context &context) noexcept {
@@ -106,7 +106,7 @@ result<void> kernels::copy(datatype_t type, const gsl::byte *src,
 }
 
 result<void> kernels::dequantize(datatype_t in_type, datatype_t out_type,
-                                 const gsl::byte *input, gsl::byte *output,
+                                 const std::byte *input, std::byte *output,
                                  const runtime_shape_t &in_shape,
                                  const runtime_shape_t &in_strides,
                                  const runtime_shape_t &out_strides,
@@ -154,8 +154,8 @@ result<void> kernels::equal(const T *input_a, const T *input_b, bool *output,
                                  out_strides);
 }
 
-result<void> kernels::lut1d(datatype_t type, const gsl::byte *input,
-                            const gsl::byte *table, gsl::byte *output,
+result<void> kernels::lut1d(datatype_t type, const std::byte *input,
+                            const std::byte *table, std::byte *output,
                             const runtime_shape_t &shape,
                             const runtime_shape_t &in_strides,
                             const runtime_shape_t &out_strides,
@@ -181,11 +181,11 @@ result<void> kernels::matmul(const T *input_a, const T *input_b, const T *bias,
 }
 
 result<void>
-kernels::onehot(datatype_t type, const int32_t *indices, gsl::byte *output,
+kernels::onehot(datatype_t type, const int32_t *indices, std::byte *output,
                 const runtime_shape_t &indices_shape,
                 const runtime_shape_t &out_shape,
-                const runtime_shape_t &out_strides, gsl::byte *depth,
-                gsl::byte *off_value, gsl::byte *on_value, size_t axis,
+                const runtime_shape_t &out_strides, std::byte *depth,
+                std::byte *off_value, std::byte *on_value, size_t axis,
                 onehot_mode_t mode, kernel_context &context) noexcept {
     if (is_contiguous(out_shape, out_strides) &&
         (indices_shape.size() - axis) < 4) {
@@ -199,8 +199,8 @@ kernels::onehot(datatype_t type, const int32_t *indices, gsl::byte *output,
     }
 }
 
-result<void> kernels::pad(datatype_t type, const gsl::byte *input,
-                          gsl::byte *output, const runtime_shape_t &in_shape,
+result<void> kernels::pad(datatype_t type, const std::byte *input,
+                          std::byte *output, const runtime_shape_t &in_shape,
                           const runtime_shape_t &in_strides,
                           const runtime_shape_t &out_strides,
                           const runtime_paddings_t &paddings, pad_mode_t mode,
@@ -211,7 +211,7 @@ result<void> kernels::pad(datatype_t type, const gsl::byte *input,
 }
 
 result<void> kernels::quantize(datatype_t in_type, datatype_t out_type,
-                               const gsl::byte *input, gsl::byte *output,
+                               const std::byte *input, std::byte *output,
                                const runtime_shape_t &in_shape,
                                const runtime_shape_t &in_strides,
                                const runtime_shape_t &out_strides, float scale,
@@ -227,8 +227,8 @@ result<void> kernels::quantize(datatype_t in_type, datatype_t out_type,
                                     context);
 }
 
-result<void> kernels::transpose(datatype_t type, const gsl::byte *src,
-                                gsl::byte *dest,
+result<void> kernels::transpose(datatype_t type, const std::byte *src,
+                                std::byte *dest,
                                 const runtime_shape_t &in_shape,
                                 const runtime_shape_t &perm,
                                 const runtime_shape_t &in_strides,
@@ -325,7 +325,7 @@ kernels::reduce_prod(const T *input, T *output, const runtime_shape_t &in_shape,
     }
 
 result<void> kernels::resize_bilinear(
-    datatype_t type, const gsl::byte *input, gsl::byte *output,
+    datatype_t type, const std::byte *input, std::byte *output,
     const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
     const runtime_shape_t &out_strides, int32_t out_h, int32_t out_w,
     bool align_corners, bool half_pixel_centers,
@@ -334,7 +334,7 @@ result<void> kernels::resize_bilinear(
 }
 
 result<void> kernels::resize_nearest_neighbor(
-    datatype_t type, const gsl::byte *input, gsl::byte *output,
+    datatype_t type, const std::byte *input, std::byte *output,
     const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
     const runtime_shape_t &out_strides, int32_t out_h, int32_t out_w,
     bool align_corners, bool half_pixel_centers,
@@ -342,8 +342,8 @@ result<void> kernels::resize_nearest_neighbor(
     DISPATCH_RESIZE(resize_nearest_neighbor);
 }
 
-result<void> kernels::slice(datatype_t type, const gsl::byte *input,
-                            gsl::byte *output, const runtime_shape_t &in_shape,
+result<void> kernels::slice(datatype_t type, const std::byte *input,
+                            std::byte *output, const runtime_shape_t &in_shape,
                             const runtime_shape_t &in_strides,
                             const runtime_shape_t &out_strides,
                             const runtime_shape_t &begins,
@@ -368,8 +368,8 @@ result<void> kernels::slice(datatype_t type, const gsl::byte *input,
     }
 }
 
-result<void> kernels::gather(datatype_t in_type, const gsl::byte *input,
-                             gsl::byte *output, const runtime_shape_t &in_shape,
+result<void> kernels::gather(datatype_t in_type, const std::byte *input,
+                             std::byte *output, const runtime_shape_t &in_shape,
                              const runtime_shape_t &out_shape,
                              const runtime_shape_t &in_strides,
                              const runtime_shape_t &out_strides,
@@ -389,7 +389,7 @@ result<void> kernels::gather(datatype_t in_type, const gsl::byte *input,
 }
 
 result<void> kernels::gather_nd(
-    datatype_t in_type, const gsl::byte *input, gsl::byte *output,
+    datatype_t in_type, const std::byte *input, std::byte *output,
     const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
     const int32_t *indices, const runtime_shape_t &indices_shape,

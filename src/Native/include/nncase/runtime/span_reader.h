@@ -14,10 +14,10 @@
  */
 #pragma once
 #include <cstring>
-#include <gsl/gsl-lite.hpp>
 #include <iterator>
 #include <nncase/compiler_defs.h>
 #include <nncase/runtime/dbg.h>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -25,14 +25,14 @@ BEGIN_NS_NNCASE_RUNTIME
 
 class span_reader {
   public:
-    span_reader(gsl::span<const gsl::byte> span)
-        : begin_(span.begin()), end_(span.end()) {}
+    span_reader(std::span<const std::byte> span)
+        : begin_(span.data()), end_(span.data() + span.size()) {}
 
-    const gsl::byte *tell() const noexcept { return begin_; }
+    const std::byte *tell() const noexcept { return begin_; }
     bool empty() const noexcept { return begin_ == end_; }
     size_t avail() const noexcept { return end_ - begin_; }
 
-    void seek(const gsl::byte *pos) noexcept { begin_ = pos; }
+    void seek(const std::byte *pos) noexcept { begin_ = pos; }
 
     template <class T> T read() {
         auto value = *reinterpret_cast<const T *>(begin_);
@@ -52,21 +52,26 @@ class span_reader {
         advance(sizeof(T));
     }
 
-    template <class T> void read_span(gsl::span<const T> &span, size_t size) {
+    template <class T> void read_span(std::span<const T> &span, size_t size) {
         span = {reinterpret_cast<const T *>(begin_), size};
         advance(sizeof(T) * size);
     }
 
-    template <class T = gsl::byte> gsl::span<const T> read_span(size_t size) {
-        gsl::span<const T> span(reinterpret_cast<const T *>(begin_), size);
+    template <class T> void read_span(std::span<T> span) {
+        std::memcpy(span.data(), begin_, span.size_bytes());
+        advance(span.size_bytes());
+    }
+
+    template <class T = std::byte> std::span<const T> read_span(size_t size) {
+        std::span<const T> span(reinterpret_cast<const T *>(begin_), size);
         advance(sizeof(T) * size);
         return span;
     }
 
     std::string read_string() {
-        auto span = read_until((gsl::byte)0).as_span<const char>();
+        auto span = read_until((std::byte)0);
         advance(1);
-        return {span.begin(), span.end()};
+        return {reinterpret_cast<const char *>(span.data()), span.size()};
     }
 
     std::vector<std::string> read_string_array() {
@@ -81,23 +86,23 @@ class span_reader {
         return array;
     }
 
-    void read_avail(gsl::span<const gsl::byte> &span) {
+    void read_avail(std::span<const std::byte> &span) {
         span = {begin_, end_};
         begin_ = end_;
     }
 
-    gsl::span<const gsl::byte> read_until(gsl::byte value) {
+    std::span<const std::byte> read_until(std::byte value) {
         auto it = std::find(begin_, end_, value);
         return read_span((size_t)std::distance(begin_, it));
     }
 
-    gsl::span<const gsl::byte> read_avail() {
-        gsl::span<const gsl::byte> span;
+    std::span<const std::byte> read_avail() {
+        std::span<const std::byte> span;
         read_avail(span);
         return span;
     }
 
-    gsl::span<const gsl::byte> peek_avail() { return {begin_, end_}; }
+    std::span<const std::byte> peek_avail() { return {begin_, end_}; }
 
     template <class T> T peek_with_offset(size_t offset) {
         auto value = *reinterpret_cast<const T *>(begin_ + offset);
@@ -138,8 +143,8 @@ class span_reader {
     }
 
   private:
-    const gsl::byte *begin_;
-    const gsl::byte *end_;
+    const std::byte *begin_;
+    const std::byte *end_;
 };
 
 END_NS_NNCASE_RUNTIME

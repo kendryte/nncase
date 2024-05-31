@@ -86,18 +86,18 @@ public static class ValueDumper
 
 public static class DumpUtility
 {
-    public static void WriteResult(string path, string data, string prefix = "")
+    public static void WriteResult(Stream stream, string data, string prefix = "")
     {
-        using (var stream = new StreamWriter(path))
+        using (var sw = new StreamWriter(stream, leaveOpen: true))
         {
-            stream.Write(prefix);
-            stream.Write(data);
+            sw.Write(prefix);
+            sw.Write(data);
         }
     }
 
-    public static void WriteResult<T>(string path, T[] data, string prefix = "")
+    public static void WriteResult<T>(Stream stream, T[] data, string prefix = "")
     {
-        WriteResult(path, SerializeByColumn(data), prefix);
+        WriteResult(stream, SerializeByColumn(data), prefix);
     }
 
     public static string SerializeByColumn<T>(T[] f)
@@ -194,9 +194,9 @@ public static class DumpUtility
     {
         var inputStr = string.Join("\n", inputs.Select(input => string.Join(" ", input.Shape.ToValueArray())));
         var outputStr = string.Join("\n", outputs.Select(output => string.Join(" ", output.Shape.ToValueArray())));
-        var content =
-            $"{inputs.Length} {outputs.Length}\n{inputStr}\n{outputStr}";
-        DumpUtility.WriteResult(Path.Join(dir, "kmodel.desc"), content);
+        var content = $"{inputs.Length} {outputs.Length}\n{inputStr}\n{outputStr}";
+        using var file = File.OpenWrite(Path.Join(dir, "kmodel.desc"));
+        DumpUtility.WriteResult(file, content);
     }
 }
 

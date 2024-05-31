@@ -16,7 +16,7 @@ namespace Nncase;
 /// <summary>
 /// The targets own compile options.
 /// </summary>
-public interface ITargetCompileOptions
+public interface ITargetOptions
 {
 }
 
@@ -34,7 +34,7 @@ public interface ITarget
     /// create the current target's command and parser.
     /// </summary>
     /// <returns>command.</returns>
-    (System.CommandLine.Command Command, Func<System.CommandLine.Invocation.InvocationContext, System.CommandLine.Command, ITargetCompileOptions> Parser) RegisterCommandAndParser();
+    (System.CommandLine.Command Command, Func<System.CommandLine.Invocation.InvocationContext, System.CommandLine.Command, ITargetOptions> Parser) RegisterCommandAndParser();
 
     /// <summary>
     /// Bind Quant Method And Quant Cosine With IR.
@@ -105,7 +105,7 @@ public interface ITarget
     IModuleBuilder CreateModuleBuilder(string moduleKind, CompileOptions options);
 }
 
-public sealed class DefaultTargetCompileOptions : ITargetCompileOptions
+public sealed class DefaultTargetCompileOptions : ITargetOptions
 {
     public static readonly DefaultTargetCompileOptions Instance = new();
 

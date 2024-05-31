@@ -48,7 +48,7 @@ class SliceTest : public KernelTest,
         }
 
         input = hrt::create(typecode, l_shape,
-                            {reinterpret_cast<gsl::byte *>(input_array),
+                            {reinterpret_cast<std::byte *>(input_array),
                              sizeof(input_array)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
@@ -57,7 +57,7 @@ class SliceTest : public KernelTest,
         int64_t *begin_array = (int64_t *)malloc(begin_size * sizeof(int64_t));
         std::copy(value1.begin(), value1.end(), begin_array);
         begin = hrt::create(dt_int64, {begin_size},
-                            {reinterpret_cast<gsl::byte *>(begin_array),
+                            {reinterpret_cast<std::byte *>(begin_array),
                              begin_size * sizeof(int64_t)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create1 tensor failed");
@@ -66,7 +66,7 @@ class SliceTest : public KernelTest,
         int64_t *end_array = (int64_t *)malloc(end_size * sizeof(int64_t));
         std::copy(value2.begin(), value2.end(), end_array);
         end = hrt::create(dt_int64, {begin_size},
-                          {reinterpret_cast<gsl::byte *>(end_array),
+                          {reinterpret_cast<std::byte *>(end_array),
                            end_size * sizeof(int64_t)},
                           true, host_runtime_tensor::pool_cpu_only)
                   .expect("create2 tensor failed");
@@ -75,7 +75,7 @@ class SliceTest : public KernelTest,
         int64_t *axes_array = (int64_t *)malloc(axes_size * sizeof(int64_t));
         std::copy(value3.begin(), value3.end(), axes_array);
         axes = hrt::create(dt_int64, {begin_size},
-                           {reinterpret_cast<gsl::byte *>(axes_array),
+                           {reinterpret_cast<std::byte *>(axes_array),
                             axes_size * sizeof(int64_t)},
                            true, host_runtime_tensor::pool_cpu_only)
                    .expect("create3 tensor failed");
@@ -85,7 +85,7 @@ class SliceTest : public KernelTest,
             (int64_t *)malloc(strides_size * sizeof(int64_t));
         std::copy(value4.begin(), value4.end(), strides_array);
         strides = hrt::create(dt_int64, {begin_size},
-                              {reinterpret_cast<gsl::byte *>(strides_array),
+                              {reinterpret_cast<std::byte *>(strides_array),
                                strides_size * sizeof(int64_t)},
                               true, host_runtime_tensor::pool_cpu_only)
                       .expect("create4 tensor failed");
@@ -110,7 +110,7 @@ TEST_P(SliceTest, Slice) {
     int32_t result[] = {0, 1, 2, 3, 4};
     auto expected =
         hrt::create(input.datatype(), {1, 1, 1, 5},
-                    {reinterpret_cast<gsl::byte *>(result), sizeof(result)},
+                    {reinterpret_cast<std::byte *>(result), sizeof(result)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 

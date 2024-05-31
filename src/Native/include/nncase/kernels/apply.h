@@ -41,49 +41,49 @@ namespace detail {
 #define APPLY_IMPL_FOR(i) for (index[i] = 0; index[i] < shape[i]; index[i]++)
 
 template <class Callable>
-result<void> apply_1(gsl::span<const size_t> shape,
+result<void> apply_1(std::span<const size_t> shape,
                      Callable &&callable) noexcept {
     size_t index[1];
     APPLY_IMPL_FOR(0)
-    try_(callable(gsl::span(index)));
+    try_(callable(std::span(index)));
     return ok();
 }
 
 template <class Callable>
-result<void> apply_2(gsl::span<const size_t> shape,
+result<void> apply_2(std::span<const size_t> shape,
                      Callable &&callable) noexcept {
     size_t index[2];
     APPLY_IMPL_FOR(0)
     APPLY_IMPL_FOR(1)
-    try_(callable(gsl::span(index)));
+    try_(callable(std::span(index)));
     return ok();
 }
 
 template <class Callable>
-result<void> apply_3(gsl::span<const size_t> shape,
+result<void> apply_3(std::span<const size_t> shape,
                      Callable &&callable) noexcept {
     size_t index[3];
     APPLY_IMPL_FOR(0)
     APPLY_IMPL_FOR(1)
     APPLY_IMPL_FOR(2)
-    try_(callable(gsl::span(index)));
+    try_(callable(std::span(index)));
     return ok();
 }
 
 template <class Callable>
-result<void> apply_4(gsl::span<const size_t> shape,
+result<void> apply_4(std::span<const size_t> shape,
                      Callable &&callable) noexcept {
     size_t index[4];
     APPLY_IMPL_FOR(0)
     APPLY_IMPL_FOR(1)
     APPLY_IMPL_FOR(2)
     APPLY_IMPL_FOR(3)
-    try_(callable(gsl::span(index)));
+    try_(callable(std::span(index)));
     return ok();
 }
 
 template <class Callable>
-result<void> apply_5(gsl::span<const size_t> shape,
+result<void> apply_5(std::span<const size_t> shape,
                      Callable &&callable) noexcept {
     size_t index[5];
     APPLY_IMPL_FOR(0)
@@ -91,12 +91,12 @@ result<void> apply_5(gsl::span<const size_t> shape,
     APPLY_IMPL_FOR(2)
     APPLY_IMPL_FOR(3)
     APPLY_IMPL_FOR(4)
-    try_(callable(gsl::span(index)));
+    try_(callable(std::span(index)));
     return ok();
 }
 
 template <class Callable>
-result<void> apply_generic(gsl::span<const size_t> shape,
+result<void> apply_generic(std::span<const size_t> shape,
                            Callable &&callable) noexcept {
     auto index_buffer = (size_t *)
 #ifdef _WIN32
@@ -106,7 +106,7 @@ result<void> apply_generic(gsl::span<const size_t> shape,
 #endif
         (sizeof(size_t) * shape.size());
 
-    gsl::span<size_t> index(index_buffer, shape.size());
+    std::span<size_t> index(index_buffer, shape.size());
     std::fill(index.begin(), index.end(), 0);
     auto last_dim_idx = (int32_t)shape.size() - 1;
     while (true) {
@@ -128,7 +128,7 @@ result<void> apply_generic(gsl::span<const size_t> shape,
 } // namespace detail
 
 template <class Callable>
-result<void> apply(gsl::span<const size_t> shape,
+result<void> apply(std::span<const size_t> shape,
                    Callable &&callable) noexcept {
     switch (shape.size()) {
     case 0:

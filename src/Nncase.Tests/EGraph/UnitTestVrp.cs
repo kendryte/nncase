@@ -154,13 +154,17 @@ public class UnitTestVrp : TestClassBase
         // 3. soft clause
         var solver = new CpSolver();
         solver.StringParameters = "enumerate_all_solutions:true";
+#if DEBUG
         System.Console.WriteLine(model.Validate());
+#endif
         var status = solver.Solve(model, new PrintCallBack(vars, costs));
         if (status is CpSolverStatus.Feasible or CpSolverStatus.Optimal)
         {
             foreach (var v in vars)
             {
+#if DEBUG
                 System.Console.WriteLine(v.Name() + " " + solver.BooleanValue(v));
+#endif
             }
 
             Assert.True(solver.BooleanValue(vars[0]));
@@ -205,6 +209,7 @@ public class UnitTestVrp : TestClassBase
 
     private static void PrintSolution(in IDataModel data, in RoutingModel routing, in RoutingIndexManager manager, in Assignment solution)
     {
+#if DEBUG
         Console.WriteLine($"Objective {solution.ObjectiveValue()}:");
 
         // Inspect solution.
@@ -228,6 +233,7 @@ public class UnitTestVrp : TestClassBase
         }
 
         Console.WriteLine("Maximum distance of the routes: {0}m", maxRouteDistance);
+#endif
     }
 
     private class PrintCallBack : CpSolverSolutionCallback
@@ -245,6 +251,7 @@ public class UnitTestVrp : TestClassBase
 
         public override void OnSolutionCallback()
         {
+#if DEBUG
             System.Console.WriteLine($"Solution {_count++}");
             foreach (var v in _vars)
             {
@@ -253,6 +260,9 @@ public class UnitTestVrp : TestClassBase
 
             System.Console.WriteLine("costs: " + _vars.Zip(_costs).Select(p => BooleanValue(p.First) ? p.Second : 0).Sum());
             System.Console.WriteLine();
+#else
+            _count++;
+#endif
         }
     }
 }

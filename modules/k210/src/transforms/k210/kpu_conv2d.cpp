@@ -143,9 +143,9 @@ auto quantize_act(quantizer &quantizer, float act_in_scale,
 
         fused_unary::compile_graph(fu->subgraph(), builder);
         auto buf = ss.str();
-        std::vector<gsl::byte> body(
-            reinterpret_cast<gsl::byte *>(buf.data()),
-            reinterpret_cast<gsl::byte *>(buf.data() + buf.size()));
+        std::vector<std::byte> body(
+            reinterpret_cast<std::byte *>(buf.data()),
+            reinterpret_cast<std::byte *>(buf.data() + buf.size()));
         kernels::nnil_unary_method(samples_x.data(), samples_y.data(),
                                    samples_count, body)
             .unwrap_or_throw();

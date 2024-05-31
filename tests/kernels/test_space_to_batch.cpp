@@ -42,7 +42,7 @@ class SpaceToBatchTest : public KernelTest,
             float expected_array[] = {1, 5, 2, 6, 3, 7, 4, 8};
             expected =
                 hrt::create(typecode, l_shape,
-                            {reinterpret_cast<gsl::byte *>(expected_array),
+                            {reinterpret_cast<std::byte *>(expected_array),
                              sizeof(expected_array)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
@@ -51,7 +51,7 @@ class SpaceToBatchTest : public KernelTest,
                                       5, 7, 13, 15, 6, 8, 14, 16};
             expected =
                 hrt::create(typecode, l_shape,
-                            {reinterpret_cast<gsl::byte *>(expected_array),
+                            {reinterpret_cast<std::byte *>(expected_array),
                              sizeof(expected_array)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
@@ -74,27 +74,27 @@ TEST_P(SpaceToBatchTest, SpaceToBatch) {
     if (expected.shape().size() == 3) {
         float a[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
         input = hrt::create(dt_float32, {1, 4, 3},
-                            {reinterpret_cast<gsl::byte *>(a), sizeof(a)}, true,
+                            {reinterpret_cast<std::byte *>(a), sizeof(a)}, true,
                             host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     } else if (expected.shape().size() == 4) {
         float a[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
         input = hrt::create(dt_float32, {1, 4, 4, 1},
-                            {reinterpret_cast<gsl::byte *>(a), sizeof(a)}, true,
+                            {reinterpret_cast<std::byte *>(a), sizeof(a)}, true,
                             host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     }
 
     int64_t shape_array[] = {2, 2};
     auto shape = hrt::create(dt_int64, {2},
-                             {reinterpret_cast<gsl::byte *>(shape_array),
+                             {reinterpret_cast<std::byte *>(shape_array),
                               sizeof(shape_array)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
 
     int64_t crops_array[] = {0, 0, 0, 0};
     auto crops = hrt::create(dt_int64, {2, 2},
-                             {reinterpret_cast<gsl::byte *>(crops_array),
+                             {reinterpret_cast<std::byte *>(crops_array),
                               sizeof(crops_array)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");

@@ -15,7 +15,7 @@ public sealed partial class Pad : Op
     /// <summary>
     /// input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Pad), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Pad), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// [1, 2, 3, 4] [[0, 0, 0, 0, 1, 1, 2, 2]] ⇒ [1, 2, 5, 8].

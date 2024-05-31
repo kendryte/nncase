@@ -59,7 +59,7 @@ TEST_P(TileTest, Tile) {
     size_t size = 0;
     int64_t repeats_array[] = {1, 1, 2, 2};
     auto repeats = hrt::create(dt_int64, {4},
-                               {reinterpret_cast<gsl::byte *>(repeats_array),
+                               {reinterpret_cast<std::byte *>(repeats_array),
                                 sizeof(repeats_array)},
                                true, host_runtime_tensor::pool_cpu_only)
                        .expect("create tensor failed");
@@ -69,7 +69,7 @@ TEST_P(TileTest, Tile) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
@@ -94,7 +94,7 @@ TEST_P(TileTest, Tile) {
     // expected
     int64_t repeats_array1[] = {1, 1, 1, 1};
     auto repeats1 = hrt::create(dt_int64, {4},
-                                {reinterpret_cast<gsl::byte *>(repeats_array1),
+                                {reinterpret_cast<std::byte *>(repeats_array1),
                                  sizeof(repeats_array1)},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
@@ -105,7 +105,7 @@ TEST_P(TileTest, Tile) {
     tensor_shape(output_ort1, reinterpret_cast<int64_t *>(shape1.data()));
     auto expected1 =
         hrt::create(input.datatype(), shape1,
-                    {reinterpret_cast<gsl::byte *>(ptr_ort1), size}, true,
+                    {reinterpret_cast<std::byte *>(ptr_ort1), size}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
@@ -130,7 +130,7 @@ TEST_P(TileTest, Tile) {
     // expected
     int64_t repeats_array2[] = {1, 1, 3, 2};
     auto repeats2 = hrt::create(dt_int64, {4},
-                                {reinterpret_cast<gsl::byte *>(repeats_array2),
+                                {reinterpret_cast<std::byte *>(repeats_array2),
                                  sizeof(repeats_array2)},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
@@ -141,7 +141,7 @@ TEST_P(TileTest, Tile) {
     tensor_shape(output_ort2, reinterpret_cast<int64_t *>(shape2.data()));
     auto expected2 =
         hrt::create(input.datatype(), shape2,
-                    {reinterpret_cast<gsl::byte *>(ptr_ort2), size}, true,
+                    {reinterpret_cast<std::byte *>(ptr_ort2), size}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
@@ -166,7 +166,7 @@ TEST_P(TileTest, Tile) {
     // expected
     int64_t repeats_array3[] = {1, 1, 1, 2};
     auto repeats3 = hrt::create(dt_int64, {4},
-                                {reinterpret_cast<gsl::byte *>(repeats_array3),
+                                {reinterpret_cast<std::byte *>(repeats_array3),
                                  sizeof(repeats_array3)},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
@@ -177,7 +177,7 @@ TEST_P(TileTest, Tile) {
     tensor_shape(output_ort3, reinterpret_cast<int64_t *>(shape3.data()));
     auto expected3 =
         hrt::create(input.datatype(), shape3,
-                    {reinterpret_cast<gsl::byte *>(ptr_ort3), size}, true,
+                    {reinterpret_cast<std::byte *>(ptr_ort3), size}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
@@ -202,7 +202,7 @@ TEST_P(TileTest, Tile) {
     // expected
     int64_t repeats_array4[] = {1, 2, 3, 2};
     auto repeats4 = hrt::create(dt_int64, {4},
-                                {reinterpret_cast<gsl::byte *>(repeats_array4),
+                                {reinterpret_cast<std::byte *>(repeats_array4),
                                  sizeof(repeats_array4)},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
@@ -213,7 +213,7 @@ TEST_P(TileTest, Tile) {
     tensor_shape(output_ort4, reinterpret_cast<int64_t *>(shape4.data()));
     auto expected4 =
         hrt::create(input.datatype(), shape4,
-                    {reinterpret_cast<gsl::byte *>(ptr_ort4), size}, true,
+                    {reinterpret_cast<std::byte *>(ptr_ort4), size}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
@@ -238,7 +238,7 @@ TEST_P(TileTest, Tile) {
     // expected
     int64_t repeats_array5[] = {3, 2, 3, 2};
     auto repeats5 = hrt::create(dt_int64, {4},
-                                {reinterpret_cast<gsl::byte *>(repeats_array5),
+                                {reinterpret_cast<std::byte *>(repeats_array5),
                                  sizeof(repeats_array5)},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
@@ -249,7 +249,7 @@ TEST_P(TileTest, Tile) {
     tensor_shape(output_ort5, reinterpret_cast<int64_t *>(shape5.data()));
     auto expected5 =
         hrt::create(input.datatype(), shape5,
-                    {reinterpret_cast<gsl::byte *>(ptr_ort5), size}, true,
+                    {reinterpret_cast<std::byte *>(ptr_ort5), size}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 

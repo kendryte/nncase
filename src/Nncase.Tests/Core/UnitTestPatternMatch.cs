@@ -84,7 +84,7 @@ public sealed class UnitTestPatternMatch
         Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.LessEqual(1f, 1f), Math.LessEqual(1f, 1f), out _));
         Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.GreaterThan(1f, 1f), Math.GreaterThan(1f, 1f), out _));
         Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.GreaterEqual(1f, 1f), Math.GreaterEqual(1f, 1f), out _));
-        Assert.Equal(IR.F.Math.FloorDiv(1f, 1f), Floor(Div(1f, 1f)));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.FloorDiv(1f, 1f), Math.FloorDiv(1f, 1f), out _));
         Assert.Equal(IR.F.Math.FloorMod(1f, 1f), Sub(1f, Mul(FloorDiv(1f, 1f), 1f)));
     }
 

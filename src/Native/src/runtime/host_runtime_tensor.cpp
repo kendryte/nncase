@@ -48,7 +48,7 @@ result<buffer_t> allocate_buffer(size_t size_bytes,
     }
 }
 
-result<buffer_t> attach_buffer(gsl::span<gsl::byte> data,
+result<buffer_t> attach_buffer(std::span<std::byte> data,
                                hrt::data_deleter_t deleter,
                                hrt::memory_pool_t pool,
                                uintptr_t physical_address) noexcept {
@@ -96,7 +96,7 @@ result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
 }
 
 result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
-                                   strides_t strides, gsl::span<gsl::byte> data,
+                                   strides_t strides, std::span<std::byte> data,
                                    bool copy, memory_pool_t pool,
                                    uintptr_t physical_address) noexcept {
     auto size_bytes = compute_size(shape, strides) * get_bytes(datatype);
@@ -119,14 +119,14 @@ result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
     } else {
         checked_try_set(buffer,
                         attach_buffer(
-                            data, [](gsl::byte *) {}, pool, physical_address));
+                            data, [](std::byte *) {}, pool, physical_address));
     }
     return ok(runtime_tensor(tensor(std::in_place, datatype, std::move(shape),
                                     std::move(strides), buffer)));
 }
 
 result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
-                                   strides_t strides, gsl::span<gsl::byte> data,
+                                   strides_t strides, std::span<std::byte> data,
                                    data_deleter_t data_deleter,
                                    memory_pool_t pool,
                                    uintptr_t physical_address) noexcept {
@@ -145,7 +145,7 @@ result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
 }
 
 result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
-                                   gsl::span<gsl::byte> data, bool copy,
+                                   std::span<std::byte> data, bool copy,
                                    memory_pool_t pool,
                                    uintptr_t physical_address) noexcept {
     return create(datatype, shape, get_default_strides(shape), data, copy, pool,
@@ -153,7 +153,7 @@ result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
 }
 
 result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
-                                   gsl::span<gsl::byte> data,
+                                   std::span<std::byte> data,
                                    data_deleter_t data_deleter,
                                    memory_pool_t pool,
                                    uintptr_t physical_address) noexcept {

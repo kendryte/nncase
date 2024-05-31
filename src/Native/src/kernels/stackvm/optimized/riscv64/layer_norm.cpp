@@ -127,8 +127,8 @@ static void layer_norm_update1(const float *data, float *out, int len,
 
 result<void> layernorm_impl(const float *input, float *output,
                             const float *scale, const float *bias,
-                            gsl::span<const size_t> in_shape, int32_t axis,
-                            float epsilon) {
+                            std::span<const size_t> in_shape, int32_t axis,
+                            float epsilon, bool use_mean) {
     if (axis < 0) {
         axis = (int)in_shape.size() + axis;
     }
@@ -143,7 +143,7 @@ result<void> layernorm_impl(const float *input, float *output,
         const float *src = input + batch * inner_size;
         float *dest = output + batch * inner_size;
 
-        float mean = get_mean(src, inner_size);
+        float mean = use_mean ? get_mean(src, inner_size) : 0.f;
 
         float var_data = get_var(src, inner_size, mean);
 
@@ -155,15 +155,16 @@ result<void> layernorm_impl(const float *input, float *output,
 #endif
 
 result<void> nncase::kernels::stackvm::optimized::layer_norm(
-    [[maybe_unused]] typecode_t typecode, const gsl::byte *input,
-    gsl::byte *output, const gsl::byte *scale, const gsl::byte *bias,
-    gsl::span<const size_t> in_shape, int32_t axis, float epsilon) {
+    [[maybe_unused]] typecode_t typecode, const std::byte *input,
+    std::byte *output, const std::byte *scale, const std::byte *bias,
+    std::span<const size_t> in_shape, int32_t axis, float epsilon,
+    bool use_mean) {
 #if __riscv_vector
     return layernorm_impl(IN_CAST(float, input), OUT_CAST(float, output),
                           IN_CAST(float, scale), IN_CAST(float, bias), in_shape,
-                          axis, epsilon);
+                          axis, epsilon, use_mean);
 #else
     return reference::layer_norm(typecode, input, output, scale, bias, in_shape,
-                                 axis, epsilon);
+                                 axis, epsilon, use_mean);
 #endif
 }

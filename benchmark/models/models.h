@@ -17,5 +17,5 @@
 
 namespace nncase
 {
-gsl::span<const gsl::byte> get_model(const std::string &name);
+std::span<const std::byte> get_model(const std::string &name);
 }

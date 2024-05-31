@@ -135,8 +135,8 @@
 #pragma once
 
 #include <cstddef>
-#include <gsl/gsl-lite.hpp>
 #include <memory>
+#include <span>
 #include <type_traits>
 
 #define ITLIB_SMALL_VECTOR_ERROR_HANDLING_NONE 0
@@ -246,8 +246,8 @@ struct small_vector : Alloc {
         assign_impl(l);
     }
 
-    template <class U>
-    small_vector(gsl::span<U> c, const Alloc &alloc = Alloc())
+    template <class U, size_t Extent>
+    small_vector(std::span<U, Extent> c, const Alloc &alloc = Alloc())
         : small_vector(alloc) {
         assign_impl(c.begin(), c.end());
     }

@@ -27,15 +27,15 @@ using namespace nncase::kernels::stackvm::optimized;
 #include <math.h>
 
 // template result<void> optimized::log_softmax<float>(
-//    typecode_t typecode, const gsl::byte *input, gsl::byte *output,
-//    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-//    gsl::span<const size_t> out_strides, int32_t axis) noexcept;
+//    typecode_t typecode, const std::byte *input, std::byte *output,
+//    std::span<const size_t> in_shape, std::span<const size_t> in_strides,
+//    std::span<const size_t> out_strides, int32_t axis) noexcept;
 
-result<void> optimized::log_softmax(typecode_t typecode, const gsl::byte *input,
-                                    gsl::byte *output,
-                                    gsl::span<const size_t> in_shape,
-                                    gsl::span<const size_t> in_strides,
-                                    gsl::span<const size_t> out_strides,
+result<void> optimized::log_softmax(typecode_t typecode, const std::byte *input,
+                                    std::byte *output,
+                                    std::span<const size_t> in_shape,
+                                    std::span<const size_t> in_strides,
+                                    std::span<const size_t> out_strides,
                                     int32_t axis) noexcept {
     return reference::log_softmax(typecode, input, output, in_shape, in_strides,
                                   out_strides, axis);

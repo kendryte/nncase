@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <RootNamespace>Nncase</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Razor.Templating.Core" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\nncase\src\Nncase.Diagnostics\Nncase.Diagnostics.csproj" />
+    <ProjectReference Include="..\..\..\nncase\src\Nncase.Passes\Nncase.Passes.csproj" />
+    <ProjectReference Include="..\..\..\nncase\src\Nncase.CodeGen\Nncase.CodeGen.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\nncase/tools/Nncase.SourceGenerator/Nncase.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\..\nncase\modules\Nncase.Modules.StackVM\Nncase.Modules.StackVM.csproj" />
+    <ProjectReference Include="..\..\src\Nncase.Evaluator\Nncase.Evaluator.csproj" />
+    <ProjectReference Include="..\..\src\Nncase.Schedule\Nncase.Schedule.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Runtime\include\nncase\" />
+    <Folder Include="Runtime\src\" />
+  </ItemGroup>
+    
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\src\Native\include\nncase\ntt\**\*" Link="Runtime\include\nncase\ntt\%(RecursiveDir)\%(FileName)%(Extension)">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\src\Native\src\ntt\**\*" Link="Runtime\src\%(RecursiveDir)\%(FileName)%(Extension)">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>
