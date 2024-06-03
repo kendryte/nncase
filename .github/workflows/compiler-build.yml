@@ -249,10 +249,6 @@ jobs:
       - name: Create Test Environment
         run: mkdir test_results
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        if: runner.os == 'Linux'
-
       - name: Test
         working-directory: ${{github.workspace}}
         shell: bash
