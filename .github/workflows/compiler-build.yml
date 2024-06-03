@@ -1,15 +1,6 @@
 ﻿name: compiler-build
 
-on: 
-  push:
-  pull_request:
-  workflow_dispatch:
-    inputs:
-      debug_enabled:
-        type: boolean
-        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
-        required: false
-        default: false
+on: [push, pull_request]
 
 concurrency:
   group: compiler-build-${{ github.ref }}
@@ -260,7 +251,7 @@ jobs:
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        if: runner.os == 'Linux'
 
       - name: Test
         working-directory: ${{github.workspace}}
