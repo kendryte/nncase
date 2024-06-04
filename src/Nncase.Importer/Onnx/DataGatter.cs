@@ -88,6 +88,23 @@ public sealed partial class OnnxImporter
         return tensor.Dims.Count == 1 && tensor.Dims[0] == 0;
     }
 
+    private Tensor GetExternalTensor<T>(BinaryReader br, DataType dataType, long length, Shape shape)
+        where T : unmanaged, IEquatable<T>
+    {
+        var tensorArray = new T[length / dataType.SizeInBytes];
+        var totalRead = 0;
+        int chunk = 1024 * 1024 * 1024;
+        for (long l = length; l > 0; l -= chunk)
+        {
+            var tmpBuffer = br.ReadBytes((int)Math.Min(chunk, l));
+
+            Buffer.BlockCopy(tmpBuffer, 0, tensorArray, totalRead, tmpBuffer.Length);
+            totalRead += tmpBuffer.Length / dataType.SizeInBytes;
+        }
+
+        return Tensor.From(tensorArray, shape);
+    }
+
     private Tensor GetTensor(TensorProto tensor)
     {
         var shape = GetShape(tensor).ToValueArray();
@@ -115,10 +132,19 @@ public sealed partial class OnnxImporter
             var location = Path.Join(parent, externalData[0].Value);
             var offset = externalDataCount > 1L ? long.Parse(externalData[1].Value) : 0;
             using var br = new BinaryReader(new FileStream(location, FileMode.Open));
-            var length = externalDataCount > 1 ? int.Parse(externalData[2].Value) : (int)br.BaseStream.Length;
+            var length = externalDataCount > 1 ? long.Parse(externalData[2].Value) : br.BaseStream.Length;
             br.BaseStream.Seek(offset, SeekOrigin.Begin);
-            var buffer = br.ReadBytes(length);
-            return Tensor.FromBytes(type, buffer, shape);
+
+            return type switch
+            {
+                var t when t == DataTypes.Float32 => GetExternalTensor<float>(br, type, length, shape),
+                var t when t == DataTypes.Float64 => GetExternalTensor<double>(br, type, length, shape),
+                var t when t == DataTypes.Int32 => GetExternalTensor<int>(br, type, length, shape),
+                var t when t == DataTypes.Int64 => GetExternalTensor<long>(br, type, length, shape),
+                var t when t == DataTypes.Int8 => GetExternalTensor<sbyte>(br, type, length, shape),
+                var t when t == DataTypes.UInt8 => GetExternalTensor<byte>(br, type, length, shape),
+                _ => throw new NotSupportedException($"Not supported onnx constant data type {type}"),
+            };
         }
 
         return dt switch
