@@ -271,6 +271,13 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     BinaryOp = op.BinaryOp,
                 }).Result);
                 break;
+            case TIR.CPU.PackedBinary op:
+                IndentScope.Writer.IndWrite(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
+                {
+                    Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
+                    BinaryOp = op.BinaryOp,
+                }).Result);
+                break;
             case TIR.CPU.Swish swish:
                 if (swish.Beta != 1.0f)
                 {
@@ -278,6 +285,13 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 }
 
                 IndentScope.Writer.IndWrite($"unary<ops::swish>({arguments[0].Name}, {arguments[1].Name});\n");
+                break;
+            case TIR.CPU.Matmul matmul:
+                IndentScope.Writer.IndWrite($"if ({arguments[3].Name}) {{\n");
+                IndentScope.Writer.IndWrite($"    matmul<false>({arguments[0].Name}, {arguments[1].Name}, {arguments[2].Name});\n");
+                IndentScope.Writer.IndWrite($"}} else {{\n");
+                IndentScope.Writer.IndWrite($"    matmul<true>({arguments[0].Name}, {arguments[1].Name}, {arguments[2].Name});\n");
+                IndentScope.Writer.IndWrite($"}}\n");
                 break;
             default:
                 throw new NotSupportedException();
@@ -410,9 +424,10 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             expr.CheckedType switch
             {
                 TensorType t => t.DType.ToC(),
+                AnyType => "auto",
                 _ => throw new ArgumentOutOfRangeException(nameof(expr)),
             },
-            expr.Name + expr.GlobalVarIndex.ToString());
+            expr.Name + "_" + expr.GlobalVarIndex.ToString());
         _exprMemo.Add(expr, symbol);
         return symbol;
     }

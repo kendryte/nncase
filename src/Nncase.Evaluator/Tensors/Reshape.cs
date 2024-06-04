@@ -197,7 +197,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                 var axisMap = new Dictionary<int, int>();
                 for (var o = 0; o < oldShape.Length; o++)
                 {
-                    if (oldShape[o] == newShape[axis])
+                    if (axis < newShape.Length && oldShape[o] == newShape[axis])
                     {
                         axisMap.Add(o, axis++);
                         if (axis >= newShape.Length)

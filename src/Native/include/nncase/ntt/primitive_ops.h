@@ -172,6 +172,12 @@ template <class T1, class T2> struct inner_product {
     }
 };
 
+template <class T1, class T2> struct outer_product {
+    constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+        return v1 * v2;
+    }
+};
+
 /**
  * @remarks mod is equivalent to fmod() function in C/C++/Python.
  */
@@ -217,6 +223,12 @@ struct reduce {
 };
 
 template <class T1, class T2, class TResult> struct mul_add {
+    constexpr TResult operator()(const T1 &v1, const T2 &v2,
+                                 const TResult &v3) const noexcept;
+};
+
+template <bool AccC, IsFixedTensor T1, IsFixedTensor T2, IsFixedTensor TResult>
+struct mma {
     constexpr TResult operator()(const T1 &v1, const T2 &v2,
                                  const TResult &v3) const noexcept;
 };
@@ -269,6 +281,7 @@ NTT_DEFINE_BINARY_FUNC_IMPL(ceil_div)
 NTT_DEFINE_BINARY_FUNC_IMPL(div)
 NTT_DEFINE_BINARY_FUNC_IMPL(floor_mod)
 NTT_DEFINE_BINARY_FUNC_IMPL(inner_product)
+NTT_DEFINE_BINARY_FUNC_IMPL(outer_product)
 NTT_DEFINE_BINARY_FUNC_IMPL(mod)
 NTT_DEFINE_BINARY_FUNC_IMPL(min)
 NTT_DEFINE_BINARY_FUNC_IMPL(max)
@@ -277,11 +290,17 @@ NTT_DEFINE_BINARY_FUNC_IMPL(swishb)
 
 NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_sum, ops::add)
 NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_max, ops::max)
+NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_min, ops::min)
 
 template <IsTensorOrScalar T1, IsTensorOrScalar T2, IsTensorOrScalar TResult>
 constexpr TResult mul_add(const T1 &v1, const T2 &v2,
                           const TResult &v3) noexcept {
     return ops::mul_add<T1, T2, TResult>()(v1, v2, v3);
+}
+
+template <bool AccC, IsFixedTensor T1, IsFixedTensor T2, IsFixedTensor TResult>
+constexpr TResult mma(const T1 &v1, const T2 &v2, const TResult &v3) noexcept {
+    return ops::mma<AccC, T1, T2, TResult>()(v1, v2, v3);
 }
 
 /**
@@ -389,6 +408,33 @@ constexpr TResult
 mul_add<T1, T2, TResult>::operator()(const T1 &v1, const T2 &v2,
                                      const TResult &v3) const noexcept {
     return v1 * v2 + v3;
+}
+
+template <bool AccC, IsFixedTensor T1, IsFixedTensor T2, IsFixedTensor TResult>
+constexpr TResult
+mma<AccC, T1, T2, TResult>::operator()(const T1 &v1, const T2 &v2,
+                                       const TResult &v3) const noexcept {
+    static_assert(T1::rank() == T2::rank() && T2::rank() == TResult::rank() &&
+                      TResult::rank() == 2,
+                  "only support 2d mma");
+    auto lhs_v = (typename T1::element_type *)(v1.elements().data());
+    auto rhs_v =
+        (vector<typename T2::element_type, T2::shape().at(1)> *)(v2.elements()
+                                                                     .data());
+    auto output_v =
+        (vector<typename TResult::element_type, TResult::shape().at(1)>
+             *)(v3.elements().data());
+    for (size_t m = 0; m < T1::shape().at(0); m++) {
+        for (size_t k = 0; k < T2::shape().at(0); k++) {
+            output_v[m] =
+                (k != 0 || AccC)
+                    ? ntt::mul_add(lhs_v[m * T2::shape().at(0) + k], rhs_v[k],
+                                   output_v[m])
+                    : ntt::mul(lhs_v[m * T2::shape().at(0) + k], rhs_v[k]);
+        }
+    }
+
+    return v3;
 }
 } // namespace ops
 } // namespace nncase::ntt

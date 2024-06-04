@@ -21,9 +21,13 @@ public sealed partial class Uninitialized : Op
 
     public TIR.MemoryLocation MemoryLocation { get; }
 
+    public IRArray<SBP> NdSBP { get; }
+
+    public Placement Placement { get; }
+
     /// <inheritdoc/>
     public override bool CanFoldConstCall => false;
 
     /// <inheritdoc/>
-    public override string DisplayProperty() => $"{DType.GetCSharpName()}, MemoryLocation.{MemoryLocation}";
+    public override string DisplayProperty() => $"{DType.GetCSharpName()}, MemoryLocation.{MemoryLocation}, {NdSBP}, {Placement}";
 }

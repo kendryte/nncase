@@ -97,7 +97,7 @@ public sealed class MemSpan : Expr
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitMemSpan(this, context);
 
-    public MemSpan With(Expr? start = null, Expr? size = null, MemoryLocation? location = null) => new(start ?? Start, size ?? Size, location ?? Location);
+    public MemSpan With(Expr? start = null, Expr? size = null, MemoryLocation? location = null, int? hierarchy = null) => new(start ?? Start, size ?? Size, location ?? Location, hierarchy ?? Hierarchy);
 
     /// <inheritdoc/>
     public override bool Equals(object? obj)

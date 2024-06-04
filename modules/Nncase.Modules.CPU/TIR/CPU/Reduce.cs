@@ -18,6 +18,10 @@ public sealed partial class Reduce : CPUKernelOp
 
     public static readonly ParameterInfo Output = new(typeof(Reduce), 2, "output");
 
+    public IRArray<int> PackedAxes { get; }
+
+    public IRArray<int> PadedNums { get; }
+
     public Nncase.IR.IRArray<int> Axis { get; }
 
     public bool KeepDims { get; }

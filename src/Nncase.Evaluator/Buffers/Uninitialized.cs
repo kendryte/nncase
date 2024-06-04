@@ -17,13 +17,18 @@ public class UninitializedEvaluator : IEvaluator<Uninitialized>, ITypeInferencer
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Uninitialized target)
     {
+        TensorType tensorType;
         if (context.GetArgument(target, Uninitialized.Shape) is TensorConst tensor)
         {
-            return new TensorType(target.DType, tensor.Value.ToArray<int>());
+            tensorType = new TensorType(target.DType, tensor.Value.ToArray<int>());
+        }
+        else
+        {
+            var shape = context.CheckArgumentType<TensorType>(target, Uninitialized.Shape);
+            tensorType = new TensorType(target.DType, new(Enumerable.Repeat(Dimension.Unknown, shape.Shape[0].FixedValue)));
         }
 
-        var shape = context.CheckArgumentType<TensorType>(target, Uninitialized.Shape);
-        return new TensorType(target.DType, new(Enumerable.Repeat(Dimension.Unknown, shape.Shape[0].FixedValue)));
+        return target.Placement.Rank == 0 ? tensorType : new DistributedType(tensorType, target.NdSBP, target.Placement);
     }
 
     /// <inheritdoc/>

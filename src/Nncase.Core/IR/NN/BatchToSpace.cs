@@ -20,7 +20,7 @@ public sealed partial class BatchToSpace : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(BatchToSpace), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(BatchToSpace), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets block shape.

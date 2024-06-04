@@ -252,6 +252,18 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         return doc;
     }
 
+    protected override IPrintSymbol VisitAffineDim(IR.Affine.AffineDim expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var doc))
+        {
+            return doc;
+        }
+
+        doc = new ScriptSymobl(new StringBuilder($"d{expr.Position}"));
+        _exprMemo.Add(expr, doc);
+        return doc;
+    }
+
     /// <inheritdoc/>
     protected override IPrintSymbol VisitCall(Call expr)
     {

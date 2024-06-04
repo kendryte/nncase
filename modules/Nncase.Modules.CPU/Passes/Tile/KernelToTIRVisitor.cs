@@ -99,7 +99,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.PackedMatMul(arguments[0], arguments[1], ret, packed_mat_mul.LhsPackedAxes, packed_mat_mul.LhsPadedNums, packed_mat_mul.RhsPackedAxes, packed_mat_mul.RhsPadedNums));
                 break;
             case IR.Math.MatMul matmul:
-                _mainBody.Add(TIR.F.CPU.Matmul(arguments[0], arguments[1], ret));
+                _mainBody.Add(TIR.F.CPU.Matmul(arguments[0], arguments[1], ret, None.Default));
                 break;
             case IR.NN.Conv2D conv:
                 {
@@ -183,7 +183,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Pad(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToArray<float>()[0]));
                 break;
             case IR.Math.Reduce reduce:
-                _mainBody.Add(TIR.F.CPU.Reduce(arguments[0], arguments[2], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[3]).Value.ToArray<bool>()[0], reduce.ReduceOp));
+                _mainBody.Add(TIR.F.CPU.Reduce(arguments[0], arguments[2], ret, Array.Empty<int>(), Array.Empty<int>(), ((TensorConst)expr.Arguments[1]).Value.ToArray<int>().OrderBy(a => a).ToArray(), ((TensorConst)expr.Arguments[3]).Value.ToArray<bool>()[0], reduce.ReduceOp));
                 break;
             default:
                 throw new NotSupportedException();
@@ -207,7 +207,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 {
                     case Call c:
                         var loc = MemoryLocation.Data;
-                        var hierarchy = 0;
+                        var hierarchy = 1;
                         var index = CheckRootCall(c, ref loc);
                         if (c.Target is Boxing box && box.NewType is DistributedType d && !d.TensorType.Shape.Equals(c.Arguments[0].CheckedShape))
                         {
@@ -256,7 +256,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
 
                         break;
                     case Var v:
-                        buffer = T.AttachBuffer((TensorType)v.CheckedType, MemoryLocation.Input, 0, out _, out _, name);
+                        buffer = T.AttachBuffer((TensorType)v.CheckedType, MemoryLocation.Input, 1, out _, out _, name);
                         break;
                     case TensorConst c:
                         buffer = T.AttachBuffer(c, out _, name);
