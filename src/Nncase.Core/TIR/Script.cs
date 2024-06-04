@@ -225,7 +225,7 @@ public static class T
 
         var dimensions = tensorType.Shape.ToValueArray();
         var strides = TensorUtilities.GetStrides(dimensions);
-        var size = (int)TensorUtilities.GetProduct(dimensions.ToArray()) * tensorType.DType.SizeInBytes;
+        var size = TensorUtilities.GetProduct(dimensions.ToArray()) * tensorType.DType.SizeInBytes;
         var memspan = new MemSpan(size, location);
         buffer = new Buffer(name, tensorType.DType, memspan, dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray());
         return buffer;
@@ -268,7 +268,7 @@ public static class T
 
         var dimensions = tensorType.Shape.ToValueArray();
         var strides = TensorUtilities.GetStrides(dimensions);
-        var size = (int)TensorUtilities.GetProduct(dimensions.ToArray()) * tensorType.DType.SizeInBytes;
+        var size = TensorUtilities.GetProduct(dimensions.ToArray()) * tensorType.DType.SizeInBytes;
         var memspan = new MemSpan(start, size, location);
         buffer = new Buffer(name, tensorType.DType, memspan, dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray());
         return buffer;
@@ -286,7 +286,7 @@ public static class T
 
         var dimensions = @const.CheckedShape.ToValueArray();
         var strides = TensorUtilities.GetStrides(dimensions);
-        var size = (int)TensorUtilities.GetProduct(dimensions.ToArray()) * @const.CheckedDataType.SizeInBytes;
+        var size = TensorUtilities.GetProduct(dimensions.ToArray()) * @const.CheckedDataType.SizeInBytes;
         var memspan = new MemSpan(IR.F.Buffer.DDrOf(@const), size, MemoryLocation.Rdata);
         buffer = new Buffer(name, @const.CheckedDataType, memspan, dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray());
         return buffer;
@@ -304,7 +304,7 @@ public static class T
 
         var dimensions = tensorType.Shape.ToValueArray();
         var strides = TensorUtilities.GetStrides(dimensions);
-        var size = (int)TensorUtilities.GetProduct(dimensions.ToArray()) * tensorType.DType.SizeInBytes;
+        var size = TensorUtilities.GetProduct(dimensions.ToArray()) * tensorType.DType.SizeInBytes;
         buffer = new Buffer(name, tensorType.DType, originBuffer.MemSpan.SubSpan(offset, size), dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray());
         return buffer;
     }
@@ -322,7 +322,7 @@ public static class T
         @var = new Var(TensorType.Pointer(tensorType.DType));
         var dimensions = tensorType.Shape.ToValueArray();
         var strides = TensorUtilities.GetStrides(dimensions);
-        var size = (int)TensorUtilities.GetProduct(dimensions.ToArray()) * tensorType.DType.SizeInBytes;
+        var size = TensorUtilities.GetProduct(dimensions.ToArray()) * tensorType.DType.SizeInBytes;
         buffer = new Buffer(name, tensorType.DType, new MemSpan(@var, size, location), dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray());
         return buffer;
     }

@@ -5,17 +5,17 @@ namespace Nncase.Passes.BufferSchedule;
 
 public sealed class Interval
 {
-    public Interval(int start, int end)
+    public Interval(long start, long end)
     {
         Start = start;
         Stop = end;
     }
 
-    public int Start { get; set; }
+    public long Start { get; set; }
 
-    public int Stop { get; set; }
+    public long Stop { get; set; }
 
-    public int Size => Stop - Start;
+    public long Size => Stop - Start;
 
     public override string ToString()
     {
