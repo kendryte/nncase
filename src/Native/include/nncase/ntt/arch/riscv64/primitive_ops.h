@@ -117,11 +117,10 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, asin)
 #define CEIL_FLOAT32(LMUL, MLEN)                                               \
     inline vfloat32m##LMUL##_t ceil_float32(const vfloat32m##LMUL##_t &v,      \
                                             const size_t vl) {                 \
-        vint32m##LMUL##_t vi = vfcvt_x_f_v_i32m##LMUL(v, vl);                  \
-        auto _mask = vmflt_vv_f32m##LMUL##_b##MLEN(                            \
-            vfcvt_f_x_v_f32m##LMUL(vi, vl), v, vl);                            \
-        return vfcvt_f_x_v_f32m##LMUL(                                         \
-            vadd_vx_i32m##LMUL##_m(_mask, vi, vi, 1, vl), vl);                 \
+        auto vi = vfcvt_x_f_v_i32m##LMUL(v, vl);                               \
+        auto vf = vfcvt_f_x_v_f32m##LMUL(vi, vl);                              \
+        auto mask = vmflt_vv_f32m##LMUL##_b##MLEN(vf, v, vl);                  \
+        return vfadd_vf_f32m##LMUL##_m(mask, vf, vf, 1.f, vl);                 \
     }
 
 IMPL_RVV_WITH_LMULS(CEIL_FLOAT32)
@@ -151,11 +150,10 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, exp)
 #define FLOOR_FLOAT32(LMUL, MLEN)                                              \
     inline vfloat32m##LMUL##_t floor_float32(const vfloat32m##LMUL##_t &v,     \
                                              const size_t vl) {                \
-        vint32m##LMUL##_t vi = vfcvt_x_f_v_i32m##LMUL(v, vl);                  \
-        auto _mask = vmfgt_vv_f32m##LMUL##_b##MLEN(                            \
-            vfcvt_f_x_v_f32m##LMUL(vi, vl), v, vl);                            \
-        return vfcvt_f_x_v_f32m##LMUL(                                         \
-            vsub_vx_i32m##LMUL##_m(_mask, vi, vi, 1, vl), vl);                 \
+        auto vi = vfcvt_x_f_v_i32m##LMUL(v, vl);                               \
+        auto vf = vfcvt_f_x_v_f32m##LMUL(vi, vl);                              \
+        auto mask = vmfgt_vv_f32m##LMUL##_b##MLEN(vf, v, vl);                  \
+        return vfsub_vf_f32m##LMUL##_m(mask, vf, vf, 1.f, vl);                 \
     }
 
 IMPL_RVV_WITH_LMULS(FLOOR_FLOAT32)
