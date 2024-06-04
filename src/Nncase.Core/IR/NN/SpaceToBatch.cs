@@ -21,7 +21,7 @@ public sealed partial class SpaceToBatch : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(SpaceToBatch), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(SpaceToBatch), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets block shape.

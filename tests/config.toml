@@ -106,6 +106,9 @@ threshold = 0.999
 enabled = true
 threshold = 0.98
 
+[target.cpu.target_options]
+packing = false
+
 [target.k510]
 eval = true
 infer = true

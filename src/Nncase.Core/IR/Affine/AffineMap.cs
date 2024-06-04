@@ -140,7 +140,7 @@ public sealed class AffineMap : Expr
         return new AffineMap(domains, default, results);
     }
 
-    public TIR.Range[] Apply(ReadOnlySpan<Expr> dims, ReadOnlySpan<Expr> extents, IReadOnlyDictionary<AffineSymbol, Expr> symbols)
+    public TIR.Range[] Apply(ReadOnlySpan<Expr> dims, ReadOnlySpan<Expr> extents, IReadOnlyDictionary<AffineSymbol, Expr>? symbols = null)
     {
         var newResults = new TIR.Range[Results.Length];
         for (int i = 0; i < newResults.Length; i++)

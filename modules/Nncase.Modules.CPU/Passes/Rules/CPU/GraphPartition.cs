@@ -51,29 +51,76 @@ public sealed partial class CPUOutputBoxingFusion : FusionMaker
             return null;
         }
 
+        var inputDict = new Dictionary<Expr, List<KeyValuePair<Var, Expr>>>(ReferenceEqualityComparer.Instance);
         var newInputs = new List<Expr>();
+
+        Expr BuildNewInput(Expr parameter)
+        {
+            Expr newInput;
+            switch (parameter)
+            {
+                case Call or Var:
+                    var v = new Var(parameter.CheckedType!);
+                    newInput = v;
+                    if (!inputDict.TryGetValue(newInput, out var _))
+                    {
+                        inputDict.Add(newInput, new() { new(v, parameter) });
+                    }
+
+                    break;
+                case IR.Tuple tp:
+                    var fileds = new Expr[tp.Fields.Length];
+                    for (int i = 0; i < tp.Fields.Length; i++)
+                    {
+                        fileds[i] = BuildNewInput(tp.Fields[i]);
+                    }
+
+                    newInput = new IR.Tuple(fileds);
+
+                    if (!inputDict.TryGetValue(newInput, out var tpl))
+                    {
+                        tpl = new() { };
+                        foreach (var filed in fileds)
+                        {
+                            tpl.AddRange(inputDict[filed]);
+                        }
+
+                        inputDict.Add(newInput, tpl);
+                    }
+
+                    break;
+                case Const c:
+                    if (parameter is TensorConst { Value: Tensor { Shape.IsScalar: true } } tc)
+                    {
+                        newInput = Const.FromTensor(Tensor.FromBytes(tc.CheckedDataType, tc.Value.BytesBuffer.ToArray(), new[] { 1 }));
+                    }
+                    else
+                    {
+                        newInput = parameter;
+                    }
+
+                    if (!inputDict.TryGetValue(newInput, out var _))
+                    {
+                        inputDict.Add(newInput, new() { });
+                    }
+
+                    break;
+
+                default:
+                    throw new NotSupportedException();
+            }
+
+            return newInput;
+        }
+
         for (int i = 0; i < callParams.Count; i++)
         {
-            if (callParams[i] is Call or Var)
-            {
-                newInputs.Add(new Var(callParams[i].CheckedType!));
-            }
-            else
-            {
-                if (callParams[i] is TensorConst { Value: Tensor { Shape.IsScalar: true } } tc)
-                {
-                    newInputs.Add(Const.FromTensor(Tensor.FromBytes(tc.CheckedDataType, tc.Value.BytesBuffer.ToArray(), new[] { 1 })));
-                }
-                else
-                {
-                    newInputs.Add(callParams[i]);
-                }
-            }
+            newInputs.Add(BuildNewInput(callParams[i]));
         }
 
         var newCall = new Call(op, newInputs.ToArray());
         var newBoxingCall = new Call(boxing, newCall);
-        var callFusion = new Call(new Fusion($"{op.GetType().Name}_{Count++}_kernel", ModuleKind, newBoxingCall, newInputs.OfType<Var>().ToArray()), newInputs.Select((e, i) => (e, i)).Where(p => p.e is Var).Select(p => callParams[p.i]).ToArray());
+        var callFusion = new Call(new Fusion($"{op.GetType().Name}_{Count++}_kernel", ModuleKind, newBoxingCall, newInputs.Select(e => inputDict[e]).SelectMany(i => i).Select(p => p.Key).ToArray()), newInputs.Select(e => inputDict[e]).SelectMany(i => i).Select(p => p.Value).ToArray());
         return callFusion;
     }
 }
@@ -130,14 +177,7 @@ public sealed partial class CPUSingleFusion : FusionMaker
                 }
                 else
                 {
-                    if (callParams[i] is TensorConst { Value: Tensor { Shape.IsScalar: true } } tc)
-                    {
-                        newInputs.Add(Const.FromTensor(Tensor.FromBytes(tc.CheckedDataType, tc.Value.BytesBuffer.ToArray(), new[] { 1 })));
-                    }
-                    else
-                    {
-                        newInputs.Add(callParams[i]);
-                    }
+                    newInputs.Add(callParams[i]);
                 }
             }
 
@@ -226,7 +266,20 @@ public sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
         {
             return new Cost()
             {
-                [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(var.CheckedType!),
+                [CostFactorNames.MemoryLoad] = var.CheckedType switch
+                {
+                    DistributedType => UInt128.One * int.MaxValue,
+                    IRType t => CostUtility.GetMemoryAccess(t),
+                    _ => throw new ArgumentOutOfRangeException(nameof(var)),
+                },
+            };
+        }
+
+        protected override Cost VisitLeafConst(Const expr)
+        {
+            return new Cost()
+            {
+                [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(expr.CheckedType!),
             };
         }
 
@@ -242,6 +295,8 @@ public sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
             {
                 var context = new GraphOpCostEvaluateContext(call.CheckedType, call.Arguments.AsValueEnumerable().Select(p => p.CheckedType).ToArray(), call.Arguments, CompileOptions);
                 cost = CompilerServices.EvaluateOpCost(op, context) ?? Cost.Zero;
+                cost.Factors[CostFactorNames.MemoryLoad] = 0;
+                cost.Factors[CostFactorNames.MemoryStore] = 0;
             }
             else
             {
@@ -257,7 +312,6 @@ public sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
             {
                 [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(fusion.Body.CheckedType!),
             };
-            cost += fusion.Parameters.AsValueEnumerable().Select(Visit).Sum() ?? Cost.Zero;
             return cost;
         }
     }
@@ -525,6 +579,8 @@ public sealed class ConcatFusionMergeRule : IRewriteRule
 {
     private readonly Dictionary<int, Call> _mergedCache = new();
 
+    private int _count;
+
     public IPattern Pattern { get; } =
     IsConcat(
         "concat",
@@ -586,7 +642,7 @@ public sealed class ConcatFusionMergeRule : IRewriteRule
         if (!_mergedCache.TryGetValue(hashcode, out var new_call))
         {
             var new_fusion_body = new Call(new Concat(concat.Axis), new IR.Tuple(callee_fusions.Select(f => f.Body).ToArray()));
-            var name = $"concat_" + string.Join("_", callee_fusions.Select(f => f.Name).ToArray());
+            var name = $"concat_fusion_{_count++}_";
 
             var parameters = callee_fusions.Select(f => f.Parameters.ToArray()).SelectMany(e => e).ToArray();
             var merged_fusion = new Fusion(name, callee_fusions[0].ModuleKind, new_fusion_body, parameters);
@@ -620,7 +676,7 @@ public sealed class DeterminedFusionMergeRule : IRewriteRule
             var patterns = new Pattern[exprs.Length];
             for (var i = 0; i < patterns.Length; i++)
             {
-                patterns[i] = IsVar($"input_{i}");
+                patterns[i] = IsWildcard($"input_{i}");
             }
 
             return patterns;
@@ -630,7 +686,7 @@ public sealed class DeterminedFusionMergeRule : IRewriteRule
             var patterns = new Pattern[exprs.Length];
             for (var i = 0; i < patterns.Length; i++)
             {
-                patterns[i] = IsCallWildcard($"callee_{i}", IsWildcard());
+                patterns[i] = IsWildcard($"callee_{i}");
             }
 
             return patterns;

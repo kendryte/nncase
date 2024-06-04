@@ -25,10 +25,12 @@ public sealed class PrimFunctionWrapper : BaseFunction
     /// <param name="name">Name.</param>
     /// <param name="target">Target.</param>
     /// <param name="parametersCount">Arguments count.</param>
-    public PrimFunctionWrapper(string name, PrimFunction target, int parametersCount)
+    /// <param name="hints">the type hints.</param>
+    public PrimFunctionWrapper(string name, PrimFunction target, int parametersCount, params IRType[] hints)
         : base(name, StackVMModuleKind, new Expr[] { target })
     {
         ParametersCount = parametersCount;
+        TypeHints = hints;
     }
 
     /// <summary>
@@ -36,14 +38,17 @@ public sealed class PrimFunctionWrapper : BaseFunction
     /// </summary>
     /// <param name="target">Target.</param>
     /// <param name="parametersCount">Arguments count.</param>
-    public PrimFunctionWrapper(PrimFunction target, int parametersCount)
-        : this($"func_{_globalFuncIndex++}", target, parametersCount)
+    /// <param name="hints">the type hints.</param>
+    public PrimFunctionWrapper(PrimFunction target, int parametersCount, params IRType[] hints)
+        : this($"func_{_globalFuncIndex++}", target, parametersCount, hints)
     {
     }
 
     public PrimFunction Target => (PrimFunction)Operands[0];
 
     public int ParametersCount { get; }
+
+    public IRArray<IRType> TypeHints { get; }
 
     /// <summary>
     /// Gets return type.
@@ -54,13 +59,13 @@ public sealed class PrimFunctionWrapper : BaseFunction
         {
             var outputParams = Target.Parameters.AsValueEnumerable().Skip(ParametersCount).ToArray();
             return outputParams.Length == 1
-                ? outputParams[0].CheckedType
-                : new TupleType(outputParams.Select(x => x.CheckedType!));
+                ? (TypeHints.Count <= ParametersCount ? outputParams[0].CheckedType : TypeHints[ParametersCount])
+                : new TupleType(outputParams.Select((x, i) => TypeHints.Count <= ParametersCount ? x.CheckedType! : TypeHints[ParametersCount + i]));
         }
     }
 
     /// <inheritdoc/>
-    public override IEnumerable<IRType> ParameterTypes => Target.Parameters.AsValueEnumerable().Take(ParametersCount).Select(x => x.CheckedType).ToArray();
+    public override IEnumerable<IRType> ParameterTypes => Target.Parameters.AsValueEnumerable().Take(ParametersCount).Select((x, i) => TypeHints.Count <= ParametersCount ? x.CheckedType : TypeHints[i]).ToArray();
 
     /// <inheritdoc/>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)

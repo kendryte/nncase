@@ -16,7 +16,7 @@ public sealed partial class LogSoftmax : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(LogSoftmax), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(LogSoftmax), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets axis.
@@ -50,7 +50,7 @@ public sealed partial class Softplus : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Softplus), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Softplus), 0, "input", ParameterKind.Input);
 }
 
 /// <summary>
@@ -62,5 +62,5 @@ public sealed partial class Softsign : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Softsign), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Softsign), 0, "input", ParameterKind.Input);
 }

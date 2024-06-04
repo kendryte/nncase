@@ -195,7 +195,7 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
  * @param rhsPackedAxes
  * @param rhsPadedNums
  */
-template <class TLhs, class TRhs, class TOut,
+template <bool AccumulateC, class TLhs, class TRhs, class TOut,
           typename LhsPackedAxes = fixed_shape<>,
           typename LhsPadedNums = fixed_shape<>,
           typename RhsPackedAxes = fixed_shape<>,
@@ -216,9 +216,9 @@ void matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output,
     static_assert(RhsPadedNums::rank() == 0 || RhsPadedNums::length() == 0,
                   "currently only support no pad!");
 
-    detail::matmul_impl<false, false, false, TLhs, TRhs, std::decay_t<TOut>,
-                        LhsPackedAxes, LhsPadedNums, RhsPackedAxes,
-                        RhsPadedNums>
+    detail::matmul_impl<false, false, AccumulateC, TLhs, TRhs,
+                        std::decay_t<TOut>, LhsPackedAxes, LhsPadedNums,
+                        RhsPackedAxes, RhsPadedNums>
         impl;
     impl(lhs, rhs, output);
 }

@@ -76,8 +76,25 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
+    [InlineData(new object[] { new[] { 4, 8, 16, 32 }, 0 })]
+    public async Task TestUnary(int[] shape, int count)
+    {
+        var input = new Var(new TensorType(DataTypes.Float32, shape));
+        var pre = IR.F.Math.Unary(UnaryOp.Neg, input);
+        var feedDict = new Dictionary<Var, IValue>() {
+            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
+        };
+
+        var rule = new Passes.Rules.CPU.PackUnary(Rank, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()).Where(e => e is not Call { Target: Slice }));
+        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+    }
+
+    [Theory]
     [InlineData(new object[] { BinaryOp.Add, new[] { 8, 2 }, new int[] { 8, 2 }, 0 })] // normal
     [InlineData(new object[] { BinaryOp.Mul, new[] { 1, 8, 64, 2 * 8 }, new int[] { 1, 1, 64, 2 * 8 }, 1 })] // broadcast
+    [InlineData(new object[] { BinaryOp.Add, new[] { 8, 16 }, new int[] { 16 }, 2 })] // normal
     public async Task TestPackBinary(BinaryOp op, int[] lhsShape, int[] rhsShape, int count)
     {
         var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
@@ -91,7 +108,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var rule = new Passes.Rules.CPU.PackBinary(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
-        var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
     }
 
@@ -162,6 +179,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [Theory]
     [InlineData(new object[] { new[] { 1, 384, 512 }, new[] { 512, 512 }, 0 })]
     [InlineData(new object[] { new[] { 1, 1, 384, 256 }, new[] { 32, 256, 512 }, 1 })]
+    [InlineData(new object[] { new[] { 384, 512 }, new[] { 512, 512 }, 2 })]
     public async Task TestMatMul(int[] lhsShape, int[] rhsShape, int count)
     {
         var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
@@ -360,7 +378,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             return;
         }
 
-        var main = new Function(new Call(fusion, kernelCase.Vars.ToArray()), kernelCase.Vars.ToArray());
+        var main = new Function(fusion.Body, kernelCase.Vars.ToArray());
 
         var module = new IR.IRModule(main);
         var inputs = kernelCase.Inputs.ToArray();

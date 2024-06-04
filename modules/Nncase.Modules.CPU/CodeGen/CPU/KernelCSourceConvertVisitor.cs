@@ -205,8 +205,8 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
         {
             (MemoryLocation.Rdata, 0) => "rdata",
             (MemoryLocation.Data, 0) => "data",
-            (MemoryLocation.Data, 1) => "l1_data",
-            _ => throw new NotSupportedException(),
+            (MemoryLocation.Data, 1) => "data",
+            _ => throw new NotSupportedException($"{expr.Location}, {expr.Hierarchy}"),
         };
         var ptype = (PointerType)expr.CheckedDataType;
         var ptypeName = ptype.ElemType.ToC();

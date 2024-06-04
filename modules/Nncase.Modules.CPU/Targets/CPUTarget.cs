@@ -119,7 +119,7 @@ public class CPUTarget : ITarget
         }
 
         // need refactor tiling.
-        // passManager.Add<AutoDistributedPass>();
+        passManager.Add<AutoDistributedPass>();
         passManager.Add<DataflowPass>().Configure(p =>
         {
             p.Add<Passes.Rules.CPU.CPUOutputBoxingFusion>(CPUTarget.Kind);
@@ -129,6 +129,8 @@ public class CPUTarget : ITarget
         {
             p.AddAnalysis<Passes.Analysis.IExprUserAnalysisResult>();
             p.Add<Passes.Rules.CPU.DeterminedFusionMergeRule>();
+            p.Add<Passes.Rules.CPU.ConcatFusionMergeRule>();
+            p.Add<Passes.Rules.CPU.TupleFusionMergeRule>();
         });
         passManager.AddWithName<EGraphRulesPass>("PartitionConstruct").Configure(p =>
         {
@@ -138,6 +140,11 @@ public class CPUTarget : ITarget
         {
             p.AddBaseFuncCostEvaluator<Passes.Rules.CPU.FusionCostEvaluator>();
         });
+        passManager.Add<DataflowPass>().Configure(p =>
+        {
+            p.AddAnalysis<Passes.Analysis.IExprUserAnalysisResult>();
+            p.Add<Passes.Rules.CPU.DeterminedFusionMergeRule>();
+        });
 
         // passManager.Add<CPUFunctionPartitionPass>();
         passManager.Add<CPUFusionToModulePass>();
@@ -146,6 +153,9 @@ public class CPUTarget : ITarget
         {
             p.Add<Passes.Rules.CPU.Affine.LowerUnary>();
             p.Add<Passes.Rules.CPU.Affine.LowerSwish>();
+            p.Add<Passes.Rules.CPU.Affine.LowerBinary>();
+            p.Add<Passes.Rules.CPU.Affine.LowerPackedBinary>();
+            p.Add<Passes.Rules.CPU.Affine.LowerMatmul>();
         });
 
         // concat/reshape lower

@@ -141,7 +141,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 # swapRB
                 if 'swapRB' in compile_opt.keys():
                     if new_value.shape[-1] != 3:
-                        assert("Please confirm your input channel is 3.")
+                        assert ("Please confirm your input channel is 3.")
                     if compile_opt['swapRB'] == True:
                         new_value = new_value[:, :, :, ::-1]
                         new_value = np.array(new_value)
@@ -188,7 +188,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                         new_value[:, :, :, i] = (new_value[:, :, :, i] - float(compile_opt['mean'][k])) / \
                             float(compile_opt['std'][k])
             else:
-                assert("Please confirm your input shape and model shape is 4D!")
+                assert ("Please confirm your input shape and model shape is 4D!")
             new_values.append(new_value)
 
         return new_values
@@ -265,6 +265,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
             tmp_dir = os.path.join(self.case_dir, 'tmp')
             if v_target['eval'] or v_target['infer']:
                 compile_options = self.get_compile_options(k_target, tmp_dir)
+                compile_options.target_options = self.get_target_options(
+                    k_target, v_target.get("target_options", None))
                 compiler = nncase.Compiler(compile_options)
                 self.import_model(compiler, model_content, import_options)
 
@@ -343,6 +345,17 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         self.generate_data('calib', self.calibs,
                            self.cfg['compile_opt'], self.cfg['generator']['calibs'])
 
+    def get_target_options(self, target: str, values: dict) -> object:
+        if values is None:
+            return None
+        e = '"'
+        target_options: object = None
+        if target == 'cpu':
+            target_options = nncase.CpuTargetOptions()
+            for k, v in values.items():
+                exec(f"target_options.{k} = {e + v + e if isinstance(v, str) else v}")
+        return target_options
+
     def get_compile_options(self, target, dump_dir):
         compile_options = nncase.CompileOptions()
 
@@ -352,14 +365,6 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         for k, v in compile_opt.items():
             # TODO: support model with unusual layout e.g.: onnx->NHWC
             if k == "model_layout" or k == "model_shape":
-                continue
-            if k == "target_options":
-                target_options = nncase.CpuTargetOptions() if target == 'cpu' else None
-                if target_options is not None:
-                    for subk, subv in v.items():
-                        exec(
-                            f"target_options.{subk} = {e + subv + e if isinstance(v, str) else subv}")
-                    compile_options.target_options = target_options
                 continue
             exec(f"compile_options.{k} = {e + v + e if isinstance(v, str) else v}")
 
@@ -399,7 +404,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         if method == 'random':
             assert args in (True, False)
         elif method == 'bin':
-            assert(os.path.isdir(args))
+            assert (os.path.isdir(args))
             for file in os.listdir(args):
                 if file.endswith('.bin'):
                     file_list.append(os.path.join(args, file))
@@ -409,7 +414,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         elif method == 'constant_of_shape':
             assert len(args) != 0
         elif method == 'numpy':
-            assert(os.path.isdir(args))
+            assert (os.path.isdir(args))
             for file in os.listdir(args):
                 if file.endswith('.npy'):
                     file_list.append(os.path.join(args, file))
@@ -438,10 +443,10 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 if method == 'random':
                     data = generator.from_random(input_shape, dtype, args)
                 elif method == 'bin':
-                    assert(idx < len(file_list))
+                    assert (idx < len(file_list))
                     data = generator.from_bin(input_shape, dtype, file_list[idx])
                 elif method == 'image':
-                    assert(idx < len(file_list))
+                    assert (idx < len(file_list))
                     data = generator.from_image(input_shape, dtype, file_list[idx])
                 elif method == 'constant_of_shape':
                     data = generator.from_constant_of_shape(args, dtype)
