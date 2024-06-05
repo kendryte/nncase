@@ -86,6 +86,20 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, abs)
 IMPL_RVV_WITH_LMULS(ACOS_FLOAT32)
 REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, acos)
 
+// acosh
+// acosh(v) = ln(v + sqrt(v^2 - 1)), v >= 1
+#define ACOSH_FLOAT32(LMUL, MLEN)                                              \
+    inline vfloat32m##LMUL##_t acosh_float32(const vfloat32m##LMUL##_t &v,     \
+                                             const size_t vl) {                \
+        auto diff =                                                            \
+            vfsub_vf_f32m##LMUL(vfmul_vv_f32m##LMUL(v, v, vl), 1.f, vl);       \
+        auto sum = vfadd_vv_f32m##LMUL(v, vfsqrt_v_f32m##LMUL(diff, vl), vl);  \
+        return log_ps(sum, vl);                                                \
+    }
+
+IMPL_RVV_WITH_LMULS(ACOSH_FLOAT32)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, acosh)
+
 // asin
 // porting from https://developer.download.nvidia.cn/cg/asin.html
 #define ASIN_FLOAT32(LMUL, MLEN)                                               \
@@ -113,6 +127,20 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, acos)
 IMPL_RVV_WITH_LMULS(ASIN_FLOAT32)
 REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, asin)
 
+// asinh
+// asinh(v) = ln(v + sqrt(v^2 + 1))
+#define ASINH_FLOAT32(LMUL, MLEN)                                              \
+    inline vfloat32m##LMUL##_t asinh_float32(const vfloat32m##LMUL##_t &v,     \
+                                             const size_t vl) {                \
+        auto sum1 =                                                            \
+            vfadd_vf_f32m##LMUL(vfmul_vv_f32m##LMUL(v, v, vl), 1.f, vl);       \
+        auto sum2 = vfadd_vv_f32m##LMUL(v, vfsqrt_v_f32m##LMUL(sum1, vl), vl); \
+        return log_ps(sum2, vl);                                               \
+    }
+
+IMPL_RVV_WITH_LMULS(ASINH_FLOAT32)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, asinh)
+
 // ceil
 #define CEIL_FLOAT32(LMUL, MLEN)                                               \
     inline vfloat32m##LMUL##_t ceil_float32(const vfloat32m##LMUL##_t &v,      \
@@ -135,6 +163,18 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, ceil)
 
 IMPL_RVV_WITH_LMULS(COS_FLOAT32)
 REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, cos)
+
+// cosh(v) = (exp(v) + exp(-v)) / 2
+#define COSH_FLOAT32(LMUL, MLEN)                                               \
+    inline vfloat32m##LMUL##_t cosh_float32(const vfloat32m##LMUL##_t &v,      \
+                                            const size_t vl) {                 \
+        auto sum = vfadd_vv_f32m##LMUL(                                        \
+            exp_ps(v, vl), exp_ps(vfneg_v_f32m##LMUL(v, vl), vl), vl);         \
+        return vfdiv_vf_f32m##LMUL(sum, 2.f, vl);                              \
+    }
+
+IMPL_RVV_WITH_LMULS(COSH_FLOAT32)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, cosh)
 
 // exp
 #define EXP_FLOAT32(LMUL, MLEN)                                                \
@@ -222,6 +262,18 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, sign)
 
 IMPL_RVV_WITH_LMULS(SIN_FLOAT32)
 REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, sin)
+
+// sinh(v) = (exp(v) - exp(-v)) / 2
+#define SINH_FLOAT32(LMUL, MLEN)                                               \
+    inline vfloat32m##LMUL##_t sinh_float32(const vfloat32m##LMUL##_t &v,      \
+                                            const size_t vl) {                 \
+        auto diff = vfsub_vv_f32m##LMUL(                                       \
+            exp_ps(v, vl), exp_ps(vfneg_v_f32m##LMUL(v, vl), vl), vl);         \
+        return vfdiv_vf_f32m##LMUL(diff, 2.f, vl);                             \
+    }
+
+IMPL_RVV_WITH_LMULS(SINH_FLOAT32)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, sinh)
 
 // sqrt
 #define SQRT_FLOAT32(LMUL, MLEN)                                               \
