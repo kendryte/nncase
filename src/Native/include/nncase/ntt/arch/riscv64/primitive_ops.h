@@ -243,11 +243,11 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, rsqrt)
 #define SIGN_FLOAT32(LMUL, MLEN)                                               \
     inline vfloat32m##LMUL##_t sign_float32(const vfloat32m##LMUL##_t &v,      \
                                             const size_t vl) {                 \
-        auto zeros = vfmv_v_f_f32m##LMUL(0.f, vl);                             \
+        auto ret = vfmv_v_f_f32m##LMUL(0.f, vl);                               \
         auto gt_mask = vmfgt_vf_f32m##LMUL##_b##MLEN(v, 0.f, vl);              \
-        auto ret = vfadd_vf_f32m##LMUL##_m(gt_mask, zeros, zeros, 1.f, vl);    \
+        ret = vfmerge_vfm_f32m##LMUL(gt_mask, ret, 1.f, vl);                   \
         auto lt_mask = vmflt_vf_f32m##LMUL##_b##MLEN(v, 0.f, vl);              \
-        return vfsub_vf_f32m##LMUL##_m(lt_mask, ret, ret, 1.f, vl);            \
+        return vfmerge_vfm_f32m##LMUL(lt_mask, ret, -1.f, vl);                 \
     }
 
 IMPL_RVV_WITH_LMULS(SIGN_FLOAT32)
