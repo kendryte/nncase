@@ -39,11 +39,31 @@ template <> struct acos<ntt::vector<float, 8>> {
     }
 };
 
+// acosh(v) = ln(v + sqrt(v^2 - 1)), v >= 1
+template <> struct acosh<ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const ntt::vector<float, 8> &v) const noexcept {
+        return log256_ps(
+            _mm256_add_ps(v, _mm256_sqrt_ps((_mm256_sub_ps(
+                                 _mm256_mul_ps(v, v), _mm256_set1_ps(1.0f))))));
+    }
+};
+
 // asin
 template <> struct asin<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
         return asin256_ps(v);
+    }
+};
+
+// acosh(v) = ln(v + sqrt(v^2 - 1)), v >= 1
+template <> struct asinh<ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const ntt::vector<float, 8> &v) const noexcept {
+        return log256_ps(
+            _mm256_add_ps(v, _mm256_sqrt_ps((_mm256_add_ps(
+                                 _mm256_mul_ps(v, v), _mm256_set1_ps(1.0f))))));
     }
 };
 
@@ -60,6 +80,17 @@ template <> struct cos<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
         return cos256_ps(v);
+    }
+};
+
+// cosh(v) = (exp(v) + exp(-v)) / 2
+template <> struct cosh<ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const ntt::vector<float, 8> &v) const noexcept {
+        return _mm256_div_ps(
+            _mm256_add_ps(exp256_ps(v),
+                          exp256_ps(_mm256_sub_ps(_mm256_setzero_ps(), v))),
+            _mm256_set1_ps(2.0f));
     }
 };
 
@@ -144,6 +175,17 @@ template <> struct sin<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
         return sin256_ps(v);
+    }
+};
+
+// sinh(v) = (exp(v) - exp(-v)) / 2
+template <> struct sinh<ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const ntt::vector<float, 8> &v) const noexcept {
+        return _mm256_div_ps(
+            _mm256_sub_ps(exp256_ps(v),
+                          exp256_ps(_mm256_sub_ps(_mm256_setzero_ps(), v))),
+            _mm256_set1_ps(2.0f));
     }
 };
 
