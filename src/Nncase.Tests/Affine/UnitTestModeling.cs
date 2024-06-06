@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Linq;
 using CommunityToolkit.HighPerformance;
 using Google.OrTools.ConstraintSolver;
+using Nncase.IR;
+using Nncase.Passes;
 using Xunit;
 
 namespace Nncase.Tests.AffineTest;
@@ -220,6 +222,24 @@ public sealed class UnitTestModeling : TestClassBase
     public void TestTwoLevelMemoryModeling()
     {
         Nncase.Schedule.MatmulTiler.Solve();
+    }
+
+    [Fact]
+    public void TestAutoFusion()
+    {
+        Function func;
+        {
+            var a = new Var(new TensorType(DataTypes.Float32, new[] { 128, 256 }));
+            var b = new Var(new TensorType(DataTypes.Float32, new[] { 256, 384 }));
+            var c = IR.F.Tensors.MatMul(a, b);
+            var d = IR.F.Math.Exp(c);
+            var e = new Var(new TensorType(DataTypes.Float32, new[] { 384, 512 }));
+            var f = IR.F.Tensors.MatMul(d, e);
+            func = new(f, a, b, e);
+        }
+
+        var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), }, new());
+        Dumpper.DumpIR(post, "post");
     }
 }
 

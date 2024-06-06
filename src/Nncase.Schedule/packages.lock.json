@@ -25,6 +25,12 @@
           "StyleCop.Analyzers.Unstable": "1.2.0.435"
         }
       },
+      "VisitorPatternGenerator": {
+        "type": "Direct",
+        "requested": "[0.1.2, )",
+        "resolved": "0.1.2",
+        "contentHash": "VxkrPrIogfFj8Sq+hKR57d3c2VBLFSP3ZjWhaGqUVTx8oAGT5Sp2PgkyPzqpwshikoMpRbuBhgkhcNQW92nssA=="
+      },
       "Google.OrTools.runtime.linux-arm64": {
         "type": "Transitive",
         "resolved": "9.4.1874",
