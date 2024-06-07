@@ -1,23 +1,21 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
-using Nncase.IR.Tensors;
-using Nncase.PatternMatch;
-using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.Buffers;
 
 /// <summary>
 /// get the buffer from the input.
 /// </summary>
-public sealed partial class BufferOf : Op
+public sealed class BufferOf : Expr
 {
-    /// <summary>
-    /// Get the input parameter.
-    /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(BufferOf), 0, "input", IsTensor());
+    public BufferOf(Expr input)
+        : base(new[] { input })
+    {
+    }
 
-    public TIR.MemoryLocation MemoryLocation { get; }
+    public Expr Input => Operands[0];
 
-    /// <inheritdoc/>
-    public override string DisplayProperty() => $"Schedule.MemoryLocation.{MemoryLocation}";
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.VisitBufferOf(this, context);
+
+    public BufferOf With(Expr? input = null) => new BufferOf(input ?? Input);
 }

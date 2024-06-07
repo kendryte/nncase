@@ -33,14 +33,14 @@ class stackvm_runtime_function final : public runtime_function,
   protected:
     result<void>
     initialize_core(runtime_function_init_context &context) noexcept override;
-    result<value_t> invoke_core(gsl::span<value_t> parameters,
+    result<value_t> invoke_core(std::span<value_t> parameters,
                                 value_t return_value) noexcept override;
 
     using tensor_op_visitor::visit;
 #include "runtime_function_ops.h"
 
   private:
-    result<void> run(gsl::span<const gsl::byte> text) noexcept;
+    result<void> run(std::span<const std::byte> text) noexcept;
 
     result<void> visit(const extcall_op_t &op) noexcept;
     result<void> visit(const cuscall_op_t &op) noexcept;
@@ -86,8 +86,8 @@ class stackvm_runtime_function final : public runtime_function,
     }
 
   private:
-    gsl::span<const gsl::byte> text_;
-    const gsl::byte *pc_;
+    std::span<const std::byte> text_;
+    const std::byte *pc_;
     evaluate_stack stack_;
     call_frames frames_;
     span_reader reader_;

@@ -31,8 +31,8 @@ class NNCASE_API runtime_tensor {
     explicit runtime_tensor(tensor impl) noexcept;
 
     typecode_t datatype() const noexcept;
-    gsl::span<const size_t> shape() const noexcept;
-    gsl::span<const size_t> strides() const noexcept;
+    std::span<const size_t> shape() const noexcept;
+    std::span<const size_t> strides() const noexcept;
     bool empty() const noexcept;
     bool is_host() const noexcept;
     bool is_contiguous() const noexcept;
@@ -62,17 +62,17 @@ typedef enum memory_pool_ {
     pool_shared
 } memory_pool_t;
 
-typedef std::function<void(gsl::byte *)> data_deleter_t;
+typedef std::function<void(std::byte *)> data_deleter_t;
 
 NNCASE_API result<runtime_tensor>
 create(typecode_t datatype, dims_t shape,
        memory_pool_t pool = pool_shared_first) noexcept;
 NNCASE_API result<runtime_tensor>
-create(typecode_t datatype, dims_t shape, gsl::span<gsl::byte> data, bool copy,
+create(typecode_t datatype, dims_t shape, std::span<std::byte> data, bool copy,
        memory_pool_t pool = pool_shared_first,
        uintptr_t physical_address = 0) noexcept;
 NNCASE_API result<runtime_tensor>
-create(typecode_t datatype, dims_t shape, gsl::span<gsl::byte> data,
+create(typecode_t datatype, dims_t shape, std::span<std::byte> data,
        data_deleter_t data_deleter, memory_pool_t pool = pool_shared_first,
        uintptr_t physical_address = 0) noexcept;
 NNCASE_API result<runtime_tensor>
@@ -80,12 +80,12 @@ create(typecode_t datatype, dims_t shape, strides_t strides,
        memory_pool_t pool = pool_shared_first) noexcept;
 NNCASE_API result<runtime_tensor>
 create(typecode_t datatype, dims_t shape, strides_t strides,
-       gsl::span<gsl::byte> data, bool copy,
+       std::span<std::byte> data, bool copy,
        memory_pool_t pool = pool_shared_first,
        uintptr_t physical_address = 0) noexcept;
 NNCASE_API result<runtime_tensor>
 create(typecode_t datatype, dims_t shape, strides_t strides,
-       gsl::span<gsl::byte> data, data_deleter_t data_deleter,
+       std::span<std::byte> data, data_deleter_t data_deleter,
        memory_pool_t pool = pool_shared_first,
        uintptr_t physical_address = 0) noexcept;
 

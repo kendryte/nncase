@@ -24,20 +24,16 @@ class nncaseConan(ConanFile):
         "fPIC": [True, False],
         "runtime": [True, False],
         "tests": [True, False],
-        "halide": [True, False],
         "python": [True, False],
-        "vulkan_runtime": [True, False],
-        "openmp": [True, False]
+        "vulkan_runtime": [True, False]
     }
     default_options = {
         "shared": False,
         "fPIC": True,
         "runtime": False,
         "tests": False,
-        "halide": True,
         "python": True,
-        "vulkan_runtime": False,
-        "openmp": True
+        "vulkan_runtime": False
     }
 
     def imports(self):
@@ -46,54 +42,32 @@ class nncaseConan(ConanFile):
             self.copy("ortki.dll", "bin", "bin")
 
     def requirements(self):
-        self.requires('gsl-lite/0.37.0')
-        self.requires('hkg/0.0.1')
         self.requires('ncnn/20240102')
         if self.options.tests:
             self.requires('gtest/1.10.0')
-            self.requires('ortki/0.0.2')
+            self.requires('ortki/0.0.3')
             self.requires('rapidjson/1.1.x')
 
         if self.options.python:
-            self.requires('pybind11/2.6.1')
+            self.requires('pybind11/2.11.1')
 
         if not self.options.runtime:
-            self.requires('abseil/20220623.1')
-            self.requires('nethost/6.0.11')
+            self.requires('nethost/7.0.5')
             self.requires('fmt/7.1.3')
-            self.requires('magic_enum/0.7.0')
-            self.requires('spdlog/1.8.2')
-            self.requires('inja/3.2.0')
-            if self.options.tests:
-                self.requires('gtest/1.10.0')
-
-        if (not self.options.runtime) or self.options.vulkan_runtime:
-            self.requires('vulkan-headers/1.2.182')
-            self.requires('vulkan-loader/1.2.182')
+            self.requires('nlohmann_json/3.9.1')
 
     def build_requirements(self):
         pass
 
     def configure(self):
-        min_cppstd = "17" if self.options.runtime else "20"
+        min_cppstd = "20"
         tools.check_min_cppstd(self, min_cppstd)
 
         if self.settings.os == 'Windows':
             self.settings.compiler.toolset = 'ClangCL'
-
-        if self.settings.arch not in ("x86_64",):
-            self.options.halide = False
-
         if not self.options.runtime:
             if self.settings.os == 'Windows':
                 self.options["nethost"].shared = True
-
-        if (not self.options.runtime) or self.options.vulkan_runtime:
-            if self.settings.os == 'Linux':
-                self.options["vulkan-loader"].with_wsi_xcb = False
-                self.options["vulkan-loader"].with_wsi_xlib = False
-                self.options["vulkan-loader"].with_wsi_wayland = False
-                self.options["vulkan-loader"].with_wsi_directfb = False
 
         if self.options.tests:
             self.options["ortki"].shared = True
@@ -101,13 +75,9 @@ class nncaseConan(ConanFile):
     def cmake_configure(self):
         cmake = CMake(self)
         cmake.definitions['BUILDING_RUNTIME'] = self.options.runtime
-        cmake.definitions['ENABLE_OPENMP'] = self.options.openmp
         cmake.definitions['ENABLE_VULKAN_RUNTIME'] = self.options.vulkan_runtime
-        cmake.definitions['ENABLE_HALIDE'] = self.options.halide
         cmake.definitions['BUILD_PYTHON_BINDING'] = self.options.python
         cmake.definitions['BUILD_TESTING'] = self.options.tests
-        if self.options.runtime:
-            cmake.definitions["CMAKE_CXX_STANDARD"] = 17
         cmake.configure()
         return cmake
 

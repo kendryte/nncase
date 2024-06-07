@@ -31,4 +31,15 @@ public sealed class UnitTestDataType
         Assert.Throws<NullReferenceException>(() => CompilerServices.DataTypeService.GetPrimTypeFromType(Type.GetType(string.Empty)!));
         Assert.Throws<NullReferenceException>(() => CompilerServices.DataTypeService.GetValueTypeFromType(Type.GetType(string.Empty)!));
     }
+
+    [Fact]
+    public void TestVectorType()
+    {
+        Vector32<int> vb = default;
+        vb[0] = 1;
+        vb[1] = 2;
+        Assert.Equal(1, vb[0]);
+        Assert.Equal(2, vb[1]);
+        Assert.Equal(0, vb[2]);
+    }
 }

@@ -29,9 +29,9 @@ namespace {
 // softmax(x) = exp(x - reduce_max(x)) / reduce_sum(exp(x - reduce_max(x)))
 template <typename T>
 result<void>
-softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
-             NNCASE_UNUSED gsl::span<const size_t> in_strides,
-             NNCASE_UNUSED gsl::span<const size_t> out_strides, int64_t axis,
+softmax_impl(const T *input, T *output, std::span<const size_t> in_shape,
+             NNCASE_UNUSED std::span<const size_t> in_strides,
+             NNCASE_UNUSED std::span<const size_t> out_strides, int64_t axis,
              float beta, bool needLog = false) noexcept {
     size_t positive_axis = axis < 0 ? in_shape.size() + axis : axis;
 
@@ -163,9 +163,9 @@ softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
 } // namespace
 
 result<void> nncase::kernels::stackvm::reference::softmax(
-    typecode_t typecode, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> out_strides, int64_t axis, float beta,
+    typecode_t typecode, const std::byte *input, std::byte *output,
+    std::span<const size_t> in_shape, std::span<const size_t> in_strides,
+    std::span<const size_t> out_strides, int64_t axis, float beta,
     bool needLog) noexcept {
     TYPE_SELECT_SOFTMAX(typecode, SOFTMAX_IMPL);
 }

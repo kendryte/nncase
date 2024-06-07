@@ -1,0 +1,7 @@
+﻿AffineDim,true,Default,,
+AffineExtent,true,Default,,
+AffineSymbol,true,Default,,
+AffineConstant,true,Default,,
+AffineAddBinary,true,Default,,Lhs;Rhs
+AffineMulBinary,true,Default,,Lhs;Rhs
+AffineDivBinary,true,Default,,Lhs;Rhs

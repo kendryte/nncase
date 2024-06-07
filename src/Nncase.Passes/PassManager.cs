@@ -203,7 +203,7 @@ internal sealed class PassManager : IPassManager
 
             if (replaced && DumpScope.Current.IsEnabled(DumpFlags.PassIR))
             {
-                DumpScope.Current.DumpModule(module, $"Epoch_{StartPassIndex}/After");
+                DumpScope.Current.DumpModule(module, $"FunctionCallUpdate_{StartPassIndex}/After");
             }
 
             return module;

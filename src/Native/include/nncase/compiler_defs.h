@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #pragma once
-#include <gsl/gsl-lite.hpp>
 #include <type_traits>
 
 #if defined(_MSC_VER)
@@ -34,31 +33,17 @@
 #define NNCASE_UNREACHABLE() __builtin_unreachable()
 #endif
 
-#if gsl_CPP17_OR_GREATER
 #define NNCASE_INLINE_VAR inline
 #define NNCASE_UNUSED [[maybe_unused]]
 namespace nncase {
 template <class Callable, class... Args>
 using invoke_result_t = std::invoke_result_t<Callable, Args...>;
 }
-#else
-#define NNCASE_INLINE_VAR
-#if defined(_MSC_VER)
-#define NNCASE_UNUSED
-#else
-#define NNCASE_UNUSED __attribute__((unused))
-#endif
-namespace nncase {
-template <class Callable, class... Args>
-using invoke_result_t = std::result_of_t<Callable(Args...)>;
-}
-#endif
 
 #define NNCASE_LITTLE_ENDIAN 1
 
-#define NNCASE_HAVE_STD_BYTE gsl_CPP17_OR_GREATER
-#define NNCASE_NODISCARD gsl_NODISCARD
-#define NNCASE_NORETURN gsl_NORETURN
+#define NNCASE_NODISCARD [[nodiscard]]
+#define NNCASE_NORETURN [[noreturn]]
 
 #define BEGIN_NS_NNCASE_RUNTIME                                                \
     namespace nncase {                                                         \
@@ -96,8 +81,35 @@ using invoke_result_t = std::result_of_t<Callable(Args...)>;
     }
 
 #ifndef DEFINE_ENUM_BITMASK_OPERATORS
-#define DEFINE_ENUM_BITMASK_OPERATORS(ENUMTYPE)                                \
-    gsl_DEFINE_ENUM_BITMASK_OPERATORS(ENUMTYPE)
+#define DEFINE_ENUM_BITMASK_OPERATORS(ENUM)                                    \
+    [[nodiscard]] inline constexpr ENUM operator~(ENUM val) noexcept {         \
+        typedef typename std::underlying_type<ENUM>::type U;                   \
+        return ENUM(~U(val));                                                  \
+    }                                                                          \
+    [[nodiscard]] inline constexpr ENUM operator|(ENUM lhs,                    \
+                                                  ENUM rhs) noexcept {         \
+        typedef typename std::underlying_type<ENUM>::type U;                   \
+        return ENUM(U(lhs) | U(rhs));                                          \
+    }                                                                          \
+    [[nodiscard]] inline constexpr ENUM operator&(ENUM lhs,                    \
+                                                  ENUM rhs) noexcept {         \
+        typedef typename std::underlying_type<ENUM>::type U;                   \
+        return ENUM(U(lhs) & U(rhs));                                          \
+    }                                                                          \
+    [[nodiscard]] inline constexpr ENUM operator^(ENUM lhs,                    \
+                                                  ENUM rhs) noexcept {         \
+        typedef typename std::underlying_type<ENUM>::type U;                   \
+        return ENUM(U(lhs) ^ U(rhs));                                          \
+    }                                                                          \
+    inline constexpr ENUM &operator|=(ENUM &lhs, ENUM rhs) noexcept {          \
+        return lhs = lhs | rhs;                                                \
+    }                                                                          \
+    inline constexpr ENUM &operator&=(ENUM &lhs, ENUM rhs) noexcept {          \
+        return lhs = lhs & rhs;                                                \
+    }                                                                          \
+    inline constexpr ENUM &operator^=(ENUM &lhs, ENUM rhs) noexcept {          \
+        return lhs = lhs ^ rhs;                                                \
+    }
 #endif
 
 namespace nncase {

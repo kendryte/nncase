@@ -142,6 +142,8 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldTwoPads>();
             p.Add<Passes.Rules.Neutral.SwapBinaryArgs>();
             p.Add<Passes.Rules.Neutral.FoldDilatedConv2D>();
+            p.Add<Passes.Rules.Neutral.DecomposeSoftmax>();
+            p.Add<Passes.Rules.Neutral.DecomposeLayerNorm>();
         });
 
         passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
@@ -251,11 +253,6 @@ internal class Compiler : ICompiler
 
     public void ClearFixShape(IPassManager p)
     {
-        if (!_compileSession.CompileOptions.ShapeBucketOptions.Enable)
-        {
-            return;
-        }
-
         p.AddWithName<DataflowPass>("ClearUnused").Configure(c =>
         {
             c.Add<FoldFixShape>();
@@ -285,7 +282,12 @@ internal class Compiler : ICompiler
             "TargetDependentAfterQuantPass",
             progress,
             token);
-        await RunPassAsync(p => ClearFixShape(p), "ClearFixShape", progress, token);
+
+        if (_compileSession.CompileOptions.ShapeBucketOptions.Enable)
+        {
+            await RunPassAsync(ClearFixShape, "ClearFixShape", progress, token);
+        }
+
         await RunPassAsync(
             p => target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions),
             "TargetDependentBeforeCodeGen",

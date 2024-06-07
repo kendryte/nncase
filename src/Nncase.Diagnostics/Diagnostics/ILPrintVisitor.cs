@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Nncase.IR.Buffers;
 using Nncase.IR.Math;
 using Nncase.TIR;
 using Nncase.Utilities;
@@ -268,7 +269,8 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
     {
         PrimType ptype => ptype.GetDisplayName() + (type.Shape.IsScalar ? string.Empty : type.Shape.ToString()),
         PointerType { ElemType: PrimType etype } => $"*{etype.GetDisplayName()}",
-        ValueType => $"{type.DType.ToString()}",
+        ValueType => $"{type.DType}",
+        VectorType vtype => $"{vtype.ElemType.GetDisplayName()}<{string.Join(",", vtype.Lanes)}>" + (type.Shape.IsScalar ? string.Empty : type.Shape.ToString()),
         _ => throw new NotSupportedException(type.DType.GetType().Name),
     };
 
@@ -541,6 +543,89 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         name = AllocateTempVar(expr);
         _scope.IndWrite($"{name} = {target}@({expr.Name} = {attr})");
         AppendCheckedType(expr.CheckedType);
+        return name;
+    }
+
+    protected override string VisitBuffer(TIR.Buffer expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        name = AllocateTempVar(expr);
+        _scope.IndWriteLine($"{name} = buffer({VisitType(expr.CheckedType)})");
+        return name;
+    }
+
+    protected override string VisitBufferOf(BufferOf expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        name = $"bufferof({Visit(expr.Input)})";
+        _names.Add(expr, name);
+        return name;
+    }
+
+    /// <inheritdoc/>
+    protected override string VisitGrid(IR.Affine.Grid expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        name = AllocateTempVar(expr);
+        var reads = expr.Reads.AsValueEnumerable().Select(Visit).ToArray();
+        var buffers = expr.Buffers.AsValueEnumerable().Select(Visit).ToArray();
+        _scope.Push();
+
+        // 1. For Loop signature
+        _scope.Append($"{name} = Grid({string.Join(", ", reads)})");
+        AppendCheckedType(expr.CheckedType);
+        _scope.IndWriteLine(" {");
+
+        using (_scope.IndentUp())
+        {
+            // 2. In buffers
+            _scope.IndWriteLine($"Reads:");
+            using (_scope.IndentUp())
+            {
+                for (int i = 0; i < buffers.Length - 1; i++)
+                {
+                    _scope.IndWriteLine($"{buffers[i]}: {expr.AccessMaps[i]}");
+                }
+            }
+
+            // 3. Out buffer
+            _scope.IndWriteLine($"Write:");
+            using (_scope.IndentUp())
+            {
+                _scope.IndWriteLine($"{buffers[^1]}: {expr.AccessMaps[^1]}");
+            }
+
+            // 4. For Body
+            var parameters = expr.BodyParameters.AsValueEnumerable().Select(Visit).ToArray();
+            _scope.IndWrite($"Body: ({string.Join(", ", parameters)})");
+            AppendCheckedType(expr.Body.CheckedType, " {", hasNewLine: true);
+            using (_scope.IndentUp())
+            {
+                foreach (var item in expr.Body.Fields)
+                {
+                    Visit(item);
+                }
+            }
+
+            _scope.IndWriteLine("}");
+        }
+
+        // 3. For closing
+        _scope.IndWriteLine("}");
+
+        _scope.IndWrite(_scope.Pop());
         return name;
     }
 

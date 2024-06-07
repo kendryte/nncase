@@ -62,7 +62,7 @@ void write_out_shape(dump_manager &dump_manager_, const nncase::dims_t &shape) {
     f.close();
 }
 
-const gsl::byte *force_get_data(nncase::tensor tensor) {
+const std::byte *force_get_data(nncase::tensor tensor) {
     return tensor->to_host()
         .unwrap()
         ->buffer()

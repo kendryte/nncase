@@ -50,7 +50,7 @@ class QuantizeTest : public KernelTest,
             uint8_t zero_point[] = {(uint8_t)zero_point_value};
             zero_point_ptr =
                 hrt::create(nncase::dt_uint8, {1},
-                            {reinterpret_cast<gsl::byte *>(zero_point),
+                            {reinterpret_cast<std::byte *>(zero_point),
                              sizeof(zero_point)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
@@ -58,7 +58,7 @@ class QuantizeTest : public KernelTest,
             int8_t zero_point[] = {(int8_t)zero_point_value};
             zero_point_ptr =
                 hrt::create(nncase::dt_int8, {1},
-                            {reinterpret_cast<gsl::byte *>(zero_point),
+                            {reinterpret_cast<std::byte *>(zero_point),
                              sizeof(zero_point)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
@@ -66,7 +66,7 @@ class QuantizeTest : public KernelTest,
             int16_t zero_point[] = {(int16_t)zero_point_value};
             zero_point_ptr =
                 hrt::create(nncase::dt_int16, {1},
-                            {reinterpret_cast<gsl::byte *>(zero_point),
+                            {reinterpret_cast<std::byte *>(zero_point),
                              sizeof(zero_point)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
@@ -75,7 +75,7 @@ class QuantizeTest : public KernelTest,
         float scale[] = {scale_value};
         scale_ptr =
             hrt::create(nncase::dt_float32, {1},
-                        {reinterpret_cast<gsl::byte *>(scale), sizeof(scale)},
+                        {reinterpret_cast<std::byte *>(scale), sizeof(scale)},
                         true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
 
@@ -85,7 +85,7 @@ class QuantizeTest : public KernelTest,
         quant_param_t quant_param[] = {quantParam};
         quant_param_ptr =
             hrt::create(dt_int64, {1},
-                        {reinterpret_cast<gsl::byte *>(quant_param),
+                        {reinterpret_cast<std::byte *>(quant_param),
                          sizeof(quant_param)},
                         true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
@@ -112,13 +112,13 @@ TEST_P(QuantizeTest, quantize) {
         runtime_tensor expected;
         auto output_ort = ortki_QuantizeLinear(
             l_ort, runtime_tensor_2_ort_tensor(scale_ptr),
-            runtime_tensor_2_ort_tensor(zero_point_ptr), 0);
+            runtime_tensor_2_ort_tensor(zero_point_ptr), 0, 1);
         size_t size = 0;
         void *ptr_ort = tensor_buffer(output_ort, &size);
         dims_t shape(tensor_rank(output_ort));
         tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
         expected = hrt::create(zero_point_ptr.datatype(), shape,
-                               {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                               {reinterpret_cast<std::byte *>(ptr_ort), size},
                                true, host_runtime_tensor::pool_cpu_only)
                        .expect("create tensor failed");
 

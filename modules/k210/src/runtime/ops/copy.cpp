@@ -28,7 +28,7 @@ result<void> k210_runtime_function::visit(const copy_options &op) noexcept {
     runtime_shape_t in_strides{op.in_strides.begin(), op.in_strides.end()};
     runtime_shape_t out_strides{op.out_strides.begin(), op.out_strides.end()};
     return kernels::copy(op.input.datatype,
-                         reinterpret_cast<const gsl::byte *>(input.data()),
-                         reinterpret_cast<gsl::byte *>(output.data()), in_shape,
+                         reinterpret_cast<const std::byte *>(input.data()),
+                         reinterpret_cast<std::byte *>(output.data()), in_shape,
                          in_strides, out_strides);
 }

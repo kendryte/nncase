@@ -27,14 +27,14 @@ using namespace nncase::kernels::stackvm;
 
 template <typename T>
 result<void> prelu_impl(const T *input, const T *slope_mem, T *output,
-                        gsl::span<const size_t> in_shape,
-                        gsl::span<const size_t> input_strides,
-                        gsl::span<const size_t> slope_shape,
-                        gsl::span<const size_t> slope_strides,
-                        gsl::span<const size_t> out_shape,
-                        gsl::span<const size_t> out_strides,
+                        std::span<const size_t> in_shape,
+                        std::span<const size_t> input_strides,
+                        std::span<const size_t> slope_shape,
+                        std::span<const size_t> slope_strides,
+                        std::span<const size_t> out_shape,
+                        std::span<const size_t> out_strides,
                         NNCASE_UNUSED kernel_context &context) {
-    return apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {
+    return apply(out_shape, [&](std::span<const size_t> index) -> result<void> {
         const auto in_index =
             kernels::detail::get_reduced_offset(index, in_shape);
         const auto slope_index =
@@ -84,11 +84,11 @@ result<void> prelu_impl(const T *input, const T *slope_mem, T *output,
     }
 
 result<void> nncase::kernels::stackvm::reference::prelu(
-    typecode_t typecode, const gsl::byte *input, const gsl::byte *slope_mem,
-    gsl::byte *output, gsl::span<const size_t> in_shape,
-    gsl::span<const size_t> input_strides, gsl::span<const size_t> slope_shape,
-    gsl::span<const size_t> slope_strides, gsl::span<const size_t> out_shape,
-    gsl::span<const size_t> out_strides,
+    typecode_t typecode, const std::byte *input, const std::byte *slope_mem,
+    std::byte *output, std::span<const size_t> in_shape,
+    std::span<const size_t> input_strides, std::span<const size_t> slope_shape,
+    std::span<const size_t> slope_strides, std::span<const size_t> out_shape,
+    std::span<const size_t> out_strides,
     NNCASE_UNUSED kernel_context &context) {
     TYPE_SELECT_PRELU(typecode, PRELU_IMPL);
 }

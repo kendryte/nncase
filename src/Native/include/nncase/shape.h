@@ -15,12 +15,24 @@
 #pragma once
 #include "compiler_defs.h"
 #include <algorithm>
+#include <iterator>
 #include <nncase/runtime/result.h>
 #include <nncase/runtime/simple_types.h>
 #include <nncase/runtime/small_vector.hpp>
 #include <optional>
 
 namespace nncase {
+inline constexpr bool operator==(const std::span<const size_t> &lhs,
+                                 const std::span<const size_t> &rhs) noexcept {
+    return lhs.size() == rhs.size() &&
+           std::equal(lhs.begin(), lhs.end(), rhs.begin());
+}
+
+inline constexpr bool operator!=(const std::span<const size_t> &lhs,
+                                 const std::span<const size_t> &rhs) noexcept {
+    return !(lhs == rhs);
+}
+
 struct unknown_dim_t {};
 
 inline constexpr unknown_dim_t unknown_dim;
@@ -118,7 +130,7 @@ class NNCASE_API shape_t {
     bool is_invalid() const noexcept { return kind() == shape_kind_invalid; }
 
     /** @brief Get dimensions */
-    gsl::span<const dim_t> dims() const noexcept { return dims_; }
+    std::span<const dim_t> dims() const noexcept { return dims_; }
 
     /** @brief Get rank */
     std::optional<size_t> rank() const noexcept {

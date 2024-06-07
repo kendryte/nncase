@@ -46,7 +46,7 @@ class SplitTest : public KernelTest,
         axis_value = value;
         int64_t axis_array[] = {axis_value};
         axis = hrt::create(dt_int64, {1},
-                           {reinterpret_cast<gsl::byte *>(axis_array),
+                           {reinterpret_cast<std::byte *>(axis_array),
                             sizeof(axis_array)},
                            true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
@@ -70,7 +70,7 @@ TEST_P(SplitTest, Split) {
     size_t size = 0;
     int64_t sections_array[] = {2, 2};
     auto sections = hrt::create(dt_int64, {2},
-                                {reinterpret_cast<gsl::byte *>(sections_array),
+                                {reinterpret_cast<std::byte *>(sections_array),
                                  sizeof(sections_array)},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
@@ -83,7 +83,7 @@ TEST_P(SplitTest, Split) {
     tensor_shape(output_ort1, reinterpret_cast<int64_t *>(shape1.data()));
     auto expected1 =
         hrt::create(input.datatype(), shape1,
-                    {reinterpret_cast<gsl::byte *>(ptr_ort1), size}, true,
+                    {reinterpret_cast<std::byte *>(ptr_ort1), size}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
@@ -95,7 +95,7 @@ TEST_P(SplitTest, Split) {
     tensor_shape(output_ort2, reinterpret_cast<int64_t *>(shape2.data()));
     auto expected2 =
         hrt::create(input.datatype(), shape2,
-                    {reinterpret_cast<gsl::byte *>(ptr_ort2), size}, true,
+                    {reinterpret_cast<std::byte *>(ptr_ort2), size}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 

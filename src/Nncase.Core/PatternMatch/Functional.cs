@@ -253,7 +253,7 @@ public static partial class Math
     /// <param name="lhs">Left operand.</param>
     /// <param name="rhs">Right operand.</param>
     /// <returns>Result expression.</returns>
-    public static CallPattern FloorDiv(Pattern lhs, Pattern rhs) => Floor(lhs / rhs);
+    public static CallPattern FloorDiv(Pattern lhs, Pattern rhs) => IsBinary(BinaryOp.FloorDiv, lhs, rhs);
 
     /// <summary>
     /// CallPattern floor mod.

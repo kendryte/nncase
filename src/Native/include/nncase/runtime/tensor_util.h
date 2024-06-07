@@ -19,7 +19,7 @@ inline float cosine(const float *v1, const float *v2, size_t size) {
            ((sqrt(dot(v1, v1, size)) * sqrt(dot(v2, v2, size))));
 }
 
-inline void dump_shape(gsl::span<const size_t> shape) {
+inline void dump_shape(std::span<const size_t> shape) {
     std::cout << "shape:";
     for (size_t i = 0; i < shape.size(); i++) {
         std::cout << shape[i] << " ";

@@ -55,7 +55,7 @@ class PreluTest : public KernelTest,
         float *slope_array = (float *)malloc(slope_size * sizeof(float));
         std::copy(slope.begin(), slope.end(), slope_array);
         slope_tensor = hrt::create(dt_float32, {slope_size},
-                                   {reinterpret_cast<gsl::byte *>(slope_array),
+                                   {reinterpret_cast<std::byte *>(slope_array),
                                     slope_size * sizeof(float)},
                                    true, host_runtime_tensor::pool_cpu_only)
                            .expect("create tensor failed");
@@ -107,7 +107,7 @@ TEST_P(PreluTest, Prelu) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 

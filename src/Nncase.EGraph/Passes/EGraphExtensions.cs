@@ -26,9 +26,10 @@ public static class EGraphExtensions
     /// </summary>
     /// <param name="eGraph">egraph.</param>
     /// <param name="root">Root eclass.</param>
+    /// <param name="compileOptions">compileOptions.</param>
     /// <param name="basefunc_cost_evaluator">base func cost evaluator.</param>
     /// <param name="constrains">the cp model constrains.</param>
-    public static Expr Extract(this IEGraph eGraph, EClass root, Evaluator.IBaseFuncCostEvaluator? basefunc_cost_evaluator, EGraphExtractConstrains[] constrains)
+    public static Expr Extract(this IEGraph eGraph, EClass root, CompileOptions compileOptions, Evaluator.IBaseFuncCostEvaluator? basefunc_cost_evaluator, EGraphExtractConstrains[]? constrains = null)
     {
         // 1. set enode expr with more accuracy type.
         foreach (var eclass in eGraph.Classes)
@@ -43,7 +44,7 @@ public static class EGraphExtensions
         }
 
         // 2. start the cost evaluator
-        var costModel = new CostModel.EGraphCostEvaluator(root.Find(), basefunc_cost_evaluator, false).Evaluate();
+        var costModel = new CostModel.EGraphCostEvaluator(root.Find(), compileOptions, basefunc_cost_evaluator, false).Evaluate();
 
         return new EGraphExtractor(costModel).Extract(root.Find(), eGraph, constrains);
     }

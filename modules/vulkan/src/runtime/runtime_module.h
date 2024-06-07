@@ -28,7 +28,7 @@ class vulkan_runtime_module : public runtime_module {
 
     vk::Buffer data() const noexcept { return data_buffer_; }
     vk::Buffer rdata() const noexcept { return {}; }
-    gsl::span<const gsl::byte> shader() const noexcept { return shader_; }
+    std::span<const std::byte> shader() const noexcept { return shader_; }
 
     vk::Device device() const noexcept { return ctx_->device(); }
     vk::CommandPool command_pool() const noexcept { return cmd_pool_; }
@@ -71,8 +71,8 @@ class vulkan_runtime_module : public runtime_module {
   private:
     uint32_t descriptors_;
     uint32_t descriptor_sets_;
-    gsl::span<const gsl::byte> text_;
-    gsl::span<const gsl::byte> shader_;
+    std::span<const std::byte> text_;
+    std::span<const std::byte> shader_;
     vulkan_context *ctx_;
     vk::Buffer data_buffer_;
     vk::DeviceMemory data_mem_;

@@ -1,0 +1,5 @@
+@model Nncase.CodeGen.CPU.TypedKernelTemplateModel<Nncase.TIR.CPU.PackedMatMul>
+@{
+}
+matmul(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), @Html.Raw(Model.Arguments[2].Symbol.Name), fixed_shape<@string.Join(",", Model.Target.LhsPackedAxes)>{},  fixed_shape<@string.Join(",", Model.Target.LhsPadedNums)>{}, fixed_shape<@string.Join(",", Model.Target.RhsPackedAxes)>{}, fixed_shape<@string.Join(",", Model.Target.RhsPadedNums)>{});
+

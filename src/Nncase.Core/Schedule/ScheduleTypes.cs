@@ -220,7 +220,12 @@ public sealed class SchedFunctionResult
     /// <summary>
     /// Gets or sets the data section length.
     /// </summary>
-    public long DataUsage { get; set; }
+    public ulong DataUsage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the data section align.
+    /// </summary>
+    public ulong DataAlign { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the Scheduled status.
@@ -251,7 +256,8 @@ public sealed class SchedFunctionResult
         }
 
         return EqualityComparer<Dictionary<IR.Const, ValueRange<long>>>.Default.Equals(Rdatas, result.Rdatas) &&
-               EqualityComparer<long>.Default.Equals(DataUsage, result.DataUsage);
+               EqualityComparer<ulong>.Default.Equals(DataUsage, result.DataUsage) &&
+               EqualityComparer<ulong>.Default.Equals(DataAlign, result.DataAlign);
     }
 
     /// <inheritdoc/>

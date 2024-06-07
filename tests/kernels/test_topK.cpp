@@ -51,7 +51,7 @@ class TopKTest : public KernelTest,
                                                          : value1;
         int64_t axis_array[] = {axis_value};
         axis = hrt::create(dt_int64, {1},
-                           {reinterpret_cast<gsl::byte *>(axis_array),
+                           {reinterpret_cast<std::byte *>(axis_array),
                             sizeof(axis_array)},
                            true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
@@ -59,7 +59,7 @@ class TopKTest : public KernelTest,
         largest_value = value2;
         int64_t largest_array[] = {value2};
         largest = hrt::create(dt_int64, {1},
-                              {reinterpret_cast<gsl::byte *>(largest_array),
+                              {reinterpret_cast<std::byte *>(largest_array),
                                sizeof(largest_array)},
                               true, host_runtime_tensor::pool_cpu_only)
                       .expect("create tensor failed");
@@ -67,7 +67,7 @@ class TopKTest : public KernelTest,
         sorted_value = value3;
         int64_t sorted_array[] = {value3};
         sorted = hrt::create(dt_int64, {1},
-                             {reinterpret_cast<gsl::byte *>(sorted_array),
+                             {reinterpret_cast<std::byte *>(sorted_array),
                               sizeof(sorted_array)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
@@ -99,7 +99,7 @@ TEST_P(TopKTest, TopK) {
     int64_t k_array[] = {k_value};
     auto k =
         hrt::create(dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(k_array), sizeof(k_array)},
+                    {reinterpret_cast<std::byte *>(k_array), sizeof(k_array)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output_ort1 = tensor_seq_get_value(
@@ -111,7 +111,7 @@ TEST_P(TopKTest, TopK) {
     tensor_shape(output_ort1, reinterpret_cast<int64_t *>(shape1.data()));
     auto expected1 =
         hrt::create(input.datatype(), shape1,
-                    {reinterpret_cast<gsl::byte *>(ptr_ort1), size}, true,
+                    {reinterpret_cast<std::byte *>(ptr_ort1), size}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
@@ -125,7 +125,7 @@ TEST_P(TopKTest, TopK) {
     tensor_shape(output_ort2, reinterpret_cast<int64_t *>(shape2.data()));
     auto expected2 =
         hrt::create(dt_int64, shape2,
-                    {reinterpret_cast<gsl::byte *>(ptr_ort2), size}, true,
+                    {reinterpret_cast<std::byte *>(ptr_ort2), size}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 

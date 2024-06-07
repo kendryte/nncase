@@ -69,7 +69,7 @@ TEST_P(ReverseSequenceTest, ReverseSequence) {
     size_t size = 0;
     auto seqLens =
         hrt::create(dt_int64, {seqLens_size},
-                    {reinterpret_cast<gsl::byte *>(seqLens_array_ptr),
+                    {reinterpret_cast<std::byte *>(seqLens_array_ptr),
                      seqLens_size * sizeof(int64_t)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
@@ -79,7 +79,7 @@ TEST_P(ReverseSequenceTest, ReverseSequence) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
@@ -87,14 +87,14 @@ TEST_P(ReverseSequenceTest, ReverseSequence) {
     int64_t batch_axis_array[] = {batch_axis};
     auto batch_axis =
         hrt::create(dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(batch_axis_array),
+                    {reinterpret_cast<std::byte *>(batch_axis_array),
                      sizeof(batch_axis_array)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     int64_t time_axis_array[] = {time_axis};
     auto time_axis =
         hrt::create(dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(time_axis_array),
+                    {reinterpret_cast<std::byte *>(time_axis_array),
                      sizeof(time_axis_array)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");

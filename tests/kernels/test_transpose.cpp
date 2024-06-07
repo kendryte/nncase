@@ -64,7 +64,7 @@ TEST_P(TransposeTest, Transpose) {
         auto input_ort = runtime_tensor_2_ort_tensor(input);
 
         auto perm_ptr = hrt::create(nncase::dt_int64, {perm_size},
-                                    {reinterpret_cast<gsl::byte *>(perm),
+                                    {reinterpret_cast<std::byte *>(perm),
                                      perm_size * sizeof(int64_t)},
                                     true, host_runtime_tensor::pool_cpu_only)
                             .expect("create tensor failed");
@@ -77,14 +77,14 @@ TEST_P(TransposeTest, Transpose) {
         tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
         auto expected =
             hrt::create(input.datatype(), shape,
-                        {reinterpret_cast<gsl::byte *>(ptr_ort), size}, true,
+                        {reinterpret_cast<std::byte *>(ptr_ort), size}, true,
                         host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
 
         int32_t perm_size_ptr[] = {4};
         auto perm_size1 =
             hrt::create(nncase::dt_int32, {1},
-                        {reinterpret_cast<gsl::byte *>(perm_size_ptr),
+                        {reinterpret_cast<std::byte *>(perm_size_ptr),
                          sizeof(perm_size_ptr)},
                         true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");

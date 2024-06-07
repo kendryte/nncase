@@ -17,7 +17,7 @@
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="Microsoft.Toolkit.HighPerformance" />
+    <PackageReference Include="CommunityToolkit.HighPerformance" />
     <PackageReference Include="xunit.analyzers" />
     <PackageReference Include="Xunit.Combinatorial" />
     <PackageReference Include="xunit.core" />
@@ -37,6 +37,7 @@
     <ProjectReference Include="..\Nncase.Compiler\Nncase.Compiler.csproj" />
     <ProjectReference Include="..\Nncase.EGraph\Nncase.EGraph.csproj" /> 
     <ProjectReference Include="..\Nncase.Graph\Nncase.Graph.csproj" /> 
+    <ProjectReference Include="..\Nncase.Schedule\Nncase.Schedule.csproj" /> 
     <ProjectReference Include="..\Nncase.Tests.TestFixture\Nncase.Tests.TestFixture.csproj" />
     <ProjectReference Include="..\Nncase.Passes\Nncase.Passes.csproj" />
     <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />

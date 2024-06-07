@@ -44,7 +44,7 @@ result<void> run_core(const std::string &kmodel_path,
     //     std::filesystem::path(arg_file_path).parent_path().string();
     // nncase_interp_set_dump_root(interp, dump_path.c_str());
     try_(interp->load_model(
-        {reinterpret_cast<const gsl::byte *>(kmodel.data()), kmodel.size()},
+        {reinterpret_cast<const std::byte *>(kmodel.data()), kmodel.size()},
         false));
 
     try_var(entry, interp->entry_function());
@@ -59,8 +59,8 @@ result<void> run_core(const std::string &kmodel_path,
         try_var(type, entry->parameter_type(i));
         try_var(ts_type, type.as<tensor_type>());
         auto input_pool = read_file(bins[i]);
-        gsl::span<gsl::byte> input_pool_span = {
-            reinterpret_cast<gsl::byte *>(input_pool.data()),
+        std::span<std::byte> input_pool_span = {
+            reinterpret_cast<std::byte *>(input_pool.data()),
             input_pool.size()};
         try_var(dims, ts_type->shape().as_fixed());
         try_var(_, hrt::create(ts_type->dtype()->typecode(), dims,

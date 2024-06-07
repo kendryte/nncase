@@ -4,16 +4,9 @@
 using Nncase.IR;
 using Nncase.IR.Buffers;
 
-namespace Nncase.Evaluator.Buffers;
+namespace Nncase.Evaluator;
 
-/// <summary>
-/// Evaluator for BufferOf.
-/// </summary>
-[TypeInferGenerator]
-public partial class BufferOfEvaluator : ITypeInferencer<BufferOf>
+internal sealed partial class TypeInferenceVisitor
 {
-    private IRType Visit(TensorType input)
-    {
-        return TupleType.Void;
-    }
+    protected override IRType VisitLeafBufferOf(BufferOf expr) => expr.Input.CheckedType;
 }

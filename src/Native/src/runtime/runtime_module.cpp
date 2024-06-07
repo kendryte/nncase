@@ -28,7 +28,7 @@ class runtime_module_init_context_span_impl
   public:
     runtime_module_init_context_span_impl(
         const module_header &header, interpreter &interp,
-        gsl::span<const gsl::byte> sections) noexcept
+        std::span<const std::byte> sections) noexcept
         : header_(header), interp_(interp), sections_(sections) {}
 
     interpreter &interp() noexcept override { return interp_; }
@@ -37,7 +37,7 @@ class runtime_module_init_context_span_impl
 
     bool is_section_pinned() const noexcept override { return true; }
 
-    result<gsl::span<const gsl::byte>>
+    result<std::span<const std::byte>>
     section(const char *name) noexcept override {
         return ok(find_section(name, sections_));
     }
@@ -51,10 +51,10 @@ class runtime_module_init_context_span_impl
   private:
     const module_header &header_;
     interpreter &interp_;
-    gsl::span<const gsl::byte> sections_;
+    std::span<const std::byte> sections_;
 };
 
-gsl::span<const gsl::byte> read_functions(span_reader &sr,
+std::span<const std::byte> read_functions(span_reader &sr,
                                           size_t functions) noexcept {
     auto nest_sr = sr;
     size_t size = 0;
@@ -88,7 +88,7 @@ class runtime_module_init_context_stream_impl
 
     bool is_section_pinned() const noexcept override { return false; }
 
-    result<gsl::span<const gsl::byte>>
+    result<std::span<const std::byte>>
     section([[maybe_unused]] const char *name) noexcept override {
         return err(std::errc::not_supported);
     }
@@ -121,7 +121,7 @@ const module_kind_t &runtime_module::kind() const noexcept {
     return header_.kind;
 }
 
-result<void> runtime_module::initialize(gsl::span<const gsl::byte> payload,
+result<void> runtime_module::initialize(std::span<const std::byte> payload,
                                         interpreter &interp) noexcept {
     interp_ = &interp;
     span_reader reader(payload);

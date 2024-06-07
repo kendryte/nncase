@@ -1,0 +1,29 @@
+﻿@model Nncase.CodeGen.CPU.UnaryKernelTemplateModel
+@{
+    string UnaryToCFunction(UnaryOp op) =>
+                op switch
+                {
+                    UnaryOp.Abs => "ops::abs",
+                    UnaryOp.Acos => "ops::acos",
+                    UnaryOp.Acosh => "ops::acosh",
+                    UnaryOp.Asin => "ops::asin",
+                    UnaryOp.Asinh => "ops::asinh",
+                    UnaryOp.Ceil => "ops::ceil",
+                    UnaryOp.Cos => "ops::cos",
+                    UnaryOp.Cosh => "ops::cosh",
+                    UnaryOp.Exp => "ops::exp",
+                    UnaryOp.Floor => "ops::floor",
+                    UnaryOp.Log => "ops::log",
+                    UnaryOp.Neg => "ops::neg",
+                    UnaryOp.Round => "ops::round",
+                    UnaryOp.Rsqrt => "ops::rsqrt",
+                    UnaryOp.Sign => "ops::sign",
+                    UnaryOp.Sin => "ops::sin",
+                    UnaryOp.Sinh => "ops::sinh",
+                    UnaryOp.Sqrt => "ops::sqrt",
+                    UnaryOp.Square => "ops::square",
+                    UnaryOp.Tanh => "ops::tanh",
+                    _ => throw new NotSupportedException($"Unsupported unary: {op}."),
+                };
+}
+unary<@UnaryToCFunction(Model.UnaryOp)>(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name));

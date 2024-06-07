@@ -8,7 +8,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Toolkit.HighPerformance.Helpers;
+using CommunityToolkit.HighPerformance.Helpers;
 using Nncase.Diagnostics;
 
 namespace Nncase.IR;
@@ -79,6 +79,30 @@ public abstract partial class Expr : IDisposable
             {
                 _checkedType = value;
                 InvalidateUsersTypeInference();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets checked tensor type.
+    /// </summary>
+    public TensorType CheckedTensorType
+    {
+        get
+        {
+            switch (CheckedType)
+            {
+                case TensorType type:
+                    return type;
+                case DistributedType type:
+                    return type.TensorType;
+                default:
+                    if (DumpScope.Current.IsEnabled(DumpFlags.Compile))
+                    {
+                        DumpScope.Current.DumpIR(this, "CheckedTensorType");
+                    }
+
+                    throw new InvalidOperationException("Only The Expr Have CheckedType Can Get It's Shape");
             }
         }
     }
@@ -184,7 +208,10 @@ public abstract partial class Expr : IDisposable
             return true;
         }
 
-        return obj is Expr other && GetHashCode() == other.GetHashCode() && Operands.SequenceEqual(other.Operands);
+        return obj is Expr other
+            && GetType() == other.GetType()
+            && GetHashCode() == other.GetHashCode()
+            && Operands.SequenceEqual(other.Operands);
     }
 
     /// <inheritdoc/>

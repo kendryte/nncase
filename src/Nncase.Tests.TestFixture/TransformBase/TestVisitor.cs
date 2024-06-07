@@ -39,6 +39,13 @@ public sealed class TestVisitor : ExprVisitor<bool, IRType>
         return count;
     }
 
+    public int CountCallFusion<T>()
+      where T : Fusion
+    {
+        var count = ExprMemo.Keys.OfType<Call>().Where(call => call is { Target: T }).Count();
+        return count;
+    }
+
     /// <inheritdoc/>
     protected override bool DefaultVisitLeaf(Expr expr) => true;
 }

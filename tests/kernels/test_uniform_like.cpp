@@ -48,7 +48,7 @@ class UniformLikeTest : public KernelTest,
         high_value = value1;
         float high_array[] = {high_value};
         high = hrt::create(typecode, shape,
-                           {reinterpret_cast<gsl::byte *>(high_array),
+                           {reinterpret_cast<std::byte *>(high_array),
                             sizeof(high_array)},
                            true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
@@ -57,14 +57,14 @@ class UniformLikeTest : public KernelTest,
         float low_array[] = {low_value};
         low = hrt::create(
                   typecode, shape,
-                  {reinterpret_cast<gsl::byte *>(low_array), sizeof(low_array)},
+                  {reinterpret_cast<std::byte *>(low_array), sizeof(low_array)},
                   true, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
 
         seed_value = value3;
         float seed_array[] = {seed_value};
         seed = hrt::create(typecode, shape,
-                           {reinterpret_cast<gsl::byte *>(seed_array),
+                           {reinterpret_cast<std::byte *>(seed_array),
                             sizeof(seed_array)},
                            true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
@@ -96,7 +96,7 @@ TEST_P(UniformLikeTest, UniformLike) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(lhs.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 

@@ -54,7 +54,7 @@ vfloat32m8_t exp_ps2_opt(vfloat32m8_t _p, const float c0, const float c1,
 
 template <typename T>
 result<void> optimized_softmax_impl_opt(const T *input, T *output,
-                                        gsl::span<const size_t> in_shape,
+                                        std::span<const size_t> in_shape,
                                         int32_t axis, float beta) noexcept {
     size_t ndim = in_shape.size();
     size_t positive_axis = axis < 0 ? ndim + axis : axis;
@@ -224,7 +224,7 @@ result<void> optimized_softmax_impl_opt(const T *input, T *output,
 
 template <typename T>
 result<void> optimized_softmax_impl(const T *input, T *output,
-                                    gsl::span<const size_t> in_shape,
+                                    std::span<const size_t> in_shape,
                                     int32_t axis, float beta) noexcept {
     size_t ndim = in_shape.size();
     size_t positive_axis = axis < 0 ? ndim + axis : axis;
@@ -398,16 +398,16 @@ result<void> optimized_softmax_impl(const T *input, T *output,
 #define OUT_CAST(_ty, _name) reinterpret_cast<_ty *>(_name)
 
 // template result<void> optimized::softmax<float>(
-//     const float *input, float *output, gsl::span<const size_t> in_shape,
-//     gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+//     const float *input, float *output, std::span<const size_t> in_shape,
+//     std::span<const size_t> in_strides, std::span<const size_t> out_strides,
 //     int32_t axis, float beta) noexcept;
 
 // template <typename T>
 result<void> optimized::softmax([[maybe_unused]] typecode_t typecode,
-                                const gsl::byte *input, gsl::byte *output,
-                                gsl::span<const size_t> in_shape,
-                                gsl::span<const size_t> in_strides,
-                                gsl::span<const size_t> out_strides,
+                                const std::byte *input, std::byte *output,
+                                std::span<const size_t> in_shape,
+                                std::span<const size_t> in_strides,
+                                std::span<const size_t> out_strides,
                                 int32_t axis, float beta) noexcept {
 #if __riscv_vector
     return optimized_softmax_impl(

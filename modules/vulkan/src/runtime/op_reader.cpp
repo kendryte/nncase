@@ -42,7 +42,7 @@ result<void> op_visitor::next() noexcept {
     return err(std::errc::operation_not_supported);
 }
 
-result<void> op_visitor::visit(gsl::span<const gsl::byte> text) noexcept {
+result<void> op_visitor::visit(std::span<const std::byte> text) noexcept {
     reader_ = span_reader(text);
     interrupted_ = false;
 

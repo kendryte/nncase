@@ -341,12 +341,12 @@ internal class UsingComparer : IEqualityComparer<UsingDirectiveSyntax>
 {
     public bool Equals(UsingDirectiveSyntax x, UsingDirectiveSyntax y)
     {
-        return x.Name.GetFullName() == y.Name.GetFullName();
+        return x.Name?.GetFullName() == y.Name?.GetFullName();
     }
 
     public int GetHashCode(UsingDirectiveSyntax obj)
     {
-        return obj.Name.GetFullName().GetHashCode();
+        return obj.Name?.GetFullName().GetHashCode() ?? 0;
     }
 }
 

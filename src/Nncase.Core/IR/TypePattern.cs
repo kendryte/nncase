@@ -104,6 +104,7 @@ public static partial class TypePatternUtility
         x => x switch
         {
             TensorType ttype => shapeCond(ttype.Shape),
+            DistributedType distributedType => shapeCond(distributedType.TensorType.Shape),
             _ => false,
         },
         reason);

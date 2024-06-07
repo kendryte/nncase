@@ -20,9 +20,9 @@
 
 BEGIN_NS_NNCASE_RUNTIME
 
-gsl::span<const gsl::byte>
-find_section(const char *name, gsl::span<const gsl::byte> sections) noexcept;
-gsl::span<const gsl::byte> read_sections(span_reader &sr,
+std::span<const std::byte>
+find_section(const char *name, std::span<const std::byte> sections) noexcept;
+std::span<const std::byte> read_sections(span_reader &sr,
                                          size_t sections) noexcept;
 
 // Seek to pos to the begin of the section and return pos to the body

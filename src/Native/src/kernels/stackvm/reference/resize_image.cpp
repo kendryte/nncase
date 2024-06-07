@@ -26,8 +26,8 @@ using namespace nncase::kernels;
 namespace {
 template <class T>
 result<void> resize_bilinear_impl(
-    const T *input, T *output, gsl::span<const size_t> in_shape,
-    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    const T *input, T *output, std::span<const size_t> in_shape,
+    std::span<const size_t> in_strides, std::span<const size_t> out_strides,
     int32_t out_h, int32_t out_w, bool align_corners,
     NNCASE_UNUSED bool half_pixel_centers,
     NNCASE_UNUSED kernel_context &context) noexcept {
@@ -89,8 +89,8 @@ result<void> resize_bilinear_impl(
 
 template <class T>
 result<void> resize_nearest_neighbor_impl(
-    const T *input, T *output, gsl::span<const size_t> in_shape,
-    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    const T *input, T *output, std::span<const size_t> in_shape,
+    std::span<const size_t> in_strides, std::span<const size_t> out_strides,
     int32_t out_h, int32_t out_w, NNCASE_UNUSED bool align_corners,
     NNCASE_UNUSED bool half_pixel_centers,
     get_coordinate_func_t get_coordinate_func,
@@ -173,18 +173,18 @@ result<void> resize_nearest_neighbor_impl(
 } // namespace
 
 result<void> nncase::kernels::stackvm::reference::resize_bilinear(
-    typecode_t type, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> out_strides, int32_t out_h, int32_t out_w,
+    typecode_t type, const std::byte *input, std::byte *output,
+    std::span<const size_t> in_shape, std::span<const size_t> in_strides,
+    std::span<const size_t> out_strides, int32_t out_h, int32_t out_w,
     bool align_corners, bool half_pixel_centers,
     kernel_context &context) noexcept {
     FP_OR_Q_IMPL(type, RESIZE_BILINEAR_IMPL);
 }
 
 result<void> nncase::kernels::stackvm::reference::resize_nearest_neighbor(
-    typecode_t type, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> out_strides, int32_t out_h, int32_t out_w,
+    typecode_t type, const std::byte *input, std::byte *output,
+    std::span<const size_t> in_shape, std::span<const size_t> in_strides,
+    std::span<const size_t> out_strides, int32_t out_h, int32_t out_w,
     bool align_corners, bool half_pixel_centers,
     get_coordinate_func_t get_coordinate_func,
     get_nearest_pixel_func_t get_nearset_func,

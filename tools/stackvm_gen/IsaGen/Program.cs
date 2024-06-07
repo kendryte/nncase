@@ -427,7 +427,7 @@ public class IsaExtractor
         }
         else if (t == typeof(byte[]))
         {
-            return "gsl::span<const gsl::byte>";
+            return "std::span<const std::byte>";
         }
         else if (t == typeof(string))
         {

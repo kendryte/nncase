@@ -1,0 +1,5 @@
+@model Nncase.CodeGen.CPU.TypedKernelTemplateModel<Nncase.TIR.CPU.PackedSoftmax>
+@{
+}
+packed_softmax<@Model.Target.Axis>(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), fixed_shape<@string.Join(",", Model.Target.PackedAxes)>{});
+

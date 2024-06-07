@@ -37,7 +37,7 @@ interpreter_init() {
 EXPORT_API(void)
 interpreter_load_model(uint8_t *buffer_ptr, int size) {
     auto buffer =
-        gsl::span<const gsl::byte>((const gsl::byte *)(buffer_ptr), size);
+        std::span<const std::byte>((const std::byte *)(buffer_ptr), size);
     _interp->load_model(buffer).unwrap_or_throw();
 }
 

@@ -25,12 +25,12 @@ BEGIN_NS_NNCASE_RUNTIME
 
 struct NNCASE_API runtime_section_context {
     virtual bool is_section_pinned() const noexcept = 0;
-    virtual result<gsl::span<const gsl::byte>>
+    virtual result<std::span<const std::byte>>
     section(const char *name) noexcept = 0;
     virtual result<stream_reader *>
     seek_section(const char *name, section_header &header) noexcept = 0;
 
-    result<gsl::span<const gsl::byte>>
+    result<std::span<const std::byte>>
     get_or_read_section(const char *name, host_buffer_t &storage,
                         bool allocate_shared) noexcept;
 

@@ -243,19 +243,19 @@ template <class T> class NNCASE_NODISCARD result {
             return err_;
     }
 
-    constexpr T &expect(gsl::cstring_span message) &noexcept {
+    constexpr T &expect(const char *message) &noexcept {
         if (is_ok())
             return ok_;
         else {
-            fail_fast(message.data());
+            fail_fast(message);
         }
     }
 
-    constexpr T &&expect(gsl::cstring_span message) &&noexcept {
+    constexpr T &&expect(const char *message) &&noexcept {
         if (is_ok())
             return std::move(ok_);
         else {
-            fail_fast(message.data());
+            fail_fast(message);
         }
     }
 
@@ -330,9 +330,9 @@ template <> class NNCASE_NODISCARD result<void> {
             return err_;
     }
 
-    void expect(gsl::cstring_span message) noexcept {
+    void expect(const char *message) noexcept {
         if (is_err())
-            fail_fast(message.data());
+            fail_fast(message);
     }
 
     template <class Func, class Traits = detail::map_traits<void, Func>>

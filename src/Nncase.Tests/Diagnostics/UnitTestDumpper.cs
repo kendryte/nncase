@@ -133,7 +133,8 @@ public sealed class UnitTestDumpper : TestClassBase
                   new Passes.Rules.Lower.RemoveMarker(),
                   new TestMulToAdd(),
             },
-            new());
+            new(),
+            CompileOptions);
 
         Assert.True(File.Exists(Path.Join(Dumpper.Directory, "Costs/Solve.txt")));
     }

@@ -1,0 +1,17 @@
+﻿@model Nncase.CodeGen.CPU.BinaryKernelTemplateModel
+@{
+    string BinaryToCFunction(BinaryOp op) =>
+                op switch
+                {
+                    BinaryOp.Add => "ops::add",
+                    BinaryOp.Sub => "ops::sub",
+                    BinaryOp.Mul => "ops::mul",
+                    BinaryOp.Div => "ops::div",
+                    BinaryOp.Mod => "ops::mod",
+                    BinaryOp.Min => "ops::min",
+                    BinaryOp.Max => "ops::max",
+                    BinaryOp.Pow => "ops::pow",
+                    _ => throw new NotSupportedException($"Unsupported binary: {op}."),
+                };
+}
+binary<@BinaryToCFunction(Model.BinaryOp)>(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), @Html.Raw(Model.Arguments[2].Symbol.Name));

@@ -144,7 +144,13 @@ PYBIND11_MODULE(_nncase, m) {
             "shape_bucket_options",
             py::overload_cast<>(&compile_options::shape_bucket_options),
             py::overload_cast<const shape_bucket_options &>(
-                &compile_options::shape_bucket_options));
+                &compile_options::shape_bucket_options))
+        .def(
+            "set_cpu_target_options",
+            [](compile_options &obj, const cpu_target_options &target_options) {
+                nncase_clr_api()->compile_options_set_cpu_target_options(
+                    obj.get(), target_options.get());
+            });
 
     py::class_<target>(m, "Target")
         .def(py::init<std::string_view>())
@@ -228,6 +234,12 @@ PYBIND11_MODULE(_nncase, m) {
                       py::overload_cast<>(&shape_bucket_options::fix_var_map),
                       py::overload_cast<std::map<std::string, int>>(
                           &shape_bucket_options::fix_var_map));
+
+    py::class_<cpu_target_options>(m, "CpuTargetOptions")
+        .def(py::init())
+        .def_property("packing",
+                      py::overload_cast<>(&cpu_target_options::packing),
+                      py::overload_cast<bool>(&cpu_target_options::packing));
 
     py::class_<calibration_dataset_provider>(m, "CalibrationDatasetProvider")
         .def(py::init([](py::list dataset, size_t samples_count,
@@ -317,7 +329,7 @@ PYBIND11_MODULE(_nncase, m) {
     py::class_<interpreter>(m, "Simulator")
         .def(py::init())
         .def("load_model",
-             [](interpreter &interp, gsl::span<const gsl::byte> buffer) {
+             [](interpreter &interp, std::span<const std::byte> buffer) {
                  interp.load_model(buffer, true).unwrap_or_throw();
              })
         .def_property_readonly("inputs_size", &interpreter::inputs_size)

@@ -233,7 +233,10 @@ public static class DetailComparator
             ? SerializeShape(resultByChannels.First().Shape)
             : "data all ok and not shape info";
         var fileName = resultByChannels.Length != 0 ? resultByChannels[0].Losses.First().V1Tensor.FileName : "AllOK";
-        WriteResult(Path.Join(path, $"{i}_{fileName}"), resultByChannels, $"{shape}\n");
+        using (var stream = File.OpenWrite(Path.Join(path, $"{i}_{fileName}")))
+        {
+            WriteResult(stream, resultByChannels, $"{shape}\n");
+        }
     }
 
     // for single file
@@ -298,7 +301,10 @@ public static class DetailComparator
         var (cosByChannel, lossInfo) = compareResult.Infos.First();
 
         // todo: insert separator for channel or other
-        WriteResult(Path.Join(resultRoot, $"cos_{count}"), cosByChannel);
+        using (var stream = File.OpenWrite(Path.Join(resultRoot, $"cos_{count}")))
+        {
+            WriteResult(stream, cosByChannel);
+        }
 
         using (var stream = new StreamWriter(Path.Join(resultRoot, count.ToString())))
         {
@@ -509,9 +515,15 @@ public static class ComparatorInstance
             var cos = Comparator.CosSimilarity(tuple.First.Value.AsTensor(), tuple.Second.Value.AsTensor());
             return (cos, tuple.First.FileName, tuple.Second.FileName);
         });
-        WriteResult(Path.Join(cosRoot, "ErrorPath"), failedValues.Select(tuple => tuple.First.Path).ToArray());
+        using (var stream = File.OpenWrite(Path.Join(cosRoot, "ErrorPath")))
+        {
+            WriteResult(stream, failedValues.Select(tuple => tuple.First.Path).ToArray());
+        }
 
         // var cosByTensor = Comparator.CosSimilarity(originData.Select(x => x.AsTensor()).ToArray(), runtimeData.Select(x => x.AsTensor()).ToArray());
-        WriteResult(Path.Join(cosRoot, $"!cos"), cosData.ToArray());
+        using (var stream = File.OpenWrite(Path.Join(cosRoot, $"!cos")))
+        {
+            WriteResult(stream, cosData.ToArray());
+        }
     }
 }

@@ -48,7 +48,7 @@ class FlattenTest : public KernelTest,
                                                         : value;
         int32_t axis_array[] = {axis_value};
         axis = hrt::create(dt_int32, {1},
-                           {reinterpret_cast<gsl::byte *>(axis_array),
+                           {reinterpret_cast<std::byte *>(axis_array),
                             sizeof(axis_array)},
                            true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
@@ -75,7 +75,7 @@ TEST_P(FlattenTest, flatten) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                {reinterpret_cast<std::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 

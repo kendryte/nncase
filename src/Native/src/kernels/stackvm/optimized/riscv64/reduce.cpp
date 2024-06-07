@@ -97,7 +97,7 @@ static void reduce_mean_s(int32_t c, int32_t dim, const float *input,
     }
 }
 
-static int compute_size_by_index(gsl::span<const size_t> input, int start_index,
+static int compute_size_by_index(std::span<const size_t> input, int start_index,
                                  int end_index) {
     int init_value = 1;
     for (int i = start_index; i < end_index; ++i) {
@@ -106,8 +106,8 @@ static int compute_size_by_index(gsl::span<const size_t> input, int start_index,
     return init_value;
 }
 
-static int get_parameter(gsl::span<const size_t> in_shape,
-                         gsl::span<const size_t> axis, gsl::span<int> out) {
+static int get_parameter(std::span<const size_t> in_shape,
+                         std::span<const size_t> axis, std::span<int> out) {
     int min_index = axis[0];
     int max_index = axis[0];
     for (int i = 1; i < (int)axis.size(); ++i) {
@@ -134,9 +134,9 @@ static int get_parameter(gsl::span<const size_t> in_shape,
 
 result<void> optimized::reduce(
     typecode_t typecode, nncase::runtime::stackvm::reduce_op_t op,
-    const gsl::byte *init_value, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> axis,
-    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    const std::byte *init_value, const std::byte *input, std::byte *output,
+    std::span<const size_t> in_shape, std::span<const size_t> axis,
+    std::span<const size_t> in_strides, std::span<const size_t> out_strides,
     bool keep_dims, kernel_context &context) noexcept {
 #if __riscv_vector
     do {

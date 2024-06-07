@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "compiler_defs.h"
+#include <cstdint>
 #include <stdexcept>
 #include <string_view>
 #include <type_traits>

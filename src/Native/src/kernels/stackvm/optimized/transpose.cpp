@@ -94,7 +94,7 @@ result<void> transpose_impl(const T *input, T *output, const dims_t &in_shape,
 } // namespace
 
 result<void> kernels::stackvm::optimized::transpose(
-    datatype_t type, const gsl::byte *src, gsl::byte *dest,
+    datatype_t type, const std::byte *src, std::byte *dest,
     const dims_t &in_shape, const dims_t &perm,
     [[maybe_unused]] const strides_t &in_strides,
     [[maybe_unused]] const strides_t &out_strides,

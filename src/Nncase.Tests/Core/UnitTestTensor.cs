@@ -86,6 +86,47 @@ public sealed class UnitTestTensor
     }
 
     [Fact]
+    public void TestFromBytesOverload4()
+    {
+        var a = new byte[] { 0x00, 0x00, 0x80, 0x3f, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x40, 0x40, 0x00, 0x00, 0x80, 0x40 };
+        var expected = new Vector4<float>[] { Vector4<float>.Create(new[] { 1.0f, 2.0f, 3.0f, 4.0f }) };
+        var tensorType = new TensorType(new VectorType(DataTypes.Float32, 4), new int[] { 1 });
+        var t = Tensor.FromBytes(tensorType, new Memory<byte>(a));
+        Assert.Equal(new VectorType(DataTypes.Float32, 4), t.ElementType);
+        Assert.Equal(expected, t.ToArray<Vector4<float>>());
+    }
+
+    [Fact]
+    public void TestFromBytesOverload5()
+    {
+        var a = new byte[] { 0x00, 0x00, 0x80, 0x3f, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x40, 0x40, 0x00, 0x00, 0x80, 0x40 };
+        var expected = new Vector4<float>[] { Vector4<float>.Create(new[] { 1.0f, 2.0f, 3.0f, 4.0f }) };
+        var t = Tensor.FromBytes<Vector4<float>>(new Memory<byte>(a), new[] { 1 });
+        Assert.Equal(new VectorType(DataTypes.Float32, 4), t.ElementType);
+        Assert.Equal(expected, t.ToArray<Vector4<float>>());
+    }
+
+    [Fact]
+    public void TestFromBytesOverload6()
+    {
+        var a = new byte[] { 0x00, 0x00, 0x80, 0x3f, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x40, 0x40, 0x00, 0x00, 0x80, 0x40 };
+        var expected = new Vector2<float>[] { Vector2<float>.Create(new[] { 1.0f, 2.0f }), Vector2<float>.Create(new[] { 3.0f, 4.0f }) };
+        var t = Tensor.FromBytes<Vector2<float>>(new Memory<byte>(a), new[] { 2 });
+        Assert.Equal(new VectorType(DataTypes.Float32, 2), t.ElementType);
+        Assert.Equal(expected, t.ToArray<Vector2<float>>());
+    }
+
+    [Fact]
+    public void TestFromBytesWithPad()
+    {
+        var a = new byte[] { 0x00, 0x00, 0x80, 0x3f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+        var expected = new Vector4<float>[] { Vector4<float>.Create(new[] { 1.0f, 0.0f, 0.0f, 0.0f }) };
+        var t = Tensor.FromBytes<Vector4<float>>(new Memory<byte>(a), new int[] { 1 });
+        Assert.Equal(new VectorType(DataTypes.Float32, 4), t.ElementType);
+        Assert.Equal(expected, t.ToArray<Vector4<float>>());
+    }
+
+    [Fact]
     public unsafe void TestFromPointer()
     {
         var value1 = 2022;

@@ -23,7 +23,7 @@ using namespace nncase::runtime;
 mapped_buffer::mapped_buffer() noexcept : buffer_(nullptr), span_() {}
 
 mapped_buffer::mapped_buffer(host_buffer_t buffer,
-                             gsl::span<gsl::byte> span) noexcept
+                             std::span<std::byte> span) noexcept
     : buffer_(std::move(buffer)), span_(span) {}
 
 mapped_buffer::mapped_buffer(mapped_buffer &&other) noexcept
@@ -109,9 +109,9 @@ result<void> host_buffer_node::sync(sync_op_t op, bool force) noexcept {
 
 result<void>
 host_buffer_node::copy_to(buffer_t dest, size_t src_start, size_t dest_start,
-                          datatype_t datatype, gsl::span<const size_t> shape,
-                          gsl::span<const size_t> src_strides,
-                          gsl::span<const size_t> dest_strides) noexcept {
+                          datatype_t datatype, std::span<const size_t> shape,
+                          std::span<const size_t> src_strides,
+                          std::span<const size_t> dest_strides) noexcept {
     axes_t begins(shape.size(), 0);
     axes_t ends(shape.size(), 0);
     axes_t strides(shape.size(), 1);
