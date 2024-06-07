@@ -47,7 +47,7 @@ public partial class LowerMatmul : RewriteRule<Pattern>
             var newInputA = new Var(inputA.CheckedType);
             var constB = ((TensorConst)inputB).Value;
             var constShape = inputB.CheckedShape.ToValueArray();
-            return new Call(new Fusion("ncnn", NcnnMatMul(new Expr[] { newInputA }, 2, constB.ToArray<float>(), constShape), newInputA), inputA);
+            return new Call(new Fusion("ncnn", NcnnMatMul(new Expr[] { newInputA }, 2, constB.ToArray<float>(), constShape), new[] { newInputA }), inputA);
         }
 
         {

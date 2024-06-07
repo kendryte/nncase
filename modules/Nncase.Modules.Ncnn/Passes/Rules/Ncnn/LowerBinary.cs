@@ -158,7 +158,7 @@ public partial class LowerBinary : RewriteRule<Pattern>
                     bShape.RemoveAt(0);
                 }
 
-                b = new Call(new Fusion("ncnn", NcnnBinary(new Expr[] { newInputA }, op, 2, constB.ToArray<float>(), bShape.ToArray()), newInputA), newA);
+                b = new Call(new Fusion("ncnn", NcnnBinary(new Expr[] { newInputA }, op, 2, constB.ToArray<float>(), bShape.ToArray()), new[] { newInputA }), newA);
             }
             else
             {
