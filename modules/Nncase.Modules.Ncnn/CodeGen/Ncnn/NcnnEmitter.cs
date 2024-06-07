@@ -55,7 +55,6 @@ internal class NcnnEmitter
                 using (var tempStream = new MemoryStream())
                 {
                     _binWriter.BaseStream.Position = _s_pos; // 重置位置到新内容的开始
-                    Console.WriteLine($"now - _s_pos : {now} - {_s_pos}");
                     _binWriter.BaseStream.CopyTo(tempStream, (int)(now - _s_pos));
                     tempStream.Position = 0;
                     tempStream.CopyTo(fileStream);

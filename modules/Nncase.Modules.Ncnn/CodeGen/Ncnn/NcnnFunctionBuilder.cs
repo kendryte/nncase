@@ -49,6 +49,8 @@ internal class NcnnFunctionBuilder : FunctionBuilder
     protected override void WriteText()
     {
         _emitter.SaveParam(TextWriter.BaseStream);
+
+        // dump param and bin.
         string dumpPath = Path.Join(DumpScope.Current.Directory, "ncnn_param_dir");
         if (!Directory.Exists(dumpPath))
         {
@@ -56,6 +58,7 @@ internal class NcnnFunctionBuilder : FunctionBuilder
         }
         else if (Id == 0)
         {
+            // clear dir before single case.
             foreach (string filePath in Directory.GetFiles(dumpPath, "*", SearchOption.AllDirectories))
             {
                 File.SetAttributes(filePath, FileAttributes.Normal); // 移除所有特殊属性以便删除
@@ -63,14 +66,18 @@ internal class NcnnFunctionBuilder : FunctionBuilder
             }
         }
 
-        // if (DumpScope.Current.IsEnabled(DumpFlags.CodeGen))
-        using (var fileStream = File.Create(Path.Join(dumpPath, $"ncnn_{Id}.param")))
+        if (DumpScope.Current.IsEnabled(DumpFlags.CodeGen))
         {
-            TextWriter.BaseStream.Seek(0, SeekOrigin.Begin);
-            TextWriter.BaseStream.CopyTo(fileStream);
-        }
+            // dump param.
+            using (var fileStream = File.Create(Path.Join(dumpPath, $"ncnn_{Id}.param")))
+            {
+                TextWriter.BaseStream.Seek(0, SeekOrigin.Begin);
+                TextWriter.BaseStream.CopyTo(fileStream);
+            }
 
-        _emitter.SaveBin(dumpPath, Id);
+            // dump bin.
+            _emitter.SaveBin(dumpPath, Id);
+        }
     }
 
     private class CodeGenVisitor : ExprVisitor<string, Unit>
