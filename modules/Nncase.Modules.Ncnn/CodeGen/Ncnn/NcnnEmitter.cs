@@ -17,6 +17,7 @@ namespace Nncase.CodeGen.Ncnn;
 
 internal class NcnnEmitter
 {
+    private static long _s_pos;
     private readonly NcnnModel _model;
     private readonly BinaryWriter _binWriter;
     private readonly List<float>? _rData;
@@ -41,12 +42,27 @@ internal class NcnnEmitter
 
     public void SaveBin(string dumpPath, uint id)
     {
+        if (id == 0)
+        {
+            _s_pos = 0;
+        }
+
         using (var fileStream = File.Create(Path.Join(dumpPath, $"/ncnn_{id}.bin")))
         {
-            _binWriter.BaseStream.Seek(0, SeekOrigin.Begin);
-            _binWriter.BaseStream.CopyTo(fileStream);
+            long now = _binWriter.BaseStream.Position;
+            if (now != 0 && now != _s_pos)
+            {
+                using (var tempStream = new MemoryStream())
+                {
+                    _binWriter.BaseStream.Position = _s_pos; // 重置位置到新内容的开始
+                    Console.WriteLine($"now - _s_pos : {now} - {_s_pos}");
+                    _binWriter.BaseStream.CopyTo(tempStream, (int)(now - _s_pos));
+                    tempStream.Position = 0;
+                    tempStream.CopyTo(fileStream);
+                }
 
-            _binWriter.BaseStream.SetLength(0);
+                _s_pos = _binWriter.BaseStream.Position;
+            }
         }
     }
 
