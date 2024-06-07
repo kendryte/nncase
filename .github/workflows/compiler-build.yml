@@ -19,7 +19,7 @@ jobs:
         config:
           - {name: x86_64-macos, os: macos-12, cmakeArgs: -DENABLE_X86SIMD=OFF, buildType: Release}
           - {name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release}
-          - {name: x86_64-windows, os: windows-2022, arch: x64, cmakeArgs: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl, buildType: Release}
+          - {name: x86_64-windows, os: windows-2019, arch: x64, cmakeArgs: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl, buildType: Release}
 
     steps:
       - uses: actions/checkout@v3
