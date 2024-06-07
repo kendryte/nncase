@@ -8,11 +8,15 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using DryIoc.ImTools;
 
 namespace Nncase.IR;
 
+[JsonDerivedType(typeof(SBPSplit), "S")]
+[JsonDerivedType(typeof(SBPPartialSum), "P")]
+[JsonDerivedType(typeof(SBPBroadCast), "B")]
 public abstract record SBP
 {
     public static SBPPartialSum P => SBPPartialSum.Instance;
@@ -31,20 +35,12 @@ public sealed record SBPPartialSum : SBP
 {
     public static readonly SBPPartialSum Instance = new SBPPartialSum();
 
-    private SBPPartialSum()
-    {
-    }
-
     public override string ToString() => "P";
 }
 
 public sealed record SBPBroadCast : SBP
 {
     public static readonly SBPBroadCast Instance = new SBPBroadCast();
-
-    private SBPBroadCast()
-    {
-    }
 
     public override string ToString() => "B";
 }
@@ -58,7 +54,6 @@ public sealed record Placement(IRArray<int> Hierarchy, string Name)
     // }
     public int Rank => Hierarchy.Count;
 
-    // public override string ToString() => $"@{Kind} [{string.Join(',', Hierarchy.Zip(Name).Select(t => t.First.ToString() + '@' + t.Second.ToString()))}]";
     public override string ToString() => $"@ [{string.Join(',', Hierarchy.Zip(Name).Select(t => t.First.ToString() + '@' + t.Second.ToString()))}]";
 }
 
