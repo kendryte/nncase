@@ -99,44 +99,44 @@ class BenchmarkNTT():
 class BenchmarkNTT_x86_64(BenchmarkNTT):
     def __init__(self, target: str, bin_path: str):
         BenchmarkNTT.__init__(self, 'x86_64', target, bin_path)
-        self.roofline_dict = {'binary': {'add': 'N/A',
-                                         'sub': 'N/A',
-                                         'mul': 'N/A',
-                                         'div': 'N/A',
-                                         'max': 'N/A',
-                                         'min': 'N/A',
-                                         'floor_mod': 'N/A',
-                                         'mod': 'N/A',
-                                         'pow': 'N/A',
+        self.roofline_dict = {'binary': {'add': '1.4',
+                                         'sub': '1.4',
+                                         'mul': '1.4',
+                                         'div': '3.0',
+                                         'max': '1.4',
+                                         'min': '1.4',
+                                         'floor_mod': '3.23',
+                                         'mod': '3.0',
+                                         'pow': '42.17',
                                          },
-                              'unary': {'abs': 'N/A',
-                                        'acos': 'N/A',
-                                        'acosh': 'N/A',
-                                        'asin': 'N/A',
-                                        'asinh': 'N/A',
-                                        'ceil': 'N/A',
-                                        'cos': 'N/A',
-                                        'cosh': 'N/A',
-                                        'exp': 'N/A',
-                                        'floor': 'N/A',
-                                        'log': 'N/A',
-                                        'neg': 'N/A',
-                                        'round': 'N/A',
-                                        'rsqrt': 'N/A',
-                                        'sign': 'N/A',
-                                        'sin': 'N/A',
-                                        'sinh': 'N/A',
-                                        'sqrt': 'N/A',
-                                        'square': 'N/A',
-                                        'swish': 'N/A',
-                                        'tanh': 'N/A',
+                              'unary': {'abs': '1.0',
+                                        'acos': '18.9',
+                                        'acosh': '25.34',
+                                        'asin': '15.18',
+                                        'asinh': '25.34',
+                                        'ceil': '1.0',
+                                        'cos': '20.52',
+                                        'cosh': '27.34',
+                                        'exp': '17.33',
+                                        'floor': '1.0',
+                                        'log': '44.0',
+                                        'neg': '1.0',
+                                        'round': '1.0',
+                                        'rsqrt': '1.0',
+                                        'sign': '2.18',
+                                        'sin': '20.35',
+                                        'sinh': '26.84',
+                                        'sqrt': '1.0',
+                                        'square': '1.4',
+                                        'swish': '21.33',
+                                        'tanh': '13.23',
                                         },
                               }
 
     def run(self):
         for bin in self.bin_list:
             cmd_status, cmd_result = subprocess.getstatusoutput(f'{bin}')
-            assert(cmd_status == 0)
+            assert (cmd_status == 0)
             self.parse_result(cmd_result)
 
 
@@ -256,7 +256,7 @@ class BenchmarkNTT_riscv64(BenchmarkNTT):
 
         for bin in self.bin_list:
             cmd_status, cmd_result = self.run_evb(bin)
-            assert(cmd_status == 0)
+            assert (cmd_status == 0)
             lines = cmd_result.split('\r\n')
             new_lines = lines[1:-1]
             new_cmd_result = '\n'.join(new_lines)
