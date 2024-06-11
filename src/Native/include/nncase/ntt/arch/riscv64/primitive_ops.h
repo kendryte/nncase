@@ -65,22 +65,20 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, abs)
 #define ACOS_FLOAT32(LMUL, MLEN)                                               \
     inline vfloat32m##LMUL##_t acos_float32(const vfloat32m##LMUL##_t &v,      \
                                             const size_t vl) {                 \
+        auto c2 = vfmv_v_f_f32m##LMUL(0.0742610f, vl);                         \
+        auto c3 = vfmv_v_f_f32m##LMUL(-0.2121144f, vl);                        \
+        auto c4 = vfmv_v_f_f32m##LMUL(1.5707288f, vl);                         \
+        auto c5 = vfmv_v_f_f32m##LMUL(3.14159265358979f, vl);                  \
         auto x = vfabs_v_f32m##LMUL(v, vl);                                    \
-        auto ret = vfmul_vf_f32m##LMUL(x, -0.0187293f, vl);                    \
-                                                                               \
-        ret = vfadd_vf_f32m##LMUL(ret, 0.0742610f, vl);                        \
-        ret = vfmul_vv_f32m##LMUL(ret, x, vl);                                 \
-                                                                               \
-        ret = vfsub_vf_f32m##LMUL(ret, 0.2121144f, vl);                        \
-        ret = vfmul_vv_f32m##LMUL(ret, x, vl);                                 \
-                                                                               \
-        ret = vfadd_vf_f32m##LMUL(ret, 1.5707288f, vl);                        \
-        ret = vfmul_vv_f32m##LMUL(                                             \
-            ret, vfsqrt_v_f32m##LMUL(vfrsub_vf_f32m##LMUL(x, 1.f, vl), vl),    \
-            vl);                                                               \
         auto mask = vmflt_vf_f32m##LMUL##_b##MLEN(v, 0.f, vl);                 \
-        ret = vfmul_vf_f32m##LMUL##_m(mask, ret, ret, -1.f, vl);               \
-        return vfadd_vf_f32m##LMUL##_m(mask, ret, ret, 3.14159265358979f, vl); \
+        auto sroot =                                                           \
+            vfsqrt_v_f32m##LMUL(vfrsub_vf_f32m##LMUL(x, 1.f, vl), vl);         \
+        auto ret = vmv_v_v_f32m##LMUL(x, vl);                                  \
+        ret = vfmadd_vf_f32m##LMUL(ret, -0.0187293f, c2, vl);                  \
+        ret = vfmadd_vv_f32m##LMUL(ret, x, c3, vl);                            \
+        ret = vfmadd_vv_f32m##LMUL(ret, x, c4, vl);                            \
+        ret = vfmul_vv_f32m##LMUL(ret, sroot, vl);                             \
+        return vfmadd_vf_f32m##LMUL##_m(mask, ret, -1.f, c5, vl);              \
     }
 
 IMPL_RVV_WITH_LMULS(ACOS_FLOAT32)
@@ -105,23 +103,20 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, acosh)
 #define ASIN_FLOAT32(LMUL, MLEN)                                               \
     inline vfloat32m##LMUL##_t asin_float32(const vfloat32m##LMUL##_t &v,      \
                                             const size_t vl) {                 \
+        auto c2 = vfmv_v_f_f32m##LMUL(0.0742610f, vl);                         \
+        auto c3 = vfmv_v_f_f32m##LMUL(-0.2121144f, vl);                        \
+        auto c4 = vfmv_v_f_f32m##LMUL(1.5707288f, vl);                         \
+        auto c5 = vfmv_v_f_f32m##LMUL(3.14159265358979f * 0.5f, vl);           \
         auto x = vfabs_v_f32m##LMUL(v, vl);                                    \
-        auto ret = vfmul_vf_f32m##LMUL(x, -0.0187293f, vl);                    \
-                                                                               \
-        ret = vfadd_vf_f32m##LMUL(ret, 0.0742610f, vl);                        \
-        ret = vfmul_vv_f32m##LMUL(ret, x, vl);                                 \
-                                                                               \
-        ret = vfsub_vf_f32m##LMUL(ret, 0.2121144f, vl);                        \
-        ret = vfmul_vv_f32m##LMUL(ret, x, vl);                                 \
-                                                                               \
-        ret = vfadd_vf_f32m##LMUL(ret, 1.5707288f, vl);                        \
-        ret = vfrsub_vf_f32m##LMUL(                                            \
-            vfmul_vv_f32m##LMUL(                                               \
-                vfsqrt_v_f32m##LMUL(vfrsub_vf_f32m##LMUL(x, 1.f, vl), vl),     \
-                ret, vl),                                                      \
-            3.14159265358979f * 0.5f, vl);                                     \
         auto mask = vmflt_vf_f32m##LMUL##_b##MLEN(v, 0.f, vl);                 \
-        return vfmul_vf_f32m##LMUL##_m(mask, ret, ret, -1.f, vl);              \
+        auto sroot =                                                           \
+            vfsqrt_v_f32m##LMUL(vfrsub_vf_f32m##LMUL(x, 1.f, vl), vl);         \
+        auto ret = vmv_v_v_f32m##LMUL(x, vl);                                  \
+        ret = vfmadd_vf_f32m##LMUL(ret, -0.0187293f, c2, vl);                  \
+        ret = vfmadd_vv_f32m##LMUL(ret, x, c3, vl);                            \
+        ret = vfmadd_vv_f32m##LMUL(ret, x, c4, vl);                            \
+        ret = vfnmsub_vv_f32m##LMUL(ret, sroot, c5, vl);                       \
+        return vfneg_v_f32m##LMUL##_m(mask, ret, ret, vl);                     \
     }
 
 IMPL_RVV_WITH_LMULS(ASIN_FLOAT32)
