@@ -13,7 +13,7 @@ namespace Nncase.Importer
     {
         private Expr VisitReduce(in NodeProto op, ReduceOp reduceOp, Expr initValue)
         {
-            return ReduceCore(op, reduceOp, initValue, expr => expr);
+            return ReduceCore(op, reduceOp, initValue, expr => expr, GetOpSet(op));
         }
 
         private Expr ReduceCore(in NodeProto op, ReduceOp reduceOp, Expr initValue, Func<Expr, Expr> f, long opVersion = 999)

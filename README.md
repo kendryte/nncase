@@ -11,7 +11,11 @@
 Telegram: [nncase community](https://t.me/joinchat/PPcEPZMLaTViNDI1)
 Technical Discussion QQ Group: 790699378 .   Answer: 人工智能
 
-[TOC]
+---
+
+## Tips
+
+- [2024/05/28] [BUG] nncase v2.8.3: ReduceSum(onnx) has a BUG that causes segmentfault. Please downgrade to v2.8.2, if your model has ReduceSum.
 
 ---
 
