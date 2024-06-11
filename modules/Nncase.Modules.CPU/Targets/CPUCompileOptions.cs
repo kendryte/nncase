@@ -45,7 +45,7 @@ public class CpuTargetOptions : ITargetOptions
 
     public NocArch NocArch { get; set; } = NocArch.Mesh;
 
-    public int[] Hierarchy { get; set; } = new[] { 1 };
+    public int[][] Hierarchy { get; set; } = new[] { new[] { 1 } };
 
     public string HierarchyNames { get; set; } = "b";
 
@@ -54,4 +54,6 @@ public class CpuTargetOptions : ITargetOptions
     public int[] MemoryCapacity { get; set; } = Array.Empty<int>();
 
     public int[] MemoryBandWidth { get; set; } = Array.Empty<int>();
+
+    public string DistributedScheme { get; set; } = string.Empty;
 }

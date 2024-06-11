@@ -14,7 +14,7 @@ using static Nncase.PatternMatch.Utility;
 
 [assembly: InternalsVisibleTo("Nncase.Tests")]
 
-namespace Nncase.Passes;
+namespace Nncase.Passes.Distributed;
 
 /// <summary>
 /// auto distributed the xpu fusion.
@@ -40,22 +40,53 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
 {
     public AutoDistributedRewriter(CompileOptions compileOptions, CpuTargetOptions targetOptions)
     {
-        Placement = new Placement(targetOptions.Hierarchy, targetOptions.HierarchyNames);
+        Placements = targetOptions.Hierarchy.Select(h => new Placement(h, targetOptions.HierarchyNames)).ToArray();
         CompileOptions = compileOptions;
         TargetOptions = targetOptions;
+        if (Path.Exists(TargetOptions.DistributedScheme) && System.Text.Json.JsonSerializer.Deserialize<DistributedScheme>(File.ReadAllText(TargetOptions.DistributedScheme)) is DistributedScheme scheme)
+        {
+            Scheme = scheme.Outputs.ToDictionary(n => n.Name, n => (new IRArray<SBP>(n.NdSBP), new Placement(n.Hierarchy, n.HierarchyName)));
+        }
+        else
+        {
+            Scheme = new Dictionary<string, (IRArray<SBP> NdSBP, Placement Placement)>();
+        }
     }
 
-    public Placement Placement { get; }
+    public IRArray<Placement> Placements { get; }
 
     public CompileOptions CompileOptions { get; }
 
     public CpuTargetOptions TargetOptions { get; }
 
-    public static IReadOnlyList<Expr> GetLeafCandidateBoxings(Expr expr, Placement placement)
+    public IReadOnlyDictionary<string, (IRArray<SBP> NdSBP, Placement Placement)> Scheme { get; }
+
+    public static IReadOnlyList<Expr> GetLeafCandidateBoxings(Expr expr, IEnumerable<Placement> placements)
     {
-        return Utilities.DistributedUtility.GetLeafCandidateNDSBPs((TensorType)expr.CheckedType, placement).
-            Select(ndsbp => IR.F.CPU.Boxing(expr, new DistributedType((TensorType)expr.CheckedType, ndsbp, placement))).
-            ToArray();
+        return placements.Select(
+            placement =>
+                Utilities.DistributedUtility.GetLeafCandidateNDSBPs((TensorType)expr.CheckedType, placement).
+                Select(ndsbp =>
+                    IR.F.CPU.Boxing(expr, new DistributedType((TensorType)expr.CheckedType, ndsbp, placement)))).
+            SelectMany(e => e).ToArray();
+    }
+
+    public void FilterByScheme(Expr expr, Dictionary<IRType, List<Expr>> result)
+    {
+        foreach (var name in expr.Metadata.OutputNames ?? Array.Empty<string>())
+        {
+            if (Scheme.TryGetValue(name, out var tp))
+            {
+                var keys = result.Keys.ToArray();
+                foreach (var key in keys)
+                {
+                    if (!(key is DistributedType dtype && dtype.NdSBP == tp.NdSBP && dtype.Placement == tp.Placement))
+                    {
+                        result.Remove(key);
+                    }
+                }
+            }
+        }
     }
 
     public BaseFunction Rewirte(BaseFunction input)
@@ -131,7 +162,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                                     BuildNotSupportedCalls(op, args.Select(kv => kv.Value[0]).ToArray())).
                     SelectMany(i => i).
                     GroupBy(c => c.CheckedType).
-                    ToDictionary(g => g.Key, g => new List<Expr>(g.ToList<Expr>()));
+                    ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count).ToList<Expr>());
 
         if (results.Count == 0)
         {
@@ -146,9 +177,10 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                     }).ToArray()), }).
                     SelectMany(i => i).
                     GroupBy(c => c.CheckedType).
-                    ToDictionary(g => g.Key, g => new List<Expr>(g.ToList<Expr>()));
+                    ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count).ToList<Expr>());
         }
 
+        FilterByScheme(expr, results);
         return results;
     }
 
@@ -166,6 +198,8 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
 
                 bucket.Add(eq);
             }
+
+            FilterByScheme(expr, buckets);
         };
 
         var buckets = ExprMemo[expr];
@@ -174,7 +208,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             switch (parameterKind, expr)
             {
                 case (ParameterKind.Input, Expr e) when e is Const or Var:
-                    updateBuckets(buckets, isSupported ? GetLeafCandidateBoxings(e, Placement) : new[] { e });
+                    updateBuckets(buckets, isSupported ? GetLeafCandidateBoxings(e, Placements) : new[] { e });
                     break;
                 case (ParameterKind.Input, Expr e) when e is IR.Tuple tp:
                     foreach (var f in tp.Fields)
@@ -207,7 +241,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             {
                 if (!buckets.Keys.Any(IsDistributed))
                 {
-                    var results = buckets.Select(kv => GetLeafCandidateBoxings(kv.Value[0], Placement)).SelectMany(i => i).ToArray();
+                    var results = buckets.Select(kv => GetLeafCandidateBoxings(kv.Value[0], Placements)).SelectMany(i => i).ToArray();
                     updateBuckets(buckets, results);
                 }
             }
@@ -279,10 +313,33 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         else
         {
             calls.Add(call);
-            if (call.CheckedType is DistributedType distributedType)
+            if (call.CheckedType is DistributedType distType)
             {
-                calls.AddRange(Utilities.DistributedUtility.GetPartialCandidateNDSBPs(distributedType).
-                    Select(ndsbp => IR.F.CPU.Boxing(call, distributedType with { NdSBP = ndsbp })));
+                // boxing for partialsum
+                var partialBoxings = Utilities.DistributedUtility.GetPartialCandidateNDSBPs(distType).
+                    Select(ndsbp => IR.F.CPU.Boxing(call, distType with { NdSBP = ndsbp })).ToArray();
+                calls.AddRange(partialBoxings);
+
+                using var pinner = new ExprPinner(calls.ToArray());
+                var getExtraBoxings = (Expr expr) => Placements.
+                    Where(p => p != distType.Placement).
+                    Select(p => Utilities.DistributedUtility.GetLeafCandidateNDSBPs(distType.TensorType, p).
+                        Select(ndsbp => IR.F.CPU.Boxing(expr, new DistributedType(distType.TensorType, ndsbp, p)))).
+                    SelectMany(b => b);
+
+                // boxing for other placements
+                var extraBoxings = partialBoxings.Any() ? partialBoxings.Select(getExtraBoxings).SelectMany(i => i) : getExtraBoxings(call);
+                foreach (var boxing in extraBoxings)
+                {
+                    if (boxing.CheckedType is InvalidType)
+                    {
+                        boxing.Dispose();
+                    }
+                    else
+                    {
+                        calls.Add(boxing);
+                    }
+                }
             }
         }
 
@@ -336,7 +393,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         {
             if (type.NdSBP.Any(s => s is SBPPartialSum))
             {
-                var boxingP2B = IR.F.CPU.Boxing(e, new DistributedType(type.TensorType, type.NdSBP.Select(s => s is SBPPartialSum ? SBP.B : s).ToArray(), Placement));
+                var boxingP2B = IR.F.CPU.Boxing(e, new DistributedType(type.TensorType, type.NdSBP.Select(s => s is SBPPartialSum ? SBP.B : s).ToArray(), type.Placement));
                 return IR.F.CPU.Boxing(boxingP2B, type.TensorType);
             }
 
@@ -371,7 +428,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         while (changed)
         {
             changed = false;
-            foreach (var (_, bukets) in ExprMemo)
+            foreach (var (e, bukets) in ExprMemo)
             {
                 foreach (var (_, buket) in bukets.Where(kv => kv.Value.Any()))
                 {
@@ -379,6 +436,11 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                     {
                         foreach (var item in buket)
                         {
+                            if (item.Users.Count != 0)
+                            {
+                                throw new InvalidOperationException("this item can't have more than zero users!");
+                            }
+
                             using (new ExprPinner(item.Operands.ToArray()))
                             {
                                 item.Dispose();

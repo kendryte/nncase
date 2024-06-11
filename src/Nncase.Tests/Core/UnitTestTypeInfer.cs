@@ -311,6 +311,15 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
         Assert.Equal(result.DType, DataTypes.Float32);
     }
 
+    [Fact]
+    public void TestBroadcastInfer2()
+    {
+        var a = new TensorType(DataTypes.Float32, new Dimension[] { 1, Dimension.Unknown, 8192 });
+        var b = new TensorType(DataTypes.Float32, new Dimension[] { 1 });
+        var result = TypeInference.BroadcastType(a, b);
+        Assert.Equal(new TensorType(DataTypes.Float32, new Dimension[] { 1, Dimension.Unknown, 8192 }), result);
+    }
+
     private void CheckInferShape(Expr expr, params Dimension[] shapeDimensions)
     {
         CheckInferShape(expr, new Shape(shapeDimensions));
