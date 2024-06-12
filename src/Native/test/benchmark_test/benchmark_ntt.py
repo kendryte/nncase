@@ -119,7 +119,7 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                         'cosh': '27.34',
                                         'exp': '17.33',
                                         'floor': '1.0',
-                                        'log': '44.0',
+                                        'log': '23.84',
                                         'neg': '1.0',
                                         'round': '1.0',
                                         'rsqrt': '1.0',
