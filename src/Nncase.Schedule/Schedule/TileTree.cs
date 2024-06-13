@@ -463,22 +463,43 @@ public partial class TileTreeMerger : ITreeNodeVisitor<Unit>
         var nextLevelProducer = producer.Child;
         if (consumer.Child is ScopeNode subScope)
         {
-            subScope.Insert(0, nextLevelProducer);
+            AddProducerToScope(subScope, nextLevelProducer);
         }
         else
         {
             subScope = new ScopeNode();
-            subScope.Add(nextLevelProducer);
+            AddProducerToScope(subScope, nextLevelProducer);
             subScope.Add(consumer.Child);
             consumer.Child = subScope;
         }
 
-        if (nextLevelProducer is ITileAbleNode tileAble)
+        // when the 
+        if (nextLevelProducer is ScopeNode producerScope)
+        {
+            // tileAble.DomainRelation = domainRel;
+            foreach (var tnode in producerScope.Children.OfType<ITileAbleNode>())
+            {
+                tnode.DomainRelation = domainRel.apply_range(tnode.DomainRelation);
+            }
+        }
+        else if (nextLevelProducer is ITileAbleNode tileAble)
         {
             tileAble.DomainRelation = domainRel;
         }
 
         return true;
+    }
+
+    private void AddProducerToScope(ScopeNode scopeNode, ITreeNode producer)
+    {
+        if (producer is ScopeNode nextLevelProduceScope)
+        {
+            scopeNode.InsertRange(0, nextLevelProduceScope.Children);
+        }
+        else
+        {
+            scopeNode.Insert(0, producer);
+        }
     }
 }
 
@@ -557,6 +578,9 @@ public static class TreeSearch
         // merge 1 0 1
         Merge(tree, 1, 0, 1);
         Dump(tree, "merge_1_0_1");
+
+        Merge(tree, 2, 1, 1);
+        Dump(tree, "merge_2_1_1");
 
         // first find the producer comsumer struct
         // grid.Buffers
