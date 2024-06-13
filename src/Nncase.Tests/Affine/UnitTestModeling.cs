@@ -240,6 +240,13 @@ public sealed class UnitTestModeling : TestClassBase
 
         var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), }, new());
         Dumpper.DumpIR(post, "post");
+
+        if (post is not Function { Body: IR.Affine.Grid grid })
+        {
+            return;
+        }
+
+        Schedule.TreeSearch.Search(grid);
     }
 }
 

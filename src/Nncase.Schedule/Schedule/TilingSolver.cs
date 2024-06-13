@@ -604,41 +604,6 @@ internal sealed class TilingSolver
     }
 }
 
-internal sealed class AffineExprToIntExprConverter : ExprVisitor<IntExpr, Unit>
-{
-    private readonly Solver _solver;
-    private readonly IntVar[] _extents;
-
-    public AffineExprToIntExprConverter(Solver solver, IntVar[] extentVars)
-    {
-        _solver = solver;
-        _extents = extentVars;
-    }
-
-    protected override IntExpr VisitLeafAffineExtent(AffineExtent expr)
-    {
-        return _extents[expr.Position];
-    }
-
-    protected override IntExpr VisitLeafAffineConstant(AffineConstant expr) =>
-        _solver.MakeIntConst(expr.Value);
-
-    protected override IntExpr VisitLeafAffineAddBinary(AffineAddBinary expr) =>
-        ExprMemo[expr.Lhs] + ExprMemo[expr.Rhs];
-
-    protected override IntExpr VisitLeafAffineMulBinary(AffineMulBinary expr) =>
-        ExprMemo[expr.Lhs] * ExprMemo[expr.Rhs];
-
-    protected override IntExpr VisitLeafAffineDivBinary(AffineDivBinary expr) =>
-        expr.BinaryOp switch
-        {
-            AffineDivBinaryOp.FloorDiv => _solver.MakeDiv(ExprMemo[expr.Lhs], ExprMemo[expr.Rhs]),
-            AffineDivBinaryOp.CeilDiv => ExprMemo[expr.Lhs].CeilDiv(ExprMemo[expr.Rhs]),
-            AffineDivBinaryOp.Mod => _solver.MakeModulo(ExprMemo[expr.Lhs], ExprMemo[expr.Rhs]),
-            _ => throw new UnreachableException(),
-        };
-}
-
 internal sealed class AffineDimCollector : ExprWalker
 {
     public HashSet<AffineDim> AffineDims { get; } = new(ReferenceEqualityComparer.Instance);
