@@ -26,6 +26,7 @@ public sealed class PluginLoader
     private static readonly string[] _builtinModules = new[]
     {
         "Nncase.Modules.StackVM.dll",
+        "Nncase.Modules.Ncnn.dll",
         "Nncase.Modules.CPU.dll",
         "Nncase.Modules.K210.dll",
     };

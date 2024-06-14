@@ -25,9 +25,10 @@ namespace Nncase.Importer.TFLite
             var filter = Tensor.From<int>(new[] { filterH, filterW }, new[] { 2 });
             var stride = Tensor.From<int>(new[] { strideH, strideW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);
+            var countIncludePad = option.Padding == tflite.Padding.SAME ? false : true;
             return F.Tensors.NCHWToNHWC(
                 F.NN.ReduceWindow2D(
-                    reduceOp, input, initValue, filter, stride, padding, Tensor.From<long>(new long[] { 1, 1 }), false, false));
+                    reduceOp, input, initValue, filter, stride, padding, Tensor.From<long>(new long[] { 1, 1 }), false, countIncludePad));
         }
     }
 }

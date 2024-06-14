@@ -58,6 +58,32 @@ class stream_reader {
         stream_.read(reinterpret_cast<char *>(span.data()), span.size_bytes());
     }
 
+    std::string read_string() {
+        std::string str;
+        while (true) {
+            auto c = read<char>();
+            if (c) {
+                str.push_back(c);
+            } else {
+                break;
+            }
+        }
+
+        return str;
+    }
+
+    std::vector<std::string> read_string_array() {
+        std::vector<std::string> array;
+        while (true) {
+            if (peek<char>() == '\0') {
+                skip(1);
+                break;
+            }
+            array.emplace_back(read_string());
+        }
+        return array;
+    }
+
     void skip(size_t count) { stream_.seekg(count, std::ios::cur); }
 
   private:

@@ -85,6 +85,73 @@ public class CPUTarget : ITarget
     /// <inheritdoc/>
     public void RegisterTargetDependentPass(IPassManager passManager, CompileOptions options)
     {
+        passManager.AddWithName<DataflowPass>("LowerNcnnIR").Configure(p =>
+        {
+            p.Add<Passes.Rules.Lower.RemoveMarker>();
+
+            // Fold reduce
+            p.Add<Passes.Rules.Ncnn.LowerReductionSumSquare>();
+            p.Add<Passes.Rules.Ncnn.LowerReductionL1>();
+            p.Add<Passes.Rules.Ncnn.LowerReductionL2>();
+            p.Add<Passes.Rules.Ncnn.LowerReductionLogSum>();
+            p.Add<Passes.Rules.Ncnn.LowerReductionLogSumExp>();
+
+            // single op
+            p.Add<Passes.Rules.Ncnn.LowerBatchNorm>();
+            p.Add<Passes.Rules.Ncnn.LowerSoftmax>();
+            p.Add<Passes.Rules.Ncnn.LowerUnary>();
+            p.Add<Passes.Rules.Ncnn.LowerBinary>();
+
+            p.Add<Passes.Rules.Ncnn.LowerCelu>();
+            p.Add<Passes.Rules.Ncnn.LowerClamp>();
+            p.Add<Passes.Rules.Ncnn.LowerConcat>();
+            p.Add<Passes.Rules.Ncnn.LowerConv>();
+            p.Add<Passes.Rules.Ncnn.LowerCumsum>();
+            p.Add<Passes.Rules.Ncnn.LowerElu>();
+
+            p.Add<Passes.Rules.Ncnn.LowerErf>();
+            p.Add<Passes.Rules.Ncnn.LowerHardSigmoid>();
+            p.Add<Passes.Rules.Ncnn.LowerHardSwish>();
+            p.Add<Passes.Rules.Ncnn.LowerInstanceNorm>();
+            p.Add<Passes.Rules.Ncnn.LowerLayerNorm>();
+            p.Add<Passes.Rules.Ncnn.LowerLRN>();
+            p.Add<Passes.Rules.Ncnn.LowerLSTM>();
+            p.Add<Passes.Rules.Ncnn.LowerPadding>();
+            p.Add<Passes.Rules.Ncnn.LowerPooling>();
+            p.Add<Passes.Rules.Ncnn.LowerPReLU>();
+            p.Add<Passes.Rules.Ncnn.LowerReduction>();
+
+            p.Add<Passes.Rules.Ncnn.LowerSELU>();
+            p.Add<Passes.Rules.Ncnn.LowerSigmoid>();
+            p.Add<Passes.Rules.Ncnn.LowerCrop>();
+            p.Add<Passes.Rules.Ncnn.LowerSoftplus>();
+            p.Add<Passes.Rules.Ncnn.LowerSlice>();
+            p.Add<Passes.Rules.Ncnn.LowerTile>();
+            p.Add<Passes.Rules.Ncnn.LowerPermute>();
+            p.Add<Passes.Rules.Ncnn.LowerMatmul>();
+            p.Add<Passes.Rules.Ncnn.LowerConvTranspose>();
+            p.Add<Passes.Rules.Ncnn.LowerCast>();
+            p.Add<Passes.Rules.Ncnn.LowerGELU>();
+
+            p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
+            p.Add<Passes.Rules.Neutral.FoldNopReshape>();
+            p.Add<Passes.Rules.Ncnn.LowerReshape>();
+
+            // p.Add<Passes.Rules.Ncnn.LowerDequantize>(); // ncnn dequantize int to float.
+        });
+
+        passManager.AddWithName<DataflowPass>("RemoveGlueOp").Configure(p =>
+        {
+            p.Add<Passes.Rules.Neutral.FoldConstCall>();
+            p.Add<Passes.Rules.Neutral.FoldSqueezeUnsqueeze>();
+            p.Add<Passes.Rules.Neutral.FoldUnsqueezeSqueeze>();
+        });
+
+        passManager.AddWithName<DataflowPass>("RemoveSingleSqueezeAndUnsqueeze").Configure(p =>
+        {
+            p.Add<Passes.Rules.Ncnn.LowerSqueeze>();
+            p.Add<Passes.Rules.Ncnn.LowerUnsqueeze>();
+        });
     }
 
     /// <inheritdoc/>

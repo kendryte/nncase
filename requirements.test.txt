@@ -17,3 +17,4 @@ pytest-xdist
 pyyaml
 pandas
 tabulate
+ncnn==1.0.20240102

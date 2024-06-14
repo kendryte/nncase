@@ -7,55 +7,36 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Nncase.IR;
 
-namespace Nncase.Importer.Ncnn;
+namespace Nncase.Runtime.Ncnn;
 
-internal class NcnnTensor
-{
-    public string Name { get; set; } = string.Empty;
-
-    public Shape ShapeHint { get; set; } = Shape.Unranked;
-
-    public override string ToString() => $"{Name}: {ShapeHint}";
-}
-
-internal class NcnnLayer
-{
-    public NcnnLayer(string type, string name, int bottomCount, int topCount)
-    {
-        Type = type;
-        Name = name;
-        Bottoms = new NcnnTensor[bottomCount];
-        Tops = new NcnnTensor[topCount];
-    }
-
-    public string Type { get; }
-
-    public string Name { get; }
-
-    public NcnnTensor[] Bottoms { get; }
-
-    public NcnnTensor[] Tops { get; }
-
-    public ParamDict ParamDict { get; } = new();
-
-    public override string ToString() => $"[{Type}] {Name}";
-}
-
-internal class NcnnModel
+public class NcnnModel
 {
     public static readonly int ExpectedMagic = 7767517;
 
-    public NcnnModel(int magic, IReadOnlyList<NcnnLayer> layers)
+    public NcnnModel()
+    {
+        Magic = ExpectedMagic;
+        ModelInputs = new List<NcnnLayer>();
+        Layers = new List<NcnnLayer>();
+        MemoryDatas = new List<NcnnLayer>();
+    }
+
+    public NcnnModel(int magic, IList<NcnnLayer> layers, IList<NcnnLayer>? modelInputs = null, IList<NcnnLayer>? memoryDatas = null)
     {
         Magic = magic;
+        ModelInputs = modelInputs ?? new List<NcnnLayer>();
         Layers = layers;
+        MemoryDatas = memoryDatas ?? new List<NcnnLayer>();
     }
 
     public int Magic { get; }
 
-    public IReadOnlyList<NcnnLayer> Layers { get; }
+    public IList<NcnnLayer> ModelInputs { get; }
+
+    public IList<NcnnLayer> MemoryDatas { get; }
+
+    public IList<NcnnLayer> Layers { get; }
 
     public static NcnnModel ParseFromStream(Stream stream)
     {
@@ -104,5 +85,32 @@ internal class NcnnModel
         }
 
         return new NcnnModel(magic, layers);
+    }
+
+    public void Serialize(TextWriter writer)
+    {
+        // 1. Magic
+        writer.WriteLine(Magic);
+
+        // 2. layer_count & blob_count
+        writer.WriteLine($"{Layers.Count + MemoryDatas.Count + ModelInputs.Count} {Layers.Select(x => x.Tops.Length).Sum() + MemoryDatas.Select(x => x.Tops.Length).Sum() + ModelInputs.Select(x => x.Tops.Length).Sum()}");
+
+        // 3. inputs
+        foreach (var modelInput in ModelInputs)
+        {
+            modelInput.Serialize(writer);
+        }
+
+        // 4. memorydatas
+        foreach (var memoryData in MemoryDatas)
+        {
+            memoryData.Serialize(writer);
+        }
+
+        // 5. layers
+        foreach (var layer in Layers)
+        {
+            layer.Serialize(writer);
+        }
     }
 }

@@ -18,54 +18,40 @@ import torch
 from onnx_test_runner import OnnxTestRunner
 
 
-def _make_module(in_shape, out_channel, kernel_size):
+def _make_module(in_shape):
 
     class ReshapeModule(torch.nn.Module):
         def __init__(self):
             super(ReshapeModule, self).__init__()
-            self.conv2d = torch.nn.Conv2d(in_shape[1], out_channel, kernel_size)
             self.n = in_shape[0]
-            self.c = out_channel
-            self.h = in_shape[2] - kernel_size + 1
-            self.w = in_shape[3] - kernel_size + 1
+            self.c = in_shape[1]
+            self.h = in_shape[2]
+            self.w = in_shape[3]
 
         def forward(self, x):
-            x = self.conv2d(x)
-            x = torch.reshape(x, (self.n, self.c * self.h * self.w))
-            x = torch.reshape(x, (self.n, self.c, self.h * self.w))
-            x = torch.reshape(x, (self.n, self.c * self.h, self.w))
-            x = torch.reshape(x, (self.n * self.c, self.h * self.w))
-            x = torch.reshape(x, (self.n * self.c, self.h, self.w))
-            x = torch.reshape(x, (self.n * self.c * self.h, self.w))
-            x = torch.reshape(x, (-1, self.w))
-            return x
+            out = []
+            out.append(torch.reshape(x, (self.n, self.c * self.h * self.w)))
+            out.append(torch.reshape(x, (self.n, self.c, self.h * self.w)))
+            out.append(torch.reshape(x, (self.n, self.c * self.h, self.w)))
+            out.append(torch.reshape(x, (self.n * self.c, self.h * self.w)))
+            out.append(torch.reshape(x, (self.n * self.c, self.h, self.w)))
+            out.append(torch.reshape(x, (self.n * self.c * self.h, self.w)))
+            out.append(torch.reshape(x, (-1, self.w)))
+            return out
 
     return ReshapeModule()
 
 
 in_shapes = [
     [1, 4, 60, 72],
-    [1, 3, 224, 224]
-]
-
-out_channels = [
-    1,
-    3,
-    16
-]
-
-kernel_sizes = [
-    1,
-    3,
-    5
+    [1, 3, 224, 224],
+    [3, 4, 5, 6]
 ]
 
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('out_channel', out_channels)
-@pytest.mark.parametrize('kernel_size', kernel_sizes)
-def test_reshape(in_shape, out_channel, kernel_size, request):
-    module = _make_module(in_shape, out_channel, kernel_size)
+def test_reshape(in_shape, request):
+    module = _make_module(in_shape)
 
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_torch(module, in_shape)
