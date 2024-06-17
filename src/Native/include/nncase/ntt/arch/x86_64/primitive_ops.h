@@ -43,9 +43,8 @@ template <> struct acos<ntt::vector<float, 8>> {
 template <> struct acosh<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
-        return log256_ps(
-            _mm256_add_ps(v, _mm256_sqrt_ps((_mm256_sub_ps(
-                                 _mm256_mul_ps(v, v), _mm256_set1_ps(1.0f))))));
+        return log256_ps(_mm256_add_ps(v, _mm256_sqrt_ps(_mm256_comp_fmsub_ps(
+                                              v, v, _mm256_set1_ps(1.0f)))));
     }
 };
 
@@ -57,13 +56,12 @@ template <> struct asin<ntt::vector<float, 8>> {
     }
 };
 
-// acosh(v) = ln(v + sqrt(v^2 - 1)), v >= 1
+// asinh(v) = ln(v + sqrt(v^2 + 1))
 template <> struct asinh<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
-        return log256_ps(
-            _mm256_add_ps(v, _mm256_sqrt_ps((_mm256_add_ps(
-                                 _mm256_mul_ps(v, v), _mm256_set1_ps(1.0f))))));
+        return log256_ps(_mm256_add_ps(v, _mm256_sqrt_ps(_mm256_comp_fmadd_ps(
+                                              v, v, _mm256_set1_ps(1.0f)))));
     }
 };
 
@@ -87,10 +85,10 @@ template <> struct cos<ntt::vector<float, 8>> {
 template <> struct cosh<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
-        return _mm256_div_ps(
+        return _mm256_mul_ps(
             _mm256_add_ps(exp256_ps(v),
                           exp256_ps(_mm256_sub_ps(_mm256_setzero_ps(), v))),
-            _mm256_set1_ps(2.0f));
+            _mm256_set1_ps(0.50f));
     }
 };
 
@@ -182,10 +180,10 @@ template <> struct sin<ntt::vector<float, 8>> {
 template <> struct sinh<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
-        return _mm256_div_ps(
+        return _mm256_mul_ps(
             _mm256_sub_ps(exp256_ps(v),
                           exp256_ps(_mm256_sub_ps(_mm256_setzero_ps(), v))),
-            _mm256_set1_ps(2.0f));
+            _mm256_set1_ps(0.50f));
     }
 };
 
@@ -209,9 +207,10 @@ template <> struct square<ntt::vector<float, 8>> {
 template <> struct swish<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
-        return _mm256_div_ps(
-            v, _mm256_add_ps(exp256_ps(_mm256_sub_ps(_mm256_setzero_ps(), v)),
-                             _mm256_set1_ps(1.0f)));
+        return _mm256_mul_ps(
+            v, _mm256_rcp_ps(_mm256_add_ps(
+                   exp256_ps(_mm256_sub_ps(_mm256_setzero_ps(), v)),
+                   _mm256_set1_ps(1.0f))));
     }
 };
 
@@ -270,7 +269,7 @@ template <> struct floor_mod<ntt::vector<int32_t, 8>, ntt::vector<int32_t, 8>> {
         auto f1 = _mm256_cvtepi32_ps(v1);
         auto f2 = _mm256_cvtepi32_ps(v2);
         auto quotient = _mm256_floor_ps(_mm256_div_ps(f1, f2));
-        auto remainder = _mm256_sub_ps(f1, _mm256_mul_ps(quotient, f2));
+        auto remainder = _mm256_comp_fnmadd_ps(quotient, f2, f1);
         return _mm256_cvtps_epi32(remainder);
     }
 };
@@ -282,7 +281,7 @@ template <> struct mod<ntt::vector<float, 8>, ntt::vector<float, 8>> {
                const ntt::vector<float, 8> &v2) const noexcept {
         auto quotient = _mm256_round_ps(_mm256_div_ps(v1, v2),
                                         _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
-        return _mm256_sub_ps(v1, _mm256_mul_ps(quotient, v2));
+        return _mm256_comp_fnmadd_ps(quotient, v2, v1);
     }
 };
 
@@ -294,7 +293,7 @@ template <> struct mod<ntt::vector<int32_t, 8>, ntt::vector<int32_t, 8>> {
         auto f2 = _mm256_cvtepi32_ps(v2);
         auto quotient = _mm256_round_ps(_mm256_div_ps(f1, f2),
                                         _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
-        auto remainder = _mm256_sub_ps(f1, _mm256_mul_ps(quotient, f2));
+        auto remainder = _mm256_comp_fnmadd_ps(quotient, f2, f1);
         return _mm256_cvtps_epi32(remainder);
     }
 };
