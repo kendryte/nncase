@@ -1,0 +1,29 @@
+{
+  "Version": "1",
+  "Model": "llama",
+  "Outputs": [
+    {
+      "Name": "hidden_in",
+      "NdSBP": [
+        {
+          "$type": "S",
+          "Axis": 1
+        },
+        {
+          "$type": "S",
+          "Axis": 2
+        },
+        {
+          "$type": "S",
+          "Axis": 2
+        }
+      ],
+      "Hierarchy": [
+        8,
+        8,
+        4
+      ],
+      "HierarchyName": "cbt"
+    }
+  ]
+}

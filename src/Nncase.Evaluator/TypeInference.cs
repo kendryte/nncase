@@ -109,20 +109,9 @@ public static class TypeInference
             return TensorType.Unranked(dataType);
         }
 
-        // If any input is not fixed, result is not fixed
-        if (inputs.Any(x => !x.Shape.IsFixed))
-        {
-            // todo:
-            // 1. multi same rank
-            // 2. can broadcast rank -> biggest shape
-            // 3. invalid rank
-            var rank = inputs.OrderByDescending(x => x.Shape.Rank).First().Shape.Rank;
-            return new TensorType(dataType, Shape.Unknown(rank));
-        }
-
         var outputRank = inputs.Select(x => x.Shape.Rank).Max();
         var outputShape = new Dimension[outputRank];
-        Span<int> inputDims = stackalloc int[inputs.Length];
+        var inputDims = new Dimension[inputs.Length];
 
         for (int dimIndex = 0; dimIndex < outputShape.Length; dimIndex++)
         {
@@ -131,8 +120,8 @@ public static class TypeInference
                 var inShape = inputs[i].Shape;
                 var inExtend = outputRank - inShape.Rank;
                 var inDimIndex = dimIndex - inExtend;
-                var inDim = inDimIndex < 0 ? 1 : inShape[inDimIndex].Value!.Value;
-                if (inDim == 0)
+                var inDim = inDimIndex < 0 ? 1 : inShape[inDimIndex];
+                if (inDim is Dimension { Value: 0 })
                 {
                     return new InvalidType("Input dimension should not be 0.");
                 }
@@ -140,22 +129,29 @@ public static class TypeInference
                 inputDims[i] = inDim;
             }
 
-            // 1. Sort descending
-            inputDims.Sort((a, b) => b.CompareTo(a));
-
-            // 2. Find first 1
-            var firstOneIndex = inputDims.IndexOf(1);
-            var expectedDim = inputDims[0];
-
-            // 3. Dims before 1 are all same or 1 is not found, it's ok to broadcast
-            if ((firstOneIndex == -1 && inputDims.AsValueEnumerable().Distinct().Count() == 1) ||
-                ((firstOneIndex != -1) && inputDims[..firstOneIndex].AsValueEnumerable().All(x => x == expectedDim)))
+            if (inputDims.All(x => x.IsFixed))
             {
-                outputShape[dimIndex] = expectedDim;
+                // 1. Sort descending
+                Array.Sort(inputDims, (a, b) => b.FixedValue.CompareTo(a.FixedValue));
+
+                // 2. Find first 1
+                var firstOneIndex = inputDims.IndexOf(1);
+                var expectedDim = inputDims[0];
+
+                // 3. Dims before 1 are all same or 1 is not found, it's ok to broadcast
+                if ((firstOneIndex == -1 && inputDims.AsValueEnumerable().Distinct().Count() == 1) ||
+                    ((firstOneIndex != -1) && inputDims[..firstOneIndex].AsValueEnumerable().All(x => x == expectedDim)))
+                {
+                    outputShape[dimIndex] = expectedDim;
+                }
+                else
+                {
+                    return new InvalidType("Inputs are not compatible to broadcast.");
+                }
             }
             else
             {
-                return new InvalidType("Inputs are not compatible to broadcast.");
+                outputShape[dimIndex] = Dimension.Unknown;
             }
         }
 
