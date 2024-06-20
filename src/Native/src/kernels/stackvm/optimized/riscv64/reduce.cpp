@@ -119,7 +119,7 @@ static int get_parameter(gsl::span<const size_t> in_shape,
     }
     int _sum1 = (max_index + min_index) * (max_index - min_index + 1) >> 1;
     int _sum2 = axis[0];
-    for (int i = 1; i < axis.size(); ++i) {
+    for (int i = 1; i < (int)axis.size(); ++i) {
         _sum2 += axis[i];
     }
     if (_sum2 != _sum1) {
