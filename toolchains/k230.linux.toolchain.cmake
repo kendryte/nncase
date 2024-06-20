@@ -10,9 +10,22 @@ if(NOT RISCV_ROOT_PATH)
 endif()
 
 set(RISCV_ROOT_PATH ${RISCV_ROOT_PATH} CACHE STRING "root path to riscv toolchain")
-set(CMAKE_C_COMPILER "${RISCV_ROOT_PATH}/bin/riscv64-unknown-linux-musl-gcc")
-set(CMAKE_CXX_COMPILER "${RISCV_ROOT_PATH}/bin/riscv64-unknown-linux-musl-g++")
-set(CMAKE_FIND_ROOT_PATH "${RISCV_ROOT_PATH}/riscv64-unknown-linux-musl")
+set(CMAKE_C_COMPILER "${RISCV_ROOT_PATH}/bin/riscv64-linux-gcc")
+set(CMAKE_CXX_COMPILER "${RISCV_ROOT_PATH}/bin/riscv64-linux-g++")
+set(CMAKE_FIND_ROOT_PATH "${RISCV_ROOT_PATH}/riscv64-linux-gnu")
+
+if(DEFINED ENV{C900_RISCV_ROOT_PATH})
+    file(TO_CMAKE_PATH $ENV{C900_RISCV_ROOT_PATH} C900_RISCV_ROOT_PATH)
+endif()
+
+if(NOT C900_RISCV_ROOT_PATH)
+    message(FATAL_ERROR "C900_RISCV_ROOT_PATH env must be defined for linux runtime")
+endif()
+
+set(C900_RISCV_ROOT_PATH ${C900_RISCV_ROOT_PATH} CACHE STRING "root path to riscv toolchain")
+set(RISCV_C_COMPILER "${C900_RISCV_ROOT_PATH}/bin/riscv64-unknown-linux-gnu-gcc")
+set(RISCV_CXX_COMPILER "${C900_RISCV_ROOT_PATH}/bin/riscv64-unknown-linux-gnu-g++")
+set(RISCV_FIND_ROOT_PATH "${C900_RISCV_ROOT_PATH}/bin/riscv64-unknown-linux-gnu")
 
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
@@ -30,3 +43,5 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=rv64imafdcv -mabi=lp64d -mcmodel=
 set(BUILDING_RUNTIME ON)
 set(ENABLE_K230_RUNTIME ON)
 set(BUILD_SHARED_LIBS OFF)
+
+add_definitions(-DKENDRYTE_LINUX)
