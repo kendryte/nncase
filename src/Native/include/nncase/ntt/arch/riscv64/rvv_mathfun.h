@@ -232,16 +232,13 @@ _RVV_FLOAT16_LOG_OP(8, 2, 16)
         y = vfmadd_vv_f##TLEN##m##LMUL(y, x, c1, vl);                          \
         y = vfmadd_vv_f##TLEN##m##LMUL(y, x, c2, vl);                          \
         y = vfmadd_vv_f##TLEN##m##LMUL(y, x, c2, vl);                          \
+        auto b = vreinterpret_v_f##TLEN##m##LMUL##_i##TLEN##m##LMUL(y);        \
                                                                                \
         /* build 2^n */                                                        \
-        vint##TLEN##m##LMUL##_t mm = vfcvt_x_f_v_i##TLEN##m##LMUL(fx, vl);     \
-        mm = vadd_vx_i##TLEN##m##LMUL(mm, E, vl);                              \
-        mm = vsll_vx_i##TLEN##m##LMUL(mm, M, vl);                              \
-        vfloat##TLEN##m##LMUL##_t pow2n =                                      \
-            vreinterpret_v_i##TLEN##m##LMUL##_f##TLEN##m##LMUL(mm);            \
-                                                                               \
-        y = vfmul_vv_f##TLEN##m##LMUL(y, pow2n, vl);                           \
-        return y;                                                              \
+        auto a = vsll_vx_i##TLEN##m##LMUL(                                     \
+            vfcvt_x_f_v_i##TLEN##m##LMUL(fx, vl), M, vl);                      \
+        auto ret = vadd_vv_i##TLEN##m##LMUL(a, b, vl);                         \
+        return vreinterpret_v_i##TLEN##m##LMUL##_f##TLEN##m##LMUL(ret);        \
     }
 
 _RVV_FLOAT_EXP_OP(1, 32, 32, 0x7f, 23)
