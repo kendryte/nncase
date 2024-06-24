@@ -22,7 +22,7 @@ using Razor.Templating.Core;
 
 namespace Nncase.CodeGen.CPU;
 
-internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
+public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 {
     private readonly Dictionary<Expr, CSymbol> _exprMemo;
     private readonly StringBuilder _deviceBuilder;
