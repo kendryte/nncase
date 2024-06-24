@@ -85,10 +85,9 @@ template <> struct cos<ntt::vector<float, 8>> {
 template <> struct cosh<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
-        return _mm256_mul_ps(
-            _mm256_add_ps(exp256_ps(v),
-                          exp256_ps(_mm256_sub_ps(_mm256_setzero_ps(), v))),
-            _mm256_set1_ps(0.50f));
+        auto expV = exp256_ps(v);
+        auto expNV = _mm256_rcp_ps(expV);
+        return _mm256_mul_ps(_mm256_add_ps(expV, expNV), _mm256_set1_ps(0.50f));
     }
 };
 
@@ -180,10 +179,9 @@ template <> struct sin<ntt::vector<float, 8>> {
 template <> struct sinh<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
-        return _mm256_mul_ps(
-            _mm256_sub_ps(exp256_ps(v),
-                          exp256_ps(_mm256_sub_ps(_mm256_setzero_ps(), v))),
-            _mm256_set1_ps(0.50f));
+        auto expV = exp256_ps(v);
+        auto expNV = _mm256_rcp_ps(expV);
+        return _mm256_mul_ps(_mm256_sub_ps(expV, expNV), _mm256_set1_ps(0.50f));
     }
 };
 
@@ -239,6 +237,19 @@ template <> struct sub<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     operator()(const ntt::vector<float, 8> &v1,
                const ntt::vector<float, 8> &v2) const noexcept {
         return _mm256_sub_ps(v1, v2);
+    }
+};
+
+// swishb(v) = v / (exp(-v*beta) + 1)
+template <> struct swishb<ntt::vector<float, 8>, ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const ntt::vector<float, 8> &v,
+               const ntt::vector<float, 8> &b) const noexcept {
+        return _mm256_mul_ps(
+            v, _mm256_rcp_ps(
+                   _mm256_add_ps(exp256_ps(_mm256_mul_ps(
+                                     _mm256_sub_ps(_mm256_setzero_ps(), v), b)),
+                                 _mm256_set1_ps(1.0f))));
     }
 };
 
