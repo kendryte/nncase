@@ -63,7 +63,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
         var op = expr.Target;
         switch (op)
         {
-            case PrimFunctionWrapper { Target: TIR.PrimFunction { ModuleKind: string mkind } deviceFunc } when mkind == Targets.CPUTarget.Kind:
+            case PrimFunctionWrapper { Target: TIR.PrimFunction { ModuleKind: string mkind } deviceFunc }:
                 _devices.Add(deviceFunc);
                 _mainBody.Add(new Call(deviceFunc, arguments.Concat(new[] { ret }).ToArray()));
                 break;

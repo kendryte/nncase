@@ -14,6 +14,13 @@ namespace Nncase.Passes.Rules.CPU.Affine;
 [RuleGenerator]
 public partial class LowerBinary : RewriteRule<Pattern>
 {
+    public LowerBinary(string moduleKind = CPUTarget.Kind)
+    {
+        ModuleKind = moduleKind;
+    }
+
+    public string ModuleKind { get; }
+
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = PatternMatch.F.Math.IsBinary(
       "binary",
@@ -78,7 +85,7 @@ public partial class LowerBinary : RewriteRule<Pattern>
             DistributedType dt => IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape.ToValueArray(), dt.NdSBP, dt.Placement),
             _ => throw new ArgumentOutOfRangeException(nameof(call)),
         };
-        return IR.F.Affine.Grid(CPUTarget.Kind)
+        return IR.F.Affine.Grid(ModuleKind)
             .Read(lhs, lhsMap, out var lhsTile)
             .Read(rhs, rhsMap, out var rhsTile)
             .Write(outBuffer, AffineMap.Identity(rank), out var outTile)
@@ -90,6 +97,13 @@ public partial class LowerBinary : RewriteRule<Pattern>
 [RuleGenerator]
 public partial class LowerPackedBinary : RewriteRule<Pattern>
 {
+    public LowerPackedBinary(string moduleKind = CPUTarget.Kind)
+    {
+        ModuleKind = moduleKind;
+    }
+
+    public string ModuleKind { get; }
+
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = PatternMatch.F.CPU.IsPackedBinary(
       "binary",
@@ -154,7 +168,7 @@ public partial class LowerPackedBinary : RewriteRule<Pattern>
             DistributedType dt => IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape.ToValueArray(), dt.NdSBP, dt.Placement),
             _ => throw new ArgumentOutOfRangeException(nameof(call)),
         };
-        return IR.F.Affine.Grid(CPUTarget.Kind)
+        return IR.F.Affine.Grid(ModuleKind)
             .Read(lhs, lhsMap, out var lhsTile)
             .Read(rhs, rhsMap, out var rhsTile)
             .Write(outBuffer, AffineMap.Identity(rank), out var outTile)
