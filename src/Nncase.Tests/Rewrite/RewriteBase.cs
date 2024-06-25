@@ -41,7 +41,7 @@ public interface IRewriteCase
     /// <summary>
     /// Gets get rules.
     /// </summary>
-    IEnumerable<Type> Rules { get; }
+    IEnumerable<System.Type> Rules { get; }
 
     /// <summary>
     /// Gets the eval inputs dict.
@@ -91,7 +91,7 @@ public sealed class FoldReshapeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules => new Type[]
+    public IEnumerable<System.Type> Rules => new System.Type[]
     {
         typeof(Passes.Rules.Neutral.FoldTwoReshapes),
     };
@@ -145,7 +145,7 @@ public sealed class MultiReshapeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules => new Type[]
+    public IEnumerable<System.Type> Rules => new System.Type[]
     {
         typeof(Passes.Rules.Neutral.FoldConstCall),
         typeof(Passes.Rules.Neutral.FoldNopTranspose),
@@ -197,7 +197,7 @@ public sealed class FoldNopReshapeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules => new Type[]
+    public IEnumerable<System.Type> Rules => new System.Type[]
     {
         typeof(Passes.Rules.Neutral.FoldNopReshape),
     };
@@ -217,7 +217,7 @@ public sealed class FoldNopClampCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules => new Type[]
+    public IEnumerable<System.Type> Rules => new System.Type[]
     {
         typeof(Passes.Rules.Neutral.FoldNopClamp),
     };
@@ -239,7 +239,7 @@ public class FoldTransposeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules => new Type[]
+    public IEnumerable<System.Type> Rules => new System.Type[]
     {
         typeof(Passes.Rules.Neutral.FoldTwoTransposes),
     };
@@ -281,7 +281,7 @@ public class FoldTransposePadCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules => new Type[]
+    public IEnumerable<System.Type> Rules => new System.Type[]
     {
         typeof(Passes.Rules.Neutral.FoldTwoTransposes),
         typeof(Passes.Rules.Neutral.CombineTransposePad),
@@ -308,7 +308,7 @@ public class FoldNopTransposeCase1 : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules => new Type[]
+    public IEnumerable<System.Type> Rules => new System.Type[]
     {
         typeof(Passes.Rules.Neutral.FoldTwoTransposes),
     };
@@ -331,7 +331,7 @@ public class FoldNopTransposeCase2 : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules => new Type[]
+    public IEnumerable<System.Type> Rules => new System.Type[]
     {
         typeof(Passes.Rules.Neutral.FoldTwoTransposes),
         typeof(Passes.Rules.Neutral.FoldNopTranspose),
@@ -361,7 +361,7 @@ public class ClassicDemo : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules => new Type[]
+    public IEnumerable<System.Type> Rules => new System.Type[]
     {
         typeof(Passes.Rules.Neutral.Xmul1),
         typeof(Passes.Rules.Neutral.ReassociateDiv),
@@ -452,7 +452,7 @@ public class MobileNetV1TransposeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
+    public IEnumerable<System.Type> Rules { get; } = new System.Type[]
     {
         typeof(Passes.Rules.Neutral.FoldConstCall),
         typeof(Passes.Rules.Neutral.FoldNopTranspose),
@@ -523,7 +523,7 @@ public class PadTransposeCase : IRewriteCase
         }
     }
 
-    public virtual IEnumerable<Type> Rules { get; } = new Type[]
+    public virtual IEnumerable<System.Type> Rules { get; } = new System.Type[]
     {
         typeof(Passes.Rules.Neutral.FoldConstCall),
         typeof(Passes.Rules.Neutral.CombinePadTranspose),
@@ -540,7 +540,7 @@ public class PadTransposeCase : IRewriteCase
 /// </summary>
 public sealed class PadTransposeCaseEgraph : PadTransposeCase
 {
-    public override IEnumerable<Type> Rules { get; } = new Type[]
+    public override IEnumerable<System.Type> Rules { get; } = new System.Type[]
     {
         typeof(Passes.Rules.Neutral.FoldConstCall),
         typeof(Passes.Rules.Neutral.CombinePadTranspose),
@@ -582,7 +582,7 @@ public sealed class TransposeLeakyRelu : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
+    public IEnumerable<System.Type> Rules { get; } = new System.Type[]
     {
         typeof(Passes.Rules.Neutral.FoldConstCall),
         typeof(Passes.Rules.Neutral.FoldNopTranspose),
@@ -624,7 +624,7 @@ public class ActivationsTranspose : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
+    public IEnumerable<System.Type> Rules { get; } = new System.Type[]
     {
         typeof(Passes.Rules.Neutral.FoldConstCall),
         typeof(Passes.Rules.Neutral.FoldNopTranspose),
@@ -794,7 +794,7 @@ public sealed class RemoveMarkerCaseEgraph : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
+    public IEnumerable<System.Type> Rules { get; } = new System.Type[]
     {
         typeof(Passes.Rules.Lower.RemoveMarker),
         typeof(Passes.Rules.Neutral.FoldConstCall),
@@ -865,7 +865,7 @@ public sealed class Conv2DPadsCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
+    public IEnumerable<System.Type> Rules { get; } = new System.Type[]
     {
         typeof(Passes.Rules.Neutral.FoldConv2DPads),
     };
@@ -932,7 +932,7 @@ public sealed class ReduceWindow2DPadsCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
+    public IEnumerable<System.Type> Rules { get; } = new System.Type[]
     {
         typeof(Passes.Rules.Neutral.FoldReduceWindow2DPads),
     };
@@ -1028,7 +1028,7 @@ public sealed class MergeBinaryBeforeConv2DCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
+    public IEnumerable<System.Type> Rules { get; } = new System.Type[]
     {
         typeof(Passes.Rules.Neutral.FoldConstCall),
         typeof(Passes.Rules.Neutral.FoldConv2DAddMul),
@@ -1066,7 +1066,7 @@ public sealed class CombineClampAddMul : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
+    public IEnumerable<System.Type> Rules { get; } = new System.Type[]
     {
       typeof(Passes.Rules.Neutral.ReluToClamp),
       typeof(Passes.Rules.Neutral.CombineClampAdd),
@@ -1171,7 +1171,7 @@ public sealed class FoldConv2DBnCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
+    public IEnumerable<System.Type> Rules { get; } = new System.Type[]
     {
       typeof(Passes.Rules.Neutral.ReluToClamp),
       typeof(Passes.Rules.Neutral.CombineClampAdd),
@@ -1233,7 +1233,7 @@ public sealed class FoldLayerNormCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
+    public IEnumerable<System.Type> Rules { get; } = new System.Type[]
     {
         typeof(Passes.Rules.Neutral.FoldLayerNormPattern1),
         typeof(Passes.Rules.Neutral.FoldLayerNormPattern2),
@@ -1269,7 +1269,7 @@ public sealed class FoldSwishCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
+    public IEnumerable<System.Type> Rules { get; } = new System.Type[]
     {
         typeof(Passes.Rules.Neutral.FoldSwishPattern1),
         typeof(Passes.Rules.Neutral.FoldSwishPattern2),
@@ -1307,7 +1307,7 @@ public sealed class FoldGeluCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
+    public IEnumerable<System.Type> Rules { get; } = new System.Type[]
     {
         typeof(Passes.Rules.Neutral.FoldGeneralGelu),
         typeof(Passes.Rules.Neutral.FoldGeluWithScale),
@@ -1343,7 +1343,7 @@ public sealed class FoldHardSwishCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
+    public IEnumerable<System.Type> Rules { get; } = new System.Type[]
     {
         typeof(Passes.Rules.Neutral.FoldHardSwish1),
     };
@@ -1376,7 +1376,7 @@ public sealed class MatMulToConv2DCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
+    public IEnumerable<System.Type> Rules { get; } = new System.Type[]
     {
         typeof(Passes.Rules.Neutral.MatMulToConv2D),
     };
@@ -1412,7 +1412,7 @@ public sealed class ReduceCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -1442,7 +1442,7 @@ public sealed class BroadcastCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -1470,7 +1470,7 @@ public sealed class CastCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -1497,7 +1497,7 @@ public sealed class TileCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -1526,7 +1526,7 @@ public sealed class StackCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -1553,7 +1553,7 @@ public sealed class BitcastCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -1585,7 +1585,7 @@ public sealed class SliceCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -1617,7 +1617,7 @@ public sealed class LRNCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -1645,7 +1645,7 @@ public sealed class SoftmaxCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -1677,7 +1677,7 @@ public sealed class CumSumCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -1718,7 +1718,7 @@ public sealed class LSTMCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -1749,7 +1749,7 @@ public sealed class InstanceNormalizationCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -1776,7 +1776,7 @@ public sealed class HardSwishCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -1803,7 +1803,7 @@ public sealed class SoftplusCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -1830,7 +1830,7 @@ public sealed class SoftsignCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -1857,7 +1857,7 @@ public sealed class LpNormalizationCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -1897,7 +1897,7 @@ public sealed class Conv2DTransposeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -1925,7 +1925,7 @@ public sealed class LogSoftmaxCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -1952,7 +1952,7 @@ public sealed class CompareCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -1984,7 +1984,7 @@ public sealed class FakeDequantizeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2016,7 +2016,7 @@ public sealed class FakeQuantizeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2047,7 +2047,7 @@ public sealed class TopKCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2077,7 +2077,7 @@ public sealed class GatherCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2107,7 +2107,7 @@ public sealed class GatherNDCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2135,7 +2135,7 @@ public sealed class FlattenCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2165,7 +2165,7 @@ public sealed class SplitCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2194,7 +2194,7 @@ public sealed class SqueezeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2223,7 +2223,7 @@ public sealed class ConcatCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2250,7 +2250,7 @@ public sealed class UnsqueezeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2278,7 +2278,7 @@ public sealed class ExpandCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2305,7 +2305,7 @@ public sealed class ShapeOfCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2336,7 +2336,7 @@ public sealed class ReverseSequenceCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2366,7 +2366,7 @@ public sealed class WhereCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2395,7 +2395,7 @@ public sealed class RangeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2423,7 +2423,7 @@ public sealed class SizeOfCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2457,7 +2457,7 @@ public sealed class BatchToSpaceCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2486,7 +2486,7 @@ public sealed class L2NormalizationCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2517,7 +2517,7 @@ public sealed class OneHotCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2545,7 +2545,7 @@ public sealed class CeluCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2573,7 +2573,7 @@ public sealed class EluCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2602,7 +2602,7 @@ public sealed class SeluCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2630,7 +2630,7 @@ public sealed class HardmaxCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2659,7 +2659,7 @@ public sealed class HardSigmoidCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2691,7 +2691,7 @@ public sealed class ReduceArgCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2722,7 +2722,7 @@ public sealed class NormalLikeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2753,7 +2753,7 @@ public sealed class UniformLikeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2783,7 +2783,7 @@ public sealed class UniformCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2810,7 +2810,7 @@ public sealed class ResizeImageCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
      {
@@ -2837,7 +2837,7 @@ public sealed class ProdCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+    public IEnumerable<System.Type> Rules { get; } = Array.Empty<System.Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2863,7 +2863,7 @@ public sealed class PReluTransposeCase : IRewriteCase
 
     public Function PreExpr { get; }
 
-    public IEnumerable<Type> Rules => new[] {
+    public IEnumerable<System.Type> Rules => new[] {
         typeof(CombineTransposeActivations),
         typeof(CombineActivationsTranspose),
         typeof(TransposeToReshape),
@@ -2899,7 +2899,7 @@ public sealed class FoldReshapeWithBranch : IRewriteCase
 
     public Function PreExpr { get; }
 
-    public IEnumerable<Type> Rules => new[] {
+    public IEnumerable<System.Type> Rules => new[] {
         typeof(FoldNopReshape),
         typeof(FoldTwoReshapes),
     };
@@ -2924,7 +2924,7 @@ public sealed class ReshapeTransposeReshapeCase : IRewriteCase
 
     public Function PreExpr { get; }
 
-    public IEnumerable<Type> Rules => new[] {
+    public IEnumerable<System.Type> Rules => new[] {
         typeof(CombineReshapeTranspose),
         typeof(FoldTwoReshapes),
     };
@@ -2950,7 +2950,7 @@ public sealed class ReshapeBinaryConstReshapeCase : IRewriteCase
 
     public Function PreExpr { get; }
 
-    public IEnumerable<Type> Rules => new[] {
+    public IEnumerable<System.Type> Rules => new[] {
         typeof(FoldReshapeBinaryConstReshape),
     };
 

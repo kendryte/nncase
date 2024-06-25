@@ -104,7 +104,7 @@ public class UnitTestFusionGroup : TestClassBase
         };
         var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
 
-        var analysis = new Dictionary<Type, IAnalysisResult>
+        var analysis = new Dictionary<System.Type, IAnalysisResult>
         {
             [typeof(IExprUserAnalysisResult)] = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(main),
         };
@@ -165,7 +165,7 @@ public class UnitTestFusionGroup : TestClassBase
         };
         var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
 
-        var analysis = new Dictionary<Type, IAnalysisResult>
+        var analysis = new Dictionary<System.Type, IAnalysisResult>
         {
             [typeof(IExprUserAnalysisResult)] = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(main),
         };

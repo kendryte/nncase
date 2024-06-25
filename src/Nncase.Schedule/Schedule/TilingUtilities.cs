@@ -14,7 +14,6 @@ public static class TilingUtilities
     public static Isl.basic_map GetIdentityMap(int dims, string domainPrefix = "", string rangePrefix = "")
     {
         var space = Isl.space.unit(Isl.ctx.Instance);
-        var s = space;
         if (domainPrefix.Any())
         {
             space = space.add_named_tuple(new Isl.id(Isl.ctx.Instance, domainPrefix), (uint)dims);

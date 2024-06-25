@@ -28,8 +28,8 @@ public sealed class UnitTestDataType
         var expect = CompilerServices.DataTypeService.GetPrimTypeFromTypeCode(TypeCode.Boolean);
         Assert.Equal(expect, DataType.FromTypeCode(TypeCode.Boolean));
 
-        Assert.Throws<NullReferenceException>(() => CompilerServices.DataTypeService.GetPrimTypeFromType(Type.GetType(string.Empty)!));
-        Assert.Throws<NullReferenceException>(() => CompilerServices.DataTypeService.GetValueTypeFromType(Type.GetType(string.Empty)!));
+        Assert.Throws<NullReferenceException>(() => CompilerServices.DataTypeService.GetPrimTypeFromType(System.Type.GetType(string.Empty)!));
+        Assert.Throws<NullReferenceException>(() => CompilerServices.DataTypeService.GetValueTypeFromType(System.Type.GetType(string.Empty)!));
     }
 
     [Fact]

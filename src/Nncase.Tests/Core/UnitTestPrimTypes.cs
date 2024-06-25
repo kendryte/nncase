@@ -32,7 +32,7 @@ public sealed class UnitTestPrimTypes
 
     [Theory]
     [MemberData(nameof(TestPrimTypesData))]
-    public void TestPrimTypes(PrimType a, PrimTypeAttributes attr, string fullName, string shortName, Type clrType, int sizeInBytes, Runtime.TypeCode typeCode)
+    public void TestPrimTypes(PrimType a, PrimTypeAttributes attr, string fullName, string shortName, System.Type clrType, int sizeInBytes, Runtime.TypeCode typeCode)
     {
         Assert.Equal(attr, a.Attributes);
         Assert.Equal(fullName, a.FullName);
