@@ -12,54 +12,52 @@ using Isl = IntegerSetLibrary;
 
 namespace Nncase.Schedule;
 
-internal sealed record TreeSolverContext(int ParentOpId, IReadOnlyList<string> DomainNames)
-{
-    public static TreeSolverContext Default => new(-1, Array.Empty<string>());
-}
-
-internal sealed record BufferIdenitity(OpNode Op, int Index)
+public sealed record BufferIdenitity(OpNode Op, int Index)
 {
     public override string ToString() => $"Op{Op.OpId}_{Index}";
+}
+
+public sealed record TileNodeBufferAssignment(bool[][] Place, long[] Write, long[] Size)
+{
+}
+
+public sealed record TileNodeAssignment(Dictionary<BufferIdenitity, BufferIdenitity> DefUseMap, Dictionary<BufferIdenitity, TileNodeBufferAssignment> BufferInfoMap)
+{
+}
+
+public sealed record DomainDimAssignment(string[] DimNames, long[] TileVars, Dictionary<BufferIdenitity, LoopMasks> BufferMasksMap)
+{
 }
 
 /// <summary>
 /// Place : [create_loop,store_level], write: [create_loop], size: [create loop].
 /// </summary>
-internal sealed record TileNodeBufferInfo(IntVar[][] Place, IntExpr[] Write, IntExpr[] Size)
+public sealed record TileNodeBufferInfo(IntVar[][] Place, IntExpr[] Write, IntExpr[] Size)
 {
 }
 
-internal sealed record TileNodeInfo(Dictionary<BufferIdenitity, BufferIdenitity> DefUseMap, Dictionary<BufferIdenitity, TileNodeBufferInfo> BufferInfoMap)
-{
-}
-
-/// <summary>
-/// each buffer with each access Maps, note the access map domain is this node's domain.
-/// </summary>
-internal sealed record TreeSolverResult(BufferIdenitity[] Bids, Isl.basic_map[] AccessMaps)
+public sealed record TileNodeInfo(Dictionary<BufferIdenitity, BufferIdenitity> DefUseMap, Dictionary<BufferIdenitity, TileNodeBufferInfo> BufferInfoMap)
 {
 }
 
 /// <summary>
 /// loop masks.count == buffer.dimension.
 /// </summary>
-internal sealed record DomainDimInfo(string[] DimNames, IntVar[] TileVars, Dictionary<BufferIdenitity, LoopMasks> BufferMasksMap)
+public sealed record DomainInfo(string[] DomainNames, IntVar[] TileVars, Dictionary<BufferIdenitity, LoopMasks> BufferMasksMap)
 {
 }
 
-internal abstract class TileTreeSolverBase
+public abstract class TileTreeSolverBase
 {
-    public TileTreeSolverBase(Solver solver, IntExpr one, IntExpr zero, IntExpr elem, Dictionary<string, IntVar[]> domainTileVarBuckets, Dictionary<string, Constraint> domainTileVarConstraints, Dictionary<OpNode, (IntExpr[][] Shapes, IntExpr[] Size)> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainDimInfo> domainDimInfos)
+    public TileTreeSolverBase(Solver solver, IntExpr one, IntExpr zero, IntExpr elem, Dictionary<OpNode, (IntExpr[][] Shapes, IntExpr[] Size)> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainInfos)
     {
         Solver = solver;
         One = one;
         Zero = zero;
         Elem = elem;
-        DomainTileVarBuckets = domainTileVarBuckets;
-        DomainTileVarConstraints = domainTileVarConstraints;
         OpNodeMemo = primitiveBufferInfo;
         TileNodeMemo = levelBufferInfos;
-        TileableNodeMemo = domainDimInfos;
+        TileableNodeMemo = domainInfos;
     }
 
     public Solver Solver { get; }
@@ -70,31 +68,21 @@ internal abstract class TileTreeSolverBase
 
     public IntExpr Elem { get; }
 
-    /// <summary>
-    /// gets key is the domain name, value is `n` level tile size var. eg. 'op0_d0' => [L0,L1,L2].
-    /// </summary>
-    public Dictionary<string, IntVar[]> DomainTileVarBuckets { get; }
-
-    /// <summary>
-    /// gets op0_d0 = L0*L1*L2.
-    /// </summary>
-    public Dictionary<string, Constraint> DomainTileVarConstraints { get; }
-
     public Dictionary<OpNode, (IntExpr[][] Shapes, IntExpr[] Size)> OpNodeMemo { get; }
 
     public Dictionary<TileNode, TileNodeInfo> TileNodeMemo { get; }
 
-    public Dictionary<ITileAbleNode, DomainDimInfo> TileableNodeMemo { get; }
+    public Dictionary<ITileAbleNode, DomainInfo> TileableNodeMemo { get; }
 }
 
-internal sealed class TileTreeSolverInit : TileTreeSolverBase, ITreeNodeVisitor<TreeSolverContext, TreeSolverResult>
+public sealed class TileTreeSolverInit : TileTreeSolverBase, ITreeNodeVisitor<TileTreeSolverInit.Context, TileTreeSolverInit.InitResult>
 {
-    public TileTreeSolverInit(Solver solver, IntExpr one, IntExpr zero, IntExpr elem, Dictionary<string, IntVar[]> domainTileVarBuckets, Dictionary<string, Constraint> domainTileVarConstraints, Dictionary<OpNode, (IntExpr[][] Shapes, IntExpr[] Size)> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainDimInfo> domainDimInfos)
-        : base(solver, one, zero, elem, domainTileVarBuckets, domainTileVarConstraints, primitiveBufferInfo, levelBufferInfos, domainDimInfos)
+    public TileTreeSolverInit(Solver solver, IntExpr one, IntExpr zero, IntExpr elem, Dictionary<OpNode, (IntExpr[][] Shapes, IntExpr[] Size)> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainDimInfos)
+        : base(solver, one, zero, elem, primitiveBufferInfo, levelBufferInfos, domainDimInfos)
     {
     }
 
-    public TreeSolverResult Visit(ScopeNode value, TreeSolverContext context)
+    public InitResult Visit(ScopeNode value, Context context)
     {
         var bids = new List<BufferIdenitity>();
         var maps = new List<Isl.basic_map>();
@@ -108,11 +96,11 @@ internal sealed class TileTreeSolverInit : TileTreeSolverBase, ITreeNodeVisitor<
         return new(bids.ToArray(), maps.ToArray());
     }
 
-    public TreeSolverResult Visit(TileNode value, TreeSolverContext context)
+    public InitResult Visit(TileNode value, Context context)
     {
         var (pid, pnames) = context;
         var dimNames = TileTreePrinter.MappingDomainDims(value, pid, pnames);
-        var tileVars = dimNames.Select(n => GetTileVar(value, n)).ToArray();
+        var tileVars = dimNames.Select(n => Solver.MakeIntVar(1, long.MaxValue, $"{n}_L{value.Level}")).ToArray();
         var childResult = value.Child.Accept(this, context with { ParentOpId = value.OpId, DomainNames = dimNames });
 
         var defUseMap = GetBufferDefUseMap(childResult);
@@ -169,22 +157,11 @@ internal sealed class TileTreeSolverInit : TileTreeSolverBase, ITreeNodeVisitor<
         return new(childResult.Bids, childResult.AccessMaps.Select(value.DomainRelation.apply_range).ToArray());
     }
 
-    public TreeSolverResult Visit(OpNode value, TreeSolverContext context)
+    public InitResult Visit(OpNode value, Context context)
     {
         var (pid, pnames) = context;
         var dimNames = TileTreePrinter.MappingDomainDims(value, pid, pnames);
-        var tileVars = dimNames.Select(n => GetTileVar(value, n)).ToArray();
-
-        // add domain constraints
-        for (int i = 0; i < dimNames.Length; i++)
-        {
-            if (!DomainTileVarConstraints.TryGetValue(dimNames[i], out var constraint))
-            {
-                var bucket = DomainTileVarBuckets[dimNames[i]];
-                constraint = Solver.MakeEquality(Solver.MakeProd(bucket), value.DomainBounds[i]);
-                DomainTileVarConstraints.Add(dimNames[i], constraint);
-            }
-        }
+        var tileVars = dimNames.Select(n => Solver.MakeIntVar(1, long.MaxValue, $"{n}_L{value.Level}")).ToArray();
 
         // cache the primitive buffer shape and sizes.
         if (!OpNodeMemo.TryGetValue(value, out var info))
@@ -238,26 +215,10 @@ internal sealed class TileTreeSolverInit : TileTreeSolverBase, ITreeNodeVisitor<
         return new(resBids, resRels);
     }
 
-    private IntVar GetTileVar(ITileAbleNode node, string name)
-    {
-        if (!DomainTileVarBuckets.TryGetValue(name, out var bucket))
-        {
-            bucket = new IntVar[node.Level + 1];
-            DomainTileVarBuckets.Add(name, bucket);
-        }
-
-        if (bucket[node.Level] is null)
-        {
-            bucket[node.Level] = Solver.MakeIntVar(1, long.MaxValue, $"{name}_L{node.Level}");
-        }
-
-        return bucket[node.Level];
-    }
-
     /// <summary>
     /// source id => sink id.
     /// </summary>
-    private Dictionary<BufferIdenitity, BufferIdenitity> GetBufferDefUseMap(TreeSolverResult childResult)
+    private Dictionary<BufferIdenitity, BufferIdenitity> GetBufferDefUseMap(InitResult childResult)
     {
         var map = new Dictionary<BufferIdenitity, BufferIdenitity>();
         for (int i = 0; i < childResult.Bids.Length; i++)
@@ -281,7 +242,7 @@ internal sealed class TileTreeSolverInit : TileTreeSolverBase, ITreeNodeVisitor<
 
     private TileNodeBufferInfo CreateBufferInfo(TileNode tile, BufferIdenitity bid)
     {
-        var domainDims = tile.Vars.Length;
+        var domainDims = tile.DomainNames.Length;
         var bufferPlaces = new IntVar[domainDims][];
         var bufferWrites = new IntExpr[domainDims];
         var bufferSizes = new IntExpr[domainDims];
@@ -372,12 +333,24 @@ internal sealed class TileTreeSolverInit : TileTreeSolverBase, ITreeNodeVisitor<
 
         return new(masks);
     }
+
+    /// <summary>
+    /// each buffer with each access Maps, note the access map domain is this node's domain.
+    /// </summary>
+    public sealed record InitResult(BufferIdenitity[] Bids, Isl.basic_map[] AccessMaps)
+    {
+    }
+
+    public sealed record Context(int ParentOpId, IReadOnlyList<string> DomainNames)
+    {
+        public static Context Default => new(-1, Array.Empty<string>());
+    }
 }
 
-internal sealed class TileTreeSolverInitWrites : TileTreeSolverBase, ITreeNodeVisitor<Dictionary<BufferIdenitity, IntExpr[]>, Unit>
+public sealed class TileTreeSolverInitWrites : TileTreeSolverBase, ITreeNodeVisitor<Dictionary<BufferIdenitity, IntExpr[]>, Unit>
 {
-    public TileTreeSolverInitWrites(Solver solver, IntExpr one, IntExpr zero, IntExpr elem, Dictionary<string, IntVar[]> domainTileVarBuckets, Dictionary<string, Constraint> domainTileVarConstraints, Dictionary<OpNode, (IntExpr[][] Shapes, IntExpr[] Size)> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainDimInfo> domainDimInfos)
-        : base(solver, one, zero, elem, domainTileVarBuckets, domainTileVarConstraints, primitiveBufferInfo, levelBufferInfos, domainDimInfos)
+    public TileTreeSolverInitWrites(Solver solver, IntExpr one, IntExpr zero, IntExpr elem, Dictionary<OpNode, (IntExpr[][] Shapes, IntExpr[] Size)> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainDimInfos)
+        : base(solver, one, zero, elem, primitiveBufferInfo, levelBufferInfos, domainDimInfos)
     {
     }
 
@@ -404,11 +377,11 @@ internal sealed class TileTreeSolverInitWrites : TileTreeSolverBase, ITreeNodeVi
 
             // 1. child domain map to parent domain.
             var domainRel = new Dictionary<int, int>();
-            for (int i = 0; i < parentDomainInfo.DimNames.Length; i++)
+            for (int i = 0; i < parentDomainInfo.DomainNames.Length; i++)
             {
-                for (int j = 0; j < domainInfo.DimNames.Length; j++)
+                for (int j = 0; j < domainInfo.DomainNames.Length; j++)
                 {
-                    if (parentDomainInfo.DimNames[i] == domainInfo.DimNames[j])
+                    if (parentDomainInfo.DomainNames[i] == domainInfo.DomainNames[j])
                     {
                         domainRel.Add(j, i);
                     }

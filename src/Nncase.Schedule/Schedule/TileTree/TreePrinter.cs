@@ -30,7 +30,7 @@ public sealed class TileTreePrinter : ITreeNodeVisitor<TileTreePrinterContext, U
     /// </summary>
     public static string[] MappingDomainDims(ITileAbleNode value, int parentId, IReadOnlyList<string> pnames)
     {
-        var names = value.Vars.ToArray();
+        var names = value.DomainNames.ToArray();
 
         if (pnames.Any())
         {

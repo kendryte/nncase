@@ -31,7 +31,7 @@ public interface ITileAbleNode : ITreeNode
     /// <summary>
     /// Gets the domain var names.
     /// </summary>
-    string[] Vars { get; }
+    string[] DomainNames { get; }
 
     /// <summary>
     /// Gets or sets the domain relation which from parent domain map to current node's domain.
@@ -92,7 +92,7 @@ public partial class TileNode : ITileAbleNode
     {
         Level = level;
         OpId = opId;
-        Vars = vars;
+        DomainNames = vars;
         DomainRelation = TilingUtilities.GetIdentityMap(vars.Length, $"op{OpId}", $"op{OpId}");
         _child = null!;
     }
@@ -106,7 +106,7 @@ public partial class TileNode : ITileAbleNode
     /// <summary>
     /// Gets the domain var names.
     /// </summary>
-    public string[] Vars { get; }
+    public string[] DomainNames { get; }
 
     /// <summary>
     /// Gets or sets the domain relation which from parent domain map to current node's domain.
@@ -131,12 +131,12 @@ public partial class TileNode : ITileAbleNode
 [Acceptor<ITreeNode, OpNode>]
 public partial class OpNode : ITileAbleNode
 {
-    public OpNode(int opId, string[] vars, int[] domain, int[][] bufferShapes, Isl.basic_map[] reads, Isl.basic_map write, AffineMap[] accessMaps, Dependence[] dependences)
+    public OpNode(int opId, string[] domainNames, int[] domain, int[][] bufferShapes, Isl.basic_map[] reads, Isl.basic_map write, AffineMap[] accessMaps, Dependence[] dependences)
     {
         Level = 0;
         OpId = opId;
-        Vars = vars;
-        DomainRelation = TilingUtilities.GetIdentityMap(vars.Length, $"op{OpId}", $"op{OpId}");
+        DomainNames = domainNames;
+        DomainRelation = TilingUtilities.GetIdentityMap(domainNames.Length, $"op{OpId}", $"op{OpId}");
         DomainBounds = domain;
         BufferShapes = bufferShapes;
         Reads = reads;
@@ -154,7 +154,7 @@ public partial class OpNode : ITileAbleNode
     /// <summary>
     /// Gets the domain var names.
     /// </summary>
-    public string[] Vars { get; }
+    public string[] DomainNames { get; }
 
     /// <summary>
     /// Gets or sets the domain relation which from parent domain map to current node's domain.
@@ -252,14 +252,12 @@ public static class TreeSearch
         var one = solver.MakeIntConst(1);
         var zero = solver.MakeIntConst(0);
         var elem = solver.MakeIntConst(4);
-        var domainTileVarBuckets = new Dictionary<string, IntVar[]>();
-        var domainTileVarConstraints = new Dictionary<string, Constraint>();
         var opNodeMemo = new Dictionary<OpNode, (IntExpr[][] Shapes, IntExpr[] Size)>();
         var tileNodeMemo = new Dictionary<TileNode, TileNodeInfo>();
-        var tileableNodeMemo = new Dictionary<ITileAbleNode, DomainDimInfo>();
-        var init = new TileTreeSolverInit(solver, one, zero, elem, domainTileVarBuckets, domainTileVarConstraints, opNodeMemo, tileNodeMemo, tileableNodeMemo);
-        tree.Accept(init, TreeSolverContext.Default);
-        var initWrites = new TileTreeSolverInitWrites(solver, one, zero, elem, domainTileVarBuckets, domainTileVarConstraints, opNodeMemo, tileNodeMemo, tileableNodeMemo);
+        var tileableNodeMemo = new Dictionary<ITileAbleNode, DomainInfo>();
+        var init = new TileTreeSolverInit(solver, one, zero, elem, opNodeMemo, tileNodeMemo, tileableNodeMemo);
+        tree.Accept(init, TileTreeSolverInit.Context.Default);
+        var initWrites = new TileTreeSolverInitWrites(solver, one, zero, elem, opNodeMemo, tileNodeMemo, tileableNodeMemo);
         tree.Accept(initWrites, new());
 
         // 1. each buffer must store one at lowest level.
@@ -334,6 +332,39 @@ public static class TreeSearch
                         solver.Add(constraint);
                     }
                 }
+            }
+        }
+
+        // 4. tile var constraints
+        foreach (var opNode in opNodeMemo.Keys)
+        {
+            var tileVarBucket = new Dictionary<string, List<IntVar>>();
+
+            ITileAbleNode? node = opNode;
+            while (node is not null)
+            {
+                var domainInfo = tileableNodeMemo[node];
+                for (int i = 0; i < domainInfo.DomainNames.Length; i++)
+                {
+                    var dimName = domainInfo.DomainNames[i];
+                    if (!tileVarBucket.TryGetValue(dimName, out var bucket))
+                    {
+                        bucket = new();
+                        tileVarBucket.Add(dimName, bucket);
+                    }
+
+                    bucket.Add(domainInfo.TileVars[i]);
+                }
+
+                node = node.GetParentTileableNode();
+            }
+
+            for (int i = 0; i < tileableNodeMemo[opNode].DomainNames.Length; i++)
+            {
+                var dimName = tileableNodeMemo[opNode].DomainNames[i];
+                var constraint = solver.MakeEquality(solver.MakeProd(tileVarBucket[dimName].ToArray()), opNode.DomainBounds[i]);
+                constraint.SetName($"bound[op{opNode.OpId}, {dimName}]");
+                solver.Add(constraint);
             }
         }
 
@@ -453,13 +484,14 @@ public static class TreeSearch
         totalCyclesVar.SetRange(1, long.MaxValue / memoryBandWidths[0]); /* avoid crash. */
 
         var objectiveMonitor = solver.MakeMinimize(totalCyclesVar, 1);
-        var logger = solver.MakeSearchTrace(string.Empty);
+        var logger = solver.MakeSearchLog(1000, totalCyclesVar);
         var collector = solver.MakeNBestValueSolutionCollector(5, false);
         collector.AddObjective(totalCyclesVar);
         var searchAbleVars = new List<IntVar>();
         foreach (var (node, diminfo) in tileableNodeMemo)
         {
             searchAbleVars.AddRange(diminfo.TileVars);
+            collector.Add(diminfo.TileVars);
             if (node is TileNode tnode)
             {
                 var tnodeInfo = tileNodeMemo[tnode];
@@ -470,16 +502,68 @@ public static class TreeSearch
                         continue;
                     }
 
-                    searchAbleVars.AddRange(bufferInfo.Place.SelectMany(i => i));
+                    var placeVars = bufferInfo.Place.SelectMany(i => i).ToArray();
+                    searchAbleVars.AddRange(placeVars);
+                    collector.Add(placeVars);
+                    collector.Add(bufferInfo.Size.Select(i => i.Var()).ToArray());
+                    collector.Add(bufferInfo.Write.Select(i => i.Var()).ToArray());
                 }
             }
         }
 
         var decisionBuilder = solver.MakeDefaultPhase(searchAbleVars.ToArray());
-        var status = solver.Solve(decisionBuilder, new SearchMonitor[] { collector, objectiveMonitor, logger });
-        if (!status)
+        var status = solver.Solve(decisionBuilder, new SearchMonitor[] { collector, objectiveMonitor, logger, solver.MakeSolutionsLimit(10) });
+        if (status)
         {
-            return;
+            var sol = collector.Solution(collector.SolutionCount() - 1);
+            var tileNodeResult = new Dictionary<TileNode, TileNodeAssignment>();
+            foreach (var (node, info) in tileNodeMemo)
+            {
+                var bufferResultMap = new Dictionary<BufferIdenitity, TileNodeBufferAssignment>();
+                foreach (var (bid, binfo) in info.BufferInfoMap)
+                {
+                    var place = new bool[binfo.Place.Length][];
+                    for (int i = 0; i < binfo.Place.Length; i++)
+                    {
+                        place[i] = new bool[binfo.Place[i].Length];
+                        for (int j = 0; j < place[i].Length; j++)
+                        {
+                            place[i][j] = sol.Value(binfo.Place[i][j]) == 1;
+                        }
+                    }
+
+                    var size = new long[binfo.Size.Length];
+                    for (int i = 0; i < size.Length; i++)
+                    {
+                        size[i] = sol.Value(binfo.Size[i].Var());
+                    }
+
+                    var write = new long[binfo.Write.Length];
+
+                    for (int i = 0; i < write.Length; i++)
+                    {
+                        write[i] = sol.Value(binfo.Write[i].Var());
+                    }
+
+                    bufferResultMap[bid] = new TileNodeBufferAssignment(place, size, write);
+                }
+
+                tileNodeResult[node] = new TileNodeAssignment(info.DefUseMap, bufferResultMap);
+            }
+
+            var tileableNodeResult = new Dictionary<ITileAbleNode, DomainDimAssignment>();
+            foreach (var (node, info) in tileableNodeMemo)
+            {
+                tileableNodeResult[node] = new DomainDimAssignment(info.DomainNames, info.TileVars.Select(sol.Value).ToArray(), info.BufferMasksMap);
+            }
+
+            using (var stream = Diagnostics.DumpScope.Current.OpenFile($"result.py"))
+            {
+                using var writer = new StreamWriter(stream);
+                var printer = new TileTreeResultPrinter(writer, tileableNodeResult, tileNodeResult);
+                tree.Accept(printer, TileTreeResultPrinter.Context.Default);
+                writer.Flush();
+            }
         }
     }
 
