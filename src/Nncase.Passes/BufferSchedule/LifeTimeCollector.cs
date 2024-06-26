@@ -61,11 +61,11 @@ public class LifeTimeCollector : ExprVisitor<Unit, Unit>
         return Unit.Default;
     }
 
-    protected virtual int ComputeBufferSize(IRType type, out int[] shape, out int[] stride)
+    protected virtual long ComputeBufferSize(IRType type, out int[] shape, out int[] stride)
     {
         shape = Array.Empty<int>();
         stride = Array.Empty<int>();
-        var size = 0;
+        long size = 0;
         if (type is TensorType tensorType)
         {
             shape = tensorType.Shape.ToValueArray();

@@ -22,7 +22,7 @@ public class BufferScheduler
             if (expr is Call { Target: IR.Tensors.Concat } concatCall && concatCall.Arguments[0] is IR.Tuple tuple)
             {
                 // the concat inputs must contiguous
-                int offset = 0;
+                long offset = 0;
                 for (int i = 0; i < tuple.Fields.Length; i++)
                 {
                     model.Add((boxs[concatCall].Y.StartExpr() + offset) == boxs[tuple.Fields[i]].Y.StartExpr());
@@ -36,7 +36,7 @@ public class BufferScheduler
 
                 // the split outputs must contiguous
                 var users = splitCall.GetUsers();
-                int offset = 0;
+                long offset = 0;
                 foreach (var user in users.OrderBy(e => ((Call)e).Arguments[1].Evaluate().AsTensor().ToScalar<int>()))
                 {
                     model.Add((boxs[splitCall].Y.StartExpr() + offset) == boxs[user].Y.StartExpr());
@@ -56,7 +56,7 @@ public class BufferScheduler
         var model = new CpModel();
         var noOverlap = model.AddNoOverlap2D();
         var boxs = new Dictionary<Expr, (IntervalVar X, IntervalVar Y)>(ReferenceEqualityComparer.Instance);
-        var timeMap = new Dictionary<int, List<Expr>>();
+        var timeMap = new Dictionary<long, List<Expr>>();
         var yStarts = new List<IntVar>();
         foreach (var (expr, item) in bufferMap)
         {
@@ -74,7 +74,7 @@ public class BufferScheduler
             yStarts.Add(memStartVar);
             boxs.Add(expr, (xInterval, yInterval));
 
-            for (int time = item.TimeInterval.Start; time < item.TimeInterval.Stop; time++)
+            for (long time = item.TimeInterval.Start; time < item.TimeInterval.Stop; time++)
             {
                 if (!timeMap.TryGetValue(time, out var timelist))
                 {
@@ -100,8 +100,8 @@ public class BufferScheduler
 
         foreach (var (k, _) in bufferMap)
         {
-            bufferMap[k].MemInterval.Start = checked((int)solver.Value(boxs[k].Y.StartExpr()));
-            bufferMap[k].MemInterval.Stop = checked((int)solver.Value(boxs[k].Y.EndExpr()));
+            bufferMap[k].MemInterval.Start = checked(solver.Value(boxs[k].Y.StartExpr()));
+            bufferMap[k].MemInterval.Stop = checked(solver.Value(boxs[k].Y.EndExpr()));
         }
     }
 
