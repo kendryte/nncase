@@ -182,9 +182,9 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, cos)
 #define COSH_FLOAT32(LMUL, MLEN)                                               \
     inline vfloat32m##LMUL##_t cosh_float32(const vfloat32m##LMUL##_t &v,      \
                                             const size_t vl) {                 \
-        auto sum = vfadd_vv_f32m##LMUL(                                        \
-            exp_ps(v, vl), exp_ps(vfneg_v_f32m##LMUL(v, vl), vl), vl);         \
-        return vfdiv_vf_f32m##LMUL(sum, 2.f, vl);                              \
+        auto a = exp_ps(v, vl);                                                \
+        auto b = vfrec7_v_f32m##LMUL(a, vl);                                   \
+        return vfmul_vf_f32m##LMUL(vfadd_vv_f32m##LMUL(a, b, vl), 0.5f, vl);   \
     }
 
 IMPL_RVV_WITH_LMULS(COSH_FLOAT32)
@@ -302,9 +302,9 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, sin)
 #define SINH_FLOAT32(LMUL, MLEN)                                               \
     inline vfloat32m##LMUL##_t sinh_float32(const vfloat32m##LMUL##_t &v,      \
                                             const size_t vl) {                 \
-        auto diff = vfsub_vv_f32m##LMUL(                                       \
-            exp_ps(v, vl), exp_ps(vfneg_v_f32m##LMUL(v, vl), vl), vl);         \
-        return vfdiv_vf_f32m##LMUL(diff, 2.f, vl);                             \
+        auto a = exp_ps(v, vl);                                                \
+        auto b = vfrec7_v_f32m##LMUL(a, vl);                                   \
+        return vfmul_vf_f32m##LMUL(vfsub_vv_f32m##LMUL(a, b, vl), 0.5f, vl);   \
     }
 
 IMPL_RVV_WITH_LMULS(SINH_FLOAT32)
@@ -490,7 +490,9 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_BINARY_OP_INT32, floor_mod)
 #define SWISH_FLOAT32(LMUL, MLEN)                                              \
     inline vfloat32m##LMUL##_t swish_float32(const vfloat32m##LMUL##_t &v,     \
                                              const size_t vl) {                \
-        return swish_op(v, vl, 1.f);                                           \
+        auto a = exp_ps(vfneg_v_f32m##LMUL(v, vl), vl);                        \
+        auto b = vfrec7_v_f32m##LMUL(vfadd_vf_f32m##LMUL(a, 1.f, vl), vl);     \
+        return vfmul_vv_f32m##LMUL(v, b, vl);                                  \
     }
 
 IMPL_RVV_WITH_LMULS(SWISH_FLOAT32)
