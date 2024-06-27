@@ -97,7 +97,7 @@ public abstract class AffineExpr : Expr
             AffineConstant e => e.Value.ToString(),
             AffineExtent e => $"t{e.Position}",
             AffineDim e => $"d{e.Position}",
-            AffineSymbol e => $"d{symbols.IndexOf(e)}",
+            AffineSymbol e => e.ToString(),
             AffineAddBinary e => $"({e.Lhs.GetDisplayString(symbols)} + {e.Rhs.GetDisplayString(symbols)})",
             AffineMulBinary e => $"({e.Lhs.GetDisplayString(symbols)} * {e.Rhs.GetDisplayString(symbols)})",
             AffineDivBinary e => $"({e.Lhs.GetDisplayString(symbols)} {F.Affine.ToString(e.BinaryOp)} {e.Rhs.GetDisplayString(symbols)})",

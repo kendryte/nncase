@@ -7,7 +7,6 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Affine;
 using VisitorPatternGenerator;
-using Isl = IntegerSetLibrary;
 
 namespace Nncase.Schedule;
 
@@ -34,21 +33,12 @@ public sealed class TileTreePrinter : ITreeNodeVisitor<TileTreePrinterContext, U
 
         if (pnames.Any())
         {
-            var space = Isl.space.unit(Isl.ctx.Instance);
-            space = space.add_named_tuple(new Isl.id(Isl.ctx.Instance, $"op{parentId}"), (uint)pnames.Count);
-            var set = Isl.set.universe(space);
-            for (int i = 0; i < pnames.Count; i++)
+            var relation = value.DomainRelation.Relation;
+            for (int i = 0; i < relation.Results.Length; i++)
             {
-                set = set.fix_dim_si((uint)i, i);
-            }
-
-            var res = set.apply(value.DomainRelation);
-            for (int i = 0; i < value.DomainRelation.dim(Isl.dim_type.out_); i++)
-            {
-                var val = res.dim_max_val(i);
-                if (val.is_int())
+                if (relation.Results[i] is AffineDim dim)
                 {
-                    names[i] = pnames[checked((int)val.num_si())];
+                    names[i] = pnames[dim.Position];
                 }
             }
         }
@@ -106,7 +96,7 @@ public sealed class TileTreePrinter : ITreeNodeVisitor<TileTreePrinterContext, U
         indent += 2;
 
         var set = value.Dependences.ToDictionary(d => d.Index, d => d.Node);
-        for (int i = 0; i < value.Reads.Count; i++)
+        for (int i = 0; i < value.Reads.Length; i++)
         {
             Indent(indent);
 

@@ -7,13 +7,11 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Affine;
 using VisitorPatternGenerator;
-using Isl = IntegerSetLibrary;
 
 namespace Nncase.Schedule;
 
 public partial class TileTreeMerger : ITreeNodeVisitor<Unit, bool>
 {
-
     public TileTreeMerger(int opConsumer, int opProducer, int level)
     {
         OpConsumer = opConsumer;
@@ -129,59 +127,28 @@ public partial class TileTreeMerger : ITreeNodeVisitor<Unit, bool>
         return false;
     }
 
-    private Isl.basic_map CheckFullMapping(Isl.basic_map domainRel, OpNode writeOp)
+    private AffineRelation CheckFullMapping(AffineRelation relation, OpNode writeOp)
     {
-        // domainRel = readAccess.apply_range(writeAccess.reverse()); // the read dependence the write
-        var eqMat = domainRel.equalities_matrix(Isl.dim_type.in_, Isl.dim_type.out_, Isl.dim_type.cst, Isl.dim_type.param, Isl.dim_type.div);
-
         var domainVarMap = new Dictionary<int, int>();
-        for (int r = 0; r < eqMat.rows(); r++)
+        for (int i = 0; i < relation.Domains.Length; i++)
         {
-            bool noCoff = true;
-            for (int i = domainRel.dim(Isl.dim_type.in_) + domainRel.dim(Isl.dim_type.out_); i < eqMat.cols(); i++)
+            for (int j = 0; j < relation.Results.Length; j++)
             {
-                noCoff &= eqMat.element_val(r, i).is_zero();
-            }
-
-            if (!noCoff)
-            {
-                continue;
-            }
-
-            for (int i = 0; i < domainRel.dim(Isl.dim_type.in_); i++)
-            {
-                var inv = eqMat.element_val(r, i);
-                for (int j = 0; j < domainRel.dim(Isl.dim_type.out_); j++)
+                if (relation.Domains[i] == relation.Results[j])
                 {
-                    var outv = eqMat.element_val(r, j + domainRel.dim(Isl.dim_type.in_));
-                    if (!inv.is_zero() && !outv.is_zero() && inv.add(outv).is_zero())
+                    if (!domainVarMap.TryGetValue(i, out _))
                     {
-                        if (!domainVarMap.TryGetValue(i, out _))
-                        {
-                            domainVarMap.Add(i, j);
-                        }
-                        else
-                        {
-                            throw new InvalidOperationException("the same input dim can't equal to muli output dim");
-                        }
+                        domainVarMap.Add(i, j);
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("the same input dim can't equal to muli output dim");
                     }
                 }
             }
         }
 
-        // rebuild the domain relation
-        var space = domainRel.space();
-        var ls = Isl.local_space.from_space(space);
-        var uniMap = Isl.basic_map.universe(space);
-        foreach (var k in domainVarMap.Keys)
-        {
-            var cons = Isl.constraint.alloc_equality(ls);
-            cons = cons.set_coefficient_si(Isl.dim_type.in_, k, -1);
-            cons = cons.set_coefficient_si(Isl.dim_type.out_, domainVarMap[k], 1);
-            uniMap = uniMap.add_constraint(cons);
-        }
-
-        return uniMap;
+        return relation;
     }
 
     private bool PerformMerge(ScopeNode parent, TileNode consumer, TileNode producer)
@@ -199,19 +166,19 @@ public partial class TileTreeMerger : ITreeNodeVisitor<Unit, bool>
         // 1. compute the domain realtion : first_consumer_op domain -> producer domain
         var writeOp = firstConsumerOp.Dependences[0].Node;
         var readAccess = firstConsumerOp.Reads[firstConsumerOp.Dependences[0].Index];
-        Isl.basic_map domainRel = readAccess.apply_range(writeOp.Write.reverse());
+        var relation = readAccess * writeOp.Write.Inverse();
 
         // 2. check the domain rel
-        domainRel = CheckFullMapping(domainRel, writeOp);
+        var domainRel = new DomainRelation(firstConsumerOp.OpId, writeOp.OpId, CheckFullMapping(relation, writeOp));
 
         // 3. compose with merged consumer op's domain realtion.
-        if (domainRel.tuple_name(Isl.dim_type.in_) != consumer.DomainRelation.tuple_name(Isl.dim_type.out_))
+        if (domainRel.DomainOp != consumer.DomainRelation.RangeOp)
         {
             foreach (var consumerChild in TileTreeWalker.Walk(consumer.Child).OfType<ITileAbleNode>())
             {
-                if (consumerChild.DomainRelation.tuple_name(Isl.dim_type.out_) == domainRel.tuple_name(Isl.dim_type.in_))
+                if (consumerChild.DomainRelation.RangeOp == domainRel.RangeOp)
                 {
-                    domainRel = consumerChild.DomainRelation.apply_range(domainRel);
+                    domainRel = consumerChild.DomainRelation.ApplyRange(domainRel);
                     break;
                 }
             }
@@ -238,7 +205,7 @@ public partial class TileTreeMerger : ITreeNodeVisitor<Unit, bool>
             // tileAble.DomainRelation = domainRel;
             foreach (var tnode in producerScope.Children.OfType<ITileAbleNode>())
             {
-                tnode.DomainRelation = domainRel.apply_range(tnode.DomainRelation);
+                tnode.DomainRelation = domainRel.ApplyRange(tnode.DomainRelation);
             }
         }
         else if (nextLevelProducer is ITileAbleNode tileAble)

@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Reactive;
 using Microsoft.Extensions.DependencyInjection;
 using Nncase.Evaluator;
 using Nncase.IR;
@@ -14,6 +15,20 @@ namespace Nncase.Tests.AffineTest;
 
 public class UnitTestFor
 {
+    [Fact]
+    public void TestAffineReverse()
+    {
+        // [m,l] @ [l,n] => [m,n],  [d0,d1,d2] -> [2d1 + 3, d2 - 1]
+        var read = AffineRelation.FromCallable((dims, syms) => new AffineExpr[] { (2 * dims[1]) + 3, dims[2] - 1 }, 3, 0);
+
+        System.Console.WriteLine(read);
+        System.Console.WriteLine(read.Inverse());
+
+        // [l,k] @ [k,n] => [l,n],  [l,k,n] -> [l,n]
+        var write = AffineRelation.FromCallable((dims, syms) => new AffineExpr[] { dims[0], dims[2] }, 3, 0);
+        System.Console.WriteLine(write.Inverse());
+    }
+
     [Fact]
     public void TestSimpleFor()
     {

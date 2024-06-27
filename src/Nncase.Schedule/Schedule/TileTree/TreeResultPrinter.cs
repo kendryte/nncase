@@ -8,7 +8,6 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Affine;
 using VisitorPatternGenerator;
-using Isl = IntegerSetLibrary;
 
 namespace Nncase.Schedule;
 
@@ -81,7 +80,7 @@ public sealed class TileTreeResultPrinter : ITreeNodeVisitor<TileTreeResultPrint
         indent += 2;
 
         var set = value.Dependences.ToDictionary(d => d.Index, d => d.Node);
-        for (int i = 0; i < value.Reads.Count; i++)
+        for (int i = 0; i < value.Reads.Length; i++)
         {
             Indent(indent);
 

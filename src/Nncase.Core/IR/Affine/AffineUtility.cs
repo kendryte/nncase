@@ -14,6 +14,17 @@ public sealed record class TiledFor(For For, AffineSymbol[] TileSizes);
 
 public static class AffineUtility
 {
+    public static AffineExpr Inverse<T>(AffineExpr original, AffineExpr input, out T? independentVar)
+            where T : AffineExpr
+    {
+        var collector = new AffineInverseCollector();
+        collector.Visit(original, default);
+        var inverser = new AffineInverser<T>(collector.ExprMemo);
+        var output = inverser.Visit(original, input);
+        independentVar = inverser.IndependentVariable;
+        return output;
+    }
+
 #if false
     private sealed class AutoTileRewriter : ExprRewriter
     {

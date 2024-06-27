@@ -8,7 +8,6 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Affine;
 using VisitorPatternGenerator;
-using Isl = IntegerSetLibrary;
 
 namespace Nncase.Schedule;
 
@@ -85,7 +84,7 @@ public sealed class TileTreeSolverInit : TileTreeSolverBase, ITreeNodeVisitor<Ti
     public InitResult Visit(ScopeNode value, Context context)
     {
         var bids = new List<BufferIdenitity>();
-        var maps = new List<Isl.basic_map>();
+        var maps = new List<AffineRelation>();
         for (int i = 0; i < value.Children.Count; i++)
         {
             var res = value.Children[i].Accept(this, context);
@@ -154,7 +153,7 @@ public sealed class TileTreeSolverInit : TileTreeSolverBase, ITreeNodeVisitor<Ti
             TileNodeMemo.Add(value, new(defUseMap, bufferInfoMap));
         }
 
-        return new(childResult.Bids, childResult.AccessMaps.Select(value.DomainRelation.apply_range).ToArray());
+        return new(childResult.Bids, childResult.AccessMaps.Select(m => m * value.DomainRelation.Relation).ToArray());
     }
 
     public InitResult Visit(OpNode value, Context context)
@@ -189,29 +188,29 @@ public sealed class TileTreeSolverInit : TileTreeSolverBase, ITreeNodeVisitor<Ti
         if (!TileableNodeMemo.TryGetValue(value, out var dimInfo))
         {
             var bufMasks = new Dictionary<BufferIdenitity, LoopMasks>();
-            for (int i = 0; i < value.Reads.Count; i++)
+            for (int i = 0; i < value.Reads.Length; i++)
             {
                 bufMasks[new(value, i)] = GetLoopMasks(value.Reads[i]);
             }
 
-            bufMasks[new(value, value.Reads.Count)] = GetLoopMasks(value.Write);
+            bufMasks[new(value, value.Reads.Length)] = GetLoopMasks(value.Write);
 
             dimInfo = new(dimNames, tileVars, bufMasks);
             TileableNodeMemo.Add(value, dimInfo);
         }
 
         // perpare return infos.
-        var resBids = new BufferIdenitity[value.Reads.Count + 1];
-        var resRels = new Isl.basic_map[value.Reads.Count + 1];
+        var resBids = new BufferIdenitity[value.Reads.Length + 1];
+        var resRels = new AffineRelation[value.Reads.Length + 1];
 
-        for (int i = 0; i < value.Reads.Count; i++)
+        for (int i = 0; i < value.Reads.Length; i++)
         {
             resBids[i] = new(value, i);
-            resRels[i] = value.DomainRelation.apply_range(value.Reads[i]);
+            resRels[i] = value.DomainRelation.Relation * value.Reads[i];
         }
 
-        resBids[value.Reads.Count] = new(value, value.Reads.Count);
-        resRels[value.Reads.Count] = value.DomainRelation.apply_range(value.Write);
+        resBids[value.Reads.Length] = new(value, value.Reads.Length);
+        resRels[value.Reads.Length] = value.DomainRelation.Relation * value.Write;
         return new(resBids, resRels);
     }
 
@@ -226,7 +225,7 @@ public sealed class TileTreeSolverInit : TileTreeSolverBase, ITreeNodeVisitor<Ti
             var sinkId = childResult.Bids[i];
             foreach (var dep in sinkId.Op.Dependences)
             {
-                var sourceId = new BufferIdenitity(dep.Node, dep.Node.Reads.Count);
+                var sourceId = new BufferIdenitity(dep.Node, dep.Node.Reads.Length);
                 if (childResult.Bids.IndexOf(sourceId) != -1)
                 {
                     if (!map.ContainsKey(sourceId))
@@ -303,32 +302,24 @@ public sealed class TileTreeSolverInit : TileTreeSolverBase, ITreeNodeVisitor<Ti
     /// <summary>
     /// loop masks contain each dimension's loop mask of the buffer.
     /// </summary>
-    private LoopMasks GetLoopMasks(Isl.basic_map accessRel)
+    private LoopMasks GetLoopMasks(AffineRelation accessRel)
     {
-        var eqMat = accessRel.equalities_matrix(Isl.dim_type.in_, Isl.dim_type.out_, Isl.dim_type.cst, Isl.dim_type.param, Isl.dim_type.div);
-        var masks = new LoopMask[accessRel.dim(Isl.dim_type.out_)];
-        for (int col = accessRel.dim(Isl.dim_type.in_); col < accessRel.dim(Isl.dim_type.out_); col++)
+        var masks = new LoopMask[accessRel.Results.Length];
+        for (int i = 0; i < accessRel.Results.Length; i++)
         {
-            uint mask = 0;
-            for (int i = 0; i < eqMat.rows(); i++)
-            {
-                // when the out dim is not zero
-                if (eqMat.element_val(i, col).is_zero())
-                {
-                    continue;
-                }
+            var dimsCollector = new AffineDimCollector();
+            dimsCollector.Visit(accessRel.Results[i]);
 
-                // check which in dim is also not zero
-                for (int j = 0; j < accessRel.dim(Isl.dim_type.in_); j++)
+            uint mask = 0;
+            for (int j = 0; j < accessRel.Domains.Length; j++)
+            {
+                if (dimsCollector.AffineDims.Contains(accessRel.Domains[j]))
                 {
-                    if (!eqMat.element_val(i, j).is_zero())
-                    {
-                        mask |= 1U << i;
-                    }
+                    mask |= 1U << accessRel.Domains[j].Position;
                 }
             }
 
-            masks[col] = new(mask);
+            masks[i] = new LoopMask(mask);
         }
 
         return new(masks);
@@ -337,7 +328,7 @@ public sealed class TileTreeSolverInit : TileTreeSolverBase, ITreeNodeVisitor<Ti
     /// <summary>
     /// each buffer with each access Maps, note the access map domain is this node's domain.
     /// </summary>
-    public sealed record InitResult(BufferIdenitity[] Bids, Isl.basic_map[] AccessMaps)
+    public sealed record InitResult(BufferIdenitity[] Bids, AffineRelation[] AccessMaps)
     {
     }
 

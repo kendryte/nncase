@@ -11,19 +11,9 @@ namespace Nncase.Schedule;
 
 internal static class AffineExtensions
 {
-    public static IntegerSetLibrary.basic_map AsIslMap(this AffineMap map, string domainPrefix, IEnumerable<int> domainBounds)
+    public static AffineRelation AsRelation(this AffineMap map)
     {
-        var domain = map.Domains.AsValueEnumerable().Select(dim => dim.Offset.ToString()).ToArray();
-        var cvt = new AffineExprToStringConverter(domain);
-        var range = new string[map.Results.Length];
-        for (int i = 0; i < map.Results.Length; i++)
-        {
-            range[i] = cvt.Visit(map.Results[i].Offset);
-        }
-
-        var constrains = domain.Zip(domainBounds).Select(p => $" 0 <= {p.First} < {p.Second}").ToArray();
-
-        return new(IntegerSetLibrary.ctx.Instance, $"{{ {domainPrefix}[{string.Join(',', domain)}] -> [{string.Join(',', range)}] : {string.Join(" and ", constrains)} }}");
+        return new AffineRelation(map.Domains.AsValueEnumerable().Select(d => d.Offset).ToArray(), map.Symbols, map.Results.AsValueEnumerable().Select(i => i.Offset).ToArray());
     }
 }
 

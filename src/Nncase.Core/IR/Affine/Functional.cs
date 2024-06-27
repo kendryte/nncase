@@ -15,6 +15,8 @@ public static class Affine
 {
     public static AffineDim Dim(int position) => new AffineDim(position);
 
+    public static AffineDim[] Dims(int count) => Enumerable.Range(0, count).Select(Dim).ToArray();
+
     public static AffineExtent Extent(int position) => new AffineExtent(position);
 
     public static AffineDomain Domain(int position) => new AffineDomain(Dim(position), Extent(position));

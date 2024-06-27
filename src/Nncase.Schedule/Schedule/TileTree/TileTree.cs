@@ -8,9 +8,21 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Affine;
 using VisitorPatternGenerator;
-using Isl = IntegerSetLibrary;
 
 namespace Nncase.Schedule;
+
+public sealed record DomainRelation(int DomainOp, int RangeOp, AffineRelation Relation)
+{
+    public DomainRelation ApplyRange(DomainRelation other)
+    {
+        if (RangeOp != other.DomainOp)
+        {
+            throw new InvalidOperationException(string.Empty);
+        }
+
+        return new DomainRelation(DomainOp, other.RangeOp, Relation * other.Relation);
+    }
+}
 
 public partial interface ITreeNode
 {
@@ -36,7 +48,7 @@ public interface ITileAbleNode : ITreeNode
     /// <summary>
     /// Gets or sets the domain relation which from parent domain map to current node's domain.
     /// </summary>
-    Isl.basic_map DomainRelation { get; set; }
+    DomainRelation DomainRelation { get; set; }
 }
 
 [Acceptor<ITreeNode, ScopeNode>]
@@ -93,7 +105,7 @@ public partial class TileNode : ITileAbleNode
         Level = level;
         OpId = opId;
         DomainNames = vars;
-        DomainRelation = TilingUtilities.GetIdentityMap(vars.Length, $"op{OpId}", $"op{OpId}");
+        DomainRelation = new(opId, opId, AffineRelation.Identity(vars.Length));
         _child = null!;
     }
 
@@ -111,7 +123,7 @@ public partial class TileNode : ITileAbleNode
     /// <summary>
     /// Gets or sets the domain relation which from parent domain map to current node's domain.
     /// </summary>
-    public Isl.basic_map DomainRelation { get; set; }
+    public DomainRelation DomainRelation { get; set; }
 
     public ITreeNode Child
     {
@@ -131,18 +143,20 @@ public partial class TileNode : ITileAbleNode
 [Acceptor<ITreeNode, OpNode>]
 public partial class OpNode : ITileAbleNode
 {
-    public OpNode(int opId, string[] domainNames, int[] domain, int[][] bufferShapes, Isl.basic_map[] reads, Isl.basic_map write, AffineMap[] accessMaps, Dependence[] dependences)
+    private readonly AffineMap[] _accessMaps;
+    private readonly AffineRelation[] _accessRelations;
+
+    public OpNode(int opId, string[] domainNames, int[] domain, int[][] bufferShapes, AffineMap[] accessMaps, Dependence[] dependences)
     {
         Level = 0;
         OpId = opId;
         DomainNames = domainNames;
-        DomainRelation = TilingUtilities.GetIdentityMap(domainNames.Length, $"op{OpId}", $"op{OpId}");
+        DomainRelation = new(opId, opId, AffineRelation.Identity(domainNames.Length));
         DomainBounds = domain;
         BufferShapes = bufferShapes;
-        Reads = reads;
-        Write = write;
         Dependences = dependences;
-        AccessMaps = accessMaps;
+        _accessMaps = accessMaps;
+        _accessRelations = accessMaps.Select(m => m.AsRelation()).ToArray();
     }
 
     public ITreeNode? Parent { get; set; }
@@ -159,7 +173,7 @@ public partial class OpNode : ITileAbleNode
     /// <summary>
     /// Gets or sets the domain relation which from parent domain map to current node's domain.
     /// </summary>
-    public Isl.basic_map DomainRelation { get; set; }
+    public DomainRelation DomainRelation { get; set; }
 
     public IReadOnlyList<Dependence> Dependences { get; }
 
@@ -167,11 +181,11 @@ public partial class OpNode : ITileAbleNode
 
     public int[][] BufferShapes { get; }
 
-    public IReadOnlyList<Isl.basic_map> Reads { get; }
+    public ReadOnlySpan<AffineRelation> Reads => _accessRelations.AsSpan()[..^1];
 
-    public Isl.basic_map Write { get; }
+    public AffineRelation Write => _accessRelations[^1];
 
-    public IReadOnlyList<AffineMap> AccessMaps { get; }
+    public ReadOnlySpan<AffineMap> AccessMaps => _accessMaps;
 
     public override string ToString()
     {
@@ -206,13 +220,8 @@ public static class TreeSearch
         var copId = opId;
         var domainDims = current.AccessMaps[0].Domains.Length;
         var vars = Enumerable.Range(0, domainDims).Select(i => $"op{copId}_d{i}").ToArray();
-        var readAccess = new Isl.basic_map[current.AccessMaps.Length - 1];
-        for (int i = 0; i < readAccess.Length; i++)
-        {
-            readAccess[i] = current.AccessMaps[i].AsIslMap($"op{copId}", domain);
-        }
 
-        var opNode = new OpNode(copId, vars, domain, bufferShapes, readAccess, current.AccessMaps[^1].AsIslMap($"op{copId}", domain), current.AccessMaps.ToArray(), dependences.ToArray());
+        var opNode = new OpNode(copId, vars, domain, bufferShapes, current.AccessMaps.ToArray(), dependences.ToArray());
         var tileNodeRoot = new TileNode(level, copId, vars);
         TileNode tileNodeTail = tileNodeRoot;
         for (int l = level - 1; l >= 1; l--)

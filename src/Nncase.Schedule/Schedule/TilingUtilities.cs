@@ -5,36 +5,11 @@ using Google.OrTools.ConstraintSolver;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Affine;
-using Isl = IntegerSetLibrary;
 
 namespace Nncase.Schedule;
 
 public static class TilingUtilities
 {
-    public static Isl.basic_map GetIdentityMap(int dims, string domainPrefix = "", string rangePrefix = "")
-    {
-        var space = Isl.space.unit(Isl.ctx.Instance);
-        if (domainPrefix.Any())
-        {
-            space = space.add_named_tuple(new Isl.id(Isl.ctx.Instance, domainPrefix), (uint)dims);
-        }
-        else
-        {
-            space = space.add_unnamed_tuple((uint)dims);
-        }
-
-        if (rangePrefix.Any())
-        {
-            space = space.add_named_tuple(new Isl.id(Isl.ctx.Instance, rangePrefix), (uint)dims);
-        }
-        else
-        {
-            space = space.add_unnamed_tuple((uint)dims);
-        }
-
-        return Isl.basic_map.identity(space);
-    }
-
     public static int[] GetBufferShape(Expr buffer)
     {
         return buffer.CheckedType switch
