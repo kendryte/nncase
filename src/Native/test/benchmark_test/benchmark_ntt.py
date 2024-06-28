@@ -163,7 +163,7 @@ class BenchmarkNTT_riscv64(BenchmarkNTT):
                                         'cosh': '72',
                                         'exp': '59',
                                         'floor': '18',
-                                        'log': 'N/A',
+                                        'log': '65',
                                         'neg': '8',
                                         'round': '11',
                                         'rsqrt': '8',

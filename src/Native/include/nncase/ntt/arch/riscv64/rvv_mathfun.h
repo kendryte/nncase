@@ -31,6 +31,8 @@
 #define c_cephes_log_q1 -2.12194440e-4
 #define c_cephes_log_q2 0.693359375
 
+#if 0
+// tylor 11 terms
 #define _RVV_FLOAT32_LOG_OP(LMUL, MLEN)                                        \
     static inline vfloat32m##LMUL##_t log_ps(vfloat32m##LMUL##_t x,            \
                                              size_t vl) {                      \
@@ -49,11 +51,8 @@
             ux, 1056964608 /* reinterpret_cast<int>(0.5) */, vl);              \
         x = vreinterpret_v_i32m##LMUL##_f32m##LMUL(ux);                        \
                                                                                \
-        emm0 = vsub_vx_i32m##LMUL(emm0, 0x7f, vl);                             \
-        vfloat32m##LMUL##_t e = vfcvt_f_x_v_f32m##LMUL(emm0, vl);              \
-                                                                               \
-        e = vfadd_vf_f32m##LMUL(e, 1.f, vl);                                   \
-                                                                               \
+        emm0 = vsub_vx_i32m##LMUL(emm0, 0x7e, vl);                             \
+        auto e = vfcvt_f_x_v_f32m##LMUL(emm0, vl);                             \
         /* part2:                      */                                      \
         /*     if( x < SQRTHF ) {      */                                      \
         /*       e -= 1;               */                                      \
@@ -62,46 +61,93 @@
         vbool##MLEN##_t mask =                                                 \
             vmflt_vf_f32m##LMUL##_b##MLEN(x, c_cephes_SQRTHF, vl);             \
         x = vfadd_vv_f32m##LMUL##_m(mask, x, x, x, vl);                        \
-        x = vfsub_vf_f32m##LMUL(x, 1.f, vl);                                   \
         e = vfsub_vf_f32m##LMUL##_m(mask, e, e, 1.f, vl);                      \
+        x = vfsub_vf_f32m##LMUL(x, 1.f, vl);                                   \
                                                                                \
-        vfloat32m##LMUL##_t z = vfmul_vv_f32m##LMUL(x, x, vl);                 \
+        auto y1 = vmv_v_v_f32m##LMUL(x, vl);                                   \
+        auto y2 = vmv_v_v_f32m##LMUL(x, vl);                                   \
+        auto y3 = vmv_v_v_f32m##LMUL(x, vl);                                   \
+        auto y4 = vmv_v_v_f32m##LMUL(x, vl);                                   \
+        auto y5 = vmv_v_v_f32m##LMUL(x, vl);                                   \
+        auto c1 = vfmv_v_f_f32m##LMUL(c_cephes_log_p1, vl);                    \
+        auto c3 = vfmv_v_f_f32m##LMUL(c_cephes_log_p3, vl);                    \
+        auto c5 = vfmv_v_f_f32m##LMUL(c_cephes_log_p5, vl);                    \
+        auto c7 = vfmv_v_f_f32m##LMUL(c_cephes_log_p7, vl);                    \
+        auto minus_half = vfmv_v_f_f32m##LMUL(-0.5f, vl);                      \
+        auto x2 = vfmul_vv_f32m##LMUL(x, x, vl);                               \
+        /*f(x) = x - x^2 / 2 + p8x^3 + ... + p0x^11 + (q1 + q2) * e */         \
+        /*     = x + x^2(-1/2 + p8x + ... +  x^2(p1 + p0x)) + (q1 + q2) * e */ \
+        y1 = vfmadd_vf_f32m##LMUL(y1, c_cephes_log_p0, c1, vl);                \
+        y2 = vfmadd_vf_f32m##LMUL(y2, c_cephes_log_p2, c3, vl);                \
+        y3 = vfmadd_vf_f32m##LMUL(y3, c_cephes_log_p4, c5, vl);                \
+        y4 = vfmadd_vf_f32m##LMUL(y4, c_cephes_log_p6, c7, vl);                \
+        y5 = vfmadd_vf_f32m##LMUL(y5, c_cephes_log_p8, minus_half, vl);        \
+        y1 = vfmadd_vv_f32m##LMUL(y1, x2, y2, vl);                             \
+        y1 = vfmadd_vv_f32m##LMUL(y1, x2, y3, vl);                             \
+        y1 = vfmadd_vv_f32m##LMUL(y1, x2, y4, vl);                             \
+        y1 = vfmadd_vv_f32m##LMUL(y1, x2, y5, vl);                             \
+        y1 = vfmadd_vv_f32m##LMUL(y1, x2, x, vl);                              \
+        y1 = vfmacc_vf_f32m##LMUL(y1, 0.6931471805599453f, e, vl);             \
                                                                                \
-        vfloat32m##LMUL##_t y = vfmul_vf_f32m##LMUL(x, c_cephes_log_p0, vl);   \
-        y = vfadd_vf_f32m##LMUL(y, c_cephes_log_p1, vl);                       \
-        y = vfmul_vv_f32m##LMUL(y, x, vl);                                     \
-        y = vfadd_vf_f32m##LMUL(y, c_cephes_log_p2, vl);                       \
-        y = vfmul_vv_f32m##LMUL(y, x, vl);                                     \
-        y = vfadd_vf_f32m##LMUL(y, c_cephes_log_p3, vl);                       \
-        y = vfmul_vv_f32m##LMUL(y, x, vl);                                     \
-        y = vfadd_vf_f32m##LMUL(y, c_cephes_log_p4, vl);                       \
-        y = vfmul_vv_f32m##LMUL(y, x, vl);                                     \
-        y = vfadd_vf_f32m##LMUL(y, c_cephes_log_p5, vl);                       \
-        y = vfmul_vv_f32m##LMUL(y, x, vl);                                     \
-        y = vfadd_vf_f32m##LMUL(y, c_cephes_log_p6, vl);                       \
-        y = vfmul_vv_f32m##LMUL(y, x, vl);                                     \
-        y = vfadd_vf_f32m##LMUL(y, c_cephes_log_p7, vl);                       \
-        y = vfmul_vv_f32m##LMUL(y, x, vl);                                     \
-        y = vfadd_vf_f32m##LMUL(y, c_cephes_log_p8, vl);                       \
-        y = vfmul_vv_f32m##LMUL(y, x, vl);                                     \
-                                                                               \
-        y = vfmul_vv_f32m##LMUL(y, z, vl);                                     \
-                                                                               \
-        vfloat32m##LMUL##_t tmp = vfmul_vf_f32m##LMUL(e, c_cephes_log_q1, vl); \
-        y = vfadd_vv_f32m##LMUL(y, tmp, vl);                                   \
-                                                                               \
-        tmp = vfmul_vf_f32m##LMUL(z, 0.5f, vl);                                \
-        y = vfsub_vv_f32m##LMUL(y, tmp, vl);                                   \
-                                                                               \
-        tmp = vfmul_vf_f32m##LMUL(e, c_cephes_log_q2, vl);                     \
-        x = vfadd_vv_f32m##LMUL(x, y, vl);                                     \
-        x = vfadd_vv_f32m##LMUL(x, tmp, vl);                                   \
         /* negative arg will be NAN */                                         \
-        vuint32m##LMUL##_t xtmp = vreinterpret_v_f32m##LMUL##_u32m##LMUL(x);   \
-        x = vreinterpret_v_u32m##LMUL##_f32m##LMUL(                            \
+        vuint32m##LMUL##_t xtmp = vreinterpret_v_f32m##LMUL##_u32m##LMUL(y1);  \
+        y1 = vreinterpret_v_u32m##LMUL##_f32m##LMUL(                           \
             vor_vx_u32m##LMUL##_m(invalid_mask, xtmp, xtmp, 0xffffffff, vl));  \
-        return x;                                                              \
+        return y1;                                                             \
     }
+#else
+// tylor 5 terms
+#define _RVV_FLOAT32_LOG_OP(LMUL, MLEN)                                        \
+    static inline vfloat32m##LMUL##_t log_ps(vfloat32m##LMUL##_t x,            \
+                                             size_t vl) {                      \
+        x = vfmax_vf_f32m##LMUL(                                               \
+            x, 0.f, vl); /* force flush to zero on denormal values */          \
+        vbool##MLEN##_t invalid_mask =                                         \
+            vmfle_vf_f32m##LMUL##_b##MLEN(x, 0.f, vl);                         \
+                                                                               \
+        vint32m##LMUL##_t ux = vreinterpret_v_f32m##LMUL##_i32m##LMUL(x);      \
+                                                                               \
+        vint32m##LMUL##_t emm0 = vsra_vx_i32m##LMUL(ux, 23, vl);               \
+                                                                               \
+        /* keep only the fractional part */                                    \
+        ux = vand_vx_i32m##LMUL(ux, c_inv_mant_mask, vl);                      \
+        ux = vor_vx_i32m##LMUL(                                                \
+            ux, 1056964608 /* reinterpret_cast<int>(0.5) */, vl);              \
+        x = vreinterpret_v_i32m##LMUL##_f32m##LMUL(ux);                        \
+                                                                               \
+        emm0 = vsub_vx_i32m##LMUL(emm0, 0x7e, vl);                             \
+        auto e = vfcvt_f_x_v_f32m##LMUL(emm0, vl);                             \
+        /* part2:                      */                                      \
+        /*     if( x < SQRTHF ) {      */                                      \
+        /*       e -= 1;               */                                      \
+        /*       x = x + x - 1.0;      */                                      \
+        /*     } else { x = x - 1.0; } */                                      \
+        vbool##MLEN##_t mask =                                                 \
+            vmflt_vf_f32m##LMUL##_b##MLEN(x, c_cephes_SQRTHF, vl);             \
+        x = vfadd_vv_f32m##LMUL##_m(mask, x, x, x, vl);                        \
+        e = vfsub_vf_f32m##LMUL##_m(mask, e, e, 1.f, vl);                      \
+        x = vfsub_vf_f32m##LMUL(x, 1.f, vl);                                   \
+                                                                               \
+        auto y1 = vmv_v_v_f32m##LMUL(x, vl);                                   \
+        auto y2 = vmv_v_v_f32m##LMUL(x, vl);                                   \
+        auto c7 = vfmv_v_f_f32m##LMUL(c_cephes_log_p7, vl);                    \
+        auto minus_half = vfmv_v_f_f32m##LMUL(-0.5f, vl);                      \
+        auto x2 = vfmul_vv_f32m##LMUL(x, x, vl);                               \
+        /*f(x) = x - x^2 / 2 + p8x^3 + ... + p6x^5 + (q1 + q2) * e */          \
+        /*     = x + x^2(-1/2 + p8x + ... +  x^2(p7 + p6x)) + (q1 + q2) * e */ \
+        y1 = vfmadd_vf_f32m##LMUL(y1, c_cephes_log_p6, c7, vl);                \
+        y2 = vfmadd_vf_f32m##LMUL(y2, c_cephes_log_p8, minus_half, vl);        \
+        y1 = vfmadd_vv_f32m##LMUL(y1, x2, y2, vl);                             \
+        y1 = vfmadd_vv_f32m##LMUL(y1, x2, x, vl);                              \
+        y1 = vfmacc_vf_f32m##LMUL(y1, 0.6931471805599453f, e, vl);             \
+                                                                               \
+        /* negative arg will be NAN */                                         \
+        vuint32m##LMUL##_t xtmp = vreinterpret_v_f32m##LMUL##_u32m##LMUL(y1);  \
+        y1 = vreinterpret_v_u32m##LMUL##_f32m##LMUL(                           \
+            vor_vx_u32m##LMUL##_m(invalid_mask, xtmp, xtmp, 0xffffffff, vl));  \
+        return y1;                                                             \
+    }
+#endif
 
 _RVV_FLOAT32_LOG_OP(1, 32)
 _RVV_FLOAT32_LOG_OP(2, 16)
