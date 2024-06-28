@@ -155,7 +155,7 @@ internal sealed class AffineTiler
                 _ => throw new NotSupportedException(),
             };
 
-            return T.AttachBuffer(None.Default, ttype, MemoryLocation.Data, 1, out _, "buffer_out");
+            return T.AttachBuffer(None.Default, ttype, MemoryLocation.Output, 1, out _, "buffer_out");
         }
 
         throw new NotSupportedException();

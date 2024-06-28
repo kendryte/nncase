@@ -24,8 +24,9 @@ namespace Nncase.CodeGen.CPU;
 
 public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 {
-    private readonly Dictionary<Expr, CSymbol> _exprMemo;
-    private readonly StringBuilder _deviceBuilder;
+#pragma warning disable SA1401
+    protected readonly Dictionary<Expr, CSymbol> _exprMemo;
+    protected readonly StringBuilder _deviceBuilder;
 
     public DeviceCSourceConvertVisitor()
     {

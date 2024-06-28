@@ -22,7 +22,7 @@ using Razor.Templating.Core;
 
 namespace Nncase.CodeGen.CPU;
 
-internal struct IndentScope : IDisposable
+public struct IndentScope : IDisposable
 {
     private static readonly AsyncLocal<IndentWriter?> _writer = new AsyncLocal<IndentWriter?>();
 
@@ -84,7 +84,7 @@ public sealed class CSymbol
     public override string ToString() => $"{Type} {Name}";
 }
 
-internal sealed class IndentWriter : StringWriter
+public sealed class IndentWriter : StringWriter
 {
     public IndentWriter(StringBuilder sb, int indent = 0)
         : base(sb)

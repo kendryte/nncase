@@ -12,6 +12,7 @@ using CommunityToolkit.HighPerformance;
 using Google.OrTools.ConstraintSolver;
 using Nncase.IR;
 using Nncase.IR.Affine;
+using Nncase.Targets;
 using Nncase.Utilities;
 
 namespace Nncase.Schedule;
@@ -27,7 +28,7 @@ internal sealed class TilingSolver
 
     public GridSchedule Solve(int[] domainBounds, int[][] bufferShapes, AffineDim[] domain, AffineMap[] accessMaps, Op computation)
     {
-        int[] memoryCapacitys = new[] { 2 * 1024 * 1024, int.MaxValue };
+        int[] memoryCapacitys = new[] { 512 * 1024, int.MaxValue };
         int[] memoryBandWidths = new[] { 128, 4 };
 
         // string prefix, long bestObjective
