@@ -375,5 +375,29 @@ template <> struct inner_product<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     }
 };
 
+// outer product
+template <> struct outer_product<ntt::vector<float, 8>, ntt::vector<float, 8>> {
+    fixed_tensor<float, 8, 8>
+    operator()(const ntt::vector<float, 8> &v1,
+               const ntt::vector<float, 8> &v2) const noexcept {
+        fixed_tensor<float, 8, 8> result;
+        __m256 tmp;
+        // Iterate over each element in v1
+        for (int i = 0; i < 8; ++i) {
+            // Broadcast the i-th element of v1 to all elements of a new __m256
+            tmp = _mm256_set1_ps(((float *)&v1)[i]);
+
+            // Multiply the broadcasted value with v2
+            tmp = _mm256_mul_ps(tmp, v2);
+
+            // Store the result in the appropriate position in the result array
+            _mm256_storeu_ps(&(((float *)(result.elements().data()))[i * 8]),
+                             tmp);
+        }
+
+        return result;
+    }
+};
+
 #endif
 } // namespace nncase::ntt::ops
