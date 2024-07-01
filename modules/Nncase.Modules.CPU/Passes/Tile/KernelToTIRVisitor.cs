@@ -118,7 +118,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                         throw new NotSupportedException("not support this conv2d");
                     }
 
-                    _mainBody.Add(TIR.F.CPU.Conv2D(arguments[0], arguments[1], arguments[2], ret, strides, padding, dilation, groups, conv.PadMode));
+                    _mainBody.Add(TIR.F.CPU.Conv2D(arguments[0], arguments[1], arguments[2], ret, strides, padding, dilation, groups, conv.PadMode, (DistributedType)expr.CheckedType));
                 }
 
                 break;
@@ -142,10 +142,10 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.PackedLayerNorm(arguments[0], arguments[1], arguments[2], ret, layernorm.Axis, layernorm.Epsilon, layernorm.UseMean, Array.Empty<int>(), Array.Empty<int>()));
                 break;
             case IR.NN.InstanceNormalization instancenorm:
-                _mainBody.Add(TIR.F.CPU.InstanceNorm(arguments[0], arguments[1], arguments[2], ret, ((TensorConst)expr.Arguments[3]).Value.ToScalar<int>(), Array.Empty<int>(), Array.Empty<int>()));
+                _mainBody.Add(TIR.F.CPU.InstanceNorm(arguments[0], arguments[1], arguments[2], ret, ((TensorConst)expr.Arguments[3]).Value.ToScalar<int>(), Array.Empty<int>(), Array.Empty<int>(), (DistributedType)expr.CheckedType));
                 break;
             case IR.CPU.InstacneNorm instancenorm:
-                _mainBody.Add(TIR.F.CPU.InstanceNorm(arguments[0], arguments[1], arguments[2], ret, instancenorm.Epsilon, instancenorm.PackedAxes, instancenorm.PadedNums));
+                _mainBody.Add(TIR.F.CPU.InstanceNorm(arguments[0], arguments[1], arguments[2], ret, instancenorm.Epsilon, instancenorm.PackedAxes, instancenorm.PadedNums, (DistributedType)expr.CheckedType));
                 break;
             case IR.Imaging.ResizeImage resize:
                 if (expr.Arguments[1] is not None || resize.IsTFResize)
@@ -165,7 +165,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Reshape(arguments[0], ret, expr.CheckedShape.ToValueArray()));
                 break;
             case IR.Tensors.Slice slice:
-                _mainBody.Add(TIR.F.CPU.Slice(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[3]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[4]).Value.ToArray<int>()));
+                _mainBody.Add(TIR.F.CPU.Slice(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[3]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[4]).Value.ToArray<int>(), (DistributedType)expr.CheckedType));
                 break;
             case IR.Tensors.Concat concat:
                 _mainBody.Add(TIR.F.CPU.Concat(((IR.Tuple)expr.Arguments[0]).Fields.AsValueEnumerable().Select(GetBuffer).ToArray(), ret, concat.Axis));

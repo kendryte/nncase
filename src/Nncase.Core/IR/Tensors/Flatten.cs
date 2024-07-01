@@ -15,7 +15,7 @@ public sealed partial class Flatten : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Flatten), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Flatten), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets axis.
