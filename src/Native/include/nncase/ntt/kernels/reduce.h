@@ -89,8 +89,8 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
             TIElem mean = (TIElem)0;
             for (size_t i = 0; i < inner_size; i++)
                 mean = mean +
-                       (input_p[i * input_strides[Axes::at(Axes::rank() - 1)]] /
-                        finner_size);
+                       input_p[i * input_strides[Axes::at(Axes::rank() - 1)]];
+            mean = mean / finner_size;
             if constexpr (UseVectorReduce) {
                 output_p[0] = reduce_sum(mean);
             } else {
