@@ -151,7 +151,7 @@ class BenchmarkNTT_riscv64(BenchmarkNTT):
                                          'min': '10.5',
                                          'floor_mod': '43',
                                          'mod': '54',
-                                         'pow': 'N/A'
+                                         'pow': '127'
                                          },
                               'unary': {'abs': '8',
                                         'acos': '54',
@@ -160,8 +160,8 @@ class BenchmarkNTT_riscv64(BenchmarkNTT):
                                         'asinh': 'N/A',
                                         'ceil': '18',
                                         'cos': '64',
-                                        'cosh': '72',
-                                        'exp': '59',
+                                        'cosh': '69',
+                                        'exp': '56',
                                         'floor': '18',
                                         'log': '65',
                                         'neg': '8',
@@ -169,10 +169,10 @@ class BenchmarkNTT_riscv64(BenchmarkNTT):
                                         'rsqrt': '8',
                                         'sign': '18',
                                         'sin': '66',
-                                        'sinh': '72',
+                                        'sinh': '69',
                                         'sqrt': '40',
                                         'square': '8',
-                                        'swish': '73',
+                                        'swish': '70',
                                         'tanh': 'N/A',
                                         },
                               }
