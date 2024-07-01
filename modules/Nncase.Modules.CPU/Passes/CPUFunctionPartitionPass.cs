@@ -38,18 +38,17 @@ public enum EdgeTypes
 
 public sealed record Vertex
 {
-    public Vertex(Expr expr, Compat compatType, int subgraphIndex)
+    public Vertex(Expr expr, Compat compatType)
     {
         Expr = expr;
         CompatType = compatType;
-        SubgraphIndex = subgraphIndex;
     }
 
     public Expr Expr { get; set; }
 
     public Compat CompatType { get; set; }
 
-    public int SubgraphIndex { get; set; }
+    public override string ToString() => Expr.ToString();
 }
 
 public sealed record Edge : QuikGraph.IEdge<Vertex>
@@ -66,9 +65,9 @@ public sealed record Edge : QuikGraph.IEdge<Vertex>
 
     public int Index { get; set; }
 
-    public Vertex Source { get; }
+    public Vertex Source { get; set; }
 
-    public Vertex Target { get; }
+    public Vertex Target { get; set; }
 }
 
 public sealed class Graph : AdjacencyGraph<Vertex, Edge>
@@ -95,7 +94,18 @@ public sealed class CPUFunctionPartitionPass : ModulePass
 
                 using (var writer = new StreamWriter(DumpScope.Current.Directory + $"graph_{i}.dot"))
                 {
-                    var a = ctx.Graph.ToGraphviz<Vertex, Edge>();
+                    var a = ctx.Graph.ToGraphviz<Vertex, Edge>(algorithm =>
+                    {
+                        algorithm.FormatVertex += (_, args) => args.VertexFormat.Label = args.Vertex.ToString();
+                    });
+                    writer.Write(a);
+                }
+
+                ctx.SummarizeGraph();
+
+                using (var writer = new StreamWriter(DumpScope.Current.Directory + $"function_{i}.dot"))
+                {
+                    var a = ctx.GraphSummary.ToGraphviz<Vertex, Edge>();
                     writer.Write(a);
                 }
 
@@ -117,32 +127,36 @@ internal sealed class GraphContext
 
     public SortedDictionary<int, Subgraph> SubgraphMap { get; set; } = new();
 
+    public Dictionary<Vertex, int> VertexSubgraphMap { get; set; } = new();
+
     public List<Subgraph> Subgraphs { get; set; } = new();
 
     public void MergeSubgraphMap()
     {
+        VertexSubgraphMap = Graph.Vertices.Select((v, i) => new KeyValuePair<Vertex, int>(v, i)).ToDictionary(kv => kv.Key, kv => kv.Value);
+
         var dfsVisitEdge = new QuikGraph.Algorithms.Search.EdgeDepthFirstSearchAlgorithm<Vertex, Edge>(Graph);
-        dfsVisitEdge.TreeEdge += (edge) =>
+        dfsVisitEdge.InitializeEdge += (edge) =>
         {
             var u = edge.Source;
             var v = edge.Target;
 
-            if (u.CompatType == v.CompatType)
+            if (u.CompatType != v.CompatType)
             {
                 return;
             }
 
-            if (u.SubgraphIndex == v.SubgraphIndex)
+            if (VertexSubgraphMap[u] == VertexSubgraphMap[v])
             {
                 return;
             }
 
-            var u_subgraph = SubgraphNodes[u.SubgraphIndex];
-            var v_subgraph = SubgraphNodes[v.SubgraphIndex];
+            var u_subgraph = SubgraphNodes[VertexSubgraphMap[u]];
+            var v_subgraph = SubgraphNodes[VertexSubgraphMap[v]];
             foreach (var v_s in v_subgraph)
             {
                 u_subgraph.Add(v_s);
-                v_s.SubgraphIndex = u.SubgraphIndex;
+                VertexSubgraphMap[v] = VertexSubgraphMap[u];
             }
 
             v_subgraph.Clear();
@@ -165,8 +179,8 @@ internal sealed class GraphContext
             var u = edge.Source;
             var v = edge.Target;
 
-            var u_sub_idx = u.SubgraphIndex;
-            var v_sub_idx = v.SubgraphIndex;
+            var u_sub_idx = VertexSubgraphMap[u];
+            var v_sub_idx = VertexSubgraphMap[v];
 
             if (u_sub_idx == v_sub_idx)
             {
@@ -197,7 +211,7 @@ internal sealed class GraphContext
                 var v = edge.Target;
                 if (v.CompatType == subgraphCompat)
                 {
-                    outSubgraphs.Add(v.SubgraphIndex);
+                    outSubgraphs.Add(VertexSubgraphMap[v]);
                 }
             }
 
@@ -209,7 +223,7 @@ internal sealed class GraphContext
             var targetIdx = outSubgraphs.First();
             var targetSubgraph = SubgraphMap[targetIdx];
 
-            sm.Value.Nodes.ForEach(x => x.SubgraphIndex = targetIdx);
+            sm.Value.Nodes.ForEach(x => VertexSubgraphMap[x] = targetIdx);
 
             targetSubgraph.Nodes.AddRange(sm.Value.Nodes);
             targetSubgraph.InteriorEdges.AddRange(sm.Value.OutputEdges);
@@ -222,61 +236,68 @@ internal sealed class GraphContext
 
     public void SummarizeGraph()
     {
+        MergeSubgraphMap();
+
         Dictionary<int, Vertex> indexMap = new();
-
-        foreach (var subgraph in SubgraphMap)
-        {
-            var u = new Vertex(subgraph.Value.Nodes[0].Expr, subgraph.Value.Nodes[0].CompatType, subgraph.Key);
-            indexMap.Add(subgraph.Key, u);
-            GraphSummary.AddVertex(u);
-        }
-
-        Dictionary<Edge, Edge> edgeMap = new();
-        foreach (var subgraph in SubgraphMap)
-        {
-            foreach (var edge in subgraph.Value.OutputEdges)
-            {
-                var u = indexMap[edge.Source.SubgraphIndex];
-                var v = indexMap[edge.Target.SubgraphIndex];
-
-                var newEdge = new Edge(edge.EdgeType, -1, u, v);
-                GraphSummary.AddEdge(newEdge);
-                if (edgeMap.ContainsKey(newEdge))
-                {
-                    System.Console.WriteLine("[ERROR] " + edge + " already mapped!");
-                }
-
-                edgeMap.Add(newEdge, edge);
-            }
-        }
-
-        List<Edge> cycles = new();
-        var dfs = new QuikGraph.Algorithms.Search.EdgeDepthFirstSearchAlgorithm<Vertex, Edge>(GraphSummary);
-        dfs.BackEdge += (edge) =>
-        {
-            var u = edge.Source;
-            var v = edge.Target;
-            cycles.Add(edge);
-        };
-        dfs.Compute();
 
         bool modified = false;
         do
         {
+            GraphSummary = new();
+            foreach (var subgraph in SubgraphMap)
+            {
+                var u = new Vertex(subgraph.Value.Nodes[0].Expr, subgraph.Value.Nodes[0].CompatType);
+                indexMap.Add(subgraph.Key, u);
+                GraphSummary.AddVertex(u);
+            }
+
+            Dictionary<Edge, Edge> edgeMap = new();
+            foreach (var subgraph in SubgraphMap)
+            {
+                foreach (var edge in subgraph.Value.OutputEdges)
+                {
+                    var u = indexMap[VertexSubgraphMap[edge.Source]];
+                    var v = indexMap[VertexSubgraphMap[edge.Target]];
+
+                    var newEdge = new Edge(edge.EdgeType, -1, u, v);
+                    GraphSummary.AddEdge(newEdge);
+                    if (edgeMap.ContainsKey(newEdge))
+                    {
+                        System.Console.WriteLine("[ERROR] " + edge + " already mapped!");
+                    }
+
+                    edgeMap.Add(newEdge, edge);
+                }
+            }
+
+            List<Edge> cycles = new();
+            var dfs = new QuikGraph.Algorithms.Search.EdgeDepthFirstSearchAlgorithm<Vertex, Edge>(GraphSummary);
+            dfs.BackEdge += (edge) =>
+            {
+                var u = edge.Source;
+                var v = edge.Target;
+                cycles.Add(edge);
+            };
+            dfs.Compute();
+
             if (cycles.Count > 0)
             {
                 var sumEdge = cycles.First();
                 var edge = edgeMap[sumEdge];
-
                 var u = edge.Source;
                 var v = edge.Target;
 
+                var oldSubgraph = SubgraphMap[VertexSubgraphMap[v]];
+                if (oldSubgraph.Nodes.Count == 1)
+                {
+                    (u, v) = (v, u);
+                    oldSubgraph = SubgraphMap[VertexSubgraphMap[v]];
+                }
+
                 var nextSubgraphIdx = SubgraphMap.Last().Key + 1;
-                var oldSubgraphIdx = v.SubgraphIndex;
-                var oldSubgraph = SubgraphMap[oldSubgraphIdx];
+                VertexSubgraphMap[v] = nextSubgraphIdx;
                 oldSubgraph.Nodes.Remove(v);
 
-                v.SubgraphIndex = nextSubgraphIdx;
                 SubgraphMap[nextSubgraphIdx] = new Subgraph(new List<Vertex>() { v }, new List<Edge>(), new List<Edge>(), new List<Edge>());
 
                 foreach (var sm in SubgraphMap)
@@ -292,8 +313,8 @@ internal sealed class GraphContext
                     var u = edge.Source;
                     var v = edge.Target;
 
-                    var u_sub_idx = u.SubgraphIndex;
-                    var v_sub_idx = v.SubgraphIndex;
+                    var u_sub_idx = VertexSubgraphMap[u];
+                    var v_sub_idx = VertexSubgraphMap[v];
 
                     if (u_sub_idx == v_sub_idx)
                     {
@@ -308,7 +329,6 @@ internal sealed class GraphContext
                 dfsAssignEdge.Compute();
 
                 modified = true;
-                GraphSummary = new();
             }
         } while (modified);
     }
@@ -318,21 +338,33 @@ internal sealed class GraphConvertor : ExprVisitor<Unit, Unit, GraphContext>
 {
     private int NodeCount { get; set; }
 
-    protected override Unit DefaultVisitLeaf(Expr expr, GraphContext context)
+    protected override Unit VisitLeafVar(Var expr, GraphContext context)
     {
         Vertex target;
-        if (expr is Call { Target: IR.CPU.Boxing } || expr.CheckedType is DistributedType)
+
+        target = new Vertex(expr, Compat.INCOMPATIBLE);
+
+        context.Graph.AddVertex(target);
+        context.SubgraphNodes.Add(NodeCount++, new() { target });
+
+        return Unit.Default;
+    }
+
+    protected override Unit VisitLeafCall(Call expr, GraphContext context)
+    {
+        Vertex target;
+        if (expr.Target is IR.CPU.Boxing || expr.CheckedType is DistributedType)
         {
-            target = new Vertex(expr, Compat.COMPATIBLE, -1);
+            target = new Vertex(expr, Compat.COMPATIBLE);
         }
         else
         {
-            target = new Vertex(expr, Compat.INCOMPATIBLE, -1);
+            target = new Vertex(expr, Compat.INCOMPATIBLE);
         }
 
         context.Graph.AddVertex(target);
         context.SubgraphNodes.Add(NodeCount++, new() { target });
-        foreach (var operand in expr.Operands)
+        foreach (var operand in expr.Arguments)
         {
             if (context.Graph.Vertices.Any(v => v.Expr == operand))
             {
@@ -355,6 +387,11 @@ internal sealed class GraphConvertor : ExprVisitor<Unit, Unit, GraphContext>
             }
         }
 
+        return Unit.Default;
+    }
+
+    protected override Unit DefaultVisitLeaf(Expr expr, GraphContext context)
+    {
         return Unit.Default;
     }
 }
