@@ -42,7 +42,8 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
         contiguous_dims(input_shape, input_strides);
     constexpr size_t output_contiguous_dims =
         contiguous_dims(output_shape, output_strides);
-    static_assert(in_contigous_dim != 0 || output_contiguous_dims != 0,
+    static_assert(in_contigous_dim == input_shape.rank() &&
+                      output_contiguous_dims == output_shape.rank(),
                   "only support contiguous for now!");
 
     constexpr auto domain = concat_fixed_dims(
