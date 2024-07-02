@@ -21,20 +21,30 @@ using namespace nncase;
 template <template <typename T1, typename T2> class Op, typename T, size_t N>
 void benchmark_ntt_binary(std::string op_name, T lhs_low, T lhs_high, T rhs_low,
                           T rhs_high) {
-    constexpr size_t size = 2000;
-    using tensor_type = ntt::tensor<ntt::vector<T, N>, ntt::fixed_shape<size>>;
-    tensor_type ntt_lhs, ntt_rhs;
+#if __riscv
+    constexpr size_t size1 = 300;
+    constexpr size_t size2 = 600;
+#elif __x86_64__
+    constexpr size_t size1 = 2000;
+    constexpr size_t size2 = 2000;
+#else
+    constexpr size_t size1 = 2000;
+    constexpr size_t size2 = 2000;
+#endif
+    using tensor_type = ntt::tensor<ntt::vector<T, N>, ntt::fixed_shape<size2>>;
+    tensor_type ntt_lhs, ntt_rhs, ntt_result;
     NttTest::init_tensor(ntt_lhs, lhs_low, lhs_high);
     NttTest::init_tensor(ntt_rhs, rhs_low, rhs_high);
     Op<tensor_type, tensor_type> op;
 
     auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < size; i++)
-        op(ntt_lhs, ntt_rhs);
+    for (size_t i = 0; i < size1; i++)
+        ntt_result = op(ntt_lhs, ntt_rhs);
     auto t2 = NttTest::get_cpu_cycle();
+    ntt_result(0)(0) = ntt_result(0)(1);
     std::cout << __FUNCTION__ << "_" << op_name << " took "
               << std::setprecision(1) << std::fixed
-              << static_cast<float>(t2 - t1) / size / size << " cycles"
+              << static_cast<float>(t2 - t1) / size1 / size2 << " cycles"
               << std::endl;
 }
 

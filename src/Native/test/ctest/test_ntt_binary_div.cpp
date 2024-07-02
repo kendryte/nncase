@@ -684,7 +684,7 @@ template <typename T, size_t vl> void test_vector() {
     _TEST_VECTOR(T, 4)                                                         \
     _TEST_VECTOR(T, 8)
 
-TEST(UnaryTestDiv, vector) {
+TEST(BinaryTestDiv, vector) {
     TEST_VECTOR(float)
     TEST_VECTOR(int32_t)
     TEST_VECTOR(int64_t)

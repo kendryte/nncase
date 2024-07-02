@@ -178,8 +178,7 @@ static inline __m256 log256_ps(__m256 x) {
     x = _mm256_max_ps(
         x, *(__m256 *)_ps256_min_norm_pos); /* cut off denormalized stuff */
 
-    // can be done with AVX2
-    imm0 = _mm256_comp_srli_epi32(_mm256_castps_si256(x), 23);
+    imm0 = _mm256_srli_epi32(_mm256_castps_si256(x), 23);
 
     /* keep only the fractional part */
     x = _mm256_and_ps(x, *(__m256 *)_ps256_inv_mant_mask);
