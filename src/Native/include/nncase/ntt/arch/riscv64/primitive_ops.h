@@ -89,10 +89,10 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, acos)
 #define ACOSH_FLOAT32(LMUL, MLEN)                                              \
     inline vfloat32m##LMUL##_t acosh_float32(const vfloat32m##LMUL##_t &v,     \
                                              const size_t vl) {                \
-        auto diff =                                                            \
+        auto sub =                                                             \
             vfsub_vf_f32m##LMUL(vfmul_vv_f32m##LMUL(v, v, vl), 1.f, vl);       \
-        auto sum = vfadd_vv_f32m##LMUL(v, vfsqrt_v_f32m##LMUL(diff, vl), vl);  \
-        return log_ps(sum, vl);                                                \
+        auto sqrt = vfrec7_v_f32m##LMUL(vfrsqrt7_v_f32m##LMUL(sub, vl), vl);   \
+        return log_ps(vfadd_vv_f32m##LMUL(v, sqrt, vl), vl);                   \
     }
 
 IMPL_RVV_WITH_LMULS(ACOSH_FLOAT32)
@@ -127,10 +127,10 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, asin)
 #define ASINH_FLOAT32(LMUL, MLEN)                                              \
     inline vfloat32m##LMUL##_t asinh_float32(const vfloat32m##LMUL##_t &v,     \
                                              const size_t vl) {                \
-        auto sum1 =                                                            \
+        auto sum =                                                             \
             vfadd_vf_f32m##LMUL(vfmul_vv_f32m##LMUL(v, v, vl), 1.f, vl);       \
-        auto sum2 = vfadd_vv_f32m##LMUL(v, vfsqrt_v_f32m##LMUL(sum1, vl), vl); \
-        return log_ps(sum2, vl);                                               \
+        auto sqrt = vfrec7_v_f32m##LMUL(vfrsqrt7_v_f32m##LMUL(sum, vl), vl);   \
+        return log_ps(vfadd_vv_f32m##LMUL(v, sqrt, vl), vl);                   \
     }
 
 IMPL_RVV_WITH_LMULS(ASINH_FLOAT32)
