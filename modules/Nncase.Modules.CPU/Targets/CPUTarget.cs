@@ -92,7 +92,7 @@ public class CPUTarget : ITarget
             });
         }
 
-        if (options.TargetCompileOptions is CpuTargetOptions { Packing: true })
+        if (options.TargetOptions is CpuTargetOptions { Packing: true })
         {
             passManager.AddWithName<EGraphRulesPass>("AutoPacking").Configure(p =>
             {

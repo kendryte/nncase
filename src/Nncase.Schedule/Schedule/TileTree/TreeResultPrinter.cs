@@ -9,14 +9,14 @@ using Nncase.IR;
 using Nncase.IR.Affine;
 using VisitorPatternGenerator;
 
-namespace Nncase.Schedule;
+namespace Nncase.Schedule.TileTree;
 
-public sealed class TileTreeResultPrinter : ITreeNodeVisitor<TileTreeResultPrinter.Context, Unit>
+public sealed class TreeResultPrinter : ITreeNodeVisitor<TreeResultPrinter.Context, Unit>
 {
     private readonly StreamWriter _writer;
     private readonly string[] _ivNames = new string[] { "i", "j", "k", "l", "m", "n", "o" };
 
-    public TileTreeResultPrinter(StreamWriter writer, Dictionary<ITileAbleNode, DomainDimAssignment> tileableNodeMemo, Dictionary<TileNode, TileNodeAssignment> tileNodeMemo)
+    public TreeResultPrinter(StreamWriter writer, Dictionary<ITileAbleNode, DomainDimAssignment> tileableNodeMemo, Dictionary<TileNode, TileNodeAssignment> tileNodeMemo)
     {
         _writer = writer;
         TileableNodeMemo = tileableNodeMemo;
@@ -53,7 +53,7 @@ public sealed class TileTreeResultPrinter : ITreeNodeVisitor<TileTreeResultPrint
         _writer.WriteLine($"# Tile Op {value.OpId} at level {value.Level}");
         Indent(indent);
         _writer.WriteLine($"# Domain Relation {value.DomainRelation}");
-        var names = TileableNodeMemo[value].DimNames;
+        var names = value.DimNames;
         var ivs = Enumerable.Range(0, names.Length).Select(i => $"{_ivNames[i]}{value.Level}").ToArray();
         for (int i = 0; i < names.Length; i++)
         {
@@ -69,7 +69,7 @@ public sealed class TileTreeResultPrinter : ITreeNodeVisitor<TileTreeResultPrint
     public Unit Visit(OpNode value, Context context)
     {
         var indent = context.Indent;
-        var names = TileableNodeMemo[value].DimNames;
+        var names = value.DimNames;
         Indent(indent);
         _writer.WriteLine($"# Compute Op {value.OpId} at level {value.Level}");
         Indent(indent);

@@ -250,7 +250,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             return;
         }
 
-        CompileOptions.TargetCompileOptions = new CpuTargetOptions() { Packing = packing };
+        CompileOptions.TargetOptions = new CpuTargetOptions() { Packing = packing };
         var vhidden_in = new Var("vhidden_in", new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 }));
         var vattn_mask = new Var("vattn_mask", new TensorType(DataTypes.Float32, new[] { 1, 1, 384, 384 }));
         var vposition_ids = new Var("vposition_ids", new TensorType(DataTypes.Int64, new[] { 1, 384 }));
@@ -321,7 +321,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { true, 1 })] // enable packing
     public async Task TestVAEDecRes(bool packing, int count)
     {
-        CompileOptions.TargetCompileOptions = new CpuTargetOptions() { Packing = packing };
+        CompileOptions.TargetOptions = new CpuTargetOptions() { Packing = packing };
         var vlatent_sample = new Var("vlatent_sample", new TensorType(DataTypes.Float32, new[] { 1, 4, 64, 64 }));
         Expr pre;
         {

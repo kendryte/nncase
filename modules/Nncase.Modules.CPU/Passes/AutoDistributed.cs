@@ -31,7 +31,7 @@ public sealed partial class AutoDistributedPass : FunctionPass
 
     protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
     {
-        var rewriter = new AutoDistributedRewriter(_compileOptions, _compileOptions.TargetCompileOptions is CpuTargetOptions options ? options : new CpuTargetOptions());
+        var rewriter = new AutoDistributedRewriter(_compileOptions, _compileOptions.TargetOptions is CpuTargetOptions options ? options : new CpuTargetOptions());
         return Task.FromResult(rewriter.Rewirte(input));
     }
 }

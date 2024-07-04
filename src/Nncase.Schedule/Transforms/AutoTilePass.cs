@@ -26,7 +26,7 @@ public sealed class AutoTilePass : ModulePass
         var funcs = input.Functions.Count;
         for (int i = 0; i < funcs; i++)
         {
-            var rewriter = new AutoTileRewriter(input, CompileOptions.TargetCompileOptions);
+            var rewriter = new AutoTileRewriter(input, CompileOptions.TargetOptions);
             input.Replace(i, (BaseFunction)rewriter.Rewrite(input.Functions[i]));
         }
 

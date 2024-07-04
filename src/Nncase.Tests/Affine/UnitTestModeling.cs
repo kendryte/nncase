@@ -246,7 +246,7 @@ public sealed class UnitTestModeling : TestClassBase
             return;
         }
 
-        Schedule.TreeSearch.Search(grid);
+        Schedule.TileTree.TreeSearch.Search(grid, CompileOptions.TargetOptions);
     }
 }
 

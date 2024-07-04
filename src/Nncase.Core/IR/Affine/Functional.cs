@@ -23,9 +23,9 @@ public static class Affine
 
     public static AffineDomain[] Domains(int count) => Enumerable.Range(0, count).Select(Domain).ToArray();
 
-    public static AffineSymbol Symbol(string name) => new AffineSymbol(name);
+    public static AffineSymbol Symbol(int position) => new AffineSymbol(position);
 
-    public static AffineSymbol[] Symbols(int count) => Enumerable.Range(0, count).Select(x => Symbol($"s{x}")).ToArray();
+    public static AffineSymbol[] Symbols(int count) => Enumerable.Range(0, count).Select(Symbol).ToArray();
 
     public static AffineDivBinary FloorDiv(this AffineExpr lhs, AffineConstant rhs) =>
         new AffineDivBinary(AffineDivBinaryOp.FloorDiv, lhs, rhs);

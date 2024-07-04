@@ -16,7 +16,7 @@ namespace Nncase.Tests.AffineTest;
 public class UnitTestFor
 {
     [Fact]
-    public void TestAffineReverse()
+    public void TestAffineRelationInverse()
     {
         // [m,l] @ [l,n] => [m,n],  [d0,d1,d2] -> [2d1 + 3, d2 - 1]
         var read = AffineRelation.FromCallable((dims, syms) => new AffineExpr[] { (2 * dims[1]) + 3, dims[2] - 1 }, 3, 0);
@@ -27,6 +27,18 @@ public class UnitTestFor
         // [l,k] @ [k,n] => [l,n],  [l,k,n] -> [l,n]
         var write = AffineRelation.FromCallable((dims, syms) => new AffineExpr[] { dims[0], dims[2] }, 3, 0);
         System.Console.WriteLine(write.Inverse());
+    }
+
+    [Fact]
+    public void TestAffineMapInverse()
+    {
+        // [d0,d1,d2] -> [d0, d2]
+        var write = AffineMap.FromCallable((dims, syms) => new AffineRange[] { new(dims[0].Offset, dims[0].Extent), new(dims[2].Offset, dims[2].Extent) }, 3, 0);
+
+        var d = new AffineDim(0);
+        var rg = AffineUtility.Inverse<AffineDim>(write.Results[0].Offset, d, out var independentVar);
+        Assert.Equal(rg, new AffineDim(0));
+        Assert.Equal(independentVar, new AffineDim(0));
     }
 
     [Fact]

@@ -8,18 +8,18 @@ using Nncase.IR;
 using Nncase.IR.Affine;
 using VisitorPatternGenerator;
 
-namespace Nncase.Schedule;
+namespace Nncase.Schedule.TileTree;
 
-public partial class TileTreeWalker : ITreeNodeVisitor<Unit, Unit>
+public partial class TreeWalker : ITreeNodeVisitor<Unit, Unit>
 {
-    public TileTreeWalker()
+    public TreeWalker()
     {
         Nodes = new();
     }
 
     public static List<ITreeNode> Walk(ITreeNode tree)
     {
-        var x = new TileTreeWalker();
+        var x = new TreeWalker();
         tree.Accept(x, default);
         return x.Nodes;
     }

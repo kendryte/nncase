@@ -8,11 +8,11 @@ using Nncase.IR;
 using Nncase.IR.Affine;
 using VisitorPatternGenerator;
 
-namespace Nncase.Schedule;
+namespace Nncase.Schedule.TileTree;
 
-public partial class TileTreeMerger : ITreeNodeVisitor<Unit, bool>
+public partial class TreeMerger : ITreeNodeVisitor<Unit, bool>
 {
-    public TileTreeMerger(int opConsumer, int opProducer, int level)
+    public TreeMerger(int opConsumer, int opProducer, int level)
     {
         OpConsumer = opConsumer;
         OpProducer = opProducer;
@@ -127,30 +127,6 @@ public partial class TileTreeMerger : ITreeNodeVisitor<Unit, bool>
         return false;
     }
 
-    private AffineRelation CheckFullMapping(AffineRelation relation, OpNode writeOp)
-    {
-        var domainVarMap = new Dictionary<int, int>();
-        for (int i = 0; i < relation.Domains.Length; i++)
-        {
-            for (int j = 0; j < relation.Results.Length; j++)
-            {
-                if (relation.Domains[i] == relation.Results[j])
-                {
-                    if (!domainVarMap.TryGetValue(i, out _))
-                    {
-                        domainVarMap.Add(i, j);
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException("the same input dim can't equal to muli output dim");
-                    }
-                }
-            }
-        }
-
-        return relation;
-    }
-
     private bool PerformMerge(ScopeNode parent, TileNode consumer, TileNode producer)
     {
         if (!FindFristOpNode(consumer, out var firstConsumerOp))
@@ -166,21 +142,33 @@ public partial class TileTreeMerger : ITreeNodeVisitor<Unit, bool>
         // 1. compute the domain realtion : first_consumer_op domain -> producer domain
         var writeOp = firstConsumerOp.Dependences[0].Node;
         var readAccess = firstConsumerOp.Reads[firstConsumerOp.Dependences[0].Index];
-        var relation = readAccess * writeOp.Write.Inverse();
+        var relation = readAccess * AffineUtility.Inverse(writeOp.Write, writeOp.DomainBounds.Select(Convert.ToInt64).ToArray());
 
         // 2. check the domain rel
-        var domainRel = new DomainRelation(firstConsumerOp.OpId, writeOp.OpId, CheckFullMapping(relation, writeOp));
+        if (!relation.IsProjectedPermutation(true))
+        {
+            return false;
+        }
+
+        var domainRel = new DomainRelation(firstConsumerOp.OpId, writeOp.OpId, relation);
 
         // 3. compose with merged consumer op's domain realtion.
         if (domainRel.DomainOp != consumer.DomainRelation.RangeOp)
         {
-            foreach (var consumerChild in TileTreeWalker.Walk(consumer.Child).OfType<ITileAbleNode>())
+            bool applyed = false;
+            foreach (var consumerChild in TreeWalker.Walk(consumer.Child).OfType<ITileAbleNode>())
             {
-                if (consumerChild.DomainRelation.RangeOp == domainRel.RangeOp)
+                if (consumerChild.DomainRelation.RangeOp == domainRel.DomainOp)
                 {
                     domainRel = consumerChild.DomainRelation.ApplyRange(domainRel);
+                    applyed = true;
                     break;
                 }
+            }
+
+            if (!applyed)
+            {
+                throw new InvalidOperationException("please find why can not compose domain relation!");
             }
         }
 

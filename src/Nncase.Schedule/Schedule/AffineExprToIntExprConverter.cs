@@ -11,9 +11,9 @@ namespace Nncase.Schedule;
 internal sealed class AffineExprToIntExprConverter : ExprVisitor<IntExpr, Unit>
 {
     private readonly Solver _solver;
-    private readonly Dictionary<int, IntVar> _extents = new();
+    private readonly Dictionary<int, IntExpr> _extents = new();
 
-    public AffineExprToIntExprConverter(Solver solver, params IntVar[] extents)
+    public AffineExprToIntExprConverter(Solver solver, params IntExpr[] extents)
     {
         _solver = solver;
         if (extents.Any())

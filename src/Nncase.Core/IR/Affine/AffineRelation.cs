@@ -37,7 +37,7 @@ public sealed class AffineRelation : Expr
             throw new ArgumentException("Cannot compose AffineMaps with mismatching dimensions and results.");
         }
 
-        var results = rhs.Results.AsValueEnumerable().Select(x => x.ReplaceDomains(lhs.Results.AsValueEnumerable().Select(r => new AffineRange(r, null!)).ToArray())).ToArray();
+        var results = rhs.Results.AsValueEnumerable().Select(x => x.ReplaceDomainsAndSymbols(lhs.Results.AsValueEnumerable().Select(r => new AffineRange(r, 0)).ToArray(), Array.Empty<AffineSymbol>())).ToArray();
         var symbols = lhs.Symbols.ToArray().Concat(rhs.Symbols.ToArray()).ToArray();
         return new AffineRelation(lhs.Domains, symbols, results);
     }
@@ -67,7 +67,7 @@ public sealed class AffineRelation : Expr
             }
             else if (type == typeof(AffineSymbol))
             {
-                var symbol = F.Affine.Symbol($"s{symbols.Count}");
+                var symbol = F.Affine.Symbol(symbols.Count);
                 symbols.Add(symbol);
                 arguments[i] = symbol;
             }
@@ -122,7 +122,7 @@ public sealed class AffineRelation : Expr
         {
             if (ranges[i] is null)
             {
-                var s = new AffineSymbol($"s{i}");
+                var s = new AffineSymbol(i);
                 syms.Add(s);
                 ranges[i] = s;
             }
@@ -131,7 +131,7 @@ public sealed class AffineRelation : Expr
         return new(domains, syms.ToArray(), ranges);
     }
 
-    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.Visit(this, context);
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.VisitAffineRelation(this, context);
 
     public override string ToString()
     {

@@ -10,11 +10,9 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR.Affine;
 
-public sealed record class TiledFor(For For, AffineSymbol[] TileSizes);
-
 public static class AffineUtility
 {
-    public static AffineExpr Inverse<T>(AffineExpr original, AffineExpr input, out T? independentVar)
+    public static AffineExpr Inverse<T>(AffineExpr original, T input, out T? independentVar)
             where T : AffineExpr
     {
         var collector = new AffineInverseCollector();
@@ -23,6 +21,37 @@ public static class AffineUtility
         var output = inverser.Visit(original, input);
         independentVar = inverser.IndependentVariable;
         return output;
+    }
+
+    public static AffineMap Inverse(AffineMap map, params long[] bounds)
+    {
+        var domains = new AffineDomain[map.Results.Length];
+        var ranges = new AffineRange[map.Domains.Length];
+        var syms = new List<AffineSymbol>();
+        for (int i = 0; i < map.Results.Length; i++)
+        {
+            domains[i] = new(new AffineDim(i), new AffineExtent(i));
+            var offset = Inverse(map.Results[i].Offset, domains[i].Offset, out var independentDimVar);
+            var extent = Inverse(map.Results[i].Extent, domains[i].Extent, out var independentExtVar);
+            switch (independentDimVar, independentExtVar)
+            {
+                case (AffineDim dim, AffineExtent ext) when dim.Position == ext.Position:
+                    ranges[dim.Position] = new(offset, extent);
+                    break;
+                default:
+                    throw new System.Diagnostics.UnreachableException();
+            }
+        }
+
+        for (int i = 0; i < ranges.Length; i++)
+        {
+            if (ranges[i] is null)
+            {
+                ranges[i] = new(0, bounds[i]);
+            }
+        }
+
+        return new(domains, syms.ToArray(), ranges);
     }
 
 #if false
