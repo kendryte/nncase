@@ -485,7 +485,7 @@ public sealed class GeneralFusionMergeRule : IRewriteRule
             var merged_fusion = new Fusion($"mfusion_{_count++}_kernel", caller_fusion.ModuleKind, new_fusion_body, parameters);
 
             new_call = new Call(merged_fusion, calleeInputs.ToArray());
-            _mergedCache.Add(hashcode, new_call); 
+            _mergedCache.Add(hashcode, new_call);
 
             return new_call;
         }
