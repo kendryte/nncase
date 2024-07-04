@@ -60,7 +60,7 @@ public partial class CPU
         return new Call(new Pack(lanes, axes), input, output);
     }
 
-    public static Call Conv2D(Buffer input, Buffer weights, Buffer bias, Buffer output, int[] stride, int[] padding, int[] dilation, int groups, PadMode padMode) => new Call(new Conv2D(stride, padding, dilation, groups, padMode, null!), input, weights, bias, output);
+    public static Call Conv2D(Buffer input, Buffer weights, Buffer bias, Buffer output, int[] stride, int[] padding, int[] dilation, int groups, PadMode padMode, DistributedType distributedType) => new Call(new Conv2D(stride, padding, dilation, groups, padMode, distributedType), input, weights, bias, output);
 
     public static Expr Unpack(Expr input, Expr output, IRArray<int> axes)
     {
@@ -77,9 +77,9 @@ public partial class CPU
         return new Call(new PackedLayerNorm(axis, epsilon, usemean, packedAxes, padedNums, null!), input, scale, bias, output);
     }
 
-    public static Expr InstanceNorm(Expr input, Expr scale, Expr bias, Expr output, float epsilon, IRArray<int> packedAxes, IRArray<int> padedNums)
+    public static Expr InstanceNorm(Expr input, Expr scale, Expr bias, Expr output, float epsilon, IRArray<int> packedAxes, IRArray<int> padedNums, DistributedType distributedType)
     {
-        return new Call(new InstanceNorm(epsilon, packedAxes, padedNums, null!), input, scale, bias, output);
+        return new Call(new InstanceNorm(epsilon, packedAxes, padedNums, distributedType), input, scale, bias, output);
     }
 
     public static Expr PackedMatMul(Expr lhs, Expr rhs, Expr output, IRArray<int> lhsPackedAxes, IRArray<int> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<int> rhsPadedNums)
@@ -102,9 +102,9 @@ public partial class CPU
         return new Call(new PackedTranspose(perm, packedAxes), input, output);
     }
 
-    public static Expr Slice(Buffer input, Buffer ret, int[] begin, int[] stop, int[] axes, int[] stride)
+    public static Expr Slice(Buffer input, Buffer ret, int[] begin, int[] stop, int[] axes, int[] stride, DistributedType distributedType)
     {
-        return new Call(new Slice(begin, stop, axes, stride, null!), input, ret);
+        return new Call(new Slice(begin, stop, axes, stride, distributedType), input, ret);
     }
 
     public static Expr Concat(Buffer[] inputs, Buffer ret, int axis)

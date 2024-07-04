@@ -63,7 +63,7 @@ public static class PassUtility
             case IR.NN.Conv2D conv2d:
                 if (((TensorConst)arguments.Skip(IR.NN.Conv2D.FusedClamp.Index).First()).Value.ToArray<float>() is var clamp)
                 {
-                    return clamp == new[] { float.NegativeInfinity, float.PositiveInfinity };
+                    return clamp.SequenceEqual(new[] { float.NegativeInfinity, float.PositiveInfinity });
                 }
 
                 break;
