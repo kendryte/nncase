@@ -131,6 +131,13 @@ public sealed record Subgraph(int Index, List<Vertex> Nodes, List<Edge> InputEdg
 
 public sealed class CPUFunctionPartitionPass : ModulePass
 {
+    public CPUFunctionPartitionPass(string moduleKind = "cpu")
+    {
+        ModuleKind = moduleKind;
+    }
+
+    public string ModuleKind { get; set; }
+
     protected override Task<IRModule> RunCoreAsync(IRModule module, RunPassContext context)
     {
         var funcs = module.Functions.Count;
@@ -184,7 +191,7 @@ public sealed class CPUFunctionPartitionPass : ModulePass
                         var merger = new Passes.Rules.FusionMerger(ctx.VarMap[ctx.SummaryVertexSubgraphMap[vertex]]);
                         var clonedRoot = merger.Clone(vertex.Expr, default);
 
-                        var rootCall = new Call(new Fusion($"Function_{i}_fusion_{vi}_kernel", pre.ModuleKind, clonedRoot, newInputs), ctx.VarMap[ctx.SummaryVertexSubgraphMap[vertex]].Keys.Select(e => exprMemo[e]).ToArray());
+                        var rootCall = new Call(new Fusion($"Function_{i}_fusion_{vi}_kernel", ModuleKind, clonedRoot, newInputs), ctx.VarMap[ctx.SummaryVertexSubgraphMap[vertex]].Keys.Select(e => exprMemo[e]).ToArray());
                         if (ctx.OutputMap[subgraph.Index].Count > 1)
                         {
                             ctx.OutputMap[subgraph.Index].ToList().ForEach(e => exprMemo.Add(e.Key, new Call(new GetItem(), rootCall, e.Value)));
@@ -319,7 +326,7 @@ internal sealed class GraphContext
                 else if (subgraph.Value.InputEdges.Any(e => e.Target == vertex))
                 {
                     var input = subgraph.Value.InputEdges.Find(e => e.Target == vertex)!.Source.Expr;
-                    if (!VarMap[subgraph.Key].ContainsKey(input))
+                    if (input is not Const && !VarMap[subgraph.Key].ContainsKey(input))
                     {
                         VarMap[subgraph.Key].Add(input, new Var(input.CheckedType));
                     }
@@ -365,7 +372,7 @@ internal sealed class GraphContext
                 GraphSummary.AddEdge(newEdge);
                 if (edgeMap.ContainsKey(newEdge))
                 {
-                    System.Console.WriteLine("[ERROR] " + edge + " already mapped!");
+                    // System.Console.WriteLine("[ERROR] " + edge + " already mapped!");
                 }
                 else
                 {
