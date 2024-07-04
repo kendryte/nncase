@@ -157,7 +157,7 @@ class BenchmarkNTT_riscv64(BenchmarkNTT):
                                         'acos': '54',
                                         'acosh': '81',
                                         'asin': '53',
-                                        'asinh': '81',
+                                        'asinh': '86',
                                         'ceil': '18',
                                         'cos': '64',
                                         'cosh': '69',
