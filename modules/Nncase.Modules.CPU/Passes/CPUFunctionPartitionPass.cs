@@ -287,189 +287,92 @@ internal sealed class GraphContext
             }
         };
         dfsVisitEdge.Compute();
-
-        // Find 0 input subgraphs and merge with output subgraph
-#if false
-        foreach (var sm in SubgraphMap)
-        {
-            var subgraph = sm.Value;
-            if (subgraph.InputEdges.Count > 0)
-            {
-                continue;
-            }
-
-            var subgraphCompat = subgraph.Nodes.First().CompatType;
-            HashSet<int> outSubgraphs = new();
-            foreach (var edge in subgraph.OutputEdges)
-            {
-                var v = edge.Target;
-                if (v.CompatType == subgraphCompat)
-                {
-                    outSubgraphs.Add(OriginalVertexSubgraphMap[v]);
-                }
-            }
-
-            if (outSubgraphs.Count > 1 || outSubgraphs.Count == 0)
-            {
-                continue;
-            }
-
-            var targetSubgraph = SubgraphMap[outSubgraphs.First()];
-
-            MergeTwoSubgraphs(targetSubgraph, subgraph, SubgraphMap);
-        }
-#endif
     }
 
     public void SummarizeGraph()
     {
         MergeSubgraphMap();
 
-        bool modified = false;
-        do
+        GraphSummary = new();
+        Dictionary<int, Vertex> indexMap = new();
+        VarMap = SubgraphMap.ToDictionary(x => x.Key, _ => new Dictionary<Expr, Var>(ReferenceEqualityComparer.Instance));
+        OutputMap = SubgraphMap.ToDictionary(x => x.Key, _ => new Dictionary<Expr, int>(ReferenceEqualityComparer.Instance));
+        foreach (var subgraph in SubgraphMap)
         {
-            GraphSummary = new();
-            Dictionary<int, Vertex> indexMap = new();
-            VarMap = SubgraphMap.ToDictionary(x => x.Key, _ => new Dictionary<Expr, Var>(ReferenceEqualityComparer.Instance));
-            OutputMap = SubgraphMap.ToDictionary(x => x.Key, _ => new Dictionary<Expr, int>(ReferenceEqualityComparer.Instance));
-            foreach (var subgraph in SubgraphMap)
-            {
-                var sg = new Graph();
-                subgraph.Value.Nodes.ForEach(n => sg.AddVertex(n));
-                subgraph.Value.InteriorEdges.ForEach(e => sg.AddEdge(e));
+            var sg = new Graph();
+            subgraph.Value.Nodes.ForEach(n => sg.AddVertex(n));
+            subgraph.Value.InteriorEdges.ForEach(e => sg.AddEdge(e));
 
-                // sg.DumpDot(DumpScope.Current.Directory + $"subgraph_{subgraph.Key}.dot");
-                var dfsVisitor = new QuikGraph.Algorithms.TopologicalSort.SourceFirstTopologicalSortAlgorithm<Vertex, Edge>(sg);
-                dfsVisitor.Compute();
-                for (var vi = 0; vi < dfsVisitor.SortedVertices.Length; vi++)
+            // sg.DumpDot(DumpScope.Current.Directory + $"subgraph_{subgraph.Key}.dot");
+            var dfsVisitor = new QuikGraph.Algorithms.TopologicalSort.SourceFirstTopologicalSortAlgorithm<Vertex, Edge>(sg);
+            dfsVisitor.Compute();
+            for (var vi = 0; vi < dfsVisitor.SortedVertices.Length; vi++)
+            {
+                var vertex = dfsVisitor.SortedVertices[vi];
+                if (vertex.Expr is Var v)
                 {
-                    var vertex = dfsVisitor.SortedVertices[vi];
-                    if (vertex.Expr is Var v)
+                    if (!VarMap[subgraph.Key].ContainsKey(v))
                     {
-                        if (!VarMap[subgraph.Key].ContainsKey(v))
-                        {
-                            VarMap[subgraph.Key].Add(v, new Var(v.CheckedType));
-                        }
-                    }
-                    else if (subgraph.Value.InputEdges.Any(e => e.Target == vertex))
-                    {
-                        var input = subgraph.Value.InputEdges.Find(e => e.Target == vertex)!.Source.Expr;
-                        if (!VarMap[subgraph.Key].ContainsKey(input))
-                        {
-                            VarMap[subgraph.Key].Add(input, new Var(input.CheckedType));
-                        }
+                        VarMap[subgraph.Key].Add(v, new Var(v.CheckedType));
                     }
                 }
-
-                var u = new Vertex(null!, Compat.UNKNOWN);
-                var outVertices = sg.Vertices.Count() == 1 ? sg.Vertices : sg.Edges.Where(e => !sg.OutEdges(e.Target).Any()).Select(e => e.Target).Distinct().ToList();
-                u.CompatType = outVertices.First().CompatType;
-
-                if (outVertices.Count() == 1)
+                else if (subgraph.Value.InputEdges.Any(e => e.Target == vertex))
                 {
-                    u.Expr = outVertices.First().Expr;
-                    if (u.CompatType == Compat.COMPATIBLE)
+                    var input = subgraph.Value.InputEdges.Find(e => e.Target == vertex)!.Source.Expr;
+                    if (!VarMap[subgraph.Key].ContainsKey(input))
                     {
-                        OutputMap[subgraph.Key].Add(u.Expr, -1);
+                        VarMap[subgraph.Key].Add(input, new Var(input.CheckedType));
                     }
+                }
+            }
+
+            var u = new Vertex(null!, Compat.UNKNOWN);
+            var outVertices = sg.Vertices.Count() == 1 ? sg.Vertices : sg.Edges.Where(e => !sg.OutEdges(e.Target).Any()).Select(e => e.Target).Distinct().ToList();
+            u.CompatType = outVertices.First().CompatType;
+
+            if (outVertices.Count() == 1)
+            {
+                u.Expr = outVertices.First().Expr;
+                if (u.CompatType == Compat.COMPATIBLE)
+                {
+                    OutputMap[subgraph.Key].Add(u.Expr, -1);
+                }
+            }
+            else
+            {
+                u.Expr = new IR.Tuple(outVertices.Select(x => x.Expr).ToArray());
+                if (u.CompatType == Compat.COMPATIBLE)
+                {
+                    Enumerable.Range(0, outVertices.Count()).ToList().ForEach(i => OutputMap[subgraph.Key].Add(outVertices.ToList()[i].Expr, i));
+                }
+            }
+
+            SummaryVertexSubgraphMap.Add(u, subgraph.Key);
+
+            indexMap.Add(subgraph.Key, u);
+            GraphSummary.AddVertex(u);
+        }
+
+        Dictionary<Edge, Edge> edgeMap = new();
+        foreach (var subgraph in SubgraphMap)
+        {
+            foreach (var edge in subgraph.Value.OutputEdges)
+            {
+                var u = indexMap[OriginalVertexSubgraphMap[edge.Source]];
+                var v = indexMap[OriginalVertexSubgraphMap[edge.Target]];
+
+                var newEdge = new Edge(edge.EdgeType, u, v);
+                GraphSummary.AddEdge(newEdge);
+                if (edgeMap.ContainsKey(newEdge))
+                {
+                    System.Console.WriteLine("[ERROR] " + edge + " already mapped!");
                 }
                 else
                 {
-                    u.Expr = new IR.Tuple(outVertices.Select(x => x.Expr).ToArray());
-                    if (u.CompatType == Compat.COMPATIBLE)
-                    {
-                        Enumerable.Range(0, outVertices.Count()).ToList().ForEach(i => OutputMap[subgraph.Key].Add(outVertices.ToList()[i].Expr, i));
-                    }
-                }
-
-                SummaryVertexSubgraphMap.Add(u, subgraph.Key);
-
-                indexMap.Add(subgraph.Key, u);
-                GraphSummary.AddVertex(u);
-            }
-
-            Dictionary<Edge, Edge> edgeMap = new();
-            foreach (var subgraph in SubgraphMap)
-            {
-                foreach (var edge in subgraph.Value.OutputEdges)
-                {
-                    var u = indexMap[OriginalVertexSubgraphMap[edge.Source]];
-                    var v = indexMap[OriginalVertexSubgraphMap[edge.Target]];
-
-                    var newEdge = new Edge(edge.EdgeType, u, v);
-                    GraphSummary.AddEdge(newEdge);
-                    if (edgeMap.ContainsKey(newEdge))
-                    {
-                        System.Console.WriteLine("[ERROR] " + edge + " already mapped!");
-                    }
-                    else
-                    {
-                        edgeMap.Add(newEdge, edge);
-                    }
+                    edgeMap.Add(newEdge, edge);
                 }
             }
-
-            List<Edge> cycles = new();
-            var dfs = new QuikGraph.Algorithms.Search.EdgeDepthFirstSearchAlgorithm<Vertex, Edge>(GraphSummary);
-            dfs.BackEdge += (edge) =>
-            {
-                var u = edge.Source;
-                var v = edge.Target;
-                cycles.Add(edge);
-            };
-            dfs.Compute();
-
-            if (cycles.Count > 0)
-            {
-                var sumEdge = cycles.First();
-                var edge = edgeMap[sumEdge];
-                var u = edge.Source;
-                var v = edge.Target;
-
-                var oldSubgraph = SubgraphMap[OriginalVertexSubgraphMap[v]];
-                if (oldSubgraph.Nodes.Count == 1)
-                {
-                    (u, v) = (v, u);
-                    oldSubgraph = SubgraphMap[OriginalVertexSubgraphMap[v]];
-                }
-
-                var nextSubgraphIdx = SubgraphMap.Last().Key + 1;
-                OriginalVertexSubgraphMap[v] = nextSubgraphIdx;
-                oldSubgraph.Nodes.Remove(v);
-
-                SubgraphMap[nextSubgraphIdx] = new Subgraph(nextSubgraphIdx, new List<Vertex>() { v }, new List<Edge>(), new List<Edge>(), new List<Edge>());
-
-                foreach (var sm in SubgraphMap)
-                {
-                    sm.Value.InteriorEdges.Clear();
-                    sm.Value.OutputEdges.Clear();
-                    sm.Value.InputEdges.Clear();
-                }
-
-                var dfsAssignEdge = new QuikGraph.Algorithms.Search.EdgeDepthFirstSearchAlgorithm<Vertex, Edge>(Graph);
-                dfsAssignEdge.TreeEdge += (edge) =>
-                {
-                    var u = edge.Source;
-                    var v = edge.Target;
-
-                    var u_sub_idx = OriginalVertexSubgraphMap[u];
-                    var v_sub_idx = OriginalVertexSubgraphMap[v];
-
-                    if (u_sub_idx == v_sub_idx)
-                    {
-                        SubgraphMap[u_sub_idx].InteriorEdges.Add(edge);
-                    }
-                    else
-                    {
-                        SubgraphMap[u_sub_idx].OutputEdges.Add(edge);
-                        SubgraphMap[v_sub_idx].InputEdges.Add(edge);
-                    }
-                };
-                dfsAssignEdge.Compute();
-
-                modified = true;
-            }
-        } while (modified);
+        }
     }
 
     private void MergeTwoSubgraphs(Subgraph target, Subgraph source, SortedDictionary<int, Subgraph> subgraphMap, Dictionary<Vertex, int> vertexSubgraphMap)
