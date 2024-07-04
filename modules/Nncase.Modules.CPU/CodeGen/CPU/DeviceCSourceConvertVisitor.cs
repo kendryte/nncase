@@ -280,12 +280,17 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 }).Result);
                 break;
             case TIR.CPU.Swish swish:
-                if (swish.Beta != 1.0f)
+                if (swish.Beta == 1.0f)
                 {
-                    throw new NotSupportedException();
+                    IndentScope.Writer.IndWrite($"unary<ops::swish>({arguments[0].Name}, {arguments[1].Name});\n");
+                }
+                else
+                {
+                    IndentScope.Writer.IndWrite($"ntt::tensor<float, ntt::fixed_shape<1>> tb;\n");
+                    IndentScope.Writer.IndWrite($"std::iota(tb.elements().begin(), tb.elements().end(), {swish.Beta});\n");
+                    IndentScope.Writer.IndWrite($"binary<ops::swishb>({arguments[0].Name}, tb, {arguments[1].Name});\n");
                 }
 
-                IndentScope.Writer.IndWrite($"unary<ops::swish>({arguments[0].Name}, {arguments[1].Name});\n");
                 break;
             case TIR.CPU.Matmul matmul:
                 IndentScope.Writer.IndWrite($"if ({arguments[3].Name}) {{\n");
