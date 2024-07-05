@@ -29,7 +29,7 @@ int main() {
         }
         auto t2 = NttTest::get_cpu_cycle();
 
-        assert(std::abs(tc(M - 1, N - 1) - 551162314880.00) / 551162314880.00 <
+        assert(std::abs(tc(M - 1, N - 1) - 551162314880.00) / 551162314880.f <
                1e-6f);
         std::string module = "benchmark_ntt_matmul";
         std::string mode = "no_pack";
@@ -69,7 +69,8 @@ int main() {
         }
         auto t2 = NttTest::get_cpu_cycle();
 
-        assert(std::abs(tc(M - 1, N - 1) - 551162314880.f) < 1e-6f);
+        assert(std::abs(tc(M - 1, N - 1) - 551162314880.f) / 551162314880.f <
+               1e-6f);
         std::string module = "benchmark_ntt_matmul";
         std::string mode = "pack_K";
         std::cout << module << "_" << mode << " took " << std::setprecision(0)
@@ -105,7 +106,8 @@ int main() {
         }
         auto t2 = NttTest::get_cpu_cycle();
 
-        assert(std::abs(pc(31, 255)(7) - 551162314880.f) < 1e-6f);
+        assert(std::abs(pc(31, 255)(7) - 551162314880.f) / 551162314880.f <
+               1e-6f);
         std::string module = "benchmark_ntt_matmul";
         std::string mode = "pack_M";
         std::cout << module << "_" << mode << " took " << std::setprecision(0)
@@ -141,7 +143,8 @@ int main() {
         }
         auto t2 = NttTest::get_cpu_cycle();
 
-        assert(std::abs(pc(255, 31)(7) - 551162314880.f) < 1e-6f);
+        assert(std::abs(pc(255, 31)(7) - 551162314880.f) / 551162314880.f <
+               1e-6f);
         std::string module = "benchmark_ntt_matmul";
         std::string mode = "pack_N";
         std::cout << module << "_" << mode << " took " << std::setprecision(0)
@@ -181,7 +184,8 @@ int main() {
         }
         auto t2 = NttTest::get_cpu_cycle();
 
-        assert(std::abs(pc(31, 31)(7, 7) - 551162314880.f) < 1e-6f);
+        assert(std::abs(pc(31, 31)(7, 7) - 551162314880.f) / 551162314880.f <
+               1e-6f);
         std::string module = "benchmark_ntt_matmul";
         std::string mode = "pack_M_N";
         std::cout << module << "_" << mode << " took " << std::setprecision(0)
@@ -221,7 +225,8 @@ int main() {
         }
         auto t2 = NttTest::get_cpu_cycle();
 
-        assert(std::abs(pc(31, 255)(7) - 551162314880.f) < 1e-6f);
+        assert(std::abs(pc(31, 255)(7) - 551162314880.f) / 551162314880.f <
+               1e-6f);
         std::string module = "benchmark_ntt_matmul";
         std::string mode = "pack_M_K";
         std::cout << module << "_" << mode << " took " << std::setprecision(0)
@@ -262,7 +267,8 @@ int main() {
         }
         auto t2 = NttTest::get_cpu_cycle();
 
-        assert(std::abs(pc(255, 31)(7) - 551162314880.f) < 1e-6f);
+        assert(std::abs(pc(255, 31)(7) - 551162314880.f) / 551162314880.f <
+               1e-6f);
         std::string module = "benchmark_ntt_matmul";
         std::string mode = "pack_K_N";
         std::cout << module << "_" << mode << " took " << std::setprecision(0)
@@ -303,7 +309,8 @@ int main() {
         }
         auto t2 = NttTest::get_cpu_cycle();
 
-        assert(std::abs(pc(31, 31)(7, 7) - 551162314880.f) < 1e-6f);
+        assert(std::abs(pc(31, 31)(7, 7) - 551162314880.f) / 551162314880.f <
+               1e-6f);
         std::string module = "benchmark_ntt_matmul";
         std::string mode = "pack_M_K_N";
         std::cout << module << "_" << mode << " took " << std::setprecision(0)
