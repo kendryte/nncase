@@ -472,6 +472,18 @@ internal sealed class GraphConvertor : ExprVisitor<Unit, Unit, GraphContext>
         return Unit.Default;
     }
 
+    protected override Unit VisitLeafNone(None expr, GraphContext context)
+    {
+        Vertex target;
+        target = new Vertex(expr, Compat.INCOMPATIBLE);
+
+        context.Graph.AddVertex(target);
+        context.SubgraphMap.Add(NodeCount, new Subgraph(NodeCount, new() { target }, new List<Edge>(), new List<Edge>(), new List<Edge>()));
+        NodeCount++;
+
+        return Unit.Default;
+    }
+
     protected override Unit VisitLeafCall(Call expr, GraphContext context)
     {
         Vertex target;
