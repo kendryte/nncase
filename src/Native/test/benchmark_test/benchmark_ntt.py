@@ -131,6 +131,15 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                         'swish': '21.33',
                                         'tanh': '13.23',
                                         },
+                              'matmul': {'no_pack': 'N/A',
+                                         'pack_K': 'N/A',
+                                         'pack_M': 'N/A',
+                                         'pack_N': 'N/A',
+                                         'pack_M_N': 'N/A',
+                                         'pack_M_K': 'N/A',
+                                         'pack_K_N': 'N/A',
+                                         'pack_M_K_N': 'N/A',
+                                         },
                               }
 
     def run(self):
@@ -175,6 +184,15 @@ class BenchmarkNTT_riscv64(BenchmarkNTT):
                                         'swish': '70',
                                         'tanh': 'N/A',
                                         },
+                              'matmul': {'no_pack': 'N/A',
+                                         'pack_K': 'N/A',
+                                         'pack_M': 'N/A',
+                                         'pack_N': 'N/A',
+                                         'pack_M_N': 'N/A',
+                                         'pack_M_K': 'N/A',
+                                         'pack_K_N': 'N/A',
+                                         'pack_M_K_N': 'N/A',
+                                         },
                               }
 
     def send_msg(self, sock, msg):
