@@ -33,7 +33,7 @@ int main() {
                1e-6f);
         std::string module = "benchmark_ntt_matmul";
         std::string mode = "no_pack";
-        std::cout << module << "_" << mode << " took " << std::setprecision(1)
+        std::cout << module << "_" << mode << " took " << std::setprecision(0)
                   << std::fixed << static_cast<float>(t2 - t1) / case_num
                   << " cycles" << std::endl;
     }
@@ -72,7 +72,7 @@ int main() {
         assert(std::abs(tc(M - 1, N - 1) - 551162314880.f) < 1e-6f);
         std::string module = "benchmark_ntt_matmul";
         std::string mode = "pack_K";
-        std::cout << module << "_" << mode << " took " << std::setprecision(1)
+        std::cout << module << "_" << mode << " took " << std::setprecision(0)
                   << std::fixed << static_cast<float>(t2 - t1) / case_num
                   << " cycles" << std::endl;
     }
@@ -108,7 +108,7 @@ int main() {
         assert(std::abs(pc(31, 255)(7) - 551162314880.f) < 1e-6f);
         std::string module = "benchmark_ntt_matmul";
         std::string mode = "pack_M";
-        std::cout << module << "_" << mode << " took " << std::setprecision(1)
+        std::cout << module << "_" << mode << " took " << std::setprecision(0)
                   << std::fixed << static_cast<float>(t2 - t1) / case_num
                   << " cycles" << std::endl;
     }
@@ -144,7 +144,7 @@ int main() {
         assert(std::abs(pc(255, 31)(7) - 551162314880.f) < 1e-6f);
         std::string module = "benchmark_ntt_matmul";
         std::string mode = "pack_N";
-        std::cout << module << "_" << mode << " took " << std::setprecision(1)
+        std::cout << module << "_" << mode << " took " << std::setprecision(0)
                   << std::fixed << static_cast<float>(t2 - t1) / case_num
                   << " cycles" << std::endl;
     }
@@ -184,7 +184,7 @@ int main() {
         assert(std::abs(pc(31, 31)(7, 7) - 551162314880.f) < 1e-6f);
         std::string module = "benchmark_ntt_matmul";
         std::string mode = "pack_M_N";
-        std::cout << module << "_" << mode << " took " << std::setprecision(1)
+        std::cout << module << "_" << mode << " took " << std::setprecision(0)
                   << std::fixed << static_cast<float>(t2 - t1) / case_num
                   << " cycles" << std::endl;
     }
@@ -224,7 +224,7 @@ int main() {
         assert(std::abs(pc(31, 255)(7) - 551162314880.f) < 1e-6f);
         std::string module = "benchmark_ntt_matmul";
         std::string mode = "pack_M_K";
-        std::cout << module << "_" << mode << " took " << std::setprecision(1)
+        std::cout << module << "_" << mode << " took " << std::setprecision(0)
                   << std::fixed << static_cast<float>(t2 - t1) / case_num
                   << " cycles" << std::endl;
     }
@@ -265,7 +265,7 @@ int main() {
         assert(std::abs(pc(255, 31)(7) - 551162314880.f) < 1e-6f);
         std::string module = "benchmark_ntt_matmul";
         std::string mode = "pack_K_N";
-        std::cout << module << "_" << mode << " took " << std::setprecision(1)
+        std::cout << module << "_" << mode << " took " << std::setprecision(0)
                   << std::fixed << static_cast<float>(t2 - t1) / case_num
                   << " cycles" << std::endl;
     }
@@ -306,7 +306,7 @@ int main() {
         assert(std::abs(pc(31, 31)(7, 7) - 551162314880.f) < 1e-6f);
         std::string module = "benchmark_ntt_matmul";
         std::string mode = "pack_M_K_N";
-        std::cout << module << "_" << mode << " took " << std::setprecision(1)
+        std::cout << module << "_" << mode << " took " << std::setprecision(0)
                   << std::fixed << static_cast<float>(t2 - t1) / case_num
                   << " cycles" << std::endl;
     }
