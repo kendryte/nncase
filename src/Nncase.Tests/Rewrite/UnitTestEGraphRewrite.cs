@@ -19,6 +19,13 @@ namespace Nncase.Tests.ReWriteTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestEGraphRewrite : TestClassBase
 {
+    public UnitTestEGraphRewrite()
+    {
+#if DEBUG
+        CompileOptions.DumpFlags = Diagnostics.DumpFlags.EGraphCost | Diagnostics.DumpFlags.Rewrite;
+#endif
+    }
+
     [Fact]
     public void RewriteNoSenceAdd()
     {
@@ -47,10 +54,39 @@ public class UnitTestEGraphRewrite : TestClassBase
     public void TestReassociate()
     {
         Expr pre = (Const)10 * 11 * 12;
-        var rule = new Passes.Rules.Neutral.ReassociateMul();
+        var rule = new Passes.Rules.Arithmetic.AssociateMul();
         CompilerServices.ERewrite(pre, new[] { rule }, new(), CompileOptions);
 
         // Assert.Equal(newExpr, 10 * ((Const)11 * 12));
+    }
+
+    [Fact]
+    public void TestReassociate2()
+    {
+        var a = new Var(TensorType.Scalar(DataTypes.Int32));
+        var b = new Var(TensorType.Scalar(DataTypes.Int32));
+        Expr pre = a + b - a;
+        var post = CompilerServices.ERewrite(pre, new IRewriteRule[] { new Passes.Rules.Arithmetic.CommutateAdd(), new Passes.Rules.Arithmetic.AssociateAdd(), new Passes.Rules.Arithmetic.XNegX(), new Passes.Rules.Arithmetic.XNegX0() }, new(), CompileOptions);
+        Assert.Equal(post, b + 0);
+    }
+
+    [Fact]
+    public void TestReassociate3()
+    {
+        var a = new Var(TensorType.Scalar(DataTypes.Int32));
+        Expr pre = a - (a - 0);
+        var post = CompilerServices.ERewrite(pre, new IRewriteRule[] { new Passes.Rules.Arithmetic.CommutateAdd(), new Passes.Rules.Arithmetic.AssociateAdd(), new Passes.Rules.Arithmetic.XNegX(), new Passes.Rules.Arithmetic.XNegX0() }, new(), CompileOptions);
+        Assert.Equal(post, 0);
+    }
+
+    [Fact]
+    public void TestReassociate4()
+    {
+        var a = new Var(TensorType.Scalar(DataTypes.Int32));
+        var b = new Var(TensorType.Scalar(DataTypes.Int32));
+        Expr pre = b + a - (0 + a);
+        var post = CompilerServices.ERewrite(pre, new IRewriteRule[] { new Passes.Rules.Arithmetic.CommutateAdd(), new Passes.Rules.Arithmetic.AssociateAdd(), new Passes.Rules.Arithmetic.XNegX(), new Passes.Rules.Arithmetic.XNegX0() }, new(), CompileOptions);
+        Assert.Equal(post, b + 0);
     }
 
     [Fact]

@@ -4,45 +4,34 @@
 using System.Collections;
 using Google.OrTools.ConstraintSolver;
 using Nncase.IR;
+using Nncase.IR.Affine;
 using VisitorPatternGenerator;
 
 namespace Nncase.Schedule.TileTree;
 
-public sealed record BufferIdenitity(OpNode Op, int Index)
+public sealed record BufferIdenitity(OpNode Node, int Index)
 {
-    public override string ToString() => $"Op{Op.OpId}_{Index}";
-}
-
-public sealed record TileNodeBufferAssignment(bool[][] Place, long[] Write, long[] Size)
-{
-}
-
-public sealed record TileNodeAssignment(Dictionary<BufferIdenitity, BufferIdenitity> DefUseMap, Dictionary<BufferIdenitity, TileNodeBufferAssignment> BufferInfoMap)
-{
-}
-
-public sealed record DomainDimAssignment(long[] TileVars)
-{
+    public override string ToString() => $"Op{Node.OpId}_{Index}";
 }
 
 /// <summary>
-/// Place : [create_loop,store_level], Shapes: [create_loop][shape] write: [create_loop], size: [create loop].
+/// Map: current offset/extent  Place : [create_loop,store_level], Shapes: [create_loop][shape] write: [create_loop], size: [create loop].
 /// </summary>
-public sealed record TileNodeBufferInfo(IntVar[][] Places, IntExpr[][] Shapes, IntExpr[] Writes, IntExpr[] Sizes, LoopMask[] Masks)
+public sealed record TileNodeBufferInfo(AffineMap Map, IntVar[][] Places, IntExpr[][] Shapes, IntExpr[] Writes, IntExpr[] SizeVars, IntExpr[] SizeExprs, LoopMask[] Masks)
 {
 }
 
-public sealed record TileNodeInfo(IntExpr[][] DomainExtents, Dictionary<BufferIdenitity, BufferIdenitity> DefUseMap, Dictionary<BufferIdenitity, TileNodeBufferInfo> BufferInfoMap)
+public sealed record TileNodeInfo(IntExpr[][] BackWardExtents, Dictionary<BufferIdenitity, BufferIdenitity> DefUseMap, Dictionary<BufferIdenitity, TileNodeBufferInfo> BufferInfoMap)
 {
 }
 
 /// <summary>
-/// loop masks.count == buffer.dimension.
+/// loop masks.count == buffer.dimension. the dims map is current dims map to partent dims.
 /// </summary>
 public sealed record DomainInfo(IntVar[] TileVars, IntExpr[] ForwardExtents, Dictionary<int, int> DimsMap)
 {
 }
 
-public sealed record OpNodeInfo(IntExpr[][] Shapes, IntExpr[] Size)
+public sealed record OpNodeInfo(AffineMap[] Maps, IntExpr[][] Shapes, IntExpr[] Size)
 {
 }

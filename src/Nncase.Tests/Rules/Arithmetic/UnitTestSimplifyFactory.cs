@@ -5,13 +5,13 @@ using System.Collections.Generic;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.Passes;
-using Nncase.Passes.Rules.Neutral;
+using Nncase.Passes.Rules.Arithmetic;
 using Nncase.PatternMatch;
 using Xunit;
 using static Nncase.Passes.RulesFactory;
 using static Nncase.PatternMatch.Utility;
 
-namespace Nncase.Tests.Rules.NeutralTest;
+namespace Nncase.Tests.Rules.ArithmeticTest;
 
 public class UnitTestSimplifyFactory
 {

@@ -363,12 +363,12 @@ public class ClassicDemo : IRewriteCase
 
     public IEnumerable<System.Type> Rules => new System.Type[]
     {
-        typeof(Passes.Rules.Neutral.Xmul1),
-        typeof(Passes.Rules.Neutral.ReassociateDiv),
-        typeof(Passes.Rules.Neutral.ReassociateMul),
+        typeof(Passes.Rules.Arithmetic.XMul1),
+        typeof(Passes.Rules.Arithmetic.ReassociateDiv),
+        typeof(Passes.Rules.Arithmetic.AssociateMul),
 
-        // new Passes.Rules.Neutral.Reassociate(),
-        typeof(Passes.Rules.Neutral.XDivX),
+        // new Passes.Rules.Arithmetic.Reassociate(),
+        typeof(Passes.Rules.Arithmetic.XDivX),
     };
 
     public Dictionary<Var, IValue> FeedDict => new();

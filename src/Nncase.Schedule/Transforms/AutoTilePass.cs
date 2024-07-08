@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Affine;
 using Nncase.Schedule;
@@ -23,31 +24,96 @@ public sealed class AutoTilePass : ModulePass
 
     protected override Task<IRModule> RunCoreAsync(IRModule input, RunPassContext context)
     {
-        var funcs = input.Functions.Count;
-        for (int i = 0; i < funcs; i++)
+        var funcNums = input.Functions.Count;
+        for (int i = 0; i < funcNums; i++)
         {
-            var rewriter = new AutoTileRewriter(input, CompileOptions.TargetOptions);
-            input.Replace(i, (BaseFunction)rewriter.Rewrite(input.Functions[i]));
+            // top sorted
+            var collects = ExprCollector.Collect(input.Functions[i]).OfType<Grid>().ToArray();
+            var worklists = GatherWorkLists(collects);
+            var post = input.Functions[i];
+            for (int j = 0; j < worklists.Count; j++)
+            {
+                var rootGrid = worklists[j].First();
+                var rewriter = new AutoTileRewriter(rootGrid, CompileOptions);
+                post = (BaseFunction)rewriter.Rewrite(post);
+
+                // if (rewriter.IsMutated)
+                // {
+                //     input.Add(rewriter.Wrapper);
+                //     input.Add(rewriter.PrimFunc);
+                // }
+            }
+
+            input.Replace(i, post);
         }
 
         return Task.FromResult(input);
     }
 
+    private List<List<Grid>> GatherWorkLists(IReadOnlyList<Grid> collects)
+    {
+        List<List<Grid>> workLists = new();
+        for (int i = collects.Count - 1; i >= 0;)
+        {
+            // start find single input.
+            if (collects[i] is Grid sinkNode)
+            {
+                var current = sinkNode;
+                var workItems = new List<Grid>() { current };
+                int j = i - 1;
+                while (j >= 0)
+                {
+                    var currentReads = current.Reads.AsValueEnumerable().Where(read => read is Grid producer && producer.Users.Count == 2).ToArray();
+                    if (!(currentReads.Length == 1 && currentReads[0] == collects[j]))
+                    {
+                        break;
+                    }
+
+                    current = collects[j];
+                    workItems.Add(current);
+                    j--;
+                }
+
+                i = j;
+                workLists.Insert(0, workItems);
+            }
+            else
+            {
+                i--;
+            }
+        }
+
+        return workLists;
+    }
+
     private sealed class AutoTileRewriter : ExprRewriter
     {
-        private readonly IRModule _module;
-        private readonly ITargetOptions _targetOptions;
-
-        public AutoTileRewriter(IRModule module, ITargetOptions targetOptions)
+        public AutoTileRewriter(Grid rootGrid, CompileOptions compileOptions)
         {
-            _module = module;
-            _targetOptions = targetOptions;
+            Root = rootGrid;
+            CompileOptions = compileOptions;
+            Wrapper = null!;
+            PrimFunc = null!;
         }
+
+        public Grid Root { get; }
+
+        public CompileOptions CompileOptions { get; }
+
+        public PrimFunctionWrapper Wrapper { get; set; }
+
+        public TIR.PrimFunction PrimFunc { get; set; }
 
         protected override Expr RewriteLeafGrid(Grid grid)
         {
-            var scheduler = new AffineTiler(grid, _targetOptions);
-            return scheduler.Tile(_module);
+            if (grid == Root)
+            {
+                Expr call;
+                (call, Wrapper, PrimFunc) = TreeTiler.Tile(grid, CompileOptions);
+                return call;
+            }
+
+            return grid;
         }
     }
 }

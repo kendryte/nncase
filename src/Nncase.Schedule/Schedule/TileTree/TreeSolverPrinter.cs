@@ -9,34 +9,43 @@ namespace Nncase.Schedule.TileTree;
 
 public sealed class TreeSolverPrinter : TreeSolverBase, ITreeNodeVisitor<Unit, Unit>
 {
-    public TreeSolverPrinter(StreamWriter writer, Solver solver, IntExpr one, IntExpr zero, IntExpr elem, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainInfos, ITargetOptions targetOptions)
+    public TreeSolverPrinter(StreamWriter writer, Assignment? solution, Solver solver, IntExpr one, IntExpr zero, IntExpr elem, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainInfos, ITargetOptions targetOptions)
         : base(solver, one, zero, elem, primitiveBufferInfo, levelBufferInfos, domainInfos, targetOptions)
     {
         Writer = new IndentedTextWriter(writer, "  ");
+        Solution = solution;
     }
 
     public IndentedTextWriter Writer { get; }
 
-    public static void WriteIntExprVector(IndentedTextWriter writer, string prefix, PropagationBaseObject[] intExprs)
+    public Assignment? Solution { get; }
+
+    public static void WriteIntExprVector(IndentedTextWriter writer, string prefix, PropagationBaseObject[] intExprs, Assignment? solution = null)
     {
         writer.WriteLine($"{prefix}: ");
         writer.Indent++;
         for (int i = 0; i < intExprs.Length; i++)
         {
-            writer.WriteLine($"{i}: {intExprs[i].ToSimplifyString()}");
+            string value = string.Empty;
+            if (solution is Assignment assignment && intExprs[i] is IntExpr expr)
+            {
+                value = assignment.Value(expr.Var()).ToString();
+            }
+
+            writer.WriteLine($"{i}: {intExprs[i].ToSimplifyString()} = {value}");
         }
 
         writer.Indent--;
     }
 
-    public static void WriteIntExprMatrix(IndentedTextWriter writer, string prefix, PropagationBaseObject[][] intMatrix)
+    public static void WriteIntExprMatrix(IndentedTextWriter writer, string prefix, PropagationBaseObject[][] intMatrix, Assignment? solution = null)
     {
         writer.WriteLine($"{prefix}:");
         writer.Indent++;
         for (int i = 0; i < intMatrix.Length; i++)
         {
             var vector = intMatrix[i];
-            writer.WriteLine($"{i}: [{string.Join(", ", vector.Select(i => i.ToSimplifyString()))}]");
+            WriteIntExprVector(writer, i.ToString(), vector, solution);
         }
 
         writer.Indent--;
@@ -59,9 +68,9 @@ public sealed class TreeSolverPrinter : TreeSolverBase, ITreeNodeVisitor<Unit, U
         Writer.Indent++;
         Writer.WriteLine($"Tile Op {value.OpId} at level {value.Level}");
         Writer.WriteLine($"Domain Relation {value.DomainRelation}");
-        WriteDomainInfo(TileableNodeMemo[value]);
+        WriteIntExprVector(Writer, "domainInfo", TileableNodeMemo[value].TileVars, Solution);
 
-        WriteIntExprMatrix(Writer, "DomainExtents", TileNodeMemo[value].DomainExtents);
+        WriteIntExprMatrix(Writer, "BackWardExtents", TileNodeMemo[value].BackWardExtents, Solution);
 
         Writer.WriteLine($"BufferInfo:");
         Writer.Indent++;
@@ -69,9 +78,10 @@ public sealed class TreeSolverPrinter : TreeSolverBase, ITreeNodeVisitor<Unit, U
         {
             Writer.WriteLine($"{bid}:");
             Writer.Indent++;
-            WriteIntExprMatrix(Writer, "Shapes", info.Shapes);
-            WriteIntExprVector(Writer, "Sizes", info.Sizes);
-            WriteIntExprVector(Writer, "Writes", info.Writes);
+            WriteIntExprMatrix(Writer, "Shapes", info.Shapes, Solution);
+            WriteIntExprVector(Writer, "SizeVars", info.SizeVars, Solution);
+            WriteIntExprVector(Writer, "SizeExprs", info.SizeExprs, Solution);
+            WriteIntExprVector(Writer, "Writes", info.Writes, Solution);
             Writer.Indent--;
         }
 
@@ -95,7 +105,7 @@ public sealed class TreeSolverPrinter : TreeSolverBase, ITreeNodeVisitor<Unit, U
 
         Writer.WriteLine($"Compute Op {value.OpId} at level {value.Level}");
         Writer.WriteLine($"Domain Relation {value.DomainRelation}");
-        WriteIntExprMatrix(Writer, "Shapes", OpNodeMemo[value].Shapes);
+        WriteIntExprMatrix(Writer, "Shapes", OpNodeMemo[value].Shapes, Solution);
         Writer.Indent--;
         Writer.WriteLine($"\"\"\"");
 
@@ -103,10 +113,10 @@ public sealed class TreeSolverPrinter : TreeSolverBase, ITreeNodeVisitor<Unit, U
         Writer.WriteLine($"with ({string.Join(", ", value.DimNames)}) as ({ivs}):");
         Writer.Indent++;
         var set = value.Dependences.ToDictionary(d => d.Index, d => d.Node);
-        for (int i = 0; i < value.Reads.Length; i++)
+        for (int i = 0; i < value.ReadAccesses.Length; i++)
         {
             Writer.Write($"read_{i} = ");
-            Writer.Write(value.Reads[i]);
+            Writer.Write(value.ReadAccesses[i]);
             if (set.ContainsKey(i))
             {
                 Writer.WriteLine($" @ Op{set[i].OpId}");
@@ -118,21 +128,9 @@ public sealed class TreeSolverPrinter : TreeSolverBase, ITreeNodeVisitor<Unit, U
         }
 
         Writer.Write("write = ");
-        Writer.WriteLine(value.Write);
+        Writer.WriteLine(value.WriteAccess);
         Writer.Indent--;
 
         return default;
-    }
-
-    private void WriteDomainInfo(DomainInfo domainInfo)
-    {
-        Writer.WriteLine($"domainInfo: ");
-        Writer.Indent++;
-        for (int i = 0; i < domainInfo.TileVars.Length; i++)
-        {
-            Writer.WriteLine($"{i}, {domainInfo.TileVars[i].ToSimplifyString()}");
-        }
-
-        Writer.Indent--;
     }
 }

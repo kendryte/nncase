@@ -17,14 +17,14 @@ public partial class TreeWalker : ITreeNodeVisitor<Unit, Unit>
         Nodes = new();
     }
 
+    public List<ITreeNode> Nodes { get; }
+
     public static List<ITreeNode> Walk(ITreeNode tree)
     {
         var x = new TreeWalker();
         tree.Accept(x, default);
         return x.Nodes;
     }
-
-    public List<ITreeNode> Nodes { get; }
 
     public Unit Visit(ScopeNode value, Unit arg1)
     {

@@ -63,7 +63,7 @@ public sealed class TreeSolverWritesInitializer : TreeSolverBase, ITreeNodeVisit
                     }
 
                     tripCounts[i] = factor * parentFactor;
-                    bufferInfo.Writes[i] = bufferInfo.Sizes[i] * tripCounts[i];
+                    bufferInfo.Writes[i] = bufferInfo.SizeVars[i] * tripCounts[i];
                 }
 
                 currentTripCounts.Add(bid, tripCounts);
@@ -88,7 +88,7 @@ public sealed class TreeSolverWritesInitializer : TreeSolverBase, ITreeNodeVisit
                     }
 
                     tripCounts[i] = factor;
-                    bufferInfo.Writes[i] = bufferInfo.Sizes[i] * tripCounts[i];
+                    bufferInfo.Writes[i] = bufferInfo.SizeVars[i] * tripCounts[i];
                 }
 
                 currentTripCounts.Add(bid, tripCounts);

@@ -141,8 +141,8 @@ public partial class TreeMerger : ITreeNodeVisitor<Unit, bool>
 
         // 1. compute the domain realtion : first_consumer_op domain -> producer domain
         var writeOp = firstConsumerOp.Dependences[0].Node;
-        var readAccess = firstConsumerOp.Reads[firstConsumerOp.Dependences[0].Index];
-        var relation = readAccess * AffineUtility.Inverse(writeOp.Write, writeOp.DomainBounds.Select(Convert.ToInt64).ToArray());
+        var readAccess = firstConsumerOp.ReadAccesses[firstConsumerOp.Dependences[0].Index];
+        var relation = readAccess * AffineUtility.Inverse(writeOp.WriteAccess, writeOp.DomainBounds.Select(Convert.ToInt64).ToArray());
 
         // 2. check the domain rel
         if (!relation.IsProjectedPermutation(true))

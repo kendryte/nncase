@@ -15,6 +15,13 @@ namespace Nncase.Tests.AffineTest;
 [TestFixture.AutoSetupTestMethod(InitSession = true)]
 public sealed class UnitTestModeling : TestClassBase
 {
+    public UnitTestModeling()
+    {
+#if DEBUG
+        CompileOptions.DumpFlags = Diagnostics.DumpFlags.PassIR;
+#endif
+    }
+
     [Fact]
     public void TestTwoLevelCpuCacheModeling()
     {
@@ -225,7 +232,7 @@ public sealed class UnitTestModeling : TestClassBase
     }
 
     [Fact]
-    public void TestAutoFusion()
+    public void TestTreeTiler()
     {
         Function func;
         {
@@ -246,7 +253,30 @@ public sealed class UnitTestModeling : TestClassBase
             return;
         }
 
-        Schedule.TileTree.TreeSearch.Search(grid, CompileOptions.TargetOptions);
+        Schedule.TreeTiler.Tile(grid, CompileOptions);
+    }
+
+    [Fact]
+    public void TestAutoFusion()
+    {
+        Function func;
+        {
+            var a = new Var(new TensorType(DataTypes.Float32, new[] { 128, 256 }));
+            var b = new Var(new TensorType(DataTypes.Float32, new[] { 256, 384 }));
+            var c = IR.F.Tensors.MatMul(a, b);
+            var d = IR.F.Math.Exp(c);
+            var e = new Var(new TensorType(DataTypes.Float32, new[] { 384, 512 }));
+            var f = IR.F.Tensors.MatMul(d, e);
+            func = new(f, a, b, e);
+        }
+
+        var module = new IR.IRModule(func);
+        CompileSession.Compiler.ImportIRModule(module);
+        CompileSession.Compiler.CompileAsync();
+        using (var stream = Diagnostics.DumpScope.Current.OpenFile("test.kmodel"))
+        {
+            CompileSession.Compiler.Gencode(stream);
+        }
     }
 }
 

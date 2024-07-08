@@ -287,11 +287,19 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 IndentScope.Writer.IndWrite($"unary<ops::swish>({arguments[0].Name}, {arguments[1].Name});\n");
                 break;
             case TIR.CPU.Matmul matmul:
-                IndentScope.Writer.IndWrite($"if ({arguments[3].Name}) {{\n");
-                IndentScope.Writer.IndWrite($"    matmul<false>({arguments[0].Name}, {arguments[1].Name}, {arguments[2].Name});\n");
-                IndentScope.Writer.IndWrite($"}} else {{\n");
-                IndentScope.Writer.IndWrite($"    matmul<true>({arguments[0].Name}, {arguments[1].Name}, {arguments[2].Name});\n");
-                IndentScope.Writer.IndWrite($"}}\n");
+                if (arguments.Length == 4)
+                {
+                    IndentScope.Writer.IndWrite($"if ({arguments[3].Name}) {{\n");
+                    IndentScope.Writer.IndWrite($"    matmul<false>({arguments[0].Name}, {arguments[1].Name}, {arguments[2].Name});\n");
+                    IndentScope.Writer.IndWrite($"}} else {{\n");
+                    IndentScope.Writer.IndWrite($"    matmul<true>({arguments[0].Name}, {arguments[1].Name}, {arguments[2].Name});\n");
+                    IndentScope.Writer.IndWrite($"}}\n");
+                }
+                else
+                {
+                    IndentScope.Writer.IndWrite($"matmul<false>({arguments[0].Name}, {arguments[1].Name}, {arguments[2].Name});\n");
+                }
+
                 break;
             default:
                 throw new NotSupportedException();
