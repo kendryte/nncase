@@ -262,6 +262,24 @@ template <> struct mul<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     }
 };
 
+// mul
+template <> struct mul<ntt::vector<float, 8>, float> {
+    ntt::vector<float, 8> operator()(const ntt::vector<float, 8> &v1,
+                                     float f2) const noexcept {
+        auto v2 = _mm256_set1_ps(f2);
+        return _mm256_mul_ps(v1, v2);
+    }
+};
+
+// mul
+template <> struct mul<float, ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(float f1, const ntt::vector<float, 8> &v2) const noexcept {
+        auto v1 = _mm256_set1_ps(f1);
+        return _mm256_mul_ps(v1, v2);
+    }
+};
+
 // div
 template <> struct div<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     ntt::vector<float, 8>
@@ -354,6 +372,30 @@ template <> struct inner_product<ntt::vector<float, 8>, ntt::vector<float, 8>> {
 
         // Extract the final sum from the 128-bit result
         return _mm_cvtss_f32(sum128);
+    }
+};
+
+// outer product
+template <> struct outer_product<ntt::vector<float, 8>, ntt::vector<float, 8>> {
+    fixed_tensor<float, 8, 8>
+    operator()(const ntt::vector<float, 8> &v1,
+               const ntt::vector<float, 8> &v2) const noexcept {
+        fixed_tensor<float, 8, 8> result;
+        __m256 tmp;
+        // Iterate over each element in v1
+        for (int i = 0; i < 8; ++i) {
+            // Broadcast the i-th element of v1 to all elements of a new __m256
+            tmp = _mm256_set1_ps(((float *)&v1)[i]);
+
+            // Multiply the broadcasted value with v2
+            tmp = _mm256_mul_ps(tmp, v2);
+
+            // Store the result in the appropriate position in the result array
+            _mm256_storeu_ps(&(((float *)(result.elements().data()))[i * 8]),
+                             tmp);
+        }
+
+        return result;
     }
 };
 
