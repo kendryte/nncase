@@ -182,7 +182,7 @@ class BenchmarkNTT_riscv64(BenchmarkNTT):
                                         'sqrt': '40',
                                         'square': '8',
                                         'swish': '70',
-                                        'tanh': 'N/A',
+                                        'tanh': '54',
                                         },
                               'matmul': {'no_pack': 'N/A',
                                          'pack_K': 'N/A',
