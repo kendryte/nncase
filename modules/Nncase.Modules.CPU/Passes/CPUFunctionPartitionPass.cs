@@ -529,6 +529,11 @@ internal sealed class GraphConvertor : ExprVisitor<Unit, Unit, GraphContext>
     {
         Vertex target;
         var compatType = context.Graph.Vertices.FindFirst(v => ReferenceEquals(v.Expr, expr.Fields[0])).CompatType;
+        if (expr.Fields.ToArray().Any(f => f is Call { Target: IR.CPU.Boxing } b && b.CheckedType is TensorType))
+        {
+            compatType = Compat.INCOMPATIBLE;
+        }
+
         target = new Vertex(expr, compatType);
 
         context.Graph.AddVertex(target);
@@ -541,14 +546,18 @@ internal sealed class GraphConvertor : ExprVisitor<Unit, Unit, GraphContext>
                 var source = context.Graph.Vertices.First(v => ReferenceEquals(v.Expr, field));
                 switch (source.CompatType, target.CompatType)
                 {
+                    case (Compat.COMPATIBLE, Compat.INCOMPATIBLE):
+                        context.Graph.AddEdge(new Edge(EdgeTypes.C2I, source, target));
+                        break;
+                    case (Compat.INCOMPATIBLE, Compat.COMPATIBLE):
+                        context.Graph.AddEdge(new Edge(EdgeTypes.I2C, source, target));
+                        break;
                     case (Compat.INCOMPATIBLE, Compat.INCOMPATIBLE):
                         context.Graph.AddEdge(new Edge(EdgeTypes.I2I, source, target));
                         break;
-                    case (Compat.COMPATIBLE, Compat.COMPATIBLE):
+                    default:
                         context.Graph.AddEdge(new Edge(EdgeTypes.C2C, source, target));
                         break;
-                    default:
-                        throw new InvalidOperationException("Not Supported Compat Type");
                 }
             }
         }
