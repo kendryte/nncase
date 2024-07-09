@@ -286,8 +286,8 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 }
                 else
                 {
-                    IndentScope.Writer.IndWrite($"ntt::tensor<float, ntt::fixed_shape<1>> tb;\n");
-                    IndentScope.Writer.IndWrite($"std::iota(tb.elements().begin(), tb.elements().end(), {swish.Beta});\n");
+                    IndentScope.Writer.IndWrite($"float beta[1] = {{{swish.Beta}}};\n");
+                    IndentScope.Writer.IndWrite($"tensor_view<float, fixed_shape<1>> tb(std::span<float, 1>(beta, beta + 1));\n");
                     IndentScope.Writer.IndWrite($"binary<ops::swishb>({arguments[0].Name}, tb, {arguments[1].Name});\n");
                 }
 

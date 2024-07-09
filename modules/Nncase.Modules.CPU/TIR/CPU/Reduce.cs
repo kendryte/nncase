@@ -16,7 +16,6 @@ public sealed partial class Reduce : CPUKernelOp
 
     // TODO: support init value
     // public static readonly ParameterInfo InitValue = new(typeof(Reduce), 1, "initValue");
-
     public static readonly ParameterInfo Output = new(typeof(Reduce), 1, "output");
 
     public IRArray<int> PackedAxes { get; }
