@@ -208,7 +208,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                     case Call c:
                         var loc = MemoryLocation.Data;
                         var hierarchy = 1;
-                        var index = CheckRootCall(c, ref loc);
+                        var index = CheckRoot(c, ref loc);
                         if (c.Target is Boxing box && box.NewType is DistributedType d && !d.TensorType.Shape.Equals(c.Arguments[0].CheckedShape))
                         {
                             name += "_reshape";
@@ -256,7 +256,16 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
 
                         break;
                     case Var v:
+                        loc = MemoryLocation.Data;
+                        index = CheckRoot(v, ref loc);
                         buffer = T.AttachBuffer((TensorType)v.CheckedType, MemoryLocation.Input, 1, out _, out _, name);
+
+                        if (index != -1)
+                        {
+                            var bufferOut = T.AttachBuffer(IR.F.Buffer.DDrOf(buffer), (TensorType)v.CheckedType, MemoryLocation.Output, 1, out _, name + $"_viewed_out_{index}");
+                            _outputbuffers.Add((index, bufferOut));
+                        }
+
                         break;
                     case TensorConst c:
                         buffer = T.AttachBuffer(c, out _, name);
@@ -403,7 +412,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
     }
 #endif
 
-    private int CheckRootCall(Call c, ref MemoryLocation loc)
+    private int CheckRoot(Expr c, ref MemoryLocation loc)
     {
         var index = -1;
         if (VisitRootFusion.Body is Call rootCall && ReferenceEquals(c, rootCall))
