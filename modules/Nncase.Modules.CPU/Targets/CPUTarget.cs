@@ -144,33 +144,9 @@ public class CPUTarget : ITarget
 
         // need refactor tiling.
         passManager.Add<Passes.Distributed.AutoDistributedPass>();
-        passManager.Add<DataflowPass>().Configure(p =>
-        {
-            p.Add<Passes.Rules.CPU.CPUOutputBoxingFusion>(CPUTarget.Kind);
-            p.Add<Passes.Rules.CPU.CPUSingleFusion>(CPUTarget.Kind);
-        });
-        passManager.Add<DataflowPass>().Configure(p =>
-        {
-            p.AddAnalysis<Passes.Analysis.IExprUserAnalysisResult>();
-            p.Add<Passes.Rules.CPU.DeterminedFusionMergeRule>();
-            p.Add<Passes.Rules.CPU.ConcatFusionMergeRule>();
-            p.Add<Passes.Rules.CPU.TupleFusionMergeRule>();
-        });
-        passManager.AddWithName<EGraphRulesPass>("PartitionConstruct").Configure(p =>
-        {
-            p.Add<Passes.Rules.CPU.GeneralFusionMergeRule>();
-        });
-        passManager.AddWithName<EGraphExtractPass>("PartitionExtract").Configure(p =>
-        {
-            p.AddBaseFuncCostEvaluator<Passes.Rules.CPU.FusionCostEvaluator>();
-        });
-        passManager.Add<DataflowPass>().Configure(p =>
-        {
-            p.AddAnalysis<Passes.Analysis.IExprUserAnalysisResult>();
-            p.Add<Passes.Rules.CPU.DeterminedFusionMergeRule>();
-        });
 
-        // passManager.Add<CPUFunctionPartitionPass>();
+        passManager.Add<Nncase.Passes.CPUFunctionPartitionPass>(CPUTarget.Kind);
+
         passManager.Add<CPUFusionToModulePass>();
 
         passManager.AddWithName<DataflowPass>("LowerToAffine").Configure(p =>
