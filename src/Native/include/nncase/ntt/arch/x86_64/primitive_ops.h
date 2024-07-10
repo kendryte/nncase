@@ -345,6 +345,77 @@ template <> struct max<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     }
 };
 
+template <bool AccC>
+struct mma<AccC, ntt::vector<float, 8, 8>, ntt::vector<float, 8, 8>,
+           ntt::vector<float, 8, 8>> {
+    ntt::vector<float, 8, 8> operator()(
+        [[maybe_unused]] const ntt::vector<float, 8, 8> &v1,
+        [[maybe_unused]] const ntt::vector<float, 8, 8> &v2,
+        [[maybe_unused]] const ntt::vector<float, 8, 8> &v3) const noexcept {
+        auto lhs_v = (float *)(v1.elements().data());
+        auto rhs_v = (vector<float, 8> *)(v2.elements().data());
+        auto output_v = (vector<float, 8> *)(v3.elements().data());
+
+        for (size_t k = 0; k < 8; k++) {
+            output_v[0] =
+                (k != 0 || AccC)
+                    ? ntt::mul_add(lhs_v[0 * 8 + k], rhs_v[k], output_v[0])
+                    : ntt::mul(lhs_v[0 * 8 + k], rhs_v[k]);
+        }
+
+        for (size_t k = 0; k < 8; k++) {
+            output_v[1] =
+                (k != 0 || AccC)
+                    ? ntt::mul_add(lhs_v[1 * 8 + k], rhs_v[k], output_v[1])
+                    : ntt::mul(lhs_v[1 * 8 + k], rhs_v[k]);
+        }
+
+        for (size_t k = 0; k < 8; k++) {
+            output_v[2] =
+                (k != 0 || AccC)
+                    ? ntt::mul_add(lhs_v[2 * 8 + k], rhs_v[k], output_v[2])
+                    : ntt::mul(lhs_v[2 * 8 + k], rhs_v[k]);
+        }
+
+        for (size_t k = 0; k < 8; k++) {
+            output_v[3] =
+                (k != 0 || AccC)
+                    ? ntt::mul_add(lhs_v[3 * 8 + k], rhs_v[k], output_v[3])
+                    : ntt::mul(lhs_v[3 * 8 + k], rhs_v[k]);
+        }
+
+        for (size_t k = 0; k < 8; k++) {
+            output_v[4] =
+                (k != 0 || AccC)
+                    ? ntt::mul_add(lhs_v[4 * 8 + k], rhs_v[k], output_v[4])
+                    : ntt::mul(lhs_v[4 * 8 + k], rhs_v[k]);
+        }
+
+        for (size_t k = 0; k < 8; k++) {
+            output_v[5] =
+                (k != 0 || AccC)
+                    ? ntt::mul_add(lhs_v[5 * 8 + k], rhs_v[k], output_v[5])
+                    : ntt::mul(lhs_v[5 * 8 + k], rhs_v[k]);
+        }
+
+        for (size_t k = 0; k < 8; k++) {
+            output_v[6] =
+                (k != 0 || AccC)
+                    ? ntt::mul_add(lhs_v[6 * 8 + k], rhs_v[k], output_v[6])
+                    : ntt::mul(lhs_v[6 * 8 + k], rhs_v[k]);
+        }
+
+        for (size_t k = 0; k < 8; k++) {
+            output_v[7] =
+                (k != 0 || AccC)
+                    ? ntt::mul_add(lhs_v[7 * 8 + k], rhs_v[k], output_v[7])
+                    : ntt::mul(lhs_v[7 * 8 + k], rhs_v[k]);
+        }
+
+        return v3;
+    }
+};
+
 // pow
 template <> struct pow<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     ntt::vector<float, 8>
