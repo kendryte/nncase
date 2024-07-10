@@ -231,6 +231,28 @@ template <> struct add<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     }
 };
 
+template <> struct add<ntt::vector<float, 8, 8>, ntt::vector<float, 8, 8>> {
+    ntt::vector<float, 8, 8>
+    operator()(const ntt::vector<float, 8, 8> &v1,
+               const ntt::vector<float, 8, 8> &v2) const noexcept {
+        ntt::vector<float, 8, 8> v3;
+        auto lhs_v = (vector<float, 8> *)(v1.elements().data());
+        auto rhs_v = (vector<float, 8> *)(v2.elements().data());
+        auto output_v = (vector<float, 8> *)(v3.elements().data());
+
+        output_v[0] = ntt::add(lhs_v[0], rhs_v[0]);
+        output_v[1] = ntt::add(lhs_v[1], rhs_v[1]);
+        output_v[2] = ntt::add(lhs_v[2], rhs_v[2]);
+        output_v[3] = ntt::add(lhs_v[3], rhs_v[3]);
+        output_v[4] = ntt::add(lhs_v[4], rhs_v[4]);
+        output_v[5] = ntt::add(lhs_v[5], rhs_v[5]);
+        output_v[6] = ntt::add(lhs_v[6], rhs_v[6]);
+        output_v[7] = ntt::add(lhs_v[7], rhs_v[7]);
+
+        return v3;
+    }
+};
+
 // sub
 template <> struct sub<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     ntt::vector<float, 8>
@@ -348,10 +370,10 @@ template <> struct max<ntt::vector<float, 8>, ntt::vector<float, 8>> {
 template <bool AccC>
 struct mma<AccC, ntt::vector<float, 8, 8>, ntt::vector<float, 8, 8>,
            ntt::vector<float, 8, 8>> {
-    ntt::vector<float, 8, 8> operator()(
-        [[maybe_unused]] const ntt::vector<float, 8, 8> &v1,
-        [[maybe_unused]] const ntt::vector<float, 8, 8> &v2,
-        [[maybe_unused]] const ntt::vector<float, 8, 8> &v3) const noexcept {
+    ntt::vector<float, 8, 8>
+    operator()(const ntt::vector<float, 8, 8> &v1,
+               const ntt::vector<float, 8, 8> &v2,
+               const ntt::vector<float, 8, 8> &v3) const noexcept {
         auto lhs_v = (float *)(v1.elements().data());
         auto rhs_v = (vector<float, 8> *)(v2.elements().data());
         auto output_v = (vector<float, 8> *)(v3.elements().data());
@@ -451,7 +473,7 @@ template <> struct outer_product<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     fixed_tensor<float, 8, 8>
     operator()(const ntt::vector<float, 8> &v1,
                const ntt::vector<float, 8> &v2) const noexcept {
-        fixed_tensor<float, 8, 8> result;
+        alignas(32) fixed_tensor<float, 8, 8> result;
         __m256 tmp;
         // Iterate over each element in v1
         for (int i = 0; i < 8; ++i) {
