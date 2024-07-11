@@ -20,6 +20,7 @@ internal sealed class EGraphCostEvaluator
     private readonly Dictionary<EClass, Cost> _eclassCosts = new();
     private readonly HashSet<EClass> _allEclasses = new();
     private readonly IBaseFuncCostEvaluator? _baseFuncCostEvaluator;
+    private readonly Dictionary<ENode, Cost> _opCosts = new(ReferenceEqualityComparer.Instance);
     private readonly bool _accumulate;
     private bool _changed;
 
@@ -163,15 +164,19 @@ internal sealed class EGraphCostEvaluator
             foreach (var targetEnode in enode.Children[0].Nodes)
             {
                 Cost? newCost;
-                if (targetEnode.Expr is Op op)
+                if (!_opCosts.TryGetValue(targetEnode, out newCost))
                 {
-                    var context = new EGraphOpCostEvaluateContext(returnType, enode.Children.Skip(1).Select(x => x.CheckedType).ToArray(), enode.Children.Skip(1).ToArray(), _compileOptions);
-                    newCost = CompilerServices.EvaluateOpCost(op, context);
-                }
-                else
-                {
-                    // Trace.Assert(targetEnode.Expr is Function);
-                    newCost = Visit(targetEnode, returnType);
+                    if (targetEnode.Expr is Op op)
+                    {
+                        var context = new EGraphOpCostEvaluateContext(returnType, enode.Children.Skip(1).Select(x => x.CheckedType).ToArray(), enode.Children.Skip(1).ToArray(), _compileOptions);
+                        newCost = CompilerServices.EvaluateOpCost(op, context);
+                        _opCosts.Add(targetEnode, newCost);
+                    }
+                    else
+                    {
+                        // Trace.Assert(targetEnode.Expr is Function);
+                        newCost = Visit(targetEnode, returnType);
+                    }
                 }
 
                 if (cost == null || (newCost != null && newCost < cost))
