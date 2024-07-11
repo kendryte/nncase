@@ -199,8 +199,10 @@ public sealed partial class OpNode : ITileAbleNode
     }
 
     /// <summary>
-    /// index is current read buffer index.
+    /// this opnode's dependence.
     /// </summary>
+    /// <param name="Index"> current read buffer index.</param>
+    /// <param name="Node"> producer node. </param>
     public record Dependence(int Index, OpNode Node)
     {
     }

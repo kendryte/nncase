@@ -36,12 +36,6 @@ public sealed class AutoTilePass : ModulePass
                 var rootGrid = worklists[j].First();
                 var rewriter = new AutoTileRewriter(rootGrid, CompileOptions);
                 post = (BaseFunction)rewriter.Rewrite(post);
-
-                // if (rewriter.IsMutated)
-                // {
-                //     input.Add(rewriter.Wrapper);
-                //     input.Add(rewriter.PrimFunc);
-                // }
             }
 
             input.Replace(i, post);

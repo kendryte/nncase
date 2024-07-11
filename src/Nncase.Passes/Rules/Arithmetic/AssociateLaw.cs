@@ -52,4 +52,3 @@ public sealed partial class ReassociateDiv : IRewriteRule
 
     private Expr? GetReplace(Expr x, Expr y, Expr z) => x * (y / z);
 }
-

@@ -30,14 +30,15 @@ public sealed class TreeSolverWritesInitializer : TreeSolverBase, ITreeNodeVisit
     {
         Dictionary<BufferIdenitity, IntExpr[]> currentTripCounts = new();
         var domainInfo = TileableNodeMemo[value];
-        if (value.GetParentTileableNode() is ITileAbleNode parentTileable)
+        if (value.GetParentTileableNode() is TileNode parentTileNode)
         {
-            var parentDomainInfo = TileableNodeMemo[parentTileable];
+            var parentDomainInfo = TileableNodeMemo[parentTileNode];
+            var partentTileInfo = TileNodeMemo[parentTileNode];
 
             // 1. child domain map to parent domain.
             foreach (var (bid, bufferInfo) in TileNodeMemo[value].BufferInfoMap)
             {
-                var parentTripCounts = bufferTripCounts[bid];
+                var parentTripCounts = bufferTripCounts[partentTileInfo.GetCacheBid(bid)];
                 var tripCounts = new IntExpr[domainInfo.TileVars.Length];
 
                 for (int i = 0; i < domainInfo.TileVars.Length; i++)

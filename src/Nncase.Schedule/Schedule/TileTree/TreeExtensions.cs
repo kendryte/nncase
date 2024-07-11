@@ -35,4 +35,9 @@ public static class TreeExtensions
         var str = intExpr.ToString();
         return _rangePattern.Replace(str, string.Empty);
     }
+
+    public static IR.Expr GetArgument(this IR.Affine.Grid grid, int index)
+    {
+        return index >= grid.Reads.Length ? grid.Buffers[^1] : grid.Reads[index];
+    }
 }

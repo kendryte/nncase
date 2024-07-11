@@ -10,15 +10,65 @@ using Nncase.TIR.Builders;
 
 namespace Nncase.Schedule.TileTree;
 
+public sealed class TreeSolverArgumentsCollector : ITreeNodeVisitor<Unit, Unit>
+{
+    public TreeSolverArgumentsCollector()
+    {
+        Inputs = new();
+        Outputs = new();
+    }
+
+    public HashSet<BufferIdenitity> Inputs { get; }
+
+    public HashSet<BufferIdenitity> Outputs { get; }
+
+    public Unit Visit(ScopeNode value, Unit arg1)
+    {
+        foreach (var child in value.Children)
+        {
+            child.Accept(this, arg1);
+        }
+
+        return default;
+    }
+
+    public Unit Visit(TileNode value, Unit arg1)
+    {
+        return value.Child.Accept(this, arg1);
+    }
+
+    public Unit Visit(OpNode value, Unit arg1)
+    {
+        for (int i = 0; i < value.BufferShapes.Length - 1; i++)
+        {
+            Inputs.Add(new(value, i));
+        }
+
+        Outputs.Add(new(value, value.BufferShapes.Length - 1));
+
+        foreach (var dep in value.Dependences)
+        {
+            Inputs.Remove(new(value, dep.Index));
+            Outputs.Remove(new(dep.Node, dep.Node.BufferShapes.Length - 1));
+        }
+
+        return default;
+    }
+}
+
 public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisitor<TreeSolverResultConstructor.Context, Unit>
 {
     private readonly Assignment _sol;
+    private readonly HashSet<BufferIdenitity> _inputs;
+    private readonly HashSet<BufferIdenitity> _outputs;
     private readonly Dictionary<ITileAbleNode, Dictionary<BufferIdenitity, SubViewInfo>> _subViewMemo;
 
-    public TreeSolverResultConstructor(Assignment solution, Solver solver, IntExpr one, IntExpr zero, IntExpr elem, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainInfos, CompileOptions compileOptions)
+    public TreeSolverResultConstructor(Assignment solution, HashSet<BufferIdenitity> inputs, HashSet<BufferIdenitity> outputs, Solver solver, IntExpr one, IntExpr zero, IntExpr elem, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainInfos, CompileOptions compileOptions)
         : base(solver, one, zero, elem, primitiveBufferInfo, levelBufferInfos, domainInfos, compileOptions.TargetOptions)
     {
         _sol = solution;
+        _inputs = inputs;
+        _outputs = outputs;
         CompileOptions = compileOptions;
         BufferMemo = new();
         _subViewMemo = new();
