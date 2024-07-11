@@ -39,7 +39,14 @@ public sealed class FusionMerger : ExprCloner<Unit>
     {
         if (_multiVarMap.TryGetValue(expr, out var newVar))
         {
-            return newVar;
+            if (expr.CheckedType is DistributedType d)
+            {
+                return IR.F.CPU.Boxing(newVar, d);
+            }
+            else
+            {
+                return newVar;
+            }
         }
 
         return base.VisitCall(expr, context);

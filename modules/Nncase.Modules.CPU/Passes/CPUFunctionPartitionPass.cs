@@ -171,7 +171,7 @@ public sealed class CPUFunctionPartitionPass : ModulePass
                         subgraph.Nodes.ForEach(n => sg.AddVertex(n));
                         subgraph.InteriorEdges.ForEach(e => sg.AddEdge(e));
 
-                        // sg.DumpDot(DumpScope.Current.Directory + $"_Incompatible_{subgraph.Index}.dot");
+                        // sg.DumpDot(DumpScope.Current.Directory + $"_Incompatible_{subgraph.Index}_{vi}.dot");
                         var sgVisitor = new QuikGraph.Algorithms.TopologicalSort.SourceFirstTopologicalSortAlgorithm<Vertex, Edge>(sg);
                         sgVisitor.Compute();
                         foreach (var v in sgVisitor.SortedVertices)
@@ -190,6 +190,11 @@ public sealed class CPUFunctionPartitionPass : ModulePass
                         var newInputs = ctx.VarMap[ctx.SummaryVertexSubgraphMap[vertex]].Values.ToArray();
                         var merger = new Passes.Rules.FusionMerger(ctx.VarMap[ctx.SummaryVertexSubgraphMap[vertex]]);
                         var clonedRoot = merger.Clone(vertex.Expr, default);
+
+                        if (clonedRoot is IR.Tuple tuple)
+                        {
+                            clonedRoot = new IR.Tuple(tuple.Fields.AsValueEnumerable().Select(f => f.CheckedType is DistributedType d ? IR.F.CPU.Boxing(f, d.TensorType) : f).ToArray());
+                        }
 
                         var rootCall = new Call(new Fusion($"Function_{i}_fusion_{vi}_kernel", ModuleKind, clonedRoot, newInputs), ctx.VarMap[ctx.SummaryVertexSubgraphMap[vertex]].Keys.Select(e => exprMemo[e]).ToArray());
                         if (ctx.OutputMap[subgraph.Index].Count > 1)
@@ -304,13 +309,15 @@ internal sealed class GraphContext
         Dictionary<int, Vertex> indexMap = new();
         VarMap = SubgraphMap.ToDictionary(x => x.Key, _ => new Dictionary<Expr, Var>(ReferenceEqualityComparer.Instance));
         OutputMap = SubgraphMap.ToDictionary(x => x.Key, _ => new Dictionary<Expr, int>(ReferenceEqualityComparer.Instance));
+
+        // int count = 0;
         foreach (var subgraph in SubgraphMap)
         {
             var sg = new Graph();
             subgraph.Value.Nodes.ForEach(n => sg.AddVertex(n));
             subgraph.Value.InteriorEdges.ForEach(e => sg.AddEdge(e));
 
-            // sg.DumpDot(DumpScope.Current.Directory + $"subgraph_{subgraph.Key}.dot");
+            // sg.DumpDot(DumpScope.Current.Directory + $"subgraph_{subgraph.Key}_{count++}.dot");
             var dfsVisitor = new QuikGraph.Algorithms.TopologicalSort.SourceFirstTopologicalSortAlgorithm<Vertex, Edge>(sg);
             dfsVisitor.Compute();
             for (var vi = 0; vi < dfsVisitor.SortedVertices.Length; vi++)
@@ -328,14 +335,26 @@ internal sealed class GraphContext
                     var input = subgraph.Value.InputEdges.Find(e => e.Target == vertex)!.Source.Expr;
                     if (input is not Const && !VarMap[subgraph.Key].ContainsKey(input))
                     {
-                        VarMap[subgraph.Key].Add(input, new Var(input.CheckedType));
+                        if (input.CheckedType is DistributedType d)
+                        {
+                            VarMap[subgraph.Key].Add(input, new Var(d.TensorType));
+                        }
+                        else
+                        {
+                            VarMap[subgraph.Key].Add(input, new Var(input.CheckedType));
+                        }
                     }
                 }
             }
 
-            var u = new Vertex(null!, Compat.UNKNOWN);
-            var outVertices = sg.Vertices.Count() == 1 ? sg.Vertices : sg.Edges.Where(e => !sg.OutEdges(e.Target).Any()).Select(e => e.Target).Distinct().ToList();
-            u.CompatType = outVertices.First().CompatType;
+            var u = new Vertex(None.Default, Compat.UNKNOWN);
+            var outVertices = sg.Vertices.Count() == 1 ? sg.Vertices : subgraph.Value.OutputEdges.Select(e => e.Source).Distinct();
+            if (!outVertices.Any())
+            {
+                outVertices = sg.Edges.Where(e => !sg.OutEdges(e.Target).Any()).Select(e => e.Target).Distinct().ToList();
+            }
+
+            u.CompatType = sg.Vertices.First().CompatType;
 
             if (outVertices.Count() == 1)
             {
