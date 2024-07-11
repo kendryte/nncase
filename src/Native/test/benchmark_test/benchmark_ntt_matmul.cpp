@@ -66,8 +66,8 @@ int main() {
 
         for (size_t i = 0; i < warmup_num; i++)
             ntt::matmul<false>(pa, pb, tc, ntt::fixed_shape<1>{},
-                            ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
-                            ntt::fixed_shape<0>{});
+                               ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
+                               ntt::fixed_shape<0>{});
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
@@ -102,8 +102,8 @@ int main() {
 
         for (size_t i = 0; i < warmup_num; i++)
             ntt::matmul<false>(pa, tb, pc, ntt::fixed_shape<0>{},
-                            ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
-                            ntt::fixed_shape<0>{});
+                               ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
+                               ntt::fixed_shape<0>{});
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
@@ -138,8 +138,8 @@ int main() {
 
         for (size_t i = 0; i < warmup_num; i++)
             ntt::matmul<false>(ta, pb, pc, ntt::fixed_shape<>{},
-                            ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
-                            ntt::fixed_shape<0>{});
+                               ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
+                               ntt::fixed_shape<0>{});
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
@@ -178,8 +178,8 @@ int main() {
 
         for (size_t i = 0; i < warmup_num; i++)
             ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0>{},
-                            ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
-                            ntt::fixed_shape<0>{});
+                               ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
+                               ntt::fixed_shape<0>{});
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
@@ -218,8 +218,8 @@ int main() {
 
         for (size_t i = 0; i < warmup_num; i++)
             ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0, 1>{},
-                            ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
-                            ntt::fixed_shape<0>{});
+                               ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
+                               ntt::fixed_shape<0>{});
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
@@ -258,8 +258,8 @@ int main() {
 
         for (size_t i = 0; i < warmup_num; i++)
             ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<1>{},
-                            ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
-                            ntt::fixed_shape<0>{});
+                               ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
+                               ntt::fixed_shape<0>{});
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
@@ -298,8 +298,8 @@ int main() {
 
         for (size_t i = 0; i < warmup_num; i++)
             ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0, 1>{},
-                            ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
-                            ntt::fixed_shape<0>{});
+                               ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
+                               ntt::fixed_shape<0>{});
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
