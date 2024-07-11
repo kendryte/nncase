@@ -79,6 +79,9 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             case IR.Math.Unary unary:
                 GenerateUnary(unary.UnaryOp, arguments, ret);
                 break;
+            case IR.Math.Clamp clamp:
+                GenerateClamp(arguments, ret, ((TensorConst)expr[IR.Math.Clamp.Min]).Value.ToScalar<float>(), ((TensorConst)expr[IR.Math.Clamp.Max]).Value.ToScalar<float>());
+                break;
             case IR.CPU.Boxing boxing:
                 GenerateBoxing(boxing, arguments, ret, expr);
                 break;
@@ -290,6 +293,11 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
         _mainBody.Add(TIR.F.CPU.Binary(binary.BinaryOp, arguments[0], arguments[1], ret));
     }
 
+    private void GenerateClamp(ReadOnlySpan<Buffer> arguments, Buffer ret, float min, float max)
+    {
+        _mainBody.Add(TIR.F.CPU.Clamp(arguments[0], ret, min, max));
+    }
+
     private void GenerateBoxing(IR.CPU.Boxing boxing, Buffer[] arguments, Buffer ret, Call expr)
     {
         switch (expr.Arguments[0].CheckedType, boxing.NewType)
@@ -399,11 +407,6 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
     private void GenerateExpand(int[] shape, DistributedType distributedType, ReadOnlySpan<Buffer> arguments, Buffer ret)
     {
         _mainBody.Add(TIR.F.CPU.Expand(shape, distributedType, arguments[0], ret));
-    }
-
-    private void GenerateClamp(ReadOnlySpan<Buffer> arguments, Buffer ret, float min, float max)
-    {
-        _mainBody.Add(TIR.F.CPU.Clamp(arguments[0], ret, min, max));
     }
 
     private void GenerateWhere(ReadOnlySpan<Buffer> arguments, Buffer ret, DistributedType distributedType)

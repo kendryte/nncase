@@ -151,4 +151,9 @@ public partial class CPU
     {
         return new Call(new TIR.CPU.GatherReduceScatter(inType, outType), input, output);
     }
+
+    public static Call Clamp(Expr input, Expr output, float min, float max)
+    {
+        return new Call(new TIR.CPU.Clamp(min, max), input, output);
+    }
 }
