@@ -302,26 +302,6 @@ template <> struct mul<float, ntt::vector<float, 8>> {
     }
 };
 
-template <>
-struct mul_add<float, ntt::vector<float, 8>, ntt::vector<float, 8>> {
-    ntt::vector<float, 8>
-    operator()(float f1, const ntt::vector<float, 8> &v2,
-               const ntt::vector<float, 8> &v3) const noexcept {
-        auto v1 = _mm256_set1_ps(f1);
-        return _mm256_add_ps(_mm256_mul_ps(v1, v2), v3);
-    }
-};
-
-template <>
-struct mul_add<ntt::vector<float, 8>, float, ntt::vector<float, 8>> {
-    ntt::vector<float, 8>
-    operator()(const ntt::vector<float, 8> &v1, float f2,
-               const ntt::vector<float, 8> &v3) const noexcept {
-        auto v2 = _mm256_set1_ps(f2);
-        return _mm256_add_ps(_mm256_mul_ps(v1, v2), v3);
-    }
-};
-
 // div
 template <> struct div<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     ntt::vector<float, 8>
