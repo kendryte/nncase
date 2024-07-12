@@ -303,6 +303,16 @@ template <> struct mul<float, ntt::vector<float, 8>> {
 };
 
 template <>
+struct mul_add<ntt::vector<float, 8>, ntt::vector<float, 8>,
+               ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const ntt::vector<float, 8> &v1, const ntt::vector<float, 8> &v2,
+               const ntt::vector<float, 8> &v3) const noexcept {
+        return _mm256_fmadd_ps(v1, v2, v3);
+    }
+};
+
+template <>
 struct mul_add<float, ntt::vector<float, 8>, ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(float f1, const ntt::vector<float, 8> &v2,
