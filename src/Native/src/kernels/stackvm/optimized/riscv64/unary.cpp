@@ -36,17 +36,15 @@ namespace {
 
 struct unary_op_abs_rvv {
     vfloat32m8_t operator()(const vfloat32m8_t &x, const size_t &vl) const {
-        return __riscv_vfabs_v_f32m8(x, vl);
+        return vfabs_v_f32m8(x, vl);
     }
 };
 
 struct unary_op_ceil_rvv {
     vfloat32m8_t operator()(const vfloat32m8_t &x, const size_t &vl) const {
-        vint32m8_t _xi = __riscv_vfcvt_x_f_v_i32m8(x, vl);
-        vbool4_t _mask = __riscv_vmflt_vv_f32m8_b4(
-            __riscv_vfcvt_f_x_v_f32m8(_xi, vl), x, vl);
-        return __riscv_vfcvt_f_x_v_f32m8(
-            __riscv_vadd_vx_i32m8_m(_mask, _xi, 1, vl), vl);
+        vint32m8_t _xi = vfcvt_x_f_v_i32m8(x, vl);
+        vbool4_t _mask = vmflt_vv_f32m8_b4(vfcvt_f_x_v_f32m8(_xi, vl), x, vl);
+        return vfcvt_f_x_v_f32m8(vadd_vx_i32m8_m(_mask, _xi, _xi, 1, vl), vl);
     }
 };
 
@@ -65,16 +63,13 @@ struct unary_op_exp_rvv {
 struct unary_op_floor_rvv {
     vfloat32m8_t operator()(const vfloat32m8_t &x, const size_t &vl) const {
 #if 1
-        vint32m8_t _xi = __riscv_vfcvt_x_f_v_i32m8(x, vl);
-        vbool4_t _mask = __riscv_vmfgt_vv_f32m8_b4(
-            __riscv_vfcvt_f_x_v_f32m8(_xi, vl), x, vl);
-        return __riscv_vfcvt_f_x_v_f32m8(
-            __riscv_vsub_vx_i32m8_m(_mask, _xi, 1, vl), vl);
+        vint32m8_t _xi = vfcvt_x_f_v_i32m8(x, vl);
+        vbool4_t _mask = vmfgt_vv_f32m8_b4(vfcvt_f_x_v_f32m8(_xi, vl), x, vl);
+        return vfcvt_f_x_v_f32m8(vsub_vx_i32m8_m(_mask, _xi, _xi, 1, vl), vl);
 #else
         float f = 0.5f;
-        auto tmp = __riscv_vfsub_vf_f32m8(x, f, vl);
-        return __riscv_vfcvt_f_x_v_f32m8(__riscv_vfcvt_x_f_v_i32m8(tmp, vl),
-                                         vl);
+        auto tmp = vfsub_vf_f32m8(x, f, vl);
+        return vfcvt_f_x_v_f32m8(vfcvt_x_f_v_i32m8(tmp, vl), vl);
 #endif
     }
 };
@@ -87,20 +82,20 @@ struct unary_op_log_rvv {
 
 struct unary_op_neg_rvv {
     vfloat32m8_t operator()(const vfloat32m8_t &x, const size_t &vl) const {
-        return __riscv_vfneg_v_f32m8(x, vl);
+        return vfneg_v_f32m8(x, vl);
     }
 };
 
 struct unary_op_round_rvv {
     vfloat32m8_t operator()(const vfloat32m8_t &x, const size_t &vl) const {
-        return __riscv_vfcvt_f_x_v_f32m8(__riscv_vfcvt_x_f_v_i32m8(x, vl), vl);
+        return vfcvt_f_x_v_f32m8(vfcvt_x_f_v_i32m8(x, vl), vl);
     }
 };
 
 struct unary_op_rsqrt_rvv {
     vfloat32m8_t operator()(const vfloat32m8_t &x, const size_t &vl) const {
         float one = 1.f;
-        return __riscv_vfrdiv_vf_f32m8(__riscv_vfsqrt_v_f32m8(x, vl), one, vl);
+        return vfrdiv_vf_f32m8(vfsqrt_v_f32m8(x, vl), one, vl);
     }
 };
 
@@ -108,12 +103,12 @@ struct unary_op_rsqrt_rvv {
 struct unary_op_sign_rvv {
     vfloat32m8_t operator()(const vfloat32m8_t &x, const size_t &vl) const {
         float zero = 0.f;
-        auto zeros = __riscv_vfmv_v_f_f32m8(zero, vl);
+        auto zeros = vfmv_v_f_f32m8(zero, vl);
         float one = 1.f;
-        auto gt_mask = __riscv_vmfgt_vf_f32m8_b4(x, zero, vl);
-        auto ret = __riscv_vfadd_vf_f32m8_m(gt_mask, zeros, one, vl);
-        auto lt_mask = __riscv_vmflt_vf_f32m8_b4(x, zero, vl);
-        ret = __riscv_vfsub_vf_f32m8_m(lt_mask, ret, one, vl);
+        auto gt_mask = vmfgt_vf_f32m8_b4(x, zero, vl);
+        auto ret = vfadd_vf_f32m8_m(gt_mask, zeros, zeros, one, vl);
+        auto lt_mask = vmflt_vf_f32m8_b4(x, zero, vl);
+        ret = vfsub_vf_f32m8_m(lt_mask, ret, ret, one, vl);
 
         return ret;
     }
@@ -127,13 +122,13 @@ struct unary_op_sin_rvv {
 
 struct unary_op_sqrt_rvv {
     vfloat32m8_t operator()(const vfloat32m8_t &x, const size_t &vl) const {
-        return __riscv_vfsqrt_v_f32m8(x, vl);
+        return vfsqrt_v_f32m8(x, vl);
     }
 };
 
 struct unary_op_square_rvv {
     vfloat32m8_t operator()(const vfloat32m8_t &x, const size_t &vl) const {
-        return __riscv_vfmul_vv_f32m8(x, x, vl);
+        return vfmul_vv_f32m8(x, x, vl);
     }
 };
 
@@ -150,10 +145,10 @@ result<void> optimized_unary_impl(const float *input, float *output,
     Top op;
     int32_t n = compute_size(shape);
     while (n > 0) {
-        size_t vl = __riscv_vsetvl_e32m8(n);
-        auto v_in = __riscv_vle32_v_f32m8(input, vl);
+        size_t vl = vsetvl_e32m8(n);
+        auto v_in = vle32_v_f32m8(input, vl);
         auto v_out = op(v_in, vl);
-        __riscv_vse32_v_f32m8(output, v_out, vl);
+        vse32_v_f32m8(output, v_out, vl);
 
         input += vl;
         output += vl;

@@ -65,13 +65,13 @@ optimized_sigmoid_impl(const float *input, float *output,
             float *ptr_output = output;
             float one = 1.f;
             while (n) {
-                auto vl = __riscv_vsetvl_e32m8(n);
-                auto v_out = __riscv_vlse32_v_f32m8(ptr_input, in_stride, vl);
-                v_out = __riscv_vfneg_v_f32m8(v_out, vl);
+                auto vl = vsetvl_e32m8(n);
+                auto v_out = vlse32_v_f32m8(ptr_input, in_stride, vl);
+                v_out = vfneg_v_f32m8(v_out, vl);
                 v_out = exp_ps(v_out, vl);
-                v_out = __riscv_vfadd_vf_f32m8(v_out, one, vl);
-                v_out = __riscv_vfrdiv_vf_f32m8(v_out, one, vl);
-                __riscv_vsse32_v_f32m8(ptr_output, out_stride, v_out, vl);
+                v_out = vfadd_vf_f32m8(v_out, one, vl);
+                v_out = vfrdiv_vf_f32m8(v_out, one, vl);
+                vsse32_v_f32m8(ptr_output, out_stride, v_out, vl);
 
                 ptr_input += vl;
                 ptr_output += vl;
@@ -84,13 +84,13 @@ optimized_sigmoid_impl(const float *input, float *output,
         float *ptr_output = output;
         float one = 1.f;
         while (n) {
-            auto vl = __riscv_vsetvl_e32m8(n);
-            auto v_out = __riscv_vle32_v_f32m8(ptr_input, vl);
-            v_out = __riscv_vfneg_v_f32m8(v_out, vl);
+            auto vl = vsetvl_e32m8(n);
+            auto v_out = vle32_v_f32m8(ptr_input, vl);
+            v_out = vfneg_v_f32m8(v_out, vl);
             v_out = exp_ps(v_out, vl);
-            v_out = __riscv_vfadd_vf_f32m8(v_out, one, vl);
-            v_out = __riscv_vfrdiv_vf_f32m8(v_out, one, vl);
-            __riscv_vse32_v_f32m8(ptr_output, v_out, vl);
+            v_out = vfadd_vf_f32m8(v_out, one, vl);
+            v_out = vfrdiv_vf_f32m8(v_out, one, vl);
+            vse32_v_f32m8(ptr_output, v_out, vl);
 
             ptr_input += vl;
             ptr_output += vl;

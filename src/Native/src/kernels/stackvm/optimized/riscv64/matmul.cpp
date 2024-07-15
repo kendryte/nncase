@@ -76,16 +76,16 @@
 //            const float *pbias = bias;
 //            for (size_t n = N; n; n -= vl)
 //            {
-//                vl = __riscv_vsetvl_e32m8(n);
+//                vl = vsetvl_e32m8(n);
 //                const float *pa = ptr_a;
 //                const float *pb_vl = pb;
 //
 //                // init acc with bias
-//                auto acc = __riscv_vle32_v_f32m8(pbias, vl);
+//                auto acc = vle32_v_f32m8(pbias, vl);
 //
 //                for (size_t k = 0; k < K; k++)
 //                {
-//                    auto vb = __riscv_vle32_v_f32m8(pb_vl, vl);
+//                    auto vb = vle32_v_f32m8(pb_vl, vl);
 //                    acc = vfmacc_vf_f32m8(acc, *pa++, vb, vl);
 //                    pb_vl += N;
 //                }
