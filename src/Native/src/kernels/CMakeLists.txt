@@ -2,7 +2,7 @@
 
 set(SRCS kernel_context.cpp)
 
-if(RISCV_V1_0_ROOT_PATH)
+if(C900_RISCV_ROOT_PATH)
     set(CMAKE_C_COMPILER ${RISCV_C_COMPILER} CACHE STRING "" FORCE)
     set(CMAKE_CXX_COMPILER ${RISCV_CXX_COMPILER} CACHE STRING "" FORCE)
     set(CMAKE_FIND_ROOT_PATH ${RISCV_FIND_ROOT_PATH} CACHE STRING "" FORCE)
@@ -44,7 +44,7 @@ if(ENABLE_OPENMP)
 endif()
 
 if(APPLE)
-  target_compile_options(kernels PRIVATE -Wno-gnu-zero-variadic-macro-arguments)
+    target_compile_options(kernels PRIVATE -Wno-gnu-zero-variadic-macro-arguments)
 endif(APPLE)
 
 

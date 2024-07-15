@@ -14,18 +14,6 @@ set(CMAKE_C_COMPILER "${RISCV_ROOT_PATH}/bin/riscv64-unknown-linux-musl-gcc")
 set(CMAKE_CXX_COMPILER "${RISCV_ROOT_PATH}/bin/riscv64-unknown-linux-musl-g++")
 set(CMAKE_FIND_ROOT_PATH "${RISCV_ROOT_PATH}/riscv64-unknown-linux-musl")
 
-if(DEFINED ENV{RISCV_V1_0_ROOT_PATH})
-    file(TO_CMAKE_PATH $ENV{RISCV_V1_0_ROOT_PATH} RISCV_V1_0_ROOT_PATH)
-endif()
-
-if(NOT RISCV_V1_0_ROOT_PATH)
-    message(FATAL_ERROR "RISCV_V1_0_ROOT_PATH env must be defined for rtos runtime to compile riscv64 kernel")
-endif()
-
-set(RISCV_V1_0_ROOT_PATH ${RISCV_V1_0_ROOT_PATH} CACHE STRING "root path to riscv toolchain")
-set(RISCV_C_COMPILER "${RISCV_V1_0_ROOT_PATH}/bin/riscv64-linux-gcc")
-set(RISCV_CXX_COMPILER "${RISCV_V1_0_ROOT_PATH}/bin/riscv64-linux-g++")
-set(RISCV_FIND_ROOT_PATH "${RISCV_V1_0_ROOT_PATH}/riscv64-linux-gnu")
 
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
