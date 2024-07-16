@@ -12,6 +12,28 @@ using Nncase.Passes;
 
 namespace Nncase.CostModel;
 
+internal sealed record CostMemoKeyPartial(Op Op, IRType ReTurnType, IRArray<IRType> Types)
+{
+}
+
+internal sealed record CostMemoKey(ENode Node, CostMemoKeyPartial KeyPart)
+{
+    public bool Equals(CostMemoKey? other)
+    {
+        if (other == null)
+        {
+            return false;
+        }
+
+        return ReferenceEquals(Node, other.Node) && KeyPart == other.KeyPart;
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(ReferenceEqualityComparer.Instance.GetHashCode(Node), KeyPart.GetHashCode());
+    }
+}
+
 internal sealed class EGraphCostEvaluator
 {
     private readonly EClass _root;
@@ -20,7 +42,7 @@ internal sealed class EGraphCostEvaluator
     private readonly Dictionary<EClass, Cost> _eclassCosts = new();
     private readonly HashSet<EClass> _allEclasses = new();
     private readonly IBaseFuncCostEvaluator? _baseFuncCostEvaluator;
-    private readonly Dictionary<ENode, Cost> _opCosts = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<CostMemoKey, Cost> _opCosts = new(ReferenceEqualityComparer.Instance);
     private readonly bool _accumulate;
     private bool _changed;
 
@@ -163,20 +185,21 @@ internal sealed class EGraphCostEvaluator
             Cost? cost = null;
             foreach (var targetEnode in enode.Children[0].Nodes)
             {
-                Cost? newCost;
-                if (!_opCosts.TryGetValue(targetEnode, out newCost))
+                Cost? newCost = null;
+                if (targetEnode.Expr is Op op)
                 {
-                    if (targetEnode.Expr is Op op)
+                    var key = new CostMemoKey(targetEnode, new CostMemoKeyPartial(op, returnType, enode.Children.Skip(1).Select(x => x.CheckedType).ToArray()));
+                    if (!_opCosts.TryGetValue(key, out newCost))
                     {
                         var context = new EGraphOpCostEvaluateContext(returnType, enode.Children.Skip(1).Select(x => x.CheckedType).ToArray(), enode.Children.Skip(1).ToArray(), _compileOptions);
                         newCost = CompilerServices.EvaluateOpCost(op, context);
-                        _opCosts.Add(targetEnode, newCost);
+                        _opCosts.Add(key, newCost);
                     }
-                    else
-                    {
-                        // Trace.Assert(targetEnode.Expr is Function);
-                        newCost = Visit(targetEnode, returnType);
-                    }
+                }
+                else
+                {
+                    // Trace.Assert(targetEnode.Expr is Function);
+                    newCost = Visit(targetEnode, returnType);
                 }
 
                 if (cost == null || (newCost != null && newCost < cost))
