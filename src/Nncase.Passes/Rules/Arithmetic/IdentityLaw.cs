@@ -25,12 +25,34 @@ public sealed partial class XMul1 : IRewriteRule
 }
 
 /// <summary>
-/// x + -x => 0.
+/// neg(neg(x)) = x.
 /// </summary>
 [RuleGenerator]
-public sealed partial class XNegX : IRewriteRule
+public sealed partial class DoubleOppositeIsEmpty : IRewriteRule
 {
-    public XNegX()
+    public IPattern Pattern { get; } = -(-IsWildcard("x"));
+
+    private Expr? GetReplace(Expr x) => x;
+}
+
+/// <summary>
+/// x - y = x + neg(y).
+/// </summary>
+[RuleGenerator]
+public sealed partial class SubIsAddOpposite : IRewriteRule
+{
+    public IPattern Pattern { get; } = IsWildcard("x") - IsWildcard("y");
+
+    private Expr? GetReplace(Expr x, Expr y) => x + (-y);
+}
+
+/// <summary>
+/// x + -x = 0.
+/// </summary>
+[RuleGenerator]
+public sealed partial class XAddNegX : IRewriteRule
+{
+    public XAddNegX()
     {
         var x = IsWildcard("x");
         Pattern = x + (-x);
@@ -42,13 +64,65 @@ public sealed partial class XNegX : IRewriteRule
 }
 
 /// <summary>
-/// x - (x ± 0) or  (x ± 0) - x => x.
-/// because of simplify x+0 => x will cause the egraph explosion.
+/// -0 = 0.
 /// </summary>
 [RuleGenerator]
-public sealed partial class XNegX0 : IRewriteRule
+public sealed partial class ZeroIsNegZero : IRewriteRule
 {
-    public XNegX0()
+    public ZeroIsNegZero()
+    {
+        var zero = IsConst("zero", (Const c) =>
+        {
+            if (c is TensorConst tc)
+            {
+                var bf = tc.Value.BytesBuffer;
+                bool isZero = true;
+                for (int i = 0; i < bf.Length; i++)
+                {
+                    if (bf[i] != 0)
+                    {
+                        isZero = false;
+                    }
+                }
+
+                return isZero;
+            }
+
+            return false;
+        });
+
+        Pattern = zero;
+    }
+
+    public IPattern Pattern { get; }
+
+    private Expr? GetReplace(Expr zero) => -zero;
+}
+
+/// <summary>
+/// x + 0 = x.
+/// </summary>
+[RuleGenerator]
+public sealed partial class XIsXAdd0 : IRewriteRule
+{
+    public XIsXAdd0()
+    {
+        var x = IsWildcard("x", e => e is not (IR.Tuple or Op));
+        Pattern = x;
+    }
+
+    public IPattern Pattern { get; }
+
+    private Expr? GetReplace(Expr x) => x + 0;
+}
+
+/// <summary>
+/// x = x + 0.
+/// </summary>
+[RuleGenerator]
+public sealed partial class XAdd0 : IRewriteRule
+{
+    public XAdd0()
     {
         var x = IsWildcard("x");
         var zero = IsConst((Const c) =>
@@ -71,13 +145,12 @@ public sealed partial class XNegX0 : IRewriteRule
             return false;
         });
 
-        var y = IsSwappableBinary("b0", "c0", b => b.BinaryOp is BinaryOp.Add or BinaryOp.Sub, x, zero);
-        Pattern = IsAlt(-y + x, x - y, -x + y, y - x);
+        Pattern = x + 0;
     }
 
     public IPattern Pattern { get; }
 
-    private Expr? GetReplace(Expr x) => Tensor.FromBytes(x.CheckedDataType, new byte[x.CheckedDataType.SizeInBytes], Array.Empty<int>());
+    private Expr? GetReplace(Expr x) => x;
 }
 
 /// <summary>

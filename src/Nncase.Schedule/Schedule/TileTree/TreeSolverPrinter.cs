@@ -29,10 +29,10 @@ public sealed class TreeSolverPrinter : TreeSolverBase, ITreeNodeVisitor<Unit, U
             string value = string.Empty;
             if (solution is Assignment assignment && intExprs[i] is IntExpr expr)
             {
-                value = assignment.Value(expr.Var()).ToString();
+                value = $"= {assignment.Value(expr.Var())}";
             }
 
-            writer.WriteLine($"{i}: {intExprs[i].ToSimplifyString()} = {value}");
+            writer.WriteLine($"{i}: {intExprs[i].ToSimplifyString()} {value}");
         }
 
         writer.Indent--;

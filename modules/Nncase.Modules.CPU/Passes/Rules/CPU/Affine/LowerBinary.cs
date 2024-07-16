@@ -155,6 +155,7 @@ public partial class LowerPackedBinary : RewriteRule<Pattern>
             _ => throw new ArgumentOutOfRangeException(nameof(call)),
         };
         return IR.F.Affine.Grid(CPUTarget.Kind)
+            .Domain(rank, out var _)
             .Read(lhs, lhsMap, out var lhsTile)
             .Read(rhs, rhsMap, out var rhsTile)
             .Write(outBuffer, AffineMap.Identity(rank), out var outTile)

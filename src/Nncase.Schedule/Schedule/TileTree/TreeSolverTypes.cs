@@ -30,6 +30,11 @@ public sealed record TileNodeInfo(IntExpr[][] BackWardExtents, Dictionary<Buffer
             return sinkId;
         }
 
+        if (!BufferInfoMap.ContainsKey(bid))
+        {
+            throw new KeyNotFoundException(bid.ToString());
+        }
+
         return bid;
     }
 }

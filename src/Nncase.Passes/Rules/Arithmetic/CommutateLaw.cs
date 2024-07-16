@@ -24,16 +24,16 @@ public sealed partial class CommutateMul : IRewriteRule
 }
 
 /// <summary>
-/// x * y => y * x.
+/// x + y => y + x.
 /// </summary>
 [RuleGenerator]
 public sealed partial class CommutateAdd : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsBinary("b0", "b0Call", op => op.BinaryOp is BinaryOp.Add or BinaryOp.Sub, IsWildcard("x"), IsWildcard("y"));
+    public IPattern Pattern { get; } = IsWildcard("x") + IsWildcard("y");
 
-    private Expr? GetReplace(Binary b0, Expr x, Expr y)
+    private Expr? GetReplace(Expr x, Expr y)
     {
-        return b0.BinaryOp == BinaryOp.Add ? y + x : (-y) + x;
+        return y + x;
     }
 }

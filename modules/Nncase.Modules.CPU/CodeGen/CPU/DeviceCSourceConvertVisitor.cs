@@ -113,6 +113,7 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
         var @var = Visit(expr.Var);
         var value = Visit(expr.Expression);
+        _exprMemo[expr.Var] = new(value.Type, @var.Name);
 
 #if DEBUG_PRINT
         IndentScope.Writer.IndWrite($"runtime_util->printf(\"let {@var.Name}\\n\");\n");
@@ -142,7 +143,14 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             _ => throw new NotSupportedException(expr.Location.ToString()),
         };
 
-        symbol = new(start.Type, $"std::span<uint8_t, {size.Name}>({name}, {size.Name})");
+        var str = start.Type switch
+        {
+            "uint8_t *" => $"std::span<uint8_t, {size.Name}>({name}, {size.Name})",
+            "auto" => $"std::span({name})",
+            _ => throw new NotSupportedException(start.Type),
+        };
+
+        symbol = new(start.Type, str);
         _exprMemo.Add(expr, symbol);
         return symbol;
     }
@@ -215,7 +223,16 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 str = op.PtrName + ".data()";
                 break;
             case IR.Buffers.Allocate op:
-                str = $"({type})runtime_util->malloc({arguments[0].Name})";
+                if (op.Malloc)
+                {
+                    str = $"({type})runtime_util->malloc({arguments[0].Name})";
+                }
+                else
+                {
+                    type = "auto";
+                    str = $"std::array<{((PointerType)expr.CheckedDataType).ElemType.ToC()}, {arguments[0].Name}>()";
+                }
+
                 break;
             case IR.Buffers.BufferSubview op:
                 {

@@ -60,6 +60,27 @@ public sealed class UnitTestCPUKernels : TestClassBase
     public static int Rank => 1;
 
     [Theory]
+    [InlineData(new object[] { new[] { 32, 64 }, new[] { 64, 48 }, new[] { 48, 16 }, 0 })]
+    [InlineData(new object[] { new[] { 128, 256 }, new[] { 256, 384 }, new[] { 384, 512 }, 1 })]
+    public async Task TestTileFlowCase(int[] ashape, int[] bshape, int[] eshape, int count)
+    {
+        var a = new Var("a", new TensorType(DataTypes.Float32, ashape));
+        var b = new Var("b", new TensorType(DataTypes.Float32, bshape));
+        var c = IR.F.Tensors.MatMul(a, b);
+        var d = IR.F.Math.Neg(c);
+        var e = new Var("e", new TensorType(DataTypes.Float32, eshape));
+        var f = IR.F.Tensors.MatMul(d, e);
+
+        var feedDict = new Dictionary<Var, IValue>() {
+            { a, IR.F.Tensors.ConstantOfShape(ashape, 1.0f).Evaluate() /* IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, ashape).Evaluate() */ },
+            { b, IR.F.Tensors.ConstantOfShape(bshape, 1.0f).Evaluate() /* IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, bshape).Evaluate() */ },
+            { e, IR.F.Tensors.ConstantOfShape(eshape, 1.0f).Evaluate() /* IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, eshape).Evaluate() */ },
+        };
+
+        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, new[] { f });
+    }
+
+    [Theory]
     [InlineData(new object[] { new[] { 32, 512, 64, 64 }, 0 })]
     public async Task TestSwish(int[] shape, int count)
     {

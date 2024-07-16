@@ -301,7 +301,7 @@ namespace Nncase.IR
         /// <inheritdoc/>
         public bool Equals(object? other, IEqualityComparer comparer)
         {
-            return ((IStructuralEquatable)_dimensions).Equals(other, comparer);
+            return other is Shape rhs && ((IStructuralEquatable)_dimensions).Equals(rhs._dimensions, comparer);
         }
 
         /// <inheritdoc/>

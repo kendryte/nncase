@@ -84,80 +84,44 @@ public static class TreeTiler
         tree.Accept(initWrites, new());
 
         // 1. each buffer must store one at lowest level.
+        // 1.1 count each node's buffer store nums.
         var lowestStoreBufferNums = new Dictionary<TileNode, Dictionary<BufferIdenitity, IntExpr>>();
+        foreach (var (tileNode, bufferInfoMemo) in tileNodeMemo)
         {
-            foreach (var (tileNode, bufferInfoMemo) in tileNodeMemo)
+            var tileStoreNums = new Dictionary<BufferIdenitity, IntExpr>();
+            foreach (var (bid, bufferInfo) in bufferInfoMemo.BufferInfoMap)
             {
-                var tileStoreNums = new Dictionary<BufferIdenitity, IntExpr>();
-                foreach (var (bid, bufferInfo) in bufferInfoMemo.BufferInfoMap)
-                {
-                    tileStoreNums.Add(bid, solver.MakeSum(bufferInfo.Places.Select(p => p[0]).ToArray()));
-                }
-
-                lowestStoreBufferNums.Add(tileNode, tileStoreNums);
+                tileStoreNums.Add(bid, solver.MakeSum(bufferInfo.Places.Select(p => p[0]).ToArray()));
             }
 
-            var nodeBufferUses = new Dictionary<TileNode, Dictionary<BufferIdenitity, HashSet<BufferIdenitity>>>();
-            for (int cl = 1; cl < totalLevel; cl++)
+            lowestStoreBufferNums.Add(tileNode, tileStoreNums);
+        }
+
+        // 1.2 accumulate the child buffer store nums to parent child buffer in each level.
+        for (int cl = 1; cl < totalLevel; cl++)
+        {
+            foreach (var (childNode, childBufferInfoMemo) in tileNodeMemo.Where(t => t.Key.Level == cl))
             {
-                foreach (var (childNode, childBufferInfoMemo) in tileNodeMemo.Where(t => t.Key.Level == cl))
+                if (childNode.GetParentTileableNode() is TileNode parentNode)
                 {
-                    if (childNode.GetParentTileableNode() is TileNode parentNode)
+                    var partentBufferInfoMemo = tileNodeMemo[parentNode];
+                    foreach (var (cbid, cbufferInfo) in childBufferInfoMemo.BufferInfoMap)
                     {
-                        var partentBufferInfoMemo = tileNodeMemo[parentNode];
-                        foreach (var (cbid, cbufferInfo) in childBufferInfoMemo.BufferInfoMap)
-                        {
-                            var pbid = partentBufferInfoMemo.GetCacheBid(cbid);
-                            lowestStoreBufferNums[parentNode][pbid] += lowestStoreBufferNums[childNode][cbid];
-
-                            // add to buffer uses
-                            if (!nodeBufferUses.TryGetValue(parentNode, out var parentBufferUses))
-                            {
-                                parentBufferUses = new();
-                                nodeBufferUses.Add(parentNode, parentBufferUses);
-                            }
-
-                            if (!parentBufferUses.TryGetValue(pbid, out var usesSet))
-                            {
-                                usesSet = new();
-                                parentBufferUses.Add(pbid, usesSet);
-                            }
-
-                            if (nodeBufferUses.TryGetValue(childNode, out var childBufferUses) && childBufferUses.TryGetValue(cbid, out var childUsesSet))
-                            {
-                                usesSet.UnionWith(childUsesSet);
-                            }
-                            else
-                            {
-                                usesSet.Add(cbid);
-                            }
-                        }
+                        var pbid = partentBufferInfoMemo.GetCacheBid(cbid);
+                        lowestStoreBufferNums[parentNode][pbid] += lowestStoreBufferNums[childNode][cbid];
                     }
                 }
             }
+        }
 
-            var lowestStoreBufferNumsConstrains = new Dictionary<BufferIdenitity, Constraint>();
-            foreach (var (node, bufferInfoMemo) in tileNodeMemo.Where(t => t.Key.Level == totalLevel))
+        // 1.3 create buffer store nums constrains at total level.
+        var lowestStoreBufferNumsConstrains = new Dictionary<BufferIdenitity, Constraint>();
+        foreach (var (node, bufferInfoMemo) in tileNodeMemo.Where(t => t.Key.Level == totalLevel))
+        {
+            foreach (var (bid, bufferInfo) in bufferInfoMemo.BufferInfoMap)
             {
-                foreach (var (bid, bufferInfo) in bufferInfoMemo.BufferInfoMap)
-                {
-                    var usesCount = nodeBufferUses[node][bid].Count;
-                    if (!(usesCount is 1 or 2))
-                    {
-                        throw new NotSupportedException("not support uses count != 1 or 2");
-                    }
-
-                    if (usesCount == 1)
-                    {
-                        lowestStoreBufferNumsConstrains[bid] = solver.MakeEquality(lowestStoreBufferNums[node][bid], 1);
-                        solver.Add(lowestStoreBufferNumsConstrains[bid]);
-                    }
-                    else
-                    {
-                        lowestStoreBufferNumsConstrains[bid] = solver.MakeBetweenCt(lowestStoreBufferNums[node][bid], 1, 2);
-                        solver.Add(lowestStoreBufferNumsConstrains[bid]);
-                    }
-                }
+                lowestStoreBufferNumsConstrains[bid] = solver.MakeEquality(lowestStoreBufferNums[node][bid], 1);
+                solver.Add(lowestStoreBufferNumsConstrains[bid]);
             }
         }
 
@@ -172,8 +136,21 @@ public static class TreeTiler
             {
                 createBufferNums[bid] = solver.MakeSum(bufferInfo.Places.SelectMany(i => i).ToArray());
                 createBufferConstraints[bid] = solver.MakeLessOrEqual(createBufferNums[bid], 1);
-                createBufferConstraints[bid].SetName($"createCons[{node.Level}, {node.OpId}, {bid}]");
+                createBufferConstraints[bid].SetName($"nodeCreate[{node.Level}, {node.OpId}, {bid}]");
                 solver.Add(createBufferConstraints[bid]);
+            }
+        }
+
+        // 2.1 each cache buffer requires it's parent level create a buffer.
+        var eachParentNodeCreateBufferConstraints = new Dictionary<TileNode, Dictionary<BufferIdenitity, Constraint>>();
+        foreach (var (node, nodeInfo) in tileNodeMemo.Where(kv => kv.Key.Level > 1 && kv.Value.DefUseMap.Any()))
+        {
+            var nodeCreateBufferConstraints = eachParentNodeCreateBufferConstraints[node] = new();
+            foreach (var (_, sinkId) in nodeInfo.DefUseMap)
+            {
+                var cons = nodeCreateBufferConstraints[sinkId] = solver.MakeEquality(solver.MakeSum(nodeInfo.BufferInfoMap[sinkId].Places.Select(p => p[node.Level - 2]).ToArray()), 1);
+                cons.SetName($"parentCreate[{node.Level}, {node.OpId}, {sinkId}]");
+                solver.Add(cons);
             }
         }
 
@@ -366,11 +343,6 @@ public static class TreeTiler
         {
             foreach (var (bid, bufferInfo) in info.BufferInfoMap)
             {
-                if (info.DefUseMap.ContainsKey(bid))
-                {
-                    continue;
-                }
-
                 var placeVars = bufferInfo.Places.SelectMany(i => i).ToArray();
                 searchAbleVars.AddRange(placeVars);
                 collector.Add(placeVars);
@@ -382,7 +354,7 @@ public static class TreeTiler
         }
 
         var decisionBuilder = solver.MakeDefaultPhase(searchAbleVars.ToArray());
-        var status = solver.Solve(decisionBuilder, new SearchMonitor[] { collector, objectiveMonitor, /*  logger */ solver.MakeSearchTrace("fuck"), solver.MakeSolutionsLimit(20) });
+        var status = solver.Solve(decisionBuilder, new SearchMonitor[] { collector, objectiveMonitor, logger, solver.MakeSolutionsLimit(20), solver.MakeTimeLimit(50000) });
         if (!status)
         {
             callFunc = null!;
@@ -409,8 +381,26 @@ public static class TreeTiler
 
             writer.Indent--;
 
+            writer.WriteLine("lowestStoreBufferNumsConstrains:");
             writer.Indent++;
+            foreach (var (node, cons) in lowestStoreBufferNumsConstrains)
+            {
+                TreeSolverPrinter.WriteIntExprVector(writer, node.ToString(), new[] { cons }, sol);
+            }
+
+            writer.Indent--;
+
+            writer.WriteLine("EachParentNodeCreateBufferConstraints:");
+            writer.Indent++;
+            foreach (var (node, constraints) in eachParentNodeCreateBufferConstraints)
+            {
+                TreeSolverPrinter.WriteIntExprVector(writer, node.ToString(), constraints.Values.ToArray(), sol);
+            }
+
+            writer.Indent--;
+
             writer.WriteLine("memoryCapacityConstraints:");
+            writer.Indent++;
             foreach (var (level, nodeMap) in memoryCapacityConstraints)
             {
                 foreach (var (node, consts) in nodeMap)

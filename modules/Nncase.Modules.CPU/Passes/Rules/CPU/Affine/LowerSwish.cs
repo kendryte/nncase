@@ -30,6 +30,7 @@ public partial class LowerSwish : RewriteRule<Pattern>
         };
         var rank = input.CheckedShape.Rank;
         return IR.F.Affine.Grid(CPUTarget.Kind)
+            .Domain(rank, out var _)
             .Read(input, AffineMap.Identity(rank), out var inTile)
             .Write(outBuffer, AffineMap.Identity(rank), out var outTile)
             .Body(TIR.F.CPU.Swish(inTile, outTile, beta))

@@ -69,9 +69,9 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
         _sol = solution;
         _inputs = inputs;
         _outputs = outputs;
-        CompileOptions = compileOptions;
         BufferMemo = new();
         _subViewMemo = new();
+        CompileOptions = compileOptions;
     }
 
     public Dictionary<BufferIdenitity, TIR.Buffer> BufferMemo { get; }
@@ -115,8 +115,9 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
             initOffsets[k] += partentOffsets[v];
         }
 
-        var forwardOffsets = new Expr[loopVars.Length][];
-        for (int i = 0; i < loopVars.Length; i++)
+        // forwardOffsets[0] means partentOffsets, forwardOffsets[i] means partentOffsets[0:i] + loop vars[0:i]
+        var forwardOffsets = new Expr[loopVars.Length + 1][];
+        for (int i = 0; i < loopVars.Length + 1; i++)
         {
             var offsets = forwardOffsets[i] = initOffsets.ToArray();
 
@@ -126,50 +127,56 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
             }
         }
 
-        var letBuilders = Enumerable.Range(0, value.DimNames.Length).Select(i => new List<ISequentialBuilder<Expr>>()).ToArray();
-
-        foreach (var (bid, bufferInfo) in nodeMemo.BufferInfoMap)
+        // var domainLetBuilders = Enumerable.Range(0, value.DimNames.Length).Select(i => new List<ISequentialBuilder<Expr>>()).ToArray();
+        var cntBuilder = parentbuilder;
+        for (int i = 0; i < value.DimNames.Length; i++)
         {
-            if (nodeMemo.DefUseMap.ContainsKey(bid))
-            {
-                continue;
-            }
-
-            for (int i = 0; i < value.DimNames.Length; i++)
+            foreach (var (bid, bufferInfo) in nodeMemo.BufferInfoMap)
             {
                 var place = bufferInfo.Places[i];
                 for (int sl = 0; sl < place.Length; sl++)
                 {
                     if (_sol.Value(place[sl]) == 1)
                     {
-                        var subViewInfo = AllocateSubView(value, bid, bufferInfo.Map, forwardOffsets[i], bufferInfo.Shapes[i]);
-                        var letBuilder = T.Let(out var letVar, subViewInfo.Buffer, $"{bid}_L{value.Level}");
-                        letBuilders[i].Add(letBuilder);
-                        if (!_subViewMemo.TryGetValue(value, out var subviewMap))
+                        var viewInfo = GetParentSubViewInfo(value, bid, bufferInfo.Map, forwardOffsets[i], bufferInfo.Shapes[i]);
+                        var subView = IR.F.Buffer.BufferSubview(viewInfo.Buffer, viewInfo.Offsets, new IR.Tuple(viewInfo.Shape.Select(x => (Expr)x).ToArray()));
+                        Var subBufVar;
+
+                        // the parent buffer is temp buffer.
+                        if (viewInfo.AllocateBuilder is ISequentialBuilder<Let> allocateBuilder)
                         {
-                            subviewMap = new();
-                            _subViewMemo.Add(value, subviewMap);
+                            var letBuilder = T.Let(out subBufVar, IR.F.Buffer.AllocateBufferView(viewInfo.Buffer), $"{bid}_L{value.Level}");
+                            allocateBuilder.Body(letBuilder);
+                            cntBuilder.Body(allocateBuilder);
+                            cntBuilder = letBuilder;
+                        }
+                        else
+                        {
+                            // copy sub view to new created local buffer.
+                            // var dtype = viewInfo.Buffer.CheckedDataType;
+                            // var spanBuilder = T.Let(out var subBufSpan, IR.F.Buffer.Allocate(TensorUtilities.GetProduct(viewInfo.Shape, 0), dtype, MemoryLocation.L2Data, false), $"{bid}_L{value.Level}_span");
+                            // T.AttachBuffer(subBufSpan, new TensorType(dtype, viewInfo.Shape), MemoryLocation.L2Data, 1, out var subBuf, $"{bid}_L{value.Level}")
+                            var letBuilder = T.Let(out subBufVar, subView, $"{bid}_L{value.Level}");
+                            cntBuilder.Body(letBuilder);
+                            cntBuilder = letBuilder;
                         }
 
-                        subviewMap[bid] = new(letVar, subViewInfo.Offsets);
+                        if (!_subViewMemo.TryGetValue(value, out var subViewMap))
+                        {
+                            subViewMap = new();
+                            _subViewMemo.Add(value, subViewMap);
+                        }
+
+                        subViewMap[bid] = new(subBufVar, viewInfo.Offsets);
                     }
                 }
             }
-        }
-
-        for (int i = value.DimNames.Length - 1; i >= 0; i--)
-        {
-            var cntBuilder = i == 0 ? parentbuilder : loopBuilders[i - 1];
-            for (int j = 0; j < letBuilders[i].Count; j++)
-            {
-                cntBuilder.Body(letBuilders[i][j]);
-                cntBuilder = letBuilders[i][j];
-            }
 
             cntBuilder.Body(loopBuilders[i]);
+            cntBuilder = loopBuilders[i];
         }
 
-        value.Child.Accept(this, new(loopBuilders[^1], forwardOffsets[0]));
+        value.Child.Accept(this, new(loopBuilders[^1], forwardOffsets[^1]));
 
         return default;
     }
@@ -182,47 +189,52 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
         for (int i = 0; i < value.BufferShapes.Length; i++)
         {
             var bid = new BufferIdenitity(value, i);
-            var subViewInfo = AllocateSubView(value, bid, OpNodeMemo[value].Maps[i], partentOffsets, OpNodeMemo[value].Shapes[i]);
+            var viewInfo = GetParentSubViewInfo(value, bid, OpNodeMemo[value].Maps[i], partentOffsets, OpNodeMemo[value].Shapes[i]);
 
-            buffers[i] = subViewInfo.Buffer;
+            buffers[i] = IR.F.Buffer.BufferSubview(viewInfo.Buffer, viewInfo.Offsets, new IR.Tuple(viewInfo.Shape.Select(x => (Expr)x).ToArray()));
         }
 
-        parentbuilder.Body(new Call(value.Op, buffers));
+        var bodyVarReplaces = new Dictionary<Expr, Expr>();
+        for (int i = 0; i < value.Grid.BodyParameters.Length; i++)
+        {
+            bodyVarReplaces.Add(value.Grid.BodyParameters[i], buffers[i]);
+        }
+
+        var domain = new IR.Tuple(partentOffsets.Select(off => new IR.Tuple(off, 0L)).ToArray());
+        bodyVarReplaces.Add(value.Grid.DomainParameter, domain);
+        var nestBody = new ReplacingExprCloner(bodyVarReplaces).Clone(value.Grid.Body, default);
+        parentbuilder.Body(nestBody);
 
         return default;
     }
 
-    private TIR.Buffer AllocateBuffer(BufferIdenitity bid)
+    private TensorType GetBufferTensorType(Expr expr)
+    {
+        TensorType GetTensorType(IRType type) => type switch
+        {
+            TensorType t => t,
+            DistributedType dt => Utilities.DistributedUtility.GetDividedTensorType(dt),
+            _ => throw new NotSupportedException(),
+        };
+
+        return expr switch
+        {
+            IR.Buffers.BufferOf bufof => GetTensorType(bufof.Input.CheckedType),
+            Call { Target: IR.Buffers.Uninitialized } c => GetTensorType(c.CheckedType),
+            _ => throw new NotSupportedException(),
+        };
+    }
+
+    /// <summary>
+    /// declare the input/output buffer.
+    /// </summary>
+    private TIR.Buffer GetDeclareBuffer(BufferIdenitity bid)
     {
         var expr = bid.Node.Buffers[bid.Index];
+        var tensorType = GetBufferTensorType(expr);
         if (!BufferMemo.TryGetValue(bid, out var buffer))
         {
-            if (expr is IR.Buffers.BufferOf bufof)
-            {
-                var ttype = bufof.Input.CheckedType switch
-                {
-                    TensorType t => t,
-                    DistributedType dt => Utilities.DistributedUtility.GetDividedTensorType(dt),
-                    _ => throw new NotSupportedException(),
-                };
-
-                buffer = T.AttachBuffer(None.Default, ttype, MemoryLocation.Input, 1, out _, $"{bid}");
-            }
-            else if (expr is Call { Target: IR.Buffers.Uninitialized } c)
-            {
-                var ttype = c.CheckedType switch
-                {
-                    TensorType t => t,
-                    DistributedType dt => Utilities.DistributedUtility.GetDividedTensorType(dt),
-                    _ => throw new NotSupportedException(),
-                };
-
-                buffer = T.AttachBuffer(None.Default, ttype, MemoryLocation.Data, 1, out _, $"{bid}");
-            }
-            else
-            {
-                throw new NotSupportedException();
-            }
+            buffer = T.AttachBuffer(None.Default, tensorType, MemoryLocation.Data, 1, out _, $"{bid}");
 
             BufferMemo.Add(bid, buffer);
         }
@@ -230,44 +242,88 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
         return buffer;
     }
 
-    private SubViewInfo AllocateSubView(ITileAbleNode node, BufferIdenitity bid, AffineMap map, Expr[] forwardOffsets, IntExpr[] shapeExprs)
+    private bool TryGetParerntBuffer(ITileAbleNode node, BufferIdenitity bid, out Expr parentBuffer, out IR.Tuple parentOffsets)
     {
-        var offset = new IR.Tuple(map.Apply(forwardOffsets, Enumerable.Repeat<Expr>(0, forwardOffsets.Length).ToArray()).Select(i => i.Start).ToArray());
-        var shape = new IR.Tuple(shapeExprs.Select(s => (Expr)_sol.Value(s.Var())).ToArray());
-        Expr parentBuffer = null!;
-        IR.Tuple parentOffsets = null!;
-
+        var cbid = bid;
         var parentNode = node.GetParentTileableNode();
         while (parentNode is TileNode parentTileNode)
         {
-            if (_subViewMemo.TryGetValue(parentTileNode, out var subViewMap) && subViewMap.TryGetValue(bid, out var subViewInfo))
+            var pbid = TileNodeMemo[parentTileNode].GetCacheBid(cbid);
+            if (_subViewMemo.TryGetValue(parentTileNode, out var subViewMap) && subViewMap.TryGetValue(pbid, out var subViewInfo))
             {
                 parentBuffer = subViewInfo.Buffer;
                 parentOffsets = subViewInfo.Offsets;
-                break;
+                return true;
             }
 
             parentNode = parentNode.GetParentTileableNode();
+            cbid = pbid;
         }
 
-        parentBuffer ??= AllocateBuffer(bid);
+        parentBuffer = null!;
+        parentOffsets = null!;
+        return false;
+    }
 
-        if (parentOffsets is not null)
+    private ParentSubViewInfo GetParentSubViewInfo(ITileAbleNode node, BufferIdenitity bid, AffineMap map, Expr[] forwardOffsets, IntExpr[] shapeExprs)
+    {
+        var offset = new IR.Tuple(map.Apply(forwardOffsets, Enumerable.Repeat<Expr>(0, forwardOffsets.Length).ToArray()).Select(i => i.Start).ToArray());
+        var shape = shapeExprs.Select(s => (int)_sol.Value(s.Var())).ToArray();
+        ISequentialBuilder<Let>? allocateBuilder = null;
+        if (TryGetParerntBuffer(node, bid, out var parentBuffer, out var parentOffsets))
         {
             var subOffset = new Expr[offset.Count];
             for (int j = 0; j < subOffset.Length; j++)
             {
                 var x = offset.Fields[j] - parentOffsets.Fields[j];
-                subOffset[j] = CompilerServices.ERewrite(x, new Passes.IRewriteRule[] { new Passes.Rules.Arithmetic.AssociateAdd(), new Passes.Rules.Arithmetic.CommutateAdd(), new Passes.Rules.Arithmetic.XNegX(), new Passes.Rules.Arithmetic.XNegX0() }, new(), CompileOptions);
+                subOffset[j] = x;
+                // CompilerServices.ERewrite(x, new Passes.IRewriteRule[] { new Passes.Rules.Arithmetic.AssociateAdd(), new Passes.Rules.Arithmetic.CommutateAdd(), new Passes.Rules.Arithmetic.XNegX(), new Passes.Rules.Arithmetic.XNegX0() }, new(), CompileOptions);
             }
 
             offset = new IR.Tuple(subOffset);
         }
+        else
+        {
+            if (_inputs.Contains(bid) || _outputs.Contains(bid))
+            {
+                parentBuffer = GetDeclareBuffer(bid);
+            }
+            else
+            {
+                parentBuffer = GetAllocateBuffer(bid, out allocateBuilder);
+            }
+        }
 
-        return new SubViewInfo(IR.F.Buffer.BufferSubview(parentBuffer, offset, shape), offset);
+        return new ParentSubViewInfo(parentBuffer, offset, shape, allocateBuilder);
+    }
+
+    /// <summary>
+    /// Get the local allocate buffer.
+    /// </summary>
+    private TIR.Buffer GetAllocateBuffer(BufferIdenitity bid, out ISequentialBuilder<Let> scope)
+    {
+        var expr = bid.Node.Buffers[bid.Index];
+        var tensorType = GetBufferTensorType(expr);
+        if (!BufferMemo.TryGetValue(bid, out var buffer))
+        {
+            var alloc = IR.F.Buffer.Allocate(TensorUtilities.GetProduct(tensorType.Shape.ToValueArray()), tensorType.DType, MemoryLocation.L2Data, false);
+            scope = T.Let(out var allocVar, alloc, $"{bid}_span");
+            buffer = T.AttachBuffer(allocVar, tensorType, MemoryLocation.L2Data, 1, out _, $"{bid}");
+            BufferMemo.Add(bid, buffer);
+        }
+        else
+        {
+            throw new InvalidOperationException("can't allocate twice.");
+        }
+
+        return buffer;
     }
 
     public sealed record Context(ISequentialBuilder<Expr> ParentBuilder, Expr[] ForwardOffsets)
+    {
+    }
+
+    public sealed record ParentSubViewInfo(Expr Buffer, IR.Tuple Offsets, int[] Shape, ISequentialBuilder<Let>? AllocateBuilder)
     {
     }
 

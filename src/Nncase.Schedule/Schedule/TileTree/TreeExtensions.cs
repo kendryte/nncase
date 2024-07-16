@@ -30,6 +30,16 @@ public static class TreeExtensions
         };
     }
 
+    public static IEnumerable<ITileAbleNode> GetChildTileableNodes(this ITreeNode node)
+    {
+        return node switch
+        {
+            ScopeNode s => s.Children.Select(GetChildTileableNodes).SelectMany(i => i),
+            ITileAbleNode s => new[] { s },
+            _ => Array.Empty<ITileAbleNode>(),
+        };
+    }
+
     public static string ToSimplifyString(this PropagationBaseObject intExpr)
     {
         var str = intExpr.ToString();

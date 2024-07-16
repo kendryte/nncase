@@ -1,34 +1,22 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using Nncase.IR;
+using Xunit;
 
-// public class UnitTestCostModel
-// {
-//     [Fact]
-//     public void TestConst()
-//     {
-//         var a = (Const)7;
-//         var exprVisitor = new ExprCostModelVisitor();
-//         Assert.True(a.InferenceType());
-//         Assert.Equal(new Cost(0, 4), exprVisitor.Visit(a));
-//     }
+namespace Nncase.Tests.CostModelTest;
 
-// [Fact]
-//     public void TestBinary()
-//     {
-//         // todo need process pow lhs is not cost
-//         // var a = (Const)1;
-//         // var n = (Const)5;
-//         // var pow = Math.Pow(a, n);
-//         // CompilerServices.InferenceType(pow);
-//         // var exprVisitor = new ExprCostModelVisitor();
-//         // Assert.Equal(new Cost(5, 0), exprVisitor.Visit(pow));
-//     }
-
-// [Fact]
-//     public void TestCostInf()
-//     {
-//         var c = Cost.Inf;
-//         Assert.Equal(Cost.Inf, c + new Cost(10, 120));
-//     }
-// }
+public class UnitTestCostModel
+{
+    [Fact]
+    public void TestDistributedTypeMemoryAccessCost()
+    {
+        var t1 = new DistributedType(new TensorType(DataTypes.Float32, new[] { 2, 4096, 320 }), new SBP[] { SBP.S(2), SBP.S(1) }, new Placement(new[] { 8, 4 }, "bt"));
+        var cost1 = CostModel.CostUtility.GetMemoryAccess(t1);
+        var t2 = new DistributedType(new TensorType(DataTypes.Float32, new[] { 2, 4096, 320 }), new SBP[] { SBP.B, SBP.B }, new Placement(new[] { 8, 4 }, "bt"));
+        var cost2 = CostModel.CostUtility.GetMemoryAccess(t2);
+        System.Console.WriteLine(cost1);
+        System.Console.WriteLine(cost2);
+        Assert.True(cost1 < cost2);
+    }
+}

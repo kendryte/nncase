@@ -608,8 +608,9 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
             }
 
             // 4. For Body
+            var domain_parameters = Visit(expr.DomainParameter);
             var parameters = expr.BodyParameters.AsValueEnumerable().Select(Visit).ToArray();
-            _scope.IndWrite($"Body: ({string.Join(", ", parameters)})");
+            _scope.IndWrite($"Body: ({domain_parameters}, {string.Join(", ", parameters)})");
             AppendCheckedType(expr.Body.CheckedType, " {", hasNewLine: true);
             using (_scope.IndentUp())
             {

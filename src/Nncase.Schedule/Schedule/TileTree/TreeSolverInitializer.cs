@@ -96,7 +96,10 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
         var (pid, pvars) = context;
         var dimsMap = TreePrinter.GetDimsMap(value);
         var tileVars = value.DimNames.Select(n => Solver.MakeIntVar(1, long.MaxValue, $"{n}_L{value.Level}")).ToArray();
-        var kernelInfo = CompilerServices.GetOpMicroKernelInfo(value.Op, value.AccessMaps[0].Domains.AsValueEnumerable().Select(i => i.Offset).ToArray(), value.AccessMaps.ToArray(), value.BufferShapes, TargetOptions);
+
+        // CompilerServices.GetOpMicroKernelInfo(value.Op, value.AccessMaps[0].Domains.AsValueEnumerable().Select(i => i.Offset).ToArray(), value.AccessMaps.ToArray(), value.BufferShapes, TargetOptions);
+        var kernelInfo = new MicroKernelInfo(tileVars.Select(i => 1).ToArray(), tileVars.Select((_, i) => new ValueRange<int>(0, value.DomainBounds[i])).ToArray(), 1, 1);
+
         for (int i = 0; i < tileVars.Length; i++)
         {
             tileVars[i].SetRange(kernelInfo.Multiplier[i].Min, kernelInfo.Multiplier[i].Max);
@@ -153,6 +156,8 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
 
         bufferResults[value.ReadAccesses.Length] = new(new(value, value.ReadAccesses.Length), new(TimeStamp, TimeStamp + 1), value.DomainRelation.Map * accessMaps[^1]);
         TimeStamp += 2;
+
+        // todo backward extents should times primtives.
         return new(bufferResults, new[] { dimsMap }, new IntExpr[][] { tileVars.Cast<IntExpr>().ToArray() });
     }
 

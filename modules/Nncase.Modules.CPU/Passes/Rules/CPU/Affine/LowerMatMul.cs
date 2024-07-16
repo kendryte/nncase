@@ -83,10 +83,11 @@ public partial class LowerMatmul : RewriteRule<Pattern>
             _ => throw new ArgumentOutOfRangeException(nameof(call)),
         };
         return IR.F.Affine.Grid(CPUTarget.Kind)
+            .Domain(rank, out var domainVar)
             .Read(lhs, lhsMap, out var lhsTile)
             .Read(rhs, rhsMap, out var rhsTile)
             .Write(outBuffer, new AffineMap(domains, default, domains.SkipLast(2).Concat(domains.TakeLast(1)).Select(x => new AffineRange(x.Offset, x.Extent)).ToArray()), out var outTile)
-            .Body(TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.Equal(domains[^2].Offset, 0L)))
+            .Body(TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.Equal(domainVar[rank - 2][0], 0L)))
             .Build();
     }
 }
