@@ -17,7 +17,7 @@ using Nncase.TIR.Builders;
 
 namespace Nncase.Schedule;
 
-internal sealed record AffineTilerMemo(IRArray<Shape> BufferShapes, IRArray<int> DomainBounds, IRArray<AffineMap> AffineMaps, Type OpType)
+internal sealed record AffineTilerMemo(IRArray<Shape> BufferShapes, IRArray<int> DomainBounds, IRArray<AffineMap> AffineMaps, Type OpType, int ElemSize)
 {
 }
 
@@ -199,13 +199,25 @@ internal sealed class AffineTiler
 
     private GridSchedule SolveSchedule(Op op, Dictionary<AffineTilerMemo, GridSchedule> memo)
     {
-        var bufferShapes = _grid.Buffers.AsValueEnumerable().Select(x => x.CheckedShape).ToArray();
+        var bufferShapes = new Shape[_grid.Buffers.Length];
+        for (int i = 0; i < _grid.Buffers.Length; i++)
+        {
+            var shape = _grid.Buffers[i].CheckedType switch
+            {
+                TensorType t => t.Shape.ToValueArray(),
+                DistributedType dt => Utilities.DistributedUtility.GetDividedTensorType(dt).Shape.ToValueArray(),
+                _ => throw new NotSupportedException(),
+            };
+            bufferShapes[i] = new Shape(shape);
+        }
+
+        int elemSize = _grid.Buffers[0].CheckedDataType.SizeInBytes;
         var originalDomain = _grid.AccessMaps[0].Domains.ToArray().Select(d => d.Offset).ToArray();
-        var key = new AffineTilerMemo(bufferShapes, _domainBounds, _grid.AccessMaps.ToArray(), op.GetType());
+        var key = new AffineTilerMemo(bufferShapes, _domainBounds, _grid.AccessMaps.ToArray(), op.GetType(), elemSize);
         if (!memo.TryGetValue(key, out var schedule))
         {
             var solver = new TilingSolver(TargetOptions);
-            schedule = solver.Solve(_domainBounds, bufferShapes.Select(x => x.ToValueArray()).ToArray(), originalDomain, _grid.AccessMaps.ToArray(), op);
+            schedule = solver.Solve(_domainBounds, bufferShapes.Select(x => x.ToValueArray()).ToArray(), originalDomain, _grid.AccessMaps.ToArray(), op, elemSize);
             memo.Add(key, schedule);
             return schedule;
         }

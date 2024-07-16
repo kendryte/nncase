@@ -26,7 +26,7 @@ internal sealed class TilingSolver
 
     public ITargetOptions TargetOptions { get; }
 
-    public GridSchedule Solve(int[] domainBounds, int[][] bufferShapes, AffineDim[] domain, AffineMap[] accessMaps, Op computation)
+    public GridSchedule Solve(int[] domainBounds, int[][] bufferShapes, AffineDim[] domain, AffineMap[] accessMaps, Op computation, int elemSize)
     {
         int[] memoryCapacitys = new[] { 512 * 1024, int.MaxValue };
         int[] memoryBandWidths = new[] { 128, 4 };
@@ -57,7 +57,7 @@ internal sealed class TilingSolver
                 newFullDomain[memoryCapacitys.Length, i] = domain[i];
             }
 
-            result = SolveWithPermutation(domainBounds, bufferShapes, newFullDomain, accessMaps, loopMasks, memoryCapacitys, memoryBandWidths, $"dd", ref bestObjective, computation);
+            result = SolveWithPermutation(domainBounds, bufferShapes, newFullDomain, accessMaps, loopMasks, memoryCapacitys, memoryBandWidths, $"dd", ref bestObjective, computation, elemSize);
             if (result is not null)
             {
                 return result;
@@ -90,13 +90,13 @@ internal sealed class TilingSolver
         return new(masks);
     }
 
-    private GridSchedule? SolveWithPermutation(int[] domainBounds, int[][] bufferShapes, AffineDim[,] fullDomain, AffineMap[] accessMaps, LoopMasks[] loopMasks, int[] memoryCapacitys, int[] memoryBandWidths, string prefix, ref long bestObjective, Op computation)
+    private GridSchedule? SolveWithPermutation(int[] domainBounds, int[][] bufferShapes, AffineDim[,] fullDomain, AffineMap[] accessMaps, LoopMasks[] loopMasks, int[] memoryCapacitys, int[] memoryBandWidths, string prefix, ref long bestObjective, Op computation, int elemSize)
     {
         var totalLevel = memoryCapacitys.Length;
         var model = new Solver("tiling");
         IntExpr one = model.MakeIntConst(1, "one");
         IntExpr zero = model.MakeIntConst(0, "zero");
-        IntExpr elem = model.MakeIntConst(sizeof(float), "elem");
+        IntExpr elem = model.MakeIntConst(elemSize, "elem");
         var info = CompilerServices.GetOpMicroKernelInfo(computation, fullDomain.GetRow(totalLevel).ToArray(), accessMaps, bufferShapes, TargetOptions);
         var primitiveSizes = info.Primitives;
         var primitiveMultiplier = info.Multiplier;
