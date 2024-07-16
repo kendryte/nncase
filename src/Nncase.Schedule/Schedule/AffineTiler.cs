@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
+using DryIoc.ImTools;
 using Google.OrTools.ConstraintSolver;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
@@ -35,7 +36,7 @@ internal sealed class AffineTiler
 
     public ITargetOptions TargetOptions { get; }
 
-    public Call Tile(IRModule module, Dictionary<AffineTilerMemo, GridSchedule> memo)
+    public Call Tile(IRModule module, Dictionary<AffineTilerMemo, GridSchedule> memo, List<ExprPinner> pinners)
     {
         // 1. Solve schedule
         if (_grid.Body[0] is not Call { Target: Op op })
@@ -43,7 +44,7 @@ internal sealed class AffineTiler
             throw new InvalidOperationException("body is not call");
         }
 
-        var schedule = SolveSchedule(op, memo);
+        var schedule = SolveSchedule(op, memo, pinners);
         var loopBuilders = new ISequentialBuilder<TIR.For>[schedule.Loops.Length];
         var domainOffsets = new Var[schedule.Loops.Length];
         var domainExtents = new Expr[schedule.Loops.Length];
@@ -197,7 +198,7 @@ internal sealed class AffineTiler
         return (letVar, letBuilder);
     }
 
-    private GridSchedule SolveSchedule(Op op, Dictionary<AffineTilerMemo, GridSchedule> memo)
+    private GridSchedule SolveSchedule(Op op, Dictionary<AffineTilerMemo, GridSchedule> memo, List<ExprPinner> pinners)
     {
         var bufferShapes = new Shape[_grid.Buffers.Length];
         for (int i = 0; i < _grid.Buffers.Length; i++)
@@ -213,12 +214,18 @@ internal sealed class AffineTiler
 
         int elemSize = _grid.Buffers[0].CheckedDataType.SizeInBytes;
         var originalDomain = _grid.AccessMaps[0].Domains.ToArray().Select(d => d.Offset).ToArray();
-        var key = new AffineTilerMemo(bufferShapes, _domainBounds, _grid.AccessMaps.ToArray(), op.GetType(), elemSize);
+        var accessMap = _grid.AccessMaps.ToArray().Select(m => m.With()).ToArray();
+        var key = new AffineTilerMemo(bufferShapes, _domainBounds, accessMap, op.GetType(), elemSize);
+        pinners.Add(new ExprPinner(accessMap));
         if (!memo.TryGetValue(key, out var schedule))
         {
             var solver = new TilingSolver(TargetOptions);
             schedule = solver.Solve(_domainBounds, bufferShapes.Select(x => x.ToValueArray()).ToArray(), originalDomain, _grid.AccessMaps.ToArray(), op, elemSize);
             memo.Add(key, schedule);
+            pinners.Add(new ExprPinner(schedule.DomainMap));
+            pinners.Add(new ExprPinner(schedule.Loops.Select(x => x.Domain).ToArray()));
+            pinners.Add(new ExprPinner(schedule.BodyBufferViews));
+            schedule.Places.ForEach(p => pinners.Add(new ExprPinner(p.TemporalBuffers.Select(x => x.Subview).ToArray())));
             return schedule;
         }
         else
