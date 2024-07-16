@@ -37,24 +37,24 @@ int main() {
                       ta.elements().begin() + (i + 1) * N, (float)i);
         }
 
-        ntt::tensor<float, ntt::fixed_shape<M, 1>> tb;
+        ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[run_num];
 
         for (size_t i = 0; i < warmup_num; i++) {
-            ntt::reduce<ntt::ops::add>(ta, tb, ntt::fixed_shape<1>{},
+            ntt::reduce<ntt::ops::add>(ta, tb[i], ntt::fixed_shape<1>{},
                                        ntt::fixed_shape<>{},
                                        ntt::fixed_shape<>{});
         }
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
-            ntt::reduce<ntt::ops::add>(ta, tb, ntt::fixed_shape<1>{},
+            ntt::reduce<ntt::ops::add>(ta, tb[i], ntt::fixed_shape<1>{},
                                        ntt::fixed_shape<>{},
                                        ntt::fixed_shape<>{});
         }
         auto t2 = NttTest::get_cpu_cycle();
 
         for (size_t i = 0; i < M - 1; i++) {
-            assert(almost_equal(tb(i, 0), (float)(i * N)));
+            assert(almost_equal(tb[0](i, 0), (float)(i * N)));
         }
 
         std::cout << module << "_"
@@ -78,24 +78,24 @@ int main() {
         ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>> taP;
         ntt::pack<1>(ta, taP.view());
 
-        ntt::tensor<float, ntt::fixed_shape<M, 1>> tb;
+        ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[run_num];
 
         for (size_t i = 0; i < warmup_num; i++) {
-            ntt::reduce<ntt::ops::add>(taP, tb, ntt::fixed_shape<1>{},
+            ntt::reduce<ntt::ops::add>(taP, tb[i], ntt::fixed_shape<1>{},
                                        ntt::fixed_shape<1>{},
                                        ntt::fixed_shape<>{});
         }
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
-            ntt::reduce<ntt::ops::add>(taP, tb, ntt::fixed_shape<1>{},
+            ntt::reduce<ntt::ops::add>(taP, tb[i], ntt::fixed_shape<1>{},
                                        ntt::fixed_shape<1>{},
                                        ntt::fixed_shape<>{});
         }
         auto t2 = NttTest::get_cpu_cycle();
 
         for (size_t i = 0; i < M - 1; i++) {
-            assert(almost_equal(tb(i, 0), (float)(i * N)));
+            assert(almost_equal(tb[0](i, 0), (float)(i * N)));
         }
 
         std::cout << module << "_"
@@ -117,24 +117,24 @@ int main() {
                       ta.elements().begin() + (i + 1) * N, (float)i);
         }
 
-        ntt::tensor<float, ntt::fixed_shape<1, N>> tb;
+        ntt::tensor<float, ntt::fixed_shape<1, N>> tb[run_num];
 
         for (size_t i = 0; i < warmup_num; i++) {
-            ntt::reduce<ntt::ops::add>(ta, tb, ntt::fixed_shape<0>{},
+            ntt::reduce<ntt::ops::add>(ta, tb[i], ntt::fixed_shape<0>{},
                                        ntt::fixed_shape<>{},
                                        ntt::fixed_shape<>{});
         }
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
-            ntt::reduce<ntt::ops::add>(ta, tb, ntt::fixed_shape<0>{},
+            ntt::reduce<ntt::ops::add>(ta, tb[i], ntt::fixed_shape<0>{},
                                        ntt::fixed_shape<>{},
                                        ntt::fixed_shape<>{});
         }
         auto t2 = NttTest::get_cpu_cycle();
 
         for (size_t i = 0; i < N - 1; i++) {
-            assert(almost_equal(tb(0, i), (float)((M - 1) * M / 2)));
+            assert(almost_equal(tb[0](0, i), (float)((M - 1) * M / 2)));
         }
 
         std::cout << module << "_"
@@ -158,24 +158,24 @@ int main() {
         ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>> taP;
         ntt::pack<0>(ta, taP.view());
 
-        ntt::tensor<float, ntt::fixed_shape<1, N>> tb;
+        ntt::tensor<float, ntt::fixed_shape<1, N>> tb[run_num];
 
         for (size_t i = 0; i < warmup_num; i++) {
-            ntt::reduce<ntt::ops::add>(taP, tb, ntt::fixed_shape<0>{},
+            ntt::reduce<ntt::ops::add>(taP, tb[i], ntt::fixed_shape<0>{},
                                        ntt::fixed_shape<0>{},
                                        ntt::fixed_shape<>{});
         }
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
-            ntt::reduce<ntt::ops::add>(taP, tb, ntt::fixed_shape<0>{},
+            ntt::reduce<ntt::ops::add>(taP, tb[i], ntt::fixed_shape<0>{},
                                        ntt::fixed_shape<0>{},
                                        ntt::fixed_shape<>{});
         }
         auto t2 = NttTest::get_cpu_cycle();
 
         for (size_t i = 0; i < N - 1; i++) {
-            assert(almost_equal(tb(0, i), (float)((M - 1) * M / 2)));
+            assert(almost_equal(tb[0](0, i), (float)((M - 1) * M / 2)));
         }
 
         std::cout << module << "_"
@@ -312,24 +312,24 @@ int main() {
                       ta.elements().begin() + (i + 1) * N, (float)i);
         }
 
-        ntt::tensor<float, ntt::fixed_shape<M, 1>> tb;
+        ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[run_num];
 
         for (size_t i = 0; i < warmup_num; i++) {
-            ntt::reduce<ntt::ops::max>(ta, tb, ntt::fixed_shape<1>{},
+            ntt::reduce<ntt::ops::max>(ta, tb[i], ntt::fixed_shape<1>{},
                                        ntt::fixed_shape<>{},
                                        ntt::fixed_shape<>{});
         }
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
-            ntt::reduce<ntt::ops::max>(ta, tb, ntt::fixed_shape<1>{},
+            ntt::reduce<ntt::ops::max>(ta, tb[i], ntt::fixed_shape<1>{},
                                        ntt::fixed_shape<>{},
                                        ntt::fixed_shape<>{});
         }
         auto t2 = NttTest::get_cpu_cycle();
 
         for (size_t i = 0; i < M - 1; i++) {
-            assert(almost_equal(tb(i, 0), (float)i));
+            assert(almost_equal(tb[0](i, 0), (float)i));
         }
 
         std::cout << module << "_"
@@ -353,24 +353,24 @@ int main() {
         ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>> taP;
         ntt::pack<1>(ta, taP.view());
 
-        ntt::tensor<float, ntt::fixed_shape<M, 1>> tb;
+        ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[run_num];
 
         for (size_t i = 0; i < warmup_num; i++) {
-            ntt::reduce<ntt::ops::max>(taP, tb, ntt::fixed_shape<1>{},
+            ntt::reduce<ntt::ops::max>(taP, tb[i], ntt::fixed_shape<1>{},
                                        ntt::fixed_shape<1>{},
                                        ntt::fixed_shape<>{});
         }
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
-            ntt::reduce<ntt::ops::max>(taP, tb, ntt::fixed_shape<1>{},
+            ntt::reduce<ntt::ops::max>(taP, tb[i], ntt::fixed_shape<1>{},
                                        ntt::fixed_shape<1>{},
                                        ntt::fixed_shape<>{});
         }
         auto t2 = NttTest::get_cpu_cycle();
 
         for (size_t i = 0; i < M - 1; i++) {
-            assert(almost_equal(tb(i, 0), (float)i));
+            assert(almost_equal(tb[0](i, 0), (float)i));
         }
 
         std::cout << module << "_"
@@ -392,24 +392,24 @@ int main() {
                       ta.elements().begin() + (i + 1) * N, (float)i);
         }
 
-        ntt::tensor<float, ntt::fixed_shape<1, N>> tb;
+        ntt::tensor<float, ntt::fixed_shape<1, N>> tb[run_num];
 
         for (size_t i = 0; i < warmup_num; i++) {
-            ntt::reduce<ntt::ops::max>(ta, tb, ntt::fixed_shape<0>{},
+            ntt::reduce<ntt::ops::max>(ta, tb[i], ntt::fixed_shape<0>{},
                                        ntt::fixed_shape<>{},
                                        ntt::fixed_shape<>{});
         }
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
-            ntt::reduce<ntt::ops::max>(ta, tb, ntt::fixed_shape<0>{},
+            ntt::reduce<ntt::ops::max>(ta, tb[i], ntt::fixed_shape<0>{},
                                        ntt::fixed_shape<>{},
                                        ntt::fixed_shape<>{});
         }
         auto t2 = NttTest::get_cpu_cycle();
 
         for (size_t i = 0; i < N - 1; i++) {
-            assert(almost_equal(tb(0, i), (float)(M - 1)));
+            assert(almost_equal(tb[0](0, i), (float)(M - 1)));
         }
 
         std::cout << module << "_"
@@ -433,24 +433,24 @@ int main() {
         ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>> taP;
         ntt::pack<0>(ta, taP.view());
 
-        ntt::tensor<float, ntt::fixed_shape<1, N>> tb;
+        ntt::tensor<float, ntt::fixed_shape<1, N>> tb[run_num];
 
         for (size_t i = 0; i < warmup_num; i++) {
-            ntt::reduce<ntt::ops::max>(taP, tb, ntt::fixed_shape<0>{},
+            ntt::reduce<ntt::ops::max>(taP, tb[i], ntt::fixed_shape<0>{},
                                        ntt::fixed_shape<0>{},
                                        ntt::fixed_shape<>{});
         }
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
-            ntt::reduce<ntt::ops::max>(taP, tb, ntt::fixed_shape<0>{},
+            ntt::reduce<ntt::ops::max>(taP, tb[i], ntt::fixed_shape<0>{},
                                        ntt::fixed_shape<0>{},
                                        ntt::fixed_shape<>{});
         }
         auto t2 = NttTest::get_cpu_cycle();
 
         for (size_t i = 0; i < N - 1; i++) {
-            assert(almost_equal(tb(0, i), (float)(M - 1)));
+            assert(almost_equal(tb[0](0, i), (float)(M - 1)));
         }
 
         std::cout << module << "_"
@@ -587,24 +587,24 @@ int main() {
                       ta.elements().begin() + (i + 1) * N, (float)i);
         }
 
-        ntt::tensor<float, ntt::fixed_shape<M, 1>> tb;
+        ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[run_num];
 
         for (size_t i = 0; i < warmup_num; i++) {
-            ntt::reduce<ntt::ops::min>(ta, tb, ntt::fixed_shape<1>{},
+            ntt::reduce<ntt::ops::min>(ta, tb[i], ntt::fixed_shape<1>{},
                                        ntt::fixed_shape<>{},
                                        ntt::fixed_shape<>{});
         }
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
-            ntt::reduce<ntt::ops::min>(ta, tb, ntt::fixed_shape<1>{},
+            ntt::reduce<ntt::ops::min>(ta, tb[i], ntt::fixed_shape<1>{},
                                        ntt::fixed_shape<>{},
                                        ntt::fixed_shape<>{});
         }
         auto t2 = NttTest::get_cpu_cycle();
 
         for (size_t i = 0; i < M - 1; i++) {
-            assert(almost_equal(tb(i, 0), (float)i));
+            assert(almost_equal(tb[0](i, 0), (float)i));
         }
 
         std::cout << module << "_"
@@ -628,24 +628,24 @@ int main() {
         ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>> taP;
         ntt::pack<1>(ta, taP.view());
 
-        ntt::tensor<float, ntt::fixed_shape<M, 1>> tb;
+        ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[run_num];
 
         for (size_t i = 0; i < warmup_num; i++) {
-            ntt::reduce<ntt::ops::min>(taP, tb, ntt::fixed_shape<1>{},
+            ntt::reduce<ntt::ops::min>(taP, tb[i], ntt::fixed_shape<1>{},
                                        ntt::fixed_shape<1>{},
                                        ntt::fixed_shape<>{});
         }
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
-            ntt::reduce<ntt::ops::min>(taP, tb, ntt::fixed_shape<1>{},
+            ntt::reduce<ntt::ops::min>(taP, tb[i], ntt::fixed_shape<1>{},
                                        ntt::fixed_shape<1>{},
                                        ntt::fixed_shape<>{});
         }
         auto t2 = NttTest::get_cpu_cycle();
 
         for (size_t i = 0; i < M - 1; i++) {
-            assert(almost_equal(tb(i, 0), (float)i));
+            assert(almost_equal(tb[0](i, 0), (float)i));
         }
 
         std::cout << module << "_"
@@ -667,24 +667,24 @@ int main() {
                       ta.elements().begin() + (i + 1) * N, (float)i);
         }
 
-        ntt::tensor<float, ntt::fixed_shape<1, N>> tb;
+        ntt::tensor<float, ntt::fixed_shape<1, N>> tb[run_num];
 
         for (size_t i = 0; i < warmup_num; i++) {
-            ntt::reduce<ntt::ops::min>(ta, tb, ntt::fixed_shape<0>{},
+            ntt::reduce<ntt::ops::min>(ta, tb[i], ntt::fixed_shape<0>{},
                                        ntt::fixed_shape<>{},
                                        ntt::fixed_shape<>{});
         }
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
-            ntt::reduce<ntt::ops::min>(ta, tb, ntt::fixed_shape<0>{},
+            ntt::reduce<ntt::ops::min>(ta, tb[i], ntt::fixed_shape<0>{},
                                        ntt::fixed_shape<>{},
                                        ntt::fixed_shape<>{});
         }
         auto t2 = NttTest::get_cpu_cycle();
 
         for (size_t i = 0; i < N - 1; i++) {
-            assert(almost_equal(tb(0, i), (float)0));
+            assert(almost_equal(tb[0](0, i), (float)0));
         }
 
         std::cout << module << "_"
@@ -708,24 +708,24 @@ int main() {
         ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>> taP;
         ntt::pack<0>(ta, taP.view());
 
-        ntt::tensor<float, ntt::fixed_shape<1, N>> tb;
+        ntt::tensor<float, ntt::fixed_shape<1, N>> tb[run_num];
 
         for (size_t i = 0; i < warmup_num; i++) {
-            ntt::reduce<ntt::ops::min>(taP, tb, ntt::fixed_shape<0>{},
+            ntt::reduce<ntt::ops::min>(taP, tb[i], ntt::fixed_shape<0>{},
                                        ntt::fixed_shape<0>{},
                                        ntt::fixed_shape<>{});
         }
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
-            ntt::reduce<ntt::ops::min>(taP, tb, ntt::fixed_shape<0>{},
+            ntt::reduce<ntt::ops::min>(taP, tb[i], ntt::fixed_shape<0>{},
                                        ntt::fixed_shape<0>{},
                                        ntt::fixed_shape<>{});
         }
         auto t2 = NttTest::get_cpu_cycle();
 
         for (size_t i = 0; i < N - 1; i++) {
-            assert(almost_equal(tb(0, i), (float)0));
+            assert(almost_equal(tb[0](0, i), (float)0));
         }
 
         std::cout << module << "_"
@@ -763,7 +763,7 @@ int main() {
         }
         auto t2 = NttTest::get_cpu_cycle();
 
-        assert(almost_equal(tb(0, 0), (float)0));
+        assert(almost_equal(tb[0](0, 0), (float)0));
 
         std::cout << module << "_"
                   << reduce_mode + "_" + reduce_direction + "_" + pack_mode
@@ -862,17 +862,17 @@ int main() {
                       ta.elements().begin() + (i + 1) * N, (float)i);
         }
 
-        ntt::tensor<float, ntt::fixed_shape<M, 1>> tb;
+        ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[run_num];
 
         for (size_t i = 0; i < warmup_num; i++) {
-            ntt::reduce<ntt::ops::mean>(ta, tb, ntt::fixed_shape<1>{},
+            ntt::reduce<ntt::ops::mean>(ta, tb[i], ntt::fixed_shape<1>{},
                                         ntt::fixed_shape<>{},
                                         ntt::fixed_shape<>{});
         }
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
-            ntt::reduce<ntt::ops::mean>(ta, tb, ntt::fixed_shape<1>{},
+            ntt::reduce<ntt::ops::mean>(ta, tb[i], ntt::fixed_shape<1>{},
                                         ntt::fixed_shape<>{},
                                         ntt::fixed_shape<>{});
         }
@@ -903,24 +903,24 @@ int main() {
         ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>> taP;
         ntt::pack<1>(ta, taP.view());
 
-        ntt::tensor<float, ntt::fixed_shape<M, 1>> tb;
+        ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[run_num];
 
         for (size_t i = 0; i < warmup_num; i++) {
-            ntt::reduce<ntt::ops::mean>(taP, tb, ntt::fixed_shape<1>{},
+            ntt::reduce<ntt::ops::mean>(taP, tb[i], ntt::fixed_shape<1>{},
                                         ntt::fixed_shape<1>{},
                                         ntt::fixed_shape<>{});
         }
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
-            ntt::reduce<ntt::ops::mean>(taP, tb, ntt::fixed_shape<1>{},
+            ntt::reduce<ntt::ops::mean>(taP, tb[i], ntt::fixed_shape<1>{},
                                         ntt::fixed_shape<1>{},
                                         ntt::fixed_shape<>{});
         }
         auto t2 = NttTest::get_cpu_cycle();
 
         for (size_t i = 0; i < M - 1; i++) {
-            assert(almost_equal(tb(i, 0), (float)i));
+            assert(almost_equal(tb[0](i, 0), (float)i));
         }
 
         std::cout << module << "_"
@@ -942,24 +942,24 @@ int main() {
                       ta.elements().begin() + (i + 1) * N, (float)i);
         }
 
-        ntt::tensor<float, ntt::fixed_shape<1, N>> tb;
+        ntt::tensor<float, ntt::fixed_shape<1, N>> tb[run_num];
 
         for (size_t i = 0; i < warmup_num; i++) {
-            ntt::reduce<ntt::ops::mean>(ta, tb, ntt::fixed_shape<0>{},
+            ntt::reduce<ntt::ops::mean>(ta, tb[i], ntt::fixed_shape<0>{},
                                         ntt::fixed_shape<>{},
                                         ntt::fixed_shape<>{});
         }
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
-            ntt::reduce<ntt::ops::mean>(ta, tb, ntt::fixed_shape<0>{},
+            ntt::reduce<ntt::ops::mean>(ta, tb[i], ntt::fixed_shape<0>{},
                                         ntt::fixed_shape<>{},
                                         ntt::fixed_shape<>{});
         }
         auto t2 = NttTest::get_cpu_cycle();
 
         for (size_t i = 0; i < N - 1; i++) {
-            assert(almost_equal(tb(0, i), (float)(M - 1) / 2));
+            assert(almost_equal(tb[0](0, i), (float)(M - 1) / 2));
         }
 
         std::cout << module << "_"
@@ -983,24 +983,24 @@ int main() {
         ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>> taP;
         ntt::pack<0>(ta, taP.view());
 
-        ntt::tensor<float, ntt::fixed_shape<1, N>> tb;
+        ntt::tensor<float, ntt::fixed_shape<1, N>> tb[run_num];
 
         for (size_t i = 0; i < warmup_num; i++) {
-            ntt::reduce<ntt::ops::mean>(taP, tb, ntt::fixed_shape<0>{},
+            ntt::reduce<ntt::ops::mean>(taP, tb[i], ntt::fixed_shape<0>{},
                                         ntt::fixed_shape<0>{},
                                         ntt::fixed_shape<>{});
         }
 
         auto t1 = NttTest::get_cpu_cycle();
         for (size_t i = 0; i < run_num; i++) {
-            ntt::reduce<ntt::ops::mean>(taP, tb, ntt::fixed_shape<0>{},
+            ntt::reduce<ntt::ops::mean>(taP, tb[i], ntt::fixed_shape<0>{},
                                         ntt::fixed_shape<0>{},
                                         ntt::fixed_shape<>{});
         }
         auto t2 = NttTest::get_cpu_cycle();
 
         for (size_t i = 0; i < N - 1; i++) {
-            assert(almost_equal(tb(0, i), (float)(M - 1) / 2));
+            assert(almost_equal(tb[0](0, i), (float)(M - 1) / 2));
         }
 
         std::cout << module << "_"
