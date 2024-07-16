@@ -163,6 +163,45 @@ struct outer_product<TTensor1, TTensor2> {
     ops::outer_product<element_type, element_type> op_;
 };
 
+template <IsTensor TTensor, class T2> struct mul_add<TTensor, T2, TTensor> {
+    using element_type = typename TTensor::element_type;
+
+    constexpr auto operator()(const TTensor &v1, const T2 &v2,
+                              const TTensor &v3) const noexcept {
+        TTensor value;
+        if constexpr (IsTensor<T2>) {
+            apply(v1.shape(), [&](auto index) {
+                value(index) = op_(v1(index), v2(index), v3(index));
+            });
+        } else {
+            apply(v1.shape(), [&](auto index) {
+                value(index) = op_(v1(index), v2, v3(index));
+            });
+        }
+        return value;
+    }
+
+  private:
+    ops::mul_add<element_type, element_type, element_type> op_;
+};
+
+template <IsScalar TScalar, IsTensor TTensor>
+struct mul_add<TScalar, TTensor, TTensor> {
+    using element_type = typename TTensor::element_type;
+
+    constexpr auto operator()(const TScalar &s1, const TTensor &v2,
+                              const TTensor &v3) const noexcept {
+        TTensor value;
+        apply(v3.shape(), [&](auto index) {
+            value(index) = op_(s1, v2(index), v3(index));
+        });
+        return value;
+    }
+
+  private:
+    ops::mul_add<element_type, element_type, element_type> op_;
+};
+
 template <template <class T1, class T2> class Op, class TResult,
           IsTensor TTensor>
 struct reduce<Op, TResult, TTensor> {
