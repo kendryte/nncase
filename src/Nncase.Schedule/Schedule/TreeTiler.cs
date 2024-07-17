@@ -69,8 +69,8 @@ public static class TreeTiler
 
     public static bool Solve(ITreeNode tree, int totalLevel, CompileOptions compileOptions, out Call callFunc, out PrimFunctionWrapper wrapper, out TIR.PrimFunction primFunc)
     {
-        int[] memoryCapacitys = new[] { 2 * 1024 * 1024, int.MaxValue }; // l1, l2
-        int[] memoryBandWidths = new[] { 256, 128, 4 }; // l0, l1, l2
+        long[] memoryCapacitys = new long[] { 2 * 1024 * 1024, int.MaxValue }; // l1, l2
+        long[] memoryBandWidths = new long[] { 256, 128, 4 }; // l0, l1, l2
         var solver = new Solver("treeSolver");
         var one = solver.MakeIntConst(1);
         var zero = solver.MakeIntConst(0);
@@ -198,33 +198,45 @@ public static class TreeTiler
             tileVarConstraints.Add(opNode, constraints);
         }
 
-        // 5. add the memory capacity constraints
-        var memoryCapacityConstraints = new Dictionary<int, Dictionary<TileNode, Constraint>>();
-        var memoryCapacitySizes = new Dictionary<int, Dictionary<TileNode, IntExpr>>();
+        // 5. add the memory schedule constraints
+        var levelNodeBufferStart = new Dictionary<int, IReadOnlyCollection<IntExpr>>();
+        var levelNodeBufferDuration = new Dictionary<int, IReadOnlyCollection<IntExpr>>();
+        var levelNodeBufferOffset = new Dictionary<int, IReadOnlyCollection<IntVar>>();
+        var levelNodeBufferExtent = new Dictionary<int, IReadOnlyCollection<IntExpr>>();
         for (int l = 1; l < totalLevel; l++)
         {
-            memoryCapacityConstraints[l] = new Dictionary<TileNode, Constraint>();
-            memoryCapacitySizes[l] = new Dictionary<TileNode, IntExpr>();
-            foreach (var (childNode, childNodeInfo) in tileNodeMemo.Where(p => p.Key.Level == l))
+            var bufferStarts = new List<IntExpr>();
+            var bufferDurations = new List<IntExpr>();
+            var bufferOffsets = new List<IntVar>();
+            var bufferExtents = new List<IntExpr>();
+            foreach (var (node, nodeInfo) in tileNodeMemo.Where(p => p.Key.Level >= l))
             {
-                var storedBufferSize = new List<IntExpr>();
-                foreach (var (childBid, childBufferInfo) in childNodeInfo.BufferInfoMap)
+                foreach (var (bid, bufferInfo) in nodeInfo.BufferInfoMap)
                 {
-                    storedBufferSize.AddRange(childBufferInfo.Places.Select(p => p[l - 1]).Zip(childBufferInfo.SizeVars).Select(p => p.First * p.Second));
-
-                    for (int pl = l + 1; pl <= totalLevel; pl++)
-                    {
-                        foreach (var (parentNode, parentBufferInfo) in tileNodeMemo.Where(p => p.Key.Level == pl).Select(p => (p.Key, p.Value.BufferInfoMap[p.Value.GetCacheBid(childBid)])))
-                        {
-                            storedBufferSize.AddRange(parentBufferInfo.Places.Select(p => p[l - 1]).Zip(parentBufferInfo.SizeVars).Select(p => p.First * p.Second));
-                        }
-                    }
+                    bufferStarts.Add(solver.MakeIntConst(bufferInfo.Lifeness.Item1, $"start[{l}, op{node.OpId}, b{bid.Index}]"));
+                    bufferDurations.Add(solver.MakeIntConst(bufferInfo.Lifeness.Item2 - bufferInfo.Lifeness.Item1));
+                    bufferOffsets.Add(solver.MakeIntVar(0, memoryCapacitys[l - 1] - 1, $"off[{l}, op{node.OpId}, b{bid.Index}]"));
+                    var extexts = bufferInfo.Places.Select(p => p[l - 1]).Zip(bufferInfo.SizeVars).Select(p => p.First * p.Second).ToArray();
+                    bufferExtents.Add(extexts.Skip(1).Aggregate(extexts[0], solver.MakeSum));
                 }
-
-                memoryCapacitySizes[l][childNode] = storedBufferSize.Skip(1).Aggregate(storedBufferSize.First(), solver.MakeSum);
-                memoryCapacityConstraints[l][childNode] = solver.MakeLessOrEqual(memoryCapacitySizes[l][childNode], memoryCapacitys[l - 1]);
-                solver.Add(memoryCapacityConstraints[l][childNode]);
             }
+
+            levelNodeBufferStart[l] = bufferStarts;
+            levelNodeBufferDuration[l] = bufferDurations;
+            levelNodeBufferOffset[l] = bufferOffsets;
+            levelNodeBufferExtent[l] = bufferExtents;
+            var x_vars = bufferStarts.Select(i => i.Var()).ToArray();
+            var y_vars = bufferOffsets.ToArray();
+            var x_sizes = bufferDurations.Select(i => i.Var()).ToArray();
+            var y_sizes = bufferExtents.Select(i => i.Var()).ToArray();
+            solver.Add(solver.MakeLessOrEqual(bufferExtents.Skip(1).Aggregate(bufferExtents[0], solver.MakeSum), memoryCapacitys[l - 1]));
+
+            // can't schedule buffers now.
+            // solver.Add(solver.MakeNonOverlappingBoxesConstraint(x_vars, y_vars, x_sizes, y_sizes));
+            // foreach (var topOffset in y_vars.Zip(y_sizes).Select(p => p.First + p.Second))
+            // {
+            //     solver.Add(solver.MakeLessOrEqual(topOffset, memoryCapacitys[l - 1]));
+            // }
         }
 
         // compute the cycles as objective
@@ -353,6 +365,12 @@ public static class TreeTiler
             }
         }
 
+        // can't schedule buffers.
+        // foreach (var (_, bufferOffset) in levelNodeBufferOffset)
+        // {
+        //     searchAbleVars.AddRange(bufferOffset);
+        //     collector.Add(bufferOffset.ToArray());
+        // }
         var decisionBuilder = solver.MakeDefaultPhase(searchAbleVars.ToArray());
         var status = solver.Solve(decisionBuilder, new SearchMonitor[] { collector, objectiveMonitor, logger, solver.MakeSolutionsLimit(20), solver.MakeTimeLimit(50000) });
         if (!status)
@@ -401,16 +419,12 @@ public static class TreeTiler
 
             writer.WriteLine("memoryCapacityConstraints:");
             writer.Indent++;
-            foreach (var (level, nodeMap) in memoryCapacityConstraints)
-            {
-                foreach (var (node, consts) in nodeMap)
-                {
-                    writer.Indent++;
-                    writer.WriteLine($"{node}: {consts.ToSimplifyString()}");
-                    writer.Indent--;
-                }
-            }
 
+            // for (int l = 1; l < totalLevel; l++)
+            // {
+            //     TreeSolverPrinter.WriteIntExprVector(writer, l.ToString(), levelNodeBufferOffset[l].ToArray(), sol);
+            //     TreeSolverPrinter.WriteIntExprVector(writer, l.ToString(), levelNodeBufferExtent[l].ToArray(), sol);
+            // }
             writer.Indent--;
 
             TreeSolverPrinter.WriteIntExprVector(writer, "levelDataReads:", levelDataReads, sol);

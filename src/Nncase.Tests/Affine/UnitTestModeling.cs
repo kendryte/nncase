@@ -283,20 +283,33 @@ public sealed class UnitTestModeling : TestClassBase
     public void TestSolveNoOverlapping()
     {
         var solver = new Solver("a");
+        var asize = solver.MakeIntConst(1);
+        var csize = solver.MakeIntConst(2);
+        var aplace = solver.MakeBoolVar();
+        var cplace = solver.MakeBoolVar();
+        solver.Add(solver.MakeSumEquality(new[] { aplace, cplace }, 1));
+
+        var offset = solver.MakeIntVar(0, 2);
+
         var aLife = (solver.MakeIntConst(0), solver.MakeIntConst(1));
-        var aSpan = (solver.MakeIntVar(0, 0), solver.MakeIntConst(1));
+        var aSpan = (offset, aplace * asize);
         var cLife = (solver.MakeIntConst(0), solver.MakeIntConst(3));
-        var cSpan = (solver.MakeIntVar(0, 0), solver.MakeIntConst(0));
-        var cons = solver.MakeNonOverlappingBoxesConstraint(new[] { aLife.Item1, cLife.Item1 }, new[] { aSpan.Item1, cSpan.Item1 }, new[] { aLife.Item2, cLife.Item2 }, new[] { aSpan.Item2, cSpan.Item2 });
+        var cSpan = (offset, cplace * csize);
+        var cons = solver.MakeNonOverlappingBoxesConstraint(new[] { aLife.Item1, cLife.Item1 }, new[] { aSpan.Item1, cSpan.Item1 }, new[] { aLife.Item2, cLife.Item2 }, new[] { aSpan.Item2.Var(), cSpan.Item2.Var() });
         solver.Add(cons);
 
-        var decisionBuilder = solver.MakeDefaultPhase(new[] { aSpan.Item1, cSpan.Item1 });
+        var decisionBuilder = solver.MakeDefaultPhase(new[] { offset, aplace, cplace });
         var collector = solver.MakeLastSolutionCollector();
-        collector.Add(new[] { aSpan.Item1, cSpan.Item1 });
+        collector.Add(new[] { offset, aplace, cplace });
         var status = solver.Solve(decisionBuilder, new SearchMonitor[] { collector, solver.MakeSolutionsLimit(20) });
 
         // note verified the [0,1] and [0,0] is not overlapping.
         Assert.True(status);
+
+        var sol = collector.Solution(0);
+        System.Console.WriteLine(sol.Value(offset));
+        System.Console.WriteLine(sol.Value(aplace));
+        System.Console.WriteLine(sol.Value(cplace));
     }
 }
 

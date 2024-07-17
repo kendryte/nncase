@@ -17,7 +17,7 @@ public sealed record BufferIdenitity(OpNode Node, int Index)
 /// <summary>
 /// Map: current offset/extent  Place : [create_loop,store_level], Shapes: [create_loop][shape] write: [create_loop], size: [create loop].
 /// </summary>
-public sealed record TileNodeBufferInfo(ValueRange<int> Lifeness, AffineMap Map, IntVar[][] Places, IntExpr[][] Shapes, IntExpr[] Writes, IntExpr[] SizeVars, IntExpr[] SizeExprs, LoopMask[] Masks)
+public sealed record TileNodeBufferInfo(Tuple<int, int> Lifeness, AffineMap Map, IntVar[][] Places, IntExpr[][] Shapes, IntExpr[] Writes, IntExpr[] SizeVars, IntExpr[] SizeExprs, LoopMask[] Masks)
 {
 }
 

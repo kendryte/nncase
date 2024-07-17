@@ -70,18 +70,24 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
             for (int i = 0; i < childResult.BufferResults.Length; i++)
             {
                 var result = childResult.BufferResults[i];
-                if (defUseMap.TryGetValue(result.Bid, out var sinkId))
+                BufferIdenitity currentId;
+                AffineMap currentAccessMap = result.AccessMap;
+                Tuple<int, int> currentLifeness = result.Lifeness;
+                if (defUseMap.TryGetValue(result.Bid, out currentId!))
                 {
-                    var sinkIndex = Array.FindIndex(childResult.BufferResults, r => r.Bid == sinkId);
-                    var accessMap = childResult.BufferResults[sinkIndex].AccessMap;
-                    ValueRange<int> lifeness = new(Math.Min(result.Lifeness.Min, childResult.BufferResults[sinkIndex].Lifeness.Min), Math.Max(result.Lifeness.Max, childResult.BufferResults[sinkIndex].Lifeness.Max));
-                    bufferInfoMap[sinkId] = GetBufferInfo(value, sinkId, accessMap, lifeness, backWardExtents);
-                    bufferResults.Add(new(sinkId, lifeness, value.DomainRelation.Map * accessMap));
+                    var sinkIndex = Array.FindIndex(childResult.BufferResults, r => r.Bid == currentId);
+                    currentAccessMap = childResult.BufferResults[sinkIndex].AccessMap;
+                    currentLifeness = new(Math.Min(result.Lifeness.Item1, childResult.BufferResults[sinkIndex].Lifeness.Item1), Math.Max(result.Lifeness.Item2, childResult.BufferResults[sinkIndex].Lifeness.Item2));
                 }
                 else
                 {
-                    bufferInfoMap[result.Bid] = GetBufferInfo(value, result.Bid, result.AccessMap, result.Lifeness, backWardExtents);
-                    bufferResults.Add(new(result.Bid, result.Lifeness, value.DomainRelation.Map * result.AccessMap));
+                    currentId = result.Bid;
+                }
+
+                if (!bufferInfoMap.TryGetValue(currentId, out var bufferInfo))
+                {
+                    bufferInfoMap.Add(currentId, GetBufferInfo(value, currentId, currentAccessMap, currentLifeness, backWardExtents));
+                    bufferResults.Add(new(currentId, currentLifeness, value.DomainRelation.Map * currentAccessMap));
                 }
             }
 
@@ -230,7 +236,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
         return map;
     }
 
-    private TileNodeBufferInfo GetBufferInfo(TileNode tile, BufferIdenitity bid, AffineMap accessMap, ValueRange<int> lifeness, IntExpr[][] backWardExtents)
+    private TileNodeBufferInfo GetBufferInfo(TileNode tile, BufferIdenitity bid, AffineMap accessMap, Tuple<int, int> lifeness, IntExpr[][] backWardExtents)
     {
         var domainDims = tile.DimNames.Length;
         var bufferPlaces = new IntVar[domainDims][];
@@ -286,7 +292,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
     {
     }
 
-    public sealed record BufferResult(BufferIdenitity Bid, ValueRange<int> Lifeness, AffineMap AccessMap)
+    public sealed record BufferResult(BufferIdenitity Bid, Tuple<int, int> Lifeness, AffineMap AccessMap)
     {
     }
 
