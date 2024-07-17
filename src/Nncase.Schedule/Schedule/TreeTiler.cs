@@ -199,44 +199,76 @@ public static class TreeTiler
         }
 
         // 5. add the memory schedule constraints
-        var levelNodeBufferStart = new Dictionary<int, IReadOnlyCollection<IntExpr>>();
-        var levelNodeBufferDuration = new Dictionary<int, IReadOnlyCollection<IntExpr>>();
-        var levelNodeBufferOffset = new Dictionary<int, IReadOnlyCollection<IntVar>>();
-        var levelNodeBufferExtent = new Dictionary<int, IReadOnlyCollection<IntExpr>>();
-        for (int l = 1; l < totalLevel; l++)
+        var levelNodeBufferBoxs = new Dictionary<int, Dictionary<TileNode, Dictionary<BufferIdenitity, IntExpr[]>>>();
+        for (int sl = 1; sl < totalLevel; sl++)
         {
-            var bufferStarts = new List<IntExpr>();
-            var bufferDurations = new List<IntExpr>();
-            var bufferOffsets = new List<IntVar>();
-            var bufferExtents = new List<IntExpr>();
-            foreach (var (node, nodeInfo) in tileNodeMemo.Where(p => p.Key.Level >= l))
+            var nodeBufferBoxs = levelNodeBufferBoxs[sl] = new();
+            foreach (var (parentNode, parentNodeInfo) in tileNodeMemo.Where(p => p.Key.Level == totalLevel))
             {
-                foreach (var (bid, bufferInfo) in nodeInfo.BufferInfoMap)
+                var bufferBoxs = nodeBufferBoxs[parentNode] = new();
+                var banedMemo = new HashSet<BufferIdenitity>(parentNodeInfo.DefUseMap.Keys.Concat(parentNodeInfo.DefUseMap.Values));
+                foreach (var (bid, bufferInfo) in parentNodeInfo.BufferInfoMap)
                 {
-                    bufferStarts.Add(solver.MakeIntConst(bufferInfo.Lifeness.Item1, $"start[{l}, op{node.OpId}, b{bid.Index}]"));
-                    bufferDurations.Add(solver.MakeIntConst(bufferInfo.Lifeness.Item2 - bufferInfo.Lifeness.Item1));
-                    bufferOffsets.Add(solver.MakeIntVar(0, memoryCapacitys[l - 1] - 1, $"off[{l}, op{node.OpId}, b{bid.Index}]"));
-                    var extexts = bufferInfo.Places.Select(p => p[l - 1]).Zip(bufferInfo.SizeVars).Select(p => p.First * p.Second).ToArray();
-                    bufferExtents.Add(extexts.Skip(1).Aggregate(extexts[0], solver.MakeSum));
+                    var box = bufferBoxs[bid] = new IntExpr[4];
+
+                    // x_var, x_size, y_var, y_size
+                    box[0] = solver.MakeIntConst(bufferInfo.Lifeness.Item1, $"start[{sl}, {parentNode}, {bid}]");
+                    box[1] = solver.MakeIntConst(bufferInfo.Lifeness.Item2 - bufferInfo.Lifeness.Item1);
+                    box[2] = solver.MakeIntVar(0, memoryCapacitys[sl - 1] - 1, $"offset[{sl}, {parentNode}, {bid}]");
+                    var extents = bufferInfo.Places.Select(p => p[sl - 1]).Zip(bufferInfo.SizeVars).Select(p => p.First * p.Second).ToArray();
+                    box[3] = extents.Skip(1).Aggregate(extents[0], solver.MakeSum);
                 }
+
+                void AccumulateChildExtents(ITreeNode currnet)
+                {
+                    switch (currnet)
+                    {
+                        case ScopeNode scopeNode:
+                            foreach (var child in scopeNode.Children)
+                            {
+                                AccumulateChildExtents(child);
+                            }
+
+                            break;
+                        case TileNode { Level: >= 1 } childNode:
+                            {
+                                foreach (var (cbid, childBufferInfo) in tileNodeMemo[childNode].BufferInfoMap)
+                                {
+                                    if (childNode.Level == 1 && parentNode.Level == 2 && banedMemo.Contains(cbid))
+                                    {
+                                        continue;
+                                    }
+
+                                    // accumulate the extents
+                                    var extents = childBufferInfo.Places.Select(p => p[sl - 1]).Zip(childBufferInfo.SizeVars).Select(p => p.First * p.Second).ToArray();
+                                    bufferBoxs[cbid][3] += extents.Skip(1).Aggregate(extents[0], solver.MakeSum);
+                                }
+
+                                AccumulateChildExtents(childNode.Child);
+                            }
+
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                AccumulateChildExtents(parentNode.Child);
+
+                var x_vars = bufferBoxs.Values.Select(box => box[0].Var()).ToArray();
+                var x_sizes = bufferBoxs.Values.Select(box => box[1].Var()).ToArray();
+                var y_vars = bufferBoxs.Values.Select(box => box[2].Var()).ToArray();
+                var y_sizes = bufferBoxs.Values.Select(box => box[3].Var()).ToArray();
+
+                solver.Add(solver.MakeSumLessOrEqual(y_sizes, memoryCapacitys[sl - 1]));
+
+                // note can't schedule buffers.
+                // solver.Add(solver.MakeNonOverlappingNonStrictBoxesConstraint(x_vars, y_vars, x_sizes, y_sizes));
+                // foreach (var topOffset in y_vars.Zip(y_sizes).Select(p => p.First + p.Second))
+                // {
+                //     solver.Add(solver.MakeLessOrEqual(topOffset, memoryCapacitys[sl - 1]));
+                // }
             }
-
-            levelNodeBufferStart[l] = bufferStarts;
-            levelNodeBufferDuration[l] = bufferDurations;
-            levelNodeBufferOffset[l] = bufferOffsets;
-            levelNodeBufferExtent[l] = bufferExtents;
-            var x_vars = bufferStarts.Select(i => i.Var()).ToArray();
-            var y_vars = bufferOffsets.ToArray();
-            var x_sizes = bufferDurations.Select(i => i.Var()).ToArray();
-            var y_sizes = bufferExtents.Select(i => i.Var()).ToArray();
-            solver.Add(solver.MakeLessOrEqual(bufferExtents.Skip(1).Aggregate(bufferExtents[0], solver.MakeSum), memoryCapacitys[l - 1]));
-
-            // can't schedule buffers now.
-            // solver.Add(solver.MakeNonOverlappingBoxesConstraint(x_vars, y_vars, x_sizes, y_sizes));
-            // foreach (var topOffset in y_vars.Zip(y_sizes).Select(p => p.First + p.Second))
-            // {
-            //     solver.Add(solver.MakeLessOrEqual(topOffset, memoryCapacitys[l - 1]));
-            // }
         }
 
         // compute the cycles as objective
@@ -366,10 +398,16 @@ public static class TreeTiler
         }
 
         // can't schedule buffers.
-        // foreach (var (_, bufferOffset) in levelNodeBufferOffset)
+        // foreach (var (_, nodeBufferBoxs) in levelNodeBufferBoxs)
         // {
-        //     searchAbleVars.AddRange(bufferOffset);
-        //     collector.Add(bufferOffset.ToArray());
+        //     foreach (var (_, bufferBoxs) in nodeBufferBoxs)
+        //     {
+        //         foreach (var (_, box) in bufferBoxs)
+        //         {
+        //             searchAbleVars.Add(box[2].Var());
+        //             collector.Add(box[2].Var());
+        //         }
+        //     }
         // }
         var decisionBuilder = solver.MakeDefaultPhase(searchAbleVars.ToArray());
         var status = solver.Solve(decisionBuilder, new SearchMonitor[] { collector, objectiveMonitor, logger, solver.MakeSolutionsLimit(20), solver.MakeTimeLimit(50000) });
