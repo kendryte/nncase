@@ -164,7 +164,14 @@ internal sealed class TilingSolver
                     var subLevelWrites = dataWrites[ts, l, i] = new IntExpr[l + 1];
                     for (int sl = 0; sl < l + 1; sl++)
                     {
-                        subLevelPlace[sl] = model.MakeBoolVar($"place(b{ts}, {l}, {fullDomain[l, i]}, {sl})");
+                        if (l == 1 && sl == 1)
+                        {
+                            subLevelPlace[sl] = model.MakeIntConst(0, $"place(b{ts}, {l}, {fullDomain[l, i]}, {sl})");
+                        }
+                        else
+                        {
+                            subLevelPlace[sl] = model.MakeBoolVar($"place(b{ts}, {l}, {fullDomain[l, i]}, {sl})");
+                        }
 
                         // 2. compute data writes
                         subLevelWrites[sl] = bufferSizes[ts, l, i];
