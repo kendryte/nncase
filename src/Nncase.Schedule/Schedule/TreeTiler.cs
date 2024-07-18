@@ -79,7 +79,7 @@ public static class TreeTiler
         var tileNodeMemo = new Dictionary<TileNode, TileNodeInfo>();
         var tileableNodeMemo = new Dictionary<ITileAbleNode, DomainInfo>();
         var init = new TreeSolverInitializer(totalLevel, solver, one, zero, elem, opNodeMemo, tileNodeMemo, tileableNodeMemo, compileOptions.TargetOptions);
-        tree.Accept(init, TreeSolverInitializer.Context.Default);
+        var argumentsInfo = TreeSolverInitializer.GetArgumentsInfo(tree.Accept(init, TreeSolverInitializer.Context.Default).BufferResults);
         var initWrites = new TreeSolverWritesInitializer(solver, one, zero, elem, opNodeMemo, tileNodeMemo, tileableNodeMemo, compileOptions.TargetOptions);
         tree.Accept(initWrites, new());
 
@@ -299,41 +299,55 @@ public static class TreeTiler
             }
         }
 
-        for (int l = 1; l < totalLevel; l++)
+        // from top to down.
+        foreach (var (topNode, _) in tileNodeMemo.Where(p => p.Key.Level == totalLevel))
         {
-            var currentLevelWrites = new List<IntExpr>();
-            var restParentLevelNums = totalLevel - l;
-            var parentLevelReads = Enumerable.Range(0, restParentLevelNums).Select(i => new List<IntExpr>()).ToArray();
-            foreach (var (childNode, childNodeInfo) in tileNodeMemo.Where(p => p.Key.Level == l))
+            void UpdateLevelReadWrites(ITreeNode treeNode)
             {
-                foreach (var (childBid, childBufferInfo) in childNodeInfo.BufferInfoMap)
+                if (treeNode is not TileNode tileNode)
                 {
-                    // store at current level
-                    var writes = childBufferInfo.Places.Select(p => p[l - 1]).Zip(childBufferInfo.Writes).Select(p => p.First * p.Second);
-                    currentLevelWrites.AddRange(writes);  // write to l
-                    parentLevelReads[0].AddRange(writes); // read from l + 1
+                    return;
+                }
 
-                    for (int pl = l + 1; pl <= totalLevel; pl++)
+                var currentLevel = tileNode.Level;
+                var nodeWrites = Enumerable.Range(0, totalLevel + 1).Select(_ => new List<IntExpr>()).ToArray();
+                var nodeReads = Enumerable.Range(0, totalLevel + 1).Select(_ => new List<IntExpr>()).ToArray();
+                var nodeInfo = tileNodeMemo[tileNode];
+                foreach (var (bid, bufferInfo) in nodeInfo.BufferInfoMap)
+                {
+                    for (int sl = 0; sl < currentLevel; sl++)
                     {
-                        foreach (var (parentNode, parentBufferInfo) in tileNodeMemo.Where(p => p.Key.Level == pl).Select(p => (p.Key, p.Value.BufferInfoMap[p.Value.GetCacheBid(childBid)])))
+                        if (sl >= bufferInfo.Places[0].Length)
                         {
-                            // parent level store at current level
-                            writes = parentBufferInfo.Places.Select(p => p[l - 1]).Zip(parentBufferInfo.Writes).Select(p => p.First * p.Second);
-                            currentLevelWrites.AddRange(writes); // pl write to l
-                            if (pl < totalLevel)
-                            {
-                                parentLevelReads[pl - l].AddRange(writes); // read from pl + 1
-                            }
+                            continue;
                         }
+
+                        var loopsWrites = bufferInfo.Places.Select(p => p[sl]).Zip(bufferInfo.Writes).Select(p => p.First * p.Second).ToArray();
+                        var write = loopsWrites.Skip(1).Aggregate(loopsWrites[0], solver.MakeSum);
+                        nodeWrites[sl + 1].Add(write); // write at sl + 1.
+                        if (currentLevel + 1 <= totalLevel)
+                        {
+                            // can't read from top level's outside.
+                            nodeReads[currentLevel + 1].Add(write); // read from current level + 1.
+                        }
+                    }
+                }
+
+                for (int l = 0; l < totalLevel + 1; l++)
+                {
+                    if (nodeWrites[l].Any())
+                    {
+                        levelDataWrites[l] += nodeWrites[l].Skip(1).Aggregate(nodeWrites[l].First(), solver.MakeSum);
+                    }
+
+                    if (nodeReads[l].Any())
+                    {
+                        levelDataReads[l] += nodeReads[l].Skip(1).Aggregate(nodeReads[l].First(), solver.MakeSum);
                     }
                 }
             }
 
-            levelDataWrites[l] += currentLevelWrites.Skip(1).Aggregate(currentLevelWrites.First(), solver.MakeSum);
-            for (int i = 0; i < parentLevelReads.Length; i++)
-            {
-                levelDataReads[l + i] += parentLevelReads[i].Skip(1).Aggregate(parentLevelReads[i].First(), solver.MakeSum);
-            }
+            topNode.Walk(UpdateLevelReadWrites, false);
         }
 
         var memoryCycles = Enumerable.Range(0, totalLevel + 1).Select(i => (IntExpr)zero).ToArray();
@@ -472,28 +486,16 @@ public static class TreeTiler
         }
 
         // builder IR
-        var argsCollector = new TreeSolverArgumentsCollector();
-        tree.Accept(argsCollector, default);
-        var constructor = new TreeSolverResultConstructor(sol, argsCollector.Inputs, argsCollector.Outputs, solver, one, zero, elem, opNodeMemo, tileNodeMemo, tileableNodeMemo, compileOptions);
+        var constructor = new TreeSolverResultConstructor(sol, argumentsInfo, solver, one, zero, elem, opNodeMemo, tileNodeMemo, tileableNodeMemo, compileOptions);
         var bodyBuilder = TIR.T.Sequential();
         tree.Accept(constructor, new(bodyBuilder, Array.Empty<Expr>()));
-        var rootInfo = tileNodeMemo[(TileNode)tree.GetChildTileableNode()!];
-        var keys = constructor.BufferMemo.Keys.ToList();
-        foreach (var (bid, binfo) in rootInfo.BufferInfoMap)
-        {
-            if (rootInfo.DefUseMap.TryGetValue(bid, out var sourcebid))
-            {
-                keys.Remove(bid);
-                keys.Remove(sourcebid);
-            }
-        }
 
-        var parameters = argsCollector.Inputs.Select(k => constructor.BufferMemo[k]).Concat(argsCollector.Outputs.Select(k => constructor.BufferMemo[k])).ToArray();
-        var arguments = argsCollector.Inputs.Select(k => k.Node.Grid.Reads[k.Index]).ToArray();
+        var parameters = argumentsInfo.Inputs.Concat(argumentsInfo.DefUseMap.Values).Concat(argumentsInfo.Outputs).Select(k => constructor.OutSideBufferMemo[k]).ToArray();
+        var arguments = argumentsInfo.Inputs.Select(k => k.Node.Grid.Reads[k.Index]).Concat(argumentsInfo.DefUseMap.Values.Select(k => TilingUtilities.GetUninitialized(k.Node.Grid.Reads[k.Index]))).ToArray();
 
         var funcBuilder = TIR.T.PrimFunc("test", "cpu", parameters).Body(bodyBuilder);
         primFunc = funcBuilder.Build();
-        wrapper = new PrimFunctionWrapper(primFunc, argsCollector.Inputs.Count, argsCollector.Inputs.Concat(argsCollector.Outputs).Select(b => b.Node.Grid.GetArgument(b.Index).CheckedType).ToArray());
+        wrapper = new PrimFunctionWrapper(primFunc, parameters.Length - argumentsInfo.Outputs.Count, argumentsInfo.Inputs.Concat(argumentsInfo.DefUseMap.Values).Concat(argumentsInfo.Outputs).Select(b => b.Node.Grid.GetArgument(b.Index).CheckedType).ToArray());
         callFunc = new Call(wrapper, arguments);
         return true;
     }
@@ -507,14 +509,14 @@ public static class TreeTiler
         Dump(tree, "build");
 
         // try merge op2 and op1 at level 1
-        Merge(tree, 2, 1, 2);
-        Dump(tree, "merge_2_1_2");
+        // Merge(tree, 2, 1, 2);
+        // Dump(tree, "merge_2_1_2");
 
-        Merge(tree, 2, 1, 1);
-        Dump(tree, "merge_2_1_1");
+        // Merge(tree, 2, 1, 1);
+        // Dump(tree, "merge_2_1_1");
 
-        Merge(tree, 2, 0, 2);
-        Dump(tree, "merge_2_0_2");
+        // Merge(tree, 2, 0, 2);
+        // Dump(tree, "merge_2_0_2");
 
         // merge 1 0 1
         // Merge(tree, 1, 0, 1);
@@ -525,7 +527,7 @@ public static class TreeTiler
             return new TileResult(call, wrapper, primFunc);
         }
 
-        throw new NotSupportedException("fuck");
+        throw new NotSupportedException("Solve Failed");
     }
 }
 

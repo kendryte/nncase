@@ -19,6 +19,48 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
 
     public int TotalLevel { get; }
 
+    /// <summary>
+    /// source id => sink id.
+    /// </summary>
+    public static Dictionary<BufferIdenitity, BufferIdenitity> GetBufferDefUseMap(BufferResult[] bufferResults)
+    {
+        var map = new Dictionary<BufferIdenitity, BufferIdenitity>();
+        for (int i = 0; i < bufferResults.Length; i++)
+        {
+            var sinkId = bufferResults[i].Bid;
+            foreach (var dep in sinkId.Node.Dependences)
+            {
+                var sourceId = new BufferIdenitity(dep.Node, dep.Node.ReadAccesses.Length);
+                if (Array.FindIndex(bufferResults, r => r.Bid == sourceId) != -1)
+                {
+                    if (!map.ContainsKey(sourceId))
+                    {
+                        map.Add(sourceId, sinkId);
+                    }
+                }
+            }
+        }
+
+        return map;
+    }
+
+    public static ArgumentsInfo GetArgumentsInfo(BufferResult[] bufferResults)
+    {
+        var map = GetBufferDefUseMap(bufferResults);
+        var inputs = new HashSet<BufferIdenitity>(bufferResults.Select(b => b.Bid).Where(b => b.Index != b.Node.BufferShapes.Length - 1));
+        var outputs = new HashSet<BufferIdenitity>(bufferResults.Select(b => b.Bid).Where(b => b.Index == b.Node.BufferShapes.Length - 1));
+
+        foreach (var (k, v) in map)
+        {
+            inputs.Remove(k);
+            inputs.Remove(v);
+            outputs.Remove(k);
+            outputs.Remove(v);
+        }
+
+        return new(inputs, outputs, map);
+    }
+
     public InitResult Visit(ScopeNode value, Context context)
     {
         var results = new List<BufferResult>();
@@ -209,31 +251,6 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
         }
 
         return backWardExtents;
-    }
-
-    /// <summary>
-    /// source id => sink id.
-    /// </summary>
-    private Dictionary<BufferIdenitity, BufferIdenitity> GetBufferDefUseMap(BufferResult[] bufferResults)
-    {
-        var map = new Dictionary<BufferIdenitity, BufferIdenitity>();
-        for (int i = 0; i < bufferResults.Length; i++)
-        {
-            var sinkId = bufferResults[i].Bid;
-            foreach (var dep in sinkId.Node.Dependences)
-            {
-                var sourceId = new BufferIdenitity(dep.Node, dep.Node.ReadAccesses.Length);
-                if (Array.FindIndex(bufferResults, r => r.Bid == sourceId) != -1)
-                {
-                    if (!map.ContainsKey(sourceId))
-                    {
-                        map.Add(sourceId, sinkId);
-                    }
-                }
-            }
-        }
-
-        return map;
     }
 
     private TileNodeBufferInfo GetBufferInfo(TileNode tile, BufferIdenitity bid, AffineMap accessMap, Tuple<int, int> lifeness, IntExpr[][] backWardExtents)

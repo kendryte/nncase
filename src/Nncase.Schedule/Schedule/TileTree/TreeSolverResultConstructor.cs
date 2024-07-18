@@ -59,22 +59,20 @@ public sealed class TreeSolverArgumentsCollector : ITreeNodeVisitor<Unit, Unit>
 public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisitor<TreeSolverResultConstructor.Context, Unit>
 {
     private readonly Assignment _sol;
-    private readonly HashSet<BufferIdenitity> _inputs;
-    private readonly HashSet<BufferIdenitity> _outputs;
+    private readonly ArgumentsInfo _argumentsInfo;
     private readonly Dictionary<ITileAbleNode, Dictionary<BufferIdenitity, SubViewInfo>> _subViewMemo;
 
-    public TreeSolverResultConstructor(Assignment solution, HashSet<BufferIdenitity> inputs, HashSet<BufferIdenitity> outputs, Solver solver, IntExpr one, IntExpr zero, IntExpr elem, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainInfos, CompileOptions compileOptions)
+    public TreeSolverResultConstructor(Assignment solution, ArgumentsInfo argumentsInfo, Solver solver, IntExpr one, IntExpr zero, IntExpr elem, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainInfos, CompileOptions compileOptions)
         : base(solver, one, zero, elem, primitiveBufferInfo, levelBufferInfos, domainInfos, compileOptions.TargetOptions)
     {
         _sol = solution;
-        _inputs = inputs;
-        _outputs = outputs;
-        BufferMemo = new();
+        _argumentsInfo = argumentsInfo;
+        OutSideBufferMemo = new();
         _subViewMemo = new();
         CompileOptions = compileOptions;
     }
 
-    public Dictionary<BufferIdenitity, TIR.Buffer> BufferMemo { get; }
+    public Dictionary<BufferIdenitity, TIR.Buffer> OutSideBufferMemo { get; }
 
     public CompileOptions CompileOptions { get; }
 
@@ -232,11 +230,11 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
     {
         var expr = bid.Node.Buffers[bid.Index];
         var tensorType = GetBufferTensorType(expr);
-        if (!BufferMemo.TryGetValue(bid, out var buffer))
+        if (!OutSideBufferMemo.TryGetValue(bid, out var buffer))
         {
             buffer = T.AttachBuffer(None.Default, tensorType, MemoryLocation.Data, 1, out _, $"{bid}");
 
-            BufferMemo.Add(bid, buffer);
+            OutSideBufferMemo.Add(bid, buffer);
         }
 
         return buffer;
@@ -284,9 +282,9 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
         }
         else
         {
-            if (_inputs.Contains(bid) || _outputs.Contains(bid))
+            if (_argumentsInfo.GetBufferKind(bid) is not ArgumentsInfo.BufferKind.None)
             {
-                parentBuffer = GetDeclareBuffer(bid);
+                parentBuffer = GetDeclareBuffer(_argumentsInfo.GetUniqueIdenitity(bid));
             }
             else
             {
@@ -304,12 +302,12 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
     {
         var expr = bid.Node.Buffers[bid.Index];
         var tensorType = GetBufferTensorType(expr);
-        if (!BufferMemo.TryGetValue(bid, out var buffer))
+        if (!OutSideBufferMemo.TryGetValue(bid, out var buffer))
         {
             var alloc = IR.F.Buffer.Allocate(TensorUtilities.GetProduct(tensorType.Shape.ToValueArray()), tensorType.DType, MemoryLocation.L2Data, false);
             scope = T.Let(out var allocVar, alloc, $"{bid}_span");
             buffer = T.AttachBuffer(allocVar, tensorType, MemoryLocation.L2Data, 1, out _, $"{bid}");
-            BufferMemo.Add(bid, buffer);
+            OutSideBufferMemo.Add(bid, buffer);
         }
         else
         {

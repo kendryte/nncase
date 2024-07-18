@@ -10,6 +10,13 @@ public static class TreeExtensions
 {
     private static readonly Regex _rangePattern = new Regex(@"\(\d+..\d+\)", RegexOptions.Compiled);
 
+    public static void Walk(this ITreeNode node, Action<ITreeNode> func, bool preOrder = true)
+    {
+        var functor = new TreeFunctor(func, preOrder);
+        node.Accept(functor, default);
+        return;
+    }
+
     public static ITileAbleNode? GetParentTileableNode(this ITreeNode node)
     {
         return node.Parent switch

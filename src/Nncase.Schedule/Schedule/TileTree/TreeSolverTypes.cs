@@ -49,3 +49,62 @@ public sealed record DomainInfo(IntVar[] TileVars, IntExpr[] ForwardExtents, Dic
 public sealed record OpNodeInfo(AffineMap[] Maps, IntExpr[][] Shapes, IntExpr[] Size)
 {
 }
+
+public sealed record ArgumentsInfo(HashSet<BufferIdenitity> Inputs, HashSet<BufferIdenitity> Outputs, Dictionary<BufferIdenitity, BufferIdenitity> DefUseMap)
+{
+    public enum BufferKind
+    {
+        Input,
+        Output,
+
+        /// <summary>
+        /// cache in the kernel's outside.
+        /// </summary>
+        Cache,
+
+        /// <summary>
+        /// cache in the kernel's inside.
+        /// </summary>
+        None,
+    }
+
+    public BufferIdenitity GetUniqueIdenitity(BufferIdenitity bid)
+    {
+        if (Inputs.Contains(bid))
+        {
+            return bid;
+        }
+        else if (Outputs.Contains(bid))
+        {
+            return bid;
+        }
+        else if (DefUseMap.ContainsKey(bid))
+        {
+            return DefUseMap[bid];
+        }
+        else if (DefUseMap.ContainsValue(bid))
+        {
+            return bid;
+        }
+
+        throw new NotSupportedException();
+    }
+
+    public BufferKind GetBufferKind(BufferIdenitity bid)
+    {
+        if (Inputs.Contains(bid))
+        {
+            return BufferKind.Input;
+        }
+        else if (Outputs.Contains(bid))
+        {
+            return BufferKind.Output;
+        }
+        else if (DefUseMap.ContainsKey(bid) || DefUseMap.ContainsValue(bid))
+        {
+            return BufferKind.Cache;
+        }
+
+        return BufferKind.None;
+    }
+}
