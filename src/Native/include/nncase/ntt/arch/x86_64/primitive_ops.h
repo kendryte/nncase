@@ -504,19 +504,39 @@ template <> struct outer_product<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     operator()(const ntt::vector<float, 8> &v1,
                const ntt::vector<float, 8> &v2) const noexcept {
         alignas(32) fixed_tensor<float, 8, 8> result;
-        __m256 tmp;
-        // Iterate over each element in v1
-        for (int i = 0; i < 8; ++i) {
-            // Broadcast the i-th element of v1 to all elements of a new __m256
-            tmp = _mm256_set1_ps(((float *)&v1)[i]);
+        __m256 tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
 
-            // Multiply the broadcasted value with v2
-            tmp = _mm256_mul_ps(tmp, v2);
+        tmp0 = _mm256_set1_ps(((float *)&v1)[0]);
+        tmp0 = _mm256_mul_ps(tmp0, v2);
+        _mm256_storeu_ps(&(((float *)(result.elements().data()))[0 * 8]), tmp0);
 
-            // Store the result in the appropriate position in the result array
-            _mm256_storeu_ps(&(((float *)(result.elements().data()))[i * 8]),
-                             tmp);
-        }
+        tmp1 = _mm256_set1_ps(((float *)&v1)[1]);
+        tmp1 = _mm256_mul_ps(tmp1, v2);
+        _mm256_storeu_ps(&(((float *)(result.elements().data()))[1 * 8]), tmp1);
+
+        tmp2 = _mm256_set1_ps(((float *)&v1)[2]);
+        tmp2 = _mm256_mul_ps(tmp2, v2);
+        _mm256_storeu_ps(&(((float *)(result.elements().data()))[2 * 8]), tmp2);
+
+        tmp3 = _mm256_set1_ps(((float *)&v1)[3]);
+        tmp3 = _mm256_mul_ps(tmp3, v2);
+        _mm256_storeu_ps(&(((float *)(result.elements().data()))[3 * 8]), tmp3);
+
+        tmp4 = _mm256_set1_ps(((float *)&v1)[4]);
+        tmp4 = _mm256_mul_ps(tmp4, v2);
+        _mm256_storeu_ps(&(((float *)(result.elements().data()))[4 * 8]), tmp4);
+
+        tmp5 = _mm256_set1_ps(((float *)&v1)[5]);
+        tmp5 = _mm256_mul_ps(tmp5, v2);
+        _mm256_storeu_ps(&(((float *)(result.elements().data()))[5 * 8]), tmp5);
+
+        tmp6 = _mm256_set1_ps(((float *)&v1)[6]);
+        tmp6 = _mm256_mul_ps(tmp6, v2);
+        _mm256_storeu_ps(&(((float *)(result.elements().data()))[6 * 8]), tmp6);
+
+        tmp7 = _mm256_set1_ps(((float *)&v1)[7]);
+        tmp7 = _mm256_mul_ps(tmp7, v2);
+        _mm256_storeu_ps(&(((float *)(result.elements().data()))[7 * 8]), tmp7);
 
         return result;
     }
