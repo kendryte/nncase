@@ -240,14 +240,14 @@ template <> struct add<ntt::vector<float, 8, 8>, ntt::vector<float, 8, 8>> {
         auto rhs_v = (vector<float, 8> *)(v2.elements().data());
         auto output_v = (vector<float, 8> *)(v3.elements().data());
 
-        output_v[0] = ntt::add(lhs_v[0], rhs_v[0]);
-        output_v[1] = ntt::add(lhs_v[1], rhs_v[1]);
-        output_v[2] = ntt::add(lhs_v[2], rhs_v[2]);
-        output_v[3] = ntt::add(lhs_v[3], rhs_v[3]);
-        output_v[4] = ntt::add(lhs_v[4], rhs_v[4]);
-        output_v[5] = ntt::add(lhs_v[5], rhs_v[5]);
-        output_v[6] = ntt::add(lhs_v[6], rhs_v[6]);
-        output_v[7] = ntt::add(lhs_v[7], rhs_v[7]);
+        output_v[0] = _mm256_add_ps(lhs_v[0], rhs_v[0]);
+        output_v[1] = _mm256_add_ps(lhs_v[1], rhs_v[1]);
+        output_v[2] = _mm256_add_ps(lhs_v[2], rhs_v[2]);
+        output_v[3] = _mm256_add_ps(lhs_v[3], rhs_v[3]);
+        output_v[4] = _mm256_add_ps(lhs_v[4], rhs_v[4]);
+        output_v[5] = _mm256_add_ps(lhs_v[5], rhs_v[5]);
+        output_v[6] = _mm256_add_ps(lhs_v[6], rhs_v[6]);
+        output_v[7] = _mm256_add_ps(lhs_v[7], rhs_v[7]);
 
         return v3;
     }
