@@ -287,7 +287,7 @@ template <> struct mul<ntt::vector<float, 8>, ntt::vector<float, 8>> {
 // mul
 template <> struct mul<ntt::vector<float, 8>, float> {
     ntt::vector<float, 8> operator()(const ntt::vector<float, 8> &v1,
-                                     float f2) const noexcept {
+                                     const float &f2) const noexcept {
         auto v2 = _mm256_set1_ps(f2);
         return _mm256_mul_ps(v1, v2);
     }
@@ -296,7 +296,8 @@ template <> struct mul<ntt::vector<float, 8>, float> {
 // mul
 template <> struct mul<float, ntt::vector<float, 8>> {
     ntt::vector<float, 8>
-    operator()(float f1, const ntt::vector<float, 8> &v2) const noexcept {
+    operator()(const float &f1,
+               const ntt::vector<float, 8> &v2) const noexcept {
         auto v1 = _mm256_set1_ps(f1);
         return _mm256_mul_ps(v1, v2);
     }
