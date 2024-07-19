@@ -131,6 +131,41 @@ template <typename T, size_t vl> void test_vector() {
 
 TEST(UnaryTestExp, vector) { TEST_VECTOR(float) }
 
+template <typename T, size_t vl> void test_vector_ulp() {
+    constexpr size_t size = 250000;
+    // constexpr size_t N = NTT_VLEN / (sizeof(float) * 8);
+
+    // init
+    using tensor_type =
+        ntt::tensor<ntt::vector<float, vl>, ntt::fixed_shape<size>>;
+    std::unique_ptr<tensor_type> ntt_input(new tensor_type);
+    NttTest::init_tensor(*ntt_input, -50.0f, 50.f);
+
+    // ntt
+    std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
+    ntt::unary<ntt::ops::exp>(*ntt_input, *ntt_output1);
+
+    // ort
+    auto ort_input = NttTest::ntt2ort(*ntt_input);
+    auto ort_output = ortki_Exp(ort_input);
+
+    // compare
+    std::unique_ptr<tensor_type> ntt_output2(new tensor_type);
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_ulp(*ntt_output1, *ntt_output2, 2.f));
+}
+
+#define _TEST_VECTOR_ULP(T, lmul)                                              \
+    test_vector_ulp<T, (NTT_VLEN) / (sizeof(T) * 8) * lmul>();
+
+#define TEST_VECTOR_ULP(T)                                                     \
+    _TEST_VECTOR_ULP(T, 1)                                                     \
+    _TEST_VECTOR_ULP(T, 2)                                                     \
+    _TEST_VECTOR_ULP(T, 4)                                                     \
+    _TEST_VECTOR_ULP(T, 8)
+
+TEST(UnaryTestExpFloat, ulp_error) { TEST_VECTOR_ULP(float) }
+
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

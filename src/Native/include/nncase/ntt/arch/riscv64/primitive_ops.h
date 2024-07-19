@@ -261,7 +261,7 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, round)
 #define RSQRT_FLOAT32(LMUL, MLEN)                                              \
     inline vfloat32m##LMUL##_t rsqrt_float32(const vfloat32m##LMUL##_t &v,     \
                                              const size_t vl) {                \
-        return vfrsqrt7_v_f32m##LMUL(v, vl);                                   \
+        return vfrdiv_vf_f32m##LMUL(vfsqrt_v_f32m##LMUL(v, vl), 1.f, vl);      \
     }
 
 IMPL_RVV_WITH_LMULS(RSQRT_FLOAT32)
