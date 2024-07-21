@@ -261,7 +261,7 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, round)
 #define RSQRT_FLOAT32(LMUL, MLEN)                                              \
     inline vfloat32m##LMUL##_t rsqrt_float32(const vfloat32m##LMUL##_t &v,     \
                                              const size_t vl) {                \
-        return vfrsqrt7_v_f32m##LMUL(v, vl);                                   \
+        return vfrdiv_vf_f32m##LMUL(vfsqrt_v_f32m##LMUL(v, vl), 1.f, vl);      \
     }
 
 IMPL_RVV_WITH_LMULS(RSQRT_FLOAT32)
@@ -744,7 +744,6 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_SWISHB_OP_FLOAT32, swishb)
 
 REGISTER_RVV_WITH_VLENS(REGISTER_RVV_OUTER_PRODUCT_OP_FLOAT32, outer_product)
 
-#if 0
 // inner product
 #define RVV_INNER_PRODUCT_OP(op, dtype, dtype_prefix, vlen, sew, lmul, kernel) \
     template <>                                                                \
@@ -775,9 +774,7 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_OUTER_PRODUCT_OP_FLOAT32, outer_product)
     RVV_INNER_PRODUCT_OP(OP, float, f, vlen, 32, 8, OP##_float32)
 
 REGISTER_RVV_WITH_VLENS(REGISTER_RVV_INNER_PRODUCT_OP_FLOAT32, inner_product)
-#endif
 
-#if 1
 // mul_add
 #define RVV_MUL_ADD_OP(op, dtype, dtype_prefix, vlen, sew, lmul, kernel)       \
     template <>                                                                \
@@ -877,7 +874,6 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_INNER_PRODUCT_OP_FLOAT32, inner_product)
 
 IMPL_RVV_WITH_LMULS(MUL_ADD_FLOAT32)
 REGISTER_RVV_WITH_VLENS(REGISTER_RVV_MUL_ADD_OP_FLOAT32, mul_add)
-#endif
 
 #endif
 } // namespace nncase::ntt::ops

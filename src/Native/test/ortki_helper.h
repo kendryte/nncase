@@ -69,9 +69,38 @@ ortki::OrtKITensor *ntt2ort(ntt::tensor<T, Shape, Stride> &tensor) {
 }
 
 template <typename T, typename Shape,
+          typename Stride = ntt::default_strides_t<Shape>, size_t N>
+ortki::OrtKITensor *
+ntt2ort(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &tensor) {
+    void *buffer = reinterpret_cast<void *>(tensor.elements().data());
+    auto ort_type = primitive_type2ort_type<T>();
+    auto rank1 = tensor.shape().rank();
+    auto rank = rank1 + tensor(0).shape().rank();
+    std::vector<size_t> v(rank);
+    for (size_t i = 0; i < rank1; i++)
+        v[i] = tensor.shape()[i];
+
+    for (size_t i = rank1; i < rank; i++)
+        v[i] = tensor(0).shape()[i];
+
+    const int64_t *shape = reinterpret_cast<const int64_t *>(v.data());
+    return make_tensor(buffer, ort_type, shape, rank);
+}
+
+template <typename T, typename Shape,
           typename Stride = ntt::default_strides_t<Shape>>
 void ort2ntt(ortki::OrtKITensor *ort_tensor,
              ntt::tensor<T, Shape, Stride> &ntt_tensor) {
+    size_t size = 0;
+    void *ort_ptr = tensor_buffer(ort_tensor, &size);
+    assert(tensor_length(ort_tensor) == ntt_tensor.shape().length());
+    memcpy((void *)ntt_tensor.elements().data(), ort_ptr, size);
+}
+
+template <typename T, typename Shape,
+          typename Stride = ntt::default_strides_t<Shape>, size_t N>
+void ort2ntt(ortki::OrtKITensor *ort_tensor,
+             ntt::tensor<ntt::vector<T, N>, Shape, Stride> &ntt_tensor) {
     size_t size = 0;
     void *ort_ptr = tensor_buffer(ort_tensor, &size);
     assert(tensor_length(ort_tensor) == ntt_tensor.shape().length());
