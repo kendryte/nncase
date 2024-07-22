@@ -243,7 +243,8 @@ jobs:
 
       - name: Install Python Packages
         run:
-          python -m pip install --upgrade pip==24.0
+          #python -m pip install --upgrade pip
+          curl -sS https://bootstrap.pypa.io/get-pip.py | python
           pip install -r requirements.test.txt
 
       - name: Create Test Environment
