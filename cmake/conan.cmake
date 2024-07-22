@@ -55,7 +55,7 @@ function(_get_msvc_ide_version result)
         set(${result} 15 PARENT_SCOPE)
     elseif(NOT MSVC_VERSION VERSION_LESS 1920 AND MSVC_VERSION VERSION_LESS 1930)
         set(${result} 16 PARENT_SCOPE)
-    elseif(NOT MSVC_VERSION VERSION_LESS 1930 AND MSVC_VERSION VERSION_LESS 1940)
+    elseif(NOT MSVC_VERSION VERSION_LESS 1930 AND MSVC_VERSION VERSION_LESS 1950)
         set(${result} 17 PARENT_SCOPE)
     else()
         message(FATAL_ERROR "Conan: Unknown MSVC compiler version [${MSVC_VERSION}]")
@@ -126,12 +126,6 @@ macro(_conan_detect_compiler)
 
     if(ARGUMENTS_ARCH)
         set(_CONAN_SETTING_ARCH ${ARGUMENTS_ARCH})
-    else()
-        set(_CONAN_SETTING_ARCH ${CMAKE_SYSTEM_PROCESSOR})
-    endif()
-
-    if (${_CONAN_SETTING_ARCH} STREQUAL "AMD64")
-        set(_CONAN_SETTING_ARCH "x86_64")
     endif()
 
     if(USING_CXX)
@@ -311,7 +305,7 @@ function(conan_cmake_settings result)
 
     if(NOT _SETTINGS OR ARGUMENTS_PROFILE_AUTO STREQUAL "ALL")
         set(ARGUMENTS_PROFILE_AUTO arch build_type compiler compiler.version
-                                   compiler.runtime compiler.libcxx compiler.toolset)
+                                   compiler.runtime compiler.libcxx compiler.toolset os)
     endif()
 
     # remove any manually specified settings from the autodetected settings
@@ -460,7 +454,7 @@ endfunction()
 function(_collect_settings result)
     set(ARGUMENTS_PROFILE_AUTO arch build_type compiler compiler.version
                             compiler.runtime compiler.libcxx compiler.toolset
-                            compiler.cppstd)
+                            compiler.cppstd os)
     foreach(ARG ${ARGUMENTS_PROFILE_AUTO})
         string(TOUPPER ${ARG} _arg_name)
         string(REPLACE "." "_" _arg_name ${_arg_name})
