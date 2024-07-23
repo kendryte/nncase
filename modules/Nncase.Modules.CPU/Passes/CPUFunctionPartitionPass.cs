@@ -152,11 +152,15 @@ public sealed class CPUFunctionPartitionPass : ModulePass
                 var convertor = new GraphConvertor();
                 convertor.Visit(pre.Body, ctx);
 
+#if Debug
                 ctx.Graph.DumpDot(DumpScope.Current.Directory + $"function_{i}.dot");
+#endif                
 
                 ctx.SummarizeGraph();
 
+#if Debug
                 ctx.GraphSummary.DumpDot(DumpScope.Current.Directory + $"function_{i}_summary.dot");
+#endif                
 
                 var dfsVisitor = new QuikGraph.Algorithms.TopologicalSort.SourceFirstTopologicalSortAlgorithm<Vertex, Edge>(ctx.GraphSummary);
                 dfsVisitor.Compute();
