@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DryIoc.ImTools;
 using Nncase.IR;
 using Nncase.PatternMatch;
 using Nncase.Utilities;
@@ -59,7 +60,7 @@ public class PackSoftmax : PackRule
             var softmax = IR.F.CPU.PackedSoftmax(packed, axis, packedAxes);
             if (softmax.CheckedType is not InvalidType)
             {
-                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(softmax, packedAxes), inShape, pads);
+                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(softmax, lanes, packedAxes), inShape, pads);
                 rets.Add(post);
             }
         }
@@ -105,7 +106,7 @@ public sealed class PackResizeImage : PackRule
 
             if (resized.CheckedType is not InvalidType)
             {
-                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(resized, packedAxes), inShape, padsInput);
+                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(resized, lanes, packedAxes), inShape, padsInput);
                 rets.Add(post);
             }
         }
@@ -162,7 +163,7 @@ public sealed class PackInstanceNorm : PackRule
 
             if (layernorm.CheckedType is not InvalidType)
             {
-                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(layernorm, packedAxes), inShape, padsInput);
+                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(layernorm, lanes, packedAxes), inShape, padsInput);
                 rets.Add(post);
             }
         }
@@ -228,7 +229,7 @@ public sealed class PackLayerNorm : PackRule
 
             if (layernorm.CheckedType is not InvalidType)
             {
-                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(layernorm, packedAxes), inShape, padsInput);
+                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(layernorm, lanes, packedAxes), inShape, padsInput);
                 rets.Add(post);
             }
         }
@@ -289,22 +290,25 @@ public sealed class PackMatMul : PackRule
             var nPackIndex = Array.IndexOf(rhsPackedAxes, rhsShape.Length - 1);
             var unpackAxes = new List<int>();
             var unpadNums = new List<int>();
+            var unpackLanes = new List<int>();
             if (mPackIndex != -1)
             {
                 unpackAxes.Add(lhsAlign + lhsPackedAxes[mPackIndex]);
                 unpadNums.Add(lhsPadNums[mPackIndex]);
+                unpackLanes.Add(lhsAlign + lhsLanes[mPackIndex]);
             }
 
             if (nPackIndex != -1)
             {
                 unpackAxes.Add(rhsAlign + rhsPackedAxes[nPackIndex]);
                 unpadNums.Add(rhsPadNums[nPackIndex]);
+                unpackLanes.Add(rhsAlign + rhsLanes[nPackIndex]);
             }
 
             Expr post = matmul;
             if (unpackAxes.Any())
             {
-                post = PackUtility.SliceForPack(IR.F.CPU.Unpack(matmul, unpackAxes.ToArray()), candidate.CheckedShape.ToValueArray(), unpadNums.ToArray());
+                post = PackUtility.SliceForPack(IR.F.CPU.Unpack(matmul, unpackLanes.ToArray(), unpackAxes.ToArray()), candidate.CheckedShape.ToValueArray(), unpadNums.ToArray());
             }
 
             rets.Add(post);
@@ -314,10 +318,17 @@ public sealed class PackMatMul : PackRule
         AddCandidate(new[] { lhsShape.Length - 1 }, new[] { rhsShape.Length - 2 }, new[] { Lane }, new[] { Lane });
 
         // only pack A's m
-        // AddCandidate(new[] { lhsShape.Length - 2 }, Array.Empty<int>(), new[] { Lane }, Array.Empty<int>());
+        AddCandidate(new[] { lhsShape.Length - 2 }, Array.Empty<int>(), new[] { Lane }, Array.Empty<int>());
+
+        // only pack B's n
+        AddCandidate(Array.Empty<int>(), new[] { rhsShape.Length - 1 }, Array.Empty<int>(), new[] { Lane });
+
         if (Rank > 1)
         {
             AddCandidate(new[] { lhsShape.Length - 2, lhsShape.Length - 1 }, new[] { rhsShape.Length - 2, rhsShape.Length - 1 }, new[] { Lane, Lane }, new[] { Lane, Lane });
+            AddCandidate(new[] { lhsShape.Length - 2 }, new[] { rhsShape.Length - 1 }, new[] { Lane }, new[] { Lane });
+            AddCandidate(new[] { lhsShape.Length - 2, lhsShape.Length - 1 }, new[] { rhsShape.Length - 2 }, new[] { Lane, Lane }, new[] { Lane });
+            AddCandidate(new[] { lhsShape.Length - 1 }, new[] { rhsShape.Length - 2, rhsShape.Length - 1 }, new[] { Lane }, new[] { Lane, Lane });
         }
 
         return rets;
@@ -349,7 +360,7 @@ public sealed class PackUnary : PackRule
             var unary = IR.F.Math.Unary(op.UnaryOp, packedInput);
             if (unary.CheckedType is not InvalidType)
             {
-                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(unary, packedAxes), inShape, padsInput);
+                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(unary, lanes, packedAxes), inShape, padsInput);
                 rets.Add(post);
             }
         }
@@ -401,7 +412,7 @@ public sealed class PackBinary : PackRule
             var binary = IR.F.CPU.PackedBinary(packedLhs, packedRhs, op.BinaryOp, lhsPackedAxes, lhsPadNums, rhsPackedAxes, rhsPadNums);
             if (binary.CheckedType is not InvalidType)
             {
-                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(binary, lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPackedAxes : rhsPackedAxes), candidate.CheckedShape.ToValueArray(), lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPadNums : rhsPadNums);
+                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(binary, lhsLanes.Length >= rhsLanes.Length ? lhsLanes : rhsLanes, lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPackedAxes : rhsPackedAxes), candidate.CheckedShape.ToValueArray(), lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPadNums : rhsPadNums);
                 rets.Add(post);
             }
         }
@@ -462,7 +473,7 @@ public sealed class PackSwish : PackRule
         {
             var packed = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
             var swish = IR.F.NN.Swish(packed, beta);
-            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(swish, packedAxes), inShape, pads);
+            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(swish, lanes, packedAxes), inShape, pads);
             rets.Add(post);
         }
 
@@ -510,15 +521,17 @@ public sealed class PackTranspose : PackRule
             if (tarns.CheckedType is not InvalidType)
             {
                 var unpackAxes = packedAxes.Select(axis => perm.IndexOf(axis)).ToArray();
+                var unpackLanes = lanes.Select(l => perm.IndexOf(l)).ToArray();
                 bool swap = unpackAxes.Length == 2 && unpackAxes[0] > unpackAxes[1];
                 if (swap)
                 {
                     (unpackAxes[0], unpackAxes[1]) = (unpackAxes[1], unpackAxes[0]);
                     (pads[0], pads[1]) = (pads[1], pads[0]);
+                    (unpackLanes[0], unpackLanes[1]) = (unpackLanes[1], unpackLanes[0]);
                 }
 
                 var newShape = perm.Select(i => inShape[i]).ToArray();
-                rets.Add(PackUtility.SliceForPack(IR.F.CPU.Unpack(tarns, unpackAxes), newShape, pads));
+                rets.Add(PackUtility.SliceForPack(IR.F.CPU.Unpack(tarns, unpackLanes, unpackAxes), newShape, pads));
             }
         }
 
@@ -580,7 +593,7 @@ public sealed class PackUnsqueeze : PackRule
                     }
                 }
 
-                rets.Add(PackUtility.SliceForPack(IR.F.CPU.Unpack(post, unpackAxes), outShape.ToArray(), pads));
+                rets.Add(PackUtility.SliceForPack(IR.F.CPU.Unpack(post, lanes, unpackAxes), outShape.ToArray(), pads));
             }
         }
 
@@ -758,7 +771,7 @@ public sealed class PackReshape : PackRule
             var post = IR.F.Tensors.Reshape(packed, packedNewShape);
             if (post.CheckedType is not InvalidType)
             {
-                rets.Add(PackUtility.SliceForPack(IR.F.CPU.Unpack(post, unpackAxes.ToArray()), newShape, pads));
+                rets.Add(PackUtility.SliceForPack(IR.F.CPU.Unpack(post, lanes, unpackAxes.ToArray()), newShape, pads));
             }
         }
 
@@ -848,7 +861,7 @@ public sealed class PackSlice : PackRule
             var post = IR.F.Tensors.Slice(packed, packedBegins, packedEnds, axes, strides);
             if (post.CheckedType is not InvalidType)
             {
-                rets.Add(PackUtility.SliceForPack(IR.F.CPU.Unpack(post, packAxes), candidate.CheckedShape.ToValueArray(), pads));
+                rets.Add(PackUtility.SliceForPack(IR.F.CPU.Unpack(post, lanes, packAxes), candidate.CheckedShape.ToValueArray(), pads));
             }
         }
 
@@ -875,7 +888,7 @@ public sealed partial class FoldPackUnpack : RewriteRule<Pattern>
 
     private Expr? GetReplace(IR.CPU.Pack pack, IR.CPU.Unpack unpack, Expr input)
     {
-        if (pack.Axes.SequenceEqual(unpack.Axes))
+        if (pack.Axes.SequenceEqual(unpack.Axes) && pack.Lanes.SequenceEqual(unpack.Lanes))
         {
             return input;
         }
@@ -904,7 +917,7 @@ public sealed partial class FoldPackConcatUnpack : RewriteRule<Pattern>
         for (int i = 0; i < fileds.Count; i++)
         {
             var unpack = (IR.CPU.Unpack)result[$"unpack_{i}"];
-            if (pack.Axes.SequenceEqual(unpack.Axes))
+            if (pack.Axes.SequenceEqual(unpack.Axes) && pack.Lanes.SequenceEqual(unpack.Lanes))
             {
                 inputs[i] = (Expr)result[$"input_{i}"];
             }

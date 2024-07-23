@@ -60,8 +60,37 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
             bool valid = true;
             switch (target.LhsPackedAxes.Count, target.RhsPackedAxes.Count)
             {
+                case (0, 1):
+                    if (target.RhsPackedAxes[0] != rhs.Rank - 1)
+                    {
+                        valid = false;
+                    }
+
+                    break;
+                case (1, 0):
+                    if (target.LhsPackedAxes[0] != lhs.Rank - 2)
+                    {
+                        valid = false;
+                    }
+
+                    break;
                 case (1, 1):
-                    if (target.LhsPackedAxes[0] != lhs.Rank - 1 || target.RhsPackedAxes[0] != rhs.Rank - 2)
+                    if (!((target.LhsPackedAxes[0] == lhs.Rank - 1 && target.RhsPackedAxes[0] == rhs.Rank - 2) ||
+                        (target.LhsPackedAxes[0] == lhs.Rank - 2 && target.RhsPackedAxes[0] == rhs.Rank - 1)))
+                    {
+                        valid = false;
+                    }
+
+                    break;
+                case (1, 2):
+                    if (target.LhsPackedAxes[0] != lhs.Rank - 1 || target.RhsPackedAxes[0] != rhs.Rank - 2 || target.RhsPackedAxes[1] != rhs.Rank - 1)
+                    {
+                        valid = false;
+                    }
+
+                    break;
+                case (2, 1):
+                    if (target.LhsPackedAxes[0] != lhs.Rank - 2 || target.LhsPackedAxes[1] != lhs.Rank - 1 || target.RhsPackedAxes[0] != rhs.Rank - 2)
                     {
                         valid = false;
                     }
@@ -96,7 +125,11 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
                     goto ERROR;
                 }
 
-                rType = Math.MatMulEvaluator.VisitDistributedType(a, b);
+                {
+                    bool packingK = target.LhsPackedAxes.Count == 1 && target.RhsPackedAxes.Count == 1 &&
+                     target.LhsPackedAxes[0] == a.TensorType.Shape.Rank - 1 && target.RhsPackedAxes[0] == b.TensorType.Shape.Rank - 2;
+                    rType = Math.MatMulEvaluator.VisitDistributedType(a, b, packingK);
+                }
 
                 break;
             case (TensorType a, TensorType b):
@@ -105,7 +138,12 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
                     goto ERROR;
                 }
 
-                rType = Math.MatMulEvaluator.VisitTensorType(a, b);
+                {
+                    bool packingK = target.LhsPackedAxes.Count == 1 && target.RhsPackedAxes.Count == 1 &&
+                     target.LhsPackedAxes[0] == a.Shape.Rank - 1 && target.RhsPackedAxes[0] == b.Shape.Rank - 2;
+                    rType = Math.MatMulEvaluator.VisitTensorType(a, b, packingK);
+                }
+
                 break;
             default:
             ERROR: rType = new InvalidType($"lhs: {lhs}, rhs: {rhs} not support");
