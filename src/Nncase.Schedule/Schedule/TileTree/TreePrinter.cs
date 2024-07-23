@@ -4,6 +4,12 @@
 using System.Collections;
 using System.Reactive;
 using System.Text;
+using GiGraph.Dot.Entities.Edges;
+using GiGraph.Dot.Entities.Graphs;
+using GiGraph.Dot.Entities.Html.Table;
+using GiGraph.Dot.Entities.Nodes;
+using GiGraph.Dot.Extensions;
+using GiGraph.Dot.Types.Records;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Affine;
@@ -11,19 +17,14 @@ using VisitorPatternGenerator;
 
 namespace Nncase.Schedule.TileTree;
 
-public record TreePrinterContext(int ParentOpId, IReadOnlyList<string> Names)
+internal sealed class TreePrinter : ITreeNodeVisitor<TreePrinter.Context, TreePrinter.Result>
 {
-    public static TreePrinterContext Default => new(-1, Array.Empty<string>());
-}
-
-public sealed class TreePrinter : ITreeNodeVisitor<TreePrinterContext, Unit>
-{
-    public TreePrinter(StreamWriter writer)
+    public TreePrinter()
     {
-        Writer = new(writer, "  ");
+        Graph = new DotGraph(true);
     }
 
-    public System.CodeDom.Compiler.IndentedTextWriter Writer { get; }
+    public DotGraph Graph { get; }
 
     /// <summary>
     /// Get the axis map from current domain to parent domain.
@@ -43,77 +44,82 @@ public sealed class TreePrinter : ITreeNodeVisitor<TreePrinterContext, Unit>
         return map;
     }
 
-    public Unit Visit(ScopeNode value, TreePrinterContext context)
+    public Result Visit(ScopeNode value, Context context)
     {
-        Writer.WriteLine($"# scope");
+        var nodes = new List<GiGraph.Dot.Entities.Nodes.DotNode>();
+        var relations = new List<DomainRelation>();
         foreach (var child in value.Children)
         {
-            child.Accept(this, context);
+            var ret = child.Accept(this, context);
+            nodes.AddRange(ret.Nodes);
+            relations.AddRange(ret.Relations);
         }
 
-        return default;
+        return new(nodes, relations);
     }
 
-    public Unit Visit(TileNode value, TreePrinterContext context)
+    public Result Visit(TileNode value, Context context)
     {
         var (pid, pnames) = context;
-        Writer.WriteLine($"# Tile Op {value.OpId} at level {value.Level}");
-        Writer.WriteLine($"# Domain Relation {value.DomainRelation}");
+
         var dimsMap = GetDimsMap(value);
         if (!pnames.Any())
         {
             dimsMap.Clear();
         }
 
-        var names = value.DimNames.Select(n => $"{n}_l{value.Level}").ToArray();
-        foreach (var (k, v) in dimsMap)
+        var strs = new List<string>();
+        for (int i = 0; i < value.DimNames.Length; i++)
         {
-            Writer.WriteLine($"{names[k]} = {pnames[v]}");
+            var indent = string.Join(string.Empty, Enumerable.Repeat("  ", i));
+            var label = dimsMap.ContainsKey(i) ? pnames[dimsMap[i]] : value.DimNames[i];
+            strs.Add($"{indent}For {label}");
         }
 
-        var ivs = string.Join(",", Enumerable.Range(0, names.Length).Select(i => $"i{i}"));
-        Writer.WriteLine($"for ({ivs}) in range({string.Join(", ", names)}):");
-        Writer.Indent++;
-        value.Child?.Accept(this, context with { ParentOpId = value.OpId, Names = names });
-        Writer.Indent--;
-        return default;
+        var node = Graph.Nodes.Add(value.ToString());
+        node.ToRecordNode(rb1 => rb1.AppendField($"Op{value.OpId}").AppendField(string.Join('\n', strs)));
+
+        var result = value.Child.Accept(this, context with { ParentOpId = value.OpId, Names = value.DimNames });
+
+        for (int i = 0; i < result.Nodes.Count; i++)
+        {
+            Graph.Edges.Add(new DotEdge(node.Id, result.Nodes[i].Id), edge =>
+            {
+                var r = result.Relations[i];
+                edge.Label = $"Op{r.DomainOp} -> Op{r.RangeOp}{System.Environment.NewLine}{r.Map}";
+            });
+        }
+
+        return new(new() { node }, new() { value.DomainRelation });
     }
 
-    public Unit Visit(OpNode value, TreePrinterContext context)
+    public Result Visit(OpNode value, Context context)
     {
         var (pid, pnames) = context;
         var dimsMap = GetDimsMap(value);
-        Writer.WriteLine($"# Compute Op {value.OpId} at level {value.Level}");
-        Writer.WriteLine($"# Domain Relation {value.DomainRelation}");
-        Writer.WriteLine($"# Domain Bounds [{string.Join(", ", value.DomainBounds)}]");
-        var names = value.DimNames.Select(n => $"{n}_l{value.Level}").ToArray();
-        foreach (var (k, v) in dimsMap)
-        {
-            Writer.WriteLine($"{names[k]} = {pnames[v]}");
-        }
 
-        var ivs = string.Join(", ", Enumerable.Range(0, names.Length).Select(i => $"d{i}"));
-        Writer.WriteLine($"with ({string.Join(", ", names)}) as ({ivs}):");
-        Writer.Indent++;
+        var node = Graph.Nodes.Add(value.ToString());
 
-        var set = value.Dependences.ToDictionary(d => d.Index, d => d.Node);
-        for (int i = 0; i < value.ReadAccesses.Length; i++)
-        {
-            Writer.Write($"read_{i} = ");
-            Writer.Write(value.ReadAccesses[i]);
-            if (set.ContainsKey(i))
+        node.ToRecordNode(rb => rb.AppendField(value.ToString()).AppendRecord(
+            rb2 =>
             {
-                Writer.WriteLine($" @ Op{set[i].OpId}");
-            }
-            else
-            {
-                Writer.WriteLine();
-            }
-        }
+                for (int i = 0; i < value.ReadAccesses.Length; i++)
+                {
+                    rb2.AppendField($"read {value.ReadAccesses[i]}");
+                }
 
-        Writer.Write("write = ");
-        Writer.WriteLine(value.WriteAccess);
-        Writer.Indent--;
-        return default;
+                rb2.AppendField($"write {value.WriteAccess}");
+            }));
+
+        return new(new() { node }, new() { value.DomainRelation });
+    }
+
+    internal record Context(int ParentOpId, IReadOnlyList<string> Names)
+    {
+        public static Context Default => new(-1, Array.Empty<string>());
+    }
+
+    internal record Result(List<DotNode> Nodes, List<DomainRelation> Relations)
+    {
     }
 }

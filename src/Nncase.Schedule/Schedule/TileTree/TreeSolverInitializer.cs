@@ -9,8 +9,8 @@ namespace Nncase.Schedule.TileTree;
 
 public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<TreeSolverInitializer.Context, TreeSolverInitializer.InitResult>
 {
-    public TreeSolverInitializer(int totalLevel, Solver solver, IntExpr one, IntExpr zero, IntExpr elem, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainDimInfos, ITargetOptions targetOptions)
-        : base(solver, one, zero, elem, primitiveBufferInfo, levelBufferInfos, domainDimInfos, targetOptions)
+    public TreeSolverInitializer(int totalLevel, Solver solver, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainDimInfos, ITargetOptions targetOptions)
+        : base(solver, primitiveBufferInfo, levelBufferInfos, domainDimInfos, targetOptions)
     {
         TotalLevel = totalLevel;
     }
@@ -153,7 +153,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
             tileVars[i].SetRange(kernelInfo.Multiplier[i].Min, kernelInfo.Multiplier[i].Max);
         }
 
-        var primtiveMap = AffineMap.FromCallable((doms, syms) => doms.Select(i => new AffineRange(i.Offset, kernelInfo.Primitives[i.Extent.Position] * i.Extent)).ToArray(), value.DomainBounds.Count);
+        var primtiveMap = AffineMap.FromCallable((doms, syms) => doms.Select(i => new AffineRange(i.Offset, kernelInfo.Primitives[i.Extent.Position] * i.Extent)).ToArray(), value.DomainBounds.Length);
         var accessMaps = new AffineMap[value.BufferShapes.Length];
 
         // cache the primitive buffer shape and sizes.
@@ -164,10 +164,10 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
             for (int a = 0; a < value.BufferShapes.Length; a++)
             {
                 shapes[a] = new IntExpr[value.BufferShapes[a].Length];
-                sizes[a] = Elem;
+                sizes[a] = Solver.MakeIntConst(value.Grid.Buffers[a].CheckedDataType.SizeInBytes);
                 var extentVars = tileVars;
                 var converter = new AffineExprToIntExprConverter(Solver, extentVars);
-                accessMaps[a] = primtiveMap * value.AccessMaps[a];
+                accessMaps[a] = primtiveMap * value.Grid.AccessMaps[a];
                 for (int i = 0; i < shapes[a].Length; i++)
                 {
                     shapes[a][i] = converter.Visit(accessMaps[a].Results[i].Extent);
@@ -279,7 +279,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
                 subDomainShapes[j] = converter.Visit(accessMap.Results[j].Extent);
             }
 
-            bufferSizes[i] = subDomainShapes.Aggregate(Elem, Solver.MakeProd);
+            bufferSizes[i] = subDomainShapes.Aggregate((IntExpr)Solver.MakeIntConst(bid.Node.Grid.Buffers[bid.Index].CheckedDataType.SizeInBytes), Solver.MakeProd);
             bufferSizeVars[i] = Solver.MakeIntVar(1, int.MaxValue, $"size[cl{tile.Level}, op{tile.OpId}, b{bid.Index}, ci{i}]");
             Solver.Add(Solver.MakeEquality(bufferSizeVars[i], bufferSizes[i]));
 

@@ -25,8 +25,6 @@ public partial class TreeMerger : ITreeNodeVisitor<Unit, bool>
 
     public int Level { get; }
 
-    public bool Merged { get; private set; }
-
     public bool Visit(ScopeNode value, Unit arg1)
     {
         for (int i = 0; i < value.Children.Count - 1; i++)
@@ -134,7 +132,7 @@ public partial class TreeMerger : ITreeNodeVisitor<Unit, bool>
             return false;
         }
 
-        if (firstConsumerOp.Dependences.Count != 1)
+        if (firstConsumerOp.Dependences.Length != 1)
         {
             return false;
         }

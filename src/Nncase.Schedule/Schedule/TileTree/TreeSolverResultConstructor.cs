@@ -62,9 +62,10 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
     private readonly ArgumentsInfo _argumentsInfo;
     private readonly Dictionary<ITileAbleNode, Dictionary<BufferIdenitity, SubViewInfo>> _subViewMemo;
 
-    public TreeSolverResultConstructor(Assignment solution, ArgumentsInfo argumentsInfo, Solver solver, IntExpr one, IntExpr zero, IntExpr elem, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainInfos, CompileOptions compileOptions)
-        : base(solver, one, zero, elem, primitiveBufferInfo, levelBufferInfos, domainInfos, compileOptions.TargetOptions)
+    public TreeSolverResultConstructor(long objectiveValue, Assignment solution, ArgumentsInfo argumentsInfo, Solver solver, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainInfos, CompileOptions compileOptions)
+        : base(solver, primitiveBufferInfo, levelBufferInfos, domainInfos, compileOptions.TargetOptions)
     {
+        ObjectiveValue = objectiveValue;
         _sol = solution;
         _argumentsInfo = argumentsInfo;
         OutSideBufferMemo = new();
@@ -73,6 +74,8 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
     }
 
     public Dictionary<BufferIdenitity, TIR.Buffer> OutSideBufferMemo { get; }
+
+    public long ObjectiveValue { get; }
 
     public CompileOptions CompileOptions { get; }
 
@@ -228,7 +231,7 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
     /// </summary>
     private TIR.Buffer GetDeclareBuffer(BufferIdenitity bid)
     {
-        var expr = bid.Node.Buffers[bid.Index];
+        var expr = bid.Node.Grid.Buffers[bid.Index];
         var tensorType = GetBufferTensorType(expr);
         if (!OutSideBufferMemo.TryGetValue(bid, out var buffer))
         {
@@ -300,7 +303,7 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
     /// </summary>
     private TIR.Buffer GetAllocateBuffer(BufferIdenitity bid, out ISequentialBuilder<Let> scope)
     {
-        var expr = bid.Node.Buffers[bid.Index];
+        var expr = bid.Node.Grid.Buffers[bid.Index];
         var tensorType = GetBufferTensorType(expr);
         if (!OutSideBufferMemo.TryGetValue(bid, out var buffer))
         {

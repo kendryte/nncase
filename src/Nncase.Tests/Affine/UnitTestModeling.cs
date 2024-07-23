@@ -280,6 +280,49 @@ public sealed class UnitTestModeling : TestClassBase
     }
 
     [Fact]
+    public void TestMerge()
+    {
+        Function func;
+        {
+            var a = new Var(new TensorType(DataTypes.Float32, new[] { 128, 256 }));
+            var b = new Var(new TensorType(DataTypes.Float32, new[] { 256, 384 }));
+            var c = IR.F.Tensors.MatMul(a, b);
+            var d = IR.F.Math.Exp(c);
+            var e = new Var(new TensorType(DataTypes.Float32, new[] { 384, 512 }));
+            var f = IR.F.Tensors.MatMul(d, e);
+            func = new(f, a, b, e);
+        }
+
+        var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), }, new());
+        Dumpper.DumpIR(post, "post");
+
+        if (post is not Function { Body: IR.Affine.Grid grid })
+        {
+            return;
+        }
+
+        // Schedule.TreeTiler.BuildTree(grid, CompileOptions.TargetOptions);
+        var root = new Schedule.TileTree.ScopeNode();
+        var opId = 0;
+        var totalLevel = 2;
+        Schedule.TreeTiler.BuildTree(grid, root, totalLevel, ref opId);
+        Schedule.TreeTiler.Dump(root, "build");
+
+        Schedule.TreeTiler.Merge(root, 2, 1, 2);
+        var m1 = Schedule.TileTree.TreeExtensions.Clone(root);
+        Schedule.TreeTiler.Dump(m1, "0");
+        Schedule.TreeTiler.Merge(m1, 2, 0, 2);
+        var m2 = Schedule.TileTree.TreeExtensions.Clone(m1);
+        Schedule.TreeTiler.Dump(m2, "1");
+        Schedule.TreeTiler.Merge(m2, 1, 0, 1);
+        var m3 = Schedule.TileTree.TreeExtensions.Clone(m2);
+        Schedule.TreeTiler.Dump(m3, "2");
+        Schedule.TreeTiler.Merge(m3, 2, 1, 1);
+        var m4 = Schedule.TileTree.TreeExtensions.Clone(m3);
+        Schedule.TreeTiler.Dump(m4, "3");
+    }
+
+    [Fact]
     public void TestSolveNoOverlapping()
     {
         var solver = new Solver("a");

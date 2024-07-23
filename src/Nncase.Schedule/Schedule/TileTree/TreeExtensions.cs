@@ -17,6 +17,17 @@ public static class TreeExtensions
         return;
     }
 
+    public static ITreeNode Root(this ITreeNode node)
+    {
+        return node.Parent is ITreeNode parent ? parent.Root() : node;
+    }
+
+    public static ITreeNode Clone(this ITreeNode node)
+    {
+        var cloner = new TreeCloner();
+        return node.Accept(cloner, default);
+    }
+
     public static ITileAbleNode? GetParentTileableNode(this ITreeNode node)
     {
         return node.Parent switch

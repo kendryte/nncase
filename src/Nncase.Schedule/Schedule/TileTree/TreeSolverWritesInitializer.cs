@@ -8,8 +8,8 @@ namespace Nncase.Schedule.TileTree;
 
 public sealed class TreeSolverWritesInitializer : TreeSolverBase, ITreeNodeVisitor<Dictionary<BufferIdenitity, IntExpr[]>, Unit>
 {
-    public TreeSolverWritesInitializer(Solver solver, IntExpr one, IntExpr zero, IntExpr elem, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainDimInfos, ITargetOptions targetOptions)
-        : base(solver, one, zero, elem, primitiveBufferInfo, levelBufferInfos, domainDimInfos, targetOptions)
+    public TreeSolverWritesInitializer(Solver solver, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainDimInfos, ITargetOptions targetOptions)
+        : base(solver, primitiveBufferInfo, levelBufferInfos, domainDimInfos, targetOptions)
     {
     }
 
@@ -51,7 +51,7 @@ public sealed class TreeSolverWritesInitializer : TreeSolverBase, ITreeNodeVisit
                     }
                     else
                     {
-                        factor = One;
+                        factor = Solver.MakeIntConst(1);
                     }
 
                     if (domainInfo.DimsMap.TryGetValue(i, out var j))
@@ -60,7 +60,7 @@ public sealed class TreeSolverWritesInitializer : TreeSolverBase, ITreeNodeVisit
                     }
                     else
                     {
-                        parentFactor = One;
+                        parentFactor = Solver.MakeIntConst(1);
                     }
 
                     tripCounts[i] = factor * parentFactor;
@@ -85,7 +85,7 @@ public sealed class TreeSolverWritesInitializer : TreeSolverBase, ITreeNodeVisit
                     }
                     else
                     {
-                        factor = One;
+                        factor = Solver.MakeIntConst(1);
                     }
 
                     tripCounts[i] = factor;
