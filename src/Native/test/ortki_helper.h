@@ -81,7 +81,7 @@ ntt2ort(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &tensor) {
         v[i] = tensor.shape()[i];
 
     for (size_t i = rank1; i < rank; i++)
-        v[i] = tensor(0).shape()[i];
+        v[i] = tensor(0).shape()[i - rank1];
 
     const int64_t *shape = reinterpret_cast<const int64_t *>(v.data());
     return make_tensor(buffer, ort_type, shape, rank);
@@ -103,7 +103,8 @@ void ort2ntt(ortki::OrtKITensor *ort_tensor,
              ntt::tensor<ntt::vector<T, N>, Shape, Stride> &ntt_tensor) {
     size_t size = 0;
     void *ort_ptr = tensor_buffer(ort_tensor, &size);
-    assert(tensor_length(ort_tensor) == ntt_tensor.shape().length());
+    assert(tensor_length(ort_tensor) ==
+           ntt_tensor.size() * ntt_tensor(0).size());
     memcpy((void *)ntt_tensor.elements().data(), ort_ptr, size);
 }
 } // namespace NttTest
