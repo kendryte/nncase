@@ -26,7 +26,7 @@ TEST(UnaryTestCosFloat, fixed_fixed) {
     using shape = ntt::fixed_shape<1, 3, 16, 16>;
     using tensor_type = ntt::tensor<float, shape>;
     std::unique_ptr<tensor_type> ntt_input(new tensor_type);
-    NttTest::init_tensor(*ntt_input, -1.f, 1.f);
+    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
 
     // ntt
     std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
@@ -47,7 +47,7 @@ TEST(UnaryTestCosFloat, fixed_ranked) {
     using shape1 = ntt::fixed_shape<1, 3, 16, 16>;
     using tensor_type1 = ntt::tensor<float, shape1>;
     std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -1.f, 1.f);
+    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
 
     // ntt
     auto shape2 = ntt::make_ranked_shape(1, 3, 16, 16);
@@ -70,7 +70,7 @@ TEST(UnaryTestCosFloat, ranked_ranked) {
     using tensor_type = ntt::tensor<float, ntt::ranked_shape<4>>;
     auto shape = ntt::make_ranked_shape(1, 3, 16, 16);
     std::unique_ptr<tensor_type> ntt_input(new tensor_type(shape));
-    NttTest::init_tensor(*ntt_input, -1.f, 1.f);
+    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
 
     // ntt
     std::unique_ptr<tensor_type> ntt_output1(new tensor_type(shape));
@@ -91,7 +91,7 @@ TEST(UnaryTestCosFloat, ranked_fixed) {
     auto shape1 = ntt::make_ranked_shape(1, 3, 16, 16);
     using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<4>>;
     std::unique_ptr<tensor_type1> ntt_input(new tensor_type1(shape1));
-    NttTest::init_tensor(*ntt_input, -1.f, 1.f);
+    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
 
     // ntt
     using shape2 = ntt::fixed_shape<1, 3, 16, 16>;
@@ -117,7 +117,7 @@ template <typename T, size_t vl> void test_vector() {
     auto ort_output = ortki_Cos(ort_input);
     ntt::vector<T, vl> ntt_output2;
     NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2, 0.999999f));
 }
 
 #define _TEST_VECTOR(T, lmul)                                                  \

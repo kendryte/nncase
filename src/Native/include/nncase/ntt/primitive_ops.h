@@ -425,12 +425,12 @@ mma<AccC, T1, T2, TResult>::operator()(const T1 &v1, const T2 &v2,
         (vector<typename TResult::element_type, TResult::shape().at(1)>
              *)(v3.elements().data());
     for (size_t m = 0; m < T1::shape().at(0); m++) {
+        auto lhs_start = m * T2::shape().at(0);
         for (size_t k = 0; k < T2::shape().at(0); k++) {
             output_v[m] =
                 (k != 0 || AccC)
-                    ? ntt::mul_add(lhs_v[m * T2::shape().at(0) + k], rhs_v[k],
-                                   output_v[m])
-                    : ntt::mul(lhs_v[m * T2::shape().at(0) + k], rhs_v[k]);
+                    ? ntt::mul_add(lhs_v[lhs_start + k], rhs_v[k], output_v[m])
+                    : ntt::mul(lhs_v[lhs_start + k], rhs_v[k]);
         }
     }
 
