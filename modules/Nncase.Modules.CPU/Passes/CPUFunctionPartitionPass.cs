@@ -154,13 +154,13 @@ public sealed class CPUFunctionPartitionPass : ModulePass
 
 #if Debug
                 ctx.Graph.DumpDot(DumpScope.Current.Directory + $"function_{i}.dot");
-#endif                
+#endif
 
                 ctx.SummarizeGraph();
 
 #if Debug
                 ctx.GraphSummary.DumpDot(DumpScope.Current.Directory + $"function_{i}_summary.dot");
-#endif                
+#endif
 
                 var dfsVisitor = new QuikGraph.Algorithms.TopologicalSort.SourceFirstTopologicalSortAlgorithm<Vertex, Edge>(ctx.GraphSummary);
                 dfsVisitor.Compute();
