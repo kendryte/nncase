@@ -111,18 +111,16 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
                 case (SBPSplit { Axis: int ix }, _) when ix == axis:
                     return new InvalidType($"the input can't split on {axis}");
 
-                // TODO: support broadcast if memory constrain is ready
-                // case (SBPBroadCast, SBPSplit { Axis: int ix }):
-                //     ndsbp[i] = SBP.S(ix);
-                //     break;
+                case (SBPBroadCast, SBPSplit { Axis: int ix }):
+                    ndsbp[i] = SBP.S(ix);
+                    break;
                 case (SBPSplit { Axis: int ix }, SBPBroadCast):
                     ndsbp[i] = SBP.S(ix - axis + index.TensorType.Shape.Rank - 1);
                     break;
 
-                // TODO: support broadcast if memory constrain is ready
-                // case (SBPBroadCast, SBPBroadCast):
-                //     ndsbp[i] = SBP.B;
-                //     break;
+                case (SBPBroadCast, SBPBroadCast):
+                    ndsbp[i] = SBP.B;
+                    break;
                 default:
                     return invalid;
             }
