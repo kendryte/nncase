@@ -20,19 +20,29 @@ using namespace nncase;
 
 template <template <typename T1> class Op, typename T2, size_t N>
 void benchmark_ntt_unary(std::string op_name, T2 low, T2 high) {
-    constexpr size_t size = 2000;
-    using tensor_type = ntt::tensor<ntt::vector<T2, N>, ntt::fixed_shape<size>>;
+#if __riscv
+    constexpr size_t size1 = 300;
+    constexpr size_t size2 = 600;
+#elif __x86_64__
+    constexpr size_t size1 = 2000;
+    constexpr size_t size2 = 2000;
+#else
+    constexpr size_t size1 = 2000;
+    constexpr size_t size2 = 2000;
+#endif
+    using tensor_type =
+        ntt::tensor<ntt::vector<T2, N>, ntt::fixed_shape<size2>>;
     tensor_type ntt_input;
     NttTest::init_tensor(ntt_input, low, high);
 
     Op<tensor_type> op;
     auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < size; i++)
+    for (size_t i = 0; i < size1; i++)
         op(ntt_input);
     auto t2 = NttTest::get_cpu_cycle();
     std::cout << __FUNCTION__ << "_" << op_name << " took "
               << std::setprecision(1) << std::fixed
-              << static_cast<float>(t2 - t1) / size / size << " cycles"
+              << static_cast<float>(t2 - t1) / size1 / size2 << " cycles"
               << std::endl;
 }
 

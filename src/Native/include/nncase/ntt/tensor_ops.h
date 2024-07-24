@@ -92,9 +92,12 @@ struct tensor_binary_impl<Op, TScalar, TTensor> {
 
 NTT_DEFINE_TENSOR_UNARY_IMPL(abs);
 NTT_DEFINE_TENSOR_UNARY_IMPL(acos);
+NTT_DEFINE_TENSOR_UNARY_IMPL(acosh);
 NTT_DEFINE_TENSOR_UNARY_IMPL(asin);
+NTT_DEFINE_TENSOR_UNARY_IMPL(asinh);
 NTT_DEFINE_TENSOR_UNARY_IMPL(ceil);
 NTT_DEFINE_TENSOR_UNARY_IMPL(cos);
+NTT_DEFINE_TENSOR_UNARY_IMPL(cosh);
 NTT_DEFINE_TENSOR_UNARY_IMPL(exp);
 NTT_DEFINE_TENSOR_UNARY_IMPL(floor);
 NTT_DEFINE_TENSOR_UNARY_IMPL(log);
@@ -103,6 +106,7 @@ NTT_DEFINE_TENSOR_UNARY_IMPL(round);
 NTT_DEFINE_TENSOR_UNARY_IMPL(rsqrt);
 NTT_DEFINE_TENSOR_UNARY_IMPL(sign);
 NTT_DEFINE_TENSOR_UNARY_IMPL(sin);
+NTT_DEFINE_TENSOR_UNARY_IMPL(sinh);
 NTT_DEFINE_TENSOR_UNARY_IMPL(sqrt);
 NTT_DEFINE_TENSOR_UNARY_IMPL(tanh);
 NTT_DEFINE_TENSOR_UNARY_IMPL(swish);
@@ -157,6 +161,45 @@ struct outer_product<TTensor1, TTensor2> {
 
   private:
     ops::outer_product<element_type, element_type> op_;
+};
+
+template <IsTensor TTensor, class T2> struct mul_add<TTensor, T2, TTensor> {
+    using element_type = typename TTensor::element_type;
+
+    constexpr auto operator()(const TTensor &v1, const T2 &v2,
+                              const TTensor &v3) const noexcept {
+        TTensor value;
+        if constexpr (IsTensor<T2>) {
+            apply(v1.shape(), [&](auto index) {
+                value(index) = op_(v1(index), v2(index), v3(index));
+            });
+        } else {
+            apply(v1.shape(), [&](auto index) {
+                value(index) = op_(v1(index), v2, v3(index));
+            });
+        }
+        return value;
+    }
+
+  private:
+    ops::mul_add<element_type, element_type, element_type> op_;
+};
+
+template <IsScalar TScalar, IsTensor TTensor>
+struct mul_add<TScalar, TTensor, TTensor> {
+    using element_type = typename TTensor::element_type;
+
+    constexpr auto operator()(const TScalar &s1, const TTensor &v2,
+                              const TTensor &v3) const noexcept {
+        TTensor value;
+        apply(v3.shape(), [&](auto index) {
+            value(index) = op_(s1, v2(index), v3(index));
+        });
+        return value;
+    }
+
+  private:
+    ops::mul_add<element_type, element_type, element_type> op_;
 };
 
 template <template <class T1, class T2> class Op, class TResult,

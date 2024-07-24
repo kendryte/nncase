@@ -136,7 +136,7 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                            LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
                            RhsPackedAxes::rank() == 1 &&
                            RhsPackedAxes::at(0) == TRhs::rank() - 1) {
-            auto value = ntt::outer_product(lhs, rhs);
+            alignas(32) auto value = ntt::outer_product(lhs, rhs);
             output = AccC ? output + value : value;
         }
         // 3.1. pack MK & K
