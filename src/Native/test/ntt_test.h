@@ -29,6 +29,11 @@
 #endif
 #endif
 
+#define ULP_SIZE 250000
+#ifndef ULP_SIZE
+#define ULP_SIZE 10000
+#endif
+
 namespace nncase {
 namespace NttTest {
 

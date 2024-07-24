@@ -86,7 +86,7 @@ template <> struct cosh<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
         auto expV = exp256_ps(v);
-        auto expNV = _mm256_rcp_ps(expV);
+        auto expNV = _mm256_div_ps(_mm256_set1_ps(1.f), expV);
         return _mm256_mul_ps(_mm256_add_ps(expV, expNV), _mm256_set1_ps(0.50f));
     }
 };
