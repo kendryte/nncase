@@ -21,7 +21,7 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
     if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm64")   
     else()
-      add_compile_options(-mavx2 -ffast-math)
+      add_compile_options(-mavx2 -ffast-math -mfma)
     endif()
 
     if (APPLE)
