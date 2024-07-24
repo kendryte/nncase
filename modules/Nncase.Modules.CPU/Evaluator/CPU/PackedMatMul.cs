@@ -20,13 +20,65 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
         var lhs = context.GetOrtArgumentValue(target, PackedMatMul.Lhs); // [x,m/32,k/32,m',k']
         var rhs = context.GetOrtArgumentValue(target, PackedMatMul.Rhs); // [x,k/32,n/32,k',n']
 
-        var outLanes = target.LhsPackedAxes.Count == 1 ? Array.Empty<int>() : new[] { (int)lhs.Shape[^2], (int)rhs.Shape[^1] };
-        var outshape = target.LhsPackedAxes.Count == 1 ? new[] { (int)lhs.Shape[^3], (int)rhs.Shape[^2] } : new[] { (int)lhs.Shape[^4], (int)rhs.Shape[^3] };
-        var maxRank = System.Math.Max(lhs.Shape.Length, rhs.Shape.Length);
-        outshape = Enumerable.Repeat(1L, maxRank - lhs.Shape.Length).Concat(lhs.Shape.SkipLast(2 + target.LhsPackedAxes.Count)).
-         Zip(Enumerable.Repeat(1L, maxRank - rhs.Shape.Length).Concat(rhs.Shape.SkipLast(2 + target.RhsPackedAxes.Count))).
+        var outRank = context.CurrentCall.CheckedShape.Rank;
+        var outLanes = Array.Empty<int>();
+        var outShape = Array.Empty<int>();
+        var axes = Array.Empty<int>();
+        if (target.LhsPackedAxes.Count == 0 && target.RhsPackedAxes.Count == 1)
+        {
+            outLanes = new[] { (int)rhs.Shape[^1] };
+            outShape = new[] { (int)lhs.Shape[^2], (int)rhs.Shape[^2] };
+            axes = new[] { outRank - 1 };
+        }
+        else if (target.LhsPackedAxes.Count == 1 && target.RhsPackedAxes.Count == 0)
+        {
+            outLanes = new[] { (int)lhs.Shape[^1] };
+            outShape = new[] { (int)lhs.Shape[^3], (int)rhs.Shape[^1] };
+            axes = new[] { outRank - 2 };
+        }
+        else if (target.LhsPackedAxes.Count == 1 && target.RhsPackedAxes.Count == 1)
+        {
+            if (target.LhsPackedAxes[0] == lhs.Shape.Length - 2 && target.RhsPackedAxes[0] == rhs.Shape.Length - 3)
+            {
+                outLanes = Array.Empty<int>();
+                axes = Array.Empty<int>();
+            }
+            else
+            {
+                outLanes = new[] { (int)lhs.Shape[^1], (int)rhs.Shape[^1] };
+                axes = new[] { outRank - 2, outRank - 1 };
+            }
+
+            outShape = new[] { (int)lhs.Shape[^3], (int)rhs.Shape[^2] };
+        }
+        else if (target.LhsPackedAxes.Count == 1 && target.RhsPackedAxes.Count == 2)
+        {
+            outLanes = new[] { (int)rhs.Shape[^1] };
+            outShape = new[] { (int)lhs.Shape[^3], (int)rhs.Shape[^3] };
+            axes = new[] { outRank - 1 };
+        }
+        else if (target.LhsPackedAxes.Count == 2 && target.RhsPackedAxes.Count == 1)
+        {
+            outLanes = new[] { (int)lhs.Shape[^2] };
+            outShape = new[] { (int)lhs.Shape[^4], (int)rhs.Shape[^2] };
+            axes = new[] { outRank - 2 };
+        }
+        else if (target.LhsPackedAxes.Count == 2 && target.RhsPackedAxes.Count == 2)
+        {
+            outLanes = new[] { (int)lhs.Shape[^2], (int)rhs.Shape[^1] };
+            outShape = new[] { (int)lhs.Shape[^4], (int)rhs.Shape[^3] };
+            axes = new[] { outRank - 2, outRank - 1 };
+        }
+        else
+        {
+            throw new NotImplementedException("PackedMatMul with more than 2 packed axes is not supported.");
+        }
+
+        var maxRank = System.Math.Max(lhs.Shape.Length - target.LhsPackedAxes.Count, rhs.Shape.Length - target.RhsPackedAxes.Count);
+        outShape = Enumerable.Repeat(1L, maxRank - lhs.Shape.Length + target.LhsPackedAxes.Count).Concat(lhs.Shape.SkipLast(2 + target.LhsPackedAxes.Count)).
+         Zip(Enumerable.Repeat(1L, maxRank - rhs.Shape.Length + target.RhsPackedAxes.Count).Concat(rhs.Shape.SkipLast(2 + target.RhsPackedAxes.Count))).
          Select(p => (int)System.Math.Max(p.First, p.Second)).
-         Concat(outshape).ToArray();
+         Concat(outShape).ToArray();
 
         foreach (var axis in target.LhsPackedAxes.Reverse())
         {
@@ -39,15 +91,15 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
         }
 
         var matmul = OrtKI.MatMul(lhs, rhs);
-        if (target.LhsPackedAxes.Count == 2)
+        if (outLanes.Length > 0)
         {
-            foreach (var (lane, axis) in outLanes.Zip(new[] { -2 + outshape.Length, -1 + outshape.Length }))
+            foreach (var (lane, axis) in outLanes.Zip(axes))
             {
                 matmul = matmul.Pack(lane, axis);
             }
         }
 
-        return Value.FromTensor(Tensor.FromBytes(outLanes.Length == 0 ? DataTypes.Float32 : new VectorType(DataTypes.Float32, outLanes), matmul.BytesBuffer.ToArray(), outshape));
+        return Value.FromTensor(Tensor.FromBytes(outLanes.Length == 0 ? DataTypes.Float32 : new VectorType(DataTypes.Float32, outLanes), matmul.BytesBuffer.ToArray(), outShape));
     }
 
     public IRType Visit(ITypeInferenceContext context, PackedMatMul target)
