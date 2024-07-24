@@ -31,6 +31,7 @@
 #include "kernels/transpose.h"
 #include "kernels/unary.h"
 #include "kernels/unpack.h"
+#include "kernels/clamp.h"
 #include "primitive_ops.h"
 #include "tensor.h"
 #include "tensor_ops.h"
