@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "kernels/binary.h"
+#include "kernels/clamp.h"
 #include "kernels/concat.h"
 #include "kernels/conv2d.h"
 #include "kernels/copy.h"
@@ -31,7 +32,6 @@
 #include "kernels/transpose.h"
 #include "kernels/unary.h"
 #include "kernels/unpack.h"
-#include "kernels/clamp.h"
 #include "primitive_ops.h"
 #include "tensor.h"
 #include "tensor_ops.h"

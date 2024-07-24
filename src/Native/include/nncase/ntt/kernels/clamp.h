@@ -22,16 +22,18 @@ namespace nncase::ntt {
 namespace clamp_detail {
 
 template <IsFixedTensor TIn, IsFixedTensor TOut, typename TElem>
-void clamp_impl(const TIn &input, TOut &&output, const TElem &min, const TElem &max) noexcept {
+void clamp_impl(const TIn &input, TOut &&output, const TElem &min,
+                const TElem &max) noexcept {
     constexpr auto output_shape = std::decay_t<TOut>::shape();
     apply(output_shape, [&](auto index) {
         output(index) = ntt::max(ntt::min(input(index), max), min);
     });
 }
-} // namespace pad_detail
+} // namespace clamp_detail
 
 template <typename TIn, typename TOut, typename TElem>
-void clamp(const TIn &input, TOut &&output, const TElem &min, const TElem &max) noexcept {
+void clamp(const TIn &input, TOut &&output, const TElem &min,
+           const TElem &max) noexcept {
     clamp_detail::clamp_impl(input, output, min, max);
 }
 } // namespace nncase::ntt
