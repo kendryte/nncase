@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using CommunityToolkit.HighPerformance;
 using Google.OrTools.ConstraintSolver;
 using Nncase.IR;
 using Nncase.Passes;
+using Nncase.Schedule.TileTree;
 using Xunit;
 
 namespace Nncase.Tests.AffineTest;
@@ -253,23 +253,13 @@ public sealed class UnitTestModeling : TestClassBase
             return;
         }
 
-        Schedule.TreeTiler.Tile(grid, CompileOptions);
+        Schedule.TreeTiler.Tile(grid, Nncase.Targets.CPUTarget.Kind, 0, CompileOptions);
     }
 
     [Fact]
     public void TestAutoFusion()
     {
-        Function func;
-        {
-            var a = new Var(new TensorType(DataTypes.Float32, new[] { 128, 256 }));
-            var b = new Var(new TensorType(DataTypes.Float32, new[] { 256, 384 }));
-            var c = IR.F.Tensors.MatMul(a, b);
-            var d = IR.F.Math.Exp(c);
-            var e = new Var(new TensorType(DataTypes.Float32, new[] { 384, 512 }));
-            var f = IR.F.Tensors.MatMul(d, e);
-            func = new(f, a, b, e);
-        }
-
+        var func = GetFunctionSample();
         var module = new IR.IRModule(func);
         CompileSession.Compiler.ImportIRModule(module);
         CompileSession.Compiler.CompileAsync();
@@ -282,17 +272,7 @@ public sealed class UnitTestModeling : TestClassBase
     [Fact]
     public void TestMerge()
     {
-        Function func;
-        {
-            var a = new Var(new TensorType(DataTypes.Float32, new[] { 128, 256 }));
-            var b = new Var(new TensorType(DataTypes.Float32, new[] { 256, 384 }));
-            var c = IR.F.Tensors.MatMul(a, b);
-            var d = IR.F.Math.Exp(c);
-            var e = new Var(new TensorType(DataTypes.Float32, new[] { 384, 512 }));
-            var f = IR.F.Tensors.MatMul(d, e);
-            func = new(f, a, b, e);
-        }
-
+        var func = GetFunctionSample();
         var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), }, new());
         Dumpper.DumpIR(post, "post");
 
@@ -306,20 +286,47 @@ public sealed class UnitTestModeling : TestClassBase
         var opId = 0;
         var totalLevel = 2;
         Schedule.TreeTiler.BuildTree(grid, root, totalLevel, ref opId);
-        Schedule.TreeTiler.Dump(root, "build");
+        root.Dump("build");
 
-        Schedule.TreeTiler.Merge(root, 2, 1, 2);
-        var m1 = Schedule.TileTree.TreeExtensions.Clone(root);
-        Schedule.TreeTiler.Dump(m1, "0");
-        Schedule.TreeTiler.Merge(m1, 2, 0, 2);
-        var m2 = Schedule.TileTree.TreeExtensions.Clone(m1);
-        Schedule.TreeTiler.Dump(m2, "1");
-        Schedule.TreeTiler.Merge(m2, 1, 0, 1);
-        var m3 = Schedule.TileTree.TreeExtensions.Clone(m2);
-        Schedule.TreeTiler.Dump(m3, "2");
-        Schedule.TreeTiler.Merge(m3, 2, 1, 1);
-        var m4 = Schedule.TileTree.TreeExtensions.Clone(m3);
-        Schedule.TreeTiler.Dump(m4, "3");
+        root.Merge(2, 1, 2);
+        var m1 = root.Clone();
+        m1.Dump("0");
+        m1.Merge(2, 0, 2);
+        var m2 = m1.Clone();
+        m2.Dump("1");
+        m2.Merge(1, 0, 1);
+        var m3 = m2.Clone();
+        m3.Dump("2");
+        m3.Merge(2, 1, 1);
+        var m4 = m3.Clone();
+        m4.Dump("3");
+    }
+
+    [Fact]
+    public void TestGetArgumentInfo()
+    {
+        var func = GetFunctionSample();
+        var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), }, new());
+        Dumpper.DumpIR(post, "post");
+
+        if (post is not Function { Body: IR.Affine.Grid grid })
+        {
+            return;
+        }
+
+        var root = new ScopeNode();
+        var opId = 0;
+        var totalLevel = 2;
+        Schedule.TreeTiler.BuildTree(grid, root, totalLevel, ref opId);
+        root.Dump("build");
+        var m1 = root.Root().Clone();
+        m1.Merge(2, 1, 2);
+        m1.Dump("final");
+
+        var res = TreeSolverInitializer.Init(m1, totalLevel, CompileOptions, out _, out _, out _, out _);
+        Assert.Equal(3, res.Inputs.Count);
+        Assert.Single(res.Outputs);
+        Assert.Single(res.DefUseMap.Keys);
     }
 
     [Fact]
@@ -338,7 +345,7 @@ public sealed class UnitTestModeling : TestClassBase
         var aSpan = (offset, aplace * asize);
         var cLife = (solver.MakeIntConst(0), solver.MakeIntConst(3));
         var cSpan = (offset, cplace * csize);
-        var cons = solver.MakeNonOverlappingBoxesConstraint(new[] { aLife.Item1, cLife.Item1 }, new[] { aSpan.Item1, cSpan.Item1 }, new[] { aLife.Item2, cLife.Item2 }, new[] { aSpan.Item2.Var(), cSpan.Item2.Var() });
+        var cons = solver.MakeNonOverlappingBoxesConstraint(new[] { aLife.Item1, cLife.Item1 }, new[] { aSpan.offset, cSpan.offset }, new[] { aLife.Item2, cLife.Item2 }, new[] { aSpan.Item2.Var(), cSpan.Item2.Var() });
         solver.Add(cons);
 
         var decisionBuilder = solver.MakeDefaultPhase(new[] { offset, aplace, cplace });
@@ -353,6 +360,22 @@ public sealed class UnitTestModeling : TestClassBase
         System.Console.WriteLine(sol.Value(offset));
         System.Console.WriteLine(sol.Value(aplace));
         System.Console.WriteLine(sol.Value(cplace));
+    }
+
+    private Function GetFunctionSample()
+    {
+        Function func;
+        {
+            var a = new Var(new TensorType(DataTypes.Float32, new[] { 128, 256 }));
+            var b = new Var(new TensorType(DataTypes.Float32, new[] { 256, 384 }));
+            var c = IR.F.Tensors.MatMul(a, b);
+            var d = IR.F.Math.Exp(c);
+            var e = new Var(new TensorType(DataTypes.Float32, new[] { 384, 512 }));
+            var f = IR.F.Tensors.MatMul(d, e);
+            func = new(f, a, b, e);
+        }
+
+        return func;
     }
 }
 

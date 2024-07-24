@@ -4,6 +4,8 @@
 using Google.OrTools.ConstraintSolver;
 using NetFabric.Hyperlinq;
 using Nncase.IR.Affine;
+using QuikGraph;
+using QuikGraph.Graphviz;
 
 namespace Nncase.Schedule.TileTree;
 
@@ -19,18 +21,29 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
 
     public int TotalLevel { get; }
 
+    public static ArgumentsInfo Init(ITreeNode tree, int totalLevel, CompileOptions compileOptions, out Solver solver, out Dictionary<OpNode, OpNodeInfo> opNodeMemo, out Dictionary<TileNode, TileNodeInfo> tileNodeMemo, out Dictionary<ITileAbleNode, DomainInfo> tileableNodeMemo)
+    {
+        solver = new Solver("treeSolver");
+        opNodeMemo = new Dictionary<OpNode, OpNodeInfo>();
+        tileNodeMemo = new Dictionary<TileNode, TileNodeInfo>();
+        tileableNodeMemo = new Dictionary<ITileAbleNode, DomainInfo>();
+        var initializer = new TreeSolverInitializer(totalLevel, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, compileOptions.TargetOptions);
+        var initResult = tree.Accept(initializer, TreeSolverInitializer.Context.Default);
+        return GetArgumentsInfo(initResult);
+    }
+
     /// <summary>
     /// source id => sink id.
     /// </summary>
-    public static Dictionary<BufferIdenitity, BufferIdenitity> GetBufferDefUseMap(BufferResult[] bufferResults)
+    public static Dictionary<BufferIdentity, BufferIdentity> GetBufferDefUseMap(BufferResult[] bufferResults)
     {
-        var map = new Dictionary<BufferIdenitity, BufferIdenitity>();
+        var map = new Dictionary<BufferIdentity, BufferIdentity>();
         for (int i = 0; i < bufferResults.Length; i++)
         {
             var sinkId = bufferResults[i].Bid;
             foreach (var dep in sinkId.Node.Dependences)
             {
-                var sourceId = new BufferIdenitity(dep.Node, dep.Node.ReadAccesses.Length);
+                var sourceId = new BufferIdentity(dep.Node, dep.Node.ReadAccesses.Length);
                 if (Array.FindIndex(bufferResults, r => r.Bid == sourceId) != -1)
                 {
                     if (!map.ContainsKey(sourceId))
@@ -44,37 +57,102 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
         return map;
     }
 
-    public static ArgumentsInfo GetArgumentsInfo(BufferResult[] bufferResults)
+    public static void Dump(AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>> graph, string name)
     {
-        var map = GetBufferDefUseMap(bufferResults);
-        var inputs = new HashSet<BufferIdenitity>(bufferResults.Select(b => b.Bid).Where(b => b.Index != b.Node.BufferShapes.Length - 1));
-        var outputs = new HashSet<BufferIdenitity>(bufferResults.Select(b => b.Bid).Where(b => b.Index == b.Node.BufferShapes.Length - 1));
-
-        foreach (var (k, v) in map)
+        using (var file = Diagnostics.DumpScope.Current.OpenFile($"{name}.dot"))
         {
-            inputs.Remove(k);
-            inputs.Remove(v);
-            outputs.Remove(k);
-            outputs.Remove(v);
+            using (var writer = new StreamWriter(file))
+            {
+                writer.WriteLine(graph.ToGraphviz(init =>
+                {
+                    init.FormatVertex += (_, args) => args.VertexFormat.Label = args.Vertex.ToString();
+                }));
+            }
+        }
+    }
+
+    public static ArgumentsInfo GetArgumentsInfo(InitResult result)
+    {
+        var graphIOs = new Dictionary<int, (HashSet<BufferIdentity> Inputs, HashSet<BufferIdentity> Outputs)>();
+
+        (HashSet<BufferIdentity>, HashSet<BufferIdentity>) GetInputsOuputs(AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>> g)
+        {
+            var sources = new HashSet<BufferIdentity>();
+            var targets = new HashSet<BufferIdentity>();
+            foreach (var item in g.Edges)
+            {
+                sources.Add(item.Source);
+                targets.Add(item.Target);
+            }
+
+            var inputs = new HashSet<BufferIdentity>(sources.Except(targets));
+            var outputs = new HashSet<BufferIdentity>(targets.Except(sources));
+            return (inputs, outputs);
         }
 
-        return new(inputs, outputs, map);
+        for (int i = 0; i < result.Graphs.Length; i++)
+        {
+            graphIOs[i] = GetInputsOuputs(result.Graphs[i]);
+        }
+
+        var graph = new AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>>();
+        for (int i = 0; i < result.Graphs.Length; i++)
+        {
+            var subGraph = result.Graphs[i];
+            foreach (var edge in subGraph.Edges)
+            {
+                graph.AddVerticesAndEdge(edge);
+            }
+        }
+
+        var defMaps = new Dictionary<BufferIdentity, BufferIdentity>();
+        for (int i = 0; i < result.Graphs.Length; i++)
+        {
+            var producer = result.Graphs[i];
+            for (int j = i + 1; j < result.Graphs.Length; j++)
+            {
+                var consumer = result.Graphs[j];
+
+                // connect the producer outputs and consumer inputs.
+                var outputs = graphIOs[i].Outputs;
+                var inputs = graphIOs[j].Inputs;
+                foreach (var (@out, @in) in new[] { outputs, inputs }.CartesianProduct().Select(x => (x.First(), x.Skip(1).First())))
+                {
+                    foreach (var inDep in @in.Node.Dependences)
+                    {
+                        if (inDep.Node == @out.Node)
+                        {
+                            graph.AddEdge(new(@out, @in));
+                            if (!defMaps.ContainsKey(@out))
+                            {
+                                defMaps.TryAdd(@out, @in);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        var ios = GetInputsOuputs(graph);
+        return new(ios.Item1, ios.Item2, defMaps);
     }
 
     public InitResult Visit(ScopeNode value, Context context)
     {
         var results = new List<BufferResult>();
+        var graphs = new List<AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>>>();
         var names = new List<Dictionary<int, int>>();
         var extents = new List<IntExpr[]>();
         for (int i = 0; i < value.Children.Count; i++)
         {
             var res = value.Children[i].Accept(this, context);
             results.AddRange(res.BufferResults);
+            graphs.AddRange(res.Graphs);
             extents.AddRange(res.BackWardExtents);
             names.AddRange(res.DimsMaps);
         }
 
-        return new(results.ToArray(), names.ToArray(), extents.ToArray());
+        return new(results.ToArray(), graphs.ToArray(), names.ToArray(), extents.ToArray());
     }
 
     public InitResult Visit(TileNode value, Context context)
@@ -108,11 +186,11 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
         // each tile node have buffer place vars.
         if (!TileNodeMemo.TryGetValue(value, out var info))
         {
-            var bufferInfoMap = new Dictionary<BufferIdenitity, TileNodeBufferInfo>();
+            var bufferInfoMap = new Dictionary<BufferIdentity, TileNodeBufferInfo>();
             for (int i = 0; i < childResult.BufferResults.Length; i++)
             {
                 var result = childResult.BufferResults[i];
-                BufferIdenitity currentId;
+                BufferIdentity currentId;
                 AffineMap currentAccessMap = result.AccessMap;
                 Tuple<int, int> currentLifeness = result.Lifeness;
                 if (defUseMap.TryGetValue(result.Bid, out currentId!))
@@ -136,7 +214,22 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
             TileNodeMemo.Add(value, new(backWardExtents, defUseMap, bufferInfoMap));
         }
 
-        return new(bufferResults.ToArray(), new[] { dimsMap }, new[] { backWardExtents[0] });
+        // link the graphs
+        var graph = new AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>>();
+        foreach (var subGraph in childResult.Graphs)
+        {
+            foreach (var subEdge in subGraph.Edges)
+            {
+                graph.AddVerticesAndEdge(subEdge);
+            }
+        }
+
+        foreach (var (k, v) in defUseMap)
+        {
+            graph.AddEdge(new(k, v));
+        }
+
+        return new(bufferResults.ToArray(), new[] { graph }, new[] { dimsMap }, new[] { backWardExtents[0] });
     }
 
     public InitResult Visit(OpNode value, Context context)
@@ -196,17 +289,23 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
 
         // perpare return infos.
         var bufferResults = new BufferResult[value.ReadAccesses.Length + 1];
+        var graph = new AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>>();
+        BufferIdentity obid = new(value, value.ReadAccesses.Length);
+        graph.AddVertex(obid);
+        bufferResults[value.ReadAccesses.Length] = new(obid, new(TimeStamp, TimeStamp + 1), value.DomainRelation.Map * accessMaps[^1]);
 
         for (int i = 0; i < value.ReadAccesses.Length; i++)
         {
-            bufferResults[i] = new(new(value, i), new(TimeStamp, TimeStamp + 1), value.DomainRelation.Map * accessMaps[i]);
+            BufferIdentity bid = new(value, i);
+            graph.AddVertex(bid);
+            graph.AddEdge(new(bid, obid));
+            bufferResults[i] = new(bid, new(TimeStamp, TimeStamp + 1), value.DomainRelation.Map * accessMaps[i]);
         }
 
-        bufferResults[value.ReadAccesses.Length] = new(new(value, value.ReadAccesses.Length), new(TimeStamp, TimeStamp + 1), value.DomainRelation.Map * accessMaps[^1]);
         TimeStamp += 2;
 
         // todo backward extents should times primtives.
-        return new(bufferResults, new[] { dimsMap }, new IntExpr[][] { tileVars.Cast<IntExpr>().ToArray() });
+        return new(bufferResults, new[] { graph }, new[] { dimsMap }, new IntExpr[][] { tileVars.Cast<IntExpr>().ToArray() });
     }
 
     /// <summary>
@@ -253,7 +352,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
         return backWardExtents;
     }
 
-    private TileNodeBufferInfo GetBufferInfo(TileNode tile, BufferIdenitity bid, AffineMap accessMap, Tuple<int, int> lifeness, IntExpr[][] backWardExtents)
+    private TileNodeBufferInfo GetBufferInfo(TileNode tile, BufferIdentity bid, AffineMap accessMap, Tuple<int, int> lifeness, IntExpr[][] backWardExtents)
     {
         var domainDims = tile.DimNames.Length;
         var bufferPlaces = new IntVar[domainDims][];
@@ -305,11 +404,11 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
     /// <summary>
     /// each buffer with each access Maps, note the access map domain is this node's domain. extents also mapping to current node's domain.
     /// </summary>
-    public sealed record InitResult(BufferResult[] BufferResults, Dictionary<int, int>[] DimsMaps, IntExpr[][] BackWardExtents)
+    public sealed record InitResult(BufferResult[] BufferResults, AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>>[] Graphs, Dictionary<int, int>[] DimsMaps, IntExpr[][] BackWardExtents)
     {
     }
 
-    public sealed record BufferResult(BufferIdenitity Bid, Tuple<int, int> Lifeness, AffineMap AccessMap)
+    public sealed record BufferResult(BufferIdentity Bid, Tuple<int, int> Lifeness, AffineMap AccessMap)
     {
     }
 

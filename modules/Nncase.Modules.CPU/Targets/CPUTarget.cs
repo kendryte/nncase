@@ -160,7 +160,7 @@ public class CPUTarget : ITarget
 
         // concat/reshape lower
         // tile and lower to tir.
-        passManager.Add<AutoTilePass>();
+        passManager.Add<AutoTilePass>(Kind);
 
         passManager.Add<CPUFusionToTirPass>();
 

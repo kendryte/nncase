@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Text.RegularExpressions;
+using GiGraph.Dot.Extensions;
 using Google.OrTools.ConstraintSolver;
 
 namespace Nncase.Schedule.TileTree;
@@ -26,6 +27,23 @@ public static class TreeExtensions
     {
         var cloner = new TreeCloner();
         return node.Accept(cloner, default);
+    }
+
+    public static void Dump(this ITreeNode tree, string name)
+    {
+        using (var stream = Diagnostics.DumpScope.Current.OpenFile($"{name}.dot"))
+        {
+            using var writer = new StreamWriter(stream);
+            var printer = new TreePrinter();
+            tree.Accept(printer, TreePrinter.Context.Default);
+            printer.Graph.Build(writer);
+        }
+    }
+
+    public static bool Merge(this ITreeNode tree, int opConsumer, int opProducer, int level)
+    {
+        var merger = new TreeMerger(opConsumer, opProducer, level);
+        return tree.Accept(merger, default);
     }
 
     public static ITileAbleNode? GetParentTileableNode(this ITreeNode node)

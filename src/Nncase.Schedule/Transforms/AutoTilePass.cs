@@ -15,12 +15,18 @@ namespace Nncase.Passes.Transforms;
 
 public sealed class AutoTilePass : ModulePass
 {
-    public AutoTilePass(CompileOptions compileOptions)
+    public AutoTilePass(string moduleKind, CompileOptions compileOptions)
     {
+        ModuleKind = moduleKind;
         CompileOptions = compileOptions;
+        WorkItem = 0;
     }
 
+    public string ModuleKind { get; }
+
     public CompileOptions CompileOptions { get; }
+
+    public int WorkItem { get; set; }
 
     protected override Task<IRModule> RunCoreAsync(IRModule input, RunPassContext context)
     {
@@ -34,7 +40,7 @@ public sealed class AutoTilePass : ModulePass
             for (int j = 0; j < worklists.Count; j++)
             {
                 var rootGrid = worklists[j].First();
-                var rewriter = new AutoTileRewriter(rootGrid, CompileOptions);
+                var rewriter = new AutoTileRewriter(rootGrid, ModuleKind, WorkItem++, CompileOptions);
                 post = (BaseFunction)rewriter.Rewrite(post);
             }
 
@@ -82,27 +88,26 @@ public sealed class AutoTilePass : ModulePass
 
     private sealed class AutoTileRewriter : ExprRewriter
     {
-        public AutoTileRewriter(Grid rootGrid, CompileOptions compileOptions)
+        private readonly string _moduleKind;
+        private readonly int _workItem;
+
+        public AutoTileRewriter(Grid rootGrid, string moduleKind, int workItem, CompileOptions compileOptions)
         {
             Root = rootGrid;
+            _moduleKind = moduleKind;
+            _workItem = workItem;
             CompileOptions = compileOptions;
-            Wrapper = null!;
-            PrimFunc = null!;
         }
 
         public Grid Root { get; }
 
         public CompileOptions CompileOptions { get; }
 
-        public PrimFunctionWrapper Wrapper { get; set; }
-
-        public TIR.PrimFunction PrimFunc { get; set; }
-
         protected override Expr RewriteLeafGrid(Grid grid)
         {
             if (grid == Root)
             {
-                return TreeTiler.Tile(grid, CompileOptions);
+                return TreeTiler.Tile(grid, _moduleKind, _workItem, CompileOptions);
             }
 
             return grid;

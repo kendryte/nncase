@@ -9,7 +9,7 @@ using VisitorPatternGenerator;
 
 namespace Nncase.Schedule.TileTree;
 
-public sealed record BufferIdenitity(OpNode Node, int Index)
+public sealed record BufferIdentity(OpNode Node, int Index)
 {
     public override string ToString() => $"Op{Node.OpId}_{Index}";
 }
@@ -21,9 +21,9 @@ public sealed record TileNodeBufferInfo(Tuple<int, int> Lifeness, AffineMap Map,
 {
 }
 
-public sealed record TileNodeInfo(IntExpr[][] BackWardExtents, Dictionary<BufferIdenitity, BufferIdenitity> DefUseMap, Dictionary<BufferIdenitity, TileNodeBufferInfo> BufferInfoMap)
+public sealed record TileNodeInfo(IntExpr[][] BackWardExtents, Dictionary<BufferIdentity, BufferIdentity> DefUseMap, Dictionary<BufferIdentity, TileNodeBufferInfo> BufferInfoMap)
 {
-    public BufferIdenitity GetCacheBid(BufferIdenitity bid)
+    public BufferIdentity GetCacheBid(BufferIdentity bid)
     {
         if (DefUseMap.TryGetValue(bid, out var sinkId))
         {
@@ -50,7 +50,7 @@ public sealed record OpNodeInfo(AffineMap[] Maps, IntExpr[][] Shapes, IntExpr[] 
 {
 }
 
-public sealed record ArgumentsInfo(HashSet<BufferIdenitity> Inputs, HashSet<BufferIdenitity> Outputs, Dictionary<BufferIdenitity, BufferIdenitity> DefUseMap)
+public sealed record ArgumentsInfo(HashSet<BufferIdentity> Inputs, HashSet<BufferIdentity> Outputs, Dictionary<BufferIdentity, BufferIdentity> DefUseMap)
 {
     public enum BufferKind
     {
@@ -68,7 +68,7 @@ public sealed record ArgumentsInfo(HashSet<BufferIdenitity> Inputs, HashSet<Buff
         None,
     }
 
-    public BufferIdenitity GetUniqueIdenitity(BufferIdenitity bid)
+    public BufferIdentity GetUniqueIdenitity(BufferIdentity bid)
     {
         if (Inputs.Contains(bid))
         {
@@ -90,7 +90,7 @@ public sealed record ArgumentsInfo(HashSet<BufferIdenitity> Inputs, HashSet<Buff
         throw new NotSupportedException();
     }
 
-    public BufferKind GetBufferKind(BufferIdenitity bid)
+    public BufferKind GetBufferKind(BufferIdentity bid)
     {
         if (Inputs.Contains(bid))
         {

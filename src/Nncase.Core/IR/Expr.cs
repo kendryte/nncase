@@ -150,7 +150,7 @@ public abstract partial class Expr : IDisposable
                         DumpScope.Current.DumpIR(this, "CheckedDatatypeError");
                     }
 
-                    throw new InvalidOperationException("Expr don't have a valid tensor type");
+                    throw new InvalidOperationException($"{CheckedType} haven't data type");
             }
         }
     }

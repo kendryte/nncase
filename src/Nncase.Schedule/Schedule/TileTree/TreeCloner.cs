@@ -8,32 +8,51 @@ namespace Nncase.Schedule.TileTree;
 
 internal partial class TreeCloner : ITreeNodeVisitor<Unit, ITreeNode>
 {
+    private readonly Dictionary<ITreeNode, ITreeNode> _memo = new(ReferenceEqualityComparer.Instance);
+
     public ITreeNode Visit(ScopeNode value, Unit arg1)
     {
-        var newScope = new ScopeNode();
-        foreach (var item in value.Children)
+        if (!_memo.TryGetValue(value, out var nScope))
         {
-            newScope.Add(item.Accept(this, arg1));
+            nScope = new ScopeNode();
+            foreach (var item in value.Children)
+            {
+                ((ScopeNode)nScope).Add(item.Accept(this, arg1));
+            }
+
+            _memo.Add(value, nScope);
         }
 
-        return newScope;
+        return nScope;
     }
 
     public ITreeNode Visit(TileNode value, Unit arg1)
     {
-        var newTile = new TileNode(value.Level, value.OpId, value.DimNames)
+        if (!_memo.TryGetValue(value, out var nTile))
         {
-            DomainRelation = value.DomainRelation,
-            Child = value.Child.Accept(this, arg1),
-        };
-        return newTile;
+            nTile = new TileNode(value.Level, value.OpId, value.DimNames)
+            {
+                DomainRelation = value.DomainRelation,
+                Child = value.Child.Accept(this, arg1),
+            };
+            _memo.Add(value, nTile);
+        }
+
+        return nTile;
     }
 
     public ITreeNode Visit(OpNode value, Unit arg1)
     {
-        return new OpNode(value.Grid, value.Op, value.OpId, value.DimNames, value.DomainBounds, value.BufferShapes.Select(x => (IEnumerable<int>)x), value.Dependences)
+        if (!_memo.TryGetValue(value, out var nOp))
         {
-            DomainRelation = value.DomainRelation,
-        };
+            nOp = new OpNode(value.Grid, value.Op, value.OpId, value.DimNames, value.DomainBounds, value.BufferShapes.Select(x => (IEnumerable<int>)x), value.Dependences.Select(d => new OpNode.Dependence(d.Index, (OpNode)_memo[d.Node])))
+            {
+                DomainRelation = value.DomainRelation,
+            };
+
+            _memo.Add(value, nOp);
+        }
+
+        return nOp;
     }
 }

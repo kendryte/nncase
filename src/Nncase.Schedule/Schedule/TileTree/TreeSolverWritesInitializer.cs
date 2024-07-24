@@ -6,14 +6,14 @@ using Google.OrTools.ConstraintSolver;
 
 namespace Nncase.Schedule.TileTree;
 
-public sealed class TreeSolverWritesInitializer : TreeSolverBase, ITreeNodeVisitor<Dictionary<BufferIdenitity, IntExpr[]>, Unit>
+public sealed class TreeSolverWritesInitializer : TreeSolverBase, ITreeNodeVisitor<Dictionary<BufferIdentity, IntExpr[]>, Unit>
 {
     public TreeSolverWritesInitializer(Solver solver, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainDimInfos, ITargetOptions targetOptions)
         : base(solver, primitiveBufferInfo, levelBufferInfos, domainDimInfos, targetOptions)
     {
     }
 
-    public Unit Visit(ScopeNode value, Dictionary<BufferIdenitity, IntExpr[]> bufferTripCounts)
+    public Unit Visit(ScopeNode value, Dictionary<BufferIdentity, IntExpr[]> bufferTripCounts)
     {
         for (int i = 0; i < value.Children.Count; i++)
         {
@@ -26,9 +26,9 @@ public sealed class TreeSolverWritesInitializer : TreeSolverBase, ITreeNodeVisit
     /// <summary>
     /// buffer trip counts mean each buffer's trip count at loop i.
     /// </summary>
-    public Unit Visit(TileNode value, Dictionary<BufferIdenitity, IntExpr[]> bufferTripCounts)
+    public Unit Visit(TileNode value, Dictionary<BufferIdentity, IntExpr[]> bufferTripCounts)
     {
-        Dictionary<BufferIdenitity, IntExpr[]> currentTripCounts = new();
+        Dictionary<BufferIdentity, IntExpr[]> currentTripCounts = new();
         var domainInfo = TileableNodeMemo[value];
         if (value.GetParentTileableNode() is TileNode parentTileNode)
         {
@@ -101,7 +101,7 @@ public sealed class TreeSolverWritesInitializer : TreeSolverBase, ITreeNodeVisit
         return default;
     }
 
-    public Unit Visit(OpNode value, Dictionary<BufferIdenitity, IntExpr[]> bufferTripCounts)
+    public Unit Visit(OpNode value, Dictionary<BufferIdentity, IntExpr[]> bufferTripCounts)
     {
         return default;
     }
