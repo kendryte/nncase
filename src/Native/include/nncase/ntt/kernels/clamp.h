@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "../apply.h"
+#include "../tensor_ops.h"
 #include "../loop.h"
 #include "../utility.h"
 
