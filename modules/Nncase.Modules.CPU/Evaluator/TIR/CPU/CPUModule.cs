@@ -44,5 +44,6 @@ internal class CPUModule : IApplicationPart
         registrator.RegisterManyInterface<Conv2DEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<ReduceEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<GatherReduceScatterEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<ClampEvaluator>(reuse: Reuse.Singleton);
     }
 }
