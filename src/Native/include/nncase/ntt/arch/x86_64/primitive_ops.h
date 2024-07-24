@@ -137,6 +137,36 @@ template <> struct rsqrt<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
         return _mm256_rsqrt_ps(v);
+
+#if 0
+        // This is a higher precision version, ulp is about 4, tp=4.5
+        const __m256 one_point_five = _mm256_set1_ps(1.5f);
+
+        // Convert float to int representation and perform the initial magic
+        // step
+        __m256i ux = _mm256_castps_si256(v);
+        ux = _mm256_srli_epi32(ux, 1);
+        ux = _mm256_sub_epi32(_mm256_set1_epi32(0x5f375a86), ux);
+        __m256 y = _mm256_castsi256_ps(ux);
+
+        // First iteration
+        __m256 y2 = _mm256_mul_ps(y, y);
+        __m256 x = _mm256_mul_ps(v, _mm256_set1_ps(-0.5f));
+        y2 = _mm256_fmadd_ps(y2, x, one_point_five);
+        y = _mm256_mul_ps(y, y2);
+
+        // Second iteration
+        y2 = _mm256_mul_ps(y, y);
+        y2 = _mm256_fmadd_ps(y2, x, one_point_five);
+        y = _mm256_mul_ps(y, y2);
+
+        // third iteration
+        y2 = _mm256_mul_ps(y, y);
+        y2 = _mm256_fmadd_ps(y2, x, one_point_five);
+        y = _mm256_mul_ps(y, y2);
+
+        return y;
+#endif
     }
 };
 
