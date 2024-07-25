@@ -98,9 +98,14 @@ internal sealed class TreePrinter : ITreeNodeVisitor<TreePrinter.Context, TreePr
         var (pid, pnames) = context;
         var dimsMap = GetDimsMap(value);
 
-        var node = Graph.Nodes.Add(value.ToString());
+        var node = Graph.Nodes.Add($"{value}");
 
-        node.ToRecordNode(rb => rb.AppendField(value.ToString()).AppendRecord(
+        node.ToRecordNode(rb => rb.AppendRecord(rb1 =>
+        {
+            rb1.AppendField(value.ToString()).
+                AppendField($"{value.Op.GetType().Name}({value.Op.DisplayProperty()})").
+                AppendFields(value.DomainBounds.Select((d, i) => $"d{i} : {d}"));
+        }).AppendRecord(
             rb2 =>
             {
                 for (int i = 0; i < value.ReadAccesses.Length; i++)

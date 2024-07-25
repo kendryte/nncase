@@ -80,6 +80,31 @@ public sealed class UnitTestCPUKernels : TestClassBase
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, new[] { f });
     }
 
+    [Fact]
+    public async Task TestMatmulBinaryBinary()
+    {
+        var ashape = new[] { 1, 64, 384, 128 };
+        var bshape = new[] { 1, 64, 128, 384 };
+        var a = new Var("a", new TensorType(DataTypes.Float32, ashape));
+        var b = new Var("b", new TensorType(DataTypes.Float32, bshape));
+        var c = IR.F.Tensors.MatMul(a, b);
+        var dshape = new[] { 1 };
+        var d = new Var("d", new TensorType(DataTypes.Float32, dshape));
+        var e = IR.F.Math.Binary(BinaryOp.Div, c, d);
+        var fshape = new[] { 1, 1, 384, 384 };
+        var f = new Var("f", new TensorType(DataTypes.Float32, fshape));
+        var g = IR.F.Math.Binary(BinaryOp.Add, e, f);
+
+        var feedDict = new Dictionary<Var, IValue>() {
+            { a, IR.F.Tensors.ConstantOfShape(ashape, 1.0f).Evaluate() /* IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, ashape).Evaluate() */ },
+            { b, IR.F.Tensors.ConstantOfShape(bshape, 1.0f).Evaluate() /* IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, bshape).Evaluate() */ },
+            { d, IR.F.Tensors.ConstantOfShape(dshape, 1.0f).Evaluate() /* IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, eshape).Evaluate() */ },
+            { f, IR.F.Tensors.ConstantOfShape(fshape, 1.0f).Evaluate() /* IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, eshape).Evaluate() */ },
+        };
+
+        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), string.Empty), feedDict, new[] { g });
+    }
+
     [Theory]
     [InlineData(new object[] { new[] { 32, 512, 64, 64 }, 0 })]
     public async Task TestSwish(int[] shape, int count)

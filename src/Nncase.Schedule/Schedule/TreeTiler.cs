@@ -485,7 +485,7 @@ public static class TreeTiler
         BuildTree(grid, root, totalLevel, ref opId);
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {
-            root.Dump("orginal");
+            root.Dump($"device_func{itemNumber}_original");
         }
 
         TreeSolverResultConstructor? bestConstructor = null;
@@ -504,7 +504,7 @@ public static class TreeTiler
 
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {
-            bestConstructor.Tree.Dump("best");
+            bestConstructor.Tree.Dump($"device_func{itemNumber}_best");
         }
 
         return bestConstructor.ConstructResult(moduleKind, itemNumber);
