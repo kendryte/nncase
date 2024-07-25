@@ -31,5 +31,3 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=rv64imafdcv -mabi=lp64d -mcmodel=
 set(BUILDING_RUNTIME ON)
 set(ENABLE_K230_RUNTIME ON)
 set(BUILD_SHARED_LIBS OFF)
-
-add_definitions(-DRTOS_RUNTIME)
