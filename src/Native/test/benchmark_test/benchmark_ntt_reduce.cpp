@@ -33,7 +33,7 @@ void benchmark_ntt_reduce_Add_reduceN_noPack() {
     ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
     NttTest::init_tensor(ta, -10.f, 10.f);
 
-    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::add>(ta, tb[i], ntt::fixed_shape<1>{},
@@ -42,8 +42,9 @@ void benchmark_ntt_reduce_Add_reduceN_noPack() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::add>(ta, tb[i], ntt::fixed_shape<1>{},
-                                   ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce<ntt::ops::add>(ta, tb[warmup_num + i],
+                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<>{},
+                                   ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -65,7 +66,7 @@ void benchmark_ntt_reduce_Add_reduceN_packN() {
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>> taP;
     ntt::pack<1>(ta, taP.view());
 
-    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::add>(taP, tb[i], ntt::fixed_shape<1>{},
@@ -74,8 +75,9 @@ void benchmark_ntt_reduce_Add_reduceN_packN() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::add>(taP, tb[i], ntt::fixed_shape<1>{},
-                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
+        ntt::reduce<ntt::ops::add>(taP, tb[warmup_num + i],
+                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<1>{},
+                                   ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -95,7 +97,7 @@ void benchmark_ntt_reduce_Add_reduceM_noPack() {
     ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
     NttTest::init_tensor(ta, -10.f, 10.f);
 
-    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::add>(ta, tb[i], ntt::fixed_shape<0>{},
@@ -104,8 +106,9 @@ void benchmark_ntt_reduce_Add_reduceM_noPack() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::add>(ta, tb[i], ntt::fixed_shape<0>{},
-                                   ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce<ntt::ops::add>(ta, tb[warmup_num + i],
+                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
+                                   ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -127,7 +130,7 @@ void benchmark_ntt_reduce_Add_reduceM_packM() {
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>> taP;
     ntt::pack<0>(ta, taP.view());
 
-    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::add>(taP, tb[i], ntt::fixed_shape<0>{},
@@ -136,8 +139,9 @@ void benchmark_ntt_reduce_Add_reduceM_packM() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::add>(taP, tb[i], ntt::fixed_shape<0>{},
-                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
+        ntt::reduce<ntt::ops::add>(taP, tb[warmup_num + i],
+                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
+                                   ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -157,7 +161,7 @@ void benchmark_ntt_reduce_Add_reduceMN_noPack() {
     ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
     NttTest::init_tensor(ta, -10.f, 10.f);
 
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::add>(ta, tb[i], ntt::fixed_shape<0, 1>{},
@@ -166,7 +170,8 @@ void benchmark_ntt_reduce_Add_reduceMN_noPack() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::add>(ta, tb[i], ntt::fixed_shape<0, 1>{},
+        ntt::reduce<ntt::ops::add>(ta, tb[warmup_num + i],
+                                   ntt::fixed_shape<0, 1>{},
                                    ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -189,7 +194,7 @@ void benchmark_ntt_reduce_Add_reduceMN_packN() {
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>> taP;
     ntt::pack<1>(ta, taP.view());
 
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::add>(taP, tb[i], ntt::fixed_shape<0, 1>{},
@@ -198,7 +203,8 @@ void benchmark_ntt_reduce_Add_reduceMN_packN() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::add>(taP, tb[i], ntt::fixed_shape<0, 1>{},
+        ntt::reduce<ntt::ops::add>(taP, tb[warmup_num + i],
+                                   ntt::fixed_shape<0, 1>{},
                                    ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -221,7 +227,7 @@ void benchmark_ntt_reduce_Add_reduceMN_packM() {
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>> taP;
     ntt::pack<0>(ta, taP.view());
 
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::add>(taP, tb[i], ntt::fixed_shape<0, 1>{},
@@ -230,7 +236,8 @@ void benchmark_ntt_reduce_Add_reduceMN_packM() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::add>(taP, tb[i], ntt::fixed_shape<0, 1>{},
+        ntt::reduce<ntt::ops::add>(taP, tb[warmup_num + i],
+                                   ntt::fixed_shape<0, 1>{},
                                    ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -251,7 +258,7 @@ void benchmark_ntt_reduce_Max_reduceN_noPack() {
     ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
     NttTest::init_tensor(ta, -10.f, 10.f);
 
-    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::max>(ta, tb[i], ntt::fixed_shape<1>{},
@@ -260,8 +267,9 @@ void benchmark_ntt_reduce_Max_reduceN_noPack() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::max>(ta, tb[i], ntt::fixed_shape<1>{},
-                                   ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce<ntt::ops::max>(ta, tb[warmup_num + i],
+                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<>{},
+                                   ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -283,7 +291,7 @@ void benchmark_ntt_reduce_Max_reduceN_packN() {
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>> taP;
     ntt::pack<1>(ta, taP.view());
 
-    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::max>(taP, tb[i], ntt::fixed_shape<1>{},
@@ -292,8 +300,9 @@ void benchmark_ntt_reduce_Max_reduceN_packN() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::max>(taP, tb[i], ntt::fixed_shape<1>{},
-                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
+        ntt::reduce<ntt::ops::max>(taP, tb[warmup_num + i],
+                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<1>{},
+                                   ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -313,7 +322,7 @@ void benchmark_ntt_reduce_Max_reduceM_noPack() {
     ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
     NttTest::init_tensor(ta, -10.f, 10.f);
 
-    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::max>(ta, tb[i], ntt::fixed_shape<0>{},
@@ -322,8 +331,9 @@ void benchmark_ntt_reduce_Max_reduceM_noPack() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::max>(ta, tb[i], ntt::fixed_shape<0>{},
-                                   ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce<ntt::ops::max>(ta, tb[warmup_num + i],
+                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
+                                   ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -345,7 +355,7 @@ void benchmark_ntt_reduce_Max_reduceM_packM() {
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>> taP;
     ntt::pack<0>(ta, taP.view());
 
-    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::max>(taP, tb[i], ntt::fixed_shape<0>{},
@@ -354,8 +364,9 @@ void benchmark_ntt_reduce_Max_reduceM_packM() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::max>(taP, tb[i], ntt::fixed_shape<0>{},
-                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
+        ntt::reduce<ntt::ops::max>(taP, tb[warmup_num + i],
+                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
+                                   ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -375,7 +386,7 @@ void benchmark_ntt_reduce_Max_reduceMN_noPack() {
     ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
     NttTest::init_tensor(ta, -10.f, 10.f);
 
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::max>(ta, tb[i], ntt::fixed_shape<0, 1>{},
@@ -384,7 +395,8 @@ void benchmark_ntt_reduce_Max_reduceMN_noPack() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::max>(ta, tb[i], ntt::fixed_shape<0, 1>{},
+        ntt::reduce<ntt::ops::max>(ta, tb[warmup_num + i],
+                                   ntt::fixed_shape<0, 1>{},
                                    ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -407,7 +419,7 @@ void benchmark_ntt_reduce_Max_reduceMN_packN() {
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>> taP;
     ntt::pack<1>(ta, taP.view());
 
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::max>(taP, tb[i], ntt::fixed_shape<0, 1>{},
@@ -416,7 +428,8 @@ void benchmark_ntt_reduce_Max_reduceMN_packN() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::max>(taP, tb[i], ntt::fixed_shape<0, 1>{},
+        ntt::reduce<ntt::ops::max>(taP, tb[warmup_num + i],
+                                   ntt::fixed_shape<0, 1>{},
                                    ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -439,7 +452,7 @@ void benchmark_ntt_reduce_Max_reduceMN_packM() {
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>> taP;
     ntt::pack<0>(ta, taP.view());
 
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::max>(taP, tb[i], ntt::fixed_shape<0, 1>{},
@@ -448,7 +461,8 @@ void benchmark_ntt_reduce_Max_reduceMN_packM() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::max>(taP, tb[i], ntt::fixed_shape<0, 1>{},
+        ntt::reduce<ntt::ops::max>(taP, tb[warmup_num + i],
+                                   ntt::fixed_shape<0, 1>{},
                                    ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -469,7 +483,7 @@ void benchmark_ntt_reduce_Min_reduceN_noPack() {
     ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
     NttTest::init_tensor(ta, -10.f, 10.f);
 
-    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::min>(ta, tb[i], ntt::fixed_shape<1>{},
@@ -478,8 +492,9 @@ void benchmark_ntt_reduce_Min_reduceN_noPack() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::min>(ta, tb[i], ntt::fixed_shape<1>{},
-                                   ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce<ntt::ops::min>(ta, tb[warmup_num + i],
+                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<>{},
+                                   ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -501,7 +516,7 @@ void benchmark_ntt_reduce_Min_reduceN_packN() {
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>> taP;
     ntt::pack<1>(ta, taP.view());
 
-    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::min>(taP, tb[i], ntt::fixed_shape<1>{},
@@ -510,8 +525,9 @@ void benchmark_ntt_reduce_Min_reduceN_packN() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::min>(taP, tb[i], ntt::fixed_shape<1>{},
-                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
+        ntt::reduce<ntt::ops::min>(taP, tb[warmup_num + i],
+                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<1>{},
+                                   ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -531,7 +547,7 @@ void benchmark_ntt_reduce_Min_reduceM_noPack() {
     ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
     NttTest::init_tensor(ta, -10.f, 10.f);
 
-    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::min>(ta, tb[i], ntt::fixed_shape<0>{},
@@ -540,8 +556,9 @@ void benchmark_ntt_reduce_Min_reduceM_noPack() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::min>(ta, tb[i], ntt::fixed_shape<0>{},
-                                   ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce<ntt::ops::min>(ta, tb[warmup_num + i],
+                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
+                                   ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -563,7 +580,7 @@ void benchmark_ntt_reduce_Min_reduceM_packM() {
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>> taP;
     ntt::pack<0>(ta, taP.view());
 
-    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::min>(taP, tb[i], ntt::fixed_shape<0>{},
@@ -572,8 +589,9 @@ void benchmark_ntt_reduce_Min_reduceM_packM() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::min>(taP, tb[i], ntt::fixed_shape<0>{},
-                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
+        ntt::reduce<ntt::ops::min>(taP, tb[warmup_num + i],
+                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
+                                   ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -593,7 +611,7 @@ void benchmark_ntt_reduce_Min_reduceMN_noPack() {
     ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
     NttTest::init_tensor(ta, -10.f, 10.f);
 
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::min>(ta, tb[i], ntt::fixed_shape<0, 1>{},
@@ -602,7 +620,8 @@ void benchmark_ntt_reduce_Min_reduceMN_noPack() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::min>(ta, tb[i], ntt::fixed_shape<0, 1>{},
+        ntt::reduce<ntt::ops::min>(ta, tb[warmup_num + i],
+                                   ntt::fixed_shape<0, 1>{},
                                    ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -625,7 +644,7 @@ void benchmark_ntt_reduce_Min_reduceMN_packN() {
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>> taP;
     ntt::pack<1>(ta, taP.view());
 
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::min>(taP, tb[i], ntt::fixed_shape<0, 1>{},
@@ -634,7 +653,8 @@ void benchmark_ntt_reduce_Min_reduceMN_packN() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::min>(taP, tb[i], ntt::fixed_shape<0, 1>{},
+        ntt::reduce<ntt::ops::min>(taP, tb[warmup_num + i],
+                                   ntt::fixed_shape<0, 1>{},
                                    ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -657,7 +677,7 @@ void benchmark_ntt_reduce_Min_reduceMN_packM() {
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>> taP;
     ntt::pack<0>(ta, taP.view());
 
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::min>(taP, tb[i], ntt::fixed_shape<0, 1>{},
@@ -666,7 +686,8 @@ void benchmark_ntt_reduce_Min_reduceMN_packM() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::min>(taP, tb[i], ntt::fixed_shape<0, 1>{},
+        ntt::reduce<ntt::ops::min>(taP, tb[warmup_num + i],
+                                   ntt::fixed_shape<0, 1>{},
                                    ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -687,7 +708,7 @@ void benchmark_ntt_reduce_Mean_reduceN_noPack() {
     ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
     NttTest::init_tensor(ta, -10.f, 10.f);
 
-    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::mean>(ta, tb[i], ntt::fixed_shape<1>{},
@@ -696,8 +717,9 @@ void benchmark_ntt_reduce_Mean_reduceN_noPack() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::mean>(ta, tb[i], ntt::fixed_shape<1>{},
-                                    ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce<ntt::ops::mean>(ta, tb[warmup_num + i],
+                                    ntt::fixed_shape<1>{}, ntt::fixed_shape<>{},
+                                    ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -719,7 +741,7 @@ void benchmark_ntt_reduce_Mean_reduceN_packN() {
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>> taP;
     ntt::pack<1>(ta, taP.view());
 
-    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::mean>(taP, tb[i], ntt::fixed_shape<1>{},
@@ -729,9 +751,9 @@ void benchmark_ntt_reduce_Mean_reduceN_packN() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::mean>(taP, tb[i], ntt::fixed_shape<1>{},
-                                    ntt::fixed_shape<1>{},
-                                    ntt::fixed_shape<>{});
+        ntt::reduce<ntt::ops::mean>(
+            taP, tb[warmup_num + i], ntt::fixed_shape<1>{},
+            ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -751,7 +773,7 @@ void benchmark_ntt_reduce_Mean_reduceM_noPack() {
     ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
     NttTest::init_tensor(ta, -10.f, 10.f);
 
-    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::mean>(ta, tb[i], ntt::fixed_shape<0>{},
@@ -760,8 +782,9 @@ void benchmark_ntt_reduce_Mean_reduceM_noPack() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::mean>(ta, tb[i], ntt::fixed_shape<0>{},
-                                    ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce<ntt::ops::mean>(ta, tb[warmup_num + i],
+                                    ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
+                                    ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -783,7 +806,7 @@ void benchmark_ntt_reduce_Mean_reduceM_packM() {
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>> taP;
     ntt::pack<0>(ta, taP.view());
 
-    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::mean>(taP, tb[i], ntt::fixed_shape<0>{},
@@ -793,9 +816,9 @@ void benchmark_ntt_reduce_Mean_reduceM_packM() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::mean>(taP, tb[i], ntt::fixed_shape<0>{},
-                                    ntt::fixed_shape<0>{},
-                                    ntt::fixed_shape<>{});
+        ntt::reduce<ntt::ops::mean>(
+            taP, tb[warmup_num + i], ntt::fixed_shape<0>{},
+            ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -815,7 +838,7 @@ void benchmark_ntt_reduce_Mean_reduceMN_noPack() {
     ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
     NttTest::init_tensor(ta, -10.f, 10.f);
 
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::mean>(ta, tb[i], ntt::fixed_shape<0, 1>{},
@@ -824,7 +847,8 @@ void benchmark_ntt_reduce_Mean_reduceMN_noPack() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::mean>(ta, tb[i], ntt::fixed_shape<0, 1>{},
+        ntt::reduce<ntt::ops::mean>(ta, tb[warmup_num + i],
+                                    ntt::fixed_shape<0, 1>{},
                                     ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -847,7 +871,7 @@ void benchmark_ntt_reduce_Mean_reduceMN_packN() {
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>> taP;
     ntt::pack<1>(ta, taP.view());
 
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::mean>(taP, tb[i], ntt::fixed_shape<0, 1>{},
@@ -857,9 +881,9 @@ void benchmark_ntt_reduce_Mean_reduceMN_packN() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::mean>(taP, tb[i], ntt::fixed_shape<0, 1>{},
-                                    ntt::fixed_shape<1>{},
-                                    ntt::fixed_shape<>{});
+        ntt::reduce<ntt::ops::mean>(
+            taP, tb[warmup_num + i], ntt::fixed_shape<0, 1>{},
+            ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -881,7 +905,7 @@ void benchmark_ntt_reduce_Mean_reduceMN_packM() {
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>> taP;
     ntt::pack<0>(ta, taP.view());
 
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[run_num];
+    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::reduce<ntt::ops::mean>(taP, tb[i], ntt::fixed_shape<0, 1>{},
@@ -891,9 +915,9 @@ void benchmark_ntt_reduce_Mean_reduceMN_packM() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::mean>(taP, tb[i], ntt::fixed_shape<0, 1>{},
-                                    ntt::fixed_shape<0>{},
-                                    ntt::fixed_shape<>{});
+        ntt::reduce<ntt::ops::mean>(
+            taP, tb[warmup_num + i], ntt::fixed_shape<0, 1>{},
+            ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -905,41 +929,41 @@ void benchmark_ntt_reduce_Mean_reduceMN_packM() {
 }
 
 int main() {
-    // Add
-    benchmark_ntt_reduce_Add_reduceN_noPack();
-    benchmark_ntt_reduce_Add_reduceN_packN();
+
     benchmark_ntt_reduce_Add_reduceM_noPack();
-    benchmark_ntt_reduce_Add_reduceM_packM();
-    benchmark_ntt_reduce_Add_reduceMN_noPack();
-    benchmark_ntt_reduce_Add_reduceMN_packN();
-    benchmark_ntt_reduce_Add_reduceMN_packM();
-
-    // Max
-    benchmark_ntt_reduce_Max_reduceN_noPack();
-    benchmark_ntt_reduce_Max_reduceN_packN();
     benchmark_ntt_reduce_Max_reduceM_noPack();
-    benchmark_ntt_reduce_Max_reduceM_packM();
-    benchmark_ntt_reduce_Max_reduceMN_noPack();
-    benchmark_ntt_reduce_Max_reduceMN_packN();
-    benchmark_ntt_reduce_Max_reduceMN_packM();
-
-    // Min
-    benchmark_ntt_reduce_Min_reduceN_noPack();
-    benchmark_ntt_reduce_Min_reduceN_packN();
     benchmark_ntt_reduce_Min_reduceM_noPack();
-    benchmark_ntt_reduce_Min_reduceM_packM();
-    benchmark_ntt_reduce_Min_reduceMN_noPack();
-    benchmark_ntt_reduce_Min_reduceMN_packN();
-    benchmark_ntt_reduce_Min_reduceMN_packM();
-
-    // Mean
-    benchmark_ntt_reduce_Mean_reduceN_noPack();
-    benchmark_ntt_reduce_Mean_reduceN_packN();
     benchmark_ntt_reduce_Mean_reduceM_noPack();
+
+    benchmark_ntt_reduce_Add_reduceM_packM();
+    benchmark_ntt_reduce_Max_reduceM_packM();
+    benchmark_ntt_reduce_Min_reduceM_packM();
     benchmark_ntt_reduce_Mean_reduceM_packM();
+
+    benchmark_ntt_reduce_Add_reduceN_noPack();
+    benchmark_ntt_reduce_Max_reduceN_noPack();
+    benchmark_ntt_reduce_Min_reduceN_noPack();
+    benchmark_ntt_reduce_Mean_reduceN_noPack();
+
+    benchmark_ntt_reduce_Add_reduceN_packN();
+    benchmark_ntt_reduce_Max_reduceN_packN();
+    benchmark_ntt_reduce_Min_reduceN_packN();
+    benchmark_ntt_reduce_Mean_reduceN_packN();
+
+    benchmark_ntt_reduce_Add_reduceMN_noPack();
+    benchmark_ntt_reduce_Max_reduceMN_noPack();
+    benchmark_ntt_reduce_Min_reduceMN_noPack();
     benchmark_ntt_reduce_Mean_reduceMN_noPack();
-    benchmark_ntt_reduce_Mean_reduceMN_packN();
+
+    benchmark_ntt_reduce_Add_reduceMN_packM();
+    benchmark_ntt_reduce_Max_reduceMN_packM();
+    benchmark_ntt_reduce_Min_reduceMN_packM();
     benchmark_ntt_reduce_Mean_reduceMN_packM();
+
+    benchmark_ntt_reduce_Add_reduceMN_packN();
+    benchmark_ntt_reduce_Max_reduceMN_packN();
+    benchmark_ntt_reduce_Min_reduceMN_packN();
+    benchmark_ntt_reduce_Mean_reduceMN_packN();
 
     return 0;
 }
