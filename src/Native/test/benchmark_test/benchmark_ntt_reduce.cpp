@@ -934,239 +934,51 @@ std::string benchmark_ntt_reduce_Mean_reduceMN_packM() {
     return oss.str();
 }
 
-#define BENCHMARK_NTT_REDUCE_ADD_REDUCEMN_NOPACK()                             \
-    result = benchmark_ntt_reduce_Add_reduceMN_noPack();                       \
-    result = benchmark_ntt_reduce_Add_reduceMN_noPack();                       \
-    result = benchmark_ntt_reduce_Add_reduceMN_noPack();                       \
-    result = benchmark_ntt_reduce_Add_reduceMN_noPack();                       \
+#define BENCHMARK_NTT_REDUCE(OP, REDUCE_AXIS, PACK_MODE)                       \
+    result = benchmark_ntt_reduce_##OP##_reduce##REDUCE_AXIS##_##PACK_MODE();  \
+    result = benchmark_ntt_reduce_##OP##_reduce##REDUCE_AXIS##_##PACK_MODE();  \
+    result = benchmark_ntt_reduce_##OP##_reduce##REDUCE_AXIS##_##PACK_MODE();  \
+    result = benchmark_ntt_reduce_##OP##_reduce##REDUCE_AXIS##_##PACK_MODE();  \
     std::cout << result << std::endl;
 
-#define BENCHMARK_NTT_REDUCE_MAX_REDUCEMN_NOPACK()                             \
-    result = benchmark_ntt_reduce_Max_reduceMN_noPack();                       \
-    result = benchmark_ntt_reduce_Max_reduceMN_noPack();                       \
-    result = benchmark_ntt_reduce_Max_reduceMN_noPack();                       \
-    result = benchmark_ntt_reduce_Max_reduceMN_noPack();                       \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_MIN_REDUCEMN_NOPACK()                             \
-    result = benchmark_ntt_reduce_Min_reduceMN_noPack();                       \
-    result = benchmark_ntt_reduce_Min_reduceMN_noPack();                       \
-    result = benchmark_ntt_reduce_Min_reduceMN_noPack();                       \
-    result = benchmark_ntt_reduce_Min_reduceMN_noPack();                       \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_MEAN_REDUCEMN_NOPACK()                            \
-    result = benchmark_ntt_reduce_Mean_reduceMN_noPack();                      \
-    result = benchmark_ntt_reduce_Mean_reduceMN_noPack();                      \
-    result = benchmark_ntt_reduce_Mean_reduceMN_noPack();                      \
-    result = benchmark_ntt_reduce_Mean_reduceMN_noPack();                      \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_ADD_REDUCEMN_PACKM()                              \
-    result = benchmark_ntt_reduce_Add_reduceMN_packM();                        \
-    result = benchmark_ntt_reduce_Add_reduceMN_packM();                        \
-    result = benchmark_ntt_reduce_Add_reduceMN_packM();                        \
-    result = benchmark_ntt_reduce_Add_reduceMN_packM();                        \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_MAX_REDUCEMN_PACKM()                              \
-    result = benchmark_ntt_reduce_Max_reduceMN_packM();                        \
-    result = benchmark_ntt_reduce_Max_reduceMN_packM();                        \
-    result = benchmark_ntt_reduce_Max_reduceMN_packM();                        \
-    result = benchmark_ntt_reduce_Max_reduceMN_packM();                        \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_MIN_REDUCEMN_PACKM()                              \
-    result = benchmark_ntt_reduce_Min_reduceMN_packM();                        \
-    result = benchmark_ntt_reduce_Min_reduceMN_packM();                        \
-    result = benchmark_ntt_reduce_Min_reduceMN_packM();                        \
-    result = benchmark_ntt_reduce_Min_reduceMN_packM();                        \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_MEAN_REDUCEMN_PACKM()                             \
-    result = benchmark_ntt_reduce_Mean_reduceMN_packM();                       \
-    result = benchmark_ntt_reduce_Mean_reduceMN_packM();                       \
-    result = benchmark_ntt_reduce_Mean_reduceMN_packM();                       \
-    result = benchmark_ntt_reduce_Mean_reduceMN_packM();                       \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_ADD_REDUCEMN_PACKN()                              \
-    result = benchmark_ntt_reduce_Add_reduceMN_packN();                        \
-    result = benchmark_ntt_reduce_Add_reduceMN_packN();                        \
-    result = benchmark_ntt_reduce_Add_reduceMN_packN();                        \
-    result = benchmark_ntt_reduce_Add_reduceMN_packN();                        \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_MAX_REDUCEMN_PACKN()                              \
-    result = benchmark_ntt_reduce_Max_reduceMN_packN();                        \
-    result = benchmark_ntt_reduce_Max_reduceMN_packN();                        \
-    result = benchmark_ntt_reduce_Max_reduceMN_packN();                        \
-    result = benchmark_ntt_reduce_Max_reduceMN_packN();                        \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_MIN_REDUCEMN_PACKN()                              \
-    result = benchmark_ntt_reduce_Min_reduceMN_packN();                        \
-    result = benchmark_ntt_reduce_Min_reduceMN_packN();                        \
-    result = benchmark_ntt_reduce_Min_reduceMN_packN();                        \
-    result = benchmark_ntt_reduce_Min_reduceMN_packN();                        \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_MEAN_REDUCEMN_PACKN()                             \
-    result = benchmark_ntt_reduce_Mean_reduceMN_packN();                       \
-    result = benchmark_ntt_reduce_Mean_reduceMN_packN();                       \
-    result = benchmark_ntt_reduce_Mean_reduceMN_packN();                       \
-    result = benchmark_ntt_reduce_Mean_reduceMN_packN();                       \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_ADD_REDUCEM_NOPACK()                              \
-    result = benchmark_ntt_reduce_Add_reduceM_noPack();                        \
-    result = benchmark_ntt_reduce_Add_reduceM_noPack();                        \
-    result = benchmark_ntt_reduce_Add_reduceM_noPack();                        \
-    result = benchmark_ntt_reduce_Add_reduceM_noPack();                        \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_MAX_REDUCEM_NOPACK()                              \
-    result = benchmark_ntt_reduce_Max_reduceM_noPack();                        \
-    result = benchmark_ntt_reduce_Max_reduceM_noPack();                        \
-    result = benchmark_ntt_reduce_Max_reduceM_noPack();                        \
-    result = benchmark_ntt_reduce_Max_reduceM_noPack();                        \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_MIN_REDUCEM_NOPACK()                              \
-    result = benchmark_ntt_reduce_Min_reduceM_noPack();                        \
-    result = benchmark_ntt_reduce_Min_reduceM_noPack();                        \
-    result = benchmark_ntt_reduce_Min_reduceM_noPack();                        \
-    result = benchmark_ntt_reduce_Min_reduceM_noPack();                        \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_MEAN_REDUCEM_NOPACK()                             \
-    result = benchmark_ntt_reduce_Mean_reduceM_noPack();                       \
-    result = benchmark_ntt_reduce_Mean_reduceM_noPack();                       \
-    result = benchmark_ntt_reduce_Mean_reduceM_noPack();                       \
-    result = benchmark_ntt_reduce_Mean_reduceM_noPack();                       \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_ADD_REDUCEN_NOPACK()                              \
-    result = benchmark_ntt_reduce_Add_reduceN_noPack();                        \
-    result = benchmark_ntt_reduce_Add_reduceN_noPack();                        \
-    result = benchmark_ntt_reduce_Add_reduceN_noPack();                        \
-    result = benchmark_ntt_reduce_Add_reduceN_noPack();                        \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_MAX_REDUCEN_NOPACK()                              \
-    result = benchmark_ntt_reduce_Max_reduceN_noPack();                        \
-    result = benchmark_ntt_reduce_Max_reduceN_noPack();                        \
-    result = benchmark_ntt_reduce_Max_reduceN_noPack();                        \
-    result = benchmark_ntt_reduce_Max_reduceN_noPack();                        \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_MIN_REDUCEN_NOPACK()                              \
-    result = benchmark_ntt_reduce_Min_reduceN_noPack();                        \
-    result = benchmark_ntt_reduce_Min_reduceN_noPack();                        \
-    result = benchmark_ntt_reduce_Min_reduceN_noPack();                        \
-    result = benchmark_ntt_reduce_Min_reduceN_noPack();                        \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_MEAN_REDUCEN_NOPACK()                             \
-    result = benchmark_ntt_reduce_Mean_reduceN_noPack();                       \
-    result = benchmark_ntt_reduce_Mean_reduceN_noPack();                       \
-    result = benchmark_ntt_reduce_Mean_reduceN_noPack();                       \
-    result = benchmark_ntt_reduce_Mean_reduceN_noPack();                       \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_ADD_REDUCEN_PACKN()                               \
-    result = benchmark_ntt_reduce_Add_reduceN_packN();                         \
-    result = benchmark_ntt_reduce_Add_reduceN_packN();                         \
-    result = benchmark_ntt_reduce_Add_reduceN_packN();                         \
-    result = benchmark_ntt_reduce_Add_reduceN_packN();                         \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_MAX_REDUCEN_PACKN()                               \
-    result = benchmark_ntt_reduce_Max_reduceN_packN();                         \
-    result = benchmark_ntt_reduce_Max_reduceN_packN();                         \
-    result = benchmark_ntt_reduce_Max_reduceN_packN();                         \
-    result = benchmark_ntt_reduce_Max_reduceN_packN();                         \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_MIN_REDUCEN_PACKN()                               \
-    result = benchmark_ntt_reduce_Min_reduceN_packN();                         \
-    result = benchmark_ntt_reduce_Min_reduceN_packN();                         \
-    result = benchmark_ntt_reduce_Min_reduceN_packN();                         \
-    result = benchmark_ntt_reduce_Min_reduceN_packN();                         \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_MEAN_REDUCEN_PACKN()                              \
-    result = benchmark_ntt_reduce_Mean_reduceN_packN();                        \
-    result = benchmark_ntt_reduce_Mean_reduceN_packN();                        \
-    result = benchmark_ntt_reduce_Mean_reduceN_packN();                        \
-    result = benchmark_ntt_reduce_Mean_reduceN_packN();                        \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_ADD_REDUCEM_PACKM()                               \
-    result = benchmark_ntt_reduce_Add_reduceM_packM();                         \
-    result = benchmark_ntt_reduce_Add_reduceM_packM();                         \
-    result = benchmark_ntt_reduce_Add_reduceM_packM();                         \
-    result = benchmark_ntt_reduce_Add_reduceM_packM();                         \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_MAX_REDUCEM_PACKM()                               \
-    result = benchmark_ntt_reduce_Max_reduceM_packM();                         \
-    result = benchmark_ntt_reduce_Max_reduceM_packM();                         \
-    result = benchmark_ntt_reduce_Max_reduceM_packM();                         \
-    result = benchmark_ntt_reduce_Max_reduceM_packM();                         \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_MIN_REDUCEM_PACKM()                               \
-    result = benchmark_ntt_reduce_Min_reduceM_packM();                         \
-    result = benchmark_ntt_reduce_Min_reduceM_packM();                         \
-    result = benchmark_ntt_reduce_Min_reduceM_packM();                         \
-    result = benchmark_ntt_reduce_Min_reduceM_packM();                         \
-    std::cout << result << std::endl;
-
-#define BENCHMARK_NTT_REDUCE_MEAN_REDUCEM_PACKM()                              \
-    result = benchmark_ntt_reduce_Mean_reduceM_packM();                        \
-    result = benchmark_ntt_reduce_Mean_reduceM_packM();                        \
-    result = benchmark_ntt_reduce_Mean_reduceM_packM();                        \
-    result = benchmark_ntt_reduce_Mean_reduceM_packM();                        \
-    std::cout << result << std::endl;
 int main() {
 
     std::string result;
 
-    BENCHMARK_NTT_REDUCE_ADD_REDUCEMN_NOPACK()
-    BENCHMARK_NTT_REDUCE_MAX_REDUCEMN_NOPACK()
-    BENCHMARK_NTT_REDUCE_MIN_REDUCEMN_NOPACK()
-    BENCHMARK_NTT_REDUCE_MEAN_REDUCEMN_NOPACK()
+    BENCHMARK_NTT_REDUCE(Add, MN, noPack)
+    BENCHMARK_NTT_REDUCE(Max, MN, noPack)
+    BENCHMARK_NTT_REDUCE(Min, MN, noPack)
+    BENCHMARK_NTT_REDUCE(Mean, MN, noPack)
 
-    BENCHMARK_NTT_REDUCE_ADD_REDUCEMN_PACKM()
-    BENCHMARK_NTT_REDUCE_MAX_REDUCEMN_PACKM()
-    BENCHMARK_NTT_REDUCE_MIN_REDUCEMN_PACKM()
-    BENCHMARK_NTT_REDUCE_MEAN_REDUCEMN_PACKM()
+    BENCHMARK_NTT_REDUCE(Add, MN, packM)
+    BENCHMARK_NTT_REDUCE(Max, MN, packM)
+    BENCHMARK_NTT_REDUCE(Min, MN, packM)
+    BENCHMARK_NTT_REDUCE(Mean, MN, packM)
 
-    BENCHMARK_NTT_REDUCE_ADD_REDUCEMN_PACKN()
-    BENCHMARK_NTT_REDUCE_MAX_REDUCEMN_PACKN()
-    BENCHMARK_NTT_REDUCE_MIN_REDUCEMN_PACKN()
-    BENCHMARK_NTT_REDUCE_MEAN_REDUCEMN_PACKN()
+    BENCHMARK_NTT_REDUCE(Add, MN, packN)
+    BENCHMARK_NTT_REDUCE(Max, MN, packN)
+    BENCHMARK_NTT_REDUCE(Min, MN, packN)
+    BENCHMARK_NTT_REDUCE(Mean, MN, packN)
 
-    BENCHMARK_NTT_REDUCE_ADD_REDUCEM_NOPACK()
-    BENCHMARK_NTT_REDUCE_MAX_REDUCEM_NOPACK()
-    BENCHMARK_NTT_REDUCE_MIN_REDUCEM_NOPACK()
-    BENCHMARK_NTT_REDUCE_MEAN_REDUCEM_NOPACK()
+    BENCHMARK_NTT_REDUCE(Add, M, noPack)
+    BENCHMARK_NTT_REDUCE(Max, M, noPack)
+    BENCHMARK_NTT_REDUCE(Min, M, noPack)
+    BENCHMARK_NTT_REDUCE(Mean, M, noPack)
 
-    BENCHMARK_NTT_REDUCE_ADD_REDUCEN_NOPACK()
-    BENCHMARK_NTT_REDUCE_MAX_REDUCEN_NOPACK()
-    BENCHMARK_NTT_REDUCE_MIN_REDUCEN_NOPACK()
-    BENCHMARK_NTT_REDUCE_MEAN_REDUCEN_NOPACK()
+    BENCHMARK_NTT_REDUCE(Add, N, noPack)
+    BENCHMARK_NTT_REDUCE(Max, N, noPack)
+    BENCHMARK_NTT_REDUCE(Min, N, noPack)
+    BENCHMARK_NTT_REDUCE(Mean, N, noPack)
 
-    BENCHMARK_NTT_REDUCE_ADD_REDUCEN_PACKN()
-    BENCHMARK_NTT_REDUCE_MAX_REDUCEN_PACKN()
-    BENCHMARK_NTT_REDUCE_MIN_REDUCEN_PACKN()
-    BENCHMARK_NTT_REDUCE_MEAN_REDUCEN_PACKN()
+    BENCHMARK_NTT_REDUCE(Add, M, packM)
+    BENCHMARK_NTT_REDUCE(Max, M, packM)
+    BENCHMARK_NTT_REDUCE(Min, M, packM)
+    BENCHMARK_NTT_REDUCE(Mean, M, packM)
 
-    BENCHMARK_NTT_REDUCE_ADD_REDUCEM_PACKM()
-    BENCHMARK_NTT_REDUCE_MAX_REDUCEM_PACKM()
-    BENCHMARK_NTT_REDUCE_MIN_REDUCEM_PACKM()
-    BENCHMARK_NTT_REDUCE_MEAN_REDUCEM_PACKM()
+    BENCHMARK_NTT_REDUCE(Add, N, packN)
+    BENCHMARK_NTT_REDUCE(Max, N, packN)
+    BENCHMARK_NTT_REDUCE(Min, N, packN)
+    BENCHMARK_NTT_REDUCE(Mean, N, packN)
 
     return 0;
 }
