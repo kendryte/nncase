@@ -14,6 +14,10 @@ namespace Nncase.Passes.Transforms;
 
 public sealed class AutoTilePass : ModulePass
 {
+    private readonly Dictionary<AffineTilerMemo, GridSchedule> _memo = new();
+
+    private readonly List<ExprPinner> _pinners = new();
+
     public AutoTilePass(CompileOptions compileOptions)
     {
         CompileOptions = compileOptions;
@@ -26,7 +30,7 @@ public sealed class AutoTilePass : ModulePass
         var funcs = input.Functions.Count;
         for (int i = 0; i < funcs; i++)
         {
-            var rewriter = new AutoTileRewriter(input, CompileOptions.TargetCompileOptions);
+            var rewriter = new AutoTileRewriter(input, CompileOptions.TargetCompileOptions, _memo, _pinners);
             input.Replace(i, (BaseFunction)rewriter.Rewrite(input.Functions[i]));
         }
 
@@ -38,16 +42,22 @@ public sealed class AutoTilePass : ModulePass
         private readonly IRModule _module;
         private readonly ITargetOptions _targetOptions;
 
-        public AutoTileRewriter(IRModule module, ITargetOptions targetOptions)
+        private readonly Dictionary<AffineTilerMemo, GridSchedule> _memo;
+
+        private readonly List<ExprPinner> _pinners = new();
+
+        public AutoTileRewriter(IRModule module, ITargetOptions targetOptions, Dictionary<AffineTilerMemo, GridSchedule> memo, List<ExprPinner> pinners)
         {
             _module = module;
             _targetOptions = targetOptions;
+            _memo = memo;
+            _pinners = pinners;
         }
 
         protected override Expr RewriteLeafGrid(Grid grid)
         {
             var scheduler = new AffineTiler(grid, _targetOptions);
-            return scheduler.Tile(_module);
+            return scheduler.Tile(_module, _memo, _pinners);
         }
     }
 }

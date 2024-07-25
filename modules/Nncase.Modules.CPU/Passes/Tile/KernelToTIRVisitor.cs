@@ -63,7 +63,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
         var op = expr.Target;
         switch (op)
         {
-            case PrimFunctionWrapper { Target: TIR.PrimFunction { ModuleKind: string mkind } deviceFunc } when mkind == Targets.CPUTarget.Kind:
+            case PrimFunctionWrapper { Target: TIR.PrimFunction { ModuleKind: string mkind } deviceFunc }:
                 _devices.Add(deviceFunc);
                 _mainBody.Add(new Call(deviceFunc, arguments.Concat(new[] { ret }).ToArray()));
                 break;
@@ -78,6 +78,9 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 break;
             case IR.Math.Unary unary:
                 GenerateUnary(unary.UnaryOp, arguments, ret);
+                break;
+            case IR.Math.Clamp clamp:
+                GenerateClamp(arguments, ret, ((TensorConst)expr[IR.Math.Clamp.Min]).Value.ToScalar<float>(), ((TensorConst)expr[IR.Math.Clamp.Max]).Value.ToScalar<float>());
                 break;
             case IR.CPU.Boxing boxing:
                 GenerateBoxing(boxing, arguments, ret, expr);
@@ -118,7 +121,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                         throw new NotSupportedException("not support this conv2d");
                     }
 
-                    _mainBody.Add(TIR.F.CPU.Conv2D(arguments[0], arguments[1], arguments[2], ret, strides, padding, dilation, groups, conv.PadMode));
+                    _mainBody.Add(TIR.F.CPU.Conv2D(arguments[0], arguments[1], arguments[2], ret, strides, padding, dilation, groups, conv.PadMode, (DistributedType)expr.CheckedType));
                 }
 
                 break;
@@ -142,10 +145,10 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.PackedLayerNorm(arguments[0], arguments[1], arguments[2], ret, layernorm.Axis, layernorm.Epsilon, layernorm.UseMean, Array.Empty<int>(), Array.Empty<int>()));
                 break;
             case IR.NN.InstanceNormalization instancenorm:
-                _mainBody.Add(TIR.F.CPU.InstanceNorm(arguments[0], arguments[1], arguments[2], ret, ((TensorConst)expr.Arguments[3]).Value.ToScalar<int>(), Array.Empty<int>(), Array.Empty<int>()));
+                _mainBody.Add(TIR.F.CPU.InstanceNorm(arguments[0], arguments[1], arguments[2], ret, ((TensorConst)expr.Arguments[3]).Value.ToScalar<int>(), Array.Empty<int>(), Array.Empty<int>(), (DistributedType)expr.CheckedType));
                 break;
             case IR.CPU.InstacneNorm instancenorm:
-                _mainBody.Add(TIR.F.CPU.InstanceNorm(arguments[0], arguments[1], arguments[2], ret, instancenorm.Epsilon, instancenorm.PackedAxes, instancenorm.PadedNums));
+                _mainBody.Add(TIR.F.CPU.InstanceNorm(arguments[0], arguments[1], arguments[2], ret, instancenorm.Epsilon, instancenorm.PackedAxes, instancenorm.PadedNums, (DistributedType)expr.CheckedType));
                 break;
             case IR.Imaging.ResizeImage resize:
                 if (expr.Arguments[1] is not None || resize.IsTFResize)
@@ -165,7 +168,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Reshape(arguments[0], ret, expr.CheckedShape.ToValueArray()));
                 break;
             case IR.Tensors.Slice slice:
-                _mainBody.Add(TIR.F.CPU.Slice(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[3]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[4]).Value.ToArray<int>()));
+                _mainBody.Add(TIR.F.CPU.Slice(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[3]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[4]).Value.ToArray<int>(), (DistributedType)expr.CheckedType));
                 break;
             case IR.Tensors.Concat concat:
                 _mainBody.Add(TIR.F.CPU.Concat(((IR.Tuple)expr.Arguments[0]).Fields.AsValueEnumerable().Select(GetBuffer).ToArray(), ret, concat.Axis));
@@ -183,7 +186,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Pad(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToArray<float>()[0]));
                 break;
             case IR.Math.Reduce reduce:
-                _mainBody.Add(TIR.F.CPU.Reduce(arguments[0], arguments[2], ret, Array.Empty<int>(), Array.Empty<int>(), ((TensorConst)expr.Arguments[1]).Value.ToArray<int>().OrderBy(a => a).ToArray(), ((TensorConst)expr.Arguments[3]).Value.ToArray<bool>()[0], reduce.ReduceOp));
+                _mainBody.Add(TIR.F.CPU.Reduce(arguments[0], ret, Array.Empty<int>(), Array.Empty<int>(), ((TensorConst)expr.Arguments[1]).Value.ToArray<int>().OrderBy(a => a).ToArray(), ((TensorConst)expr.Arguments[3]).Value.ToArray<bool>()[0], reduce.ReduceOp));
                 break;
             default:
                 throw new NotSupportedException();
@@ -208,7 +211,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                     case Call c:
                         var loc = MemoryLocation.Data;
                         var hierarchy = 1;
-                        var index = CheckRootCall(c, ref loc);
+                        var index = CheckRoot(c, ref loc);
                         if (c.Target is Boxing box && box.NewType is DistributedType d && !d.TensorType.Shape.Equals(c.Arguments[0].CheckedShape))
                         {
                             name += "_reshape";
@@ -256,7 +259,16 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
 
                         break;
                     case Var v:
+                        loc = MemoryLocation.Data;
+                        index = CheckRoot(v, ref loc);
                         buffer = T.AttachBuffer((TensorType)v.CheckedType, MemoryLocation.Input, 1, out _, out _, name);
+
+                        if (index != -1)
+                        {
+                            var bufferOut = T.AttachBuffer(IR.F.Buffer.DDrOf(buffer), (TensorType)v.CheckedType, MemoryLocation.Output, 1, out _, name + $"_viewed_out_{index}");
+                            _outputbuffers.Add((index, bufferOut));
+                        }
+
                         break;
                     case TensorConst c:
                         buffer = T.AttachBuffer(c, out _, name);
@@ -281,6 +293,11 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
         _mainBody.Add(TIR.F.CPU.Binary(binary.BinaryOp, arguments[0], arguments[1], ret));
     }
 
+    private void GenerateClamp(ReadOnlySpan<Buffer> arguments, Buffer ret, float min, float max)
+    {
+        _mainBody.Add(TIR.F.CPU.Clamp(arguments[0], ret, min, max));
+    }
+
     private void GenerateBoxing(IR.CPU.Boxing boxing, Buffer[] arguments, Buffer ret, Call expr)
     {
         switch (expr.Arguments[0].CheckedType, boxing.NewType)
@@ -301,7 +318,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 {
                     if (inType.NdSBP.Any(sbp => sbp is SBPPartialSum))
                     {
-                        // _mainBody.Add(TIR.F.CPU.GatherReduceScatter(arguments[0], ret, inType, outType));
+                        _mainBody.Add(TIR.F.CPU.GatherReduceScatter(arguments[0], ret, inType, outType));
                     }
                     else
                     {
@@ -392,18 +409,13 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
         _mainBody.Add(TIR.F.CPU.Expand(shape, distributedType, arguments[0], ret));
     }
 
-    private void GenerateClamp(ReadOnlySpan<Buffer> arguments, Buffer ret, float min, float max)
-    {
-        _mainBody.Add(TIR.F.CPU.Clamp(arguments[0], ret, min, max));
-    }
-
     private void GenerateWhere(ReadOnlySpan<Buffer> arguments, Buffer ret, DistributedType distributedType)
     {
         _mainBody.Add(TIR.F.CPU.Where(arguments[0], arguments[1], arguments[2], ret, distributedType));
     }
 #endif
 
-    private int CheckRootCall(Call c, ref MemoryLocation loc)
+    private int CheckRoot(Expr c, ref MemoryLocation loc)
     {
         var index = -1;
         if (VisitRootFusion.Body is Call rootCall && ReferenceEquals(c, rootCall))

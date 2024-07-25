@@ -12,6 +12,7 @@ using CommunityToolkit.HighPerformance;
 using Google.OrTools.ConstraintSolver;
 using Nncase.IR;
 using Nncase.IR.Affine;
+using Nncase.Targets;
 using Nncase.Utilities;
 
 namespace Nncase.Schedule;
@@ -25,9 +26,9 @@ internal sealed class TilingSolver
 
     public ITargetOptions TargetOptions { get; }
 
-    public GridSchedule Solve(int[] domainBounds, int[][] bufferShapes, AffineDim[] domain, AffineMap[] accessMaps, Op computation)
+    public GridSchedule Solve(int[] domainBounds, int[][] bufferShapes, AffineDim[] domain, AffineMap[] accessMaps, Op computation, int elemSize)
     {
-        int[] memoryCapacitys = new[] { 2 * 1024 * 1024, int.MaxValue };
+        int[] memoryCapacitys = new[] { 512 * 1024, int.MaxValue };
         int[] memoryBandWidths = new[] { 128, 4 };
 
         // string prefix, long bestObjective
@@ -56,7 +57,7 @@ internal sealed class TilingSolver
                 newFullDomain[memoryCapacitys.Length, i] = domain[i];
             }
 
-            result = SolveWithPermutation(domainBounds, bufferShapes, newFullDomain, accessMaps, loopMasks, memoryCapacitys, memoryBandWidths, $"dd", ref bestObjective, computation);
+            result = SolveWithPermutation(domainBounds, bufferShapes, newFullDomain, accessMaps, loopMasks, memoryCapacitys, memoryBandWidths, $"dd", ref bestObjective, computation, elemSize);
             if (result is not null)
             {
                 return result;
@@ -89,13 +90,13 @@ internal sealed class TilingSolver
         return new(masks);
     }
 
-    private GridSchedule? SolveWithPermutation(int[] domainBounds, int[][] bufferShapes, AffineDim[,] fullDomain, AffineMap[] accessMaps, LoopMasks[] loopMasks, int[] memoryCapacitys, int[] memoryBandWidths, string prefix, ref long bestObjective, Op computation)
+    private GridSchedule? SolveWithPermutation(int[] domainBounds, int[][] bufferShapes, AffineDim[,] fullDomain, AffineMap[] accessMaps, LoopMasks[] loopMasks, int[] memoryCapacitys, int[] memoryBandWidths, string prefix, ref long bestObjective, Op computation, int elemSize)
     {
         var totalLevel = memoryCapacitys.Length;
         var model = new Solver("tiling");
         IntExpr one = model.MakeIntConst(1, "one");
         IntExpr zero = model.MakeIntConst(0, "zero");
-        IntExpr elem = model.MakeIntConst(sizeof(float), "elem");
+        IntExpr elem = model.MakeIntConst(elemSize, "elem");
         var info = CompilerServices.GetOpMicroKernelInfo(computation, fullDomain.GetRow(totalLevel).ToArray(), accessMaps, bufferShapes, TargetOptions);
         var primitiveSizes = info.Primitives;
         var primitiveMultiplier = info.Multiplier;
@@ -163,7 +164,14 @@ internal sealed class TilingSolver
                     var subLevelWrites = dataWrites[ts, l, i] = new IntExpr[l + 1];
                     for (int sl = 0; sl < l + 1; sl++)
                     {
-                        subLevelPlace[sl] = model.MakeBoolVar($"place(b{ts}, {l}, {fullDomain[l, i]}, {sl})");
+                        if (l == 1 && sl == 1)
+                        {
+                            subLevelPlace[sl] = model.MakeIntConst(0, $"place(b{ts}, {l}, {fullDomain[l, i]}, {sl})");
+                        }
+                        else
+                        {
+                            subLevelPlace[sl] = model.MakeBoolVar($"place(b{ts}, {l}, {fullDomain[l, i]}, {sl})");
+                        }
 
                         // 2. compute data writes
                         subLevelWrites[sl] = bufferSizes[ts, l, i];

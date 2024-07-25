@@ -3,6 +3,7 @@
 
 using System.Reactive;
 using System.Runtime.CompilerServices;
+using Google.OrTools.Sat;
 using NetFabric.Hyperlinq;
 using Nncase.CodeGen;
 using Nncase.IR;
@@ -10,6 +11,7 @@ using Nncase.IR.CPU;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using Nncase.Targets;
+using Nncase.Utilities;
 using static Nncase.PatternMatch.Utility;
 
 [assembly: InternalsVisibleTo("Nncase.Tests")]
@@ -60,6 +62,16 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
     public CpuTargetOptions TargetOptions { get; }
 
     public IReadOnlyDictionary<string, (IRArray<SBP> NdSBP, Placement Placement)> Scheme { get; }
+
+    public static void MemoryExtractConstrains(CpModel model, IReadOnlyDictionary<ENode, BoolVar> vars)
+    {
+        var consts = vars.Keys.Where(k => k.Expr is Call { Target: IR.CPU.Boxing { NewType: DistributedType } } call && call.Arguments[0] is TensorConst tc && tc.Value.Length >= 8).ToArray();
+        model.Add(LinearExpr.WeightedSum(consts.Select(k => vars[k]), consts.Select(k =>
+        {
+            var type = DistributedUtility.GetDividedTensorType((DistributedType)k.Expr.CheckedType);
+            return TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
+        })) < (2L * 512L * 1024L * 1024L));
+    }
 
     public static IReadOnlyList<Expr> GetLeafCandidateBoxings(Expr expr, IEnumerable<Placement> placements)
     {
@@ -114,6 +126,8 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             }
 
             var root = Unions(graph, equivalents);
+
+            // EGraphExtractConstrains constrain1 = MemoryExtractConstrains;
             var post = graph.Extract(root, CompileOptions, null, Array.Empty<EGraphExtractConstrains>());
             return function.With(body: post);
         }

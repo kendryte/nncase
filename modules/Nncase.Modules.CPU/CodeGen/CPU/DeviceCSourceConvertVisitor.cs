@@ -22,10 +22,11 @@ using Razor.Templating.Core;
 
 namespace Nncase.CodeGen.CPU;
 
-internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
+public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 {
-    private readonly Dictionary<Expr, CSymbol> _exprMemo;
-    private readonly StringBuilder _deviceBuilder;
+#pragma warning disable SA1401
+    protected readonly Dictionary<Expr, CSymbol> _exprMemo;
+    protected readonly StringBuilder _deviceBuilder;
 
     public DeviceCSourceConvertVisitor()
     {
@@ -279,12 +280,17 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 }).Result);
                 break;
             case TIR.CPU.Swish swish:
-                if (swish.Beta != 1.0f)
+                if (swish.Beta == 1.0f)
                 {
-                    throw new NotSupportedException();
+                    IndentScope.Writer.IndWrite($"unary<ops::swish>({arguments[0].Name}, {arguments[1].Name});\n");
+                }
+                else
+                {
+                    IndentScope.Writer.IndWrite($"float beta[1] = {{{swish.Beta}}};\n");
+                    IndentScope.Writer.IndWrite($"tensor_view<float, fixed_shape<1>> tb(std::span<float, 1>(beta, beta + 1));\n");
+                    IndentScope.Writer.IndWrite($"binary<ops::swishb>({arguments[0].Name}, tb, {arguments[1].Name});\n");
                 }
 
-                IndentScope.Writer.IndWrite($"unary<ops::swish>({arguments[0].Name}, {arguments[1].Name});\n");
                 break;
             case TIR.CPU.Matmul matmul:
                 IndentScope.Writer.IndWrite($"if ({arguments[3].Name}) {{\n");

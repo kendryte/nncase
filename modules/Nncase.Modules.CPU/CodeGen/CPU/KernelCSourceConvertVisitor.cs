@@ -22,7 +22,7 @@ using Razor.Templating.Core;
 
 namespace Nncase.CodeGen.CPU;
 
-internal struct IndentScope : IDisposable
+public struct IndentScope : IDisposable
 {
     private static readonly AsyncLocal<IndentWriter?> _writer = new AsyncLocal<IndentWriter?>();
 
@@ -84,7 +84,7 @@ public sealed class CSymbol
     public override string ToString() => $"{Type} {Name}";
 }
 
-internal sealed class IndentWriter : StringWriter
+public sealed class IndentWriter : StringWriter
 {
     public IndentWriter(StringBuilder sb, int indent = 0)
         : base(sb)
@@ -463,7 +463,12 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     IndentScope.Writer.Write($"pad<{string.Join(",", pad.Paddings)}>({Visit(args[0]).Name}, {Visit(args[1]).Name}, {args[0].CheckedDataType.ToC()} {{ {pad.PadValue} }} );\n");
                     break;
                 case TIR.CPU.Reduce reduce:
-                    IndentScope.Writer.Write($"reduce<ops::{reduce.ReduceOp.ToC()}>({Visit(args[0]).Name}, {Visit(args[2]).Name}, fixed_shape<{string.Join(",", reduce.Axis)}>{{}}, fixed_shape<{string.Join(",", reduce.PackedAxes)}>{{}}, fixed_shape<{string.Join(",", reduce.PadedNums)}>{{}});\n");
+                    IndentScope.Writer.Write($"reduce<ops::{reduce.ReduceOp.ToC()}>({Visit(args[0]).Name}, {Visit(args[1]).Name}, fixed_shape<{string.Join(",", reduce.Axis)}>{{}}, fixed_shape<{string.Join(",", reduce.PackedAxes)}>{{}}, fixed_shape<{string.Join(",", reduce.PadedNums)}>{{}});\n");
+                    break;
+                case TIR.CPU.Clamp clamp:
+                    string min = clamp.Min is float.NegativeInfinity ? float.MinValue.ToString() : clamp.Min.ToString();
+                    string max = clamp.Max is float.PositiveInfinity ? float.MaxValue.ToString() : clamp.Max.ToString();
+                    IndentScope.Writer.Write($"clamp({Visit(args[0]).Name}, {Visit(args[1]).Name}, (float){min}, (float){max});\n");
                     break;
                 default:
                     throw new NotSupportedException(xpuOp.ToString());

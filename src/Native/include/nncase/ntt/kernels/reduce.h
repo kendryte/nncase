@@ -55,7 +55,7 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
         slice_fixed_dims<input_strides.rank() - Axes::rank() - Axes::at(0),
                          Axes::at(0) + Axes::rank()>(input_strides));
 
-    constexpr auto ostrides = output_strides;
+    [[maybe_unused]] constexpr auto ostrides = output_strides;
     constexpr auto rank =
         input_shape.rank() == output_shape.rank()
             ? output_strides.rank() - Axes::rank() - Axes::at(0)

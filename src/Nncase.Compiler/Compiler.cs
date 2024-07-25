@@ -144,6 +144,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldDilatedConv2D>();
             p.Add<Passes.Rules.Neutral.DecomposeSoftmax>();
             p.Add<Passes.Rules.Neutral.DecomposeLayerNorm>();
+            p.Add<Passes.Rules.Neutral.BianryScalarConstToTensor>();
         });
 
         passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>

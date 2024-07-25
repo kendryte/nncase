@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Nncase.CostModel;
 using Nncase.Diagnostics;
 using Nncase.IR;
@@ -19,9 +20,9 @@ namespace Nncase.Evaluator.Math;
 /// </summary>
 public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICostEvaluator<MatMul>, IShapeEvaluator<MatMul>, IMetricEvaluator<MatMul>
 {
-    public static IRType VisitDistributedType(DistributedType a, DistributedType b)
+    public static IRType VisitDistributedType(DistributedType a, DistributedType b, bool packingK = false)
     {
-        if (VisitTensorType(a.TensorType, b.TensorType) is not TensorType outType)
+        if (VisitTensorType(a.TensorType, b.TensorType, packingK) is not TensorType outType)
         {
             return new InvalidType($"{a.TensorType} {b.TensorType} not support");
         }
@@ -105,7 +106,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         return new DistributedType(outType, ndsbp, a.Placement);
     }
 
-    public static IRType VisitTensorType(TensorType lhs, TensorType rhs)
+    public static IRType VisitTensorType(TensorType lhs, TensorType rhs, bool packingK = false)
     {
         if (lhs.Shape.IsUnranked || rhs.Shape.IsUnranked)
         {
@@ -117,7 +118,9 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         //     return new TensorType(lhs.DType, Shape.Unranked);
         // }
         DataType dtype = lhs.DType;
-        if (lhs.DType != rhs.DType)
+        DataType lhsDType = lhs.DType is VectorType l ? l.ElemType : lhs.DType;
+        DataType rhsDType = rhs.DType is VectorType r ? r.ElemType : rhs.DType;
+        if (lhsDType != rhsDType)
         {
             return new InvalidType("MatMul lhs and rhs have different DType");
         }
@@ -127,16 +130,46 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             return new InvalidType("MatMul lhs and rhs have not compatiable shape");
         }
 
-        if (lhs.DType is VectorType vl && rhs.DType is VectorType vr)
+        if (lhs.DType is VectorType vl1 && rhs.DType is not VectorType)
         {
-            if (vl.Lanes.Count != vr.Lanes.Count)
+            if (vl1.Lanes.Count != 1)
             {
-                return new InvalidType("MatMul lhs and rhs have different lanes vector type.");
+                return new InvalidType("Only packing m is supported when rhs is not vector type.");
             }
 
-            if (vl.Lanes.Count == 1)
+            dtype = vl1;
+        }
+        else if (lhs.DType is not VectorType && rhs.DType is VectorType vr1)
+        {
+            if (vr1.Lanes.Count != 1)
             {
-                dtype = vl.ElemType;
+                return new InvalidType("Only packing n is supported when lhs is not vector type.");
+            }
+
+            dtype = vr1;
+        }
+        else if (lhs.DType is VectorType vl && rhs.DType is VectorType vr)
+        {
+            // pack k or m&n
+            if (vl.Lanes.Count == 1 && vr.Lanes.Count == 1)
+            {
+                dtype = packingK ? vl.ElemType : new VectorType(vl.ElemType, vl.Lanes[0], vr.Lanes[0]);
+            }
+            else if (vl.Lanes.Count == 1 && vr.Lanes.Count == 2)
+            {
+                dtype = new VectorType(vl.ElemType, vr.Lanes[1]);
+            }
+            else if (vl.Lanes.Count == 2 && vr.Lanes.Count == 1)
+            {
+                dtype = new VectorType(vr.ElemType, vl.Lanes[0]);
+            }
+            else if (vl.Lanes.Count == 2 && vr.Lanes.Count == 2)
+            {
+                dtype = new VectorType(vl.ElemType, vl.Lanes[0], vr.Lanes[1]);
+            }
+            else
+            {
+                return new InvalidType("Not supported packing.");
             }
         }
 

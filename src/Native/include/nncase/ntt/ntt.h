@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "kernels/binary.h"
+#include "kernels/clamp.h"
 #include "kernels/concat.h"
 #include "kernels/conv2d.h"
 #include "kernels/copy.h"
