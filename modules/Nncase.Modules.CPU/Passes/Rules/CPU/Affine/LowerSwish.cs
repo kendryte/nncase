@@ -13,6 +13,13 @@ namespace Nncase.Passes.Rules.CPU.Affine;
 [RuleGenerator]
 public partial class LowerSwish : RewriteRule<Pattern>
 {
+    public LowerSwish(string moduleKind = CPUTarget.Kind)
+    {
+        ModuleKind = moduleKind;
+    }
+
+    public string ModuleKind { get; }
+
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = PatternMatch.F.NN.IsSwish(
       "swish",
@@ -29,7 +36,7 @@ public partial class LowerSwish : RewriteRule<Pattern>
             _ => throw new ArgumentOutOfRangeException(nameof(input)),
         };
         var rank = input.CheckedShape.Rank;
-        return IR.F.Affine.Grid(CPUTarget.Kind)
+        return IR.F.Affine.Grid(ModuleKind)
             .Domain(rank, out var _)
             .Read(input, AffineMap.Identity(rank), out var inTile)
             .Write(outBuffer, AffineMap.Identity(rank), out var outTile)

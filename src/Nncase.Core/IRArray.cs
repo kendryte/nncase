@@ -105,7 +105,7 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
     /// <inheritdoc/>
     public bool Equals(object? other, IEqualityComparer comparer)
     {
-        return other is IRArray<T> rhs && ((IStructuralEquatable)_array).Equals(rhs._array, comparer);
+        return other is IRArray<T> array && ((IStructuralEquatable)_array).Equals(array._array, comparer);
     }
 
     /// <inheritdoc/>

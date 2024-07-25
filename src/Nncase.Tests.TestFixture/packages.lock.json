@@ -815,6 +815,8 @@
           "Nncase.Modules.StackVM": "[1.0.0, )",
           "Nncase.Passes": "[1.0.0, )",
           "Nncase.Schedule": "[1.0.0, )",
+          "QuikGraph": "[2.5.0, )",
+          "QuikGraph.Graphviz": "[2.5.0, )",
           "Razor.Templating.Core": "[1.9.0, )"
         }
       },

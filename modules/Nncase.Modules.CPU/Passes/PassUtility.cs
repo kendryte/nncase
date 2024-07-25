@@ -19,7 +19,7 @@ public static class PassUtility
             return true;
         }
 
-        return op is IR.Math.Unary or IR.Math.Binary { BinaryOp: BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div } or IR.Math.MatMul or IR.NN.Conv2D { PadMode: PadMode.Constant } or IR.NN.Softmax or IR.NN.LayerNorm or IR.NN.InstanceNormalization or IR.Imaging.ResizeImage { IsTFResize: false } or IR.Tensors.Unsqueeze or IR.Tensors.Reshape or IR.Tensors.Slice or IR.Tensors.Concat or IR.Tensors.Transpose or IR.NN.Swish or IR.Tensors.Gather or IR.NN.Pad { PadMode: PadMode.Constant } or IR.Math.Reduce;
+        return op is IR.Math.Unary or IR.Math.Binary { BinaryOp: BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div } or IR.Math.MatMul or IR.NN.Conv2D { PadMode: PadMode.Constant } or IR.NN.Softmax or IR.NN.LayerNorm or IR.NN.InstanceNormalization or IR.Imaging.ResizeImage { IsTFResize: false } or IR.Tensors.Unsqueeze or IR.Tensors.Reshape or IR.Tensors.Slice or IR.Tensors.Concat or IR.Tensors.Transpose or IR.NN.Swish or IR.Tensors.Gather or IR.NN.Pad { PadMode: PadMode.Constant } or IR.Math.Reduce or IR.Math.Clamp;
     }
 
     public static bool IsCpuSupported(Op op, IEnumerable<Expr> arguments)
@@ -63,7 +63,7 @@ public static class PassUtility
             case IR.NN.Conv2D conv2d:
                 if (((TensorConst)arguments.Skip(IR.NN.Conv2D.FusedClamp.Index).First()).Value.ToArray<float>() is var clamp)
                 {
-                    return clamp == new[] { float.NegativeInfinity, float.PositiveInfinity };
+                    return clamp.SequenceEqual(new[] { float.NegativeInfinity, float.PositiveInfinity });
                 }
 
                 break;

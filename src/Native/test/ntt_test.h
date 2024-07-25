@@ -140,8 +140,8 @@ bool compare_tensor(ntt::tensor<T, Shape, Stride> &lhs,
         if (lhs.shape()[i] != rhs.shape()[i])
             return false;
 
-    std::vector<double> v1;
-    std::vector<double> v2;
+    std::vector<T> v1;
+    std::vector<T> v2;
     v1.reserve(lhs.shape().length());
     v2.reserve(rhs.shape().length());
 
@@ -149,9 +149,8 @@ bool compare_tensor(ntt::tensor<T, Shape, Stride> &lhs,
     nncase::ntt::apply(lhs.shape(), [&](auto index) {
         auto lvalue = lhs(index);
         auto rvalue = rhs(index);
-        v1.push_back(static_cast<double>(lvalue));
-        v2.push_back(static_cast<double>(rvalue));
-
+        v1.push_back(lvalue);
+        v2.push_back(rvalue);
         if (lvalue != rvalue) {
             // std::cout << "index = (";
             // for (size_t i = 0; i < index.rank(); i++)
@@ -177,5 +176,153 @@ bool compare_tensor(ntt::tensor<T, Shape, Stride> &lhs,
     }
     return pass;
 }
+
+template <typename T, typename Shape,
+          typename Stride = ntt::default_strides_t<Shape>, size_t N>
+bool compare_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
+                    ntt::tensor<ntt::vector<T, N>, Shape, Stride> &rhs,
+                    double threshold = 0.999f) {
+    if (lhs.shape().rank() != rhs.shape().rank()) {
+        return false;
+    }
+
+    for (size_t i = 0; i < lhs.shape().rank(); i++)
+        if (lhs.shape()[i] != rhs.shape()[i])
+            return false;
+
+    std::vector<T> v1;
+    std::vector<T> v2;
+    v1.reserve(lhs.shape().length());
+    v2.reserve(rhs.shape().length());
+
+    bool pass = true;
+    nncase::ntt::apply(lhs.shape(), [&](auto index) {
+        auto lvalue = lhs(index);
+        auto rvalue = rhs(index);
+
+        nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
+            v1.push_back(lvalue(idx));
+            v2.push_back(rvalue(idx));
+            if (lvalue(idx) != rvalue(idx)) {
+                // std::cout << "index = (";
+                // for (size_t i = 0; i < index.rank(); i++)
+                //     std::cout << index[i] << " ";
+                // std::cout << "): lhs = " << lvalue(idx) << ", rhs = " <<
+                // rvalue(idx)
+                //           << std::endl;
+                pass = false;
+            }
+        });
+    });
+
+    if (!pass) {
+        double dotProduct =
+            std::inner_product(v1.begin(), v1.end(), v2.begin(), (double)0.0);
+        double norm1 = std::sqrt(
+            std::inner_product(v1.begin(), v1.end(), v1.begin(), (double)0.0));
+        double norm2 = std::sqrt(
+            std::inner_product(v2.begin(), v2.end(), v2.begin(), (double)0.0));
+        double cosine_similarity = dotProduct / (norm1 * norm2);
+        pass = cosine_similarity > threshold;
+        if (!pass)
+            std::cerr << "cosine_similarity = " << cosine_similarity
+                      << std::endl;
+    }
+    return pass;
+}
+
+template <typename T> T ulp(T x) {
+    x = std::fabs(x);
+    if (std::isfinite(x)) {
+        T lower = std::nextafter(x, static_cast<T>(-1.0));
+        return x - lower;
+    }
+    return x;
+}
+
+template <typename T, typename Shape,
+          typename Stride = ntt::default_strides_t<Shape>>
+bool compare_ulp(ntt::tensor<T, Shape, Stride> &lhs,
+                 ntt::tensor<T, Shape, Stride> &rhs, double threshold = 0.5f) {
+    if (lhs.shape().rank() != rhs.shape().rank()) {
+        return false;
+    }
+
+    for (size_t i = 0; i < lhs.shape().rank(); i++)
+        if (lhs.shape()[i] != rhs.shape()[i])
+            return false;
+
+    std::vector<T> v1;
+    std::vector<T> v2;
+    v1.reserve(lhs.shape().length());
+    v2.reserve(rhs.shape().length());
+
+    bool pass = true;
+    double max_ulp_error = 0.f;
+    nncase::ntt::apply(lhs.shape(), [&](auto index) {
+        auto lvalue = lhs(index);
+        auto rvalue = rhs(index);
+        auto ulp_error = std::abs(lvalue - rvalue) / ulp(rvalue);
+        max_ulp_error = ulp_error > max_ulp_error ? ulp_error : max_ulp_error;
+    });
+
+    if (max_ulp_error > threshold) {
+        std::cout << "ulp threshold = " << threshold
+                  << ", max_ulp_error = " << max_ulp_error << std::endl;
+
+        pass = false;
+    }
+    std::cout << "ulp threshold = " << threshold
+              << ", max_ulp_error = " << max_ulp_error << std::endl;
+    return pass;
+}
+
+template <typename T, size_t N, typename Shape,
+          typename Stride = ntt::default_strides_t<Shape>>
+bool compare_ulp(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
+                 ntt::tensor<ntt::vector<T, N>, Shape, Stride> &rhs,
+                 double threshold = 0.5f) {
+    if (lhs.shape().rank() != rhs.shape().rank()) {
+        return false;
+    }
+
+    for (size_t i = 0; i < lhs.shape().rank(); i++)
+        if (lhs.shape()[i] != rhs.shape()[i])
+            return false;
+
+    std::vector<T> v1;
+    std::vector<T> v2;
+    v1.reserve(lhs.shape().length());
+    v2.reserve(rhs.shape().length());
+
+    bool pass = true;
+    double max_ulp_error = 0.f;
+    nncase::ntt::apply(lhs.shape(), [&](auto index) {
+        auto lvalue = lhs(index);
+        auto rvalue = rhs(index);
+
+        nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
+            auto ulp_error =
+                std::abs(lvalue(idx) - rvalue(idx)) / ulp(rvalue(idx));
+            max_ulp_error =
+                ulp_error > max_ulp_error ? ulp_error : max_ulp_error;
+            // std::cout << "lvalue(idx) = " << lvalue(idx)
+            //           << ", rvalue(idx) = " << rvalue(idx)
+            //           << ", ulp(rvalue(idx) = " << ulp(rvalue(idx))
+            //           << ", max_ulp_error = " << max_ulp_error << std::endl;
+        });
+    });
+
+    if (max_ulp_error > threshold) {
+        std::cout << "ulp threshold = " << threshold
+                  << ", max_ulp_error = " << max_ulp_error << std::endl;
+
+        pass = false;
+    }
+    std::cout << "ulp threshold = " << threshold
+              << ", max_ulp_error = " << max_ulp_error << std::endl;
+    return pass;
+}
+
 } // namespace NttTest
 } // namespace nncase

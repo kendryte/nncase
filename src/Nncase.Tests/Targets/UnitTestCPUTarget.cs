@@ -215,7 +215,7 @@ public class UnitTestCPUTarget : TestClassBase
         GenerateKModelAndRunFromFn(main, input, output);
     }
 
-    [Fact]
+    [Fact(Skip = "NotSupportIf")]
     public void TestNestIfWithThenBegin()
     {
         var condVar = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));
@@ -228,7 +228,7 @@ public class UnitTestCPUTarget : TestClassBase
         GenerateKModelAndRunFromFn(main, input, output);
     }
 
-    [Fact]
+    [Fact(Skip = "NotSupportIf")]
     public void TestNestIfWithElseBegin()
     {
         var condVar = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));

@@ -42,7 +42,8 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
         contiguous_dims(input_shape, input_strides);
     constexpr size_t output_contiguous_dims =
         contiguous_dims(output_shape, output_strides);
-    static_assert(in_contigous_dim != 0 || output_contiguous_dims != 0,
+    static_assert(in_contigous_dim == input_shape.rank() &&
+                      output_contiguous_dims == output_shape.rank(),
                   "only support contiguous for now!");
 
     constexpr auto domain = concat_fixed_dims(
@@ -54,7 +55,7 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
         slice_fixed_dims<input_strides.rank() - Axes::rank() - Axes::at(0),
                          Axes::at(0) + Axes::rank()>(input_strides));
 
-    constexpr auto ostrides = output_strides;
+    [[maybe_unused]] constexpr auto ostrides = output_strides;
     constexpr auto rank =
         input_shape.rank() == output_shape.rank()
             ? output_strides.rank() - Axes::rank() - Axes::at(0)
@@ -88,8 +89,8 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
             TIElem mean = (TIElem)0;
             for (size_t i = 0; i < inner_size; i++)
                 mean = mean +
-                       (input_p[i * input_strides[Axes::at(Axes::rank() - 1)]] /
-                        finner_size);
+                       input_p[i * input_strides[Axes::at(Axes::rank() - 1)]];
+            mean = mean / finner_size;
             if constexpr (UseVectorReduce) {
                 output_p[0] = reduce_sum(mean);
             } else {

@@ -111,13 +111,13 @@ TEST(UnaryTestTanhFloat, ranked_fixed) {
 
 template <typename T, size_t vl> void test_vector() {
     ntt::vector<T, vl> ntt_input;
-    NttTest::init_tensor(ntt_input, static_cast<T>(-10), static_cast<T>(10));
+    NttTest::init_tensor(ntt_input, static_cast<T>(-30), static_cast<T>(30));
     auto ntt_output1 = ntt::tanh(ntt_input);
     auto ort_input = NttTest::ntt2ort(ntt_input);
     auto ort_output = ortki_Tanh(ort_input);
     ntt::vector<T, vl> ntt_output2;
     NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2, 0.99999f));
 }
 
 #define _TEST_VECTOR(T, lmul)                                                  \

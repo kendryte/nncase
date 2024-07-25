@@ -14,6 +14,13 @@ namespace Nncase.Passes.Rules.CPU.Affine;
 [RuleGenerator]
 public partial class LowerMatmul : RewriteRule<Pattern>
 {
+    public LowerMatmul(string moduleKind = CPUTarget.Kind)
+    {
+        ModuleKind = moduleKind;
+    }
+
+    public string ModuleKind { get; }
+
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = PatternMatch.F.Math.IsMatMul(
       "matmul",
@@ -82,7 +89,7 @@ public partial class LowerMatmul : RewriteRule<Pattern>
             DistributedType dt => IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape.ToValueArray(), dt.NdSBP, dt.Placement),
             _ => throw new ArgumentOutOfRangeException(nameof(call)),
         };
-        return IR.F.Affine.Grid(CPUTarget.Kind)
+        return IR.F.Affine.Grid(ModuleKind)
             .Domain(rank, out var domainVar)
             .Read(lhs, lhsMap, out var lhsTile)
             .Read(rhs, rhsMap, out var rhsTile)

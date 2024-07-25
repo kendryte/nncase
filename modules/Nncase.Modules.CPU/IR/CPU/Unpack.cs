@@ -22,8 +22,10 @@ public sealed partial class Unpack : Op
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(Unpack), 0, "input", ParameterKind.Input);
 
+    public IRArray<int> Lanes { get; }
+
     public IRArray<int> Axes { get; }
 
     /// <inheritdoc/>
-    public override string DisplayProperty() => $"Axes: {Axes}";
+    public override string DisplayProperty() => $"Lanes: {Lanes}, Axes: {Axes}";
 }

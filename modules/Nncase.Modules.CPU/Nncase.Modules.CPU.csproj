@@ -10,6 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="QuikGraph" />
+    <PackageReference Include="QuikGraph.Graphviz" />
     <PackageReference Include="Razor.Templating.Core" />
   </ItemGroup>
   

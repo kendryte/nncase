@@ -38,11 +38,35 @@ public class CPUTarget : ITarget
             description: "enable layout optimization.",
             getDefaultValue: () => false);
         cmd.AddOption(packingOption);
+        var hierarchyOption = new Option<IEnumerable<int[]>>(
+            name: "--hierarchy",
+            description: "the topology of hardware. eg. `8,4 4,8` for dynamic cluster search or `4` for fixed hardware",
+            parseArgument: result =>
+            {
+                return result.Tokens.Select(tk => tk.Value.Split(",").Select(i => int.Parse(i)).ToArray());
+            })
+        {
+            AllowMultipleArgumentsPerToken = true,
+        };
+        cmd.AddOption(hierarchyOption);
+        var hierarchyNameOption = new Option<string>(
+            name: "--hierarchy-name",
+            description: "the name identify of hierarchy.",
+            getDefaultValue: () => "b");
+        cmd.AddOption(hierarchyNameOption);
+        var schemeOption = new Option<string>(
+            name: "--scheme",
+            description: "the distributed scheme path.",
+            getDefaultValue: () => string.Empty);
+        cmd.AddOption(schemeOption);
 
         ITargetOptions ParseTargetCompileOptions(InvocationContext context, Command command)
         {
             var packing = context.ParseResult.GetValueForOption(packingOption);
-            return new CpuTargetOptions() { Packing = packing };
+            var hierarchy = context.ParseResult.GetValueForOption(hierarchyOption);
+            var hierarchyName = context.ParseResult.GetValueForOption(hierarchyNameOption);
+            var scheme = context.ParseResult.GetValueForOption(schemeOption);
+            return new CpuTargetOptions() { Packing = packing, Hierarchy = hierarchy?.ToArray() ?? new[] { new[] { 1 } }, HierarchyNames = hierarchyName ?? "b", DistributedScheme = scheme ?? string.Empty };
         }
 
         return (cmd, ParseTargetCompileOptions);
@@ -119,34 +143,10 @@ public class CPUTarget : ITarget
         }
 
         // need refactor tiling.
-        passManager.Add<AutoDistributedPass>();
-        passManager.Add<DataflowPass>().Configure(p =>
-        {
-            p.Add<Passes.Rules.CPU.CPUOutputBoxingFusion>(CPUTarget.Kind);
-            p.Add<Passes.Rules.CPU.CPUSingleFusion>(CPUTarget.Kind);
-        });
-        passManager.Add<DataflowPass>().Configure(p =>
-        {
-            p.AddAnalysis<Passes.Analysis.IExprUserAnalysisResult>();
-            p.Add<Passes.Rules.CPU.DeterminedFusionMergeRule>();
-            p.Add<Passes.Rules.CPU.ConcatFusionMergeRule>();
-            p.Add<Passes.Rules.CPU.TupleFusionMergeRule>();
-        });
-        passManager.AddWithName<EGraphRulesPass>("PartitionConstruct").Configure(p =>
-        {
-            p.Add<Passes.Rules.CPU.GeneralFusionMergeRule>();
-        });
-        passManager.AddWithName<EGraphExtractPass>("PartitionExtract").Configure(p =>
-        {
-            p.AddBaseFuncCostEvaluator<Passes.Rules.CPU.FusionCostEvaluator>();
-        });
-        passManager.Add<DataflowPass>().Configure(p =>
-        {
-            p.AddAnalysis<Passes.Analysis.IExprUserAnalysisResult>();
-            p.Add<Passes.Rules.CPU.DeterminedFusionMergeRule>();
-        });
+        passManager.Add<Passes.Distributed.AutoDistributedPass>();
 
-        // passManager.Add<CPUFunctionPartitionPass>();
+        passManager.Add<Nncase.Passes.CPUFunctionPartitionPass>(CPUTarget.Kind);
+
         passManager.Add<CPUFusionToModulePass>();
 
         passManager.AddWithName<DataflowPass>("LowerToAffine").Configure(p =>
