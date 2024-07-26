@@ -26,6 +26,8 @@ else()
 
     if (APPLE)
         add_compile_options(-fno-stack-check -Wno-c++11-narrowing)
+    else()
+        add_compile_options(-Wnarrowing)
     endif()
 endif()
 

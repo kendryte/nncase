@@ -10,7 +10,6 @@ namespace Nncase.Schedule;
 
 public static class TilingUtilities
 {
-
     public static Expr GetUninitialized(Expr expr)
     {
         return expr.CheckedType switch

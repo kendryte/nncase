@@ -119,7 +119,16 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 #if DEBUG_PRINT
         IndentScope.Writer.IndWrite($"runtime_util->printf(\"let {@var.Name}\\n\");\n");
 #endif
-        IndentScope.Writer.IndWrite($"{value.Type} {@var.Name} = {value.Name};\n");
+        if (value.Type.StartsWith("array"))
+        {
+            var ss = value.Type.Split(" ");
+            IndentScope.Writer.IndWrite($"{ss[1]} {@var.Name}[{ss[2]}];\n");
+        }
+        else
+        {
+            IndentScope.Writer.IndWrite($"{value.Type} {@var.Name} = {value.Name};\n");
+        }
+
         Visit(expr.Body);
 
         symbol = new(string.Empty, string.Empty);
@@ -148,6 +157,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         {
             "uint8_t *" => $"std::span<uint8_t, {size.Name}>({name}, {size.Name})",
             "auto" => $"std::span({name})",
+            string s when s.StartsWith("array") => $"std::span({name})",
             _ => throw new NotSupportedException(start.Type),
         };
 
@@ -230,8 +240,8 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 }
                 else
                 {
-                    type = "auto";
-                    str = $"std::array<{((PointerType)expr.CheckedDataType).ElemType.ToC()}, {arguments[0].Name}>()";
+                    type = $"array {((PointerType)expr.CheckedDataType).ElemType.ToC()} {arguments[0].Name}";
+                    str = $"";
                 }
 
                 break;

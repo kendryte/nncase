@@ -296,6 +296,7 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
             {
                 var x = offset.Fields[j] - parentOffsets.Fields[j];
                 subOffset[j] = x;
+
                 // CompilerServices.ERewrite(x, new Passes.IRewriteRule[] { new Passes.Rules.Arithmetic.AssociateAdd(), new Passes.Rules.Arithmetic.CommutateAdd(), new Passes.Rules.Arithmetic.XNegX(), new Passes.Rules.Arithmetic.XNegX0() }, new(), CompileOptions);
             }
 
