@@ -75,7 +75,7 @@ public static class IRHelpers
 
         foreach (var user in users)
         {
-            Trace.Assert(user.Users.Count > 0);
+            Trace.Assert(user.Users.Any());
         }
     }
 }

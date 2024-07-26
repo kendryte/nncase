@@ -7,18 +7,26 @@ using Google.OrTools.ConstraintSolver;
 
 namespace Nncase.Schedule.TileTree;
 
-public sealed class TreeSolverPrinter : TreeSolverBase, ITreeNodeVisitor<Unit, Unit>
+public sealed class TreeSolverPrinter : TreeSolverBase, ITreeNodeVisitor<IndentedTextWriter, Unit>
 {
-    public TreeSolverPrinter(StreamWriter writer, Assignment? solution, Solver solver, IntExpr one, IntExpr zero, IntExpr elem, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainInfos, ITargetOptions targetOptions)
-        : base(solver, primitiveBufferInfo, levelBufferInfos, domainInfos, targetOptions)
+    public TreeSolverPrinter(Assignment? solution, Solver solver, Dictionary<OpNode, OpNodeInfo> opNodeMemo, Dictionary<TileNode, TileNodeInfo> tileNodeMemo, Dictionary<ITileAbleNode, DomainInfo> tileableNodeMemo, ITargetOptions targetOptions)
+        : base(solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions)
     {
-        Writer = new IndentedTextWriter(writer, "  ");
         Solution = solution;
     }
 
-    public IndentedTextWriter Writer { get; }
-
     public Assignment? Solution { get; }
+
+    public static void WriteIntExpr(IndentedTextWriter writer, string prefix, PropagationBaseObject intExpr, Assignment? solution = null)
+    {
+        string value = string.Empty;
+        if (solution is Assignment assignment && intExpr is IntExpr expr)
+        {
+            value = $"= {assignment.Value(expr.Var())}";
+        }
+
+        writer.WriteLine($"{prefix}: {intExpr.ToSimplifyString()} {value}");
+    }
 
     public static void WriteIntExprVector(IndentedTextWriter writer, string prefix, PropagationBaseObject[] intExprs, Assignment? solution = null)
     {
@@ -51,85 +59,85 @@ public sealed class TreeSolverPrinter : TreeSolverBase, ITreeNodeVisitor<Unit, U
         writer.Indent--;
     }
 
-    public Unit Visit(ScopeNode value, Unit context)
+    public Unit Visit(ScopeNode value, IndentedTextWriter writer)
     {
-        Writer.WriteLine($"# scope");
+        writer.WriteLine($"# scope");
         foreach (var child in value.Children)
         {
-            child.Accept(this, context);
+            child.Accept(this, writer);
         }
 
         return default;
     }
 
-    public Unit Visit(TileNode value, Unit context)
+    public Unit Visit(TileNode value, IndentedTextWriter writer)
     {
-        Writer.WriteLine($"\"\"\"");
-        Writer.Indent++;
-        Writer.WriteLine($"Tile Op {value.OpId} at level {value.Level}");
-        Writer.WriteLine($"Domain Relation {value.DomainRelation}");
-        WriteIntExprVector(Writer, "domainInfo", TileableNodeMemo[value].TileVars, Solution);
+        writer.WriteLine($"\"\"\"");
+        writer.Indent++;
+        writer.WriteLine($"Tile Op {value.OpId} at level {value.Level}");
+        writer.WriteLine($"Domain Relation {value.DomainRelation}");
+        WriteIntExprVector(writer, "domainInfo", TileableNodeMemo[value].TileVars, Solution);
 
-        WriteIntExprMatrix(Writer, "BackWardExtents", TileNodeMemo[value].BackWardExtents, Solution);
+        WriteIntExprMatrix(writer, "BackWardExtents", TileNodeMemo[value].BackWardExtents, Solution);
 
-        Writer.WriteLine($"BufferInfo:");
-        Writer.Indent++;
+        writer.WriteLine($"BufferInfo:");
+        writer.Indent++;
         foreach (var (bid, info) in TileNodeMemo[value].BufferInfoMap)
         {
-            Writer.WriteLine($"{bid}:");
-            Writer.Indent++;
-            WriteIntExprMatrix(Writer, "Shapes", info.Shapes, Solution);
-            WriteIntExprVector(Writer, "SizeVars", info.SizeVars, Solution);
-            WriteIntExprVector(Writer, "SizeExprs", info.SizeExprs, Solution);
-            WriteIntExprVector(Writer, "Writes", info.Writes, Solution);
-            Writer.Indent--;
+            writer.WriteLine($"{bid}:");
+            writer.Indent++;
+            WriteIntExprMatrix(writer, "Shapes", info.Shapes, Solution);
+            WriteIntExprVector(writer, "SizeVars", info.SizeVars, Solution);
+            WriteIntExprVector(writer, "SizeExprs", info.SizeExprs, Solution);
+            WriteIntExprVector(writer, "Writes", info.Writes, Solution);
+            writer.Indent--;
         }
 
-        Writer.Indent--;
-        Writer.Indent--;
-        Writer.WriteLine($"\"\"\"");
+        writer.Indent--;
+        writer.Indent--;
+        writer.WriteLine($"\"\"\"");
 
         var ivs = string.Join(",", Enumerable.Range(0, value.DimNames.Length).Select(i => $"i{i}"));
-        Writer.WriteLine($"for ({ivs}) in range({string.Join(", ", value.DimNames)}):");
-        Writer.Indent++;
-        value.Child.Accept(this, context);
-        Writer.Indent--;
+        writer.WriteLine($"for ({ivs}) in range({string.Join(", ", value.DimNames)}):");
+        writer.Indent++;
+        value.Child.Accept(this, writer);
+        writer.Indent--;
 
         return default;
     }
 
-    public Unit Visit(OpNode value, Unit context)
+    public Unit Visit(OpNode value, IndentedTextWriter writer)
     {
-        Writer.WriteLine($"\"\"\"");
-        Writer.Indent++;
+        writer.WriteLine($"\"\"\"");
+        writer.Indent++;
 
-        Writer.WriteLine($"Compute Op {value.OpId} at level {value.Level}");
-        Writer.WriteLine($"Domain Relation {value.DomainRelation}");
-        WriteIntExprMatrix(Writer, "Shapes", OpNodeMemo[value].Shapes, Solution);
-        Writer.Indent--;
-        Writer.WriteLine($"\"\"\"");
+        writer.WriteLine($"Compute Op {value.OpId} at level {value.Level}");
+        writer.WriteLine($"Domain Relation {value.DomainRelation}");
+        WriteIntExprMatrix(writer, "Shapes", OpNodeMemo[value].Shapes, Solution);
+        writer.Indent--;
+        writer.WriteLine($"\"\"\"");
 
         var ivs = string.Join(", ", Enumerable.Range(0, value.DimNames.Length).Select(i => $"d{i}"));
-        Writer.WriteLine($"with ({string.Join(", ", value.DimNames)}) as ({ivs}):");
-        Writer.Indent++;
+        writer.WriteLine($"with ({string.Join(", ", value.DimNames)}) as ({ivs}):");
+        writer.Indent++;
         var set = value.Dependences.ToDictionary(d => d.Index, d => d.Node);
         for (int i = 0; i < value.ReadAccesses.Length; i++)
         {
-            Writer.Write($"read_{i} = ");
-            Writer.Write(value.ReadAccesses[i]);
+            writer.Write($"read_{i} = ");
+            writer.Write(value.ReadAccesses[i]);
             if (set.ContainsKey(i))
             {
-                Writer.WriteLine($" @ Op{set[i].OpId}");
+                writer.WriteLine($" @ Op{set[i].OpId}");
             }
             else
             {
-                Writer.WriteLine();
+                writer.WriteLine();
             }
         }
 
-        Writer.Write("write = ");
-        Writer.WriteLine(value.WriteAccess);
-        Writer.Indent--;
+        writer.Write("write = ");
+        writer.WriteLine(value.WriteAccess);
+        writer.Indent--;
 
         return default;
     }

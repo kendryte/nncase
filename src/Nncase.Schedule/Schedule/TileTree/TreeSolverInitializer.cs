@@ -408,6 +408,12 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
     {
     }
 
+    /// <summary>
+    /// buffer init result.
+    /// </summary>
+    /// <param name="Bid">buffer id.</param>
+    /// <param name="Lifeness">buffer's lifetime.</param>
+    /// <param name="AccessMap">access buffer relation from current node's domain, e.g. node.DomainRelation * buffer.AccessMap.</param>
     public sealed record BufferResult(BufferIdentity Bid, Tuple<int, int> Lifeness, AffineMap AccessMap)
     {
     }

@@ -45,7 +45,7 @@ public class CpuTargetOptions : ITargetOptions
 
     public NocArch NocArch { get; set; } = NocArch.Mesh;
 
-    public int[][] Hierarchy { get; set; } = new[] { new[] { 1 } };
+    public int[][] Hierarchies { get; set; } = new int[][] { new int[] { 1 } };
 
     public string HierarchyNames { get; set; } = "b";
 

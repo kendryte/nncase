@@ -46,6 +46,12 @@ public sealed record DomainInfo(IntVar[] TileVars, IntExpr[] ForwardExtents, Dic
 {
 }
 
+/// <summary>
+/// op node info.
+/// </summary>
+/// <param name="Maps">current node's domain accesses the buffer. it means applyed by this op's domain relation.</param>
+/// <param name="Shapes">this buffer's shape expr. </param>
+/// <param name="Size">buffer's size.</param>
 public sealed record OpNodeInfo(AffineMap[] Maps, IntExpr[][] Shapes, IntExpr[] Size)
 {
 }

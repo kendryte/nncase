@@ -50,20 +50,18 @@ public static class TreeTiler
         return opNode;
     }
 
-#if false
-    public static void DumpAssgin(ITreeNode tree, TreeSolverPrinter printer)
+    public static void DumpAssgin(ITreeNode tree, TreeSolverPrinter printer, Dictionary<OpNode, Constraint[]> tileVarConstraints, Dictionary<BufferIdentity, Constraint> lowestStoreBufferNumsConstrains, Dictionary<TileNode, Dictionary<BufferIdentity, Constraint>> eachParentNodeCreateBufferConstraints, Dictionary<int, Dictionary<TileNode, IntExpr>> levelMemoryUsage, IntExpr[] levelDataReads, IntExpr[] levelDataWrites, IntExpr[] memoryCycles, IntVar computeCycles)
     {
         using (var stream = Diagnostics.DumpScope.Current.OpenFile($"model.py"))
         {
             using var baseWriter = new StreamWriter(stream);
-            var printer = new TreeSolverPrinter(baseWriter, sol, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, compileOptions.TargetOptions);
-            tree.Accept(printer, default);
             using var writer = new System.CodeDom.Compiler.IndentedTextWriter(baseWriter, "  ");
+            tree.Accept(printer, writer);
             writer.WriteLine("tileVarConstraints:");
             writer.Indent++;
             foreach (var (opnode, consts) in tileVarConstraints)
             {
-                TreeSolverPrinter.WriteIntExprVector(writer, opnode.ToString(), consts, sol);
+                TreeSolverPrinter.WriteIntExprVector(writer, opnode.ToString(), consts, printer.Solution);
             }
 
             writer.Indent--;
@@ -72,7 +70,7 @@ public static class TreeTiler
             writer.Indent++;
             foreach (var (node, cons) in lowestStoreBufferNumsConstrains)
             {
-                TreeSolverPrinter.WriteIntExprVector(writer, node.ToString(), new[] { cons }, sol);
+                TreeSolverPrinter.WriteIntExprVector(writer, node.ToString(), new[] { cons }, printer.Solution);
             }
 
             writer.Indent--;
@@ -81,28 +79,33 @@ public static class TreeTiler
             writer.Indent++;
             foreach (var (node, constraints) in eachParentNodeCreateBufferConstraints)
             {
-                TreeSolverPrinter.WriteIntExprVector(writer, node.ToString(), constraints.Values.ToArray(), sol);
+                TreeSolverPrinter.WriteIntExprVector(writer, node.ToString(), constraints.Values.ToArray(), printer.Solution);
             }
 
             writer.Indent--;
 
-            writer.WriteLine("memoryCapacityConstraints:");
+            writer.WriteLine("LevelMemoryUsage:");
             writer.Indent++;
+            foreach (var (sl, nodeMemoryUsage) in levelMemoryUsage)
+            {
+                writer.WriteLine($"Level {sl}:");
+                writer.Indent++;
+                foreach (var (node, usage) in nodeMemoryUsage)
+                {
+                    TreeSolverPrinter.WriteIntExpr(writer, node.ToString(), usage, printer.Solution);
+                }
 
-            // for (int l = 1; l < totalLevel; l++)
-            // {
-            //     TreeSolverPrinter.WriteIntExprVector(writer, l.ToString(), levelNodeBufferOffset[l].ToArray(), sol);
-            //     TreeSolverPrinter.WriteIntExprVector(writer, l.ToString(), levelNodeBufferExtent[l].ToArray(), sol);
-            // }
+                writer.Indent--;
+            }
+
             writer.Indent--;
 
-            TreeSolverPrinter.WriteIntExprVector(writer, "levelDataReads:", levelDataReads, sol);
-            TreeSolverPrinter.WriteIntExprVector(writer, "levelDataWrites:", levelDataWrites, sol);
-            TreeSolverPrinter.WriteIntExprVector(writer, "memoryCycles:", memoryCycles, sol);
+            TreeSolverPrinter.WriteIntExprVector(writer, "LevelDataReads", levelDataReads, printer.Solution);
+            TreeSolverPrinter.WriteIntExprVector(writer, "LevelDataWrites", levelDataWrites, printer.Solution);
+            TreeSolverPrinter.WriteIntExprVector(writer, "MemoryCycles", memoryCycles, printer.Solution);
             writer.WriteLine($"computeCycles: {computeCycles.ToSimplifyString()}");
         }
     }
-#endif
 
     public static TreeSolverResultConstructor? Solve(ITreeNode tree, int totalLevel, CompileOptions compileOptions)
     {
@@ -229,9 +232,11 @@ public static class TreeTiler
 
         // 5. add the memory schedule constraints
         var levelNodeBufferBoxs = new Dictionary<int, Dictionary<TileNode, Dictionary<BufferIdentity, IntExpr[]>>>();
+        var levelMemoryUsage = new Dictionary<int, Dictionary<TileNode, IntExpr>>();
         for (int sl = 1; sl < totalLevel; sl++)
         {
             var nodeBufferBoxs = levelNodeBufferBoxs[sl] = new();
+            var nodeMemoryUsage = levelMemoryUsage[sl] = new();
             foreach (var (parentNode, parentNodeInfo) in tileNodeMemo.Where(p => p.Key.Level == totalLevel))
             {
                 var bufferBoxs = nodeBufferBoxs[parentNode] = new();
@@ -289,7 +294,8 @@ public static class TreeTiler
                 var y_vars = bufferBoxs.Values.Select(box => box[2].Var()).ToArray();
                 var y_sizes = bufferBoxs.Values.Select(box => box[3].Var()).ToArray();
 
-                solver.Add(solver.MakeSumLessOrEqual(y_sizes, memoryCapacitys[sl - 1]));
+                nodeMemoryUsage[parentNode] = solver.MakeSum(y_sizes);
+                solver.Add(solver.MakeLessOrEqual(nodeMemoryUsage[parentNode], memoryCapacitys[sl - 1]));
 
                 // note can't schedule buffers.
                 // solver.Add(solver.MakeNonOverlappingNonStrictBoxesConstraint(x_vars, y_vars, x_sizes, y_sizes));
@@ -451,6 +457,14 @@ public static class TreeTiler
         //         }
         //     }
         // }
+        foreach (var (_, nodeMemoryUsage) in levelMemoryUsage)
+        {
+            foreach (var (_, expr) in nodeMemoryUsage)
+            {
+                collector.Add(expr.Var());
+            }
+        }
+
         var decisionBuilder = solver.MakeDefaultPhase(searchAbleVars.ToArray());
         var status = solver.Solve(decisionBuilder, new SearchMonitor[] { collector, objectiveMonitor, solver.MakeSolutionsLimit(20), solver.MakeTimeLimit(50000),
 #if DEBUG
@@ -466,6 +480,9 @@ public static class TreeTiler
 
         // dump model
         // builder IR
+#if false
+        DumpAssgin(tree, new TreeSolverPrinter(sol, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, compileOptions.TargetOptions), tileVarConstraints, lowestStoreBufferNumsConstrains, eachParentNodeCreateBufferConstraints, levelMemoryUsage, levelDataReads, levelDataWrites, memoryCycles, totalCyclesVar);
+#endif
 
         return new TreeSolverResultConstructor(tree, sol.ObjectiveValue(), sol, argumentsInfo, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, compileOptions);
     }
@@ -489,7 +506,12 @@ public static class TreeTiler
         }
 
         TreeSolverResultConstructor? bestConstructor = null;
-        foreach (var chunk in EnumerateAll(root, totalLevel, new()).Chunk(System.Math.Max(System.Environment.ProcessorCount - 1, 1)))
+#if false
+        root.Merge(1, 0, 2);
+        root.Merge(1, 0, 1);
+        bestConstructor = Solve(root, totalLevel, compileOptions);
+#endif
+        foreach (var chunk in EnumerateAll(root, totalLevel, new()).Chunk(System.Math.Max(System.Environment.ProcessorCount - 2, 1)))
         {
             foreach (var resultConstructor in chunk.AsParallel().Select(isoTree => Solve(isoTree.Root, totalLevel, compileOptions)).OfType<TreeSolverResultConstructor>())
             {

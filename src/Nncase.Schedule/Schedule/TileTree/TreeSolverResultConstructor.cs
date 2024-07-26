@@ -194,7 +194,7 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
         for (int i = 0; i < value.BufferShapes.Length; i++)
         {
             var bid = new BufferIdentity(value, i);
-            var viewInfo = GetParentSubViewInfo(value, bid, OpNodeMemo[value].Maps[i], partentOffsets, OpNodeMemo[value].Shapes[i]);
+            var viewInfo = GetParentSubViewInfo(value, bid, value.DomainRelation.Map * OpNodeMemo[value].Maps[i], partentOffsets, OpNodeMemo[value].Shapes[i]);
 
             buffers[i] = IR.F.Buffer.BufferSubview(viewInfo.Buffer, viewInfo.Offsets, new IR.Tuple(viewInfo.Shape.Select(x => (Expr)x).ToArray()));
         }
@@ -309,7 +309,7 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
             }
             else
             {
-                parentBuffer = GetAllocateBuffer(bid, out allocateBuilder);
+                parentBuffer = GetAllocateBuffer(bid, shape, out allocateBuilder);
             }
         }
 
@@ -319,10 +319,10 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
     /// <summary>
     /// Get the local allocate buffer.
     /// </summary>
-    private TIR.Buffer GetAllocateBuffer(BufferIdentity bid, out ISequentialBuilder<Let> scope)
+    private TIR.Buffer GetAllocateBuffer(BufferIdentity bid, int[] shape, out ISequentialBuilder<Let> scope)
     {
         var expr = bid.Node.Grid.Buffers[bid.Index];
-        var tensorType = GetBufferTensorType(expr);
+        var tensorType = new TensorType(GetBufferTensorType(expr).DType, shape);
         if (!OutSideBufferMemo.TryGetValue(bid, out var buffer))
         {
             var alloc = IR.F.Buffer.Allocate(TensorUtilities.GetProduct(tensorType.Shape.ToValueArray()), tensorType.DType, MemoryLocation.L2Data, false);

@@ -64,7 +64,7 @@ public class UnitTestDistributeScheme : TestClassBase
         var path = Path.Join(SolutionDirectory, "src/Nncase.Tests/Distributed/hidden_in.json");
         var options = new Nncase.Targets.CpuTargetOptions()
         {
-            Hierarchy = new[] { new[] { 8, 8, 4 } },
+            Hierarchies = new[] { new[] { 8, 8, 4 } },
             HierarchyNames = "cbt",
             DistributedScheme = path,
         };

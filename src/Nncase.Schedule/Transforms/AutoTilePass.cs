@@ -63,7 +63,7 @@ public sealed class AutoTilePass : ModulePass
                 int j = i - 1;
                 while (j >= 0)
                 {
-                    var currentReads = current.Reads.AsValueEnumerable().Where(read => read is Grid producer && producer.Users.Count == 2).ToArray();
+                    var currentReads = current.Reads.AsValueEnumerable().Where(read => read is Grid producer && producer.Users.Count() == 2).ToArray();
                     if (!(currentReads.Length == 1 && currentReads[0] == collects[j]))
                     {
                         break;
