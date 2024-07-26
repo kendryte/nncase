@@ -439,7 +439,7 @@ get_sample_span(gsl::span<const size_t> in_shape) {
                     (index != (int)(in_b_shape.size() - 1))) {                 \
                     int size_diff = in_a_shape.size() - in_b_shape.size();     \
                     int len_a_leave = 1;                                       \
-                    for (int i = index + 1; i < (int)in_b_shape.size(); ++i) {      \
+                    for (int i = index + 1; i < (int)in_b_shape.size(); ++i) { \
                         len_a_leave *= in_a_shape[i + size_diff];              \
                     }                                                          \
                     for (int j = 0; j < outter_front_size; ++j) {              \
@@ -470,7 +470,7 @@ get_sample_span(gsl::span<const size_t> in_shape) {
                     (index != (int)(in_a_shape.size() - 1))) {                 \
                     int size_diff = in_b_shape.size() - in_a_shape.size();     \
                     int len_b_leave = 1;                                       \
-                    for (int i = index + 1; i < (int)in_a_shape.size(); ++i) {      \
+                    for (int i = index + 1; i < (int)in_a_shape.size(); ++i) { \
                         len_b_leave *= in_b_shape[i + size_diff];              \
                     }                                                          \
                     for (int j = 0; j < outter_front_size; ++j) {              \

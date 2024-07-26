@@ -25,7 +25,9 @@ double get_ms_time();
 #include <chrono>
 double get_ms_time() {
     auto now = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(now.time_since_epoch());
+    auto duration =
+        std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
+            now.time_since_epoch());
     return duration.count();
 }
 #else
