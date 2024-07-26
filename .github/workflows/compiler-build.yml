@@ -246,7 +246,7 @@ jobs:
 
       - name: Install Python Packages
         run:
-          python -m pip install --upgrade "pip<24.0"
+          # python -m pip install --upgrade "pip<24.0" #pip24 not available on 3.7
           pip install -r requirements.test.txt
 
       - name: Create Test Environment
