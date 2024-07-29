@@ -22,8 +22,8 @@ constexpr size_t warmup_num = 10;
 constexpr size_t run_num = 3000;
 constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 #if __riscv
-constexpr size_t M = 256;
-constexpr size_t N = 256;
+constexpr size_t M = 64;
+constexpr size_t N = 64;
 #else
 constexpr size_t M = 256;
 constexpr size_t N = 256;
