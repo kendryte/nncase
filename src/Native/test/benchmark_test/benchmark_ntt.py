@@ -192,7 +192,7 @@ class BenchmarkNTT_riscv64(BenchmarkNTT):
                                          'pow': '127'
                                          },
                               'unary': {'abs': '8',
-                                        'acos': '54',
+                                        'acos': '84',
                                         'acosh': '81',
                                         'asin': '53',
                                         'asinh': '86',
