@@ -61,6 +61,8 @@ IMPL_RVV_WITH_LMULS(ABS_FLOAT32)
 REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, abs)
 
 // acos
+#if 0
+// max_ulp_error = 789 on c908
 // porting from https://developer.download.nvidia.cn/cg/acos.html
 #define ACOS_FLOAT32(LMUL, MLEN)                                               \
     inline vfloat32m##LMUL##_t acos_float32(const vfloat32m##LMUL##_t &v,      \
@@ -80,7 +82,51 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, abs)
         ret = vfmul_vv_f32m##LMUL(ret, sroot, vl);                             \
         return vfmadd_vf_f32m##LMUL##_m(mask, ret, -1.f, c5, vl);              \
     }
-
+#else
+// max_ulp_error = 2 on c908
+#define ACOS_FLOAT32(LMUL, MLEN)                                               \
+    inline vfloat32m##LMUL##_t acos_float32(const vfloat32m##LMUL##_t &v,      \
+                                            const size_t vl) {                 \
+        auto zero = vfmv_v_f_f32m##LMUL(0.f, vl);                              \
+        auto half = vfmv_v_f_f32m##LMUL(0.5f, vl);                             \
+        auto one = vfmv_v_f_f32m##LMUL(1.f, vl);                               \
+        auto two = vfmv_v_f_f32m##LMUL(2.f, vl);                               \
+        auto minus_one = vfmv_v_f_f32m##LMUL(-1.f, vl);                        \
+        auto p0 = vfmv_v_f_f32m##LMUL(0x1.55555ep-3, vl);                      \
+        auto p1 = vfmv_v_f_f32m##LMUL(0x1.33261ap-4, vl);                      \
+        auto p2 = vfmv_v_f_f32m##LMUL(0x1.70d7dcp-5, vl);                      \
+        auto neg_mask = vmflt_vf_f32m##LMUL##_b##MLEN(v, 0.f, vl);             \
+        auto x = vfabs_v_f32m##LMUL(v, vl);                                    \
+        auto off = vfmerge_vfm_f32m##LMUL(neg_mask, zero, 0x1.921fb6p+1f, vl); \
+        auto mul1 = vfmerge_vfm_f32m##LMUL(neg_mask, two, -2.f, vl);           \
+        auto mul2 = vfmerge_vfm_f32m##LMUL(neg_mask, minus_one, 1.f, vl);      \
+        /* Evaluate polynomial Q(x) = z + z * z2 * P(z2) with                  \
+            z2 = x ^ 2         and z = |x|     , if |x| < 0.5                  \
+            z2 = (1 - |x|) / 2 and z = sqrt(z2), if |x| >= 0.5.  */            \
+        auto le_half_mask = vmfle_vv_f32m##LMUL##_b##MLEN(x, half, vl);        \
+        auto tmp = vmv_v_v_f32m##LMUL(x, vl);                                  \
+        auto mul = vmerge_vvm_f32m##LMUL(le_half_mask, mul1, mul2, vl);        \
+        tmp = vfnmsub_vv_f32m##LMUL(tmp, half, half, vl);                      \
+        auto add =                                                             \
+            vfmerge_vfm_f32m##LMUL(le_half_mask, off, 0x1.921fb6p+0f, vl);     \
+        auto z2 = vfmul_vv_f32m##LMUL##_m(le_half_mask, tmp, v, v, vl);        \
+        /* acos(|x|) = pi/2 - sign(x) * Q(|x|), for  |x| < 0.5                 \
+                = 2 Q(|x|)               , for  0.5 < x < 1.0                  \
+                = pi - 2 Q(|x|)          , for -1.0 < x < -0.5.  */            \
+        auto y1 = vfmv_v_f_f32m##LMUL(0x1.3af7d8p-5, vl);                      \
+        auto y2 = vfmv_v_f_f32m##LMUL(0x1.b059dp-6, vl);                       \
+        tmp = vfsqrt_v_f32m##LMUL(z2, vl);                                     \
+        auto z4 = vfmul_vv_f32m##LMUL(z2, z2, vl);                             \
+        y1 = vfmadd_vv_f32m##LMUL(y1, z4, p2, vl);                             \
+        y2 = vfmadd_vv_f32m##LMUL(y2, z4, p1, vl);                             \
+        y1 = vfmadd_vv_f32m##LMUL(y1, z4, p0, vl);                             \
+        auto z = vmerge_vvm_f32m##LMUL(le_half_mask, tmp, x, vl);              \
+        y1 = vfmacc_vv_f32m##LMUL(y1, y2, z2, vl);                             \
+        mul = vfmul_vv_f32m##LMUL(mul, z, vl);                                 \
+        y1 = vfmadd_vv_f32m##LMUL(y1, z2, one, vl);                            \
+        return vfmadd_vv_f32m##LMUL(y1, mul, add, vl);                         \
+    }
+#endif
 IMPL_RVV_WITH_LMULS(ACOS_FLOAT32)
 REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, acos)
 
