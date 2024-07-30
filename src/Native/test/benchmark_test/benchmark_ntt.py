@@ -140,34 +140,34 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                          'pack_K_N': '1048576',
                                          'pack_M_K_N': '1048576',
                                          },
-                              'reduce': {'Add_reduceN_NoPack': 'N/A',
-                                         'Add_reduceN_PackN': 'N/A',
-                                         'Add_reduceM_NoPack': 'N/A',
-                                         'Add_reduceM_PackM': 'N/A',
-                                         'Add_reduceMN_NoPack': 'N/A',
-                                         'Add_reduceMN_PackN': 'N/A',
-                                         'Add_reduceMN_PackM': 'N/A',
-                                         'Max_reduceN_NoPack': 'N/A',
-                                         'Max_reduceN_PackN': 'N/A',
-                                         'Max_reduceM_NoPack': 'N/A',
-                                         'Max_reduceM_PackM': 'N/A',
-                                         'Max_reduceMN_NoPack': 'N/A',
-                                         'Max_reduceMN_PackN': 'N/A',
-                                         'Max_reduceMN_PackM': 'N/A',
-                                         'Min_reduceN_NoPack': 'N/A',
-                                         'Min_reduceN_PackN': 'N/A',
-                                         'Min_reduceM_NoPack': 'N/A',
-                                         'Min_reduceM_PackM': 'N/A',
-                                         'Min_reduceMN_NoPack': 'N/A',
-                                         'Min_reduceMN_PackN': 'N/A',
-                                         'Min_reduceMN_PackM': 'N/A',
-                                         'Mean_reduceN_NoPack': 'N/A',
-                                         'Mean_reduceN_PackN': 'N/A',
-                                         'Mean_reduceM_NoPack': 'N/A',
-                                         'Mean_reduceM_PackM': 'N/A',
-                                         'Mean_reduceMN_NoPack': 'N/A',
-                                         'Mean_reduceMN_PackN': 'N/A',
-                                         'Mean_reduceMN_PackM': 'N/A',
+                              'reduce': {'Add_reduceM_NoPack': 2047,
+                                         'Add_reduceM_PackM': 263,
+                                         'Add_reduceMN_NoPack': 2016,
+                                         'Add_reduceMN_PackM': 263,
+                                         'Add_reduceMN_PackN': 263,
+                                         'Add_reduceN_NoPack': 2047,
+                                         'Add_reduceN_PackN': 263,
+                                         'Max_reduceM_NoPack': 2047,
+                                         'Max_reduceM_PackM': 263,
+                                         'Max_reduceMN_NoPack': 2016,
+                                         'Max_reduceMN_PackM': 263,
+                                         'Max_reduceMN_PackN': 263,
+                                         'Max_reduceN_NoPack': 2047,
+                                         'Max_reduceN_PackN': 263,
+                                         'Mean_reduceM_NoPack': 2056,
+                                         'Mean_reduceM_PackM': 272,
+                                         'Mean_reduceMN_NoPack': 2020.5,
+                                         'Mean_reduceMN_PackM': 267.5,
+                                         'Mean_reduceMN_PackN': 267.5,
+                                         'Mean_reduceN_NoPack': 2056,
+                                         'Mean_reduceN_PackN': 272,
+                                         'Min_reduceM_NoPack': 2047,
+                                         'Min_reduceM_PackM': 263,
+                                         'Min_reduceMN_NoPack': 2016,
+                                         'Min_reduceMN_PackM': 263,
+                                         'Min_reduceMN_PackN': 263,
+                                         'Min_reduceN_NoPack': 2047,
+                                         'Min_reduceN_PackN': 263,
                                          },
                               }
 
@@ -356,14 +356,10 @@ if __name__ == '__main__':
     ntt_x86_64 = BenchmarkNTT_x86_64(args.x86_64_target, args.x86_64_path)
     ntt_x86_64.run()
 
-    # riscv64
-    ntt_riscv64 = BenchmarkNTT_riscv64(args.riscv64_target, args.riscv64_path)
-    ntt_riscv64.run()
-
     # merge benchmark list
     benchmark_list = []
     for i in range(len(ntt_x86_64.benchmark_list)):
-        item = {**ntt_x86_64.benchmark_list[i], **ntt_riscv64.benchmark_list[i]}
+        item = {**ntt_x86_64.benchmark_list[i]}
         benchmark_list.append(item)
 
     # generate md
