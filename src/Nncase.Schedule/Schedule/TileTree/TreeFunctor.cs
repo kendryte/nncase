@@ -2,7 +2,6 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Reactive;
-using VisitorPatternGenerator;
 
 namespace Nncase.Schedule.TileTree;
 

@@ -6,18 +6,23 @@ using System.Collections.Immutable;
 using System.Reactive;
 using Nncase.IR;
 using Nncase.IR.Affine;
-using VisitorPatternGenerator;
 
 namespace Nncase.Schedule.TileTree;
 
-public partial interface ITreeNode
+public interface ITreeNode
 {
     public ITreeNode? Parent { get; set; }
+
+    TReturn Accept<TArg1, TReturn>(ITreeNodeVisitor<TArg1, TReturn> visitor, TArg1 arg1);
 }
 
-[Visitor<ITreeNode>]
-public partial interface ITreeNodeVisitor<in TArg1, out TReturn>
+public interface ITreeNodeVisitor<in TArg1, out TReturn>
 {
+    TReturn Visit(ScopeNode value, TArg1 arg1);
+
+    TReturn Visit(TileNode value, TArg1 arg1);
+
+    TReturn Visit(OpNode value, TArg1 arg1);
 }
 
 public interface ITileAbleNode : ITreeNode
@@ -52,8 +57,7 @@ public sealed record DomainRelation(int DomainOp, int RangeOp, AffineMap Map)
     public override string ToString() => $"Op{DomainOp} -> Op{RangeOp}: {Map}";
 }
 
-[Acceptor<ITreeNode, ScopeNode>]
-public sealed partial class ScopeNode
+public sealed class ScopeNode : ITreeNode
 {
     private readonly List<ITreeNode> _children;
 
@@ -66,6 +70,8 @@ public sealed partial class ScopeNode
     public ITreeNode? Parent { get; set; }
 
     public IList<ITreeNode> Children => _children;
+
+    TReturn ITreeNode.Accept<TArg1, TReturn>(ITreeNodeVisitor<TArg1, TReturn> visitor, TArg1 arg1) => visitor.Visit(this, arg1);
 
     public void Add(ITreeNode node)
     {
@@ -96,8 +102,7 @@ public sealed partial class ScopeNode
     }
 }
 
-[Acceptor<ITreeNode, TileNode>]
-public sealed partial class TileNode : ITileAbleNode
+public sealed class TileNode : ITileAbleNode
 {
     private ITreeNode _child;
 
@@ -135,14 +140,15 @@ public sealed partial class TileNode : ITileAbleNode
         }
     }
 
+    TReturn ITreeNode.Accept<TArg1, TReturn>(ITreeNodeVisitor<TArg1, TReturn> visitor, TArg1 arg1) => visitor.Visit(this, arg1);
+
     public override string ToString()
     {
         return $"Tile{OpId} @ {Level}";
     }
 }
 
-[Acceptor<ITreeNode, OpNode>]
-public sealed partial class OpNode : ITileAbleNode
+public sealed class OpNode : ITileAbleNode
 {
     public OpNode(Grid grid, Op op, int opId, IEnumerable<string> dimNames, IEnumerable<int> domainBounds, IEnumerable<IEnumerable<int>> bufferShapes, IEnumerable<Dependence> dependences)
     {
@@ -186,6 +192,8 @@ public sealed partial class OpNode : ITileAbleNode
     public ReadOnlySpan<AffineMap> ReadAccesses => Grid.AccessMaps[..^1];
 
     public AffineMap WriteAccess => Grid.AccessMaps[^1];
+
+    TReturn ITreeNode.Accept<TArg1, TReturn>(ITreeNodeVisitor<TArg1, TReturn> visitor, TArg1 arg1) => visitor.Visit(this, arg1);
 
     public override string ToString()
     {

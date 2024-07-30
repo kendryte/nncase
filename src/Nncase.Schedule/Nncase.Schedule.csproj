@@ -12,10 +12,6 @@
     <PackageReference Include="Google.OrTools" />
     <PackageReference Include="QuikGraph" />
     <PackageReference Include="QuikGraph.Graphviz" />
-    <PackageReference Include="VisitorPatternGenerator">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
   
   <ItemGroup>

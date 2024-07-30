@@ -6,7 +6,6 @@ using System.Reactive;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Affine;
-using VisitorPatternGenerator;
 
 namespace Nncase.Schedule.TileTree;
 
