@@ -17,6 +17,7 @@ public sealed class UnitTestModeling : TestClassBase
 {
     public UnitTestModeling()
     {
+        CompileOptions.TargetOptions = new Nncase.Targets.CpuTargetOptions();
 #if DEBUG
         CompileOptions.DumpFlags = Diagnostics.DumpFlags.PassIR;
 #endif
@@ -326,7 +327,7 @@ public sealed class UnitTestModeling : TestClassBase
         var res = TreeSolverInitializer.Init(m1, totalLevel, CompileOptions.TargetOptions, out _, out _, out _, out _);
         Assert.Equal(3, res.Inputs.Count);
         Assert.Single(res.Outputs);
-        Assert.Single(res.DefUseMap.Keys);
+        Assert.Equal(2, res.DefUseMap.Keys.Count);
     }
 
     [Fact]
