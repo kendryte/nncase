@@ -253,7 +253,7 @@ public sealed class UnitTestModeling : TestClassBase
             return;
         }
 
-        Schedule.TreeTiler.Tile(grid, Nncase.Targets.CPUTarget.Kind, 0, CompileOptions);
+        Schedule.TreeTiler.Tile(grid, Nncase.Targets.CPUTarget.Kind, 0, CompileOptions.TargetOptions);
     }
 
     [Fact]
@@ -316,17 +316,74 @@ public sealed class UnitTestModeling : TestClassBase
 
         var root = new ScopeNode();
         var opId = 0;
-        var totalLevel = 2;
+        var totalLevel = CompileOptions.TargetOptions.MemoryCapacities.Length - 1;
         Schedule.TreeTiler.BuildTree(grid, root, totalLevel, ref opId);
         root.Dump("build");
-        var m1 = root.Root().Clone();
+        var m1 = root.Root<ITreeNode>().Clone();
         m1.Merge(2, 1, 2);
         m1.Dump("final");
 
-        var res = TreeSolverInitializer.Init(m1, totalLevel, CompileOptions, out _, out _, out _, out _);
+        var res = TreeSolverInitializer.Init(m1, totalLevel, CompileOptions.TargetOptions, out _, out _, out _, out _);
         Assert.Equal(3, res.Inputs.Count);
         Assert.Single(res.Outputs);
         Assert.Single(res.DefUseMap.Keys);
+    }
+
+    [Fact]
+    public void TestGetArgumentInfo2()
+    {
+        var func = GetFunctionSample2();
+        var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), new Passes.Rules.CPU.Affine.LowerBinary() }, new());
+        Dumpper.DumpIR(post, "post");
+
+        if (post is not Function { Body: IR.Affine.Grid grid })
+        {
+            return;
+        }
+
+        var root = new ScopeNode();
+        var opId = 0;
+        var totalLevel = CompileOptions.TargetOptions.MemoryCapacities.Length - 1;
+        Schedule.TreeTiler.BuildTree(grid, root, totalLevel, ref opId);
+        root.Dump("build");
+        var m1 = root.Root<ITreeNode>().Clone();
+        m1.Merge(1, 0, 2);
+        m1.Merge(1, 0, 1);
+        m1.Dump("final");
+
+        var res = TreeSolverInitializer.Init(m1, totalLevel, CompileOptions.TargetOptions, out _, out _, out _, out _);
+        Assert.Equal(4, res.Inputs.Count);
+        Assert.Single(res.Outputs);
+        Assert.Single(res.DefUseMap.Keys);
+    }
+
+    [Fact]
+    public void TestGetArgumentInfo3()
+    {
+        var func = GetFunctionSample2();
+        var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), new Passes.Rules.CPU.Affine.LowerBinary() }, new());
+        Dumpper.DumpIR(post, "post");
+
+        if (post is not Function { Body: IR.Affine.Grid grid })
+        {
+            return;
+        }
+
+        var root = new ScopeNode();
+        var opId = 0;
+        var totalLevel = CompileOptions.TargetOptions.MemoryCapacities.Length - 1;
+        Schedule.TreeTiler.BuildTree(grid, root, totalLevel, ref opId);
+        root.Dump("build");
+        var m1 = root.Root<ITreeNode>().Clone();
+        m1.Merge(1, 0, 2);
+        m1.Dump("final");
+
+        var res = TreeSolverInitializer.Init(m1, totalLevel, CompileOptions.TargetOptions, out _, out _, out _, out _);
+
+        // when merge point at top level, should put the cache buffer into defuse map.
+        Assert.Equal(4, res.Inputs.Count);
+        Assert.Single(res.Outputs);
+        Assert.Equal(2, res.DefUseMap.Keys.Count);
     }
 
     [Fact]
@@ -373,6 +430,27 @@ public sealed class UnitTestModeling : TestClassBase
             var e = new Var(new TensorType(DataTypes.Float32, new[] { 384, 512 }));
             var f = IR.F.Tensors.MatMul(d, e);
             func = new(f, a, b, e);
+        }
+
+        return func;
+    }
+
+    private Function GetFunctionSample2()
+    {
+        Function func;
+        {
+            var ashape = new[] { 1, 64, 384, 128 };
+            var bshape = new[] { 1, 64, 128, 384 };
+            var a = new IR.Var("a", new IR.TensorType(DataTypes.Float32, ashape));
+            var b = new IR.Var("b", new IR.TensorType(DataTypes.Float32, bshape));
+            var c = IR.F.Tensors.MatMul(a, b);
+            var dshape = new[] { 1 };
+            var d = new IR.Var("d", new IR.TensorType(DataTypes.Float32, dshape));
+            var e = IR.F.Math.Binary(BinaryOp.Div, c, d);
+            var fshape = new[] { 1, 1, 384, 384 };
+            var f = new IR.Var("f", new IR.TensorType(DataTypes.Float32, fshape));
+            var g = IR.F.Math.Binary(BinaryOp.Add, e, f);
+            func = new IR.Function("main", g, a, b, d, f);
         }
 
         return func;

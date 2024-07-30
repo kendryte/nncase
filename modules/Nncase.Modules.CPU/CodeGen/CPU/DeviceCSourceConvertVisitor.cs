@@ -148,7 +148,8 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         var size = Visit(expr.Size);
         string name = expr.Location switch
         {
-            MemoryLocation.L2Data => start.Name,
+            MemoryLocation.L2Data => $"L2Data + {start.Name}",
+            MemoryLocation.L1Data => $"L1Data + {start.Name}",
             MemoryLocation.Input or MemoryLocation.Output => start.Name,
             _ => throw new NotSupportedException(expr.Location.ToString()),
         };

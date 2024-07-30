@@ -48,6 +48,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     public UnitTestCPUKernels()
     {
         DefaultTargetName = CPUTarget.Kind;
+        CompileOptions.TargetOptions = new CpuTargetOptions();
 #if DEBUG
         CompileOptions.DumpFlags = Diagnostics.DumpFlags.PassIR | Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.CodeGen | Diagnostics.DumpFlags.EGraphCost | Diagnostics.DumpFlags.Tiling;
 #endif
@@ -102,8 +103,8 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { f, IR.F.Tensors.ConstantOfShape(fshape, 1.0f).Evaluate() /* IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, eshape).Evaluate() */ },
         };
 
-        var tensors = feedDict.Values.Select(v => v.AsTensor()).ToArray();
-
+        // var inputs = feedDict.Values.Select(v => v.AsTensor()).ToArray();
+        // var actuals = Testing.RunKModel("/Users/lisa/Documents/nncase/tests_output/UnitTestCPUKernels/TestMatmulBinaryBinary/Case0/test.kmodel", Diagnostics.DumpScope.Current.Directory, inputs).AsTensors();
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), string.Empty), feedDict, new[] { g });
     }
 

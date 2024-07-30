@@ -18,9 +18,18 @@ public static class TreeExtensions
         return;
     }
 
-    public static ITreeNode Root(this ITreeNode node)
+    public static T Root<T>(this ITreeNode node)
+        where T : ITreeNode
     {
-        return node.Parent is ITreeNode parent ? parent.Root() : node;
+        List<ITreeNode> stack = new();
+        ITreeNode? cur = node;
+        while (cur is ITreeNode)
+        {
+            stack.Add(cur);
+            cur = cur.Parent;
+        }
+
+        return stack.Reverse<ITreeNode>().OfType<T>().First();
     }
 
     public static ITreeNode Clone(this ITreeNode node)

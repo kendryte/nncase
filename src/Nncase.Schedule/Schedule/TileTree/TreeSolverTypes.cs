@@ -11,13 +11,15 @@ namespace Nncase.Schedule.TileTree;
 
 public sealed record BufferIdentity(OpNode Node, int Index)
 {
+    public bool IsOutput => Index == Node.ReadAccesses.Length;
+
     public override string ToString() => $"Op{Node.OpId}_{Index}";
 }
 
 /// <summary>
 /// Map: current offset/extent  Place : [create_loop,store_level], Shapes: [create_loop][shape] write: [create_loop], size: [create loop].
 /// </summary>
-public sealed record TileNodeBufferInfo(Tuple<int, int> Lifeness, AffineMap Map, IntVar[][] Places, IntExpr[][] Shapes, IntExpr[] Writes, IntExpr[] SizeVars, IntExpr[] SizeExprs, LoopMask[] Masks)
+public sealed record TileNodeBufferInfo(Tuple<int, int> Liveness, AffineMap Map, IntVar[][] Places, IntExpr[][] Shapes, IntExpr[] Writes, IntExpr[] SizeVars, IntExpr[] SizeExprs, LoopMask[] Masks)
 {
 }
 

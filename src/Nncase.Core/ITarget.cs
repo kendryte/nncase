@@ -18,6 +18,9 @@ namespace Nncase;
 /// </summary>
 public interface ITargetOptions
 {
+    int[] MemoryCapacities { get; }
+
+    int[] MemoryBandWidths { get; }
 }
 
 /// <summary>
@@ -112,4 +115,8 @@ public sealed class DefaultTargetCompileOptions : ITargetOptions
     private DefaultTargetCompileOptions()
     {
     }
+
+    public int[] MemoryCapacities => Array.Empty<int>();
+
+    public int[] MemoryBandWidths => Array.Empty<int>();
 }

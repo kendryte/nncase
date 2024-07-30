@@ -21,15 +21,17 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
 
     public int TotalLevel { get; }
 
-    public static ArgumentsInfo Init(ITreeNode tree, int totalLevel, CompileOptions compileOptions, out Solver solver, out Dictionary<OpNode, OpNodeInfo> opNodeMemo, out Dictionary<TileNode, TileNodeInfo> tileNodeMemo, out Dictionary<ITileAbleNode, DomainInfo> tileableNodeMemo)
+    public static ArgumentsInfo Init(ITreeNode tree, int totalLevel, ITargetOptions options, out Solver solver, out Dictionary<OpNode, OpNodeInfo> opNodeMemo, out Dictionary<TileNode, TileNodeInfo> tileNodeMemo, out Dictionary<ITileAbleNode, DomainInfo> tileableNodeMemo)
     {
         solver = new Solver("treeSolver");
         opNodeMemo = new Dictionary<OpNode, OpNodeInfo>();
         tileNodeMemo = new Dictionary<TileNode, TileNodeInfo>();
         tileableNodeMemo = new Dictionary<ITileAbleNode, DomainInfo>();
-        var initializer = new TreeSolverInitializer(totalLevel, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, compileOptions.TargetOptions);
-        var initResult = tree.Accept(initializer, TreeSolverInitializer.Context.Default);
-        return GetArgumentsInfo(initResult);
+        var initializer = new TreeSolverInitializer(totalLevel, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, options);
+        var initResult = tree.Accept(initializer, Context.Default);
+        var (graph, defuseMap) = LinkGraphs(initResult, true);
+        var (inputs, outputs) = GetGetGraphInputsOuputs(graph);
+        return new(inputs, outputs, defuseMap);
     }
 
     /// <summary>
@@ -71,28 +73,28 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
         }
     }
 
-    public static ArgumentsInfo GetArgumentsInfo(InitResult result)
+    public static (HashSet<BufferIdentity> Inputs, HashSet<BufferIdentity> Outputs) GetGetGraphInputsOuputs(AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>> g)
+    {
+        var sources = new HashSet<BufferIdentity>();
+        var targets = new HashSet<BufferIdentity>();
+        foreach (var item in g.Edges)
+        {
+            sources.Add(item.Source);
+            targets.Add(item.Target);
+        }
+
+        var inputs = new HashSet<BufferIdentity>(sources.Except(targets));
+        var outputs = new HashSet<BufferIdentity>(targets.Except(sources));
+        return (inputs, outputs);
+    }
+
+    public static (AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>> Graph, Dictionary<BufferIdentity, BufferIdentity> DefUseMap) LinkGraphs(InitResult result, bool gatherCacheBuffers)
     {
         var graphIOs = new Dictionary<int, (HashSet<BufferIdentity> Inputs, HashSet<BufferIdentity> Outputs)>();
 
-        (HashSet<BufferIdentity>, HashSet<BufferIdentity>) GetInputsOuputs(AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>> g)
-        {
-            var sources = new HashSet<BufferIdentity>();
-            var targets = new HashSet<BufferIdentity>();
-            foreach (var item in g.Edges)
-            {
-                sources.Add(item.Source);
-                targets.Add(item.Target);
-            }
-
-            var inputs = new HashSet<BufferIdentity>(sources.Except(targets));
-            var outputs = new HashSet<BufferIdentity>(targets.Except(sources));
-            return (inputs, outputs);
-        }
-
         for (int i = 0; i < result.Graphs.Length; i++)
         {
-            graphIOs[i] = GetInputsOuputs(result.Graphs[i]);
+            graphIOs[i] = GetGetGraphInputsOuputs(result.Graphs[i]);
         }
 
         var graph = new AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>>();
@@ -105,27 +107,25 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
             }
         }
 
-        var defMaps = new Dictionary<BufferIdentity, BufferIdentity>();
+        var defMaps = new Dictionary<BufferIdentity, BufferIdentity>(result.DefUseMap);
+
         for (int i = 0; i < result.Graphs.Length; i++)
         {
-            var producer = result.Graphs[i];
             for (int j = i + 1; j < result.Graphs.Length; j++)
             {
-                var consumer = result.Graphs[j];
-
                 // connect the producer outputs and consumer inputs.
-                var outputs = graphIOs[i].Outputs;
-                var inputs = graphIOs[j].Inputs;
-                foreach (var (@out, @in) in new[] { outputs, inputs }.CartesianProduct().Select(x => (x.First(), x.Skip(1).First())))
+                var producers = graphIOs[i].Outputs;
+                var consumers = graphIOs[j].Inputs;
+                foreach (var (produce, consumer) in new[] { producers, consumers }.CartesianProduct().Select(x => (x.First(), x.Skip(1).First())))
                 {
-                    foreach (var inDep in @in.Node.Dependences)
+                    foreach (var dep in consumer.Node.Dependences.Where(dep => dep.Index == consumer.Index))
                     {
-                        if (inDep.Node == @out.Node)
+                        if (dep.Node == produce.Node)
                         {
-                            graph.AddEdge(new(@out, @in));
-                            if (!defMaps.ContainsKey(@out))
+                            graph.AddEdge(new(produce, consumer));
+                            if (gatherCacheBuffers && !defMaps.ContainsKey(produce))
                             {
-                                defMaps.TryAdd(@out, @in);
+                                defMaps.TryAdd(produce, consumer);
                             }
                         }
                     }
@@ -133,8 +133,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
             }
         }
 
-        var ios = GetInputsOuputs(graph);
-        return new(ios.Item1, ios.Item2, defMaps);
+        return (graph, defMaps);
     }
 
     public InitResult Visit(ScopeNode value, Context context)
@@ -143,6 +142,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
         var graphs = new List<AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>>>();
         var names = new List<Dictionary<int, int>>();
         var extents = new List<IntExpr[]>();
+        var defUseMap = new Dictionary<BufferIdentity, BufferIdentity>();
         for (int i = 0; i < value.Children.Count; i++)
         {
             var res = value.Children[i].Accept(this, context);
@@ -150,9 +150,13 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
             graphs.AddRange(res.Graphs);
             extents.AddRange(res.BackWardExtents);
             names.AddRange(res.DimsMaps);
+            foreach (var (k, v) in res.DefUseMap)
+            {
+                defUseMap.Add(k, v);
+            }
         }
 
-        return new(results.ToArray(), graphs.ToArray(), names.ToArray(), extents.ToArray());
+        return new(results.ToArray(), graphs.ToArray(), defUseMap, names.ToArray(), extents.ToArray());
     }
 
     public InitResult Visit(TileNode value, Context context)
@@ -215,21 +219,9 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
         }
 
         // link the graphs
-        var graph = new AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>>();
-        foreach (var subGraph in childResult.Graphs)
-        {
-            foreach (var subEdge in subGraph.Edges)
-            {
-                graph.AddVerticesAndEdge(subEdge);
-            }
-        }
+        var (graph, retDefUseMap) = LinkGraphs(childResult, value.Level == TotalLevel);
 
-        foreach (var (k, v) in defUseMap)
-        {
-            graph.AddEdge(new(k, v));
-        }
-
-        return new(bufferResults.ToArray(), new[] { graph }, new[] { dimsMap }, new[] { backWardExtents[0] });
+        return new(bufferResults.ToArray(), new[] { graph }, retDefUseMap, new[] { dimsMap }, new[] { backWardExtents[0] });
     }
 
     public InitResult Visit(OpNode value, Context context)
@@ -305,7 +297,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
         TimeStamp += 2;
 
         // todo backward extents should times primtives.
-        return new(bufferResults, new[] { graph }, new[] { dimsMap }, new IntExpr[][] { tileVars.Cast<IntExpr>().ToArray() });
+        return new(bufferResults, new[] { graph }, new(), new[] { dimsMap }, new IntExpr[][] { tileVars.Cast<IntExpr>().ToArray() });
     }
 
     /// <summary>
@@ -404,7 +396,12 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
     /// <summary>
     /// each buffer with each access Maps, note the access map domain is this node's domain. extents also mapping to current node's domain.
     /// </summary>
-    public sealed record InitResult(BufferResult[] BufferResults, AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>>[] Graphs, Dictionary<int, int>[] DimsMaps, IntExpr[][] BackWardExtents)
+    /// <param name="BufferResults">buffer info.</param>
+    /// <param name="Graphs"> sub computation graph. </param>
+    /// <param name="DefUseMap">the defuse map is used to record cache buffer in the top memory level. </param>
+    /// <param name="DimsMaps">dims map.</param>
+    /// <param name="BackWardExtents"> backward extents for cout the buffer size. </param>
+    public sealed record InitResult(BufferResult[] BufferResults, AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>>[] Graphs, Dictionary<BufferIdentity, BufferIdentity> DefUseMap, Dictionary<int, int>[] DimsMaps, IntExpr[][] BackWardExtents)
     {
     }
 

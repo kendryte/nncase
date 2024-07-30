@@ -61,16 +61,18 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
     private readonly Assignment _sol;
     private readonly Dictionary<ITileAbleNode, Dictionary<BufferIdentity, SubViewInfo>> _subViewMemo;
 
-    public TreeSolverResultConstructor(ITreeNode tree, long objectiveValue, Assignment solution, ArgumentsInfo argumentsInfo, Solver solver, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainInfos, CompileOptions compileOptions)
-        : base(solver, primitiveBufferInfo, levelBufferInfos, domainInfos, compileOptions.TargetOptions)
+    public TreeSolverResultConstructor(ITreeNode tree, long objectiveValue, Assignment solution, ArgumentsInfo argumentsInfo, Dictionary<int, Dictionary<TileNode, Dictionary<(TileNode Node, BufferIdentity Buffer), IntExpr>>> levelNodeBufferBoxs, Dictionary<int, Dictionary<TileNode, Dictionary<(TileNode Node, BufferIdentity Buffer), Tuple<int, int>>>> levelTreeBufferLifeness, Solver solver, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainInfos, ITargetOptions targetOptions)
+        : base(solver, primitiveBufferInfo, levelBufferInfos, domainInfos, targetOptions)
     {
         Tree = tree;
         ObjectiveValue = objectiveValue;
         _sol = solution;
         ArgumentsInfo = argumentsInfo;
+        LevelTreeBufferSizes = levelNodeBufferBoxs;
+        LevelTreeBufferLifeness = levelTreeBufferLifeness;
+        LevelTreeBufferOffsets = new();
         OutSideBufferMemo = new();
         _subViewMemo = new();
-        CompileOptions = compileOptions;
     }
 
     public Dictionary<BufferIdentity, TIR.Buffer> OutSideBufferMemo { get; }
@@ -81,7 +83,11 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
 
     public ArgumentsInfo ArgumentsInfo { get; }
 
-    public CompileOptions CompileOptions { get; }
+    public Dictionary<int, Dictionary<TileNode, Dictionary<(TileNode Node, BufferIdentity Buffer), IntExpr>>> LevelTreeBufferSizes { get; }
+
+    public Dictionary<int, Dictionary<TileNode, Dictionary<(TileNode Node, BufferIdentity Buffer), ulong>>> LevelTreeBufferOffsets { get; }
+
+    public Dictionary<int, Dictionary<TileNode, Dictionary<(TileNode Node, BufferIdentity Buffer), Tuple<int, int>>>> LevelTreeBufferLifeness { get; }
 
     public Unit Visit(ScopeNode value, Context context)
     {
@@ -143,28 +149,14 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
                 {
                     if (_sol.Value(place[sl]) == 1)
                     {
-                        var viewInfo = GetParentSubViewInfo(value, bid, bufferInfo.Map, forwardOffsets[i], bufferInfo.Shapes[i]);
-                        var subView = IR.F.Buffer.BufferSubview(viewInfo.Buffer, viewInfo.Offsets, new IR.Tuple(viewInfo.Shape.Select(x => (Expr)x).ToArray()));
+                        var viewInfo = GetParentSubViewInfo(sl + 1, value, bid, bufferInfo.Map, forwardOffsets[i], bufferInfo.Shapes[i]);
+                        var subView = viewInfo.InnerAllocated ? IR.F.Buffer.AllocateBufferView(viewInfo.Buffer) : IR.F.Buffer.BufferSubview(viewInfo.Buffer, viewInfo.Offsets, new IR.Tuple(viewInfo.Shape.Select(x => (Expr)x).ToArray()));
                         Var subBufVar;
 
                         // the parent buffer is temp buffer.
-                        if (viewInfo.AllocateBuilder is ISequentialBuilder<Let> allocateBuilder)
-                        {
-                            var letBuilder = T.Let(out subBufVar, IR.F.Buffer.AllocateBufferView(viewInfo.Buffer), $"{bid}_L{value.Level}");
-                            allocateBuilder.Body(letBuilder);
-                            cntBuilder.Body(allocateBuilder);
-                            cntBuilder = letBuilder;
-                        }
-                        else
-                        {
-                            // copy sub view to new created local buffer.
-                            // var dtype = viewInfo.Buffer.CheckedDataType;
-                            // var spanBuilder = T.Let(out var subBufSpan, IR.F.Buffer.Allocate(TensorUtilities.GetProduct(viewInfo.Shape, 0), dtype, MemoryLocation.L2Data, false), $"{bid}_L{value.Level}_span");
-                            // T.AttachBuffer(subBufSpan, new TensorType(dtype, viewInfo.Shape), MemoryLocation.L2Data, 1, out var subBuf, $"{bid}_L{value.Level}")
-                            var letBuilder = T.Let(out subBufVar, subView, $"{bid}_L{value.Level}");
-                            cntBuilder.Body(letBuilder);
-                            cntBuilder = letBuilder;
-                        }
+                        var letBuilder = T.Let(out subBufVar, subView, $"{bid}_L{value.Level}");
+                        cntBuilder.Body(letBuilder);
+                        cntBuilder = letBuilder;
 
                         if (!_subViewMemo.TryGetValue(value, out var subViewMap))
                         {
@@ -194,7 +186,7 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
         for (int i = 0; i < value.BufferShapes.Length; i++)
         {
             var bid = new BufferIdentity(value, i);
-            var viewInfo = GetParentSubViewInfo(value, bid, value.DomainRelation.Map * OpNodeMemo[value].Maps[i], partentOffsets, OpNodeMemo[value].Shapes[i]);
+            var viewInfo = GetParentSubViewInfo(value.Level, value, bid, value.DomainRelation.Map * OpNodeMemo[value].Maps[i], partentOffsets, OpNodeMemo[value].Shapes[i]);
 
             buffers[i] = IR.F.Buffer.BufferSubview(viewInfo.Buffer, viewInfo.Offsets, new IR.Tuple(viewInfo.Shape.Select(x => (Expr)x).ToArray()));
         }
@@ -213,8 +205,64 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
         return default;
     }
 
+    public void ScheduleBuffers()
+    {
+        foreach (var (level, treeBufferSizes) in LevelTreeBufferSizes)
+        {
+            var treeBufferOffsets = LevelTreeBufferOffsets[level] = new();
+            foreach (var (root, nodeBufferSizes) in treeBufferSizes)
+            {
+                var nodeBufferOffsets = treeBufferOffsets[root] = new();
+                var solver = new Solver("buffer scheduler");
+                var xstarts = new List<IntVar>();
+                var xsizes = new List<long>();
+                var ystarts = new List<IntVar>();
+                var ysizes = new List<long>();
+                var validKeys = new List<(TileNode Node, BufferIdentity Buffer)>();
+
+                foreach (var (key, sizeExpr) in nodeBufferSizes)
+                {
+                    if (_sol.Value(sizeExpr.Var()) is long size && size > 0)
+                    {
+                        xstarts.Add(solver.MakeIntConst(LevelTreeBufferLifeness[level][root][key].Item1));
+                        xsizes.Add(LevelTreeBufferLifeness[level][root][key].Item2 - LevelTreeBufferLifeness[level][root][key].Item1);
+                        ystarts.Add(solver.MakeIntVar(0, TargetOptions.MemoryCapacities[level] - size));
+                        ysizes.Add(size);
+                        validKeys.Add(key);
+                    }
+                }
+
+                solver.Add(solver.MakeNonOverlappingBoxesConstraint(xstarts.ToArray(), ystarts.ToArray(), xsizes.ToArray(), ysizes.ToArray()));
+                var collector = solver.MakeFirstSolutionCollector();
+                foreach (var item in ystarts)
+                {
+                    collector.Add(item);
+                }
+
+                var decisionBuilder = solver.MakeDefaultPhase(ystarts.ToArray());
+                var status = solver.Solve(decisionBuilder, new SearchMonitor[] { collector, solver.MakeSolutionsLimit(1),
+#if DEBUG
+        solver.MakeSearchLog(1000),
+#endif
+                });
+                if (!status)
+                {
+                    throw new InvalidOperationException("can't schedule buffers!");
+                }
+
+                var sol = collector.Solution(0);
+                for (int i = 0; i < ystarts.Count; i++)
+                {
+                    nodeBufferOffsets[validKeys[i]] = (ulong)sol.Value(ystarts[i]);
+                }
+            }
+        }
+    }
+
     public Call ConstructResult(string moduleKind, int itemNumber)
     {
+        // 1. schedule the buffers
+        ScheduleBuffers();
         var bodyBuilder = T.Sequential();
         Tree.Accept(this, new(bodyBuilder, Array.Empty<Expr>()));
 
@@ -247,7 +295,7 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
     /// <summary>
     /// declare the input/output buffer.
     /// </summary>
-    private TIR.Buffer GetDeclareBuffer(BufferIdentity bid)
+    private TIR.Buffer GetParentDeclareBuffer(int storeLevel, ITileAbleNode node, BufferIdentity bid)
     {
         var expr = bid.Node.Grid.Buffers[bid.Index];
         var tensorType = GetBufferTensorType(expr);
@@ -284,11 +332,11 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
         return false;
     }
 
-    private ParentSubViewInfo GetParentSubViewInfo(ITileAbleNode node, BufferIdentity bid, AffineMap map, Expr[] forwardOffsets, IntExpr[] shapeExprs)
+    private ParentSubViewInfo GetParentSubViewInfo(int storeLevel, ITileAbleNode node, BufferIdentity bid, AffineMap map, Expr[] forwardOffsets, IntExpr[] shapeExprs)
     {
         var offset = new IR.Tuple(map.Apply(forwardOffsets, Enumerable.Repeat<Expr>(0, forwardOffsets.Length).ToArray()).Select(i => i.Start).ToArray());
         var shape = shapeExprs.Select(s => (int)_sol.Value(s.Var())).ToArray();
-        ISequentialBuilder<Let>? allocateBuilder = null;
+        bool innerAllocated = false;
         if (TryGetParerntBuffer(node, bid, out var parentBuffer, out var parentOffsets))
         {
             var subOffset = new Expr[offset.Count];
@@ -306,34 +354,41 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
         {
             if (ArgumentsInfo.GetBufferKind(bid) is not ArgumentsInfo.BufferKind.None)
             {
-                parentBuffer = GetDeclareBuffer(ArgumentsInfo.GetUniqueIdenitity(bid));
+                parentBuffer = GetParentDeclareBuffer(storeLevel, node, ArgumentsInfo.GetUniqueIdenitity(bid));
             }
-            else
+            else if (node is TileNode tileNode)
             {
-                parentBuffer = GetAllocateBuffer(bid, shape, out allocateBuilder);
+                parentBuffer = GetParentAllocateBuffer(storeLevel, tileNode, bid, shape, out innerAllocated);
             }
         }
 
-        return new ParentSubViewInfo(parentBuffer, offset, shape, allocateBuilder);
+        return new ParentSubViewInfo(parentBuffer, offset, shape, innerAllocated);
     }
 
     /// <summary>
     /// Get the local allocate buffer.
     /// </summary>
-    private TIR.Buffer GetAllocateBuffer(BufferIdentity bid, int[] shape, out ISequentialBuilder<Let> scope)
+    private TIR.Buffer GetParentAllocateBuffer(int storeLevel, TileNode node, BufferIdentity bid, int[] shape, out bool innerAllocated)
     {
         var expr = bid.Node.Grid.Buffers[bid.Index];
-        var tensorType = new TensorType(GetBufferTensorType(expr).DType, shape);
+        var tensorType = GetBufferTensorType(expr);
+        innerAllocated = false;
         if (!OutSideBufferMemo.TryGetValue(bid, out var buffer))
         {
-            var alloc = IR.F.Buffer.Allocate(TensorUtilities.GetProduct(tensorType.Shape.ToValueArray()), tensorType.DType, MemoryLocation.L2Data, false);
-            scope = T.Let(out var allocVar, alloc, $"{bid}_span");
-            buffer = T.AttachBuffer(allocVar, tensorType, MemoryLocation.L2Data, 1, out _, $"{bid}");
+            var rootNode = node.Root<TileNode>();
+            if (storeLevel < rootNode.Level)
+            {
+                tensorType = new TensorType(tensorType.DType, shape); // according to subtensor shape.
+                var start = LevelTreeBufferOffsets[storeLevel][rootNode][(node, bid)];
+                buffer = T.AttachBuffer(Tensor.FromPointer(start, tensorType.DType), tensorType, MemoryLocation.L1Data, 1, out _, $"{bid}");
+                innerAllocated = true;
+            }
+            else
+            {
+                buffer = T.AttachBuffer(None.Default, tensorType, MemoryLocation.Data, 1, out _, $"{bid}");
+            }
+
             OutSideBufferMemo.Add(bid, buffer);
-        }
-        else
-        {
-            throw new InvalidOperationException("can't allocate twice.");
         }
 
         return buffer;
@@ -343,7 +398,7 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
     {
     }
 
-    public sealed record ParentSubViewInfo(Expr Buffer, IR.Tuple Offsets, int[] Shape, ISequentialBuilder<Let>? AllocateBuilder)
+    public sealed record ParentSubViewInfo(Expr Buffer, IR.Tuple Offsets, int[] Shape, bool InnerAllocated)
     {
     }
 

@@ -107,7 +107,7 @@ public sealed class AutoTilePass : ModulePass
         {
             if (grid == Root)
             {
-                return TreeTiler.Tile(grid, _moduleKind, _workItem, CompileOptions);
+                return TreeTiler.Tile(grid, _moduleKind, _workItem, CompileOptions.TargetOptions);
             }
 
             return grid;

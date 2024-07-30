@@ -51,9 +51,9 @@ public class CpuTargetOptions : ITargetOptions
 
     public int[] HierarchySizes { get; set; } = new[] { 3 * (int)MathF.Pow(2, 20) };
 
-    public int[] MemoryCapacity { get; set; } = Array.Empty<int>();
+    public int[] MemoryCapacities { get; set; } = new[] { 0, 2 * 1024 * 1024, int.MaxValue };
 
-    public int[] MemoryBandWidth { get; set; } = Array.Empty<int>();
+    public int[] MemoryBandWidths { get; set; } = new[] { 128, 64, 8 };
 
     public string DistributedScheme { get; set; } = string.Empty;
 }
