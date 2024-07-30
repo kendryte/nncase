@@ -30,6 +30,7 @@ constexpr size_t N = 256;
 #endif
 
 // 0,Add_reduceN_NoPack
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Add_reduceN_noPack() {
     std::string reduce_mode = "Add";
     std::string reduce_direction = "reduceN";
@@ -61,6 +62,7 @@ std::string benchmark_ntt_reduce_Add_reduceN_noPack() {
 }
 
 // 1,Add_reduceN_PackN
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Add_reduceN_packN() {
     std::string reduce_mode = "Add";
     std::string reduce_direction = "reduceN";
@@ -94,6 +96,7 @@ std::string benchmark_ntt_reduce_Add_reduceN_packN() {
 }
 
 // 2,Add_reduceM_NoPack
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Add_reduceM_noPack() {
     std::string reduce_mode = "Add";
     std::string reduce_direction = "reduceM";
@@ -125,6 +128,7 @@ std::string benchmark_ntt_reduce_Add_reduceM_noPack() {
 }
 
 // 3,Add_reduceM_PackM
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Add_reduceM_packM() {
     std::string reduce_mode = "Add";
     std::string reduce_direction = "reduceM";
@@ -158,6 +162,7 @@ std::string benchmark_ntt_reduce_Add_reduceM_packM() {
 }
 
 // 4,Add_reduceMN_NoPack
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Add_reduceMN_noPack() {
     std::string reduce_mode = "Add";
     std::string reduce_direction = "reduceMN";
@@ -189,6 +194,7 @@ std::string benchmark_ntt_reduce_Add_reduceMN_noPack() {
 }
 
 // 5,Add_reduceMN_PackN
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Add_reduceMN_packN() {
     std::string reduce_mode = "Add";
     std::string reduce_direction = "reduceMN";
@@ -222,6 +228,7 @@ std::string benchmark_ntt_reduce_Add_reduceMN_packN() {
 }
 
 // 6,Add_reduceMN_PackM
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Add_reduceMN_packM() {
     std::string reduce_mode = "Add";
     std::string reduce_direction = "reduceMN";
@@ -255,6 +262,7 @@ std::string benchmark_ntt_reduce_Add_reduceMN_packM() {
 }
 
 // 7,Max_reduceN_NoPack
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Max_reduceN_noPack() {
     std::string reduce_mode = "Max";
     std::string reduce_direction = "reduceN";
@@ -286,6 +294,7 @@ std::string benchmark_ntt_reduce_Max_reduceN_noPack() {
 }
 
 // 8,Max_reduceN_PackN
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Max_reduceN_packN() {
     std::string reduce_mode = "Max";
     std::string reduce_direction = "reduceN";
@@ -319,6 +328,7 @@ std::string benchmark_ntt_reduce_Max_reduceN_packN() {
 }
 
 // 9,Max_reduceM_NoPack
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Max_reduceM_noPack() {
     std::string reduce_mode = "Max";
     std::string reduce_direction = "reduceM";
@@ -350,6 +360,7 @@ std::string benchmark_ntt_reduce_Max_reduceM_noPack() {
 }
 
 // 10,Max_reduceM_PackM
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Max_reduceM_packM() {
     std::string reduce_mode = "Max";
     std::string reduce_direction = "reduceM";
@@ -383,6 +394,7 @@ std::string benchmark_ntt_reduce_Max_reduceM_packM() {
 }
 
 // 11,Max_reduceMN_NoPack
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Max_reduceMN_noPack() {
     std::string reduce_mode = "Max";
     std::string reduce_direction = "reduceMN";
@@ -414,6 +426,7 @@ std::string benchmark_ntt_reduce_Max_reduceMN_noPack() {
 }
 
 // 12,Max_reduceMN_PackN
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Max_reduceMN_packN() {
     std::string reduce_mode = "Max";
     std::string reduce_direction = "reduceMN";
@@ -447,6 +460,7 @@ std::string benchmark_ntt_reduce_Max_reduceMN_packN() {
 }
 
 // 13,Max_reduceMN_PackM
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Max_reduceMN_packM() {
     std::string reduce_mode = "Max";
     std::string reduce_direction = "reduceMN";
@@ -480,6 +494,7 @@ std::string benchmark_ntt_reduce_Max_reduceMN_packM() {
 }
 
 // 14,Min_reduceN_NoPack
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Min_reduceN_noPack() {
     std::string reduce_mode = "Min";
     std::string reduce_direction = "reduceN";
@@ -511,6 +526,7 @@ std::string benchmark_ntt_reduce_Min_reduceN_noPack() {
 }
 
 // 15,Min_reduceN_PackN
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Min_reduceN_packN() {
     std::string reduce_mode = "Min";
     std::string reduce_direction = "reduceN";
@@ -544,6 +560,7 @@ std::string benchmark_ntt_reduce_Min_reduceN_packN() {
 }
 
 // 16,Min_reduceM_NoPack
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Min_reduceM_noPack() {
     std::string reduce_mode = "Min";
     std::string reduce_direction = "reduceM";
@@ -575,6 +592,7 @@ std::string benchmark_ntt_reduce_Min_reduceM_noPack() {
 }
 
 // 17,Min_reduceM_PackM
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Min_reduceM_packM() {
     std::string reduce_mode = "Min";
     std::string reduce_direction = "reduceM";
@@ -609,6 +627,7 @@ std::string benchmark_ntt_reduce_Min_reduceM_packM() {
 
 // 18,Min_reduceMN_NoPack
 
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Min_reduceMN_noPack() {
     std::string reduce_mode = "Min";
     std::string reduce_direction = "reduceMN";
@@ -640,6 +659,7 @@ std::string benchmark_ntt_reduce_Min_reduceMN_noPack() {
 }
 
 // 19,Min_reduceMN_PackN
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Min_reduceMN_packN() {
     std::string reduce_mode = "Min";
     std::string reduce_direction = "reduceMN";
@@ -673,6 +693,7 @@ std::string benchmark_ntt_reduce_Min_reduceMN_packN() {
 }
 
 // 20,Min_reduceMN_PackM
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Min_reduceMN_packM() {
     std::string reduce_mode = "Min";
     std::string reduce_direction = "reduceMN";
@@ -706,6 +727,7 @@ std::string benchmark_ntt_reduce_Min_reduceMN_packM() {
 }
 
 // 21,Mean_reduceN_NoPack
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Mean_reduceN_noPack() {
     std::string reduce_mode = "Mean";
     std::string reduce_direction = "reduceN";
@@ -737,6 +759,7 @@ std::string benchmark_ntt_reduce_Mean_reduceN_noPack() {
 }
 
 // 22,Mean_reduceN_PackN
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Mean_reduceN_packN() {
     std::string reduce_mode = "Mean";
     std::string reduce_direction = "reduceN";
@@ -771,6 +794,7 @@ std::string benchmark_ntt_reduce_Mean_reduceN_packN() {
 }
 
 // 23,Mean_reduceM_NoPack
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Mean_reduceM_noPack() {
     std::string reduce_mode = "Mean";
     std::string reduce_direction = "reduceM";
@@ -802,6 +826,7 @@ std::string benchmark_ntt_reduce_Mean_reduceM_noPack() {
 }
 
 // 24,Mean_reduceM_PackM
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Mean_reduceM_packM() {
     std::string reduce_mode = "Mean";
     std::string reduce_direction = "reduceM";
@@ -836,6 +861,7 @@ std::string benchmark_ntt_reduce_Mean_reduceM_packM() {
 }
 
 // 25,Mean_reduceMN_NoPack
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Mean_reduceMN_noPack() {
     std::string reduce_mode = "Mean";
     std::string reduce_direction = "reduceMN";
@@ -867,6 +893,7 @@ std::string benchmark_ntt_reduce_Mean_reduceMN_noPack() {
 }
 
 // 26,Mean_reduceMN_PackN
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Mean_reduceMN_packN() {
     std::string reduce_mode = "Mean";
     std::string reduce_direction = "reduceMN";
@@ -901,6 +928,7 @@ std::string benchmark_ntt_reduce_Mean_reduceMN_packN() {
 }
 
 // 27,Mean_reduceMN_PackM
+template <size_t M, size_t N>
 std::string benchmark_ntt_reduce_Mean_reduceMN_packM() {
     std::string reduce_mode = "Mean";
     std::string reduce_direction = "reduceMN";
@@ -934,48 +962,52 @@ std::string benchmark_ntt_reduce_Mean_reduceMN_packM() {
     return oss.str();
 }
 
-#define BENCHMARK_NTT_REDUCE(OP, REDUCE_AXIS, PACK_MODE)                       \
-    result = benchmark_ntt_reduce_##OP##_reduce##REDUCE_AXIS##_##PACK_MODE();  \
+#define BENCHMARK_NTT_REDUCE(OP, REDUCE_AXIS, PACK_MODE, M, N)                 \
+    benchmark_ntt_reduce_##OP##_reduce##REDUCE_AXIS##_##PACK_MODE<M, N>();     \
+    benchmark_ntt_reduce_##OP##_reduce##REDUCE_AXIS##_##PACK_MODE<M, N>();     \
+    benchmark_ntt_reduce_##OP##_reduce##REDUCE_AXIS##_##PACK_MODE<M, N>();     \
+    result =                                                                   \
+        benchmark_ntt_reduce_##OP##_reduce##REDUCE_AXIS##_##PACK_MODE<M, N>(); \
     std::cout << result << std::endl;
 
 int main() {
 
     std::string result;
 
-    BENCHMARK_NTT_REDUCE(Add, MN, noPack)
-    BENCHMARK_NTT_REDUCE(Max, MN, noPack)
-    BENCHMARK_NTT_REDUCE(Min, MN, noPack)
-    BENCHMARK_NTT_REDUCE(Mean, MN, noPack)
+    BENCHMARK_NTT_REDUCE(Add, MN, noPack, 64, 64)
+    BENCHMARK_NTT_REDUCE(Max, MN, noPack, 64, 64)
+    BENCHMARK_NTT_REDUCE(Min, MN, noPack, 64, 64)
+    BENCHMARK_NTT_REDUCE(Mean, MN, noPack, 64, 64)
 
-    BENCHMARK_NTT_REDUCE(Add, MN, packM)
-    BENCHMARK_NTT_REDUCE(Max, MN, packM)
-    BENCHMARK_NTT_REDUCE(Min, MN, packM)
-    BENCHMARK_NTT_REDUCE(Mean, MN, packM)
+    BENCHMARK_NTT_REDUCE(Add, MN, packM, 2048, 2)
+    BENCHMARK_NTT_REDUCE(Max, MN, packM, 2048, 2)
+    BENCHMARK_NTT_REDUCE(Min, MN, packM, 2048, 2)
+    BENCHMARK_NTT_REDUCE(Mean, MN, packM, 2048, 2)
 
-    BENCHMARK_NTT_REDUCE(Add, MN, packN)
-    BENCHMARK_NTT_REDUCE(Max, MN, packN)
-    BENCHMARK_NTT_REDUCE(Min, MN, packN)
-    BENCHMARK_NTT_REDUCE(Mean, MN, packN)
+    BENCHMARK_NTT_REDUCE(Add, MN, packN, 2, 2048)
+    BENCHMARK_NTT_REDUCE(Max, MN, packN, 2, 2048)
+    BENCHMARK_NTT_REDUCE(Min, MN, packN, 2, 2048)
+    BENCHMARK_NTT_REDUCE(Mean, MN, packN, 2, 2048)
 
-    BENCHMARK_NTT_REDUCE(Add, M, noPack)
-    BENCHMARK_NTT_REDUCE(Max, M, noPack)
-    BENCHMARK_NTT_REDUCE(Min, M, noPack)
-    BENCHMARK_NTT_REDUCE(Mean, M, noPack)
+    BENCHMARK_NTT_REDUCE(Add, M, noPack, 2048, 2)
+    BENCHMARK_NTT_REDUCE(Max, M, noPack, 2048, 2)
+    BENCHMARK_NTT_REDUCE(Min, M, noPack, 2048, 2)
+    BENCHMARK_NTT_REDUCE(Mean, M, noPack, 2048, 2)
 
-    BENCHMARK_NTT_REDUCE(Add, N, noPack)
-    BENCHMARK_NTT_REDUCE(Max, N, noPack)
-    BENCHMARK_NTT_REDUCE(Min, N, noPack)
-    BENCHMARK_NTT_REDUCE(Mean, N, noPack)
+    BENCHMARK_NTT_REDUCE(Add, N, noPack, 2, 2048)
+    BENCHMARK_NTT_REDUCE(Max, N, noPack, 2, 2048)
+    BENCHMARK_NTT_REDUCE(Min, N, noPack, 2, 2048)
+    BENCHMARK_NTT_REDUCE(Mean, N, noPack, 2, 2048)
 
-    BENCHMARK_NTT_REDUCE(Add, M, packM)
-    BENCHMARK_NTT_REDUCE(Max, M, packM)
-    BENCHMARK_NTT_REDUCE(Min, M, packM)
-    BENCHMARK_NTT_REDUCE(Mean, M, packM)
+    BENCHMARK_NTT_REDUCE(Add, M, packM, 2048, 2)
+    BENCHMARK_NTT_REDUCE(Max, M, packM, 2048, 2)
+    BENCHMARK_NTT_REDUCE(Min, M, packM, 2048, 2)
+    BENCHMARK_NTT_REDUCE(Mean, M, packM, 2048, 2)
 
-    BENCHMARK_NTT_REDUCE(Add, N, packN)
-    BENCHMARK_NTT_REDUCE(Max, N, packN)
-    BENCHMARK_NTT_REDUCE(Min, N, packN)
-    BENCHMARK_NTT_REDUCE(Mean, N, packN)
+    BENCHMARK_NTT_REDUCE(Add, N, packN, 2, 2048)
+    BENCHMARK_NTT_REDUCE(Max, N, packN, 2, 2048)
+    BENCHMARK_NTT_REDUCE(Min, N, packN, 2, 2048)
+    BENCHMARK_NTT_REDUCE(Mean, N, packN, 2, 2048)
 
     return 0;
 }
