@@ -6,13 +6,14 @@ if(DEFINED ENV{RISCV_ROOT_PATH})
 endif()
 
 if(NOT RISCV_ROOT_PATH)
-    message(FATAL_ERROR "RISCV_ROOT_PATH env must be defined")
+    message(FATAL_ERROR "RISCV_ROOT_PATH env must be defined for rtos runtime")
 endif()
 
 set(RISCV_ROOT_PATH ${RISCV_ROOT_PATH} CACHE STRING "root path to riscv toolchain")
-set(CMAKE_C_COMPILER "${RISCV_ROOT_PATH}/bin/riscv64-unknown-linux-gnu-gcc")
-set(CMAKE_CXX_COMPILER "${RISCV_ROOT_PATH}/bin/riscv64-unknown-linux-gnu-g++")
-set(CMAKE_FIND_ROOT_PATH "${RISCV_ROOT_PATH}/riscv64-unknown-linux-gnu")
+set(CMAKE_C_COMPILER "${RISCV_ROOT_PATH}/bin/riscv64-unknown-linux-musl-gcc")
+set(CMAKE_CXX_COMPILER "${RISCV_ROOT_PATH}/bin/riscv64-unknown-linux-musl-g++")
+set(CMAKE_FIND_ROOT_PATH "${RISCV_ROOT_PATH}/riscv64-unknown-linux-musl")
+
 
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
@@ -30,5 +31,3 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=rv64imafdcv -mabi=lp64d -mcmodel=
 set(BUILDING_RUNTIME ON)
 set(ENABLE_K230_RUNTIME ON)
 set(BUILD_SHARED_LIBS OFF)
-
-add_definitions(-DLINUX_RUNTIME)

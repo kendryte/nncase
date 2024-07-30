@@ -25,9 +25,9 @@ else()
         if(os_name STREQUAL "linux")
             target_link_libraries(kernels PRIVATE -lpthread)
         endif()
-        target_compile_definitions(kernels PRIVATE "-DNNCASE_HALIDE")        
+        target_compile_definitions(kernels PRIVATE "-DNNCASE_HALIDE")
     endif()
-    
+
     target_compile_definitions(kernels PUBLIC -DNNCASE_DLL -DNNCASE_SIMULATOR)
     set_property(TARGET kernels PROPERTY POSITION_INDEPENDENT_CODE ON)
 endif()
@@ -38,7 +38,7 @@ if(ENABLE_OPENMP)
 endif()
 
 if(APPLE)
-  target_compile_options(kernels PRIVATE -Wno-gnu-zero-variadic-macro-arguments)  
+    target_compile_options(kernels PRIVATE -Wno-gnu-zero-variadic-macro-arguments)
 endif(APPLE)
 
 
