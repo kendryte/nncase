@@ -145,6 +145,7 @@ IMPL_RVV_WITH_LMULS(ACOSH_FLOAT32)
 REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, acosh)
 
 // asin
+#if 0
 // porting from https://developer.download.nvidia.cn/cg/asin.html
 #define ASIN_FLOAT32(LMUL, MLEN)                                               \
     inline vfloat32m##LMUL##_t asin_float32(const vfloat32m##LMUL##_t &v,      \
@@ -164,7 +165,48 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, acosh)
         ret = vfnmsub_vv_f32m##LMUL(ret, sroot, c5, vl);                       \
         return vfneg_v_f32m##LMUL##_m(mask, ret, ret, vl);                     \
     }
-
+#else
+// max_ulp_error = 2 on c908
+#define ASIN_FLOAT32(LMUL, MLEN)                                               \
+    inline vfloat32m##LMUL##_t asin_float32(const vfloat32m##LMUL##_t &v,      \
+                                            const size_t vl) {                 \
+        auto half = vfmv_v_f_f32m##LMUL(0.5f, vl);                             \
+        auto one = vfmv_v_f_f32m##LMUL(1.f, vl);                               \
+        auto minus_two = vfmv_v_f_f32m##LMUL(-2.f, vl);                        \
+        auto pi_over_2f = vfmv_v_f_f32m##LMUL(0x1.921fb6p+0f, vl);             \
+        auto p0 = vfmv_v_f_f32m##LMUL(0x1.55555ep-3, vl);                      \
+        auto p1 = vfmv_v_f_f32m##LMUL(0x1.33261ap-4, vl);                      \
+        auto p2 = vfmv_v_f_f32m##LMUL(0x1.70d7dcp-5, vl);                      \
+        auto neg_mask = vmflt_vf_f32m##LMUL##_b##MLEN(v, 0.f, vl);             \
+        auto x = vfabs_v_f32m##LMUL(v, vl);                                    \
+        auto mul1 = vfmerge_vfm_f32m##LMUL(neg_mask, one, -1.f, vl);           \
+                                                                               \
+        /* Evaluate polynomial Q(x) = z + z * z2 * P(z2) with                  \
+            z2 = x ^ 2         and z = |x|     , if |x| < 0.5                  \
+            z2 = (1 - |x|) / 2 and z = sqrt(z2), if |x| >= 0.5.  */            \
+        auto lt_half_mask = vmflt_vv_f32m##LMUL##_b##MLEN(x, half, vl);        \
+        auto tmp = vmv_v_v_f32m##LMUL(x, vl);                                  \
+        auto mul2 = vfmerge_vfm_f32m##LMUL(lt_half_mask, minus_two, 1.f, vl);  \
+        tmp = vfnmsub_vv_f32m##LMUL(tmp, half, half, vl);                      \
+        auto add = vfmerge_vfm_f32m##LMUL(lt_half_mask, pi_over_2f, 0.f, vl);  \
+        auto z2 = vfmul_vv_f32m##LMUL##_m(lt_half_mask, tmp, v, v, vl);        \
+        /* asin(|x|) = Q(|x|),        for |x| < 0.5                            \
+                = pi / 2 - 2 Q(|x|) , for |x| >= 0.5.  */                      \
+        auto y1 = vfmv_v_f_f32m##LMUL(0x1.3af7d8p-5, vl);                      \
+        auto y2 = vfmv_v_f_f32m##LMUL(0x1.b059dp-6, vl);                       \
+        auto z4 = vfmul_vv_f32m##LMUL(z2, z2, vl);                             \
+        tmp = vfsqrt_v_f32m##LMUL(z2, vl);                                     \
+        y1 = vfmadd_vv_f32m##LMUL(y1, z4, p2, vl);                             \
+        y2 = vfmadd_vv_f32m##LMUL(y2, z4, p1, vl);                             \
+        y1 = vfmadd_vv_f32m##LMUL(y1, z4, p0, vl);                             \
+        auto z = vmerge_vvm_f32m##LMUL(lt_half_mask, tmp, x, vl);              \
+        y1 = vfmacc_vv_f32m##LMUL(y1, y2, z2, vl);                             \
+        z2 = vfmul_vv_f32m##LMUL(z2, z, vl);                                   \
+        y1 = vfmadd_vv_f32m##LMUL(y1, z2, z, vl);                              \
+        y1 = vfmadd_vv_f32m##LMUL(y1, mul2, add, vl);                          \
+        return vfmul_vv_f32m##LMUL(y1, mul1, vl);                              \
+    }
+#endif
 IMPL_RVV_WITH_LMULS(ASIN_FLOAT32)
 REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, asin)
 
