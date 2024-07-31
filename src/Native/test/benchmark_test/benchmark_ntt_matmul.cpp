@@ -17,9 +17,9 @@ void benchmark_ntt_matmul_no_pack() {
     constexpr size_t K = 32;
     constexpr size_t N = 32;
 #else
-    constexpr size_t M = 256;
-    constexpr size_t K = 256;
-    constexpr size_t N = 256;
+    constexpr size_t M = 32;
+    constexpr size_t K = 32;
+    constexpr size_t N = 32;
 #endif
     ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
     ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
@@ -51,9 +51,9 @@ void benchmark_ntt_matmul_pack_K() {
     constexpr size_t K = 32;
     constexpr size_t N = 32;
 #else
-    constexpr size_t M = 256;
-    constexpr size_t K = 256;
-    constexpr size_t N = 256;
+    constexpr size_t M = 32;
+    constexpr size_t K = 32;
+    constexpr size_t N = 32;
 #endif
     ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
     ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
@@ -95,9 +95,9 @@ void benchmark_ntt_matmul_pack_M() {
     constexpr size_t K = 32;
     constexpr size_t N = 32;
 #else
-    constexpr size_t M = 256;
-    constexpr size_t K = 256;
-    constexpr size_t N = 256;
+    constexpr size_t M = 32;
+    constexpr size_t K = 32;
+    constexpr size_t N = 32;
 #endif
     ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
     ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
@@ -137,9 +137,9 @@ void benchmark_ntt_matmul_pack_N() {
     constexpr size_t K = 32;
     constexpr size_t N = 32;
 #else
-    constexpr size_t M = 256;
-    constexpr size_t K = 256;
-    constexpr size_t N = 256;
+    constexpr size_t M = 32;
+    constexpr size_t K = 32;
+    constexpr size_t N = 32;
 #endif
     ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
     ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
@@ -179,9 +179,9 @@ void benchmark_ntt_matmul_pack_M_N() {
     constexpr size_t K = 32;
     constexpr size_t N = 32;
 #else
-    constexpr size_t M = 256;
-    constexpr size_t K = 256;
-    constexpr size_t N = 256;
+    constexpr size_t M = 32;
+    constexpr size_t K = 32;
+    constexpr size_t N = 32;
 #endif
     ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
     ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
@@ -225,9 +225,9 @@ void benchmark_ntt_matmul_pack_M_K() {
     constexpr size_t K = 32;
     constexpr size_t N = 32;
 #else
-    constexpr size_t M = 256;
-    constexpr size_t K = 256;
-    constexpr size_t N = 256;
+    constexpr size_t M = 32;
+    constexpr size_t K = 32;
+    constexpr size_t N = 32;
 #endif
     ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
     ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
@@ -271,9 +271,9 @@ void benchmark_ntt_matmul_pack_K_N() {
     constexpr size_t K = 32;
     constexpr size_t N = 32;
 #else
-    constexpr size_t M = 256;
-    constexpr size_t K = 256;
-    constexpr size_t N = 256;
+    constexpr size_t M = 32;
+    constexpr size_t K = 32;
+    constexpr size_t N = 32;
 #endif
     ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
     ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
@@ -317,9 +317,9 @@ void benchmark_ntt_matmul_pack_M_K_N() {
     constexpr size_t K = 32;
     constexpr size_t N = 32;
 #else
-    constexpr size_t M = 256;
-    constexpr size_t K = 256;
-    constexpr size_t N = 256;
+    constexpr size_t M = 32;
+    constexpr size_t K = 32;
+    constexpr size_t N = 32;
 #endif
     ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
     ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
