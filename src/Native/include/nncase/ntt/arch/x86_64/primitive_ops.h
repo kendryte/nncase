@@ -136,9 +136,11 @@ template <> struct round<ntt::vector<float, 8>> {
 template <> struct rsqrt<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
-        return _mm256_rsqrt_ps(v);
 
 #if 0
+        return _mm256_rsqrt_ps(v);
+
+#else
         // This is a higher precision version, ulp is about 4, tp=4.5
         const __m256 one_point_five = _mm256_set1_ps(1.5f);
 
