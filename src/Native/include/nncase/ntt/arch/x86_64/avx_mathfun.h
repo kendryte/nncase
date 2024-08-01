@@ -839,8 +839,9 @@ static inline __m256 acos256_ps(__m256 x) {
     const __m256 magic_a3 = _mm256_set1_ps(0.045520633f);
     const __m256 magic_a0 = _mm256_set1_ps(1.0f);
     const __m256 magic_a1 = _mm256_set1_ps(0.166667819f);
-    const __m256 magic_half_pi = _mm256_set1_ps(1.5707964f);
-    const __m256 magic_pi = _mm256_set1_ps(3.1415927f);
+    const __m256 magic_half_pi = _mm256_set1_ps(1.57079632679489661923f);
+    const __m256 magic_pi =
+        _mm256_set1_ps(3.14159265358979323846264338327950288f);
 
     // negative_mask = magic_negative_zero && x;
     __m256 negative_mask = _mm256_and_ps(magic_negative_zero, x);
