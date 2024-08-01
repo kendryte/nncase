@@ -108,7 +108,59 @@ template <> struct acosh<ntt::vector<float, 8>> {
 template <> struct asin<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
+#if 0
         return asin256_ps(v);
+#else
+        // 定义常量
+        const __m256 zero = _mm256_set1_ps(0.0f);
+        const __m256 half = _mm256_set1_ps(0.5f);
+        const __m256 one = _mm256_set1_ps(1.0f);
+        const __m256 minus_two = _mm256_set1_ps(-2.0f);
+        const __m256 pi_over_2f = _mm256_set1_ps(0x1.921fb6p+0f);
+
+        // 定义多项式系数
+        const __m256 p0 = _mm256_set1_ps(0x1.55555ep-3);
+        const __m256 p1 = _mm256_set1_ps(0x1.33261ap-4);
+        const __m256 p2 = _mm256_set1_ps(0x1.70d7dcp-5);
+
+        // 计算符号掩码和绝对值
+        const __m256 neg_mask = _mm256_cmp_ps(v, zero, _CMP_LT_OS); // v < 0.0
+        const __m256 abs_mask = _mm256_set1_ps(-0.0f); // 位掩码，用于计算绝对值
+        __m256 x = _mm256_andnot_ps(abs_mask, v); // 绝对值
+
+        // 初始化偏移量和乘法因子
+        const __m256 mul1 =
+            _mm256_blendv_ps(one, _mm256_set1_ps(-1.0f), neg_mask);
+
+        // 判断 x 是否小于 0.5
+        const __m256 lt_half_mask = _mm256_cmp_ps(x, half, _CMP_LT_OS);
+        __m256 tmp = x;
+        __m256 mul2 = _mm256_blendv_ps(minus_two, one, lt_half_mask);
+
+        // 计算多项式 Q(x)
+        tmp = _mm256_fnmadd_ps(tmp, half, half); // tmp = half - half * tmp
+        const __m256 add = _mm256_blendv_ps(pi_over_2f, zero, lt_half_mask);
+        __m256 z2 = _mm256_mul_ps(v, v); // z2 = tmp * v
+        z2 = _mm256_blendv_ps(tmp, z2, lt_half_mask);
+
+        // 计算多项式近似
+        __m256 y1 = _mm256_set1_ps(0x1.3af7d8p-5);
+        __m256 y2 = _mm256_set1_ps(0x1.b059dp-6);
+        const __m256 z4 = _mm256_mul_ps(z2, z2); // z4 = z2 * z2
+        tmp = _mm256_sqrt_ps(z2);                // tmp = sqrt(z2)
+
+        y1 = _mm256_fmadd_ps(y1, z4, p2); // y1 = y1 * z4 + p2
+        y2 = _mm256_fmadd_ps(y2, z4, p1); // y2 = y2 * z4 + p1
+        y1 = _mm256_fmadd_ps(y1, z4, p0); // y1 = y1 * z4 + p0
+
+        const __m256 z = _mm256_blendv_ps(tmp, x, lt_half_mask);
+        y1 = _mm256_fmadd_ps(y2, z2, y1); // y1 = y1 * y2 + z2
+        z2 = _mm256_mul_ps(z2, z);        // mul = mul * z
+        y1 = _mm256_fmadd_ps(y1, z2, z);  // y1 = y1 * z2 + one
+        // 计算最终结果并返回
+        y1 = _mm256_fmadd_ps(y1, mul2, add); // y1 * mul + add
+        return _mm256_mul_ps(y1, mul1);      // mul = mul * z
+#endif
     }
 };
 
