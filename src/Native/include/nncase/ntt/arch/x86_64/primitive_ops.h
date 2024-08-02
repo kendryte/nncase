@@ -185,7 +185,47 @@ template <> struct ceil<ntt::vector<float, 8>> {
 template <> struct cos<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
+#if 0
         return cos256_ps(v);
+#else
+        auto n = _mm256_set1_ps(0x1.45f306p-2f);
+        auto half = _mm256_set1_ps(0.5f);
+        auto c0 = _mm256_set1_ps(-0x1.555548p-3f);
+        auto c2 = _mm256_set1_ps(-0x1.9f42eap-13f);
+
+        // n = rint((|x|+pi/2)/pi) - 0.5
+        auto r = _mm256_and_ps(v, _mm256_castsi256_ps(_mm256_set1_epi32(
+                                      0x7FFFFFFF))); // vfabs_v_f32m
+        n = _mm256_fmadd_ps(n, r, half);             // vfmadd_vv_f32m
+        auto ni = _mm256_cvtps_epi32(n);             // vfcvt_x_f_v_i32m
+        n = _mm256_cvtepi32_ps(ni);                  // vfcvt_f_x_v_f32m
+        auto odd =
+            _mm256_add_epi32(ni, _mm256_set1_epi32(0x1.8p+23)); // vadd_vx_i32m
+        n = _mm256_sub_ps(n, _mm256_set1_ps(0.5f));             // vfsub_vf_f32m
+        odd = _mm256_slli_epi32(odd, 31);                       // vsll_vx_i32
+
+        // r = |x| - n*pi  (range reduction into -pi/2 .. pi/2)
+        r = _mm256_fnmadd_ps(_mm256_set1_ps(0x1.921fb6p+1f), n,
+                             r); // vfnmsac_vf_f32m
+        r = _mm256_fnmadd_ps(_mm256_set1_ps(-0x1.777a5cp-24f), n,
+                             r); // vfnmsac_vf_f32m
+        r = _mm256_fnmadd_ps(_mm256_set1_ps(-0x1.ee59dap-49f), n,
+                             r); // vfnmsac_vf_f32m
+
+        // y = sin(r)
+        auto r2 = _mm256_mul_ps(r, r); // vfmul_vv_f32m
+        auto y1 = _mm256_set1_ps(0x1.5b2e76p-19f);
+        auto y2 = _mm256_set1_ps(0x1.110df4p-7f);
+        y1 = _mm256_fmadd_ps(y1, r2, c2);   // vfmadd_vv_f32m
+        y2 = _mm256_fmadd_ps(y2, r2, c0);   // vfmadd_vv_f32m
+        auto r4 = _mm256_mul_ps(r2, r2);    // vfmul_vv_f32m
+        auto r3 = _mm256_mul_ps(r2, r);     // vfmul_vv_f32m
+        y1 = _mm256_fmadd_ps(y1, r4, y2);   // vfmadd_vv_f32m
+        y1 = _mm256_fmadd_ps(y1, r3, r);    // vfmadd_vv_f32m
+        auto tmp = _mm256_castps_si256(y1); // vreinterpret_v_f32m_i32m
+        tmp = _mm256_xor_si256(tmp, odd);   // vxor_vv_i32m
+        return _mm256_castsi256_ps(tmp);    // vreinterpret_v_i32m_f32m
+#endif
     }
 };
 
