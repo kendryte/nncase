@@ -447,31 +447,43 @@ IMPL_RVV_WITH_LMULS(SIGN_FLOAT32)
 REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, sign)
 
 // sin
-// sin(x) = x - x^3/3! + x^5/5! - x^7/7!
+// from glibc 2.40: sysdeps/aarch64/fpu/sinf_advsimd.c
 #define SIN_FLOAT32(LMUL, MLEN)                                                \
     inline vfloat32m##LMUL##_t sin_float32(const vfloat32m##LMUL##_t &v,       \
                                            const size_t vl) {                  \
-        auto mask1 = vmflt_vf_f32m##LMUL##_b##MLEN(v, 0.f, vl);                \
-        auto x = vfabs_v_f32m##LMUL(v, vl);                                    \
-        auto quotient = vfcvt_f_x_v_f32m##LMUL(                                \
-            vfcvt_rtz_x_f_v_i32m##LMUL(                                        \
-                vfmul_vf_f32m##LMUL(x, 1 / (2.f * M_PI), vl), vl),             \
-            vl);                                                               \
-        x = vfnmsub_vf_f32m##LMUL(quotient, 2.f * M_PI, x, vl);                \
-        auto mask2 = vmfgt_vf_f32m##LMUL##_b##MLEN(x, M_PI, vl);               \
-        x = vfsub_vf_f32m##LMUL##_m(mask2, x, x, M_PI, vl);                    \
-        auto mask3 = vmfgt_vf_f32m##LMUL##_b##MLEN(x, M_PI / 2.f, vl);         \
-        x = vfrsub_vf_f32m##LMUL##_m(mask3, x, x, M_PI, vl);                   \
-        auto x2 = vfmul_vv_f32m##LMUL(x, x, vl);                               \
-        auto ret = vfmv_v_f_f32m##LMUL(1 / 120.f, vl);                         \
-        auto c1 = vfmv_v_f_f32m##LMUL(-1 / 6.f, vl);                           \
-        auto c2 = vfmv_v_f_f32m##LMUL(1.f, vl);                                \
-        ret = vfmacc_vf_f32m##LMUL(ret, -1 / 5040.f, x2, vl);                  \
-        ret = vfmadd_vv_f32m##LMUL(ret, x2, c1, vl);                           \
-        ret = vfmadd_vv_f32m##LMUL(ret, x2, c2, vl);                           \
-        ret = vfmul_vv_f32m##LMUL(x, ret, vl);                                 \
-        auto mask = vmxor_mm_b##MLEN(mask1, mask2, vl);                        \
-        return vfneg_v_f32m##LMUL##_m(mask, ret, ret, vl);                     \
+        auto c0 = vfmv_v_f_f32m##LMUL(-0x1.555548p-3f, vl);                    \
+        auto c2 = vfmv_v_f_f32m##LMUL(-0x1.9f42eap-13f, vl);                   \
+                                                                               \
+        /* n = rint(|x|/pi) */                                                 \
+        auto r = vfabs_v_f32m##LMUL(v, vl);                                    \
+        auto n = vfmul_vf_f32m##LMUL(r, 0x1.45f306p-2f, vl);                   \
+        auto sign =                                                            \
+            vxor_vv_i32m##LMUL(vreinterpret_v_f32m##LMUL##_i32m##LMUL(v),      \
+                               vreinterpret_v_f32m##LMUL##_i32m##LMUL(r), vl); \
+        auto ni = vfcvt_x_f_v_i32m##LMUL(n, vl);                               \
+        n = vfcvt_f_x_v_f32m##LMUL(ni, vl);                                    \
+        auto odd = vadd_vx_i32m##LMUL(ni, 0x1.8p+23, vl);                      \
+                                                                               \
+        /* r = |x| - n*pi  (range reduction into -pi/2 .. pi/2).  */           \
+        r = vfnmsac_vf_f32m##LMUL(r, 0x1.921fb6p+1f, n, vl);                   \
+        odd = vsll_vx_i32##m##LMUL(odd, 31, vl);                               \
+        r = vfnmsac_vf_f32m##LMUL(r, -0x1.777a5cp-24f, n, vl);                 \
+        r = vfnmsac_vf_f32m##LMUL(r, -0x1.ee59dap-49f, n, vl);                 \
+                                                                               \
+        /* y = sin(r).  */                                                     \
+        auto r2 = vfmul_vv_f32m##LMUL(r, r, vl);                               \
+        auto y1 = vfmv_v_f_f32m##LMUL(0x1.5b2e76p-19f, vl);                    \
+        auto y2 = vfmv_v_f_f32m##LMUL(0x1.110df4p-7f, vl);                     \
+        y1 = vfmadd_vv_f32m##LMUL(y1, r2, c2, vl);                             \
+        y2 = vfmadd_vv_f32m##LMUL(y2, r2, c0, vl);                             \
+        auto r4 = vfmul_vv_f32m##LMUL(r2, r2, vl);                             \
+        auto r3 = vfmul_vv_f32m##LMUL(r2, r, vl);                              \
+        y1 = vfmadd_vv_f32m##LMUL(y1, r4, y2, vl);                             \
+        sign = vxor_vv_i32m##LMUL(sign, odd, vl);                              \
+        y1 = vfmadd_vv_f32m##LMUL(y1, r3, r, vl);                              \
+        auto tmp = vreinterpret_v_f32m##LMUL##_i32m##LMUL(y1);                 \
+        tmp = vxor_vv_i32m##LMUL(tmp, sign, vl);                               \
+        return vreinterpret_v_i32m##LMUL##_f32m##LMUL(tmp);                    \
     }
 
 IMPL_RVV_WITH_LMULS(SIN_FLOAT32)

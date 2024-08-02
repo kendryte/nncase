@@ -206,7 +206,7 @@ class BenchmarkNTT_riscv64(BenchmarkNTT):
                                         'round': '11',
                                         'rsqrt': '58',
                                         'sign': '18',
-                                        'sin': '66',
+                                        'sin': '54',
                                         'sinh': '69',
                                         'sqrt': '40',
                                         'square': '8',
