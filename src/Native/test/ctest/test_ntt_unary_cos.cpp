@@ -131,6 +131,22 @@ template <typename T, size_t vl> void test_vector() {
 
 TEST(UnaryTestCos, vector) { TEST_VECTOR(float) }
 
+template <typename T, size_t N, typename Shape,
+          typename Stride = ntt::default_strides_t<Shape>>
+void cos_std(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &input,
+             ntt::tensor<ntt::vector<T, N>, Shape, Stride> &output) {
+
+    nncase::ntt::apply(input.shape(), [&](auto index) {
+        auto input_element = input(index);
+        auto &output_element = output(index);
+
+        nncase::ntt::apply(input_element.shape(), [&](auto idx) {
+            output_element(idx) = std::cos(input_element(idx));
+            [[maybe_unused]] auto debug = 1.0f;
+        });
+    });
+}
+
 template <typename T, size_t vl> void test_vector_ulp(double ulp_threshold) {
     constexpr size_t size = ULP_SIZE;
 
@@ -144,13 +160,9 @@ template <typename T, size_t vl> void test_vector_ulp(double ulp_threshold) {
     std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
     ntt::unary<ntt::ops::cos>(*ntt_input, *ntt_output1);
 
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    auto ort_output = ortki_Cos(ort_input);
-
     // compare
     std::unique_ptr<tensor_type> ntt_output2(new tensor_type);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
+    cos_std(*ntt_input, *ntt_output2);
     EXPECT_TRUE(
         NttTest::compare_ulp(*ntt_output1, *ntt_output2, ulp_threshold));
 }
