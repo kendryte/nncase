@@ -251,14 +251,14 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     var arg0 = expr.Arguments[1] switch
                     {
                         TupleConst => $"fixed_shape<{arguments[1].Name}>{{}}",
-                        IR.Tuple tc => $"ranked_shape<{tc.Count}>{{{arguments[1].Name}}}",
+                        IR.Tuple tc => $"make_ranked_shape({arguments[1].Name})",
                         _ => throw new ArgumentOutOfRangeException(nameof(expr)),
                     };
 
                     var arg1 = expr.Arguments[2] switch
                     {
                         TupleConst => $"fixed_shape<{arguments[2].Name}>{{}}",
-                        IR.Tuple tc => $"ranked_shape<{tc.Count}>{{{arguments[2].Name}}}",
+                        IR.Tuple tc => $"make_ranked_shape({arguments[2].Name})",
                         _ => throw new ArgumentOutOfRangeException(nameof(expr)),
                     };
 
