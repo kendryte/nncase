@@ -315,6 +315,11 @@ template <> struct rsqrt<ntt::vector<float, 8>> {
         y2 = _mm256_fmadd_ps(y2, x, one_point_five);
         y = _mm256_mul_ps(y, y2);
 
+        // third iteration
+        y2 = _mm256_mul_ps(y, y);
+        y2 = _mm256_fmadd_ps(y2, x, one_point_five);
+        y = _mm256_mul_ps(y, y2);
+
         return y;
 #endif
     }
