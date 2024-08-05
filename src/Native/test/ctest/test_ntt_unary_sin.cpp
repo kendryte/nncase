@@ -131,6 +131,45 @@ template <typename T, size_t vl> void test_vector() {
 
 TEST(UnaryTestSin, vector) { TEST_VECTOR(float) }
 
+template <typename T, size_t vl> void test_vector_ulp(double ulp_threshold) {
+    constexpr size_t size = ULP_SIZE;
+
+    // init
+    using tensor_type = ntt::tensor<ntt::vector<T, vl>, ntt::fixed_shape<size>>;
+    std::unique_ptr<tensor_type> ntt_input(new tensor_type);
+    NttTest::init_tensor(*ntt_input, static_cast<T>(-1000),
+                         static_cast<T>(1000));
+
+    // ntt
+    std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
+    ntt::unary<ntt::ops::sin>(*ntt_input, *ntt_output1);
+
+    // ort
+    auto ort_input = NttTest::ntt2ort(*ntt_input);
+    auto ort_output = ortki_Sin(ort_input);
+
+    // compare
+    std::unique_ptr<tensor_type> ntt_output2(new tensor_type);
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(
+        NttTest::compare_ulp(*ntt_output1, *ntt_output2, ulp_threshold));
+}
+
+#define _TEST_VECTOR_ULP(T, lmul, ulp_threshold)                               \
+    test_vector_ulp<T, (NTT_VLEN) / (sizeof(T) * 8) * lmul>(ulp_threshold);
+
+#ifdef __riscv_vector
+#define TEST_VECTOR_ULP(T, ulp_threshold)                                      \
+    _TEST_VECTOR_ULP(T, 1, ulp_threshold)                                      \
+    _TEST_VECTOR_ULP(T, 2, ulp_threshold)                                      \
+    _TEST_VECTOR_ULP(T, 4, ulp_threshold)                                      \
+    _TEST_VECTOR_ULP(T, 8, ulp_threshold)
+#else
+#define TEST_VECTOR_ULP(T, ulp_threshold) _TEST_VECTOR_ULP(T, 1, ulp_threshold)
+#endif
+
+TEST(UnaryTestSinFloat, ulp_error) { TEST_VECTOR_ULP(float, 2.) }
+
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

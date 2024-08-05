@@ -21,13 +21,6 @@ std::string module = "benchmark_ntt_reduce";
 constexpr size_t warmup_num = 10;
 constexpr size_t run_num = 3000;
 constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-#if __riscv
-constexpr size_t M = 256;
-constexpr size_t N = 256;
-#else
-constexpr size_t M = 256;
-constexpr size_t N = 256;
-#endif
 
 // 0,Add_reduceN_NoPack
 template <size_t M, size_t N>
