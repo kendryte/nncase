@@ -371,12 +371,22 @@ template <> struct sinh<ntt::vector<float, 8>> {
 };
 
 // sqrt
+#if 0
+// max_ulp_error = 8861
 template <> struct sqrt<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
         return _mm256_rcp_ps(_mm256_rsqrt_ps(v));
     }
 };
+#else
+template <> struct sqrt<ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const ntt::vector<float, 8> &v) const noexcept {
+        return _mm256_sqrt_ps(v);
+    }
+};
+#endif
 
 // square
 template <> struct square<ntt::vector<float, 8>> {
