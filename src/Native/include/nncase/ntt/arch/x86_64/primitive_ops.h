@@ -356,7 +356,49 @@ template <> struct sign<ntt::vector<float, 8>> {
 template <> struct sin<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
+#if 0
         return sin256_ps(v);
+#else
+        // Define constants
+        __m256 c0 = _mm256_set1_ps(-0x1.555548p-3f);
+        __m256 c2 = _mm256_set1_ps(-0x1.9f42eap-13f);
+        __m256 c3 = _mm256_set1_ps(0x1.45f306p-2f);
+        __m256 c4 = _mm256_set1_ps(0x1.8p+23);
+        __m256 c5 = _mm256_set1_ps(0x1.921fb6p+1f);
+        __m256 c6 = _mm256_set1_ps(-0x1.777a5cp-24f);
+        __m256 c7 = _mm256_set1_ps(-0x1.ee59dap-49f);
+        __m256 c8 = _mm256_set1_ps(0x1.5b2e76p-19f);
+        __m256 c9 = _mm256_set1_ps(0x1.110df4p-7f);
+
+        // n = rint(|x|/pi)
+        __m256 r = _mm256_andnot_ps(_mm256_set1_ps(-0.0f), v); // fabs(v)
+        __m256 n = _mm256_mul_ps(r, c3);
+        __m256 sign = _mm256_and_ps(v, _mm256_set1_ps(-0.0f)); // sign bit
+        __m256i ni = _mm256_cvtps_epi32(n);
+        n = _mm256_cvtepi32_ps(ni);
+        __m256i odd = _mm256_add_epi32(ni, _mm256_castps_si256(c4));
+
+        // r = |x| - n*pi  (range reduction into -pi/2 .. pi/2)
+        r = _mm256_fnmadd_ps(c5, n, r);
+        odd = _mm256_slli_epi32(odd, 31);
+        r = _mm256_fnmadd_ps(c6, n, r);
+        r = _mm256_fnmadd_ps(c7, n, r);
+
+        // y = sin(r)
+        __m256 r2 = _mm256_mul_ps(r, r);
+        __m256 y1 = c8;
+        __m256 y2 = c9;
+        y1 = _mm256_fmadd_ps(y1, r2, c2);
+        y2 = _mm256_fmadd_ps(y2, r2, c0);
+        __m256 r4 = _mm256_mul_ps(r2, r2);
+        __m256 r3 = _mm256_mul_ps(r2, r);
+        y1 = _mm256_fmadd_ps(y1, r4, y2);
+        __m256 sign_adjust = _mm256_castsi256_ps(
+            _mm256_xor_si256(_mm256_castps_si256(sign), odd));
+        y1 = _mm256_fmadd_ps(y1, r3, r);
+        __m256 tmp = _mm256_xor_ps(y1, sign_adjust);
+        return tmp;
+#endif
     }
 };
 
