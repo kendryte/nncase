@@ -27,8 +27,8 @@ public sealed class Function : BaseFunction
     /// Initializes a new instance of the <see cref="Function"/> class.
     /// build function.
     /// </summary>
-    public Function(string name, Expr body, ReadOnlySpan<Var> parameters)
-        : this(name, body, parameters, new Dictionary<Var, Expr[]>())
+    public Function(string name, Expr body, ReadOnlySpan<Var> parameters, string? moduleKind = null)
+        : this(name, body, parameters, new Dictionary<Var, Expr[]>(), moduleKind)
     {
     }
 
@@ -49,8 +49,8 @@ public sealed class Function : BaseFunction
     /// Initializes a new instance of the <see cref="Function"/> class.
     /// build function.
     /// </summary>
-    public Function(Expr body, ReadOnlySpan<Var> parameters)
-        : this($"func_{_globalFuncIndex++}", body, parameters, new Dictionary<Var, Expr[]>())
+    public Function(Expr body, ReadOnlySpan<Var> parameters, string? moduleKind = null)
+        : this($"func_{_globalFuncIndex++}", body, parameters, new Dictionary<Var, Expr[]>(), moduleKind)
     {
     }
 

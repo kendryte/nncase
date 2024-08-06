@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../tools/Nncase.SourceGenerator/Nncase.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Nncase.Modules.Ncnn\Nncase.Modules.Ncnn.csproj" />
   </ItemGroup>
 
 </Project>

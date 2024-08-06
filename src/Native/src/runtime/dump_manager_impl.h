@@ -87,6 +87,7 @@ void dump_data(std::ostream &stream, const T *data,
             stream << std::to_string(data[i]) << "\n";
         }
     }
+    stream << "------------------\n" << std::endl;
 }
 
 END_NS_NNCASE_RUNTIME

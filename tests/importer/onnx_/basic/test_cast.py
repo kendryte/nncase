@@ -18,6 +18,7 @@ import onnx
 from onnx import helper
 from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
+import numpy as np
 
 
 def _make_module(in_shape, in_type, out_type, op_version):
@@ -52,6 +53,9 @@ in_shapes_in_types_out_types = [
     ([8, 3, 12, 3], TensorProto.FLOAT, TensorProto.FLOAT16),
     ([8, 3, 12, 3], TensorProto.FLOAT, TensorProto.UINT8),
     ([8, 3, 12, 3], TensorProto.FLOAT, TensorProto.INT32),
+    ([1, 3, 12, 3], TensorProto.FLOAT16, TensorProto.FLOAT),
+    ([1, 3, 12, 3], TensorProto.FLOAT, TensorProto.FLOAT16),
+
 ]
 
 op_versions = [

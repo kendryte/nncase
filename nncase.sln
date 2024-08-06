@@ -77,6 +77,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Tests.TestFixture", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Passes", "src\Nncase.Passes\Nncase.Passes.csproj", "{E6462E82-B48F-4AFA-AE34-725EF0A9CB42}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nncase.Modules.Ncnn", "modules\Nncase.Modules.Ncnn\Nncase.Modules.Ncnn.csproj", "{FA535CB0-C8B9-4CA5-B3E3-8B7912E5F061}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Studio", "src\Nncase.Studio\Nncase.Studio.csproj", "{0E5BF964-B878-4BD6-8C84-FFE85E23994B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Modules.CPU", "modules\Nncase.Modules.CPU\Nncase.Modules.CPU.csproj", "{6AEE2334-CCF4-464E-8C90-C6BC0D930327}"

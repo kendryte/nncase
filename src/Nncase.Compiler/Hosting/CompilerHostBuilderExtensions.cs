@@ -53,6 +53,8 @@ public static class CompilerHostBuilderExtensions
                 .AddEGraph()
                 .AddCodeGen()
                 .AddPasses()
+                .AddStackVM()
+                .AddNcnn()
                 .AddSchedule()
                 .AddCPU()
                 .AddStackVM();

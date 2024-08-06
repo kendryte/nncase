@@ -35,13 +35,14 @@ class nncaseConan(ConanFile):
         "python": True,
         "vulkan_runtime": False
     }
-    
+
     def imports(self):
         if self.settings.os == 'Windows':
             self.copy("nethost.dll", "bin", "bin")
             self.copy("ortki.dll", "bin", "bin")
 
     def requirements(self):
+        self.requires('ncnn/20240102')
         if self.options.tests:
             self.requires('gtest/1.10.0')
             self.requires('ortki/0.0.3')
@@ -64,7 +65,6 @@ class nncaseConan(ConanFile):
 
         if self.settings.os == 'Windows':
             self.settings.compiler.toolset = 'ClangCL'
-            
         if not self.options.runtime:
             if self.settings.os == 'Windows':
                 self.options["nethost"].shared = True

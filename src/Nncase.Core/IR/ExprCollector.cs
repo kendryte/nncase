@@ -13,20 +13,27 @@ namespace Nncase.IR;
 
 public sealed class ExprCollector : ExprWalker<List<Expr>>
 {
-    private ExprCollector()
+    private readonly Func<Expr, bool>? _condition;
+
+    private ExprCollector(Func<Expr, bool>? condition = null)
     {
+        _condition = condition;
     }
 
-    public static IReadOnlyList<Expr> Collect(Expr expr)
+    public static IReadOnlyList<Expr> Collect(Expr expr, Func<Expr, bool>? condition = null)
     {
         var exprs = new List<Expr>();
-        new ExprCollector().Visit(expr, exprs);
+        new ExprCollector(condition).Visit(expr, exprs);
         return exprs;
     }
 
     protected override Unit DefaultVisitLeaf(Expr expr, List<Expr> context)
     {
-        context.Add(expr);
+        if (_condition?.Invoke(expr) ?? true)
+        {
+            context.Add(expr);
+        }
+
         return default;
     }
 }

@@ -11,6 +11,7 @@ using Nncase.IR;
 using Nncase.IR.Buffers;
 using Nncase.IR.F;
 using Nncase.IR.NN;
+using Nncase.Runtime.Ncnn;
 
 namespace Nncase.Importer.Ncnn;
 
