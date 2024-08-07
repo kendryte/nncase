@@ -12,11 +12,9 @@ bool are_floats_equal(float a, float b, float epsilon = 1e-6) {
     return std::fabs(a - b) < epsilon;
 }
 
-template <typename T>
-concept is_vector = T::rank() == 1;
+template <typename T> concept is_vector = T::rank() == 1;
 
-template <typename T>
-concept is_tensor = T::rank() > 1;
+template <typename T> concept is_tensor = T::rank() > 1;
 
 // 一维数组处理函数
 template <is_vector T> void processNTT([[maybe_unused]] T &array) {
