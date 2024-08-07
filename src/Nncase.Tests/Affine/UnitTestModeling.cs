@@ -271,6 +271,43 @@ public sealed class UnitTestModeling : TestClassBase
     }
 
     [Fact]
+    public void TestAutoFusionFailedCase0()
+    {
+        var func = GetFunctionSample3();
+        var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerBinary() }, new());
+        Dumpper.DumpIR(post, "post");
+
+        if (post is not Function { Body: IR.Affine.Grid grid })
+        {
+            return;
+        }
+
+        var root = new ScopeNode();
+        var opId = 0;
+        var totalLevel = 2;
+        Schedule.TreeTiler.BuildTree(grid, root, totalLevel, ref opId);
+#if DEBUG
+        root.Dump("built");
+#endif
+        root.Merge(3, 2, 2);
+        root.Merge(3, 1, 2);
+        root.Merge(3, 0, 2);
+        root.Merge(3, 2, 1);
+        root.Merge(3, 1, 1);
+        root.Merge(3, 0, 1);
+#if DEBUG
+        root.Dump("fused");
+#endif
+
+        var result = Schedule.TreeTiler.Solve(root, CompileOptions.TargetOptions);
+
+        if (result is not null)
+        {
+            result.ConstructResult("cpu", 0);
+        }
+    }
+
+    [Fact]
     public void TestMerge()
     {
         var func = GetFunctionSample();
@@ -452,6 +489,22 @@ public sealed class UnitTestModeling : TestClassBase
             var f = new IR.Var("f", new IR.TensorType(DataTypes.Float32, fshape));
             var g = IR.F.Math.Binary(BinaryOp.Add, e, f);
             func = new IR.Function("main", g, a, b, d, f);
+        }
+
+        return func;
+    }
+
+    private Function GetFunctionSample3()
+    {
+        Function func;
+        {
+            var shape = new[] { 1, 12, 14, 14 };
+            var a = new IR.Var("a", new IR.TensorType(DataTypes.Float32, shape));
+            var b = IR.F.Math.Mul(a, new[] { 1.0f });
+            var c = IR.F.Math.Div(b, new[] { 2.0f });
+            var d = IR.F.Math.Mul(c, new[] { 3.0f });
+            var e = IR.F.Math.Sub(new[] { 1.5f }, d);
+            func = new IR.Function("main", e, a);
         }
 
         return func;

@@ -109,7 +109,16 @@ internal sealed class TreePrinter : ITreeNodeVisitor<TreePrinter.Context, TreePr
             {
                 for (int i = 0; i < value.ReadAccesses.Length; i++)
                 {
-                    rb2.AppendField($"read {value.ReadAccesses[i]}");
+                    string prefix = "read";
+                    for (int j = 0; j < value.Dependences.Length; j++)
+                    {
+                        if (value.Dependences[j].Index == i)
+                        {
+                            prefix += $" {value.Dependences[j].Node}";
+                        }
+                    }
+
+                    rb2.AppendField($"{prefix} {value.ReadAccesses[i]}");
                 }
 
                 rb2.AppendField($"write {value.WriteAccess}");

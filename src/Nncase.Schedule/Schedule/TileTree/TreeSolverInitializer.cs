@@ -43,7 +43,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
         for (int i = 0; i < bufferResults.Length; i++)
         {
             var sinkId = bufferResults[i].Bid;
-            foreach (var dep in sinkId.Node.Dependences)
+            foreach (var dep in sinkId.Node.Dependences.Where(dep => sinkId.Index == dep.Index))
             {
                 var sourceId = new BufferIdentity(dep.Node, dep.Node.ReadAccesses.Length);
                 if (Array.FindIndex(bufferResults, r => r.Bid == sourceId) != -1)
