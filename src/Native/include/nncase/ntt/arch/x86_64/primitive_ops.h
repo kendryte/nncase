@@ -231,28 +231,6 @@ template <> struct add<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     }
 };
 
-template <> struct add<ntt::vector<float, 8, 8>, ntt::vector<float, 8, 8>> {
-    ntt::vector<float, 8, 8>
-    operator()(const ntt::vector<float, 8, 8> &v1,
-               const ntt::vector<float, 8, 8> &v2) const noexcept {
-        ntt::vector<float, 8, 8> v3;
-        auto lhs_v = (vector<float, 8> *)(v1.elements().data());
-        auto rhs_v = (vector<float, 8> *)(v2.elements().data());
-        auto output_v = (vector<float, 8> *)(v3.elements().data());
-
-        output_v[0] = _mm256_add_ps(lhs_v[0], rhs_v[0]);
-        output_v[1] = _mm256_add_ps(lhs_v[1], rhs_v[1]);
-        output_v[2] = _mm256_add_ps(lhs_v[2], rhs_v[2]);
-        output_v[3] = _mm256_add_ps(lhs_v[3], rhs_v[3]);
-        output_v[4] = _mm256_add_ps(lhs_v[4], rhs_v[4]);
-        output_v[5] = _mm256_add_ps(lhs_v[5], rhs_v[5]);
-        output_v[6] = _mm256_add_ps(lhs_v[6], rhs_v[6]);
-        output_v[7] = _mm256_add_ps(lhs_v[7], rhs_v[7]);
-
-        return v3;
-    }
-};
-
 // sub
 template <> struct sub<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     ntt::vector<float, 8>
@@ -402,67 +380,56 @@ template <bool AccC>
 struct mma<AccC, ntt::vector<float, 8, 8>, ntt::vector<float, 8, 8>,
            ntt::vector<float, 8, 8>> {
     ntt::vector<float, 8, 8>
-    operator()(const ntt::vector<float, 8, 8> &v1,
-               const ntt::vector<float, 8, 8> &v2,
+    operator()(const ntt::vector<float, 8, 8> &lhs,
+               const ntt::vector<float, 8, 8> &rhs,
                const ntt::vector<float, 8, 8> &v3) const noexcept {
-        auto lhs_v = (float *)(v1.elements().data());
-        auto rhs_v = (vector<float, 8> *)(v2.elements().data());
-        auto output_v = (vector<float, 8> *)(v3.elements().data());
-
+        auto output = v3;
         for (size_t k = 0; k < 8; k++) {
-            output_v[0] =
-                (k != 0 || AccC)
-                    ? ntt::mul_add(lhs_v[0 * 8 + k], rhs_v[k], output_v[0])
-                    : ntt::mul(lhs_v[0 * 8 + k], rhs_v[k]);
+            output(0) = (k != 0 || AccC)
+                            ? ntt::mul_add(lhs(0 * 8, k), rhs(k), output(0))
+                            : ntt::mul(lhs(0 * 8, k), rhs(k));
         }
 
         for (size_t k = 0; k < 8; k++) {
-            output_v[1] =
-                (k != 0 || AccC)
-                    ? ntt::mul_add(lhs_v[1 * 8 + k], rhs_v[k], output_v[1])
-                    : ntt::mul(lhs_v[1 * 8 + k], rhs_v[k]);
+            output(1) = (k != 0 || AccC)
+                            ? ntt::mul_add(lhs(1 * 8, k), rhs(k), output(1))
+                            : ntt::mul(lhs(1 * 8, k), rhs(k));
         }
 
         for (size_t k = 0; k < 8; k++) {
-            output_v[2] =
-                (k != 0 || AccC)
-                    ? ntt::mul_add(lhs_v[2 * 8 + k], rhs_v[k], output_v[2])
-                    : ntt::mul(lhs_v[2 * 8 + k], rhs_v[k]);
+            output(2) = (k != 0 || AccC)
+                            ? ntt::mul_add(lhs(2 * 8, k), rhs(k), output(2))
+                            : ntt::mul(lhs(2 * 8, k), rhs(k));
         }
 
         for (size_t k = 0; k < 8; k++) {
-            output_v[3] =
-                (k != 0 || AccC)
-                    ? ntt::mul_add(lhs_v[3 * 8 + k], rhs_v[k], output_v[3])
-                    : ntt::mul(lhs_v[3 * 8 + k], rhs_v[k]);
+            output(3) = (k != 0 || AccC)
+                            ? ntt::mul_add(lhs(3 * 8, k), rhs(k), output(3))
+                            : ntt::mul(lhs(3 * 8, k), rhs(k));
         }
 
         for (size_t k = 0; k < 8; k++) {
-            output_v[4] =
-                (k != 0 || AccC)
-                    ? ntt::mul_add(lhs_v[4 * 8 + k], rhs_v[k], output_v[4])
-                    : ntt::mul(lhs_v[4 * 8 + k], rhs_v[k]);
+            output(4) = (k != 0 || AccC)
+                            ? ntt::mul_add(lhs(4 * 8, k), rhs(k), output(4))
+                            : ntt::mul(lhs(4 * 8, k), rhs(k));
         }
 
         for (size_t k = 0; k < 8; k++) {
-            output_v[5] =
-                (k != 0 || AccC)
-                    ? ntt::mul_add(lhs_v[5 * 8 + k], rhs_v[k], output_v[5])
-                    : ntt::mul(lhs_v[5 * 8 + k], rhs_v[k]);
+            output(5) = (k != 0 || AccC)
+                            ? ntt::mul_add(lhs(5 * 8, k), rhs(k), output(5))
+                            : ntt::mul(lhs(5 * 8, k), rhs(k));
         }
 
         for (size_t k = 0; k < 8; k++) {
-            output_v[6] =
-                (k != 0 || AccC)
-                    ? ntt::mul_add(lhs_v[6 * 8 + k], rhs_v[k], output_v[6])
-                    : ntt::mul(lhs_v[6 * 8 + k], rhs_v[k]);
+            output(6) = (k != 0 || AccC)
+                            ? ntt::mul_add(lhs(6 * 8, k), rhs(k), output(6))
+                            : ntt::mul(lhs(6 * 8, k), rhs(k));
         }
 
         for (size_t k = 0; k < 8; k++) {
-            output_v[7] =
-                (k != 0 || AccC)
-                    ? ntt::mul_add(lhs_v[7 * 8 + k], rhs_v[k], output_v[7])
-                    : ntt::mul(lhs_v[7 * 8 + k], rhs_v[k]);
+            output(7) = (k != 0 || AccC)
+                            ? ntt::mul_add(lhs(7 * 8, k), rhs(k), output(7))
+                            : ntt::mul(lhs(7 * 8, k), rhs(k));
         }
 
         return v3;
@@ -501,44 +468,34 @@ template <> struct inner_product<ntt::vector<float, 8>, ntt::vector<float, 8>> {
 
 // outer product
 template <> struct outer_product<ntt::vector<float, 8>, ntt::vector<float, 8>> {
-    fixed_tensor<float, 8, 8>
-    operator()(const ntt::vector<float, 8> &v1,
-               const ntt::vector<float, 8> &v2) const noexcept {
-        alignas(32) fixed_tensor<float, 8, 8> result;
+    auto operator()(const ntt::vector<float, 8> &v1,
+                    const ntt::vector<float, 8> &v2) const noexcept {
+        ntt::vector<float, 8, 8> result;
         __m256 tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
 
-        tmp0 = _mm256_set1_ps(((float *)&v1)[0]);
-        tmp0 = _mm256_mul_ps(tmp0, v2);
-        _mm256_storeu_ps(&(((float *)(result.elements().data()))[0 * 8]), tmp0);
+        tmp0 = _mm256_set1_ps(v1(0));
+        result(0) = _mm256_mul_ps(tmp0, v2);
 
-        tmp1 = _mm256_set1_ps(((float *)&v1)[1]);
-        tmp1 = _mm256_mul_ps(tmp1, v2);
-        _mm256_storeu_ps(&(((float *)(result.elements().data()))[1 * 8]), tmp1);
+        tmp1 = _mm256_set1_ps(v1(1));
+        result(1) = _mm256_mul_ps(tmp1, v2);
 
-        tmp2 = _mm256_set1_ps(((float *)&v1)[2]);
-        tmp2 = _mm256_mul_ps(tmp2, v2);
-        _mm256_storeu_ps(&(((float *)(result.elements().data()))[2 * 8]), tmp2);
+        tmp2 = _mm256_set1_ps(v1(2));
+        result(2) = _mm256_mul_ps(tmp2, v2);
 
-        tmp3 = _mm256_set1_ps(((float *)&v1)[3]);
-        tmp3 = _mm256_mul_ps(tmp3, v2);
-        _mm256_storeu_ps(&(((float *)(result.elements().data()))[3 * 8]), tmp3);
+        tmp3 = _mm256_set1_ps(v1(3));
+        result(3) = _mm256_mul_ps(tmp3, v2);
 
-        tmp4 = _mm256_set1_ps(((float *)&v1)[4]);
-        tmp4 = _mm256_mul_ps(tmp4, v2);
-        _mm256_storeu_ps(&(((float *)(result.elements().data()))[4 * 8]), tmp4);
+        tmp4 = _mm256_set1_ps(v1(4));
+        result(4) = _mm256_mul_ps(tmp4, v2);
 
-        tmp5 = _mm256_set1_ps(((float *)&v1)[5]);
-        tmp5 = _mm256_mul_ps(tmp5, v2);
-        _mm256_storeu_ps(&(((float *)(result.elements().data()))[5 * 8]), tmp5);
+        tmp5 = _mm256_set1_ps(v1(5));
+        result(5) = _mm256_mul_ps(tmp5, v2);
 
-        tmp6 = _mm256_set1_ps(((float *)&v1)[6]);
-        tmp6 = _mm256_mul_ps(tmp6, v2);
-        _mm256_storeu_ps(&(((float *)(result.elements().data()))[6 * 8]), tmp6);
+        tmp6 = _mm256_set1_ps(v1(6));
+        result(6) = _mm256_mul_ps(tmp6, v2);
 
-        tmp7 = _mm256_set1_ps(((float *)&v1)[7]);
-        tmp7 = _mm256_mul_ps(tmp7, v2);
-        _mm256_storeu_ps(&(((float *)(result.elements().data()))[7 * 8]), tmp7);
-
+        tmp7 = _mm256_set1_ps(v1(7));
+        result(7) = _mm256_mul_ps(tmp7, v2);
         return result;
     }
 };

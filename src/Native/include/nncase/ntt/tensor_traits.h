@@ -20,25 +20,33 @@
 #include <utility>
 
 namespace nncase::ntt {
+template <typename T>
+concept IsFixedTensor = is_fixed_dims_v<typename std::decay_t<T>::shape_type> &&
+                        is_fixed_dims_v<typename std::decay_t<T>::strides_type>;
 
 template <typename T>
-concept IsFixedTensor = is_fixed_dims_v<typename std::decay_t<T>::shape_type>
-    &&is_fixed_dims_v<typename std::decay_t<T>::strides_type>;
+concept IsRankedTensor =
+    is_ranked_dims_v<typename std::decay_t<T>::shape_type> &&
+    is_ranked_dims_v<typename std::decay_t<T>::strides_type>;
 
 template <typename T>
-concept IsRankedTensor = is_ranked_dims_v<typename std::decay_t<T>::shape_type>
-    &&is_ranked_dims_v<typename std::decay_t<T>::strides_type>;
+concept IsVector = std::decay_t<T>::IsVector;
 
 template <typename T>
 concept IsScalar = std::is_integral_v<T> || std::is_floating_point_v<T>;
 
-template <typename T> concept IsTensor = IsFixedTensor<T> || IsRankedTensor<T>;
+template <typename T>
+concept IsTensor = IsFixedTensor<T> || IsRankedTensor<T>;
 
-template <typename T> concept IsTensorOrScalar = IsTensor<T> || IsScalar<T>;
+template <typename T>
+concept IsTensorOrScalar = IsTensor<T> || IsScalar<T>;
 
-template <typename T> concept IsFixedDims = is_fixed_dims_v<T>;
+template <typename T>
+concept IsFixedDims = is_fixed_dims_v<T>;
 
-template <class T> struct element_or_scalar_type { using type = T; };
+template <class T> struct element_or_scalar_type {
+    using type = T;
+};
 
 template <IsTensor T> struct element_or_scalar_type<T> {
     using type = typename T::element_type;
@@ -46,4 +54,9 @@ template <IsTensor T> struct element_or_scalar_type<T> {
 
 template <class T>
 using element_or_scalar_t = typename element_or_scalar_type<T>::type;
+
+template <class T, size_t... Lanes> struct fixed_tensor_alike_type;
+template <class T, size_t... Lanes>
+using fixed_tensor_alike_t =
+    typename fixed_tensor_alike_type<T, Lanes...>::type;
 } // namespace nncase::ntt

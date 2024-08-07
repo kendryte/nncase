@@ -62,7 +62,9 @@ struct fixed_shape : detail::fixed_dims_base<Dims...> {
         using type = fixed_shape<I, Dims...>;
     };
 
-    template <size_t I> struct append { using type = fixed_shape<Dims..., I>; };
+    template <size_t I> struct append {
+        using type = fixed_shape<Dims..., I>;
+    };
 
     static constexpr size_t length() noexcept { return (Dims * ... * 1); }
 };
@@ -125,11 +127,14 @@ inline constexpr bool is_fixed_dims_v = is_fixed_dims<Dims>::value;
 
 template <typename T> struct is_ranked_dims : std::false_type {};
 
-// template <size_t Rank>
-// struct is_ranked_dims<detail::ranked_dims_base<Rank>> : std::true_type {};
+template <size_t Rank>
+struct is_ranked_dims<detail::ranked_dims_base<Rank>> : std::true_type {};
 
-// template <size_t Rank>
-// struct is_ranked_dims<ranked_strides<Rank>> : std::true_type {};
+template <size_t Rank>
+struct is_ranked_dims<ranked_shape<Rank>> : std::true_type {};
+
+template <size_t Rank>
+struct is_ranked_dims<ranked_strides<Rank>> : std::true_type {};
 
 template <typename T>
 inline constexpr bool is_ranked_dims_v = is_ranked_dims<T>::value;
@@ -255,10 +260,10 @@ constexpr size_t contiguous_dims(const Shape &shape, const Strides &strides) {
 }
 
 template <class Shape, class Strides>
-inline constexpr size_t max_size_v = (is_fixed_dims_v<Shape> &&
-                                      is_fixed_dims_v<Strides>)
-                                         ? linear_size(Shape{}, Strides{})
-                                         : std::dynamic_extent;
+inline constexpr size_t max_size_v =
+    (is_fixed_dims_v<Shape> && is_fixed_dims_v<Strides>)
+        ? linear_size(Shape{}, Strides{})
+        : std::dynamic_extent;
 
 template <class Index, class Shape>
 constexpr bool in_bound(const Index &index, const Shape &shape) {
