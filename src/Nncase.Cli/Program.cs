@@ -73,7 +73,7 @@ internal partial class Program
             Action<System.CommandLine.Invocation.InvocationContext> targetHandler = async (System.CommandLine.Invocation.InvocationContext context) =>
             {
                 var options = ParseCompileOptions(context, compile);
-                options.TargetCompileOptions = targetParser(context, targetCmd);
+                options.TargetOptions = targetParser(context, targetCmd);
                 await RunAsync(targetCmd.Name, options, context.ParseResult.GetValueForOption(compile.DatasetFormat), context.ParseResult.GetValueForOption(compile.Dataset)!, context.ParseResult.GetValueForArgument(compile.OutputFile), context.GetHost());
             };
             targetCmd.SetHandler(targetHandler);
@@ -165,7 +165,7 @@ internal partial class Program
                        from t in asm.ExportedTypes
                        where t.IsClass
                        && t.IsAssignableTo(typeof(ITarget))
-                       let ctor = t.GetConstructor(Type.EmptyTypes)
+                       let ctor = t.GetConstructor(System.Type.EmptyTypes)
                        where ctor != null
                        select (ITarget)ctor.Invoke(null)).ToList();
         return targets;

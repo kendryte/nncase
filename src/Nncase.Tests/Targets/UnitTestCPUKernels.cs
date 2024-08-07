@@ -48,6 +48,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     public UnitTestCPUKernels()
     {
         DefaultTargetName = CPUTarget.Kind;
+        CompileOptions.TargetOptions = new CpuTargetOptions();
 #if DEBUG
         CompileOptions.DumpFlags = Diagnostics.DumpFlags.PassIR | Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.CodeGen | Diagnostics.DumpFlags.EGraphCost | Diagnostics.DumpFlags.Tiling;
 #endif
@@ -58,6 +59,54 @@ public sealed class UnitTestCPUKernels : TestClassBase
     public static int Lane => Vector256.IsHardwareAccelerated ? 8 : 4;
 
     public static int Rank => 1;
+
+    [Theory]
+    [InlineData(new object[] { new[] { 32, 64 }, new[] { 64, 48 }, new[] { 48, 16 }, 0 })]
+    [InlineData(new object[] { new[] { 128, 256 }, new[] { 256, 384 }, new[] { 384, 512 }, 1 })]
+    public async Task TestTileFlowCase(int[] ashape, int[] bshape, int[] eshape, int count)
+    {
+        var a = new Var("a", new TensorType(DataTypes.Float32, ashape));
+        var b = new Var("b", new TensorType(DataTypes.Float32, bshape));
+        var c = IR.F.Tensors.MatMul(a, b);
+        var d = IR.F.Math.Neg(c);
+        var e = new Var("e", new TensorType(DataTypes.Float32, eshape));
+        var f = IR.F.Tensors.MatMul(d, e);
+
+        var feedDict = new Dictionary<Var, IValue>() {
+            { a, IR.F.Tensors.ConstantOfShape(ashape, 1.0f).Evaluate() /* IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, ashape).Evaluate() */ },
+            { b, IR.F.Tensors.ConstantOfShape(bshape, 1.0f).Evaluate() /* IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, bshape).Evaluate() */ },
+            { e, IR.F.Tensors.ConstantOfShape(eshape, 1.0f).Evaluate() /* IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, eshape).Evaluate() */ },
+        };
+
+        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, new[] { f });
+    }
+
+    [Fact]
+    public async Task TestMatmulBinaryBinary()
+    {
+        var ashape = new[] { 1, 64, 384, 128 };
+        var bshape = new[] { 1, 64, 128, 384 };
+        var a = new Var("a", new TensorType(DataTypes.Float32, ashape));
+        var b = new Var("b", new TensorType(DataTypes.Float32, bshape));
+        var c = IR.F.Tensors.MatMul(a, b);
+        var dshape = new[] { 1 };
+        var d = new Var("d", new TensorType(DataTypes.Float32, dshape));
+        var e = IR.F.Math.Binary(BinaryOp.Div, c, d);
+        var fshape = new[] { 1, 1, 384, 384 };
+        var f = new Var("f", new TensorType(DataTypes.Float32, fshape));
+        var g = IR.F.Math.Binary(BinaryOp.Add, e, f);
+
+        var feedDict = new Dictionary<Var, IValue>() {
+            { a, IR.F.Tensors.ConstantOfShape(ashape, 1.0f).Evaluate() /* IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, ashape).Evaluate() */ },
+            { b, IR.F.Tensors.ConstantOfShape(bshape, 1.0f).Evaluate() /* IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, bshape).Evaluate() */ },
+            { d, IR.F.Tensors.ConstantOfShape(dshape, 1.0f).Evaluate() /* IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, eshape).Evaluate() */ },
+            { f, IR.F.Tensors.ConstantOfShape(fshape, 1.0f).Evaluate() /* IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, eshape).Evaluate() */ },
+        };
+
+        // var inputs = feedDict.Values.Select(v => v.AsTensor()).ToArray();
+        // var actuals = Testing.RunKModel("/Users/lisa/Documents/nncase/tests_output/UnitTestCPUKernels/TestMatmulBinaryBinary/Case0/test.kmodel", Diagnostics.DumpScope.Current.Directory, inputs).AsTensors();
+        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), string.Empty), feedDict, new[] { g });
+    }
 
     [Theory]
     [InlineData(new object[] { new[] { 32, 512, 64, 64 }, 0 })]
@@ -250,7 +299,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             return;
         }
 
-        CompileOptions.TargetCompileOptions = new CpuTargetOptions() { Packing = packing };
+        CompileOptions.TargetOptions = new CpuTargetOptions() { Packing = packing };
         var vhidden_in = new Var("vhidden_in", new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 }));
         var vattn_mask = new Var("vattn_mask", new TensorType(DataTypes.Float32, new[] { 1, 1, 384, 384 }));
         var vposition_ids = new Var("vposition_ids", new TensorType(DataTypes.Int64, new[] { 1, 384 }));
@@ -321,7 +370,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { true, 1 })] // enable packing
     public async Task TestVAEDecRes(bool packing, int count)
     {
-        CompileOptions.TargetCompileOptions = new CpuTargetOptions() { Packing = packing };
+        CompileOptions.TargetOptions = new CpuTargetOptions() { Packing = packing };
         var vlatent_sample = new Var("vlatent_sample", new TensorType(DataTypes.Float32, new[] { 1, 4, 64, 64 }));
         Expr pre;
         {

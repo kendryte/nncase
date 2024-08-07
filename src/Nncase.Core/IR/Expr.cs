@@ -3,9 +3,11 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance.Helpers;
@@ -30,7 +32,7 @@ public class IRMetadata
 public abstract partial class Expr : IDisposable
 {
     private readonly Expr[] _operands;
-    private readonly HashSet<Expr> _users = new(ReferenceEqualityComparer.Instance);
+    private readonly ConcurrentDictionary<Expr, Unit> _users = new(ReferenceEqualityComparer.Instance);
     private IRType? _checkedType;
     private int? _hashCodeCache;
     private bool _disposedValue;
@@ -150,7 +152,7 @@ public abstract partial class Expr : IDisposable
                         DumpScope.Current.DumpIR(this, "CheckedDatatypeError");
                     }
 
-                    throw new InvalidOperationException("Expr don't have a valid tensor type");
+                    throw new InvalidOperationException($"{CheckedType} haven't data type");
             }
         }
     }
@@ -158,7 +160,7 @@ public abstract partial class Expr : IDisposable
     /// <summary>
     /// Gets users.
     /// </summary>
-    public IReadOnlyCollection<Expr> Users => EnsureAlive()._users;
+    public IEnumerable<Expr> Users => EnsureAlive()._users.Keys;
 
     /// <summary>
     /// Gets operands.
@@ -225,7 +227,7 @@ public abstract partial class Expr : IDisposable
 
     public void DisposeIfNoUsers()
     {
-        if (_users.Count == 0)
+        if (_users.Keys.Count == 0)
         {
             Dispose();
         }
@@ -235,12 +237,12 @@ public abstract partial class Expr : IDisposable
     {
         EnsureAlive();
         Trace.Assert(!ReferenceEquals(this, user));
-        _users.Add(user.EnsureAlive());
+        _users.TryAdd(user.EnsureAlive(), default);
     }
 
     internal void RemoveUser(Expr user)
     {
-        _users.Remove(user);
+        _users.Remove(user, out _);
     }
 
     internal void ReplaceOperand(int index, Expr newOperand)

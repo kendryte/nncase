@@ -54,7 +54,7 @@ public partial class MergeNextMarkerToFusion : MergeFusionBase
         }
 
         // marker
-        if (fusionOuterCall.Users.Count > 1 || marker.Users.Count > 1)
+        if (fusionOuterCall.Users.Count() > 1 || marker.Users.Count() > 1)
         {
             return null;
         }
@@ -169,7 +169,7 @@ public partial class MergeNextCallToFusion : MergeFusionBase
         Expr newBody = ReplaceCallParams(nextCall.Target, nextCall.Arguments.ToArray(), (0, (Expr)oldBody));
 
         // todo: 针对marker的测试
-        if (nextCall.Users.Count == 1 && nextCall.Users.First() is Marker m)
+        if (nextCall.Users.Count() == 1 && nextCall.Users.First() is Marker m)
         {
             newBody = m.With(target: newBody);
         }
@@ -187,7 +187,7 @@ public partial class MergeNextCallToFusion : MergeFusionBase
 
         // 附加next call的外面marker
         DumpIR(call, $"{Counter++}_{fusion.Name}_{target.GetType().Name}_after");
-        if (newBody.Users.Count > 1)
+        if (newBody.Users.Count() > 1)
         {
             throw new InvalidOperationException($"{newFusion.Name} is Invalid");
         }
@@ -200,13 +200,13 @@ public partial class MergeNextCallToFusion : MergeFusionBase
     private static bool MultiUser(Expr call)
     {
         // 不是marker直接判断count
-        if (call is Call && call.Users.Count > 1)
+        if (call is Call && call.Users.Count() > 1)
         {
             return true;
         }
 
         // 是marker那么判断marker的users
-        if (call is Marker { Users.Count: > 1 })
+        if (call is Marker { Users: var u } && u.Count() > 1)
         {
             return true;
         }
@@ -566,7 +566,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
             var rhsArg = args[i];
             if (rhsArg is Marker marker && marker.Target is Call rhsPrevCall)
             {
-                if (marker.Users.Count > 1)
+                if (marker.Users.Count() > 1)
                 {
                     continue;
                 }
@@ -611,7 +611,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
 
     private bool IsInvalid(Call lhsPrevCall, Expr lhsTarget)
     {
-        if (lhsPrevCall.Users.Count > 1)
+        if (lhsPrevCall.Users.Count() > 1)
         {
             return true;
         }

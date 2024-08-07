@@ -97,7 +97,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
 
         var post = await pass.RunAsync(pre, new());
 
-        var analysis = new Dictionary<Type, IAnalysisResult>
+        var analysis = new Dictionary<System.Type, IAnalysisResult>
         {
             [typeof(IExprUserAnalysisResult)] = AnalyzerManager.GetAnaylsis<IExprUserAnalysisResult>(post),
         };

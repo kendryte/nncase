@@ -47,7 +47,7 @@ public static class Buffer
 
     public static Call Uninitialized(DataType dataType, TIR.MemoryLocation memoryLocation, Expr shape, IRArray<SBP> ndsbp, Placement placement) => new Call(new Uninitialized(dataType, memoryLocation, ndsbp, placement), shape);
 
-    public static Call Allocate(Expr size, DataType dataType, TIR.MemoryLocation location) => new Call(new Allocate(dataType, location), size);
+    public static Call Allocate(Expr size, DataType dataType, TIR.MemoryLocation location, bool malloc = true) => new Call(new Allocate(dataType, location, malloc), size);
 
     public static Call AllocateBufferView(Expr buffer) => new Call(new AllocateBufferView(), buffer);
 

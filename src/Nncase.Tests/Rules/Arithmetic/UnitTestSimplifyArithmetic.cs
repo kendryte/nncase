@@ -13,16 +13,17 @@ using Nncase.IR.F;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.Passes;
+using Nncase.Passes.Rules.Arithmetic;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Tests.TestFixture;
 using Xunit;
 using Math = Nncase.IR.F.Math;
 using Random = Nncase.IR.F.Random;
 
-namespace Nncase.Tests.Rules.NeutralTest;
+namespace Nncase.Tests.Rules.ArithmeticTest;
 
 [AutoSetupTestMethod(InitSession = true)]
-public class UnitTestSimplifyBinary : TransformTestBase
+public class UnitTestSimplifyArithmetic : TransformTestBase
 {
     public static IEnumerable<object[]> TestReassociateMulPositiveData =>
         new[]
@@ -61,7 +62,7 @@ public class UnitTestSimplifyBinary : TransformTestBase
         normal.Add(c, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
 
         var rootPre = a * b * c; // Math.Binary(binaryOp, Math.Binary(binaryOp, a, bValue), bValue);
-        TestMatched<ReassociateMul>(rootPre, normal);
+        TestMatched<AssociateMul>(rootPre, normal);
     }
 
     [Theory]

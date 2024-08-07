@@ -12,10 +12,10 @@ namespace Nncase.Studio.Views
 {
     public partial class EnumComboBox : ComboBox
     {
-        public static readonly StyledProperty<Type> TypeNameProperty =
-            AvaloniaProperty.Register<EnumComboBox, Type>(nameof(TypeName));
+        public static readonly StyledProperty<System.Type> TypeNameProperty =
+            AvaloniaProperty.Register<EnumComboBox, System.Type>(nameof(TypeName));
 
-        public Type TypeName
+        public System.Type TypeName
         {
             get
             {
@@ -35,6 +35,6 @@ namespace Nncase.Studio.Views
             }
         }
 
-        protected override Type StyleKeyOverride => typeof(Avalonia.Controls.ComboBox);
+        protected override System.Type StyleKeyOverride => typeof(Avalonia.Controls.ComboBox);
     }
 }

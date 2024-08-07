@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,7 +15,7 @@ internal sealed class ExprScope : IDisposable
     private static readonly AsyncLocal<ExprScope?> _exprScope = new AsyncLocal<ExprScope?>();
 
     private readonly ExprScope? _originalExprScope;
-    private readonly List<Expr> _exprs = new();
+    private readonly ConcurrentBag<Expr> _exprs = new();
 
     public ExprScope()
     {
@@ -24,7 +25,7 @@ internal sealed class ExprScope : IDisposable
 
     public static ExprScope? Current => _exprScope.Value;
 
-    public IReadOnlyList<Expr> Exprs => _exprs;
+    public IReadOnlyCollection<Expr> Exprs => _exprs;
 
     public void Add(Expr expr) => _exprs.Add(expr);
 

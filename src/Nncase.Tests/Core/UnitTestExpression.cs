@@ -398,7 +398,7 @@ public class UnitTestExpression
         Assert.Equal(a, b);
 
         Dictionary<Op, Evaluator.IEvaluator> dict1 = new();
-        Dictionary<Type, Evaluator.IEvaluator> dict2 = new();
+        Dictionary<System.Type, Evaluator.IEvaluator> dict2 = new();
         Dictionary<RuntimeTypeHandle, Evaluator.IEvaluator> dict3 = new();
         for (int i = 0; i < 1000000; i++)
         {

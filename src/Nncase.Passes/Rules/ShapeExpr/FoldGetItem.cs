@@ -38,7 +38,7 @@ public partial class FoldStackGetItem : RewriteRule<Pattern>
         }
 
         var input = getItems[0].Arguments[GetItem.Input.Index];
-        if (input.Users.Count != getItems.Length)
+        if (input.Users.Count() != getItems.Length)
         {
             return null;
         }

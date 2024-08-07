@@ -36,6 +36,7 @@ AffineDivBinary,true,false,AffineExpr,Affine.,Lhs;Rhs
 AffineDomain,true,false,Default,Affine.,Offset;Extent
 AffineRange,true,false,Default,Affine.,Offset;Extent
 AffineMap,true,false,Default,Affine.,@Domains;@Symbols;@Results
+AffineRelation,true,false,Default,Affine.,@Domains;@Symbols;@Results
 Grid,true,false,Default,Affine.,@BodyParameters;@AccessMaps;@Buffers;@Reads;Body
 Load,true,false,Default,Affine.,Source;Region
 For,true,false,Default,Affine.,Domain;Body

@@ -15,15 +15,17 @@ public static class Affine
 {
     public static AffineDim Dim(int position) => new AffineDim(position);
 
+    public static AffineDim[] Dims(int count) => Enumerable.Range(0, count).Select(Dim).ToArray();
+
     public static AffineExtent Extent(int position) => new AffineExtent(position);
 
     public static AffineDomain Domain(int position) => new AffineDomain(Dim(position), Extent(position));
 
     public static AffineDomain[] Domains(int count) => Enumerable.Range(0, count).Select(Domain).ToArray();
 
-    public static AffineSymbol Symbol(string name) => new AffineSymbol(name);
+    public static AffineSymbol Symbol(int position) => new AffineSymbol(position);
 
-    public static AffineSymbol[] Symbols(int count) => Enumerable.Range(0, count).Select(x => Symbol($"s{x}")).ToArray();
+    public static AffineSymbol[] Symbols(int count) => Enumerable.Range(0, count).Select(Symbol).ToArray();
 
     public static AffineDivBinary FloorDiv(this AffineExpr lhs, AffineConstant rhs) =>
         new AffineDivBinary(AffineDivBinaryOp.FloorDiv, lhs, rhs);

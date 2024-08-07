@@ -58,7 +58,7 @@ public partial class TransformTestBase : TestClassBase
     public Expr TestMatchedCore(Function pre, IReadOnlyDictionary<Var, IValue>? feeds = null, bool isNotMatch = false, params IRewriteRule[] rules)
     {
         IAnalyzerManager analyzerManager = CompileSession.GetRequiredService<IAnalyzerManager>();
-        var analysis = new Dictionary<Type, IAnalysisResult> { [typeof(IExprUserAnalysisResult)] = analyzerManager.GetAnaylsis<IExprUserAnalysisResult>(pre) };
+        var analysis = new Dictionary<System.Type, IAnalysisResult> { [typeof(IExprUserAnalysisResult)] = analyzerManager.GetAnaylsis<IExprUserAnalysisResult>(pre) };
         Assert.True(CompilerServices.InferenceType(pre), "TestInferFailed:" + pre.CheckedType);
 
         if (rules.Length == 0)

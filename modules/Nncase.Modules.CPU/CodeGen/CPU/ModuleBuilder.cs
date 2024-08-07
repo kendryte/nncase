@@ -30,7 +30,7 @@ public sealed class CPUModuleBuilder : IModuleBuilder
     /// <inheritdoc/>
     public ILinkableModule Build(IReadOnlyList<BaseFunction> functions)
     {
-        var linkableFunctions = functions.OfType<TIR.PrimFunction>().Select((f, i) => new FunctionBuilder((uint)i, _rdataWriter).Build(f)).ToArray();
+        var linkableFunctions = functions.OfType<TIR.PrimFunction>().Select((f, i) => new FunctionBuilder((uint)i, _rdataWriter, (Targets.CpuTargetOptions)CompileOptions.TargetOptions).Build(f)).ToArray();
         _rdataWriter.Flush();
 
         return new LinkableModule(_sectionManager.GetContent(WellknownSectionNames.Rdata)!, linkableFunctions, CompileOptions);

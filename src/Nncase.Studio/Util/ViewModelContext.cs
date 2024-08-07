@@ -54,7 +54,7 @@ public class ViewModelContext
         _mainWindowView.ShowDialog(prompt, level);
     }
 
-    public void SwitchToPage(Type page)
+    public void SwitchToPage(System.Type page)
     {
         var viewModel = ViewModelLookup(page);
         Navigator?.SwitchToPage(viewModel);
@@ -65,7 +65,7 @@ public class ViewModelContext
         Navigator?.SwitchNext();
     }
 
-    public ViewModelBase ViewModelLookup(Type type)
+    public ViewModelBase ViewModelLookup(System.Type type)
     {
         foreach (var viewModelBase in ViewModelBases)
         {

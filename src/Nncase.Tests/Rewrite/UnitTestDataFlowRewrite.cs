@@ -294,7 +294,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var pre = new Function(m + (x + (z + (x + (y / y)))), new[] { x, y, z, m });
         CompilerServices.InferenceType(pre);
 
-        var analysis = new Dictionary<Type, IAnalysisResult>
+        var analysis = new Dictionary<System.Type, IAnalysisResult>
         {
             [typeof(IExprUserAnalysisResult)] = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(pre),
         };

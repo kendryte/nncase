@@ -19,6 +19,13 @@ namespace Nncase.Tests.ReWriteTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestEGraphRewrite : TestClassBase
 {
+    public UnitTestEGraphRewrite()
+    {
+#if DEBUG
+        CompileOptions.DumpFlags = Diagnostics.DumpFlags.EGraphCost | Diagnostics.DumpFlags.Rewrite;
+#endif
+    }
+
     [Fact]
     public void RewriteNoSenceAdd()
     {
@@ -43,14 +50,53 @@ public class UnitTestEGraphRewrite : TestClassBase
         egraph.Rebuild();
     }
 
+    [Fact(Skip = "EGraph Bug")]
+    public void TestInfineLoop()
+    {
+        Expr pre = new Var("a", TensorType.Scalar(DataTypes.Int32));
+        var rules = new IRewriteRule[] { new Passes.Rules.Arithmetic.XIsXAdd0(), new Passes.Rules.Arithmetic.CommutateAdd(), new Passes.Rules.Arithmetic.AssociateAdd() };
+        CompilerServices.ERewrite(pre, rules, new(), CompileOptions);
+    }
+
     [Fact]
     public void TestReassociate()
     {
         Expr pre = (Const)10 * 11 * 12;
-        var rule = new Passes.Rules.Neutral.ReassociateMul();
+        var rule = new Passes.Rules.Arithmetic.AssociateMul();
         CompilerServices.ERewrite(pre, new[] { rule }, new(), CompileOptions);
 
         // Assert.Equal(newExpr, 10 * ((Const)11 * 12));
+    }
+
+    [Fact(Skip = "EGraph Bug")]
+    public void TestReassociate2()
+    {
+        var a = new Var(TensorType.Scalar(DataTypes.Int32));
+        var b = new Var(TensorType.Scalar(DataTypes.Int32));
+        Expr pre = a + b - a;
+        var post = CompilerServices.ERewrite(pre, new IRewriteRule[] { new Passes.Rules.Arithmetic.CommutateAdd(), new Passes.Rules.Arithmetic.AssociateAdd(), new Passes.Rules.Arithmetic.XAddNegX(), new Passes.Rules.Arithmetic.ZeroIsNegZero() }, new(), CompileOptions);
+        Assert.Equal(post, b + 0);
+    }
+
+    [Fact(Skip = "EGraph Bug")]
+    public void TestReassociate3()
+    {
+        var a = new Var("a", TensorType.Scalar(DataTypes.Int32));
+        Expr pre = a - (a - 0);
+
+        var post = CompilerServices.ERewrite(pre, new IRewriteRule[] { new Passes.Rules.Arithmetic.CommutateAdd(), new Passes.Rules.Arithmetic.AssociateAdd(), new Passes.Rules.Arithmetic.SubIsAddOpposite(), new Passes.Rules.Arithmetic.DoubleOppositeIsEmpty(), new Passes.Rules.Arithmetic.XAddNegX(), new Passes.Rules.Arithmetic.ZeroIsNegZero(), new Passes.Rules.Arithmetic.XAdd0(), new Passes.Rules.Neutral.FoldConstCall() }, new(), CompileOptions);
+
+        Assert.Equal(post, 0);
+    }
+
+    [Fact(Skip = "EGraph Bug")]
+    public void TestReassociate4()
+    {
+        var a = new Var(TensorType.Scalar(DataTypes.Int32));
+        var b = new Var(TensorType.Scalar(DataTypes.Int32));
+        Expr pre = b + a - (0 + a);
+        var post = CompilerServices.ERewrite(pre, new IRewriteRule[] { new Passes.Rules.Arithmetic.CommutateAdd(), new Passes.Rules.Arithmetic.AssociateAdd(), new Passes.Rules.Arithmetic.XAddNegX(), new Passes.Rules.Arithmetic.ZeroIsNegZero() }, new(), CompileOptions);
+        Assert.Equal(post, b + 0);
     }
 
     [Fact]

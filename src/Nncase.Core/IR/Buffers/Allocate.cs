@@ -25,6 +25,8 @@ public sealed partial class Allocate : Op
 
     public TIR.MemoryLocation Location { get; }
 
+    public bool Malloc { get; }
+
     /// <inheritdoc/>
     public override bool CanFoldConstCall => false;
 

@@ -85,7 +85,7 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
                         _logger.LogTrace("Version {Version} : Merge {OldClass} to {NewClass}", eGraph.Version, oldEClass, newEClass);
                     }
 
-                    eGraph.Union(newEClass, oldEClass);
+                    eGraph.Union(oldEClass, newEClass);
                 }
             }
 

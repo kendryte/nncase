@@ -51,7 +51,7 @@ public class UnitTestDLLCall
         Console.WriteLine(created_class.GetMember("delfunc"));
     }
 
-    public Type GetDynamicDeleType()
+    public System.Type GetDynamicDeleType()
     {
         var aName = new AssemblyName("DynamicAssemblyExample");
         var ab = AssemblyBuilder.DefineDynamicAssembly(aName, AssemblyBuilderAccess.RunAndCollect);

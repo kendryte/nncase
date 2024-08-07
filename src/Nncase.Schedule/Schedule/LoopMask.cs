@@ -39,6 +39,8 @@ public record LoopMasks(LoopMask[] Masks) : IReadOnlyList<LoopMask>
 
     IEnumerator IEnumerable.GetEnumerator() => Masks.GetEnumerator();
 
+    public bool IsRelated(int dim) => Masks.Any(m => m.IsRelated(dim));
+
     public bool IsRelated(IR.Affine.AffineDim dim) => Masks.Any(m => m.IsRelated(dim));
 
     public int IndexOf(IR.Affine.AffineDim dim)

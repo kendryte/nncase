@@ -945,7 +945,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
             throw new InvalidOperationException();
         }
 
-        if (body.Users.Count > 1)
+        if (body.Users.Count() > 1)
         {
             throw new InvalidOperationException();
         }

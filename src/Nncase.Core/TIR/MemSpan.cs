@@ -39,13 +39,11 @@ public enum MemoryLocation
 
     /// <summary>
     /// l2 data.
-    /// todo remove it.
     /// </summary>
     L2Data = 1 << 6,
 
     /// <summary>
     /// L1 data.
-    /// todo remove it.
     /// </summary>
     L1Data = 1 << 7,
 

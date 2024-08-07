@@ -69,7 +69,7 @@ public partial class MergeTupleFusion : RewriteRule<Pattern>
             list =>
             {
                 return Enumerable.Range(0, list.Length).Select(_ =>
-                    IsWildcard(null, field => field is Call { Target: BucketFusion } && field.Users.Count == 1)).ToArray();
+                    IsWildcard(null, field => field is Call { Target: BucketFusion } && field.Users.Count() == 1)).ToArray();
             },
             null));
 
@@ -599,7 +599,7 @@ public class MergeMultiUsersFusion : FunctionPass
 
             if (expr is Call outerCall && outerCall.Target is BucketFusion fusion)
             {
-                if (outerCall.Users.Count == 1 && outerCall.Users.First() is Function)
+                if (outerCall.Users.Count() == 1 && outerCall.Users.First() is Function)
                 {
                     return expr;
                 }

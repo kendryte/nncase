@@ -47,8 +47,8 @@ internal sealed class IRPrinterProvider : IIRPrinterProvider
         using var dumpWriter = new StreamWriter(dumpFile);
         switch (expr)
         {
-            case PrimFunction pf:
-                new ScriptPrintVisitor(dumpWriter, display_callable).Visit(pf);
+            case PrimFunction or Sequential or Let or IfThenElse or For:
+                new ScriptPrintVisitor(dumpWriter, display_callable).Visit(expr);
                 break;
             default:
                 new ILPrintVisitor(dumpWriter, display_callable, 0).Visit(expr);

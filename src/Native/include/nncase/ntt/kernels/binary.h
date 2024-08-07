@@ -127,7 +127,7 @@ class binary_impl<TLhs, TRhs, TOut> {
 
 template <template <class T1, class T2> class Op, class TLhs, class TRhs,
           class TOut>
-void binary(const TLhs &lhs, const TRhs &rhs, TOut &output) {
+void binary(const TLhs &lhs, const TRhs &rhs, TOut &&output) {
     Op<typename TLhs::element_type, typename TRhs::element_type> op;
     detail::binary_impl<std::decay_t<TLhs>, std::decay_t<TRhs>,
                         std::decay_t<TOut>>()(op, lhs, rhs, output);

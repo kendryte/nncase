@@ -27,6 +27,8 @@ public interface IGridBuilder : IExprBuilder<Grid>
     IGridBuilder Read(Expr argument, AffineMap accessMap, out Var parameter);
 
     IGridBuilder Write(Expr buffer, AffineMap accessMap, out Var parameter);
+
+    public IGridBuilder Domain(int dims, out Var parameter);
 }
 
 internal class GridBuilder : IGridBuilder
@@ -37,6 +39,8 @@ internal class GridBuilder : IGridBuilder
     private readonly List<Expr> _readBuffers = new();
     private readonly List<AffineMap> _readMaps = new();
     private readonly string _moduleKind;
+    private int? _domainDims;
+    private Var? _domainParameter;
     private Expr? _writeBuffer;
     private AffineMap? _writeMap;
 
@@ -55,11 +59,20 @@ internal class GridBuilder : IGridBuilder
     {
         return new Grid(
             _moduleKind,
+            _domainParameter ?? throw new InvalidOperationException("domain dims is not set."),
             CollectionsMarshal.AsSpan(_bodyParameters),
             _readMaps.Append(_writeMap ?? throw new InvalidOperationException("Write map is not set.")).ToArray(),
             _readBuffers.Append(_writeBuffer ?? throw new InvalidOperationException("Write buffer is not set.")).ToArray(),
             CollectionsMarshal.AsSpan(_reads),
             Sequential.Flatten(CollectionsMarshal.AsSpan(_body)));
+    }
+
+    public IGridBuilder Domain(int dims, out Var parameter)
+    {
+        _domainDims = dims;
+        parameter = new Var(new IR.TupleType(Enumerable.Repeat(new IR.TupleType(new IRType[] { TensorType.Scalar(DataTypes.Int64), TensorType.Scalar(DataTypes.Int64) }), dims)));
+        _domainParameter = parameter;
+        return this;
     }
 
     public IGridBuilder Read(Expr argument, AffineMap accessMap, out Var parameter)

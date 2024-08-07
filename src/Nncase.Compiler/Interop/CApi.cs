@@ -393,7 +393,7 @@ public static unsafe class CApi
     [UnmanagedCallersOnly]
     private static void CompileOptionsSetCpuTargetOptions(IntPtr compileOptionsHandle, IntPtr targetOptionsHandle)
     {
-        Get<CompileOptions>(compileOptionsHandle).TargetCompileOptions = Get<Targets.CpuTargetOptions>(targetOptionsHandle);
+        Get<CompileOptions>(compileOptionsHandle).TargetOptions = Get<Targets.CpuTargetOptions>(targetOptionsHandle);
     }
 
     [UnmanagedCallersOnly]
