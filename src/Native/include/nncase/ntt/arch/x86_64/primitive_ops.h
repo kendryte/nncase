@@ -617,11 +617,30 @@ template <> struct mod<ntt::vector<int32_t, 8>, ntt::vector<int32_t, 8>> {
     }
 };
 
-// min
+// min(v1, v2)
 template <> struct min<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v1,
                const ntt::vector<float, 8> &v2) const noexcept {
+        return _mm256_min_ps(v1, v2);
+    }
+};
+
+// min(v1, f2)
+template <> struct min<ntt::vector<float, 8>, float> {
+    ntt::vector<float, 8> operator()(const ntt::vector<float, 8> &v1,
+                                     const float &f2) const noexcept {
+        auto v2 = _mm256_set1_ps(f2);
+        return _mm256_min_ps(v1, v2);
+    }
+};
+
+// min(f1, v2)
+template <> struct min<float, ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const float &f1,
+               const ntt::vector<float, 8> &v2) const noexcept {
+        auto v1 = _mm256_set1_ps(f1);
         return _mm256_min_ps(v1, v2);
     }
 };
@@ -631,6 +650,25 @@ template <> struct max<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v1,
                const ntt::vector<float, 8> &v2) const noexcept {
+        return _mm256_max_ps(v1, v2);
+    }
+};
+
+// max(v1, f2)
+template <> struct max<ntt::vector<float, 8>, float> {
+    ntt::vector<float, 8> operator()(const ntt::vector<float, 8> &v1,
+                                     const float &f2) const noexcept {
+        auto v2 = _mm256_set1_ps(f2);
+        return _mm256_max_ps(v1, v2);
+    }
+};
+
+// max(f1, v2)
+template <> struct max<float, ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const float &f1,
+               const ntt::vector<float, 8> &v2) const noexcept {
+        auto v1 = _mm256_set1_ps(f1);
         return _mm256_max_ps(v1, v2);
     }
 };
