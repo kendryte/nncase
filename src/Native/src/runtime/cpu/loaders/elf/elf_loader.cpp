@@ -15,7 +15,9 @@
 #include "elf_loader.h"
 #include <cstring>
 #include <nncase/runtime/result.h>
+#if defined(__linux__)
 #include <sys/mman.h>
+#endif
 
 using namespace nncase::runtime;
 
