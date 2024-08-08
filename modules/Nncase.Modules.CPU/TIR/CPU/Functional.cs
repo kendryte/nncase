@@ -147,6 +147,11 @@ public partial class CPU
         return new Call(new TIR.CPU.Reduce(packedAxes, padedNums, axis, keepDims, reduceOp), input, ret);
     }
 
+    public static Expr ReduceArg(Buffer input, Buffer ret, int axis, bool keepDims, bool selectLastIndex, ReduceArgOp reduceArgOp, DataType destType)
+    {
+        return new Call(new TIR.CPU.ReduceArg(axis, keepDims, selectLastIndex, reduceArgOp, destType), input, ret);
+    }
+
     public static Call GatherReduceScatter(Expr input, Expr output, DistributedType inType, DistributedType outType)
     {
         return new Call(new TIR.CPU.GatherReduceScatter(inType, outType), input, output);
