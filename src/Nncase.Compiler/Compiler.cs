@@ -145,6 +145,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.DecomposeSoftmax>();
             p.Add<Passes.Rules.Neutral.DecomposeLayerNorm>();
             p.Add<Passes.Rules.Neutral.DecomposeSwish>();
+            p.Add<Passes.Rules.Neutral.DecomposeInstanceNorm>();
             p.Add<Passes.Rules.Neutral.BianryScalarConstToTensor>();
         });
 
