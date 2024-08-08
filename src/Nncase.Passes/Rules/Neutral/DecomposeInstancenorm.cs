@@ -20,7 +20,7 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Passes.Rules.Neutral;
 
 /// <summary>
-/// Decompose layernorm.
+/// Decompose instancenorm.
 /// </summary>
 [RuleGenerator]
 public sealed partial class DecomposeInstanceNorm : IRewriteRule

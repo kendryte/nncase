@@ -19,22 +19,23 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Passes.Rules.Neutral;
 
 /// <summary>
-/// Decompose swish.
+/// Decompose Gelu.
 /// </summary>
 [RuleGenerator]
-public sealed partial class DecomposeSwish : IRewriteRule
+public sealed partial class DecomposeGelu : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsSwish(
-            "swish",
-            "swishCall",
+        IsGelu(
+            "gelu",
+            "geluCall",
             _ => true,
             IsWildcard("input"),
-            IsTensorConst("beta"));
+            IsTensorConst("alpha"));
 
-    private Expr? GetReplace(Expr input, Call swishCall, float beta)
+    private Expr? GetReplace(Expr input, Call geluCall, float alpha)
     {
-        return IR.F.Math.Div(input, 1f + IR.F.Math.Exp(-beta * input));
+        var scaledInput = IR.F.Math.Mul(input, alpha);
+        return IR.F.Math.Mul(0.5f, IR.F.Math.Mul(scaledInput, IR.F.Math.Add(IR.F.NN.Erf(IR.F.Math.Div(scaledInput, IR.F.Math.Sqrt(2f))), 1f))).ToValue();
     }
 }
