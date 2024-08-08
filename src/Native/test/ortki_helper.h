@@ -77,7 +77,7 @@ template <typename T, typename Shape,
           typename Stride = ntt::default_strides_t<Shape>, size_t N>
 ortki::OrtKITensor *
 ntt2ort(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &tensor) {
-    void *buffer = reinterpret_cast<void *>(&tensor.buffer());
+    void *buffer = reinterpret_cast<void *>(tensor.elements().data());
     auto ort_type = primitive_type2ort_type<T>();
     auto rank = tensor.shape().rank() + 1;
     std::vector<size_t> v(rank);
