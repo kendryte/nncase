@@ -386,53 +386,53 @@ struct mma<AccC, ntt::vector<float, 8, 8>, ntt::vector<float, 8, 8>,
         auto output = v3;
         for (size_t k = 0; k < 8; k++) {
             output(0) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(0 * 8, k), rhs(k), output(0))
-                            : ntt::mul(lhs(0 * 8, k), rhs(k));
+                            ? ntt::mul_add(lhs(0, k), rhs(k), output(0))
+                            : ntt::mul(lhs(0, k), rhs(k));
         }
 
         for (size_t k = 0; k < 8; k++) {
             output(1) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(1 * 8, k), rhs(k), output(1))
-                            : ntt::mul(lhs(1 * 8, k), rhs(k));
+                            ? ntt::mul_add(lhs(1, k), rhs(k), output(1))
+                            : ntt::mul(lhs(1, k), rhs(k));
         }
 
         for (size_t k = 0; k < 8; k++) {
             output(2) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(2 * 8, k), rhs(k), output(2))
-                            : ntt::mul(lhs(2 * 8, k), rhs(k));
+                            ? ntt::mul_add(lhs(2, k), rhs(k), output(2))
+                            : ntt::mul(lhs(2, k), rhs(k));
         }
 
         for (size_t k = 0; k < 8; k++) {
             output(3) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(3 * 8, k), rhs(k), output(3))
-                            : ntt::mul(lhs(3 * 8, k), rhs(k));
+                            ? ntt::mul_add(lhs(3, k), rhs(k), output(3))
+                            : ntt::mul(lhs(3, k), rhs(k));
         }
 
         for (size_t k = 0; k < 8; k++) {
             output(4) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(4 * 8, k), rhs(k), output(4))
-                            : ntt::mul(lhs(4 * 8, k), rhs(k));
+                            ? ntt::mul_add(lhs(4, k), rhs(k), output(4))
+                            : ntt::mul(lhs(4, k), rhs(k));
         }
 
         for (size_t k = 0; k < 8; k++) {
             output(5) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(5 * 8, k), rhs(k), output(5))
-                            : ntt::mul(lhs(5 * 8, k), rhs(k));
+                            ? ntt::mul_add(lhs(5, k), rhs(k), output(5))
+                            : ntt::mul(lhs(5, k), rhs(k));
         }
 
         for (size_t k = 0; k < 8; k++) {
             output(6) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(6 * 8, k), rhs(k), output(6))
-                            : ntt::mul(lhs(6 * 8, k), rhs(k));
+                            ? ntt::mul_add(lhs(6, k), rhs(k), output(6))
+                            : ntt::mul(lhs(6, k), rhs(k));
         }
 
         for (size_t k = 0; k < 8; k++) {
             output(7) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(7 * 8, k), rhs(k), output(7))
-                            : ntt::mul(lhs(7 * 8, k), rhs(k));
+                            ? ntt::mul_add(lhs(7, k), rhs(k), output(7))
+                            : ntt::mul(lhs(7, k), rhs(k));
         }
 
-        return v3;
+        return output;
     }
 };
 

@@ -420,11 +420,10 @@ mma<AccC, T1, T2, TResult>::operator()(const T1 &lhs, const T2 &rhs,
                   "only support 2d mma");
     TResult output = v3;
     for (size_t m = 0; m < T1::shape().at(0); m++) {
-        auto lhs_start = m * T2::shape().at(0);
         for (size_t k = 0; k < T2::shape().at(0); k++) {
             output(m) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(lhs_start, k), rhs(k), output(m))
-                            : ntt::mul(lhs(lhs_start, k), rhs(k));
+                            ? ntt::mul_add(lhs(m, k), rhs(k), output(m))
+                            : ntt::mul(lhs(m, k), rhs(k));
         }
     }
 
