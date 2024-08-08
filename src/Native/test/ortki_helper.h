@@ -57,7 +57,12 @@ template <typename T> ortki::DataType primitive_type2ort_type() {
 
 template <ntt::IsTensor TTensor> ortki::OrtKITensor *ntt2ort(TTensor &tensor) {
     using T = typename std::decay_t<TTensor>::element_type;
-    void *buffer = reinterpret_cast<void *>(&tensor.buffer());
+    void *buffer;
+    if constexpr (ntt::IsVector<TTensor>) {
+        buffer = &tensor.buffer();
+    } else {
+        buffer = tensor.elements().data();
+    }
     auto ort_type = primitive_type2ort_type<T>();
     auto rank = tensor.shape().rank();
     std::vector<size_t> v(rank);
@@ -90,7 +95,11 @@ void ort2ntt(ortki::OrtKITensor *ort_tensor, TTensor &ntt_tensor) {
     size_t size = 0;
     void *ort_ptr = tensor_buffer(ort_tensor, &size);
     assert(tensor_length(ort_tensor) == ntt_tensor.shape().length());
-    memcpy((void *)&ntt_tensor.buffer(), ort_ptr, size);
+    if constexpr (ntt::IsVector<TTensor>) {
+        memcpy(&ntt_tensor.buffer(), ort_ptr, size);
+    } else {
+        memcpy(ntt_tensor.elements().data(), ort_ptr, size);
+    }
 }
 
 template <typename T, typename Shape,
@@ -101,7 +110,7 @@ void ort2ntt(ortki::OrtKITensor *ort_tensor,
     void *ort_ptr = tensor_buffer(ort_tensor, &size);
     assert(tensor_length(ort_tensor) ==
            ntt_tensor.size() * ntt_tensor(0).size());
-    memcpy((void *)&ntt_tensor.buffer(), ort_ptr, size);
+    memcpy(ntt_tensor.elements().data(), ort_ptr, size);
 }
 } // namespace NttTest
 } // namespace nncase
