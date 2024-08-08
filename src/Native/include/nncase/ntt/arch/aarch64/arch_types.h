@@ -47,7 +47,16 @@ NTT_END_DEFINE_NATIVE_VECTOR()
 NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(float, float32x4_t, 4)
 NTT_END_DEFINE_NATIVE_VECTOR()
 
-NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(float, float32x4x2_t, 8)
+NTT_BEGIN_DEFINE_NATIVE_VECTOR(float, float32x4x2_t, 8)
+static float get_element(const float32x4x2_t &array,
+                         ranked_shape<1> index) noexcept {
+    return array.val[index[0] / 4][index[0] % 4];
+}
+
+static void set_element(float32x4x2_t &array, ranked_shape<1> index,
+                        float value) noexcept {
+    array.val[index[0] / 4][index[0] % 4] = value;
+}
 NTT_END_DEFINE_NATIVE_VECTOR()
 
 NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(double, float64x2_t, 2)
