@@ -125,15 +125,12 @@ if (BUILDING_RUNTIME)
     include_directories(${NNCASE_INCLUDE_DIR})
 
     add_subdirectory(src/Native/include/nncase)
-    #    add_subdirectory(src/Native/src/kernels)
-    #    add_subdirectory(src/Native/src/runtime)
     add_subdirectory(src/Native/src)
     if(BUILD_TESTING)
         add_subdirectory(src/Native/test/ctest)
     endif()
-#    add_subdirectory(src/Native/src/functional)
+
     if(BUILD_BENCHMARK)
-#        add_subdirectory(benchmark)
         add_subdirectory(src/Native/test/benchmark_test)
     endif()
 
@@ -222,9 +219,13 @@ else()
 
     add_subdirectory(src/Native/include/nncase)
     add_subdirectory(src/Native/src)
-if(BUILD_TESTING)
-    add_subdirectory(src/Native/test/ctest)
-endif()
+    if(BUILD_TESTING)
+        add_subdirectory(src/Native/test/ctest)
+    endif()
+
+    if(BUILD_BENCHMARK)
+        add_subdirectory(src/Native/test/benchmark_test)
+    endif()
     # Python binding
     if(BUILD_PYTHON_BINDING)
         add_subdirectory(python/nncase/native)

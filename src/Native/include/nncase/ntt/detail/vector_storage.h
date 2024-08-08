@@ -34,10 +34,16 @@ template <class TTraits, class TIndex> class vector_storage_element_proxy {
     constexpr operator element_type() const noexcept {
         return TTraits::get_element(buffer_, index_);
     }
+
     constexpr vector_storage_element_proxy &
     operator=(element_type value) noexcept {
         TTraits::set_element(buffer_, index_, value);
         return *this;
+    }
+
+    constexpr vector_storage_element_proxy &
+    operator=(const vector_storage_element_proxy &value) noexcept {
+        return operator=((element_type)value);
     }
 
   private:
