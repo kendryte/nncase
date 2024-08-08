@@ -25,3 +25,17 @@
     }                                                                          \
     ;                                                                          \
     }
+
+#define NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(element_type_, native_type,     \
+                                               ...)                            \
+    NTT_BEGIN_DEFINE_NATIVE_VECTOR(element_type_, native_type, __VA_ARGS__)    \
+                                                                               \
+    static element_type_ get_element(const native_type &array,                 \
+                                     ranked_shape<1> index) noexcept {         \
+        return array[index[0]];                                                \
+    }                                                                          \
+                                                                               \
+    static void set_element(native_type &array, ranked_shape<1> index,         \
+                            element_type_ value) noexcept {                    \
+        array[index[0]] = value;                                               \
+    }

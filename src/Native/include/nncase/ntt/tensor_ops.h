@@ -257,11 +257,20 @@ namespace nncase::ntt {
 template <class T, class Shape, class Strides, size_t MaxSize>
 detail::tensor_impl<T, Shape, Strides, MaxSize, false, true>::tensor_impl(
     T value) noexcept
-    : tensor_impl(TTensor::tload_scalar<
-                  tensor_base<T, Shape, Strides, MaxSize, false>>()(value)) {}
+    : tensor_impl(
+          basic_tensor<T, Shape, Strides, MaxSize, false>::from_scalar(value)) {
+}
+
+template <class T, class Shape, class Strides, size_t MaxSize, bool IsView>
+basic_tensor<T, Shape, Strides, MaxSize, IsView>
+basic_tensor<T, Shape, Strides, MaxSize, IsView>::from_scalar(
+    T value) noexcept {
+    return tensor_ops::tload_scalar<
+        basic_tensor<T, Shape, Strides, MaxSize, false>>()(value);
+}
 
 template <class T, size_t... Lanes>
-basic_vector<T, Lanes...> basic_vector<T, Lanes...>::from_scalar(T v) {
+basic_vector<T, Lanes...> basic_vector<T, Lanes...>::from_scalar(T v) noexcept {
     return tensor_ops::tload_scalar<basic_vector<T, Lanes...>>()(v);
 }
 
