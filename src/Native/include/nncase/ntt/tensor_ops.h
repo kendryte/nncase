@@ -16,6 +16,18 @@
 #include "primitive_ops.h"
 #include "tensor.h"
 #include "tensor_traits.h"
+#include "utility.h"
+
+namespace nncase::ntt {
+// Forward declare get/set elem
+template <class TContainer, size_t Rank>
+constexpr auto &get_elem(TContainer &&container,
+                         ranked_shape<Rank> index) noexcept;
+
+template <class TContainer, class T, size_t Rank>
+constexpr void set_elem(const TContainer &container, ranked_shape<Rank> index,
+                        T &&value) noexcept;
+} // namespace nncase::ntt
 
 namespace nncase::ntt::ops {
 // unary_ops ops
@@ -150,8 +162,8 @@ struct outer_product<TTensor1, TTensor2> {
                               const TTensor2 &v2) const noexcept {
 
         using result_type =
-            fixed_tensor<element_type, TTensor1::shape().length(),
-                         TTensor2::shape().length()>;
+            fixed_tensor_alike_t<TTensor1, TTensor1::shape().length(),
+                                 TTensor2::shape().length()>;
         result_type value{};
         apply(value.shape(), [&](auto index) {
             value(index) = op_(v1(index[0]), v2(index[1]));
@@ -209,11 +221,10 @@ struct reduce<Op, TResult, TTensor> {
 
     constexpr TResult operator()(const TTensor &v) const noexcept {
         Op<TResult, element_type> op;
-        auto elements = v.elements();
-        auto it = elements.begin();
-        auto value = TResult(*it++);
-        for (; it != elements.end(); ++it) {
-            value = op(value, *it);
+        auto count = v.shape()[0];
+        auto value = v(0);
+        for (size_t i = 1; i < count; i++) {
+            value = op(value, v(i));
         }
         return value;
     }
@@ -226,7 +237,7 @@ template <class TTensor> struct tload {
 
     constexpr TTensor operator()(const T *src) const noexcept {
         TTensor vec;
-        std::copy(src, src + vec.size(), vec.elements().data());
+        std::copy(src, src + vec.size(), vec.buffer().data());
         return vec;
     }
 };
@@ -236,7 +247,7 @@ template <class TTensor> struct tload_scalar {
 
     constexpr TTensor operator()(const T &value) const noexcept {
         TTensor vec;
-        std::fill_n(vec.elements().data(), vec.size(), value);
+        std::fill_n(vec.buffer().data(), vec.size(), value);
         return vec;
     }
 };
@@ -246,17 +257,24 @@ namespace nncase::ntt {
 template <class T, class Shape, class Strides, size_t MaxSize>
 detail::tensor_impl<T, Shape, Strides, MaxSize, false, true>::tensor_impl(
     T value) noexcept
-    : tensor_impl(tensor_ops::tload_scalar<
-                  tensor_base<T, Shape, Strides, MaxSize, false>>()(value)) {}
-
-template <class T, class Shape, class Strides, size_t MaxSize, bool IsView>
-tensor_base<T, Shape, Strides, MaxSize, IsView>
-tensor_base<T, Shape, Strides, MaxSize, IsView>::from_scalar(T v) {
-    return tensor_ops::tload_scalar<
-        tensor_base<T, Shape, Strides, MaxSize, IsView>>()(v);
+    : tensor_impl(
+          basic_tensor<T, Shape, Strides, MaxSize, false>::from_scalar(value)) {
 }
 
-template <IsTensor TTensor, IsTensorOrScalar T>
+template <class T, class Shape, class Strides, size_t MaxSize, bool IsView>
+basic_tensor<T, Shape, Strides, MaxSize, IsView>
+basic_tensor<T, Shape, Strides, MaxSize, IsView>::from_scalar(
+    T value) noexcept {
+    return tensor_ops::tload_scalar<
+        basic_tensor<T, Shape, Strides, MaxSize, false>>()(value);
+}
+
+template <class T, size_t... Lanes>
+basic_vector<T, Lanes...> basic_vector<T, Lanes...>::from_scalar(T v) noexcept {
+    return tensor_ops::tload_scalar<basic_vector<T, Lanes...>>()(v);
+}
+
+template <IsTensor TTensor, IsScalar T>
 constexpr TTensor tload(const T *src) noexcept {
     return tensor_ops::tload<TTensor>()(src);
 }
