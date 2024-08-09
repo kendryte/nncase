@@ -1110,5 +1110,65 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_INNER_PRODUCT_OP_FLOAT32, inner_product)
 IMPL_RVV_WITH_LMULS(MUL_ADD_FLOAT32)
 REGISTER_RVV_WITH_VLENS(REGISTER_RVV_MUL_ADD_OP_FLOAT32, mul_add)
 
+// reduce_sum kernel
+#define REDUCE_ADD_FLOAT32(LMUL, MLEN)                                         \
+    inline float reduce_add_float32(const vfloat32m##LMUL##_t &v,              \
+                                    const size_t vl) {                         \
+        auto dest = vfmv_v_f_f32m1(0.f, vl);                                   \
+        auto scalar = vfmv_v_f_f32m1(0.f, vl);                                 \
+        dest = vfredusum_vs_f32m##LMUL##_f32m1(dest, v, scalar, vl);           \
+        return vfmv_f_s_f32m1_f32(dest);                                       \
+    }
+
+// reduce_max kernel
+#define REDUCE_MAX_FLOAT32(LMUL, MLEN)                                         \
+    inline float reduce_max_float32(const vfloat32m##LMUL##_t &v,              \
+                                    const size_t vl) {                         \
+        float lowest = std::numeric_limits<float>::lowest();                   \
+        auto dest = vfmv_v_f_f32m1(0.f, vl);                                   \
+        auto scalar = vfmv_v_f_f32m1(lowest, vl);                              \
+        dest = vfredmax_vs_f32m##LMUL##_f32m1(dest, v, scalar, vl);            \
+        return vfmv_f_s_f32m1_f32(dest);                                       \
+    }
+
+// reduce_min kernel
+#define REDUCE_MIN_FLOAT32(LMUL, MLEN)                                         \
+    inline float reduce_min_float32(const vfloat32m##LMUL##_t &v,              \
+                                    const size_t vl) {                         \
+        float max = std::numeric_limits<float>::max();                         \
+        auto dest = vfmv_v_f_f32m1(0.f, vl);                                   \
+        auto scalar = vfmv_v_f_f32m1(max, vl);                                 \
+        dest = vfredmin_vs_f32m##LMUL##_f32m1(dest, v, scalar, vl);            \
+        return vfmv_f_s_f32m1_f32(dest);                                       \
+    }
+
+IMPL_RVV_WITH_LMULS(REDUCE_ADD_FLOAT32)
+IMPL_RVV_WITH_LMULS(REDUCE_MAX_FLOAT32)
+IMPL_RVV_WITH_LMULS(REDUCE_MIN_FLOAT32)
+
+// reduce op
+#define RVV_REDUCE_OP(op, dtype, dtype_prefix, vlen, sew, lmul, kernel)        \
+    template <>                                                                \
+    struct reduce<op, dtype, ntt::vector<dtype, NTT_VL(vlen, sew, lmul)>> {    \
+        dtype operator()(const ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> &v) \
+            const noexcept {                                                   \
+            constexpr size_t vl = NTT_VL(vlen, sew, lmul);                     \
+            auto p = reinterpret_cast<const dtype *>(v.buffer().data());       \
+            auto input = vle##sew##_v_##dtype_prefix##sew##m##lmul(p, vl);     \
+            return kernel(input, vl);                                          \
+        }                                                                      \
+    };
+
+// reduce with float
+#define REGISTER_RVV_REDUCE_OP_FLOAT32(op, vlen)                               \
+    RVV_REDUCE_OP(op, float, f, vlen, 32, 1, reduce_##op##_float32)            \
+    RVV_REDUCE_OP(op, float, f, vlen, 32, 2, reduce_##op##_float32)            \
+    RVV_REDUCE_OP(op, float, f, vlen, 32, 4, reduce_##op##_float32)            \
+    RVV_REDUCE_OP(op, float, f, vlen, 32, 8, reduce_##op##_float32)
+
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_REDUCE_OP_FLOAT32, add)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_REDUCE_OP_FLOAT32, max)
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_REDUCE_OP_FLOAT32, min)
+
 #endif
 } // namespace nncase::ntt::ops
