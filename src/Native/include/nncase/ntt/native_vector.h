@@ -46,7 +46,7 @@
                                                                                \
     static element_type_ get_element(const native_type &array,                 \
                                      ranked_shape<1> index) noexcept {         \
-        return static_cast<const cast_type &>(array)[index[0]];                \
+        return reinterpret_cast<const cast_type &>(array)[index[0]];           \
     }                                                                          \
                                                                                \
     static void set_element(native_type &array, ranked_shape<1> index,         \
