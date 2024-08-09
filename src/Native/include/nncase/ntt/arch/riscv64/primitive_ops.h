@@ -701,12 +701,12 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_SWISHB_OP_FLOAT32, swishb)
     template <>                                                                \
     struct op<ntt::vector<dtype, NTT_VL(vlen, sew, lmul)>,                     \
               ntt::vector<dtype, NTT_VL(vlen, sew, lmul)>> {                   \
-        fixed_tensor<dtype, NTT_VL(vlen, sew, lmul), NTT_VL(vlen, sew, lmul)>  \
+        vector<dtype, NTT_VL(vlen, sew, lmul), NTT_VL(vlen, sew, lmul)>        \
         operator()(const ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> &v1,      \
                    const ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> &v2)      \
             const noexcept {                                                   \
             constexpr size_t vl = NTT_VL(vlen, sew, lmul);                     \
-            fixed_tensor<dtype, vl, vl> vout;                                  \
+            vector<dtype, vl, vl> vout;                                        \
             auto p1 = reinterpret_cast<const dtype *>(v1.buffer().data());     \
             auto p2 = reinterpret_cast<const dtype *>(v2.buffer().data());     \
             auto pout = reinterpret_cast<dtype *>(vout.buffer().data());       \
