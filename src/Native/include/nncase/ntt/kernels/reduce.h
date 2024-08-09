@@ -69,6 +69,7 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
     constexpr bool UseVectorReduce =
         PackedAxes::rank() == 1 && PackedAxes::at(0) >= Axes::at(0);
 
+    constexpr auto input_stride = input_strides[Axes::at(Axes::rank() - 1)];
     apply(domain, [&](auto index) {
         auto input_p = input.elements().data() + linear_offset(index, strides);
         auto output_p = output.elements().data();
@@ -80,29 +81,22 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
 
         if constexpr (std::is_same_v<Op<TIElem, TIElem>,
                                      ntt::ops::mean<TIElem, TIElem>>) {
-            TIElem finner_size = (TIElem)inner_size;
-            if constexpr (UseVectorReduce) {
-                finner_size =
-                    finner_size * (TIElem)TIElem::shape_type::length();
-            }
-
-            TIElem mean = (TIElem)0;
+            TIElem sum = (TIElem)0;
             for (size_t i = 0; i < inner_size; i++)
-                mean = mean +
-                       input_p[i * input_strides[Axes::at(Axes::rank() - 1)]];
-            mean = mean / finner_size;
+                sum = sum + input_p[i * input_stride];
+
             if constexpr (UseVectorReduce) {
-                output_p[0] = reduce_sum(mean);
+                sum = sum / (inner_size * TIElem::shape_type::length());
+                output_p[0] = reduce_sum(sum);
             } else {
-                output_p[0] = mean;
+                output_p[0] = sum / inner_size;
             }
         } else {
             Op<TIElem, TIElem> op;
             TIElem ret = (TIElem)input_p[0];
             for (size_t i = 1; i < inner_size; i++)
-                ret =
-                    op(ret,
-                       input_p[i * input_strides[Axes::at(Axes::rank() - 1)]]);
+                ret = op(ret, input_p[i * input_stride]);
+
             if constexpr (UseVectorReduce) {
                 output_p[0] = ops::reduce<Op, TOElem, TIElem>()(ret);
             } else {

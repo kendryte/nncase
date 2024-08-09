@@ -30,6 +30,11 @@
 #endif
 #endif
 
+#define ULP_SIZE 250000
+#ifndef ULP_SIZE
+#define ULP_SIZE 10000
+#endif
+
 namespace nncase {
 namespace NttTest {
 
@@ -205,9 +210,8 @@ bool compare_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
                 // std::cout << "index = (";
                 // for (size_t i = 0; i < index.rank(); i++)
                 //     std::cout << index[i] << " ";
-                // std::cout << "): lhs = " << lvalue(idx) << ", rhs = " <<
-                // rvalue(idx)
-                //           << std::endl;
+                // std::cout << "): lhs = " << lvalue(idx)
+                //           << ", rhs = " << rvalue(idx) << std::endl;
                 pass = false;
             }
         });
@@ -302,12 +306,14 @@ bool compare_ulp(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
         nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
             auto ulp_error =
                 std::abs(lvalue(idx) - rvalue(idx)) / ulp((T)rvalue(idx));
+            if (ulp_error > max_ulp_error)
+                std::cout << "lvalue(idx) = " << lvalue(idx)
+                          << ", rvalue(idx) = " << rvalue(idx)
+                          << ", ulp = " << ulp((T)rvalue(idx))
+                          << ", ulp_error = " << ulp_error
+                          << ", max_ulp_error = " << max_ulp_error << std::endl;
             max_ulp_error =
                 ulp_error > max_ulp_error ? ulp_error : max_ulp_error;
-            // std::cout << "lvalue(idx) = " << lvalue(idx)
-            //           << ", rvalue(idx) = " << rvalue(idx)
-            //           << ", ulp(rvalue(idx) = " << ulp(rvalue(idx))
-            //           << ", max_ulp_error = " << max_ulp_error << std::endl;
         });
     });
 
