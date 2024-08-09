@@ -203,7 +203,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
             }
 
             if (sbps.OfType<SBPSplit>().ToHashSet() is HashSet<SBPSplit> setSplit &&
-            sbps.OfType<SBPSplit>().ToHashSet() is HashSet<SBPSplit> setBroadcast)
+            sbps.OfType<SBPBroadCast>().ToHashSet() is HashSet<SBPBroadCast> setBroadcast)
             {
                 switch (setSplit.Count)
                 {

@@ -37,6 +37,7 @@
 #include "tensor_ops.h"
 #include "ukernels.h"
 #include "utility.h"
+#include "vector.h"
 
 #ifdef __AVX2__
 #include "arch/x86_64/arch_types.h"

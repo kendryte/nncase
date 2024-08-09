@@ -486,13 +486,14 @@ public sealed class GeneralFusionMergeRule : IRewriteRule
 
             new_call = new Call(merged_fusion, calleeInputs.ToArray());
             _mergedCache.Add(hashcode, new_call);
+
+            return new_call;
         }
         else
         {
             // System.Console.WriteLine("Re Add Merged Two Fusion Call");
+            return null;
         }
-
-        return new_call;
     }
 }
 
@@ -565,13 +566,13 @@ public sealed class TupleFusionMergeRule : IRewriteRule
             var calleeInputs = callees.Select(c => c.Arguments.ToArray()).SelectMany(e => e).ToArray();
             new_call = new Call(merged_fusion, calleeInputs.ToArray());
             _mergedCache.Add(hashcode, new_call);
+            return new_call;
         }
         else
         {
             // System.Console.WriteLine("Re Add Merged Two Fusion Call");
+            return null;
         }
-
-        return new_call;
     }
 }
 
@@ -650,13 +651,13 @@ public sealed class ConcatFusionMergeRule : IRewriteRule
             var calleeInputs = callees.Select(c => c.Arguments.ToArray()).SelectMany(e => e).ToArray();
             new_call = new Call(merged_fusion, calleeInputs.ToArray());
             _mergedCache.Add(hashcode, new_call);
+            return new_call;
         }
         else
         {
             // System.Console.WriteLine("Re Add Merged Two Fusion Call");
+            return null;
         }
-
-        return new_call;
     }
 }
 

@@ -15,7 +15,6 @@
 #pragma once
 #include "../apply.h"
 #include "../loop.h"
-#include "../primitive_ops.h"
 #include "../tensor_ops.h"
 #include "../utility.h"
 
@@ -23,18 +22,19 @@ namespace nncase::ntt {
 
 namespace clamp_detail {
 
-template <IsFixedTensor TIn, IsFixedTensor TOut, IsScalar TMin, IsScalar TMax>
-void clamp_impl(const TIn &input, TOut &&output, TMin min, TMax max) {
-    constexpr auto input_shape = typename TIn::shape_type{};
-    apply(input_shape, [&](auto index) {
-        output(index) = ntt::max(input(index), min);
-        output(index) = ntt::min(output(index), max);
+template <IsFixedTensor TIn, IsFixedTensor TOut, typename TElem>
+void clamp_impl(const TIn &input, TOut &&output, const TElem &min,
+                const TElem &max) noexcept {
+    constexpr auto output_shape = std::decay_t<TOut>::shape();
+    apply(output_shape, [&](auto index) {
+        output(index) = ntt::max(ntt::min(input(index), max), min);
     });
 }
 } // namespace clamp_detail
 
-template <IsFixedTensor TIn, IsFixedTensor TOut, IsScalar TMin, IsScalar TMax>
-void clamp(const TIn &input, TOut &&output, TMin min, TMax max) noexcept {
+template <typename TIn, typename TOut, typename TElem>
+void clamp(const TIn &input, TOut &&output, const TElem &min,
+           const TElem &max) noexcept {
     clamp_detail::clamp_impl(input, output, min, max);
 }
 } // namespace nncase::ntt

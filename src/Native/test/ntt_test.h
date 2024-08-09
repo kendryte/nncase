@@ -20,6 +20,7 @@
 #include <iostream>
 #include <random>
 #include <string>
+#include <type_traits>
 
 #ifdef __AVX2__
 #ifdef _WIN32
@@ -49,10 +50,9 @@ __inline__ uint64_t get_cpu_cycle(void) {
     return cycles;
 }
 
-template <typename T, typename Shape,
-          typename Stride = ntt::default_strides_t<Shape>>
-void init_tensor(ntt::tensor<T, Shape, Stride> &tensor,
-                 T start = static_cast<T>(0), T stop = static_cast<T>(1)) {
+template <typename T, class TTensor>
+void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
+                 T stop = static_cast<T>(1)) {
     std::random_device rd;
     std::mt19937 gen(rd());
     if (std::is_same_v<T, int8_t>) {
@@ -132,11 +132,9 @@ void init_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &tensor,
                [&](auto &index) { init_tensor(tensor(index), start, stop); });
 }
 
-template <typename T, typename Shape,
-          typename Stride = ntt::default_strides_t<Shape>>
-bool compare_tensor(ntt::tensor<T, Shape, Stride> &lhs,
-                    ntt::tensor<T, Shape, Stride> &rhs,
-                    double threshold = 0.999f) {
+template <ntt::IsTensor TTensor>
+bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
+    using T = typename std::decay_t<TTensor>::element_type;
     if (lhs.shape().rank() != rhs.shape().rank()) {
         return false;
     }
@@ -307,11 +305,11 @@ bool compare_ulp(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
 
         nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
             auto ulp_error =
-                std::abs(lvalue(idx) - rvalue(idx)) / ulp(rvalue(idx));
+                std::abs(lvalue(idx) - rvalue(idx)) / ulp((T)rvalue(idx));
             if (ulp_error > max_ulp_error)
                 std::cout << "lvalue(idx) = " << lvalue(idx)
                           << ", rvalue(idx) = " << rvalue(idx)
-                          << ", ulp = " << ulp(rvalue(idx))
+                          << ", ulp = " << ulp((T)rvalue(idx))
                           << ", ulp_error = " << ulp_error
                           << ", max_ulp_error = " << max_ulp_error << std::endl;
             max_ulp_error =

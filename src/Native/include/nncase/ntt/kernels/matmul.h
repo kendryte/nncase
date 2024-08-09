@@ -136,7 +136,7 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                            LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
                            RhsPackedAxes::rank() == 1 &&
                            RhsPackedAxes::at(0) == TRhs::rank() - 1) {
-            alignas(32) auto value = ntt::outer_product(lhs, rhs);
+            auto value = ntt::outer_product(lhs, rhs);
             output = AccC ? output + value : value;
         }
         // 3.1. pack MK & K
@@ -145,11 +145,8 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                            LhsPackedAxes::at(1) == TLhs::rank() - 1 &&
                            RhsPackedAxes::rank() == 1 &&
                            RhsPackedAxes::at(0) == TRhs::rank() - 2) {
-            auto lhs_v =
-                (vector<typename TLhsElem::element_type,
-                        TLhsElem::shape().at(1)> *)(lhs.elements().data());
             for (size_t m = 0; m < TLhsElem::shape().at(0); m++) {
-                auto value = ntt::inner_product(lhs_v[m], rhs);
+                auto value = ntt::inner_product(lhs(m), rhs);
                 output(m) = AccC ? output(m) + value : value;
             }
         }
@@ -159,13 +156,12 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                            RhsPackedAxes::rank() == 2 &&
                            RhsPackedAxes::at(0) == TRhs::rank() - 2 &&
                            RhsPackedAxes::at(1) == TRhs::rank() - 1) {
-            auto lhs_2d =
-                (vector<typename TLhsElem::element_type, 1,
-                        TLhsElem::shape().at(0)> *)(lhs.elements().data());
-            auto output_2d =
-                (vector<typename TOutElem::element_type, 1,
-                        TOutElem::shape().at(0)> *)(output.elements().data());
-            ntt::mma<AccC>(*lhs_2d, rhs, *output_2d);
+            fixed_tensor_alike_t<TLhsElem, 1, TLhsElem::shape().at(0)> lhs_2d{
+                {lhs}};
+            fixed_tensor_alike_t<TOutElem, 1, TOutElem::shape().at(0)>
+                output_2d{{output}};
+            output_2d = ntt::mma<AccC>(lhs_2d, rhs, output_2d);
+            output = output_2d(0);
         }
         // 3.3. pack MK & KN
         else if constexpr (LhsPackedAxes::rank() == 2 &&
@@ -174,7 +170,7 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                            RhsPackedAxes::rank() == 2 &&
                            RhsPackedAxes::at(0) == TRhs::rank() - 2 &&
                            RhsPackedAxes::at(1) == TRhs::rank() - 1) {
-            ntt::mma<AccC>(lhs, rhs, output);
+            output = ntt::mma<AccC>(lhs, rhs, output);
         } else {
             static_assert(sizeof(TLhsElem) == 0, "Unsupported packing.");
         }

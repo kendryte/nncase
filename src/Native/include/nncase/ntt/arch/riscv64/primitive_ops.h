@@ -32,8 +32,8 @@ namespace nncase::ntt::ops {
         operator()(const ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> &v)       \
             const noexcept {                                                   \
             ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> vout;                  \
-            auto pin = reinterpret_cast<const dtype *>(v.elements().data());   \
-            auto pout = reinterpret_cast<dtype *>(vout.elements().data());     \
+            auto pin = reinterpret_cast<const dtype *>(v.buffer().data());     \
+            auto pout = reinterpret_cast<dtype *>(vout.buffer().data());       \
             auto input = vle##sew##_v_##dtype_prefix##sew##m##lmul(            \
                 pin, NTT_VL(vlen, sew, lmul));                                 \
             auto output = kernel(input, NTT_VL(vlen, sew, lmul));              \
@@ -599,9 +599,9 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, tanh)
                    const ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> &v2)      \
             const noexcept {                                                   \
             ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> vout;                  \
-            auto p1 = reinterpret_cast<const dtype *>(v1.elements().data());   \
-            auto p2 = reinterpret_cast<const dtype *>(v2.elements().data());   \
-            auto pout = reinterpret_cast<dtype *>(vout.elements().data());     \
+            auto p1 = reinterpret_cast<const dtype *>(v1.buffer().data());     \
+            auto p2 = reinterpret_cast<const dtype *>(v2.buffer().data());     \
+            auto pout = reinterpret_cast<dtype *>(vout.buffer().data());       \
             auto input1 = vle##sew##_v_##dtype_prefix##sew##m##lmul(           \
                 p1, NTT_VL(vlen, sew, lmul));                                  \
             auto input2 = vle##sew##_v_##dtype_prefix##sew##m##lmul(           \
@@ -620,8 +620,8 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, tanh)
         operator()(const ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> &v,       \
                    const dtype &s) const noexcept {                            \
             ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> vout;                  \
-            auto p = reinterpret_cast<const dtype *>(v.elements().data());     \
-            auto pout = reinterpret_cast<dtype *>(vout.elements().data());     \
+            auto p = reinterpret_cast<const dtype *>(v.buffer().data());     \
+            auto pout = reinterpret_cast<dtype *>(vout.buffer().data());     \
             auto input = vle##sew##_v_##dtype_prefix##sew##m##lmul(            \
                 p, NTT_VL(vlen, sew, lmul));                                   \
             auto output = kernel(input, s, NTT_VL(vlen, sew, lmul));           \
@@ -639,8 +639,8 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, tanh)
                    const ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> &v)       \
             const noexcept {                                                   \
             ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> vout;                  \
-            auto p = reinterpret_cast<const dtype *>(v.elements().data());     \
-            auto pout = reinterpret_cast<dtype *>(vout.elements().data());     \
+            auto p = reinterpret_cast<const dtype *>(v.buffer().data());     \
+            auto pout = reinterpret_cast<dtype *>(vout.buffer().data());     \
             auto input = vle##sew##_v_##dtype_prefix##sew##m##lmul(            \
                 p, NTT_VL(vlen, sew, lmul));                                   \
             auto output = kernel(input, s, NTT_VL(vlen, sew, lmul));           \
@@ -904,8 +904,8 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, swish)
         operator()(const ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> &v,       \
                    dtype beta) const noexcept {                                \
             ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> vout;                  \
-            auto pin = reinterpret_cast<const dtype *>(v.elements().data());   \
-            auto pout = reinterpret_cast<dtype *>(vout.elements().data());     \
+            auto pin = reinterpret_cast<const dtype *>(v.buffer().data());     \
+            auto pout = reinterpret_cast<dtype *>(vout.buffer().data());       \
             auto input = vle##sew##_v_##dtype_prefix##sew##m##lmul(            \
                 pin, NTT_VL(vlen, sew, lmul));                                 \
             auto output = kernel(input, NTT_VL(vlen, sew, lmul), beta);        \
@@ -936,15 +936,15 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_SWISHB_OP_FLOAT32, swishb)
     template <>                                                                \
     struct op<ntt::vector<dtype, NTT_VL(vlen, sew, lmul)>,                     \
               ntt::vector<dtype, NTT_VL(vlen, sew, lmul)>> {                   \
-        fixed_tensor<dtype, NTT_VL(vlen, sew, lmul), NTT_VL(vlen, sew, lmul)>  \
+        vector<dtype, NTT_VL(vlen, sew, lmul), NTT_VL(vlen, sew, lmul)>        \
         operator()(const ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> &v1,      \
                    const ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> &v2)      \
             const noexcept {                                                   \
             constexpr size_t vl = NTT_VL(vlen, sew, lmul);                     \
-            fixed_tensor<dtype, vl, vl> vout;                                  \
-            auto p1 = reinterpret_cast<const dtype *>(v1.elements().data());   \
-            auto p2 = reinterpret_cast<const dtype *>(v2.elements().data());   \
-            auto pout = reinterpret_cast<dtype *>(vout.elements().data());     \
+            vector<dtype, vl, vl> vout;                                        \
+            auto p1 = reinterpret_cast<const dtype *>(v1.buffer().data());     \
+            auto p2 = reinterpret_cast<const dtype *>(v2.buffer().data());     \
+            auto pout = reinterpret_cast<dtype *>(vout.buffer().data());       \
             auto input2 = vle##sew##_v_##dtype_prefix##sew##m##lmul(p2, vl);   \
             if (vl == 4) {                                                     \
                 auto out0 = vfmul_vf_f32m##lmul(input2, p1[0], vl);            \
@@ -989,8 +989,8 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_OUTER_PRODUCT_OP_FLOAT32, outer_product)
                    const ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> &v2)      \
             const noexcept {                                                   \
             constexpr size_t vl = NTT_VL(vlen, sew, lmul);                     \
-            auto p1 = reinterpret_cast<const dtype *>(v1.elements().data());   \
-            auto p2 = reinterpret_cast<const dtype *>(v2.elements().data());   \
+            auto p1 = reinterpret_cast<const dtype *>(v1.buffer().data());     \
+            auto p2 = reinterpret_cast<const dtype *>(v2.buffer().data());     \
             auto input1 = vle##sew##_v_##dtype_prefix##sew##m##lmul(p1, vl);   \
             auto input2 = vle##sew##_v_##dtype_prefix##sew##m##lmul(p2, vl);   \
             auto zero = vfmv_v_f_f32m1(0, vl);                                 \
@@ -1023,10 +1023,10 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_INNER_PRODUCT_OP_FLOAT32, inner_product)
             const noexcept {                                                   \
             constexpr size_t vl = NTT_VL(vlen, sew, lmul);                     \
             ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> vout;                  \
-            auto p1 = reinterpret_cast<const dtype *>(v1.elements().data());   \
-            auto p2 = reinterpret_cast<const dtype *>(v2.elements().data());   \
-            auto p3 = reinterpret_cast<const dtype *>(v3.elements().data());   \
-            auto pout = reinterpret_cast<dtype *>(vout.elements().data());     \
+            auto p1 = reinterpret_cast<const dtype *>(v1.buffer().data());     \
+            auto p2 = reinterpret_cast<const dtype *>(v2.buffer().data());     \
+            auto p3 = reinterpret_cast<const dtype *>(v3.buffer().data());     \
+            auto pout = reinterpret_cast<dtype *>(vout.buffer().data());       \
             auto input1 = vle##sew##_v_##dtype_prefix##sew##m##lmul(p1, vl);   \
             auto input2 = vle##sew##_v_##dtype_prefix##sew##m##lmul(p2, vl);   \
             auto input3 = vle##sew##_v_##dtype_prefix##sew##m##lmul(p3, vl);   \
@@ -1047,9 +1047,9 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_INNER_PRODUCT_OP_FLOAT32, inner_product)
             const noexcept {                                                   \
             constexpr size_t vl = NTT_VL(vlen, sew, lmul);                     \
             ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> vout;                  \
-            auto p1 = reinterpret_cast<const dtype *>(v1.elements().data());   \
-            auto p3 = reinterpret_cast<const dtype *>(v3.elements().data());   \
-            auto pout = reinterpret_cast<dtype *>(vout.elements().data());     \
+            auto p1 = reinterpret_cast<const dtype *>(v1.buffer().data());     \
+            auto p3 = reinterpret_cast<const dtype *>(v3.buffer().data());     \
+            auto pout = reinterpret_cast<dtype *>(vout.buffer().data());       \
             auto input1 = vle##sew##_v_##dtype_prefix##sew##m##lmul(p1, vl);   \
             auto input3 = vle##sew##_v_##dtype_prefix##sew##m##lmul(p3, vl);   \
             auto output = kernel(input1, s2, input3, vl);                      \
@@ -1069,11 +1069,11 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_INNER_PRODUCT_OP_FLOAT32, inner_product)
             const noexcept {                                                   \
             constexpr size_t vl = NTT_VL(vlen, sew, lmul);                     \
             ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> vout;                  \
-            auto p2 = reinterpret_cast<const dtype *>(v2.elements().data());   \
-            auto p3 = reinterpret_cast<const dtype *>(v3.elements().data());   \
+            auto p2 = reinterpret_cast<const dtype *>(v2.buffer().data());     \
+            auto p3 = reinterpret_cast<const dtype *>(v3.buffer().data());     \
             auto input2 = vle##sew##_v_##dtype_prefix##sew##m##lmul(p2, vl);   \
             auto input3 = vle##sew##_v_##dtype_prefix##sew##m##lmul(p3, vl);   \
-            auto pout = reinterpret_cast<dtype *>(vout.elements().data());     \
+            auto pout = reinterpret_cast<dtype *>(vout.buffer().data());       \
             auto output = kernel(s1, input2, input3, vl);                      \
             vse##sew##_v_##dtype_prefix##sew##m##lmul(                         \
                 pout, output, NTT_VL(vlen, sew, lmul));                        \

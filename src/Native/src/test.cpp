@@ -187,8 +187,9 @@ int main() {
         ntt::tensor<ntt::vector<float, 8>, ntt::ranked_shape<3>> tb(b_shape);
         std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
         ntt::pack<1>(ta, tb.view());
+        constexpr auto rank = tb.shape().rank();
         ntt::apply(tb.shape(), [&](auto index) {
-            ntt::ranked_shape<tb.shape().rank()> inIndex;
+            ntt::ranked_shape<rank> inIndex;
             for (size_t i = 0; i < index.rank(); i++)
                 inIndex[i] = index[i];
             auto b = tb(index);
@@ -213,8 +214,9 @@ int main() {
         ntt::tensor<ntt::vector<float, 8>, ntt::ranked_shape<3>> tb(shape);
         std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
         ntt::pack<1>(ta, tb.view());
+        constexpr auto rank = tb.shape().rank();
         ntt::apply(tb.shape(), [&](auto index) {
-            ntt::ranked_shape<tb.shape().rank()> inIndex;
+            ntt::ranked_shape<rank> inIndex;
             for (size_t i = 0; i < index.rank(); i++)
                 inIndex[i] = index[i];
             auto b = tb(index);
@@ -239,8 +241,9 @@ int main() {
         ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<1, 8, 32>> tb;
         std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
         ntt::pack<1>(ta, tb.view());
+        constexpr auto rank = tb.shape().rank();
         ntt::apply(tb.shape(), [&](auto index) {
-            ntt::ranked_shape<tb.shape().rank()> inIndex;
+            ntt::ranked_shape<rank> inIndex;
             for (size_t i = 0; i < index.rank(); i++)
                 inIndex[i] = index[i];
             auto b = tb(index);
