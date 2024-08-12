@@ -2,7 +2,6 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
-using LanguageExt.UnsafeValueAccess;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Onnx;

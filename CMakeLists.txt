@@ -49,6 +49,13 @@ option(ENABLE_DUMP_MANAGER "Enable dump manager" OFF)
 option(ENABLE_RVV "Some kernel impl by rvv" OFF)
 option(ENABLE_DUMP_MEM "Dump mem usage" OFF)
 
+if (BUILDING_RUNTIME)
+    option(ENABLE_VULKAN_RUNTIME "Enable Vulkan runtime" OFF)
+    option(ENABLE_K210_RUNTIME "Enable k210 runtime" OFF)
+    option(DEFAULT_BUILTIN_RUNTIMES "Use default builtin runtimes" ON)
+    option(DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL "Use default shared memory platform impl" ON)
+endif()
+
 if (ENABLE_OP_PROFILE)
     add_definitions(-DENABLE_OP_PROFILE)
 endif()
@@ -67,78 +74,68 @@ if (${CMAKE_SYSTEM_PROCESSOR} MATCHES
     set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
 endif()
 
-if (BUILDING_RUNTIME)
-    option(ENABLE_VULKAN_RUNTIME "Enable Vulkan runtime" OFF)
-    option(ENABLE_K210_RUNTIME "Enable k210 runtime" OFF)
-    option(DEFAULT_BUILTIN_RUNTIMES "Use default builtin runtimes" ON)
-    option(DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL "Use default shared memory platform impl" ON)
-endif()
-
 include(cmake/configure-conan.cmake)
 include(cmake/conan.cmake)
-
-if(NOT CONAN_EXPORTED)
-    conan_check()
-    conan_add_remote(NAME sunnycase URL https://conan.sunnycase.moe INDEX 0)
-endif()
-
-if(CONAN_EXPORTED) # in conan local cache
-    message(STATUS "Standard Conan Installation")
-else() # in user space
-    message(STATUS "Auto Cmake Conan Installation")
-    include(${CMAKE_SOURCE_DIR}/cmake/conan.cmake)
-    conan_cmake_run(CONANFILE conanfile.py
-                    BASIC_SETUP
-                    OPTIONS ${CONAN_OPTS}
-                    SETTINGS ${CONAN_SETTINGS}
-                    BUILD missing)
-endif()
-
-include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 include(cmake/dependencies.cmake)
 
-if (BUILDING_RUNTIME)
-    set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/src/Native/include)
-    set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/src/Native/include)
-    set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src/Native/include)
-    set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
-    set_property(GLOBAL PROPERTY POSITION_INDEPENDENT_CODE ON)
+set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/src/Native/include)
+set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/src/Native/include)
+set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src/Native/include)
+set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
 
-    if (MSVC)
-        add_definitions(/D_CRT_SECURE_NO_WARNINGS /DNOMINMAX)
-        add_compile_options(/wd4267 /wd4251 /wd4244 /FC /utf-8 /W3 /WX /wd4297 -Wno-unused-function -Wno-unused-command-line-argument)
+set_property(GLOBAL PROPERTY POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_SKIP_RPATH OFF)
+if (APPLE)
+    set(CMAKE_MACOSX_RPATH TRUE)
+    set(CMAKE_INSTALL_RPATH "@loader_path")
+    set(CMAKE_INSTALL_NAME_DIR "@rpath")
+else ()
+    set(CMAKE_INSTALL_RPATH "$ORIGIN")
+endif()
+
+if (MSVC)
+    add_definitions(/D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS /D_CRT_SECURE_NO_WARNINGS /DNOMINMAX)
+    add_compile_options(/wd4267 /wd4251 /wd4244 /FC /utf-8 /W3 /WX -Wno-unused-function -Wno-unused-command-line-argument)
+    set(PYBIND11_CPP_STANDARD "/std:c++latest")
+else()
+    add_compile_options(-fvisibility=hidden)
+    add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-type-limits -Wno-unused-local-typedefs -Wno-sign-compare)
+    if (APPLE)
+        add_compile_options(-Wno-four-char-constants -Wno-sometimes-uninitialized -Wno-deprecated)
+    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        add_compile_options(-Wno-uninitialized -Wno-gnu-zero-variadic-macro-arguments)
+    else ()
+        add_compile_options(-Wno-maybe-uninitialized -Wno-deprecated-copy)
+        add_link_options(-Wl,--exclude-libs,ALL)
+    endif()
+endif()
+
+include_directories(${NNCASE_MAIN_INCLUDE_DIR})
+include_directories(${NNCASE_INCLUDE_DIR})
+
+add_subdirectory(src/Native/include/nncase)
+add_subdirectory(src/Native/src)
+
+if(BUILD_TESTING)
+    add_subdirectory(src/Native/test/ctest)
+    add_subdirectory(tests/kernels)
+endif()
+
+if(BUILD_BENCHMARK)
+    add_subdirectory(src/Native/test/benchmark_test)
+endif()
+
+# Python binding
+if(BUILD_PYTHON_BINDING)
+    if(BUILDING_RUNTIME)
+        #add_subdirectory(python/nncaseruntime/native)
     else()
-        add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-type-limits)
-        if (APPLE)
-            add_compile_options(-Wno-four-char-constants -Wno-sometimes-uninitialized -Wno-deprecated-declarations)
-        elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-            add_compile_options(-Wno-uninitialized -Wno-unused-private-field)
-        else()
-            add_compile_options(-Wno-maybe-uninitialized -Wno-attributes)
-            if (CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 9)
-                add_compile_options(-Wno-unused-private-field)
-            endif()
-        endif()
+        add_subdirectory(python/nncase/native)
     endif()
+endif()
 
-    include_directories(${NNCASE_MAIN_INCLUDE_DIR})
-    include_directories(${NNCASE_INCLUDE_DIR})
-
-    add_subdirectory(src/Native/include/nncase)
-    add_subdirectory(src/Native/src)
-    if(BUILD_TESTING)
-        add_subdirectory(src/Native/test/ctest)
-    endif()
-
-    if(BUILD_BENCHMARK)
-        add_subdirectory(src/Native/test/benchmark_test)
-    endif()
-
-    # Python binding
-    if(BUILD_PYTHON_BINDING)
-#        add_subdirectory(python/nncaseruntime/native)
-    endif()
-
+# Install
+if (BUILDING_RUNTIME)
     install(DIRECTORY ${NNCASE_INCLUDE_DIR}/nncase
         DESTINATION include
         COMPONENT nncase-headers
@@ -183,62 +180,6 @@ if (BUILDING_RUNTIME)
         PATTERN "LICENSE.TXT"
         )
 else()
-    set(CMAKE_SKIP_RPATH OFF)
-
-    set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/src/Native/include)
-    set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src/Native/include)
-    set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
-    set_property(GLOBAL PROPERTY POSITION_INDEPENDENT_CODE ON)
-    if (APPLE)
-        set(CMAKE_MACOSX_RPATH TRUE)
-        set(CMAKE_INSTALL_RPATH "@loader_path")
-        set(CMAKE_INSTALL_NAME_DIR "@rpath")
-    else ()
-        set(CMAKE_INSTALL_RPATH "$ORIGIN")
-    endif()
-
-    if (MSVC)
-        add_definitions(/D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS /D_CRT_SECURE_NO_WARNINGS /DNOMINMAX)
-        add_compile_options(/wd4267 /wd4251 /wd4244 /FC /utf-8 /W3 /WX -Wno-unused-function -Wno-unused-command-line-argument)
-        set(PYBIND11_CPP_STANDARD "/std:c++latest")
-    else()
-        add_compile_options(-fvisibility=hidden)
-        add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-type-limits -Wno-unused-local-typedefs -Wno-sign-compare)
-        if (APPLE)
-            add_compile_options(-Wno-four-char-constants -Wno-sometimes-uninitialized -Wno-deprecated)
-        elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-            add_compile_options(-Wno-uninitialized -Wno-gnu-zero-variadic-macro-arguments)
-        else ()
-            add_compile_options(-Wno-maybe-uninitialized -Wno-deprecated-copy)
-            add_link_options(-Wl,--exclude-libs,ALL)
-        endif()
-    endif()
-
-    include_directories(${NNCASE_MAIN_INCLUDE_DIR})
-    include_directories(${NNCASE_INCLUDE_DIR})
-
-    add_subdirectory(src/Native/include/nncase)
-    add_subdirectory(src/Native/src)
-    if(BUILD_TESTING)
-        add_subdirectory(src/Native/test/ctest)
-    endif()
-
-    if(BUILD_BENCHMARK)
-        add_subdirectory(src/Native/test/benchmark_test)
-    endif()
-    # Python binding
-    if(BUILD_PYTHON_BINDING)
-        add_subdirectory(python/nncase/native)
-    endif()
-
-    # Csharp binding
-    if(BUILD_CSHARP_BINDING)
-        #add_subdirectory(csharp)
-    endif()
-
-    # Thrid party
-    # add_subdirectory(third_party/onnx)
-
     install(DIRECTORY src/Native/include/nncase
         DESTINATION include
         COMPONENT nncase-headers
@@ -272,15 +213,6 @@ else()
         FILES_MATCHING
         PATTERN "*.py"
         )
-
-    # Targets
-    #add_subdirectory(targets/cpu)
-    #add_subdirectory(targets/k210)
-    #add_subdirectory(targets/vulkan)
-endif()
-
-if(BUILD_TESTING)
-    add_subdirectory(tests/kernels)
 endif()
 
 # Modules

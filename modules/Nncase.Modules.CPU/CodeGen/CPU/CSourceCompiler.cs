@@ -20,6 +20,8 @@ namespace Nncase.CodeGen.CPU;
 /// </summary>
 public class CSourceCompiler
 {
+    private static string? _vcVarPath;
+
     /// <summary>
     /// compiler exe name.
     /// </summary>
@@ -40,6 +42,8 @@ public class CSourceCompiler
         PlatformSpecific();
         ArchSpecific();
     }
+
+    protected static string? VCVarPath => _vcVarPath ??= FindVCVarPath();
 
     protected string Exe
     {
