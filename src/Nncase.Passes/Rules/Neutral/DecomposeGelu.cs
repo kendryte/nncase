@@ -36,6 +36,6 @@ public sealed partial class DecomposeGelu : IRewriteRule
     private Expr? GetReplace(Expr input, Call geluCall, float alpha)
     {
         var scaledInput = IR.F.Math.Mul(input, alpha);
-        return IR.F.Math.Mul(0.5f, IR.F.Math.Mul(scaledInput, IR.F.Math.Add(IR.F.NN.Erf(IR.F.Math.Div(scaledInput, IR.F.Math.Sqrt(2f))), 1f))).ToValue();
+        return IR.F.Math.Mul(0.5f, IR.F.Math.Mul(scaledInput, IR.F.Math.Add(IR.F.NN.Erf(IR.F.Math.Div(scaledInput, IR.F.Math.Sqrt(2f))), 1f)));
     }
 }
