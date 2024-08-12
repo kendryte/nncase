@@ -335,6 +335,12 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 }
 
                 break;
+            case TIR.CPU.Pack pack:
+                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Pack.cshtml", new TypedKernelTemplateModel<TIR.CPU.Pack>(pack)
+                {
+                    Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
+                }).Result);
+                break;
             default:
                 throw new NotSupportedException();
         }
@@ -366,7 +372,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
             type = ptype.ToC();
         }
-        else if (expr is TensorConst { Value: Tensor { ElementType: PointerType { ElemType: PrimType }, Shape: { IsScalar: true } } pointer })
+        else if (expr is TensorConst { Value: Tensor { ElementType: PointerType { ElemType: DataType elemtype }, Shape: { IsScalar: true } } pointer })
         {
             str = pointer.ToScalar<ulong>().ToString();
             type = pointer.ElementType.ToC();

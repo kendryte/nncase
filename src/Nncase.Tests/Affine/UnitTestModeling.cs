@@ -258,6 +258,32 @@ public sealed class UnitTestModeling : TestClassBase
     }
 
     [Fact]
+    public void TestTilePackMatmul()
+    {
+        Function func;
+        {
+            var a = new Var(new TensorType(DataTypes.Float32, new[] { 128, 256 }));
+            var b = new Var(new TensorType(DataTypes.Float32, new[] { 256, 384 }));
+            var c = IR.F.Tensors.MatMul(a, b);
+            var d = IR.F.Math.Exp(c);
+            var e = new Var(new TensorType(DataTypes.Float32, new[] { 384, 512 }));
+            var f = IR.F.Tensors.MatMul(d, e);
+            func = new(f, a, b, e);
+        }
+
+        var post = CompilerServices.ERewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.PackMatMul(1, 4), new Passes.Rules.CPU.PackUnary(1, 4), }, new(), CompileOptions);
+        post = CompilerServices.Rewrite(post, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), }, new());
+        Dumpper.DumpIR(post, "post");
+
+        if (post is not Function { Body: IR.Affine.Grid grid })
+        {
+            return;
+        }
+
+        Schedule.TreeTiler.Tile(grid, Nncase.Targets.CPUTarget.Kind, 0, CompileOptions.TargetOptions);
+    }
+
+    [Fact]
     public void TestAutoFusion()
     {
         var func = GetFunctionSample();

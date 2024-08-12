@@ -22,14 +22,13 @@ public partial class LowerMatmul : RewriteRule<Pattern>
     public string ModuleKind { get; }
 
     /// <inheritdoc/>
-    public override Pattern Pattern { get; } = PatternMatch.F.Math.IsMatMul(
-      "matmul",
-      "call",
-      _ => true,
-      IsWildcard("lhs") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") },
-      IsWildcard("rhs") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") });
+    public override Pattern Pattern { get; } = IsCall(
+        "call",
+        IsOp<Op>("op", op => op is MatMul or IR.CPU.PackedMatMul),
+        IsWildcard("lhs") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") },
+        IsWildcard("rhs") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") });
 
-    private Expr? GetReplace(Expr call, MatMul matmul, Expr lhs, Expr rhs)
+    private Expr? GetReplace(Expr call, Op op, Expr lhs, Expr rhs)
     {
         var lhsShape = lhs.CheckedShape.ToValueArray();
         var rhsShape = rhs.CheckedShape.ToValueArray();
@@ -94,7 +93,12 @@ public partial class LowerMatmul : RewriteRule<Pattern>
             .Read(lhs, lhsMap, out var lhsTile)
             .Read(rhs, rhsMap, out var rhsTile)
             .Write(outBuffer, new AffineMap(domains, default, domains.SkipLast(2).Concat(domains.TakeLast(1)).Select(x => new AffineRange(x.Offset, x.Extent)).ToArray()), out var outTile)
-            .Body(TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.Equal(domainVar[rank - 2][0], 0L)))
+            .Body(op switch
+            {
+                MatMul => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.Equal(domainVar[rank - 2][0], 0L)),
+                IR.CPU.PackedMatMul => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.Equal(domainVar[rank - 2][0], 0L)),
+                _ => throw new System.Diagnostics.UnreachableException(),
+            })
             .Build();
     }
 }
