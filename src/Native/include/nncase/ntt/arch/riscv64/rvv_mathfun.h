@@ -548,59 +548,59 @@ _RVV_FLOAT_POW_OP(8, 2, 16)
         return vf##OP##_vf_f##TLEN##m##LMUL(x, y, vl);                         \
     }
 
-_RVV_FLOAT_VF_OP(add, 8, 32);
-_RVV_FLOAT_VF_OP(add, 8, 16);
-_RVV_FLOAT_VF_OP(add, 4, 32);
-_RVV_FLOAT_VF_OP(add, 4, 16);
-_RVV_FLOAT_VF_OP(add, 2, 32);
-_RVV_FLOAT_VF_OP(add, 2, 16);
-_RVV_FLOAT_VF_OP(add, 1, 32);
-_RVV_FLOAT_VF_OP(add, 1, 16);
+_RVV_FLOAT_VF_OP(add, 8, 32)
+_RVV_FLOAT_VF_OP(add, 8, 16)
+_RVV_FLOAT_VF_OP(add, 4, 32)
+_RVV_FLOAT_VF_OP(add, 4, 16)
+_RVV_FLOAT_VF_OP(add, 2, 32)
+_RVV_FLOAT_VF_OP(add, 2, 16)
+_RVV_FLOAT_VF_OP(add, 1, 32)
+_RVV_FLOAT_VF_OP(add, 1, 16)
 
-_RVV_FLOAT_VF_OP(sub, 8, 32);
-_RVV_FLOAT_VF_OP(sub, 8, 16);
-_RVV_FLOAT_VF_OP(sub, 4, 32);
-_RVV_FLOAT_VF_OP(sub, 4, 16);
-_RVV_FLOAT_VF_OP(sub, 2, 32);
-_RVV_FLOAT_VF_OP(sub, 2, 16);
-_RVV_FLOAT_VF_OP(sub, 1, 32);
-_RVV_FLOAT_VF_OP(sub, 1, 16);
+_RVV_FLOAT_VF_OP(sub, 8, 32)
+_RVV_FLOAT_VF_OP(sub, 8, 16)
+_RVV_FLOAT_VF_OP(sub, 4, 32)
+_RVV_FLOAT_VF_OP(sub, 4, 16)
+_RVV_FLOAT_VF_OP(sub, 2, 32)
+_RVV_FLOAT_VF_OP(sub, 2, 16)
+_RVV_FLOAT_VF_OP(sub, 1, 32)
+_RVV_FLOAT_VF_OP(sub, 1, 16)
 
-_RVV_FLOAT_VF_OP(mul, 8, 32);
-_RVV_FLOAT_VF_OP(mul, 8, 16);
-_RVV_FLOAT_VF_OP(mul, 4, 32);
-_RVV_FLOAT_VF_OP(mul, 4, 16);
-_RVV_FLOAT_VF_OP(mul, 2, 32);
-_RVV_FLOAT_VF_OP(mul, 2, 16);
-_RVV_FLOAT_VF_OP(mul, 1, 32);
-_RVV_FLOAT_VF_OP(mul, 1, 16);
+_RVV_FLOAT_VF_OP(mul, 8, 32)
+_RVV_FLOAT_VF_OP(mul, 8, 16)
+_RVV_FLOAT_VF_OP(mul, 4, 32)
+_RVV_FLOAT_VF_OP(mul, 4, 16)
+_RVV_FLOAT_VF_OP(mul, 2, 32)
+_RVV_FLOAT_VF_OP(mul, 2, 16)
+_RVV_FLOAT_VF_OP(mul, 1, 32)
+_RVV_FLOAT_VF_OP(mul, 1, 16)
 
-_RVV_FLOAT_VF_OP(div, 8, 32);
-_RVV_FLOAT_VF_OP(div, 8, 16);
-_RVV_FLOAT_VF_OP(div, 4, 32);
-_RVV_FLOAT_VF_OP(div, 4, 16);
-_RVV_FLOAT_VF_OP(div, 2, 32);
-_RVV_FLOAT_VF_OP(div, 2, 16);
-_RVV_FLOAT_VF_OP(div, 1, 32);
-_RVV_FLOAT_VF_OP(div, 1, 16);
+_RVV_FLOAT_VF_OP(div, 8, 32)
+_RVV_FLOAT_VF_OP(div, 8, 16)
+_RVV_FLOAT_VF_OP(div, 4, 32)
+_RVV_FLOAT_VF_OP(div, 4, 16)
+_RVV_FLOAT_VF_OP(div, 2, 32)
+_RVV_FLOAT_VF_OP(div, 2, 16)
+_RVV_FLOAT_VF_OP(div, 1, 32)
+_RVV_FLOAT_VF_OP(div, 1, 16)
 
-_RVV_FLOAT_VF_OP(min, 8, 32);
-_RVV_FLOAT_VF_OP(min, 8, 16);
-_RVV_FLOAT_VF_OP(min, 4, 32);
-_RVV_FLOAT_VF_OP(min, 4, 16);
-_RVV_FLOAT_VF_OP(min, 2, 32);
-_RVV_FLOAT_VF_OP(min, 2, 16);
-_RVV_FLOAT_VF_OP(min, 1, 32);
-_RVV_FLOAT_VF_OP(min, 1, 16);
+_RVV_FLOAT_VF_OP(min, 8, 32)
+_RVV_FLOAT_VF_OP(min, 8, 16)
+_RVV_FLOAT_VF_OP(min, 4, 32)
+_RVV_FLOAT_VF_OP(min, 4, 16)
+_RVV_FLOAT_VF_OP(min, 2, 32)
+_RVV_FLOAT_VF_OP(min, 2, 16)
+_RVV_FLOAT_VF_OP(min, 1, 32)
+_RVV_FLOAT_VF_OP(min, 1, 16)
 
-_RVV_FLOAT_VF_OP(max, 8, 32);
-_RVV_FLOAT_VF_OP(max, 8, 16);
-_RVV_FLOAT_VF_OP(max, 4, 32);
-_RVV_FLOAT_VF_OP(max, 4, 16);
-_RVV_FLOAT_VF_OP(max, 2, 32);
-_RVV_FLOAT_VF_OP(max, 2, 16);
-_RVV_FLOAT_VF_OP(max, 1, 32);
-_RVV_FLOAT_VF_OP(max, 1, 16);
+_RVV_FLOAT_VF_OP(max, 8, 32)
+_RVV_FLOAT_VF_OP(max, 8, 16)
+_RVV_FLOAT_VF_OP(max, 4, 32)
+_RVV_FLOAT_VF_OP(max, 4, 16)
+_RVV_FLOAT_VF_OP(max, 2, 32)
+_RVV_FLOAT_VF_OP(max, 2, 16)
+_RVV_FLOAT_VF_OP(max, 1, 32)
+_RVV_FLOAT_VF_OP(max, 1, 16)
 
 #define _RVV_FLOAT_FV_OP(OP, LMUL, TLEN)                                       \
     static inline vfloat##TLEN##m##LMUL##_t fv_##OP##_op(                      \
@@ -615,59 +615,59 @@ _RVV_FLOAT_VF_OP(max, 1, 16);
         return vfneg_v_f##TLEN##m##LMUL(x, vl);                                \
     }
 
-_RVV_FLOAT_FV_OP(add, 8, 32);
-_RVV_FLOAT_FV_OP(add, 8, 16);
-_RVV_FLOAT_FV_OP(add, 4, 32);
-_RVV_FLOAT_FV_OP(add, 4, 16);
-_RVV_FLOAT_FV_OP(add, 2, 32);
-_RVV_FLOAT_FV_OP(add, 2, 16);
-_RVV_FLOAT_FV_OP(add, 1, 32);
-_RVV_FLOAT_FV_OP(add, 1, 16);
+_RVV_FLOAT_FV_OP(add, 8, 32)
+_RVV_FLOAT_FV_OP(add, 8, 16)
+_RVV_FLOAT_FV_OP(add, 4, 32)
+_RVV_FLOAT_FV_OP(add, 4, 16)
+_RVV_FLOAT_FV_OP(add, 2, 32)
+_RVV_FLOAT_FV_OP(add, 2, 16)
+_RVV_FLOAT_FV_OP(add, 1, 32)
+_RVV_FLOAT_FV_OP(add, 1, 16)
 
-_RVV_FLOAT_FV_SUB(sub, 8, 32);
-_RVV_FLOAT_FV_SUB(sub, 8, 16);
-_RVV_FLOAT_FV_SUB(sub, 4, 32);
-_RVV_FLOAT_FV_SUB(sub, 4, 16);
-_RVV_FLOAT_FV_SUB(sub, 2, 32);
-_RVV_FLOAT_FV_SUB(sub, 2, 16);
-_RVV_FLOAT_FV_SUB(sub, 1, 32);
-_RVV_FLOAT_FV_SUB(sub, 1, 16);
+_RVV_FLOAT_FV_SUB(sub, 8, 32)
+_RVV_FLOAT_FV_SUB(sub, 8, 16)
+_RVV_FLOAT_FV_SUB(sub, 4, 32)
+_RVV_FLOAT_FV_SUB(sub, 4, 16)
+_RVV_FLOAT_FV_SUB(sub, 2, 32)
+_RVV_FLOAT_FV_SUB(sub, 2, 16)
+_RVV_FLOAT_FV_SUB(sub, 1, 32)
+_RVV_FLOAT_FV_SUB(sub, 1, 16)
 
-_RVV_FLOAT_FV_OP(mul, 8, 32);
-_RVV_FLOAT_FV_OP(mul, 8, 16);
-_RVV_FLOAT_FV_OP(mul, 4, 32);
-_RVV_FLOAT_FV_OP(mul, 4, 16);
-_RVV_FLOAT_FV_OP(mul, 2, 32);
-_RVV_FLOAT_FV_OP(mul, 2, 16);
-_RVV_FLOAT_FV_OP(mul, 1, 32);
-_RVV_FLOAT_FV_OP(mul, 1, 16);
+_RVV_FLOAT_FV_OP(mul, 8, 32)
+_RVV_FLOAT_FV_OP(mul, 8, 16)
+_RVV_FLOAT_FV_OP(mul, 4, 32)
+_RVV_FLOAT_FV_OP(mul, 4, 16)
+_RVV_FLOAT_FV_OP(mul, 2, 32)
+_RVV_FLOAT_FV_OP(mul, 2, 16)
+_RVV_FLOAT_FV_OP(mul, 1, 32)
+_RVV_FLOAT_FV_OP(mul, 1, 16)
 
-_RVV_FLOAT_FV_OP(div, 8, 32);
-_RVV_FLOAT_FV_OP(div, 8, 16);
-_RVV_FLOAT_FV_OP(div, 4, 32);
-_RVV_FLOAT_FV_OP(div, 4, 16);
-_RVV_FLOAT_FV_OP(div, 2, 32);
-_RVV_FLOAT_FV_OP(div, 2, 16);
-_RVV_FLOAT_FV_OP(div, 1, 32);
-_RVV_FLOAT_FV_OP(div, 1, 16);
+_RVV_FLOAT_FV_OP(div, 8, 32)
+_RVV_FLOAT_FV_OP(div, 8, 16)
+_RVV_FLOAT_FV_OP(div, 4, 32)
+_RVV_FLOAT_FV_OP(div, 4, 16)
+_RVV_FLOAT_FV_OP(div, 2, 32)
+_RVV_FLOAT_FV_OP(div, 2, 16)
+_RVV_FLOAT_FV_OP(div, 1, 32)
+_RVV_FLOAT_FV_OP(div, 1, 16)
 
-_RVV_FLOAT_FV_OP(min, 8, 32);
-_RVV_FLOAT_FV_OP(min, 8, 16);
-_RVV_FLOAT_FV_OP(min, 4, 32);
-_RVV_FLOAT_FV_OP(min, 4, 16);
-_RVV_FLOAT_FV_OP(min, 2, 32);
-_RVV_FLOAT_FV_OP(min, 2, 16);
-_RVV_FLOAT_FV_OP(min, 1, 32);
-_RVV_FLOAT_FV_OP(min, 1, 16);
+_RVV_FLOAT_FV_OP(min, 8, 32)
+_RVV_FLOAT_FV_OP(min, 8, 16)
+_RVV_FLOAT_FV_OP(min, 4, 32)
+_RVV_FLOAT_FV_OP(min, 4, 16)
+_RVV_FLOAT_FV_OP(min, 2, 32)
+_RVV_FLOAT_FV_OP(min, 2, 16)
+_RVV_FLOAT_FV_OP(min, 1, 32)
+_RVV_FLOAT_FV_OP(min, 1, 16)
 
-_RVV_FLOAT_FV_OP(max, 8, 32);
-_RVV_FLOAT_FV_OP(max, 8, 16);
-_RVV_FLOAT_FV_OP(max, 4, 32);
-_RVV_FLOAT_FV_OP(max, 4, 16);
-_RVV_FLOAT_FV_OP(max, 2, 32);
-_RVV_FLOAT_FV_OP(max, 2, 16);
-_RVV_FLOAT_FV_OP(max, 1, 32);
-_RVV_FLOAT_FV_OP(max, 1, 16);
+_RVV_FLOAT_FV_OP(max, 8, 32)
+_RVV_FLOAT_FV_OP(max, 8, 16)
+_RVV_FLOAT_FV_OP(max, 4, 32)
+_RVV_FLOAT_FV_OP(max, 4, 16)
+_RVV_FLOAT_FV_OP(max, 2, 32)
+_RVV_FLOAT_FV_OP(max, 2, 16)
+_RVV_FLOAT_FV_OP(max, 1, 32)
+_RVV_FLOAT_FV_OP(max, 1, 16)
 
 #define _RVV_FLOAT_VV_OP(OP, LMUL, TLEN)                                       \
     static inline vfloat##TLEN##m##LMUL##_t vv_##OP##_op(                      \
@@ -675,59 +675,59 @@ _RVV_FLOAT_FV_OP(max, 1, 16);
         return vf##OP##_vv_f##TLEN##m##LMUL(x, y, vl);                         \
     }
 
-_RVV_FLOAT_VV_OP(add, 8, 32);
-_RVV_FLOAT_VV_OP(add, 8, 16);
-_RVV_FLOAT_VV_OP(add, 4, 32);
-_RVV_FLOAT_VV_OP(add, 4, 16);
-_RVV_FLOAT_VV_OP(add, 2, 32);
-_RVV_FLOAT_VV_OP(add, 2, 16);
-_RVV_FLOAT_VV_OP(add, 1, 32);
-_RVV_FLOAT_VV_OP(add, 1, 16);
+_RVV_FLOAT_VV_OP(add, 8, 32)
+_RVV_FLOAT_VV_OP(add, 8, 16)
+_RVV_FLOAT_VV_OP(add, 4, 32)
+_RVV_FLOAT_VV_OP(add, 4, 16)
+_RVV_FLOAT_VV_OP(add, 2, 32)
+_RVV_FLOAT_VV_OP(add, 2, 16)
+_RVV_FLOAT_VV_OP(add, 1, 32)
+_RVV_FLOAT_VV_OP(add, 1, 16)
 
-_RVV_FLOAT_VV_OP(sub, 8, 32);
-_RVV_FLOAT_VV_OP(sub, 8, 16);
-_RVV_FLOAT_VV_OP(sub, 4, 32);
-_RVV_FLOAT_VV_OP(sub, 4, 16);
-_RVV_FLOAT_VV_OP(sub, 2, 32);
-_RVV_FLOAT_VV_OP(sub, 2, 16);
-_RVV_FLOAT_VV_OP(sub, 1, 32);
-_RVV_FLOAT_VV_OP(sub, 1, 16);
+_RVV_FLOAT_VV_OP(sub, 8, 32)
+_RVV_FLOAT_VV_OP(sub, 8, 16)
+_RVV_FLOAT_VV_OP(sub, 4, 32)
+_RVV_FLOAT_VV_OP(sub, 4, 16)
+_RVV_FLOAT_VV_OP(sub, 2, 32)
+_RVV_FLOAT_VV_OP(sub, 2, 16)
+_RVV_FLOAT_VV_OP(sub, 1, 32)
+_RVV_FLOAT_VV_OP(sub, 1, 16)
 
-_RVV_FLOAT_VV_OP(mul, 8, 32);
-_RVV_FLOAT_VV_OP(mul, 8, 16);
-_RVV_FLOAT_VV_OP(mul, 4, 32);
-_RVV_FLOAT_VV_OP(mul, 4, 16);
-_RVV_FLOAT_VV_OP(mul, 2, 32);
-_RVV_FLOAT_VV_OP(mul, 2, 16);
-_RVV_FLOAT_VV_OP(mul, 1, 32);
-_RVV_FLOAT_VV_OP(mul, 1, 16);
+_RVV_FLOAT_VV_OP(mul, 8, 32)
+_RVV_FLOAT_VV_OP(mul, 8, 16)
+_RVV_FLOAT_VV_OP(mul, 4, 32)
+_RVV_FLOAT_VV_OP(mul, 4, 16)
+_RVV_FLOAT_VV_OP(mul, 2, 32)
+_RVV_FLOAT_VV_OP(mul, 2, 16)
+_RVV_FLOAT_VV_OP(mul, 1, 32)
+_RVV_FLOAT_VV_OP(mul, 1, 16)
 
-_RVV_FLOAT_VV_OP(div, 8, 32);
-_RVV_FLOAT_VV_OP(div, 8, 16);
-_RVV_FLOAT_VV_OP(div, 4, 32);
-_RVV_FLOAT_VV_OP(div, 4, 16);
-_RVV_FLOAT_VV_OP(div, 2, 32);
-_RVV_FLOAT_VV_OP(div, 2, 16);
-_RVV_FLOAT_VV_OP(div, 1, 32);
-_RVV_FLOAT_VV_OP(div, 1, 16);
+_RVV_FLOAT_VV_OP(div, 8, 32)
+_RVV_FLOAT_VV_OP(div, 8, 16)
+_RVV_FLOAT_VV_OP(div, 4, 32)
+_RVV_FLOAT_VV_OP(div, 4, 16)
+_RVV_FLOAT_VV_OP(div, 2, 32)
+_RVV_FLOAT_VV_OP(div, 2, 16)
+_RVV_FLOAT_VV_OP(div, 1, 32)
+_RVV_FLOAT_VV_OP(div, 1, 16)
 
-_RVV_FLOAT_VV_OP(min, 8, 32);
-_RVV_FLOAT_VV_OP(min, 8, 16);
-_RVV_FLOAT_VV_OP(min, 4, 32);
-_RVV_FLOAT_VV_OP(min, 4, 16);
-_RVV_FLOAT_VV_OP(min, 2, 32);
-_RVV_FLOAT_VV_OP(min, 2, 16);
-_RVV_FLOAT_VV_OP(min, 1, 32);
-_RVV_FLOAT_VV_OP(min, 1, 16);
+_RVV_FLOAT_VV_OP(min, 8, 32)
+_RVV_FLOAT_VV_OP(min, 8, 16)
+_RVV_FLOAT_VV_OP(min, 4, 32)
+_RVV_FLOAT_VV_OP(min, 4, 16)
+_RVV_FLOAT_VV_OP(min, 2, 32)
+_RVV_FLOAT_VV_OP(min, 2, 16)
+_RVV_FLOAT_VV_OP(min, 1, 32)
+_RVV_FLOAT_VV_OP(min, 1, 16)
 
-_RVV_FLOAT_VV_OP(max, 8, 32);
-_RVV_FLOAT_VV_OP(max, 8, 16);
-_RVV_FLOAT_VV_OP(max, 4, 32);
-_RVV_FLOAT_VV_OP(max, 4, 16);
-_RVV_FLOAT_VV_OP(max, 2, 32);
-_RVV_FLOAT_VV_OP(max, 2, 16);
-_RVV_FLOAT_VV_OP(max, 1, 32);
-_RVV_FLOAT_VV_OP(max, 1, 16);
+_RVV_FLOAT_VV_OP(max, 8, 32)
+_RVV_FLOAT_VV_OP(max, 8, 16)
+_RVV_FLOAT_VV_OP(max, 4, 32)
+_RVV_FLOAT_VV_OP(max, 4, 16)
+_RVV_FLOAT_VV_OP(max, 2, 32)
+_RVV_FLOAT_VV_OP(max, 2, 16)
+_RVV_FLOAT_VV_OP(max, 1, 32)
+_RVV_FLOAT_VV_OP(max, 1, 16)
 
 #define _RVV_FLOAT_ABS_OP(LMUL, TLEN)                                          \
     static inline vfloat##TLEN##m##LMUL##_t abs_op(                            \

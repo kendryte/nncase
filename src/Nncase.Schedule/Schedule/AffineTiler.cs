@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DryIoc.ImTools;
 using Google.OrTools.ConstraintSolver;
+using Microsoft.Extensions.Logging;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Affine;
@@ -26,12 +27,14 @@ internal sealed class AffineTiler
 {
     private readonly Grid _grid;
     private readonly int[] _domainBounds;
+    private readonly ILogger _logger;
 
-    public AffineTiler(Grid grid, ITargetOptions targetOptions)
+    public AffineTiler(Grid grid, ITargetOptions targetOptions, ILoggerFactory loggerFactory)
     {
         _grid = grid;
         TargetOptions = targetOptions;
         _domainBounds = TilingUtilities.InferDomainBounds(_grid.Buffers.AsValueEnumerable().Select(b => TilingUtilities.GetBufferShape(b)).ToArray(), _grid.AccessMaps.ToArray());
+        _logger = loggerFactory.CreateLogger<AffineTiler>();
     }
 
     public ITargetOptions TargetOptions { get; }
@@ -230,7 +233,7 @@ internal sealed class AffineTiler
         }
         else
         {
-            System.Console.WriteLine("use cached schedule");
+            _logger.LogTrace("use cached schedule");
             return schedule;
         }
     }
