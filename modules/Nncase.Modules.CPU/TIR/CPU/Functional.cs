@@ -161,4 +161,19 @@ public partial class CPU
     {
         return new Call(new TIR.CPU.Clamp(min, max), input, output);
     }
+
+    public static Call Cast(Expr input, Expr output, DataType newType, CastMode castMode)
+    {
+        return new Call(new TIR.CPU.Cast(newType, castMode), input, output);
+    }
+
+    public static Call Where(Expr cond, Expr x, Expr y, Expr output, DistributedType distributedType)
+    {
+        return new Call(new TIR.CPU.Where(distributedType), cond, x, y, output);
+    }
+
+    public static Call Expand(Expr input, Expr output, IRArray<int> shape, IRArray<SBP> ndsbp)
+    {
+        return new Call(new TIR.CPU.Expand(shape, ndsbp), input, output);
+    }
 }
