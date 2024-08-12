@@ -372,7 +372,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
             type = ptype.ToC();
         }
-        else if (expr is TensorConst { Value: Tensor { ElementType: PointerType { ElemType: DataType elemtype }, Shape: { IsScalar: true } } pointer })
+        else if (expr is TensorConst { Value: Tensor { ElementType: PointerType { ElemType: DataType }, Shape: { IsScalar: true } } pointer })
         {
             str = pointer.ToScalar<ulong>().ToString();
             type = pointer.ElementType.ToC();
