@@ -23,66 +23,119 @@ using namespace nncase;
 using namespace ortki;
 
 TEST(ClampTestFloat, NoPack) {
-    using typeNoPack = ntt::tensor<float, ntt::fixed_shape<8, 8>>;
-    typeNoPack ti, to;
-    std::iota(ti.elements().begin(), ti.elements().end(), -32.f);
-    std::fill(to.elements().begin(), to.elements().end(), 0.f);
+    constexpr size_t M = 1024;
+    constexpr size_t N = 1024;
+    float min_input = static_cast<float>(-10);
+    float max_input = static_cast<float>(10);
+    float min_clamp = static_cast<float>(-6);
+    float max_clamp = static_cast<float>(6);
 
-    ntt::clamp(ti, to, -30.f, 30.f);
+    // init
+    using tensor_type = ntt::tensor<float, ntt::fixed_shape<M, N>>;
+    std::unique_ptr<tensor_type> ntt_input(new tensor_type);
+    NttTest::init_tensor(*ntt_input, min_input, max_input);
 
-    bool result = (to(0, 0) == -30.f) && (to(0, 1) == -30.f) &&
-                  (to(0, 2) == -30.f) && (to(0, 3) == -29.f) &&
-                  (to(0, 4) == -28.f) && (to(7, 3) == 27.f) &&
-                  (to(7, 4) == 28.f) && (to(7, 5) == 29.f) &&
-                  (to(7, 6) == 30.f) && (to(7, 7) == 30.f);
+    // ntt
+    std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
+    ntt::clamp(*ntt_input, *ntt_output1, min_clamp, max_clamp);
 
-    EXPECT_TRUE(result);
+    // ort
+    auto ort_input = NttTest::ntt2ort(*ntt_input);
+    float min_buf[] = {min_clamp};
+    int64_t shape[] = {std::size(min_buf)};
+    auto min = make_tensor(reinterpret_cast<void *>(min_buf), DataType_FLOAT,
+                           shape, 1);
+    float max_buf[] = {max_clamp};
+    auto max = make_tensor(reinterpret_cast<void *>(max_buf), DataType_FLOAT,
+                           shape, 1);
+    auto ort_output = ortki_Clip(ort_input, min, max);
+
+    // compare
+    std::unique_ptr<tensor_type> ntt_output2(new tensor_type);
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
 TEST(ClampTestFloat, PackM) {
-    using typeNoPack = ntt::tensor<float, ntt::fixed_shape<8, 8>>;
-    typeNoPack ti, to;
-    std::iota(ti.elements().begin(), ti.elements().end(), -32.f);
-    std::fill(to.elements().begin(), to.elements().end(), 0.f);
+    constexpr size_t M = 1024;
+    constexpr size_t N = 1024;
+    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    float min_input = static_cast<float>(-10);
+    float max_input = static_cast<float>(10);
+    float min_clamp = static_cast<float>(-6);
+    float max_clamp = static_cast<float>(6);
 
-    using typePack = ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<8, 1>>;
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
+    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
+    NttTest::init_tensor(*ntt_input, min_input, max_input);
 
-    typePack pi, po;
-    ntt::pack<1>(ti, pi);
-    ntt::pack<1>(to, po);
+    // ntt
+    using tensor_type2 =
+        ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>>;
+    std::unique_ptr<tensor_type2> pack_input(new tensor_type2);
+    std::unique_ptr<tensor_type2> pack_output(new tensor_type2);
+    ntt::pack<0>(*ntt_input, *pack_input);
+    ntt::clamp(*pack_input, *pack_output, min_clamp, max_clamp);
+    std::unique_ptr<tensor_type1> ntt_output1(new tensor_type1);
+    ntt::unpack<0>(*pack_output, *ntt_output1);
 
-    ntt::clamp(pi, po, -30.f, 30.f);
+    // ort
+    auto ort_input = NttTest::ntt2ort(*ntt_input);
+    float min_buf[] = {min_clamp};
+    int64_t shape[] = {std::size(min_buf)};
+    auto min = make_tensor(reinterpret_cast<void *>(min_buf), DataType_FLOAT,
+                           shape, 1);
+    float max_buf[] = {max_clamp};
+    auto max = make_tensor(reinterpret_cast<void *>(max_buf), DataType_FLOAT,
+                           shape, 1);
+    auto ort_output = ortki_Clip(ort_input, min, max);
 
-    bool result = (po(0, 0)(0) == -30.f) && (po(0, 0)(1) == -30.f) &&
-                  (po(0, 0)(2) == -30.f) && (po(0, 0)(3) == -29.f) &&
-                  (po(0, 0)(4) == -28.f) && (po(7, 0)(3) == 27.f) &&
-                  (po(7, 0)(4) == 28.f) && (po(7, 0)(5) == 29.f) &&
-                  (po(7, 0)(6) == 30.f) && (po(7, 0)(7) == 30.f);
-
-    EXPECT_TRUE(result);
+    // compare
+    std::unique_ptr<tensor_type1> ntt_output2(new tensor_type1);
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
 TEST(ClampTestFloat, PackN) {
-    using typeNoPack = ntt::tensor<float, ntt::fixed_shape<8, 8>>;
-    typeNoPack ti, to;
-    std::iota(ti.elements().begin(), ti.elements().end(), -32.f);
-    std::fill(to.elements().begin(), to.elements().end(), 0.f);
+    constexpr size_t M = 1024;
+    constexpr size_t N = 1024;
+    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    float min_input = static_cast<float>(-10);
+    float max_input = static_cast<float>(10);
+    float min_clamp = static_cast<float>(-6);
+    float max_clamp = static_cast<float>(6);
 
-    using typePack = ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<1, 8>>;
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
+    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
+    NttTest::init_tensor(*ntt_input, min_input, max_input);
 
-    typePack pi, po;
-    ntt::pack<0>(ti, pi);
-    ntt::pack<0>(to, po);
+    // ntt
+    using tensor_type2 =
+        ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>>;
+    std::unique_ptr<tensor_type2> pack_input(new tensor_type2);
+    std::unique_ptr<tensor_type2> pack_output(new tensor_type2);
+    ntt::pack<1>(*ntt_input, *pack_input);
+    ntt::clamp(*pack_input, *pack_output, min_clamp, max_clamp);
+    std::unique_ptr<tensor_type1> ntt_output1(new tensor_type1);
+    ntt::unpack<1>(*pack_output, *ntt_output1);
 
-    ntt::clamp(pi, po, -30.f, 30.f);
+    // ort
+    auto ort_input = NttTest::ntt2ort(*ntt_input);
+    float min_buf[] = {min_clamp};
+    int64_t shape[] = {std::size(min_buf)};
+    auto min = make_tensor(reinterpret_cast<void *>(min_buf), DataType_FLOAT,
+                           shape, 1);
+    float max_buf[] = {max_clamp};
+    auto max = make_tensor(reinterpret_cast<void *>(max_buf), DataType_FLOAT,
+                           shape, 1);
+    auto ort_output = ortki_Clip(ort_input, min, max);
 
-    bool result = (po(0, 0)(0) == -30.f) && (po(0, 0)(1) == -24.f) &&
-                  (po(0, 0)(2) == -16.f) && (po(0, 0)(3) == -8.f) &&
-                  (po(0, 0)(4) == -0.f) && (po(0, 7)(3) == -1.f) &&
-                  (po(0, 7)(4) == 7.f) && (po(0, 7)(5) == 15.f) &&
-                  (po(0, 7)(6) == 23.f) && (po(0, 7)(7) == 30.f);
-
-    EXPECT_TRUE(result);
+    // compare
+    std::unique_ptr<tensor_type1> ntt_output2(new tensor_type1);
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
 int main(int argc, char *argv[]) {
