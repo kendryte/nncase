@@ -1113,6 +1113,95 @@ int main() {
         assert(are_floats_equal(tb(1, 0), 25.6f));
     }
 
+    {
+        ntt::tensor<float, ntt::fixed_shape<1, 16>> ta;
+        ntt::tensor<int32_t, ntt::fixed_shape<1, 16>> tb;
+        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+        ntt::cast(ta, tb.view());
+        assert(tb(0, 0) == 0);
+        assert(tb(0, 2) == 2);
+    }
+
+    {
+        ntt::tensor<float, ntt::fixed_shape<1, 64, 32>> ta;
+        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 16, 32>> tb;
+        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+        ntt::pack<1>(ta, tb.view());
+        ntt::tensor<ntt::vector<int32_t, 4>, ntt::fixed_shape<1, 16, 32>> tc;
+        ntt::cast(tb, tc);
+        assert(tc(0, 0, 0)(0) == 0);
+        assert(tc(0, 0, 0)(1) == 32);
+        assert(tc(0, 0, 0)(2) == 64);
+    }
+
+    {
+        ntt::tensor<float, ntt::fixed_shape<1, 2>> ta;
+        ntt::tensor<float, ntt::fixed_shape<2, 2>> tb;
+        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+        ntt::expand(ta, tb.view());
+        assert(are_floats_equal(tb(0, 0), 0.f));
+        assert(are_floats_equal(tb(0, 1), 1.f));
+        assert(are_floats_equal(tb(1, 0), 0.f));
+        assert(are_floats_equal(tb(1, 1), 1.f));
+    }
+
+    {
+        ntt::tensor<bool, ntt::fixed_shape<2, 2>> tcond;
+        ntt::tensor<float, ntt::fixed_shape<2, 2>> tx;
+        ntt::tensor<float, ntt::fixed_shape<2, 2>> ty;
+        ntt::tensor<float, ntt::fixed_shape<2, 2>> tout;
+        tcond(0, 0) = true;
+        tcond(0, 1) = false;
+        tcond(1, 0) = false;
+        tcond(1, 1) = true;
+        std::iota(tx.elements().begin(), tx.elements().end(), 0.f);
+        std::iota(ty.elements().begin(), ty.elements().end(), 4.f);
+        ntt::where(tcond, tx, ty, tout.view());
+        assert(are_floats_equal(tout(0, 0), 0.f));
+        assert(are_floats_equal(tout(0, 1), 5.f));
+        assert(are_floats_equal(tout(1, 0), 6.f));
+        assert(are_floats_equal(tout(1, 1), 3.f));
+    }
+
+    {
+        ntt::tensor<float, ntt::fixed_shape<2, 4>> ta;
+        ta(0, 0) = 0.f;
+        ta(0, 1) = 2.f;
+        ta(0, 2) = 4.f;
+        ta(0, 3) = 6.f;
+        ta(1, 0) = 7.f;
+        ta(1, 1) = 5.f;
+        ta(1, 2) = 3.f;
+        ta(1, 3) = 7.f;
+
+        ntt::tensor<int64_t, ntt::fixed_shape<2, 1>> tb;
+        ntt::reduce_arg<ntt::ops::max, 1, false, true>(
+            ta, tb.view(), ntt::fixed_shape<>(), ntt::fixed_shape<>());
+        assert(tb(0, 0) == 3);
+        assert(tb(1, 0) == 0);
+
+        ntt::tensor<int64_t, ntt::fixed_shape<1, 4>> tc;
+        ntt::reduce_arg<ntt::ops::max, 0, false, true>(
+            ta, tc.view(), ntt::fixed_shape<>(), ntt::fixed_shape<>());
+        assert(tc(0, 0) == 1);
+        assert(tc(0, 1) == 1);
+        assert(tc(0, 2) == 0);
+        assert(tc(0, 3) == 1);
+
+        ntt::tensor<int64_t, ntt::fixed_shape<2>> td;
+        ntt::reduce_arg<ntt::ops::max, 1, true, false>(
+            ta, td.view(), ntt::fixed_shape<>(), ntt::fixed_shape<>());
+        assert(td(0) == 3);
+        assert(td(1) == 3);
+    }
+
+    {
+        ntt::tensor<float, ntt::fixed_shape<1, 16>> ta, tb, tc;
+        std::fill(ta.elements().begin(), ta.elements().end(), 1.f);
+        ntt::unary<ntt::ops::erf>(ta, tb.view());
+        assert(are_floats_equal(tb(0, 0), erf(1.f)));
+    }
+
 #if 0
     auto kmodel = read_file(
         R"(/mnt/home-nas/work/repo/nncase/tests_output/UnitTestCPUTarget/TestSimpleUnary/TestSimpleUnary.kmodel)");

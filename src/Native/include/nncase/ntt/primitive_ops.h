@@ -59,6 +59,10 @@ template <class T> struct cosh {
     constexpr T operator()(const T &v) const noexcept;
 };
 
+template <class T> struct erf {
+    constexpr T operator()(const T &v) const noexcept { return std::erf(v); }
+};
+
 template <class T> struct exp {
     constexpr T operator()(const T &v) const noexcept { return std::exp(v); }
 };
@@ -261,6 +265,7 @@ NTT_DEFINE_UNARY_FUNC_IMPL(ceil)
 NTT_DEFINE_UNARY_FUNC_IMPL(cos)
 NTT_DEFINE_UNARY_FUNC_IMPL(cosh)
 NTT_DEFINE_UNARY_FUNC_IMPL(exp)
+NTT_DEFINE_UNARY_FUNC_IMPL(erf)
 NTT_DEFINE_UNARY_FUNC_IMPL(floor)
 NTT_DEFINE_UNARY_FUNC_IMPL(log)
 NTT_DEFINE_UNARY_FUNC_IMPL(neg)
