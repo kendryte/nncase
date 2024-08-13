@@ -247,6 +247,21 @@ struct reduce<Op, TResult, TTensor> {
         return value;
     }
 };
+
+template <IsTensor TTensor, IsScalar TScalar> struct clamp<TTensor, TScalar> {
+    using element_type = typename TTensor::element_type;
+    constexpr auto operator()(const TTensor &v, const TScalar &min,
+                              const TScalar &max) const noexcept {
+        TTensor value;
+        apply(v.shape(),
+              [&](auto index) { value(index) = op_(v(index), min, max); });
+        return value;
+    }
+
+  private:
+    ops::clamp<element_type, TScalar> op_;
+};
+
 } // namespace nncase::ntt::ops
 
 namespace nncase::ntt::tensor_ops {

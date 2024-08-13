@@ -233,6 +233,13 @@ struct mma {
     constexpr TResult operator()(const T1 &v1, const T2 &v2,
                                  const TResult &v3) const noexcept;
 };
+
+template <class T1, class T2> struct clamp {
+    constexpr T1 operator()(const T1 &v, const T2 &min,
+                            const T2 &max) const noexcept {
+        return std::min(std::max(v, min), max);
+    }
+};
 } // namespace ops
 
 #define NTT_DEFINE_UNARY_FUNC_IMPL(op)                                         \

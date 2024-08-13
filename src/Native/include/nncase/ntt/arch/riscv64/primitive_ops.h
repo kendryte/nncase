@@ -1170,5 +1170,33 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_REDUCE_OP_FLOAT32, add)
 REGISTER_RVV_WITH_VLENS(REGISTER_RVV_REDUCE_OP_FLOAT32, max)
 REGISTER_RVV_WITH_VLENS(REGISTER_RVV_REDUCE_OP_FLOAT32, min)
 
+// clamp op
+#define RVV_CLAMP_OP(dtype, dtype_prefix, vlen, sew, lmul)                     \
+    template <>                                                                \
+    struct clamp<ntt::vector<dtype, NTT_VL(vlen, sew, lmul)>, dtype> {         \
+        ntt::vector<dtype, NTT_VL(vlen, sew, lmul)>                            \
+        operator()(const ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> &v,       \
+                   const dtype &min, const dtype &max) const noexcept {        \
+            constexpr size_t vl = NTT_VL(vlen, sew, lmul);                     \
+            ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> vout;                  \
+            auto pin = reinterpret_cast<const dtype *>(v.buffer().data());     \
+            auto input = vle##sew##_v_##dtype_prefix##sew##m##lmul(pin, vl);   \
+            auto pout = reinterpret_cast<dtype *>(vout.buffer().data());       \
+            auto output = vfmax_vf_f32m##lmul(input, min, vl);                 \
+            output = vfmin_vf_f32m##lmul(output, max, vl);                     \
+            vse##sew##_v_##dtype_prefix##sew##m##lmul(                         \
+                pout, output, NTT_VL(vlen, sew, lmul));                        \
+            return vout;                                                       \
+        }                                                                      \
+    };
+
+// clamp with float
+#define REGISTER_RVV_CLAMP_OP_FLOAT32(op, vlen)                                \
+    RVV_CLAMP_OP(float, f, vlen, 32, 1)                                        \
+    RVV_CLAMP_OP(float, f, vlen, 32, 2)                                        \
+    RVV_CLAMP_OP(float, f, vlen, 32, 4)                                        \
+    RVV_CLAMP_OP(float, f, vlen, 32, 8)
+
+REGISTER_RVV_WITH_VLENS(REGISTER_RVV_CLAMP_OP_FLOAT32, clamp)
 #endif
 } // namespace nncase::ntt::ops

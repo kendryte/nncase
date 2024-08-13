@@ -775,5 +775,13 @@ template <> struct outer_product<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     }
 };
 
+template <> struct clamp<ntt::vector<float, 8>, float> {
+    auto operator()(const ntt::vector<float, 8> &v, const float &min,
+                    const float &max) const noexcept {
+        auto tmp = _mm256_max_ps(v, _mm256_set1_ps(min));
+        return _mm256_min_ps(tmp, _mm256_set1_ps(max));
+    }
+};
+
 #endif
 } // namespace nncase::ntt::ops
