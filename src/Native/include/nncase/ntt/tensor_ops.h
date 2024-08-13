@@ -73,6 +73,22 @@ struct tensor_binary_impl<Op, TTensor, T2> {
     Op<element_type1, element_type2> op_;
 };
 
+template <template <class T1, class T2> class Op, Is2DVector T1, Is2DVector T2>
+struct tensor_binary_impl<Op, T1, T2> {
+    using sub_vector_type = fixed_tensor_alike_t<T1, T1::shape().at(1)>;
+
+    constexpr T1 operator()(const T1 &v1, const T2 &v2) const noexcept {
+        T1 value;
+        for (size_t m = 0; m < T1::shape().at(0); m++) {
+            value(m) = op_(v1(m), v2(m));
+        }
+        return value;
+    }
+
+  private:
+    Op<sub_vector_type, sub_vector_type> op_;
+};
+
 template <template <class T1, class T2> class Op, IsScalar TScalar,
           IsTensor TTensor>
 struct tensor_binary_impl<Op, TScalar, TTensor> {
@@ -100,6 +116,8 @@ struct tensor_binary_impl<Op, TScalar, TTensor> {
     template <IsTensor T1, class T2>                                           \
     struct op<T1, T2> : detail::tensor_binary_impl<op, T1, T2> {};             \
     template <IsScalar T1, IsTensor T2>                                        \
+    struct op<T1, T2> : detail::tensor_binary_impl<op, T1, T2> {};             \
+    template <Is2DVector T1, Is2DVector T2>                                    \
     struct op<T1, T2> : detail::tensor_binary_impl<op, T1, T2> {}
 
 NTT_DEFINE_TENSOR_UNARY_IMPL(abs);
@@ -140,8 +158,8 @@ template <IsTensor TTensor> struct inner_product<TTensor, TTensor> {
 
     constexpr auto operator()(const TTensor &v1,
                               const TTensor &v2) const noexcept {
-        using result_type = decltype(
-            op_(std::declval<element_type>(), std::declval<element_type>()));
+        using result_type = decltype(op_(std::declval<element_type>(),
+                                         std::declval<element_type>()));
         result_type value{};
         apply(v1.shape(),
               [&](auto index) { value += op_(v1(index), v2(index)); });

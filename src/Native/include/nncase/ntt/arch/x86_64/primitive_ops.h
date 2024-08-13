@@ -468,24 +468,6 @@ template <> struct add<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     }
 };
 
-template <> struct add<ntt::vector<float, 8, 8>, ntt::vector<float, 8, 8>> {
-    ntt::vector<float, 8, 8>
-    operator()(const ntt::vector<float, 8, 8> &v1,
-               const ntt::vector<float, 8, 8> &v2) const noexcept {
-        ntt::vector<float, 8, 8> v3;
-        v3(0) = _mm256_add_ps(v1(0), v2(0));
-        v3(1) = _mm256_add_ps(v1(1), v2(1));
-        v3(2) = _mm256_add_ps(v1(2), v2(2));
-        v3(3) = _mm256_add_ps(v1(3), v2(3));
-        v3(4) = _mm256_add_ps(v1(4), v2(4));
-        v3(5) = _mm256_add_ps(v1(5), v2(5));
-        v3(6) = _mm256_add_ps(v1(6), v2(6));
-        v3(7) = _mm256_add_ps(v1(7), v2(7));
-
-        return v3;
-    }
-};
-
 // sub
 template <> struct sub<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     ntt::vector<float, 8>
