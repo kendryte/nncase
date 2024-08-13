@@ -612,16 +612,16 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, tanh)
                                                                                \
             return vout;                                                       \
         }                                                                      \
-    };
-#if 0
+    };                                                                         \
+                                                                               \
     template <>                                                                \
     struct op<ntt::vector<dtype, NTT_VL(vlen, sew, lmul)>, dtype> {            \
         ntt::vector<dtype, NTT_VL(vlen, sew, lmul)>                            \
         operator()(const ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> &v,       \
                    const dtype &s) const noexcept {                            \
             ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> vout;                  \
-            auto p = reinterpret_cast<const dtype *>(v.buffer().data());     \
-            auto pout = reinterpret_cast<dtype *>(vout.buffer().data());     \
+            auto p = reinterpret_cast<const dtype *>(v.buffer().data());       \
+            auto pout = reinterpret_cast<dtype *>(vout.buffer().data());       \
             auto input = vle##sew##_v_##dtype_prefix##sew##m##lmul(            \
                 p, NTT_VL(vlen, sew, lmul));                                   \
             auto output = kernel(input, s, NTT_VL(vlen, sew, lmul));           \
@@ -639,8 +639,8 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, tanh)
                    const ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> &v)       \
             const noexcept {                                                   \
             ntt::vector<dtype, NTT_VL(vlen, sew, lmul)> vout;                  \
-            auto p = reinterpret_cast<const dtype *>(v.buffer().data());     \
-            auto pout = reinterpret_cast<dtype *>(vout.buffer().data());     \
+            auto p = reinterpret_cast<const dtype *>(v.buffer().data());       \
+            auto pout = reinterpret_cast<dtype *>(vout.buffer().data());       \
             auto input = vle##sew##_v_##dtype_prefix##sew##m##lmul(            \
                 p, NTT_VL(vlen, sew, lmul));                                   \
             auto output = kernel(input, s, NTT_VL(vlen, sew, lmul));           \
@@ -650,7 +650,7 @@ REGISTER_RVV_WITH_VLENS(REGISTER_RVV_UNARY_OP_FLOAT32, tanh)
             return vout;                                                       \
         }                                                                      \
     };
-#endif
+
 // binary with float
 #define REGISTER_RVV_BINARY_OP_FLOAT32(OP, vlen)                               \
     RVV_BINARY_OP(OP, float, f, vlen, 32, 1, OP##_float32)                     \

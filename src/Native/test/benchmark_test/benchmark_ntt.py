@@ -109,6 +109,7 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                          'mod': '3.0',
                                          'pow': '42.17',
                                          },
+                              'clamp': {'NoPack': 'N/A'},
                               'unary': {'abs': '1.0',
                                         'acos': '18.9',
                                         'acosh': '25.34',
@@ -191,6 +192,7 @@ class BenchmarkNTT_riscv64(BenchmarkNTT):
                                          'mod': '54',
                                          'pow': '127'
                                          },
+                              'clamp': {'NoPack': '12.3'},
                               'unary': {'abs': '8',
                                         'acos': '84',
                                         'acosh': '81',
