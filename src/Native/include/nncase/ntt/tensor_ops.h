@@ -32,8 +32,10 @@ constexpr void set_elem(const TContainer &container, ranked_shape<Rank> index,
 namespace nncase::ntt::ops {
 // unary_ops ops
 namespace detail {
+template <template <class T> class Op, class TTensor> struct tensor_unary_impl;
+
 template <template <class T> class Op, IsTensor TTensor>
-struct tensor_unary_impl {
+struct tensor_unary_impl<Op, TTensor> {
     using element_type = typename TTensor::element_type;
 
     constexpr TTensor operator()(const TTensor &v) const noexcept {
@@ -44,6 +46,23 @@ struct tensor_unary_impl {
 
   private:
     Op<element_type> op_;
+};
+
+template <template <class T> class Op, Is2DVector TTensor>
+struct tensor_unary_impl<Op, TTensor> {
+    using sub_vector_type =
+        fixed_tensor_alike_t<TTensor, TTensor::shape().at(1)>;
+
+    constexpr TTensor operator()(const TTensor &v) const noexcept {
+        TTensor value;
+        for (size_t m = 0; m < TTensor::shape().at(0); m++) {
+            value(m) = op_(v(m));
+        }
+        return value;
+    }
+
+  private:
+    Op<sub_vector_type> op_;
 };
 
 template <template <class T1, class T2> class Op, class T1, class T2>
@@ -158,8 +177,8 @@ template <IsTensor TTensor> struct inner_product<TTensor, TTensor> {
 
     constexpr auto operator()(const TTensor &v1,
                               const TTensor &v2) const noexcept {
-        using result_type = decltype(
-            op_(std::declval<element_type>(), std::declval<element_type>()));
+        using result_type = decltype(op_(std::declval<element_type>(),
+                                         std::declval<element_type>()));
         result_type value{};
         apply(v1.shape(),
               [&](auto index) { value += op_(v1(index), v2(index)); });
