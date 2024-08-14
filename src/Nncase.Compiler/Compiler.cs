@@ -142,6 +142,12 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldTwoPads>();
             p.Add<Passes.Rules.Neutral.SwapBinaryArgs>();
             p.Add<Passes.Rules.Neutral.FoldDilatedConv2D>();
+            p.Add<Passes.Rules.Neutral.BianryScalarConstToTensor>();
+        });
+
+        passManager.AddWithName<DataflowPass>("DeComposePass").Configure(p =>
+        {
+            p.Add<Passes.Rules.Neutral.SwapBinaryArgs>();
             p.Add<Passes.Rules.Neutral.DecomposeSoftmax>();
             p.Add<Passes.Rules.Neutral.DecomposeLayerNorm>();
             p.Add<Passes.Rules.Neutral.DecomposeSwish>();
