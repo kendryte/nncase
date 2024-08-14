@@ -22,8 +22,8 @@ namespace nncase::ntt {
 
 namespace where_detail {
 
-template <IsFixedTensor TCond, IsFixedTensor TIn, IsFixedTensor TOut>
-void where_impl(const TCond &cond, const TIn &x, const TIn &y,
+template <IsFixedTensor TCond, IsFixedTensor TX, IsFixedTensor TY, IsFixedTensor TOut>
+void where_impl(const TCond &cond, const TX &x, const TY &y,
                 TOut &&output) noexcept {
     // constexpr auto rank = TOut::shape_type::rank();
     // constexpr auto input_strides = TIn::strides();
@@ -46,8 +46,8 @@ void where_impl(const TCond &cond, const TIn &x, const TIn &y,
 }
 } // namespace where_detail
 
-template <typename TCond, typename TIn, typename TOut>
-void where(const TCond &cond, const TIn &x, const TIn &y,
+template <typename TCond, typename TX, typename TY, typename TOut>
+void where(const TCond &cond, const TX &x, const TY &y,
            TOut &&output) noexcept {
     where_detail::where_impl(cond, x, y, output);
 }
