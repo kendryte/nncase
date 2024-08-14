@@ -8,6 +8,7 @@ using GiGraph.Dot.Entities.Edges;
 using GiGraph.Dot.Entities.Graphs;
 using GiGraph.Dot.Entities.Html.Table;
 using GiGraph.Dot.Entities.Nodes;
+using GiGraph.Dot.Entities.Subgraphs;
 using GiGraph.Dot.Extensions;
 using GiGraph.Dot.Types.Records;
 using NetFabric.Hyperlinq;
@@ -18,9 +19,16 @@ namespace Nncase.Schedule.TileTree;
 
 internal sealed class TreePrinter : ITreeNodeVisitor<TreePrinter.Context, TreePrinter.Result>
 {
+    private readonly Dictionary<OpNode, DotNode> _opMemo;
+
+    private readonly DotSubgraph _subgraph;
+
     public TreePrinter()
     {
+        _opMemo = new();
         Graph = new DotGraph(true);
+        _subgraph = new(GiGraph.Dot.Types.Ranks.DotRank.Same);
+        Graph.Subgraphs.Add(_subgraph);
     }
 
     public DotGraph Graph { get; }
@@ -98,6 +106,8 @@ internal sealed class TreePrinter : ITreeNodeVisitor<TreePrinter.Context, TreePr
         var dimsMap = GetDimsMap(value);
 
         var node = Graph.Nodes.Add($"{value}");
+        _opMemo.Add(value, node);
+        _subgraph.Nodes.Add(node);
 
         node.ToRecordNode(rb => rb.AppendRecord(rb1 =>
         {
@@ -109,19 +119,20 @@ internal sealed class TreePrinter : ITreeNodeVisitor<TreePrinter.Context, TreePr
             {
                 for (int i = 0; i < value.ReadAccesses.Length; i++)
                 {
-                    string prefix = "read";
-                    for (int j = 0; j < value.Dependences.Length; j++)
-                    {
-                        if (value.Dependences[j].Index == i)
-                        {
-                            prefix += $" {value.Dependences[j].Node}";
-                        }
-                    }
+                    rb2.AppendField($"read {value.ReadAccesses[i]}", $"R{i}");
 
-                    rb2.AppendField($"{prefix} {value.ReadAccesses[i]}");
+                    foreach (var dep in value.Dependences.Where(dep => dep.Index == i))
+                    {
+                        var depNode = _opMemo[dep.Node];
+                        Graph.Edges.Add(depNode.Id, node.Id, edge =>
+                        {
+                            edge.Head.Endpoint.Port = new GiGraph.Dot.Types.Edges.DotEndpointPort($"R{i}");
+                            edge.Tail.Endpoint.Port = new GiGraph.Dot.Types.Edges.DotEndpointPort($"W");
+                        });
+                    }
                 }
 
-                rb2.AppendField($"write {value.WriteAccess}");
+                rb2.AppendField($"write {value.WriteAccess}", "W");
             }));
 
         return new(new() { node }, new() { value.DomainRelation });

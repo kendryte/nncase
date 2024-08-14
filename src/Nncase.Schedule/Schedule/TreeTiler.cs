@@ -510,10 +510,12 @@ public static class TreeTiler
 
     public static Call Tile(Grid grid, string moduleKind, int itemNumber, ITargetOptions targetOptions)
     {
-        var root = new ScopeNode();
-        var opId = 0;
+        // var root = new ScopeNode();
+        // var opId = 0;
         var totalLevel = targetOptions.MemoryCapacities.Length - 1;
-        BuildTree(grid, root, totalLevel, ref opId);
+        var root = TreeBuilder.Build(grid, totalLevel);
+
+        // BuildTree(grid, root, totalLevel, ref opId);
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {
             root.Dump($"device_func{itemNumber}_original");

@@ -233,6 +233,66 @@ public sealed class UnitTestModeling : TestClassBase
     }
 
     [Fact]
+    public void TestMultiInputs()
+    {
+        var func = GetFunctionSample4();
+
+        var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerBinary(), }, new());
+#if DEBUG
+        Dumpper.DumpIR(post, "post");
+#endif
+
+        var grid = (IR.Affine.Grid)((IR.Function)post).Body;
+
+        var root = TreeBuilder.Build(grid, 2);
+#if DEBUG
+        root.Dump("build");
+#endif
+
+        Assert.Equal(4, root.Collect().OfType<OpNode>().Count());
+
+        Assert.True(root.Merge(2, 1, 2));
+        Assert.True(root.Merge(2, 0, 2));
+#if DEBUG
+        root.Dump("merged");
+#endif
+
+        Assert.IsType<TreeSolverResultConstructor>(Schedule.TreeTiler.Solve(root, CompileOptions.TargetOptions));
+    }
+
+    [Fact]
+    public void TestMultiInputs2()
+    {
+        var func = GetFunctionSample();
+
+        var post = CompilerServices.ERewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.PackMatMul(1, 4), new Passes.Rules.CPU.PackUnary(1, 4) }, new(), CompileOptions);
+        post = CompilerServices.Rewrite(post, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerPack(), new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), }, new());
+#if DEBUG
+        Dumpper.DumpIR(post, "post");
+#endif
+
+        var call = (IR.Call)((IR.Function)post).Body;
+        var grid = (IR.Affine.Grid)call.Arguments[0];
+
+        var root = TreeBuilder.Build(grid, 2);
+#if DEBUG
+        root.Dump("build");
+#endif
+
+        Assert.Equal(7, root.Collect().OfType<OpNode>().Count());
+
+        Assert.True(root.Merge(2, 1, 2));
+        Assert.True(root.Merge(2, 0, 2));
+        Assert.True(root.Merge(6, 5, 2));
+        Assert.True(root.Merge(6, 4, 2));
+#if DEBUG
+        root.Dump("merged");
+#endif
+
+        Assert.IsType<TreeSolverResultConstructor>(Schedule.TreeTiler.Solve(root, CompileOptions.TargetOptions));
+    }
+
+    [Fact]
     public void TestTreeTiler()
     {
         Function func;
@@ -531,6 +591,23 @@ public sealed class UnitTestModeling : TestClassBase
             var d = IR.F.Math.Mul(c, new[] { 3.0f });
             var e = IR.F.Math.Sub(new[] { 1.5f }, d);
             func = new IR.Function("main", e, a);
+        }
+
+        return func;
+    }
+
+    private Function GetFunctionSample4()
+    {
+        Function func;
+        {
+            var shape = new[] { 1, 12, 14, 14 };
+            var a = new IR.Var("a", new IR.TensorType(DataTypes.Float32, shape));
+            var b = new IR.Var("b", new IR.TensorType(DataTypes.Float32, shape));
+            var a1 = IR.F.Math.Neg(a);
+            var b1 = IR.F.Math.Neg(b);
+            var c = IR.F.Math.Add(a1, b1);
+            var d = IR.F.Math.Neg(c);
+            func = new IR.Function("main", d, a, b);
         }
 
         return func;

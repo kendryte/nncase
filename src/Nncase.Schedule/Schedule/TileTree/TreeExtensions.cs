@@ -55,6 +55,14 @@ public static class TreeExtensions
         return tree.Accept(merger, default);
     }
 
+    public static IEnumerable<ITreeNode> Collect(this ITreeNode root) => root switch
+    {
+        ScopeNode s => new[] { s }.Concat(s.Children.Select(x => x.Collect()).SelectMany(i => i)),
+        TileNode t => new[] { t }.Concat(t.Child.Collect()),
+        OpNode op => new[] { op },
+        _ => throw new System.Diagnostics.UnreachableException(),
+    };
+
     public static ITileAbleNode? GetParentTileableNode(this ITreeNode node)
     {
         return node.Parent switch

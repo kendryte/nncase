@@ -126,19 +126,26 @@ public partial class TreeMerger : ITreeNodeVisitor<Unit, bool>
 
     private bool PerformMerge(ScopeNode parent, TileNode consumer, TileNode producer)
     {
-        if (!FindFristOpNode(consumer, out var firstConsumerOp))
+        var consumerOps = consumer.Collect().OfType<OpNode>();
+        if (!consumerOps.Any())
         {
             return false;
         }
 
-        if (firstConsumerOp.Dependences.Length != 1)
+        // find the op which depend on the producer in consumerOps.
+        // todo avoid dependence cycle.
+        var consumerOpAndDeps = consumerOps.Select(cop => (cop, cop.Dependences.Where(dep => dep.Node.OpId == producer.OpId))).Where(p => p.Item2.Count() == 1);
+        if (!(consumerOpAndDeps.Count() == 1))
         {
             return false;
         }
+
+        var (consumerOp, deps) = consumerOpAndDeps.First();
+        var dep = deps.First();
 
         // 1. compute the domain realtion : first_consumer_op domain -> producer domain
-        var writeOp = firstConsumerOp.Dependences[0].Node;
-        var readAccess = firstConsumerOp.ReadAccesses[firstConsumerOp.Dependences[0].Index];
+        var writeOp = dep.Node;
+        var readAccess = consumerOp.ReadAccesses[dep.Index];
         var relation = readAccess * AffineUtility.Inverse(writeOp.WriteAccess, writeOp.DomainBounds.Select(Convert.ToInt64).ToArray());
 
         // 2. check the domain rel
@@ -147,7 +154,7 @@ public partial class TreeMerger : ITreeNodeVisitor<Unit, bool>
             return false;
         }
 
-        var domainRel = new DomainRelation(firstConsumerOp.OpId, writeOp.OpId, relation);
+        var domainRel = new DomainRelation(consumerOp.OpId, writeOp.OpId, relation);
 
         // 3. compose with merged consumer op's domain realtion.
         if (domainRel.DomainOp != consumer.DomainRelation.RangeOp)

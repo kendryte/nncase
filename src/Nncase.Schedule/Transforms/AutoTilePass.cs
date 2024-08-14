@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Affine;
+using Nncase.Passes.GraphPartition;
 using Nncase.Schedule;
 
 namespace Nncase.Passes.Transforms;
@@ -33,84 +34,71 @@ public sealed class AutoTilePass : ModulePass
         var funcNums = input.Functions.Count;
         for (int i = 0; i < funcNums; i++)
         {
-            // top sorted
-            var collects = ExprCollector.Collect(input.Functions[i]).OfType<Grid>().ToArray();
-            var worklists = GatherWorkLists(collects);
-            var post = input.Functions[i];
-            for (int j = 0; j < worklists.Count; j++)
-            {
-                var rootGrid = worklists[j].First();
-                var rewriter = new AutoTileRewriter(rootGrid, ModuleKind, WorkItem++, CompileOptions);
-                post = (BaseFunction)rewriter.Rewrite(post);
-            }
-
+            var post = Rewrite(input.Functions[i], i);
             input.Replace(i, post);
         }
 
         return Task.FromResult(input);
     }
 
-    private List<List<Grid>> GatherWorkLists(IReadOnlyList<Grid> collects)
+    private BaseFunction Rewrite(BaseFunction pre, int i)
     {
-        List<List<Grid>> workLists = new();
-        for (int i = collects.Count - 1; i >= 0;)
+        if (!(pre is IR.Fusion fusion && fusion.ModuleKind == ModuleKind))
         {
-            // start find single input.
-            if (collects[i] is Grid sinkNode)
+            return pre;
+        }
+
+        // Function post;
+        var ctx = new GraphContext();
+        var convertor = new GraphConvertor(x => x switch
+        {
+            Grid => true,
+            IR.Tuple tp => tp.Fields.AsValueEnumerable().All(f => f is Grid),
+            _ => false,
+        });
+        convertor.Visit(fusion.Body, ctx);
+
+        ctx.SummarizeGraph();
+
+        var dfsVisitor = new QuikGraph.Algorithms.TopologicalSort.SourceFirstTopologicalSortAlgorithm<Vertex, Edge>(ctx.GraphSummary);
+        dfsVisitor.Compute();
+        var exprMemo = new Dictionary<Expr, Expr>(ReferenceEqualityComparer.Instance);
+        for (var vi = 0; vi < dfsVisitor.SortedVertices.Length; vi++)
+        {
+            var vertex = dfsVisitor.SortedVertices[vi];
+            var subgraph = ctx.SubgraphMap[ctx.SummaryVertexSubgraphMap[vertex]];
+            if (vertex.CompatType == Compat.INCOMPATIBLE)
             {
-                var current = sinkNode;
-                var workItems = new List<Grid>() { current };
-                int j = i - 1;
-                while (j >= 0)
+                var sg = new Graph();
+                subgraph.Nodes.ForEach(n => sg.AddVertex(n));
+                subgraph.InteriorEdges.ForEach(e => sg.AddEdge(e));
+
+                // sg.DumpDot(DumpScope.Current.Directory + $"_Incompatible_{subgraph.Index}_{vi}.dot");
+                var sgVisitor = new QuikGraph.Algorithms.TopologicalSort.SourceFirstTopologicalSortAlgorithm<Vertex, Edge>(sg);
+                sgVisitor.Compute();
+                foreach (var v in sgVisitor.SortedVertices)
                 {
-                    var currentReads = current.Reads.AsValueEnumerable().Where(read => read is Grid producer && producer.Users.Count() == 2).ToArray();
-                    if (!(currentReads.Length == 1 && currentReads[0] == collects[j]))
+                    var expr = v.Expr switch
                     {
-                        break;
-                    }
-
-                    current = collects[j];
-                    workItems.Add(current);
-                    j--;
+                        Call c => c.With(arguments: c.Arguments.AsValueEnumerable().Select(arg => exprMemo[arg]).ToArray()),
+                        IR.Tuple t => t.With(fields: t.Fields.AsValueEnumerable().Select(arg => exprMemo[arg]).ToArray()),
+                        _ => v.Expr,
+                    };
+                    exprMemo.Add(v.Expr, expr);
                 }
-
-                i = j;
-                workLists.Insert(0, workItems);
             }
             else
             {
-                i--;
+                var newInputs = ctx.VarMap[ctx.SummaryVertexSubgraphMap[vertex]].Values.ToArray();
+                var merger = new ReplacingExprCloner(ctx.VarMap[ctx.SummaryVertexSubgraphMap[vertex]].ToDictionary(kv => kv.Key, kv => (Expr)kv.Value));
+                var clonedRoot = merger.Clone(vertex.Expr, default);
+
+                var newCall = TreeTiler.Tile((Grid)clonedRoot, ModuleKind, vi, CompileOptions.TargetOptions);
+
+                exprMemo.Add(ctx.OutputMap[subgraph.Index].Keys.First(), newCall);
             }
         }
 
-        return workLists;
-    }
-
-    private sealed class AutoTileRewriter : ExprRewriter
-    {
-        private readonly string _moduleKind;
-        private readonly int _workItem;
-
-        public AutoTileRewriter(Grid rootGrid, string moduleKind, int workItem, CompileOptions compileOptions)
-        {
-            Root = rootGrid;
-            _moduleKind = moduleKind;
-            _workItem = workItem;
-            CompileOptions = compileOptions;
-        }
-
-        public Grid Root { get; }
-
-        public CompileOptions CompileOptions { get; }
-
-        protected override Expr RewriteLeafGrid(Grid grid)
-        {
-            if (grid == Root)
-            {
-                return TreeTiler.Tile(grid, _moduleKind, _workItem, CompileOptions.TargetOptions);
-            }
-
-            return grid;
-        }
+        return fusion.With(fusion.Name, fusion.ModuleKind, exprMemo[fusion.Body], fusion.Parameters.ToArray());
     }
 }

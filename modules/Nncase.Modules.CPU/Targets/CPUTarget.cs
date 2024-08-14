@@ -145,13 +145,13 @@ public class CPUTarget : ITarget
         // need refactor tiling.
         passManager.Add<Passes.Distributed.AutoDistributedPass>();
 
-        passManager.Add<Nncase.Passes.CPUFunctionPartitionPass>(CPUTarget.Kind);
+        passManager.Add<CPUFunctionPartitionPass>();
 
         passManager.Add<CPUFusionToModulePass>();
 
         passManager.AddWithName<DataflowPass>("LowerToAffine").Configure(p =>
         {
-            // p.Add<Passes.Rules.CPU.Affine.LowerPack>();
+            p.Add<Passes.Rules.CPU.Affine.LowerPack>();
             p.Add<Passes.Rules.CPU.Affine.LowerUnary>();
             p.Add<Passes.Rules.CPU.Affine.LowerSwish>();
             p.Add<Passes.Rules.CPU.Affine.LowerBinary>();
