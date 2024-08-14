@@ -18,7 +18,6 @@
 #include "../primitive_ops.h"
 #include "../tensor_ops.h"
 #include "../utility.h"
-#include <unordered_map>
 
 namespace nncase::ntt {
 
@@ -43,14 +42,21 @@ void reduce_arg_impl(const TIn &input, TOut &&output, PackedAxes, PadedNums) {
     auto output_tensor = *reinterpret_cast<
         ntt::tensor<TIElem, typename std::decay_t<TOut>::shape_type> *>(
         output.elements().data());
+    std::array<std::array<int64_t, 2>, output_shape[0] * output_strides[0]> out_map;
     if constexpr (std::is_same_v<Op<TIElem, TIElem>,
                                  ntt::ops::max<TIElem, TIElem>>) {
         apply(output_shape, [&](auto index) {
             output_tensor(index) = std::numeric_limits<TIElem>::lowest();
+            auto out_offset = linear_offset(index, output_strides);
+            out_map[out_offset][0] = -1;
+            out_map[out_offset][1] = -1;
         });
     } else {
         apply(output_shape, [&](auto index) {
             output_tensor(index) = std::numeric_limits<TIElem>::max();
+            auto out_offset = linear_offset(index, output_strides);
+            out_map[out_offset][0] = -1;
+            out_map[out_offset][1] = -1;
         });
     }
 
@@ -58,7 +64,6 @@ void reduce_arg_impl(const TIn &input, TOut &&output, PackedAxes, PadedNums) {
     constexpr size_t rank2 = input_shape.rank() - 1;
 
     // collect all min/max indices
-    std::unordered_map<size_t, std::vector<TOElem>> out_map;
     apply(input_shape, [&](auto index) {
         const auto src = input(index);
         size_t out_offset;
@@ -74,30 +79,28 @@ void reduce_arg_impl(const TIn &input, TOut &&output, PackedAxes, PadedNums) {
         if constexpr (std::is_same_v<Op<TIElem, TIElem>,
                                      ntt::ops::max<TIElem, TIElem>>) {
             if (src > *dst) {
-                out_map[out_offset].clear();
-                out_map[out_offset].push_back(index.at(Axes));
+                out_map[out_offset][0] = index.at(Axes);
                 *dst = src;
             } else {
                 if constexpr (std::is_floating_point_v<TIElem>) {
                     if (std::fabs(src - *dst) < epsilon)
-                        out_map[out_offset].push_back(index.at(Axes));
+                        out_map[out_offset][out_map[out_offset][0] == -1 ? 0 : 1] = index.at(Axes);
                 } else {
                     if (src == *dst)
-                        out_map[out_offset].push_back(index.at(Axes));
+                        out_map[out_offset][out_map[out_offset][0] == -1 ? 0 : 1] = index.at(Axes);
                 }
             }
         } else {
             if (src < *dst) {
-                out_map[out_offset].clear();
-                out_map[out_offset].push_back(index.at(Axes));
+                out_map[out_offset][0] = (index.at(Axes));
                 *dst = src;
             } else {
                 if constexpr (std::is_floating_point_v<TIElem>) {
                     if (std::fabs(src - *dst) < epsilon)
-                        out_map[out_offset].push_back(index.at(Axes));
+                        out_map[out_offset][out_map[out_offset][0] == -1 ? 0 : 1] = index.at(Axes);
                 } else {
                     if (src == *dst)
-                        out_map[out_offset].push_back(index.at(Axes));
+                        out_map[out_offset][out_map[out_offset][0] == -1 ? 0 : 1] = index.at(Axes);
                 }
             }
         }
@@ -107,9 +110,9 @@ void reduce_arg_impl(const TIn &input, TOut &&output, PackedAxes, PadedNums) {
     apply(output_shape, [&](auto index) {
         auto out_offset = linear_offset(index, output_strides);
         if constexpr (SelectLastIdx) {
-            output(index) = out_map[out_offset].back();
+            output(index) = out_map[out_offset][out_map[out_offset][1] == -1 ? 0 : 1];
         } else {
-            output(index) = out_map[out_offset].front();
+            output(index) = out_map[out_offset][0];
         }
     });
 }

@@ -466,7 +466,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     IndentScope.Writer.Write($"reduce<ops::{reduce.ReduceOp.ToC()}>({Visit(args[0]).Name}, {Visit(args[1]).Name}, fixed_shape<{string.Join(",", reduce.Axis)}>{{}}, fixed_shape<{string.Join(",", reduce.PackedAxes)}>{{}}, fixed_shape<{string.Join(",", reduce.PadedNums)}>{{}});\n");
                     break;
                 case TIR.CPU.ReduceArg reduceArg:
-                    IndentScope.Writer.Write($"reduce_arg<ops::{reduceArg.ReduceArgOp.ToC()}, {reduceArg.Axis}, {reduceArg.SelectLastIndex}, {reduceArg.KeepDims}>({Visit(args[0]).Name}, {Visit(args[1]).Name}, fixed_shape<>{{}}, fixed_shape<>{{}});\n");
+                    IndentScope.Writer.Write($"reduce_arg<ops::{reduceArg.ReduceArgOp.ToC()[4..]}, {reduceArg.Axis}, {reduceArg.SelectLastIndex.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}, {reduceArg.KeepDims.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}>({Visit(args[0]).Name}, {Visit(args[1]).Name}, fixed_shape<>{{}}, fixed_shape<>{{}});\n");
                     break;
                 case TIR.CPU.Clamp clamp:
                     string min = clamp.Min is float.NegativeInfinity ? float.MinValue.ToString() : clamp.Min.ToString();

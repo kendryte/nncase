@@ -298,10 +298,13 @@ ranked_shape<Rank> get_reduced_offset(Index in_offset) {
 
     if constexpr (in_offset.rank() == Rank) {
         off.at(Axes) = 0;
-    }
-
-    for (size_t i = Axes + 1; i < in_offset.rank(); i++) {
-        off.at(i) = in_offset.at(i);
+        for (size_t i = Axes + 1; i < in_offset.rank(); i++) {
+            off.at(i) = in_offset.at(i);
+        }
+    } else {
+        for (size_t i = Axes + 1; i < in_offset.rank(); i++) {
+            off.at(i - 1) = in_offset.at(i);
+        }
     }
 
     return off;
