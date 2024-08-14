@@ -151,7 +151,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.InstanceNorm(arguments[0], arguments[1], arguments[2], ret, instancenorm.Epsilon, instancenorm.PackedAxes, instancenorm.PadedNums, (DistributedType)expr.CheckedType));
                 break;
             case IR.Imaging.ResizeImage resize:
-                if (expr.Arguments[1] is not None || resize.IsTFResize)
+                if ((expr.Arguments[1] is not None && expr.Arguments[1].CheckedShape.Size != 0) || resize.IsTFResize)
                 {
                     throw new NotSupportedException("not support tf resize");
                 }
@@ -199,6 +199,9 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 break;
             case IR.Tensors.Expand expand:
                 _mainBody.Add(TIR.F.CPU.Expand(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((DistributedType)expr.CheckedType).NdSBP));
+                break;
+            case IR.NN.Erf erf:
+                _mainBody.Add(TIR.F.CPU.Erf(arguments[0], ret));
                 break;
             default:
                 throw new NotSupportedException();

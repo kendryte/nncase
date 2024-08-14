@@ -482,6 +482,13 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                 case TIR.CPU.Expand expand:
                     IndentScope.Writer.Write($"expand({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
                     break;
+                case TIR.CPU.Erf erf:
+                    IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unary.cshtml", new UnaryKernelTemplateModel
+                    {
+                        Arguments = args.Select(x => new KernelArgument { Symbol = Visit(x) }).ToArray(),
+                        UnaryOp = UnaryOp.Erf,
+                    }).Result);
+                    break;
                 default:
                     throw new NotSupportedException(xpuOp.ToString());
             }

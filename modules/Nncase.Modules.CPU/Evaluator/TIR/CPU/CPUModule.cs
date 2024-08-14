@@ -49,5 +49,6 @@ internal class CPUModule : IApplicationPart
         registrator.RegisterManyInterface<CastEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<WhereEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<ExpandEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<ErfEvaluator>(reuse: Reuse.Singleton);
     }
 }

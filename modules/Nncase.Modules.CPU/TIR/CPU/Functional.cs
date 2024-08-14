@@ -176,4 +176,9 @@ public partial class CPU
     {
         return new Call(new TIR.CPU.Expand(shape, ndsbp), input, output);
     }
+
+    public static Call Erf(Expr input, Expr output)
+    {
+        return new Call(new TIR.CPU.Erf(), input, output);
+    }
 }

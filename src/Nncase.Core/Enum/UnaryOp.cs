@@ -55,6 +55,11 @@ public enum UnaryOp : byte
     Cosh,
 
     /// <summary>
+    /// Erf.
+    /// </summary>
+    Erf,
+
+    /// <summary>
     /// Exp.
     /// </summary>
     Exp,

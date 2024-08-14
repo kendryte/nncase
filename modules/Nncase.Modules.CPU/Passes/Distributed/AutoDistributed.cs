@@ -171,7 +171,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             return new Dictionary<IRType, List<Expr>> { { expr.CheckedType, new() { expr } } };
         }
 
-        var isSupported = PassUtility.IsCpuSupported(op, expr.Arguments.ToArray());
+        var isSupported = PassUtility.IsCpuSupported(op, expr, expr.Arguments.ToArray());
         foreach (var param in op.Parameters)
         {
             VisitLeafArgument(param.ParameterKind, expr.Arguments[param.Index], isSupported);

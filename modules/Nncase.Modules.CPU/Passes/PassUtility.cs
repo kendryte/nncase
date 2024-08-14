@@ -19,10 +19,10 @@ public static class PassUtility
             return true;
         }
 
-        return op is IR.Math.Unary or IR.Math.Binary { BinaryOp: BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div } or IR.Math.MatMul or IR.NN.Conv2D { PadMode: PadMode.Constant } or IR.NN.Softmax or IR.NN.LayerNorm or IR.NN.InstanceNormalization or IR.Imaging.ResizeImage { IsTFResize: false } or IR.Tensors.Unsqueeze or IR.Tensors.Reshape or IR.Tensors.Slice or IR.Tensors.Concat or IR.Tensors.Transpose or IR.NN.Swish or IR.Tensors.Gather or IR.NN.Pad { PadMode: PadMode.Constant } or IR.Math.Reduce or IR.Math.ReduceArg or IR.Math.Clamp;
+        return op is IR.Math.Unary or IR.Math.Binary { BinaryOp: BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div } or IR.Math.MatMul or IR.NN.Conv2D { PadMode: PadMode.Constant } or IR.NN.Softmax or IR.NN.LayerNorm or IR.NN.InstanceNormalization or IR.Imaging.ResizeImage { IsTFResize: false } or IR.Tensors.Unsqueeze or IR.Tensors.Reshape or IR.Tensors.Slice or IR.Tensors.Concat or IR.Tensors.Transpose or IR.NN.Swish or IR.Tensors.Gather or IR.NN.Pad { PadMode: PadMode.Constant } or IR.Math.Reduce or IR.Math.ReduceArg or IR.Math.Clamp or IR.NN.Erf or IR.Tensors.Cast or IR.Tensors.Expand or IR.Tensors.Where;
     }
 
-    public static bool IsCpuSupported(Op op, IEnumerable<Expr> arguments)
+    public static bool IsCpuSupported(Op op, Expr expr, IEnumerable<Expr> arguments)
     {
         if (!IsCpuSupported(op))
         {
@@ -37,7 +37,8 @@ public static class PassUtility
         switch (op)
         {
             case IR.Imaging.ResizeImage:
-                if (arguments.Skip(IR.Imaging.ResizeImage.Roi.Index).First() is not IR.None)
+                var roi = arguments.Skip(IR.Imaging.ResizeImage.Roi.Index).First();
+                if (roi is not IR.None && roi.CheckedShape.Size != 0)
                 {
                     return false;
                 }
@@ -80,6 +81,33 @@ public static class PassUtility
                 if (reduce.ReduceOp == ReduceOp.Prod ||
                  arguments.ToArray()[0].CheckedDataType == DataTypes.Float16 ||
                  !consecutiveAixs)
+                {
+                    return false;
+                }
+
+                break;
+
+            case IR.Tensors.Cast cast:
+                var inType = arguments.ToArray()[0].CheckedDataType;
+                if (inType == DataTypes.Float16 || inType == DataTypes.BFloat16 || cast.NewType == DataTypes.Float16 || cast.NewType == DataTypes.BFloat16)
+                {
+                    return false;
+                }
+
+                break;
+
+            case IR.Tensors.Expand expand:
+                if (arguments.ToArray()[0].CheckedShape.Rank != arguments.ToArray()[1].CheckedShape.Size)
+                {
+                    return false;
+                }
+
+                break;
+
+            case IR.Tensors.Where where:
+                if (!(arguments.ToArray()[0].CheckedShape.Rank == arguments.ToArray()[1].CheckedShape.Rank &&
+                    arguments.ToArray()[1].CheckedShape.Rank == arguments.ToArray()[2].CheckedShape.Rank) ||
+                    arguments.ToArray()[0].CheckedShape != expr.CheckedShape)
                 {
                     return false;
                 }
