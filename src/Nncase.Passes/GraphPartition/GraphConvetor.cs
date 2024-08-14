@@ -112,7 +112,7 @@ public sealed class GraphContext
             subgraph.Value.Nodes.ForEach(n => sg.AddVertex(n));
             subgraph.Value.InteriorEdges.ForEach(e => sg.AddEdge(e));
 
-            // sg.DumpDot(DumpScope.Current.Directory + $"subgraph_{subgraph.Key}_{count++}.dot");
+            // sg.DumpDot(Diagnostics.DumpScope.Current.Directory + $"subgraph_{subgraph.Key}_{count++}.dot");
             var dfsVisitor = new QuikGraph.Algorithms.TopologicalSort.SourceFirstTopologicalSortAlgorithm<Vertex, Edge>(sg);
             dfsVisitor.Compute();
             for (var vi = 0; vi < dfsVisitor.SortedVertices.Length; vi++)
@@ -127,16 +127,18 @@ public sealed class GraphContext
                 }
                 else if (subgraph.Value.InputEdges.Any(e => e.Target == vertex))
                 {
-                    var input = subgraph.Value.InputEdges.Find(e => e.Target == vertex)!.Source.Expr;
-                    if (input is not Const && !VarMap[subgraph.Key].ContainsKey(input))
+                    foreach (var input in subgraph.Value.InputEdges.Where(e => e.Target == vertex).Select(e => e.Source.Expr))
                     {
-                        if (input.CheckedType is DistributedType d)
+                        if (input is not Const && !VarMap[subgraph.Key].ContainsKey(input))
                         {
-                            VarMap[subgraph.Key].Add(input, new Var(d.TensorType));
-                        }
-                        else
-                        {
-                            VarMap[subgraph.Key].Add(input, new Var(input.CheckedType));
+                            if (input.CheckedType is DistributedType d)
+                            {
+                                VarMap[subgraph.Key].Add(input, new Var(d.TensorType));
+                            }
+                            else
+                            {
+                                VarMap[subgraph.Key].Add(input, new Var(input.CheckedType));
+                            }
                         }
                     }
                 }

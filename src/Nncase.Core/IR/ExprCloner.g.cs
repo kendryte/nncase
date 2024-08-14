@@ -335,6 +335,7 @@ public partial class ExprCloner<TContext>
     protected override Expr VisitLeafGrid(Affine.Grid expr, TContext context)
     {
         return expr.With(
+            domainParameter: Clone(expr.DomainParameter, context),
             bodyParameters: CloneArray(expr.BodyParameters, context),
             accessMaps: CloneArray(expr.AccessMaps, context),
             buffers: CloneArray(expr.Buffers, context),

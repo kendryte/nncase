@@ -89,13 +89,23 @@ public sealed class AutoTilePass : ModulePass
             }
             else
             {
-                var newInputs = ctx.VarMap[ctx.SummaryVertexSubgraphMap[vertex]].Values.ToArray();
-                var merger = new ReplacingExprCloner(ctx.VarMap[ctx.SummaryVertexSubgraphMap[vertex]].ToDictionary(kv => kv.Key, kv => (Expr)kv.Value));
-                var clonedRoot = merger.Clone(vertex.Expr, default);
+                var si = ctx.SummaryVertexSubgraphMap[vertex];
+                var cloner = new ReplacingExprCloner(ctx.VarMap[si].ToDictionary(kv => kv.Key, kv => (Expr)kv.Value));
+                var clonedCall = cloner.Clone(vertex.Expr, default);
+                var tiledCall = TreeTiler.Tile((Grid)clonedCall, ModuleKind, vi, CompileOptions.TargetOptions);
 
-                var newCall = TreeTiler.Tile((Grid)clonedRoot, ModuleKind, vi, CompileOptions.TargetOptions);
+                var varMap = ctx.VarMap[si].ToDictionary(kv => (Expr)kv.Value, kv => exprMemo[kv.Key]);
+                var substitutor = new Mutators.Substitutor(e =>
+                {
+                    if (varMap.TryGetValue(e, out var arg))
+                    {
+                        return arg;
+                    }
 
-                exprMemo.Add(ctx.OutputMap[subgraph.Index].Keys.First(), newCall);
+                    return e;
+                });
+                var cleanedCall = substitutor.Rewrite(tiledCall, default);
+                exprMemo.Add(ctx.OutputMap[subgraph.Index].Keys.First(), cleanedCall);
             }
         }
 

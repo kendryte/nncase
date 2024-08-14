@@ -96,6 +96,10 @@ public abstract record DataType
             {
                 return new VectorType(FromType(t.GenericTypeArguments[0]), 8);
             }
+            else if (generic == typeof(Vector8x8<>))
+            {
+                return new VectorType(FromType(t.GenericTypeArguments[0]), 8, 8);
+            }
             else if (generic == typeof(Vector16<>))
             {
                 return new VectorType(FromType(t.GenericTypeArguments[0]), 16);
