@@ -210,18 +210,18 @@ public sealed record VectorType(DataType ElemType, IR.IRArray<int> Lanes) : Data
 
     public override Type CLRType => Lanes.ToArray() switch
     {
-    [4] => typeof(Vector4<>).MakeGenericType(ElemType.CLRType),
-    [4, 4] => typeof(Vector4x4<>).MakeGenericType(ElemType.CLRType),
-    [8] => typeof(Vector8<>).MakeGenericType(ElemType.CLRType),
-    [8, 8] => typeof(Vector8x8<>).MakeGenericType(ElemType.CLRType),
-    [16] => typeof(Vector16<>).MakeGenericType(ElemType.CLRType),
-    [16, 16] => typeof(Vector16x16<>).MakeGenericType(ElemType.CLRType),
-    [32] => typeof(Vector32<>).MakeGenericType(ElemType.CLRType),
-    [32, 16] => typeof(Vector32x16<>).MakeGenericType(ElemType.CLRType),
-    [32, 32] => typeof(Vector32x32<>).MakeGenericType(ElemType.CLRType),
-    [32, 64] => typeof(Vector32x64<>).MakeGenericType(ElemType.CLRType),
-    [64] => typeof(Vector64<>).MakeGenericType(ElemType.CLRType),
-    [128] => typeof(Vector128<>).MakeGenericType(ElemType.CLRType),
+        [4] => typeof(Vector4<>).MakeGenericType(ElemType.CLRType),
+        [4, 4] => typeof(Vector4x4<>).MakeGenericType(ElemType.CLRType),
+        [8] => typeof(Vector8<>).MakeGenericType(ElemType.CLRType),
+        [8, 8] => typeof(Vector8x8<>).MakeGenericType(ElemType.CLRType),
+        [16] => typeof(Vector16<>).MakeGenericType(ElemType.CLRType),
+        [16, 16] => typeof(Vector16x16<>).MakeGenericType(ElemType.CLRType),
+        [32] => typeof(Vector32<>).MakeGenericType(ElemType.CLRType),
+        [32, 16] => typeof(Vector32x16<>).MakeGenericType(ElemType.CLRType),
+        [32, 32] => typeof(Vector32x32<>).MakeGenericType(ElemType.CLRType),
+        [32, 64] => typeof(Vector32x64<>).MakeGenericType(ElemType.CLRType),
+        [64] => typeof(Vector64<>).MakeGenericType(ElemType.CLRType),
+        [128] => typeof(Vector128<>).MakeGenericType(ElemType.CLRType),
         _ => throw new NotSupportedException(),
     };
 
