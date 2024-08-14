@@ -22,7 +22,8 @@ namespace nncase::ntt {
 
 namespace where_detail {
 
-template <IsFixedTensor TCond, IsFixedTensor TX, IsFixedTensor TY, IsFixedTensor TOut>
+template <IsFixedTensor TCond, IsFixedTensor TX, IsFixedTensor TY,
+          IsFixedTensor TOut>
 void where_impl(const TCond &cond, const TX &x, const TY &y,
                 TOut &&output) noexcept {
     // constexpr auto rank = TOut::shape_type::rank();

@@ -42,7 +42,8 @@ void reduce_arg_impl(const TIn &input, TOut &&output, PackedAxes, PadedNums) {
     auto output_tensor = *reinterpret_cast<
         ntt::tensor<TIElem, typename std::decay_t<TOut>::shape_type> *>(
         output.elements().data());
-    std::array<std::array<int64_t, 2>, output_shape[0] * output_strides[0]> out_map;
+    std::array<std::array<int64_t, 2>, output_shape[0] * output_strides[0]>
+        out_map;
     if constexpr (std::is_same_v<Op<TIElem, TIElem>,
                                  ntt::ops::max<TIElem, TIElem>>) {
         apply(output_shape, [&](auto index) {
@@ -84,10 +85,14 @@ void reduce_arg_impl(const TIn &input, TOut &&output, PackedAxes, PadedNums) {
             } else {
                 if constexpr (std::is_floating_point_v<TIElem>) {
                     if (std::fabs(src - *dst) < epsilon)
-                        out_map[out_offset][out_map[out_offset][0] == -1 ? 0 : 1] = index.at(Axes);
+                        out_map[out_offset]
+                               [out_map[out_offset][0] == -1 ? 0 : 1] =
+                                   index.at(Axes);
                 } else {
                     if (src == *dst)
-                        out_map[out_offset][out_map[out_offset][0] == -1 ? 0 : 1] = index.at(Axes);
+                        out_map[out_offset]
+                               [out_map[out_offset][0] == -1 ? 0 : 1] =
+                                   index.at(Axes);
                 }
             }
         } else {
@@ -97,10 +102,14 @@ void reduce_arg_impl(const TIn &input, TOut &&output, PackedAxes, PadedNums) {
             } else {
                 if constexpr (std::is_floating_point_v<TIElem>) {
                     if (std::fabs(src - *dst) < epsilon)
-                        out_map[out_offset][out_map[out_offset][0] == -1 ? 0 : 1] = index.at(Axes);
+                        out_map[out_offset]
+                               [out_map[out_offset][0] == -1 ? 0 : 1] =
+                                   index.at(Axes);
                 } else {
                     if (src == *dst)
-                        out_map[out_offset][out_map[out_offset][0] == -1 ? 0 : 1] = index.at(Axes);
+                        out_map[out_offset]
+                               [out_map[out_offset][0] == -1 ? 0 : 1] =
+                                   index.at(Axes);
                 }
             }
         }
@@ -110,7 +119,8 @@ void reduce_arg_impl(const TIn &input, TOut &&output, PackedAxes, PadedNums) {
     apply(output_shape, [&](auto index) {
         auto out_offset = linear_offset(index, output_strides);
         if constexpr (SelectLastIdx) {
-            output(index) = out_map[out_offset][out_map[out_offset][1] == -1 ? 0 : 1];
+            output(index) =
+                out_map[out_offset][out_map[out_offset][1] == -1 ? 0 : 1];
         } else {
             output(index) = out_map[out_offset][0];
         }

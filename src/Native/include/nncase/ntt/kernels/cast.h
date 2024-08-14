@@ -38,8 +38,7 @@ void cast_impl(const TIn &input, TOut &&output) noexcept {
                         input(out_index)(index));
             });
         } else {
-            output(out_index) =
-                static_cast<element_type>(input(out_index));
+            output(out_index) = static_cast<element_type>(input(out_index));
         }
     });
 }
