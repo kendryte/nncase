@@ -125,11 +125,14 @@ inline constexpr bool is_fixed_dims_v = is_fixed_dims<Dims>::value;
 
 template <typename T> struct is_ranked_dims : std::false_type {};
 
-// template <size_t Rank>
-// struct is_ranked_dims<detail::ranked_dims_base<Rank>> : std::true_type {};
+template <size_t Rank>
+struct is_ranked_dims<detail::ranked_dims_base<Rank>> : std::true_type {};
 
-// template <size_t Rank>
-// struct is_ranked_dims<ranked_strides<Rank>> : std::true_type {};
+template <size_t Rank>
+struct is_ranked_dims<ranked_shape<Rank>> : std::true_type {};
+
+template <size_t Rank>
+struct is_ranked_dims<ranked_strides<Rank>> : std::true_type {};
 
 template <typename T>
 inline constexpr bool is_ranked_dims_v = is_ranked_dims<T>::value;

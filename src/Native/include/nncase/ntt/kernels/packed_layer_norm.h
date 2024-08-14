@@ -120,7 +120,7 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
             norm[i] = sub[i] / sqrt;
 
         for (auto i = 0; i < inner_size; i++)
-            output_p[i] = (norm[i] * (TElem)scale_p[i]) + (TElem)bias_p[i];
+            output_p[i] = (norm[i] * scale_p[i]) + (TElem)bias_p[i];
     });
 }
 } // namespace packed_layer_norm_detail

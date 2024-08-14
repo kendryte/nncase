@@ -23,4 +23,10 @@ template <> struct tload_scalar<ntt::vector<float, 4>> {
         return vdupq_n_f32(v);
     }
 };
+
+template <> struct tload_scalar<ntt::vector<float, 8>> {
+    ntt::vector<float, 8> operator()(const float &v) const noexcept {
+        return float32x4x2_t{vdupq_n_f32(v), vdupq_n_f32(v)};
+    }
+};
 } // namespace nncase::ntt::tensor_ops
