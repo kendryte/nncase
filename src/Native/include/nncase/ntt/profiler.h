@@ -1,5 +1,6 @@
 #pragma once
 #include <chrono>
+#include <iomanip>
 #include <iostream>
 #include <string>
 #include <unordered_map>
@@ -31,12 +32,22 @@ class FunctionProfiler {
 
     // print statistics
     void printStatistics() const {
+        uint64_t totalTime = 0;
         for (const auto &[name, stats] : functionStats_) {
-            std::cout << "\033[34m\nStatistics for NTT kernels:\n\033[0m"
-                      << "Function: " << name << "\n";
+            totalTime += stats.totalTime;
+        }
+
+        std::cout << "\033[34m\nStatistics for NTT kernels. Total time: "
+                  << totalTime << " microseconds\033[0m\n";
+        for (const auto &[name, stats] : functionStats_) {
+            std::cout << "Function: " << name << "\n";
             std::cout << "  Calls: " << stats.callCount << "\n";
             std::cout << "  Total time: " << stats.totalTime
                       << " microseconds\n";
+            std::cout << "  Time Ratio: " << std::fixed << std::setprecision(2)
+                      << static_cast<double>(stats.totalTime) /
+                             static_cast<double>(totalTime)
+                      << std::endl;
         }
     }
 
