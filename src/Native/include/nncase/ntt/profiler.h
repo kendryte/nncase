@@ -32,7 +32,8 @@ class FunctionProfiler {
     // print statistics
     void printStatistics() const {
         for (const auto &[name, stats] : functionStats_) {
-            std::cout << "Function: " << name << "\n";
+            std::cout << "\033[34m\nStatistics for NTT kernels:\n\033[0m"
+                      << "Function: " << name << "\n";
             std::cout << "  Calls: " << stats.callCount << "\n";
             std::cout << "  Total time: " << stats.totalTime
                       << " microseconds\n";
