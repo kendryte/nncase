@@ -48,6 +48,11 @@ option(ENABLE_OP_PROFILE "Profile ops cast time" OFF)
 option(ENABLE_DUMP_MANAGER "Enable dump manager" OFF)
 option(ENABLE_RVV "Some kernel impl by rvv" OFF)
 option(ENABLE_DUMP_MEM "Dump mem usage" OFF)
+option(NTT_PROFILER "NTT kernel profiler" OFF)
+
+if(NTT_PROFILER)
+    add_definitions(-DNTT_PROFILER)
+endif()
 
 if (ENABLE_OP_PROFILE)
     add_definitions(-DENABLE_OP_PROFILE)

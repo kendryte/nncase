@@ -117,6 +117,7 @@ void reduce(const TIn &input, TOut &&output, Axes axes, PackedAxes packedAxes,
     static_assert(PadedNums::rank() == 0 ||
                       (PadedNums::rank() == 1 && PadedNums::at(0) == 0),
                   "not support padding");
+    AUTO_NTT_PROFILER
     reduce_detail::reduce_impl<Op>(input, output, axes, packedAxes, padedNums);
 }
 } // namespace nncase::ntt
