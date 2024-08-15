@@ -1,5 +1,6 @@
 #pragma once
 #include <chrono>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -38,7 +39,8 @@ class FunctionProfiler {
         }
 
         std::cout << "\033[34m\nStatistics for NTT kernels. Total time: "
-                  << totalTime << " microseconds\033[0m\n";
+                  << totalTime
+                  << " microseconds. More info in: ./ntt_profiler.md\033[0m\n";
         for (const auto &[name, stats] : functionStats_) {
             std::cout << "Function: " << name << "\n";
             std::cout << "  Calls: " << stats.callCount << "\n";
@@ -51,10 +53,46 @@ class FunctionProfiler {
         }
     }
 
+    void writeMarkdownReport(const std::string &filename) const {
+
+        uint64_t totalTime = 0;
+        for (const auto &[name, stats] : functionStats_) {
+            totalTime += stats.totalTime;
+        }
+
+        std::ofstream ofs(filename);
+        if (!ofs) {
+            std::cerr << "Error opening file: " << filename << std::endl;
+            return;
+        }
+
+        ofs << "# Statistics for NTT Kernels\n\n";
+        ofs << "**Total time:** `" << totalTime << "` microseconds\n\n";
+        ofs << "| Function Name | Calls | Total Time (microseconds) | Time "
+               "Ratio |\n";
+        ofs << "|---------------|-------|--------------------------|-----------"
+               "-|\n";
+
+        for (const auto &[name, stats] : functionStats_) {
+            ofs << "| " << name << " | " << stats.callCount << " | "
+                << stats.totalTime << " | " << std::fixed
+                << std::setprecision(2)
+                << static_cast<double>(stats.totalTime) /
+                       static_cast<double>(totalTime)
+                << " |\n";
+        }
+
+        ofs << "\n*Note*: The `Time Ratio` is the fraction of the total time "
+               "taken by each function.\n";
+    }
+
   private:
     FunctionProfiler() = default;
 
-    ~FunctionProfiler() { printStatistics(); }
+    ~FunctionProfiler() {
+        printStatistics();
+        writeMarkdownReport("ntt_profiler.md");
+    }
 
     uint64_t getCurrentTime() const {
         return std::chrono::duration_cast<std::chrono::microseconds>(
