@@ -47,6 +47,7 @@ nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
     .copysignf = copysignf,
     .cosf = cosf,
     .coshf = coshf,
+    .erff = erff,
     .expf = expf,
     .fmodf = fmodf,
     .logf = logf,

@@ -30,6 +30,7 @@ size_t tid;
 #pragma function(asinf)
 #pragma function(cosf)
 #pragma function(coshf)
+#pragma function(erff)
 #pragma function(expf)
 #pragma function(fmodf)
 #pragma function(logf)
@@ -46,6 +47,7 @@ float asinhf(float v) { return g_cpu_mt->asinhf(v); }
 float copysignf(float mag, float sgn) { return g_cpu_mt->copysignf(mag, sgn); }
 float cosf(float v) { return g_cpu_mt->cosf(v); }
 float coshf(float v) { return g_cpu_mt->coshf(v); }
+float erff(float v) { return g_cpu_mt->erff(v); }
 float expf(float v) { return g_cpu_mt->expf(v); }
 float fmodf(float x, float y) { return g_cpu_mt->fmodf(x, y); }
 float logf(float v) { return g_cpu_mt->logf(v); }

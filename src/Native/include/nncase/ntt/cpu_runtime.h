@@ -26,6 +26,7 @@ struct nncase_runtime_cpu_mt_t {
     float (*copysignf)(float mag, float sgn);
     float (*cosf)(float v);
     float (*coshf)(float v);
+    float (*erff)(float v);
     float (*expf)(float v);
     float (*fmodf)(float x, float y);
     float (*logf)(float v);
