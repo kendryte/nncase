@@ -17,11 +17,11 @@
 #include <nncase/runtime/result.h>
 #if defined(__linux__)
 #include <chrono>
-#include <iostream>
-#include <fstream>
 #include <dlfcn.h>
-#include <sstream>
+#include <fstream>
 #include <iomanip>
+#include <iostream>
+#include <sstream>
 #include <sys/mman.h>
 #endif
 
