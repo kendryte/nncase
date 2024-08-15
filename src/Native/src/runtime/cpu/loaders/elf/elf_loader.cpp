@@ -16,6 +16,10 @@
 #include <cstring>
 #include <nncase/runtime/result.h>
 #if defined(__linux__)
+#include <chrono>
+#include <iostream>
+#include <fstream>
+#include <dlfcn.h>
 #include <sys/mman.h>
 #endif
 
@@ -46,16 +50,61 @@ void elf_loader::load(std::span<const std::byte> elf) {
     ctx_.elf = (void *)elf.data();
     el_init(&ctx_);
 
-    buffer_ = (std::byte *)malloc(ctx_.memsz + ctx_.align);
-    image_ =
-        (std::byte *)(((size_t)buffer_ + (ctx_.align - 1)) & ~(ctx_.align - 1));
+    if (ctx_.ehdr.e_type == ET_EXEC) {
+        buffer_ = (std::byte *)malloc(ctx_.memsz + ctx_.align);
+        image_ = (std::byte *)(((size_t)buffer_ + (ctx_.align - 1)) &
+                               ~(ctx_.align - 1));
 
 #if defined(__linux__)
-    mprotect(image_, ctx_.memsz, PROT_READ | PROT_WRITE | PROT_EXEC);
+        mprotect(image_, ctx_.memsz, PROT_READ | PROT_WRITE | PROT_EXEC);
 #endif
-    ctx_.base_load_vaddr = ctx_.base_load_paddr = (uintptr_t)image_;
-    el_load(&ctx_, alloccb);
-    el_relocate(&ctx_);
+        ctx_.base_load_vaddr = ctx_.base_load_paddr = (uintptr_t)image_;
+        el_load(&ctx_, alloccb);
+        el_relocate(&ctx_);
+#if defined(__linux__)
+    } else if (ctx_.ehdr.e_type == ET_DYN) {
+        auto now = std::chrono::system_clock::now();
+        auto in_time_t = std::chrono::system_clock::to_time_t(now);
+
+        std::stringstream ss;
+        ss << std::put_time(std::localtime(&in_time_t), "%Y%m%d_%H%M%S");
+        std::string kernel_so = "/tmp/" + ss.str() + ".so";
+        std::ofstream outputFile(kernel_so, std::ios::out | std::ios::binary);
+        if (!outputFile) {
+            std::cerr << "cannot create file:" << kernel_so << std::endl;
+            throw std::runtime_error("cannot create file:" + kernel_so);
+        }
+
+        outputFile.write((char *)ctx_.elf, elf.size());
+
+        if (!outputFile.good()) {
+            std::cerr << "error writing file" << std::endl;
+            outputFile.close();
+            throw std::runtime_error("error writing file");
+        }
+
+        void *handle = dlopen(kernel_so.c_str(), RTLD_LAZY);
+        if (!handle) {
+            fprintf(stderr, "Error: %s\n", dlerror());
+            exit(EXIT_FAILURE);
+        }
+
+        entry_ = dlsym(handle, "kernel_entry");
+        const char *dlsym_error = dlerror();
+        if (dlsym_error) {
+            dlclose(handle);
+            throw std::runtime_error("dlsym error:" + std::string(dlsym_error));
+        }
+#endif
+    } else {
+        throw std::runtime_error("Unsupported ELF type");
+    }
 }
 
-void *elf_loader::entry() const noexcept { return image_ + ctx_.ehdr.e_entry; }
+void *elf_loader::entry() const noexcept {
+    if (ctx_.ehdr.e_type == ET_EXEC) {
+        return image_ + ctx_.ehdr.e_entry;
+    } else {
+        return entry_;
+    }
+}

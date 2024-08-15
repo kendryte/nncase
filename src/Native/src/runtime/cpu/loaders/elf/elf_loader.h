@@ -31,6 +31,7 @@ class elf_loader {
     std::byte *buffer_;
     std::byte *image_;
     el_ctx ctx_;
+    void *entry_;
 };
 
 END_NS_NNCASE_RUNTIME
