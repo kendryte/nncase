@@ -20,6 +20,8 @@
 #include <iostream>
 #include <fstream>
 #include <dlfcn.h>
+#include <sstream>
+#include <iomanip>
 #include <sys/mman.h>
 #endif
 
