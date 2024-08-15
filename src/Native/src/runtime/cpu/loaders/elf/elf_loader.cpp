@@ -17,9 +17,9 @@
 #include <nncase/runtime/result.h>
 #if defined(__linux__)
 #include <chrono>
-#include <iostream>
-#include <fstream>
 #include <dlfcn.h>
+#include <fstream>
+#include <iostream>
 #include <sys/mman.h>
 #endif
 
