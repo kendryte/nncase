@@ -49,9 +49,10 @@ jobs:
           cmake --preset conan-release
 
       - name: Build & Install
+        shell: bash
         run: |
-          cmake --build build --config ${{matrix.config.buildType}}
-          cmake --install build --prefix install
+          cmake --build build/${{matrix.config.buildType}} --config ${{matrix.config.buildType}}
+          cmake --install build/${{matrix.config.buildType}} --prefix install
 
       - name: Upload nncase Native Build Artifact
         uses: actions/upload-artifact@v3
