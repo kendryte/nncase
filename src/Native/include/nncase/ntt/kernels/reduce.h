@@ -23,6 +23,14 @@ namespace nncase::ntt {
 
 namespace reduce_detail {
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+#if defined(__GNUC__) || defined(__clang__)
+#define UNROLL_CXX_LOOP(n) _Pragma(TOSTRING(GCC unroll n))
+#else
+#define UNROLL_CXX_LOOP(n)
+#endif
+
 template <template <class T1, class T2> class Op, IsFixedTensor TIn,
           IsFixedTensor TOut, IsFixedDims Axes, IsFixedDims PackedAxes,
           IsFixedDims PadedNums>
@@ -82,6 +90,8 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
         if constexpr (std::is_same_v<Op<TIElem, TIElem>,
                                      ntt::ops::mean<TIElem, TIElem>>) {
             TIElem sum = (TIElem)0;
+
+            UNROLL_CXX_LOOP(2)
             for (size_t i = 0; i < inner_size; i++)
                 sum = sum + input_p[i * input_stride];
 
@@ -94,6 +104,8 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
         } else {
             Op<TIElem, TIElem> op;
             TIElem ret = (TIElem)input_p[0];
+
+            UNROLL_CXX_LOOP(2)
             for (size_t i = 1; i < inner_size; i++)
                 ret = op(ret, input_p[i * input_stride]);
 
