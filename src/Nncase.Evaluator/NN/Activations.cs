@@ -484,14 +484,14 @@ public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluato
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Erf target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Erf.Input);
+        var input = context.CheckArgumentType<IRType>(target, Erf.Input);
         return Visit(input);
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Erf target)
     {
-        var outputType = context.GetReturnType<TensorType>();
+        var outputType = context.GetReturnType<IRType>();
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
@@ -512,8 +512,13 @@ public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluato
 
     public Expr Visit(IShapeEvaluateContext context, Erf target) => context.GetArgumentShape(target, Erf.Input);
 
-    private IRType Visit(TensorType input)
+    private IRType Visit(IRType input)
     {
+        if (input is DistributedType d && d.NdSBP.Any(s => s is SBPPartialSum))
+        {
+            return new InvalidType("Erf with partial sum is not supported");
+        }
+
         return input;
     }
 }

@@ -147,6 +147,11 @@ public partial class CPU
         return new Call(new TIR.CPU.Reduce(packedAxes, padedNums, axis, keepDims, reduceOp), input, ret);
     }
 
+    public static Expr ReduceArg(Buffer input, Buffer ret, int axis, bool keepDims, bool selectLastIndex, ReduceArgOp reduceArgOp, DataType destType)
+    {
+        return new Call(new TIR.CPU.ReduceArg(axis, keepDims, selectLastIndex, reduceArgOp, destType), input, ret);
+    }
+
     public static Call GatherReduceScatter(Expr input, Expr output, DistributedType inType, DistributedType outType)
     {
         return new Call(new TIR.CPU.GatherReduceScatter(inType, outType), input, output);
@@ -155,5 +160,25 @@ public partial class CPU
     public static Call Clamp(Expr input, Expr output, float min, float max)
     {
         return new Call(new TIR.CPU.Clamp(min, max), input, output);
+    }
+
+    public static Call Cast(Expr input, Expr output, DataType newType, CastMode castMode)
+    {
+        return new Call(new TIR.CPU.Cast(newType, castMode), input, output);
+    }
+
+    public static Call Where(Expr cond, Expr x, Expr y, Expr output, DistributedType distributedType)
+    {
+        return new Call(new TIR.CPU.Where(distributedType), cond, x, y, output);
+    }
+
+    public static Call Expand(Expr input, Expr output, IRArray<int> shape, IRArray<SBP> ndsbp)
+    {
+        return new Call(new TIR.CPU.Expand(shape, ndsbp), input, output);
+    }
+
+    public static Call Erf(Expr input, Expr output)
+    {
+        return new Call(new TIR.CPU.Erf(), input, output);
     }
 }

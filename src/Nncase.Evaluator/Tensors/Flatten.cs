@@ -35,7 +35,8 @@ public class FlattenEvaluator : IEvaluator<Flatten>, ITypeInferencer<Flatten>, I
     {
         return new()
         {
-            [CostFactorNames.CPUCycles] = 1,
+            // set cost to 2 to convert to reshape
+            [CostFactorNames.CPUCycles] = 2,
         };
     }
 
