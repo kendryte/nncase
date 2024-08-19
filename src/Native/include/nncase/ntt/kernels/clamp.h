@@ -16,6 +16,7 @@
 #include "../apply.h"
 #include "../loop.h"
 #include "../primitive_ops.h"
+#include "../profiler.h"
 #include "../tensor_ops.h"
 #include "../utility.h"
 
@@ -38,6 +39,7 @@ void clamp_impl(const TIn &input, TOut &&output, const TElem &min,
 template <typename TIn, typename TOut, typename TElem>
 void clamp(const TIn &input, TOut &&output, const TElem &min,
            const TElem &max) noexcept {
+    AUTO_NTT_PROFILER
     clamp_detail::clamp_impl(input, output, min, max);
 }
 } // namespace nncase::ntt

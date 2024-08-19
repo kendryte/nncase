@@ -1,4 +1,7 @@
 #pragma once
+
+// add add_definitions(-DNTT_PROFILER) or add_compile_definitions(NTT_PROFILER)
+// in CMakeLists.txt to enable NTT_PROFILER
 #ifdef NTT_PROFILER
 #include <chrono>
 #include <fstream>
