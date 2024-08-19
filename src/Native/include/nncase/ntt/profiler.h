@@ -1,4 +1,5 @@
 #pragma once
+#ifdef NTT_PROFILER
 #include <chrono>
 #include <fstream>
 #include <iomanip>
@@ -119,10 +120,17 @@ class AutoProfiler {
     uint64_t startTime_;
 };
 
-#ifdef NTT_PROFILER
 #define AUTO_NTT_PROFILER AutoProfiler profiler(__FUNCTION__);
 #define DISP_NTT_PROFILER FunctionProfiler::getInstance().printStatistics();
-#else
+
+#else // 如果NTT_PROFILER未定义
+
+class AutoProfiler {
+  public:
+    AutoProfiler() {}
+};
+
 #define AUTO_NTT_PROFILER
 #define DISP_NTT_PROFILER
+
 #endif
