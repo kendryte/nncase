@@ -64,18 +64,12 @@ if(ENABLE_DUMP_MEM)
     add_definitions(-DDUMP_MEM)
 endif()
 
-if(NOT CMAKE_TOOLCHAIN_FILE)
-   include(toolchains/native.toolchain.cmake)
-endif()
-
 # Workaroud for riscv toolchain auto vectorization bugs in O3
 if (${CMAKE_SYSTEM_PROCESSOR} MATCHES
    "(riscv32)|(riscv64)")
     set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
 endif()
 
-include(cmake/configure-conan.cmake)
-include(cmake/conan.cmake)
 include(cmake/dependencies.cmake)
 
 set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/src/Native/include)

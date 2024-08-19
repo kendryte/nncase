@@ -47,17 +47,20 @@ class nncaseConan(ConanFile):
             self.copy("nethost.dll", "bin", "bin")
             self.copy("ortki.dll", "bin", "bin")
 
+    def layout(self):
+        cmake_layout(self)
+
     def requirements(self):
         if self.options.tests:
             self.requires('gtest/1.10.0')
-            self.requires('ortki/0.0.3')
+            self.requires('ortki/0.0.4')
             self.requires('rapidjson/1.1.x')
 
         if self.options.python:
             self.requires('pybind11/2.11.1')
 
         if not self.options.runtime:
-            self.requires('nethost/7.0.5')
+            self.requires('nethost/8.0.8')
             self.requires('fmt/7.1.3')
             self.requires('nlohmann_json/3.9.1')
 
