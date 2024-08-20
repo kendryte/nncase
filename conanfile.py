@@ -17,6 +17,7 @@ from conan import ConanFile
 from conan.errors import ConanInvalidConfiguration
 from conan.tools.build import check_min_cppstd, cross_building
 from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
+from conan.tools.files import apply_conandata_patches, copy, export_conandata_patches, get, rmdir
 
 
 class nncaseConan(ConanFile):
@@ -41,11 +42,6 @@ class nncaseConan(ConanFile):
     @property
     def _min_cppstd(self):
         return 20
-    
-    def imports(self):
-        if self.settings.os == 'Windows':
-            self.copy("nethost.dll", "bin", "bin")
-            self.copy("ortki.dll", "bin", "bin")
 
     def layout(self):
         cmake_layout(self)
@@ -69,7 +65,7 @@ class nncaseConan(ConanFile):
 
     def config_options(self):
         if not self.options.runtime:
-            if self.settings.os == 'Windows':
+            if self.settings.os == 'Windows' and self.settings.build_type == 'Debug':
                 self.options["nethost"].shared = True
 
         if self.options.tests:
