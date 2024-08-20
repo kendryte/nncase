@@ -24,8 +24,8 @@ set(DEFAULT_BUILTIN_RUNTIMES OFF)
 set(DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL OFF)
 set(BUILD_BENCHMARK OFF)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=rv64imafdcv -mabi=lp64d -mcmodel=medany")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=rv64imafdcv -mabi=lp64d -mcmodel=medany")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=rv64imafdcv -mabi=lp64d -mcmodel=medany -fstack-protector-strong -fPIE -pie -Wl,-z,now -Wl,-z,relro")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=rv64imafdcv -mabi=lp64d -mcmodel=medany -fstack-protector-strong -fPIE -pie -Wl,-z,now -Wl,-z,relro")
 
 set(BUILDING_RUNTIME ON)
 set(ENABLE_K230_RUNTIME ON)
