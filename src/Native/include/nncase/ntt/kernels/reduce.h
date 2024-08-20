@@ -91,9 +91,21 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
                                      ntt::ops::mean<TIElem, TIElem>>) {
             TIElem sum = (TIElem)0;
 
-            UNROLL_CXX_LOOP(2)
-            for (size_t i = 0; i < inner_size; i++)
-                sum = sum + input_p[i * input_stride];
+            // 假设 inner_size 大于等于 2
+            if constexpr (inner_size >= 2) {
+                TIElem sum0 = (TIElem)input_p[0 * input_stride];
+                TIElem sum1 = (TIElem)input_p[1 * input_stride];
+                for (size_t i = 2; i < inner_size; i += 2) {
+                    sum0 = sum0 + input_p[i * input_stride];
+                    sum1 = sum1 + input_p[(i + 1) * input_stride];
+                }
+                sum = sum0 + sum1;
+            }
+
+            // 假设 inner_size 为奇数
+            if constexpr (inner_size % 2 == 1) {
+                sum = sum + input_p[(inner_size - 1) * input_stride];
+            }
 
             if constexpr (UseVectorReduce) {
                 sum = sum / (inner_size * TIElem::shape_type::length());
@@ -103,11 +115,23 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
             }
         } else {
             Op<TIElem, TIElem> op;
-            TIElem ret = (TIElem)input_p[0];
+            TIElem ret;
 
-            UNROLL_CXX_LOOP(2)
-            for (size_t i = 1; i < inner_size; i++)
-                ret = op(ret, input_p[i * input_stride]);
+            // 假设 inner_size 大于等于 2
+            if constexpr (inner_size >= 2) {
+                TIElem ret0 = (TIElem)input_p[0 * input_stride];
+                TIElem ret1 = (TIElem)input_p[1 * input_stride];
+                for (size_t i = 2; i < inner_size; i += 2) {
+                    ret0 = op(ret0, input_p[i * input_stride]);
+                    ret1 = op(ret1, input_p[(i + 1) * input_stride]);
+                }
+                ret = op(ret0, ret1);
+            }
+
+            // 假设 inner_size 为奇数
+            if constexpr (inner_size % 2 == 1) {
+                ret = op(ret, input_p[(inner_size - 1) * input_stride]);
+            }
 
             if constexpr (UseVectorReduce) {
                 output_p[0] = ops::reduce<Op, TOElem, TIElem>()(ret);
