@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reactive;
 using Nncase;
 using Nncase.IR;
+using Nncase.Utilities;
 
 namespace Nncase.Passes.BufferSchedule;
 
@@ -16,12 +17,13 @@ public class LifeTimeCollector : ExprVisitor<Unit, Unit>
 
     public Dictionary<Expr, Interval> LifenessMap { get; } = new(ReferenceEqualityComparer.Instance);
 
-    public IReadOnlyDictionary<Expr, ScheduleBuffer> Collect(Expr expr)
+    public virtual IReadOnlyDictionary<Expr, ScheduleBuffer> Collect(Expr expr)
     {
         Visit(expr);
         Update(expr); // avoid final call time interval size == 1.
-        Alias();
 
+        // TODO: open Alias
+        // Alias();
         var d = new Dictionary<Expr, ScheduleBuffer>(ReferenceEqualityComparer.Instance);
         int count = 0;
         foreach (var (k, v) in LifenessMap)
@@ -32,7 +34,7 @@ public class LifeTimeCollector : ExprVisitor<Unit, Unit>
                 Var va => va.Name,
                 _ => k.GetType().Name,
             };
-            var size = ComputeBufferSize(k.CheckedType, out var shape, out var stride);
+            var size = ComputeBufferSize(k, k.CheckedType, out var shape, out var stride);
             d.Add(k, new(name, count++, v, new(0, size), shape, stride, false));
         }
 
@@ -50,18 +52,17 @@ public class LifeTimeCollector : ExprVisitor<Unit, Unit>
 
         Update(expr);
 
-        TimeStamp += 2;
+        TimeStamp += 1;
 
         // note we will update tuple field on the next call.
-        foreach (var item in expr.Users.Where(e => e is not (BaseFunction or IR.Tuple)))
-        {
-            Update(item);
-        }
-
+        // foreach (var item in expr.Users.Where(e => e is not (BaseFunction or IR.Tuple)))
+        // {
+        //     Update(item);
+        // }
         return Unit.Default;
     }
 
-    protected virtual int ComputeBufferSize(IRType type, out int[] shape, out int[] stride)
+    protected virtual int ComputeBufferSize(Expr expr, IRType type, out int[] shape, out int[] stride)
     {
         shape = Array.Empty<int>();
         stride = Array.Empty<int>();
@@ -72,21 +73,34 @@ public class LifeTimeCollector : ExprVisitor<Unit, Unit>
             stride = TensorUtilities.GetStrides(shape);
             size = TensorUtilities.GetSize(shape, stride, tensorType.DType.SizeInBytes);
         }
+        else if (type is DistributedType distributedType)
+        {
+            if (DistributedUtility.TryGetDividedTensorType(distributedType, out var tt))
+            {
+                shape = tt.Shape.ToValueArray();
+                stride = TensorUtilities.GetStrides(shape);
+                size = TensorUtilities.GetSize(shape, stride, tt.DType.SizeInBytes);
+            }
+            else
+            {
+                throw new NotSupportedException();
+            }
+        }
         else if (type is TupleType tupleType)
         {
             size = 0;
             foreach (var item in tupleType)
             {
-                size += ComputeBufferSize(item, out _, out _);
+                size += ComputeBufferSize(null!, item, out _, out _);
             }
         }
 
         return size;
     }
 
-    private void Update(Expr expr)
+    protected virtual void Update(Expr expr)
     {
-        if (expr is Const or None)
+        if (expr is Const or None or Var)
         {
             return;
         }
@@ -113,7 +127,7 @@ public class LifeTimeCollector : ExprVisitor<Unit, Unit>
         LifenessMap[expr] = interval;
     }
 
-    private void Alias()
+    protected virtual void Alias()
     {
         bool changed;
         do

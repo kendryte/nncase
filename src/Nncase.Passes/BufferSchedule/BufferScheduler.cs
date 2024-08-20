@@ -15,6 +15,13 @@ namespace Nncase.Passes.BufferSchedule;
 
 public class BufferScheduler
 {
+    private readonly long _memSize;
+
+    public BufferScheduler(long memSize = 2147483648L)
+    {
+        _memSize = memSize;
+    }
+
     public virtual void ExternalConstrains(CpModel model, IReadOnlyDictionary<Expr, ScheduleBuffer> bufferMap, IReadOnlyDictionary<Expr, (IntervalVar X, IntervalVar Y)> boxs)
     {
         foreach (var (expr, item) in bufferMap)
@@ -62,7 +69,7 @@ public class BufferScheduler
         {
             var xInterval = model.NewIntervalVar(model.NewConstant(item.TimeInterval.Start), model.NewConstant(item.TimeInterval.Size), model.NewConstant(item.TimeInterval.Stop), item.Name + $"{item.Number}_x");
 
-            var upbound = 2147483648 - item.MemInterval.Stop;
+            var upbound = _memSize - item.MemInterval.Stop;
             if (upbound <= 0)
             {
                 throw new System.NotSupportedException();
@@ -86,8 +93,8 @@ public class BufferScheduler
             }
         }
 
-        ExternalConstrains(model, bufferMap, boxs);
-
+        // TODO: reopen external constrains
+        // ExternalConstrains(model, bufferMap, boxs);
         model.Minimize(LinearExpr.Sum(yStarts));
 
         var solver = new CpSolver();
@@ -174,7 +181,7 @@ for buffer in buffers:
   height = buffer.mem_interval.end - buffer.mem_interval.start
   y = buffer.mem_interval.start + (height / 2)
   y_range_max = max(y_range_max, y)
-  x_range_max = max(x_range_max, buffer.interval.end)
+  x_range_max = max(x_range_max, buffer.time_interval.end)
   source['x'].append(x)
   source['y'].append(y)
   source['width'].append(width)
