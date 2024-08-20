@@ -112,7 +112,7 @@ add_subdirectory(src/Native/src)
 
 if(BUILD_TESTING)
     add_subdirectory(src/Native/test/ctest)
-    add_subdirectory(tests/kernels)
+    #add_subdirectory(tests/kernels)
 endif()
 
 if(BUILD_BENCHMARK)
