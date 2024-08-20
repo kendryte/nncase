@@ -35,7 +35,7 @@ void expand_impl(const TIn &input, TOut &&output) noexcept {
                   "Only support scalar type for now");
 
     apply(output.shape(), [&](auto index) {
-        const auto in_index = get_reduced_offset(index, input.shape());
+        const auto in_index = get_reduced_offset<input.shape().rank()>(index, input.shape());
         output(index) = input(in_index);
     });
 }

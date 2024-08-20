@@ -34,9 +34,9 @@ void where_impl(const TCond &cond, const TX &x, const TY &y,
                   "Only support scalar type for now");
 
     apply(output.shape(), [&](auto index) {
-        const auto cond_index = get_reduced_offset(index, cond.shape());
-        const auto x_index = get_reduced_offset(index, x.shape());
-        const auto y_index = get_reduced_offset(index, y.shape());
+        const auto cond_index = get_reduced_offset<cond.shape().rank()>(index, cond.shape());
+        const auto x_index = get_reduced_offset<x.shape().rank()>(index, x.shape());
+        const auto y_index = get_reduced_offset<y.shape().rank()>(index, y.shape());
 
         const auto a = cond(cond_index);
         const auto b = x(x_index);
