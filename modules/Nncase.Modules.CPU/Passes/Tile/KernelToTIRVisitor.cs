@@ -271,7 +271,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                             }
                             else
                             {
-                                T.CreateBuffer((TensorType)dividedType, loc, out buffer);
+                                T.CreateBuffer((TensorType)dividedType, loc, out buffer, name);
                             }
 
                             // T.AttachBuffer(Tensor.FromPointer(DataUsage, dividedType.DType), dividedType, loc, hierarchy, out buffer, name);
