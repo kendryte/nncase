@@ -21,9 +21,10 @@ template <size_t Axis, typename TA, typename TB, typename TC>
 void gather(const TA &input, const TB &indices, TC &&output) noexcept {
     constexpr auto rank = TA::shape_type::rank();
     constexpr auto indices_rank = TB::shape_type::rank();
+    constexpr auto out_shape = std::decay_t<TC>::shape();
     ranked_shape<rank> in_index;
     ranked_shape<indices_rank> indices_index;
-    apply(output.shape(), [&](auto out_index) {
+    apply(out_shape, [&](auto out_index) {
         // in_index[:axis] = out_index[:axis]
         loop<Axis>([&](auto i) { in_index[i] = out_index[i]; });
 

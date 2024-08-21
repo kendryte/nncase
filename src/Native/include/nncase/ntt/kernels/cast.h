@@ -24,13 +24,14 @@ namespace cast_detail {
 
 template <IsFixedTensor TIn, IsFixedTensor TOut>
 void cast_impl(const TIn &input, TOut &&output) noexcept {
+    constexpr auto out_shape = std::decay_t<TOut>::shape();
     // constexpr auto rank = TOut::shape_type::rank();
     // constexpr auto input_strides = TIn::strides();
     // constexpr auto output_strides = std::decay_t<TOut>::strides();
 
     using element_type = typename std::decay_t<TOut>::element_type;
 
-    apply(output.shape(), [&](auto out_index) {
+    apply(out_shape, [&](auto out_index) {
         if constexpr (IsTensor<element_type>) {
             apply(element_type::shape(), [&](auto index) {
                 output(out_index)(index) =

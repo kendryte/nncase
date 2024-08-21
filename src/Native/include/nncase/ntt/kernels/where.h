@@ -26,17 +26,20 @@ template <IsFixedTensor TCond, IsFixedTensor TX, IsFixedTensor TY,
           IsFixedTensor TOut>
 void where_impl(const TCond &cond, const TX &x, const TY &y,
                 TOut &&output) noexcept {
-    // constexpr auto rank = TOut::shape_type::rank();
+    constexpr auto cond_shape = typename TCond::shape_type{};
+    constexpr auto x_shape = typename TX::shape_type{};
+    constexpr auto y_shape = typename TY::shape_type{};
+    constexpr auto out_shape = typename  std::decay_t<TOut>::shape_type{};
     // constexpr auto input_strides = TIn::strides();
     // constexpr auto output_strides = std::decay_t<TOut>::strides();
 
     static_assert(IsScalar<typename std::decay_t<TOut>::element_type>,
                   "Only support scalar type for now");
 
-    apply(output.shape(), [&](auto index) {
-        const auto cond_index = get_reduced_offset<cond.shape().rank()>(index, cond.shape());
-        const auto x_index = get_reduced_offset<x.shape().rank()>(index, x.shape());
-        const auto y_index = get_reduced_offset<y.shape().rank()>(index, y.shape());
+    apply(out_shape, [&](auto index) {
+        const auto cond_index = get_reduced_offset<cond_shape.rank()>(index, cond_shape);
+        const auto x_index = get_reduced_offset<x_shape.rank()>(index, x_shape);
+        const auto y_index = get_reduced_offset<y_shape.rank()>(index, y_shape);
 
         const auto a = cond(cond_index);
         const auto b = x(x_index);
