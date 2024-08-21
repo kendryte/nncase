@@ -359,7 +359,7 @@ public static class TreeTiler
 
                         var loopsWrites = bufferInfo.Places.Select(p => p[sl]).Zip(bufferInfo.Writes).Select(p => p.First * p.Second).ToArray();
                         var write = loopsWrites.Skip(1).Aggregate(loopsWrites[0], solver.MakeSum);
-                        nodeWrites[sl + 1].Add(write); // write at sl + 1.
+                        nodeWrites[sl + 1].Add(write); // write at store level (sl + 1).
                         if (currentLevel + 1 <= totalLevel)
                         {
                             // can't read from top level's outside.

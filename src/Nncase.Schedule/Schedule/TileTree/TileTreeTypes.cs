@@ -25,7 +25,15 @@ public interface ITreeNodeVisitor<in TArg1, out TReturn>
     TReturn Visit(OpNode value, TArg1 arg1);
 }
 
-public interface ITileAbleNode : ITreeNode
+public interface IMappableNode
+{
+    /// <summary>
+    /// Gets or sets the domain relation which from parent domain map to current node's domain.
+    /// </summary>
+    DomainRelation DomainRelation { get; set; }
+}
+
+public interface ITileAbleNode : ITreeNode, IMappableNode
 {
     int Level { get; }
 
@@ -35,11 +43,6 @@ public interface ITileAbleNode : ITreeNode
     /// Gets the domain var names.
     /// </summary>
     ImmutableArray<string> DimNames { get; }
-
-    /// <summary>
-    /// Gets or sets the domain relation which from parent domain map to current node's domain.
-    /// </summary>
-    DomainRelation DomainRelation { get; set; }
 }
 
 public sealed record DomainRelation(int DomainOp, int RangeOp, AffineMap Map)

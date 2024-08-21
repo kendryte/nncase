@@ -3,11 +3,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Google.OrTools.ConstraintSolver;
 using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Schedule.TileTree;
+using QuikGraph.Graphviz;
 using Xunit;
 
 namespace Nncase.Tests.AffineTest;
@@ -235,7 +237,7 @@ public sealed class UnitTestModeling : TestClassBase
     [Fact]
     public void TestMultiInputs()
     {
-        var func = GetFunctionSample4();
+        var func = FunctionSamples.Get4();
 
         var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerBinary(), }, new());
 #if DEBUG
@@ -263,7 +265,7 @@ public sealed class UnitTestModeling : TestClassBase
     [Fact]
     public void TestMultiInputs2()
     {
-        var func = GetFunctionSample();
+        var func = FunctionSamples.Get1();
 
         var post = CompilerServices.ERewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.PackMatMul(1, 4), new Passes.Rules.CPU.PackUnary(1, 4) }, new(), CompileOptions);
         post = CompilerServices.Rewrite(post, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerPack(), new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), }, new());
@@ -322,31 +324,32 @@ public sealed class UnitTestModeling : TestClassBase
     {
         Function func;
         {
-            var a = new Var(new TensorType(DataTypes.Float32, new[] { 128, 256 }));
-            var b = new Var(new TensorType(DataTypes.Float32, new[] { 256, 384 }));
+            var a = new Var(new TensorType(DataTypes.Float32, new[] { 1024, 2048 }));
+            var b = new Var(new TensorType(DataTypes.Float32, new[] { 2048, 1024 }));
             var c = IR.F.Tensors.MatMul(a, b);
             var d = IR.F.Math.Exp(c);
-            var e = new Var(new TensorType(DataTypes.Float32, new[] { 384, 512 }));
+            var e = new Var(new TensorType(DataTypes.Float32, new[] { 1024, 3072 }));
             var f = IR.F.Tensors.MatMul(d, e);
             func = new(f, a, b, e);
         }
 
-        var post = CompilerServices.ERewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.PackMatMul(1, 4), new Passes.Rules.CPU.PackUnary(1, 4), }, new(), CompileOptions);
-        post = CompilerServices.Rewrite(post, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), }, new());
-        Dumpper.DumpIR(post, "post");
+        var post = CompilerServices.ERewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.PackMatMul(1, 8), new Passes.Rules.CPU.PackUnary(1, 8), }, new(), CompileOptions);
+        Dumpper.DumpIR(post, "pack");
+        post = CompilerServices.Rewrite(post, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerPack(), new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), }, new());
+        Dumpper.DumpIR(post, "grid");
 
-        if (post is not Function { Body: IR.Affine.Grid grid })
-        {
-            return;
-        }
+        // if (post is not Function { Body: IR.Affine.Grid grid })
+        // {
+        //     return;
+        // }
 
-        Schedule.TreeTiler.Tile(grid, Nncase.Targets.CPUTarget.Kind, 0, CompileOptions.TargetOptions);
+        // Schedule.TreeTiler.Tile(grid, Nncase.Targets.CPUTarget.Kind, 0, CompileOptions.TargetOptions);
     }
 
     [Fact]
     public void TestAutoFusion()
     {
-        var func = GetFunctionSample();
+        var func = FunctionSamples.Get1();
         var module = new IR.IRModule(func);
         CompileSession.Compiler.ImportIRModule(module);
         CompileSession.Compiler.CompileAsync();
@@ -359,7 +362,7 @@ public sealed class UnitTestModeling : TestClassBase
     [Fact]
     public void TestAutoFusionFailedCase0()
     {
-        var func = GetFunctionSample3();
+        var func = FunctionSamples.Get3();
         var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerBinary() }, new());
         Dumpper.DumpIR(post, "post");
 
@@ -396,7 +399,7 @@ public sealed class UnitTestModeling : TestClassBase
     [Fact]
     public void TestMerge()
     {
-        var func = GetFunctionSample();
+        var func = FunctionSamples.Get1();
         var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), }, new());
         Dumpper.DumpIR(post, "post");
 
@@ -429,7 +432,7 @@ public sealed class UnitTestModeling : TestClassBase
     [Fact]
     public void TestGetArgumentInfo()
     {
-        var func = GetFunctionSample();
+        var func = FunctionSamples.Get1();
         var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), }, new());
         Dumpper.DumpIR(post, "post");
 
@@ -456,7 +459,7 @@ public sealed class UnitTestModeling : TestClassBase
     [Fact]
     public void TestGetArgumentInfo2()
     {
-        var func = GetFunctionSample2();
+        var func = FunctionSamples.Get2();
         var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), new Passes.Rules.CPU.Affine.LowerBinary() }, new());
         Dumpper.DumpIR(post, "post");
 
@@ -484,7 +487,7 @@ public sealed class UnitTestModeling : TestClassBase
     [Fact]
     public void TestGetArgumentInfo3()
     {
-        var func = GetFunctionSample2();
+        var func = FunctionSamples.Get2();
         var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), new Passes.Rules.CPU.Affine.LowerBinary() }, new());
         Dumpper.DumpIR(post, "post");
 
@@ -541,76 +544,6 @@ public sealed class UnitTestModeling : TestClassBase
         System.Console.WriteLine(sol.Value(offset));
         System.Console.WriteLine(sol.Value(aplace));
         System.Console.WriteLine(sol.Value(cplace));
-    }
-
-    private Function GetFunctionSample()
-    {
-        Function func;
-        {
-            var a = new Var(new TensorType(DataTypes.Float32, new[] { 128, 256 }));
-            var b = new Var(new TensorType(DataTypes.Float32, new[] { 256, 384 }));
-            var c = IR.F.Tensors.MatMul(a, b);
-            var d = IR.F.Math.Exp(c);
-            var e = new Var(new TensorType(DataTypes.Float32, new[] { 384, 512 }));
-            var f = IR.F.Tensors.MatMul(d, e);
-            func = new(f, a, b, e);
-        }
-
-        return func;
-    }
-
-    private Function GetFunctionSample2()
-    {
-        Function func;
-        {
-            var ashape = new[] { 1, 64, 384, 128 };
-            var bshape = new[] { 1, 64, 128, 384 };
-            var a = new IR.Var("a", new IR.TensorType(DataTypes.Float32, ashape));
-            var b = new IR.Var("b", new IR.TensorType(DataTypes.Float32, bshape));
-            var c = IR.F.Tensors.MatMul(a, b);
-            var dshape = new[] { 1 };
-            var d = new IR.Var("d", new IR.TensorType(DataTypes.Float32, dshape));
-            var e = IR.F.Math.Binary(BinaryOp.Div, c, d);
-            var fshape = new[] { 1, 1, 384, 384 };
-            var f = new IR.Var("f", new IR.TensorType(DataTypes.Float32, fshape));
-            var g = IR.F.Math.Binary(BinaryOp.Add, e, f);
-            func = new IR.Function("main", g, a, b, d, f);
-        }
-
-        return func;
-    }
-
-    private Function GetFunctionSample3()
-    {
-        Function func;
-        {
-            var shape = new[] { 1, 12, 14, 14 };
-            var a = new IR.Var("a", new IR.TensorType(DataTypes.Float32, shape));
-            var b = IR.F.Math.Mul(a, new[] { 1.0f });
-            var c = IR.F.Math.Div(b, new[] { 2.0f });
-            var d = IR.F.Math.Mul(c, new[] { 3.0f });
-            var e = IR.F.Math.Sub(new[] { 1.5f }, d);
-            func = new IR.Function("main", e, a);
-        }
-
-        return func;
-    }
-
-    private Function GetFunctionSample4()
-    {
-        Function func;
-        {
-            var shape = new[] { 1, 12, 14, 14 };
-            var a = new IR.Var("a", new IR.TensorType(DataTypes.Float32, shape));
-            var b = new IR.Var("b", new IR.TensorType(DataTypes.Float32, shape));
-            var a1 = IR.F.Math.Neg(a);
-            var b1 = IR.F.Math.Neg(b);
-            var c = IR.F.Math.Add(a1, b1);
-            var d = IR.F.Math.Neg(c);
-            func = new IR.Function("main", d, a, b);
-        }
-
-        return func;
     }
 }
 
