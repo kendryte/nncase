@@ -105,6 +105,12 @@ public class LifeTimeCollector : ExprVisitor<Unit, Unit>
             return;
         }
 
+        // boxing store
+        if (expr is Call c && c.CheckedType is TensorType && c.Arguments[0].CheckedType is DistributedType)
+        {
+            return;
+        }
+
         if (expr is IR.Tuple t)
         {
             foreach (var item in t.Fields)

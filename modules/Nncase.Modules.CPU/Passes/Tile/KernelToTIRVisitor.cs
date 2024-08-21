@@ -265,7 +265,14 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
 
                         if (dividedType is TensorType)
                         {
-                            T.AttachBuffer(Tensor.FromPointer((ulong)buffers[expr].MemInterval.Start, dividedType.DType), (TensorType)dividedType, loc, hierarchy, out buffer, name);
+                            if (index == -1)
+                            {
+                                T.AttachBuffer(Tensor.FromPointer((ulong)buffers[expr].MemInterval.Start, dividedType.DType), (TensorType)dividedType, loc, hierarchy, out buffer, name);
+                            }
+                            else
+                            {
+                                T.CreateBuffer((TensorType)dividedType, loc, out buffer);
+                            }
 
                             // T.AttachBuffer(Tensor.FromPointer(DataUsage, dividedType.DType), dividedType, loc, hierarchy, out buffer, name);
                             // DataUsage += Enumerable.Range(0, dividedType.Shape.Rank).Aggregate(1ul, (size, i) => size * (ulong)dividedType.Shape[i].FixedValue) * (ulong)dividedType.DType.SizeInBytes;

@@ -116,7 +116,7 @@ public class BufferScheduler
     {
         using (var wr = new StreamWriter(fs))
         {
-            wr.Write(@"from bokeh.models import ColumnDataSource, HoverTool, FuncTickFormatter, SingleIntervalTicker, SaveTool, WheelZoomTool, WheelPanTool, ResetTool
+            wr.Write(@"from bokeh.models import ColumnDataSource, HoverTool, SingleIntervalTicker, SaveTool, WheelZoomTool, WheelPanTool, ResetTool
 from bokeh.palettes import Category20_20 as palette
 from bokeh.plotting import figure, show, save
 import itertools
