@@ -68,7 +68,7 @@ class PreluTest : public KernelTest,
         const auto &array = _document[key];
         size_t arraySize = array.size();
         slope_t cArray(arraySize);
-        for (auto i = 0; i < arraySize; i++) {
+        for (size_t i = 0; i < arraySize; i++) {
             if (array[i].is_number_float()) {
                 cArray[i] = array[i].get<float>();
             } else {
