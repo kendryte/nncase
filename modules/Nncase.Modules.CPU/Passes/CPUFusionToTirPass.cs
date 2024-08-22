@@ -57,7 +57,7 @@ internal sealed class CPUFusionToTirPass : ModulePass
                 // }
                 var post = fusion;
                 var primBody = new List<Expr>();
-                var visitor = new KernelToTIRVisitor(primBody, deviceFuncs, fusionCheckCache, new BufferSchedule.BufferScheduler(((CpuTargetOptions)_compileOptions.TargetCompileOptions).HierarchySizes[0]), new BufferSchedule.LifeTimeCollector());
+                var visitor = new KernelToTIRVisitor(primBody, deviceFuncs, fusionCheckCache, new BufferSchedule.BufferScheduler(_compileOptions.TargetCompileOptions is null ? new CpuTargetOptions().HierarchySizes[0] : ((CpuTargetOptions)_compileOptions.TargetCompileOptions).HierarchySizes[0]), new BufferSchedule.LifeTimeCollector());
                 visitor.Convert(post);
                 var primFunc = T.PrimFunc(post.Name, post.ModuleKind, visitor.InputBuffers.Concat(visitor.OutputBuffers).ToArray()).Body(primBody.ToArray()).Build();
                 primFunc.SchedResult.DataUsage = visitor.DataUsage;
