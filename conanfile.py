@@ -45,7 +45,7 @@ class nncaseConan(ConanFile):
         if self.options.tests:
             self.requires('gtest/1.10.0')
             self.requires('ortki/0.0.3')
-            self.requires('rapidjson/cci.20230929')
+            self.requires('rapidjson/1.1.x')
 
         if self.options.python:
             self.requires('pybind11/2.11.1')
