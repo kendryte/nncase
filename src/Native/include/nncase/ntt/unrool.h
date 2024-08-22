@@ -65,4 +65,13 @@ auto loop_unrool(const TElem *input) {
 
     return ret;
 }
+
+template <template <typename T1, typename T2> class Op, class TElem,
+          size_t UnRoolNum, size_t LoopCnt, size_t Stride>
+auto loop_unrool(const TElem *input_a, const TElem *input_b) {
+
+    return Op<TElem, TElem>(
+        loop_unrool<Op, TElem, UnRoolNum, LoopCnt, Stride>(input_a),
+        loop_unrool<Op, TElem, UnRoolNum, LoopCnt, Stride>(input_b));
+}
 } // namespace nncase::ntt
