@@ -61,6 +61,9 @@ if(NOT CMAKE_TOOLCHAIN_FILE)
    include(toolchains/native.toolchain.cmake)
 endif()
 
+set(NTT_UNROOL_NUM 1 CACHE STRING "Set the unroll number for loop unrolling")
+add_compile_definitions(NTT_UNROOL_NUM=${NTT_UNROOL_NUM})
+
 # Workaroud for riscv toolchain auto vectorization bugs in O3
 if (${CMAKE_SYSTEM_PROCESSOR} MATCHES
    "(riscv32)|(riscv64)")

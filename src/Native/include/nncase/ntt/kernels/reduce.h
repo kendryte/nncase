@@ -17,17 +17,12 @@
 #include "../loop.h"
 #include "../primitive_ops.h"
 #include "../tensor_ops.h"
+#include "../unrool.h"
 #include "../utility.h"
 
 namespace nncase::ntt {
 
 namespace reduce_detail {
-
-#if defined(__GNUC__) || defined(__clang__)
-#define UNROLLNUM 2
-#else
-#define UNROLLNUM 1
-#endif
 
 template <template <class T1, class T2> class Op, IsFixedTensor TIn,
           IsFixedTensor TOut, IsFixedDims Axes, IsFixedDims PackedAxes,
@@ -87,27 +82,9 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
 
         if constexpr (std::is_same_v<Op<TIElem, TIElem>,
                                      ntt::ops::mean<TIElem, TIElem>>) {
-            TIElem sum = (TIElem)0;
-
-            // inner_size 大于等于 UNROLLNUM 时,展开循环以便获得增益
-            if constexpr (inner_size >= UNROLLNUM && UNROLLNUM > 1) {
-                TIElem sum_loop[UNROLLNUM] = {(TIElem)0};
-
-                for (size_t i = 0; i < inner_size; i += UNROLLNUM) {
-                    sum_loop[0] = sum_loop[0] + input_p[i * input_stride];
-                    sum_loop[1] = sum_loop[1] + input_p[(i + 1) * input_stride];
-                }
-                for (size_t i = 0; i < UNROLLNUM; i++) {
-                    sum += sum_loop[i];
-                }
-                for (size_t i = 0; i < inner_size % UNROLLNUM; i++) {
-                    sum = sum + input_p[inner_size * input_stride - i - 1];
-                }
-            } else {
-                for (size_t i = 0; i < inner_size; i++) {
-                    sum = sum + input_p[i * input_stride];
-                }
-            }
+            TIElem sum;
+            sum = loop_unrool<ntt::ops::add, TIElem, NTT_UNROOL_NUM, inner_size,
+                              input_stride>(input_p);
 
             if constexpr (UseVectorReduce) {
                 sum = sum / (inner_size * TIElem::shape_type::length());
@@ -116,31 +93,9 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
                 output_p[0] = sum / inner_size;
             }
         } else {
-            Op<TIElem, TIElem> op;
-            TIElem ret = input_p[0];
-
-            // 假设 inner_size 大于等于 UNROLLNUM,展开循环以便获得增益
-            if constexpr (inner_size >= UNROLLNUM && UNROLLNUM > 1) {
-                TIElem ret_loop[UNROLLNUM];
-                for (size_t i = 0; i < UNROLLNUM; i++) {
-                    ret_loop[i] = input_p[i * input_stride];
-                }
-                for (size_t i = UNROLLNUM; i < inner_size; i += UNROLLNUM) {
-                    ret_loop[0] = op(ret_loop[0], input_p[i * input_stride]);
-                    ret_loop[1] =
-                        op(ret_loop[1], input_p[(i + 1) * input_stride]);
-                }
-                ret = ret_loop[0];
-                for (size_t i = 1; i < UNROLLNUM; i++) {
-                    ret = op(ret, ret_loop[i]);
-                }
-                for (size_t i = 0; i < inner_size % UNROLLNUM; i++) {
-                    ret = op(ret, input_p[inner_size * input_stride - i - 1]);
-                }
-            } else {
-                for (size_t i = 1; i < inner_size; i++)
-                    ret = op(ret, input_p[i * input_stride]);
-            }
+            TIElem ret;
+            ret = loop_unrool<Op, TIElem, NTT_UNROOL_NUM, inner_size,
+                              input_stride>(input_p);
 
             if constexpr (UseVectorReduce) {
                 output_p[0] = ops::reduce<Op, TOElem, TIElem>()(ret);
