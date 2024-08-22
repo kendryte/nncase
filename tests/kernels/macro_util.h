@@ -303,15 +303,13 @@
 #define ENDFIX ".json"
 
 #define SPLIT_ELEMENT(key, idx)                                                \
-    rapidjson::Value copiedArray##key(rapidjson::kArrayType);                  \
-    copiedArray##key.CopyFrom(key[idx], write_doc.GetAllocator());             \
-    write_doc.AddMember(Value(#key, write_doc.GetAllocator()),                 \
-                        copiedArray##key, write_doc.GetAllocator());
+    const auto &sourceArray = source[key];                                     \
+    write_doc[key] = sourceArray[idx];
 
 #define FOR_LOOP(key, idx)                                                     \
-    assert(document[#key].IsArray());                                          \
-    Value &key = document[#key];                                               \
-    for (SizeType idx = 0; idx < key.Size(); ++idx) {
+    assert(document[#key].is_array());                                         \
+    const auto &key = document[#key];                                          \
+    for (auto idx = 0; idx < key.size(); ++idx) {
 
 #define FOR_LOOP_END() }
 
@@ -333,21 +331,19 @@
         content = KernelTest::ReadFromJsonFile(file1);                         \
         std::cout << "File exists: " << filename << std::endl;                 \
     }                                                                          \
-    Document document;                                                         \
+    nlohmann::json document;                                                   \
     KernelTest::ParseJson(document, content);                                  \
     unsigned case_num = 0;                                                     \
-    Document write_doc;                                                        \
-    write_doc.SetObject();
+    nlohmann::json write_doc;
 
 #define WRITE_SUB_CASE()                                                       \
     std::ofstream ofs(FILE_NAME_GEN_SUBCASE(                                   \
         TEST_CASE_NAME, KernelTest::GetFileNameFromMacro(__FILE__),            \
         case_num));                                                            \
-    OStreamWrapper osw(ofs);                                                   \
-    Writer<OStreamWrapper> writer(osw);                                        \
-    write_doc.Accept(writer);                                                  \
+    auto str = write_doc.dump();                                               \
+    ofs.write(str, str.size());                                                \
     case_num++;                                                                \
-    write_doc.RemoveAllMembers();
+    write_doc.clear();
 
 #define READY_SUBCASE()                                                        \
     auto &&[idx] = GetParam();                                                 \
