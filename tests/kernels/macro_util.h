@@ -303,13 +303,13 @@
 #define ENDFIX ".json"
 
 #define SPLIT_ELEMENT(key, idx)                                                \
-    const auto &sourceArray = source[key];                                     \
-    write_doc[key] = sourceArray[idx];
+    const auto &copiedArray##key = document[#key];                             \
+    write_doc[#key] = copiedArray##key[idx];
 
 #define FOR_LOOP(key, idx)                                                     \
     assert(document[#key].is_array());                                         \
     const auto &key = document[#key];                                          \
-    for (auto idx = 0; idx < key.size(); ++idx) {
+    for (size_t idx = 0; idx < key.size(); ++idx) {
 
 #define FOR_LOOP_END() }
 
@@ -341,7 +341,7 @@
         TEST_CASE_NAME, KernelTest::GetFileNameFromMacro(__FILE__),            \
         case_num));                                                            \
     auto str = write_doc.dump();                                               \
-    ofs.write(str, str.size());                                                \
+    ofs.write(str.c_str(), str.size());                                        \
     case_num++;                                                                \
     write_doc.clear();
 
