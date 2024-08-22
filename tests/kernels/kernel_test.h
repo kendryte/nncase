@@ -1107,7 +1107,7 @@ class KernelTest {
             throw std::runtime_error("type error! it should be double.");
         }
 
-        return _document[key]<float>();
+        return _document[key].get<float>();
     }
 
     typecode_t GetDataType(const char *key) {
@@ -1127,14 +1127,14 @@ class KernelTest {
     }
 
     dims_t GetShapeArray(const char *key) {
-        if (!_document[key].IsArray()) {
+        if (!_document[key].is_array()) {
             throw std::runtime_error("type error! it should be array.");
         }
 
         const auto &array = _document[key];
         size_t arraySize = array.size();
         dims_t cArray(arraySize);
-        for (auto i = 0; i < arraySize; i++) {
+        for (size_t i = 0; i < arraySize; i++) {
             if (array[i].is_number_integer()) {
                 cArray[i] = array[i].get<size_t>();
             } else {
@@ -1154,7 +1154,7 @@ class KernelTest {
         const auto &array = _document[key];
         size_t arraySize = array.size();
         std::vector<int64_t> cArray(arraySize);
-        for (auto i = 0; i < arraySize; i++) {
+        for (size_t i = 0; i < arraySize; i++) {
             if (array[i].is_number_integer()) {
                 cArray[i] = array[i].get<int64_t>();
             } else {
@@ -1174,7 +1174,7 @@ class KernelTest {
         const auto &array = _document[key];
         size_t arraySize = array.size();
         axes_t cArray(arraySize);
-        for (auto i = 0; i < arraySize; i++) {
+        for (size_t i = 0; i < arraySize; i++) {
             if (array[i].is_number_integer()) {
                 cArray[i] = array[i].get<size_t>();
             } else {
