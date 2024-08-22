@@ -18,21 +18,21 @@
 #include <utility>
 
 namespace nncase::ntt {
-#define UNROLL_STEP(N, i, rets, input, Stride, op)                             \
+#define THREAD(N, i, rets, input, Stride, op)                                  \
     if constexpr (UnRoolNum > N) {                                             \
         rets[N] = op(rets[N], input[(i + N) * Stride]);                        \
     }
 
 // 目前只支持到最大8维度展开，如果有需要可以扩展
 #define UNROLL_LOOP(i, rets, input, Stride, op)                                \
-    UNROLL_STEP(0, i, rets, input, Stride, op)                                 \
-    UNROLL_STEP(1, i, rets, input, Stride, op)                                 \
-    UNROLL_STEP(2, i, rets, input, Stride, op)                                 \
-    UNROLL_STEP(3, i, rets, input, Stride, op)                                 \
-    UNROLL_STEP(4, i, rets, input, Stride, op)                                 \
-    UNROLL_STEP(5, i, rets, input, Stride, op)                                 \
-    UNROLL_STEP(6, i, rets, input, Stride, op)                                 \
-    UNROLL_STEP(7, i, rets, input, Stride, op)
+    THREAD(0, i, rets, input, Stride, op)                                      \
+    THREAD(1, i, rets, input, Stride, op)                                      \
+    THREAD(2, i, rets, input, Stride, op)                                      \
+    THREAD(3, i, rets, input, Stride, op)                                      \
+    THREAD(4, i, rets, input, Stride, op)                                      \
+    THREAD(5, i, rets, input, Stride, op)                                      \
+    THREAD(6, i, rets, input, Stride, op)                                      \
+    THREAD(7, i, rets, input, Stride, op)
 
 template <template <typename T1, typename T2> class Op, class TElem,
           size_t UnRoolNum, size_t LoopCnt, size_t Stride>
