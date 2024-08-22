@@ -23,6 +23,7 @@
 #include <fstream>
 #include <gtest/gtest.h>
 #include <iostream>
+#include <nlohmann/json.hpp>
 #include <nncase/kernels/apply.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/tensor_ops.h>
@@ -33,16 +34,13 @@
 #include <numeric>
 #include <ortki/c_api.h>
 #include <random>
-#include <rapidjson/document.h> // rapidjson's DOM-style API
-#include <rapidjson/error/en.h>
-#include <rapidjson/ostreamwrapper.h>
-#include <rapidjson/writer.h>
 #include <string>
 #include <vector>
 
 using namespace nncase::runtime;
 using namespace nncase::kernels;
-using namespace rapidjson;
+using namespace nlohmann;
+
 namespace nncase {
 typedef enum { RANDOM, NOZERO, NONEG, NOPOS } initial_mode;
 
@@ -55,7 +53,7 @@ class KernelTest {
         auto data = map.buffer().as_span<T>();
         return data[kernels::offset(t.strides(), index)];
     }
-
+    
     virtual void init_tensor(runtime::runtime_tensor &tensor) {
         auto dtype = tensor.datatype();
         switch (dtype) {
@@ -1059,27 +1057,31 @@ class KernelTest {
         return content;
     }
 
-    static void ParseJson(Document &document, std::string js_str) {
-        if (document.Parse<kParseCommentsFlag>(js_str.c_str()).HasParseError())
-            std::cout << "Parsing Error: "
-                      << (unsigned)document.GetErrorOffset() << " "
-                      << GetParseError_En(document.GetParseError())
-                      << std::endl;
+    static void ParseJson(nlohmann::json &document, std::string js_str) {
+        try {
+            document = nlohmann::json::parse(js_str);
 
-        if (!document.IsObject()) {
-            throw std::runtime_error("type error! it should be Object.");
+            if (!document.is_object()) {
+
+                throw std::runtime_error("type error! it should be Object.");
+            }
+        } catch (const json::parse_error &e) {
+            std::cout << "Parsing Error: " << e.what() << std::endl;
+            std::cout << "Error at byte " << e.byte << std::endl;
         }
     }
 
     void ParseJson(std::string js_str) {
-        if (_document.Parse<kParseCommentsFlag>(js_str.c_str()).HasParseError())
-            std::cout << "Parsing Error: "
-                      << (unsigned)_document.GetErrorOffset() << " "
-                      << GetParseError_En(_document.GetParseError())
-                      << std::endl;
+        try {
+            _document = nlohmann::json::parse(js_str);
 
-        if (!_document.IsObject()) {
-            throw std::runtime_error("type error! it should be Object.");
+            if (!_document.is_object()) {
+
+                throw std::runtime_error("type error! it should be Object.");
+            }
+        } catch (const json::parse_error &e) {
+            std::cout << "Parsing Error: " << e.what() << std::endl;
+            std::cout << "Error at byte " << e.byte << std::endl;
         }
     }
 
@@ -1093,35 +1095,35 @@ class KernelTest {
     }
 
     int64_t GetNumber(const char *key) {
-        if (!_document[key].IsInt64()) {
+        if (!_document[key].is_number_integer()) {
             throw std::runtime_error("type error! it should be int64.");
         }
 
-        return _document[key].GetInt64();
+        return _document[key].get<int64_t>();
     }
 
     float GetFloatNumber(const char *key) {
-        if (!_document[key].IsDouble()) {
+        if (!_document[key].is_number_float()) {
             throw std::runtime_error("type error! it should be double.");
         }
 
-        return _document[key].GetFloat();
+        return _document[key]<float>();
     }
 
     typecode_t GetDataType(const char *key) {
-        if (!_document[key].IsString()) {
+        if (!_document[key].is_string()) {
             throw std::runtime_error("type error! it should be string.");
         }
 
-        return Str2DataType(_document[key].GetString());
+        return Str2DataType(_document[key].get<std::string>());
     }
 
     std::string GetString(const char *key) {
-        if (!_document[key].IsString()) {
+        if (!_document[key].is_string()) {
             throw std::runtime_error("type error! it should be string.");
         }
 
-        return _document[key].GetString();
+        return _document[key].get<std::string>();
     }
 
     dims_t GetShapeArray(const char *key) {
@@ -1129,12 +1131,12 @@ class KernelTest {
             throw std::runtime_error("type error! it should be array.");
         }
 
-        Value &array = _document[key];
-        size_t arraySize = array.Size();
+        const auto &array = _document[key];
+        size_t arraySize = array.size();
         dims_t cArray(arraySize);
-        for (rapidjson::SizeType i = 0; i < arraySize; i++) {
-            if (array[i].IsInt()) {
-                cArray[i] = array[i].GetInt();
+        for (auto i = 0; i < arraySize; i++) {
+            if (array[i].is_number_integer()) {
+                cArray[i] = array[i].get<size_t>();
             } else {
                 std::cout << "Invalid JSON format. Expected unsigned integer "
                              "values in the array."
@@ -1145,16 +1147,16 @@ class KernelTest {
     }
 
     std::vector<int64_t> GetDataArray(const char *key) {
-        if (!_document[key].IsArray()) {
+        if (!_document[key].is_array()) {
             throw std::runtime_error("type error! it should be array.");
         }
 
-        Value &array = _document[key];
-        size_t arraySize = array.Size();
+        const auto &array = _document[key];
+        size_t arraySize = array.size();
         std::vector<int64_t> cArray(arraySize);
-        for (rapidjson::SizeType i = 0; i < arraySize; i++) {
-            if (array[i].IsInt()) {
-                cArray[i] = array[i].GetInt();
+        for (auto i = 0; i < arraySize; i++) {
+            if (array[i].is_number_integer()) {
+                cArray[i] = array[i].get<int64_t>();
             } else {
                 std::cout << "Invalid JSON format. Expected unsigned integer "
                              "values in the array."
@@ -1165,16 +1167,16 @@ class KernelTest {
     }
 
     axes_t GetAxesArray(const char *key) {
-        if (!_document[key].IsArray()) {
+        if (!_document[key].is_array()) {
             throw std::runtime_error("type error! it should be array.");
         }
 
-        Value &array = _document[key];
-        size_t arraySize = array.Size();
+        const auto &array = _document[key];
+        size_t arraySize = array.size();
         axes_t cArray(arraySize);
-        for (rapidjson::SizeType i = 0; i < arraySize; i++) {
-            if (array[i].IsInt()) {
-                cArray[i] = array[i].GetInt();
+        for (auto i = 0; i < arraySize; i++) {
+            if (array[i].is_number_integer()) {
+                cArray[i] = array[i].get<size_t>();
             } else {
                 std::cout << "Invalid JSON format. Expected unsigned integer "
                              "values in the array."
@@ -1194,7 +1196,7 @@ class KernelTest {
     }
 
   public:
-    Document _document;
+    nlohmann::json _document;
     std::map<std::string, typecode_t> str_2_datatype = {
         {"dt_int8", dt_int8},       {"dt_int16", dt_int16},
         {"dt_int32", dt_int32},     {"dt_int64", dt_int64},
