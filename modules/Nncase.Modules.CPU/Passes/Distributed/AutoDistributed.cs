@@ -83,6 +83,15 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             SelectMany(e => e).ToArray();
     }
 
+    public static IReadOnlyList<IRArray<SBP>> GetDiverseCandidateSBPs(DistributedType distributedType, IEnumerable<Placement> placements)
+    {
+        return placements.Select(
+            placement =>
+                Utilities.DistributedUtility.GetLeafCandidateNDSBPs(distributedType.TensorType, placement).
+                Where(ndsbp => ndsbp != distributedType.NdSBP)).
+            SelectMany(e => e).ToArray();
+    }
+
     public void FilterByScheme(Expr expr, Dictionary<IRType, List<Expr>> result)
     {
         foreach (var name in expr.Metadata.OutputNames ?? Array.Empty<string>())
@@ -162,7 +171,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             return new Dictionary<IRType, List<Expr>> { { expr.CheckedType, new() { expr } } };
         }
 
-        var isSupported = PassUtility.IsCpuSupported(op, expr.Arguments.ToArray());
+        var isSupported = PassUtility.IsCpuSupported(op, expr, expr.Arguments.ToArray());
         foreach (var param in op.Parameters)
         {
             VisitLeafArgument(param.ParameterKind, expr.Arguments[param.Index], isSupported);
@@ -189,6 +198,22 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                         DistributedType d => d.NdSBP.All(sbp => sbp is SBPBroadCast) ? arg : IR.F.CPU.Boxing(arg, d with { NdSBP = new(Enumerable.Repeat(SBP.B, d.NdSBP.Count)) }),
                         _ => arg,
                     }).ToArray()), }).
+                    SelectMany(i => i).
+                    GroupBy(c => c.CheckedType).
+                    ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count).ToList<Expr>());
+        }
+
+        if (results.Count == 1 && results.First().Key is DistributedType dt && dt.NdSBP.All(sbp => sbp is SBPBroadCast))
+        {
+            return expr.Arguments.ToArray().
+                    Select(Visit).
+                    CartesianProduct().
+                    Select(args => args.ToArray()).
+                    Select(args => args.Select(kv => kv.Value[0]).Select(arg => arg.CheckedType switch
+                    {
+                        DistributedType d => GetDiverseCandidateSBPs(d, Placements).Select(ndsbp => IR.F.CPU.Boxing(arg, new DistributedType(d.TensorType, ndsbp, d.Placement))).Concat(new[] { arg }).ToArray(),
+                        _ => new[] { arg },
+                    }).ToList().CartesianProduct().Select(arg => BuildEquivalCalls(op, arg.ToArray())).SelectMany(i => i).ToArray()).
                     SelectMany(i => i).
                     GroupBy(c => c.CheckedType).
                     ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count).ToList<Expr>());
