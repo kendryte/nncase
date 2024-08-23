@@ -62,13 +62,14 @@ class nncaseConan(ConanFile):
     def build_requirements(self):
         pass
 
-    def config_options(self):
+    def configure(self):
         if not self.options.runtime:
             if self.settings.os == 'Windows' and self.settings.build_type == 'Debug':
                 self.options["nethost"].shared = True
 
         if self.options.tests:
             self.options["ortki"].shared = True
+            self.options["date"].header_only = True
         
     def validate(self):
         if self.settings.compiler.get_safe("cppstd"):

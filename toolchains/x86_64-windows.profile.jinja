@@ -1,5 +1,5 @@
 [conf]
-tools.cmake.cmaketoolchain:user_toolchain+={{ os.path.join(profile_dir, "x86_64.toolchain.cmake") }}
+tools.cmake.cmaketoolchain:user_toolchain+={{ os.path.join(profile_dir, "x86_64-windows.toolchain.cmake") }}
 tools.cmake.cmaketoolchain:generator=Ninja
 tools.build:compiler_executables={"cpp": "clang-cl", "c": "clang-cl"}
 
