@@ -11,7 +11,7 @@ using System.Runtime.CompilerServices;
 using QuikGraph;
 using QuikGraph.Collections;
 
-namespace QuikGraph;
+namespace Nncase.Graphs;
 
 /// <summary>
 /// Mutable clustered adjacency graph data structure.
@@ -20,7 +20,7 @@ namespace QuikGraph;
 /// <typeparam name="TEdge">Edge type.</typeparam>
 [DebuggerDisplay("VertexCount = {" + nameof(VertexCount) + "}, EdgeCount = {" + nameof(EdgeCount) + "}")]
 public class TieredAdjacencyGraph<TVertex, TEdge> : IVertexAndEdgeListGraph<TVertex, TEdge>, IEdgeListAndIncidenceGraph<TVertex, TEdge>, IClusteredGraph
-where TEdge : IEdge<TVertex>
+    where TEdge : IEdge<TVertex>
 {
     [NotNull]
     private readonly List<IClusteredGraph> _clusters = new List<IClusteredGraph>();

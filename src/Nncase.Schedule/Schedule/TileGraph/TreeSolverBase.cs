@@ -6,16 +6,9 @@ using Nncase.IR.Affine;
 
 namespace Nncase.Schedule.TileGraph;
 
-public interface ITileGraphVisitor<TArg, TReturn>
+public abstract class TreeSolverBase<T>
 {
-    TReturn Visit(TileGraph value, TArg arg1);
-
-    TReturn Visit(OpNode value, TArg arg1);
-}
-
-public abstract class GraphSolverBase
-{
-    public GraphSolverBase(Solver solver, Dictionary<OpNode, OpNodeInfo> opNodeMemo, Dictionary<TileGraph, TileNodeInfo> tileNodeMemo, Dictionary<ITileableNode, DomainInfo> tileableNodeMemo, ITargetOptions targetOptions)
+    public TreeSolverBase(Solver solver, Dictionary<OpNode, OpNodeInfo<T>> opNodeMemo, Dictionary<TileNode, TileNodeInfo<T>> tileNodeMemo, Dictionary<ITileable, DomainInfo<T>> tileableNodeMemo, ITargetOptions targetOptions)
     {
         Solver = solver;
         OpNodeMemo = opNodeMemo;
@@ -26,11 +19,11 @@ public abstract class GraphSolverBase
 
     public Solver Solver { get; }
 
-    public Dictionary<OpNode, OpNodeInfo> OpNodeMemo { get; }
+    public Dictionary<OpNode, OpNodeInfo<T>> OpNodeMemo { get; }
 
-    public Dictionary<TileGraph, TileNodeInfo> TileNodeMemo { get; }
+    public Dictionary<TileNode, TileNodeInfo<T>> TileNodeMemo { get; }
 
-    public Dictionary<ITileableNode, DomainInfo> TileableNodeMemo { get; }
+    public Dictionary<ITileable, DomainInfo<T>> TileableNodeMemo { get; }
 
     public ITargetOptions TargetOptions { get; }
 
@@ -39,7 +32,7 @@ public abstract class GraphSolverBase
     /// </summary>
     /// <param name="value">node.</param>
     /// <returns>map.</returns>
-    public static Dictionary<int, int> GetDimsMap(ITileableNode value)
+    public static Dictionary<int, int> GetDimsMap(ITileable value)
     {
         var map = new Dictionary<int, int>();
         var relation = value.DomainRelation.Map;

@@ -92,7 +92,7 @@ public sealed class AutoTilePass : ModulePass
                 var si = ctx.SummaryVertexSubgraphMap[vertex];
                 var cloner = new ReplacingExprCloner(ctx.VarMap[si].ToDictionary(kv => kv.Key, kv => (Expr)kv.Value));
                 var clonedCall = cloner.Clone(vertex.Expr, default);
-                var tiledCall = TreeTiler.Tile((Grid)clonedCall, ModuleKind, vi, CompileOptions.TargetOptions);
+                var tiledCall = GraphTiler.Tile((Grid)clonedCall, ModuleKind, vi, CompileOptions.TargetOptions);
 
                 var varMap = ctx.VarMap[si].ToDictionary(kv => (Expr)kv.Value, kv => exprMemo[kv.Key]);
                 var substitutor = new Mutators.Substitutor(e =>

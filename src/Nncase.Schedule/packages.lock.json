@@ -16,21 +16,6 @@
           "Google.Protobuf": "3.19.4"
         }
       },
-      "QuikGraph": {
-        "type": "Direct",
-        "requested": "[2.5.0, )",
-        "resolved": "2.5.0",
-        "contentHash": "sG+mrPpXwxlXknRK5VqWUGiOmDACa9X+3ftlkQIMgOZUqxVOQSe0+HIU9PTjwqazy0pqSf8MPDXYFGl0GYWcKw=="
-      },
-      "QuikGraph.Graphviz": {
-        "type": "Direct",
-        "requested": "[2.5.0, )",
-        "resolved": "2.5.0",
-        "contentHash": "pCKpErtHGxUi72OT+2aIg1pdHdUqpqEM5J/i9rmVsEVDE4X0xb1HBPWdxv/FLZmbBjk0ZogZXZttUL3CnAPpNw==",
-        "dependencies": {
-          "QuikGraph": "2.5.0"
-        }
-      },
       "StyleCop.Analyzers": {
         "type": "Direct",
         "requested": "[1.2.0-beta.435, )",
@@ -193,7 +178,8 @@
         "type": "Project",
         "dependencies": {
           "Nncase.Core": "[1.0.0, )",
-          "Nncase.Evaluator": "[1.0.0, )"
+          "Nncase.Evaluator": "[1.0.0, )",
+          "QuikGraph": "[2.5.0, )"
         }
       },
       "nncase.passes": {
@@ -203,7 +189,6 @@
           "Nncase.EGraph": "[1.0.0, )",
           "Nncase.Evaluator": "[1.0.0, )",
           "Nncase.Graph": "[1.0.0, )",
-          "QuikGraph": "[2.5.0, )",
           "QuikGraph.Graphviz": "[2.5.0, )"
         }
       },
@@ -281,6 +266,21 @@
         "contentHash": "q8j0yR5836Zhv9WB9BFkQt1UaEFyibq8bqJcTiULlILF6/sz8z7Wy2N8sgYdDKsdW25zncIz7j6IDbKM5ynePg==",
         "dependencies": {
           "libortki": "0.0.2"
+        }
+      },
+      "QuikGraph": {
+        "type": "CentralTransitive",
+        "requested": "[2.5.0, )",
+        "resolved": "2.5.0",
+        "contentHash": "sG+mrPpXwxlXknRK5VqWUGiOmDACa9X+3ftlkQIMgOZUqxVOQSe0+HIU9PTjwqazy0pqSf8MPDXYFGl0GYWcKw=="
+      },
+      "QuikGraph.Graphviz": {
+        "type": "CentralTransitive",
+        "requested": "[2.5.0, )",
+        "resolved": "2.5.0",
+        "contentHash": "pCKpErtHGxUi72OT+2aIg1pdHdUqpqEM5J/i9rmVsEVDE4X0xb1HBPWdxv/FLZmbBjk0ZogZXZttUL3CnAPpNw==",
+        "dependencies": {
+          "QuikGraph": "2.5.0"
         }
       },
       "Singulink.Collections.Weak": {

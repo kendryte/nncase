@@ -11,26 +11,24 @@ namespace Nncase.Schedule.TileGraph;
 
 public sealed class GraphBuilder : ExprVisitor<Unit, Unit>
 {
-    private readonly Dictionary<Grid, OpNode> _memo;
+    private readonly Dictionary<Grid, TileGrid> _memo;
     private readonly int _totalLevel;
     private int _opId;
 
     public GraphBuilder(int totalLevel)
     {
         _totalLevel = totalLevel;
-        OpGraph = new AdjacencyGraph<OpNode, OpEdge>();
-        RootGraph = new(totalLevel + 1, OpGraph);
+        RootGraph = new(totalLevel + 1, new AdjacencyGraph<TileGrid, EquatableTaggedEdge<TileGrid, int>>());
         _memo = new();
     }
 
-    public AdjacencyGraph<OpNode, OpEdge> OpGraph { get; }
+    public TieredTileGraph RootGraph { get; }
 
-    public TileGraph RootGraph { get; }
-
-    public static void Build(Grid grid, int totalLevel)
+    public static TieredTileGraph Build(Grid grid, int totalLevel)
     {
         var builder = new GraphBuilder(totalLevel);
         builder.Visit(grid);
+        return builder.RootGraph;
     }
 
     protected override Unit DefaultVisitLeaf(Expr expr) => default;
@@ -52,14 +50,14 @@ public sealed class GraphBuilder : ExprVisitor<Unit, Unit>
             throw new InvalidOperationException("body is not call");
         }
 
-        var opNode = new OpNode(current, op, copId, dimNames, domain, bufferShapes);
+        var opNode = new TileGrid(current, op, copId, dimNames, domain, bufferShapes);
 
-        var tileNodeRoot = RootGraph.CreateCluster<TileGraph>(_totalLevel, copId, new DomainRelation(copId, copId, AffineMap.Identity(domainDims)));
+        var tileNodeRoot = RootGraph.CreateCluster<TieredTileGraph>(_totalLevel, copId, new DomainRelation(copId, copId, AffineMap.Identity(domainDims)));
         var tileNodeTail = tileNodeRoot;
         for (int l = _totalLevel - 1; l >= 1; l--)
         {
             tileNodeRoot.AddVertex(opNode);
-            tileNodeTail = tileNodeRoot.CreateCluster<TileGraph>(l, copId, new DomainRelation(copId, copId, AffineMap.Identity(domainDims)));
+            tileNodeTail = tileNodeRoot.CreateCluster<TieredTileGraph>(l, copId, new DomainRelation(copId, copId, AffineMap.Identity(domainDims)));
         }
 
         tileNodeTail.AddVertex(opNode);

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Nncase.Graphs;
 using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Schedule.TileGraph;
@@ -24,7 +25,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         { FunctionSamples.Get3, 2 },
     };
 
-    public static readonly TheoryData<Func<Function>, (IntMergePoint, bool)[], Action<TileGraph>, int> MergeTileGraphDatas = new()
+    public static readonly TheoryData<Func<Function>, (IntMergePoint, bool)[], Action<TieredTileGraph>, int> MergeTileGraphDatas = new()
     {
         { FunctionSamples.Get1, new (IntMergePoint, bool)[] { (new(2, 1, 2), true), (new(2, 0, 2), true), (new(2, 0, 1), false), (new(1, 0, 1), true) }, MergeTileGraphChecker0, 0 },
         { FunctionSamples.Get1, new (IntMergePoint, bool)[] { (new(1, 0, 2), true), (new(2, 0, 2), false), (new(2, 1, 2), true), }, MergeTileGraphCheckerDefault, 1 },
@@ -98,6 +99,47 @@ public sealed class UnitTestTileGraph : TestClassBase
             using var writer = new StreamWriter(file);
             writer.Write(cg.ToGraphviz(algorithm =>
             {
+            }));
+        }
+#endif
+    }
+
+    [Fact]
+    public void TestClusteredGraphAsBufferGraph()
+    {
+        var g = new AdjacencyGraph<string, Edge<string>>();
+        var cg = new ClusteredAdjacencyGraph<string, Edge<string>>(g);
+        var cg0 = cg.AddCluster();
+        var cg0_0 = cg0.AddCluster();
+        var cg0_1 = cg0.AddCluster();
+
+        cg0_0.AddVerticesAndEdge(new("op0_in0", "op0_out"));
+        cg0_1.AddVerticesAndEdge(new("op1_in0", "op1_out"));
+        cg0_1.AddVerticesAndEdge(new("op1_in1", "op1_out"));
+        cg0.AddEdge(new("op0_out", "op1_in0"));
+
+        var cg1 = cg.AddCluster();
+        var cg1_0 = cg1.AddCluster();
+        cg1_0.AddVerticesAndEdge(new("op2_in0", "op2_out"));
+
+        cg.AddEdge(new("op1_out", "op2_in0"));
+
+        var nameMap = new Dictionary<IVertexAndEdgeListGraph<string, Edge<string>>, string>() {
+            { cg0, "cg0" },
+            { cg0_0, "cg0_0" },
+            { cg0_1, "cg0_1" },
+            { cg1, "cg1" },
+            { cg1_0, "cg1_0" },
+        };
+
+#if DEBUG
+        using (var file = Dumpper.OpenFile("g.dot"))
+        {
+            using var writer = new StreamWriter(file);
+            writer.Write(cg.ToGraphviz(algorithm =>
+            {
+                algorithm.FormatVertex += (_, args) => args.VertexFormat.Label = args.Vertex;
+                algorithm.FormatCluster += (_, args) => args.GraphFormat.Label = nameMap[args.Cluster];
             }));
         }
 #endif
@@ -213,7 +255,7 @@ public sealed class UnitTestTileGraph : TestClassBase
 
     [Theory]
     [MemberData(nameof(MergeTileGraphDatas))]
-    public void TestMergeTileGraph(Func<Function> functor, (IntMergePoint, bool)[] mergePoints, Action<TileGraph> checker, int count)
+    public void TestMergeTileGraph(Func<Function> functor, (IntMergePoint, bool)[] mergePoints, Action<TieredTileGraph> checker, int count)
     {
         var func = functor();
         var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerPack(), new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), new Passes.Rules.CPU.Affine.LowerBinary() }, new());
@@ -243,18 +285,18 @@ public sealed class UnitTestTileGraph : TestClassBase
         checker(tileGraph);
     }
 
-    private static void MergeTileGraphCheckerDefault(TileGraph tileGraph)
+    private static void MergeTileGraphCheckerDefault(TieredTileGraph tileGraph)
     {
     }
 
-    private static void MergeTileGraphChecker0(TileGraph tileGraph)
+    private static void MergeTileGraphChecker0(TieredTileGraph tileGraph)
     {
         tileGraph.Walk(g =>
         {
-            if (g is TileGraph { Level: 1, OpId: 1 })
+            if (g is TieredTileGraph { Level: 1, OpId: 1 } g1)
             {
-                Assert.Equal(2, g.VertexCount);
-                foreach (var op in g.Vertices.Where(v => v.OpId == 0))
+                Assert.Equal(2, g1.VertexCount);
+                foreach (var op in g1.Vertices.Where(v => v.OpId == 0))
                 {
                     Assert.Equal(1, op.DomainRelation.DomainOp);
                     Assert.Equal(0, op.DomainRelation.RangeOp);
@@ -263,33 +305,33 @@ public sealed class UnitTestTileGraph : TestClassBase
         });
     }
 
-    private static void MergeTileGraphChecker2(TileGraph tileGraph)
+    private static void MergeTileGraphChecker2(TieredTileGraph tileGraph)
     {
         // (new(2, 0, 2), true), (new(2, 1, 2), true), (new(2, 0, 1), true), (new(2, 1, 1), true), (new(3, 2, 2), true), (new(5, 4, 2), true)
         tileGraph.Walk(g =>
         {
-            if (g is TileGraph { Level: 2, OpId: 5 })
+            if (g is TieredTileGraph { Level: 2, OpId: 5 } g1)
             {
-                Assert.Equal(2, g.VertexCount);
-                Assert.Equal(2, g.ClustersCount);
-                foreach (var item in g.Clusters.OfType<TileGraph>())
+                Assert.Equal(2, g1.VertexCount);
+                Assert.Equal(2, g1.ClustersCount);
+                foreach (var item in g1.Clusters.OfType<TieredTileGraph>())
                 {
                     Assert.Equal(5, item.DomainRelation.DomainOp);
                     Assert.Equal(item.OpId, item.DomainRelation.RangeOp);
                 }
             }
 
-            if (g is TileGraph { Level: 2, OpId: 2 })
+            if (g is TieredTileGraph { Level: 2, OpId: 2 } g2)
             {
-                Assert.Equal(3, g.VertexCount);
-                Assert.Equal(1, g.ClustersCount);
+                Assert.Equal(3, g2.VertexCount);
+                Assert.Equal(1, g2.ClustersCount);
             }
 
-            if (g is TileGraph { Level: 1, OpId: 2 })
+            if (g is TieredTileGraph { Level: 1, OpId: 2 } g3)
             {
-                Assert.Equal(3, g.VertexCount);
-                Assert.Equal(0, g.ClustersCount);
-                foreach (var item in g.Vertices)
+                Assert.Equal(3, g3.VertexCount);
+                Assert.Equal(0, g3.ClustersCount);
+                foreach (var item in g3.Vertices)
                 {
                     Assert.Equal(2, item.DomainRelation.DomainOp);
                     Assert.Equal(item.OpId, item.DomainRelation.RangeOp);

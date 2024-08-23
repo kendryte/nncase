@@ -6,9 +6,9 @@ using Google.OrTools.ConstraintSolver;
 
 namespace Nncase.Schedule.TileGraph;
 
-public sealed class GraphSolverWritesInitializer : GraphSolverBase, ITileGraphVisitor<Dictionary<BufferIdentity, IntExpr[]>, Unit>
+public sealed class TreeSolverWritesInitializer : TreeSolverBase<IntExpr>, ITreeNodeVisitor<Dictionary<BufferIdentity, IntExpr[]>, Unit>
 {
-    public GraphSolverWritesInitializer(Solver solver, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileGraph, TileNodeInfo> levelBufferInfos, Dictionary<ITileableNode, DomainInfo> domainDimInfos, ITargetOptions targetOptions)
+    public TreeSolverWritesInitializer(Solver solver, Dictionary<OpNode, OpNodeInfo<IntExpr>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<IntExpr>> levelBufferInfos, Dictionary<ITileable, DomainInfo<IntExpr>> domainDimInfos, ITargetOptions targetOptions)
         : base(solver, primitiveBufferInfo, levelBufferInfos, domainDimInfos, targetOptions)
     {
     }
@@ -16,11 +16,13 @@ public sealed class GraphSolverWritesInitializer : GraphSolverBase, ITileGraphVi
     /// <summary>
     /// buffer trip counts mean each buffer's trip count at loop i.
     /// </summary>
-    public Unit Visit(TileGraph value, Dictionary<BufferIdentity, IntExpr[]> bufferTripCounts)
+    public Unit Visit(TileNode value, Dictionary<BufferIdentity, IntExpr[]> bufferTripCounts)
     {
         Dictionary<BufferIdentity, IntExpr[]> currentTripCounts = new();
         var domainInfo = TileableNodeMemo[value];
-        if (value.Parent is TileGraph parentTileNode)
+
+        // for child graph node.
+        if (value.Parent is TileNode parentTileNode && parentTileNode.OpId != -1)
         {
             var partentTileInfo = TileNodeMemo[parentTileNode];
 
@@ -61,6 +63,7 @@ public sealed class GraphSolverWritesInitializer : GraphSolverBase, ITileGraphVi
         }
         else
         {
+            // for prim graph node.
             foreach (var (bid, bufferInfo) in TileNodeMemo[value].BufferInfoMap)
             {
                 var tripCounts = new IntExpr[domainInfo.TileVars.Length];
@@ -85,19 +88,9 @@ public sealed class GraphSolverWritesInitializer : GraphSolverBase, ITileGraphVi
             }
         }
 
-        if (value.ClustersCount == 0)
+        foreach (var item in value.Children)
         {
-            foreach (var item in value.Clusters.OfType<TileGraph>())
-            {
-                Visit(item, currentTripCounts);
-            }
-        }
-        else
-        {
-            foreach (var item in value.Vertices)
-            {
-                Visit(item, currentTripCounts);
-            }
+            item.Accept(this, currentTripCounts);
         }
 
         return default;

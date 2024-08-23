@@ -9,9 +9,9 @@ using QuikGraph.Graphviz;
 
 namespace Nncase.Schedule.TileGraph;
 
-public sealed class GraphSolverInitializer : GraphSolverBase, ITileGraphVisitor<GraphSolverInitializer.Context, GraphSolverInitializer.InitResult>
+public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVisitor<TreeSolverInitializer.Context, TreeSolverInitializer.InitResult>
 {
-    public GraphSolverInitializer(int totalLevel, Solver solver, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileGraph, TileNodeInfo> levelBufferInfos, Dictionary<ITileableNode, DomainInfo> domainDimInfos, ITargetOptions targetOptions)
+    public TreeSolverInitializer(int totalLevel, Solver solver, Dictionary<OpNode, OpNodeInfo<IntExpr>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<IntExpr>> levelBufferInfos, Dictionary<ITileable, DomainInfo<IntExpr>> domainDimInfos, ITargetOptions targetOptions)
         : base(solver, primitiveBufferInfo, levelBufferInfos, domainDimInfos, targetOptions)
     {
         TotalLevel = totalLevel;
@@ -21,38 +21,35 @@ public sealed class GraphSolverInitializer : GraphSolverBase, ITileGraphVisitor<
 
     public int TotalLevel { get; }
 
-    public static ArgumentsInfo Init(TileGraph tree, int totalLevel, ITargetOptions options, out Solver solver, out Dictionary<OpNode, OpNodeInfo> opNodeMemo, out Dictionary<TileGraph, TileNodeInfo> tileNodeMemo, out Dictionary<ITileableNode, DomainInfo> tileableNodeMemo)
+    public static void Init(TileNode tree, int totalLevel, ITargetOptions options, out Solver solver, out Dictionary<OpNode, OpNodeInfo<IntExpr>> opNodeMemo, out Dictionary<TileNode, TileNodeInfo<IntExpr>> tileNodeMemo, out Dictionary<ITileable, DomainInfo<IntExpr>> tileableNodeMemo)
     {
         solver = new Solver("GraphSolver");
-        opNodeMemo = new Dictionary<OpNode, OpNodeInfo>();
-        tileNodeMemo = new Dictionary<TileGraph, TileNodeInfo>();
-        tileableNodeMemo = new Dictionary<ITileableNode, DomainInfo>();
-        var initializer = new GraphSolverInitializer(totalLevel, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, options);
-        var initResult = initializer.Visit(tree, Context.Default);
-        var (graph, defuseMap) = LinkGraphs(tree.RootParent(), initResult, true);
-        var (inputs, outputs) = GetGetGraphInputsOuputs(graph);
-        return new(inputs, outputs, defuseMap);
+        opNodeMemo = new Dictionary<OpNode, OpNodeInfo<IntExpr>>();
+        tileNodeMemo = new Dictionary<TileNode, TileNodeInfo<IntExpr>>();
+        tileableNodeMemo = new Dictionary<ITileable, DomainInfo<IntExpr>>();
+        var initializer = new TreeSolverInitializer(totalLevel, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, options);
+        initializer.Visit(tree, Context.Default);
     }
 
     /// <summary>
     /// source id => sink id.
     /// </summary>
-    public static Dictionary<BufferIdentity, BufferIdentity> GetBufferDefUseMap(TileGraph graph, BufferResult[] bufferResults)
+    public static Dictionary<BufferIdentity, BufferIdentity> GetBufferDefUseMap(TileNode tilenode, BufferResult[] bufferResults)
     {
-        while (graph.Parent is TileGraph parent)
+        while (tilenode.Parent is TileNode parent)
         {
-            graph = parent;
+            tilenode = parent;
         }
 
         var map = new Dictionary<BufferIdentity, BufferIdentity>();
         for (int i = 0; i < bufferResults.Length; i++)
         {
             var sourceId = bufferResults[i].Bid;
-            if (graph.TryGetOutEdges(sourceId.Node, out var outEdges))
+            if (tilenode.Wrapped.TryGetOutEdges(sourceId.Node, out var outEdges))
             {
                 foreach (var outEdge in outEdges)
                 {
-                    foreach (var target in bufferResults.Where(r => r.Bid.Node == outEdge.Target && r.Bid.Index == outEdge.Index))
+                    foreach (var target in bufferResults.Where(r => r.Bid.Node == outEdge.Target && r.Bid.Index == outEdge.Tag))
                     {
                         if (!map.ContainsKey(sourceId))
                         {
@@ -66,81 +63,7 @@ public sealed class GraphSolverInitializer : GraphSolverBase, ITileGraphVisitor<
         return map;
     }
 
-    public static void Dump(AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>> graph, string name)
-    {
-        using (var file = Diagnostics.DumpScope.Current.OpenFile($"{name}.dot"))
-        {
-            using (var writer = new StreamWriter(file))
-            {
-                writer.WriteLine(graph.ToGraphviz(init =>
-                {
-                    init.FormatVertex += (_, args) => args.VertexFormat.Label = args.Vertex.ToString();
-                }));
-            }
-        }
-    }
-
-    public static (HashSet<BufferIdentity> Inputs, HashSet<BufferIdentity> Outputs) GetGetGraphInputsOuputs(AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>> g)
-    {
-        var sources = new HashSet<BufferIdentity>();
-        var targets = new HashSet<BufferIdentity>();
-        foreach (var item in g.Edges)
-        {
-            sources.Add(item.Source);
-            targets.Add(item.Target);
-        }
-
-        var inputs = new HashSet<BufferIdentity>(sources.Except(targets));
-        var outputs = new HashSet<BufferIdentity>(targets.Except(sources));
-        return (inputs, outputs);
-    }
-
-    public static (AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>> Graph, Dictionary<BufferIdentity, BufferIdentity> DefUseMap) LinkGraphs(TileGraph tileGraph, InitResult result, bool gatherCacheBuffers)
-    {
-        var graphIOs = new Dictionary<int, (HashSet<BufferIdentity> Inputs, HashSet<BufferIdentity> Outputs)>();
-
-        for (int i = 0; i < result.Graphs.Length; i++)
-        {
-            graphIOs[i] = GetGetGraphInputsOuputs(result.Graphs[i]);
-        }
-
-        var graph = new AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>>();
-        for (int i = 0; i < result.Graphs.Length; i++)
-        {
-            var subGraph = result.Graphs[i];
-            foreach (var edge in subGraph.Edges)
-            {
-                graph.AddVerticesAndEdge(edge);
-            }
-        }
-
-        var defMaps = new Dictionary<BufferIdentity, BufferIdentity>(result.DefUseMap);
-
-        for (int i = 0; i < result.Graphs.Length; i++)
-        {
-            for (int j = i + 1; j < result.Graphs.Length; j++)
-            {
-                // connect the producer outputs and consumer inputs.
-                var producers = graphIOs[i].Outputs;
-                var consumers = graphIOs[j].Inputs;
-                foreach (var (producer, consumer) in new[] { producers, consumers }.CartesianProduct().Select(x => (x.First(), x.Skip(1).First())))
-                {
-                    if (tileGraph.ContainsEdge(new OpEdge(producer.Node, consumer.Node, consumer.Index)))
-                    {
-                        graph.AddEdge(new(producer, consumer));
-                        if (gatherCacheBuffers && !defMaps.ContainsKey(producer))
-                        {
-                            defMaps.TryAdd(producer, consumer);
-                        }
-                    }
-                }
-            }
-        }
-
-        return (graph, defMaps);
-    }
-
-    public InitResult Visit(TileGraph value, Context context)
+    public InitResult Visit(TileNode value, Context context)
     {
         var (pid, pvars) = context;
         var dimsMap = GetDimsMap(value);
@@ -149,7 +72,7 @@ public sealed class GraphSolverInitializer : GraphSolverBase, ITileGraphVisitor<
             dimsMap.Clear();
         }
 
-        var tileVars = Enumerable.Range(0, value.DomainRelation.Map.Results.Length).Select(n => Solver.MakeIntVar(1, int.MaxValue, $"{n}_L{value.Level}")).ToArray();
+        var tileVars = Enumerable.Range(0, value.DomainRelation.Map.Results.Length).Select(n => Solver.MakeIntVar(1, int.MaxValue, $"op{value.OpId}_d{n}_L{value.Level}")).ToArray();
         var forwardExtents = tileVars.Cast<IntExpr>().ToArray();
         if (!TileableNodeMemo.TryGetValue(value, out var dimInfo))
         {
@@ -166,15 +89,13 @@ public sealed class GraphSolverInitializer : GraphSolverBase, ITileGraphVisitor<
             var childContext = context with { ParentOpId = value.OpId, ForwardExtents = forwardExtents };
 
             var results = new List<BufferResult>();
-            var graphs = new List<AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>>>();
             var names = new List<Dictionary<int, int>>();
             var extents = new List<IntExpr[]>();
             var childDefUseMap = new Dictionary<BufferIdentity, BufferIdentity>();
-            foreach (var (i, child) in Enumerable.Range(0, value.ClustersCount).Zip(value.Clusters.OfType<TileGraph>()))
+            foreach (var child in value.Children)
             {
-                var res = Visit(child, childContext);
+                var res = child.Accept(this, childContext);
                 results.AddRange(res.BufferResults);
-                graphs.AddRange(res.Graphs);
                 extents.AddRange(res.BackWardExtents);
                 names.AddRange(res.DimsMaps);
                 foreach (var (k, v) in res.DefUseMap)
@@ -183,7 +104,7 @@ public sealed class GraphSolverInitializer : GraphSolverBase, ITileGraphVisitor<
                 }
             }
 
-            childResult = new(results.ToArray(), graphs.ToArray(), childDefUseMap, names.ToArray(), extents.ToArray());
+            childResult = new(results.ToArray(), childDefUseMap, names.ToArray(), extents.ToArray());
         }
 
         var backWardExtents = GetBackWardExtents(tileVars, childResult.DimsMaps, childResult.BackWardExtents);
@@ -194,7 +115,7 @@ public sealed class GraphSolverInitializer : GraphSolverBase, ITileGraphVisitor<
         // each tile node have buffer place vars.
         if (!TileNodeMemo.TryGetValue(value, out var info))
         {
-            var bufferInfoMap = new Dictionary<BufferIdentity, TileNodeBufferInfo>();
+            var bufferInfoMap = new Dictionary<BufferIdentity, TileNodeBufferInfo<IntExpr>>();
             for (int i = 0; i < childResult.BufferResults.Length; i++)
             {
                 var result = childResult.BufferResults[i];
@@ -222,10 +143,7 @@ public sealed class GraphSolverInitializer : GraphSolverBase, ITileGraphVisitor<
             TileNodeMemo.Add(value, new(backWardExtents, defUseMap, bufferInfoMap));
         }
 
-        // link the graphs
-        var (graph, retDefUseMap) = LinkGraphs(value, childResult, value.Level == TotalLevel);
-
-        return new(bufferResults.ToArray(), new[] { graph }, retDefUseMap, new[] { dimsMap }, new[] { backWardExtents[0] });
+        return new(bufferResults.ToArray(), defUseMap, new[] { dimsMap }, new[] { backWardExtents[0] });
     }
 
     public InitResult Visit(OpNode value, Context context)
@@ -285,23 +203,19 @@ public sealed class GraphSolverInitializer : GraphSolverBase, ITileGraphVisitor<
 
         // perpare return infos.
         var bufferResults = new BufferResult[value.ReadAccesses.Length + 1];
-        var graph = new AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>>();
-        BufferIdentity obid = new(value, value.ReadAccesses.Length);
-        graph.AddVertex(obid);
+        BufferIdentity obid = new(value.Wrapped, value.ReadAccesses.Length);
         bufferResults[value.ReadAccesses.Length] = new(obid, new(TimeStamp, TimeStamp + 1), value.DomainRelation.Map * accessMaps[^1]);
 
         for (int i = 0; i < value.ReadAccesses.Length; i++)
         {
-            BufferIdentity bid = new(value, i);
-            graph.AddVertex(bid);
-            graph.AddEdge(new(bid, obid));
+            BufferIdentity bid = new(value.Wrapped, i);
             bufferResults[i] = new(bid, new(TimeStamp, TimeStamp + 1), value.DomainRelation.Map * accessMaps[i]);
         }
 
         TimeStamp += 2;
 
         // todo backward extents should times primtives.
-        return new(bufferResults, new[] { graph }, new(), new[] { dimsMap }, new IntExpr[][] { tileVars.Cast<IntExpr>().ToArray() });
+        return new(bufferResults, new(), new[] { dimsMap }, new IntExpr[][] { tileVars.Cast<IntExpr>().ToArray() });
     }
 
     /// <summary>
@@ -348,7 +262,7 @@ public sealed class GraphSolverInitializer : GraphSolverBase, ITileGraphVisitor<
         return backWardExtents;
     }
 
-    private TileNodeBufferInfo GetBufferInfo(TileGraph tile, BufferIdentity bid, AffineMap accessMap, Tuple<int, int> lifeness, IntExpr[][] backWardExtents)
+    private TileNodeBufferInfo<IntExpr> GetBufferInfo(TileNode tile, BufferIdentity bid, AffineMap accessMap, Tuple<int, int> lifeness, IntExpr[][] backWardExtents)
     {
         var domainDims = tile.DomainRelation.Map.Results.Length;
         var bufferPlaces = new IntVar[domainDims][];
@@ -393,7 +307,7 @@ public sealed class GraphSolverInitializer : GraphSolverBase, ITileGraphVisitor<
             // note update writes in second visitor.
         }
 
-        var bufferInfo = new TileNodeBufferInfo(lifeness, accessMap, bufferPlaces, bufferShapes, bufferWrites, bufferSizeVars, bufferSizes, bufferMasks);
+        var bufferInfo = new TileNodeBufferInfo<IntExpr>(lifeness, accessMap, bufferPlaces, bufferShapes, bufferWrites, bufferSizeVars, bufferSizes, bufferMasks);
         return bufferInfo;
     }
 
@@ -401,11 +315,10 @@ public sealed class GraphSolverInitializer : GraphSolverBase, ITileGraphVisitor<
     /// each buffer with each access Maps, note the access map domain is this node's domain. extents also mapping to current node's domain.
     /// </summary>
     /// <param name="BufferResults">buffer info.</param>
-    /// <param name="Graphs"> sub computation graph. </param>
     /// <param name="DefUseMap">the defuse map is used to record cache buffer in the top memory level. </param>
     /// <param name="DimsMaps">dims map.</param>
     /// <param name="BackWardExtents"> backward extents for cout the buffer size. </param>
-    public sealed record InitResult(BufferResult[] BufferResults, AdjacencyGraph<BufferIdentity, Edge<BufferIdentity>>[] Graphs, Dictionary<BufferIdentity, BufferIdentity> DefUseMap, Dictionary<int, int>[] DimsMaps, IntExpr[][] BackWardExtents)
+    public sealed record InitResult(BufferResult[] BufferResults, Dictionary<BufferIdentity, BufferIdentity> DefUseMap, Dictionary<int, int>[] DimsMaps, IntExpr[][] BackWardExtents)
     {
     }
 

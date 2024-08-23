@@ -5,7 +5,7 @@ using System.Reactive;
 
 namespace Nncase.Schedule.TileGraph;
 
-internal sealed class GraphMergePointCollector : ITileGraphVisitor<Unit, Unit>
+internal sealed class GraphMergePointCollector
 {
     public GraphMergePointCollector(int targetLevel)
     {
@@ -17,10 +17,10 @@ internal sealed class GraphMergePointCollector : ITileGraphVisitor<Unit, Unit>
 
     public List<MergePoint> Points { get; }
 
-    public Unit Visit(TileGraph value, Unit arg1)
+    public Unit Visit(TieredTileGraph value, Unit arg1)
     {
         var rootGraph = value.RootParent();
-        var subgraphs = value.Clusters.OfType<TileGraph>().Where(x => x.Level == TargetLevel);
+        var subgraphs = value.Clusters.OfType<TieredTileGraph>().Where(x => x.Level == TargetLevel);
         foreach (var s1 in subgraphs)
         {
             foreach (var s2 in subgraphs.Where(s => !ReferenceEquals(s, s1)))
@@ -44,7 +44,7 @@ internal sealed class GraphMergePointCollector : ITileGraphVisitor<Unit, Unit>
 
         if (value.ClustersCount != 0)
         {
-            foreach (var child in value.Clusters.OfType<TileGraph>())
+            foreach (var child in value.Clusters.OfType<TieredTileGraph>())
             {
                 Visit(child, arg1);
             }
@@ -60,7 +60,7 @@ internal sealed class GraphMergePointCollector : ITileGraphVisitor<Unit, Unit>
         return default;
     }
 
-    public Unit Visit(OpNode value, Unit arg1)
+    public Unit Visit(TileGrid value, Unit arg1)
     {
         return default;
     }

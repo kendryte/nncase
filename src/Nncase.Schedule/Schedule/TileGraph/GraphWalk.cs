@@ -16,19 +16,19 @@ public partial class GraphWalker
         Graphs = new();
     }
 
-    public List<TileGraph> Graphs { get; }
+    public List<TieredTileGraph> Graphs { get; }
 
-    public static List<TileGraph> Walk(TileGraph tree)
+    public static List<TieredTileGraph> Walk(TieredTileGraph tree)
     {
         var walker = new GraphWalker();
         walker.Visit(tree, default);
         return walker.Graphs;
     }
 
-    public Unit Visit(TileGraph value, Unit arg1)
+    public Unit Visit(TieredTileGraph value, Unit arg1)
     {
         Graphs.Add(value);
-        foreach (var c in value.Clusters.OfType<TileGraph>())
+        foreach (var c in value.Clusters.OfType<TieredTileGraph>())
         {
             Visit(c, arg1);
         }

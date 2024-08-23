@@ -8,6 +8,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using Nncase.Graphs;
 using Nncase.IR;
 using Nncase.IR.Affine;
 using QuikGraph;
@@ -15,12 +16,15 @@ using QuikGraph.Collections;
 
 namespace Nncase.Schedule.TileGraph;
 
-public interface ITileableNode
+public interface ITileable
 {
     int Level { get; }
 
     int OpId { get; }
 
+    /// <summary>
+    /// Gets or sets the domain relation which from parent domain map to current node's domain.
+    /// </summary>
     DomainRelation DomainRelation { get; set; }
 }
 
@@ -39,9 +43,9 @@ public sealed record DomainRelation(int DomainOp, int RangeOp, AffineMap Map)
     public override string ToString() => $"Op{DomainOp} -> Op{RangeOp}: {Map}";
 }
 
-public sealed class OpNode : ITileableNode
+public sealed class TileGrid : ITileable
 {
-    public OpNode(Grid grid, Op op, int opId, IEnumerable<string> dimNames, IEnumerable<int> domainBounds, IEnumerable<IEnumerable<int>> bufferShapes)
+    public TileGrid(Grid grid, Op op, int opId, IEnumerable<string> dimNames, IEnumerable<int> domainBounds, IEnumerable<IEnumerable<int>> bufferShapes)
     {
         Level = 0;
         Grid = grid;
@@ -54,16 +58,13 @@ public sealed class OpNode : ITileableNode
 
     public int Level { get; }
 
+    public int OpId { get; }
+
+    public DomainRelation DomainRelation { get; set; }
+
     public Grid Grid { get; }
 
     public Op Op { get; }
-
-    public int OpId { get; }
-
-    /// <summary>
-    /// Gets or sets the domain relation which from parent domain map to current node's domain.
-    /// </summary>
-    public DomainRelation DomainRelation { get; set; }
 
     public ImmutableArray<int> DomainBounds { get; }
 
@@ -79,19 +80,10 @@ public sealed class OpNode : ITileableNode
     }
 }
 
-/// <summary>
-/// Edge for opnode.
-/// </summary>
-/// <param name="Source">source node.</param>
-/// <param name="Target">target node.</param>
-/// <param name="Index">argument index for target node.</param>
-public record OpEdge(OpNode Source, OpNode Target, int Index) : IEdge<OpNode>
+[DebuggerDisplay("Op{OpId}@{Level} VertexCount = {VertexCount}, EdgeCount = {EdgeCount}")]
+public sealed class TieredTileGraph : TieredAdjacencyGraph<TileGrid, EquatableTaggedEdge<TileGrid, int>>, ITileable
 {
-}
-
-public sealed class TileGraph : TieredAdjacencyGraph<OpNode, OpEdge>, ITileableNode
-{
-    public TileGraph(int topLevel, [NotNull] AdjacencyGraph<OpNode, OpEdge> wrappedGraph)
+    public TieredTileGraph(int topLevel, [NotNull] AdjacencyGraph<TileGrid, EquatableTaggedEdge<TileGrid, int>> wrappedGraph)
         : base(wrappedGraph)
     {
         OpId = -1;
@@ -99,7 +91,7 @@ public sealed class TileGraph : TieredAdjacencyGraph<OpNode, OpEdge>, ITileableN
         DomainRelation = new(-1, -1, IR.Affine.AffineMap.Identity(0));
     }
 
-    public TileGraph([NotNull] TileGraph parentGraph, int level, int opid, DomainRelation relation)
+    public TieredTileGraph([NotNull] TieredTileGraph parentGraph, int level, int opid, DomainRelation relation)
         : base(parentGraph)
     {
         OpId = opid;

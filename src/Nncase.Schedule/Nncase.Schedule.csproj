@@ -10,8 +10,6 @@
 
   <ItemGroup>
     <PackageReference Include="Google.OrTools" />
-    <PackageReference Include="QuikGraph" />
-    <PackageReference Include="QuikGraph.Graphviz" />
   </ItemGroup>
   
   <ItemGroup>

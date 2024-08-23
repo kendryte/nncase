@@ -63,8 +63,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [Theory]
     [InlineData(new object[] { new[] { 32, 64 }, new[] { 64, 48 }, new[] { 48, 16 }, 0 })]
     [InlineData(new object[] { new[] { 128, 256 }, new[] { 256, 384 }, new[] { 384, 512 }, 1 })]
-    public async Task TestTileFlowCase(int[] ashape, int[] bshape, int[] eshape, int count)
+
+    // [InlineData(new object[] { new[] { 1024, 2048 }, new[] { 2048, 1024 }, new[] { 1024, 3072 }, 2, true })]
+    public async Task TestTileFlowCase(int[] ashape, int[] bshape, int[] eshape, int count, bool packing = false)
     {
+        CompileOptions.TargetOptions = new CpuTargetOptions() { Packing = packing };
         var a = new Var("a", new TensorType(DataTypes.Float32, ashape));
         var b = new Var("b", new TensorType(DataTypes.Float32, bshape));
         var c = IR.F.Tensors.MatMul(a, b);

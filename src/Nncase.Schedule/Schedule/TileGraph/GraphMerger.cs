@@ -9,20 +9,19 @@ using Nncase.IR;
 using Nncase.IR.Affine;
 using QuikGraph;
 using QuikGraph.Algorithms;
-using QuikGraph.Algorithms.Observers;
-using QuikGraph.Algorithms.Search;
+using QuikGraph.Algorithms.ShortestPath;
 using QuikGraph.Graphviz;
 
 namespace Nncase.Schedule.TileGraph;
 
-public sealed record MergePoint(OpNode Consumer, OpNode Producer, int Level)
+public sealed record MergePoint(TileGrid Consumer, TileGrid Producer, int Level)
 {
     public override string ToString() => $"merge({Consumer},{Producer},{Level})";
 }
 
 public sealed class GraphMerger
 {
-    public GraphMerger(OpNode opConsumer, OpNode opProducer, int level)
+    public GraphMerger(TileGrid opConsumer, TileGrid opProducer, int level)
     {
         ConsumerOp = opConsumer;
         ProducerOp = opProducer;
@@ -30,21 +29,21 @@ public sealed class GraphMerger
         RootGraph = null!;
     }
 
-    public OpNode ConsumerOp { get; }
+    public TileGrid ConsumerOp { get; }
 
-    public OpNode ProducerOp { get; }
+    public TileGrid ProducerOp { get; }
 
     public int TargetLevel { get; }
 
-    public TileGraph RootGraph { get; set; }
+    public TieredTileGraph RootGraph { get; set; }
 
-    public bool Visit(TileGraph graph)
+    public bool Visit(TieredTileGraph graph)
     {
         RootGraph = graph;
         return VisitRecursion(graph);
     }
 
-    private bool TryMerge(TileGraph graph)
+    private bool TryMerge(TieredTileGraph graph)
     {
         if (!GatherSubGraphs(graph, out var producerGraph, out var consumerGraph))
         {
@@ -63,29 +62,26 @@ public sealed class GraphMerger
 
         // 1. find the dataflow graph
         // 1.1 find the directly connected opnode with producer op.
-        var algo = new EdgeDepthFirstSearchAlgorithm<OpNode, OpEdge>(RootGraph);
-        var observer = new EdgePredecessorRecorderObserver<OpNode, OpEdge>();
-        using (observer.Attach(algo))
+        var algo = new FloydWarshallAllShortestPathAlgorithm<TileGrid, EquatableTaggedEdge<TileGrid, int>>(RootGraph, (_) => 1.0f);
+        if (!algo.TryGetPath(ProducerOp, ConsumerOp, out var dependencePath))
         {
-            algo.Compute(ProducerOp);
+            return false;
         }
 
-        System.Diagnostics.Trace.Assert(observer.AllPaths().Count() == 1, "producer to consumer must have one path.");
-        var dependencePath = observer.AllPaths().First();
         var relayOp = dependencePath.First().Target;
 
         // 1.2. build the dataflow graph from consumer graph -> sub graph -> relay node.
-        ITileableNode consumerParent = consumerGraph;
-        var relationChain = new List<ITileableNode>();
-        while (consumerParent is TileGraph tileGraph)
+        ITileable consumerParent = consumerGraph;
+        var relationChain = new List<ITileable>();
+        while (consumerParent is TieredTileGraph tileGraph)
         {
-            ITileableNode consumerChild = tileGraph.Clusters.OfType<TileGraph>().Where(sg => sg.ContainsVertex(relayOp)).Cast<ITileableNode>().FirstOrDefault(relayOp);
+            ITileable consumerChild = tileGraph.Clusters.OfType<TieredTileGraph>().Where(sg => sg.ContainsVertex(relayOp)).Cast<ITileable>().FirstOrDefault(relayOp);
             relationChain.Add(consumerChild);
             consumerParent = consumerChild;
         }
 
         // 1.3 build the domain relation betwwen relay op -> producer op.
-        var readAccess = relayOp.ReadAccesses[dependencePath.First().Index];
+        var readAccess = relayOp.ReadAccesses[dependencePath.First().Tag];
         var relation = readAccess * AffineUtility.Inverse(ProducerOp.WriteAccess, ProducerOp.DomainBounds.Select(Convert.ToInt64).ToArray());
         if (!relation.IsProjectedPermutation(true))
         {
@@ -95,7 +91,7 @@ public sealed class GraphMerger
         var domainRel = new DomainRelation(relayOp.OpId, ProducerOp.OpId, relation);
 
         // 1.4 apply domain relation until consumerGraph
-        foreach (var mappable in relationChain.Reverse<ITileableNode>())
+        foreach (var mappable in relationChain.Reverse<ITileable>())
         {
             domainRel = mappable.DomainRelation.ApplyRange(domainRel);
         }
@@ -111,7 +107,7 @@ public sealed class GraphMerger
         }
         else
         {
-            foreach (var producerChild in producerGraph.Clusters.OfType<TileGraph>())
+            foreach (var producerChild in producerGraph.Clusters.OfType<TieredTileGraph>())
             {
                 producerChild.DomainRelation = domainRel.ApplyRange(producerChild.DomainRelation);
                 consumerGraph.AddCluster(producerChild);
@@ -122,10 +118,10 @@ public sealed class GraphMerger
         return true;
     }
 
-    private bool CheckSubGraphsDenpendence(TileGraph producer, TileGraph consumer)
+    private bool CheckSubGraphsDenpendence(TieredTileGraph producer, TieredTileGraph consumer)
     {
         // 1. ensure there is no dependence cycle between producer and consumer.
-        var subGraphGraph = new AdjacencyGraph<TileGraph, Edge<TileGraph>>();
+        var subGraphGraph = new AdjacencyGraph<TieredTileGraph, Edge<TieredTileGraph>>();
         foreach (var edge in RootGraph.Edges)
         {
             if (producer.ContainsVertex(edge.Source) && consumer.ContainsVertex(edge.Target))
@@ -144,7 +140,7 @@ public sealed class GraphMerger
 
         bool hasCycles = false;
         bool hasDependence = false;
-        var dfs = new QuikGraph.Algorithms.Search.EdgeDepthFirstSearchAlgorithm<TileGraph, Edge<TileGraph>>(subGraphGraph);
+        var dfs = new QuikGraph.Algorithms.Search.EdgeDepthFirstSearchAlgorithm<TieredTileGraph, Edge<TieredTileGraph>>(subGraphGraph);
         dfs.BackEdge += (edge) =>
         {
             hasCycles = true;
@@ -163,13 +159,13 @@ public sealed class GraphMerger
         return hasDependence && !hasCycles;
     }
 
-    private bool GatherSubGraphs(TileGraph graph, [MaybeNullWhen(false)] out TileGraph producer, [MaybeNullWhen(false)] out TileGraph consumer)
+    private bool GatherSubGraphs(TieredTileGraph graph, [MaybeNullWhen(false)] out TieredTileGraph producer, [MaybeNullWhen(false)] out TieredTileGraph consumer)
     {
         producer = null!;
         consumer = null!;
-        foreach (var s1 in graph.Clusters.OfType<TileGraph>().Where(s => s.OpId == ProducerOp.OpId))
+        foreach (var s1 in graph.Clusters.OfType<TieredTileGraph>().Where(s => s.OpId == ProducerOp.OpId))
         {
-            foreach (var s2 in graph.Clusters.OfType<TileGraph>().Where(s => s.OpId == ConsumerOp.OpId))
+            foreach (var s2 in graph.Clusters.OfType<TieredTileGraph>().Where(s => s.OpId == ConsumerOp.OpId))
             {
                 if (s1.ContainsVertex(ProducerOp) && !s1.ContainsVertex(ConsumerOp) &&
                     !s2.ContainsVertex(ProducerOp) && s2.ContainsVertex(ConsumerOp))
@@ -184,7 +180,7 @@ public sealed class GraphMerger
         return false;
     }
 
-    private bool VisitRecursion(TileGraph graph)
+    private bool VisitRecursion(TieredTileGraph graph)
     {
         if (graph.Level == TargetLevel + 1)
         {
@@ -196,7 +192,7 @@ public sealed class GraphMerger
             return false;
         }
 
-        foreach (var subGraph in graph.Clusters.OfType<TileGraph>())
+        foreach (var subGraph in graph.Clusters.OfType<TieredTileGraph>())
         {
             if (VisitRecursion(subGraph))
             {
