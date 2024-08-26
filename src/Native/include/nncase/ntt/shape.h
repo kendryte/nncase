@@ -278,9 +278,9 @@ constexpr bool in_bound(const Index &index, const Shape &shape) {
     return false;
 }
 
-template <class Index, class Shape>
-Index get_reduced_offset(Index in_offset, Shape reduced_shape) {
-    Index off;
+template <size_t Rank, class Index, class Shape>
+ranked_shape<Rank> get_reduced_offset(Index in_offset, Shape reduced_shape) {
+    ranked_shape<Rank> off;
     const auto dims_ext = in_offset.rank() - reduced_shape.rank();
     for (size_t i = 0; i < reduced_shape.rank(); i++) {
         if (in_offset.at(i + dims_ext) >= reduced_shape.at(i))

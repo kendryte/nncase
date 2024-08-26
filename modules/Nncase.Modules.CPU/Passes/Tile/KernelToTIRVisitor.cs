@@ -23,12 +23,18 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
     private readonly List<(int, TIR.Buffer)> _outputbuffers;
     private readonly Dictionary<Fusion, FusionChecker> _fusionCheckCache;
 
-    public KernelToTIRVisitor(List<Expr> mainBody, HashSet<PrimFunction> devices, Dictionary<Fusion, FusionChecker> fusionCheckCache)
+    private readonly BufferSchedule.BufferScheduler _bufferScheduler;
+
+    private readonly BufferSchedule.LifeTimeCollector _lifeTimeCollector;
+
+    public KernelToTIRVisitor(List<Expr> mainBody, HashSet<PrimFunction> devices, Dictionary<Fusion, FusionChecker> fusionCheckCache, BufferSchedule.BufferScheduler bufferScheduler, BufferSchedule.LifeTimeCollector lifeTimeCollector)
     {
         _mainBody = mainBody;
         _devices = devices;
         _outputbuffers = new();
         _fusionCheckCache = fusionCheckCache;
+        _bufferScheduler = bufferScheduler;
+        _lifeTimeCollector = lifeTimeCollector;
         VisitRootFusion = null!;
         DataUsage = 0;
         MaxDTypeSize = 0;
@@ -214,6 +220,17 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
 
     private void AllocBuffers(Fusion fusion)
     {
+        var buffers = _lifeTimeCollector.Collect(fusion.Body);
+        _bufferScheduler.Schedule(buffers);
+#if DEBUG
+        using (var fs = Diagnostics.DumpScope.Current.OpenFile("draw_buffers.py"))
+        {
+            _bufferScheduler.Dump(fs, buffers);
+        }
+#endif
+
+        DataUsage = buffers.Max(b => (ulong)b.Value.MemInterval.Stop);
+
         var candidates = ExprCollector.Collect(fusion).Where(e => e is Call or Var or TensorConst);
         MaxDTypeSize = (ulong)candidates.Select(e => e.CheckedDataType.SizeInBytes).Max();
         foreach (var expr in candidates)
@@ -248,9 +265,18 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
 
                         if (dividedType is TensorType)
                         {
-                            T.AttachBuffer(Tensor.FromPointer(DataUsage, dividedType.DType), dividedType, loc, hierarchy, out buffer, name);
-                            DataUsage += Enumerable.Range(0, dividedType.Shape.Rank).Aggregate(1ul, (size, i) => size * (ulong)dividedType.Shape[i].FixedValue) * (ulong)dividedType.DType.SizeInBytes;
-                            DataUsage = MathUtility.AlignUp(DataUsage, MaxDTypeSize);
+                            if (index == -1)
+                            {
+                                T.AttachBuffer(Tensor.FromPointer((ulong)buffers[expr].MemInterval.Start, dividedType.DType), (TensorType)dividedType, loc, hierarchy, out buffer, name);
+                            }
+                            else
+                            {
+                                T.CreateBuffer((TensorType)dividedType, loc, out buffer, name);
+                            }
+
+                            // T.AttachBuffer(Tensor.FromPointer(DataUsage, dividedType.DType), dividedType, loc, hierarchy, out buffer, name);
+                            // DataUsage += Enumerable.Range(0, dividedType.Shape.Rank).Aggregate(1ul, (size, i) => size * (ulong)dividedType.Shape[i].FixedValue) * (ulong)dividedType.DType.SizeInBytes;
+                            // DataUsage = MathUtility.AlignUp(DataUsage, MaxDTypeSize);
                         }
                         else if (c.CheckedType is DistributedType)
                         {

@@ -64,13 +64,13 @@ class PreluTest : public KernelTest,
     void TearDown() override{CLEAR_SUBCASE()}
 
     slope_t GetSlopeArray(const char *key) {
-        assert(_document[key].IsArray());
-        Value &array = _document[key];
-        size_t arraySize = array.Size();
+        assert(_document[key].is_array());
+        const auto &array = _document[key];
+        size_t arraySize = array.size();
         slope_t cArray(arraySize);
-        for (rapidjson::SizeType i = 0; i < arraySize; i++) {
-            if (array[i].IsFloat()) {
-                cArray[i] = array[i].GetFloat();
+        for (size_t i = 0; i < arraySize; i++) {
+            if (array[i].is_number_float()) {
+                cArray[i] = array[i].get<float>();
             } else {
                 std::cout << "Invalid JSON format. Expected unsigned float "
                              "values in the array."

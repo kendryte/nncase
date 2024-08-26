@@ -45,7 +45,7 @@ public sealed class DDrBufferSchdeulePass : ModulePass
         {
             if (module.Entry is Function { ModuleKind: Callable.StackVMModuleKind, Body: Expr body } func && IsFixedType(body.CheckedType))
             {
-                var sch = new BufferSchedule.BufferScheduler();
+                var sch = new BufferSchedule.BufferScheduler(2147483648L);
                 var c = new BufferSchedule.LifeTimeCollector();
                 var buffers = c.Collect(func.Body);
                 sch.Schedule(buffers);
