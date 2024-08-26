@@ -36,41 +36,41 @@ namespace {
     struct binary_op_##op##_rvv {                                              \
         vfloat32m8_t operator()(const vfloat32m8_t &a, const vfloat32m8_t &b,  \
                                 size_t vl) const {                             \
-            return vf##op##_vv_f32m8(a, b, vl);                                \
+            return __riscv_vf##op##_vv_f32m8(a, b, vl);                        \
         }                                                                      \
         vfloat32m8_t operator()(const vfloat32m8_t &a, const float &b,         \
                                 size_t vl) const {                             \
-            return vf##op##_vf_f32m8(a, b, vl);                                \
+            return __riscv_vf##op##_vf_f32m8(a, b, vl);                        \
         }                                                                      \
         vfloat32m8_t operator()(const float &a, const vfloat32m8_t &b,         \
                                 size_t vl) const {                             \
-            return vf##op##_vf_f32m8(b, a, vl);                                \
+            return __riscv_vf##op##_vf_f32m8(b, a, vl);                        \
         }                                                                      \
                                                                                \
         vint32m8_t operator()(const vint32m8_t &a, const vint32m8_t &b,        \
                               size_t vl) const {                               \
-            return v##op##_vv_i32m8(a, b, vl);                                 \
+            return __riscv_v##op##_vv_i32m8(a, b, vl);                         \
         }                                                                      \
         vint32m8_t operator()(const vint32m8_t &a, const int32_t &b,           \
                               size_t vl) const {                               \
-            return v##op##_vx_i32m8(a, b, vl);                                 \
+            return __riscv_v##op##_vx_i32m8(a, b, vl);                         \
         }                                                                      \
         vint32m8_t operator()(const int32_t &a, const vint32m8_t &b,           \
                               size_t vl) const {                               \
-            return v##op##_vx_i32m8(b, a, vl);                                 \
+            return __riscv_v##op##_vx_i32m8(b, a, vl);                         \
         }                                                                      \
                                                                                \
         vint64m8_t operator()(const vint64m8_t &a, const vint64m8_t &b,        \
                               size_t vl) const {                               \
-            return v##op##_vv_i64m8(a, b, vl);                                 \
+            return __riscv_v##op##_vv_i64m8(a, b, vl);                         \
         }                                                                      \
         vint64m8_t operator()(const vint64m8_t &a, const int64_t &b,           \
                               size_t vl) const {                               \
-            return v##op##_vx_i64m8(a, b, vl);                                 \
+            return __riscv_v##op##_vx_i64m8(a, b, vl);                         \
         }                                                                      \
         vint64m8_t operator()(const int64_t &a, const vint64m8_t &b,           \
                               size_t vl) const {                               \
-            return v##op##_vx_i64m8(b, a, vl);                                 \
+            return __riscv_v##op##_vx_i64m8(b, a, vl);                         \
         }                                                                      \
     }
 
@@ -85,43 +85,43 @@ struct binary_op_sub_rvv {
     // float
     vfloat32m8_t operator()(const vfloat32m8_t &a, const vfloat32m8_t &b,
                             size_t vl) const {
-        return vfsub_vv_f32m8(a, b, vl);
+        return __riscv_vfsub_vv_f32m8(a, b, vl);
     }
     vfloat32m8_t operator()(const vfloat32m8_t &a, const float &b,
                             size_t vl) const {
-        return vfsub_vf_f32m8(a, b, vl);
+        return __riscv_vfsub_vf_f32m8(a, b, vl);
     }
     vfloat32m8_t operator()(const float &a, const vfloat32m8_t &b,
                             size_t vl) const {
-        return vfrsub_vf_f32m8(b, a, vl);
+        return __riscv_vfrsub_vf_f32m8(b, a, vl);
     }
 
     // int32_t
     vint32m8_t operator()(const vint32m8_t &a, const vint32m8_t &b,
                           size_t vl) const {
-        return vsub_vv_i32m8(a, b, vl);
+        return __riscv_vsub_vv_i32m8(a, b, vl);
     }
     vint32m8_t operator()(const vint32m8_t &a, const int32_t &b,
                           size_t vl) const {
-        return vsub_vx_i32m8(a, b, vl);
+        return __riscv_vsub_vx_i32m8(a, b, vl);
     }
     vint32m8_t operator()(const int32_t &a, const vint32m8_t &b,
                           size_t vl) const {
-        return vrsub_vx_i32m8(b, a, vl);
+        return __riscv_vrsub_vx_i32m8(b, a, vl);
     }
 
     // int64_t
     vint64m8_t operator()(const vint64m8_t &a, const vint64m8_t &b,
                           size_t vl) const {
-        return vsub_vv_i64m8(a, b, vl);
+        return __riscv_vsub_vv_i64m8(a, b, vl);
     }
     vint64m8_t operator()(const vint64m8_t &a, const int64_t &b,
                           size_t vl) const {
-        return vsub_vx_i64m8(a, b, vl);
+        return __riscv_vsub_vx_i64m8(a, b, vl);
     }
     vint64m8_t operator()(const int64_t &a, const vint64m8_t &b,
                           size_t vl) const {
-        return vrsub_vx_i64m8(b, a, vl);
+        return __riscv_vrsub_vx_i64m8(b, a, vl);
     }
 };
 
@@ -129,43 +129,43 @@ struct binary_op_div_rvv {
     // float
     vfloat32m8_t operator()(const vfloat32m8_t &a, const vfloat32m8_t &b,
                             size_t vl) const {
-        return vfdiv_vv_f32m8(a, b, vl);
+        return __riscv_vfdiv_vv_f32m8(a, b, vl);
     }
     vfloat32m8_t operator()(const vfloat32m8_t &a, const float &b,
                             size_t vl) const {
-        return vfdiv_vf_f32m8(a, b, vl);
+        return __riscv_vfdiv_vf_f32m8(a, b, vl);
     }
     vfloat32m8_t operator()(const float &a, const vfloat32m8_t &b,
                             size_t vl) const {
-        return vfrdiv_vf_f32m8(b, a, vl);
+        return __riscv_vfrdiv_vf_f32m8(b, a, vl);
     }
 
     // int32_t
     vint32m8_t operator()(const vint32m8_t &a, const vint32m8_t &b,
                           size_t vl) const {
-        return vdiv_vv_i32m8(a, b, vl);
+        return __riscv_vdiv_vv_i32m8(a, b, vl);
     }
     vint32m8_t operator()(const vint32m8_t &a, const int32_t &b,
                           size_t vl) const {
-        return vdiv_vx_i32m8(a, b, vl);
+        return __riscv_vdiv_vx_i32m8(a, b, vl);
     }
     vint32m8_t operator()(const int32_t &a, const vint32m8_t &b,
                           size_t vl) const {
-        return vdiv_vv_i32m8(vmv_v_x_i32m8(a, vl), b, vl);
+        return __riscv_vdiv_vv_i32m8(__riscv_vmv_v_x_i32m8(a, vl), b, vl);
     }
 
     // int64_t
     vint64m8_t operator()(const vint64m8_t &a, const vint64m8_t &b,
                           size_t vl) const {
-        return vdiv_vv_i64m8(a, b, vl);
+        return __riscv_vdiv_vv_i64m8(a, b, vl);
     }
     vint64m8_t operator()(const vint64m8_t &a, const int64_t &b,
                           size_t vl) const {
-        return vdiv_vx_i64m8(a, b, vl);
+        return __riscv_vdiv_vx_i64m8(a, b, vl);
     }
     vint64m8_t operator()(const int64_t &a, const vint64m8_t &b,
                           size_t vl) const {
-        return vdiv_vv_i64m8(vmv_v_x_i64m8(a, vl), b, vl);
+        return __riscv_vdiv_vv_i64m8(__riscv_vmv_v_x_i64m8(a, vl), b, vl);
     }
 };
 
@@ -176,11 +176,11 @@ void binary_impl_vv_f32(const float *input_a, const float *input_b, float *out,
     Top op;
     size_t vl;
     while (n > 0) {
-        vl = vsetvl_e32m8(n);
-        auto v_a = vle32_v_f32m8(input_a, vl);
-        auto v_b = vle32_v_f32m8(input_b, vl);
+        vl = __riscv_vsetvl_e32m8(n);
+        auto v_a = __riscv_vle32_v_f32m8(input_a, vl);
+        auto v_b = __riscv_vle32_v_f32m8(input_b, vl);
         auto v_out = op(v_a, v_b, vl);
-        vse32_v_f32m8(out, v_out, vl);
+        __riscv_vse32_v_f32m8(out, v_out, vl);
 
         input_a += vl;
         input_b += vl;
@@ -195,10 +195,10 @@ void binary_impl_vf_f32(const float *input_a, float input_b, float *out,
     Top op;
     size_t vl;
     while (n > 0) {
-        vl = vsetvl_e32m8(n);
-        auto v_a = vle32_v_f32m8(input_a, vl);
+        vl = __riscv_vsetvl_e32m8(n);
+        auto v_a = __riscv_vle32_v_f32m8(input_a, vl);
         auto v_out = op(v_a, input_b, vl);
-        vse32_v_f32m8(out, v_out, vl);
+        __riscv_vse32_v_f32m8(out, v_out, vl);
         input_a += vl;
         out += vl;
         n -= vl;
@@ -211,10 +211,10 @@ void binary_impl_fv_f32(float input_a, const float *input_b, float *out,
     Top op;
     size_t vl;
     while (n > 0) {
-        vl = vsetvl_e32m8(n);
-        auto v_b = vle32_v_f32m8(input_b, vl);
+        vl = __riscv_vsetvl_e32m8(n);
+        auto v_b = __riscv_vle32_v_f32m8(input_b, vl);
         auto v_out = op(input_a, v_b, vl);
-        vse32_v_f32m8(out, v_out, vl);
+        __riscv_vse32_v_f32m8(out, v_out, vl);
         input_b += vl;
         out += vl;
         n -= vl;
@@ -228,11 +228,11 @@ void binary_impl_vv_i32(const int32_t *input_a, const int32_t *input_b,
     Top op;
     size_t vl;
     while (n > 0) {
-        vl = vsetvl_e32m8(n);
-        auto v_a = vle32_v_i32m8(input_a, vl);
-        auto v_b = vle32_v_i32m8(input_b, vl);
+        vl = __riscv_vsetvl_e32m8(n);
+        auto v_a = __riscv_vle32_v_i32m8(input_a, vl);
+        auto v_b = __riscv_vle32_v_i32m8(input_b, vl);
         auto v_out = op(v_a, v_b, vl);
-        vse32_v_i32m8(out, v_out, vl);
+        __riscv_vse32_v_i32m8(out, v_out, vl);
 
         input_a += vl;
         input_b += vl;
@@ -247,10 +247,10 @@ void binary_impl_vf_i32(const int32_t *input_a, int32_t input_b, int32_t *out,
     Top op;
     size_t vl;
     while (n > 0) {
-        vl = vsetvl_e32m8(n);
-        auto v_a = vle32_v_i32m8(input_a, vl);
+        vl = __riscv_vsetvl_e32m8(n);
+        auto v_a = __riscv_vle32_v_i32m8(input_a, vl);
         auto v_out = op(v_a, input_b, vl);
-        vse32_v_i32m8(out, v_out, vl);
+        __riscv_vse32_v_i32m8(out, v_out, vl);
         input_a += vl;
         out += vl;
         n -= vl;
@@ -263,10 +263,10 @@ void binary_impl_fv_i32(int32_t input_a, const int32_t *input_b, int32_t *out,
     Top op;
     size_t vl;
     while (n > 0) {
-        vl = vsetvl_e32m8(n);
-        auto v_b = vle32_v_i32m8(input_b, vl);
+        vl = __riscv_vsetvl_e32m8(n);
+        auto v_b = __riscv_vle32_v_i32m8(input_b, vl);
         auto v_out = op(input_a, v_b, vl);
-        vse32_v_i32m8(out, v_out, vl);
+        __riscv_vse32_v_i32m8(out, v_out, vl);
         input_b += vl;
         out += vl;
         n -= vl;
@@ -280,11 +280,11 @@ void binary_impl_vv_i64(const int64_t *input_a, const int64_t *input_b,
     Top op;
     size_t vl;
     while (n > 0) {
-        vl = vsetvl_e64m8(n);
-        auto v_a = vle64_v_i64m8(input_a, vl);
-        auto v_b = vle64_v_i64m8(input_b, vl);
+        vl = __riscv_vsetvl_e64m8(n);
+        auto v_a = __riscv_vle64_v_i64m8(input_a, vl);
+        auto v_b = __riscv_vle64_v_i64m8(input_b, vl);
         auto v_out = op(v_a, v_b, vl);
-        vse64_v_i64m8(out, v_out, vl);
+        __riscv_vse64_v_i64m8(out, v_out, vl);
         input_a += vl;
         input_b += vl;
         out += vl;
@@ -298,10 +298,10 @@ void binary_impl_vf_i64(const int64_t *input_a, int64_t input_b, int64_t *out,
     Top op;
     size_t vl;
     while (n > 0) {
-        vl = vsetvl_e64m8(n);
-        auto v_a = vle64_v_i64m8(input_a, vl);
+        vl = __riscv_vsetvl_e64m8(n);
+        auto v_a = __riscv_vle64_v_i64m8(input_a, vl);
         auto v_out = op(v_a, input_b, vl);
-        vse64_v_i64m8(out, v_out, vl);
+        __riscv_vse64_v_i64m8(out, v_out, vl);
         input_a += vl;
         out += vl;
         n -= vl;
@@ -314,10 +314,10 @@ void binary_impl_fv_i64(int64_t input_a, const int64_t *input_b, int64_t *out,
     Top op;
     size_t vl;
     while (n > 0) {
-        vl = vsetvl_e64m8(n);
-        auto v_b = vle64_v_i64m8(input_b, vl);
+        vl = __riscv_vsetvl_e64m8(n);
+        auto v_b = __riscv_vle64_v_i64m8(input_b, vl);
         auto v_out = op(input_a, v_b, vl);
-        vse64_v_i64m8(out, v_out, vl);
+        __riscv_vse64_v_i64m8(out, v_out, vl);
         input_b += vl;
         out += vl;
         n -= vl;
@@ -350,7 +350,7 @@ static int verify_shape_impl(std::span<const size_t> in_a_shape,
 
     if (in_b_shape[in_b_shape.size() - 1] == 1) {
         int len_b_leave = 1;
-        for (int i = index + 1; i < in_b_shape.size(); ++i) {
+        for (int i = index + 1; i < (int)in_b_shape.size(); ++i) {
             len_b_leave *= in_b_shape[i];
         }
         if (len_b_leave != 1) {
@@ -470,7 +470,7 @@ get_sample_span(std::span<const size_t> in_shape) {
                     (index != (int)(in_a_shape.size() - 1))) {                 \
                     int size_diff = in_b_shape.size() - in_a_shape.size();     \
                     int len_b_leave = 1;                                       \
-                    for (int i = index + 1; i < in_a_shape.size(); ++i) {      \
+                    for (int i = index + 1; i < (int)in_a_shape.size(); ++i) { \
                         len_b_leave *= in_b_shape[i + size_diff];              \
                     }                                                          \
                     for (int j = 0; j < outter_front_size; ++j) {              \

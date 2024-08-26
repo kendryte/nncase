@@ -24,3 +24,9 @@ set(ENABLE_OPENMP OFF)
 set(ENABLE_VULKAN OFF)
 set(ENABLE_HALIDE OFF)
 set(BUILD_PYTHON_BINDING OFF)
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=rv64gv_zvl128b_zfh -mrvv-vector-bits=zvl")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=rv64gcv_zvl128b_zfh -mrvv-vector-bits=zvl")
+
+set(CMAKE_CXX_STANDARD 20)
+set(BUILDING_RUNTIME ON)

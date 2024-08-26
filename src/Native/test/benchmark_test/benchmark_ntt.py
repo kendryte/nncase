@@ -85,12 +85,13 @@ class BenchmarkNTT():
     def parse_result(self, result: str):
         lines = result.split('\n')
         for line in lines:
-            items = line.split(' ')
-            dict = {}
-            dict['kind'], dict['op'] = items[0].split(self.bin_prefix)[1].split('_', 1)
-            dict[f'{self.arch}_roofline'] = self.roofline_dict[dict['kind']][dict['op']]
-            dict[f'{self.arch}_actual'] = items[-2]
-            self.benchmark_list.append(dict)
+            if self.bin_prefix.lower() in line.lower():
+                items = line.split(' ')
+                dict = {}
+                dict['kind'], dict['op'] = items[0].split(self.bin_prefix)[1].split('_', 1)
+                dict[f'{self.arch}_roofline'] = self.roofline_dict[dict['kind']][dict['op']]
+                dict[f'{self.arch}_actual'] = items[-2]
+                self.benchmark_list.append(dict)
 
     def run():
         pass

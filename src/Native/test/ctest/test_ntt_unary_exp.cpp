@@ -123,11 +123,15 @@ template <typename T, size_t vl> void test_vector() {
 #define _TEST_VECTOR(T, lmul)                                                  \
     test_vector<T, (NTT_VLEN) / (sizeof(T) * 8) * lmul>();
 
+#ifdef __riscv_vector
 #define TEST_VECTOR(T)                                                         \
     _TEST_VECTOR(T, 1)                                                         \
     _TEST_VECTOR(T, 2)                                                         \
     _TEST_VECTOR(T, 4)                                                         \
     _TEST_VECTOR(T, 8)
+#else
+#define TEST_VECTOR(T) _TEST_VECTOR(T, 1)
+#endif
 
 TEST(UnaryTestExp, vector) { TEST_VECTOR(float) }
 

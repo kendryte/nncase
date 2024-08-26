@@ -35,6 +35,14 @@
 #define ULP_SIZE 10000
 #endif
 
+#ifndef CPU_FREQUENCY_MHZ
+#define CPU_FREQUENCY_MHZ 1600
+#endif
+
+#ifndef CLOCK_SOURCE_FREQUENCY_MHZ
+#define CLOCK_SOURCE_FREQUENCY_MHZ 27
+#endif
+
 namespace nncase {
 namespace NttTest {
 
@@ -45,7 +53,9 @@ __inline__ uint64_t get_cpu_cycle(void) {
     cycles = __rdtsc();
     __asm__ __volatile__("" : : : "memory");
 #elif defined __riscv
-    asm volatile("rdcycle %0" : "=r"(cycles));
+    uint64_t time = 0;
+    asm volatile("rdtime %0" : "=r"(time));
+    cycles = time * CPU_FREQUENCY_MHZ / CLOCK_SOURCE_FREQUENCY_MHZ;
 #endif
     return cycles;
 }
@@ -274,8 +284,8 @@ bool compare_ulp(ntt::tensor<T, Shape, Stride> &lhs,
 
         pass = false;
     }
-    std::cout << "ulp threshold = " << threshold
-              << ", max_ulp_error = " << max_ulp_error << std::endl;
+    // std::cout << "ulp threshold = " << threshold
+    //           << ", max_ulp_error = " << max_ulp_error << std::endl;
     return pass;
 }
 
