@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -167,6 +167,7 @@ public sealed class UnitTestTileGraph : TestClassBase
             { cg11, "cg11" },
         };
 
+#if DEBUG
         void Dump(TieredAdjacencyGraph<string, Edge<string>> graph, string name)
         {
             using (var file = Dumpper.OpenFile($"{name}.dot"))
@@ -180,7 +181,6 @@ public sealed class UnitTestTileGraph : TestClassBase
             }
         }
 
-#if DEBUG
         Dump(cg, "cg");
 #endif
 

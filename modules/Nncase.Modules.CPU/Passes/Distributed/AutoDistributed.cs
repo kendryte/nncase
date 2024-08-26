@@ -216,7 +216,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                     }).ToList().CartesianProduct().Select(arg => BuildEquivalCalls(op, arg.ToArray())).SelectMany(i => i).ToArray()).
                     SelectMany(i => i).
                     GroupBy(c => c.CheckedType).
-                    ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count).ToList<Expr>());
+                    ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
         }
 
         FilterByScheme(expr, results);
