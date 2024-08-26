@@ -39,7 +39,7 @@ class nncaseConan(ConanFile):
         "vulkan_runtime": False,
         "openmp": True
     }
-    
+
     def imports(self):
         if self.settings.os == 'Windows':
             self.copy("nethost.dll", "bin", "bin")
@@ -51,7 +51,7 @@ class nncaseConan(ConanFile):
         if self.options.tests:
             self.requires('gtest/1.10.0')
             self.requires('ortki/0.0.2')
-            self.requires('rapidjson/1.1.x')
+            self.requires('nlohmann_json/3.9.1')
 
         if self.options.python:
             self.requires('pybind11/2.12.0')
@@ -82,7 +82,7 @@ class nncaseConan(ConanFile):
 
         if self.settings.arch not in ("x86_64",):
             self.options.halide = False
-            
+
         if not self.options.runtime:
             if self.settings.os == 'Windows':
                 self.options["nethost"].shared = True
