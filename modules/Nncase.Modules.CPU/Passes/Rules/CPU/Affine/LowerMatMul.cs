@@ -95,8 +95,8 @@ public partial class LowerMatmul : RewriteRule<Pattern>
             .Write(outBuffer, new AffineMap(domains, default, domains.SkipLast(2).Concat(domains.TakeLast(1)).Select(x => new AffineRange(x.Offset, x.Extent)).ToArray()), out var outTile)
             .Body(op switch
             {
-                MatMul => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.Equal(domainVar[rank - 2][0], 0L)),
-                IR.CPU.PackedMatMul packop => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.Equal(domainVar[rank - 2][0], 0L), packop.LhsPackedAxes, packop.LhsPadedNums, packop.RhsPackedAxes, packop.RhsPadedNums),
+                MatMul => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[rank - 2][0], 0L)),
+                IR.CPU.PackedMatMul packop => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[rank - 2][0], 0L), packop.LhsPackedAxes, packop.LhsPadedNums, packop.RhsPackedAxes, packop.RhsPadedNums),
                 _ => throw new System.Diagnostics.UnreachableException(),
             })
             .Build();

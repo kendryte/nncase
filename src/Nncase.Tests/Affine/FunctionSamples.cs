@@ -85,7 +85,7 @@ public static class FunctionSamples
             var a = new IR.Var("a", new IR.TensorType(DataTypes.Float32, shape));
             var b = IR.F.Math.Mul(a, new[] { 1.0f });
             var c = IR.F.Math.Div(b, new[] { 2.0f });
-            var d = IR.F.Math.Mul(c, new[] { 3.0f });
+            var d = IR.F.Math.Mul(c, new[] { 1.0f });
             var e = IR.F.Math.Sub(new[] { 1.5f }, d);
             func = new IR.Function("main", e, a);
         }

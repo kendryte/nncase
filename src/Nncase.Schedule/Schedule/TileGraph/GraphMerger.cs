@@ -63,6 +63,7 @@ public sealed class GraphMerger
         // 1. find the dataflow graph
         // 1.1 find the directly connected opnode with producer op.
         var algo = new FloydWarshallAllShortestPathAlgorithm<TileGrid, EquatableTaggedEdge<TileGrid, int>>(RootGraph, (_) => 1.0f);
+        algo.Compute();
         if (!algo.TryGetPath(ProducerOp, ConsumerOp, out var dependencePath))
         {
             return false;

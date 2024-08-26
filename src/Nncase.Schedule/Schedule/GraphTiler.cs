@@ -14,9 +14,13 @@ using QuikGraph.Graphviz;
 
 namespace Nncase.Schedule;
 
-public static class GraphTiler
+public sealed class GraphTiler
 {
-    public static Call Tile(Grid grid, string moduleKind, int itemNumber, ITargetOptions targetOptions)
+    private readonly Dictionary<TileNode, PrimFunctionWrapper> _primFuncMemo = new(new ITreeNodeComparer());
+
+    private int _useCached;
+
+    public Call Tile(Grid grid, string moduleKind, int itemNumber, ITargetOptions targetOptions)
     {
         var totalLevel = targetOptions.MemoryCapacities.Length - 1;
         var rootGraph = GraphBuilder.Build(grid, totalLevel);
@@ -62,21 +66,29 @@ public static class GraphTiler
         {
             var primTree = treeGraphMemo[primGraph];
             var primBufferGraph = bufferGraphMemo[primGraph];
-            var result = SolvePrimGraph(primTree, primBufferGraph, targetOptions);
-
             var (inputBids, outputBids) = primBufferGraph.GetInputsOutputs();
-            result.ScheduleBuffers();
-            var bodyBuilder = T.Sequential();
-            result.Visit(primTree, new(bodyBuilder, Array.Empty<Expr>()));
-            var parameters = inputBids.Concat(outputBids).Select(k => result.PrimBufferMemo[k]).ToArray();
-            var funcBuilder = T.PrimFunc($"device_func{itemNumber}_{i}", moduleKind, parameters).Body(bodyBuilder);
-            var primFunc = funcBuilder.Build();
-            var wrapper = new PrimFunctionWrapper(primFunc, inputBids.Count, inputBids.Concat(outputBids).Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType).ToArray());
+
+            if (!_primFuncMemo.TryGetValue(primTree, out var wrapper))
+            {
+                var result = SolvePrimGraph(primTree, primBufferGraph, targetOptions);
+                result.ScheduleBuffers();
+                var bodyBuilder = T.Sequential();
+                result.Visit(primTree, new(bodyBuilder, Array.Empty<Expr>()));
+                var parameters = inputBids.Concat(outputBids).Select(k => result.PrimBufferMemo[k]).ToArray();
+                var funcBuilder = T.PrimFunc($"device_func{itemNumber}_{i}", moduleKind, parameters).Body(bodyBuilder);
+                var primFunc = funcBuilder.Build();
+                wrapper = new PrimFunctionWrapper(primFunc, inputBids.Count, inputBids.Concat(outputBids).Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType).ToArray());
+                _primFuncMemo.Add(primTree, wrapper);
+            }
+            else
+            {
+                _useCached++;
+            }
 
             var finalCall = new Call(wrapper, inputBids.Select(bid => argumentsMemo[bid]).ToArray());
             createdCalls.Add(finalCall);
 
-            // save the output expr
+            // save the output.
             foreach (var outputBid in outputBids)
             {
                 if (!argumentsMemo.TryGetValue(outputBid, out var _))
@@ -117,7 +129,7 @@ public static class GraphTiler
         // return new Call(None.Default);
     }
 
-    private static TreeSolveResult SolvePrimGraph(TileNode primTree, BufferGraph primBufferGraph, ITargetOptions targetOptions)
+    private TreeSolveResult SolvePrimGraph(TileNode primTree, BufferGraph primBufferGraph, ITargetOptions targetOptions)
     {
         int[] memoryCapacities = targetOptions.MemoryCapacities;
         int[] memoryBandWidths = targetOptions.MemoryBandWidths;
@@ -488,7 +500,7 @@ public static class GraphTiler
         return new TreeSolveResult(primBufferGraph, sol.ObjectiveValue(), levelBufferSizesAssgin, levelBufferLifeness, opNodeMemoAssgin, tileNodeMemoAssgin, tileableNodeMemoAssgin, targetOptions);
     }
 
-    private static void DumpGantt(Dictionary<(TieredTileGraph Node, BufferIdentity Buffer), IntExpr> nodeBufferSizes, Dictionary<(TieredTileGraph Node, BufferIdentity Buffer), Tuple<int, int>> nodeBufferLiveness, TieredTileGraph rootNode, int storeLevel)
+    private void DumpGantt(Dictionary<(TieredTileGraph Node, BufferIdentity Buffer), IntExpr> nodeBufferSizes, Dictionary<(TieredTileGraph Node, BufferIdentity Buffer), Tuple<int, int>> nodeBufferLiveness, TieredTileGraph rootNode, int storeLevel)
     {
         string GetStartStr(string name, int start) => $"[{name}] starts D+{start}";
         string GetDurationStr(string name, int duration) => $"[{name}] requires {duration} days";

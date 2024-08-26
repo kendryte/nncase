@@ -285,6 +285,33 @@ public sealed class UnitTestTileGraph : TestClassBase
         checker(tileGraph);
     }
 
+    [Fact]
+    public void TestPrimTreeEqualityComparer()
+    {
+        var func = FunctionSamples.Get3();
+        var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerPack(), new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), new Passes.Rules.CPU.Affine.LowerBinary() }, new());
+        var grid = (IR.Affine.Grid)((Function)post).Body;
+        var rootGraph = GraphBuilder.Build(grid, 2);
+#if DEBUG
+        rootGraph.Dump($"g");
+#endif
+        var rootTree = TileNode.FromTileGraph(rootGraph, out var _);
+
+        Assert.True(new ITreeNodeComparer().Equals(rootTree.Children[0], rootTree.Children[2]));
+
+        var set = new HashSet<ITreeNode>(new ITreeNodeComparer());
+        foreach (var item in rootTree.Children)
+        {
+            if (!set.Contains(item))
+            {
+                set.Add(item);
+            }
+        }
+
+        Assert.Equal(4, rootTree.Children.Length);
+        Assert.Equal(3, set.Count);
+    }
+
     private static void MergeTileGraphCheckerDefault(TieredTileGraph tileGraph)
     {
     }

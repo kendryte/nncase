@@ -32,7 +32,7 @@ public sealed class CPUFunctionPartitionPass : ModulePass
                 var convertor = new GraphPartition.GraphConvertor(x => x switch
                 {
                     Call call => (call.Target is IR.CPU.Boxing || call.CheckedType is DistributedType) ? true : false,
-                    IR.Tuple tp => tp.Fields.ToArray().Any(f => f is Call { Target: IR.CPU.Boxing } b && b.CheckedType is TensorType) ? true : false,
+                    IR.Tuple tp => tp.Fields.ToArray().Any(f => f is Call { Target: IR.CPU.Boxing } b && b.CheckedType is TensorType) ? false : true,
                     _ => throw new NotSupportedException(),
                 });
                 convertor.Visit(pre.Body, ctx);

@@ -31,17 +31,18 @@ public sealed class AutoTilePass : ModulePass
 
     protected override Task<IRModule> RunCoreAsync(IRModule input, RunPassContext context)
     {
+        var tiler = new GraphTiler();
         var funcNums = input.Functions.Count;
         for (int i = 0; i < funcNums; i++)
         {
-            var post = Rewrite(input.Functions[i], i);
+            var post = Rewrite(input.Functions[i], i, tiler);
             input.Replace(i, post);
         }
 
         return Task.FromResult(input);
     }
 
-    private BaseFunction Rewrite(BaseFunction pre, int i)
+    private BaseFunction Rewrite(BaseFunction pre, int i, GraphTiler tiler)
     {
         if (!(pre is IR.Fusion fusion && fusion.ModuleKind == ModuleKind))
         {
@@ -92,7 +93,7 @@ public sealed class AutoTilePass : ModulePass
                 var si = ctx.SummaryVertexSubgraphMap[vertex];
                 var cloner = new ReplacingExprCloner(ctx.VarMap[si].ToDictionary(kv => kv.Key, kv => (Expr)kv.Value));
                 var clonedCall = cloner.Clone(vertex.Expr, default);
-                var tiledCall = GraphTiler.Tile((Grid)clonedCall, ModuleKind, vi, CompileOptions.TargetOptions);
+                var tiledCall = tiler.Tile((Grid)clonedCall, ModuleKind, vi, CompileOptions.TargetOptions);
 
                 var varMap = ctx.VarMap[si].ToDictionary(kv => (Expr)kv.Value, kv => exprMemo[kv.Key]);
                 var substitutor = new Mutators.Substitutor(e =>

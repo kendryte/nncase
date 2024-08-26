@@ -471,7 +471,7 @@ public class UnitTestExpression
         Assert.Equal("Binary", CompilerServices.Print(new Nncase.IR.Math.Binary(BinaryOp.Add)));
         var y = new Var("y");
         CompilerServices.InferenceType(y);
-        Assert.Equal("%y: any", CompilerServices.Print(y));
+        Assert.Equal("%y#1: any", CompilerServices.Print(y));
     }
 
     [Fact]
