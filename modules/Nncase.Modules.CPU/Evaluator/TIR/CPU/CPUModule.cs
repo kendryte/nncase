@@ -42,7 +42,12 @@ internal class CPUModule : IApplicationPart
         registrator.RegisterManyInterface<ResizeImageEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<Conv2DEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<ReduceEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<ReduceArgEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<GatherReduceScatterEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<ClampEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<CastEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<WhereEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<ExpandEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<ErfEvaluator>(reuse: Reuse.Singleton);
     }
 }

@@ -277,4 +277,39 @@ constexpr bool in_bound(const Index &index, const Shape &shape) {
 
     return false;
 }
+
+template <class Index, class Shape>
+Index get_reduced_offset(Index in_offset, Shape reduced_shape) {
+    Index off;
+    const auto dims_ext = in_offset.rank() - reduced_shape.rank();
+    for (size_t i = 0; i < reduced_shape.rank(); i++) {
+        if (in_offset.at(i + dims_ext) >= reduced_shape.at(i))
+            off.at(i) = 0;
+        else
+            off.at(i) = in_offset.at(i + dims_ext);
+    }
+
+    return off;
+}
+
+template <size_t Axes, size_t Rank, class Index>
+ranked_shape<Rank> get_reduced_offset(Index in_offset) {
+    ranked_shape<Rank> off;
+    for (size_t i = 0; i < Axes; i++) {
+        off.at(i) = in_offset.at(i);
+    }
+
+    if constexpr (in_offset.rank() == Rank) {
+        off.at(Axes) = 0;
+        for (size_t i = Axes + 1; i < in_offset.rank(); i++) {
+            off.at(i) = in_offset.at(i);
+        }
+    } else {
+        for (size_t i = Axes + 1; i < in_offset.rank(); i++) {
+            off.at(i - 1) = in_offset.at(i);
+        }
+    }
+
+    return off;
+}
 } // namespace nncase::ntt

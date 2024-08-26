@@ -465,10 +465,29 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                 case TIR.CPU.Reduce reduce:
                     IndentScope.Writer.Write($"reduce<ops::{reduce.ReduceOp.ToC()}>({Visit(args[0]).Name}, {Visit(args[1]).Name}, fixed_shape<{string.Join(",", reduce.Axis)}>{{}}, fixed_shape<{string.Join(",", reduce.PackedAxes)}>{{}}, fixed_shape<{string.Join(",", reduce.PadedNums)}>{{}});\n");
                     break;
+                case TIR.CPU.ReduceArg reduceArg:
+                    IndentScope.Writer.Write($"reduce_arg<ops::{reduceArg.ReduceArgOp.ToC()[4..]}, {reduceArg.Axis}, {reduceArg.SelectLastIndex.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}, {reduceArg.KeepDims.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}>({Visit(args[0]).Name}, {Visit(args[1]).Name}, fixed_shape<>{{}}, fixed_shape<>{{}});\n");
+                    break;
                 case TIR.CPU.Clamp clamp:
                     string min = clamp.Min is float.NegativeInfinity ? float.MinValue.ToString() : clamp.Min.ToString();
                     string max = clamp.Max is float.PositiveInfinity ? float.MaxValue.ToString() : clamp.Max.ToString();
                     IndentScope.Writer.Write($"clamp({Visit(args[0]).Name}, {Visit(args[1]).Name}, (float){min}, (float){max});\n");
+                    break;
+                case TIR.CPU.Cast cast:
+                    IndentScope.Writer.Write($"cast({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
+                    break;
+                case TIR.CPU.Where where:
+                    IndentScope.Writer.Write($"where({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, {Visit(args[3]).Name});\n");
+                    break;
+                case TIR.CPU.Expand expand:
+                    IndentScope.Writer.Write($"expand({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
+                    break;
+                case TIR.CPU.Erf erf:
+                    IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unary.cshtml", new UnaryKernelTemplateModel
+                    {
+                        Arguments = args.Select(x => new KernelArgument { Symbol = Visit(x) }).ToArray(),
+                        UnaryOp = UnaryOp.Erf,
+                    }).Result);
                     break;
                 default:
                     throw new NotSupportedException(xpuOp.ToString());

@@ -151,7 +151,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.InstanceNorm(arguments[0], arguments[1], arguments[2], ret, instancenorm.Epsilon, instancenorm.PackedAxes, instancenorm.PadedNums, (DistributedType)expr.CheckedType));
                 break;
             case IR.Imaging.ResizeImage resize:
-                if (expr.Arguments[1] is not None || resize.IsTFResize)
+                if ((expr.Arguments[1] is not None && expr.Arguments[1].CheckedShape.Size != 0) || resize.IsTFResize)
                 {
                     throw new NotSupportedException("not support tf resize");
                 }
@@ -189,6 +189,21 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Reduce(arguments[0], ret, Array.Empty<int>(), Array.Empty<int>(), ((TensorConst)expr.Arguments[1]).Value.ToArray<int>().OrderBy(a => a).ToArray(), ((TensorConst)expr.Arguments[3]).Value.ToArray<bool>()[0], reduce.ReduceOp));
                 break;
             case IR.Buffers.Uninitialized:
+                break;
+            case IR.Math.ReduceArg reduceArg:
+                _mainBody.Add(TIR.F.CPU.ReduceArg(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>()[0], ((TensorConst)expr.Arguments[2]).Value.ToArray<bool>()[0], ((TensorConst)expr.Arguments[3]).Value.ToArray<bool>()[0], reduceArg.ReduceArgOp, reduceArg.DestType));
+                break;
+            case IR.Tensors.Cast cast:
+                _mainBody.Add(TIR.F.CPU.Cast(arguments[0], ret, cast.NewType, cast.CastMode));
+                break;
+            case IR.Tensors.Where where:
+                _mainBody.Add(TIR.F.CPU.Where(arguments[0], arguments[1], arguments[2], ret, (DistributedType)expr.CheckedType));
+                break;
+            case IR.Tensors.Expand expand:
+                _mainBody.Add(TIR.F.CPU.Expand(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((DistributedType)expr.CheckedType).NdSBP));
+                break;
+            case IR.NN.Erf erf:
+                _mainBody.Add(TIR.F.CPU.Erf(arguments[0], ret));
                 break;
             default:
                 throw new NotSupportedException();
