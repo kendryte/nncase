@@ -13,6 +13,8 @@ namespace Nncase.Passes.BufferSchedule;
 
 public class LifeTimeCollector : ExprVisitor<Unit, Unit>
 {
+    public event Action<LifeTimeCollector>? Alias;
+
     public int TimeStamp { get; private set; }
 
     public Dictionary<Expr, Interval> LifenessMap { get; } = new(ReferenceEqualityComparer.Instance);
@@ -23,7 +25,7 @@ public class LifeTimeCollector : ExprVisitor<Unit, Unit>
         Update(expr); // avoid final call time interval size == 1.
 
         // TODO: open Alias
-        // Alias();
+        Alias?.Invoke(this);
         var d = new Dictionary<Expr, ScheduleBuffer>(ReferenceEqualityComparer.Instance);
         int count = 0;
         foreach (var (k, v) in LifenessMap)
@@ -52,7 +54,7 @@ public class LifeTimeCollector : ExprVisitor<Unit, Unit>
 
         Update(expr);
 
-        TimeStamp += 1;
+        TimeStamp += 2;
 
         // note we will update tuple field on the next call.
         // foreach (var item in expr.Users.Where(e => e is not (BaseFunction or IR.Tuple)))
@@ -131,57 +133,5 @@ public class LifeTimeCollector : ExprVisitor<Unit, Unit>
         }
 
         LifenessMap[expr] = interval;
-    }
-
-    protected virtual void Alias()
-    {
-        bool changed;
-        do
-        {
-            changed = false;
-            foreach (var (expr, interval) in LifenessMap)
-            {
-                if (expr is Call { Target: IR.Tensors.Reshape } callReshape)
-                {
-                    changed = AliasTime(callReshape, interval);
-                }
-            }
-
-            foreach (var (expr, interval) in LifenessMap)
-            {
-                if (expr is Call { Target: IR.Tensors.Concat } concatCall)
-                {
-                    changed = AliasTime(concatCall, interval);
-                }
-            }
-
-            foreach (var (expr, interval) in LifenessMap)
-            {
-                if (expr is Call { Target: IR.Tensors.Split } splitCall)
-                {
-                    changed = AliasTime(splitCall, interval);
-                }
-            }
-        } while (changed);
-    }
-
-    private bool AliasTime(Call call, Interval interval)
-    {
-        var brith = call.GetArguments().Select(arg => LifenessMap[arg].Stop).Concat(new[] { interval.Start }).Max();
-        var death = call.GetUsers().Select(usr => LifenessMap[usr].Start).Concat(new[] { interval.Stop }).Min();
-
-        if (brith == interval.Start && death == interval.Stop)
-        {
-            return false;
-        }
-
-        if (brith >= death)
-        {
-            throw new InvalidOperationException();
-        }
-
-        interval.Start = brith;
-        interval.Stop = death;
-        return true;
     }
 }

@@ -20,10 +20,10 @@ public sealed class GraphTiler
 
     private int _useCached;
 
-    public Call Tile(Grid grid, string moduleKind, int itemNumber, ITargetOptions targetOptions)
+    public Expr Tile(Expr preExpr, string moduleKind, int itemNumber, ITargetOptions targetOptions)
     {
         var totalLevel = targetOptions.MemoryCapacities.Length - 1;
-        var rootGraph = GraphBuilder.Build(grid, totalLevel);
+        var rootGraph = GraphBuilder.Build(preExpr, totalLevel, out var exprMemo);
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {
             rootGraph.Dump($"device_func{itemNumber}_original");
@@ -61,7 +61,7 @@ public sealed class GraphTiler
         var rootTree = TileNode.FromTileGraph(rootGraph, out var treeGraphMemo);
 
         var argumentsMemo = bufferGraphMemo[rootGraph].GetInputsOutputs().Inputs.ToDictionary(k => k, k => k.Node.Grid.GetArgument(k.Index));
-        var createdCalls = new List<Call>();
+        var resultMemo = new Dictionary<TieredTileGraph, Expr>();
         foreach (var (primGraph, i) in condensedGraph.TopologicalSort().Select((s, i) => (s, i)))
         {
             var primTree = treeGraphMemo[primGraph];
@@ -86,7 +86,7 @@ public sealed class GraphTiler
             }
 
             var finalCall = new Call(wrapper, inputBids.Select(bid => argumentsMemo[bid]).ToArray());
-            createdCalls.Add(finalCall);
+            resultMemo.Add(primGraph, finalCall);
 
             // save the output.
             foreach (var outputBid in outputBids)
@@ -103,7 +103,9 @@ public sealed class GraphTiler
             }
         }
 
-        return createdCalls.Last();
+        var cloner = new ReplacingExprCloner(exprMemo.ToDictionary(kv => (Expr)kv.Key, kv => resultMemo[kv.Value]));
+        return cloner.Clone(preExpr, default);
+
 #else
         PrimGraphSolveResult? bestConstructor = null;
         foreach (var chunk in EnumerateAll(root, totalLevel, new()).Chunk(System.Math.Max(System.Environment.ProcessorCount - 2, 1)))

@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Reactive;
+using Google.OrTools.Sat;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.CPU;
@@ -9,6 +10,7 @@ using Nncase.IR.Imaging;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
+using Nncase.Passes.BufferSchedule;
 using Nncase.TIR;
 using Nncase.Utilities;
 using Buffer = Nncase.TIR.Buffer;
@@ -211,6 +213,8 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             case IR.NN.Erf erf:
                 _mainBody.Add(TIR.F.CPU.Erf(arguments[0], ret));
                 break;
+            case IR.Tensors.GetItem:
+                break;
             default:
                 throw new NotSupportedException();
         }
@@ -218,11 +222,67 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
         return default;
     }
 
+    private static void ExternalConstrains(CpModel model, IReadOnlyDictionary<Expr, ScheduleBuffer> bufferMap, IReadOnlyDictionary<Expr, (IntervalVar X, IntervalVar Y)> boxs)
+    {
+        foreach (var (expr, _) in bufferMap)
+        {
+            // the getItem output buffer is input tuple's item.
+            if (expr is Call { Target: IR.Tensors.GetItem } getItem && getItem.Arguments[0] is IR.Tuple tuple && getItem.Arguments[1] is TensorConst { Value: Tensor { Shape: { IsScalar: true } } tc })
+            {
+                var index = tc.ToScalar<int>();
+                model.Add(boxs[tuple.Fields[index]].Y.StartExpr() == boxs[getItem].Y.StartExpr());
+
+                foreach (var user in getItem.GetUsers())
+                {
+                    model.Add(boxs[getItem].Y.StartExpr() == boxs[user].Y.StartExpr());
+                }
+            }
+        }
+    }
+
+    private void Alias(LifeTimeCollector collector)
+    {
+        bool changed;
+        do
+        {
+            changed = false;
+            foreach (var (expr, interval) in collector.LifenessMap)
+            {
+                if (expr is Call { Target: IR.Tensors.GetItem } call)
+                {
+                    changed = AliasTime(call, interval);
+                }
+            }
+        } while (changed);
+
+        bool AliasTime(Call call, Interval interval)
+        {
+            var brith = call.GetArguments().Select(arg => collector.LifenessMap[arg].Stop).Concat(new[] { interval.Start }).Max();
+            var death = call.GetUsers().Select(usr => collector.LifenessMap[usr].Start).Concat(new[] { interval.Stop }).Min();
+
+            if (brith == interval.Start && death == interval.Stop)
+            {
+                return false;
+            }
+
+            if (brith >= death)
+            {
+                throw new InvalidOperationException();
+            }
+
+            interval.Start = brith;
+            interval.Stop = death;
+            return true;
+        }
+    }
+
     private TIR.Buffer GetBuffer(Expr expr) => _buffersMap.GetValueOrDefault(expr, null!);
 
     private void AllocBuffers(Fusion fusion)
     {
+        _lifeTimeCollector.Alias += Alias;
         var buffers = _lifeTimeCollector.Collect(fusion.Body);
+        _bufferScheduler.ExternalConstrains += ExternalConstrains;
         _bufferScheduler.Schedule(buffers);
 #if DEBUG
         using (var fs = Diagnostics.DumpScope.Current.OpenFile("draw_buffers.py"))

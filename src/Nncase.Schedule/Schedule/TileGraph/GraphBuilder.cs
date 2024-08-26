@@ -12,6 +12,7 @@ namespace Nncase.Schedule.TileGraph;
 public sealed class GraphBuilder : ExprVisitor<Unit, Unit>
 {
     private readonly Dictionary<Grid, TileGrid> _memo;
+    private readonly Dictionary<Grid, TieredTileGraph> _exprMemo;
     private readonly int _totalLevel;
     private int _opId;
 
@@ -20,14 +21,16 @@ public sealed class GraphBuilder : ExprVisitor<Unit, Unit>
         _totalLevel = totalLevel;
         RootGraph = new(totalLevel + 1, new AdjacencyGraph<TileGrid, EquatableTaggedEdge<TileGrid, int>>());
         _memo = new();
+        _exprMemo = new();
     }
 
     public TieredTileGraph RootGraph { get; }
 
-    public static TieredTileGraph Build(Grid grid, int totalLevel)
+    public static TieredTileGraph Build(Expr expr, int totalLevel, out Dictionary<Grid, TieredTileGraph> exprMemo)
     {
         var builder = new GraphBuilder(totalLevel);
-        builder.Visit(grid);
+        builder.Visit(expr);
+        exprMemo = builder._exprMemo;
         return builder.RootGraph;
     }
 
@@ -72,6 +75,7 @@ public sealed class GraphBuilder : ExprVisitor<Unit, Unit>
         }
 
         _memo.Add(current, opNode);
+        _exprMemo.Add(current, tileNodeRoot);
 
         return default;
     }

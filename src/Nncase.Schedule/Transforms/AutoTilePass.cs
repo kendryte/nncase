@@ -92,8 +92,8 @@ public sealed class AutoTilePass : ModulePass
             {
                 var si = ctx.SummaryVertexSubgraphMap[vertex];
                 var cloner = new ReplacingExprCloner(ctx.VarMap[si].ToDictionary(kv => kv.Key, kv => (Expr)kv.Value));
-                var clonedCall = cloner.Clone(vertex.Expr, default);
-                var tiledCall = tiler.Tile((Grid)clonedCall, ModuleKind, vi, CompileOptions.TargetOptions);
+                var clonedCall = cloner.Clone(vertex.Expr, default); // replaces some exprs that are in the subgraph with var, avoid tiling the grids out of the subgraph.
+                var tiledCall = tiler.Tile(clonedCall, ModuleKind, vi, CompileOptions.TargetOptions);
 
                 var varMap = ctx.VarMap[si].ToDictionary(kv => (Expr)kv.Value, kv => exprMemo[kv.Key]);
                 var substitutor = new Mutators.Substitutor(e =>
@@ -103,10 +103,18 @@ public sealed class AutoTilePass : ModulePass
                         return arg;
                     }
 
-                    return e;
+                    return null;
                 });
+
                 var cleanedCall = substitutor.Rewrite(tiledCall, default);
-                exprMemo.Add(ctx.OutputMap[subgraph.Index].Keys.First(), cleanedCall);
+                if (ctx.OutputMap[subgraph.Index].Count > 1)
+                {
+                    ctx.OutputMap[subgraph.Index].ToList().ForEach(e => exprMemo.Add(e.Key, IR.F.Tensors.GetItem(cleanedCall, e.Value)));
+                }
+                else
+                {
+                    exprMemo.Add(ctx.OutputMap[subgraph.Index].Keys.First(), cleanedCall);
+                }
             }
         }
 

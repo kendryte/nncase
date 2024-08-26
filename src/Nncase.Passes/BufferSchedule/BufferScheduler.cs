@@ -20,9 +20,12 @@ public class BufferScheduler
     public BufferScheduler(long memSize = 2147483648L)
     {
         _memSize = memSize;
+        ExternalConstrains = null;
     }
 
-    public virtual void ExternalConstrains(CpModel model, IReadOnlyDictionary<Expr, ScheduleBuffer> bufferMap, IReadOnlyDictionary<Expr, (IntervalVar X, IntervalVar Y)> boxs)
+    public event Action<CpModel, IReadOnlyDictionary<Expr, ScheduleBuffer>, IReadOnlyDictionary<Expr, (IntervalVar X, IntervalVar Y)>>? ExternalConstrains;
+
+    public static void DefaultExternalConstrains(CpModel model, IReadOnlyDictionary<Expr, ScheduleBuffer> bufferMap, IReadOnlyDictionary<Expr, (IntervalVar X, IntervalVar Y)> boxs)
     {
         foreach (var (expr, item) in bufferMap)
         {
@@ -93,8 +96,7 @@ public class BufferScheduler
             }
         }
 
-        // TODO: reopen external constrains
-        // ExternalConstrains(model, bufferMap, boxs);
+        ExternalConstrains?.Invoke(model, bufferMap, boxs);
         model.Minimize(LinearExpr.Sum(yStarts));
 
         var solver = new CpSolver();

@@ -23,6 +23,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         { FunctionSamples.Get1, 0 },
         { FunctionSamples.Get2, 1 },
         { FunctionSamples.Get3, 2 },
+        { FunctionSamples.Get5, 3 },
     };
 
     public static readonly TheoryData<Func<Function>, (IntMergePoint, bool)[], Action<TieredTileGraph>, int> MergeTileGraphDatas = new()
@@ -31,6 +32,16 @@ public sealed class UnitTestTileGraph : TestClassBase
         { FunctionSamples.Get1, new (IntMergePoint, bool)[] { (new(1, 0, 2), true), (new(2, 0, 2), false), (new(2, 1, 2), true), }, MergeTileGraphCheckerDefault, 1 },
         { FunctionSamples.Get1PackMN, new (IntMergePoint, bool)[] { (new(2, 0, 2), true), (new(2, 1, 2), true), (new(2, 0, 1), true), (new(2, 1, 1), true), (new(3, 2, 2), true), (new(5, 4, 2), true) }, MergeTileGraphChecker2, 2 },
     };
+
+    public static readonly TheoryData<Func<Function>, Action<Expr>, int> SolveTileGraphDatas = new()
+    {
+        { FunctionSamples.Get5, SolveTileGraphChecker0, 3 },
+    };
+
+    public UnitTestTileGraph()
+    {
+        CompileOptions.TargetOptions = new Nncase.Targets.CpuTargetOptions();
+    }
 
     [Fact]
     public void TestClusteredGraph()
@@ -285,13 +296,25 @@ public sealed class UnitTestTileGraph : TestClassBase
         checker(tileGraph);
     }
 
+    [Theory]
+    [MemberData(nameof(SolveTileGraphDatas))]
+    public void TestSolveTileGraph(Func<Function> functor, Action<Expr> action, int count)
+    {
+        var func = functor();
+        var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerPack(), new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), new Passes.Rules.CPU.Affine.LowerBinary() }, new());
+
+        var tiler = new Schedule.GraphTiler();
+        var result = tiler.Tile(post, Nncase.Targets.CPUTarget.Kind, count, CompileOptions.TargetOptions);
+        action(result);
+    }
+
     [Fact]
     public void TestPrimTreeEqualityComparer()
     {
         var func = FunctionSamples.Get3();
         var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerPack(), new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), new Passes.Rules.CPU.Affine.LowerBinary() }, new());
         var grid = (IR.Affine.Grid)((Function)post).Body;
-        var rootGraph = GraphBuilder.Build(grid, 2);
+        var rootGraph = GraphBuilder.Build(grid, 2, out _);
 #if DEBUG
         rootGraph.Dump($"g");
 #endif
@@ -310,6 +333,16 @@ public sealed class UnitTestTileGraph : TestClassBase
 
         Assert.Equal(4, rootTree.Children.Length);
         Assert.Equal(3, set.Count);
+    }
+
+    private static void SolveTileGraphCheckerDefault(Expr post)
+    {
+    }
+
+    private static void SolveTileGraphChecker0(Expr post)
+    {
+        Assert.IsType<IR.Function>(post);
+        Assert.IsType<IR.Tuple>(((IR.Function)post).Body);
     }
 
     private static void MergeTileGraphCheckerDefault(TieredTileGraph tileGraph)

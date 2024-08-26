@@ -109,4 +109,22 @@ public static class FunctionSamples
 
         return func;
     }
+
+    /// <summary>
+    /// the tuple output.
+    /// </summary>
+    public static Function Get5()
+    {
+        Function func;
+        {
+            var shape = new[] { 1, 12, 14, 14 };
+            var a = new IR.Var("a", new IR.TensorType(DataTypes.Float32, shape));
+            var b = new IR.Var("b", new IR.TensorType(DataTypes.Float32, shape));
+            var c = IR.F.Math.Binary(BinaryOp.Mul, a, b);
+            var d = IR.F.Math.Neg(c);
+            func = new IR.Function("main", new IR.Tuple(c, d), a, b);
+        }
+
+        return func;
+    }
 }
