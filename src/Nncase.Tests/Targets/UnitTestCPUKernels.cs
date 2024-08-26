@@ -216,7 +216,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     public async Task TestResizeImage(int[] shape, ImageResizeMode resizeMode, int[] newSize, int count)
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));
-        var pre = IR.F.Imaging.ResizeImage(resizeMode, input, None.Default, newSize);
+        var pre = IR.F.Imaging.ResizeImage(resizeMode, input, Array.Empty<float>(), newSize);
 
         var feedDict = new Dictionary<Var, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },

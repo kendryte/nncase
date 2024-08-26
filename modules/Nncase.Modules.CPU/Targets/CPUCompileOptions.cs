@@ -49,7 +49,7 @@ public class CpuTargetOptions : ITargetOptions
 
     public string HierarchyNames { get; set; } = "b";
 
-    public int[] HierarchySizes { get; set; } = new[] { 3 * (int)MathF.Pow(2, 20) };
+    public int[] HierarchySizes { get; set; } = new[] { 1 * (int)MathF.Pow(2, 30) };
 
     public int[] MemoryCapacities { get; set; } = new[] { 0, 2 * 1024 * 1024, int.MaxValue };
 
