@@ -53,7 +53,7 @@ class KernelTest {
         auto data = map.buffer().as_span<T>();
         return data[kernels::offset(t.strides(), index)];
     }
-    
+
     virtual void init_tensor(runtime::runtime_tensor &tensor) {
         auto dtype = tensor.datatype();
         switch (dtype) {
