@@ -24,6 +24,21 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                 {
                     return (IRType)new InvalidType("Same NDSBP");
                 }
+
+                if (inv.NdSBP.Any(sbp => sbp is SBPPartialSum))
+                {
+                    DistributedUtility.TryGetDividedTensorType(inv, out var inType);
+                    DistributedUtility.TryGetDividedTensorType(outv, out var outType);
+
+                    var nonPartialSumPos = Enumerable.Range(0, inv.NdSBP.Count).Where(i => inv.NdSBP[i] is not SBPPartialSum);
+                    if (nonPartialSumPos.Any(i => inv.NdSBP[i] is SBPSplit && outv.NdSBP[i] is SBPBroadCast))
+                    {
+                        // TODO: S[i]->S[i] may be a problem
+                        return new InvalidType("Not supported NDSBP");
+                    }
+
+                    return outv;
+                }
                 else
                 {
                     return outv;
