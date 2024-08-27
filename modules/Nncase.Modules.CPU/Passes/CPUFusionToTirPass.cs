@@ -17,6 +17,20 @@ using Nncase.TIR;
 
 namespace Nncase.Passes;
 
+public sealed class CpuBufferSizeCalculator : BufferSchedule.BufferSizeCalculator
+{
+    protected override Result VisitCall(Call expr)
+    {
+        if (expr is Call { Target: IR.CPU.Boxing boxing } && boxing.NewType is TensorType ttype)
+        {
+            var res = VisitType(ttype);
+            return new(0, res.Shape, res.Stride);
+        }
+
+        return base.VisitCall(expr);
+    }
+}
+
 internal sealed class CPUFusionToTirPass : ModulePass
 {
     private readonly CompileOptions _compileOptions;
@@ -57,7 +71,7 @@ internal sealed class CPUFusionToTirPass : ModulePass
                 // }
                 var post = fusion;
                 var primBody = new List<Expr>();
-                var visitor = new KernelToTIRVisitor(primBody, deviceFuncs, fusionCheckCache, new BufferSchedule.BufferScheduler(_compileOptions.TargetOptions is null ? new CpuTargetOptions().HierarchySizes[0] : ((CpuTargetOptions)_compileOptions.TargetOptions).HierarchySizes[0]), new BufferSchedule.LifeTimeCollector());
+                var visitor = new KernelToTIRVisitor(primBody, deviceFuncs, fusionCheckCache, new BufferSchedule.BufferScheduler(_compileOptions.TargetOptions is null ? new CpuTargetOptions().HierarchySizes[0] : ((CpuTargetOptions)_compileOptions.TargetOptions).HierarchySizes[0]), new BufferSchedule.LifeTimeCollector(new BufferSchedule.LifeTimeUpdater(), new BufferSchedule.BufferSizeCalculator()));
                 visitor.Convert(post);
                 var primFunc = T.PrimFunc(post.Name, post.ModuleKind, visitor.InputBuffers.Concat(visitor.OutputBuffers).ToArray()).Body(primBody.ToArray()).Build();
                 primFunc.SchedResult.DataUsage = visitor.DataUsage;

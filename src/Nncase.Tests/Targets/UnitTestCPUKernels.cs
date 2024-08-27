@@ -21,7 +21,7 @@ using Nncase.Tests.TestFixture;
 using Nncase.Utilities;
 using Xunit;
 
-namespace Nncase.Tests.Targets;
+namespace Nncase.Tests.TargetTest;
 
 public class CpuKernelCase
 {
@@ -263,6 +263,32 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var posts = new[] { pre };
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+    }
+
+    [Theory]
+    [InlineData(new object[] { new[] { 1, 3, 28, 28 }, 0 })]
+    public async Task TestInstanceNormal(int[] shape, int number)
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, shape));
+        Expr pre; // f32[1,3,28,28]
+        {
+            var v0 = IR.F.Tensors.Reduce(ReduceOp.Mean, input, new[] { 2, 3 }, 0f, true); // f32[1,3,1,1]
+            var v1 = IR.F.Math.Binary(BinaryOp.Sub, input, v0); // f32[1,3,28,28]
+            var v2 = IR.F.Math.Unary(UnaryOp.Square, v1); // f32[1,3,28,28]
+            var v3 = IR.F.Tensors.Reduce(ReduceOp.Mean, v2, new[] { 2, 3 }, 0f, true); // f32[1,3,1,1]
+            var v4 = IR.F.Math.Binary(BinaryOp.Add, v3, new float[] { 1E-05f }); // f32[1,3,1,1]
+            var v5 = IR.F.Math.Unary(UnaryOp.Rsqrt, v4); // f32[1,3,1,1]
+            var v6 = IR.F.Math.Binary(BinaryOp.Mul, v1, v5); // f32[1,3,28,28]
+            var v7 = IR.F.Math.Binary(BinaryOp.Mul, v6, new float[3, 1, 1] { { { 0.24680786f } }, { { 0.065782584f } }, { { -0.9344868f } } }); // f32[1,3,28,28]
+            pre = IR.F.Math.Binary(BinaryOp.Add, v7, new float[3, 1, 1] { { { 0.6403651f } }, { { -0.7995949f } }, { { 0.46802735f } } }); // f32[1,3,28,28]
+        }
+
+        var feedDict = new Dictionary<Var, IValue>() {
+            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
+        };
+
+        var posts = new[] { pre };
+        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, posts);
     }
 
     [Theory]

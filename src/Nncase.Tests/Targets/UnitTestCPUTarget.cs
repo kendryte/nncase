@@ -22,7 +22,7 @@ using Xunit;
 using static Nncase.IR.F.Tensors;
 using GetItem = Nncase.IR.Tensors.GetItem;
 
-namespace Nncase.Tests.Targets;
+namespace Nncase.Tests.TargetTest;
 
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestCPUTarget : TestClassBase

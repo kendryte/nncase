@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using Google.OrTools.Sat;
 using Nncase;
 using Nncase.Converters;
 using Nncase.Runtime;
