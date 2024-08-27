@@ -20,6 +20,12 @@
 #include "../unrool.h"
 #include "../utility.h"
 
+#if defined(__GNUC__) || defined(__clang__)
+#define REDUCE_UNROLLNUM 2
+#else
+#define REDUCE_UNROLLNUM 1
+#endif
+
 namespace nncase::ntt {
 
 namespace reduce_detail {
@@ -83,8 +89,8 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
         if constexpr (std::is_same_v<Op<TIElem, TIElem>,
                                      ntt::ops::mean<TIElem, TIElem>>) {
             TIElem sum;
-            sum = loop_unrool<ntt::ops::add, TIElem, NTT_UNROOL_NUM, inner_size,
-                              input_stride>(input_p);
+            sum = loop_unrool<ntt::ops::add, TIElem, REDUCE_UNROLLNUM,
+                              inner_size, input_stride>(input_p);
 
             if constexpr (UseVectorReduce) {
                 sum = sum / (inner_size * TIElem::shape_type::length());
@@ -94,7 +100,7 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
             }
         } else {
             TIElem ret;
-            ret = loop_unrool<Op, TIElem, NTT_UNROOL_NUM, inner_size,
+            ret = loop_unrool<Op, TIElem, REDUCE_UNROLLNUM, inner_size,
                               input_stride>(input_p);
 
             if constexpr (UseVectorReduce) {
