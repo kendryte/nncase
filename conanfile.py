@@ -28,7 +28,8 @@ class nncaseConan(ConanFile):
         "runtime": [True, False],
         "tests": [True, False],
         "python": [True, False],
-        "vulkan_runtime": [True, False]
+        "vulkan_runtime": [True, False],
+        "python_root": ANY
     }
     default_options = {
         "shared": False,
@@ -36,7 +37,8 @@ class nncaseConan(ConanFile):
         "runtime": False,
         "tests": False,
         "python": True,
-        "vulkan_runtime": False
+        "vulkan_runtime": False,
+        "python_root": None
     }
 
     @property
@@ -83,6 +85,8 @@ class nncaseConan(ConanFile):
         tc.variables['ENABLE_VULKAN_RUNTIME'] = self.options.vulkan_runtime
         tc.variables['BUILD_PYTHON_BINDING'] = self.options.python
         tc.variables['BUILD_TESTING'] = self.options.tests
+        if self.options.get_safe("python_root") is not None:
+            tc.variables['Python3_ROOT_DIR'] = self.options.python_root
         tc.generate()
         deps = CMakeDeps(self)
         deps.generate()
