@@ -43,8 +43,8 @@ public sealed partial class DecomposeInstanceNorm : IRewriteRule
         var sub = IR.F.Math.Sub(input, mean);
         var sigma = IR.F.Tensors.ReduceMean(IR.F.Math.Square(sub), axis, 0f, true);
         var rsigma = IR.F.Math.Rsqrt(IR.F.Math.Add(sigma, eps));
-        var newScale = Tensor.FromBytes(scale.CheckedDataType, scale.Value.BytesBuffer.ToArray(), new[] { scale.CheckedShape[0].FixedValue, 1, 1 });
-        var newBias = Tensor.FromBytes(bias.CheckedDataType, bias.Value.BytesBuffer.ToArray(), new[] { bias.CheckedShape[0].FixedValue, 1, 1 });
+        var newScale = Tensor.FromBytes(scale.CheckedDataType, scale.Value.BytesBuffer.ToArray(), new[] { scale.CheckedShape[0].FixedValue }.Concat(Enumerable.Repeat(1, axis.Length).ToArray()).ToArray());
+        var newBias = Tensor.FromBytes(bias.CheckedDataType, bias.Value.BytesBuffer.ToArray(), new[] { bias.CheckedShape[0].FixedValue }.Concat(Enumerable.Repeat(1, axis.Length).ToArray()).ToArray());
         return IR.F.Math.Add(IR.F.Math.Mul(IR.F.Math.Mul(sub, rsigma), newScale), newBias);
     }
 }

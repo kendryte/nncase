@@ -29,7 +29,7 @@ public static class PassUtility
             return false;
         }
 
-        if (!op.Parameters.Zip(arguments).All(p => (p.First.ParameterKind == ParameterKind.Input && p.Second.CheckedType switch { TensorType t => t.Shape.IsRanked, _ => true }) || (p.First.ParameterKind == ParameterKind.Attribute && p.Second is TensorConst)))
+        if (!op.Parameters.Zip(arguments).All(p => (p.First.ParameterKind == ParameterKind.Input && p.Second.CheckedType switch { TensorType t => t.Shape.IsRanked, _ => true }) || (p.First.ParameterKind == ParameterKind.Attribute && (p.Second is TensorConst || p.Second is IR.None))))
         {
             return false;
         }
@@ -105,9 +105,7 @@ public static class PassUtility
                 break;
 
             case IR.Tensors.Where where:
-                if (!(arguments.ToArray()[0].CheckedShape.Rank == arguments.ToArray()[1].CheckedShape.Rank &&
-                    arguments.ToArray()[1].CheckedShape.Rank == arguments.ToArray()[2].CheckedShape.Rank) ||
-                    arguments.ToArray()[0].CheckedShape != expr.CheckedShape)
+                if (arguments.ToArray()[0].CheckedShape != expr.CheckedShape)
                 {
                     return false;
                 }
