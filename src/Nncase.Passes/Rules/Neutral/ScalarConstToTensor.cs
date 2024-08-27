@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Nncase.IR.Math;
 using Nncase.PatternMatch;
 using Nncase.Utilities;
 using static Nncase.Passes.Utility;
@@ -14,21 +15,18 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Passes.Rules.Neutral;
 
 [RuleGenerator]
-public partial class BianryScalarConstToTensor : RewriteRule<Pattern>
+public partial class ScalarConstToTensor : RewriteRule<Pattern>
 {
-    public override Pattern Pattern => IsBinary(
-        "bn",
-        "bnCall",
-        _ => true,
-        IsWildcard("lhs"),
-        IsWildcard("rhs"));
+    public override Pattern Pattern => IsCallWildcard(
+        "call",
+        IsAlt(IsOp<IR.Math.Binary>(), IsOp<IR.Math.Unary>(), IsOp<IR.Tensors.Where>()));
 
-    private Expr? GetReplace(Call bnCall, Expr lhs, Expr rhs)
+    private Expr? GetReplace(Call call)
     {
-        if (bnCall.Arguments.AsValueEnumerable().Any(a => a is TensorConst { Value: Tensor { Shape.IsScalar: true } }))
+        if (call.Arguments.AsValueEnumerable().Any(a => a is TensorConst { Value: Tensor { Shape.IsScalar: true } }))
         {
-            var arguments = bnCall.Arguments.AsValueEnumerable().Select(e => e switch { TensorConst { Value: Tensor { Shape.IsScalar: true } } tc => Const.FromTensor(Tensor.FromBytes(tc.CheckedDataType, tc.Value.BytesBuffer.ToArray(), new[] { 1 })), _ => e }).ToArray();
-            return bnCall.With(arguments: arguments);
+            var arguments = call.Arguments.AsValueEnumerable().Select(e => e switch { TensorConst { Value: Tensor { Shape.IsScalar: true } } tc => Const.FromTensor(Tensor.FromBytes(tc.CheckedDataType, tc.Value.BytesBuffer.ToArray(), new[] { 1 })), _ => e }).ToArray();
+            return call.With(arguments: arguments);
         }
 
         return null;
