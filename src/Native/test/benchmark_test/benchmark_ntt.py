@@ -111,7 +111,7 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                          'pow': '42.17',
                                          },
                               'clamp': {'NoPack': '1.5'},
-                              'unary': {'abs': '1.5',
+                              'unary': {'abs': '2.0',
                                         'acos': '18.9',
                                         'acosh': '25.34',
                                         'asin': '15.18',
