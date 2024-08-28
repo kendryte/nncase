@@ -475,11 +475,13 @@ public sealed class GraphTiler
         }
 
         var decisionBuilder = solver.MakeDefaultPhase(searchAbleVars.ToArray());
-        var status = solver.Solve(decisionBuilder, new SearchMonitor[] { collector, objectiveMonitor, solver.MakeSolutionsLimit(10), solver.MakeTimeLimit(30000),
-#if DEBUG
-        solver.MakeSearchLog(10000, totalCyclesVar),
-#endif
-         });
+        var monitors = new List<SearchMonitor>() { collector, objectiveMonitor, solver.MakeSolutionsLimit(10), solver.MakeTimeLimit(30000) };
+        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
+        {
+            monitors.Add(solver.MakeSearchLog(10000, totalCyclesVar));
+        }
+
+        var status = solver.Solve(decisionBuilder, monitors.ToArray());
         if (!status)
         {
             // return null;

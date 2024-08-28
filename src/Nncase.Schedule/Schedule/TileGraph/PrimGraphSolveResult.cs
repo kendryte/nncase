@@ -182,11 +182,13 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
             }
 
             var decisionBuilder = solver.MakeDefaultPhase(ystarts.ToArray());
-            var status = solver.Solve(decisionBuilder, new SearchMonitor[] { collector, solver.MakeSolutionsLimit(1),
-#if DEBUG
-        solver.MakeSearchLog(1000),
-#endif
-            });
+            var monitors = new List<SearchMonitor>() { collector, solver.MakeSolutionsLimit(1), };
+            if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
+            {
+                monitors.Add(solver.MakeSearchLog(10000));
+            }
+
+            var status = solver.Solve(decisionBuilder, monitors.ToArray());
             if (!status)
             {
                 throw new InvalidOperationException("can't schedule buffers!");
