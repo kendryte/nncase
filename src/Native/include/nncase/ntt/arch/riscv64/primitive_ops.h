@@ -271,6 +271,7 @@ REGISTER_RVV_UNARY_OP(asin, float, asin_float32)
 
 // asinh
 // asinh(v) = ln(v + sqrt(v^2 + 1)), -inf < x < +inf
+#if 0
 #define ASINH_FLOAT32(lmul, mlen)                                              \
     inline vfloat32m##lmul##_t asinh_float32(const vfloat32m##lmul##_t &v,     \
                                              const size_t vl) {                \
@@ -282,6 +283,20 @@ REGISTER_RVV_UNARY_OP(asin, float, asin_float32)
         auto ret = log_ps(__riscv_vfadd_vv_f32m##lmul(x, sqrt, vl), vl);       \
         return __riscv_vfsgnj_vv_f32##m##lmul(ret, v, vl);                     \
     }
+#else
+#define ASINH_FLOAT32(lmul, mlen)                                              \
+    inline vfloat32m##lmul##_t asinh_float32(const vfloat32m##lmul##_t &v,     \
+                                             const size_t vl) {                \
+        auto x = __riscv_vfsgnj_vf_f32##m##lmul(v, 1.f, vl);                   \
+        auto two = __riscv_vfmv_v_f_f32m##lmul(2.f, vl);                       \
+        auto add = __riscv_vfadd_vf_f32m##lmul(x, 1.f, vl);                    \
+        auto sub = __riscv_vfsub_vf_f32m##lmul(x, 1.f, vl);                    \
+        add = __riscv_vfmadd_vv_f32m##lmul(add, sub, two, vl);                 \
+        auto sqrt = __riscv_vfsqrt_v_f32m##lmul(add, vl);                      \
+        auto ret = log_ps(__riscv_vfadd_vv_f32m##lmul(x, sqrt, vl), vl);       \
+        return __riscv_vfsgnj_vv_f32##m##lmul(ret, v, vl);                     \
+    }
+#endif
 
 REGISTER_RVV_KERNEL(ASINH_FLOAT32)
 REGISTER_RVV_UNARY_OP(asinh, float, asinh_float32)
@@ -821,8 +836,7 @@ REGISTER_RVV_BINARY_OP(pow, float, pow_float32)
         auto cond1 = __riscv_vmsne_vx_i32m##lmul##_b##mlen(remainder, 0, vl);  \
         auto cond2 = __riscv_vmsne_vv_i32m##lmul##_b##mlen(sign1, sign2, vl);  \
         cond1 = __riscv_vmand_mm_b##mlen(cond1, cond2, vl);                    \
-        remainder = __riscv_vadd_vv_i32m##lmul##_m(cond1, remainder, v2, vl);  \
-        return remainder;                                                      \
+        return __riscv_vadd_vv_i32m##lmul##_m(cond1, remainder, v2, vl);       \
     }                                                                          \
                                                                                \
     inline vint32m##lmul##_t floor_mod_int32(                                  \
