@@ -48,7 +48,8 @@ struct tensor_unary_impl<Op, TTensor> {
     Op<element_type> op_;
 };
 
-template <template <class T> class Op, Is2DVector TTensor>
+template <template <class T> class Op, IsTensor TTensor>
+    requires(TTensor::rank() == 2)
 struct tensor_unary_impl<Op, TTensor> {
     using sub_vector_type =
         fixed_tensor_alike_t<TTensor, TTensor::shape().at(1)>;
@@ -92,7 +93,8 @@ struct tensor_binary_impl<Op, TTensor, T2> {
     Op<element_type1, element_type2> op_;
 };
 
-template <template <class T1, class T2> class Op, Is2DVector T1, Is2DVector T2>
+template <template <class T1, class T2> class Op, IsTensor T1, IsTensor T2>
+    requires(T1::rank() == 2 && T2::rank() == 2)
 struct tensor_binary_impl<Op, T1, T2> {
     using sub_vector_type = fixed_tensor_alike_t<T1, T1::shape().at(1)>;
 
@@ -129,16 +131,12 @@ struct tensor_binary_impl<Op, TScalar, TTensor> {
 
 #define NTT_DEFINE_TENSOR_UNARY_IMPL(op)                                       \
     template <IsTensor TTensor>                                                \
-    struct op<TTensor> : detail::tensor_unary_impl<op, TTensor> {};            \
-    template <Is2DVector TTensor>                                              \
     struct op<TTensor> : detail::tensor_unary_impl<op, TTensor> {}
 
 #define NTT_DEFINE_TENSOR_BINARY_IMPL(op)                                      \
     template <IsTensor T1, class T2>                                           \
     struct op<T1, T2> : detail::tensor_binary_impl<op, T1, T2> {};             \
     template <IsScalar T1, IsTensor T2>                                        \
-    struct op<T1, T2> : detail::tensor_binary_impl<op, T1, T2> {};             \
-    template <Is2DVector T1, Is2DVector T2>                                    \
     struct op<T1, T2> : detail::tensor_binary_impl<op, T1, T2> {}
 
 NTT_DEFINE_TENSOR_UNARY_IMPL(abs);
@@ -180,8 +178,8 @@ template <IsTensor TTensor> struct inner_product<TTensor, TTensor> {
 
     constexpr auto operator()(const TTensor &v1,
                               const TTensor &v2) const noexcept {
-        using result_type = decltype(
-            op_(std::declval<element_type>(), std::declval<element_type>()));
+        using result_type = decltype(op_(std::declval<element_type>(),
+                                         std::declval<element_type>()));
         result_type value{};
         apply(v1.shape(),
               [&](auto index) { value += op_(v1(index), v2(index)); });
