@@ -129,6 +129,8 @@ struct tensor_binary_impl<Op, TScalar, TTensor> {
 
 #define NTT_DEFINE_TENSOR_UNARY_IMPL(op)                                       \
     template <IsTensor TTensor>                                                \
+    struct op<TTensor> : detail::tensor_unary_impl<op, TTensor> {};            \
+    template <Is2DVector TTensor>                                              \
     struct op<TTensor> : detail::tensor_unary_impl<op, TTensor> {}
 
 #define NTT_DEFINE_TENSOR_BINARY_IMPL(op)                                      \
@@ -178,8 +180,8 @@ template <IsTensor TTensor> struct inner_product<TTensor, TTensor> {
 
     constexpr auto operator()(const TTensor &v1,
                               const TTensor &v2) const noexcept {
-        using result_type = decltype(
-            op_(std::declval<element_type>(), std::declval<element_type>()));
+        using result_type = decltype(op_(std::declval<element_type>(),
+                                         std::declval<element_type>()));
         result_type value{};
         apply(v1.shape(),
               [&](auto index) { value += op_(v1(index), v2(index)); });
