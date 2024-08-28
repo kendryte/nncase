@@ -32,10 +32,10 @@ void cast_impl(const TIn &input, TOut &&output) noexcept {
     using element_type = typename std::decay_t<TOut>::element_type;
 
     apply(out_shape, [&](auto out_index) {
-        if constexpr (IsTensor<element_type>) {
+        if constexpr (IsVector<element_type>) {
             apply(element_type::shape(), [&](auto index) {
                 output(out_index)(index) =
-                    static_cast<element_type::element_type>(
+                    static_cast<typename element_type::element_type>(
                         input(out_index)(index));
             });
         } else {
