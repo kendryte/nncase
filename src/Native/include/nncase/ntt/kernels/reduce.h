@@ -24,12 +24,19 @@ namespace nncase::ntt {
 
 namespace reduce_detail {
 
-template <IsFixedDims Axes, IsFixedDims PackedAxes>
+template <template <class T1, class T2> class Op, class TElem, IsFixedDims Axes,
+          IsFixedDims PackedAxes>
 constexpr size_t unroll_arch() {
 #if __riscv
     return 2;
 #elif __x86_64__
-    return (Axes::rank() >= 2 && PackedAxes::rank() == 0) ? 2 : 4;
+    if (Axes::rank() == 1 && PackedAxes::rank() == 0 &&
+        (std::is_same_v<Op<TElem, TElem>, ntt::ops::mean<TElem, TElem>> ||
+         std::is_same_v<Op<TElem, TElem>, ntt::ops::add<TElem, TElem>>)) {
+        return 4;
+    } else {
+        return 2;
+    };
 #else
     return 1;
 #endif
@@ -81,7 +88,7 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
     constexpr bool UseVectorReduce =
         PackedAxes::rank() == 1 && PackedAxes::at(0) >= Axes::at(0);
 
-    constexpr size_t unroll_num = unroll_arch<Axes, PackedAxes>();
+    constexpr size_t unroll_num = unroll_arch<Op, TIElem, Axes, PackedAxes>();
 
     constexpr auto input_stride = input_strides[Axes::at(Axes::rank() - 1)];
     apply(domain, [&](auto index) {
