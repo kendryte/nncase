@@ -1029,7 +1029,7 @@ REGISTER_RVV_KERNEL(MUL_ADD_FLOAT32)
 
 REGISTER_RVV_MUL_ADD_OP(float, mul_add_float32)
 
-# if 1
+#if 1
 template <bool AccC>
 struct mma<AccC, ntt::vector<float, 1, 4>, ntt::vector<float, 4, 4>,
            ntt::vector<float, 1, 4>> {
