@@ -16,7 +16,7 @@ jobs:
         config:
           # - {name: aarch64-macos, os: macos-14, shell: bash, rid: osx-arm64, buildType: Release}
           - {name: x86_64-linux, os: ubuntu-24.04, shell: bash, rid: linux-x64, buildType: Release}
-          - {name: x86_64-windows, os: windows-latest, shell: bash, rid: win-x64, buildType: Release}
+          # - {name: x86_64-windows, os: windows-latest, shell: bash, rid: win-x64, buildType: Release}
 
     steps:
       - uses: actions/checkout@v2
@@ -55,7 +55,7 @@ jobs:
         config:
           # - {name: aarch64-macos, os: macos-14}
           - {name: x86_64-linux, os: ubuntu-24.04}
-          - {name: x86_64-windows, os: windows-latest, arch: x64}
+          # - {name: x86_64-windows, os: windows-latest, arch: x64}
 
     env:
       VULKANSDK_VER: 1.3.268.0
