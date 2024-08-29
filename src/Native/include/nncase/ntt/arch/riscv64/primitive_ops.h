@@ -831,23 +831,22 @@ REGISTER_RVV_BINARY_OP(pow, float, pow_float32)
                                              const vint32m##lmul##_t &v2,      \
                                              const size_t vl) {                \
         auto remainder = __riscv_vrem_vv_i32m##lmul(v1, v2, vl);               \
-        auto sign1 = __riscv_vsra_vx_i32m##lmul(v1, 31, vl);                   \
-        auto sign2 = __riscv_vsra_vx_i32m##lmul(v2, 31, vl);                   \
-        auto cond1 = __riscv_vmsne_vx_i32m##lmul##_b##mlen(remainder, 0, vl);  \
-        auto cond2 = __riscv_vmsne_vv_i32m##lmul##_b##mlen(sign1, sign2, vl);  \
-        cond1 = __riscv_vmand_mm_b##mlen(cond1, cond2, vl);                    \
-        return __riscv_vadd_vv_i32m##lmul##_m(cond1, remainder, v2, vl);       \
+        auto tmp = __riscv_vxor_vv_i32m##lmul(v1, v2, vl);                     \
+        auto mask1 = __riscv_vmsne_vx_i32m##lmul##_b##mlen(remainder, 0, vl);  \
+        auto mask2 = __riscv_vmslt_vx_i32m##lmul##_b##mlen(tmp, 0, vl);        \
+        mask1 = __riscv_vmand_mm_b##mlen(mask1, mask2, vl);                    \
+        remainder = __riscv_vadd_vv_i32m##lmul##_m(mask1, remainder, v2, vl);  \
+        return remainder;                                                      \
     }                                                                          \
                                                                                \
     inline vint32m##lmul##_t floor_mod_int32(                                  \
         const vint32m##lmul##_t &v1, const int32_t &s, const size_t vl) {      \
         auto remainder = __riscv_vrem_vx_i32m##lmul(v1, s, vl);                \
-        auto sign1 = __riscv_vsra_vx_i32m##lmul(v1, 31, vl);                   \
-        auto sign2 = s >> 31;                                                  \
-        auto cond1 = __riscv_vmsne_vx_i32m##lmul##_b##mlen(remainder, 0, vl);  \
-        auto cond2 = __riscv_vmsne_vx_i32m##lmul##_b##mlen(sign1, sign2, vl);  \
-        cond1 = __riscv_vmand_mm_b##mlen(cond1, cond2, vl);                    \
-        remainder = __riscv_vadd_vx_i32m##lmul##_m(cond1, remainder, s, vl);   \
+        auto tmp = __riscv_vxor_vx_i32m##lmul(v1, s, vl);                      \
+        auto mask1 = __riscv_vmsne_vx_i32m##lmul##_b##mlen(remainder, 0, vl);  \
+        auto mask2 = __riscv_vmslt_vx_i32m##lmul##_b##mlen(tmp, 0, vl);        \
+        mask1 = __riscv_vmand_mm_b##mlen(mask1, mask2, vl);                    \
+        remainder = __riscv_vadd_vx_i32m##lmul##_m(mask1, remainder, s, vl);   \
         return remainder;                                                      \
     }                                                                          \
                                                                                \
@@ -855,12 +854,11 @@ REGISTER_RVV_BINARY_OP(pow, float, pow_float32)
         const int32_t &s, const vint32m##lmul##_t &v2, const size_t vl) {      \
         auto v1 = __riscv_vmv_v_x_i32m##lmul(s, vl);                           \
         auto remainder = __riscv_vrem_vv_i32m##lmul(v1, v2, vl);               \
-        auto sign1 = s >> 31;                                                  \
-        auto sign2 = __riscv_vsra_vx_i32m##lmul(v2, 31, vl);                   \
-        auto cond1 = __riscv_vmsne_vx_i32m##lmul##_b##mlen(remainder, 0, vl);  \
-        auto cond2 = __riscv_vmsne_vx_i32m##lmul##_b##mlen(sign2, sign1, vl);  \
-        cond1 = __riscv_vmand_mm_b##mlen(cond1, cond2, vl);                    \
-        remainder = __riscv_vadd_vv_i32m##lmul##_m(cond1, remainder, v2, vl);  \
+        auto tmp = __riscv_vxor_vv_i32m##lmul(v1, v2, vl);                     \
+        auto mask1 = __riscv_vmsne_vx_i32m##lmul##_b##mlen(remainder, 0, vl);  \
+        auto mask2 = __riscv_vmslt_vx_i32m##lmul##_b##mlen(tmp, 0, vl);        \
+        mask1 = __riscv_vmand_mm_b##mlen(mask1, mask2, vl);                    \
+        remainder = __riscv_vadd_vv_i32m##lmul##_m(mask1, remainder, v2, vl);  \
         return remainder;                                                      \
     }
 
@@ -924,7 +922,7 @@ REGISTER_RVV_SWISHB_OP(float, swishb_float32)
                 vout(3) = __riscv_vfmul_vf_f32m##lmul(v2, v1(3), vl);          \
             } else {                                                           \
                 for (size_t i = 0; i < vl; i++) {                              \
-                    vout(i) = __riscv_vfmul_vf_f32m##lmul(v1, v2(i), vl);      \
+                    vout(i) = __riscv_vfmul_vf_f32m##lmul(v2, v1(i), vl);      \
                 }                                                              \
             }                                                                  \
             return vout;                                                       \
@@ -1030,6 +1028,60 @@ REGISTER_RVV_KERNEL(MUL_ADD_FLOAT32)
     RVV_MUL_ADD_OP(dtype, NTT_VL(sizeof(dtype) * 8, 8), kernel)
 
 REGISTER_RVV_MUL_ADD_OP(float, mul_add_float32)
+
+#if 1
+template <bool AccC>
+struct mma<AccC, ntt::vector<float, 1, 4>, ntt::vector<float, 4, 4>,
+           ntt::vector<float, 1, 4>> {
+    ntt::vector<float, 1, 4>
+    operator()(const ntt::vector<float, 1, 4> &lhs,
+               const ntt::vector<float, 4, 4> &rhs,
+               const ntt::vector<float, 1, 4> &v3) const noexcept {
+        auto output = v3;
+        for (size_t k = 0; k < 4; k++) {
+            output(0) = (k != 0 || AccC)
+                            ? ntt::mul_add(lhs(0, k), rhs(k), output(0))
+                            : ntt::mul(lhs(0, k), rhs(k));
+        }
+        return output;
+    }
+};
+
+template <bool AccC>
+struct mma<AccC, ntt::vector<float, 4, 4>, ntt::vector<float, 4, 4>,
+           ntt::vector<float, 4, 4>> {
+    ntt::vector<float, 4, 4>
+    operator()(const ntt::vector<float, 4, 4> &lhs,
+               const ntt::vector<float, 4, 4> &rhs,
+               const ntt::vector<float, 4, 4> &v3) const noexcept {
+        auto output = v3;
+        for (size_t k = 0; k < 4; k++) {
+            output(0) = (k != 0 || AccC)
+                            ? ntt::mul_add(lhs(0, k), rhs(k), output(0))
+                            : ntt::mul(lhs(0, k), rhs(k));
+        }
+
+        for (size_t k = 0; k < 4; k++) {
+            output(1) = (k != 0 || AccC)
+                            ? ntt::mul_add(lhs(1, k), rhs(k), output(1))
+                            : ntt::mul(lhs(1, k), rhs(k));
+        }
+
+        for (size_t k = 0; k < 4; k++) {
+            output(2) = (k != 0 || AccC)
+                            ? ntt::mul_add(lhs(2, k), rhs(k), output(2))
+                            : ntt::mul(lhs(2, k), rhs(k));
+        }
+
+        for (size_t k = 0; k < 4; k++) {
+            output(3) = (k != 0 || AccC)
+                            ? ntt::mul_add(lhs(3, k), rhs(k), output(3))
+                            : ntt::mul(lhs(3, k), rhs(k));
+        }
+        return output;
+    }
+};
+#endif
 
 // register reduce_sum kernel
 #define REDUCE_ADD_FLOAT32(lmul, mlen)                                         \
