@@ -88,10 +88,16 @@ public sealed class PackResizeImage : PackRule
     {
     }
 
-    public override Pattern Pattern { get; } = IsResizeImage("target", op => op.TransformationMode == ImageResizeTransformationMode.Asymmetric && op.IsTFResize == false, IsWildcard("input"), IsNone(), IsTensorConst("newSize"), IsTensorConst("cubicCoeffA"), IsTensorConst("excludeOutside"), IsTensorConst("extrapolationValue"));
+    public override Pattern Pattern { get; } = IsResizeImage("target", op => op.TransformationMode == ImageResizeTransformationMode.Asymmetric && op.IsTFResize == false, IsWildcard("input"), IsWildcard("roi"), IsTensorConst("newSize"), IsTensorConst("cubicCoeffA"), IsTensorConst("excludeOutside"), IsTensorConst("extrapolationValue"));
 
     public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
+        var roi = (Expr)result["roi"];
+        if (roi is not None && roi.CheckedShape.Size != 0)
+        {
+            return null!;
+        }
+
         var rets = new List<Expr>();
         var op = (IR.Imaging.ResizeImage)result["target"];
         var input = (Expr)result["input"];
