@@ -225,7 +225,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
     }
 
     [Fact]
-    public async void TestComplexFusionTensorConstInput()
+    public async Task TestComplexFusionTensorConstInput()
     {
         var inShape = new[] { 1, 24, 32, 3 };
         var input = DataGenerator.DefaultRandom(inShape);

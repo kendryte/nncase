@@ -16,7 +16,6 @@
 #include <cstring>
 #include <iostream>
 #include <map>
-#include <nlohmann/json.hpp>
 #include <nncase/compiler_defs.h>
 #include <nncase/runtime/simple_types.h>
 #include <nncase/value.h>
@@ -454,12 +453,8 @@ class shape_bucket_options : public clr_object_base {
     }
 
     std::map<std::string, std::tuple<int, int>> range_info() { return {}; }
-    void range_info(std::map<std::string, std::tuple<int, int>> value) {
-        nlohmann::json j = value;
-        std::string s = j.dump();
-        nncase_clr_api()->shape_bucket_options_set_range_info(
-            obj_.get(), s.c_str(), s.length());
-    }
+    NNCASE_API void
+    range_info(std::map<std::string, std::tuple<int, int>> value);
 
     int segments_count() { return 2; }
     void segments_count(int value) {
@@ -468,12 +463,7 @@ class shape_bucket_options : public clr_object_base {
     }
 
     std::map<std::string, int> fix_var_map() { return {}; }
-    void fix_var_map(std::map<std::string, int> value) {
-        nlohmann::json j = value;
-        std::string s = j.dump();
-        nncase_clr_api()->shape_bucket_options_set_fix_var_map(
-            obj_.get(), s.c_str(), s.length());
-    }
+    NNCASE_API void fix_var_map(std::map<std::string, int> value);
 };
 
 class cpu_target_options : public clr_object_base {

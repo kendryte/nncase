@@ -78,5 +78,9 @@ int _CrtDbgReport(int reportType, const char *filename, int linenumber,
 void *memcpy(void *dst, const void *src, size_t len) {
     return g_cpu_mt->memcpy(dst, src, len);
 }
+
+void *memmove(void *dst, const void *src, size_t len) {
+    return g_cpu_mt->memmove(dst, src, len);
+}
 #endif
 }

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
@@ -46,7 +47,7 @@ public class UnitTestPrimFuncMerge : TestClassBase
 
     [Theory(Skip = "Disable")]
     [MemberData(nameof(Datas))]
-    private async void RunCore(IDataFlowPrimFuncCase fusionCase, int count)
+    private async Task RunCore(IDataFlowPrimFuncCase fusionCase, int count)
     {
         var dumper = Diagnostics.DumpScope.Current.CreateSubDummper($"case_{count}");
         var inputVar = new Var("input", new TensorType(DataTypes.Float32, PrimFuncBuilder.Dimensions));

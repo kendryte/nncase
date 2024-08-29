@@ -305,7 +305,7 @@ internal sealed class DataFlowType4FusionCase : IDataFlowPrimFuncCase
 
     private bool CheckOnFinish(TestVisitor v)
     {
-        var wrapper = v.ExprMemo.OfType<PrimFunctionWrapper>().Where(p => p.Name.StartsWith("multi_fusion_")).First();
+        var wrapper = v.ExprMemo.Keys.OfType<PrimFunctionWrapper>().Where(p => p.Name.StartsWith("multi_fusion_")).First();
         return wrapper.ParametersCount == 3;
     }
 }
@@ -348,7 +348,7 @@ internal sealed class DataFlowType5FusionCase : IDataFlowPrimFuncCase
 
     private bool CheckOnFinish(TestVisitor v)
     {
-        var wrapper = v.ExprMemo.OfType<PrimFunctionWrapper>().First();
+        var wrapper = v.ExprMemo.Keys.OfType<PrimFunctionWrapper>().First();
         return wrapper.ParametersCount == 1;
     }
 }
