@@ -61,6 +61,7 @@ nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
 
 #ifndef WIN32
     .memcpy = memcpy,
+    .memmove = memmove,
 #endif
 };
 } // namespace

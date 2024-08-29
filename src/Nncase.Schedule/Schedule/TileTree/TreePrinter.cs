@@ -109,12 +109,12 @@ internal sealed class TreePrinter : ITreeNodeVisitor<TreePrinter.Context, TreePr
         _opMemo.Add(value, node);
         _subgraph.Nodes.Add(node);
 
-        node.ToRecordNode(rb => rb.AppendRecord(rb1 =>
+        node.ToRecordNode(rb => rb.AppendSubrecord(rb1 =>
         {
             rb1.AppendField(value.ToString()).
                 AppendField($"{value.Op.GetType().Name}({value.Op.DisplayProperty()})").
                 AppendFields(value.DomainBounds.Select((d, i) => $"d{i} : {d}"));
-        }).AppendRecord(
+        }).AppendSubrecord(
             rb2 =>
             {
                 for (int i = 0; i < value.ReadAccesses.Length; i++)
