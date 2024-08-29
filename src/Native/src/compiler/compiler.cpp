@@ -16,6 +16,7 @@
 #include <fstream>
 #include <hostfxr.h>
 #include <nethost.h>
+#include <nlohmann/json.hpp>
 #include <nncase/compiler.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/error.h>
@@ -292,4 +293,20 @@ int nncase_clr_initialize(const char *root_assembly_path) {
 int nncase_clr_uninitialize() {
     g_nncase_api_mt = {};
     return 0;
+}
+
+void nncase::clr::shape_bucket_options::range_info(
+    std::map<std::string, std::tuple<int, int>> value) {
+    nlohmann::json j = value;
+    std::string s = j.dump();
+    nncase_clr_api()->shape_bucket_options_set_range_info(obj_.get(), s.c_str(),
+                                                          s.length());
+}
+
+void nncase::clr::shape_bucket_options::fix_var_map(
+    std::map<std::string, int> value) {
+    nlohmann::json j = value;
+    std::string s = j.dump();
+    nncase_clr_api()->shape_bucket_options_set_fix_var_map(
+        obj_.get(), s.c_str(), s.length());
 }
