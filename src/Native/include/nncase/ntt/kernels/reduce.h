@@ -20,15 +20,20 @@
 #include "../unrool.h"
 #include "../utility.h"
 
-#if defined(__GNUC__) || defined(__clang__)
-#define REDUCE_UNROLLNUM 2
-#else
-#define REDUCE_UNROLLNUM 1
-#endif
-
 namespace nncase::ntt {
 
 namespace reduce_detail {
+
+template <IsFixedDims Axes, IsFixedDims PackedAxes>
+constexpr size_t unroll_arch() {
+#if __riscv
+    return 2;
+#elif __x86_64__
+    return (Axes::rank() >= 2 && PackedAxes::rank() == 0) ? 2 : 2;
+#else
+    return 1;
+#endif
+}
 
 template <template <class T1, class T2> class Op, IsFixedTensor TIn,
           IsFixedTensor TOut, IsFixedDims Axes, IsFixedDims PackedAxes,
@@ -76,6 +81,8 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
     constexpr bool UseVectorReduce =
         PackedAxes::rank() == 1 && PackedAxes::at(0) >= Axes::at(0);
 
+    constexpr size_t unroll_num = unroll_arch<Axes, PackedAxes>();
+
     constexpr auto input_stride = input_strides[Axes::at(Axes::rank() - 1)];
     apply(domain, [&](auto index) {
         auto input_p = input.elements().data() + linear_offset(index, strides);
@@ -89,8 +96,8 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
         if constexpr (std::is_same_v<Op<TIElem, TIElem>,
                                      ntt::ops::mean<TIElem, TIElem>>) {
             TIElem sum;
-            sum = loop_unrool<ntt::ops::add, TIElem, REDUCE_UNROLLNUM,
-                              inner_size, input_stride>(input_p);
+            sum = loop_unrool<ntt::ops::add, TIElem, unroll_num, inner_size,
+                              input_stride>(input_p);
 
             if constexpr (UseVectorReduce) {
                 sum = sum / (inner_size * TIElem::shape_type::length());
@@ -100,8 +107,8 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
             }
         } else {
             TIElem ret;
-            ret = loop_unrool<Op, TIElem, REDUCE_UNROLLNUM, inner_size,
-                              input_stride>(input_p);
+            ret = loop_unrool<Op, TIElem, unroll_num, inner_size, input_stride>(
+                input_p);
 
             if constexpr (UseVectorReduce) {
                 output_p[0] = ops::reduce<Op, TOElem, TIElem>()(ret);
