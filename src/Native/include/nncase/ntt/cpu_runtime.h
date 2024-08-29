@@ -40,6 +40,7 @@ struct nncase_runtime_cpu_mt_t {
 
 #ifndef WIN32
     void *(*memcpy)(void *dst, const void *src, size_t len);
+    void *(*memmove)(void *dst, const void *src, size_t len);
 #endif
 };
 

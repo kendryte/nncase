@@ -1,5 +1,4 @@
 from distutils.command.install_data import install_data
-import imp
 from posixpath import dirname
 from setuptools import find_packages, setup, Extension
 from setuptools.command.build_ext import build_ext
