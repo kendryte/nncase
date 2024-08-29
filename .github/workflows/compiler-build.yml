@@ -36,6 +36,12 @@ jobs:
           arch: ${{matrix.config.arch}}
         if: runner.os == 'Windows'
 
+      - name: Set up build environment (Linux)
+        run: |
+          echo "CC=gcc-14" >> $GITHUB_ENV
+          echo "CXX=g++-14" >> $GITHUB_ENV
+        if: runner.os == 'Linux'
+
       - name: Install Conan
         shell: bash
         run: |
