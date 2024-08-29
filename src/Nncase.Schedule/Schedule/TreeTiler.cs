@@ -107,7 +107,7 @@ public static class TreeTiler
         }
     }
 
-    public static TreeSolverResultConstructor? Solve(ITreeNode tree, ITargetOptions targetOptions)
+    public static TreeSolverResultConstructor? Solve(ITreeNode tree, ICpuTargetOptions targetOptions)
     {
         int[] memoryCapacities = targetOptions.MemoryCapacities;
         int[] memoryBandWidths = targetOptions.MemoryBandWidths;
@@ -508,7 +508,7 @@ public static class TreeTiler
         return collector.Points;
     }
 
-    public static Call Tile(Grid grid, string moduleKind, int itemNumber, ITargetOptions targetOptions)
+    public static Call Tile(Grid grid, string moduleKind, int itemNumber, ICpuTargetOptions targetOptions)
     {
         // var root = new ScopeNode();
         // var opId = 0;

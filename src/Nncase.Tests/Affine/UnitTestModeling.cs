@@ -259,7 +259,7 @@ public sealed class UnitTestModeling : TestClassBase
         root.Dump("merged");
 #endif
 
-        Assert.IsType<TreeSolverResultConstructor>(Schedule.TreeTiler.Solve(root, CompileOptions.TargetOptions));
+        Assert.IsType<TreeSolverResultConstructor>(Schedule.TreeTiler.Solve(root, (ICpuTargetOptions)CompileOptions.TargetOptions));
     }
 
     [Fact]
@@ -291,7 +291,7 @@ public sealed class UnitTestModeling : TestClassBase
         root.Dump("merged");
 #endif
 
-        Assert.IsType<TreeSolverResultConstructor>(Schedule.TreeTiler.Solve(root, CompileOptions.TargetOptions));
+        Assert.IsType<TreeSolverResultConstructor>(Schedule.TreeTiler.Solve(root, (ICpuTargetOptions)CompileOptions.TargetOptions));
     }
 
     [Fact]
@@ -316,7 +316,7 @@ public sealed class UnitTestModeling : TestClassBase
             return;
         }
 
-        Schedule.TreeTiler.Tile(grid, Nncase.Targets.CPUTarget.Kind, 0, CompileOptions.TargetOptions);
+        Schedule.TreeTiler.Tile(grid, Nncase.Targets.CPUTarget.Kind, 0, (ICpuTargetOptions)CompileOptions.TargetOptions);
     }
 
     [Fact]
@@ -388,7 +388,7 @@ public sealed class UnitTestModeling : TestClassBase
         root.Dump("fused");
 #endif
 
-        var result = Schedule.TreeTiler.Solve(root, CompileOptions.TargetOptions);
+        var result = Schedule.TreeTiler.Solve(root, (ICpuTargetOptions)CompileOptions.TargetOptions);
 
         if (result is not null)
         {
@@ -443,14 +443,14 @@ public sealed class UnitTestModeling : TestClassBase
 
         var root = new ScopeNode();
         var opId = 0;
-        var totalLevel = CompileOptions.TargetOptions.MemoryCapacities.Length - 1;
+        var totalLevel = ((ICpuTargetOptions)CompileOptions.TargetOptions).MemoryCapacities.Length - 1;
         Schedule.TreeTiler.BuildTree(grid, root, totalLevel, ref opId);
         root.Dump("build");
         var m1 = root.Root<ITreeNode>().Clone();
         m1.Merge(2, 1, 2);
         m1.Dump("final");
 
-        var res = TreeSolverInitializer.Init(m1, totalLevel, CompileOptions.TargetOptions, out _, out _, out _, out _);
+        var res = TreeSolverInitializer.Init(m1, totalLevel, (ICpuTargetOptions)CompileOptions.TargetOptions, out _, out _, out _, out _);
         Assert.Equal(3, res.Inputs.Count);
         Assert.Single(res.Outputs);
         Assert.Equal(2, res.DefUseMap.Keys.Count);
@@ -470,7 +470,7 @@ public sealed class UnitTestModeling : TestClassBase
 
         var root = new ScopeNode();
         var opId = 0;
-        var totalLevel = CompileOptions.TargetOptions.MemoryCapacities.Length - 1;
+        var totalLevel = ((ICpuTargetOptions)CompileOptions.TargetOptions).MemoryCapacities.Length - 1;
         Schedule.TreeTiler.BuildTree(grid, root, totalLevel, ref opId);
         root.Dump("build");
         var m1 = root.Root<ITreeNode>().Clone();
@@ -478,7 +478,7 @@ public sealed class UnitTestModeling : TestClassBase
         m1.Merge(1, 0, 1);
         m1.Dump("final");
 
-        var res = TreeSolverInitializer.Init(m1, totalLevel, CompileOptions.TargetOptions, out _, out _, out _, out _);
+        var res = TreeSolverInitializer.Init(m1, totalLevel, (ICpuTargetOptions)CompileOptions.TargetOptions, out _, out _, out _, out _);
         Assert.Equal(4, res.Inputs.Count);
         Assert.Single(res.Outputs);
         Assert.Single(res.DefUseMap.Keys);
@@ -498,14 +498,14 @@ public sealed class UnitTestModeling : TestClassBase
 
         var root = new ScopeNode();
         var opId = 0;
-        var totalLevel = CompileOptions.TargetOptions.MemoryCapacities.Length - 1;
+        var totalLevel = ((ICpuTargetOptions)CompileOptions.TargetOptions).MemoryCapacities.Length - 1;
         Schedule.TreeTiler.BuildTree(grid, root, totalLevel, ref opId);
         root.Dump("build");
         var m1 = root.Root<ITreeNode>().Clone();
         m1.Merge(1, 0, 2);
         m1.Dump("final");
 
-        var res = TreeSolverInitializer.Init(m1, totalLevel, CompileOptions.TargetOptions, out _, out _, out _, out _);
+        var res = TreeSolverInitializer.Init(m1, totalLevel, (ICpuTargetOptions)CompileOptions.TargetOptions, out _, out _, out _, out _);
 
         // when merge point at top level, should put the cache buffer into defuse map.
         Assert.Equal(4, res.Inputs.Count);

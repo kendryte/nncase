@@ -13,14 +13,18 @@ using Nncase.Quantization;
 
 namespace Nncase;
 
+public interface ICpuTargetOptions : ITargetOptions
+{
+    int[] MemoryCapacities { get; }
+
+    int[] MemoryBandWidths { get; }
+}
+
 /// <summary>
 /// The targets own compile options.
 /// </summary>
 public interface ITargetOptions
 {
-    int[] MemoryCapacities { get; }
-
-    int[] MemoryBandWidths { get; }
 }
 
 /// <summary>

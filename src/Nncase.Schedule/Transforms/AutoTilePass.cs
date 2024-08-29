@@ -93,7 +93,7 @@ public sealed class AutoTilePass : ModulePass
                 var si = ctx.SummaryVertexSubgraphMap[vertex];
                 var cloner = new ReplacingExprCloner(ctx.VarMap[si].ToDictionary(kv => kv.Key, kv => (Expr)kv.Value));
                 var clonedCall = cloner.Clone(vertex.Expr, default); // replaces some exprs that are in the subgraph with var, avoid tiling the grids out of the subgraph.
-                var tiledCall = tiler.Tile(clonedCall, ModuleKind, vi, CompileOptions.TargetOptions);
+                var tiledCall = tiler.Tile(clonedCall, ModuleKind, vi, (ICpuTargetOptions)CompileOptions.TargetOptions);
 
                 var varMap = ctx.VarMap[si].ToDictionary(kv => (Expr)kv.Value, kv => exprMemo[kv.Key]);
                 var substitutor = new Mutators.Substitutor(e =>

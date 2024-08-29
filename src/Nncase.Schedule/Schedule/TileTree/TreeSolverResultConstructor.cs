@@ -61,7 +61,7 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
     private readonly Assignment _sol;
     private readonly Dictionary<ITileAbleNode, Dictionary<BufferIdentity, SubViewInfo>> _subViewMemo;
 
-    public TreeSolverResultConstructor(ITreeNode tree, long objectiveValue, Assignment solution, ArgumentsInfo argumentsInfo, Dictionary<int, Dictionary<TileNode, Dictionary<(TileNode Node, BufferIdentity Buffer), IntExpr>>> levelNodeBufferBoxs, Dictionary<int, Dictionary<TileNode, Dictionary<(TileNode Node, BufferIdentity Buffer), Tuple<int, int>>>> levelTreeBufferLifeness, Solver solver, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainInfos, ITargetOptions targetOptions)
+    public TreeSolverResultConstructor(ITreeNode tree, long objectiveValue, Assignment solution, ArgumentsInfo argumentsInfo, Dictionary<int, Dictionary<TileNode, Dictionary<(TileNode Node, BufferIdentity Buffer), IntExpr>>> levelNodeBufferBoxs, Dictionary<int, Dictionary<TileNode, Dictionary<(TileNode Node, BufferIdentity Buffer), Tuple<int, int>>>> levelTreeBufferLifeness, Solver solver, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainInfos, ICpuTargetOptions targetOptions)
         : base(solver, primitiveBufferInfo, levelBufferInfos, domainInfos, targetOptions)
     {
         Tree = tree;

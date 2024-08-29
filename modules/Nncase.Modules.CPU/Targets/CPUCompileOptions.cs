@@ -3,13 +3,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Nncase.Targets;
 
-public enum MemoryArch : byte
+public enum MemoryAccessArchitecture : byte
 {
     /// <summary>
     /// Unified Memory Access.
@@ -22,7 +23,7 @@ public enum MemoryArch : byte
     NUMA = 1,
 }
 
-public enum NocArch : byte
+public enum NocArchitecture : byte
 {
     Mesh = 0,
     CrossBar = 1,
@@ -30,30 +31,65 @@ public enum NocArch : byte
 
 public class CpuTargetOptions : ITargetOptions
 {
+    [DisplayName("--model-name")]
+    [Description("the input model name.")]
+    [DefaultValue("")]
     public string ModelName { get; set; } = string.Empty;
 
+    [DisplayName("--packing")]
+    [Description("enable simd layout optimization.")]
+    [DefaultValue(false)]
     public bool Packing { get; set; }
 
-    public int[] TargetTileSize { get; set; } = Array.Empty<int>();
+    [DisplayName("--unified-memory-arch")]
+    [Description("whether Unified Memory Architecture. see https://en.wikipedia.org/wiki/Unified_Memory_Access.")]
+    [DefaultValue(true)]
+    public bool UnifiedMemoryArch { get; set; } = true;
 
-    /// <summary>
-    /// Gets or sets a value indicating whether Unified Memory Architecture. see https://en.wikipedia.org/wiki/Unified_Memory_Access.
-    /// </summary>
-    public bool UnifiedMemoryArchitecture { get; set; } = true;
+    [DisplayName("--memory-access-arch")]
+    [Description("Memory Access Architecture.")]
+    [DefaultValue(MemoryAccessArchitecture.UMA)]
+    [CommandLine.FromAmong(MemoryAccessArchitecture.UMA, MemoryAccessArchitecture.NUMA)]
+    public MemoryAccessArchitecture MemoryAccessArch { get; set; } = MemoryAccessArchitecture.UMA;
 
-    public MemoryArch MemoryArch { get; set; } = MemoryArch.UMA;
+    [DisplayName("--noc-arch")]
+    [Description("Noc Architecture.")]
+    [DefaultValue(NocArchitecture.Mesh)]
+    [CommandLine.FromAmong(NocArchitecture.Mesh, NocArchitecture.CrossBar)]
+    public NocArchitecture NocArch { get; set; } = NocArchitecture.Mesh;
 
-    public NocArch NocArch { get; set; } = NocArch.Mesh;
-
+    [DisplayName("--hierarchies")]
+    [Description("the distributed hierarchies of hardware. eg. `8,4 4,8` for dynamic cluster search or `4` for fixed hardware.")]
+    [DefaultValue("() => new int[][] { new int[] { 1 } }")]
+    [AmbientValue("ParseNestedIntArray")]
+    [CommandLine.AllowMultiplePerToken]
     public int[][] Hierarchies { get; set; } = new int[][] { new int[] { 1 } };
 
+    [DisplayName("--hierarchy-names")]
+    [Description("the name identify of hierarchies.")]
+    [DefaultValue("b")]
     public string HierarchyNames { get; set; } = "b";
 
+    [DisplayName("--hierarchy-sizes")]
+    [Description("the memory capacity of hierarchies.")]
+    [DefaultValue("() => new int[] { 1073741824 }")]
+    [CommandLine.AllowMultiplePerToken]
     public int[] HierarchySizes { get; set; } = new[] { 1 * (int)MathF.Pow(2, 30) };
 
+    [DisplayName("--memory-capacities")]
+    [Description("the memory capacity of single core. eg. `0 32 64` for l0,l1,l2")]
+    [DefaultValue("() => new int[] { 0, 2097152, 2147483647 }")]
+    [CommandLine.AllowMultiplePerToken]
     public int[] MemoryCapacities { get; set; } = new[] { 0, 2 * 1024 * 1024, int.MaxValue };
 
+    [DisplayName("--memory-bandwidths")]
+    [Description("the memory bandwidth of single core. eg. `128 64 8` for l0,l1,l2")]
+    [DefaultValue("() => new int[] { 128, 64, 8 }")]
+    [CommandLine.AllowMultiplePerToken]
     public int[] MemoryBandWidths { get; set; } = new[] { 128, 64, 8 };
 
+    [DisplayName("--distributed--scheme")]
+    [Description("the distributed scheme path.")]
+    [DefaultValue("")]
     public string DistributedScheme { get; set; } = string.Empty;
 }

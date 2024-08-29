@@ -8,7 +8,7 @@ namespace Nncase.Schedule.TileTree;
 
 public sealed class TreeSolverWritesInitializer : TreeSolverBase, ITreeNodeVisitor<Dictionary<BufferIdentity, IntExpr[]>, Unit>
 {
-    public TreeSolverWritesInitializer(Solver solver, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainDimInfos, ITargetOptions targetOptions)
+    public TreeSolverWritesInitializer(Solver solver, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainDimInfos, ICpuTargetOptions targetOptions)
         : base(solver, primitiveBufferInfo, levelBufferInfos, domainDimInfos, targetOptions)
     {
     }

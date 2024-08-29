@@ -8,7 +8,7 @@ namespace Nncase.Schedule.TileGraph;
 
 public abstract class TreeSolverBase<T>
 {
-    public TreeSolverBase(Solver solver, Dictionary<OpNode, OpNodeInfo<T>> opNodeMemo, Dictionary<TileNode, TileNodeInfo<T>> tileNodeMemo, Dictionary<ITileable, DomainInfo<T>> tileableNodeMemo, ITargetOptions targetOptions)
+    public TreeSolverBase(Solver solver, Dictionary<OpNode, OpNodeInfo<T>> opNodeMemo, Dictionary<TileNode, TileNodeInfo<T>> tileNodeMemo, Dictionary<ITileable, DomainInfo<T>> tileableNodeMemo, ICpuTargetOptions targetOptions)
     {
         Solver = solver;
         OpNodeMemo = opNodeMemo;
@@ -25,7 +25,7 @@ public abstract class TreeSolverBase<T>
 
     public Dictionary<ITileable, DomainInfo<T>> TileableNodeMemo { get; }
 
-    public ITargetOptions TargetOptions { get; }
+    public ICpuTargetOptions TargetOptions { get; }
 
     /// <summary>
     /// compute the dim map from the domain relation.

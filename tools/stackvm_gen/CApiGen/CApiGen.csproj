@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <PreserveCompilationReferences>true</PreserveCompilationReferences>
+    <!-- This group contains project properties for RazorLight on .NET Core -->
+    <PreserveCompilationContext>true</PreserveCompilationContext>
+    <MvcRazorCompileOnPublish>false</MvcRazorCompileOnPublish>
+    <MvcRazorExcludeRefAssembliesFromPublish>false</MvcRazorExcludeRefAssembliesFromPublish>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Templates\CApi.razor" />
+    <None Remove="Templates\Command.razor" />
+    <!-- <None Remove="Templates\dummy_kernel_cpp.razor" />
+    <None Remove="Templates\emitter_cs.razor" />
+    <None Remove="Templates\opcode_h.razor" />
+    <None Remove="Templates\op_reader_cpp.razor" />
+    <None Remove="Templates\op_reader_h.razor" />
+    <None Remove="Templates\op_writer_cpp.razor" />
+    <None Remove="Templates\kernel_h.razor" />
+    <None Remove="Templates\runtime_function_ops_h.razor" />
+    <None Remove="Templates\runtime_function_tensor_ops_cpp.razor" /> -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\CApi.razor" />
+    <EmbeddedResource Include="Templates\Command.razor" />
+    <!-- <EmbeddedResource Include="Templates\op_writer_cpp.razor" />
+    <EmbeddedResource Include="Templates\op_reader_cpp.razor" />
+    <EmbeddedResource Include="Templates\emitter_cs.razor" />
+    <EmbeddedResource Include="Templates\op_reader_h.razor" />
+    <EmbeddedResource Include="Templates\opcode_h.razor" />
+    <EmbeddedResource Include="Templates\kernel_h.razor" />
+    <EmbeddedResource Include="Templates\runtime_function_ops_h.razor" />
+    <EmbeddedResource Include="Templates\runtime_function_tensor_ops_cpp.razor" /> -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="RazorLight" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\modules\Nncase.Modules.CPU\Nncase.Modules.CPU.csproj" />
+  </ItemGroup>
+</Project>

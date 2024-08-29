@@ -32,41 +32,12 @@ public class CPUTarget : ITarget
 
     public (System.CommandLine.Command Command, Func<InvocationContext, System.CommandLine.Command, ITargetOptions> Parser) RegisterCommandAndParser()
     {
-        var cmd = new System.CommandLine.Command(Kind);
-        var packingOption = new Option<bool>(
-            name: "--packing",
-            description: "enable layout optimization.",
-            getDefaultValue: () => false);
-        cmd.AddOption(packingOption);
-        var hierarchiesOption = new Option<IEnumerable<int[]>>(
-            name: "--hierarchies",
-            description: "the topology of hardware. eg. `8,4 4,8` for dynamic cluster search or `4` for fixed hardware",
-            parseArgument: result =>
-            {
-                return result.Tokens.Select(tk => tk.Value.Split(",").Select(i => int.Parse(i)).ToArray());
-            })
-        {
-            AllowMultipleArgumentsPerToken = true,
-        };
-        cmd.AddOption(hierarchiesOption);
-        var hierarchyNameOption = new Option<string>(
-            name: "--hierarchy-name",
-            description: "the name identify of hierarchy.",
-            getDefaultValue: () => "b");
-        cmd.AddOption(hierarchyNameOption);
-        var schemeOption = new Option<string>(
-            name: "--scheme",
-            description: "the distributed scheme path.",
-            getDefaultValue: () => string.Empty);
-        cmd.AddOption(schemeOption);
+        var cmd = new CpuTargetOptionsCommand(Kind);
 
         ITargetOptions ParseTargetCompileOptions(InvocationContext context, Command command)
         {
-            var packing = context.ParseResult.GetValueForOption(packingOption);
-            var hierarchies = context.ParseResult.GetValueForOption(hierarchiesOption)?.ToArray() ?? Array.Empty<int[]>();
-            var hierarchyName = context.ParseResult.GetValueForOption(hierarchyNameOption);
-            var scheme = context.ParseResult.GetValueForOption(schemeOption);
-            return new CpuTargetOptions() { Packing = packing, Hierarchies = hierarchies.Length == 0 ? new[] { new[] { 1 } } : hierarchies, HierarchyNames = hierarchyName ?? "b", DistributedScheme = scheme ?? string.Empty };
+            var binder = new CpuTargetOptionsBinder(cmd);
+            return binder.GetBoundValue(context);
         }
 
         return (cmd, ParseTargetCompileOptions);

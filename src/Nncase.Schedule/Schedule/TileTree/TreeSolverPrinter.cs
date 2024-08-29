@@ -9,7 +9,7 @@ namespace Nncase.Schedule.TileTree;
 
 public sealed class TreeSolverPrinter : TreeSolverBase, ITreeNodeVisitor<IndentedTextWriter, Unit>
 {
-    public TreeSolverPrinter(Assignment? solution, Solver solver, Dictionary<OpNode, OpNodeInfo> opNodeMemo, Dictionary<TileNode, TileNodeInfo> tileNodeMemo, Dictionary<ITileAbleNode, DomainInfo> tileableNodeMemo, ITargetOptions targetOptions)
+    public TreeSolverPrinter(Assignment? solution, Solver solver, Dictionary<OpNode, OpNodeInfo> opNodeMemo, Dictionary<TileNode, TileNodeInfo> tileNodeMemo, Dictionary<ITileAbleNode, DomainInfo> tileableNodeMemo, ICpuTargetOptions targetOptions)
         : base(solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions)
     {
         Solution = solution;
