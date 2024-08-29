@@ -29,7 +29,7 @@ constexpr size_t unroll_arch() {
 #if __riscv
     return 2;
 #elif __x86_64__
-    return (Axes::rank() >= 2 && PackedAxes::rank() == 0) ? 2 : 2;
+    return (Axes::rank() >= 2 && PackedAxes::rank() == 0) ? 4 : 2;
 #else
     return 1;
 #endif
