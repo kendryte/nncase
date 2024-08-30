@@ -138,7 +138,7 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                          'pack_M': '6080',
                                          'pack_N': '2016',
                                          'pack_M_N': '3040',
-                                         'pack_M_K': '8064',
+                                         'pack_M_K': '11776',
                                          'pack_K_N': '2016',
                                          'pack_M_K_N': '2016',
                                          },
