@@ -112,7 +112,7 @@ public record class OptionInfo(Type PropertyType, string PropertyName, string Di
 
     public string OptionTypeName() => GetAliasTypeName(PropertyType);
 
-    private string GetAliasTypeName(Type type, bool init = true)
+    public string GetAliasTypeName(Type type, bool init = true)
     {
         if (Aliases.TryGetValue(type, out var alias))
         {
@@ -137,5 +137,66 @@ public record class OptionInfo(Type PropertyType, string PropertyName, string Di
         {
             throw new NotSupportedException(type.FullName);
         }
+    }
+
+    public string GetUnmanagedTypeNames(bool withParam)
+    {
+        var sb = new StringBuilder();
+        if (PropertyType.IsValueType)
+        {
+            sb.Append(GetAliasTypeName(PropertyType == typeof(bool) ? typeof(byte) : PropertyType));
+            if (withParam)
+            {
+                sb.Append(' ');
+                sb.Append("value");
+            }
+        }
+        else if (PropertyType.IsArray && PropertyType.GetElementType() is Type elemType)
+        {
+            var elemTypeName = GetAliasTypeName(elemType);
+            sb.Append($"{elemTypeName}*");
+            if (withParam)
+            {
+                sb.Append(' ');
+                sb.Append("value");
+            }
+
+            for (int i = PropertyType.GetArrayRank(); i > 0; i--)
+            {
+                var suffix = i == 0 ? string.Empty : "*";
+                sb.Append($", nuint{suffix}");
+                if (withParam)
+                {
+                    sb.Append(' ');
+                    sb.Append($"shape{i - 1}");
+                }
+            }
+        }
+        else
+        {
+            throw new NotSupportedException();
+        }
+
+        return sb.ToString();
+    }
+
+    public string GetUnmanagedValueSettingNames()
+    {
+
+        var sb = new StringBuilder();
+        if (PropertyType.IsValueType)
+        {
+            sb.Append(PropertyType == typeof(bool) ? "value != 0" : "value");
+        }
+        else if (PropertyType.IsArray)
+        {
+            sb.Append()
+        }
+        else
+        {
+            throw new NotSupportedException();
+        }
+
+        return sb.ToString();
     }
 }

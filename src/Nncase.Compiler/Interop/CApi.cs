@@ -815,6 +815,35 @@ public static unsafe class CApi
     private static string ToString(byte* bytes, nuint length) =>
         Encoding.UTF8.GetString(bytes, (int)length);
 
+    private static T[] To1DArray<T>(T* value, nuint shape0)
+        where T : unmanaged
+    {
+        var arr = new T[shape0];
+        for (nuint i = 0; i < shape0; i++)
+        {
+            arr[i] = value[i];
+        }
+
+        return arr;
+    }
+
+    private static T[][] To2DArray<T>(T* value, nuint* shape1, nuint shape0)
+        where T : unmanaged
+    {
+        var arr = new T[shape0][];
+        int count = 0;
+        for (nuint i = 0; i < shape0; i++)
+        {
+            arr[i] = new T[shape1[i]];
+            for (nuint j = 0; j < shape1[i]; j++)
+            {
+                arr[i][j] = value[count++];
+            }
+        }
+
+        return arr;
+    }
+
     private static int[] StringToArrayInt32(string value)
     {
         var data = value.Replace(" ", string.Empty, StringComparison.OrdinalIgnoreCase).Split(",");
