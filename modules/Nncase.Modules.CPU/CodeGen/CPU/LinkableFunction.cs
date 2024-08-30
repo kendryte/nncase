@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using Nncase.IR;
 
 namespace Nncase.CodeGen.CPU;
+
 internal sealed class LinkableKernelFunction : ILinkableFunction
 {
     public LinkableKernelFunction(uint id, TIR.PrimFunction sourceFunction, KernelCSource funcCSource, Stream text, params ILinkedSection[] sections)

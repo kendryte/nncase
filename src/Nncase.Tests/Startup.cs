@@ -5,7 +5,6 @@ using System;
 using System.IO;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Tomlyn.Extensions.Configuration;
 
 namespace Nncase.Tests;
 
@@ -30,7 +29,6 @@ public class Startup
 
     private void ConfigureAppConfiguration(HostBuilderContext context, IConfigurationBuilder builder)
     {
-        builder.Sources.Clear(); // CreateDefaultBuilder adds default configuration sources like appsettings.json. Here we can remove them
-        builder.AddTomlFile("testsettings.toml", true, false);
+        builder.Sources.Clear();
     }
 }

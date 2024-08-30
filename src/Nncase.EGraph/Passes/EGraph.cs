@@ -10,7 +10,6 @@ using System.Reactive;
 using System.Runtime.CompilerServices;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
-using Singulink.Collections;
 
 namespace Nncase.Passes;
 

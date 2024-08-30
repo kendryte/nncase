@@ -12,12 +12,4 @@ namespace Nncase.Collections;
 
 public static class CollectionsExtensions
 {
-    public static void AddRange<T>(this List<T> list, ReadOnlySpan<T> items)
-    {
-        list.Capacity += items.Length;
-        foreach (var item in items)
-        {
-            list.Add(item);
-        }
-    }
 }
