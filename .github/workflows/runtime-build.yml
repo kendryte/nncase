@@ -48,7 +48,7 @@ jobs:
         run: |
           conan install . --build=missing -s build_type=${{matrix.config.buildType}} -pr:a=toolchains/${{matrix.config.name}}.profile.jinja -o "&:runtime=True" -o "&:python=True" -o "&:tests=True"
           cmake --preset conan-release
-          
+
       - name: Build & Install
         run: |
           cmake --build build/${{matrix.config.buildType}} --config ${{matrix.config.buildType}}
@@ -86,7 +86,7 @@ jobs:
     strategy:
       matrix:
         config:
-          - { name: riscv64-unknown-linux, toolchain: riscv64-unknown-linux, toolchain_env: RISCV_ROOT_PATH, toolchain_file: riscv64-unknown-linux-gnu-12.0.1, qemu: qemu-riscv64, loader_args: '-cpu;rv64,v=true,Zfh=true,vlen=128,elen=64,vext_spec=v1.0;-L', cmakeArgs: '', buildType: Release }
+          - { name: riscv64-unknown-linux, toolchain: riscv64-unknown-linux, toolchain_env: RISCV_ROOT_PATH, toolchain_file: riscv64-unknown-linux_gnu_14.2.0, qemu: qemu-riscv64, loader_args: '-cpu;rv64,v=true,Zfh=true,vlen=128,elen=64,vext_spec=v1.0;-L', cmakeArgs: '', buildType: Release }
 
     steps:
       - uses: actions/checkout@v3
@@ -100,8 +100,9 @@ jobs:
       - name: Install toolchain and QEMU
         shell: bash
         run: |
-          wget https://dav.sunnycase.moe/d/ci/nncase/${{matrix.config.toolchain_file}}.tar.xz -O toolchain.tar.xz
-          sudo tar xf toolchain.tar.xz -C $GITHUB_WORKSPACE
+          wget https://dav.sunnycase.moe/d/ci/nncase/${{matrix.config.toolchain_file}}.tar.zst -O toolchain.tar.zst
+          sudo apt install zstd
+          sudo tar -I zstd -xf toolchain.tar.zst -C $GITHUB_WORKSPACE
           echo "${{matrix.config.toolchain_env}}=$GITHUB_WORKSPACE/${{matrix.config.toolchain_file}}" >> $GITHUB_ENV
 
           wget https://dav.sunnycase.moe/d/ci/nncase/${{matrix.config.qemu}}.tgz -O qemu.tgz
