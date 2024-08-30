@@ -126,6 +126,7 @@ _RVV_FLOAT32_LOG_OP(8, 4)
 #define c_cephes_exp_p4 1.6666665459E-1
 #define c_cephes_exp_p5 5.0000001201E-1
 
+#if 0
 #define _RVV_FLOAT32_EXP_OP(LMUL, MLEN)                                        \
     static inline vfloat32m##LMUL##_t exp_ps(vfloat32m##LMUL##_t x,            \
                                              size_t vl) {                      \
@@ -186,6 +187,57 @@ _RVV_FLOAT32_EXP_OP(1, 32)
 _RVV_FLOAT32_EXP_OP(2, 16)
 _RVV_FLOAT32_EXP_OP(4, 8)
 _RVV_FLOAT32_EXP_OP(8, 4)
+#else
+// e^x = 1 + x + 1/2!x^2 + 1/3!x^3 + 1/4!x^4 + 1/5!x^5 + 1/6!x^6 + 1/7!x^7
+#define _RVV_FLOAT32_EXP_OP(LMUL, MLEN, TLEN, E, M)                            \
+    static inline __attribute__((optimize("no-schedule-insns2")))              \
+        vfloat##TLEN##m##LMUL##_t                                              \
+        exp_ps(vfloat##TLEN##m##LMUL##_t x, size_t vl) {                       \
+        auto a1 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_LOG2EF, vl);      \
+        auto c1 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_exp_p1, vl);      \
+        auto c3 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_exp_p3, vl);      \
+        auto c5 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_exp_p5, vl);      \
+        x = __riscv_vfmin_vf_f##TLEN##m##LMUL(x, c_exp_hi, vl);                \
+        x = __riscv_vfmax_vf_f##TLEN##m##LMUL(x, c_exp_lo, vl);                \
+                                                                               \
+        /* express exp(x) as exp(g + n*log(2)) */                              \
+        a1 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(a1, x, c5, vl);                \
+                                                                               \
+        /* perform a floorf */                                                 \
+        auto tmp = __riscv_vfcvt_f_x_v_f##TLEN##m##LMUL(                       \
+            __riscv_vfcvt_x_f_v_i##TLEN##m##LMUL(a1, vl), vl);                 \
+        auto mask = __riscv_vmfgt_vv_f##TLEN##m##LMUL##_b##MLEN(tmp, a1, vl);  \
+        tmp = __riscv_vfsub_vf_f##TLEN##m##LMUL##_m(mask, tmp, 1.f, vl);       \
+                                                                               \
+        auto b1 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_exp_p0, vl);      \
+        x = __riscv_vfnmsac_vf_f##TLEN##m##LMUL(x, c_cephes_exp_C1, tmp, vl);  \
+        auto a2 = __riscv_vfcvt_x_f_v_i##TLEN##m##LMUL(tmp, vl);               \
+        auto b2 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_exp_p2, vl);      \
+        x = __riscv_vfnmsac_vf_f##TLEN##m##LMUL(x, c_cephes_exp_C2, tmp, vl);  \
+        auto b3 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_exp_p4, vl);      \
+        auto x2 = __riscv_vfmul_vv_f##TLEN##m##LMUL(x, x, vl);                 \
+        b1 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(b1, x, c1, vl);                \
+        b2 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(b2, x, c3, vl);                \
+        b3 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(b3, x, c5, vl);                \
+        b1 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(b1, x2, b2, vl);               \
+        x = __riscv_vfadd_vf_f##TLEN##m##LMUL(x, 1.f, vl);                     \
+        b1 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(b1, x2, b3, vl);               \
+        auto a = __riscv_vsll_vx_i##TLEN##m##LMUL(a2, M, vl);                  \
+        b1 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(b1, x2, x, vl);                \
+        auto b =                                                               \
+            __riscv_vreinterpret_v_f##TLEN##m##LMUL##_i##TLEN##m##LMUL(b1);    \
+                                                                               \
+        /* build 2^n */                                                        \
+        auto ret = __riscv_vadd_vv_i##TLEN##m##LMUL(a, b, vl);                 \
+        return __riscv_vreinterpret_v_i##TLEN##m##LMUL##_f##TLEN##m##LMUL(     \
+            ret);                                                              \
+    }
+
+_RVV_FLOAT32_EXP_OP(1, 32, 32, 0x7f, 23)
+_RVV_FLOAT32_EXP_OP(2, 16, 32, 0x7f, 23)
+_RVV_FLOAT32_EXP_OP(4, 8, 32, 0x7f, 23)
+_RVV_FLOAT32_EXP_OP(8, 4, 32, 0x7f, 23)
+#endif
 
 #define c_minus_cephes_DP1 -0.78515625
 #define c_minus_cephes_DP2 -2.4187564849853515625e-4
