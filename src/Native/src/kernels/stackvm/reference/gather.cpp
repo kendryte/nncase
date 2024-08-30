@@ -50,10 +50,20 @@ gather_impl(const T *input, T *output, std::span<const size_t> in_shape,
                 in_index[i_index] = out_index[i_index];
             }
 
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#if !defined(__clang__) && __GNUC__ >= 14
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#pragma GCC diagnostic ignored "-Wstringop-overread"
+#endif
+#endif
             // which index to be used in indices
             dims_t indices_index(out_index.begin() + axis,
                                  out_index.begin() + axis +
                                      indices_shape.size());
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
             auto indices_offset =
                 offset(get_default_strides(indices_shape), indices_index);
             // select sub block in dim axis

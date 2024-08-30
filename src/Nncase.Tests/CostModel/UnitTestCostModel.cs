@@ -7,6 +7,7 @@ using Nncase.IR;
 using Xunit;
 
 namespace Nncase.Tests.CostModelTest;
+
 public class UnitTestCostModel
 {
     [Fact]
