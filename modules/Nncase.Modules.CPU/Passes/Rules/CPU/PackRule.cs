@@ -329,10 +329,12 @@ public sealed class PackMatMul : PackRule
         // only pack B's n
         AddCandidate(Array.Empty<int>(), new[] { rhsShape.Length - 1 }, Array.Empty<int>(), new[] { Lane });
 
+        // pack A's m and B's n
+        AddCandidate(new[] { lhsShape.Length - 2 }, new[] { rhsShape.Length - 1 }, new[] { Lane }, new[] { Lane });
+
         if (Rank > 1)
         {
             AddCandidate(new[] { lhsShape.Length - 2, lhsShape.Length - 1 }, new[] { rhsShape.Length - 2, rhsShape.Length - 1 }, new[] { Lane, Lane }, new[] { Lane, Lane });
-            AddCandidate(new[] { lhsShape.Length - 2 }, new[] { rhsShape.Length - 1 }, new[] { Lane }, new[] { Lane });
             AddCandidate(new[] { lhsShape.Length - 2, lhsShape.Length - 1 }, new[] { rhsShape.Length - 2 }, new[] { Lane, Lane }, new[] { Lane });
             AddCandidate(new[] { lhsShape.Length - 1 }, new[] { rhsShape.Length - 2, rhsShape.Length - 1 }, new[] { Lane }, new[] { Lane, Lane });
         }

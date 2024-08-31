@@ -724,7 +724,8 @@
         "type": "Project",
         "dependencies": {
           "Nncase.Core": "[1.0.0, )",
-          "Nncase.Evaluator": "[1.0.0, )"
+          "Nncase.Evaluator": "[1.0.0, )",
+          "QuikGraph": "[2.5.0, )"
         }
       },
       "nncase.importer": {
@@ -748,8 +749,6 @@
           "Nncase.Modules.StackVM": "[1.0.0, )",
           "Nncase.Passes": "[1.0.0, )",
           "Nncase.Schedule": "[1.0.0, )",
-          "QuikGraph": "[2.5.0, )",
-          "QuikGraph.Graphviz": "[2.5.0, )",
           "Razor.Templating.Core": "[2.0.0, )"
         }
       },
@@ -766,7 +765,8 @@
           "Nncase.Core": "[1.0.0, )",
           "Nncase.EGraph": "[1.0.0, )",
           "Nncase.Evaluator": "[1.0.0, )",
-          "Nncase.Graph": "[1.0.0, )"
+          "Nncase.Graph": "[1.0.0, )",
+          "QuikGraph.Graphviz": "[2.5.0, )"
         }
       },
       "nncase.quantization": {

@@ -46,7 +46,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
         switch (inType, returnType)
         {
             case (TensorType tensorType, DistributedType distTensorType):
-                switch (context.CompileOptions.TargetCompileOptions)
+                switch (context.CompileOptions.TargetOptions)
                 {
                     case Targets.CpuTargetOptions { UnifiedMemoryArchitecture: true }:
                         break;
@@ -61,7 +61,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
 
                 break;
             case (DistributedType distTensorType, TensorType tensorType):
-                switch (context.CompileOptions.TargetCompileOptions)
+                switch (context.CompileOptions.TargetOptions)
                 {
                     case Targets.CpuTargetOptions { UnifiedMemoryArchitecture: true }:
                         break;

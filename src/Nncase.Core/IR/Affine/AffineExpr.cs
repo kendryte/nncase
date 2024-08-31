@@ -53,15 +53,16 @@ public abstract class AffineExpr : Expr
     /// <returns>Visit result.</returns>
     public abstract TExprResult Accept<TExprResult, TContext>(AffineExprVisitor<TExprResult, TContext> functor, TContext context);
 
-    internal AffineExpr ReplaceDomains(ReadOnlySpan<AffineRange> newDomains)
+    internal AffineExpr ReplaceDomainsAndSymbols(ReadOnlySpan<AffineRange> newDomains, ReadOnlySpan<AffineSymbol> newSymbols)
     {
         return this switch
         {
             AffineDim e when e.Position < newDomains.Length => newDomains[e.Position].Offset,
             AffineExtent e when e.Position < newDomains.Length => newDomains[e.Position].Extent,
-            AffineAddBinary e => new AffineAddBinary(e.Lhs.ReplaceDomains(newDomains), e.Rhs.ReplaceDomains(newDomains)),
-            AffineMulBinary e => new AffineMulBinary((AffineSymbolBase)e.Lhs.ReplaceDomains(newDomains), e.Rhs.ReplaceDomains(newDomains)),
-            AffineDivBinary e => new AffineDivBinary(e.BinaryOp, e.Lhs.ReplaceDomains(newDomains), (AffineSymbolBase)e.Rhs.ReplaceDomains(newDomains)),
+            AffineSymbol e when e.Position < newSymbols.Length => newSymbols[e.Position],
+            AffineAddBinary e => new AffineAddBinary(e.Lhs.ReplaceDomainsAndSymbols(newDomains, newSymbols), e.Rhs.ReplaceDomainsAndSymbols(newDomains, newSymbols)),
+            AffineMulBinary e => new AffineMulBinary((AffineSymbolBase)e.Lhs.ReplaceDomainsAndSymbols(newDomains, newSymbols), e.Rhs.ReplaceDomainsAndSymbols(newDomains, newSymbols)),
+            AffineDivBinary e => new AffineDivBinary(e.BinaryOp, e.Lhs.ReplaceDomainsAndSymbols(newDomains, newSymbols), (AffineSymbolBase)e.Rhs.ReplaceDomainsAndSymbols(newDomains, newSymbols)),
             _ => this,
         };
     }
@@ -90,6 +91,30 @@ public abstract class AffineExpr : Expr
         };
     }
 
+    internal long Apply(ReadOnlySpan<long> dims, ReadOnlySpan<long> extents, IReadOnlyDictionary<AffineSymbol, long>? symbols = null)
+    {
+        static long ApplyDivBinary(AffineDivBinaryOp binaryOp, long lhs, long rhs) =>
+            binaryOp switch
+            {
+                AffineDivBinaryOp.FloorDiv => lhs / rhs,
+                AffineDivBinaryOp.CeilDiv => (lhs + rhs - 1) / rhs,
+                AffineDivBinaryOp.Mod => lhs % rhs,
+                _ => throw new UnreachableException(),
+            };
+
+        return this switch
+        {
+            AffineConstant e => e.Value,
+            AffineExtent e => extents[e.Position],
+            AffineDim e => dims[e.Position],
+            AffineSymbol e => (symbols ?? throw new ArgumentNullException(nameof(symbols)))[e],
+            AffineAddBinary e => e.Lhs.Apply(dims, extents, symbols) + e.Rhs.Apply(dims, extents, symbols),
+            AffineMulBinary e => e.Lhs.Apply(dims, extents, symbols) * e.Rhs.Apply(dims, extents, symbols),
+            AffineDivBinary e => ApplyDivBinary(e.BinaryOp, e.Lhs.Apply(dims, extents, symbols), e.Rhs.Apply(dims, extents, symbols)),
+            _ => throw new UnreachableException(),
+        };
+    }
+
     internal string GetDisplayString(ReadOnlySpan<AffineSymbol> symbols)
     {
         return this switch
@@ -97,7 +122,7 @@ public abstract class AffineExpr : Expr
             AffineConstant e => e.Value.ToString(),
             AffineExtent e => $"t{e.Position}",
             AffineDim e => $"d{e.Position}",
-            AffineSymbol e => $"d{symbols.IndexOf(e)}",
+            AffineSymbol e => e.ToString(),
             AffineAddBinary e => $"({e.Lhs.GetDisplayString(symbols)} + {e.Rhs.GetDisplayString(symbols)})",
             AffineMulBinary e => $"({e.Lhs.GetDisplayString(symbols)} * {e.Rhs.GetDisplayString(symbols)})",
             AffineDivBinary e => $"({e.Lhs.GetDisplayString(symbols)} {F.Affine.ToString(e.BinaryOp)} {e.Rhs.GetDisplayString(symbols)})",
@@ -159,21 +184,21 @@ public sealed class AffineExtent : AffineSymbolBase
 
 public sealed class AffineSymbol : AffineSymbolBase
 {
-    public AffineSymbol(string name)
+    public AffineSymbol(int position)
     {
-        Name = name;
+        Position = position;
     }
 
-    public string Name { get; }
+    public int Position { get; }
 
     /// <inheritdoc/>
     public override TExprResult Accept<TExprResult, TContext>(AffineExprVisitor<TExprResult, TContext> functor, TContext context) => functor.VisitAffineSymbol(this, context);
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.VisitAffineSymbol(this, context);
 
-    public AffineSymbol With(string? name = null) => new AffineSymbol(name ?? Name);
+    public AffineSymbol With(int? position = null) => new AffineSymbol(position ?? Position);
 
-    public override string ToString() => Name;
+    public override string ToString() => $"s{Position}";
 }
 
 public sealed class AffineConstant : AffineSymbolBase

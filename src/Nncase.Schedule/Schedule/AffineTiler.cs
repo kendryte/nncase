@@ -33,7 +33,7 @@ internal sealed class AffineTiler
     {
         _grid = grid;
         TargetOptions = targetOptions;
-        _domainBounds = InferDomainBounds();
+        _domainBounds = TilingUtilities.InferDomainBounds(_grid.Buffers.AsValueEnumerable().Select(b => TilingUtilities.GetBufferShape(b)).ToArray(), _grid.AccessMaps.ToArray());
         _logger = loggerFactory.CreateLogger<AffineTiler>();
     }
 
@@ -236,81 +236,5 @@ internal sealed class AffineTiler
             _logger.LogTrace("use cached schedule");
             return schedule;
         }
-    }
-
-    private int[] InferDomainBounds()
-    {
-        var solver = new Solver("affineSolver");
-        var converter = new AffineExprToIntExprConverter(solver);
-        for (int i = 0; i < _grid.Buffers.Length; i++)
-        {
-            var shape = _grid.Buffers[i].CheckedType switch
-            {
-                TensorType t => t.Shape.ToValueArray(),
-                DistributedType dt => Utilities.DistributedUtility.GetDividedTensorType(dt).Shape.ToValueArray(),
-                _ => throw new NotSupportedException(),
-            };
-            var results = _grid.AccessMaps[i].Results;
-            for (int j = 0; j < results.Length; j++)
-            {
-                var extent = results[j].Extent;
-                var expr = converter.Visit(extent);
-                solver.Add(expr == shape[j]);
-            }
-        }
-
-        var dimVars = _grid.AccessMaps[0].Domains.AsValueEnumerable().Select(x => (IntVar)converter.Visit(x.Extent)).ToArray();
-        var db = solver.MakePhase(dimVars, Solver.CHOOSE_FIRST_UNBOUND, Solver.ASSIGN_MIN_VALUE);
-        var solutionCollector = solver.MakeFirstSolutionCollector();
-        solutionCollector.Add(dimVars);
-        solver.Solve(db, solutionCollector);
-
-        if (solutionCollector.SolutionCount() < 1)
-        {
-            throw new InvalidOperationException();
-        }
-
-        var dims = dimVars.Select(x => (int)solutionCollector.Value(0, x)).ToArray();
-        return dims;
-    }
-
-    private sealed class AffineExprToIntExprConverter : ExprVisitor<IntExpr, Unit>
-    {
-        private readonly Solver _solver;
-        private readonly Dictionary<int, IntVar> _extents = new();
-
-        public AffineExprToIntExprConverter(Solver solver)
-        {
-            _solver = solver;
-        }
-
-        protected override IntExpr VisitLeafAffineExtent(AffineExtent expr)
-        {
-            if (!_extents.TryGetValue(expr.Position, out var v))
-            {
-                v = _solver.MakeIntVar(1, int.MaxValue, $"d{expr.Position}_v");
-                _extents.Add(expr.Position, v);
-            }
-
-            return v;
-        }
-
-        protected override IntExpr VisitLeafAffineConstant(AffineConstant expr) =>
-            _solver.MakeIntConst(expr.Value);
-
-        protected override IntExpr VisitLeafAffineAddBinary(AffineAddBinary expr) =>
-            ExprMemo[expr.Lhs] + ExprMemo[expr.Rhs];
-
-        protected override IntExpr VisitLeafAffineMulBinary(AffineMulBinary expr) =>
-            ExprMemo[expr.Lhs] * ExprMemo[expr.Rhs];
-
-        protected override IntExpr VisitLeafAffineDivBinary(AffineDivBinary expr) =>
-            expr.BinaryOp switch
-            {
-                AffineDivBinaryOp.FloorDiv => _solver.MakeDiv(ExprMemo[expr.Lhs], ExprMemo[expr.Rhs]),
-                AffineDivBinaryOp.CeilDiv => ExprMemo[expr.Lhs].CeilDiv(ExprMemo[expr.Rhs]),
-                AffineDivBinaryOp.Mod => _solver.MakeModulo(ExprMemo[expr.Lhs], ExprMemo[expr.Rhs]),
-                _ => throw new UnreachableException(),
-            };
     }
 }

@@ -22,7 +22,7 @@ using Xunit;
 using static Nncase.IR.F.Tensors;
 using GetItem = Nncase.IR.Tensors.GetItem;
 
-namespace Nncase.Tests.Targets;
+namespace Nncase.Tests.TargetTest;
 
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestCPUTarget : TestClassBase
@@ -30,6 +30,7 @@ public class UnitTestCPUTarget : TestClassBase
     public UnitTestCPUTarget()
     {
         DefaultTargetName = CPUTarget.Kind;
+        CompileOptions.TargetOptions = new CpuTargetOptions();
 #if DEBUG
         CompileOptions.DumpFlags = DumpFlags.PassIR | DumpFlags.Rewrite | DumpFlags.EGraphCost | DumpFlags.CodeGen;
 #else
@@ -264,6 +265,11 @@ public class UnitTestCPUTarget : TestClassBase
 
         if (Dumpper.IsEnabled(DumpFlags.CodeGen))
         {
+            using (var inputFile = Dumpper.OpenFile($"input.bin", FileMode.Create))
+            {
+                inputFile.Write(input.BytesBuffer);
+            }
+
             using (var kmodelFile = Dumpper.OpenFile($"{name}.kmodel"))
             {
                 kmodelFile.Write(kmodel);

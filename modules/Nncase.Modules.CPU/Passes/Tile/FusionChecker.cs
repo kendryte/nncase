@@ -415,7 +415,7 @@ public sealed class FusionChecker
 
         void UpdateLifeness(int start, Expr expr, TIR.Buffer buffer, bool updateEnd)
         {
-            lifenessMap.Add(expr, new ScheduledBuffer(new Lifeness(start, int.MaxValue), buffer));
+            lifenessMap.Add(expr, new ScheduledBuffer(new Liveness(start, int.MaxValue), buffer));
             if (updateEnd)
             {
                 foreach (var operand in expr.Operands.ToArray().Where(e => e is not Op))

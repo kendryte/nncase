@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Reactive;
+using Google.OrTools.Sat;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.CPU;
@@ -9,6 +10,7 @@ using Nncase.IR.Imaging;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
+using Nncase.Passes.BufferSchedule;
 using Nncase.TIR;
 using Nncase.Utilities;
 using Buffer = Nncase.TIR.Buffer;
@@ -105,7 +107,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Binary(packed_binary.BinaryOp, arguments[0], arguments[1], ret));
                 break;
             case IR.CPU.PackedMatMul packed_mat_mul:
-                _mainBody.Add(TIR.F.CPU.PackedMatMul(arguments[0], arguments[1], ret, packed_mat_mul.LhsPackedAxes, packed_mat_mul.LhsPadedNums, packed_mat_mul.RhsPackedAxes, packed_mat_mul.RhsPadedNums));
+                _mainBody.Add(TIR.F.CPU.Matmul(arguments[0], arguments[1], ret, None.Default, packed_mat_mul.LhsPackedAxes, packed_mat_mul.LhsPadedNums, packed_mat_mul.RhsPackedAxes, packed_mat_mul.RhsPadedNums));
                 break;
             case IR.Math.MatMul matmul:
                 _mainBody.Add(TIR.F.CPU.Matmul(arguments[0], arguments[1], ret, None.Default));
@@ -194,6 +196,8 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             case IR.Math.Reduce reduce:
                 _mainBody.Add(TIR.F.CPU.Reduce(arguments[0], ret, Array.Empty<int>(), Array.Empty<int>(), ((TensorConst)expr.Arguments[1]).Value.ToArray<int>().OrderBy(a => a).ToArray(), ((TensorConst)expr.Arguments[3]).Value.ToArray<bool>()[0], reduce.ReduceOp));
                 break;
+            case IR.Buffers.Uninitialized:
+                break;
             case IR.Math.ReduceArg reduceArg:
                 _mainBody.Add(TIR.F.CPU.ReduceArg(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>()[0], ((TensorConst)expr.Arguments[2]).Value.ToArray<bool>()[0], ((TensorConst)expr.Arguments[3]).Value.ToArray<bool>()[0], reduceArg.ReduceArgOp, reduceArg.DestType));
                 break;
@@ -209,6 +213,8 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             case IR.NN.Erf erf:
                 _mainBody.Add(TIR.F.CPU.Erf(arguments[0], ret));
                 break;
+            case IR.Tensors.GetItem:
+                break;
             default:
                 throw new NotSupportedException();
         }
@@ -222,12 +228,11 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
     {
         var buffers = _lifeTimeCollector.Collect(fusion.Body);
         _bufferScheduler.Schedule(buffers);
-#if DEBUG
-        using (var fs = Diagnostics.DumpScope.Current.OpenFile("draw_buffers.py"))
+
+        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Schedule))
         {
-            _bufferScheduler.Dump(fs, buffers);
+            _bufferScheduler.Dump($"{fusion.Name}_buffers", buffers);
         }
-#endif
 
         DataUsage = buffers.Max(b => (ulong)b.Value.MemInterval.Stop);
 
@@ -271,21 +276,11 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                             }
                             else
                             {
-                                T.CreateBuffer((TensorType)dividedType, loc, out buffer, name);
+                                T.CreateBuffer(dividedType, loc, out buffer, name);
                             }
-
-                            // T.AttachBuffer(Tensor.FromPointer(DataUsage, dividedType.DType), dividedType, loc, hierarchy, out buffer, name);
-                            // DataUsage += Enumerable.Range(0, dividedType.Shape.Rank).Aggregate(1ul, (size, i) => size * (ulong)dividedType.Shape[i].FixedValue) * (ulong)dividedType.DType.SizeInBytes;
-                            // DataUsage = MathUtility.AlignUp(DataUsage, MaxDTypeSize);
                         }
                         else if (c.CheckedType is DistributedType)
                         {
-                            // deal the not uinform sbp.
-                            // var shape = DistributedUtility.TryGetNonUniformDividedShape(distributedType);
-                            // var @var = new Var(TensorType.Pointer(distributedType.TensorType.DType));
-                            // var strides = TensorUtilities.GetStrides(shape);
-                            // var size = TensorUtilities.GetProduct(shape) * distributedType.TensorType.DType.SizeInBytes;
-                            // buffer = new Buffer(name, distributedType.TensorType.DType, new MemSpan(@var, size, loc, hierarchy), shape, strides);
                             throw new NotSupportedException("not support non uniform sbp");
                         }
                         else

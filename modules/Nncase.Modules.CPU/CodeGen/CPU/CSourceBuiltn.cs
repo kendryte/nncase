@@ -3,6 +3,7 @@
 using System.Runtime.CompilerServices;
 using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
+using Nncase.Targets;
 using Razor.Templating.Core;
 
 namespace Nncase.CodeGen.CPU;
@@ -27,7 +28,7 @@ using namespace nncase::ntt;
         return KernelHeader + ctype + kernelImpl;
     }
 
-    public static string MakeMain(TIR.PrimFunction primFunction, IEnumerable<TIR.Buffer> rdataBuffers)
+    public static string MakeMain(TIR.PrimFunction primFunction, IEnumerable<TIR.Buffer> rdataBuffers, CpuTargetOptions options)
     {
         string init_tensors = string.Join("\n", primFunction.Parameters.ToArray().Select((b, i) =>
         {
@@ -42,7 +43,14 @@ using namespace nncase::ntt;
             return $@"    std::span<{b.ElemType.ToC()}, {size}> p{b.Name}(({b.ElemType.ToC()}*)(rdata + {((IR.TensorConst)b.MemSpan.Start).Value.ToScalar<ulong>()}), {size});
     tensor_view<{b.ElemType.ToC()}, {KernelUtility.DimensionsToC(b.Dimensions)}, {KernelUtility.StridesToC(b.Strides)}> {b.Name}(p{b.Name});";
         })));
+        var memorys = new List<string>();
+        for (int i = 1; i < options.MemoryCapacities.Length - 1; i++)
+        {
+            memorys.Add($"uint8_t L{i}Data[{options.MemoryCapacities[i]}];");
+        }
+
         return @$"#include <nncase/ntt/cpu_runtime.h>
+ {string.Join("\n", memorys)}
  #include ""../device.h""
  #include ""kernel.h""
 

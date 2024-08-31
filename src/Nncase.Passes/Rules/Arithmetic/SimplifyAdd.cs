@@ -8,7 +8,7 @@ using Nncase.PatternMatch;
 using static Nncase.Passes.RulesFactory;
 using static Nncase.PatternMatch.Utility;
 
-namespace Nncase.Passes.Rules.Neutral;
+namespace Nncase.Passes.Rules.Arithmetic;
 
 public static partial class SimplifyFactory
 {

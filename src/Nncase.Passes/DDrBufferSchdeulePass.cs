@@ -45,8 +45,8 @@ public sealed class DDrBufferSchdeulePass : ModulePass
         {
             if (module.Entry is Function { ModuleKind: Callable.StackVMModuleKind, Body: Expr body } func && IsFixedType(body.CheckedType))
             {
-                var sch = new BufferSchedule.BufferScheduler(2147483648L);
-                var c = new BufferSchedule.LifeTimeCollector();
+                var sch = new BufferSchedule.BufferScheduler(int.MaxValue);
+                var c = new BufferSchedule.LifeTimeCollector(new BufferSchedule.LifeTimeUpdater(), new BufferSchedule.BufferSizeCalculator());
                 var buffers = c.Collect(func.Body);
                 sch.Schedule(buffers);
                 using (var fs = Diagnostics.DumpScope.Current.OpenFile("draw_buffers.py"))

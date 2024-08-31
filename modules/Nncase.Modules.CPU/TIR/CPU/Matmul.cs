@@ -13,4 +13,14 @@ public sealed partial class Matmul : CPUKernelOp
     public static readonly ParameterInfo Output = new(typeof(Matmul), 2, "output");
 
     public static readonly ParameterInfo LoadC = new(typeof(Matmul), 3, "loadC");
+
+    public IRArray<int> LhsPackedAxes { get; }
+
+    public IRArray<int> LhsPadedNums { get; }
+
+    public IRArray<int> RhsPackedAxes { get; }
+
+    public IRArray<int> RhsPadedNums { get; }
+
+    public override string DisplayProperty() => $"LhsPackedAxes: {LhsPackedAxes}, LhsPadedNums: {LhsPadedNums}, RhsPackedAxes: {RhsPackedAxes}, RhsPadedNums: {RhsPadedNums}";
 }

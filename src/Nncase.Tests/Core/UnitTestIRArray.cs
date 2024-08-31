@@ -44,6 +44,26 @@ public sealed class UnitTestIRArray
     }
 
     [Fact]
+    public void TestCompareNested()
+    {
+        var a = new IR.IRArray<IR.IRArray<int>>(new[] { new IR.IRArray<int>(new[] { 1, 2, 3 }), new IR.IRArray<int>(new[] { 4, 5, 6 }) });
+        var b = new IR.IRArray<IR.IRArray<int>>(new[] { new IR.IRArray<int>(new[] { 1, 2, 3 }), new IR.IRArray<int>(new[] { 4, 5, 6 }) });
+
+        Assert.True(a.Equals(b));
+        Assert.True(a == b);
+    }
+
+    [Fact]
+    public void TestCompareNestedShape()
+    {
+        var a = new IR.IRArray<IR.Shape>(new[] { new IR.Shape(new[] { 1, 2, 3 }), new IR.Shape(new[] { 4, 5, 6 }) });
+        var b = new IR.IRArray<IR.Shape>(new[] { new IR.Shape(new[] { 1, 2, 3 }), new IR.Shape(new[] { 4, 5, 6 }) });
+
+        Assert.True(a.Equals(b));
+        Assert.True(a == b);
+    }
+
+    [Fact]
     public void TestContains()
     {
         var a = new IR.IRArray<int>(Enumerable.Range(1, 100));

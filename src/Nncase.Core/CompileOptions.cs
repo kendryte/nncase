@@ -123,5 +123,5 @@ public sealed record CompileOptions
     /// <summary>
     /// Gets or sets the target compile options.
     /// </summary>
-    public ITargetOptions TargetCompileOptions { get; set; } = null!;
+    public ITargetOptions TargetOptions { get; set; } = null!;
 }
