@@ -10,8 +10,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Templates\CApi.razor" />
+    <None Remove="Templates\CApics.razor" />
+    <None Remove="Templates\CApih.razor" />
     <None Remove="Templates\Command.razor" />
+    <None Remove="Templates\PyBind.razor" />
+    <None Remove="Templates\Python.razor" />
     <!-- <None Remove="Templates\dummy_kernel_cpp.razor" />
     <None Remove="Templates\emitter_cs.razor" />
     <None Remove="Templates\opcode_h.razor" />
@@ -24,8 +27,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Templates\CApi.razor" />
+    <Compile Remove="out/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\CApics.razor" />
+    <EmbeddedResource Include="Templates\CApih.razor" />
     <EmbeddedResource Include="Templates\Command.razor" />
+    <EmbeddedResource Include="Templates\PyBind.razor" />
+    <EmbeddedResource Include="Templates\Python.razor" />
     <!-- <EmbeddedResource Include="Templates\op_writer_cpp.razor" />
     <EmbeddedResource Include="Templates\op_reader_cpp.razor" />
     <EmbeddedResource Include="Templates\emitter_cs.razor" />

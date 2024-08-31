@@ -32,7 +32,7 @@ public sealed class @(CmdClassName) : Command
     {
 @foreach (var info in Model.OptionInfos) 
 {
-@:        @(info.PropertyName)Option = new Option<@(info.OptionTypeName())>(
+@:        @(info.PropertyName)Option = new Option<@(info.PropertyType.RenderType(LangMode.CSC))>(
 @:            name: "@(info.DisplayName)",
 @:            description: "@(info.Description)",
 if (info.Parser is string parseFunc) 
@@ -40,7 +40,7 @@ if (info.Parser is string parseFunc)
 @:            parseArgument: ArgumentParsers.@(parseFunc)@(info.AllowMultiple ? ")" : ");")
 }else
 {
-@:            getDefaultValue: @(info.RenderDefulatValue())@(info.AllowMultiple ? ")" : ");")
+@:            getDefaultValue: @(info.RenderCSCDefaultValue())@(info.AllowMultiple ? ")" : ");")
 }
 if (info.AllowMultiple) 
 {
@@ -54,7 +54,7 @@ if (info.AllowMultiple)
 @foreach (var info in Model.OptionInfos)
 {
 @:
-@:    public Option<@(info.OptionTypeName())> @(info.PropertyName)Option { get; }
+@:    public Option<@(info.PropertyType.RenderType(LangMode.CSC))> @(info.PropertyName)Option { get; }
 
 }
 }

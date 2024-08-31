@@ -24,6 +24,18 @@ public sealed class Program
         extractor.Extract(optionType);
 
         var command = await extractor.RenderAsync("Templates.Command");
-        File.WriteAllText(Path.Combine("/Users/lisa/Documents/nncase/tools/stackvm_gen/CApiGen", "Command.cs"), command);
+        File.WriteAllText(Path.Combine("/Users/lisa/Documents/nncase/tools/stackvm_gen/CApiGen/out", "Command.cs"), command);
+
+        var capics = await extractor.RenderAsync("Templates.CApics");
+        File.WriteAllText(Path.Combine("/Users/lisa/Documents/nncase/tools/stackvm_gen/CApiGen/out", "CApi.cs"), capics);
+
+        var capih = await extractor.RenderAsync("Templates.CApih");
+        File.WriteAllText(Path.Combine("/Users/lisa/Documents/nncase/tools/stackvm_gen/CApiGen/out", "CApi.h"), capih);
+
+        var pybindh = await extractor.RenderAsync("Templates.PyBind");
+        File.WriteAllText(Path.Combine("/Users/lisa/Documents/nncase/tools/stackvm_gen/CApiGen/out", "Pybind.h"), pybindh);
+
+        var python = await extractor.RenderAsync("Templates.Python");
+        File.WriteAllText(Path.Combine("/Users/lisa/Documents/nncase/tools/stackvm_gen/CApiGen/out", "Python.pyi"), python);
     }
 }

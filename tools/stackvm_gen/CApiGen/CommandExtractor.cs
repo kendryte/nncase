@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.CSharp;
 using Nncase.CommandLine;
@@ -16,6 +17,31 @@ using RazorLight;
 using RazorLight.Razor;
 
 namespace CApiGen;
+
+[Flags]
+public enum SignMode : byte
+{
+    Type,
+    Param,
+}
+
+public enum LangMode : byte
+{
+    /* csharp command. */
+    CSC,
+
+    /* unmanged csharp */
+    UnCS,
+
+    /* unmanged cpp */
+    UnCPP,
+
+    /* pybind */
+    Pyb,
+
+    /* pyi */
+    Pyi,
+}
 
 public class CommandExtractor
 {
@@ -68,109 +94,133 @@ public class CommandExtractor
 
 public record class OptionInfo(Type PropertyType, string PropertyName, string DisplayName, string Description, object DefulatValue, object[] Amongs, string? Parser, bool AllowMultiple = false)
 {
-    private static readonly Dictionary<Type, string> Aliases =
-    new Dictionary<Type, string>()
-    {
-        { typeof(byte), "byte" },
-        { typeof(sbyte), "sbyte" },
-        { typeof(short), "short" },
-        { typeof(ushort), "ushort" },
-        { typeof(int), "int" },
-        { typeof(uint), "uint" },
-        { typeof(long), "long" },
-        { typeof(ulong), "ulong" },
-        { typeof(float), "float" },
-        { typeof(double), "double" },
-        { typeof(decimal), "decimal" },
-        { typeof(object), "object" },
-        { typeof(bool), "bool" },
-        { typeof(char), "char" },
-        { typeof(string), "string" },
-        { typeof(void), "void" },
-    };
-
-    public string RenderDefulatValue()
+    /// <summary>
+    /// render csharp command get default value.
+    /// </summary>
+    /// <returns>str.</returns>
+    public string RenderCSCDefaultValue()
     {
         return DefulatValue switch
         {
             string v when v.StartsWith("() => ") => v,
             string v when v == string.Empty => $"() => string.Empty",
             string v => $"() => \"{v}\"",
-            _ => $"() => {GetAliasValueName(DefulatValue)}",
+            _ => $"() => {DefulatValue.RenderValue(LangMode.CSC)}",
         };
     }
 
-    public string? GetAliasValueName(object value)
+    public string RenderSignature(SignMode signMode, LangMode langMode)
     {
-        return value switch
+        var sizeType = langMode switch
         {
-            bool b => b.ToString().ToLowerInvariant(),
-            Enum e => $"{e.GetType().Name}.{e}",
-            _ => value.ToString()
+            LangMode.UnCS => "nuint",
+            LangMode.UnCPP => "size_t",
+            _ => throw new NotSupportedException(nameof(langMode)),
         };
-    }
 
-    public string OptionTypeName() => GetAliasTypeName(PropertyType);
-
-    public string GetAliasTypeName(Type type, bool init = true)
-    {
-        if (Aliases.TryGetValue(type, out var alias))
-        {
-            return alias;
-        }
-        else if (type.IsEnum)
-        {
-            return type.Name;
-        }
-        else if (type.IsArray && type.GetElementType() is Type inner)
-        {
-            if (init)
-            {
-                return $"IEnumerable<{GetAliasTypeName(inner, false)}>";
-            }
-            else
-            {
-                return $"{GetAliasTypeName(inner, false)}[]";
-            }
-        }
-        else
-        {
-            throw new NotSupportedException(type.FullName);
-        }
-    }
-
-    public string GetUnmanagedTypeNames(bool withParam)
-    {
         var sb = new StringBuilder();
         if (PropertyType.IsValueType)
         {
-            sb.Append(GetAliasTypeName(PropertyType == typeof(bool) ? typeof(byte) : PropertyType));
-            if (withParam)
+            if (signMode.HasFlag(SignMode.Type))
             {
-                sb.Append(' ');
+                sb.Append((PropertyType == typeof(bool) ? typeof(byte) : PropertyType).RenderType(langMode));
+            }
+
+            if (signMode.HasFlag(SignMode.Param))
+            {
+                if (signMode.HasFlag(SignMode.Type))
+                {
+                    sb.Append(' ');
+                }
+
                 sb.Append("value");
             }
         }
         else if (PropertyType.IsArray && PropertyType.GetElementType() is Type elemType)
         {
-            var elemTypeName = GetAliasTypeName(elemType);
-            sb.Append($"{elemTypeName}*");
-            if (withParam)
+            var typeList = new List<Type> { elemType };
+            while (elemType.IsArray && elemType.GetElementType() is Type inner)
             {
-                sb.Append(' ');
+                typeList.Add(inner);
+                elemType = inner;
+            }
+
+            var elemTypeName = elemType.RenderType(langMode);
+            if (signMode.HasFlag(SignMode.Type))
+            {
+                sb.Append($"{elemTypeName}*");
+            }
+
+            if (signMode.HasFlag(SignMode.Param))
+            {
+                if (signMode.HasFlag(SignMode.Type))
+                {
+                    sb.Append(' ');
+                }
+
                 sb.Append("value");
             }
 
-            for (int i = PropertyType.GetArrayRank(); i > 0; i--)
+            for (int i = typeList.Count; i > 0; i--)
             {
-                var suffix = i == 0 ? string.Empty : "*";
-                sb.Append($", nuint{suffix}");
-                if (withParam)
+                var suffix = i == 1 ? string.Empty : "*";
+                if (signMode.HasFlag(SignMode.Type))
                 {
-                    sb.Append(' ');
+                    sb.Append($", {sizeType}{suffix}");
+                }
+
+                if (signMode.HasFlag(SignMode.Param))
+                {
+                    if (signMode.HasFlag(SignMode.Type))
+                    {
+                        sb.Append(' ');
+                    }
+                    else
+                    {
+                        sb.Append(", ");
+                    }
+
                     sb.Append($"shape{i - 1}");
                 }
             }
+        }
+        else if (PropertyType == typeof(string))
+        {
+            if (signMode.HasFlag(SignMode.Type))
+            {
+                sb.Append(PropertyType.RenderType(langMode));
+            }
+
+            if (signMode.HasFlag(SignMode.Param))
+            {
+                if (signMode.HasFlag(SignMode.Type))
+                {
+                    sb.Append(' ');
+                }
+
+                sb.Append("value");
+            }
+
+            if (signMode.HasFlag(SignMode.Type))
+            {
+                sb.Append($", {sizeType}");
+            }
+
+            if (signMode.HasFlag(SignMode.Param))
+            {
+                if (signMode.HasFlag(SignMode.Type))
+                {
+                    sb.Append(' ');
+                }
+                else
+                {
+                    sb.Append(", ");
+                }
+
+                sb.Append("length");
+            }
+
+            return sb.ToString();
         }
         else
         {
@@ -180,9 +230,8 @@ public record class OptionInfo(Type PropertyType, string PropertyName, string Di
         return sb.ToString();
     }
 
-    public string GetUnmanagedValueSettingNames()
+    public string RenderUnCSAssginValue()
     {
-
         var sb = new StringBuilder();
         if (PropertyType.IsValueType)
         {
@@ -190,7 +239,25 @@ public record class OptionInfo(Type PropertyType, string PropertyName, string Di
         }
         else if (PropertyType.IsArray)
         {
-            sb.Append()
+            if (PropertyType.IsNestedArrayType(out var inners))
+            {
+                var rank = inners.Count;
+                sb.Append($"To{rank}DArray(value");
+                for (int i = rank; i > 0; i--)
+                {
+                    sb.Append($", shape{i - 1}");
+                }
+
+                sb.Append(')');
+            }
+            else
+            {
+                throw new NotSupportedException();
+            }
+        }
+        else if (PropertyType == typeof(string))
+        {
+            sb.Append($"ToString(value, length)");
         }
         else
         {
