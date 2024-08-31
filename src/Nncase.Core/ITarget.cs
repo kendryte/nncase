@@ -25,6 +25,9 @@ public interface ICpuTargetOptions : ITargetOptions
 /// </summary>
 public interface ITargetOptions
 {
+    int[] MemoryCapacities { get; }
+
+    int[] MemoryBandWidths { get; }
 }
 
 /// <summary>
