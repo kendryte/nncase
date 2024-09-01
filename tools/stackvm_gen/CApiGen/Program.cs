@@ -6,6 +6,7 @@ using System.CommandLine;
 using System.CommandLine.Binding;
 using System.CommandLine.Invocation;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace CApiGen;
@@ -17,25 +18,26 @@ public sealed class Program
         await Extract(string.Empty);
     }
 
-    internal static async Task Extract(string inputFile)
+    internal static async Task Extract(string inputFile, [CallerFilePath] string? callerFilePath = null)
     {
         var extractor = new CommandExtractor();
         var optionType = typeof(Nncase.Targets.CpuTargetOptions);
         extractor.Extract(optionType);
 
+        var directory = Path.GetDirectoryName(callerFilePath);
         var command = await extractor.RenderAsync("Templates.Command");
-        File.WriteAllText(Path.Combine("/Users/lisa/Documents/nncase/tools/stackvm_gen/CApiGen/out", "Command.cs"), command);
+        File.WriteAllText(Path.Combine($"{directory}/out", "Command.cs"), command);
 
-        var capics = await extractor.RenderAsync("Templates.CApics");
-        File.WriteAllText(Path.Combine("/Users/lisa/Documents/nncase/tools/stackvm_gen/CApiGen/out", "CApi.cs"), capics);
+        var capi = await extractor.RenderAsync("Templates.CApi");
+        File.WriteAllText(Path.Combine($"{directory}/out", "CApi.cs"), capi);
 
-        var capih = await extractor.RenderAsync("Templates.CApih");
-        File.WriteAllText(Path.Combine("/Users/lisa/Documents/nncase/tools/stackvm_gen/CApiGen/out", "CApi.h"), capih);
+        var compiler = await extractor.RenderAsync("Templates.Compiler");
+        File.WriteAllText(Path.Combine($"{directory}/out", "compiler.h"), compiler);
 
         var pybindh = await extractor.RenderAsync("Templates.PyBind");
-        File.WriteAllText(Path.Combine("/Users/lisa/Documents/nncase/tools/stackvm_gen/CApiGen/out", "Pybind.h"), pybindh);
+        File.WriteAllText(Path.Combine($"{directory}/out", "ffi.cpp"), pybindh);
 
         var python = await extractor.RenderAsync("Templates.Python");
-        File.WriteAllText(Path.Combine("/Users/lisa/Documents/nncase/tools/stackvm_gen/CApiGen/out", "Python.pyi"), python);
+        File.WriteAllText(Path.Combine($"{directory}/out", "_nncase.pyi"), python);
     }
 }

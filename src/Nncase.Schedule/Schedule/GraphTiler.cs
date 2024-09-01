@@ -474,7 +474,17 @@ public sealed class GraphTiler
             }
         }
 
-        var decisionBuilder = solver.MakeDefaultPhase(searchAbleVars.ToArray());
+        var defaultPhaseParameters = new DefaultPhaseParameters();
+        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
+        {
+            defaultPhaseParameters.display_level = DefaultPhaseParameters.NORMAL;
+        }
+        else
+        {
+            defaultPhaseParameters.display_level = DefaultPhaseParameters.NONE;
+        }
+
+        var decisionBuilder = solver.MakeDefaultPhase(searchAbleVars.ToArray(), defaultPhaseParameters);
         var monitors = new List<SearchMonitor>() { collector, objectiveMonitor, solver.MakeSolutionsLimit(10), solver.MakeTimeLimit(30000) };
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {

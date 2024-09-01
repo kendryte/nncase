@@ -181,7 +181,17 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                 collector.Add(item);
             }
 
-            var decisionBuilder = solver.MakeDefaultPhase(ystarts.ToArray());
+            var defaultPhaseParameters = new DefaultPhaseParameters();
+            if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
+            {
+                defaultPhaseParameters.display_level = DefaultPhaseParameters.NORMAL;
+            }
+            else
+            {
+                defaultPhaseParameters.display_level = DefaultPhaseParameters.NONE;
+            }
+
+            var decisionBuilder = solver.MakeDefaultPhase(ystarts.ToArray(), defaultPhaseParameters);
             var monitors = new List<SearchMonitor>() { collector, solver.MakeSolutionsLimit(1), };
             if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
             {

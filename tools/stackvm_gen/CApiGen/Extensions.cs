@@ -51,7 +51,7 @@ public static class CApiGenExtensions
         { "float", "float32_t" },
         { "double", "float64_t" },
         { "char", "char" },
-        { "string", "char*" },
+        { "string", "const char*" },
     };
 
     public static string ToSnake(this string input)
@@ -107,9 +107,14 @@ public static class CApiGenExtensions
             LangMode.UnCS => alias switch
             {
                 "string" => "byte*",
+                "bool" => "byte",
                 _ => alias,
             },
-            LangMode.UnCPP => UnCPPMemo[alias],
+            LangMode.UnCPP => code switch
+            {
+                TypeCode.Boolean => UnCPPMemo["byte"],
+                _ => UnCPPMemo[alias],
+            },
             LangMode.Pyb => code switch
             {
                 TypeCode.Boolean => "bool",
