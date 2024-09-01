@@ -169,7 +169,7 @@ class Compiler:
 
     def init_target_options(self, compile_options: CompileOptions) -> None:
         if hasattr(compile_options, "target_options"):
-          self._compile_options.set_cpu_target_options(compile_options.target_options)
+            self._compile_options.set_cpu_target_options(compile_options.target_options)
 
     def compile(self) -> None:
         self._compiler.compile()
