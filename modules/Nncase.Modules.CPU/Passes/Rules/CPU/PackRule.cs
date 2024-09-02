@@ -218,6 +218,12 @@ public sealed class PackLayerNorm : PackRule
         {
             var packedInput = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
 
+            // todo support padings.
+            if (padsInput.Any(x => x > 0))
+            {
+                return;
+            }
+
             var pAxes = packedAxes.Where(i => i >= op.Axis).Select(i => i - op.Axis).ToArray();
             var packedScale = PackUtility.PadForPack(scale, pshape, pAxes, lanes, 0f, out var padsScale);
             if (pAxes.Length > 0)
@@ -328,14 +334,18 @@ public sealed class PackMatMul : PackRule
 
         // only pack B's n
         AddCandidate(Array.Empty<int>(), new[] { rhsShape.Length - 1 }, Array.Empty<int>(), new[] { Lane });
-
-        // pack A's m and B's n
-        AddCandidate(new[] { lhsShape.Length - 2 }, new[] { rhsShape.Length - 1 }, new[] { Lane }, new[] { Lane });
-
         if (Rank > 1)
         {
+            // pack A's m and B's n
+            AddCandidate(new[] { lhsShape.Length - 2 }, new[] { rhsShape.Length - 1 }, new[] { Lane }, new[] { Lane });
+
+            // pack A's m,k and B's k,n
             AddCandidate(new[] { lhsShape.Length - 2, lhsShape.Length - 1 }, new[] { rhsShape.Length - 2, rhsShape.Length - 1 }, new[] { Lane, Lane }, new[] { Lane, Lane });
+
+            // pack A's m,k and B's k
             AddCandidate(new[] { lhsShape.Length - 2, lhsShape.Length - 1 }, new[] { rhsShape.Length - 2 }, new[] { Lane, Lane }, new[] { Lane });
+
+            // pack A's m and B's k,n
             AddCandidate(new[] { lhsShape.Length - 1 }, new[] { rhsShape.Length - 2, rhsShape.Length - 1 }, new[] { Lane }, new[] { Lane, Lane });
         }
 
@@ -525,21 +535,15 @@ public sealed class PackTranspose : PackRule
         {
             var packed = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
 
-            var tarns = IR.F.CPU.PackedTranspose(packed, perm, packedAxes);
+            var tarns = IR.F.Tensors.Transpose(packed, perm);
             if (tarns.CheckedType is not InvalidType)
             {
-                var unpackAxes = packedAxes.Select(axis => perm.IndexOf(axis)).ToArray();
-                var unpackLanes = lanes.Select(l => perm.IndexOf(l)).ToArray();
-                bool swap = unpackAxes.Length == 2 && unpackAxes[0] > unpackAxes[1];
-                if (swap)
-                {
-                    (unpackAxes[0], unpackAxes[1]) = (unpackAxes[1], unpackAxes[0]);
-                    (pads[0], pads[1]) = (pads[1], pads[0]);
-                    (unpackLanes[0], unpackLanes[1]) = (unpackLanes[1], unpackLanes[0]);
-                }
-
+                var partialPerm = perm.Select(axis => packedAxes.IndexOf(axis)).Where(x => x != -1).ToArray();
+                var unpackAxes = packedAxes.Select(axis => perm[axis]).ToArray();
+                var unpackPads = Enumerable.Range(0, pads.Length).Select(i => pads[partialPerm[i]]).ToArray();
+                var unpackLanes = Enumerable.Range(0, lanes.Length).Select(i => lanes[partialPerm[i]]).ToArray();
                 var newShape = perm.Select(i => inShape[i]).ToArray();
-                rets.Add(PackUtility.SliceForPack(IR.F.CPU.Unpack(tarns, unpackLanes, unpackAxes), newShape, pads));
+                rets.Add(PackUtility.SliceForPack(IR.F.CPU.Unpack(tarns, unpackLanes, unpackAxes), newShape, unpackPads));
             }
         }
 
@@ -735,10 +739,10 @@ public sealed class PackReshape : PackRule
                 var mapedOutAxes = forwardDict[axis];
                 if (mapedOutAxes.Count > 1)
                 {
-                    // split to more dim.
                     if (mapedOutAxes.Count(i => newShape[i] != 1) > 1)
                     {
-                        continue;
+                        // we can pack on split axis and unpack on splited last axis.
+                        unpackAxes.Add(mapedOutAxes[^1]);
                     }
                     else
                     {
@@ -786,9 +790,9 @@ public sealed class PackReshape : PackRule
         for (int i = 0; i < input.CheckedShape.Count; i++)
         {
             AddCandidate(new[] { i }, new[] { Lane });
-            for (int j = i + 1; j < input.CheckedShape.Count; j++)
+            if (Rank > 1)
             {
-                if (Rank > 1)
+                for (int j = i + 1; j < input.CheckedShape.Count; j++)
                 {
                     AddCandidate(new[] { i, j }, new[] { Lane, Lane });
                 }

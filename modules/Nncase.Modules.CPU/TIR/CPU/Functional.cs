@@ -97,11 +97,6 @@ public partial class CPU
         return new Call(new ResizeImage(packedAxes, padedNums, newSize, resizeMode, transformationMode, nearestMode), input, output);
     }
 
-    public static Expr PackedTranspose(Expr input, Expr output, IRArray<int> perm, IRArray<int> packedAxes)
-    {
-        return new Call(new PackedTranspose(perm, packedAxes), input, output);
-    }
-
     public static Expr Slice(Buffer input, Buffer ret, int[] begin, int[] stop, int[] axes, int[] stride, DistributedType distributedType)
     {
         return new Call(new Slice(begin, stop, axes, stride, distributedType), input, ret);
