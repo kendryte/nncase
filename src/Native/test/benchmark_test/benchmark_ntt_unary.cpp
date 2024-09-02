@@ -32,14 +32,15 @@ void benchmark_ntt_unary(std::string op_name, T2 low, T2 high) {
 #endif
     using tensor_type =
         ntt::tensor<ntt::vector<T2, N>, ntt::fixed_shape<size2>>;
-    tensor_type ntt_input;
+    tensor_type ntt_input, ntt_result;
     NttTest::init_tensor(ntt_input, low, high);
 
     Op<tensor_type> op;
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < size1; i++)
-        op(ntt_input);
+        ntt_result = op(ntt_input);
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(ntt_result));
     std::cout << __FUNCTION__ << "_" << op_name << " took "
               << std::setprecision(1) << std::fixed
               << static_cast<float>(t2 - t1) / size1 / size2 << " cycles"
