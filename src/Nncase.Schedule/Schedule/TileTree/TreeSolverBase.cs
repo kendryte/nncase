@@ -7,7 +7,7 @@ namespace Nncase.Schedule.TileTree;
 
 public abstract class TreeSolverBase
 {
-    public TreeSolverBase(Solver solver, Dictionary<OpNode, OpNodeInfo> opNodeMemo, Dictionary<TileNode, TileNodeInfo> tileNodeMemo, Dictionary<ITileAbleNode, DomainInfo> tileableNodeMemo, ITargetOptions targetOptions)
+    public TreeSolverBase(Solver solver, Dictionary<OpNode, OpNodeInfo> opNodeMemo, Dictionary<TileNode, TileNodeInfo> tileNodeMemo, Dictionary<ITileAbleNode, DomainInfo> tileableNodeMemo, ICpuTargetOptions targetOptions)
     {
         Solver = solver;
         OpNodeMemo = opNodeMemo;
@@ -24,5 +24,5 @@ public abstract class TreeSolverBase
 
     public Dictionary<ITileAbleNode, DomainInfo> TileableNodeMemo { get; }
 
-    public ITargetOptions TargetOptions { get; }
+    public ICpuTargetOptions TargetOptions { get; }
 }

@@ -11,7 +11,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Nncase.CodeGen;
 using Nncase.Diagnostics;
+using Nncase.IR;
 using Nncase.Passes;
+using Xunit;
 
 namespace Nncase.Tests;
 
@@ -290,4 +292,77 @@ public static class Testing
             return entry.Invoke(input_tensors).ToValue();
         }
     }
+
+    public static async Task CompileAndRun(ModuleCase moduleCase, CompileOptions compileOptions, CompileSession compileSession, Func<IRModule, Task> compile)
+    {
+        compileOptions.DumpDir = Path.Join(compileOptions.DumpDir, moduleCase.Name);
+        using var dumpScope = new DumpScope(string.Empty, compileOptions.DumpFlags);
+
+        var module = moduleCase.Module;
+        var inputs = moduleCase.Inputs.ToArray();
+        if (module.Entry is not Function func || func.Body.CheckedType is InvalidType)
+        {
+            throw new ArgumentException("the module case is invalid!");
+        }
+
+        var outputs = func.Body.Evaluate(moduleCase.Vars.Zip(inputs).ToDictionary(p => p.First, p => (IValue)Value.FromTensor(p.Second))).AsTensors();
+
+        if (DumpScope.Current.IsEnabled(DumpFlags.CodeGen))
+        {
+            for (var i = 0; i < inputs.Length; i++)
+            {
+                using (var fs = DumpScope.Current.OpenFile($"input_{i}.bin"))
+                {
+                    fs.Write(inputs[i].BytesBuffer);
+                }
+            }
+
+            for (int i = 0; i < outputs.Length; i++)
+            {
+                using (var fs = DumpScope.Current.OpenFile($"output_{i}.bin"))
+                {
+                    fs.Write(outputs[i].BytesBuffer);
+                }
+            }
+        }
+
+        await compile(module);
+        var (kmodel_path, _) = BuildKModel("test", module, compileSession, false);
+        var actuals = RunKModel(kmodel_path, DumpScope.Current.Directory, inputs).AsTensors();
+        if (DumpScope.Current.IsEnabled(DumpFlags.CodeGen))
+        {
+            for (int i = 0; i < actuals.Length; i++)
+            {
+                using (var fs = DumpScope.Current.OpenFile($"actual_{i}.bin"))
+                {
+                    fs.Write(actuals[i].BytesBuffer);
+                }
+            }
+        }
+
+        for (int i = 0; i < outputs.Length; i++)
+        {
+            var cos = Comparator.CosSimilarity(outputs[i], actuals[i]);
+            Assert.True(cos > 0.999, $"the {compileOptions.DumpDir} output {i} cos: {cos} ");
+        }
+    }
+}
+
+public class ModuleCase
+{
+    public ModuleCase(string name, IRModule module, Var[] vars, Tensor[] inputs)
+    {
+        Name = name;
+        Module = module;
+        Vars = vars;
+        Inputs = inputs;
+    }
+
+    public string Name { get; }
+
+    public IRModule Module { get; }
+
+    public IReadOnlyList<Var> Vars { get; }
+
+    public IReadOnlyList<Tensor> Inputs { get; }
 }

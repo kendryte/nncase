@@ -20,7 +20,7 @@ public sealed class GraphTiler
 
     private int _useCached;
 
-    public Expr Tile(Expr preExpr, string moduleKind, int itemNumber, ITargetOptions targetOptions)
+    public Expr Tile(Expr preExpr, string moduleKind, int itemNumber, ICpuTargetOptions targetOptions)
     {
         var totalLevel = targetOptions.MemoryCapacities.Length - 1;
         var rootGraph = GraphBuilder.Build(preExpr, totalLevel, out var exprMemo);
@@ -131,7 +131,7 @@ public sealed class GraphTiler
         // return new Call(None.Default);
     }
 
-    private TreeSolveResult SolvePrimGraph(TileNode primTree, BufferGraph primBufferGraph, ITargetOptions targetOptions)
+    private TreeSolveResult SolvePrimGraph(TileNode primTree, BufferGraph primBufferGraph, ICpuTargetOptions targetOptions)
     {
         int[] memoryCapacities = targetOptions.MemoryCapacities;
         int[] memoryBandWidths = targetOptions.MemoryBandWidths;
@@ -474,7 +474,17 @@ public sealed class GraphTiler
             }
         }
 
-        var decisionBuilder = solver.MakeDefaultPhase(searchAbleVars.ToArray());
+        var defaultPhaseParameters = new DefaultPhaseParameters();
+        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
+        {
+            defaultPhaseParameters.display_level = DefaultPhaseParameters.NORMAL;
+        }
+        else
+        {
+            defaultPhaseParameters.display_level = DefaultPhaseParameters.NONE;
+        }
+
+        var decisionBuilder = solver.MakeDefaultPhase(searchAbleVars.ToArray(), defaultPhaseParameters);
         var monitors = new List<SearchMonitor>() { collector, objectiveMonitor, solver.MakeSolutionsLimit(10), solver.MakeTimeLimit(30000) };
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {

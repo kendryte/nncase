@@ -304,7 +304,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerPack(), new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), new Passes.Rules.CPU.Affine.LowerBinary() }, new());
 
         var tiler = new Schedule.GraphTiler();
-        var result = tiler.Tile(post, Nncase.Targets.CPUTarget.Kind, count, CompileOptions.TargetOptions);
+        var result = tiler.Tile(post, Nncase.Targets.CPUTarget.Kind, count, (ICpuTargetOptions)CompileOptions.TargetOptions);
         action(result);
     }
 

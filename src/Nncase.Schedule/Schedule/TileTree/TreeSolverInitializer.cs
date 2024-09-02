@@ -11,7 +11,7 @@ namespace Nncase.Schedule.TileTree;
 
 public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<TreeSolverInitializer.Context, TreeSolverInitializer.InitResult>
 {
-    public TreeSolverInitializer(int totalLevel, Solver solver, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainDimInfos, ITargetOptions targetOptions)
+    public TreeSolverInitializer(int totalLevel, Solver solver, Dictionary<OpNode, OpNodeInfo> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo> levelBufferInfos, Dictionary<ITileAbleNode, DomainInfo> domainDimInfos, ICpuTargetOptions targetOptions)
         : base(solver, primitiveBufferInfo, levelBufferInfos, domainDimInfos, targetOptions)
     {
         TotalLevel = totalLevel;
@@ -21,7 +21,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
 
     public int TotalLevel { get; }
 
-    public static ArgumentsInfo Init(ITreeNode tree, int totalLevel, ITargetOptions options, out Solver solver, out Dictionary<OpNode, OpNodeInfo> opNodeMemo, out Dictionary<TileNode, TileNodeInfo> tileNodeMemo, out Dictionary<ITileAbleNode, DomainInfo> tileableNodeMemo)
+    public static ArgumentsInfo Init(ITreeNode tree, int totalLevel, ICpuTargetOptions options, out Solver solver, out Dictionary<OpNode, OpNodeInfo> opNodeMemo, out Dictionary<TileNode, TileNodeInfo> tileNodeMemo, out Dictionary<ITileAbleNode, DomainInfo> tileableNodeMemo)
     {
         solver = new Solver("treeSolver");
         opNodeMemo = new Dictionary<OpNode, OpNodeInfo>();

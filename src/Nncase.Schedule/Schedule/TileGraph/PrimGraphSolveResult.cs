@@ -18,7 +18,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
 {
     private readonly Dictionary<ITileable, Dictionary<BufferIdentity, SubViewInfo>> _subViewMemo;
 
-    public TreeSolveResult(BufferGraph primBufferGraph, long objectiveValue, Dictionary<int, Dictionary<NodeWithBuffer, long>> levelNodeBufferBoxs, Dictionary<int, Dictionary<NodeWithBuffer, Tuple<int, int>>> levelTreeBufferLifeness, Dictionary<OpNode, OpNodeInfo<long>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<long>> levelBufferInfos, Dictionary<ITileable, DomainInfo<long>> domainInfos, ITargetOptions targetOptions)
+    public TreeSolveResult(BufferGraph primBufferGraph, long objectiveValue, Dictionary<int, Dictionary<NodeWithBuffer, long>> levelNodeBufferBoxs, Dictionary<int, Dictionary<NodeWithBuffer, Tuple<int, int>>> levelTreeBufferLifeness, Dictionary<OpNode, OpNodeInfo<long>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<long>> levelBufferInfos, Dictionary<ITileable, DomainInfo<long>> domainInfos, ICpuTargetOptions targetOptions)
         : base(null!, primitiveBufferInfo, levelBufferInfos, domainInfos, targetOptions)
     {
         PrimBufferGraph = primBufferGraph;
@@ -181,7 +181,17 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                 collector.Add(item);
             }
 
-            var decisionBuilder = solver.MakeDefaultPhase(ystarts.ToArray());
+            var defaultPhaseParameters = new DefaultPhaseParameters();
+            if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
+            {
+                defaultPhaseParameters.display_level = DefaultPhaseParameters.NORMAL;
+            }
+            else
+            {
+                defaultPhaseParameters.display_level = DefaultPhaseParameters.NONE;
+            }
+
+            var decisionBuilder = solver.MakeDefaultPhase(ystarts.ToArray(), defaultPhaseParameters);
             var monitors = new List<SearchMonitor>() { collector, solver.MakeSolutionsLimit(1), };
             if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
             {

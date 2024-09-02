@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,6 +29,34 @@ public sealed class CpuBufferSizeCalculator : BufferSchedule.BufferSizeCalculato
         }
 
         return base.VisitCall(expr);
+    }
+}
+
+public sealed class CpuLifeTimeUpdater : BufferSchedule.LifeTimeUpdater
+{
+    protected override Unit VisitCall(Call expr, Context context)
+    {
+        foreach (var item in expr.Arguments)
+        {
+            if (item is IR.Tuple tp)
+            {
+                Visit(tp, context);
+            }
+            else if (item is Call c)
+            {
+                if (c.Target is IR.Tensors.GetItem)
+                {
+                    Visit(c, context);
+                }
+                else
+                {
+                    PerformUpdate(c, context);
+                }
+            }
+        }
+
+        PerformUpdate(expr, context);
+        return default;
     }
 }
 
@@ -71,7 +100,8 @@ internal sealed class CPUFusionToTirPass : ModulePass
                 // }
                 var post = fusion;
                 var primBody = new List<Expr>();
-                var visitor = new KernelToTIRVisitor(primBody, deviceFuncs, fusionCheckCache, new BufferSchedule.BufferScheduler(_compileOptions.TargetOptions is null ? new CpuTargetOptions().HierarchySizes[0] : ((CpuTargetOptions)_compileOptions.TargetOptions).HierarchySizes[0]), new BufferSchedule.LifeTimeCollector(new BufferSchedule.LifeTimeUpdater(), new BufferSchedule.BufferSizeCalculator()));
+                var memCapacity = _compileOptions.TargetOptions is CpuTargetOptions copt ? copt.HierarchySizes[0] : throw new ArgumentException("TargetOptions is not CpuTargetOptions");
+                var visitor = new KernelToTIRVisitor(primBody, deviceFuncs, fusionCheckCache, new BufferSchedule.BufferScheduler(memCapacity), new BufferSchedule.LifeTimeCollector(new CpuLifeTimeUpdater(), new CpuBufferSizeCalculator()));
                 visitor.Convert(post);
                 var primFunc = T.PrimFunc(post.Name, post.ModuleKind, visitor.InputBuffers.Concat(visitor.OutputBuffers).ToArray()).Body(primBody.ToArray()).Build();
                 primFunc.SchedResult.DataUsage = visitor.DataUsage;

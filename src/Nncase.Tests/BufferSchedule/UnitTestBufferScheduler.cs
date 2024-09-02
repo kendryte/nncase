@@ -3,7 +3,9 @@
 
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Google.OrTools.Sat;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Passes.BufferSchedule;
@@ -13,38 +15,43 @@ using Xunit;
 namespace Nncase.Tests.BufferScheduleTest;
 
 [AutoSetupTestMethod(InitSession = true)]
-public sealed class BufferScheduleTest : TestClassBase
+public sealed class UnitTestBufferScheduler : TestClassBase
 {
-    public static TheoryData<Func<Expr>, Func<LifeTimeUpdater>, Func<BufferSizeCalculator>, int, int> TestScheduleGetItemDatas
-    { get; } = new()
+    public UnitTestBufferScheduler()
     {
-        { SampleSwish, () => new LifeTimeUpdater(), () => new BufferSizeCalculator(), 800, 0 },
-        { SampleDistSwish, () => new LifeTimeUpdater(), () => new CpuBufferSizeCalculator(), 1200, 1 },
-    };
-
-    public static Expr SampleSwish()
-    {
-        var a = new Var("a", new TensorType(DataTypes.Float32, new[] { 100 }));
-        var b = new Var("b", new TensorType(DataTypes.Float32, new[] { 100 }));
-        var c = a + b;
-        var d = -c;
-        var tp = new IR.Tuple(c, d);
-        return IR.F.Tensors.GetItem(tp, 0) + IR.F.Tensors.GetItem(tp, 1);
+        DefaultTargetName = Targets.CPUTarget.Kind;
+        CompileOptions.TargetOptions = new Targets.CpuTargetOptions();
+#if DEBUG
+        CompileOptions.DumpFlags = Diagnostics.DumpFlags.PassIR | Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.CodeGen | Diagnostics.DumpFlags.Schedule | Diagnostics.DumpFlags.EGraphCost | Diagnostics.DumpFlags.Tiling;
+#endif
     }
 
-    public static Expr SampleDistSwish()
+    public static TheoryData<Func<Fusion>, int, int> ScheduleGetItemDatas
+    { get; } = new()
+    {
+        { SampleSwish, 1600, 0 },
+    };
+
+    public static Fusion SampleSwish()
     {
         var ttype = new TensorType(DataTypes.Float32, new[] { 100 });
         var dtype = new DistributedType(ttype, new[] { SBP.B }, new(new[] { 1 }, "b"));
         var a = new Var("a", ttype);
         var b = new Var("b", ttype);
-        var c = IR.F.CPU.Boxing(a, dtype) + IR.F.CPU.Boxing(b, dtype);
-        var d = -c;
-        var tp = new IR.Tuple(c, d);
-        var tp0 = IR.F.Tensors.GetItem(tp, 0);
-        var tp1 = IR.F.Tensors.GetItem(tp, 1);
-        var e = tp0 + tp1;
-        return new IR.Tuple(IR.F.CPU.Boxing(e, ttype), IR.F.CPU.Boxing(d, ttype));
+        var boxa = IR.F.CPU.Boxing(a, dtype);
+        var boxb = IR.F.CPU.Boxing(b, dtype);
+        var tp = new IR.Tuple([boxa, boxb]);
+        var tc = new TensorConst(Tensor.FromScalar(1.0f, [100]), new[] { SBP.B }, new(new[] { 1 }, "b"));
+        var c = IR.F.Math.Sin(tc);
+        var d = IR.F.Math.Cos(c);
+        var e = IR.F.Math.Neg(d);
+        var f = IR.F.Math.Abs(e);
+        var g = IR.F.Math.Cos(f);
+        var h = IR.F.Math.Neg(g);
+        var i = IR.F.Tensors.GetItem(tp, 1) + h;
+
+        var body = new IR.Tuple(IR.F.CPU.Boxing(IR.F.Tensors.GetItem(tp, 0), ttype), IR.F.CPU.Boxing(i, ttype));
+        return new Fusion("kernel", Targets.CPUTarget.Kind, body, a, b);
     }
 
     [Fact]
@@ -71,28 +78,49 @@ public sealed class BufferScheduleTest : TestClassBase
     }
 
     [Theory]
-    [MemberData(nameof(TestScheduleGetItemDatas))]
-    public void TestScheduleGetItem(Func<Expr> funcGetter, Func<LifeTimeUpdater> updaterGetter, Func<BufferSizeCalculator> calcGetter, int capacity, int number)
+    [MemberData(nameof(ScheduleGetItemDatas))]
+    public async Task TestScheduleGetItem(Func<Fusion> fusionGetter, int capacity, int number)
     {
-        var body = funcGetter();
-#if DEBUG
-        Dumpper.DumpIR(body, $"{number}_body");
-#endif
-        var updater = updaterGetter();
-        var calc = calcGetter();
-        var collector = new LifeTimeCollector(updater, calc);
-        var buffers = collector.Collect(body);
-        Assert.Empty(buffers.Keys.OfType<Const>());
-        Assert.Empty(buffers.Keys.OfType<Var>());
+        ((Targets.CpuTargetOptions)CompileOptions.TargetOptions).HierarchySizes[^1] = capacity;
+        var fusion = fusionGetter();
+        var dupVars = fusion.Parameters.AsValueEnumerable().Select(v => new Var(v.TypeAnnotation)).ToArray();
 
-        var scheduler = new BufferScheduler(capacity);
-#if DEBUG
-        scheduler.Dump($"{number}_start", buffers);
-#endif
+        var module = new IRModule(new Function("main", new Call(fusion, dupVars), dupVars));
+        module.Add(fusion);
 
-        scheduler.Schedule(buffers);
-#if DEBUG
-        scheduler.Dump($"{number}_end", buffers);
-#endif
+        var inputs = dupVars.AsValueEnumerable().Select(v =>
+        {
+            var ttype = v.CheckedTensorType;
+            return IR.F.Random.Normal(ttype.DType, ttype.Shape.ToValueArray()).Evaluate().AsTensor();
+        }).ToArray();
+
+        var kernelCase = new ModuleCase($"case{number}", module, dupVars, inputs);
+        await Testing.CompileAndRun(kernelCase, CompileOptions, CompileSession, Compile);
+    }
+
+    private async Task Compile(IRModule module)
+    {
+        var passManager = CompileSession.CreatePassManager("pmgr");
+        passManager.Add<CPUFusionToTirPass>();
+
+        // todo add auto fusion merge pass here.
+        passManager.Add<PrimFuncPass>().Configure(p =>
+        {
+            p.Add<Passes.Mutators.UnFoldBlock>();
+            p.Add<Passes.Mutators.FlattenSequential>();
+            p.Add<Passes.Mutators.TailLoopStripping>();
+            p.Add<Passes.Mutators.FoldConstCall>();
+        });
+
+        passManager.AddWithName<DDrBufferSchdeulePass>("DDrBufferSchdeule");
+
+        passManager.AddWithName<PrimFuncPass>("InstStage").Configure(p =>
+        {
+            p.Add<Passes.Mutators.FlattenBuffer>();
+            p.Add<Passes.Mutators.FoldConstCall>();
+            p.Add<Passes.Mutators.RemoveNop>();
+        });
+        CompileSession.Target.RegisterTargetDependentBeforeCodeGen(passManager, CompileSession.CompileOptions);
+        await passManager.RunAsync(module);
     }
 }
