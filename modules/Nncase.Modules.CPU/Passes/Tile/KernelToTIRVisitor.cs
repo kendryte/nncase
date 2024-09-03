@@ -142,10 +142,6 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             case IR.NN.Softmax softmax:
                 _mainBody.Add(TIR.F.CPU.PackedSoftmax(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToScalar<int>(), Array.Empty<int>()));
                 break;
-            case IR.CPU.PackedTranspose packed_transpose:
-                // _mainBody.Add(TIR.F.CPU.PackedTranspose(arguments[0], arguments[1], ret, packed_transpose.PackedAxes));
-                _mainBody.Add(TIR.F.CPU.PackedTranspose(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), packed_transpose.PackedAxes));
-                break;
             case IR.CPU.PackedLayerNorm packed_layer_norm:
                 _mainBody.Add(TIR.F.CPU.PackedLayerNorm(arguments[0], arguments[1], arguments[2], ret, packed_layer_norm.Axis, packed_layer_norm.Epsilon, packed_layer_norm.UseMean, packed_layer_norm.PackedAxes, packed_layer_norm.PadedNums));
                 break;

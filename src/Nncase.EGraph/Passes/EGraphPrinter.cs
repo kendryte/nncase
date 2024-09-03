@@ -270,13 +270,7 @@ public partial class EGraphPrinter
 
         protected override string VisitOp(Op expr)
         {
-            return expr switch
-            {
-                Unary op => op.UnaryOp.ToString(),
-                Binary op => op.BinaryOp.ToString(),
-                Reduce op => "Reduce" + op.ReduceOp.ToString(),
-                _ => expr.GetType().Name,
-            };
+            return $"{expr.GetType().Name}({expr.DisplayProperty()})";
         }
 
         protected override string VisitVar(Var expr) => expr.GetType().Name + " " + expr.Name;

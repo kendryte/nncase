@@ -415,17 +415,6 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     }).Result);
 
                     break;
-                case TIR.CPU.PackedTranspose transpose:
-                    {
-                        IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedTranspose.cshtml", new TypedKernelTemplateModel<TIR.CPU.PackedTranspose>(transpose)
-                        {
-                            Arguments = args.Select(x => new KernelArgument { Symbol = Visit(x) }).ToArray(),
-                            Args = args.ToArray(),
-                        }).Result);
-                    }
-
-                    break;
-
                 case TIR.CPU.Memcopy copy:
                     IndentScope.Writer.Write($"tensor_copy({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
                     break;

@@ -107,4 +107,22 @@ template <> struct reduce<ops::max, float, ntt::vector<float, 4>> {
         return vmaxvq_f32(tensor);
     }
 };
+
+// outer product
+template <> struct outer_product<ntt::vector<float, 4>, ntt::vector<float, 4>> {
+    auto operator()(const ntt::vector<float, 4> &v1,
+                    const ntt::vector<float, 4> &v2) const noexcept {
+        ntt::vector<float32_t, 4, 4> result;
+        float32x4_t m0 = vdupq_n_f32(v1(0));
+        float32x4_t m1 = vdupq_n_f32(v1(1));
+        float32x4_t m2 = vdupq_n_f32(v1(2));
+        float32x4_t m3 = vdupq_n_f32(v1(3));
+
+        result(0) = vmulq_f32(m0, v2);
+        result(1) = vmulq_f32(m1, v2);
+        result(2) = vmulq_f32(m2, v2);
+        result(3) = vmulq_f32(m3, v2);
+        return result;
+    }
+};
 } // namespace nncase::ntt::ops
