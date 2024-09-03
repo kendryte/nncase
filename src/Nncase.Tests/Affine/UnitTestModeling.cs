@@ -281,12 +281,10 @@ public sealed class UnitTestModeling : TestClassBase
         root.Dump("build");
 #endif
 
-        Assert.Equal(7, root.Collect().OfType<OpNode>().Count());
+        Assert.Equal(5, root.Collect().OfType<OpNode>().Count());
 
-        Assert.True(root.Merge(2, 1, 2));
-        Assert.True(root.Merge(2, 0, 2));
-        Assert.True(root.Merge(6, 5, 2));
-        Assert.True(root.Merge(6, 4, 2));
+        Assert.True(root.Merge(1, 0, 2));
+        Assert.True(root.Merge(4, 3, 2));
 #if DEBUG
         root.Dump("merged");
 #endif
