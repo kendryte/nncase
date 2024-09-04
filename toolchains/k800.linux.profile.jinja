@@ -1,0 +1,12 @@
+[conf]
+tools.cmake.cmaketoolchain:user_toolchain+={{ os.path.join(profile_dir, "k800.linux.toolchain.cmake") }}
+tools.cmake.cmaketoolchain:generator=Ninja
+
+[settings]
+os=Linux
+arch=riscv64
+build_type=Release
+compiler=gcc
+compiler.cppstd=20
+compiler.libcxx=libstdc++11
+compiler.version=12
