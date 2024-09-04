@@ -22,14 +22,13 @@ public partial class LowerMatmul : RewriteRule<Pattern>
     public string ModuleKind { get; }
 
     /// <inheritdoc/>
-    public override Pattern Pattern { get; } = PatternMatch.F.Math.IsMatMul(
-      "matmul",
-      "call",
-      _ => true,
-      IsWildcard("lhs") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") },
-      IsWildcard("rhs") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") });
+    public override Pattern Pattern { get; } = IsCall(
+        "call",
+        IsOp<Op>("op", op => op is MatMul or IR.CPU.PackedMatMul),
+        IsWildcard("lhs") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") },
+        IsWildcard("rhs") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") });
 
-    private Expr? GetReplace(Expr call, MatMul matmul, Expr lhs, Expr rhs)
+    private Expr? GetReplace(Expr call, Op op, Expr lhs, Expr rhs)
     {
         var lhsShape = lhs.CheckedShape.ToValueArray();
         var rhsShape = rhs.CheckedShape.ToValueArray();
@@ -90,10 +89,16 @@ public partial class LowerMatmul : RewriteRule<Pattern>
             _ => throw new ArgumentOutOfRangeException(nameof(call)),
         };
         return IR.F.Affine.Grid(ModuleKind)
+            .Domain(rank, out var domainVar)
             .Read(lhs, lhsMap, out var lhsTile)
             .Read(rhs, rhsMap, out var rhsTile)
             .Write(outBuffer, new AffineMap(domains, default, domains.SkipLast(2).Concat(domains.TakeLast(1)).Select(x => new AffineRange(x.Offset, x.Extent)).ToArray()), out var outTile)
-            .Body(TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.Equal(domains[^2].Offset, 0L)))
+            .Body(op switch
+            {
+                MatMul => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[rank - 2][0], 0L)),
+                IR.CPU.PackedMatMul packop => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[rank - 2][0], 0L), packop.LhsPackedAxes, packop.LhsPadedNums, packop.RhsPackedAxes, packop.RhsPadedNums),
+                _ => throw new System.Diagnostics.UnreachableException(),
+            })
             .Build();
     }
 }

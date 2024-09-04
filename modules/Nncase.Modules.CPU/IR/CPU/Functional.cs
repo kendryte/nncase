@@ -87,11 +87,6 @@ public partial class CPU
         return new Call(new ResizeImage(packedAxes, padedNums, newSize, resizeMode, transformationMode, nearestMode), input);
     }
 
-    public static Expr PackedTranspose(Expr input, Expr perm, IRArray<int> packedAxes)
-    {
-        return new Call(new PackedTranspose(packedAxes), input, perm);
-    }
-
     public static Expr Im2col(Expr input, int[] kernel, int[] stride, int[] padding)
     {
         return new Call(new Im2col(kernel, stride, padding, Array.Empty<int>(), Array.Empty<int>()), input);

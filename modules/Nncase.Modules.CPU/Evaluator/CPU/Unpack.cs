@@ -67,6 +67,11 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
 
     private IRType Visit(ITypeInferenceContext context, Unpack target, TensorType input)
     {
+        if (target.Lanes.Any(x => x <= 0))
+        {
+            return new InvalidType("unpack lane <= 0");
+        }
+
         return TypeInference.UnpackType(input, target.Axes);
     }
 

@@ -1,16 +1,8 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 using NetFabric.Hyperlinq;
-using Nncase.IR;
-using Nncase.TIR;
 using Nncase.Utilities;
 
 namespace Nncase.IR.Affine;
@@ -57,11 +49,18 @@ public sealed class AffineRange : Expr
         return (offset, extent);
     }
 
+    public ValueRange<long> Apply(ReadOnlySpan<long> dims, ReadOnlySpan<long> extents, IReadOnlyDictionary<AffineSymbol, long>? symbols = null)
+    {
+        var offset = Offset.Apply(dims, extents, symbols);
+        var extent = Extent.Apply(dims, extents, symbols);
+        return (offset, extent);
+    }
+
     internal string GetDisplayString(ReadOnlySpan<AffineSymbol> symbols)
         => $"({Offset.GetDisplayString(symbols)}, {Extent.GetDisplayString(symbols)})";
 
     internal AffineRange ReplaceDomains(ReadOnlySpan<AffineRange> newDomains)
-        => new AffineRange(Offset.ReplaceDomains(newDomains), Extent.ReplaceDomains(newDomains));
+        => new AffineRange(Offset.ReplaceDomainsAndSymbols(newDomains, Array.Empty<AffineSymbol>()), Extent.ReplaceDomainsAndSymbols(newDomains, Array.Empty<AffineSymbol>()));
 }
 
 public sealed class AffineMap : Expr
@@ -119,7 +118,7 @@ public sealed class AffineMap : Expr
             }
             else if (type == typeof(AffineSymbol))
             {
-                var symbol = F.Affine.Symbol($"s{symbols.Count}");
+                var symbol = F.Affine.Symbol(symbols.Count);
                 symbols.Add(symbol);
                 arguments[i] = symbol;
             }
@@ -138,6 +137,65 @@ public sealed class AffineMap : Expr
         var domains = F.Affine.Domains(rank);
         var results = domains.Select(x => new AffineRange(x.Offset, x.Extent)).ToArray();
         return new AffineMap(domains, default, results);
+    }
+
+    public static AffineMap Permutation(int[] perms)
+    {
+        var domains = F.Affine.Domains(perms.Length);
+        var results = Enumerable.Range(0, perms.Length).Select(i => new AffineRange(domains[perms[i]].Offset, domains[perms[i]].Extent)).ToArray();
+        return new AffineMap(domains, default, results);
+    }
+
+    public bool IsProjectedPermutation(bool allowConstInResults)
+    {
+        if (Symbols.Length > 0)
+        {
+            return false;
+        }
+
+        // Having more results than inputs means that results have duplicated dims or
+        // zeros that can't be mapped to input dims.
+        if (Results.Length > Domains.Length && !allowConstInResults)
+        {
+            return false;
+        }
+
+        var seen = Enumerable.Repeat(false, Domains.Length).ToArray();
+        foreach (var range in Results)
+        {
+            switch (range.Offset, range.Extent)
+            {
+                case (AffineDim dim, AffineExtent extent) when dim.Position == extent.Position:
+                    if (seen[dim.Position])
+                    {
+                        return false;
+                    }
+
+                    seen[dim.Position] = true;
+                    break;
+                case (AffineConstant, AffineConstant):
+                    if (!allowConstInResults)
+                    {
+                        return false;
+                    }
+
+                    break;
+                default:
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    public bool IsPermutation()
+    {
+        if (Domains.Length != Results.Length)
+        {
+            return false;
+        }
+
+        return IsProjectedPermutation(false);
     }
 
     public TIR.Range[] Apply(ReadOnlySpan<Expr> dims, ReadOnlySpan<Expr> extents, IReadOnlyDictionary<AffineSymbol, Expr>? symbols = null)

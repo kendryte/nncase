@@ -26,6 +26,7 @@ py::class_<runtime_tensor>(m, "RuntimeTensor")
     .def_static(
         "from_numpy",
         [](py::array arr) {
+            arr = py::array::ensure(arr, py::array::c_style);
             auto src_buffer = arr.request();
             auto datatype = from_dtype(arr);
             auto tensor =

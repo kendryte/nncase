@@ -10,7 +10,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FlatBuffers;
-using LanguageExt;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.F;

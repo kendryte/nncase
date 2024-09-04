@@ -11,177 +11,180 @@ using Nncase.Utilities;
 
 namespace Nncase.Passes.BufferSchedule;
 
+public class LifeTimeUpdater : ExprFunctor<Unit, Unit, LifeTimeUpdater.Context>
+{
+    protected override Unit DefaultVisit(Expr expr, Context context) => default;
+
+    protected override Unit VisitTuple(IR.Tuple expr, Context context)
+    {
+        foreach (var item in expr.Fields)
+        {
+            if (item is IR.Tuple tp)
+            {
+                Visit(tp, context);
+            }
+            else if (item is Call c)
+            {
+                PerformUpdate(c, context);
+            }
+        }
+
+        return default;
+    }
+
+    protected override Unit VisitCall(Call expr, Context context)
+    {
+        foreach (var item in expr.Arguments)
+        {
+            if (item is IR.Tuple tp)
+            {
+                Visit(tp, context);
+            }
+            else if (item is Call c)
+            {
+                PerformUpdate(c, context);
+            }
+        }
+
+        PerformUpdate(expr, context);
+        return default;
+    }
+
+    protected void PerformUpdate(Expr expr, Context context)
+    {
+        var (livenessMap, timeStamp) = context;
+        if (!livenessMap.TryGetValue(expr, out var interval))
+        {
+            interval = new(timeStamp, timeStamp + 1);
+        }
+        else
+        {
+            interval.Stop = timeStamp + 1;
+        }
+
+        livenessMap[expr] = interval;
+    }
+
+    public sealed record Context(Dictionary<Expr, Interval> LivenessMap, int TimeStamp)
+    {
+    }
+}
+
+public class BufferSizeCalculator : ExprFunctor<BufferSizeCalculator.Result, BufferSizeCalculator.Result>
+{
+    public override Result DefaultVisitType(IRType type) => throw new NotSupportedException();
+
+    public override Result VisitType(TensorType type)
+    {
+        var shape = type.Shape.ToValueArray();
+        var stride = TensorUtilities.GetStrides(shape);
+        return new(TensorUtilities.GetSize(shape, stride, type.DType.SizeInBytes), shape, stride);
+    }
+
+    public override Result VisitType(DistributedType distributedType)
+    {
+        if (DistributedUtility.TryGetDividedTensorType(distributedType, out var tt))
+        {
+            var shape = tt.Shape.ToValueArray();
+            var stride = TensorUtilities.GetStrides(shape);
+            var size = TensorUtilities.GetSize(shape, stride, tt.DType.SizeInBytes);
+            return new(size, shape, stride);
+        }
+        else
+        {
+            throw new NotSupportedException();
+        }
+    }
+
+    public override Result VisitType(TupleType tupleType)
+    {
+        var size = 0;
+        foreach (var item in tupleType)
+        {
+            size += VisitType(item).Size;
+        }
+
+        return new(size, Array.Empty<int>(), Array.Empty<int>());
+    }
+
+    protected override Result VisitCall(Call expr)
+    {
+        if (expr.Target is IR.Tensors.GetItem)
+        {
+            if (expr.Arguments[1] is TensorConst tc && tc.Value.Shape.IsScalar)
+            {
+                var res = VisitType(expr.CheckedType);
+                return new(0, res.Shape, res.Stride);
+            }
+            else
+            {
+                throw new NotSupportedException("getItem index is not const scalar!");
+            }
+        }
+
+        return VisitType(expr.CheckedType);
+    }
+
+    public sealed record Result(int Size, int[] Shape, int[] Stride)
+    {
+        public static readonly Result Empty = new(0, Array.Empty<int>(), Array.Empty<int>());
+    }
+}
+
 public class LifeTimeCollector : ExprVisitor<Unit, Unit>
 {
+    public LifeTimeCollector(LifeTimeUpdater updater, BufferSizeCalculator calculator)
+    {
+        Updater = updater;
+        Calculator = calculator;
+        FinishedCollect = null!;
+    }
+
+    public event EventHandler FinishedCollect;
+
     public int TimeStamp { get; private set; }
 
-    public Dictionary<Expr, Interval> LifenessMap { get; } = new(ReferenceEqualityComparer.Instance);
+    public Dictionary<Expr, Interval> LivenessMap { get; } = new(ReferenceEqualityComparer.Instance);
 
-    public virtual IReadOnlyDictionary<Expr, ScheduleBuffer> Collect(Expr expr)
+    public LifeTimeUpdater Updater { get; }
+
+    public BufferSizeCalculator Calculator { get; }
+
+    public IReadOnlyDictionary<Expr, ScheduleBuffer> Collect(Expr expr)
     {
         Visit(expr);
-        Update(expr); // avoid final call time interval size == 1.
+        Updater.Visit(expr, new(LivenessMap, TimeStamp)); // avoid final call time interval size == 1.
 
-        // TODO: open Alias
-        // Alias();
+        FinishedCollect?.Invoke(this, EventArgs.Empty); // custom some liveness.
         var d = new Dictionary<Expr, ScheduleBuffer>(ReferenceEqualityComparer.Instance);
         int count = 0;
-        foreach (var (k, v) in LifenessMap)
+        foreach (var (k, v) in LivenessMap)
         {
             var name = k switch
             {
-                Call c => c.Target.GetType().Name,
+                Call c => c.Target switch
+                {
+                    Op op => $"{op.GetType().Name}({op.DisplayProperty()})",
+                    Callable cb => $"{cb.Name}@{cb.ModuleKind}",
+                    _ => $"{c.Target.GetType().Name}",
+                },
                 Var va => va.Name,
                 _ => k.GetType().Name,
             };
-            var size = ComputeBufferSize(k, k.CheckedType, out var shape, out var stride);
-            d.Add(k, new(name, count++, v, new(0, size), shape, stride, false));
+
+            var rest = Calculator.Visit(k);
+            d.Add(k, new(name, count++, v, new(0, rest.Size), rest.Shape, rest.Stride, false));
         }
 
         return d;
     }
 
-    protected override Unit DefaultVisitLeaf(Expr expr) => Unit.Default;
+    protected override Unit DefaultVisitLeaf(Expr expr) => default;
 
     protected override Unit VisitLeafCall(Call expr)
     {
-        foreach (var arg in expr.Arguments)
-        {
-            Update(arg);
-        }
-
-        Update(expr);
-
-        TimeStamp += 1;
-
-        // note we will update tuple field on the next call.
-        // foreach (var item in expr.Users.Where(e => e is not (BaseFunction or IR.Tuple)))
-        // {
-        //     Update(item);
-        // }
-        return Unit.Default;
-    }
-
-    protected virtual int ComputeBufferSize(Expr expr, IRType type, out int[] shape, out int[] stride)
-    {
-        shape = Array.Empty<int>();
-        stride = Array.Empty<int>();
-        var size = 0;
-        if (type is TensorType tensorType)
-        {
-            shape = tensorType.Shape.ToValueArray();
-            stride = TensorUtilities.GetStrides(shape);
-            size = TensorUtilities.GetSize(shape, stride, tensorType.DType.SizeInBytes);
-        }
-        else if (type is DistributedType distributedType)
-        {
-            if (DistributedUtility.TryGetDividedTensorType(distributedType, out var tt))
-            {
-                shape = tt.Shape.ToValueArray();
-                stride = TensorUtilities.GetStrides(shape);
-                size = TensorUtilities.GetSize(shape, stride, tt.DType.SizeInBytes);
-            }
-            else
-            {
-                throw new NotSupportedException();
-            }
-        }
-        else if (type is TupleType tupleType)
-        {
-            size = 0;
-            foreach (var item in tupleType)
-            {
-                size += ComputeBufferSize(null!, item, out _, out _);
-            }
-        }
-
-        return size;
-    }
-
-    protected virtual void Update(Expr expr)
-    {
-        if (expr is Const or None or Var)
-        {
-            return;
-        }
-
-        // boxing store
-        if (expr is Call c && c.CheckedType is TensorType && c.Arguments[0].CheckedType is DistributedType)
-        {
-            return;
-        }
-
-        if (expr is IR.Tuple t)
-        {
-            foreach (var item in t.Fields)
-            {
-                Update(item);
-            }
-
-            return;
-        }
-
-        if (!LifenessMap.TryGetValue(expr, out var interval))
-        {
-            interval = new(TimeStamp, TimeStamp + 1);
-        }
-        else
-        {
-            interval.Stop = TimeStamp + 1;
-        }
-
-        LifenessMap[expr] = interval;
-    }
-
-    protected virtual void Alias()
-    {
-        bool changed;
-        do
-        {
-            changed = false;
-            foreach (var (expr, interval) in LifenessMap)
-            {
-                if (expr is Call { Target: IR.Tensors.Reshape } callReshape)
-                {
-                    changed = AliasTime(callReshape, interval);
-                }
-            }
-
-            foreach (var (expr, interval) in LifenessMap)
-            {
-                if (expr is Call { Target: IR.Tensors.Concat } concatCall)
-                {
-                    changed = AliasTime(concatCall, interval);
-                }
-            }
-
-            foreach (var (expr, interval) in LifenessMap)
-            {
-                if (expr is Call { Target: IR.Tensors.Split } splitCall)
-                {
-                    changed = AliasTime(splitCall, interval);
-                }
-            }
-        } while (changed);
-    }
-
-    private bool AliasTime(Call call, Interval interval)
-    {
-        var brith = call.GetArguments().Select(arg => LifenessMap[arg].Stop).Concat(new[] { interval.Start }).Max();
-        var death = call.GetUsers().Select(usr => LifenessMap[usr].Start).Concat(new[] { interval.Stop }).Min();
-
-        if (brith == interval.Start && death == interval.Stop)
-        {
-            return false;
-        }
-
-        if (brith >= death)
-        {
-            throw new InvalidOperationException();
-        }
-
-        interval.Start = brith;
-        interval.Stop = death;
-        return true;
+        Updater.Visit(expr, new(LivenessMap, TimeStamp));
+        TimeStamp += 2;
+        return default;
     }
 }

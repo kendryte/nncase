@@ -97,7 +97,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
 
         var post = await pass.RunAsync(pre, new());
 
-        var analysis = new Dictionary<Type, IAnalysisResult>
+        var analysis = new Dictionary<System.Type, IAnalysisResult>
         {
             [typeof(IExprUserAnalysisResult)] = AnalyzerManager.GetAnaylsis<IExprUserAnalysisResult>(post),
         };
@@ -225,7 +225,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
     }
 
     [Fact]
-    public async void TestComplexFusionTensorConstInput()
+    public async Task TestComplexFusionTensorConstInput()
     {
         var inShape = new[] { 1, 24, 32, 3 };
         var input = DataGenerator.DefaultRandom(inShape);

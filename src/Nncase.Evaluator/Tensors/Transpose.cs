@@ -59,8 +59,15 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Transpose tr)
     {
-        var input = context.GetOrtArgumentValue(tr, Transpose.Input);
+        var inputValue = context.GetArgumentValue(tr, Transpose.Input);
         var perm = context.GetArgumentValueAsArray<long>(tr, Transpose.Perm);
+        var input = context.GetOrtArgumentValue(tr, Transpose.Input);
+        if (inputValue.Type is TensorType { DType: VectorType vectorType })
+        {
+            var newPerm = perm.Concat(Enumerable.Range(0, vectorType.Lanes.Count).Select(i => (long)(i + perm.Length))).ToArray();
+            var output = OrtKI.Transpose(input, newPerm);
+            return Value.FromTensor(Tensor.FromBytes(new TensorType(vectorType, output.Shape.Select(i => (int)i).SkipLast(vectorType.Lanes.Count).ToArray()), output.BytesBuffer.ToArray()));
+        }
 
         // when HasBindedMixQuantInfo is true, eval will do simulation of quant/dequant for some inputs, this is used for evaluate accumulated quant error for layers.
         if (context.CurrentCall.EnodeBestQuantConfigWithCosine != null)

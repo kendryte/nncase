@@ -15,7 +15,7 @@ public sealed partial class Dequantize : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Dequantize), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Dequantize), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets DequantParam.

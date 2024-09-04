@@ -259,7 +259,7 @@ internal sealed class ResNet
     private int _dilation;
 
     public ResNet(
-        Type block,
+        System.Type block,
         int[] layers,
         int num_classes = 1000,
         bool zero_init_residual = false,
@@ -358,7 +358,7 @@ internal sealed class ResNet
         return x;
     }
 
-    private IForwardable Make_layer(Type block, int planes, int blocks, int stride = 1, bool dilate = false)
+    private IForwardable Make_layer(System.Type block, int planes, int blocks, int stride = 1, bool dilate = false)
     {
         IForwardable? downsample = null;
         var previous_dilation = _dilation;

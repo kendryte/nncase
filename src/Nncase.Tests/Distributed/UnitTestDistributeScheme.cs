@@ -3,6 +3,7 @@
 
 using System.IO;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.Passes.Distributed;
 using Nncase.Tests.TestFixture;
@@ -59,17 +60,17 @@ public class UnitTestDistributeScheme : TestClassBase
     }
 
     [Fact]
-    public async void TestLoadScheme()
+    public async Task TestLoadScheme()
     {
         var path = Path.Join(SolutionDirectory, "src/Nncase.Tests/Distributed/hidden_in.json");
         var options = new Nncase.Targets.CpuTargetOptions()
         {
-            Hierarchy = new[] { new[] { 8, 8, 4 } },
+            Hierarchies = new[] { new[] { 8, 8, 4 } },
             HierarchyNames = "cbt",
             DistributedScheme = path,
         };
 
-        CompileOptions.TargetCompileOptions = options;
+        CompileOptions.TargetOptions = options;
 
         Function func;
         {

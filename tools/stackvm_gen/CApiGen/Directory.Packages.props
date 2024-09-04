@@ -1,0 +1,8 @@
+<Project>
+  <Import Project="$(MSBuildThisFileDirectory)../../../Directory.Packages.props" />
+  <!-- <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup> -->
+  <ItemGroup>
+  </ItemGroup>
+</Project>

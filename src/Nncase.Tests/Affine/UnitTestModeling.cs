@@ -3,9 +3,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using CommunityToolkit.HighPerformance;
 using Google.OrTools.ConstraintSolver;
+using Nncase.IR;
+using Nncase.Passes;
+using Nncase.Schedule.TileTree;
+using QuikGraph.Graphviz;
 using Xunit;
 
 namespace Nncase.Tests.AffineTest;
@@ -13,6 +17,14 @@ namespace Nncase.Tests.AffineTest;
 [TestFixture.AutoSetupTestMethod(InitSession = true)]
 public sealed class UnitTestModeling : TestClassBase
 {
+    public UnitTestModeling()
+    {
+        CompileOptions.TargetOptions = new Nncase.Targets.CpuTargetOptions();
+#if DEBUG
+        CompileOptions.DumpFlags = Diagnostics.DumpFlags.PassIR;
+#endif
+    }
+
     [Fact]
     public void TestTwoLevelCpuCacheModeling()
     {
@@ -220,6 +232,316 @@ public sealed class UnitTestModeling : TestClassBase
     public void TestTwoLevelMemoryModeling()
     {
         Nncase.Schedule.MatmulTiler.Solve();
+    }
+
+    [Fact]
+    public void TestMultiInputs()
+    {
+        var func = FunctionSamples.Get4();
+
+        var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerBinary(), }, new());
+#if DEBUG
+        Dumpper.DumpIR(post, "post");
+#endif
+
+        var grid = (IR.Affine.Grid)((IR.Function)post).Body;
+
+        var root = TreeBuilder.Build(grid, 2);
+#if DEBUG
+        root.Dump("build");
+#endif
+
+        Assert.Equal(4, root.Collect().OfType<OpNode>().Count());
+
+        Assert.True(root.Merge(2, 1, 2));
+        Assert.True(root.Merge(2, 0, 2));
+#if DEBUG
+        root.Dump("merged");
+#endif
+
+        Assert.IsType<TreeSolverResultConstructor>(Schedule.TreeTiler.Solve(root, (ICpuTargetOptions)CompileOptions.TargetOptions));
+    }
+
+    [Fact]
+    public void TestMultiInputs2()
+    {
+        var func = FunctionSamples.Get1();
+
+        var post = CompilerServices.ERewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.PackMatMul(1, 4), new Passes.Rules.CPU.PackUnary(1, 4) }, new(), CompileOptions);
+        post = CompilerServices.Rewrite(post, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerPack(), new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), }, new());
+#if DEBUG
+        Dumpper.DumpIR(post, "post");
+#endif
+
+        var call = (IR.Call)((IR.Function)post).Body;
+        var grid = (IR.Affine.Grid)call.Arguments[0];
+
+        var root = TreeBuilder.Build(grid, 2);
+#if DEBUG
+        root.Dump("build");
+#endif
+
+        Assert.Equal(5, root.Collect().OfType<OpNode>().Count());
+
+        Assert.True(root.Merge(1, 0, 2));
+        Assert.True(root.Merge(4, 3, 2));
+#if DEBUG
+        root.Dump("merged");
+#endif
+
+        Assert.IsType<TreeSolverResultConstructor>(Schedule.TreeTiler.Solve(root, (ICpuTargetOptions)CompileOptions.TargetOptions));
+    }
+
+    [Fact]
+    public void TestTreeTiler()
+    {
+        Function func;
+        {
+            var a = new Var(new TensorType(DataTypes.Float32, new[] { 128, 256 }));
+            var b = new Var(new TensorType(DataTypes.Float32, new[] { 256, 384 }));
+            var c = IR.F.Tensors.MatMul(a, b);
+            var d = IR.F.Math.Exp(c);
+            var e = new Var(new TensorType(DataTypes.Float32, new[] { 384, 512 }));
+            var f = IR.F.Tensors.MatMul(d, e);
+            func = new(f, a, b, e);
+        }
+
+        var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), }, new());
+        Dumpper.DumpIR(post, "post");
+
+        if (post is not Function { Body: IR.Affine.Grid grid })
+        {
+            return;
+        }
+
+        Schedule.TreeTiler.Tile(grid, Nncase.Targets.CPUTarget.Kind, 0, (ICpuTargetOptions)CompileOptions.TargetOptions);
+    }
+
+    [Fact]
+    public void TestTilePackMatmul()
+    {
+        Function func;
+        {
+            var a = new Var(new TensorType(DataTypes.Float32, new[] { 1024, 2048 }));
+            var b = new Var(new TensorType(DataTypes.Float32, new[] { 2048, 1024 }));
+            var c = IR.F.Tensors.MatMul(a, b);
+            var d = IR.F.Math.Exp(c);
+            var e = new Var(new TensorType(DataTypes.Float32, new[] { 1024, 3072 }));
+            var f = IR.F.Tensors.MatMul(d, e);
+            func = new(f, a, b, e);
+        }
+
+        var post = CompilerServices.ERewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.PackMatMul(1, 8), new Passes.Rules.CPU.PackUnary(1, 8), }, new(), CompileOptions);
+        Dumpper.DumpIR(post, "pack");
+        post = CompilerServices.Rewrite(post, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerPack(), new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), }, new());
+        Dumpper.DumpIR(post, "grid");
+
+        // if (post is not Function { Body: IR.Affine.Grid grid })
+        // {
+        //     return;
+        // }
+
+        // Schedule.TreeTiler.Tile(grid, Nncase.Targets.CPUTarget.Kind, 0, CompileOptions.TargetOptions);
+    }
+
+    [Fact]
+    public void TestAutoFusion()
+    {
+        var func = FunctionSamples.Get1();
+        var module = new IR.IRModule(func);
+        CompileSession.Compiler.ImportIRModule(module);
+        CompileSession.Compiler.CompileAsync();
+        using (var stream = Diagnostics.DumpScope.Current.OpenFile("test.kmodel"))
+        {
+            CompileSession.Compiler.Gencode(stream);
+        }
+    }
+
+    [Fact]
+    public void TestAutoFusionFailedCase0()
+    {
+        var func = FunctionSamples.Get3();
+        var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerBinary() }, new());
+        Dumpper.DumpIR(post, "post");
+
+        if (post is not Function { Body: IR.Affine.Grid grid })
+        {
+            return;
+        }
+
+        var root = new ScopeNode();
+        var opId = 0;
+        var totalLevel = 2;
+        Schedule.TreeTiler.BuildTree(grid, root, totalLevel, ref opId);
+#if DEBUG
+        root.Dump("built");
+#endif
+        root.Merge(3, 2, 2);
+        root.Merge(3, 1, 2);
+        root.Merge(3, 0, 2);
+        root.Merge(3, 2, 1);
+        root.Merge(3, 1, 1);
+        root.Merge(3, 0, 1);
+#if DEBUG
+        root.Dump("fused");
+#endif
+
+        var result = Schedule.TreeTiler.Solve(root, (ICpuTargetOptions)CompileOptions.TargetOptions);
+
+        if (result is not null)
+        {
+            result.ConstructResult("cpu", 0);
+        }
+    }
+
+    [Fact]
+    public void TestMerge()
+    {
+        var func = FunctionSamples.Get1();
+        var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), }, new());
+        Dumpper.DumpIR(post, "post");
+
+        if (post is not Function { Body: IR.Affine.Grid grid })
+        {
+            return;
+        }
+
+        // Schedule.TreeTiler.BuildTree(grid, CompileOptions.TargetOptions);
+        var root = new Schedule.TileTree.ScopeNode();
+        var opId = 0;
+        var totalLevel = 2;
+        Schedule.TreeTiler.BuildTree(grid, root, totalLevel, ref opId);
+        root.Dump("build");
+
+        root.Merge(2, 1, 2);
+        var m1 = root.Clone();
+        m1.Dump("0");
+        m1.Merge(2, 0, 2);
+        var m2 = m1.Clone();
+        m2.Dump("1");
+        m2.Merge(1, 0, 1);
+        var m3 = m2.Clone();
+        m3.Dump("2");
+        m3.Merge(2, 1, 1);
+        var m4 = m3.Clone();
+        m4.Dump("3");
+    }
+
+    [Fact]
+    public void TestGetArgumentInfo()
+    {
+        var func = FunctionSamples.Get1();
+        var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), }, new());
+        Dumpper.DumpIR(post, "post");
+
+        if (post is not Function { Body: IR.Affine.Grid grid })
+        {
+            return;
+        }
+
+        var root = new ScopeNode();
+        var opId = 0;
+        var totalLevel = ((ICpuTargetOptions)CompileOptions.TargetOptions).MemoryCapacities.Length - 1;
+        Schedule.TreeTiler.BuildTree(grid, root, totalLevel, ref opId);
+        root.Dump("build");
+        var m1 = root.Root<ITreeNode>().Clone();
+        m1.Merge(2, 1, 2);
+        m1.Dump("final");
+
+        var res = TreeSolverInitializer.Init(m1, totalLevel, (ICpuTargetOptions)CompileOptions.TargetOptions, out _, out _, out _, out _);
+        Assert.Equal(3, res.Inputs.Count);
+        Assert.Single(res.Outputs);
+        Assert.Equal(2, res.DefUseMap.Keys.Count);
+    }
+
+    [Fact]
+    public void TestGetArgumentInfo2()
+    {
+        var func = FunctionSamples.Get2();
+        var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), new Passes.Rules.CPU.Affine.LowerBinary() }, new());
+        Dumpper.DumpIR(post, "post");
+
+        if (post is not Function { Body: IR.Affine.Grid grid })
+        {
+            return;
+        }
+
+        var root = new ScopeNode();
+        var opId = 0;
+        var totalLevel = ((ICpuTargetOptions)CompileOptions.TargetOptions).MemoryCapacities.Length - 1;
+        Schedule.TreeTiler.BuildTree(grid, root, totalLevel, ref opId);
+        root.Dump("build");
+        var m1 = root.Root<ITreeNode>().Clone();
+        m1.Merge(1, 0, 2);
+        m1.Merge(1, 0, 1);
+        m1.Dump("final");
+
+        var res = TreeSolverInitializer.Init(m1, totalLevel, (ICpuTargetOptions)CompileOptions.TargetOptions, out _, out _, out _, out _);
+        Assert.Equal(4, res.Inputs.Count);
+        Assert.Single(res.Outputs);
+        Assert.Single(res.DefUseMap.Keys);
+    }
+
+    [Fact]
+    public void TestGetArgumentInfo3()
+    {
+        var func = FunctionSamples.Get2();
+        var post = CompilerServices.Rewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), new Passes.Rules.CPU.Affine.LowerBinary() }, new());
+        Dumpper.DumpIR(post, "post");
+
+        if (post is not Function { Body: IR.Affine.Grid grid })
+        {
+            return;
+        }
+
+        var root = new ScopeNode();
+        var opId = 0;
+        var totalLevel = ((ICpuTargetOptions)CompileOptions.TargetOptions).MemoryCapacities.Length - 1;
+        Schedule.TreeTiler.BuildTree(grid, root, totalLevel, ref opId);
+        root.Dump("build");
+        var m1 = root.Root<ITreeNode>().Clone();
+        m1.Merge(1, 0, 2);
+        m1.Dump("final");
+
+        var res = TreeSolverInitializer.Init(m1, totalLevel, (ICpuTargetOptions)CompileOptions.TargetOptions, out _, out _, out _, out _);
+
+        // when merge point at top level, should put the cache buffer into defuse map.
+        Assert.Equal(4, res.Inputs.Count);
+        Assert.Single(res.Outputs);
+        Assert.Equal(2, res.DefUseMap.Keys.Count);
+    }
+
+    [Fact]
+    public void TestSolveNoOverlapping()
+    {
+        var solver = new Solver("a");
+        var asize = solver.MakeIntConst(1);
+        var csize = solver.MakeIntConst(2);
+        var aplace = solver.MakeBoolVar();
+        var cplace = solver.MakeBoolVar();
+        solver.Add(solver.MakeSumEquality(new[] { aplace, cplace }, 1));
+
+        var offset = solver.MakeIntVar(0, 2);
+
+        var aLife = (solver.MakeIntConst(0), solver.MakeIntConst(1));
+        var aSpan = (offset, aplace * asize);
+        var cLife = (solver.MakeIntConst(0), solver.MakeIntConst(3));
+        var cSpan = (offset, cplace * csize);
+        var cons = solver.MakeNonOverlappingBoxesConstraint(new[] { aLife.Item1, cLife.Item1 }, new[] { aSpan.offset, cSpan.offset }, new[] { aLife.Item2, cLife.Item2 }, new[] { aSpan.Item2.Var(), cSpan.Item2.Var() });
+        solver.Add(cons);
+
+        var decisionBuilder = solver.MakeDefaultPhase(new[] { offset, aplace, cplace });
+        var collector = solver.MakeLastSolutionCollector();
+        collector.Add(new[] { offset, aplace, cplace });
+        var status = solver.Solve(decisionBuilder, new SearchMonitor[] { collector, solver.MakeSolutionsLimit(20) });
+
+        // note verified the [0,1] and [0,0] is not overlapping.
+        Assert.True(status);
+
+        var sol = collector.Solution(0);
+        System.Console.WriteLine(sol.Value(offset));
+        System.Console.WriteLine(sol.Value(aplace));
+        System.Console.WriteLine(sol.Value(cplace));
     }
 }
 

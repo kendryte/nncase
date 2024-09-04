@@ -117,24 +117,27 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
     private readonly HashSet<TIR.PrimFunction> _refFuncs;
     private readonly StringWriter _sharedWriter;
 
-    public KernelCSourceConvertVisitor()
+    public KernelCSourceConvertVisitor(Targets.CpuTargetOptions targetOptions)
     {
         _kernelBuilder = new StringBuilder();
         _sharedBuilder = new StringBuilder();
         _sharedWriter = new StringWriter(_sharedBuilder);
         _exprMemo = new(ReferenceEqualityComparer.Instance);
         _refFuncs = new(ReferenceEqualityComparer.Instance);
+        TargetOptions = targetOptions;
     }
 
     public PrimFunction VisitEntry => (TIR.PrimFunction)VisitRoot!;
 
     public int CallCount { get; private set; }
 
+    public Targets.CpuTargetOptions TargetOptions { get; }
+
     public KernelCSource GetCSource()
     {
         var ctype = $"void {VisitEntry.Name}({string.Join(", ", VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}").ToArray().Concat(_exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.Rdata).Select(Visit).Select(s => $" {s.Type} {s.Name}").ToArray()))}, uint8_t* data)";
         return new(
-            CSourceBuiltn.MakeMain(VisitEntry, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.Rdata)),
+            CSourceBuiltn.MakeMain(VisitEntry, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.Rdata), TargetOptions),
             CSourceBuiltn.MakeKernel(ctype, _kernelBuilder.ToString()));
     }
 
@@ -349,6 +352,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                         IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Pack.cshtml", new TypedKernelTemplateModel<TIR.CPU.Pack>(pack)
                         {
                             Arguments = args.Select(x => new KernelArgument { Symbol = Visit(x) }).ToArray(),
+                            Indent = string.Join(string.Empty, Enumerable.Repeat(' ', IndentScope.Writer.Indent)),
                         }).Result);
                     }
 
@@ -359,6 +363,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                         IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unpack.cshtml", new TypedKernelTemplateModel<TIR.CPU.Unpack>(unpack)
                         {
                             Arguments = args.Select(x => new KernelArgument { Symbol = Visit(x) }).ToArray(),
+                            Indent = string.Join(string.Empty, Enumerable.Repeat(' ', IndentScope.Writer.Indent)),
                         }).Result);
                     }
 
@@ -403,26 +408,13 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                 case TIR.CPU.Conv2D conv:
                     IndentScope.Writer.IndWrite($"conv2d({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, {Visit(args[3]).Name}, fixed_shape<{string.Join(",", conv.Stride)}>{{}}, fixed_shape<{string.Join(",", conv.Padding)}>{{}}, fixed_shape<{string.Join(",", conv.Dilation)}>{{}}, {conv.Groups});\n");
                     break;
-                case TIR.CPU.PackedMatMul packedMatmul:
+                case TIR.CPU.Matmul matmul:
+                    IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Matmul.cshtml", new TypedKernelTemplateModel<TIR.CPU.Matmul>(matmul)
                     {
-                        IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedMatmul.cshtml", new TypedKernelTemplateModel<TIR.CPU.PackedMatMul>(packedMatmul)
-                        {
-                            Arguments = args.Select(x => new KernelArgument { Symbol = Visit(x) }).ToArray(),
-                        }).Result);
-                    }
+                        Arguments = args.Select(x => new KernelArgument { Symbol = Visit(x) }).ToArray(),
+                    }).Result);
 
                     break;
-                case TIR.CPU.PackedTranspose transpose:
-                    {
-                        IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedTranspose.cshtml", new TypedKernelTemplateModel<TIR.CPU.PackedTranspose>(transpose)
-                        {
-                            Arguments = args.Select(x => new KernelArgument { Symbol = Visit(x) }).ToArray(),
-                            Args = args.ToArray(),
-                        }).Result);
-                    }
-
-                    break;
-
                 case TIR.CPU.Memcopy copy:
                     IndentScope.Writer.Write($"tensor_copy({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
                     break;
@@ -438,9 +430,6 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                         }).Result);
                     }
 
-                    break;
-                case TIR.CPU.Matmul matmul:
-                    IndentScope.Writer.Write($"matmul({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name});\n");
                     break;
                 case TIR.CPU.Swish swish:
                     if (swish.Beta != 1.0f)

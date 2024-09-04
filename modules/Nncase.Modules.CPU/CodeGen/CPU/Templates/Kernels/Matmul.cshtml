@@ -1,0 +1,10 @@
+@model Nncase.CodeGen.CPU.TypedKernelTemplateModel<Nncase.TIR.CPU.Matmul>
+@{
+}
+
+@(Model.Indent)if (@Html.Raw(Model.Arguments[3].Symbol.Name)) {
+@(Model.Indent)  matmul<true>(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), @Html.Raw(Model.Arguments[2].Symbol.Name), fixed_shape<@string.Join(",", Model.Target.LhsPackedAxes)>{},  fixed_shape<@string.Join(",", Model.Target.LhsPadedNums)>{}, fixed_shape<@string.Join(",", Model.Target.RhsPackedAxes)>{}, fixed_shape<@string.Join(",", Model.Target.RhsPadedNums)>{});
+@(Model.Indent)} else {
+@(Model.Indent)  matmul<false>(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), @Html.Raw(Model.Arguments[2].Symbol.Name), fixed_shape<@string.Join(",", Model.Target.LhsPackedAxes)>{},  fixed_shape<@string.Join(",", Model.Target.LhsPadedNums)>{}, fixed_shape<@string.Join(",", Model.Target.RhsPackedAxes)>{}, fixed_shape<@string.Join(",", Model.Target.RhsPadedNums)>{});
+@(Model.Indent)}
+

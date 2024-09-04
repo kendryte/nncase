@@ -10,7 +10,6 @@ using System.Reactive;
 using System.Runtime.CompilerServices;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
-using Singulink.Collections;
 
 namespace Nncase.Passes;
 
@@ -20,7 +19,6 @@ namespace Nncase.Passes;
 public sealed partial class EGraph : IEGraph
 {
     // TODO: use weak keys
-    private readonly Dictionary<Expr, ENodeEntry> _exprMemo = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<ENode, ENodeEntry> _nodes = new();
     private readonly List<EClass> _classes = new();
 
@@ -124,18 +122,11 @@ public sealed partial class EGraph : IEGraph
         // TODO: concurrent safe
         EClass eclass;
 
-        // 1. If exists in memo, return it
-        if (_exprMemo.TryGetValue(expr, out var entry))
-        {
-            return entry.Class;
-        }
-
         // 2. Create new node and check it
         var enode = ENode.Create(expr, children);
-        if (_nodes.TryGetValue(enode, out entry))
+        if (_nodes.TryGetValue(enode, out var entry))
         {
             // 2.1 Node already exists, add expr to memo
-            _exprMemo.Add(expr, entry);
             eclass = entry.Class;
         }
         else
@@ -144,7 +135,6 @@ public sealed partial class EGraph : IEGraph
             eclass = new EClass(_globalEClassId++);
             entry = new ENodeEntry(enode, eclass);
             _classes.Add(eclass);
-            _exprMemo.Add(expr, entry);
             _nodes.Add(enode, entry);
             enode.SetClass(eclass);
         }

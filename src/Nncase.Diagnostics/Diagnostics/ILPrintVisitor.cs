@@ -175,12 +175,12 @@ public sealed class ScopeWriter
     /// <param name="prefix">prefix name.</param>
     public IPrintSymbol GetUniqueVarSymbol(Var @var, string prefix = "")
     {
-        if (!_globalVarCountMap.TryGetValue(prefix + @var.Name + "_" + @var.GlobalVarIndex.ToString(), out var count))
+        if (!_globalVarCountMap.TryGetValue(prefix + @var.Name + "#" + @var.GlobalVarIndex.ToString(), out var count))
         {
             count = 0;
         }
 
-        var symbol = new ScriptSymobl(new(prefix + @var.Name + "_" + @var.GlobalVarIndex.ToString() + (count == 0 ? string.Empty : $"_{count}")), @var.Name, false);
+        var symbol = new ScriptSymobl(new(prefix + @var.Name + "#" + @var.GlobalVarIndex.ToString() + (count == 0 ? string.Empty : $"_{count}")), @var.Name, false);
         count++;
         _globalVarCountMap[@var.Name] = count;
         return symbol;
@@ -507,7 +507,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
             return name;
         }
 
-        name = $"%{expr.Name}";
+        name = $"%{expr.Name}#{expr.GlobalVarIndex}";
         _names.Add(expr, name);
         if (expr.CheckedType is IRType type)
         {
@@ -608,8 +608,9 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
             }
 
             // 4. For Body
+            var domain_parameters = Visit(expr.DomainParameter);
             var parameters = expr.BodyParameters.AsValueEnumerable().Select(Visit).ToArray();
-            _scope.IndWrite($"Body: ({string.Join(", ", parameters)})");
+            _scope.IndWrite($"Body: ({domain_parameters}, {string.Join(", ", parameters)})");
             AppendCheckedType(expr.Body.CheckedType, " {", hasNewLine: true);
             using (_scope.IndentUp())
             {

@@ -141,7 +141,7 @@ public sealed class PluginLoader
                        from t in asm.ExportedTypes
                        where t.IsClass
                        && t.IsAssignableTo(typeof(IPlugin))
-                       let ctor = t.GetConstructor(Type.EmptyTypes)
+                       let ctor = t.GetConstructor(System.Type.EmptyTypes)
                        where ctor != null
                        select (IPlugin)ctor.Invoke(null)).ToList();
 

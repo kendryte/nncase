@@ -114,11 +114,21 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
         var @var = Visit(expr.Var);
         var value = Visit(expr.Expression);
+        _exprMemo[expr.Var] = new(value.Type, @var.Name);
 
 #if DEBUG_PRINT
         IndentScope.Writer.IndWrite($"runtime_util->printf(\"let {@var.Name}\\n\");\n");
 #endif
-        IndentScope.Writer.IndWrite($"{value.Type} {@var.Name} = {value.Name};\n");
+        if (value.Type.StartsWith("array"))
+        {
+            var ss = value.Type.Split(" ");
+            IndentScope.Writer.IndWrite($"{ss[1]} {@var.Name}[{ss[2]}];\n");
+        }
+        else
+        {
+            IndentScope.Writer.IndWrite($"{value.Type} {@var.Name} = {value.Name};\n");
+        }
+
         Visit(expr.Body);
 
         symbol = new(string.Empty, string.Empty);
@@ -138,12 +148,21 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         var size = Visit(expr.Size);
         string name = expr.Location switch
         {
-            MemoryLocation.L2Data => start.Name,
+            MemoryLocation.L2Data => $"L2Data + {start.Name}",
+            MemoryLocation.L1Data => $"L1Data + {start.Name}",
             MemoryLocation.Input or MemoryLocation.Output => start.Name,
             _ => throw new NotSupportedException(expr.Location.ToString()),
         };
 
-        symbol = new(start.Type, $"std::span<uint8_t, {size.Name}>({name}, {size.Name})");
+        var str = start.Type switch
+        {
+            "uint8_t *" => $"std::span<uint8_t, {size.Name}>({name}, {size.Name})",
+            "auto" => $"std::span({name})",
+            string s when s.StartsWith("array") => $"std::span({name})",
+            _ => throw new NotSupportedException(start.Type),
+        };
+
+        symbol = new(start.Type, str);
         _exprMemo.Add(expr, symbol);
         return symbol;
     }
@@ -216,21 +235,30 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 str = op.PtrName + ".data()";
                 break;
             case IR.Buffers.Allocate op:
-                str = $"({type})runtime_util->malloc({arguments[0].Name})";
+                if (op.Malloc)
+                {
+                    str = $"({type})runtime_util->malloc({arguments[0].Name})";
+                }
+                else
+                {
+                    type = $"array {((PointerType)expr.CheckedDataType).ElemType.ToC()} {arguments[0].Name}";
+                    str = $"";
+                }
+
                 break;
             case IR.Buffers.BufferSubview op:
                 {
                     var arg0 = expr.Arguments[1] switch
                     {
                         TupleConst => $"fixed_shape<{arguments[1].Name}>{{}}",
-                        IR.Tuple tc => $"ranked_shape<{tc.Count}>{{{arguments[1].Name}}}",
+                        IR.Tuple tc => $"make_ranked_shape({arguments[1].Name})",
                         _ => throw new ArgumentOutOfRangeException(nameof(expr)),
                     };
 
                     var arg1 = expr.Arguments[2] switch
                     {
                         TupleConst => $"fixed_shape<{arguments[2].Name}>{{}}",
-                        IR.Tuple tc => $"ranked_shape<{tc.Count}>{{{arguments[2].Name}}}",
+                        IR.Tuple tc => $"make_ranked_shape({arguments[2].Name})",
                         _ => throw new ArgumentOutOfRangeException(nameof(expr)),
                     };
 
@@ -293,11 +321,19 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
                 break;
             case TIR.CPU.Matmul matmul:
-                IndentScope.Writer.IndWrite($"if ({arguments[3].Name}) {{\n");
-                IndentScope.Writer.IndWrite($"    matmul<false>({arguments[0].Name}, {arguments[1].Name}, {arguments[2].Name});\n");
-                IndentScope.Writer.IndWrite($"}} else {{\n");
-                IndentScope.Writer.IndWrite($"    matmul<true>({arguments[0].Name}, {arguments[1].Name}, {arguments[2].Name});\n");
-                IndentScope.Writer.IndWrite($"}}\n");
+                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Matmul.cshtml", new TypedKernelTemplateModel<TIR.CPU.Matmul>(matmul)
+                {
+                    Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
+                    Indent = string.Join(string.Empty, Enumerable.Repeat(' ', IndentScope.Writer.Indent)),
+                }).Result);
+
+                break;
+            case TIR.CPU.Pack pack:
+                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Pack.cshtml", new TypedKernelTemplateModel<TIR.CPU.Pack>(pack)
+                {
+                    Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
+                    Indent = string.Join(string.Empty, Enumerable.Repeat(' ', IndentScope.Writer.Indent)),
+                }).Result);
                 break;
             default:
                 throw new NotSupportedException();
@@ -330,7 +366,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
             type = ptype.ToC();
         }
-        else if (expr is TensorConst { Value: Tensor { ElementType: PointerType { ElemType: PrimType }, Shape: { IsScalar: true } } pointer })
+        else if (expr is TensorConst { Value: Tensor { ElementType: PointerType { ElemType: DataType }, Shape: { IsScalar: true } } pointer })
         {
             str = pointer.ToScalar<ulong>().ToString();
             type = pointer.ElementType.ToC();

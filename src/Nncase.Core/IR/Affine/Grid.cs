@@ -20,13 +20,14 @@ public sealed class Grid : Expr
     /// Initializes a new instance of the <see cref="Grid"/> class.
     /// </summary>
     /// <param name="moduleKind">module kind.</param>
+    /// <param name="domainParameter">the grid domain parameter. </param>
     /// <param name="bodyParameters">Body parameters.</param>
     /// <param name="accessMaps">Access maps.</param>
     /// <param name="buffers">output buffers.</param>
     /// <param name="reads">Reads.</param>
     /// <param name="body">The body sequence.</param>
-    public Grid(string moduleKind, ReadOnlySpan<Var> bodyParameters, ReadOnlySpan<AffineMap> accessMaps, ReadOnlySpan<Expr> buffers, ReadOnlySpan<Expr> reads, Sequential body)
-        : base(bodyParameters.ToArray().AsEnumerable<Expr>().Concat(accessMaps.ToArray()).Concat(buffers.ToArray()).Concat(reads.ToArray()).Append(body))
+    public Grid(string moduleKind, Var domainParameter, ReadOnlySpan<Var> bodyParameters, ReadOnlySpan<AffineMap> accessMaps, ReadOnlySpan<Expr> buffers, ReadOnlySpan<Expr> reads, Sequential body)
+        : base(new Expr[] { domainParameter }.Concat(bodyParameters.ToArray()).Concat(accessMaps.ToArray()).Concat(buffers.ToArray()).Concat(reads.ToArray()).Append(body))
     {
         ModuleKind = moduleKind;
         _bodyParametersCount = bodyParameters.Length;
@@ -46,20 +47,22 @@ public sealed class Grid : Expr
 
     public string ModuleKind { get; }
 
-    public ReadOnlySpan<Var> BodyParameters => SpanUtility.UnsafeCast<Expr, Var>(Operands.Slice(0, _bodyParametersCount));
+    public Var DomainParameter => (Var)Operands[0];
 
-    public ReadOnlySpan<AffineMap> AccessMaps => SpanUtility.UnsafeCast<Expr, AffineMap>(Operands.Slice(_bodyParametersCount, _accessMapsCount));
+    public ReadOnlySpan<Var> BodyParameters => SpanUtility.UnsafeCast<Expr, Var>(Operands.Slice(1, _bodyParametersCount));
 
-    public ReadOnlySpan<Expr> Buffers => Operands.Slice(_bodyParametersCount + _accessMapsCount, _accessMapsCount);
+    public ReadOnlySpan<AffineMap> AccessMaps => SpanUtility.UnsafeCast<Expr, AffineMap>(Operands.Slice(1 + _bodyParametersCount, _accessMapsCount));
 
-    public ReadOnlySpan<Expr> Reads => Operands.Slice(_bodyParametersCount + (_accessMapsCount * 2), _accessMapsCount - 1);
+    public ReadOnlySpan<Expr> Buffers => Operands.Slice(1 + _bodyParametersCount + _accessMapsCount, _accessMapsCount);
 
-    public Sequential Body => (Sequential)Operands[_bodyParametersCount + (_accessMapsCount * 3) - 1];
+    public ReadOnlySpan<Expr> Reads => Operands.Slice(1 + _bodyParametersCount + (_accessMapsCount * 2), _accessMapsCount - 1);
+
+    public Sequential Body => (Sequential)Operands[1 + _bodyParametersCount + (_accessMapsCount * 3) - 1];
 
     /// <inheritdoc/>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitGrid(this, context);
 
-    public Grid With(string? moduleKind = null, Var[]? bodyParameters = null, AffineMap[]? accessMaps = null, Expr[]? buffers = null, Expr[]? reads = null, Sequential? body = null)
-        => new Grid(moduleKind ?? ModuleKind, bodyParameters ?? BodyParameters, accessMaps ?? AccessMaps, buffers ?? Buffers, reads ?? Reads, body ?? Body);
+    public Grid With(string? moduleKind = null, Var? domainParameter = null, Var[]? bodyParameters = null, AffineMap[]? accessMaps = null, Expr[]? buffers = null, Expr[]? reads = null, Sequential? body = null)
+        => new Grid(moduleKind ?? ModuleKind, domainParameter ?? DomainParameter, bodyParameters ?? BodyParameters, accessMaps ?? AccessMaps, buffers ?? Buffers, reads ?? Reads, body ?? Body);
 }

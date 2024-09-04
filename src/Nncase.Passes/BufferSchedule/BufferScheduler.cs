@@ -13,16 +13,56 @@ using Nncase.IR;
 
 namespace Nncase.Passes.BufferSchedule;
 
-public class BufferScheduler
+public sealed class ConstrainEventArgs : EventArgs
 {
-    private readonly long _memSize;
-
-    public BufferScheduler(long memSize = 2147483648L)
+    public ConstrainEventArgs(CpModel model, IReadOnlyDictionary<Expr, ScheduleBuffer> bufferMap, IReadOnlyDictionary<Expr, BufferScheduler.Box> boxMap)
     {
-        _memSize = memSize;
+        Model = model;
+        BufferMap = bufferMap;
+        BoxMap = boxMap;
     }
 
-    public virtual void ExternalConstrains(CpModel model, IReadOnlyDictionary<Expr, ScheduleBuffer> bufferMap, IReadOnlyDictionary<Expr, (IntervalVar X, IntervalVar Y)> boxs)
+    public CpModel Model { get; set; }
+
+    public IReadOnlyDictionary<Expr, ScheduleBuffer> BufferMap { get; set; }
+
+    public IReadOnlyDictionary<Expr, BufferScheduler.Box> BoxMap { get; set; }
+}
+
+public class BufferScheduler
+{
+    public BufferScheduler(long capacity = 2147483648L)
+    {
+        MemoryCapacity = capacity;
+        FinishedConstrain = null!;
+        FinishedSchedule = GetItemReSchedule;
+    }
+
+    public event EventHandler<ConstrainEventArgs> FinishedConstrain;
+
+    public event EventHandler<IReadOnlyDictionary<Expr, ScheduleBuffer>> FinishedSchedule;
+
+    public long MemoryCapacity { get; }
+
+    public static void GetItemReSchedule(object? sender, IReadOnlyDictionary<Expr, ScheduleBuffer> buffers)
+    {
+        foreach (var getItem in buffers.Keys.OfType<Call>().Where(e => e is Call { Target: IR.Tensors.GetItem } && buffers[e].MemInterval.Size == 0))
+        {
+            var index = ((TensorConst)getItem.Arguments[1]).Value.ToScalar<int>();
+            var tuple = (IR.Tuple)getItem.Arguments[0];
+            switch (tuple.Fields[index])
+            {
+                case Call argCall:
+                    buffers[getItem].MemInterval.Start = buffers[argCall].MemInterval.Start;
+                    break;
+                case IR.Tuple argTP:
+                    throw new NotSupportedException("not support nested tuple!.");
+            }
+        }
+    }
+
+#if false
+    public static void DefaultExternalConstrains(CpModel model, IReadOnlyDictionary<Expr, ScheduleBuffer> bufferMap, IReadOnlyDictionary<Expr, Box> boxs)
     {
         foreach (var (expr, item) in bufferMap)
         {
@@ -57,19 +97,20 @@ public class BufferScheduler
             }
         }
     }
+#endif
 
     public void Schedule(IReadOnlyDictionary<Expr, ScheduleBuffer> bufferMap)
     {
         var model = new CpModel();
         var noOverlap = model.AddNoOverlap2D();
-        var boxs = new Dictionary<Expr, (IntervalVar X, IntervalVar Y)>(ReferenceEqualityComparer.Instance);
+        var boxs = new Dictionary<Expr, Box>(ReferenceEqualityComparer.Instance);
         var timeMap = new Dictionary<int, List<Expr>>();
         var yStarts = new List<IntVar>();
         foreach (var (expr, item) in bufferMap)
         {
             var xInterval = model.NewIntervalVar(model.NewConstant(item.TimeInterval.Start), model.NewConstant(item.TimeInterval.Size), model.NewConstant(item.TimeInterval.Stop), item.Name + $"{item.Number}_x");
 
-            var upbound = _memSize - item.MemInterval.Stop;
+            var upbound = MemoryCapacity - item.MemInterval.Stop;
             if (upbound <= 0)
             {
                 throw new System.NotSupportedException();
@@ -79,7 +120,7 @@ public class BufferScheduler
             var yInterval = model.NewFixedSizeIntervalVar(memStartVar, item.MemInterval.Stop, $"{item.Name}_{item.Number}_y");
             noOverlap.AddRectangle(xInterval, yInterval);
             yStarts.Add(memStartVar);
-            boxs.Add(expr, (xInterval, yInterval));
+            boxs.Add(expr, new(xInterval, yInterval));
 
             for (int time = item.TimeInterval.Start; time < item.TimeInterval.Stop; time++)
             {
@@ -93,8 +134,7 @@ public class BufferScheduler
             }
         }
 
-        // TODO: reopen external constrains
-        // ExternalConstrains(model, bufferMap, boxs);
+        FinishedConstrain?.Invoke(this, new(model, bufferMap, boxs));
         model.Minimize(LinearExpr.Sum(yStarts));
 
         var solver = new CpSolver();
@@ -109,6 +149,16 @@ public class BufferScheduler
         {
             bufferMap[k].MemInterval.Start = checked((int)solver.Value(boxs[k].Y.StartExpr()));
             bufferMap[k].MemInterval.Stop = checked((int)solver.Value(boxs[k].Y.EndExpr()));
+        }
+
+        FinishedSchedule?.Invoke(this, bufferMap);
+    }
+
+    public void Dump(string name, IReadOnlyDictionary<Expr, ScheduleBuffer> buffers)
+    {
+        using (var fs = Nncase.Diagnostics.DumpScope.Current.OpenFile($"{name}.py"))
+        {
+            Dump(fs, buffers);
         }
     }
 
@@ -210,5 +260,9 @@ p.outline_line_color = None
 
 show(p)");
         }
+    }
+
+    public sealed record Box(IntervalVar X, IntervalVar Y)
+    {
     }
 }
