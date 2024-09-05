@@ -662,8 +662,9 @@ struct mma<AccC, ntt::vector<float, 8, 8>, ntt::vector<float, 8, 8>,
         for (size_t m = 0; m < 8; m++) {
             for (size_t k = 0; k < 8; k++) {
                 output(m) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(m, k), rhs(k), k == 0 ? v3(m) : output(m))
-                            : ntt::mul(lhs(m, k), rhs(k));
+                                ? ntt::mul_add(lhs(m, k), rhs(k),
+                                               k == 0 ? v3(m) : output(m))
+                                : ntt::mul(lhs(m, k), rhs(k));
             }
         }
         return output;
