@@ -59,7 +59,7 @@ public sealed class AutoTilePass : ModulePass
         });
         convertor.Visit(fusion.Body, ctx);
 
-        ctx.SummarizeGraph();
+        ctx.SummarizeGraph(true);
 
         var dfsVisitor = new QuikGraph.Algorithms.TopologicalSort.SourceFirstTopologicalSortAlgorithm<Vertex, Edge>(ctx.GraphSummary);
         dfsVisitor.Compute();

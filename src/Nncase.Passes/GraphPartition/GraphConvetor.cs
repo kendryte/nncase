@@ -96,7 +96,7 @@ public sealed class GraphContext
         dfsVisitEdge.Compute();
     }
 
-    public void SummarizeGraph()
+    public void SummarizeGraph(bool tiling = false)
     {
         MergeSubgraphMap();
 
@@ -133,7 +133,14 @@ public sealed class GraphContext
                         {
                             if (input.CheckedType is DistributedType d)
                             {
-                                VarMap[subgraph.Key].Add(input, new Var(d.TensorType));
+                                if (tiling)
+                                {
+                                    VarMap[subgraph.Key].Add(input, new Var(d));
+                                }
+                                else
+                                {
+                                    VarMap[subgraph.Key].Add(input, new Var(d.TensorType));
+                                }
                             }
                             else
                             {
