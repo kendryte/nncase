@@ -18,7 +18,7 @@ using Nncase.Runtime.Interop;
 using Nncase.Tests.TestFixture;
 using Xunit;
 
-namespace Nncase.Tests.Targets;
+namespace Nncase.Tests.TargetTest;
 
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestK210Target : TestClassBase

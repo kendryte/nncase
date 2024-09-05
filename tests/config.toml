@@ -107,7 +107,7 @@ enabled = true
 threshold = 0.98
 
 [target.cpu.target_options]
-packing = false
+Packing = false
 
 [target.k510]
 eval = true

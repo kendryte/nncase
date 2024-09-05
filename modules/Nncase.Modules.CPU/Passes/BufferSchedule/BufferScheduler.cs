@@ -9,9 +9,9 @@ using Buffer = Nncase.TIR.Buffer;
 
 namespace Nncase.Passes.BufferSchedule;
 
-internal class Lifeness
+internal class Liveness
 {
-    public Lifeness(int start, int end)
+    public Liveness(int start, int end)
     {
         Start = start;
         End = end;
@@ -29,13 +29,13 @@ internal class Lifeness
 
 internal class ScheduledBuffer
 {
-    public ScheduledBuffer(Lifeness lifeness, Buffer buffer)
+    public ScheduledBuffer(Liveness lifeness, Buffer buffer)
     {
         Lifeness = lifeness;
         Buffer = buffer;
     }
 
-    public Lifeness Lifeness { get; }
+    public Liveness Lifeness { get; }
 
     public Buffer Buffer { get; }
 

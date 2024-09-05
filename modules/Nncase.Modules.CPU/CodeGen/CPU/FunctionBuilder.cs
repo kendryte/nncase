@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.CodeGen.CPU;
 using Nncase.IR;
+using Nncase.Targets;
 
 namespace Nncase.CodeGen.CPU;
 
@@ -20,20 +21,23 @@ internal class FunctionBuilder
     private readonly BinaryWriter _textWriter;
     private readonly BinaryWriter _rdataWriter;
 
-    public FunctionBuilder(uint id, BinaryWriter rdataWriter)
+    public FunctionBuilder(uint id, BinaryWriter rdataWriter, Targets.CpuTargetOptions targetOptions)
     {
         _id = id;
         _sectionManager = new();
         _textWriter = _sectionManager.GetWriter(WellknownSectionNames.Text);
         _rdataWriter = rdataWriter;
+        TargetOptions = targetOptions;
     }
+
+    public CpuTargetOptions TargetOptions { get; }
 
     public unsafe ILinkableFunction Build(TIR.PrimFunction function)
     {
         if (function.Name.EndsWith("kernel"))
         {
             // 1. convert func to csource
-            var visitor = new KernelCSourceConvertVisitor();
+            var visitor = new KernelCSourceConvertVisitor(TargetOptions);
             visitor.Visit(function);
             var functionCSource = visitor.GetCSource();
 

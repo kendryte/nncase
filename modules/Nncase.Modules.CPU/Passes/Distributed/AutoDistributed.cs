@@ -33,7 +33,7 @@ public sealed partial class AutoDistributedPass : FunctionPass
 
     protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
     {
-        var rewriter = new AutoDistributedRewriter(_compileOptions, _compileOptions.TargetCompileOptions is CpuTargetOptions options ? options : new CpuTargetOptions());
+        var rewriter = new AutoDistributedRewriter(_compileOptions, _compileOptions.TargetOptions is CpuTargetOptions options ? options : new CpuTargetOptions());
         return Task.FromResult(rewriter.Rewirte(input));
     }
 }
@@ -42,7 +42,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
 {
     public AutoDistributedRewriter(CompileOptions compileOptions, CpuTargetOptions targetOptions)
     {
-        Placements = targetOptions.Hierarchy.Select(h => new Placement(h, targetOptions.HierarchyNames)).ToArray();
+        Placements = targetOptions.Hierarchies.Select(h => new Placement(h, targetOptions.HierarchyNames)).ToArray();
         CompileOptions = compileOptions;
         TargetOptions = targetOptions;
         if (Path.Exists(TargetOptions.DistributedScheme) && System.Text.Json.JsonSerializer.Deserialize<DistributedScheme>(File.ReadAllText(TargetOptions.DistributedScheme)) is DistributedScheme scheme)
@@ -185,7 +185,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                                     BuildNotSupportedCalls(op, args.Select(kv => kv.Value[0]).ToArray())).
                     SelectMany(i => i).
                     GroupBy(c => c.CheckedType).
-                    ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count).ToList<Expr>());
+                    ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
 
         if (results.Count == 0)
         {
@@ -200,7 +200,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                     }).ToArray()), }).
                     SelectMany(i => i).
                     GroupBy(c => c.CheckedType).
-                    ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count).ToList<Expr>());
+                    ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
         }
 
         if (results.Count == 1 && results.First().Key is DistributedType dt && dt.NdSBP.All(sbp => sbp is SBPBroadCast))
@@ -216,7 +216,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                     }).ToList().CartesianProduct().Select(arg => BuildEquivalCalls(op, arg.ToArray())).SelectMany(i => i).ToArray()).
                     SelectMany(i => i).
                     GroupBy(c => c.CheckedType).
-                    ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count).ToList<Expr>());
+                    ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
         }
 
         FilterByScheme(expr, results);
@@ -475,7 +475,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                     {
                         foreach (var item in buket)
                         {
-                            if (item.Users.Count != 0)
+                            if (item.Users.Any())
                             {
                                 throw new InvalidOperationException("this item can't have more than zero users!");
                             }

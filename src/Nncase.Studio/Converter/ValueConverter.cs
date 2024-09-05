@@ -14,7 +14,7 @@ namespace Nncase.Studio;
 public class EnumConverter : IValueConverter
 {
     // enum to selected index
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    public object? Convert(object? value, System.Type targetType, object? parameter, CultureInfo culture)
     {
         if (value == null)
         {
@@ -26,7 +26,7 @@ public class EnumConverter : IValueConverter
     }
 
     // to enum
-    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    public object? ConvertBack(object? value, System.Type targetType, object? parameter, CultureInfo culture)
     {
         // to enum or to other
         if (value == null || (int)value < 0)

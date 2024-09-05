@@ -244,6 +244,8 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
 
     protected override IRType VisitLeafGrid(Grid expr)
     {
+        VerifySubField(expr, expr.DomainParameter);
+
         foreach (var p in expr.BodyParameters)
         {
             VerifySubField(expr, p);

@@ -25,10 +25,16 @@ public abstract partial class AffineExprVisitor<TExprResult, TContext>
     public Dictionary<AffineExpr, TExprResult> ExprMemo { get; } = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>
+    /// Gets visit root.
+    /// </summary>
+    protected AffineExpr? VisitRoot { get; private set; }
+
+    /// <summary>
     /// Visit <see cref="Expr"/>.
     /// </summary>
     public TExprResult Visit(AffineExpr expr, TContext context)
     {
+        VisitRoot ??= expr;
         return DispatchVisit(expr, context);
     }
 
@@ -42,6 +48,7 @@ public abstract partial class AffineExprVisitor<TExprResult, TContext>
 
     public void Clear()
     {
+        VisitRoot = null;
         ExprMemo.Clear();
     }
 

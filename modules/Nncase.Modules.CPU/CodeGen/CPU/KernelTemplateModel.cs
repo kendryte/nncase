@@ -17,6 +17,8 @@ public class KernelArgument
 public class KernelTemplateModel
 {
     public KernelArgument[] Arguments { get; set; } = null!;
+
+    public string Indent { get; set; } = string.Empty;
 }
 
 public class UnaryKernelTemplateModel : KernelTemplateModel
@@ -32,9 +34,10 @@ public class BinaryKernelTemplateModel : KernelTemplateModel
 public class TypedKernelTemplateModel<T> : KernelTemplateModel
     where T : IR.Op
 {
-    public TypedKernelTemplateModel(T target)
+    public TypedKernelTemplateModel(T target, string indent = "")
     {
         Target = target;
+        Indent = indent;
     }
 
     public T Target { get; }

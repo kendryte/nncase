@@ -22,10 +22,10 @@ namespace Nncase;
 // NOTE fixed array not suppot generic
 
 <# 
-foreach (var lanesA in new[] { 0, 16, 32, 64 })
-{
-foreach (var lanesB in new[] { 2, 4, 8, 16, 32, 64, 128 })
-{
+foreach (var (lanesA, lanesB) in new[] { 
+  (0, 4), (0, 8), (0, 16), (0, 32), (0, 64), (0, 128),
+  (4, 4), (8, 8), (16, 16), (32, 16), (32, 32), (32, 64) })
+{  
 var typeName = lanesA == 0 ? $"Vector{lanesB.ToString()}<T>" : $"Vector{lanesA.ToString()}x{lanesB.ToString()}<T>";
 #>
 [StructLayout(LayoutKind.Sequential)]
@@ -97,4 +97,4 @@ public unsafe struct <#=typeName#> : IEquatable<<#=typeName#>>, IAdditionOperato
 <#}#>
 }
 
-<#}}#>
+<#}#>

@@ -32,7 +32,7 @@ import platform
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 import _nncase
-from _nncase import RuntimeTensor, TensorDesc, Simulator
+from _nncase import RuntimeTensor, TensorDesc, Simulator, CpuTargetOptions, NocArchitecture, MemoryAccessArchitecture
 
 
 def _initialize():
@@ -168,11 +168,8 @@ class Compiler:
         self._compile_options.shape_bucket_options = self._shape_bucket_options
 
     def init_target_options(self, compile_options: CompileOptions) -> None:
-        if (hasattr(compile_options, "target_options") and isinstance(compile_options.target_options, CpuTargetOptions)):
-            option: CpuTargetOptions = compile_options.target_options
-            self._target_options = _nncase.CpuTargetOptions()
-            self._target_options.packing = option.packing
-            self._compile_options.set_cpu_target_options(self._target_options)
+        if hasattr(compile_options, "target_options"):
+            self._compile_options.set_cpu_target_options(compile_options.target_options)
 
     def compile(self) -> None:
         self._compiler.compile()
@@ -410,23 +407,6 @@ class CompileOptions:
         self.shape_bucket_segments_count = 2
         self.shape_bucket_fix_var_map = {}
         self.target_options = None
-
-
-class CpuTargetOptions:
-    model_name: str
-    packing: bool
-    target_tile_size: List[int]
-    hierarchy: List[int]
-    hierarchy_names: str
-    hierarchy_sizes: List[int]
-
-    def __init__(self) -> None:
-        self.model_name = ""
-        self.packing = False
-        self.target_tile_size = []
-        self.hierarchy = [1]
-        self.hierarchy_names = "b"
-        self.hierarchy_sizes = [3 * (2 ** 20)]
 
 
 class ShapeBucketOptions:
