@@ -66,11 +66,13 @@ public sealed class GraphTiler
         {
             var primTree = treeGraphMemo[primGraph];
             var primBufferGraph = bufferGraphMemo[primGraph];
-            var (inputBids, outputBids) = primBufferGraph.GetInputsOutputs();
+            HashSet<BufferIdentity> inputBids;
+            HashSet<BufferIdentity> outputBids;
 
             if (!_primFuncMemo.TryGetValue(primTree, out var wrapper))
             {
                 var result = SolvePrimGraph(primTree, primBufferGraph, targetOptions);
+                (inputBids, outputBids) = (result.Inputs, result.Outputs);
                 result.ScheduleBuffers();
                 var bodyBuilder = T.Sequential();
                 result.Visit(primTree, new(bodyBuilder, Array.Empty<Expr>()));
@@ -82,6 +84,7 @@ public sealed class GraphTiler
             }
             else
             {
+                (inputBids, outputBids) = primBufferGraph.GetInputsOutputs();
                 _useCached++;
             }
 

@@ -22,6 +22,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         : base(null!, primitiveBufferInfo, levelBufferInfos, domainInfos, targetOptions)
     {
         PrimBufferGraph = primBufferGraph;
+        (Inputs, Outputs) = primBufferGraph.GetInputsOutputs();
         ObjectiveValue = objectiveValue;
         LevelBufferSizes = levelNodeBufferBoxs;
         LevelBufferLifeness = levelTreeBufferLifeness;
@@ -33,6 +34,10 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
     public Dictionary<BufferIdentity, TIR.Buffer> PrimBufferMemo { get; }
 
     public BufferGraph PrimBufferGraph { get; }
+
+    public HashSet<BufferIdentity> Inputs { get; }
+
+    public HashSet<BufferIdentity> Outputs { get; }
 
     public long ObjectiveValue { get; }
 
@@ -238,7 +243,17 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         var tensorType = GetBufferTensorType(expr);
         if (!PrimBufferMemo.TryGetValue(bid, out var buffer))
         {
-            buffer = T.AttachBuffer(None.Default, tensorType, MemoryLocation.Data, 1, out _, $"{bid}");
+            MemoryLocation loc = MemoryLocation.Data;
+            if (Inputs.Contains(bid))
+            {
+                loc = MemoryLocation.Input;
+            }
+            else if (Outputs.Contains(bid))
+            {
+                loc = MemoryLocation.Output;
+            }
+
+            buffer = T.AttachBuffer(None.Default, tensorType, loc, 1, out _, $"{bid}");
 
             PrimBufferMemo.Add(bid, buffer);
         }
