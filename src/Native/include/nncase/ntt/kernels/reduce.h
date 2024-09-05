@@ -17,11 +17,32 @@
 #include "../loop.h"
 #include "../primitive_ops.h"
 #include "../tensor_ops.h"
+#include "../unrool.h"
 #include "../utility.h"
 
 namespace nncase::ntt {
 
 namespace reduce_detail {
+
+template <template <class, class> class Op, class TElem, IsFixedDims Axes,
+          IsFixedDims PackedAxes>
+constexpr size_t unroll_arch() {
+#if defined(__riscv)
+    return 2;
+#elif defined(__x86_64__)
+    constexpr bool is_pattern =
+        (Axes::rank() == 1) && (PackedAxes::rank() == 0);
+    constexpr bool is_op =
+        std::is_same_v<Op<TElem, TElem>, ntt::ops::mean<TElem, TElem>> ||
+        std::is_same_v<Op<TElem, TElem>, ntt::ops::add<TElem, TElem>>;
+    if (is_pattern && is_op) {
+        return 4;
+    }
+    return 2;
+#else
+    return 1;
+#endif
+}
 
 template <template <class T1, class T2> class Op, IsFixedTensor TIn,
           IsFixedTensor TOut, IsFixedDims Axes, IsFixedDims PackedAxes,
@@ -69,6 +90,8 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
     constexpr bool UseVectorReduce =
         PackedAxes::rank() == 1 && PackedAxes::at(0) >= Axes::at(0);
 
+    constexpr size_t unroll_num = unroll_arch<Op, TIElem, Axes, PackedAxes>();
+
     constexpr auto input_stride = input_strides[Axes::at(Axes::rank() - 1)];
     apply(domain, [&](auto index) {
         auto input_p = input.elements().data() + linear_offset(index, strides);
@@ -81,9 +104,9 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
 
         if constexpr (std::is_same_v<Op<TIElem, TIElem>,
                                      ntt::ops::mean<TIElem, TIElem>>) {
-            TIElem sum = (TIElem)0;
-            for (size_t i = 0; i < inner_size; i++)
-                sum = sum + input_p[i * input_stride];
+            TIElem sum;
+            sum = loop_unrool<ntt::ops::add, TIElem, unroll_num, inner_size,
+                              input_stride>(input_p);
 
             if constexpr (UseVectorReduce) {
                 sum = sum / (inner_size * TIElem::shape_type::length());
@@ -92,10 +115,9 @@ void reduce_impl(const TIn &input, TOut &&output, Axes axes, PackedAxes,
                 output_p[0] = sum / inner_size;
             }
         } else {
-            Op<TIElem, TIElem> op;
-            TIElem ret = (TIElem)input_p[0];
-            for (size_t i = 1; i < inner_size; i++)
-                ret = op(ret, input_p[i * input_stride]);
+            TIElem ret;
+            ret = loop_unrool<Op, TIElem, unroll_num, inner_size, input_stride>(
+                input_p);
 
             if constexpr (UseVectorReduce) {
                 output_p[0] = ops::reduce<Op, TOElem, TIElem>()(ret);
