@@ -20,7 +20,7 @@ public sealed class GraphTiler
 
     private int _useCached;
 
-    public Expr Tile(Expr preExpr, string moduleKind, int itemNumber, ICpuTargetOptions targetOptions)
+    public Expr Tile(Expr preExpr, string moduleKind, string itemNumber, ICpuTargetOptions targetOptions)
     {
         var totalLevel = targetOptions.MemoryCapacities.Length - 1;
         var rootGraph = GraphBuilder.Build(preExpr, totalLevel, out var exprMemo);
