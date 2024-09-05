@@ -127,7 +127,7 @@ public sealed class GraphContext
                 }
                 else if (subgraph.Value.InputEdges.Any(e => e.Target == vertex))
                 {
-                    foreach (var input in subgraph.Value.InputEdges.Where(e => e.Target == vertex).Select(e => e.Source.Expr))
+                    foreach (var input in subgraph.Value.InputEdges.Where(e => e.Target == vertex && e.Source.Expr is not None).Select(e => e.Source.Expr))
                     {
                         if (input is not Const && !VarMap[subgraph.Key].ContainsKey(input))
                         {
