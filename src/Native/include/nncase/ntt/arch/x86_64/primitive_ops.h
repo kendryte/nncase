@@ -724,20 +724,17 @@ template <> struct pow<ntt::vector<float, 8>, ntt::vector<float, 8>> {
 template <> struct inner_product<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     float operator()(const ntt::vector<float, 8> &v1,
                      const ntt::vector<float, 8> &v2) const noexcept {
-        auto vec = _mm256_mul_ps(v1, v2);
-        // Extract the lower 128-bit part
-        auto low = _mm256_extractf128_ps(vec, 0);
-        // Extract the upper 128-bit part
-        auto high = _mm256_extractf128_ps(vec, 1);
-        // Add the low and high parts
-        auto sum128 = _mm_add_ps(low, high);
+        // Multiply the elements
+        __m256 mul = _mm256_mul_ps(v1, v2);
 
-        // Horizontal add: sum the pairs of elements
-        sum128 = _mm_hadd_ps(sum128, sum128);
-        sum128 = _mm_hadd_ps(sum128, sum128);
+        // Sum the elements in the 256-bit vector directly
+        __m128 sum1 = _mm_add_ps(_mm256_castps256_ps128(mul),
+                                 _mm256_extractf128_ps(mul, 1));
+        sum1 = _mm_add_ps(sum1, _mm_movehl_ps(sum1, sum1));
+        sum1 = _mm_add_ss(sum1, _mm_shuffle_ps(sum1, sum1, 1));
 
-        // Extract the final sum from the 128-bit result
-        return _mm_cvtss_f32(sum128);
+        // Extract and return the final sum
+        return _mm_cvtss_f32(sum1);
     }
 };
 
