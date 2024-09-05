@@ -80,6 +80,7 @@ std::string benchmark_ntt_reduce_add_reduceN_packN() {
                                    ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -112,6 +113,7 @@ std::string benchmark_ntt_reduce_add_reduceM_noPack() {
                                    ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -146,6 +148,7 @@ std::string benchmark_ntt_reduce_add_reduceM_packM() {
                                    ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -178,6 +181,7 @@ std::string benchmark_ntt_reduce_add_reduceMN_noPack() {
                                    ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -212,6 +216,7 @@ std::string benchmark_ntt_reduce_add_reduceMN_packN() {
                                    ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -246,6 +251,7 @@ std::string benchmark_ntt_reduce_add_reduceMN_packM() {
                                    ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -278,6 +284,7 @@ std::string benchmark_ntt_reduce_max_reduceN_noPack() {
                                    ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -312,6 +319,7 @@ std::string benchmark_ntt_reduce_max_reduceN_packN() {
                                    ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -344,6 +352,7 @@ std::string benchmark_ntt_reduce_max_reduceM_noPack() {
                                    ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -378,6 +387,7 @@ std::string benchmark_ntt_reduce_max_reduceM_packM() {
                                    ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -410,6 +420,7 @@ std::string benchmark_ntt_reduce_max_reduceMN_noPack() {
                                    ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -444,6 +455,7 @@ std::string benchmark_ntt_reduce_max_reduceMN_packN() {
                                    ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -478,6 +490,7 @@ std::string benchmark_ntt_reduce_max_reduceMN_packM() {
                                    ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -510,6 +523,7 @@ std::string benchmark_ntt_reduce_min_reduceN_noPack() {
                                    ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -544,6 +558,7 @@ std::string benchmark_ntt_reduce_min_reduceN_packN() {
                                    ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -576,6 +591,7 @@ std::string benchmark_ntt_reduce_min_reduceM_noPack() {
                                    ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -610,6 +626,7 @@ std::string benchmark_ntt_reduce_min_reduceM_packM() {
                                    ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -643,6 +660,7 @@ std::string benchmark_ntt_reduce_min_reduceMN_noPack() {
                                    ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -677,6 +695,7 @@ std::string benchmark_ntt_reduce_min_reduceMN_packN() {
                                    ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -711,6 +730,7 @@ std::string benchmark_ntt_reduce_min_reduceMN_packM() {
                                    ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -743,6 +763,7 @@ std::string benchmark_ntt_reduce_mean_reduceN_noPack() {
                                     ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -778,6 +799,7 @@ std::string benchmark_ntt_reduce_mean_reduceN_packN() {
             ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -810,6 +832,7 @@ std::string benchmark_ntt_reduce_mean_reduceM_noPack() {
                                     ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -845,6 +868,7 @@ std::string benchmark_ntt_reduce_mean_reduceM_packM() {
             ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -877,6 +901,7 @@ std::string benchmark_ntt_reduce_mean_reduceMN_noPack() {
                                     ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -912,6 +937,7 @@ std::string benchmark_ntt_reduce_mean_reduceMN_packN() {
             ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -947,6 +973,7 @@ std::string benchmark_ntt_reduce_mean_reduceMN_packM() {
             ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
