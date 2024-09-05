@@ -41,8 +41,9 @@ void benchmark_ntt_binary(std::string op_name, T lhs_low, T lhs_high, T rhs_low,
     for (size_t i = 0; i < size1; i++)
         ntt_result = op(ntt_lhs, ntt_rhs);
     auto t2 = NttTest::get_cpu_cycle();
+#if __x86_64__
     asm volatile("" ::"g"(ntt_result));
-
+#endif
     std::cout << __FUNCTION__ << "_" << op_name << " took "
               << std::setprecision(1) << std::fixed
               << static_cast<float>(t2 - t1) / size1 / size2 << " cycles"

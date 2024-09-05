@@ -70,7 +70,7 @@ add_compile_definitions(NTT_UNROOL_NUM=${NTT_UNROOL_NUM})
 # Workaroud for riscv toolchain auto vectorization bugs in O3
 if (${CMAKE_SYSTEM_PROCESSOR} MATCHES
    "(riscv32)|(riscv64)")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG -mrvv-vector-bits=zvl")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
 endif()
 
 include(cmake/dependencies.cmake)
