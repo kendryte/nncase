@@ -658,55 +658,14 @@ struct mma<AccC, ntt::vector<float, 8, 8>, ntt::vector<float, 8, 8>,
     operator()(const ntt::vector<float, 8, 8> &lhs,
                const ntt::vector<float, 8, 8> &rhs,
                const ntt::vector<float, 8, 8> &v3) const noexcept {
-        auto output = v3;
-        for (size_t k = 0; k < 8; k++) {
-            output(0) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(0, k), rhs(k), output(0))
-                            : ntt::mul(lhs(0, k), rhs(k));
+        ntt::vector<float, 8, 8> output;
+        for (size_t m = 0; m < 8; m++) {
+            for (size_t k = 0; k < 8; k++) {
+                output(m) = (k != 0 || AccC)
+                            ? ntt::mul_add(lhs(m, k), rhs(k), k == 0 ? v3(m) : output(m))
+                            : ntt::mul(lhs(m, k), rhs(k));
+            }
         }
-
-        for (size_t k = 0; k < 8; k++) {
-            output(1) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(1, k), rhs(k), output(1))
-                            : ntt::mul(lhs(1, k), rhs(k));
-        }
-
-        for (size_t k = 0; k < 8; k++) {
-            output(2) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(2, k), rhs(k), output(2))
-                            : ntt::mul(lhs(2, k), rhs(k));
-        }
-
-        for (size_t k = 0; k < 8; k++) {
-            output(3) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(3, k), rhs(k), output(3))
-                            : ntt::mul(lhs(3, k), rhs(k));
-        }
-
-        for (size_t k = 0; k < 8; k++) {
-            output(4) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(4, k), rhs(k), output(4))
-                            : ntt::mul(lhs(4, k), rhs(k));
-        }
-
-        for (size_t k = 0; k < 8; k++) {
-            output(5) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(5, k), rhs(k), output(5))
-                            : ntt::mul(lhs(5, k), rhs(k));
-        }
-
-        for (size_t k = 0; k < 8; k++) {
-            output(6) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(6, k), rhs(k), output(6))
-                            : ntt::mul(lhs(6, k), rhs(k));
-        }
-
-        for (size_t k = 0; k < 8; k++) {
-            output(7) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(7, k), rhs(k), output(7))
-                            : ntt::mul(lhs(7, k), rhs(k));
-        }
-
         return output;
     }
 };
@@ -743,31 +702,10 @@ template <> struct outer_product<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     auto operator()(const ntt::vector<float, 8> &v1,
                     const ntt::vector<float, 8> &v2) const noexcept {
         ntt::vector<float, 8, 8> result;
-        __m256 tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
-
-        tmp0 = _mm256_set1_ps(v1(0));
-        result(0) = _mm256_mul_ps(tmp0, v2);
-
-        tmp1 = _mm256_set1_ps(v1(1));
-        result(1) = _mm256_mul_ps(tmp1, v2);
-
-        tmp2 = _mm256_set1_ps(v1(2));
-        result(2) = _mm256_mul_ps(tmp2, v2);
-
-        tmp3 = _mm256_set1_ps(v1(3));
-        result(3) = _mm256_mul_ps(tmp3, v2);
-
-        tmp4 = _mm256_set1_ps(v1(4));
-        result(4) = _mm256_mul_ps(tmp4, v2);
-
-        tmp5 = _mm256_set1_ps(v1(5));
-        result(5) = _mm256_mul_ps(tmp5, v2);
-
-        tmp6 = _mm256_set1_ps(v1(6));
-        result(6) = _mm256_mul_ps(tmp6, v2);
-
-        tmp7 = _mm256_set1_ps(v1(7));
-        result(7) = _mm256_mul_ps(tmp7, v2);
+        for (size_t i = 0; i < 8; i++) {
+            auto a_broadcast = _mm256_set1_ps(v1(i));
+            result(i) = _mm256_mul_ps(a_broadcast, v2);
+        }
         return result;
     }
 };
