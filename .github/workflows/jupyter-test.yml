@@ -11,7 +11,7 @@ jobs:
       matrix:
         config:
           - {name: aarch64-macos, os: macos-14}
-          - {name: x86_64-linux, os: ubuntu-24.04}
+          - {name: x86_64-linux, os: ubuntu-22.04}
           - {name: x86_64-windows, os: windows-latest}
 
     steps:
