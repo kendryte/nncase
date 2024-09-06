@@ -497,16 +497,11 @@ public sealed class GraphTiler
         var status = solver.Solve(decisionBuilder, monitors.ToArray());
         if (!status)
         {
-            // return null;
+            DumpAssgin(primTree, new TreeSolverPrinter(null, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions), tileVarConstraints, lowestStoreBufferNumsConstrains, eachParentNodeCreateBufferConstraints, levelBufferSizes, levelDataReads, levelDataWrites, memoryCycles, totalCyclesVar);
+            throw new InvalidOperationException("tiling solve failed!");
         }
 
         var sol = collector.Solution(collector.SolutionCount() - 1);
-
-        // dump model
-        // builder IR
-#if false
-        DumpAssgin(tree, new GraphSolverPrinter(sol, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, compileOptions.TargetOptions), tileVarConstraints, lowestStoreBufferNumsConstrains, eachParentNodeCreateBufferConstraints, levelMemoryUsage, levelDataReads, levelDataWrites, memoryCycles, totalCyclesVar);
-#endif
 
         var levelBufferSizesAssgin = levelBufferSizes.ToDictionary(kv => kv.Key, kv => kv.Value.ToDictionary(p => p.Key, p => sol.Value(p.Value.Var())));
         var opNodeMemoAssgin = opNodeMemo.ToDictionary(kv => kv.Key, kv => new OpNodeInfo<long>(kv.Value.Maps, sol.Value(kv.Value.Shapes), sol.Value(kv.Value.Size)));
@@ -515,6 +510,65 @@ public sealed class GraphTiler
 
         // ScheduledResultMemo.Add(primGraph, );
         return new TreeSolveResult(primBufferGraph, sol.ObjectiveValue(), levelBufferSizesAssgin, levelBufferLifeness, opNodeMemoAssgin, tileNodeMemoAssgin, tileableNodeMemoAssgin, targetOptions);
+    }
+
+    private void DumpAssgin(ITreeNode tree, TreeSolverPrinter printer, Dictionary<OpNode, Constraint[]> tileVarConstraints, Dictionary<BufferIdentity, Constraint> lowestStoreBufferNumsConstrains, Dictionary<TileNode, Dictionary<BufferIdentity, Constraint>> eachParentNodeCreateBufferConstraints, Dictionary<int, Dictionary<NodeWithBuffer, IntExpr>> levelBufferSizes, IntExpr[] levelDataReads, IntExpr[] levelDataWrites, IntExpr[] memoryCycles, IntVar computeCycles)
+    {
+        using (var stream = Diagnostics.DumpScope.Current.OpenFile($"modeling.yaml"))
+        {
+            using var baseWriter = new StreamWriter(stream);
+            using var writer = new System.CodeDom.Compiler.IndentedTextWriter(baseWriter, "  ");
+            tree.Accept(printer, writer);
+            writer.WriteLine("tileVarConstraints:");
+            writer.Indent++;
+            foreach (var (opnode, consts) in tileVarConstraints)
+            {
+                TreeSolverPrinter.WriteIntExprVector(writer, opnode.ToString(), consts, printer.Solution);
+            }
+
+            writer.Indent--;
+
+            writer.WriteLine("lowestStoreBufferNumsConstrains:");
+            writer.Indent++;
+            foreach (var (node, cons) in lowestStoreBufferNumsConstrains)
+            {
+                TreeSolverPrinter.WriteIntExprVector(writer, node.ToString(), new[] { cons }, printer.Solution);
+            }
+
+            writer.Indent--;
+
+            writer.WriteLine("EachParentNodeCreateBufferConstraints:");
+            writer.Indent++;
+            foreach (var (node, constraints) in eachParentNodeCreateBufferConstraints)
+            {
+                TreeSolverPrinter.WriteIntExprVector(writer, node.ToString(), constraints.Values.ToArray(), printer.Solution);
+            }
+
+            writer.Indent--;
+
+            writer.WriteLine("LevelMemoryUsage:");
+            {
+                writer.Indent++;
+                foreach (var (sl, nodeMemoryUsage) in levelBufferSizes)
+                {
+                    writer.WriteLine($"Level_{sl}:");
+                    writer.Indent++;
+                    foreach (var (node, usage) in nodeMemoryUsage)
+                    {
+                        TreeSolverPrinter.WriteIntExpr(writer, $"- {node}", usage, printer.Solution);
+                    }
+
+                    writer.Indent--;
+                }
+
+                writer.Indent--;
+            }
+
+            TreeSolverPrinter.WriteIntExprVector(writer, "LevelDataReads", levelDataReads, printer.Solution);
+            TreeSolverPrinter.WriteIntExprVector(writer, "LevelDataWrites", levelDataWrites, printer.Solution);
+            TreeSolverPrinter.WriteIntExprVector(writer, "MemoryCycles", memoryCycles, printer.Solution);
+            writer.WriteLine($"computeCycles: {computeCycles.ToSimplifyString()}");
+        }
     }
 
     private void DumpGantt(Dictionary<(TieredTileGraph Node, BufferIdentity Buffer), IntExpr> nodeBufferSizes, Dictionary<(TieredTileGraph Node, BufferIdentity Buffer), Tuple<int, int>> nodeBufferLiveness, TieredTileGraph rootNode, int storeLevel)

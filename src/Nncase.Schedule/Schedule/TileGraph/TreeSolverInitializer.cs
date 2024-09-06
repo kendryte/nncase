@@ -150,7 +150,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
     {
         var (pid, pvars) = context;
         var dimsMap = GetDimsMap(value);
-        var tileVars = Enumerable.Range(0, value.DomainBounds.Length).Select(n => Solver.MakeIntVar(1, long.MaxValue, $"d{n}_L{value.Level}")).ToArray();
+        var tileVars = Enumerable.Range(0, value.DomainBounds.Length).Select(n => Solver.MakeIntVar(1, long.MaxValue, $"op{value.OpId}_d{n}_L{value.Level}")).ToArray();
 
         var kernelInfo = value.GetKernelInfo(TargetOptions);
 
