@@ -253,7 +253,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
         };
 
         string str = string.Empty;
-        if (expr.Target is Op kop && kop is (TIR.CPU.CPUKernelOp or TIR.Memcopy))
+        if (expr.Target is Op kop && kop is TIR.CPU.CPUKernelOp or TIR.Memcopy)
         {
             foreach (var item in expr.Arguments.ToArray().OfType<TIR.Buffer>())
             {
