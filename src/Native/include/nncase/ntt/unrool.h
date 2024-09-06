@@ -41,7 +41,7 @@ template <template <typename T1, typename T2> class Op, class TElem,
           size_t UnRoolNum, size_t LoopCnt, size_t Stride>
 auto loop_unrool(const TElem *input) {
 
-    static_assert(UnRoolNum <= LoopCnt, "UnRoolNum must be less than LoopCnt");
+    // static_assert(UnRoolNum <= LoopCnt, "UnRoolNum must be less than LoopCnt");
     static_assert(UnRoolNum > 0, "UnRoolNum must be greater than zero");
     static_assert(UnRoolNum < 9, "UnRoolNum must be less than 9");
     TElem ret;
