@@ -258,9 +258,6 @@ jobs:
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/ncnn_basic.xml pytest tests/importer/ncnn_/basic/ --doctest-modules --junitxml=test_results/ncnn_basic.xml
           dotnet-coverage merge -o coverage.integration.xml -f cobertura -r coverage/*.xml
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-
       - name: Upload Coverage
         uses: actions/upload-artifact@v3
         if: matrix.config.name == 'x86_64-linux'
