@@ -149,10 +149,10 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
     }
 
     template <bool AccC, class TLhsElem, class TRhsElem, class TOutElem>
-        requires(TLhsElem::rank() == 1)
-    void outer_product(const TLhsElem *lhs, const TRhsElem *rhs,
-                       TOutElem *output, size_t extent, size_t K,
-                       size_t rhs_stride) {
+    requires(TLhsElem::rank() ==
+             1) void outer_product(const TLhsElem *lhs, const TRhsElem *rhs,
+                                   TOutElem *output, size_t extent, size_t K,
+                                   size_t rhs_stride) {
         for (size_t i = 0; i < extent; i++) {
             auto rhs_mp = rhs;
             auto lhs_mp = lhs;
@@ -168,10 +168,10 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
     }
 
     template <bool AccC, class TLhsElem, class TRhsElem, class TOutElem>
-        requires(TLhsElem::rank() == 2)
-    void outer_product(const TLhsElem *lhs, const TRhsElem *rhs,
-                       TOutElem *output, size_t extent, size_t K,
-                       size_t rhs_stride) {
+    requires(TLhsElem::rank() ==
+             2) void outer_product(const TLhsElem *lhs, const TRhsElem *rhs,
+                                   TOutElem *output, size_t extent, size_t K,
+                                   size_t rhs_stride) {
         for (size_t i = 0; i < extent; i++) {
             auto rhs_mp = rhs;
             auto lhs_mp = lhs;
