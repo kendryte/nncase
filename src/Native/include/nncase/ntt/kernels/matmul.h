@@ -217,17 +217,6 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
             auto value = ntt::outer_product(lhs, rhs);
             output = AccC ? output + value : value;
         }
-        // 3.1. pack MK & K
-        else if constexpr (LhsPackedAxes::rank() == 2 &&
-                           LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
-                           LhsPackedAxes::at(1) == TLhs::rank() - 1 &&
-                           RhsPackedAxes::rank() == 1 &&
-                           RhsPackedAxes::at(0) == TRhs::rank() - 2) {
-            for (size_t m = 0; m < TLhsElem::shape().at(0); m++) {
-                auto value = ntt::inner_product(lhs(m), rhs);
-                output(m) = AccC ? output(m) + value : value;
-            }
-        }
         // 3.2. pack K & KN
         else if constexpr (LhsPackedAxes::rank() == 1 &&
                            LhsPackedAxes::at(0) == TLhs::rank() - 1 &&
