@@ -109,7 +109,7 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                       RhsPackedAxes::at(0) == TRhs::rank() - 2) {
             auto lhs_mp = lhs;
             for (size_t m = 0; m < M; m++) {
-                outer_product<AccC>(lhs_mp, rhs, output, N, K, rhs_stride);
+                mul_add<AccC>(lhs_mp, rhs, output, N, K, rhs_stride);
                 lhs_mp += lhs_stride;
                 output += out_stride;
             }
@@ -122,7 +122,7 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                            RhsPackedAxes::at(0) == TRhs::rank() - 2) {
             auto lhs_mp = lhs;
             for (size_t m = 0; m < M; m++) {
-                outer_product<AccC>(lhs_mp, rhs, output, N, K, rhs_stride);
+                mul_add<AccC>(lhs_mp, rhs, output, N, K, rhs_stride);
                 lhs_mp += lhs_stride;
                 output += out_stride;
             }
@@ -148,44 +148,53 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
         }
     }
 
+    // 1. 1D-packing: pack K
     template <bool AccC, class TLhsElem, class TRhsElem, class TOutElem>
-    requires(TLhsElem::rank() ==
-             1) void outer_product(const TLhsElem *lhs, const TRhsElem *rhs,
-                                   TOutElem *output, size_t extent, size_t K,
-                                   size_t rhs_stride) {
-        for (size_t i = 0; i < extent; i++) {
-            auto rhs_mp = rhs;
-            auto lhs_mp = lhs;
-            for (size_t k = 0; k < K; k++) {
-                auto value = ntt::inner_product(*lhs_mp, *rhs_mp);
-                *output = AccumulateC || k > 0 ? *output + value : value;
-                lhs_mp++;
-                rhs_mp += rhs_stride;
-            }
-            rhs++;
-            output++;
-        }
-    }
+    void mul_add(const TLhsElem *lhs, const TRhsElem *rhs, TOutElem *output,
+                 size_t extent, size_t K, size_t rhs_stride) {
 
-    template <bool AccC, class TLhsElem, class TRhsElem, class TOutElem>
-    requires(TLhsElem::rank() ==
-             2) void outer_product(const TLhsElem *lhs, const TRhsElem *rhs,
-                                   TOutElem *output, size_t extent, size_t K,
-                                   size_t rhs_stride) {
-        for (size_t i = 0; i < extent; i++) {
-            auto rhs_mp = rhs;
-            auto lhs_mp = lhs;
-            for (size_t k = 0; k < K; k++) {
-                for (size_t m = 0; m < TLhsElem::shape().at(0); m++) {
-                    auto value = ntt::inner_product((*lhs_mp)(m), *rhs_mp);
-                    (*output)(m) =
-                        AccumulateC || k > 0 ? (*output)(m) + value : value;
+        // 1. 1D-packing: pack K
+        if constexpr (LhsPackedAxes::rank() == 1 &&
+                      LhsPackedAxes::at(0) == TLhs::rank() - 1 &&
+                      RhsPackedAxes::rank() == 1 &&
+                      RhsPackedAxes::at(0) == TRhs::rank() - 2) {
+
+            for (size_t i = 0; i < extent; i++) {
+                auto rhs_mp = rhs;
+                auto lhs_mp = lhs;
+                for (size_t k = 0; k < K; k++) {
+                    auto value = ntt::inner_product(*lhs_mp, *rhs_mp);
+                    *output = AccumulateC || k > 0 ? *output + value : value;
+                    lhs_mp++;
+                    rhs_mp += rhs_stride;
                 }
-                lhs_mp++;
-                rhs_mp += rhs_stride;
+                rhs++;
+                output++;
             }
-            rhs++;
-            output++;
+        }
+
+        // 2. 2D-packing: pack MK & K
+        else if constexpr (LhsPackedAxes::rank() == 2 &&
+                           LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
+                           LhsPackedAxes::at(1) == TLhs::rank() - 1 &&
+                           RhsPackedAxes::rank() == 1 &&
+                           RhsPackedAxes::at(0) == TRhs::rank() - 2) {
+
+            for (size_t i = 0; i < extent; i++) {
+                auto rhs_mp = rhs;
+                auto lhs_mp = lhs;
+                for (size_t k = 0; k < K; k++) {
+                    for (size_t m = 0; m < TLhsElem::shape().at(0); m++) {
+                        auto value = ntt::inner_product((*lhs_mp)(m), *rhs_mp);
+                        (*output)(m) =
+                            AccumulateC || k > 0 ? (*output)(m) + value : value;
+                    }
+                    lhs_mp++;
+                    rhs_mp += rhs_stride;
+                }
+                rhs++;
+                output++;
+            }
         }
     }
 
