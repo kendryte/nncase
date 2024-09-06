@@ -16,7 +16,11 @@ public sealed record BufferIdentity(TileGrid Node, int Index)
 }
 
 /// <summary>
-/// Map: current offset/extent  Place : [create_loop,store_level], Shapes: [create_loop][shape] write: [create_loop], size: [create loop].
+/// Map: current offset/extent  Place : [create_loop,store_level], Shapes: [create_loop][shape] write: [create_loop], size: [create loop] masks[create loop].
+/// domain dims = 4, create loop will be 0,1,2,3.
+/// create loop = 0 means we create buffer in outside of all loops.
+/// for example, create loop = 2, means create buffer d0,d1,(buffer create here) d2,d3:
+/// measks[2] means the d2,d3 tile vars is related with buffer size.
 /// </summary>
 public sealed record TileNodeBufferInfo<T>(Tuple<int, int> Liveness, AffineMap Map, T[][] Places, T[][] Shapes, T[] Writes, T[] SizeVars, T[] SizeExprs, LoopMask[] Masks)
 {

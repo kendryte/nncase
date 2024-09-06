@@ -94,12 +94,48 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                 {
                     if (place[sl] == 1)
                     {
+                        var kernelInfo = bid.Node.GetKernelInfo(TargetOptions);
                         var viewInfo = GetParentSubViewInfo(sl + 1, value, bid, bufferInfo.Map, forwardOffsets[i], bufferInfo.Shapes[i]);
-                        var subView = viewInfo.InnerAllocated ? IR.F.Buffer.AllocateBufferView(viewInfo.Buffer) : IR.F.Buffer.BufferSubview(viewInfo.Buffer, viewInfo.Offsets, new IR.Tuple(viewInfo.Shape.Select(x => (Expr)x).ToArray()));
-                        Var subBufVar;
+                        Expr subView;
+                        if (viewInfo.InnerAllocated)
+                        {
+                            subView = IR.F.Buffer.AllocateBufferView(viewInfo.Buffer);
+                        }
+                        else
+                        {
+                            // for cpu we can use tensor view.
+                            if (TargetOptions.UnifiedMemoryArch)
+                            {
+                                subView = IR.F.Buffer.BufferSubview(viewInfo.Buffer, viewInfo.Offsets, new IR.Tuple(viewInfo.Shape.Select(x => (Expr)x).ToArray()));
+                            }
+                            else
+                            {
+                                // for device we should use copy.
+                                var offset = LevelBufferOffsets[sl + 1][new(value, bid)];
+                                var dtype = viewInfo.Buffer.CheckedDataType;
+                                var shape = bufferInfo.Shapes[i].Select(i => (Expr)(int)i).ToArray();
+                                subView = new TIR.Buffer($"{bid}_L{value.Level}_Copy", dtype, new MemSpan(Tensor.FromPointer(offset, dtype), bufferInfo.SizeVars[i], MemoryLocation.Data, 0), shape, TensorUtilities.GetStrides(shape));
+                            }
+                        }
+
+                        Var subViewVar;
 
                         // the parent buffer is temp buffer.
-                        var letBuilder = T.Let(out subBufVar, subView, $"{bid}_L{value.Level}");
+                        var letBuilder = T.Let(out subViewVar, subView, $"{bid}_L{value.Level}");
+                        if (!TargetOptions.UnifiedMemoryArch)
+                        {
+                            var srcBufView = IR.F.Buffer.BufferSubview(viewInfo.Buffer, viewInfo.Offsets, new IR.Tuple(viewInfo.Shape.Select(x => (Expr)x).ToArray()));
+                            if (kernelInfo.BufferInfos[bid.Index].State.HasFlag(MicroKernelBufferInfo.BufferState.Read))
+                            {
+                                letBuilder.Body(T.Memcopy(subViewVar, srcBufView));
+                            }
+
+                            if (kernelInfo.BufferInfos[bid.Index].State.HasFlag(MicroKernelBufferInfo.BufferState.Write))
+                            {
+                                letBuilder.Tail(T.Memcopy(srcBufView, subViewVar));
+                            }
+                        }
+
                         cntBuilder.Body(letBuilder);
                         cntBuilder = letBuilder;
 
@@ -109,7 +145,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                             _subViewMemo.Add(value, subViewMap);
                         }
 
-                        subViewMap[bid] = new(subBufVar, viewInfo.Offsets);
+                        subViewMap[bid] = new(subViewVar, viewInfo.Offsets);
                     }
                 }
             }

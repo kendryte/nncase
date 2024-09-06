@@ -18,10 +18,10 @@ internal sealed class MicroKernelInfoProvider : IMicroKernelInfoProvider
         _serviceProvider = serviceProvider;
     }
 
-    public MicroKernelInfo GetInfo(Op op, AffineDim[] domain, AffineMap[] accessMaps, int[][] bufferShapes, ITargetOptions targetOptions)
+    public MicroKernelInfo GetInfo(Op op, MicroKernelContext context)
     {
         var evaluatorType = typeof(IKernelInfoEvaluator<>).MakeGenericType(op.GetType());
         var evaluator = (IKernelInfoEvaluator)_serviceProvider.GetRequiredService(evaluatorType);
-        return evaluator.Visit(op, domain, accessMaps, bufferShapes, targetOptions);
+        return evaluator.Visit(op, context);
     }
 }

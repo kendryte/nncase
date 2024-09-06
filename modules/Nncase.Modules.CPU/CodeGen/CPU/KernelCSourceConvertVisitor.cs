@@ -253,7 +253,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
         };
 
         string str = string.Empty;
-        if (expr.Target is TIR.CPU.CPUKernelOp xpuOp)
+        if (expr.Target is Op kop && kop is (TIR.CPU.CPUKernelOp or TIR.Memcopy))
         {
             foreach (var item in expr.Arguments.ToArray().OfType<TIR.Buffer>())
             {
@@ -263,7 +263,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
             IndentScope.Writer.Write($"auto start_{CallCount} = get_ms_time();\n");
 #endif
             var args = expr.Arguments.ToArray().OfType<TIR.Buffer>().ToArray();
-            switch (xpuOp)
+            switch (kop)
             {
                 case TIR.CPU.Unary unary:
                     IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unary.cshtml", new UnaryKernelTemplateModel
@@ -415,7 +415,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     }).Result);
 
                     break;
-                case TIR.CPU.Memcopy copy:
+                case TIR.Memcopy copy:
                     IndentScope.Writer.Write($"tensor_copy({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
                     break;
                 case TIR.CPU.Gather gather:
@@ -479,7 +479,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     }).Result);
                     break;
                 default:
-                    throw new NotSupportedException(xpuOp.ToString());
+                    throw new NotSupportedException(kop.ToString());
             }
 #if PROFILE_CALL
             IndentScope.Writer.Write($"printf(\"{expr.Target.GetType().Name} cost: %f\\n\", get_ms_time() - start_{CallCount++});\n");

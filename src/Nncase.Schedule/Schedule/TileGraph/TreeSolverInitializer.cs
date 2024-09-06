@@ -152,12 +152,11 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
         var dimsMap = GetDimsMap(value);
         var tileVars = Enumerable.Range(0, value.DomainBounds.Length).Select(n => Solver.MakeIntVar(1, long.MaxValue, $"d{n}_L{value.Level}")).ToArray();
 
-        // CompilerServices.GetOpMicroKernelInfo(value.Op, value.AccessMaps[0].Domains.AsValueEnumerable().Select(i => i.Offset).ToArray(), value.AccessMaps.ToArray(), value.BufferShapes, TargetOptions);
-        var kernelInfo = new MicroKernelInfo(tileVars.Select(i => 1).ToArray(), tileVars.Select((_, i) => new ValueRange<int>(0, value.DomainBounds[i])).ToArray(), 1, 1);
+        var kernelInfo = value.GetKernelInfo(TargetOptions);
 
         for (int i = 0; i < tileVars.Length; i++)
         {
-            tileVars[i].SetRange(kernelInfo.Multiplier[i].Min, kernelInfo.Multiplier[i].Max);
+            tileVars[i].SetRange(kernelInfo.Multipliers[i].Min, kernelInfo.Multipliers[i].Max);
         }
 
         var primtiveMap = AffineMap.FromCallable((doms, syms) => doms.Select(i => new AffineRange(i.Offset, kernelInfo.Primitives[i.Extent.Position] * i.Extent)).ToArray(), value.DomainBounds.Length);
@@ -293,12 +292,12 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
             Solver.Add(Solver.MakeEquality(bufferSizeVars[i], bufferSizes[i]));
 
             var mask = 0U;
-            var sizeStr = bufferSizes[i].ToString();
-            for (int j = 0; j < domainDims; j++)
+            var sizeExprStr = bufferSizes[i].ToString();
+            for (int j = i; j < domainDims; j++)
             {
-                if (sizeStr.Contains(TileableNodeMemo[tile].TileVars[i].Name(), StringComparison.CurrentCulture))
+                if (sizeExprStr.Contains(TileableNodeMemo[tile].TileVars[j].Name(), StringComparison.CurrentCulture))
                 {
-                    mask |= 1U << j;
+                    mask |= 1U << (domainDims - 1 - j);
                 }
             }
 
