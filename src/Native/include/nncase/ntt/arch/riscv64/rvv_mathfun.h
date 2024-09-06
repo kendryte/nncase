@@ -95,96 +95,6 @@ _RVV_FLOAT32_LOG_OP(2, 16)
 _RVV_FLOAT32_LOG_OP(4, 8)
 _RVV_FLOAT32_LOG_OP(8, 4)
 
-#if 0
-#define c_inv_mant_fp16_mask (uint16_t) ~0x7c00u
-#define _RVV_FLOAT16_LOG_OP(LMUL, MLEN, TLEN)                                  \
-    static inline vfloat##TLEN##m##LMUL##_t log_ps(                            \
-        vfloat##TLEN##m##LMUL##_t x, size_t vl) {                              \
-        __fp16 zero = 0.f;                                                     \
-        __fp16 one = 1.f;                                                      \
-        x = __riscv_vfmax_vf_f##TLEN##m##LMUL(                                 \
-            x, zero, vl); /* force flush to zero on denormal values */         \
-        vbool##MLEN##_t invalid_mask =                                         \
-            __riscv_vmfle_vf_f##TLEN##m##LMUL##_b##MLEN(x, zero, vl);          \
-                                                                               \
-        vint##TLEN##m##LMUL##_t ux =                                           \
-            __riscv_vreinterpret_v_f##TLEN##m##LMUL##_i##TLEN##m##LMUL(x);     \
-                                                                               \
-        vint##TLEN##m##LMUL##_t emm0 =                                         \
-            __riscv_vsra_vx_i##TLEN##m##LMUL(ux, 10, vl);                      \
-                                                                               \
-        /* keep only the fractional part */                                    \
-        ux = __riscv_vand_vx_i##TLEN##m##LMUL(ux, c_inv_mant_fp16_mask, vl);   \
-        ux = __riscv_vor_vx_i##TLEN##m##LMUL(                                  \
-            ux, 14336 /* reinterpret_cast<int>(0.5) */, vl);                   \
-        x = __riscv_vreinterpret_v_i##TLEN##m##LMUL##_f##TLEN##m##LMUL(ux);    \
-                                                                               \
-        emm0 = __riscv_vsub_vx_i##TLEN##m##LMUL(emm0, 0xf, vl);                \
-        vfloat##TLEN##m##LMUL##_t e =                                          \
-            __riscv_vfcvt_f_x_v_f##TLEN##m##LMUL(emm0, vl);                    \
-                                                                               \
-        e = __riscv_vfadd_vf_f##TLEN##m##LMUL(e, one, vl);                     \
-                                                                               \
-        /* part2:                      */                                      \
-        /*     if( x < SQRTHF ) {      */                                      \
-        /*       e -= 1;               */                                      \
-        /*       x = x + x - 1.0;      */                                      \
-        /*     } else { x = x - 1.0; } */                                      \
-        vbool##MLEN##_t mask = __riscv_vmflt_vf_f##TLEN##m##LMUL##_b##MLEN(    \
-            x, c_cephes_SQRTHF, vl);                                           \
-        x = __riscv_vfadd_vv_f##TLEN##m##LMUL##_m(mask, x, x, x, vl);          \
-        x = __riscv_vfsub_vf_f##TLEN##m##LMUL(x, one, vl);                     \
-        e = __riscv_vfsub_vf_f##TLEN##m##LMUL##_m(mask, e, e, one, vl);        \
-                                                                               \
-        vfloat##TLEN##m##LMUL##_t z =                                          \
-            __riscv_vfmul_vv_f##TLEN##m##LMUL(x, x, vl);                       \
-                                                                               \
-        vfloat##TLEN##m##LMUL##_t y =                                          \
-            __riscv_vfmul_vf_f##TLEN##m##LMUL(x, c_cephes_log_p0, vl);         \
-        y = __riscv_vfadd_vf_f##TLEN##m##LMUL(y, c_cephes_log_p1, vl);         \
-        y = __riscv_vfmul_vv_f##TLEN##m##LMUL(y, x, vl);                       \
-        y = __riscv_vfadd_vf_f##TLEN##m##LMUL(y, c_cephes_log_p2, vl);         \
-        y = __riscv_vfmul_vv_f##TLEN##m##LMUL(y, x, vl);                       \
-        y = __riscv_vfadd_vf_f##TLEN##m##LMUL(y, c_cephes_log_p3, vl);         \
-        y = __riscv_vfmul_vv_f##TLEN##m##LMUL(y, x, vl);                       \
-        y = __riscv_vfadd_vf_f##TLEN##m##LMUL(y, c_cephes_log_p4, vl);         \
-        y = __riscv_vfmul_vv_f##TLEN##m##LMUL(y, x, vl);                       \
-        y = __riscv_vfadd_vf_f##TLEN##m##LMUL(y, c_cephes_log_p5, vl);         \
-        y = __riscv_vfmul_vv_f##TLEN##m##LMUL(y, x, vl);                       \
-        y = __riscv_vfadd_vf_f##TLEN##m##LMUL(y, c_cephes_log_p6, vl);         \
-        y = __riscv_vfmul_vv_f##TLEN##m##LMUL(y, x, vl);                       \
-        y = __riscv_vfadd_vf_f##TLEN##m##LMUL(y, c_cephes_log_p7, vl);         \
-        y = __riscv_vfmul_vv_f##TLEN##m##LMUL(y, x, vl);                       \
-        y = __riscv_vfadd_vf_f##TLEN##m##LMUL(y, c_cephes_log_p8, vl);         \
-        y = __riscv_vfmul_vv_f##TLEN##m##LMUL(y, x, vl);                       \
-                                                                               \
-        y = __riscv_vfmul_vv_f##TLEN##m##LMUL(y, z, vl);                       \
-                                                                               \
-        vfloat##TLEN##m##LMUL##_t tmp =                                        \
-            __riscv_vfmul_vf_f##TLEN##m##LMUL(e, c_cephes_log_q1, vl);         \
-        y = __riscv_vfadd_vv_f##TLEN##m##LMUL(y, tmp, vl);                     \
-                                                                               \
-        tmp = __riscv_vfmul_vf_f##TLEN##m##LMUL(z, 0.5f, vl);                  \
-        y = __riscv_vfsub_vv_f##TLEN##m##LMUL(y, tmp, vl);                     \
-                                                                               \
-        tmp = __riscv_vfmul_vf_f##TLEN##m##LMUL(e, c_cephes_log_q2, vl);       \
-        x = __riscv_vfadd_vv_f##TLEN##m##LMUL(x, y, vl);                       \
-        x = __riscv_vfadd_vv_f##TLEN##m##LMUL(x, tmp, vl);                     \
-        /* negative arg will be NAN */                                         \
-        vuint##TLEN##m##LMUL##_t xtmp =                                        \
-            __riscv_vreinterpret_v_f##TLEN##m##LMUL##_u##TLEN##m##LMUL(x);     \
-        x = __riscv_vreinterpret_v_u##TLEN##m##LMUL##_f##TLEN##m##LMUL(        \
-            __riscv_vor_vx_u##TLEN##m##LMUL##_m(invalid_mask, xtmp, xtmp,      \
-                                                0x7e00, vl));                  \
-        return x;                                                              \
-    }
-
-_RVV_FLOAT16_LOG_OP(1, 16, 16)
-_RVV_FLOAT16_LOG_OP(2, 8, 16)
-_RVV_FLOAT16_LOG_OP(4, 4, 16)
-_RVV_FLOAT16_LOG_OP(8, 2, 16)
-#endif
-
 #define c_exp_hi 88.3762626647949f
 #define c_exp_lo -88.3762626647949f
 
@@ -249,12 +159,6 @@ _RVV_FLOAT_EXP_OP(2, 16, 32, 0x7f, 23)
 _RVV_FLOAT_EXP_OP(4, 8, 32, 0x7f, 23)
 _RVV_FLOAT_EXP_OP(8, 4, 32, 0x7f, 23)
 
-#if 0
-_RVV_FLOAT_EXP_OP(1, 16, 16, 0xf, 10)
-_RVV_FLOAT_EXP_OP(2, 8, 16, 0xf, 10)
-_RVV_FLOAT_EXP_OP(4, 4, 16, 0xf, 10)
-_RVV_FLOAT_EXP_OP(8, 2, 16, 0xf, 10)
-#endif
 #define c_minus_cephes_DP1 -0.78515625
 #define c_minus_cephes_DP2 -2.4187564849853515625e-4
 #define c_minus_cephes_DP3 -3.77489497744594108e-8
@@ -344,14 +248,6 @@ _RVV_FLOAT_TANH_OP(2, 16, 32)
 _RVV_FLOAT_TANH_OP(4, 8, 32)
 _RVV_FLOAT_TANH_OP(8, 4, 32)
 
-#if 0
-_RVV_FLOAT_TANH_OP(1, 16, 16)
-_RVV_FLOAT_TANH_OP(2, 8, 16)
-_RVV_FLOAT_TANH_OP(4, 4, 16)
-_RVV_FLOAT_TANH_OP(8, 2, 16)
-#endif
-
-#if 1
 #define _RVV_FLOAT_POW_OP(LMUL, MLEN, TLEN)                                    \
     static inline vfloat##TLEN##m##LMUL##_t pow_ps(                            \
         vfloat##TLEN##m##LMUL##_t a, vfloat##TLEN##m##LMUL##_t b, size_t vl) { \
@@ -359,21 +255,6 @@ _RVV_FLOAT_TANH_OP(8, 2, 16)
         return exp_ps(__riscv_vfmul_vv_f##TLEN##m##LMUL(b, log_ps(a, vl), vl), \
                       vl);                                                     \
     }
-#else
-#define _RVV_FLOAT_POW_OP(LMUL, MLEN, TLEN)                                    \
-    static inline vfloat##TLEN##m##LMUL##_t pow_ps(                            \
-        vfloat##TLEN##m##LMUL##_t a, vfloat##TLEN##m##LMUL##_t b, size_t vl) { \
-        dump_v_register("input a = ", a);                                      \
-        dump_v_register("input b = ", b);                                      \
-        auto log_ret = log_ps(a, vl);                                          \
-        dump_v_register("log_ret = ", log_ret);                                \
-        auto mul_ret = __riscv_vfmul_vv_f##TLEN##m##LMUL(b, log_ret, vl);      \
-        dump_v_register("mul_ret = ", mul_ret);                                \
-        auto exp_ret = exp_ps(mul_ret, vl);                                    \
-        dump_v_register("exp_ret = ", exp_ret);                                \
-        return exp_ret;                                                        \
-    }
-#endif
 
 _RVV_FLOAT_POW_OP(1, 32, 32)
 _RVV_FLOAT_POW_OP(2, 16, 32)
