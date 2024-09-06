@@ -18,7 +18,7 @@ jobs:
       matrix:
         config:
           - {name: aarch64-macos, os: macos-14, buildType: Release}
-          - {name: x86_64-linux, os: ubuntu-22.04, buildType: Release}
+          - {name: x86_64-linux, os: ubuntu-24.04, buildType: Release}
           - {name: x86_64-windows, os: windows-latest, arch: x64, buildType: Release}
 
     steps:
@@ -76,7 +76,7 @@ jobs:
         dotnet-version: ['8.0']
         config:
           - {name: aarch64-macos, os: macos-14, shell: bash, rid: osx-arm64, buildType: Release}
-          - {name: x86_64-linux, os: ubuntu-22.04, shell: bash, rid: linux-x64, buildType: Release}
+          - {name: x86_64-linux, os: ubuntu-24.04, shell: bash, rid: linux-x64, buildType: Release}
           - {name: x86_64-windows, os: windows-latest, arch: x64, shell: bash, rid: win-x64, buildType: Release}
 
     steps:
@@ -162,7 +162,7 @@ jobs:
         dotnet-version: ['8.0']
         config:
           - {name: aarch64-macos, os: macos-14}
-          - {name: x86_64-linux, os: ubuntu-22.04}
+          - {name: x86_64-linux, os: ubuntu-24.04}
           - {name: x86_64-windows, os: windows-latest, arch: x64}
 
     env:
@@ -258,6 +258,9 @@ jobs:
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/ncnn_basic.xml pytest tests/importer/ncnn_/basic/ --doctest-modules --junitxml=test_results/ncnn_basic.xml
           dotnet-coverage merge -o coverage.integration.xml -f cobertura -r coverage/*.xml
 
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+
       - name: Upload Coverage
         uses: actions/upload-artifact@v3
         if: matrix.config.name == 'x86_64-linux'
@@ -274,7 +277,7 @@ jobs:
 
   upload-coverage:
     needs: [test-compiler]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v3
       - name: Setup .NET
