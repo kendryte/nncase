@@ -32,8 +32,10 @@ constexpr void set_elem(const TContainer &container, ranked_shape<Rank> index,
 namespace nncase::ntt::ops {
 // unary_ops ops
 namespace detail {
+template <template <class T> class Op, class TTensor> struct tensor_unary_impl;
+
 template <template <class T> class Op, IsTensor TTensor>
-struct tensor_unary_impl {
+struct tensor_unary_impl<Op, TTensor> {
     using element_type = typename TTensor::element_type;
 
     constexpr TTensor operator()(const TTensor &v) const noexcept {
@@ -44,6 +46,23 @@ struct tensor_unary_impl {
 
   private:
     Op<element_type> op_;
+};
+
+template <template <class T> class Op, IsTensor TTensor>
+requires(TTensor::rank() == 2) struct tensor_unary_impl<Op, TTensor> {
+    using sub_vector_type =
+        fixed_tensor_alike_t<TTensor, TTensor::shape().at(1)>;
+
+    constexpr TTensor operator()(const TTensor &v) const noexcept {
+        TTensor value;
+        for (size_t m = 0; m < TTensor::shape().at(0); m++) {
+            value(m) = op_(v(m));
+        }
+        return value;
+    }
+
+  private:
+    Op<sub_vector_type> op_;
 };
 
 template <template <class T1, class T2> class Op, class T1, class T2>
@@ -71,6 +90,23 @@ struct tensor_binary_impl<Op, TTensor, T2> {
 
   private:
     Op<element_type1, element_type2> op_;
+};
+
+template <template <class T1, class T2> class Op, IsTensor T1, IsTensor T2>
+requires(T1::rank() == 2 &&
+         T2::rank() == 2) struct tensor_binary_impl<Op, T1, T2> {
+    using sub_vector_type = fixed_tensor_alike_t<T1, T1::shape().at(1)>;
+
+    constexpr T1 operator()(const T1 &v1, const T2 &v2) const noexcept {
+        T1 value;
+        for (size_t m = 0; m < T1::shape().at(0); m++) {
+            value(m) = op_(v1(m), v2(m));
+        }
+        return value;
+    }
+
+  private:
+    Op<sub_vector_type, sub_vector_type> op_;
 };
 
 template <template <class T1, class T2> class Op, IsScalar TScalar,
@@ -230,6 +266,21 @@ struct reduce<Op, TResult, TTensor> {
         return value;
     }
 };
+
+template <IsTensor TTensor, IsScalar TScalar> struct clamp<TTensor, TScalar> {
+    using element_type = typename TTensor::element_type;
+    constexpr auto operator()(const TTensor &v, const TScalar &min,
+                              const TScalar &max) const noexcept {
+        TTensor value;
+        apply(v.shape(),
+              [&](auto index) { value(index) = op_(v(index), min, max); });
+        return value;
+    }
+
+  private:
+    ops::clamp<element_type, TScalar> op_;
+};
+
 } // namespace nncase::ntt::ops
 
 namespace nncase::ntt::tensor_ops {

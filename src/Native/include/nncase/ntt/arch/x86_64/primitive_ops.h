@@ -35,7 +35,63 @@ template <> struct abs<ntt::vector<float, 8>> {
 template <> struct acos<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
+#if 0
         return acos256_ps(v);
+#else
+        // 定义常量
+        const __m256 zero = _mm256_set1_ps(0.0f);
+        const __m256 half = _mm256_set1_ps(0.5f);
+        const __m256 one = _mm256_set1_ps(1.0f);
+        const __m256 two = _mm256_set1_ps(2.0f);
+        const __m256 minus_one = _mm256_set1_ps(-1.0f);
+
+        // 定义多项式系数
+        const __m256 p0 = _mm256_set1_ps(0x1.55555ep-3);
+        const __m256 p1 = _mm256_set1_ps(0x1.33261ap-4);
+        const __m256 p2 = _mm256_set1_ps(0x1.70d7dcp-5);
+
+        // 计算符号掩码和绝对值
+        const __m256 abs_mask = _mm256_set1_ps(-0.0f); // 位掩码，用于计算绝对值
+        const __m256 neg_mask = _mm256_cmp_ps(v, zero, _CMP_LT_OS); // v < 0.0
+        __m256 x = _mm256_andnot_ps(abs_mask, v);                   // 绝对值
+
+        // 初始化偏移量和乘法因子
+        const __m256 off =
+            _mm256_blendv_ps(zero, _mm256_set1_ps(0x1.921fb6p+1f), neg_mask);
+        const __m256 mul1 =
+            _mm256_blendv_ps(two, _mm256_set1_ps(-2.0f), neg_mask);
+        const __m256 mul2 = _mm256_blendv_ps(minus_one, one, neg_mask);
+
+        // 判断 x 是否小于 0.5
+        const __m256 le_half_mask = _mm256_cmp_ps(x, half, _CMP_LE_OS);
+        __m256 tmp = x;
+        __m256 mul = _mm256_blendv_ps(mul1, mul2, le_half_mask);
+
+        // 计算多项式 Q(x)
+        tmp = _mm256_fnmadd_ps(tmp, half, half); // tmp = half - half * tmp
+        const __m256 add =
+            _mm256_blendv_ps(off, _mm256_set1_ps(0x1.921fb6p+0f), le_half_mask);
+        __m256 z2 = _mm256_mul_ps(v, v); // z2 = tmp * v
+        z2 = _mm256_blendv_ps(tmp, z2, le_half_mask);
+
+        // 计算多项式近似
+        __m256 y1 = _mm256_set1_ps(0x1.3af7d8p-5);
+        __m256 y2 = _mm256_set1_ps(0x1.b059dp-6);
+        tmp = _mm256_sqrt_ps(z2);                // tmp = sqrt(z2)
+        const __m256 z4 = _mm256_mul_ps(z2, z2); // z4 = z2 * z2
+
+        y1 = _mm256_fmadd_ps(y1, z4, p2); // y1 = y1 * z4 + p2
+        y2 = _mm256_fmadd_ps(y2, z4, p1); // y2 = y2 * z4 + p1
+        y1 = _mm256_fmadd_ps(y1, z4, p0); // y1 = y1 * z4 + p0
+
+        const __m256 z = _mm256_blendv_ps(tmp, x, le_half_mask);
+        y1 = _mm256_fmadd_ps(y2, z2, y1);  // y1 = y1 * y2 + z2
+        mul = _mm256_mul_ps(mul, z);       // mul = mul * z
+        y1 = _mm256_fmadd_ps(y1, z2, one); // y1 = y1 * z2 + one
+
+        // 计算最终结果并返回
+        return _mm256_fmadd_ps(y1, mul, add); // y1 * mul + add
+#endif
     }
 };
 
@@ -52,7 +108,59 @@ template <> struct acosh<ntt::vector<float, 8>> {
 template <> struct asin<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
+#if 0
         return asin256_ps(v);
+#else
+        // 定义常量
+        const __m256 zero = _mm256_set1_ps(0.0f);
+        const __m256 half = _mm256_set1_ps(0.5f);
+        const __m256 one = _mm256_set1_ps(1.0f);
+        const __m256 minus_two = _mm256_set1_ps(-2.0f);
+        const __m256 pi_over_2f = _mm256_set1_ps(0x1.921fb6p+0f);
+
+        // 定义多项式系数
+        const __m256 p0 = _mm256_set1_ps(0x1.55555ep-3);
+        const __m256 p1 = _mm256_set1_ps(0x1.33261ap-4);
+        const __m256 p2 = _mm256_set1_ps(0x1.70d7dcp-5);
+
+        // 计算符号掩码和绝对值
+        const __m256 neg_mask = _mm256_cmp_ps(v, zero, _CMP_LT_OS); // v < 0.0
+        const __m256 abs_mask = _mm256_set1_ps(-0.0f); // 位掩码，用于计算绝对值
+        __m256 x = _mm256_andnot_ps(abs_mask, v); // 绝对值
+
+        // 初始化偏移量和乘法因子
+        const __m256 mul1 =
+            _mm256_blendv_ps(one, _mm256_set1_ps(-1.0f), neg_mask);
+
+        // 判断 x 是否小于 0.5
+        const __m256 lt_half_mask = _mm256_cmp_ps(x, half, _CMP_LT_OS);
+        __m256 tmp = x;
+        __m256 mul2 = _mm256_blendv_ps(minus_two, one, lt_half_mask);
+
+        // 计算多项式 Q(x)
+        tmp = _mm256_fnmadd_ps(tmp, half, half); // tmp = half - half * tmp
+        const __m256 add = _mm256_blendv_ps(pi_over_2f, zero, lt_half_mask);
+        __m256 z2 = _mm256_mul_ps(v, v); // z2 = tmp * v
+        z2 = _mm256_blendv_ps(tmp, z2, lt_half_mask);
+
+        // 计算多项式近似
+        __m256 y1 = _mm256_set1_ps(0x1.3af7d8p-5);
+        __m256 y2 = _mm256_set1_ps(0x1.b059dp-6);
+        const __m256 z4 = _mm256_mul_ps(z2, z2); // z4 = z2 * z2
+        tmp = _mm256_sqrt_ps(z2);                // tmp = sqrt(z2)
+
+        y1 = _mm256_fmadd_ps(y1, z4, p2); // y1 = y1 * z4 + p2
+        y2 = _mm256_fmadd_ps(y2, z4, p1); // y2 = y2 * z4 + p1
+        y1 = _mm256_fmadd_ps(y1, z4, p0); // y1 = y1 * z4 + p0
+
+        const __m256 z = _mm256_blendv_ps(tmp, x, lt_half_mask);
+        y1 = _mm256_fmadd_ps(y2, z2, y1); // y1 = y1 * y2 + z2
+        z2 = _mm256_mul_ps(z2, z);        // mul = mul * z
+        y1 = _mm256_fmadd_ps(y1, z2, z);  // y1 = y1 * z2 + one
+        // 计算最终结果并返回
+        y1 = _mm256_fmadd_ps(y1, mul2, add); // y1 * mul + add
+        return _mm256_mul_ps(y1, mul1);      // mul = mul * z
+#endif
     }
 };
 
@@ -77,7 +185,47 @@ template <> struct ceil<ntt::vector<float, 8>> {
 template <> struct cos<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
+#if 0
         return cos256_ps(v);
+#else
+        auto n = _mm256_set1_ps(0x1.45f306p-2f);
+        auto half = _mm256_set1_ps(0.5f);
+        auto c0 = _mm256_set1_ps(-0x1.555548p-3f);
+        auto c2 = _mm256_set1_ps(-0x1.9f42eap-13f);
+
+        // n = rint((|x|+pi/2)/pi) - 0.5
+        auto r = _mm256_and_ps(v, _mm256_castsi256_ps(_mm256_set1_epi32(
+                                      0x7FFFFFFF))); // vfabs_v_f32m
+        n = _mm256_fmadd_ps(n, r, half);             // vfmadd_vv_f32m
+        auto ni = _mm256_cvtps_epi32(n);             // vfcvt_x_f_v_i32m
+        n = _mm256_cvtepi32_ps(ni);                  // vfcvt_f_x_v_f32m
+        auto odd =
+            _mm256_add_epi32(ni, _mm256_set1_epi32(0x1.8p+23)); // vadd_vx_i32m
+        n = _mm256_sub_ps(n, _mm256_set1_ps(0.5f));             // vfsub_vf_f32m
+        odd = _mm256_slli_epi32(odd, 31);                       // vsll_vx_i32
+
+        // r = |x| - n*pi  (range reduction into -pi/2 .. pi/2)
+        r = _mm256_fnmadd_ps(_mm256_set1_ps(0x1.921fb6p+1f), n,
+                             r); // vfnmsac_vf_f32m
+        r = _mm256_fnmadd_ps(_mm256_set1_ps(-0x1.777a5cp-24f), n,
+                             r); // vfnmsac_vf_f32m
+        r = _mm256_fnmadd_ps(_mm256_set1_ps(-0x1.ee59dap-49f), n,
+                             r); // vfnmsac_vf_f32m
+
+        // y = sin(r)
+        auto r2 = _mm256_mul_ps(r, r); // vfmul_vv_f32m
+        auto y1 = _mm256_set1_ps(0x1.5b2e76p-19f);
+        auto y2 = _mm256_set1_ps(0x1.110df4p-7f);
+        y1 = _mm256_fmadd_ps(y1, r2, c2);   // vfmadd_vv_f32m
+        y2 = _mm256_fmadd_ps(y2, r2, c0);   // vfmadd_vv_f32m
+        auto r4 = _mm256_mul_ps(r2, r2);    // vfmul_vv_f32m
+        auto r3 = _mm256_mul_ps(r2, r);     // vfmul_vv_f32m
+        y1 = _mm256_fmadd_ps(y1, r4, y2);   // vfmadd_vv_f32m
+        y1 = _mm256_fmadd_ps(y1, r3, r);    // vfmadd_vv_f32m
+        auto tmp = _mm256_castps_si256(y1); // vreinterpret_v_f32m_i32m
+        tmp = _mm256_xor_si256(tmp, odd);   // vxor_vv_i32m
+        return _mm256_castsi256_ps(tmp);    // vreinterpret_v_i32m_f32m
+#endif
     }
 };
 
@@ -86,7 +234,7 @@ template <> struct cosh<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
         auto expV = exp256_ps(v);
-        auto expNV = _mm256_rcp_ps(expV);
+        auto expNV = _mm256_div_ps(_mm256_set1_ps(1.f), expV);
         return _mm256_mul_ps(_mm256_add_ps(expV, expNV), _mm256_set1_ps(0.50f));
     }
 };
@@ -136,7 +284,44 @@ template <> struct round<ntt::vector<float, 8>> {
 template <> struct rsqrt<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
+
+#if 0
         return _mm256_rsqrt_ps(v);
+
+#else
+        // This is a higher precision version, ulp is about 4, tp=4.5
+        const __m256 one_point_five = _mm256_set1_ps(1.5f);
+
+        // Convert float to int representation and perform the initial magic
+        // step
+        __m256i ux = _mm256_castps_si256(v);
+        ux = _mm256_srli_epi32(ux, 1);
+        ux = _mm256_sub_epi32(_mm256_set1_epi32(0x5f375a86), ux);
+        __m256 y = _mm256_castsi256_ps(ux);
+
+        // First iteration
+        __m256 y2 = _mm256_mul_ps(y, y);
+        __m256 x = _mm256_mul_ps(v, _mm256_set1_ps(-0.5f));
+        y2 = _mm256_fmadd_ps(y2, x, one_point_five);
+        y = _mm256_mul_ps(y, y2);
+
+        // Second iteration
+        y2 = _mm256_mul_ps(y, y);
+        y2 = _mm256_fmadd_ps(y2, x, one_point_five);
+        y = _mm256_mul_ps(y, y2);
+
+        // third iteration
+        y2 = _mm256_mul_ps(y, y);
+        y2 = _mm256_fmadd_ps(y2, x, one_point_five);
+        y = _mm256_mul_ps(y, y2);
+
+        // third iteration
+        y2 = _mm256_mul_ps(y, y);
+        y2 = _mm256_fmadd_ps(y2, x, one_point_five);
+        y = _mm256_mul_ps(y, y2);
+
+        return y;
+#endif
     }
 };
 
@@ -171,7 +356,49 @@ template <> struct sign<ntt::vector<float, 8>> {
 template <> struct sin<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
+#if 0
         return sin256_ps(v);
+#else
+        // Define constants
+        __m256 c0 = _mm256_set1_ps(-0x1.555548p-3f);
+        __m256 c2 = _mm256_set1_ps(-0x1.9f42eap-13f);
+        __m256 c3 = _mm256_set1_ps(0x1.45f306p-2f);
+        __m256 c4 = _mm256_set1_ps(0x1.8p+23);
+        __m256 c5 = _mm256_set1_ps(0x1.921fb6p+1f);
+        __m256 c6 = _mm256_set1_ps(-0x1.777a5cp-24f);
+        __m256 c7 = _mm256_set1_ps(-0x1.ee59dap-49f);
+        __m256 c8 = _mm256_set1_ps(0x1.5b2e76p-19f);
+        __m256 c9 = _mm256_set1_ps(0x1.110df4p-7f);
+
+        // n = rint(|x|/pi)
+        __m256 r = _mm256_andnot_ps(_mm256_set1_ps(-0.0f), v); // fabs(v)
+        __m256 n = _mm256_mul_ps(r, c3);
+        __m256 sign = _mm256_and_ps(v, _mm256_set1_ps(-0.0f)); // sign bit
+        __m256i ni = _mm256_cvtps_epi32(n);
+        n = _mm256_cvtepi32_ps(ni);
+        __m256i odd = _mm256_add_epi32(ni, _mm256_castps_si256(c4));
+
+        // r = |x| - n*pi  (range reduction into -pi/2 .. pi/2)
+        r = _mm256_fnmadd_ps(c5, n, r);
+        odd = _mm256_slli_epi32(odd, 31);
+        r = _mm256_fnmadd_ps(c6, n, r);
+        r = _mm256_fnmadd_ps(c7, n, r);
+
+        // y = sin(r)
+        __m256 r2 = _mm256_mul_ps(r, r);
+        __m256 y1 = c8;
+        __m256 y2 = c9;
+        y1 = _mm256_fmadd_ps(y1, r2, c2);
+        y2 = _mm256_fmadd_ps(y2, r2, c0);
+        __m256 r4 = _mm256_mul_ps(r2, r2);
+        __m256 r3 = _mm256_mul_ps(r2, r);
+        y1 = _mm256_fmadd_ps(y1, r4, y2);
+        __m256 sign_adjust = _mm256_castsi256_ps(
+            _mm256_xor_si256(_mm256_castps_si256(sign), odd));
+        y1 = _mm256_fmadd_ps(y1, r3, r);
+        __m256 tmp = _mm256_xor_ps(y1, sign_adjust);
+        return tmp;
+#endif
     }
 };
 
@@ -186,12 +413,22 @@ template <> struct sinh<ntt::vector<float, 8>> {
 };
 
 // sqrt
+#if 0
+// max_ulp_error = 8861
 template <> struct sqrt<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
         return _mm256_rcp_ps(_mm256_rsqrt_ps(v));
     }
 };
+#else
+template <> struct sqrt<ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const ntt::vector<float, 8> &v) const noexcept {
+        return _mm256_sqrt_ps(v);
+    }
+};
+#endif
 
 // square
 template <> struct square<ntt::vector<float, 8>> {
@@ -358,11 +595,30 @@ template <> struct mod<ntt::vector<int32_t, 8>, ntt::vector<int32_t, 8>> {
     }
 };
 
-// min
+// min(v1, v2)
 template <> struct min<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v1,
                const ntt::vector<float, 8> &v2) const noexcept {
+        return _mm256_min_ps(v1, v2);
+    }
+};
+
+// min(v1, f2)
+template <> struct min<ntt::vector<float, 8>, float> {
+    ntt::vector<float, 8> operator()(const ntt::vector<float, 8> &v1,
+                                     const float &f2) const noexcept {
+        auto v2 = _mm256_set1_ps(f2);
+        return _mm256_min_ps(v1, v2);
+    }
+};
+
+// min(f1, v2)
+template <> struct min<float, ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const float &f1,
+               const ntt::vector<float, 8> &v2) const noexcept {
+        auto v1 = _mm256_set1_ps(f1);
         return _mm256_min_ps(v1, v2);
     }
 };
@@ -376,6 +632,25 @@ template <> struct max<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     }
 };
 
+// max(v1, f2)
+template <> struct max<ntt::vector<float, 8>, float> {
+    ntt::vector<float, 8> operator()(const ntt::vector<float, 8> &v1,
+                                     const float &f2) const noexcept {
+        auto v2 = _mm256_set1_ps(f2);
+        return _mm256_max_ps(v1, v2);
+    }
+};
+
+// max(f1, v2)
+template <> struct max<float, ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const float &f1,
+               const ntt::vector<float, 8> &v2) const noexcept {
+        auto v1 = _mm256_set1_ps(f1);
+        return _mm256_max_ps(v1, v2);
+    }
+};
+
 template <bool AccC>
 struct mma<AccC, ntt::vector<float, 8, 8>, ntt::vector<float, 8, 8>,
            ntt::vector<float, 8, 8>> {
@@ -383,55 +658,15 @@ struct mma<AccC, ntt::vector<float, 8, 8>, ntt::vector<float, 8, 8>,
     operator()(const ntt::vector<float, 8, 8> &lhs,
                const ntt::vector<float, 8, 8> &rhs,
                const ntt::vector<float, 8, 8> &v3) const noexcept {
-        auto output = v3;
+        ntt::vector<float, 8, 8> output;
         for (size_t k = 0; k < 8; k++) {
-            output(0) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(0, k), rhs(k), output(0))
-                            : ntt::mul(lhs(0, k), rhs(k));
+            for (size_t m = 0; m < 8; m++) {
+                output(m) = (k != 0 || AccC)
+                                ? ntt::mul_add(lhs(m, k), rhs(k),
+                                               k == 0 ? v3(m) : output(m))
+                                : ntt::mul(lhs(m, k), rhs(k));
+            }
         }
-
-        for (size_t k = 0; k < 8; k++) {
-            output(1) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(1, k), rhs(k), output(1))
-                            : ntt::mul(lhs(1, k), rhs(k));
-        }
-
-        for (size_t k = 0; k < 8; k++) {
-            output(2) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(2, k), rhs(k), output(2))
-                            : ntt::mul(lhs(2, k), rhs(k));
-        }
-
-        for (size_t k = 0; k < 8; k++) {
-            output(3) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(3, k), rhs(k), output(3))
-                            : ntt::mul(lhs(3, k), rhs(k));
-        }
-
-        for (size_t k = 0; k < 8; k++) {
-            output(4) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(4, k), rhs(k), output(4))
-                            : ntt::mul(lhs(4, k), rhs(k));
-        }
-
-        for (size_t k = 0; k < 8; k++) {
-            output(5) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(5, k), rhs(k), output(5))
-                            : ntt::mul(lhs(5, k), rhs(k));
-        }
-
-        for (size_t k = 0; k < 8; k++) {
-            output(6) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(6, k), rhs(k), output(6))
-                            : ntt::mul(lhs(6, k), rhs(k));
-        }
-
-        for (size_t k = 0; k < 8; k++) {
-            output(7) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(7, k), rhs(k), output(7))
-                            : ntt::mul(lhs(7, k), rhs(k));
-        }
-
         return output;
     }
 };
@@ -449,20 +684,17 @@ template <> struct pow<ntt::vector<float, 8>, ntt::vector<float, 8>> {
 template <> struct inner_product<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     float operator()(const ntt::vector<float, 8> &v1,
                      const ntt::vector<float, 8> &v2) const noexcept {
-        auto vec = _mm256_mul_ps(v1, v2);
-        // Extract the lower 128-bit part
-        auto low = _mm256_extractf128_ps(vec, 0);
-        // Extract the upper 128-bit part
-        auto high = _mm256_extractf128_ps(vec, 1);
-        // Add the low and high parts
-        auto sum128 = _mm_add_ps(low, high);
+        // Multiply the elements
+        __m256 mul = _mm256_mul_ps(v1, v2);
 
-        // Horizontal add: sum the pairs of elements
-        sum128 = _mm_hadd_ps(sum128, sum128);
-        sum128 = _mm_hadd_ps(sum128, sum128);
+        // Sum the elements in the 256-bit vector directly
+        __m128 sum1 = _mm_add_ps(_mm256_castps256_ps128(mul),
+                                 _mm256_extractf128_ps(mul, 1));
+        sum1 = _mm_add_ps(sum1, _mm_movehl_ps(sum1, sum1));
+        sum1 = _mm_add_ss(sum1, _mm_shuffle_ps(sum1, sum1, 1));
 
-        // Extract the final sum from the 128-bit result
-        return _mm_cvtss_f32(sum128);
+        // Extract and return the final sum
+        return _mm_cvtss_f32(sum1);
     }
 };
 
@@ -471,32 +703,19 @@ template <> struct outer_product<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     auto operator()(const ntt::vector<float, 8> &v1,
                     const ntt::vector<float, 8> &v2) const noexcept {
         ntt::vector<float, 8, 8> result;
-        __m256 tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
-
-        tmp0 = _mm256_set1_ps(v1(0));
-        result(0) = _mm256_mul_ps(tmp0, v2);
-
-        tmp1 = _mm256_set1_ps(v1(1));
-        result(1) = _mm256_mul_ps(tmp1, v2);
-
-        tmp2 = _mm256_set1_ps(v1(2));
-        result(2) = _mm256_mul_ps(tmp2, v2);
-
-        tmp3 = _mm256_set1_ps(v1(3));
-        result(3) = _mm256_mul_ps(tmp3, v2);
-
-        tmp4 = _mm256_set1_ps(v1(4));
-        result(4) = _mm256_mul_ps(tmp4, v2);
-
-        tmp5 = _mm256_set1_ps(v1(5));
-        result(5) = _mm256_mul_ps(tmp5, v2);
-
-        tmp6 = _mm256_set1_ps(v1(6));
-        result(6) = _mm256_mul_ps(tmp6, v2);
-
-        tmp7 = _mm256_set1_ps(v1(7));
-        result(7) = _mm256_mul_ps(tmp7, v2);
+        for (size_t i = 0; i < 8; i++) {
+            auto a_broadcast = _mm256_set1_ps(v1(i));
+            result(i) = _mm256_mul_ps(a_broadcast, v2);
+        }
         return result;
+    }
+};
+
+template <> struct clamp<ntt::vector<float, 8>, float> {
+    auto operator()(const ntt::vector<float, 8> &v, const float &min,
+                    const float &max) const noexcept {
+        auto tmp = _mm256_max_ps(v, _mm256_set1_ps(min));
+        return _mm256_min_ps(tmp, _mm256_set1_ps(max));
     }
 };
 

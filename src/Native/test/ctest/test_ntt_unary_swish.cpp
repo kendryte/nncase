@@ -21,6 +21,19 @@
 using namespace nncase;
 using namespace ortki;
 
+template <typename T>
+static ortki::OrtKITensor *ortki_Swish(ortki::OrtKITensor *ort_input) {
+    T data[1] = {static_cast<T>(1)};
+    int64_t one_shape[1] = {1};
+    auto ort_type = NttTest::primitive_type2ort_type<T>();
+    auto one_tensor = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                                  one_shape, std::size(one_shape));
+    auto ort_neg = ortki_Neg(ort_input);
+    auto ort_exp = ortki_Exp(ort_neg);
+    auto ort_add = ortki_Add(one_tensor, ort_exp);
+    return ortki_Div(ort_input, ort_add);
+}
+
 TEST(UnaryTestSwishFloat, fixed_fixed) {
     // init
     using shape = ntt::fixed_shape<1, 3, 16, 16>;
@@ -34,15 +47,7 @@ TEST(UnaryTestSwishFloat, fixed_fixed) {
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
-    float data[1] = {1.f};
-    int64_t one_shape[1] = {1};
-    auto one_tensor =
-        make_tensor(reinterpret_cast<void *>(data), ortki::DataType_FLOAT,
-                    one_shape, std::size(one_shape));
-    auto ort_neg = ortki_Neg(ort_input);
-    auto ort_exp = ortki_Exp(ort_neg);
-    auto ort_add = ortki_Add(one_tensor, ort_exp);
-    auto ort_output = ortki_Div(ort_input, ort_add);
+    auto ort_output = ortki_Swish<float>(ort_input);
 
     // compare
     std::unique_ptr<tensor_type> ntt_output2(new tensor_type);
@@ -65,15 +70,7 @@ TEST(UnaryTestSwishFloat, fixed_ranked) {
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
-    float data[1] = {1.f};
-    int64_t one_shape[1] = {1};
-    auto one_tensor =
-        make_tensor(reinterpret_cast<void *>(data), ortki::DataType_FLOAT,
-                    one_shape, std::size(one_shape));
-    auto ort_neg = ortki_Neg(ort_input);
-    auto ort_exp = ortki_Exp(ort_neg);
-    auto ort_add = ortki_Add(one_tensor, ort_exp);
-    auto ort_output = ortki_Div(ort_input, ort_add);
+    auto ort_output = ortki_Swish<float>(ort_input);
 
     // compare
     std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2(shape2));
@@ -94,15 +91,7 @@ TEST(UnaryTestSwishFloat, ranked_ranked) {
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
-    float data[1] = {1.f};
-    int64_t one_shape[1] = {1};
-    auto one_tensor =
-        make_tensor(reinterpret_cast<void *>(data), ortki::DataType_FLOAT,
-                    one_shape, std::size(one_shape));
-    auto ort_neg = ortki_Neg(ort_input);
-    auto ort_exp = ortki_Exp(ort_neg);
-    auto ort_add = ortki_Add(one_tensor, ort_exp);
-    auto ort_output = ortki_Div(ort_input, ort_add);
+    auto ort_output = ortki_Swish<float>(ort_input);
 
     // compare
     std::unique_ptr<tensor_type> ntt_output2(new tensor_type(shape));
@@ -125,15 +114,7 @@ TEST(UnaryTestSwishFloat, ranked_fixed) {
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
-    float data[1] = {1.f};
-    int64_t one_shape[1] = {1};
-    auto one_tensor =
-        make_tensor(reinterpret_cast<void *>(data), ortki::DataType_FLOAT,
-                    one_shape, std::size(one_shape));
-    auto ort_neg = ortki_Neg(ort_input);
-    auto ort_exp = ortki_Exp(ort_neg);
-    auto ort_add = ortki_Add(one_tensor, ort_exp);
-    auto ort_output = ortki_Div(ort_input, ort_add);
+    auto ort_output = ortki_Swish<float>(ort_input);
 
     // compare
     std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
@@ -142,32 +123,35 @@ TEST(UnaryTestSwishFloat, ranked_fixed) {
 }
 
 template <typename T, size_t vl> void test_vector() {
+    // init
     ntt::vector<T, vl> ntt_input;
     NttTest::init_tensor(ntt_input, static_cast<T>(-10), static_cast<T>(10));
+
+    // ntt
     auto ntt_output1 = ntt::swish(ntt_input);
+
+    // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
-    T data[] = {static_cast<T>(1)};
-    int64_t one_shape[] = {1};
-    auto one_tensor = make_tensor(reinterpret_cast<void *>(data),
-                                  NttTest::primitive_type2ort_type<T>(),
-                                  one_shape, std::size(one_shape));
-    auto ort_neg = ortki_Neg(ort_input);
-    auto ort_exp = ortki_Exp(ort_neg);
-    auto ort_add = ortki_Add(one_tensor, ort_exp);
-    auto ort_output = ortki_Div(ort_input, ort_add);
+    auto ort_output = ortki_Swish<T>(ort_input);
     ntt::vector<T, vl> ntt_output2;
     NttTest::ort2ntt(ort_output, ntt_output2);
+
+    // compare
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
 #define _TEST_VECTOR(T, lmul)                                                  \
     test_vector<T, (NTT_VLEN) / (sizeof(T) * 8) * lmul>();
 
+#ifdef __riscv_vector
 #define TEST_VECTOR(T)                                                         \
     _TEST_VECTOR(T, 1)                                                         \
     _TEST_VECTOR(T, 2)                                                         \
     _TEST_VECTOR(T, 4)                                                         \
     _TEST_VECTOR(T, 8)
+#else
+#define TEST_VECTOR(T) _TEST_VECTOR(T, 1)
+#endif
 
 TEST(UnaryTestSwish, vector) {
     TEST_VECTOR(float)

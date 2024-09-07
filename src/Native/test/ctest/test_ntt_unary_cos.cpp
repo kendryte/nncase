@@ -131,6 +131,59 @@ template <typename T, size_t vl> void test_vector() {
 
 TEST(UnaryTestCos, vector) { TEST_VECTOR(float) }
 
+template <typename T, size_t N, typename Shape,
+          typename Stride = ntt::default_strides_t<Shape>>
+void cos_std(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &input,
+             ntt::tensor<ntt::vector<T, N>, Shape, Stride> &output) {
+
+    nncase::ntt::apply(input.shape(), [&](auto index) {
+        auto input_element = input(index);
+        auto &output_element = output(index);
+
+        nncase::ntt::apply(input_element.shape(), [&](auto idx) {
+            output_element(idx) = std::cos(input_element(idx));
+            [[maybe_unused]] auto debug = 1.0f;
+        });
+    });
+}
+
+template <typename T, size_t vl> void test_vector_ulp(double ulp_threshold) {
+    constexpr size_t size = ULP_SIZE;
+
+    // init
+    using tensor_type = ntt::tensor<ntt::vector<T, vl>, ntt::fixed_shape<size>>;
+    std::unique_ptr<tensor_type> ntt_input(new tensor_type);
+    NttTest::init_tensor(*ntt_input, static_cast<T>(-1000),
+                         static_cast<T>(1000));
+
+    // ntt
+    std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
+    ntt::unary<ntt::ops::cos>(*ntt_input, *ntt_output1);
+
+    // compare
+    std::unique_ptr<tensor_type> ntt_output2(new tensor_type);
+    cos_std(*ntt_input, *ntt_output2);
+    EXPECT_TRUE(
+        NttTest::compare_ulp(*ntt_output1, *ntt_output2, ulp_threshold));
+}
+
+#define _TEST_VECTOR_ULP(T, lmul, ulp_threshold)                               \
+    test_vector_ulp<T, (NTT_VLEN) / (sizeof(T) * 8) * lmul>(ulp_threshold);
+
+#ifdef __riscv_vector
+#define TEST_VECTOR_ULP(T, ulp_threshold)                                      \
+    _TEST_VECTOR_ULP(T, 1, ulp_threshold)                                      \
+    _TEST_VECTOR_ULP(T, 2, ulp_threshold)                                      \
+    _TEST_VECTOR_ULP(T, 4, ulp_threshold)                                      \
+    _TEST_VECTOR_ULP(T, 8, ulp_threshold)
+#else
+#define TEST_VECTOR_ULP(T, ulp_threshold) _TEST_VECTOR_ULP(T, 1, ulp_threshold)
+#endif
+
+#ifndef __aarch64__
+TEST(UnaryTestCosFloat, ulp_error) { TEST_VECTOR_ULP(float, 2.) }
+#endif
+
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
