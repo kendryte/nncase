@@ -171,4 +171,9 @@ public partial class CPU
     {
         return new Call(new TIR.CPU.Erf(), input, output);
     }
+
+    public static Call Compare(CompareOp compareOp, Expr lhs, Expr rhs, Expr output)
+    {
+        return new Call(new TIR.CPU.Compare(compareOp), lhs, rhs, output);
+    }
 }

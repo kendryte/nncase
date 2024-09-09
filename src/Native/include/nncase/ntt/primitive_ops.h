@@ -220,6 +220,42 @@ template <class T, class B> struct swishb {
 
 /**@}*/
 
+template <class T> struct equal {
+    constexpr auto operator()(const T &v1, const T &v2) const noexcept {
+        return std::equal_to<T>()(v1, v2);
+    }
+};
+
+template <class T> struct not_equal {
+    constexpr auto operator()(const T &v1, const T &v2) const noexcept {
+        return std::not_equal_to<T>()(v1, v2);
+    }
+};
+
+template <class T> struct less {
+    constexpr auto operator()(const T &v1, const T &v2) const noexcept {
+        return std::less<T>()(v1, v2);
+    }
+};
+
+template <class T> struct less_or_equal {
+    constexpr auto operator()(const T &v1, const T &v2) const noexcept {
+        return std::less_equal<T>()(v1, v2);
+    }
+};
+
+template <class T> struct greater {
+    constexpr auto operator()(const T &v1, const T &v2) const noexcept {
+        return std::greater<T>()(v1, v2);
+    }
+};
+
+template <class T> struct greater_or_equal {
+    constexpr auto operator()(const T &v1, const T &v2) const noexcept {
+        return std::greater_equal<T>()(v1, v2);
+    }
+};
+
 template <template <class T1, class T2> class BinaryOp, class TResult, class T>
 struct reduce {
     constexpr TResult operator()(const T &v) const noexcept {
@@ -263,7 +299,11 @@ template <class T1, class T2> struct clamp {
                                element_or_scalar_t<T>, TResultOrVoid>;         \
         return ops::reduce<op, TResult, T>()(v);                               \
     }
-
+#define NTT_DEFINE_COMPARE_FUNC_IMPL(op)                                       \
+    template <IsTensorOrScalar T>                                              \
+    constexpr auto op(const T &v1, const T &v2) noexcept {                     \
+        return ops::op<T>()(v1, v2);                                           \
+    }
 NTT_DEFINE_UNARY_FUNC_IMPL(abs)
 NTT_DEFINE_UNARY_FUNC_IMPL(acos)
 NTT_DEFINE_UNARY_FUNC_IMPL(acosh)
@@ -300,6 +340,12 @@ NTT_DEFINE_BINARY_FUNC_IMPL(min)
 NTT_DEFINE_BINARY_FUNC_IMPL(max)
 NTT_DEFINE_BINARY_FUNC_IMPL(pow)
 NTT_DEFINE_BINARY_FUNC_IMPL(swishb)
+NTT_DEFINE_COMPARE_FUNC_IMPL(equal)
+NTT_DEFINE_COMPARE_FUNC_IMPL(not_equal)
+NTT_DEFINE_COMPARE_FUNC_IMPL(less)
+NTT_DEFINE_COMPARE_FUNC_IMPL(less_or_equal)
+NTT_DEFINE_COMPARE_FUNC_IMPL(greater)
+NTT_DEFINE_COMPARE_FUNC_IMPL(greater_or_equal)
 
 NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_sum, ops::add)
 NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_max, ops::max)

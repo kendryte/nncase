@@ -211,6 +211,9 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 break;
             case IR.Tensors.GetItem:
                 break;
+            case IR.Math.Compare compare:
+                _mainBody.Add(TIR.F.CPU.Compare(compare.CompareOp, arguments[0], arguments[1], ret));
+                break;
             default:
                 throw new NotSupportedException();
         }

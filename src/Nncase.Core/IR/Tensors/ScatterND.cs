@@ -21,7 +21,7 @@ public sealed partial class ScatterND : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(ScatterND), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(ScatterND), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets indices.

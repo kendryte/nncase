@@ -478,6 +478,16 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                         UnaryOp = UnaryOp.Erf,
                     }).Result);
                     break;
+                case TIR.CPU.Compare compare:
+                    {
+                        IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Compare.cshtml", new CompareKernelTemplateModel
+                        {
+                            Arguments = args.Select(x => new KernelArgument { Symbol = Visit(x) }).ToArray(),
+                            CompareOp = compare.CompareOp,
+                        }).Result);
+                    }
+
+                    break;
                 default:
                     throw new NotSupportedException(kop.ToString());
             }

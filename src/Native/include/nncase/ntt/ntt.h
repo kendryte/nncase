@@ -16,6 +16,7 @@
 #include "kernels/binary.h"
 #include "kernels/cast.h"
 #include "kernels/clamp.h"
+#include "kernels/compare.h"
 #include "kernels/concat.h"
 #include "kernels/conv2d.h"
 #include "kernels/copy.h"

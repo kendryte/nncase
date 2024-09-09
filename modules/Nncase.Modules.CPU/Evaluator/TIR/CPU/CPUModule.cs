@@ -3,6 +3,7 @@
 
 using DryIoc;
 using Nncase.Evaluator.Imaging;
+using Nncase.Evaluator.Math;
 using Nncase.Evaluator.NN;
 using Nncase.Evaluator.Tensors;
 using Nncase.Hosting;
@@ -47,5 +48,6 @@ internal class CPUModule : IApplicationPart
         registrator.RegisterManyInterface<WhereEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<ExpandEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<ErfEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<CompareEvaluator>(reuse: Reuse.Singleton);
     }
 }

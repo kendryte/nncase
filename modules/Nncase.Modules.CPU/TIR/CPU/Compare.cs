@@ -10,19 +10,19 @@ using Nncase.IR;
 
 namespace Nncase.TIR.CPU;
 
-public sealed partial class Binary : CPUKernelOp
+public sealed partial class Compare : CPUKernelOp
 {
-    public static readonly ParameterInfo Lhs = new(typeof(Binary), 0, "lhs");
+    public static readonly ParameterInfo Lhs = new(typeof(Compare), 0, "lhs");
 
-    public static readonly ParameterInfo Rhs = new(typeof(Binary), 1, "rhs");
+    public static readonly ParameterInfo Rhs = new(typeof(Compare), 1, "rhs");
 
-    public static readonly ParameterInfo Output = new(typeof(Binary), 2, "output");
+    public static readonly ParameterInfo Output = new(typeof(Compare), 2, "output");
 
-    public BinaryOp BinaryOp { get; }
+    public CompareOp CompareOp { get; }
 
     /// <inheritdoc/>
     public override string DisplayProperty()
     {
-        return $"BinaryOp.{BinaryOp}";
+        return $"CompareOp.{CompareOp}";
     }
 }
