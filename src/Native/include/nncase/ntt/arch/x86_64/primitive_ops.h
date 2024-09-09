@@ -711,6 +711,23 @@ template <> struct outer_product<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     }
 };
 
+// outer_mul_add
+template <>
+struct outer_mul_add<ntt::vector<float, 8>, ntt::vector<float, 8>,
+                     ntt::vector<float, 8, 8>> {
+    auto operator()(const ntt::vector<float, 8> &v1,
+                    const ntt::vector<float, 8> &v2,
+                    const ntt::vector<float, 8, 8> &v3) const noexcept {
+        ntt::vector<float, 8, 8> result;
+        for (size_t i = 0; i < 8; i++) {
+            auto a_broadcast = _mm256_set1_ps(v1(i));
+            result(i) = _mm256_mul_ps(a_broadcast, v2);
+            result(i) = _mm256_add_ps(result(i), v3(i));
+        }
+        return result;
+    }
+};
+
 template <> struct clamp<ntt::vector<float, 8>, float> {
     auto operator()(const ntt::vector<float, 8> &v, const float &min,
                     const float &max) const noexcept {

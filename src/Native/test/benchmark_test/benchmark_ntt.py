@@ -135,7 +135,7 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                         },
                               'matmul': {'no_pack': '49152',
                                          'pack_K': '9728',
-                                         'pack_M': '6080',
+                                         'pack_M': '3584',
                                          'pack_N': '2016',
                                          'pack_M_N': '3040',
                                          'pack_M_K': '9728',

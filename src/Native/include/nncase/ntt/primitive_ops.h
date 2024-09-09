@@ -232,6 +232,11 @@ template <class T1, class T2, class TResult> struct mul_add {
                                  const TResult &v3) const noexcept;
 };
 
+template <class T1, class T2, class T3> struct outer_mul_add {
+    constexpr T3 operator()(const T1 &v1, const T2 &v2,
+                            const T3 &v3) const noexcept;
+};
+
 template <bool AccC, IsFixedTensor T1, IsFixedTensor T2, IsFixedTensor TResult>
 struct mma {
     constexpr TResult operator()(const T1 &v1, const T2 &v2,
@@ -309,6 +314,11 @@ template <IsTensorOrScalar T1, IsTensorOrScalar T2, IsTensorOrScalar TResult>
 constexpr TResult mul_add(const T1 &v1, const T2 &v2,
                           const TResult &v3) noexcept {
     return ops::mul_add<T1, T2, TResult>()(v1, v2, v3);
+}
+
+template <class T1, class T2, class T3>
+constexpr T3 outer_mul_add(const T1 &v1, const T2 &v2, const T3 &v3) noexcept {
+    return ops::outer_mul_add<T1, T2, T3>()(v1, v2, v3);
 }
 
 template <bool AccC, IsFixedTensor T1, IsFixedTensor T2, IsFixedTensor TResult>
@@ -421,6 +431,14 @@ constexpr TResult
 mul_add<T1, T2, TResult>::operator()(const T1 &v1, const T2 &v2,
                                      const TResult &v3) const noexcept {
     return v1 * v2 + v3;
+}
+
+template <class T1, class T2, class T3>
+constexpr T3
+outer_mul_add<T1, T2, T3>::operator()(const T1 &v1, const T2 &v2,
+                                      const T3 &v3) const noexcept {
+    // return v1 * v2 + v3;
+    return ntt::outer_product(v1, v2) + v3;
 }
 
 template <bool AccC, IsFixedTensor T1, IsFixedTensor T2, IsFixedTensor TResult>
