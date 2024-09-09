@@ -307,14 +307,14 @@ public sealed class PackMatMul : PackRule
             {
                 unpackAxes.Add(lhsAlign + lhsPackedAxes[mPackIndex]);
                 unpadNums.Add(lhsPadNums[mPackIndex]);
-                unpackLanes.Add(lhsAlign + lhsLanes[mPackIndex]);
+                unpackLanes.Add(lhsLanes[mPackIndex]);
             }
 
             if (nPackIndex != -1)
             {
                 unpackAxes.Add(rhsAlign + rhsPackedAxes[nPackIndex]);
                 unpadNums.Add(rhsPadNums[nPackIndex]);
-                unpackLanes.Add(rhsAlign + rhsLanes[nPackIndex]);
+                unpackLanes.Add(rhsLanes[nPackIndex]);
             }
 
             Expr post = matmul;
