@@ -17,6 +17,11 @@
 #include <fstream>
 #include <vector>
 
+#ifdef _WIN32
+#include <malloc.h>
+#define aligned_alloc(alignment, size) _aligned_malloc(size, alignment)
+#endif
+
 namespace nncase {
 template <typename T, std::size_t Alignment> class aligned_allocator {
   public:
@@ -32,7 +37,7 @@ template <typename T, std::size_t Alignment> class aligned_allocator {
             throw std::bad_alloc();
 
         if (auto ptr =
-                static_cast<T *>(std::aligned_alloc(alignment, n * sizeof(T))))
+                static_cast<T *>(aligned_alloc(alignment, n * sizeof(T))))
             return ptr;
 
         throw std::bad_alloc();
