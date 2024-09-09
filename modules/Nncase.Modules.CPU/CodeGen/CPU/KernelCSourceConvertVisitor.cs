@@ -17,6 +17,7 @@ using NetFabric.Hyperlinq;
 using Nncase.CodeGen.CPU;
 using Nncase.IR;
 using Nncase.Runtime;
+using Nncase.Targets;
 using Nncase.TIR;
 using Razor.Templating.Core;
 
@@ -117,8 +118,11 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
     private readonly HashSet<TIR.PrimFunction> _refFuncs;
     private readonly StringWriter _sharedWriter;
 
-    public KernelCSourceConvertVisitor(Targets.CpuTargetOptions targetOptions)
+    public KernelCSourceConvertVisitor(ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, CpuTargetOptions targetOptions)
     {
+        DataAlign = dataAlign;
+        DataUsage = dataUsage;
+        RdataPoolSize = rdataPoolSize;
         _kernelBuilder = new StringBuilder();
         _sharedBuilder = new StringBuilder();
         _sharedWriter = new StringWriter(_sharedBuilder);
@@ -131,13 +135,19 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 
     public int CallCount { get; private set; }
 
-    public Targets.CpuTargetOptions TargetOptions { get; }
+    public CpuTargetOptions TargetOptions { get; }
+
+    public ulong DataAlign { get; }
+
+    public ulong DataUsage { get; }
+
+    public ulong RdataPoolSize { get; }
 
     public KernelCSource GetCSource()
     {
         var ctype = $"void {VisitEntry.Name}({string.Join(", ", VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}").ToArray().Concat(_exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.Rdata).Select(Visit).Select(s => $" {s.Type} {s.Name}").ToArray()))}, uint8_t* data)";
         return new(
-            CSourceBuiltn.MakeMain(VisitEntry, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.Rdata), TargetOptions),
+            CSourceBuiltn.MakeMain(VisitEntry, DataAlign, DataUsage, RdataPoolSize, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.Rdata), TargetOptions),
             CSourceBuiltn.MakeKernel(ctype, _kernelBuilder.ToString()));
     }
 

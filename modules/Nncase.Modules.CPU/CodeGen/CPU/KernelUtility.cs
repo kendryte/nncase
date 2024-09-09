@@ -13,23 +13,6 @@ namespace Nncase.CodeGen.CPU;
 
 public static class KernelUtility
 {
-    public static ulong GetLength(TIR.Buffer buffer)
-    {
-        // Scalar
-        if (buffer.Dimensions.Length == 0)
-        {
-            return 1;
-        }
-
-        ulong length = 1;
-        foreach (var dim in buffer.Dimensions)
-        {
-            length *= ((TensorConst)dim).Value.Cast<ulong>()[0];
-        }
-
-        return length;
-    }
-
     public static string DimensionsToC(ReadOnlySpan<Expr> dimensions)
     {
         var sb = new StringBuilder("fixed_shape<");
