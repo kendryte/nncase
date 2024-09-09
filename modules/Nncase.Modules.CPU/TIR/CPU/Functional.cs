@@ -176,4 +176,9 @@ public partial class CPU
     {
         return new Call(new TIR.CPU.Compare(compareOp), lhs, rhs, output);
     }
+
+    public static Call ScatterND(Expr input, Expr indices, Expr updates, Expr output)
+    {
+        return new Call(new TIR.CPU.ScatterND(), input, indices, updates, output);
+    }
 }

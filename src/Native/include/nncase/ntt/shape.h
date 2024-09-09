@@ -225,6 +225,10 @@ template <class Index, class Strides>
 constexpr size_t linear_offset(const Index &index,
                                const Strides &strides) noexcept {
     size_t offset = 0;
+    if constexpr (index.rank() == 0 || strides.rank() == 0) {
+        return offset;
+    }
+
     for (size_t i = 0; i < index.rank(); i++) {
         offset += index[i] * strides[i];
     }

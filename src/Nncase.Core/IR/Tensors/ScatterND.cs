@@ -26,10 +26,10 @@ public sealed partial class ScatterND : Op
     /// <summary>
     /// Gets indices.
     /// </summary>
-    public static readonly ParameterInfo Indices = new(typeof(ScatterND), 1, "indices");
+    public static readonly ParameterInfo Indices = new(typeof(ScatterND), 1, "indices", ParameterKind.Input);
 
     /// <summary>
     /// Gets updates.
     /// </summary>
-    public static readonly ParameterInfo Updates = new(typeof(ScatterND), 2, "updates");
+    public static readonly ParameterInfo Updates = new(typeof(ScatterND), 2, "updates", ParameterKind.Input);
 }

@@ -32,6 +32,7 @@
 #include "kernels/reduce.h"
 #include "kernels/reduce_arg.h"
 #include "kernels/resize_image.h"
+#include "kernels/scatter_nd.h"
 #include "kernels/slice.h"
 #include "kernels/transpose.h"
 #include "kernels/unary.h"

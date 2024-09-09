@@ -1,7 +1,9 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Linq;
+using DryIoc;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
@@ -51,8 +53,15 @@ public class ScatterNDEvaluator : IEvaluator<ScatterND>, ITypeInferencer<Scatter
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, ScatterND target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, ScatterND.Input);
-        return input;
+        var input = context.CheckArgumentType<IRType>(target, ScatterND.Input);
+
+        // TODO: support other sbp
+        return input switch
+        {
+            TensorType => input,
+            DistributedType dt => dt.NdSBP.All(sbp => sbp is SBPBroadCast) ? input : new InvalidType("input type is not supported"),
+            _ => throw new NotSupportedException("input type is not supported"),
+        };
     }
 
     /// <inheritdoc/>

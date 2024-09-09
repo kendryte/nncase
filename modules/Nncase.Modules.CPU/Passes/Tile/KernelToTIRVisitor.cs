@@ -214,6 +214,9 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             case IR.Math.Compare compare:
                 _mainBody.Add(TIR.F.CPU.Compare(compare.CompareOp, arguments[0], arguments[1], ret));
                 break;
+            case IR.Tensors.ScatterND scatterND:
+                _mainBody.Add(TIR.F.CPU.ScatterND(arguments[0], arguments[1], arguments[2], ret));
+                break;
             default:
                 throw new NotSupportedException();
         }

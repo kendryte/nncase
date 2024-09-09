@@ -19,7 +19,7 @@ public static class PassUtility
             return true;
         }
 
-        return op is IR.Math.Unary or IR.Math.Binary { BinaryOp: BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div } or IR.Math.MatMul or IR.NN.Conv2D { PadMode: PadMode.Constant } or IR.NN.Softmax or IR.NN.LayerNorm or IR.NN.InstanceNormalization or IR.Imaging.ResizeImage { IsTFResize: false } or IR.Tensors.Unsqueeze or IR.Tensors.Reshape or IR.Tensors.Slice or IR.Tensors.Concat or IR.Tensors.Transpose or IR.NN.Swish or IR.Tensors.Gather or IR.NN.Pad { PadMode: PadMode.Constant } or IR.Math.Reduce or IR.Math.ReduceArg or IR.Math.Clamp or IR.NN.Erf or IR.Tensors.Cast or IR.Tensors.Expand or IR.Tensors.Where or IR.Math.Compare;
+        return op is IR.Math.Unary or IR.Math.Binary { BinaryOp: BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div } or IR.Math.MatMul or IR.NN.Conv2D { PadMode: PadMode.Constant } or IR.NN.Softmax or IR.NN.LayerNorm or IR.NN.InstanceNormalization or IR.Imaging.ResizeImage { IsTFResize: false } or IR.Tensors.Unsqueeze or IR.Tensors.Reshape or IR.Tensors.Slice or IR.Tensors.Concat or IR.Tensors.Transpose or IR.NN.Swish or IR.Tensors.Gather or IR.NN.Pad { PadMode: PadMode.Constant } or IR.Math.Reduce or IR.Math.ReduceArg or IR.Math.Clamp or IR.NN.Erf or IR.Tensors.Cast or IR.Tensors.Expand or IR.Tensors.Where or IR.Math.Compare or IR.Tensors.ScatterND;
     }
 
     public static bool IsCpuSupported(Op op, Expr expr, IEnumerable<Expr> arguments)
