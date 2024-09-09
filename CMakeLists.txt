@@ -64,6 +64,9 @@ if(ENABLE_DUMP_MEM)
     add_definitions(-DDUMP_MEM)
 endif()
 
+set(NTT_UNROOL_NUM 1 CACHE STRING "Set the unroll number for loop unrolling")
+add_compile_definitions(NTT_UNROOL_NUM=${NTT_UNROOL_NUM})
+
 # Workaroud for riscv toolchain auto vectorization bugs in O3
 if (${CMAKE_SYSTEM_PROCESSOR} MATCHES
    "(riscv32)|(riscv64)")
@@ -86,6 +89,9 @@ if (APPLE)
 else ()
     set(CMAKE_INSTALL_RPATH "$ORIGIN")
 endif()
+
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 if (MSVC)
     add_definitions(/D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS /D_CRT_SECURE_NO_WARNINGS /DNOMINMAX)

@@ -19,3 +19,9 @@ set(CMAKE_FIND_ROOT_PATH "${RISCV_ROOT_PATH}/riscv64-unknown-linux-gnu")
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=rv64gv_zvl128b_zfh -mrvv-vector-bits=zvl")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=rv64gcv_zvl128b_zfh -mrvv-vector-bits=zvl")
+
+set(CMAKE_CXX_STANDARD 20)
+set(BUILDING_RUNTIME ON)

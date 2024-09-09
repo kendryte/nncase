@@ -60,24 +60,24 @@ void log_softmax_step1(int n, const float *x, float *y) {
     int nn = n;
     float sum = 0.0f;
     for (; n > 0; n -= vl) {
-        vl = vsetvl_e32m8(n);
-        vfloat32m8_t _p = vle32_v_f32m8(src_bak, vl);
-        vfloat32m1_t _sum = vfmv_s_f_f32m1(vundefined_f32m1(), sum, vl);
+        vl = __riscv_vsetvl_e32m8(n);
+        vfloat32m8_t _p = __riscv_vle32_v_f32m8(src_bak, vl);
+        vfloat32m1_t _sum = __riscv_vfmv_s_f_f32m1(sum, vl);
 
-        _p = vfsub_vf_f32m8(_p, max_value, vl);
+        _p = __riscv_vfsub_vf_f32m8(_p, max_value, vl);
         _p = exp_ps(_p, vl);
 
-        _sum = vfredusum_vs_f32m8_f32m1(_sum, _p, /* scalar*/ _sum, vl);
+        _sum = __riscv_vfredusum_vs_f32m8_f32m1(_p, /* scalar*/ _sum, vl);
 
-        sum = vfmv_f_s_f32m1_f32(_sum);
+        sum = __riscv_vfmv_f_s_f32m1_f32(_sum);
         src_bak += vl;
     }
     sum = logf(sum) + max_value;
     for (; nn > 0; nn -= vl) {
-        vl = vsetvl_e32m8(nn);
-        vfloat32m8_t _p = vle32_v_f32m8(x, vl);
-        _p = vfsub_vf_f32m8(_p, sum, vl);
-        vse32_v_f32m8(y, _p, vl);
+        vl = __riscv_vsetvl_e32m8(nn);
+        vfloat32m8_t _p = __riscv_vle32_v_f32m8(x, vl);
+        _p = __riscv_vfsub_vf_f32m8(_p, sum, vl);
+        __riscv_vse32_v_f32m8(y, _p, vl);
         y += vl;
         x += vl;
     }
@@ -86,28 +86,28 @@ void log_softmax_step1(int n, const float *x, float *y) {
 void log_softmax_block(int len, int real_blocksize, const float *x, float *dx,
                        int data_stride) {
     size_t vl;
-    vl = vsetvl_e32m8(real_blocksize);
+    vl = __riscv_vsetvl_e32m8(real_blocksize);
     assert((int)vl == real_blocksize);
-    vfloat32m8_t max_sf = vfmv_v_f_f32m8(-FLT_MAX, vl);
-    vfloat32m8_t sum_sf = vfmv_v_f_f32m8(0.0f, vl);
+    vfloat32m8_t max_sf = __riscv_vfmv_v_f_f32m8(-FLT_MAX, vl);
+    vfloat32m8_t sum_sf = __riscv_vfmv_v_f_f32m8(0.0f, vl);
     for (int32_t i = 0; i < len; i++) {
-        vfloat32m8_t v_in = vle32_v_f32m8(x + i * data_stride, vl);
-        max_sf = vfmax_vv_f32m8(max_sf, v_in, vl);
+        vfloat32m8_t v_in = __riscv_vle32_v_f32m8(x + i * data_stride, vl);
+        max_sf = __riscv_vfmax_vv_f32m8(max_sf, v_in, vl);
     }
     for (int32_t i = 0; i < len; i++) {
-        vfloat32m8_t v_in = vle32_v_f32m8(x + i * data_stride, vl);
-        vfloat32m8_t vsub_data = vfsub_vv_f32m8(v_in, max_sf, vl);
+        vfloat32m8_t v_in = __riscv_vle32_v_f32m8(x + i * data_stride, vl);
+        vfloat32m8_t vsub_data = __riscv_vfsub_vv_f32m8(v_in, max_sf, vl);
         vsub_data = exp_ps(vsub_data, vl);
-        sum_sf = vfadd_vv_f32m8(sum_sf, vsub_data, vl);
+        sum_sf = __riscv_vfadd_vv_f32m8(sum_sf, vsub_data, vl);
     }
 
     sum_sf = log_ps(sum_sf, vl);
 
     for (int32_t i = 0; i < len; i++) {
-        vfloat32m8_t v_in = vle32_v_f32m8(x + i * data_stride, vl);
-        vfloat32m8_t vsub_data = vfsub_vv_f32m8(v_in, sum_sf, vl);
-        vsub_data = vfsub_vv_f32m8(vsub_data, max_sf, vl);
-        vse32_v_f32m8(dx + i * data_stride, vsub_data, vl);
+        vfloat32m8_t v_in = __riscv_vle32_v_f32m8(x + i * data_stride, vl);
+        vfloat32m8_t vsub_data = __riscv_vfsub_vv_f32m8(v_in, sum_sf, vl);
+        vsub_data = __riscv_vfsub_vv_f32m8(vsub_data, max_sf, vl);
+        __riscv_vse32_v_f32m8(dx + i * data_stride, vsub_data, vl);
     }
 }
 

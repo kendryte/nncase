@@ -43,7 +43,7 @@ class basic_vector
     static basic_vector<T, Lanes...> from_scalar(T value) noexcept;
 
     constexpr basic_vector() noexcept = default;
-    constexpr basic_vector(buffer_type buffer) noexcept
+    constexpr basic_vector(const buffer_type &buffer) noexcept
         : buffer_(std::move(buffer)) {}
     constexpr explicit basic_vector(element_type value) noexcept
         : basic_vector(from_scalar(value)) {}
