@@ -40,12 +40,13 @@ template <class TLhs, class TRhs, class TOut> class compare_impl {
 };
 } // namespace detail
 
-template <template <class T> class Op, class TLhs, class TRhs,
-          class TOut>
+template <template <class T> class Op, class TLhs, class TRhs, class TOut>
 void compare(const TLhs &lhs, const TRhs &rhs, TOut &&output) {
-    static_assert(std::is_same_v<typename TLhs::element_type, typename TRhs::element_type>, "compare only support same element type now");
+    static_assert(std::is_same_v<typename TLhs::element_type,
+                                 typename TRhs::element_type>,
+                  "compare only support same element type now");
     Op<typename TLhs::element_type> op;
     detail::compare_impl<std::decay_t<TLhs>, std::decay_t<TRhs>,
-                        std::decay_t<TOut>>()(op, lhs, rhs, output);
+                         std::decay_t<TOut>>()(op, lhs, rhs, output);
 }
 } // namespace nncase::ntt
