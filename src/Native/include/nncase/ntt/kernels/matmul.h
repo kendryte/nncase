@@ -90,13 +90,6 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
             return;
         }
 
-        if constexpr (LhsPackedAxes::rank() == 1 &&
-                      LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
-                      RhsPackedAxes::rank() == 1 &&
-                      RhsPackedAxes::at(0) == TRhs::rank() - 1) {
-            return;
-        }
-
         for (size_t k = 1; k < K; k++) {
             outer_product<true>(lhs_p, rhs_p, out_p, M, N, K, lhs_stride,
                                 rhs_stride, out_stride);
@@ -134,20 +127,6 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                 output += out_stride;
             }
         }
-
-        // 2. 1D-packing: pack M & N
-        else if constexpr (LhsPackedAxes::rank() == 1 &&
-                           LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
-                           RhsPackedAxes::rank() == 1 &&
-                           RhsPackedAxes::at(0) == TRhs::rank() - 1) {
-            auto lhs_mp = lhs;
-            for (size_t m = 0; m < M; m++) {
-                mul_add<AccC>(lhs_mp, rhs, output, N, K, rhs_stride);
-                lhs_mp += lhs_stride;
-                output += out_stride;
-            }
-        }
-
         // 3. Other Case
         else {
             auto lhs_mp = lhs;
@@ -210,30 +189,6 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                         (*output)(m) =
                             AccumulateC || k > 0 ? (*output)(m) + value : value;
                     }
-                    lhs_mp++;
-                    rhs_mp += rhs_stride;
-                }
-                rhs++;
-                output++;
-            }
-        }
-
-        // 2. 1D-packing: pack M & N
-        else if constexpr (LhsPackedAxes::rank() == 1 &&
-                           LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
-                           RhsPackedAxes::rank() == 1 &&
-                           RhsPackedAxes::at(0) == TRhs::rank() - 1) {
-
-            for (size_t i = 0; i < extent; i++) {
-                auto rhs_mp = rhs;
-                auto lhs_mp = lhs;
-                for (size_t k = 0; k < K; k++) {
-                    auto value = ntt::outer_product(*lhs_mp, *rhs_mp);
-                    if (AccumulateC || k > 0) {
-                        // *output = *output + value;
-                        *output = ntt::outer_mul_add(*lhs_mp, *rhs_mp, *output);
-                    } else
-                        *output = value;
                     lhs_mp++;
                     rhs_mp += rhs_stride;
                 }
