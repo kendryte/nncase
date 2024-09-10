@@ -163,8 +163,11 @@ subgraph A
 
 ```
 
+> If you have utilized pre-processing configurations when compiling the `kmodel`, when you need to verify the results using the `ONNX` or `TFLite` framework, you must add the corresponding pre-processing operations to your `ONNX` or `TFLite` pipeline to ensure equivalence between the `kmodel` pipeline.
+
+
 ##### Dynamice shape args
-Refer to[Dynamic shape args description](./shape_bucket.md)
+Refer to [Dynamic shape args description](./shape_bucket.md)
 
 #### Example
 
