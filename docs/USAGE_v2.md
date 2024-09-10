@@ -161,6 +161,9 @@ subgraph A
     end
 
 ```
+
+>如果你在编译`kmodel`时使用了前处理相关的配置，当你需要使用`ONNX`或者`TFLite`框架进行结果验证时，需要在你的`ONNX`或者`TFLite` pipeline中增加相应的前处理操作，这样才能保证和`kmodel` pipeline是等价的。
+
 ##### 动态shape参数
 详见[动态shape参数说明](./shape_bucket.md)
 
