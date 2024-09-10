@@ -41,27 +41,26 @@ template <template <typename T1, typename T2> class Op, class TElem,
           size_t UnRoolNum, size_t LoopCnt, size_t Stride>
 auto loop_unrool(const TElem *input) {
 
-    // static_assert(UnRoolNum <= LoopCnt, "UnRoolNum must be less than
-    // LoopCnt");
     static_assert(UnRoolNum > 0, "UnRoolNum must be greater than zero");
     static_assert(UnRoolNum < 9, "UnRoolNum must be less than 9");
+    constexpr size_t UnRollNumReal = UnRoolNum <= LoopCnt ? UnRoolNum : LoopCnt;
     TElem ret;
     TElem rets[UnRoolNum];
 
     Op<TElem, TElem> op;
 
-    for (size_t i = 0; i < UnRoolNum; i++) {
+    for (size_t i = 0; i < UnRollNumReal; i++) {
         rets[i] = input[i * Stride];
     }
 
-    constexpr size_t remainder = LoopCnt % UnRoolNum;
+    constexpr size_t remainder = LoopCnt % UnRollNumReal;
     constexpr size_t integer = LoopCnt - remainder;
-    for (size_t i = UnRoolNum; i < integer; i += UnRoolNum) {
+    for (size_t i = UnRollNumReal; i < integer; i += UnRollNumReal) {
         UNROLL_LOOP(i, rets, input, Stride, op, true)
     }
 
     ret = rets[0];
-    for (size_t i = 1; i < UnRoolNum; i++) {
+    for (size_t i = 1; i < UnRollNumReal; i++) {
         ret = op(ret, rets[i]);
     }
 

@@ -28,17 +28,28 @@ template <template <class, class> class Op, class TElem, IsFixedDims Axes,
           IsFixedDims PackedAxes>
 constexpr size_t unroll_arch() {
 #if defined(__riscv)
-    return 1;
+    return 2;
 #elif defined(__x86_64__)
-    constexpr bool is_pattern =
+    constexpr bool is_pattern0 =
         (Axes::rank() == 1) && (PackedAxes::rank() == 0);
-    constexpr bool is_op =
+    constexpr bool is_op0 =
         std::is_same_v<Op<TElem, TElem>, ntt::ops::mean<TElem, TElem>> ||
         std::is_same_v<Op<TElem, TElem>, ntt::ops::add<TElem, TElem>>;
-    if (is_pattern && is_op) {
+
+    constexpr bool is_pattern1 =
+        (Axes::rank() == 2) && (PackedAxes::rank() == 0);
+    constexpr bool is_op1 =
+        std::is_same_v<Op<TElem, TElem>, ntt::ops::max<TElem, TElem>> ||
+        std::is_same_v<Op<TElem, TElem>, ntt::ops::min<TElem, TElem>>;
+
+    if (is_pattern0 && is_op0) {
+        return 4;
+    }
+
+    if (is_pattern1 && is_op1) {
         return 1;
     }
-    return 1;
+    return 2;
 #else
     return 1;
 #endif
