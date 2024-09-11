@@ -38,7 +38,7 @@ if(ENABLE_OPENMP)
 endif()
 
 if(APPLE)
-  target_compile_options(kernels PRIVATE -Wno-gnu-zero-variadic-macro-arguments)  
+    target_compile_options(kernels PRIVATE -Wno-gnu-zero-variadic-macro-arguments)
 endif(APPLE)
 
 

@@ -108,6 +108,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern4>();
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern5>();
+            p.Add<Passes.Rules.Neutral.ConvertLayerNormChannelFirstToLast>();
             p.Add<Passes.Rules.Neutral.FoldGeluWithScale>();
             p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
             p.Add<Passes.Rules.Neutral.FoldSwishPattern1>();
@@ -142,6 +143,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldTwoPads>();
             p.Add<Passes.Rules.Neutral.SwapBinaryArgs>();
             p.Add<Passes.Rules.Neutral.FoldDilatedConv2D>();
+            p.Add<Passes.Rules.Neutral.PowOf2ToSquare>();
         });
 
         passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>

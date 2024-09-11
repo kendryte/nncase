@@ -13,14 +13,15 @@ namespace Nncase.Importer
     {
         private Expr VisitReduce(in NodeProto op, ReduceOp reduceOp, Expr initValue)
         {
-            return ReduceCore(op, reduceOp, initValue, expr => expr);
+            return ReduceCore(op, reduceOp, initValue, expr => expr, GetOpSet(op));
         }
 
-        private Expr ReduceCore(in NodeProto op, ReduceOp reduceOp, Expr initValue, Func<Expr, Expr> f)
+        private Expr ReduceCore(in NodeProto op, ReduceOp reduceOp, Expr initValue, Func<Expr, Expr> f, long opVersion = 999)
         {
             var input = GetInputExpr(op, 0);
             Expr axis;
-            if (GetOpSet(op) < 18)
+
+            if ((reduceOp == ReduceOp.Sum && opVersion < 13) || (reduceOp != ReduceOp.Sum && GetOpSet(op) < 18))
             {
                 axis = GetAxesAttribute(op, input);
             }
@@ -63,7 +64,9 @@ namespace Nncase.Importer
 
         private Expr ReduceSumZero(in NodeProto op, Func<Expr, Expr> f)
         {
-            return ReduceCore(op, ReduceOp.Sum, 0f, f);
+            // Reduce_sum opVersion 13 == other reduce opVersion 18. Axis is not Attributes.
+            // If GetOpSet(op) > 13, use reduce_sum opVersion 11. Axis is Attributes.
+            return ReduceCore(op, ReduceOp.Sum, 0f, f, GetOpSet(op) >= 18 ? 13 : 11);
         }
 
         private Expr VisitReduceL1(in NodeProto op)
