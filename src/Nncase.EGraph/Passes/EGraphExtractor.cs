@@ -29,54 +29,81 @@ internal class EGraphExtractor
         var cpmodel = new CpModel();
 
         // 0. create bool var for all enode.
-        var vars = new Dictionary<ENode, BoolVar>();
-        foreach (var item in eGraph.Nodes.Select((e, i) => (e, i)))
+        var varMemo = new Dictionary<ENode, BoolVar>();
+        foreach (var cls in eGraph.Classes)
         {
-            vars.Add(item.e, cpmodel.NewBoolVar(item.i.ToString()));
+            foreach (var (e, i) in cls.Nodes.Select((e, i) => (e, i)))
+            {
+                varMemo.Add(e, cpmodel.NewBoolVar($"{cls.Id}_{i}"));
+            }
         }
 
         // 1. must pick one in root enode.
-        cpmodel.AddBoolOr(root.Nodes.Select(n => vars[n]).ToArray());
+        cpmodel.AddBoolOr(root.Nodes.Select(n => varMemo[n]).ToArray());
 
         // 2. when pick node, must pick one child node.
         foreach (var n in eGraph.Nodes)
         {
-            var ns = new[] { vars[n].Not() };
+            var ns = new[] { varMemo[n].Not() };
             foreach (var child in n.Children)
             {
-                cpmodel.AddBoolOr(ns.Concat(child.Nodes.Select(cn => vars[cn])));
+                cpmodel.AddBoolOr(ns.Concat(child.Nodes.Select(cn => varMemo[cn])));
             }
         }
 
         // 3. no cycle
         {
-            // 1. first simplify const folding.
-            var visited = new Dictionary<ENode, bool>();
-            foreach (var eclass in eGraph.Classes)
+            var hgraph = ToHyperGraph(root);
+            var class_cycles = FindCycles(hgraph);
+            foreach (var cycle in class_cycles)
             {
-                if (eclass.Nodes.Count > 1 && eclass.Nodes.Count(e => e.Expr is Const) == 1)
+                if (cycle.Count == 1)
                 {
-                    foreach (var enode in eclass.Nodes.Where(e => e.Expr is not Const))
+                    foreach (var n in cycle[0].Nodes)
                     {
-                        if (!visited.ContainsKey(enode))
+                        if (n.Children.Contains(cycle[0]))
                         {
-                            cpmodel.AddAssumption(vars[enode].Not());
-                            visited.Add(enode, true);
+                            cpmodel.AddAssumption(varMemo[n].Not());
                         }
                     }
                 }
-            }
+                else
+                {
+                    // build clauses.
+                    var clauses = new List<List<BoolVar>>();
+                    for (int i = 0; i < cycle.Count; i++)
+                    {
+                        var next_hop = (i + 1) % cycle.Count;
+                        var u = hgraph.Edges(cycle[i])!;
+                        var v = u[cycle[next_hop]];
+                        clauses.Add(v.Select(n => varMemo[n]).ToList());
+                    }
 
-            EliminateAllCycles(root, new(), new(), visited, cpmodel, vars);
+                    var clauseMemo = new Dictionary<int, BoolVar>();
+                    for (int i = 0; i < clauses.Count; i++)
+                    {
+                        var clause = clauses[i];
+                        if (clause.Count > 1)
+                        {
+                            var tmpV = cpmodel.NewBoolVar(string.Empty);
+                            cpmodel.AddBoolAnd(clause.Select(c => c.Not())).OnlyEnforceIf(tmpV);
+                            cpmodel.AddBoolOr(clause).OnlyEnforceIf(tmpV.Not());
+                            clauseMemo.Add(i, tmpV);
+                        }
+                    }
+
+                    cpmodel.AddBoolOr(clauses.Select((c, i) => (c, i)).Select(p => p.c.Count == 1 ? p.c[0].Not() : clauseMemo[p.i]));
+                }
+            }
         }
 
         foreach (var constrain in constrains)
         {
-            constrain(cpmodel, vars);
+            constrain(cpmodel, varMemo);
         }
 
         // 3. add pick weights for all enode.
-        cpmodel.Minimize(LinearExpr.WeightedSum(eGraph.Nodes.Select(n => vars[n]), eGraph.Nodes.Select(n => checked((long)_costModel[n].Score))));
+        cpmodel.Minimize(LinearExpr.WeightedSum(eGraph.Nodes.Select(n => varMemo[n]), eGraph.Nodes.Select(n => checked((long)_costModel[n].Score))));
 
         if (cpmodel.Validate().Any())
         {
@@ -117,7 +144,7 @@ internal class EGraphExtractor
         using (var dumpStream = enableDump ? DumpScope.Current.OpenFile("Costs/Solve.txt") : Stream.Null)
         {
             using var writer = new StreamWriter(dumpStream);
-            var cb = new PrintCostCallBack(vars, _costModel, writer, enableDump);
+            var cb = new PrintCostCallBack(varMemo, _costModel, writer, enableDump);
             status = solver.Solve(cpmodel, cb);
             writer.WriteLine($"Status : {status}");
             dumpStream.Flush();
@@ -128,7 +155,7 @@ internal class EGraphExtractor
             throw new InvalidProgramException("SatExtract Failed!");
         }
 
-        var picks = eGraph.Nodes.ToDictionary(e => e, e => solver.BooleanValue(vars[e]));
+        var picks = eGraph.Nodes.ToDictionary(e => e, e => solver.BooleanValue(varMemo[e]));
         using (var dumpStream = enableDump ? DumpScope.Current.OpenFile("Costs/Pick.dot") : Stream.Null)
         {
             EGraphPrinter.DumpEgraphAsDot(eGraph, _costModel, picks, root.Find(), dumpStream);
@@ -137,52 +164,190 @@ internal class EGraphExtractor
         return new SatExprBuildVisitor(picks).Visit(root);
     }
 
-    private void EliminateAllCycles(EClass root, LinkedList<(EClass Class, ENode Node)> path, Dictionary<EClass, LinkedListNode<(EClass Class, ENode Node)>> pathMemo, Dictionary<ENode, bool> visited, CpModel cpModel, Dictionary<ENode, BoolVar> vars)
+    private static HyperGraph ToHyperGraph(EClass root)
     {
-        // note how to avoid duplicate visit same cycle ?
-        // simulate the extract, disable the all cycle path.
-        // when detect the cycle, do not pick the cycle path
-        if (pathMemo.TryGetValue(root, out _))
+        var hgraph = new HyperGraph();
+        var visited = new HashSet<EClass>();
+        var queue = new Queue<EClass>();
+        queue.Enqueue(root);
+        visited.Add(root);
+        while (queue.Any())
         {
-            var (_, node) = path.Last!.Value;
-            cpModel.AddAssumption(vars[node].Not());
-
-            // var cycle = new List<BoolVar>();
-            // do
-            // {
-            //     cycle.Add(vars[oldNode!.Value.Node]);
-            //     oldNode = oldNode.Next;
-            // } while (oldNode is not null);
-
-            // if (cycle.Count == 1)
-            // {
-            //     // eg. eclass: [marker(x) , x], don't pick marker.
-            //     cpModel.AddAssumption(cycle[0].Not());
-            // }
-            // else
-            // {
-            //     // note maybe we just do not pick backward node?
-            //     cpModel.Add(cpModel.NewConstant(cycle.Count) != LinearExpr.Sum(cycle));
-            // }
-            return;
-        }
-
-        foreach (var enode in root.Nodes)
-        {
-            if (!visited.ContainsKey(enode))
+            var front = queue.Dequeue();
+            foreach (var node in front.Nodes)
             {
-                foreach (var ch in enode.Children)
+                foreach (var ch in node.Children)
                 {
-                    var linkNode = path.AddLast((root, enode));
-                    pathMemo.Add(root, linkNode);
-                    EliminateAllCycles(ch, path, pathMemo, visited, cpModel, vars);
-                    path.Remove(linkNode);
-                    pathMemo.Remove(root);
+                    var canonical = ch;
+                    hgraph.Connect(front, canonical, node);
+                    if (!visited.Contains(canonical))
+                    {
+                        visited.Add(canonical);
+                        queue.Enqueue(canonical);
+                    }
                 }
-
-                visited.Add(enode, true);
             }
         }
+
+        return hgraph;
+    }
+
+    private static void SCCImpl(EClass v, HyperGraph graph, Dictionary<EClass, int> num, Dictionary<EClass, int> low, Stack<EClass> stack, HashSet<EClass> visited, HashSet<EClass> onstack, ref int idx, List<List<EClass>> scc)
+    {
+        num[v] = idx;
+        low[v] = idx;
+        idx++;
+        visited.Add(v);
+        stack.Push(v);
+        onstack.Add(v);
+
+        foreach (var u in graph.Neighbors(v))
+        {
+            if (!visited.Contains(u))
+            {
+                SCCImpl(u, graph, num, low, stack, visited, onstack, ref idx, scc);
+                low[v] = Math.Min(low[v], low[u]);
+            }
+            else if (onstack.Contains(u))
+            {
+                low[v] = Math.Min(low[v], num[u]);
+            }
+        }
+
+        if (low[v] == num[v])
+        {
+            var sccFound = new List<EClass>();
+            EClass sccRt;
+            do
+            {
+                sccRt = stack.Pop();
+                onstack.Remove(sccRt);
+                sccFound.Add(sccRt);
+            } while (sccRt.Id != v.Id);
+            scc.Add(sccFound);
+        }
+    }
+
+    private static List<List<EClass>> FindSCC(HyperGraph graph)
+    {
+        var num = new Dictionary<EClass, int>();
+        var low = new Dictionary<EClass, int>();
+        var visited = new HashSet<EClass>();
+        var processed = new HashSet<EClass>();
+        var stack = new Stack<EClass>();
+        int idx = 0;
+        var scc = new List<List<EClass>>();
+
+        foreach (var v in graph.Nodes().OrderBy(n => n.Id))
+        {
+            if (!visited.Contains(v))
+            {
+                SCCImpl(v, graph, num, low, stack, visited, processed, ref idx, scc);
+            }
+        }
+
+        return scc;
+    }
+
+    private static void Unblock(EClass v, HashSet<EClass> blocked, Dictionary<EClass, HashSet<EClass>> blockedMap)
+    {
+        blocked.Remove(v);
+        if (blockedMap.TryGetValue(v, out var blockedSet))
+        {
+            var worklist = blockedSet.ToList();
+            foreach (var w in worklist)
+            {
+                if (blocked.Contains(w))
+                {
+                    Unblock(w, blocked, blockedMap);
+                }
+            }
+        }
+    }
+
+    private static bool JohnsonAlgImpl(
+        EClass s,
+        EClass v,
+        HyperGraph graph,
+        HashSet<EClass> blocked,
+        List<EClass> stack,
+        Dictionary<EClass, HashSet<EClass>> blockMap,
+        List<List<EClass>> cycles)
+    {
+        bool f = false;
+        blocked.Add(v);
+        stack.Add(v);
+
+        foreach (var w in graph.Neighbors(v))
+        {
+            if (w.Equals(s))
+            {
+                f = true;
+                cycles.Add(new List<EClass>(stack));
+            }
+            else if (!blocked.Contains(w))
+            {
+                f = JohnsonAlgImpl(s, w, graph, blocked, stack, blockMap, cycles) || f;
+            }
+        }
+
+        if (f)
+        {
+            Unblock(v, blocked, blockMap);
+        }
+        else
+        {
+            foreach (var w in graph.Neighbors(v))
+            {
+                if (!blockMap.ContainsKey(w))
+                {
+                    blockMap[w] = new HashSet<EClass>();
+                }
+
+                blockMap[w].Add(v);
+            }
+        }
+
+        stack.RemoveAt(stack.Count - 1);
+        return f;
+    }
+
+    private static List<List<EClass>> FindCycles(HyperGraph hgraph)
+    {
+        var scc = FindSCC(hgraph)
+            .Where(c => c.Count > 1)
+            .ToList();
+
+        var cycles = new List<List<EClass>>();
+        foreach (var n in hgraph.Nodes())
+        {
+            if (hgraph.Neighbors(n).Contains(n))
+            {
+                cycles.Add(new List<EClass> { n });
+            }
+        }
+
+        var blocked = new HashSet<EClass>();
+        var blockMap = new Dictionary<EClass, HashSet<EClass>>();
+        var stack = new List<EClass>();
+
+        while (scc.Count > 0)
+        {
+            var curScc = scc[scc.Count - 1];
+            scc.RemoveAt(scc.Count - 1);
+            var subgraph = hgraph.SubGraph(curScc);
+
+            for (int i = 0; i < curScc.Count; i++)
+            {
+                blocked.Clear();
+                blockMap.Clear();
+                var v = subgraph.GetIdByNode(i);
+                JohnsonAlgImpl(v, v, subgraph, blocked, stack, blockMap, cycles);
+                subgraph.RemoveNodeRaw(i);
+            }
+        }
+
+        return cycles;
     }
 }
 
@@ -277,5 +442,176 @@ internal sealed class SatExprBuildVisitor
         _memo.Add(root, expr);
 
         return expr;
+    }
+}
+
+internal sealed class HyperGraph
+{
+    private readonly Dictionary<int, Dictionary<int, HashSet<ENode>>> _edges;
+    private readonly HashSet<int> _nodes;
+    private readonly Dictionary<EClass, int> _ids_to_nodes;
+    private readonly Dictionary<int, EClass> _nodes_to_ids;
+    private int _num_nodes;
+
+    public HyperGraph()
+    {
+        _edges = new();
+        _nodes = new();
+        _ids_to_nodes = new();
+        _nodes_to_ids = new();
+        _num_nodes = 0;
+    }
+
+    public bool Contains(EClass id)
+    {
+        return _ids_to_nodes.ContainsKey(id);
+    }
+
+    public Dictionary<EClass, HashSet<ENode>>? Edges(EClass eclass)
+    {
+        if (Contains(eclass))
+        {
+            var result = new Dictionary<EClass, HashSet<ENode>>();
+            foreach (var (to, enodes) in _edges[_ids_to_nodes[eclass]])
+            {
+                result.Add(_nodes_to_ids[to], enodes);
+            }
+
+            return result;
+        }
+
+        return null;
+    }
+
+    public HashSet<EClass> Nodes()
+    {
+        return new(_nodes.Select(x => _nodes_to_ids[x]));
+    }
+
+    public void AddNode(EClass k)
+    {
+        var node_id = _num_nodes;
+        _ids_to_nodes.Add(k, node_id);
+        _nodes_to_ids.Add(node_id, k);
+        _edges.Add(node_id, new());
+        _nodes.Add(node_id);
+        _num_nodes += 1;
+    }
+
+    public void Connect(EClass cfrom, EClass cto, ENode enode)
+    {
+        if (!Contains(cfrom))
+        {
+            AddNode(cfrom);
+        }
+
+        if (!Contains(cto))
+        {
+            AddNode(cto);
+        }
+
+        var from = _ids_to_nodes[cfrom];
+        var to = _ids_to_nodes[cto];
+        if (!_edges[from].ContainsKey(to))
+        {
+            _edges[from].Add(to, new HashSet<ENode>(new[] { enode }));
+        }
+        else
+        {
+            _edges[from][to].Add(enode);
+        }
+    }
+
+    public EClass[] Neighbors(EClass u)
+    {
+        if (Contains(u))
+        {
+            return _edges[_ids_to_nodes[u]].Keys.Select(x => _nodes_to_ids[x]).ToArray();
+        }
+
+        return Array.Empty<EClass>();
+    }
+
+    public int GetNodeById(EClass id)
+    {
+        return _ids_to_nodes[id];
+    }
+
+    public EClass GetIdByNode(int node)
+    {
+        return _nodes_to_ids[node];
+    }
+
+    public void RemoveNodeRaw(int node)
+    {
+        if (_nodes.Contains(node))
+        {
+            _edges.Remove(node);
+            foreach (var (_, v) in _edges)
+            {
+                v.Remove(node);
+            }
+
+            _nodes.Remove(node);
+        }
+    }
+
+    public void RemoveNode(EClass node)
+    {
+        var node_id = _ids_to_nodes[node];
+        if (Contains(node))
+        {
+            _edges.Remove(node_id);
+            foreach (var (_, v) in _edges)
+            {
+                v.Remove(node_id);
+            }
+
+            _nodes.Remove(node_id);
+        }
+    }
+
+    public int Size()
+    {
+        return _nodes.Count;
+    }
+
+    public HyperGraph SubGraph(IEnumerable<EClass> nodes)
+    {
+        var graph = new HyperGraph();
+        var node_set = new HashSet<EClass>(nodes);
+        foreach (var n in node_set)
+        {
+            var nedges = _edges[_ids_to_nodes[n]];
+            foreach (var (neighbor, enodes) in nedges)
+            {
+                if (!node_set.Contains(_nodes_to_ids[neighbor]))
+                {
+                    continue;
+                }
+
+                foreach (var enode in enodes)
+                {
+                    graph.Connect(n, _nodes_to_ids[neighbor], enode);
+                }
+            }
+        }
+
+        return graph;
+    }
+
+    public void Dump(string name)
+    {
+        using (var dumpStream = DumpScope.Current.OpenFile($"Costs/{name}.dot"))
+        {
+            using var writer = new StreamWriter(dumpStream);
+            foreach (var (u, v) in _edges)
+            {
+                foreach (var w in v.Keys)
+                {
+                    writer.WriteLine($"{_nodes_to_ids[u]} -> {_nodes_to_ids[w]}\n");
+                }
+            }
+        }
     }
 }
