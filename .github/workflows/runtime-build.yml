@@ -13,9 +13,9 @@ jobs:
     strategy:
       matrix:
         config:
-          - { name: x86_64-macos, os: macos-12, cmakeArgs: '', buildType: Release }
-          - { name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release }
-          - { name: x86_64-windows, os: windows-2019, arch: x64, cmakeArgs: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl, buildType: Release }
+          - { name: x86_64-macos, os: macos-12, buildType: Release }
+          - { name: x86_64-linux, os: ubuntu-latest, buildType: Release }
+          - { name: x86_64-windows, os: windows-2019, arch: x64, buildType: Release }
 
     steps:
       - uses: actions/checkout@v3
@@ -32,38 +32,36 @@ jobs:
           brew install sunnycase/core/libomp@11.1.0
         if: runner.os == 'Macos'
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.7
-
-      - name: Install Conan
+      - name: Set up build enviroment(Linux)
         run: |
-          pip install conan==1.58
-          conan remote add -i 0 sunnycase https://conan.sunnycase.moe
-
-      - name: Configure Conan (Linux)
-        run: |
-          conan profile new default --detect
-          conan profile update settings.compiler.libcxx=libstdc++11 default
-          conan profile update settings.compiler.version=10 default
           echo "CC=gcc-10" >> $GITHUB_ENV
           echo "CXX=g++-10" >> $GITHUB_ENV
         if: runner.os == 'Linux'
 
-      - name: Configure CMake
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.7
+      
+      - name: Install Conan
+        run: |
+          pip install conan==2.6.0
+          conan remote add sunnycase https://conan.sunnycase.moe --index 0
+
+      - name: Configure
         shell: bash
         run: |
-          conan install . -if build --build=missing -s build_type=${{matrix.config.buildType}} --profile=default -o runtime=True -o python=False -o tests=True -s compiler.cppstd=17
+          conan install . --build=missing -s build_type=${{matrix.config.buildType}} -pr:a=toolchains/${{matrix.config.name}}.profile.jinja -o "&:runtime=True" -o "&:python=True" -o "&:tests=True"
+          cmake --preset conan-release
 
       - name: Build & Install
         run: |
-          conan build . -if build -bf build
-          cmake --install build --prefix install
+          cmake --build build/${{matrix.config.buildType}} --config ${{matrix.config.buildType}}
+          cmake --install build/${{matrix.config.buildType}} --prefix install
 
       - name: Test
         run: |
-          cd build
+          cd build/${{matrix.config.buildType}}
           ctest -C ${{matrix.config.buildType}} --test-dir tests/kernels --output-on-failure -j4
         if: runner.os != 'Macos' && runner.os != 'Windows'
 
@@ -117,30 +115,24 @@ jobs:
 
       - name: Install Conan
         run: |
-          pip install conan==1.58
-          conan remote add -i 0 sunnycase https://conan.sunnycase.moe
+          pip install conan==2.6.0
+          conan remote add sunnycase https://conan.sunnycase.moe --index 0
 
-      - name: Configure Conan
+      - name: Configure
         run: |
-          conan profile new default --detect
-          conan profile update settings.compiler.libcxx=libstdc++11 default
-          conan config init
-          sed -i 's/xtensalx7]/xtensalx7, ${{matrix.config.arch}}]/g' ~/.conan/settings.yml
-
-      - name: Configure CMake
-        run: |
-          conan install . -if build --build=missing -s build_type=${{matrix.config.buildType}} --profile:host=toolchains/riscv64-unknown-linux.profile.jinja --profile:build=default -o runtime=True -o python=False -o tests=True -s compiler.cppstd=17
+          conan install . --build=missing -s build_type=${{matrix.config.buildType}} -pr:h=toolchains/${{matrix.config.name}}.profile.jinja -pr:b=toolchains/x86_64-linux.profile.jinja -o "&:runtime=True" -o "&:python=True" -o "&:tests=True"
+          cmake --preset conan-release
 
       - name: Build & Install
         run: |
-          conan build . -if build -bf build
-          cmake --install build --prefix install
+          cmake --build build/${{matrix.config.buildType}} --config ${{matrix.config.buildType}}
+          cmake --install build/${{matrix.config.buildType}} --prefix install
 
       - name: Test
         shell: bash
         run: |
-          cd build
-          ctest --test-dir tests/kernels --output-on-failure -j4
+          cd build/${{matrix.config.buildType}}
+          ctest -C ${{matrix.config.buildType}} --test-dir tests/kernels --output-on-failure -j4
 
       - name: Upload nncaseruntime Build Artifact
         uses: actions/upload-artifact@v3

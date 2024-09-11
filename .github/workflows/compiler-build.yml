@@ -17,9 +17,9 @@ jobs:
     strategy:
       matrix:
         config:
-          - {name: x86_64-macos, os: macos-12, cmakeArgs: -DENABLE_X86SIMD=OFF, buildType: Release}
-          - {name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release}
-          - {name: x86_64-windows, os: windows-2019, arch: x64, cmakeArgs: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl, buildType: Release}
+          - {name: x86_64-macos, os: macos-12, buildType: Release}
+          - {name: x86_64-linux, os: ubuntu-latest, buildType: Release}
+          - {name: x86_64-windows, os: windows-2019, arch: x64, buildType: Release}
 
     steps:
       - uses: actions/checkout@v3
@@ -48,17 +48,24 @@ jobs:
 
       - name: Configure Conan (Linux)
         run: |
-          conan profile new default --detect
-          conan profile update settings.compiler.libcxx=libstdc++11 default
+          # conan profile new default --detect
+          # conan profile update settings.compiler.libcxx=libstdc++11 default
           echo "CC=gcc-10" >> $GITHUB_ENV
           echo "CXX=g++-10" >> $GITHUB_ENV
         if: runner.os == 'Linux'
 
-      - name: Configure CMake
+      - name: Install Conan
         shell: bash
         run: |
-          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DPython3_ROOT_DIR=${pythonLocation}
+          pip install conan==2.6.0
+          conan remote add sunnycase https://conan.sunnycase.moe --index 0
 
+      - name: Configure
+        shell: bash
+        run: |
+          conan install . --build=missing -s build_type=${{matrix.config.buildType}} -pr:a=toolchains/${{matrix.config.name}}.profile.jinja -o "&:runtime=False" -o "&:python=True" -o "&:tests=False"
+          cmake --preset conan-release
+          
       - name: Build & Install
         run: |
           cmake --build build --config ${{matrix.config.buildType}}
