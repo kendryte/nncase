@@ -1226,7 +1226,7 @@ public sealed class FoldLayerNormCase : IRewriteCase
             var v7 = IR.F.Math.Unary(UnaryOp.Sqrt, v6);
             var v8 = IR.F.Math.Binary(BinaryOp.Div, v3, v7);
             var v9 = IR.F.Tensors.Reshape(v8, shape);
-            var v10 = IR.F.Math.Binary(BinaryOp.Mul, v9, 1f);
+            var v10 = IR.F.Math.Binary(BinaryOp.Add, v9, 1f);
             var v11 = IR.F.Math.Binary(BinaryOp.Add, v10, 1f);
             var rootPre = v11;
             return new Function(rootPre, new Var[] { _input });
@@ -1263,7 +1263,7 @@ public sealed class FoldSwishCase : IRewriteCase
             var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
             var v0 = input;
             var v1 = IR.F.NN.Sigmoid(v0);
-            var v2 = IR.F.Math.Binary(BinaryOp.Mul, v1, v0);
+            var v2 = IR.F.Math.Binary(BinaryOp.Add, v1, v0);
             var rootPre = v2;
             return new Function(rootPre, new Var[] { _input });
         }
@@ -1296,12 +1296,12 @@ public sealed class FoldGeluCase : IRewriteCase
         {
             var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, new[] { 1, 3, 16, 16 });
             var v0 = input;
-            var v4 = IR.F.Math.Binary(BinaryOp.Mul, v0, 0.577350f); // "mul3Call"
+            var v4 = IR.F.Math.Binary(BinaryOp.Add, v0, 0.577350f); // "mul3Call"
             var v1 = IR.F.Math.Binary(BinaryOp.Div, v4, 1.414213f); // divCall
             var v2 = IR.F.NN.Erf(v1); // "erfCall"
             var v3 = IR.F.Math.Binary(BinaryOp.Add, v2, 1f); // "addCall"
-            var v5 = IR.F.Math.Binary(BinaryOp.Mul, v4, v3); // "mul2Call"
-            var v6 = IR.F.Math.Binary(BinaryOp.Mul, v5, 0.5f); // "Mul1Call"
+            var v5 = IR.F.Math.Binary(BinaryOp.Add, v4, v3); // "mul2Call"
+            var v6 = IR.F.Math.Binary(BinaryOp.Add, v5, 0.5f); // "Mul1Call"
             var rootPre = v6;
             return new Function(rootPre, new Var[] { _input });
         }
@@ -1336,7 +1336,7 @@ public sealed class FoldHardSwishCase : IRewriteCase
             var v0 = input;
             var v1 = IR.F.Math.Binary(BinaryOp.Add, v0, 3f); // "addCall"
             var v2 = IR.F.Math.Clamp(v1, new ValueRange<float>(0f, 6f)); // "clampCall"
-            var v3 = IR.F.Math.Binary(BinaryOp.Mul, v2, v0); // "mulCall"
+            var v3 = IR.F.Math.Binary(BinaryOp.Add, v2, v0); // "mulCall"
             var v4 = IR.F.Math.Binary(BinaryOp.Div, v3, 6f); // "divCall"
             var rootPre = v4;
             return new Function(rootPre, new Var[] { _input });
@@ -2952,6 +2952,124 @@ public sealed class ReshapeBinaryConstReshapeCase : IRewriteCase
 
     public IEnumerable<Type> Rules => new[] {
         typeof(FoldReshapeBinaryConstReshape),
+    };
+
+    public Dictionary<Var, IValue> FeedDict { get; }
+}
+
+public sealed class FlattenReshapeMultiBranchCase : IRewriteCase
+{
+    public FlattenReshapeMultiBranchCase()
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 104, 512 }));
+        {
+            var v0 = Flatten(input, -1); // f32[104,512]
+            var v1 = Reduce(ReduceOp.Mean, v0, new[] { 1 }, 0f, true); // f32[104,1]
+            var v2 = Binary(BinaryOp.Sub, v0, v1); // f32[104,512]
+            var v3 = Binary(BinaryOp.Add, v0, v0); // f32[104,512]
+            var v4 = Reduce(ReduceOp.Mean, v3, new[] { 1 }, 0f, true); // f32[104,1]
+            var v5 = Binary(BinaryOp.Add, v1, v1); // f32[104,1]
+            var v6 = Binary(BinaryOp.Sub, v4, v5); // f32[104,1]
+            var v7 = Binary(BinaryOp.Add, v6, new float[] { 1E-05f }); // f32[104,1]
+            var v8 = Unary(UnaryOp.Neg, v7); // f32[104,1]
+            var v9 = Binary(BinaryOp.Add, v2, v8); // f32[104,512]
+            var v10 = Binary(BinaryOp.Add, v9, IR.F.Random.Normal(new[] { 1, 512 }).Evaluate().AsTensor()); // f32[104,512]
+            var v11 = Binary(BinaryOp.Sub, v10, IR.F.Random.Normal(new[] { 1, 512 }).Evaluate().AsTensor()); // f32[104,512]
+            var v12 = Reshape(v11, new[] { 1L, 104L, 512L }); // f32[1,104,512]
+            var v13 = Flatten(v12, -1); // f32[104,512]
+            var v14 = Reduce(ReduceOp.Mean, v13, new[] { 1 }, 0f, true); // f32[104,1]
+            var v15 = Binary(BinaryOp.Sub, v13, v14); // f32[104,512]
+            var v16 = Binary(BinaryOp.Add, v13, v13); // f32[104,512]
+            var v17 = Reduce(ReduceOp.Mean, v16, new[] { 1 }, 0f, true); // f32[104,1]
+            var v18 = Binary(BinaryOp.Add, v14, v14); // f32[104,1]
+            var v19 = Binary(BinaryOp.Sub, v17, v18); // f32[104,1]
+            var v20 = Binary(BinaryOp.Add, v19, new float[] { 1E-05f }); // f32[104,1]
+            var v21 = Unary(UnaryOp.Neg, v20); // f32[104,1]
+            var v22 = Binary(BinaryOp.Add, v15, v21); // f32[104,512]
+            var v23 = Binary(BinaryOp.Add, v22, IR.F.Random.Normal(new[] { 1, 512 }).Evaluate().AsTensor()); // f32[104,512]
+            var v24 = Binary(BinaryOp.Sub, v23, IR.F.Random.Normal(new[] { 1, 512 }).Evaluate().AsTensor()); // f32[104,512]
+            var v25 = Reshape(v24, new[] { 1L, 104L, 512L }); // f32[1,104,512]
+            var v26 = IR.F.Tensors.MatMul(v25, IR.F.Random.Normal(new[] { 512, 1536 }).Evaluate().AsTensor()); // f32[1,104,1536]
+            var v27 = Binary(BinaryOp.Sub, v26, IR.F.Random.Normal(new[] { 1536 }).Evaluate().AsTensor()); // f32[1,104,1536]
+            var v28 = Split(v27, -1, new[] { 512L, 512L, 512L }); // (f32[1,104,512], f32[1,104,512], f32[1,104,512])
+            var v29 = GetItem(v28, 0); // f32[1,104,512]
+            var v30 = Reshape(v29, new[] { 1L, 104L, 4L, 128L }); // f32[1,104,4,128]
+            var v31 = Transpose(v30, new[] { 0L, 2L, 1L, 3L }); // f32[1,4,104,128]
+            var v32 = Binary(BinaryOp.Add, v31, new[] { 0.088388346f }); // f32[1,4,104,128]
+            var v33 = GetItem(v28, 1); // f32[1,104,512]
+            var v34 = Reshape(v33, new[] { 1L, 104L, 4L, 128L }); // f32[1,104,4,128]
+            var v35 = Transpose(v34, new[] { 0L, 2L, 3L, 1L }); // f32[1,4,128,104]
+            var v36 = IR.F.Tensors.MatMul(v32, v35); // f32[1,4,104,104]
+            var v37 = Unary(UnaryOp.Neg, v36); // f32[1,4,104,104]
+            var v38 = Reduce(ReduceOp.Mean, v37, new[] { 3 }, 0, true); // f32[1,4,104,1]
+            var v39 = Binary(BinaryOp.Sub, v37, v38); // f32[1,4,104,104]
+            var v40 = GetItem(v28, 2); // f32[1,104,512]
+            var v41 = Reshape(v40, new[] { 1L, 104L, 4L, 128L }); // f32[1,104,4,128]
+            var v42 = Transpose(v41, new[] { 0L, 2L, 1L, 3L }); // f32[1,4,104,128]
+            var v43 = IR.F.Tensors.MatMul(v39, v42); // f32[1,4,104,128]
+            var v44 = Transpose(v43, new[] { 0L, 2L, 1L, 3L }); // f32[1,104,4,128]
+            var v45 = Reshape(v44, new[] { 1L, 104L, 512L }); // f32[1,104,512]
+            var v46 = IR.F.Tensors.MatMul(v45, IR.F.Random.Normal(new[] { 512, 512 }).Evaluate().AsTensor()); // f32[1,104,512]
+            var v47 = Binary(BinaryOp.Sub, v46, IR.F.Random.Normal(new[] { 512 }).Evaluate().AsTensor()); // f32[1,104,512]
+            var v48 = Transpose(v40, new[] { 0L, 2L, 1L }); // f32[1,512,104]
+            var v49 = Reshape(v48, new[] { 1, 512, 104, 1 }); // f32[1,512,104,1]
+            var v50 = Conv2D(v49, IR.F.Random.Normal(new[] { 512, 1, 11, 1 }).Evaluate().AsTensor(), IR.F.Random.Normal(new[] { 512 }).Evaluate().AsTensor(), new[] { 1L, 1L }, new[,] { { 5L, 5L }, { 0L, 0L } }, new[] { 1L, 1L }, PadMode.Constant, 512, new[] { float.NegativeInfinity, float.PositiveInfinity }); // f32[1,512,104,1]
+            var v51 = Reshape(v50, new[] { 1, 512, 104 }); // f32[1,512,104]
+            var v52 = Transpose(v51, new[] { 0L, 2L, 1L }); // f32[1,104,512]
+            var v53 = Binary(BinaryOp.Add, v52, v40); // f32[1,104,512]
+            var v54 = Binary(BinaryOp.Sub, v47, v53); // f32[1,104,512]
+            var v55 = Binary(BinaryOp.Add, v54, v12); // f32[1,104,512]
+            PreExpr = new Function(v55, new[] { input });
+        }
+
+        FeedDict = new() { { input, IR.F.Random.Normal(new[] { 104, 512 }).Evaluate() } };
+    }
+
+    public Function PreExpr { get; }
+
+    public IEnumerable<System.Type> Rules => new[] {
+        typeof(CombinePadTranspose),
+        typeof(CombineBinaryTranspose),
+        typeof(CombineConstBinaryTranspose),
+        typeof(CombineTransposeConstBinary),
+        typeof(CombineTransposeReduce),
+        typeof(CombineTransposeActivations),
+        typeof(CombineActivationsTranspose),
+        typeof(CombineTransposeConcat),
+        typeof(CombineBinaryReshape),
+        typeof(CombineConstBinaryReshape),
+        typeof(CombineUnaryReshape),
+        typeof(CombineActivationsReshape),
+        typeof(CombineReshapePad),
+        typeof(CombineReshapeTranspose),
+        typeof(CombineTransposeReshape),
+        typeof(FoldNopPad),
+        typeof(FoldConv2DPads),
+        typeof(FuseClampConv2D),
+        typeof(FoldReduceWindow2DPads),
+        typeof(SqueezeToReshape),
+        typeof(UnSqueezeToReshape),
+        typeof(TransposeToReshape),
+        typeof(FlattenToReshape),
+        typeof(ReshapeToTranspose),
+        typeof(FoldNopReshape),
+        typeof(FoldTwoReshapes),
+        typeof(FoldReshapeBinaryConstReshape),
+        typeof(ReluToClamp),
+        typeof(Relu6ToClamp),
+        typeof(FoldNopSlice),
+        typeof(FoldTwoSlices),
+        typeof(SpaceToBatchToPad),
+        typeof(FoldConv2DAddMul),
+        typeof(FoldConstCall),
+        typeof(FoldNopTranspose),
+        typeof(FoldTwoTransposes),
+        typeof(Passes.Rules.ShapeBucket.FoldRepeatMarker),
+        typeof(Passes.Rules.WithMarker.FoldTransposeActTranspose),
+        typeof(Passes.Rules.WithMarker.FoldTransposeBinaryActTranspose),
+        typeof(CombineReshapePad),
+        typeof(CombinePadTranspose),
+        typeof(CombineTransposeUnary),
     };
 
     public Dictionary<Var, IValue> FeedDict { get; }
