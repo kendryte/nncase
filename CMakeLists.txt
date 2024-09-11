@@ -55,7 +55,7 @@ option(ENABLE_RVV "Some kernel impl by rvv" OFF)
 option(ENABLE_DUMP_MEM "Dump mem usage" OFF)
 
 if (BUILDING_RUNTIME)
-    option(ENABLE_VULKAN_RUNTIME "Enable Vulkan runtime" OFF)
+    # option(ENABLE_VULKAN_RUNTIME "Enable Vulkan runtime" OFF)
     option(ENABLE_K210_RUNTIME "Enable k210 runtime" OFF)
     option(DEFAULT_BUILTIN_RUNTIMES "Use default builtin runtimes" ON)
     option(DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL "Use default shared memory platform impl" ON)

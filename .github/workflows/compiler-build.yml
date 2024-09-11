@@ -63,7 +63,7 @@ jobs:
       - name: Configure
         shell: bash
         run: |
-          conan install . --build=missing -s build_type=${{matrix.config.buildType}} -pr:a=toolchains/${{matrix.config.name}}.profile.jinja -o "&:runtime=False" -o "&:python=True" -o "&:tests=False" -c tools.system.package_manager:mode=install
+          conan install . --build=missing -s build_type=${{matrix.config.buildType}} -pr:a=toolchains/${{matrix.config.name}}.profile.jinja -o "&:runtime=False" -o "&:python=True" -o "&:tests=False" 
           cmake --preset conan-release
           
       - name: Build & Install
@@ -179,8 +179,8 @@ jobs:
           - {name: x86_64-linux, os: ubuntu-latest, shell: bash}
           - {name: x86_64-windows, os: windows-2019, shell: bash}
 
-    env:
-      VULKANSDK_VER: 1.3.268.0
+    # env:
+    #   VULKANSDK_VER: 1.3.268.0
 
     steps:
       - uses: actions/checkout@v3
@@ -204,42 +204,20 @@ jobs:
       - name: Set up test environment (macOS)
         run: |
           brew install sunnycase/core/libomp@11.1.0
-          aria2c --parameterized-uri=true https://{sdk.lunarg.com/sdk/download/${VULKANSDK_VER}/mac,distfiles.macports.org/MoltenVK}/vulkansdk-macos-${VULKANSDK_VER}.dmg
-          hdiutil attach ./vulkansdk-macos-*.dmg
-          sudo /Volumes/vulkansdk-macos-*/InstallVulkan.app/Contents/MacOS/InstallVulkan --root $HOME/VulkanSDK --accept-licenses --default-answer --confirm-command install
-          hdiutil detach /Volumes/vulkansdk-macos-*
-          echo "VULKAN_SDK=$HOME/VulkanSDK/macOS" >> $GITHUB_ENV
           wget https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-macos-10.15-x86_64.zip -O swiftshader.zip
           unzip swiftshader.zip
-          sudo cmake -E make_directory /usr/local/share/vulkan/icd.d
-          sudo cp lib/* /usr/local/share/vulkan/icd.d
           cp install/lib/*.dylib install/
           echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
         if: runner.os == 'macOS'
 
       - name: Set up test environment (Linux)
         run: |
-          wget https://sdk.lunarg.com/sdk/download/${VULKANSDK_VER}/linux/vulkansdk-linux-x86_64-${VULKANSDK_VER}.tar.xz -O vulkansdk.tar.xz
-          tar xf vulkansdk.tar.xz
-          sudo cp -P ${VULKANSDK_VER}/x86_64/lib/libvulkan.so* /usr/local/lib/
-          wget https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-ubuntu-18.04-x86_64.zip -O swiftshader.zip
-          unzip swiftshader.zip
-          sudo cmake -E make_directory /usr/local/share/vulkan/icd.d
-          sudo cp lib/* /usr/local/share/vulkan/icd.d
-          cp install/lib/*.so install/
           echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
         if: runner.os == 'Linux'
 
       - name: Set up test environment (Windows)
         shell: pwsh
         run: |
-          # Invoke-WebRequest -Uri https://sdk.lunarg.com/sdk/download/${env:VULKANSDK_VER}/windows/VulkanSDK-${env:VULKANSDK_VER}-Installer.exe -O VulkanSDK-Installer.exe
-          # .\VulkanSDK-Installer.exe /S
-          Invoke-WebRequest -Uri https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-windows-2019-x86_64.zip -OutFile swiftshader.zip
-          Expand-Archive swiftshader.zip
-          Copy-Item swiftshader\lib\vk_swiftshader_icd.json swiftshader\bin\
-          Copy-Item install/bin/*.dll install/
-          echo "VK_ICD_FILENAMES=${env:GITHUB_WORKSPACE}/swiftshader/bin/vk_swiftshader_icd.json" >> $env:GITHUB_ENV
           echo "PYTHONPATH=${env:GITHUB_WORKSPACE}/install/lib;${env:GITHUB_WORKSPACE}/install/python;${env:GITHUB_WORKSPACE}/tests" >> $env:GITHUB_ENV
           echo "PATH=${env:PATH};${env:GITHUB_WORKSPACE}/install/bin" >> $env:GITHUB_ENV
         if: runner.os == 'Windows'

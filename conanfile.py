@@ -28,7 +28,7 @@ class nncaseConan(ConanFile):
         "runtime": [True, False],
         "tests": [True, False],
         "python": [True, False],
-        "vulkan_runtime": [True, False],
+        # "vulkan_runtime": [True, False],
         "python_root": ["ANY"]
     }
     default_options = {
@@ -37,7 +37,7 @@ class nncaseConan(ConanFile):
         "runtime": False,
         "tests": False,
         "python": True,
-        "vulkan_runtime": False,
+        # "vulkan_runtime": False,
         "python_root": ""
     }
 
@@ -68,9 +68,9 @@ class nncaseConan(ConanFile):
         if not self.options.runtime or self.options.tests:
             self.requires('nlohmann_json/3.11.3')
             
-        if (not self.options.runtime) or self.options.vulkan_runtime:
-            self.requires('vulkan-headers/1.2.182')
-            self.requires('vulkan-loader/1.2.182')
+        # if (not self.options.runtime) or self.options.vulkan_runtime:
+        #     self.requires('vulkan-headers/1.2.182')
+        #     self.requires('vulkan-loader/1.2.182')
 
     def build_requirements(self):
         pass
@@ -91,7 +91,7 @@ class nncaseConan(ConanFile):
     def generate(self):
         tc = CMakeToolchain(self, generator="Ninja")
         tc.variables['BUILDING_RUNTIME'] = self.options.runtime
-        tc.variables['ENABLE_VULKAN_RUNTIME'] = self.options.vulkan_runtime
+        # tc.variables['ENABLE_VULKAN_RUNTIME'] = self.options.vulkan_runtime
         tc.variables['BUILD_PYTHON_BINDING'] = self.options.python
         tc.variables['BUILD_TESTING'] = self.options.tests
         if self.options.get_safe("python_root", default="") != "":
