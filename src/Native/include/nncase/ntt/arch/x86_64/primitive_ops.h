@@ -271,6 +271,45 @@ template <> struct neg<ntt::vector<float, 8>> {
     }
 };
 
+template <> struct reduce<add, float, ntt::vector<float, 8>> {
+    float operator()(const ntt::vector<float, 8> &v) const noexcept {
+        // Sum the elements in the 256-bit vector directly
+        __m128 sum =
+            _mm_add_ps(_mm256_castps256_ps128(v), _mm256_extractf128_ps(v, 1));
+        sum = _mm_add_ps(sum, _mm_movehl_ps(sum, sum));
+        sum = _mm_add_ss(sum, _mm_shuffle_ps(sum, sum, 1));
+
+        // Extract and return the final sum
+        return _mm_cvtss_f32(sum);
+    }
+};
+
+template <> struct reduce<max, float, ntt::vector<float, 8>> {
+    float operator()(const ntt::vector<float, 8> &v) const noexcept {
+        // Sum the elements in the 256-bit vector directly
+        __m128 sum =
+            _mm_max_ps(_mm256_castps256_ps128(v), _mm256_extractf128_ps(v, 1));
+        sum = _mm_max_ps(sum, _mm_movehl_ps(sum, sum));
+        sum = _mm_max_ss(sum, _mm_shuffle_ps(sum, sum, 1));
+
+        // Extract and return the final sum
+        return _mm_cvtss_f32(sum);
+    }
+};
+
+template <> struct reduce<min, float, ntt::vector<float, 8>> {
+    float operator()(const ntt::vector<float, 8> &v) const noexcept {
+        // Sum the elements in the 256-bit vector directly
+        __m128 sum =
+            _mm_min_ps(_mm256_castps256_ps128(v), _mm256_extractf128_ps(v, 1));
+        sum = _mm_min_ps(sum, _mm_movehl_ps(sum, sum));
+        sum = _mm_min_ss(sum, _mm_shuffle_ps(sum, sum, 1));
+
+        // Extract and return the final sum
+        return _mm_cvtss_f32(sum);
+    }
+};
+
 // round
 template <> struct round<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
