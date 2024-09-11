@@ -27,7 +27,7 @@ TEST(SoftMax, NoPackDim0) {
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_1;
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_2;
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_2_ort;
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
+    NttTest::init_tensor(buffer_1, -10.f, 10.f);
 
     auto ort_buffer_1 = NttTest::ntt2ort(buffer_1);
     auto ort_output = ortki_Softmax(ort_buffer_1, 0);
@@ -42,7 +42,7 @@ TEST(SoftMax, NoPackDim1) {
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_1;
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_2;
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_2_ort;
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
+    NttTest::init_tensor(buffer_1, -10.f, 10.f);
 
     auto ort_buffer_1 = NttTest::ntt2ort(buffer_1);
     auto ort_output = ortki_Softmax(ort_buffer_1, 1);
@@ -58,12 +58,12 @@ TEST(SoftMax, Pack0Dim0) {
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_1;
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_2;
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_2_ort;
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
+    NttTest::init_tensor(buffer_1, -10.f, 10.f);
 
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<32 / P, 32>> buffer_1_p;
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<32 / P, 32>> buffer_2_p;
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_2_up;
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
+
     pack<0>(buffer_1, buffer_1_p);
     packed_softmax<0>(buffer_1_p, buffer_2_p, ntt::fixed_shape<0>{});
     unpack<0>(buffer_2_p, buffer_2_up);
@@ -81,12 +81,11 @@ TEST(SoftMax, Pack0Dim1) {
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_1;
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_2;
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_2_ort;
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
+    NttTest::init_tensor(buffer_1, -10.f, 10.f);
 
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<32 / P, 32>> buffer_1_p;
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<32 / P, 32>> buffer_2_p;
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_2_up;
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
     pack<0>(buffer_1, buffer_1_p);
     packed_softmax<1>(buffer_1_p, buffer_2_p, ntt::fixed_shape<0>{});
     unpack<0>(buffer_2_p, buffer_2_up);
@@ -104,12 +103,11 @@ TEST(SoftMax, Pack1Dim0) {
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_1;
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_2;
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_2_ort;
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
+    NttTest::init_tensor(buffer_1, -10.f, 10.f);
 
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<32, 32 / P>> buffer_1_p;
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<32, 32 / P>> buffer_2_p;
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_2_up;
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
     pack<1>(buffer_1, buffer_1_p);
     packed_softmax<0>(buffer_1_p, buffer_2_p, ntt::fixed_shape<1>{});
     unpack<1>(buffer_2_p, buffer_2_up);
@@ -127,12 +125,11 @@ TEST(SoftMax, Pack1Dim1) {
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_1;
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_2;
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_2_ort;
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
+    NttTest::init_tensor(buffer_1, -10.f, 10.f);
 
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<32, 32 / P>> buffer_1_p;
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<32, 32 / P>> buffer_2_p;
     ntt::tensor<float, ntt::fixed_shape<32, 32>> buffer_2_up;
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
     pack<1>(buffer_1, buffer_1_p);
     packed_softmax<1>(buffer_1_p, buffer_2_p, ntt::fixed_shape<1>{});
     unpack<1>(buffer_2_p, buffer_2_up);
