@@ -6,7 +6,7 @@ if (NOT BUILDING_RUNTIME)
     add_library(compiler OBJECT ${SRCS})
     target_include_directories(compiler PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
     target_link_libraries(compiler PUBLIC gsl::gsl-lite)
-    target_link_libraries(compiler PRIVATE nethost::nethost absl::absl)
+    target_link_libraries(compiler PRIVATE nethost::nethost abseil::abseil)
     target_compile_definitions(compiler PUBLIC -DNNCASE_DLL -DNNCASE_SIMULATOR)
     set_property(TARGET compiler PROPERTY POSITION_INDEPENDENT_CODE ON)
 
@@ -14,3 +14,4 @@ if (NOT BUILDING_RUNTIME)
         target_compile_definitions(compiler PRIVATE -DNNCASE_DOTNET_INIT_FOR_CONFIG)
     endif ()
 endif()
+

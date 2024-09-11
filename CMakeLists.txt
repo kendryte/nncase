@@ -39,6 +39,9 @@ project(nncase
   VERSION ${NNCASE_VERSION}
   LANGUAGES C CXX ASM)
 
+find_package(nlohmann_json REQUIRED)
+include_directories(${nlohmann_json_INCLUDE_DIRS})
+
 option(ENABLE_OPENMP "OpenMP support" ON)
 option(ENABLE_HALIDE "halide kernels support" ON)
 option(DOTNET_INIT_FOR_CONFIG "Initialize dotnet from runtimeconfig" OFF)
@@ -51,6 +54,13 @@ option(ENABLE_DUMP_MANAGER "Enable dump manager" OFF)
 option(ENABLE_RVV "Some kernel impl by rvv" OFF)
 option(ENABLE_DUMP_MEM "Dump mem usage" OFF)
 
+if (BUILDING_RUNTIME)
+    option(ENABLE_VULKAN_RUNTIME "Enable Vulkan runtime" OFF)
+    option(ENABLE_K210_RUNTIME "Enable k210 runtime" OFF)
+    option(DEFAULT_BUILTIN_RUNTIMES "Use default builtin runtimes" ON)
+    option(DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL "Use default shared memory platform impl" ON)
+endif()
+
 if (ENABLE_OP_PROFILE)
     add_definitions(-DENABLE_OP_PROFILE)
 endif()
@@ -59,52 +69,20 @@ if(ENABLE_DUMP_MEM)
     add_definitions(-DDUMP_MEM)
 endif()
 
-if(NOT CMAKE_TOOLCHAIN_FILE)
-   include(toolchains/native.toolchain.cmake)
-endif()
-
-if (BUILDING_RUNTIME)
-    option(ENABLE_VULKAN_RUNTIME "Enable Vulkan runtime" OFF)
-    option(ENABLE_K210_RUNTIME "Enable k210 runtime" OFF)
-    option(DEFAULT_BUILTIN_RUNTIMES "Use default builtin runtimes" ON)
-    option(DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL "Use default shared memory platform impl" ON)
-endif()
-
-include(cmake/configure-conan.cmake)
-include(cmake/conan.cmake)
-
-if(NOT CONAN_EXPORTED)
-    conan_check()
-    conan_add_remote(NAME sunnycase URL https://conan.sunnycase.moe INDEX 0)
-endif()
-
-if(CONAN_EXPORTED) # in conan local cache
-    message(STATUS "Standard Conan Installation")
-else() # in user space
-    message(STATUS "Auto Cmake Conan Installation")
-    include(${CMAKE_SOURCE_DIR}/cmake/conan.cmake)
-    conan_cmake_run(CONANFILE conanfile.py
-                    BASIC_SETUP
-                    OPTIONS ${CONAN_OPTS}
-                    SETTINGS ${CONAN_SETTINGS}
-                    BUILD missing)
-endif()
-
-include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 include(cmake/dependencies.cmake)
 
-if (BUILDING_RUNTIME)
-    set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/src/Native/include)
-    set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/src/Native/include)
-    set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src/Native/include)
-    set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
-    set_property(GLOBAL PROPERTY POSITION_INDEPENDENT_CODE ON)
+set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/src/Native/include)
+set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src/Native/include)
+set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
+set_property(GLOBAL PROPERTY POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_SKIP_RPATH OFF)
 
+if (BUILDING_RUNTIME)
     if (MSVC)
         add_definitions(/D_CRT_SECURE_NO_WARNINGS /DNOMINMAX)
         add_compile_options(/wd4267 /wd4251 /wd4244 /FC /utf-8 /W3 /WX /wd4297 -Wno-unused-function -Wno-unused-command-line-argument)
     else()
-        add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-type-limits)
+        add_compile_options(-Wall -Wextra -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-type-limits)
         if (APPLE)
             add_compile_options(-Wno-four-char-constants -Wno-sometimes-uninitialized)
         elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
@@ -178,12 +156,7 @@ if (BUILDING_RUNTIME)
         PATTERN "LICENSE.TXT"
         )
 else()
-    set(CMAKE_SKIP_RPATH OFF)
 
-    set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/src/Native/include)
-    set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src/Native/include)
-    set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
-    set_property(GLOBAL PROPERTY POSITION_INDEPENDENT_CODE ON)
     if (APPLE)
         set(CMAKE_MACOSX_RPATH TRUE)
         set(CMAKE_INSTALL_RPATH "@loader_path")
@@ -198,7 +171,7 @@ else()
         set(PYBIND11_CPP_STANDARD "/std:c++latest")
     else()
         add_compile_options(-fvisibility=hidden)
-        add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-type-limits -Wno-unused-local-typedefs -Wno-sign-compare)
+        add_compile_options(-Wall -Wextra -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-type-limits -Wno-unused-local-typedefs -Wno-sign-compare)
         if (APPLE)
             add_compile_options(-Wno-four-char-constants -Wno-sometimes-uninitialized -Wno-deprecated)
         elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
