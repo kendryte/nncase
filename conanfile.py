@@ -58,7 +58,7 @@ class nncaseConan(ConanFile):
             self.requires('pybind11/2.11.1')
 
         if not self.options.runtime:
-            self.requires('abseil/20240722.0')
+            self.requires('abseil/20240116.1')
             self.requires('magic_enum/0.7.0')
             self.requires('spdlog/1.8.5')
             self.requires('inja/3.4.0')
