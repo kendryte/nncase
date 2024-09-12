@@ -69,7 +69,7 @@ template <reduce_op Op> struct u_reduce<Op, vector<float, 8>, true> {
             tmp[0] = op(tmp[0], tmp[2]);
             init_value = op(init_value, tmp[0]);
         }
-        
+
         if (count / 2) {
             vector<float, 8> tmp[2];
             for (size_t i = 0; i < 2; i++) {
