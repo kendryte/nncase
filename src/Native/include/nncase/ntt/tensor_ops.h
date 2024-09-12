@@ -49,7 +49,8 @@ struct tensor_unary_impl<Op, TTensor> {
 };
 
 template <template <class T> class Op, IsTensor TTensor>
-requires(TTensor::rank() == 2) struct tensor_unary_impl<Op, TTensor> {
+    requires(TTensor::rank() == 2)
+struct tensor_unary_impl<Op, TTensor> {
     using sub_vector_type =
         fixed_tensor_alike_t<TTensor, TTensor::shape().at(1)>;
 
@@ -93,8 +94,8 @@ struct tensor_binary_impl<Op, TTensor, T2> {
 };
 
 template <template <class T1, class T2> class Op, IsTensor T1, IsTensor T2>
-requires(T1::rank() == 2 &&
-         T2::rank() == 2) struct tensor_binary_impl<Op, T1, T2> {
+    requires(T1::rank() == 2 && T2::rank() == 2)
+struct tensor_binary_impl<Op, T1, T2> {
     using sub_vector_type = fixed_tensor_alike_t<T1, T1::shape().at(1)>;
 
     constexpr T1 operator()(const T1 &v1, const T2 &v2) const noexcept {
@@ -177,8 +178,8 @@ template <IsTensor TTensor> struct inner_product<TTensor, TTensor> {
 
     constexpr auto operator()(const TTensor &v1,
                               const TTensor &v2) const noexcept {
-        using result_type = decltype(
-            op_(std::declval<element_type>(), std::declval<element_type>()));
+        using result_type = decltype(op_(std::declval<element_type>(),
+                                         std::declval<element_type>()));
         result_type value{};
         apply(v1.shape(),
               [&](auto index) { value += op_(v1(index), v2(index)); });
@@ -251,10 +252,21 @@ struct mul_add<TScalar, TTensor, TTensor> {
     ops::mul_add<element_type, element_type, element_type> op_;
 };
 
-template <template <class T1, class T2> class Op, class TResult,
+template <template <class T1, class T2> class Op, IsScalar TResult,
           IsTensor TTensor>
 struct reduce<Op, TResult, TTensor> {
     using element_type = typename TTensor::element_type;
+
+    constexpr TResult operator()(const TTensor &v,
+                                 TResult init_value) const noexcept {
+        Op<TResult, element_type> op;
+        auto count = v.shape()[0];
+        auto value = init_value;
+        for (size_t i = 0; i < count; i++) {
+            value = op(value, v(i));
+        }
+        return value;
+    }
 
     constexpr TResult operator()(const TTensor &v) const noexcept {
         Op<TResult, element_type> op;
