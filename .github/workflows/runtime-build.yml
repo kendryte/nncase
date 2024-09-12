@@ -125,13 +125,13 @@ jobs:
 
       - name: Build & Install
         run: |
-          conan build . -if build -bf build
-          cmake --install build --prefix install
+          cmake --build build/${{matrix.config.buildType}} --config ${{matrix.config.buildType}}
+          cmake --install build/${{matrix.config.buildType}} --prefix install
 
       - name: Test
         shell: bash
         run: |
-          cd build
+          cd build/${{matrix.config.buildType}}
           ctest --test-dir tests/kernels --output-on-failure -j4
 
       - name: Upload nncaseruntime Build Artifact
