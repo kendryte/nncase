@@ -56,7 +56,7 @@ repair-wheel-command = "LD_LIBRARY_PATH=/usr/lib64 auditwheel repair -w {dest_di
 # CXX = "g++-14"
 
 [tool.cibuildwheel.macos]
-archs = ["x86_64"]
+archs = ["aarch64"]
 
 [tool.cibuildwheel.macos.environment]
 MACOSX_DEPLOYMENT_TARGET = "10.15"
