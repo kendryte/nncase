@@ -39,7 +39,7 @@ jobs:
           dotnet publish src/Nncase.Compiler -c ${{matrix.config.buildType}} --no-restore --sc false -r ${{matrix.config.rid}}
 
       - name: Upload nncase Build Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: nncase-${{matrix.config.name}}
           path: ${{github.workspace}}/src/Nncase.Compiler/bin/${{matrix.config.buildType}}/net${{matrix.dotnet-version}}/${{matrix.config.rid}}/publish
@@ -69,7 +69,7 @@ jobs:
         dotnet-version: ${{matrix.dotnet-version}}
 
     - name: Install nncase
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: nncase-${{matrix.config.name}}
         path: ${{github.workspace}}/install
@@ -97,7 +97,7 @@ jobs:
       run: python -m cibuildwheel --output-dir wheelhouse
 
     - name: Upload nncase-python Build Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: nncase-python-${{matrix.config.name}}
         path: ${{github.workspace}}/wheelhouse

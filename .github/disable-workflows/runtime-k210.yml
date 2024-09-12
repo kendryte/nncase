@@ -73,7 +73,7 @@ jobs:
       run: cmake --install . --prefix ../install
       
     - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.2.2
+      uses: actions/upload-artifact@v4
       with:
         name: nncaseruntime-k210
         path: ${{github.workspace}}/install
