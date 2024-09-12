@@ -107,7 +107,6 @@ TEST_P(PadTest, Pad) {
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
 
-
     auto l_ort = runtime_tensor_2_ort_tensor(input);
     auto pad_ort = runtime_tensor_2_ort_tensor(pad);
     auto value_ort = runtime_tensor_2_ort_tensor(value);
