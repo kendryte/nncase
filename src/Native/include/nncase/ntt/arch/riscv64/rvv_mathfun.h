@@ -159,41 +159,58 @@ _RVV_FLOAT_EXP_OP(2, 16, 32, 0x7f, 23)
 _RVV_FLOAT_EXP_OP(4, 8, 32, 0x7f, 23)
 _RVV_FLOAT_EXP_OP(8, 4, 32, 0x7f, 23)
 
-#define c_minus_cephes_DP1 -0.78515625
-#define c_minus_cephes_DP2 -2.4187564849853515625e-4
-#define c_minus_cephes_DP3 -3.77489497744594108e-8
-#define c_sincof_p0 -1.9515295891E-4
-#define c_sincof_p1 8.3321608736E-3
-#define c_sincof_p2 -1.6666654611E-1
-#define c_coscof_p0 2.443315711809948E-005
-#define c_coscof_p1 -1.388731625493765E-003
-#define c_coscof_p2 4.166664568298827E-002
-#define c_cephes_FOPI 1.27323954473516 // 4 / M_PI
+#if 0
+// from glibc 2.40: max_ulp_error = 3
+// e^x -1 = x + 1/2!x^2 + 1/3!x^3 + 1/4!x^4 + 1/5!x^5 + 1/6!x^6 + 1/7!x^7
+#define _RVV_FLOAT_EXPM1F_OP(LMUL, MLEN, TLEN, E, M)                           \
+    static inline vfloat##TLEN##m##LMUL##_t expm1f(                            \
+        vfloat##TLEN##m##LMUL##_t x, size_t vl) {                              \
+        /* Reduce argument to smaller range:                                   \
+            Let i = round(x / ln2)                                             \
+            and f = x - i * ln2, then f is in [-ln2/2, ln2/2].                 \
+            exp(x) - 1 = 2^i * (expm1(f) + 1) - 1                              \
+            where 2^i is exact because i is an integer.  */                    \
+        auto shift = __riscv_vfmv_v_f_f##TLEN##m##LMUL(0x1.8p23f, vl);         \
+        auto j = __riscv_vmv_v_v_f32m##LMUL(x, vl);                            \
+        j = __riscv_vfmadd_vf_f##TLEN##m##LMUL(j, 0x1.715476p+0f, shift, vl);  \
+        j = __riscv_vfsub_vv_f##TLEN##m##LMUL(j, shift, vl);                   \
+        auto f = __riscv_vfmv_v_f_f##TLEN##m##LMUL(0x1.62e4p-1f, vl);          \
+        auto c0 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(0x1.7f7d1cp-20f, vl);      \
+        f = __riscv_vfnmsub_vv_f##TLEN##m##LMUL(f, j, x, vl);                  \
+        auto i = __riscv_vfcvt_x_f_v_i##TLEN##m##LMUL(j, vl);                  \
+        f = __riscv_vfnmsac_vv_f##TLEN##m##LMUL(f, j, c0, vl);                 \
+        /* Approximate expm1(f) using polynomial.                              \
+            Taylor expansion for expm1(x) has the form:                        \
+            x + ax^2 + bx^3 + cx^4 ....                                        \
+            So we calculate the polynomial P(f) = a + bf + cf^2 + ...          \
+            and assemble the approximation expm1(f) ~= f + f^2 * P(f).  */     \
+        auto poly_0 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(0x1.fffffep-2, vl);    \
+        auto poly_1 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(0x1.5554aep-3, vl);    \
+        auto poly_2 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(0x1.555736p-5, vl);    \
+        auto poly_3 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(0x1.12287cp-7, vl);    \
+        auto poly_4 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(0x1.6b55a2p-10, vl);   \
+        auto p = __riscv_vfmadd_vv_f##TLEN##m##LMUL(poly_4, f, poly_3, vl);    \
+        auto f2 = __riscv_vfmul_vv_f##TLEN##m##LMUL(f, f, vl);                 \
+        p = __riscv_vfmadd_vv_f##TLEN##m##LMUL(p, f, poly_2, vl);              \
+        p = __riscv_vfmadd_vv_f##TLEN##m##LMUL(p, f, poly_1, vl);              \
+        p = __riscv_vfmadd_vv_f##TLEN##m##LMUL(p, f, poly_0, vl);              \
+        p = __riscv_vfmadd_vv_f##TLEN##m##LMUL(p, f2, f, vl);                  \
+        auto u = __riscv_vsll_vx_i##TLEN##m##LMUL(i, 23, vl);                  \
+        u = __riscv_vadd_vx_i32m##LMUL(u, 0x3f800000, vl);                     \
+        /* expm1(x) ~= p * t + (t - 1).  */                                    \
+        auto t =                                                               \
+            __riscv_vreinterpret_v_i##TLEN##m##LMUL##_f##TLEN##m##LMUL(u);     \
+        auto tmp = __riscv_vfsub_vf_f##TLEN##m##LMUL(t, 1.f, vl);              \
+        return __riscv_vfmadd_vv_f##TLEN##m##LMUL(p, t, tmp, vl);              \
+    }
+
+_RVV_FLOAT_EXPM1F_OP(1, 32, 32, 0x7f, 23)
+_RVV_FLOAT_EXPM1F_OP(2, 16, 32, 0x7f, 23)
+_RVV_FLOAT_EXPM1F_OP(4, 8, 32, 0x7f, 23)
+_RVV_FLOAT_EXPM1F_OP(8, 4, 32, 0x7f, 23)
 
 #define c_tanh_tiny 1e-4f
 #define c_tanh_hi 9.0f
-// The monomial coefficients of the numerator polynomial (odd).
-#define c_tanh_alpha_1 4.89352455891786e-3f
-#define c_tanh_alpha_3 6.37261928875436e-4f
-#define c_tanh_alpha_5 1.48572235717979e-5f
-#define c_tanh_alpha_7 5.12229709037114e-8f
-#define c_tanh_alpha_9 -8.60467152213735e-11f
-#define c_tanh_alpha_11 2.00018790482477e-13f
-#define c_tanh_alpha_13 -2.76076847742355e-16f
-// The monomial coefficients of the denominator polynomial (even).
-#define c_tanh_beta_0 4.89352518554385e-3f
-#define c_tanh_beta_2 2.26843463243900e-3f
-#define c_tanh_beta_4 1.18534705686654e-4f
-#define c_tanh_beta_6 1.19825839466702e-6f
-
-/*
-y = p1 * x + p3 * x^3 + p5 * x^5 + p7 * x^7 + p9 * x^9 + p11 * x^11 + p13 * x^13
-  = x * (p1 + p3 * x^2 + x^4 * (p5 + p7 * x^2 + x^4 * (p9 + p11 * x^2 + p13 *
-x^4)))
-
-w = p0 + p2 * x^2 + p4 * x^4 + p6 * x^6
-  = p0 + p2 * x^2 + x^4 * (p4 + p6 * x^2)
-*/
 #define _RVV_FLOAT_TANH_OP(LMUL, MLEN, TLEN)                                   \
     static inline vfloat##TLEN##m##LMUL##_t tanh_ps(                           \
         vfloat##TLEN##m##LMUL##_t x, size_t vl) {                              \
@@ -203,38 +220,12 @@ w = p0 + p2 * x^2 + p4 * x^4 + p6 * x^6
         /* this range is -/+1.0f in single-precision.                   */     \
         abs = __riscv_vfmin_vf_f##TLEN##m##LMUL(abs, c_tanh_hi, vl);           \
                                                                                \
-        /* since the polynomials are odd/even, we need x**2. */                \
-        auto x2 = __riscv_vfmul_vv_f##TLEN##m##LMUL(abs, abs, vl);             \
+        auto q = expm1f(__riscv_vfmul_vf_f##TLEN##m##LMUL(x, 2.f, vl), vl);    \
+        auto y = __riscv_vfdiv_vv_f##TLEN##m##LMUL(                            \
+            q, __riscv_vfadd_vf_f##TLEN##m##LMUL(q, 2.f, vl), vl);             \
                                                                                \
-        /* evaluate the numerator polynomial y, denominator polynomial w. */   \
-        auto c0 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_tanh_beta_0, vl);        \
-        auto c1 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_tanh_alpha_1, vl);       \
-        auto c4 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_tanh_beta_4, vl);        \
-        auto c5 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_tanh_alpha_5, vl);       \
-        auto c9 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_tanh_alpha_9, vl);       \
-        auto y1 = __riscv_vmv_v_v_f##TLEN##m##LMUL(x2, vl);                    \
-        auto y2 = __riscv_vmv_v_v_f##TLEN##m##LMUL(x2, vl);                    \
-        auto y3 = __riscv_vmv_v_v_f##TLEN##m##LMUL(x2, vl);                    \
-        auto w1 = __riscv_vmv_v_v_f##TLEN##m##LMUL(x2, vl);                    \
-        auto w2 = __riscv_vmv_v_v_f##TLEN##m##LMUL(x2, vl);                    \
-        y1 = __riscv_vfmadd_vf_f##TLEN##m##LMUL(y1, c_tanh_alpha_11, c9, vl);  \
-        w1 = __riscv_vfmadd_vf_f##TLEN##m##LMUL(w1, c_tanh_beta_6, c4, vl);    \
-        auto x4 = __riscv_vfmul_vv_f##TLEN##m##LMUL(x2, x2, vl);               \
-        y1 = __riscv_vfmacc_vf_f##TLEN##m##LMUL(y1, c_tanh_alpha_13, x4, vl);  \
-        y2 = __riscv_vfmadd_vf_f##TLEN##m##LMUL(y2, c_tanh_alpha_7, c5, vl);   \
-        y1 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(y1, x4, y2, vl);               \
-        w2 = __riscv_vfmadd_vf_f##TLEN##m##LMUL(w2, c_tanh_beta_2, c0, vl);    \
-        y3 = __riscv_vfmadd_vf_f##TLEN##m##LMUL(y3, c_tanh_alpha_3, c1, vl);   \
-        auto w = __riscv_vfmadd_vv_f##TLEN##m##LMUL(w1, x4, w2, vl);           \
-        y1 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(y1, x4, y3, vl);               \
-        auto z = __riscv_vfsgnj_vv_f##TLEN##m##LMUL(abs, x, vl);               \
-        w = __riscv_vfrec7_v_f##TLEN##m##LMUL(w, vl);                          \
-        y1 = __riscv_vfmul_vv_f##TLEN##m##LMUL(y1, z, vl);                     \
         auto tiny_mask =                                                       \
             __riscv_vmfge_vf_f##TLEN##m##LMUL##_b##MLEN(abs, c_tanh_tiny, vl); \
-                                                                               \
-        /* divide the numerator by the denominator. */                         \
-        auto y = __riscv_vfmul_vv_f##TLEN##m##LMUL(y1, w, vl);                 \
                                                                                \
         /* when the argument is very small in magnitude it's more accurate to  \
          * just return it. */                                                  \
@@ -242,6 +233,141 @@ w = p0 + p2 * x^2 + p4 * x^4 + p6 * x^6
                                                                                \
         return y;                                                              \
     }
+
+#else
+#define LOG2_INV 0x1.71547652b82fep+0
+#define LOG2_HI 0x1.62e42fefa39efp-1
+#define LOG2_LO 0x1.abc9e3b39803fp-56
+#define _RVV_FLOAT_TANH_OP(LMUL, MLEN, TLEN)                                   \
+    static inline vfloat##TLEN##m##LMUL##_t tanh_ps(                           \
+        vfloat##TLEN##m##LMUL##_t v, size_t vl) {                              \
+        constexpr float fp_posZero = 0.0f;                                     \
+        constexpr float fp_posOne = 1.f;                                       \
+        auto zero = __riscv_vfmv_v_f_f32m##LMUL(fp_posZero, vl);               \
+        auto one = __riscv_vfmv_v_f_f32m##LMUL(fp_posOne, vl);                 \
+        /*tanh(x) = sign(x) * tanh(|x|); suffices to work on |x| for the main  \
+         * part */                                                             \
+        auto vx = __riscv_vfsgnj_vf_f32##m##LMUL(v, 1.f, vl);                  \
+        /* Suffices to clip |x| to 20, which is bigger than 28 log(2) */       \
+        vx = __riscv_vfmin_vf_f##TLEN##m##LMUL(vx, 0x1.4p4, vl);               \
+                                                                               \
+        /* tanh(x) = (1 - exp(-2x)) / (1 + exp(-2x)); so we compute exp(-2x)   \
+         */                                                                    \
+        /* by replacing x by -2x */                                            \
+        vx = __riscv_vfmul_vf_f##TLEN##m##LMUL(vx, -2.f, vl);                  \
+        auto n_flt = __riscv_vfmul_vf_f##TLEN##m##LMUL(vx, LOG2_INV, vl);      \
+        auto n = __riscv_vfcvt_x_f_v_i32m##LMUL(n_flt, vl);                    \
+        n_flt = __riscv_vfcvt_f_x_v_f32m##LMUL(n, vl);                         \
+        auto u = __riscv_vadd_vx_i32m##LMUL(n, 127, vl);                       \
+        auto r_delta = __riscv_vfnmsac_vf_f32m##LMUL(vx, LOG2_HI, n_flt, vl);  \
+        u = __riscv_vsll_vx_i32##m##LMUL(u, 23, vl);                           \
+        auto r = __riscv_vfnmsac_vf_f32m##LMUL(r_delta, LOG2_LO, n_flt, vl);   \
+        auto s = __riscv_vreinterpret_v_i32m##LMUL##_f32m##LMUL(u);            \
+        auto s_is_small =                                                      \
+            __riscv_vmsle_vx_i32m##LMUL##_b##MLEN(n, -(23 + 1), vl);           \
+        r_delta = __riscv_vfsub_vv_f##TLEN##m##LMUL(r_delta, r, vl);           \
+        auto s_head =                                                          \
+            __riscv_vfmerge_vfm_f32m##LMUL(s, fp_posZero, s_is_small, vl);     \
+        r_delta = __riscv_vfnmsac_vf_f32m##LMUL(r_delta, LOG2_LO, n_flt, vl);  \
+        /* exp(x) = 2^n exp(r'), r' = r + r_delta and thus we compute 1 +/-    \
+        exp(x) as 1 +/- 2^(n)(1 + r' + (r')^2/2 + r^3 p(r)) (1 +/- s) +/- s(r' \
+        + (r')^2/2) +/- s r^3 p(r) To maintain good precision, 1 +/- s and r'  \
+        + (r')^2/2 are computed to extra precision in a leading term and a     \
+        correctional term. This leads to representing 1 +/- exp(x) in a        \
+        leading and correctional term. */                                      \
+        /* 1 +/- s is exact when s is not small */                             \
+        auto rsq = __riscv_vfmul_vv_f##TLEN##m##LMUL(r, r, vl);                \
+        auto s_tail = __riscv_vmerge_vvm_f32m##LMUL(zero, s, s_is_small, vl);  \
+        /* s_head + s_tail = s; and 1 +/- s is (1 +/- s_head) +/- s_tail */    \
+        /* exp(r') is approximated by 1 + r' + (r')^2/2 + r^3(p_even(r^2) +    \
+           r*p_odd(r^2)) using r without delta_r sufficies from the third      \
+         order onwards */                                                      \
+        auto rcube = __riscv_vfmul_vv_f##TLEN##m##LMUL(rsq, r, vl);            \
+        auto c0 = __riscv_vfmv_v_f_f32m##LMUL(0x1.71ddef82f4beep-19, vl);      \
+        auto c1 = __riscv_vfmv_v_f_f32m##LMUL(0x1.a01a01b32b633p-13, vl);      \
+        auto c2 = __riscv_vfmv_v_f_f32m##LMUL(0x1.111111110ef6ap-7, vl);       \
+        auto c3 = __riscv_vfmv_v_f_f32m##LMUL(0x1.555555555555ap-3, vl);       \
+        auto c4 = __riscv_vfmv_v_f_f32m##LMUL(0x1.a019b37a2b3dfp-16, vl);      \
+        auto c5 = __riscv_vfmv_v_f_f32m##LMUL(0x1.6c16c17a09506p-10, vl);      \
+        auto c6 = __riscv_vfmv_v_f_f32m##LMUL(0x1.5555555553aefp-5, vl);       \
+                                                                               \
+        auto p_even = __riscv_vmv_v_v_f32m##LMUL(rsq, vl);                     \
+        p_even = __riscv_vfmadd_vf_f32m##LMUL(p_even, 0x1.af6eacd796f0bp-26,   \
+                                              c0, vl);                         \
+        p_even = __riscv_vfmadd_vv_f32m##LMUL(p_even, rsq, c1, vl);            \
+        p_even = __riscv_vfmadd_vv_f32m##LMUL(p_even, rsq, c2, vl);            \
+        p_even = __riscv_vfmadd_vv_f32m##LMUL(p_even, rsq, c3, vl);            \
+                                                                               \
+        auto p_odd = __riscv_vmv_v_v_f32m##LMUL(rsq, vl);                      \
+        p_odd = __riscv_vfmadd_vf_f32m##LMUL(p_odd, 0x1.289788d8bdadfp-22, c4, \
+                                             vl);                              \
+        p_odd = __riscv_vfmadd_vv_f32m##LMUL(p_odd, rsq, c5, vl);              \
+        p_odd = __riscv_vfmadd_vv_f32m##LMUL(p_odd, rsq, c6, vl);              \
+        auto poly = __riscv_vfmadd_vv_f32m##LMUL(p_odd, r, p_even, vl);        \
+                                                                               \
+        /* r^3 * poly will be r^3(...)                                         \
+           we delay this multiplication with r^3 for now */                    \
+                                                                               \
+        /*  Compute r' + (r')^2/2 extra precisely */                           \
+        auto r_prime = __riscv_vfmul_vf_f32m##LMUL(r, 0x1.0p-1, vl);           \
+        auto B = __riscv_vfmadd_vv_f32m##LMUL(r, r_prime, r, vl);              \
+        auto b = __riscv_vfsub_vv_f32m##LMUL(r, B, vl);                        \
+        b = __riscv_vfmacc_vv_f32m##LMUL(b, r, r_prime, vl);                   \
+        /* B + b is r' + (r')^2/2 extra precisely */                           \
+        /* incoporate r_delta in R + R^2/2 */                                  \
+        auto c = __riscv_vfmadd_vv_f32m##LMUL(r, r_delta, r_delta, vl);        \
+        b = __riscv_vfadd_vv_f32m##LMUL(b, c, vl);                             \
+        poly = __riscv_vfmadd_vv_f32m##LMUL(poly, rcube, b, vl);               \
+        /* B + poly is r' + (r')^2/2 + r^3(.....) */                           \
+        /* and exp(r') is well approximated by s*(1 + B + poly) */             \
+                                                                               \
+        /* We compute the denominator 1 + exp(R) first as                      \
+           we will need to recipricate afterwards, the latency of which        \
+           can be hidden somewhat by proceeding with the numerator             \
+           at that time */                                                     \
+        auto Z = __riscv_vfadd_vf_f32m##LMUL(s_head, fp_posOne, vl);           \
+        auto D_tmp = __riscv_vfmadd_vv_f32m##LMUL(B, s, Z, vl);                \
+        auto d_tmp = __riscv_vfsub_vv_f32m##LMUL(Z, D_tmp, vl);                \
+        d_tmp = __riscv_vfmacc_vv_f32m##LMUL(d_tmp, s, B, vl);                 \
+        d_tmp = __riscv_vfadd_vv_f32m##LMUL(d_tmp, s_tail, vl);                \
+        d_tmp = __riscv_vfmacc_vv_f32m##LMUL(d_tmp, s, poly, vl);              \
+        /* D_tmp + d_tmp is 1 + exp(R) to high precision, but we have to       \
+           normalize this representation so that the leading term              \
+           has full FP64 precision of this sum */                              \
+        auto D = __riscv_vfadd_vv_f32m##LMUL(D_tmp, d_tmp, vl);                \
+        auto d = __riscv_vfsub_vv_f32m##LMUL(D_tmp, D, vl);                    \
+        d = __riscv_vfadd_vv_f32m##LMUL(d, d_tmp, vl);                         \
+                                                                               \
+        /* Now start to compute 1/(D+d) as E + e */                            \
+        auto E = __riscv_vfrdiv_vf_f32m##LMUL(D, fp_posOne, vl);               \
+        auto e = __riscv_vfnmsub_vv_f32m##LMUL(E, D, one, vl);                 \
+        e = __riscv_vfnmsac_vv_f32m##LMUL(e, E, d, vl);                        \
+        e = __riscv_vfmul_vv_f32m##LMUL(e, __riscv_vfrec7_v_f32m##LMUL(D, vl), \
+                                        vl);                                   \
+        /* E + e is 1/(D+d) to extra precision */                              \
+                                                                               \
+        /* Overlap much of the 1/(D+d) computation with */                     \
+        /* computing 1 - s(1 + B + poly) */                                    \
+        Z = __riscv_vfrsub_vf_f32m##LMUL(s_head, fp_posOne, vl);               \
+                                                                               \
+        auto Numer = __riscv_vfnmsub_vv_f32m##LMUL(B, s, Z, vl);               \
+        auto numer = __riscv_vfsub_vv_f32m##LMUL(Z, Numer, vl);                \
+        numer = __riscv_vfnmsac_vv_f32m##LMUL(numer, s, B, vl);                \
+                                                                               \
+        /* Numer + numer = Z - s * B accurately */                             \
+        numer = __riscv_vfsub_vv_f32m##LMUL(numer, s_tail, vl);                \
+        numer = __riscv_vfnmsac_vv_f32m##LMUL(numer, s, poly, vl);             \
+                                                                               \
+        /* (Numer + numer) * (E + e) */                                        \
+        /* Numer * E + ( numer * E + (Numer * e + (e*numer)) ) */              \
+        auto vy = __riscv_vfmul_vv_f32m##LMUL(e, numer, vl);                   \
+        vy = __riscv_vfmacc_vv_f32m##LMUL(vy, Numer, e, vl);                   \
+        vy = __riscv_vfmacc_vv_f32m##LMUL(vy, numer, E, vl);                   \
+        vy = __riscv_vfmacc_vv_f32m##LMUL(vy, Numer, E, vl);                   \
+        return __riscv_vfsgnj_vv_f32##m##LMUL(vy, v, vl);                      \
+        return __riscv_vfsgnj_vv_f32##m##LMUL(vy, v, vl);                      \
+    }
+#endif
 
 _RVV_FLOAT_TANH_OP(1, 32, 32)
 _RVV_FLOAT_TANH_OP(2, 16, 32)
