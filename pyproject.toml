@@ -51,9 +51,9 @@ before-build = [
 ]
 repair-wheel-command = "LD_LIBRARY_PATH=/usr/lib64 auditwheel repair -w {dest_dir} {wheel} --exclude libvulkan.so.1,libgomp.so.1"
 
-[tool.cibuildwheel.linux.environment]
-CC = "gcc-10"
-CXX = "g++-10"
+# [tool.cibuildwheel.linux.environment]
+# CC = "gcc-14"
+# CXX = "g++-14"
 
 [tool.cibuildwheel.macos]
 archs = ["x86_64"]
