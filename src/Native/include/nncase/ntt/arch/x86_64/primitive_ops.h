@@ -16,6 +16,8 @@
 #include "../../primitive_ops.h"
 #include "arch_types.h"
 #include "avx_mathfun.h"
+#include <iomanip>
+#include <iostream>
 
 namespace nncase::ntt::ops {
 
@@ -489,10 +491,121 @@ template <> struct swish<ntt::vector<float, 8>> {
 };
 
 // tanh
+#define LOG2_INV 0x1.71547652b82fep+0
+#define LOG2_HI 0x1.62e42fefa39efp-1
+#define LOG2_LO 0x1.abc9e3b39803fp-56
 template <> struct tanh<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
+#if 0
         return tanh256_ps(v);
+#else
+        constexpr float fp_posZero = 0.0f;
+        constexpr float fp_posOne = 1.f;
+
+        __m256 zero = _mm256_set1_ps(0.0f);
+
+        // 创建一个所有元素都是 1.0f 的向量
+        __m256 one = _mm256_set1_ps(1.0f);
+
+        __m256 vx = _mm256_and_ps(
+            v, _mm256_castsi256_ps(_mm256_set1_epi32(0x7FFFFFFF))); // vfsgnj_vf
+        vx = _mm256_min_ps(vx, _mm256_set1_ps(20.0f));              // vfmin_vf
+        vx = _mm256_mul_ps(vx, _mm256_set1_ps(-2.0f));              // vfmul_vf
+        __m256 n_flt = _mm256_mul_ps(vx, _mm256_set1_ps(LOG2_INV)); // vfmul_vf
+        __m256i n = _mm256_cvtps_epi32(n_flt);                   // vfcvt_x_f_v
+        n_flt = _mm256_cvtepi32_ps(n);                           // vfcvt_f_x_v
+        __m256i u = _mm256_add_epi32(n, _mm256_set1_epi32(127)); // vadd_vx
+
+        __m256 r_delta =
+            _mm256_fnmadd_ps(_mm256_set1_ps(LOG2_HI), n_flt, vx); // vfnmsac_vf
+        u = _mm256_slli_epi32(u, 23);                             // vsll_vx
+        __m256 r = _mm256_fnmadd_ps(_mm256_set1_ps(LOG2_LO), n_flt,
+                                    r_delta); // vfnmsac_vf
+        __m256 s = _mm256_castsi256_ps(u);    // vreinterpret_v_i32m_f32m
+        __m256i s_is_small =
+            _mm256_cmpgt_epi32(_mm256_set1_epi32(-(23 + 1)), n); // vmsle_vx
+
+        r_delta = _mm256_sub_ps(r_delta, r); // vfsub_vv
+        // std::endl;
+        __m256 s_head =
+            _mm256_blendv_ps(s, _mm256_set1_ps(fp_posZero),
+                             _mm256_castsi256_ps(s_is_small)); // vfmerge_vfm
+        r_delta = _mm256_fnmadd_ps(_mm256_set1_ps(LOG2_LO), n_flt,
+                                   r_delta); // vfnmsac_vf
+        // std::endl;
+
+        __m256 rsq = _mm256_mul_ps(r, r); // vfmul_vv
+        __m256 s_tail = _mm256_blendv_ps(
+            zero, s, _mm256_castsi256_ps(s_is_small)); // vmerge_vvm
+
+        __m256 rcube = _mm256_mul_ps(rsq, r);               // vfmul_vv
+        __m256 c0 = _mm256_set1_ps(0x1.71ddef82f4beep-19f); // vfmv_v_f
+        __m256 c1 = _mm256_set1_ps(0x1.a01a01b32b633p-13f); // vfmv_v_f
+        __m256 c2 = _mm256_set1_ps(0x1.111111110ef6ap-7f);  // vfmv_v_f
+        __m256 c3 = _mm256_set1_ps(0x1.555555555555ap-3f);  // vfmv_v_f
+        __m256 c4 = _mm256_set1_ps(0x1.a019b37a2b3dfp-16f); // vfmv_v_f
+        __m256 c5 = _mm256_set1_ps(0x1.6c16c17a09506p-10f); // vfmv_v_f
+        __m256 c6 = _mm256_set1_ps(0x1.5555555553aefp-5f);  // vfmv_v_f
+
+        __m256 p_even = _mm256_moveldup_ps(rsq); // vmv_v_v
+        p_even = _mm256_fmadd_ps(p_even, _mm256_set1_ps(0x1.af6eacd796f0bp-26f),
+                                 c0);              // vfmadd_vf
+        p_even = _mm256_fmadd_ps(p_even, rsq, c1); // vfmadd_vv
+        p_even = _mm256_fmadd_ps(p_even, rsq, c2); // vfmadd_vv
+        p_even = _mm256_fmadd_ps(p_even, rsq, c3); // vfmadd_vv
+
+        __m256 p_odd = _mm256_moveldup_ps(rsq); // vmv_v_v
+        p_odd = _mm256_fmadd_ps(p_odd, _mm256_set1_ps(0x1.289788d8bdadfp-22f),
+                                c4);                     // vfmadd_vf
+        p_odd = _mm256_fmadd_ps(p_odd, rsq, c5);         // vfmadd_vv
+        p_odd = _mm256_fmadd_ps(p_odd, rsq, c6);         // vfmadd_vv
+        __m256 poly = _mm256_fmadd_ps(p_odd, r, p_even); // vfmadd_vv
+
+        __m256 r_prime = _mm256_mul_ps(r, _mm256_set1_ps(0.5f)); // vfmul_vf
+        // std::endl;
+        __m256 B = _mm256_fmadd_ps(r, r_prime, r); // vfmadd_vv
+        __m256 b = _mm256_sub_ps(r, B);            // vfsub_vv
+        b = _mm256_fmadd_ps(r, r_prime, b); // vfmacc_vv (vfmadd_ps in AVX2)
+        __m256 c = _mm256_fmadd_ps(r, r_delta, r_delta); // vfmadd_vv
+        b = _mm256_add_ps(b, c);                         // vfadd_vv
+        poly = _mm256_fmadd_ps(poly, rcube, b);          // vfmadd_vv
+
+        __m256 Z = _mm256_add_ps(s_head, _mm256_set1_ps(fp_posOne)); // vfadd_vf
+        __m256 D_tmp = _mm256_fmadd_ps(B, s, Z); // vfmadd_vv
+        __m256 d_tmp = _mm256_sub_ps(Z, D_tmp);  // vfsub_vv
+        d_tmp = _mm256_fmadd_ps(s, B, d_tmp); // vfmacc_vv (vfmadd_ps in AVX2)
+        d_tmp = _mm256_add_ps(d_tmp, s_tail); // vfadd_vv
+        d_tmp =
+            _mm256_fmadd_ps(s, poly, d_tmp); // vfmacc_vv (vfmadd_ps in AVX2)
+
+        __m256 D = _mm256_add_ps(D_tmp, d_tmp);                 // vfadd_vv
+        __m256 d = _mm256_sub_ps(D_tmp, D);                     // vfsub_vv
+        d = _mm256_add_ps(d, d_tmp);                            // vfadd_vv
+        __m256 E = _mm256_div_ps(_mm256_set1_ps(fp_posOne), D); // vfrdiv_vf
+        __m256 e = _mm256_fnmadd_ps(E, D, one);                 // vfnmsub_vv
+        e = _mm256_fnmadd_ps(E, d, e);                          // vfnmsac_vv
+        e = _mm256_mul_ps(e, _mm256_rcp_ps(D)); // vfmul_vv with vfrec7_v
+
+        Z = _mm256_sub_ps(_mm256_set1_ps(fp_posOne), s_head); // vfrsub_vf
+        __m256 Numer = _mm256_fnmadd_ps(B, s, Z);             // vfnmsub_vv
+        __m256 numer = _mm256_sub_ps(Z, Numer);               // vfsub_vv
+        numer = _mm256_fnmadd_ps(s, B, numer);                // vfnmsac_vv
+        numer = _mm256_sub_ps(numer, s_tail);                 // vfsub_vv
+        numer = _mm256_fnmadd_ps(s, poly, numer);             // vfnmsac_vv
+
+        __m256 vy = _mm256_mul_ps(e, numer); // vfmul_vv
+        vy = _mm256_fmadd_ps(Numer, e, vy);  // vfmacc_vv
+        vy = _mm256_fmadd_ps(numer, E, vy);  // vfmacc_vv
+        vy = _mm256_fmadd_ps(Numer, E, vy);  // vfmacc_vv
+        __m256 sign_v =
+            _mm256_and_ps(v, _mm256_set1_ps(-0.0f)); // Extract sign from `v`
+        __m256 magnitude_vy = _mm256_andnot_ps(
+            _mm256_set1_ps(-0.0f), vy); // Extract magnitude from `vy`
+        __m256 result = _mm256_or_ps(magnitude_vy, sign_v);
+        return result;
+
+#endif
     }
 };
 

@@ -111,9 +111,9 @@ _RVV_FLOAT32_LOG_OP(8, 4)
 
 // e^x = 1 + x + 1/2!x^2 + 1/3!x^3 + 1/4!x^4 + 1/5!x^5 + 1/6!x^6 + 1/7!x^7
 #define _RVV_FLOAT_EXP_OP(LMUL, MLEN, TLEN, E, M)                              \
-    static inline __attribute__((optimize("no-schedule-insns2")))              \
-        vfloat##TLEN##m##LMUL##_t                                              \
-        exp_ps(vfloat##TLEN##m##LMUL##_t x, size_t vl) {                       \
+    static inline __attribute__((                                              \
+        optimize("no-schedule-insns2"))) vfloat##TLEN##m##LMUL##_t             \
+    exp_ps(vfloat##TLEN##m##LMUL##_t x, size_t vl) {                           \
         auto a1 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_LOG2EF, vl);      \
         auto c1 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_exp_p1, vl);      \
         auto c3 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_exp_p3, vl);      \
@@ -364,7 +364,6 @@ _RVV_FLOAT_EXPM1F_OP(8, 4, 32, 0x7f, 23)
         vy = __riscv_vfmacc_vv_f32m##LMUL(vy, Numer, e, vl);                   \
         vy = __riscv_vfmacc_vv_f32m##LMUL(vy, numer, E, vl);                   \
         vy = __riscv_vfmacc_vv_f32m##LMUL(vy, Numer, E, vl);                   \
-        return __riscv_vfsgnj_vv_f32##m##LMUL(vy, v, vl);                      \
         return __riscv_vfsgnj_vv_f32##m##LMUL(vy, v, vl);                      \
     }
 #endif
