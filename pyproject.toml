@@ -31,7 +31,7 @@ build-backend = "setuptools.build_meta"
 [tool.cibuildwheel]
 build = ["cp38*", "cp39*", "cp310*", "cp311*", "cp312*"]
 skip = "*musllinux*"
-manylinux-x86_64-image = "sunnycase/manylinux_2_28_x86_64:1.0"
+manylinux-x86_64-image = "sunnycase/manylinux2014_x86_64:1.1"
 test-requires = "pytest"
 test-command = [
   "pytest {project}/tests/other"
@@ -47,7 +47,7 @@ archs = ["AMD64"]
 archs = ["x86_64"]
 before-build = [
   "rm -f {project}/CMakeUserPresets.json",
-  "pip install https://github.com/sunnycase/auditwheel/releases/download/6.0.0/auditwheel-6.0.0-py3-none-any.whl"
+  "pip install auditwheel==6.0.0"
 ]
 repair-wheel-command = "LD_LIBRARY_PATH=/usr/lib64 auditwheel repair -w {dest_dir} {wheel} --exclude libvulkan.so.1,libgomp.so.1"
 
@@ -59,4 +59,4 @@ repair-wheel-command = "LD_LIBRARY_PATH=/usr/lib64 auditwheel repair -w {dest_di
 archs = ["arm64"]
 
 [tool.cibuildwheel.macos.environment]
-MACOSX_DEPLOYMENT_TARGET = "10.15" #
+MACOSX_DEPLOYMENT_TARGET = "10.15"
