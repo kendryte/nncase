@@ -45,15 +45,20 @@ archs = ["AMD64"]
 
 [tool.cibuildwheel.linux]
 archs = ["x86_64"]
-# before-all = [
-#   "pip install conan==2.6.0",
-#   "conan profile detect",
-#   echo 'settings.compiler.libcxx=libstdc++17' >> ~/.conan2/profiles/default"
-# ]
+
+
+
+# TODO： confirm stdc++17
+before-all = [
+  "pip install conan==2.6.0",
+  "conan profile detect",
+  "echo 'settings.compiler.libcxx=libstdc++17' >> ~/.conan2/profiles/default"
+]
+
+
 
 before-build = [
   "rm -f {project}/CMakeUserPresets.json",
-  "rm -rf install",
   "pip install auditwheel==6.0.0"
 ]
 repair-wheel-command = "LD_LIBRARY_PATH=/usr/lib64 auditwheel repair -w {dest_dir} {wheel} --exclude libvulkan.so.1,libgomp.so.1"
