@@ -16,8 +16,6 @@
 #include "../../primitive_ops.h"
 #include "arch_types.h"
 #include "avx_mathfun.h"
-#include <iomanip>
-#include <iostream>
 
 namespace nncase::ntt::ops {
 
