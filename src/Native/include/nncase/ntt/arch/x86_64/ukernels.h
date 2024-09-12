@@ -49,21 +49,80 @@ template <reduce_op Op> struct u_reduce<Op, vector<float, 8>, true> {
             typename reduce_to_binary_type<Op>::template type<vector<float, 8>,
                                                               vector<float, 8>>;
         binary_op_t op;
-        if (count / 8) {
+        if (count / 4) {
             vector<float, 8> tmp[4];
-            while (count / 8) {
-                for (size_t j = 0; j < 4; j++) {
-                    tmp[j] = op(input[(j * 2) * input_stride],
-                                input[(j * 2 + 1) * input_stride]);
-                }
-                input += input_stride * 8;
-                count -= 8;
-
-                tmp[0] = op(tmp[0], tmp[1]);
-                tmp[2] = op(tmp[2], tmp[3]);
-                tmp[0] = op(tmp[0], tmp[2]);
-                init_value = op(init_value, tmp[0]);
+            for (size_t i = 0; i < 4; i++) {
+                tmp[i] = input[i * input_stride];
             }
+            input += input_stride * 4;
+            count -= 4;
+            while (count / 4) {
+                for (size_t i = 0; i < 4; i++) {
+                    tmp[i] = op(tmp[i], input[i * input_stride]);
+                }
+                input += input_stride * 4;
+                count -= 4;
+            }
+
+            tmp[0] = op(tmp[0], tmp[1]);
+            tmp[2] = op(tmp[2], tmp[3]);
+            tmp[0] = op(tmp[0], tmp[2]);
+            init_value = op(init_value, tmp[0]);
+        }
+        
+        if (count / 2) {
+            vector<float, 8> tmp[2];
+            for (size_t i = 0; i < 2; i++) {
+                tmp[i] = input[i * input_stride];
+            }
+            input += input_stride * 2;
+            count -= 2;
+            while (count / 2) {
+                for (size_t i = 0; i < 2; i++) {
+                    tmp[i] = op(tmp[i], input[i * input_stride]);
+                }
+                input += input_stride * 2;
+                count -= 2;
+            }
+
+            tmp[0] = op(tmp[0], tmp[1]);
+            init_value = op(init_value, tmp[0]);
+        }
+
+        for (size_t i = 0; i < count; i++) {
+            init_value = op(init_value, *input);
+            input += input_stride;
+        }
+        return init_value;
+    }
+};
+
+template <reduce_op Op> struct u_reduce<Op, float, true> {
+  public:
+    constexpr float operator()(const float *input, size_t input_stride,
+                               size_t count, float init_value) noexcept {
+        using binary_op_t =
+            typename reduce_to_binary_type<Op>::template type<float, float>;
+        binary_op_t op;
+        if (count / 4) {
+            float tmp[4];
+            for (size_t i = 0; i < 4; i++) {
+                tmp[i] = input[i * input_stride];
+            }
+            input += input_stride * 4;
+            count -= 4;
+            while (count / 4) {
+                for (size_t i = 0; i < 4; i++) {
+                    tmp[i] = op(tmp[i], input[i * input_stride]);
+                }
+                input += input_stride * 4;
+                count -= 4;
+            }
+
+            tmp[0] = op(tmp[0], tmp[1]);
+            tmp[2] = op(tmp[2], tmp[3]);
+            tmp[0] = op(tmp[0], tmp[2]);
+            init_value = op(init_value, tmp[0]);
         }
 
         for (size_t i = 0; i < count; i++) {
