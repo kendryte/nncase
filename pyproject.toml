@@ -45,10 +45,13 @@ archs = ["AMD64"]
 
 [tool.cibuildwheel.linux]
 archs = ["x86_64"]
-before-build = [
+before-all = [
   "pip install conan==2.6.0",
-  "conan config install default",
-  "conan profile update settings.compiler.libcxx=libstdc++11 default",
+  "conan profile detect",
+  "conan profile update settings.compiler.libcxx=libstdc++11 default"
+]
+
+before-build = [
   "rm -f {project}/CMakeUserPresets.json",
   "pip install auditwheel==6.0.0"
 ]
