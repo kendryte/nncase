@@ -59,4 +59,4 @@ repair-wheel-command = "LD_LIBRARY_PATH=/usr/lib64 auditwheel repair -w {dest_di
 archs = ["arm64"]
 
 [tool.cibuildwheel.macos.environment]
-MACOSX_DEPLOYMENT_TARGET = CMAKE_OSX_DEPLOYMENT_TARGET
+MACOSX_DEPLOYMENT_TARGET = "10.15" #
