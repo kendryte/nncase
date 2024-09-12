@@ -1,25 +1,12 @@
-toolchain={{ os.getenv("RISCV_ROOT_PATH") }}
-target_host=riscv64-unknown-linux-gnu
-cc_compiler=gcc
-cxx_compiler=g++
-
-[env]
-CONAN_CMAKE_FIND_ROOT_PATH=$toolchain/riscv64-unknown-linux-gnu  # Optional, for CMake to find things in that folder
-CONAN_CMAKE_SYSTEM_PROCESSOR=riscv64
-CHOST=$target_host
-AR=$toolchain/bin/$target_host-ar
-AS=$toolchain/bin/$target_host-as
-RANLIB=$target_host-ranlib
-CC=$toolchain/bin/$target_host-$cc_compiler
-CXX=$toolchain/bin/$target_host-$cxx_compiler
-STRIP=$toolchain/bin/$target_host-strip
-RC=$toolchain/bin/$target_host-windres
+[conf]
+tools.cmake.cmaketoolchain:user_toolchain+={{ os.path.join(profile_dir, "riscv64-unknown-linux.toolchain.cmake") }}
+tools.cmake.cmaketoolchain:generator=Ninja
 
 [settings]
 os=Linux
 arch=riscv64
-compiler=gcc
 build_type=Release
+compiler=gcc
 compiler.cppstd=17
 compiler.libcxx=libstdc++11
 compiler.version=12

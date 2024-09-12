@@ -17,9 +17,9 @@ jobs:
     strategy:
       matrix:
         config:
-          - {name: x86_64-macos, os: macos-12, cmakeArgs: -DENABLE_X86SIMD=OFF, buildType: Release}
-          - {name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release}
-          - {name: x86_64-windows, os: windows-2019, arch: x64, cmakeArgs: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl, buildType: Release}
+          - {name: aarch64-macos, os: macos-14, buildType: Release}
+          - {name: x86_64-linux, os: ubuntu-latest, buildType: Release}
+          # - {name: x86_64-windows, os: windows-2019, arch: x64, buildType: Release}
 
     steps:
       - uses: actions/checkout@v3
@@ -39,30 +39,30 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.7
-
-      - name: Install Conan
-        shell: bash
-        run: |
-          pip install conan==1.58
+          python-version: 3.8
 
       - name: Configure Conan (Linux)
         run: |
-          conan profile new default --detect
-          conan profile update settings.compiler.libcxx=libstdc++11 default
           echo "CC=gcc-10" >> $GITHUB_ENV
           echo "CXX=g++-10" >> $GITHUB_ENV
         if: runner.os == 'Linux'
 
-      - name: Configure CMake
+      - name: Install Conan
         shell: bash
         run: |
-          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DPython3_ROOT_DIR=${pythonLocation}
+          pip install conan==2.6.0
+          conan remote add sunnycase https://conan.sunnycase.moe --index 0
 
+      - name: Configure
+        shell: bash
+        run: |
+          conan install . --build=missing -s build_type=${{matrix.config.buildType}} -pr:a=toolchains/${{matrix.config.name}}.profile.jinja -o "&:runtime=False" -o "&:python=True" -o "&:tests=False" 
+          cmake --preset conan-release
+          
       - name: Build & Install
         run: |
-          cmake --build build --config ${{matrix.config.buildType}}
-          cmake --install build --prefix install
+          cmake --build build/${{matrix.config.buildType}} --config ${{matrix.config.buildType}}
+          cmake --install build/${{matrix.config.buildType}} --prefix install
 
       - name: Upload nncase Native Build Artifact
         uses: actions/upload-artifact@v3
@@ -79,9 +79,9 @@ jobs:
       matrix:
         dotnet-version: ['7.0']
         config:
-          - {name: x86_64-macos, os: macos-12, shell: bash, rid: osx-x64, buildType: Release}
+          - {name: aarch64-macos, os: macos-14, shell: bash, rid: osx-x64, buildType: Release}
           - {name: x86_64-linux, os: ubuntu-latest, shell: bash, rid: linux-x64, buildType: Release}
-          - {name: x86_64-windows, os: windows-2019, shell: bash, rid: win-x64, buildType: Release}
+          # - {name: x86_64-windows, os: windows-2019, shell: bash, rid: win-x64, buildType: Release}
 
     steps:
       - uses: actions/checkout@v2
@@ -99,7 +99,7 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Install nncase native Artifact
-        uses: actions/download-artifact@v2.0.9
+        uses: actions/download-artifact@v3
         with:
           name: nncase-native-${{matrix.config.name}}
           path: ${{github.workspace}}/install
@@ -168,12 +168,12 @@ jobs:
       matrix:
         dotnet-version: ['7.0']
         config:
-          - {name: x86_64-macos, os: macos-12, shell: bash}
+          - {name: aarch64-macos, os: macos-14, shell: bash}
           - {name: x86_64-linux, os: ubuntu-latest, shell: bash}
-          - {name: x86_64-windows, os: windows-2019, shell: bash}
+          # - {name: x86_64-windows, os: windows-2019, shell: bash}
 
-    env:
-      VULKANSDK_VER: 1.3.268.0
+    # env:
+    #   VULKANSDK_VER: 1.3.268.0
 
     steps:
       - uses: actions/checkout@v3
@@ -197,42 +197,20 @@ jobs:
       - name: Set up test environment (macOS)
         run: |
           brew install sunnycase/core/libomp@11.1.0
-          aria2c --parameterized-uri=true https://{sdk.lunarg.com/sdk/download/${VULKANSDK_VER}/mac,distfiles.macports.org/MoltenVK}/vulkansdk-macos-${VULKANSDK_VER}.dmg
-          hdiutil attach ./vulkansdk-macos-*.dmg
-          sudo /Volumes/vulkansdk-macos-*/InstallVulkan.app/Contents/MacOS/InstallVulkan --root $HOME/VulkanSDK --accept-licenses --default-answer --confirm-command install
-          hdiutil detach /Volumes/vulkansdk-macos-*
-          echo "VULKAN_SDK=$HOME/VulkanSDK/macOS" >> $GITHUB_ENV
           wget https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-macos-10.15-x86_64.zip -O swiftshader.zip
           unzip swiftshader.zip
-          sudo cmake -E make_directory /usr/local/share/vulkan/icd.d
-          sudo cp lib/* /usr/local/share/vulkan/icd.d
           cp install/lib/*.dylib install/
           echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
         if: runner.os == 'macOS'
 
       - name: Set up test environment (Linux)
         run: |
-          wget https://sdk.lunarg.com/sdk/download/${VULKANSDK_VER}/linux/vulkansdk-linux-x86_64-${VULKANSDK_VER}.tar.xz -O vulkansdk.tar.xz
-          tar xf vulkansdk.tar.xz
-          sudo cp -P ${VULKANSDK_VER}/x86_64/lib/libvulkan.so* /usr/local/lib/
-          wget https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-ubuntu-18.04-x86_64.zip -O swiftshader.zip
-          unzip swiftshader.zip
-          sudo cmake -E make_directory /usr/local/share/vulkan/icd.d
-          sudo cp lib/* /usr/local/share/vulkan/icd.d
-          cp install/lib/*.so install/
           echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
         if: runner.os == 'Linux'
 
       - name: Set up test environment (Windows)
         shell: pwsh
         run: |
-          # Invoke-WebRequest -Uri https://sdk.lunarg.com/sdk/download/${env:VULKANSDK_VER}/windows/VulkanSDK-${env:VULKANSDK_VER}-Installer.exe -O VulkanSDK-Installer.exe
-          # .\VulkanSDK-Installer.exe /S
-          Invoke-WebRequest -Uri https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-windows-2019-x86_64.zip -OutFile swiftshader.zip
-          Expand-Archive swiftshader.zip
-          Copy-Item swiftshader\lib\vk_swiftshader_icd.json swiftshader\bin\
-          Copy-Item install/bin/*.dll install/
-          echo "VK_ICD_FILENAMES=${env:GITHUB_WORKSPACE}/swiftshader/bin/vk_swiftshader_icd.json" >> $env:GITHUB_ENV
           echo "PYTHONPATH=${env:GITHUB_WORKSPACE}/install/lib;${env:GITHUB_WORKSPACE}/install/python;${env:GITHUB_WORKSPACE}/tests" >> $env:GITHUB_ENV
           echo "PATH=${env:PATH};${env:GITHUB_WORKSPACE}/install/bin" >> $env:GITHUB_ENV
         if: runner.os == 'Windows'
@@ -240,13 +218,13 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.7
+          python-version: 3.8
           cache: 'pip'
           cache-dependency-path: '**/requirements.test.txt'
 
       - name: Install Python Packages
         run:
-          # python -m pip install --upgrade "pip<24.0" #pip24 not available on 3.7
+          # python -m pip install --upgrade "pip<24.0" #pip24 not available on 3.8
           pip install -r requirements.test.txt
 
       - name: Create Test Environment
