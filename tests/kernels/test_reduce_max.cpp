@@ -212,7 +212,7 @@ TEST_P(ReduceMaxTest, ReduceMax) {
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
         auto axis_ort = runtime_tensor_2_ort_tensor(axis);
-        auto output_ort = ortki_ReduceMean(runtime_tensor_2_ort_tensor(a),
+        auto output_ort = ortki_ReduceMax(runtime_tensor_2_ort_tensor(a),
                                            axis_ort, keepDims_value, 0);
 
         // expected
