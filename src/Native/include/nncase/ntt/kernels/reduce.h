@@ -19,6 +19,7 @@
 #include "../shape_infer/reduce.h"
 #include "../tensor_ops.h"
 #include "../tensor_traits.h"
+#include "../ukernels.h"
 #include "../utility.h"
 #include "nncase/ntt/shape.h"
 #include <limits>
@@ -26,36 +27,7 @@
 #include <utility>
 
 namespace nncase::ntt {
-enum class reduce_op {
-    mean,
-    min,
-    max,
-    sum,
-    prod,
-};
-
 namespace detail {
-template <reduce_op Op> struct reduce_to_binary_type;
-
-template <> struct reduce_to_binary_type<reduce_op::mean> {
-    template <class T1, class T2> using type = ops::add<T1, T2>;
-};
-
-template <> struct reduce_to_binary_type<reduce_op::min> {
-    template <class T1, class T2> using type = ops::min<T1, T2>;
-};
-
-template <> struct reduce_to_binary_type<reduce_op::max> {
-    template <class T1, class T2> using type = ops::max<T1, T2>;
-};
-
-template <> struct reduce_to_binary_type<reduce_op::sum> {
-    template <class T1, class T2> using type = ops::add<T1, T2>;
-};
-
-template <> struct reduce_to_binary_type<reduce_op::prod> {
-    template <class T1, class T2> using type = ops::mul<T1, T2>;
-};
 
 template <reduce_op Op, bool Accumulate, IsTensor TIn, IsTensor TOut,
           IsFixedDims Axes, IsFixedDims PackedAxes, class PadedNums>
@@ -81,57 +53,47 @@ class reduce_impl {
 
   public:
     constexpr void operator()(const TIn &input, TOut &output) {
-        auto in_p = input.elements().data();
-        auto out_p = output.elements().data();
-        // 1. Initialize
-        if constexpr (!Accumulate) {
-            ntt::apply(output.shape(),
-                  [&](auto index) { output(index) = initial_value(); });
-        }
-
-        // 2. Reduce
-        apply<0>(input, output, in_p, out_p);
-
-        // 3. Mean
-        if constexpr (Op == reduce_op::mean) {
-            size_t inner_size =
-                slice_fixed_dims<Axes::rank(), Axes::at(0)>(input.shape())
-                    .length();
-            if constexpr (use_vector_reduce) {
-                inner_size *= TInElem::shape_type::length();
+        ntt::apply(output.shape(), [&](auto index) {
+            auto reduced_in = (TInElem)initial_value();
+            apply_reduce<0>(input, index, reduced_in);
+            if constexpr (IsScalar<TOutElem>) {
+                output(index) = ntt::reduce<
+                    ukernels::reduce_to_binary_type<Op>::template type,
+                    TOutElem>(reduced_in);
+            } else {
+                output(index) = reduced_in;
             }
 
-            auto denom = (TOutScalar)inner_size;
-            ntt::apply(output.shape(), [&](auto index) { output(index) /= denom; });
-        }
+            // Mean
+            if constexpr (Op == reduce_op::mean) {
+                size_t inner_size =
+                    slice_fixed_dims<Axes::rank(), Axes::at(0)>(input.shape())
+                        .length();
+                if constexpr (use_vector_reduce) {
+                    inner_size *= TInElem::shape_type::length();
+                }
+
+                auto denom = (TOutScalar)inner_size;
+                output(index) /= denom;
+            }
+        });
     }
 
   private:
-    template <size_t Axis, class TInP, class TOutP>
-    constexpr void apply(const TIn &input, TOut &output, TInP in_p,
-                         TOutP out_p) {
-        for (size_t i = 0; i < input.shape()[Axis]; i++) {
-            if constexpr (Axis == TIn::rank() - 1) {
-                reduce(*out_p, *in_p);
-            } else {
-                apply<Axis + 1>(input, output, in_p, out_p);
+    template <size_t ReduceIndex>
+    constexpr void apply_reduce(const TIn &input,
+                                ranked_shape<TIn::rank()> index,
+                                TInElem &reduced_in) {
+        constexpr size_t Axis = Axes::at(ReduceIndex);
+        if constexpr (ReduceIndex < Axes::rank() - 1) {
+            for (size_t i = 0; i < input.shape()[Axis]; i++) {
+                index[Axis] = i;
+                apply_reduce<ReduceIndex + 1>(input, index, reduced_in);
             }
-
-            in_p += input.strides()[Axis];
-            out_p +=
-                utility_detail::get_safe_stride(output, Axis, TOut::shape());
-        }
-    }
-
-    template <class TOutElem, class TInElem>
-    void reduce(TOutElem &output, const TInElem input) {
-        if constexpr (IsScalar<TOutElem>) {
-            output = ntt::reduce<reduce_to_binary_type<Op>::template type>(
-                input, output);
         } else {
-            output =
-                reduce_to_binary_type<Op>::template type<TOutElem, TInElem>()(
-                    output, input);
+            const TInElem *in_p = &input(index);
+            reduced_in = ntt::u_reduce<Op>(in_p, input.strides()[Axis],
+                                           input.shape()[Axis], reduced_in);
         }
     }
 };

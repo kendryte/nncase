@@ -21,6 +21,14 @@
 #include <type_traits>
 
 namespace nncase::ntt {
+enum class reduce_op {
+    mean,
+    min,
+    max,
+    sum,
+    prod,
+};
+
 namespace ops {
 
 /**
