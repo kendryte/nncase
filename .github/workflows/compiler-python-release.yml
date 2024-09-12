@@ -53,7 +53,7 @@ jobs:
       matrix:
         dotnet-version: ['7.0']
         config:
-          - {name: aarch64-macos, os: macos-14}
+          # - {name: aarch64-macos, os: macos-14}
           - {name: x86_64-linux, os: ubuntu-latest}
           # - {name: x86_64-windows, os: windows-2019, arch: x64}
 
