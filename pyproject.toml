@@ -45,11 +45,11 @@ archs = ["AMD64"]
 
 [tool.cibuildwheel.linux]
 archs = ["x86_64"]
-before-all = [
-  "pip install conan==2.6.0",
-  "conan profile detect",
-  "conan profile update settings.compiler.libcxx=libstdc++11 default"
-]
+# before-all = [
+#   "pip install conan==2.6.0",
+#   "conan profile detect",
+#   echo 'settings.compiler.libcxx=libstdc++11' >> ~/.conan2/profiles/default"
+# ]
 
 before-build = [
   "rm -f {project}/CMakeUserPresets.json",
