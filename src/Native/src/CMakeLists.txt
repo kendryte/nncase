@@ -27,16 +27,16 @@ add_subdirectory(kernels)
 
 if (NOT BUILDING_RUNTIME)
     add_executable(nncasetest test.cpp)
-    target_link_libraries(nncasetest PRIVATE nncaseruntime)
+    target_link_libraries(nncasetest PRIVATE nncaseruntime stdc++)
     if (${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo" AND MSVC)
         set_target_properties(nncasetest PROPERTIES LINK_FLAGS "/PROFILE")
     endif()
 
     add_executable(nncasetest_cli test_cli.cpp)
-    target_link_libraries(nncasetest_cli PRIVATE nncaseruntime)
+    target_link_libraries(nncasetest_cli PRIVATE nncaseruntime stdc++)
 
     add_executable(nncasetest_dynamic_cli test_dynamic_cli.cpp)
-    target_link_libraries(nncasetest_dynamic_cli PRIVATE nncaseruntime)
+    target_link_libraries(nncasetest_dynamic_cli PRIVATE nncaseruntime stdc++)
 endif()
 
 if(BUILDING_RUNTIME)
