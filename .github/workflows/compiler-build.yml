@@ -85,7 +85,7 @@ jobs:
 
     steps:
       - name: Remove other .NET SDK
-        run: sudo apt remove --purge dotnet-sdk-5.0
+        run: sudo apt remove --purge dotnet-sdk-8.0
 
       - uses: actions/checkout@v2
       - name: Setup .NET
