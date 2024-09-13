@@ -15,10 +15,12 @@
 #pragma once
 #include "../../ukernels.h"
 #include "arch_types.h"
+#include "nncase/ntt/vector.h"
+#include <vector>
 
 namespace nncase::ntt::ukernels {
 template <size_t M, size_t N, size_t MStrides>
-class upack<M, N, MStrides, true, float, vector<float, 8>> {
+class u_pack<M, N, MStrides, true, float, vector<float, 8>> {
   public:
     constexpr void operator()(const float *input,
                               vector<float, 8> *output) noexcept {
@@ -36,5 +38,9 @@ class upack<M, N, MStrides, true, float, vector<float, 8>> {
             }
         }
     }
+};
+
+template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
+    static constexpr size_t unroll = 8;
 };
 } // namespace nncase::ntt::ukernels

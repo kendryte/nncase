@@ -251,10 +251,21 @@ struct mul_add<TScalar, TTensor, TTensor> {
     ops::mul_add<element_type, element_type, element_type> op_;
 };
 
-template <template <class T1, class T2> class Op, class TResult,
+template <template <class T1, class T2> class Op, IsScalar TResult,
           IsTensor TTensor>
 struct reduce<Op, TResult, TTensor> {
     using element_type = typename TTensor::element_type;
+
+    constexpr TResult operator()(const TTensor &v,
+                                 TResult init_value) const noexcept {
+        Op<TResult, element_type> op;
+        auto count = v.shape()[0];
+        auto value = init_value;
+        for (size_t i = 0; i < count; i++) {
+            value = op(value, v(i));
+        }
+        return value;
+    }
 
     constexpr TResult operator()(const TTensor &v) const noexcept {
         Op<TResult, element_type> op;

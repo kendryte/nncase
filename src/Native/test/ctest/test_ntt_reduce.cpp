@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "nncase/ntt/kernels/reduce.h"
 #include "ntt_test.h"
 #include "ortki_helper.h"
 #include <gtest/gtest.h>
@@ -34,8 +35,7 @@ TEST(ReduceSumTestFloat, ReduceM_NoPack) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, N>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::add>(*ntt_input, *ntt_output1, ntt::fixed_shape<0>{},
-                               ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+    ntt::reduce_sum<ntt::fixed_shape<0>>(*ntt_input, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -63,8 +63,7 @@ TEST(ReduceMaxTestFloat, ReduceM_NoPack) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, N>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::max>(*ntt_input, *ntt_output1, ntt::fixed_shape<0>{},
-                               ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+    ntt::reduce_max<ntt::fixed_shape<0>>(*ntt_input, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -92,8 +91,7 @@ TEST(ReduceMinTestFloat, ReduceM_NoPack) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, N>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::min>(*ntt_input, *ntt_output1, ntt::fixed_shape<0>{},
-                               ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+    ntt::reduce_min<ntt::fixed_shape<0>>(*ntt_input, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -121,8 +119,7 @@ TEST(ReduceMeanTestFloat, ReduceM_NoPack) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, N>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::mean>(*ntt_input, *ntt_output1, ntt::fixed_shape<0>{},
-                                ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+    ntt::reduce_mean<ntt::fixed_shape<0>>(*ntt_input, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -155,9 +152,8 @@ TEST(ReduceSumTestFloat, ReduceM_PackM) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, N>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::add>(ntt_input_pack, *ntt_output1,
-                               ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
-                               ntt::fixed_shape<>{});
+    ntt::reduce_sum<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(ntt_input_pack,
+                                                              *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -190,9 +186,8 @@ TEST(ReduceMaxTestFloat, ReduceM_PackM) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, N>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::max>(ntt_input_pack, *ntt_output1,
-                               ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
-                               ntt::fixed_shape<>{});
+    ntt::reduce_max<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(ntt_input_pack,
+                                                              *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -225,9 +220,8 @@ TEST(ReduceMinTestFloat, ReduceM_PackM) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, N>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::min>(ntt_input_pack, *ntt_output1,
-                               ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
-                               ntt::fixed_shape<>{});
+    ntt::reduce_min<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(ntt_input_pack,
+                                                              *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -260,9 +254,8 @@ TEST(ReduceMeanTestFloat, ReduceM_PackM) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, N>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::mean>(ntt_input_pack, *ntt_output1,
-                                ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
-                                ntt::fixed_shape<>{});
+    ntt::reduce_mean<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(ntt_input_pack,
+                                                               *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -290,8 +283,7 @@ TEST(ReduceSumTestFloat, ReduceN_NoPack) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<M, 1>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::add>(*ntt_input, *ntt_output1, ntt::fixed_shape<1>{},
-                               ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+    ntt::reduce_sum<ntt::fixed_shape<1>>(*ntt_input, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -319,8 +311,7 @@ TEST(ReduceMaxTestFloat, ReduceN_NoPack) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<M, 1>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::max>(*ntt_input, *ntt_output1, ntt::fixed_shape<1>{},
-                               ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+    ntt::reduce_max<ntt::fixed_shape<1>>(*ntt_input, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -348,8 +339,7 @@ TEST(ReduceMinTestFloat, ReduceN_NoPack) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<M, 1>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::min>(*ntt_input, *ntt_output1, ntt::fixed_shape<1>{},
-                               ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+    ntt::reduce_min<ntt::fixed_shape<1>>(*ntt_input, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -377,8 +367,7 @@ TEST(ReduceMeanTestFloat, ReduceN_NoPack) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<M, 1>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::mean>(*ntt_input, *ntt_output1, ntt::fixed_shape<1>{},
-                                ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+    ntt::reduce_mean<ntt::fixed_shape<1>>(*ntt_input, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -411,9 +400,7 @@ TEST(ReduceSumTestFloat, ReduceN_PackN) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<M, 1>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::add>(ntt_input_pack, *ntt_output1,
-                               ntt::fixed_shape<1>{}, ntt::fixed_shape<1>{},
-                               ntt::fixed_shape<>{});
+    ntt::reduce_sum<ntt::fixed_shape<1>>(ntt_input_pack, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -446,9 +433,8 @@ TEST(ReduceMaxTestFloat, ReduceN_PackN) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<M, 1>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::max>(ntt_input_pack, *ntt_output1,
-                               ntt::fixed_shape<1>{}, ntt::fixed_shape<1>{},
-                               ntt::fixed_shape<>{});
+    ntt::reduce_max<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(ntt_input_pack,
+                                                              *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -481,9 +467,8 @@ TEST(ReduceMinTestFloat, ReduceN_PackN) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<M, 1>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::min>(ntt_input_pack, *ntt_output1,
-                               ntt::fixed_shape<1>{}, ntt::fixed_shape<1>{},
-                               ntt::fixed_shape<>{});
+    ntt::reduce_min<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(ntt_input_pack,
+                                                              *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -516,9 +501,8 @@ TEST(ReduceMeanTestFloat, ReduceN_PackN) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<M, 1>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::mean>(ntt_input_pack, *ntt_output1,
-                                ntt::fixed_shape<1>{}, ntt::fixed_shape<1>{},
-                                ntt::fixed_shape<>{});
+    ntt::reduce_mean<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(ntt_input_pack,
+                                                               *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -546,9 +530,7 @@ TEST(ReduceSumTestFloat, ReduceMN_NoPack) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::add>(*ntt_input, *ntt_output1,
-                               ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<>{},
-                               ntt::fixed_shape<>{});
+    ntt::reduce_sum<ntt::fixed_shape<0, 1>>(*ntt_input, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -576,9 +558,7 @@ TEST(ReduceMaxTestFloat, ReduceMN_NoPack) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::max>(*ntt_input, *ntt_output1,
-                               ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<>{},
-                               ntt::fixed_shape<>{});
+    ntt::reduce_max<ntt::fixed_shape<0, 1>>(*ntt_input, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -606,9 +586,7 @@ TEST(ReduceMinTestFloat, ReduceMN_NoPack) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::min>(*ntt_input, *ntt_output1,
-                               ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<>{},
-                               ntt::fixed_shape<>{});
+    ntt::reduce_min<ntt::fixed_shape<0, 1>>(*ntt_input, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -636,9 +614,7 @@ TEST(ReduceMeanTestFloat, ReduceMN_NoPack) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::mean>(*ntt_input, *ntt_output1,
-                                ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<>{},
-                                ntt::fixed_shape<>{});
+    ntt::reduce_mean<ntt::fixed_shape<0, 1>>(*ntt_input, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -671,9 +647,8 @@ TEST(ReduceSumTestFloat, ReduceMN_PackM) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::add>(ntt_input_pack, *ntt_output1,
-                               ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0>{},
-                               ntt::fixed_shape<>{});
+    ntt::reduce_sum<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(ntt_input_pack,
+                                                                 *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -706,9 +681,8 @@ TEST(ReduceMaxTestFloat, ReduceMN_PackM) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::max>(ntt_input_pack, *ntt_output1,
-                               ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0>{},
-                               ntt::fixed_shape<>{});
+    ntt::reduce_max<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(ntt_input_pack,
+                                                                 *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -741,9 +715,8 @@ TEST(ReduceMinTestFloat, ReduceMN_PackM) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::min>(ntt_input_pack, *ntt_output1,
-                               ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0>{},
-                               ntt::fixed_shape<>{});
+    ntt::reduce_min<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(ntt_input_pack,
+                                                                 *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -776,9 +749,8 @@ TEST(ReduceMeanTestFloat, ReduceMN_PackM) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::mean>(ntt_input_pack, *ntt_output1,
-                                ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0>{},
-                                ntt::fixed_shape<>{});
+    ntt::reduce_mean<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(
+        ntt_input_pack, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -811,9 +783,8 @@ TEST(ReduceSumTestFloat, ReduceMN_PackN) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::add>(ntt_input_pack, *ntt_output1,
-                               ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<1>{},
-                               ntt::fixed_shape<>{});
+    ntt::reduce_sum<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(ntt_input_pack,
+                                                                 *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -846,9 +817,8 @@ TEST(ReduceMaxTestFloat, ReduceMN_PackN) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::max>(ntt_input_pack, *ntt_output1,
-                               ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<1>{},
-                               ntt::fixed_shape<>{});
+    ntt::reduce_max<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(ntt_input_pack,
+                                                                 *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -881,9 +851,8 @@ TEST(ReduceMinTestFloat, ReduceMN_PackN) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::min>(ntt_input_pack, *ntt_output1,
-                               ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<1>{},
-                               ntt::fixed_shape<>{});
+    ntt::reduce_min<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(ntt_input_pack,
+                                                                 *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -916,9 +885,8 @@ TEST(ReduceMeanTestFloat, ReduceMN_PackN) {
     // ntt
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce<ntt::ops::mean>(ntt_input_pack, *ntt_output1,
-                                ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0>{},
-                                ntt::fixed_shape<>{});
+    ntt::reduce_mean<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(
+        ntt_input_pack, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);

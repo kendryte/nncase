@@ -21,6 +21,14 @@
 #include <type_traits>
 
 namespace nncase::ntt {
+enum class reduce_op {
+    mean,
+    min,
+    max,
+    sum,
+    prod,
+};
+
 namespace ops {
 
 /**
@@ -210,10 +218,6 @@ template <class T1, class T2> struct pow {
     }
 };
 
-template <class T1, class T2> struct mean {
-    constexpr auto operator()(const T1 &v1) const noexcept { return v1; }
-};
-
 template <class T, class B> struct swishb {
     constexpr T operator()(const T &v, const B &beta) const noexcept;
 };
@@ -222,8 +226,13 @@ template <class T, class B> struct swishb {
 
 template <template <class T1, class T2> class BinaryOp, class TResult, class T>
 struct reduce {
+    constexpr TResult operator()(const T &v,
+                                 TResult init_value) const noexcept {
+        return BinaryOp<TResult, T>()(init_value, v);
+    }
+
     constexpr TResult operator()(const T &v) const noexcept {
-        return TResult(v);
+        return (TResult)v;
     }
 };
 
@@ -261,7 +270,11 @@ template <class T1, class T2> struct clamp {
         using TResult =                                                        \
             std::conditional_t<std::is_same_v<TResultOrVoid, void>,            \
                                element_or_scalar_t<T>, TResultOrVoid>;         \
-        return ops::reduce<op, TResult, T>()(v);                               \
+        return ntt::reduce<op, TResult>(v);                                    \
+    }                                                                          \
+    template <IsScalar TResult, IsTensorOrScalar T>                            \
+    constexpr auto name(const T &v, TResult init_value) noexcept {             \
+        return ntt::reduce<op>(v, init_value);                                 \
     }
 
 NTT_DEFINE_UNARY_FUNC_IMPL(abs)
@@ -301,10 +314,6 @@ NTT_DEFINE_BINARY_FUNC_IMPL(max)
 NTT_DEFINE_BINARY_FUNC_IMPL(pow)
 NTT_DEFINE_BINARY_FUNC_IMPL(swishb)
 
-NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_sum, ops::add)
-NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_max, ops::max)
-NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_min, ops::min)
-
 template <IsTensorOrScalar T1, IsTensorOrScalar T2, IsTensorOrScalar TResult>
 constexpr TResult mul_add(const T1 &v1, const T2 &v2,
                           const TResult &v3) noexcept {
@@ -315,6 +324,22 @@ template <bool AccC, IsFixedTensor T1, IsFixedTensor T2, IsFixedTensor TResult>
 constexpr TResult mma(const T1 &v1, const T2 &v2, const TResult &v3) noexcept {
     return ops::mma<AccC, T1, T2, TResult>()(v1, v2, v3);
 }
+
+template <template <class T1, class T2> class BinaryOp, IsScalar TResult,
+          IsTensorOrScalar T>
+constexpr TResult reduce(const T &v, TResult init_value) noexcept {
+    return ops::reduce<BinaryOp, TResult, T>()(v, init_value);
+}
+
+template <template <class T1, class T2> class BinaryOp, IsScalar TResult,
+          IsTensorOrScalar T>
+constexpr TResult reduce(const T &v) noexcept {
+    return ops::reduce<BinaryOp, TResult, T>()(v);
+}
+
+NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_sum, ops::add)
+NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_max, ops::max)
+NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_min, ops::min)
 
 /**
  * @defgroup Builtin operators

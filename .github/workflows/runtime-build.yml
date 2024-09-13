@@ -67,14 +67,14 @@ jobs:
       #    cat benchnncase.log
 
       - name: Upload nncaseruntime Build Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: nncaseruntime-${{matrix.config.name}}
           path: ${{github.workspace}}/install
           if-no-files-found: error
 
     #- name: Upload nncaseruntime Benchmark
-    #  uses: actions/upload-artifact@v3
+    #  uses: actions/upload-artifact@v4
     #  with:
     #    name: nncaseruntime-benchmark-${{matrix.config.name}}
     #    path: ${{github.workspace}}/benchnncase.log
@@ -134,7 +134,7 @@ jobs:
           ctest -C ${{matrix.config.buildType}} --test-dir src/Native/test/ctest --output-on-failure -j4
 
       - name: Upload nncaseruntime Build Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: nncaseruntime-${{matrix.config.name}}
           path: ${{github.workspace}}/install
