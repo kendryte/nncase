@@ -52,7 +52,8 @@ archs = ["x86_64"]
 before-all = [
   "pip install conan==2.6.0",
   "conan profile detect --force",
-#  "conan profile update default.conf settings.compiler.libcxx=libstdc++17"
+  "sed -i 's/compiler.libcxx=libstdc++11/compiler.libcxx=libstdc++17/' $HOME/.conan2/profiles/default"
+  "sed -i 's/libstdc++11/libstdc++11, libstdc++17/' $HOME/.conan2/settings.yml"
   "conan profile show"
 ]
 
