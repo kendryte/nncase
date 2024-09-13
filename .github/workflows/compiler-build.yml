@@ -194,19 +194,10 @@ jobs:
           name: nncase-${{matrix.config.name}}
           path: ${{github.workspace}}/install
 
-      - name: Set up test environment (macOS)
-        run: |
-          brew install sunnycase/core/libomp@11.1.0
-          wget https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-macos-10.15-x86_64.zip -O swiftshader.zip
-          unzip swiftshader.zip
-          cp install/lib/*.dylib install/
-          echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
-        if: runner.os == 'macOS'
-
-      - name: Set up test environment (Linux)
+      - name: Set up test environment (macOS && Linux)
         run: |
           echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
-        if: runner.os == 'Linux'
+        if: runner.os != 'Windows'
 
       - name: Set up test environment (Windows)
         shell: pwsh
@@ -238,6 +229,9 @@ jobs:
         run: |
           dotnet tool install --global dotnet-coverage
           export COREHOST_TRACE=1
+          echo "``````````````````````````````````````````"
+          dotnet --list-sdks
+          echo "``````````````````````````````````````````"
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_basic.xml pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/onnx_basic.xml
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_combine.xml pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/onnx_combine.xml
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_basic.xml pytest tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/tflite_basic.xml
