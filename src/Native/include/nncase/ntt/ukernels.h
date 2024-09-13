@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "apply.h"
 #include "primitive_ops.h"
 #include "tensor.h"
 #include "tensor_traits.h"
@@ -60,18 +61,66 @@ template <> struct reduce_to_binary_type<reduce_op::prod> {
     template <class T1, class T2> using type = ops::mul<T1, T2>;
 };
 
+template <reduce_op Op, class T, bool Arch> struct u_reduce_policy {
+    static constexpr size_t unroll = 1;
+};
+
 template <reduce_op Op, class T, bool Arch> struct u_reduce {
   public:
     constexpr T operator()(const T *input, size_t input_stride, size_t count,
                            T init_value) noexcept {
         using binary_op_t =
             typename reduce_to_binary_type<Op>::template type<T, T>;
+        using policy_t = u_reduce_policy<Op, T, Arch>;
+        constexpr auto unroll = policy_t::unroll;
+
+        if (count / unroll) {
+            T temp[unroll];
+#if 1
+            for (size_t i = 0; i < unroll; i++) {
+                temp[i] = *input;
+                input += input_stride;
+                count--;
+            }
+
+            while (count / unroll) {
+                for (size_t i = 0; i < unroll; i++) {
+                    temp[i] = binary_op_t()(temp[i], *input);
+                    input += input_stride;
+                    count--;
+                }
+            }
+
+            init_value = binary_op_t()(init_value, tree_reduce<unroll>(temp));
+#else
+            while (count / unroll) {
+                for (size_t i = 0; i < unroll; i++) {
+                    temp[i] = *input;
+                    input += input_stride;
+                    count--;
+                }
+                init_value =
+                    binary_op_t()(init_value, tree_reduce<unroll>(temp));
+            }
+#endif
+        }
 
         for (size_t i = 0; i < count; i++) {
             init_value = binary_op_t()(init_value, *input);
             input += input_stride;
         }
         return init_value;
+    }
+
+    template <size_t N> constexpr T tree_reduce(T *input) noexcept {
+        using binary_op_t =
+            typename reduce_to_binary_type<Op>::template type<T, T>;
+        if constexpr (N == 2) {
+            return binary_op_t()(input[0], input[1]);
+        } else {
+            return binary_op_t()(tree_reduce<N / 2>(input),
+                                 tree_reduce<N / 2>(input + N / 2));
+        }
     }
 };
 } // namespace nncase::ntt::ukernels

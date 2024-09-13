@@ -55,7 +55,7 @@ class reduce_impl {
     constexpr void operator()(const TIn &input, TOut &output) {
         ntt::apply(output.shape(), [&](auto index) {
             auto reduced_in = (TInElem)initial_value();
-            apply_reduce<0>(input, index, reduced_in);
+            apply_reduce(input, reduce_source_offset<TIn::rank(), Axes>(index), reduced_in);
             if constexpr (IsScalar<TOutElem>) {
                 output(index) = ntt::reduce<
                     ukernels::reduce_to_binary_type<Op>::template type,
@@ -80,15 +80,54 @@ class reduce_impl {
     }
 
   private:
-    template <size_t ReduceIndex>
     constexpr void apply_reduce(const TIn &input,
                                 ranked_shape<TIn::rank()> index,
                                 TInElem &reduced_in) {
+        auto src_tensor =
+            input.view(index, fixed_reduce_source_shape_type<Axes, TIn>());
+        auto conti_dims =
+            contiguous_dims(src_tensor.shape(), src_tensor.strides());
+        if (conti_dims > 1) {
+            ranked_shape<TIn::rank()> src_index{};
+            apply_contiguous_reduce<0>(src_index, conti_dims, src_tensor,
+                                       reduced_in);
+        } else {
+            apply_non_contiguous_reduce<0>(input, index, reduced_in);
+        }
+    }
+
+    template <size_t Axis, class TSubIn>
+    constexpr void apply_contiguous_reduce(ranked_shape<TSubIn::rank()> &index,
+                                           size_t conti_dims,
+                                           const TSubIn &input,
+                                           TInElem &reduced_in) {
+        const auto outer_dims = TSubIn::rank() - conti_dims;
+        if (Axis >= outer_dims) {
+            size_t inner_size = 1;
+            for (size_t i = outer_dims; i < input.shape().rank(); i++)
+                inner_size *= input.shape()[i];
+            auto input_p =
+                input.buffer().data() + linear_offset(index, input.strides());
+            reduced_in = ntt::u_reduce<Op>(input_p, 1, inner_size, reduced_in);
+        } else if constexpr (Axis < TSubIn::rank() - 1) {
+            const auto dim = input.shape()[Axis];
+            for (index[Axis] = 0; index[Axis] < dim; index[Axis]++) {
+                apply_contiguous_reduce<Axis + 1>(index, conti_dims, input,
+                                                  reduced_in);
+            }
+        }
+    }
+
+    template <size_t ReduceIndex>
+    constexpr void apply_non_contiguous_reduce(const TIn &input,
+                                               ranked_shape<TIn::rank()> index,
+                                               TInElem &reduced_in) {
         constexpr size_t Axis = Axes::at(ReduceIndex);
         if constexpr (ReduceIndex < Axes::rank() - 1) {
             for (size_t i = 0; i < input.shape()[Axis]; i++) {
                 index[Axis] = i;
-                apply_reduce<ReduceIndex + 1>(input, index, reduced_in);
+                apply_non_contiguous_reduce<ReduceIndex + 1>(input, index,
+                                                             reduced_in);
             }
         } else {
             const TInElem *in_p = &input(index);
