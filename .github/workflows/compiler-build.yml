@@ -90,6 +90,11 @@ jobs:
         with:
           dotnet-version: '7.0.x'
 
+      - name: Set dotnet version
+        run: |
+          cd ${{github.workspace}}
+          sh set_dotnet_version.sh 7
+
       - name: Cache NuGet packages
         uses: actions/cache@v3
         with:
@@ -179,6 +184,11 @@ jobs:
         with:
           dotnet-version: '7.0.x'
 
+      - name: Set dotnet version
+        run: |
+          cd ${{github.workspace}}
+          sh set_dotnet_version.sh 7
+
       - name: Install nncase native Artifact
         uses: actions/download-artifact@v3
         with:
@@ -256,6 +266,11 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '7.0.x'
+
+      - name: Set dotnet version
+        run: |
+          cd ${{github.workspace}}
+          sh set_dotnet_version.sh 7
 
       - name: Download Unit Test Coverage
         uses: actions/download-artifact@v3
