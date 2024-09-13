@@ -285,7 +285,7 @@ public sealed class GraphTiler
                     return;
                 }
 
-                if (current is not TileNode { Level: >= 1 } childNode)
+                if (current is not TileNode childNode || childNode.Level < sl)
                 {
                     return;
                 }

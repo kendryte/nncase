@@ -20,9 +20,9 @@ namespace Nncase.Evaluator.Math;
 /// </summary>
 public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICostEvaluator<MatMul>, IShapeEvaluator<MatMul>, IMetricEvaluator<MatMul>
 {
-    public static IRType VisitDistributedType(DistributedType a, DistributedType b, bool packingK = false)
+    public static IRType VisitDistributedType(DistributedType a, DistributedType b, bool packingK = false, DimInfo? dimInfo = null)
     {
-        if (VisitTensorType(a.TensorType, b.TensorType, packingK) is not TensorType outType)
+        if (VisitTensorType(a.TensorType, b.TensorType, packingK, dimInfo) is not TensorType outType)
         {
             return new InvalidType($"{a.TensorType} {b.TensorType} not support");
         }
@@ -37,6 +37,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var oRank = outType.Shape.Rank;
         var aPad = oRank - aRank;
         var bPad = oRank - bRank;
+        var (lm, lk, rk, _) = dimInfo ?? new(aRank - 2, aRank - 1, bRank - 2, bRank - 1);
 
         var ndsbp = new SBP[a.Placement.Rank];
         for (int i = 0; i < a.Placement.Rank; i++)
@@ -46,11 +47,11 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             {
                 // split on k
                 case (SBPSplit { Axis: int ax }, SBPSplit { Axis: int bx }):
-                    if (ax == (aRank - 1) && bx == (bRank - 2))
+                    if (ax == lk && bx == rk)
                     {
                         ndsbp[i] = SBP.P;
                     }
-                    else if ((ax == (aRank - 1) && bx != (bRank - 2)) || (ax != (aRank - 1) && bx == (bRank - 2)))
+                    else if ((ax == lk && bx != rk) || (ax != lk && bx == rk))
                     {
                         return invalid;
                     }
@@ -68,13 +69,13 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
 
                     break;
                 case (SBPSplit { Axis: int ax }, SBPBroadCast):
-                    if (ax == aRank - 1)
+                    if (ax == lk)
                     {
                         return invalid;
                     }
 
                     // invalid (S, B) if B is not broacast matmul
-                    if (ax < aRank - 2 && !(bRank <= 2 || (ax + aPad - bPad >= 0 && b.TensorType.Shape[ax + aPad - bPad] == 1)))
+                    if (ax < lm && !(bRank <= 2 || (ax + aPad - bPad >= 0 && b.TensorType.Shape[ax + aPad - bPad] == 1)))
                     {
                         return invalid;
                     }
@@ -82,13 +83,13 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                     ndsbp[i] = SBP.S(ax + aPad);
                     break;
                 case (SBPBroadCast, SBPSplit { Axis: int bx }):
-                    if (bx == bRank - 2)
+                    if (bx == rk)
                     {
                         return invalid;
                     }
 
                     // invalid (B, S) if A is not broacast matmul
-                    if (bx < bRank - 2 && !(aRank <= 2 || (bx + bPad - aPad >= 0 && a.TensorType.Shape[bx + bPad - aPad] == 1)))
+                    if (bx < rk && !(aRank <= 2 || (bx + bPad - aPad >= 0 && a.TensorType.Shape[bx + bPad - aPad] == 1)))
                     {
                         return invalid;
                     }
@@ -106,17 +107,14 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         return new DistributedType(outType, ndsbp, a.Placement);
     }
 
-    public static IRType VisitTensorType(TensorType lhs, TensorType rhs, bool packingK = false)
+    public static IRType VisitTensorType(TensorType lhs, TensorType rhs, bool packingK = false, DimInfo? dimInfo = null)
     {
         if (lhs.Shape.IsUnranked || rhs.Shape.IsUnranked)
         {
             return new TensorType(lhs.DType, Shape.Unranked);
         }
 
-        // if (lhs.Shape[^1].IsUnknown || rhs.Shape[^2].IsUnknown)
-        // {
-        //     return new TensorType(lhs.DType, Shape.Unranked);
-        // }
+        var (lm, lk, rk, rn) = dimInfo ?? new(lhs.Shape.Rank - 2, lhs.Shape.Rank - 1, rhs.Shape.Rank - 2, rhs.Shape.Rank - 1);
         DataType dtype = lhs.DType;
         DataType lhsDType = lhs.DType is VectorType l ? l.ElemType : lhs.DType;
         DataType rhsDType = rhs.DType is VectorType r ? r.ElemType : rhs.DType;
@@ -125,7 +123,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             return new InvalidType("MatMul lhs and rhs have different DType");
         }
 
-        if (lhs.Shape[^1] != rhs.Shape[^2] && lhs.Shape[^1] != Dimension.Unknown && rhs.Shape[^2] != Dimension.Unknown)
+        if (lhs.Shape[lk] != rhs.Shape[rk] && lhs.Shape[lk] != Dimension.Unknown && rhs.Shape[rk] != Dimension.Unknown)
         {
             return new InvalidType("MatMul lhs and rhs have not compatiable shape");
         }
@@ -183,7 +181,9 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
 
         // batch and channel
         var front = bigShape;
-        var end = new[] { lhs.Shape[^2], rhs.Shape[^1] };
+
+        // currently the output keep the m,n.
+        var end = new[] { lhs.Shape[lm], rhs.Shape[rn] };
         return new TensorType(dtype, front.Concat(end).ToArray());
     }
 
@@ -255,5 +255,9 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var lhs = context.GetArgumentShape(target, MatMul.Lhs);
         var rhs = context.GetArgumentShape(target, MatMul.Rhs);
         return Cast(IR.F.ShapeExpr.MatMulShape(lhs, rhs), DataTypes.Int32);
+    }
+
+    public record DimInfo(int Lm, int Lk, int Rk, int Rn)
+    {
     }
 }

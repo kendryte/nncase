@@ -59,8 +59,7 @@ public sealed class GraphBuilder : ExprVisitor<Unit, Unit>
         var tileNodeTail = tileNodeRoot;
         for (int l = _totalLevel - 1; l >= 1; l--)
         {
-            tileNodeRoot.AddVertex(opNode);
-            tileNodeTail = tileNodeRoot.CreateCluster<TieredTileGraph>(l, copId, new DomainRelation(copId, copId, AffineMap.Identity(domainDims)));
+            tileNodeTail = tileNodeTail.CreateCluster<TieredTileGraph>(l, copId, new DomainRelation(copId, copId, AffineMap.Identity(domainDims)));
         }
 
         tileNodeTail.AddVertex(opNode);

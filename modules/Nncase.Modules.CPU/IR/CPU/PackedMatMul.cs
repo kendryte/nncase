@@ -26,5 +26,9 @@ public sealed partial class PackedMatMul : PackedOp
 
     public IRArray<int> RhsPadedNums { get; }
 
-    public override string DisplayProperty() => $"LhsPackedAxes: {LhsPackedAxes}, LhsPadedNums: {LhsPadedNums}, RhsPackedAxes: {RhsPackedAxes}, RhsPadedNums: {RhsPadedNums}";
+    public bool TransposeA { get; }
+
+    public bool TransposeB { get; }
+
+    public override string DisplayProperty() => $"LhsPackedAxes: {LhsPackedAxes}, LhsPadedNums: {LhsPadedNums}, RhsPackedAxes: {RhsPackedAxes}, RhsPadedNums: {RhsPadedNums}, TransposeA: {TransposeA}, TransposeB: {TransposeB}";
 }

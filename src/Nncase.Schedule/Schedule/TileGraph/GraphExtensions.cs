@@ -37,18 +37,28 @@ public static class GraphExtensions
 
                 alg.FormatVertex += (_, arg) =>
                 {
-                    var cell = new QuikGraph.Graphviz.Dot.GraphvizRecordCell();
-                    cell.Cells.Add(new() { Text = arg.Vertex.ToString(), Port = "Title" });
-                    cell.Cells.Add(new() { Text = arg.Vertex.DomainRelation.ToString() });
+                    var parentCell = new QuikGraph.Graphviz.Dot.GraphvizRecordCell();
+                    parentCell.Cells.Add(new() { Text = arg.Vertex.ToString(), Port = "Title" });
+                    var childCell = new QuikGraph.Graphviz.Dot.GraphvizRecordCell();
+                    parentCell.Cells.Add(childCell);
+                    var domainCell = new QuikGraph.Graphviz.Dot.GraphvizRecordCell();
+                    var boundCell = new QuikGraph.Graphviz.Dot.GraphvizRecordCell();
+                    childCell.Cells.Add(boundCell);
+                    childCell.Cells.Add(domainCell);
                     for (int i = 0; i < arg.Vertex.ReadAccesses.Length; i++)
                     {
                         var item = arg.Vertex.ReadAccesses[i];
-                        cell.Cells.Add(new() { Text = $"read: {item}", Port = $"R{i}" });
+                        domainCell.Cells.Add(new() { Text = $"read: {item}", Port = $"R{i}" });
                     }
 
-                    cell.Cells.Add(new() { Text = $"write: {arg.Vertex.WriteAccess}", Port = $"W" });
+                    domainCell.Cells.Add(new() { Text = $"write: {arg.Vertex.WriteAccess}", Port = $"W" });
 
-                    arg.VertexFormat.Record.Cells.Add(cell);
+                    for (int i = 0; i < arg.Vertex.DomainBounds.Length; i++)
+                    {
+                        boundCell.Cells.Add(new() { Text = $"d{i}: {arg.Vertex.DomainBounds[i]}" });
+                    }
+
+                    arg.VertexFormat.Record.Cells.Add(parentCell);
                     arg.VertexFormat.Shape = QuikGraph.Graphviz.Dot.GraphvizVertexShape.Record;
                     arg.VertexFormat.FillColor = _colors[arg.Vertex.OpId];
                     arg.VertexFormat.Style = QuikGraph.Graphviz.Dot.GraphvizVertexStyle.Filled;

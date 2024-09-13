@@ -34,12 +34,12 @@ public partial class LowerMatmul : RewriteRule<Pattern>
         var rhsShape = rhs.CheckedShape.ToValueArray();
         var rank = Math.Max(lhs.CheckedShape.Rank, rhs.CheckedShape.Rank) + 1;
         var domains = IR.F.Affine.Domains(rank);
-        var lhsRes = new AffineRange[lhs.CheckedShape.Rank];
-        var rhsRes = new AffineRange[rhs.CheckedShape.Rank];
+        var lhsRes = new AffineRange[lhsShape.Length];
+        var rhsRes = new AffineRange[rhsShape.Length];
         for (int i = rank - 1 - 3; i >= 0; i--)
         {
-            var lhsi = i - (rank - (lhs.CheckedShape.Rank + 1));
-            var rhsi = i - (rank - (rhs.CheckedShape.Rank + 1));
+            var lhsi = i - (rank - (lhsShape.Length + 1));
+            var rhsi = i - (rank - (rhsShape.Length + 1));
             switch (lhsi, rhsi)
             {
 #pragma warning disable SA1008 // Opening parenthesis should be spaced correctly
@@ -75,10 +75,26 @@ public partial class LowerMatmul : RewriteRule<Pattern>
             }
         }
 
-        lhsRes[^2] = new AffineRange(domains[^3].Offset, domains[^3].Extent);
-        lhsRes[^1] = new AffineRange(domains[^2].Offset, domains[^2].Extent);
-        rhsRes[^2] = lhsRes[^1];
-        rhsRes[^1] = new AffineRange(domains[^1].Offset, domains[^1].Extent);
+        var (om, ok, on) = (rank - 3, rank - 2, rank - 1);
+        var (lm, lk) = (lhsShape.Length - 2, lhsShape.Length - 1);
+        var (rk, rn) = (rhsShape.Length - 2, rhsShape.Length - 1);
+        if (op is IR.CPU.PackedMatMul pm)
+        {
+            if (pm.TransposeA)
+            {
+                (lm, lk) = (lk, lm);
+            }
+
+            if (pm.TransposeB)
+            {
+                (rk, rn) = (rn, rk);
+            }
+        }
+
+        lhsRes[lm] = new AffineRange(domains[om].Offset, domains[om].Extent);
+        lhsRes[lk] = new AffineRange(domains[ok].Offset, domains[ok].Extent);
+        rhsRes[rk] = lhsRes[lk];
+        rhsRes[rn] = new AffineRange(domains[on].Offset, domains[on].Extent);
 
         var lhsMap = new AffineMap(domains, default, lhsRes);
         var rhsMap = new AffineMap(domains, default, rhsRes);
@@ -96,7 +112,7 @@ public partial class LowerMatmul : RewriteRule<Pattern>
             .Body(op switch
             {
                 MatMul => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[rank - 2][0], 0L)),
-                IR.CPU.PackedMatMul packop => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[rank - 2][0], 0L), packop.LhsPackedAxes, packop.LhsPadedNums, packop.RhsPackedAxes, packop.RhsPadedNums),
+                IR.CPU.PackedMatMul pop => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[rank - 2][0], 0L), pop.LhsPackedAxes, pop.LhsPadedNums, pop.RhsPackedAxes, pop.RhsPadedNums, pop.TransposeA, pop.TransposeB),
                 _ => throw new System.Diagnostics.UnreachableException(),
             })
             .Build();

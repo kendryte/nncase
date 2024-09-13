@@ -72,9 +72,9 @@ public partial class CPU
         return new Call(new InstacneNorm(epsilon, packedAxes, padedNums), input, scale, bias);
     }
 
-    public static Expr PackedMatMul(Expr lhs, Expr rhs, IRArray<int> lhsPackedAxes, IRArray<int> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<int> rhsPadedNums)
+    public static Expr PackedMatMul(Expr lhs, Expr rhs, IRArray<int> lhsPackedAxes, IRArray<int> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<int> rhsPadedNums, bool transA = false, bool transB = false)
     {
-        return new Call(new PackedMatMul(lhsPackedAxes, lhsPadedNums, rhsPackedAxes, rhsPadedNums), lhs, rhs);
+        return new Call(new PackedMatMul(lhsPackedAxes, lhsPadedNums, rhsPackedAxes, rhsPadedNums, transA, transB), lhs, rhs);
     }
 
     public static Expr PackedBinary(Expr lhs, Expr rhs, BinaryOp binaryOp, IRArray<int> lhsPackedAxes, IRArray<int> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<int> rhsPadedNums)

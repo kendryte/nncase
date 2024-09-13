@@ -63,11 +63,17 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [Theory]
     [InlineData(new object[] { new[] { 32, 64 }, new[] { 64, 48 }, new[] { 48, 16 }, 0 })]
     [InlineData(new object[] { new[] { 128, 256 }, new[] { 256, 384 }, new[] { 384, 512 }, 1 })]
-
-    // [InlineData(new object[] { new[] { 1024, 2048 }, new[] { 2048, 1024 }, new[] { 1024, 3072 }, 2, true })]
+    [InlineData(new object[] { new[] { 1024, 2048 }, new[] { 2048, 1024 }, new[] { 1024, 3072 }, 2, true })]
     public async Task TestTileFlowCase(int[] ashape, int[] bshape, int[] eshape, int count, bool packing = false)
     {
-        CompileOptions.TargetOptions = new CpuTargetOptions() { Packing = packing };
+        if (CompileOptions.TargetOptions is not CpuTargetOptions options)
+        {
+            return;
+        }
+
+        options.Packing = packing;
+        options.MemoryBandWidths = [128, 64, 16, 2];
+        options.MemoryCapacities = [0, 65536, 4194304, 2147483647];
         var a = new Var("a", new TensorType(DataTypes.Float32, ashape));
         var b = new Var("b", new TensorType(DataTypes.Float32, bshape));
         var c = IR.F.Tensors.MatMul(a, b);
@@ -229,21 +235,31 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new[] { 1, 384, 512 }, new[] { 512, 512 }, 0 })]
-    [InlineData(new object[] { new[] { 1, 1, 384, 256 }, new[] { 32, 256, 512 }, 1 })]
-    [InlineData(new object[] { new[] { 384, 512 }, new[] { 512, 512 }, 2 })]
-    public async Task TestMatMul(int[] lhsShape, int[] rhsShape, int count)
+
+    [InlineData(new object[] { new[] { 1, 384, 512 }, new[] { 512, 512 }, false, false, 0 })]
+    [InlineData(new object[] { new[] { 1, 1, 384, 256 }, new[] { 32, 256, 512 }, false, false, 1 })]
+    [InlineData(new object[] { new[] { 384, 512 }, new[] { 512, 512 }, false, false, 2 })]
+    [InlineData(new object[] { new[] { 1, 384, 512 }, new[] { 512, 512 }, false, true, 3 })]
+    [InlineData(new object[] { new[] { 1, 1, 384, 256 }, new[] { 32, 256, 512 }, false, true, 4 })]
+    [InlineData(new object[] { new[] { 384, 512 }, new[] { 512, 512 }, false, true, 5 })]
+    public async Task TestPackMatMul(int[] lhsShape, int[] rhsShape, bool constA, bool constB, int count)
     {
-        var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
-        var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
+        Expr lhs = constA ? IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate().AsTensor() : new Var(new TensorType(DataTypes.Float32, lhsShape));
+        Expr rhs = constB ? IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate().AsTensor() : new Var(new TensorType(DataTypes.Float32, rhsShape));
         var pre = IR.F.Tensors.MatMul(lhs, rhs);
 
-        var feedDict = new Dictionary<Var, IValue>() {
-            { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
-            { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
-        };
+        var feedDict = new Dictionary<Var, IValue>();
+        if (!constA)
+        {
+            feedDict.Add((Var)lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate());
+        }
 
-        var rule = new Passes.Rules.CPU.PackMatMul(Rank, Lane);
+        if (!constB)
+        {
+            feedDict.Add((Var)rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate());
+        }
+
+        var rule = new Passes.Rules.CPU.PackMatMul(2, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);

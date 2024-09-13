@@ -24,21 +24,23 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
         var outLanes = Array.Empty<int>();
         var outShape = Array.Empty<int>();
         var axes = Array.Empty<int>();
+        var (lm, lk) = target.TransposeA ? (lhs.Rank - target.RhsPackedAxes.Count - 1, lhs.Rank - target.RhsPackedAxes.Count - 2) : (lhs.Rank - target.LhsPackedAxes.Count - 2, lhs.Rank - target.LhsPackedAxes.Count - 1);
+        var (rk, rn) = target.TransposeB ? (rhs.Rank - target.RhsPackedAxes.Count - 1, rhs.Rank - target.RhsPackedAxes.Count - 2) : (rhs.Rank - target.LhsPackedAxes.Count - 2, rhs.Rank - target.LhsPackedAxes.Count - 1);
         if (target.LhsPackedAxes.Count == 0 && target.RhsPackedAxes.Count == 1)
         {
             outLanes = new[] { (int)rhs.Shape[^1] };
-            outShape = new[] { (int)lhs.Shape[^2], (int)rhs.Shape[^2] };
+            outShape = new[] { (int)lhs.Shape[lm], (int)rhs.Shape[rn] };
             axes = new[] { outRank - 1 };
         }
         else if (target.LhsPackedAxes.Count == 1 && target.RhsPackedAxes.Count == 0)
         {
             outLanes = new[] { (int)lhs.Shape[^1] };
-            outShape = new[] { (int)lhs.Shape[^3], (int)rhs.Shape[^1] };
+            outShape = new[] { (int)lhs.Shape[lm], (int)rhs.Shape[rn] };
             axes = new[] { outRank - 2 };
         }
         else if (target.LhsPackedAxes.Count == 1 && target.RhsPackedAxes.Count == 1)
         {
-            if (target.LhsPackedAxes[0] == lhs.Shape.Length - 2 && target.RhsPackedAxes[0] == rhs.Shape.Length - 3)
+            if (target.LhsPackedAxes[0] == lk && target.RhsPackedAxes[0] == rk)
             {
                 outLanes = Array.Empty<int>();
                 axes = Array.Empty<int>();
@@ -54,19 +56,19 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
         else if (target.LhsPackedAxes.Count == 1 && target.RhsPackedAxes.Count == 2)
         {
             outLanes = new[] { (int)rhs.Shape[^1] };
-            outShape = new[] { (int)lhs.Shape[^3], (int)rhs.Shape[^3] };
+            outShape = new[] { (int)lhs.Shape[lm], (int)rhs.Shape[rn] };
             axes = new[] { outRank - 1 };
         }
         else if (target.LhsPackedAxes.Count == 2 && target.RhsPackedAxes.Count == 1)
         {
             outLanes = new[] { (int)lhs.Shape[^2] };
-            outShape = new[] { (int)lhs.Shape[^4], (int)rhs.Shape[^2] };
+            outShape = new[] { (int)lhs.Shape[lm], (int)rhs.Shape[rn] };
             axes = new[] { outRank - 2 };
         }
         else if (target.LhsPackedAxes.Count == 2 && target.RhsPackedAxes.Count == 2)
         {
             outLanes = new[] { (int)lhs.Shape[^2], (int)rhs.Shape[^1] };
-            outShape = new[] { (int)lhs.Shape[^4], (int)rhs.Shape[^3] };
+            outShape = new[] { (int)lhs.Shape[lm], (int)rhs.Shape[rn] };
             axes = new[] { outRank - 2, outRank - 1 };
         }
         else
@@ -90,6 +92,20 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
             rhs = rhs.Unpack(axis);
         }
 
+        if (target.TransposeA)
+        {
+            var perm = Enumerable.Range(0, lhs.Rank).Select(i => (long)i).ToArray();
+            (perm[^2], perm[^1]) = (perm[^1], perm[^2]);
+            lhs = OrtKI.Transpose(lhs, perm);
+        }
+
+        if (target.TransposeB)
+        {
+            var perm = Enumerable.Range(0, rhs.Rank).Select(i => (long)i).ToArray();
+            (perm[^2], perm[^1]) = (perm[^1], perm[^2]);
+            rhs = OrtKI.Transpose(rhs, perm);
+        }
+
         var matmul = OrtKI.MatMul(lhs, rhs);
         if (outLanes.Length > 0)
         {
@@ -107,54 +123,64 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
         var lhs = context.CheckArgumentType<IRType>(target, PackedMatMul.Lhs);
         var rhs = context.CheckArgumentType<IRType>(target, PackedMatMul.Rhs);
 
-        bool CheckPackAxes(Shape lhs, Shape rhs)
+        bool CheckPackAxes(Shape lhs, Shape rhs, out int lm, out int lk, out int rk, out int rn, out string? message)
         {
+            (lm, lk) = target.TransposeA ? (lhs.Rank - 1, lhs.Rank - 2) : (lhs.Rank - 2, lhs.Rank - 1);
+            (rk, rn) = target.TransposeB ? (rhs.Rank - 1, rhs.Rank - 2) : (rhs.Rank - 2, rhs.Rank - 1);
             bool valid = true;
+            message = null;
             switch (target.LhsPackedAxes.Count, target.RhsPackedAxes.Count)
             {
                 case (0, 1):
-                    if (target.RhsPackedAxes[0] != rhs.Rank - 1)
+                    // pack rhs n.
+                    if (target.RhsPackedAxes[0] != rn)
                     {
                         valid = false;
+                        message = $"target.RhsPackedAxes[0] {target.RhsPackedAxes[0]} != rk {rn}";
                     }
 
                     break;
                 case (1, 0):
-                    if (target.LhsPackedAxes[0] != lhs.Rank - 2)
+                    // pack lhs m.
+                    if (target.LhsPackedAxes[0] != lm)
                     {
                         valid = false;
                     }
 
                     break;
                 case (1, 1):
-                    if (!((target.LhsPackedAxes[0] == lhs.Rank - 1 && target.RhsPackedAxes[0] == rhs.Rank - 2) ||
-                        (target.LhsPackedAxes[0] == lhs.Rank - 2 && target.RhsPackedAxes[0] == rhs.Rank - 1)))
+                    // pack m,n or pack lk,rk
+                    if (!((target.LhsPackedAxes[0] == lk && target.RhsPackedAxes[0] == rk) ||
+                        (target.LhsPackedAxes[0] == lm && target.RhsPackedAxes[0] == rn)))
                     {
                         valid = false;
                     }
 
                     break;
                 case (1, 2):
-                    if (target.LhsPackedAxes[0] != lhs.Rank - 1 || target.RhsPackedAxes[0] != rhs.Rank - 2 || target.RhsPackedAxes[1] != rhs.Rank - 1)
+                    // pack [lk, rk, rn]
+                    if (target.LhsPackedAxes[0] != lk || target.RhsPackedAxes[0] != rk || target.RhsPackedAxes[1] != rn)
                     {
                         valid = false;
                     }
 
                     break;
                 case (2, 1):
-                    if (target.LhsPackedAxes[0] != lhs.Rank - 2 || target.LhsPackedAxes[1] != lhs.Rank - 1 || target.RhsPackedAxes[0] != rhs.Rank - 2)
+                    // pack [lm, lk, rk]
+                    if (target.LhsPackedAxes[0] != lm || target.LhsPackedAxes[1] != lk || target.RhsPackedAxes[0] != rk)
                     {
                         valid = false;
                     }
 
                     break;
                 case (2, 2):
-                    if (target.LhsPackedAxes[0] != lhs.Rank - 2 || target.LhsPackedAxes[1] != lhs.Rank - 1)
+                    // pack [lm, lk, rk, rn]
+                    if (target.LhsPackedAxes[0] != lm || target.LhsPackedAxes[1] != lk)
                     {
                         valid = false;
                     }
 
-                    if (target.RhsPackedAxes[0] != rhs.Rank - 2 || target.RhsPackedAxes[1] != rhs.Rank - 1)
+                    if (target.RhsPackedAxes[0] != rk || target.RhsPackedAxes[1] != rn)
                     {
                         valid = false;
                     }
@@ -169,36 +195,37 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
         }
 
         IRType rType;
+        string? errorMessage = null;
         switch (lhs, rhs)
         {
             case (DistributedType a, DistributedType b):
-                if (!CheckPackAxes(a.TensorType.Shape, b.TensorType.Shape))
                 {
-                    goto ERROR;
-                }
+                    if (!CheckPackAxes(a.TensorType.Shape, b.TensorType.Shape, out int lm, out int lk, out int rk, out int rn, out errorMessage))
+                    {
+                        goto ERROR;
+                    }
 
-                {
                     bool packingK = target.LhsPackedAxes.Count == 1 && target.RhsPackedAxes.Count == 1 &&
                      target.LhsPackedAxes[0] == a.TensorType.Shape.Rank - 1 && target.RhsPackedAxes[0] == b.TensorType.Shape.Rank - 2;
-                    rType = Math.MatMulEvaluator.VisitDistributedType(a, b, packingK);
+                    rType = Math.MatMulEvaluator.VisitDistributedType(a, b, packingK, new(lm, lk, rk, rn));
                 }
 
                 break;
             case (TensorType a, TensorType b):
-                if (!CheckPackAxes(a.Shape, b.Shape))
                 {
-                    goto ERROR;
-                }
+                    if (!CheckPackAxes(a.Shape, b.Shape, out int lm, out int lk, out int rk, out int rn, out errorMessage))
+                    {
+                        goto ERROR;
+                    }
 
-                {
                     bool packingK = target.LhsPackedAxes.Count == 1 && target.RhsPackedAxes.Count == 1 &&
-                     target.LhsPackedAxes[0] == a.Shape.Rank - 1 && target.RhsPackedAxes[0] == b.Shape.Rank - 2;
-                    rType = Math.MatMulEvaluator.VisitTensorType(a, b, packingK);
+                     target.LhsPackedAxes[0] == lk && target.RhsPackedAxes[0] == rk;
+                    rType = Math.MatMulEvaluator.VisitTensorType(a, b, packingK, new(lm, lk, rk, rn));
                 }
 
                 break;
             default:
-            ERROR: rType = new InvalidType($"lhs: {lhs}, rhs: {rhs} not support");
+            ERROR: rType = new InvalidType($"lhs: {lhs}, rhs: {rhs}, in {target.DisplayProperty()} not support: {errorMessage}");
                 break;
         }
 
@@ -214,12 +241,14 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
         uint macPerElement = 1;
         if (lhs is TensorType { Shape: Shape lhsShape })
         {
-            macPerElement = lhsShape[^1].IsFixed ? (uint)lhsShape[^1].FixedValue : 1U;
+            var k = target.TransposeA ? lhsShape.Rank - 2 : lhsShape.Rank - 1;
+            macPerElement = lhsShape[k].IsFixed ? (uint)lhsShape[k].FixedValue : 1U;
         }
         else if (lhs is DistributedType distributedType)
         {
             var lhsType = DistributedUtility.GetDividedTensorType(distributedType);
-            macPerElement = lhsType.Shape[^1].IsFixed ? (uint)lhsType.Shape[^1].FixedValue : 1U;
+            var k = target.TransposeA ? distributedType.TensorType.Shape.Rank - 2 : distributedType.TensorType.Shape.Rank - 1;
+            macPerElement = lhsType.Shape[k].IsFixed ? (uint)lhsType.Shape[k].FixedValue : 1U;
         }
 
         return new()

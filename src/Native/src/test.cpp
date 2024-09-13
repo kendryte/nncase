@@ -930,6 +930,46 @@ int main() {
         assert(tg(0, 1, 2, 0) == 1070.f);
     }
 
+    // transposeB matmu test
+    {
+        // 1. ref
+        ntt::tensor<float, ntt::fixed_shape<8, 4>> ta;
+        ntt::tensor<float, ntt::fixed_shape<4, 8>> tb;
+        ntt::tensor<float, ntt::fixed_shape<8, 8>> tc;
+        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+        std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
+        ntt::matmul<false>(ta, tb, tc);
+
+        // transB norm
+        {
+            ntt::tensor<float, ntt::fixed_shape<8, 4>> tranb;
+            ntt::transpose<ntt::fixed_shape<1, 0>>(tb, tranb);
+            ntt::tensor<float, ntt::fixed_shape<8, 8>> tc1;
+            ntt::matmul<false, false, true>(ta, tranb, tc1);
+            ntt::apply(tc.shape(), [&]([[maybe_unused]] auto index) {
+                assert(tc1(index) == tc(index));
+            });
+
+            // transB pack n
+            {
+                ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<2, 4>>
+                    packb;
+                ntt::pack<0>(tranb, packb);
+                ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<8, 2>> tc2;
+                ntt::matmul<false, false, true>(
+                    ta, packb, tc2, ntt::fixed_shape<>{}, ntt::fixed_shape<>{},
+                    ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
+                
+                ntt::tensor<float, ntt::fixed_shape<8, 8>> tc2unpack;
+                ntt::unpack<1>(tc2, tc2unpack);
+
+                ntt::apply(tc.shape(), [&]([[maybe_unused]] auto index) {
+                    assert(tc2unpack(index) == tc(index));
+                });
+            }
+        }
+    }
+
     // concat
     {
         ntt::tensor<float, ntt::fixed_shape<3, 8>> ta;

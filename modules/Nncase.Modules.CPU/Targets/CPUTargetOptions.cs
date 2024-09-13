@@ -78,9 +78,9 @@ public class CpuTargetOptions : ICpuTargetOptions
 
     [DisplayName("--memory-capacities")]
     [Description("the memory capacity of single core. eg. `0 32 64` for l0,l1,l2")]
-    [DefaultValue("() => new int[] { 0, 2097152, 2147483647 }")]
+    [DefaultValue("() => new int[] { 0, 65536, 2147483647 }")]
     [CommandLine.AllowMultiplePerToken]
-    public int[] MemoryCapacities { get; set; } = new[] { 0, 2 * 1024 * 1024, int.MaxValue };
+    public int[] MemoryCapacities { get; set; } = new[] { 0, 65536, int.MaxValue };
 
     [DisplayName("--memory-bandwidths")]
     [Description("the memory bandwidth of single core. eg. `128 64 8` for l0,l1,l2")]
