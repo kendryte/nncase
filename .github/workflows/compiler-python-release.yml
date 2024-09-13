@@ -75,6 +75,7 @@ jobs:
       run: |
         cd ${{github.workspace}}
         sh set_dotnet_version.sh 7
+        apt autoremove dotnet-sdk-8.0
 
     - name: Verify .NET Installation
       run: dotnet --info
