@@ -55,7 +55,8 @@ class reduce_impl {
     constexpr void operator()(const TIn &input, TOut &output) {
         ntt::apply(output.shape(), [&](auto index) {
             auto reduced_in = (TInElem)initial_value();
-            apply_reduce(input, reduce_source_offset<TIn::rank(), Axes>(index), reduced_in);
+            apply_reduce(input, reduce_source_offset<TIn::rank(), Axes>(index),
+                         reduced_in);
             if constexpr (IsScalar<TOutElem>) {
                 output(index) = ntt::reduce<
                     ukernels::reduce_to_binary_type<Op>::template type,
