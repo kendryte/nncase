@@ -969,6 +969,7 @@ REGISTER_RVV_KERNEL(INNER_PRODUCT_FLOAT32)
 REGISTER_RVV_INNER_PRODUCT_OP(float, inner_product_float32)
 
 // register mul_add kernel
+#if 0
 #define MUL_ADD_FLOAT32(lmul, mlen)                                            \
     inline vfloat32m##lmul##_t mul_add_float32(                                \
         const vfloat32m##lmul##_t &v1, const vfloat32m##lmul##_t &v2,          \
@@ -987,6 +988,26 @@ REGISTER_RVV_INNER_PRODUCT_OP(float, inner_product_float32)
         const vfloat32m##lmul##_t &v3, const size_t vl) {                      \
         return __riscv_vfmadd_vf_f32m##lmul(v2, s1, v3, vl);                   \
     }
+#else
+#define MUL_ADD_FLOAT32(lmul, mlen)                                            \
+    inline vfloat32m##lmul##_t mul_add_float32(                                \
+        const vfloat32m##lmul##_t &v1, const vfloat32m##lmul##_t &v2,          \
+        const vfloat32m##lmul##_t &v3, const size_t vl) {                      \
+        return __riscv_vfmacc_vv_f32m##lmul(v3, v1, v2, vl);                   \
+    }                                                                          \
+                                                                               \
+    inline vfloat32m##lmul##_t mul_add_float32(                                \
+        const vfloat32m##lmul##_t &v1, const float &s2,                        \
+        const vfloat32m##lmul##_t &v3, const size_t vl) {                      \
+        return __riscv_vfmacc_vf_f32m##lmul(v3, s2, v1, vl);                   \
+    }                                                                          \
+                                                                               \
+    inline vfloat32m##lmul##_t mul_add_float32(                                \
+        const float &s1, const vfloat32m##lmul##_t &v2,                        \
+        const vfloat32m##lmul##_t &v3, const size_t vl) {                      \
+        return __riscv_vfmacc_vf_f32m##lmul(v3, s1, v2, vl);                   \
+    }
+#endif
 
 REGISTER_RVV_KERNEL(MUL_ADD_FLOAT32)
 
