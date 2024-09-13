@@ -13,7 +13,6 @@ jobs:
     strategy:
       matrix:
         dotnet-version: ['7.0']
-        runtime-version: ['7.0'] 
         config:
           # - {name: aarch64-macos, os: macos-14, shell: bash, rid: osx-x64, buildType: Release}
           - {name: x86_64-linux, os: ubuntu-latest, shell: bash, rid: linux-x64, buildType: Release}
@@ -22,10 +21,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: ${{matrix.dotnet-version}}
-          runtime-version: ${{ matrix.runtime-version }}
+          dotnet-version: '7.0.x'
 
       - name: Cache NuGet packages
         uses: actions/cache@v3
@@ -54,7 +52,6 @@ jobs:
     strategy:
       matrix:
         dotnet-version: ['7.0']
-        runtime-version: ['7.0']
         config:
           # - {name: aarch64-macos, os: macos-14}
           - {name: x86_64-linux, os: ubuntu-latest}
@@ -63,11 +60,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: seanmiddleditch/gha-setup-ninja@master
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: ${{matrix.dotnet-version}}
-        runtime-version: ${{ matrix.runtime-version }}
+        dotnet-version: '7.0.x'
 
     - name: Verify .NET Installation
       run: dotnet --info
