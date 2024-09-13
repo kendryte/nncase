@@ -1,5 +1,9 @@
 #!/bin/bash
 version=$1
+
+# Delete old global.json
+rm -rf global.json
+
 # Detect the latest installed .NET SDK version starting with 7.x.x
 DOTNET_VERSION=$(dotnet --list-sdks | grep "^$version\." | sort -V | tail -n 1 | awk '{print $1}')
 

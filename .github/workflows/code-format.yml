@@ -22,6 +22,11 @@ jobs:
       with:
         dotnet-version: "7.0"
 
+    - name: Set dotnet version
+      run: |
+        cd ${{github.workspace}}
+        sh set_dotnet_version.sh 7
+
     - name: Install Formatters
       run: |
         sudo apt-get update

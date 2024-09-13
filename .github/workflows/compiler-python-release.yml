@@ -71,10 +71,10 @@ jobs:
       with:
         dotnet-version: '7.0.x'
 
-      - name: Set dotnet version
-        run: |
-          cd ${{github.workspace}}
-          sh set_dotnet_version.sh 7
+    - name: Set dotnet version
+      run: |
+        cd ${{github.workspace}}
+        sh set_dotnet_version.sh 7
 
     - name: Verify .NET Installation
       run: dotnet --info
