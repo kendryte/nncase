@@ -62,7 +62,7 @@ template <> struct reduce_to_binary_type<reduce_op::prod> {
 };
 
 template <reduce_op Op, class T, bool Arch> struct u_reduce_policy {
-    static constexpr size_t unroll = 1;
+    static constexpr size_t unroll = 2;
 };
 
 template <reduce_op Op, class T, bool Arch> struct u_reduce {
