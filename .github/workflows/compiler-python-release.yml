@@ -65,6 +65,9 @@ jobs:
       with:
         dotnet-version: ${{matrix.dotnet-version}}
 
+    - name: Verify .NET Installation
+      run: dotnet --info
+
     - name: Install nncase
       uses: actions/download-artifact@v3
       with:
