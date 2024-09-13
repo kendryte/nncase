@@ -84,6 +84,9 @@ jobs:
           # - {name: x86_64-windows, os: windows-2019, shell: bash, rid: win-x64, buildType: Release}
 
     steps:
+      - name: Remove other .NET SDK
+        run: sudo apt remove --purge dotnet-sdk-5.0
+
       - uses: actions/checkout@v2
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
@@ -231,6 +234,7 @@ jobs:
           export COREHOST_TRACE=1
           echo "``````````````````````````````````````````"
           dotnet --list-sdks
+
           echo "``````````````````````````````````````````"
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_basic.xml pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/onnx_basic.xml
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_combine.xml pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/onnx_combine.xml

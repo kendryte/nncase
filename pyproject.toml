@@ -51,8 +51,8 @@ archs = ["x86_64"]
 # TODO： confirm stdc++17
 before-all = [
   "pip install conan==2.6.0",
-  "conan profile detect",
-  "echo 'settings.compiler.libcxx=libstdc++17' >> ~/.conan2/profiles/default"
+  "conan profile detect --force",
+  "conan profile update default.conf settings.compiler.libcxx=libstdc++17"
 ]
 
 
