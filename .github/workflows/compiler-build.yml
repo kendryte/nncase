@@ -205,12 +205,12 @@ jobs:
         run: |
           brew install sunnycase/core/libomp@11.1.0
           echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
-        if: runner.os = 'macOS'
+        if: runner.os == 'macOS'
 
       - name: Set up test environment (macOS)
         run: |
           echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
-        if: runner.os = 'Linux'
+        if: runner.os == 'Linux'
 
       - name: Set up test environment (Windows)
         shell: pwsh
