@@ -188,7 +188,7 @@ jobs:
         run: |
           cd ${{github.workspace}}
           sh set_dotnet_version.sh 7
-          apt autoremove dotnet-sdk-8.0
+          sudo apt autoremove dotnet-sdk-8.0
 
       - name: Install nncase native Artifact
         uses: actions/download-artifact@v3
