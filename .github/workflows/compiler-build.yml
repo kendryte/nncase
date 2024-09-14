@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         config:
-          - {name: aarch64-macos, os: macos-14, buildType: Release}
+          - {name: x86_64-macos, os: macos-12, buildType: Release}
           - {name: x86_64-linux, os: ubuntu-22.04, buildType: Release}
           # - {name: x86_64-windows, os: windows-2019, arch: x64, buildType: Release}
 
@@ -79,14 +79,14 @@ jobs:
       matrix:
         dotnet-version: ['7.0']
         config:
-          - {name: aarch64-macos, os: macos-14, shell: bash, rid: osx-x64, buildType: Release}
+          - {name: x86_64-macos, os: macos-12, shell: bash, rid: osx-x64, buildType: Release}
           - {name: x86_64-linux, os: ubuntu-22.04, shell: bash, rid: linux-x64, buildType: Release}
           # - {name: x86_64-windows, os: windows-2019, shell: bash, rid: win-x64, buildType: Release}
 
     steps:
       - uses: actions/checkout@v2
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v1
         with:
           dotnet-version: '7.0.x'
 
@@ -173,7 +173,7 @@ jobs:
       matrix:
         dotnet-version: ['7.0']
         config:
-          # - {name: aarch64-macos, os: macos-14, shell: bash}
+          - {name: x86_64-macos, os: macos-12, shell: bash}
           - {name: x86_64-linux, os: ubuntu-22.04, shell: bash}
           # - {name: x86_64-windows, os: windows-2019, shell: bash}
 
@@ -232,13 +232,6 @@ jobs:
       - name: Create Test Environment
         run: mkdir test_results
 
-      # - name: Start tmate session for debugging
-      #   uses: mxschmitt/action-tmate@v3
-      #   continue-on-error: true
-
-      # # 例如，如果编译失败，可以通过SSH进行调试
-      # - run: echo "Run after tmate session"
-
       - name: Test
         working-directory: ${{github.workspace}}
         shell: bash
@@ -274,14 +267,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v1
         with:
           dotnet-version: '7.0.x'
-
-      - name: Set dotnet version
-        run: |
-          cd ${{github.workspace}}
-          sh set_dotnet_version.sh 7
 
       - name: Download Unit Test Coverage
         uses: actions/download-artifact@v3

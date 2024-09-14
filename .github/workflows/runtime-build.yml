@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         config:
-          - { name: aarch64-macos, os: macos-14, buildType: Release }
+          - { name: x86_64-macos, os: macos-12, buildType: Release }
           - { name: x86_64-linux, os: ubuntu-latest, buildType: Release }
           # - { name: x86_64-windows, os: windows-2019, arch: x64, buildType: Release }
 
@@ -41,7 +41,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: '3.10'
       
       - name: Install Conan
         run: |
@@ -99,7 +99,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: '3.10'
 
       - name: Install toolchain and QEMU
         shell: bash
