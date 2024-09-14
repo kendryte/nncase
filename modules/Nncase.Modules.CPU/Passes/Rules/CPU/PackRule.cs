@@ -35,52 +35,6 @@ public abstract class PackRule : RewriteRule<Pattern>
     public override Expr? GetReplace(IMatchResult result, RunPassContext options) => throw new NotImplementedException();
 }
 
-public class PackSoftmax : PackRule
-{
-    public PackSoftmax(int rank, int lane)
-        : base(rank, lane)
-    {
-    }
-
-    public override Pattern Pattern { get; } = IsSoftmax(
-      "target",
-      IsWildcard("input") with { TypePattern = IsFloat() },
-      IsWildcard("axis") with { TypePattern = IsIntegralScalar() });
-
-    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
-    {
-        var rets = new List<Expr>();
-        var input = (Expr)result["input"];
-        var axis = ((TensorConst)result["axis"]).Value.ToScalar<int>();
-        var inShape = input.CheckedShape.ToValueArray();
-
-        void AddCandidate(int[] packedAxes, int[] lanes)
-        {
-            var packed = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, float.NegativeInfinity, out var pads), lanes, packedAxes);
-            var softmax = IR.F.CPU.PackedSoftmax(packed, axis, packedAxes);
-            if (softmax.CheckedType is not InvalidType)
-            {
-                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(softmax, lanes, packedAxes), inShape, pads);
-                rets.Add(post);
-            }
-        }
-
-        for (int i = 0; i < input.CheckedShape.Count; i++)
-        {
-            AddCandidate(new[] { i }, new[] { Lane });
-            for (int j = i + 1; j < input.CheckedShape.Count; j++)
-            {
-                if (Rank > 1)
-                {
-                    AddCandidate(new[] { i, j }, new[] { Lane, Lane });
-                }
-            }
-        }
-
-        return rets;
-    }
-}
-
 public sealed class PackResizeImage : PackRule
 {
     public PackResizeImage(int rank, int lane)
@@ -166,78 +120,6 @@ public sealed class PackInstanceNorm : PackRule
             }
 
             var layernorm = IR.F.CPU.InstacneNorm(packedInput, packedScale, packedBias, eps, packedAxes, padsInput);
-
-            if (layernorm.CheckedType is not InvalidType)
-            {
-                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(layernorm, lanes, packedAxes), inShape, padsInput);
-                rets.Add(post);
-            }
-        }
-
-        for (int i = 0; i < input.CheckedShape.Count; i++)
-        {
-            AddCandidate(new[] { i }, new[] { Lane });
-            for (int j = i + 1; j < input.CheckedShape.Count; j++)
-            {
-                if (Rank > 1)
-                {
-                    AddCandidate(new[] { i, j }, new[] { Lane, Lane });
-                }
-            }
-        }
-
-        return rets;
-    }
-}
-
-public sealed class PackLayerNorm : PackRule
-{
-    public PackLayerNorm(int rank, int lane)
-        : base(rank, lane)
-    {
-    }
-
-    public override Pattern Pattern { get; } = IsLayerNorm(
-      "target",
-      _ => true,
-      IsWildcard("input") with { TypePattern = IsFloat() },
-      IsWildcard("scale") with { TypePattern = IsFloat() },
-      IsWildcard("bias") with { TypePattern = IsFloat() });
-
-    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
-    {
-        var rets = new List<Expr>();
-        var op = (IR.NN.LayerNorm)result["target"];
-        var input = (Expr)result["input"];
-        var scale = (Expr)result["scale"];
-        var bias = (Expr)result["bias"];
-        var inShape = input.CheckedShape.ToValueArray();
-        var pshape = scale.CheckedShape.ToValueArray();
-
-        void AddCandidate(int[] packedAxes, int[] lanes)
-        {
-            var packedInput = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
-
-            // todo support padings.
-            if (padsInput.Any(x => x > 0))
-            {
-                return;
-            }
-
-            var pAxes = packedAxes.Where(i => i >= op.Axis).Select(i => i - op.Axis).ToArray();
-            var packedScale = PackUtility.PadForPack(scale, pshape, pAxes, lanes, 0f, out var padsScale);
-            if (pAxes.Length > 0)
-            {
-                packedScale = IR.F.CPU.Pack(packedScale, Enumerable.Repeat(Lane, pAxes.Length).ToArray(), pAxes);
-            }
-
-            var packedBias = PackUtility.PadForPack(bias, pshape, pAxes, lanes, 0f, out var padsBias);
-            if (pAxes.Length > 0)
-            {
-                packedBias = IR.F.CPU.Pack(packedBias, Enumerable.Repeat(Lane, pAxes.Length).ToArray(), pAxes);
-            }
-
-            var layernorm = IR.F.CPU.PackedLayerNorm(packedInput, packedScale, packedBias, op.Axis, op.Epsilon, op.UseMean, packedAxes, padsInput);
 
             if (layernorm.CheckedType is not InvalidType)
             {

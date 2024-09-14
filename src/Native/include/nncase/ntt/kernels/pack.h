@@ -118,7 +118,7 @@ class pack_impl<TIn, TOut, PackAxis> {
                 slice_fixed_dims<rest_rank, TOut::rank() - rest_rank>(
                     TOut::shape());
             constexpr auto N = rest_dims.length();
-            ntt::upack<M, N, MStrides>(in_p, out_p);
+            ntt::u_pack<M, N, MStrides>(in_p, out_p);
         } else {
             for (size_t i = 0; i < TOut::shape()[Axis]; i++) {
                 apply_transpose<Axis + 1, ContiguousDims, M, MStrides>(

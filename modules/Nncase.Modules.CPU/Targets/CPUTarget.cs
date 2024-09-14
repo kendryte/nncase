@@ -94,9 +94,7 @@ public class CPUTarget : ITarget
                 // todo config it in the target options.
                 var rank = 1;
                 var lane = System.Runtime.Intrinsics.Vector256.IsHardwareAccelerated ? 8 : 4;
-                p.Add<Passes.Rules.CPU.PackSoftmax>(rank, lane);
                 p.Add<Passes.Rules.CPU.PackSwish>(rank, lane);
-                p.Add<Passes.Rules.CPU.PackLayerNorm>(rank, lane);
                 p.Add<Passes.Rules.CPU.PackResizeImage>(rank, lane);
                 p.Add<Passes.Rules.CPU.PackMatMul>(rank, lane);
                 p.Add<Passes.Rules.CPU.PackConv2D>(rank, lane);
