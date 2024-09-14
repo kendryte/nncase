@@ -23,7 +23,8 @@
 namespace nncase::ntt {
 namespace detail {
 template <class TIn, class TOut, size_t... Axes> class pack_impl {
-  public:
+public:
+    using TElem = typename TIn::element_type;
     using TVec = typename std::decay_t<TOut>::element_type;
 
     constexpr void operator()(const TIn &input, TOut &output) {
@@ -55,7 +56,7 @@ template <class TIn, class TOut, size_t... Axes> class pack_impl {
                     skip = true;
                 }
             });
-            output(out_index)(elem_index) = skip ? 0 : input(in_index);
+            output(out_index)(elem_index) = skip ? (TElem)0 : input(in_index);
         });
     }
 };
