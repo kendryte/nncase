@@ -184,13 +184,8 @@ jobs:
         with:
           dotnet-version: '7.0.x'
 
-      - name: Set dotnet version
-        run: |
-          cd ${{github.workspace}}
-          sh set_dotnet_version.sh 7
-
       - name: Install nncase native Artifact
-        uses: actions/download-artifact@v2.0.9
+        uses: actions/download-artifact@v3
         with:
           name: nncase-native-${{matrix.config.name}}
           path: ${{github.workspace}}/install
