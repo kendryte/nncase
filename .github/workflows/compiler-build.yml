@@ -232,12 +232,12 @@ jobs:
       - name: Create Test Environment
         run: mkdir test_results
 
-      - name: Start tmate session for debugging
-        uses: mxschmitt/action-tmate@v3
-        continue-on-error: true
+      # - name: Start tmate session for debugging
+      #   uses: mxschmitt/action-tmate@v3
+      #   continue-on-error: true
 
-      # 例如，如果编译失败，可以通过SSH进行调试
-      - run: echo "Run after tmate session"
+      # # 例如，如果编译失败，可以通过SSH进行调试
+      # - run: echo "Run after tmate session"
 
       - name: Test
         working-directory: ${{github.workspace}}
