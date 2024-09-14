@@ -19,7 +19,7 @@ jobs:
         config:
           - {name: aarch64-macos, os: macos-14, buildType: Release}
           - {name: x86_64-linux, os: ubuntu-22.04, buildType: Release}
-          - {name: x86_64-windows, os: windows-2019, arch: x64, buildType: Release}
+          # - {name: x86_64-windows, os: windows-2019, arch: x64, buildType: Release}
 
     steps:
       - uses: actions/checkout@v3
@@ -81,7 +81,7 @@ jobs:
         config:
           - {name: aarch64-macos, os: macos-14, shell: bash, rid: osx-x64, buildType: Release}
           - {name: x86_64-linux, os: ubuntu-22.04, shell: bash, rid: linux-x64, buildType: Release}
-          - {name: x86_64-windows, os: windows-2019, shell: bash, rid: win-x64, buildType: Release}
+          # - {name: x86_64-windows, os: windows-2019, shell: bash, rid: win-x64, buildType: Release}
 
     steps:
       - uses: actions/checkout@v2
@@ -175,7 +175,7 @@ jobs:
         config:
           - {name: aarch64-macos, os: macos-14, shell: bash}
           - {name: x86_64-linux, os: ubuntu-22.04, shell: bash}
-          - {name: x86_64-windows, os: windows-2019, shell: bash}
+          # - {name: x86_64-windows, os: windows-2019, shell: bash}
 
     steps:
       - uses: actions/checkout@v3
