@@ -171,13 +171,6 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                          'Min_reduceN_NoPack': 2047,
                                          'Min_reduceN_PackN': 263,
                                          },
-                              'softmax': {'no_pack_dim0': '13824',
-                                          'no_pack_dim1': '13824',
-                                          'pack0_dim0': '1728',  # 32*32/8*(exp=9.5+div=3.5+add=0.5)
-                                          'pack0_dim1': '1728',  # 32*32/8*(exp=9.5+div=3.5+add=0.5)
-                                          'pack1_dim0': '1728',  # 32*32/8*(exp=9.5+div=3.5+add=0.5)
-                                          'pack1_dim1': '1728',  # 32*32/8*(exp=9.5+div=3.5+add=0.5)
-                                          },
                               }
 
     def run(self):
@@ -261,13 +254,6 @@ class BenchmarkNTT_riscv64(BenchmarkNTT):
                                          'Mean_reduceMN_PackN': '5905',
                                          'Mean_reduceMN_PackM': '5089',
                                          },
-                              'softmax': {'no_pack_dim0': 'N/A',
-                                          'no_pack_dim1': 'N/A',
-                                          'pack0_dim0': 'N/A',
-                                          'pack0_dim1': 'N/A',
-                                          'pack1_dim0': 'N/A',
-                                          'pack1_dim1': 'N/A',
-                                          },
                               }
 
     def send_msg(self, sock, msg):
