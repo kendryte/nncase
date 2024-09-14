@@ -15,11 +15,14 @@ public static class DistributedUtility
         for (int i = 0; i < placement.Rank; i++)
         {
             var ndsbp = new List<SBP>();
-            for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
+            if (!tensorType.Shape.ToValueArray().Contains(0))
             {
-                if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && placement.Hierarchy[i] > 1 && IsDivideExactly(s, placement.Hierarchy[i]))
+                for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
                 {
-                    ndsbp.Add(SBP.S(axis));
+                    if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && placement.Hierarchy[i] > 1 && IsDivideExactly(s, placement.Hierarchy[i]))
+                    {
+                        ndsbp.Add(SBP.S(axis));
+                    }
                 }
             }
 
@@ -217,6 +220,11 @@ public static class DistributedUtility
     public static float GetDividedTensorEfficiency(DistributedType distributedType, int burstLength)
     {
         var (tiles, shape) = GetDividedTile(distributedType);
+        if (tiles.Contains(0))
+        {
+            return 1f;
+        }
+
         return Enumerable.Range(0, tiles.Count).Select(i => tiles[i].Ranges(0, shape[i])).CartesianProduct().Select(rgs =>
         {
             var slice = rgs.ToArray();
