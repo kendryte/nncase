@@ -188,7 +188,6 @@ jobs:
         run: |
           cd ${{github.workspace}}
           sh set_dotnet_version.sh 7
-          sudo apt autoremove dotnet-sdk-8.0
 
       - name: Install nncase native Artifact
         uses: actions/download-artifact@v3
@@ -208,7 +207,7 @@ jobs:
           echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
         if: runner.os == 'macOS'
 
-      - name: Set up test environment (macOS)
+      - name: Set up test environment (Linux)
         run: |
           echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
         if: runner.os == 'Linux'
@@ -242,7 +241,6 @@ jobs:
           NNCASE_COMPILER: ${{github.workspace}}/install/Nncase.Compiler.dll
         run: |
           dotnet tool install --global dotnet-coverage
-          dotnet build
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_basic.xml pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/onnx_basic.xml
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_combine.xml pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/onnx_combine.xml
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_basic.xml pytest tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/tflite_basic.xml
