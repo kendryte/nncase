@@ -180,14 +180,74 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                            RhsPackedAxes::rank() == 1 &&
                            RhsPackedAxes::at(0) == TRhs::rank() - 2) {
 
+            constexpr size_t vl = TLhsElem::shape().at(0);
             for (size_t i = 0; i < extent; i++) {
                 auto rhs_mp = rhs;
                 auto lhs_mp = lhs;
-                for (size_t k = 0; k < K; k++) {
-                    for (size_t m = 0; m < TLhsElem::shape().at(0); m++) {
-                        auto value = ntt::inner_product((*lhs_mp)(m), *rhs_mp);
+
+                // k == 0
+                if (vl >= 4) {
+                    for (size_t m = 0; m < vl; m += 4) {
+                        (*output)(m + 0) =
+                            AccumulateC
+                                ? (*output)(m + 0) +
+                                      ntt::inner_product((*lhs_mp)(m + 0),
+                                                         *rhs_mp)
+                                : ntt::inner_product((*lhs_mp)(m + 0), *rhs_mp);
+                        (*output)(m + 1) =
+                            AccumulateC
+                                ? (*output)(m + 1) +
+                                      ntt::inner_product((*lhs_mp)(m + 1),
+                                                         *rhs_mp)
+                                : ntt::inner_product((*lhs_mp)(m + 1), *rhs_mp);
+                        (*output)(m + 2) =
+                            AccumulateC
+                                ? (*output)(m + 2) +
+                                      ntt::inner_product((*lhs_mp)(m + 2),
+                                                         *rhs_mp)
+                                : ntt::inner_product((*lhs_mp)(m + 2), *rhs_mp);
+                        (*output)(m + 3) =
+                            AccumulateC
+                                ? (*output)(m + 3) +
+                                      ntt::inner_product((*lhs_mp)(m + 3),
+                                                         *rhs_mp)
+                                : ntt::inner_product((*lhs_mp)(m + 3), *rhs_mp);
+                    }
+                }
+
+                for (size_t m = (vl / 4) * 4; m < vl; m++) {
+                    (*output)(m) =
+                        AccumulateC
+                            ? (*output)(m) +
+                                  ntt::inner_product((*lhs_mp)(m), *rhs_mp)
+                            : ntt::inner_product((*lhs_mp)(m), *rhs_mp);
+                }
+                lhs_mp++;
+                rhs_mp += rhs_stride;
+
+                // k >= 1
+                for (size_t k = 1; k < K; k++) {
+                    if (vl >= 4) {
+                        for (size_t m = 0; m < vl; m += 4) {
+                            (*output)(m + 0) =
+                                (*output)(m + 0) +
+                                ntt::inner_product((*lhs_mp)(m + 0), *rhs_mp);
+                            (*output)(m + 1) =
+                                (*output)(m + 1) +
+                                ntt::inner_product((*lhs_mp)(m + 1), *rhs_mp);
+                            (*output)(m + 2) =
+                                (*output)(m + 2) +
+                                ntt::inner_product((*lhs_mp)(m + 2), *rhs_mp);
+                            (*output)(m + 3) =
+                                (*output)(m + 3) +
+                                ntt::inner_product((*lhs_mp)(m + 3), *rhs_mp);
+                        }
+                    }
+
+                    for (size_t m = (vl / 4) * 4; m < vl; m++) {
                         (*output)(m) =
-                            AccumulateC || k > 0 ? (*output)(m) + value : value;
+                            (*output)(m) +
+                            ntt::inner_product((*lhs_mp)(m), *rhs_mp);
                     }
                     lhs_mp++;
                     rhs_mp += rhs_stride;
@@ -223,8 +283,45 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                            LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
                            RhsPackedAxes::rank() == 1 &&
                            RhsPackedAxes::at(0) == TRhs::rank() - 1) {
-            auto value = ntt::outer_product(lhs, rhs);
-            output = AccC ? output + value : value;
+#if 0
+            constexpr size_t vl = TLhsElem::shape().at(0);
+            if (vl >= 4)
+            {
+                for (size_t i = 0; i < vl; i += 4) {
+                    output(i + 0) = AccC ? ntt::mul_add(lhs(i + 0), rhs, output(i + 0)) : ntt::mul(lhs(i + 0), rhs);
+                    output(i + 1) = AccC ? ntt::mul_add(lhs(i + 1), rhs, output(i + 1)) : ntt::mul(lhs(i + 1), rhs);
+                    output(i + 2) = AccC ? ntt::mul_add(lhs(i + 2), rhs, output(i + 2)) : ntt::mul(lhs(i + 2), rhs);
+                    output(i + 3) = AccC ? ntt::mul_add(lhs(i + 3), rhs, output(i + 3)) : ntt::mul(lhs(i + 3), rhs);
+                }
+            }
+
+            for (size_t i = (vl / 4) * 4; i < vl; i++) {
+                output(i) = AccC ? ntt::mul_add(lhs(i), rhs, output(i)) : ntt::mul(lhs(i), rhs);
+            }
+#else
+            constexpr size_t vl = TLhsElem::shape().at(0);
+            if (vl >= 4) {
+                for (size_t i = 0; i < vl; i += 4) {
+                    output(i + 0) =
+                        AccC ? ntt::mul(lhs(i + 0), rhs) + output(i + 0)
+                             : ntt::mul(lhs(i + 0), rhs);
+                    output(i + 1) =
+                        AccC ? ntt::mul(lhs(i + 1), rhs) + output(i + 1)
+                             : ntt::mul(lhs(i + 1), rhs);
+                    output(i + 2) =
+                        AccC ? ntt::mul(lhs(i + 2), rhs) + output(i + 2)
+                             : ntt::mul(lhs(i + 2), rhs);
+                    output(i + 3) =
+                        AccC ? ntt::mul(lhs(i + 3), rhs) + output(i + 3)
+                             : ntt::mul(lhs(i + 3), rhs);
+                }
+            }
+
+            for (size_t i = (vl / 4) * 4; i < vl; i++) {
+                output(i) = AccC ? ntt::mul_add(lhs(i), rhs, output(i))
+                                 : ntt::mul(lhs(i), rhs);
+            }
+#endif
         }
         // 3.2. pack K & KN
         else if constexpr (LhsPackedAxes::rank() == 1 &&
