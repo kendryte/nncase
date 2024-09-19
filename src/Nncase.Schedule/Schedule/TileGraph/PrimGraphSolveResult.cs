@@ -89,6 +89,11 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         {
             foreach (var (bid, bufferInfo) in nodeMemo.BufferInfoMap)
             {
+                if (!bufferInfo.Places.Any())
+                {
+                    continue;
+                }
+
                 var place = bufferInfo.Places[i];
                 for (int sl = 0; sl < place.Length; sl++)
                 {

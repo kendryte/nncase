@@ -77,16 +77,16 @@ public class CpuTargetOptions : ICpuTargetOptions
     public int[] HierarchySizes { get; set; } = new[] { 1 * (int)MathF.Pow(2, 30) };
 
     [DisplayName("--memory-capacities")]
-    [Description("the memory capacity of single core. eg. `0 32 64` for l0,l1,l2")]
-    [DefaultValue("() => new int[] { 0, 65536, 2147483647 }")]
+    [Description("the memory capacity of single core. eg. `32 64` for sram,main")]
+    [DefaultValue("() => new int[] { 65536, 2147483647 }")]
     [CommandLine.AllowMultiplePerToken]
-    public int[] MemoryCapacities { get; set; } = new[] { 0, 65536, int.MaxValue };
+    public int[] MemoryCapacities { get; set; } = new[] { 65536, int.MaxValue };
 
     [DisplayName("--memory-bandwidths")]
-    [Description("the memory bandwidth of single core. eg. `128 64 8` for l0,l1,l2")]
-    [DefaultValue("() => new int[] { 128, 64, 8 }")]
+    [Description("the memory bandwidth of single core. eg. `64 8` for sram,main")]
+    [DefaultValue("() => new int[] { 64, 8 }")]
     [CommandLine.AllowMultiplePerToken]
-    public int[] MemoryBandWidths { get; set; } = new[] { 128, 64, 8 };
+    public int[] MemoryBandWidths { get; set; } = new[] { 64, 8 };
 
     [DisplayName("--distributed--scheme")]
     [Description("the distributed scheme path.")]

@@ -11,23 +11,23 @@ namespace Nncase.Schedule.TileGraph;
 
 public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVisitor<TreeSolverInitializer.Context, TreeSolverInitializer.InitResult>
 {
-    public TreeSolverInitializer(int totalLevel, Solver solver, Dictionary<OpNode, OpNodeInfo<IntExpr>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<IntExpr>> levelBufferInfos, Dictionary<ITileable, DomainInfo<IntExpr>> domainDimInfos, ICpuTargetOptions targetOptions)
+    public TreeSolverInitializer(int topLevel, Solver solver, Dictionary<OpNode, OpNodeInfo<IntExpr>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<IntExpr>> levelBufferInfos, Dictionary<ITileable, DomainInfo<IntExpr>> domainDimInfos, ICpuTargetOptions targetOptions)
         : base(solver, primitiveBufferInfo, levelBufferInfos, domainDimInfos, targetOptions)
     {
-        TotalLevel = totalLevel;
+        TopLevel = topLevel;
     }
 
     public int TimeStamp { get; private set; }
 
-    public int TotalLevel { get; }
+    public int TopLevel { get; }
 
-    public static void Init(TileNode tree, int totalLevel, ICpuTargetOptions options, out Solver solver, out Dictionary<OpNode, OpNodeInfo<IntExpr>> opNodeMemo, out Dictionary<TileNode, TileNodeInfo<IntExpr>> tileNodeMemo, out Dictionary<ITileable, DomainInfo<IntExpr>> tileableNodeMemo)
+    public static void Init(TileNode tree, int topLevel, ICpuTargetOptions options, out Solver solver, out Dictionary<OpNode, OpNodeInfo<IntExpr>> opNodeMemo, out Dictionary<TileNode, TileNodeInfo<IntExpr>> tileNodeMemo, out Dictionary<ITileable, DomainInfo<IntExpr>> tileableNodeMemo)
     {
         solver = new Solver("GraphSolver");
         opNodeMemo = new Dictionary<OpNode, OpNodeInfo<IntExpr>>();
         tileNodeMemo = new Dictionary<TileNode, TileNodeInfo<IntExpr>>();
         tileableNodeMemo = new Dictionary<ITileable, DomainInfo<IntExpr>>();
-        var initializer = new TreeSolverInitializer(totalLevel, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, options);
+        var initializer = new TreeSolverInitializer(topLevel, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, options);
         initializer.Visit(tree, Context.Default);
     }
 
@@ -65,7 +65,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
 
     public InitResult Visit(TileNode value, Context context)
     {
-        var (pid, pvars) = context;
+        var (pid, pvars, ptrips) = context;
         var dimsMap = GetDimsMap(value);
         if (!pvars.Any())
         {
@@ -84,9 +84,24 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
             TileableNodeMemo.Add(value, new(tileVars, forwardExtents, dimsMap));
         }
 
+        var tripCounts = new IntExpr[tileVars.Length + 1];
+        if (pvars.Any())
+        {
+            tripCounts[0] = ptrips;
+        }
+        else
+        {
+            tripCounts[0] = Solver.MakeIntConst(1);
+        }
+
+        for (int i = 0; i < tileVars.Length; i++)
+        {
+            tripCounts[1 + i] = tripCounts[i] * tileVars[i];
+        }
+
         InitResult childResult;
         {
-            var childContext = context with { ParentOpId = value.OpId, ForwardExtents = forwardExtents };
+            var childContext = context with { ParentOpId = value.OpId, ForwardExtents = forwardExtents, TripCounts = tripCounts[^1] };
 
             var results = new List<BufferResult>();
             var names = new List<Dictionary<int, int>>();
@@ -140,7 +155,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
                 }
             }
 
-            TileNodeMemo.Add(value, new(backWardExtents, defUseMap, bufferInfoMap));
+            TileNodeMemo.Add(value, new(tripCounts, backWardExtents, defUseMap, bufferInfoMap));
         }
 
         return new(bufferResults.ToArray(), defUseMap, new[] { dimsMap }, new[] { backWardExtents[0] });
@@ -148,7 +163,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
 
     public InitResult Visit(OpNode value, Context context)
     {
-        var (pid, pvars) = context;
+        var (pid, pvars, ptrips) = context;
         var dimsMap = GetDimsMap(value);
         var tileVars = Enumerable.Range(0, value.DomainBounds.Length).Select(n => Solver.MakeIntVar(1, long.MaxValue, $"op{value.OpId}_d{n}_L{value.Level}")).ToArray();
 
@@ -218,11 +233,14 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
     }
 
     /// <summary>
-    /// Get the backward accumulated domain extents, domain extents[i] means extents[0:i] is not accumulated, extents[i:] is accumulated.
+    /// Get the backward accumulated domain extents.
+    /// backWardExtents[i] contains a extents[domain rank], note the extents[0:i] is not accumulated, extents[i:] is accumulated.
+    /// for example. backWardExtents[2] contains extents[3], this extents[0],extents[1] is not accumulated, extents[2] is accumulated.
+    /// so backWardExtents[0] means extents[0:domain rank] is accumulated.
     /// </summary>
     private IntExpr[][] GetBackWardExtents(IntVar[] tileVars, Dictionary<int, int>[] childDimsMaps, IntExpr[][] childBackWardExtents)
     {
-        var backWardExtents = new IntExpr[tileVars.Length][];
+        var backWardExtents = new IntExpr[tileVars.Length + 1][];
         bool ProductExtent(IntExpr[] extents, int i)
         {
             bool find = false;
@@ -243,41 +261,42 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
             throw new InvalidOperationException("can't find the child tile var");
         }
 
-        for (int d = 0; d < tileVars.Length; d++)
+        for (int i = 0; i < tileVars.Length + 1; i++)
         {
-            var extents = backWardExtents[d] = new IntExpr[tileVars.Length];
-            for (int i = 0; i < d; i++)
+            var extents = backWardExtents[i] = new IntExpr[tileVars.Length];
+
+            // [0:i] is not accumulated.
+            for (int j = 0; j < i; j++)
             {
-                ProductExtent(extents, i);
+                ProductExtent(extents, j);
             }
 
-            for (int i = d; i < tileVars.Length; i++)
+            // [i:domain] is accumulated
+            for (int j = i; j < tileVars.Length; j++)
             {
-                extents[i] = tileVars[i];
-                ProductExtent(extents, i);
+                extents[j] = tileVars[j];
+                ProductExtent(extents, j);
             }
         }
 
         return backWardExtents;
     }
 
-    private TileNodeBufferInfo<IntExpr> GetBufferInfo(TileNode tile, BufferIdentity bid, AffineMap accessMap, Tuple<int, int> lifeness, IntExpr[][] backWardExtents)
+    private TileNodeBufferInfo<IntExpr> GetBufferInfo(TileNode tileNode, BufferIdentity bid, AffineMap accessMap, Tuple<int, int> lifeness, IntExpr[][] backWardExtents)
     {
-        var domainDims = tile.DomainRelation.Map.Results.Length;
-        var bufferPlaces = new IntVar[domainDims][];
-        var bufferShapes = new IntExpr[domainDims][];
-        var bufferWrites = new IntExpr[domainDims];
-        var bufferSizes = new IntExpr[domainDims];
-        var bufferSizeVars = new IntVar[domainDims];
-        var bufferMasks = new LoopMask[domainDims];
+        var rank = tileNode.DomainRelation.Map.Results.Length + 1;
+        var bufferPlaces = new IntExpr[rank][];
+        var bufferShapes = new IntExpr[rank][];
+        var bufferSizes = new IntExpr[rank];
+        var bufferSizeVars = new IntExpr[rank];
+        var bufferMasks = new LoopMask[rank];
 
-        for (int i = 0; i < domainDims; i++)
+        for (int i = 0; i < rank; i++)
         {
-            // note we assume the inputs/outputs already stored at top level, so disable the top level store buffer placement.
-            var subLevelPlace = bufferPlaces[i] = new IntVar[tile.Level == TotalLevel ? tile.Level - 1 : tile.Level];
+            var subLevelPlace = bufferPlaces[i] = new IntVar[tileNode.Level];
             for (int sl = 0; sl < subLevelPlace.Length; sl++)
             {
-                subLevelPlace[sl] = Solver.MakeBoolVar($"p[cl{tile.Level}, op{tile.OpId}, b{bid.Index}, ci{i}, {sl}]");
+                subLevelPlace[sl] = Solver.MakeBoolVar($"p[cl{tileNode.Level}, op{tileNode.OpId}, b{bid.Index}, ci{i}, sl{sl}]");
             }
 
             var subDomainShapes = bufferShapes[i] = new IntExpr[accessMap.Results.Length];
@@ -288,25 +307,25 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
             }
 
             bufferSizes[i] = subDomainShapes.Aggregate((IntExpr)Solver.MakeIntConst(bid.Node.Grid.Buffers[bid.Index].CheckedDataType.SizeInBytes), Solver.MakeProd);
-            bufferSizeVars[i] = Solver.MakeIntVar(1, int.MaxValue, $"size[cl{tile.Level}, op{tile.OpId}, b{bid.Index}, ci{i}]");
+            bufferSizeVars[i] = Solver.MakeIntVar(1, int.MaxValue, $"size[cl{tileNode.Level}, op{tileNode.OpId}, b{bid.Index}, ci{i}]");
             Solver.Add(Solver.MakeEquality(bufferSizeVars[i], bufferSizes[i]));
 
             var mask = 0U;
-            var sizeExprStr = bufferSizes[i].ToString();
-            for (int j = i; j < domainDims; j++)
-            {
-                if (sizeExprStr.Contains(TileableNodeMemo[tile].TileVars[j].Name(), StringComparison.CurrentCulture))
-                {
-                    mask |= 1U << (domainDims - 1 - j);
-                }
-            }
 
+            // var sizeExprStr = bufferSizes[i].ToString();
+            // for (int j = i; j < rank; j++)
+            // {
+            //     if (sizeExprStr.Contains(TileableNodeMemo[tileNode].TileVars[j].Name(), StringComparison.CurrentCulture))
+            //     {
+            //         mask |= 1U << (rank - 1 - j);
+            //     }
+            // }
             bufferMasks[i] = new(mask);
 
             // note update writes in second visitor.
         }
 
-        var bufferInfo = new TileNodeBufferInfo<IntExpr>(lifeness, accessMap, bufferPlaces, bufferShapes, bufferWrites, bufferSizeVars, bufferSizes, bufferMasks);
+        var bufferInfo = new TileNodeBufferInfo<IntExpr>(lifeness, accessMap, bufferPlaces, bufferShapes, bufferSizeVars, bufferSizes, bufferMasks);
         return bufferInfo;
     }
 
@@ -331,8 +350,8 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
     {
     }
 
-    public sealed record Context(int ParentOpId, IReadOnlyList<IntExpr> ForwardExtents)
+    public sealed record Context(int ParentOpId, IReadOnlyList<IntExpr> ForwardExtents, IntExpr TripCounts)
     {
-        public static Context Default => new(-1, Array.Empty<IntVar>());
+        public static Context Default => new(-1, Array.Empty<IntVar>(), null!);
     }
 }

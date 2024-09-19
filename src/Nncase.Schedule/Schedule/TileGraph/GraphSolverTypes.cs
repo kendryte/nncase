@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using Google.OrTools.ConstraintSolver;
 using Nncase.IR;
 using Nncase.IR.Affine;
@@ -16,17 +17,34 @@ public sealed record BufferIdentity(TileGrid Node, int Index)
 }
 
 /// <summary>
-/// Map: current offset/extent  Place : [create_loop,store_level], Shapes: [create_loop][shape] write: [create_loop], size: [create loop] masks[create loop].
-/// domain dims = 4, create loop will be 0,1,2,3.
+/// the placement length = domain rank + 1. if domain dims = 4, create loop will be 0,1,2,3,4.
 /// create loop = 0 means we create buffer in outside of all loops.
-/// for example, create loop = 2, means create buffer d0,d1,(buffer create here) d2,d3:
-/// measks[2] means the d2,d3 tile vars is related with buffer size.
+/// for example, create loop = 2, means create buffer d0,d1,(buffer create here) d2,d3.
 /// </summary>
-public sealed record TileNodeBufferInfo<T>(Tuple<int, int> Liveness, AffineMap Map, T[][] Places, T[][] Shapes, T[] Writes, T[] SizeVars, T[] SizeExprs, LoopMask[] Masks)
+/// <param name="Liveness">this buffer's liveness.</param>
+/// <param name="Map">this buffers access map.</param>
+/// <param name="Places">
+/// Places[create loop][store level]:
+/// create loop in [0, domain rank] , 0 means out all, 1 means out loop0, domain rank means in loopN.
+/// store level in [0, create level == top level ? create level : top level - 1), 0 means level 1, 1 means level 2. </param>
+/// <param name="Shapes">the buffer shape according to the placement.</param>
+/// <param name="SizeVars">the buffer size according to the placement.</param>
+/// <param name="SizeExprs">the buffer size expr.</param>
+/// <param name="Masks">the mask means the which outside tile vars is related with buffer size.</param>
+public sealed record TileNodeBufferInfo<T>(Tuple<int, int> Liveness, AffineMap Map, T[][] Places, T[][] Shapes, T[] SizeVars, T[] SizeExprs, LoopMask[] Masks)
 {
 }
 
-public sealed record TileNodeInfo<T>(T[][] BackWardExtents, Dictionary<BufferIdentity, BufferIdentity> DefUseMap, Dictionary<BufferIdentity, TileNodeBufferInfo<T>> BufferInfoMap)
+/// <summary>
+/// the placement length = domain rank + 1. if domain dims = 4, create loop will be 0,1,2,3,4.
+/// create loop = 0 means we create buffer in outside of all loops.
+/// for example, create loop = 2, means create buffer d0,d1,(buffer create here) d2,d3.
+/// </summary>
+/// <param name="TripCounts">forward trips, length = domainRank+1. the trips[i] means trips accumulated until loop var[i].</param>
+/// <param name="BackWardExtents">accumulated backward extents.</param>
+/// <param name="DefUseMap">key is def, value is use.</param>
+/// <param name="BufferInfoMap">buffer info memo.</param>
+public sealed record TileNodeInfo<T>(T[] TripCounts, T[][] BackWardExtents, Dictionary<BufferIdentity, BufferIdentity> DefUseMap, Dictionary<BufferIdentity, TileNodeBufferInfo<T>> BufferInfoMap)
 {
     public BufferIdentity GetCacheBid(BufferIdentity bid)
     {
@@ -42,11 +60,28 @@ public sealed record TileNodeInfo<T>(T[][] BackWardExtents, Dictionary<BufferIde
 
         return bid;
     }
+
+    public bool TryGetBufferInfo(BufferIdentity bid, [MaybeNullWhen(false)] out TileNodeBufferInfo<T> info)
+    {
+        if (DefUseMap.TryGetValue(bid, out var sinkId))
+        {
+            BufferInfoMap.TryGetValue(sinkId, out info);
+        }
+        else
+        {
+            BufferInfoMap.TryGetValue(bid, out info);
+        }
+
+        return info is not null;
+    }
 }
 
 /// <summary>
-/// loop masks.count == buffer.dimension. the dims map is current dims map to partent dims.
+/// domain infomation.
 /// </summary>
+/// <param name="TileVars">loop trip vars length = domainRank.</param>
+/// <param name="ForwardExtents">forward extents.</param>
+/// <param name="DimsMap"> key is current dim, value is partent dim. </param>
 public sealed record DomainInfo<T>(T[] TileVars, T[] ForwardExtents, Dictionary<int, int> DimsMap)
 {
 }
@@ -55,8 +90,8 @@ public sealed record DomainInfo<T>(T[] TileVars, T[] ForwardExtents, Dictionary<
 /// op node info.
 /// </summary>
 /// <param name="Maps">current node's domain accesses the buffer. it means applyed by this op's domain relation.</param>
-/// <param name="Shapes">this buffer's shape expr. </param>
-/// <param name="Size">buffer's size.</param>
-public sealed record OpNodeInfo<T>(AffineMap[] Maps, T[][] Shapes, T[] Size)
+/// <param name="Shapes">each buffer's shape expr. </param>
+/// <param name="Sizes">each buffer's size.</param>
+public sealed record OpNodeInfo<T>(AffineMap[] Maps, T[][] Shapes, T[] Sizes)
 {
 }

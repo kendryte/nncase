@@ -67,6 +67,7 @@ public sealed class TreeSolverPrinter : TreeSolverBase<IntExpr>, ITreeNodeVisito
         writer.WriteLine($"Domain Relation: {value.DomainRelation}");
         WriteIntExprVector(writer, "TileVars", TileableNodeMemo[value].TileVars, Solution);
 
+        WriteIntExprVector(writer, "TripCounts", TileNodeMemo[value].TripCounts, Solution);
         WriteIntExprMatrix(writer, "BackWardExtents", TileNodeMemo[value].BackWardExtents, Solution);
 
         writer.WriteLine($"BufferInfo:");
@@ -79,7 +80,6 @@ public sealed class TreeSolverPrinter : TreeSolverBase<IntExpr>, ITreeNodeVisito
                 WriteIntExprMatrix(writer, "Shapes", info.Shapes, Solution);
                 WriteIntExprVector(writer, "SizeVars", info.SizeVars, Solution);
                 WriteIntExprVector(writer, "SizeExprs", info.SizeExprs, Solution);
-                WriteIntExprVector(writer, "Writes", info.Writes, Solution);
                 writer.Indent--;
             }
 
