@@ -237,7 +237,7 @@ class BenchmarkNTT_riscv64(BenchmarkNTT):
                                          'Max_reduceM_NoPack': '5126',
                                          'Max_reduceM_PackM': '2594',
                                          'Max_reduceMN_NoPack': '2577',
-                                         'Max_reduceMN_PackN': '5897',
+                                         'Max_reduceMN_PackN': '2577',
                                          'Max_reduceMN_PackM': '2577',
                                          'Min_reduceN_NoPack': '2573',
                                          'Min_reduceN_PackN': '2594',
