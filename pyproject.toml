@@ -47,6 +47,7 @@ archs = ["AMD64"]
 archs = ["x86_64"]
 
 before-build = [
+  "ls -l {project}",
   "ls -l {project}/Build/",
   "cat {project}/Build/Release/generators/CMakePresets.json",
   "rm -f {project}/CMakeUserPresets.json",
