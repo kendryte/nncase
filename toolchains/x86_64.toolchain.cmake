@@ -1,1 +1,5 @@
-add_compile_options(-mavx2 -mfma)
+if (MSVC)
+    add_compile_options(/arch:AVX)
+else()
+    add_compile_options(-mavx)
+endif()
