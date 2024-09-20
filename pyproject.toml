@@ -57,3 +57,4 @@ archs = ["x86_64"]
 
 [tool.cibuildwheel.macos.environment]
 MACOSX_DEPLOYMENT_TARGET = "12"
+SYSTEM_VERSION_COMPAT = "0"
