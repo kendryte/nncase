@@ -87,6 +87,13 @@ jobs:
       with:
         python-version: 3.8
 
+    - name: Start tmate session for debugging
+      uses: mxschmitt/action-tmate@v3
+      continue-on-error: true
+
+    # 例如，如果编译失败，可以通过SSH进行调试
+    - run: echo "Run after tmate session"
+
     - name: Install cibuildwheel
       run: pip install cibuildwheel
 
