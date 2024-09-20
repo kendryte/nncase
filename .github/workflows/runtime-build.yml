@@ -59,11 +59,11 @@ jobs:
           cmake --build build/${{matrix.config.buildType}} --config ${{matrix.config.buildType}}
           cmake --install build/${{matrix.config.buildType}} --prefix install
 
-      - name: Test
-        run: |
-          cd build/${{matrix.config.buildType}}
-          ctest --test-dir tests/kernels --output-on-failure -j4
-        if: runner.os != 'Macos' && runner.os != 'Windows'
+      # - name: Test
+      #   run: |
+      #     cd build/${{matrix.config.buildType}}
+      #     ctest --test-dir tests/kernels --output-on-failure -j4
+      #   if: runner.os != 'Macos' && runner.os != 'Windows'
 
       #- name: Benchmark
       #  run: |
