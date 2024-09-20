@@ -48,7 +48,7 @@ public sealed class TreeSolverPythonPrinter : TreeSolverBase<IntExpr>, ITreeNode
             }
 
             var tile = Solution.Value(domainInfo.TileVars[i].Var());
-            writer.WriteLine($"for {domainInfo.TileVars[i].ToSimplifyString()} in range(0, {parentBounds}, {parentBounds / tile}): # trip: {trip}");
+            writer.WriteLine($"for {domainInfo.TileVars[i].ToSimplifyString()} in range(0, {parentBounds}, {parentBounds / tile}):  # trip: {trip}");
             bounds.Add(parentBounds / tile);
             writer.Indent++;
         }
@@ -86,7 +86,7 @@ public sealed class TreeSolverPythonPrinter : TreeSolverBase<IntExpr>, ITreeNode
                 {
                     var shape = bufferInfo.Shapes[i].Select(s => Solution.Value(s.Var())).ToArray();
                     var size = Solution.Value(bufferInfo.SizeExprs[i].Var());
-                    writer.WriteLine($"{bid}[{string.Join(", ", shape)}] @ L{sl + 1} # size: {size}");
+                    writer.WriteLine($"{bid}[{string.Join(", ", shape)}] @ L{sl + 1}  # size: {size}");
                 }
             }
         }
@@ -98,7 +98,7 @@ public sealed class TreeSolverPythonPrinter : TreeSolverBase<IntExpr>, ITreeNode
         var opinfo = OpNodeMemo[value];
         var shapes = string.Join(", ", opinfo.Shapes.Select((sp, i) => $"buf{i}[" + string.Join(',', sp.Select(s => Solution.Value(s.Var()))) + "]"));
         var size = string.Join(", ", opinfo.Sizes.Select(s => Solution.Value(s.Var())));
-        writer.WriteLine($"{value.Op.GetType()}({value.Op.DisplayProperty()}, {shapes}) # size: {size}");
+        writer.WriteLine($"{value.Op.GetType()}({value.Op.DisplayProperty()}, {shapes})  # size: {size}");
         return default;
     }
 }

@@ -406,23 +406,23 @@ public sealed class PackMatMul : PackRule
         AddCandidate(PackKind.K, PackKind.K);
 
         // only pack A's m
-        // AddCandidate(new[] { lhsShape.Length - 2 }, Array.Empty<int>(), new[] { Lane }, Array.Empty<int>());
+        AddCandidate(PackKind.M, PackKind.None);
 
         // only pack B's n
         AddCandidate(PackKind.None, PackKind.N, transB: rhs is Const);
         if (Rank > 1)
         {
             // pack A's m and B's n, when B is const, force transpose
-            // AddCandidate(new[] { lhsShape.Length - 2 }, new[] { rhsShape.Length - 1 }, new[] { Lane }, new[] { Lane }, transB: rhs is Const);
+            AddCandidate(PackKind.M, PackKind.N, transB: rhs is Const);
 
             // pack A's m,k and B's k,n
-            // AddCandidate(new[] { lhsShape.Length - 2, lhsShape.Length - 1 }, new[] { rhsShape.Length - 2, rhsShape.Length - 1 }, new[] { Lane, Lane }, new[] { Lane, Lane }, transB: rhs is Const);
+            AddCandidate(PackKind.M | PackKind.K, PackKind.K | PackKind.N, transB: rhs is Const);
 
             // pack A's m,k and B's k
-            // AddCandidate(new[] { lhsShape.Length - 2, lhsShape.Length - 1 }, new[] { rhsShape.Length - 2 }, new[] { Lane, Lane }, new[] { Lane });
+            AddCandidate(PackKind.M | PackKind.K, PackKind.K);
 
             // pack A's k and B's k,n
-            // AddCandidate(new[] { lhsShape.Length - 1 }, new[] { rhsShape.Length - 2, rhsShape.Length - 1 }, new[] { Lane }, new[] { Lane, Lane });
+            AddCandidate(PackKind.K, PackKind.K | PackKind.N);
         }
 
         return rets;

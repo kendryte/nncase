@@ -183,6 +183,11 @@ template <class T1, class T2> struct outer_product {
     }
 };
 
+template <class T1, class T2> struct plane_outer_product {
+    constexpr auto operator()(const T1 &v1, const T2 &v2,
+                              const size_t length) const noexcept;
+};
+
 /**
  * @remarks mod is equivalent to fmod() function in C/C++/Python.
  */
@@ -232,7 +237,8 @@ template <class T1, class T2, class TResult> struct mul_add {
                                  const TResult &v3) const noexcept;
 };
 
-template <bool AccC, IsFixedTensor T1, IsFixedTensor T2, IsFixedTensor TResult>
+template <bool AccC, bool TransA, IsFixedTensor T1, IsFixedTensor T2,
+          IsFixedTensor TResult>
 struct mma {
     constexpr TResult operator()(const T1 &v1, const T2 &v2,
                                  const TResult &v3) const noexcept;
@@ -288,6 +294,11 @@ NTT_DEFINE_BINARY_FUNC_IMPL(div)
 NTT_DEFINE_BINARY_FUNC_IMPL(floor_mod)
 NTT_DEFINE_BINARY_FUNC_IMPL(inner_product)
 NTT_DEFINE_BINARY_FUNC_IMPL(outer_product)
+template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+constexpr auto plane_outer_product(const T1 &v1, const T2 &v2,
+                                   const size_t length) noexcept {
+    return ops::plane_outer_product<T1, T2>()(v1, v2, length);
+}
 NTT_DEFINE_BINARY_FUNC_IMPL(mod)
 NTT_DEFINE_BINARY_FUNC_IMPL(min)
 NTT_DEFINE_BINARY_FUNC_IMPL(max)
@@ -304,9 +315,10 @@ constexpr TResult mul_add(const T1 &v1, const T2 &v2,
     return ops::mul_add<T1, T2, TResult>()(v1, v2, v3);
 }
 
-template <bool AccC, IsFixedTensor T1, IsFixedTensor T2, IsFixedTensor TResult>
+template <bool AccC, bool TransA, IsFixedTensor T1, IsFixedTensor T2,
+          IsFixedTensor TResult>
 constexpr TResult mma(const T1 &v1, const T2 &v2, const TResult &v3) noexcept {
-    return ops::mma<AccC, T1, T2, TResult>()(v1, v2, v3);
+    return ops::mma<AccC, TransA, T1, T2, TResult>()(v1, v2, v3);
 }
 
 /**
@@ -416,19 +428,32 @@ mul_add<T1, T2, TResult>::operator()(const T1 &v1, const T2 &v2,
     return v1 * v2 + v3;
 }
 
-template <bool AccC, IsFixedTensor T1, IsFixedTensor T2, IsFixedTensor TResult>
-constexpr TResult
-mma<AccC, T1, T2, TResult>::operator()(const T1 &lhs, const T2 &rhs,
-                                       const TResult &v3) const noexcept {
+template <bool AccC, bool TransA, IsFixedTensor T1, IsFixedTensor T2,
+          IsFixedTensor TResult>
+constexpr TResult mma<AccC, TransA, T1, T2, TResult>::operator()(
+    const T1 &lhs, const T2 &rhs, const TResult &v3) const noexcept {
     static_assert(T1::rank() == T2::rank() && T2::rank() == TResult::rank() &&
                       TResult::rank() == 2,
                   "only support 2d mma");
     TResult output = v3;
-    for (size_t m = 0; m < T1::shape().at(0); m++) {
-        for (size_t k = 0; k < T2::shape().at(0); k++) {
-            output(m) = (k != 0 || AccC)
-                            ? ntt::mul_add(lhs(m, k), rhs(k), output(m))
-                            : ntt::mul(lhs(m, k), rhs(k));
+    if constexpr (TransA) {
+        // <k,m> @ <k,n>
+        if constexpr (AccC) {
+            output = ntt::outer_product(lhs(0), rhs(0)) + output;
+        } else {
+            output = ntt::outer_product(lhs(0), rhs(0));
+        }
+
+        for (size_t k = 1; k < T1::shape().at(0); k++) {
+            output = ntt::outer_product(lhs(k), rhs(k)) + output;
+        }
+    } else {
+        for (size_t m = 0; m < T1::shape().at(0); m++) {
+            for (size_t k = 0; k < T2::shape().at(0); k++) {
+                output(m) = (k != 0 || AccC)
+                                ? ntt::mul_add(lhs(m, k), rhs(k), output(m))
+                                : ntt::mul(lhs(m, k), rhs(k));
+            }
         }
     }
 

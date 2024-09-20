@@ -89,16 +89,29 @@ class matmul_impl<false, true, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                       LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
                       RhsPackedAxes::rank() == 1 &&
                       RhsPackedAxes::at(0) == TRhs::rank() - 2) {
-            static_assert(LhsPackedAxes::rank() != 1, "not support!");
+            auto value = ntt::plane_outer_product(lhs, rhs, K);
+            // for (size_t k = 1; k < K; k++) {
+            //     auto value = ntt::outer_product(lhs, rhs);
+            //     output = AccC ? output + value : value;
+            // }
         }
-        // 3.3. pack MK & KN
+        // 3.3. pack [M,K]<m,k> & [N,K]<k,n>
         else if constexpr (LhsPackedAxes::rank() == 2 &&
                            LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
                            LhsPackedAxes::at(1) == TLhs::rank() - 1 &&
                            RhsPackedAxes::rank() == 2 &&
                            RhsPackedAxes::at(0) == TRhs::rank() - 1 &&
                            RhsPackedAxes::at(1) == TRhs::rank() - 2) {
-            static_assert(LhsPackedAxes::rank() != 2, "not support!");
+            output = ntt::mma<AccC, false>(*lhs++, *rhs++, output);
+        }
+        // 3.3. pack [M,K]<k,m> & [N,K]<k,n>
+        else if constexpr (LhsPackedAxes::rank() == 2 &&
+                           LhsPackedAxes::at(0) == TLhs::rank() - 1 &&
+                           LhsPackedAxes::at(1) == TLhs::rank() - 2 &&
+                           RhsPackedAxes::rank() == 2 &&
+                           RhsPackedAxes::at(0) == TRhs::rank() - 1 &&
+                           RhsPackedAxes::at(1) == TRhs::rank() - 2) {
+            output = ntt::mma<AccC, true>(*lhs++, *rhs++, output);
         }
         // fall back
         else {
@@ -246,7 +259,7 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                 {lhs}};
             fixed_tensor_alike_t<TOutElem, 1, TOutElem::shape().at(0)>
                 output_2d{{output}};
-            output_2d = ntt::mma<AccC>(lhs_2d, rhs, output_2d);
+            output_2d = ntt::mma<AccC, false>(lhs_2d, rhs, output_2d);
             output = output_2d(0);
         }
         // 3.3. pack MK & KN
@@ -256,7 +269,7 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                            RhsPackedAxes::rank() == 2 &&
                            RhsPackedAxes::at(0) == TRhs::rank() - 2 &&
                            RhsPackedAxes::at(1) == TRhs::rank() - 1) {
-            output = ntt::mma<AccC>(lhs, rhs, output);
+            output = ntt::mma<AccC, false>(lhs, rhs, output);
         } else {
             static_assert(sizeof(TLhsElem) == 0, "Unsupported packing.");
         }

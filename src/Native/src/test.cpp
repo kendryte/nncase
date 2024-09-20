@@ -959,9 +959,58 @@ int main() {
                 ntt::matmul<false, false, true>(
                     ta, packb, tc2, ntt::fixed_shape<>{}, ntt::fixed_shape<>{},
                     ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
-                
+
                 ntt::tensor<float, ntt::fixed_shape<8, 8>> tc2unpack;
                 ntt::unpack<1>(tc2, tc2unpack);
+
+                ntt::apply(tc.shape(), [&]([[maybe_unused]] auto index) {
+                    assert(tc2unpack(index) == tc(index));
+                });
+            }
+
+            // A[m,k]<m,k> @ B[n,k]<k,n>
+            {
+                ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 1>>
+                    packb;
+                ntt::pack<1, 0>(tranb, packb); // [n,k]<k,n>
+                ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 1>>
+                    packa;
+                // note actully a should pack as [m,k]<k,m>
+                ntt::pack<0, 1>(ta, packa); // [m,k]<m,k>
+                // [m,n]<m,n>
+                ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 2>>
+                    tc2;
+                ntt::matmul<false, false, true>(
+                    packa, packb, tc2, ntt::fixed_shape<0, 1>{},
+                    ntt::fixed_shape<>{}, ntt::fixed_shape<1, 0>{},
+                    ntt::fixed_shape<>{});
+
+                ntt::tensor<float, ntt::fixed_shape<8, 8>> tc2unpack;
+                ntt::unpack<0, 1>(tc2, tc2unpack);
+
+                ntt::apply(tc.shape(), [&]([[maybe_unused]] auto index) {
+                    assert(tc2unpack(index) == tc(index));
+                });
+            }
+
+            // A[m,k]<k,m> @ B[n,k]<k,n>
+            {
+                ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 1>>
+                    packb;
+                ntt::pack<1, 0>(tranb, packb); // [n,k]<k,n>
+                ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 1>>
+                    packa;
+                ntt::pack<1, 0>(ta, packa); // [m,k]<k,m>
+                // [m,n]<m,n>
+                ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 2>>
+                    tc2;
+                ntt::matmul<false, false, true>(
+                    packa, packb, tc2, ntt::fixed_shape<1, 0>{},
+                    ntt::fixed_shape<>{}, ntt::fixed_shape<1, 0>{},
+                    ntt::fixed_shape<>{});
+
+                ntt::tensor<float, ntt::fixed_shape<8, 8>> tc2unpack;
+                ntt::unpack<0, 1>(tc2, tc2unpack);
 
                 ntt::apply(tc.shape(), [&]([[maybe_unused]] auto index) {
                     assert(tc2unpack(index) == tc(index));

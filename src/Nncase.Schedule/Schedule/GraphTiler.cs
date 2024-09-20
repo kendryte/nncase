@@ -228,69 +228,9 @@ public sealed class GraphTiler
             eachLevelStoreBufferNumsConstrains[bid] = cons;
             for (int sl = 0; sl < primTree.Level; sl++)
             {
-                if (sl == 0)
-                {
-                    cons[sl] = solver.MakeEquality(eachLevelStoreBufferNums[primTree][bid][sl], 1);
-                }
-                else
-                {
-                    cons[sl] = solver.MakeLessOrEqual(eachLevelStoreBufferNums[primTree][bid][sl], 1);
-                }
-
-                cons[sl].SetName($"{bid}Store{sl}");
+                cons[sl] = solver.MakeEquality(eachLevelStoreBufferNums[primTree][bid][sl], 1);
+                cons[sl].SetName($"store[{bid}, sl{sl}]");
                 solver.Add(cons[sl]);
-            }
-        }
-
-        // 2. if current loop has create a buffer, it's requires parent level store a buffer in current level.
-        var eachBufferCreateStoreNums = new Dictionary<BufferIdentity, Dictionary<TileNode, IntExpr[][]>>();
-
-        foreach (var (childNode, childNodeInfo) in tileNodeMemo)
-        {
-            foreach (var (cbid, cbinfo) in childNodeInfo.BufferInfoMap)
-            {
-                for (int cstoreLevel = 0; cstoreLevel < childNode.Level; cstoreLevel++)
-                {
-                    // collect parent node store previous level.
-                    var parentStoreNums = new List<IntVar>();
-
-                    var parent = childNode.Parent;
-                    while (parent is TileNode parentNode && parentNode.Level != -1)
-                    {
-                        var parentNodeInfo = tileNodeMemo[parentNode];
-                        var pbid = parentNodeInfo.GetCacheBid(cbid);
-                        parentStoreNums.AddRange(parentNodeInfo.BufferInfoMap[pbid].Places.Select(p => p[cstoreLevel + 1].Var()));
-                        parent = parentNode.Parent;
-                    }
-
-                    // 如果上一个层级buffer需要在当前node之外store, 那么直接统计所有parent node在上一个store level的nums
-                    if (cstoreLevel + 1 >= childNode.Level)
-                    {
-                        var childStoreNums = solver.MakeSum(cbinfo.Places.Select(p => p[cstoreLevel].Var()).ToArray());
-
-                        var parentStored = solver.MakeIsEqualVar(solver.MakeSum(parentStoreNums.ToArray()), solver.MakeIntConst(1));
-                        var constraint = solver.MakeEquality(childStoreNums, parentStored);
-                        // solver.Add(constraint);
-                    }
-                    else
-                    {
-                        // 上一个层级的buffer也可以在当前层级allocate, 当前循环store level时, 那么要求他以及之前所有的循环存在store上一级的buffer
-                        for (int i = 0; i < cbinfo.Places.Length; i++)
-                        {
-                            var childStoreNums = cbinfo.Places[i][cstoreLevel];
-
-                            var previousLoopsStoreNums = new List<IntVar>();
-                            for (int j = 0; j <= i; j++)
-                            {
-                                previousLoopsStoreNums.Add(cbinfo.Places[j][cstoreLevel + 1].Var());
-                            }
-
-                            var parentStored = solver.MakeIsEqualVar(solver.MakeSum(parentStoreNums.Concat(previousLoopsStoreNums).ToArray()), solver.MakeIntConst(1));
-                            var constraint = solver.MakeEquality(childStoreNums, parentStored);
-                            // solver.Add(constraint);
-                        }
-                    }
-                }
             }
         }
 
@@ -338,7 +278,7 @@ public sealed class GraphTiler
                     return;
                 }
 
-                if (current is not TileNode childNode || childNode.Level < sl)
+                if (current is not TileNode childNode || childNode.Level <= sl)
                 {
                     return;
                 }
@@ -593,15 +533,6 @@ public sealed class GraphTiler
 
             writer.Indent--;
 
-            // writer.WriteLine("EachParentNodeCreateBufferConstraints:");
-            // writer.Indent++;
-            // foreach (var (node, constraints) in eachParentNodeCreateBufferConstraints)
-            // {
-            //     TreeSolverPrinter.WriteIntExprVector(writer, node.ToString(), constraints.Values.ToArray(), printer.Solution);
-            // }
-
-            // writer.Indent--;
-
             writer.WriteLine("LevelMemoryUsage:");
             {
                 writer.Indent++;
@@ -624,7 +555,10 @@ public sealed class GraphTiler
             TreeSolverPrinter.WriteIntExprVector(writer, "LevelDataWrites", levelDataWrites, printer.Solution);
             TreeSolverPrinter.WriteIntExprVector(writer, "MemoryCycles", memoryCycles, printer.Solution);
             TreeSolverPrinter.WriteIntExpr(writer, "ComputeCycles", computeCycles, printer.Solution);
-            TreeSolverPrinter.WriteIntExpr(writer, "TotalCycles", totalCycles, printer.Solution);
+            if (printer.Solution is not null)
+            {
+                writer.WriteLine($"TotalCycles: {printer.Solution.ObjectiveValue()}");
+            }
         }
     }
 

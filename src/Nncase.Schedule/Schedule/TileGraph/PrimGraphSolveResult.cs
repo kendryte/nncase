@@ -85,19 +85,15 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
 
         // var domainLetBuilders = Enumerable.Range(0, value.DimNames.Length).Select(i => new List<ISequentialBuilder<Expr>>()).ToArray();
         var cntBuilder = parentbuilder;
-        for (int i = 0; i < value.DomainRelation.Map.Results.Length; i++)
+        for (int i = 0; i < loopVars.Length + 1; i++)
         {
             foreach (var (bid, bufferInfo) in nodeMemo.BufferInfoMap)
             {
-                if (!bufferInfo.Places.Any())
-                {
-                    continue;
-                }
-
                 var place = bufferInfo.Places[i];
                 for (int sl = 0; sl < place.Length; sl++)
                 {
-                    if (place[sl] == 1)
+                    // skip the top level allocate
+                    if (!(value.Level == PrimBufferGraph.Level && i == 0) && place[sl] == 1)
                     {
                         var kernelInfo = bid.Node.GetKernelInfo(TargetOptions);
                         var viewInfo = GetParentSubViewInfo(sl + 1, value, bid, bufferInfo.Map, forwardOffsets[i], bufferInfo.Shapes[i]);
@@ -155,15 +151,18 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                 }
             }
 
-            cntBuilder.Body(loopBuilders[i]);
-            cntBuilder = loopBuilders[i];
+            if (i < loopVars.Length)
+            {
+                cntBuilder.Body(loopBuilders[i]);
+                cntBuilder = loopBuilders[i];
+            }
         }
 
         foreach (var child in value.Children)
         {
             var childBuilder = T.Sequential();
             child.Accept(this, new(childBuilder, forwardOffsets[^1]));
-            loopBuilders[^1].Body(childBuilder);
+            cntBuilder.Body(childBuilder);
         }
 
         return default;

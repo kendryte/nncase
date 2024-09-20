@@ -235,7 +235,6 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-
     [InlineData(new object[] { new[] { 1, 384, 512 }, new[] { 512, 512 }, false, false, 0 })]
     [InlineData(new object[] { new[] { 1, 1, 384, 256 }, new[] { 32, 256, 512 }, false, false, 1 })]
     [InlineData(new object[] { new[] { 384, 512 }, new[] { 512, 512 }, false, false, 2 })]
@@ -261,7 +260,8 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var rule = new Passes.Rules.CPU.PackMatMul(2, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
-        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+        // var posts = new[] { pre }.Concat();
+        var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
     }
 

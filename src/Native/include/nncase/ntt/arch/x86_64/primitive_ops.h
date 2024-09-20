@@ -377,7 +377,7 @@ template <> struct max<ntt::vector<float, 8>, ntt::vector<float, 8>> {
 };
 
 template <bool AccC>
-struct mma<AccC, ntt::vector<float, 8, 8>, ntt::vector<float, 8, 8>,
+struct mma<AccC, false, ntt::vector<float, 8, 8>, ntt::vector<float, 8, 8>,
            ntt::vector<float, 8, 8>> {
     ntt::vector<float, 8, 8>
     operator()(const ntt::vector<float, 8, 8> &lhs,
