@@ -260,6 +260,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var rule = new Passes.Rules.CPU.PackMatMul(2, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+
         // var posts = new[] { pre }.Concat();
         var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);

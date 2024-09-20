@@ -30,6 +30,7 @@ public sealed class TreeSolverPythonPrinter : TreeSolverBase<IntExpr>, ITreeNode
         {
             WriteBuffer(value, i, writer);
             var trip = Solution.Value(TileNodeMemo[value].TripCounts[i + 1].Var());
+
             // 2. write loop.
             int parentBounds = 0;
             if (parent is null)
@@ -80,7 +81,7 @@ public sealed class TreeSolverPythonPrinter : TreeSolverBase<IntExpr>, ITreeNode
             }
 
             var place = bufferInfo.Places[i];
-            for (int sl = 0; sl < place.Length; sl++)
+            for (int sl = place.Length - 1; sl >= 0; sl--)
             {
                 if (Solution.Value(place[sl].Var()) == 1)
                 {
