@@ -54,6 +54,10 @@ repair-wheel-command = "LD_LIBRARY_PATH=/usr/lib64 auditwheel repair -w {dest_di
 
 [tool.cibuildwheel.macos]
 archs = ["x86_64"]
+before-build = [
+  "rm -f {project}/CMakeUserPresets.json",
+  "pip install auditwheel==6.0.0",
+]
 
 [tool.cibuildwheel.macos.environment]
 MACOSX_DEPLOYMENT_TARGET = "12"
