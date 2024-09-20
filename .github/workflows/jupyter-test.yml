@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         config:
-          - {name: x86_64-macos, os: macos-12,}
+          - {name: x86_64-macos, os: macos-10,}
           - {name: x86_64-linux, os: ubuntu-latest}
           # - {name: x86_64-windows, os: windows-2019}
 
