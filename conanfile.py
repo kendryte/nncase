@@ -95,7 +95,7 @@ class nncaseConan(ConanFile):
         tc.variables['BUILD_PYTHON_BINDING'] = self.options.python
         tc.variables['BUILD_TESTING'] = self.options.tests
         if self.options.get_safe("python_root", default="") != "":
-            tc.variables['Python3_ROOT_DIR'] = self.options.python_root
+            tc.variables['Python3_ROOT_DIR'] = os.path.normpath(self.options.python_root)
         tc.generate()
         deps = CMakeDeps(self)
         deps.generate()
