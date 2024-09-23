@@ -63,7 +63,7 @@ before-build = [
   "rm -f {project}/CMakeUserPresets.json",
   "pip install auditwheel==6.0.0",
   "pip install ninja",
-  "export PATH=\"$PATH:$(dirname \"$(command -v ninja)\")\""
+  "export PATH=\"$PATH:$(dirname \"$(which ninja)\")\""
 ]
 
 [tool.cibuildwheel.macos.environment]
