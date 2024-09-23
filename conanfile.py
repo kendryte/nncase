@@ -97,7 +97,7 @@ class nncaseConan(ConanFile):
             if self.settings.os == 'Windows':
                 tc.variables['Python3_ROOT_DIR'] = self.options.python_root.replace('\\', '/')
             else:
-            tc.variables['Python3_ROOT_DIR'] = self.options.python_root
+                tc.variables['Python3_ROOT_DIR'] = self.options.python_root
         tc.generate()
         deps = CMakeDeps(self)
         deps.generate()
