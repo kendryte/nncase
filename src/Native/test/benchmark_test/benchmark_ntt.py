@@ -91,7 +91,8 @@ class BenchmarkNTT():
                 dict['kind'], dict['op'] = items[0].split(self.bin_prefix)[1].split('_', 1)
                 dict[f'{self.arch}_roofline'] = self.roofline_dict[dict['kind']][dict['op']]
                 dict[f'{self.arch}_actual'] = items[-2]
-                dict[f'{self.arch}_ratio'] = round(float(dict[f'{self.arch}_roofline']) / (float(dict[f'{self.arch}_actual']) + 0.01), 3)
+                dict[f'{self.arch}_ratio'] = round(
+                    float(dict[f'{self.arch}_roofline']) / (float(dict[f'{self.arch}_actual']) + 0.01), 3)
                 self.benchmark_list.append(dict)
 
     def run():
@@ -132,7 +133,7 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                         'sqrt': '3.5',
                                         'square': '3.0',
                                         'swish': '12.5',
-                                        'tanh': '6.5',
+                                        'tanh': '27.5',
                                         },
                               'matmul': {'no_pack': '49152',
                                          'pack_K': '9728',
