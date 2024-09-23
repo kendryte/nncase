@@ -90,10 +90,6 @@ jobs:
     - name: Install cibuildwheel
       run: pip install cibuildwheel
 
-    # - name: Start tmate session for debugging
-    #   uses: mxschmitt/action-tmate@v3
-    #   continue-on-error: true
-
     - name: Build wheel
       run: python -m cibuildwheel --output-dir wheelhouse
 

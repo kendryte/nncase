@@ -49,21 +49,19 @@ before-build = [
 
 [tool.cibuildwheel.linux]
 archs = ["x86_64"]
+requires = ["ninja"]
 before-build = [
   "rm -f {project}/CMakeUserPresets.json",
   "pip install auditwheel==6.0.0",
-  "pip install ninja",
-  "export PATH=\"$PATH:$(dirname \"$(which ninja)\")\""
 ]
 repair-wheel-command = "LD_LIBRARY_PATH=/usr/lib64 auditwheel repair -w {dest_dir} {wheel} --exclude libvulkan.so.1,libgomp.so.1"
 
 [tool.cibuildwheel.macos]
 archs = ["x86_64"]
+requires = ["ninja"]
 before-build = [
   "rm -f {project}/CMakeUserPresets.json",
   "pip install auditwheel==6.0.0",
-  "pip install ninja",
-  "export PATH=\"$PATH:$(dirname \"$(command -v ninja)\")\""
 ]
 
 [tool.cibuildwheel.macos.environment]
