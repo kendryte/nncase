@@ -25,7 +25,7 @@ dependencies = ["numpy"]
 homepage = "https://github.com/kendryte/nncase"
 
 [build-system]
-requires = ["setuptools>=42", "wheel", "conan==2.6.0", "gitpython"]
+requires = ["setuptools>=42", "wheel", "conan==2.6.0", "gitpython", "ninja"]
 build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel]
@@ -52,8 +52,8 @@ archs = ["x86_64"]
 before-build = [
   "rm -f {project}/CMakeUserPresets.json",
   "pip install auditwheel==6.0.0",
-  "pip install ninja",
-  "export PATH=\"$PATH:$(dirname \"$(which ninja)\")\""
+#  "pip install ninja",
+#  "export PATH=\"$PATH:$(dirname \"$(which ninja)\")\""
 ]
 repair-wheel-command = "LD_LIBRARY_PATH=/usr/lib64 auditwheel repair -w {dest_dir} {wheel} --exclude libvulkan.so.1,libgomp.so.1"
 
@@ -62,8 +62,8 @@ archs = ["x86_64"]
 before-build = [
   "rm -f {project}/CMakeUserPresets.json",
   "pip install auditwheel==6.0.0",
-  "pip install ninja",
-  "export PATH=\"$PATH:$(dirname \"$(which ninja)\")\""
+#  "pip install ninja",
+#  "export PATH=\"$PATH:$(dirname \"$(which ninja)\")\""
 ]
 
 [tool.cibuildwheel.macos.environment]
