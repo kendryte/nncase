@@ -94,10 +94,10 @@ class nncaseConan(ConanFile):
         tc.variables['BUILD_PYTHON_BINDING'] = self.options.python
         tc.variables['BUILD_TESTING'] = self.options.tests
         if self.options.get_safe("python_root", default="") != "":
-            if self.settings.os == 'Windows':
-                tc.variables['Python3_ROOT_DIR'] = self.options.python_root.replace('\\', '\\\\')
-            else:
-                tc.variables['Python3_ROOT_DIR'] = self.options.python_root
+            # if self.settings.os == 'Windows':
+            #     tc.variables['Python3_ROOT_DIR'] = self.options.python_root.replace('\\', '\\\\')
+            # else:
+            tc.variables['Python3_ROOT_DIR'] = self.options.python_root
         tc.generate()
         deps = CMakeDeps(self)
         deps.generate()
