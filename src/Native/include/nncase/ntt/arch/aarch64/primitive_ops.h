@@ -136,7 +136,7 @@ struct mma<Acc, true, ntt::vector<float, 4, 4>, ntt::vector<float, 4, 4>,
         ntt::vector<float, 4, 4> ret;
         
         // c,n,m,lane => c = c + (m[lane] * n)
-        if (Acc){
+        if (Acc) {
           ret(0) = vfmaq_laneq_f32(out(0), rhs(0), lhs(0), 0); // k = 0
           ret(1) = vfmaq_laneq_f32(out(1), rhs(0), lhs(0), 1);
           ret(2) = vfmaq_laneq_f32(out(2), rhs(0), lhs(0), 2);

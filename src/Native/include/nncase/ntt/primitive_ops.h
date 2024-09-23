@@ -183,11 +183,6 @@ template <class T1, class T2> struct outer_product {
     }
 };
 
-template <class T1, class T2> struct plane_outer_product {
-    constexpr auto operator()(const T1 &v1, const T2 &v2,
-                              const size_t length) const noexcept;
-};
-
 /**
  * @remarks mod is equivalent to fmod() function in C/C++/Python.
  */
@@ -294,11 +289,6 @@ NTT_DEFINE_BINARY_FUNC_IMPL(div)
 NTT_DEFINE_BINARY_FUNC_IMPL(floor_mod)
 NTT_DEFINE_BINARY_FUNC_IMPL(inner_product)
 NTT_DEFINE_BINARY_FUNC_IMPL(outer_product)
-template <IsTensorOrScalar T1, IsTensorOrScalar T2>
-constexpr auto plane_outer_product(const T1 &v1, const T2 &v2,
-                                   const size_t length) noexcept {
-    return ops::plane_outer_product<T1, T2>()(v1, v2, length);
-}
 NTT_DEFINE_BINARY_FUNC_IMPL(mod)
 NTT_DEFINE_BINARY_FUNC_IMPL(min)
 NTT_DEFINE_BINARY_FUNC_IMPL(max)

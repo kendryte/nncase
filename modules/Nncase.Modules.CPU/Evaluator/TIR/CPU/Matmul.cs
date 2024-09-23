@@ -22,6 +22,14 @@ public sealed class MatmulEvaluator : ITypeInferencer<Matmul>, IKernelInfoEvalua
         bufferInfos[0] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Read);
         bufferInfos[1] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Read);
         bufferInfos[2] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Read | MicroKernelBufferInfo.BufferState.Write);
-        return new MicroKernelInfo(primitives, multipliers, bufferInfos);
+        return new MicroKernelInfo(primitives, multipliers, bufferInfos, (bufferShapes, solver) =>
+        {
+            var ashape = bufferShapes[0];
+            var bshape = bufferShapes[1];
+            var cshape = bufferShapes[2];
+            var (k, m, n) = (ashape[^1], cshape[^2], cshape[^1]);
+            var factor = 16 * 4 * 4;
+            return factor * (1 + solver.MakeIsLessVar(k, solver.MakeIntConst(16)) + solver.MakeIsLessVar(n, solver.MakeIntConst(4)) + solver.MakeIsLessVar(m, solver.MakeIntConst(4)));
+        });
     }
 }

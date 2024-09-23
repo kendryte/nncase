@@ -51,7 +51,7 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
                 axes = new[] { outRank - 2, outRank - 1 };
             }
 
-            outShape = new[] { (int)lhs.Shape[^3], (int)rhs.Shape[^2] };
+            outShape = new[] { (int)lhs.Shape[lm], (int)rhs.Shape[rn] };
         }
         else if (target.LhsPackedAxes.Count == 1 && target.RhsPackedAxes.Count == 2)
         {

@@ -30,8 +30,9 @@ public sealed record BufferIdentity(TileGrid Node, int Index)
 /// <param name="Shapes">the buffer shape according to the placement.</param>
 /// <param name="SizeVars">the buffer size according to the placement.</param>
 /// <param name="SizeExprs">the buffer size expr.</param>
-/// <param name="Masks">the mask means the which outside tile vars is related with buffer size.</param>
-public sealed record TileNodeBufferInfo<T>(Tuple<int, int> Liveness, AffineMap Map, T[][] Places, T[][] Shapes, T[] SizeVars, T[] SizeExprs, LoopMask[] Masks)
+/// <param name="Trips">related loop trips.</param>
+/// <param name="Masks">record this tile's loop vars which involved buffer size.</param>
+public sealed record TileNodeBufferInfo<T>(Tuple<int, int> Liveness, AffineMap Map, T[][] Places, T[][] Shapes, T[] SizeVars, T[] SizeExprs, T[] Trips, LoopMask[] Masks)
 {
 }
 

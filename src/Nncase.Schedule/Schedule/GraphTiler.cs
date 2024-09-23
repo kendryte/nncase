@@ -330,10 +330,20 @@ public sealed class GraphTiler
         foreach (var (opNode, opNodeInfo) in opNodeMemo)
         {
             var tnode = (TileNode)opNode.Parent!;
-
             var loopTrip = tileNodeMemo[tnode].TripCounts[^1];
-            var opCycles = 4; // note cycles should get from op.
-            computeCycles = computeCycles + (opCycles * loopTrip);
+            var kernelInfo = opNode.GetKernelInfo(targetOptions);
+
+            // make inner dimension increase.
+            // var noContiguous = new IntExpr[opNodeInfo.Shapes.Length];
+            // for (int i = 0; i < opNodeInfo.Shapes.Length; i++)
+            // {
+            //     noContiguous[i] = opNode.BufferShapes[i][^1] - opNodeInfo.Shapes[i][^1];
+            // }
+            // IntExpr opCycles = solver.MakeIntConst(120); // note cycles should get from op.
+            IntExpr opCycles = kernelInfo.GetComputeCycle(opNodeInfo.Shapes, solver);
+            computeCycles = solver.MakeSum(computeCycles, opCycles * loopTrip);
+
+            // computeCycles = solver.MakeSum(computeCycles, noContiguous.Aggregate(opCycles, solver.MakeSum) * loopTrip);
         }
 
         // from top to down.
@@ -353,19 +363,29 @@ public sealed class GraphTiler
                     var volumes = new IntExpr[bufferInfo.Places.Length];
                     for (int i = 0; i < bufferInfo.Places.Length; i++)
                     {
-                        volumes[i] = bufferInfo.Places[i][storeLevel] * nodeInfo.TripCounts[i] * bufferInfo.SizeVars[i];
+                        IntExpr factor = solver.MakeIntConst(1);
+
+                        // if (storeLevel == 0 && !bid.IsOutput)
+                        // {
+                        //     // var elemSize = bid.Node.Grid.Buffers[bid.Index].CheckedDataType.SizeInBytes;
+                        //     factor = bid.Node.BufferShapes[bid.Index][^1] - bufferInfo.Shapes[i][^1];
+                        //     // var v = solver.MakeIsLessCstVar(width, 128) + 1; // for cache line.
+                        // }
+                        volumes[i] = bufferInfo.Places[i][storeLevel] * nodeInfo.TripCounts[i] * bufferInfo.SizeVars[i] * factor;
+
+                        // volumes[i] = bufferInfo.Places[i][storeLevel] * bufferInfo.Trips[i] * bufferInfo.SizeVars[i] * factor;
                     }
 
                     var dataMoves = volumes.Skip(1).Aggregate(volumes[0], solver.MakeSum);
 
                     if (binfo[bid.Index].State.HasFlag(MicroKernelBufferInfo.BufferState.Read))
                     {
-                        if (storeLevel < topLevel)
+                        if (storeLevel < topLevel - 1)
                         {
                             nodeWrites[storeLevel].Add(dataMoves); // write to store level.
                         }
 
-                        if (storeLevel + 1 < topLevel)
+                        if (storeLevel < topLevel - 1)
                         {
                             nodeReads[storeLevel + 1].Add(dataMoves); // read from create level.
                         }
@@ -374,12 +394,12 @@ public sealed class GraphTiler
                     // todo the intermediate buffer should be read write.
                     if (binfo[bid.Index].State.HasFlag(MicroKernelBufferInfo.BufferState.Write))
                     {
-                        if (storeLevel + 1 < topLevel)
+                        if (storeLevel < topLevel - 1)
                         {
                             nodeWrites[storeLevel + 1].Add(dataMoves);
                         }
 
-                        if (storeLevel < topLevel)
+                        if (storeLevel < topLevel - 1)
                         {
                             nodeReads[storeLevel].Add(dataMoves);
                         }
@@ -401,14 +421,13 @@ public sealed class GraphTiler
             }
         }
 
-        var memoryCycles = Enumerable.Range(0, topLevel).Select(i => (IntExpr)solver.MakeIntConst(0)).ToArray();
+        var memoryCycles = new IntExpr[topLevel];
         for (int i = 0; i < topLevel; i++)
         {
-            memoryCycles[i] = memoryCycles[i] + levelDataWrites[i].CeilDiv(memoryBandWidths[i]);
-            memoryCycles[i] = memoryCycles[i] + levelDataReads[i].CeilDiv(memoryBandWidths[i]);
+            memoryCycles[i] = (levelDataWrites[i] + levelDataReads[i]).CeilDiv(memoryBandWidths[i]);
         }
 
-        var totalCycles = computeCycles;
+        IntExpr totalCycles = computeCycles;
         for (int i = 0; i < topLevel; i++)
         {
             totalCycles = totalCycles + memoryCycles[i];
@@ -420,6 +439,7 @@ public sealed class GraphTiler
         var objectiveMonitor = solver.MakeMinimize(totalCyclesVar, 1);
         var collector = solver.MakeNBestValueSolutionCollector(5, false);
         collector.AddObjective(totalCyclesVar);
+        collector.Add(totalCyclesVar);
         collector.Add(levelDataReads.Select(i => i.Var()).ToArray());
         collector.Add(levelDataWrites.Select(i => i.Var()).ToArray());
         collector.Add(memoryCycles.Select(i => i.Var()).ToArray());
@@ -449,6 +469,7 @@ public sealed class GraphTiler
                 collector.Add(bufferInfo.Shapes.SelectMany(i => i).Select(i => i.Var()).ToArray());
                 collector.Add(bufferInfo.SizeVars.Select(i => i.Var()).ToArray());
                 collector.Add(bufferInfo.SizeExprs.Select(i => i.Var()).ToArray());
+                collector.Add(bufferInfo.Trips.Select(i => i.Var()).ToArray());
             }
         }
 
@@ -471,7 +492,7 @@ public sealed class GraphTiler
         }
 
         var decisionBuilder = solver.MakeDefaultPhase(searchAbleVars.ToArray(), defaultPhaseParameters);
-        var monitors = new List<SearchMonitor>() { collector, objectiveMonitor, solver.MakeSolutionsLimit(10), solver.MakeTimeLimit(30000) };
+        var monitors = new List<SearchMonitor>() { collector, objectiveMonitor, /* solver.MakeSolutionsLimit(30), */ solver.MakeTimeLimit(500000) };
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {
             monitors.Add(solver.MakeSearchLog(10000, totalCyclesVar));
@@ -488,10 +509,11 @@ public sealed class GraphTiler
 
         var levelBufferSizesAssgin = levelBufferSizes.ToDictionary(kv => kv.Key, kv => kv.Value.ToDictionary(p => p.Key, p => sol.Value(p.Value.Var())));
         var opNodeMemoAssgin = opNodeMemo.ToDictionary(kv => kv.Key, kv => new OpNodeInfo<long>(kv.Value.Maps, sol.Value(kv.Value.Shapes), sol.Value(kv.Value.Sizes)));
-        var tileNodeMemoAssgin = tileNodeMemo.ToDictionary(kv => kv.Key, kv => new TileNodeInfo<long>(sol.Value(kv.Value.TripCounts), sol.Value(kv.Value.BackWardExtents), kv.Value.DefUseMap, kv.Value.BufferInfoMap.ToDictionary(p => p.Key, p => new TileNodeBufferInfo<long>(p.Value.Liveness, p.Value.Map, sol.Value(p.Value.Places), sol.Value(p.Value.Shapes), sol.Value(p.Value.SizeVars), sol.Value(p.Value.SizeExprs), p.Value.Masks))));
+        var tileNodeMemoAssgin = tileNodeMemo.ToDictionary(kv => kv.Key, kv => new TileNodeInfo<long>(sol.Value(kv.Value.TripCounts), sol.Value(kv.Value.BackWardExtents), kv.Value.DefUseMap, kv.Value.BufferInfoMap.ToDictionary(p => p.Key, p => new TileNodeBufferInfo<long>(p.Value.Liveness, p.Value.Map, sol.Value(p.Value.Places), sol.Value(p.Value.Shapes), sol.Value(p.Value.SizeVars), sol.Value(p.Value.SizeExprs), sol.Value(p.Value.Trips), p.Value.Masks))));
         var tileableNodeMemoAssgin = tileableNodeMemo.ToDictionary(kv => kv.Key, kv => new DomainInfo<long>(sol.Value(kv.Value.TileVars), sol.Value(kv.Value.ForwardExtents), kv.Value.DimsMap));
 
-        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling)) {
+        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
+        {
             DumpAssgin(primTree, new TreeSolverPrinter(sol, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions), tileVarConstraints, eachLevelStoreBufferNumsConstrains, levelBufferSizes, levelDataReads, levelDataWrites, memoryCycles, computeCycles, totalCyclesVar);
 
             DumpAssgin(primTree, new TreeSolverPythonPrinter(sol, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions), tileVarConstraints, eachLevelStoreBufferNumsConstrains, levelBufferSizes, levelDataReads, levelDataWrites, memoryCycles, computeCycles, totalCyclesVar);
@@ -557,10 +579,7 @@ public sealed class GraphTiler
             TreeSolverPrinter.WriteIntExprVector(writer, "LevelDataWrites", levelDataWrites, printer.Solution);
             TreeSolverPrinter.WriteIntExprVector(writer, "MemoryCycles", memoryCycles, printer.Solution);
             TreeSolverPrinter.WriteIntExpr(writer, "ComputeCycles", computeCycles, printer.Solution);
-            if (printer.Solution is not null)
-            {
-                writer.WriteLine($"TotalCycles: {printer.Solution.ObjectiveValue()}");
-            }
+            TreeSolverPrinter.WriteIntExpr(writer, "TotalCycles", totalCycles, printer.Solution);
         }
     }
 

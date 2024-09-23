@@ -231,7 +231,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase, ITreeNodeVisitor<Tre
         var tileVars = value.DimNames.Select(n => Solver.MakeIntVar(1, long.MaxValue, $"{n}_L{value.Level}")).ToArray();
 
         // CompilerServices.GetOpMicroKernelInfo(value.Op, value.AccessMaps[0].Domains.AsValueEnumerable().Select(i => i.Offset).ToArray(), value.AccessMaps.ToArray(), value.BufferShapes, TargetOptions);
-        var kernelInfo = new MicroKernelInfo(tileVars.Select(i => 1).ToArray(), tileVars.Select((_, i) => new ValueRange<int>(0, value.DomainBounds[i])).ToArray(), Array.Empty<MicroKernelBufferInfo>());
+        var kernelInfo = new MicroKernelInfo(tileVars.Select(i => 1).ToArray(), tileVars.Select((_, i) => new ValueRange<int>(0, value.DomainBounds[i])).ToArray(), Array.Empty<MicroKernelBufferInfo>(), (_, b) => b.MakeIntConst(1));
 
         for (int i = 0; i < tileVars.Length; i++)
         {

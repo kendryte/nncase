@@ -291,141 +291,150 @@ public sealed class PackMatMul : PackRule
         var candidate = (Expr)result[Pattern];
         var lhsShape = lhs.CheckedShape.ToValueArray();
         var rhsShape = rhs.CheckedShape.ToValueArray();
-
-        void AddCandidate(PackKind lhsPack, PackKind rhsPack, bool transA = false, bool transB = false)
-        {
-            if (transA)
-            {
-                var perm = Enumerable.Range(0, lhsShape.Length).ToArray();
-                (perm[^2], perm[^1]) = (perm[^1], perm[^2]);
-                (lhsShape[^2], lhsShape[^1]) = (lhsShape[^1], lhsShape[^2]);
-                lhs = IR.F.Tensors.Transpose(lhs, perm);
-            }
-
-            if (transB)
-            {
-                var perm = Enumerable.Range(0, rhsShape.Length).ToArray();
-                (perm[^2], perm[^1]) = (perm[^1], perm[^2]);
-                (rhsShape[^2], rhsShape[^1]) = (rhsShape[^1], rhsShape[^2]);
-                rhs = IR.F.Tensors.Transpose(rhs, perm);
-            }
-
-            int[] lhsLanes;
-            int[] lhsPackedAxes;
-            var (lm, lk) = transA ? (lhsShape.Length - 1, lhsShape.Length - 2) : (lhsShape.Length - 2, lhsShape.Length - 1);
-            var (rk, rn) = transB ? (rhsShape.Length - 1, rhsShape.Length - 2) : (rhsShape.Length - 2, rhsShape.Length - 1);
-            switch (lhsPack)
-            {
-                case PackKind.None:
-                    lhsLanes = Array.Empty<int>();
-                    lhsPackedAxes = Array.Empty<int>();
-                    break;
-                case PackKind.M:
-                    lhsLanes = [Lane];
-                    lhsPackedAxes = [lm];
-                    break;
-                case PackKind.K:
-                    lhsLanes = [Lane];
-                    lhsPackedAxes = [lk];
-                    break;
-                case PackKind.M | PackKind.K:
-                    lhsLanes = [Lane, Lane];
-                    lhsPackedAxes = [lm, lk];
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(lhsPack), lhsPack.ToString());
-            }
-
-            int[] rhsLanes;
-            int[] rhsPackedAxes;
-            switch (rhsPack)
-            {
-                case PackKind.None:
-                    rhsLanes = Array.Empty<int>();
-                    rhsPackedAxes = Array.Empty<int>();
-                    break;
-                case PackKind.N:
-                    rhsLanes = [Lane];
-                    rhsPackedAxes = [rn];
-                    break;
-                case PackKind.K:
-                    rhsLanes = [Lane];
-                    rhsPackedAxes = [rk];
-                    break;
-                case PackKind.K | PackKind.N:
-                    rhsLanes = [Lane, Lane];
-                    rhsPackedAxes = [rk, rn];
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(rhsPack), rhsPack.ToString());
-            }
-
-            var packedLhs = IR.F.CPU.Pack(PackUtility.PadForPack(lhs, lhsShape, lhsPackedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsPackedAxes);
-            var packedRhs = IR.F.CPU.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
-
-            // TODO: support padding
-            if (lhsPadNums.Any(x => x > 0) || rhsPadNums.Any(x => x > 0))
-            {
-                return;
-            }
-
-            var matmul = IR.F.CPU.PackedMatMul(packedLhs, packedRhs, lhsPackedAxes, lhsPadNums, rhsPackedAxes, rhsPadNums, transA, transB);
-            var outRank = System.Math.Max(lhsShape.Length, rhsShape.Length);
-            var lhsAlign = outRank - lhsShape.Length;
-            var rhsAlign = outRank - rhsShape.Length;
-
-            var unpackAxes = new List<int>();
-            var unpadNums = new List<int>();
-            var unpackLanes = new List<int>();
-            if (lhsPack.HasFlag(PackKind.M))
-            {
-                var mPackIndex = Array.IndexOf(lhsPackedAxes, lm);
-                unpackAxes.Add(outRank - 2);
-                unpadNums.Add(lhsPadNums[mPackIndex]);
-                unpackLanes.Add(Lane);
-            }
-
-            if (rhsPack.HasFlag(PackKind.N))
-            {
-                var nPackIndex = Array.IndexOf(rhsPackedAxes, rn);
-                unpackAxes.Add(outRank - 1);
-                unpadNums.Add(rhsPadNums[nPackIndex]);
-                unpackLanes.Add(Lane);
-            }
-
-            Expr post = matmul;
-            if (unpackAxes.Any())
-            {
-                post = PackUtility.SliceForPack(IR.F.CPU.Unpack(matmul, unpackLanes.ToArray(), unpackAxes.ToArray()), candidate.CheckedShape.ToValueArray(), unpadNums.ToArray());
-            }
-
-            rets.Add(post);
-        }
+        var rcontext = new RuleContext(rets, lhs, rhs, candidate, lhsShape, rhsShape);
 
         // pack A's k and B's k
-        AddCandidate(PackKind.K, PackKind.K);
+        AddCandidate(rcontext, PackKind.K, PackKind.K);
 
         // only pack A's m
-        AddCandidate(PackKind.M, PackKind.None);
+        AddCandidate(rcontext, PackKind.M, PackKind.None);
 
         // only pack B's n
-        AddCandidate(PackKind.None, PackKind.N, transB: rhs is Const);
+        // AddCandidate(PackKind.None, PackKind.N, transB: rhs is Const);
         if (Rank > 1)
         {
             // pack A's m and B's n, when B is const, force transpose
-            AddCandidate(PackKind.M, PackKind.N, transB: rhs is Const);
+            AddCandidate(rcontext, PackKind.M, PackKind.N, transB: rhs is Const);
 
             // pack A's m,k and B's k,n
-            AddCandidate(PackKind.M | PackKind.K, PackKind.K | PackKind.N, transB: rhs is Const);
+            AddCandidate(rcontext, PackKind.M | PackKind.K, PackKind.K | PackKind.N, transB: rhs is Const);
 
             // pack A's m,k and B's k
-            AddCandidate(PackKind.M | PackKind.K, PackKind.K);
+            // AddCandidate(PackKind.M | PackKind.K, PackKind.K);
 
             // pack A's k and B's k,n
-            AddCandidate(PackKind.K, PackKind.K | PackKind.N);
+            // AddCandidate(PackKind.K, PackKind.K | PackKind.N);
         }
 
         return rets;
+    }
+
+    private void AddCandidate(RuleContext context, PackKind lhsPack, PackKind rhsPack, bool transA = false, bool transB = false)
+    {
+        var (rets, lhs, rhs, candidate, _, _) = context;
+        var lhsShape = context.LhsShape.ToArray();
+        var rhsShape = context.RhsShape.ToArray();
+        if (transA)
+        {
+            var perm = Enumerable.Range(0, lhsShape.Length).ToArray();
+            (perm[^2], perm[^1]) = (perm[^1], perm[^2]);
+            (lhsShape[^2], lhsShape[^1]) = (lhsShape[^1], lhsShape[^2]);
+            lhs = IR.F.Tensors.Transpose(lhs, perm);
+        }
+
+        if (transB)
+        {
+            var perm = Enumerable.Range(0, rhsShape.Length).ToArray();
+            (perm[^2], perm[^1]) = (perm[^1], perm[^2]);
+            (rhsShape[^2], rhsShape[^1]) = (rhsShape[^1], rhsShape[^2]);
+            rhs = IR.F.Tensors.Transpose(rhs, perm);
+        }
+
+        int[] lhsLanes;
+        int[] lhsPackedAxes;
+        var (lm, lk) = transA ? (lhsShape.Length - 1, lhsShape.Length - 2) : (lhsShape.Length - 2, lhsShape.Length - 1);
+        var (rk, rn) = transB ? (rhsShape.Length - 1, rhsShape.Length - 2) : (rhsShape.Length - 2, rhsShape.Length - 1);
+        switch (lhsPack)
+        {
+            case PackKind.None:
+                lhsLanes = Array.Empty<int>();
+                lhsPackedAxes = Array.Empty<int>();
+                break;
+            case PackKind.M:
+                lhsLanes = [Lane];
+                lhsPackedAxes = [lm];
+                break;
+            case PackKind.K:
+                lhsLanes = [Lane];
+                lhsPackedAxes = [lk];
+                break;
+            case PackKind.M | PackKind.K:
+                lhsLanes = [Lane, Lane];
+                lhsPackedAxes = [lm, lk];
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(lhsPack), lhsPack.ToString());
+        }
+
+        int[] rhsLanes;
+        int[] rhsPackedAxes;
+        switch (rhsPack)
+        {
+            case PackKind.None:
+                rhsLanes = Array.Empty<int>();
+                rhsPackedAxes = Array.Empty<int>();
+                break;
+            case PackKind.N:
+                rhsLanes = [Lane];
+                rhsPackedAxes = [rn];
+                break;
+            case PackKind.K:
+                rhsLanes = [Lane];
+                rhsPackedAxes = [rk];
+                break;
+            case PackKind.K | PackKind.N:
+                rhsLanes = [Lane, Lane];
+                rhsPackedAxes = [rk, rn];
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(rhsPack), rhsPack.ToString());
+        }
+
+        var packedLhs = IR.F.CPU.Pack(PackUtility.PadForPack(lhs, lhsShape, lhsPackedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsPackedAxes);
+        var packedRhs = IR.F.CPU.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
+
+        // TODO: support padding
+        if (lhsPadNums.Any(x => x > 0) || rhsPadNums.Any(x => x > 0))
+        {
+            return;
+        }
+
+        var matmul = IR.F.CPU.PackedMatMul(packedLhs, packedRhs, lhsPackedAxes, lhsPadNums, rhsPackedAxes, rhsPadNums, transA, transB);
+
+        var outRank = System.Math.Max(lhsShape.Length, rhsShape.Length);
+        var lhsAlign = outRank - lhsShape.Length;
+        var rhsAlign = outRank - rhsShape.Length;
+
+        var unpackAxes = new List<int>();
+        var unpadNums = new List<int>();
+        var unpackLanes = new List<int>();
+        if (lhsPack.HasFlag(PackKind.M))
+        {
+            var mPackIndex = Array.IndexOf(lhsPackedAxes, lm);
+            unpackAxes.Add(outRank - 2);
+            unpadNums.Add(lhsPadNums[mPackIndex]);
+            unpackLanes.Add(Lane);
+        }
+
+        if (rhsPack.HasFlag(PackKind.N))
+        {
+            var nPackIndex = Array.IndexOf(rhsPackedAxes, rn);
+            unpackAxes.Add(outRank - 1);
+            unpadNums.Add(rhsPadNums[nPackIndex]);
+            unpackLanes.Add(Lane);
+        }
+
+        Expr post = matmul;
+        if (unpackAxes.Any())
+        {
+            post = PackUtility.SliceForPack(IR.F.CPU.Unpack(matmul, unpackLanes.ToArray(), unpackAxes.ToArray()), candidate.CheckedShape.ToValueArray(), unpadNums.ToArray());
+        }
+
+        rets.Add(post);
+    }
+
+    private sealed record RuleContext(List<Expr> Results, Expr Lhs, Expr Rhs, Expr Candidate, IReadOnlyList<int> LhsShape, IReadOnlyList<int> RhsShape)
+    {
     }
 }
 

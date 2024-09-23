@@ -30,7 +30,7 @@ public record MicroKernelBufferInfo(int ReadBandWidth, int WriteBandWidth, Micro
 /// <summary>
 /// micro kernel infomation for auto tiling.
 /// </summary>
-public record MicroKernelInfo(int[] Primitives, ValueRange<int>[] Multipliers, MicroKernelBufferInfo[] BufferInfos)
+public record MicroKernelInfo(int[] Primitives, ValueRange<int>[] Multipliers, MicroKernelBufferInfo[] BufferInfos, Func<Google.OrTools.ConstraintSolver.IntExpr[][], Google.OrTools.ConstraintSolver.Solver, Google.OrTools.ConstraintSolver.IntExpr> GetComputeCycle)
 {
 }
 

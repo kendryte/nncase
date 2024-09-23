@@ -80,6 +80,8 @@ public sealed class TreeSolverPrinter : TreeSolverBase<IntExpr>, ITreeNodeVisito
                 WriteIntExprMatrix(writer, "Shapes", info.Shapes, Solution);
                 WriteIntExprVector(writer, "SizeVars", info.SizeVars, Solution);
                 WriteIntExprVector(writer, "SizeExprs", info.SizeExprs, Solution);
+
+                // WriteIntExprVector(writer, "Trips", info.Trips, Solution);
                 writer.Indent--;
             }
 

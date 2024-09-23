@@ -98,6 +98,7 @@ public partial class LowerMatmul : RewriteRule<Pattern>
 
         var lhsMap = new AffineMap(domains, default, lhsRes);
         var rhsMap = new AffineMap(domains, default, rhsRes);
+        var outMap = new AffineMap(domains, default, domains.SkipLast(3).Concat([domains[om], domains[on]]).Select(x => new AffineRange(x.Offset, x.Extent)).ToArray());
         var outBuffer = call.CheckedType switch
         {
             TensorType t => IR.F.Buffer.Uninitialized(t.DType, TIR.MemoryLocation.Data, t.Shape.ToValueArray()),
@@ -108,11 +109,11 @@ public partial class LowerMatmul : RewriteRule<Pattern>
             .Domain(rank, out var domainVar)
             .Read(lhs, lhsMap, out var lhsTile)
             .Read(rhs, rhsMap, out var rhsTile)
-            .Write(outBuffer, new AffineMap(domains, default, domains.SkipLast(2).Concat(domains.TakeLast(1)).Select(x => new AffineRange(x.Offset, x.Extent)).ToArray()), out var outTile)
+            .Write(outBuffer, outMap, out var outTile)
             .Body(op switch
             {
-                MatMul => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[rank - 2][0], 0L)),
-                IR.CPU.PackedMatMul pop => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[rank - 2][0], 0L), pop.LhsPackedAxes, pop.LhsPadedNums, pop.RhsPackedAxes, pop.RhsPadedNums, pop.TransposeA, pop.TransposeB),
+                MatMul => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L)),
+                IR.CPU.PackedMatMul pop => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L), pop.LhsPackedAxes, pop.LhsPadedNums, pop.RhsPackedAxes, pop.RhsPadedNums, pop.TransposeA, pop.TransposeB),
                 _ => throw new System.Diagnostics.UnreachableException(),
             })
             .Build();

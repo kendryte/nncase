@@ -150,7 +150,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
 
                 if (!bufferInfoMap.TryGetValue(currentId, out var bufferInfo))
                 {
-                    bufferInfoMap.Add(currentId, GetBufferInfo(value, currentId, currentAccessMap, currentLifeness, backWardExtents));
+                    bufferInfoMap.Add(currentId, GetBufferInfo(value, currentId, currentAccessMap, currentLifeness, forwardExtents, backWardExtents));
                     bufferResults.Add(new(currentId, currentLifeness, value.DomainRelation.Map * currentAccessMap));
                 }
             }
@@ -282,15 +282,17 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
         return backWardExtents;
     }
 
-    private TileNodeBufferInfo<IntExpr> GetBufferInfo(TileNode tileNode, BufferIdentity bid, AffineMap accessMap, Tuple<int, int> lifeness, IntExpr[][] backWardExtents)
+    private TileNodeBufferInfo<IntExpr> GetBufferInfo(TileNode tileNode, BufferIdentity bid, AffineMap accessMap, Tuple<int, int> lifeness, IntExpr[] forwardExtents, IntExpr[][] backWardExtents)
     {
         var rank = tileNode.DomainRelation.Map.Results.Length + 1;
         var bufferPlaces = new IntExpr[rank][];
         var bufferShapes = new IntExpr[rank][];
         var bufferSizes = new IntExpr[rank];
         var bufferSizeVars = new IntExpr[rank];
+        var bufferTrips = new IntExpr[rank];
         var bufferMasks = new LoopMask[rank];
 
+        var resultStr = accessMap.ToString().Split("->")[1];
         for (int i = 0; i < rank; i++)
         {
             var subLevelPlace = bufferPlaces[i] = new IntVar[tileNode.Level];
@@ -311,21 +313,22 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
             Solver.Add(Solver.MakeEquality(bufferSizeVars[i], bufferSizes[i]));
 
             var mask = 0U;
+            bufferTrips[i] = Solver.MakeIntConst(1);
+            for (int j = 0; j < i; j++)
+            {
+                if (resultStr.Contains($"d{j}", StringComparison.CurrentCulture))
+                {
+                    mask |= 1U << j;
+                    bufferTrips[i] = bufferTrips[i] * forwardExtents[j];
+                }
+            }
 
-            // var sizeExprStr = bufferSizes[i].ToString();
-            // for (int j = i; j < rank; j++)
-            // {
-            //     if (sizeExprStr.Contains(TileableNodeMemo[tileNode].TileVars[j].Name(), StringComparison.CurrentCulture))
-            //     {
-            //         mask |= 1U << (rank - 1 - j);
-            //     }
-            // }
             bufferMasks[i] = new(mask);
 
             // note update writes in second visitor.
         }
 
-        var bufferInfo = new TileNodeBufferInfo<IntExpr>(lifeness, accessMap, bufferPlaces, bufferShapes, bufferSizeVars, bufferSizes, bufferMasks);
+        var bufferInfo = new TileNodeBufferInfo<IntExpr>(lifeness, accessMap, bufferPlaces, bufferShapes, bufferSizeVars, bufferSizes, bufferTrips, bufferMasks);
         return bufferInfo;
     }
 

@@ -967,6 +967,26 @@ int main() {
                     assert(tc2unpack(index) == tc(index));
                 });
             }
+            // transB [M,K]<m> @ [N,K]<n>
+            {
+                ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<2, 4>>
+                    packa;
+                ntt::pack<0>(ta, packa);
+                ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<2, 4>>
+                    packb;
+                ntt::pack<0>(tranb, packb);
+                ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 2>> tc2;
+                ntt::matmul<false, false, true>(
+                    packa, packb, tc2, ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
+                    ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
+
+                ntt::tensor<float, ntt::fixed_shape<8, 8>> tc2unpack;
+                ntt::unpack<0, 1>(tc2, tc2unpack);
+
+                ntt::apply(tc.shape(), [&]([[maybe_unused]] auto index) {
+                    assert(tc2unpack(index) == tc(index));
+                });
+            }
 
             // A[m,k]<m,k> @ B[n,k]<k,n>
             {

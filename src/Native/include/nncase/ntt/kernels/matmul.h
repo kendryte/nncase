@@ -89,11 +89,11 @@ class matmul_impl<false, true, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                       LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
                       RhsPackedAxes::rank() == 1 &&
                       RhsPackedAxes::at(0) == TRhs::rank() - 2) {
-            auto value = ntt::plane_outer_product(lhs, rhs, K);
-            // for (size_t k = 1; k < K; k++) {
-            //     auto value = ntt::outer_product(lhs, rhs);
-            //     output = AccC ? output + value : value;
-            // }
+            auto value = ntt::outer_product(*lhs++, *rhs++);
+            output = AccC ? output + value : value;
+            for (size_t k = 1; k < K; k++) {
+                output += ntt::outer_product(*lhs++, *rhs++);
+            }
         }
         // 3.3. pack [M,K]<m,k> & [N,K]<k,n>
         else if constexpr (LhsPackedAxes::rank() == 2 &&
