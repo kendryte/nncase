@@ -18,7 +18,6 @@ from conan.errors import ConanInvalidConfiguration
 from conan.tools.build import check_min_cppstd, cross_building
 from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
 from conan.tools.files import apply_conandata_patches, copy, export_conandata_patches, get, rmdir
-import os
 
 class nncaseConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
@@ -95,7 +94,10 @@ class nncaseConan(ConanFile):
         tc.variables['BUILD_PYTHON_BINDING'] = self.options.python
         tc.variables['BUILD_TESTING'] = self.options.tests
         if self.options.get_safe("python_root", default="") != "":
-            tc.variables['Python3_ROOT_DIR'] = os.path.normpath(self.options.python_root)
+            if self.settings.os == 'Windows':
+                tc.variables['Python3_ROOT_DIR'] = self.options.python_root.replace('\\', '\\\\')
+            else:
+                tc.variables['Python3_ROOT_DIR'] = self.options.python_root
         tc.generate()
         deps = CMakeDeps(self)
         deps.generate()
