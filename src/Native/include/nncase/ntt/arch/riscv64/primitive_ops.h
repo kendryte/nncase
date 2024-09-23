@@ -761,6 +761,16 @@ REGISTER_RVV_KERNEL(MOD_FLOAT32)
 REGISTER_RVV_BINARY_OP(mod, float, mod_float32)
 
 // min
+template <> struct min<float, float> {
+    auto operator()(const float &s1, const float &s2) const noexcept {
+        float ret;
+        __asm("fmin.s %[ret], %[s1], %[s2];"
+              : [ret] "=f"(ret)
+              : [s1] "f"(s1), [s2] "f"(s2));
+        return ret;
+    }
+};
+
 #define MIN_FLOAT32(lmul, mlen)                                                \
     inline vfloat32m##lmul##_t min_float32(const vfloat32m##lmul##_t &v1,      \
                                            const vfloat32m##lmul##_t &v2,      \
@@ -782,6 +792,16 @@ REGISTER_RVV_KERNEL(MIN_FLOAT32)
 REGISTER_RVV_BINARY_OP(min, float, min_float32)
 
 // max
+template <> struct max<float, float> {
+    auto operator()(const float &s1, const float &s2) const noexcept {
+        float ret;
+        __asm("fmax.s %[ret], %[s1], %[s2];"
+              : [ret] "=f"(ret)
+              : [s1] "f"(s1), [s2] "f"(s2));
+        return ret;
+    }
+};
+
 #define MAX_FLOAT32(lmul, mlen)                                                \
     inline vfloat32m##lmul##_t max_float32(const vfloat32m##lmul##_t &v1,      \
                                            const vfloat32m##lmul##_t &v2,      \
