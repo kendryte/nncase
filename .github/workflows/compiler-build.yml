@@ -53,9 +53,9 @@ jobs:
           pip install conan==2.6.0
           conan remote add sunnycase https://conan.sunnycase.moe --index 0
 
-      - name: Start tmate session for debugging
-        uses: mxschmitt/action-tmate@v3
-        continue-on-error: true
+      # - name: Start tmate session for debugging
+      #   uses: mxschmitt/action-tmate@v3
+      #   continue-on-error: true
 
       - name: Configure
         shell: bash
