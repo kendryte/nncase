@@ -43,7 +43,7 @@ PYTHONPATH = "{project}/tests:$PYTHONPATH"
 [tool.cibuildwheel.windows]
 archs = ["AMD64"]
 before-build = [
-    "if exist %PROJECT%\\CMakeUserPresets.json del %PROJECT%\\CMakeUserPresets.json",
+    "rm -f {project}/CMakeUserPresets.json",
     "pip install auditwheel==6.0.0"
 ]
 
