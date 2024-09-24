@@ -228,6 +228,10 @@ jobs:
 
       - name: Create Test Environment
         run: mkdir test_results
+        
+      - name: Start tmate session for debugging
+        uses: mxschmitt/action-tmate@v3
+        continue-on-error: true
 
       - name: Test
         working-directory: ${{github.workspace}}
