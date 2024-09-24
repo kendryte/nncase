@@ -58,7 +58,7 @@ jobs:
       - name: Configure
         shell: bash
         run: |
-          conan install . --build=missing -s build_type=Release -pr:a=toolchains/x86_64-windows.profile.jinja -o "&:runtime=False" -o "&:python=True" -o "&:tests=False" 
+          conan install . --build=missing -s build_type=${{matrix.config.buildType}} -pr:a=toolchains/${{matrix.config.name}}.profile.jinja -o "&:runtime=False" -o "&:python=True" -o "&:tests=False" 
           cmake --preset conan-release
           
       - name: Build & Install
@@ -231,8 +231,6 @@ jobs:
         
       - name: Start tmate session for debugging
         uses: mxschmitt/action-tmate@v3
-        env:
-          NNCASE_COMPILER: ${{github.workspace}}/install/Nncase.Compiler.dll
         continue-on-error: true
 
       - name: Test
