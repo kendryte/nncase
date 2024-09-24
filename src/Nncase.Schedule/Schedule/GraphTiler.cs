@@ -340,7 +340,7 @@ public sealed class GraphTiler
             //     noContiguous[i] = opNode.BufferShapes[i][^1] - opNodeInfo.Shapes[i][^1];
             // }
             // IntExpr opCycles = solver.MakeIntConst(120); // note cycles should get from op.
-            IntExpr opCycles = kernelInfo.GetComputeCycle(opNodeInfo.Shapes, solver);
+            IntExpr opCycles = kernelInfo.GetComputeCycle(opNodeInfo.Shapes, solver, opNode.GetMicroKernelContext(targetOptions));
             computeCycles = solver.MakeSum(computeCycles, opCycles * loopTrip);
 
             // computeCycles = solver.MakeSum(computeCycles, noContiguous.Aggregate(opCycles, solver.MakeSum) * loopTrip);
@@ -424,7 +424,8 @@ public sealed class GraphTiler
         var memoryCycles = new IntExpr[topLevel];
         for (int i = 0; i < topLevel; i++)
         {
-            memoryCycles[i] = (levelDataWrites[i] + levelDataReads[i]).CeilDiv(memoryBandWidths[i]);
+            // memoryCycles[i] = (levelDataWrites[i] + levelDataReads[i]).CeilDiv(memoryBandWidths[i]);
+            memoryCycles[i] = levelDataWrites[i].CeilDiv(memoryBandWidths[i]);
         }
 
         IntExpr totalCycles = computeCycles;
@@ -492,7 +493,7 @@ public sealed class GraphTiler
         }
 
         var decisionBuilder = solver.MakeDefaultPhase(searchAbleVars.ToArray(), defaultPhaseParameters);
-        var monitors = new List<SearchMonitor>() { collector, objectiveMonitor, /* solver.MakeSolutionsLimit(30), */ solver.MakeTimeLimit(500000) };
+        var monitors = new List<SearchMonitor>() { collector, objectiveMonitor, /* solver.MakeSolutionsLimit(30), */ solver.MakeTimeLimit(50000) };
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {
             monitors.Add(solver.MakeSearchLog(10000, totalCyclesVar));

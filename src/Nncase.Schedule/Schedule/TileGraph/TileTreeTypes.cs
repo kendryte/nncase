@@ -62,7 +62,9 @@ public sealed class OpNode : ITreeNode
 
     public AffineMap WriteAccess => _wrapped.WriteAccess;
 
-    public MicroKernelInfo GetKernelInfo(ITargetOptions targetOptions) => CompilerServices.GetOpMicroKernelInfo(Op, new(Grid.AccessMaps.ToImmutableArray(), BufferShapes, targetOptions));
+    public MicroKernelContext GetMicroKernelContext(ITargetOptions targetOptions) => new(Op, Grid.AccessMaps.ToImmutableArray(), BufferShapes, targetOptions);
+
+    public MicroKernelInfo GetKernelInfo(ITargetOptions targetOptions) => CompilerServices.GetOpMicroKernelInfo(Op, GetMicroKernelContext(targetOptions));
 
     public TReturn Accept<TArg1, TReturn>(ITreeNodeVisitor<TArg1, TReturn> visitor, TArg1 arg1) => visitor.Visit(this, arg1);
 

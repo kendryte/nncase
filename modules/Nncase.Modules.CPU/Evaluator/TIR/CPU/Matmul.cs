@@ -22,14 +22,25 @@ public sealed class MatmulEvaluator : ITypeInferencer<Matmul>, IKernelInfoEvalua
         bufferInfos[0] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Read);
         bufferInfos[1] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Read);
         bufferInfos[2] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Read | MicroKernelBufferInfo.BufferState.Write);
-        return new MicroKernelInfo(primitives, multipliers, bufferInfos, (bufferShapes, solver) =>
-        {
-            var ashape = bufferShapes[0];
-            var bshape = bufferShapes[1];
-            var cshape = bufferShapes[2];
-            var (k, m, n) = (ashape[^1], cshape[^2], cshape[^1]);
-            var factor = 16 * 4 * 4;
-            return factor * (1 + solver.MakeIsLessVar(k, solver.MakeIntConst(16)) + solver.MakeIsLessVar(n, solver.MakeIntConst(4)) + solver.MakeIsLessVar(m, solver.MakeIntConst(4)));
-        });
+        return new MicroKernelInfo(primitives, multipliers, bufferInfos, GetComputeCycle);
+    }
+
+    private static Google.OrTools.ConstraintSolver.IntExpr GetComputeCycle(Google.OrTools.ConstraintSolver.IntExpr[][] bufferShapes, Google.OrTools.ConstraintSolver.Solver solver, MicroKernelContext context)
+    {
+        var ashape = bufferShapes[0];
+        var cshape = bufferShapes[2];
+        var (k, m, n) = (ashape[^1], cshape[^2], cshape[^1]);
+        var kb = context.BufferShapes[0][^1];
+
+        // var (kb, mb, nb) = (context.BufferShapes[0][^1], context.BufferShapes[^1][^2], context.BufferShapes[^2][^1]);
+        // note add constrants in here will cause solver fail.
+        // if (kb % 8 == 0 && mb % 8 == 0 && nb % 8 == 0)
+        // {
+        // solver.Add(solver.MakeEquality(k, 8));
+        // solver.Add(solver.MakeEquality(m, 8));
+        // solver.Add(solver.MakeEquality(n, 8));
+        // return solver.MakeIntConst(1);
+        // }
+        return (kb - k) * m * n * 2;
     }
 }
