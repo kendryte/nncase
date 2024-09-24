@@ -231,6 +231,8 @@ jobs:
         
       - name: Start tmate session for debugging
         uses: mxschmitt/action-tmate@v3
+        env:
+          NNCASE_COMPILER: ${{github.workspace}}/install/Nncase.Compiler.dll
         continue-on-error: true
 
       - name: Test
