@@ -80,9 +80,9 @@ TEST_P(ClampTest, clamp) {
     auto output_ort =
         ortki_Clip(runtime_tensor_2_ort_tensor(input),
                    ortki_CastLike(runtime_tensor_2_ort_tensor(min_tensor_float),
-                                  runtime_tensor_2_ort_tensor(input)),
+                                  runtime_tensor_2_ort_tensor(input), 1),
                    ortki_CastLike(runtime_tensor_2_ort_tensor(max_tensor_float),
-                                  runtime_tensor_2_ort_tensor(input)));
+                                  runtime_tensor_2_ort_tensor(input), 1));
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));

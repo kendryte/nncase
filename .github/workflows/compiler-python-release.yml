@@ -15,15 +15,15 @@ jobs:
         dotnet-version: ['7.0']
         config:
           - {name: x86_64-macos, os: macos-12, shell: bash, rid: osx-x64, buildType: Release}
-          - {name: x86_64-linux, os: ubuntu-latest, shell: bash, rid: linux-x64, buildType: Release}
-          - {name: x86_64-windows, os: windows-2019, shell: bash, rid: win-x64, buildType: Release}
+          - {name: x86_64-linux, os: ubuntu-22.04, shell: bash, rid: linux-x64, buildType: Release}
+          - {name: x86_64-windows, os: windows-2022, shell: bash, rid: win-x64, buildType: Release}
 
     steps:
       - uses: actions/checkout@v2
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: ${{matrix.dotnet-version}}
+          dotnet-version: '7.0.x'
 
       - name: Cache NuGet packages
         uses: actions/cache@v3
@@ -54,19 +54,18 @@ jobs:
         dotnet-version: ['7.0']
         config:
           - {name: x86_64-macos, os: macos-12}
-          - {name: x86_64-linux, os: ubuntu-latest}
-          - {name: x86_64-windows, os: windows-2019, arch: x64}
-
-    env:
-      VULKANSDK_VER: 1.3.268.0
+          - {name: x86_64-linux, os: ubuntu-22.04}
+          - {name: x86_64-windows, os: windows-2022, arch: x64}
 
     steps:
     - uses: actions/checkout@v3
+
     - uses: seanmiddleditch/gha-setup-ninja@master
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: ${{matrix.dotnet-version}}
+        dotnet-version: '7.0.x'
 
     - name: Install nncase
       uses: actions/download-artifact@v3
@@ -88,11 +87,11 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
-        python-version: 3.7
+        python-version: 3.8
 
     - name: Install cibuildwheel
       run: pip install cibuildwheel
-
+    
     - name: Build wheel
       run: python -m cibuildwheel --output-dir wheelhouse
 

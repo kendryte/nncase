@@ -82,7 +82,7 @@ TEST_P(CastTest, cast) {
     // expected
     //    cast_copy_tensor(input, expected);
     auto output_ort = ortki_CastLike(runtime_tensor_2_ort_tensor(input),
-                                     runtime_tensor_2_ort_tensor(actual));
+                                     runtime_tensor_2_ort_tensor(actual), 1);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -114,7 +114,7 @@ TEST_P(CastTest, cast) {
 
     // expected
     auto output_ort1 = ortki_CastLike(runtime_tensor_2_ort_tensor(input1),
-                                      runtime_tensor_2_ort_tensor(actual1));
+                                      runtime_tensor_2_ort_tensor(actual1), 1);
     size_t size1 = 0;
     void *ptr_ort1 = tensor_buffer(output_ort1, &size1);
     dims_t shape1(tensor_rank(output_ort1));

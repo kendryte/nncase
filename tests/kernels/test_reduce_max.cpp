@@ -211,9 +211,9 @@ TEST_P(ReduceMaxTest, ReduceMax) {
                                  axis_size * sizeof(int64_t)},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
-        auto output_ort =
-            ortki_ReduceMax(runtime_tensor_2_ort_tensor(a), axis_array,
-                            axis_size, keepDims_value);
+        auto axis_ort = runtime_tensor_2_ort_tensor(axis);
+        auto output_ort = ortki_ReduceMax(runtime_tensor_2_ort_tensor(a),
+                                          axis_ort, keepDims_value, 0);
 
         // expected
         size_t size = 0;
