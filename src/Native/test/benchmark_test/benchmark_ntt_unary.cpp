@@ -36,6 +36,8 @@ void benchmark_ntt_unary(std::string op_name, T2 low, T2 high) {
     NttTest::init_tensor(ntt_input, low, high);
 
     Op<tensor_type> op;
+    for (size_t i = 0; i < size1; i++)
+        ntt_result = op(ntt_input);
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < size1; i++)
         ntt_result = op(ntt_input);
@@ -54,8 +56,8 @@ int main(int argc, char *argv[]) {
     (void)argv;
 
     constexpr size_t N = NTT_VLEN / (sizeof(float) * 8);
-    benchmark_ntt_unary<ntt::ops::acos, float, N>("acos", -1.f, 1.f);
     benchmark_ntt_unary<ntt::ops::abs, float, N>("abs", -10.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::acos, float, N>("acos", -1.f, 1.f);
     benchmark_ntt_unary<ntt::ops::acosh, float, N>("acosh", 1.f, 10.f);
     benchmark_ntt_unary<ntt::ops::asin, float, N>("asin", -1.f, 1.f);
     benchmark_ntt_unary<ntt::ops::asinh, float, N>("asinh", -10.f, 10.f);
