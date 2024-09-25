@@ -15,12 +15,65 @@
 #pragma once
 #include "../apply.h"
 #include "../profiler.h"
-#include "../tensor_ops.h"
-#include "binary.h"
-#include "matmul.h"
+#include "../shape_infer/matmul.h"
+#include "../tensor.h"
+#include "../ukernels.h"
+#include "nncase/ntt/arch/x86_64/ukernels.h"
+#include "nncase/ntt/primitive_ops.h"
+#include "nncase/ntt/shape.h"
+#include "nncase/ntt/shape_infer/reduce.h"
+#include "nncase/ntt/utility.h"
+#include <type_traits>
 
 namespace nncase::ntt {
 namespace detail {
+template <class TLhs, class TRhs, typename LhsPackedAxes,
+          typename RhsPackedAxes>
+constexpr ukernels::mamtul_pack_kind get_matmul_pack_kind() noexcept {
+    if constexpr (LhsPackedAxes::rank() == 0 && RhsPackedAxes::rank() == 0) {
+        return ukernels::mamtul_pack_kind::no_pack;
+    } else if constexpr (LhsPackedAxes::rank() == 1 &&
+                         LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
+                         RhsPackedAxes::rank() == 0) {
+        return ukernels::mamtul_pack_kind::pack_m;
+    } else if constexpr (LhsPackedAxes::rank() == 0 &&
+                         RhsPackedAxes::rank() == 1 &&
+                         RhsPackedAxes::at(0) == TRhs::rank() - 1) {
+        return ukernels::mamtul_pack_kind::pack_n;
+    } else if constexpr (LhsPackedAxes::rank() == 1 &&
+                         LhsPackedAxes::at(0) == TLhs::rank() - 1 &&
+                         RhsPackedAxes::rank() == 1 &&
+                         RhsPackedAxes::at(0) == TRhs::rank() - 2) {
+        return ukernels::mamtul_pack_kind::pack_k;
+    } else if constexpr (LhsPackedAxes::rank() == 1 &&
+                         LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
+                         RhsPackedAxes::rank() == 1 &&
+                         RhsPackedAxes::at(0) == TRhs::rank() - 1) {
+        return ukernels::mamtul_pack_kind::pack_mn;
+    } else if constexpr (LhsPackedAxes::rank() == 2 &&
+                         LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
+                         LhsPackedAxes::at(1) == TLhs::rank() - 1 &&
+                         RhsPackedAxes::rank() == 1 &&
+                         RhsPackedAxes::at(0) == TRhs::rank() - 2) {
+        return ukernels::mamtul_pack_kind::pack_mk;
+    } else if constexpr (LhsPackedAxes::rank() == 1 &&
+                         LhsPackedAxes::at(0) == TLhs::rank() - 1 &&
+                         RhsPackedAxes::rank() == 2 &&
+                         RhsPackedAxes::at(0) == TRhs::rank() - 2 &&
+                         RhsPackedAxes::at(1) == TRhs::rank() - 1) {
+        return ukernels::mamtul_pack_kind::pack_kn;
+    } else if constexpr (LhsPackedAxes::rank() == 2 &&
+                         LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
+                         LhsPackedAxes::at(1) == TLhs::rank() - 1 &&
+                         RhsPackedAxes::rank() == 2 &&
+                         RhsPackedAxes::at(0) == TRhs::rank() - 2 &&
+                         RhsPackedAxes::at(1) == TRhs::rank() - 1) {
+        return ukernels::mamtul_pack_kind::pack_mkn;
+    } else {
+        return ukernels::mamtul_pack_kind::unknown;
+    }
+}
+
 template <bool TransposedA, bool TransposedB, bool AccumulateC, class TLhs,
           class TRhs, class TOut, typename LhsPackedAxes, typename LhsPadedNums,
           typename RhsPackedAxes, typename RhsPadedNums>
@@ -28,172 +81,262 @@ class matmul_impl;
 
 /**
  * @brief Fixed 1D-packed matmul with non transposed A/B
- * @remarks Loop orders: (k, m, n)
+ * @remarks Loop orders: (m, n, k)
  */
 template <bool AccumulateC, IsFixedTensor TLhs, IsFixedTensor TRhs,
           IsFixedTensor TOut, typename LhsPackedAxes, typename LhsPadedNums,
           typename RhsPackedAxes, typename RhsPadedNums>
 class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                   LhsPadedNums, RhsPackedAxes, RhsPadedNums> {
+    using TOutElem = typename TOut::element_type;
+
+    static constexpr auto pack_kind =
+        get_matmul_pack_kind<TLhs, TRhs, LhsPackedAxes, RhsPackedAxes>();
+    using policy_t =
+        ntt::ukernels::u_matmul_policy<pack_kind, typename TLhs::element_type,
+                                       typename TRhs::element_type, TOutElem,
+                                       true>;
+    static constexpr auto m0_tile = policy_t::m0_tile;
+    static constexpr auto n0_tile = policy_t::n0_tile;
+    static constexpr auto m0_subtile = policy_t::m0_subtile;
+
   public:
     void operator()(const TLhs &lhs, const TRhs &rhs, TOut &output) {
-        auto lhs_p = lhs.elements().data();
-        auto rhs_p = rhs.elements().data();
-        auto out_p = output.elements().data();
-        apply<0>(lhs, rhs, output, lhs_p, rhs_p, out_p);
+        auto domain =
+            slice_fixed_dims<TOut::rank() - 2>(typename TOut::shape_type{});
+        constexpr size_t M = TOut::shape()[TOut::rank() - 2];
+        constexpr size_t K = TLhs::shape()[TLhs::rank() - 1];
+        constexpr size_t N = TOut::shape()[TOut::rank() - 1];
+        ntt::apply(domain, [&](auto out_offset_prefix) {
+            ranked_shape<TOut::rank()> out_offset{};
+            std::copy(out_offset_prefix.begin(), out_offset_prefix.end(),
+                      out_offset.begin());
+            auto lhs_offset =
+                shape_infer::reduced_index_by_shape(out_offset, TLhs::shape());
+            auto rhs_offset =
+                shape_infer::reduced_index_by_shape(out_offset, TRhs::shape());
+            auto lhs_shape = shape_infer::sub_matmul_shape(TLhs::shape());
+            auto rhs_shape = shape_infer::sub_matmul_shape(TRhs::shape());
+            auto out_shape = shape_infer::sub_matmul_shape(TOut::shape());
+
+            auto a =
+                lhs.view(lhs_offset, lhs_shape).reshape(fixed_shape<M, K>{});
+            auto b =
+                rhs.view(rhs_offset, rhs_shape).reshape(fixed_shape<K, N>{});
+            auto c =
+                output.view(out_offset, out_shape).reshape(fixed_shape<M, N>{});
+            matmul_2d_l1(a, b, c);
+        });
     }
 
   private:
-    template <size_t Axis, class TLhsP, class TRhsP, class TOutP>
-    constexpr void apply(const TLhs &lhs, const TRhs &rhs, TOut &output,
-                         TLhsP lhs_p, TRhsP rhs_p, TOutP out_p) {
-        // 1. Inner matmul ranks
-        if constexpr (Axis == TOut::rank() - 2) {
-            matmul_2d(lhs, rhs, output, lhs_p, rhs_p, out_p);
-        } else {
-            for (size_t i = 0; i < TOut::shape()[Axis]; i++) {
-                apply<Axis + 1>(lhs, rhs, output, lhs_p, rhs_p, out_p);
-                lhs_p +=
-                    utility_detail::get_safe_stride(lhs, Axis, TOut::shape());
-                rhs_p +=
-                    utility_detail::get_safe_stride(rhs, Axis, TOut::shape());
-                out_p += output.strides()[Axis];
+    template <class TA, class TB, class TC>
+    constexpr void matmul_2d_l1(const TA &a, const TB &b, TC &c) {
+        const size_t M = c.shape()[c.rank() - 2];
+        const size_t N = c.shape()[c.rank() - 1];
+        const size_t K = a.shape()[a.rank() - 1];
+
+        for (size_t m1 = 0; m1 < M; m1 += m0_tile) {
+            auto actual_m1 = std::min(M - m1, m0_tile);
+            for (size_t n1 = 0; n1 < N; n1 += n0_tile) {
+                auto actual_n1 = std::min(N - n1, n0_tile);
+                matmul_2d_l0(a, b, c, K, m1, n1, actual_m1, actual_n1);
             }
         }
     }
 
-    template <class TLhsP, class TRhsP, class TOutP>
-    constexpr void matmul_2d(const TLhs &lhs, const TRhs &rhs, TOut &output,
-                             TLhsP lhs_p, TRhsP rhs_p, TOutP out_p) {
-        const size_t M = output.shape()[output.rank() - 2];
-        const size_t K = lhs.shape()[lhs.rank() - 1];
-        const size_t N = output.shape()[output.rank() - 1];
-        const size_t lhs_stride = lhs.strides()[lhs.rank() - 2];
-        const size_t rhs_stride = rhs.strides()[rhs.rank() - 2];
-        const size_t out_stride = output.strides()[output.rank() - 2];
+    template <class TA, class TB, class TC>
+    __attribute__((noinline)) void
+    matmul_2d_l0(const TA &a, const TB &b, TC &c, size_t K, size_t m1,
+                 size_t n1, size_t actual_m1, size_t actual_n1) {
+        auto c0 = c.view(make_ranked_shape(m1, n1),
+                         make_ranked_shape(actual_m1, actual_n1));
 
-        outer_product<AccumulateC>(lhs_p, rhs_p, out_p, M, N, K, lhs_stride,
-                                   rhs_stride, out_stride);
+        // 1. pack M & N
+        if constexpr (pack_kind == ukernels::mamtul_pack_kind::pack_mn &&
+                      m0_subtile) {
+            using TSubOutElem = ntt::vector<typename TOutElem::element_type,
+                                            TOutElem::shape().last()>;
+            TSubOutElem c0_tmp[m0_subtile][n0_tile];
 
-        if constexpr (LhsPackedAxes::rank() == 1 &&
-                      LhsPackedAxes::at(0) == TLhs::rank() - 1 &&
-                      RhsPackedAxes::rank() == 1 &&
-                      RhsPackedAxes::at(0) == TRhs::rank() - 2) {
-            return;
-        }
+            for (size_t sm1 = 0; sm1 < TOutElem::shape()[0];
+                 sm1 += m0_subtile) {
+                ntt::apply(fixed_shape<m0_subtile, n0_tile>{}, [&](auto index) {
+                    c0_tmp[index[0]][index[1]] =
+                        AccumulateC ? c0(0, index[1])(sm1 + index[0])
+                                    : TSubOutElem{};
+                });
 
-        if constexpr (LhsPackedAxes::rank() == 2 &&
-                      LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
-                      LhsPackedAxes::at(1) == TLhs::rank() - 1 &&
-                      RhsPackedAxes::rank() == 1 &&
-                      RhsPackedAxes::at(0) == TRhs::rank() - 2) {
-            return;
-        }
-
-        for (size_t k = 1; k < K; k++) {
-            outer_product<true>(lhs_p, rhs_p, out_p, M, N, K, lhs_stride,
-                                rhs_stride, out_stride);
-        }
-    }
-
-    template <bool AccC, class TLhsElem, class TRhsElem, class TOutElem>
-    void outer_product(const TLhsElem *&lhs, const TRhsElem *&rhs,
-                       TOutElem *output, size_t M, size_t N,
-                       [[maybe_unused]] size_t K, size_t lhs_stride,
-                       size_t rhs_stride, size_t out_stride) {
-
-        // 1. 1D-packing: pack K
-        if constexpr (LhsPackedAxes::rank() == 1 &&
-                      LhsPackedAxes::at(0) == TLhs::rank() - 1 &&
-                      RhsPackedAxes::rank() == 1 &&
-                      RhsPackedAxes::at(0) == TRhs::rank() - 2) {
-            auto lhs_mp = lhs;
-            for (size_t m = 0; m < M; m++) {
-                mul_add<AccC>(lhs_mp, rhs, output, N, K, rhs_stride);
-                lhs_mp += lhs_stride;
-                output += out_stride;
-            }
-        }
-        // 2. 2D-packing: pack MK & K
-        else if constexpr (LhsPackedAxes::rank() == 2 &&
-                           LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
-                           LhsPackedAxes::at(1) == TLhs::rank() - 1 &&
-                           RhsPackedAxes::rank() == 1 &&
-                           RhsPackedAxes::at(0) == TRhs::rank() - 2) {
-            auto lhs_mp = lhs;
-            for (size_t m = 0; m < M; m++) {
-                mul_add<AccC>(lhs_mp, rhs, output, N, K, rhs_stride);
-                lhs_mp += lhs_stride;
-                output += out_stride;
-            }
-        }
-        // 3. Other Case
-        else {
-            auto lhs_mp = lhs;
-            for (size_t m = 0; m < M; m++) {
-                outer_product<AccC>(*lhs_mp, rhs, output, N);
-                lhs_mp += lhs_stride;
-                output += out_stride;
-            }
-            lhs += 1;
-            rhs += rhs_stride;
-        }
-    }
-
-    template <bool AccC, class TLhsElem, class TRhsElem, class TOutElem>
-    void outer_product(const TLhsElem &lhs, const TRhsElem *rhs,
-                       TOutElem *output, size_t extent) {
-        for (size_t i = 0; i < extent; i++) {
-            mul_add<AccC>(lhs, *rhs++, *output++);
-        }
-    }
-
-    // 1. 1D-packing: pack K
-    template <bool AccC, class TLhsElem, class TRhsElem, class TOutElem>
-    void mul_add(const TLhsElem *lhs, const TRhsElem *rhs, TOutElem *output,
-                 size_t extent, size_t K, size_t rhs_stride) {
-
-        // 1. 1D-packing: pack K
-        if constexpr (LhsPackedAxes::rank() == 1 &&
-                      LhsPackedAxes::at(0) == TLhs::rank() - 1 &&
-                      RhsPackedAxes::rank() == 1 &&
-                      RhsPackedAxes::at(0) == TRhs::rank() - 2) {
-
-            for (size_t i = 0; i < extent; i++) {
-                auto rhs_mp = rhs;
-                auto lhs_mp = lhs;
-                for (size_t k = 0; k < K; k++) {
-                    auto value = ntt::inner_product(*lhs_mp, *rhs_mp);
-                    *output = AccumulateC || k > 0 ? *output + value : value;
-                    lhs_mp++;
-                    rhs_mp += rhs_stride;
+                for (size_t k1 = 0; k1 < K; k1++) {
+                    outer_product(a, b, c0_tmp, m1, k1, n1, actual_m1,
+                                  actual_n1, sm1);
                 }
-                rhs++;
-                output++;
+
+                ntt::apply(fixed_shape<m0_subtile, n0_tile>{}, [&](auto index) {
+                    c0(0, index[1])(sm1 + index[0]) =
+                        c0_tmp[index[0]][index[1]];
+                });
             }
         }
+        // 2. pack K & KN
+        else if constexpr (pack_kind == ukernels::mamtul_pack_kind::pack_kn) {
+            using TLhsElem = std::remove_const_t<typename TA::element_type>;
 
-        // 2. 2D-packing: pack MK & K
-        else if constexpr (LhsPackedAxes::rank() == 2 &&
-                           LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
-                           LhsPackedAxes::at(1) == TLhs::rank() - 1 &&
-                           RhsPackedAxes::rank() == 1 &&
-                           RhsPackedAxes::at(0) == TRhs::rank() - 2) {
+            TOutElem c0_tmp[m0_tile][n0_tile];
+            ntt::apply(c0.shape(), [&](auto index) {
+                c0_tmp[index[0]][index[1]] =
+                    AccumulateC ? c0(index) : TOutElem{};
+            });
 
-            for (size_t i = 0; i < extent; i++) {
-                auto rhs_mp = rhs;
-                auto lhs_mp = lhs;
-                for (size_t k = 0; k < K; k++) {
-                    for (size_t m = 0; m < TLhsElem::shape().at(0); m++) {
-                        auto value = ntt::inner_product((*lhs_mp)(m), *rhs_mp);
-                        (*output)(m) =
-                            AccumulateC || k > 0 ? (*output)(m) + value : value;
+            for (size_t k1 = 0; k1 < K; k1++) {
+                for (size_t sk1 = 0; sk1 < TLhsElem::shape()[0]; sk1++) {
+                    outer_product(a, b, c0_tmp, m1, k1, n1, actual_m1,
+                                  actual_n1, 0, sk1);
+                }
+            }
+
+            ntt::apply(c0.shape(), [&](auto index) {
+                c0(index) = c0_tmp[index[0]][index[1]];
+            });
+        }
+        // 3. pack MK & KN
+        else if constexpr (pack_kind == ukernels::mamtul_pack_kind::pack_mkn &&
+                           m0_subtile) {
+            using TLhsElem = std::remove_const_t<typename TA::element_type>;
+            using TSubOutElem = ntt::vector<typename TOutElem::element_type,
+                                            TOutElem::shape().last()>;
+
+            TSubOutElem c0_tmp[m0_subtile][n0_tile];
+
+            for (size_t sm1 = 0; sm1 < TOutElem::shape()[0];
+                 sm1 += m0_subtile) {
+                ntt::apply(fixed_shape<m0_subtile, n0_tile>{}, [&](auto index) {
+                    c0_tmp[index[0]][index[1]] =
+                        AccumulateC ? c0(0, index[1])(sm1 + index[0])
+                                    : TSubOutElem{};
+                });
+
+                for (size_t k1 = 0; k1 < K; k1++) {
+                    for (size_t sk1 = 0; sk1 < TLhsElem::shape()[0]; sk1++) {
+                        outer_product(a, b, c0_tmp, m1, k1, n1, actual_m1,
+                                      actual_n1, sm1, sk1);
                     }
-                    lhs_mp++;
-                    rhs_mp += rhs_stride;
                 }
-                rhs++;
-                output++;
+
+                ntt::apply(fixed_shape<m0_subtile, n0_tile>{}, [&](auto index) {
+                    c0(0, index[1])(sm1 + index[0]) =
+                        c0_tmp[index[0]][index[1]];
+                });
+            }
+        }
+        // Other packs
+        else {
+            TOutElem c0_tmp[m0_tile][n0_tile];
+            ntt::apply(c0.shape(), [&](auto index) {
+                c0_tmp[index[0]][index[1]] =
+                    AccumulateC ? c0(index) : TOutElem{};
+            });
+
+            for (size_t k1 = 0; k1 < K; k1++) {
+                outer_product(a, b, c0_tmp, m1, k1, n1, actual_m1, actual_n1);
+            }
+
+            ntt::apply(c0.shape(), [&](auto index) {
+                c0(index) = c0_tmp[index[0]][index[1]];
+            });
+        }
+    }
+
+    template <class TA, class TB, class TC>
+    void outer_product(const TA &a, const TB &b, TC &c0_tmp, size_t m1,
+                       size_t k1, size_t n1, size_t actual_m1, size_t actual_n1,
+                       size_t sm1 = 0, size_t sk1 = 0) {
+        auto a1 =
+            a.view(make_ranked_shape(m1, k1), make_ranked_shape(actual_m1, 1));
+        auto b1 =
+            b.view(make_ranked_shape(k1, n1), make_ranked_shape(1, actual_n1));
+
+        using TLhsElem = std::remove_const_t<typename TA::element_type>;
+        using TRhsElem = std::remove_const_t<typename TB::element_type>;
+
+        // 1. pack M & N
+        if constexpr (pack_kind == ukernels::mamtul_pack_kind::pack_mn &&
+                      m0_subtile) {
+            using TSubLhsElem = typename TLhsElem::element_type;
+            TSubLhsElem a0_tmp[m0_subtile];
+            TRhsElem b0_tmp[n0_tile];
+
+            ntt::apply(fixed_shape<m0_subtile>{}, [&](auto index) {
+                a0_tmp[index[0]] = a1(0, 0)(sm1 + index[0]);
+            });
+            ntt::apply(fixed_shape<n0_tile>{},
+                       [&](auto index) { b0_tmp[index[0]] = b1(0, index[0]); });
+
+            for (size_t n = 0; n < actual_n1; n++) {
+                for (size_t m = 0; m < m0_subtile; m++) {
+                    mul_add<true>(a0_tmp[m], b0_tmp[n], c0_tmp[m][n]);
+                }
+            }
+        }
+        // 2. pack K & KN
+        else if constexpr (pack_kind == ukernels::mamtul_pack_kind::pack_kn) {
+            using TSubLhsElem = typename TLhsElem::element_type;
+            using TSubRhsElem = ntt::vector<typename TRhsElem::element_type,
+                                            TRhsElem::shape().last()>;
+            TSubLhsElem a0_tmp[m0_tile];
+            TSubRhsElem b0_tmp[n0_tile];
+
+            ntt::apply(fixed_shape<m0_tile>{}, [&](auto index) {
+                a0_tmp[index[0]] = a1(index[0], 0)(sk1);
+            });
+            ntt::apply(fixed_shape<n0_tile>{}, [&](auto index) {
+                b0_tmp[index[0]] = b1(0, index[0])(sk1);
+            });
+
+            for (size_t n = 0; n < actual_n1; n++) {
+                for (size_t m = 0; m < actual_m1; m++) {
+                    mul_add<true>(a0_tmp[m], b0_tmp[n], c0_tmp[m][n]);
+                }
+            }
+        }
+        // 1. pack MK & KN
+        else if constexpr (pack_kind == ukernels::mamtul_pack_kind::pack_mkn &&
+                           m0_subtile) {
+            using TSubLhsElem = typename TLhsElem::element_type;
+            using TSubRhsElem = ntt::vector<typename TRhsElem::element_type,
+                                            TRhsElem::shape().last()>;
+            TSubLhsElem a0_tmp[m0_subtile];
+            TSubRhsElem b0_tmp[n0_tile];
+
+            ntt::apply(fixed_shape<m0_subtile>{}, [&](auto index) {
+                a0_tmp[index[0]] = a1(0, 0)(sm1 + index[0], sk1);
+            });
+            ntt::apply(fixed_shape<n0_tile>{}, [&](auto index) {
+                b0_tmp[index[0]] = b1(0, index[0])(sk1);
+            });
+
+            for (size_t n = 0; n < actual_n1; n++) {
+                for (size_t m = 0; m < m0_subtile; m++) {
+                    auto &output = c0_tmp[m][n];
+                    auto value = ntt::outer_product(a0_tmp[m], b0_tmp[n]);
+                    output = output + value;
+                }
+            }
+        }
+        // Other packs
+        else {
+            TLhsElem a0_tmp[m0_tile];
+            TRhsElem b0_tmp[n0_tile];
+
+            ntt::apply(fixed_shape<m0_tile>{},
+                       [&](auto index) { a0_tmp[index[0]] = a1(index[0], 0); });
+            ntt::apply(fixed_shape<n0_tile>{},
+                       [&](auto index) { b0_tmp[index[0]] = b1(0, index[0]); });
+
+            for (size_t n = 0; n < actual_n1; n++) {
+                for (size_t m = 0; m < actual_m1; m++) {
+                    mul_add<true>(a0_tmp[m], b0_tmp[n], c0_tmp[m][n]);
+                }
             }
         }
     }
@@ -201,51 +344,38 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
     template <bool AccC, class TLhsElem, class TRhsElem, class TOutElem>
     void mul_add(const TLhsElem &lhs, const TRhsElem &rhs, TOutElem &output) {
         // 1. 0D-packing
-        if constexpr (LhsPackedAxes::rank() == 0 &&
-                      RhsPackedAxes::rank() == 0) {
+        if constexpr (pack_kind == ukernels::mamtul_pack_kind::no_pack) {
             output = AccC ? ntt::mul_add(lhs, rhs, output) : ntt::mul(lhs, rhs);
         }
         // 2. 1D-packing
         // 2.1. pack M
-        else if constexpr (LhsPackedAxes::rank() == 1 &&
-                           LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
-                           RhsPackedAxes::rank() == 0) {
+        else if constexpr (pack_kind == ukernels::mamtul_pack_kind::pack_m) {
             output = AccC ? ntt::mul_add(lhs, rhs, output) : ntt::mul(lhs, rhs);
         }
-        // 2.2. pack N
-        else if constexpr (LhsPackedAxes::rank() == 0 &&
-                           RhsPackedAxes::rank() == 1 &&
-                           RhsPackedAxes::at(0) == TRhs::rank() - 1) {
+        // 2.2. pack K
+        else if constexpr (pack_kind == ukernels::mamtul_pack_kind::pack_k) {
+            auto value = ntt::inner_product(lhs, rhs);
+            output = AccC ? output + value : value;
+        }
+        // 2.3. pack N
+        else if constexpr (pack_kind == ukernels::mamtul_pack_kind::pack_n) {
             output = AccC ? ntt::mul_add(lhs, rhs, output) : ntt::mul(lhs, rhs);
         }
-        // 2.3. pack M & N
-        else if constexpr (LhsPackedAxes::rank() == 1 &&
-                           LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
-                           RhsPackedAxes::rank() == 1 &&
-                           RhsPackedAxes::at(0) == TRhs::rank() - 1) {
+        // 2.4. pack M & N
+        else if constexpr (pack_kind == ukernels::mamtul_pack_kind::pack_mn ||
+                           pack_kind == ukernels::mamtul_pack_kind::pack_kn) {
             auto value = ntt::outer_product(lhs, rhs);
             output = AccC ? output + value : value;
         }
-        // 3.2. pack K & KN
-        else if constexpr (LhsPackedAxes::rank() == 1 &&
-                           LhsPackedAxes::at(0) == TLhs::rank() - 1 &&
-                           RhsPackedAxes::rank() == 2 &&
-                           RhsPackedAxes::at(0) == TRhs::rank() - 2 &&
-                           RhsPackedAxes::at(1) == TRhs::rank() - 1) {
-            fixed_tensor_alike_t<TLhsElem, 1, TLhsElem::shape().at(0)> lhs_2d{
-                {lhs}};
-            fixed_tensor_alike_t<TOutElem, 1, TOutElem::shape().at(0)>
-                output_2d{{output}};
-            output_2d = ntt::mma<AccC>(lhs_2d, rhs, output_2d);
-            output = output_2d(0);
+        // 3.1. pack MK & K
+        else if constexpr (pack_kind == ukernels::mamtul_pack_kind::pack_mk) {
+            for (size_t m = 0; m < lhs.shape()[0]; m++) {
+                auto value = ntt::inner_product(lhs(m), rhs);
+                output(m) = AccC ? output(m) + value : value;
+            }
         }
-        // 3.3. pack MK & KN
-        else if constexpr (LhsPackedAxes::rank() == 2 &&
-                           LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
-                           LhsPackedAxes::at(1) == TLhs::rank() - 1 &&
-                           RhsPackedAxes::rank() == 2 &&
-                           RhsPackedAxes::at(0) == TRhs::rank() - 2 &&
-                           RhsPackedAxes::at(1) == TRhs::rank() - 1) {
+        // 3.2. pack MK & KN
+        else if constexpr (pack_kind == ukernels::mamtul_pack_kind::pack_mkn) {
             output = ntt::mma<AccC>(lhs, rhs, output);
         } else {
             static_assert(sizeof(TLhsElem) == 0, "Unsupported packing.");

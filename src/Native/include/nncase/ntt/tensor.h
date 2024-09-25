@@ -16,6 +16,7 @@
 #include "detail/shape_storage.h"
 #include "detail/tensor_storage.h"
 #include "nncase/ntt/shape.h"
+#include "nncase/ntt/utility.h"
 #include "tensor_traits.h"
 
 namespace nncase::ntt {
@@ -42,7 +43,8 @@ struct fixed_tensor_alike_type<basic_tensor<T, Shape, Strides, MaxSize, IsView>,
 
 namespace detail {
 template <class T, class Shape, class Strides, size_t MaxSize, bool IsView,
-          bool IsFixedShape = is_fixed_dims_v<Shape> &&is_fixed_dims_v<Strides>>
+          bool IsFixedShape =
+              is_fixed_dims_v<Shape> && is_fixed_dims_v<Strides>>
 class tensor_impl;
 
 // dynamic tensor

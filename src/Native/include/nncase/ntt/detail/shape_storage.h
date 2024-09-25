@@ -47,6 +47,8 @@ template <class Strides> class strides_storage {
 
 template <size_t... Dims> class strides_storage<fixed_strides<Dims...>> {
   public:
+    constexpr strides_storage(fixed_strides<Dims...> = {}) noexcept {};
+
     static constexpr auto strides() noexcept {
         return fixed_strides<Dims...>{};
     }
