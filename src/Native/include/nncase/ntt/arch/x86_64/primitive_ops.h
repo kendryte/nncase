@@ -27,10 +27,7 @@ namespace nncase::ntt::ops {
 template <> struct abs<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
-        // 生成一个掩码，符号位为0，其余位为1
-        const __m256 mask = _mm256_castsi256_ps(_mm256_set1_epi32(0x7FFFFFFF));
-        // 使用按位与操作清除符号位
-        return _mm256_and_ps(v, mask);
+        return _mm256_andnot_ps(_mm256_set1_ps(-0.0f), v);
     }
 };
 
