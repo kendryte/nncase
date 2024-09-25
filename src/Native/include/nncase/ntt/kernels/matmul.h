@@ -16,9 +16,7 @@
 #include "../apply.h"
 #include "../profiler.h"
 #include "../shape_infer/matmul.h"
-#include "../tensor.h"
 #include "../ukernels.h"
-#include "nncase/ntt/arch/x86_64/ukernels.h"
 #include "nncase/ntt/primitive_ops.h"
 #include "nncase/ntt/shape.h"
 #include "nncase/ntt/shape_infer/reduce.h"
@@ -146,9 +144,8 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
     }
 
     template <class TA, class TB, class TC>
-    __attribute__((noinline)) void
-    matmul_2d_l0(const TA &a, const TB &b, TC &c, size_t K, size_t m1,
-                 size_t n1, size_t actual_m1, size_t actual_n1) {
+    void matmul_2d_l0(const TA &a, const TB &b, TC &c, size_t K, size_t m1,
+                      size_t n1, size_t actual_m1, size_t actual_n1) {
         auto c0 = c.view(make_ranked_shape(m1, n1),
                          make_ranked_shape(actual_m1, actual_n1));
 
