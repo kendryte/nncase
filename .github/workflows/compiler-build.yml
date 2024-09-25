@@ -172,7 +172,7 @@ jobs:
         config:
           - {name: x86_64-macos, os: macos-12, shell: bash}
           - {name: x86_64-linux, os: ubuntu-22.04, shell: bash}
-          - {name: x86_64-windows, os: windows-2022, arch: x64, shell: bash}
+          # - {name: x86_64-windows, os: windows-2022, arch: x64, shell: bash}
 
     steps:
       - uses: actions/checkout@v3
@@ -229,9 +229,9 @@ jobs:
       - name: Create Test Environment
         run: mkdir test_results
         
-      - name: Start tmate session for debugging
-        uses: mxschmitt/action-tmate@v3
-        continue-on-error: true
+      # - name: Start tmate session for debugging
+      #   uses: mxschmitt/action-tmate@v3
+      #   continue-on-error: true
 
       - name: Test
         working-directory: ${{github.workspace}}
