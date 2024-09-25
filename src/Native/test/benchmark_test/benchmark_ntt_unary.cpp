@@ -54,8 +54,8 @@ int main(int argc, char *argv[]) {
     (void)argv;
 
     constexpr size_t N = NTT_VLEN / (sizeof(float) * 8);
-    benchmark_ntt_unary<ntt::ops::abs, float, N>("abs", -10.f, 10.f);
     benchmark_ntt_unary<ntt::ops::acos, float, N>("acos", -1.f, 1.f);
+    benchmark_ntt_unary<ntt::ops::abs, float, N>("abs", -10.f, 10.f);
     benchmark_ntt_unary<ntt::ops::acosh, float, N>("acosh", 1.f, 10.f);
     benchmark_ntt_unary<ntt::ops::asin, float, N>("asin", -1.f, 1.f);
     benchmark_ntt_unary<ntt::ops::asinh, float, N>("asinh", -10.f, 10.f);
