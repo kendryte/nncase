@@ -27,7 +27,7 @@ namespace nncase::ntt::ops {
 template <> struct abs<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
-        return abs256_ps(v);
+        return _mm256_andnot_ps(_mm256_set1_ps(-0.0f), v);
     }
 };
 
