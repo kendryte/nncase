@@ -30,17 +30,8 @@ public sealed class MatmulEvaluator : ITypeInferencer<Matmul>, IKernelInfoEvalua
         var ashape = bufferShapes[0];
         var cshape = bufferShapes[2];
         var (k, m, n) = (ashape[^1], cshape[^2], cshape[^1]);
-        var kb = context.BufferShapes[0][^1];
 
-        // var (kb, mb, nb) = (context.BufferShapes[0][^1], context.BufferShapes[^1][^2], context.BufferShapes[^2][^1]);
-        // note add constrants in here will cause solver fail.
-        // if (kb % 8 == 0 && mb % 8 == 0 && nb % 8 == 0)
-        // {
-        // solver.Add(solver.MakeEquality(k, 8));
-        // solver.Add(solver.MakeEquality(m, 8));
-        // solver.Add(solver.MakeEquality(n, 8));
-        // return solver.MakeIntConst(1);
-        // }
-        return (kb - k) * m * n * 2;
+        // var kb = context.BufferShapes[0][^1];
+        return 16000 * (1 + solver.MakeIsLessVar(k, solver.MakeIntConst(8)) + solver.MakeIsLessVar(n, solver.MakeIntConst(8)) + solver.MakeIsLessVar(m, solver.MakeIntConst(8)));
     }
 }

@@ -70,6 +70,22 @@ int main() {
         assert(tc(0, 0) == sinf(1.f));
     }
 
+    // 2d binary
+    {
+      // pack and broadcast
+        {
+          ntt::tensor<float, ntt::fixed_shape<1, 16, 8>> ta;
+          ntt::tensor<float, ntt::fixed_shape<8>> tb;
+          std::fill(ta.elements().begin(), ta.elements().end(), 1.f);
+          std::fill(tb.elements().begin(), tb.elements().end(), 1.f);
+          ntt::tensor<ntt::vector<float,4,4>, ntt::fixed_shape<1, 4, 2>> pa, pc;
+          ntt::tensor<ntt::vector<float,4>, ntt::fixed_shape<2>> pb;
+          ntt::pack<1,2>(ta,pa);
+          ntt::pack<0>(tb,pb);
+          ntt::binary<ntt::ops::add>(pa, pb, pc.view());
+        } 
+    }
+
     // 1
     {
         auto shape = ntt::make_ranked_shape(1);
