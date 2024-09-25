@@ -58,6 +58,9 @@ template <size_t Rank> struct ranked_dims_base {
     constexpr auto begin() const noexcept { return dims_.begin(); }
     constexpr auto end() const noexcept { return dims_.end(); }
 
+    constexpr auto begin() noexcept { return dims_.begin(); }
+    constexpr auto end() noexcept { return dims_.end(); }
+
     constexpr size_t last() const noexcept { return at(rank() - 1); }
     constexpr size_t &last() noexcept { return at(rank() - 1); }
 

@@ -456,8 +456,8 @@ mma<AccC, T1, T2, TResult>::operator()(const T1 &lhs, const T2 &rhs,
                       TResult::rank() == 2,
                   "only support 2d mma");
     TResult output = v3;
-    for (size_t m = 0; m < T1::shape().at(0); m++) {
-        for (size_t k = 0; k < T2::shape().at(0); k++) {
+    for (size_t k = 0; k < T2::shape().at(0); k++) {
+        for (size_t m = 0; m < T1::shape().at(0); m++) {
             output(m) = (k != 0 || AccC)
                             ? ntt::mul_add(lhs(m, k), rhs(k), output(m))
                             : ntt::mul(lhs(m, k), rhs(k));

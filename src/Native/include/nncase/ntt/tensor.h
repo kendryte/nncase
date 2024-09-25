@@ -16,6 +16,7 @@
 #include "detail/shape_storage.h"
 #include "detail/tensor_storage.h"
 #include "nncase/ntt/shape.h"
+#include "nncase/ntt/utility.h"
 #include "tensor_traits.h"
 
 namespace nncase::ntt {
