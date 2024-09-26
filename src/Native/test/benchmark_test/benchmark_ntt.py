@@ -63,7 +63,7 @@ def generate_markdown(benchmark_list: list, md_file: str, primitive_info: str = 
 
     md += '</table>\n'
 
-    md += primitive_info
+    # md += primitive_info
 
     with open(md_file, 'w') as f:
         f.write(md)
@@ -76,8 +76,21 @@ def primitive_markdown(execute_path: str):
 
     lines = cmd_result.strip().split('\n')
 
-    md = "| PackMode | M  | K  | N  | Cycles | GFLOPS |\n|----------|----|----|----|--------|--------|\n"
+    # Start of the HTML table
 
+    md = '<table class="primitive_table">\n'
+
+    # Table header
+    md += '\t<tr>\n'
+    md += '\t\t<th>PackMode</th>\n'
+    md += '\t\t<th>M</th>\n'
+    md += '\t\t<th>K</th>\n'
+    md += '\t\t<th>N</th>\n'
+    md += '\t\t<th>Cycles</th>\n'
+    md += '\t\t<th>GFLOPS</th>\n'
+    md += '\t</tr>\n'
+
+    # Table rows
     for line in lines:
         parts = line.split(',')
         packmode = parts[0].strip()
@@ -87,7 +100,17 @@ def primitive_markdown(execute_path: str):
         cycles = parts[4].split(':')[1].strip()
         gflops = parts[5].split(':')[1].strip()
 
-        md += f"| {packmode} | {M} | {K} | {N} | {cycles} | {gflops} |\n"
+        md += '\t<tr>\n'
+        md += f'\t\t<td>{packmode}</td>\n'
+        md += f'\t\t<td>{M}</td>\n'
+        md += f'\t\t<td>{K}</td>\n'
+        md += f'\t\t<td>{N}</td>\n'
+        md += f'\t\t<td>{cycles}</td>\n'
+        md += f'\t\t<td>{gflops}</td>\n'
+        md += '\t</tr>\n'
+
+    # End of the HTML table
+    md += '</table>\n'
 
     # Write the HTML table to the file
     return md
