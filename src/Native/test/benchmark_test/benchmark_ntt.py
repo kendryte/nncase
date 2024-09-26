@@ -25,7 +25,7 @@ def report_file(default: str):
     return os.getenv('BENCHMARK_NTT_REPORT_FILE', default)
 
 
-def generate_markdown(benchmark_list: list, md_file: str):
+def generate_markdown(benchmark_list: list, md_file: str, primitive_info: str):
     # generate dict after sorting
     benchmark_list = sorted(benchmark_list, key=lambda d: (d['kind'], d['op']))
     dict = {}
@@ -63,11 +63,13 @@ def generate_markdown(benchmark_list: list, md_file: str):
 
     md += '</table>\n'
 
+    md += primitive_info
+
     with open(md_file, 'w') as f:
         f.write(md)
 
 
-def primitive_markdown(md_file: str, execute_path: str):
+def primitive_markdown(execute_path: str):
 
     cmd_status, cmd_result = subprocess.getstatusoutput(
         f'{execute_path}' + '/benchmark_ntt_primitive_size')
@@ -111,8 +113,7 @@ def primitive_markdown(md_file: str, execute_path: str):
     md += '</table>\n'
 
     # Write the HTML table to the file
-    with open(md_file, 'a') as file:
-        file.write(md)
+    return md
 
 
 class BenchmarkNTT():
@@ -421,5 +422,5 @@ if __name__ == '__main__':
 
     # generate md
     md_file = report_file('benchmark_ntt.md')
-    generate_markdown(benchmark_list, md_file)
-    primitive_markdown(md_file, ntt_x86_64.bin_path)
+    primitive_info = primitive_markdown(ntt_x86_64.bin_path)
+    generate_markdown(benchmark_list, md_file, primitive_info)
