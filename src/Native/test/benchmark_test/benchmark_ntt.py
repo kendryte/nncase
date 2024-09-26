@@ -36,7 +36,7 @@ def generate_markdown(benchmark_list: list, md_file: str, primitive_info: str = 
         dict[kind].append(e)
 
     # generate html table
-    md = '<table>\n'
+    md = '<table class="roofline">\n'
 
     # table head
     md += '\t<tr>\n'
@@ -63,7 +63,7 @@ def generate_markdown(benchmark_list: list, md_file: str, primitive_info: str = 
 
     md += '</table>\n'
 
-    md = primitive_info
+    md += primitive_info
 
     with open(md_file, 'w') as f:
         f.write(md)
@@ -411,13 +411,13 @@ if __name__ == '__main__':
     ntt_x86_64.run()
 
     # riscv64
-    ntt_riscv64 = BenchmarkNTT_riscv64(args.riscv64_target, args.riscv64_path)
-    ntt_riscv64.run()
+    # ntt_riscv64 = BenchmarkNTT_riscv64(args.riscv64_target, args.riscv64_path)
+    # ntt_riscv64.run()
 
     # merge benchmark list
     benchmark_list = []
     for i in range(len(ntt_x86_64.benchmark_list)):
-        item = {**ntt_x86_64.benchmark_list[i], **ntt_riscv64.benchmark_list[i]}
+        item = {**ntt_x86_64.benchmark_list[i]}
         benchmark_list.append(item)
 
     # generate md
