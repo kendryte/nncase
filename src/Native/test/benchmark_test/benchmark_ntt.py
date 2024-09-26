@@ -229,7 +229,8 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
             cmd_status, cmd_result = subprocess.getstatusoutput(f'{bin}')
             assert (cmd_status == 0)
             if "primitive" in str(bin):
-                primitive_markdown(report_file('benchmark_ntt.md'), cmd_result)
+                # primitive_markdown(report_file('benchmark_ntt.md'), cmd_result)
+                continue
             else:
                 self.parse_result(cmd_result)
 
