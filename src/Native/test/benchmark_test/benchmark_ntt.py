@@ -63,18 +63,16 @@ def generate_markdown(benchmark_list: list, md_file: str):
 
     md += '</table>\n'
 
+    # append original content
+    with open(md_file, 'r') as f:
+        original_content = f.read()
     with open(md_file, 'w') as f:
-        f.write(md)
+        f.write(md + original_content)
 
 
-def primitive_markdown(md_file: str):
-    command = ["taskset", "-c", "0", "./build/Release/bin/benchmark_ntt_primitive_size"]
+def primitive_markdown(md_file: str, contents: str):
 
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-
-    output = result.stdout
-
-    lines = output.strip().split('\n')
+    lines = contents.strip().split('\n')
 
     # Start of the HTML table
 
@@ -114,7 +112,7 @@ def primitive_markdown(md_file: str):
     md += '</table>\n'
 
     # Write the HTML table to the file
-    with open(md_file, 'a') as file:
+    with open(md_file, 'w') as file:
         file.write(md)
 
 
@@ -230,7 +228,10 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
         for bin in self.bin_list:
             cmd_status, cmd_result = subprocess.getstatusoutput(f'{bin}')
             assert (cmd_status == 0)
-            self.parse_result(cmd_result)
+            if "primitive" in str(bin):
+                primitive_markdown(report_file('benchmark_ntt.md'), cmd_result)
+            else:
+                self.parse_result(cmd_result)
 
 
 class BenchmarkNTT_riscv64(BenchmarkNTT):
@@ -425,4 +426,3 @@ if __name__ == '__main__':
     # generate md
     md_file = report_file('benchmark_ntt.md')
     generate_markdown(benchmark_list, md_file)
-    primitive_markdown(md_file)
