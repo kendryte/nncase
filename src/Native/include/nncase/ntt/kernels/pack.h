@@ -23,7 +23,7 @@
 namespace nncase::ntt {
 namespace detail {
 template <class TIn, class TOut, size_t... Axes> class pack_impl {
-public:
+  public:
     using TElem = typename TIn::element_type;
     using TVec = typename std::decay_t<TOut>::element_type;
 
