@@ -19,7 +19,7 @@ public partial class ScalarConstToTensor : RewriteRule<Pattern>
 {
     public override Pattern Pattern => IsCallWildcard(
         "call",
-        IsAlt(IsOp<IR.Math.Binary>(), IsOp<IR.Math.Unary>(), IsOp<IR.Tensors.Where>()));
+        IsAlt(IsOp<IR.Math.Binary>(), IsOp<IR.Math.Unary>(), IsOp<IR.Tensors.Where>(), IsOp<IR.Math.Compare>()));
 
     private Expr? GetReplace(Call call)
     {
