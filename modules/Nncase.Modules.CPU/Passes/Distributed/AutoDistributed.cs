@@ -18,6 +18,18 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Passes.Distributed;
 
+public interface IEquality
+{
+}
+
+public record EqualityNode(Expr Expr) : IEquality
+{
+}
+
+public record EqualityClass(bool Tuple, List<IEquality> Children) : IEquality
+{
+}
+
 /// <summary>
 /// auto distributed the xpu fusion.
 /// </summary>
@@ -40,6 +52,8 @@ public sealed partial class AutoDistributedPass : FunctionPass
 
 internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, List<Expr>>, Unit>
 {
+    private readonly Dictionary<Expr, IEquality> _equalMemo = new();
+
     public AutoDistributedRewriter(CompileOptions compileOptions, CpuTargetOptions targetOptions)
     {
         Placements = targetOptions.Hierarchies.Select(h => new Placement(h, targetOptions.HierarchyNames)).ToArray();
@@ -92,6 +106,24 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             SelectMany(e => e).ToArray();
     }
 
+    public void SingleNodeMemoryExtractConstrains(CpModel model, IReadOnlyDictionary<ENode, BoolVar> vars)
+    {
+        var distTypes = vars.Keys.Where(k => k.Expr.CheckedType is DistributedType dt).ToArray();
+        foreach (var k in distTypes)
+        {
+            var type = DistributedUtility.GetDividedTensorType((DistributedType)k.Expr.CheckedType);
+            var size = TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
+
+            if (k.Expr is Call { Target: IR.CPU.Boxing boxing } call && boxing.NewType is DistributedType distributedType && call.Arguments[0].CheckedType is DistributedType inType && inType.NdSBP.Any(sbp => sbp is SBPPartialSum) && distributedType != call.Arguments[0].CheckedType)
+            {
+                type = DistributedUtility.GetDividedTensorType(inType);
+                size += TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
+            }
+
+            model.Add(vars[k] * size < TargetOptions.HierarchySizes[^2] / TargetOptions.Hierarchies[0][^1]);
+        }
+    }
+
     public void FilterByScheme(Expr expr, Dictionary<IRType, List<Expr>> result)
     {
         foreach (var name in expr.Metadata.OutputNames ?? Array.Empty<string>())
@@ -114,15 +146,48 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
     {
         if (input is Function function)
         {
-            var equivalents = Visit(function.Body).Select(g => InstertTerminator(g.Value[0])).ToArray();
-            if (!equivalents.Any())
-            {
-                return input;
-            }
+            var typeEquivalents = Visit(function.Body);
 
-            using (new ExprPinner(equivalents))
+            if (function.Body is IR.Tuple tp)
             {
-                BranchCut();
+                var outputs = new List<Expr>();
+                var equ = _equalMemo[tp];
+
+                void Dfs(IEquality equality)
+                {
+                    switch (equality)
+                    {
+                        case EqualityNode n:
+                            outputs.Add(n.Expr);
+                            break;
+                        case EqualityClass tp:
+                            foreach (var item in tp.Children)
+                            {
+                                Dfs(item);
+                            }
+
+                            break;
+                    }
+                }
+
+                Dfs(equ);
+
+                using (new ExprPinner(outputs.ToArray()))
+                {
+                    BranchCut();
+                }
+            }
+            else
+            {
+                var outputs = typeEquivalents.Select(g => InstertTerminator(g.Value[0]))
+                .Select(e => new EqualityNode(e))
+                .OfType<IEquality>().ToList();
+                _equalMemo.Add(function.Body, new EqualityClass(false, outputs));
+
+                using (new ExprPinner(outputs.Select(e => ((EqualityNode)e).Expr).ToArray()))
+                {
+                    BranchCut();
+                }
             }
 
             var graph = new EGraph();
@@ -134,10 +199,45 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                 }
             }
 
-            var root = Unions(graph, equivalents);
+            var equivalents = _equalMemo[function.Body];
+            EClass Ddfs(IEquality equival)
+            {
+                switch (equival)
+                {
+                    case EqualityNode n:
+                        return graph.Add(n.Expr);
+                    case EqualityClass tp:
+                        var eids = tp.Children.Select(Ddfs).ToArray();
+                        if (tp.Tuple)
+                        {
+                            return graph.AddENode(new IR.Tuple(), eids);
+                        }
+                        else
+                        {
+                            foreach (var cls in eids.Skip(1))
+                            {
+                                graph.Union(eids[0], cls);
+                            }
 
-            // EGraphExtractConstrains constrain1 = MemoryExtractConstrains;
-            var post = graph.Extract(root, CompileOptions, null, Array.Empty<EGraphExtractConstrains>());
+                            graph.Rebuild();
+                            return eids[0];
+                        }
+
+                    default:
+                        throw new NotSupportedException();
+                }
+            }
+
+            var root = Ddfs(equivalents);
+#if DEBUG
+            using (var stream = Diagnostics.DumpScope.Current.OpenFile("egraph.dot"))
+            {
+                EGraphPrinter.DumpEgraphAsDot(graph, stream);
+            }
+#endif
+
+            var constrains = new EGraphExtractConstrains[] { SingleNodeMemoryExtractConstrains };
+            var post = graph.Extract(root, CompileOptions, null, constrains);
             return function.With(body: post);
         }
 
@@ -156,6 +256,21 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
 
     protected override Dictionary<IRType, List<Expr>> VisitLeafTuple(IR.Tuple expr)
     {
+        if (ReferenceEquals(expr, VisitRoot))
+        {
+            var fileds = new List<IEquality>();
+            foreach (var i in Enumerable.Range(0, expr.Fields.Length))
+            {
+                var boxings = Visit(expr.Fields[i]).Values.
+                    Select(l => l.Select(e => IR.F.CPU.Boxing(e, ((DistributedType)e.CheckedType).TensorType))).
+                    SelectMany(e => e).Select(e => new EqualityNode(e)).OfType<IEquality>().ToList();
+                fileds.Add(new EqualityClass(false, boxings));
+            }
+
+            _equalMemo.Add(expr, new EqualityClass(true, fileds));
+            return new Dictionary<IRType, List<Expr>> { }; // return empty.
+        }
+
         return expr.Fields.ToArray().
                 Select(Visit).
                 CartesianProduct().
@@ -203,7 +318,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                     ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
         }
 
-        if (results.Count == 1 && results.First().Key is DistributedType dt && dt.NdSBP.All(sbp => sbp is SBPBroadCast))
+        if (expr.Target is not ScatterND && expr.Target is not Boxing && !expr.CheckedShape.ToValueArray().Contains(0) && results.Count == 1 && results.First().Key is DistributedType dt && dt.NdSBP.All(sbp => sbp is SBPBroadCast))
         {
             return expr.Arguments.ToArray().
                     Select(Visit).

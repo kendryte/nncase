@@ -117,7 +117,7 @@ public sealed partial class EGraph : IEGraph
         }
     }
 
-    private EClass AddENode(Expr expr, IRArray<EClass> children)
+    public EClass AddENode(Expr expr, IRArray<EClass> children)
     {
         // TODO: concurrent safe
         EClass eclass;
