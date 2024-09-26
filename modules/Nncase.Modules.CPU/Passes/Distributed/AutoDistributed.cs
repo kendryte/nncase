@@ -265,7 +265,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             foreach (var i in Enumerable.Range(0, expr.Fields.Length))
             {
                 var boxings = Visit(expr.Fields[i]).Values.
-                    Select(l => l.Select(e => IR.F.CPU.Boxing(e, ((DistributedType)e.CheckedType).TensorType))).
+                    Select(l => l.Select(e => e.CheckedType is DistributedType dt ? IR.F.CPU.Boxing(e, dt.TensorType) : e).ToArray()).
                     SelectMany(e => e).Select(e => new EqualityNode(e)).OfType<IEquality>().ToList();
                 fileds.Add(new EqualityClass(false, boxings));
             }
