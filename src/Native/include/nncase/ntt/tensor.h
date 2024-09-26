@@ -43,7 +43,8 @@ struct fixed_tensor_alike_type<basic_tensor<T, Shape, Strides, MaxSize, IsView>,
 
 namespace detail {
 template <class T, class Shape, class Strides, size_t MaxSize, bool IsView,
-          bool IsFixedShape = is_fixed_dims_v<Shape> &&is_fixed_dims_v<Strides>>
+          bool IsFixedShape =
+              is_fixed_dims_v<Shape> && is_fixed_dims_v<Strides>>
 class tensor_impl;
 
 // dynamic tensor
@@ -233,6 +234,14 @@ class basic_tensor
     constexpr tensor_view<T, TNewShape, default_strides_t<TNewShape>>
     reshape(TNewShape shape) noexcept {
         return {buffer(), shape, default_strides(shape)};
+    }
+
+    template <size_t... Axes>
+    constexpr auto squeeze(fixed_shape<Axes...> axes) noexcept {
+        constexpr auto new_shape = squeeze_shape(axes, shape());
+        constexpr auto new_strides = squeeze_strides(axes, strides());
+        return tensor_view<T, decltype(new_shape), decltype(new_strides)>(
+            buffer(), new_shape, new_strides);
     }
 
     constexpr tensor_view<T, Shape, Strides> view() noexcept {

@@ -22,6 +22,7 @@
 #include <numeric>
 #include <optional>
 #include <span>
+#include <type_traits>
 #include <utility>
 
 namespace nncase::ntt {
@@ -78,7 +79,9 @@ struct fixed_shape : detail::fixed_dims_base<Dims...> {
         using type = fixed_shape<I, Dims...>;
     };
 
-    template <size_t I> struct append { using type = fixed_shape<Dims..., I>; };
+    template <size_t I> struct append {
+        using type = fixed_shape<Dims..., I>;
+    };
 
     static constexpr size_t length() noexcept { return (Dims * ... * 1); }
 };
@@ -126,6 +129,32 @@ template <size_t Value, size_t... Dims>
 struct repeat_shape_impl<Value, std::index_sequence<Dims...>> {
     using shape_t = fixed_shape<((void)Dims, Value)...>;
 };
+
+#define DEFINE_SQUEEZE_FIXED_DIMS_IMPL(name)                                   \
+    template <class TShape, class TAxes, size_t Index>                         \
+    struct squeeze_fixed_##name##_impl {                                       \
+        static constexpr auto get_##name() noexcept {                          \
+            if constexpr (Index >= TShape::rank()) {                           \
+                return fixed_##name<>{};                                       \
+            } else {                                                           \
+                using src_type =                                               \
+                    typename squeeze_fixed_##name##_impl<TShape, TAxes,        \
+                                                         Index + 1>::name##_t; \
+                if constexpr (TAxes::contains(Index)) {                        \
+                    return src_type{};                                         \
+                } else {                                                       \
+                    using type =                                               \
+                        src_type::template prepend<TShape::at(Index)>::type;   \
+                    return type{};                                             \
+                }                                                              \
+            }                                                                  \
+        }                                                                      \
+                                                                               \
+        using name##_t = decltype(get_##name());                               \
+    };
+
+DEFINE_SQUEEZE_FIXED_DIMS_IMPL(shape)
+DEFINE_SQUEEZE_FIXED_DIMS_IMPL(strides)
 } // namespace detail
 
 template <class Dims> struct is_fixed_dims : std::false_type {};
@@ -209,6 +238,27 @@ using repeat_shape_t =
 
 template <size_t Rank> using zero_shape_t = repeat_shape_t<0, Rank>;
 
+#define DEFINE_SQUEEZE_DIMS_TYPE(name)                                         \
+    template <class TShape, size_t... Axes> struct squeeze_##name##_type;      \
+                                                                               \
+    template <size_t Rank, size_t... Axes>                                     \
+    struct squeeze_##name##_type<ranked_##name<Rank>, Axes...> {               \
+        using type = ranked_##name<Rank - sizeof...(Axes)>;                    \
+    };                                                                         \
+                                                                               \
+    template <size_t... Dims, size_t... Axes>                                  \
+    struct squeeze_##name##_type<fixed_##name<Dims...>, Axes...> {             \
+        using type = detail::squeeze_fixed_##name##_impl<                      \
+            fixed_##name<Dims...>, fixed_##name<Axes...>, 0>::name##_t;        \
+    };                                                                         \
+                                                                               \
+    template <class TShape, size_t... Axes>                                    \
+    using squeeze_##name##_t =                                                 \
+        typename squeeze_##name##_type<TShape, Axes...>::type;
+
+DEFINE_SQUEEZE_DIMS_TYPE(shape)
+DEFINE_SQUEEZE_DIMS_TYPE(strides)
+
 template <class... Args> auto make_ranked_shape(Args &&...args) noexcept {
     return ranked_shape<sizeof...(args)>{
         static_cast<size_t>(std::forward<Args>(args))...};
@@ -217,6 +267,18 @@ template <class... Args> auto make_ranked_shape(Args &&...args) noexcept {
 template <class... Args> auto make_ranked_strides(Args &&...args) noexcept {
     return ranked_strides<sizeof...(args)>{
         static_cast<size_t>(std::forward<Args>(args))...};
+}
+
+template <size_t Rank, size_t... Indices>
+constexpr auto to_fixed_shape(ranked_shape<Rank> shape,
+                              std::index_sequence<Indices...>) noexcept {
+    return fixed_shape<shape[Indices]...>{};
+}
+
+template <size_t Rank, size_t... Indices>
+constexpr auto to_fixed_strides(ranked_strides<Rank> strides,
+                                std::index_sequence<Indices...>) noexcept {
+    return fixed_strides<strides[Indices]...>{};
 }
 
 template <class Shape>
@@ -274,10 +336,10 @@ constexpr size_t contiguous_dims(const Shape &shape, const Strides &strides) {
 }
 
 template <class Shape, class Strides>
-inline constexpr size_t max_size_v = (is_fixed_dims_v<Shape> &&
-                                      is_fixed_dims_v<Strides>)
-                                         ? linear_size(Shape{}, Strides{})
-                                         : std::dynamic_extent;
+inline constexpr size_t max_size_v =
+    (is_fixed_dims_v<Shape> && is_fixed_dims_v<Strides>)
+        ? linear_size(Shape{}, Strides{})
+        : std::dynamic_extent;
 
 template <class Index, class Shape>
 constexpr bool in_bound(const Index &index, const Shape &shape) {
@@ -327,6 +389,37 @@ ranked_shape<Rank> get_reduced_offset(Index in_offset) {
     }
 
     return off;
+}
+
+template <size_t... Axes, class TShape>
+constexpr auto squeeze_shape(fixed_shape<Axes...> axes, TShape shape) noexcept {
+    if constexpr (is_fixed_dims_v<std::decay_t<TShape>>) {
+        return squeeze_shape_t<TShape, Axes...>{};
+    } else {
+        ranked_shape<shape.rank() - axes.rank()> new_shape;
+        size_t cnt = 0;
+        for (size_t axis = 0; axis < axes.rank(); axis++) {
+            if (!axes.contains(axis)) {
+                new_shape[cnt++] = shape[axis];
+            }
+        }
+    }
+}
+
+template <size_t... Axes, class TStrides>
+constexpr auto squeeze_strides(fixed_shape<Axes...> axes,
+                               TStrides strides) noexcept {
+    if constexpr (is_fixed_dims_v<std::decay_t<TStrides>>) {
+        return squeeze_strides_t<TStrides, Axes...>{};
+    } else {
+        ranked_strides<strides.rank() - axes.rank()> new_strides;
+        size_t cnt = 0;
+        for (size_t axis = 0; axis < axes.rank(); axis++) {
+            if (!axes.contains(axis)) {
+                new_strides[cnt++] = strides[axis];
+            }
+        }
+    }
 }
 
 template <size_t RankA, size_t RankB>

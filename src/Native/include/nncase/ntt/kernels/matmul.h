@@ -102,9 +102,6 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
     void operator()(const TLhs &lhs, const TRhs &rhs, TOut &output) {
         auto domain =
             slice_fixed_dims<TOut::rank() - 2>(typename TOut::shape_type{});
-        constexpr size_t M = TOut::shape()[TOut::rank() - 2];
-        constexpr size_t K = TLhs::shape()[TLhs::rank() - 1];
-        constexpr size_t N = TOut::shape()[TOut::rank() - 1];
         ntt::apply(domain, [&](auto out_offset_prefix) {
             ranked_shape<TOut::rank()> out_offset{};
             std::copy(out_offset_prefix.begin(), out_offset_prefix.end(),
@@ -117,12 +114,12 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
             auto rhs_shape = shape_infer::sub_matmul_shape(TRhs::shape());
             auto out_shape = shape_infer::sub_matmul_shape(TOut::shape());
 
-            auto a =
-                lhs.view(lhs_offset, lhs_shape).reshape(fixed_shape<M, K>{});
-            auto b =
-                rhs.view(rhs_offset, rhs_shape).reshape(fixed_shape<K, N>{});
-            auto c =
-                output.view(out_offset, out_shape).reshape(fixed_shape<M, N>{});
+            auto a = lhs.view(lhs_offset, lhs_shape)
+                         .squeeze(make_index_axes<lhs_shape.rank() - 2>());
+            auto b = rhs.view(rhs_offset, rhs_shape)
+                         .squeeze(make_index_axes<rhs_shape.rank() - 2>());
+            auto c = output.view(out_offset, out_shape)
+                         .squeeze(make_index_axes<out_shape.rank() - 2>());
             matmul_2d_l1(a, b, c);
         });
     }
