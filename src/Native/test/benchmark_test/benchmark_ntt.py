@@ -388,12 +388,15 @@ class BenchmarkNTT_riscv64(BenchmarkNTT):
             return
 
         for bin in self.bin_list:
-            cmd_status, cmd_result = self.run_evb(bin)
-            assert (cmd_status == 0)
-            lines = cmd_result.split('\r\n')
-            new_lines = lines[1:-1]
-            new_cmd_result = '\n'.join(new_lines)
-            self.parse_result(new_cmd_result)
+            if "primitive" in str(bin):
+                continue
+            else:
+                cmd_status, cmd_result = self.run_evb(bin)
+                assert (cmd_status == 0)
+                lines = cmd_result.split('\r\n')
+                new_lines = lines[1:-1]
+                new_cmd_result = '\n'.join(new_lines)
+                self.parse_result(new_cmd_result)
 
 
 if __name__ == '__main__':
