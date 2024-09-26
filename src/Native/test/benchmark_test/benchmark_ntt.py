@@ -78,7 +78,7 @@ def primitive_markdown(execute_path: str):
 
     # Start of the HTML table
 
-    md = '<table>\n'
+    md = '<table class="primitive_table">\n'
 
     # Table header
     md += '\t<tr>\n'
