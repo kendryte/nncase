@@ -67,6 +67,57 @@ def generate_markdown(benchmark_list: list, md_file: str):
         f.write(md)
 
 
+def primitive_markdown(md_file: str):
+    command = ["taskset", "-c", "0", "./build/Release/bin/benchmark_ntt_primitive_size"]
+
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+    output = result.stdout
+
+    lines = output.strip().split('\n')
+
+    # Start of the HTML table
+
+    md = '<h2>下表信息可以用来寻找 Primitive Size 和对应的 Cost</h2>\n'
+    md += '<table>\n'
+
+    # Table header
+    md += '\t<tr>\n'
+    md += '\t\t<th>PackMode</th>\n'
+    md += '\t\t<th>M</th>\n'
+    md += '\t\t<th>K</th>\n'
+    md += '\t\t<th>N</th>\n'
+    md += '\t\t<th>Cycles</th>\n'
+    md += '\t\t<th>GFLOPS</th>\n'
+    md += '\t</tr>\n'
+
+    # Table rows
+    for line in lines:
+        parts = line.split(',')
+        packmode = parts[0].strip()
+        M = parts[1].split(':')[1].strip()
+        K = parts[2].split(':')[1].strip()
+        N = parts[3].split(':')[1].strip()
+        cycles = parts[4].split(':')[1].strip()
+        gflops = parts[5].split(':')[1].strip()
+
+        md += '\t<tr>\n'
+        md += f'\t\t<td>{packmode}</td>\n'
+        md += f'\t\t<td>{M}</td>\n'
+        md += f'\t\t<td>{K}</td>\n'
+        md += f'\t\t<td>{N}</td>\n'
+        md += f'\t\t<td>{cycles}</td>\n'
+        md += f'\t\t<td>{gflops}</td>\n'
+        md += '\t</tr>\n'
+
+    # End of the HTML table
+    md += '</table>\n'
+
+    # Write the HTML table to the file
+    with open(md_file, 'a') as file:
+        file.write(md)
+
+
 class BenchmarkNTT():
     def __init__(self, arch: str, target: str, bin_path: str):
         self.arch = arch
@@ -374,3 +425,4 @@ if __name__ == '__main__':
     # generate md
     md_file = report_file('benchmark_ntt.md')
     generate_markdown(benchmark_list, md_file)
+    primitive_markdown(md_file)
