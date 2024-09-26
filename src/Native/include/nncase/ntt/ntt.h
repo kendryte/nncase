@@ -26,8 +26,6 @@
 #include "kernels/instance_norm.h"
 #include "kernels/matmul.h"
 #include "kernels/pack.h"
-#include "kernels/packed_layer_norm.h"
-#include "kernels/packed_softmax.h"
 #include "kernels/pad.h"
 #include "kernels/reduce.h"
 #include "kernels/reduce_arg.h"

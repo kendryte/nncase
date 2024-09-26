@@ -35,15 +35,12 @@ std::string benchmark_ntt_reduce_add_reduceN_noPack() {
     ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::add>(ta, tb[i], ntt::fixed_shape<1>{},
-                                   ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce_sum<ntt::fixed_shape<1>>(ta, tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::add>(ta, tb[warmup_num + i],
-                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<>{},
-                                   ntt::fixed_shape<>{});
+        ntt::reduce_sum<ntt::fixed_shape<1>>(ta, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -69,15 +66,13 @@ std::string benchmark_ntt_reduce_add_reduceN_packN() {
     ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::add>(taP, tb[i], ntt::fixed_shape<1>{},
-                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
+        ntt::reduce_sum<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(taP, tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::add>(taP, tb[warmup_num + i],
-                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<1>{},
-                                   ntt::fixed_shape<>{});
+        ntt::reduce_sum<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(
+            taP, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -102,15 +97,12 @@ std::string benchmark_ntt_reduce_add_reduceM_noPack() {
     ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::add>(ta, tb[i], ntt::fixed_shape<0>{},
-                                   ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce_sum<ntt::fixed_shape<0>>(ta, tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::add>(ta, tb[warmup_num + i],
-                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
-                                   ntt::fixed_shape<>{});
+        ntt::reduce_sum<ntt::fixed_shape<0>>(ta, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -137,15 +129,13 @@ std::string benchmark_ntt_reduce_add_reduceM_packM() {
     ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::add>(taP, tb[i], ntt::fixed_shape<0>{},
-                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
+        ntt::reduce_sum<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(taP, tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::add>(taP, tb[warmup_num + i],
-                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
-                                   ntt::fixed_shape<>{});
+        ntt::reduce_sum<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(
+            taP, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -170,15 +160,12 @@ std::string benchmark_ntt_reduce_add_reduceMN_noPack() {
     ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::add>(ta, tb[i], ntt::fixed_shape<0, 1>{},
-                                   ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce_sum<ntt::fixed_shape<0, 1>>(ta, tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::add>(ta, tb[warmup_num + i],
-                                   ntt::fixed_shape<0, 1>{},
-                                   ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce_sum<ntt::fixed_shape<0, 1>>(ta, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -205,15 +192,14 @@ std::string benchmark_ntt_reduce_add_reduceMN_packN() {
     ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::add>(taP, tb[i], ntt::fixed_shape<0, 1>{},
-                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
+        ntt::reduce_sum<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(taP,
+                                                                     tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::add>(taP, tb[warmup_num + i],
-                                   ntt::fixed_shape<0, 1>{},
-                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
+        ntt::reduce_sum<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(
+            taP, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -240,15 +226,14 @@ std::string benchmark_ntt_reduce_add_reduceMN_packM() {
     ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::add>(taP, tb[i], ntt::fixed_shape<0, 1>{},
-                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
+        ntt::reduce_sum<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(taP,
+                                                                     tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::add>(taP, tb[warmup_num + i],
-                                   ntt::fixed_shape<0, 1>{},
-                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
+        ntt::reduce_sum<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(
+            taP, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -273,15 +258,12 @@ std::string benchmark_ntt_reduce_max_reduceN_noPack() {
     ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::max>(ta, tb[i], ntt::fixed_shape<1>{},
-                                   ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce_max<ntt::fixed_shape<1>>(ta, tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::max>(ta, tb[warmup_num + i],
-                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<>{},
-                                   ntt::fixed_shape<>{});
+        ntt::reduce_max<ntt::fixed_shape<1>>(ta, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -308,15 +290,13 @@ std::string benchmark_ntt_reduce_max_reduceN_packN() {
     ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::max>(taP, tb[i], ntt::fixed_shape<1>{},
-                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
+        ntt::reduce_max<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(taP, tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::max>(taP, tb[warmup_num + i],
-                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<1>{},
-                                   ntt::fixed_shape<>{});
+        ntt::reduce_max<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(
+            taP, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -341,15 +321,12 @@ std::string benchmark_ntt_reduce_max_reduceM_noPack() {
     ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::max>(ta, tb[i], ntt::fixed_shape<0>{},
-                                   ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce_max<ntt::fixed_shape<0>>(ta, tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::max>(ta, tb[warmup_num + i],
-                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
-                                   ntt::fixed_shape<>{});
+        ntt::reduce_max<ntt::fixed_shape<0>>(ta, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -376,15 +353,13 @@ std::string benchmark_ntt_reduce_max_reduceM_packM() {
     ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::max>(taP, tb[i], ntt::fixed_shape<0>{},
-                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
+        ntt::reduce_max<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(taP, tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::max>(taP, tb[warmup_num + i],
-                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
-                                   ntt::fixed_shape<>{});
+        ntt::reduce_max<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(
+            taP, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -409,15 +384,12 @@ std::string benchmark_ntt_reduce_max_reduceMN_noPack() {
     ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::max>(ta, tb[i], ntt::fixed_shape<0, 1>{},
-                                   ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce_max<ntt::fixed_shape<0, 1>>(ta, tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::max>(ta, tb[warmup_num + i],
-                                   ntt::fixed_shape<0, 1>{},
-                                   ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce_max<ntt::fixed_shape<0, 1>>(ta, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -444,15 +416,14 @@ std::string benchmark_ntt_reduce_max_reduceMN_packN() {
     ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::max>(taP, tb[i], ntt::fixed_shape<0, 1>{},
-                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
+        ntt::reduce_max<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(taP,
+                                                                     tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::max>(taP, tb[warmup_num + i],
-                                   ntt::fixed_shape<0, 1>{},
-                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
+        ntt::reduce_max<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(
+            taP, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -479,15 +450,14 @@ std::string benchmark_ntt_reduce_max_reduceMN_packM() {
     ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::max>(taP, tb[i], ntt::fixed_shape<0, 1>{},
-                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
+        ntt::reduce_max<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(taP,
+                                                                     tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::max>(taP, tb[warmup_num + i],
-                                   ntt::fixed_shape<0, 1>{},
-                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
+        ntt::reduce_max<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(
+            taP, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -512,15 +482,12 @@ std::string benchmark_ntt_reduce_min_reduceN_noPack() {
     ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::min>(ta, tb[i], ntt::fixed_shape<1>{},
-                                   ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce_min<ntt::fixed_shape<1>>(ta, tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::min>(ta, tb[warmup_num + i],
-                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<>{},
-                                   ntt::fixed_shape<>{});
+        ntt::reduce_min<ntt::fixed_shape<1>>(ta, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -547,15 +514,13 @@ std::string benchmark_ntt_reduce_min_reduceN_packN() {
     ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::min>(taP, tb[i], ntt::fixed_shape<1>{},
-                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
+        ntt::reduce_min<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(taP, tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::min>(taP, tb[warmup_num + i],
-                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<1>{},
-                                   ntt::fixed_shape<>{});
+        ntt::reduce_min<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(
+            taP, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -580,15 +545,12 @@ std::string benchmark_ntt_reduce_min_reduceM_noPack() {
     ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::min>(ta, tb[i], ntt::fixed_shape<0>{},
-                                   ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce_min<ntt::fixed_shape<0>>(ta, tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::min>(ta, tb[warmup_num + i],
-                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
-                                   ntt::fixed_shape<>{});
+        ntt::reduce_min<ntt::fixed_shape<0>>(ta, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -615,15 +577,13 @@ std::string benchmark_ntt_reduce_min_reduceM_packM() {
     ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::min>(taP, tb[i], ntt::fixed_shape<0>{},
-                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
+        ntt::reduce_min<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(taP, tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::min>(taP, tb[warmup_num + i],
-                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
-                                   ntt::fixed_shape<>{});
+        ntt::reduce_min<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(
+            taP, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -649,15 +609,12 @@ std::string benchmark_ntt_reduce_min_reduceMN_noPack() {
     ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::min>(ta, tb[i], ntt::fixed_shape<0, 1>{},
-                                   ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce_min<ntt::fixed_shape<0, 1>>(ta, tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::min>(ta, tb[warmup_num + i],
-                                   ntt::fixed_shape<0, 1>{},
-                                   ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce_min<ntt::fixed_shape<0, 1>>(ta, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -684,15 +641,14 @@ std::string benchmark_ntt_reduce_min_reduceMN_packN() {
     ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::min>(taP, tb[i], ntt::fixed_shape<0, 1>{},
-                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
+        ntt::reduce_min<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(taP,
+                                                                     tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::min>(taP, tb[warmup_num + i],
-                                   ntt::fixed_shape<0, 1>{},
-                                   ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
+        ntt::reduce_min<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(
+            taP, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -719,15 +675,14 @@ std::string benchmark_ntt_reduce_min_reduceMN_packM() {
     ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::min>(taP, tb[i], ntt::fixed_shape<0, 1>{},
-                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
+        ntt::reduce_min<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(taP,
+                                                                     tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::min>(taP, tb[warmup_num + i],
-                                   ntt::fixed_shape<0, 1>{},
-                                   ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
+        ntt::reduce_min<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(
+            taP, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -752,15 +707,12 @@ std::string benchmark_ntt_reduce_mean_reduceN_noPack() {
     ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::mean>(ta, tb[i], ntt::fixed_shape<1>{},
-                                    ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce_mean<ntt::fixed_shape<1>>(ta, tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::mean>(ta, tb[warmup_num + i],
-                                    ntt::fixed_shape<1>{}, ntt::fixed_shape<>{},
-                                    ntt::fixed_shape<>{});
+        ntt::reduce_mean<ntt::fixed_shape<1>>(ta, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -787,16 +739,13 @@ std::string benchmark_ntt_reduce_mean_reduceN_packN() {
     ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::mean>(taP, tb[i], ntt::fixed_shape<1>{},
-                                    ntt::fixed_shape<1>{},
-                                    ntt::fixed_shape<>{});
+        ntt::reduce_mean<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(taP, tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::mean>(
-            taP, tb[warmup_num + i], ntt::fixed_shape<1>{},
-            ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
+        ntt::reduce_mean<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(
+            taP, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -821,15 +770,12 @@ std::string benchmark_ntt_reduce_mean_reduceM_noPack() {
     ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::mean>(ta, tb[i], ntt::fixed_shape<0>{},
-                                    ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce_mean<ntt::fixed_shape<0>>(ta, tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::mean>(ta, tb[warmup_num + i],
-                                    ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
-                                    ntt::fixed_shape<>{});
+        ntt::reduce_mean<ntt::fixed_shape<0>>(ta, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -856,16 +802,13 @@ std::string benchmark_ntt_reduce_mean_reduceM_packM() {
     ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::mean>(taP, tb[i], ntt::fixed_shape<0>{},
-                                    ntt::fixed_shape<0>{},
-                                    ntt::fixed_shape<>{});
+        ntt::reduce_mean<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(taP, tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::mean>(
-            taP, tb[warmup_num + i], ntt::fixed_shape<0>{},
-            ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
+        ntt::reduce_mean<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(
+            taP, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -890,15 +833,12 @@ std::string benchmark_ntt_reduce_mean_reduceMN_noPack() {
     ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::mean>(ta, tb[i], ntt::fixed_shape<0, 1>{},
-                                    ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce_mean<ntt::fixed_shape<0, 1>>(ta, tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::mean>(ta, tb[warmup_num + i],
-                                    ntt::fixed_shape<0, 1>{},
-                                    ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+        ntt::reduce_mean<ntt::fixed_shape<0, 1>>(ta, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -925,16 +865,14 @@ std::string benchmark_ntt_reduce_mean_reduceMN_packN() {
     ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::mean>(taP, tb[i], ntt::fixed_shape<0, 1>{},
-                                    ntt::fixed_shape<1>{},
-                                    ntt::fixed_shape<>{});
+        ntt::reduce_mean<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(taP,
+                                                                      tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::mean>(
-            taP, tb[warmup_num + i], ntt::fixed_shape<0, 1>{},
-            ntt::fixed_shape<1>{}, ntt::fixed_shape<>{});
+        ntt::reduce_mean<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(
+            taP, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));
@@ -961,16 +899,14 @@ std::string benchmark_ntt_reduce_mean_reduceMN_packM() {
     ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce<ntt::ops::mean>(taP, tb[i], ntt::fixed_shape<0, 1>{},
-                                    ntt::fixed_shape<0>{},
-                                    ntt::fixed_shape<>{});
+        ntt::reduce_mean<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(taP,
+                                                                      tb[i]);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce<ntt::ops::mean>(
-            taP, tb[warmup_num + i], ntt::fixed_shape<0, 1>{},
-            ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
+        ntt::reduce_mean<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(
+            taP, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
     asm volatile("" ::"g"(tb));

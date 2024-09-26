@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "shape.h"
+#include "tensor_traits.h"
 #include <cstddef>
 #include <cstring>
 #include <span>
@@ -64,6 +65,13 @@ template <int32_t Offset, template <size_t...> class A, size_t... Dims>
 inline constexpr auto shift_fixed_dims(A<Dims...>) {
     return A<(Dims - Offset)...>{};
 }
+
+template <IsFixedDims Axes, IsFixedTensor TTensor, size_t... Ints>
+constexpr auto
+fixed_reduce_source_shape_type(std::index_sequence<Ints...>) noexcept {
+    return fixed_shape<(Axes::contains(Ints) ? TTensor::shape_type::at(Ints)
+                                             : 1)...>{};
+}
 } // namespace utility_detail
 
 template <class U, class T, size_t Extent>
@@ -113,5 +121,32 @@ inline constexpr auto make_index_sequence(A<Dims...>) {
 template <int32_t Offset, template <size_t...> class A, size_t... Dims>
 inline constexpr auto shift_fixed_dims(A<Dims...> a) {
     return utility_detail::shift_fixed_dims<Offset>(a);
+}
+
+template <IsFixedDims Axes, IsFixedTensor TTensor>
+constexpr auto fixed_reduce_source_shape_type() noexcept {
+    return utility_detail::fixed_reduce_source_shape_type<Axes, TTensor>(
+        std::make_index_sequence<TTensor::rank()>());
+}
+
+template <size_t InRank, IsFixedDims Axes, size_t OutRank>
+constexpr ranked_shape<InRank>
+reduce_source_offset(ranked_shape<OutRank> out_index) noexcept {
+    // Keep dims
+    if constexpr (InRank == OutRank) {
+        return out_index;
+    } else {
+        ranked_shape<InRank> in_index;
+        size_t shrinked_dims = 0;
+        for (size_t i = 0; i < InRank; i++) {
+            if (Axes::contains(i)) {
+                in_index[i] = 0;
+                shrinked_dims++;
+            } else {
+                in_index[i] = out_index[i - shrinked_dims];
+            }
+        }
+        return in_index;
+    }
 }
 } // namespace nncase::ntt

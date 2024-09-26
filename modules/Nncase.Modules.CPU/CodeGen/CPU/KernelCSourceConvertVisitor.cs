@@ -452,7 +452,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     IndentScope.Writer.Write($"pad<{string.Join(",", pad.Paddings)}>({Visit(args[0]).Name}, {Visit(args[1]).Name}, {args[0].CheckedDataType.ToC()} {{ {pad.PadValue} }} );\n");
                     break;
                 case TIR.CPU.Reduce reduce:
-                    IndentScope.Writer.Write($"reduce<ops::{reduce.ReduceOp.ToC()}>({Visit(args[0]).Name}, {Visit(args[1]).Name}, fixed_shape<{string.Join(",", reduce.Axis)}>{{}}, fixed_shape<{string.Join(",", reduce.PackedAxes)}>{{}}, fixed_shape<{string.Join(",", reduce.PadedNums)}>{{}});\n");
+                    IndentScope.Writer.Write($"reduce_{reduce.ReduceOp.ToC()}<fixed_shape<{string.Join(",", reduce.Axis)}>, fixed_shape<{string.Join(",", reduce.PackedAxes)}>, fixed_shape<{string.Join(",", reduce.PadedNums)}>>({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
                     break;
                 case TIR.CPU.ReduceArg reduceArg:
                     IndentScope.Writer.Write($"reduce_arg<ops::{reduceArg.ReduceArgOp.ToC()[4..]}, {reduceArg.Axis}, {reduceArg.SelectLastIndex.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}, {reduceArg.KeepDims.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}>({Visit(args[0]).Name}, {Visit(args[1]).Name}, fixed_shape<>{{}}, fixed_shape<>{{}});\n");

@@ -41,9 +41,9 @@ internal static class CSourceExtensions
     {
         ReduceOp.Min => "min",
         ReduceOp.Max => "max",
-        ReduceOp.Sum => "add",
+        ReduceOp.Sum => "sum",
         ReduceOp.Mean => "mean",
-        ReduceOp.Prod => "mul",
+        ReduceOp.Prod => "prod",
         _ => throw new NotImplementedException(),
     };
 

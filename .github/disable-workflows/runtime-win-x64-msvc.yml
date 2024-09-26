@@ -54,14 +54,14 @@ jobs:
       run: .\install\bin\benchnncase.exe > benchnncase.log
       
     - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.2.2
+      uses: actions/upload-artifact@v4
       with:
         name: nncaseruntime-win-x64-msvc
         path: ${{github.workspace}}/install
         if-no-files-found: error
       
     - name: Upload Benchmark Result
-      uses: actions/upload-artifact@v2.2.2
+      uses: actions/upload-artifact@v4
       with:
         name: nncasebenchmark-win-x64-msvc
         path: ${{github.workspace}}/benchnncase.log

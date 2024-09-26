@@ -33,6 +33,12 @@ template <size_t... Dims> struct fixed_dims_base {
         return std::array<size_t, sizeof...(Dims)>{Dims...}[index];
     }
 
+    static constexpr size_t last() noexcept { return at(rank() - 1); }
+
+    static constexpr bool contains(size_t value) noexcept {
+        return (false || ... || (Dims == value));
+    }
+
     constexpr size_t operator[](size_t index) const noexcept {
         return at(index);
     }
@@ -51,6 +57,13 @@ template <size_t Rank> struct ranked_dims_base {
 
     constexpr auto begin() const noexcept { return dims_.begin(); }
     constexpr auto end() const noexcept { return dims_.end(); }
+
+    constexpr size_t last() const noexcept { return at(rank() - 1); }
+    constexpr size_t &last() noexcept { return at(rank() - 1); }
+
+    constexpr bool contains(size_t value) const noexcept {
+        return std::find(begin(), end(), value) != end();
+    }
 
     std::array<size_t, Rank> dims_;
 };
@@ -315,5 +328,11 @@ ranked_shape<Rank> get_reduced_offset(Index in_offset) {
     }
 
     return off;
+}
+
+template <size_t RankA, size_t RankB>
+bool operator==(const ranked_shape<RankA> &lhs,
+                const ranked_shape<RankB> &rhs) noexcept {
+    return RankA == RankB && std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 } // namespace nncase::ntt

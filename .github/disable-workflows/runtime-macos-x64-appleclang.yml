@@ -55,14 +55,14 @@ jobs:
       run: ${{github.workspace}}/install/bin/benchnncase > benchnncase.log
       
     - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.2.2
+      uses: actions/upload-artifact@v4
       with:
         name: nncaseruntime-macos-x64-appleclang
         path: ${{github.workspace}}/install
         if-no-files-found: error
       
     - name: Upload Benchmark Result
-      uses: actions/upload-artifact@v2.2.2
+      uses: actions/upload-artifact@v4
       with:
         name: nncasebenchmark-macos-x64-appleclang
         path: ${{github.workspace}}/benchnncase.log

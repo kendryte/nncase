@@ -61,7 +61,7 @@ jobs:
           cmake --install build/${{matrix.config.buildType}} --prefix install
 
       - name: Upload nncase Native Build Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: nncase-native-${{matrix.config.name}}
           path: ${{github.workspace}}/install
@@ -97,7 +97,7 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Install nncase native Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: nncase-native-${{matrix.config.name}}
           path: ${{github.workspace}}/install
@@ -139,7 +139,7 @@ jobs:
           dotnet-coverage merge -o coverage.unit.xml -f cobertura -r coverage/*.xml
 
       - name: Upload Coverage
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: matrix.config.name == 'x86_64-linux'
         with:
           name: nncase-coverage-unit
@@ -147,7 +147,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload nncase Build Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: nncase-${{matrix.config.name}}
           path: ${{github.workspace}}/src/Nncase.Compiler/bin/${{matrix.config.buildType}}/net${{matrix.dotnet-version}}/${{matrix.config.rid}}/publish
@@ -185,13 +185,13 @@ jobs:
           cache-dependency-path: '**/requirements.test.txt'
 
       - name: Install nncase native Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: nncase-native-${{matrix.config.name}}
           path: ${{github.workspace}}/install
 
       - name: Install nncase
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: nncase-${{matrix.config.name}}
           path: ${{github.workspace}}/install
@@ -259,7 +259,7 @@ jobs:
           dotnet-coverage merge -o coverage.integration.xml -f cobertura -r coverage/*.xml
 
       - name: Upload Coverage
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: matrix.config.name == 'x86_64-linux'
         with:
           name: nncase-coverage-integration
@@ -283,13 +283,13 @@ jobs:
           dotnet-version: "8.0"
 
       - name: Download Unit Test Coverage
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: nncase-coverage-unit
           path: ${{github.workspace}}/coverage
 
       - name: Download Integration Test Coverage
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: nncase-coverage-integration
           path: ${{github.workspace}}/coverage
@@ -314,7 +314,7 @@ jobs:
           reportgenerator -reports:coverage.xml -targetdir:"coveragereport" -reporttypes:Html
 
       - name: Upload Coverage Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: nncase-coverage-report
           path: coveragereport

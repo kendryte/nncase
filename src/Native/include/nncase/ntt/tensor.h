@@ -15,6 +15,7 @@
 #pragma once
 #include "detail/shape_storage.h"
 #include "detail/tensor_storage.h"
+#include "nncase/ntt/shape.h"
 #include "tensor_traits.h"
 
 namespace nncase::ntt {
@@ -137,11 +138,54 @@ class basic_tensor
 
     using impl_type::impl_type;
 
+    class const_iterator {
+      public:
+        const_iterator(const basic_tensor &tensor,
+                       ranked_shape<shape_type::rank()> index) noexcept
+            : tensor_(tensor), index_(index) {}
+
+        const_iterator &operator++(int) noexcept {
+            index_.last() += 1;
+            for (size_t i = index_.rank() - 1; i > 0; i--) {
+                if (index_[i] >= tensor_.shape()[i]) {
+                    index_[i - 1]++;
+                    index_[i] = 0;
+                }
+            }
+            return *this;
+        }
+
+        const_iterator operator++() noexcept {
+            auto old = *this;
+            operator++(0);
+            return old;
+        }
+
+        T &operator*() noexcept { return tensor_(index_); }
+
+        bool operator==(const const_iterator &other) const noexcept {
+            return &tensor_ == &other.tensor_ && index_ == other.index_;
+        }
+
+      private:
+        const basic_tensor &tensor_;
+        ranked_shape<shape_type::rank()> index_;
+    };
+
     static basic_tensor<T, Shape, Strides, MaxSize, IsView>
     from_scalar(T value) noexcept;
 
     operator const buffer_type &() const noexcept { return buffer(); }
     operator buffer_type &() noexcept { return buffer(); }
+
+    const_iterator begin() const noexcept {
+        return const_iterator(*this, ranked_shape<shape_type::rank()>{});
+    }
+
+    const_iterator end() const noexcept {
+        return const_iterator(*this,
+                              ranked_shape<shape_type::rank()>{shape()[0]});
+    }
 
     template <class Index, class UShape>
     constexpr tensor_view<T, UShape, Strides> view(Index index,
@@ -152,6 +196,27 @@ class basic_tensor
             if constexpr (is_fixed_dims_v<UShape>) {
                 constexpr size_t size = linear_size(shape, strides());
                 return {std::span<T, size>(begin, size), shape, strides()};
+            } else {
+                size_t size = linear_size(shape, strides());
+                return {std::span(begin, size), shape, strides()};
+            }
+        } else {
+            return {elements().subspan(linear_offset(index, strides()),
+                                       linear_size(shape, strides())),
+                    shape, strides()};
+        }
+    }
+
+    template <class Index, class UShape>
+    constexpr tensor_view<const T, UShape, Strides>
+    view(Index index, UShape shape) const noexcept {
+        if constexpr (is_fixed_dims_v<Strides>) {
+            auto offset = linear_offset(index, strides());
+            auto begin = elements().data() + offset;
+            if constexpr (is_fixed_dims_v<UShape>) {
+                constexpr size_t size = linear_size(shape, strides());
+                return {std::span<const T, size>(begin, size), shape,
+                        strides()};
             } else {
                 size_t size = linear_size(shape, strides());
                 return {std::span(begin, size), shape, strides()};
