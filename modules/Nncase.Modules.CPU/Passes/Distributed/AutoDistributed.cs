@@ -185,11 +185,19 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                 var outputs = typeEquivalents.Select(g => InstertTerminator(g.Value[0]))
                 .Select(e => new EqualityNode(e))
                 .OfType<IEquality>().ToList();
-                _equalMemo.Add(function.Body, new EqualityClass(false, outputs));
 
-                using (new ExprPinner(outputs.Select(e => ((EqualityNode)e).Expr).ToArray()))
+                if (outputs.Any())
                 {
-                    BranchCut();
+                    _equalMemo.Add(function.Body, new EqualityClass(false, outputs));
+
+                    using (new ExprPinner(outputs.Select(e => ((EqualityNode)e).Expr).ToArray()))
+                    {
+                        BranchCut();
+                    }
+                }
+                else
+                {
+                    return input;
                 }
             }
 
