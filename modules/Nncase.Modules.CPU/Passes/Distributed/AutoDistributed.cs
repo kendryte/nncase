@@ -321,7 +321,8 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                     ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
         }
 
-        if (expr.Target is not ScatterND && expr.Target is not Boxing && (expr.CheckedType is TensorType or DistributedType) && !expr.CheckedShape.ToValueArray().Contains(0) && results.Count == 1 && results.First().Key is DistributedType dt && dt.NdSBP.All(sbp => sbp is SBPBroadCast))
+        // TODO: refactor here
+        if (expr.Target is not ScatterND && expr.Target is not Boxing && (expr.CheckedType is TensorType or DistributedType) && expr.CheckedShape.IsFixed && !expr.CheckedShape.ToValueArray().Contains(0) && results.Count == 1 && results.First().Key is DistributedType dt && dt.NdSBP.All(sbp => sbp is SBPBroadCast))
         {
             return expr.Arguments.ToArray().
                     Select(Visit).
