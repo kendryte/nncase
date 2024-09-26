@@ -63,57 +63,8 @@ def generate_markdown(benchmark_list: list, md_file: str):
 
     md += '</table>\n'
 
-    # append original content
-    with open(md_file, 'r') as f:
-        original_content = f.read()
     with open(md_file, 'w') as f:
-        f.write(md + original_content)
-
-
-def primitive_markdown(md_file: str, contents: str):
-
-    lines = contents.strip().split('\n')
-
-    # Start of the HTML table
-
-    md = '<h2>下表信息可以用来寻找 Primitive Size 和对应的 Cost</h2>\n'
-    md += '<table>\n'
-
-    # Table header
-    md += '\t<tr>\n'
-    md += '\t\t<th>PackMode</th>\n'
-    md += '\t\t<th>M</th>\n'
-    md += '\t\t<th>K</th>\n'
-    md += '\t\t<th>N</th>\n'
-    md += '\t\t<th>Cycles</th>\n'
-    md += '\t\t<th>GFLOPS</th>\n'
-    md += '\t</tr>\n'
-
-    # Table rows
-    for line in lines:
-        parts = line.split(',')
-        packmode = parts[0].strip()
-        M = parts[1].split(':')[1].strip()
-        K = parts[2].split(':')[1].strip()
-        N = parts[3].split(':')[1].strip()
-        cycles = parts[4].split(':')[1].strip()
-        gflops = parts[5].split(':')[1].strip()
-
-        md += '\t<tr>\n'
-        md += f'\t\t<td>{packmode}</td>\n'
-        md += f'\t\t<td>{M}</td>\n'
-        md += f'\t\t<td>{K}</td>\n'
-        md += f'\t\t<td>{N}</td>\n'
-        md += f'\t\t<td>{cycles}</td>\n'
-        md += f'\t\t<td>{gflops}</td>\n'
-        md += '\t</tr>\n'
-
-    # End of the HTML table
-    md += '</table>\n'
-
-    # Write the HTML table to the file
-    with open(md_file, 'w') as file:
-        file.write(md)
+        f.write(md)
 
 
 class BenchmarkNTT():
@@ -228,11 +179,7 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
         for bin in self.bin_list:
             cmd_status, cmd_result = subprocess.getstatusoutput(f'{bin}')
             assert (cmd_status == 0)
-            if "primitive" in str(bin):
-                # primitive_markdown(report_file('benchmark_ntt.md'), cmd_result)
-                continue
-            else:
-                self.parse_result(cmd_result)
+            self.parse_result(cmd_result)
 
 
 class BenchmarkNTT_riscv64(BenchmarkNTT):
@@ -389,15 +336,12 @@ class BenchmarkNTT_riscv64(BenchmarkNTT):
             return
 
         for bin in self.bin_list:
-            if "primitive" in str(bin):
-                continue
-            else:
-                cmd_status, cmd_result = self.run_evb(bin)
-                assert (cmd_status == 0)
-                lines = cmd_result.split('\r\n')
-                new_lines = lines[1:-1]
-                new_cmd_result = '\n'.join(new_lines)
-                self.parse_result(new_cmd_result)
+            cmd_status, cmd_result = self.run_evb(bin)
+            assert (cmd_status == 0)
+            lines = cmd_result.split('\r\n')
+            new_lines = lines[1:-1]
+            new_cmd_result = '\n'.join(new_lines)
+            self.parse_result(new_cmd_result)
 
 
 if __name__ == '__main__':
