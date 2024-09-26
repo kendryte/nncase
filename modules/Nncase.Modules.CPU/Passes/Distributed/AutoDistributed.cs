@@ -111,16 +111,19 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         var distTypes = vars.Keys.Where(k => k.Expr.CheckedType is DistributedType dt).ToArray();
         foreach (var k in distTypes)
         {
-            var type = DistributedUtility.GetDividedTensorType((DistributedType)k.Expr.CheckedType);
-            var size = TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
-
-            if (k.Expr is Call { Target: IR.CPU.Boxing boxing } call && boxing.NewType is DistributedType distributedType && call.Arguments[0].CheckedType is DistributedType inType && inType.NdSBP.Any(sbp => sbp is SBPPartialSum) && distributedType != call.Arguments[0].CheckedType)
+            if (TargetOptions.HierarchySizes.Length > 1)
             {
-                type = DistributedUtility.GetDividedTensorType(inType);
-                size += TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
-            }
+                var type = DistributedUtility.GetDividedTensorType((DistributedType)k.Expr.CheckedType);
+                var size = TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
 
-            model.Add(vars[k] * size < TargetOptions.HierarchySizes[^2] / TargetOptions.Hierarchies[0][^1]);
+                if (k.Expr is Call { Target: IR.CPU.Boxing boxing } call && boxing.NewType is DistributedType distributedType && call.Arguments[0].CheckedType is DistributedType inType && inType.NdSBP.Any(sbp => sbp is SBPPartialSum) && distributedType != call.Arguments[0].CheckedType)
+                {
+                    type = DistributedUtility.GetDividedTensorType(inType);
+                    size += TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
+                }
+
+                model.Add(vars[k] * size < TargetOptions.HierarchySizes[^2] / TargetOptions.Hierarchies[0][^1]);
+            }
         }
     }
 
