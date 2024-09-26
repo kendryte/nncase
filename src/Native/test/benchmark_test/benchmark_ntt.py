@@ -76,8 +76,7 @@ def primitive_markdown(md_file: str, execute_path: str):
 
     # Start of the HTML table
 
-    md = '<h2>下表信息可以用来寻找 Primitive Size 和对应的 Cost</h2>\n'
-    md += '<table>\n'
+    md = '<table>\n'
 
     # Table header
     md += '\t<tr>\n'
