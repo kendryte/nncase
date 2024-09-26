@@ -25,7 +25,7 @@ def report_file(default: str):
     return os.getenv('BENCHMARK_NTT_REPORT_FILE', default)
 
 
-def generate_markdown(benchmark_list: list, md_file: str, primitive_info: str):
+def generate_markdown(benchmark_list: list, md_file: str, primitive_info: str = ""):
     # generate dict after sorting
     benchmark_list = sorted(benchmark_list, key=lambda d: (d['kind'], d['op']))
     dict = {}
@@ -423,4 +423,4 @@ if __name__ == '__main__':
     # generate md
     md_file = report_file('benchmark_ntt.md')
     primitive_info = primitive_markdown(ntt_x86_64.bin_path)
-    generate_markdown(benchmark_list, md_file, primitive_info)
+    generate_markdown(benchmark_list, md_file)
