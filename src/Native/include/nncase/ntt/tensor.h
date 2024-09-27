@@ -18,6 +18,7 @@
 #include "nncase/ntt/shape.h"
 #include "nncase/ntt/utility.h"
 #include "tensor_traits.h"
+#include <type_traits>
 
 namespace nncase::ntt {
 template <class T, class Shape, class Strides, size_t MaxSize, bool IsView>
@@ -43,7 +44,8 @@ struct fixed_tensor_alike_type<basic_tensor<T, Shape, Strides, MaxSize, IsView>,
 
 namespace detail {
 template <class T, class Shape, class Strides, size_t MaxSize, bool IsView,
-          bool IsFixedShape = is_fixed_dims_v<Shape> &&is_fixed_dims_v<Strides>>
+          bool IsFixedShape =
+              is_fixed_dims_v<Shape> && is_fixed_dims_v<Strides>>
 class tensor_impl;
 
 // dynamic tensor
@@ -239,7 +241,8 @@ class basic_tensor
     constexpr auto squeeze(fixed_shape<Axes...> axes) noexcept {
         constexpr auto new_shape = squeeze_shape(axes, shape());
         constexpr auto new_strides = squeeze_strides(axes, strides());
-        return tensor_view<T, decltype(new_shape), decltype(new_strides)>(
+        return tensor_view<T, std::decay_t<decltype(new_shape)>,
+                           std::decay_t<decltype(new_strides)>>(
             buffer(), new_shape, new_strides);
     }
 
