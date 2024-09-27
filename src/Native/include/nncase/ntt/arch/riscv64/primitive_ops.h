@@ -610,6 +610,16 @@ REGISTER_RVV_UNARY_OP(square, float, square_float32)
 REGISTER_RVV_KERNEL(TANH_FLOAT32)
 REGISTER_RVV_UNARY_OP(tanh, float, tanh_float32)
 
+// erf
+#define ERF_FLOAT32(lmul, mlen)                                                \
+    inline vfloat32m##lmul##_t erf_float32(const vfloat32m##lmul##_t &v,       \
+                                           const size_t vl) {                  \
+        return erf_ps(v, vl);                                                  \
+    }
+
+REGISTER_RVV_KERNEL(ERF_FLOAT32)
+REGISTER_RVV_UNARY_OP(erf, float, erf_float32)
+
 // binary
 #define RVV_BINARY_OP(op, dtype, vl, kernel)                                   \
     template <> struct op<ntt::vector<dtype, vl>, ntt::vector<dtype, vl>> {    \
