@@ -55,8 +55,8 @@ struct u_matmul_policy<mamtul_pack_kind::no_pack, float, float, float, true> {
 template <>
 struct u_matmul_policy<mamtul_pack_kind::pack_m, vector<float, 8>, float,
                        vector<float, 8>, true> {
-    static constexpr size_t m0_tile = 4;
-    static constexpr size_t n0_tile = 2;
+    static constexpr size_t m0_tile = 2;
+    static constexpr size_t n0_tile = 4;
     static constexpr size_t m0_subtile = 0;
 };
 

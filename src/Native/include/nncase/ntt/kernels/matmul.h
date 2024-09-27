@@ -94,17 +94,12 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
         ntt::ukernels::u_matmul_policy<pack_kind, typename TLhs::element_type,
                                        typename TRhs::element_type, TOutElem,
                                        true>;
-    static constexpr auto m0_tile = policy_t::m0_tile;
-    static constexpr auto n0_tile = policy_t::n0_tile;
     static constexpr auto m0_subtile = policy_t::m0_subtile;
 
   public:
     void operator()(const TLhs &lhs, const TRhs &rhs, TOut &output) {
         auto domain =
             slice_fixed_dims<TOut::rank() - 2>(typename TOut::shape_type{});
-        constexpr size_t M = TOut::shape()[TOut::rank() - 2];
-        constexpr size_t K = TLhs::shape()[TLhs::rank() - 1];
-        constexpr size_t N = TOut::shape()[TOut::rank() - 1];
         ntt::apply(domain, [&](auto out_offset_prefix) {
             ranked_shape<TOut::rank()> out_offset{};
             std::copy(out_offset_prefix.begin(), out_offset_prefix.end(),
@@ -117,12 +112,12 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
             auto rhs_shape = shape_infer::sub_matmul_shape(TRhs::shape());
             auto out_shape = shape_infer::sub_matmul_shape(TOut::shape());
 
-            auto a =
-                lhs.view(lhs_offset, lhs_shape).reshape(fixed_shape<M, K>{});
-            auto b =
-                rhs.view(rhs_offset, rhs_shape).reshape(fixed_shape<K, N>{});
-            auto c =
-                output.view(out_offset, out_shape).reshape(fixed_shape<M, N>{});
+            auto a = lhs.view(lhs_offset, lhs_shape)
+                         .squeeze(make_index_axes<lhs_shape.rank() - 2>());
+            auto b = rhs.view(rhs_offset, rhs_shape)
+                         .squeeze(make_index_axes<rhs_shape.rank() - 2>());
+            auto c = output.view(out_offset, out_shape)
+                         .squeeze(make_index_axes<out_shape.rank() - 2>());
             matmul_2d_l1(a, b, c);
         });
     }
@@ -130,46 +125,69 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
   private:
     template <class TA, class TB, class TC>
     constexpr void matmul_2d_l1(const TA &a, const TB &b, TC &c) {
-        const size_t M = c.shape()[c.rank() - 2];
-        const size_t N = c.shape()[c.rank() - 1];
-        const size_t K = a.shape()[a.rank() - 1];
+        constexpr size_t M = c.shape()[c.rank() - 2];
+        constexpr size_t N = c.shape()[c.rank() - 1];
+        constexpr size_t K = a.shape()[a.rank() - 1];
+        constexpr auto m0_tile = policy_t::m0_tile;
+        constexpr auto n0_tile = policy_t::n0_tile;
 
-        for (size_t m1 = 0; m1 < M; m1 += m0_tile) {
-            auto actual_m1 = std::min(M - m1, m0_tile);
-            for (size_t n1 = 0; n1 < N; n1 += n0_tile) {
-                auto actual_n1 = std::min(N - n1, n0_tile);
-                matmul_2d_l0(a, b, c, K, m1, n1, actual_m1, actual_n1);
+        size_t m1 = 0;
+        for (; m1 < M / m0_tile * m0_tile; m1 += m0_tile) {
+            size_t n1 = 0;
+            for (; n1 < N / n0_tile * n0_tile; n1 += n0_tile) {
+                matmul_2d_l0<m0_tile, n0_tile>(a, b, c, K, m1, n1);
+            }
+
+            if constexpr (N % n0_tile) {
+                for (; n1 < N; n1++) {
+                    matmul_2d_l0<m0_tile, 1>(a, b, c, K, m1, n1);
+                }
+            }
+        }
+
+        if constexpr (M % m0_tile) {
+            for (; m1 < M; m1++) {
+                size_t n1 = 0;
+                for (; n1 < N / n0_tile * n0_tile; n1 += n0_tile) {
+                    matmul_2d_l0<1, n0_tile>(a, b, c, K, m1, n1);
+                }
+
+                if constexpr (N % n0_tile) {
+                    for (; n1 < N; n1++) {
+                        matmul_2d_l0<1, 1>(a, b, c, K, m1, n1);
+                    }
+                }
             }
         }
     }
 
-    template <class TA, class TB, class TC>
+    template <size_t M0Tile, size_t N0Tile, class TA, class TB, class TC>
     void matmul_2d_l0(const TA &a, const TB &b, TC &c, size_t K, size_t m1,
-                      size_t n1, size_t actual_m1, size_t actual_n1) {
-        auto c0 = c.view(make_ranked_shape(m1, n1),
-                         make_ranked_shape(actual_m1, actual_n1));
+                      size_t n1) {
+        auto c0 =
+            c.view(make_ranked_shape(m1, n1), fixed_shape<M0Tile, N0Tile>{});
 
         // 1. pack M & N
         if constexpr (pack_kind == ukernels::mamtul_pack_kind::pack_mn &&
                       m0_subtile) {
             using TSubOutElem = ntt::vector<typename TOutElem::element_type,
                                             TOutElem::shape().last()>;
-            TSubOutElem c0_tmp[m0_subtile][n0_tile];
+            TSubOutElem c0_tmp[m0_subtile][N0Tile];
 
             for (size_t sm1 = 0; sm1 < TOutElem::shape()[0];
                  sm1 += m0_subtile) {
-                ntt::apply(fixed_shape<m0_subtile, n0_tile>{}, [&](auto index) {
+                ntt::apply(fixed_shape<m0_subtile, N0Tile>{}, [&](auto index) {
                     c0_tmp[index[0]][index[1]] =
                         AccumulateC ? c0(0, index[1])(sm1 + index[0])
                                     : TSubOutElem{};
                 });
 
                 for (size_t k1 = 0; k1 < K; k1++) {
-                    outer_product(a, b, c0_tmp, m1, k1, n1, actual_m1,
-                                  actual_n1, sm1);
+                    outer_product<M0Tile, N0Tile>(a, b, c0_tmp, m1, k1, n1,
+                                                  sm1);
                 }
 
-                ntt::apply(fixed_shape<m0_subtile, n0_tile>{}, [&](auto index) {
+                ntt::apply(fixed_shape<m0_subtile, N0Tile>{}, [&](auto index) {
                     c0(0, index[1])(sm1 + index[0]) =
                         c0_tmp[index[0]][index[1]];
                 });
@@ -179,7 +197,7 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
         else if constexpr (pack_kind == ukernels::mamtul_pack_kind::pack_kn) {
             using TLhsElem = std::remove_const_t<typename TA::element_type>;
 
-            TOutElem c0_tmp[m0_tile][n0_tile];
+            TOutElem c0_tmp[M0Tile][N0Tile];
             ntt::apply(c0.shape(), [&](auto index) {
                 c0_tmp[index[0]][index[1]] =
                     AccumulateC ? c0(index) : TOutElem{};
@@ -187,8 +205,8 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
 
             for (size_t k1 = 0; k1 < K; k1++) {
                 for (size_t sk1 = 0; sk1 < TLhsElem::shape()[0]; sk1++) {
-                    outer_product(a, b, c0_tmp, m1, k1, n1, actual_m1,
-                                  actual_n1, 0, sk1);
+                    outer_product<M0Tile, N0Tile>(a, b, c0_tmp, m1, k1, n1, 0,
+                                                  sk1);
                 }
             }
 
@@ -203,11 +221,11 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
             using TSubOutElem = ntt::vector<typename TOutElem::element_type,
                                             TOutElem::shape().last()>;
 
-            TSubOutElem c0_tmp[m0_subtile][n0_tile];
+            TSubOutElem c0_tmp[m0_subtile][N0Tile];
 
             for (size_t sm1 = 0; sm1 < TOutElem::shape()[0];
                  sm1 += m0_subtile) {
-                ntt::apply(fixed_shape<m0_subtile, n0_tile>{}, [&](auto index) {
+                ntt::apply(fixed_shape<m0_subtile, N0Tile>{}, [&](auto index) {
                     c0_tmp[index[0]][index[1]] =
                         AccumulateC ? c0(0, index[1])(sm1 + index[0])
                                     : TSubOutElem{};
@@ -215,12 +233,12 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
 
                 for (size_t k1 = 0; k1 < K; k1++) {
                     for (size_t sk1 = 0; sk1 < TLhsElem::shape()[0]; sk1++) {
-                        outer_product(a, b, c0_tmp, m1, k1, n1, actual_m1,
-                                      actual_n1, sm1, sk1);
+                        outer_product<M0Tile, N0Tile>(a, b, c0_tmp, m1, k1, n1,
+                                                      sm1, sk1);
                     }
                 }
 
-                ntt::apply(fixed_shape<m0_subtile, n0_tile>{}, [&](auto index) {
+                ntt::apply(fixed_shape<m0_subtile, N0Tile>{}, [&](auto index) {
                     c0(0, index[1])(sm1 + index[0]) =
                         c0_tmp[index[0]][index[1]];
                 });
@@ -228,14 +246,14 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
         }
         // Other packs
         else {
-            TOutElem c0_tmp[m0_tile][n0_tile];
+            TOutElem c0_tmp[M0Tile][N0Tile];
             ntt::apply(c0.shape(), [&](auto index) {
                 c0_tmp[index[0]][index[1]] =
                     AccumulateC ? c0(index) : TOutElem{};
             });
 
             for (size_t k1 = 0; k1 < K; k1++) {
-                outer_product(a, b, c0_tmp, m1, k1, n1, actual_m1, actual_n1);
+                outer_product<M0Tile, N0Tile>(a, b, c0_tmp, m1, k1, n1);
             }
 
             ntt::apply(c0.shape(), [&](auto index) {
@@ -244,14 +262,13 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
         }
     }
 
-    template <class TA, class TB, class TC>
+    template <size_t M0Tile, size_t N0Tile, class TA, class TB, class TC>
     void outer_product(const TA &a, const TB &b, TC &c0_tmp, size_t m1,
-                       size_t k1, size_t n1, size_t actual_m1, size_t actual_n1,
-                       size_t sm1 = 0, size_t sk1 = 0) {
+                       size_t k1, size_t n1, size_t sm1 = 0, size_t sk1 = 0) {
         auto a1 =
-            a.view(make_ranked_shape(m1, k1), make_ranked_shape(actual_m1, 1));
+            a.view(make_ranked_shape(m1, k1), make_ranked_shape(M0Tile, 1));
         auto b1 =
-            b.view(make_ranked_shape(k1, n1), make_ranked_shape(1, actual_n1));
+            b.view(make_ranked_shape(k1, n1), make_ranked_shape(1, N0Tile));
 
         using TLhsElem = std::remove_const_t<typename TA::element_type>;
         using TRhsElem = std::remove_const_t<typename TB::element_type>;
@@ -261,15 +278,15 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                       m0_subtile) {
             using TSubLhsElem = typename TLhsElem::element_type;
             TSubLhsElem a0_tmp[m0_subtile];
-            TRhsElem b0_tmp[n0_tile];
+            TRhsElem b0_tmp[N0Tile];
 
             ntt::apply(fixed_shape<m0_subtile>{}, [&](auto index) {
                 a0_tmp[index[0]] = a1(0, 0)(sm1 + index[0]);
             });
-            ntt::apply(fixed_shape<n0_tile>{},
+            ntt::apply(fixed_shape<N0Tile>{},
                        [&](auto index) { b0_tmp[index[0]] = b1(0, index[0]); });
 
-            for (size_t n = 0; n < actual_n1; n++) {
+            for (size_t n = 0; n < N0Tile; n++) {
                 for (size_t m = 0; m < m0_subtile; m++) {
                     mul_add<true>(a0_tmp[m], b0_tmp[n], c0_tmp[m][n]);
                 }
@@ -280,18 +297,18 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
             using TSubLhsElem = typename TLhsElem::element_type;
             using TSubRhsElem = ntt::vector<typename TRhsElem::element_type,
                                             TRhsElem::shape().last()>;
-            TSubLhsElem a0_tmp[m0_tile];
-            TSubRhsElem b0_tmp[n0_tile];
+            TSubLhsElem a0_tmp[M0Tile];
+            TSubRhsElem b0_tmp[N0Tile];
 
-            ntt::apply(fixed_shape<m0_tile>{}, [&](auto index) {
+            ntt::apply(fixed_shape<M0Tile>{}, [&](auto index) {
                 a0_tmp[index[0]] = a1(index[0], 0)(sk1);
             });
-            ntt::apply(fixed_shape<n0_tile>{}, [&](auto index) {
+            ntt::apply(fixed_shape<N0Tile>{}, [&](auto index) {
                 b0_tmp[index[0]] = b1(0, index[0])(sk1);
             });
 
-            for (size_t n = 0; n < actual_n1; n++) {
-                for (size_t m = 0; m < actual_m1; m++) {
+            for (size_t n = 0; n < N0Tile; n++) {
+                for (size_t m = 0; m < M0Tile; m++) {
                     mul_add<true>(a0_tmp[m], b0_tmp[n], c0_tmp[m][n]);
                 }
             }
@@ -303,16 +320,16 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
             using TSubRhsElem = ntt::vector<typename TRhsElem::element_type,
                                             TRhsElem::shape().last()>;
             TSubLhsElem a0_tmp[m0_subtile];
-            TSubRhsElem b0_tmp[n0_tile];
+            TSubRhsElem b0_tmp[N0Tile];
 
             ntt::apply(fixed_shape<m0_subtile>{}, [&](auto index) {
                 a0_tmp[index[0]] = a1(0, 0)(sm1 + index[0], sk1);
             });
-            ntt::apply(fixed_shape<n0_tile>{}, [&](auto index) {
+            ntt::apply(fixed_shape<N0Tile>{}, [&](auto index) {
                 b0_tmp[index[0]] = b1(0, index[0])(sk1);
             });
 
-            for (size_t n = 0; n < actual_n1; n++) {
+            for (size_t n = 0; n < N0Tile; n++) {
                 for (size_t m = 0; m < m0_subtile; m++) {
                     auto &output = c0_tmp[m][n];
                     auto value = ntt::outer_product(a0_tmp[m], b0_tmp[n]);
@@ -322,16 +339,16 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
         }
         // Other packs
         else {
-            TLhsElem a0_tmp[m0_tile];
-            TRhsElem b0_tmp[n0_tile];
+            TLhsElem a0_tmp[M0Tile];
+            TRhsElem b0_tmp[N0Tile];
 
-            ntt::apply(fixed_shape<m0_tile>{},
+            ntt::apply(fixed_shape<M0Tile>{},
                        [&](auto index) { a0_tmp[index[0]] = a1(index[0], 0); });
-            ntt::apply(fixed_shape<n0_tile>{},
+            ntt::apply(fixed_shape<N0Tile>{},
                        [&](auto index) { b0_tmp[index[0]] = b1(0, index[0]); });
 
-            for (size_t n = 0; n < actual_n1; n++) {
-                for (size_t m = 0; m < actual_m1; m++) {
+            for (size_t n = 0; n < N0Tile; n++) {
+                for (size_t m = 0; m < M0Tile; m++) {
                     mul_add<true>(a0_tmp[m], b0_tmp[n], c0_tmp[m][n]);
                 }
             }

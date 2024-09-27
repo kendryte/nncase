@@ -30,6 +30,8 @@ template <class Shape> class shape_storage {
 
 template <size_t... Dims> class shape_storage<fixed_shape<Dims...>> {
   public:
+    constexpr shape_storage(fixed_shape<Dims...> = {}) noexcept {};
+
     static constexpr size_t rank() noexcept { return sizeof...(Dims); }
     static constexpr auto shape() noexcept { return fixed_shape<Dims...>{}; }
 };

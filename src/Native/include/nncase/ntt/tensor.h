@@ -235,6 +235,14 @@ class basic_tensor
         return {buffer(), shape, default_strides(shape)};
     }
 
+    template <size_t... Axes>
+    constexpr auto squeeze(fixed_shape<Axes...> axes) noexcept {
+        constexpr auto new_shape = squeeze_shape(axes, shape());
+        constexpr auto new_strides = squeeze_strides(axes, strides());
+        return tensor_view<T, decltype(new_shape), decltype(new_strides)>(
+            buffer(), new_shape, new_strides);
+    }
+
     constexpr tensor_view<T, Shape, Strides> view() noexcept {
         return view(zero_shape_t<Shape::rank()>{}, shape());
     }
