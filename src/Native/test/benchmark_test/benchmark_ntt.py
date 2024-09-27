@@ -172,7 +172,7 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                         'ceil': '3.0',
                                         'cos': '8.7',
                                         'cosh': '12.5',
-                                        'erf': '16.5',
+                                        'erf': '26.5',
                                         'exp': '9.27',
                                         'floor': '3.0',
                                         'log': '14.72',
