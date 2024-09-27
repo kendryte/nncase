@@ -54,4 +54,5 @@
 #include "arch/riscv64/arch_types.h"
 #include "arch/riscv64/primitive_ops.h"
 #include "arch/riscv64/tensor_ops.h"
+#include "arch/riscv64/ukernels.h"
 #endif
