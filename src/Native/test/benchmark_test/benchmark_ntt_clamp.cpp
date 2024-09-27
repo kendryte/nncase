@@ -45,8 +45,10 @@ void benchmark_ntt_clamp(T init_low, T init_high, T clamp_low, T clamp_high) {
 
     // run
     auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_size; i++)
+    for (size_t i = 0; i < run_size; i++) {
         ntt::clamp(*ntt_input, *ntt_output, clamp_low, clamp_high);
+        asm volatile("" ::"g"(ntt_output));
+    }
     auto t2 = NttTest::get_cpu_cycle();
 
     std::cout << __FUNCTION__ << "_" << pack_mode << " took "
