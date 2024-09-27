@@ -239,6 +239,14 @@ template <> struct cosh<ntt::vector<float, 8>> {
     }
 };
 
+// erf
+template <> struct erf<ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const ntt::vector<float, 8> &v) const noexcept {
+        return erf_ps(v);
+    }
+};
+
 // exp
 template <> struct exp<ntt::vector<float, 8>> {
     ntt::vector<float, 8>

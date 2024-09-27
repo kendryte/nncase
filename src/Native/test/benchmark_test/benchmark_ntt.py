@@ -24,8 +24,10 @@ def nuc_port():
 def ntt_report_file(default: str):
     return os.getenv('BENCHMARK_NTT_REPORT_FILE', default)
 
+
 def ntt_matmul_report_file(default: str):
     return os.getenv('BENCHMARK_NTT_MATMUL_REPORT_FILE', default)
+
 
 def generate_benchmark_ntt_md(benchmark_list: list, md_file: str):
     # generate dict after sorting
@@ -170,7 +172,7 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                         'ceil': '3.0',
                                         'cos': '8.7',
                                         'cosh': '12.5',
-                                        'erf': '1.0',
+                                        'erf': '16.5',
                                         'exp': '9.27',
                                         'floor': '3.0',
                                         'log': '14.72',
