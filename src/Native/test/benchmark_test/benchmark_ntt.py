@@ -62,7 +62,6 @@ def generate_markdown(benchmark_list: list, md_file: str, primitive_info: str = 
             md += '\t</tr>\n'
 
     md += '</table>\n'
-    md += md
 
     # md += primitive_info
 
