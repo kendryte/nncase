@@ -21,11 +21,13 @@ def nuc_port():
     return os.getenv('NUC_PROXY_PORT')
 
 
-def report_file(default: str):
+def ntt_report_file(default: str):
     return os.getenv('BENCHMARK_NTT_REPORT_FILE', default)
 
+def ntt_matmul_report_file(default: str):
+    return os.getenv('BENCHMARK_NTT_MATMUL_REPORT_FILE', default)
 
-def generate_markdown(benchmark_list: list, md_file: str, primitive_info: str = ""):
+def generate_benchmark_ntt_md(benchmark_list: list, md_file: str):
     # generate dict after sorting
     benchmark_list = sorted(benchmark_list, key=lambda d: (d['kind'], d['op']))
     dict = {}
@@ -36,7 +38,7 @@ def generate_markdown(benchmark_list: list, md_file: str, primitive_info: str = 
         dict[kind].append(e)
 
     # generate html table
-    md = '<table class="roofline">\n'
+    md = '<table>\n'
 
     # table head
     md += '\t<tr>\n'
@@ -63,13 +65,11 @@ def generate_markdown(benchmark_list: list, md_file: str, primitive_info: str = 
 
     md += '</table>\n'
 
-    md += primitive_info
-
     with open(md_file, 'w') as f:
         f.write(md)
 
 
-def primitive_markdown(execute_path: str):
+def generate_benchmark_ntt_matmul_md(execute_path: str, md_file: str):
 
     cmd_status, cmd_result = subprocess.getstatusoutput(
         f'{execute_path}' + '/benchmark_ntt_primitive_size')
@@ -112,8 +112,8 @@ def primitive_markdown(execute_path: str):
     # End of the HTML table
     md += '</table>\n'
 
-    # Write the HTML table to the file
-    return md
+    with open(md_file, 'w') as f:
+        f.write(md)
 
 
 class BenchmarkNTT():
@@ -423,6 +423,7 @@ if __name__ == '__main__':
         benchmark_list.append(item)
 
     # generate md
-    md_file = report_file('benchmark_ntt.md')
-    primitive_info = primitive_markdown(ntt_x86_64.bin_path)
-    generate_markdown(benchmark_list, md_file, primitive_info)
+    ntt_md = ntt_report_file('benchmark_ntt.md')
+    ntt_matmul_md = ntt_matmul_report_file('benchmark_ntt_matmul.md')
+    generate_benchmark_ntt_md(benchmark_list, ntt_md)
+    generate_benchmark_ntt_matmul_md(ntt_x86_64.bin_path, ntt_matmul_md)
