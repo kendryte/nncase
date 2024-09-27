@@ -64,6 +64,7 @@ int main(int argc, char *argv[]) {
     benchmark_ntt_unary<ntt::ops::ceil, float, N>("ceil", -10.f, 10.f);
     benchmark_ntt_unary<ntt::ops::cos, float, N>("cos", -10.f, 10.f);
     benchmark_ntt_unary<ntt::ops::cosh, float, N>("cosh", -10.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::erf, float, N>("erf", -10.f, 10.f);
     benchmark_ntt_unary<ntt::ops::exp, float, N>("exp", -10.f, 10.f);
     benchmark_ntt_unary<ntt::ops::floor, float, N>("floor", -10.f, 10.f);
     benchmark_ntt_unary<ntt::ops::log, float, N>("log", -10.f, 10.f);
