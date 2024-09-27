@@ -63,7 +63,7 @@ def generate_markdown(benchmark_list: list, md_file: str, primitive_info: str = 
 
     md += '</table>\n'
 
-    # md += primitive_info
+    md += primitive_info
 
     with open(md_file, 'w') as f:
         f.write(md)
