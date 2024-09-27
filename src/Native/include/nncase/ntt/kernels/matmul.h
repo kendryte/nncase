@@ -125,9 +125,9 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
   private:
     template <class TA, class TB, class TC>
     constexpr void matmul_2d_l1(const TA &a, const TB &b, TC &c) {
-        constexpr size_t M = c.shape()[c.rank() - 2];
-        constexpr size_t N = c.shape()[c.rank() - 1];
-        constexpr size_t K = a.shape()[a.rank() - 1];
+        size_t M = c.shape()[c.rank() - 2];
+        size_t N = c.shape()[c.rank() - 1];
+        size_t K = a.shape()[a.rank() - 1];
         constexpr auto m0_tile = policy_t::m0_tile;
         constexpr auto n0_tile = policy_t::n0_tile;
 
@@ -138,21 +138,21 @@ class matmul_impl<false, false, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                 matmul_2d_l0<m0_tile, n0_tile>(a, b, c, K, m1, n1);
             }
 
-            if constexpr (N % n0_tile) {
+            if (N % n0_tile) {
                 for (; n1 < N; n1++) {
                     matmul_2d_l0<m0_tile, 1>(a, b, c, K, m1, n1);
                 }
             }
         }
 
-        if constexpr (M % m0_tile) {
+        if (M % m0_tile) {
             for (; m1 < M; m1++) {
                 size_t n1 = 0;
                 for (; n1 < N / n0_tile * n0_tile; n1 += n0_tile) {
                     matmul_2d_l0<1, n0_tile>(a, b, c, K, m1, n1);
                 }
 
-                if constexpr (N % n0_tile) {
+                if (N % n0_tile) {
                     for (; n1 < N; n1++) {
                         matmul_2d_l0<1, 1>(a, b, c, K, m1, n1);
                     }
