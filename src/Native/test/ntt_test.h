@@ -35,12 +35,19 @@
 #define ULP_SIZE 10000
 #endif
 
+#if defined __x86_64
+#ifndef CPU_FREQUENCY_MHZ
+#define CPU_FREQUENCY_MHZ 4100
+#endif
+
+#elif defined __riscv
 #ifndef CPU_FREQUENCY_MHZ
 #define CPU_FREQUENCY_MHZ 1600
 #endif
 
 #ifndef CLOCK_SOURCE_FREQUENCY_MHZ
 #define CLOCK_SOURCE_FREQUENCY_MHZ 27
+#endif
 #endif
 
 namespace nncase {

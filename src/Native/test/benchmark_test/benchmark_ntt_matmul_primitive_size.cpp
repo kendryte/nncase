@@ -31,13 +31,12 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_NONE() {
     asm volatile("" ::"g"(tc));
 
     auto ops = M * N * (2 * K - 1);
-    auto freq = 3.2 * 1e9;
     std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
               << std::setprecision(0) << std::fixed << ", M:" << M
               << ", K:" << K << ", N:" << N
               << ", Cycles:" << static_cast<float>(t2 - t1) / run_num
               << ", GFLOPS:"
-              << ops / (static_cast<float>(t2 - t1) / run_num / freq) * 1e-9
+              << ops / (static_cast<float>(t2 - t1) / run_num / CPU_FREQUENCY_MHZ) * 1e-3
               << std::endl;
 }
 
@@ -74,13 +73,12 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_K() {
     asm volatile("" ::"g"(tc));
 
     auto ops = M * N * (2 * K - 1);
-    auto freq = 3.2 * 1e9;
     std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
               << std::setprecision(0) << std::fixed << ", M:" << M
               << ", K:" << K / P << ", N:" << N
               << ", Cycles:" << static_cast<float>(t2 - t1) / run_num
               << ", GFLOPS:"
-              << ops / (static_cast<float>(t2 - t1) / run_num / freq) * 1e-9
+              << ops / (static_cast<float>(t2 - t1) / run_num / CPU_FREQUENCY_MHZ) * 1e-3
               << std::endl;
 }
 
@@ -115,13 +113,12 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M() {
     asm volatile("" ::"g"(pc));
 
     auto ops = M * N * (2 * K - 1);
-    auto freq = 3.2 * 1e9;
     std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
               << std::setprecision(0) << std::fixed << ", M:" << M / P
               << ", K:" << K << ", N:" << N
               << ", Cycles:" << static_cast<float>(t2 - t1) / run_num
               << ", GFLOPS:"
-              << ops / (static_cast<float>(t2 - t1) / run_num / freq) * 1e-9
+              << ops / (static_cast<float>(t2 - t1) / run_num / CPU_FREQUENCY_MHZ) * 1e-3
               << std::endl;
 }
 
@@ -156,13 +153,12 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_N() {
     asm volatile("" ::"g"(pc));
 
     auto ops = M * N * (2 * K - 1);
-    auto freq = 3.2 * 1e9;
     std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
               << std::setprecision(0) << std::fixed << ", M:" << M
               << ", K:" << K << ", N:" << N / P
               << ", Cycles:" << static_cast<float>(t2 - t1) / run_num
               << ", GFLOPS:"
-              << ops / (static_cast<float>(t2 - t1) / run_num / freq) * 1e-9
+              << ops / (static_cast<float>(t2 - t1) / run_num / CPU_FREQUENCY_MHZ) * 1e-3
               << std::endl;
 }
 
@@ -201,13 +197,12 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_N() {
     asm volatile("" ::"g"(pc));
 
     auto ops = M * N * (2 * K - 1);
-    auto freq = 3.2 * 1e9;
     std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
               << std::setprecision(0) << std::fixed << ", M:" << M / P
               << ", K:" << K << ", N:" << N / P
               << ", Cycles:" << static_cast<float>(t2 - t1) / run_num
               << ", GFLOPS:"
-              << ops / (static_cast<float>(t2 - t1) / run_num / freq) * 1e-9
+              << ops / (static_cast<float>(t2 - t1) / run_num / CPU_FREQUENCY_MHZ) * 1e-3
               << std::endl;
 }
 
@@ -246,13 +241,12 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_K() {
     asm volatile("" ::"g"(pc));
 
     auto ops = M * N * (2 * K - 1);
-    auto freq = 3.2 * 1e9;
     std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
               << std::setprecision(0) << std::fixed << ", M:" << M / P
               << ", K:" << K / P << ", N:" << N
               << ", Cycles:" << static_cast<float>(t2 - t1) / run_num
               << ", GFLOPS:"
-              << ops / (static_cast<float>(t2 - t1) / run_num / freq) * 1e-9
+              << ops / (static_cast<float>(t2 - t1) / run_num / CPU_FREQUENCY_MHZ) * 1e-3
               << std::endl;
 }
 
@@ -291,13 +285,12 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_K_N() {
     asm volatile("" ::"g"(pc));
 
     auto ops = M * N * (2 * K - 1);
-    auto freq = 3.2 * 1e9;
     std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
               << std::setprecision(0) << std::fixed << ", M:" << M
               << ", K:" << K / P << ", N:" << N / P
               << ", Cycles:" << static_cast<float>(t2 - t1) / run_num
               << ", GFLOPS:"
-              << ops / (static_cast<float>(t2 - t1) / run_num / freq) * 1e-9
+              << ops / (static_cast<float>(t2 - t1) / run_num / CPU_FREQUENCY_MHZ) * 1e-3
               << std::endl;
 }
 
@@ -338,13 +331,12 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_K_N() {
     asm volatile("" ::"g"(pc));
 
     auto ops = M * N * (2 * K - 1);
-    auto freq = 3.2 * 1e9;
     std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
               << std::setprecision(0) << std::fixed << ", M:" << M / P
               << ", K:" << K / P << ", N:" << N / P
               << ", Cycles:" << static_cast<float>(t2 - t1) / run_num
               << ", GFLOPS:"
-              << ops / (static_cast<float>(t2 - t1) / run_num / freq) * 1e-9
+              << ops / (static_cast<float>(t2 - t1) / run_num / CPU_FREQUENCY_MHZ) * 1e-3
               << std::endl;
 }
 
@@ -505,8 +497,6 @@ void matmul_primitive_analysis() {
 
 int main() {
 
-#if __x86_64__
-
     {
         const auto PackMode = nncase::ntt::ukernels::mamtul_pack_kind::pack_m;
         matmul_primitive_analysis<PackMode>();
@@ -541,8 +531,6 @@ int main() {
         const auto PackMode = nncase::ntt::ukernels::mamtul_pack_kind::pack_mkn;
         matmul_primitive_analysis<PackMode>();
     }
-
-#endif
 
     return 0;
 }
