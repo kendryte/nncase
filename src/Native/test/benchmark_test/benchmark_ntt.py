@@ -12,6 +12,7 @@ from html import escape
 def kpu_targets():
     return os.getenv('KPU_TARGETS', "").split(',')
 
+
 def nuc_ip():
     return os.getenv('NUC_PROXY_IP')
 
@@ -19,14 +20,18 @@ def nuc_ip():
 def nuc_port():
     return os.getenv('NUC_PROXY_PORT')
 
+
 def ntt_report_file(default: str):
     return os.getenv('BENCHMARK_NTT_REPORT_FILE', default)
+
 
 def ntt_matmul_x86_64_report_file(default: str):
     return os.getenv('BENCHMARK_NTT_MATMUL_X86_64_REPORT_FILE', default)
 
+
 def ntt_matmul_riscv64_report_file(default: str):
     return os.getenv('BENCHMARK_NTT_MATMUL_RISCV64_REPORT_FILE', default)
+
 
 def generate_benchmark_ntt_md(benchmark_list: list, key: str, md_file: str):
     # generate dict after sorting
@@ -68,6 +73,7 @@ def generate_benchmark_ntt_md(benchmark_list: list, key: str, md_file: str):
     with open(md_file, 'w') as f:
         f.write(md)
 
+
 class Benchmark():
     def __init__(self, arch: str, target: str, bin_path: str, bin_prefix: str):
         self.arch = arch
@@ -82,6 +88,7 @@ class Benchmark():
         for bin in Path(os.path.dirname(self.bin_path)).glob(f'{self.bin_prefix}*'):
             file_list.append(bin)
         return file_list
+
 
 class Benchmark_riscv64():
     def send_msg(self, sock, msg):
@@ -174,6 +181,7 @@ class BenchmarkNTT(Benchmark):
                 dict[f'{self.arch}_ratio'] = round(
                     float(dict[f'{self.arch}_roofline']) / (float(dict[f'{self.arch}_actual']) + 0.01), 3)
                 self.benchmark_list.append(dict)
+
     def run():
         pass
 
@@ -351,6 +359,7 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
             new_cmd_result = '\n'.join(new_lines)
             self.parse_result(new_cmd_result)
 
+
 class BenchmarkNTTMatmul(Benchmark):
     def __init__(self, arch: str, target: str, bin_path: str):
         Benchmark.__init__(self, arch, target, bin_path, 'benchmark_ntt_matmul_primitive_size')
@@ -382,6 +391,7 @@ class BenchmarkNTTMatmul_x86_64(BenchmarkNTTMatmul):
             assert (cmd_status == 0)
             self.parse_result(cmd_result)
 
+
 class BenchmarkNTTMatmul_riscv64(BenchmarkNTTMatmul, Benchmark_riscv64):
     def __init__(self, target: str, bin_path: str):
         BenchmarkNTTMatmul.__init__(self, 'riscv64', target, bin_path)
@@ -397,6 +407,7 @@ class BenchmarkNTTMatmul_riscv64(BenchmarkNTTMatmul, Benchmark_riscv64):
             new_lines = lines[2:-1]
             new_cmd_result = '\n'.join(new_lines)
             self.parse_result(new_cmd_result)
+
 
 if __name__ == '__main__':
     # parse
@@ -441,6 +452,7 @@ if __name__ == '__main__':
     generate_benchmark_ntt_md(benchmark_list, 'pack_mode', md_file)
 
     # 2.2 riscv64
+    benchmark_list = []
     ntt_matmul_riscv64 = BenchmarkNTTMatmul_riscv64(args.riscv64_target, args.riscv64_path)
     ntt_matmul_riscv64.run()
     benchmark_list = sorted(ntt_matmul_riscv64.benchmark_list, key=lambda d: (d['pack_mode']))

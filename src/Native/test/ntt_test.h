@@ -40,9 +40,22 @@
 #define CPU_FREQUENCY_MHZ 4100
 #endif
 
+#ifndef CLOCK_SOURCE_FREQUENCY_MHZ
+#define CLOCK_SOURCE_FREQUENCY_MHZ 27
+#endif
+
 #elif defined __riscv
 #ifndef CPU_FREQUENCY_MHZ
 #define CPU_FREQUENCY_MHZ 1600
+#endif
+
+#ifndef CLOCK_SOURCE_FREQUENCY_MHZ
+#define CLOCK_SOURCE_FREQUENCY_MHZ 27
+#endif
+
+#else
+#ifndef CPU_FREQUENCY_MHZ
+#define CPU_FREQUENCY_MHZ 1000
 #endif
 
 #ifndef CLOCK_SOURCE_FREQUENCY_MHZ
