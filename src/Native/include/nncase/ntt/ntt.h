@@ -25,8 +25,6 @@
 #include "kernels/instance_norm.h"
 #include "kernels/matmul.h"
 #include "kernels/pack.h"
-#include "kernels/packed_layer_norm.h"
-#include "kernels/packed_softmax.h"
 #include "kernels/pad.h"
 #include "kernels/reduce.h"
 #include "kernels/reduce_arg.h"
@@ -55,4 +53,5 @@
 #elif __riscv_vector
 #include "arch/riscv64/arch_types.h"
 #include "arch/riscv64/primitive_ops.h"
+#include "arch/riscv64/tensor_ops.h"
 #endif

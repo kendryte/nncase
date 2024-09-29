@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "../apply.h"
+#include "../profiler.h"
 #include "../shape_infer/reduce_axis.h"
 #include "../utility.h"
 #include <tuple>
@@ -24,6 +25,7 @@ template <size_t Axis, IsFixedTensor... TInputs, IsFixedTensor TOut>
 void concat(const std::tuple<TInputs...> &inputs, TOut &&output) {
     constexpr auto domain = shape_infer::reduced_shape_by_axis<Axis>(
         typename std::decay_t<TOut>::shape_type{});
+    AUTO_NTT_PROFILER
     auto in_index = ranked_shape<domain.rank()>{};
     apply(domain, [&](auto index) {
         loop<domain.rank()>([&](auto i) { in_index[i] = index[i]; });

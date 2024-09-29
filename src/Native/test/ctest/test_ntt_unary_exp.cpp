@@ -123,48 +123,60 @@ template <typename T, size_t vl> void test_vector() {
 #define _TEST_VECTOR(T, lmul)                                                  \
     test_vector<T, (NTT_VLEN) / (sizeof(T) * 8) * lmul>();
 
+#ifdef __riscv_vector
 #define TEST_VECTOR(T)                                                         \
     _TEST_VECTOR(T, 1)                                                         \
     _TEST_VECTOR(T, 2)                                                         \
     _TEST_VECTOR(T, 4)                                                         \
     _TEST_VECTOR(T, 8)
+#else
+#define TEST_VECTOR(T) _TEST_VECTOR(T, 1)
+#endif
 
 TEST(UnaryTestExp, vector) { TEST_VECTOR(float) }
 
-template <typename T, size_t vl> void test_vector_ulp() {
-    constexpr size_t size = 250000;
-    // constexpr size_t N = NTT_VLEN / (sizeof(float) * 8);
+template <typename T, size_t vl> void test_vector_ulp(double ulp_threshold) {
+    constexpr size_t size = ULP_SIZE;
 
     // init
-    using tensor_type =
-        ntt::tensor<ntt::vector<float, vl>, ntt::fixed_shape<size>>;
+    using tensor_type = ntt::tensor<ntt::vector<T, vl>, ntt::fixed_shape<size>>;
     std::unique_ptr<tensor_type> ntt_input(new tensor_type);
-    NttTest::init_tensor(*ntt_input, -50.0f, 50.f);
+    NttTest::init_tensor(*ntt_input, static_cast<T>(-50), static_cast<T>(50));
 
     // ntt
     std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
     ntt::unary<ntt::ops::exp>(*ntt_input, *ntt_output1);
 
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    auto ort_output = ortki_Exp(ort_input);
+    // golden
+    std::unique_ptr<tensor_type> ntt_output2(new tensor_type);
+    nncase::ntt::apply(ntt_input->shape(), [&](auto index) {
+        auto input_element = (*ntt_input)(index);
+        auto &output_element = (*ntt_output2)(index);
+
+        nncase::ntt::apply(input_element.shape(), [&](auto idx) {
+            output_element(idx) = std::exp(input_element(idx));
+        });
+    });
 
     // compare
-    std::unique_ptr<tensor_type> ntt_output2(new tensor_type);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_ulp(*ntt_output1, *ntt_output2, 2.f));
+    EXPECT_TRUE(
+        NttTest::compare_ulp(*ntt_output1, *ntt_output2, ulp_threshold));
 }
 
-#define _TEST_VECTOR_ULP(T, lmul)                                              \
-    test_vector_ulp<T, (NTT_VLEN) / (sizeof(T) * 8) * lmul>();
+#define _TEST_VECTOR_ULP(T, lmul, ulp_threshold)                               \
+    test_vector_ulp<T, (NTT_VLEN) / (sizeof(T) * 8) * lmul>(ulp_threshold);
 
-#define TEST_VECTOR_ULP(T)                                                     \
-    _TEST_VECTOR_ULP(T, 1)                                                     \
-    _TEST_VECTOR_ULP(T, 2)                                                     \
-    _TEST_VECTOR_ULP(T, 4)                                                     \
-    _TEST_VECTOR_ULP(T, 8)
+#ifdef __riscv_vector
+#define TEST_VECTOR_ULP(T, ulp_threshold)                                      \
+    _TEST_VECTOR_ULP(T, 1, ulp_threshold)                                      \
+    _TEST_VECTOR_ULP(T, 2, ulp_threshold)                                      \
+    _TEST_VECTOR_ULP(T, 4, ulp_threshold)                                      \
+    _TEST_VECTOR_ULP(T, 8, ulp_threshold)
+#else
+#define TEST_VECTOR_ULP(T, ulp_threshold) _TEST_VECTOR_ULP(T, 1, ulp_threshold)
+#endif
 
-TEST(UnaryTestExpFloat, ulp_error) { TEST_VECTOR_ULP(float) }
+TEST(UnaryTestExpFloat, ulp_error) { TEST_VECTOR_ULP(float, 2.) }
 
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);

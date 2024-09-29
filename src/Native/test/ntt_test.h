@@ -30,6 +30,19 @@
 #endif
 #endif
 
+#define ULP_SIZE 250000
+#ifndef ULP_SIZE
+#define ULP_SIZE 10000
+#endif
+
+#ifndef CPU_FREQUENCY_MHZ
+#define CPU_FREQUENCY_MHZ 1600
+#endif
+
+#ifndef CLOCK_SOURCE_FREQUENCY_MHZ
+#define CLOCK_SOURCE_FREQUENCY_MHZ 27
+#endif
+
 namespace nncase {
 namespace NttTest {
 
@@ -40,7 +53,9 @@ __inline__ uint64_t get_cpu_cycle(void) {
     cycles = __rdtsc();
     __asm__ __volatile__("" : : : "memory");
 #elif defined __riscv
-    asm volatile("rdcycle %0" : "=r"(cycles));
+    uint64_t time = 0;
+    asm volatile("rdtime %0" : "=r"(time));
+    cycles = time * CPU_FREQUENCY_MHZ / CLOCK_SOURCE_FREQUENCY_MHZ;
 #endif
     return cycles;
 }
@@ -205,9 +220,8 @@ bool compare_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
                 // std::cout << "index = (";
                 // for (size_t i = 0; i < index.rank(); i++)
                 //     std::cout << index[i] << " ";
-                // std::cout << "): lhs = " << lvalue(idx) << ", rhs = " <<
-                // rvalue(idx)
-                //           << std::endl;
+                // std::cout << "): lhs = " << lvalue(idx)
+                //           << ", rhs = " << rvalue(idx) << std::endl;
                 pass = false;
             }
         });
@@ -270,8 +284,8 @@ bool compare_ulp(ntt::tensor<T, Shape, Stride> &lhs,
 
         pass = false;
     }
-    std::cout << "ulp threshold = " << threshold
-              << ", max_ulp_error = " << max_ulp_error << std::endl;
+    // std::cout << "ulp threshold = " << threshold
+    //           << ", max_ulp_error = " << max_ulp_error << std::endl;
     return pass;
 }
 
@@ -302,12 +316,14 @@ bool compare_ulp(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
         nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
             auto ulp_error =
                 std::abs(lvalue(idx) - rvalue(idx)) / ulp((T)rvalue(idx));
+            if (ulp_error > max_ulp_error)
+                std::cout << "lvalue(idx) = " << lvalue(idx)
+                          << ", rvalue(idx) = " << rvalue(idx)
+                          << ", ulp = " << ulp((T)rvalue(idx))
+                          << ", ulp_error = " << ulp_error
+                          << ", max_ulp_error = " << max_ulp_error << std::endl;
             max_ulp_error =
                 ulp_error > max_ulp_error ? ulp_error : max_ulp_error;
-            // std::cout << "lvalue(idx) = " << lvalue(idx)
-            //           << ", rvalue(idx) = " << rvalue(idx)
-            //           << ", ulp(rvalue(idx) = " << ulp(rvalue(idx))
-            //           << ", max_ulp_error = " << max_ulp_error << std::endl;
         });
     });
 

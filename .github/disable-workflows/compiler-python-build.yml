@@ -38,7 +38,7 @@ jobs:
       run: python -m cibuildwheel --output-dir wheelhouse
       
     - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.2.2
+      uses: actions/upload-artifact@v4
       if: runner.os == 'Windows'
       with:
         name: nncase-python-windows
@@ -46,7 +46,7 @@ jobs:
         if-no-files-found: error
       
     - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.2.2
+      uses: actions/upload-artifact@v4
       if: runner.os == 'Linux'
       with:
         name: nncase-python-linux
@@ -54,7 +54,7 @@ jobs:
         if-no-files-found: error
       
     - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.2.2
+      uses: actions/upload-artifact@v4
       if: runner.os == 'Macos'
       with:
         name: nncase-python-macos
