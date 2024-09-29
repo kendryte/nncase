@@ -14,9 +14,7 @@
  */
 #pragma once
 #include "../../ukernels.h"
-#include "arch_types.h"
 #include "nncase/ntt/vector.h"
-#include <vector>
 
 namespace nncase::ntt::ukernels {
 template <size_t M, size_t N, size_t MStrides>

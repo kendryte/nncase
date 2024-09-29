@@ -14,9 +14,9 @@
  */
 #pragma once
 #include "../../ukernels.h"
-#include "arch_types.h"
+#include "nncase/ntt/arch/riscv64/arch_types.h"
 #include "nncase/ntt/vector.h"
-#include <vector>
+#include <riscv_vector.h>
 
 namespace nncase::ntt::ukernels {
 template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
@@ -32,8 +32,8 @@ struct u_matmul_policy<mamtul_pack_kind::no_pack, float, float, float, true> {
 
 // Pack M
 template <>
-struct u_matmul_policy<mamtul_pack_kind::pack_m, vector<float, 4>, float,
-                       vector<float, 4>, true> {
+struct u_matmul_policy<mamtul_pack_kind::pack_m, vector<float, NTT_VLEN / 32>,
+                       float, vector<float, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 2;
     static constexpr size_t n0_tile = 4;
     static constexpr size_t m0_subtile = 0;
@@ -41,8 +41,8 @@ struct u_matmul_policy<mamtul_pack_kind::pack_m, vector<float, 4>, float,
 
 // Pack K
 template <>
-struct u_matmul_policy<mamtul_pack_kind::pack_k, vector<float, 8>,
-                       vector<float, 8>, float, true> {
+struct u_matmul_policy<mamtul_pack_kind::pack_k, vector<float, NTT_VLEN / 32>,
+                       vector<float, NTT_VLEN / 32>, float, true> {
     static constexpr size_t m0_tile = 2;
     static constexpr size_t n0_tile = 2;
     static constexpr size_t m0_subtile = 0;
@@ -50,8 +50,9 @@ struct u_matmul_policy<mamtul_pack_kind::pack_k, vector<float, 8>,
 
 // Pack N
 template <>
-struct u_matmul_policy<mamtul_pack_kind::pack_n, float, vector<float, 8>,
-                       vector<float, 8>, true> {
+struct u_matmul_policy<mamtul_pack_kind::pack_n, float,
+                       vector<float, NTT_VLEN / 32>,
+                       vector<float, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 4;
     static constexpr size_t n0_tile = 2;
     static constexpr size_t m0_subtile = 0;
@@ -59,8 +60,9 @@ struct u_matmul_policy<mamtul_pack_kind::pack_n, float, vector<float, 8>,
 
 // Pack MN
 template <>
-struct u_matmul_policy<mamtul_pack_kind::pack_mn, vector<float, 8>,
-                       vector<float, 8>, vector<float, 8, 8>, true> {
+struct u_matmul_policy<mamtul_pack_kind::pack_mn, vector<float, NTT_VLEN / 32>,
+                       vector<float, NTT_VLEN / 32>,
+                       vector<float, NTT_VLEN / 32, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 2;
     static constexpr size_t m0_subtile = 4;
@@ -68,8 +70,9 @@ struct u_matmul_policy<mamtul_pack_kind::pack_mn, vector<float, 8>,
 
 // Pack MK
 template <>
-struct u_matmul_policy<mamtul_pack_kind::pack_mk, vector<float, 8, 8>,
-                       vector<float, 8>, vector<float, 8>, true> {
+struct u_matmul_policy<
+    mamtul_pack_kind::pack_mk, vector<float, NTT_VLEN / 32, NTT_VLEN / 32>,
+    vector<float, NTT_VLEN / 32>, vector<float, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 1;
     static constexpr size_t m0_subtile = 0;
@@ -77,8 +80,9 @@ struct u_matmul_policy<mamtul_pack_kind::pack_mk, vector<float, 8, 8>,
 
 // Pack KN
 template <>
-struct u_matmul_policy<mamtul_pack_kind::pack_kn, vector<float, 8>,
-                       vector<float, 8, 8>, vector<float, 8>, true> {
+struct u_matmul_policy<mamtul_pack_kind::pack_kn, vector<float, NTT_VLEN / 32>,
+                       vector<float, NTT_VLEN / 32, NTT_VLEN / 32>,
+                       vector<float, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 4;
     static constexpr size_t n0_tile = 2;
     static constexpr size_t m0_subtile = 0;
@@ -86,8 +90,10 @@ struct u_matmul_policy<mamtul_pack_kind::pack_kn, vector<float, 8>,
 
 // Pack MKN
 template <>
-struct u_matmul_policy<mamtul_pack_kind::pack_mkn, vector<float, 8, 8>,
-                       vector<float, 8, 8>, vector<float, 8, 8>, true> {
+struct u_matmul_policy<mamtul_pack_kind::pack_mkn,
+                       vector<float, NTT_VLEN / 32, NTT_VLEN / 32>,
+                       vector<float, NTT_VLEN / 32, NTT_VLEN / 32>,
+                       vector<float, NTT_VLEN / 32, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 2;
     static constexpr size_t m0_subtile = 4;

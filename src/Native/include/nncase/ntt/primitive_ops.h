@@ -32,6 +32,17 @@ enum class reduce_op {
 namespace ops {
 
 /**
+ * @defgroup Load/Store operation functors
+ * @{
+ */
+
+template <class TDest, class TSource> struct store {
+    constexpr void operator()(TDest &dest, const TSource &v) const noexcept {
+        dest = v;
+    }
+};
+
+/**
  * @defgroup Unary operation functors
  * @{
  */
@@ -276,6 +287,11 @@ template <class T1, class T2> struct clamp {
     constexpr auto name(const T &v, TResult init_value) noexcept {             \
         return ntt::reduce<op>(v, init_value);                                 \
     }
+
+template <class TDest, class TSource>
+constexpr void store(TDest &dest, const TSource &v) noexcept {
+    ops::store<std::decay_t<TDest>, std::decay_t<TSource>>()(dest, v);
+}
 
 NTT_DEFINE_UNARY_FUNC_IMPL(abs)
 NTT_DEFINE_UNARY_FUNC_IMPL(acos)

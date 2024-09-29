@@ -14,6 +14,8 @@
  */
 #pragma once
 #include "../../primitive_ops.h"
+#include "nncase/ntt/arch/riscv64/arch_types.h"
+#include "nncase/ntt/vector.h"
 #include "rvv_mathfun.h"
 
 #ifdef __riscv_vector
@@ -28,6 +30,15 @@ namespace nncase::ntt::ops {
 #define REGISTER_RVV_KERNEL(kernel)                                            \
     kernel(1, 32) kernel(2, 16) kernel(4, 8) kernel(8, 4)
 #endif
+
+template <>
+struct store<ntt::vector<float, NTT_VLEN / 32>,
+             ntt::vector<float, NTT_VLEN / 32>> {
+    void operator()(ntt::vector<float, NTT_VLEN / 32> &dest,
+                    const ntt::vector<float, NTT_VLEN / 32> &v) const noexcept {
+        __riscv_vse32_v_f32m1((float *)&dest, v, NTT_VLEN / 32);
+    }
+};
 
 #define RVV_UNARY_OP(op, dtype, vl, kernel)                                    \
     template <> struct op<ntt::vector<dtype, vl>> {                            \
