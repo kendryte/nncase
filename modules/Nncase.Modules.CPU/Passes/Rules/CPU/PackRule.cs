@@ -151,15 +151,6 @@ public sealed class PackMatMul : PackRule
     {
     }
 
-    [Flags]
-    public enum PackKind : byte
-    {
-        None = 1 << 0,
-        M = 1 << 1,
-        K = 1 << 2,
-        N = 1 << 3,
-    }
-
     public override Pattern Pattern { get; } = IsMatMul(
       "target",
       IsWildcard("lhs", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
@@ -182,26 +173,26 @@ public sealed class PackMatMul : PackRule
         // AddCandidate(rcontext, PackKind.M, PackKind.None);
 
         // only pack B's n
-        AddCandidate(rcontext, PackKind.None, PackKind.N, transB: rhs is Const);
+        AddCandidate(rcontext, IR.CPU.PackedMatMul.PackKind.None, IR.CPU.PackedMatMul.PackKind.N/* , transB: rhs is Const */);
         if (Rank > 1)
         {
             // pack A's m and B's n, when B is const, force transpose
-            AddCandidate(rcontext, PackKind.M, PackKind.N, transB: rhs is Const);
+            AddCandidate(rcontext, IR.CPU.PackedMatMul.PackKind.M, IR.CPU.PackedMatMul.PackKind.N/* , transB: rhs is Const */);
 
             // pack A's m,k and B's k,n
-            AddCandidate(rcontext, PackKind.M | PackKind.K, PackKind.K | PackKind.N, transB: rhs is Const);
+            AddCandidate(rcontext, IR.CPU.PackedMatMul.PackKind.M | IR.CPU.PackedMatMul.PackKind.K, IR.CPU.PackedMatMul.PackKind.K | IR.CPU.PackedMatMul.PackKind.N/* , transB: rhs is Const */);
 
             // pack A's m,k and B's k
-            // AddCandidate(rcontext, PackKind.M | PackKind.K, PackKind.K);
+            // AddCandidate(rcontext,  IR.CPU.PackedMatMul.PackKind.M |  IR.CPU.PackedMatMul.PackKind.K,  IR.CPU.PackedMatMul.PackKind.K);
 
             // pack A's k and B's k,n
-            AddCandidate(rcontext, PackKind.K, PackKind.K | PackKind.N, transB: lhs is Const);
+            AddCandidate(rcontext, IR.CPU.PackedMatMul.PackKind.K, IR.CPU.PackedMatMul.PackKind.K | IR.CPU.PackedMatMul.PackKind.N/* , transB: lhs is Const */);
         }
 
         return rets;
     }
 
-    private void AddCandidate(RuleContext context, PackKind lhsPack, PackKind rhsPack, bool transA = false, bool transB = false)
+    private void AddCandidate(RuleContext context, IR.CPU.PackedMatMul.PackKind lhsPack, IR.CPU.PackedMatMul.PackKind rhsPack, bool transA = false, bool transB = false)
     {
         var (rets, lhs, rhs, candidate, _, _) = context;
         var lhsShape = context.LhsShape.ToArray();
@@ -228,19 +219,19 @@ public sealed class PackMatMul : PackRule
         var (rk, rn) = transB ? (rhsShape.Length - 1, rhsShape.Length - 2) : (rhsShape.Length - 2, rhsShape.Length - 1);
         switch (lhsPack)
         {
-            case PackKind.None:
+            case IR.CPU.PackedMatMul.PackKind.None:
                 lhsLanes = Array.Empty<int>();
                 lhsPackedAxes = Array.Empty<int>();
                 break;
-            case PackKind.M:
+            case IR.CPU.PackedMatMul.PackKind.M:
                 lhsLanes = [Lane];
                 lhsPackedAxes = [lm];
                 break;
-            case PackKind.K:
+            case IR.CPU.PackedMatMul.PackKind.K:
                 lhsLanes = [Lane];
                 lhsPackedAxes = [lk];
                 break;
-            case PackKind.M | PackKind.K:
+            case IR.CPU.PackedMatMul.PackKind.M | IR.CPU.PackedMatMul.PackKind.K:
                 lhsLanes = [Lane, Lane];
                 lhsPackedAxes = [lm, lk];
                 break;
@@ -252,19 +243,19 @@ public sealed class PackMatMul : PackRule
         int[] rhsPackedAxes;
         switch (rhsPack)
         {
-            case PackKind.None:
+            case IR.CPU.PackedMatMul.PackKind.None:
                 rhsLanes = Array.Empty<int>();
                 rhsPackedAxes = Array.Empty<int>();
                 break;
-            case PackKind.N:
+            case IR.CPU.PackedMatMul.PackKind.N:
                 rhsLanes = [Lane];
                 rhsPackedAxes = [rn];
                 break;
-            case PackKind.K:
+            case IR.CPU.PackedMatMul.PackKind.K:
                 rhsLanes = [Lane];
                 rhsPackedAxes = [rk];
                 break;
-            case PackKind.K | PackKind.N:
+            case IR.CPU.PackedMatMul.PackKind.K | IR.CPU.PackedMatMul.PackKind.N:
                 rhsLanes = [Lane, Lane];
                 rhsPackedAxes = [rk, rn];
                 break;
@@ -290,7 +281,7 @@ public sealed class PackMatMul : PackRule
         var unpackAxes = new List<int>();
         var unpadNums = new List<int>();
         var unpackLanes = new List<int>();
-        if (lhsPack.HasFlag(PackKind.M))
+        if (lhsPack.HasFlag(IR.CPU.PackedMatMul.PackKind.M))
         {
             var mPackIndex = Array.IndexOf(lhsPackedAxes, lm);
             unpackAxes.Add(outRank - 2);
@@ -298,7 +289,7 @@ public sealed class PackMatMul : PackRule
             unpackLanes.Add(Lane);
         }
 
-        if (rhsPack.HasFlag(PackKind.N))
+        if (rhsPack.HasFlag(IR.CPU.PackedMatMul.PackKind.N))
         {
             var nPackIndex = Array.IndexOf(rhsPackedAxes, rn);
             unpackAxes.Add(outRank - 1);
