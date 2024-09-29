@@ -176,10 +176,10 @@ public sealed class PackMatMul : PackRule
         var rcontext = new RuleContext(rets, lhs, rhs, candidate, lhsShape, rhsShape);
 
         // pack A's k and B's k
-        AddCandidate(rcontext, PackKind.K, PackKind.K);
+        // AddCandidate(rcontext, PackKind.K, PackKind.K);
 
         // only pack A's m
-        AddCandidate(rcontext, PackKind.M, PackKind.None);
+        // AddCandidate(rcontext, PackKind.M, PackKind.None);
 
         // only pack B's n
         AddCandidate(rcontext, PackKind.None, PackKind.N, transB: rhs is Const);
@@ -192,7 +192,7 @@ public sealed class PackMatMul : PackRule
             AddCandidate(rcontext, PackKind.M | PackKind.K, PackKind.K | PackKind.N, transB: rhs is Const);
 
             // pack A's m,k and B's k
-            AddCandidate(rcontext, PackKind.M | PackKind.K, PackKind.K);
+            // AddCandidate(rcontext, PackKind.M | PackKind.K, PackKind.K);
 
             // pack A's k and B's k,n
             AddCandidate(rcontext, PackKind.K, PackKind.K | PackKind.N, transB: lhs is Const);
