@@ -26,46 +26,50 @@
 namespace nncase::ntt {
 namespace detail {
 template <class TLhs, class TRhs, typename LhsPackedAxes,
-          typename RhsPackedAxes>
+          typename RhsPackedAxes, bool TransA = false, bool TransB = false>
 constexpr ukernels::mamtul_pack_kind get_matmul_pack_kind() noexcept {
+    constexpr size_t lm = TransA ? (TLhs::rank() - 1) : (TLhs::rank() - 2),
+                     lk = TransA ? (TLhs::rank() - 2) : (TLhs::rank() - 1);
+    constexpr size_t rk = TransB ? (TRhs::rank() - 1) : (TRhs::rank() - 2),
+                     rn = TransB ? (TRhs::rank() - 2) : (TRhs::rank() - 1);
     if constexpr (LhsPackedAxes::rank() == 0 && RhsPackedAxes::rank() == 0) {
         return ukernels::mamtul_pack_kind::no_pack;
     } else if constexpr (LhsPackedAxes::rank() == 1 &&
-                         LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
+                         LhsPackedAxes::at(0) == lm &&
                          RhsPackedAxes::rank() == 0) {
         return ukernels::mamtul_pack_kind::pack_m;
     } else if constexpr (LhsPackedAxes::rank() == 0 &&
                          RhsPackedAxes::rank() == 1 &&
-                         RhsPackedAxes::at(0) == TRhs::rank() - 1) {
+                         RhsPackedAxes::at(0) == rn) {
         return ukernels::mamtul_pack_kind::pack_n;
     } else if constexpr (LhsPackedAxes::rank() == 1 &&
-                         LhsPackedAxes::at(0) == TLhs::rank() - 1 &&
+                         LhsPackedAxes::at(0) == lk &&
                          RhsPackedAxes::rank() == 1 &&
-                         RhsPackedAxes::at(0) == TRhs::rank() - 2) {
+                         RhsPackedAxes::at(0) == rk) {
         return ukernels::mamtul_pack_kind::pack_k;
     } else if constexpr (LhsPackedAxes::rank() == 1 &&
-                         LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
+                         LhsPackedAxes::at(0) == lm &&
                          RhsPackedAxes::rank() == 1 &&
-                         RhsPackedAxes::at(0) == TRhs::rank() - 1) {
+                         RhsPackedAxes::at(0) == rn) {
         return ukernels::mamtul_pack_kind::pack_mn;
     } else if constexpr (LhsPackedAxes::rank() == 2 &&
-                         LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
-                         LhsPackedAxes::at(1) == TLhs::rank() - 1 &&
+                         LhsPackedAxes::at(0) == lm &&
+                         LhsPackedAxes::at(1) == lk &&
                          RhsPackedAxes::rank() == 1 &&
-                         RhsPackedAxes::at(0) == TRhs::rank() - 2) {
+                         RhsPackedAxes::at(0) == rk) {
         return ukernels::mamtul_pack_kind::pack_mk;
     } else if constexpr (LhsPackedAxes::rank() == 1 &&
-                         LhsPackedAxes::at(0) == TLhs::rank() - 1 &&
+                         LhsPackedAxes::at(0) == lk &&
                          RhsPackedAxes::rank() == 2 &&
-                         RhsPackedAxes::at(0) == TRhs::rank() - 2 &&
-                         RhsPackedAxes::at(1) == TRhs::rank() - 1) {
+                         RhsPackedAxes::at(0) == rk &&
+                         RhsPackedAxes::at(1) == rn) {
         return ukernels::mamtul_pack_kind::pack_kn;
     } else if constexpr (LhsPackedAxes::rank() == 2 &&
-                         LhsPackedAxes::at(0) == TLhs::rank() - 2 &&
-                         LhsPackedAxes::at(1) == TLhs::rank() - 1 &&
+                         LhsPackedAxes::at(0) == lm &&
+                         LhsPackedAxes::at(1) == lk &&
                          RhsPackedAxes::rank() == 2 &&
-                         RhsPackedAxes::at(0) == TRhs::rank() - 2 &&
-                         RhsPackedAxes::at(1) == TRhs::rank() - 1) {
+                         RhsPackedAxes::at(0) == rk &&
+                         RhsPackedAxes::at(1) == rn) {
         return ukernels::mamtul_pack_kind::pack_mkn;
     } else {
         return ukernels::mamtul_pack_kind::unknown;
