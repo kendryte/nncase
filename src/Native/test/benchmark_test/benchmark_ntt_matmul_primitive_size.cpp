@@ -36,7 +36,10 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_NONE() {
               << ", K:" << K << ", N:" << N
               << ", Cycles:" << static_cast<float>(t2 - t1) / run_num
               << ", GFLOPS:"
-              << ops / (static_cast<float>(t2 - t1) / run_num / CPU_FREQUENCY_MHZ) * 1e-3
+              << ops /
+                     (static_cast<float>(t2 - t1) / run_num /
+                      CPU_FREQUENCY_MHZ) *
+                     1e-3
               << std::endl;
 }
 
@@ -78,7 +81,10 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_K() {
               << ", K:" << K / P << ", N:" << N
               << ", Cycles:" << static_cast<float>(t2 - t1) / run_num
               << ", GFLOPS:"
-              << ops / (static_cast<float>(t2 - t1) / run_num / CPU_FREQUENCY_MHZ) * 1e-3
+              << ops /
+                     (static_cast<float>(t2 - t1) / run_num /
+                      CPU_FREQUENCY_MHZ) *
+                     1e-3
               << std::endl;
 }
 
@@ -118,7 +124,10 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M() {
               << ", K:" << K << ", N:" << N
               << ", Cycles:" << static_cast<float>(t2 - t1) / run_num
               << ", GFLOPS:"
-              << ops / (static_cast<float>(t2 - t1) / run_num / CPU_FREQUENCY_MHZ) * 1e-3
+              << ops /
+                     (static_cast<float>(t2 - t1) / run_num /
+                      CPU_FREQUENCY_MHZ) *
+                     1e-3
               << std::endl;
 }
 
@@ -158,7 +167,10 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_N() {
               << ", K:" << K << ", N:" << N / P
               << ", Cycles:" << static_cast<float>(t2 - t1) / run_num
               << ", GFLOPS:"
-              << ops / (static_cast<float>(t2 - t1) / run_num / CPU_FREQUENCY_MHZ) * 1e-3
+              << ops /
+                     (static_cast<float>(t2 - t1) / run_num /
+                      CPU_FREQUENCY_MHZ) *
+                     1e-3
               << std::endl;
 }
 
@@ -202,7 +214,10 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_N() {
               << ", K:" << K << ", N:" << N / P
               << ", Cycles:" << static_cast<float>(t2 - t1) / run_num
               << ", GFLOPS:"
-              << ops / (static_cast<float>(t2 - t1) / run_num / CPU_FREQUENCY_MHZ) * 1e-3
+              << ops /
+                     (static_cast<float>(t2 - t1) / run_num /
+                      CPU_FREQUENCY_MHZ) *
+                     1e-3
               << std::endl;
 }
 
@@ -246,7 +261,10 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_K() {
               << ", K:" << K / P << ", N:" << N
               << ", Cycles:" << static_cast<float>(t2 - t1) / run_num
               << ", GFLOPS:"
-              << ops / (static_cast<float>(t2 - t1) / run_num / CPU_FREQUENCY_MHZ) * 1e-3
+              << ops /
+                     (static_cast<float>(t2 - t1) / run_num /
+                      CPU_FREQUENCY_MHZ) *
+                     1e-3
               << std::endl;
 }
 
@@ -290,7 +308,10 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_K_N() {
               << ", K:" << K / P << ", N:" << N / P
               << ", Cycles:" << static_cast<float>(t2 - t1) / run_num
               << ", GFLOPS:"
-              << ops / (static_cast<float>(t2 - t1) / run_num / CPU_FREQUENCY_MHZ) * 1e-3
+              << ops /
+                     (static_cast<float>(t2 - t1) / run_num /
+                      CPU_FREQUENCY_MHZ) *
+                     1e-3
               << std::endl;
 }
 
@@ -336,7 +357,10 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_K_N() {
               << ", K:" << K / P << ", N:" << N / P
               << ", Cycles:" << static_cast<float>(t2 - t1) / run_num
               << ", GFLOPS:"
-              << ops / (static_cast<float>(t2 - t1) / run_num / CPU_FREQUENCY_MHZ) * 1e-3
+              << ops /
+                     (static_cast<float>(t2 - t1) / run_num /
+                      CPU_FREQUENCY_MHZ) *
+                     1e-3
               << std::endl;
 }
 
