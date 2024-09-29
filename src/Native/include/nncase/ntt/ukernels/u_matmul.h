@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "../apply.h"
+#include "nncase/ntt/primitive_ops.h"
 #include "nncase/ntt/shape.h"
 #include "u_mul_add.h"
 
@@ -116,8 +117,8 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mn, AccumulateC, M0Tile,
 
                     for (size_t n = 0; n < N0Tile; n++) {
                         for (size_t m = 0; m < m0_subtile; m++) {
-                            ntt::u_mul_add<mamtul_pack_kind::pack_mn, true>(
-                                a0_tmp[m], b0_tmp[n], c0_tmp[m][n]);
+                            c0_tmp[m][n] = ntt::mul_add(a0_tmp[m], b0_tmp[n],
+                                                        c0_tmp[m][n]);
                         }
                     }
                 }
@@ -170,8 +171,8 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, M0Tile,
 
                 for (size_t n = 0; n < N0Tile; n++) {
                     for (size_t m = 0; m < M0Tile; m++) {
-                        ntt::u_mul_add<mamtul_pack_kind::pack_kn, true>(
-                            a0_tmp[m], b0_tmp[n], c0_tmp[m][n]);
+                        c0_tmp[m][n] =
+                            ntt::mul_add(a0_tmp[m], b0_tmp[n], c0_tmp[m][n]);
                     }
                 }
             }
@@ -233,9 +234,8 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, M0Tile,
                         for (size_t n = 0; n < N0Tile; n++) {
                             for (size_t m = 0; m < m0_subtile; m++) {
                                 auto &output = c0_tmp[m][n];
-                                auto value =
-                                    ntt::outer_product(a0_tmp[m], b0_tmp[n]);
-                                output = output + value;
+                                output =
+                                    ntt::mul_add(a0_tmp[m], b0_tmp[n], output);
                             }
                         }
                     }
