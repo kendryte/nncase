@@ -51,6 +51,8 @@ template <size_t Rank> struct ranked_dims_base {
 
     constexpr auto begin() const noexcept { return dims_.begin(); }
     constexpr auto end() const noexcept { return dims_.end(); }
+    constexpr auto rbegin() const noexcept { return dims_.rbegin(); }
+    constexpr auto rend() const noexcept { return dims_.rend(); }
 
     std::array<size_t, Rank> dims_;
 };

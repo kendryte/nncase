@@ -103,6 +103,9 @@ class matmul_impl<false, true, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                            RhsPackedAxes::at(0) == TRhs::rank() - 1 &&
                            RhsPackedAxes::at(1) == TRhs::rank() - 2) {
             output = ntt::mma<AccC, false>(*lhs++, *rhs++, output);
+            for (size_t k = 1; k < K; k++) {
+                output = ntt::mma<true, false>(*lhs++, *rhs++, output);
+            }
         }
         // 3.3. pack [M,K]<k,m> & [N,K]<k,n>
         else if constexpr (LhsPackedAxes::rank() == 2 &&
@@ -112,6 +115,9 @@ class matmul_impl<false, true, AccumulateC, TLhs, TRhs, TOut, LhsPackedAxes,
                            RhsPackedAxes::at(0) == TRhs::rank() - 1 &&
                            RhsPackedAxes::at(1) == TRhs::rank() - 2) {
             output = ntt::mma<AccC, true>(*lhs++, *rhs++, output);
+            for (size_t k = 1; k < K; k++) {
+                output = ntt::mma<true, true>(*lhs++, *rhs++, output);
+            }
         }
         // fall back
         else {

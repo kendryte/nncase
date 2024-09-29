@@ -866,6 +866,7 @@ int main() {
     {
         ntt::tensor<float, ntt::fixed_shape<4, 8>> ta;
         ntt::tensor<float, ntt::fixed_shape<8, 4>> tb;
+        ntt::tensor<float, ntt::fixed_shape<4, 4>> tc, unpackc;
         std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
         std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
         ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<1, 2>> pa;
@@ -876,22 +877,11 @@ int main() {
         ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0, 1>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
                            ntt::fixed_shape<0>{});
-        assert(are_floats_equal(pc(0, 0)(0, 0), 560.f));
-        assert(are_floats_equal(pc(0, 0)(0, 1), 588.f));
-        assert(are_floats_equal(pc(0, 0)(0, 2), 616.f));
-        assert(are_floats_equal(pc(0, 0)(0, 3), 644.f));
-        assert(are_floats_equal(pc(0, 0)(1, 0), 1456.f));
-        assert(are_floats_equal(pc(0, 0)(1, 1), 1548.f));
-        assert(are_floats_equal(pc(0, 0)(1, 2), 1640.f));
-        assert(are_floats_equal(pc(0, 0)(1, 3), 1732.f));
-        assert(are_floats_equal(pc(0, 0)(2, 0), 2352.f));
-        assert(are_floats_equal(pc(0, 0)(2, 1), 2508.f));
-        assert(are_floats_equal(pc(0, 0)(2, 2), 2664.f));
-        assert(are_floats_equal(pc(0, 0)(2, 3), 2820.f));
-        assert(are_floats_equal(pc(0, 0)(3, 0), 3248.f));
-        assert(are_floats_equal(pc(0, 0)(3, 1), 3468.f));
-        assert(are_floats_equal(pc(0, 0)(3, 2), 3688.f));
-        assert(are_floats_equal(pc(0, 0)(3, 3), 3908.f));
+        ntt::unpack<0, 1>(pc, unpackc.view());
+        ntt::matmul<false>(ta, tb, tc);
+        ntt::apply(tc.shape(), [&]([[maybe_unused]] auto index) {
+            assert(tc(index) == unpackc(index));
+        });
     }
 
     // packed matmul 1d on k with broadcast
@@ -946,11 +936,11 @@ int main() {
         assert(tg(0, 1, 2, 0) == 1070.f);
     }
 
-    // transposeB matmu test
+    // transposeB matmul test
     {
         // 1. ref
-        ntt::tensor<float, ntt::fixed_shape<8, 4>> ta;
-        ntt::tensor<float, ntt::fixed_shape<4, 8>> tb;
+        ntt::tensor<float, ntt::fixed_shape<8, 8>> ta;
+        ntt::tensor<float, ntt::fixed_shape<8, 8>> tb;
         ntt::tensor<float, ntt::fixed_shape<8, 8>> tc;
         std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
         std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
@@ -958,7 +948,7 @@ int main() {
 
         // transB norm
         {
-            ntt::tensor<float, ntt::fixed_shape<8, 4>> tranb;
+            ntt::tensor<float, ntt::fixed_shape<8, 8>> tranb;
             ntt::transpose<ntt::fixed_shape<1, 0>>(tb, tranb);
             ntt::tensor<float, ntt::fixed_shape<8, 8>> tc1;
             ntt::matmul<false, false, true>(ta, tranb, tc1);
@@ -968,7 +958,7 @@ int main() {
 
             // transB pack n
             {
-                ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<2, 4>>
+                ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<2, 8>>
                     packb;
                 ntt::pack<0>(tranb, packb);
                 ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<8, 2>> tc2;
@@ -985,10 +975,10 @@ int main() {
             }
             // transB [M,K]<m> @ [N,K]<n>
             {
-                ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<2, 4>>
+                ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<2, 8>>
                     packa;
                 ntt::pack<0>(ta, packa);
-                ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<2, 4>>
+                ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<2, 8>>
                     packb;
                 ntt::pack<0>(tranb, packb);
                 ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 2>> tc2;
@@ -1006,10 +996,10 @@ int main() {
 
             // A[m,k]<m,k> @ B[n,k]<k,n>
             {
-                ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 1>>
+                ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 2>>
                     packb;
                 ntt::pack<1, 0>(tranb, packb); // [n,k]<k,n>
-                ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 1>>
+                ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 2>>
                     packa;
                 // note actully a should pack as [m,k]<k,m>
                 ntt::pack<0, 1>(ta, packa); // [m,k]<m,k>
@@ -1031,10 +1021,10 @@ int main() {
 
             // A[m,k]<k,m> @ B[n,k]<k,n>
             {
-                ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 1>>
+                ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 2>>
                     packb;
                 ntt::pack<1, 0>(tranb, packb); // [n,k]<k,n>
-                ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 1>>
+                ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 2>>
                     packa;
                 ntt::pack<1, 0>(ta, packa); // [m,k]<k,m>
                 // [m,n]<m,n>

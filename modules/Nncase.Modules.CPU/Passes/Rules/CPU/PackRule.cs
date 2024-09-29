@@ -44,7 +44,7 @@ public class PackSoftmax : PackRule
 
     public override Pattern Pattern { get; } = IsSoftmax(
       "target",
-      IsWildcard("input") with { TypePattern = IsFloat() },
+      IsWildcard("input") with { TypePattern = IsFloat() & !IsVector() },
       IsWildcard("axis") with { TypePattern = IsIntegralScalar() });
 
     public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
@@ -58,9 +58,9 @@ public class PackSoftmax : PackRule
         {
             var packed = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, float.NegativeInfinity, out var pads), lanes, packedAxes);
             var softmax = IR.F.CPU.PackedSoftmax(packed, axis, packedAxes);
-            if (softmax.CheckedType is not InvalidType)
+            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(softmax, lanes, packedAxes), inShape, pads);
+            if (post.CheckedType is not InvalidType)
             {
-                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(softmax, lanes, packedAxes), inShape, pads);
                 rets.Add(post);
             }
         }
@@ -88,7 +88,7 @@ public sealed class PackResizeImage : PackRule
     {
     }
 
-    public override Pattern Pattern { get; } = IsResizeImage("target", op => op.TransformationMode == ImageResizeTransformationMode.Asymmetric && op.IsTFResize == false, IsWildcard("input"), IsWildcard("roi"), IsTensorConst("newSize"), IsTensorConst("cubicCoeffA"), IsTensorConst("excludeOutside"), IsTensorConst("extrapolationValue"));
+    public override Pattern Pattern { get; } = IsResizeImage("target", op => op.TransformationMode == ImageResizeTransformationMode.Asymmetric && op.IsTFResize == false, IsWildcard("input") with { TypePattern = !IsVector() }, IsWildcard("roi"), IsTensorConst("newSize"), IsTensorConst("cubicCoeffA"), IsTensorConst("excludeOutside"), IsTensorConst("extrapolationValue"));
 
     public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
@@ -110,9 +110,9 @@ public sealed class PackResizeImage : PackRule
 
             var resized = IR.F.CPU.ResizeImage(packedInput, packedAxes, padsInput, newSize, op.ResizeMode, op.TransformationMode, op.NearestMode);
 
-            if (resized.CheckedType is not InvalidType)
+            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(resized, lanes, packedAxes), inShape, padsInput);
+            if (post.CheckedType is not InvalidType)
             {
-                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(resized, lanes, packedAxes), inShape, padsInput);
                 rets.Add(post);
             }
         }
@@ -132,9 +132,9 @@ public sealed class PackInstanceNorm : PackRule
     public override Pattern Pattern { get; } = IsInstanceNormalization(
       "target",
       _ => true,
-      IsWildcard("input") with { TypePattern = IsFloat() },
-      IsWildcard("scale") with { TypePattern = IsFloat() },
-      IsWildcard("bias") with { TypePattern = IsFloat() },
+      IsWildcard("input") with { TypePattern = IsFloat() & !IsVector() },
+      IsWildcard("scale") with { TypePattern = IsFloat() & !IsVector() },
+      IsWildcard("bias") with { TypePattern = IsFloat() & !IsVector() },
       IsTensorConst("eps") with { TypePattern = IsFloat() });
 
     public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
@@ -200,9 +200,9 @@ public sealed class PackLayerNorm : PackRule
     public override Pattern Pattern { get; } = IsLayerNorm(
       "target",
       _ => true,
-      IsWildcard("input") with { TypePattern = IsFloat() },
-      IsWildcard("scale") with { TypePattern = IsFloat() },
-      IsWildcard("bias") with { TypePattern = IsFloat() });
+      IsWildcard("input") with { TypePattern = IsFloat() & !IsVector() },
+      IsWildcard("scale") with { TypePattern = IsFloat() & !IsVector() },
+      IsWildcard("bias") with { TypePattern = IsFloat() & !IsVector() });
 
     public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
@@ -238,10 +238,10 @@ public sealed class PackLayerNorm : PackRule
             }
 
             var layernorm = IR.F.CPU.PackedLayerNorm(packedInput, packedScale, packedBias, op.Axis, op.Epsilon, op.UseMean, packedAxes, padsInput);
+            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(layernorm, lanes, packedAxes), inShape, padsInput);
 
-            if (layernorm.CheckedType is not InvalidType)
+            if (post.CheckedType is not InvalidType)
             {
-                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(layernorm, lanes, packedAxes), inShape, padsInput);
                 rets.Add(post);
             }
         }
@@ -280,8 +280,8 @@ public sealed class PackMatMul : PackRule
 
     public override Pattern Pattern { get; } = IsMatMul(
       "target",
-      IsWildcard("lhs") with { TypePattern = IsFloat() },
-      IsWildcard("rhs") with { TypePattern = IsFloat() });
+      IsWildcard("lhs", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
+      IsWildcard("rhs", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() });
 
     public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
@@ -294,26 +294,26 @@ public sealed class PackMatMul : PackRule
         var rcontext = new RuleContext(rets, lhs, rhs, candidate, lhsShape, rhsShape);
 
         // pack A's k and B's k
-        // AddCandidate(rcontext, PackKind.K, PackKind.K);
+        AddCandidate(rcontext, PackKind.K, PackKind.K);
 
         // only pack A's m
-        // AddCandidate(rcontext, PackKind.M, PackKind.None);
+        AddCandidate(rcontext, PackKind.M, PackKind.None);
 
         // only pack B's n
-        // AddCandidate(PackKind.None, PackKind.N, transB: rhs is Const);
+        AddCandidate(rcontext, PackKind.None, PackKind.N, transB: rhs is Const);
         if (Rank > 1)
         {
             // pack A's m and B's n, when B is const, force transpose
-            // AddCandidate(rcontext, PackKind.M, PackKind.N, transB: rhs is Const);
+            AddCandidate(rcontext, PackKind.M, PackKind.N, transB: rhs is Const);
 
             // pack A's m,k and B's k,n
             AddCandidate(rcontext, PackKind.M | PackKind.K, PackKind.K | PackKind.N, transB: rhs is Const);
 
             // pack A's m,k and B's k
-            // AddCandidate(PackKind.M | PackKind.K, PackKind.K);
+            AddCandidate(rcontext, PackKind.M | PackKind.K, PackKind.K);
 
             // pack A's k and B's k,n
-            // AddCandidate(PackKind.K, PackKind.K | PackKind.N);
+            AddCandidate(rcontext, PackKind.K, PackKind.K | PackKind.N, transB: lhs is Const);
         }
 
         return rets;
@@ -430,7 +430,10 @@ public sealed class PackMatMul : PackRule
             post = PackUtility.SliceForPack(IR.F.CPU.Unpack(matmul, unpackLanes.ToArray(), unpackAxes.ToArray()), candidate.CheckedShape.ToValueArray(), unpadNums.ToArray());
         }
 
-        rets.Add(post);
+        if (post.CheckedType is not InvalidType)
+        {
+            rets.Add(post);
+        }
     }
 
     private sealed record RuleContext(List<Expr> Results, Expr Lhs, Expr Rhs, Expr Candidate, IReadOnlyList<int> LhsShape, IReadOnlyList<int> RhsShape)
@@ -448,7 +451,7 @@ public sealed class PackUnary : PackRule
     public override Pattern Pattern { get; } = IsUnary(
       "target",
       _ => true,
-      IsWildcard("input") with { TypePattern = IsFloat() });
+      IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() });
 
     public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
@@ -461,9 +464,9 @@ public sealed class PackUnary : PackRule
         {
             var packedInput = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
             var unary = IR.F.Math.Unary(op.UnaryOp, packedInput);
+            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(unary, lanes, packedAxes), inShape, padsInput);
             if (unary.CheckedType is not InvalidType)
             {
-                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(unary, lanes, packedAxes), inShape, padsInput);
                 rets.Add(post);
             }
         }
@@ -494,8 +497,8 @@ public sealed class PackBinary : PackRule
     public override Pattern Pattern { get; } = IsBinary(
       "target",
       _ => true,
-      IsWildcard("lhs") with { TypePattern = IsFloat() },
-      IsWildcard("rhs") with { TypePattern = IsFloat() });
+      IsWildcard("lhs", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
+      IsWildcard("rhs", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() });
 
     public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
@@ -513,9 +516,9 @@ public sealed class PackBinary : PackRule
             var packedRhs = IR.F.CPU.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
 
             var binary = IR.F.CPU.PackedBinary(packedLhs, packedRhs, op.BinaryOp, lhsPackedAxes, lhsPadNums, rhsPackedAxes, rhsPadNums);
-            if (binary.CheckedType is not InvalidType)
+            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(binary, lhsLanes.Length >= rhsLanes.Length ? lhsLanes : rhsLanes, lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPackedAxes : rhsPackedAxes), candidate.CheckedShape.ToValueArray(), lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPadNums : rhsPadNums);
+            if (post.CheckedType is not InvalidType)
             {
-                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(binary, lhsLanes.Length >= rhsLanes.Length ? lhsLanes : rhsLanes, lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPackedAxes : rhsPackedAxes), candidate.CheckedShape.ToValueArray(), lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPadNums : rhsPadNums);
                 rets.Add(post);
             }
         }
@@ -562,7 +565,7 @@ public sealed class PackSwish : PackRule
 
     public override Pattern Pattern { get; } = IsSwish(
       "target",
-      IsWildcard("input") with { TypePattern = IsFloat() },
+      IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
       IsTensorConst("beta") with { TypePattern = IsFloatScalar() });
 
     public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
@@ -577,7 +580,10 @@ public sealed class PackSwish : PackRule
             var packed = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
             var swish = IR.F.NN.Swish(packed, beta);
             var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(swish, lanes, packedAxes), inShape, pads);
-            rets.Add(post);
+            if (post.CheckedType is not InvalidType)
+            {
+                rets.Add(post);
+            }
         }
 
         for (int i = 0; i < input.CheckedShape.Count; i++)
@@ -605,7 +611,7 @@ public sealed class PackTranspose : PackRule
 
     public override Pattern Pattern { get; } = IsTranspose(
       "trans",
-      IsWildcard("input") with { TypePattern = IsFloat() },
+      IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
       IsTensorConst("perm") with { TypePattern = IsIntegral() });
 
     public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
@@ -628,7 +634,11 @@ public sealed class PackTranspose : PackRule
                 var unpackPads = Enumerable.Range(0, pads.Length).Select(i => pads[partialPerm[i]]).ToArray();
                 var unpackLanes = Enumerable.Range(0, lanes.Length).Select(i => lanes[partialPerm[i]]).ToArray();
                 var newShape = perm.Select(i => inShape[i]).ToArray();
-                rets.Add(PackUtility.SliceForPack(IR.F.CPU.Unpack(tarns, unpackLanes, unpackAxes), newShape, unpackPads));
+                var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(tarns, unpackLanes, unpackAxes), newShape, unpackPads);
+                if (post.CheckedType is not InvalidType)
+                {
+                    rets.Add(post);
+                }
             }
         }
 
@@ -657,7 +667,7 @@ public sealed class PackUnsqueeze : PackRule
 
     public override Pattern Pattern { get; } = IsUnsqueeze(
       "unsq",
-      IsWildcard("input") with { TypePattern = IsFloat() },
+      IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
       IsTensorConst("axes") with { TypePattern = IsIntegral() });
 
     public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
@@ -671,26 +681,26 @@ public sealed class PackUnsqueeze : PackRule
         void AddCandidate(int[] packedAxes, int[] lanes)
         {
             var packed = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
+            var unseq = IR.F.Tensors.Unsqueeze(packed, axes);
+            var unpackAxes = packedAxes.Select(axis => axis + axes.Count(i => i <= axis)).ToArray();
+            var outShape = inShape.ToList();
+            foreach (var axis in axes)
+            {
+                if (axis >= 0)
+                {
+                    outShape.Insert(axis, 1);
+                }
+                else
+                {
+                    var index = System.Math.Max(outShape.Count + axis + 1, 0);
+                    outShape.Insert(index, 1);
+                }
+            }
 
-            var post = IR.F.Tensors.Unsqueeze(packed, axes);
+            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(unseq, lanes, unpackAxes), outShape.ToArray(), pads);
             if (post.CheckedType is not InvalidType)
             {
-                var unpackAxes = packedAxes.Select(axis => axis + axes.Count(i => i <= axis)).ToArray();
-                var outShape = inShape.ToList();
-                foreach (var axis in axes)
-                {
-                    if (axis >= 0)
-                    {
-                        outShape.Insert(axis, 1);
-                    }
-                    else
-                    {
-                        var index = System.Math.Max(outShape.Count + axis + 1, 0);
-                        outShape.Insert(index, 1);
-                    }
-                }
-
-                rets.Add(PackUtility.SliceForPack(IR.F.CPU.Unpack(post, lanes, unpackAxes), outShape.ToArray(), pads));
+                rets.Add(post);
             }
         }
 
@@ -720,7 +730,7 @@ public sealed class PackConv2D : PackRule
     public override Pattern Pattern { get; } = IsConv2D(
         "conv",
         conv => conv.PadMode == PadMode.Constant,
-        IsWildcard("input"),
+        IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = !IsVector() },
         IsWildcard("weights"),
         IsWildcard("bias"),
         IsTensorConst("stride"),
@@ -796,7 +806,7 @@ public sealed class PackReshape : PackRule
 
     public override Pattern Pattern { get; } = IsReshape(
       "target",
-      IsWildcard("input") with { TypePattern = IsFloat() },
+      IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = !IsVector() },
       IsTensorConst("newShape") with { TypePattern = IsIntegral() });
 
     public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
@@ -865,10 +875,11 @@ public sealed class PackReshape : PackRule
                 packedNewShape[axis] = MathUtility.CeilDiv(packedNewShape[axis], lane);
             }
 
-            var post = IR.F.Tensors.Reshape(packed, packedNewShape);
+            var nreshape = IR.F.Tensors.Reshape(packed, packedNewShape);
+            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(nreshape, lanes, unpackAxes.ToArray()), newShape, pads);
             if (post.CheckedType is not InvalidType)
             {
-                rets.Add(PackUtility.SliceForPack(IR.F.CPU.Unpack(post, lanes, unpackAxes.ToArray()), newShape, pads));
+                rets.Add(post);
             }
         }
 
@@ -897,7 +908,7 @@ public sealed class PackSlice : PackRule
 
     public override Pattern Pattern { get; } = IsSlice(
       "target",
-      IsWildcard("input") with { TypePattern = IsFloat() },
+      IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
       IsTensorConst("begins") with { TypePattern = IsIntegral() },
       IsTensorConst("ends") with { TypePattern = IsIntegral() },
       IsTensorConst("axes") with { TypePattern = IsIntegral() },
@@ -955,10 +966,11 @@ public sealed class PackSlice : PackRule
             }
 
             var packed = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packAxes, lanes, 0f, out var pads), lanes, packAxes);
-            var post = IR.F.Tensors.Slice(packed, packedBegins, packedEnds, axes, strides);
+            var slice = IR.F.Tensors.Slice(packed, packedBegins, packedEnds, axes, strides);
+            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(slice, lanes, packAxes), candidate.CheckedShape.ToValueArray(), pads);
             if (post.CheckedType is not InvalidType)
             {
-                rets.Add(PackUtility.SliceForPack(IR.F.CPU.Unpack(post, lanes, packAxes), candidate.CheckedShape.ToValueArray(), pads));
+                rets.Add(post);
             }
         }
 
