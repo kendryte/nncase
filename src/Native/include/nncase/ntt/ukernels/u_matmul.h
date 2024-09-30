@@ -212,7 +212,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, M0Tile,
                 for (size_t k1 = 0; k1 < K; k1++) {
                     // Force compiler do not unroll the loop
                     size_t sk1_max = TLhsElem::shape()[1];
-                    #pragma GCC unroll 1
+#pragma GCC unroll 1
                     for (size_t sk1 = 0; sk1 < sk1_max; sk1++) {
                         using TSubLhsElem = typename TLhsElem::element_type;
                         using TSubRhsElem =
