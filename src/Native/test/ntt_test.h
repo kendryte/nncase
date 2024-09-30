@@ -37,7 +37,7 @@
 
 #if defined __x86_64
 #ifndef CPU_FREQUENCY_MHZ
-#define CPU_FREQUENCY_MHZ 4100
+#define CPU_FREQUENCY_MHZ 2450
 #endif
 
 #ifndef CLOCK_SOURCE_FREQUENCY_MHZ

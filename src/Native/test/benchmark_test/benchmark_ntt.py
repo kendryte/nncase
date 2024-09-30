@@ -387,7 +387,7 @@ class BenchmarkNTTMatmul_x86_64(BenchmarkNTTMatmul):
 
     def run(self):
         for bin in self.bin_list:
-            cmd_status, cmd_result = subprocess.getstatusoutput(f'{bin}')
+            cmd_status, cmd_result = subprocess.getstatusoutput('taskset -c 0 ' + f'{bin}')
             assert (cmd_status == 0)
             self.parse_result(cmd_result)
 
