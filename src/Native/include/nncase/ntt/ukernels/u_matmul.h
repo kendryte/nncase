@@ -210,7 +210,9 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, M0Tile,
                 });
 
                 for (size_t k1 = 0; k1 < K; k1++) {
-                    for (size_t sk1 = 0; sk1 < TLhsElem::shape()[1]; sk1++) {
+                    volatile size_t sk1_max = TLhsElem::shape()[1];
+                    [[assume(sk1_max > 0)]];
+                    for (size_t sk1 = 0; sk1 < sk1_max; sk1++) {
                         using TSubLhsElem = typename TLhsElem::element_type;
                         using TSubRhsElem =
                             ntt::vector<typename TRhsElem::element_type,
