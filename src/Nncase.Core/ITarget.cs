@@ -18,6 +18,8 @@ public interface ICpuTargetOptions : ITargetOptions
     int[] MemoryCapacities { get; }
 
     int[] MemoryBandWidths { get; }
+
+    bool UnifiedMemoryArch { get; }
 }
 
 /// <summary>

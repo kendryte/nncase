@@ -9,16 +9,16 @@ namespace Nncase.Evaluator;
 
 public interface IKernelInfoEvaluator
 {
-    MicroKernelInfo Visit(Op op, AffineDim[] domain, AffineMap[] accessMaps, int[][] bufferShapes, ITargetOptions targetOptions);
+    MicroKernelInfo Visit(Op op, MicroKernelContext context);
 }
 
 public interface IKernelInfoEvaluator<T> : IKernelInfoEvaluator
     where T : Op
 {
-    MicroKernelInfo Visit(T op, AffineDim[] domain, AffineMap[] accessMaps, int[][] bufferShapes, ITargetOptions targetOptions);
+    MicroKernelInfo Visit(T op, MicroKernelContext context);
 
-    MicroKernelInfo IKernelInfoEvaluator.Visit(Op op, AffineDim[] domain, AffineMap[] accessMaps, int[][] bufferShapes, ITargetOptions targetOptions)
+    MicroKernelInfo IKernelInfoEvaluator.Visit(Op op, MicroKernelContext context)
     {
-        return Visit((T)op, domain, accessMaps, bufferShapes, targetOptions);
+        return Visit((T)op, context);
     }
 }

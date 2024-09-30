@@ -47,8 +47,8 @@ jobs:
         shell: bash
         run: |
           conan install . --build=missing -s build_type=${{matrix.config.buildType}} -pr:a=toolchains/${{matrix.config.name}}.profile.jinja -o "&:runtime=True" -o "&:python=True" -o "&:tests=True"
-          cmake --preset conan-release
-
+          cmake --preset conan-runtime-release
+          
       - name: Build & Install
         run: |
           cmake --build build/${{matrix.config.buildType}} --config ${{matrix.config.buildType}}
@@ -119,7 +119,7 @@ jobs:
         shell: bash
         run: |
           conan install . --build=missing -s build_type=${{matrix.config.buildType}} -pr:h=toolchains/${{matrix.config.name}}.profile.jinja -pr:b=toolchains/x86_64-linux.profile.jinja -o "&:runtime=True" -o "&:python=True" -o "&:tests=True"
-          cmake --preset conan-release
+          cmake --preset conan-runtime-release
 
       - name: Build & Install
         run: |

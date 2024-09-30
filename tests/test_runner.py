@@ -350,7 +350,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
             return None
         e = '"'
         target_options: object = None
-        if target == 'cpu':
+        if target == 'cpu' or target == 'xpu':
             target_options = nncase.CpuTargetOptions()
             for k, v in values.items():
                 exec(f"target_options.{k} = {e + v + e if isinstance(v, str) else v}")

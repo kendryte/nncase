@@ -142,7 +142,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldTwoPads>();
             p.Add<Passes.Rules.Neutral.SwapBinaryArgs>();
             p.Add<Passes.Rules.Neutral.FoldDilatedConv2D>();
-            p.Add<Passes.Rules.Neutral.BianryScalarConstToTensor>();
+            p.Add<Passes.Rules.Neutral.ScalarConstToTensor>();
         });
 
         passManager.AddWithName<DataflowPass>("DeComposePass").Configure(p =>
@@ -153,7 +153,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.DecomposeSwish>();
             p.Add<Passes.Rules.Neutral.DecomposeInstanceNorm>();
             p.Add<Passes.Rules.Neutral.DecomposeGelu>();
-            p.Add<Passes.Rules.Neutral.BianryScalarConstToTensor>();
+            p.Add<Passes.Rules.Neutral.ScalarConstToTensor>();
         });
 
         passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>

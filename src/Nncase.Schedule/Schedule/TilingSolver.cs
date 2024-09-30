@@ -97,9 +97,10 @@ internal sealed class TilingSolver
         IntExpr one = model.MakeIntConst(1, "one");
         IntExpr zero = model.MakeIntConst(0, "zero");
         IntExpr elem = model.MakeIntConst(elemSize, "elem");
-        var info = CompilerServices.GetOpMicroKernelInfo(computation, fullDomain.GetRow(totalLevel).ToArray(), accessMaps, bufferShapes, TargetOptions);
-        var primitiveSizes = info.Primitives;
-        var primitiveMultiplier = info.Multiplier;
+
+        // var info = CompilerServices.GetOpMicroKernelInfo(computation, fullDomain.GetRow(totalLevel).ToArray(), accessMaps, bufferShapes, TargetOptions);
+        var primitiveSizes = Enumerable.Repeat(1, domainBounds.Length).ToArray();
+        var primitiveMultiplier = Enumerable.Repeat(new ValueRange<int>(1, 1), domainBounds.Length).ToArray();
 
         // 1. create tilesize vars, and we save the statement level tile size var in the last row.
         var tileVars = new IntVar[totalLevel + 1, fullDomain.GetLength(1)];
@@ -371,9 +372,9 @@ internal sealed class TilingSolver
             // custom the computation level cycles
             {
                 var computationLoad = totalLoopTimes * primitiveBufferSizes.SkipLast(1).Aggregate(zero, (acc, s) => acc + s);
-                levelCycles[0] += computationLoad.CeilDiv(info.ReadBandWidth);
+                levelCycles[0] += computationLoad.CeilDiv(4);
                 var computationStore = totalLoopTimes * primitiveBufferSizes[^1];
-                levelCycles[0] += computationStore.CeilDiv(info.WriteBandWidth);
+                levelCycles[0] += computationStore.CeilDiv(4);
             }
         }
 

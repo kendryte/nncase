@@ -80,3 +80,12 @@ public sealed partial class Nop : Op
     /// <inheritdoc/>
     public override bool CanFoldConstCall => false;
 }
+
+public sealed partial class Memcopy : Op
+{
+    public static readonly ParameterInfo Dest = new(typeof(Memcopy), 0, "dest");
+
+    public static readonly ParameterInfo Src = new(typeof(Memcopy), 1, "src");
+
+    public override bool CanFoldConstCall => false;
+}

@@ -20,12 +20,12 @@ public sealed partial class Compare : Op
     /// <summary>
     /// Gets lhs.
     /// </summary>
-    public static readonly ParameterInfo Lhs = new(typeof(Compare), 0, "lhs");
+    public static readonly ParameterInfo Lhs = new(typeof(Compare), 0, "lhs", ParameterKind.Input);
 
     /// <summary>
     /// Gets rhs.
     /// </summary>
-    public static readonly ParameterInfo Rhs = new(typeof(Compare), 1, "rhs");
+    public static readonly ParameterInfo Rhs = new(typeof(Compare), 1, "rhs", ParameterKind.Input);
 
     public CompareOp CompareOp { get; }
 

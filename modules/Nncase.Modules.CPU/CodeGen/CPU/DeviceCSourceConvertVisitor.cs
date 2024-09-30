@@ -283,7 +283,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             case IR.Tensors.Cast op:
                 str = $"(({op.NewType.ToC()}){arguments[0].Name})";
                 break;
-            case TIR.CPU.Memcopy op:
+            case TIR.Memcopy op:
                 IndentScope.Writer.IndWrite($"tensor_copy({arguments[1].Name}, {arguments[0].Name});\n");
                 break;
             case TIR.CPU.Unary op:

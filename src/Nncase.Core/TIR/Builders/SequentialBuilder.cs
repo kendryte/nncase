@@ -26,9 +26,9 @@ public interface ISequentialBuilder<out T> : IExprBuilder<T>
     ISequentialBuilder<T> Body(params object[] exprOrBuilders);
 
     /// <summary>
-    /// Insert the expr items to body.
+    /// Insert the expr items to Tail.
     /// </summary>
-    ISequentialBuilder<T> InsertBody(int index, params object[] exprOrBuilders);
+    ISequentialBuilder<T> Tail(params object[] exprOrBuilders);
 }
 
 internal class SequentialBuilder<T> : ISequentialBuilder<T>
@@ -36,6 +36,7 @@ internal class SequentialBuilder<T> : ISequentialBuilder<T>
 {
     private readonly Func<Sequential, T> _creator;
     private readonly List<object> _body = new();
+    private readonly List<object> _tail = new();
 
     public SequentialBuilder(Func<Sequential, T> creator)
     {
@@ -50,12 +51,15 @@ internal class SequentialBuilder<T> : ISequentialBuilder<T>
 
     public T Build()
     {
-        return _creator(Sequential.Flatten(CollectionsMarshal.AsSpan(_body)));
+        var l = new List<object>();
+        l.AddRange(_body);
+        l.AddRange(_tail);
+        return _creator(Sequential.Flatten(CollectionsMarshal.AsSpan(l)));
     }
 
-    public ISequentialBuilder<T> InsertBody(int index, params object[] exprOrBuilders)
+    public ISequentialBuilder<T> Tail(params object[] exprOrBuilders)
     {
-        _body.InsertRange(index, exprOrBuilders);
+        _tail.AddRange(exprOrBuilders);
         return this;
     }
 }

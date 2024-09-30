@@ -83,6 +83,9 @@ class OnnxTestRunner(TestRunner):
     def do_preprocess(self, model_file):
         # preprocess model
         old_onnx_model = onnx.load(model_file)
+        if old_onnx_model.ByteSize() >= 2147483648:
+            return model_file
+
         onnx_model = self.preprocess_model(old_onnx_model)
         onnx_model = onnx_model or self.preprocess_model(
             old_onnx_model, convert_version=False)
@@ -95,7 +98,7 @@ class OnnxTestRunner(TestRunner):
         model_file = os.path.join(
             os.path.dirname(model_file), 'simplified.onnx')
         onnx.save_model(onnx_model, model_file,
-                        save_as_external_data=True if onnx_model.ByteSize() > 2147483648 else False)
+                        save_as_external_data=True if onnx_model.ByteSize() >= 2147483648 else False)
         return model_file
 
     def preprocess_model(self, onnx_model, fix_bn=True, convert_version=True, simplify=True, import_test=True):
