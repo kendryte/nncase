@@ -15,6 +15,9 @@ endif()
 
 add_library(cpu_loaders OBJECT ${SRCS})
 set_property(TARGET cpu_loaders PROPERTY POSITION_INDEPENDENT_CODE ON)
+if (NOT WIN32 AND NOT APPLE)
+    target_link_libraries(cpu_loaders PRIVATE -ldl)
+endif()
 
 if (BUILDING_RUNTIME)
     install(TARGETS cpu_loaders EXPORT nncaseruntimeTargets)

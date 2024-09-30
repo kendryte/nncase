@@ -222,7 +222,7 @@ public interface ICompilerServicesProvider
     /// <returns>Rewrited expression.</returns>
     IEGraph ERewrite(IEGraph expr, IEnumerable<IRewriteRule> rules, RunPassContext options);
 
-    MicroKernelInfo GetOpMicroKernelInfo(Op op, AffineDim[] domain, AffineMap[] accessMaps, int[][] bufferShapes, ITargetOptions targetOptions);
+    MicroKernelInfo GetOpMicroKernelInfo(Op op, MicroKernelContext context);
 }
 
 internal interface ICompilerServicesProviderInternal
@@ -330,7 +330,7 @@ public static class CompilerServices
     /// <returns>Evaluate result.</returns>
     public static Dictionary<Expr, Metric> EvaluateMetric(Expr expr) => Provider.EvaluateMetric(expr);
 
-    public static MicroKernelInfo GetOpMicroKernelInfo(Op op, AffineDim[] domain, AffineMap[] accessMaps, int[][] bufferShapes, ITargetOptions targetOptions) => Provider.GetOpMicroKernelInfo(op, domain, accessMaps, bufferShapes, targetOptions);
+    public static MicroKernelInfo GetOpMicroKernelInfo(Op op, MicroKernelContext context) => Provider.GetOpMicroKernelInfo(op, context);
 
     /// <summary>
     /// Evaluate cost of operator.
@@ -717,5 +717,5 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         return _eGraphrewriteProvider.ERewrite(graph, rules, options);
     }
 
-    public MicroKernelInfo GetOpMicroKernelInfo(Op op, AffineDim[] domain, AffineMap[] accessMaps, int[][] bufferShapes, ITargetOptions targetOptions) => _microKernelInfoGetter.GetInfo(op, domain, accessMaps, bufferShapes, targetOptions);
+    public MicroKernelInfo GetOpMicroKernelInfo(Op op, MicroKernelContext context) => _microKernelInfoGetter.GetInfo(op, context);
 }

@@ -49,9 +49,9 @@ internal class NestBodyExprBuilder<T> : ISequentialBuilder<T>
         return _subBuilders[0].Build();
     }
 
-    public ISequentialBuilder<T> InsertBody(int index, params object[] exprOrBuilders)
+    public ISequentialBuilder<T> Tail(params object[] exprOrBuilders)
     {
-        _subBuilders[index < 0 ? _subBuilders.Length + index : index].Body(exprOrBuilders);
+        _subBuilders[_subBuilders.Length - 1].Tail(exprOrBuilders);
         return this;
     }
 }

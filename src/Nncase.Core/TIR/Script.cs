@@ -59,6 +59,11 @@ public static class T
     /// </summary>
     public static Call Nop() => new Call(new Nop());
 
+    public static Call Memcopy(Expr dest, Expr src)
+    {
+        return new Call(new Memcopy(), dest, src);
+    }
+
     /// <summary>
     /// Store value to the buffer.
     /// Equivalent to ((DType*)buffer_var)[index] = value.

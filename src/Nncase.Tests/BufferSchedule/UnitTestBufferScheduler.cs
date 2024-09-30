@@ -29,7 +29,7 @@ public sealed class UnitTestBufferScheduler : TestClassBase
     public static TheoryData<Func<Fusion>, int, int> ScheduleGetItemDatas
     { get; } = new()
     {
-        { SampleSwish, 1600, 0 },
+        { SampleSwish, 1648, 0 },
     };
 
     public static Fusion SampleSwish()

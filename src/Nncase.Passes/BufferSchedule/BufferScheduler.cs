@@ -120,6 +120,7 @@ public class BufferScheduler
             var yInterval = model.NewFixedSizeIntervalVar(memStartVar, item.MemInterval.Stop, $"{item.Name}_{item.Number}_y");
             noOverlap.AddRectangle(xInterval, yInterval);
             yStarts.Add(memStartVar);
+            model.AddModuloEquality(0, memStartVar, 32);
             boxs.Add(expr, new(xInterval, yInterval));
 
             for (int time = item.TimeInterval.Start; time < item.TimeInterval.Stop; time++)

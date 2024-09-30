@@ -35,11 +35,6 @@ public partial class CPU
         return new Call(new TensorStore(ndsbp, placement), src, dest);
     }
 
-    public static Call Memcopy(Expr dest, Expr src)
-    {
-        return new Call(new Memcopy(), dest, src);
-    }
-
     public static Call Unary(UnaryOp unaryOp, Expr input, Expr output)
     {
         return new Call(new TIR.CPU.Unary(unaryOp), input, output);
@@ -175,5 +170,15 @@ public partial class CPU
     public static Call Erf(Expr input, Expr output)
     {
         return new Call(new TIR.CPU.Erf(), input, output);
+    }
+
+    public static Call Compare(CompareOp compareOp, Expr lhs, Expr rhs, Expr output)
+    {
+        return new Call(new TIR.CPU.Compare(compareOp), lhs, rhs, output);
+    }
+
+    public static Call ScatterND(Expr input, Expr indices, Expr updates, Expr output)
+    {
+        return new Call(new TIR.CPU.ScatterND(), input, indices, updates, output);
     }
 }

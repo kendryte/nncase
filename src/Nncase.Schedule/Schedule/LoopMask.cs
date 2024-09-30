@@ -27,6 +27,8 @@ public struct LoopMask
     public bool IsRelated(int loop) => (_mask & (1 << loop)) != 0;
 
     public bool IsRelated(IR.Affine.AffineDim dim) => (_mask & (1 << dim.Position)) != 0;
+
+    public override string ToString() => Convert.ToString(_mask, 2);
 }
 
 public record LoopMasks(LoopMask[] Masks) : IReadOnlyList<LoopMask>

@@ -374,7 +374,7 @@ internal sealed class DeviceToTIRConverter
             Visit(call.Arguments[0], rootMap, inRegion, out var _),
             block);
 #if USE_KERNEL_LIB
-        block.Body(TIR.F.CPU.Memcopy(outRegion, inRegion));
+        block.Body(T.Memcopy(outRegion, inRegion));
 #else
         // var inStarts = inRegion.Region.ToArray().Select(r => (T.Let(out var start, r.Start), start)).ToArray();
         // var outStarts = outRegion.Region.ToArray().Select(r => (T.Let(out var start, r.Start), start)).ToArray();
@@ -422,7 +422,7 @@ internal sealed class DeviceToTIRConverter
             Visit(call.Arguments[0], rootMap, inRegion, out inputMaps),
             block);
 #if USE_KERNEL_LIB
-        block.Body(TIR.F.CPU.Memcopy(outRegion, inRegion));
+        block.Body(T.Memcopy(outRegion, inRegion));
 #else
         // var inStarts = inRegion.Region.ToArray().Select(r => (T.Let(out var start, r.Start), start)).ToArray();
         // var outStarts = outRegion.Region.ToArray().Select(r => (T.Let(out var start, r.Start), start)).ToArray();

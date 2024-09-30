@@ -52,7 +52,7 @@ gather_impl(const T *input, T *output, std::span<const size_t> in_shape,
 
 #if defined(__GNUC__)
 #pragma GCC diagnostic push
-#if !defined(__clang__) && __GNUC__ >= 14
+#if !defined(__clang__) && __GNUC__ >= 13
 #pragma GCC diagnostic ignored "-Warray-bounds"
 #pragma GCC diagnostic ignored "-Wstringop-overread"
 #endif
