@@ -154,7 +154,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, M0Tile,
                 a.view(make_ranked_shape(0, k1), fixed_shape<M0Tile, 1>{});
             auto b0 =
                 b.view(make_ranked_shape(k1, 0), fixed_shape<1, N0Tile>{});
-            for (size_t sk1 = 0; sk1 < TLhsElem::shape()[0]; sk1++) {
+            for (size_t sk1 = 0; sk1 < TLhsElem::shape()[1]; sk1++) {
                 using TSubLhsElem = typename TLhsElem::element_type;
                 using TSubRhsElem = ntt::vector<typename TRhsElem::element_type,
                                                 TRhsElem::shape().last()>;
@@ -210,7 +210,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, M0Tile,
                 });
 
                 for (size_t k1 = 0; k1 < K; k1++) {
-                    for (size_t sk1 = 0; sk1 < TLhsElem::shape()[0]; sk1++) {
+                    for (size_t sk1 = 0; sk1 < TLhsElem::shape()[1]; sk1++) {
                         using TSubLhsElem = typename TLhsElem::element_type;
                         using TSubRhsElem =
                             ntt::vector<typename TRhsElem::element_type,

@@ -304,7 +304,7 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_K_N() {
         ntt::tensor<ntt::vector<float, P, P>, ntt::fixed_shape<K / P, N / P>>
             pb;
     alignas(32)
-        ntt::tensor<ntt::vector<float, P, P>, ntt::fixed_shape<K / P, N / P>>
+        ntt::tensor<ntt::vector<float, P, P>, ntt::fixed_shape<M / P, N / P>>
             pc;
     ntt::pack<0, 1>(ta, pa);
     ntt::pack<0, 1>(tb, pb);
