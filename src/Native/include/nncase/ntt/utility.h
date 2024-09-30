@@ -149,4 +149,13 @@ reduce_source_offset(ranked_shape<OutRank> out_index) noexcept {
         return in_index;
     }
 }
+
+template <size_t Rank, size_t... Axes>
+constexpr auto make_index_axes(std::index_sequence<Axes...>) noexcept {
+    return fixed_shape<Axes...>{};
+}
+
+template <size_t Rank> constexpr auto make_index_axes() noexcept {
+    return make_index_axes<Rank>(std::make_index_sequence<Rank>());
+}
 } // namespace nncase::ntt

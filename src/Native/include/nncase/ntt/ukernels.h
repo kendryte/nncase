@@ -123,6 +123,26 @@ template <reduce_op Op, class T, bool Arch> struct u_reduce {
         }
     }
 };
+
+enum class mamtul_pack_kind {
+    unknown,
+    no_pack,
+    pack_m,
+    pack_k,
+    pack_n,
+    pack_mn,
+    pack_mk,
+    pack_kn,
+    pack_mkn,
+};
+
+template <mamtul_pack_kind PackKind, class TLhsElem, class TRhsElem,
+          class TOutElem, bool Arch>
+struct u_matmul_policy {
+    static constexpr size_t m0_tile = 1;
+    static constexpr size_t n0_tile = 1;
+    static constexpr size_t m0_subtile = 0;
+};
 } // namespace nncase::ntt::ukernels
 
 namespace nncase::ntt {
@@ -136,8 +156,16 @@ constexpr void u_pack(const TIn *input, TOut *output) noexcept {
 
 template <reduce_op Op, class T>
 constexpr T u_reduce(const T *input, size_t input_stride, size_t count,
-                     T init_value) {
+                     T init_value) noexcept {
     ukernels::u_reduce<Op, T, true> impl;
     return impl(input, input_stride, count, init_value);
 }
+
+// template <bool AccC, class TLhsElem, class TRhsElem, class TOutElem>
+// constexpr void u_matmul(const TLhsElem *&lhs, const TRhsElem *&rhs,
+//                         TOutElem *output, size_t M, size_t N, size_t K,
+//                         size_t lhs_stride, size_t rhs_stride,
+//                         size_t out_stride) noexcept {
+
+//                         }
 } // namespace nncase::ntt
