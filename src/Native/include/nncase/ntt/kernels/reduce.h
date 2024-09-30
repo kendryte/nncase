@@ -63,9 +63,6 @@ class reduce_impl {
     using TOutElem = typename TOut::element_type;
     using TOutScalar = element_or_scalar_t<TOutElem>;
 
-    static constexpr bool use_vector_reduce =
-        PackedAxes::rank() == 1 && PackedAxes::at(0) >= Axes::at(0);
-
     static constexpr TInElem initial_value() noexcept {
         if constexpr (Op == reduce_op::mean || Op == reduce_op::sum) {
             return (TInElem)0;
@@ -104,8 +101,12 @@ class reduce_impl {
                 size_t inner_size =
                     slice_fixed_dims<Axes::rank(), Axes::at(0)>(input.shape())
                         .length();
-                if constexpr (use_vector_reduce) {
+                if constexpr (IsVector<TOutElem>) {
                     inner_size *= TInElem::shape_type::length();
+                }
+
+                if constexpr (IsVector<TOutElem>) {
+                    inner_size /= TOutElem::shape_type::length();
                 }
 
                 auto denom = (TOutScalar)inner_size;

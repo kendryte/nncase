@@ -943,7 +943,7 @@ int main() {
             ntt::tensor<float, ntt::fixed_shape<1, 1, 8>> tb, upb;
             ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<1, 2, 2>> pa;
             ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 1, 2>> pb;
-            std::iota(ta.elements().begin(), ta.elements().begin(), 0.f);
+            std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
             ntt::pack<1, 2>(ta, pa.view());
 
             ntt::reduce_sum<ntt::fixed_shape<1>>(ta, tb);
@@ -951,9 +951,8 @@ int main() {
             ntt::reduce_sum<ntt::fixed_shape<1>, ntt::fixed_shape<1, 2>,
                             ntt::fixed_shape<0, 0>>(pa, pb);
 
-            ntt::unpack<1>(pb, upb.view());
+            ntt::unpack<2>(pb, upb.view());
             ntt::apply(tb.shape(), [&]([[maybe_unused]] auto index) {
-                assert(tb(index) == upb(index));
                 assert(tb(index) == upb(index));
             });
         }
@@ -964,7 +963,7 @@ int main() {
             ntt::tensor<float, ntt::fixed_shape<1, 8, 1>> tb, upb;
             ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<1, 2, 2>> pa;
             ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 2, 1>> pb;
-            std::iota(ta.elements().begin(), ta.elements().begin(), 0.f);
+            std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
             ntt::pack<1, 2>(ta, pa.view());
 
             ntt::reduce_mean<ntt::fixed_shape<2>>(ta, tb);
@@ -974,7 +973,6 @@ int main() {
 
             ntt::unpack<1>(pb, upb.view());
             ntt::apply(tb.shape(), [&]([[maybe_unused]] auto index) {
-                assert(tb(index) == upb(index));
                 assert(tb(index) == upb(index));
             });
         }
