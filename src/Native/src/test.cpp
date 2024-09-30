@@ -72,18 +72,19 @@ int main() {
 
     // 2d binary
     {
-      // pack and broadcast
+        // pack and broadcast
         {
-          ntt::tensor<float, ntt::fixed_shape<1, 16, 8>> ta;
-          ntt::tensor<float, ntt::fixed_shape<8>> tb;
-          std::fill(ta.elements().begin(), ta.elements().end(), 1.f);
-          std::fill(tb.elements().begin(), tb.elements().end(), 1.f);
-          ntt::tensor<ntt::vector<float,4,4>, ntt::fixed_shape<1, 4, 2>> pa, pc;
-          ntt::tensor<ntt::vector<float,4>, ntt::fixed_shape<2>> pb;
-          ntt::pack<1,2>(ta,pa);
-          ntt::pack<0>(tb,pb);
-          ntt::binary<ntt::ops::add>(pa, pb, pc.view());
-        } 
+            ntt::tensor<float, ntt::fixed_shape<1, 16, 8>> ta;
+            ntt::tensor<float, ntt::fixed_shape<8>> tb;
+            std::fill(ta.elements().begin(), ta.elements().end(), 1.f);
+            std::fill(tb.elements().begin(), tb.elements().end(), 1.f);
+            ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<1, 4, 2>> pa,
+                pc;
+            ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<2>> pb;
+            ntt::pack<1, 2>(ta, pa);
+            ntt::pack<0>(tb, pb);
+            ntt::binary<ntt::ops::add>(pa, pb, pc.view());
+        }
     }
 
     // 1
@@ -643,7 +644,7 @@ int main() {
 
     // transposeB matmul test
     {
-        // 1. ref
+        // 1. tb
         ntt::tensor<float, ntt::fixed_shape<8, 8>> ta;
         ntt::tensor<float, ntt::fixed_shape<8, 8>> tb;
         ntt::tensor<float, ntt::fixed_shape<8, 8>> tc;
@@ -686,10 +687,12 @@ int main() {
                 ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<2, 8>>
                     packb;
                 ntt::pack<0>(tranb, packb);
-                ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 2>> tc2;
+                ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 2>>
+                    tc2;
                 ntt::matmul<false, false, true>(
-                    packa, packb, tc2, ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
-                    ntt::fixed_shape<0>{}, ntt::fixed_shape<>{});
+                    packa, packb, tc2, ntt::fixed_shape<0>{},
+                    ntt::fixed_shape<>{}, ntt::fixed_shape<0>{},
+                    ntt::fixed_shape<>{});
 
                 ntt::tensor<float, ntt::fixed_shape<8, 8>> tc2unpack;
                 ntt::unpack<0, 1>(tc2, tc2unpack);
@@ -919,17 +922,62 @@ int main() {
         assert(te(3, 0, 1) == 1.3f);
     }
 
+    // reduce
     {
-        ntt::tensor<float, ntt::fixed_shape<2, 8>> ta;
-        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<2, 2>> tav;
-        std::fill(ta.elements().begin(), ta.elements().begin() + 8, 1.f);
-        std::fill(ta.elements().begin() + 8, ta.elements().end(), 3.2f);
-        ntt::pack<1>(ta, tav.view());
+        { // pack 1d
+            ntt::tensor<float, ntt::fixed_shape<2, 8>> ta;
+            ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<2, 2>> tav;
+            std::fill(ta.elements().begin(), ta.elements().begin() + 8, 1.f);
+            std::fill(ta.elements().begin() + 8, ta.elements().end(), 3.2f);
+            ntt::pack<1>(ta, tav.view());
 
-        ntt::tensor<float, ntt::fixed_shape<2, 1>> tb;
-        ntt::reduce_sum<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(tav, tb);
-        assert(are_floats_equal(tb(0, 0), 8.f));
-        assert(are_floats_equal(tb(1, 0), 25.6f));
+            ntt::tensor<float, ntt::fixed_shape<2, 1>> tb;
+            ntt::reduce_sum<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(tav, tb);
+            assert(are_floats_equal(tb(0, 0), 8.f));
+            assert(are_floats_equal(tb(1, 0), 25.6f));
+        }
+
+        {
+            // pack 2d, inner reduce 0
+            ntt::tensor<float, ntt::fixed_shape<1, 8, 8>> ta;
+            ntt::tensor<float, ntt::fixed_shape<1, 1, 8>> tb, upb;
+            ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<1, 2, 2>> pa;
+            ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 1, 2>> pb;
+            std::iota(ta.elements().begin(), ta.elements().begin(), 0.f);
+            ntt::pack<1, 2>(ta, pa.view());
+
+            ntt::reduce_sum<ntt::fixed_shape<1>>(ta, tb);
+
+            ntt::reduce_sum<ntt::fixed_shape<1>, ntt::fixed_shape<1, 2>,
+                            ntt::fixed_shape<0, 0>>(pa, pb);
+
+            ntt::unpack<1>(pb, upb.view());
+            ntt::apply(tb.shape(), [&]([[maybe_unused]] auto index) {
+                assert(tb(index) == upb(index));
+                assert(tb(index) == upb(index));
+            });
+        }
+
+        {
+            // pack 2d, inner reduce 1
+            ntt::tensor<float, ntt::fixed_shape<1, 8, 8>> ta;
+            ntt::tensor<float, ntt::fixed_shape<1, 8, 1>> tb, upb;
+            ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<1, 2, 2>> pa;
+            ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 2, 1>> pb;
+            std::iota(ta.elements().begin(), ta.elements().begin(), 0.f);
+            ntt::pack<1, 2>(ta, pa.view());
+
+            ntt::reduce_mean<ntt::fixed_shape<2>>(ta, tb);
+
+            ntt::reduce_mean<ntt::fixed_shape<2>, ntt::fixed_shape<1, 2>,
+                            ntt::fixed_shape<0, 0>>(pa, pb);
+
+            ntt::unpack<1>(pb, upb.view());
+            ntt::apply(tb.shape(), [&]([[maybe_unused]] auto index) {
+                assert(tb(index) == upb(index));
+                assert(tb(index) == upb(index));
+            });
+        }
     }
 
     {

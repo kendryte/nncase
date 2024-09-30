@@ -24,6 +24,17 @@ template <> struct tload_scalar<ntt::vector<float, 4>> {
     }
 };
 
+template <> struct tload_scalar<ntt::vector<float, 4, 4>> {
+    ntt::vector<float, 4, 4> operator()(const float &v) const noexcept {
+        ntt::vector<float, 4, 4> ret;
+        ret(0) = vdupq_n_f32(v);
+        ret(1) = vdupq_n_f32(v);
+        ret(2) = vdupq_n_f32(v);
+        ret(3) = vdupq_n_f32(v);
+        return ret;
+    }
+};
+
 template <> struct tload_scalar<ntt::vector<float, 8>> {
     ntt::vector<float, 8> operator()(const float &v) const noexcept {
         return float32x4x2_t{vdupq_n_f32(v), vdupq_n_f32(v)};

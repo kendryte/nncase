@@ -22,7 +22,7 @@ public sealed partial class Reduce : CPUKernelOp
 
     public IRArray<int> PadedNums { get; }
 
-    public Nncase.IR.IRArray<int> Axis { get; }
+    public IRArray<int> Axes { get; }
 
     public bool KeepDims { get; }
 

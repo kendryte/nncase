@@ -209,6 +209,9 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             case IR.NN.Erf erf:
                 _mainBody.Add(TIR.F.CPU.Erf(arguments[0], ret));
                 break;
+            case IR.CPU.PackedReduce pr:
+                _mainBody.Add(TIR.F.CPU.Reduce(arguments[0], ret, pr.PackedAxes.ToArray(), pr.PadedNums.ToArray(), pr.Axes, pr.KeepDims, pr.ReduceOp));
+                break;
             case IR.Tensors.GetItem:
                 break;
             default:

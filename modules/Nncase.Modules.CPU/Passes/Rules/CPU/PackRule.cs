@@ -76,6 +76,73 @@ public sealed class PackResizeImage : PackRule
     }
 }
 
+public sealed class PackReduce : PackRule
+{
+    public PackReduce(int rank, int lane)
+        : base(rank, lane)
+    {
+    }
+
+    public override Pattern Pattern { get; } = IsReduce(
+      "target",
+      r => r.ReduceOp is ReduceOp.Mean or ReduceOp.Sum,
+      IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
+      IsTensorConst("axes") with { TypePattern = IsIntegral() },
+      IsTensorConst("initValue") with { TypePattern = IsFloat() },
+      IsTensorConst("keepDims") with { TypePattern = IsBool() });
+
+    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
+    {
+        var rets = new List<Expr>();
+        var op = (IR.Math.Reduce)result["target"];
+        var input = (Expr)result["input"];
+        var axes = ((TensorConst)result["axes"]).Value.ToArray<int>();
+        if (axes.Length > 1)
+        {
+            return new();
+        }
+
+        var initValue = ((TensorConst)result["initValue"]).Value.ToScalar<float>();
+        var keepDims = ((TensorConst)result["keepDims"]).Value.ToScalar<bool>();
+        var inShape = input.CheckedShape.ToValueArray();
+
+        void AddCandidate(int[] packedAxes, int[] lanes)
+        {
+            var packedInput = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+
+            // todo support padings.
+            if (padsInput.Any(x => x > 0))
+            {
+                return;
+            }
+
+            Call reduce = IR.F.CPU.PackedReduce(packedInput, op.ReduceOp, axes, initValue, keepDims, packedAxes, padsInput);
+
+            var (outPackAxes, outPadNums, outLanes, outShape) = IR.CPU.PackedReduce.ComputeOutputInfo((IR.CPU.PackedReduce)reduce.Target, inShape, lanes);
+            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(reduce, outLanes, outPackAxes), outShape, outPadNums);
+
+            if (post.CheckedType is not InvalidType)
+            {
+                rets.Add(post);
+            }
+        }
+
+        for (int i = 0; i < input.CheckedShape.Count; i++)
+        {
+            AddCandidate([i], [Lane]);
+            for (int j = i + 1; j < input.CheckedShape.Count; j++)
+            {
+                if (Rank > 1)
+                {
+                    AddCandidate([i, j], [Lane, Lane]);
+                }
+            }
+        }
+
+        return rets;
+    }
+}
+
 public sealed class PackInstanceNorm : PackRule
 {
     public PackInstanceNorm(int rank, int lane)
