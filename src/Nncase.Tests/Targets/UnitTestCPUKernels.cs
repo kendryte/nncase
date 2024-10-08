@@ -60,7 +60,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     public static int Rank => 2;
 
-    [Theory(Skip = "Bug")]
+    [Theory]
     [InlineData(new object[] { new[] { 32, 64 }, new[] { 64, 48 }, new[] { 48, 16 }, 0 })]
     [InlineData(new object[] { new[] { 128, 256 }, new[] { 256, 384 }, new[] { 384, 512 }, 1 })]
     [InlineData(new object[] { new[] { 1024, 2048 }, new[] { 2048, 1024 }, new[] { 1024, 3072 }, 2, true })]
@@ -72,8 +72,6 @@ public sealed class UnitTestCPUKernels : TestClassBase
         }
 
         options.Packing = packing;
-        options.MemoryBandWidths = [128, 64, 16, 2];
-        options.MemoryCapacities = [0, 65536, 4194304, 2147483647];
         var a = new Var("a", new TensorType(DataTypes.Float32, ashape));
         var b = new Var("b", new TensorType(DataTypes.Float32, bshape));
         var c = IR.F.Tensors.MatMul(a, b);
@@ -170,7 +168,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
     }
 
-    [Theory]
+    [Theory(Skip = "Drop InstanceNorm")]
     [InlineData(new object[] { new[] { 1, 2, 16, 32 }, 1e-5, 0 })]
     [InlineData(new object[] { new[] { 1, 32, 2048 }, 1e-6, 1 })]
     public async Task TestInstanceNorm(int[] shape, float epsion, int count)
