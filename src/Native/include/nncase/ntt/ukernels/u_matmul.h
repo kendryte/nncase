@@ -20,6 +20,18 @@
 
 namespace nncase::ntt {
 namespace ukernels {
+namespace detail {
+template <bool TransposedB, size_t N0Tile> struct b_stride_getter;
+
+template <size_t N0Tile> struct b_stride_getter<true, N0Tile> {
+    using Stride = fixed_shape<N0Tile, 1>;
+};
+
+template <size_t N0Tile> struct b_stride_getter<false, N0Tile> {
+    using Stride = fixed_shape<1, N0Tile>;
+};
+} // namespace detail
+
 template <mamtul_pack_kind PackKind, class TLhsElem, class TRhsElem,
           class TOutElem, bool Arch>
 struct u_matmul_policy {
@@ -28,10 +40,12 @@ struct u_matmul_policy {
     static constexpr size_t m0_subtile = 0;
 };
 
-template <ukernels::mamtul_pack_kind PackKind, bool AccumulateC, size_t M0Tile,
-          size_t N0Tile, class TLhsElem, class TRhsElem, class TOutElem,
-          bool Arch>
+template <ukernels::mamtul_pack_kind PackKind, bool AccumulateC,
+          bool TransposedA, bool TransposedB, size_t M0Tile, size_t N0Tile,
+          class TLhsElem, class TRhsElem, class TOutElem, bool Arch>
 struct u_matmul_generic {
+    using BStride = detail::b_stride_getter<TransposedB, N0Tile>::Stride;
+
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
                               size_t K) noexcept {
@@ -43,15 +57,23 @@ struct u_matmul_generic {
         for (size_t k1 = 0; k1 < K; k1++) {
             auto a0 =
                 a.view(make_ranked_shape(0, k1), fixed_shape<M0Tile, 1>{});
-            auto b0 =
-                b.view(make_ranked_shape(k1, 0), fixed_shape<1, N0Tile>{});
+            auto b0 = b.view(TransposedB ? make_ranked_shape(0, k1)
+                                         : make_ranked_shape(k1, 0),
+                             BStride{});
             TLhsElem a0_tmp[M0Tile];
             TRhsElem b0_tmp[N0Tile];
 
             ntt::apply(fixed_shape<M0Tile>{},
                        [&](auto index) { a0_tmp[index[0]] = a0(index[0], 0); });
-            ntt::apply(fixed_shape<N0Tile>{},
-                       [&](auto index) { b0_tmp[index[0]] = b0(0, index[0]); });
+            if constexpr (TransposedB) {
+                ntt::apply(fixed_shape<N0Tile>{}, [&](auto index) {
+                    b0_tmp[index[0]] = b0(index[0], 0);
+                });
+            } else {
+                ntt::apply(fixed_shape<N0Tile>{}, [&](auto index) {
+                    b0_tmp[index[0]] = b0(0, index[0]);
+                });
+            }
 
             for (size_t n = 0; n < N0Tile; n++) {
                 for (size_t m = 0; m < M0Tile; m++) {
@@ -67,16 +89,20 @@ struct u_matmul_generic {
     }
 };
 
-template <ukernels::mamtul_pack_kind PackKind, bool AccumulateC, size_t M0Tile,
+template <ukernels::mamtul_pack_kind PackKind, bool TransposedA,
+          bool TransposedB, bool AccumulateC, size_t M0Tile, size_t N0Tile,
+          class TLhsElem, class TRhsElem, class TOutElem, bool Arch>
+struct u_matmul
+    : u_matmul_generic<PackKind, AccumulateC, TransposedA, TransposedB, M0Tile,
+                       N0Tile, TLhsElem, TRhsElem, TOutElem, Arch> {};
+
+template <bool AccumulateC, bool TransposedA, bool TransposedB, size_t M0Tile,
           size_t N0Tile, class TLhsElem, class TRhsElem, class TOutElem,
           bool Arch>
-struct u_matmul : u_matmul_generic<PackKind, AccumulateC, M0Tile, N0Tile,
-                                   TLhsElem, TRhsElem, TOutElem, Arch> {};
-
-template <bool AccumulateC, size_t M0Tile, size_t N0Tile, class TLhsElem,
-          class TRhsElem, class TOutElem, bool Arch>
-struct u_matmul<ukernels::mamtul_pack_kind::pack_mn, AccumulateC, M0Tile,
-                N0Tile, TLhsElem, TRhsElem, TOutElem, Arch> {
+struct u_matmul<ukernels::mamtul_pack_kind::pack_mn, AccumulateC, TransposedA,
+                TransposedB, M0Tile, N0Tile, TLhsElem, TRhsElem, TOutElem,
+                Arch> {
+    using BStride = detail::b_stride_getter<TransposedB, N0Tile>::Stride;
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
                               size_t K) noexcept {
@@ -105,15 +131,22 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mn, AccumulateC, M0Tile,
 
                     auto a0 = a.view(make_ranked_shape(0, k1),
                                      fixed_shape<M0Tile, 1>{});
-                    auto b0 = b.view(make_ranked_shape(k1, 0),
-                                     fixed_shape<1, N0Tile>{});
+                    auto b0 = b.view(TransposedB ? make_ranked_shape(0, k1)
+                                                 : make_ranked_shape(k1, 0),
+                                     BStride{});
 
                     ntt::apply(fixed_shape<m0_subtile>{}, [&](auto index) {
                         a0_tmp[index[0]] = a0(0, 0)(sm1 + index[0]);
                     });
-                    ntt::apply(fixed_shape<N0Tile>{}, [&](auto index) {
-                        b0_tmp[index[0]] = b0(0, index[0]);
-                    });
+                    if constexpr (TransposedB) {
+                        ntt::apply(fixed_shape<N0Tile>{}, [&](auto index) {
+                            b0_tmp[index[0]] = b0(index[0], 0);
+                        });
+                    } else {
+                        ntt::apply(fixed_shape<N0Tile>{}, [&](auto index) {
+                            b0_tmp[index[0]] = b0(0, index[0]);
+                        });
+                    }
 
                     for (size_t n = 0; n < N0Tile; n++) {
                         for (size_t m = 0; m < m0_subtile; m++) {
@@ -129,18 +162,22 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mn, AccumulateC, M0Tile,
                 });
             }
         } else {
-            u_matmul_generic<mamtul_pack_kind::pack_mn, AccumulateC, M0Tile,
-                             N0Tile, TLhsElem, TRhsElem, TOutElem, Arch>
+            u_matmul_generic<mamtul_pack_kind::pack_mn, AccumulateC,
+                             TransposedA, TransposedB, M0Tile, N0Tile, TLhsElem,
+                             TRhsElem, TOutElem, Arch>
                 impl;
             impl(a, b, c0, K);
         }
     }
 };
 
-template <bool AccumulateC, size_t M0Tile, size_t N0Tile, class TLhsElem,
-          class TRhsElem, class TOutElem, bool Arch>
-struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, M0Tile,
-                N0Tile, TLhsElem, TRhsElem, TOutElem, Arch> {
+template <bool AccumulateC, bool TransposedA, bool TransposedB, size_t M0Tile,
+          size_t N0Tile, class TLhsElem, class TRhsElem, class TOutElem,
+          bool Arch>
+struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, TransposedA,
+                TransposedB, M0Tile, N0Tile, TLhsElem, TRhsElem, TOutElem,
+                Arch> {
+    using BStride = detail::b_stride_getter<TransposedB, N0Tile>::Stride;
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
                               size_t K) noexcept {
@@ -152,8 +189,9 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, M0Tile,
         for (size_t k1 = 0; k1 < K; k1++) {
             auto a0 =
                 a.view(make_ranked_shape(0, k1), fixed_shape<M0Tile, 1>{});
-            auto b0 =
-                b.view(make_ranked_shape(k1, 0), fixed_shape<1, N0Tile>{});
+            auto b0 = b.view(TransposedB ? make_ranked_shape(0, k1)
+                                         : make_ranked_shape(k1, 0),
+                             BStride{});
             for (size_t sk1 = 0; sk1 < TLhsElem::shape()[1]; sk1++) {
                 using TSubLhsElem = typename TLhsElem::element_type;
                 using TSubRhsElem = ntt::vector<typename TRhsElem::element_type,
@@ -165,9 +203,15 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, M0Tile,
                 ntt::apply(fixed_shape<M0Tile>{}, [&](auto index) {
                     a0_tmp[index[0]] = a0(index[0], 0)(sk1);
                 });
-                ntt::apply(fixed_shape<N0Tile>{}, [&](auto index) {
-                    b0_tmp[index[0]] = b0(0, index[0])(sk1);
-                });
+                if constexpr (TransposedB) {
+                    ntt::apply(fixed_shape<N0Tile>{}, [&](auto index) {
+                        b0_tmp[index[0]] = b0(index[0], 0)(sk1);
+                    });
+                } else {
+                    ntt::apply(fixed_shape<N0Tile>{}, [&](auto index) {
+                        b0_tmp[index[0]] = b0(0, index[0])(sk1);
+                    });
+                }
 
                 for (size_t n = 0; n < N0Tile; n++) {
                     for (size_t m = 0; m < M0Tile; m++) {
@@ -184,10 +228,13 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, M0Tile,
     }
 };
 
-template <bool AccumulateC, size_t M0Tile, size_t N0Tile, class TLhsElem,
-          class TRhsElem, class TOutElem, bool Arch>
-struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, M0Tile,
-                N0Tile, TLhsElem, TRhsElem, TOutElem, Arch> {
+template <bool AccumulateC, bool TransposedA, bool TransposedB, size_t M0Tile,
+          size_t N0Tile, class TLhsElem, class TRhsElem, class TOutElem,
+          bool Arch>
+struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, TransposedA,
+                TransposedB, M0Tile, N0Tile, TLhsElem, TRhsElem, TOutElem,
+                Arch> {
+    using BStride = detail::b_stride_getter<TransposedB, N0Tile>::Stride;
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
                               size_t K) noexcept {
@@ -221,8 +268,10 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, M0Tile,
 
                         auto a0 = a.view(make_ranked_shape(0, k1),
                                          fixed_shape<M0Tile, 1>{});
-                        auto b0 = b.view(make_ranked_shape(k1, 0),
-                                         fixed_shape<1, N0Tile>{});
+                        auto b0 =
+                            b.view(TransposedB ? make_ranked_shape(0, k1)
+                                               : make_ranked_shape(k1, 0),
+                                   BStride{});
 
                         TSubLhsElem a0_tmp[m0_subtile];
                         TSubRhsElem b0_tmp[N0Tile];
@@ -230,9 +279,16 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, M0Tile,
                         ntt::apply(fixed_shape<m0_subtile>{}, [&](auto index) {
                             a0_tmp[index[0]] = a0(0, 0)(sm1 + index[0], sk1);
                         });
-                        ntt::apply(fixed_shape<N0Tile>{}, [&](auto index) {
-                            b0_tmp[index[0]] = b0(0, index[0])(sk1);
-                        });
+                        if constexpr (TransposedB) {
+                            ntt::apply(fixed_shape<N0Tile>{}, [&](auto index) {
+                                b0_tmp[index[0]] = b0(index[0], 0)(sk1);
+                            });
+                        } else {
+
+                            ntt::apply(fixed_shape<N0Tile>{}, [&](auto index) {
+                                b0_tmp[index[0]] = b0(0, index[0])(sk1);
+                            });
+                        }
 
                         for (size_t n = 0; n < N0Tile; n++) {
                             for (size_t m = 0; m < m0_subtile; m++) {
@@ -250,8 +306,9 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, M0Tile,
                 });
             }
         } else {
-            u_matmul_generic<mamtul_pack_kind::pack_mkn, AccumulateC, M0Tile,
-                             N0Tile, TLhsElem, TRhsElem, TOutElem, Arch>
+            u_matmul_generic<mamtul_pack_kind::pack_mkn, AccumulateC,
+                             TransposedA, TransposedB, M0Tile, N0Tile, TLhsElem,
+                             TRhsElem, TOutElem, Arch>
                 impl;
             impl(a, b, c0, K);
         }
@@ -259,14 +316,15 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, M0Tile,
 };
 } // namespace ukernels
 
-template <ukernels::mamtul_pack_kind PackKind, bool AccumulateC, size_t M0Tile,
-          size_t N0Tile, class TA, class TB, class TC>
+template <ukernels::mamtul_pack_kind PackKind, bool AccumulateC,
+          bool TransposedA, bool TransposedB, size_t M0Tile, size_t N0Tile,
+          class TA, class TB, class TC>
 constexpr void u_matmul(const TA &a, const TB &b, TC &c, size_t K) noexcept {
     using TLhsElem = std::decay_t<typename TA::element_type>;
     using TRhsElem = std::decay_t<typename TB::element_type>;
     using TOutElem = std::decay_t<typename TC::element_type>;
-    ukernels::u_matmul<PackKind, AccumulateC, M0Tile, N0Tile, TLhsElem,
-                       TRhsElem, TOutElem, true>
+    ukernels::u_matmul<PackKind, AccumulateC, TransposedA, TransposedB, M0Tile,
+                       N0Tile, TLhsElem, TRhsElem, TOutElem, true>
         impl;
     impl(a, b, c, K);
 }
