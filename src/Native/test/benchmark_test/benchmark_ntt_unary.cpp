@@ -36,6 +36,8 @@ void benchmark_ntt_unary(std::string op_name, T2 low, T2 high) {
     NttTest::init_tensor(ntt_input, low, high);
 
     Op<tensor_type> op;
+    for (size_t i = 0; i < size1; i++)
+        ntt_result = op(ntt_input);
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < size1; i++)
         ntt_result = op(ntt_input);
@@ -62,6 +64,7 @@ int main(int argc, char *argv[]) {
     benchmark_ntt_unary<ntt::ops::ceil, float, N>("ceil", -10.f, 10.f);
     benchmark_ntt_unary<ntt::ops::cos, float, N>("cos", -10.f, 10.f);
     benchmark_ntt_unary<ntt::ops::cosh, float, N>("cosh", -10.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::erf, float, N>("erf", -10.f, 10.f);
     benchmark_ntt_unary<ntt::ops::exp, float, N>("exp", -10.f, 10.f);
     benchmark_ntt_unary<ntt::ops::floor, float, N>("floor", -10.f, 10.f);
     benchmark_ntt_unary<ntt::ops::log, float, N>("log", -10.f, 10.f);
