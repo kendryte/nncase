@@ -43,6 +43,7 @@ std::string benchmark_ntt_reduce_add_reduceN_noPack() {
         ntt::reduce_sum<ntt::fixed_shape<1>>(ta, tb[warmup_num + i]);
     }
     auto t2 = NttTest::get_cpu_cycle();
+    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
