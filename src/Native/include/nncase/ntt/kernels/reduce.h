@@ -37,8 +37,8 @@ class inner_reduce_impl<Op, Accumulate, TIn, TOut, 0> {
   public:
     constexpr void operator()(const TIn &input, TOut &output) {
         auto count = input.shape()[0] - 1;
-        output = u_reduce<Op, TOut>(input.buffer().begin() + 1, 1, count,
-                                    *input.buffer().begin());
+        auto begin = input.buffer().data();
+        output = u_reduce<Op, TOut>(begin + 1, 1, count, *begin);
     }
 };
 
