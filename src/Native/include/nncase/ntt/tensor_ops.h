@@ -77,14 +77,15 @@ struct tensor_binary_impl<Op, TTensor, T2> {
                                  const T2 &v2) const noexcept {
         TTensor value;
         if constexpr (IsTensor<T2>) {
-            if constexpr (TTensor::shape().rank() == 2 && T2::shape().rank() == 1) {
-              apply(v1.shape(), [&](auto index) {
-                  value(index) = op_(v1(index), v2(*index.rbegin()));
-              });
+            if constexpr (TTensor::shape().rank() == 2 &&
+                          T2::shape().rank() == 1) {
+                apply(v1.shape(), [&](auto index) {
+                    value(index) = op_(v1(index), v2(*index.rbegin()));
+                });
             } else {
-              apply(v1.shape(), [&](auto index) {
-                  value(index) = op_(v1(index), v2(index));
-              });
+                apply(v1.shape(), [&](auto index) {
+                    value(index) = op_(v1(index), v2(index));
+                });
             }
         } else {
             apply(v1.shape(),

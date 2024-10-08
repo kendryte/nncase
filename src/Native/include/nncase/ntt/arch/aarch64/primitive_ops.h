@@ -134,31 +134,31 @@ struct mma<Acc, true, ntt::vector<float, 4, 4>, ntt::vector<float, 4, 4>,
                const ntt::vector<float, 4, 4> &rhs,
                const ntt::vector<float, 4, 4> &out) const noexcept {
         ntt::vector<float, 4, 4> ret;
-        
+
         // c,n,m,lane => c = c + (m[lane] * n)
         if (Acc) {
-          ret(0) = vfmaq_laneq_f32(out(0), rhs(0), lhs(0), 0); // k = 0
-          ret(1) = vfmaq_laneq_f32(out(1), rhs(0), lhs(0), 1);
-          ret(2) = vfmaq_laneq_f32(out(2), rhs(0), lhs(0), 2);
-          ret(3) = vfmaq_laneq_f32(out(3), rhs(0), lhs(0), 3);
+            ret(0) = vfmaq_laneq_f32(out(0), rhs(0), lhs(0), 0); // k = 0
+            ret(1) = vfmaq_laneq_f32(out(1), rhs(0), lhs(0), 1);
+            ret(2) = vfmaq_laneq_f32(out(2), rhs(0), lhs(0), 2);
+            ret(3) = vfmaq_laneq_f32(out(3), rhs(0), lhs(0), 3);
         } else {
-          vector<float, 4> zero = vdupq_n_f32(0.f);
-          ret(0) = vfmaq_laneq_f32(zero, rhs(0), lhs(0), 0); // k = 0
-          ret(1) = vfmaq_laneq_f32(zero, rhs(0), lhs(0), 1);
-          ret(2) = vfmaq_laneq_f32(zero, rhs(0), lhs(0), 2);
-          ret(3) = vfmaq_laneq_f32(zero, rhs(0), lhs(0), 3);
+            vector<float, 4> zero = vdupq_n_f32(0.f);
+            ret(0) = vfmaq_laneq_f32(zero, rhs(0), lhs(0), 0); // k = 0
+            ret(1) = vfmaq_laneq_f32(zero, rhs(0), lhs(0), 1);
+            ret(2) = vfmaq_laneq_f32(zero, rhs(0), lhs(0), 2);
+            ret(3) = vfmaq_laneq_f32(zero, rhs(0), lhs(0), 3);
         }
 
         ret(0) = vfmaq_laneq_f32(ret(0), rhs(1), lhs(1), 0); // k = 1
         ret(1) = vfmaq_laneq_f32(ret(1), rhs(1), lhs(1), 1);
         ret(2) = vfmaq_laneq_f32(ret(2), rhs(1), lhs(1), 2);
         ret(3) = vfmaq_laneq_f32(ret(3), rhs(1), lhs(1), 3);
-        
+
         ret(0) = vfmaq_laneq_f32(ret(0), rhs(2), lhs(2), 0); // k = 2
         ret(1) = vfmaq_laneq_f32(ret(1), rhs(2), lhs(2), 1);
         ret(2) = vfmaq_laneq_f32(ret(2), rhs(2), lhs(2), 2);
         ret(3) = vfmaq_laneq_f32(ret(3), rhs(2), lhs(2), 3);
-        
+
         ret(0) = vfmaq_laneq_f32(ret(0), rhs(3), lhs(3), 0); // k = 3
         ret(1) = vfmaq_laneq_f32(ret(1), rhs(3), lhs(3), 1);
         ret(2) = vfmaq_laneq_f32(ret(2), rhs(3), lhs(3), 2);
