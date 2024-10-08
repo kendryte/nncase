@@ -1,0 +1,15 @@
+﻿@model Nncase.CodeGen.CPU.CompareKernelTemplateModel
+@{
+    string CompareToCFunction(CompareOp op) =>
+                op switch
+                {
+                    CompareOp.Equal => "ops::equal",
+                    CompareOp.NotEqual => "ops::not_equal",
+                    CompareOp.LowerThan => "ops::less",
+                    CompareOp.LowerOrEqual => "ops::less_or_equal",
+                    CompareOp.GreaterThan => "ops::greater",
+                    CompareOp.GreaterOrEqual => "ops::greater_or_equal",
+                    _ => throw new NotSupportedException($"Unsupported Compare: {op}."),
+                };
+}
+compare<@CompareToCFunction(Model.CompareOp)>(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), @Html.Raw(Model.Arguments[2].Symbol.Name));

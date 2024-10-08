@@ -31,6 +31,11 @@ public class BinaryKernelTemplateModel : KernelTemplateModel
     public BinaryOp BinaryOp { get; set; }
 }
 
+public class CompareKernelTemplateModel : KernelTemplateModel
+{
+    public CompareOp CompareOp { get; set; }
+}
+
 public class TypedKernelTemplateModel<T> : KernelTemplateModel
     where T : IR.Op
 {

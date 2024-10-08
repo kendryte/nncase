@@ -147,3 +147,11 @@ threshold = 0.999
 [target.xpu.mode.ptq]
 enabled = false
 threshold = 0.9
+
+[target.xpu.target_options]
+Hierarchies = [[1, 16, 4]]
+HierarchyNames = "cbt"
+HierarchySizes = [536870912, 2097152]
+MemoryCapacities = [0, 524288, 134217728]
+UnifiedMemoryArch = false
+Packing = false

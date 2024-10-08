@@ -15,6 +15,55 @@ namespace Nncase.Evaluator.Math;
 /// </summary>
 public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, ICostEvaluator<Compare>, IOpPrinter<Compare>, IShapeEvaluator<Compare>, IMetricEvaluator<Compare>
 {
+    public static IRType CheckSBP(TensorType tensorType, DistributedType a, DistributedType b)
+    {
+        // assume broadcast shapes are left algin
+        var padA = tensorType.Shape.Rank - a.TensorType.Shape.Rank;
+        var padB = tensorType.Shape.Rank - b.TensorType.Shape.Rank;
+        var ndsbp = new SBP[a.Placement.Rank];
+        for (int i = 0; i < a.Placement.Rank; i++)
+        {
+            switch (a.NdSBP[i], b.NdSBP[i])
+            {
+                case (SBPSplit sa, SBPSplit sb):
+                    if ((padA + sa.Axis) != (padB + sb.Axis))
+                    {
+                        return new InvalidType($"lhs rhs sbp at {i} not equal");
+                    }
+
+                    ndsbp[i] = SBP.S(padA + sa.Axis);
+                    break;
+                case (SBPSplit s1, SBPBroadCast):
+                    // invalid (S, B) if B is not broacast
+                    if (s1.Axis + padA - padB >= 0 && b.TensorType.Shape[s1.Axis + padA - padB] != 1)
+                    {
+                        return new InvalidType($"lhs rhs sbp at {i} not broadcast");
+                    }
+
+                    ndsbp[i] = SBP.S(padA + s1.Axis);
+                    break;
+                case (SBPBroadCast, SBPSplit s2):
+                    // invalid (B, S) if A is not broacast
+                    if (s2.Axis + padB - padA >= 0 && a.TensorType.Shape[s2.Axis + padB - padA] != 1)
+                    {
+                        return new InvalidType($"lhs rhs sbp at {i} not broadcast");
+                    }
+
+                    ndsbp[i] = SBP.S(padB + s2.Axis);
+                    break;
+                case (SBPBroadCast, SBPBroadCast):
+                    ndsbp[i] = SBP.B;
+                    break;
+                case (SBPPartialSum, SBPPartialSum):
+                case (SBPPartialSum, _):
+                case (_, SBPPartialSum):
+                    return new InvalidType("not support lhs or rhs partial.");
+            }
+        }
+
+        return new DistributedType(tensorType, ndsbp, a.Placement);
+    }
+
     /// <inheritdoc />
     public IValue Visit(IEvaluateContext context, Compare target)
     {
@@ -42,9 +91,9 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Compare target)
     {
-        var lhsType = context.GetArgumentType<TensorType>(target, Compare.Lhs);
-        var rhsType = context.GetArgumentType<TensorType>(target, Compare.Rhs);
-        var outputType = context.GetReturnType<TensorType>();
+        var lhsType = context.GetArgumentType<IRType>(target, Compare.Lhs);
+        var rhsType = context.GetArgumentType<IRType>(target, Compare.Rhs);
+        var outputType = context.GetReturnType<IRType>();
 
         return new()
         {
@@ -56,7 +105,7 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
 
     public Metric Visit(IMetricEvaluateContext context, Compare target)
     {
-        var outputType = context.GetReturnType<TensorType>();
+        var outputType = context.GetReturnType<IRType>();
         return new()
         {
             [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(outputType) * 2,
@@ -67,9 +116,15 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Compare target)
     {
-        var lhs = context.CheckArgumentType<TensorType>(target, Compare.Lhs);
-        var rhs = context.CheckArgumentType<TensorType>(target, Compare.Rhs);
-        return Visit(lhs, rhs);
+        var lhs = context.CheckArgumentType<IRType>(target, Compare.Lhs);
+        var rhs = context.CheckArgumentType<IRType>(target, Compare.Rhs);
+
+        return (lhs, rhs) switch
+        {
+            (TensorType a, TensorType b) => Visit(a, b),
+            (DistributedType a, DistributedType b) => Visit(a, b),
+            _ => new InvalidType($"{lhs} {rhs}"),
+        };
     }
 
     public string Visit(IIRPrinterContext context, Compare target, bool iLmode)
@@ -114,5 +169,21 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
         }
 
         return broadcastType;
+    }
+
+    private IRType Visit(DistributedType a, DistributedType b)
+    {
+        if (a.Placement != b.Placement)
+        {
+            return new InvalidType("lhs rhs have different placement");
+        }
+
+        var rType = Visit(a.TensorType, b.TensorType);
+        if (rType is not TensorType tensorType)
+        {
+            return rType;
+        }
+
+        return CheckSBP(tensorType, a, b);
     }
 }
