@@ -175,10 +175,10 @@ class matmul_impl<false, TransposedB, AccumulateC, TLhs, TRhs, TOut,
             c.view(make_ranked_shape(m1, n1), fixed_shape<M0Tile, N0Tile>{});
         auto a1 =
             a.view(make_ranked_shape(m1, 0), make_ranked_shape(M0Tile, K));
-        auto b1 = b.view(make_ranked_shape(0, n1),
+        auto b1 = b.view(TransposedB ? make_ranked_shape(n1, 0)
+                                     : make_ranked_shape(0, n1),
                          TransposedB ? make_ranked_shape(N0Tile, K)
                                      : make_ranked_shape(K, N0Tile));
-
         ntt::u_matmul<pack_kind, AccumulateC, false, TransposedB, M0Tile,
                       N0Tile>(a1, b1, c0, K);
     }

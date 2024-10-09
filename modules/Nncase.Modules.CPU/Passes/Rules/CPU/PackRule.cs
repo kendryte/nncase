@@ -213,15 +213,21 @@ public sealed class PackInstanceNorm : PackRule
 
 public sealed class PackMatMul : PackRule
 {
-    public PackMatMul(int rank, int lane)
+    public PackMatMul(int rank = 2, int lane = 4, bool transB = false)
         : base(rank, lane)
     {
+        TransB = transB;
     }
 
     public override Pattern Pattern { get; } = IsMatMul(
       "target",
       IsWildcard("lhs", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
       IsWildcard("rhs", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() });
+
+    /// <summary>
+    /// Gets a value indicating whether trans b, note only for test.
+    /// </summary>
+    public bool TransB { get; }
 
     public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
@@ -248,6 +254,10 @@ public sealed class PackMatMul : PackRule
 
             // pack A's m,k and B's k,n
             AddCandidate(rcontext, IR.CPU.PackedMatMul.PackKind.M | IR.CPU.PackedMatMul.PackKind.K, IR.CPU.PackedMatMul.PackKind.K | IR.CPU.PackedMatMul.PackKind.N/* , transB: rhs is Const */);
+            if (TransB)
+            {
+                AddCandidate(rcontext, IR.CPU.PackedMatMul.PackKind.M | IR.CPU.PackedMatMul.PackKind.K, IR.CPU.PackedMatMul.PackKind.K | IR.CPU.PackedMatMul.PackKind.N, transB: TransB);
+            }
 
             // pack A's m,k and B's k
             // AddCandidate(rcontext,  IR.CPU.PackedMatMul.PackKind.M |  IR.CPU.PackedMatMul.PackKind.K,  IR.CPU.PackedMatMul.PackKind.K);
@@ -544,7 +554,7 @@ public sealed class PackSwish : PackRule
 
 public sealed class PackTranspose : PackRule
 {
-    public PackTranspose(int rank, int lane)
+    public PackTranspose(int rank = 2, int lane = 4)
         : base(rank, lane)
     {
     }
@@ -977,5 +987,27 @@ public sealed partial class FoldPackConcatUnpack : RewriteRule<Pattern>
         }
 
         return IR.F.Tensors.Concat(new IR.Tuple(inputs), concat.Axis);
+    }
+}
+
+[RuleGenerator]
+public sealed partial class TransposePackMatMulInputs : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } = PatternMatch.F.CPU.IsPackedMatMul("matmul", "caller", m => m.RhsPackedAxes.Count == 2 && m.RhsPadedNums.All(v => v == 0) && m.TransposeB == false, IsWildcard("lhs"), PatternMatch.F.CPU.IsPack("rhsPack", "callee", p => p.Axes.Count == 2 && p.Lanes.Count == 2, PatternMatch.F.Tensors.IsTranspose("trans", "rhs", IsWildcard("transInput"), IsTensorConst("perm") /* IsAlt(IsTensorConst("rhs"), PatternMatch.F.Tensors.IsTranspose("trans", "rhs", IsWildcard("transInput"), IsTensorConst("perm")) */)));
+
+    private Expr? GetReplace(IR.CPU.PackedMatMul matmul, Expr lhs, IR.CPU.Pack rhsPack, Expr transInput, int[] perm, IMatchResult result)
+    {
+        // note can't enable transpose const b, because const folding will be very solw.
+        var inputsShape = transInput.CheckedShape.ToValueArray();
+        var tperm = Enumerable.Range(0, inputsShape.Length).ToArray();
+        (tperm[^2], tperm[^1]) = (tperm[^1], tperm[^2]);
+        if (tperm.SequenceEqual(perm))
+        {
+            var npack = IR.F.CPU.Pack(transInput, [rhsPack.Lanes[1], rhsPack.Lanes[0]], [rhsPack.Axes[1], rhsPack.Axes[0]]);
+            var newMatmul = new IR.CPU.PackedMatMul(matmul.LhsPackedAxes, matmul.LhsPadedNums, new[] { matmul.RhsPackedAxes[1], matmul.RhsPackedAxes[0] }, new[] { matmul.RhsPadedNums[1], matmul.RhsPadedNums[0] }, false, true);
+            return new Call(newMatmul, lhs, npack);
+        }
+
+        return null;
     }
 }

@@ -89,8 +89,8 @@ struct u_matmul_generic {
     }
 };
 
-template <ukernels::mamtul_pack_kind PackKind, bool TransposedA,
-          bool TransposedB, bool AccumulateC, size_t M0Tile, size_t N0Tile,
+template <ukernels::mamtul_pack_kind PackKind, bool AccumulateC,
+          bool TransposedA, bool TransposedB, size_t M0Tile, size_t N0Tile,
           class TLhsElem, class TRhsElem, class TOutElem, bool Arch>
 struct u_matmul
     : u_matmul_generic<PackKind, AccumulateC, TransposedA, TransposedB, M0Tile,
@@ -192,7 +192,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, TransposedA,
             auto b0 = b.view(TransposedB ? make_ranked_shape(0, k1)
                                          : make_ranked_shape(k1, 0),
                              BStride{});
-            for (size_t sk1 = 0; sk1 < TLhsElem::shape()[1]; sk1++) {
+            for (size_t sk1 = 0; sk1 < TLhsElem::shape()[0]; sk1++) {
                 using TSubLhsElem = typename TLhsElem::element_type;
                 using TSubRhsElem = ntt::vector<typename TRhsElem::element_type,
                                                 TRhsElem::shape().last()>;
@@ -268,10 +268,9 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, TransposedA,
 
                         auto a0 = a.view(make_ranked_shape(0, k1),
                                          fixed_shape<M0Tile, 1>{});
-                        auto b0 =
-                            b.view(TransposedB ? make_ranked_shape(0, k1)
-                                               : make_ranked_shape(k1, 0),
-                                   BStride{});
+                        auto b0 = b.view(TransposedB ? make_ranked_shape(0, k1)
+                                                     : make_ranked_shape(k1, 0),
+                                         BStride{});
 
                         TSubLhsElem a0_tmp[m0_subtile];
                         TSubRhsElem b0_tmp[N0Tile];

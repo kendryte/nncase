@@ -538,7 +538,7 @@ int main() {
     ntt::pack<1>(ta, pa);
     ntt::pack<0, 1>(tb, pb);
     ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{},
-                       ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0>{});
+                       ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0, 0>{});
     assert(are_floats_equal(pc(0, 0)(0), 560.f));
     assert(are_floats_equal(pc(0, 0)(1), 588.f));
     assert(are_floats_equal(pc(0, 0)(2), 616.f));
