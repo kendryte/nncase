@@ -64,9 +64,6 @@ if(ENABLE_DUMP_MEM)
     add_definitions(-DDUMP_MEM)
 endif()
 
-set(NTT_UNROOL_NUM 1 CACHE STRING "Set the unroll number for loop unrolling")
-add_compile_definitions(NTT_UNROOL_NUM=${NTT_UNROOL_NUM})
-
 include(cmake/dependencies.cmake)
 
 set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/src/Native/include)
