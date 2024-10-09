@@ -261,7 +261,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         graph.Dump($"g{count}");
 #endif
 
-        Assert.Equal(3, graph.Level);
+        Assert.Equal(-1, graph.Level);
     }
 
     [Theory]

@@ -8,6 +8,28 @@ using Razor.Templating.Core;
 
 namespace Nncase.CodeGen.CPU;
 
+public record BufferRenderInfo(string Name, string ElemType, ulong Offset, ulong Size, string Dimensions, string Strides)
+{
+}
+
+public record KernelMainModel(TIR.PrimFunction PrimFunction, TIR.Buffer[] RDataBuffers, CpuTargetOptions Options, ulong Alignment, ulong DataSize, ulong RDataSize)
+{
+    public BufferRenderInfo GetInfo(TIR.Buffer buffer)
+    {
+        ulong offset = 0;
+        if (buffer.MemSpan.Start is IR.TensorConst tc)
+        {
+            offset = tc.Value.Cast<ulong>()[0];
+        }
+
+        var elemType = buffer.ElemType.ToC();
+        var size = ((IR.TensorConst)buffer.MemSpan.Size).Value.Cast<ulong>()[0] / (ulong)buffer.ElemType.SizeInBytes;
+        var dims = KernelUtility.DimensionsToC(buffer.Dimensions);
+        var strides = KernelUtility.StridesToC(buffer.Strides);
+        return new(buffer.Name, elemType, offset, size, dims, strides);
+    }
+}
+
 public static class CSourceBuiltn
 {
     public const string KernelHeader = @"#pragma once
@@ -23,42 +45,15 @@ using namespace nncase::ntt;
         return content;
     }
 
+    public static string MakeMain(TIR.PrimFunction primFunction, ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, IEnumerable<TIR.Buffer> rdataBuffers, CpuTargetOptions options)
+    {
+        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/main.cpp.cshtml", new KernelMainModel(primFunction, rdataBuffers.ToArray(), options, dataAlign, dataUsage, rdataPoolSize)).Result;
+        return content;
+    }
+
     public static string MakeKernel(string ctype, string kernelImpl)
     {
         return KernelHeader + ctype + kernelImpl;
-    }
-
-    public static string MakeMain(TIR.PrimFunction primFunction, IEnumerable<TIR.Buffer> rdataBuffers, CpuTargetOptions options)
-    {
-        string init_tensors = string.Join("\n", primFunction.Parameters.ToArray().Select((b, i) =>
-        {
-            var buffer = (TIR.Buffer)b;
-            var size = TensorUtilities.GetSize(b.CheckedShape.ToValueArray(), TensorUtilities.GetStrides(b.CheckedShape.ToValueArray()), 1);
-            return $@"    std::span<{buffer.ElemType.ToC()}, {size}> p{buffer.Name}(({buffer.ElemType.ToC()} *)inputs[{i}], {size});
-    tensor_view<{buffer.ElemType.ToC()}, {KernelUtility.DimensionsToC(buffer.Dimensions)}, {KernelUtility.StridesToC(buffer.Strides)}> {buffer.Name}(p{buffer.Name});
-";
-        }).Concat(rdataBuffers.Select(b =>
-        {
-            var size = TensorUtilities.GetSize(b.CheckedShape.ToValueArray(), TensorUtilities.GetStrides(b.CheckedShape.ToValueArray()), 1);
-            return $@"    std::span<{b.ElemType.ToC()}, {size}> p{b.Name}(({b.ElemType.ToC()}*)(rdata + {((IR.TensorConst)b.MemSpan.Start).Value.ToScalar<ulong>()}), {size});
-    tensor_view<{b.ElemType.ToC()}, {KernelUtility.DimensionsToC(b.Dimensions)}, {KernelUtility.StridesToC(b.Strides)}> {b.Name}(p{b.Name});";
-        })));
-        var memorys = new List<string>();
-        for (int i = 1; i < options.MemoryCapacities.Length - 1; i++)
-        {
-            memorys.Add($"uint8_t L{i}Data[{options.MemoryCapacities[i]}];");
-        }
-
-        return @$"#include <nncase/ntt/cpu_runtime.h>
- {string.Join("\n", memorys)}
- #include ""../device.h""
- #include ""kernel.h""
-
- extern ""C"" void kernel_entry(nncase_runtime_cpu_mt_t *cpu_mt, uint8_t **inputs, uint8_t *rdata, uint8_t *l1_data) {{
- g_cpu_mt = cpu_mt;
- {init_tensors}
-     {primFunction.Name}({string.Join(", ", primFunction.Parameters.AsValueEnumerable().Select(b => ((TIR.Buffer)b).Name).ToArray().Concat(rdataBuffers.Select(b => b.Name)).ToArray())}, l1_data);
- }}";
     }
 
     private static string CMakePath(string path) =>

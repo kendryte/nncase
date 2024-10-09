@@ -36,12 +36,7 @@ internal class FunctionBuilder
     {
         if (function.Name.EndsWith("kernel"))
         {
-            // 1. convert func to csource
-            var visitor = new KernelCSourceConvertVisitor(TargetOptions);
-            visitor.Visit(function);
-            var functionCSource = visitor.GetCSource();
-
-            // 2. write the kernel header
+            // 1. write the kernel header
             using (var writer = _sectionManager.GetWriter(KernelHeaderSectionName))
             {
                 var header = default(DescHeader);
@@ -50,11 +45,13 @@ internal class FunctionBuilder
                 writer.Write(ref header);
             }
 
-            // 3. write the rdata
+            // 2. write the rdata
+            ulong rdataPoolSize = ulong.MinValue;
             foreach (var (@const, range) in function.SchedResult.Rdatas)
             {
                 var bytes = ((TensorConst)@const).Value.BytesBuffer;
                 var size = range.Max - range.Min;
+                rdataPoolSize = System.Math.Max((ulong)range.Max, rdataPoolSize);
                 if ((uint)bytes.Length != size)
                 {
                     throw new InvalidDataException("The Buffer Size Not Equal!");
@@ -63,6 +60,11 @@ internal class FunctionBuilder
                 _rdataWriter.Position(range.Min);
                 _rdataWriter.Write(bytes);
             }
+
+            // 3. build function.
+            var visitor = new KernelCSourceConvertVisitor(function.SchedResult.DataAlign, function.SchedResult.DataUsage, rdataPoolSize, TargetOptions);
+            visitor.Visit(function);
+            var functionCSource = visitor.GetCSource();
 
             return new LinkableKernelFunction(_id, function, functionCSource, _sectionManager.GetContent(WellknownSectionNames.Text)!, new LinkedSection(_sectionManager.GetContent(KernelHeaderSectionName), KernelHeaderSectionName, 0, 8, (uint)sizeof(DescHeader)));
         }

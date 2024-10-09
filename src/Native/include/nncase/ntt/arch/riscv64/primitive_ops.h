@@ -1092,7 +1092,7 @@ REGISTER_RVV_KERNEL(MUL_ADD_FLOAT32)
 REGISTER_RVV_MUL_ADD_OP(float, mul_add_float32)
 
 template <bool AccC>
-struct mma<AccC, ntt::vector<float, 1, 4>, ntt::vector<float, 4, 4>,
+struct mma<AccC, false, ntt::vector<float, 1, 4>, ntt::vector<float, 4, 4>,
            ntt::vector<float, 1, 4>> {
     ntt::vector<float, 1, 4>
     operator()(const ntt::vector<float, 1, 4> &lhs,
@@ -1110,7 +1110,7 @@ struct mma<AccC, ntt::vector<float, 1, 4>, ntt::vector<float, 4, 4>,
 };
 
 template <bool AccC>
-struct mma<AccC, ntt::vector<float, 1, 32>, ntt::vector<float, 32, 32>,
+struct mma<AccC, false, ntt::vector<float, 1, 32>, ntt::vector<float, 32, 32>,
            ntt::vector<float, 1, 32>> {
     ntt::vector<float, 1, 32>
     operator()(const ntt::vector<float, 1, 32> &lhs,
@@ -1165,7 +1165,7 @@ struct mma<AccC, ntt::vector<float, 1, 32>, ntt::vector<float, 32, 32>,
 };
 
 template <bool AccC>
-struct mma<AccC, ntt::vector<float, 4, 4>, ntt::vector<float, 4, 4>,
+struct mma<AccC, false, ntt::vector<float, 4, 4>, ntt::vector<float, 4, 4>,
            ntt::vector<float, 4, 4>> {
     ntt::vector<float, 4, 4>
     operator()(const ntt::vector<float, 4, 4> &lhs,
@@ -1200,7 +1200,7 @@ struct mma<AccC, ntt::vector<float, 4, 4>, ntt::vector<float, 4, 4>,
 };
 
 template <bool AccC>
-struct mma<AccC, ntt::vector<float, 32, 32>, ntt::vector<float, 32, 32>,
+struct mma<AccC, false, ntt::vector<float, 32, 32>, ntt::vector<float, 32, 32>,
            ntt::vector<float, 32, 32>> {
     ntt::vector<float, 32, 32>
     operator()(const ntt::vector<float, 32, 32> &lhs,

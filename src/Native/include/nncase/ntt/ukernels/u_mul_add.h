@@ -66,7 +66,7 @@ void u_mul_add(const TLhsElem &lhs, const TRhsElem &rhs, TOutElem &output) {
     }
     // 3.2. pack MK & KN
     else if constexpr (PackKind == ukernels::mamtul_pack_kind::pack_mkn) {
-        output = ntt::mma<AccC>(lhs, rhs, output);
+        output = ntt::mma<AccC, false>(lhs, rhs, output);
     } else {
         static_assert(sizeof(TLhsElem) == 0, "Unsupported packing.");
     }
