@@ -321,7 +321,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, 4, 4,
         }
 
         // 3. Tail
-        if (K > 1 && K % 2) {
+        if (K % 2 == 0) {
             NTT_MATMUL_PP(1, 0)
             NTT_MATMUL_TAIL(1)
         } else {
