@@ -195,7 +195,15 @@ internal class EGraphExtractor
     private static List<List<EClass>> FindCycles(HyperGraph hgraph)
     {
         var edges = hgraph.AdjacencyEdges();
-        var circuits = new List<List<int>>();
+        var circuits = new List<List<EClass>>();
+        foreach (var n in hgraph.Nodes())
+        {
+            if (hgraph.Neighbors(n).Contains(n))
+            {
+                circuits.Add(new() { n });
+            }
+        }
+
         var stack = new List<int>();
         bool[] blocked = new bool[hgraph.NumEdges()];
         var blockMap = new Dictionary<int, Dictionary<int, bool>>();
@@ -263,11 +271,11 @@ internal class EGraphExtractor
 
         void Output(int start, List<int> stack)
         {
-            var cycle = new List<int>(stack)
-            {
-                start,
-            };
-            circuits.Add(cycle);
+            // var cycle = new List<int>(stack);
+            // {
+            //     start,
+            // };
+            circuits.Add(stack.Select(hgraph.GetIdByNode).ToList());
         }
 
         void Subgraph(int minId)
@@ -328,8 +336,9 @@ internal class EGraphExtractor
 
         while (s < edges.Count)
         {
-            var (lasts, lastadj) = AdjacencyStructureSCC(s);
-            adjList = lastadj;
+            var (leastVertex, leastAdjList) = AdjacencyStructureSCC(s);
+            s = leastVertex;
+            adjList = leastAdjList;
 
             if (adjList.Any())
             {
@@ -355,7 +364,7 @@ internal class EGraphExtractor
             }
         }
 
-        return circuits.Select(l => l.SkipLast(1).Select(i => hgraph.GetIdByNode(i)).ToList()).ToList();
+        return circuits;
     }
 
     private static (List<List<int>> Components, List<List<int>> AdjacencyList) StronglyConnectedComponents(List<List<int>> adjList)
