@@ -84,9 +84,7 @@ void *memmove(void *dst, const void *src, size_t len) {
     return g_cpu_mt->memmove(dst, src, len);
 }
 
-void *memset(void *b, int c, size_t len) {
-    return g_cpu_mt->memset(b, c, len);
-}
+void *memset(void *b, int c, size_t len) { return g_cpu_mt->memset(b, c, len); }
 #endif
 #endif
 }
