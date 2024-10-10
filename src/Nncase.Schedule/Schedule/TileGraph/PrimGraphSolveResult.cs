@@ -112,7 +112,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                             else
                             {
                                 // for device we should use copy.
-                                var offset = LevelBufferOffsets[sl + 1][new(value, bid)];
+                                var offset = LevelBufferOffsets[sl][new(value, bid)];
                                 var dtype = viewInfo.Buffer.CheckedDataType;
                                 var shape = bufferInfo.Shapes[i].Select(i => (Expr)(int)i).ToArray();
                                 subView = new TIR.Buffer($"{bid}_L{value.Level}_Copy", dtype, new MemSpan(Tensor.FromPointer(offset, dtype), bufferInfo.SizeVars[i], MemoryLocation.Data, 0), shape, TensorUtilities.GetStrides(shape));

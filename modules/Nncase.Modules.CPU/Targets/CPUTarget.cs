@@ -108,7 +108,9 @@ public class CPUTarget : ITarget
                 p.Add<Passes.Rules.Neutral.FoldConstCall>();
                 p.Add<Passes.Rules.CPU.FoldPackUnpack>();
                 p.Add<Passes.Rules.CPU.FoldPackConcatUnpack>();
+                p.Add<Passes.Rules.CPU.TransposePackMatMulInputs>();
                 p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
+                p.Add<Passes.Rules.Neutral.FoldTwoTransposes>();
             });
         }
 

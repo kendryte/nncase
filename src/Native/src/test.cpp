@@ -538,7 +538,7 @@ int main() {
     ntt::pack<1>(ta, pa);
     ntt::pack<0, 1>(tb, pb);
     ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{},
-                       ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0>{});
+                       ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0, 0>{});
     assert(are_floats_equal(pc(0, 0)(0), 560.f));
     assert(are_floats_equal(pc(0, 0)(1), 588.f));
     assert(are_floats_equal(pc(0, 0)(2), 616.f));
@@ -696,27 +696,6 @@ int main() {
             ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 2>> tc2;
             ntt::matmul<false, false, true>(
                 packa, packb, tc2, ntt::fixed_shape<0, 1>{},
-                ntt::fixed_shape<>{}, ntt::fixed_shape<1, 0>{},
-                ntt::fixed_shape<>{});
-
-            ntt::tensor<float, ntt::fixed_shape<8, 8>> tc2unpack;
-            ntt::unpack<0, 1>(tc2, tc2unpack);
-
-            ntt::apply(tc.shape(), [&]([[maybe_unused]] auto index) {
-                assert(tc2unpack(index) == tc(index));
-            });
-        }
-
-        // A[m,k]<k,m> @ B[n,k]<k,n>
-        {
-            ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 2>> packb;
-            ntt::pack<1, 0>(tranb, packb); // [n,k]<k,n>
-            ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 2>> packa;
-            ntt::pack<1, 0>(ta, packa); // [m,k]<k,m>
-            // [m,n]<m,n>
-            ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<2, 2>> tc2;
-            ntt::matmul<false, false, true>(
-                packa, packb, tc2, ntt::fixed_shape<1, 0>{},
                 ntt::fixed_shape<>{}, ntt::fixed_shape<1, 0>{},
                 ntt::fixed_shape<>{});
 

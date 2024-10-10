@@ -47,7 +47,6 @@ else()
                 target_link_options(nncase_cpu_module PRIVATE -e kernel_entry -nostdlib)
             endif(NOT BUILD_STANDALONE)
         endif()
-        set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG") # gcc optimization have bug with nostdlib in O3
         target_link_libraries(nncase_cpu_module PRIVATE gcc)
     endif()
 endif()

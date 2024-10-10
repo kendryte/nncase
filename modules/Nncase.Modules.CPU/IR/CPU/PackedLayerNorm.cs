@@ -6,7 +6,7 @@ using Nncase.PatternMatch;
 namespace Nncase.IR.CPU;
 
 [PatternFunctionalGenerator]
-public sealed partial class PackedLayerNorm : PackedOp
+public sealed partial class PackedLayerNorm : Op
 {
     /// <summary>
     /// Gets input.
