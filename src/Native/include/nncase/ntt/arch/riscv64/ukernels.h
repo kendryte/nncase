@@ -101,7 +101,6 @@ struct u_matmul_policy<mamtul_pack_kind::pack_mkn,
     static constexpr size_t m0_subtile = 4;
 };
 
-#if 0
 template <bool AccumulateC>
 struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, 4, 4,
                 vector<float, NTT_VLEN / 32>, float,
@@ -110,8 +109,6 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, 4, 4,
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
                               size_t K) noexcept {
         NTT_ASSUME(K > 0);
-        // constexpr size_t vl = NTT_VLEN / 32;
-        static_assert(__riscv_v_fixed_vlen == 256);
 
         register fixed_vfloat32m1_t c0_0_0 asm("v0") = {};
         register fixed_vfloat32m1_t c0_0_1 asm("v1") = {};
@@ -205,201 +202,130 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, 4, 4,
         }
 
 #define NTT_MATMUL_PP(ld, calc)                                                \
-    asm volatile("vl1re32.v %[a0_0_" #ld "], (%[a0_0_1_p])\n"                  \
-                 "addi	%[a0_0_1_p],%[a0_0_1_p],%[ak_strides] * 2\n"            \
-                 "vl1re32.v %[a0_1_1], (%[a0_1_1_p])\n"                        \
-                 "addi	%[a0_1_1_p],%[a0_1_1_p],%[ak_strides] * 2\n"            \
-                 "vl1re32.v %[a0_2_1], (%[a0_2_1_p])\n"                        \
-                 "addi	%[a0_2_1_p],%[a0_2_1_p],%[ak_strides] * 2\n"            \
-                 "vl1re32.v %[a0_3_1], (%[a0_3_1_p])\n"                        \
-                 "addi	%[a0_3_1_p],%[a0_3_1_p],%[ak_strides] * 2\n"            \
-                 : [a0_0_1] "=vr"(a0_0_1), [a0_1_1] "=vr"(a0_1_1),             \
-                   [a0_2_1] "=vr"(a0_2_1), [a0_3_1] "=vr"(a0_3_1),             \
-                   [a0_0_1_p] "+r"(a0_0_1_p), [a0_1_1_p] "+r"(a0_1_1_p),       \
-                   [a0_2_1_p] "+r"(a0_2_1_p), [a0_3_1_p] "+r"(a0_3_1_p)        \
-                 : [ak_strides] "i"(ak_strides * sizeof(a0_0_0)));             \
+    asm volatile(                                                              \
+        "vl1re32.v %[a0_0_" #ld "], (%[a0_0_" #ld "_p])\n"                     \
+        "addi	%[a0_0_" #ld "_p],%[a0_0_" #ld "_p],%[ak_strides] * 2\n"       \
+        "vl1re32.v %[a0_1_" #ld "], (%[a0_1_" #ld "_p])\n"                     \
+        "addi	%[a0_1_" #ld "_p],%[a0_1_" #ld "_p],%[ak_strides] * 2\n"       \
+        "vl1re32.v %[a0_2_" #ld "], (%[a0_2_" #ld "_p])\n"                     \
+        "addi	%[a0_2_" #ld "_p],%[a0_2_" #ld "_p],%[ak_strides] * 2\n"       \
+        "vl1re32.v %[a0_3_" #ld "], (%[a0_3_" #ld "_p])\n"                     \
+        "addi	%[a0_3_" #ld "_p],%[a0_3_" #ld "_p],%[ak_strides] * 2\n"       \
+        : [a0_0_##ld] "=vr"(a0_0_##ld), [a0_1_##ld] "=vr"(a0_1_##ld),          \
+          [a0_2_##ld] "=vr"(a0_2_##ld), [a0_3_##ld] "=vr"(a0_3_##ld),          \
+          [a0_0_##ld##_p] "+r"(a0_0_##ld##_p),                                 \
+          [a0_1_##ld##_p] "+r"(a0_1_##ld##_p),                                 \
+          [a0_2_##ld##_p] "+r"(a0_2_##ld##_p),                                 \
+          [a0_3_##ld##_p] "+r"(a0_3_##ld##_p)                                  \
+        : [ak_strides] "i"(ak_strides * sizeof(a0_0_0)));                      \
                                                                                \
     asm volatile(                                                              \
-        "vfmacc.vf	%[c0_0_0],%[b0_0_0],%[a0_0_0]\n"                            \
-        "vfmacc.vf	%[c0_0_1],%[b0_0_1],%[a0_0_0]\n"                            \
-        "vfmacc.vf	%[c0_0_2],%[b0_0_2],%[a0_0_0]\n"                            \
-        "vfmacc.vf	%[c0_0_3],%[b0_0_3],%[a0_0_0]\n"                            \
-        "flw	%[b0_1_0],0(%[b0_1_x_p]) \n"                                      \
-        "vfmacc.vf	%[c0_1_0],%[b0_0_0],%[a0_1_0]\n"                            \
-        "vfmacc.vf	%[c0_1_1],%[b0_0_1],%[a0_1_0]\n"                            \
-        "vfmacc.vf	%[c0_1_2],%[b0_0_2],%[a0_1_0]\n"                            \
-        "vfmacc.vf	%[c0_1_3],%[b0_0_3],%[a0_1_0]\n"                            \
-        "flw	%[b0_1_1],%[bn_strides](%[b0_1_x_p]) \n"                          \
-        : [b0_1_0] "=f"(b0_1_0), [b0_1_1] "=f"(b0_1_1), [b0_1_2] "=f"(b0_1_2), \
-          [b0_1_3] "=f"(b0_1_3), [c0_0_0] "+vr"(c0_0_0),                       \
-          [c0_0_1] "+vr"(c0_0_1), [c0_0_2] "+vr"(c0_0_2),                      \
-          [c0_0_3] "+vr"(c0_0_3), [c0_1_0] "+vr"(c0_1_0),                      \
-          [c0_1_1] "+vr"(c0_1_1), [c0_1_2] "+vr"(c0_1_2),                      \
-          [c0_1_3] "+vr"(c0_1_3), [b0_1_x_p] "+r"(b0_1_x_p)                    \
-        : [a0_0_0] "vr"(a0_0_0), [a0_1_0] "vr"(a0_1_0), [b0_0_0] "f"(b0_0_0),  \
-          [b0_0_1] "f"(b0_0_1), [b0_0_2] "f"(b0_0_2), [b0_0_3] "f"(b0_0_3),    \
+        "vfmacc.vf	%[c0_0_0],%[b0_" #calc "_0],%[a0_0_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_0_1],%[b0_" #calc "_1],%[a0_0_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_0_2],%[b0_" #calc "_2],%[a0_0_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_0_3],%[b0_" #calc "_3],%[a0_0_" #calc "]\n"       \
+        "flw	%[b0_" #ld "_0],0(%[b0_" #ld "_x_p]) \n"                       \
+        "vfmacc.vf	%[c0_1_0],%[b0_" #calc "_0],%[a0_1_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_1_1],%[b0_" #calc "_1],%[a0_1_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_1_2],%[b0_" #calc "_2],%[a0_1_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_1_3],%[b0_" #calc "_3],%[a0_1_" #calc "]\n"       \
+        "flw	%[b0_" #ld "_1],%[bn_strides](%[b0_" #ld "_x_p]) \n"           \
+        : [b0_##ld##_0] "=f"(b0_##ld##_0), [b0_##ld##_1] "=f"(b0_##ld##_1),    \
+          [b0_##ld##_2] "=f"(b0_##ld##_2), [b0_##ld##_3] "=f"(b0_##ld##_3),    \
+          [c0_0_0] "+vr"(c0_0_0), [c0_0_1] "+vr"(c0_0_1),                      \
+          [c0_0_2] "+vr"(c0_0_2), [c0_0_3] "+vr"(c0_0_3),                      \
+          [c0_1_0] "+vr"(c0_1_0), [c0_1_1] "+vr"(c0_1_1),                      \
+          [c0_1_2] "+vr"(c0_1_2), [c0_1_3] "+vr"(c0_1_3),                      \
+          [b0_##ld##_x_p] "+r"(b0_##ld##_x_p)                                  \
+        : [a0_0_##calc] "vr"(a0_0_##calc), [a0_1_##calc] "vr"(a0_1_##calc),    \
+          [b0_##calc##_0] "f"(b0_##calc##_0),                                  \
+          [b0_##calc##_1] "f"(b0_##calc##_1),                                  \
+          [b0_##calc##_2] "f"(b0_##calc##_2),                                  \
+          [b0_##calc##_3] "f"(b0_##calc##_3),                                  \
           [bk_strides] "i"(bk_strides * sizeof(b0_0_0)),                       \
           [bn_strides] "i"(bn_strides * sizeof(b0_0_0)));                      \
                                                                                \
     asm volatile(                                                              \
-        "vfmacc.vf	%[c0_2_0],%[b0_0_0],%[a0_2_0]\n"                            \
-        "vfmacc.vf	%[c0_2_1],%[b0_0_1],%[a0_2_0]\n"                            \
-        "vfmacc.vf	%[c0_2_2],%[b0_0_2],%[a0_2_0]\n"                            \
-        "vfmacc.vf	%[c0_2_3],%[b0_0_3],%[a0_2_0]\n"                            \
-        "flw	%[b0_1_2],%[bn_strides] * 2(%[b0_1_x_p]) \n"                      \
-        "vfmacc.vf	%[c0_3_0],%[b0_0_0],%[a0_3_0]\n"                            \
-        "vfmacc.vf	%[c0_3_1],%[b0_0_1],%[a0_3_0]\n"                            \
-        "vfmacc.vf	%[c0_3_2],%[b0_0_2],%[a0_3_0]\n"                            \
-        "vfmacc.vf	%[c0_3_3],%[b0_0_3],%[a0_3_0]\n"                            \
-        "flw	%[b0_1_3],%[bn_strides] * 3(%[b0_1_x_p]) \n"                      \
-        "addi	%[b0_1_x_p],%[b0_1_x_p],%[bk_strides] * 2\n"                     \
-        : [b0_1_0] "=f"(b0_1_0), [b0_1_1] "=f"(b0_1_1), [b0_1_2] "=f"(b0_1_2), \
-          [b0_1_3] "=f"(b0_1_3), [c0_2_0] "+vr"(c0_2_0),                       \
-          [c0_2_1] "+vr"(c0_2_1), [c0_2_2] "+vr"(c0_2_2),                      \
-          [c0_2_3] "+vr"(c0_2_3), [c0_3_0] "+vr"(c0_3_0),                      \
-          [c0_3_1] "+vr"(c0_3_1), [c0_3_2] "+vr"(c0_3_2),                      \
-          [c0_3_3] "+vr"(c0_3_3), [b0_1_x_p] "+r"(b0_1_x_p)                    \
-        : [a0_2_0] "vr"(a0_2_0), [a0_3_0] "vr"(a0_3_0), [b0_0_0] "f"(b0_0_0),  \
-          [b0_0_1] "f"(b0_0_1), [b0_0_2] "f"(b0_0_2), [b0_0_3] "f"(b0_0_3),    \
+        "vfmacc.vf	%[c0_2_0],%[b0_" #calc "_0],%[a0_2_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_2_1],%[b0_" #calc "_1],%[a0_2_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_2_2],%[b0_" #calc "_2],%[a0_2_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_2_3],%[b0_" #calc "_3],%[a0_2_" #calc "]\n"       \
+        "flw	%[b0_" #ld "_2],%[bn_strides] * 2(%[b0_" #ld "_x_p]) \n"       \
+        "vfmacc.vf	%[c0_3_0],%[b0_" #calc "_0],%[a0_3_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_3_1],%[b0_" #calc "_1],%[a0_3_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_3_2],%[b0_" #calc "_2],%[a0_3_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_3_3],%[b0_" #calc "_3],%[a0_3_" #calc "]\n"       \
+        "flw	%[b0_" #ld "_3],%[bn_strides] * 3(%[b0_" #ld "_x_p]) \n"       \
+        "addi	%[b0_" #ld "_x_p],%[b0_" #ld "_x_p],%[bk_strides] * 2\n"       \
+        : [b0_##ld##_0] "=f"(b0_##ld##_0), [b0_##ld##_1] "=f"(b0_##ld##_1),    \
+          [b0_##ld##_2] "=f"(b0_##ld##_2), [b0_##ld##_3] "=f"(b0_##ld##_3),    \
+          [c0_2_0] "+vr"(c0_2_0), [c0_2_1] "+vr"(c0_2_1),                      \
+          [c0_2_2] "+vr"(c0_2_2), [c0_2_3] "+vr"(c0_2_3),                      \
+          [c0_3_0] "+vr"(c0_3_0), [c0_3_1] "+vr"(c0_3_1),                      \
+          [c0_3_2] "+vr"(c0_3_2), [c0_3_3] "+vr"(c0_3_3),                      \
+          [b0_##ld##_x_p] "+r"(b0_##ld##_x_p)                                  \
+        : [a0_2_##calc] "vr"(a0_2_##calc), [a0_3_##calc] "vr"(a0_3_##calc),    \
+          [b0_##calc##_0] "f"(b0_##calc##_0),                                  \
+          [b0_##calc##_1] "f"(b0_##calc##_1),                                  \
+          [b0_##calc##_2] "f"(b0_##calc##_2),                                  \
+          [b0_##calc##_3] "f"(b0_##calc##_3),                                  \
           [bk_strides] "i"(bk_strides * sizeof(b0_0_0)),                       \
           [bn_strides] "i"(bn_strides * sizeof(b0_0_0)));
+
+#define NTT_MATMUL_TAIL(calc)                                                  \
+    asm volatile(                                                              \
+        "vfmacc.vf	%[c0_0_0],%[b0_" #calc "_0],%[a0_0_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_0_1],%[b0_" #calc "_1],%[a0_0_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_0_2],%[b0_" #calc "_2],%[a0_0_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_0_3],%[b0_" #calc "_3],%[a0_0_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_1_0],%[b0_" #calc "_0],%[a0_1_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_1_1],%[b0_" #calc "_1],%[a0_1_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_1_2],%[b0_" #calc "_2],%[a0_1_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_1_3],%[b0_" #calc "_3],%[a0_1_" #calc "]\n"       \
+        : [c0_0_0] "+vr"(c0_0_0), [c0_0_1] "+vr"(c0_0_1),                      \
+          [c0_0_2] "+vr"(c0_0_2), [c0_0_3] "+vr"(c0_0_3),                      \
+          [c0_1_0] "+vr"(c0_1_0), [c0_1_1] "+vr"(c0_1_1),                      \
+          [c0_1_2] "+vr"(c0_1_2), [c0_1_3] "+vr"(c0_1_3)                       \
+        : [a0_0_##calc] "vr"(a0_0_##calc), [a0_1_##calc] "vr"(a0_1_##calc),    \
+          [b0_##calc##_0] "f"(b0_##calc##_0),                                  \
+          [b0_##calc##_1] "f"(b0_##calc##_1),                                  \
+          [b0_##calc##_2] "f"(b0_##calc##_2),                                  \
+          [b0_##calc##_3] "f"(b0_##calc##_3));                                 \
+                                                                               \
+    asm volatile(                                                              \
+        "vfmacc.vf	%[c0_2_0],%[b0_" #calc "_0],%[a0_2_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_2_1],%[b0_" #calc "_1],%[a0_2_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_2_2],%[b0_" #calc "_2],%[a0_2_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_2_3],%[b0_" #calc "_3],%[a0_2_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_3_0],%[b0_" #calc "_0],%[a0_3_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_3_1],%[b0_" #calc "_1],%[a0_3_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_3_2],%[b0_" #calc "_2],%[a0_3_" #calc "]\n"       \
+        "vfmacc.vf	%[c0_3_3],%[b0_" #calc "_3],%[a0_3_" #calc "]\n"       \
+        : [c0_2_0] "+vr"(c0_2_0), [c0_2_1] "+vr"(c0_2_1),                      \
+          [c0_2_2] "+vr"(c0_2_2), [c0_2_3] "+vr"(c0_2_3),                      \
+          [c0_3_0] "+vr"(c0_3_0), [c0_3_1] "+vr"(c0_3_1),                      \
+          [c0_3_2] "+vr"(c0_3_2), [c0_3_3] "+vr"(c0_3_3)                       \
+        : [a0_2_##calc] "vr"(a0_2_##calc), [a0_3_##calc] "vr"(a0_3_##calc),    \
+          [b0_##calc##_0] "f"(b0_##calc##_0),                                  \
+          [b0_##calc##_1] "f"(b0_##calc##_1),                                  \
+          [b0_##calc##_2] "f"(b0_##calc##_2),                                  \
+          [b0_##calc##_3] "f"(b0_##calc##_3));
 
         // 2. Pipelined
         const size_t pipeline_count = (K - 1) / 2;
         for (size_t k1 = 0; k1 < pipeline_count; k1++) {
             // Ping
             NTT_MATMUL_PP(1, 0)
-
             // Pong
-            asm volatile("vl1re32.v %[a0_0_0], (%[a0_0_0_p])\n"
-                         "addi	%[a0_0_0_p],%[a0_0_0_p],%[ak_strides] * 2\n"
-                         "vl1re32.v %[a0_1_0], (%[a0_1_0_p])\n"
-                         "addi	%[a0_1_0_p],%[a0_1_0_p],%[ak_strides] * 2\n"
-                         "vl1re32.v %[a0_2_0], (%[a0_2_0_p])\n"
-                         "addi	%[a0_2_0_p],%[a0_2_0_p],%[ak_strides] * 2\n"
-                         "vl1re32.v %[a0_3_0], (%[a0_3_0_p])\n"
-                         "addi	%[a0_3_0_p],%[a0_3_0_p],%[ak_strides] * 2\n"
-                         : [a0_0_0] "=vr"(a0_0_0), [a0_1_0] "=vr"(a0_1_0),
-                           [a0_2_0] "=vr"(a0_2_0), [a0_3_0] "=vr"(a0_3_0),
-                           [a0_0_0_p] "+r"(a0_0_0_p), [a0_1_0_p] "+r"(a0_1_0_p),
-                           [a0_2_0_p] "+r"(a0_2_0_p), [a0_3_0_p] "+r"(a0_3_0_p)
-                         : [ak_strides] "i"(ak_strides * sizeof(a0_0_0)));
-
-            asm volatile("vfmacc.vf	%[c0_0_0],%[b0_1_0],%[a0_0_1]\n"
-                         "vfmacc.vf	%[c0_0_1],%[b0_1_1],%[a0_0_1]\n"
-                         "vfmacc.vf	%[c0_0_2],%[b0_1_2],%[a0_0_1]\n"
-                         "vfmacc.vf	%[c0_0_3],%[b0_1_3],%[a0_0_1]\n"
-                         "flw	%[b0_0_0],0(%[b0_0_x_p]) \n"
-                         "vfmacc.vf	%[c0_1_0],%[b0_0_0],%[a0_1_1]\n"
-                         "vfmacc.vf	%[c0_1_1],%[b0_0_1],%[a0_1_1]\n"
-                         "vfmacc.vf	%[c0_1_2],%[b0_0_2],%[a0_1_1]\n"
-                         "vfmacc.vf	%[c0_1_3],%[b0_0_3],%[a0_1_1]\n"
-                         "flw	%[b0_0_1],%[bn_strides](%[b0_0_x_p]) \n"
-                         : [b0_0_0] "=f"(b0_0_0), [b0_0_1] "=f"(b0_0_1),
-                           [b0_0_2] "=f"(b0_0_2), [b0_0_3] "=f"(b0_0_3),
-                           [c0_0_0] "+vr"(c0_0_0), [c0_0_1] "+vr"(c0_0_1),
-                           [c0_0_2] "+vr"(c0_0_2), [c0_0_3] "+vr"(c0_0_3),
-                           [c0_1_0] "+vr"(c0_1_0), [c0_1_1] "+vr"(c0_1_1),
-                           [c0_1_2] "+vr"(c0_1_2), [c0_1_3] "+vr"(c0_1_3),
-                           [b0_0_x_p] "+r"(b0_0_x_p)
-                         : [a0_0_1] "vr"(a0_0_1), [a0_1_1] "vr"(a0_1_1),
-                           [b0_1_0] "f"(b0_1_0), [b0_1_1] "f"(b0_1_1),
-                           [b0_1_2] "f"(b0_1_2), [b0_1_3] "f"(b0_1_3),
-                           [bk_strides] "i"(bk_strides * sizeof(b0_0_0)),
-                           [bn_strides] "i"(bn_strides * sizeof(b0_0_0)));
-
-            asm volatile("vfmacc.vf	%[c0_2_0],%[b0_1_0],%[a0_2_1]\n"
-                         "vfmacc.vf	%[c0_2_1],%[b0_1_1],%[a0_2_1]\n"
-                         "vfmacc.vf	%[c0_2_2],%[b0_1_2],%[a0_2_1]\n"
-                         "vfmacc.vf	%[c0_2_3],%[b0_1_3],%[a0_2_1]\n"
-                         "flw	%[b0_0_2],%[bn_strides] * 2(%[b0_0_x_p]) \n"
-                         "vfmacc.vf	%[c0_3_0],%[b0_1_0],%[a0_3_1]\n"
-                         "vfmacc.vf	%[c0_3_1],%[b0_1_1],%[a0_3_1]\n"
-                         "vfmacc.vf	%[c0_3_2],%[b0_1_2],%[a0_3_1]\n"
-                         "vfmacc.vf	%[c0_3_3],%[b0_1_3],%[a0_3_1]\n"
-                         "flw	%[b0_0_3],%[bn_strides] * 3(%[b0_0_x_p]) \n"
-                         "addi	%[b0_0_x_p],%[b0_0_x_p],%[bk_strides] * 2\n"
-                         : [b0_0_0] "=f"(b0_0_0), [b0_0_1] "=f"(b0_0_1),
-                           [b0_0_2] "=f"(b0_0_2), [b0_0_3] "=f"(b0_0_3),
-                           [c0_2_0] "+vr"(c0_2_0), [c0_2_1] "+vr"(c0_2_1),
-                           [c0_2_2] "+vr"(c0_2_2), [c0_2_3] "+vr"(c0_2_3),
-                           [c0_3_0] "+vr"(c0_3_0), [c0_3_1] "+vr"(c0_3_1),
-                           [c0_3_2] "+vr"(c0_3_2), [c0_3_3] "+vr"(c0_3_3),
-                           [b0_0_x_p] "+r"(b0_0_x_p)
-                         : [a0_2_1] "vr"(a0_2_1), [a0_3_1] "vr"(a0_3_1),
-                           [b0_1_0] "f"(b0_1_0), [b0_1_1] "f"(b0_1_1),
-                           [b0_1_2] "f"(b0_1_2), [b0_1_3] "f"(b0_1_3),
-                           [bk_strides] "i"(bk_strides * sizeof(b0_0_0)),
-                           [bn_strides] "i"(bn_strides * sizeof(b0_0_0)));
+            NTT_MATMUL_PP(0, 1)
         }
 
         // 3. Tail
         if (K > 1 && K % 2) {
             NTT_MATMUL_PP(1, 0)
-
-            asm volatile("vfmacc.vf	%[c0_0_0],%[b0_1_0],%[a0_0_1]\n"
-                         "vfmacc.vf	%[c0_0_1],%[b0_1_1],%[a0_0_1]\n"
-                         "vfmacc.vf	%[c0_0_2],%[b0_1_2],%[a0_0_1]\n"
-                         "vfmacc.vf	%[c0_0_3],%[b0_1_3],%[a0_0_1]\n"
-                         "vfmacc.vf	%[c0_1_0],%[b0_1_0],%[a0_1_1]\n"
-                         "vfmacc.vf	%[c0_1_1],%[b0_1_1],%[a0_1_1]\n"
-                         "vfmacc.vf	%[c0_1_2],%[b0_1_2],%[a0_1_1]\n"
-                         "vfmacc.vf	%[c0_1_3],%[b0_1_3],%[a0_1_1]\n"
-                         : [c0_0_0] "+vr"(c0_0_0), [c0_0_1] "+vr"(c0_0_1),
-                           [c0_0_2] "+vr"(c0_0_2), [c0_0_3] "+vr"(c0_0_3),
-                           [c0_1_0] "+vr"(c0_1_0), [c0_1_1] "+vr"(c0_1_1),
-                           [c0_1_2] "+vr"(c0_1_2), [c0_1_3] "+vr"(c0_1_3)
-                         : [a0_0_1] "vr"(a0_0_1), [a0_1_1] "vr"(a0_1_1),
-                           [b0_1_0] "f"(b0_1_0), [b0_1_1] "f"(b0_1_1),
-                           [b0_1_2] "f"(b0_1_2), [b0_1_3] "f"(b0_1_3));
-
-            asm volatile("vfmacc.vf	%[c0_2_0],%[b0_1_0],%[a0_2_1]\n"
-                         "vfmacc.vf	%[c0_2_1],%[b0_1_1],%[a0_2_1]\n"
-                         "vfmacc.vf	%[c0_2_2],%[b0_1_2],%[a0_2_1]\n"
-                         "vfmacc.vf	%[c0_2_3],%[b0_1_3],%[a0_2_1]\n"
-                         "vfmacc.vf	%[c0_3_0],%[b0_1_0],%[a0_3_1]\n"
-                         "vfmacc.vf	%[c0_3_1],%[b0_1_1],%[a0_3_1]\n"
-                         "vfmacc.vf	%[c0_3_2],%[b0_1_2],%[a0_3_1]\n"
-                         "vfmacc.vf	%[c0_3_3],%[b0_1_3],%[a0_3_1]\n"
-                         : [c0_2_0] "+vr"(c0_2_0), [c0_2_1] "+vr"(c0_2_1),
-                           [c0_2_2] "+vr"(c0_2_2), [c0_2_3] "+vr"(c0_2_3),
-                           [c0_3_0] "+vr"(c0_3_0), [c0_3_1] "+vr"(c0_3_1),
-                           [c0_3_2] "+vr"(c0_3_2), [c0_3_3] "+vr"(c0_3_3)
-                         : [a0_2_1] "vr"(a0_2_1), [a0_3_1] "vr"(a0_3_1),
-                           [b0_1_0] "f"(b0_1_0), [b0_1_1] "f"(b0_1_1),
-                           [b0_1_2] "f"(b0_1_2), [b0_1_3] "f"(b0_1_3));
+            NTT_MATMUL_TAIL(1)
         } else {
-            asm volatile("vfmacc.vf	%[c0_0_0],%[b0_0_0],%[a0_0_0]\n"
-                         "vfmacc.vf	%[c0_0_1],%[b0_0_1],%[a0_0_0]\n"
-                         "vfmacc.vf	%[c0_0_2],%[b0_0_2],%[a0_0_0]\n"
-                         "vfmacc.vf	%[c0_0_3],%[b0_0_3],%[a0_0_0]\n"
-                         "vfmacc.vf	%[c0_1_0],%[b0_0_0],%[a0_1_0]\n"
-                         "vfmacc.vf	%[c0_1_1],%[b0_0_1],%[a0_1_0]\n"
-                         "vfmacc.vf	%[c0_1_2],%[b0_0_2],%[a0_1_0]\n"
-                         "vfmacc.vf	%[c0_1_3],%[b0_0_3],%[a0_1_0]\n"
-                         : [c0_0_0] "+vr"(c0_0_0), [c0_0_1] "+vr"(c0_0_1),
-                           [c0_0_2] "+vr"(c0_0_2), [c0_0_3] "+vr"(c0_0_3),
-                           [c0_1_0] "+vr"(c0_1_0), [c0_1_1] "+vr"(c0_1_1),
-                           [c0_1_2] "+vr"(c0_1_2), [c0_1_3] "+vr"(c0_1_3)
-                         : [a0_0_0] "vr"(a0_0_0), [a0_1_0] "vr"(a0_1_0),
-                           [b0_0_0] "f"(b0_0_0), [b0_0_1] "f"(b0_0_1),
-                           [b0_0_2] "f"(b0_0_2), [b0_0_3] "f"(b0_0_3));
-
-            asm volatile("vfmacc.vf	%[c0_2_0],%[b0_0_0],%[a0_2_0]\n"
-                         "vfmacc.vf	%[c0_2_1],%[b0_0_1],%[a0_2_0]\n"
-                         "vfmacc.vf	%[c0_2_2],%[b0_0_2],%[a0_2_0]\n"
-                         "vfmacc.vf	%[c0_2_3],%[b0_0_3],%[a0_2_0]\n"
-                         "vfmacc.vf	%[c0_3_0],%[b0_0_0],%[a0_3_0]\n"
-                         "vfmacc.vf	%[c0_3_1],%[b0_0_1],%[a0_3_0]\n"
-                         "vfmacc.vf	%[c0_3_2],%[b0_0_2],%[a0_3_0]\n"
-                         "vfmacc.vf	%[c0_3_3],%[b0_0_3],%[a0_3_0]\n"
-                         : [c0_2_0] "+vr"(c0_2_0), [c0_2_1] "+vr"(c0_2_1),
-                           [c0_2_2] "+vr"(c0_2_2), [c0_2_3] "+vr"(c0_2_3),
-                           [c0_3_0] "+vr"(c0_3_0), [c0_3_1] "+vr"(c0_3_1),
-                           [c0_3_2] "+vr"(c0_3_2), [c0_3_3] "+vr"(c0_3_3)
-                         : [a0_2_0] "vr"(a0_2_0), [a0_3_0] "vr"(a0_3_0),
-                           [b0_0_0] "f"(b0_0_0), [b0_0_1] "f"(b0_0_1),
-                           [b0_0_2] "f"(b0_0_2), [b0_0_3] "f"(b0_0_3));
+            NTT_MATMUL_TAIL(0)
         }
 
         ntt::store(c0(0, 0), c0_0_0);
@@ -420,7 +346,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, 4, 4,
         ntt::store(c0(3, 3), c0_3_3);
 
 #undef NTT_MATMUL_PING
+#undef NTT_MATMUL_TAIL
     }
 };
-#endif
 } // namespace nncase::ntt::ukernels
