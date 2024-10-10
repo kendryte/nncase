@@ -373,8 +373,7 @@ class BenchmarkNTTMatmul(Benchmark):
             dict['M'] = items[1].split(':')[1].strip()
             dict['K'] = items[2].split(':')[1].strip()
             dict['N'] = items[3].split(':')[1].strip()
-            dict[f'{self.arch}_cycles'] = items[4].split(':')[1].strip()
-            dict[f'{self.arch}_gflops'] = items[5].split(':')[1].strip()
+            dict[f'{self.arch}_gflops'] = items[4].split(':')[1].strip()
             self.benchmark_list.append(dict)
 
     def run():
