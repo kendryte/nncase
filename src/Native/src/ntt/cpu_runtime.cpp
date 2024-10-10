@@ -24,6 +24,7 @@ nncase_runtime_cpu_mt_t *g_cpu_mt;
 size_t bid;
 size_t tid;
 
+#ifndef NNCASE_STANDALONE
 // compiler support
 #if defined(_MSC_VER)
 #pragma function(acosf)
@@ -82,5 +83,6 @@ void *memcpy(void *dst, const void *src, size_t len) {
 void *memmove(void *dst, const void *src, size_t len) {
     return g_cpu_mt->memmove(dst, src, len);
 }
+#endif
 #endif
 }

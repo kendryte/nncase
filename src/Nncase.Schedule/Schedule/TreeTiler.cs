@@ -111,7 +111,7 @@ public static class TreeTiler
     {
         int[] memoryCapacities = targetOptions.MemoryCapacities;
         int[] memoryBandWidths = targetOptions.MemoryBandWidths;
-        var totalLevel = memoryCapacities.Length - 1;
+        var totalLevel = memoryCapacities.Length;
         var argumentsInfo = TreeSolverInitializer.Init(tree, totalLevel, targetOptions, out var solver, out var opNodeMemo, out var tileNodeMemo, out var tileableNodeMemo);
         var initWrites = new TreeSolverWritesInitializer(solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions);
         tree.Accept(initWrites, new());
@@ -397,7 +397,7 @@ public static class TreeTiler
             if (i > 0)
             {
                 // haven't read from l0
-                memoryCycles[i] += levelDataReads[i].CeilDiv(memoryBandWidths[i]);
+                memoryCycles[i] += levelDataReads[i].CeilDiv(memoryBandWidths[i - 1]);
             }
         }
 

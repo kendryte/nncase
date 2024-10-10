@@ -204,6 +204,15 @@ public static partial class TypePatternUtility
       },
       "IsFloat");
 
+    public static TypePattern IsVector(int rank = -1) => new TypePattern(
+      x => x switch
+      {
+          TensorType ttype => ttype.DType is VectorType v && (rank == -1 ? true : v.Lanes.Count == rank),
+          DistributedType dtype => dtype.TensorType.DType is VectorType v && (rank == -1 ? true : v.Lanes.Count == rank),
+          _ => false,
+      },
+      "IsPacked");
+
     /// <summary>
     /// check the data type is bool.
     /// </summary>

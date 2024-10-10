@@ -17,6 +17,7 @@ internal class CPUModule : IApplicationPart
         registrator.RegisterManyInterface<LoadEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<StoreEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<PackEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<PackedReduceEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<PackedSoftMaxEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<PackedLayerNormEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<PackedMatMulEvaluator>(reuse: Reuse.Singleton);

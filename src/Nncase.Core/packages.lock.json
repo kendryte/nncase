@@ -20,6 +20,20 @@
         "resolved": "3.0.1",
         "contentHash": "TseDWNkBFKrrrzamgl2yeSDk9gmxQZvymcTqRydY/EL9REM9jBwCHFceg7AutXw3ULUL/FKhc1uFzfd2Cjpe/A=="
       },
+      "Google.OrTools": {
+        "type": "Direct",
+        "requested": "[9.4.1874, )",
+        "resolved": "9.4.1874",
+        "contentHash": "jqRoI+pYlym+fhoU25u+13oti5h+772bllQ9zDitTVMclDXVTiG6pxzvmYO74wnADBMdpb2SQlgiNQxoNk5dlA==",
+        "dependencies": {
+          "Google.OrTools.runtime.linux-arm64": "9.4.1874",
+          "Google.OrTools.runtime.linux-x64": "9.4.1874",
+          "Google.OrTools.runtime.osx-arm64": "9.4.1874",
+          "Google.OrTools.runtime.osx-x64": "9.4.1874",
+          "Google.OrTools.runtime.win-x64": "9.4.1874",
+          "Google.Protobuf": "3.19.4"
+        }
+      },
       "Microsoft.Extensions.Hosting.Abstractions": {
         "type": "Direct",
         "requested": "[8.0.0, )",
@@ -84,6 +98,31 @@
         "resolved": "6.0.0",
         "contentHash": "31kfaW4ZupZzPsI5PVe77VhnvFF55qgma7KZr/E0iFTs6fmdhhG8j0mgEx620iLTey1EynOkEfnyTjtNEpJzGw=="
       },
+      "Google.OrTools.runtime.linux-arm64": {
+        "type": "Transitive",
+        "resolved": "9.4.1874",
+        "contentHash": "Z46ndZcZa2Lt5b76xU9kxVYbPLg/LfuMufhUVsu3Qo3L7Bibf7WXd9j7RRldjnuv8RIHWTqb0b+2FwwMxs0c5A=="
+      },
+      "Google.OrTools.runtime.linux-x64": {
+        "type": "Transitive",
+        "resolved": "9.4.1874",
+        "contentHash": "zGeDb8FuvP9HXjrsU7krVXtSDFpR+DUGNEsH51k94jL9tzf2vWYI8+WUBRHZ/cGe50dpLr+vIjfcNo3gFyOpkQ=="
+      },
+      "Google.OrTools.runtime.osx-arm64": {
+        "type": "Transitive",
+        "resolved": "9.4.1874",
+        "contentHash": "Wo0ZfDaH6DhiQw0jZm4HWJm/oPGPpWNwOLUz+EYaoH3MLtocSxItHGQj/Ta3HyhXnYNOv+TliAH8L+8RCXu/2w=="
+      },
+      "Google.OrTools.runtime.osx-x64": {
+        "type": "Transitive",
+        "resolved": "9.4.1874",
+        "contentHash": "IAfGgKR1og6vU87axK1d37Ak/4jy8B4NMoElovG/KZc/2UY+cJEAQDA709UMegtI4lBhuxTWFNUiHQYmRIB9yQ=="
+      },
+      "Google.OrTools.runtime.win-x64": {
+        "type": "Transitive",
+        "resolved": "9.4.1874",
+        "contentHash": "fUs5qDnZA6itygolcX6nPuachQkY9CVvQbakIzIiRAWKcaj8umQAbFdGwbkyzp3qp34BKW5mtPVsmMyfQBBjOQ=="
+      },
       "Microsoft.Extensions.Configuration.Abstractions": {
         "type": "Transitive",
         "resolved": "8.0.0",
@@ -144,6 +183,12 @@
         "type": "Transitive",
         "resolved": "5.0.0",
         "contentHash": "ZD9TMpsmYJLrxbbmdvhwt9YEgG5WntEnZ/d1eH8JBX9LBp+Ju8BSBhUGbZMNVHHomWo2KVImJhTDl2hIgw/6MA=="
+      },
+      "Google.Protobuf": {
+        "type": "CentralTransitive",
+        "requested": "[3.27.3, )",
+        "resolved": "3.19.4",
+        "contentHash": "fd07/ykL4O4FhqrZIELm5lmiyOHfdPg9+o+hWr6tcfRdS7tHXnImg/2wtogLzlW2eEmr0J7j6ZrZvaWOLiJbxQ=="
       }
     }
   }

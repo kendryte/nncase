@@ -6,86 +6,55 @@ using Google.OrTools.ConstraintSolver;
 
 namespace Nncase.Schedule.TileGraph;
 
-public sealed class TreeSolverWritesInitializer : TreeSolverBase<IntExpr>, ITreeNodeVisitor<Dictionary<BufferIdentity, IntExpr[]>, Unit>
+public sealed class TreeSolverWritesInitializer : TreeSolverBase<IntExpr>, ITreeNodeVisitor<Dictionary<BufferIdentity, IntExpr>, Unit>
 {
-    public TreeSolverWritesInitializer(Solver solver, Dictionary<OpNode, OpNodeInfo<IntExpr>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<IntExpr>> levelBufferInfos, Dictionary<ITileable, DomainInfo<IntExpr>> domainDimInfos, ICpuTargetOptions targetOptions)
+    public TreeSolverWritesInitializer(int topLevel, Solver solver, Dictionary<OpNode, OpNodeInfo<IntExpr>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<IntExpr>> levelBufferInfos, Dictionary<ITileable, DomainInfo<IntExpr>> domainDimInfos, ICpuTargetOptions targetOptions)
         : base(solver, primitiveBufferInfo, levelBufferInfos, domainDimInfos, targetOptions)
     {
+        TopLevel = topLevel;
+    }
+
+    public int TopLevel { get; }
+
+    public static void Init(ITreeNode tree, int topLevel, Solver solver, Dictionary<OpNode, OpNodeInfo<IntExpr>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<IntExpr>> levelBufferInfos, Dictionary<ITileable, DomainInfo<IntExpr>> domainDimInfos, ICpuTargetOptions targetOptions)
+    {
+        var initzer = new TreeSolverWritesInitializer(topLevel, solver, primitiveBufferInfo, levelBufferInfos, domainDimInfos, targetOptions);
+        tree.Accept(initzer, new());
     }
 
     /// <summary>
     /// buffer trip counts mean each buffer's trip count at loop i.
     /// </summary>
-    public Unit Visit(TileNode value, Dictionary<BufferIdentity, IntExpr[]> bufferTripCounts)
+    public Unit Visit(TileNode value, Dictionary<BufferIdentity, IntExpr> bufferTripCounts)
     {
-        Dictionary<BufferIdentity, IntExpr[]> currentTripCounts = new();
+        Dictionary<BufferIdentity, IntExpr> currentTripCounts = new();
         var domainInfo = TileableNodeMemo[value];
-
-        // for child graph node.
-        if (value.Parent is TileNode parentTileNode && parentTileNode.OpId != -1)
+        TileNodeInfo<IntExpr>? partentTileInfo = null;
+        if (value.Parent is TileNode { Level: not -1 } parentNode)
         {
-            var partentTileInfo = TileNodeMemo[parentTileNode];
-
-            // 1. child domain map to parent domain.
-            foreach (var (bid, bufferInfo) in TileNodeMemo[value].BufferInfoMap)
-            {
-                var parentTripCounts = bufferTripCounts[partentTileInfo.GetCacheBid(bid)];
-                var tripCounts = new IntExpr[domainInfo.TileVars.Length];
-
-                for (int i = 0; i < domainInfo.TileVars.Length; i++)
-                {
-                    IntExpr factor;
-                    IntExpr parentFactor;
-                    if (bufferInfo.Masks[i].IsRelated(i))
-                    {
-                        factor = domainInfo.TileVars[i];
-                    }
-                    else
-                    {
-                        factor = Solver.MakeIntConst(1);
-                    }
-
-                    if (domainInfo.DimsMap.TryGetValue(i, out var j))
-                    {
-                        parentFactor = parentTripCounts[j];
-                    }
-                    else
-                    {
-                        parentFactor = Solver.MakeIntConst(1);
-                    }
-
-                    tripCounts[i] = factor * parentFactor;
-                    bufferInfo.Writes[i] = bufferInfo.SizeVars[i] * tripCounts[i];
-                }
-
-                currentTripCounts.Add(bid, tripCounts);
-            }
+            partentTileInfo = TileNodeMemo[parentNode];
         }
-        else
+
+        // 1. child domain map to parent domain.
+        foreach (var (bid, bufferInfo) in TileNodeMemo[value].BufferInfoMap)
         {
-            // for prim graph node.
-            foreach (var (bid, bufferInfo) in TileNodeMemo[value].BufferInfoMap)
+            var parentTripCounts = partentTileInfo is null ? Solver.MakeIntConst(1) : bufferTripCounts[partentTileInfo.GetCacheBid(bid)];
+
+            for (int i = 0; i < domainInfo.TileVars.Length + 1; i++)
             {
-                var tripCounts = new IntExpr[domainInfo.TileVars.Length];
-
-                for (int i = 0; i < domainInfo.TileVars.Length; i++)
+                IntExpr trip = parentTripCounts;
+                for (int j = 0; j < domainInfo.TileVars.Length; j++)
                 {
-                    IntExpr factor;
-                    if (bufferInfo.Masks[i].IsRelated(i))
+                    if (bufferInfo.Masks[i].IsRelated(j))
                     {
-                        factor = domainInfo.TileVars[i];
+                        trip = trip * domainInfo.TileVars[j];
                     }
-                    else
-                    {
-                        factor = Solver.MakeIntConst(1);
-                    }
-
-                    tripCounts[i] = factor;
-                    bufferInfo.Writes[i] = bufferInfo.SizeVars[i] * tripCounts[i];
                 }
 
-                currentTripCounts.Add(bid, tripCounts);
+                bufferInfo.Trips[i] = trip;
             }
+
+            currentTripCounts.Add(bid, bufferInfo.Trips[^1]);
         }
 
         foreach (var item in value.Children)
@@ -96,7 +65,7 @@ public sealed class TreeSolverWritesInitializer : TreeSolverBase<IntExpr>, ITree
         return default;
     }
 
-    public Unit Visit(OpNode value, Dictionary<BufferIdentity, IntExpr[]> bufferTripCounts)
+    public Unit Visit(OpNode value, Dictionary<BufferIdentity, IntExpr> bufferTripCounts)
     {
         return default;
     }

@@ -183,14 +183,14 @@ public sealed class GraphMerger
 
     private bool VisitRecursion(TieredTileGraph graph)
     {
-        if (graph.Level == TargetLevel + 1)
-        {
-            return TryMerge(graph);
-        }
-
-        if (graph.Level <= TargetLevel)
+        if (graph.Level > 0 && graph.Level <= TargetLevel)
         {
             return false;
+        }
+
+        if (TryMerge(graph))
+        {
+            return true;
         }
 
         foreach (var subGraph in graph.Clusters.OfType<TieredTileGraph>())

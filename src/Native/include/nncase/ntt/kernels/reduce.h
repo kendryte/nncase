@@ -28,26 +28,50 @@
 
 namespace nncase::ntt {
 namespace detail {
+template <reduce_op Op, bool Accumulate, IsVector TIn, IsVector TOut,
+          size_t Axis>
+class inner_reduce_impl;
+
+template <reduce_op Op, bool Accumulate, IsVector TIn, IsVector TOut>
+class inner_reduce_impl<Op, Accumulate, TIn, TOut, 0> {
+  public:
+    constexpr void operator()(const TIn &input, TOut &output) {
+        auto count = input.shape()[0] - 1;
+        auto begin = input.buffer().data();
+        output = u_reduce<Op, TOut>(begin + 1, 1, count, *begin);
+    }
+};
+
+template <reduce_op Op, bool Accumulate, IsVector TIn, IsVector TOut>
+class inner_reduce_impl<Op, Accumulate, TIn, TOut, 1> {
+    using TElem = typename TOut::element_type;
+
+  public:
+    constexpr void operator()(const TIn &input, TOut &output) {
+        for (size_t i = 0; i < output.shape()[0]; i++) {
+            output(i) =
+                ntt::reduce<ukernels::reduce_to_binary_type<Op>::template type,
+                            TElem>(input(i));
+        }
+    }
+};
 
 template <reduce_op Op, bool Accumulate, IsTensor TIn, IsTensor TOut,
-          IsFixedDims Axes, IsFixedDims PackedAxes, class PadedNums>
+          IsFixedDims Axes, IsFixedDims PackedAxes, IsFixedDims PadedNums>
 class reduce_impl {
     using TInElem = typename TIn::element_type;
     using TOutElem = typename TOut::element_type;
     using TOutScalar = element_or_scalar_t<TOutElem>;
 
-    static constexpr bool use_vector_reduce =
-        PackedAxes::rank() == 1 && PackedAxes::at(0) >= Axes::at(0);
-
-    static constexpr TOutElem initial_value() noexcept {
+    static constexpr TInElem initial_value() noexcept {
         if constexpr (Op == reduce_op::mean || Op == reduce_op::sum) {
-            return (TOutElem)0;
+            return (TInElem)0;
         } else if constexpr (Op == reduce_op::min) {
-            return (TOutElem)std::numeric_limits<TOutScalar>::max();
+            return (TInElem)std::numeric_limits<TOutScalar>::max();
         } else if constexpr (Op == reduce_op::max) {
-            return (TOutElem)std::numeric_limits<TOutScalar>::lowest();
+            return (TInElem)std::numeric_limits<TOutScalar>::lowest();
         } else if constexpr (Op == reduce_op::prod) {
-            return (TOutElem)1;
+            return (TInElem)1;
         }
     }
 
@@ -61,6 +85,13 @@ class reduce_impl {
                 output(index) = ntt::reduce<
                     ukernels::reduce_to_binary_type<Op>::template type,
                     TOutElem>(reduced_in);
+            } else if constexpr (IsTensor<TOutElem> && TInElem::rank() == 2 &&
+                                 TOutElem::rank() == 1) {
+                constexpr auto inner_axis =
+                    PackedAxes::at(0) == Axes::at(0) ? 0 : 1;
+                inner_reduce_impl<Op, false, TInElem, TOutElem, inner_axis>
+                    inner_impl;
+                inner_impl(reduced_in, output(index));
             } else {
                 output(index) = reduced_in;
             }
@@ -70,8 +101,12 @@ class reduce_impl {
                 size_t inner_size =
                     slice_fixed_dims<Axes::rank(), Axes::at(0)>(input.shape())
                         .length();
-                if constexpr (use_vector_reduce) {
+                if constexpr (IsVector<TOutElem>) {
                     inner_size *= TInElem::shape_type::length();
+                }
+
+                if constexpr (IsVector<TOutElem>) {
+                    inner_size /= TOutElem::shape_type::length();
                 }
 
                 auto denom = (TOutScalar)inner_size;
@@ -142,10 +177,10 @@ class reduce_impl {
 template <reduce_op Op, IsFixedDims Axes, IsFixedDims PackedAxes,
           IsFixedDims PadedNums, class TIn, class TOut>
 void reduce(const TIn &input, TOut &&output) noexcept {
-    static_assert(PackedAxes::rank() < 2, "currently not support 2d packing.");
-
     static_assert(PadedNums::rank() == 0 ||
-                      (PadedNums::rank() == 1 && PadedNums::at(0) == 0),
+                      (PadedNums::rank() == 1 && PadedNums::at(0) == 0) ||
+                      (PadedNums::rank() == 2 && PadedNums::at(0) == 0 &&
+                       PadedNums::at(1) == 0),
                   "not support padding");
     AUTO_NTT_PROFILER
     detail::reduce_impl<Op, false, std::decay_t<TIn>, std::decay_t<TOut>, Axes,

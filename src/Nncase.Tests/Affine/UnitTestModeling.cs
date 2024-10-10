@@ -468,7 +468,7 @@ public sealed class UnitTestModeling : TestClassBase
 
         var root = new ScopeNode();
         var opId = 0;
-        var totalLevel = ((ICpuTargetOptions)CompileOptions.TargetOptions).MemoryCapacities.Length - 1;
+        var totalLevel = ((ICpuTargetOptions)CompileOptions.TargetOptions).MemoryCapacities.Length;
         Schedule.TreeTiler.BuildTree(grid, root, totalLevel, ref opId);
         root.Dump("build");
         var m1 = root.Root<ITreeNode>().Clone();

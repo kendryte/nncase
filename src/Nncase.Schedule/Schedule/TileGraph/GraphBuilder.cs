@@ -16,19 +16,19 @@ public sealed class GraphBuilder : ExprVisitor<Unit, Unit>
     private readonly int _totalLevel;
     private int _opId;
 
-    public GraphBuilder(int totalLevel)
+    public GraphBuilder(int topLevel)
     {
-        _totalLevel = totalLevel;
-        RootGraph = new(totalLevel + 1, new AdjacencyGraph<TileGrid, EquatableTaggedEdge<TileGrid, int>>());
+        _totalLevel = topLevel;
+        RootGraph = new(-1, new AdjacencyGraph<TileGrid, EquatableTaggedEdge<TileGrid, int>>());
         _memo = new();
         _exprMemo = new();
     }
 
     public TieredTileGraph RootGraph { get; }
 
-    public static TieredTileGraph Build(Expr expr, int totalLevel, out Dictionary<Grid, TieredTileGraph> exprMemo)
+    public static TieredTileGraph Build(Expr expr, int topLevel, out Dictionary<Grid, TieredTileGraph> exprMemo)
     {
-        var builder = new GraphBuilder(totalLevel);
+        var builder = new GraphBuilder(topLevel);
         builder.Visit(expr);
         exprMemo = builder._exprMemo;
         return builder.RootGraph;
@@ -59,8 +59,7 @@ public sealed class GraphBuilder : ExprVisitor<Unit, Unit>
         var tileNodeTail = tileNodeRoot;
         for (int l = _totalLevel - 1; l >= 1; l--)
         {
-            tileNodeRoot.AddVertex(opNode);
-            tileNodeTail = tileNodeRoot.CreateCluster<TieredTileGraph>(l, copId, new DomainRelation(copId, copId, AffineMap.Identity(domainDims)));
+            tileNodeTail = tileNodeTail.CreateCluster<TieredTileGraph>(l, copId, new DomainRelation(copId, copId, AffineMap.Identity(domainDims)));
         }
 
         tileNodeTail.AddVertex(opNode);

@@ -22,8 +22,8 @@ public sealed class GraphTiler
 
     public Expr Tile(Expr preExpr, string moduleKind, string itemNumber, ICpuTargetOptions targetOptions)
     {
-        var totalLevel = targetOptions.MemoryCapacities.Length - 1;
-        var rootGraph = GraphBuilder.Build(preExpr, totalLevel, out var exprMemo);
+        var topLevel = targetOptions.MemoryCapacities.Length;
+        var rootGraph = GraphBuilder.Build(preExpr, topLevel, out var exprMemo);
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {
             rootGraph.Dump($"device_func{itemNumber}_original");
@@ -64,6 +64,7 @@ public sealed class GraphTiler
         var resultMemo = new Dictionary<TieredTileGraph, Expr>();
         foreach (var (primGraph, i) in condensedGraph.TopologicalSort().Select((s, i) => (s, i)))
         {
+            using var subscope = new Diagnostics.DumpScope($"device_func{itemNumber}_{i}", Diagnostics.DumpFlags.Tiling);
             var primTree = treeGraphMemo[primGraph];
             var primBufferGraph = bufferGraphMemo[primGraph];
             HashSet<BufferIdentity> inputBids;
@@ -138,106 +139,98 @@ public sealed class GraphTiler
     {
         int[] memoryCapacities = targetOptions.MemoryCapacities;
         int[] memoryBandWidths = targetOptions.MemoryBandWidths;
-        var totalLevel = memoryCapacities.Length - 1;
-        TreeSolverInitializer.Init(primTree, totalLevel, targetOptions, out var solver, out var opNodeMemo, out var tileNodeMemo, out var tileableNodeMemo);
-        var initWrites = new TreeSolverWritesInitializer(solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions);
-        initWrites.Visit(primTree, new());
+        var topLevel = memoryCapacities.Length;
+        TreeSolverInitializer.Init(primTree, topLevel, targetOptions, out var solver, out var opNodeMemo, out var tileNodeMemo, out var tileableNodeMemo);
 
-        // 1. each buffer must store one at lowest level.
-        // 1.1 count each node's buffer store nums.
-        var lowestStoreBufferNums = new Dictionary<TileNode, Dictionary<BufferIdentity, IntExpr>>();
-        foreach (var (tileNode, bufferInfoMemo) in tileNodeMemo)
+        // 0. the top level already store a buffer at outter most.
+        var toplevelStoreBufferConstraints = new List<Constraint>();
+        foreach (var (bid, binfo) in tileNodeMemo[primTree].BufferInfoMap)
         {
-            var tileStoreNums = new Dictionary<BufferIdentity, IntExpr>();
-            foreach (var (bid, bufferInfo) in bufferInfoMemo.BufferInfoMap)
-            {
-                tileStoreNums.Add(bid, solver.MakeSum(bufferInfo.Places.Select(p => p[0].Var()).ToArray()));
-            }
-
-            lowestStoreBufferNums.Add(tileNode, tileStoreNums);
+            var cons = solver.MakeEquality(binfo.Places[0][^1], 1);
+            cons.SetName($"{bid}StoreAtOutMost");
+            solver.Add(cons);
+            toplevelStoreBufferConstraints.Add(cons);
         }
 
-        // 1.2 accumulate the child buffer store nums to parent child buffer in each level.
-        for (int cl = 1; cl < totalLevel; cl++)
-        {
-            foreach (var (childNode, childBufferInfoMemo) in tileNodeMemo.Where(t => t.Key.Level == cl))
+        // 0.1 parent node's inner place is equal to child's outter place.
+        var duplictePlaceConstranits = new List<Constraint>();
+        primTree.Walk(
+            (treeNode) =>
             {
-                if (childNode.Parent is TileNode parentNode && parentNode.OpId != -1)
+                if (treeNode is not TileNode tileNode || tileNode.Level == 1)
                 {
-                    var partentBufferInfoMemo = tileNodeMemo[parentNode];
-                    foreach (var (cbid, cbufferInfo) in childBufferInfoMemo.BufferInfoMap)
+                    return;
+                }
+
+                foreach (var (bid, binfo) in tileNodeMemo[tileNode].BufferInfoMap)
+                {
+                    foreach (var child in tileNode.Children.ToArray().OfType<TileNode>())
                     {
-                        var pbid = partentBufferInfoMemo.GetCacheBid(cbid);
-                        lowestStoreBufferNums[parentNode][pbid] += lowestStoreBufferNums[childNode][cbid];
+                        var cbinfo = tileNodeMemo[child].BufferInfoMap[tileNodeMemo[child].GetCacheBid(bid)];
+                        for (int sl = 0; sl < tileNode.Level - 1; sl++)
+                        {
+                            var cons = solver.MakeLessOrEqual(binfo.Places[^1][sl] + cbinfo.Places[0][sl], 1);
+                            duplictePlaceConstranits.Add(cons);
+                            solver.Add(cons);
+                        }
                     }
                 }
-            }
-        }
+            });
 
-        // 1.3 create buffer store nums constrains at total level.
-        var lowestStoreBufferNumsConstrains = new Dictionary<BufferIdentity, Constraint>();
-        foreach (var (node, bufferInfoMemo) in tileNodeMemo.Where(t => t.Key.Level == totalLevel))
-        {
-            foreach (var (bid, bufferInfo) in bufferInfoMemo.BufferInfoMap)
+        // 1. must have one buffer at lowest store level.
+        // Beside the top-level node, from bottom to top count each tile node's buffer numbers which are stored at the lowest level.
+        var eachLevelStoreBufferNums = new Dictionary<TileNode, Dictionary<BufferIdentity, Dictionary<int, IntExpr>>>();
+        primTree.Walk(
+            treeNode =>
             {
-                lowestStoreBufferNumsConstrains[bid] = solver.MakeEquality(lowestStoreBufferNums[node][bid], 1);
-                solver.Add(lowestStoreBufferNumsConstrains[bid]);
-            }
-        }
-
-        // 2. each tensor only can create one or zero buffer at each create level.
-        var eachNodeCreateBufferConstraints = new Dictionary<TileNode, Dictionary<BufferIdentity, Constraint>>();
-        var eachNodeCreateBufferNums = new Dictionary<TileNode, Dictionary<BufferIdentity, IntExpr>>();
-        foreach (var (node, nodeInfo) in tileNodeMemo)
-        {
-            var createBufferConstraints = eachNodeCreateBufferConstraints[node] = new Dictionary<BufferIdentity, Constraint>();
-            var createBufferNums = eachNodeCreateBufferNums[node] = new Dictionary<BufferIdentity, IntExpr>();
-            foreach (var (bid, bufferInfo) in nodeInfo.BufferInfoMap)
-            {
-                createBufferNums[bid] = solver.MakeSum(bufferInfo.Places.SelectMany(i => i).Select(i => i.Var()).ToArray());
-                createBufferConstraints[bid] = solver.MakeLessOrEqual(createBufferNums[bid], 1);
-                createBufferConstraints[bid].SetName($"nodeCreate[{node.Level}, {node.OpId}, {bid}]");
-                solver.Add(createBufferConstraints[bid]);
-            }
-        }
-
-        // 2.1 each cache buffer requires it's parent level create a buffer.
-        var eachParentNodeCreateBufferConstraints = new Dictionary<TileNode, Dictionary<BufferIdentity, Constraint>>();
-        foreach (var (node, nodeInfo) in tileNodeMemo.Where(kv => kv.Key.Level > 1 && kv.Value.DefUseMap.Any()))
-        {
-            var nodeCreateBufferConstraints = eachParentNodeCreateBufferConstraints[node] = new();
-            foreach (var (_, sinkId) in nodeInfo.DefUseMap)
-            {
-                var cons = nodeCreateBufferConstraints[sinkId] = solver.MakeEquality(solver.MakeSum(nodeInfo.BufferInfoMap[sinkId].Places.Select(p => p[node.Level - 2].Var()).ToArray()), 1);
-                cons.SetName($"parentCreate[{node.Level}, {node.OpId}, {sinkId}]");
-                solver.Add(cons);
-            }
-        }
-
-        // 3. if current level has create a buffer, it's requires parent level store a buffer in current level.
-        for (int l = 1; l < totalLevel; l++)
-        {
-            foreach (var (childNode, childNodeInfo) in tileNodeMemo.Where(p => p.Key.Level == l))
-            {
-                if (childNode.Parent is TileNode parentNode && parentNode.Level == l + 1)
+                if (treeNode is not TileNode tileNode)
                 {
-                    // because of we assume the inputs/outputs buffer already stores at total Level.
-                    if (parentNode.Level == totalLevel)
+                    return;
+                }
+
+                var tileNodeInfo = tileNodeMemo[tileNode];
+
+                if (!eachLevelStoreBufferNums.TryGetValue(tileNode, out var nodeStoreBufferNums))
+                {
+                    nodeStoreBufferNums = new Dictionary<BufferIdentity, Dictionary<int, IntExpr>>();
+                    foreach (var (bid, bufferInfo) in tileNodeInfo.BufferInfoMap)
                     {
-                        continue;
+                        var levelStoreNums = new Dictionary<int, IntExpr>();
+                        for (int sl = 0; sl < tileNode.Level; sl++)
+                        {
+                            levelStoreNums[sl] = solver.MakeSum(bufferInfo.Places.Select(p => p[sl].Var()).ToArray());
+                        }
+
+                        nodeStoreBufferNums.Add(bid, levelStoreNums);
                     }
 
-                    foreach (var (childBid, childBufferInfo) in childNodeInfo.BufferInfoMap)
+                    foreach (var child in tileNode.Children.ToArray().OfType<TileNode>())
                     {
-                        var parentNodeInfo = tileNodeMemo[parentNode];
-                        var pbid = parentNodeInfo.GetCacheBid(childBid);
-                        var parentStored = solver.MakeIsEqualVar(solver.MakeSum(parentNodeInfo.BufferInfoMap[pbid].Places.Select(p => p[l - 1].Var()).ToArray()), solver.MakeIntConst(1));
-                        var childCreateNums = eachNodeCreateBufferNums[childNode][childBid];
-                        var constraint = solver.MakeEquality(childCreateNums, parentStored);
-                        constraint.SetName($"dep[{childNode}, {childBid}, {parentNode}]");
-                        solver.Add(constraint);
+                        foreach (var (cbid, cbufferInfo) in tileNodeMemo[child].BufferInfoMap)
+                        {
+                            var pbid = tileNodeInfo.GetCacheBid(cbid);
+                            for (int sl = 0; sl < child.Level; sl++)
+                            {
+                                nodeStoreBufferNums[pbid][sl] = nodeStoreBufferNums[pbid][sl] + eachLevelStoreBufferNums[child][cbid][sl];
+                            }
+                        }
                     }
+
+                    eachLevelStoreBufferNums.Add(tileNode, nodeStoreBufferNums);
                 }
+            },
+            true);
+
+        var eachLevelStoreBufferNumsConstrains = new Dictionary<BufferIdentity, Constraint[]>();
+        foreach (var (bid, bufferInfo) in tileNodeMemo[primTree].BufferInfoMap)
+        {
+            var cons = new Constraint[primTree.Level];
+            eachLevelStoreBufferNumsConstrains[bid] = cons;
+            for (int sl = 0; sl < primTree.Level; sl++)
+            {
+                cons[sl] = solver.MakeEquality(eachLevelStoreBufferNums[primTree][bid][sl], 1);
+                cons[sl].SetName($"store[{bid}, sl{sl}]");
+                solver.Add(cons[sl]);
             }
         }
 
@@ -260,7 +253,7 @@ public sealed class GraphTiler
         // 5. add the memory schedule constraints, each level has own memory plan schedule.
         var levelBufferSizes = new Dictionary<int, Dictionary<NodeWithBuffer, IntExpr>>();
         var levelBufferLifeness = new Dictionary<int, Dictionary<NodeWithBuffer, Tuple<int, int>>>();
-        for (int sl = 1; sl < totalLevel; sl++)
+        for (int sl = 0; sl < topLevel - 1; sl++)
         {
             // note currently there is a only one root
             var nodeBufferSizes = levelBufferSizes[sl] = new();
@@ -271,7 +264,7 @@ public sealed class GraphTiler
 
             foreach (var (bid, bufferInfo) in rootNodeInfo.BufferInfoMap)
             {
-                var extents = bufferInfo.Places.Select(p => p[sl - 1]).Zip(bufferInfo.SizeVars).Select(p => p.First * p.Second).ToArray();
+                var extents = bufferInfo.Places.Select(p => p[sl]).Zip(bufferInfo.SizeVars).Select(p => p.First * p.Second).ToArray();
                 nodeBufferSizes[new(primTree, bid)] = extents.Skip(1).Aggregate(extents[0], solver.MakeSum);
                 nodeBufferLiveness[new(primTree, bid)] = bufferInfo.Liveness;
                 beginTime = Math.Min(beginTime, bufferInfo.Liveness.Item1);
@@ -285,7 +278,7 @@ public sealed class GraphTiler
                     return;
                 }
 
-                if (current is not TileNode { Level: >= 1 } childNode)
+                if (current is not TileNode childNode || childNode.Level <= sl)
                 {
                     return;
                 }
@@ -293,7 +286,7 @@ public sealed class GraphTiler
                 foreach (var (cbid, childBufferInfo) in tileNodeMemo[childNode].BufferInfoMap)
                 {
                     // accumulate the extents
-                    var extents = childBufferInfo.Places.Select(p => p[sl - 1]).Zip(childBufferInfo.SizeVars).Select(p => p.First * p.Second).ToArray();
+                    var extents = childBufferInfo.Places.Select(p => p[sl]).Zip(childBufferInfo.SizeVars).Select(p => p.First * p.Second).ToArray();
                     nodeBufferSizes[new(childNode, cbid)] = extents.Skip(1).Aggregate(extents[0], solver.MakeSum);
                     nodeBufferLiveness[new(childNode, cbid)] = childBufferInfo.Liveness;
                     beginTime = Math.Min(beginTime, childBufferInfo.Liveness.Item1);
@@ -303,7 +296,7 @@ public sealed class GraphTiler
 
             // Add constraints according to liveness.
 #if false
-                DumpGantt(nodeBufferSizes, nodeBufferLiveness, primGraph, sl);
+            DumpGantt(nodeBufferSizes, nodeBufferLiveness, primTree, sl);
 #endif
 
             var lastTimeStamp = new HashSet<NodeWithBuffer>();
@@ -331,104 +324,114 @@ public sealed class GraphTiler
         }
 
         // compute the cycles as objective
-        var levelDataReads = Enumerable.Range(0, totalLevel + 1).Select(i => (IntExpr)solver.MakeIntConst(0)).ToArray();
-        var levelDataWrites = Enumerable.Range(0, totalLevel + 1).Select(i => (IntExpr)solver.MakeIntConst(0)).ToArray();
         IntExpr computeCycles = solver.MakeIntConst(0);
 
         // the l0 write and l1 read update by op node. l0 have no reads.
         foreach (var (opNode, opNodeInfo) in opNodeMemo)
         {
-            var vars = new List<IntVar>();
-            var tileableNode = opNode.Parent;
-            while (tileableNode is TileNode g && g.OpId != -1)
-            {
-                vars.AddRange(tileableNodeMemo[tileableNode].TileVars.Select(i => i.Var()));
-                tileableNode = tileableNode.Parent;
-            }
+            var tnode = (TileNode)opNode.Parent!;
+            var loopTrip = tileNodeMemo[tnode].TripCounts[^1];
+            var kernelInfo = opNode.GetKernelInfo(targetOptions);
 
-            var loopTrip = solver.MakeProd(vars.ToArray());
-            {
-                var l1Load = loopTrip * opNodeInfo.Size.SkipLast(1).Aggregate((IntExpr)solver.MakeIntConst(0), (acc, s) => acc + s);
-                levelDataReads[1] += l1Load; // read from level 1
-                var l0Store = loopTrip * opNodeInfo.Size[^1];
-                levelDataWrites[0] += l0Store; // write to level 0
+            // make inner dimension increase.
+            // var noContiguous = new IntExpr[opNodeInfo.Shapes.Length];
+            // for (int i = 0; i < opNodeInfo.Shapes.Length; i++)
+            // {
+            //     noContiguous[i] = opNode.BufferShapes[i][^1] - opNodeInfo.Shapes[i][^1];
+            // }
+            // IntExpr opCycles = solver.MakeIntConst(120); // note cycles should get from op.
+            IntExpr opCycles = kernelInfo.GetComputeCycle(opNodeInfo.Shapes, solver, opNode.GetMicroKernelContext(targetOptions));
+            computeCycles = solver.MakeSum(computeCycles, opCycles * loopTrip);
 
-                // note use kernel info. amx 32*32 matmul only 4 cycles
-                computeCycles += 4 * loopTrip;
-            }
+            // computeCycles = solver.MakeSum(computeCycles, noContiguous.Aggregate(opCycles, solver.MakeSum) * loopTrip);
         }
 
         // from top to down.
-        foreach (var (topNode, _) in tileNodeMemo.Where(p => p.Key.Level == totalLevel))
+        var levelDataReads = Enumerable.Range(0, topLevel).Select(i => (IntExpr)solver.MakeIntConst(0)).ToArray();
+        var levelDataWrites = Enumerable.Range(0, topLevel).Select(i => (IntExpr)solver.MakeIntConst(0)).ToArray();
+        foreach (var (tileNode, nodeInfo) in tileNodeMemo)
         {
-            void UpdateLevelReadWrites(ITileable treeNode)
+            var createLevel = tileNode.Level;
+            var nodeWrites = Enumerable.Range(0, topLevel).Select(_ => new List<IntExpr>()).ToArray();
+            var nodeReads = Enumerable.Range(0, topLevel).Select(_ => new List<IntExpr>()).ToArray();
+            MicroKernelBufferInfo[]? binfo = null;
+            foreach (var (bid, bufferInfo) in nodeInfo.BufferInfoMap)
             {
-                if (treeNode is not TileNode tileNode)
+                binfo ??= bid.Node.GetKernelInfo(targetOptions).BufferInfos;
+                for (int storeLevel = 0; storeLevel < bufferInfo.Places[0].Length; storeLevel++)
                 {
-                    return;
-                }
-
-                var currentLevel = tileNode.Level;
-                var nodeWrites = Enumerable.Range(0, totalLevel + 1).Select(_ => new List<IntExpr>()).ToArray();
-                var nodeReads = Enumerable.Range(0, totalLevel + 1).Select(_ => new List<IntExpr>()).ToArray();
-                var nodeInfo = tileNodeMemo[tileNode];
-                foreach (var (bid, bufferInfo) in nodeInfo.BufferInfoMap)
-                {
-                    for (int sl = 0; sl < currentLevel; sl++)
+                    var volumes = new IntExpr[bufferInfo.Places.Length];
+                    for (int i = 0; i < bufferInfo.Places.Length; i++)
                     {
-                        if (sl >= bufferInfo.Places[0].Length)
+                        IntExpr factor = solver.MakeIntConst(1);
+
+                        // if (storeLevel == 0 && !bid.IsOutput)
+                        // {
+                        //     // var elemSize = bid.Node.Grid.Buffers[bid.Index].CheckedDataType.SizeInBytes;
+                        //     factor = bid.Node.BufferShapes[bid.Index][^1] - bufferInfo.Shapes[i][^1];
+                        //     // var v = solver.MakeIsLessCstVar(width, 128) + 1; // for cache line.
+                        // }
+                        volumes[i] = bufferInfo.Places[i][storeLevel] * nodeInfo.TripCounts[i] * bufferInfo.SizeVars[i] * factor;
+
+                        // volumes[i] = bufferInfo.Places[i][storeLevel] * bufferInfo.Trips[i] * bufferInfo.SizeVars[i] * factor;
+                    }
+
+                    var dataMoves = volumes.Skip(1).Aggregate(volumes[0], solver.MakeSum);
+
+                    if (binfo[bid.Index].State.HasFlag(MicroKernelBufferInfo.BufferState.Read))
+                    {
+                        if (storeLevel < topLevel - 1)
                         {
-                            continue;
+                            nodeWrites[storeLevel].Add(dataMoves); // write to store level.
                         }
 
-                        var loopsWrites = bufferInfo.Places.Select(p => p[sl]).Zip(bufferInfo.Writes).Select(p => p.First * p.Second).ToArray();
-                        var write = loopsWrites.Skip(1).Aggregate(loopsWrites[0], solver.MakeSum);
-                        nodeWrites[sl + 1].Add(write); // write at store level (sl + 1).
-                        if (currentLevel + 1 <= totalLevel)
+                        if (storeLevel < topLevel - 1)
                         {
-                            // can't read from top level's outside.
-                            nodeReads[currentLevel + 1].Add(write); // read from current level + 1.
+                            nodeReads[storeLevel + 1].Add(dataMoves); // read from create level.
+                        }
+                    }
+
+                    // todo the intermediate buffer should be read write.
+                    if (binfo[bid.Index].State.HasFlag(MicroKernelBufferInfo.BufferState.Write))
+                    {
+                        if (storeLevel < topLevel - 1)
+                        {
+                            nodeWrites[storeLevel + 1].Add(dataMoves);
+                        }
+
+                        if (storeLevel < topLevel - 1)
+                        {
+                            nodeReads[storeLevel].Add(dataMoves);
                         }
                     }
                 }
+            }
 
-                for (int l = 0; l < totalLevel + 1; l++)
+            for (int l = 0; l < topLevel; l++)
+            {
+                if (nodeWrites[l].Any())
                 {
-                    if (nodeWrites[l].Any())
-                    {
-                        levelDataWrites[l] += nodeWrites[l].Skip(1).Aggregate(nodeWrites[l].First(), solver.MakeSum);
-                    }
+                    levelDataWrites[l] = levelDataWrites[l] + nodeWrites[l].Skip(1).Aggregate(nodeWrites[l].First(), solver.MakeSum);
+                }
 
-                    if (nodeReads[l].Any())
-                    {
-                        levelDataReads[l] += nodeReads[l].Skip(1).Aggregate(nodeReads[l].First(), solver.MakeSum);
-                    }
+                if (nodeReads[l].Any())
+                {
+                    levelDataReads[l] = levelDataReads[l] + nodeReads[l].Skip(1).Aggregate(nodeReads[l].First(), solver.MakeSum);
                 }
             }
-
-            topNode.Walk(UpdateLevelReadWrites, false);
         }
 
-        var memoryCycles = Enumerable.Range(0, totalLevel + 1).Select(i => (IntExpr)solver.MakeIntConst(0)).ToArray();
-        for (int i = 0; i <= totalLevel; i++)
+        var memoryCycles = new IntExpr[topLevel];
+        for (int i = 0; i < topLevel; i++)
         {
-            if (i < totalLevel)
-            {
-                // haven't write to totalLevel
-                memoryCycles[i] += levelDataWrites[i].CeilDiv(memoryBandWidths[i]);
-            }
-
-            if (i > 0)
-            {
-                // haven't read from l0
-                memoryCycles[i] += levelDataReads[i].CeilDiv(memoryBandWidths[i]);
-            }
+            // memoryCycles[i] = (levelDataWrites[i] + levelDataReads[i]).CeilDiv(memoryBandWidths[i]);
+            memoryCycles[i] = levelDataWrites[i].CeilDiv(memoryBandWidths[i]);
         }
 
-        var totalCycles = computeCycles;
-        for (int l = 0; l <= totalLevel; l++)
+        IntExpr totalCycles = computeCycles;
+        for (int i = 0; i < topLevel; i++)
         {
-            totalCycles = solver.MakeMax(totalCycles, memoryCycles[l]);
+            totalCycles = totalCycles + memoryCycles[i];
         }
 
         var totalCyclesVar = totalCycles.Var();
@@ -437,6 +440,7 @@ public sealed class GraphTiler
         var objectiveMonitor = solver.MakeMinimize(totalCyclesVar, 1);
         var collector = solver.MakeNBestValueSolutionCollector(5, false);
         collector.AddObjective(totalCyclesVar);
+        collector.Add(totalCyclesVar);
         collector.Add(levelDataReads.Select(i => i.Var()).ToArray());
         collector.Add(levelDataWrites.Select(i => i.Var()).ToArray());
         collector.Add(memoryCycles.Select(i => i.Var()).ToArray());
@@ -452,20 +456,21 @@ public sealed class GraphTiler
         foreach (var (node, info) in opNodeMemo)
         {
             collector.Add(info.Shapes.SelectMany(i => i).Select(i => i.Var()).ToArray());
-            collector.Add(info.Size.Select(i => i.Var()).ToArray());
+            collector.Add(info.Sizes.Select(i => i.Var()).ToArray());
         }
 
         foreach (var (node, info) in tileNodeMemo)
         {
+            collector.Add(info.TripCounts.Select(i => i.Var()).ToArray());
             foreach (var (bid, bufferInfo) in info.BufferInfoMap)
             {
                 var placeVars = bufferInfo.Places.SelectMany(i => i).ToArray();
                 searchAbleVars.AddRange(placeVars.Select(i => i.Var()));
                 collector.Add(placeVars.Select(i => i.Var()).ToArray());
                 collector.Add(bufferInfo.Shapes.SelectMany(i => i).Select(i => i.Var()).ToArray());
-                collector.Add(bufferInfo.Writes.Select(i => i.Var()).ToArray());
                 collector.Add(bufferInfo.SizeVars.Select(i => i.Var()).ToArray());
                 collector.Add(bufferInfo.SizeExprs.Select(i => i.Var()).ToArray());
+                collector.Add(bufferInfo.Trips.Select(i => i.Var()).ToArray());
             }
         }
 
@@ -488,7 +493,36 @@ public sealed class GraphTiler
         }
 
         var decisionBuilder = solver.MakeDefaultPhase(searchAbleVars.ToArray(), defaultPhaseParameters);
-        var monitors = new List<SearchMonitor>() { collector, objectiveMonitor, solver.MakeSolutionsLimit(10), solver.MakeTimeLimit(30000) };
+        var solve_max_time = 30;
+        if (System.Environment.GetEnvironmentVariable("TILING_SOLVE_MAX_TIME") is string s_solve_max_time)
+        {
+            try
+            {
+                solve_max_time = int.Parse(s_solve_max_time);
+            }
+            catch (System.Exception)
+            {
+            }
+        }
+
+        var solve_max_solutions = 10;
+        if (System.Environment.GetEnvironmentVariable("TILING_SOLVE_MAX_SOLUTIONS") is string s_solve_max_solutions)
+        {
+            try
+            {
+                solve_max_solutions = int.Parse(s_solve_max_solutions);
+            }
+            catch (System.Exception)
+            {
+            }
+        }
+
+        var monitors = new List<SearchMonitor>() { collector, objectiveMonitor, solver.MakeTimeLimit(solve_max_time * 1000) };
+        if (solve_max_solutions > 0)
+        {
+            monitors.Add(solver.MakeSolutionsLimit(solve_max_solutions));
+        }
+
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {
             monitors.Add(solver.MakeSearchLog(10000, totalCyclesVar));
@@ -497,22 +531,38 @@ public sealed class GraphTiler
         var status = solver.Solve(decisionBuilder, monitors.ToArray());
         if (!status)
         {
-            DumpAssgin(primTree, new TreeSolverPrinter(null, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions), tileVarConstraints, lowestStoreBufferNumsConstrains, eachParentNodeCreateBufferConstraints, levelBufferSizes, levelDataReads, levelDataWrites, memoryCycles, totalCyclesVar);
+            DumpAssgin(primTree, new TreeSolverPrinter(null, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions), tileVarConstraints, eachLevelStoreBufferNumsConstrains, levelBufferSizes, levelDataReads, levelDataWrites, memoryCycles, totalCycles, totalCyclesVar);
             throw new InvalidOperationException("tiling solve failed!");
         }
 
         var sol = collector.Solution(collector.SolutionCount() - 1);
 
         var levelBufferSizesAssgin = levelBufferSizes.ToDictionary(kv => kv.Key, kv => kv.Value.ToDictionary(p => p.Key, p => sol.Value(p.Value.Var())));
-        var opNodeMemoAssgin = opNodeMemo.ToDictionary(kv => kv.Key, kv => new OpNodeInfo<long>(kv.Value.Maps, sol.Value(kv.Value.Shapes), sol.Value(kv.Value.Size)));
-        var tileNodeMemoAssgin = tileNodeMemo.ToDictionary(kv => kv.Key, kv => new TileNodeInfo<long>(sol.Value(kv.Value.BackWardExtents), kv.Value.DefUseMap, kv.Value.BufferInfoMap.ToDictionary(p => p.Key, p => new TileNodeBufferInfo<long>(p.Value.Liveness, p.Value.Map, sol.Value(p.Value.Places), sol.Value(p.Value.Shapes), sol.Value(p.Value.Writes), sol.Value(p.Value.SizeVars), sol.Value(p.Value.SizeExprs), p.Value.Masks))));
+        var opNodeMemoAssgin = opNodeMemo.ToDictionary(kv => kv.Key, kv => new OpNodeInfo<long>(kv.Value.Maps, sol.Value(kv.Value.Shapes), sol.Value(kv.Value.Sizes)));
+        var tileNodeMemoAssgin = tileNodeMemo.ToDictionary(kv => kv.Key, kv => new TileNodeInfo<long>(sol.Value(kv.Value.TripCounts), sol.Value(kv.Value.BackWardExtents), kv.Value.DefUseMap, kv.Value.BufferInfoMap.ToDictionary(p => p.Key, p => new TileNodeBufferInfo<long>(p.Value.Liveness, p.Value.Map, sol.Value(p.Value.Places), sol.Value(p.Value.Shapes), sol.Value(p.Value.SizeVars), sol.Value(p.Value.SizeExprs), sol.Value(p.Value.Trips), p.Value.Masks))));
         var tileableNodeMemoAssgin = tileableNodeMemo.ToDictionary(kv => kv.Key, kv => new DomainInfo<long>(sol.Value(kv.Value.TileVars), sol.Value(kv.Value.ForwardExtents), kv.Value.DimsMap));
 
-        // ScheduledResultMemo.Add(primGraph, );
+        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
+        {
+            DumpAssgin(primTree, new TreeSolverPrinter(sol, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions), tileVarConstraints, eachLevelStoreBufferNumsConstrains, levelBufferSizes, levelDataReads, levelDataWrites, memoryCycles, computeCycles, totalCyclesVar);
+
+            DumpAssgin(primTree, new TreeSolverPythonPrinter(sol, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions), tileVarConstraints, eachLevelStoreBufferNumsConstrains, levelBufferSizes, levelDataReads, levelDataWrites, memoryCycles, computeCycles, totalCyclesVar);
+        }
+
         return new TreeSolveResult(primBufferGraph, sol.ObjectiveValue(), levelBufferSizesAssgin, levelBufferLifeness, opNodeMemoAssgin, tileNodeMemoAssgin, tileableNodeMemoAssgin, targetOptions);
     }
 
-    private void DumpAssgin(ITreeNode tree, TreeSolverPrinter printer, Dictionary<OpNode, Constraint[]> tileVarConstraints, Dictionary<BufferIdentity, Constraint> lowestStoreBufferNumsConstrains, Dictionary<TileNode, Dictionary<BufferIdentity, Constraint>> eachParentNodeCreateBufferConstraints, Dictionary<int, Dictionary<NodeWithBuffer, IntExpr>> levelBufferSizes, IntExpr[] levelDataReads, IntExpr[] levelDataWrites, IntExpr[] memoryCycles, IntVar computeCycles)
+    private void DumpAssgin(ITreeNode tree, TreeSolverPythonPrinter printer, Dictionary<OpNode, Constraint[]> tileVarConstraints, Dictionary<BufferIdentity, Constraint[]> lowestStoreBufferNumsConstrains, Dictionary<int, Dictionary<NodeWithBuffer, IntExpr>> levelBufferSizes, IntExpr[] levelDataReads, IntExpr[] levelDataWrites, IntExpr[] memoryCycles, IntExpr computeCycles, IntVar totalCycles)
+    {
+        using (var stream = Diagnostics.DumpScope.Current.OpenFile($"modeling.py"))
+        {
+            using var baseWriter = new StreamWriter(stream);
+            using var writer = new System.CodeDom.Compiler.IndentedTextWriter(baseWriter, "  ");
+            tree.Accept(printer, (null, writer));
+        }
+    }
+
+    private void DumpAssgin(ITreeNode tree, TreeSolverPrinter printer, Dictionary<OpNode, Constraint[]> tileVarConstraints, Dictionary<BufferIdentity, Constraint[]> eachLevelStoreBufferNumsConstrains, Dictionary<int, Dictionary<NodeWithBuffer, IntExpr>> levelBufferSizes, IntExpr[] levelDataReads, IntExpr[] levelDataWrites, IntExpr[] memoryCycles, IntExpr computeCycles, IntVar totalCycles)
     {
         using (var stream = Diagnostics.DumpScope.Current.OpenFile($"modeling.yaml"))
         {
@@ -528,20 +578,11 @@ public sealed class GraphTiler
 
             writer.Indent--;
 
-            writer.WriteLine("lowestStoreBufferNumsConstrains:");
+            writer.WriteLine("EachLevelStoreBufferNumsConstrains:");
             writer.Indent++;
-            foreach (var (node, cons) in lowestStoreBufferNumsConstrains)
+            foreach (var (node, cons) in eachLevelStoreBufferNumsConstrains)
             {
-                TreeSolverPrinter.WriteIntExprVector(writer, node.ToString(), new[] { cons }, printer.Solution);
-            }
-
-            writer.Indent--;
-
-            writer.WriteLine("EachParentNodeCreateBufferConstraints:");
-            writer.Indent++;
-            foreach (var (node, constraints) in eachParentNodeCreateBufferConstraints)
-            {
-                TreeSolverPrinter.WriteIntExprVector(writer, node.ToString(), constraints.Values.ToArray(), printer.Solution);
+                TreeSolverPrinter.WriteIntExprVector(writer, node.ToString(), cons, printer.Solution);
             }
 
             writer.Indent--;
@@ -567,15 +608,16 @@ public sealed class GraphTiler
             TreeSolverPrinter.WriteIntExprVector(writer, "LevelDataReads", levelDataReads, printer.Solution);
             TreeSolverPrinter.WriteIntExprVector(writer, "LevelDataWrites", levelDataWrites, printer.Solution);
             TreeSolverPrinter.WriteIntExprVector(writer, "MemoryCycles", memoryCycles, printer.Solution);
-            writer.WriteLine($"computeCycles: {computeCycles.ToSimplifyString()}");
+            TreeSolverPrinter.WriteIntExpr(writer, "ComputeCycles", computeCycles, printer.Solution);
+            TreeSolverPrinter.WriteIntExpr(writer, "TotalCycles", totalCycles, printer.Solution);
         }
     }
 
-    private void DumpGantt(Dictionary<(TieredTileGraph Node, BufferIdentity Buffer), IntExpr> nodeBufferSizes, Dictionary<(TieredTileGraph Node, BufferIdentity Buffer), Tuple<int, int>> nodeBufferLiveness, TieredTileGraph rootNode, int storeLevel)
+    private void DumpGantt(Dictionary<NodeWithBuffer, IntExpr> nodeBufferSizes, Dictionary<NodeWithBuffer, Tuple<int, int>> nodeBufferLiveness, TileNode primTree, int storeLevel)
     {
         string GetStartStr(string name, int start) => $"[{name}] starts D+{start}";
         string GetDurationStr(string name, int duration) => $"[{name}] requires {duration} days";
-        using (var fs = Diagnostics.DumpScope.Current.OpenFile($"Op{rootNode.OpId}_{rootNode.Level}_store_{storeLevel}_gantt.md"))
+        using (var fs = Diagnostics.DumpScope.Current.OpenFile($"Op{primTree.OpId}_{primTree.Level}_store_{storeLevel}_gantt.md"))
         {
             using var writer = new StreamWriter(fs);
             writer.WriteLine("```plantuml");

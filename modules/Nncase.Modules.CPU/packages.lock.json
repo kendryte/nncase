@@ -148,6 +148,7 @@
           "CommunityToolkit.HighPerformance": "[8.2.2, )",
           "DryIoc.dll": "[5.4.3, )",
           "GiGraph.Dot": "[3.0.1, )",
+          "Google.OrTools": "[9.4.1874, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[8.0.0, )",
           "Microsoft.Extensions.Logging.Abstractions": "[8.0.1, )",
           "Microsoft.Extensions.Options": "[8.0.2, )",
@@ -210,7 +211,6 @@
       "nncase.schedule": {
         "type": "Project",
         "dependencies": {
-          "Google.OrTools": "[9.4.1874, )",
           "Nncase.Core": "[1.0.0, )",
           "Nncase.Passes": "[1.0.0, )"
         }

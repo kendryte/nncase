@@ -23,4 +23,30 @@ template <> struct tload_scalar<ntt::vector<float, 8>> {
         return _mm256_set1_ps(v);
     }
 };
+template <> struct tload_scalar<ntt::vector<float, 4, 4>> {
+    ntt::vector<float, 4, 4> operator()(float v) const noexcept {
+        ntt::vector<float, 4, 4> out;
+        for (size_t i = 0; i < 4; i++) {
+            for (size_t j = 0; j < 4; j++) {
+                out(i, j) = v;
+            }
+        }
+        return out;
+    }
+};
+
+template <> struct tload_scalar<ntt::vector<float, 8, 8>> {
+    ntt::vector<float, 8, 8> operator()(float v) const noexcept {
+        ntt::vector<float, 8, 8> out;
+        out(0) = _mm256_set1_ps(v);
+        out(1) = _mm256_set1_ps(v);
+        out(2) = _mm256_set1_ps(v);
+        out(3) = _mm256_set1_ps(v);
+        out(4) = _mm256_set1_ps(v);
+        out(5) = _mm256_set1_ps(v);
+        out(6) = _mm256_set1_ps(v);
+        out(7) = _mm256_set1_ps(v);
+        return out;
+    }
+};
 } // namespace nncase::ntt::tensor_ops
