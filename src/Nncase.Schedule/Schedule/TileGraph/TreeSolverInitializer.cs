@@ -11,23 +11,26 @@ namespace Nncase.Schedule.TileGraph;
 
 public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVisitor<TreeSolverInitializer.Context, TreeSolverInitializer.InitResult>
 {
-    public TreeSolverInitializer(int topLevel, Solver solver, Dictionary<OpNode, OpNodeInfo<IntExpr>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<IntExpr>> levelBufferInfos, Dictionary<ITileable, DomainInfo<IntExpr>> domainDimInfos, ICpuTargetOptions targetOptions)
+    public TreeSolverInitializer(Dictionary<TieredTileGraph, BufferGraph> bufferGraphMemo, int topLevel, Solver solver, Dictionary<OpNode, OpNodeInfo<IntExpr>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<IntExpr>> levelBufferInfos, Dictionary<ITileable, DomainInfo<IntExpr>> domainDimInfos, ICpuTargetOptions targetOptions)
         : base(solver, primitiveBufferInfo, levelBufferInfos, domainDimInfos, targetOptions)
     {
+        BufferGraphMemo = bufferGraphMemo;
         TopLevel = topLevel;
     }
 
     public int TimeStamp { get; private set; }
 
+    public IReadOnlyDictionary<TieredTileGraph, BufferGraph> BufferGraphMemo { get; }
+
     public int TopLevel { get; }
 
-    public static void Init(TileNode tree, int topLevel, ICpuTargetOptions options, out Solver solver, out Dictionary<OpNode, OpNodeInfo<IntExpr>> opNodeMemo, out Dictionary<TileNode, TileNodeInfo<IntExpr>> tileNodeMemo, out Dictionary<ITileable, DomainInfo<IntExpr>> tileableNodeMemo)
+    public static void Init(TileNode tree, Dictionary<TieredTileGraph, BufferGraph> bufferGraphMemo, int topLevel, ICpuTargetOptions options, out Solver solver, out Dictionary<OpNode, OpNodeInfo<IntExpr>> opNodeMemo, out Dictionary<TileNode, TileNodeInfo<IntExpr>> tileNodeMemo, out Dictionary<ITileable, DomainInfo<IntExpr>> tileableNodeMemo)
     {
         solver = new Solver("GraphSolver");
         opNodeMemo = new Dictionary<OpNode, OpNodeInfo<IntExpr>>();
         tileNodeMemo = new Dictionary<TileNode, TileNodeInfo<IntExpr>>();
         tileableNodeMemo = new Dictionary<ITileable, DomainInfo<IntExpr>>();
-        var initializer = new TreeSolverInitializer(topLevel, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, options);
+        var initializer = new TreeSolverInitializer(bufferGraphMemo, topLevel, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, options);
         initializer.Visit(tree, Context.Default);
     }
 
