@@ -44,7 +44,6 @@ public sealed partial class QuantizerMatmul : IRewriteRule
 
         if (inputA is TensorConst)
         {
-            var debug = 0;
         }
         else
         {
@@ -71,13 +70,10 @@ public sealed partial class QuantizerMatmul : IRewriteRule
 
         if (inputB is TensorConst)
         {
-            var debug = 0;
         }
         else
         {
-            var debug = 0;
         }
-
 
         return null;
     }
