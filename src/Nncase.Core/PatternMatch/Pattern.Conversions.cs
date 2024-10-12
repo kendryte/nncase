@@ -36,6 +36,8 @@ public abstract partial record Pattern
 
     public static implicit operator Pattern(BFloat16 value) => (TensorConst)value;
 
+    public static implicit operator Pattern(Float8 value) => (TensorConst)value;
+
     public static implicit operator Pattern(bool value) => (TensorConst)value;
 
     public static implicit operator Pattern(Tensor value) => (TensorConst)value;

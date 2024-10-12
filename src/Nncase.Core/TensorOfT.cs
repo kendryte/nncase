@@ -731,6 +731,7 @@ internal sealed class TensorOfT
     {
         { typeof(Half).TypeHandle, "(Half)" },
         { typeof(BFloat16).TypeHandle, "(BFloat16)" },
+        { typeof(Float8).TypeHandle, "(Float8)" },
     };
 
     /// <summary>

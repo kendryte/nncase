@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Nncase;
 
 /// <summary>
-/// BFloat16.
+/// Float8.
 /// </summary>
 public struct Float8 : IEquatable<Float8>, IComparable<Float8>
 {

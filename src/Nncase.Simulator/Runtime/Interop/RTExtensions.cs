@@ -34,6 +34,7 @@ public static class RTExtensions
         TypeCode.Float32 => DataTypes.Float32,
         TypeCode.Float64 => DataTypes.Float64,
         TypeCode.BFloat16 => DataTypes.BFloat16,
+        TypeCode.Float8 => DataTypes.Float8,
         _ => throw new ArgumentOutOfRangeException(nameof(rt_dtype)),
     };
 }

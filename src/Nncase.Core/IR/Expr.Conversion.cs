@@ -87,6 +87,12 @@ public abstract partial class Expr
     public static implicit operator Expr(BFloat16 value) => (Const)value;
 
     /// <summary>
+    /// Create <see cref="Expr"/> from a <see cref="Float8"/>.
+    /// </summary>
+    /// <param name="value">Value.</param>
+    public static implicit operator Expr(Float8 value) => (Const)value;
+
+    /// <summary>
     /// Create <see cref="Expr"/> from a <see cref="bool"/>.
     /// </summary>
     /// <param name="value">Value.</param>

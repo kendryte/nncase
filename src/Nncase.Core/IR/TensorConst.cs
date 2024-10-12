@@ -106,6 +106,12 @@ public sealed class TensorConst : Const, IEquatable<TensorConst?>
     public static implicit operator TensorConst(BFloat16 value) => new(Tensor.FromScalar(value));
 
     /// <summary>
+    /// Create TensorConstant from a <see cref="Float8"/>.
+    /// </summary>
+    /// <param name="value">Value.</param>
+    public static implicit operator TensorConst(Float8 value) => new(Tensor.FromScalar(value));
+
+    /// <summary>
     /// Create TensorConstant from a <see cref="bool"/>.
     /// </summary>
     /// <param name="value">Value.</param>

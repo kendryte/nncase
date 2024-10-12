@@ -163,6 +163,7 @@ public static class DataTypes
             Runtime.TypeCode.Float32 => "float",
             Runtime.TypeCode.Float64 => "double",
             Runtime.TypeCode.BFloat16 => "BFloat16",
+            Runtime.TypeCode.Float8 => "Float8",
             _ => throw new ArgumentOutOfRangeException(primType.FullName),
         },
         PointerType pointerType => throw new NotSupportedException(nameof(PointerType)),
