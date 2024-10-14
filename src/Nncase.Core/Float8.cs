@@ -238,6 +238,16 @@ public struct Float8 : IEquatable<Float8>, IComparable<Float8>
         return FromRaw(u);
     }
 
+    public static explicit operator Float8(Half input)
+    {
+        return (Float8)(float)input;
+    }
+
+    public static explicit operator Half(Float8 input)
+    {
+        return (Half)(float)input;
+    }
+
     public static bool operator ==(Float8 lhs, Float8 rhs) => lhs._value == rhs._value;
 
     public static bool operator !=(Float8 lhs, Float8 rhs) => lhs._value != rhs._value;
