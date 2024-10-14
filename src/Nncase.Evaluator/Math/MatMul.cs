@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using DryIoc.ImTools;
 using Nncase.CostModel;
 using Nncase.Diagnostics;
 using Nncase.IR;
@@ -190,9 +191,21 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, MatMul matMul)
     {
-        var input = context.GetOrtArgumentValue(matMul, MatMul.Lhs);
-        var other = context.GetOrtArgumentValue(matMul, MatMul.Rhs);
-        return OrtKI.MatMul(input, other).ToValue();
+        if (context.CurrentCall.CheckedDataType == DataTypes.Float8)
+        {
+            var lhs = Cast(context.GetArgumentValue(matMul, MatMul.Lhs).AsTensor(), DataTypes.Float32);
+            var rhs = Cast(context.GetArgumentValue(matMul, MatMul.Rhs).AsTensor(), DataTypes.Float32);
+            var lhsOrt = lhs.Evaluate().AsTensor().ToOrtTensor();
+            var rhsOrt = rhs.Evaluate().AsTensor().ToOrtTensor();
+            var ret = Cast(OrtKI.MatMul(lhsOrt, rhsOrt).ToTensor(), DataTypes.Float8).Evaluate().AsTensor();
+            return Value.FromTensor(ret);
+        }
+        else
+        {
+            var input = context.GetOrtArgumentValue(matMul, MatMul.Lhs);
+            var other = context.GetOrtArgumentValue(matMul, MatMul.Rhs);
+            return OrtKI.MatMul(input, other).ToValue();
+        }
     }
 
     /// <inheritdoc/>
