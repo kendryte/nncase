@@ -208,13 +208,13 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, 2, 8,
 #define NTT_MATMUL_PP(ld, calc)                                                \
     asm volatile(                                                              \
         "vfmacc.vf	%[c0_0_0],%[b0_" #calc "_0],%[a0_0_" #calc "]\n"       \
-        "vfmacc.vf	%[c0_0_1],%[b0_" #calc "_1],%[a0_0_" #calc "]\n"       \
-        "vl1re32.v %[a0_0_" #ld "], (%[a0_0_" #ld "_p])\n"                     \
+        "vle32.v %[a0_0_" #ld "], (%[a0_0_" #ld "_p])\n"                       \
         "addi	%[a0_0_" #ld "_p],%[a0_0_" #ld "_p],%[ak_strides] * 2\n"       \
+        "vfmacc.vf	%[c0_0_1],%[b0_" #calc "_1],%[a0_0_" #calc "]\n"       \
+        "vle32.v %[a0_1_" #ld "], (%[a0_1_" #ld "_p])\n"                       \
+        "addi	%[a0_1_" #ld "_p],%[a0_1_" #ld "_p],%[ak_strides] * 2\n"       \
         "vfmacc.vf	%[c0_0_2],%[b0_" #calc "_2],%[a0_0_" #calc "]\n"       \
         "vfmacc.vf	%[c0_0_3],%[b0_" #calc "_3],%[a0_0_" #calc "]\n"       \
-        "vl1re32.v %[a0_1_" #ld "], (%[a0_1_" #ld "_p])\n"                     \
-        "addi	%[a0_1_" #ld "_p],%[a0_1_" #ld "_p],%[ak_strides] * 2\n"       \
         : [a0_0_##ld] "=vr"(a0_0_##ld), [a0_1_##ld] "=vr"(a0_1_##ld),          \
           [c0_0_0] "+vr"(c0_0_0), [c0_0_1] "+vr"(c0_0_1),                      \
           [c0_0_2] "+vr"(c0_0_2), [c0_0_3] "+vr"(c0_0_3),                      \
@@ -333,13 +333,13 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, 2, 8,
                                                                                \
     asm volatile(                                                              \
         "vfmacc.vf	%[c0_0_4],%[b0_" #calc "_4],%[a0_0_" #calc "]\n"       \
-        "addi %[c0_x_4_p], %[c0_x_0_p_init], %[cn_strides] * 4\n"              \
-        "vs1r.v     %[c0_0_0], (%[c0_x_0_p])\n"                                \
+        "vse32.v     %[c0_0_0], (%[c0_x_0_p])\n"                               \
         "add %[c0_x_0_p],%[c0_x_0_p],%[cm_strides] \n"                         \
+        "addi %[c0_x_4_p], %[c0_x_0_p_init], %[cn_strides] * 4\n"              \
         "vfmacc.vf	%[c0_0_5],%[b0_" #calc "_5],%[a0_0_" #calc "]\n"       \
-        "addi %[c0_x_5_p], %[c0_x_0_p_init], %[cn_strides] * 5\n"              \
-        "vs1r.v     %[c0_0_1], (%[c0_x_1_p])\n"                                \
+        "vse32.v     %[c0_0_1], (%[c0_x_1_p])\n"                               \
         "add %[c0_x_1_p],%[c0_x_1_p],%[cm_strides] \n"                         \
+        "addi %[c0_x_5_p], %[c0_x_0_p_init], %[cn_strides] * 5\n"              \
         : [c0_0_4] "+vr"(c0_0_4), [c0_0_5] "+vr"(c0_0_5),                      \
           [c0_x_0_p] "+r"(c0_x_0_p), [c0_x_1_p] "+r"(c0_x_1_p),                \
           [c0_x_4_p] "=r"(c0_x_4_p), [c0_x_5_p] "=r"(c0_x_5_p)                 \
@@ -351,13 +351,13 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, 2, 8,
                                                                                \
     asm volatile(                                                              \
         "vfmacc.vf	%[c0_0_6],%[b0_" #calc "_6],%[a0_0_" #calc "]\n"       \
-        "addi %[c0_x_6_p], %[c0_x_0_p_init], %[cn_strides] * 6\n"              \
-        "vs1r.v     %[c0_0_2], (%[c0_x_2_p])\n"                                \
+        "vse32.v     %[c0_0_2], (%[c0_x_2_p])\n"                               \
         "add %[c0_x_2_p],%[c0_x_2_p],%[cm_strides] \n"                         \
+        "addi %[c0_x_6_p], %[c0_x_0_p_init], %[cn_strides] * 6\n"              \
         "vfmacc.vf	%[c0_0_7],%[b0_" #calc "_7],%[a0_0_" #calc "]\n"       \
-        "addi %[c0_x_7_p], %[c0_x_0_p_init], %[cn_strides] * 7\n"              \
-        "vs1r.v     %[c0_0_3], (%[c0_x_3_p])\n"                                \
+        "vse32.v     %[c0_0_3], (%[c0_x_3_p])\n"                               \
         "add %[c0_x_3_p],%[c0_x_3_p],%[cm_strides] \n"                         \
+        "addi %[c0_x_7_p], %[c0_x_0_p_init], %[cn_strides] * 7\n"              \
         : [c0_0_6] "+vr"(c0_0_6), [c0_0_7] "+vr"(c0_0_7),                      \
           [c0_x_2_p] "+r"(c0_x_2_p), [c0_x_3_p] "+r"(c0_x_3_p),                \
           [c0_x_6_p] "=r"(c0_x_6_p), [c0_x_7_p] "=r"(c0_x_7_p)                 \
@@ -369,16 +369,16 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, 2, 8,
                                                                                \
     asm volatile(                                                              \
         "vfmacc.vf	%[c0_1_0],%[b0_" #calc "_0],%[a0_1_" #calc "]\n"       \
-        "vs1r.v     %[c0_0_4], (%[c0_x_4_p])\n"                                \
+        "vse32.v     %[c0_0_4], (%[c0_x_4_p])\n"                               \
         "add %[c0_x_4_p],%[c0_x_4_p],%[cm_strides] \n"                         \
         "vfmacc.vf	%[c0_1_1],%[b0_" #calc "_1],%[a0_1_" #calc "]\n"       \
-        "vs1r.v     %[c0_0_5], (%[c0_x_5_p])\n"                                \
+        "vse32.v     %[c0_0_5], (%[c0_x_5_p])\n"                               \
         "add %[c0_x_5_p],%[c0_x_5_p],%[cm_strides] \n"                         \
         "vfmacc.vf	%[c0_1_2],%[b0_" #calc "_2],%[a0_1_" #calc "]\n"       \
-        "vs1r.v     %[c0_0_6], (%[c0_x_6_p])\n"                                \
+        "vse32.v     %[c0_0_6], (%[c0_x_6_p])\n"                               \
         "add %[c0_x_6_p],%[c0_x_6_p],%[cm_strides] \n"                         \
         "vfmacc.vf	%[c0_1_3],%[b0_" #calc "_3],%[a0_1_" #calc "]\n"       \
-        "vs1r.v     %[c0_0_7], (%[c0_x_7_p])\n"                                \
+        "vse32.v     %[c0_0_7], (%[c0_x_7_p])\n"                               \
         "add %[c0_x_7_p],%[c0_x_7_p],%[cm_strides] \n"                         \
         : [c0_1_0] "+vr"(c0_1_0), [c0_1_1] "+vr"(c0_1_1),                      \
           [c0_1_2] "+vr"(c0_1_2), [c0_1_3] "+vr"(c0_1_3),                      \
@@ -393,13 +393,13 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, 2, 8,
                                                                                \
     asm volatile(                                                              \
         "vfmacc.vf	%[c0_1_4],%[b0_" #calc "_4],%[a0_1_" #calc "]\n"       \
-        "vs1r.v     %[c0_1_0], (%[c0_x_0_p])\n"                                \
+        "vse32.v     %[c0_1_0], (%[c0_x_0_p])\n"                               \
         "vfmacc.vf	%[c0_1_5],%[b0_" #calc "_5],%[a0_1_" #calc "]\n"       \
-        "vs1r.v     %[c0_1_1], (%[c0_x_1_p])\n"                                \
+        "vse32.v     %[c0_1_1], (%[c0_x_1_p])\n"                               \
         "vfmacc.vf	%[c0_1_6],%[b0_" #calc "_6],%[a0_1_" #calc "]\n"       \
-        "vs1r.v     %[c0_1_2], (%[c0_x_2_p])\n"                                \
+        "vse32.v     %[c0_1_2], (%[c0_x_2_p])\n"                               \
         "vfmacc.vf	%[c0_1_7],%[b0_" #calc "_7],%[a0_1_" #calc "]\n"       \
-        "vs1r.v     %[c0_1_3], (%[c0_x_3_p])\n"                                \
+        "vse32.v     %[c0_1_3], (%[c0_x_3_p])\n"                               \
         : [c0_1_4] "+vr"(c0_1_4), [c0_1_5] "+vr"(c0_1_5),                      \
           [c0_1_6] "+vr"(c0_1_6), [c0_1_7] "+vr"(c0_1_7)                       \
         : [a0_1_##calc] "vr"(a0_1_##calc), [b0_##calc##_4] "f"(b0_##calc##_4), \
@@ -411,10 +411,10 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, 2, 8,
           [c0_x_2_p] "r"(c0_x_2_p), [c0_x_3_p] "r"(c0_x_3_p));                 \
                                                                                \
     asm volatile(                                                              \
-        "vs1r.v     %[c0_1_4], (%[c0_x_4_p])\n"                                \
-        "vs1r.v     %[c0_1_5], (%[c0_x_5_p])\n"                                \
-        "vs1r.v     %[c0_1_6], (%[c0_x_6_p])\n"                                \
-        "vs1r.v     %[c0_1_7], (%[c0_x_7_p])\n" ::[c0_1_4] "vr"(c0_1_4),       \
+        "vse32.v     %[c0_1_4], (%[c0_x_4_p])\n"                               \
+        "vse32.v     %[c0_1_5], (%[c0_x_5_p])\n"                               \
+        "vse32.v     %[c0_1_6], (%[c0_x_6_p])\n"                               \
+        "vse32.v     %[c0_1_7], (%[c0_x_7_p])\n" ::[c0_1_4] "vr"(c0_1_4),      \
         [c0_1_5] "vr"(c0_1_5), [c0_1_6] "vr"(c0_1_6), [c0_1_7] "vr"(c0_1_7),   \
         [c0_x_4_p] "r"(c0_x_4_p), [c0_x_5_p] "r"(c0_x_5_p),                    \
         [c0_x_6_p] "r"(c0_x_6_p), [c0_x_7_p] "r"(c0_x_7_p));
