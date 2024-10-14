@@ -22,7 +22,8 @@ internal class SingleConverters :
     ISpanConverter<float, Half>,
     ISpanConverter<float, float>,
     ISpanConverter<float, double>,
-    ISpanConverter<float, BFloat16>
+    ISpanConverter<float, BFloat16>,
+    ISpanConverter<float, Float8>
 {
     public void ConvertTo(ReadOnlySpan<float> source, Span<bool> dest, CastMode castMode)
     {
@@ -304,6 +305,24 @@ internal class SingleConverters :
         for (int i = 0; i < source.Length; i++)
         {
             dest[i] = source[i];
+        }
+    }
+
+    public void ConvertTo(ReadOnlySpan<float> source, Span<Float8> dest, CastMode castMode)
+    {
+        if (castMode == CastMode.Exact)
+        {
+            throw new InvalidCastException();
+        }
+
+        if (dest.Length < source.Length)
+        {
+            throw new ArgumentException("Dest buffer is not sufficient.");
+        }
+
+        for (int i = 0; i < source.Length; i++)
+        {
+            dest[i] = (Float8)source[i];
         }
     }
 
