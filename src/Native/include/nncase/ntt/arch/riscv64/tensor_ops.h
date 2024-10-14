@@ -24,9 +24,9 @@ namespace nncase::ntt::tensor_ops {
         }                                                                      \
     };
 
-RVV_LOAD_SCALAR_FLOAT32(NTT_VL_GE1(sizeof(float) * 8, 1), 1)
-RVV_LOAD_SCALAR_FLOAT32(NTT_VL_GE1(sizeof(float) * 8, 2), 2)
-RVV_LOAD_SCALAR_FLOAT32(NTT_VL_GE1(sizeof(float) * 8, 4), 4)
-RVV_LOAD_SCALAR_FLOAT32(NTT_VL_GE1(sizeof(float) * 8, 8), 8)
+RVV_LOAD_SCALAR_FLOAT32(NTT_VL(sizeof(float) * 8, *, 1), 1)
+RVV_LOAD_SCALAR_FLOAT32(NTT_VL(sizeof(float) * 8, *, 2), 2)
+RVV_LOAD_SCALAR_FLOAT32(NTT_VL(sizeof(float) * 8, *, 4), 4)
+RVV_LOAD_SCALAR_FLOAT32(NTT_VL(sizeof(float) * 8, *, 8), 8)
 
 } // namespace nncase::ntt::tensor_ops

@@ -26,12 +26,8 @@
 #define NTT_VLEN __riscv_v_fixed_vlen
 #endif
 
-#ifndef NTT_VL_LT1
-#define NTT_VL_LT1(sew, lmul) ((NTT_VLEN) / (sew) / (lmul))
-#endif
-
-#ifndef NTT_VL_GE1
-#define NTT_VL_GE1(sew, lmul) ((NTT_VLEN) / (sew) * (lmul))
+#ifndef NTT_VL_
+#define NTT_VL(sew, op, lmul) ((NTT_VLEN) / (sew)op(lmul))
 #endif
 
 // rvv fixed type

@@ -61,10 +61,10 @@ struct store<ntt::vector<float, NTT_VLEN / 32>,
 
 // unary with float
 #define REGISTER_RVV_UNARY_OP(OP, dtype, kernel)                               \
-    RVV_UNARY_OP(OP, float, NTT_VL_GE1(sizeof(dtype) * 8, 1), kernel)          \
-    RVV_UNARY_OP(OP, float, NTT_VL_GE1(sizeof(dtype) * 8, 2), kernel)          \
-    RVV_UNARY_OP(OP, float, NTT_VL_GE1(sizeof(dtype) * 8, 4), kernel)          \
-    RVV_UNARY_OP(OP, float, NTT_VL_GE1(sizeof(dtype) * 8, 8), kernel)
+    RVV_UNARY_OP(OP, float, NTT_VL(sizeof(dtype) * 8, *, 1), kernel)           \
+    RVV_UNARY_OP(OP, float, NTT_VL(sizeof(dtype) * 8, *, 2), kernel)           \
+    RVV_UNARY_OP(OP, float, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)           \
+    RVV_UNARY_OP(OP, float, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)
 
 // abs
 #define ABS_FLOAT32(lmul, mlen)                                                \
@@ -669,10 +669,10 @@ REGISTER_RVV_UNARY_OP(erf, float, erf_float32)
 
 // binary op
 #define REGISTER_RVV_BINARY_OP(op, dtype, kernel)                              \
-    RVV_BINARY_OP(op, dtype, NTT_VL_GE1(sizeof(dtype) * 8, 1), kernel)         \
-    RVV_BINARY_OP(op, dtype, NTT_VL_GE1(sizeof(dtype) * 8, 2), kernel)         \
-    RVV_BINARY_OP(op, dtype, NTT_VL_GE1(sizeof(dtype) * 8, 4), kernel)         \
-    RVV_BINARY_OP(op, dtype, NTT_VL_GE1(sizeof(dtype) * 8, 8), kernel)
+    RVV_BINARY_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 1), kernel)          \
+    RVV_BINARY_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 2), kernel)          \
+    RVV_BINARY_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)          \
+    RVV_BINARY_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)
 
 // add
 #define ADD_FLOAT32(lmul, mlen)                                                \
@@ -953,10 +953,10 @@ REGISTER_RVV_KERNEL(SWISHB_FLOAT32)
     };
 
 #define REGISTER_RVV_SWISHB_OP(dtype, kernel)                                  \
-    RVV_SWISHB_OP(dtype, NTT_VL_GE1(sizeof(dtype) * 8, 1), kernel)             \
-    RVV_SWISHB_OP(dtype, NTT_VL_GE1(sizeof(dtype) * 8, 2), kernel)             \
-    RVV_SWISHB_OP(dtype, NTT_VL_GE1(sizeof(dtype) * 8, 4), kernel)             \
-    RVV_SWISHB_OP(dtype, NTT_VL_GE1(sizeof(dtype) * 8, 8), kernel)
+    RVV_SWISHB_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 1), kernel)              \
+    RVV_SWISHB_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 2), kernel)              \
+    RVV_SWISHB_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)              \
+    RVV_SWISHB_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)
 
 REGISTER_RVV_SWISHB_OP(float, swishb_float32)
 
@@ -982,10 +982,10 @@ REGISTER_RVV_SWISHB_OP(float, swishb_float32)
     };
 
 #define REGISTER_RVV_OUTER_PRODUCT_OP(dtype)                                   \
-    RVV_OUTER_PRODUCT_OP(dtype, NTT_VL_GE1(sizeof(dtype) * 8, 1), 1)           \
-    RVV_OUTER_PRODUCT_OP(dtype, NTT_VL_GE1(sizeof(dtype) * 8, 2), 2)           \
-    RVV_OUTER_PRODUCT_OP(dtype, NTT_VL_GE1(sizeof(dtype) * 8, 4), 4)           \
-    RVV_OUTER_PRODUCT_OP(dtype, NTT_VL_GE1(sizeof(dtype) * 8, 8), 8)
+    RVV_OUTER_PRODUCT_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 1), 1)            \
+    RVV_OUTER_PRODUCT_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 2), 2)            \
+    RVV_OUTER_PRODUCT_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 4), 4)            \
+    RVV_OUTER_PRODUCT_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 8), 8)
 
 REGISTER_RVV_OUTER_PRODUCT_OP(float)
 
@@ -1013,10 +1013,10 @@ REGISTER_RVV_KERNEL(INNER_PRODUCT_FLOAT32)
     };
 
 #define REGISTER_RVV_INNER_PRODUCT_OP(dtype, kernel)                           \
-    RVV_INNER_PRODUCT_OP(dtype, NTT_VL_GE1(sizeof(dtype) * 8, 1), kernel)      \
-    RVV_INNER_PRODUCT_OP(dtype, NTT_VL_GE1(sizeof(dtype) * 8, 2), kernel)      \
-    RVV_INNER_PRODUCT_OP(dtype, NTT_VL_GE1(sizeof(dtype) * 8, 4), kernel)      \
-    RVV_INNER_PRODUCT_OP(dtype, NTT_VL_GE1(sizeof(dtype) * 8, 8), kernel)
+    RVV_INNER_PRODUCT_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 1), kernel)       \
+    RVV_INNER_PRODUCT_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 2), kernel)       \
+    RVV_INNER_PRODUCT_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)       \
+    RVV_INNER_PRODUCT_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)
 
 REGISTER_RVV_INNER_PRODUCT_OP(float, inner_product_float32)
 
@@ -1095,10 +1095,10 @@ REGISTER_RVV_KERNEL(MUL_ADD_FLOAT32)
     };
 
 #define REGISTER_RVV_MUL_ADD_OP(dtype, kernel)                                 \
-    RVV_MUL_ADD_OP(dtype, NTT_VL_GE1(sizeof(dtype) * 8, 1), kernel)            \
-    RVV_MUL_ADD_OP(dtype, NTT_VL_GE1(sizeof(dtype) * 8, 2), kernel)            \
-    RVV_MUL_ADD_OP(dtype, NTT_VL_GE1(sizeof(dtype) * 8, 4), kernel)            \
-    RVV_MUL_ADD_OP(dtype, NTT_VL_GE1(sizeof(dtype) * 8, 8), kernel)
+    RVV_MUL_ADD_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 1), kernel)             \
+    RVV_MUL_ADD_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 2), kernel)             \
+    RVV_MUL_ADD_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)             \
+    RVV_MUL_ADD_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)
 
 REGISTER_RVV_MUL_ADD_OP(float, mul_add_float32)
 
@@ -1354,10 +1354,10 @@ REGISTER_RVV_KERNEL(REDUCE_MIN_FLOAT32)
     };
 
 #define REGISTER_RVV_REDUCE_OP(op, dtype, kernel)                              \
-    RVV_REDUCE_OP(op, dtype, NTT_VL_GE1(sizeof(dtype) * 8, 1), kernel)         \
-    RVV_REDUCE_OP(op, dtype, NTT_VL_GE1(sizeof(dtype) * 8, 2), kernel)         \
-    RVV_REDUCE_OP(op, dtype, NTT_VL_GE1(sizeof(dtype) * 8, 4), kernel)         \
-    RVV_REDUCE_OP(op, dtype, NTT_VL_GE1(sizeof(dtype) * 8, 8), kernel)
+    RVV_REDUCE_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 1), kernel)          \
+    RVV_REDUCE_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 2), kernel)          \
+    RVV_REDUCE_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)          \
+    RVV_REDUCE_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)
 
 REGISTER_RVV_REDUCE_OP(add, float, reduce_add_float32)
 REGISTER_RVV_REDUCE_OP(max, float, reduce_max_float32)
@@ -1385,10 +1385,10 @@ REGISTER_RVV_KERNEL(CLAMP_FLOAT32)
     };
 
 #define REGISTER_RVV_CLAMP_OP(dtype, kernel)                                   \
-    RVV_CLAMP_OP(dtype, NTT_VL_GE1(sizeof(dtype) * 8, 1), kernel)              \
-    RVV_CLAMP_OP(dtype, NTT_VL_GE1(sizeof(dtype) * 8, 2), kernel)              \
-    RVV_CLAMP_OP(dtype, NTT_VL_GE1(sizeof(dtype) * 8, 4), kernel)              \
-    RVV_CLAMP_OP(dtype, NTT_VL_GE1(sizeof(dtype) * 8, 8), kernel)
+    RVV_CLAMP_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 1), kernel)               \
+    RVV_CLAMP_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 2), kernel)               \
+    RVV_CLAMP_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)               \
+    RVV_CLAMP_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)
 
 REGISTER_RVV_CLAMP_OP(float, clamp_float32)
 
@@ -1450,27 +1450,18 @@ REGISTER_RVV_KERNEL_1_4(CAST_BOOL_FLOAT32)
         }                                                                      \
     };
 
-#define REGISTER_RVV_CAST_OP(from_dtype, to_dtype, kernel)                     \
-    RVV_CAST_OP(from_dtype, to_dtype, NTT_VL_GE1(sizeof(from_dtype) * 8, 1),   \
-                kernel)                                                        \
-    RVV_CAST_OP(from_dtype, to_dtype, NTT_VL_GE1(sizeof(from_dtype) * 8, 2),   \
-                kernel)                                                        \
-    RVV_CAST_OP(from_dtype, to_dtype, NTT_VL_GE1(sizeof(from_dtype) * 8, 4),   \
-                kernel)                                                        \
-    RVV_CAST_OP(from_dtype, to_dtype, NTT_VL_GE1(sizeof(from_dtype) * 8, 8),   \
-                kernel)
+#define REGISTER_RVV_CAST_OP(from, to, kernel)                                 \
+    RVV_CAST_OP(from, to, NTT_VL(sizeof(from) * 8, *, 1), kernel)              \
+    RVV_CAST_OP(from, to, NTT_VL(sizeof(from) * 8, *, 2), kernel)              \
+    RVV_CAST_OP(from, to, NTT_VL(sizeof(from) * 8, *, 4), kernel)              \
+    RVV_CAST_OP(from, to, NTT_VL(sizeof(from) * 8, *, 8), kernel)
 
-#define REGISTER_RVV_CAST_OP_1_4(from_dtype, to_dtype, kernel)                 \
-    RVV_CAST_OP(from_dtype, to_dtype, NTT_VL_LT1(sizeof(from_dtype) * 8, 8),   \
-                kernel)                                                        \
-    RVV_CAST_OP(from_dtype, to_dtype, NTT_VL_LT1(sizeof(from_dtype) * 8, 4),   \
-                kernel)                                                        \
-    RVV_CAST_OP(from_dtype, to_dtype, NTT_VL_LT1(sizeof(from_dtype) * 8, 2),   \
-                kernel)                                                        \
-    RVV_CAST_OP(from_dtype, to_dtype, NTT_VL_GE1(sizeof(from_dtype) * 8, 1),   \
-                kernel)                                                        \
-    RVV_CAST_OP(from_dtype, to_dtype, NTT_VL_GE1(sizeof(from_dtype) * 8, 2),   \
-                kernel)
+#define REGISTER_RVV_CAST_OP_1_4(from, to, kernel)                             \
+    RVV_CAST_OP(from, to, NTT_VL(sizeof(from) * 8, /, 8), kernel)              \
+    RVV_CAST_OP(from, to, NTT_VL(sizeof(from) * 8, /, 4), kernel)              \
+    RVV_CAST_OP(from, to, NTT_VL(sizeof(from) * 8, /, 2), kernel)              \
+    RVV_CAST_OP(from, to, NTT_VL(sizeof(from) * 8, *, 1), kernel)              \
+    RVV_CAST_OP(from, to, NTT_VL(sizeof(from) * 8, *, 2), kernel)
 
 REGISTER_RVV_CAST_OP(float, int, cast_float32_int32)
 REGISTER_RVV_CAST_OP(int, float, cast_int32_float32)
