@@ -102,8 +102,8 @@ struct u_matmul_policy<mamtul_pack_kind::pack_mkn,
 };
 
 template <bool AccumulateC>
-struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, 2, 8,
-                vector<float, NTT_VLEN / 32>, float,
+struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, false, false,
+                2, 8, vector<float, NTT_VLEN / 32>, float,
                 vector<float, NTT_VLEN / 32>, true> {
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
