@@ -67,7 +67,7 @@ struct u_matmul_policy<mamtul_pack_kind::pack_mn, vector<float, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 2;
-    static constexpr size_t m0_subtile = 8;
+    static constexpr size_t m0_subtile = 4;
 };
 
 // Pack MK
@@ -98,7 +98,7 @@ struct u_matmul_policy<mamtul_pack_kind::pack_mkn,
                        vector<float, NTT_VLEN / 32, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 2;
-    static constexpr size_t m0_subtile = 8;
+    static constexpr size_t m0_subtile = 4;
 };
 
 template <bool AccumulateC>
