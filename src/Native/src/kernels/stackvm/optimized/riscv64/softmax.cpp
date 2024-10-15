@@ -249,51 +249,88 @@ result<void> optimized_softmax_impl(const T *input, T *output,
             float *ptr_output_vl = ptr_output;
 
             // max
-            float max = std::numeric_limits<float>::lowest();
-            while (n) {
-                auto vl = vsetvl_e32m8(n);
-                auto v = vle32_v_f32m8(ptr_input_vl, vl);
-                auto s = vfmv_s_f_f32m1(vundefined_f32m1(), max, vl);
+            float max = *ptr_input_vl;
+            {
+                size_t vl = vsetvl_e32m4(n);
+                vfloat32m4_t s = vfmv_v_f_f32m4(max, vl);
+                while(n / vl > 0){
+                    vfloat32m4_t v = vle32_v_f32m4(ptr_input_vl, vl);
+                    s = vfmax_vv_f32m4(s, v, vl);
 
-                s = vfredmax_vs_f32m8_f32m1(s, v, s, vl);
-                max = vfmv_f_s_f32m1_f32(s);
-                ptr_input_vl += vl;
-                n -= vl;
+                    n -= vl;
+                    ptr_input_vl += vl;
+                }
+
+                vfloat32m1_t reduced_max_ = vfredmax_vs_f32m4_f32m1(
+                    vundefined_f32m1(), s, vfmv_v_f_f32m1(max, vl), vl);
+                max = vfmv_f_s_f32m1_f32(reduced_max_);
+
+                if(n > 0){
+                    vl = vsetvl_e32m4(n);
+                    s = vfmv_v_f_f32m4(max, vl);
+                    vfloat32m4_t v = vle32_v_f32m4(ptr_input_vl, vl);
+                    s = vfmax_vv_f32m4(s, v, vl);
+                    reduced_max_ = vfredmax_vs_f32m4_f32m1(
+                        vundefined_f32m1(), s, vfmv_v_f_f32m1(max, vl), vl);
+                    max = vfmv_f_s_f32m1_f32(reduced_max_);
+                }
             }
 
             // exp((x - max) * beta) and sum(exp)
             float sum = 0.f;
             ptr_input_vl = ptr_input;
             n = axis_dim;
-            while (n) {
-                auto vl = vsetvl_e32m8(n);
-                auto v_in = vle32_v_f32m8(ptr_input_vl, vl);
+            {
+                auto vl = vsetvl_e32m4(n);
                 auto s = vfmv_s_f_f32m1(vundefined_f32m1(), sum, vl);
+                while (n / vl > 0) {
 
-                auto v_out = exp_ps(
-                    vfmul_vf_f32m8(vfsub_vf_f32m8(v_in, max, vl), beta, vl),
-                    vl);
-                s = vfredosum_vs_f32m8_f32m1(s, v_out, s, vl);
+                    auto v_in = vle32_v_f32m4(ptr_input_vl, vl);
+                    auto v_out = exp_ps(
+                        vfmul_vf_f32m4(vfsub_vf_f32m4(v_in, max, vl), beta, vl),
+                        vl);
+                    s = vfredosum_vs_f32m4_f32m1(s, v_out, s, vl);
 
-                vse32_v_f32m8(ptr_output_vl, v_out, vl);
+                    vse32_v_f32m4(ptr_output_vl, v_out, vl);
+
+                    ptr_input_vl += vl;
+                    ptr_output_vl += vl;
+                    n -= vl;
+                }
                 sum = vfmv_f_s_f32m1_f32(s);
-                ptr_input_vl += vl;
-                ptr_output_vl += vl;
-                n -= vl;
-            }
+                if (n > 0) {
+                    vl = vsetvl_e32m4(n);
+                    s = vfmv_s_f_f32m1(vundefined_f32m1(), sum, vl);
+                    auto v_in = vle32_v_f32m4(ptr_input_vl, vl);
+                    auto v_out = exp_ps(
+                        vfmul_vf_f32m4(vfsub_vf_f32m4(v_in, max, vl), beta, vl),
+                        vl);
+                    s = vfredosum_vs_f32m4_f32m1(s, v_out, s, vl);
 
+                    vse32_v_f32m4(ptr_output_vl, v_out, vl);
+                    sum = vfmv_f_s_f32m1_f32(s);
+                }
+            }
             // div
             ptr_input_vl = ptr_input;
             ptr_output_vl = ptr_output;
             n = axis_dim;
             sum = 1.0f / sum;
-            while (n) {
-                auto vl = vsetvl_e32m8(n);
-                auto v_out = vle32_v_f32m8(ptr_output_vl, vl);
-                v_out = vfmul_vf_f32m8(v_out, sum, vl);
-                vse32_v_f32m8(ptr_output_vl, v_out, vl);
-                ptr_output_vl += vl;
-                n -= vl;
+            {
+                auto vl = vsetvl_e32m4(n);
+                while (n/vl>0) {
+                    auto v_out = vle32_v_f32m4(ptr_output_vl, vl);
+                    v_out = vfmul_vf_f32m4(v_out, sum, vl);
+                    vse32_v_f32m4(ptr_output_vl, v_out, vl);
+                    ptr_output_vl += vl;
+                    n -= vl;
+                }
+                if (n > 0){
+                    vl = vsetvl_e32m4(n);
+                    auto v_out = vle32_v_f32m4(ptr_output_vl, vl);
+                    v_out = vfmul_vf_f32m4(v_out, sum, vl);
+                    vse32_v_f32m4(ptr_output_vl, v_out, vl);
+                }
             }
 
             ptr_input += axis_dim;
