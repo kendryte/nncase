@@ -72,6 +72,14 @@ internal sealed class LinkableModule : ILinkableModule
                 }
             }
 
+            using (var fs = File.Open(Path.Join(dumpPath, "topo_aware_runtime.h"), FileMode.Create))
+            {
+                using (var writer = new StreamWriter(fs))
+                {
+                    writer.Write(func.FunctionCSource.TopoRuntime);
+                }
+            }
+
             using (var fs = File.Open(Path.Join(dumpPath, "CMakeLists.txt"), FileMode.Create))
             {
                 using (var writer = new StreamWriter(fs))

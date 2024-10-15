@@ -7,13 +7,31 @@
 }
 
 #include <nncase/ntt/cpu_runtime.h>
+#include "topo_aware_runtime.h"
 #include "../device.h"
 @foreach(var (s,i) in Model.Options.MemoryCapacities.Select((s,i) => (s,i)).Skip(1).SkipLast(1)){
 @:uint8_t L@(i)Data[@(s)];
 }
 #include "kernel.h"
+#include <memory>
 
-extern "C" void kernel_entry(nncase_runtime_cpu_mt_t *cpu_mt, uint8_t **inputs, uint8_t *rdata, uint8_t *data) {
+uint8_t *aligned_malloc(size_t size, size_t alignment, void *&data_ptr) {
+    size_t total_size = size + alignment;
+    data_ptr = malloc(total_size);
+    if (data_ptr == nullptr) {
+        printf("bad alloc\n");
+        std::terminate();
+    }
+    void *back_ptr = data_ptr;
+    void *offset_ptr = std::align(alignment, size, back_ptr, total_size);
+    if (offset_ptr == nullptr) {
+        printf("bad align\n");
+        std::terminate();
+    }
+    return static_cast<uint8_t *>(offset_ptr);
+}
+
+extern "C" void kernel_entry(nncase_runtime_cpu_mt_t *cpu_mt, uint8_t **inputs, uint8_t *rdata) {
   g_cpu_mt = cpu_mt;
   /* prepare inputs */
   @{
@@ -34,27 +52,45 @@ extern "C" void kernel_entry(nncase_runtime_cpu_mt_t *cpu_mt, uint8_t **inputs, 
   @:tensor_view<@Html.Raw(b.ElemType), @Html.Raw(b.Dimensions), @Html.Raw(b.Strides)> @(b.Name)(p@(b.Name));
   @:
   }
-  @(Model.PrimFunction.Name)(@(string.Join(", ", names)), data);
+
+  @if (Model.Options.Hierarchies.Length > 1) {
+    throw new NotSupportedException($"not support multi form topology!");
+  }
+  @if (Model.Options.Hierarchies[0].Any(h => h != 1)) {
+    var hierarchy = Model.Options.Hierarchies[0];
+  
+  @:/* prepare wrapped kernel */
+  @:auto wrapped_kernel = [&](@(string.Join(", ", Model.Options.HierarchyNames.Select(c => "size_t cur_" + c + "id")))) {
+    foreach (var c in Model.Options.HierarchyNames) {
+    @:@(c)id = cur_@(c)id;
+    }
+    @:void* data_raw = nullptr;
+    @:uint8_t* data = aligned_malloc(@(Model.DataSize), @(Model.Alignment), data_raw);
+    @:@(Model.PrimFunction.Name)(@(string.Join(", ", names)), data);
+    @:free(data_raw);
+  @:};
+
+  @:/* invoke kernels */
+  int count = 0;
+  @foreach(var index in hierarchy.Select(i => Enumerable.Range(0, i)).CartesianProduct().Select(arr => arr.ToArray()))
+  {
+  @:std::thread t@(count++)(wrapped_kernel, @(string.Join(",", index)));
+  }
+  for (int i = 0; i < count; i++) {
+  @:t@(i).join();
+  }
+  } else {
+  @:/* invoke kernel */
+  @:void* data_raw = nullptr;
+  @:uint8_t* data = aligned_malloc(@(Model.DataSize), @(Model.Alignment), data_raw);
+  @:@(Model.PrimFunction.Name)(@(string.Join(", ", names)), data);
+  @:free(data_raw);
+  }
 }
 
 #ifdef NNCASE_STANDALONE
-uint8_t *aligned_malloc(size_t size, size_t alignment, void *&data_ptr) {
-    size_t total_size = size + alignment;
-    data_ptr = malloc(total_size);
-    if (data_ptr == nullptr) {
-        printf("bad alloc\n");
-        std::terminate();
-    }
-    void *offset_ptr = std::align(alignment, size, data_ptr, total_size);
-    if (offset_ptr == nullptr) {
-        printf("bad align\n");
-        std::terminate();
-    }
-    return static_cast<uint8_t *>(offset_ptr);
-}
-
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
-  void* ptrs[@(inputCount + 2)];
+  void* ptrs[@(inputCount + 1)];
   uint8_t* inputs[@inputCount];
   size_t align = @(Model.Alignment);
   @foreach(var (b,i) in Model.PrimFunction.Parameters.ToArray().OfType<Nncase.TIR.Buffer>().Select((b,i)=>(Model.GetInfo(b),i)))
@@ -63,10 +99,9 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
   }
 
   uint8_t* rdata = aligned_malloc(@Model.RDataSize, align, ptrs[@inputCount]);
-  uint8_t* data = aligned_malloc(@Model.DataSize, align, ptrs[@(inputCount + 1)]);
 
-  kernel_entry(nullptr, inputs, rdata, data);
-  for (size_t i = 0; i < @(inputCount + 2); i++) {
+  kernel_entry(nullptr, inputs, rdata);
+  for (size_t i = 0; i < @(inputCount + 1); i++) {
     free(ptrs[i]);
   }
   return 0;

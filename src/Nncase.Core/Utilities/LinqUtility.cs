@@ -21,4 +21,22 @@ public static class LinqUtility
             yield return start++;
         }
     }
+
+    public static IEnumerable<IEnumerable<int>> Combination(int len)
+    {
+        int n = 1 << len;
+        for (int i = 1; i < n; i++)
+        {
+            var combine = new List<int>();
+            for (int j = 0; j < len; j++)
+            {
+                if ((i & (1 << j)) != 0)
+                {
+                    combine.Add(j);
+                }
+            }
+
+            yield return combine;
+        }
+    }
 }

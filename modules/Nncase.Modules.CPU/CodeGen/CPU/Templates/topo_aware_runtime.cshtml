@@ -1,0 +1,88 @@
+@using System.Linq
+@using NetFabric.Hyperlinq
+@using Nncase
+@model Nncase.CodeGen.CPU.CpuTargetOptionsModel
+@{
+  var hierarchy = Model.Options.Hierarchies[0];
+  var worldSize = (int)TensorUtilities.GetProduct(hierarchy);
+
+  string GetGroupName(IEnumerable<int> axes) {
+    var name = "group";
+    for (int i = 0; i < Model.Options.HierarchyNames.Length; i++) {
+      name += "_" + (axes.Contains(i) ? "r" : string.Empty) + Model.Options.HierarchyNames[i];
+    }
+    return name;
+  }
+}
+
+#pragma once
+#include <nncase/ntt/ntt.h>
+#include <thread>
+#include <barrier>
+
+@foreach (var c in Model.Options.HierarchyNames)
+{
+@:thread_local size_t @(c)id = 0;
+}
+
+/**
+ * @@brief topology aware runtime
+ * 
+ */
+namespace tar {
+  @foreach (var comb in Nncase.Utilities.LinqUtility.Combination(hierarchy.Length))
+  {
+    var groupSize = (int)TensorUtilities.GetProduct(comb.Select(i => hierarchy[i]).ToArray());
+    var groups = worldSize / groupSize;
+    
+    var shape = hierarchy.ToArray();
+    var groupName = GetGroupName(comb);
+    foreach (var i in comb) {
+      shape[i] = 1;
+    }
+    var groupRawName = groupName + "_raw";
+
+@:std::barrier<> @(groupRawName)[@(groups)] {
+    @for (int i = 0; i < groups; i++) 
+    {
+  @:std::barrier(@(groupSize)), 
+    }
+@:};
+@:nncase::ntt::tensor_view<std::barrier<>, nncase::ntt::fixed_shape<@(string.Join(",", shape))>> @(groupName)(@(groupRawName));
+  }
+
+@if (Model.CollectivePoolSize > 0) {
+@:alignas(@Model.Alignment) uint8_t collective_pool_ptr[@Model.CollectivePoolSize];
+} else {
+@:uint8_t* collective_pool_ptr = nullptr;
+}
+}
+
+/**
+ * @@brief topology aware collective
+ * 
+ */
+namespace tac {
+
+template <nncase::ntt::IsFixedDims GlobalDims, class Index, class TDst>
+void tensor_boxing_load_sync(Index index, TDst &dest)
+{
+    using TDstBase = std::decay_t<TDst>;
+    using TElem = typename TDstBase::element_type;
+    auto gtensor = nncase::ntt::tensor_view<TElem, GlobalDims>(std::span<TElem, GlobalDims::length()>((TElem *)tar::collective_pool_ptr, GlobalDims::length()));
+    nncase::ntt::tensor_copy(gtensor.view(index, typename TDstBase::shape_type{}), std::move(dest));
+    // printf("boxing load %ld arrive\n", bid);
+    tar::@(GetGroupName(Enumerable.Range(0, hierarchy.Length)))(@(string.Join(",", Enumerable.Repeat("0", hierarchy.Length)))).arrive_and_wait();
+}
+
+template <nncase::ntt::IsFixedDims GlobalDims, class Index, class TSrc>
+void tensor_boxing_store_sync(Index index, TSrc &src)
+{
+    using TSrcBase = std::decay_t<TSrc>;
+    using TElem = typename TSrcBase::element_type;
+    auto gtensor = nncase::ntt::tensor_view<TElem, GlobalDims>(std::span<TElem, GlobalDims::length()>((TElem *)tar::collective_pool_ptr, GlobalDims::length()));
+    nncase::ntt::tensor_copy(std::move(src), gtensor.view(index, typename TSrcBase::shape_type{}));
+    // printf("boxing store %ld arrive\n", bid);
+    tar::@(GetGroupName(Enumerable.Range(0, hierarchy.Length)))(@(string.Join(",", Enumerable.Repeat("0", hierarchy.Length)))).arrive_and_wait();
+}
+}

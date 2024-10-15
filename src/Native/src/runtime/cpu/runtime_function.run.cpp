@@ -68,19 +68,6 @@ nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
 } // namespace
 
 result<void> cpu_runtime_function::run(std::span<std::byte *> params) noexcept {
-    size_t alignment = data_align_;
-    size_t space = data_pool_size_ + alignment;
-    auto alloced = new (std::nothrow) std::byte[space];
-    if (alloced == nullptr) {
-        return err(std::errc::not_enough_memory);
-    }
-    void *data = alloced;
-    std::align(alignment, data_pool_size_, data, space);
-    if (data == nullptr) {
-        return err(std::errc::not_enough_memory);
-    }
-    kernel_entry_(&nncase_cpu_mt_, params.data(), module().rdata().data(),
-                  reinterpret_cast<std::byte *>(data));
-    delete[] alloced;
+    kernel_entry_(&nncase_cpu_mt_, params.data(), module().rdata().data());
     return ok();
 }
