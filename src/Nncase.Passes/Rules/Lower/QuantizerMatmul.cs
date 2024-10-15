@@ -69,7 +69,6 @@ public sealed partial class QuantizerMatmul : IRewriteRule
 
         var qWeightsConst = Tensor.From<Float8>(qWeights, inputB.CheckedShape.ToValueArray());
         var qMatmul = Nncase.IR.F.Math.MatMul(qInput, qWeightsConst);
-        qMatmul = Nncase.IR.F.Tensors.Cast(qMatmul, DataTypes.Float32);
         qMatmul = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, qMatmul, deqScaleA * deqScaleB);
         return qMatmul;
     }

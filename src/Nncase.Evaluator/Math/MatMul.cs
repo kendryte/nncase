@@ -129,6 +129,11 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             return new InvalidType("MatMul lhs and rhs have not compatiable shape");
         }
 
+        if (lhsDType == DataTypes.Float8)
+        {
+            dtype = DataTypes.Float32;
+        }
+
         if (lhs.DType is VectorType vl1 && rhs.DType is not VectorType)
         {
             if (vl1.Lanes.Count != 1)
@@ -191,13 +196,13 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, MatMul matMul)
     {
-        if (context.CurrentCall.CheckedDataType == DataTypes.Float8)
+        if (context.CurrentCall.Arguments[MatMul.Lhs.Index].CheckedDataType == DataTypes.Float8)
         {
             var lhs = Cast(context.GetArgumentValue(matMul, MatMul.Lhs).AsTensor(), DataTypes.Float32);
             var rhs = Cast(context.GetArgumentValue(matMul, MatMul.Rhs).AsTensor(), DataTypes.Float32);
             var lhsOrt = lhs.Evaluate().AsTensor().ToOrtTensor();
             var rhsOrt = rhs.Evaluate().AsTensor().ToOrtTensor();
-            var ret = Cast(OrtKI.MatMul(lhsOrt, rhsOrt).ToTensor(), DataTypes.Float8).Evaluate().AsTensor();
+            var ret = OrtKI.MatMul(lhsOrt, rhsOrt).ToTensor();
             return Value.FromTensor(ret);
         }
         else
