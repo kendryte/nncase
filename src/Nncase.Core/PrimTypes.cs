@@ -252,25 +252,25 @@ public sealed record UInt64Type : PrimType
 /// <summary>
 /// Prim type of <see cref="byte"/>.
 /// </summary>
-public sealed record Float8Type : PrimType
+public sealed record Float8E4M3Type : PrimType
 {
     /// <inheritdoc/>
     public override PrimTypeAttributes Attributes => PrimTypeAttributes.IsFloat;
 
     /// <inheritdoc/>
-    public override string FullName => "Float8";
+    public override string FullName => "Float8E4M3";
 
     /// <inheritdoc/>
     public override string ShortName => "F8_E4M3";
 
     /// <inheritdoc/>
-    public override Type CLRType => typeof(Float8);
+    public override Type CLRType => typeof(Float8E4M3);
 
     /// <inheritdoc/>
-    public unsafe override int SizeInBytes => sizeof(Float8);
+    public unsafe override int SizeInBytes => sizeof(Float8E4M3);
 
     /// <inheritdoc/>
-    public override Runtime.TypeCode TypeCode => Runtime.TypeCode.Float8;
+    public override Runtime.TypeCode TypeCode => Runtime.TypeCode.Float8E4M3;
 }
 
 /// <summary>

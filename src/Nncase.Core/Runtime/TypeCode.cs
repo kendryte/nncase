@@ -85,9 +85,9 @@ public enum TypeCode : byte
     BFloat16,
 
     /// <summary>
-    /// <see cref="Float8"/>.
+    /// <see cref="Float8E4M3"/>.
     /// </summary>
-    Float8,
+    Float8E4M3,
 
     /// <summary>
     /// <see cref="Pointer{T}"/>.

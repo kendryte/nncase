@@ -30,7 +30,7 @@ public sealed partial class StackVMEmitter
         { typeof(float), 11 },
         { typeof(double), 12 },
         { typeof(BFloat16), 13 },
-        { typeof(Float8), 14 },
+        { typeof(Float8E4M3), 14 },
     };
 
     /// <summary>

@@ -55,9 +55,9 @@ public static class DataTypes
     public static readonly PrimType UInt64 = new UInt64Type();
 
     /// <summary>
-    /// structcut for Float8.
+    /// structcut for Float8E4M3.
     /// </summary>
-    public static readonly PrimType Float8 = new Float8Type();
+    public static readonly PrimType Float8E4M3 = new Float8E4M3Type();
 
     /// <summary>
     /// structcut for Float16.
@@ -163,7 +163,7 @@ public static class DataTypes
             Runtime.TypeCode.Float32 => "float",
             Runtime.TypeCode.Float64 => "double",
             Runtime.TypeCode.BFloat16 => "BFloat16",
-            Runtime.TypeCode.Float8 => "Float8",
+            Runtime.TypeCode.Float8E4M3 => "Float8E4M3",
             _ => throw new ArgumentOutOfRangeException(primType.FullName),
         },
         PointerType pointerType => throw new NotSupportedException(nameof(PointerType)),
@@ -177,7 +177,7 @@ public static class DataTypes
         var x when x == DataTypes.Int8.ShortName => DataTypes.Int8,
         var x when x == DataTypes.Int16.ShortName => DataTypes.Int16,
         var x when x == DataTypes.Int32.ShortName => DataTypes.Int32,
-        var x when x == DataTypes.Float8.ShortName => DataTypes.Float8,
+        var x when x == DataTypes.Float8E4M3.ShortName => DataTypes.Float8E4M3,
         var x when x == DataTypes.Float16.ShortName => DataTypes.Float16,
         var x when x == DataTypes.Float32.ShortName => DataTypes.Float32,
         var x when x == DataTypes.BFloat16.ShortName => DataTypes.BFloat16,

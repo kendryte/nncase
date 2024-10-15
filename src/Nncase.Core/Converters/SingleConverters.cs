@@ -23,7 +23,7 @@ internal class SingleConverters :
     ISpanConverter<float, float>,
     ISpanConverter<float, double>,
     ISpanConverter<float, BFloat16>,
-    ISpanConverter<float, Float8>
+    ISpanConverter<float, Float8E4M3>
 {
     public void ConvertTo(ReadOnlySpan<float> source, Span<bool> dest, CastMode castMode)
     {
@@ -308,7 +308,7 @@ internal class SingleConverters :
         }
     }
 
-    public void ConvertTo(ReadOnlySpan<float> source, Span<Float8> dest, CastMode castMode)
+    public void ConvertTo(ReadOnlySpan<float> source, Span<Float8E4M3> dest, CastMode castMode)
     {
         if (castMode == CastMode.Exact)
         {
@@ -322,7 +322,7 @@ internal class SingleConverters :
 
         for (int i = 0; i < source.Length; i++)
         {
-            dest[i] = (Float8)source[i];
+            dest[i] = (Float8E4M3)source[i];
         }
     }
 

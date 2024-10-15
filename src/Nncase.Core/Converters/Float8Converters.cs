@@ -10,11 +10,11 @@ using System.Threading.Tasks;
 namespace Nncase.Converters;
 
 internal class Float8Converters :
-    ISpanConverter<Float8, Half>,
-    ISpanConverter<Float8, float>,
-    ISpanConverter<Float8, Float8>
+    ISpanConverter<Float8E4M3, Half>,
+    ISpanConverter<Float8E4M3, float>,
+    ISpanConverter<Float8E4M3, Float8E4M3>
 {
-    public void ConvertTo(ReadOnlySpan<Float8> source, Span<Half> dest, CastMode castMode)
+    public void ConvertTo(ReadOnlySpan<Float8E4M3> source, Span<Half> dest, CastMode castMode)
     {
         if (castMode == CastMode.Exact)
         {
@@ -32,7 +32,7 @@ internal class Float8Converters :
         }
     }
 
-    public void ConvertTo(ReadOnlySpan<Float8> source, Span<float> dest, CastMode castMode)
+    public void ConvertTo(ReadOnlySpan<Float8E4M3> source, Span<float> dest, CastMode castMode)
     {
         if (castMode == CastMode.Exact)
         {
@@ -50,7 +50,7 @@ internal class Float8Converters :
         }
     }
 
-    public void ConvertTo(ReadOnlySpan<Float8> source, Span<Float8> dest, CastMode castMode)
+    public void ConvertTo(ReadOnlySpan<Float8E4M3> source, Span<Float8E4M3> dest, CastMode castMode)
     {
         source.CopyTo(dest);
     }

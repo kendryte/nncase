@@ -23,7 +23,7 @@ internal class HalfConverters :
     ISpanConverter<Half, float>,
     ISpanConverter<Half, double>,
     ISpanConverter<Half, BFloat16>,
-    ISpanConverter<Half, Float8>
+    ISpanConverter<Half, Float8E4M3>
 {
     public void ConvertTo(ReadOnlySpan<Half> source, Span<bool> dest, CastMode castMode)
     {
@@ -308,7 +308,7 @@ internal class HalfConverters :
         }
     }
 
-    public void ConvertTo(ReadOnlySpan<Half> source, Span<Float8> dest, CastMode castMode)
+    public void ConvertTo(ReadOnlySpan<Half> source, Span<Float8E4M3> dest, CastMode castMode)
     {
         if (castMode == CastMode.Exact)
         {
@@ -322,7 +322,7 @@ internal class HalfConverters :
 
         for (int i = 0; i < source.Length; i++)
         {
-            dest[i] = (Float8)source[i];
+            dest[i] = (Float8E4M3)source[i];
         }
     }
 

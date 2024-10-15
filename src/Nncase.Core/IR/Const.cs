@@ -99,10 +99,10 @@ public abstract class Const : Expr
     public static implicit operator Const(BFloat16 value) => FromTensor(Tensor.FromScalar(value));
 
     /// <summary>
-    /// Create constant from a <see cref="Float8"/>.
+    /// Create constant from a <see cref="Float8E4M3"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Const(Float8 value) => FromTensor(Tensor.FromScalar(value));
+    public static implicit operator Const(Float8E4M3 value) => FromTensor(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create constant from a <see cref="bool"/>.

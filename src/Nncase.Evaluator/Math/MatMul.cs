@@ -129,7 +129,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             return new InvalidType("MatMul lhs and rhs have not compatiable shape");
         }
 
-        if (lhsDType == DataTypes.Float8)
+        if (lhsDType == DataTypes.Float8E4M3)
         {
             dtype = DataTypes.Float32;
         }
@@ -196,7 +196,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, MatMul matMul)
     {
-        if (context.CurrentCall.Arguments[MatMul.Lhs.Index].CheckedDataType == DataTypes.Float8)
+        if (context.CurrentCall.Arguments[MatMul.Lhs.Index].CheckedDataType == DataTypes.Float8E4M3)
         {
             var lhs = Cast(context.GetArgumentValue(matMul, MatMul.Lhs).AsTensor(), DataTypes.Float32);
             var rhs = Cast(context.GetArgumentValue(matMul, MatMul.Rhs).AsTensor(), DataTypes.Float32);

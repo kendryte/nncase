@@ -11,36 +11,36 @@ using System.Threading.Tasks;
 namespace Nncase;
 
 /// <summary>
-/// Float8.
+/// Float8E4M3.
 /// </summary>
-public struct Float8 : IEquatable<Float8>, IComparable<Float8>
+public struct Float8E4M3 : IEquatable<Float8E4M3>, IComparable<Float8E4M3>
 {
     /// <summary>
     /// FP8 E4M3 representation bits.
     /// </summary>
     public byte _value;
 
-    public static Float8 NaN => FromRaw(0b1111111);
+    public static Float8E4M3 NaN => FromRaw(0b1111111);
 
-    public static Float8 Infinity => NaN;
+    public static Float8E4M3 Infinity => NaN;
 
-    public static Float8 NegInfinity => NaN;
+    public static Float8E4M3 NegInfinity => NaN;
 
-    public static Float8 Zero => FromRaw(0b0000000);
+    public static Float8E4M3 Zero => FromRaw(0b0000000);
 
-    public static Float8 MaxNormal => FromRaw(0b1111110);
+    public static Float8E4M3 MaxNormal => FromRaw(0b1111110);
 
-    public static Float8 MinNormal => FromRaw(0b0010000);
+    public static Float8E4M3 MinNormal => FromRaw(0b0010000);
 
-    public static Float8 MaxSubnormal => FromRaw(0b0000111);
+    public static Float8E4M3 MaxSubnormal => FromRaw(0b0000111);
 
-    public static Float8 MinSubnormal => FromRaw(0b0000001);
+    public static Float8E4M3 MinSubnormal => FromRaw(0b0000001);
 
     /// <summary>
-    /// Implicit conversion from Float8 to float.
+    /// Implicit conversion from Float8E4M3 to float.
     /// </summary>
     /// <param name="input">FP8 value.</param>
-    public static implicit operator float(Float8 input)
+    public static implicit operator float(Float8E4M3 input)
     {
         const bool IS_E4M3 = true;
 
@@ -113,10 +113,10 @@ public struct Float8 : IEquatable<Float8>, IComparable<Float8>
     }
 
     /// <summary>
-    /// Explicit conversion from float to Float8.
+    /// Explicit conversion from float to Float8E4M3.
     /// </summary>
     /// <param name="input">Float value.</param>
-    public static explicit operator Float8(float input)
+    public static explicit operator Float8E4M3(float input)
     {
         const bool IS_E4M3 = true;
 
@@ -238,48 +238,48 @@ public struct Float8 : IEquatable<Float8>, IComparable<Float8>
         return FromRaw(u);
     }
 
-    public static explicit operator Float8(Half input)
+    public static explicit operator Float8E4M3(Half input)
     {
-        return (Float8)(float)input;
+        return (Float8E4M3)(float)input;
     }
 
-    public static explicit operator Half(Float8 input)
+    public static explicit operator Half(Float8E4M3 input)
     {
         return (Half)(float)input;
     }
 
-    public static bool operator ==(Float8 lhs, Float8 rhs) => lhs._value == rhs._value;
+    public static bool operator ==(Float8E4M3 lhs, Float8E4M3 rhs) => lhs._value == rhs._value;
 
-    public static bool operator !=(Float8 lhs, Float8 rhs) => lhs._value != rhs._value;
+    public static bool operator !=(Float8E4M3 lhs, Float8E4M3 rhs) => lhs._value != rhs._value;
 
-    public static bool operator <(Float8 left, Float8 right)
+    public static bool operator <(Float8E4M3 left, Float8E4M3 right)
     {
         return left.CompareTo(right) < 0;
     }
 
-    public static bool operator <=(Float8 left, Float8 right)
+    public static bool operator <=(Float8E4M3 left, Float8E4M3 right)
     {
         return left.CompareTo(right) <= 0;
     }
 
-    public static bool operator >(Float8 left, Float8 right)
+    public static bool operator >(Float8E4M3 left, Float8E4M3 right)
     {
         return left.CompareTo(right) > 0;
     }
 
-    public static bool operator >=(Float8 left, Float8 right)
+    public static bool operator >=(Float8E4M3 left, Float8E4M3 right)
     {
         return left.CompareTo(right) >= 0;
     }
 
     /// <summary>
-    /// Reinterpret cast <see cref="byte"/> to <see cref="Float8"/>.
+    /// Reinterpret cast <see cref="byte"/> to <see cref="Float8E4M3"/>.
     /// </summary>
     /// <param name="value">Byte value.</param>
-    /// <returns>Casted Float8.</returns>
-    public static Float8 FromRaw(byte value)
+    /// <returns>Casted Float8E4M3.</returns>
+    public static Float8E4M3 FromRaw(byte value)
     {
-        Float8 result;
+        Float8E4M3 result;
         Unsafe.SkipInit(out result);
         result._value = value;
         return result;
@@ -290,16 +290,16 @@ public struct Float8 : IEquatable<Float8>, IComparable<Float8>
         return _value;
     }
 
-    public bool Equals(Float8 other)
+    public bool Equals(Float8E4M3 other)
     {
         return other == this;
     }
 
     public override bool Equals(object? obj)
     {
-        if (obj is Float8)
+        if (obj is Float8E4M3)
         {
-            var fp8 = (Float8)obj;
+            var fp8 = (Float8E4M3)obj;
             return fp8 == this;
         }
 
@@ -316,7 +316,7 @@ public struct Float8 : IEquatable<Float8>, IComparable<Float8>
         return ((float)this).ToString();
     }
 
-    public int CompareTo(Float8 other)
+    public int CompareTo(Float8E4M3 other)
     {
         return ((float)this).CompareTo((float)other);
     }
