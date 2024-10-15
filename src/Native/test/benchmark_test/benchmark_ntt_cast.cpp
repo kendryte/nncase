@@ -23,24 +23,25 @@ using namespace nncase;
 template <typename T> struct TypeToString;
 
 template <> struct TypeToString<float> {
-    static constexpr const std::string name = "float";
+    static constexpr char name[] = "float";
 };
 
 template <> struct TypeToString<int> {
-    static constexpr const std::string name = "int32";
+    static constexpr char name[] = "int32";
 };
 
 template <> struct TypeToString<unsigned int> {
-    static constexpr const std::string name = "uint32";
+    static constexpr char name[] = "uint32";
 };
 
 template <> struct TypeToString<bool> {
-    static constexpr const std::string name = "bool";
+    static constexpr char name[] = "bool";
 };
 
 template <typename T1, typename T2, size_t N>
 void benchmark_ntt_cast(T1 init_low, T1 init_high) {
-    std::string op = TypeToString<T1>::name + "-" + TypeToString<T2>::name;
+    std::string op = std::string(TypeToString<T1>::name) + "-" +
+                     std::string(TypeToString<T2>::name);
     constexpr size_t warmup_size = 10;
 #if __riscv
     constexpr size_t run_size = 300;
