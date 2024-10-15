@@ -71,7 +71,7 @@ public class QuantizerChecker : FunctionPass, IRulesPass
         CompilerServices.DumpIR(((Nncase.IR.Function)function).Body, "matmul", "/compiler3.0/dev3.0/nncase/tests_output/test_debug");
         var samples = CompileSession.CompileOptions.QuantizeOptions.CalibrationDataset!.Samples;
         var first = await GetFirstElementAsync(samples);
-        var curentResults = CompilerServices.Evaluate(((Nncase.IR.Function)function).Body, first).AsTensor().ToArray<float>();
+        _ = CompilerServices.Evaluate(((Nncase.IR.Function)function).Body, first).AsTensor().ToArray<float>();
     }
 
     /// <inheritdoc/>
