@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "../include/nncase/runtime/float8.h"
 #include "ntt_test.h"
 #include <iomanip>
 #include <memory>
@@ -36,6 +37,10 @@ template <> struct TypeToString<unsigned int> {
 
 template <> struct TypeToString<bool> {
     static constexpr char name[] = "bool";
+};
+
+template <> struct TypeToString<float_e4m3_t> {
+    static constexpr char name[] = "f8e4m3";
 };
 
 template <typename T1, typename T2, size_t N>
@@ -90,4 +95,5 @@ int main(int argc, char *argv[]) {
     benchmark_ntt_cast<unsigned int, float, N>(0, 100);
     benchmark_ntt_cast<float, bool, N>(-100.f, 100.f);
     benchmark_ntt_cast<bool, float, N>(0, 1);
+    benchmark_ntt_cast<float, float_e4m3_t, N>(0, 1);
 }
