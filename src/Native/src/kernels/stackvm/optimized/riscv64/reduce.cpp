@@ -29,7 +29,8 @@ using namespace nncase::kernels::stackvm::optimized;
 
 #if __riscv_vector
 
-result<void> reduce_max_impl(const float *in, float *out, size_t outter_size, size_t inner_size, size_t reduce_size){
+result<void> reduce_max_impl(const float *in, float *out, size_t outter_size,
+                             size_t inner_size, size_t reduce_size) {
     for (size_t i = 0; i < outter_size; ++i) {
         size_t outer_offset = i * reduce_size * inner_size;
         for (size_t j = 0; j < inner_size; ++j) {
@@ -38,7 +39,7 @@ result<void> reduce_max_impl(const float *in, float *out, size_t outter_size, si
             size_t remaining = reduce_size;
 
             // set vlen and convert scaler to vector
-            if(0) //m1
+            if (0) // m1
             {
                 size_t vl = vsetvl_e32m1(remaining);
                 vfloat32m1_t v_max = vfmv_v_f_f32m1(max_val, vl);
@@ -65,8 +66,7 @@ result<void> reduce_max_impl(const float *in, float *out, size_t outter_size, si
                         vfredmax_vs_f32m1_f32m1(v_max, v_max, v_max, vl);
                     max_val = vfmv_f_s_f32m1_f32(reduced_max_);
                 }
-            }
-            else // m4
+            } else // m4
             {
                 // set vlen and convert scaler to vector
                 size_t vl = vsetvl_e32m4(remaining);
@@ -102,7 +102,8 @@ result<void> reduce_max_impl(const float *in, float *out, size_t outter_size, si
     return ok();
 }
 
-result<void> reduce_min_impl(const float *in, float *out, size_t outter_size, size_t inner_size, size_t reduce_size){
+result<void> reduce_min_impl(const float *in, float *out, size_t outter_size,
+                             size_t inner_size, size_t reduce_size) {
     for (size_t i = 0; i < outter_size; ++i) {
         size_t outer_offset = i * reduce_size * inner_size;
         for (size_t j = 0; j < inner_size; ++j) {
@@ -143,7 +144,8 @@ result<void> reduce_min_impl(const float *in, float *out, size_t outter_size, si
     return ok();
 }
 
-result<void> reduce_sum_impl(const float *in, float *out, size_t outter_size, size_t inner_size, size_t reduce_size){
+result<void> reduce_sum_impl(const float *in, float *out, size_t outter_size,
+                             size_t inner_size, size_t reduce_size) {
     for (size_t i = 0; i < outter_size; ++i) {
         size_t outer_offset = i * reduce_size * inner_size;
         for (size_t j = 0; j < inner_size; ++j) {
@@ -185,7 +187,7 @@ result<void> reduce_sum_impl(const float *in, float *out, size_t outter_size, si
 }
 
 result<void> reduce_prod_impl(const float *in, float *out, size_t outter_size,
-                             size_t inner_size, size_t reduce_size) {
+                              size_t inner_size, size_t reduce_size) {
     for (size_t i = 0; i < outter_size; ++i) {
         size_t outer_offset = i * reduce_size * inner_size;
         for (size_t j = 0; j < inner_size; ++j) {
@@ -217,8 +219,8 @@ result<void> reduce_prod_impl(const float *in, float *out, size_t outter_size,
                 vfloat32m4_t v_in = vle32_v_f32m4(&in[base_index], vl);
                 v_acc = vfmul_vv_f32m4(v_acc, v_in, vl);
                 for (size_t i = 0; i < vl; i++) {
-                acc *= vfmv_f_s_f32m4_f32(
-                    vslidedown_vx_f32m4(vundefined_f32m4(), v_acc, i, vl));
+                    acc *= vfmv_f_s_f32m4_f32(
+                        vslidedown_vx_f32m4(vundefined_f32m4(), v_acc, i, vl));
                 }
             }
 
@@ -232,41 +234,50 @@ result<void> reduce_prod_impl(const float *in, float *out, size_t outter_size,
 
 result<void> optimized::reduce(
     NNCASE_UNUSED typecode_t typecode, nncase::runtime::stackvm::reduce_op_t op,
-    NNCASE_UNUSED  const gsl::byte *init_value, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> axis,
-    NNCASE_UNUSED  gsl::span<const size_t> in_strides, NNCASE_UNUSED gsl::span<const size_t> out_strides,
-    NNCASE_UNUSED  bool keep_dims, NNCASE_UNUSED  kernel_context &context) noexcept {
+    NNCASE_UNUSED const gsl::byte *init_value, const gsl::byte *input,
+    gsl::byte *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> axis,
+    NNCASE_UNUSED gsl::span<const size_t> in_strides,
+    NNCASE_UNUSED gsl::span<const size_t> out_strides,
+    NNCASE_UNUSED bool keep_dims,
+    NNCASE_UNUSED kernel_context &context) noexcept {
 #if __riscv_vector
     // The type of axis is 'size_t'. It is real axis.
     // 计算inner_size、outter_size
     size_t inner_size = 1, outter_size = 1;
     size_t reduce_size = in_shape[axis[0]];
 
-    for (size_t i = 0; i < axis[0]; i++) { outter_size *= in_shape[i]; }
+    for (size_t i = 0; i < axis[0]; i++) {
+        outter_size *= in_shape[i];
+    }
 
-    for (size_t i = axis[0]+1; i < in_shape.size(); i++) { inner_size *= in_shape[i]; }
+    for (size_t i = axis[0] + 1; i < in_shape.size(); i++) {
+        inner_size *= in_shape[i];
+    }
 
-    const float* in = reinterpret_cast<const float*>(input);
-    float* out = reinterpret_cast<float*>(output);
-    if (axis.size() == 1 && axis[0] == in_shape.size() - 1)
-    {
-        switch(op)
-        {
+    const float *in = reinterpret_cast<const float *>(input);
+    float *out = reinterpret_cast<float *>(output);
+    if (axis.size() == 1 && axis[0] == in_shape.size() - 1) {
+        switch (op) {
         case reduce_op_t::max:
-            return reduce_max_impl(in, out, outter_size, inner_size, reduce_size);
+            return reduce_max_impl(in, out, outter_size, inner_size,
+                                   reduce_size);
         case reduce_op_t::min:
-            return reduce_min_impl(in, out, outter_size, inner_size, reduce_size);
+            return reduce_min_impl(in, out, outter_size, inner_size,
+                                   reduce_size);
         case reduce_op_t::sum:
-            return reduce_sum_impl(in, out, outter_size, inner_size, reduce_size);
+            return reduce_sum_impl(in, out, outter_size, inner_size,
+                                   reduce_size);
         case reduce_op_t::mean:
-            reduce_sum_impl(in, out, outter_size, inner_size, reduce_size).unwrap();
-            for(size_t i = 0; i < outter_size; i++)
-            {
+            reduce_sum_impl(in, out, outter_size, inner_size, reduce_size)
+                .unwrap();
+            for (size_t i = 0; i < outter_size; i++) {
                 out[i] *= 1.0f / reduce_size;
             }
             return ok();
         case reduce_op_t::prod:
-            return reduce_prod_impl(in, out, outter_size, inner_size, reduce_size);
+            return reduce_prod_impl(in, out, outter_size, inner_size,
+                                    reduce_size);
         default:
             break;
         }

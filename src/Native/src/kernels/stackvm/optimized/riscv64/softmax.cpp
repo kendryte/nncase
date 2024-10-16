@@ -253,7 +253,7 @@ result<void> optimized_softmax_impl(const T *input, T *output,
             {
                 size_t vl = vsetvl_e32m4(n);
                 vfloat32m4_t s = vfmv_v_f_f32m4(max, vl);
-                while(n / vl > 0){
+                while (n / vl > 0) {
                     vfloat32m4_t v = vle32_v_f32m4(ptr_input_vl, vl);
                     s = vfmax_vv_f32m4(s, v, vl);
 
@@ -265,7 +265,7 @@ result<void> optimized_softmax_impl(const T *input, T *output,
                     vundefined_f32m1(), s, vfmv_v_f_f32m1(max, vl), vl);
                 max = vfmv_f_s_f32m1_f32(reduced_max_);
 
-                if(n > 0){
+                if (n > 0) {
                     vl = vsetvl_e32m4(n);
                     s = vfmv_v_f_f32m4(max, vl);
                     vfloat32m4_t v = vle32_v_f32m4(ptr_input_vl, vl);
@@ -306,7 +306,8 @@ result<void> optimized_softmax_impl(const T *input, T *output,
                     auto v_out = exp_ps(
                         vfmul_vf_f32m4(vfsub_vf_f32m4(v_in, max, vl), beta, vl),
                         vl);
-                    reduce_sum_ = vfredosum_vs_f32m4_f32m1(vundefined_f32m1(), v_out,
+                    reduce_sum_ =
+                        vfredosum_vs_f32m4_f32m1(vundefined_f32m1(), v_out,
                                                  vfmv_v_f_f32m1(0.0f, vl), vl);
 
                     vse32_v_f32m4(ptr_output_vl, v_out, vl);
@@ -320,14 +321,14 @@ result<void> optimized_softmax_impl(const T *input, T *output,
             sum = 1.0f / sum;
             {
                 auto vl = vsetvl_e32m4(n);
-                while (n/vl>0) {
+                while (n / vl > 0) {
                     auto v_out = vle32_v_f32m4(ptr_output_vl, vl);
                     v_out = vfmul_vf_f32m4(v_out, sum, vl);
                     vse32_v_f32m4(ptr_output_vl, v_out, vl);
                     ptr_output_vl += vl;
                     n -= vl;
                 }
-                if (n > 0){
+                if (n > 0) {
                     vl = vsetvl_e32m4(n);
                     auto v_out = vle32_v_f32m4(ptr_output_vl, vl);
                     v_out = vfmul_vf_f32m4(v_out, sum, vl);
