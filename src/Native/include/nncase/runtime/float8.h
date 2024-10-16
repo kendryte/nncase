@@ -365,7 +365,10 @@ template <FloatEncoding T> struct alignas(1) float8_base {
 #if defined(__CUDA_ARCH111__)
         return reinterpret_cast<float const &>(f);
 #else
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuninitialized"
         return reinterpret_cast<float const &>(f);
+#pragma GCC diagnostic pop
         // float flt;
         // std::memcpy(&flt, &f, sizeof(flt));
         // return flt;
