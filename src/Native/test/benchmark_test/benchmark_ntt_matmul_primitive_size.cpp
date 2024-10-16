@@ -488,6 +488,10 @@ void matmul_primitive_analysis() {
 }
 
 int main() {
+#ifdef __riscv_vector
+    // Enable RVV
+    asm volatile("vsetivli	zero,4,e32,m1,ta,ma");
+#endif
 
     {
         const auto PackMode = nncase::ntt::ukernels::mamtul_pack_kind::pack_m;
