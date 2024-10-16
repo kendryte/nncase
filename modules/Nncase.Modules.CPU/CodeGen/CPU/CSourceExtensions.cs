@@ -25,6 +25,7 @@ internal static class CSourceExtensions
         { DataTypes.Float16, "half" },
         { DataTypes.Float32, "float" },
         { DataTypes.Float64, "double" },
+        { DataTypes.Float8E4M3, "float_e4m3_t" },
     };
 
     public static string ToC(this PrimType primType) =>
