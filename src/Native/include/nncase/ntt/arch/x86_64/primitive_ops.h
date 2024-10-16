@@ -189,6 +189,14 @@ template <> struct cast<ntt::vector<bool, 8>, ntt::vector<float, 8>> {
     }
 };
 
+// cast
+template <> struct cast<ntt::vector<float, 8>, ntt::vector<int, 8>> {
+    ntt::vector<int, 8>
+    operator()(const ntt::vector<float, 8> &v) const noexcept {
+        return _mm256_cvttps_epi32(v);
+    }
+};
+
 // ceil
 template <> struct ceil<ntt::vector<float, 8>> {
     ntt::vector<float, 8>
