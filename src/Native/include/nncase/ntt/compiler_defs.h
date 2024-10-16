@@ -20,3 +20,18 @@
 #else
 #define NTT_EMPTY_BASES
 #endif
+
+#ifdef _MSC_VER
+#define NTT_ASSUME(...)
+#define NTT_UNREACHABLE() __assume(0)
+#elif __GNUC__
+#define NTT_ASSUME(...)                                                        \
+    do {                                                                       \
+        if (!(__VA_ARGS__))                                                    \
+            __builtin_unreachable();                                           \
+    } while (0)
+#define NTT_UNREACHABLE() __builtin_unreachable()
+#else
+#define NTT_ASSUME(...) __builtin_assume(__VA_ARGS__)
+#define NTT_UNREACHABLE() __builtin_unreachable()
+#endif
