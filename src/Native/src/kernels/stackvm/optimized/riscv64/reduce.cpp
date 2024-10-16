@@ -27,18 +27,18 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 using namespace nncase::kernels::stackvm::optimized;
 
-// #if __riscv_vector
+#if __riscv_vector
 
 result<void> reduce_max_impl(const float *in, float *out, size_t outter_size, size_t inner_size, size_t reduce_size){
     for (size_t i = 0; i < outter_size; ++i) {
         size_t outer_offset = i * reduce_size * inner_size;
         for (size_t j = 0; j < inner_size; ++j) {
             size_t base_index = outer_offset + j;
-            float max_val = in[base_index];  // 初始化最大值为第一个元素
+            float max_val = in[base_index];
             size_t remaining = reduce_size;
 
             // set vlen and convert scaler to vector
-            if(0)
+            if(0) //m1
             {
                 size_t vl = vsetvl_e32m1(remaining);
                 vfloat32m1_t v_max = vfmv_v_f_f32m1(max_val, vl);
@@ -66,7 +66,7 @@ result<void> reduce_max_impl(const float *in, float *out, size_t outter_size, si
                     max_val = vfmv_f_s_f32m1_f32(reduced_max_);
                 }
             }
-            else
+            else // m4
             {
                 // set vlen and convert scaler to vector
                 size_t vl = vsetvl_e32m4(remaining);
@@ -85,8 +85,6 @@ result<void> reduce_max_impl(const float *in, float *out, size_t outter_size, si
                 max_val = vfmv_f_s_f32m1_f32(reduced_max_);
 
                 // process the remaining elements
-
-                // 处理剩余的元素
                 if (remaining > 0) {
                     vl = vsetvl_e32m4(remaining);
                     v_max = vfmv_v_f_f32m4(max_val, vl);
@@ -98,7 +96,7 @@ result<void> reduce_max_impl(const float *in, float *out, size_t outter_size, si
                     max_val = vfmv_f_s_f32m1_f32(reduced_max_);
                 }
             }
-            out[i * inner_size + j] = max_val;  // 存储结果
+            out[i * inner_size + j] = max_val;
         }
     }
     return ok();
@@ -109,38 +107,128 @@ result<void> reduce_min_impl(const float *in, float *out, size_t outter_size, si
         size_t outer_offset = i * reduce_size * inner_size;
         for (size_t j = 0; j < inner_size; ++j) {
             size_t base_index = outer_offset + j;
-            float min_val = in[base_index];  // 初始化最大值为第一个元素
+            float min_val = in[base_index];
             size_t remaining = reduce_size;
 
             // set vlen and convert scaler to vector
-            size_t vl = vsetvl_e32m1(remaining);
-            vfloat32m1_t v_min = vfmv_v_f_f32m1(min_val, vl);
+            size_t vl = vsetvl_e32m4(remaining);
+            vfloat32m4_t v_min = vfmv_v_f_f32m4(min_val, vl);
 
             // process full registers data.
             while (remaining / vl > 0) {
-                vfloat32m1_t v_in = vle32_v_f32m1(&in[base_index], vl);
-                v_min = vfmin_vv_f32m1(v_min, v_in, vl);
+                vfloat32m4_t v_in = vle32_v_f32m4(&in[base_index], vl);
+                v_min = vfmin_vv_f32m4(v_min, v_in, vl);
 
                 remaining -= vl;
                 base_index += vl;
             }
-            vfloat32m1_t reduced_min_ = vfredmin_vs_f32m1_f32m1(v_min, v_min, v_min, vl);
+            vfloat32m1_t reduced_min_ = vfredmin_vs_f32m4_f32m1(
+                vundefined_f32m1(), v_min, vfmv_v_f_f32m1(min_val, vl), vl);
             min_val = vfmv_f_s_f32m1_f32(reduced_min_);
 
             // process the remaining elements
-            vl = vsetvl_e32m1(remaining);
-            v_min = vfmv_v_f_f32m1(min_val, vl);
-            vfloat32m1_t v_in = vle32_v_f32m1(&in[base_index], vl);
-            v_min = vfmin_vv_f32m1(v_min, v_in, vl);
-            reduced_min_ = vfredmin_vs_f32m1_f32m1(v_min, v_min, v_min, vl);
-            min_val = vfmv_f_s_f32m1_f32(reduced_min_);
+            if (remaining > 0) {
+                vl = vsetvl_e32m4(remaining);
+                v_min = vfmv_v_f_f32m4(min_val, vl);
+                vfloat32m4_t v_in = vle32_v_f32m4(&in[base_index], vl);
+                v_min = vfmin_vv_f32m4(v_min, v_in, vl);
+                reduced_min_ = vfredmin_vs_f32m4_f32m1(
+                    vundefined_f32m1(), v_min, vfmv_v_f_f32m1(min_val, vl), vl);
+                min_val = vfmv_f_s_f32m1_f32(reduced_min_);
+            }
 
-            out[i * inner_size + j] = min_val;  // 存储结果
+            out[i * inner_size + j] = min_val;
         }
     }
     return ok();
 }
-// #endif
+
+result<void> reduce_sum_impl(const float *in, float *out, size_t outter_size, size_t inner_size, size_t reduce_size){
+    for (size_t i = 0; i < outter_size; ++i) {
+        size_t outer_offset = i * reduce_size * inner_size;
+        for (size_t j = 0; j < inner_size; ++j) {
+            size_t base_index = outer_offset + j;
+            float sum = 0.0f;
+            size_t remaining = reduce_size;
+
+            // set vlen and convert scaler to vector
+            size_t vl = vsetvl_e32m4(remaining);
+            vfloat32m4_t v_sum = vfmv_v_f_f32m4(0.0f, vl);
+
+            // process full registers data.
+            while (remaining / vl > 0) {
+                vfloat32m4_t v_in = vle32_v_f32m4(&in[base_index], vl);
+                v_sum = vfadd_vv_f32m4(v_sum, v_in, vl);
+
+                remaining -= vl;
+                base_index += vl;
+            }
+            vfloat32m1_t reduced_sum_ = vfredosum_vs_f32m4_f32m1(
+                vundefined_f32m1(), v_sum, vfmv_v_f_f32m1(0.0f, vl), vl);
+            sum += vfmv_f_s_f32m1_f32(reduced_sum_);
+
+            // process the remaining elements
+            if (remaining > 0) {
+                vl = vsetvl_e32m4(remaining);
+                v_sum = vfmv_v_f_f32m4(0.0f, vl);
+                vfloat32m4_t v_in = vle32_v_f32m4(&in[base_index], vl);
+                v_sum = vfadd_vv_f32m4(v_sum, v_in, vl);
+                reduced_sum_ = vfredosum_vs_f32m4_f32m1(
+                    vundefined_f32m1(), v_sum, vfmv_v_f_f32m1(0.0f, vl), vl);
+                sum += vfmv_f_s_f32m1_f32(reduced_sum_);
+            }
+
+            out[i * inner_size + j] = sum;
+        }
+    }
+    return ok();
+}
+
+result<void> reduce_prod_impl(const float *in, float *out, size_t outter_size,
+                             size_t inner_size, size_t reduce_size) {
+    for (size_t i = 0; i < outter_size; ++i) {
+        size_t outer_offset = i * reduce_size * inner_size;
+        for (size_t j = 0; j < inner_size; ++j) {
+            size_t base_index = outer_offset + j;
+            float acc = 1.0f;
+            size_t remaining = reduce_size;
+
+            // set vlen and convert scaler to vector
+            size_t vl = vsetvl_e32m4(remaining);
+            vfloat32m4_t v_acc = vfmv_v_f_f32m4(1.0f, vl);
+
+            // process full registers data.
+            while (remaining / vl > 0) {
+                vfloat32m4_t v_in = vle32_v_f32m4(&in[base_index], vl);
+                v_acc = vfmul_vv_f32m4(v_acc, v_in, vl);
+
+                remaining -= vl;
+                base_index += vl;
+            }
+            for (size_t i = 0; i < vl; i++) {
+                acc *= vfmv_f_s_f32m4_f32(
+                    vslidedown_vx_f32m4(vundefined_f32m4(), v_acc, i, vl));
+            }
+
+            // process the remaining elements
+            if (remaining > 0) {
+                vl = vsetvl_e32m4(remaining);
+                v_acc = vfmv_v_f_f32m4(1.0f, vl);
+                vfloat32m4_t v_in = vle32_v_f32m4(&in[base_index], vl);
+                v_acc = vfmul_vv_f32m4(v_acc, v_in, vl);
+                for (size_t i = 0; i < vl; i++) {
+                acc *= vfmv_f_s_f32m4_f32(
+                    vslidedown_vx_f32m4(vundefined_f32m4(), v_acc, i, vl));
+                }
+            }
+
+            out[i * inner_size + j] = acc;
+        }
+    }
+    return ok();
+}
+
+#endif
 
 result<void> optimized::reduce(
     NNCASE_UNUSED typecode_t typecode, nncase::runtime::stackvm::reduce_op_t op,
@@ -160,7 +248,7 @@ result<void> optimized::reduce(
 
     const float* in = reinterpret_cast<const float*>(input);
     float* out = reinterpret_cast<float*>(output);
-    if (axis.size() == 1)
+    if (axis.size() == 1 && axis[0] == in_shape.size() - 1)
     {
         switch(op)
         {
@@ -168,14 +256,23 @@ result<void> optimized::reduce(
             return reduce_max_impl(in, out, outter_size, inner_size, reduce_size);
         case reduce_op_t::min:
             return reduce_min_impl(in, out, outter_size, inner_size, reduce_size);
-            break;
         case reduce_op_t::sum:
+            return reduce_sum_impl(in, out, outter_size, inner_size, reduce_size);
         case reduce_op_t::mean:
+            reduce_sum_impl(in, out, outter_size, inner_size, reduce_size).unwrap();
+            for(size_t i = 0; i < outter_size; i++)
+            {
+                out[i] *= 1.0f / reduce_size;
+            }
+            return ok();
         case reduce_op_t::prod:
+            return reduce_prod_impl(in, out, outter_size, inner_size, reduce_size);
         default:
             break;
         }
     }
+    // TODO: implement non-last axis reduce
+    // TODO: implement multi-axis reduce
 
 #endif
     return stackvm::reference::reduce(typecode, op, init_value, input, output,

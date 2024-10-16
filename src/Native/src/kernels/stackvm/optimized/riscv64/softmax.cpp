@@ -282,33 +282,35 @@ result<void> optimized_softmax_impl(const T *input, T *output,
             n = axis_dim;
             {
                 auto vl = vsetvl_e32m4(n);
-                auto s = vfmv_s_f_f32m1(vundefined_f32m1(), sum, vl);
+                auto s = vfmv_v_f_f32m4(0.0f, vl);
                 while (n / vl > 0) {
 
                     auto v_in = vle32_v_f32m4(ptr_input_vl, vl);
                     auto v_out = exp_ps(
                         vfmul_vf_f32m4(vfsub_vf_f32m4(v_in, max, vl), beta, vl),
                         vl);
-                    s = vfredosum_vs_f32m4_f32m1(s, v_out, s, vl);
-
+                    s = vfadd_vv_f32m4(s, v_out, vl);
                     vse32_v_f32m4(ptr_output_vl, v_out, vl);
 
                     ptr_input_vl += vl;
                     ptr_output_vl += vl;
                     n -= vl;
                 }
-                sum = vfmv_f_s_f32m1_f32(s);
+                vfloat32m1_t reduce_sum_ = vfredosum_vs_f32m4_f32m1(
+                    vundefined_f32m1(), s, vfmv_v_f_f32m1(0.0f, vl), vl);
+                sum += vfmv_f_s_f32m1_f32(reduce_sum_);
+
                 if (n > 0) {
                     vl = vsetvl_e32m4(n);
-                    s = vfmv_s_f_f32m1(vundefined_f32m1(), sum, vl);
                     auto v_in = vle32_v_f32m4(ptr_input_vl, vl);
                     auto v_out = exp_ps(
                         vfmul_vf_f32m4(vfsub_vf_f32m4(v_in, max, vl), beta, vl),
                         vl);
-                    s = vfredosum_vs_f32m4_f32m1(s, v_out, s, vl);
+                    reduce_sum_ = vfredosum_vs_f32m4_f32m1(vundefined_f32m1(), v_out,
+                                                 vfmv_v_f_f32m1(0.0f, vl), vl);
 
                     vse32_v_f32m4(ptr_output_vl, v_out, vl);
-                    sum = vfmv_f_s_f32m1_f32(s);
+                    sum += vfmv_f_s_f32m1_f32(reduce_sum_);
                 }
             }
             // div
