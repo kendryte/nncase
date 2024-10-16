@@ -238,7 +238,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             feedDict.Add((Var)rhs, Value.FromTensor(rhsTensor));
         }
 
-        var rule = new Passes.Rules.CPU.PackMatMul(2, Lane);
+        var rule = new Passes.Rules.CPU.PackMatMul(2, Lane, transB: true);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
 
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
