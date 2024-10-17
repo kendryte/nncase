@@ -32,6 +32,7 @@ internal class CoreModule : IApplicationPart
         registrator.Register<PrimType, Float64Type>(reuse: Reuse.Singleton);
         registrator.Register<PrimType, BFloat16Type>(reuse: Reuse.Singleton);
         registrator.Register<PrimType, Float8E4M3Type>(reuse: Reuse.Singleton);
+        registrator.Register<PrimType, Float8E5M2Type>(reuse: Reuse.Singleton);
 
         // Value types
         registrator.Register<ValueType, QuantParamType>(reuse: Reuse.Singleton);

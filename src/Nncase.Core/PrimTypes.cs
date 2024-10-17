@@ -274,6 +274,30 @@ public sealed record Float8E4M3Type : PrimType
 }
 
 /// <summary>
+/// Prim type of <see cref="byte"/>.
+/// </summary>
+public sealed record Float8E5M2Type : PrimType
+{
+    /// <inheritdoc/>
+    public override PrimTypeAttributes Attributes => PrimTypeAttributes.IsFloat;
+
+    /// <inheritdoc/>
+    public override string FullName => "Float8E5M2";
+
+    /// <inheritdoc/>
+    public override string ShortName => "F8_E5M2";
+
+    /// <inheritdoc/>
+    public override Type CLRType => typeof(Float8E5M2);
+
+    /// <inheritdoc/>
+    public unsafe override int SizeInBytes => sizeof(Float8E5M2);
+
+    /// <inheritdoc/>
+    public override Runtime.TypeCode TypeCode => Runtime.TypeCode.Float8E5M2;
+}
+
+/// <summary>
 /// Prim type of <see cref="Half"/>.
 /// </summary>
 public sealed record Float16Type : PrimType

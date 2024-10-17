@@ -12,7 +12,10 @@ namespace Nncase.Converters;
 internal class Float8Converters :
     ISpanConverter<Float8E4M3, Half>,
     ISpanConverter<Float8E4M3, float>,
-    ISpanConverter<Float8E4M3, Float8E4M3>
+    ISpanConverter<Float8E4M3, Float8E4M3>,
+    ISpanConverter<Float8E5M2, Half>,
+    ISpanConverter<Float8E5M2, float>,
+    ISpanConverter<Float8E5M2, Float8E5M2>
 {
     public void ConvertTo(ReadOnlySpan<Float8E4M3> source, Span<Half> dest, CastMode castMode)
     {
@@ -51,6 +54,47 @@ internal class Float8Converters :
     }
 
     public void ConvertTo(ReadOnlySpan<Float8E4M3> source, Span<Float8E4M3> dest, CastMode castMode)
+    {
+        source.CopyTo(dest);
+    }
+
+    public void ConvertTo(ReadOnlySpan<Float8E5M2> source, Span<Half> dest, CastMode castMode)
+    {
+        if (castMode == CastMode.Exact)
+        {
+            throw new InvalidCastException();
+        }
+
+        if (dest.Length < source.Length)
+        {
+            throw new ArgumentException("Dest buffer is not sufficient.");
+        }
+
+        for (int i = 0; i < source.Length; i++)
+        {
+            dest[i] = (Half)source[i];
+        }
+    }
+
+    public void ConvertTo(ReadOnlySpan<Float8E5M2> source, Span<float> dest, CastMode castMode)
+    {
+        if (castMode == CastMode.Exact)
+        {
+            throw new InvalidCastException();
+        }
+
+        if (dest.Length < source.Length)
+        {
+            throw new ArgumentException("Dest buffer is not sufficient.");
+        }
+
+        for (int i = 0; i < source.Length; i++)
+        {
+            dest[i] = (float)source[i];
+        }
+    }
+
+    public void ConvertTo(ReadOnlySpan<Float8E5M2> source, Span<Float8E5M2> dest, CastMode castMode)
     {
         source.CopyTo(dest);
     }

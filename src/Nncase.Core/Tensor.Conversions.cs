@@ -90,6 +90,12 @@ public partial class Tensor
     public static implicit operator Tensor(Float8E4M3 value) => FromScalar(value);
 
     /// <summary>
+    /// Create Tensor from a <see cref="Float8E5M2"/>.
+    /// </summary>
+    /// <param name="value">Value.</param>
+    public static implicit operator Tensor(Float8E5M2 value) => FromScalar(value);
+
+    /// <summary>
     /// Create Tensor from a <see cref="bool"/>.
     /// </summary>
     /// <param name="value">Value.</param>
@@ -172,6 +178,12 @@ public partial class Tensor
     /// </summary>
     /// <param name="value">Value.</param>
     public static implicit operator Tensor(Memory<Float8E4M3> value) => From(value);
+
+    /// <summary>
+    /// Create Tensor from a memory of <see cref="Float8E5M2"/>.
+    /// </summary>
+    /// <param name="value">Value.</param>
+    public static implicit operator Tensor(Memory<Float8E5M2> value) => From(value);
 
     /// <summary>
     /// Create Tensor from a memory of <see cref="bool"/>.
