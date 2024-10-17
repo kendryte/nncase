@@ -26,19 +26,29 @@ using namespace nncase::kernels::stackvm::optimized;
 
 namespace {
 template <size_t Dims, size_t CurDim = 0, class Callable = DefaultCallable>
-void _slice_contiguous_dim_copy(const axes_t &begins,
-                                NNCASE_UNUSED const axes_t &ends,
-                                Callable &&line_copy, dims_t &in_index,
-                                std::false_type) noexcept {
+#if defined __riscv
+void __attribute__((optimize("O2")))
+#else
+void
+#endif
+_slice_contiguous_dim_copy(const axes_t &begins,
+                           NNCASE_UNUSED const axes_t &ends,
+                           Callable &&line_copy, dims_t &in_index,
+                           std::false_type) noexcept {
     in_index[Dims] = begins[Dims];
     line_copy();
 }
 
 template <size_t Dims, size_t CurDim = 0, class Callable = DefaultCallable>
-void _slice_contiguous_dim_copy(const axes_t &begins,
-                                NNCASE_UNUSED const axes_t &ends,
-                                Callable &&line_copy, dims_t &in_index,
-                                std::true_type) noexcept {
+#if defined __riscv
+void __attribute__((optimize("O2")))
+#else
+void
+#endif
+_slice_contiguous_dim_copy(const axes_t &begins,
+                           NNCASE_UNUSED const axes_t &ends,
+                           Callable &&line_copy, dims_t &in_index,
+                           std::true_type) noexcept {
     for (size_t i = begins[CurDim]; i < static_cast<size_t>(ends[CurDim]);
          ++i) {
         in_index[CurDim] = i;
@@ -95,19 +105,27 @@ result<void> slice_contiguous_impl(
 }
 
 template <size_t Dims, size_t CurDim = 0, class Callable = DefaultCallable>
-void _slice_dim_copy(NNCASE_UNUSED const axes_t &begins,
-                     NNCASE_UNUSED const axes_t &ends,
-                     NNCASE_UNUSED const axes_t &strides, Callable &&line_copy,
-                     dims_t &in_index, dims_t &out_index,
-                     std::false_type) noexcept {
+#if defined __riscv
+void __attribute__((optimize("O2")))
+#else
+void
+#endif
+_slice_dim_copy(NNCASE_UNUSED const axes_t &begins,
+                NNCASE_UNUSED const axes_t &ends,
+                NNCASE_UNUSED const axes_t &strides, Callable &&line_copy,
+                dims_t &in_index, dims_t &out_index, std::false_type) noexcept {
     line_copy(in_index, out_index);
 }
 
 template <size_t Dims, size_t CurDim = 0, class Callable = DefaultCallable>
-void _slice_dim_copy(const axes_t &begins, const axes_t &ends,
-                     const axes_t &strides, Callable &&line_copy,
-                     dims_t &in_index, dims_t &out_index,
-                     std::true_type) noexcept {
+#if defined __riscv
+void __attribute__((optimize("O2")))
+#else
+void
+#endif
+_slice_dim_copy(const axes_t &begins, const axes_t &ends, const axes_t &strides,
+                Callable &&line_copy, dims_t &in_index, dims_t &out_index,
+                std::true_type) noexcept {
     out_index[CurDim] = 0;
     for (size_t i = begins[CurDim]; i < static_cast<size_t>(ends[CurDim]);
          i += strides[CurDim]) {

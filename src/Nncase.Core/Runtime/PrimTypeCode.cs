@@ -88,6 +88,18 @@ public enum PrimTypeCode : byte
     BFloat16,
 
     /// <summary>
+    /// Float8E4M3.
+    /// </summary>
+    [Display(Name = "f8e4m3")]
+    Float8E4M3,
+
+    /// <summary>
+    /// Float8E4M3.
+    /// </summary>
+    [Display(Name = "f8e5m2")]
+    Float8E5M2,
+
+    /// <summary>
     /// Boolean.
     /// </summary>
     [Display(Name = "bool")]
@@ -122,6 +134,8 @@ public static class PrimTypeCodes
         { DataTypes.Int32, PrimTypeCode.Int32 },
         { DataTypes.Int64, PrimTypeCode.Int64 },
         { DataTypes.BFloat16, PrimTypeCode.BFloat16 },
+        { DataTypes.Float8E4M3, PrimTypeCode.Float8E4M3 },
+        { DataTypes.Float8E5M2, PrimTypeCode.Float8E5M2 },
         { DataTypes.Float16, PrimTypeCode.Float16 },
         { DataTypes.Float32, PrimTypeCode.Float32 },
         { DataTypes.Float64, PrimTypeCode.Float64 },
