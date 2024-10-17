@@ -53,7 +53,6 @@ public struct Float8E4M3 : IEquatable<Float8E4M3>, IComparable<Float8E4M3>
         const int FP8_NUM_EXPONENT_BITS = IS_E4M3 ? 4 : 5;
         const int FP8_NUM_MANTISSA_BITS = IS_E4M3 ? 3 : 2;
         const int FP8_EXPONENT_BIAS = IS_E4M3 ? 7 : 15;
-        const int FP8_MAX_EXPONENT = IS_E4M3 ? 7 : 15;
         const byte FP8_EXPONENT_MASK = (1 << FP8_NUM_EXPONENT_BITS) - 1;
         const byte FP8_MANTISSA_MASK = (1 << FP8_NUM_MANTISSA_BITS) - 1;
 
@@ -65,12 +64,13 @@ public struct Float8E4M3 : IEquatable<Float8E4M3>, IComparable<Float8E4M3>
         int mantissa = f8 & FP8_MANTISSA_MASK;
         uint f = (uint)(sign << (FP32_NUM_BITS - 1));
 
+        int fP8_MAX_EXPONENT;
         if (IS_E4M3 && exp == 15 && mantissa == 0x7)
         {
             // Handle special case for NaN in E4M3 format
             f = kF32_NaN;
         }
-        else if (exp > 0 && (IS_E4M3 || exp < (FP8_MAX_EXPONENT + FP8_EXPONENT_BIAS + 1)))
+        else if (exp > 0 && (IS_E4M3 || exp < (fP8_MAX_EXPONENT + FP8_EXPONENT_BIAS + 1)))
         {
             // Normal case
             exp += FP32_EXPONENT_BIAS - FP8_EXPONENT_BIAS;
