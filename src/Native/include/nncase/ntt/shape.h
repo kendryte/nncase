@@ -81,7 +81,9 @@ struct fixed_shape : detail::fixed_dims_base<Dims...> {
         using type = fixed_shape<I, Dims...>;
     };
 
-    template <size_t I> struct append { using type = fixed_shape<Dims..., I>; };
+    template <size_t I> struct append {
+        using type = fixed_shape<Dims..., I>;
+    };
 
     static constexpr size_t length() noexcept { return (Dims * ... * 1); }
 };
@@ -313,6 +315,18 @@ constexpr size_t linear_offset(const Index &index,
     return offset;
 }
 
+template <class Strides>
+ranked_shape<Strides::rank()> unravel_index(const size_t offset,
+                                            const Strides &strides) noexcept {
+    size_t remain = offset;
+    ranked_shape<Strides::rank()> index;
+    for (size_t i = 0; i < Strides::rank(); i++) {
+        index[i] = remain / strides[i];
+        remain = remain % strides[i];
+    }
+    return index;
+}
+
 template <class Shape, class Strides>
 constexpr size_t linear_size(const Shape &shape,
                              const Strides &strides) noexcept {
@@ -328,6 +342,13 @@ constexpr size_t linear_size(const Shape &shape,
     return size;
 }
 
+/**
+ * @brief calculate the number of contigous dimensions.
+ *
+ * @param shape fixed/ranked
+ * @param strides fixed/ranked
+ * @return constexpr size_t contigous dimension numbers.
+ */
 template <class Shape, class Strides>
 constexpr size_t contiguous_dims(const Shape &shape, const Strides &strides) {
     auto def_strides = default_strides(shape);
@@ -340,10 +361,10 @@ constexpr size_t contiguous_dims(const Shape &shape, const Strides &strides) {
 }
 
 template <class Shape, class Strides>
-inline constexpr size_t max_size_v = (is_fixed_dims_v<Shape> &&
-                                      is_fixed_dims_v<Strides>)
-                                         ? linear_size(Shape{}, Strides{})
-                                         : std::dynamic_extent;
+inline constexpr size_t max_size_v =
+    (is_fixed_dims_v<Shape> && is_fixed_dims_v<Strides>)
+        ? linear_size(Shape{}, Strides{})
+        : std::dynamic_extent;
 
 template <class Index, class Shape>
 constexpr bool in_bound(const Index &index, const Shape &shape) {

@@ -359,14 +359,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 {
                     if (inType.NdSBP.Any(sbp => sbp is SBPPartialSum))
                     {
-                        if (boxing.IsReshape)
-                        {
-                            throw new NotSupportedException("");
-                        }
-                        else
-                        {
-                            _mainBody.Add(TIR.F.CPU.GatherReduceScatter(arguments[0], ret, inType, outType));
-                        }
+                        _mainBody.Add(TIR.F.CPU.GatherReduceScatter(arguments[0], ret, inType, outType));
                     }
                     else
                     {

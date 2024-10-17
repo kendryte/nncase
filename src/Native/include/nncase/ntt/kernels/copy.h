@@ -14,7 +14,6 @@
  */
 #pragma once
 #include "../apply.h"
-#include "../utility.h"
 
 namespace nncase::ntt {
 namespace copy_detail {
@@ -41,6 +40,34 @@ template <IsFixedTensor TA, IsFixedTensor TB> struct copy_impl<TA, TB> {
             apply(input_shape,
                   [&](auto index) { output(index) = input(index); });
         }
+    }
+};
+
+template <typename TA, typename TB> struct copy_impl;
+template <IsRankedTensor TA, IsRankedTensor TB> struct copy_impl<TA, TB> {
+    constexpr void operator()(const TA &input, TB &output) {
+        auto input_shape = input.shape();
+        auto input_strides = input.strides();
+        auto output_shape = output.shape();
+        auto output_strides = output.strides();
+        auto cdims_input = contiguous_dims(input_shape, input_strides);
+        auto cdims_output = contiguous_dims(output_shape, output_strides);
+        auto cdims = std::min(cdims_input, cdims_output);
+
+        auto domain = ntt::ranked_shape<TA::rank()>();
+        auto caxis = input_shape.rank() - cdims;
+        for (size_t i = 0; i < caxis; i++) {
+            domain[i] = input_shape[i];
+        }
+        for (size_t i = caxis; i < TA::rank(); i++) {
+            domain[i] = 1;
+        }
+
+        apply(domain, [&](auto index) {
+            memcpy(output.buffer().data() + linear_offset(index, output_strides),
+                   input.buffer().data() + linear_offset(index, input_strides),
+                   input_shape[caxis] * input_strides[caxis] * sizeof(typename TA::element_type));
+        });
     }
 };
 } // namespace copy_detail

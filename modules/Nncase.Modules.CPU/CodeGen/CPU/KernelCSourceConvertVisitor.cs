@@ -512,8 +512,8 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 
                     break;
                 case TIR.CPU.GatherReduceScatter grs:
-                    var reduceKind = "tac::reduce_kind::" + string.Join("_", grs.InType.NdSBP.Select((s, i) => (s is SBPPartialSum ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
-                    IndentScope.Writer.IndWrite($"tensor_reduce_sync<ops::add, {reduceKind}>({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
+                    var reduceKind = "tar::reduce_kind::" + string.Join("_", grs.InType.NdSBP.Select((s, i) => (s is SBPPartialSum ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
+                    IndentScope.Writer.IndWrite($"tac::tensor_reduce_sync<ops::add, {reduceKind}>({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
                     break;
                 default:
                     throw new NotSupportedException(kop.ToString());
