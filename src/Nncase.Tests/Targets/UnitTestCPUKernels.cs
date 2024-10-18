@@ -61,17 +61,17 @@ public sealed class UnitTestCPUKernels : TestClassBase
     public static int Rank => 2;
 
     [Theory]
-    [InlineData(new object[] { new[] { 32, 64 }, new[] { 64, 48 }, new[] { 48, 16 }, 0 })]
-    [InlineData(new object[] { new[] { 128, 256 }, new[] { 256, 384 }, new[] { 384, 512 }, 1 })]
-    [InlineData(new object[] { new[] { 1024, 2048 }, new[] { 2048, 1024 }, new[] { 1024, 3072 }, 2, true })]
-    public async Task TestTileFlowCase(int[] ashape, int[] bshape, int[] eshape, int count, bool packing = false)
+    [InlineData(new object[] { new[] { 32, 64 }, new[] { 64, 48 }, new[] { 48, 16 }, new[] { 1 }, 0 })]
+    [InlineData(new object[] { new[] { 128, 256 }, new[] { 256, 384 }, new[] { 384, 512 }, new[] { 1 }, 1 })]
+    [InlineData(new object[] { new[] { 1024, 2048 }, new[] { 2048, 1024 }, new[] { 1024, 3072 }, new[] { 1 }, 2, true })]
+    [InlineData(new object[] { new[] { 128, 256 }, new[] { 256, 384 }, new[] { 384, 512 }, new[] { 8 }, 3, false })]
+    public async Task TestTileFlowCase(int[] ashape, int[] bshape, int[] eshape, int[] hierarchy, int count, bool packing = false)
     {
-        if (CompileOptions.TargetOptions is not CpuTargetOptions options)
-        {
-            return;
-        }
-
-        options.Packing = packing;
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((int)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.Packing = packing;
         var a = new Var("a", new TensorType(DataTypes.Float32, ashape));
         var b = new Var("b", new TensorType(DataTypes.Float32, bshape));
         var c = IR.F.Tensors.MatMul(a, b);
@@ -357,10 +357,15 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData([new[] { 1, 384, 8192 }, new[] { 1, 384, 64, 128 }, 1, 0])]
-    [InlineData([new[] { 1, 8192, 384 }, new[] { 1, 64, 128, 384 }, 1, 1])]
-    public async Task TestReshape(int[] inshape, int[] outshape, int packRank, int number)
+    [InlineData([new[] { 1, 384, 8192 }, new[] { 1, 384, 64, 128 }, 1, new[] { 1 }, 0])]
+    [InlineData([new[] { 1, 8192, 384 }, new[] { 1, 64, 128, 384 }, 1, new[] { 1 }, 1])]
+    [InlineData([new[] { 1, 8192, 384 }, new[] { 1, 64, 128, 384 }, 1, new[] { 8 }, 2])]
+    public async Task TestPackReshape(int[] inshape, int[] outshape, int packRank, int[] hierarchy, int number)
     {
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((int)MathF.Pow(2, 30), hierarchy.Length).ToArray();
         var input = new Var("input", new TensorType(DataTypes.Float32, inshape));
         Expr pre;
         {

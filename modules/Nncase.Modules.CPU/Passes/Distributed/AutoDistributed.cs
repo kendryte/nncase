@@ -483,7 +483,12 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             {
                 // boxing for partialsum
                 var partialBoxings = Utilities.DistributedUtility.GetPartialCandidateNDSBPs(distType).
-                    Select(ndsbp => IR.F.CPU.Boxing(call, distType with { NdSBP = ndsbp })).ToArray();
+                    Select(ndsbp => (ndsbp, IR.F.CPU.Boxing(call, distType with { NdSBP = ndsbp }))).Select(p =>
+                    {
+                        var lastSbp = p.ndsbp;
+                        var reduced = p.Item2;
+                        return Utilities.DistributedUtility.GetLeafCandidateNDSBPs(distType.TensorType, distType.Placement).Where(ndsbp => lastSbp != ndsbp).Select(ndsbp => IR.F.CPU.Boxing(reduced, distType with { NdSBP = ndsbp })).ToArray();
+                    }).SelectMany(i => i).ToArray();
                 calls.AddRange(partialBoxings);
 
                 using var pinner = new ExprPinner(calls.ToArray());

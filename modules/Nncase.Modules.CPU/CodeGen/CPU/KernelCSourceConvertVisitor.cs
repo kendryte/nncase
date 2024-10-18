@@ -440,16 +440,6 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                 case TIR.CPU.Gather gather:
                     IndentScope.Writer.Write($"gather<{gather.Axis}>({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name});\n");
                     break;
-                case TIR.CPU.Reshape reshape:
-                    {
-                        IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Reshape.cshtml", new TypedKernelTemplateModel<TIR.CPU.Reshape>(reshape)
-                        {
-                            Arguments = args.Select(x => new KernelArgument { Symbol = Visit(x) }).ToArray(),
-                            Args = args.ToArray(),
-                        }).Result);
-                    }
-
-                    break;
                 case TIR.CPU.Swish swish:
                     if (swish.Beta != 1.0f)
                     {
@@ -515,6 +505,8 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     var reduceKind = "tar::reduce_kind::" + string.Join("_", grs.InType.NdSBP.Select((s, i) => (s is SBPPartialSum ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
                     IndentScope.Writer.IndWrite($"tac::tensor_reduce_sync<ops::add, {reduceKind}>({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
                     break;
+                case TIR.CPU.Reshape reshape:
+                    throw new NotSupportedException("the reshape should be eliminated");
                 default:
                     throw new NotSupportedException(kop.ToString());
             }

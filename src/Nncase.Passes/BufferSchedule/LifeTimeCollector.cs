@@ -70,6 +70,9 @@ public class LifeTimeUpdater : ExprFunctor<Unit, Unit, LifeTimeUpdater.Context>
     }
 }
 
+/// <summary>
+/// default BufferSizeCalculator. already support optimize memory move for get_item.
+/// </summary>
 public class BufferSizeCalculator : ExprFunctor<BufferSizeCalculator.Result, BufferSizeCalculator.Result>
 {
     public override Result DefaultVisitType(IRType type) => throw new NotSupportedException();
