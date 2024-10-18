@@ -59,6 +59,17 @@ public sealed partial class QuantizerMatmul : IRewriteRule
                 return QuantMatmulE5M2(inputA, scaleA, inputB, scaleB);
             }
         }
+        else if (markerA.MixQuantInfo!.MarkerQuantType == DataTypes.Int8 && markerB.MixQuantInfo!.MarkerQuantType == DataTypes.Int8)
+        {
+            if (inputA is TensorConst)
+            {
+                return QuantMatmulInt8(inputB, scaleB, inputA, scaleA);
+            }
+            else
+            {
+                return QuantMatmulInt8(inputA, scaleA, inputB, scaleB);
+            }
+        }
         else
         {
             return null;
@@ -102,6 +113,27 @@ public sealed partial class QuantizerMatmul : IRewriteRule
         }
 
         var qWeightsConst = Tensor.From<Float8E5M2>(qWeights, inputB.CheckedShape.ToValueArray());
+        var qMatmul = Nncase.IR.F.Math.MatMul(qInput, qWeightsConst);
+        qMatmul = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, qMatmul, deqScaleA * deqScaleB);
+        return qMatmul;
+    }
+
+    private Expr? QuantMatmulInt8(Expr inputA, TensorConst scaleA, Expr inputB, TensorConst scaleB)
+    {
+        var deqScaleA = scaleA.Value.ToScalar<float>();
+        var deqScaleB = scaleB.Value.ToScalar<float>();
+        var qScaleA = 1 / deqScaleA;
+        var qScaleB = 1 / deqScaleB;
+        var qInput = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, inputA, qScaleA);
+        qInput = Nncase.IR.F.Tensors.Cast(qInput, DataTypes.Int8);
+        var weights = ((TensorConst)inputB).Value.ToArray<float>();
+        var qWeights = new sbyte[weights.Length];
+        for (int i = 0; i < weights.Length; i++)
+        {
+            qWeights[i] = (sbyte)(weights[i] * qScaleB);
+        }
+
+        var qWeightsConst = Tensor.From<sbyte>(qWeights, inputB.CheckedShape.ToValueArray());
         var qMatmul = Nncase.IR.F.Math.MatMul(qInput, qWeightsConst);
         qMatmul = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, qMatmul, deqScaleA * deqScaleB);
         return qMatmul;

@@ -129,7 +129,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             return new InvalidType("MatMul lhs and rhs have not compatiable shape");
         }
 
-        if (lhsDType == DataTypes.Float8E4M3 || lhsDType == DataTypes.Float8E5M2)
+        if (lhsDType == DataTypes.Float8E4M3 || lhsDType == DataTypes.Float8E5M2 || lhsDType == DataTypes.Int8)
         {
             dtype = DataTypes.Float32;
         }
