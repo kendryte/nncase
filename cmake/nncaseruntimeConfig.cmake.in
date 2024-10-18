@@ -1,5 +1,4 @@
 include(${CMAKE_CURRENT_LIST_DIR}/nncaseruntimeTargets.cmake)
 
-if(NOT TARGET gsl-lite)
-    find_package(gsl-lite REQUIRED)
-endif()
+set(nncaseruntime_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/../../../include)
+set(nncaseruntime_LIBS ${CMAKE_CURRENT_LIST_DIR}/../../libNncase.Runtime.Native.a)
