@@ -548,6 +548,7 @@ int main() {
     asm volatile("vsetivli	zero,4,e32,m1,ta,ma");
 #endif
 
+#if NTT_VLEN <= 256
     {
         const auto PackMode = nncase::ntt::ukernels::mamtul_pack_kind::pack_m;
         matmul_primitive_analysis<PackMode>();
@@ -582,6 +583,7 @@ int main() {
         const auto PackMode = nncase::ntt::ukernels::mamtul_pack_kind::pack_mkn;
         matmul_primitive_analysis<PackMode>();
     }
+#endif
 
     return 0;
 }
