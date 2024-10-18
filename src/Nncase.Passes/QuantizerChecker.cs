@@ -9,6 +9,7 @@ using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Primitives;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.PatternMatch;
@@ -66,18 +67,61 @@ public class QuantizerChecker : FunctionPass, IRulesPass
         return null!;
     }
 
+    public float CalculateCosineSimilarity(float[] vectorA, float[] vectorB)
+    {
+        if (vectorA.Length != vectorB.Length)
+        {
+            Console.WriteLine("Array lengths are inconsistent and cosine similarity cannot be calculated!");
+            return 0;
+        }
+
+        float dotProduct = 0;
+        float magnitudeA = 0;
+        float magnitudeB = 0;
+
+        for (int i = 0; i < vectorA.Length; i++)
+        {
+            dotProduct += vectorA[i] * vectorB[i];
+            magnitudeA += vectorA[i] * vectorA[i];
+            magnitudeB += vectorB[i] * vectorB[i];
+        }
+
+        magnitudeA = (float)Math.Sqrt(magnitudeA);
+        magnitudeB = (float)Math.Sqrt(magnitudeB);
+
+        if (magnitudeA == 0 || magnitudeB == 0)
+        {
+            return 0; // 避免除以零
+        }
+
+        return dotProduct / (magnitudeA * magnitudeB);
+    }
+
     public async Task UpdateQuantConfigBySensitivity(BaseFunction function, RunPassContext options)
     {
-        CompilerServices.DumpIR(((Nncase.IR.Function)function).Body, "matmul", "/compiler3.0/dev3.0/nncase/tests_output/test_debug");
+        string dumpDir = Directory.GetCurrentDirectory() + "/tests_output/test_debug";
+        string cpuResultDir = dumpDir + "/cpu_result_0.txt";
+        CompilerServices.DumpIR(((Nncase.IR.Function)function).Body, "matmul", dumpDir);
         var samples = CompileSession.CompileOptions.QuantizeOptions.CalibrationDataset!.Samples;
         var first = await GetFirstElementAsync(samples);
-        _ = CompilerServices.Evaluate(((Nncase.IR.Function)function).Body, first).AsTensor().ToArray<float>();
+        var result = CompilerServices.Evaluate(((Nncase.IR.Function)function).Body, first).AsTensor().ToArray<float>();
+
+        float[] expected = File.ReadAllLines(cpuResultDir)
+                                  .Skip(1)
+                                  .Select(line => float.Parse(line.Trim()))
+                                  .ToArray();
+
+        float cosineSimilarity = CalculateCosineSimilarity(expected, result);
+        Console.ForegroundColor = ConsoleColor.Blue;
+        Console.WriteLine("Please Check the IR in:" + dumpDir);
+        Console.WriteLine($"Evaluate Cosine Similarity: {cosineSimilarity}");
+        Console.ResetColor();
     }
 
     /// <inheritdoc/>
-    protected override async Task<BaseFunction> RunCoreAsync(BaseFunction function, RunPassContext options)
+    protected override Task<BaseFunction> RunCoreAsync(BaseFunction function, RunPassContext options)
     {
-        await UpdateQuantConfigBySensitivity(function, options);
-        return null!;
+        _ = UpdateQuantConfigBySensitivity(function, options);
+        return Task.FromResult((BaseFunction)CompilerServices.Rewrite(function, Rules, options));
     }
 }
