@@ -1,5 +1,7 @@
 #include "../../include/nncase/ntt/ukernels.h"
 #include "ntt_test.h"
+#include <chrono>
+#include <ctime>
 #include <iomanip>
 #include <iostream>
 #include <nncase/ntt/ntt.h>
@@ -10,9 +12,14 @@
 
 using namespace nncase;
 
+static double get_time(struct timespec *start, struct timespec *end) {
+    return end->tv_sec - start->tv_sec + (end->tv_nsec - start->tv_nsec) * 1e-9;
+}
+
 template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_NONE() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
+    // struct timespec start, end;
 
     ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
     ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
@@ -23,20 +30,26 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_NONE() {
     for (size_t i = 0; i < warmup_num; i++)
         ntt::matmul<false>(ta, tb, tc);
 
-    auto t1 = NttTest::get_cpu_cycle();
+    // clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    auto start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < run_num; i++) {
         ntt::matmul<false>(ta, tb, tc);
     }
-    auto t2 = NttTest::get_cpu_cycle();
+    // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    auto stop = std::chrono::high_resolution_clock::now();
+
     asm volatile("" ::"g"(tc));
 
-    auto ops = M * N * (2 * K - 1);
-    auto cycles = static_cast<float>(t2 - t1) / run_num;
+    auto ops = M * N * K * 2;
+    // auto t = get_time(&start, &end) / run_num;
+    auto t =
+        std::chrono::duration<double, std::ratio<1>>(stop - start).count() /
+        run_num;
     std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
               << std::setprecision(0) << std::fixed << ", M:" << M
-              << ", K:" << K << ", N:" << N << ", Cycles:" << cycles
+              << ", K:" << K << ", N:" << N
               << ", GFLOPS:" << std::setprecision(1) << std::fixed
-              << ops / (cycles / CPU_FREQUENCY_MHZ) * 1e-3 << std::endl;
+              << ops / t * 1e-9 << std::endl;
 }
 
 // pack K
@@ -44,6 +57,7 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_K() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    // struct timespec start, end;
 
     ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
     ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
@@ -62,22 +76,27 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_K() {
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
                            ntt::fixed_shape<0>{});
 
-    auto t1 = NttTest::get_cpu_cycle();
+    // clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    auto start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < run_num; i++) {
         ntt::matmul<false>(pa, pb, tc, ntt::fixed_shape<1>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
                            ntt::fixed_shape<0>{});
     }
-    auto t2 = NttTest::get_cpu_cycle();
+    // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    auto stop = std::chrono::high_resolution_clock::now();
     asm volatile("" ::"g"(tc));
 
-    auto ops = M * N * (2 * K - 1);
-    auto cycles = static_cast<float>(t2 - t1) / run_num;
+    auto ops = M * N * K * 2;
+    // auto t = get_time(&start, &end) / run_num;
+    auto t =
+        std::chrono::duration<double, std::ratio<1>>(stop - start).count() /
+        run_num;
     std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
               << std::setprecision(0) << std::fixed << ", M:" << M
-              << ", K:" << K / P << ", N:" << N << ", Cycles:" << cycles
+              << ", K:" << K / P << ", N:" << N
               << ", GFLOPS:" << std::setprecision(1) << std::fixed
-              << ops / (cycles / CPU_FREQUENCY_MHZ) * 1e-3 << std::endl;
+              << ops / t * 1e-9 << std::endl;
 }
 
 // pack M
@@ -85,6 +104,7 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    // struct timespec start, end;
 
     ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
     ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
@@ -101,22 +121,27 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M() {
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
                            ntt::fixed_shape<0>{});
 
-    auto t1 = NttTest::get_cpu_cycle();
+    // clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    auto start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < run_num; i++) {
         ntt::matmul<false>(pa, tb, pc, ntt::fixed_shape<0>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
                            ntt::fixed_shape<0>{});
     }
-    auto t2 = NttTest::get_cpu_cycle();
+    // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    auto stop = std::chrono::high_resolution_clock::now();
     asm volatile("" ::"g"(pc));
 
-    auto ops = M * N * (2 * K - 1);
-    auto cycles = static_cast<float>(t2 - t1) / run_num;
+    auto ops = M * N * K * 2;
+    // auto t = get_time(&start, &end) / run_num;
+    auto t =
+        std::chrono::duration<double, std::ratio<1>>(stop - start).count() /
+        run_num;
     std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
               << std::setprecision(0) << std::fixed << ", M:" << M / P
-              << ", K:" << K << ", N:" << N << ", Cycles:" << cycles
+              << ", K:" << K << ", N:" << N
               << ", GFLOPS:" << std::setprecision(1) << std::fixed
-              << ops / (cycles / CPU_FREQUENCY_MHZ) * 1e-3 << std::endl;
+              << ops / t * 1e-9 << std::endl;
 }
 
 // pack N
@@ -124,6 +149,7 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_N() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    // struct timespec start, end;
 
     ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
     ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
@@ -140,22 +166,27 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_N() {
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
                            ntt::fixed_shape<0>{});
 
-    auto t1 = NttTest::get_cpu_cycle();
+    // clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    auto start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < run_num; i++) {
         ntt::matmul<false>(ta, pb, pc, ntt::fixed_shape<>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
                            ntt::fixed_shape<0>{});
     }
-    auto t2 = NttTest::get_cpu_cycle();
+    // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    auto stop = std::chrono::high_resolution_clock::now();
     asm volatile("" ::"g"(pc));
 
-    auto ops = M * N * (2 * K - 1);
-    auto cycles = static_cast<float>(t2 - t1) / run_num;
+    auto ops = M * N * K * 2;
+    // auto t = get_time(&start, &end) / run_num;
+    auto t =
+        std::chrono::duration<double, std::ratio<1>>(stop - start).count() /
+        run_num;
     std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
               << std::setprecision(0) << std::fixed << ", M:" << M
-              << ", K:" << K << ", N:" << N / P << ", Cycles:" << cycles
+              << ", K:" << K << ", N:" << N / P
               << ", GFLOPS:" << std::setprecision(1) << std::fixed
-              << ops / (cycles / CPU_FREQUENCY_MHZ) * 1e-3 << std::endl;
+              << ops / t * 1e-9 << std::endl;
 }
 
 // pack M and N
@@ -163,6 +194,7 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_N() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    // struct timespec start, end;
 
     ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
     ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
@@ -183,22 +215,27 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_N() {
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
                            ntt::fixed_shape<0>{});
 
-    auto t1 = NttTest::get_cpu_cycle();
+    // clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    auto start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < run_num; i++) {
         ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
                            ntt::fixed_shape<0>{});
     }
-    auto t2 = NttTest::get_cpu_cycle();
+    // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    auto stop = std::chrono::high_resolution_clock::now();
     asm volatile("" ::"g"(pc));
 
-    auto ops = M * N * (2 * K - 1);
-    auto cycles = static_cast<float>(t2 - t1) / run_num;
+    auto ops = M * N * K * 2;
+    // auto t = get_time(&start, &end) / run_num;
+    auto t =
+        std::chrono::duration<double, std::ratio<1>>(stop - start).count() /
+        run_num;
     std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
               << std::setprecision(0) << std::fixed << ", M:" << M / P
-              << ", K:" << K << ", N:" << N / P << ", Cycles:" << cycles
+              << ", K:" << K << ", N:" << N / P
               << ", GFLOPS:" << std::setprecision(1) << std::fixed
-              << ops / (cycles / CPU_FREQUENCY_MHZ) * 1e-3 << std::endl;
+              << ops / t * 1e-9 << std::endl;
 }
 
 // pack M and K
@@ -206,6 +243,7 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_K() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    // struct timespec start, end;
 
     ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
     ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
@@ -226,22 +264,27 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_K() {
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
                            ntt::fixed_shape<0>{});
 
-    auto t1 = NttTest::get_cpu_cycle();
+    // clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    auto start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < run_num; i++) {
         ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0, 1>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
                            ntt::fixed_shape<0>{});
     }
-    auto t2 = NttTest::get_cpu_cycle();
+    // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    auto stop = std::chrono::high_resolution_clock::now();
     asm volatile("" ::"g"(pc));
 
-    auto ops = M * N * (2 * K - 1);
-    auto cycles = static_cast<float>(t2 - t1) / run_num;
+    auto ops = M * N * K * 2;
+    // auto t = get_time(&start, &end) / run_num;
+    auto t =
+        std::chrono::duration<double, std::ratio<1>>(stop - start).count() /
+        run_num;
     std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
               << std::setprecision(0) << std::fixed << ", M:" << M / P
-              << ", K:" << K / P << ", N:" << N << ", Cycles:" << cycles
+              << ", K:" << K / P << ", N:" << N
               << ", GFLOPS:" << std::setprecision(1) << std::fixed
-              << ops / (cycles / CPU_FREQUENCY_MHZ) * 1e-3 << std::endl;
+              << ops / t * 1e-9 << std::endl;
 }
 
 // pack K and N
@@ -249,6 +292,7 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_K_N() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    // struct timespec start, end;
 
     ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
     ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
@@ -269,22 +313,27 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_K_N() {
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
                            ntt::fixed_shape<0>{});
 
-    auto t1 = NttTest::get_cpu_cycle();
+    // clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    auto start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < run_num; i++) {
         ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<1>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
                            ntt::fixed_shape<0>{});
     }
-    auto t2 = NttTest::get_cpu_cycle();
+    // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    auto stop = std::chrono::high_resolution_clock::now();
     asm volatile("" ::"g"(pc));
 
-    auto ops = M * N * (2 * K - 1);
-    auto cycles = static_cast<float>(t2 - t1) / run_num;
+    auto ops = M * N * K * 2;
+    // auto t = get_time(&start, &end) / run_num;
+    auto t =
+        std::chrono::duration<double, std::ratio<1>>(stop - start).count() /
+        run_num;
     std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
               << std::setprecision(0) << std::fixed << ", M:" << M
-              << ", K:" << K / P << ", N:" << N / P << ", Cycles:" << cycles
+              << ", K:" << K / P << ", N:" << N / P
               << ", GFLOPS:" << std::setprecision(1) << std::fixed
-              << ops / (cycles / CPU_FREQUENCY_MHZ) * 1e-3 << std::endl;
+              << ops / t * 1e-9 << std::endl;
 }
 
 // pack M, K and N
@@ -292,6 +341,7 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_K_N() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    // struct timespec start, end;
 
     ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
     ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
@@ -314,22 +364,27 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_K_N() {
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
                            ntt::fixed_shape<0>{});
 
-    auto t1 = NttTest::get_cpu_cycle();
+    // clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    auto start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < run_num; i++) {
         ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0, 1>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
                            ntt::fixed_shape<0>{});
     }
-    auto t2 = NttTest::get_cpu_cycle();
+    // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    auto stop = std::chrono::high_resolution_clock::now();
     asm volatile("" ::"g"(pc));
 
-    auto ops = M * N * (2 * K - 1);
-    auto cycles = static_cast<float>(t2 - t1) / run_num;
+    auto ops = M * N * K * 2;
+    // auto t = get_time(&start, &end) / run_num;
+    auto t =
+        std::chrono::duration<double, std::ratio<1>>(stop - start).count() /
+        run_num;
     std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
               << std::setprecision(0) << std::fixed << ", M:" << M / P
-              << ", K:" << K / P << ", N:" << N / P << ", Cycles:" << cycles
+              << ", K:" << K / P << ", N:" << N / P
               << ", GFLOPS:" << std::setprecision(1) << std::fixed
-              << ops / (cycles / CPU_FREQUENCY_MHZ) * 1e-3 << std::endl;
+              << ops / t * 1e-9 << std::endl;
 }
 
 #define BENCHMARK_NTT_MATMUL(MODE, M_BASE, K_BASE, N_BASE, M_TILE, N_TILE)     \
@@ -493,6 +548,7 @@ int main() {
     asm volatile("vsetivli	zero,4,e32,m1,ta,ma");
 #endif
 
+#if NTT_VLEN <= 256
     {
         const auto PackMode = nncase::ntt::ukernels::mamtul_pack_kind::pack_m;
         matmul_primitive_analysis<PackMode>();
@@ -527,6 +583,7 @@ int main() {
         const auto PackMode = nncase::ntt::ukernels::mamtul_pack_kind::pack_mkn;
         matmul_primitive_analysis<PackMode>();
     }
+#endif
 
     return 0;
 }

@@ -173,6 +173,30 @@ template <> struct asinh<ntt::vector<float, 8>> {
     }
 };
 
+// cast
+template <> struct cast<ntt::vector<bool, 8>, ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const ntt::vector<bool, 8> &v) const noexcept {
+        __m256i mask = _mm256_setr_epi32(
+            v(0) ? -1 : 0, v(1) ? -1 : 0, v(2) ? -1 : 0, v(3) ? -1 : 0,
+            v(4) ? -1 : 0, v(5) ? -1 : 0, v(6) ? -1 : 0, v(7) ? -1 : 0);
+
+        // Convert to float (1.0f for true, 0.0f for false)
+        __m256 result =
+            _mm256_and_ps(_mm256_castsi256_ps(mask), _mm256_set1_ps(1.0f));
+
+        return result;
+    }
+};
+
+// cast
+template <> struct cast<ntt::vector<float, 8>, ntt::vector<int, 8>> {
+    ntt::vector<int, 8>
+    operator()(const ntt::vector<float, 8> &v) const noexcept {
+        return _mm256_cvttps_epi32(v);
+    }
+};
+
 // ceil
 template <> struct ceil<ntt::vector<float, 8>> {
     ntt::vector<float, 8>

@@ -301,6 +301,13 @@ template <class T1, class T2> struct clamp {
         return std::min(std::max(v, min), max);
     }
 };
+
+template <class T1, class T2> struct cast {
+    constexpr T2 operator()(const T1 &v) const noexcept {
+        return static_cast<T2>(v);
+    }
+};
+
 } // namespace ops
 
 #define NTT_DEFINE_UNARY_FUNC_IMPL(op)                                         \

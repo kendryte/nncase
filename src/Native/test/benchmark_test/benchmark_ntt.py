@@ -199,7 +199,15 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                          'mod': '3.5',
                                          'pow': '42.17',
                                          },
-                              'clamp': {'NoPack': '3.0'},
+                              'cast': {'float-int32': '1.5',
+                                       'int32-float': '1.5',
+                                       'float-uint32': '1.5',
+                                       'uint32-float': '1.5',
+                                       'float-bool': '1.5',
+                                       'bool-float': '1.5',
+                                       'float-f8e4m3': '0',
+                                       },
+                              'clamp': {'Pack': '3.0'},
                               'unary': {'abs': '3.0',
                                         'acos': '8.2',
                                         'acosh': '25.34',
@@ -283,7 +291,15 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                          'mod': '54',
                                          'pow': '139'
                                          },
-                              'clamp': {'NoPack': '12.3'},
+                              'cast': {'float-int32': '5',
+                                       'int32-float': '5',
+                                       'float-uint32': '5',
+                                       'uint32-float': '5',
+                                       'float-bool': '8',
+                                       'bool-float': '8',
+                                       'float-f8e4m3': '0',
+                                       },
+                              'clamp': {'Pack': '12.3'},
                               'unary': {'abs': '8',
                                         'acos': '84',
                                         'acosh': '123',
@@ -308,13 +324,13 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                         'tanh': '197',
                                         },
                               'matmul': {'no_pack': '92058',
-                                         'pack_K': '163840',
-                                         'pack_M': '76170',
-                                         'pack_N': '92058',
-                                         'pack_M_N': '47322',
-                                         'pack_M_K': '77824',
-                                         'pack_K_N': '41063',
-                                         'pack_M_K_N': '22374',
+                                         'pack_K': '57344',
+                                         'pack_M': '8192',
+                                         'pack_N': '8192',
+                                         'pack_M_N': '8192',
+                                         'pack_M_K': '57344',
+                                         'pack_K_N': '8192',
+                                         'pack_M_K_N': '8192',
                                          },
                               'reduce': {'Add_reduceN_NoPack': '8196',
                                          'Add_reduceN_PackN': '2600',
@@ -373,8 +389,7 @@ class BenchmarkNTTMatmul(Benchmark):
             dict['M'] = items[1].split(':')[1].strip()
             dict['K'] = items[2].split(':')[1].strip()
             dict['N'] = items[3].split(':')[1].strip()
-            dict[f'{self.arch}_cycles'] = items[4].split(':')[1].strip()
-            dict[f'{self.arch}_gflops'] = items[5].split(':')[1].strip()
+            dict[f'{self.arch}_gflops'] = items[4].split(':')[1].strip()
             self.benchmark_list.append(dict)
 
     def run():

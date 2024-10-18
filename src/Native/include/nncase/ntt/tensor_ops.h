@@ -299,6 +299,20 @@ template <IsTensor TTensor, IsScalar TScalar> struct clamp<TTensor, TScalar> {
     ops::clamp<element_type, TScalar> op_;
 };
 
+template <IsTensor TTensor1, IsTensor TTensor2>
+struct cast<TTensor1, TTensor2> {
+    using from_type = typename TTensor1::element_type;
+    using to_type = typename TTensor2::element_type;
+    constexpr auto operator()(const TTensor1 &v) const noexcept {
+        TTensor2 value;
+        apply(v.shape(), [&](auto index) { value(index) = op_(v(index)); });
+        return value;
+    }
+
+  private:
+    ops::cast<from_type, to_type> op_;
+};
+
 } // namespace nncase::ntt::ops
 
 namespace nncase::ntt::tensor_ops {
