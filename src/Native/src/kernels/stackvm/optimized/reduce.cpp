@@ -36,8 +36,9 @@ result<void> optimized::reduce(
     return stackvm::optimized::reduce(typecode, op, init_value, input, output,
                                       in_shape, axis, in_strides, out_strides,
                                       keep_dims, context);
-#endif
+#else
     return stackvm::reference::reduce(typecode, op, init_value, input, output,
                                       in_shape, axis, in_strides, out_strides,
                                       keep_dims, context);
+#endif
 }
