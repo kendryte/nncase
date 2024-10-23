@@ -189,14 +189,14 @@ class BenchmarkNTT(Benchmark):
 class BenchmarkNTT_x86_64(BenchmarkNTT):
     def __init__(self, target: str, bin_path: str):
         BenchmarkNTT.__init__(self, 'x86_64', target, bin_path)
-        self.roofline_dict = {'binary': {'add': '3.5',
-                                         'sub': '3.5',
-                                         'mul': '3.5',
-                                         'div': '3.5',
-                                         'max': '3.5',
-                                         'min': '3.5',
+        self.roofline_dict = {'binary': {'add': '2.0',
+                                         'sub': '2.0',
+                                         'mul': '2.0',
+                                         'div': '2.0',
+                                         'max': '2.0',
+                                         'min': '2.0',
                                          'floor_mod': '5.5',
-                                         'mod': '3.5',
+                                         'mod': '2.0',
                                          'pow': '42.17',
                                          },
                               'cast': {'float-int32': '2.0',
