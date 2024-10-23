@@ -14,9 +14,12 @@
  */
 #pragma once
 #include "../apply.h"
+#include "../loop.h"
 #include "../shape_infer/binary.h"
 #include "../shape_infer/reduce.h"
+#include "../tensor_ops.h"
 #include "../tensor_traits.h"
+#include "../ukernels.h"
 #include "../utility.h"
 #include <type_traits>
 
@@ -123,6 +126,129 @@ class binary_impl<TLhs, TRhs, TOut> {
         }
     }
 };
+
+#define BINARY_IMPL(OP)                                                        \
+    template <class Shape, class In1Strides, class In2Strides,                 \
+              class OutStrides>                                                \
+    class OP##_impl;                                                           \
+    template <size_t... Dims, size_t... In1Strides, size_t... In2Strides,      \
+              size_t... OutStrides>                                            \
+    class OP##_impl<fixed_shape<Dims...>, fixed_strides<In1Strides...>,        \
+                    fixed_strides<In2Strides...>,                              \
+                    fixed_strides<OutStrides...>> {                            \
+      public:                                                                  \
+        template <class TIn1, class TIn2, class TOut>                          \
+        constexpr void operator()(const TIn1 &input1, const TIn2 &input2,      \
+                                  TOut &output) {                              \
+            constexpr size_t rank = sizeof...(Dims);                           \
+            ranked_shape<rank> index{};                                        \
+            constexpr auto conti_dims =                                        \
+                std::min(contiguous_dims(fixed_shape<Dims...>{},               \
+                                         fixed_strides<In1Strides...>{}),      \
+                         contiguous_dims(fixed_shape<Dims...>{},               \
+                                         fixed_strides<OutStrides...>{}));     \
+            apply<TIn1, TIn2, TOut, 0, rank, conti_dims, Dims...>(             \
+                index, input1, input2, output);                                \
+        }                                                                      \
+                                                                               \
+      private:                                                                 \
+        template <class TIn1, class TIn2, class TOut, size_t Axis,             \
+                  size_t Rank, size_t ContiguousDims, size_t... RestDims>      \
+        constexpr void apply(ranked_shape<Rank> &index, const TIn1 &input1,    \
+                             const TIn2 &input2, TOut &output) {               \
+            if constexpr (ContiguousDims == sizeof...(RestDims)) {             \
+                constexpr auto inner_size =                                    \
+                    fixed_shape<RestDims...>::length();                        \
+                auto input1_p = input1.elements().data() +                     \
+                                linear_offset(index, input1.strides());        \
+                auto input2_p = input2.elements().data() +                     \
+                                linear_offset(index, input2.strides());        \
+                auto output_p = output.elements().data() +                     \
+                                linear_offset(index, output.strides());        \
+                OP##_contiguous<inner_size>(input1_p, input2_p, output_p);     \
+            } else {                                                           \
+                apply_next<TIn1, TIn2, TOut, Axis, Rank, ContiguousDims,       \
+                           RestDims...>(index, input1, input2, output);        \
+            }                                                                  \
+        }                                                                      \
+                                                                               \
+        template <class TIn1, class TIn2, class TOut, size_t Axis,             \
+                  size_t Rank, size_t ContiguousDims, size_t Dim,              \
+                  size_t... RestDims>                                          \
+        constexpr void apply_next(ranked_shape<Rank> &index,                   \
+                                  const TIn1 &input1, const TIn2 &input2,      \
+                                  TOut &output) {                              \
+            for (index[Axis] = 0; index[Axis] < Dim; index[Axis]++) {          \
+                apply<TIn1, TIn2, TOut, Axis + 1, Rank, ContiguousDims,        \
+                      RestDims...>(index, input1, input2, output);             \
+            }                                                                  \
+        }                                                                      \
+        template <size_t Extent, class T1, class T2, class TOut>               \
+        constexpr void OP##_contiguous(const T1 *input1, const T2 *input2,     \
+                                       TOut *output) {                         \
+            ntt::u_##OP(input1, input2, 1, 1, output, 1, Extent);              \
+        }                                                                      \
+    };                                                                         \
+                                                                               \
+    template <size_t Rank, class In1Strides, class In2Strides,                 \
+              class OutStrides>                                                \
+    class OP##_impl<ranked_shape<Rank>, In1Strides, In2Strides, OutStrides> {  \
+      public:                                                                  \
+        template <class TIn1, class TIn2, class TOut>                          \
+        constexpr void operator()(const TIn1 &input1, const TIn2 &input2,      \
+                                  TOut &output) {                              \
+            ranked_shape<Rank> index{};                                        \
+            auto conti_dims =                                                  \
+                std::min(contiguous_dims(input1.shape(), input1.strides()),    \
+                         contiguous_dims(input1.shape(), output.strides()));   \
+            apply<TIn1, TIn2, TOut, 0>(index, conti_dims, input1, input2,      \
+                                       output);                                \
+        }                                                                      \
+                                                                               \
+      private:                                                                 \
+        template <class TIn1, class TIn2, class TOut, size_t Axis>             \
+        constexpr void apply(ranked_shape<Rank> &index, size_t conti_dims,     \
+                             const TIn1 &input1, const TIn2 &input2,           \
+                             TOut &output) {                                   \
+            const auto outer_dims = Rank - conti_dims;                         \
+            if (Axis >= outer_dims) {                                          \
+                size_t inner_size = 1;                                         \
+                for (size_t i = outer_dims; i < input1.shape().rank(); i++)    \
+                    inner_size *= input1.shape()[i];                           \
+                auto input1_p = input1.buffer().data() +                       \
+                                linear_offset(index, input1.strides());        \
+                auto input2_p = input2.buffer().data() +                       \
+                                linear_offset(index, input2.strides());        \
+                auto output_p = output.buffer().data() +                       \
+                                linear_offset(index, output.strides());        \
+                OP##_contiguous(input1_p, input2_p, output_p, inner_size);     \
+            } else if constexpr (Axis < Rank - 1) {                            \
+                const auto dim = input1.shape()[Axis];                         \
+                for (index[Axis] = 0; index[Axis] < dim; index[Axis]++) {      \
+                    apply<TIn1, TIn2, TOut, Axis + 1>(index, conti_dims,       \
+                                                      input1, input2, output); \
+                }                                                              \
+            }                                                                  \
+        }                                                                      \
+                                                                               \
+        template <class T1, class T2, class TOut>                              \
+        constexpr void OP##_contiguous(const T1 *input1_p, const T2 *input2_p, \
+                                       TOut *output_p, size_t extent) {        \
+            for (size_t i = 0; i < extent; i++) {                              \
+                output_p[i] =                                                  \
+                    ntt::ops::OP<T1, T2>()(input1_p[i], input2_p[i]);          \
+            }                                                                  \
+        }                                                                      \
+    };
+
+BINARY_IMPL(add)
+BINARY_IMPL(div)
+BINARY_IMPL(max)
+BINARY_IMPL(min)
+BINARY_IMPL(mod)
+BINARY_IMPL(mul)
+BINARY_IMPL(sub)
+
 } // namespace detail
 
 template <template <class T1, class T2> class Op, class TLhs, class TRhs,
@@ -132,4 +258,25 @@ void binary(const TLhs &lhs, const TRhs &rhs, TOut &&output) {
     detail::binary_impl<std::decay_t<TLhs>, std::decay_t<TRhs>,
                         std::decay_t<TOut>>()(op, lhs, rhs, output);
 }
+
+#define BINARY(OP)                                                             \
+    template <typename TIn1, typename TIn2, typename TOut>                     \
+    void OP(const TIn1 &input1, const TIn2 &input2, TOut &&output) noexcept {  \
+        detail::OP##_impl<                                                     \
+            common_shape_t<typename TIn1::shape_type,                          \
+                           typename std::decay_t<TOut>::shape_type>,           \
+            typename TIn1::strides_type, typename TIn2::strides_type,          \
+            typename std::decay_t<TOut>::strides_type>                         \
+            impl;                                                              \
+        impl(input1, input2, output);                                          \
+    }
+
+BINARY(add)
+BINARY(div)
+BINARY(max)
+BINARY(min)
+BINARY(mod)
+BINARY(mul)
+BINARY(sub)
+
 } // namespace nncase::ntt

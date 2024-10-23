@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "ukernels/u_binary.h"
 #include "ukernels/u_cast.h"
 #include "ukernels/u_matmul.h"
 #include "ukernels/u_mul_add.h"
