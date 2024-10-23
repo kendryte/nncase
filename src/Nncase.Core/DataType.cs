@@ -132,6 +132,26 @@ public abstract record DataType
             {
                 return new VectorType(FromType(t.GenericTypeArguments[0]), 128);
             }
+            else if (generic == typeof(Vector32x128<>))
+            {
+                return new VectorType(FromType(t.GenericTypeArguments[0]), 32, 128);
+            }
+            else if (generic == typeof(Vector64x32<>))
+            {
+                return new VectorType(FromType(t.GenericTypeArguments[0]), 64, 32);
+            }
+            else if (generic == typeof(Vector64x64<>))
+            {
+                return new VectorType(FromType(t.GenericTypeArguments[0]), 64, 64);
+            }
+            else if (generic == typeof(Vector64x128<>))
+            {
+                return new VectorType(FromType(t.GenericTypeArguments[0]), 64, 128);
+            }
+            else if (generic == typeof(Vector128x64<>))
+            {
+                return new VectorType(FromType(t.GenericTypeArguments[0]), 128, 64);
+            }
 
             throw new ArgumentException("Unsupported CLR type.");
         }
@@ -226,6 +246,11 @@ public sealed record VectorType(DataType ElemType, IR.IRArray<int> Lanes) : Data
         [32, 64] => typeof(Vector32x64<>).MakeGenericType(ElemType.CLRType),
         [64] => typeof(Vector64<>).MakeGenericType(ElemType.CLRType),
         [128] => typeof(Vector128<>).MakeGenericType(ElemType.CLRType),
+        [32, 128] => typeof(Vector32x128<>).MakeGenericType(ElemType.CLRType),
+        [64, 32] => typeof(Vector64x32<>).MakeGenericType(ElemType.CLRType),
+        [64, 64] => typeof(Vector64x64<>).MakeGenericType(ElemType.CLRType),
+        [64, 128] => typeof(Vector64x128<>).MakeGenericType(ElemType.CLRType),
+        [128, 64] => typeof(Vector128x64<>).MakeGenericType(ElemType.CLRType),
         _ => throw new NotSupportedException(),
     };
 

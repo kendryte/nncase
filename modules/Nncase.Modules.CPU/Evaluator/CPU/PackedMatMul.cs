@@ -180,7 +180,7 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
                         valid = false;
                     }
 
-                    if (target.RhsPackedAxes[0] != rk || target.RhsPackedAxes[1] != rn)
+                    if ((target.RhsPackedAxes[0] != rk || target.RhsPackedAxes[1] != rn) && (target.RhsPackedAxes[0] != rn || target.RhsPackedAxes[1] != rk))
                     {
                         valid = false;
                     }

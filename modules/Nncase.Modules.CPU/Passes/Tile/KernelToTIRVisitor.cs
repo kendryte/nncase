@@ -129,7 +129,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                         throw new NotSupportedException("not support this conv2d");
                     }
 
-                    _mainBody.Add(TIR.F.CPU.Conv2D(arguments[0], arguments[1], arguments[2], ret, strides, padding, dilation, groups, conv.PadMode, (DistributedType)expr.CheckedType));
+                    _mainBody.Add(TIR.F.CPU.Conv2D(arguments[0], arguments[1], arguments[2], ret, strides, padding, dilation, groups, conv.PadMode, expr.CheckedType is DistributedType dt_conv ? dt_conv : null!));
                 }
 
                 break;
@@ -149,10 +149,10 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.PackedLayerNorm(arguments[0], arguments[1], arguments[2], ret, layernorm.Axis, layernorm.Epsilon, layernorm.UseMean, Array.Empty<int>(), Array.Empty<int>()));
                 break;
             case IR.NN.InstanceNormalization instancenorm:
-                _mainBody.Add(TIR.F.CPU.InstanceNorm(arguments[0], arguments[1], arguments[2], ret, ((TensorConst)expr.Arguments[3]).Value.ToScalar<int>(), Array.Empty<int>(), Array.Empty<int>(), (DistributedType)expr.CheckedType));
+                _mainBody.Add(TIR.F.CPU.InstanceNorm(arguments[0], arguments[1], arguments[2], ret, ((TensorConst)expr.Arguments[3]).Value.ToScalar<int>(), Array.Empty<int>(), Array.Empty<int>(), expr.CheckedType is DistributedType dt ? dt : null!));
                 break;
             case IR.CPU.InstacneNorm instancenorm:
-                _mainBody.Add(TIR.F.CPU.InstanceNorm(arguments[0], arguments[1], arguments[2], ret, instancenorm.Epsilon, instancenorm.PackedAxes, instancenorm.PadedNums, (DistributedType)expr.CheckedType));
+                _mainBody.Add(TIR.F.CPU.InstanceNorm(arguments[0], arguments[1], arguments[2], ret, instancenorm.Epsilon, instancenorm.PackedAxes, instancenorm.PadedNums, expr.CheckedType is DistributedType dt_instancenorm ? dt_instancenorm : null!));
                 break;
             case IR.Imaging.ResizeImage resize:
                 if ((expr.Arguments[1] is not None && expr.Arguments[1].CheckedShape.Size != 0) || resize.IsTFResize)
@@ -172,7 +172,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Reshape(arguments[0], ret, expr.CheckedShape.ToValueArray()));
                 break;
             case IR.Tensors.Slice slice:
-                _mainBody.Add(TIR.F.CPU.Slice(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[3]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[4]).Value.ToArray<int>(), (DistributedType)expr.CheckedType));
+                _mainBody.Add(TIR.F.CPU.Slice(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[3]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[4]).Value.ToArray<int>(), expr.CheckedType is DistributedType dt_slice ? dt_slice : null!));
                 break;
             case IR.Tensors.Concat concat:
                 _mainBody.Add(TIR.F.CPU.Concat(((IR.Tuple)expr.Arguments[0]).Fields.AsValueEnumerable().Select(GetBuffer).ToArray(), ret, concat.Axis));
@@ -201,10 +201,10 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Cast(arguments[0], ret, cast.NewType, cast.CastMode));
                 break;
             case IR.Tensors.Where where:
-                _mainBody.Add(TIR.F.CPU.Where(arguments[0], arguments[1], arguments[2], ret, (DistributedType)expr.CheckedType));
+                _mainBody.Add(TIR.F.CPU.Where(arguments[0], arguments[1], arguments[2], ret, expr.CheckedType is DistributedType dt_where ? dt_where : null!));
                 break;
             case IR.Tensors.Expand expand:
-                _mainBody.Add(TIR.F.CPU.Expand(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((DistributedType)expr.CheckedType).NdSBP));
+                _mainBody.Add(TIR.F.CPU.Expand(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), expr.CheckedType is DistributedType dt_expand ? dt_expand.NdSBP : null!));
                 break;
             case IR.NN.Erf erf:
                 _mainBody.Add(TIR.F.CPU.Erf(arguments[0], ret));

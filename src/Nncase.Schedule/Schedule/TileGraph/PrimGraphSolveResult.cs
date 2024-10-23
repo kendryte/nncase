@@ -93,7 +93,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                 for (int sl = 0; sl < place.Length; sl++)
                 {
                     // skip the top level allocate
-                    if (!(value.Level == PrimBufferGraph.Level && i == 0) && place[sl] == 1)
+                    if (!(value.Level == PrimBufferGraph.Level && i == 0 && sl == (PrimBufferGraph.Level - 1)) && place[sl] == 1)
                     {
                         var kernelInfo = bid.Node.GetKernelInfo(TargetOptions);
                         var viewInfo = GetParentSubViewInfo(sl + 1, value, bid, bufferInfo.Map, forwardOffsets[i], bufferInfo.Shapes[i]);

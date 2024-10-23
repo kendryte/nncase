@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using DryIoc.ImTools;
 using Nncase.CostModel;
 using Nncase.Diagnostics;
 using Nncase.IR;
@@ -128,6 +129,11 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             return new InvalidType("MatMul lhs and rhs have not compatiable shape");
         }
 
+        if (lhsDType == DataTypes.Float8E4M3 || lhsDType == DataTypes.Float8E5M2 || lhsDType == DataTypes.Int8)
+        {
+            dtype = DataTypes.Float32;
+        }
+
         if (lhs.DType is VectorType vl1 && rhs.DType is not VectorType)
         {
             if (vl1.Lanes.Count != 1)
@@ -149,21 +155,28 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         else if (lhs.DType is VectorType vl && rhs.DType is VectorType vr)
         {
             // pack k or m&n
+            var elemType = vl.ElemType;
+            if (elemType == DataTypes.Float8E4M3 || elemType == DataTypes.Float8E5M2)
+            {
+                elemType = DataTypes.Float32;
+            }
+
             if (vl.Lanes.Count == 1 && vr.Lanes.Count == 1)
             {
-                dtype = packingK ? vl.ElemType : new VectorType(vl.ElemType, vl.Lanes[0], vr.Lanes[0]);
+                dtype = packingK ? elemType : new VectorType(elemType, vl.Lanes[0], vr.Lanes[0]);
             }
             else if (vl.Lanes.Count == 1 && vr.Lanes.Count == 2)
             {
-                dtype = new VectorType(vl.ElemType, vr.Lanes[1]);
+                dtype = new VectorType(elemType, vr.Lanes[1]);
             }
             else if (vl.Lanes.Count == 2 && vr.Lanes.Count == 1)
             {
-                dtype = new VectorType(vr.ElemType, vl.Lanes[0]);
+                dtype = new VectorType(elemType, vl.Lanes[0]);
             }
             else if (vl.Lanes.Count == 2 && vr.Lanes.Count == 2)
             {
-                dtype = new VectorType(vl.ElemType, vl.Lanes[0], vr.Lanes[1]);
+                // TODO: only support transpose vector B for now
+                dtype = new VectorType(elemType, vl.Lanes[0], vl.Lanes[1] == vr.Lanes[0] ? vr.Lanes[1] : vr.Lanes[0]);
             }
             else
             {
@@ -190,9 +203,21 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, MatMul matMul)
     {
-        var input = context.GetOrtArgumentValue(matMul, MatMul.Lhs);
-        var other = context.GetOrtArgumentValue(matMul, MatMul.Rhs);
-        return OrtKI.MatMul(input, other).ToValue();
+        if (context.CurrentCall.Arguments[MatMul.Lhs.Index].CheckedDataType == DataTypes.Float8E4M3 || context.CurrentCall.Arguments[MatMul.Lhs.Index].CheckedDataType == DataTypes.Float8E5M2)
+        {
+            var lhs = Cast(context.GetArgumentValue(matMul, MatMul.Lhs).AsTensor(), DataTypes.Float32);
+            var rhs = Cast(context.GetArgumentValue(matMul, MatMul.Rhs).AsTensor(), DataTypes.Float32);
+            var lhsOrt = lhs.Evaluate().AsTensor().ToOrtTensor();
+            var rhsOrt = rhs.Evaluate().AsTensor().ToOrtTensor();
+            var ret = OrtKI.MatMul(lhsOrt, rhsOrt).ToTensor();
+            return Value.FromTensor(ret);
+        }
+        else
+        {
+            var input = context.GetOrtArgumentValue(matMul, MatMul.Lhs);
+            var other = context.GetOrtArgumentValue(matMul, MatMul.Rhs);
+            return OrtKI.MatMul(input, other).ToValue();
+        }
     }
 
     /// <inheritdoc/>

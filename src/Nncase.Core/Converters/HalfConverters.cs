@@ -22,7 +22,9 @@ internal class HalfConverters :
     ISpanConverter<Half, Half>,
     ISpanConverter<Half, float>,
     ISpanConverter<Half, double>,
-    ISpanConverter<Half, BFloat16>
+    ISpanConverter<Half, BFloat16>,
+    ISpanConverter<Half, Float8E4M3>,
+    ISpanConverter<Half, Float8E5M2>
 {
     public void ConvertTo(ReadOnlySpan<Half> source, Span<bool> dest, CastMode castMode)
     {
@@ -304,6 +306,42 @@ internal class HalfConverters :
         for (int i = 0; i < source.Length; i++)
         {
             dest[i] = (double)source[i];
+        }
+    }
+
+    public void ConvertTo(ReadOnlySpan<Half> source, Span<Float8E4M3> dest, CastMode castMode)
+    {
+        if (castMode == CastMode.Exact)
+        {
+            throw new InvalidCastException();
+        }
+
+        if (dest.Length < source.Length)
+        {
+            throw new ArgumentException("Dest buffer is not sufficient.");
+        }
+
+        for (int i = 0; i < source.Length; i++)
+        {
+            dest[i] = (Float8E4M3)source[i];
+        }
+    }
+
+    public void ConvertTo(ReadOnlySpan<Half> source, Span<Float8E5M2> dest, CastMode castMode)
+    {
+        if (castMode == CastMode.Exact)
+        {
+            throw new InvalidCastException();
+        }
+
+        if (dest.Length < source.Length)
+        {
+            throw new ArgumentException("Dest buffer is not sufficient.");
+        }
+
+        for (int i = 0; i < source.Length; i++)
+        {
+            dest[i] = (Float8E5M2)source[i];
         }
     }
 
