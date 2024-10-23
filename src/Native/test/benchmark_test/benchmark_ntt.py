@@ -207,7 +207,7 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                        'bool-float': '1.5',
                                        'float-f8e4m3': '0',
                                        },
-                              'clamp': {'Pack': '1.5'},
+                              'clamp': {'Pack': '2.5'},
                               'unary': {'abs': '1.5',
                                         'acos': '8.2',
                                         'acosh': '25.34',
