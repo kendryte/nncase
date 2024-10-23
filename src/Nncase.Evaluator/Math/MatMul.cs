@@ -155,21 +155,28 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         else if (lhs.DType is VectorType vl && rhs.DType is VectorType vr)
         {
             // pack k or m&n
+            var elemType = vl.ElemType;
+            if (elemType == DataTypes.Float8E4M3 || elemType == DataTypes.Float8E5M2)
+            {
+                elemType = DataTypes.Float32;
+            }
+
             if (vl.Lanes.Count == 1 && vr.Lanes.Count == 1)
             {
-                dtype = packingK ? vl.ElemType : new VectorType(vl.ElemType, vl.Lanes[0], vr.Lanes[0]);
+                dtype = packingK ? elemType : new VectorType(elemType, vl.Lanes[0], vr.Lanes[0]);
             }
             else if (vl.Lanes.Count == 1 && vr.Lanes.Count == 2)
             {
-                dtype = new VectorType(vl.ElemType, vr.Lanes[1]);
+                dtype = new VectorType(elemType, vr.Lanes[1]);
             }
             else if (vl.Lanes.Count == 2 && vr.Lanes.Count == 1)
             {
-                dtype = new VectorType(vr.ElemType, vl.Lanes[0]);
+                dtype = new VectorType(elemType, vl.Lanes[0]);
             }
             else if (vl.Lanes.Count == 2 && vr.Lanes.Count == 2)
             {
-                dtype = new VectorType(vl.ElemType, vl.Lanes[0], vr.Lanes[1]);
+                // TODO: only support transpose vector B for now
+                dtype = new VectorType(elemType, vl.Lanes[0], vl.Lanes[1] == vr.Lanes[0] ? vr.Lanes[1] : vr.Lanes[0]);
             }
             else
             {
