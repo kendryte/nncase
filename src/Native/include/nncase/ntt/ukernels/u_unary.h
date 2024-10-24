@@ -18,59 +18,41 @@
 namespace nncase::ntt {
 namespace ukernels {
 
-template <bool Arch> struct u_unary_policy {
-    static constexpr size_t unroll = 2;
+template <class Op, class T, bool Arch> struct u_unary_policy {
+    static constexpr size_t unroll = 1;
 };
 
-#define U_UNARY_IMPL(OP)                                                       \
-    template <class T1, class T2, bool Arch> struct u_##OP {                   \
-      public:                                                                  \
-        constexpr void operator()(const T1 *input, size_t input_stride,        \
-                                  T2 *output, size_t output_stride,            \
-                                  size_t count) noexcept {                     \
-            using policy_t = u_unary_policy<Arch>;                             \
-            constexpr auto unroll = policy_t::unroll;                          \
-                                                                               \
-            if (count / unroll) {                                              \
-                while (count / unroll) {                                       \
-                    for (size_t i = 0; i < unroll; i++) {                      \
-                        *output = ntt::ops::OP<T1>()(*input);                  \
-                        input += input_stride;                                 \
-                        output += output_stride;                               \
-                        count--;                                               \
-                    }                                                          \
-                }                                                              \
-            }                                                                  \
-                                                                               \
-            for (size_t i = 0; i < count; i++) {                               \
-                *output = ntt::ops::OP<T1>()(*input);                          \
-                input += input_stride;                                         \
-                output += output_stride;                                       \
-            }                                                                  \
-        }                                                                      \
-    };
+template <class Op, class T, bool Arch> struct u_unary {
+  public:
+    constexpr void operator()(const T *input, size_t input_stride, T *output,
+                              size_t output_stride, size_t count) noexcept {
+        using policy_t = u_unary_policy<Op, T, Arch>;
+        constexpr auto unroll = policy_t::unroll;
+        Op op;
+        if (count / unroll) {
+            while (count / unroll) {
+                for (size_t i = 0; i < unroll; i++) {
+                    *output = op(*input);
+                    input += input_stride;
+                    output += output_stride;
+                    count--;
+                }
+            }
+        }
 
-U_UNARY_IMPL(ceil)
-U_UNARY_IMPL(abs)
-U_UNARY_IMPL(floor)
-U_UNARY_IMPL(neg)
-U_UNARY_IMPL(round)
-U_UNARY_IMPL(sign)
-U_UNARY_IMPL(square)
+        for (size_t i = 0; i < count; i++) {
+            *output = op(*input);
+            input += input_stride;
+            output += output_stride;
+        }
+    }
+};
 } // namespace ukernels
 
-#define U_UNARY(OP)                                                            \
-    template <class T1, class T2>                                              \
-    constexpr void u_##OP(const T1 *input, size_t input_stride, T2 *output,    \
-                          size_t output_stride, size_t count) noexcept {       \
-        ukernels::u_##OP<T1, T2, true> impl;                                   \
-        impl(input, input_stride, output, output_stride, count);               \
-    }
-U_UNARY(ceil)
-U_UNARY(abs)
-U_UNARY(floor)
-U_UNARY(neg)
-U_UNARY(round)
-U_UNARY(sign)
-U_UNARY(square)
+template <class Op, class T>
+constexpr void u_unary(const T *input, size_t input_stride, T *output,
+                       size_t output_stride, size_t count) noexcept {
+    ukernels::u_unary<Op, T, true> impl;
+    impl(input, input_stride, output, output_stride, count);
+}
 } // namespace nncase::ntt

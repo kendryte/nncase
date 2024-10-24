@@ -21,6 +21,50 @@
 #include <riscv_vector.h>
 
 namespace nncase::ntt::ukernels {
+
+// unary
+template <typename T>
+struct u_unary_policy<ntt::ops::abs<vector<T, NTT_VLEN / sizeof(T) / 8>>,
+                      vector<T, NTT_VLEN / sizeof(T) / 8>, true> {
+    static constexpr size_t unroll = 8;
+};
+
+template <typename T>
+struct u_unary_policy<ntt::ops::ceil<vector<T, NTT_VLEN / sizeof(T) / 8>>,
+                      vector<T, NTT_VLEN / sizeof(T) / 8>, true> {
+    static constexpr size_t unroll = 8;
+};
+
+template <typename T>
+struct u_unary_policy<ntt::ops::floor<vector<T, NTT_VLEN / sizeof(T) / 8>>,
+                      vector<T, NTT_VLEN / sizeof(T) / 8>, true> {
+    static constexpr size_t unroll = 8;
+};
+
+template <typename T>
+struct u_unary_policy<ntt::ops::neg<vector<T, NTT_VLEN / sizeof(T) / 8>>,
+                      vector<T, NTT_VLEN / sizeof(T) / 8>, true> {
+    static constexpr size_t unroll = 8;
+};
+
+template <typename T>
+struct u_unary_policy<ntt::ops::round<vector<T, NTT_VLEN / sizeof(T) / 8>>,
+                      vector<T, NTT_VLEN / sizeof(T) / 8>, true> {
+    static constexpr size_t unroll = 8;
+};
+
+template <typename T>
+struct u_unary_policy<ntt::ops::sign<vector<T, NTT_VLEN / sizeof(T) / 8>>,
+                      vector<T, NTT_VLEN / sizeof(T) / 8>, true> {
+    static constexpr size_t unroll = 8;
+};
+
+template <typename T>
+struct u_unary_policy<ntt::ops::square<vector<T, NTT_VLEN / sizeof(T) / 8>>,
+                      vector<T, NTT_VLEN / sizeof(T) / 8>, true> {
+    static constexpr size_t unroll = 8;
+};
+
 template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
     static constexpr size_t unroll = 8;
 };

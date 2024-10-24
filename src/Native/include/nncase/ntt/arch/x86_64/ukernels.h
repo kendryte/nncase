@@ -17,6 +17,43 @@
 #include "nncase/ntt/vector.h"
 
 namespace nncase::ntt::ukernels {
+
+// unary
+template <typename T>
+struct u_unary_policy<ntt::ops::abs<vector<T, 8>>, vector<T, 8>, true> {
+    static constexpr size_t unroll = 2;
+};
+
+template <typename T>
+struct u_unary_policy<ntt::ops::ceil<vector<T, 8>>, vector<T, 8>, true> {
+    static constexpr size_t unroll = 2;
+};
+
+template <typename T>
+struct u_unary_policy<ntt::ops::floor<vector<T, 8>>, vector<T, 8>, true> {
+    static constexpr size_t unroll = 2;
+};
+
+template <typename T>
+struct u_unary_policy<ntt::ops::neg<vector<T, 8>>, vector<T, 8>, true> {
+    static constexpr size_t unroll = 2;
+};
+
+template <typename T>
+struct u_unary_policy<ntt::ops::round<vector<T, 8>>, vector<T, 8>, true> {
+    static constexpr size_t unroll = 2;
+};
+
+template <typename T>
+struct u_unary_policy<ntt::ops::sign<vector<T, 8>>, vector<T, 8>, true> {
+    static constexpr size_t unroll = 2;
+};
+
+template <typename T>
+struct u_unary_policy<ntt::ops::square<vector<T, 8>>, vector<T, 8>, true> {
+    static constexpr size_t unroll = 2;
+};
+
 template <size_t M, size_t N, size_t MStrides>
 class u_pack<M, N, MStrides, true, float, vector<float, 8>> {
   public:
