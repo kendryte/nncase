@@ -173,23 +173,22 @@ bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
         if (lhs.shape()[i] != rhs.shape()[i])
             return false;
 
-    std::vector<T> v1;
-    std::vector<T> v2;
+    std::vector<double> v1;
+    std::vector<double> v2;
     v1.reserve(lhs.shape().length());
     v2.reserve(rhs.shape().length());
 
     bool pass = true;
     nncase::ntt::apply(lhs.shape(), [&](auto index) {
-        auto lvalue = lhs(index);
-        auto rvalue = rhs(index);
-        v1.push_back(lvalue);
-        v2.push_back(rvalue);
-        if (lvalue != rvalue) {
+        auto d1 = (double)lhs(index);
+        auto d2 = (double)rhs(index);
+        v1.push_back(d1);
+        v2.push_back(d2);
+        if (d1 != d2) {
             // std::cout << "index = (";
             // for (size_t i = 0; i < index.rank(); i++)
             //     std::cout << index[i] << " ";
-            // std::cout << "): lhs = " << lvalue << ", rhs = " << rvalue
-            //           << std::endl;
+            // std::cout << "): lhs = " << d1 << ", rhs = " << d2 << std::endl;
             pass = false;
         }
     });
@@ -223,25 +222,26 @@ bool compare_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
         if (lhs.shape()[i] != rhs.shape()[i])
             return false;
 
-    std::vector<T> v1;
-    std::vector<T> v2;
-    v1.reserve(lhs.shape().length());
-    v2.reserve(rhs.shape().length());
+    std::vector<double> v1;
+    std::vector<double> v2;
+    v1.reserve(lhs.shape().length() * N);
+    v2.reserve(rhs.shape().length() * N);
 
     bool pass = true;
     nncase::ntt::apply(lhs.shape(), [&](auto index) {
-        auto lvalue = lhs(index);
-        auto rvalue = rhs(index);
+        const ntt::vector<T, N> lvalue = lhs(index);
+        const ntt::vector<T, N> rvalue = rhs(index);
 
         nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
-            v1.push_back(lvalue(idx));
-            v2.push_back(rvalue(idx));
-            if (lvalue(idx) != rvalue(idx)) {
-                // std::cout << "index = (";
-                // for (size_t i = 0; i < index.rank(); i++)
-                //     std::cout << index[i] << " ";
-                // std::cout << "): lhs = " << lvalue(idx)
-                //           << ", rhs = " << rvalue(idx) << std::endl;
+            auto d1 = (double)(lvalue(idx));
+            auto d2 = (double)(rvalue(idx));
+            v1.push_back(d1);
+            v2.push_back(d2);
+            if (d1 != d2) {
+                std::cout << "index = (";
+                for (size_t i = 0; i < index.rank(); i++)
+                    std::cout << index[i] << " ";
+                std::cout << "): lhs = " << d1 << ", rhs = " << d2 << std::endl;
                 pass = false;
             }
         });

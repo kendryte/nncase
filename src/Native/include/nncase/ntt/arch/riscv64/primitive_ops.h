@@ -39,7 +39,8 @@ namespace nncase::ntt::ops {
 
 #ifndef REGISTER_RVV_KERNEL_4_1
 #define REGISTER_RVV_KERNEL_4_1(kernel)                                        \
-    kernel(1, f4, 32) kernel(2, f2, 16) kernel(4, 1, 8) kernel(8, 2, 4)
+    kernel(1, f2, f4, 32) kernel(2, 1, f2, 16) kernel(4, 2, 1, 8)              \
+        kernel(8, 4, 2, 4)
 #endif
 
 template <>
@@ -1417,12 +1418,12 @@ REGISTER_RVV_CLAMP_OP(float, clamp_float32)
         return __riscv_vfcvt_f_xu_v_f32m##lmul(v, vl);                         \
     }
 
-#define CAST_FLOAT32_BOOL(lmul1, lmul2, mlen)                                  \
-    inline vuint8m##lmul2##_t cast_float32_bool(const vfloat32m##lmul1##_t &v, \
-                                                const size_t vl) {             \
-        auto zero = __riscv_vmv_v_x_u8m##lmul2(0, vl);                         \
-        auto mask = __riscv_vmfne_vf_f32m##lmul1##_b##mlen(v, 0.f, vl);        \
-        return __riscv_vmerge_vxm_u8m##lmul2(zero, 1, mask, vl);               \
+#define CAST_FLOAT32_BOOL(lmul32, lmul16, lmul8, mlen)                         \
+    inline vuint8m##lmul8##_t cast_float32_bool(                               \
+        const vfloat32m##lmul32##_t &v, const size_t vl) {                     \
+        auto zero = __riscv_vmv_v_x_u8m##lmul8(0, vl);                         \
+        auto mask = __riscv_vmfne_vf_f32m##lmul32##_b##mlen(v, 0.f, vl);       \
+        return __riscv_vmerge_vxm_u8m##lmul8(zero, 1, mask, vl);               \
     }
 
 #define CAST_BOOL_FLOAT32(lmul1, lmul2, mlen)                                  \
@@ -1433,12 +1434,79 @@ REGISTER_RVV_CLAMP_OP(float, clamp_float32)
         return __riscv_vfmerge_vfm_f32m##lmul2(zero, 1.f, mask, vl);           \
     }
 
+#define CAST_FLOAT32_FLOAT8_E4M3(lmul32, lmul16, lmul8, mlen)                  \
+    inline vuint8m##lmul8##_t cast_float32_float8_e4m3(                        \
+        const vfloat32m##lmul32##_t &v, const size_t vl) {                     \
+        auto u8_128 = __riscv_vmv_v_x_u8m##lmul8(0x80, vl);                    \
+        auto u32_zero = __riscv_vmv_v_x_u32m##lmul32(0, vl);                   \
+        auto u32_one = __riscv_vmv_v_x_u32m##lmul32(1, vl);                    \
+        auto s = __riscv_vreinterpret_v_f32m##lmul32##_u32m##lmul32(v);        \
+        s = __riscv_vand_vx_u32m##lmul32(s, 0x7fffffff, vl);                   \
+        auto mask1 = __riscv_vmfge_vf_f32m##lmul32##_b##mlen(v, 0.f, vl);      \
+        auto sign = __riscv_vmerge_vxm_u8m##lmul8(u8_128, 0x00, mask1, vl);    \
+        auto u32_tmp = __riscv_vsrl_vx_u32m##lmul32(s, 23, vl);                \
+        auto i32_exp =                                                         \
+            __riscv_vreinterpret_v_u32m##lmul32##_i32m##lmul32(u32_tmp);       \
+        i32_exp = __riscv_vsub_vx_i32m##lmul32(i32_exp, 127, vl);              \
+        auto i8_exp = __riscv_vncvt_x_x_w_i8m##lmul8(                          \
+            __riscv_vncvt_x_x_w_i16m##lmul16(i32_exp, vl), vl);                \
+        auto mantissa = __riscv_vand_vx_u32m##lmul32(s, 0x7fffff, vl);         \
+        auto i8_tmp = __riscv_vadd_vx_i8m##lmul8(i8_exp, 7, vl);               \
+        i8_tmp = __riscv_vsll_vx_i8m##lmul8(i8_tmp, 3, vl);                    \
+        mask1 = __riscv_vmslt_vx_i8m##lmul8##_b##mlen(i8_exp, -6, vl);         \
+        auto rshift = __riscv_vreinterpret_v_i32m##lmul32##_u32m##lmul32(      \
+            __riscv_vrsub_vx_i32m##lmul32(i32_exp, -6, vl));                   \
+        auto mask2 = __riscv_vmsltu_vx_u32m##lmul32##_b##mlen(rshift, 32, vl); \
+        mask2 = __riscv_vmand_mm_b##mlen(mask2, mask1, vl);                    \
+        auto u32_tmp2 = __riscv_vor_vx_u32m##lmul32(mantissa, 1 << 23, vl);    \
+        u32_tmp = __riscv_vsll_vv_u32m##lmul32(u32_one, rshift, vl);           \
+        u32_tmp = __riscv_vsub_vx_u32m##lmul32(u32_tmp, 1, vl);                \
+        u32_tmp = __riscv_vand_vv_u32m##lmul32(u32_tmp, u32_tmp2, vl);         \
+        auto sticky_bit =                                                      \
+            __riscv_vmerge_vvm_u32m##lmul32(u32_zero, u32_tmp, mask2, vl);     \
+        u32_tmp2 = __riscv_vsrl_vv_u32m##lmul32(u32_tmp2, rshift, vl);         \
+        mantissa =                                                             \
+            __riscv_vmerge_vvm_u32m##lmul32(mantissa, u32_tmp2, mask1, vl);    \
+        u32_tmp = __riscv_vsrl_vx_u32m##lmul32(mantissa, 23 - 3, vl);          \
+        u32_tmp2 = __riscv_vand_vx_u32m##lmul32(u32_tmp, (1 << 3) - 1, vl);    \
+        u32_tmp =                                                              \
+            __riscv_vmerge_vvm_u32m##lmul32(u32_tmp, u32_tmp2, mask1, vl);     \
+        auto u8_tmp = __riscv_vncvt_x_x_w_u8m##lmul8(                          \
+            __riscv_vncvt_x_x_w_u16m##lmul16(u32_tmp, vl), vl);                \
+        auto u = __riscv_vor_vv_u8m##lmul8(                                    \
+            __riscv_vreinterpret_v_i8m##lmul8##_u8m##lmul8(i8_tmp), u8_tmp,    \
+            vl);                                                               \
+        u = __riscv_vmerge_vvm_u8m##lmul8(u, u8_tmp, mask1, vl);               \
+        u32_tmp = __riscv_vsrl_vx_u32m##lmul32(mantissa, 23 - 3 - 1, vl);      \
+        auto round_bit = __riscv_vand_vx_u32m##lmul32(u32_tmp, 1, vl);         \
+        u32_tmp = __riscv_vand_vx_u32m##lmul32(mantissa,                       \
+                                               (1 << (23 - 3 - 1)) - 1, vl);   \
+        sticky_bit = __riscv_vor_vv_u32m##lmul32(sticky_bit, u32_tmp, vl);     \
+        u8_tmp = __riscv_vand_vx_u8m##lmul8(u, 1, vl);                         \
+        mask1 = __riscv_vmsne_vx_u8m##lmul8##_b##mlen(u8_tmp, 0, vl);          \
+        mask2 = __riscv_vmsne_vx_u32m##lmul32##_b##mlen(sticky_bit, 0, vl);    \
+        mask1 = __riscv_vmor_mm_b##mlen(mask1, mask2, vl);                     \
+        mask2 = __riscv_vmsne_vx_u32m##lmul32##_b##mlen(round_bit, 0, vl);     \
+        mask1 = __riscv_vmand_mm_b##mlen(mask1, mask2, vl);                    \
+        u8_tmp = __riscv_vadd_vx_u8m##lmul8(u, 1, vl);                         \
+        u = __riscv_vmerge_vvm_u8m##lmul8(u, u8_tmp, mask1, vl);               \
+        u = __riscv_vminu_vx_u8m##lmul8(u, 0x7e, vl);                          \
+        mask1 = __riscv_vmsgtu_vx_u32m##lmul32##_b##mlen(s, 0x7f800000, vl);   \
+        u = __riscv_vmerge_vxm_u8m##lmul8(u, 0x7f, mask1, vl);                 \
+        mask1 = __riscv_vmseq_vx_u32m##lmul32##_b##mlen(s, 0x7f800000, vl);    \
+        mask2 = __riscv_vmsgt_vx_i8m##lmul8##_b##mlen(i8_exp, 8, vl);          \
+        mask1 = __riscv_vmor_mm_b##mlen(mask1, mask2, vl);                     \
+        u = __riscv_vmerge_vxm_u8m##lmul8(u, 0x7e, mask1, vl);                 \
+        return __riscv_vor_vv_u8m##lmul8(u, sign, vl);                         \
+    }
+
 REGISTER_RVV_KERNEL(CAST_FLOAT32_INT32)
 REGISTER_RVV_KERNEL(CAST_INT32_FLOAT32)
 REGISTER_RVV_KERNEL(CAST_FLOAT32_UINT32)
 REGISTER_RVV_KERNEL(CAST_UINT32_FLOAT32)
 REGISTER_RVV_KERNEL_4_1(CAST_FLOAT32_BOOL)
 REGISTER_RVV_KERNEL_1_4(CAST_BOOL_FLOAT32)
+REGISTER_RVV_KERNEL_4_1(CAST_FLOAT32_FLOAT8_E4M3)
 
 // register cast op
 #define RVV_CAST_OP(from_dtype, to_dtype, vl, kernel)                          \
@@ -1469,6 +1537,7 @@ REGISTER_RVV_CAST_OP(float, unsigned int, cast_float32_uint32)
 REGISTER_RVV_CAST_OP(unsigned int, float, cast_uint32_float32)
 REGISTER_RVV_CAST_OP(float, bool, cast_float32_bool)
 REGISTER_RVV_CAST_OP_1_4(bool, float, cast_bool_float32)
+REGISTER_RVV_CAST_OP(float, float_e4m3_t, cast_float32_float8_e4m3)
 
 #endif
 } // namespace nncase::ntt::ops
