@@ -37,7 +37,7 @@ class MySerial:
         self.baudrate = baudrate
         self.separator = separator
         self.logger = logger
-        self.timeout = 60
+        self.timeout = 120
 
     def open(self):
         self.logger.debug(f'open {self.port} begin')

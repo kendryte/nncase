@@ -17,7 +17,7 @@
 #include <immintrin.h>
 
 #ifndef NTT_VLEN
-#define NTT_VLEN (sizeof(__m256i) * 8)
+constexpr size_t NTT_VLEN = sizeof(__m256i) * 8;
 #endif
 
 NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT_CAST(int8_t, __m256i, __v32qs, 32)

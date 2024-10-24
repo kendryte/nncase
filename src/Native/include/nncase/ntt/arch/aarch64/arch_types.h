@@ -17,7 +17,7 @@
 #include <arm_neon.h>
 
 #ifndef NTT_VLEN
-#define NTT_VLEN (sizeof(int8x16_t) * 8)
+constexpr size_t NTT_VLEN = (sizeof(int8x16_t) * 8);
 #endif
 
 NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(int8_t, int8x16_t, 16)

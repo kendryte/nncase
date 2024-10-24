@@ -14,6 +14,10 @@
  */
 #pragma once
 #include "../apply.h"
+#include "../loop.h"
+#include "../tensor_ops.h"
+#include "../ukernels.h"
+#include "../utility.h"
 
 namespace nncase::ntt {
 namespace detail {
@@ -47,7 +51,7 @@ class unary_impl<fixed_shape<Dims...>, fixed_strides<InStrides...>,
                 input.elements().data() + linear_offset(index, input.strides());
             auto output_p = output.elements().data() +
                             linear_offset(index, output.strides());
-            unary_contiguous<inner_size>(op, input_p, output_p);
+            unary_contiguous<Op, inner_size>(input_p, output_p);
         } else {
             apply_next<Op, TIn, TOut, Axis, Rank, ContiguousDims, RestDims...>(
                 op, index, input, output);
@@ -64,11 +68,9 @@ class unary_impl<fixed_shape<Dims...>, fixed_strides<InStrides...>,
         }
     }
 
-    template <size_t Extent, class T, class Op>
-    constexpr void unary_contiguous(Op &&op, const T *input_p, T *output_p) {
-        for (size_t i = 0; i < Extent; i++) {
-            output_p[i] = op(input_p[i]);
-        }
+    template <class Op, size_t Extent, class T>
+    constexpr void unary_contiguous(const T *input, T *output) {
+        ntt::u_unary<Op, T>(input, 1, output, 1, Extent);
     }
 };
 
@@ -97,7 +99,7 @@ class unary_impl<ranked_shape<Rank>, InStrides, OutStrides> {
                 input.buffer().data() + linear_offset(index, input.strides());
             auto output_p =
                 output.buffer().data() + linear_offset(index, output.strides());
-            unary_contiguous(op, input_p, output_p, inner_size);
+            unary_contiguous<Op>(input_p, output_p, inner_size);
         } else if constexpr (Axis < Rank - 1) {
             const auto dim = input.shape()[Axis];
             for (index[Axis] = 0; index[Axis] < dim; index[Axis]++) {
@@ -107,12 +109,9 @@ class unary_impl<ranked_shape<Rank>, InStrides, OutStrides> {
         }
     }
 
-    template <class T, class Op>
-    constexpr void unary_contiguous(Op &&op, const T *input_p, T *output_p,
-                                    size_t extent) {
-        for (size_t i = 0; i < extent; i++) {
-            output_p[i] = op(input_p[i]);
-        }
+    template <class Op, class T>
+    constexpr void unary_contiguous(const T *input, T *output, size_t extent) {
+        ntt::u_unary<Op, T>(input, 1, output, 1, extent);
     }
 };
 } // namespace detail
