@@ -164,7 +164,6 @@ void init_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &tensor,
 
 template <ntt::IsTensor TTensor>
 bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
-    using T = typename std::decay_t<TTensor>::element_type;
     if (lhs.shape().rank() != rhs.shape().rank()) {
         return false;
     }
