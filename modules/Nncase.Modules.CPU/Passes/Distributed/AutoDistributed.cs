@@ -303,15 +303,27 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             VisitLeafArgument(param.ParameterKind, expr.Arguments[param.Index], isSupported);
         }
 
+        // var results = expr.Arguments.ToArray().
+        //             Select(Visit).
+        //             CartesianProduct().
+        //             Select(args => args.ToArray()).
+        //             Select(args => isSupported ? BuildEquivalCalls(op, args.Select(kv => kv.Value[0]).ToArray()).ToArray() :
+        //                             BuildNotSupportedCalls(op, args.Select(kv => kv.Value[0]).ToArray())).
+        //             SelectMany(i => i).
+        //             GroupBy(c => c.CheckedType).
+        //             ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
         var results = expr.Arguments.ToArray().
-                    Select(Visit).
-                    CartesianProduct().
-                    Select(args => args.ToArray()).
-                    Select(args => isSupported ? BuildEquivalCalls(op, args.Select(kv => kv.Value[0]).ToArray()).ToArray() :
-                                    BuildNotSupportedCalls(op, args.Select(kv => kv.Value[0]).ToArray())).
-                    SelectMany(i => i).
-                    GroupBy(c => c.CheckedType).
-                    ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
+                            Select(Visit).
+                            CartesianProduct().
+                            Select(args => args.ToArray()).
+                            Select(args => args.Select(kv => kv.Value[0]).Select(arg => arg.CheckedType switch
+                            {
+                                DistributedType d => GetDiverseCandidateSBPs(d, Placements).Select(ndsbp => IR.F.CPU.Boxing(arg, new DistributedType(d.TensorType, ndsbp, d.Placement))).Concat(new[] { arg }).ToArray(),
+                                _ => new[] { arg },
+                            }).ToList().CartesianProduct().Select(arg => BuildEquivalCalls(op, arg.ToArray())).SelectMany(i => i).ToArray()).
+                            SelectMany(i => i).
+                            GroupBy(c => c.CheckedType).
+                            ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
 
         if (results.Count == 0)
         {

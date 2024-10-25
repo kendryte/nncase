@@ -16,36 +16,72 @@
 #include "../apply.h"
 
 namespace nncase::ntt {
-namespace copy_detail {
-template <typename TA, typename TB> struct copy_impl;
-template <IsFixedTensor TA, IsFixedTensor TB> struct copy_impl<TA, TB> {
-    constexpr void operator()(const TA &input, TB &output) {
-        constexpr auto input_shape = TA::shape();
-        constexpr auto input_strides = TA::strides();
+namespace detail {
+template <typename TIn, typename TOut> struct copy_impl;
 
-        constexpr auto output_shape = std::decay_t<TB>::shape();
-        constexpr auto output_strides = std::decay_t<TB>::strides();
+template <IsFixedTensor TIn, IsFixedTensor TOut> struct copy_impl<TIn, TOut> {
+    constexpr void operator()(const TIn &input, TOut &output) {
+        constexpr auto rank = TIn::rank();
+        constexpr auto input_shape = TIn::shape();
+        constexpr auto input_strides = TIn::strides();
 
-        constexpr auto cdim_input = contiguous_dims(input_shape, input_strides);
-        constexpr auto cdim_output =
+        constexpr auto output_shape = std::decay_t<TOut>::shape();
+        constexpr auto output_strides = std::decay_t<TOut>::strides();
+
+        constexpr auto cdims_input =
+            contiguous_dims(input_shape, input_strides);
+        constexpr auto cdims_output =
             contiguous_dims(output_shape, output_strides);
+        constexpr auto cdims = std::min(cdims_input, cdims_output);
+        constexpr auto caxis = input_shape.rank() - cdims;
 
-        if constexpr (cdim_input == cdim_output &&
-                      cdim_input == input_shape.rank() &&
-                      cdim_output == output_shape.rank()) {
-            auto out_buffer = output.buffer();
-            memcpy(out_buffer.data(), input.buffer().data(),
-                   out_buffer.size_bytes());
+        ranked_shape<rank> index{};
+        apply<0, rank, caxis>(index, input, output);
+
+        // if constexpr (cdim_input == cdim_output &&
+        //               cdim_input == input_shape.rank() &&
+        //               cdim_output == output_shape.rank()) {
+        //     auto out_buffer = output.buffer();
+        //     memcpy(out_buffer.data(), input.buffer().data(),
+        //            out_buffer.size_bytes());
+        // } else {
+        //     apply(input_shape,
+        //           [&](auto index) { output(index) = input(index); });
+        // }
+    }
+
+  private:
+    template <size_t Axis, size_t Rank, size_t ContiguousAxis>
+    constexpr void apply(ranked_shape<Rank> &index, const TIn &input,
+                         TOut &output) {
+        if constexpr (Axis == ContiguousAxis) {
+            constexpr auto rest_dims =
+                slice_fixed_dims<Rank - Axis, Axis>(TIn::shape());
+            constexpr auto inner_size =
+                rest_dims.length() * sizeof(typename TIn::element_type);
+            auto input_p =
+                input.elements().data() + linear_offset(index, input.strides());
+            auto output_p = output.elements().data() +
+                            linear_offset(index, output.strides());
+            memcpy(output_p, input_p, inner_size);
         } else {
-            apply(input_shape,
-                  [&](auto index) { output(index) = input(index); });
+            apply_next<Axis, Rank, ContiguousAxis>(index, input, output);
+        }
+    }
+
+    template <size_t Axis, size_t Rank, size_t ContiguousAxis>
+    constexpr void apply_next(ranked_shape<Rank> &index, const TIn &input,
+                              TOut &output) {
+        for (index[Axis] = 0; index[Axis] < input.shape()[Axis];
+             index[Axis]++) {
+            apply<Axis + 1, Rank, ContiguousAxis>(index, input, output);
         }
     }
 };
 
-template <typename TA, typename TB> struct copy_impl;
-template <IsRankedTensor TA, IsRankedTensor TB> struct copy_impl<TA, TB> {
-    constexpr void operator()(const TA &input, TB &output) {
+template <typename TIn, typename TOut> struct copy_impl;
+template <IsRankedTensor TIn, IsRankedTensor TOut> struct copy_impl<TIn, TOut> {
+    constexpr void operator()(const TIn &input, TOut &output) {
         auto input_shape = input.shape();
         auto input_strides = input.strides();
         auto output_shape = output.shape();
@@ -54,27 +90,29 @@ template <IsRankedTensor TA, IsRankedTensor TB> struct copy_impl<TA, TB> {
         auto cdims_output = contiguous_dims(output_shape, output_strides);
         auto cdims = std::min(cdims_input, cdims_output);
 
-        auto domain = ntt::ranked_shape<TA::rank()>();
+        auto domain = ntt::ranked_shape<TIn::rank()>();
         auto caxis = input_shape.rank() - cdims;
         for (size_t i = 0; i < caxis; i++) {
             domain[i] = input_shape[i];
         }
-        for (size_t i = caxis; i < TA::rank(); i++) {
+        for (size_t i = caxis; i < TIn::rank(); i++) {
             domain[i] = 1;
         }
 
         apply(domain, [&](auto index) {
-            memcpy(output.buffer().data() + linear_offset(index, output_strides),
+            memcpy(output.buffer().data() +
+                       linear_offset(index, output_strides),
                    input.buffer().data() + linear_offset(index, input_strides),
-                   input_shape[caxis] * input_strides[caxis] * sizeof(typename TA::element_type));
+                   input_shape[caxis] * input_strides[caxis] *
+                       sizeof(typename TIn::element_type));
         });
     }
 };
-} // namespace copy_detail
+} // namespace detail
 
-template <class TA, class TB>
-void tensor_copy(const TA &input, TB &&output) noexcept {
-    copy_detail::copy_impl<TA, TB> impl;
+template <class TIn, class TOut>
+void tensor_copy(const TIn &input, TOut &&output) noexcept {
+    detail::copy_impl<TIn, TOut> impl;
     impl(input, output);
 }
 } // namespace nncase::ntt

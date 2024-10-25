@@ -109,6 +109,19 @@ int main() {
         assert(ta(1, 0) == tb(1, 0, 0));
         assert(ta(1, 1) == tb(1, 0, 1));
         assert(ta(1, 2) == tb(1, 0, 2));
+
+        // nocontigious copy
+        {
+            ntt::tensor<float, ntt::fixed_shape<2, 6>> tc;
+            std::iota(tc.elements().begin(), tc.elements().end(), 0.f);
+            ntt::tensor<float, ntt::fixed_shape<2, 3>> td;
+            ntt::tensor_copy(
+                tc.view(ntt::make_ranked_shape(0, 3), ntt::fixed_shape<2, 3>{}),
+                td);
+            ntt::apply(ntt::fixed_shape<2, 3>{}, [&](NNCASE_UNUSED auto index) {
+                assert(tc(index[0], index[1] + 3) == td(index));
+            });
+        }
     }
 
     // fixed pack
