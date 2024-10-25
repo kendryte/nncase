@@ -269,13 +269,6 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                          'Min_reduceN_NoPack': 2047,
                                          'Min_reduceN_PackN': 256,
                                          },
-                              'gather': {'pack1d_dim0_contiguous': '0',
-                                         'pack1d_dim0_no_contiguous': '0',
-                                         'pack1d_dim1_contiguous': '0',
-                                         'pack1d_dim1_no_contiguous': '0',
-                                         'pack2d_dim0_contiguous': '0',
-                                         'pack2d_dim1_contiguous': '0',
-                                         },
                               }
 
     def run(self):
@@ -367,13 +360,6 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                          'Mean_reduceMN_NoPack': '8198',
                                          'Mean_reduceMN_PackN': '2586',
                                          'Mean_reduceMN_PackM': '2586',
-                                         },
-                              'gather': {'pack1d_dim0_contiguous': '0',
-                                         'pack1d_dim0_no_contiguous': '0',
-                                         'pack1d_dim1_contiguous': '0',
-                                         'pack1d_dim1_no_contiguous': '0',
-                                         'pack2d_dim0_contiguous': '0',
-                                         'pack2d_dim1_contiguous': '0',
                                          },
                               }
 
