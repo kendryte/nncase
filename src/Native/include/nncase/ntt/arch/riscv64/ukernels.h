@@ -76,6 +76,9 @@ SPECIALIZE_U_BINARY(floor_mod, 8)
 
 #undef SPECIALIZE_U_BINARY
 
+// clamp
+template <> struct u_clamp_policy<true> { static constexpr size_t unroll = 8; };
+
 // reduce
 template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
     static constexpr size_t unroll = 8;

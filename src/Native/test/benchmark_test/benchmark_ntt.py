@@ -306,7 +306,7 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                        'bool-float': '8',
                                        'float-f8e4m3': '100',
                                        },
-                              'clamp': {'Pack': '12.3'},
+                              'clamp': {'Pack': '6.3'},
                               'unary': {'abs': '6.3',
                                         'acos': '84',
                                         'acosh': '123',
