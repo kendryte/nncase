@@ -23,54 +23,68 @@
 namespace nncase::ntt::ukernels {
 
 // unary
-template <typename T>
-struct u_unary_policy<ntt::ops::abs<vector<T, NTT_VLEN / sizeof(T) / 8>>,
-                      vector<T, NTT_VLEN / sizeof(T) / 8>, true> {
-    static constexpr size_t unroll = 8;
-};
+#define SPECIALIZE_U_UNARY(op, unroll_num)                                     \
+    template <typename T>                                                      \
+    struct u_unary_policy<ntt::ops::op<vector<T, NTT_VLEN / sizeof(T) / 8>>,   \
+                          vector<T, NTT_VLEN / sizeof(T) / 8>, true> {         \
+        static constexpr size_t unroll = unroll_num;                           \
+    };
 
-template <typename T>
-struct u_unary_policy<ntt::ops::ceil<vector<T, NTT_VLEN / sizeof(T) / 8>>,
-                      vector<T, NTT_VLEN / sizeof(T) / 8>, true> {
-    static constexpr size_t unroll = 8;
-};
+SPECIALIZE_U_UNARY(abs, 8)
+SPECIALIZE_U_UNARY(ceil, 8)
+SPECIALIZE_U_UNARY(floor, 8)
+SPECIALIZE_U_UNARY(neg, 8)
+SPECIALIZE_U_UNARY(round, 8)
+SPECIALIZE_U_UNARY(sign, 8)
+SPECIALIZE_U_UNARY(square, 8)
 
-template <typename T>
-struct u_unary_policy<ntt::ops::floor<vector<T, NTT_VLEN / sizeof(T) / 8>>,
-                      vector<T, NTT_VLEN / sizeof(T) / 8>, true> {
-    static constexpr size_t unroll = 8;
-};
+#undef SPECIALIZE_U_UNARY
 
-template <typename T>
-struct u_unary_policy<ntt::ops::neg<vector<T, NTT_VLEN / sizeof(T) / 8>>,
-                      vector<T, NTT_VLEN / sizeof(T) / 8>, true> {
-    static constexpr size_t unroll = 8;
-};
+// binary
+#define SPECIALIZE_U_BINARY(op, unroll_num)                                    \
+    template <typename T1, typename T2>                                        \
+    struct u_binary_policy<                                                    \
+        ntt::ops::op<vector<T1, NTT_VLEN / sizeof(T1) / 8>,                    \
+                     vector<T2, NTT_VLEN / sizeof(T2) / 8>>,                   \
+        vector<T1, NTT_VLEN / sizeof(T1) / 8>,                                 \
+        vector<T2, NTT_VLEN / sizeof(T2) / 8>, true> {                         \
+        static constexpr size_t unroll = unroll_num;                           \
+    };                                                                         \
+                                                                               \
+    template <typename T1, typename T2>                                        \
+    struct u_binary_policy<                                                    \
+        ntt::ops::op<T1, vector<T2, NTT_VLEN / sizeof(T2) / 8>>, T1,           \
+        vector<T2, NTT_VLEN / sizeof(T2) / 8>, true> {                         \
+        static constexpr size_t unroll = unroll_num;                           \
+    };                                                                         \
+                                                                               \
+    template <typename T1, typename T2>                                        \
+    struct u_binary_policy<                                                    \
+        ntt::ops::op<vector<T1, NTT_VLEN / sizeof(T1) / 8>, T2>,               \
+        vector<T1, NTT_VLEN / sizeof(T1) / 8>, T2, true> {                     \
+        static constexpr size_t unroll = unroll_num;                           \
+    };
 
-template <typename T>
-struct u_unary_policy<ntt::ops::round<vector<T, NTT_VLEN / sizeof(T) / 8>>,
-                      vector<T, NTT_VLEN / sizeof(T) / 8>, true> {
-    static constexpr size_t unroll = 8;
-};
+SPECIALIZE_U_BINARY(add, 8)
+SPECIALIZE_U_BINARY(sub, 8)
+SPECIALIZE_U_BINARY(mul, 8)
+SPECIALIZE_U_BINARY(div, 8)
+SPECIALIZE_U_BINARY(max, 8)
+SPECIALIZE_U_BINARY(min, 8)
+SPECIALIZE_U_BINARY(mod, 8)
+SPECIALIZE_U_BINARY(floor_mod, 8)
 
-template <typename T>
-struct u_unary_policy<ntt::ops::sign<vector<T, NTT_VLEN / sizeof(T) / 8>>,
-                      vector<T, NTT_VLEN / sizeof(T) / 8>, true> {
-    static constexpr size_t unroll = 8;
-};
+#undef SPECIALIZE_U_BINARY
 
-template <typename T>
-struct u_unary_policy<ntt::ops::square<vector<T, NTT_VLEN / sizeof(T) / 8>>,
-                      vector<T, NTT_VLEN / sizeof(T) / 8>, true> {
-    static constexpr size_t unroll = 8;
-};
-
+// reduce
 template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
     static constexpr size_t unroll = 8;
 };
 
+// cast
 template <> struct u_cast_policy<true> { static constexpr size_t unroll = 8; };
 
+// matmul
 template <>
 struct u_matmul_policy<mamtul_pack_kind::no_pack, float, float, float, true> {
     static constexpr size_t m0_tile = 1;

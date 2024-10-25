@@ -35,11 +35,10 @@ void benchmark_ntt_binary(std::string op_name, T lhs_low, T lhs_high, T rhs_low,
     tensor_type ntt_lhs, ntt_rhs, ntt_result;
     NttTest::init_tensor(ntt_lhs, lhs_low, lhs_high);
     NttTest::init_tensor(ntt_rhs, rhs_low, rhs_high);
-    Op<tensor_type, tensor_type> op;
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < size1; i++)
-        ntt_result = op(ntt_lhs, ntt_rhs);
+        ntt::binary<Op>(ntt_lhs, ntt_rhs, ntt_result);
     auto t2 = NttTest::get_cpu_cycle();
 #if __x86_64__
     asm volatile("" ::"g"(ntt_result));
@@ -50,76 +49,26 @@ void benchmark_ntt_binary(std::string op_name, T lhs_low, T lhs_high, T rhs_low,
               << std::endl;
 }
 
-#define BENCHMARK_NTT_BINARY(OP)                                               \
-    template <size_t N, size_t run_size, size_t size>                          \
-    void benchmark_ntt_binary_##OP() {                                         \
-                                                                               \
-        using tensor_type1 =                                                   \
-            ntt::tensor<ntt::vector<float, N>, ntt::fixed_shape<size>>;        \
-        using tensor_type2 =                                                   \
-            ntt::tensor<ntt::vector<float, N>, ntt::fixed_shape<size>>;        \
-        using tensor_type_out =                                                \
-            ntt::tensor<ntt::vector<float, N>, ntt::fixed_shape<size>>;        \
-        constexpr size_t warmup_size = 30;                                     \
-                                                                               \
-        tensor_type1 ntt_input1;                                               \
-        tensor_type2 ntt_input2;                                               \
-        tensor_type_out ntt_output;                                            \
-        NttTest::init_tensor(ntt_input1, -10.f, 10.f);                         \
-        NttTest::init_tensor(ntt_input2, -10.f, 10.f);                         \
-                                                                               \
-        for (size_t i = 0; i < warmup_size; i++)                               \
-            ntt::OP(ntt_input1, ntt_input2, ntt_output);                       \
-                                                                               \
-        auto t1 = NttTest::get_cpu_cycle();                                    \
-        for (size_t i = 0; i < run_size; i++) {                                \
-            ntt::OP(ntt_input1, ntt_input2, ntt_output);                       \
-            asm volatile("" ::"g"(ntt_output));                                \
-            asm volatile("" ::"g"(ntt_input1));                                \
-            asm volatile("" ::"g"(ntt_input2));                                \
-        }                                                                      \
-        auto t2 = NttTest::get_cpu_cycle();                                    \
-                                                                               \
-        std::cout << __FUNCTION__ << " took " << std::setprecision(1)          \
-                  << std::fixed                                                \
-                  << static_cast<float>(t2 - t1) / size / run_size             \
-                  << " cycles" << std::endl;                                   \
-    }
-
-BENCHMARK_NTT_BINARY(add)
-BENCHMARK_NTT_BINARY(div)
-BENCHMARK_NTT_BINARY(max)
-BENCHMARK_NTT_BINARY(min)
-BENCHMARK_NTT_BINARY(mod)
-BENCHMARK_NTT_BINARY(mul)
-BENCHMARK_NTT_BINARY(sub)
-
 int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
 
-#if __riscv
-    constexpr size_t run_size = 300;
-    constexpr size_t size = 600;
-#elif __x86_64__
-    constexpr size_t run_size = 2000;
-    constexpr size_t size = 2000;
-#else
-    constexpr size_t run_size = 2000;
-    constexpr size_t size = 2000;
-#endif
-
     constexpr size_t N = NTT_VLEN / (sizeof(float) * 8);
-
+    benchmark_ntt_binary<ntt::ops::add, float, N>("add", -10.f, 10.f, -10.f,
+                                                  10.f);
+    benchmark_ntt_binary<ntt::ops::sub, float, N>("sub", -10.f, 10.f, -10.f,
+                                                  10.f);
+    benchmark_ntt_binary<ntt::ops::mul, float, N>("mul", -10.f, 10.f, -10.f,
+                                                  10.f);
+    benchmark_ntt_binary<ntt::ops::div, float, N>("div", -10.f, 10.f, 1.f,
+                                                  10.f);
+    benchmark_ntt_binary<ntt::ops::max, float, N>("max", -10.f, 10.f, -10.f,
+                                                  10.f);
+    benchmark_ntt_binary<ntt::ops::min, float, N>("min", -10.f, 10.f, -10.f,
+                                                  10.f);
     benchmark_ntt_binary<ntt::ops::floor_mod, int32_t, N>("floor_mod", -10, 10,
                                                           1, 10);
+    benchmark_ntt_binary<ntt::ops::mod, float, N>("mod", -10.f, 10.f, 1.f,
+                                                  10.f);
     benchmark_ntt_binary<ntt::ops::pow, float, N>("pow", 0.f, 3.f, 0.f, 3.f);
-
-    benchmark_ntt_binary_add<N, run_size, size>();
-    benchmark_ntt_binary_div<N, run_size, size>();
-    benchmark_ntt_binary_max<N, run_size, size>();
-    benchmark_ntt_binary_min<N, run_size, size>();
-    benchmark_ntt_binary_mod<N, run_size, size>();
-    benchmark_ntt_binary_mul<N, run_size, size>();
-    benchmark_ntt_binary_sub<N, run_size, size>();
 }

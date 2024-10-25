@@ -281,14 +281,14 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
 class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
     def __init__(self, target: str, bin_path: str):
         BenchmarkNTT.__init__(self, 'riscv64', target, bin_path)
-        self.roofline_dict = {'binary': {'add': '10.3',
-                                         'sub': '10.3',
-                                         'mul': '10.3',
-                                         'div': '42.3',
-                                         'max': '10.3',
-                                         'min': '10.3',
-                                         'floor_mod': '43',
-                                         'mod': '54',
+        self.roofline_dict = {'binary': {'add': '7.3',
+                                         'sub': '7.3',
+                                         'mul': '7.3',
+                                         'div': '30.3',
+                                         'max': '7.3',
+                                         'min': '7.3',
+                                         'floor_mod': '40.3',
+                                         'mod': '35.3',
                                          'pow': '139'
                                          },
                               'cast': {'float-int32': '5',
