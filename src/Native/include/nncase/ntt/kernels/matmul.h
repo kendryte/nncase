@@ -69,8 +69,10 @@ constexpr ukernels::mamtul_pack_kind get_matmul_pack_kind() noexcept {
                          LhsPackedAxes::at(0) == lm &&
                          LhsPackedAxes::at(1) == lk &&
                          RhsPackedAxes::rank() == 2 &&
-                         RhsPackedAxes::at(0) == rk &&
-                         RhsPackedAxes::at(1) == rn) {
+                         ((RhsPackedAxes::at(0) == rk &&
+                           RhsPackedAxes::at(1) == rn) ||
+                          (RhsPackedAxes::at(0) == rn &&
+                           RhsPackedAxes::at(1) == rk))) {
         return ukernels::mamtul_pack_kind::pack_mkn;
     } else {
         static_assert(TLhs::rank() == 0, "not support pack kind!");
