@@ -282,7 +282,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             foreach (var i in Enumerable.Range(0, expr.Fields.Length))
             {
                 var boxings = Visit(expr.Fields[i]).Values.
-                    Select(l => l.Select(e => e.CheckedType is DistributedType dt ? IR.F.CPU.Boxing(e, dt.TensorType) : e).ToArray()).
+                    Select(l => l.Select(e => e.CheckedType is DistributedType dt ? (dt.NdSBP.Any(s => s is SBPPartialSum) ? IR.F.CPU.Boxing(IR.F.CPU.Boxing(e, new DistributedType(dt.TensorType, dt.NdSBP.Select(s => s is SBPPartialSum ? SBP.B : s).ToArray(), dt.Placement)), dt.TensorType) : IR.F.CPU.Boxing(e, dt.TensorType)) : e).ToArray()).
                     SelectMany(e => e).Select(e => new EqualityNode(e)).OfType<IEquality>().ToList();
                 fileds.Add(new EqualityClass(false, boxings));
             }
