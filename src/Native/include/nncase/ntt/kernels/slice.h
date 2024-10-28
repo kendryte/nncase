@@ -32,14 +32,6 @@ inline constexpr auto compute_inner_domain(std::index_sequence<Ints...>) {
 }
 } // namespace slice_detail
 
-template <typename Tshape>
-void dump_shape(const std::string &info, Tshape shape) {
-    std::cout << info;
-    for (size_t i = 0; i < shape.rank(); i++)
-        std::cout << shape[i] << " ";
-    std::cout << std::endl;
-}
-
 /**
  * @brief
  *
@@ -62,30 +54,19 @@ void slice(const TIn &input, TOut &&output) {
 
     auto in_index = ranked_shape<domain.rank()>{};
     auto out_index = ranked_shape<domain.rank()>{};
-    // dump_shape("domain = ", domain);
-    // dump_shape("inner_domain = ", inner_domain);
-    // dump_shape("in_index = ", in_index);
-    // dump_shape("out_index = ", out_index);
 
     apply(domain, [&](auto index) {
-        // dump_shape("index = ", index);
-
         loop<domain.rank()>([&](auto i) {
             in_index[i] = index[i];
             out_index[i] = index[i];
         });
-        // dump_shape("1: in_index = ", in_index);
-        // dump_shape("1: out_index = ", out_index);
 
         apply(inner_domain, [&](auto inner_index) {
-            // dump_shape("inner_index = ", inner_index);
             loop<inner_domain.rank()>([&](auto i) {
                 in_index[TAxes::at(i)] =
                     TStart::at(i) + inner_index[i] * TStride::at(i);
                 out_index[TAxes::at(i)] = inner_index[i];
             });
-            // dump_shape("2: in_index = ", in_index);
-            // dump_shape("2: out_index = ", out_index);
             output(out_index) = input(in_index);
         });
     });

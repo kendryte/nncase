@@ -931,11 +931,6 @@ int main() {
 
     std::string result;
 
-    BENCHMARK_NTT_REDUCE(add, MN, noPack, 64, 64)
-    BENCHMARK_NTT_REDUCE(max, MN, noPack, 64, 64)
-    BENCHMARK_NTT_REDUCE(min, MN, noPack, 64, 64)
-    BENCHMARK_NTT_REDUCE(mean, MN, noPack, 64, 64)
-
     BENCHMARK_NTT_REDUCE(add, MN, packM, 2048, 2)
     BENCHMARK_NTT_REDUCE(max, MN, packM, 2048, 2)
     BENCHMARK_NTT_REDUCE(min, MN, packM, 2048, 2)
@@ -945,16 +940,6 @@ int main() {
     BENCHMARK_NTT_REDUCE(max, MN, packN, 2, 2048)
     BENCHMARK_NTT_REDUCE(min, MN, packN, 2, 2048)
     BENCHMARK_NTT_REDUCE(mean, MN, packN, 2, 2048)
-
-    BENCHMARK_NTT_REDUCE(add, M, noPack, 2048, 2)
-    BENCHMARK_NTT_REDUCE(max, M, noPack, 2048, 2)
-    BENCHMARK_NTT_REDUCE(min, M, noPack, 2048, 2)
-    BENCHMARK_NTT_REDUCE(mean, M, noPack, 2048, 2)
-
-    BENCHMARK_NTT_REDUCE(add, N, noPack, 2, 2048)
-    BENCHMARK_NTT_REDUCE(max, N, noPack, 2, 2048)
-    BENCHMARK_NTT_REDUCE(min, N, noPack, 2, 2048)
-    BENCHMARK_NTT_REDUCE(mean, N, noPack, 2, 2048)
 
     BENCHMARK_NTT_REDUCE(add, M, packM, 2048, 2)
     BENCHMARK_NTT_REDUCE(max, M, packM, 2048, 2)
