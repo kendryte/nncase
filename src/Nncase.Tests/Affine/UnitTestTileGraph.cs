@@ -35,8 +35,15 @@ public sealed class UnitTestTileGraph : TestClassBase
 
     public static readonly TheoryData<Func<Function>, IntMergePoint[], Action<Expr>, int> SolveTileGraphDatas = new()
     {
-        { FunctionSamples.Get1, [new(1, 0, 2)], (_) => { }, 0 },
-        { FunctionSamples.Get5, [], SolveTileGraphChecker0, 1 },
+        { FunctionSamples.Get5, [], SolveTileGraphChecker0, 0 },
+        { FunctionSamples.Get1, [new(1, 0, 2)], (_) => { }, 1 },
+        { FunctionSamples.Get1, [new(2, 1, 2)], (_) => { }, 2 },
+        { FunctionSamples.Get1, [new(1, 0, 2), new(2, 1, 2)], (_) => { }, 3 },
+    };
+
+    public static readonly TheoryData<Func<Function>, IntMergePoint[], Action<BufferGraph>, int> BufferizeTileGraphDatas = new()
+    {
+        { FunctionSamples.Get1, [new(1, 0, 2)], (bufGraph) => { Assert.Equal(4, bufGraph.Clusters.OfType<BufferGraph>().First().Edges.Count()); }, 0 },
     };
 
     public UnitTestTileGraph()
@@ -308,6 +315,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         var func = functor();
         var post = CompilerServices.Rewrite(func, [new Passes.Rules.CPU.Affine.LowerPack(), new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), new Passes.Rules.CPU.Affine.LowerBinary()], new());
 
+        using var dumpScope = new Diagnostics.DumpScope(count.ToString());
         var builder = new GraphBuilder(targetOptions.MemoryBandWidths.Length);
         builder.Visit(post);
         var tileGraph = builder.RootGraph;
@@ -323,6 +331,31 @@ public sealed class UnitTestTileGraph : TestClassBase
 
         var tiler = new Schedule.GraphTiler();
         tiler.SolveRootGraph(tileGraph, Targets.CPUTarget.Kind, count.ToString(), targetOptions);
+    }
+
+    [Theory]
+    [MemberData(nameof(BufferizeTileGraphDatas))]
+    public void TestBufferizeTileGraph(Func<Function> functor, IntMergePoint[] mergePoints, Action<BufferGraph> action, int count)
+    {
+        var targetOptions = (ICpuTargetOptions)CompileOptions.TargetOptions;
+        var func = functor();
+        var post = CompilerServices.Rewrite(func, [new Passes.Rules.CPU.Affine.LowerPack(), new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), new Passes.Rules.CPU.Affine.LowerBinary()], new());
+
+        using var dumpScope = new Diagnostics.DumpScope(count.ToString());
+        var builder = new GraphBuilder(targetOptions.MemoryBandWidths.Length);
+        builder.Visit(post);
+        var tileGraph = builder.RootGraph;
+
+        for (int i = 0; i < mergePoints.Length; i++)
+        {
+            var point = mergePoints[i];
+            tileGraph.Merge(new(tileGraph.Vertices.Skip(point.Consumer).First(), tileGraph.Vertices.Skip(point.Producer).First(), point.Level));
+        }
+#if DEBUG
+        tileGraph.Dump($"g{count}_m");
+#endif
+        var bufferGraph = tileGraph.Bufferize();
+        action(bufferGraph[tileGraph]);
     }
 
     [Fact]

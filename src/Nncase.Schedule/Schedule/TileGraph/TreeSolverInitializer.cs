@@ -34,38 +34,6 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
         initializer.Visit(tree, Context.Default);
     }
 
-    /// <summary>
-    /// source id => sink id.
-    /// </summary>
-    public static Dictionary<BufferIdentity, BufferIdentity> GetBufferDefUseMap(TileNode tilenode, BufferResult[] bufferResults)
-    {
-        while (tilenode.Parent is TileNode parent)
-        {
-            tilenode = parent;
-        }
-
-        var map = new Dictionary<BufferIdentity, BufferIdentity>();
-        for (int i = 0; i < bufferResults.Length; i++)
-        {
-            var sourceId = bufferResults[i].Bid;
-            if (tilenode.Wrapped.TryGetOutEdges(sourceId.Node, out var outEdges))
-            {
-                foreach (var outEdge in outEdges)
-                {
-                    foreach (var target in bufferResults.Where(r => r.Bid.Node == outEdge.Target && r.Bid.Index == outEdge.Tag))
-                    {
-                        if (!map.ContainsKey(sourceId))
-                        {
-                            map.Add(sourceId, target.Bid);
-                        }
-                    }
-                }
-            }
-        }
-
-        return map;
-    }
-
     public InitResult Visit(TileNode value, Context context)
     {
         var (pid, pvars, ptrips) = context;
@@ -127,34 +95,37 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
 
         var backWardExtents = GetBackWardExtents(tileVars, childResult.DimsMaps, childResult.BackWardExtents);
 
-        var defUseMap = GetBufferDefUseMap(value, childResult.BufferResults);
+        // {source id : target id}
+        var defUseMap = BufferGraphMemo[value.Wrapped].Edges.Where(e => e.Tag == BufferEdgeKind.Outer).ToDictionary(e => e.Source, e => e.Target);
         var bufferResults = new List<BufferResult>();
 
         // each tile node have buffer place vars.
         if (!TileNodeMemo.TryGetValue(value, out var info))
         {
             var bufferInfoMap = new Dictionary<BufferIdentity, TileNodeBufferInfo<IntExpr>>();
+            var reusedIds = new HashSet<BufferIdentity>(childResult.BufferResults.Where(r => defUseMap.ContainsKey(r.Bid)).Select(r => defUseMap[r.Bid]));
             for (int i = 0; i < childResult.BufferResults.Length; i++)
             {
                 var result = childResult.BufferResults[i];
-                BufferIdentity currentId;
+                var curId = result.Bid;
+                if (reusedIds.Contains(curId))
+                {
+                    continue;
+                }
+
                 AffineMap currentAccessMap = result.AccessMap;
                 Tuple<int, int> currentLifeness = result.Lifeness;
-                if (defUseMap.TryGetValue(result.Bid, out currentId!))
+                if (defUseMap.TryGetValue(curId, out var sinkId))
                 {
-                    var sinkIndex = Array.FindIndex(childResult.BufferResults, r => r.Bid == currentId);
+                    var sinkIndex = Array.FindIndex(childResult.BufferResults, r => r.Bid == sinkId);
                     currentAccessMap = childResult.BufferResults[sinkIndex].AccessMap;
                     currentLifeness = new(Math.Min(result.Lifeness.Item1, childResult.BufferResults[sinkIndex].Lifeness.Item1), Math.Max(result.Lifeness.Item2, childResult.BufferResults[sinkIndex].Lifeness.Item2));
                 }
-                else
-                {
-                    currentId = result.Bid;
-                }
 
-                if (!bufferInfoMap.TryGetValue(currentId, out var bufferInfo))
+                if (!bufferInfoMap.TryGetValue(curId, out var bufferInfo))
                 {
-                    bufferInfoMap.Add(currentId, GetBufferInfo(value, currentId, currentAccessMap, currentLifeness, forwardExtents, backWardExtents));
-                    bufferResults.Add(new(currentId, currentLifeness, value.DomainRelation.Map * currentAccessMap));
+                    bufferInfoMap.Add(curId, GetBufferInfo(value, curId, currentAccessMap, currentLifeness, forwardExtents, backWardExtents));
+                    bufferResults.Add(new(curId, currentLifeness, value.DomainRelation.Map * currentAccessMap));
                 }
             }
 
@@ -288,15 +259,15 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
     private TileNodeBufferInfo<IntExpr> GetBufferInfo(TileNode tileNode, BufferIdentity bid, AffineMap accessMap, Tuple<int, int> lifeness, IntExpr[] forwardExtents, IntExpr[][] backWardExtents)
     {
         var rank = tileNode.DomainRelation.Map.Results.Length + 1;
-        var bufferPlaces = new IntExpr[rank][];
-        var bufferShapes = new IntExpr[rank][];
+        var bufferPlaces = Enumerable.Range(0, rank).Select(i => Array.Empty<IntExpr>()).ToArray();
+        var bufferShapes = Enumerable.Range(0, rank).Select(i => Array.Empty<IntExpr>()).ToArray();
         var bufferSizes = new IntExpr[rank];
         var bufferSizeVars = new IntExpr[rank];
         var bufferTrips = new IntExpr[rank];
         var bufferMasks = new LoopMask[rank];
 
         var resultStr = accessMap.ToString().Split("->")[1];
-        for (int i = 0; i < rank; i++)
+        for (int i = tileNode.Level == TopLevel ? 0 : 1; i < rank; i++)
         {
             var subLevelPlace = bufferPlaces[i] = new IntVar[tileNode.Level];
             for (int sl = 0; sl < subLevelPlace.Length; sl++)

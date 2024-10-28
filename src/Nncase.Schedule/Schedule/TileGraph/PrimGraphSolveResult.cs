@@ -96,7 +96,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                     if (!(value.Level == PrimBufferGraph.Level && i == 0) && place[sl] == 1)
                     {
                         var kernelInfo = bid.Node.GetKernelInfo(TargetOptions);
-                        var viewInfo = GetParentSubViewInfo(sl + 1, value, bid, bufferInfo.Map, forwardOffsets[i], bufferInfo.Shapes[i]);
+                        var viewInfo = GetParentSubViewInfo(sl, value, bid, bufferInfo.Map, forwardOffsets[i], bufferInfo.Shapes[i]);
                         Expr subView;
                         if (viewInfo.InnerAllocated)
                         {
@@ -275,9 +275,9 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
     }
 
     /// <summary>
-    /// declare the input/output buffer.
+    /// get declare of the input/output buffer which was stored on top level.
     /// </summary>
-    private TIR.Buffer GetParentDeclareBuffer(int storeLevel, ITileable node, BufferIdentity bid)
+    private TIR.Buffer GetTopLevelDeclareBuffer(BufferIdentity bid)
     {
         var expr = bid.Node.Grid.Buffers[bid.Index];
         var tensorType = GetBufferTensorType(expr);
@@ -307,7 +307,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         var parentNode = node.Parent;
         while (parentNode is TileNode parentTileNode && parentTileNode.OpId != -1)
         {
-            var pbid = TileNodeMemo[parentTileNode].GetCacheBid(cbid);
+            var pbid = TileNodeMemo[parentTileNode].GetByChildBuffer(cbid);
             if (_subViewMemo.TryGetValue(parentTileNode, out var subViewMap) && subViewMap.TryGetValue(pbid, out var subViewInfo))
             {
                 parentBuffer = subViewInfo.Buffer;
@@ -347,15 +347,15 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
             var (outputs, inputs) = PrimBufferGraph.GetInputsOutputs();
             if (outputs.Contains(bid))
             {
-                parentBuffer = GetParentDeclareBuffer(storeLevel, node, bid);
+                parentBuffer = GetTopLevelDeclareBuffer(bid);
             }
             else if (inputs.Contains(bid))
             {
-                parentBuffer = GetParentDeclareBuffer(storeLevel, node, bid);
+                parentBuffer = GetTopLevelDeclareBuffer(bid);
             }
             else if (node is TileNode tileNode)
             {
-                parentBuffer = GetParentAllocateBuffer(storeLevel, tileNode, bid, shape, out innerAllocated);
+                parentBuffer = GetInnerAllocateBuffer(storeLevel, tileNode, bid, shape, out innerAllocated);
             }
         }
 
@@ -363,9 +363,9 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
     }
 
     /// <summary>
-    /// Get the local allocate buffer.
+    /// Allocate a buffer which store at inner level.
     /// </summary>
-    private TIR.Buffer GetParentAllocateBuffer(int storeLevel, TileNode node, BufferIdentity bid, int[] shape, out bool innerAllocated)
+    private TIR.Buffer GetInnerAllocateBuffer(int storeLevel, TileNode node, BufferIdentity bid, int[] shape, out bool innerAllocated)
     {
         var expr = bid.Node.Grid.Buffers[bid.Index];
         var tensorType = GetBufferTensorType(expr);

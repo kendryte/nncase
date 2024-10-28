@@ -148,42 +148,22 @@ public sealed class GraphTiler
 
         // 0. the top level already store a buffer at outter most.
         var toplevelStoreBufferConstraints = new List<Constraint>();
+        var (inputBids, outputBids) = bufferGraphMemo[primTree.Wrapped].GetInputsOutputs();
         foreach (var (bid, binfo) in tileNodeMemo[primTree].BufferInfoMap)
         {
-            var cons = solver.MakeEquality(binfo.Places[0][^1], 1);
-            cons.SetName($"{bid}StoreAtOutMost");
-            solver.Add(cons);
-            toplevelStoreBufferConstraints.Add(cons);
-        }
-
-        // 0.1 parent node's inner place is equal to child's outter place.
-        var duplictePlaceConstranits = new List<Constraint>();
-        primTree.Walk(
-            (treeNode) =>
+            if (inputBids.Contains(bid) || outputBids.Contains(bid))
             {
-                if (treeNode is not TileNode tileNode || tileNode.Level == 1)
-                {
-                    return;
-                }
-
-                foreach (var (bid, binfo) in tileNodeMemo[tileNode].BufferInfoMap)
-                { // 首先parent是op1, child是op0, 那么他们的依赖的buffer也只能是op0的1.
-                    foreach (var child in tileNode.Children.ToArray().OfType<TileNode>())
-                    {
-                        var cbinfo = tileNodeMemo[child].BufferInfoMap[tileNodeMemo[child].GetCacheBid(bid)];
-                        for (int sl = 0; sl < tileNode.Level - 1; sl++)
-                        {
-                            var cons = solver.MakeLessOrEqual(binfo.Places[^1][sl] + cbinfo.Places[0][sl], 1);
-                            duplictePlaceConstranits.Add(cons);
-                            solver.Add(cons);
-                        }
-                    }
-                }
-            });
+                var cons = solver.MakeEquality(binfo.Places[0][^1], 1);
+                cons.SetName($"{bid}StoreAtOutMost");
+                solver.Add(cons);
+                toplevelStoreBufferConstraints.Add(cons);
+            }
+        }
 
         // 1. must have one buffer at lowest store level.
         // Beside the top-level node, from bottom to top count each tile node's buffer numbers which are stored at the lowest level.
-        var eachLevelStoreBufferNums = new Dictionary<TileNode, Dictionary<BufferIdentity, Dictionary<int, IntExpr>>>();
+        var tileNodeStoreAtLevelPlaces = new Dictionary<TileNode, Dictionary<BufferIdentity, Dictionary<int, List<IntExpr>>>>();
+        var reusedBuffers = new HashSet<NodeWithBuffer>();
         primTree.Walk(
             treeNode =>
             {
@@ -194,48 +174,142 @@ public sealed class GraphTiler
 
                 var tileNodeInfo = tileNodeMemo[tileNode];
 
-                if (!eachLevelStoreBufferNums.TryGetValue(tileNode, out var nodeStoreBufferNums))
+                if (!tileNodeStoreAtLevelPlaces.TryGetValue(tileNode, out var curNodeStoreAtLevelePlaces))
                 {
-                    nodeStoreBufferNums = new Dictionary<BufferIdentity, Dictionary<int, IntExpr>>();
+                    curNodeStoreAtLevelePlaces = new Dictionary<BufferIdentity, Dictionary<int, List<IntExpr>>>();
+                    reusedBuffers.UnionWith(tileNodeInfo.DefUseMap.Keys.Select(b => new NodeWithBuffer(tileNode, b)));
                     foreach (var (bid, bufferInfo) in tileNodeInfo.BufferInfoMap)
                     {
-                        var levelStoreNums = new Dictionary<int, IntExpr>();
+                        var levelPlaces = new Dictionary<int, List<IntExpr>>();
+
+                        // collect current node‘s placements.
                         for (int sl = 0; sl < tileNode.Level; sl++)
                         {
-                            levelStoreNums[sl] = solver.MakeSum(bufferInfo.Places.Select(p => p[sl].Var()).ToArray());
-                        }
-
-                        nodeStoreBufferNums.Add(bid, levelStoreNums);
-                    }
-
-                    foreach (var child in tileNode.Children.ToArray().OfType<TileNode>())
-                    {
-                        foreach (var (cbid, cbufferInfo) in tileNodeMemo[child].BufferInfoMap)
-                        {
-                            var pbid = tileNodeInfo.GetCacheBid(cbid);
-                            for (int sl = 0; sl < child.Level; sl++)
+                            if (!levelPlaces.TryGetValue(sl, out var places))
                             {
-                                nodeStoreBufferNums[pbid][sl] = nodeStoreBufferNums[pbid][sl] + eachLevelStoreBufferNums[child][cbid][sl];
+                                places = new List<IntExpr>();
+                                levelPlaces.Add(sl, places);
+                            }
+
+                            foreach (var place in bufferInfo.Places)
+                            {
+                                if (sl < place.Length)
+                                {
+                                    places.Add(place[sl]);
+                                }
                             }
                         }
+
+                        // collect child node's placement
+                        foreach (var childNode in tileNode.Children.ToArray().OfType<TileNode>())
+                        {
+                            var childNodeStoreAtLevelePlaces = tileNodeStoreAtLevelPlaces[childNode];
+                            if (tileNodeInfo.DefUseMap.ContainsKey(bid) || tileNodeInfo.DefUseMap.ContainsValue(bid))
+                            {
+                                continue;
+                            }
+
+                            // collect the child buffer's placement which has not been reused.
+                            if (childNodeStoreAtLevelePlaces.TryGetValue(bid, out var childLevelPlaces))
+                            {
+                                for (int sl = 0; sl < childNode.Level; sl++)
+                                {
+                                    levelPlaces[sl].AddRange(childLevelPlaces[sl]);
+                                }
+                            }
+                        }
+
+                        curNodeStoreAtLevelePlaces.Add(bid, levelPlaces);
                     }
 
-                    eachLevelStoreBufferNums.Add(tileNode, nodeStoreBufferNums);
+                    tileNodeStoreAtLevelPlaces.Add(tileNode, curNodeStoreAtLevelePlaces);
                 }
             },
             true);
 
+        // sum(places[buffer,cl,l,sl], (cl, l)) == 1
         var eachLevelStoreBufferNumsConstrains = new Dictionary<BufferIdentity, Constraint[]>();
         foreach (var (bid, bufferInfo) in tileNodeMemo[primTree].BufferInfoMap)
         {
+            if (reusedBuffers.Contains(new NodeWithBuffer(primTree, bid)))
+            {
+                continue;
+            }
+
+            var levelPlaces = tileNodeStoreAtLevelPlaces[primTree][bid];
             var cons = new Constraint[primTree.Level];
             eachLevelStoreBufferNumsConstrains[bid] = cons;
             for (int sl = 0; sl < primTree.Level; sl++)
             {
-                cons[sl] = solver.MakeEquality(eachLevelStoreBufferNums[primTree][bid][sl], 1);
-                cons[sl].SetName($"store[{bid}, sl{sl}]");
-                solver.Add(cons[sl]);
+                if (levelPlaces.TryGetValue(sl, out var places))
+                {
+                    cons[sl] = solver.MakeEquality(solver.MakeSum(places.Select(e => e.Var()).ToArray()), 1);
+                    cons[sl].SetName($"store[{bid}, sl{sl}]");
+                    solver.Add(cons[sl]);
+                }
             }
+        }
+
+        var eachLevelStoreReusedBufferNumsConstrains = new Dictionary<NodeWithBuffer, Constraint[]>();
+        foreach (var (tileNode, bid) in reusedBuffers)
+        {
+            var fusedLevel = tileNode.Level - 1;
+
+            // child's places
+            var producerSubPlaces = new List<IntExpr>();
+            var consumerSubPlaces = new List<IntExpr>();
+            var nodeInfo = tileNodeMemo[tileNode];
+            var sourceId = bid;
+            var sinkId = nodeInfo.DefUseMap[sourceId];
+            foreach (var childNode in tileNode.Children.ToArray().OfType<TileNode>())
+            {
+                var childNodeInfo = tileNodeMemo[childNode];
+                foreach (var (cbid, cbidInfo) in childNodeInfo.BufferInfoMap)
+                {
+                    if (cbid == sourceId)
+                    {
+                        producerSubPlaces.AddRange(tileNodeStoreAtLevelPlaces[childNode][cbid][fusedLevel - 1]);
+                    }
+                    else if (cbid == sinkId)
+                    {
+                        consumerSubPlaces.AddRange(tileNodeStoreAtLevelPlaces[childNode][cbid][fusedLevel - 1]);
+                    }
+                }
+            }
+
+            // 1. child consumer sub places == child producer sub places == 0
+            var producerChildStoreNums = solver.MakeSum(producerSubPlaces.Select(e => e.Var()).ToArray());
+            var consumerChildStoreNums = solver.MakeSum(consumerSubPlaces.Select(e => e.Var()).ToArray());
+            var pcons = solver.MakeEquality(producerChildStoreNums, 0);
+            pcons.SetName($"producer_store[{bid}, sl{fusedLevel}]");
+            solver.Add(pcons);
+            var ccons = solver.MakeEquality(consumerChildStoreNums, 0);
+            ccons.SetName($"consumer_store[{bid}, sl{fusedLevel}]");
+            solver.Add(ccons);
+
+            // 2. all parent places == 0
+            var parentPlaces = new List<IntExpr>();
+            var nextNode = tileNode;
+            while (nextNode.Parent is TileNode nextParent)
+            {
+                for (int sl = tileNode.Level - 1; sl < primTree.Level; sl++)
+                {
+                    parentPlaces.AddRange(tileNodeStoreAtLevelPlaces[nextNode][bid][sl]);
+                }
+
+                nextNode = nextParent;
+            }
+
+            var parentCons = solver.MakeEquality(solver.MakeSum(parentPlaces.Select(e => e.Var()).ToArray()), 0);
+            parentCons.SetName($"fused_parent_store[{bid}]");
+            solver.Add(parentCons);
+
+            // 3. fused places == 1
+            var fusedStoreNums = solver.MakeSum(tileNodeStoreAtLevelPlaces[tileNode][bid][fusedLevel - 1].Select(e => e.Var()).ToArray());
+            var fcons = solver.MakeEquality(fusedStoreNums, 1);
+            fcons.SetName($"fused_store[{bid}, sl{fusedLevel}]");
+            solver.Add(fcons);
+            eachLevelStoreReusedBufferNumsConstrains.Add(new NodeWithBuffer(tileNode, bid), new[] { pcons, ccons, parentCons, fcons });
         }
 
         // 4. tile var constraints
@@ -290,7 +364,12 @@ public sealed class GraphTiler
                 foreach (var (cbid, childBufferInfo) in tileNodeMemo[childNode].BufferInfoMap)
                 {
                     // accumulate the extents
-                    var extents = childBufferInfo.Places.Select(p => p[sl]).Zip(childBufferInfo.SizeVars).Select(p => p.First * p.Second).ToArray();
+                    var extents = childBufferInfo.Places.Where(p => p.Length > (sl + 1)).Select(p => p[sl]).Zip(childBufferInfo.SizeVars).Select(p => p.First * p.Second).ToArray();
+                    if (extents.Length == 0)
+                    {
+                        continue;
+                    }
+
                     nodeBufferSizes[new(childNode, cbid)] = extents.Skip(1).Aggregate(extents[0], solver.MakeSum);
                     nodeBufferLiveness[new(childNode, cbid)] = childBufferInfo.Liveness;
                     beginTime = Math.Min(beginTime, childBufferInfo.Liveness.Item1);
@@ -358,10 +437,9 @@ public sealed class GraphTiler
             var createLevel = tileNode.Level;
             var nodeWrites = Enumerable.Range(0, topLevel).Select(_ => new List<IntExpr>()).ToArray();
             var nodeReads = Enumerable.Range(0, topLevel).Select(_ => new List<IntExpr>()).ToArray();
-            MicroKernelBufferInfo[]? binfo = null;
             foreach (var (bid, bufferInfo) in nodeInfo.BufferInfoMap)
             {
-                binfo ??= bid.Node.GetKernelInfo(targetOptions).BufferInfos;
+                var binfo = bid.Node.GetKernelInfo(targetOptions).BufferInfos;
                 for (int storeLevel = 0; storeLevel < bufferInfo.Places[0].Length; storeLevel++)
                 {
                     var volumes = new IntExpr[bufferInfo.Places.Length];
@@ -472,9 +550,9 @@ public sealed class GraphTiler
                 searchAbleVars.AddRange(placeVars.Select(i => i.Var()));
                 collector.Add(placeVars.Select(i => i.Var()).ToArray());
                 collector.Add(bufferInfo.Shapes.SelectMany(i => i).Select(i => i.Var()).ToArray());
-                collector.Add(bufferInfo.SizeVars.Select(i => i.Var()).ToArray());
-                collector.Add(bufferInfo.SizeExprs.Select(i => i.Var()).ToArray());
-                collector.Add(bufferInfo.Trips.Select(i => i.Var()).ToArray());
+                collector.Add(bufferInfo.SizeVars.Where(v => v is not null).Select(i => i.Var()).ToArray());
+                collector.Add(bufferInfo.SizeExprs.Where(v => v is not null).Select(i => i.Var()).ToArray());
+                collector.Add(bufferInfo.Trips.Where(v => v is not null).Select(i => i.Var()).ToArray());
             }
         }
 
