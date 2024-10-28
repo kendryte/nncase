@@ -37,12 +37,14 @@ void benchmark_ntt_unary(std::string op_name, T low, T high) {
     for (size_t i = 0; i < size1; i++)
         ntt::unary<Op>(ntt_input, ntt_result);
     auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < size1; i++)
+    for (size_t i = 0; i < size1; i++) {
         ntt::unary<Op>(ntt_input, ntt_result);
-    auto t2 = NttTest::get_cpu_cycle();
 #if __x86_64__
-    asm volatile("" ::"g"(ntt_result));
+        asm volatile("" ::"g"(ntt_result));
 #endif
+    }
+    auto t2 = NttTest::get_cpu_cycle();
+
     std::cout << __FUNCTION__ << "_" << op_name << " took "
               << std::setprecision(1) << std::fixed
               << static_cast<float>(t2 - t1) / size1 / size2 << " cycles"

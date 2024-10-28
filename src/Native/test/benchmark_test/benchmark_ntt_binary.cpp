@@ -37,12 +37,15 @@ void benchmark_ntt_binary(std::string op_name, T lhs_low, T lhs_high, T rhs_low,
     NttTest::init_tensor(ntt_rhs, rhs_low, rhs_high);
 
     auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < size1; i++)
+    for (size_t i = 0; i < size1; i++) {
         ntt::binary<Op>(ntt_lhs, ntt_rhs, ntt_result);
-    auto t2 = NttTest::get_cpu_cycle();
 #if __x86_64__
-    asm volatile("" ::"g"(ntt_result));
+        asm volatile("" ::"g"(ntt_result));
 #endif
+    }
+
+    auto t2 = NttTest::get_cpu_cycle();
+
     std::cout << __FUNCTION__ << "_" << op_name << " took "
               << std::setprecision(1) << std::fixed
               << static_cast<float>(t2 - t1) / size1 / size2 << " cycles"
