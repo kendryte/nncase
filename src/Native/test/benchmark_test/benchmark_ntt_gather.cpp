@@ -58,9 +58,9 @@ void benchmark_ntt_gather_pack1d_dim0_contiguous() {
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
         ntt::gather<0>(pa, tb, pc);
+        asm volatile("" ::"g"(pc));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(pc));
 
     constexpr size_t size = pc.elements().size();
     std::cout << __FUNCTION__ << " took " << std::setprecision(1) << std::fixed
@@ -106,9 +106,9 @@ void benchmark_ntt_gather_pack1d_dim0_no_contiguous() {
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
         ntt::gather<0>(pa, tb, pc);
+        asm volatile("" ::"g"(pc));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(pc));
 
     constexpr size_t size = pc.elements().size();
     std::cout << __FUNCTION__ << " took " << std::setprecision(1) << std::fixed
@@ -131,7 +131,8 @@ void benchmark_ntt_gather_pack1d_dim1_contiguous() {
     constexpr size_t N = 64;
     constexpr size_t Period = 1;
     using tensor_a_type = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    using tensor_b_type = ntt::tensor<size_t, ntt::fixed_shape<1, M / Period>>;
+    using tensor_b_type =
+        ntt::tensor<size_t, ntt::fixed_shape<1, M / P / Period>>;
     using tensor_pa_type =
         ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>>;
     using tensor_pc_type = ntt::tensor<ntt::vector<float, P>,
@@ -154,9 +155,9 @@ void benchmark_ntt_gather_pack1d_dim1_contiguous() {
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
         ntt::gather<1>(pa, tb, pc);
+        asm volatile("" ::"g"(pc));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(pc));
 
     constexpr size_t size = pc.elements().size();
     std::cout << __FUNCTION__ << " took " << std::setprecision(1) << std::fixed
@@ -179,7 +180,8 @@ void benchmark_ntt_gather_pack1d_dim1_no_contiguous() {
     constexpr size_t N = 64;
     constexpr size_t Period = 2;
     using tensor_a_type = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    using tensor_b_type = ntt::tensor<size_t, ntt::fixed_shape<1, M / Period>>;
+    using tensor_b_type =
+        ntt::tensor<size_t, ntt::fixed_shape<1, M / P / Period>>;
     using tensor_pa_type =
         ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>>;
     using tensor_pc_type = ntt::tensor<ntt::vector<float, P>,
@@ -202,9 +204,9 @@ void benchmark_ntt_gather_pack1d_dim1_no_contiguous() {
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
         ntt::gather<1>(pa, tb, pc);
+        asm volatile("" ::"g"(pc));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(pc));
 
     constexpr size_t size = pc.elements().size();
     std::cout << __FUNCTION__ << " took " << std::setprecision(1) << std::fixed
@@ -248,9 +250,9 @@ void benchmark_ntt_gather_pack2d_dim0_contiguous() {
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
         ntt::gather<0>(pa, tb, pc);
+        asm volatile("" ::"g"(pc));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(pc));
 
     constexpr size_t size = pc.elements().size() * P;
     std::cout << __FUNCTION__ << " took " << std::setprecision(1) << std::fixed
@@ -294,9 +296,9 @@ void benchmark_ntt_gather_pack2d_dim1_contiguous() {
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
         ntt::gather<1>(pa, tb, pc);
+        asm volatile("" ::"g"(pc));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(pc));
 
     constexpr size_t size = pc.elements().size() * P;
     std::cout << __FUNCTION__ << " took " << std::setprecision(1) << std::fixed
