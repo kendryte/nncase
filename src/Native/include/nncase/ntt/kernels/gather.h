@@ -61,8 +61,7 @@ void gather(const TA &input, const TB &indices, TC &&output) noexcept {
     auto addr_output =
         reinterpret_cast<unsigned char *>(output.buffer().data());
 
-    constexpr auto input_conti_dims =
-        contiguous_dims(input.shape(), input.strides());
+    auto input_conti_dims = contiguous_dims(input.shape(), input.strides());
 
     constexpr auto indices_rank = TB::shape_type::rank();
     constexpr auto out_shape = std::decay_t<TC>::shape();
@@ -70,7 +69,7 @@ void gather(const TA &input, const TB &indices, TC &&output) noexcept {
     ranked_shape<indices_rank> indices_index;
     ranked_shape<rank> src_index;
 
-    if constexpr (input_conti_dims == rank) {
+    if (input_conti_dims == rank) {
         apply(domain_before_axis, [&](auto index) {
             for (const auto &seq : result) {
                 for (size_t i = 0; i < rank; i++) {
