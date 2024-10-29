@@ -54,8 +54,8 @@ void gather(const TA &input, const TB &indices, TC &&output) noexcept {
                                 indices.elements().end());
     auto result = detail::continuous_dims_groups(input_v);
 
-    constexpr auto domain_before_axis = slice_fixed_dims<Axis>(input.shape());
-    constexpr auto domain_after_axis =
+    auto domain_before_axis = slice_fixed_dims<Axis>(input.shape());
+    auto domain_after_axis =
         slice_fixed_dims<rank - Axis - 1, Axis + 1>(input.shape());
 
     auto addr_output =
