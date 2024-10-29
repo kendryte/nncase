@@ -36,3 +36,27 @@ public record class QuantScheme
 
     public Output[]? Outputs { get; set; }
 }
+
+public record class QuantPara
+{
+    public string? Name { get; set; }
+
+    public string? Model_Name { get; set; }
+
+    public bool? Quant_For_Save { get; set; }
+
+    public string? DataType { get; set; }
+
+    public float Scale { get; set; }
+
+    public string? DataRangeMode { get; set; }
+}
+
+public record class QuantInfo
+{
+    public string? Version { get; set; }
+
+    public string? Model { get; set; }
+
+    public QuantPara[]? Outputs { get; set; }
+}

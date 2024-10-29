@@ -45,7 +45,11 @@ void _concat_contiguous_dim_copy(std::span<const size_t> in_shape,
 }
 
 template <class T>
+#if defined __riscv
+result<void> __attribute__((optimize("O2")))
+#else
 result<void>
+#endif
 concat_contiguous_impl(std::span<const std::byte *const> inputs, T *output,
                        std::span<const size_t> out_shape,
                        std::span<const dims_t> &in_strides,
@@ -119,12 +123,17 @@ void concat_inputs(std::span<const std::byte *const> inputs, dims_t &in_index,
 }
 
 template <class T>
-result<void> concat_impl(std::span<const std::byte *const> inputs, T *output,
-                         std::span<const size_t> out_shape,
-                         std::span<const dims_t> &in_strides,
-                         std::span<const size_t> out_strides, size_t axis,
-                         std::span<const size_t> concat_dims,
-                         NNCASE_UNUSED kernel_context &context) noexcept {
+#if defined __riscv
+result<void> __attribute__((optimize("O2")))
+#else
+result<void>
+#endif
+concat_impl(std::span<const std::byte *const> inputs, T *output,
+            std::span<const size_t> out_shape,
+            std::span<const dims_t> &in_strides,
+            std::span<const size_t> out_strides, size_t axis,
+            std::span<const size_t> concat_dims,
+            NNCASE_UNUSED kernel_context &context) noexcept {
     dims_t in_shape(out_shape);
     auto *out_ptr = output;
     auto dims = in_strides[0].size();

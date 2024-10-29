@@ -21,7 +21,7 @@ using namespace nncase;
 
 template <typename T, size_t N>
 void benchmark_ntt_clamp(T init_low, T init_high, T clamp_low, T clamp_high) {
-    std::string pack_mode = "NoPack";
+    std::string pack_mode = "Pack";
     constexpr size_t warmup_size = 10;
 #if __riscv
     constexpr size_t run_size = 300;
