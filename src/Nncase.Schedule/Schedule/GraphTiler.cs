@@ -16,11 +16,11 @@ namespace Nncase.Schedule;
 
 public sealed class GraphTiler
 {
-    private readonly Dictionary<TileNode, PrimFunctionWrapper> _tiledFuncMemo = new(new ITreeNodeComparer());
+    public sealed record TiledFunc(PrimFunctionWrapper Func, long ObjectValue)
+    {
+    }
 
-    private int _useCached;
-
-    public Expr Tile(Expr preExpr, string moduleKind, string itemNumber, ICpuTargetOptions targetOptions)
+    public static Expr Tile(Expr preExpr, string moduleKind, string itemNumber, Dictionary<TileNode, TiledFunc> tilingMemo, ICpuTargetOptions targetOptions)
     {
         var topLevel = targetOptions.MemoryCapacities.Length;
         var rootGraph = GraphBuilder.Build(preExpr, topLevel, out var exprMemo);
@@ -29,36 +29,12 @@ public sealed class GraphTiler
             rootGraph.Dump($"device_func{itemNumber}_original");
         }
 
-#if true
-        var resultMemo = SolveRootGraph(rootGraph, moduleKind, itemNumber, targetOptions);
+        var (resultMemo, _) = SolveRootGraph(rootGraph, moduleKind, itemNumber, new(), targetOptions);
         var cloner = new ReplacingExprCloner(exprMemo.ToDictionary(kv => (Expr)kv.Key, kv => resultMemo[kv.Value]));
         return cloner.Clone(preExpr, default);
-#else
-        PrimGraphSolveResult? bestConstructor = null;
-        foreach (var chunk in EnumerateAll(root, totalLevel, new()).Chunk(System.Math.Max(System.Environment.ProcessorCount - 2, 1)))
-        {
-            foreach (var resultConstructor in chunk.AsParallel().Select(isoTree => Solve(isoTree.Root, targetOptions)).OfType<GraphSolverResultConstructor>())
-            {
-                bestConstructor = (bestConstructor?.ObjectiveValue <= resultConstructor.ObjectiveValue ? bestConstructor : resultConstructor) ?? resultConstructor;
-            }
-        }
-#endif
-
-        // if (bestConstructor is null)
-        // {
-        //     throw new InvalidOperationException("can't solver!");
-        // }
-
-        // if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
-        // {
-        //     bestConstructor.Tree.Dump($"device_func{itemNumber}_best");
-        // }
-
-        // return bestConstructor.ConstructResult(moduleKind, itemNumber);
-        // return new Call(None.Default);
     }
 
-    public Dictionary<TieredTileGraph, Expr> SolveRootGraph(TieredTileGraph rootGraph, string moduleKind, string itemNumber, ICpuTargetOptions targetOptions)
+    public static (Dictionary<TieredTileGraph, Expr> ResultMemo, long ObjectValue) SolveRootGraph(TieredTileGraph rootGraph, string moduleKind, string itemNumber, Dictionary<TileNode, TiledFunc> tilingMemo, ICpuTargetOptions targetOptions)
     {
         // bufferize root graph.
         var bufferGraphMemo = rootGraph.Bufferize();
@@ -92,6 +68,7 @@ public sealed class GraphTiler
 
         var argumentsMemo = bufferGraphMemo[rootGraph].GetInputsOutputs().Inputs.ToDictionary(k => k, k => k.Node.Grid.GetArgument(k.Index));
         var resultMemo = new Dictionary<TieredTileGraph, Expr>();
+        long objectValue = 0;
         foreach (var (primGraph, i) in condensedGraph.TopologicalSort().Select((s, i) => (s, i)))
         {
             using var subscope = new Diagnostics.DumpScope($"device_func{itemNumber}_{i}", Diagnostics.DumpFlags.Tiling);
@@ -99,7 +76,7 @@ public sealed class GraphTiler
             HashSet<BufferIdentity> inputBids;
             HashSet<BufferIdentity> outputBids;
 
-            if (!_tiledFuncMemo.TryGetValue(primTree, out var wrapper))
+            if (!tilingMemo.TryGetValue(primTree, out var memo))
             {
                 var result = SolvePrimGraph(primTree, bufferGraphMemo, targetOptions);
                 (inputBids, outputBids) = (result.Inputs, result.Outputs);
@@ -109,16 +86,16 @@ public sealed class GraphTiler
                 var parameters = inputBids.Concat(outputBids).Select(k => result.PrimBufferMemo[k]).ToArray();
                 var funcBuilder = T.PrimFunc($"device_func{itemNumber}_{i}", moduleKind, parameters).Body(bodyBuilder);
                 var primFunc = funcBuilder.Build();
-                wrapper = new PrimFunctionWrapper(primFunc, inputBids.Count, inputBids.Concat(outputBids).Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType).ToArray());
-                _tiledFuncMemo.Add(primTree, wrapper);
+                memo = new(new PrimFunctionWrapper(primFunc, inputBids.Count, inputBids.Concat(outputBids).Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType).ToArray()), result.ObjectiveValue);
+                tilingMemo.Add(primTree, memo);
             }
             else
             {
                 (inputBids, outputBids) = bufferGraphMemo[primGraph].GetInputsOutputs();
-                _useCached++;
             }
 
-            var finalCall = new Call(wrapper, inputBids.Select(bid => argumentsMemo[bid]).ToArray());
+            objectValue += memo.ObjectValue;
+            var finalCall = new Call(memo.Func, inputBids.Select(bid => argumentsMemo[bid]).ToArray());
             resultMemo.Add(primGraph, finalCall);
 
             // save the output.
@@ -136,10 +113,10 @@ public sealed class GraphTiler
             }
         }
 
-        return resultMemo;
+        return (resultMemo, objectValue);
     }
 
-    private TreeSolveResult SolvePrimGraph(TileNode primTree, Dictionary<TieredTileGraph, BufferGraph> bufferGraphMemo, ICpuTargetOptions targetOptions)
+    public static TreeSolveResult SolvePrimGraph(TileNode primTree, Dictionary<TieredTileGraph, BufferGraph> bufferGraphMemo, ICpuTargetOptions targetOptions)
     {
         int[] memoryCapacities = targetOptions.MemoryCapacities;
         int[] memoryBandWidths = targetOptions.MemoryBandWidths;
@@ -634,7 +611,7 @@ public sealed class GraphTiler
         return new TreeSolveResult(bufferGraphMemo[primTree.Wrapped], sol.ObjectiveValue(), levelBufferSizesAssgin, levelBufferLifeness, opNodeMemoAssgin, tileNodeMemoAssgin, tileableNodeMemoAssgin, targetOptions);
     }
 
-    private void DumpAssgin(ITreeNode tree, TreeSolverPythonPrinter printer, Dictionary<OpNode, Constraint[]> tileVarConstraints, Dictionary<BufferIdentity, Constraint[]> lowestStoreBufferNumsConstrains, Dictionary<int, Dictionary<NodeWithBuffer, IntExpr>> levelBufferSizes, IntExpr[] levelDataReads, IntExpr[] levelDataWrites, IntExpr[] memoryCycles, IntExpr computeCycles, IntVar totalCycles)
+    public static void DumpAssgin(ITreeNode tree, TreeSolverPythonPrinter printer, Dictionary<OpNode, Constraint[]> tileVarConstraints, Dictionary<BufferIdentity, Constraint[]> lowestStoreBufferNumsConstrains, Dictionary<int, Dictionary<NodeWithBuffer, IntExpr>> levelBufferSizes, IntExpr[] levelDataReads, IntExpr[] levelDataWrites, IntExpr[] memoryCycles, IntExpr computeCycles, IntVar totalCycles)
     {
         using (var stream = Diagnostics.DumpScope.Current.OpenFile($"modeling.py"))
         {
@@ -644,7 +621,7 @@ public sealed class GraphTiler
         }
     }
 
-    private void DumpAssgin(ITreeNode tree, TreeSolverPrinter printer, Dictionary<OpNode, Constraint[]> tileVarConstraints, Dictionary<BufferIdentity, Constraint[]> eachLevelStoreBufferNumsConstrains, Dictionary<int, Dictionary<NodeWithBuffer, IntExpr>> levelBufferSizes, IntExpr[] levelDataReads, IntExpr[] levelDataWrites, IntExpr[] memoryCycles, IntExpr computeCycles, IntVar totalCycles)
+    public static void DumpAssgin(ITreeNode tree, TreeSolverPrinter printer, Dictionary<OpNode, Constraint[]> tileVarConstraints, Dictionary<BufferIdentity, Constraint[]> eachLevelStoreBufferNumsConstrains, Dictionary<int, Dictionary<NodeWithBuffer, IntExpr>> levelBufferSizes, IntExpr[] levelDataReads, IntExpr[] levelDataWrites, IntExpr[] memoryCycles, IntExpr computeCycles, IntVar totalCycles)
     {
         using (var stream = Diagnostics.DumpScope.Current.OpenFile($"modeling.yaml"))
         {

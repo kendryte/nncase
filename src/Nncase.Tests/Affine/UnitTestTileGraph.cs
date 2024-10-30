@@ -41,6 +41,11 @@ public sealed class UnitTestTileGraph : TestClassBase
         { FunctionSamples.Get1, [new(1, 0, 2), new(2, 1, 2)], (_) => { }, 3 },
     };
 
+    public static readonly TheoryData<Func<Function>, int> MCTSDatas = new()
+    {
+        { FunctionSamples.Get1, 0 },
+    };
+
     public static readonly TheoryData<Func<Function>, IntMergePoint[], Action<BufferGraph>, int> BufferizeTileGraphDatas = new()
     {
         { FunctionSamples.Get1, [new(1, 0, 2)], (bufGraph) => { Assert.Equal(4, bufGraph.Clusters.OfType<BufferGraph>().First().Edges.Count()); }, 0 },
@@ -48,7 +53,7 @@ public sealed class UnitTestTileGraph : TestClassBase
 
     public UnitTestTileGraph()
     {
-        CompileOptions.TargetOptions = new Nncase.Targets.CpuTargetOptions();
+        CompileOptions.TargetOptions = new Targets.CpuTargetOptions();
 #if DEBUG
         CompileOptions.DumpFlags = Diagnostics.DumpFlags.Tiling;
 #endif
@@ -329,8 +334,27 @@ public sealed class UnitTestTileGraph : TestClassBase
         tileGraph.Dump($"g{count}_m");
 #endif
 
-        var tiler = new Schedule.GraphTiler();
-        tiler.SolveRootGraph(tileGraph, Targets.CPUTarget.Kind, count.ToString(), targetOptions);
+        Schedule.GraphTiler.SolveRootGraph(tileGraph, Targets.CPUTarget.Kind, count.ToString(), new(), targetOptions);
+    }
+
+    [Theory]
+    [MemberData(nameof(MCTSDatas))]
+    public void TestMCTS(Func<Function> functor, int count)
+    {
+        var targetOptions = (ICpuTargetOptions)CompileOptions.TargetOptions;
+        var func = functor();
+        var post = CompilerServices.Rewrite(func, [new Passes.Rules.CPU.Affine.LowerPack(), new Passes.Rules.CPU.Affine.LowerUnary(), new Passes.Rules.CPU.Affine.LowerMatmul(), new Passes.Rules.CPU.Affine.LowerBinary()], new());
+
+        using var dumpScope = new Diagnostics.DumpScope(count.ToString());
+        var builder = new GraphBuilder(targetOptions.MemoryBandWidths.Length);
+        builder.Visit(post);
+        var tileGraph = builder.RootGraph;
+
+        var memo = new Dictionary<TileNode, Schedule.GraphTiler.TiledFunc>();
+        var state = new MCTState(tileGraph, "cpu", count.ToString(), memo, targetOptions);
+        var rootNode = new MCTNode(state);
+        var searcher = new MCTSearcher();
+        searcher.Search(rootNode);
     }
 
     [Theory]

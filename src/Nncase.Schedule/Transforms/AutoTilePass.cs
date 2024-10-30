@@ -31,18 +31,18 @@ public sealed class AutoTilePass : ModulePass
 
     protected override Task<IRModule> RunCoreAsync(IRModule input, RunPassContext context)
     {
-        var tiler = new GraphTiler();
+        var memo = new Dictionary<Schedule.TileGraph.TileNode, GraphTiler.TiledFunc>();
         var funcNums = input.Functions.Count;
         for (int i = 0; i < funcNums; i++)
         {
-            var post = Rewrite(input.Functions[i], i, tiler);
+            var post = Rewrite(input.Functions[i], i, memo);
             input.Replace(i, post);
         }
 
         return Task.FromResult(input);
     }
 
-    private BaseFunction Rewrite(BaseFunction pre, int funcNumber, GraphTiler tiler)
+    private BaseFunction Rewrite(BaseFunction pre, int funcNumber, Dictionary<Schedule.TileGraph.TileNode, GraphTiler.TiledFunc> memo)
     {
         if (!(pre is IR.Fusion fusion && fusion.ModuleKind == ModuleKind))
         {
@@ -93,7 +93,7 @@ public sealed class AutoTilePass : ModulePass
                 var si = ctx.SummaryVertexSubgraphMap[vertex];
                 var cloner = new ReplacingExprCloner(ctx.VarMap[si].ToDictionary(kv => kv.Key, kv => (Expr)kv.Value));
                 var clonedCall = cloner.Clone(vertex.Expr, default); // replaces some exprs that are in the subgraph with var, avoid tiling the grids out of the subgraph.
-                var tiledCall = tiler.Tile(clonedCall, ModuleKind, $"{funcNumber}_{subFuncNumber}", (ICpuTargetOptions)CompileOptions.TargetOptions);
+                var tiledCall = GraphTiler.Tile(clonedCall, ModuleKind, $"{funcNumber}_{subFuncNumber}", memo, (ICpuTargetOptions)CompileOptions.TargetOptions);
 
                 var varMap = ctx.VarMap[si].ToDictionary(kv => (Expr)kv.Value, kv => exprMemo[kv.Key]);
                 var substitutor = new Mutators.Substitutor(e =>
