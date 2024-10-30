@@ -257,12 +257,12 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                          'Min_reduceMN_PackN': 256,
                                          'Min_reduceN_PackN': 256,
                                          },
-                              'gather': {'pack1d_dim0_contiguous': '0',
-                                         'pack1d_dim0_no_contiguous': '0',
-                                         'pack1d_dim1_contiguous': '0',
-                                         'pack1d_dim1_no_contiguous': '0',
-                                         'pack2d_dim0_contiguous': '0',
-                                         'pack2d_dim1_contiguous': '0',
+                              'gather': {'pack1d_dim0_contiguous': '1.5',
+                                         'pack1d_dim0_no_contiguous': '1.5',
+                                         'pack1d_dim1_contiguous': '1.5',
+                                         'pack1d_dim1_no_contiguous': '1.5',
+                                         'pack2d_dim0_contiguous': '1.5',
+                                         'pack2d_dim1_contiguous': '1.5',
                                          },
                               }
 
