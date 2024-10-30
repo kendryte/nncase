@@ -30,23 +30,21 @@ size_t findContinuousSegments(const size_t *arr, size_t arrSize,
         return 0;
 
     size_t segmentCount = 0;
-    size_t start = 0;  // 当前片段的起始索引
-    size_t length = 1; // 当前片段的长度
+    size_t start = 0;
+    size_t length = 1;
 
     for (size_t i = 1; i < arrSize; ++i) {
         if (arr[i] == arr[i - 1] + 1) {
-            ++length; // 当前元素与前一个元素连续，长度+1
+            ++length;
         } else {
-            // 记录当前片段
             segments[segmentCount].start = start;
             segments[segmentCount].length = length;
             ++segmentCount;
-            start = i;  // 新片段的起始索引
-            length = 1; // 重置长度为1
+            start = i;
+            length = 1;
         }
     }
 
-    // 添加最后一个片段
     segments[segmentCount].start = start;
     segments[segmentCount].length = length;
     ++segmentCount;
@@ -65,9 +63,11 @@ void gather(const TA &input, const TB &indices, TC &&output) noexcept {
     std::vector<size_t> input_v(indices.elements().begin(),
                                 indices.elements().end());
 
-    detail::Segment segments[indices.elements().size()]; // 用于存储结果
-    size_t count = detail::findContinuousSegments(
-        indices.elements().data(), indices.elements().size(), segments);
+    constexpr size_t indices_len = TB::size();
+
+    detail::Segment segments[indices_len];
+    size_t count = detail::findContinuousSegments(indices.elements().data(),
+                                                  indices_len, segments);
 
     auto domain_before_axis = slice_fixed_dims<Axis>(input.shape());
     auto domain_after_axis =
