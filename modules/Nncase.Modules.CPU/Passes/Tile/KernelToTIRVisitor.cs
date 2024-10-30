@@ -87,6 +87,9 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             case IR.Math.Unary unary:
                 GenerateUnary(unary.UnaryOp, arguments, ret);
                 break;
+            case IR.CustomCPU.Unary unary:
+                GenerateUnary(unary.UnaryOp, arguments, ret);
+                break;
             case IR.Math.Clamp clamp:
                 GenerateClamp(arguments, ret, ((TensorConst)expr[IR.Math.Clamp.Min]).Value.ToScalar<float>(), ((TensorConst)expr[IR.Math.Clamp.Max]).Value.ToScalar<float>());
                 break;
@@ -110,6 +113,9 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Matmul(arguments[0], arguments[1], ret, None.Default, packed_mat_mul.LhsPackedAxes, packed_mat_mul.LhsPadedNums, packed_mat_mul.RhsPackedAxes, packed_mat_mul.RhsPadedNums));
                 break;
             case IR.Math.MatMul matmul:
+                _mainBody.Add(TIR.F.CPU.Matmul(arguments[0], arguments[1], ret, None.Default));
+                break;
+            case IR.CustomCPU.MatMul matmul:
                 _mainBody.Add(TIR.F.CPU.Matmul(arguments[0], arguments[1], ret, None.Default));
                 break;
             case IR.NN.Conv2D conv:
