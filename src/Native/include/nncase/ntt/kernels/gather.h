@@ -15,7 +15,6 @@
 #pragma once
 #include "../apply.h"
 #include "../utility.h"
-#include <iostream>
 
 namespace nncase::ntt {
 
