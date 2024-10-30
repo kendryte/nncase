@@ -60,9 +60,6 @@ void gather(const TA &input, const TB &indices, TC &&output) noexcept {
     using element_type = element_or_scalar_t<TA>;
     constexpr auto element_size = sizeof(element_type);
 
-    std::vector<size_t> input_v(indices.elements().begin(),
-                                indices.elements().end());
-
     constexpr size_t indices_len = TB::size();
 
     detail::Segment segments[indices_len];
