@@ -200,24 +200,30 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         return new TensorType(dtype, front.Concat(end).ToArray());
     }
 
-    /// <inheritdoc/>
-    public IValue Visit(IEvaluateContext context, MatMul matMul)
+    public static IValue InferValue(DataType dataType, Tensor lhs, Tensor rhs)
     {
-        if (context.CurrentCall.Arguments[MatMul.Lhs.Index].CheckedDataType == DataTypes.Float8E4M3 || context.CurrentCall.Arguments[MatMul.Lhs.Index].CheckedDataType == DataTypes.Float8E5M2)
+        if (dataType == DataTypes.Float8E4M3 || dataType == DataTypes.Float8E5M2)
         {
-            var lhs = Cast(context.GetArgumentValue(matMul, MatMul.Lhs).AsTensor(), DataTypes.Float32);
-            var rhs = Cast(context.GetArgumentValue(matMul, MatMul.Rhs).AsTensor(), DataTypes.Float32);
-            var lhsOrt = lhs.Evaluate().AsTensor().ToOrtTensor();
-            var rhsOrt = rhs.Evaluate().AsTensor().ToOrtTensor();
+            var lhsOrt = Cast(lhs, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
+            var rhsOrt = Cast(rhs, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
             var ret = OrtKI.MatMul(lhsOrt, rhsOrt).ToTensor();
             return Value.FromTensor(ret);
         }
         else
         {
-            var input = context.GetOrtArgumentValue(matMul, MatMul.Lhs);
-            var other = context.GetOrtArgumentValue(matMul, MatMul.Rhs);
+            var input = lhs.ToOrtTensor();
+            var other = rhs.ToOrtTensor();
             return OrtKI.MatMul(input, other).ToValue();
         }
+    }
+
+    /// <inheritdoc/>
+    public IValue Visit(IEvaluateContext context, MatMul matMul)
+    {
+        var dataType = context.CurrentCall.Arguments[MatMul.Lhs.Index].CheckedDataType;
+        var lhs = context.GetArgumentValue(matMul, MatMul.Lhs).AsTensor();
+        var rhs = context.GetArgumentValue(matMul, MatMul.Rhs).AsTensor();
+        return InferValue(dataType, lhs, rhs);
     }
 
     /// <inheritdoc/>

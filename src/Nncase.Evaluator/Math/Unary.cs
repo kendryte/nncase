@@ -15,24 +15,22 @@ namespace Nncase.Evaluator.Math;
 /// </summary>
 public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEvaluator<Unary>, IOpPrinter<Unary>, IShapeEvaluator<Unary>, IMetricEvaluator<Unary>
 {
-    /// <inheritdoc/>
-    public IValue Visit(IEvaluateContext context, Unary unary)
+    public static IValue InferValue(Tensor input_tensor, UnaryOp unaryOp)
     {
-        var input_tensor = context.GetArgumentValueAsTensor(unary, Unary.Input);
         if (input_tensor.Shape.IsScalar)
         {
             if (input_tensor.ElementType == DataTypes.Int32)
             {
-                return Value.FromTensor(Tensor.FromScalar<int>(Compute_int(input_tensor.ToScalar<int>(), unary.UnaryOp)));
+                return Value.FromTensor(Tensor.FromScalar<int>(Compute_int(input_tensor.ToScalar<int>(), unaryOp)));
             }
             else if (input_tensor.ElementType == DataTypes.Float32)
             {
-                return Value.FromTensor(Tensor.FromScalar<float>(Compute_float(input_tensor.ToScalar<float>(), unary.UnaryOp)));
+                return Value.FromTensor(Tensor.FromScalar<float>(Compute_float(input_tensor.ToScalar<float>(), unaryOp)));
             }
         }
 
-        var input = context.GetOrtArgumentValue(unary, Unary.Input);
-        var result = unary.UnaryOp switch
+        var input = input_tensor.ToOrtTensor();
+        var result = unaryOp switch
         {
             UnaryOp.Abs => OrtKI.Abs(input),
             UnaryOp.Acos => OrtKI.Acos(input),
@@ -56,9 +54,27 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
             UnaryOp.Tanh => OrtKI.Tanh(input),
             UnaryOp.BitwiseNot => throw new NotSupportedException("NotSupported UnaryOp BitwiseNot"),
             UnaryOp.LogicalNot => OrtKI.Not(input),
-            _ => throw new ArgumentOutOfRangeException(nameof(unary)),
+            _ => throw new ArgumentOutOfRangeException(nameof(input_tensor)),
         };
         return result.ToValue();
+    }
+
+    public static IRType InferType(IRType inputType, UnaryOp unaryOp)
+    {
+        return inputType switch
+        {
+            TensorType tensorType => Visit(tensorType),
+            DistributedType distTensorType => Visit(distTensorType, unaryOp),
+            AnyType => AnyType.Default,
+            _ => new InvalidType($"Not support {inputType.GetType().Name}"),
+        };
+    }
+
+    /// <inheritdoc/>
+    public IValue Visit(IEvaluateContext context, Unary unary)
+    {
+        var input_tensor = context.GetArgumentValueAsTensor(unary, Unary.Input);
+        return InferValue(input_tensor, unary.UnaryOp);
     }
 
     /// <inheritdoc/>
@@ -66,13 +82,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
     {
         var inputType = context.GetArgumentType(target, Unary.Input);
 
-        return inputType switch
-        {
-            TensorType tensorType => Visit(tensorType),
-            DistributedType distTensorType => Visit(distTensorType, target.UnaryOp),
-            AnyType => AnyType.Default,
-            _ => new InvalidType($"Not support {inputType.GetType().Name}"),
-        };
+        return InferType(inputType, target.UnaryOp);
     }
 
     /// <inheritdoc/>
@@ -123,7 +133,12 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         return context.GetArgumentShape(target, Unary.Input);
     }
 
-    private IRType Visit(DistributedType inType, UnaryOp unaryOp)
+    private static IRType Visit(TensorType input)
+    {
+        return input;
+    }
+
+    private static IRType Visit(DistributedType inType, UnaryOp unaryOp)
     {
         var invalid = new InvalidType(inType.ToString());
         var ndsbp = new SBP[inType.Placement.Rank];
@@ -140,7 +155,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         return new DistributedType(inType.TensorType, ndsbp, inType.Placement);
     }
 
-    private int Compute_int(int input, UnaryOp op) => op switch
+    private static int Compute_int(int input, UnaryOp op) => op switch
     {
         UnaryOp.Ceil => input,
         UnaryOp.Floor => input,
@@ -150,7 +165,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         _ => throw new ArgumentOutOfRangeException(nameof(op), $"NotSupported {nameof(op)} For Int"),
     };
 
-    private float Compute_float(float input, UnaryOp op) => op switch
+    private static float Compute_float(float input, UnaryOp op) => op switch
     {
         UnaryOp.Abs => System.MathF.Abs(input),
         UnaryOp.Acos => System.MathF.Acos(input),
@@ -174,11 +189,6 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         UnaryOp.Tanh => System.MathF.Tanh(input),
         _ => throw new ArgumentOutOfRangeException(nameof(op), $"NotSupported {nameof(op)} For Float"),
     };
-
-    private IRType Visit(TensorType input)
-    {
-        return input;
-    }
 
     private Cost Visit(DistributedType inType, DistributedType outType, Unary target)
     {

@@ -26,6 +26,7 @@ public static class CPUApplicationPart
     {
         return registrator.RegisterModule<CPUModule>()
             .RegisterModule<Evaluator.IR.CPU.CPUModule>()
-            .RegisterModule<Evaluator.TIR.CPU.CPUModule>();
+            .RegisterModule<Evaluator.TIR.CPU.CPUModule>()
+            .RegisterModule<Evaluator.CustomCPU.CPUModule>();
     }
 }
