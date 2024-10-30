@@ -15,32 +15,45 @@
 #pragma once
 #include "../apply.h"
 #include "../utility.h"
-
 namespace nncase::ntt {
 
 namespace detail {
 
-std::vector<std::vector<size_t>>
-continuous_dims_groups(const std::vector<size_t> &input) {
-    std::vector<std::vector<size_t>> result;
-    if (input.empty())
-        return result;
+struct Segment {
+    size_t start;
+    size_t length;
+};
 
-    std::vector<size_t> currentSequence = {input[0]};
+size_t findContinuousSegments(const size_t *arr, size_t arrSize,
+                              Segment *segments) {
+    if (arrSize == 0)
+        return 0;
 
-    for (size_t i = 1; i < input.size(); ++i) {
-        if (input[i] != input[i - 1] + 1) {
-            result.push_back(currentSequence);
-            currentSequence = {input[i]};
+    size_t segmentCount = 0;
+    size_t start = 0;  // 当前片段的起始索引
+    size_t length = 1; // 当前片段的长度
+
+    for (size_t i = 1; i < arrSize; ++i) {
+        if (arr[i] == arr[i - 1] + 1) {
+            ++length; // 当前元素与前一个元素连续，长度+1
         } else {
-            currentSequence.push_back(input[i]);
+            // 记录当前片段
+            segments[segmentCount].start = start;
+            segments[segmentCount].length = length;
+            ++segmentCount;
+            start = i;  // 新片段的起始索引
+            length = 1; // 重置长度为1
         }
     }
 
-    result.push_back(currentSequence);
+    // 添加最后一个片段
+    segments[segmentCount].start = start;
+    segments[segmentCount].length = length;
+    ++segmentCount;
 
-    return result;
+    return segmentCount;
 }
+
 } // namespace detail
 
 template <size_t Axis, typename TA, typename TB, typename TC>
@@ -51,7 +64,10 @@ void gather(const TA &input, const TB &indices, TC &&output) noexcept {
 
     std::vector<size_t> input_v(indices.elements().begin(),
                                 indices.elements().end());
-    auto result = detail::continuous_dims_groups(input_v);
+
+    detail::Segment segments[indices.elements().size()]; // 用于存储结果
+    size_t count = detail::findContinuousSegments(
+        indices.elements().data(), indices.elements().size(), segments);
 
     auto domain_before_axis = slice_fixed_dims<Axis>(input.shape());
     auto domain_after_axis =
@@ -71,15 +87,16 @@ void gather(const TA &input, const TB &indices, TC &&output) noexcept {
         src_index[i] = 0;
     }
 
-    if (input_conti_dims == rank) {
+    if (input_conti_dims == rank && count != indices.elements().size()) {
         apply(domain_before_axis, [&](auto index) {
-            for (const auto &seq : result) {
+            for (size_t i = 0; i < count; i++) {
+                auto seq = segments[i];
                 for (size_t i = 0; i < Axis; i++) {
                     src_index[i] = index[i];
                 }
-                src_index[Axis] = seq[0];
+                src_index[Axis] = seq.start;
                 auto len =
-                    seq.size() * domain_after_axis.length() * element_size;
+                    seq.length * domain_after_axis.length() * element_size;
                 std::memcpy(addr_output, &(input(src_index)), len);
                 addr_output += len;
             }
