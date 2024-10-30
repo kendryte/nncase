@@ -66,8 +66,8 @@ void gather(const TA &input, const TB &indices, TC &&output) noexcept {
     constexpr size_t indices_len = TB::size();
 
     detail::Segment segments[indices_len];
-    size_t count = detail::findContinuousSegments(indices.elements().data(),
-                                                  indices_len, segments);
+    size_t count = detail::findContinuousSegments(
+        (const size_t *)(indices.elements().data()), indices_len, segments);
 
     auto domain_before_axis = slice_fixed_dims<Axis>(input.shape());
     auto domain_after_axis =
