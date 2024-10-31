@@ -77,6 +77,7 @@ class nncaseConan(ConanFile):
 
         if self.options.tests:
             self.options["ortki"].shared = True
+            self.options["date"].header_only = True
 
     def validate(self):
         if self.settings.compiler.get_safe("cppstd"):
