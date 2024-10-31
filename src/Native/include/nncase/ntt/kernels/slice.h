@@ -80,9 +80,9 @@ void slice(const TIn &input, TOut &&output) {
         });
     });
 #else
-    constexpr auto out_shape = output.shape();
+    auto out_shape = output.shape();
     constexpr auto rank = out_shape.rank();
-    constexpr auto count = out_shape[rank - 1];
+    auto count = out_shape[rank - 1];
     constexpr auto domain = shape_infer::reduced_shape_by_axes(
         typename std::decay_t<TOut>::shape_type{}, fixed_shape<rank - 1>{});
 

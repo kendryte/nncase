@@ -28,14 +28,12 @@ template <class T, bool Arch> struct u_gather {
                               size_t output_stride, size_t count) noexcept {
         using policy_t = u_gather_policy<T, Arch>;
         constexpr auto unroll = policy_t::unroll;
-        if (count / unroll) {
-            while (count / unroll) {
-                for (size_t i = 0; i < unroll; i++) {
-                    *output = *input;
-                    input += input_stride;
-                    output += output_stride;
-                    count--;
-                }
+        while (count / unroll) {
+            for (size_t i = 0; i < unroll; i++) {
+                *output = *input;
+                input += input_stride;
+                output += output_stride;
+                count--;
             }
         }
 
