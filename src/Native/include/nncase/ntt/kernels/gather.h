@@ -14,7 +14,11 @@
  */
 #pragma once
 #include "../apply.h"
+#include "../loop.h"
+#include "../tensor_ops.h"
+#include "../ukernels.h"
 #include "../utility.h"
+#include <cstddef>
 namespace nncase::ntt {
 
 namespace detail {
@@ -67,11 +71,13 @@ void gather(const TA &input, const TB &indices, TC &&output) noexcept {
         (const size_t *)(indices.elements().data()), indices_len, segments);
 
     auto domain_before_axis = slice_fixed_dims<Axis>(input.shape());
-    auto domain_after_axis =
-        slice_fixed_dims<rank - Axis - 1, Axis + 1>(input.shape());
+    constexpr auto domain_after_axis =
+        slice_fixed_dims<rank - Axis - 1, Axis + 1>(TA::shape());
 
-    auto addr_output =
+    auto addr_output_byte =
         reinterpret_cast<unsigned char *>(output.buffer().data());
+    auto addr_output_element =
+        reinterpret_cast<element_type *>(output.buffer().data());
 
     auto input_conti_dims = contiguous_dims(input.shape(), input.strides());
 
@@ -84,18 +90,34 @@ void gather(const TA &input, const TB &indices, TC &&output) noexcept {
         src_index[i] = 0;
     }
 
-    if (input_conti_dims == rank && count != indices.elements().size()) {
+    if (input_conti_dims == rank && count != indices_len) {
         apply(domain_before_axis, [&](auto index) {
             for (size_t i = 0; i < count; i++) {
                 auto seq = segments[i];
-                for (size_t i = 0; i < Axis; i++) {
-                    src_index[i] = index[i];
+                for (size_t j = 0; j < Axis; j++) {
+                    src_index[j] = index[j];
                 }
                 src_index[Axis] = indices.elements()[seq.start];
                 auto len =
                     seq.length * domain_after_axis.length() * element_size;
-                std::memcpy(addr_output, &(input(src_index)), len);
-                addr_output += len;
+                std::memcpy(addr_output_byte, &(input(src_index)), len);
+                addr_output_byte += len;
+            }
+        });
+    } else if (input_conti_dims == rank) {
+        apply(domain_before_axis, [&](auto index) {
+            for (size_t i = 0; i < TB::size(); i++) {
+
+                for (size_t j = 0; j < Axis; j++) {
+                    src_index[j] = index[j];
+                }
+                src_index[Axis] = indices.elements()[i];
+                auto addr_input =
+                    reinterpret_cast<const element_type *>(&(input(src_index)));
+                constexpr auto len = domain_after_axis.length();
+
+                ntt::u_gather<element_type>(addr_input, 1, addr_output_element,
+                                            1, len);
             }
         });
     } else {
