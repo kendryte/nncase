@@ -127,12 +127,12 @@ void benchmark_ntt_gather_pack1d_dim1_contiguous() {
 #endif
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    constexpr size_t M = 32;
-    constexpr size_t N = 128;
+    constexpr size_t M = 8;
+    constexpr size_t N = 512;
     constexpr size_t Period = 1;
     using tensor_a_type = ntt::tensor<float, ntt::fixed_shape<M, N>>;
     using tensor_b_type =
-        ntt::tensor<size_t, ntt::fixed_shape<1, M / P / Period>>;
+        ntt::tensor<size_t, ntt::fixed_shape<1, N / P / Period>>;
     using tensor_pa_type =
         ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>>;
     using tensor_pc_type = ntt::tensor<ntt::vector<float, P>,
@@ -181,7 +181,7 @@ void benchmark_ntt_gather_pack1d_dim1_no_contiguous() {
     constexpr size_t Period = 2;
     using tensor_a_type = ntt::tensor<float, ntt::fixed_shape<M, N>>;
     using tensor_b_type =
-        ntt::tensor<size_t, ntt::fixed_shape<1, M / P / Period>>;
+        ntt::tensor<size_t, ntt::fixed_shape<1, N / P / Period>>;
     using tensor_pa_type =
         ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>>;
     using tensor_pc_type = ntt::tensor<ntt::vector<float, P>,
@@ -274,7 +274,7 @@ void benchmark_ntt_gather_pack2d_dim1_contiguous() {
     constexpr size_t M = 64;
     constexpr size_t N = 64;
     using tensor_a_type = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    using tensor_b_type = ntt::tensor<size_t, ntt::fixed_shape<1, M / P>>;
+    using tensor_b_type = ntt::tensor<size_t, ntt::fixed_shape<1, N / P>>;
     using tensor_pa_type =
         ntt::tensor<ntt::vector<float, P, P>, ntt::fixed_shape<M / P, N / P>>;
     using tensor_pc_type = ntt::tensor<ntt::vector<float, P, P>,
