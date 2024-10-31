@@ -29,14 +29,12 @@ template <class Op, class T, bool Arch> struct u_unary {
         using policy_t = u_unary_policy<Op, T, Arch>;
         constexpr auto unroll = policy_t::unroll;
         Op op;
-        if (count / unroll) {
-            while (count / unroll) {
-                for (size_t i = 0; i < unroll; i++) {
-                    *output = op(*input);
-                    input += input_stride;
-                    output += output_stride;
-                    count--;
-                }
+        while (count / unroll) {
+            for (size_t i = 0; i < unroll; i++) {
+                *output = op(*input);
+                input += input_stride;
+                output += output_stride;
+                count--;
             }
         }
 

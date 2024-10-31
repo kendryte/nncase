@@ -30,14 +30,12 @@ template <class T1, class T2, bool Arch> struct u_clamp {
         using policy_t = u_clamp_policy<Arch>;
         constexpr auto unroll = policy_t::unroll;
 
-        if (count / unroll) {
-            while (count / unroll) {
-                for (size_t i = 0; i < unroll; i++) {
-                    *output = ntt::ops::clamp<T1, T2>()(*input, min, max);
-                    input += input_stride;
-                    output += output_stride;
-                    count--;
-                }
+        while (count / unroll) {
+            for (size_t i = 0; i < unroll; i++) {
+                *output = ntt::ops::clamp<T1, T2>()(*input, min, max);
+                input += input_stride;
+                output += output_stride;
+                count--;
             }
         }
 
