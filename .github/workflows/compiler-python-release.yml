@@ -68,7 +68,7 @@ jobs:
         dotnet-version: '7.0.x'
 
     - name: Install nncase
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: nncase-${{matrix.config.name}}
         path: ${{github.workspace}}/install
