@@ -13,9 +13,9 @@ jobs:
     strategy:
       matrix:
         config:
-          - { name: x86_64-macos, os: macos-12, buildType: Release }
-          - { name: x86_64-linux, os: ubuntu-22.04, buildType: Release }
-          - { name: x86_64-windows, os: windows-2022, arch: x64, buildType: Release }
+          - { name: aarch64-macos, os: macos-14, buildType: Release }
+          - { name: x86_64-linux, os: ubuntu-24.04, buildType: Release }
+          - { name: x86_64-windows, os: windows-latest, arch: x64, buildType: Release }
 
     steps:
       - uses: actions/checkout@v3
@@ -27,21 +27,16 @@ jobs:
           arch: ${{matrix.config.arch}}
         if: runner.os == 'Windows'
 
-      - name: Set up build environment (Macos)
-        run: |
-          brew install sunnycase/core/libomp@11.1.0
-        if: runner.os == 'Macos'
-
       - name: Set up build enviroment(Linux)
         run: |
-          echo "CC=gcc-10" >> $GITHUB_ENV
-          echo "CXX=g++-10" >> $GITHUB_ENV
+          echo "CC=gcc-14" >> $GITHUB_ENV
+          echo "CXX=g++-14" >> $GITHUB_ENV
         if: runner.os == 'Linux'
 
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.8'
+          python-version: '3.10'
       
       - name: Install Conan
         run: |
@@ -59,11 +54,11 @@ jobs:
           cmake --build build/${{matrix.config.buildType}} --config ${{matrix.config.buildType}}
           cmake --install build/${{matrix.config.buildType}} --prefix install
 
-      # - name: Test
-      #   run: |
-      #     cd build/${{matrix.config.buildType}}
-      #     ctest --test-dir tests/kernels --output-on-failure -j4
-      #   if: runner.os != 'Macos' && runner.os != 'Windows'
+      - name: Test
+        run: |
+          cd build/${{matrix.config.buildType}}
+          ctest --test-dir tests/kernels --output-on-failure -j4
+        if: runner.os != 'Macos' && runner.os != 'Windows'
 
       #- name: Benchmark
       #  run: |
@@ -71,7 +66,7 @@ jobs:
       #    cat benchnncase.log
 
       - name: Upload nncaseruntime Build Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: nncaseruntime-${{matrix.config.name}}
           path: ${{github.workspace}}/install
@@ -99,7 +94,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.8'
+          python-version: '3.10'
 
       - name: Install toolchain and QEMU
         shell: bash
@@ -135,7 +130,7 @@ jobs:
           ctest --test-dir tests/kernels --output-on-failure -j4
 
       - name: Upload nncaseruntime Build Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: nncaseruntime-${{matrix.config.name}}
           path: ${{github.workspace}}/install

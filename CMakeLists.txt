@@ -42,7 +42,7 @@ project(nncase
 find_package(nlohmann_json REQUIRED)
 include_directories(${nlohmann_json_INCLUDE_DIRS})
 
-option(ENABLE_OPENMP "OpenMP support" ON)
+option(ENABLE_OPENMP "OpenMP support" OFF)
 option(ENABLE_HALIDE "halide kernels support" ON)
 option(DOTNET_INIT_FOR_CONFIG "Initialize dotnet from runtimeconfig" OFF)
 option(BUILD_PYTHON_BINDING "Build python binding" ON)

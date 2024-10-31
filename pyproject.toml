@@ -25,13 +25,13 @@ dependencies = ["numpy"]
 homepage = "https://github.com/kendryte/nncase"
 
 [build-system]
-requires = ["setuptools>=42", "wheel", "conan==2.6.0", "gitpython", "ninja"]
+requires = ["setuptools>=42", "wheel", "conan==2.6.0", "gitpython"]
 build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel]
 build = ["cp38*", "cp39*", "cp310*", "cp311*", "cp312*"]
 skip = "*musllinux*"
-manylinux-x86_64-image = "sunnycase/manylinux2014_x86_64:1.1"
+manylinux-x86_64-image = "sunnycase/manylinux2014_x86_64:1.2"
 test-requires = "pytest"
 test-command = [
   "pytest {project}/tests/other"
@@ -51,12 +51,16 @@ before-build = [
 archs = ["x86_64"]
 before-build = [
   "rm -f {project}/CMakeUserPresets.json",
-  "pip install auditwheel==6.0.0",
+  "pip install https://github.com/sunnycase/auditwheel/releases/download/6.0.0/auditwheel-6.0.0-py3-none-any.whl"
 ]
 repair-wheel-command = "LD_LIBRARY_PATH=/usr/lib64 auditwheel repair -w {dest_dir} {wheel} --exclude libvulkan.so.1,libgomp.so.1"
 
+[tool.cibuildwheel.linux.environment]
+CC = "gcc-14"
+CXX = "g++-14"
+
 [tool.cibuildwheel.macos]
-archs = ["x86_64"]
+archs = ["aarch64"]
 before-build = [
   "rm -f {project}/CMakeUserPresets.json",
   "pip install auditwheel==6.0.0",

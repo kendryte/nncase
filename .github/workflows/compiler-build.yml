@@ -17,13 +17,18 @@ jobs:
     strategy:
       matrix:
         config:
-          - {name: x86_64-macos, os: macos-12, buildType: Release}
-          - {name: x86_64-linux, os: ubuntu-22.04, buildType: Release}
-          - {name: x86_64-windows, os: windows-2022, arch: x64, buildType: Release}
+          - {name: aarch64-macos, os: macos-14, buildType: Release}
+          - {name: x86_64-linux, os: ubuntu-24.04, buildType: Release}
+          - {name: x86_64-windows, os: windows-latest, arch: x64, buildType: Release}
 
     steps:
       - uses: actions/checkout@v3
       - uses: seanmiddleditch/gha-setup-ninja@master
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
       - name: Set up build environment (Windows, Visual Studio)
         uses: ilammy/msvc-dev-cmd@v1
@@ -31,20 +36,10 @@ jobs:
           arch: ${{matrix.config.arch}}
         if: runner.os == 'Windows'
 
-      - name: Set up build environment (Macos)
+      - name: Set up build environment (Linux)
         run: |
-          brew install sunnycase/core/libomp@11.1.0
-        if: runner.os == 'Macos'
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.8'
-
-      - name: Configure Conan (Linux)
-        run: |
-          echo "CC=gcc-10" >> $GITHUB_ENV
-          echo "CXX=g++-10" >> $GITHUB_ENV
+          echo "CC=gcc-14" >> $GITHUB_ENV
+          echo "CXX=g++-14" >> $GITHUB_ENV
         if: runner.os == 'Linux'
 
       - name: Install Conan
@@ -52,8 +47,6 @@ jobs:
         run: |
           pip install conan==2.6.0
           conan remote add sunnycase https://conan.sunnycase.moe --index 0
-
-
 
       - name: Configure
         shell: bash
@@ -67,7 +60,7 @@ jobs:
           cmake --install build/${{matrix.config.buildType}} --prefix install
 
       - name: Upload nncase Native Build Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: nncase-native-${{matrix.config.name}}
           path: ${{github.workspace}}/install
@@ -81,9 +74,9 @@ jobs:
       matrix:
         dotnet-version: ['7.0']
         config:
-          - {name: x86_64-macos, os: macos-12, shell: bash, rid: osx-x64, buildType: Release}
-          - {name: x86_64-linux, os: ubuntu-22.04, shell: bash, rid: linux-x64, buildType: Release}
-          - {name: x86_64-windows, os: windows-2022, shell: bash, rid: win-x64, buildType: Release}
+          - {name: aarch64-macos, os: macos-14, shell: bash, rid: osx-arm64, buildType: Release}
+          - {name: x86_64-linux, os: ubuntu-24.04, shell: bash, rid: linux-x64, buildType: Release}
+          - {name: x86_64-windows, os: windows-latest, arch: x64, shell: bash, rid: win-x64, buildType: Release}
 
     steps:
       - uses: actions/checkout@v2
@@ -101,15 +94,10 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Install nncase native Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: nncase-native-${{matrix.config.name}}
           path: ${{github.workspace}}/install
-
-      - name: Set up build environment (Macos)
-        run: |
-          brew install sunnycase/core/libomp@11.1.0
-        if: runner.os == 'Macos'
 
       - name: Build
         run: |
@@ -156,7 +144,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload nncase Build Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: nncase-${{matrix.config.name}}
           path: ${{github.workspace}}/src/Nncase.Compiler/bin/${{matrix.config.buildType}}/net${{matrix.dotnet-version}}/${{matrix.config.rid}}/publish
@@ -170,9 +158,9 @@ jobs:
       matrix:
         dotnet-version: ['7.0']
         config:
-          - {name: x86_64-macos, os: macos-12, shell: bash}
-          - {name: x86_64-linux, os: ubuntu-22.04, shell: bash}
-          # - {name: x86_64-windows, os: windows-2022, arch: x64, shell: bash}
+          - {name: aarch64-macos, os: macos-14}
+          - {name: x86_64-linux, os: ubuntu-24.04}
+          - {name: x86_64-windows, os: windows-latest, arch: x64}
 
     steps:
       - uses: actions/checkout@v3
@@ -181,21 +169,27 @@ jobs:
         with:
           dotnet-version: '7.0.x'
 
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+          cache-dependency-path: '**/requirements.test.txt'
+
       - name: Install nncase native Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: nncase-native-${{matrix.config.name}}
           path: ${{github.workspace}}/install
 
       - name: Install nncase
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: nncase-${{matrix.config.name}}
           path: ${{github.workspace}}/install
 
       - name: Set up test environment (macOS)
         run: |
-          brew install sunnycase/core/libomp@11.1.0
           cp install/lib/*.dylib install/
           echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
         if: runner.os == 'macOS'
@@ -214,24 +208,13 @@ jobs:
           echo "PATH=${env:PATH};${env:GITHUB_WORKSPACE}/install/bin" >> $env:GITHUB_ENV
         if: runner.os == 'Windows'
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.8'
-          cache: 'pip'
-          cache-dependency-path: '**/requirements.test.txt'
-
       - name: Install Python Packages
-        run:
-          # python -m pip install --upgrade "pip<24.0" #pip24 not available on 3.8
+        run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.test.txt
 
       - name: Create Test Environment
         run: mkdir test_results
-        
-      # - name: Start tmate session for debugging
-      #   uses: mxschmitt/action-tmate@v3
-      #   continue-on-error: true
 
       - name: Test
         working-directory: ${{github.workspace}}
@@ -249,7 +232,7 @@ jobs:
           dotnet-coverage merge -o coverage.integration.xml -f cobertura -r coverage/*.xml
 
       - name: Upload Coverage
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: matrix.config.name == 'x86_64-linux'
         with:
           name: nncase-coverage-integration
@@ -273,13 +256,13 @@ jobs:
           dotnet-version: '7.0.x'
 
       - name: Download Unit Test Coverage
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: nncase-coverage-unit
           path: ${{github.workspace}}/coverage
 
       - name: Download Integration Test Coverage
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: nncase-coverage-integration
           path: ${{github.workspace}}/coverage
@@ -304,7 +287,7 @@ jobs:
           reportgenerator -reports:coverage.xml -targetdir:"coveragereport" -reporttypes:Html
 
       - name: Upload Coverage Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: nncase-coverage-report
           path: coveragereport

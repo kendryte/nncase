@@ -57,11 +57,7 @@ class nncaseConan(ConanFile):
             self.requires('pybind11/2.11.1')
 
         if not self.options.runtime:
-            self.requires('abseil/20240116.1')
-            self.requires('magic_enum/0.7.0')
-            self.requires('spdlog/1.8.5')
-            self.requires('inja/3.4.0')
-            self.requires('nethost/8.0.8')
+            self.requires('nethost/6.0.35')
             self.requires('fmt/7.1.3')
 
         if not self.options.runtime or self.options.tests:
@@ -81,7 +77,6 @@ class nncaseConan(ConanFile):
 
         if self.options.tests:
             self.options["ortki"].shared = True
-            self.options["date"].header_only = True
 
     def validate(self):
         if self.settings.compiler.get_safe("cppstd"):
@@ -94,7 +89,9 @@ class nncaseConan(ConanFile):
         tc.variables['BUILD_PYTHON_BINDING'] = self.options.python
         tc.variables['BUILD_TESTING'] = self.options.tests
         if self.options.get_safe("python_root", default="") != "":
-            tc.variables['Python3_ROOT_DIR'] = str(self.options.python_root).replace('\\', '/')
+            tc.variables['Python3_ROOT_DIR'] = self.options.python_root
+        if self.options.runtime:
+            tc.presets_prefix += "-runtime";
         tc.generate()
         deps = CMakeDeps(self)
         deps.generate()
