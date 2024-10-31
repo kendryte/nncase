@@ -91,7 +91,7 @@ void gather(const TA &input, const TB &indices, TC &&output) noexcept {
                 for (size_t i = 0; i < Axis; i++) {
                     src_index[i] = index[i];
                 }
-                src_index[Axis] = seq.start;
+                src_index[Axis] = indices.elements()[seq.start];
                 auto len =
                     seq.length * domain_after_axis.length() * element_size;
                 std::memcpy(addr_output, &(input(src_index)), len);
