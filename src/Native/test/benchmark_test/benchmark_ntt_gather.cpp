@@ -127,7 +127,7 @@ void benchmark_ntt_gather_pack1d_dim1_contiguous() {
 #endif
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    constexpr size_t M = 8;
+    constexpr size_t M = 4;
     constexpr size_t N = 512;
     constexpr size_t Period = 1;
     using tensor_a_type = ntt::tensor<float, ntt::fixed_shape<M, N>>;
