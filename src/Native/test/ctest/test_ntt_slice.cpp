@@ -338,7 +338,7 @@ TEST(SliceTestFloat, NoPack_dim_multiple_step_gt_1) {
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(SliceTestFloat, Pack) {
+TEST(SliceTestFloat, Pack_fixed_shape) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t M = 1024;
     constexpr size_t N = P * 32;
@@ -385,6 +385,61 @@ TEST(SliceTestFloat, Pack) {
 
     // compare
     std::unique_ptr<tensor_type4> ntt_output2(new tensor_type4);
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(SliceTestFloat, Pack_ranked_shape) {
+    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    constexpr size_t M = 1024;
+    constexpr size_t N = P * 32;
+    float min_input = -10.0f;
+    float max_input = 10.0f;
+
+    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<2>>;
+    auto shape1 = ntt::make_ranked_shape(M, N);
+    using tensor_type2 =
+        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<2>>;
+    auto shape2 = ntt::make_ranked_shape(M, N / P);
+    using tensor_type3 =
+        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<2>>;
+    auto shape3 = ntt::make_ranked_shape(16, 16);
+    using tensor_type4 = ntt::tensor<float, ntt::ranked_shape<2>>;
+    auto shape4 = ntt::make_ranked_shape(16, 16 * P);
+
+    // init
+    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1(shape1));
+    NttTest::init_tensor(*ntt_input, min_input, max_input);
+
+    // ntt
+    std::unique_ptr<tensor_type2> pack_input(new tensor_type2(shape2));
+    ntt::pack<1>(*ntt_input, *pack_input);
+    std::unique_ptr<tensor_type3> pack_output(new tensor_type3(shape3));
+    ntt::slice<ntt::fixed_shape<0, 0>, ntt::fixed_shape<16, 16>,
+               ntt::fixed_shape<0, 1>, ntt::fixed_shape<1, 1>>(*pack_input,
+                                                               *pack_output);
+    std::unique_ptr<tensor_type4> ntt_output1(new tensor_type4(shape4));
+    ntt::unpack<1>(*pack_output, *ntt_output1);
+
+    // ort
+    auto ort_input = NttTest::ntt2ort(*ntt_input);
+    int64_t starts_buf[] = {0, 0};
+    int64_t stops_buf[] = {16, 16 * P};
+    int64_t axes_buf[] = {0, 1};
+    int64_t steps_buf[] = {1, 1};
+    int64_t shape[] = {std::size(starts_buf)};
+    auto starts = make_tensor(reinterpret_cast<void *>(starts_buf),
+                              DataType_INT64, shape, 1);
+    auto stops = make_tensor(reinterpret_cast<void *>(stops_buf),
+                             DataType_INT64, shape, 1);
+    auto axes = make_tensor(reinterpret_cast<void *>(axes_buf), DataType_INT64,
+                            shape, 1);
+    auto steps = make_tensor(reinterpret_cast<void *>(steps_buf),
+                             DataType_INT64, shape, 1);
+    auto ort_output = ortki_Slice(ort_input, starts, stops, axes, steps);
+
+    // compare
+    std::unique_ptr<tensor_type4> ntt_output2(new tensor_type4(shape4));
     NttTest::ort2ntt(ort_output, *ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }

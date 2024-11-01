@@ -94,7 +94,7 @@ template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
 };
 
 // gather
-template <class T> struct u_gather_policy<T, true> {
+template <class T> struct u_memcpy_policy<T, true> {
     static constexpr size_t unroll = 4;
 };
 

@@ -494,90 +494,88 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, false, false,
     }
 };
 
-// slice
-template <> struct u_slice_policy<true> { static constexpr size_t unroll = 8; };
+// memcpy
+template <typename T> struct u_memcpy_policy<T, true> {
+    static constexpr size_t unroll = 8;
+};
 
-template <> struct u_slice<vector<float, NTT_VLEN / 32>, true> {
+template <> struct u_memcpy<vector<float, NTT_VLEN / 32>, true> {
   public:
-    constexpr void operator()(const vector<float, NTT_VLEN / 32> *pin,
+    constexpr void operator()(const vector<float, NTT_VLEN / 32> *input,
                               size_t in_stride,
-                              vector<float, NTT_VLEN / 32> *pout,
+                              vector<float, NTT_VLEN / 32> *output,
                               size_t out_stride, size_t count) noexcept {
-        using policy_t = u_slice_policy<true>;
+        using policy_t = u_memcpy_policy<float, true>;
         constexpr auto unroll = policy_t::unroll;
-        in_stride = in_stride * sizeof(vector<float, NTT_VLEN / 32>);
-        out_stride = out_stride * sizeof(vector<float, NTT_VLEN / 32>);
-        constexpr size_t vl = NTT_VLEN / 32;
-        if (count / unroll)
-            asm volatile(
-                "vsetvli zero, %[vl], e32, m1, ta, ma\n" ::[vl] "r"(vl));
+        constexpr auto unit = sizeof(vector<float, NTT_VLEN / 32>);
+        in_stride *= unit;
+        out_stride *= unit;
 
         while (count / unroll) {
 #if 0
             asm volatile(
-                "vle32.v v1, (%[pin])\n"
-                "add %[pin], %[pin], %[in_stride]\n"
-                "vle32.v v2, (%[pin])\n"
-                "add %[pin], %[pin], %[in_stride]\n"
-                "vse32.v v1, (%[pout])\n"
-                "add %[pout], %[pout], %[out_stride]\n"
-                "vle32.v v3, (%[pin])\n"
-                "add %[pin], %[pin], %[in_stride]\n"
-                "vse32.v v2, (%[pout])\n"
-                "add %[pout], %[pout], %[out_stride]\n"
-                "vle32.v v4, (%[pin])\n"
-                "add %[pin], %[pin], %[in_stride]\n"
-                "vse32.v v3, (%[pout])\n"
-                "add %[pout], %[pout], %[out_stride]\n"
-                "vse32.v v4, (%[pout])\n"
-                "add %[pout], %[pout], %[out_stride]\n"
-                :[pin]"+r"(pin), [pout]"+r"(pout)
-                :[in_stride]"r"(in_stride), [out_stride]"r"(out_stride)
-            );
+                "vl1re32.v v1, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vl1re32.v v2, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vs1r.v v1, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                "vl1re32.v v3, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vs1r.v v2, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                "vl1re32.v v4, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vs1r.v v3, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                "vs1r.v v4, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                : [input] "+r"(input), [output] "+r"(output)
+                : [in_stride] "r"(in_stride), [out_stride] "r"(out_stride));
 #else
             asm volatile(
-                "vle32.v v1, (%[pin])\n"
-                "add %[pin], %[pin], %[in_stride]\n"
-                "vle32.v v2, (%[pin])\n"
-                "add %[pin], %[pin], %[in_stride]\n"
-                "vse32.v v1, (%[pout])\n"
-                "add %[pout], %[pout], %[out_stride]\n"
-                "vle32.v v3, (%[pin])\n"
-                "add %[pin], %[pin], %[in_stride]\n"
-                "vse32.v v2, (%[pout])\n"
-                "add %[pout], %[pout], %[out_stride]\n"
-                "vle32.v v4, (%[pin])\n"
-                "add %[pin], %[pin], %[in_stride]\n"
-                "vse32.v v3, (%[pout])\n"
-                "add %[pout], %[pout], %[out_stride]\n"
-                "vle32.v v5, (%[pin])\n"
-                "add %[pin], %[pin], %[in_stride]\n"
-                "vse32.v v4, (%[pout])\n"
-                "add %[pout], %[pout], %[out_stride]\n"
-                "vle32.v v6, (%[pin])\n"
-                "add %[pin], %[pin], %[in_stride]\n"
-                "vse32.v v5, (%[pout])\n"
-                "add %[pout], %[pout], %[out_stride]\n"
-                "vle32.v v7, (%[pin])\n"
-                "add %[pin], %[pin], %[in_stride]\n"
-                "vse32.v v6, (%[pout])\n"
-                "add %[pout], %[pout], %[out_stride]\n"
-                "vle32.v v8, (%[pin])\n"
-                "add %[pin], %[pin], %[in_stride]\n"
-                "vse32.v v7, (%[pout])\n"
-                "add %[pout], %[pout], %[out_stride]\n"
-                "vse32.v v8, (%[pout])\n"
-                "add %[pout], %[pout], %[out_stride]\n"
-                : [pin] "+r"(pin), [pout] "+r"(pout)
+                "vl1re32.v v1, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vl1re32.v v2, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vs1r.v v1, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                "vl1re32.v v3, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vs1r.v v2, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                "vl1re32.v v4, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vs1r.v v3, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                "vl1re32.v v5, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vs1r.v v4, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                "vl1re32.v v6, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vs1r.v v5, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                "vl1re32.v v7, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vs1r.v v6, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                "vl1re32.v v8, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vs1r.v v7, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                "vs1r.v v8, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                : [input] "+r"(input), [output] "+r"(output)
                 : [in_stride] "r"(in_stride), [out_stride] "r"(out_stride));
 #endif
             count -= unroll;
         }
 
-        for (size_t j = 0; j < count; j++) {
-            *pout = *pin;
-            pin += in_stride;
-            pout += out_stride;
+        for (size_t i = 0; i < count; i++) {
+            *output = *input;
+            input += in_stride;
+            output += out_stride;
         }
     }
 };

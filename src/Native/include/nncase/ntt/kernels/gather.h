@@ -116,7 +116,7 @@ void gather(const TA &input, const TB &indices, TC &&output) noexcept {
                     reinterpret_cast<const element_type *>(&(input(src_index)));
                 constexpr auto len = domain_after_axis.length();
 
-                ntt::u_gather<element_type>(addr_input, 1, addr_output_element,
+                ntt::u_memcpy<element_type>(addr_input, 1, addr_output_element,
                                             1, len);
                 addr_output_element += len;
             }

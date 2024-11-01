@@ -18,15 +18,15 @@
 namespace nncase::ntt {
 namespace ukernels {
 
-template <class T, bool Arch> struct u_gather_policy {
+template <class T, bool Arch> struct u_memcpy_policy {
     static constexpr size_t unroll = 1;
 };
 
-template <class T, bool Arch> struct u_gather {
+template <class T, bool Arch> struct u_memcpy {
   public:
-    constexpr void operator()(const T *input, size_t input_stride, T *output,
+    constexpr void operator()(const T *input, size_t input_stride, T *&output,
                               size_t output_stride, size_t count) noexcept {
-        using policy_t = u_gather_policy<T, Arch>;
+        using policy_t = u_memcpy_policy<T, Arch>;
         constexpr auto unroll = policy_t::unroll;
         while (count / unroll) {
             for (size_t i = 0; i < unroll; i++) {
@@ -47,9 +47,9 @@ template <class T, bool Arch> struct u_gather {
 } // namespace ukernels
 
 template <class T>
-constexpr void u_gather(const T *input, size_t input_stride, T *output,
+constexpr void u_memcpy(const T *input, size_t input_stride, T *&output,
                         size_t output_stride, size_t count) noexcept {
-    ukernels::u_gather<T, true> impl;
+    ukernels::u_memcpy<T, true> impl;
     impl(input, input_stride, output, output_stride, count);
 }
 } // namespace nncase::ntt

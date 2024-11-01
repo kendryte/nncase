@@ -14,10 +14,7 @@
  */
 #pragma once
 #include "../apply.h"
-#include "../shape_infer/reduce_axis.h"
 #include "../utility.h"
-#include <iostream>
-#include <tuple>
 
 namespace nncase::ntt {
 namespace slice_detail {
@@ -42,41 +39,15 @@ inline constexpr auto compute_inner_domain(std::index_sequence<Ints...>) {
  * @param input input tensor
  * @param output output tensor
  */
-template <IsFixedDims TStart, IsFixedDims TStop, IsFixedDims TAxes,
-          IsFixedDims TStride, IsFixedTensor TIn, IsFixedTensor TOut>
+template <typename TStart, typename TStop, typename TAxes, typename TStride,
+          typename TIn, typename TOut>
 void slice(const TIn &input, TOut &&output) {
-#if 0
-    constexpr auto domain = shape_infer::reduced_shape_by_axes(
-        typename std::decay_t<TOut>::shape_type{}, TAxes{});
-    constexpr auto inner_domain =
-        slice_detail::compute_inner_domain<TStart, TStop, TStride, TAxes,
-                                           typename TIn::shape_type>(
-            std::make_index_sequence<TAxes::rank()>{});
-
-    auto in_index = ranked_shape<domain.rank()>{};
-    auto out_index = ranked_shape<domain.rank()>{};
-
-    apply(domain, [&](auto index) {
-        loop<domain.rank()>([&](auto i) {
-            in_index[i] = index[i];
-            out_index[i] = index[i];
-        });
-
-        apply(inner_domain, [&](auto inner_index) {
-            loop<inner_domain.rank()>([&](auto i) {
-                in_index[TAxes::at(i)] =
-                    TStart::at(i) + inner_index[i] * TStride::at(i);
-                out_index[TAxes::at(i)] = inner_index[i];
-            });
-            output(out_index) = input(in_index);
-        });
-    });
-#else
     auto out_shape = output.shape();
     constexpr auto rank = out_shape.rank();
     auto count = out_shape[rank - 1];
-    constexpr auto domain = shape_infer::reduced_shape_by_axes(
-        typename std::decay_t<TOut>::shape_type{}, fixed_shape<rank - 1>{});
+    ranked_shape<rank> domain;
+    loop<rank>([&](auto i) { domain[i] = out_shape[i]; });
+    domain[rank - 1] = 1;
 
     // update starts/steps
     size_t in_starts[rank] = {0};
@@ -97,8 +68,7 @@ void slice(const TIn &input, TOut &&output) {
             [&](auto i) { index[i] = in_starts[i] + index[i] * in_steps[i]; });
         auto pin =
             input.buffer().data() + linear_offset(index, input.strides());
-        u_slice(pin, in_steps[rank - 1], pout, out_step, count);
+        u_memcpy(pin, in_steps[rank - 1], pout, out_step, count);
     });
-#endif
 }
 } // namespace nncase::ntt
