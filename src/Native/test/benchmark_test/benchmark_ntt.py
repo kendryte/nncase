@@ -257,7 +257,7 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                          'Min_reduceMN_PackN': 256,
                                          'Min_reduceN_PackN': 256,
                                          },
-                              'slice': {'Pack': '0'},
+                              'slice': {'Pack': '1.5'},
                               'gather': {'pack1d_dim0_contiguous': '1.5',
                                          'pack1d_dim0_no_contiguous': '1.5',
                                          'pack1d_dim1_contiguous': '1.5',
