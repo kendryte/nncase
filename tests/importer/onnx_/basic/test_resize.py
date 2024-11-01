@@ -49,8 +49,8 @@ sizes = [
 ]
 
 modes = [
-    0,  # PIL.Image.NEAREST
-    2,   # PIL.Image.BILINEAR
+    F.InterpolationMode.NEAREST,
+    # F.InterpolationMode.BILINEAR,
 ]
 
 
@@ -67,3 +67,4 @@ def test_resize(in_shape, size, mode, request):
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_resize.py'])
+    
