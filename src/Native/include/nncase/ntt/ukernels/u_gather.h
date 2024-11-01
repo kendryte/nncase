@@ -24,7 +24,7 @@ template <class T, bool Arch> struct u_gather_policy {
 
 template <class T, bool Arch> struct u_gather {
   public:
-    constexpr void operator()(const T *input, size_t input_stride, T *&output,
+    constexpr void operator()(const T *input, size_t input_stride, T *output,
                               size_t output_stride, size_t count) noexcept {
         using policy_t = u_gather_policy<T, Arch>;
         constexpr auto unroll = policy_t::unroll;
@@ -47,7 +47,7 @@ template <class T, bool Arch> struct u_gather {
 } // namespace ukernels
 
 template <class T>
-constexpr void u_gather(const T *input, size_t input_stride, T *&output,
+constexpr void u_gather(const T *input, size_t input_stride, T *output,
                         size_t output_stride, size_t count) noexcept {
     ukernels::u_gather<T, true> impl;
     impl(input, input_stride, output, output_stride, count);
