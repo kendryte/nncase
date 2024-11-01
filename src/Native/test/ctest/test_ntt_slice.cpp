@@ -339,9 +339,9 @@ TEST(SliceTestFloat, NoPack_dim_multiple_step_gt_1) {
 }
 
 TEST(SliceTestFloat, Pack) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    constexpr size_t M = 1024;
+    constexpr size_t N = P * 32;
     float min_input = -10.0f;
     float max_input = 10.0f;
 
@@ -350,7 +350,7 @@ TEST(SliceTestFloat, Pack) {
         ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>>;
     using tensor_type3 =
         ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<16, 16>>;
-    using tensor_type4 = ntt::tensor<float, ntt::fixed_shape<16, 64>>;
+    using tensor_type4 = ntt::tensor<float, ntt::fixed_shape<16, 16 * P>>;
 
     // init
     std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
@@ -358,8 +358,8 @@ TEST(SliceTestFloat, Pack) {
 
     // ntt
     std::unique_ptr<tensor_type2> pack_input(new tensor_type2);
-    std::unique_ptr<tensor_type3> pack_output(new tensor_type3);
     ntt::pack<1>(*ntt_input, *pack_input);
+    std::unique_ptr<tensor_type3> pack_output(new tensor_type3);
     ntt::slice<ntt::fixed_shape<0, 0>, ntt::fixed_shape<16, 16>,
                ntt::fixed_shape<0, 1>, ntt::fixed_shape<1, 1>>(*pack_input,
                                                                *pack_output);
@@ -369,7 +369,7 @@ TEST(SliceTestFloat, Pack) {
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
     int64_t starts_buf[] = {0, 0};
-    int64_t stops_buf[] = {16, 64};
+    int64_t stops_buf[] = {16, 16 * P};
     int64_t axes_buf[] = {0, 1};
     int64_t steps_buf[] = {1, 1};
     int64_t shape[] = {std::size(starts_buf)};
