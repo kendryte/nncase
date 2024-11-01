@@ -92,4 +92,9 @@ public class CpuTargetOptions : ICpuTargetOptions
     [Description("the distributed scheme path.")]
     [DefaultValue("")]
     public string DistributedScheme { get; set; } = string.Empty;
+
+    [DisplayName("--custom-op-scheme")]
+    [Description("the custom-op scheme path.")]
+    [DefaultValue("")]
+    public string CustomOpScheme { get; set; } = string.Empty;
 }
