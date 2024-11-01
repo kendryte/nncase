@@ -265,6 +265,10 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                          'pack2d_dim0_contiguous': '1.5',
                                          'pack2d_dim1_contiguous': '1.5',
                                          },
+                              'pack': {'pack1d_dim0': '0',
+                                       'pack1d_dim1': '0',
+                                       'pack2d': '0',
+                                       },
                               }
 
     def run(self):
@@ -353,6 +357,10 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                          'pack2d_dim0_contiguous': '0',
                                          'pack2d_dim1_contiguous': '0',
                                          },
+                              'pack': {'pack1d_dim0': '0',
+                                       'pack1d_dim1': '0',
+                                       'pack2d': '0',
+                                       },
                               }
 
     def run(self):
