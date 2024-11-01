@@ -118,7 +118,6 @@ void gather(const TA &input, const TB &indices, TC &&output) noexcept {
 
                 ntt::u_memcpy<element_type>(addr_input, 1, addr_output_element,
                                             1, len);
-                addr_output_element += len;
             }
         });
     } else {
