@@ -67,4 +67,3 @@ def test_resize(in_shape, size, mode, request):
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_resize.py'])
-    
