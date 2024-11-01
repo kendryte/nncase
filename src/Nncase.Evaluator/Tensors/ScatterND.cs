@@ -54,12 +54,17 @@ public class ScatterNDEvaluator : IEvaluator<ScatterND>, ITypeInferencer<Scatter
     public IRType Visit(ITypeInferenceContext context, ScatterND target)
     {
         var input = context.CheckArgumentType<IRType>(target, ScatterND.Input);
+        var indices = context.CheckArgumentType<IRType>(target, ScatterND.Indices);
+        var updates = context.CheckArgumentType<IRType>(target, ScatterND.Updates);
 
         // TODO: support other sbp
-        return input switch
+        return (input, indices, updates) switch
         {
-            TensorType => input,
-            DistributedType dt => dt.NdSBP.All(sbp => sbp is SBPBroadCast) ? input : new InvalidType("input type is not supported"),
+            (TensorType, TensorType, TensorType) => input,
+            (DistributedType dt0, DistributedType dt1, DistributedType dt2) =>
+            (dt0.NdSBP.All(sbp => sbp is SBPBroadCast) &&
+            dt1.NdSBP.All(sbp => sbp is SBPBroadCast) &&
+            dt2.NdSBP.All(sbp => sbp is SBPBroadCast)) ? input : new InvalidType("input type is not supported"),
             _ => throw new NotSupportedException("input type is not supported"),
         };
     }
