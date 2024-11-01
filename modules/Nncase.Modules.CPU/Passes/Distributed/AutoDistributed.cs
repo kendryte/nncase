@@ -147,11 +147,12 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
 
     public BaseFunction Rewirte(BaseFunction input)
     {
-        if (input is Function function)
+        if (input is Function || input is Fusion)
         {
-            var typeEquivalents = Visit(function.Body);
+            var body = input is Function ? ((Function)input).Body : ((Fusion)input).Body;
+            var typeEquivalents = Visit(body);
 
-            if (function.Body is IR.Tuple tp)
+            if (body is IR.Tuple tp)
             {
                 var outputs = new List<Expr>();
                 var equ = _equalMemo[tp];
@@ -188,7 +189,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
 
                 if (outputs.Any())
                 {
-                    _equalMemo.Add(function.Body, new EqualityClass(false, outputs));
+                    _equalMemo.Add(body, new EqualityClass(false, outputs));
 
                     using (new ExprPinner(outputs.Select(e => ((EqualityNode)e).Expr).ToArray()))
                     {
@@ -210,7 +211,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                 }
             }
 
-            var equivalents = _equalMemo[function.Body];
+            var equivalents = _equalMemo[body];
             EClass Ddfs(IEquality equival)
             {
                 switch (equival)
@@ -249,7 +250,15 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
 
             var constrains = new EGraphExtractConstrains[] { SingleNodeMemoryExtractConstrains };
             var post = graph.Extract(root, CompileOptions, null, constrains);
-            return function.With(body: post);
+
+            if (input is Function)
+            {
+                return ((Function)input).With(body: post);
+            }
+            else
+            {
+                return ((Fusion)input).With(body: post);
+            }
         }
 
         return input;
@@ -273,7 +282,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             foreach (var i in Enumerable.Range(0, expr.Fields.Length))
             {
                 var boxings = Visit(expr.Fields[i]).Values.
-                    Select(l => l.Select(e => e.CheckedType is DistributedType dt ? IR.F.CPU.Boxing(e, dt.TensorType) : e).ToArray()).
+                    Select(l => l.Select(e => e.CheckedType is DistributedType dt ? (dt.NdSBP.Any(s => s is SBPPartialSum) ? IR.F.CPU.Boxing(IR.F.CPU.Boxing(e, new DistributedType(dt.TensorType, dt.NdSBP.Select(s => s is SBPPartialSum ? SBP.B : s).ToArray(), dt.Placement)), dt.TensorType) : IR.F.CPU.Boxing(e, dt.TensorType)) : e).ToArray()).
                     SelectMany(e => e).Select(e => new EqualityNode(e)).OfType<IEquality>().ToList();
                 fileds.Add(new EqualityClass(false, boxings));
             }
@@ -292,6 +301,31 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
 
     protected override Dictionary<IRType, List<Expr>> VisitLeafCall(Call expr)
     {
+        if (expr.Target is Fusion fusion)
+        {
+            foreach (var idx in Enumerable.Range(0, fusion.Parameters.Length))
+            {
+                VisitLeafArgument(ParameterKind.Input, expr.Arguments[idx], false);
+            }
+
+            var rewriter = new AutoDistributedRewriter(CompileOptions, TargetOptions);
+            var post = rewriter.Rewirte(fusion);
+            var ret = expr.Arguments.ToArray().
+                    Select(Visit).
+                    CartesianProduct().
+                    Select(args => args.ToArray()).
+                    Select(args => args.Select(kv => kv.Value[0]).Select(arg => arg.CheckedType switch
+                    {
+                        DistributedType d => GetDiverseCandidateSBPs(d, Placements).Select(ndsbp => IR.F.CPU.Boxing(arg, new DistributedType(d.TensorType, ndsbp, d.Placement))).Concat(new[] { arg }).ToArray(),
+                        _ => new[] { arg },
+                    }).ToList().CartesianProduct().Select(arg => expr.With(target: post, arguments: arg.ToArray())).ToArray()).
+                    SelectMany(i => i).
+                    GroupBy(c => c.CheckedType).
+                    ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
+
+            return ret;
+        }
+
         if (expr.Target is not Op op)
         {
             return new Dictionary<IRType, List<Expr>> { { expr.CheckedType, new() { expr } } };

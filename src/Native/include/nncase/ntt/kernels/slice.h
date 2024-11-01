@@ -32,14 +32,6 @@ inline constexpr auto compute_inner_domain(std::index_sequence<Ints...>) {
 }
 } // namespace slice_detail
 
-template <typename Tshape>
-static void dump_shape(const std::string &info, Tshape shape) {
-    std::cout << info;
-    for (size_t i = 0; i < shape.rank(); i++)
-        std::cout << shape[i] << " ";
-    std::cout << std::endl;
-}
-
 /**
  * @brief
  *

@@ -35,7 +35,21 @@ public sealed partial class DecomposeSoftmax : IRewriteRule
 
     private Expr? GetReplace(Expr input, Call softmaxCall, int[] axis)
     {
-        var exp = IR.F.Math.Exp(input);
+        var max = input.CheckedDataType switch
+        {
+            var x when x == DataTypes.Float32 => IR.F.Tensors.ReduceMax(input, axis, float.MinValue, true),
+            var x when x == DataTypes.Float64 => IR.F.Tensors.ReduceMax(input, axis, double.MinValue, true),
+            var x when x == DataTypes.Float16 => IR.F.Tensors.ReduceMax(input, axis, (Half)float.MinValue, true),
+            var x when x == DataTypes.BFloat16 => IR.F.Tensors.ReduceMax(input, axis, (BFloat16)float.MinValue, true),
+            var x when x == DataTypes.Int32 => IR.F.Tensors.ReduceMax(input, axis, int.MinValue, true),
+            var x when x == DataTypes.Int64 => IR.F.Tensors.ReduceMax(input, axis, long.MinValue, true),
+            var x when x == DataTypes.UInt32 => IR.F.Tensors.ReduceMax(input, axis, 0u, true),
+            var x when x == DataTypes.UInt64 => IR.F.Tensors.ReduceMax(input, axis, 0ul, true),
+            _ => throw new NotSupportedException(),
+        };
+
+        var sub = input - max;
+        var exp = IR.F.Math.Exp(sub);
         var reduce = input.CheckedDataType switch
         {
             var x when x == DataTypes.Float32 => IR.F.Tensors.ReduceSum(exp, axis, 0f, true),

@@ -22,14 +22,16 @@ namespace Nncase.Quantization;
 internal partial class Quantizer
 {
     private readonly IEGraph _graph;
+    private readonly ITarget _target;
     private readonly QuantizeOptions _quantizeOptions;
     private readonly List<ENode> _rangeOfs = new List<ENode>();
     private readonly List<ENode> _childrenOfRangeOfs = new List<ENode>();
     private readonly List<ENode> _markers = new List<ENode>();
 
-    public Quantizer(IEGraph graph, QuantizeOptions quantizeOptions)
+    public Quantizer(IEGraph graph, QuantizeOptions quantizeOptions, ITarget target)
     {
         _graph = graph;
+        _target = target;
         _quantizeOptions = quantizeOptions;
         MarkRangeOfs();
         MarkMarkers();
@@ -303,16 +305,30 @@ internal partial class Quantizer
             // AssignDataTypeFromConfig(quantScheme!);
 
             // load from file
-            using (var r = new StreamReader(readJson))
+            if (_target.Kind == "xpu")
             {
-                string json = r.ReadToEnd();
-                var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(json);
-                var ranges = GetRangesFromConfig(quantScheme!);
-                AssignByChannelRanges(ranges);
-                AssignDataTypeFromConfig(quantScheme!);
-                if (_quantizeOptions.DumpQuantError)
+                using (var r = new StreamReader(readJson))
                 {
-                    await DumpQuantErrorFromConfig(ranges);
+                    string json = r.ReadToEnd();
+                    var quantScheme = JsonConvert.DeserializeObject<QuantInfo>(json);
+                    var ranges = GetScalesFromConfig(quantScheme!);
+                    AssignByChannelRangesXPU(ranges);
+                    AssignDataTypeFromConfigXPU(quantScheme!);
+                }
+            }
+            else
+            {
+                using (var r = new StreamReader(readJson))
+                {
+                    string json = r.ReadToEnd();
+                    var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(json);
+                    var ranges = GetRangesFromConfig(quantScheme!);
+                    AssignByChannelRanges(ranges);
+                    AssignDataTypeFromConfig(quantScheme!);
+                    if (_quantizeOptions.DumpQuantError)
+                    {
+                        await DumpQuantErrorFromConfig(ranges);
+                    }
                 }
             }
         }
@@ -476,6 +492,24 @@ internal partial class Quantizer
         return ranges;
     }
 
+    private IDictionary<ENode, float> GetScalesFromConfig(QuantInfo quantScheme)
+    {
+        var ranges = new Dictionary<ENode, float>(ReferenceEqualityComparer.Instance);
+
+        foreach (var rangeOf in _rangeOfs)
+        {
+            for (int i = 0; i < quantScheme!.Outputs!.Length; i++)
+            {
+                if (rangeOf.Expr.Metadata.OutputNames?[0] == quantScheme!.Outputs[i].Name && (!ranges.ContainsKey(rangeOf)))
+                {
+                    ranges.Add(rangeOf, quantScheme!.Outputs[i].Scale);
+                }
+            }
+        }
+
+        return ranges;
+    }
+
     private void AssignDataTypeFromConfig(QuantScheme quantScheme)
     {
         foreach (var marker in _markers)
@@ -501,6 +535,27 @@ internal partial class Quantizer
             {
                 var markerExpr = (Marker)marker.Expr;
                 markerExpr.MixQuantInfo!.MarkerQuantType = DataTypes.Float16;
+            }
+        }
+    }
+
+    private void AssignDataTypeFromConfigXPU(QuantInfo quantScheme)
+    {
+        foreach (var marker in _markers)
+        {
+            for (int i = 0; i < quantScheme!.Outputs!.Length; i++)
+            {
+                if (marker.Expr.Metadata.OutputNames?[0] == quantScheme.Outputs[i].Name)
+                {
+                    var markerExpr = (Marker)marker.Expr;
+                    if (markerExpr.MixQuantInfo == null)
+                    {
+                        markerExpr.MixQuantInfo = new MixQuantInfo();
+                    }
+
+                    DataType dataType = DataTypes.FromShortName(quantScheme!.Outputs[i].DataType!);
+                    markerExpr.MixQuantInfo!.MarkerQuantType = dataType;
+                }
             }
         }
     }
@@ -708,6 +763,19 @@ internal partial class Quantizer
 
             var shape = oc == 1 ? new[] { 2 } : new[] { oc, 2 };
             var rangeEclass = _graph.Add(new TensorConst(Tensor.From(minMaxArr, shape)));
+            var rangeOfEclass = _graph.Find(range.Key);
+            range.Key.Expr.CheckedType = rangeEclass.CheckedType;
+            rangeOfEclass.SetCheckedType(rangeEclass.CheckedType);
+            _graph.Union(rangeOfEclass, rangeEclass);
+        }
+    }
+
+    private void AssignByChannelRangesXPU(IDictionary<ENode, float> ranges)
+    {
+        // note union the constant in the rangeof eclass, when extact the graph will replace the rangeof expression with the constant ValueRange.
+        foreach (var range in ranges)
+        {
+            var rangeEclass = _graph.Add(new TensorConst(Tensor.FromScalar<float>(range.Value)));
             var rangeOfEclass = _graph.Find(range.Key);
             range.Key.Expr.CheckedType = rangeEclass.CheckedType;
             rangeOfEclass.SetCheckedType(rangeEclass.CheckedType);
