@@ -22,6 +22,32 @@
 using namespace nncase;
 using namespace ortki;
 
+TEST(GatherTestFloat, no_pack) {
+
+    using tensor_a_type = ntt::tensor<float, ntt::fixed_shape<4, 5, 8, 3>>;
+    using tensor_b_type = ntt::tensor<int64_t, ntt::fixed_shape<1, 3>>;
+    using tensor_c_type = ntt::tensor<float, ntt::fixed_shape<4, 1, 3, 8, 3>>;
+
+    int64_t index_array[384] = {1, 0, 2};
+    auto tb = ntt::tensor_view<int64_t, ntt::fixed_shape<1, 3>>(
+        std::span<int64_t, 3>(index_array, 3));
+
+    tensor_a_type ta;
+    tensor_c_type tc;
+    tensor_c_type td;
+    std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+    ntt::gather<1>(ta, tb, tc);
+
+    // ort
+    auto ort_input = NttTest::ntt2ort(ta);
+    auto ort_tb = NttTest::ntt2ort(tb);
+    auto ort_output = ortki_Gather(ort_input, ort_tb, 1);
+
+    // // compare
+    NttTest::ort2ntt(ort_output, td);
+    EXPECT_TRUE(NttTest::compare_tensor(tc, td));
+}
+
 TEST(GatherTestFloat, pack1d_dim0_contiguous) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
