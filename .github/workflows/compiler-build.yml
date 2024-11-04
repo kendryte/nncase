@@ -203,8 +203,8 @@ jobs:
       - name: Set up test environment (Windows)
         shell: pwsh
         run: |
-          Copy-Item install/bin/*.dll install/
-          echo "PYTHONPATH=${env:GITHUB_WORKSPACE}/install/lib;${env:GITHUB_WORKSPACE}/install/python;${env:GITHUB_WORKSPACE}/tests" >> $env:GITHUB_ENV
+          Copy-Item install/lib/*.pyd install/bin/
+          echo "PYTHONPATH=${env:GITHUB_WORKSPACE}/install/bin;${env:GITHUB_WORKSPACE}/install/python;${env:GITHUB_WORKSPACE}/tests" >> $env:GITHUB_ENV
           echo "PATH=${env:PATH};${env:GITHUB_WORKSPACE}/install/bin" >> $env:GITHUB_ENV
         if: runner.os == 'Windows'
 
