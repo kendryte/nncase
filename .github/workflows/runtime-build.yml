@@ -86,7 +86,7 @@ jobs:
     strategy:
       matrix:
         config:
-          - { name: riscv64-k230-linux, toolchain: riscv64-linux, toolchainPrefix: riscv64-unknown-linux-gnu-, toolchainFile: riscv64-unknown-linux_gnu_14.2.0, qemu: qemu-riscv64, loaderArgs: '-cpu;rv64,v=true,Zfh=true,vlen=128,elen=64,vext_spec=v1.0;-L', conanInstallArgs: '-o "&:k230_runtime=True"', buildType: Release }
+          - { name: riscv64-k230-linux, profile: riscv64-linux, toolchainPrefix: riscv64-unknown-linux-gnu-, toolchainFile: riscv64-unknown-linux_gnu_14.2.0, qemu: qemu-riscv64, loaderArgs: '-cpu;rv64,v=true,Zfh=true,vlen=128,elen=64,vext_spec=v1.0;-L', conanInstallArgs: '-o "&:k230_runtime=True"', buildType: Release }
 
     steps:
       - uses: actions/checkout@v3
@@ -119,7 +119,7 @@ jobs:
       - name: Configure
         shell: bash
         run: |
-          conan install . --build=missing -s build_type=${{matrix.config.buildType}} -pr:h=toolchains/${{matrix.config.name}}.profile.jinja -pr:b=toolchains/x86_64-linux.profile.jinja -o "&:runtime=True" -o "&:python=True" -o "&:tests=True" ${{matrix.config.conanInstallArgs}}
+          conan install . --build=missing -s build_type=${{matrix.config.buildType}} -pr:h=toolchains/${{matrix.config.profile}}.profile.jinja -pr:b=toolchains/x86_64-linux.profile.jinja -o "&:runtime=True" -o "&:python=True" -o "&:tests=True" ${{matrix.config.conanInstallArgs}}
           cmake --preset conan-runtime-release
 
       - name: Build & Install
