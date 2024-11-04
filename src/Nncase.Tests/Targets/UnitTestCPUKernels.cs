@@ -42,6 +42,12 @@ public class CpuKernelCase
     public IReadOnlyList<Tensor> Inputs { get; }
 }
 
+[CollectionDefinition(nameof(NotThreadSafeResourceCollection), DisableParallelization = true)]
+public class NotThreadSafeResourceCollection
+{
+}
+
+[Collection(nameof(NotThreadSafeResourceCollection))]
 [AutoSetupTestMethod(InitSession = true)]
 public sealed class UnitTestCPUKernels : TestClassBase
 {
