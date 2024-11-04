@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 #pragma once
-#include "../compiler_defs.h"
+#include "ntt/compiler_defs.h"
 #include <cmath>
+#include <codecvt>
 #include <cstdint>
 #include <float.h>
 #include <functional>
@@ -25,7 +26,7 @@ struct from_raw_t {
     explicit from_raw_t() = default;
 };
 
-NNCASE_INLINE_VAR constexpr from_raw_t from_raw{};
+inline constexpr from_raw_t from_raw{};
 
 struct bfloat16 {
   private:
@@ -34,12 +35,12 @@ struct bfloat16 {
         float f32;
 
         uint16_t u16() const noexcept {
-            constexpr size_t index = NNCASE_LITTLE_ENDIAN ? 1 : 0;
+            constexpr size_t index = std::little_endian ? 1 : 0;
             return reinterpret_cast<const uint16_t *>(&u32)[index];
         }
 
         uint16_t &u16() noexcept {
-            constexpr size_t index = NNCASE_LITTLE_ENDIAN ? 1 : 0;
+            constexpr size_t index = std::little_endian ? 1 : 0;
             return reinterpret_cast<uint16_t *>(&u32)[index];
         }
     };
@@ -183,7 +184,7 @@ DEFINE_BF16_BINARY_BOOLRET(>=)
 DEFINE_BF16_BINARY_BOOLRET(>)
 
 #define DEFINE_BF16_BINARY_SELF_MOD(x, op)                                     \
-    inline bfloat16 &operator x(bfloat16 &a, bfloat16 b) noexcept {            \
+    inline bfloat16 &operator x(bfloat16 & a, bfloat16 b) noexcept {           \
         a = a op b;                                                            \
         return a;                                                              \
     }
@@ -225,40 +226,40 @@ template <> struct numeric_limits<nncase::bfloat16> {
     static constexpr float_round_style round_style = round_to_nearest;
     static constexpr int radix = FLT_RADIX;
 
-    NNCASE_UNUSED static constexpr nncase::bfloat16(min)() noexcept {
+    static constexpr nncase::bfloat16(min)() noexcept {
         return nncase::bfloat16::min();
     }
 
-    NNCASE_UNUSED static constexpr nncase::bfloat16(max)() noexcept {
+    static constexpr nncase::bfloat16(max)() noexcept {
         return nncase::bfloat16::highest();
     }
 
-    NNCASE_UNUSED static constexpr nncase::bfloat16 lowest() noexcept {
+    static constexpr nncase::bfloat16 lowest() noexcept {
         return nncase::bfloat16::lowest();
     }
 
-    NNCASE_UNUSED static constexpr nncase::bfloat16 epsilon() noexcept {
+    static constexpr nncase::bfloat16 epsilon() noexcept {
         return nncase::bfloat16::epsilon();
     }
 
-    NNCASE_UNUSED static constexpr nncase::bfloat16 round_error() noexcept {
+    static constexpr nncase::bfloat16 round_error() noexcept {
         // 0.5
         return nncase::bfloat16::from_raw(0x3f00);
     }
 
-    NNCASE_UNUSED static constexpr nncase::bfloat16 denorm_min() noexcept {
+    static constexpr nncase::bfloat16 denorm_min() noexcept {
         return nncase::bfloat16::min();
     }
 
-    NNCASE_UNUSED static constexpr nncase::bfloat16 infinity() noexcept {
+    static constexpr nncase::bfloat16 infinity() noexcept {
         return nncase::bfloat16::infinity();
     }
 
-    NNCASE_UNUSED static constexpr nncase::bfloat16 quiet_NaN() noexcept {
+    static constexpr nncase::bfloat16 quiet_NaN() noexcept {
         return nncase::bfloat16::quiet_NaN();
     }
 
-    NNCASE_UNUSED static constexpr nncase::bfloat16 signaling_NaN() noexcept {
+    static constexpr nncase::bfloat16 signaling_NaN() noexcept {
         return nncase::bfloat16::signaling_NaN();
     }
 

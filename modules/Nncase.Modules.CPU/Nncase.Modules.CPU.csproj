@@ -27,8 +27,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Runtime\include\nncase\" />
-    <Folder Include="Runtime\src\" />
+    <Folder Include="Runtime\include\" />
+    <Folder Include="Runtime\cmake\" />
   </ItemGroup>
     
   <ItemGroup>
@@ -36,10 +36,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\src\Native\include\nncase\ntt\**\*" Link="Runtime\include\nncase\ntt\%(RecursiveDir)\%(FileName)%(Extension)">
+    <None Include="..\..\ntt\include\nncase\**\*" Link="Runtime\include\nncase\%(RecursiveDir)\%(FileName)%(Extension)">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="..\..\src\Native\src\ntt\**\*" Link="Runtime\src\%(RecursiveDir)\%(FileName)%(Extension)">
+    <None Include="..\..\ntt\cmake\**\*" Link="Runtime\cmake\%(RecursiveDir)\%(FileName)%(Extension)">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

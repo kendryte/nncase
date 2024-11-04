@@ -52,6 +52,7 @@ option(ENABLE_DUMP_MEM "Dump mem usage" OFF)
 if (BUILDING_RUNTIME)
     option(ENABLE_VULKAN_RUNTIME "Enable Vulkan runtime" OFF)
     option(ENABLE_K210_RUNTIME "Enable k210 runtime" OFF)
+    option(ENABLE_K230_RUNTIME "Enable k230 runtime" OFF)
     option(DEFAULT_BUILTIN_RUNTIMES "Use default builtin runtimes" ON)
     option(DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL "Use default shared memory platform impl" ON)
 endif()
@@ -64,10 +65,13 @@ if(ENABLE_DUMP_MEM)
     add_definitions(-DDUMP_MEM)
 endif()
 
+set(NNCASE_CMAKE_DIR ${CMAKE_CURRENT_LIST_DIR}/cmake)
+
 include(cmake/dependencies.cmake)
+include(cmake/compile_flags.cmake)
 
 set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/src/Native/include)
-set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/src/Native/include)
+set(NNCASE_NTT_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/ntt/include)
 set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src/Native/include)
 set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
 
@@ -84,36 +88,16 @@ endif()
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-if (MSVC)
-    add_definitions(/D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS /D_CRT_SECURE_NO_WARNINGS /DNOMINMAX)
-    add_compile_options(/wd4267 /wd4251 /wd4244 /FC /utf-8 /W3 /WX -Wno-unused-function -Wno-unused-command-line-argument)
-    set(PYBIND11_CPP_STANDARD "/std:c++latest")
-else()
-    add_compile_options(-fvisibility=hidden)
-    add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-type-limits -Wno-unused-local-typedefs -Wno-sign-compare)
-    if (APPLE)
-        add_compile_options(-Wno-four-char-constants -Wno-sometimes-uninitialized -Wno-deprecated)
-    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        add_compile_options(-Wno-uninitialized -Wno-gnu-zero-variadic-macro-arguments)
-    else ()
-        add_compile_options(-Wno-maybe-uninitialized -Wno-deprecated-copy)
-        add_link_options(-Wl,--exclude-libs,ALL)
-    endif()
-endif()
-
 include_directories(${NNCASE_MAIN_INCLUDE_DIR})
+include_directories(${NNCASE_NTT_INCLUDE_DIR})
 include_directories(${NNCASE_INCLUDE_DIR})
 
 add_subdirectory(src/Native/include/nncase)
 add_subdirectory(src/Native/src)
+add_subdirectory(ntt)
 
 if(BUILD_TESTING)
-    add_subdirectory(src/Native/test/ctest)
     add_subdirectory(tests/kernels)
-endif()
-
-if(BUILD_BENCHMARK)
-    add_subdirectory(src/Native/test/benchmark_test)
 endif()
 
 # Python binding
@@ -138,6 +122,16 @@ if (BUILDING_RUNTIME)
         )
 
     install(DIRECTORY src/Native/include/nncase/
+            DESTINATION include/nncase
+            COMPONENT nncase-headers
+            FILES_MATCHING
+            PATTERN "*.def"
+            PATTERN "*.h"
+            PATTERN "*version.h"
+            PATTERN "CMakeFiles" EXCLUDE
+            )
+
+    install(DIRECTORY ntt/include/nncase/
             DESTINATION include/nncase
             COMPONENT nncase-headers
             FILES_MATCHING
@@ -172,6 +166,19 @@ if (BUILDING_RUNTIME)
         )
 else()
     install(DIRECTORY src/Native/include/nncase
+        DESTINATION include
+        COMPONENT nncase-headers
+        FILES_MATCHING
+        PATTERN "*.def"
+        PATTERN "*.h"
+        PATTERN "*.hpp"
+        PATTERN "*.td"
+        PATTERN "*.inc"
+        PATTERN "LICENSE.TXT"
+        PATTERN "*.h"
+        )
+
+    install(DIRECTORY ntt/include/nncase
         DESTINATION include
         COMPONENT nncase-headers
         FILES_MATCHING
