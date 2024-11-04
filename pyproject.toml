@@ -29,9 +29,9 @@ requires = ["setuptools>=42", "wheel", "conan==2.6.0", "gitpython"]
 build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel]
-build = ["cp38*", "cp39*", "cp310*", "cp311*", "cp312*"]
+build = ["cp39*", "cp310*", "cp311*", "cp312*", "cp313*"]
 skip = "*musllinux*"
-manylinux-x86_64-image = "sunnycase/manylinux2014_x86_64:1.2"
+manylinux-x86_64-image = "sunnycase/manylinux_2_28_x86_64:1.1"
 test-requires = "pytest"
 test-command = [
   "pytest {project}/tests/other"
@@ -53,11 +53,11 @@ before-build = [
   "rm -f {project}/CMakeUserPresets.json",
   "pip install https://github.com/sunnycase/auditwheel/releases/download/6.0.0/auditwheel-6.0.0-py3-none-any.whl"
 ]
-repair-wheel-command = "LD_LIBRARY_PATH=/opt/rh/devtoolset-14/root/usr/lib64 auditwheel repair -w {dest_dir} {wheel} --exclude libvulkan.so.1,libgomp.so.1"
+repair-wheel-command = "LD_LIBRARY_PATH=/usr/lib64 auditwheel repair -w {dest_dir} {wheel} --exclude libvulkan.so.1,libgomp.so.1"
 
 [tool.cibuildwheel.linux.environment]
-CC = "gcc"
-CXX = "g++"
+CC = "gcc-14"
+CXX = "g++-14"
 
 [tool.cibuildwheel.macos]
 archs = ["aarch64"]
