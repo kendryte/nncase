@@ -136,7 +136,7 @@ jobs:
           dotnet-coverage merge -o coverage.unit.xml -f cobertura -r coverage/*.xml
 
       - name: Upload Coverage
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: matrix.config.name == 'x86_64-linux'
         with:
           name: nncase-coverage-unit
