@@ -28,8 +28,8 @@ struct Segment {
     size_t length;
 };
 
-size_t findContinuousSegments(const size_t *arr, size_t arrSize,
-                              Segment *segments) {
+template <typename T>
+size_t findContinuousSegments(const T *arr, size_t arrSize, Segment *segments) {
     if (arrSize == 0)
         return 0;
 
@@ -62,13 +62,14 @@ template <size_t Axis, typename TA, typename TB, typename TC>
 void gather(const TA &input, const TB &indices, TC &&output) noexcept {
     constexpr auto rank = TA::shape_type::rank();
     using element_type = element_or_scalar_t<TA>;
+    using slice_type = element_or_scalar_t<TB>;
     constexpr auto element_size = sizeof(element_type);
 
     constexpr size_t indices_len = TB::size();
 
     detail::Segment segments[indices_len];
     size_t count = detail::findContinuousSegments(
-        (const size_t *)(indices.elements().data()), indices_len, segments);
+        (const slice_type *)(indices.elements().data()), indices_len, segments);
 
     auto domain_before_axis = slice_fixed_dims<Axis>(input.shape());
     constexpr auto domain_after_axis =
