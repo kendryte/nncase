@@ -186,28 +186,6 @@
         "resolved": "6.0.0",
         "contentHash": "31kfaW4ZupZzPsI5PVe77VhnvFF55qgma7KZr/E0iFTs6fmdhhG8j0mgEx620iLTey1EynOkEfnyTjtNEpJzGw=="
       }
-    },
-    "net7.0/linux-x64": {
-      "libortki-linux": {
-        "type": "Transitive",
-        "resolved": "0.0.2",
-        "contentHash": "b04LWD4lgGy60tys3hPFhnUpgWDM6dN5r1PI7GOcPj8VupXCaI70LKNQ5/5twbDE6rkowOGanVTw0S2wBGBqBQ=="
-      },
-      "libortki-osx": {
-        "type": "Transitive",
-        "resolved": "0.0.2",
-        "contentHash": "O6Q9GLULkDkZEPAZJVKLPH0ROXGVOE7BxuddgOcHNK2oiTEM7wIRnzp2OIlYgLpaOLyxJMisbGOhtWgdzt2Wng=="
-      },
-      "libortki-osx-arm64": {
-        "type": "Transitive",
-        "resolved": "0.0.2",
-        "contentHash": "4Qn2dirJmRicnUG945oWpq7HVGwgqCKKxYPMISv/MRvmpZBbXrZ1cVvRaF8WwTu4XXgfKTa1sLv+i8zLifUMeQ=="
-      },
-      "libortki-win": {
-        "type": "Transitive",
-        "resolved": "0.0.2",
-        "contentHash": "HAoROgAKn8XBun11X43HZuspKlo5JGy8/OYw5IUPo7FVh5TCaPrLjGmyGYYZ2dqLlv31yv/b6s254PIRGn95cA=="
-      }
     }
   }
 }

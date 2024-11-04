@@ -255,53 +255,6 @@
         "resolved": "6.0.0",
         "contentHash": "31kfaW4ZupZzPsI5PVe77VhnvFF55qgma7KZr/E0iFTs6fmdhhG8j0mgEx620iLTey1EynOkEfnyTjtNEpJzGw=="
       }
-    },
-    "net7.0/linux-x64": {
-      "Google.OrTools.runtime.linux-arm64": {
-        "type": "Transitive",
-        "resolved": "9.4.1874",
-        "contentHash": "Z46ndZcZa2Lt5b76xU9kxVYbPLg/LfuMufhUVsu3Qo3L7Bibf7WXd9j7RRldjnuv8RIHWTqb0b+2FwwMxs0c5A=="
-      },
-      "Google.OrTools.runtime.linux-x64": {
-        "type": "Transitive",
-        "resolved": "9.4.1874",
-        "contentHash": "zGeDb8FuvP9HXjrsU7krVXtSDFpR+DUGNEsH51k94jL9tzf2vWYI8+WUBRHZ/cGe50dpLr+vIjfcNo3gFyOpkQ=="
-      },
-      "Google.OrTools.runtime.osx-arm64": {
-        "type": "Transitive",
-        "resolved": "9.4.1874",
-        "contentHash": "Wo0ZfDaH6DhiQw0jZm4HWJm/oPGPpWNwOLUz+EYaoH3MLtocSxItHGQj/Ta3HyhXnYNOv+TliAH8L+8RCXu/2w=="
-      },
-      "Google.OrTools.runtime.osx-x64": {
-        "type": "Transitive",
-        "resolved": "9.4.1874",
-        "contentHash": "IAfGgKR1og6vU87axK1d37Ak/4jy8B4NMoElovG/KZc/2UY+cJEAQDA709UMegtI4lBhuxTWFNUiHQYmRIB9yQ=="
-      },
-      "Google.OrTools.runtime.win-x64": {
-        "type": "Transitive",
-        "resolved": "9.4.1874",
-        "contentHash": "fUs5qDnZA6itygolcX6nPuachQkY9CVvQbakIzIiRAWKcaj8umQAbFdGwbkyzp3qp34BKW5mtPVsmMyfQBBjOQ=="
-      },
-      "libortki-linux": {
-        "type": "Transitive",
-        "resolved": "0.0.2",
-        "contentHash": "b04LWD4lgGy60tys3hPFhnUpgWDM6dN5r1PI7GOcPj8VupXCaI70LKNQ5/5twbDE6rkowOGanVTw0S2wBGBqBQ=="
-      },
-      "libortki-osx": {
-        "type": "Transitive",
-        "resolved": "0.0.2",
-        "contentHash": "O6Q9GLULkDkZEPAZJVKLPH0ROXGVOE7BxuddgOcHNK2oiTEM7wIRnzp2OIlYgLpaOLyxJMisbGOhtWgdzt2Wng=="
-      },
-      "libortki-osx-arm64": {
-        "type": "Transitive",
-        "resolved": "0.0.2",
-        "contentHash": "4Qn2dirJmRicnUG945oWpq7HVGwgqCKKxYPMISv/MRvmpZBbXrZ1cVvRaF8WwTu4XXgfKTa1sLv+i8zLifUMeQ=="
-      },
-      "libortki-win": {
-        "type": "Transitive",
-        "resolved": "0.0.2",
-        "contentHash": "HAoROgAKn8XBun11X43HZuspKlo5JGy8/OYw5IUPo7FVh5TCaPrLjGmyGYYZ2dqLlv31yv/b6s254PIRGn95cA=="
-      }
     }
   }
 }
