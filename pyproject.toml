@@ -1,7 +1,7 @@
 [project]
 name = "nncase"
 dynamic = ["version"]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 authors = [{ name = "sunnycase" }, { email = "sunnycase@live.cn" }]
 maintainers = [{ name = "sunnycase" }, { email = "sunnycase@live.cn" }]
 readme = "README.md"
@@ -10,11 +10,11 @@ license = { file = "LICENSE" }
 classifiers = [
     "Programming Language :: C++",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
 ]
@@ -60,7 +60,7 @@ CC = "gcc-14"
 CXX = "g++-14"
 
 [tool.cibuildwheel.macos]
-archs = ["aarch64"]
+archs = ["arm64"]
 before-build = [
   "rm -f {project}/CMakeUserPresets.json",
   "pip install auditwheel==6.0.0",
