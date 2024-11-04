@@ -76,8 +76,7 @@ void gather(const TA &input, const TB &indices, TC &&output) noexcept {
 
     auto addr_output_byte =
         reinterpret_cast<unsigned char *>(output.buffer().data());
-    auto addr_output_element =
-        reinterpret_cast<element_type *>(output.buffer().data());
+    auto addr_output_element = output.buffer().data();
 
     auto input_conti_dims = contiguous_dims(input.shape(), input.strides());
 
