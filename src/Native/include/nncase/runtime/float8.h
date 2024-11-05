@@ -151,6 +151,9 @@ template <FloatEncoding T> struct alignas(1) float8_base {
     CUTLASS_HOST_DEVICE
     float8_base() : storage(0) {}
 
+    CUTLASS_HOST_DEVICE
+    float8_base(uint8_t u8) : storage(u8) {}
+
     /// Is finite implementation
     CUTLASS_HOST_DEVICE
     static bool isfinite(float flt) {

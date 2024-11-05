@@ -95,5 +95,5 @@ int main(int argc, char *argv[]) {
     benchmark_ntt_cast<unsigned int, float, N>(0, 100);
     benchmark_ntt_cast<float, bool, N>(-100.f, 100.f);
     benchmark_ntt_cast<bool, float, N>(0, 1);
-    benchmark_ntt_cast<float, float_e4m3_t, N>(0, 1);
+    benchmark_ntt_cast<float, float_e4m3_t, N>(-1000.f, 1000.f);
 }

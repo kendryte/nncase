@@ -18,8 +18,8 @@
 
 using namespace nncase;
 
-template <template <typename T1> class Op, typename T2, size_t N>
-void benchmark_ntt_unary(std::string op_name, T2 low, T2 high) {
+template <template <typename T> class Op, typename T, size_t N>
+void benchmark_ntt_unary(std::string op_name, T low, T high) {
 #if __riscv
     constexpr size_t size1 = 300;
     constexpr size_t size2 = 600;
@@ -30,21 +30,21 @@ void benchmark_ntt_unary(std::string op_name, T2 low, T2 high) {
     constexpr size_t size1 = 2000;
     constexpr size_t size2 = 2000;
 #endif
-    using tensor_type =
-        ntt::tensor<ntt::vector<T2, N>, ntt::fixed_shape<size2>>;
+    using tensor_type = ntt::tensor<ntt::vector<T, N>, ntt::fixed_shape<size2>>;
     tensor_type ntt_input, ntt_result;
     NttTest::init_tensor(ntt_input, low, high);
 
-    Op<tensor_type> op;
     for (size_t i = 0; i < size1; i++)
-        ntt_result = op(ntt_input);
+        ntt::unary<Op>(ntt_input, ntt_result);
     auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < size1; i++)
-        ntt_result = op(ntt_input);
-    auto t2 = NttTest::get_cpu_cycle();
+    for (size_t i = 0; i < size1; i++) {
+        ntt::unary<Op>(ntt_input, ntt_result);
 #if __x86_64__
-    asm volatile("" ::"g"(ntt_result));
+        asm volatile("" ::"g"(ntt_result));
 #endif
+    }
+    auto t2 = NttTest::get_cpu_cycle();
+
     std::cout << __FUNCTION__ << "_" << op_name << " took "
               << std::setprecision(1) << std::fixed
               << static_cast<float>(t2 - t1) / size1 / size2 << " cycles"
