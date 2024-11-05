@@ -36,8 +36,10 @@ size_t tid;
 #pragma function(fmodf)
 #pragma function(logf)
 #pragma function(powf)
+#pragma function(roundf)
 #pragma function(sinf)
 #pragma function(sinhf)
+#pragma function(sqrtf)
 #pragma function(tanhf)
 #endif
 
@@ -54,8 +56,10 @@ float fmodf(float x, float y) { return g_cpu_mt->fmodf(x, y); }
 float logf(float v) { return g_cpu_mt->logf(v); }
 float nearbyintf(float v) { return g_cpu_mt->nearbyintf(v); }
 float powf(float x, float y) { return g_cpu_mt->powf(x, y); }
+float roundf(float v) { return g_cpu_mt->roundf(v); }
 float sinf(float v) { return g_cpu_mt->sinf(v); }
 float sinhf(float v) { return g_cpu_mt->sinhf(v); }
+float sqrtf(float v) { return g_cpu_mt->sqrtf(v); }
 float tanhf(float v) { return g_cpu_mt->tanhf(v); }
 
 #ifdef WIN32

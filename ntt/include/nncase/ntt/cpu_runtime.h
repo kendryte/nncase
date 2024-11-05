@@ -32,8 +32,10 @@ struct nncase_runtime_cpu_mt_t {
     float (*logf)(float v);
     float (*nearbyintf)(float v);
     float (*powf)(float x, float y);
+    float (*roundf)(float v);
     float (*sinf)(float v);
     float (*sinhf)(float v);
+    float (*sqrtf)(float v);
     float (*tanhf)(float v);
     uint8_t *(*sram_address)(int bid, int tid);
     void (*failfast)(const char *format, va_list args);
