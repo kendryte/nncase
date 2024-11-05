@@ -43,7 +43,9 @@ static void *local_alloc(size_t bytes, size_t alignment) {
 #ifdef WIN32
     return _aligned_malloc(bytes, alignment);
 #else
-    return aligned_alloc(alignment, bytes);
+    size_t mask = alignment - 1;
+    size_t aligned_bytes = bytes + (-bytes & mask);
+    return aligned_alloc(alignment, aligned_bytes);
 #endif
 }
 
