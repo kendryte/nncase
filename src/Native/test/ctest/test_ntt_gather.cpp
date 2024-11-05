@@ -22,6 +22,70 @@
 using namespace nncase;
 using namespace ortki;
 
+TEST(GatherTestFloat, no_pack_dynamic_shape_int32) {
+
+    using tensor_a_type = ntt::tensor<float, ntt::fixed_shape<4, 5, 8, 3>>;
+    using tensor_b_type = ntt::tensor<int32_t, ntt::fixed_shape<1, 3>>;
+    using tensor_c_type = ntt::tensor<float, ntt::fixed_shape<4, 1, 3, 8, 3>>;
+
+    int32_t index_array[] = {1, 0, 2};
+    auto tb = ntt::tensor_view<int32_t, ntt::fixed_shape<1, 3>>(
+        std::span<int32_t, 3>(index_array, 3));
+
+    tensor_a_type ta;
+    tensor_c_type tc;
+    tensor_c_type td;
+    std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+
+    auto shape = ntt::make_ranked_shape(4, 5, 8, 3);
+    auto ta_dynamic = ntt::tensor_view<float, ntt::ranked_shape<4>>(
+        std::span<float, std::dynamic_extent>(ta.elements().data(),
+                                              shape.length()),
+        shape);
+    ntt::gather<1>(ta_dynamic, tb, tc);
+
+    // ort
+    auto ort_input = NttTest::ntt2ort(ta);
+    auto ort_tb = NttTest::ntt2ort(tb);
+    auto ort_output = ortki_Gather(ort_input, ort_tb, 1);
+
+    // // compare
+    NttTest::ort2ntt(ort_output, td);
+    EXPECT_TRUE(NttTest::compare_tensor(tc, td));
+}
+
+TEST(GatherTestFloat, no_pack_dynamic_shape_int64) {
+
+    using tensor_a_type = ntt::tensor<float, ntt::fixed_shape<4, 5, 8, 3>>;
+    using tensor_b_type = ntt::tensor<int64_t, ntt::fixed_shape<1, 3>>;
+    using tensor_c_type = ntt::tensor<float, ntt::fixed_shape<4, 1, 3, 8, 3>>;
+
+    int64_t index_array[] = {1, 0, 2};
+    auto tb = ntt::tensor_view<int64_t, ntt::fixed_shape<1, 3>>(
+        std::span<int64_t, 3>(index_array, 3));
+
+    tensor_a_type ta;
+    tensor_c_type tc;
+    tensor_c_type td;
+    std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+
+    auto shape = ntt::make_ranked_shape(4, 5, 8, 3);
+    auto ta_dynamic = ntt::tensor_view<float, ntt::ranked_shape<4>>(
+        std::span<float, std::dynamic_extent>(ta.elements().data(),
+                                              shape.length()),
+        shape);
+    ntt::gather<1>(ta_dynamic, tb, tc);
+
+    // ort
+    auto ort_input = NttTest::ntt2ort(ta);
+    auto ort_tb = NttTest::ntt2ort(tb);
+    auto ort_output = ortki_Gather(ort_input, ort_tb, 1);
+
+    // // compare
+    NttTest::ort2ntt(ort_output, td);
+    EXPECT_TRUE(NttTest::compare_tensor(tc, td));
+}
+
 TEST(GatherTestFloat, no_pack_index_int32) {
 
     using tensor_a_type = ntt::tensor<float, ntt::fixed_shape<4, 5, 8, 3>>;

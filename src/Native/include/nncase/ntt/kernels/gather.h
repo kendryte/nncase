@@ -155,9 +155,8 @@ class gather_impl<ranked_shape<Rank>, InStrides, OutStrides> {
     template <size_t Axis, typename TA, typename TB, typename TC>
     constexpr void operator()(const TA &input, const TB &indices, TC &&output) {
         ranked_shape<Rank> in_index;
-        auto indices_rank = TB::shape_type::rank();
+        constexpr auto indices_rank = TB::shape_type::rank();
         ranked_shape<indices_rank> indices_index;
-        ranked_shape<Rank> src_index;
         apply(output.shape(), [&](auto out_index) {
             // in_index[:axis] = out_index[:axis]
             loop<Axis>([&](auto i) { in_index[i] = out_index[i]; });
