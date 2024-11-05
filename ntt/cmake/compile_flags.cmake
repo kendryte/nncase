@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.15)
 
+# Disable C++ exceptions & RTTI
 if (MSVC)
     add_definitions(/D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS /D_CRT_SECURE_NO_WARNINGS /DNOMINMAX /DUNICODE /D_UNICODE)
     add_compile_options(/Zc:threadSafeInit- /utf-8 /wd4200 /Oi)
-    # Disable C++ exceptions.
     string(REGEX REPLACE "/EH[a-z]+" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHs-c- /GS-")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /GS-")
@@ -11,7 +11,6 @@ if (MSVC)
     string(REGEX REPLACE "/RTC[^ ]*" "" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
     add_definitions(-D_HAS_EXCEPTIONS=0)
 
-    # Disable RTTI.
     string(REGEX REPLACE "/GR" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GR-")
 else()
@@ -25,13 +24,20 @@ else()
     endif()
 endif()
 
+# fp contract
+if (MSVC)
+    add_compile_options(/fp:contract)
+else()
+    add_compile_options(-ffp-contract=on)
+endif()
+
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES
    "(x86)|(X86)|(amd64)|(AMD64)|(x86_64)|(X86_64)")
     if (MSVC)
-        add_compile_options(/fp:contract /arch:AVX2)
+        add_compile_options(/arch:AVX2)
         add_compile_definitions(__SSE2__ __SSE4_1__ __FMA__ __AVX__ __AVX2__)
     else()
-        add_compile_options(-ffast-math -mavx2 -mfma)
+        add_compile_options(-mavx2 -mfma)
     endif()
 endif()
 
@@ -41,8 +47,6 @@ endif()
 
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES
    "riscv64")
-   add_compile_options(-ffast-math)
-
    if(ENABLE_K230_RUNTIME)
        add_compile_options(-march=rv64gv_zvl128b_zfh -mrvv-vector-bits=zvl)
    elseif(ENABLE_K80_RUNTIME)
