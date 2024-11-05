@@ -17,6 +17,56 @@
 #include "nncase/ntt/vector.h"
 
 namespace nncase::ntt::ukernels {
+
+// unary
+#define SPECIALIZE_U_UNARY(op, unroll_num)                                     \
+    template <typename T>                                                      \
+    struct u_unary_policy<ntt::ops::op<vector<T, 8>>, vector<T, 8>, true> {    \
+        static constexpr size_t unroll = unroll_num;                           \
+    };
+
+SPECIALIZE_U_UNARY(abs, 2)
+SPECIALIZE_U_UNARY(ceil, 2)
+SPECIALIZE_U_UNARY(floor, 2)
+SPECIALIZE_U_UNARY(neg, 2)
+SPECIALIZE_U_UNARY(round, 2)
+SPECIALIZE_U_UNARY(sign, 2)
+SPECIALIZE_U_UNARY(square, 2)
+
+#undef SPECIALIZE_U_UNARY
+
+// binary
+#define SPECIALIZE_U_BINARY(op, unroll_num)                                    \
+    template <typename T1, typename T2>                                        \
+    struct u_binary_policy<ntt::ops::op<vector<T1, 8>, vector<T2, 8>>,         \
+                           vector<T1, 8>, vector<T2, 8>, true> {               \
+        static constexpr size_t unroll = unroll_num;                           \
+    };                                                                         \
+                                                                               \
+    template <typename T1, typename T2>                                        \
+    struct u_binary_policy<ntt::ops::op<T1, vector<T2, 8>>, T1, vector<T2, 8>, \
+                           true> {                                             \
+        static constexpr size_t unroll = unroll_num;                           \
+    };                                                                         \
+                                                                               \
+    template <typename T1, typename T2>                                        \
+    struct u_binary_policy<ntt::ops::op<vector<T1, 8>, T2>, vector<T1, 8>, T2, \
+                           true> {                                             \
+        static constexpr size_t unroll = unroll_num;                           \
+    };
+
+SPECIALIZE_U_BINARY(add, 2)
+SPECIALIZE_U_BINARY(sub, 2)
+SPECIALIZE_U_BINARY(mul, 2)
+SPECIALIZE_U_BINARY(div, 2)
+SPECIALIZE_U_BINARY(max, 2)
+SPECIALIZE_U_BINARY(min, 2)
+SPECIALIZE_U_BINARY(mod, 2)
+SPECIALIZE_U_BINARY(floor_mod, 2)
+
+#undef SPECIALIZE_U_BINARY
+
+// pack
 template <size_t M, size_t N, size_t MStrides>
 class u_pack<M, N, MStrides, true, float, vector<float, 8>> {
   public:
@@ -38,10 +88,17 @@ class u_pack<M, N, MStrides, true, float, vector<float, 8>> {
     }
 };
 
+// reduce
 template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
     static constexpr size_t unroll = 8;
 };
 
+// gather
+template <class T> struct u_memcpy_policy<T, true> {
+    static constexpr size_t unroll = 4;
+};
+
+// matmul
 template <>
 struct u_matmul_policy<mamtul_pack_kind::no_pack, float, float, float, true> {
     static constexpr size_t m0_tile = 1;

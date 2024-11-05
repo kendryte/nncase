@@ -2956,3 +2956,31 @@ public sealed class ReshapeBinaryConstReshapeCase : IRewriteCase
 
     public Dictionary<Var, IValue> FeedDict { get; }
 }
+
+public sealed class MatMulTransposeCase : IRewriteCase
+{
+    public MatMulTransposeCase()
+    {
+        var v32 = new Var("v32", new TensorType(DataTypes.Float32, new[] { 1, 64, 384, 128 }));
+        {
+            var v33 = Transpose(v32, new[] { 0L, 1L, 3L, 2L }); // f32[1,64,128,384]
+            var v21 = IR.F.Random.Normal(new[] { 1, 64, 384, 128 }).Evaluate().AsTensor();
+            var v34 = IR.F.Math.MatMul(v21, v33); // f32[1,64,384,384]
+            PreExpr = new Function(v34, new[] { v32 });
+        }
+
+        FeedDict = new() { { v32, IR.F.Random.Normal(new[] { 1, 64, 384, 128 }).Evaluate() } };
+    }
+
+    public Function PreExpr { get; }
+
+    public IEnumerable<System.Type> Rules => new[] {
+        typeof(FoldTwoTransposes),
+        typeof(Passes.Rules.CPU.PackTranspose),
+        typeof(Passes.Rules.CPU.PackMatMul),
+        typeof(Passes.Rules.CPU.FoldPackUnpack),
+        typeof(Passes.Rules.CPU.TransposePackMatMulInputs),
+    };
+
+    public Dictionary<Var, IValue> FeedDict { get; }
+}

@@ -46,6 +46,6 @@ public static class EGraphExtensions
         // 2. start the cost evaluator
         var costModel = new CostModel.EGraphCostEvaluator(root.Find(), compileOptions, basefunc_cost_evaluator, false).Evaluate();
 
-        return new EGraphExtractor(costModel).Extract(root.Find(), eGraph, constrains);
+        return new EGraphExtractor(costModel).Extract(root.Find(), eGraph, constrains ?? Array.Empty<EGraphExtractConstrains>());
     }
 }

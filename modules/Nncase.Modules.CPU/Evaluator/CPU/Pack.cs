@@ -11,6 +11,7 @@ using Nncase.IR.CPU;
 using Nncase.IR.Tensors;
 using Nncase.Utilities;
 using OrtKISharp;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Evaluator.IR.CPU;
 
@@ -19,13 +20,29 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Pack target)
     {
-        var input = context.GetOrtArgumentValue(target, Pack.Input);
-        foreach (var (lanes, axis) in target.Lanes.Zip(target.Axes))
+        if (context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType == DataTypes.Float8E4M3 || context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType == DataTypes.Float8E5M2)
         {
-            input = input.Pack(lanes, axis);
-        }
+            var input = Cast(context.GetArgumentValue(target, Pack.Input).AsTensor(), DataTypes.Float32);
+            var inputOrt = input.Evaluate().AsTensor().ToOrtTensor();
+            foreach (var (lanes, axis) in target.Lanes.Zip(target.Axes))
+            {
+                inputOrt = inputOrt.Pack(lanes, axis);
+            }
 
-        return Value.FromTensor(Tensor.FromBytes(new VectorType(input.DataType.ToDataType(), target.Lanes), input.BytesBuffer.ToArray(), input.Shape.ToArray().SkipLast(target.Lanes.Count).Select(i => (int)i).ToArray()));
+            var output = Cast(inputOrt.ToTensor(), context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType).Evaluate().AsTensor();
+
+            return Value.FromTensor(Tensor.FromBytes(new VectorType(output.ElementType, target.Lanes), output.BytesBuffer.ToArray(), inputOrt.Shape.SkipLast(target.Lanes.Count).Select(i => (int)i).ToArray()));
+        }
+        else
+        {
+            var input = context.GetOrtArgumentValue(target, Pack.Input);
+            foreach (var (lanes, axis) in target.Lanes.Zip(target.Axes))
+            {
+                input = input.Pack(lanes, axis);
+            }
+
+            return Value.FromTensor(Tensor.FromBytes(new VectorType(input.DataType.ToDataType(), target.Lanes), input.BytesBuffer.ToArray(), input.Shape.ToArray().SkipLast(target.Lanes.Count).Select(i => (int)i).ToArray()));
+        }
     }
 
     /// <inheritdoc/>

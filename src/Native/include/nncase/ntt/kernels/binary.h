@@ -14,9 +14,12 @@
  */
 #pragma once
 #include "../apply.h"
+#include "../loop.h"
 #include "../shape_infer/binary.h"
 #include "../shape_infer/reduce.h"
+#include "../tensor_ops.h"
 #include "../tensor_traits.h"
+#include "../ukernels.h"
 #include "../utility.h"
 #include <type_traits>
 
@@ -73,14 +76,14 @@ class binary_impl<TLhs, TRhs, TOut> {
 
             // 1.1 Non broadcast
             if constexpr (is_same_seq(lhs_rest_dims, rhs_rest_dims)) {
-                return binary_non_broadcast(op, lhs_p, rhs_p, out_p,
-                                            lhs_rest_dims.length());
+                return binary_non_broadcast<Op>(lhs_p, rhs_p, out_p,
+                                                lhs_rest_dims.length());
             } else if constexpr (lhs_rest_dims.length() == 1) {
-                return binary_left_broadcast(op, *lhs_p, rhs_p, out_p,
-                                             rhs_rest_dims.length());
+                return binary_left_broadcast<Op>(lhs_p, rhs_p, out_p,
+                                                 rhs_rest_dims.length());
             } else if constexpr (rhs_rest_dims.length() == 1) {
-                return binary_right_broadcast(op, lhs_p, *rhs_p, out_p,
-                                              lhs_rest_dims.length());
+                return binary_right_broadcast<Op>(lhs_p, rhs_p, out_p,
+                                                  lhs_rest_dims.length());
             }
         }
 
@@ -99,28 +102,24 @@ class binary_impl<TLhs, TRhs, TOut> {
     }
 
     template <class Op, class TLhsElem, class TRhsElem, class TOutElem>
-    void binary_non_broadcast(Op &op, const TLhsElem *lhs, const TRhsElem *rhs,
+    void binary_non_broadcast(const TLhsElem *lhs, const TRhsElem *rhs,
                               TOutElem *output, size_t extent) {
-        for (size_t i = 0; i < extent; i++) {
-            *output++ = op(*lhs++, *rhs++);
-        }
+        ntt::u_binary<Op, TLhsElem, TRhsElem, TOutElem>(lhs, 1, rhs, 1, output,
+                                                        1, extent);
     }
 
     template <class Op, class TLhsElem, class TRhsElem, class TOutElem>
-    void binary_left_broadcast(Op &op, const TLhsElem &lhs, const TRhsElem *rhs,
+    void binary_left_broadcast(const TLhsElem *lhs, const TRhsElem *rhs,
                                TOutElem *output, size_t extent) {
-        for (size_t i = 0; i < extent; i++) {
-            *output++ = op(lhs, *rhs++);
-        }
+        ntt::u_binary<Op, TLhsElem, TRhsElem, TOutElem>(lhs, 0, rhs, 1, output,
+                                                        1, extent);
     }
 
     template <class Op, class TLhsElem, class TRhsElem, class TOutElem>
-    void binary_right_broadcast(Op &op, const TLhsElem *lhs,
-                                const TRhsElem &rhs, TOutElem *output,
-                                size_t extent) {
-        for (size_t i = 0; i < extent; i++) {
-            *output++ = op(*lhs++, rhs);
-        }
+    void binary_right_broadcast(const TLhsElem *lhs, const TRhsElem *rhs,
+                                TOutElem *output, size_t extent) {
+        ntt::u_binary<Op, TLhsElem, TRhsElem, TOutElem>(lhs, 1, rhs, 0, output,
+                                                        1, extent);
     }
 };
 } // namespace detail

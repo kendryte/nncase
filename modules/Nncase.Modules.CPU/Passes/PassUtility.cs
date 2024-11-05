@@ -14,7 +14,7 @@ public static class PassUtility
 {
     public static bool IsCpuSupported(Op op)
     {
-        if (op.GetType().Namespace == "Nncase.IR.CPU")
+        if (op.GetType().Namespace == "Nncase.IR.CPU" || op.GetType().Namespace == "Nncase.IR.CustomCPU")
         {
             return true;
         }

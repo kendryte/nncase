@@ -3,7 +3,7 @@
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules)
 
 if(NOT DEFINED NNCASE_VERSION)
-    set(NNCASE_VERSION "2.0.0")
+    set(NNCASE_VERSION "3.0.0")
 endif()
 
 if(DEFINED ENV{NNCASE_VERSION_SUFFIX})
@@ -62,15 +62,6 @@ endif()
 
 if(ENABLE_DUMP_MEM)
     add_definitions(-DDUMP_MEM)
-endif()
-
-set(NTT_UNROOL_NUM 1 CACHE STRING "Set the unroll number for loop unrolling")
-add_compile_definitions(NTT_UNROOL_NUM=${NTT_UNROOL_NUM})
-
-# Workaroud for riscv toolchain auto vectorization bugs in O3
-if (${CMAKE_SYSTEM_PROCESSOR} MATCHES
-   "(riscv32)|(riscv64)")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
 endif()
 
 include(cmake/dependencies.cmake)
