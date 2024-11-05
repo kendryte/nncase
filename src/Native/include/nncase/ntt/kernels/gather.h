@@ -125,7 +125,7 @@ class gather_impl<fixed_shape<Dims...>, fixed_strides<InStrides...>,
         if (arrSize == 0)
             return 0;
 
-        size_t segmentCount = 0;
+        size_t segment_count = 0;
         size_t start = 0;
         size_t length = 1;
 
@@ -133,19 +133,19 @@ class gather_impl<fixed_shape<Dims...>, fixed_strides<InStrides...>,
             if (arr[i] == arr[i - 1] + 1) {
                 ++length;
             } else {
-                segments[segmentCount].start = start;
-                segments[segmentCount].length = length;
-                ++segmentCount;
+                segments[segment_count].start = start;
+                segments[segment_count].length = length;
+                ++segment_count;
                 start = i;
                 length = 1;
             }
         }
 
-        segments[segmentCount].start = start;
-        segments[segmentCount].length = length;
-        ++segmentCount;
+        segments[segment_count].start = start;
+        segments[segment_count].length = length;
+        ++segment_count;
 
-        return segmentCount;
+        return segment_count;
     }
 };
 
