@@ -120,7 +120,7 @@ internal sealed class CPUFusionToTirPass : ModulePass
                 visitor.Convert(post);
                 var primFunc = T.PrimFunc(post.Name, post.ModuleKind, visitor.InputBuffers.Concat(visitor.OutputBuffers).ToArray()).Body(primBody.ToArray()).Build();
                 primFunc.SchedResult.DataUsage = visitor.DataUsage;
-                primFunc.SchedResult.DataAlign = visitor.MaxDTypeSize;
+                primFunc.SchedResult.DataAlign = Math.Max(8, visitor.MaxDTypeSize);
                 var primWrapper = new PrimFunctionWrapper(primFunc, visitor.InputBuffers.Count());
                 module.Replace(i, primWrapper);
                 kernelFuncs.Add(primWrapper);
