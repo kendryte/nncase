@@ -39,6 +39,22 @@ static void failfast(const char *foramt, va_list args) {
     throw std::runtime_error(buffer);
 }
 
+static void *local_alloc(size_t bytes, size_t alignment) {
+#ifdef WIN32
+    return _aligned_malloc(bytes, alignment);
+#else
+    return aligned_alloc(alignment, bytes);
+#endif
+}
+
+static void local_free(void *ptr) {
+#ifdef WIN32
+    _aligned_free(ptr);
+#else
+    free(ptr);
+#endif
+}
+
 nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
     .acosf = acosf,
     .acoshf = acoshf,
@@ -57,6 +73,8 @@ nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
     .sinhf = sinhf,
     .tanhf = tanhf,
     .sram_address = sram_address,
+    .local_alloc = local_alloc,
+    .local_free = local_free,
     .failfast = failfast,
 
 #ifndef WIN32

@@ -35,7 +35,11 @@ struct nncase_runtime_cpu_mt_t {
     float (*sinf)(float v);
     float (*sinhf)(float v);
     float (*tanhf)(float v);
+
     uint8_t *(*sram_address)(int bid, int tid);
+    void *(*local_alloc)(size_t bytes, size_t alignment);
+    void (*local_free)(void *ptr);
+
     void (*failfast)(const char *format, va_list args);
 
 #ifndef WIN32
