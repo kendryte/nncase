@@ -112,7 +112,7 @@ TEST_P(QuantizeTest, quantize) {
         runtime_tensor expected;
         auto output_ort = ortki_QuantizeLinear(
             l_ort, runtime_tensor_2_ort_tensor(scale_ptr),
-            runtime_tensor_2_ort_tensor(zero_point_ptr), 0);
+            runtime_tensor_2_ort_tensor(zero_point_ptr), 0, 1);
         size_t size = 0;
         void *ptr_ort = tensor_buffer(output_ort, &size);
         dims_t shape(tensor_rank(output_ort));
