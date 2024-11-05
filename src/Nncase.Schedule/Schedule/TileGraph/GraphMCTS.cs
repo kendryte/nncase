@@ -23,33 +23,35 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
 
     private readonly List<int> _legalIndex = new();
 
-    private readonly Dictionary<TieredTileGraph, Expr> _resultMemo = new();
 
     private int _permformCount = 0;
 
-    public MCTState(TieredTileGraph graph, string moduleKind, string prefix, string searchPath, Dictionary<TileNode, GraphTiler.TiledFunc> tilingMemo, ICpuTargetOptions targetOptions)
+    private readonly Dictionary<TileNode, GraphTiler.TiledFunc> _solveMemo;
+
+    private TieredTileGraph _graph;
+
+    public readonly string _moduleKind;
+
+    public readonly string _prefix;
+
+    public readonly ICpuTargetOptions _targetOptions;
+
+    public MCTState(TieredTileGraph graph, string moduleKind, string prefix, string searchPath, Dictionary<TileNode, GraphTiler.TiledFunc> solveMemo, ICpuTargetOptions targetOptions)
     {
-        Graph = graph;
-        ModuleKind = moduleKind;
-        Prefix = prefix;
-        SolveMemo = tilingMemo;
-        TargetOptions = targetOptions;
+        _graph = graph;
+        _moduleKind = moduleKind;
+        _prefix = prefix;
+        _solveMemo = solveMemo;
+        _targetOptions = targetOptions;
         _mergePoints.AddRange(graph.GetMergePoints());
         _legalIndex.AddRange(Enumerable.Range(0, _mergePoints.Count));
         _path = searchPath;
+        Results = new();
     }
 
     public long ObjectValue { get; private set; }
-
-    public TieredTileGraph Graph { get; }
-
-    public string ModuleKind { get; }
-
-    public string Prefix { get; }
-
-    public Dictionary<TileNode, GraphTiler.TiledFunc> SolveMemo { get; }
-
-    public ICpuTargetOptions TargetOptions { get; }
+    
+    public Dictionary<TieredTileGraph, Expr> Results { get; }
 
     public MergePoint GetNextAction(int index)
     {
@@ -66,10 +68,10 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
 
     public IEnvironmentState<MergePoint>? PerformAction(MergePoint mergePoint)
     {
-        var newGraph = Graph.Clone();
+        var newGraph = _graph.Clone();
         if (newGraph.Merge(mergePoint))
         {
-            return new MCTState(newGraph, ModuleKind, Prefix, $"{_path}.{_permformCount}", SolveMemo, TargetOptions);
+            return new MCTState(newGraph, _moduleKind, _prefix, $"{_path}.{_permformCount}", _solveMemo, _targetOptions);
         }
 
         return null;
@@ -82,11 +84,11 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
             using var scope = new Diagnostics.DumpScope($"RollOut{_path}");
             try
             {
-                var res = GraphTiler.SolveRootGraph(Graph, ModuleKind, Prefix, SolveMemo, TargetOptions);
+                var res = GraphTiler.SolveRootGraph(_graph, _moduleKind, _prefix, _solveMemo, _targetOptions);
                 ObjectValue = res.ObjectValue;
                 foreach (var item in res.ResultMemo)
                 {
-                    _resultMemo.Add(item.Key, item.Value);
+                    Results.Add(item.Key, item.Value);
                 }
             }
             catch (System.Exception)

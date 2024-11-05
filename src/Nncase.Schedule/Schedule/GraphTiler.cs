@@ -16,11 +16,30 @@ namespace Nncase.Schedule;
 
 public static class GraphTiler
 {
-    public sealed record TiledFunc(PrimFunctionWrapper Func, long ObjectValue)
+    public static Expr MCTSTiling(Expr preExpr, string moduleKind, string prefix, Dictionary<TileNode, TiledFunc> solveMemo, ICpuTargetOptions targetOptions)
     {
+        var topLevel = targetOptions.MemoryCapacities.Length;
+        var rootGraph = GraphBuilder.Build(preExpr, topLevel, out var exprMemo);
+        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
+        {
+            rootGraph.Dump($"device_func{prefix}_original");
+        }
+
+        var state = new MCTState(rootGraph, moduleKind, prefix, string.Empty, solveMemo, targetOptions);
+        var rootNode = new MCTNode(state);
+        var searcher = new MCTSearcher();
+        searcher.Search(rootNode);
+        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
+        {
+            rootNode.Dump("mct");
+        }
+
+        var results = ((MCTState)searcher.BestMCTNode!.State).Results;
+        var cloner = new ReplacingExprCloner(exprMemo.ToDictionary(kv => (Expr)kv.Key, kv => results[kv.Value]));
+        return cloner.Clone(preExpr, default);
     }
 
-    public static Expr Tile(Expr preExpr, string moduleKind, string prefix, Dictionary<TileNode, TiledFunc> solveMemo, ICpuTargetOptions targetOptions)
+    public static Expr Tiling(Expr preExpr, string moduleKind, string prefix, Dictionary<TileNode, TiledFunc> solveMemo, ICpuTargetOptions targetOptions)
     {
         var topLevel = targetOptions.MemoryCapacities.Length;
         var rootGraph = GraphBuilder.Build(preExpr, topLevel, out var exprMemo);
@@ -698,5 +717,9 @@ public static class GraphTiler
             writer.WriteLine("@endgantt");
             writer.WriteLine("```");
         }
+    }
+
+    public sealed record TiledFunc(PrimFunctionWrapper Func, long ObjectValue)
+    {
     }
 }
