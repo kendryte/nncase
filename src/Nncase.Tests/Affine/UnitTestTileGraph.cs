@@ -350,11 +350,12 @@ public sealed class UnitTestTileGraph : TestClassBase
         builder.Visit(post);
         var tileGraph = builder.RootGraph;
 
-        var memo = new Dictionary<TileNode, Schedule.GraphTiler.TiledFunc>();
+        var memo = new Dictionary<TileNode, Schedule.GraphTiler.TiledFunc>(new ITreeNodeComparer());
         var state = new MCTState(tileGraph, "cpu", count.ToString(), memo, targetOptions);
         var rootNode = new MCTNode(state);
         var searcher = new MCTSearcher();
         searcher.Search(rootNode);
+        rootNode.Dump("mct");
     }
 
     [Theory]

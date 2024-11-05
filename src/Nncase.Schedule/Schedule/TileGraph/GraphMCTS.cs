@@ -32,7 +32,7 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
         Graph = graph;
         ModuleKind = moduleKind;
         ItemNumber = itemNumber;
-        TilingMemo = tilingMemo;
+        SolveMemo = tilingMemo;
         TargetOptions = targetOptions;
         _mergePoints.AddRange(graph.GetMergePoints());
         _legalIndex.AddRange(Enumerable.Range(0, _mergePoints.Count));
@@ -47,7 +47,7 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
 
     public string ItemNumber { get; }
 
-    public Dictionary<TileNode, GraphTiler.TiledFunc> TilingMemo { get; }
+    public Dictionary<TileNode, GraphTiler.TiledFunc> SolveMemo { get; }
 
     public ICpuTargetOptions TargetOptions { get; }
 
@@ -63,11 +63,15 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
         return _legalIndex.Count;
     }
 
-    public IEnvironmentState<MergePoint> PerformAction(MergePoint mergePoint)
+    public IEnvironmentState<MergePoint>? PerformAction(MergePoint mergePoint)
     {
         var newGraph = Graph.Clone();
-        newGraph.Merge(mergePoint);
-        return new MCTState(newGraph, ModuleKind, ItemNumber, TilingMemo, TargetOptions);
+        if (newGraph.Merge(mergePoint))
+        {
+            return new MCTState(newGraph, ModuleKind, ItemNumber, SolveMemo, TargetOptions);
+        }
+
+        return null;
     }
 
     public double RollOut()
@@ -75,11 +79,19 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
         if (ObjectValue == 0)
         {
             using var scope = new Diagnostics.DumpScope($"MCTS{_count}");
-            var res = GraphTiler.SolveRootGraph(Graph, ModuleKind, ItemNumber, TilingMemo, TargetOptions);
-            ObjectValue = res.ObjectValue;
-            foreach (var item in res.ResultMemo)
+            try
             {
-                _resultMemo.Add(item.Key, item.Value);
+                var res = GraphTiler.SolveRootGraph(Graph, ModuleKind, ItemNumber, SolveMemo, TargetOptions);
+                ObjectValue = res.ObjectValue;
+                foreach (var item in res.ResultMemo)
+                {
+                    _resultMemo.Add(item.Key, item.Value);
+                }
+            }
+            catch (System.Exception)
+            {
+                ObjectValue = long.MaxValue;
+                return ObjectValue;
             }
         }
 
@@ -92,12 +104,18 @@ public sealed class MCTNode : SearchNode<MergePoint>
     public MCTNode(IEnvironmentState<MergePoint> state)
         : base(state)
     {
+        Action = null;
+        QualityValue = double.PositiveInfinity;
     }
 
-    public MCTNode(SearchNode<MergePoint> parent, IEnvironmentState<MergePoint> state)
+    public MCTNode(SearchNode<MergePoint> parent, IEnvironmentState<MergePoint> state, MergePoint action)
         : base(parent, state)
     {
+        QualityValue = double.PositiveInfinity;
+        Action = action;
     }
+
+    public MergePoint? Action { get; }
 
     public override void Update(double reward)
     {
@@ -113,6 +131,32 @@ public sealed class MCTNode : SearchNode<MergePoint>
             Parent.Update(reward);
         }
     }
+
+    public void Dump(string name)
+    {
+        using (var file = Diagnostics.DumpScope.Current.OpenFile($"{name}.yaml"))
+        {
+            using var baseWriter = new StreamWriter(file);
+            using var writer = new System.CodeDom.Compiler.IndentedTextWriter(baseWriter, "  ");
+            Dump(writer);
+        }
+    }
+
+    public void Dump(System.CodeDom.Compiler.IndentedTextWriter writer)
+    {
+        writer.WriteLine($"- name: {this}");
+        writer.WriteLine($"  Action: {Action}");
+        writer.WriteLine($"  QualityValue: {QualityValue}");
+        writer.WriteLine($"  VisitTimes: {VisitTimes}");
+        writer.WriteLine($"  Children:");
+        writer.Indent += 1;
+        foreach (var item in Children.OfType<MCTNode>())
+        {
+            item.Dump(writer);
+        }
+
+        writer.Indent -= 1;
+    }
 }
 
 public sealed class MCTSearcher : Searcher<MergePoint>
@@ -122,9 +166,12 @@ public sealed class MCTSearcher : Searcher<MergePoint>
     public MCTSearcher()
     {
         BestObjectValue = double.PositiveInfinity;
+        BestMCTNode = null;
     }
 
     public double BestObjectValue { get; private set; }
+
+    public MCTNode? BestMCTNode { get; private set; }
 
     public SearchNode<MergePoint> UCBSelectChild(SearchNode<MergePoint> node)
     {
@@ -135,7 +182,7 @@ public sealed class MCTSearcher : Searcher<MergePoint>
         var sum = ucbs_exp.Sum();
         var probs = ucbs_exp.Select(e => (int)(e / sum * 30)).ToArray(); // conver ucb as prob
         var candidates = probs.Select((p, i) => Enumerable.Repeat(i, p).ToArray()).SelectMany(i => i).ToArray();
-        return node.Children[_random.GetItems(candidates, 1)[0]];
+        return node.Children[candidates[_random.Next(candidates.Length)]];
     }
 
     public override bool Selection(SearchNode<MergePoint> node, out SearchNode<MergePoint> selected)
@@ -149,14 +196,19 @@ public sealed class MCTSearcher : Searcher<MergePoint>
         return true;
     }
 
-    public override SearchNode<MergePoint> Expand(SearchNode<MergePoint> node)
+    public override SearchNode<MergePoint>? Expand(SearchNode<MergePoint> node)
     {
         if (node.VisitTimes != 0 && node.State.LegalActions() > 0)
         {
             var index = _random.Next(node.State.LegalActions());
             var action = node.State.GetNextAction(index);
             var state = node.State.PerformAction(action);
-            return new MCTNode(node, state);
+            if (state is not null)
+            {
+                return new MCTNode(node, state, action);
+            }
+
+            return null;
         }
 
         return node;
@@ -168,6 +220,7 @@ public sealed class MCTSearcher : Searcher<MergePoint>
         if (value < BestObjectValue)
         {
             BestObjectValue = value;
+            BestMCTNode = (MCTNode)node;
         }
 
         return value;

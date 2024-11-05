@@ -272,7 +272,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
             var subLevelPlace = bufferPlaces[i] = new IntVar[tileNode.Level];
             for (int sl = 0; sl < subLevelPlace.Length; sl++)
             {
-                subLevelPlace[sl] = Solver.MakeBoolVar($"p[cl{tileNode.Level}, op{tileNode.OpId}, b{bid.Index}, ci{i}, sl{sl}]");
+                subLevelPlace[sl] = Solver.MakeBoolVar($"p[cl{tileNode.Level}, op{bid.Node.OpId}, b{bid.Index}, ci{i}, sl{sl}]");
             }
 
             var subDomainShapes = bufferShapes[i] = new IntExpr[accessMap.Results.Length];
@@ -283,7 +283,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
             }
 
             bufferSizes[i] = subDomainShapes.Aggregate((IntExpr)Solver.MakeIntConst(bid.Node.Grid.Buffers[bid.Index].CheckedDataType.SizeInBytes), Solver.MakeProd);
-            bufferSizeVars[i] = Solver.MakeIntVar(1, int.MaxValue, $"size[cl{tileNode.Level}, op{tileNode.OpId}, b{bid.Index}, ci{i}]");
+            bufferSizeVars[i] = Solver.MakeIntVar(1, int.MaxValue, $"size[cl{tileNode.Level}, op{bid.Node.OpId}, b{bid.Index}, ci{i}]");
             Solver.Add(Solver.MakeEquality(bufferSizeVars[i], bufferSizes[i]));
 
             var mask = 0U;

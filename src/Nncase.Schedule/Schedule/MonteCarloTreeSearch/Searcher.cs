@@ -25,15 +25,21 @@ public abstract class Searcher<T>
                 return;
             }
 
-            node = Expand(node);
-            var reward = Simulation(node);
-            BackPropagate(node, reward);
+            var expanded = Expand(node);
+            if (expanded is not null)
+            {
+                BackPropagate(expanded, Simulation(expanded));
+            }
+            else
+            {
+                BackPropagate(node, double.PositiveInfinity);
+            }
         }
     }
 
     public abstract bool Selection(SearchNode<T> node, out SearchNode<T> selected);
 
-    public abstract SearchNode<T> Expand(SearchNode<T> node);
+    public abstract SearchNode<T>? Expand(SearchNode<T> node);
 
     public abstract double Simulation(SearchNode<T> node);
 

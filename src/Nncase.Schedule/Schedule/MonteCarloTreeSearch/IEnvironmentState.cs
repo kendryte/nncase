@@ -13,7 +13,7 @@ public interface IEnvironmentState<TAction>
 
     TAction GetNextAction(int index);
 
-    IEnvironmentState<TAction> PerformAction(TAction action);
+    IEnvironmentState<TAction>? PerformAction(TAction action);
 
     double RollOut();
 }
