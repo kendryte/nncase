@@ -14,9 +14,7 @@
  */
 #pragma once
 #include "../apply.h"
-#include "../shape_infer/reduce_axis.h"
 #include "../utility.h"
-#include <tuple>
 
 namespace nncase::ntt {
 namespace slice_detail {
@@ -41,32 +39,36 @@ inline constexpr auto compute_inner_domain(std::index_sequence<Ints...>) {
  * @param input input tensor
  * @param output output tensor
  */
-template <IsFixedDims TStart, IsFixedDims TStop, IsFixedDims TAxes,
-          IsFixedDims TStride, IsFixedTensor TIn, IsFixedTensor TOut>
+template <typename TStart, typename TStop, typename TAxes, typename TStride,
+          typename TIn, typename TOut>
 void slice(const TIn &input, TOut &&output) {
-    constexpr auto domain = shape_infer::reduced_shape_by_axes(
-        typename std::decay_t<TOut>::shape_type{}, TAxes{});
-    constexpr auto inner_domain =
-        slice_detail::compute_inner_domain<TStart, TStop, TStride, TAxes,
-                                           typename TIn::shape_type>(
-            std::make_index_sequence<TAxes::rank()>{});
+    auto out_shape = output.shape();
+    constexpr auto rank = out_shape.rank();
+    auto count = out_shape[rank - 1];
+    ranked_shape<rank> domain;
+    loop<rank>([&](auto i) { domain[i] = out_shape[i]; });
+    domain[rank - 1] = 1;
 
-    auto in_index = ranked_shape<domain.rank()>{};
-    auto out_index = ranked_shape<domain.rank()>{};
+    // update starts/steps
+    size_t in_starts[rank] = {0};
+    size_t in_steps[rank] = {0};
+    for (size_t i = 0; i < rank; i++) {
+        in_steps[i] = 1;
+    }
+    loop<TAxes::rank()>([&](auto i) {
+        in_starts[TAxes::at(i)] = TStart::at(i);
+        in_steps[TAxes::at(i)] = TStride::at(i);
+    });
+
+    auto out_step = output.strides()[rank - 1];
     apply(domain, [&](auto index) {
-        loop<domain.rank()>([&](auto i) {
-            in_index[i] = index[i];
-            out_index[i] = index[i];
-        });
-
-        apply(inner_domain, [&](auto inner_index) {
-            loop<inner_domain.rank()>([&](auto i) {
-                in_index[TAxes::at(i)] =
-                    TStart::at(i) + inner_index[i] * TStride::at(i);
-                out_index[TAxes::at(i)] = inner_index[i];
-            });
-            output(out_index) = input(in_index);
-        });
+        auto pout =
+            output.buffer().data() + linear_offset(index, output.strides());
+        loop<rank>(
+            [&](auto i) { index[i] = in_starts[i] + index[i] * in_steps[i]; });
+        auto pin =
+            input.buffer().data() + linear_offset(index, input.strides());
+        u_memcpy(pin, in_steps[rank - 1], pout, out_step, count);
     });
 }
 } // namespace nncase::ntt

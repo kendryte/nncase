@@ -108,11 +108,8 @@ class cast_impl<ranked_shape<Rank>, InStrides, OutStrides> {
     }
 
     template <class T1, class T2>
-    constexpr void cast_contiguous(const T1 *input_p, T2 *output_p,
-                                   size_t extent) {
-        for (size_t i = 0; i < extent; i++) {
-            output_p[i] = ntt::ops::cast<T1, T2>()(input_p[i]);
-        }
+    constexpr void cast_contiguous(const T1 *input, T2 *output, size_t extent) {
+        ntt::u_cast(input, 1, output, 1, extent);
     }
 };
 } // namespace detail

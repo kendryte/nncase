@@ -21,12 +21,73 @@
 #include <riscv_vector.h>
 
 namespace nncase::ntt::ukernels {
+
+// unary
+#define SPECIALIZE_U_UNARY(op, unroll_num)                                     \
+    template <typename T>                                                      \
+    struct u_unary_policy<ntt::ops::op<vector<T, NTT_VLEN / sizeof(T) / 8>>,   \
+                          vector<T, NTT_VLEN / sizeof(T) / 8>, true> {         \
+        static constexpr size_t unroll = unroll_num;                           \
+    };
+
+SPECIALIZE_U_UNARY(abs, 8)
+SPECIALIZE_U_UNARY(ceil, 8)
+SPECIALIZE_U_UNARY(floor, 8)
+SPECIALIZE_U_UNARY(neg, 8)
+SPECIALIZE_U_UNARY(round, 8)
+SPECIALIZE_U_UNARY(sign, 8)
+SPECIALIZE_U_UNARY(square, 8)
+
+#undef SPECIALIZE_U_UNARY
+
+// binary
+#define SPECIALIZE_U_BINARY(op, unroll_num)                                    \
+    template <typename T1, typename T2>                                        \
+    struct u_binary_policy<                                                    \
+        ntt::ops::op<vector<T1, NTT_VLEN / sizeof(T1) / 8>,                    \
+                     vector<T2, NTT_VLEN / sizeof(T2) / 8>>,                   \
+        vector<T1, NTT_VLEN / sizeof(T1) / 8>,                                 \
+        vector<T2, NTT_VLEN / sizeof(T2) / 8>, true> {                         \
+        static constexpr size_t unroll = unroll_num;                           \
+    };                                                                         \
+                                                                               \
+    template <typename T1, typename T2>                                        \
+    struct u_binary_policy<                                                    \
+        ntt::ops::op<T1, vector<T2, NTT_VLEN / sizeof(T2) / 8>>, T1,           \
+        vector<T2, NTT_VLEN / sizeof(T2) / 8>, true> {                         \
+        static constexpr size_t unroll = unroll_num;                           \
+    };                                                                         \
+                                                                               \
+    template <typename T1, typename T2>                                        \
+    struct u_binary_policy<                                                    \
+        ntt::ops::op<vector<T1, NTT_VLEN / sizeof(T1) / 8>, T2>,               \
+        vector<T1, NTT_VLEN / sizeof(T1) / 8>, T2, true> {                     \
+        static constexpr size_t unroll = unroll_num;                           \
+    };
+
+SPECIALIZE_U_BINARY(add, 8)
+SPECIALIZE_U_BINARY(sub, 8)
+SPECIALIZE_U_BINARY(mul, 8)
+SPECIALIZE_U_BINARY(div, 8)
+SPECIALIZE_U_BINARY(max, 8)
+SPECIALIZE_U_BINARY(min, 8)
+SPECIALIZE_U_BINARY(mod, 8)
+SPECIALIZE_U_BINARY(floor_mod, 8)
+
+#undef SPECIALIZE_U_BINARY
+
+// clamp
+template <> struct u_clamp_policy<true> { static constexpr size_t unroll = 8; };
+
+// reduce
 template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
     static constexpr size_t unroll = 8;
 };
 
+// cast
 template <> struct u_cast_policy<true> { static constexpr size_t unroll = 8; };
 
+// matmul
 template <>
 struct u_matmul_policy<mamtul_pack_kind::no_pack, float, float, float, true> {
     static constexpr size_t m0_tile = 1;
@@ -430,6 +491,92 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, false, false,
 
 #undef NTT_MATMUL_PING
 #undef NTT_MATMUL_TAIL
+    }
+};
+
+// memcpy
+template <typename T> struct u_memcpy_policy<T, true> {
+    static constexpr size_t unroll = 8;
+};
+
+template <> struct u_memcpy<vector<float, NTT_VLEN / 32>, true> {
+  public:
+    constexpr void operator()(const vector<float, NTT_VLEN / 32> *input,
+                              size_t in_stride,
+                              vector<float, NTT_VLEN / 32> *output,
+                              size_t out_stride, size_t count) noexcept {
+        using policy_t = u_memcpy_policy<float, true>;
+        constexpr auto unroll = policy_t::unroll;
+        constexpr auto unit = sizeof(vector<float, NTT_VLEN / 32>);
+        in_stride *= unit;
+        out_stride *= unit;
+
+        while (count / unroll) {
+#if 0
+            asm volatile(
+                "vl1re32.v v1, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vl1re32.v v2, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vs1r.v v1, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                "vl1re32.v v3, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vs1r.v v2, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                "vl1re32.v v4, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vs1r.v v3, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                "vs1r.v v4, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                : [input] "+r"(input), [output] "+r"(output)
+                : [in_stride] "r"(in_stride), [out_stride] "r"(out_stride));
+#else
+            asm volatile(
+                "vl1re32.v v1, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vl1re32.v v2, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vs1r.v v1, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                "vl1re32.v v3, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vs1r.v v2, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                "vl1re32.v v4, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vs1r.v v3, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                "vl1re32.v v5, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vs1r.v v4, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                "vl1re32.v v6, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vs1r.v v5, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                "vl1re32.v v7, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vs1r.v v6, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                "vl1re32.v v8, (%[input])\n"
+                "add %[input], %[input], %[in_stride]\n"
+                "vs1r.v v7, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                "vs1r.v v8, (%[output])\n"
+                "add %[output], %[output], %[out_stride]\n"
+                : [input] "+r"(input), [output] "+r"(output)
+                : [in_stride] "r"(in_stride), [out_stride] "r"(out_stride));
+#endif
+            count -= unroll;
+        }
+
+        for (size_t i = 0; i < count; i++) {
+            *output = *input;
+            input += in_stride;
+            output += out_stride;
+        }
     }
 };
 } // namespace nncase::ntt::ukernels
