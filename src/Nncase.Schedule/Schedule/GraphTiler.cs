@@ -14,40 +14,40 @@ using QuikGraph.Graphviz;
 
 namespace Nncase.Schedule;
 
-public sealed class GraphTiler
+public static class GraphTiler
 {
     public sealed record TiledFunc(PrimFunctionWrapper Func, long ObjectValue)
     {
     }
 
-    public static Expr Tile(Expr preExpr, string moduleKind, string itemNumber, Dictionary<TileNode, TiledFunc> tilingMemo, ICpuTargetOptions targetOptions)
+    public static Expr Tile(Expr preExpr, string moduleKind, string prefix, Dictionary<TileNode, TiledFunc> solveMemo, ICpuTargetOptions targetOptions)
     {
         var topLevel = targetOptions.MemoryCapacities.Length;
         var rootGraph = GraphBuilder.Build(preExpr, topLevel, out var exprMemo);
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {
-            rootGraph.Dump($"device_func{itemNumber}_original");
+            rootGraph.Dump($"device_func{prefix}_original");
         }
 
-        var (resultMemo, _) = SolveRootGraph(rootGraph, moduleKind, itemNumber, new(new ITreeNodeComparer()), targetOptions);
+        var (resultMemo, _) = SolveRootGraph(rootGraph, moduleKind, prefix, solveMemo, targetOptions);
         var cloner = new ReplacingExprCloner(exprMemo.ToDictionary(kv => (Expr)kv.Key, kv => resultMemo[kv.Value]));
         return cloner.Clone(preExpr, default);
     }
 
-    public static (Dictionary<TieredTileGraph, Expr> ResultMemo, long ObjectValue) SolveRootGraph(TieredTileGraph rootGraph, string moduleKind, string itemNumber, Dictionary<TileNode, TiledFunc> solveMemo, ICpuTargetOptions targetOptions)
+    public static (Dictionary<TieredTileGraph, Expr> ResultMemo, long ObjectValue) SolveRootGraph(TieredTileGraph rootGraph, string moduleKind, string prefix, Dictionary<TileNode, TiledFunc> solveMemo, ICpuTargetOptions targetOptions)
     {
         // bufferize root graph.
         var bufferGraphMemo = rootGraph.Bufferize();
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {
-            bufferGraphMemo[rootGraph].Dump($"device_func{itemNumber}_original_buffer");
+            bufferGraphMemo[rootGraph].Dump($"device_func{prefix}_original_buffer");
         }
 
         // condense the root graph.
         var condensedGraph = rootGraph.Condense();
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {
-            using (var file = Diagnostics.DumpScope.Current.OpenFile($"device_func{itemNumber}_condensed.dot"))
+            using (var file = Diagnostics.DumpScope.Current.OpenFile($"device_func{prefix}_condensed.dot"))
             {
                 using var writer = new StreamWriter(file);
                 writer.Write(condensedGraph.ToGraphviz(init =>
@@ -71,7 +71,7 @@ public sealed class GraphTiler
         long objectValue = 0;
         foreach (var (primGraph, i) in condensedGraph.TopologicalSort().Select((s, i) => (s, i)))
         {
-            using var subscope = new Diagnostics.DumpScope($"device_func{itemNumber}_{i}", Diagnostics.DumpFlags.Tiling);
+            using var subscope = new Diagnostics.DumpScope($"device_func{prefix}_{i}", Diagnostics.DumpFlags.Tiling);
             var primTree = treeGraphMemo[primGraph];
             HashSet<BufferIdentity> inputBids;
             HashSet<BufferIdentity> outputBids;
@@ -84,7 +84,7 @@ public sealed class GraphTiler
                 var bodyBuilder = T.Sequential();
                 result.Visit(primTree, new(bodyBuilder, Array.Empty<Expr>()));
                 var parameters = inputBids.Concat(outputBids).Select(k => result.PrimBufferMemo[k]).ToArray();
-                var funcBuilder = T.PrimFunc($"device_func{itemNumber}_{i}", moduleKind, parameters).Body(bodyBuilder);
+                var funcBuilder = T.PrimFunc($"device_func{prefix}_{i}", moduleKind, parameters).Body(bodyBuilder);
                 var primFunc = funcBuilder.Build();
                 memo = new(new PrimFunctionWrapper(primFunc, inputBids.Count, inputBids.Concat(outputBids).Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType).ToArray()), result.ObjectiveValue);
                 solveMemo.Add(primTree, memo);
@@ -677,7 +677,7 @@ public sealed class GraphTiler
         }
     }
 
-    private void DumpGantt(Dictionary<NodeWithBuffer, IntExpr> nodeBufferSizes, Dictionary<NodeWithBuffer, Tuple<int, int>> nodeBufferLiveness, TileNode primTree, int storeLevel)
+    private static void DumpGantt(Dictionary<NodeWithBuffer, IntExpr> nodeBufferSizes, Dictionary<NodeWithBuffer, Tuple<int, int>> nodeBufferLiveness, TileNode primTree, int storeLevel)
     {
         string GetStartStr(string name, int start) => $"[{name}] starts D+{start}";
         string GetDurationStr(string name, int duration) => $"[{name}] requires {duration} days";

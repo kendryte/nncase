@@ -39,11 +39,14 @@ public sealed class UnitTestTileGraph : TestClassBase
         { FunctionSamples.Get1, [new(1, 0, 2)], (_) => { }, 1 },
         { FunctionSamples.Get1, [new(2, 1, 2)], (_) => { }, 2 },
         { FunctionSamples.Get1, [new(1, 0, 2), new(2, 1, 2)], (_) => { }, 3 },
+        { FunctionSamples.Get4, [new(2, 0, 2)], (_) => { }, 4 },
     };
 
     public static readonly TheoryData<Func<Function>, int> MCTSDatas = new()
     {
         { FunctionSamples.Get1, 0 },
+        { FunctionSamples.Get4, 1 },
+        { FunctionSamples.Get6, 2 },
     };
 
     public static readonly TheoryData<Func<Function>, IntMergePoint[], Action<BufferGraph>, int> BufferizeTileGraphDatas = new()
@@ -351,7 +354,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         var tileGraph = builder.RootGraph;
 
         var memo = new Dictionary<TileNode, Schedule.GraphTiler.TiledFunc>(new ITreeNodeComparer());
-        var state = new MCTState(tileGraph, "cpu", count.ToString(), memo, targetOptions);
+        var state = new MCTState(tileGraph, "cpu", count.ToString(), string.Empty, memo, targetOptions);
         var rootNode = new MCTNode(state);
         var searcher = new MCTSearcher();
         searcher.Search(rootNode);

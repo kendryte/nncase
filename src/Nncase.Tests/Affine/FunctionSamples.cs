@@ -127,4 +127,21 @@ public static class FunctionSamples
 
         return func;
     }
+
+    /// <summary>
+    /// get single op for mcts.
+    /// </summary>
+    public static Function Get6()
+    {
+        Function func;
+        {
+            var shape = new[] { 1, 12, 14, 14 };
+            var a = new IR.Var("a", new IR.TensorType(DataTypes.Float32, shape));
+            var b = new IR.Var("b", new IR.TensorType(DataTypes.Float32, shape));
+            var c = IR.F.Math.Binary(BinaryOp.Mul, a, b);
+            func = new IR.Function("main", c, a, b);
+        }
+
+        return func;
+    }
 }
