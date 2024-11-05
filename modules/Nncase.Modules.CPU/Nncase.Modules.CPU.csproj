@@ -29,6 +29,7 @@
   <ItemGroup>
     <Folder Include="Runtime\include\" />
     <Folder Include="Runtime\cmake\" />
+    <Folder Include="Runtime\src\" />
   </ItemGroup>
     
   <ItemGroup>
@@ -40,6 +41,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="..\..\ntt\cmake\**\*" Link="Runtime\cmake\%(RecursiveDir)\%(FileName)%(Extension)">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\ntt\src\**\*" Link="Runtime\src\%(RecursiveDir)\%(FileName)%(Extension)">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
