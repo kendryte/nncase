@@ -39,7 +39,7 @@ class gather_impl<fixed_shape<Dims...>, fixed_strides<InStrides...>,
 
         constexpr size_t indices_len = TB::size();
 
-        Segment segments[indices_len];
+        segment segments[indices_len];
         size_t count = find_continuous_segments(
             (const slice_type *)(indices.elements().data()), indices_len,
             segments);
@@ -114,14 +114,14 @@ class gather_impl<fixed_shape<Dims...>, fixed_strides<InStrides...>,
     }
 
   private:
-    struct Segment {
+    struct segment {
         size_t start;
         size_t length;
     };
 
     template <typename T>
     size_t find_continuous_segments(const T *arr, size_t arrSize,
-                                    Segment *segments) {
+                                    segment *segments) {
         if (arrSize == 0)
             return 0;
 
