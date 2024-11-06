@@ -47,7 +47,7 @@ static void *local_alloc(size_t bytes, size_t alignment) {
     size_t aligned_bytes = bytes + (-bytes & mask);
     auto ptr = aligned_alloc(alignment, aligned_bytes);
     if (!ptr) {
-      throw std::runtime_error("aligned alloc error!");
+        throw std::runtime_error("aligned alloc error!");
     }
     return ptr;
 #endif

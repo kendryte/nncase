@@ -1134,37 +1134,37 @@ int main() {
         ntt::binary<ntt::ops::swishb>(pa, tb, pc);
     }
 
-// gather
-{
-    ntt::tensor<float, ntt::fixed_shape<6, 3>> ta;
-    ntt::tensor<size_t, ntt::fixed_shape<1, 3>> tb;
-    ntt::tensor<float, ntt::fixed_shape<1, 3, 3>> tc;
-    std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-    std::iota(tb.elements().rbegin(), tb.elements().rend(), 0.f);
-    ntt::gather<0>(ta, tb, tc);
-    assert(tc(0, 2, 0) == 0.0f);
-    assert(tc(0, 2, 1) == 1.0f);
-    assert(tc(0, 2, 2) == 2.0f);
-    assert(tc(0, 1, 0) == 3.0f);
-    assert(tc(0, 1, 1) == 4.0f);
-    assert(tc(0, 1, 2) == 5.0f);
-    assert(tc(0, 0, 0) == 6.0f);
-    assert(tc(0, 0, 1) == 7.0f);
-    assert(tc(0, 0, 2) == 8.0f);
+    // gather
+    {
+        ntt::tensor<float, ntt::fixed_shape<6, 3>> ta;
+        ntt::tensor<size_t, ntt::fixed_shape<1, 3>> tb;
+        ntt::tensor<float, ntt::fixed_shape<1, 3, 3>> tc;
+        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+        std::iota(tb.elements().rbegin(), tb.elements().rend(), 0.f);
+        ntt::gather<0>(ta, tb, tc);
+        assert(tc(0, 2, 0) == 0.0f);
+        assert(tc(0, 2, 1) == 1.0f);
+        assert(tc(0, 2, 2) == 2.0f);
+        assert(tc(0, 1, 0) == 3.0f);
+        assert(tc(0, 1, 1) == 4.0f);
+        assert(tc(0, 1, 2) == 5.0f);
+        assert(tc(0, 0, 0) == 6.0f);
+        assert(tc(0, 0, 1) == 7.0f);
+        assert(tc(0, 0, 2) == 8.0f);
 
-    ntt::tensor<float, ntt::fixed_shape<2, 3, 3>> td;
-    ntt::tensor<size_t, ntt::fixed_shape<1, 2>> te;
-    ntt::tensor<float, ntt::fixed_shape<2, 1, 2, 3>> tf;
-    std::iota(td.elements().begin(), td.elements().end(), 0.f);
-    std::iota(te.elements().rbegin(), te.elements().rend(), 0.f);
-    ntt::gather<1>(td, te, tf);
-    assert(tf(0, 0, 1, 0) == 0.0f);
-    assert(tf(0, 0, 1, 1) == 1.0f);
-    assert(tf(0, 0, 1, 2) == 2.0f);
-    assert(tf(0, 0, 0, 0) == 3.0f);
-    assert(tf(0, 0, 0, 1) == 4.0f);
-    assert(tf(0, 0, 0, 2) == 5.0f);
-}
+        ntt::tensor<float, ntt::fixed_shape<2, 3, 3>> td;
+        ntt::tensor<size_t, ntt::fixed_shape<1, 2>> te;
+        ntt::tensor<float, ntt::fixed_shape<2, 1, 2, 3>> tf;
+        std::iota(td.elements().begin(), td.elements().end(), 0.f);
+        std::iota(te.elements().rbegin(), te.elements().rend(), 0.f);
+        ntt::gather<1>(td, te, tf);
+        assert(tf(0, 0, 1, 0) == 0.0f);
+        assert(tf(0, 0, 1, 1) == 1.0f);
+        assert(tf(0, 0, 1, 2) == 2.0f);
+        assert(tf(0, 0, 0, 0) == 3.0f);
+        assert(tf(0, 0, 0, 1) == 4.0f);
+        assert(tf(0, 0, 0, 2) == 5.0f);
+    }
 
     // pad
     {
