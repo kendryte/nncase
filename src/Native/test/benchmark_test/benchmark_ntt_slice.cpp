@@ -77,21 +77,51 @@ int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
     constexpr size_t N = NTT_VLEN / (sizeof(float) * 8);
-    constexpr size_t in_dim0 = 12;
-    constexpr size_t in_dim1 = 64;
-    benchmark_ntt_slice<float, N, in_dim0, in_dim1, 0, 0, in_dim0 / 2, in_dim1,
-                        1, 1>(-100.f, 100.f, "contiguous_step_1");
-    benchmark_ntt_slice<float, N, in_dim0, in_dim1, 0, 0, in_dim0 / 2, in_dim1,
-                        2, 2>(-100.f, 100.f, "contiguous_step_2");
-    benchmark_ntt_slice<float, N, in_dim0, in_dim1, 0, 0, in_dim0 / 2, in_dim1,
-                        4, 4>(-100.f, 100.f, "contiguous_step_4");
-    benchmark_ntt_slice<float, N, in_dim0, in_dim1, 0, 0, in_dim0 / 2,
-                        in_dim1 / 2, 1, 1>(-100.f, 100.f,
-                                           "no_contiguous_step_1");
-    benchmark_ntt_slice<float, N, in_dim0, in_dim1, 0, 0, in_dim0 / 2,
-                        in_dim1 / 2, 2, 2>(-100.f, 100.f,
-                                           "no_contiguous_step_2");
-    benchmark_ntt_slice<float, N, in_dim0, in_dim1, 0, 0, in_dim0 / 2,
-                        in_dim1 / 2, 4, 4>(-100.f, 100.f,
-                                           "no_contiguous_step_4");
+    {
+        constexpr size_t in_dim0 = 12;
+        constexpr size_t in_dim1 = 64;
+        benchmark_ntt_slice<float, N, in_dim0, in_dim1, 0, 0, in_dim0 / 2,
+                            in_dim1, 1, 1>(-100.f, 100.f, "contiguous_step_1");
+    }
+    {
+        constexpr size_t in_dim0 = 12;
+        constexpr size_t in_dim1 = 64;
+        benchmark_ntt_slice<float, N, in_dim0, in_dim1, 0, 0, in_dim0 / 2,
+                            in_dim1, 2, 2>(-100.f, 100.f, "contiguous_step_2");
+    }
+    {
+        constexpr size_t in_dim0 = 12;
+        constexpr size_t in_dim1 = 64;
+        benchmark_ntt_slice<float, N, in_dim0, in_dim1, 0, 0, in_dim0 / 2,
+                            in_dim1, 4, 4>(-100.f, 100.f, "contiguous_step_4");
+    }
+    {
+        constexpr size_t in_dim0 = 12;
+        constexpr size_t in_dim1 = 64;
+        benchmark_ntt_slice<float, N, in_dim0, in_dim1, 0, 0, in_dim0 / 2,
+                            in_dim1 / 2, 1, 1>(-100.f, 100.f,
+                                               "no_contiguous_step_1");
+    }
+    {
+        constexpr size_t in_dim0 = 12;
+        constexpr size_t in_dim1 = 64;
+        benchmark_ntt_slice<float, N, in_dim0, in_dim1, 0, 0, in_dim0 / 2,
+                            in_dim1 / 2, 2, 2>(-100.f, 100.f,
+                                               "no_contiguous_step_2");
+    }
+    {
+#if __riscv
+        constexpr size_t in_dim0 = 12;
+        constexpr size_t in_dim1 = 64;
+#elif __x86_64__
+        constexpr size_t in_dim0 = 32;
+        constexpr size_t in_dim1 = 128;
+#else
+        constexpr size_t in_dim0 = 12;
+        constexpr size_t in_dim1 = 64;
+#endif
+        benchmark_ntt_slice<float, N, in_dim0, in_dim1, 0, 0, in_dim0 / 2,
+                            in_dim1 / 2, 4, 4>(-100.f, 100.f,
+                                               "no_contiguous_step_4");
+    }
 }
