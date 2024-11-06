@@ -114,8 +114,8 @@ int main(int argc, char *argv[]) {
         constexpr size_t in_dim0 = 12;
         constexpr size_t in_dim1 = 64;
 #elif __x86_64__
-        constexpr size_t in_dim0 = 64;
-        constexpr size_t in_dim1 = 96;
+        constexpr size_t in_dim0 = 128;
+        constexpr size_t in_dim1 = 128;
 #else
         constexpr size_t in_dim0 = 12;
         constexpr size_t in_dim1 = 64;
