@@ -1,11 +1,13 @@
 enable_testing()
 
 find_package(ortki)
-find_package(nlohmann_json)
+find_package(GTest REQUIRED)
+
+include_directories(${CMAKE_CURRENT_LIST_DIR}/..)
 
 macro(add_test_exec name)
     add_executable(${name} ${name}.cpp)
-    target_link_libraries(${name} PRIVATE GTest::gtest_main nncaseruntime ortki::ortki nlohmann_json::nlohmann_json)
+    target_link_libraries(${name} PRIVATE GTest::gtest_main nncaseruntime ortki::ortki)
     add_test(NAME ${name} COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:${name}> -P ${NNCASE_CMAKE_DIR}/run_test.cmake)
 endmacro()
 
