@@ -20,22 +20,26 @@ public static class GraphTiler
     {
         var topLevel = targetOptions.MemoryCapacities.Length;
         var rootGraph = GraphBuilder.Build(preExpr, topLevel, out var exprMemo);
-        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
-        {
-            rootGraph.Dump($"device_func{prefix}_original");
-        }
-
-        var state = new MCTState(rootGraph, moduleKind, prefix, string.Empty, solveMemo, targetOptions);
-        var rootNode = new MCTNode(state);
+        var rootState = new MCTState(rootGraph, moduleKind, prefix, "0", solveMemo, targetOptions);
+        var rootNode = new MCTNode(rootState);
         var searcher = new MCTSearcher();
         searcher.Search(rootNode);
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {
-            rootNode.Dump("mct");
+            rootNode.Dump("SearchTree");
         }
 
-        var results = ((MCTState)searcher.BestMCTNode!.State).Results;
-        var cloner = new ReplacingExprCloner(exprMemo.ToDictionary(kv => (Expr)kv.Key, kv => results[kv.Value]));
+        var bestState = (MCTState)searcher.BestMCTNode!.State;
+        var replaces = new Dictionary<Expr, Expr>();
+        foreach (var (oldExpr, v) in exprMemo)
+        {
+            if (bestState.Results.TryGetValue(v, out var newExpr))
+            {
+                replaces.Add(oldExpr, newExpr);
+            }
+        }
+
+        var cloner = new ReplacingExprCloner(replaces);
         return cloner.Clone(preExpr, default);
     }
 
@@ -537,6 +541,7 @@ public static class GraphTiler
         foreach (var (node, info) in tileNodeMemo)
         {
             collector.Add(info.TripCounts.Select(i => i.Var()).ToArray());
+            collector.Add(info.BackWardExtents.Select(i => i.Select(j => j.Var())).SelectMany(i => i).ToArray());
             foreach (var (bid, bufferInfo) in info.BufferInfoMap)
             {
                 var placeVars = bufferInfo.Places.SelectMany(i => i).ToArray();

@@ -7,10 +7,10 @@
 }
 
 #include <nncase/ntt/cpu_runtime.h>
-#include "../device.h"
-@foreach(var (s,i) in Model.Options.MemoryCapacities.Select((s,i) => (s,i)).Skip(1).SkipLast(1)){
-@:uint8_t L@(i)Data[@(s)];
+@foreach(var (s,i) in Model.Options.MemoryCapacities.Select((s,i) => (s,i)).SkipLast(1)){
+@:uint8_t L@(i+1)Data[@(s)];
 }
+#include "../device.h"
 #include "kernel.h"
 
 extern "C" void kernel_entry(nncase_runtime_cpu_mt_t *cpu_mt, uint8_t **inputs, uint8_t *rdata, uint8_t *data) {

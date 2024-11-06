@@ -23,18 +23,17 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
 
     private readonly List<int> _legalIndex = new();
 
-
-    private int _permformCount = 0;
-
     private readonly Dictionary<TileNode, GraphTiler.TiledFunc> _solveMemo;
 
+    private readonly string _moduleKind;
+
+    private readonly string _prefix;
+
+    private readonly ICpuTargetOptions _targetOptions;
+
+    private int _permformCount;
+
     private TieredTileGraph _graph;
-
-    public readonly string _moduleKind;
-
-    public readonly string _prefix;
-
-    public readonly ICpuTargetOptions _targetOptions;
 
     public MCTState(TieredTileGraph graph, string moduleKind, string prefix, string searchPath, Dictionary<TileNode, GraphTiler.TiledFunc> solveMemo, ICpuTargetOptions targetOptions)
     {
@@ -46,11 +45,11 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
         _mergePoints.AddRange(graph.GetMergePoints());
         _legalIndex.AddRange(Enumerable.Range(0, _mergePoints.Count));
         _path = searchPath;
-        Results = new();
+        Results = new(new LeafTileGraphComparer());
     }
 
     public long ObjectValue { get; private set; }
-    
+
     public Dictionary<TieredTileGraph, Expr> Results { get; }
 
     public MergePoint GetNextAction(int index)
@@ -99,6 +98,18 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
         }
 
         return ObjectValue;
+    }
+
+    private sealed class LeafTileGraphComparer : IEqualityComparer<TieredTileGraph>
+    {
+        public bool Equals(TieredTileGraph? x, TieredTileGraph? y) => (x, y) switch
+        {
+            (null, null) => true,
+            (TieredTileGraph a, TieredTileGraph b) => a.OpId.Equals(b.OpId) && a.Level.Equals(b.Level),
+            _ => false,
+        };
+
+        public int GetHashCode([DisallowNull] TieredTileGraph obj) => HashCode.Combine(obj.OpId, obj.Level);
     }
 }
 
