@@ -58,7 +58,7 @@ jobs:
         run: |
           cd build/${{matrix.config.buildType}}
           ctest -C ${{matrix.config.buildType}} --test-dir tests/kernels --output-on-failure -j4
-          ctest -C ${{matrix.config.buildType}} --test-dir src/Native/test/ctest --output-on-failure -j4
+          ctest -C ${{matrix.config.buildType}} --test-dir ntt/test/ctest --output-on-failure -j4
         if: runner.os != 'Windows'
 
       #- name: Benchmark
@@ -86,7 +86,7 @@ jobs:
     strategy:
       matrix:
         config:
-          - { name: riscv64-unknown-linux, toolchain: riscv64-unknown-linux, toolchain_env: RISCV_ROOT_PATH, toolchain_file: riscv64-unknown-linux_gnu_14.2.0, qemu: qemu-riscv64, loader_args: '-cpu;rv64,v=true,Zfh=true,vlen=128,elen=64,vext_spec=v1.0;-L', cmakeArgs: '', buildType: Release }
+          - { name: riscv64-k230-linux, profile: riscv64-linux, toolchainPrefix: riscv64-unknown-linux-gnu-, toolchainFile: riscv64-unknown-linux_gnu_14.2.0, qemu: qemu-riscv64, loaderArgs: '-cpu;rv64,v=true,Zfh=true,vlen=128,elen=64,vext_spec=v1.0;-L', conanInstallArgs: '-o "&:k230_runtime=True"', buildType: Release }
 
     steps:
       - uses: actions/checkout@v3
@@ -100,15 +100,16 @@ jobs:
       - name: Install toolchain and QEMU
         shell: bash
         run: |
-          wget https://dav.sunnycase.moe/d/ci/nncase/${{matrix.config.toolchain_file}}.tar.zst -O toolchain.tar.zst
+          wget https://dav.sunnycase.moe/d/ci/nncase/${{matrix.config.toolchainFile}}.tar.zst -O toolchain.tar.zst
           sudo apt install zstd
           sudo tar -I zstd -xf toolchain.tar.zst -C $GITHUB_WORKSPACE
-          echo "${{matrix.config.toolchain_env}}=$GITHUB_WORKSPACE/${{matrix.config.toolchain_file}}" >> $GITHUB_ENV
 
           wget https://dav.sunnycase.moe/d/ci/nncase/${{matrix.config.qemu}}.tgz -O qemu.tgz
           sudo tar xf qemu.tgz -C /usr/local/bin
           echo "TESTS_EXECUTABLE_LOADER=${{matrix.config.qemu}}" >> $GITHUB_ENV
-          echo "TESTS_EXECUTABLE_LOADER_ARGUMENTS=${{matrix.config.loader_args}};$GITHUB_WORKSPACE/${{matrix.config.toolchain_file}}/sysroot" >> $GITHUB_ENV
+          echo "TESTS_EXECUTABLE_LOADER_ARGUMENTS=${{matrix.config.loaderArgs}};$GITHUB_WORKSPACE/${{matrix.config.toolchainFile}}/sysroot" >> $GITHUB_ENV
+          echo "CC=$GITHUB_WORKSPACE/${{matrix.config.toolchainFile}}/bin/${{matrix.config.toolchainPrefix}}gcc" >> $GITHUB_ENV
+          echo "CXX=$GITHUB_WORKSPACE/${{matrix.config.toolchainFile}}/bin/${{matrix.config.toolchainPrefix}}g++" >> $GITHUB_ENV
 
       - name: Install Conan
         run: |
@@ -118,7 +119,7 @@ jobs:
       - name: Configure
         shell: bash
         run: |
-          conan install . --build=missing -s build_type=${{matrix.config.buildType}} -pr:h=toolchains/${{matrix.config.name}}.profile.jinja -pr:b=toolchains/x86_64-linux.profile.jinja -o "&:runtime=True" -o "&:python=True" -o "&:tests=True"
+          conan install . --build=missing -s build_type=${{matrix.config.buildType}} -pr:h=toolchains/${{matrix.config.profile}}.profile.jinja -pr:b=toolchains/x86_64-linux.profile.jinja -o "&:runtime=True" -o "&:python=True" -o "&:tests=True" ${{matrix.config.conanInstallArgs}}
           cmake --preset conan-runtime-release
 
       - name: Build & Install
@@ -131,7 +132,7 @@ jobs:
         run: |
           cd build/${{matrix.config.buildType}}
           ctest -C ${{matrix.config.buildType}} --test-dir tests/kernels --output-on-failure -j4
-          ctest -C ${{matrix.config.buildType}} --test-dir src/Native/test/ctest --output-on-failure -j4
+          ctest -C ${{matrix.config.buildType}} --test-dir ntt/test/ctest --output-on-failure -j4
 
       - name: Upload nncaseruntime Build Artifact
         uses: actions/upload-artifact@v4

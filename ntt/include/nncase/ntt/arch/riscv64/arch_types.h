@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 #pragma once
-#include "../../../runtime/float8.h"
 #include "../../native_vector.h"
+#include <nncase/float8.h>
 
 #ifdef __riscv_vector
 #include <riscv_vector.h>
