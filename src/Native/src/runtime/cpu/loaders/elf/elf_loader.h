@@ -30,6 +30,7 @@ class elf_loader {
   private:
     std::byte *buffer_;
     std::byte *image_;
+    void *handle_;
     el_ctx ctx_;
     void *entry_;
 };

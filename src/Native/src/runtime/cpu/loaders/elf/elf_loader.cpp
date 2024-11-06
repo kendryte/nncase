@@ -18,11 +18,12 @@
 #if defined(__linux__)
 #include <chrono>
 #include <dlfcn.h>
-#include <fstream>
+#include <fcntl.h>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <sys/mman.h>
+#include <unistd.h>
 #endif
 
 using namespace nncase::runtime;
@@ -40,11 +41,17 @@ static void *alloccb(el_ctx *ctx, Elf_Addr phys, Elf_Addr virt, Elf_Addr size) {
     return (void *)virt;
 }
 
-elf_loader::elf_loader() noexcept : buffer_(nullptr) { ctx_.pread = bpread; }
+elf_loader::elf_loader() noexcept
+    : buffer_(nullptr), image_(nullptr), handle_(nullptr) {
+    ctx_.pread = bpread;
+}
 
 elf_loader::~elf_loader() {
     if (buffer_) {
         free(buffer_);
+    }
+    if (handle_) {
+        dlclose(handle_);
     }
 }
 
@@ -71,30 +78,30 @@ void elf_loader::load(std::span<const std::byte> elf) {
         std::stringstream ss;
         ss << std::put_time(std::localtime(&in_time_t), "%Y%m%d_%H%M%S");
         std::string kernel_so = "/tmp/" + ss.str() + ".so";
-        std::ofstream outputFile(kernel_so, std::ios::out | std::ios::binary);
-        if (!outputFile) {
+        auto outputFile = open(kernel_so.c_str(), O_WRONLY | O_CREAT, 0666);
+        if (outputFile == -1) {
             std::cerr << "cannot create file:" << kernel_so << std::endl;
             throw std::runtime_error("cannot create file:" + kernel_so);
         }
 
-        outputFile.write((char *)ctx_.elf, elf.size());
-
-        if (!outputFile.good()) {
-            std::cerr << "error writing file" << std::endl;
-            outputFile.close();
-            throw std::runtime_error("error writing file");
+        if (write(outputFile, (char *)ctx_.elf, elf.size()) == -1) {
+            throw std::runtime_error("write file:" + kernel_so);
         }
 
-        void *handle = dlopen(kernel_so.c_str(), RTLD_LAZY);
-        if (!handle) {
+        if (close(outputFile) == -1) {
+            throw std::runtime_error("close file:" + kernel_so);
+        }
+
+        handle_ = dlopen(kernel_so.c_str(), RTLD_NOW);
+        if (!handle_) {
             fprintf(stderr, "Error: %s\n", dlerror());
             exit(EXIT_FAILURE);
         }
 
-        entry_ = dlsym(handle, "kernel_entry");
+        entry_ = dlsym(handle_, "kernel_entry");
         const char *dlsym_error = dlerror();
         if (dlsym_error) {
-            dlclose(handle);
+            dlclose(handle_);
             throw std::runtime_error("dlsym error:" + std::string(dlsym_error));
         }
 #endif

@@ -241,12 +241,13 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             }
 
             var root = Ddfs(equivalents);
-#if DEBUG
-            using (var stream = Diagnostics.DumpScope.Current.OpenFile("egraph.dot"))
+            if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.EGraphCost))
             {
-                EGraphPrinter.DumpEgraphAsDot(graph, stream);
+                using (var stream = Diagnostics.DumpScope.Current.OpenFile("egraph.dot"))
+                {
+                    EGraphPrinter.DumpEgraphAsDot(graph, stream);
+                }
             }
-#endif
 
             var constrains = new EGraphExtractConstrains[] { SingleNodeMemoryExtractConstrains };
             var post = graph.Extract(root, CompileOptions, null, constrains);
