@@ -96,15 +96,31 @@ int main(int argc, char *argv[]) {
                             in_dim1, 4, 4>(-100.f, 100.f, "contiguous_step_4");
     }
     {
+#if __riscv
         constexpr size_t in_dim0 = 12;
         constexpr size_t in_dim1 = 64;
+#elif __x86_64__
+        constexpr size_t in_dim0 = 64;
+        constexpr size_t in_dim1 = 64;
+#else
+        constexpr size_t in_dim0 = 12;
+        constexpr size_t in_dim1 = 64;
+#endif
         benchmark_ntt_slice<float, N, in_dim0, in_dim1, 0, 0, in_dim0 / 2,
                             in_dim1 / 2, 1, 1>(-100.f, 100.f,
                                                "no_contiguous_step_1");
     }
     {
+#if __riscv
         constexpr size_t in_dim0 = 12;
         constexpr size_t in_dim1 = 64;
+#elif __x86_64__
+        constexpr size_t in_dim0 = 64;
+        constexpr size_t in_dim1 = 64;
+#else
+        constexpr size_t in_dim0 = 12;
+        constexpr size_t in_dim1 = 64;
+#endif
         benchmark_ntt_slice<float, N, in_dim0, in_dim1, 0, 0, in_dim0 / 2,
                             in_dim1 / 2, 2, 2>(-100.f, 100.f,
                                                "no_contiguous_step_2");
