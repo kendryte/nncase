@@ -12,10 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../include/nncase/runtime/float8.h"
 #include "ntt_test.h"
 #include <iomanip>
 #include <memory>
+#include <nncase/float8.h>
 #include <nncase/ntt/ntt.h>
 #include <string>
 

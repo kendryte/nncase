@@ -13,19 +13,20 @@
  * limitations under the License.
  */
 #pragma once
+#include "ntt/compiler_defs.h"
 #include <cmath>
+#include <codecvt>
 #include <cstdint>
 #include <float.h>
 #include <functional>
 #include <limits>
-#include <nncase/compiler_defs.h>
 
 namespace nncase {
 struct fp16_from_raw_t {
     explicit fp16_from_raw_t() = default;
 };
 
-NNCASE_INLINE_VAR constexpr fp16_from_raw_t fp16_from_raw{};
+inline constexpr fp16_from_raw_t fp16_from_raw{};
 
 struct half {
   private:
@@ -34,12 +35,12 @@ struct half {
         float f32;
 
         uint16_t u16() const noexcept {
-            constexpr size_t index = NNCASE_LITTLE_ENDIAN ? 1 : 0;
+            constexpr size_t index = std::little_endian ? 1 : 0;
             return reinterpret_cast<const uint16_t *>(&u32)[index];
         }
 
         uint16_t &u16() noexcept {
-            constexpr size_t index = NNCASE_LITTLE_ENDIAN ? 1 : 0;
+            constexpr size_t index = std::little_endian ? 1 : 0;
             return reinterpret_cast<uint16_t *>(&u32)[index];
         }
     };
@@ -186,7 +187,7 @@ DEFINE_FP16_BINARY_BOOLRET(>=)
 DEFINE_FP16_BINARY_BOOLRET(>)
 
 #define DEFINE_FP16_BINARY_SELF_MOD(x, op)                                     \
-    inline half &operator x(half &a, half b) noexcept {                        \
+    inline half &operator x(half & a, half b) noexcept {                       \
         a = a op b;                                                            \
         return a;                                                              \
     }
@@ -228,39 +229,39 @@ template <> struct numeric_limits<nncase::half> {
     static constexpr float_round_style round_style = std::round_to_nearest;
     static constexpr int radix = FLT_RADIX;
 
-    NNCASE_UNUSED static constexpr nncase::half(min)() noexcept {
+    static constexpr nncase::half(min)() noexcept {
         return nncase::half::min();
     }
 
-    NNCASE_UNUSED static constexpr nncase::half(max)() noexcept {
+    static constexpr nncase::half(max)() noexcept {
         return nncase::half::highest();
     }
 
-    NNCASE_UNUSED static constexpr nncase::half lowest() noexcept {
+    static constexpr nncase::half lowest() noexcept {
         return nncase::half::lowest();
     }
 
-    NNCASE_UNUSED static constexpr nncase::half epsilon() noexcept {
+    static constexpr nncase::half epsilon() noexcept {
         return nncase::half::epsilon();
     }
 
-    NNCASE_UNUSED static nncase::half round_error() noexcept {
+    static nncase::half round_error() noexcept {
         return nncase::half((double)0.5);
     }
 
-    NNCASE_UNUSED static constexpr nncase::half denorm_min() noexcept {
+    static constexpr nncase::half denorm_min() noexcept {
         return nncase::half::min();
     }
 
-    NNCASE_UNUSED static constexpr nncase::half infinity() noexcept {
+    static constexpr nncase::half infinity() noexcept {
         return nncase::half::infinity();
     }
 
-    NNCASE_UNUSED static constexpr nncase::half quiet_NaN() noexcept {
+    static constexpr nncase::half quiet_NaN() noexcept {
         return nncase::half::quiet_NaN();
     }
 
-    NNCASE_UNUSED static constexpr nncase::half signaling_NaN() noexcept {
+    static constexpr nncase::half signaling_NaN() noexcept {
         return nncase::half::signaling_NaN();
     }
 

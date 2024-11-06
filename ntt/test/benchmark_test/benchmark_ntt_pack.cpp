@@ -31,12 +31,14 @@ template <size_t... PackDims> std::string pack_pattern() {
         } else if constexpr (pack_dims[0] == 1) {
             return "pack1d_dim1";
         } else {
-            throw std::invalid_argument("Invalid PackDims");
+            std::cerr << "Invalid PackDims" << std::endl;
+            std::abort();
         }
     } else if constexpr (sizeof...(PackDims) == 2) {
         return "pack2d";
     } else {
-        throw std::invalid_argument("Invalid PackDims for pack2d");
+        std::cerr << "Invalid PackDims for pack2d" << std::endl;
+        std::abort();
     }
 };
 
@@ -55,7 +57,12 @@ template <size_t... PackDims> void benchmark_ntt_pack() {
     constexpr size_t P0 =
         pack_dims[0] == 0 ? NTT_VLEN / (sizeof(float) * 8) : 1;
     constexpr size_t P1 =
-        ((sizeof...(PackDims) == 2 && pack_dims[1] == 1) || pack_dims[0] == 1)
+        [=] {
+            if constexpr (sizeof...(PackDims) == 2)
+                return pack_dims[1] == 1;
+            else
+                return pack_dims[0] == 1;
+        }()
             ? NTT_VLEN / (sizeof(float) * 8)
             : 1;
 
