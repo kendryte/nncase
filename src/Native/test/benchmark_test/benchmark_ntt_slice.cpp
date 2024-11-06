@@ -20,39 +20,27 @@
 
 using namespace nncase;
 
-template <typename T, size_t N>
-void benchmark_ntt_slice(T init_low, T init_high) {
+template <typename T, size_t N, size_t in_dim0, size_t in_dim1,
+          size_t start_dim0, size_t start_dim1, size_t stop_dim0,
+          size_t stop_dim1, size_t step_dim0, size_t step_dim1>
+void benchmark_ntt_slice(T init_low, T init_high, const std::string &mode) {
     constexpr size_t warmup_size = 10;
-    std::string pack_mode = "Pack";
+    constexpr size_t axes[] = {0, 1};
+
 #if __riscv
     constexpr size_t run_size = 300;
-    constexpr size_t size1 = 3;
-    constexpr size_t size2 = 256;
-    constexpr size_t starts[] = {0, 0};
-    constexpr size_t stops[] = {size1, size2};
-    constexpr size_t axes[] = {0, 1};
-    constexpr size_t steps[] = {1, 1};
 #elif __x86_64__
     constexpr size_t run_size = 2000;
-    constexpr size_t size1 = 3;
-    constexpr size_t size2 = 256;
-    constexpr size_t starts[] = {0, 0};
-    constexpr size_t stops[] = {size1, size2};
-    constexpr size_t axes[] = {0, 1};
-    constexpr size_t steps[] = {1, 1};
 #else
     constexpr size_t run_size = 300;
-    constexpr size_t size1 = 3;
-    constexpr size_t size2 = 256;
-    constexpr size_t starts[] = {0, 0};
-    constexpr size_t stops[] = {size1, size2};
-    constexpr size_t axes[] = {0, 1};
-    constexpr size_t steps[] = {1, 1};
 #endif
+
     using tensor_type1 =
-        ntt::tensor<ntt::vector<T, N>, ntt::fixed_shape<1024, 256>>;
+        ntt::tensor<ntt::vector<T, N>, ntt::fixed_shape<in_dim0, in_dim1>>;
+    constexpr size_t out_dim0 = (stop_dim0 - 1 - start_dim0) / step_dim0 + 1;
+    constexpr size_t out_dim1 = (stop_dim1 - 1 - start_dim1) / step_dim1 + 1;
     using tensor_type2 =
-        ntt::tensor<ntt::vector<T, N>, ntt::fixed_shape<size1, size2>>;
+        ntt::tensor<ntt::vector<T, N>, ntt::fixed_shape<out_dim0, out_dim1>>;
 
     // init
     std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
@@ -61,27 +49,27 @@ void benchmark_ntt_slice(T init_low, T init_high) {
 
     // warm up
     for (size_t i = 0; i < warmup_size; i++)
-        ntt::slice<ntt::fixed_shape<starts[0], starts[1]>,
-                   ntt::fixed_shape<stops[0], stops[1]>,
+        ntt::slice<ntt::fixed_shape<start_dim0, start_dim1>,
+                   ntt::fixed_shape<stop_dim0, stop_dim1>,
                    ntt::fixed_shape<axes[0], axes[1]>,
-                   ntt::fixed_shape<steps[0], steps[1]>>(*ntt_input,
-                                                         *ntt_output);
+                   ntt::fixed_shape<step_dim0, step_dim1>>(*ntt_input,
+                                                           *ntt_output);
 
     // run
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
-        ntt::slice<ntt::fixed_shape<starts[0], starts[1]>,
-                   ntt::fixed_shape<stops[0], stops[1]>,
+        ntt::slice<ntt::fixed_shape<start_dim0, start_dim1>,
+                   ntt::fixed_shape<stop_dim0, stop_dim1>,
                    ntt::fixed_shape<axes[0], axes[1]>,
-                   ntt::fixed_shape<steps[0], steps[1]>>(*ntt_input,
-                                                         *ntt_output);
+                   ntt::fixed_shape<step_dim0, step_dim1>>(*ntt_input,
+                                                           *ntt_output);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
 
-    std::cout << __FUNCTION__ << "_" << pack_mode << " took "
-              << std::setprecision(1) << std::fixed
-              << static_cast<float>(t2 - t1) / size1 / size2 / run_size
+    std::cout << __FUNCTION__ << "_" << mode << " took " << std::setprecision(1)
+              << std::fixed
+              << static_cast<float>(t2 - t1) / out_dim0 / out_dim1 / run_size
               << " cycles" << std::endl;
 }
 
@@ -89,5 +77,21 @@ int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
     constexpr size_t N = NTT_VLEN / (sizeof(float) * 8);
-    benchmark_ntt_slice<float, N>(-100.f, 100.f);
+    constexpr size_t in_dim0 = 12;
+    constexpr size_t in_dim1 = 64;
+    benchmark_ntt_slice<float, N, in_dim0, in_dim1, 0, 0, in_dim0 / 2, in_dim1,
+                        1, 1>(-100.f, 100.f, "contiguous_step_1");
+    benchmark_ntt_slice<float, N, in_dim0, in_dim1, 0, 0, in_dim0 / 2, in_dim1,
+                        2, 2>(-100.f, 100.f, "contiguous_step_2");
+    benchmark_ntt_slice<float, N, in_dim0, in_dim1, 0, 0, in_dim0 / 2, in_dim1,
+                        4, 4>(-100.f, 100.f, "contiguous_step_4");
+    benchmark_ntt_slice<float, N, in_dim0, in_dim1, 0, 0, in_dim0 / 2,
+                        in_dim1 / 2, 1, 1>(-100.f, 100.f,
+                                           "no_contiguous_step_1");
+    benchmark_ntt_slice<float, N, in_dim0, in_dim1, 0, 0, in_dim0 / 2,
+                        in_dim1 / 2, 2, 2>(-100.f, 100.f,
+                                           "no_contiguous_step_2");
+    benchmark_ntt_slice<float, N, in_dim0, in_dim1, 0, 0, in_dim0 / 2,
+                        in_dim1 / 2, 4, 4>(-100.f, 100.f,
+                                           "no_contiguous_step_4");
 }
