@@ -192,162 +192,319 @@ internal class EGraphExtractor
         return hgraph;
     }
 
-    private static void SCCImpl(EClass v, HyperGraph graph, Dictionary<EClass, int> num, Dictionary<EClass, int> low, Stack<EClass> stack, HashSet<EClass> visited, HashSet<EClass> onstack, ref int idx, List<List<EClass>> scc)
-    {
-        num[v] = idx;
-        low[v] = idx;
-        idx++;
-        visited.Add(v);
-        stack.Push(v);
-        onstack.Add(v);
-
-        foreach (var u in graph.Neighbors(v))
-        {
-            if (!visited.Contains(u))
-            {
-                SCCImpl(u, graph, num, low, stack, visited, onstack, ref idx, scc);
-                low[v] = Math.Min(low[v], low[u]);
-            }
-            else if (onstack.Contains(u))
-            {
-                low[v] = Math.Min(low[v], num[u]);
-            }
-        }
-
-        if (low[v] == num[v])
-        {
-            var sccFound = new List<EClass>();
-            EClass sccRt;
-            do
-            {
-                sccRt = stack.Pop();
-                onstack.Remove(sccRt);
-                sccFound.Add(sccRt);
-            } while (sccRt.Id != v.Id);
-            scc.Add(sccFound);
-        }
-    }
-
-    private static List<List<EClass>> FindSCC(HyperGraph graph)
-    {
-        var num = new Dictionary<EClass, int>();
-        var low = new Dictionary<EClass, int>();
-        var visited = new HashSet<EClass>();
-        var processed = new HashSet<EClass>();
-        var stack = new Stack<EClass>();
-        int idx = 0;
-        var scc = new List<List<EClass>>();
-
-        foreach (var v in graph.Nodes().OrderBy(n => n.Id))
-        {
-            if (!visited.Contains(v))
-            {
-                SCCImpl(v, graph, num, low, stack, visited, processed, ref idx, scc);
-            }
-        }
-
-        return scc;
-    }
-
-    private static void Unblock(EClass v, HashSet<EClass> blocked, Dictionary<EClass, HashSet<EClass>> blockedMap)
-    {
-        blocked.Remove(v);
-        if (blockedMap.TryGetValue(v, out var blockedSet))
-        {
-            var worklist = blockedSet.ToList();
-            foreach (var w in worklist)
-            {
-                if (blocked.Contains(w))
-                {
-                    Unblock(w, blocked, blockedMap);
-                }
-            }
-        }
-    }
-
-    private static bool JohnsonAlgImpl(
-        EClass s,
-        EClass v,
-        HyperGraph graph,
-        HashSet<EClass> blocked,
-        List<EClass> stack,
-        Dictionary<EClass, HashSet<EClass>> blockMap,
-        List<List<EClass>> cycles)
-    {
-        bool f = false;
-        blocked.Add(v);
-        stack.Add(v);
-
-        foreach (var w in graph.Neighbors(v))
-        {
-            if (w.Equals(s))
-            {
-                f = true;
-                cycles.Add(new List<EClass>(stack));
-            }
-            else if (!blocked.Contains(w))
-            {
-                f = JohnsonAlgImpl(s, w, graph, blocked, stack, blockMap, cycles) || f;
-            }
-        }
-
-        if (f)
-        {
-            Unblock(v, blocked, blockMap);
-        }
-        else
-        {
-            foreach (var w in graph.Neighbors(v))
-            {
-                if (!blockMap.ContainsKey(w))
-                {
-                    blockMap[w] = new HashSet<EClass>();
-                }
-
-                blockMap[w].Add(v);
-            }
-        }
-
-        stack.RemoveAt(stack.Count - 1);
-        return f;
-    }
-
     private static List<List<EClass>> FindCycles(HyperGraph hgraph)
     {
-        var scc = FindSCC(hgraph)
-            .Where(c => c.Count > 1)
-            .ToList();
-
-        var cycles = new List<List<EClass>>();
+        var edges = hgraph.AdjacencyEdges();
+        var circuits = new List<List<EClass>>();
         foreach (var n in hgraph.Nodes())
         {
             if (hgraph.Neighbors(n).Contains(n))
             {
-                cycles.Add(new List<EClass> { n });
+                circuits.Add(new() { n });
             }
         }
 
-        var blocked = new HashSet<EClass>();
-        var blockMap = new Dictionary<EClass, HashSet<EClass>>();
-        var stack = new List<EClass>();
+        var stack = new List<int>();
+        bool[] blocked = new bool[hgraph.NumEdges()];
+        var blockMap = new Dictionary<int, Dictionary<int, bool>>();
+        List<List<int>> adjList;
+        int s = 0;
 
-        while (scc.Count > 0)
+        void Unblock(int u)
         {
-            var curScc = scc[scc.Count - 1];
-            scc.RemoveAt(scc.Count - 1);
-            var subgraph = hgraph.SubGraph(curScc);
-
-            for (int i = 0; i < curScc.Count; i++)
+            blocked[u] = false;
+            if (blockMap.ContainsKey(u))
             {
-                blocked.Clear();
-                blockMap.Clear();
-                var v = subgraph.GetIdByNode(i);
-                JohnsonAlgImpl(v, v, subgraph, blocked, stack, blockMap, cycles);
-                subgraph.RemoveNodeRaw(i);
+                foreach (var w in blockMap[u].Keys)
+                {
+                    blockMap[u].Remove(w);
+                    if (blocked[w])
+                    {
+                        Unblock(w);
+                    }
+                }
             }
         }
 
-        return cycles;
+        bool Circuit(int v)
+        {
+            bool found = false;
+
+            stack.Add(v);
+            blocked[v] = true;
+
+            for (int i = 0; i < adjList[v].Count; i++)
+            {
+                int w = adjList[v][i];
+                if (w == s)
+                {
+                    Output(s, stack);
+                    found = true;
+                }
+                else if (!blocked[w])
+                {
+                    found = Circuit(w);
+                }
+            }
+
+            if (found)
+            {
+                Unblock(v);
+            }
+            else
+            {
+                for (int i = 0; i < adjList[v].Count; i++)
+                {
+                    int w = adjList[v][i];
+                    if (!blockMap.ContainsKey(w))
+                    {
+                        blockMap[w] = new Dictionary<int, bool>();
+                    }
+
+                    blockMap[w][w] = true;
+                }
+            }
+
+            stack.RemoveAt(stack.Count - 1);
+            return found;
+        }
+
+        void Output(int start, List<int> stack)
+        {
+            // var cycle = new List<int>(stack);
+            // {
+            //     start,
+            // };
+            circuits.Add(stack.Select(hgraph.GetIdByNode).ToList());
+        }
+
+        void Subgraph(int minId)
+        {
+            for (int i = 0; i < edges!.Count; i++)
+            {
+                if (i < minId || edges[i] == null)
+                {
+                    edges[i] = new List<int>();
+                }
+
+                edges[i] = edges[i].Where(j => j >= minId).ToList();
+            }
+        }
+
+        (int LeastVertex, List<List<int>> AdjList) AdjacencyStructureSCC(int from)
+        {
+            Subgraph(from);
+            List<List<int>> g = edges;
+
+            var (components, _) = StronglyConnectedComponents(edges);
+
+            var ccs = components.Where(scc => scc.Count > 1).ToList();
+
+            int leastVertex = int.MaxValue;
+            int leastVertexComponent = -1;
+            for (int i = 0; i < ccs.Count; i++)
+            {
+                for (int j = 0; j < ccs[i].Count; j++)
+                {
+                    if (ccs[i][j] < leastVertex)
+                    {
+                        leastVertex = ccs[i][j];
+                        leastVertexComponent = i;
+                    }
+                }
+            }
+
+            var cc = leastVertexComponent >= 0 ? ccs[leastVertexComponent] : null;
+
+            if (cc == null)
+            {
+                return (-1, new());
+            }
+
+            var adjList = edges.Select((l, index) =>
+            {
+                if (cc.IndexOf(index) == -1)
+                {
+                    return new();
+                }
+
+                return l.Where(i => cc.IndexOf(i) != -1).ToList();
+            }).ToList();
+
+            return (leastVertex, adjList);
+        }
+
+        while (s < edges.Count)
+        {
+            var (leastVertex, leastAdjList) = AdjacencyStructureSCC(s);
+            s = leastVertex;
+            adjList = leastAdjList;
+
+            if (adjList.Any())
+            {
+                for (int i = 0; i < adjList.Count; i++)
+                {
+                    for (int j = 0; j < adjList[i].Count; j++)
+                    {
+                        int vertexId = adjList[i][j];
+                        blocked[vertexId] = false;
+                        if (!blockMap.ContainsKey(vertexId))
+                        {
+                            blockMap[vertexId] = new Dictionary<int, bool>();
+                        }
+                    }
+                }
+
+                Circuit(s);
+                s++;
+            }
+            else
+            {
+                s = edges.Count;
+            }
+        }
+
+        return circuits;
+    }
+
+    private static (List<List<int>> Components, List<List<int>> AdjacencyList) StronglyConnectedComponents(List<List<int>> adjList)
+    {
+        int numVertices = adjList.Count;
+        int[] index = new int[numVertices];
+        int[] lowValue = new int[numVertices];
+        bool[] active = new bool[numVertices];
+        int[] child = new int[numVertices];
+        int[] scc = new int[numVertices];
+        var sccLinks = new List<int>[numVertices];
+
+        // Initialize tables
+        for (int i = 0; i < numVertices; ++i)
+        {
+            index[i] = -1;
+            lowValue[i] = 0;
+            active[i] = false;
+            child[i] = 0;
+            scc[i] = -1;
+            sccLinks[i] = new List<int>();
+        }
+
+        int count = 0;
+        var components = new List<List<int>>();
+        var sccAdjList = new List<List<int>>();
+
+        void StrongConnect(int v)
+        {
+            var s = new Stack<int>();
+            var t = new Stack<int>();
+            s.Push(v);
+            t.Push(v);
+            index[v] = lowValue[v] = count;
+            active[v] = true;
+            count++;
+
+            while (t.Count > 0)
+            {
+                v = t.Peek();
+                var e = adjList[v];
+                if (child[v] < e.Count)
+                {
+                    int i;
+                    for (i = child[v]; i < e.Count; ++i)
+                    {
+                        int u = e[i];
+                        if (index[u] < 0)
+                        {
+                            index[u] = lowValue[u] = count;
+                            active[u] = true;
+                            count++;
+                            s.Push(u);
+                            t.Push(u);
+                            break;
+                        }
+                        else if (active[u])
+                        {
+                            lowValue[v] = Math.Min(lowValue[v], lowValue[u]);
+                        }
+
+                        if (scc[u] >= 0)
+                        {
+                            sccLinks[v].Add(scc[u]);
+                        }
+                    }
+
+                    child[v] = i;
+                }
+                else
+                {
+                    if (lowValue[v] == index[v])
+                    {
+                        var component = new List<int>();
+                        var links = Enumerable.Range(0, s.Count).Select(i => new List<int>()).ToArray();
+                        int linkCount = 0;
+                        for (int i = s.Count - 1; i >= 0; --i)
+                        {
+                            int w = s.Pop();
+                            active[w] = false;
+                            component.Add(w);
+                            links[i] = sccLinks[w];
+                            linkCount += sccLinks[w].Count;
+                            scc[w] = components.Count;
+                            if (w == v)
+                            {
+                                break;
+                            }
+                        }
+
+                        components.Add(component);
+                        var allLinks = new List<int>(linkCount);
+                        for (int i = 0; i < links.Length; i++)
+                        {
+                            for (int j = 0; j < links[i].Count; j++)
+                            {
+                                allLinks.Add(links[i][j]);
+                            }
+                        }
+
+                        sccAdjList.Add(allLinks);
+                    }
+
+                    t.Pop();
+                }
+            }
+        }
+
+        // Run strong connect starting from each vertex
+        for (int i = 0; i < numVertices; ++i)
+        {
+            if (index[i] < 0)
+            {
+                StrongConnect(i);
+            }
+        }
+
+        // Compact sccAdjList
+        for (int i = 0; i < sccAdjList.Count; i++)
+        {
+            var e = sccAdjList[i];
+            if (e.Count == 0)
+            {
+                continue;
+            }
+
+            e.Sort();
+            var newE = new List<int> { e[0] };
+            for (int j = 1; j < e.Count; j++)
+            {
+                if (e[j] != e[j - 1])
+                {
+                    newE.Add(e[j]);
+                }
+            }
+
+            sccAdjList[i] = newE;
+        }
+
+        return (components, sccAdjList);
     }
 }
 
@@ -421,7 +578,7 @@ internal sealed class SatExprBuildVisitor
                 expr = enode.Expr;
                 break;
             case Function func:
-                expr = func.With(body: children[0], parameters: children[1..].OfType<Var>().ToArray());
+                expr = children.Length == 0 ? func : func.With(body: children[0], parameters: children[1..].OfType<Var>().ToArray());
                 break;
             case Call call:
                 expr = call.With(target: children[0], arguments: children[1..], call.Metadata);
@@ -467,6 +624,11 @@ internal sealed class HyperGraph
         return _ids_to_nodes.ContainsKey(id);
     }
 
+    public List<List<int>> AdjacencyEdges()
+    {
+        return _edges.Select(kv => kv.Value.Keys.ToList()).ToList();
+    }
+
     public Dictionary<EClass, HashSet<ENode>>? Edges(EClass eclass)
     {
         if (Contains(eclass))
@@ -481,6 +643,11 @@ internal sealed class HyperGraph
         }
 
         return null;
+    }
+
+    public int NumEdges()
+    {
+        return _edges.Select(kv => kv.Value.Keys.Count).Sum();
     }
 
     public HashSet<EClass> Nodes()
@@ -605,13 +772,31 @@ internal sealed class HyperGraph
         using (var dumpStream = DumpScope.Current.OpenFile($"Costs/{name}.dot"))
         {
             using var writer = new StreamWriter(dumpStream);
+            writer.WriteLine("digraph G {");
+            writer.WriteLine("/*");
+            writer.WriteLine("[");
+            foreach (var (_, v) in _edges.OrderBy(kv => kv.Key))
+            {
+                writer.WriteLine($"[{string.Join(",", v.Keys)}],");
+            }
+
+            writer.WriteLine("]");
+            writer.WriteLine("*/");
+
+            foreach (var node in _nodes)
+            {
+                writer.WriteLine($"{node} [label = \"{_nodes_to_ids[node].Id}\"]");
+            }
+
             foreach (var (u, v) in _edges)
             {
                 foreach (var w in v.Keys)
                 {
-                    writer.WriteLine($"{_nodes_to_ids[u]} -> {_nodes_to_ids[w]}\n");
+                    writer.WriteLine($"{u} -> {w};");
                 }
             }
+
+            writer.WriteLine("}");
         }
     }
 }
