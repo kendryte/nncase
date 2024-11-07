@@ -275,6 +275,10 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                        'pack1d_dim1': '0',
                                        'pack2d': '0',
                                        },
+                              'unpack': {'pack1d_dim0': '0',
+                                         'pack1d_dim1': '0',
+                                         'pack2d': '0',
+                                         },
                               }
 
     def run(self):
@@ -373,6 +377,10 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                        'pack1d_dim1': '0',
                                        'pack2d': '0',
                                        },
+                              'unpack': {'pack1d_dim0': '0',
+                                         'pack1d_dim1': '0',
+                                         'pack2d': '0',
+                                         },
                               }
 
     def run(self):

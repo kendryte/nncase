@@ -73,17 +73,22 @@ template <size_t... PackDims> void benchmark_ntt_pack() {
     // pay attention to the following code
     constexpr size_t warmup_size = 10;
 #if __riscv
+    constexpr size_t M = 12 * P;
+    constexpr size_t N = 16 * P;
     constexpr size_t run_size = 300;
 #elif __x86_64__
+    constexpr size_t M = 8 * P;
+    constexpr size_t N = 8 * P;
     constexpr size_t run_size = 2000;
 #else
+    constexpr size_t M = 12 * P;
+    constexpr size_t N = 16 * P;
     constexpr size_t run_size = 2000;
 #endif
-    constexpr size_t M = 64;
-    constexpr size_t N = 64;
+
     using tensor_a_type = ntt::tensor<float, ntt::fixed_shape<M, N>>;
     using tensor_b_type =
-        ntt::tensor<ElementType, ntt::fixed_shape<M / P0, M / P1>>;
+        ntt::tensor<ElementType, ntt::fixed_shape<M / P0, N / P1>>;
 
     tensor_a_type ta;
     tensor_b_type tb;
@@ -101,7 +106,7 @@ template <size_t... PackDims> void benchmark_ntt_pack() {
     }
     auto t2 = NttTest::get_cpu_cycle();
 
-    auto element_size = tensor_b_type::size() * ElementType::size() / 8;
+    auto element_size = tensor_b_type::size() * ElementType::size() / P;
     std::cout << __FUNCTION__ << "_" << pattern << " took "
               << std::setprecision(1) << std::fixed
               << static_cast<float>(t2 - t1) / run_size / element_size

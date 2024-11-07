@@ -50,7 +50,7 @@ template <typename T> ortki::DataType primitive_type2ort_type() {
     else if (std::is_same_v<T, bool>)
         ort_type = ortki::DataType_BOOL;
     else {
-        std::cerr << "unsupported data type" << std::endl;
+        std::cerr << __FUNCTION__ << ": unsupported data type" << std::endl;
         std::abort();
     }
 
@@ -81,15 +81,30 @@ ortki::OrtKITensor *
 ntt2ort(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &tensor) {
     void *buffer = reinterpret_cast<void *>(tensor.elements().data());
     auto ort_type = primitive_type2ort_type<T>();
-    auto rank = tensor.shape().rank() + 1;
-    std::vector<size_t> v(rank);
-    for (size_t i = 0; i < tensor.shape().rank(); i++)
+    auto r1 = tensor.shape().rank();
+    auto r2 = r1 + 1;
+    std::vector<size_t> v(r2, N);
+    for (size_t i = 0; i < r1; i++)
         v[i] = tensor.shape()[i];
 
-    v[tensor.shape().rank()] = N;
+    const int64_t *shape = reinterpret_cast<const int64_t *>(v.data());
+    return make_tensor(buffer, ort_type, shape, r2);
+}
+
+template <typename T, typename Shape,
+          typename Stride = ntt::default_strides_t<Shape>, size_t N>
+ortki::OrtKITensor *
+ntt2ort(ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &tensor) {
+    void *buffer = reinterpret_cast<void *>(tensor.elements().data());
+    auto ort_type = primitive_type2ort_type<T>();
+    auto r1 = tensor.shape().rank();
+    auto r2 = r1 + 2;
+    std::vector<size_t> v(r2, N);
+    for (size_t i = 0; i < r1; i++)
+        v[i] = tensor.shape()[i];
 
     const int64_t *shape = reinterpret_cast<const int64_t *>(v.data());
-    return make_tensor(buffer, ort_type, shape, rank);
+    return make_tensor(buffer, ort_type, shape, r2);
 }
 
 template <ntt::IsTensor TTensor>

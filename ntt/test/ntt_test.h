@@ -149,7 +149,7 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
             tensor(index) = static_cast<double>(dis(gen)) >= 0.5;
         });
     } else {
-        std::cerr << "unsupported data type" << std::endl;
+        std::cerr << __FUNCTION__ << ": unsupported data type" << std::endl;
         std::abort();
     }
 }
@@ -157,6 +157,14 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
 template <typename T, typename Shape,
           typename Stride = ntt::default_strides_t<Shape>, size_t N>
 void init_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &tensor,
+                 T start = static_cast<T>(0), T stop = static_cast<T>(1)) {
+    ntt::apply(tensor.shape(),
+               [&](auto &index) { init_tensor(tensor(index), start, stop); });
+}
+
+template <typename T, typename Shape,
+          typename Stride = ntt::default_strides_t<Shape>, size_t N>
+void init_tensor(ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &tensor,
                  T start = static_cast<T>(0), T stop = static_cast<T>(1)) {
     ntt::apply(tensor.shape(),
                [&](auto &index) { init_tensor(tensor(index), start, stop); });
