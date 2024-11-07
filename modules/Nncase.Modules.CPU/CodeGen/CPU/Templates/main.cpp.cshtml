@@ -90,6 +90,37 @@ static void local_free(void *ptr) {
 #endif
 }
 
+static nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
+    .acosf = acosf,
+    .acoshf = acoshf,
+    .asinf = asinf,
+    .asinhf = asinhf,
+    .copysignf = copysignf,
+    .cosf = cosf,
+    .coshf = coshf,
+    .erff = erff,
+    .expf = expf,
+    .fmodf = fmodf,
+    .logf = logf,
+    .nearbyintf = nearbyintf,
+    .powf = powf,
+    .roundf = roundf,
+    .sinf = sinf,
+    .sinhf = sinhf,
+    .sqrtf = sqrtf,
+    .tanhf = tanhf,
+    .sram_address = nullptr,
+    .local_alloc = local_alloc,
+    .local_free = local_free,
+    .failfast = nullptr,
+
+#ifndef WIN32
+    .memcpy = memcpy,
+    .memmove = memmove,
+    .memset = memset,
+#endif
+};
+
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
   uint8_t *inputs[@inputCount];
   size_t align = @(Model.Alignment);
@@ -98,12 +129,13 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
   @:inputs[@i] = (uint8_t *)local_alloc(sizeof(@Html.Raw(b.ElemType)) * @b.Size, align);
   }
 
-  uint8_t* rdata = aligned_malloc(@Model.RDataSize, align, ptrs[@inputCount]);
+  uint8_t* rdata = (uint8_t *)local_alloc(@Model.RDataSize, align);
 
-  kernel_entry(nullptr, inputs, rdata);
-  for (size_t i = 0; i < @(inputCount + 1); i++) {
+  kernel_entry(&nncase_cpu_mt_, inputs, rdata);
+  for (size_t i = 0; i < @inputCount; i++) {
     local_free(inputs[i]);
   }
+  local_free(rdata);
   return 0;
 }
 #endif

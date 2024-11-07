@@ -13,20 +13,24 @@
  * limitations under the License.
  */
 #include "elf_loader.h"
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <nncase/runtime/result.h>
 #if defined(__linux__)
-#include <chrono>
+#include <cstdio>
 #include <dlfcn.h>
 #include <fcntl.h>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
 #include <sys/mman.h>
 #include <unistd.h>
 #endif
 
 using namespace nncase::runtime;
+
+#define THROW_SYS_IF_NOT(x)                                                    \
+    if (!(x)) {                                                                \
+        throw std::system_error(errno, std::system_category());                \
+    }
 
 static bool bpread(el_ctx *ctx, void *dest, size_t nb, size_t offset) {
     (void)ctx;
@@ -72,37 +76,23 @@ void elf_loader::load(std::span<const std::byte> elf) {
         el_relocate(&ctx_);
 #if defined(__linux__)
     } else if (ctx_.ehdr.e_type == ET_DYN) {
-        auto now = std::chrono::system_clock::now();
-        auto in_time_t = std::chrono::system_clock::to_time_t(now);
-
-        std::stringstream ss;
-        ss << std::put_time(std::localtime(&in_time_t), "%Y%m%d_%H%M%S");
-        std::string kernel_so = "/tmp/" + ss.str() + ".so";
-        auto outputFile = open(kernel_so.c_str(), O_WRONLY | O_CREAT, 0666);
-        if (outputFile == -1) {
-            std::cerr << "cannot create file:" << kernel_so << std::endl;
-            throw std::runtime_error("cannot create file:" + kernel_so);
+        char temp_path[] = "/tmp/nncase.function.cpu.XXXXXX";
+        {
+            auto func_file = mkstemp(temp_path);
+            THROW_SYS_IF_NOT(func_file != -1);
+            THROW_SYS_IF_NOT(write(func_file, (char *)ctx_.elf, elf.size()) !=
+                             -1);
+            THROW_SYS_IF_NOT(close(func_file) != -1);
         }
 
-        if (write(outputFile, (char *)ctx_.elf, elf.size()) == -1) {
-            throw std::runtime_error("write file:" + kernel_so);
-        }
-
-        if (close(outputFile) == -1) {
-            throw std::runtime_error("close file:" + kernel_so);
-        }
-
-        handle_ = dlopen(kernel_so.c_str(), RTLD_NOW);
+        handle_ = dlopen(temp_path, RTLD_NOW);
         if (!handle_) {
-            fprintf(stderr, "Error: %s\n", dlerror());
-            exit(EXIT_FAILURE);
+            throw std::runtime_error("dlopen error:" + std::string(dlerror()));
         }
 
         entry_ = dlsym(handle_, "kernel_entry");
-        const char *dlsym_error = dlerror();
-        if (dlsym_error) {
-            dlclose(handle_);
-            throw std::runtime_error("dlsym error:" + std::string(dlsym_error));
+        if (!entry_) {
+            throw std::runtime_error("dlsym error:" + std::string(dlerror()));
         }
 #endif
     } else {
