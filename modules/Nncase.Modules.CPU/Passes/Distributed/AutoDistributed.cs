@@ -241,12 +241,13 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             }
 
             var root = Ddfs(equivalents);
-#if DEBUG
-            using (var stream = Diagnostics.DumpScope.Current.OpenFile("egraph.dot"))
+            if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.EGraphCost))
             {
-                EGraphPrinter.DumpEgraphAsDot(graph, stream);
+                using (var stream = Diagnostics.DumpScope.Current.OpenFile("egraph.dot"))
+                {
+                    EGraphPrinter.DumpEgraphAsDot(graph, stream);
+                }
             }
-#endif
 
             var constrains = new EGraphExtractConstrains[] { SingleNodeMemoryExtractConstrains };
             var post = graph.Extract(root, CompileOptions, null, constrains);
@@ -338,15 +339,27 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         }
 
         var results = expr.Arguments.ToArray().
-                    Select(Visit).
-                    CartesianProduct().
-                    Select(args => args.ToArray()).
-                    Select(args => isSupported ? BuildEquivalCalls(op, args.Select(kv => kv.Value[0]).ToArray()).ToArray() :
-                                    BuildNotSupportedCalls(op, args.Select(kv => kv.Value[0]).ToArray())).
-                    SelectMany(i => i).
-                    GroupBy(c => c.CheckedType).
-                    ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
+            Select(Visit).
+            CartesianProduct().
+            Select(args => args.ToArray()).
+            Select(args => isSupported ? BuildEquivalCalls(op, args.Select(kv => kv.Value[0]).ToArray()).ToArray() :
+                            BuildNotSupportedCalls(op, args.Select(kv => kv.Value[0]).ToArray())).
+            SelectMany(i => i).
+            GroupBy(c => c.CheckedType).
+            ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
 
+        // var results = expr.Arguments.ToArray().
+        //                     Select(Visit).
+        //                     CartesianProduct().
+        //                     Select(args => args.ToArray()).
+        //                     Select(args => args.Select(kv => kv.Value[0]).Select(arg => arg.CheckedType switch
+        //                     {
+        //                         DistributedType d => GetDiverseCandidateSBPs(d, Placements).Select(ndsbp => IR.F.CPU.Boxing(arg, new DistributedType(d.TensorType, ndsbp, d.Placement))).Concat(new[] { arg }).ToArray(),
+        //                         _ => new[] { arg },
+        //                     }).ToList().CartesianProduct().Select(arg => BuildEquivalCalls(op, arg.ToArray())).SelectMany(i => i).ToArray()).
+        //                     SelectMany(i => i).
+        //                     GroupBy(c => c.CheckedType).
+        //                     ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
         if (results.Count == 0)
         {
             return expr.Arguments.ToArray().
@@ -491,7 +504,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                 var inType = (DistributedType)args[0].CheckedType;
                 var tensorType = inType.TensorType with { Shape = newShape };
                 foreach (var boxing in Utilities.DistributedUtility.GetLeafCandidateNDSBPs(tensorType, inType.Placement).
-                    Select(ndsbp => IR.F.CPU.Boxing(args[0], new DistributedType(tensorType, ndsbp, inType.Placement))))
+                    Select(ndsbp => IR.F.CPU.Boxing(args[0], new DistributedType(tensorType, ndsbp, inType.Placement), true)))
                 {
                     if (boxing.CheckedType is InvalidType)
                     {
@@ -517,7 +530,12 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             {
                 // boxing for partialsum
                 var partialBoxings = Utilities.DistributedUtility.GetPartialCandidateNDSBPs(distType).
-                    Select(ndsbp => IR.F.CPU.Boxing(call, distType with { NdSBP = ndsbp })).ToArray();
+                    Select(ndsbp => (ndsbp, IR.F.CPU.Boxing(call, distType with { NdSBP = ndsbp }))).Select(p =>
+                    {
+                        var lastSbp = p.ndsbp;
+                        var reduced = p.Item2;
+                        return Utilities.DistributedUtility.GetLeafCandidateNDSBPs(distType.TensorType, distType.Placement).Where(ndsbp => lastSbp != ndsbp).Select(ndsbp => IR.F.CPU.Boxing(reduced, distType with { NdSBP = ndsbp })).ToArray();
+                    }).SelectMany(i => i).ToArray();
                 calls.AddRange(partialBoxings);
 
                 using var pinner = new ExprPinner(calls.ToArray());

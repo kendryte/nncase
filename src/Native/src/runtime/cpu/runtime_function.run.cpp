@@ -39,6 +39,28 @@ static void failfast(const char *foramt, va_list args) {
     throw std::runtime_error(buffer);
 }
 
+static void *local_alloc(size_t bytes, size_t alignment) {
+#ifdef WIN32
+    return _aligned_malloc(bytes, alignment);
+#else
+    size_t mask = alignment - 1;
+    size_t aligned_bytes = bytes + (-bytes & mask);
+    auto ptr = aligned_alloc(alignment, aligned_bytes);
+    if (!ptr) {
+        throw std::runtime_error("aligned alloc error!");
+    }
+    return ptr;
+#endif
+}
+
+static void local_free(void *ptr) {
+#ifdef WIN32
+    _aligned_free(ptr);
+#else
+    free(ptr);
+#endif
+}
+
 nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
     .acosf = acosf,
     .acoshf = acoshf,
@@ -59,6 +81,8 @@ nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
     .sqrtf = sqrtf,
     .tanhf = tanhf,
     .sram_address = sram_address,
+    .local_alloc = local_alloc,
+    .local_free = local_free,
     .failfast = failfast,
 
 #ifndef WIN32
@@ -70,19 +94,6 @@ nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
 } // namespace
 
 result<void> cpu_runtime_function::run(std::span<std::byte *> params) noexcept {
-    size_t alignment = data_align_;
-    size_t space = data_pool_size_ + alignment;
-    auto alloced = new (std::nothrow) std::byte[space];
-    if (alloced == nullptr) {
-        return err(std::errc::not_enough_memory);
-    }
-    void *data = alloced;
-    std::align(alignment, data_pool_size_, data, space);
-    if (data == nullptr) {
-        return err(std::errc::not_enough_memory);
-    }
-    kernel_entry_(&nncase_cpu_mt_, params.data(), module().rdata().data(),
-                  reinterpret_cast<std::byte *>(data));
-    delete[] alloced;
+    kernel_entry_(&nncase_cpu_mt_, params.data(), module().rdata().data());
     return ok();
 }

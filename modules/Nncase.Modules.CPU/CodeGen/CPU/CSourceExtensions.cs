@@ -83,15 +83,17 @@ internal static class CSourceExtensions
         _ => throw new NotImplementedException(),
     };
 
-    public static string ToSlicing(this IEnumerable<string> dims, string[] begins, IRArray<SBP> ndsbp, Placement placement)
+    public static string[] ToSlicing(this IEnumerable<string> dims, string[] begins, IRArray<SBP> ndsbp, Placement placement)
     {
         var hstrides = TensorUtilities.GetStrides(placement.Hierarchy.ToArray());
+        var splitHierarchy = Enumerable.Range(0, begins.Length).Select(_ => new List<int>()).ToArray();
         var splits = Enumerable.Range(0, begins.Length).Select(_ => new List<(int H, SBPSplit S)>()).ToArray();
         foreach (var (sbp, i) in ndsbp.Select((s, i) => (s, i)))
         {
             if (sbp is SBPSplit { Axis: int axis } split)
             {
                 splits[axis].Add((i, split));
+                splitHierarchy[axis] = placement.Hierarchy.Select((h, i) => ndsbp[i] is SBPSplit { Axis: int a } && a == axis ? h : 1).ToList();
             }
         }
 
@@ -111,14 +113,14 @@ internal static class CSourceExtensions
                     dimi = dimi[(s + 1)..e].Trim();
                 }
 
-                begins[i] += " + " + sp.Skip(1).Aggregate($"{placement.Name[sp[0].H]}id", (acc, p) => $"({acc} + {TensorUtilities.GetProduct(placement.Hierarchy[(p.H + 1)..])} * {placement.Name[p.H]}id)") + $" * {dimi}";
+                begins[i] += " + " + sp.Skip(1).Aggregate($"{placement.Name[sp[0].H]}id", (acc, p) => $"({acc} + {TensorUtilities.GetProduct(splitHierarchy[i].ToArray().AsSpan()[(p.H + 1)..])} * {placement.Name[p.H]}id)") + $" * {dimi}";
             }
         }
 
-        return $".view(make_ranked_shape({string.Join(',', begins)}), fixed_shape<{string.Join(",", dims.Select(d => d.ToString()))}>{{}})";
+        return [$"make_ranked_shape({string.Join(',', begins)})", $"fixed_shape<{string.Join(",", dims.Select(d => d.ToString()))}>{{}}"];
     }
 
-    public static string ToSlicing(this IEnumerable<string> dims, IRArray<SBP> ndsbp, Placement placement) => ToSlicing(dims, Enumerable.Repeat("0", dims.Count()).ToArray(), ndsbp, placement);
+    public static string[] ToSlicing(this IEnumerable<string> dims, IRArray<SBP> ndsbp, Placement placement) => ToSlicing(dims, Enumerable.Repeat("0", dims.Count()).ToArray(), ndsbp, placement);
 
     public static string ToC(this BinaryOp binaryOp) => binaryOp switch
     {

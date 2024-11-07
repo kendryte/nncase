@@ -215,7 +215,7 @@ public sealed class SchedFunctionResult
     /// <summary>
     /// Gets the buffer allocation.
     /// </summary>
-    public Dictionary<IR.Const, ValueRange<long>> Rdatas { get; }
+    public Dictionary<IR.Const, ValueRange<ulong>> Rdatas { get; }
 
     /// <summary>
     /// Gets or sets the data section length.
@@ -255,7 +255,7 @@ public sealed class SchedFunctionResult
             return true;
         }
 
-        return EqualityComparer<Dictionary<IR.Const, ValueRange<long>>>.Default.Equals(Rdatas, result.Rdatas) &&
+        return EqualityComparer<Dictionary<IR.Const, ValueRange<ulong>>>.Default.Equals(Rdatas, result.Rdatas) &&
                EqualityComparer<ulong>.Default.Equals(DataUsage, result.DataUsage) &&
                EqualityComparer<ulong>.Default.Equals(DataAlign, result.DataAlign);
     }

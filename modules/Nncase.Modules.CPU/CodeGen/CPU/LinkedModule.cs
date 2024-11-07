@@ -12,13 +12,13 @@ namespace Nncase.CodeGen.CPU;
 
 internal sealed class LinkedModule : ILinkedModule
 {
-    public LinkedModule(IReadOnlyList<ILinkedFunction> functions, Stream text, Stream rdata)
+    public LinkedModule(IReadOnlyList<ILinkedFunction> functions, Stream text, Stream rdata, ulong rdataAlign)
     {
         Functions = functions;
         Sections = new[]
         {
             new LinkedSection(text, WellknownSectionNames.Text, 0, 8, (ulong)text.Length),
-            new LinkedSection(rdata, WellknownSectionNames.Rdata, 0, 8, (ulong)rdata.Length),
+            new LinkedSection(rdata, WellknownSectionNames.Rdata, 0, (uint)rdataAlign, (ulong)rdata.Length),
         };
     }
 

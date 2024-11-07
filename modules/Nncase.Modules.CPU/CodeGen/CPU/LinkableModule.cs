@@ -72,6 +72,14 @@ internal sealed class LinkableModule : ILinkableModule
                 }
             }
 
+            using (var fs = File.Open(Path.Join(dumpPath, "topo_aware_runtime.h"), FileMode.Create))
+            {
+                using (var writer = new StreamWriter(fs))
+                {
+                    writer.Write(func.FunctionCSource.TopoRuntime);
+                }
+            }
+
             using (var fs = File.Open(Path.Join(dumpPath, "CMakeLists.txt"), FileMode.Create))
             {
                 using (var writer = new StreamWriter(fs))
@@ -85,8 +93,10 @@ internal sealed class LinkableModule : ILinkableModule
         var textWriter = manager.GetWriter(WellknownSectionNames.Text);
         var linkedFunctions = new List<LinkedFunction>();
         int offset = 0;
+        ulong rdataAlign = 8;
         foreach (var func in _functions.OfType<LinkableKernelFunction>())
         {
+            rdataAlign = Math.Max(rdataAlign, func.PrimFunction.SchedResult.DataAlign);
             var dumpPath = Path.Join(_options.DumpDir, func.PrimFunction.Name);
             var elfPath = CompileCSource(dumpPath);
 
@@ -96,7 +106,7 @@ internal sealed class LinkableModule : ILinkableModule
             offset += func_text.Length;
         }
 
-        return new LinkedModule(linkedFunctions, manager.GetContent(WellknownSectionNames.Text)!, _rdata);
+        return new LinkedModule(linkedFunctions, manager.GetContent(WellknownSectionNames.Text)!, _rdata, rdataAlign);
     }
 
     private string CompileCSource(string sourcePath)

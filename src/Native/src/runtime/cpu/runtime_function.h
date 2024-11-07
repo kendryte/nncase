@@ -33,8 +33,7 @@ BEGIN_NS_NNCASE_RT_MODULE(cpu)
 
 class cpu_runtime_function final : public runtime_function {
     typedef void (*kernel_entry_t)(nncase_runtime_cpu_mt_t *cpu_mt,
-                                   std::byte **inputs, const std::byte *rdata,
-                                   std::byte *data);
+                                   std::byte **inputs, const std::byte *rdata);
 
   public:
     cpu_runtime_function(runtime_module &rt_module);

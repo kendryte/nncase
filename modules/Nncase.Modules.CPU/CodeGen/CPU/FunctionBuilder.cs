@@ -51,13 +51,13 @@ internal class FunctionBuilder
             {
                 var bytes = ((TensorConst)@const).Value.BytesBuffer;
                 var size = range.Max - range.Min;
-                rdataPoolSize = System.Math.Max((ulong)range.Max, rdataPoolSize);
+                rdataPoolSize = System.Math.Max(range.Max, rdataPoolSize);
                 if ((uint)bytes.Length != size)
                 {
                     throw new InvalidDataException("The Buffer Size Not Equal!");
                 }
 
-                _rdataWriter.Position(range.Min);
+                _rdataWriter.Position(checked((long)range.Min));
                 _rdataWriter.Write(bytes);
             }
 

@@ -21,8 +21,6 @@
 
 extern "C" {
 nncase_runtime_cpu_mt_t *g_cpu_mt;
-size_t bid;
-size_t tid;
 
 #ifndef NNCASE_STANDALONE
 // compiler support

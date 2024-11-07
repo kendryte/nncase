@@ -30,6 +30,10 @@ public record KernelMainModel(TIR.PrimFunction PrimFunction, TIR.Buffer[] RDataB
     }
 }
 
+public record CpuTargetOptionsModel(CpuTargetOptions Options, ulong Alignment, ulong CollectivePoolSize)
+{
+}
+
 public static class CSourceBuiltn
 {
     public const string KernelHeader = @"#pragma once
@@ -37,6 +41,17 @@ public static class CSourceBuiltn
 using namespace nncase::ntt;
 
 ";
+
+    public static string TopoAwareRuntimeDef(CpuTargetOptions options, ulong dataAlign, ulong collective_pool_size)
+    {
+        if (options.Hierarchies[0].Any(i => i > 1))
+        {
+            var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/topo_aware_runtime.cshtml", new CpuTargetOptionsModel(options, dataAlign, collective_pool_size)).Result;
+            return content;
+        }
+
+        return string.Empty;
+    }
 
     public static string CMakeDef(string name)
     {
