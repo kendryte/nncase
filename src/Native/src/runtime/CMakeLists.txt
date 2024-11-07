@@ -68,6 +68,9 @@ else()
     add_library(nncaseruntime SHARED dummy.cpp)
     target_link_libraries(nncaseruntime PRIVATE nncasebase kernels simulator compiler simulator_stackvm fmt::fmt)
     target_link_libraries(nncaseruntime PUBLIC gsl::gsl-lite)
+    if (NOT (WIN32 OR APPLE))
+      target_link_libraries(nncaseruntime PRIVATE dl)
+    endif()
     set_target_properties(nncaseruntime PROPERTIES
                                         OUTPUT_NAME "Nncase.Runtime.Native")
 
@@ -81,11 +84,11 @@ else()
     install(EXPORT nncaseTargets
         DESTINATION lib/cmake/nncase)
 
-    if (WIN32)
-        install(FILES ${CONAN_NETHOST_ROOT}/bin/nethost.dll
-            COMPONENT nncase-runtime
-            DESTINATION bin)
-    endif()
+    # if (WIN32)
+    #     install(FILES ${CONAN_NETHOST_ROOT}/bin/nethost.dll
+    #         COMPONENT nncase-runtime
+    #         DESTINATION bin)
+    # endif()
 
     configure_file(${CMAKE_CURRENT_LIST_DIR}/../../../../cmake/nncaseConfig.cmake.in nncaseConfig.cmake @ONLY)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nncaseConfig.cmake DESTINATION lib/cmake/nncase)
