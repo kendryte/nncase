@@ -72,10 +72,14 @@ class u_pack<M, N, MStrides, true, float, vector<float, 8>> {
   public:
     constexpr void operator()(const float *input,
                               vector<float, 8> *output) noexcept {
+        auto out_ptr = reinterpret_cast<float *>(output);
         for (size_t j = 0; j < N; j++) {
+            const float *input_ptr = nullptr;
             for (size_t i = 0; i < M; i++) {
-                output[j](i) = input[i * MStrides + j];
+                input_ptr = input + i * MStrides;
+                *(out_ptr++) = *input_ptr;
             }
+            input_ptr++;
         }
 
         if constexpr (M < 8) {
