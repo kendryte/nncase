@@ -275,9 +275,13 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                        'pack1d_dim1': '0',
                                        'pack2d': '0',
                                        },
-                              'unpack': {'pack1d_dim0': '0',
-                                         'pack1d_dim1': '0',
-                                         'pack2d': '0',
+                              'unpack': {'N': '0',
+                                         'C': '0',
+                                         'H': '0',
+                                         'W': '0',
+                                         'NC': '0',
+                                         'CH': '0',
+                                         'HW': '0',
                                          },
                               }
 
@@ -377,9 +381,13 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                        'pack1d_dim1': '0',
                                        'pack2d': '0',
                                        },
-                              'unpack': {'pack1d_dim0': '0',
-                                         'pack1d_dim1': '0',
-                                         'pack2d': '0',
+                              'unpack': {'N': '0',
+                                         'C': '0',
+                                         'H': '0',
+                                         'W': '0',
+                                         'NC': '0',
+                                         'CH': '0',
+                                         'HW': '0',
                                          },
                               }
 

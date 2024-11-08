@@ -22,30 +22,31 @@
 using namespace nncase;
 using namespace ortki;
 
-TEST(UnpackTestFloat, fixed_shape_dim0) {
+TEST(UnpackTestFloat, fixed_shape_dim_N) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    constexpr size_t M = P * 32;
-    constexpr size_t N = 1024;
+    constexpr size_t N = P * 2;
+    constexpr size_t C = P;
+    constexpr size_t H = P;
+    constexpr size_t W = P;
     float min_input = -10.0f;
     float max_input = 10.0f;
 
-    using tensor_type1 =
-        ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>>;
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-
     // init
+    using tensor_type1 =
+        ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<N / P, C, H, W>>;
     std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
     NttTest::init_tensor(*ntt_input, min_input, max_input);
 
     // ntt
+    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
     ntt::unpack<0>(*ntt_input, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t perms[] = {0, 2, 1};
+    int64_t perms[] = {0, 4, 1, 2, 3};
     auto tmp = ortki_Transpose(ort_input, perms, std::size(perms));
-    int64_t data[] = {M, N};
+    int64_t data[] = {N, C, H, W};
     int64_t data_shape[] = {std::size(data)};
     auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
     auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
@@ -58,28 +59,103 @@ TEST(UnpackTestFloat, fixed_shape_dim0) {
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(UnpackTestFloat, fixed_shape_dim1) {
+TEST(UnpackTestFloat, fixed_shape_dim_C) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    constexpr size_t M = 1024;
-    constexpr size_t N = P * 32;
+    constexpr size_t N = P;
+    constexpr size_t C = P * 2;
+    constexpr size_t H = P;
+    constexpr size_t W = P;
     float min_input = -10.0f;
     float max_input = 10.0f;
 
-    using tensor_type1 =
-        ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>>;
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-
     // init
+    using tensor_type1 =
+        ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<N, C / P, H, W>>;
     std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
     NttTest::init_tensor(*ntt_input, min_input, max_input);
 
     // ntt
+    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
     ntt::unpack<1>(*ntt_input, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t data[] = {M, N};
+    int64_t perms[] = {0, 1, 4, 2, 3};
+    auto tmp = ortki_Transpose(ort_input, perms, std::size(perms));
+    int64_t data[] = {N, C, H, W};
+    int64_t data_shape[] = {std::size(data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                                  data_shape, std::size(data_shape));
+    auto ort_output = ortki_Reshape(tmp, shape, 0);
+
+    // compare
+    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(UnpackTestFloat, fixed_shape_dim_H) {
+    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    constexpr size_t N = P;
+    constexpr size_t C = P;
+    constexpr size_t H = P * 2;
+    constexpr size_t W = P;
+    float min_input = -10.0f;
+    float max_input = 10.0f;
+
+    // init
+    using tensor_type1 =
+        ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<N, C, H / P, W>>;
+    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
+    NttTest::init_tensor(*ntt_input, min_input, max_input);
+
+    // ntt
+    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
+    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
+    ntt::unpack<2>(*ntt_input, *ntt_output1);
+
+    // ort
+    auto ort_input = NttTest::ntt2ort(*ntt_input);
+    int64_t perms[] = {0, 1, 2, 4, 3};
+    auto tmp = ortki_Transpose(ort_input, perms, std::size(perms));
+    int64_t data[] = {N, C, H, W};
+    int64_t data_shape[] = {std::size(data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                                  data_shape, std::size(data_shape));
+    auto ort_output = ortki_Reshape(tmp, shape, 0);
+
+    // compare
+    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(UnpackTestFloat, fixed_shape_dim_W) {
+    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    constexpr size_t N = P;
+    constexpr size_t C = P;
+    constexpr size_t H = P;
+    constexpr size_t W = P * 2;
+    float min_input = -10.0f;
+    float max_input = 10.0f;
+
+    // init
+    using tensor_type1 =
+        ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<N, C, H, W / P>>;
+    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
+    NttTest::init_tensor(*ntt_input, min_input, max_input);
+
+    // ntt
+    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
+    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
+    ntt::unpack<3>(*ntt_input, *ntt_output1);
+
+    // ort
+    auto ort_input = NttTest::ntt2ort(*ntt_input);
+    int64_t data[] = {N, C, H, W};
     int64_t data_shape[] = {std::size(data)};
     auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
     auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
@@ -92,29 +168,31 @@ TEST(UnpackTestFloat, fixed_shape_dim1) {
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(UnpackTestFloat, fixed_shape_dim0_1) {
+TEST(UnpackTestFloat, fixed_shape_dim_N_C) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    constexpr size_t M = P * 32;
-    constexpr size_t N = P * 32;
+    constexpr size_t N = P * 2;
+    constexpr size_t C = P * 2;
+    constexpr size_t H = P;
+    constexpr size_t W = P;
     float min_input = -10.0f;
     float max_input = 10.0f;
 
     // init
     using tensor_type1 =
-        ntt::tensor<ntt::vector<float, P, P>, ntt::fixed_shape<M / P, N / P>>;
+        ntt::tensor<ntt::vector<float, P, P>, ntt::fixed_shape<N / P, C / P, H, W>>;
     std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
     NttTest::init_tensor(*ntt_input, min_input, max_input);
 
     // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
+    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
     ntt::unpack<0, 1>(*ntt_input, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t perms[] = {0, 2, 1, 3};
+    int64_t perms[] = {0, 4, 1, 5, 2, 3};
     auto tmp = ortki_Transpose(ort_input, perms, std::size(perms));
-    int64_t data[] = {M, N};
+    int64_t data[] = {N, C, H, W};
     int64_t data_shape[] = {std::size(data)};
     auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
     auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
@@ -127,31 +205,107 @@ TEST(UnpackTestFloat, fixed_shape_dim0_1) {
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(UnpackTestFloat, ranked_shape_dim0) {
+TEST(UnpackTestFloat, fixed_shape_dim_C_H) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    constexpr size_t M = P * 32;
-    constexpr size_t N = 1024;
+    constexpr size_t N = P;
+    constexpr size_t C = P * 2;
+    constexpr size_t H = P * 2;
+    constexpr size_t W = P;
     float min_input = -10.0f;
     float max_input = 10.0f;
 
     // init
     using tensor_type1 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<2>>;
-    auto shape1 = ntt::make_ranked_shape(M / P, N);
+        ntt::tensor<ntt::vector<float, P, P>, ntt::fixed_shape<N, C / P, H / P, W>>;
+    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
+    NttTest::init_tensor(*ntt_input, min_input, max_input);
+
+    // ntt
+    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
+    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
+    ntt::unpack<1, 2>(*ntt_input, *ntt_output1);
+
+    // ort
+    auto ort_input = NttTest::ntt2ort(*ntt_input);
+    int64_t perms[] = {0, 1, 4, 2, 5, 3};
+    auto tmp = ortki_Transpose(ort_input, perms, std::size(perms));
+    int64_t data[] = {N, C, H, W};
+    int64_t data_shape[] = {std::size(data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                                  data_shape, std::size(data_shape));
+    auto ort_output = ortki_Reshape(tmp, shape, 0);
+
+    // compare
+    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(UnpackTestFloat, fixed_shape_dim_H_W) {
+    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    constexpr size_t N = P;
+    constexpr size_t C = P;
+    constexpr size_t H = P * 2;
+    constexpr size_t W = P * 2;
+    float min_input = -10.0f;
+    float max_input = 10.0f;
+
+    // init
+    using tensor_type1 =
+        ntt::tensor<ntt::vector<float, P, P>, ntt::fixed_shape<N, C, H / P, W / P>>;
+    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
+    NttTest::init_tensor(*ntt_input, min_input, max_input);
+
+    // ntt
+    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
+    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
+    ntt::unpack<2, 3>(*ntt_input, *ntt_output1);
+
+    // ort
+    auto ort_input = NttTest::ntt2ort(*ntt_input);
+    int64_t perms[] = {0, 1, 2, 4, 3, 5};
+    auto tmp = ortki_Transpose(ort_input, perms, std::size(perms));
+    int64_t data[] = {N, C, H, W};
+    int64_t data_shape[] = {std::size(data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                                  data_shape, std::size(data_shape));
+    auto ort_output = ortki_Reshape(tmp, shape, 0);
+
+    // compare
+    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(UnpackTestFloat, ranked_shape_dim_N) {
+    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    constexpr size_t N = P * 2;
+    constexpr size_t C = P;
+    constexpr size_t H = P;
+    constexpr size_t W = P;
+    float min_input = -10.0f;
+    float max_input = 10.0f;
+
+    // init
+    using tensor_type1 =
+        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<4>>;
+    auto shape1 = ntt::make_ranked_shape(N / P, C, H, W);
     std::unique_ptr<tensor_type1> ntt_input(new tensor_type1(shape1));
     NttTest::init_tensor(*ntt_input, min_input, max_input);
 
     // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<2>>;
-    auto shape2 = ntt::make_ranked_shape(M, N);
+    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape2 = ntt::make_ranked_shape(N, C, H, W);
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2(shape2));
     ntt::unpack<0>(*ntt_input, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t perms[] = {0, 2, 1};
+    int64_t perms[] = {0, 4, 1, 2, 3};
     auto tmp = ortki_Transpose(ort_input, perms, std::size(perms));
-    int64_t data[] = {M, N};
+    int64_t data[] = {N, C, H, W};
     int64_t data_shape[] = {std::size(data)};
     auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
     auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
@@ -164,29 +318,109 @@ TEST(UnpackTestFloat, ranked_shape_dim0) {
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(UnpackTestFloat, ranked_shape_dim1) {
+TEST(UnpackTestFloat, ranked_shape_dim_C) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    constexpr size_t M = 1024;
-    constexpr size_t N = P * 32;
+    constexpr size_t N = P;
+    constexpr size_t C = P * 2;
+    constexpr size_t H = P;
+    constexpr size_t W = P;
     float min_input = -10.0f;
     float max_input = 10.0f;
 
     // init
     using tensor_type1 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<2>>;
-    auto shape1 = ntt::make_ranked_shape(M, N / P);
+        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<4>>;
+    auto shape1 = ntt::make_ranked_shape(N, C / P, H, W);
     std::unique_ptr<tensor_type1> ntt_input(new tensor_type1(shape1));
     NttTest::init_tensor(*ntt_input, min_input, max_input);
 
     // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<2>>;
-    auto shape2 = ntt::make_ranked_shape(M, N);
+    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape2 = ntt::make_ranked_shape(N, C, H, W);
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2(shape2));
     ntt::unpack<1>(*ntt_input, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t data[] = {M, N};
+    int64_t perms[] = {0, 1, 4, 2, 3};
+    auto tmp = ortki_Transpose(ort_input, perms, std::size(perms));
+    int64_t data[] = {N, C, H, W};
+    int64_t data_shape[] = {std::size(data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                                  data_shape, std::size(data_shape));
+    auto ort_output = ortki_Reshape(tmp, shape, 0);
+
+    // compare
+    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2(shape2));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(UnpackTestFloat, ranked_shape_dim_H) {
+    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    constexpr size_t N = P;
+    constexpr size_t C = P;
+    constexpr size_t H = P * 2;
+    constexpr size_t W = P;
+    float min_input = -10.0f;
+    float max_input = 10.0f;
+
+    // init
+    using tensor_type1 =
+        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<4>>;
+    auto shape1 = ntt::make_ranked_shape(N, C, H / P, W);
+    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1(shape1));
+    NttTest::init_tensor(*ntt_input, min_input, max_input);
+
+    // ntt
+    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape2 = ntt::make_ranked_shape(N, C, H, W);
+    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2(shape2));
+    ntt::unpack<2>(*ntt_input, *ntt_output1);
+
+    // ort
+    auto ort_input = NttTest::ntt2ort(*ntt_input);
+    int64_t perms[] = {0, 1, 2, 4, 3};
+    auto tmp = ortki_Transpose(ort_input, perms, std::size(perms));
+    int64_t data[] = {N, C, H, W};
+    int64_t data_shape[] = {std::size(data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                                  data_shape, std::size(data_shape));
+    auto ort_output = ortki_Reshape(tmp, shape, 0);
+
+    // compare
+    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2(shape2));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(UnpackTestFloat, ranked_shape_dim_W) {
+    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    constexpr size_t N = P;
+    constexpr size_t C = P;
+    constexpr size_t H = P;
+    constexpr size_t W = P * 2;
+    float min_input = -10.0f;
+    float max_input = 10.0f;
+
+    // init
+    using tensor_type1 =
+        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<4>>;
+    auto shape1 = ntt::make_ranked_shape(N, C, H, W / P);
+    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1(shape1));
+    NttTest::init_tensor(*ntt_input, min_input, max_input);
+
+    // ntt
+    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape2 = ntt::make_ranked_shape(N, C, H, W);
+    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2(shape2));
+    ntt::unpack<3>(*ntt_input, *ntt_output1);
+
+    // ort
+    auto ort_input = NttTest::ntt2ort(*ntt_input);
+    int64_t data[] = {N, C, H, W};
     int64_t data_shape[] = {std::size(data)};
     auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
     auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
@@ -199,31 +433,111 @@ TEST(UnpackTestFloat, ranked_shape_dim1) {
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
-TEST(UnpackTestFloat, ranked_shape_dim0_1) {
+TEST(UnpackTestFloat, ranked_shape_dim_N_C) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    constexpr size_t M = P * 32;
-    constexpr size_t N = P * 32;
+    constexpr size_t N = P * 2;
+    constexpr size_t C = P * 2;
+    constexpr size_t H = P;
+    constexpr size_t W = P;
     float min_input = -10.0f;
     float max_input = 10.0f;
 
     // init
     using tensor_type1 =
-        ntt::tensor<ntt::vector<float, P, P>, ntt::ranked_shape<2>>;
-    auto shape1 = ntt::make_ranked_shape(M / P, N / P);
+        ntt::tensor<ntt::vector<float, P, P>, ntt::ranked_shape<4>>;
+    auto shape1 = ntt::make_ranked_shape(N / P, C / P, H, W);
     std::unique_ptr<tensor_type1> ntt_input(new tensor_type1(shape1));
     NttTest::init_tensor(*ntt_input, min_input, max_input);
 
     // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<2>>;
-    auto shape2 = ntt::make_ranked_shape(M, N);
+    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape2 = ntt::make_ranked_shape(N, C, H, W);
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2(shape2));
     ntt::unpack<0, 1>(*ntt_input, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t perms[] = {0, 2, 1, 3};
+    int64_t perms[] = {0, 4, 1, 5, 2, 3};
     auto tmp = ortki_Transpose(ort_input, perms, std::size(perms));
-    int64_t data[] = {M, N};
+    int64_t data[] = {N, C, H, W};
+    int64_t data_shape[] = {std::size(data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                                  data_shape, std::size(data_shape));
+    auto ort_output = ortki_Reshape(tmp, shape, 0);
+
+    // compare
+    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2(shape2));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(UnpackTestFloat, ranked_shape_dim_C_H) {
+    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    constexpr size_t N = P;
+    constexpr size_t C = P * 2;
+    constexpr size_t H = P * 2;
+    constexpr size_t W = P;
+    float min_input = -10.0f;
+    float max_input = 10.0f;
+
+    // init
+    using tensor_type1 =
+        ntt::tensor<ntt::vector<float, P, P>, ntt::ranked_shape<4>>;
+    auto shape1 = ntt::make_ranked_shape(N, C / P, H / P, W);
+    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1(shape1));
+    NttTest::init_tensor(*ntt_input, min_input, max_input);
+
+    // ntt
+    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape2 = ntt::make_ranked_shape(N, C, H, W);
+    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2(shape2));
+    ntt::unpack<1, 2>(*ntt_input, *ntt_output1);
+
+    // ort
+    auto ort_input = NttTest::ntt2ort(*ntt_input);
+    int64_t perms[] = {0, 1, 4, 2, 5, 3};
+    auto tmp = ortki_Transpose(ort_input, perms, std::size(perms));
+    int64_t data[] = {N, C, H, W};
+    int64_t data_shape[] = {std::size(data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                                  data_shape, std::size(data_shape));
+    auto ort_output = ortki_Reshape(tmp, shape, 0);
+
+    // compare
+    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2(shape2));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(UnpackTestFloat, ranked_shape_dim_H_W) {
+    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    constexpr size_t N = P;
+    constexpr size_t C = P;
+    constexpr size_t H = P * 2;
+    constexpr size_t W = P * 2;
+    float min_input = -10.0f;
+    float max_input = 10.0f;
+
+    // init
+    using tensor_type1 =
+        ntt::tensor<ntt::vector<float, P, P>, ntt::ranked_shape<4>>;
+    auto shape1 = ntt::make_ranked_shape(N, C, H / P, W / P);
+    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1(shape1));
+    NttTest::init_tensor(*ntt_input, min_input, max_input);
+
+    // ntt
+    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape2 = ntt::make_ranked_shape(N, C, H, W);
+    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2(shape2));
+    ntt::unpack<2, 3>(*ntt_input, *ntt_output1);
+
+    // ort
+    auto ort_input = NttTest::ntt2ort(*ntt_input);
+    int64_t perms[] = {0, 1, 2, 4, 3, 5};
+    auto tmp = ortki_Transpose(ort_input, perms, std::size(perms));
+    int64_t data[] = {N, C, H, W};
     int64_t data_shape[] = {std::size(data)};
     auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
     auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
