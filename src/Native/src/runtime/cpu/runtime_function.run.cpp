@@ -22,6 +22,12 @@
 #include <stdexcept>
 #include <thread>
 
+#ifdef WIN32
+#include <Windows.h>
+#else
+#include <pthread.h>
+#endif
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
@@ -73,7 +79,7 @@ nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
 } // namespace
 
 result<void> cpu_runtime_function::run(std::span<std::byte *> params) noexcept {
-    std::vector<std::jthread> threads;
+    std::vector<std::thread> threads;
     for (size_t bid = 0; bid < bdim_; bid++) {
         nncase_runtime_cpu_block_params_t block_params{
             .cpu_mt = &nncase_cpu_mt_,
@@ -84,6 +90,18 @@ result<void> cpu_runtime_function::run(std::span<std::byte *> params) noexcept {
                       &block_params);
         for (size_t tid = 0; tid < tdim_; tid++) {
             threads.emplace_back([this, tid, bid, params] {
+                size_t cpu_id = bid * tdim_ + tid;
+#if WIN32
+                SetThreadAffinityMask(GetCurrentThread(),
+                                      (DWORD_PTR)1 << cpu_id);
+#else
+                cpu_set_t cpuset;
+                CPU_ZERO(&cpuset);
+                CPU_SET(cpu_id, &cpuset);
+                pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t),
+                                       &cpuset);
+#endif
+
                 nncase_runtime_cpu_thread_params_t thread_params{
                     .tid = tid,
                     .bid = bid,
