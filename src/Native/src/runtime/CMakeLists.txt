@@ -65,7 +65,7 @@ else()
     add_library(nncaseruntime SHARED dummy.cpp)
     target_link_libraries(nncaseruntime PRIVATE nncasebase kernels simulator compiler simulator_stackvm simulator_cpu cpu_loaders fmt::fmt)
     if (NOT (WIN32 OR APPLE))
-      target_link_libraries(nncaseruntime PRIVATE dl)
+      target_link_libraries(nncaseruntime PRIVATE dl pthread)
     endif()
     set_target_properties(nncaseruntime PROPERTIES
                                         OUTPUT_NAME "Nncase.Runtime.Native")
