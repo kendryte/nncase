@@ -25,6 +25,8 @@
 #ifdef WIN32
 #include <Windows.h>
 #elif defined(__APPLE__)
+#include <mach/mach.h>
+#include <mach/thread_policy.h>
 #else
 #include <pthread.h>
 #endif
@@ -96,6 +98,11 @@ result<void> cpu_runtime_function::run(std::span<std::byte *> params) noexcept {
                 SetThreadAffinityMask(GetCurrentThread(),
                                       (DWORD_PTR)1 << cpu_id);
 #elif defined(__APPLE__)
+                thread_affinity_policy_data_t policy = {(int)cpu_id};
+                thread_policy_set(pthread_mach_thread_np(pthread_self()),
+                                  THREAD_AFFINITY_POLICY,
+                                  (thread_policy_t)&policy,
+                                  THREAD_AFFINITY_POLICY_COUNT);
 #else
                 cpu_set_t cpuset;
                 CPU_ZERO(&cpuset);
