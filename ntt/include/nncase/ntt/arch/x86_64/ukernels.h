@@ -89,6 +89,44 @@ class u_pack<M, N, MStrides, true, float, vector<float, 8>> {
     }
 };
 
+template <class TIn, class TOut, size_t... Axes>
+class u_pack2d<TIn, TOut, float, vector<float, 8, 8>, Axes...> {
+  public:
+    constexpr void operator()(const TIn &input, TOut &output) noexcept {
+        using TElem = float;
+        using TVec = vector<float, 8, 8>;
+        constexpr auto axes = std::array<size_t, sizeof...(Axes)>{Axes...};
+        constexpr auto in_rank = TIn::rank();
+        constexpr auto out_rank = TOut::rank();
+        constexpr auto elem_rank = TVec::rank();
+        constexpr auto lanes = TVec::shape();
+        auto out_shape = output.shape();
+        constexpr auto rank = out_rank + elem_rank;
+        ranked_shape<rank> domain{};
+        for (size_t i = 0, j = 0; i < rank; i++) {
+            if (i < out_rank)
+                domain[i] = out_shape[i];
+            else
+                domain[i] = lanes[j++];
+        }
+
+        apply(domain, [&](auto index) {
+            auto out_index = slice_index<out_rank>(index);
+            auto in_index = slice_index<in_rank>(index);
+            auto elem_index = slice_index<elem_rank>(index, out_rank);
+            bool skip = false;
+            loop<axes.size()>([&](auto i) {
+                in_index[axes[i]] =
+                    in_index[axes[i]] * lanes[i] + index[out_rank + i];
+                if (in_index[axes[i]] >= input.shape()[axes[i]]) {
+                    skip = true;
+                }
+            });
+            output(out_index)(elem_index) = skip ? (TElem)0 : input(in_index);
+        });
+    }
+};
+
 // reduce
 template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
     static constexpr size_t unroll = 8;

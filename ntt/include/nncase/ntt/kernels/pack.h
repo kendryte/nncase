@@ -34,30 +34,42 @@ template <class TIn, class TOut, size_t... Axes> class pack_impl {
         constexpr auto elem_rank = TVec::rank();
         constexpr auto lanes = TVec::shape();
 
-        auto out_shape = output.shape();
-        constexpr auto rank = out_rank + elem_rank;
-        ranked_shape<rank> domain{};
-        for (size_t i = 0, j = 0; i < rank; i++) {
-            if (i < out_rank)
-                domain[i] = out_shape[i];
-            else
-                domain[i] = lanes[j++];
-        }
+        auto conti_dims_input = contiguous_dims(input.shape(), input.strides());
+        auto conti_dims_output =
+            contiguous_dims(output.shape(), output.strides());
 
-        apply(domain, [&](auto index) {
-            auto out_index = slice_index<out_rank>(index);
-            auto in_index = slice_index<in_rank>(index);
-            auto elem_index = slice_index<elem_rank>(index, out_rank);
-            bool skip = false;
-            loop<axes.size()>([&](auto i) {
-                in_index[axes[i]] =
-                    in_index[axes[i]] * lanes[i] + index[out_rank + i];
-                if (in_index[axes[i]] >= input.shape()[axes[i]]) {
-                    skip = true;
-                }
+        if (sizeof...(Axes) == 2 && axes[0] == in_rank - 2 &&
+            axes[1] == in_rank - 1 && conti_dims_input >= 2 &&
+            conti_dims_output >= 2) {
+            ntt::u_pack2d<TIn, TOut, Axes...>(input, output);
+
+        } else {
+            auto out_shape = output.shape();
+            constexpr auto rank = out_rank + elem_rank;
+            ranked_shape<rank> domain{};
+            for (size_t i = 0, j = 0; i < rank; i++) {
+                if (i < out_rank)
+                    domain[i] = out_shape[i];
+                else
+                    domain[i] = lanes[j++];
+            }
+
+            apply(domain, [&](auto index) {
+                auto out_index = slice_index<out_rank>(index);
+                auto in_index = slice_index<in_rank>(index);
+                auto elem_index = slice_index<elem_rank>(index, out_rank);
+                bool skip = false;
+                loop<axes.size()>([&](auto i) {
+                    in_index[axes[i]] =
+                        in_index[axes[i]] * lanes[i] + index[out_rank + i];
+                    if (in_index[axes[i]] >= input.shape()[axes[i]]) {
+                        skip = true;
+                    }
+                });
+                output(out_index)(elem_index) =
+                    skip ? (TElem)0 : input(in_index);
             });
-            output(out_index)(elem_index) = skip ? (TElem)0 : input(in_index);
-        });
+        }
     }
 };
 
