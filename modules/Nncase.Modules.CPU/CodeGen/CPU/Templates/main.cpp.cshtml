@@ -45,6 +45,26 @@ extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata) {
 }
 
 #ifdef NNCASE_STANDALONE
+#include <memory>
+
+static void *local_alloc(size_t bytes, size_t alignment) {
+#ifdef WIN32
+    return _aligned_malloc(bytes, alignment);
+#else
+    size_t mask = alignment - 1;
+    size_t aligned_bytes = bytes + (-bytes & mask);
+    return aligned_alloc(alignment, aligned_bytes);
+#endif
+}
+
+static void local_free(void *ptr) {
+#ifdef WIN32
+    _aligned_free(ptr);
+#else
+    free(ptr);
+#endif
+}
+
 static nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
     .acosf = acosf,
     .acoshf = acoshf,

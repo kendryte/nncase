@@ -106,6 +106,7 @@ void module_entry(nncase::ntt::runtime::module_main_reason reason,
     case nncase::ntt::runtime::module_main_reason::block_main: {
         auto block_params =
             reinterpret_cast<nncase_runtime_cpu_block_params_t *>(params);
+        cpu_mt = block_params->cpu_mt;
         tdim = block_params->tdim;
         bdim = block_params->bdim;
         break;
