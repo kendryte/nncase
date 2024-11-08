@@ -47,7 +47,7 @@ void macho_loader::load(std::span<const std::byte> macho) {
     }
 
     sym_ = reinterpret_cast<NSSymbol>(NSLookupSymbolInModule(
-        reinterpret_cast<NSModule>(mod_), "_kernel_entry"));
+        reinterpret_cast<NSModule>(mod_), "_module_entry"));
     if (sym_ == NULL) {
         throw std::runtime_error("NSLookupSymbolInModule failed");
     }

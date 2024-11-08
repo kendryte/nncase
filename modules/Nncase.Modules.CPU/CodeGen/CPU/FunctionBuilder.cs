@@ -40,8 +40,8 @@ internal class FunctionBuilder
             using (var writer = _sectionManager.GetWriter(KernelHeaderSectionName))
             {
                 var header = default(DescHeader);
-                header.DataPoolSize = function.SchedResult.DataUsage;
-                header.DataAlign = function.SchedResult.DataAlign;
+                header.ThreadDim = (ulong)TargetOptions.Hierarchies[0][^1];
+                header.BlockDim = TargetOptions.Hierarchies[0].Length == 1 ? 1 : (ulong)TargetOptions.Hierarchies[0][^2];
                 writer.Write(ref header);
             }
 
@@ -83,9 +83,9 @@ internal class FunctionBuilder
     private unsafe struct DescHeader
     {
         [MarshalAs(UnmanagedType.U8)]
-        public ulong DataPoolSize;
+        public ulong ThreadDim;
 
         [MarshalAs(UnmanagedType.U8)]
-        public ulong DataAlign;
+        public ulong BlockDim;
     }
 }

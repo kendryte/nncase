@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 #pragma once
+#include "../distributed.h"
+#include "../runtime.h"
 #include <cstdarg>
-#include <cstddef>
-#include <cstdint>
 
 extern "C" {
 struct nncase_runtime_cpu_mt_t {
@@ -39,8 +39,6 @@ struct nncase_runtime_cpu_mt_t {
     float (*tanhf)(float v);
 
     uint8_t *(*sram_address)(int bid, int tid);
-    void *(*local_alloc)(size_t bytes, size_t alignment);
-    void (*local_free)(void *ptr);
 
     void (*failfast)(const char *format, va_list args);
 
@@ -51,7 +49,37 @@ struct nncase_runtime_cpu_mt_t {
 #endif
 };
 
-#ifdef NNCASE_CPU_MODULE
-extern nncase_runtime_cpu_mt_t *g_cpu_mt;
-#endif
+struct nncase_runtime_cpu_block_params_t {
+    const nncase_runtime_cpu_mt_t *cpu_mt;
+    size_t tdim;
+    size_t bdim;
+};
+
+struct nncase_runtime_cpu_thread_params_t {
+    size_t tid;
+    size_t bid;
+    std::byte *const *inouts;
+    const std::byte *rdata;
+};
 }
+
+namespace nncase::ntt::runtime {
+extern const nncase_runtime_cpu_mt_t *cpu_mt;
+extern size_t tdim;
+extern size_t bdim;
+
+extern thread_local size_t tid;
+extern thread_local size_t bid;
+} // namespace nncase::ntt::runtime
+
+namespace nncase::ntt {
+template <> struct program_id_getter<0> {
+    static size_t id() noexcept { return runtime::tid; }
+    static size_t dim() noexcept { return runtime::tdim; }
+};
+
+template <> struct program_id_getter<1> {
+    static size_t id() noexcept { return runtime::bid; }
+    static size_t dim() noexcept { return runtime::bdim; }
+};
+} // namespace nncase::ntt

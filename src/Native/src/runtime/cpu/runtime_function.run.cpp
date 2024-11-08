@@ -13,11 +13,14 @@
  * limitations under the License.
  */
 #include "runtime_function.h"
+#include "nncase/ntt/runtime.h"
+#include "nncase/ntt/runtime/cpu_runtime.h"
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/type_serializer.h>
 #include <stdexcept>
+#include <thread>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -37,28 +40,6 @@ static void failfast(const char *foramt, va_list args) {
     char buffer[1024];
     vsprintf(buffer, foramt, args);
     throw std::runtime_error(buffer);
-}
-
-static void *local_alloc(size_t bytes, size_t alignment) {
-#ifdef WIN32
-    return _aligned_malloc(bytes, alignment);
-#else
-    size_t mask = alignment - 1;
-    size_t aligned_bytes = bytes + (-bytes & mask);
-    auto ptr = aligned_alloc(alignment, aligned_bytes);
-    if (!ptr) {
-        throw std::runtime_error("aligned alloc error!");
-    }
-    return ptr;
-#endif
-}
-
-static void local_free(void *ptr) {
-#ifdef WIN32
-    _aligned_free(ptr);
-#else
-    free(ptr);
-#endif
 }
 
 nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
@@ -81,8 +62,6 @@ nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
     .sqrtf = sqrtf,
     .tanhf = tanhf,
     .sram_address = sram_address,
-    .local_alloc = local_alloc,
-    .local_free = local_free,
     .failfast = failfast,
 
 #ifndef WIN32
@@ -94,6 +73,31 @@ nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
 } // namespace
 
 result<void> cpu_runtime_function::run(std::span<std::byte *> params) noexcept {
-    kernel_entry_(&nncase_cpu_mt_, params.data(), module().rdata().data());
+    std::vector<std::jthread> threads;
+    for (size_t bid = 0; bid < bdim_; bid++) {
+        nncase_runtime_cpu_block_params_t block_params{
+            .cpu_mt = &nncase_cpu_mt_,
+            .tdim = tdim_,
+            .bdim = bdim_,
+        };
+        module_entry_(ntt::runtime::module_main_reason::block_main,
+                      &block_params);
+        for (size_t tid = 0; tid < tdim_; tid++) {
+            threads.emplace_back([this, tid, bid, params] {
+                nncase_runtime_cpu_thread_params_t thread_params{
+                    .tid = tid,
+                    .bid = bid,
+                    .inouts = params.data(),
+                    .rdata = module().rdata().data(),
+                };
+                module_entry_(ntt::runtime::module_main_reason::thread_main,
+                              &thread_params);
+            });
+        }
+    }
+
+    for (auto &t : threads)
+        t.join();
+
     return ok();
 }

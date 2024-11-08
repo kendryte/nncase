@@ -90,7 +90,7 @@ void elf_loader::load(std::span<const std::byte> elf) {
             throw std::runtime_error("dlopen error:" + std::string(dlerror()));
         }
 
-        entry_ = dlsym(handle_, "kernel_entry");
+        entry_ = dlsym(handle_, "module_entry");
         if (!entry_) {
             throw std::runtime_error("dlsym error:" + std::string(dlerror()));
         }
