@@ -24,6 +24,7 @@
 
 #ifdef WIN32
 #include <Windows.h>
+#elif defined(__APPLE__)
 #else
 #include <pthread.h>
 #endif
@@ -94,6 +95,7 @@ result<void> cpu_runtime_function::run(std::span<std::byte *> params) noexcept {
 #if WIN32
                 SetThreadAffinityMask(GetCurrentThread(),
                                       (DWORD_PTR)1 << cpu_id);
+#elif defined(__APPLE__)
 #else
                 cpu_set_t cpuset;
                 CPU_ZERO(&cpuset);
