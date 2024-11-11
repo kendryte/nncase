@@ -83,43 +83,47 @@ nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
 
 result<void> cpu_runtime_function::run(std::span<std::byte *> params) noexcept {
     std::vector<std::thread> threads;
-    for (size_t bid = 0; bid < bdim_; bid++) {
-        nncase_runtime_cpu_block_params_t block_params{
-            .cpu_mt = &nncase_cpu_mt_,
-            .tdim = tdim_,
-            .bdim = bdim_,
-        };
-        module_entry_(ntt::runtime::module_main_reason::block_main,
-                      &block_params);
-        for (size_t tid = 0; tid < tdim_; tid++) {
-            threads.emplace_back([this, tid, bid, params] {
-                size_t cpu_id = bid * tdim_ + tid;
+    for (size_t cid = 0; cid < cdim_; cid++) {
+        for (size_t bid = 0; bid < bdim_; bid++) {
+            nncase_runtime_cpu_block_params_t block_params{
+                .cpu_mt = &nncase_cpu_mt_,
+                .tdim = tdim_,
+                .bdim = bdim_,
+                .cdim = cdim_,
+            };
+            module_entry_(ntt::runtime::module_main_reason::block_main,
+                          &block_params);
+            for (size_t tid = 0; tid < tdim_; tid++) {
+                threads.emplace_back([this, cid, tid, bid, params] {
+                    size_t cpu_id = (cid * bdim_ + bid) * tdim_ + tid;
 #if WIN32
-                SetThreadAffinityMask(GetCurrentThread(),
-                                      (DWORD_PTR)1 << cpu_id);
+                    SetThreadAffinityMask(GetCurrentThread(),
+                                          (DWORD_PTR)1 << cpu_id);
 #elif defined(__APPLE__)
-                thread_affinity_policy_data_t policy = {(int)cpu_id};
-                thread_policy_set(pthread_mach_thread_np(pthread_self()),
-                                  THREAD_AFFINITY_POLICY,
-                                  (thread_policy_t)&policy,
-                                  THREAD_AFFINITY_POLICY_COUNT);
+                    thread_affinity_policy_data_t policy = {(int)cpu_id};
+                    thread_policy_set(pthread_mach_thread_np(pthread_self()),
+                                      THREAD_AFFINITY_POLICY,
+                                      (thread_policy_t)&policy,
+                                      THREAD_AFFINITY_POLICY_COUNT);
 #else
-                cpu_set_t cpuset;
-                CPU_ZERO(&cpuset);
-                CPU_SET(cpu_id, &cpuset);
-                pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t),
-                                       &cpuset);
+                    cpu_set_t cpuset;
+                    CPU_ZERO(&cpuset);
+                    CPU_SET(cpu_id, &cpuset);
+                    pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t),
+                                           &cpuset);
 #endif
 
-                nncase_runtime_cpu_thread_params_t thread_params{
-                    .tid = tid,
-                    .bid = bid,
-                    .inouts = params.data(),
-                    .rdata = module().rdata().data(),
-                };
-                module_entry_(ntt::runtime::module_main_reason::thread_main,
-                              &thread_params);
-            });
+                    nncase_runtime_cpu_thread_params_t thread_params{
+                        .tid = tid,
+                        .bid = bid,
+                        .cid = cid,
+                        .inouts = params.data(),
+                        .rdata = module().rdata().data(),
+                    };
+                    module_entry_(ntt::runtime::module_main_reason::thread_main,
+                                  &thread_params);
+                });
+            }
         }
     }
 

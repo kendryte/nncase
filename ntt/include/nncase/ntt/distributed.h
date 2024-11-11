@@ -34,4 +34,6 @@ inline size_t tid() noexcept { return program_id<0>(); }
 inline size_t tdim() noexcept { return program_dim<0>(); }
 inline size_t bid() noexcept { return program_id<1>(); }
 inline size_t bdim() noexcept { return program_dim<1>(); }
+inline size_t cid() noexcept { return program_id<2>(); }
+inline size_t cdim() noexcept { return program_dim<2>(); }
 } // namespace nncase::ntt

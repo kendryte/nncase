@@ -29,8 +29,10 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
 
 typedef struct {
-    uint64_t tdim;
-    uint64_t bdim;
+    uint32_t tdim;
+    uint32_t bdim;
+    uint32_t cdim;
+    uint32_t reserved0;
 } desc_header;
 
 cpu_runtime_function::cpu_runtime_function(runtime_module &rt_module)
@@ -49,6 +51,7 @@ result<void> cpu_runtime_function::initialize_core(
             auto header = reader.template read<desc_header>();
             this->tdim_ = header.tdim;
             this->bdim_ = header.bdim;
+            this->cdim_ = header.cdim;
             return ok();
         }));
     auto text = module().text().subspan(context.header().entrypoint,

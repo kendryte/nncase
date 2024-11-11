@@ -53,11 +53,13 @@ struct nncase_runtime_cpu_block_params_t {
     const nncase_runtime_cpu_mt_t *cpu_mt;
     size_t tdim;
     size_t bdim;
+    size_t cdim;
 };
 
 struct nncase_runtime_cpu_thread_params_t {
     size_t tid;
     size_t bid;
+    size_t cid;
     std::byte *const *inouts;
     const std::byte *rdata;
 };
@@ -67,9 +69,11 @@ namespace nncase::ntt::runtime {
 extern const nncase_runtime_cpu_mt_t *cpu_mt;
 extern size_t tdim;
 extern size_t bdim;
+extern size_t cdim;
 
 extern thread_local size_t tid;
 extern thread_local size_t bid;
+extern thread_local size_t cid;
 } // namespace nncase::ntt::runtime
 
 namespace nncase::ntt {
@@ -81,5 +85,10 @@ template <> struct program_id_getter<0> {
 template <> struct program_id_getter<1> {
     static size_t id() noexcept { return runtime::bid; }
     static size_t dim() noexcept { return runtime::bdim; }
+};
+
+template <> struct program_id_getter<2> {
+    static size_t id() noexcept { return runtime::cid; }
+    static size_t dim() noexcept { return runtime::cdim; }
 };
 } // namespace nncase::ntt

@@ -24,9 +24,11 @@ namespace nncase::ntt::runtime {
 const nncase_runtime_cpu_mt_t *cpu_mt;
 size_t tdim;
 size_t bdim;
+size_t cdim;
 
 thread_local size_t tid;
 thread_local size_t bid;
+thread_local size_t cid;
 } // namespace nncase::ntt::runtime
 
 using namespace nncase::ntt::runtime;
@@ -109,6 +111,7 @@ void module_entry(nncase::ntt::runtime::module_main_reason reason,
         cpu_mt = block_params->cpu_mt;
         tdim = block_params->tdim;
         bdim = block_params->bdim;
+        cdim = block_params->cdim;
         break;
     }
     case nncase::ntt::runtime::module_main_reason::thread_main: {
@@ -116,6 +119,7 @@ void module_entry(nncase::ntt::runtime::module_main_reason reason,
             reinterpret_cast<nncase_runtime_cpu_thread_params_t *>(params);
         tid = thread_params->tid;
         bid = thread_params->bid;
+        cid = thread_params->cid;
         thread_main(thread_params->inouts, thread_params->rdata);
         break;
     }

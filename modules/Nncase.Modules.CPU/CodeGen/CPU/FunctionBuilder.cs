@@ -40,8 +40,9 @@ internal class FunctionBuilder
             using (var writer = _sectionManager.GetWriter(KernelHeaderSectionName))
             {
                 var header = default(DescHeader);
-                header.ThreadDim = (ulong)TargetOptions.Hierarchies[0][^1];
-                header.BlockDim = TargetOptions.Hierarchies[0].Length == 1 ? 1 : (ulong)TargetOptions.Hierarchies[0][^2];
+                header.ThreadDim = (uint)TargetOptions.Hierarchies[0][^1];
+                header.BlockDim = TargetOptions.Hierarchies[0].Length < 2 ? 1 : (uint)TargetOptions.Hierarchies[0][^2];
+                header.ChipDim = TargetOptions.Hierarchies[0].Length < 3 ? 1 : (uint)TargetOptions.Hierarchies[0][^3];
                 writer.Write(ref header);
             }
 
@@ -82,10 +83,16 @@ internal class FunctionBuilder
     [StructLayout(LayoutKind.Sequential)]
     private unsafe struct DescHeader
     {
-        [MarshalAs(UnmanagedType.U8)]
-        public ulong ThreadDim;
+        [MarshalAs(UnmanagedType.U4)]
+        public uint ThreadDim;
 
-        [MarshalAs(UnmanagedType.U8)]
-        public ulong BlockDim;
+        [MarshalAs(UnmanagedType.U4)]
+        public uint BlockDim;
+
+        [MarshalAs(UnmanagedType.U4)]
+        public uint ChipDim;
+
+        [MarshalAs(UnmanagedType.U4)]
+        public uint Reserved0;
     }
 }
