@@ -93,7 +93,6 @@ template <class TIn, class TOut, size_t... Axes>
 class u_pack2d<TIn, TOut, float, vector<float, 8, 8>, Axes...> {
   public:
     constexpr void operator()(const TIn &input, TOut &output) noexcept {
-        using TElem = float;
         using TVec = vector<float, 8, 8>;
         constexpr auto axes = std::array<size_t, sizeof...(Axes)>{Axes...};
         constexpr auto in_rank = TIn::rank();
