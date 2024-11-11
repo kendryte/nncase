@@ -16,6 +16,12 @@
 #include <cstddef>
 #include <cstdint>
 
+#if defined(_MSC_VER)
+#define NTT_RUNTIME_API __declspec(dllexport)
+#else
+#define NTT_RUNTIME_API __attribute__((visibility("default")))
+#endif
+
 namespace nncase::ntt::runtime {
 enum class module_main_reason {
     block_main,
@@ -26,7 +32,7 @@ enum class module_main_reason {
 extern "C" {
 extern void thread_main(std::byte *const *inouts, const std::byte *rdata);
 
-extern void module_entry(nncase::ntt::runtime::module_main_reason reason,
-                         void *params);
+extern NTT_RUNTIME_API void
+module_entry(nncase::ntt::runtime::module_main_reason reason, void *params);
 using module_entry_t = decltype(module_entry) *;
 }

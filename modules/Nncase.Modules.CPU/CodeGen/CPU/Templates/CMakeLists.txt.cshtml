@@ -12,7 +12,7 @@ endif()
 
 include(@Html.Raw(Model.CMakePath))
 
-if(NOT MSVC AND NOT APPLE AND BUILD_SHARED)
+if(NOT APPLE AND BUILD_SHARED)
     add_library(nncase_cpu_module SHARED main.cpp)
     set_target_properties(nncase_cpu_module PROPERTIES PREFIX "" SUFFIX "")
     set_target_properties(nncase_cpu_runtime PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -25,8 +25,8 @@ target_compile_definitions(nncase_cpu_module PUBLIC -DNNCASE_CPU_MODULE=1)
 
 if (MSVC)
     set_target_properties(nncase_cpu_module PROPERTIES LINK_FLAGS /SUBSYSTEM:CONSOLE)
-    target_link_options(nncase_cpu_module PRIVATE /ENTRY:module_entry /NODEFAULTLIB)
-    target_link_libraries(nncase_cpu_module PRIVATE libvcruntime msvcrt)
+    target_link_options(nncase_cpu_module PRIVATE /NODEFAULTLIB)
+    target_link_libraries(nncase_cpu_module PRIVATE libvcruntime msvcrt ucrt "libcpmt$<$<CONFIG:Debug>:d>")
     set_property(TARGET nncase_cpu_module PROPERTY
         MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 else()

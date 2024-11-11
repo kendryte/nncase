@@ -18,7 +18,7 @@
 
 using namespace nncase::runtime;
 
-#ifndef NDEBUG
+#if 1
 #define THROW_WIN32_IF_NOT(x)                                                  \
     if (!(x)) {                                                                \
         throw std::system_error(GetLastError(), std::system_category());       \
@@ -41,7 +41,7 @@ static int ProtectionFlags[2][2][2] = {
 
 pe_loader::~pe_loader() {
     if (image_) {
-#ifndef NDEBUG
+#if 1
         FreeModule((HMODULE)image_);
 #else
         VirtualFree(image_, 0, MEM_RELEASE);
@@ -50,7 +50,7 @@ pe_loader::~pe_loader() {
 }
 
 void pe_loader::load(std::span<const std::byte> pe) {
-#ifndef NDEBUG
+#if 1
     wchar_t temp_path[MAX_PATH];
     wchar_t temp_filename[MAX_PATH];
 
@@ -71,9 +71,10 @@ void pe_loader::load(std::span<const std::byte> pe) {
         FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, nullptr);
     THROW_WIN32_IF_NOT(func_file != INVALID_HANDLE_VALUE);
 
-    auto func_mod = LoadLibraryW(temp_filename);
-    THROW_WIN32_IF_NOT(func_mod);
-    image_ = (std::byte *)func_mod;
+    image_ = LoadLibraryW(temp_filename);
+    THROW_WIN32_IF_NOT(image_);
+    entry_ = (void *)GetProcAddress((HMODULE)image_, "module_entry");
+    THROW_WIN32_IF_NOT(entry_);
 #else
     auto dos_header = reinterpret_cast<const IMAGE_DOS_HEADER *>(pe.data());
     auto nt_header = reinterpret_cast<const IMAGE_NT_HEADERS *>(
@@ -134,8 +135,12 @@ void pe_loader::load(std::span<const std::byte> pe) {
 }
 
 void *pe_loader::entry() const noexcept {
+#if 1
+    return entry_;
+#else
     auto dos_header = reinterpret_cast<const IMAGE_DOS_HEADER *>(image_);
     auto nt_header = reinterpret_cast<const IMAGE_NT_HEADERS *>(
         image_ + dos_header->e_lfanew);
     return image_ + nt_header->OptionalHeader.AddressOfEntryPoint;
+#endif
 }
