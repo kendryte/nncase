@@ -98,31 +98,22 @@ class u_pack2d<TIn, TOut, float, vector<float, 8, 8>, Axes...> {
         constexpr auto axes = std::array<size_t, sizeof...(Axes)>{Axes...};
         constexpr auto in_rank = TIn::rank();
         constexpr auto out_rank = TOut::rank();
-        constexpr auto elem_rank = TVec::rank();
         constexpr auto lanes = TVec::shape();
         auto out_shape = output.shape();
-        constexpr auto rank = out_rank + elem_rank;
-        ranked_shape<rank> domain{};
-        for (size_t i = 0, j = 0; i < rank; i++) {
-            if (i < out_rank)
-                domain[i] = out_shape[i];
-            else
-                domain[i] = lanes[j++];
-        }
 
-        apply(domain, [&](auto index) {
+        apply(out_shape, [&](auto index) {
             auto out_index = slice_index<out_rank>(index);
             auto in_index = slice_index<in_rank>(index);
-            auto elem_index = slice_index<elem_rank>(index, out_rank);
-            bool skip = false;
             loop<axes.size()>([&](auto i) {
-                in_index[axes[i]] =
-                    in_index[axes[i]] * lanes[i] + index[out_rank + i];
-                if (in_index[axes[i]] >= input.shape()[axes[i]]) {
-                    skip = true;
-                }
+                in_index[axes[i]] = in_index[axes[i]] * lanes[i];
             });
-            output(out_index)(elem_index) = skip ? (TElem)0 : input(in_index);
+            auto in_ptr =
+                reinterpret_cast<const vector<float, 8> *>(&input(in_index));
+            auto out_ptr =
+                reinterpret_cast<vector<float, 8> *>(&output(out_index));
+            for (size_t i = 0; i < lanes[0]; i++) {
+                out_ptr[i] = in_ptr[i * out_shape[out_rank - 1]];
+            }
         });
     }
 };
