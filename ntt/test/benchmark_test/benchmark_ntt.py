@@ -271,9 +271,9 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                          'pack2d_dim0_contiguous': '1.5',
                                          'pack2d_dim1_contiguous': '1.5',
                                          },
-                              'pack': {'pack1d_dim0': '0',
-                                       'pack1d_dim1': '0',
-                                       'pack2d': '0',
+                              'pack': {'pack1d_dim0': '4.7',  # 3.2e9/(100.738*1024*1024*1024*8/(128×8+256))
+                                       'pack1d_dim1': '1.5',
+                                       'pack2d': '1.5',
                                        },
                               'unpack': {'N': '0',
                                          'C': '0',
