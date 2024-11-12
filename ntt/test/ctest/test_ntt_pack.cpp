@@ -27,8 +27,8 @@ TEST(GatherTestFloat, pack1d_dim0) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t M = 64;
     constexpr size_t N = 64;
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    ntt::tensor<float, ntt::fixed_shape<M, N>> tc;
+    alignas(32) ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
+    alignas(32) ntt::tensor<float, ntt::fixed_shape<M, N>> tc;
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>>
         pa;
@@ -42,8 +42,8 @@ TEST(GatherTestFloat, pack1d_dim1) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t M = 64;
     constexpr size_t N = 64;
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    ntt::tensor<float, ntt::fixed_shape<M, N>> tc;
+    alignas(32) ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
+    alignas(32) ntt::tensor<float, ntt::fixed_shape<M, N>> tc;
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>>
         pa;
@@ -55,8 +55,8 @@ TEST(GatherTestFloat, pack1d_dim1) {
 TEST(GatherTestFloat, pack2d) {
 
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    constexpr size_t M = 64;
-    constexpr size_t N = 64;
+    alignas(32) constexpr size_t M = 64;
+    alignas(32) constexpr size_t N = 64;
     ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
     ntt::tensor<float, ntt::fixed_shape<M, N>> tc;
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);

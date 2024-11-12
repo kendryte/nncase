@@ -81,14 +81,14 @@ class u_pack<M, N, MStrides, true, float, vector<float, 8>> {
             auto dst = reinterpret_cast<float *>(output);
             for (size_t j = 0; j < N / M; j++) {
 
-                __m256 row0 = _mm256_load_ps(&src[0 * MStrides]);
-                __m256 row1 = _mm256_load_ps(&src[1 * MStrides]);
-                __m256 row2 = _mm256_load_ps(&src[2 * MStrides]);
-                __m256 row3 = _mm256_load_ps(&src[3 * MStrides]);
-                __m256 row4 = _mm256_load_ps(&src[4 * MStrides]);
-                __m256 row5 = _mm256_load_ps(&src[5 * MStrides]);
-                __m256 row6 = _mm256_load_ps(&src[6 * MStrides]);
-                __m256 row7 = _mm256_load_ps(&src[7 * MStrides]);
+                __m256 row0 = _mm256_loadu_ps(&src[0 * MStrides]);
+                __m256 row1 = _mm256_loadu_ps(&src[1 * MStrides]);
+                __m256 row2 = _mm256_loadu_ps(&src[2 * MStrides]);
+                __m256 row3 = _mm256_loadu_ps(&src[3 * MStrides]);
+                __m256 row4 = _mm256_loadu_ps(&src[4 * MStrides]);
+                __m256 row5 = _mm256_loadu_ps(&src[5 * MStrides]);
+                __m256 row6 = _mm256_loadu_ps(&src[6 * MStrides]);
+                __m256 row7 = _mm256_loadu_ps(&src[7 * MStrides]);
 
                 __m256 t0 = _mm256_unpacklo_ps(row0, row1);
                 __m256 t1 = _mm256_unpackhi_ps(row0, row1);
@@ -117,14 +117,14 @@ class u_pack<M, N, MStrides, true, float, vector<float, 8>> {
                 row6 = _mm256_permute2f128_ps(u2, u6, 0x31);
                 row7 = _mm256_permute2f128_ps(u3, u7, 0x31);
 
-                _mm256_store_ps(&dst[0 * 8], row0);
-                _mm256_store_ps(&dst[1 * 8], row1);
-                _mm256_store_ps(&dst[2 * 8], row2);
-                _mm256_store_ps(&dst[3 * 8], row3);
-                _mm256_store_ps(&dst[4 * 8], row4);
-                _mm256_store_ps(&dst[5 * 8], row5);
-                _mm256_store_ps(&dst[6 * 8], row6);
-                _mm256_store_ps(&dst[7 * 8], row7);
+                _mm256_storeu_ps(&dst[0 * 8], row0);
+                _mm256_storeu_ps(&dst[1 * 8], row1);
+                _mm256_storeu_ps(&dst[2 * 8], row2);
+                _mm256_storeu_ps(&dst[3 * 8], row3);
+                _mm256_storeu_ps(&dst[4 * 8], row4);
+                _mm256_storeu_ps(&dst[5 * 8], row5);
+                _mm256_storeu_ps(&dst[6 * 8], row6);
+                _mm256_storeu_ps(&dst[7 * 8], row7);
                 src += 8;
                 dst += 64;
             }

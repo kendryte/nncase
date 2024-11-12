@@ -90,8 +90,8 @@ template <size_t... PackDims> void benchmark_ntt_pack() {
     using tensor_b_type =
         ntt::tensor<ElementType, ntt::fixed_shape<M / P0, N / P1>>;
 
-    tensor_a_type ta;
-    tensor_b_type tb;
+    alignas(32) tensor_a_type ta;
+    alignas(32) tensor_b_type tb;
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
 
     // warm up

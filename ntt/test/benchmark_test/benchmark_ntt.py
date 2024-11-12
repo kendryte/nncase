@@ -271,7 +271,7 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                          'pack2d_dim0_contiguous': '1.5',
                                          'pack2d_dim1_contiguous': '1.5',
                                          },
-                              'pack': {'pack1d_dim0': '4.7',  # 3.2e9/(100.738*1024*1024*1024*8/(128×8+256))
+                              'pack': {'pack1d_dim0': '2.0',  # ./nanoBench.sh -cpu 0 -min -asm_init "xor rax, rax;" -asm "vmovaps ymm0,YMMWORD PTR [r14+rax*1];vunpcklps ymm4,ymm0,ymm2;vshufps ymm0,ymm6,ymm0,0xee;vperm2f128 ymm0,ymm0,ymm1,0x31;vmovaps YMMWORD PTR [rsi+rax*1],ymm0"
                                        'pack1d_dim1': '1.5',
                                        'pack2d': '1.5',
                                        },
