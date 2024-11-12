@@ -73,16 +73,73 @@ class u_pack<M, N, MStrides, true, float, vector<float, 8>> {
     constexpr void operator()(const float *input,
                               vector<float, 8> *output) noexcept {
 
-        for (size_t j = 0; j < N; j++) {
-            for (size_t i = 0; i < M; i++) {
-                output[j](i) = input[i * MStrides + j];
-            }
-        }
+        constexpr bool speedup = M == 8 && N % 8 == 0 && MStrides != 1;
 
-        if constexpr (M < 8) {
+        if constexpr (speedup) {
+
+            auto src = reinterpret_cast<const float *>(input);
+            auto dst = reinterpret_cast<float *>(output);
+            for (size_t j = 0; j < N / M; j++) {
+
+                __m256 row0 = _mm256_loadu_ps(&src[0 * MStrides]);
+                __m256 row1 = _mm256_loadu_ps(&src[1 * MStrides]);
+                __m256 row2 = _mm256_loadu_ps(&src[2 * MStrides]);
+                __m256 row3 = _mm256_loadu_ps(&src[3 * MStrides]);
+                __m256 row4 = _mm256_loadu_ps(&src[4 * MStrides]);
+                __m256 row5 = _mm256_loadu_ps(&src[5 * MStrides]);
+                __m256 row6 = _mm256_loadu_ps(&src[6 * MStrides]);
+                __m256 row7 = _mm256_loadu_ps(&src[7 * MStrides]);
+
+                __m256 t0 = _mm256_unpacklo_ps(row0, row1);
+                __m256 t1 = _mm256_unpackhi_ps(row0, row1);
+                __m256 t2 = _mm256_unpacklo_ps(row2, row3);
+                __m256 t3 = _mm256_unpackhi_ps(row2, row3);
+                __m256 t4 = _mm256_unpacklo_ps(row4, row5);
+                __m256 t5 = _mm256_unpackhi_ps(row4, row5);
+                __m256 t6 = _mm256_unpacklo_ps(row6, row7);
+                __m256 t7 = _mm256_unpackhi_ps(row6, row7);
+
+                __m256 u0 = _mm256_shuffle_ps(t0, t2, 0x44); // 0x44 -> 01000100
+                __m256 u1 = _mm256_shuffle_ps(t0, t2, 0xEE); // 0xEE -> 11101110
+                __m256 u2 = _mm256_shuffle_ps(t1, t3, 0x44);
+                __m256 u3 = _mm256_shuffle_ps(t1, t3, 0xEE);
+                __m256 u4 = _mm256_shuffle_ps(t4, t6, 0x44);
+                __m256 u5 = _mm256_shuffle_ps(t4, t6, 0xEE);
+                __m256 u6 = _mm256_shuffle_ps(t5, t7, 0x44);
+                __m256 u7 = _mm256_shuffle_ps(t5, t7, 0xEE);
+
+                row0 = _mm256_permute2f128_ps(u0, u4, 0x20); // 0x20 -> 00100000
+                row1 = _mm256_permute2f128_ps(u1, u5, 0x20);
+                row2 = _mm256_permute2f128_ps(u2, u6, 0x20);
+                row3 = _mm256_permute2f128_ps(u3, u7, 0x20);
+                row4 = _mm256_permute2f128_ps(u0, u4, 0x31); // 0x31 -> 00110001
+                row5 = _mm256_permute2f128_ps(u1, u5, 0x31);
+                row6 = _mm256_permute2f128_ps(u2, u6, 0x31);
+                row7 = _mm256_permute2f128_ps(u3, u7, 0x31);
+
+                _mm256_storeu_ps(&dst[0 * 8], row0);
+                _mm256_storeu_ps(&dst[1 * 8], row1);
+                _mm256_storeu_ps(&dst[2 * 8], row2);
+                _mm256_storeu_ps(&dst[3 * 8], row3);
+                _mm256_storeu_ps(&dst[4 * 8], row4);
+                _mm256_storeu_ps(&dst[5 * 8], row5);
+                _mm256_storeu_ps(&dst[6 * 8], row6);
+                _mm256_storeu_ps(&dst[7 * 8], row7);
+                src += 8;
+                dst += 64;
+            }
+        } else {
             for (size_t j = 0; j < N; j++) {
-                for (size_t i = M; i < 8; i++) {
-                    output[j](i) = 0.f;
+                for (size_t i = 0; i < M; i++) {
+                    output[j](i) = input[i * MStrides + j];
+                }
+            }
+
+            if constexpr (M < 8) {
+                for (size_t j = 0; j < N; j++) {
+                    for (size_t i = M; i < 8; i++) {
+                        output[j](i) = 0.f;
+                    }
                 }
             }
         }
