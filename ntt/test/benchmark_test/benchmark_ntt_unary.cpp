@@ -24,8 +24,8 @@ void benchmark_ntt_unary(std::string op_name, T low, T high) {
     constexpr size_t size1 = 300;
     constexpr size_t size2 = 600;
 #elif __x86_64__
-    constexpr size_t size1 = 2000;
-    constexpr size_t size2 = 2000;
+    constexpr size_t size1 = 1000;
+    constexpr size_t size2 = 1000;
 #else
     constexpr size_t size1 = 2000;
     constexpr size_t size2 = 2000;
