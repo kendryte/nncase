@@ -13,6 +13,7 @@
  * limintt_inputtions under the License.
  */
 #include "ntt_test.h"
+#include <algorithm>
 #include <cstddef>
 #include <iomanip>
 #include <iostream>
@@ -20,20 +21,34 @@
 #include <nncase/ntt/ntt.h>
 #include <stdexcept>
 #include <string>
-#include <algorithm>
 
 using namespace nncase;
 
-template <typename ElementType, size_t N, size_t C, size_t H, size_t W, size_t... unpack_dims>
+template <typename ElementType, size_t N, size_t C, size_t H, size_t W,
+          size_t... unpack_dims>
 void benchmark_ntt_unpack(const std::string &mode, const size_t run_size) {
     constexpr size_t axes[] = {unpack_dims...};
     constexpr size_t axes_size = sizeof...(unpack_dims);
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    constexpr size_t P0 = std::any_of(axes, axes + axes_size, [](size_t i) {return i == 0;}) ? P : 1;
-    constexpr size_t P1 = std::any_of(axes, axes + axes_size, [](size_t i) {return i == 1;}) ? P : 1;
-    constexpr size_t P2 = std::any_of(axes, axes + axes_size, [](size_t i) {return i == 2;}) ? P : 1;
-    constexpr size_t P3 = std::any_of(axes, axes + axes_size, [](size_t i) {return i == 3;}) ? P : 1;
-    using tensor_type1 = ntt::tensor<ElementType, ntt::fixed_shape<N / P0, C / P1, H / P2, W / P3>>;
+    constexpr size_t P0 =
+        std::any_of(axes, axes + axes_size, [](size_t i) { return i == 0; })
+            ? P
+            : 1;
+    constexpr size_t P1 =
+        std::any_of(axes, axes + axes_size, [](size_t i) { return i == 1; })
+            ? P
+            : 1;
+    constexpr size_t P2 =
+        std::any_of(axes, axes + axes_size, [](size_t i) { return i == 2; })
+            ? P
+            : 1;
+    constexpr size_t P3 =
+        std::any_of(axes, axes + axes_size, [](size_t i) { return i == 3; })
+            ? P
+            : 1;
+    using tensor_type1 =
+        ntt::tensor<ElementType,
+                    ntt::fixed_shape<N / P0, C / P1, H / P2, W / P3>>;
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
 
     tensor_type1 ntt_input;
@@ -42,8 +57,7 @@ void benchmark_ntt_unpack(const std::string &mode, const size_t run_size) {
 
     // warm up
     constexpr size_t warmup_size = 10;
-    for (size_t i = 0; i < warmup_size; i++)
-    {
+    for (size_t i = 0; i < warmup_size; i++) {
         ntt::unpack<unpack_dims...>(ntt_input, ntt_output);
         asm volatile("" ::"g"(ntt_output));
     }
@@ -57,8 +71,8 @@ void benchmark_ntt_unpack(const std::string &mode, const size_t run_size) {
     auto t2 = NttTest::get_cpu_cycle();
 
     auto element_size = tensor_type1::size() * ElementType::size() / P;
-    std::cout << __FUNCTION__ << "_" << mode << " took "
-              << std::setprecision(1) << std::fixed
+    std::cout << __FUNCTION__ << "_" << mode << " took " << std::setprecision(1)
+              << std::fixed
               << static_cast<float>(t2 - t1) / run_size / element_size
               << " cycles" << std::endl;
 }
@@ -73,24 +87,33 @@ int main(int argc, char *argv[]) {
     benchmark_ntt_unpack<ntt::vector<float, P>, 3, 16 * P, 4, 4, 1>("C", 300);
     benchmark_ntt_unpack<ntt::vector<float, P>, 3, 4, 16 * P, 4, 2>("H", 300);
     benchmark_ntt_unpack<ntt::vector<float, P>, 3, 4, 4, 16 * P, 3>("W", 300);
-    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4 * P, 3 * P, 4, 4, 0, 1>("NC", 300);
-    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4, 3 * P, 4 * P, 4, 1, 2>("CH", 300);
-    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4, 4, 3 * P, 4 * P, 2, 3>("HW", 300);
-#elif __x86_64_
+    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4 * P, 3 * P, 4, 4, 0, 1>(
+        "NC", 300);
+    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4, 3 * P, 4 * P, 4, 1, 2>(
+        "CH", 300);
+    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4, 4, 3 * P, 4 * P, 2, 3>(
+        "HW", 300);
+#elif __x86_64__
     benchmark_ntt_unpack<ntt::vector<float, P>, 16 * P, 3, 4, 4, 0>("N", 2000);
     benchmark_ntt_unpack<ntt::vector<float, P>, 3, 16 * P, 4, 4, 1>("C", 2000);
     benchmark_ntt_unpack<ntt::vector<float, P>, 3, 4, 16 * P, 4, 2>("H", 2000);
     benchmark_ntt_unpack<ntt::vector<float, P>, 3, 4, 4, 16 * P, 3>("W", 2000);
-    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4 * P, 3 * P, 4, 4, 0, 1>("NC", 2000);
-    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4, 3 * P, 4 * P, 4, 1, 2>("CH", 2000);
-    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4, 4, 3 * P, 4 * P, 2, 3>("HW", 2000);
+    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4 * P, 3 * P, 4, 4, 0, 1>(
+        "NC", 2000);
+    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4, 3 * P, 4 * P, 4, 1, 2>(
+        "CH", 2000);
+    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4, 4, 3 * P, 4 * P, 2, 3>(
+        "HW", 2000);
 #else
     benchmark_ntt_unpack<ntt::vector<float, P>, 16 * P, 3, 4, 4, 0>("N", 300);
     benchmark_ntt_unpack<ntt::vector<float, P>, 3, 16 * P, 4, 4, 1>("C", 300);
     benchmark_ntt_unpack<ntt::vector<float, P>, 3, 4, 16 * P, 4, 2>("H", 300);
     benchmark_ntt_unpack<ntt::vector<float, P>, 3, 4, 4, 16 * P, 3>("W", 300);
-    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4 * P, 3 * P, 4, 4, 0, 1>("NC", 300);
-    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4, 3 * P, 4 * P, 4, 1, 2>("CH", 300);
-    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4, 4, 3 * P, 4 * P, 2, 3>("HW", 300);
+    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4 * P, 3 * P, 4, 4, 0, 1>(
+        "NC", 300);
+    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4, 3 * P, 4 * P, 4, 1, 2>(
+        "CH", 300);
+    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4, 4, 3 * P, 4 * P, 2, 3>(
+        "HW", 300);
 #endif
 }

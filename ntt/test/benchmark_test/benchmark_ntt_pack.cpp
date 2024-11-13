@@ -92,16 +92,16 @@ int main(int argc, char *argv[]) {
                                                                            300);
     benchmark_ntt_pack<ntt::vector<float, P, P>, 4, 4, 3 * P, 4 * P, 2, 3>("HW",
                                                                            300);
-#elif __x86_64_
-    benchmark_ntt_pack<ntt::vector<float, P>, 16 * P, 3, 4, 4, 0>("N", 2000);
-    benchmark_ntt_pack<ntt::vector<float, P>, 3, 16 * P, 4, 4, 1>("C", 2000);
-    benchmark_ntt_pack<ntt::vector<float, P>, 3, 4, 16 * P, 4, 2>("H", 2000);
-    benchmark_ntt_pack<ntt::vector<float, P>, 3, 4, 4, 16 * P, 3>("W", 2000);
-    benchmark_ntt_pack<ntt::vector<float, P, P>, 4 * P, 3 * P, 4, 4, 0, 1>(
+#elif __x86_64__
+    benchmark_ntt_pack<ntt::vector<float, P>, P * 8, 2, 2, 2, 0>("N", 2000);
+    benchmark_ntt_pack<ntt::vector<float, P>, 2, 8 * P, 2, 2, 1>("C", 2000);
+    benchmark_ntt_pack<ntt::vector<float, P>, 2, 2, 8 * P, 2, 2>("H", 2000);
+    benchmark_ntt_pack<ntt::vector<float, P>, 2, 2, 2, 8 * P, 3>("W", 2000);
+    benchmark_ntt_pack<ntt::vector<float, P, P>, 8 * P, 8 * P, 2, 2, 0, 1>(
         "NC", 2000);
-    benchmark_ntt_pack<ntt::vector<float, P, P>, 4, 3 * P, 4 * P, 4, 1, 2>(
+    benchmark_ntt_pack<ntt::vector<float, P, P>, 2, 8 * P, 8 * P, 2, 1, 2>(
         "CH", 2000);
-    benchmark_ntt_pack<ntt::vector<float, P, P>, 4, 4, 3 * P, 4 * P, 2, 3>(
+    benchmark_ntt_pack<ntt::vector<float, P, P>, 2, 2, 4 * P, 4 * P, 2, 3>(
         "HW", 2000);
 #else
     benchmark_ntt_pack<ntt::vector<float, P>, 16 * P, 3, 4, 4, 0>("N", 300);
