@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
         "NC", 2000);
     benchmark_ntt_pack<ntt::vector<float, P, P>, 2, 8 * P, 8 * P, 2, 1, 2>(
         "CH", 2000);
-    benchmark_ntt_pack<ntt::vector<float, P, P>, 2, 2, 4 * P, 4 * P, 2, 3>(
+    benchmark_ntt_pack<ntt::vector<float, P, P>, 4, 4, 8 * P, 8 * P, 2, 3>(
         "HW", 2000);
 #else
     benchmark_ntt_pack<ntt::vector<float, P>, 16 * P, 3, 4, 4, 0>("N", 300);

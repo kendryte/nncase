@@ -18,7 +18,6 @@
 #include "nncase/ntt/shape.h"
 #include "nncase/ntt/tensor_traits.h"
 #include <assert.h>
-#include <iostream>
 #include <ortki/c_api.h>
 #include <string>
 
