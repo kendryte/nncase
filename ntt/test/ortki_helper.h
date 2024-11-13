@@ -111,7 +111,13 @@ template <ntt::IsTensor TTensor>
 void ort2ntt(ortki::OrtKITensor *ort_tensor, TTensor &ntt_tensor) {
     size_t size = 0;
     void *ort_ptr = tensor_buffer(ort_tensor, &size);
-    assert(tensor_length(ort_tensor) == ntt_tensor.shape().length());
+    using element_type = ntt::element_or_scalar_t<TTensor>;
+    if constexpr (ntt::IsVector<element_type>) {
+        assert(tensor_length(ort_tensor) ==
+               ntt_tensor.shape().length() * element_type::size());
+    } else {
+        assert(tensor_length(ort_tensor) == ntt_tensor.shape().length());
+    }
     if constexpr (ntt::IsVector<TTensor>) {
         memcpy(&ntt_tensor.buffer(), ort_ptr, size);
     } else {
