@@ -39,15 +39,18 @@ public class CustomOpSubstitutePass : DataflowPass
         {
             CustomOpScheme = null!;
         }
+
+        if (CustomOpScheme is not null)
+        {
+            Add<ToCustomUnary>(CustomOpScheme);
+            Add<ToCustomMatmul>(CustomOpScheme);
+        }
     }
 
-    public CustomOpScheme CustomOpScheme { get; }
+    public CustomOpScheme? CustomOpScheme { get; }
 
     protected override Task<BaseFunction> RunCoreAsync(BaseFunction function, RunPassContext options)
     {
-        Add<ToCustomUnary>(CustomOpScheme);
-        Add<ToCustomMatmul>(CustomOpScheme);
-
         return Task.FromResult((BaseFunction)CompilerServices.Rewrite(function, Rules, options));
     }
 }
