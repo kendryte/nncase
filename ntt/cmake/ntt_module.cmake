@@ -25,9 +25,10 @@ if (MSVC)
         MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     set_target_properties(nncase_ntt_module PROPERTIES LINK_FLAGS /SUBSYSTEM:CONSOLE)
     target_link_options(nncase_ntt_module PRIVATE /NODEFAULTLIB)
-    target_link_libraries(nncase_ntt_module PRIVATE libvcruntime msvcrt ucrt "libcpmt$<$<CONFIG:Debug>:d>")
+    target_link_libraries(nncase_ntt_module PRIVATE "libvcruntime$<$<CONFIG:Debug>:d>"
+                                                    "msvcrt$<$<CONFIG:Debug>:d>"
+                                                    "ucrt$<$<CONFIG:Debug>:d>"
+                                                    "libcpmt$<$<CONFIG:Debug>:d>")
 elseif(APPLE)
     target_link_options(nncase_ntt_module PRIVATE -ld_classic -lc)
-else()
-    target_link_options(nncase_ntt_module PRIVATE -static)
 endif()

@@ -72,6 +72,6 @@ template <> struct program_id_getter<2> {
 };
 } // namespace nncase::ntt
 
-extern "C" void
+extern "C" NTT_RUNTIME_API void
 block_entry(const nncase::ntt::runtime::cpu_block_entry_params_t &params);
 using block_entry_t = decltype(block_entry) *;
