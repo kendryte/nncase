@@ -73,7 +73,7 @@ void pe_loader::load(std::span<const std::byte> pe) {
 
     image_ = LoadLibraryW(temp_filename);
     THROW_WIN32_IF_NOT(image_);
-    entry_ = (void *)GetProcAddress((HMODULE)image_, "module_entry");
+    entry_ = (void *)GetProcAddress((HMODULE)image_, "block_entry");
     THROW_WIN32_IF_NOT(entry_);
 #else
     auto dos_header = reinterpret_cast<const IMAGE_DOS_HEADER *>(pe.data());

@@ -21,114 +21,40 @@
 #include <nncase/runtime/type_serializer.h>
 #include <stdexcept>
 #include <thread>
-
-#ifdef WIN32
-#include <Windows.h>
-#elif defined(__APPLE__)
-#include <mach/mach.h>
-#include <mach/thread_policy.h>
-#else
-#include <pthread.h>
-#endif
+#include <vector>
 
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
-
-namespace {
-#define SRAM_SIZE_PER_BLOCK (1024 * 1024 * 4)
-#define SRAM_SIZE_PER_THREAD (SRAM_SIZE_PER_BLOCK)
-
-static uint8_t _sram[1][SRAM_SIZE_PER_BLOCK];
-static uint8_t *_block_sram_ptr[] = {_sram[0]};
-static uint8_t *sram_address(int bid, int tid) {
-    return _block_sram_ptr[bid] + (SRAM_SIZE_PER_BLOCK * tid);
-}
-
-static void failfast(const char *foramt, va_list args) {
-    char buffer[1024];
-    vsprintf(buffer, foramt, args);
-    throw std::runtime_error(buffer);
-}
-
-nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
-    .acosf = acosf,
-    .acoshf = acoshf,
-    .asinf = asinf,
-    .asinhf = asinhf,
-    .copysignf = copysignf,
-    .cosf = cosf,
-    .coshf = coshf,
-    .erff = erff,
-    .expf = expf,
-    .fmodf = fmodf,
-    .logf = logf,
-    .nearbyintf = nearbyintf,
-    .powf = powf,
-    .roundf = roundf,
-    .sinf = sinf,
-    .sinhf = sinhf,
-    .sqrtf = sqrtf,
-    .tanhf = tanhf,
-    .sram_address = sram_address,
-    .failfast = failfast,
-
-#ifndef WIN32
-    .memcpy = memcpy,
-    .memmove = memmove,
-    .memset = memset,
-#endif
-};
-} // namespace
+using namespace nncase::ntt::runtime;
 
 result<void> cpu_runtime_function::run(std::span<std::byte *> params) noexcept {
-    std::vector<std::thread> threads;
+    std::vector<std::thread> blocks;
     for (size_t cid = 0; cid < cdim_; cid++) {
         for (size_t bid = 0; bid < bdim_; bid++) {
-            nncase_runtime_cpu_block_params_t block_params{
-                .cpu_mt = &nncase_cpu_mt_,
-                .tdim = tdim_,
-                .bdim = bdim_,
-                .cdim = cdim_,
-            };
-            module_entry_(ntt::runtime::module_main_reason::block_main,
-                          &block_params);
-            for (size_t tid = 0; tid < tdim_; tid++) {
-                threads.emplace_back([this, cid, tid, bid, params] {
-                    size_t cpu_id = (cid * bdim_ + bid) * tdim_ + tid;
-#if WIN32
-                    SetThreadAffinityMask(GetCurrentThread(),
-                                          (DWORD_PTR)1 << cpu_id);
-#elif defined(__APPLE__)
-                    thread_affinity_policy_data_t policy = {(int)cpu_id};
-                    thread_policy_set(pthread_mach_thread_np(pthread_self()),
-                                      THREAD_AFFINITY_POLICY,
-                                      (thread_policy_t)&policy,
-                                      THREAD_AFFINITY_POLICY_COUNT);
-#else
-                    cpu_set_t cpuset;
-                    CPU_ZERO(&cpuset);
-                    CPU_SET(cpu_id, &cpuset);
-                    pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t),
-                                           &cpuset);
+            blocks.emplace_back([cid, bid, params, this] {
+                cpu_block_entry_params_t block_entry_params{
+                    .tdim = tdim_,
+                    .bdim = bdim_,
+                    .cdim = cdim_,
+                    .bid = bid,
+                    .cid = cid,
+                    .cpu_id_offset = (cid * bdim_ + bid) * tdim_,
+                    .inouts = params.data(),
+                    .rdata = module().rdata().data(),
+#ifdef __APPLE__
+                    .cpu_thread_context_key = module().cpu_thread_context_key(),
 #endif
+                };
 
-                    nncase_runtime_cpu_thread_params_t thread_params{
-                        .tid = tid,
-                        .bid = bid,
-                        .cid = cid,
-                        .inouts = params.data(),
-                        .rdata = module().rdata().data(),
-                    };
-                    module_entry_(ntt::runtime::module_main_reason::thread_main,
-                                  &thread_params);
-                });
-            }
+                block_entry_(block_entry_params);
+            });
         }
     }
 
-    for (auto &t : threads)
-        t.join();
+    for (auto &block : blocks) {
+        block.join();
+    }
 
     return ok();
 }

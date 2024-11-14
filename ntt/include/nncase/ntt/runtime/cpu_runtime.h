@@ -17,78 +17,61 @@
 #include "../runtime.h"
 #include <cstdarg>
 
-extern "C" {
-struct nncase_runtime_cpu_mt_t {
-    float (*acosf)(float v);
-    float (*acoshf)(float v);
-    float (*asinf)(float v);
-    float (*asinhf)(float v);
-    float (*copysignf)(float mag, float sgn);
-    float (*cosf)(float v);
-    float (*coshf)(float v);
-    float (*erff)(float v);
-    float (*expf)(float v);
-    float (*fmodf)(float x, float y);
-    float (*logf)(float v);
-    float (*nearbyintf)(float v);
-    float (*powf)(float x, float y);
-    float (*roundf)(float v);
-    float (*sinf)(float v);
-    float (*sinhf)(float v);
-    float (*sqrtf)(float v);
-    float (*tanhf)(float v);
-
-    uint8_t *(*sram_address)(int bid, int tid);
-
-    void (*failfast)(const char *format, va_list args);
-
-#ifndef WIN32
-    void *(*memcpy)(void *dst, const void *src, size_t len);
-    void *(*memmove)(void *dst, const void *src, size_t len);
-    void *(*memset)(void *b, int c, size_t len);
+#ifdef __APPLE__
+#include <pthread.h>
 #endif
-};
 
-struct nncase_runtime_cpu_block_params_t {
-    const nncase_runtime_cpu_mt_t *cpu_mt;
+namespace nncase::ntt::runtime {
+struct cpu_block_entry_params_t {
     size_t tdim;
     size_t bdim;
     size_t cdim;
+    size_t bid;
+    size_t cid;
+    size_t cpu_id_offset;
+    std::byte *const *inouts;
+    const std::byte *rdata;
+#ifdef __APPLE__
+    pthread_key_t cpu_thread_context_key;
+#endif
 };
 
-struct nncase_runtime_cpu_thread_params_t {
+struct cpu_thread_context_t {
     size_t tid;
     size_t bid;
     size_t cid;
-    std::byte *const *inouts;
-    const std::byte *rdata;
-};
-}
 
-namespace nncase::ntt::runtime {
-extern const nncase_runtime_cpu_mt_t *cpu_mt;
+    static cpu_thread_context_t &current() noexcept;
+};
+
 extern size_t tdim;
 extern size_t bdim;
 extern size_t cdim;
-
-extern thread_local size_t tid;
-extern thread_local size_t bid;
-extern thread_local size_t cid;
 } // namespace nncase::ntt::runtime
 
 namespace nncase::ntt {
 template <> struct program_id_getter<0> {
-    static size_t id() noexcept { return runtime::tid; }
+    static size_t id() noexcept {
+        return runtime::cpu_thread_context_t::current().tid;
+    }
     static size_t dim() noexcept { return runtime::tdim; }
 };
 
 template <> struct program_id_getter<1> {
-    static size_t id() noexcept { return runtime::bid; }
+    static size_t id() noexcept {
+        return runtime::cpu_thread_context_t::current().bid;
+    }
     static size_t dim() noexcept { return runtime::bdim; }
 };
 
 template <> struct program_id_getter<2> {
-    static size_t id() noexcept { return runtime::cid; }
+    static size_t id() noexcept {
+        return runtime::cpu_thread_context_t::current().cid;
+    }
     static size_t dim() noexcept { return runtime::cdim; }
 };
 } // namespace nncase::ntt
+
+extern "C" void
+block_entry(const nncase::ntt::runtime::cpu_block_entry_params_t &params);
+using block_entry_t = decltype(block_entry) *;

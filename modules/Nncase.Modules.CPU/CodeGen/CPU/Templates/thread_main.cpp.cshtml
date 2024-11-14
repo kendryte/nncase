@@ -14,7 +14,7 @@
 }
 #include "kernel.h"
 
-alignas(@(Model.Alignment)) static thread_local uint8_t local_data[@(Model.DataSize)];
+//alignas(@(Model.Alignment)) static thread_local uint8_t local_data[@(Model.DataSize)];
 
 extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata) {
   /* prepare inputs */
@@ -41,7 +41,9 @@ extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata) {
     throw new NotSupportedException($"not support multi form topology!");
   }
   
+  auto local_data = (uint8_t *)nncase::ntt::runtime::thread_alloc(@Model.DataSize, @Model.Alignment);
   @(Model.PrimFunction.Name)(@(string.Join(", ", names)), local_data);
+  nncase::ntt::runtime::thread_free(local_data);
 }
 
 #ifdef NNCASE_STANDALONE

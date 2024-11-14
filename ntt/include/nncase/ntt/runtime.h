@@ -23,16 +23,8 @@
 #endif
 
 namespace nncase::ntt::runtime {
-enum class module_main_reason {
-    block_main,
-    thread_main,
-};
-}
+void *thread_alloc(size_t bytes, size_t alignment);
+void thread_free(void *ptr);
+} // namespace nncase::ntt::runtime
 
-extern "C" {
-extern void thread_main(std::byte *const *inouts, const std::byte *rdata);
-
-extern NTT_RUNTIME_API void
-module_entry(nncase::ntt::runtime::module_main_reason reason, void *params);
-using module_entry_t = decltype(module_entry) *;
-}
+extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata);

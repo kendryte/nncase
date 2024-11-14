@@ -54,7 +54,7 @@ class cpu_runtime_function final : public runtime_function {
     elf_loader loader_;
 #endif
 
-    module_entry_t module_entry_;
+    block_entry_t block_entry_;
     uint64_t tdim_;
     uint64_t bdim_;
     uint64_t cdim_;

@@ -169,9 +169,7 @@ public class CSourceCompiler
     private string ArgumentsSpecific(string sourcePath, string outPath)
     {
         var archConfig = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ?
-        "-DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl -DBUILD_SHARED=ON" :
-        RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "-DBUILD_SHARED=ON" :
-        string.Empty;
+        "-DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl" : string.Empty;
 
 #if DEBUG
         var config = "Debug";

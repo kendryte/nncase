@@ -56,7 +56,7 @@ internal sealed class LinkableModule : ILinkableModule
                 Directory.CreateDirectory(dumpPath);
             }
 
-            using (var fs = File.Open(Path.Join(dumpPath, "main.cpp"), FileMode.Create))
+            using (var fs = File.Open(Path.Join(dumpPath, "thread_main.cpp"), FileMode.Create))
             {
                 using (var writer = new StreamWriter(fs))
                 {
@@ -112,7 +112,7 @@ internal sealed class LinkableModule : ILinkableModule
     private string CompileCSource(string sourcePath)
     {
         var compiler = new CSourceCompiler();
-        var binDir = Path.Join(sourcePath, "build", "nncase_cpu_module");
+        var binDir = Path.Join(sourcePath, "build", "nncase_ntt_module");
         return compiler.Compile(sourcePath, binDir);
     }
 }

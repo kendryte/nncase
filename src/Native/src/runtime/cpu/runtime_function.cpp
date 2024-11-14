@@ -27,6 +27,7 @@
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
+using namespace nncase::ntt::runtime;
 
 typedef struct {
     uint32_t tdim;
@@ -36,7 +37,7 @@ typedef struct {
 } desc_header;
 
 cpu_runtime_function::cpu_runtime_function(runtime_module &rt_module)
-    : runtime_function(rt_module), module_entry_(nullptr), tdim_(0), bdim_(0) {}
+    : runtime_function(rt_module), block_entry_(nullptr), tdim_(0), bdim_(0) {}
 
 cpu_runtime_function::~cpu_runtime_function() {}
 
@@ -57,7 +58,7 @@ result<void> cpu_runtime_function::initialize_core(
     auto text = module().text().subspan(context.header().entrypoint,
                                         context.header().text_size);
     loader_.load(text);
-    module_entry_ = (module_entry_t)loader_.entry();
+    block_entry_ = (block_entry_t)loader_.entry();
     return ok();
 }
 
