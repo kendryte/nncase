@@ -36,17 +36,28 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
         constexpr auto rank = TIn::shape_type::rank();
         constexpr auto elem_rank = TVec::shape_type::rank();
         constexpr fixed_shape<InDims..., InElemDims...> domain{};
-
-        apply(domain, [&](auto index) {
-            auto in_index = slice_index<rank>(index);
-            auto elem_index = slice_index<elem_rank>(index, rank);
-            auto out_index = slice_index<rank>(index);
-            loop<axes.size()>([&](auto i) {
-                out_index[axes[i]] =
-                    out_index[axes[i]] * TVec::shape()[i] + index[rank + i];
+        constexpr auto in_conti_dims = contiguous_dims(input.shape(), input.strides());
+        constexpr auto out_conti_dims = contiguous_dims(output.shape(), output.strides());
+        if constexpr((in_conti_dims == rank) && (out_conti_dims == rank) && (elem_rank == 1)) {
+            auto pin = input.buffer().data();
+            auto pout = output.buffer().data();
+            auto count = input.shape().length();
+            if constexpr(axes[0] == (rank - 1))
+                ntt::u_memcpy(pin, 1, reinterpret_cast<TVec *>(pout), 1, count);
+            else
+                ntt::u_unpack_1d<input.strides()[axes[0]], TVec::shape()[0]>(pin, 1, pout, count);
+        } else {
+            apply(domain, [&](auto index) {
+                auto in_index = slice_index<rank>(index);
+                auto elem_index = slice_index<elem_rank>(index, rank);
+                auto out_index = slice_index<rank>(index);
+                loop<axes.size()>([&](auto i) {
+                    out_index[axes[i]] =
+                        out_index[axes[i]] * TVec::shape()[i] + index[rank + i];
+                });
+                output(out_index) = input(in_index)(elem_index);
             });
-            output(out_index) = input(in_index)(elem_index);
-        });
+        }
     }
 };
 
