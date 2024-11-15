@@ -24,10 +24,10 @@ template <class InShape, class InElemShape, class OutShape, class InStrides,
           class OutStrides, size_t... Axes>
 class unpack_impl;
 
-template <size_t... InDims, size_t... InElemDims, class OutShape,
-          size_t... InStrides, class OutStrides, size_t... Axes>
-class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
-                  fixed_strides<InStrides...>, OutStrides, Axes...> {
+template <size_t... InDims, size_t... InElemDims, size_t ...OutDims,
+          size_t... InStrides, size_t ... OutStrides, size_t... Axes>
+class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, fixed_shape<OutDims...>,
+                  fixed_strides<InStrides...>, fixed_strides<OutStrides...>, Axes...> {
   public:
     template <class TIn, class TOut>
     constexpr void operator()(const TIn &input, TOut &&output) {
@@ -36,8 +36,8 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
         constexpr auto rank = TIn::shape_type::rank();
         constexpr auto elem_rank = TVec::shape_type::rank();
         constexpr fixed_shape<InDims..., InElemDims...> domain{};
-        constexpr auto in_conti_dims = contiguous_dims(input.shape(), input.strides());
-        constexpr auto out_conti_dims = contiguous_dims(output.shape(), output.strides());
+        constexpr auto in_conti_dims = contiguous_dims(fixed_shape<InDims...>{}, fixed_strides<InStrides...>{});
+        constexpr auto out_conti_dims = contiguous_dims(fixed_shape<OutDims...>{}, fixed_strides<OutStrides...>{});
         if constexpr((in_conti_dims == rank) && (out_conti_dims == rank) && (elem_rank == 1)) {
             auto pin = input.buffer().data();
             auto pout = output.buffer().data();

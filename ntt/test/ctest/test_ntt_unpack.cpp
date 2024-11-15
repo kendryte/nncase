@@ -22,6 +22,42 @@
 using namespace nncase;
 using namespace ortki;
 
+TEST(UnpackTestFloat, fixed_shape_rest) {
+    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    constexpr size_t M = P * 32;
+    constexpr size_t N = 7;
+    float min_input = -10.0f;
+    float max_input = 10.0f;
+
+    using tensor_type1 =
+        ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>>;
+    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
+
+    // init
+    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
+    NttTest::init_tensor(*ntt_input, min_input, max_input);
+
+    // ntt
+    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
+    ntt::unpack<0>(*ntt_input, *ntt_output1);
+
+    // ort
+    auto ort_input = NttTest::ntt2ort(*ntt_input);
+    int64_t perms[] = {0, 2, 1};
+    auto tmp = ortki_Transpose(ort_input, perms, std::size(perms));
+    int64_t data[] = {M, N};
+    int64_t data_shape[] = {std::size(data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                                  data_shape, std::size(data_shape));
+    auto ort_output = ortki_Reshape(tmp, shape, 0);
+
+    // compare
+    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
 TEST(UnpackTestFloat, fixed_shape_dim_N) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t N = P * 2;

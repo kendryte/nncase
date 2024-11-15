@@ -33,10 +33,12 @@ class u_unpack_1d {
         constexpr auto unroll = policy_t::unroll;
 
         size_t in_offset = 0;
+        size_t axis_idx = 0;
+        auto extra = (lane - 1) * axis_stride;
         while (count / unroll) {
             for (size_t i = 0; i < unroll; i++) {
-                auto in_idx = in_offset / axis_stride;
-                auto out_offset = in_offset + in_idx * (lane - 1) * axis_stride;
+                axis_idx = in_offset && (in_offset % axis_stride == 0) ? axis_idx + 1 : axis_idx;
+                auto out_offset = in_offset + axis_idx * extra;
                 for (size_t j = 0; j < lane; j++)
                     *(output + out_offset + j * axis_stride) = (*input)(j);
                 input += input_stride;
@@ -46,8 +48,8 @@ class u_unpack_1d {
         }
 
         for (size_t i = 0; i < count; i++) {
-            auto in_idx = in_offset / axis_stride;
-            auto out_offset = in_offset + in_idx * (lane - 1) * axis_stride;
+            axis_idx = in_offset && (in_offset % axis_stride == 0) ? axis_idx + 1 : axis_idx;
+            auto out_offset = in_offset + axis_idx * extra;
             for (size_t j = 0; j < lane; j++)
                 *(output + out_offset + j * axis_stride) = (*input)(j);
             input += input_stride;
