@@ -671,4 +671,87 @@ template <size_t axis_stride> struct u_unpack_1d<axis_stride, NTT_VLEN / 32, vec
     }
 };
 
+template <> struct u_unpack_1d_ranked<NTT_VLEN / 32, vector<float, NTT_VLEN / 32>, float, true> {
+  public:
+    void operator()(const vector<float, NTT_VLEN / 32> *input, size_t in_stride, size_t axis_stride, float *output, size_t count) noexcept {
+        constexpr size_t vl = NTT_VLEN / 32;
+        using policy_t = u_unpack_policy<vector<float, vl>, float, true>;
+        constexpr auto unroll = policy_t::unroll;
+        auto in_strides = in_stride * sizeof(vector<float, vl>);
+        auto out_strides = axis_stride * sizeof(float);
+        asm("vsetvli zero, %[vl], e32, m1\n"::[vl] "r"(vl));
+        size_t in_offset = 0;
+        size_t axis_idx = 0;
+        size_t extra = (vl - 1) * axis_stride;
+        while (count / axis_stride) {
+            auto tmp = axis_stride;
+            while (tmp / unroll) {
+                auto out_ptr = output + in_offset;
+                asm volatile(
+                    "vl1re32.v v1, (%[input])\n"
+                    "add %[input], %[input], %[in_strides]\n"
+                    : [input] "+r"(input)
+                    : [in_strides] "r"(in_strides));
+                auto output1 = out_ptr + 0 + axis_idx * extra;
+
+                asm volatile(
+                    "vl1re32.v v2, (%[input])\n"
+                    "add %[input], %[input], %[in_strides]\n"
+                    : [input] "+r"(input)
+                    : [in_strides] "r"(in_strides));
+                auto output2 = out_ptr + 1 + axis_idx * extra;
+
+                asm volatile(
+                    "vl1re32.v v3, (%[input])\n"
+                    "add %[input], %[input], %[in_strides]\n"
+                    : [input] "+r"(input)
+                    : [in_strides] "r"(in_strides));
+                auto output3 = out_ptr + 2 + axis_idx * extra;
+
+                asm volatile(
+                    "vl1re32.v v4, (%[input])\n"
+                    "add %[input], %[input], %[in_strides]\n"
+                    : [input] "+r"(input)
+                    : [in_strides] "r"(in_strides));
+                auto output4 = out_ptr + 3 + axis_idx * extra;
+
+                asm volatile(
+                    "vsse32.v v1, (%[output1]), %[out_strides]\n"
+                    : [output1] "+r"(output1)
+                    : [out_strides] "r"(out_strides));
+                in_offset += unroll;
+
+                asm volatile(
+                    "vsse32.v v2, (%[output2]), %[out_strides]\n"
+                    : [output2] "+r"(output2)
+                    : [out_strides] "r"(out_strides));
+                count -= unroll;
+
+                asm volatile(
+                    "vsse32.v v3, (%[output3]), %[out_strides]\n"
+                    : [output3] "+r"(output3)
+                    : [out_strides] "r"(out_strides));
+                tmp -= unroll;
+
+                asm volatile(
+                    "vsse32.v v4, (%[output4]), %[out_strides]\n"
+                    : [output4] "+r"(output4)
+                    : [out_strides] "r"(out_strides));
+            }
+
+            for (size_t i = 0; i < tmp; i++) {
+                auto output1 = output + in_offset + axis_idx * extra;
+                asm volatile(
+                    "vl1re32.v v1, (%[input])\n"
+                    "add %[input], %[input], %[in_strides]\n"
+                    "vsse32.v v1, (%[output1]), %[out_strides]\n"
+                    : [input] "+r"(input), [output1] "+r"(output1)
+                    : [in_strides] "r"(in_strides), [out_strides] "r"(out_strides));
+                in_offset++;
+                count--;
+            }
+            axis_idx++;
+        }
+    }
+};
 } // namespace nncase::ntt::ukernels

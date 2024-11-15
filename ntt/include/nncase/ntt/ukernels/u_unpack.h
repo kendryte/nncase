@@ -28,7 +28,44 @@ template <class T1, class T2, bool Arch> struct u_unpack_policy {
 template <size_t axis_stride, size_t lane, class T1, class T2, bool Arch>
 class u_unpack_1d {
   public:
-    constexpr void operator()(const T1 *input, size_t input_stride, T2 *output, size_t count) noexcept {
+    void operator()(const T1 *input, size_t input_stride, T2 *output, size_t count) noexcept {
+        using policy_t = u_unpack_policy<T1, T2, Arch>;
+        constexpr auto unroll = policy_t::unroll;
+        size_t in_offset = 0;
+        size_t axis_idx = 0;
+        auto extra = (lane - 1) * axis_stride;
+        while (count / axis_stride) {
+            auto tmp = axis_stride;
+            while (tmp / unroll) {
+                auto out_ptr = output + in_offset;
+                for (size_t i = 0; i < unroll; i++) {
+                    auto out = out_ptr + i + axis_idx * extra;
+                    for (size_t j = 0; j < lane; j++)
+                        *(out + j * axis_stride) = (*input)(j);
+                    input += input_stride;
+                }
+                in_offset += unroll;
+                count -= unroll;
+                tmp -= unroll;
+            }
+
+            for (size_t i = 0; i < tmp; i++) {
+                auto out = output + in_offset + axis_idx * extra;
+                for (size_t j = 0; j < lane; j++)
+                    *(out + j * axis_stride) = (*input)(j);
+                input += input_stride;
+                in_offset++;
+                count--;
+            }
+            axis_idx++;
+        }
+    }
+};
+
+template <size_t lane, class T1, class T2, bool Arch>
+class u_unpack_1d_ranked {
+  public:
+    void operator()(const T1 *input, size_t input_stride, size_t axis_stride, T2 *output, size_t count) noexcept {
         using policy_t = u_unpack_policy<T1, T2, Arch>;
         constexpr auto unroll = policy_t::unroll;
         size_t in_offset = 0;
@@ -69,4 +106,9 @@ constexpr void u_unpack_1d(const T1 *input, size_t in_stride, T2 *output, size_t
     impl(input, in_stride, output, count);
 }
 
+template <size_t lane, class T1, class T2>
+constexpr void u_unpack_1d_ranked(const T1 *input, size_t in_stride, size_t axis_stride, T2 *output, size_t count) noexcept {
+    ukernels::u_unpack_1d_ranked<lane, T1, T2, true> impl;
+    impl(input, in_stride, axis_stride, output, count);
+}
 } // namespace nncase::ntt
