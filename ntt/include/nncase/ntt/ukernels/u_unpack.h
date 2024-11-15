@@ -31,29 +31,33 @@ class u_unpack_1d {
     constexpr void operator()(const T1 *input, size_t input_stride, T2 *output, size_t count) noexcept {
         using policy_t = u_unpack_policy<T1, T2, Arch>;
         constexpr auto unroll = policy_t::unroll;
-
         size_t in_offset = 0;
         size_t axis_idx = 0;
         auto extra = (lane - 1) * axis_stride;
-        while (count / unroll) {
-            for (size_t i = 0; i < unroll; i++) {
-                axis_idx = in_offset && (in_offset % axis_stride == 0) ? axis_idx + 1 : axis_idx;
-                auto out_offset = in_offset + axis_idx * extra;
+        while (count / axis_stride) {
+            auto tmp = axis_stride;
+            while (tmp / unroll) {
+                auto out_ptr = output + in_offset;
+                for (size_t i = 0; i < unroll; i++) {
+                    auto out = out_ptr + i + axis_idx * extra;
+                    for (size_t j = 0; j < lane; j++)
+                        *(out + j * axis_stride) = (*input)(j);
+                    input += input_stride;
+                }
+                in_offset += unroll;
+                count -= unroll;
+                tmp -= unroll;
+            }
+
+            for (size_t i = 0; i < tmp; i++) {
+                auto out = output + in_offset + axis_idx * extra;
                 for (size_t j = 0; j < lane; j++)
-                    *(output + out_offset + j * axis_stride) = (*input)(j);
+                    *(out + j * axis_stride) = (*input)(j);
                 input += input_stride;
                 in_offset++;
                 count--;
             }
-        }
-
-        for (size_t i = 0; i < count; i++) {
-            axis_idx = in_offset && (in_offset % axis_stride == 0) ? axis_idx + 1 : axis_idx;
-            auto out_offset = in_offset + axis_idx * extra;
-            for (size_t j = 0; j < lane; j++)
-                *(output + out_offset + j * axis_stride) = (*input)(j);
-            input += input_stride;
-            in_offset++;
+            axis_idx++;
         }
     }
 };
