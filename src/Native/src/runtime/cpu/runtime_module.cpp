@@ -14,6 +14,7 @@
  */
 #include "runtime_module.h"
 #include "runtime_function.h"
+#include <nncase/ntt/runtime/cpu_runtime.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_loader.h>
@@ -22,6 +23,20 @@
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
+using namespace nncase::ntt::runtime;
+
+cpu_runtime_module::cpu_runtime_module() noexcept {
+#ifdef __APPLE__
+    pthread_key_create(&cpu_thread_context_key_,
+                       [](void *ptr) { delete (cpu_thread_context_t *)ptr; });
+#endif
+}
+
+cpu_runtime_module::~cpu_runtime_module() {
+#ifdef __APPLE__
+    pthread_key_delete(cpu_thread_context_key_);
+#endif
+}
 
 result<void> cpu_runtime_module::initialize_before_functions(
     runtime_module_init_context &context) noexcept {

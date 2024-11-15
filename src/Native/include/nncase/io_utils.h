@@ -46,7 +46,13 @@ template <typename T, std::size_t Alignment> class aligned_allocator {
         throw std::bad_alloc();
     }
 
-    void deallocate(T *p, std::size_t) noexcept { std::free(p); }
+    void deallocate(T *p, std::size_t) noexcept {
+#ifdef _WIN32
+        _aligned_free(p);
+#else
+        std::free(p);
+#endif
+    }
 
     template <typename U> struct rebind {
         using other = aligned_allocator<U, Alignment>;

@@ -113,7 +113,7 @@ internal static class CSourceExtensions
                     dimi = dimi[(s + 1)..e].Trim();
                 }
 
-                begins[i] += " + " + sp.Skip(1).Aggregate($"{placement.Name[sp[0].H]}id", (acc, p) => $"({acc} + {TensorUtilities.GetProduct(splitHierarchy[i].ToArray().AsSpan()[(p.H + 1)..])} * {placement.Name[p.H]}id)") + $" * {dimi}";
+                begins[i] += " + " + sp.Skip(1).Aggregate($"{placement.Name[sp[0].H]}id()", (acc, p) => $"({acc} + {TensorUtilities.GetProduct(splitHierarchy[i].ToArray().AsSpan()[(p.H + 1)..])} * {placement.Name[p.H]}id())") + $" * {dimi}";
             }
         }
 

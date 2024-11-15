@@ -68,7 +68,7 @@ public class CpuTargetOptions : ICpuTargetOptions
     [DisplayName("--hierarchy-names")]
     [Description("the name identify of hierarchies.")]
     [DefaultValue("b")]
-    public string HierarchyNames { get; set; } = "b";
+    public string HierarchyNames { get; set; } = "t";
 
     [DisplayName("--hierarchy-sizes")]
     [Description("the memory capacity of hierarchies.")]
