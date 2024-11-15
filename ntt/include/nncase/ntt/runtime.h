@@ -13,22 +13,18 @@
  * limitations under the License.
  */
 #pragma once
-#include <nncase/compiler_defs.h>
-#include <span>
+#include <cstddef>
+#include <cstdint>
 
-BEGIN_NS_NNCASE_RUNTIME
+#if defined(_MSC_VER)
+#define NTT_RUNTIME_API __declspec(dllexport)
+#else
+#define NTT_RUNTIME_API __attribute__((visibility("default")))
+#endif
 
-class pe_loader {
-  public:
-    pe_loader() noexcept : image_(nullptr), entry_(nullptr) {}
-    ~pe_loader();
+namespace nncase::ntt::runtime {
+void *thread_alloc(size_t bytes, size_t alignment);
+void thread_free(void *ptr);
+} // namespace nncase::ntt::runtime
 
-    void load(std::span<const std::byte> pe);
-    void *entry() const noexcept;
-
-  private:
-    void *image_;
-    void *entry_;
-};
-
-END_NS_NNCASE_RUNTIME
+extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata);

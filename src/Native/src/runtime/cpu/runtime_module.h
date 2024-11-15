@@ -17,14 +17,27 @@
 #include <nncase/runtime/cpu/runtime_module.h>
 #include <unordered_map>
 
+#ifdef __APPLE__
+#include <pthread.h>
+#endif
+
 BEGIN_NS_NNCASE_RT_MODULE(cpu)
 
 class cpu_runtime_module : public runtime_module {
   public:
+    cpu_runtime_module() noexcept;
+    virtual ~cpu_runtime_module();
+
     kernels::kernel_context &kernel_context() noexcept;
 
     std::span<const std::byte> text() const noexcept { return text_; }
     std::span<const std::byte> rdata() const noexcept { return rdata_; }
+
+#ifdef __APPLE__
+    pthread_key_t cpu_thread_context_key() const noexcept {
+        return cpu_thread_context_key_;
+    }
+#endif
 
   protected:
     result<void> initialize_before_functions(
@@ -37,6 +50,10 @@ class cpu_runtime_module : public runtime_module {
     std::span<const std::byte> rdata_;
     host_buffer_t text_storage_;
     host_buffer_t rdata_storage_;
+
+#ifdef __APPLE__
+    pthread_key_t cpu_thread_context_key_ = {};
+#endif
 };
 
 END_NS_NNCASE_RT_MODULE

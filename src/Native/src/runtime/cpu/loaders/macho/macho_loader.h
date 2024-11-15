@@ -20,14 +20,23 @@ BEGIN_NS_NNCASE_RUNTIME
 
 class macho_loader {
   public:
-    macho_loader() noexcept : ofi_(nullptr), mod_(nullptr), sym_(nullptr) {}
+    macho_loader() noexcept
+        :
+#if 0 
+     ofi_(nullptr),
+#endif
+          mod_(nullptr),
+          sym_(nullptr) {
+    }
     ~macho_loader();
 
     void load(std::span<const std::byte> macho);
     void *entry() const noexcept;
 
   private:
+#if 0
     void *ofi_;
+#endif
     void *mod_;
     void *sym_;
 };
