@@ -37,7 +37,7 @@ public class CustomOpSubstitutePass : DataflowPass
         }
         else
         {
-            CustomOpScheme = null!;
+            CustomOpScheme = null;
         }
 
         if (CustomOpScheme is not null)
