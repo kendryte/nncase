@@ -96,7 +96,7 @@ constexpr void u_pack2d(const TIn &input, TOut &output) noexcept {
     for (size_t i = axes[1] + 1; i < in_rank; i++) {
         inner_size *= input.shape()[i];
     }
-    if (inner_size != TVec::shape()[1]) {
+    if (inner_size % TVec::shape()[1] != 0) {
         ukernels::u_pack2d<false, TIn, TOut, TElem, TVec, Axes...> impl;
         impl(input, output);
     } else {
