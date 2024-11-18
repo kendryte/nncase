@@ -277,7 +277,7 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                        'W': '1.5',
                                        'NC': '2.5',
                                        'CH': '2.5',
-                                       'HW': '1.5',
+                                       'HW': '2.0',
                                        },
                               'unpack': {'N': '0',
                                          'C': '0',
