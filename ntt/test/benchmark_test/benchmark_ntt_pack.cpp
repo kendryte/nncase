@@ -51,8 +51,8 @@ void benchmark_ntt_pack(const std::string &mode, const size_t run_size) {
         ntt::tensor<ElementType,
                     ntt::fixed_shape<N / P0, C / P1, H / P2, W / P3>>;
 
-    tensor_type1 ntt_input;
-    tensor_type2 ntt_output;
+    alignas(32) tensor_type1 ntt_input;
+    alignas(32) tensor_type2 ntt_output;
     NttTest::init_tensor(ntt_input, -10.f, 10.f);
 
     // warm up
@@ -97,9 +97,9 @@ int main(int argc, char *argv[]) {
     benchmark_ntt_pack<ntt::vector<float, P>, 2, 8 * P, 2, 4, 1>("C", 2000);
     benchmark_ntt_pack<ntt::vector<float, P>, 2, 2, 8 * P, 8, 2>("H", 2000);
     benchmark_ntt_pack<ntt::vector<float, P>, 2, 2, 2, 8 * P, 3>("W", 2000);
-    benchmark_ntt_pack<ntt::vector<float, P, P>, 8 * P, 8 * P, 2, 2, 0, 1>(
-        "NC", 2000);
-    benchmark_ntt_pack<ntt::vector<float, P, P>, 2, 8 * P, 8 * P, 2, 1, 2>(
+    benchmark_ntt_pack<ntt::vector<float, P, P>, 8 * P, 8 * P, 2, 4, 0, 1>("NC",
+                                                                           1);
+    benchmark_ntt_pack<ntt::vector<float, P, P>, 2, 8 * P, 8 * P, 8, 1, 2>(
         "CH", 2000);
     benchmark_ntt_pack<ntt::vector<float, P, P>, 4, 4, 8 * P, 8 * P, 2, 3>(
         "HW", 2000);

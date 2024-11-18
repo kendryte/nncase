@@ -146,8 +146,37 @@ class u_pack<M, N, MStrides, true, float, vector<float, 8>> {
     }
 };
 
+template <class TIn, class TOut>
+class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>, (TIn::rank() - 2),
+               (TIn::rank() - 1)> {
+  public:
+    constexpr void operator()(const TIn &input, TOut &output) noexcept {
+        using TVec = vector<float, 8, 8>;
+        constexpr size_t axes[2] = {TIn::rank() - 2, TIn::rank() - 1};
+        constexpr auto in_rank = TIn::rank();
+        constexpr auto out_rank = TOut::rank();
+        constexpr auto lanes = TVec::shape();
+        auto out_shape = output.shape();
+
+        apply(out_shape, [&](auto index) {
+            auto out_index = slice_index<out_rank>(index);
+            auto in_index = slice_index<in_rank>(index);
+            loop<2>([&](auto i) {
+                in_index[axes[i]] = in_index[axes[i]] * lanes[i];
+            });
+            auto in_ptr =
+                reinterpret_cast<const vector<float, 8> *>(&input(in_index));
+            auto out_ptr =
+                reinterpret_cast<vector<float, 8> *>(&output(out_index));
+            for (size_t i = 0; i < lanes[0]; i++) {
+                out_ptr[i] = in_ptr[i * out_shape[out_rank - 1]];
+            }
+        });
+    }
+};
+
 template <class TIn, class TOut, size_t... Axes>
-class u_pack2d<TIn, TOut, float, vector<float, 8, 8>, Axes...> {
+class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>, Axes...> {
   public:
     constexpr void operator()(const TIn &input, TOut &output) noexcept {
         using TVec = vector<float, 8, 8>;
@@ -157,18 +186,115 @@ class u_pack2d<TIn, TOut, float, vector<float, 8, 8>, Axes...> {
         constexpr auto lanes = TVec::shape();
         auto out_shape = output.shape();
 
-        apply(out_shape, [&](auto index) {
-            auto out_index = slice_index<out_rank>(index);
-            auto in_index = slice_index<in_rank>(index);
-            loop<axes.size()>([&](auto i) {
-                in_index[axes[i]] = in_index[axes[i]] * lanes[i];
-            });
-            auto in_ptr =
-                reinterpret_cast<const vector<float, 8> *>(&input(in_index));
-            auto out_ptr =
-                reinterpret_cast<vector<float, 8> *>(&output(out_index));
-            for (size_t i = 0; i < lanes[0]; i++) {
-                out_ptr[i] = in_ptr[i * out_shape[out_rank - 1]];
+        ranked_shape<out_rank> domain{};
+        for (size_t i = 0; i < out_rank; i++) {
+            domain[i] = out_shape[i];
+        }
+        ranked_shape<in_rank> inner_domain{};
+        ranked_shape<in_rank> outer_domain{};
+
+        auto outer_index = slice_index<axes[0]>(domain);
+        auto packed_index = slice_index<sizeof...(Axes)>(domain, axes[0]);
+        auto inner_index =
+            slice_index<out_rank - (axes[1] + 1)>(domain, axes[1] + 1);
+        auto inner_size = inner_index.length();
+
+        ntt::apply(outer_index, [&](auto index) {
+            for (size_t i = 0; i < axes[0]; i++) {
+                inner_domain[i] = index[i];
+                outer_domain[i] = index[i];
+            }
+            for (size_t i = 0; i < packed_index[0]; i++) {
+                outer_domain[axes[0]] = i;
+                auto outer_ptr_keep =
+                    reinterpret_cast<float *>(&output(outer_domain));
+                for (size_t j = 0; j < lanes[0]; j++) {
+                    inner_domain[axes[0]] = i * lanes[0] + j;
+                    auto outer_ptr = outer_ptr_keep + j * lanes[0];
+
+                    for (size_t k = 0; k < packed_index[1]; k++) {
+                        inner_domain[axes[1]] = k * lanes[1];
+                        auto input_ptr = reinterpret_cast<const float *>(
+                            &input(inner_domain));
+
+                        for (size_t l = 0; l < inner_size / lanes[1]; l++) {
+                            __m256 row0 = _mm256_loadu_ps(
+                                &input_ptr[0 * inner_size + l * lanes[1]]);
+                            __m256 row1 = _mm256_loadu_ps(
+                                &input_ptr[1 * inner_size + l * lanes[1]]);
+                            __m256 row2 = _mm256_loadu_ps(
+                                &input_ptr[2 * inner_size + l * lanes[1]]);
+                            __m256 row3 = _mm256_loadu_ps(
+                                &input_ptr[3 * inner_size + l * lanes[1]]);
+                            __m256 row4 = _mm256_loadu_ps(
+                                &input_ptr[4 * inner_size + l * lanes[1]]);
+                            __m256 row5 = _mm256_loadu_ps(
+                                &input_ptr[5 * inner_size + l * lanes[1]]);
+                            __m256 row6 = _mm256_loadu_ps(
+                                &input_ptr[6 * inner_size + l * lanes[1]]);
+                            __m256 row7 = _mm256_loadu_ps(
+                                &input_ptr[7 * inner_size + l * lanes[1]]);
+
+                            __m256 t0 = _mm256_unpacklo_ps(row0, row1);
+                            __m256 t1 = _mm256_unpackhi_ps(row0, row1);
+                            __m256 t2 = _mm256_unpacklo_ps(row2, row3);
+                            __m256 t3 = _mm256_unpackhi_ps(row2, row3);
+                            __m256 t4 = _mm256_unpacklo_ps(row4, row5);
+                            __m256 t5 = _mm256_unpackhi_ps(row4, row5);
+                            __m256 t6 = _mm256_unpacklo_ps(row6, row7);
+                            __m256 t7 = _mm256_unpackhi_ps(row6, row7);
+
+                            __m256 u0 = _mm256_shuffle_ps(
+                                t0, t2, 0x44); // 0x44 -> 01000100
+                            __m256 u1 = _mm256_shuffle_ps(
+                                t0, t2, 0xEE); // 0xEE -> 11101110
+                            __m256 u2 = _mm256_shuffle_ps(t1, t3, 0x44);
+                            __m256 u3 = _mm256_shuffle_ps(t1, t3, 0xEE);
+                            __m256 u4 = _mm256_shuffle_ps(t4, t6, 0x44);
+                            __m256 u5 = _mm256_shuffle_ps(t4, t6, 0xEE);
+                            __m256 u6 = _mm256_shuffle_ps(t5, t7, 0x44);
+                            __m256 u7 = _mm256_shuffle_ps(t5, t7, 0xEE);
+
+                            row0 = _mm256_permute2f128_ps(
+                                u0, u4, 0x20); // 0x20 -> 00100000
+                            row1 = _mm256_permute2f128_ps(u1, u5, 0x20);
+                            row2 = _mm256_permute2f128_ps(u2, u6, 0x20);
+                            row3 = _mm256_permute2f128_ps(u3, u7, 0x20);
+                            row4 = _mm256_permute2f128_ps(
+                                u0, u4, 0x31); // 0x31 -> 00110001
+                            row5 = _mm256_permute2f128_ps(u1, u5, 0x31);
+                            row6 = _mm256_permute2f128_ps(u2, u6, 0x31);
+                            row7 = _mm256_permute2f128_ps(u3, u7, 0x31);
+
+                            _mm256_storeu_ps(
+                                &outer_ptr[(l * lanes[0] + 0) * lanes.length()],
+                                row0);
+                            _mm256_storeu_ps(
+                                &outer_ptr[(l * lanes[0] + 1) * lanes.length()],
+                                row1);
+                            _mm256_storeu_ps(
+                                &outer_ptr[(l * lanes[0] + 2) * lanes.length()],
+                                row2);
+                            _mm256_storeu_ps(
+                                &outer_ptr[(l * lanes[0] + 3) * lanes.length()],
+                                row3);
+                            _mm256_storeu_ps(
+                                &outer_ptr[(l * lanes[0] + 4) * lanes.length()],
+                                row4);
+                            _mm256_storeu_ps(
+                                &outer_ptr[(l * lanes[0] + 5) * lanes.length()],
+                                row5);
+                            _mm256_storeu_ps(
+                                &outer_ptr[(l * lanes[0] + 6) * lanes.length()],
+                                row6);
+                            _mm256_storeu_ps(
+                                &outer_ptr[(l * lanes[0] + 7) * lanes.length()],
+                                row7);
+                        }
+
+                        outer_ptr += (inner_size * lanes.length());
+                    }
+                }
             }
         });
     }

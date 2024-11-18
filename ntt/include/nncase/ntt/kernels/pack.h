@@ -38,11 +38,8 @@ template <class TIn, class TOut, size_t... Axes> class pack_impl {
         auto conti_dims_output =
             contiguous_dims(output.shape(), output.strides());
 
-        if (sizeof...(Axes) == 2 && axes[0] == in_rank - 2 &&
-            axes[1] == in_rank - 1 && conti_dims_input >= 2 &&
-            conti_dims_output >= 2 &&
-            input.shape()[in_rank - 2] % lanes[0] == 0 &&
-            input.shape()[in_rank - 1] % lanes[1] == 0) {
+        if (sizeof...(Axes) == 2 && conti_dims_input == in_rank &&
+            conti_dims_output == out_rank) {
             ntt::u_pack2d<TIn, TOut, Axes...>(input, output);
 
         } else {
