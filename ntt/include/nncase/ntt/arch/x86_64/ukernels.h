@@ -218,24 +218,22 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>, Axes...> {
                             &input(inner_domain));
 
                         for (size_t l = 0; l < inner_size / lanes[1]; l++) {
-                            auto st_base = l * lanes[0] * lanes.length();
-                            auto ld_base = l * lanes[1];
                             __m256 row0 = _mm256_loadu_ps(
-                                &input_ptr[0 * inner_size + ld_base]);
+                                &input_ptr[0 * inner_size + l * 8]);
                             __m256 row1 = _mm256_loadu_ps(
-                                &input_ptr[1 * inner_size + ld_base]);
+                                &input_ptr[1 * inner_size + l * 8]);
                             __m256 row2 = _mm256_loadu_ps(
-                                &input_ptr[2 * inner_size + ld_base]);
+                                &input_ptr[2 * inner_size + l * 8]);
                             __m256 row3 = _mm256_loadu_ps(
-                                &input_ptr[3 * inner_size + ld_base]);
+                                &input_ptr[3 * inner_size + l * 8]);
                             __m256 row4 = _mm256_loadu_ps(
-                                &input_ptr[4 * inner_size + ld_base]);
+                                &input_ptr[4 * inner_size + l * 8]);
                             __m256 row5 = _mm256_loadu_ps(
-                                &input_ptr[5 * inner_size + ld_base]);
+                                &input_ptr[5 * inner_size + l * 8]);
                             __m256 row6 = _mm256_loadu_ps(
-                                &input_ptr[6 * inner_size + ld_base]);
+                                &input_ptr[6 * inner_size + l * 8]);
                             __m256 row7 = _mm256_loadu_ps(
-                                &input_ptr[7 * inner_size + ld_base]);
+                                &input_ptr[7 * inner_size + l * 8]);
 
                             __m256 t0 = _mm256_unpacklo_ps(row0, row1);
                             __m256 t1 = _mm256_unpackhi_ps(row0, row1);
@@ -268,22 +266,22 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>, Axes...> {
                             row6 = _mm256_permute2f128_ps(u2, u6, 0x31);
                             row7 = _mm256_permute2f128_ps(u3, u7, 0x31);
 
-                            _mm256_storeu_ps(
-                                &outer_ptr[st_base + 0 * lanes.length()], row0);
-                            _mm256_storeu_ps(
-                                &outer_ptr[st_base + 1 * lanes.length()], row1);
-                            _mm256_storeu_ps(
-                                &outer_ptr[st_base + 2 * lanes.length()], row2);
-                            _mm256_storeu_ps(
-                                &outer_ptr[st_base + 3 * lanes.length()], row3);
-                            _mm256_storeu_ps(
-                                &outer_ptr[st_base + 4 * lanes.length()], row4);
-                            _mm256_storeu_ps(
-                                &outer_ptr[st_base + 5 * lanes.length()], row5);
-                            _mm256_storeu_ps(
-                                &outer_ptr[st_base + 6 * lanes.length()], row6);
-                            _mm256_storeu_ps(
-                                &outer_ptr[st_base + 7 * lanes.length()], row7);
+                            _mm256_storeu_ps(&outer_ptr[l * 512 + 0 * 64],
+                                             row0);
+                            _mm256_storeu_ps(&outer_ptr[l * 512 + 1 * 64],
+                                             row1);
+                            _mm256_storeu_ps(&outer_ptr[l * 512 + 2 * 64],
+                                             row2);
+                            _mm256_storeu_ps(&outer_ptr[l * 512 + 3 * 64],
+                                             row3);
+                            _mm256_storeu_ps(&outer_ptr[l * 512 + 4 * 64],
+                                             row4);
+                            _mm256_storeu_ps(&outer_ptr[l * 512 + 5 * 64],
+                                             row5);
+                            _mm256_storeu_ps(&outer_ptr[l * 512 + 6 * 64],
+                                             row6);
+                            _mm256_storeu_ps(&outer_ptr[l * 512 + 7 * 64],
+                                             row7);
                         }
 
                         outer_ptr += (inner_size * lanes.length());
