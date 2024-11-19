@@ -26,7 +26,7 @@ template <class T1, class T2, bool Arch> struct u_unpack_policy {
 
 
 template <size_t axis_stride, size_t lane, class T1, class T2, bool Arch>
-class u_unpack_1d {
+class u_unpack_1d_fixed {
   public:
     void operator()(const T1 *input, size_t input_stride, T2 *output, size_t count) noexcept {
         using policy_t = u_unpack_policy<T1, T2, Arch>;
@@ -101,13 +101,13 @@ class u_unpack_1d_ranked {
 } // namespace ukernels
 
 template <size_t axis_stride, size_t lane, class T1, class T2>
-constexpr void u_unpack_1d(const T1 *input, size_t in_stride, T2 *output, size_t count) noexcept {
-    ukernels::u_unpack_1d<axis_stride, lane, T1, T2, true> impl;
+void u_unpack_1d_fixed(const T1 *input, size_t in_stride, T2 *output, size_t count) noexcept {
+    ukernels::u_unpack_1d_fixed<axis_stride, lane, T1, T2, true> impl;
     impl(input, in_stride, output, count);
 }
 
 template <size_t lane, class T1, class T2>
-constexpr void u_unpack_1d_ranked(const T1 *input, size_t in_stride, size_t axis_stride, T2 *output, size_t count) noexcept {
+void u_unpack_1d_ranked(const T1 *input, size_t in_stride, size_t axis_stride, T2 *output, size_t count) noexcept {
     ukernels::u_unpack_1d_ranked<lane, T1, T2, true> impl;
     impl(input, in_stride, axis_stride, output, count);
 }
