@@ -146,9 +146,11 @@ class u_pack<M, N, MStrides, true, float, vector<float, 8>> {
     }
 };
 
-template <class TIn, class TOut>
-class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>, (TIn::rank() - 2),
-               (TIn::rank() - 1)> {
+template <class TIn, class TOut, size_t... Axes>
+    requires(sizeof...(Axes) > 0 &&
+             (std::get<sizeof...(Axes) - 1>(std::array<size_t, sizeof...(Axes)>{
+                  Axes...}) == (TIn::rank() - 1)))
+class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>, Axes...> {
   public:
     constexpr void operator()(const TIn &input, TOut &output) noexcept {
         using TVec = vector<float, 8, 8>;
