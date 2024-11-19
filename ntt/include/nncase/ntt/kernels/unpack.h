@@ -43,7 +43,11 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
             if constexpr(PackAxis == (rank - 1))
                 ntt::u_memcpy(pin, 1, reinterpret_cast<TVec *>(pout), 1, count);
             else
-                ntt::u_unpack_1d_fixed<input.strides()[PackAxis], TVec::shape()[0], TVec, typename TOut::element_type>(pin, 1, pout, count);
+            {
+                constexpr auto in_strides = std::array<size_t, sizeof...(InStrides)>{InStrides...};
+                constexpr auto v_shape = std::array<size_t, sizeof...(InElemDims)>{InElemDims...};
+                ntt::u_unpack_1d_fixed<in_strides[PackAxis], v_shape[0], TVec, typename TOut::element_type>(pin, 1, pout, count);
+            }
         } else {
             constexpr auto elem_rank = TVec::shape_type::rank();
             constexpr fixed_shape<InDims..., InElemDims...> domain{};
