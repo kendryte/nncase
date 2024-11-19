@@ -296,14 +296,42 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>, Axes...> {
     }
 };
 
+// gather
+template <> struct u_memcpy_policy<vector<float, 8>, true> {
+    static constexpr size_t unroll = 4;
+};
+
+template <> struct u_memcpy<vector<float, 8>, true> {
+  public:
+    constexpr void operator()(const vector<float, 8> *input,
+                              size_t input_stride, vector<float, 8> *output,
+                              size_t output_stride, size_t count) noexcept {
+        using policy_t = u_memcpy_policy<vector<float, 8>, true>;
+        constexpr auto unroll = policy_t::unroll;
+        while (count / unroll) {
+            for (size_t i = 0; i < unroll; i++) {
+                __m256 data =
+                    _mm256_loadu_ps(reinterpret_cast<const float *>(input));
+                _mm256_storeu_ps(reinterpret_cast<float *>(output), data);
+                input += input_stride;
+                output += output_stride;
+                count--;
+            }
+        }
+
+        for (size_t i = 0; i < count; i++) {
+            __m256 data =
+                _mm256_loadu_ps(reinterpret_cast<const float *>(input));
+            _mm256_storeu_ps(reinterpret_cast<float *>(output), data);
+            input += input_stride;
+            output += output_stride;
+        }
+    }
+};
+
 // reduce
 template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
     static constexpr size_t unroll = 8;
-};
-
-// gather
-template <class T> struct u_memcpy_policy<T, true> {
-    static constexpr size_t unroll = 4;
 };
 
 // matmul
