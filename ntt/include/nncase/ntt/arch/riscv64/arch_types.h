@@ -14,7 +14,6 @@
  */
 #pragma once
 #include "../../native_vector.h"
-#include <nncase/float8.h>
 
 #ifdef __riscv_vector
 #include <riscv_vector.h>
@@ -51,12 +50,6 @@
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 4)));                  \
     typedef vuint8mf8_t fixed_boolmf8_t                                        \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 8)));                  \
-    typedef vuint8mf2_t fixed_fp8e4m3mf2_t                                     \
-        __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 2)));                  \
-    typedef vuint8mf4_t fixed_fp8e4m3mf4_t                                     \
-        __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 4)));                  \
-    typedef vuint8mf8_t fixed_fp8e4m3mf8_t                                     \
-        __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 8)));                  \
     typedef vint16mf2_t fixed_vint16mf2_t                                      \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 2)));                  \
     typedef vint16mf4_t fixed_vint16mf4_t                                      \
@@ -78,8 +71,6 @@
     typedef vuint8m##lmul##_t fixed_vuint8m##lmul##_t                          \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));               \
     typedef vuint8m##lmul##_t fixed_boolm##lmul##_t                            \
-        __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));               \
-    typedef vuint8m##lmul##_t fixed_fp8e4m3m##lmul##_t                         \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));               \
     typedef vint16m##lmul##_t fixed_vint16m##lmul##_t                          \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));               \
@@ -133,15 +124,6 @@ REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(8)
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(bool, fixed_boolmf8_t,              \
                                            NTT_VLEN / 8 / sizeof(uint8_t) / 8) \
     NTT_END_DEFINE_NATIVE_VECTOR()                                             \
-    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(float_e4m3_t, fixed_fp8e4m3mf2_t,   \
-                                           NTT_VLEN / 8 / sizeof(uint8_t) / 2) \
-    NTT_END_DEFINE_NATIVE_VECTOR()                                             \
-    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(float_e4m3_t, fixed_fp8e4m3mf4_t,   \
-                                           NTT_VLEN / 8 / sizeof(uint8_t) / 4) \
-    NTT_END_DEFINE_NATIVE_VECTOR()                                             \
-    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(float_e4m3_t, fixed_fp8e4m3mf8_t,   \
-                                           NTT_VLEN / 8 / sizeof(uint8_t) / 8) \
-    NTT_END_DEFINE_NATIVE_VECTOR()                                             \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(int16_t, fixed_vint16mf2_t,         \
                                            NTT_VLEN / 8 / sizeof(int16_t) / 2) \
     NTT_END_DEFINE_NATIVE_VECTOR()                                             \
@@ -174,10 +156,6 @@ REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(8)
     NTT_END_DEFINE_NATIVE_VECTOR()                                             \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
         bool, fixed_boolm##lmul##_t, NTT_VLEN / 8 / sizeof(uint8_t) * lmul)    \
-    NTT_END_DEFINE_NATIVE_VECTOR()                                             \
-    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
-        float_e4m3_t, fixed_fp8e4m3m##lmul##_t,                                \
-        NTT_VLEN / 8 / sizeof(uint8_t) * lmul)                                 \
     NTT_END_DEFINE_NATIVE_VECTOR()                                             \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(int16_t, fixed_vint16m##lmul##_t,   \
                                            NTT_VLEN / 8 / sizeof(int16_t) *    \
