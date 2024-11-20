@@ -187,7 +187,7 @@ DEFINE_FP16_BINARY_BOOLRET(>=)
 DEFINE_FP16_BINARY_BOOLRET(>)
 
 #define DEFINE_FP16_BINARY_SELF_MOD(x, op)                                     \
-    inline half &operator x(half & a, half b) noexcept {                       \
+    inline half &operator x(half &a, half b) noexcept {                        \
         a = a op b;                                                            \
         return a;                                                              \
     }

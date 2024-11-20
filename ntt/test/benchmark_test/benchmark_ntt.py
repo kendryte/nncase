@@ -393,9 +393,9 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                          'C': '6',
                                          'H': '6',
                                          'W': '4.3',
-                                         'NC': '0',
-                                         'CH': '0',
-                                         'HW': '0',
+                                         'NC': '6',
+                                         'CH': '6',
+                                         'HW': '6',
                                          },
                               }
 

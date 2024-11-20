@@ -64,6 +64,59 @@ class u_unpack_1d_fixed {
     }
 };
 
+template <size_t low_axis_stride, size_t low_lane, size_t high_axis_stride,
+          size_t high_lane, class T1, class T2, bool Arch>
+class u_unpack_2d_fixed {
+  public:
+    void operator()(const T1 *input, size_t input_stride, T2 *output,
+                    size_t count) noexcept {
+        using policy_t = u_unpack_policy<T1, T2, Arch>;
+        constexpr auto unroll = policy_t::unroll;
+        size_t in_offset = 0;
+        size_t low_idx = 0;
+        size_t high_idx = 0;
+        constexpr auto high_dim = low_axis_stride / high_axis_stride;
+        constexpr auto out_low_strides = low_axis_stride * low_lane;
+        constexpr auto low_extra = low_axis_stride * (low_lane * low_lane - 1);
+        constexpr auto high_extra = high_axis_stride * (high_lane - 1);
+
+        while (count / high_axis_stride) {
+            auto out_ptr = output + in_offset + low_idx * low_extra +
+                           high_idx * high_extra;
+            auto out_end = out_ptr + high_axis_stride;
+            while (out_ptr < out_end) {
+                auto tmp = low_lane;
+                size_t i_idx = 0;
+                while (tmp / unroll) {
+                    for (size_t i = 0; i < unroll; i++) {
+                        for (size_t j = 0; j < high_lane; j++)
+                            *(out_ptr + i_idx * out_low_strides +
+                              j * high_axis_stride) = (*input)(i_idx)(j);
+                        i_idx++;
+                    }
+                    tmp -= unroll;
+                }
+
+                for (; i_idx < low_lane; i_idx++) {
+                    for (size_t j = 0; j < high_lane; j++)
+                        *(out_ptr + i_idx * out_low_strides +
+                          j * high_axis_stride) = (*input)(i_idx)(j);
+                }
+
+                input += input_stride;
+                out_ptr += 1;
+            }
+            in_offset += high_axis_stride;
+            count -= high_axis_stride;
+            high_idx++;
+            if (high_idx == high_dim) {
+                high_idx = 0;
+                low_idx++;
+            }
+        }
+    }
+};
+
 template <size_t lane, class T1, class T2, bool Arch> class u_unpack_1d_ranked {
   public:
     void operator()(const T1 *input, size_t input_stride, size_t axis_stride,
@@ -106,6 +159,16 @@ template <size_t axis_stride, size_t lane, class T1, class T2, size_t PackAxis>
 void u_unpack_1d_fixed(const T1 &input, size_t in_stride, T2 *output,
                        size_t count) noexcept {
     ukernels::u_unpack_1d_fixed<axis_stride, lane, T1, T2, true, PackAxis> impl;
+    impl(input, in_stride, output, count);
+}
+
+template <size_t low_axis_stride, size_t low_lane, size_t high_axis_stride,
+          size_t high_lane, class T1, class T2>
+void u_unpack_2d_fixed(const T1 *input, size_t in_stride, T2 *output,
+                       size_t count) noexcept {
+    ukernels::u_unpack_2d_fixed<low_axis_stride, low_lane, high_axis_stride,
+                                high_lane, T1, T2, true>
+        impl;
     impl(input, in_stride, output, count);
 }
 

@@ -20,6 +20,6 @@
 #include "ukernels/u_memcpy.h"
 #include "ukernels/u_mul_add.h"
 #include "ukernels/u_pack.h"
-#include "ukernels/u_unpack.h"
 #include "ukernels/u_reduce.h"
 #include "ukernels/u_unary.h"
+#include "ukernels/u_unpack.h"

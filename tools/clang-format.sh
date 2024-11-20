@@ -32,5 +32,6 @@ find "${ROOT_DIR}/tests" \
      "${ROOT_DIR}/modules" \
      "${ROOT_DIR}/python" \
      "${ROOT_DIR}/targets" \
+     "${ROOT_DIR}/ntt" \
      \( -name "*.h" -o -name "*.c" -o -name "*.cc" -o -name "*.cxx" -o -name "*.cpp" -o -name "*.hpp" -o -name "*.cppm" \) -and -not -wholename "*/.*" | \
      xargs ${CLANG_FORMAT_LLVM_INSTALL_DIR}/bin/clang-format -i -style=file

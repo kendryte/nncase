@@ -77,9 +77,7 @@ SPECIALIZE_U_BINARY(floor_mod, 8)
 #undef SPECIALIZE_U_BINARY
 
 // clamp
-template <> struct u_clamp_policy<true> {
-    static constexpr size_t unroll = 8;
-};
+template <> struct u_clamp_policy<true> { static constexpr size_t unroll = 8; };
 
 // reduce
 template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
@@ -87,9 +85,7 @@ template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
 };
 
 // cast
-template <> struct u_cast_policy<true> {
-    static constexpr size_t unroll = 8;
-};
+template <> struct u_cast_policy<true> { static constexpr size_t unroll = 8; };
 
 // matmul
 template <>
@@ -666,6 +662,100 @@ struct u_unpack_1d_fixed<axis_stride, NTT_VLEN / 32, T1, float, true,
                 count--;
             }
             axis_idx++;
+        }
+    }
+};
+
+template <size_t low_axis_stride, size_t high_axis_stride>
+class u_unpack_2d_fixed<
+    low_axis_stride, NTT_VLEN / 32, high_axis_stride, NTT_VLEN / 32,
+    vector<float, NTT_VLEN / 32, NTT_VLEN / 32>, float, true> {
+  public:
+    void operator()(const vector<float, NTT_VLEN / 32, NTT_VLEN / 32> *input,
+                    size_t in_stride, float *output, size_t count) noexcept {
+        constexpr size_t vl = NTT_VLEN / 32;
+        using policy_t =
+            u_unpack_policy<vector<float, NTT_VLEN / 32, NTT_VLEN / 32>, float,
+                            true>;
+        constexpr auto unroll = policy_t::unroll;
+        size_t in_offset = 0;
+        size_t low_idx = 0;
+        size_t high_idx = 0;
+        constexpr auto high_dim = low_axis_stride / high_axis_stride;
+        constexpr auto out_low_strides = low_axis_stride * vl;
+        constexpr auto low_extra = low_axis_stride * (vl * vl - 1);
+        constexpr auto high_extra = high_axis_stride * (vl - 1);
+        asm("vsetvli zero, %[vl], e32, m1\n" ::[vl] "r"(vl));
+        auto in_strides = sizeof(vector<float, vl>);
+        in_stride = in_stride + 1;
+        auto out_strides = high_axis_stride * sizeof(float);
+
+        while (count / high_axis_stride) {
+            auto out_ptr = output + in_offset + low_idx * low_extra +
+                           high_idx * high_extra;
+            auto out_end = out_ptr + high_axis_stride;
+            while (out_ptr < out_end) {
+                auto tmp = vl;
+                size_t i_idx = 0;
+                while (tmp / unroll) {
+                    asm volatile("vl1re32.v v1, (%[input])\n"
+                                 "add %[input], %[input], %[in_strides]\n"
+                                 : [input] "+r"(input)
+                                 : [in_strides] "r"(in_strides));
+                    auto output1 = out_ptr + i_idx * out_low_strides;
+
+                    asm volatile("vl1re32.v v2, (%[input])\n"
+                                 "add %[input], %[input], %[in_strides]\n"
+                                 : [input] "+r"(input)
+                                 : [in_strides] "r"(in_strides));
+                    auto output2 = out_ptr + (i_idx + 1) * out_low_strides;
+
+                    asm volatile("vl1re32.v v3, (%[input])\n"
+                                 "add %[input], %[input], %[in_strides]\n"
+                                 : [input] "+r"(input)
+                                 : [in_strides] "r"(in_strides));
+                    auto output3 = out_ptr + (i_idx + 2) * out_low_strides;
+
+                    asm volatile("vl1re32.v v4, (%[input])\n"
+                                 "add %[input], %[input], %[in_strides]\n"
+                                 : [input] "+r"(input)
+                                 : [in_strides] "r"(in_strides));
+                    auto output4 = out_ptr + (i_idx + 3) * out_low_strides;
+
+                    asm volatile("vsse32.v v1, (%[output1]), %[out_strides]\n"
+                                 : [output1] "+r"(output1)
+                                 : [out_strides] "r"(out_strides));
+                    i_idx += 4;
+
+                    asm volatile("vsse32.v v2, (%[output2]), %[out_strides]\n"
+                                 : [output2] "+r"(output2)
+                                 : [out_strides] "r"(out_strides));
+                    tmp -= unroll;
+
+                    asm volatile("vsse32.v v3, (%[output3]), %[out_strides]\n"
+                                 : [output3] "+r"(output3)
+                                 : [out_strides] "r"(out_strides));
+
+                    asm volatile("vsse32.v v4, (%[output4]), %[out_strides]\n"
+                                 : [output4] "+r"(output4)
+                                 : [out_strides] "r"(out_strides));
+                }
+
+                for (; i_idx < vl; i_idx++) {
+                    for (size_t j = 0; j < vl; j++)
+                        *(out_ptr + i_idx * out_low_strides +
+                          j * high_axis_stride) = (*input)(i_idx)(j);
+                }
+
+                out_ptr += 1;
+            }
+            in_offset += high_axis_stride;
+            count -= high_axis_stride;
+            high_idx++;
+            if (high_idx == high_dim) {
+                high_idx = 0;
+                low_idx++;
+            }
         }
     }
 };

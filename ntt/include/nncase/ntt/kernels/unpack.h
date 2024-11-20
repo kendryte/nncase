@@ -68,6 +68,49 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
 };
 
 template <size_t... InDims, size_t... InElemDims, class OutShape,
+          size_t... InStrides, class OutStrides, size_t Axis1, size_t Axis2>
+class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
+                  fixed_strides<InStrides...>, OutStrides, Axis1, Axis2> {
+  public:
+    template <class TIn, class TOut>
+    constexpr void operator()(const TIn &input, TOut &output) {
+        using TVec = typename TIn::element_type;
+        constexpr auto rank = TIn::shape_type::rank();
+        constexpr auto in_conti_dims = contiguous_dims(
+            fixed_shape<InDims...>{}, fixed_strides<InStrides...>{});
+        constexpr auto low_axis = Axis1 < Axis2 ? Axis1 : Axis2;
+        constexpr auto high_axis = Axis1 < Axis2 ? Axis2 : Axis1;
+        if constexpr ((in_conti_dims == rank) && (high_axis == low_axis + 1)) {
+            auto pin = input.buffer().data();
+            auto pout = output.buffer().data();
+            auto count = input.shape().length();
+            constexpr auto in_strides =
+                std::array<size_t, sizeof...(InStrides)>{InStrides...};
+            constexpr auto v_shape =
+                std::array<size_t, sizeof...(InElemDims)>{InElemDims...};
+            ntt::u_unpack_2d_fixed<in_strides[low_axis], v_shape[0],
+                                   in_strides[high_axis], v_shape[1], TVec,
+                                   typename TOut::element_type>(pin, 1, pout,
+                                                                count);
+        } else {
+            constexpr auto elem_rank = TVec::shape_type::rank();
+            constexpr fixed_shape<InDims..., InElemDims...> domain{};
+            apply(domain, [&](auto index) {
+                auto in_index = slice_index<rank>(index);
+                auto elem_index = slice_index<elem_rank>(index, rank);
+                auto out_index = slice_index<rank>(index);
+                out_index[low_axis] =
+                    out_index[low_axis] * TVec::shape()[low_axis] + index[rank];
+                out_index[high_axis] =
+                    out_index[high_axis] * TVec::shape()[high_axis] +
+                    index[rank];
+                output(out_index) = input(in_index)(elem_index);
+            });
+        }
+    }
+};
+
+template <size_t... InDims, size_t... InElemDims, class OutShape,
           size_t... InStrides, class OutStrides, size_t... Axes>
 class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
                   fixed_strides<InStrides...>, OutStrides, Axes...> {
