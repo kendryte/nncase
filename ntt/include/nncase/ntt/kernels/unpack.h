@@ -35,18 +35,22 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
     constexpr void operator()(const TIn &input, TOut &output) {
         using TVec = typename TIn::element_type;
         constexpr auto rank = TIn::shape_type::rank();
-        constexpr auto in_conti_dims = contiguous_dims(fixed_shape<InDims...>{}, fixed_strides<InStrides...>{});
-        if constexpr(in_conti_dims == rank) {
+        constexpr auto in_conti_dims = contiguous_dims(
+            fixed_shape<InDims...>{}, fixed_strides<InStrides...>{});
+        if constexpr (in_conti_dims == rank) {
             auto pin = input.buffer().data();
             auto pout = output.buffer().data();
             auto count = input.shape().length();
-            if constexpr(PackAxis == (rank - 1))
+            if constexpr (PackAxis == (rank - 1))
                 ntt::u_memcpy(pin, 1, reinterpret_cast<TVec *>(pout), 1, count);
-            else
-            {
-                constexpr auto in_strides = std::array<size_t, sizeof...(InStrides)>{InStrides...};
-                constexpr auto v_shape = std::array<size_t, sizeof...(InElemDims)>{InElemDims...};
-                ntt::u_unpack_1d_fixed<in_strides[PackAxis], v_shape[0], TVec, typename TOut::element_type>(pin, 1, pout, count);
+            else {
+                constexpr auto in_strides =
+                    std::array<size_t, sizeof...(InStrides)>{InStrides...};
+                constexpr auto v_shape =
+                    std::array<size_t, sizeof...(InElemDims)>{InElemDims...};
+                ntt::u_unpack_1d_fixed<in_strides[PackAxis], v_shape[0], TIn,
+                                       typename TOut::element_type>(
+                    input, 1, pout, count);
             }
         } else {
             constexpr auto elem_rank = TVec::shape_type::rank();
@@ -55,7 +59,8 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
                 auto in_index = slice_index<rank>(index);
                 auto elem_index = slice_index<elem_rank>(index, rank);
                 auto out_index = slice_index<rank>(index);
-                out_index[PackAxis] = out_index[PackAxis] * TVec::shape()[0] + index[rank];
+                out_index[PackAxis] =
+                    out_index[PackAxis] * TVec::shape()[0] + index[rank];
                 output(out_index) = input(in_index)(elem_index);
             });
         }
@@ -104,10 +109,12 @@ class unpack_impl<ranked_shape<in_rank>, fixed_shape<InElemDims...>, OutShape,
             auto pin = input.buffer().data();
             auto pout = output.buffer().data();
             auto count = input.shape().length();
-            if constexpr(PackAxis == (rank - 1))
+            if constexpr (PackAxis == (rank - 1))
                 ntt::u_memcpy(pin, 1, reinterpret_cast<TVec *>(pout), 1, count);
             else
-                ntt::u_unpack_1d_ranked<TVec::shape()[0], TVec, typename TOut::element_type>(pin, 1, input.strides()[PackAxis], pout, count);
+                ntt::u_unpack_1d_ranked<TVec::shape()[0], TVec,
+                                        typename TOut::element_type>(
+                    pin, 1, input.strides()[PackAxis], pout, count);
         } else {
             constexpr auto elem_rank = TVec::shape_type::rank();
             fixed_shape<InElemDims...> elem_shape{};
@@ -124,7 +131,8 @@ class unpack_impl<ranked_shape<in_rank>, fixed_shape<InElemDims...>, OutShape,
                 auto in_index = slice_index<rank>(index);
                 auto elem_index = slice_index<elem_rank>(index, rank);
                 auto out_index = slice_index<rank>(index);
-                out_index[PackAxis] = out_index[PackAxis] * TVec::shape()[0] + index[rank];
+                out_index[PackAxis] =
+                    out_index[PackAxis] * TVec::shape()[0] + index[rank];
                 output(out_index) = input(in_index)(elem_index);
             });
         }
