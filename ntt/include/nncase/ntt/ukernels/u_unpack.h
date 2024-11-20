@@ -24,7 +24,8 @@ template <class T1, class T2, bool Arch> struct u_unpack_policy {
     static constexpr size_t unroll = 2;
 };
 
-template <size_t axis_stride, size_t lane, class T1, class T2, bool Arch>
+template <size_t axis_stride, size_t lane, class T1, class T2, bool Arch,
+          size_t PackAxis>
 class u_unpack_1d_fixed {
   public:
     void operator()(const T1 &input, size_t input_stride, T2 *output,
@@ -101,10 +102,10 @@ template <size_t lane, class T1, class T2, bool Arch> class u_unpack_1d_ranked {
 };
 } // namespace ukernels
 
-template <size_t axis_stride, size_t lane, class T1, class T2>
+template <size_t axis_stride, size_t lane, class T1, class T2, size_t PackAxis>
 void u_unpack_1d_fixed(const T1 &input, size_t in_stride, T2 *output,
                        size_t count) noexcept {
-    ukernels::u_unpack_1d_fixed<axis_stride, lane, T1, T2, true> impl;
+    ukernels::u_unpack_1d_fixed<axis_stride, lane, T1, T2, true, PackAxis> impl;
     impl(input, in_stride, output, count);
 }
 

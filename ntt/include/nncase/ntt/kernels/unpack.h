@@ -49,7 +49,7 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
                 constexpr auto v_shape =
                     std::array<size_t, sizeof...(InElemDims)>{InElemDims...};
                 ntt::u_unpack_1d_fixed<in_strides[PackAxis], v_shape[0], TIn,
-                                       typename TOut::element_type>(
+                                       typename TOut::element_type, PackAxis>(
                     input, 1, pout, count);
             }
         } else {

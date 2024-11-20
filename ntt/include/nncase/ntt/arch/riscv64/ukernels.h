@@ -590,8 +590,9 @@ template <class T1, class T2> struct u_unpack_policy<T1, T2, true> {
     static constexpr size_t unroll = 4;
 };
 
-template <size_t axis_stride, class T1>
-struct u_unpack_1d_fixed<axis_stride, NTT_VLEN / 32, T1, float, true> {
+template <size_t axis_stride, class T1, size_t PackAxis>
+struct u_unpack_1d_fixed<axis_stride, NTT_VLEN / 32, T1, float, true,
+                         PackAxis> {
   public:
     void operator()(const T1 &input, size_t in_stride, float *output,
                     size_t count) noexcept {
