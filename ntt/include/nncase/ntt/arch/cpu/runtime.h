@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 #pragma once
-#include "../distributed.h"
-#include "../runtime.h"
+#include "../../distributed.h"
+#include "../../runtime.h"
+#include "topology.h"
 #include <cstdarg>
 
 #ifdef __APPLE__
@@ -50,25 +51,22 @@ extern size_t cdim;
 } // namespace nncase::ntt::runtime
 
 namespace nncase::ntt {
-template <> struct program_id_getter<0> {
+template <> struct program_id_getter<topology::thread> {
     static size_t id() noexcept {
         return runtime::cpu_thread_context_t::current().tid;
     }
-    static size_t dim() noexcept { return runtime::tdim; }
 };
 
-template <> struct program_id_getter<1> {
+template <> struct program_id_getter<topology::block> {
     static size_t id() noexcept {
         return runtime::cpu_thread_context_t::current().bid;
     }
-    static size_t dim() noexcept { return runtime::bdim; }
 };
 
-template <> struct program_id_getter<2> {
+template <> struct program_id_getter<topology::chip> {
     static size_t id() noexcept {
         return runtime::cpu_thread_context_t::current().cid;
     }
-    static size_t dim() noexcept { return runtime::cdim; }
 };
 } // namespace nncase::ntt
 

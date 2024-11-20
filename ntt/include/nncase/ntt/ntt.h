@@ -60,4 +60,6 @@
 #include "arch/riscv64/ukernels.h"
 #endif
 
-#include "runtime/cpu_runtime.h"
+#include "arch/cpu/distributed.h"
+#include "arch/cpu/runtime.h"
+#include "arch/cpu/topology.h"

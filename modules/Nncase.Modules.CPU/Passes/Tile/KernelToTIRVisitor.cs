@@ -272,11 +272,12 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                         }
 
                         TensorType? dividedType = null;
-                        if (c.CheckedType is TensorType tensorType)
+                        var distributedType = c.CheckedType as DistributedType;
+                        if (distributedType == null)
                         {
-                            dividedType = tensorType;
+                            dividedType = (TensorType)expr.CheckedType;
                         }
-                        else if (c.CheckedType is DistributedType distributedType)
+                        else if (distributedType != null)
                         {
                             hierarchy = 1;
                             if (DistributedUtility.TryGetDividedTensorType(distributedType, out var type))
@@ -289,11 +290,11 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                         {
                             if (index == -1)
                             {
-                                T.AttachBuffer(Tensor.FromPointer((ulong)buffers[expr].MemInterval.Start, dividedType.DType), (TensorType)dividedType, loc, hierarchy, out buffer, name);
+                                T.AttachBuffer(Tensor.FromPointer((ulong)buffers[expr].MemInterval.Start, dividedType.DType), (TensorType)dividedType, loc, hierarchy, out buffer, name, distributedType);
                             }
                             else
                             {
-                                T.CreateBuffer(dividedType, loc, out buffer, name);
+                                T.CreateBuffer(dividedType, loc, out buffer, name, distributedType);
                             }
                         }
                         else if (c.CheckedType is DistributedType)

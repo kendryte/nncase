@@ -1,0 +1,15 @@
+@using System.Linq
+@using NetFabric.Hyperlinq
+@using Nncase
+@model Nncase.Targets.CpuTargetOptions
+@{
+  var hierarchy = Model.Hierarchies[0];
+}
+
+#pragma once
+#include <array>
+#include <cstddef>
+
+namespace nncase::ntt {
+    constexpr std::array<size_t, @(hierarchy.Length)> topology_dims = {@(string.Join(", ", hierarchy))};
+}

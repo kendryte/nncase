@@ -13,3 +13,4 @@ endif()
 include(@Html.Raw(Model.CMakePath))
 
 target_sources(nncase_ntt_module PRIVATE thread_main.cpp)
+target_include_directories(nncase_ntt_module PRIVATE ${CMAKE_CURRENT_LIST_DIR})
