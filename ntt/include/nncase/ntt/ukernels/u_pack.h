@@ -89,20 +89,8 @@ template <class TIn, class TOut, size_t... Axes>
 constexpr void u_pack2d(const TIn &input, TOut &output) noexcept {
     using TElem = typename TIn::element_type;
     using TVec = typename std::decay_t<TOut>::element_type;
-    constexpr auto axes = std::array<size_t, sizeof...(Axes)>{Axes...};
-    constexpr auto in_rank = TIn::rank();
-
-    auto inner_size = 1;
-    for (size_t i = axes[1] + 1; i < in_rank; i++) {
-        inner_size *= input.shape()[i];
-    }
-    if (inner_size % TVec::shape()[1] != 0) {
-        ukernels::u_pack2d<false, TIn, TOut, TElem, TVec, Axes...> impl;
-        impl(input, output);
-    } else {
-        ukernels::u_pack2d<true, TIn, TOut, TElem, TVec, Axes...> impl;
-        impl(input, output);
-    }
+    ukernels::u_pack2d<true, TIn, TOut, TElem, TVec, Axes...> impl;
+    impl(input, output);
 }
 
 } // namespace nncase::ntt
