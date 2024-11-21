@@ -94,15 +94,15 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
         } else {
             constexpr auto elem_rank = TVec::shape_type::rank();
             constexpr fixed_shape<InDims..., InElemDims...> domain{};
+            constexpr auto axes = std::array<size_t, 2>{Axis1, Axis2};
             apply(domain, [&](auto index) {
                 auto in_index = slice_index<rank>(index);
                 auto elem_index = slice_index<elem_rank>(index, rank);
                 auto out_index = slice_index<rank>(index);
-                out_index[low_axis] =
-                    out_index[low_axis] * TVec::shape()[low_axis] + index[rank];
-                out_index[high_axis] =
-                    out_index[high_axis] * TVec::shape()[high_axis] +
-                    index[rank];
+                loop<axes.size()>([&](auto i) {
+                out_index[axes[i]] =
+                    out_index[axes[i]] * TVec::shape()[i] + index[rank + i];
+                });
                 output(out_index) = input(in_index)(elem_index);
             });
         }
