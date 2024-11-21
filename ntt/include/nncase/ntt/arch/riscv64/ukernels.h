@@ -77,7 +77,9 @@ SPECIALIZE_U_BINARY(floor_mod, 8)
 #undef SPECIALIZE_U_BINARY
 
 // clamp
-template <> struct u_clamp_policy<true> { static constexpr size_t unroll = 8; };
+template <> struct u_clamp_policy<true> {
+    static constexpr size_t unroll = 8;
+};
 
 // reduce
 template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
@@ -85,7 +87,9 @@ template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
 };
 
 // cast
-template <> struct u_cast_policy<true> { static constexpr size_t unroll = 8; };
+template <> struct u_cast_policy<true> {
+    static constexpr size_t unroll = 8;
+};
 
 // matmul
 template <>
@@ -666,13 +670,14 @@ struct u_unpack_1d_fixed<axis_stride, NTT_VLEN / 32, T1, float, true,
     }
 };
 
-template <size_t low_axis_stride, size_t high_axis_stride>
-class u_unpack_2d_fixed<
-    low_axis_stride, NTT_VLEN / 32, high_axis_stride, NTT_VLEN / 32,
-    vector<float, NTT_VLEN / 32, NTT_VLEN / 32>, float, true> {
+template <size_t low_axis_stride, size_t high_axis_stride, class T1,
+          size_t PackAxis1, size_t PackAxis2>
+class u_unpack_2d_fixed<low_axis_stride, NTT_VLEN / 32, high_axis_stride,
+                        NTT_VLEN / 32, T1, float, true> {
   public:
-    void operator()(const vector<float, NTT_VLEN / 32, NTT_VLEN / 32> *input,
-                    size_t in_stride, float *output, size_t count) noexcept {
+    void operator()(const T1 &input, size_t in_stride, float *output,
+                    size_t count) noexcept {
+        auto in_ptr = input.buffer().data();
         constexpr size_t vl = NTT_VLEN / 32;
         using policy_t =
             u_unpack_policy<vector<float, NTT_VLEN / 32, NTT_VLEN / 32>, float,
@@ -698,27 +703,27 @@ class u_unpack_2d_fixed<
                 auto tmp = vl;
                 size_t i_idx = 0;
                 while (tmp / unroll) {
-                    asm volatile("vl1re32.v v1, (%[input])\n"
-                                 "add %[input], %[input], %[in_strides]\n"
-                                 : [input] "+r"(input)
+                    asm volatile("vl1re32.v v1, (%[in_ptr])\n"
+                                 "add %[in_ptr], %[in_ptr], %[in_strides]\n"
+                                 : [in_ptr] "+r"(in_ptr)
                                  : [in_strides] "r"(in_strides));
                     auto output1 = out_ptr + i_idx * out_low_strides;
 
-                    asm volatile("vl1re32.v v2, (%[input])\n"
-                                 "add %[input], %[input], %[in_strides]\n"
-                                 : [input] "+r"(input)
+                    asm volatile("vl1re32.v v2, (%[in_ptr])\n"
+                                 "add %[in_ptr], %[in_ptr], %[in_strides]\n"
+                                 : [in_ptr] "+r"(in_ptr)
                                  : [in_strides] "r"(in_strides));
                     auto output2 = out_ptr + (i_idx + 1) * out_low_strides;
 
-                    asm volatile("vl1re32.v v3, (%[input])\n"
-                                 "add %[input], %[input], %[in_strides]\n"
-                                 : [input] "+r"(input)
+                    asm volatile("vl1re32.v v3, (%[in_ptr])\n"
+                                 "add %[in_ptr], %[in_ptr], %[in_strides]\n"
+                                 : [in_ptr] "+r"(in_ptr)
                                  : [in_strides] "r"(in_strides));
                     auto output3 = out_ptr + (i_idx + 2) * out_low_strides;
 
-                    asm volatile("vl1re32.v v4, (%[input])\n"
-                                 "add %[input], %[input], %[in_strides]\n"
-                                 : [input] "+r"(input)
+                    asm volatile("vl1re32.v v4, (%[in_ptr])\n"
+                                 "add %[in_ptr], %[in_ptr], %[in_strides]\n"
+                                 : [in_ptr] "+r"(in_ptr)
                                  : [in_strides] "r"(in_strides));
                     auto output4 = out_ptr + (i_idx + 3) * out_low_strides;
 
@@ -744,7 +749,7 @@ class u_unpack_2d_fixed<
                 for (; i_idx < vl; i_idx++) {
                     for (size_t j = 0; j < vl; j++)
                         *(out_ptr + i_idx * out_low_strides +
-                          j * high_axis_stride) = (*input)(i_idx)(j);
+                          j * high_axis_stride) = (*in_ptr)(i_idx)(j);
                 }
 
                 out_ptr += 1;

@@ -81,7 +81,6 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
         constexpr auto low_axis = Axis1 < Axis2 ? Axis1 : Axis2;
         constexpr auto high_axis = Axis1 < Axis2 ? Axis2 : Axis1;
         if constexpr ((in_conti_dims == rank) && (high_axis == low_axis + 1)) {
-            auto pin = input.buffer().data();
             auto pout = output.buffer().data();
             auto count = input.shape().length();
             constexpr auto in_strides =
@@ -89,9 +88,9 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
             constexpr auto v_shape =
                 std::array<size_t, sizeof...(InElemDims)>{InElemDims...};
             ntt::u_unpack_2d_fixed<in_strides[low_axis], v_shape[0],
-                                   in_strides[high_axis], v_shape[1], TVec,
-                                   typename TOut::element_type>(pin, 1, pout,
-                                                                count);
+                                   in_strides[high_axis], v_shape[1], TIn,
+                                   typename TOut::element_type, Axis1, Axis2>(
+                input, 1, pout, count);
         } else {
             constexpr auto elem_rank = TVec::shape_type::rank();
             constexpr fixed_shape<InDims..., InElemDims...> domain{};

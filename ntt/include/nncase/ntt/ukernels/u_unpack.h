@@ -65,10 +65,11 @@ class u_unpack_1d_fixed {
 };
 
 template <size_t low_axis_stride, size_t low_lane, size_t high_axis_stride,
-          size_t high_lane, class T1, class T2, bool Arch>
+          size_t high_lane, class T1, class T2, bool Arch, size_t Axis1,
+          size_t Axis2>
 class u_unpack_2d_fixed {
   public:
-    void operator()(const T1 *input, size_t input_stride, T2 *output,
+    void operator()(const T1 &input, size_t input_stride, T2 *output,
                     size_t count) noexcept {
         using policy_t = u_unpack_policy<T1, T2, Arch>;
         constexpr auto unroll = policy_t::unroll;
@@ -80,6 +81,7 @@ class u_unpack_2d_fixed {
         constexpr auto low_extra = low_axis_stride * (low_lane * low_lane - 1);
         constexpr auto high_extra = high_axis_stride * (high_lane - 1);
 
+        auto in_ptr = input.buffer().data();
         while (count / high_axis_stride) {
             auto out_ptr = output + in_offset + low_idx * low_extra +
                            high_idx * high_extra;
@@ -91,7 +93,7 @@ class u_unpack_2d_fixed {
                     for (size_t i = 0; i < unroll; i++) {
                         for (size_t j = 0; j < high_lane; j++)
                             *(out_ptr + i_idx * out_low_strides +
-                              j * high_axis_stride) = (*input)(i_idx)(j);
+                              j * high_axis_stride) = (*in_ptr)(i_idx)(j);
                         i_idx++;
                     }
                     tmp -= unroll;
@@ -100,10 +102,10 @@ class u_unpack_2d_fixed {
                 for (; i_idx < low_lane; i_idx++) {
                     for (size_t j = 0; j < high_lane; j++)
                         *(out_ptr + i_idx * out_low_strides +
-                          j * high_axis_stride) = (*input)(i_idx)(j);
+                          j * high_axis_stride) = (*in_ptr)(i_idx)(j);
                 }
 
-                input += input_stride;
+                in_ptr += input_stride;
                 out_ptr += 1;
             }
             in_offset += high_axis_stride;
@@ -163,11 +165,11 @@ void u_unpack_1d_fixed(const T1 &input, size_t in_stride, T2 *output,
 }
 
 template <size_t low_axis_stride, size_t low_lane, size_t high_axis_stride,
-          size_t high_lane, class T1, class T2>
-void u_unpack_2d_fixed(const T1 *input, size_t in_stride, T2 *output,
+          size_t high_lane, class T1, class T2, size_t Axis1, size_t Axis2>
+void u_unpack_2d_fixed(const T1 &input, size_t in_stride, T2 *output,
                        size_t count) noexcept {
     ukernels::u_unpack_2d_fixed<low_axis_stride, low_lane, high_axis_stride,
-                                high_lane, T1, T2, true>
+                                high_lane, T1, T2, true, Axis1, Axis2>
         impl;
     impl(input, in_stride, output, count);
 }
