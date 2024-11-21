@@ -137,11 +137,10 @@ class u_pack<M, N, MStrides, true, float, vector<float, 8>> {
 };
 
 template <class TIn, class TOut, size_t... Axes>
-requires(sizeof...(Axes) > 0 &&
-         (std::get<sizeof...(Axes) - 1>(std::array<size_t, sizeof...(Axes)>{
-              Axes...}) ==
-          (TIn::rank() - 1))) class u_pack2d<true, TIn, TOut, float,
-                                             vector<float, 8, 8>, Axes...> {
+    requires(sizeof...(Axes) > 0 &&
+             (std::get<sizeof...(Axes) - 1>(std::array<size_t, sizeof...(Axes)>{
+                  Axes...}) == (TIn::rank() - 1)))
+class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>, Axes...> {
   public:
     constexpr void operator()(const TIn &input, TOut &output) noexcept {
         using TVec = vector<float, 8, 8>;
@@ -329,6 +328,99 @@ template <> struct u_memcpy<vector<float, 8>, true> {
             _mm256_storeu_ps(reinterpret_cast<float *>(output), data);
             input += input_stride;
             output += output_stride;
+        }
+    }
+};
+
+template <size_t axis_stride, class T1, size_t PackAxis>
+class u_unpack_1d_fixed<axis_stride, 8, T1, float, true, PackAxis> {
+  public:
+    void operator()(const T1 &input, size_t input_stride, float *output,
+                    size_t count) noexcept {
+
+        constexpr auto in_rank = T1::rank();
+        auto in_shape = input.shape();
+
+        ranked_shape<in_rank> inner_domain{};
+        ranked_shape<in_rank> domain{};
+        for (size_t i = 0; i < in_rank; i++) {
+            domain[i] = in_shape[i];
+        }
+
+        auto outer_index = slice_index<PackAxis + 1>(domain);
+        auto inner_index =
+            slice_index<in_rank - (PackAxis + 1)>(domain, PackAxis + 1);
+        auto inner_size = inner_index.length();
+
+        auto dst = output;
+        if (inner_size % 8 != 0) {
+            ukernels::u_unpack_1d_fixed<axis_stride, 8, T1, float, false,
+                                        PackAxis>
+                impl;
+            impl(input, input_stride, output, count);
+        } else {
+            ntt::apply(outer_index, [&](const auto &index) {
+                for (size_t i = 0; i < PackAxis + 1; i++) {
+                    inner_domain[i] = index[i];
+                }
+                auto src =
+                    reinterpret_cast<const float *>(&input(inner_domain));
+
+                dst = output + linear_offset(inner_domain, input.strides()) * 8;
+
+                for (size_t i = 0; i < inner_size / 8; i++) {
+                    auto offset = i * 8;
+                    __m256 row0 = _mm256_load_ps(src + 0 * 8);
+                    __m256 row1 = _mm256_load_ps(src + 1 * 8);
+                    __m256 row2 = _mm256_load_ps(src + 2 * 8);
+                    __m256 row3 = _mm256_load_ps(src + 3 * 8);
+                    __m256 row4 = _mm256_load_ps(src + 4 * 8);
+                    __m256 row5 = _mm256_load_ps(src + 5 * 8);
+                    __m256 row6 = _mm256_load_ps(src + 6 * 8);
+                    __m256 row7 = _mm256_load_ps(src + 7 * 8);
+
+                    __m256 t0 = _mm256_unpacklo_ps(row0, row1);
+                    __m256 t1 = _mm256_unpackhi_ps(row0, row1);
+                    __m256 t2 = _mm256_unpacklo_ps(row2, row3);
+                    __m256 t3 = _mm256_unpackhi_ps(row2, row3);
+                    __m256 t4 = _mm256_unpacklo_ps(row4, row5);
+                    __m256 t5 = _mm256_unpackhi_ps(row4, row5);
+                    __m256 t6 = _mm256_unpacklo_ps(row6, row7);
+                    __m256 t7 = _mm256_unpackhi_ps(row6, row7);
+
+                    __m256 u0 =
+                        _mm256_shuffle_ps(t0, t2, 0x44); // 0x44 -> 01000100
+                    __m256 u1 =
+                        _mm256_shuffle_ps(t0, t2, 0xEE); // 0xEE -> 11101110
+                    __m256 u2 = _mm256_shuffle_ps(t1, t3, 0x44);
+                    __m256 u3 = _mm256_shuffle_ps(t1, t3, 0xEE);
+                    __m256 u4 = _mm256_shuffle_ps(t4, t6, 0x44);
+                    __m256 u5 = _mm256_shuffle_ps(t4, t6, 0xEE);
+                    __m256 u6 = _mm256_shuffle_ps(t5, t7, 0x44);
+                    __m256 u7 = _mm256_shuffle_ps(t5, t7, 0xEE);
+
+                    row0 = _mm256_permute2f128_ps(u0, u4,
+                                                  0x20); // 0x20 -> 00100000
+                    row1 = _mm256_permute2f128_ps(u1, u5, 0x20);
+                    row2 = _mm256_permute2f128_ps(u2, u6, 0x20);
+                    row3 = _mm256_permute2f128_ps(u3, u7, 0x20);
+                    row4 = _mm256_permute2f128_ps(u0, u4,
+                                                  0x31); // 0x31 -> 00110001
+                    row5 = _mm256_permute2f128_ps(u1, u5, 0x31);
+                    row6 = _mm256_permute2f128_ps(u2, u6, 0x31);
+                    row7 = _mm256_permute2f128_ps(u3, u7, 0x31);
+
+                    _mm256_store_ps(&dst[0 * inner_size + offset], row0);
+                    _mm256_store_ps(&dst[1 * inner_size + offset], row1);
+                    _mm256_store_ps(&dst[2 * inner_size + offset], row2);
+                    _mm256_store_ps(&dst[3 * inner_size + offset], row3);
+                    _mm256_store_ps(&dst[4 * inner_size + offset], row4);
+                    _mm256_store_ps(&dst[5 * inner_size + offset], row5);
+                    _mm256_store_ps(&dst[6 * inner_size + offset], row6);
+                    _mm256_store_ps(&dst[7 * inner_size + offset], row7);
+                    src += 64;
+                }
+            });
         }
     }
 };

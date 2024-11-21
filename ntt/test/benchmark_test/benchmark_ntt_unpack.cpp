@@ -51,12 +51,16 @@ void benchmark_ntt_unpack(const std::string &mode, const size_t run_size) {
                     ntt::fixed_shape<N / P0, C / P1, H / P2, W / P3>>;
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
 
-    tensor_type1 ntt_input;
-    tensor_type2 ntt_output;
+    alignas(32) tensor_type1 ntt_input;
+    alignas(32) tensor_type2 ntt_output;
     NttTest::init_tensor(ntt_input, -10.f, 10.f);
 
-    // warm up
+// warm up
+#if __x86_64__
+    constexpr size_t warmup_size = 0;
+#else
     constexpr size_t warmup_size = 10;
+#endif
     for (size_t i = 0; i < warmup_size; i++) {
         ntt::unpack<unpack_dims...>(ntt_input, ntt_output);
         asm volatile("" ::"g"(ntt_output));
@@ -99,7 +103,7 @@ int main(int argc, char *argv[]) {
     benchmark_ntt_unpack<ntt::vector<float, P>, 2, 2, 8 * P, 8, 2>("H", 2000);
     benchmark_ntt_unpack<ntt::vector<float, P>, 2, 8, 8, 8 * P, 3>("W", 2000);
     benchmark_ntt_unpack<ntt::vector<float, P, P>, 4 * P, 8 * P, 2, 4, 0, 1>(
-        "NC", 1);
+        "NC", 2000);
     benchmark_ntt_unpack<ntt::vector<float, P, P>, 2, 4 * P, 8 * P, 8, 1, 2>(
         "CH", 2000);
     benchmark_ntt_unpack<ntt::vector<float, P, P>, 4, 4, 8 * P, 8 * P, 2, 3>(
