@@ -77,9 +77,7 @@ SPECIALIZE_U_BINARY(floor_mod, 8)
 #undef SPECIALIZE_U_BINARY
 
 // clamp
-template <> struct u_clamp_policy<true> {
-    static constexpr size_t unroll = 8;
-};
+template <> struct u_clamp_policy<true> { static constexpr size_t unroll = 8; };
 
 // reduce
 template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
@@ -87,9 +85,7 @@ template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
 };
 
 // cast
-template <> struct u_cast_policy<true> {
-    static constexpr size_t unroll = 8;
-};
+template <> struct u_cast_policy<true> { static constexpr size_t unroll = 8; };
 
 // matmul
 template <>
@@ -670,10 +666,10 @@ struct u_unpack_1d_fixed<axis_stride, NTT_VLEN / 32, T1, float, true,
     }
 };
 
-template <size_t low_axis_stride, size_t high_axis_stride, class T1,
-          size_t PackAxis1, size_t PackAxis2>
-class u_unpack_2d_fixed<low_axis_stride, NTT_VLEN / 32, high_axis_stride,
-                        NTT_VLEN / 32, T1, float, true> {
+template <size_t low_stride, size_t high_stride, class T1, size_t PackAxis1,
+          size_t PackAxis2>
+class u_unpack_2d_fixed<low_stride, NTT_VLEN / 32, high_stride, NTT_VLEN / 32,
+                        T1, float, true, PackAxis1, PackAxis2> {
   public:
     void operator()(const T1 &input, size_t in_stride, float *output,
                     size_t count) noexcept {
@@ -686,19 +682,19 @@ class u_unpack_2d_fixed<low_axis_stride, NTT_VLEN / 32, high_axis_stride,
         size_t in_offset = 0;
         size_t low_idx = 0;
         size_t high_idx = 0;
-        constexpr auto high_dim = low_axis_stride / high_axis_stride;
-        constexpr auto out_low_strides = low_axis_stride * vl;
-        constexpr auto low_extra = low_axis_stride * (vl * vl - 1);
-        constexpr auto high_extra = high_axis_stride * (vl - 1);
+        constexpr auto high_dim = low_stride / high_stride;
+        constexpr auto out_low_strides = low_stride * vl;
+        constexpr auto low_extra = low_stride * (vl * vl - 1);
+        constexpr auto high_extra = high_stride * (vl - 1);
         asm("vsetvli zero, %[vl], e32, m1\n" ::[vl] "r"(vl));
         auto in_strides = sizeof(vector<float, vl>);
         in_stride = in_stride + 1;
-        auto out_strides = high_axis_stride * sizeof(float);
+        auto out_strides = high_stride * sizeof(float);
 
-        while (count / high_axis_stride) {
+        while (count / high_stride) {
             auto out_ptr = output + in_offset + low_idx * low_extra +
                            high_idx * high_extra;
-            auto out_end = out_ptr + high_axis_stride;
+            auto out_end = out_ptr + high_stride;
             while (out_ptr < out_end) {
                 auto tmp = vl;
                 size_t i_idx = 0;
@@ -748,14 +744,14 @@ class u_unpack_2d_fixed<low_axis_stride, NTT_VLEN / 32, high_axis_stride,
 
                 for (; i_idx < vl; i_idx++) {
                     for (size_t j = 0; j < vl; j++)
-                        *(out_ptr + i_idx * out_low_strides +
-                          j * high_axis_stride) = (*in_ptr)(i_idx)(j);
+                        *(out_ptr + i_idx * out_low_strides + j * high_stride) =
+                            (*in_ptr)(i_idx)(j);
                 }
 
                 out_ptr += 1;
             }
-            in_offset += high_axis_stride;
-            count -= high_axis_stride;
+            in_offset += high_stride;
+            count -= high_stride;
             high_idx++;
             if (high_idx == high_dim) {
                 high_idx = 0;
