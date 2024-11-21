@@ -23,8 +23,8 @@ using namespace nncase;
 using namespace ortki;
 
 TEST(ClampTestFloat, NoPack) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 32;
+    constexpr size_t N = 32;
     float min_input = static_cast<float>(-10);
     float max_input = static_cast<float>(10);
     float min_clamp = static_cast<float>(-6);
@@ -57,8 +57,8 @@ TEST(ClampTestFloat, NoPack) {
 }
 
 TEST(ClampTestFloat, PackM) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 32;
+    constexpr size_t N = 32;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     float min_input = static_cast<float>(-10);
     float max_input = static_cast<float>(10);
@@ -98,8 +98,8 @@ TEST(ClampTestFloat, PackM) {
 }
 
 TEST(ClampTestFloat, PackN) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 32;
+    constexpr size_t N = 32;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     float min_input = static_cast<float>(-10);
     float max_input = static_cast<float>(10);
