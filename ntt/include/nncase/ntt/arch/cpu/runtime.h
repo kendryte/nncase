@@ -50,26 +50,6 @@ extern size_t bdim;
 extern size_t cdim;
 } // namespace nncase::ntt::runtime
 
-namespace nncase::ntt {
-template <> struct program_id_getter<topology::thread> {
-    static size_t id() noexcept {
-        return runtime::cpu_thread_context_t::current().tid;
-    }
-};
-
-template <> struct program_id_getter<topology::block> {
-    static size_t id() noexcept {
-        return runtime::cpu_thread_context_t::current().bid;
-    }
-};
-
-template <> struct program_id_getter<topology::chip> {
-    static size_t id() noexcept {
-        return runtime::cpu_thread_context_t::current().cid;
-    }
-};
-} // namespace nncase::ntt
-
 extern "C" NTT_RUNTIME_API void
 block_entry(const nncase::ntt::runtime::cpu_block_entry_params_t &params);
 using block_entry_t = decltype(block_entry) *;

@@ -14,8 +14,27 @@
  */
 #pragma once
 #include "../../distributed.h"
+#include "runtime.h"
 
-namespace nncase::ntt {
+namespace nncase::ntt::distributed {
+template <> struct program_id_getter<topology::thread> {
+    static size_t id() noexcept {
+        return runtime::cpu_thread_context_t::current().tid;
+    }
+};
+
+template <> struct program_id_getter<topology::block> {
+    static size_t id() noexcept {
+        return runtime::cpu_thread_context_t::current().bid;
+    }
+};
+
+template <> struct program_id_getter<topology::chip> {
+    static size_t id() noexcept {
+        return runtime::cpu_thread_context_t::current().cid;
+    }
+};
+
 inline size_t tid() noexcept { return program_id<topology::thread>(); }
 inline size_t bid() noexcept { return program_id<topology::block>(); }
 inline size_t cid() noexcept { return program_id<topology::chip>(); }
@@ -25,4 +44,4 @@ inline constexpr size_t tdim() noexcept {
 }
 inline constexpr size_t bdim() noexcept { return program_dim(topology::block); }
 inline constexpr size_t cdim() noexcept { return program_dim(topology::chip); }
-} // namespace nncase::ntt
+} // namespace nncase::ntt::distributed

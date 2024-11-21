@@ -10,6 +10,6 @@
 #include <array>
 #include <cstddef>
 
-namespace nncase::ntt {
+namespace nncase::ntt::distributed {
     constexpr std::array<size_t, @(hierarchy.Length)> topology_dims = {@(string.Join(", ", hierarchy))};
 }

@@ -19,6 +19,7 @@
 #include <nncase/ntt/arch/cpu/runtime.h>
 #include <nncase/ntt/distributed.h>
 #include <thread>
+#include <vector>
 
 #ifdef WIN32
 #include <Windows.h>

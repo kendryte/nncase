@@ -64,28 +64,37 @@ public static class KernelUtility
         return sb.ToString();
     }
 
-    public static string NdSBPToC(IRArray<SBP> ndSBP)
+    public static string DistributedToC(DistributedType distributedType)
     {
-        var sb = new StringBuilder("dist<");
-        for (int i = 0; i < ndSBP.Count; i++)
-        {
-            var value = ndSBP[i];
-            if (value is SBPBroadCast)
-            {
-                sb.Append('B');
-            }
-            else if (value is SBPPartialSum)
-            {
-                sb.Append('P');
-            }
-            else if (value is SBPSplit split)
-            {
-                sb.Append($"S<{split.Axis}>");
-            }
+        var placement = distributedType.Placement;
+        var ndSBP = distributedType.NdSBP;
 
-            if (i != ndSBP.Count - 1)
+        var sb = new StringBuilder("sharding<mesh<topology::thread, ");
+        for (int i = 0; i < placement.Rank; i++)
+        {
+            var value = placement.Hierarchy[i];
+            sb.Append($"{value}");
+            if (i != placement.Rank - 1)
             {
                 sb.Append(", ");
+            }
+        }
+
+        var nonAxisPolicy = ndSBP.Any(x => x is SBPPartialSum) ? "P" : "B";
+        sb.Append('>');
+
+        for (int axis = 0; axis < distributedType.TensorType.Shape.Rank; axis++)
+        {
+            var value = from sbp in ndSBP.Select((x, i) => (x, i))
+                        where sbp.x is SBPSplit split && split.Axis == axis
+                        select sbp.i;
+            if (value.Any())
+            {
+                sb.Append($", S<{string.Join(", ", value)}>");
+            }
+            else
+            {
+                sb.Append($", {nonAxisPolicy}");
             }
         }
 
