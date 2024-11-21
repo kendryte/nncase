@@ -80,8 +80,8 @@ public static class KernelUtility
             }
         }
 
-        var nonAxisPolicy = ndSBP.Any(x => x is SBPPartialSum) ? "P" : "B";
-        sb.Append('>');
+        var implicitPolicy = ndSBP.Any(x => x is SBPPartialSum) ? "P<reduce_op::sum>" : "B";
+        sb.Append($">, {implicitPolicy}");
 
         for (int axis = 0; axis < distributedType.TensorType.Shape.Rank; axis++)
         {
@@ -94,7 +94,7 @@ public static class KernelUtility
             }
             else
             {
-                sb.Append($", {nonAxisPolicy}");
+                sb.Append($", I");
             }
         }
 

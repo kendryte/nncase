@@ -18,9 +18,17 @@
 #include "shape.h"
 
 namespace nncase::ntt::distributed {
-namespace dist_policy {
+namespace shard_policy {
 // Broadcast
-struct B {
+struct B {};
+
+// Partial
+template <reduce_op ReduceOp> struct P {
+    static constexpr ntt::reduce_op reduce_op = ReduceOp;
+};
+
+// Implicit
+struct I {
     template <class Mesh>
     static constexpr size_t local_dim(size_t global_dim) noexcept {
         return global_dim;
@@ -37,15 +45,7 @@ template <size_t... Axes> struct S {
         return ntt::ceil_div(global_dim, divider);
     }
 };
-
-// Partial
-struct P {
-    template <class Mesh>
-    static constexpr size_t local_dim(size_t global_dim) noexcept {
-        return global_dim;
-    }
-};
-} // namespace dist_policy
+} // namespace shard_policy
 
 template <topology Scope, size_t... Dims> struct mesh {
     using shape_type = fixed_shape<Dims...>;
@@ -57,11 +57,13 @@ template <topology Scope, size_t... Dims> struct mesh {
     remote_program_id(ranked_shape<shape_type::rank()> index) noexcept;
 };
 
-template <class Mesh, class... Policies> struct sharding {
+template <class Mesh, class ImplicitPolicy, class... AxisPolicies>
+struct sharding {
     using mesh_type = Mesh;
+    using implicit_policy_type = ImplicitPolicy;
+    using axis_policy_type = std::tuple<AxisPolicies...>;
 
-    static constexpr std::tuple<Policies...> policies = {Policies{}...};
-    static constexpr size_t policies_size = sizeof...(Policies);
+    static constexpr size_t axis_policies_size = sizeof...(AxisPolicies);
 };
 
 namespace detail {
@@ -103,11 +105,11 @@ constexpr size_t get_submesh_start() noexcept {
 
 template <class Sharding, size_t Axis, class GlobalShape>
 constexpr size_t get_local_shard_dim(GlobalShape shape) noexcept {
-    static_assert(GlobalShape::rank() == Sharding::policies_size,
+    static_assert(GlobalShape::rank() == Sharding::axis_policies_size,
                   "Invalid sharding.");
 
     auto local_dim = shape.at(Axis);
-    return std::get<Axis>(Sharding::policies)
+    return std::get<Axis>(typename Sharding::axis_policy_type{})
         .template local_dim<typename Sharding::mesh_type>(local_dim);
 }
 

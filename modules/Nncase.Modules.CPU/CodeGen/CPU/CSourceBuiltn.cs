@@ -40,7 +40,7 @@ public static class CSourceBuiltn
 #include <nncase/ntt/ntt.h>
 using namespace nncase::ntt;
 using namespace nncase::ntt::distributed;
-using namespace nncase::ntt::distributed::dist_policy;
+using namespace nncase::ntt::distributed::shard_policy;
 
 ";
 

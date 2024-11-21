@@ -526,7 +526,11 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 #if DEBUG_PRINT
             IndentScope.Writer.IndWrite($"runtime_util->printf(\"call {deviceFunc.Name} bid %d tid %d\\n\", bid, tid);\n");
 #endif
-            var arguments = expr.Arguments.AsValueEnumerable().Select(Visit).ToArray();
+            var arguments = expr.Arguments.AsValueEnumerable().Select(x => x switch
+            {
+                TIR.Buffer b => VisitBuffer(b, local: true),
+                _ => Visit(x),
+            }).ToArray();
             _refFuncs.Add(deviceFunc);
             IndentScope.Writer.IndWrite($"{deviceFunc.Name}({string.Join(",", arguments.Select(arg => arg.Name))});\n");
         }
