@@ -59,5 +59,9 @@ class sharded_tensor_view
                     std::forward<ShardIndexes>(shardIndexes)...)),
             local_address);
     }
+
+    template <class DestSharding, class DestStrides>
+    void reshard(sharded_tensor_view<T, GlobalShape, DestSharding, DestStrides>
+                     dest_view) noexcept;
 };
 } // namespace nncase::ntt::distributed
