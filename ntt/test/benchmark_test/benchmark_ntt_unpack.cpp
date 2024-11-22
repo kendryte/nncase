@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
     benchmark_ntt_unpack<ntt::vector<float, P>, 3, 4, 4, 16 * P, 3>("W", 300);
     benchmark_ntt_unpack<ntt::vector<float, P, P>, 4 * P, 3 * P, 4, 4, 0, 1>(
         "NC", 300);
-    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4, 3 * P, 4 * P, 4, 1, 2>(
+    benchmark_ntt_unpack<ntt::vector<float, P, P>, 2, 3 * P, 4 * P, 8, 1, 2>(
         "CH", 300);
     benchmark_ntt_unpack<ntt::vector<float, P, P>, 4, 4, 3 * P, 4 * P, 2, 3>(
         "HW", 300);
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
     benchmark_ntt_unpack<ntt::vector<float, P>, 3, 4, 4, 16 * P, 3>("W", 300);
     benchmark_ntt_unpack<ntt::vector<float, P, P>, 4 * P, 3 * P, 4, 4, 0, 1>(
         "NC", 300);
-    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4, 3 * P, 4 * P, 4, 1, 2>(
+    benchmark_ntt_unpack<ntt::vector<float, P, P>, 2, 3 * P, 4 * P, 8, 1, 2>(
         "CH", 300);
     benchmark_ntt_unpack<ntt::vector<float, P, P>, 4, 4, 3 * P, 4 * P, 2, 3>(
         "HW", 300);

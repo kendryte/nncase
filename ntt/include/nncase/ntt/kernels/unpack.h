@@ -25,7 +25,7 @@ template <class InShape, class InElemShape, class OutShape, class InStrides,
           class OutStrides, size_t... Axes>
 class unpack_impl;
 
-// fixed shape
+// fixed shape(1D)
 template <size_t... InDims, size_t... InElemDims, class OutShape,
           size_t... InStrides, class OutStrides, size_t PackAxis>
 class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
@@ -67,6 +67,7 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
     }
 };
 
+// fixed shape(2D)
 template <size_t... InDims, size_t... InElemDims, class OutShape,
           size_t... InStrides, class OutStrides, size_t Axis1, size_t Axis2>
 class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
@@ -108,6 +109,7 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
     }
 };
 
+// fixed shape
 template <size_t... InDims, size_t... InElemDims, class OutShape,
           size_t... InStrides, class OutStrides, size_t... Axes>
 class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
@@ -133,7 +135,7 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
     }
 };
 
-// ranked shape
+// ranked shape(1D)
 template <size_t in_rank, size_t... InElemDims, class OutShape, class InStrides,
           class OutStrides, size_t PackAxis>
 class unpack_impl<ranked_shape<in_rank>, fixed_shape<InElemDims...>, OutShape,
@@ -180,6 +182,55 @@ class unpack_impl<ranked_shape<in_rank>, fixed_shape<InElemDims...>, OutShape,
     }
 };
 
+// ranked shape(2D)
+template <size_t in_rank, size_t... InElemDims, class OutShape, class InStrides,
+          class OutStrides, size_t Axis1, size_t Axis2>
+class unpack_impl<ranked_shape<in_rank>, fixed_shape<InElemDims...>, OutShape,
+                  InStrides, OutStrides, Axis1, Axis2> {
+  public:
+    template <class TIn, class TOut>
+    constexpr void operator()(const TIn &input, TOut &output) {
+        using TVec = typename TIn::element_type;
+        constexpr auto rank = in_rank;
+        auto input_shape = input.shape();
+        auto input_strides = input.strides();
+        auto in_conti_dims = contiguous_dims(input_shape, input_strides);
+        if ((in_conti_dims == rank) && (Axis2 == Axis1 + 1) &&
+            (Axis2 != (rank - 1))) {
+            auto pout = output.buffer().data();
+            auto count = input.shape().length();
+            ntt::u_unpack_2d_ranked<TVec::shape()[0], TVec::shape()[1], TIn,
+                                    typename TOut::element_type, Axis1, Axis2>(
+                input, 1, input_strides[Axis1], input_strides[Axis2], pout,
+                count);
+        } else {
+            constexpr auto axes = std::array<size_t, 2>{Axis1, Axis2};
+            constexpr auto elem_rank = TVec::shape_type::rank();
+            fixed_shape<InElemDims...> elem_shape{};
+            constexpr auto domain_rank = in_rank + elem_rank;
+            ranked_shape<domain_rank> domain{};
+            for (size_t i = 0, j = 0; i < domain_rank; i++) {
+                if (i < in_rank)
+                    domain[i] = input_shape[i];
+                else
+                    domain[i] = elem_shape[j++];
+            }
+
+            apply(domain, [&](auto index) {
+                auto in_index = slice_index<rank>(index);
+                auto elem_index = slice_index<elem_rank>(index, rank);
+                auto out_index = slice_index<rank>(index);
+                loop<axes.size()>([&](auto i) {
+                    out_index[axes[i]] =
+                        out_index[axes[i]] * TVec::shape()[i] + index[rank + i];
+                });
+                output(out_index) = input(in_index)(elem_index);
+            });
+        }
+    }
+};
+
+// ranked shape
 template <size_t in_rank, size_t... InElemDims, class OutShape, class InStrides,
           class OutStrides, size_t... Axes>
 class unpack_impl<ranked_shape<in_rank>, fixed_shape<InElemDims...>, OutShape,
