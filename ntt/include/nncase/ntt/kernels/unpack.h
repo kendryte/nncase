@@ -78,18 +78,16 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
         constexpr auto rank = TIn::shape_type::rank();
         constexpr auto in_conti_dims = contiguous_dims(
             fixed_shape<InDims...>{}, fixed_strides<InStrides...>{});
-        constexpr auto low_axis = Axis1 < Axis2 ? Axis1 : Axis2;
-        constexpr auto high_axis = Axis1 < Axis2 ? Axis2 : Axis1;
-        if constexpr ((in_conti_dims == rank) && (high_axis == low_axis + 1) &&
-                      (high_axis != (rank - 1))) {
+        if constexpr ((in_conti_dims == rank) && (Axis2 == Axis1 + 1) &&
+                      (Axis2 != (rank - 1))) {
             auto pout = output.buffer().data();
             auto count = input.shape().length();
             constexpr auto in_strides =
                 std::array<size_t, sizeof...(InStrides)>{InStrides...};
             constexpr auto v_shape =
                 std::array<size_t, sizeof...(InElemDims)>{InElemDims...};
-            ntt::u_unpack_2d_fixed<in_strides[low_axis], v_shape[0],
-                                   in_strides[high_axis], v_shape[1], TIn,
+            ntt::u_unpack_2d_fixed<in_strides[Axis1], v_shape[0],
+                                   in_strides[Axis2], v_shape[1], TIn,
                                    typename TOut::element_type, Axis1, Axis2>(
                 input, 1, pout, count);
         } else {
