@@ -80,7 +80,8 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
             fixed_shape<InDims...>{}, fixed_strides<InStrides...>{});
         constexpr auto low_axis = Axis1 < Axis2 ? Axis1 : Axis2;
         constexpr auto high_axis = Axis1 < Axis2 ? Axis2 : Axis1;
-        if constexpr ((in_conti_dims == rank) && (high_axis == low_axis + 1)) {
+        if constexpr ((in_conti_dims == rank) && (high_axis == low_axis + 1) &&
+                      (high_axis != (rank - 1))) {
             auto pout = output.buffer().data();
             auto count = input.shape().length();
             constexpr auto in_strides =
@@ -100,8 +101,8 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
                 auto elem_index = slice_index<elem_rank>(index, rank);
                 auto out_index = slice_index<rank>(index);
                 loop<axes.size()>([&](auto i) {
-                out_index[axes[i]] =
-                    out_index[axes[i]] * TVec::shape()[i] + index[rank + i];
+                    out_index[axes[i]] =
+                        out_index[axes[i]] * TVec::shape()[i] + index[rank + i];
                 });
                 output(out_index) = input(in_index)(elem_index);
             });
