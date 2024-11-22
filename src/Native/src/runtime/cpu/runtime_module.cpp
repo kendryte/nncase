@@ -14,7 +14,7 @@
  */
 #include "runtime_module.h"
 #include "runtime_function.h"
-#include <nncase/ntt/runtime/cpu_runtime.h>
+#include <nncase/ntt/arch/cpu/runtime.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_loader.h>

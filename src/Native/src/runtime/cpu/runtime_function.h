@@ -15,7 +15,7 @@
 #pragma once
 #include "runtime_module.h"
 #include <nncase/kernels/kernel_context.h>
-#include <nncase/ntt/runtime/cpu_runtime.h>
+#include <nncase/ntt/arch/cpu/runtime.h>
 #include <nncase/runtime/runtime_function.h>
 #include <nncase/tensor.h>
 

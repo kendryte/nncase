@@ -554,7 +554,8 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         }
 
         name = AllocateTempVar(expr);
-        _scope.IndWriteLine($"{name} = buffer({VisitType(expr.CheckedType)})");
+        var type = expr.DistributedType == null ? VisitType(expr.CheckedType) : VisitType(expr.DistributedType);
+        _scope.IndWriteLine($"{name} = buffer({type})");
         return name;
     }
 

@@ -269,12 +269,13 @@ public record SelectedRange(int Start, int End, Padding Padding)
 /// </summary>
 public sealed class Buffer : Expr
 {
-    public Buffer(string name, DataType elemType, MemSpan memSpan, Expr[] dimensions, Expr[] strides)
+    public Buffer(string name, DataType elemType, MemSpan memSpan, Expr[] dimensions, Expr[] strides, DistributedType? distributedType)
         : base(new[] { memSpan }.Concat(dimensions).Concat(strides))
     {
         Name = name;
         ElemType = elemType;
         Rank = dimensions.Length;
+        DistributedType = distributedType;
     }
 
     public string Name { get; }
@@ -304,10 +305,12 @@ public sealed class Buffer : Expr
     /// </summary>
     public ReadOnlySpan<Expr> Strides => Operands[(1 + Rank)..(1 + Rank + Rank)];
 
+    public DistributedType? DistributedType { get; }
+
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.VisitBuffer(this, context);
 
-    public Buffer With(MemSpan? memSpan = null, Expr[]? dimensions = null, Expr[]? strides = null)
-        => new Buffer(Name, ElemType, memSpan ?? MemSpan, dimensions ?? Dimensions.ToArray(), strides ?? Strides.ToArray());
+    public Buffer With(MemSpan? memSpan = null, Expr[]? dimensions = null, Expr[]? strides = null, Expr[]? globalShape = null, DistributedType? distributedType = null)
+        => new Buffer(Name, ElemType, memSpan ?? MemSpan, dimensions ?? Dimensions.ToArray(), strides ?? Strides.ToArray(), distributedType ?? DistributedType);
 
     /// <inheritdoc/>
     public override bool Equals(object? obj)
