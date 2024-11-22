@@ -115,4 +115,15 @@ public static class LinqExtensions
 
         return acc;
     }
+
+    public static ulong Sum(this IEnumerable<ulong> source)
+    {
+        ulong acc = 0;
+        foreach (var item in source)
+        {
+            acc += item;
+        }
+
+        return acc;
+    }
 }

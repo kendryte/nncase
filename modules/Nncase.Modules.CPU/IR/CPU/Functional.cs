@@ -12,9 +12,9 @@ namespace Nncase.IR.F;
 
 public partial class CPU
 {
-    public static Call Boxing(Expr input, IRType type)
+    public static Call Boxing(Expr input, IRType type, bool isReshape = false)
     {
-        return new Call(new Boxing(type), input);
+        return new Call(new Boxing(type, isReshape), input);
     }
 
     public static Call Load(Expr input)

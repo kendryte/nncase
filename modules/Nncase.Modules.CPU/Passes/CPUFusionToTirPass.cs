@@ -18,6 +18,12 @@ using Nncase.TIR;
 
 namespace Nncase.Passes;
 
+/// <summary>
+/// BufferSizeCalculator for cpu.
+/// now it supports to optimize memory move for:
+///    1. boxing store.
+///    2. reshape.
+/// </summary>
 public sealed class CpuBufferSizeCalculator : BufferSchedule.BufferSizeCalculator
 {
     protected override Result VisitCall(Call expr)
@@ -25,6 +31,11 @@ public sealed class CpuBufferSizeCalculator : BufferSchedule.BufferSizeCalculato
         if (expr is Call { Target: IR.CPU.Boxing boxing } && boxing.NewType is TensorType ttype)
         {
             var res = VisitType(ttype);
+            return new(0, res.Shape, res.Stride);
+        }
+        else if (expr.Target is IR.Tensors.Reshape)
+        {
+            var res = VisitType(expr.CheckedType);
             return new(0, res.Shape, res.Stride);
         }
 
@@ -45,6 +56,10 @@ public sealed class CpuLifeTimeUpdater : BufferSchedule.LifeTimeUpdater
             else if (item is Call c)
             {
                 if (c.Target is IR.Tensors.GetItem)
+                {
+                    Visit(c, context);
+                }
+                else if (c.Target is IR.Tensors.Reshape)
                 {
                     Visit(c, context);
                 }
@@ -105,7 +120,7 @@ internal sealed class CPUFusionToTirPass : ModulePass
                 visitor.Convert(post);
                 var primFunc = T.PrimFunc(post.Name, post.ModuleKind, visitor.InputBuffers.Concat(visitor.OutputBuffers).ToArray()).Body(primBody.ToArray()).Build();
                 primFunc.SchedResult.DataUsage = visitor.DataUsage;
-                primFunc.SchedResult.DataAlign = visitor.MaxDTypeSize;
+                primFunc.SchedResult.DataAlign = Math.Max(8, visitor.MaxDTypeSize);
                 var primWrapper = new PrimFunctionWrapper(primFunc, visitor.InputBuffers.Count());
                 module.Replace(i, primWrapper);
                 kernelFuncs.Add(primWrapper);

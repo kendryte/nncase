@@ -171,12 +171,6 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             case IR.CPU.ResizeImage resize:
                 _mainBody.Add(TIR.F.CPU.ResizeImage(arguments[0], ret, resize.PackedAxes.ToArray(), resize.PadedNums.ToArray(), resize.NewSize.ToArray(), resize.ResizeMode, resize.TransformationMode, resize.NearestMode));
                 break;
-            case IR.Tensors.Unsqueeze unsqueeze:
-                _mainBody.Add(TIR.F.CPU.Reshape(arguments[0], ret, expr.CheckedShape.ToValueArray()));
-                break;
-            case IR.Tensors.Reshape reshape:
-                _mainBody.Add(TIR.F.CPU.Reshape(arguments[0], ret, expr.CheckedShape.ToValueArray()));
-                break;
             case IR.Tensors.Slice slice:
                 _mainBody.Add(TIR.F.CPU.Slice(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[3]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[4]).Value.ToArray<int>(), expr.CheckedType is DistributedType dt_slice ? dt_slice : null!));
                 break;
@@ -218,13 +212,16 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             case IR.CPU.PackedReduce pr:
                 _mainBody.Add(TIR.F.CPU.Reduce(arguments[0], ret, pr.PackedAxes.ToArray(), pr.PadedNums.ToArray(), pr.Axes, pr.KeepDims, pr.ReduceOp));
                 break;
-            case IR.Tensors.GetItem:
-                break;
             case IR.Math.Compare compare:
                 _mainBody.Add(TIR.F.CPU.Compare(compare.CompareOp, arguments[0], arguments[1], ret));
                 break;
             case IR.Tensors.ScatterND scatterND:
                 _mainBody.Add(TIR.F.CPU.ScatterND(arguments[0], arguments[1], arguments[2], ret));
+                break;
+            case IR.Tensors.GetItem:
+            case IR.Tensors.Reshape:
+            case IR.Tensors.Unsqueeze:
+                // optimized.
                 break;
             default:
                 throw new NotSupportedException();
@@ -233,10 +230,19 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
         return default;
     }
 
+    private static void ReShapeReSchedule(object? sender, IReadOnlyDictionary<Expr, ScheduleBuffer> buffers)
+    {
+        foreach (var reshape in buffers.Keys.OfType<Call>().Where(e => e is Call { Target: IR.Tensors.Reshape } && buffers[e].MemInterval.Size == 0))
+        {
+            buffers[reshape].MemInterval.Start = buffers[reshape[IR.Tensors.Reshape.Input]].MemInterval.Start;
+        }
+    }
+
     private TIR.Buffer GetBuffer(Expr expr) => _buffersMap.GetValueOrDefault(expr, null!);
 
     private void AllocBuffers(Fusion fusion)
     {
+        _bufferScheduler.FinishedSchedule += ReShapeReSchedule;
         var buffers = _lifeTimeCollector.Collect(fusion.Body);
         _bufferScheduler.Schedule(buffers);
 

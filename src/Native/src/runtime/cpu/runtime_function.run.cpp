@@ -12,77 +12,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "nncase/ntt/runtime.h"
+#include "nncase/ntt/runtime/cpu_runtime.h"
 #include "runtime_function.h"
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/type_serializer.h>
 #include <stdexcept>
+#include <thread>
+#include <vector>
 
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
-
-namespace {
-#define SRAM_SIZE_PER_BLOCK (1024 * 1024 * 4)
-#define SRAM_SIZE_PER_THREAD (SRAM_SIZE_PER_BLOCK)
-
-static uint8_t _sram[1][SRAM_SIZE_PER_BLOCK];
-static uint8_t *_block_sram_ptr[] = {_sram[0]};
-static uint8_t *sram_address(int bid, int tid) {
-    return _block_sram_ptr[bid] + (SRAM_SIZE_PER_BLOCK * tid);
-}
-
-static void failfast(const char *foramt, va_list args) {
-    char buffer[1024];
-    vsprintf(buffer, foramt, args);
-    throw std::runtime_error(buffer);
-}
-
-nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
-    .acosf = acosf,
-    .acoshf = acoshf,
-    .asinf = asinf,
-    .asinhf = asinhf,
-    .copysignf = copysignf,
-    .cosf = cosf,
-    .coshf = coshf,
-    .erff = erff,
-    .expf = expf,
-    .fmodf = fmodf,
-    .logf = logf,
-    .nearbyintf = nearbyintf,
-    .powf = powf,
-    .roundf = roundf,
-    .sinf = sinf,
-    .sinhf = sinhf,
-    .sqrtf = sqrtf,
-    .tanhf = tanhf,
-    .sram_address = sram_address,
-    .failfast = failfast,
-
-#ifndef WIN32
-    .memcpy = memcpy,
-    .memmove = memmove,
-    .memset = memset,
-#endif
-};
-} // namespace
+using namespace nncase::ntt::runtime;
 
 result<void> cpu_runtime_function::run(std::span<std::byte *> params) noexcept {
-    size_t alignment = data_align_;
-    size_t space = data_pool_size_ + alignment;
-    auto alloced = new (std::nothrow) std::byte[space];
-    if (alloced == nullptr) {
-        return err(std::errc::not_enough_memory);
+    std::vector<std::thread> blocks;
+    for (size_t cid = 0; cid < cdim_; cid++) {
+        for (size_t bid = 0; bid < bdim_; bid++) {
+            blocks.emplace_back([cid, bid, params, this] {
+                cpu_block_entry_params_t block_entry_params{
+                    .tdim = tdim_,
+                    .bdim = bdim_,
+                    .cdim = cdim_,
+                    .bid = bid,
+                    .cid = cid,
+                    .cpu_id_offset = (cid * bdim_ + bid) * tdim_,
+                    .inouts = params.data(),
+                    .rdata = module().rdata().data(),
+#ifdef __APPLE__
+                    .cpu_thread_context_key = module().cpu_thread_context_key(),
+#endif
+                };
+
+                block_entry_(block_entry_params);
+            });
+        }
     }
-    void *data = alloced;
-    std::align(alignment, data_pool_size_, data, space);
-    if (data == nullptr) {
-        return err(std::errc::not_enough_memory);
+
+    for (auto &block : blocks) {
+        block.join();
     }
-    kernel_entry_(&nncase_cpu_mt_, params.data(), module().rdata().data(),
-                  reinterpret_cast<std::byte *>(data));
-    delete[] alloced;
+
     return ok();
 }

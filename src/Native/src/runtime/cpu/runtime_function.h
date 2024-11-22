@@ -15,7 +15,7 @@
 #pragma once
 #include "runtime_module.h"
 #include <nncase/kernels/kernel_context.h>
-#include <nncase/ntt/cpu_runtime.h>
+#include <nncase/ntt/runtime/cpu_runtime.h>
 #include <nncase/runtime/runtime_function.h>
 #include <nncase/tensor.h>
 
@@ -29,13 +29,7 @@
 
 BEGIN_NS_NNCASE_RT_MODULE(cpu)
 
-#define CPU_ENTRY_NAME "kernel_entry"
-
 class cpu_runtime_function final : public runtime_function {
-    typedef void (*kernel_entry_t)(nncase_runtime_cpu_mt_t *cpu_mt,
-                                   std::byte **inputs, const std::byte *rdata,
-                                   std::byte *data);
-
   public:
     cpu_runtime_function(runtime_module &rt_module);
     virtual ~cpu_runtime_function();
@@ -60,9 +54,10 @@ class cpu_runtime_function final : public runtime_function {
     elf_loader loader_;
 #endif
 
-    kernel_entry_t kernel_entry_;
-    uint64_t data_pool_size_;
-    uint64_t data_align_;
+    block_entry_t block_entry_;
+    uint64_t tdim_;
+    uint64_t bdim_;
+    uint64_t cdim_;
 };
 
 END_NS_NNCASE_RT_MODULE

@@ -24,6 +24,7 @@ using GetItem = Nncase.IR.Tensors.GetItem;
 
 namespace Nncase.Tests.TargetTest;
 
+[Collection(nameof(NotThreadSafeResourceCollection))]
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestCPUTarget : TestClassBase
 {

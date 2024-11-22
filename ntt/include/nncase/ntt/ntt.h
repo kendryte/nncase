@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "distributed.h"
 #include "kernels/binary.h"
 #include "kernels/cast.h"
 #include "kernels/clamp.h"
@@ -58,3 +59,5 @@
 #include "arch/riscv64/tensor_ops.h"
 #include "arch/riscv64/ukernels.h"
 #endif
+
+#include "runtime/cpu_runtime.h"

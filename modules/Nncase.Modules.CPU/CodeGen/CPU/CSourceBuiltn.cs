@@ -30,6 +30,10 @@ public record KernelMainModel(TIR.PrimFunction PrimFunction, TIR.Buffer[] RDataB
     }
 }
 
+public record CpuTargetOptionsModel(CpuTargetOptions Options, ulong Alignment, ulong CollectivePoolSize)
+{
+}
+
 public static class CSourceBuiltn
 {
     public const string KernelHeader = @"#pragma once
@@ -38,16 +42,27 @@ using namespace nncase::ntt;
 
 ";
 
+    public static string TopoAwareRuntimeDef(CpuTargetOptions options, ulong dataAlign, ulong collective_pool_size)
+    {
+        if (options.Hierarchies[0].Any(i => i > 1))
+        {
+            var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/topo_aware_runtime.cshtml", new CpuTargetOptionsModel(options, dataAlign, collective_pool_size)).Result;
+            return content;
+        }
+
+        return string.Empty;
+    }
+
     public static string CMakeDef(string name)
     {
-        var cmakePath = CMakePath(Path.Combine(Path.GetDirectoryName(typeof(CSourceBuiltn).Assembly.Location)!, "Runtime", "cmake", "cpu_runtime.cmake"));
+        var cmakePath = CMakePath(Path.Combine(Path.GetDirectoryName(typeof(CSourceBuiltn).Assembly.Location)!, "Runtime", "cmake", "ntt_module.cmake"));
         var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/CMakeLists.txt.cshtml", new { CMakePath = cmakePath }).Result;
         return content;
     }
 
     public static string MakeMain(TIR.PrimFunction primFunction, ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, IEnumerable<TIR.Buffer> rdataBuffers, CpuTargetOptions options)
     {
-        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/main.cpp.cshtml", new KernelMainModel(primFunction, rdataBuffers.ToArray(), options, dataAlign, dataUsage, rdataPoolSize)).Result;
+        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/thread_main.cpp.cshtml", new KernelMainModel(primFunction, rdataBuffers.ToArray(), options, dataAlign, dataUsage, rdataPoolSize)).Result;
         return content;
     }
 

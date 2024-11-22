@@ -13,26 +13,18 @@
  * limitations under the License.
  */
 #pragma once
-#include "elfload.h"
-#include <nncase/compiler_defs.h>
-#include <span>
+#include <cstddef>
+#include <cstdint>
 
-BEGIN_NS_NNCASE_RUNTIME
+#if defined(_MSC_VER)
+#define NTT_RUNTIME_API __declspec(dllexport)
+#else
+#define NTT_RUNTIME_API __attribute__((visibility("default")))
+#endif
 
-class elf_loader {
-  public:
-    elf_loader() noexcept;
-    ~elf_loader();
+namespace nncase::ntt::runtime {
+void *thread_alloc(size_t bytes, size_t alignment);
+void thread_free(void *ptr);
+} // namespace nncase::ntt::runtime
 
-    void load(std::span<const std::byte> pe);
-    void *entry() const noexcept;
-
-  private:
-    std::byte *buffer_;
-    std::byte *image_;
-    void *handle_;
-    el_ctx ctx_;
-    void *entry_;
-};
-
-END_NS_NNCASE_RUNTIME
+extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata);

@@ -51,13 +51,15 @@ public static class DistributedUtility
             if (ndsbp[i] is SBPPartialSum)
             {
                 candidateNdsbps[i].Add(SBP.B);
-                for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
-                {
-                    if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && placement.Hierarchy[i] > 1 && IsDivideExactly(s, placement.Hierarchy[i]) && !innerSplitedAxes.Contains(axis))
-                    {
-                        candidateNdsbps[i].Add(SBP.S(axis));
-                    }
-                }
+
+                // note separate reduce boxing and reshard boxing.
+                // for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
+                // {
+                //     if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && placement.Hierarchy[i] > 1 && IsDivideExactly(s, placement.Hierarchy[i]) && !innerSplitedAxes.Contains(axis))
+                //     {
+                //         candidateNdsbps[i].Add(SBP.S(axis));
+                //     }
+                // }
             }
             else
             {

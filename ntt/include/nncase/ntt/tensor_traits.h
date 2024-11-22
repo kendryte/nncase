@@ -25,8 +25,7 @@ concept IsFixedTensor = is_fixed_dims_v<typename std::decay_t<T>::shape_type>
     &&is_fixed_dims_v<typename std::decay_t<T>::strides_type>;
 
 template <typename T>
-concept IsRankedTensor = is_ranked_dims_v<typename std::decay_t<T>::shape_type>
-    &&is_ranked_dims_v<typename std::decay_t<T>::strides_type>;
+concept IsRankedTensor = is_ranked_dims_v<typename std::decay_t<T>::shape_type>;
 
 template <typename T> concept IsVector = std::decay_t<T>::IsVector;
 

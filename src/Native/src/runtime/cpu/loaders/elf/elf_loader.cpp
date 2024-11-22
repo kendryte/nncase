@@ -13,19 +13,24 @@
  * limitations under the License.
  */
 #include "elf_loader.h"
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <nncase/runtime/result.h>
 #if defined(__linux__)
-#include <chrono>
+#include <cstdio>
 #include <dlfcn.h>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
+#include <fcntl.h>
 #include <sys/mman.h>
+#include <unistd.h>
 #endif
 
 using namespace nncase::runtime;
+
+#define THROW_SYS_IF_NOT(x)                                                    \
+    if (!(x)) {                                                                \
+        throw std::system_error(errno, std::system_category());                \
+    }
 
 static bool bpread(el_ctx *ctx, void *dest, size_t nb, size_t offset) {
     (void)ctx;
@@ -40,11 +45,17 @@ static void *alloccb(el_ctx *ctx, Elf_Addr phys, Elf_Addr virt, Elf_Addr size) {
     return (void *)virt;
 }
 
-elf_loader::elf_loader() noexcept : buffer_(nullptr) { ctx_.pread = bpread; }
+elf_loader::elf_loader() noexcept
+    : buffer_(nullptr), image_(nullptr), handle_(nullptr) {
+    ctx_.pread = bpread;
+}
 
 elf_loader::~elf_loader() {
     if (buffer_) {
         free(buffer_);
+    }
+    if (handle_) {
+        dlclose(handle_);
     }
 }
 
@@ -65,37 +76,23 @@ void elf_loader::load(std::span<const std::byte> elf) {
         el_relocate(&ctx_);
 #if defined(__linux__)
     } else if (ctx_.ehdr.e_type == ET_DYN) {
-        auto now = std::chrono::system_clock::now();
-        auto in_time_t = std::chrono::system_clock::to_time_t(now);
-
-        std::stringstream ss;
-        ss << std::put_time(std::localtime(&in_time_t), "%Y%m%d_%H%M%S");
-        std::string kernel_so = "/tmp/" + ss.str() + ".so";
-        std::ofstream outputFile(kernel_so, std::ios::out | std::ios::binary);
-        if (!outputFile) {
-            std::cerr << "cannot create file:" << kernel_so << std::endl;
-            throw std::runtime_error("cannot create file:" + kernel_so);
+        char temp_path[] = "/tmp/nncase.function.cpu.XXXXXX";
+        {
+            auto func_file = mkstemp(temp_path);
+            THROW_SYS_IF_NOT(func_file != -1);
+            THROW_SYS_IF_NOT(write(func_file, (char *)ctx_.elf, elf.size()) !=
+                             -1);
+            THROW_SYS_IF_NOT(close(func_file) != -1);
         }
 
-        outputFile.write((char *)ctx_.elf, elf.size());
-
-        if (!outputFile.good()) {
-            std::cerr << "error writing file" << std::endl;
-            outputFile.close();
-            throw std::runtime_error("error writing file");
+        handle_ = dlopen(temp_path, RTLD_NOW);
+        if (!handle_) {
+            throw std::runtime_error("dlopen error:" + std::string(dlerror()));
         }
 
-        void *handle = dlopen(kernel_so.c_str(), RTLD_LAZY);
-        if (!handle) {
-            fprintf(stderr, "Error: %s\n", dlerror());
-            exit(EXIT_FAILURE);
-        }
-
-        entry_ = dlsym(handle, "kernel_entry");
-        const char *dlsym_error = dlerror();
-        if (dlsym_error) {
-            dlclose(handle);
-            throw std::runtime_error("dlsym error:" + std::string(dlsym_error));
+        entry_ = dlsym(handle_, "block_entry");
+        if (!entry_) {
+            throw std::runtime_error("dlsym error:" + std::string(dlerror()));
         }
 #endif
     } else {

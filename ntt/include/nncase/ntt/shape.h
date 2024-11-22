@@ -313,6 +313,18 @@ constexpr size_t linear_offset(const Index &index,
     return offset;
 }
 
+template <class Strides>
+ranked_shape<Strides::rank()> unravel_index(const size_t offset,
+                                            const Strides &strides) noexcept {
+    size_t remain = offset;
+    ranked_shape<Strides::rank()> index;
+    for (size_t i = 0; i < Strides::rank(); i++) {
+        index[i] = remain / strides[i];
+        remain = remain % strides[i];
+    }
+    return index;
+}
+
 template <class Shape, class Strides>
 constexpr size_t linear_size(const Shape &shape,
                              const Strides &strides) noexcept {
@@ -328,6 +340,13 @@ constexpr size_t linear_size(const Shape &shape,
     return size;
 }
 
+/**
+ * @brief calculate the number of contigous dimensions.
+ *
+ * @param shape fixed/ranked
+ * @param strides fixed/ranked
+ * @return constexpr size_t contigous dimension numbers.
+ */
 template <class Shape, class Strides>
 constexpr size_t contiguous_dims(const Shape &shape, const Strides &strides) {
     auto def_strides = default_strides(shape);

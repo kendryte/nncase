@@ -117,6 +117,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
     private readonly StringBuilder _sharedBuilder;
     private readonly HashSet<TIR.PrimFunction> _refFuncs;
     private readonly StringWriter _sharedWriter;
+    private ulong _collective_pool_size;
 
     public KernelCSourceConvertVisitor(ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, CpuTargetOptions targetOptions)
     {
@@ -128,6 +129,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
         _sharedWriter = new StringWriter(_sharedBuilder);
         _exprMemo = new(ReferenceEqualityComparer.Instance);
         _refFuncs = new(ReferenceEqualityComparer.Instance);
+        _collective_pool_size = 0;
         TargetOptions = targetOptions;
     }
 
@@ -148,7 +150,8 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
         var ctype = $"void {VisitEntry.Name}({string.Join(", ", VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}").ToArray().Concat(_exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.Rdata).Select(Visit).Select(s => $" {s.Type} {s.Name}").ToArray()))}, uint8_t* data)";
         return new(
             CSourceBuiltn.MakeMain(VisitEntry, DataAlign, DataUsage, RdataPoolSize, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.Rdata), TargetOptions),
-            CSourceBuiltn.MakeKernel(ctype, _kernelBuilder.ToString()));
+            CSourceBuiltn.MakeKernel(ctype, _kernelBuilder.ToString()),
+            CSourceBuiltn.TopoAwareRuntimeDef(TargetOptions, DataAlign, _collective_pool_size));
     }
 
     /// <inheritdoc/>
@@ -305,11 +308,14 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                             }
                         }
 
-                        IndentScope.Writer.Write($"tensor_boxing_load({Visit(args[0]).Name}, {{{string.Join(',', fullShape)}}}, {args[0].Dimensions.ToArray().Select(e => Visit(e).Name).ToSlicing(load.NdSbp, load.Placement)[1..^1]}, ctx);\n");
+                        _collective_pool_size = Math.Max(_collective_pool_size, (ulong)(TensorUtilities.GetProduct(fullShape) * args[0].CheckedDataType.SizeInBytes));
+                        var indices = args[0].Dimensions.ToArray().Select(e => Visit(e).Name).ToSlicing(load.NdSbp, load.Placement)[0];
+                        IndentScope.Writer.Write($"tac::tensor_boxing_load_sync<fixed_shape<{string.Join(',', fullShape)}>>({indices}, {Visit(args[0]).Name});\n");
                     }
                     else
                     {
-                        IndentScope.Writer.Write($"tensor_copy({Visit(args[1]).Name}{args[0].Dimensions.ToArray().Select(e => Visit(e).Name).ToSlicing(load.NdSbp, load.Placement)}, {Visit(args[0]).Name});\n");
+                        var slicing = string.Join(", ", args[0].Dimensions.ToArray().Select(e => Visit(e).Name).ToSlicing(load.NdSbp, load.Placement));
+                        IndentScope.Writer.Write($"tensor_copy({Visit(args[1]).Name}.view({slicing}), {Visit(args[0]).Name});\n");
                     }
 
                     break;
@@ -336,11 +342,14 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                             }
                         }
 
-                        IndentScope.Writer.Write($"tensor_boxing_store({Visit(args[0]).Name}, {{{string.Join(',', fullShape)}}}, {args[0].Dimensions.ToArray().Select(e => Visit(e).Name).ToSlicing(store.NdSbp, store.Placement)[1..^1]}, ctx);\n");
+                        _collective_pool_size = Math.Max(_collective_pool_size, (ulong)(TensorUtilities.GetProduct(fullShape) * args[0].CheckedDataType.SizeInBytes));
+                        var indices = args[0].Dimensions.ToArray().Select(e => Visit(e).Name).ToSlicing(store.NdSbp, store.Placement)[0];
+                        IndentScope.Writer.Write($"tac::tensor_boxing_store_sync<fixed_shape<{string.Join(',', fullShape)}>>({indices}, {Visit(args[0]).Name});\n");
                     }
                     else
                     {
-                        IndentScope.Writer.Write($"tensor_copy({Visit(args[0]).Name}, {Visit(args[1]).Name}{args[0].Dimensions.ToArray().Select(e => Visit(e).Name).ToSlicing(store.NdSbp, store.Placement)});\n");
+                        var slicing = string.Join(", ", args[0].Dimensions.ToArray().Select(e => Visit(e).Name).ToSlicing(store.NdSbp, store.Placement));
+                        IndentScope.Writer.Write($"tensor_copy({Visit(args[0]).Name}, {Visit(args[1]).Name}.view({slicing}));\n");
                     }
 
                     break;
@@ -431,16 +440,6 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                 case TIR.CPU.Gather gather:
                     IndentScope.Writer.Write($"gather<{gather.Axis}>({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name});\n");
                     break;
-                case TIR.CPU.Reshape reshape:
-                    {
-                        IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Reshape.cshtml", new TypedKernelTemplateModel<TIR.CPU.Reshape>(reshape)
-                        {
-                            Arguments = args.Select(x => new KernelArgument { Symbol = Visit(x) }).ToArray(),
-                            Args = args.ToArray(),
-                        }).Result);
-                    }
-
-                    break;
                 case TIR.CPU.Swish swish:
                     if (swish.Beta != 1.0f)
                     {
@@ -502,6 +501,12 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     IndentScope.Writer.Write($"scatter_nd({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, {Visit(args[3]).Name});\n");
 
                     break;
+                case TIR.CPU.GatherReduceScatter grs:
+                    var reduceKind = "tar::reduce_kind::" + string.Join("_", grs.InType.NdSBP.Select((s, i) => (s is SBPPartialSum ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
+                    IndentScope.Writer.IndWrite($"tac::tensor_reduce_sync<ops::add, {reduceKind}>({Visit(args[0]).Name}, {Visit(args[1]).Name});\n");
+                    break;
+                case TIR.CPU.Reshape reshape:
+                    throw new NotSupportedException("the reshape should be eliminated");
                 default:
                     throw new NotSupportedException(kop.ToString());
             }
