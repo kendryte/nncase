@@ -13,7 +13,7 @@ namespace nncase::ntt {
 }
 
 template <typename T, size_t M, size_t P>
-void benchmark_ntt_expand_NoPack(T init_low, T init_high) {
+void benchmark_ntt_expand_nopack(T init_low, T init_high) {
     std::string pack_mode = "NoPack";
     constexpr size_t warmup_size = 10;
 #if __riscv
@@ -50,7 +50,7 @@ void benchmark_ntt_expand_NoPack(T init_low, T init_high) {
 }
 
 template <typename T, size_t M, size_t N, size_t P>
-void benchmark_ntt_expand_NoPack1(T init_low, T init_high) {
+void benchmark_ntt_expand_nopack1(T init_low, T init_high) {
     std::string pack_mode = "NoPack";
     constexpr size_t warmup_size = 10;
 #if __riscv
@@ -87,7 +87,7 @@ void benchmark_ntt_expand_NoPack1(T init_low, T init_high) {
 }
 
 template <typename T, size_t M, size_t N, size_t P, size_t VLEN>
-void benchmark_ntt_expand_2D_pack(T init_low, T init_high) {
+void benchmark_ntt_expand_pack(T init_low, T init_high) {
     std::string pack_mode = "Pack";
     constexpr size_t warmup_size = 10;
 #if __riscv
@@ -137,18 +137,18 @@ int main(int argc, char *argv[]) {
 
     constexpr size_t M1 = 1;
     constexpr size_t P1 = 2;
-    benchmark_ntt_expand_NoPack<float, M1, P1>(-10.f, 10.f);
+    benchmark_ntt_expand_nopack<float, M1, P1>(-10.f, 10.f);
 
     constexpr size_t M2 = 1024;
     constexpr size_t N2 = 1;
     constexpr size_t P2 = 2048;
-    benchmark_ntt_expand_NoPack1<float, M2, N2, P2>(-10.f, 10.f);
+    benchmark_ntt_expand_nopack1<float, M2, N2, P2>(-10.f, 10.f);
 
     constexpr size_t M3 = 32;
     constexpr size_t N3 = 1;
     constexpr size_t P3 = 2;
     constexpr size_t VLEN3 = 4;
-    benchmark_ntt_expand_2D_pack<float, M3, N3, P3, VLEN3>(0.0f, 1.0f);
+    benchmark_ntt_expand_pack<float, M3, N3, P3, VLEN3>(-10.f, 10.f);
 
     return 0;
 }

@@ -45,14 +45,8 @@ TEST(ExpandTestFloat, NoPack) {
     auto ort_input = NttTest::ntt2ort(*ntt_input);
     int64_t target_shape[] = {M, K};
     int64_t shape_size = 2;
-
-    // 创建一维的 shape_tensor 形状
     int64_t shape[] = {shape_size};
-
-    // 创建 shape_tensor
     auto shape_tensor = make_tensor(reinterpret_cast<void*>(target_shape), DataType_INT64, shape, 1);
-
-    // 调用 Expand 操作
     auto ort_output = ortki_Expand(ort_input, shape_tensor);
 
     // compare
@@ -68,35 +62,27 @@ TEST(ExpandTestFloat, NoPack1) {
     float min_input = static_cast<float>(-10);
     float max_input = static_cast<float>(10);
 
-    // 定义输入和输出张量类型
+    // init
     using input_tensor_type = ntt::tensor<float, ntt::fixed_shape<M>>;
     using output_tensor_type = ntt::tensor<float, ntt::fixed_shape<M, K>>;
-
-    // 初始化输入张量
     std::unique_ptr<input_tensor_type> ntt_input(new input_tensor_type);
     NttTest::init_tensor(*ntt_input, min_input, max_input);
 
-    // 执行 expand 操作
+   // ntt
     std::unique_ptr<output_tensor_type> ntt_output1(new output_tensor_type);
     ntt::expand(*ntt_input, *ntt_output1);
 
-    // 将输入张量转换为 ORT 格式
+    // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
     int64_t target_shape[] = {M, K};
     int64_t shape_size = 2;
     int64_t shape[] = {shape_size};
-
-    // 创建 shape_tensor
     auto shape_tensor = make_tensor(reinterpret_cast<void*>(target_shape), DataType_INT64, shape, 1);
-
-    // 调用 Expand 操作
     auto ort_output = ortki_Expand(ort_input, shape_tensor);
 
-    // 将 ORT 输出转换回 NTT 格式
+    // compare
     std::unique_ptr<output_tensor_type> ntt_output2(new output_tensor_type);
     NttTest::ort2ntt(ort_output, *ntt_output2);
-
-    // 比较结果
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
@@ -122,18 +108,12 @@ TEST(ExpandTestFloat, Pack_M_K) {
     int64_t target_shape[] = {32, 2};
     int64_t shape_size = 2;
     int64_t shape[] = {shape_size};
-
-    // 创建 shape_tensor
     auto shape_tensor = make_tensor(reinterpret_cast<void*>(target_shape), DataType_INT64, shape, 1);
-
-    // 调用 Expand 操作
     auto ort_output = ortki_Expand(ort_input, shape_tensor);
-
-    // 将 ORT 输出转换回 NTT 格式
     std::unique_ptr<output_tensor_type> ntt_output2(new output_tensor_type);
     NttTest::ort2ntt(ort_output, *ntt_output2);
 
-    // 比较结果
+    // compare
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
