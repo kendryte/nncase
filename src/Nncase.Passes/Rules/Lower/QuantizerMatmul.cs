@@ -20,17 +20,14 @@ namespace Nncase.Passes.Rules.Lower;
 public sealed partial class QuantizerMatmul : IRewriteRule
 {
     public IPattern Pattern { get; }
-        = IsRangeOfMarker(
-            "markerC",
-            IsMatMul(
+        = IsMatMul(
                 "matmul",
                 "call",
                 _ => true,
                 IsRangeOfMarker("markerA", IsWildcard("inputA"), IsTensorConst("scaleA")),
-                IsRangeOfMarker("markerB", IsWildcard("inputB"), IsTensorConst("scaleB"))),
-            IsWildcard("scaleC"));
+                IsRangeOfMarker("markerB", IsWildcard("inputB"), IsTensorConst("scaleB")));
 
-    private Expr? GetReplace(Expr matmul, Call call, Expr inputA, Marker markerA, TensorConst scaleA, Expr inputB, Marker markerB, TensorConst scaleB, Marker markerC, RunPassContext context)
+    private Expr? GetReplace(Expr matmul, Call call, Expr inputA, Marker markerA, TensorConst scaleA, Expr inputB, Marker markerB, TensorConst scaleB, RunPassContext context)
     {
         if (inputA is not TensorConst && inputB is not TensorConst)
         {
