@@ -317,8 +317,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     }
                     else
                     {
-                        var slicing = string.Join(", ", args[0].Dimensions.ToArray().Select(e => Visit(e).Name).ToSlicing(load.NdSbp, load.Placement));
-                        IndentScope.Writer.Write($"tensor_copy({VisitBuffer(args[1], local: true).Name}.view({slicing}), {VisitBuffer(args[0], local: true).Name});\n");
+                        IndentScope.Writer.Write($"reshard({VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[0], local: false).Name});\n");
                     }
 
                     break;

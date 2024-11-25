@@ -30,6 +30,7 @@
 #include "kernels/pad.h"
 #include "kernels/reduce.h"
 #include "kernels/reduce_arg.h"
+#include "kernels/reshard.h"
 #include "kernels/resize_image.h"
 #include "kernels/scatter_nd.h"
 #include "kernels/slice.h"

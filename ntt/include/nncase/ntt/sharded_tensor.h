@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 #pragma once
+#include "nncase/ntt/arch/cpu/topology.h"
 #include "remote_tensor.h"
 #include "sharding.h"
 #include "tensor.h"
+#include <cstddef>
 
 namespace nncase::ntt::distributed {
 template <
@@ -35,10 +37,16 @@ class sharded_tensor_view
     using local_shape_type =
         typename detail::local_shard_shape_type<GlobalShape, Sharding>::type;
     using local_tensor_type = tensor_view<T, local_shape_type, LocalStrides>;
+
+    template <topology Scope>
     using remote_tensor_type =
-        remote_tensor_view<T, local_shape_type, LocalStrides>;
+        remote_tensor_view<T, local_shape_type, Scope, LocalStrides>;
 
     using local_tensor_type::local_tensor_type;
+
+    static constexpr GlobalShape global_shape() noexcept {
+        return GlobalShape{};
+    }
 
     local_tensor_type &local() noexcept {
         return static_cast<local_tensor_type &>(*this);
@@ -48,12 +56,16 @@ class sharded_tensor_view
         return static_cast<const local_tensor_type &>(*this);
     }
 
-    template <class... ShardIndexes>
-    remote_tensor_type remote(ShardIndexes &&...shardIndexes) const noexcept {
-        static_assert(sizeof...(shardIndexes) == mesh_type::shape_type::rank(),
-                      "Invalid index.");
+    template <topology RemoteScope, class... ShardIndexes>
+    remote_tensor_type<RemoteScope>
+    remote(ShardIndexes &&...shardIndexes) const noexcept {
+        static_assert(
+            sizeof...(shardIndexes) +
+                    detail::get_submesh_rank<mesh_type, RemoteScope>() - 1 ==
+                mesh_type::shape_type::rank(),
+            "Invalid index.");
         auto local_address = local().elements().data();
-        return remote_tensor_type::create(
+        return remote_tensor_type<RemoteScope>::create(
             mesh_type::remote_program_id(
                 ranked_shape<mesh_type::shape_type::rank()>(
                     std::forward<ShardIndexes>(shardIndexes)...)),
