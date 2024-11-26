@@ -59,15 +59,20 @@ void benchmark_ntt_pack(const std::string &mode, const size_t run_size) {
     constexpr size_t warmup_size = 10;
     for (size_t i = 0; i < warmup_size; i++) {
         ntt::pack<pack_dims...>(ntt_input, ntt_output);
+#if __x86_64__
+        asm volatile("" ::"g"(ntt_output));
+#endif
     }
 
     // run
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
         ntt::pack<pack_dims...>(ntt_input, ntt_output);
+#if __x86_64__
+        asm volatile("" ::"g"(ntt_output));
+#endif
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(ntt_output));
 
     auto element_size = tensor_type2::size() * ElementType::size() / P;
     std::cout << __FUNCTION__ << "_" << mode << " took " << std::setprecision(1)

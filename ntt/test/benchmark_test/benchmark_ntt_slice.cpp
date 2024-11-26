@@ -48,12 +48,16 @@ void benchmark_ntt_slice(T init_low, T init_high, const std::string &mode) {
     std::unique_ptr<tensor_type2> ntt_output(new tensor_type2);
 
     // warm up
-    for (size_t i = 0; i < warmup_size; i++)
+    for (size_t i = 0; i < warmup_size; i++) {
         ntt::slice<ntt::fixed_shape<start_dim0, start_dim1>,
                    ntt::fixed_shape<stop_dim0, stop_dim1>,
                    ntt::fixed_shape<axes[0], axes[1]>,
                    ntt::fixed_shape<step_dim0, step_dim1>>(*ntt_input,
                                                            *ntt_output);
+#if __x86_64__
+        asm volatile("" ::"g"(ntt_output));
+#endif
+    }
 
     // run
     auto t1 = NttTest::get_cpu_cycle();
@@ -63,7 +67,9 @@ void benchmark_ntt_slice(T init_low, T init_high, const std::string &mode) {
                    ntt::fixed_shape<axes[0], axes[1]>,
                    ntt::fixed_shape<step_dim0, step_dim1>>(*ntt_input,
                                                            *ntt_output);
+#if __x86_64__
         asm volatile("" ::"g"(ntt_output));
+#endif
     }
     auto t2 = NttTest::get_cpu_cycle();
 

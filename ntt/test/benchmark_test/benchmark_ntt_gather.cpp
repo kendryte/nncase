@@ -51,14 +51,20 @@ void benchmark_ntt_gather_pack1d_dim0_contiguous() {
     ntt::pack<1>(ta, pa);
 
     // warm up
-    for (size_t i = 0; i < warmup_size; i++)
+    for (size_t i = 0; i < warmup_size; i++) {
         ntt::gather<0>(pa, tb, pc);
+#if __x86_64__
+        asm volatile("" ::"g"(pc));
+#endif
+    }
 
     // run
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
         ntt::gather<0>(pa, tb, pc);
+#if __x86_64__
         asm volatile("" ::"g"(pc));
+#endif
     }
     auto t2 = NttTest::get_cpu_cycle();
 

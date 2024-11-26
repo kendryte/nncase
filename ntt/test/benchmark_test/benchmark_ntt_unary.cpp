@@ -34,8 +34,13 @@ void benchmark_ntt_unary(std::string op_name, T low, T high) {
     tensor_type ntt_input, ntt_result;
     NttTest::init_tensor(ntt_input, low, high);
 
-    for (size_t i = 0; i < size1; i++)
+    for (size_t i = 0; i < size1; i++) {
         ntt::unary<Op>(ntt_input, ntt_result);
+#if __x86_64__
+        asm volatile("" ::"g"(ntt_result));
+#endif
+    }
+
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < size1; i++) {
         ntt::unary<Op>(ntt_input, ntt_result);

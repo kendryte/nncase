@@ -111,19 +111,25 @@ void benchmark_ntt_matmul_pack_M() {
         pc;
     ntt::pack<0>(ta, pa);
 
-    for (size_t i = 0; i < warmup_num; i++)
+    for (size_t i = 0; i < warmup_num; i++) {
         ntt::matmul<false>(pa, tb, pc, ntt::fixed_shape<0>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
                            ntt::fixed_shape<0>{});
+#if __x86_64__
+        asm volatile("" ::"g"(pc));
+#endif
+    }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
         ntt::matmul<false>(pa, tb, pc, ntt::fixed_shape<0>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
                            ntt::fixed_shape<0>{});
+#if __x86_64__
+        asm volatile("" ::"g"(pc));
+#endif
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(pc));
 
     std::cout << __FUNCTION__ << " took " << std::setprecision(0) << std::fixed
               << static_cast<float>(t2 - t1) / run_num << " cycles"
