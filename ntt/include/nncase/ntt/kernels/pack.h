@@ -83,7 +83,20 @@ class pack_impl<TIn, TOut, PackAxis> {
     constexpr void operator()(const TIn &input, TOut &output) {
         auto in_p = input.elements().data();
         auto out_p = output.elements().data();
-        apply<0>(input, output, in_p, out_p);
+        constexpr auto rank = TIn::rank();
+        constexpr auto in_shape = TIn::shape();
+        constexpr auto in_conti_dims =
+            contiguous_dims(in_shape, TIn::strides());
+        constexpr auto out_conti_dims =
+            contiguous_dims(TOut::shape(), TOut::strides());
+        if constexpr ((in_conti_dims == rank) && (out_conti_dims == rank) &&
+                      (PackAxis == rank - 1) &&
+                      (in_shape.length() % VecLen == 0)) {
+            ntt::u_memcpy(reinterpret_cast<const TVec *>(in_p), 1, out_p, 1,
+                          output.shape().length());
+        } else {
+            apply<0>(input, output, in_p, out_p);
+        }
     }
 
   private:

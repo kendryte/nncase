@@ -19,6 +19,11 @@
 
 namespace nncase::ntt {
 namespace ukernels {
+
+template <class T1, class T2, bool Arch> struct u_pack_policy {
+    static constexpr size_t unroll = 4;
+};
+
 template <size_t M, size_t N, size_t MStrides, bool Arch, class TIn, class TOut>
 class u_pack {
   public:

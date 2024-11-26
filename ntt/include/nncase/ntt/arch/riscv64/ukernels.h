@@ -581,6 +581,96 @@ template <> struct u_memcpy<vector<float, NTT_VLEN / 32>, true> {
     }
 };
 
+// pack
+template <class T1, class T2> struct u_pack_policy<T1, T2, true> {
+    static constexpr size_t unroll = 4;
+};
+
+template <size_t N, size_t MStrides>
+class u_pack<NTT_VLEN / 32, N, MStrides, true, float,
+             vector<float, NTT_VLEN / 32>> {
+  public:
+    constexpr void operator()(const float *input,
+                              vector<float, NTT_VLEN / 32> *output) noexcept {
+        constexpr size_t vl = NTT_VLEN / 32;
+        if constexpr (N % vl != 0) {
+            ukernels::u_pack<vl, N, MStrides, false, float, vector<float, vl>>
+                impl;
+            impl(input, output);
+        } else {
+            using policy_t = u_pack_policy<float, vector<float, vl>, true>;
+            constexpr auto unroll = policy_t::unroll;
+            constexpr auto in_strides1 = sizeof(float) * MStrides;
+            constexpr auto in_strides2 = sizeof(float);
+            asm("vsetvli zero, %[vl], e32, m1\n" ::[vl] "r"(vl));
+
+            auto count = N;
+            while (count / unroll) {
+                asm volatile(
+                    "vlse32.v v1, (%[input]), %[in_strides1]\n"
+                    "add %[input], %[input], %[in_strides2]\n"
+                    : [input] "+r"(input)
+                    : [in_strides1] "r"(in_strides1), [in_strides2] "r"(
+                                                          in_strides2));
+                auto output1 = output;
+
+                asm volatile(
+                    "vlse32.v v2, (%[input]), %[in_strides1]\n"
+                    "add %[input], %[input], %[in_strides2]\n"
+                    : [input] "+r"(input)
+                    : [in_strides1] "r"(in_strides1), [in_strides2] "r"(
+                                                          in_strides2));
+                auto output2 = output + 1;
+
+                asm volatile(
+                    "vlse32.v v3, (%[input]), %[in_strides1]\n"
+                    "add %[input], %[input], %[in_strides2]\n"
+                    : [input] "+r"(input)
+                    : [in_strides1] "r"(in_strides1), [in_strides2] "r"(
+                                                          in_strides2));
+                auto output3 = output + 2;
+
+                asm volatile(
+                    "vlse32.v v4, (%[input]), %[in_strides1]\n"
+                    "add %[input], %[input], %[in_strides2]\n"
+                    : [input] "+r"(input)
+                    : [in_strides1] "r"(in_strides1), [in_strides2] "r"(
+                                                          in_strides2));
+                auto output4 = output + 3;
+
+                asm volatile("vse32.v v1, (%[output1])\n"
+                             : [output1] "+r"(output1)
+                             :);
+                output += unroll;
+
+                asm volatile("vse32.v v2, (%[output2])\n"
+                             : [output2] "+r"(output2)
+                             :);
+                count -= unroll;
+
+                asm volatile("vse32.v v3, (%[output3])\n"
+                             : [output3] "+r"(output3)
+                             :);
+
+                asm volatile("vse32.v v4, (%[output4])\n"
+                             : [output4] "+r"(output4)
+                             :);
+            }
+
+            for (size_t i = 0; i < count; i++) {
+                asm volatile(
+                    "vlse32.v v1, (%[input]), %[in_strides1]\n"
+                    "add %[input], %[input], %[in_strides2]\n"
+                    "vse32.v v1, (%[output])\n"
+                    : [input] "+r"(input), [output] "+r"(output)
+                    : [in_strides1] "r"(in_strides1), [in_strides2] "r"(
+                                                          in_strides2));
+                output += 1;
+            }
+        }
+    }
+};
+
 // unpack
 template <class T1, class T2> struct u_unpack_policy<T1, T2, true> {
     static constexpr size_t unroll = 4;
