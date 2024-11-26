@@ -14,9 +14,9 @@
  */
 #pragma once
 #include "distributed.h"
-#include "nncase/ntt/arch/cpu/topology.h"
 #include "primitive_ops.h"
 #include "shape.h"
+#include "utility.h"
 #include <cstddef>
 #include <tuple>
 
@@ -206,11 +206,15 @@ template <class Mesh, topology Topology>
 constexpr size_t
 mesh_index_from_program_id(ranked_shape<Mesh::shape_type::rank()> &index,
                            size_t index_offset, size_t program_id) noexcept {
-    auto submesh_rank = get_submesh_rank<Mesh, Topology>();
-    if (submesh_rank) {
-        auto axis = get_submesh_start<Mesh, Topology>();
+    constexpr auto submesh_rank = get_submesh_rank<Mesh, Topology>();
+    if constexpr (submesh_rank) {
+        constexpr auto submesh_start = get_submesh_start<Mesh, Topology>();
+        using submesh_shape_t =
+            decltype(slice_fixed_dims<submesh_rank, submesh_start>(
+                typename Mesh::shape_type{}));
+        using submesh_strides_t = default_strides_t<submesh_shape_t>;
         for (size_t i = 0; i < submesh_rank; i++) {
-            auto divider = Mesh::strides_type::at(i + axis);
+            auto divider = submesh_strides_t::at(i);
             index.at(i + index_offset) = program_id / divider;
             program_id = program_id % divider;
         }
