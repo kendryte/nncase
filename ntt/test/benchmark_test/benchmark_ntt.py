@@ -204,7 +204,7 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                        'float-uint32': '1.5',
                                        'uint32-float': '1.5',
                                        'float-bool': '1.5',
-                                       'bool-float': '1.5',
+                                       'bool-float': '6.0',
                                        'float-f8e4m3': '117.5',
                                        },
                               'clamp': {'Pack': '2.5'},
