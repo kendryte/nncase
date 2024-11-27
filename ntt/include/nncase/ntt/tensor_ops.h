@@ -310,31 +310,45 @@ struct cast<TTensor1, TTensor2> {
         return value;
     }
 
-    template <typename... Tensors1>
-        requires(sizeof...(Tensors1) > 1 &&
-                 (std::is_const_v<std::remove_reference_t<Tensors1>> && ...))
-    constexpr auto operator()(const Tensors1 &...tensors) const noexcept {
-        static_assert(((Tensors1::rank() == 1) && ...),
-                      "All tensors must have rank 1");
+    constexpr auto operator()(const TTensor1 &v0, const TTensor1 &v1,
+                              const TTensor1 &v2,
+                              const TTensor1 &v3) const noexcept {
         TTensor2 value;
         size_t count = 0;
-        (..., apply(tensors.shape(),
-                    [&](auto index) { value(count++) = op_(tensors(index)); }));
+        static_assert(TTensor1::rank() == 1 && TTensor2::rank() == 1);
+        apply(v0.shape(), [&](auto index) { value(count++) = op_(v0(index)); });
+        apply(v1.shape(), [&](auto index) { value(count++) = op_(v1(index)); });
+        apply(v2.shape(), [&](auto index) { value(count++) = op_(v2(index)); });
+        apply(v3.shape(), [&](auto index) { value(count++) = op_(v3(index)); });
         return value;
     }
 
-    template <typename... Tensors2>
-        requires(sizeof...(Tensors2) > 1 &&
-                 (!std::is_const_v<std::remove_reference_t<Tensors2>> && ...))
-    constexpr void operator()(const TTensor1 &v,
-                              Tensors2 &...outputs) const noexcept {
-        static_assert(TTensor1::rank() == 1, "Input tensor must have rank 1");
-        static_assert(((Tensors2::rank() == 1) && ...),
-                      "All output tensors must have rank 1");
-
+    constexpr auto operator()(const TTensor1 &v0,
+                              const TTensor1 &v1) const noexcept {
+        TTensor2 value;
         size_t count = 0;
-        (..., apply(outputs.shape(),
-                    [&](auto index) { outputs(index) = op_(v(count++)); }));
+        static_assert(TTensor1::rank() == 1 && TTensor2::rank() == 1);
+        apply(v0.shape(), [&](auto index) { value(count++) = op_(v0(index)); });
+        apply(v1.shape(), [&](auto index) { value(count++) = op_(v1(index)); });
+        return value;
+    }
+
+    constexpr void operator()(const TTensor1 &v, TTensor2 &v0, TTensor2 &v1,
+                              TTensor2 &v2, TTensor2 &v3) const noexcept {
+        size_t count = 0;
+        static_assert(TTensor1::rank() == 1 && TTensor2::rank() == 1);
+        apply(v0.shape(), [&](auto index) { v0(index) = op_(v(count++)); });
+        apply(v1.shape(), [&](auto index) { v1(index) = op_(v(count++)); });
+        apply(v2.shape(), [&](auto index) { v2(index) = op_(v(count++)); });
+        apply(v3.shape(), [&](auto index) { v3(index) = op_(v(count++)); });
+    }
+
+    constexpr void operator()(const TTensor1 &v, TTensor2 &v0,
+                              TTensor2 &v1) const noexcept {
+        size_t count = 0;
+        static_assert(TTensor1::rank() == 1 && TTensor2::rank() == 1);
+        apply(v0.shape(), [&](auto index) { v0(index) = op_(v(count++)); });
+        apply(v1.shape(), [&](auto index) { v1(index) = op_(v(count++)); });
     }
 
   private:
