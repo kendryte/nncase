@@ -32,8 +32,6 @@ class cast_impl<fixed_shape<InDims...>, fixed_shape<OutDims...>,
     template <class TIn, class TOut>
     constexpr void operator()(const TIn &input, TOut &output) {
 
-        using InElem = typename TIn::element_type;
-        using OutElem = typename TOut::element_type;
         constexpr float scale =
             (float)TIn::shape().length() / TOut::shape().length();
 
