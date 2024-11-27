@@ -49,7 +49,8 @@ struct tensor_unary_impl<Op, TTensor> {
 };
 
 template <template <class T> class Op, IsTensor TTensor>
-requires(TTensor::rank() == 2) struct tensor_unary_impl<Op, TTensor> {
+    requires(TTensor::rank() == 2)
+struct tensor_unary_impl<Op, TTensor> {
     using sub_vector_type =
         fixed_tensor_alike_t<TTensor, TTensor::shape().at(1)>;
 
@@ -100,8 +101,8 @@ struct tensor_binary_impl<Op, TTensor, T2> {
 };
 
 template <template <class T1, class T2> class Op, IsTensor T1, IsTensor T2>
-requires(T1::rank() == 2 &&
-         T2::rank() == 2) struct tensor_binary_impl<Op, T1, T2> {
+    requires(T1::rank() == 2 && T2::rank() == 2)
+struct tensor_binary_impl<Op, T1, T2> {
     using sub_vector_type = fixed_tensor_alike_t<T1, T1::shape().at(1)>;
 
     constexpr T1 operator()(const T1 &v1, const T2 &v2) const noexcept {
@@ -184,8 +185,8 @@ template <IsTensor TTensor> struct inner_product<TTensor, TTensor> {
 
     constexpr auto operator()(const TTensor &v1,
                               const TTensor &v2) const noexcept {
-        using result_type = decltype(
-            op_(std::declval<element_type>(), std::declval<element_type>()));
+        using result_type = decltype(op_(std::declval<element_type>(),
+                                         std::declval<element_type>()));
         result_type value{};
         apply(v1.shape(),
               [&](auto index) { value += op_(v1(index), v2(index)); });
@@ -310,6 +311,7 @@ struct cast<TTensor1, TTensor2> {
     }
 
     template <typename... Tensors1>
+        requires(sizeof...(Tensors1) > 1)
     constexpr auto operator()(const Tensors1 &...tensors) const noexcept {
         static_assert(((Tensors1::rank() == 1) && ...),
                       "All tensors must have rank 1");
@@ -321,6 +323,7 @@ struct cast<TTensor1, TTensor2> {
     }
 
     template <typename... Tensors2>
+        requires(sizeof...(Tensors2) > 1)
     constexpr void operator()(const TTensor1 &v,
                               Tensors2 &...outputs) const noexcept {
         static_assert(TTensor1::rank() == 1, "Input tensor must have rank 1");
