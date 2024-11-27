@@ -114,6 +114,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
                     typename DestTensor::global_shape_type>
             global_tensor(global_buffer);
         tensor_copy(global_tensor.view(global_offset, local.shape()), local);
+        distributed::topology_synchronize();
     }
 };
 } // namespace detail
