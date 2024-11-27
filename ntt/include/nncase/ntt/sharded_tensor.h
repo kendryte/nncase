@@ -33,6 +33,7 @@ class sharded_tensor_view
   public:
     using sharding_type = Sharding;
     using mesh_type = typename sharding_type::mesh_type;
+    using global_shape_type = GlobalShape;
 
     using local_shape_type =
         typename detail::local_shard_shape_type<GlobalShape, Sharding>::type;

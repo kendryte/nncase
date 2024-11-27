@@ -65,4 +65,10 @@ auto program_ids() noexcept {
     };
     return f(std::make_index_sequence<static_cast<size_t>(Scope) + 1>());
 }
+
+template <topology Scope> class topology_synchronizer;
+
+template <topology Scope = (topology)0> void topology_synchronize() noexcept {
+    topology_synchronizer<Scope>::synchronize();
+}
 } // namespace nncase::ntt::distributed

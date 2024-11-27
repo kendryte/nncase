@@ -350,8 +350,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     }
                     else
                     {
-                        var slicing = string.Join(", ", args[0].Dimensions.ToArray().Select(e => Visit(e).Name).ToSlicing(store.NdSbp, store.Placement));
-                        IndentScope.Writer.Write($"tensor_copy({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}.view({slicing}));\n");
+                        IndentScope.Writer.Write($"reshard({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     }
 
                     break;
@@ -504,8 +503,39 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 
                     break;
                 case TIR.CPU.GatherReduceScatter grs:
-                    var reduceKind = "tar::reduce_kind::" + string.Join("_", grs.InType.NdSBP.Select((s, i) => (s is SBPPartialSum ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
-                    IndentScope.Writer.IndWrite($"tac::tensor_reduce_sync<ops::add, {reduceKind}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
+                    {
+                        if (grs.InType.NdSBP.Any(s => s is SBPPartialSum))
+                        {
+                            var reduceKind = "tar::reduce_kind::" + string.Join("_", grs.InType.NdSBP.Select((s, i) => (s is SBPPartialSum ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
+                            IndentScope.Writer.IndWrite($"tac::tensor_reduce_sync<ops::add, {reduceKind}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
+                        }
+                        else
+                        {
+                            var fullShape = Enumerable.Repeat(1, args[0].Dimensions.Length).ToArray();
+                            var splitAxisAndScale = grs.InType.NdSBP.Select((sbp, i) => sbp is SBPSplit s ? (s.Axis, grs.InType.Placement.Hierarchy[i]) : (0, 1)).ToArray();
+                            foreach (var s in splitAxisAndScale)
+                            {
+                                fullShape[s.Item1] *= s.Item2;
+                            }
+
+                            foreach (var (dimS, axis) in args[0].Dimensions.ToArray().Select((e, axis) => (Visit(e).Name, axis)))
+                            {
+                                if (int.TryParse(dimS, out var div))
+                                {
+                                    fullShape[axis] *= div;
+                                }
+                                else if (CSourceUtilities.TryGetDivRem(dimS, out div, out var rem))
+                                {
+                                    fullShape[axis] = (fullShape[axis] - 1) * div;
+                                    fullShape[axis] += rem;
+                                }
+                            }
+
+                            _collective_pool_size = Math.Max(_collective_pool_size, (ulong)(TensorUtilities.GetProduct(fullShape) * args[0].CheckedDataType.SizeInBytes));
+                            IndentScope.Writer.Write($"reshard({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: false).Name});\n");
+                        }
+                    }
+
                     break;
                 case TIR.CPU.Reshape reshape:
                     throw new NotSupportedException("the reshape should be eliminated");

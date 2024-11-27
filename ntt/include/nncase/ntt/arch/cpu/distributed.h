@@ -15,6 +15,7 @@
 #pragma once
 #include "../../distributed.h"
 #include "runtime.h"
+#include <barrier>
 
 namespace nncase::ntt::distributed {
 template <> struct program_id_getter<topology::thread> {
@@ -44,4 +45,49 @@ inline constexpr size_t tdim() noexcept {
 }
 inline constexpr size_t bdim() noexcept { return program_dim(topology::block); }
 inline constexpr size_t cdim() noexcept { return program_dim(topology::chip); }
+
+namespace detail {
+struct thread_barrier {
+    std::barrier<> barrier{tdim()};
+};
+
+struct block_barrier {
+    std::barrier<> barrier{bdim() * tdim()};
+};
+
+struct chip_barrier {
+    std::barrier<> barrier{cdim() * bdim() * tdim()};
+};
+} // namespace detail
+
+template <> class topology_synchronizer<topology::thread> {
+  private:
+  public:
+    static void synchronize() noexcept {
+        barriers_[cid()][bid()].barrier.arrive_and_wait();
+    }
+
+  private:
+    inline static detail::thread_barrier barriers_[cdim()][bdim()];
+};
+
+template <> class topology_synchronizer<topology::block> {
+  private:
+  public:
+    static void synchronize() noexcept {
+        barriers_[cid()].barrier.arrive_and_wait();
+    }
+
+  private:
+    inline static detail::block_barrier barriers_[cdim()];
+};
+
+template <> class topology_synchronizer<topology::chip> {
+  private:
+  public:
+    static void synchronize() noexcept { barrier_.barrier.arrive_and_wait(); }
+
+  private:
+    inline static detail::chip_barrier barrier_;
+};
 } // namespace nncase::ntt::distributed

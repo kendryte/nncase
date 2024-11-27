@@ -370,15 +370,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 break;
             case (DistributedType inType, DistributedType outType):
                 {
-                    if (inType.NdSBP.Any(sbp => sbp is SBPPartialSum))
-                    {
-                        _mainBody.Add(TIR.F.CPU.GatherReduceScatter(arguments[0], ret, inType, outType));
-                    }
-                    else
-                    {
-                        _mainBody.Add(TIR.F.CPU.TensorStore(arguments[0], None.Default, inType.NdSBP, inType.Placement));
-                        _mainBody.Add(TIR.F.CPU.TensorLoad(ret, None.Default, outType.NdSBP, outType.Placement));
-                    }
+                    _mainBody.Add(TIR.F.CPU.GatherReduceScatter(arguments[0], ret, inType, outType));
                 }
 
                 break;

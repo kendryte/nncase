@@ -16,7 +16,13 @@
 #include "../sharded_tensor.h"
 #include "../tensor_traits.h"
 #include "nncase/ntt/kernels/copy.h"
+#include "nncase/ntt/shape.h"
+#include "nncase/ntt/tensor.h"
 #include <type_traits>
+
+namespace tar {
+extern uint8_t collective_pool_ptr[];
+}
 
 namespace nncase::ntt {
 namespace detail {
@@ -47,6 +53,51 @@ struct reshard_impl<SrcTensor, DestTensor> {
             sharding_type::global_offset(src.global_shape(), local_mesh_index);
         auto local = src.local();
         tensor_copy(local, dest.view(global_offset, local.shape()));
+        distributed::topology_synchronize();
+    }
+};
+
+// reshard
+template <IsShardedTensor SrcTensor, IsShardedTensor DestTensor>
+struct reshard_impl<SrcTensor, DestTensor> {
+    using mesh_type = typename SrcTensor::mesh_type;
+    using src_sharding_type = typename SrcTensor::sharding_type;
+    using dest_sharding_type = typename DestTensor::sharding_type;
+
+    static_assert(std::is_same_v<mesh_type, typename DestTensor::mesh_type>,
+                  "Cannot reshard between different mesh types.");
+
+    constexpr void operator()(const SrcTensor &src, DestTensor &dest) noexcept {
+        using mesh_type = typename SrcTensor::mesh_type;
+        using src_sharding_type = typename SrcTensor::sharding_type;
+        auto local_mesh_index = mesh_type::local_index();
+        auto src_global_offset = src_sharding_type::global_offset(
+            src.global_shape(), local_mesh_index);
+        auto src_local = src.local();
+
+        using local_tensor_type = typename SrcTensor::local_tensor_type;
+        constexpr auto global_size = linear_size(
+            typename SrcTensor::global_shape_type{},
+            default_strides(typename SrcTensor::global_shape_type{}));
+        auto global_buffer =
+            std::span<typename local_tensor_type::element_type, global_size>(
+                reinterpret_cast<typename local_tensor_type::element_type *>(
+                    tar::collective_pool_ptr),
+                global_size);
+        tensor_view<typename local_tensor_type::element_type,
+                    typename SrcTensor::global_shape_type>
+            global_tensor(global_buffer);
+
+        tensor_copy(src_local,
+                    global_tensor.view(src_global_offset, src_local.shape()));
+        // distributed::topology_synchronize();
+
+        using dest_sharding_type = typename DestTensor::sharding_type;
+        auto dest_global_offset = dest_sharding_type::global_offset(
+            dest.global_shape(), local_mesh_index);
+        auto dest_local = dest.local();
+        tensor_copy(global_tensor.view(dest_global_offset, dest_local.shape()),
+                    dest_local);
     }
 };
 } // namespace detail
