@@ -41,7 +41,6 @@ template <class TIn, class TOut, size_t... Axes> class pack_impl {
         if (sizeof...(Axes) == 2 && axes[0] + 1 == axes[1] &&
             conti_dims_input == in_rank && conti_dims_output == out_rank) {
             ntt::u_pack2d<TIn, TOut, Axes...>(input, output);
-
         } else {
             auto out_shape = output.shape();
             constexpr auto rank = out_rank + elem_rank;
