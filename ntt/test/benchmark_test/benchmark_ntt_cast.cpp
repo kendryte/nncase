@@ -53,7 +53,7 @@ void benchmark_ntt_cast(T1 init_low, T1 init_high) {
     constexpr size_t size = 600;
 #elif __x86_64__
     constexpr size_t run_size = 2000;
-    constexpr size_t size = 2000;
+    constexpr size_t size = 16000;
 #else
     constexpr size_t run_size = 2000;
     constexpr size_t size = 2000;
@@ -90,7 +90,8 @@ void benchmark_ntt_cast(T1 init_low, T1 init_high) {
     auto t2 = NttTest::get_cpu_cycle();
 
     std::cout << __FUNCTION__ << "_" << op << " took " << std::setprecision(1)
-              << std::fixed << static_cast<float>(t2 - t1) / size / run_size
+              << std::fixed
+              << static_cast<float>(t2 - t1) / (size / M) / run_size
               << " cycles" << std::endl;
 }
 
