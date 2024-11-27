@@ -34,7 +34,8 @@ class cast_impl<fixed_shape<InDims...>, fixed_shape<OutDims...>,
 
         using InElem = typename TIn::element_type;
         using OutElem = typename TOut::element_type;
-        constexpr float scale = type_scale<TIn, TOut>();
+        constexpr float scale =
+            (float)TIn::shape().length() / TOut::shape().length();
 
         if constexpr (scale != 1.0f) {
             static_assert(TIn::rank() == 1,
@@ -58,12 +59,6 @@ class cast_impl<fixed_shape<InDims...>, fixed_shape<OutDims...>,
     }
 
   private:
-    template <class TIn, class TOut> constexpr float type_scale() {
-        using InElem = typename TIn::element_type;
-        using OutElem = typename TOut::element_type;
-        return (float)TIn::shape().length() / TOut::shape().length();
-    }
-
     template <float scale, class TIn, class TOut, size_t Axis, size_t Rank,
               size_t ContiguousDims, size_t... RestDims>
     constexpr void apply(ranked_shape<Rank> &index, const TIn &input,
