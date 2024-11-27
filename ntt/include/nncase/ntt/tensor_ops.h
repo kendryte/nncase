@@ -49,7 +49,8 @@ struct tensor_unary_impl<Op, TTensor> {
 };
 
 template <template <class T> class Op, IsTensor TTensor>
-requires(TTensor::rank() == 2) struct tensor_unary_impl<Op, TTensor> {
+    requires(TTensor::rank() == 2)
+struct tensor_unary_impl<Op, TTensor> {
     using sub_vector_type =
         fixed_tensor_alike_t<TTensor, TTensor::shape().at(1)>;
 
@@ -100,8 +101,8 @@ struct tensor_binary_impl<Op, TTensor, T2> {
 };
 
 template <template <class T1, class T2> class Op, IsTensor T1, IsTensor T2>
-requires(T1::rank() == 2 &&
-         T2::rank() == 2) struct tensor_binary_impl<Op, T1, T2> {
+    requires(T1::rank() == 2 && T2::rank() == 2)
+struct tensor_binary_impl<Op, T1, T2> {
     using sub_vector_type = fixed_tensor_alike_t<T1, T1::shape().at(1)>;
 
     constexpr T1 operator()(const T1 &v1, const T2 &v2) const noexcept {
@@ -184,8 +185,8 @@ template <IsTensor TTensor> struct inner_product<TTensor, TTensor> {
 
     constexpr auto operator()(const TTensor &v1,
                               const TTensor &v2) const noexcept {
-        using result_type = decltype(
-            op_(std::declval<element_type>(), std::declval<element_type>()));
+        using result_type = decltype(op_(std::declval<element_type>(),
+                                         std::declval<element_type>()));
         result_type value{};
         apply(v1.shape(),
               [&](auto index) { value += op_(v1(index), v2(index)); });
@@ -307,6 +308,47 @@ struct cast<TTensor1, TTensor2> {
         TTensor2 value;
         apply(v.shape(), [&](auto index) { value(index) = op_(v(index)); });
         return value;
+    }
+
+    constexpr auto operator()(const TTensor1 &v0, const TTensor1 &v1,
+                              const TTensor1 &v2,
+                              const TTensor1 &v3) const noexcept {
+        TTensor2 value;
+        size_t count = 0;
+        static_assert(TTensor1::rank() == 1 && TTensor2::rank() == 1);
+        apply(v0.shape(), [&](auto index) { value(count++) = op_(v0(index)); });
+        apply(v1.shape(), [&](auto index) { value(count++) = op_(v1(index)); });
+        apply(v2.shape(), [&](auto index) { value(count++) = op_(v2(index)); });
+        apply(v3.shape(), [&](auto index) { value(count++) = op_(v3(index)); });
+        return value;
+    }
+
+    constexpr auto operator()(const TTensor1 &v0,
+                              const TTensor1 &v1) const noexcept {
+        TTensor2 value;
+        size_t count = 0;
+        static_assert(TTensor1::rank() == 1 && TTensor2::rank() == 1);
+        apply(v0.shape(), [&](auto index) { value(count++) = op_(v0(index)); });
+        apply(v1.shape(), [&](auto index) { value(count++) = op_(v1(index)); });
+        return value;
+    }
+
+    constexpr void operator()(const TTensor1 &v, TTensor2 &v0, TTensor2 &v1,
+                              TTensor2 &v2, TTensor2 &v3) const noexcept {
+        size_t count = 0;
+        static_assert(TTensor1::rank() == 1 && TTensor2::rank() == 1);
+        apply(v0.shape(), [&](auto index) { v0(index) = op_(v(count++)); });
+        apply(v1.shape(), [&](auto index) { v1(index) = op_(v(count++)); });
+        apply(v2.shape(), [&](auto index) { v2(index) = op_(v(count++)); });
+        apply(v3.shape(), [&](auto index) { v3(index) = op_(v(count++)); });
+    }
+
+    constexpr void operator()(const TTensor1 &v, TTensor2 &v0,
+                              TTensor2 &v1) const noexcept {
+        size_t count = 0;
+        static_assert(TTensor1::rank() == 1 && TTensor2::rank() == 1);
+        apply(v0.shape(), [&](auto index) { v0(index) = op_(v(count++)); });
+        apply(v1.shape(), [&](auto index) { v1(index) = op_(v(count++)); });
     }
 
   private:

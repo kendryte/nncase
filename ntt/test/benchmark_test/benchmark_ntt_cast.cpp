@@ -43,7 +43,7 @@ template <> struct TypeToString<float_e4m3_t> {
     static constexpr char name[] = "f8e4m3";
 };
 
-template <typename T1, typename T2, size_t N>
+template <typename T1, typename T2>
 void benchmark_ntt_cast(T1 init_low, T1 init_high) {
     std::string op = std::string(TypeToString<T1>::name) + "-" +
                      std::string(TypeToString<T2>::name);
@@ -59,10 +59,13 @@ void benchmark_ntt_cast(T1 init_low, T1 init_high) {
     constexpr size_t size = 2000;
 #endif
 
+    constexpr size_t M = NTT_VLEN / (sizeof(T1) * 8);
+    constexpr size_t N = NTT_VLEN / (sizeof(T2) * 8);
+
     using tensor_type1 =
-        ntt::tensor<ntt::vector<T1, N>, ntt::fixed_shape<size>>;
+        ntt::tensor<ntt::vector<T1, M>, ntt::fixed_shape<size / M>>;
     using tensor_type2 =
-        ntt::tensor<ntt::vector<T2, N>, ntt::fixed_shape<size>>;
+        ntt::tensor<ntt::vector<T2, N>, ntt::fixed_shape<size / N>>;
 
     std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
     std::unique_ptr<tensor_type2> ntt_output(new tensor_type2);
@@ -94,12 +97,12 @@ void benchmark_ntt_cast(T1 init_low, T1 init_high) {
 int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
-    constexpr size_t N = NTT_VLEN / (sizeof(float) * 8);
-    benchmark_ntt_cast<float, int, N>(-100.f, 100.f);
-    benchmark_ntt_cast<int, float, N>(-100, 100);
-    benchmark_ntt_cast<float, unsigned int, N>(0.f, 100.f);
-    benchmark_ntt_cast<unsigned int, float, N>(0, 100);
-    benchmark_ntt_cast<float, bool, N>(-100.f, 100.f);
-    benchmark_ntt_cast<bool, float, N>(0, 1);
-    benchmark_ntt_cast<float, float_e4m3_t, N>(-1000.f, 1000.f);
+
+    benchmark_ntt_cast<float, int>(-100.f, 100.f);
+    benchmark_ntt_cast<int, float>(-100, 100);
+    benchmark_ntt_cast<float, unsigned int>(0.f, 100.f);
+    benchmark_ntt_cast<unsigned int, float>(0, 100);
+    benchmark_ntt_cast<float, bool>(-100.f, 100.f);
+    benchmark_ntt_cast<bool, float>(0, 1);
+    benchmark_ntt_cast<float, float_e4m3_t>(-1000.f, 1000.f);
 }
