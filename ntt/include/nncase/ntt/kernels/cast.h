@@ -41,6 +41,12 @@ class cast_impl<fixed_shape<InDims...>, fixed_shape<OutDims...>,
             static_assert(TIn::rank() == 1,
                           "Only support 1D tensor repack for now!");
         }
+
+        constexpr auto in_offset_scale =
+            scale > 1.0f ? (size_t)scale : (size_t)1;
+        constexpr auto out_offset_scale =
+            scale > 1.0f ? (size_t)1 : (size_t)(1.0f / scale);
+
         constexpr size_t rank = sizeof...(InDims);
         ranked_shape<rank> index{};
         constexpr auto conti_dims =
@@ -50,25 +56,23 @@ class cast_impl<fixed_shape<InDims...>, fixed_shape<OutDims...>,
                                      fixed_strides<OutStrides...>{}));
 
         if constexpr (scale >= 1.0f) {
-            apply<scale, TIn, TOut, 0, rank, conti_dims, OutDims...>(
-                index, input, output);
+            apply<in_offset_scale, out_offset_scale, TIn, TOut, 0, rank,
+                  conti_dims, OutDims...>(index, input, output);
         } else {
-            apply<scale, TIn, TOut, 0, rank, conti_dims, InDims...>(
-                index, input, output);
+            apply<in_offset_scale, out_offset_scale, TIn, TOut, 0, rank,
+                  conti_dims, InDims...>(index, input, output);
         }
     }
 
   private:
-    template <float scale, class TIn, class TOut, size_t Axis, size_t Rank,
-              size_t ContiguousDims, size_t... RestDims>
+    template <size_t in_offset_scale, size_t out_offset_scale, class TIn,
+              class TOut, size_t Axis, size_t Rank, size_t ContiguousDims,
+              size_t... RestDims>
     constexpr void apply(ranked_shape<Rank> &index, const TIn &input,
                          TOut &output) {
         if constexpr (ContiguousDims == sizeof...(RestDims)) {
             constexpr auto inner_size = fixed_shape<RestDims...>::length();
-            constexpr auto in_offset_scale =
-                scale > 1.0f ? (size_t)scale : (size_t)1;
-            constexpr auto out_offset_scale =
-                scale > 1.0f ? (size_t)1 : (size_t)(1.0f / scale);
+
             auto in_offset =
                 linear_offset(index, input.strides()) * in_offset_scale;
             auto out_offset =
@@ -78,18 +82,19 @@ class cast_impl<fixed_shape<InDims...>, fixed_shape<OutDims...>,
             cast_contiguous<in_offset_scale, out_offset_scale, inner_size>(
                 input_p, output_p);
         } else {
-            apply_next<scale, TIn, TOut, Axis, Rank, ContiguousDims,
-                       RestDims...>(index, input, output);
+            apply_next<in_offset_scale, out_offset_scale, TIn, TOut, Axis, Rank,
+                       ContiguousDims, RestDims...>(index, input, output);
         }
     }
 
-    template <float scale, class TIn, class TOut, size_t Axis, size_t Rank,
-              size_t ContiguousDims, size_t Dim, size_t... RestDims>
+    template <size_t in_offset_scale, size_t out_offset_scale, class TIn,
+              class TOut, size_t Axis, size_t Rank, size_t ContiguousDims,
+              size_t Dim, size_t... RestDims>
     constexpr void apply_next(ranked_shape<Rank> &index, const TIn &input,
                               TOut &output) {
         for (index[Axis] = 0; index[Axis] < Dim; index[Axis]++) {
-            apply<scale, TIn, TOut, Axis + 1, Rank, ContiguousDims,
-                  RestDims...>(index, input, output);
+            apply<in_offset_scale, out_offset_scale, TIn, TOut, Axis + 1, Rank,
+                  ContiguousDims, RestDims...>(index, input, output);
         }
     }
 
