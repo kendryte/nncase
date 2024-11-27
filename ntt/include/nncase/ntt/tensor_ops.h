@@ -311,7 +311,8 @@ struct cast<TTensor1, TTensor2> {
     }
 
     template <typename... Tensors1>
-        requires(sizeof...(Tensors1) > 1)
+        requires(sizeof...(Tensors1) > 1 &&
+                 (std::is_const_v<std::remove_reference_t<Tensors1>> && ...))
     constexpr auto operator()(const Tensors1 &...tensors) const noexcept {
         static_assert(((Tensors1::rank() == 1) && ...),
                       "All tensors must have rank 1");
@@ -323,7 +324,8 @@ struct cast<TTensor1, TTensor2> {
     }
 
     template <typename... Tensors2>
-        requires(sizeof...(Tensors2) > 1)
+        requires(sizeof...(Tensors2) > 1 &&
+                 (!std::is_const_v<std::remove_reference_t<Tensors2>> && ...))
     constexpr void operator()(const TTensor1 &v,
                               Tensors2 &...outputs) const noexcept {
         static_assert(TTensor1::rank() == 1, "Input tensor must have rank 1");
