@@ -90,7 +90,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
 
         tensor_copy(src_local,
                     global_tensor.view(src_global_offset, src_local.shape()));
-        // distributed::topology_synchronize();
+        distributed::topology_synchronize();
 
         using dest_sharding_type = typename DestTensor::sharding_type;
         auto dest_global_offset = dest_sharding_type::global_offset(
