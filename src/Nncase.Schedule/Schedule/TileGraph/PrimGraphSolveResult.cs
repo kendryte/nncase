@@ -128,7 +128,32 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                             var srcBufView = IR.F.Buffer.BufferSubview(viewInfo.Buffer, viewInfo.Offsets, new IR.Tuple(viewInfo.Shape.Select(x => (Expr)x).ToArray()));
                             if (kernelInfo.BufferInfos[bid.Index].State.HasFlag(MicroKernelBufferInfo.BufferState.Read))
                             {
-                                letBuilder.Body(T.Memcopy(subViewVar, srcBufView));
+                                if (bid.Node.Op.GetType().Name.Contains("Matmul", StringComparison.Ordinal) && bid.IsOutput)
+                                {
+                                    var kdim = bid.Node.WriteAccess.Domains.Length - 2;
+                                    var relatedWithK = bufferInfo.Masks[i].IsRelated(kdim);
+                                    var val = value;
+                                    bool isLoopRelated = false;
+                                    while (val.Parent is TileNode parent)
+                                    {
+                                        if (TileableNodeMemo.TryGetValue(val, out var m) && m.TileVars[kdim] != 1)
+                                        {
+                                            isLoopRelated = true;
+                                            break;
+                                        }
+
+                                        val = parent;
+                                    }
+
+                                    if (relatedWithK && isLoopRelated)
+                                    {
+                                        letBuilder.Body(T.Memcopy(subViewVar, srcBufView));
+                                    }
+                                }
+                                else
+                                {
+                                    letBuilder.Body(T.Memcopy(subViewVar, srcBufView));
+                                }
                             }
 
                             if (kernelInfo.BufferInfos[bid.Index].State.HasFlag(MicroKernelBufferInfo.BufferState.Write))
