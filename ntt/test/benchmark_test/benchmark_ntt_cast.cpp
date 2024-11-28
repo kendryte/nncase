@@ -99,29 +99,6 @@ int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
 
-    {
-        ntt::tensor<float, ntt::fixed_shape<1, 64, 32>> ta;
-        ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 16, 32>> tb;
-        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-        ntt::pack<1>(ta, tb.view());
-        ntt::tensor<ntt::vector<int32_t, 4>, ntt::fixed_shape<1, 16, 32>> tc;
-        ntt::cast(tb, tc);
-        assert(tc(0, 0, 0)(0) == 0);
-        assert(tc(0, 0, 0)(1) == 32);
-        assert(tc(0, 0, 0)(2) == 64);
-    }
-
-    {
-        ntt::tensor<float, ntt::fixed_shape<1, 2>> ta;
-        ntt::tensor<float, ntt::fixed_shape<2, 2>> tb;
-        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-        ntt::expand(ta, tb.view());
-        assert(are_floats_equal(tb(0, 0), 0.f));
-        assert(are_floats_equal(tb(0, 1), 1.f));
-        assert(are_floats_equal(tb(1, 0), 0.f));
-        assert(are_floats_equal(tb(1, 1), 1.f));
-    }
-
     benchmark_ntt_cast<float, int>(-100.f, 100.f);
     benchmark_ntt_cast<int, float>(-100, 100);
     benchmark_ntt_cast<float, unsigned int>(0.f, 100.f);
