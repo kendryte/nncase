@@ -287,6 +287,17 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                          'CH': '2.5',
                                          'HW': '2.0',
                                          },
+                              'expand': {'N': '0.0',
+                                         'C': '0.0',
+                                         'H': '0.0',
+                                         'W': '0.0',
+                                         'NC': '0.0',
+                                         'CH': '0.0',
+                                         'HW': '0.0',
+                                         'NH': '0.0',
+                                         'CW': '0.0',
+                                         'NW': '0.0',
+                                         },
                               }
 
     def run(self):
@@ -396,6 +407,17 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                          'NC': '6',
                                          'CH': '6',
                                          'HW': '6',
+                                         },
+                              'expand': {'N': '0.0',
+                                         'C': '0.0',
+                                         'H': '0.0',
+                                         'W': '0.0',
+                                         'NC': '0.0',
+                                         'CH': '0.0',
+                                         'HW': '0.0',
+                                         'NH': '0.0',
+                                         'CW': '0.0',
+                                         'NW': '0.0',
                                          },
                               }
 
