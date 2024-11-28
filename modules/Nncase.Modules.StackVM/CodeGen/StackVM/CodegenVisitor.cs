@@ -5,7 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
 using System.Reactive;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
@@ -403,7 +406,22 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     private TextSnippet Visit(TensorConst expr, Tensor tensor)
     {
-        var buffer = WriteRdata(tensor.BytesBuffer, _alignment);
+        var dt = tensor.ElementType;
+        var buffer = dt switch
+        {
+            var t when t == DataTypes.Float32 => WriteRdata<float>(tensor.ToArray<float>().AsSpan(), _alignment),
+            var t when t == DataTypes.Float64 => WriteRdata<double>(tensor.ToArray<double>().AsSpan(), _alignment),
+            var t when t == DataTypes.Int8 => WriteRdata<sbyte>(tensor.ToArray<sbyte>().AsSpan(), _alignment),
+            var t when t == DataTypes.Int32 => WriteRdata<int>(tensor.ToArray<int>().AsSpan(), _alignment),
+            var t when t == DataTypes.Int64 => WriteRdata<long>(tensor.ToArray<long>().AsSpan(), _alignment),
+            var t when t == DataTypes.UInt8 => WriteRdata<byte>(tensor.ToArray<byte>().AsSpan(), _alignment),
+            var t when t == DataTypes.UInt32 => WriteRdata<uint>(tensor.ToArray<uint>().AsSpan(), _alignment),
+            var t when t == DataTypes.UInt64 => WriteRdata<ulong>(tensor.ToArray<ulong>().AsSpan(), _alignment),
+
+            // var t when t == DataTypes.BFloat16 => WriteRdata<BFloat16>(tensor.ToArray<BFloat16>().AsSpan(), _alignment),
+            var t when t == DataTypes.Float16 => WriteRdata<Half>(tensor.ToArray<Half>().AsSpan(), _alignment),
+            _ => throw new NotSupportedException($"Not supported onnx constant data type {dt}"),
+        };
 
         // stack: dtype shape strides buffer
         var snippet = BeginTextSnippet(expr);
@@ -433,6 +451,25 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         _context.RdataWriter.AlignPosition(alignment);
         var symbol = AddSymbol(WellknownSectionNames.Rdata);
         _context.RdataWriter.Write(data);
+        return symbol;
+    }
+
+    private unsafe Symbol WriteRdata<T>(ReadOnlySpan<T> data, int alignment)
+        where T : unmanaged, INumber<T>
+    {
+        _context.RdataWriter.AlignPosition(alignment);
+        var chunck = 1024 * 1024 * 1024L / sizeof(T);
+        int written = 0;
+        long length = data.Length;
+        while (length > 0)
+        {
+            var sizeToWrite = (int)Math.Min(length, chunck);
+            _context.RdataWriter.Write(MemoryMarshal.Cast<T, byte>(data.Slice(written, sizeToWrite)));
+            written += sizeToWrite;
+            length -= sizeToWrite;
+        }
+
+        var symbol = AddSymbol(WellknownSectionNames.Rdata);
         return symbol;
     }
 
