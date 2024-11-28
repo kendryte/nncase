@@ -70,10 +70,10 @@ int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
 
-    benchmark_ntt_expand<1, 16, 16, 8, 8, 16, 16, 8>("N");
-    benchmark_ntt_expand<32, 1, 32, 32, 32, 32, 32, 32>("C");
-    benchmark_ntt_expand<32, 32, 1, 32, 32, 32, 32, 32>("H");
     benchmark_ntt_expand<32, 32, 32, 1, 32, 32, 32, 32>("W");
+    benchmark_ntt_expand<32, 32, 1, 32, 32, 32, 32, 32>("H");
+    benchmark_ntt_expand<32, 1, 32, 32, 32, 32, 32, 32>("C");
+    benchmark_ntt_expand<1, 16, 16, 16, 16, 16, 16, 16>("N");
     benchmark_ntt_expand<1, 1, 32, 32, 32, 32, 32, 32>("NC");
     benchmark_ntt_expand<32, 1, 1, 32, 32, 32, 32, 32>("CH");
     benchmark_ntt_expand<32, 32, 1, 1, 32, 32, 32, 32>("HW");
