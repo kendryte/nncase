@@ -962,9 +962,9 @@ public sealed class PackCast : PackRule
         void AddCandidate(int[] packedAxes, int[] lanes)
         {
             var packedInput = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
-            var Cast = IR.F.Tensors.Cast(packedInput, op.NewType, op.CastMode);
-            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(Cast, lanes, packedAxes), inShape, padsInput);
-            if (Cast.CheckedType is not InvalidType)
+            var cast = IR.F.Tensors.Cast(packedInput, op.NewType, op.CastMode);
+            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(cast, lanes, packedAxes), inShape, padsInput);
+            if (cast.CheckedType is not InvalidType)
             {
                 rets.Add(post);
             }
