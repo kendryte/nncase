@@ -79,8 +79,7 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
         constexpr auto rank = TIn::shape_type::rank();
         constexpr auto in_conti_dims = contiguous_dims(
             fixed_shape<InDims...>{}, fixed_strides<InStrides...>{});
-        if constexpr ((in_conti_dims == rank) && (Axis2 == Axis1 + 1) &&
-                      (Axis2 != (rank - 1))) {
+        if constexpr ((in_conti_dims == rank) && (Axis2 == Axis1 + 1)) {
             auto pout = output.buffer().data();
             auto count = input.shape().length();
             constexpr auto in_strides =

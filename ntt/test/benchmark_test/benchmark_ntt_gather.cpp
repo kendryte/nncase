@@ -246,6 +246,7 @@ void benchmark_ntt_gather_pack2d_dim0_contiguous() {
     tensor_pc_type pc;
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0);
+    NttTest::init_tensor(pa, -10.f, 10.f);
     ntt::pack<0, 1>(ta, pa);
 
     // warm up

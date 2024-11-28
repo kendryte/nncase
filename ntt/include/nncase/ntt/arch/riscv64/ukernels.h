@@ -681,7 +681,7 @@ class u_pack2d<true, TIn, TOut, float,
         auto input_shape = input.shape();
         auto out_stride = output.strides();
         auto rank = input_shape.rank();
-        if ((PackAxis2 != rank - 1) && (input_shape[PackAxis1] % vl == 0) &&
+        if ((input_shape[PackAxis1] % vl == 0) &&
             (input_shape[PackAxis2] % vl == 0)) {
             auto pin = input.buffer().data();
             auto out_ptr = output.buffer().data();
@@ -704,155 +704,289 @@ class u_pack2d<true, TIn, TOut, float,
             asm("vsetvli zero, %[vl], e32, m1\n" ::[vl] "r"(vl));
 
             auto count = output.shape().length();
-            while (count / high_stride) {
-                auto in_ptr = pin + out_offset + low_idx * low_extra +
-                              high_idx * high_extra;
-                auto count1 = high_stride;
-                while (count1 / unroll1) {
-                    auto input1 = in_ptr;
-                    auto input2 = in_ptr + 1;
-                    auto output1 = out_ptr;
-                    auto output2 = out_ptr + 1;
-                    auto count2 = vl;
-                    while (count2 / unroll2) {
-                        // load input1 + input2
-                        asm volatile(
-                            "vlse32.v v1, (%[input1]), %[in_high_strides]\n"
-                            "add %[input1], %[input1], %[in_low_strides]\n"
-                            : [input1] "+r"(input1)
-                            : [in_high_strides] "r"(in_high_strides),
-                              [in_low_strides] "r"(in_low_strides));
+            if (PackAxis2 != rank - 1) {
+                while (count / high_stride) {
+                    auto in_ptr = pin + out_offset + low_idx * low_extra +
+                                  high_idx * high_extra;
+                    auto count1 = high_stride;
+                    while (count1 / unroll1) {
+                        auto input1 = in_ptr;
+                        auto input2 = in_ptr + 1;
+                        auto output1 = out_ptr;
+                        auto output2 = out_ptr + 1;
+                        auto count2 = vl;
+                        while (count2 / unroll2) {
+                            // load input1 + input2
+                            asm volatile(
+                                "vlse32.v v1, (%[input1]), %[in_high_strides]\n"
+                                "add %[input1], %[input1], %[in_low_strides]\n"
+                                : [input1] "+r"(input1)
+                                : [in_high_strides] "r"(in_high_strides),
+                                  [in_low_strides] "r"(in_low_strides));
 
-                        asm volatile(
-                            "vlse32.v v5, (%[input2]), %[in_high_strides]\n"
-                            "add %[input2], %[input2], %[in_low_strides]\n"
-                            : [input2] "+r"(input2)
-                            : [in_high_strides] "r"(in_high_strides),
-                              [in_low_strides] "r"(in_low_strides));
+                            asm volatile(
+                                "vlse32.v v5, (%[input2]), %[in_high_strides]\n"
+                                "add %[input2], %[input2], %[in_low_strides]\n"
+                                : [input2] "+r"(input2)
+                                : [in_high_strides] "r"(in_high_strides),
+                                  [in_low_strides] "r"(in_low_strides));
 
-                        asm volatile(
-                            "vlse32.v v2, (%[input1]), %[in_high_strides]\n"
-                            "add %[input1], %[input1], %[in_low_strides]\n"
-                            : [input1] "+r"(input1)
-                            : [in_high_strides] "r"(in_high_strides),
-                              [in_low_strides] "r"(in_low_strides));
+                            asm volatile(
+                                "vlse32.v v2, (%[input1]), %[in_high_strides]\n"
+                                "add %[input1], %[input1], %[in_low_strides]\n"
+                                : [input1] "+r"(input1)
+                                : [in_high_strides] "r"(in_high_strides),
+                                  [in_low_strides] "r"(in_low_strides));
 
-                        asm volatile(
-                            "vlse32.v v6, (%[input2]), %[in_high_strides]\n"
-                            "add %[input2], %[input2], %[in_low_strides]\n"
-                            : [input2] "+r"(input2)
-                            : [in_high_strides] "r"(in_high_strides),
-                              [in_low_strides] "r"(in_low_strides));
+                            asm volatile(
+                                "vlse32.v v6, (%[input2]), %[in_high_strides]\n"
+                                "add %[input2], %[input2], %[in_low_strides]\n"
+                                : [input2] "+r"(input2)
+                                : [in_high_strides] "r"(in_high_strides),
+                                  [in_low_strides] "r"(in_low_strides));
 
-                        asm volatile(
-                            "vlse32.v v3, (%[input1]), %[in_high_strides]\n"
-                            "add %[input1], %[input1], %[in_low_strides]\n"
-                            : [input1] "+r"(input1)
-                            : [in_high_strides] "r"(in_high_strides),
-                              [in_low_strides] "r"(in_low_strides));
+                            asm volatile(
+                                "vlse32.v v3, (%[input1]), %[in_high_strides]\n"
+                                "add %[input1], %[input1], %[in_low_strides]\n"
+                                : [input1] "+r"(input1)
+                                : [in_high_strides] "r"(in_high_strides),
+                                  [in_low_strides] "r"(in_low_strides));
 
-                        asm volatile(
-                            "vlse32.v v7, (%[input2]), %[in_high_strides]\n"
-                            "add %[input2], %[input2], %[in_low_strides]\n"
-                            : [input2] "+r"(input2)
-                            : [in_high_strides] "r"(in_high_strides),
-                              [in_low_strides] "r"(in_low_strides));
+                            asm volatile(
+                                "vlse32.v v7, (%[input2]), %[in_high_strides]\n"
+                                "add %[input2], %[input2], %[in_low_strides]\n"
+                                : [input2] "+r"(input2)
+                                : [in_high_strides] "r"(in_high_strides),
+                                  [in_low_strides] "r"(in_low_strides));
 
-                        asm volatile(
-                            "vlse32.v v4, (%[input1]), %[in_high_strides]\n"
-                            "add %[input1], %[input1], %[in_low_strides]\n"
-                            : [input1] "+r"(input1)
-                            : [in_high_strides] "r"(in_high_strides),
-                              [in_low_strides] "r"(in_low_strides));
+                            asm volatile(
+                                "vlse32.v v4, (%[input1]), %[in_high_strides]\n"
+                                "add %[input1], %[input1], %[in_low_strides]\n"
+                                : [input1] "+r"(input1)
+                                : [in_high_strides] "r"(in_high_strides),
+                                  [in_low_strides] "r"(in_low_strides));
 
-                        asm volatile(
-                            "vlse32.v v8, (%[input2]), %[in_high_strides]\n"
-                            "add %[input2], %[input2], %[in_low_strides]\n"
-                            : [input2] "+r"(input2)
-                            : [in_high_strides] "r"(in_high_strides),
-                              [in_low_strides] "r"(in_low_strides));
+                            asm volatile(
+                                "vlse32.v v8, (%[input2]), %[in_high_strides]\n"
+                                "add %[input2], %[input2], %[in_low_strides]\n"
+                                : [input2] "+r"(input2)
+                                : [in_high_strides] "r"(in_high_strides),
+                                  [in_low_strides] "r"(in_low_strides));
 
-                        // store output1 + output2
-                        asm volatile(
-                            "vse32.v v1, (%[output1])\n"
-                            "add %[output1], %[output1], %[out_strides]\n"
-                            : [output1] "+r"(output1)
-                            : [out_strides] "r"(out_strides));
-                        count2 -= unroll2;
+                            // store output1 + output2
+                            asm volatile(
+                                "vse32.v v1, (%[output1])\n"
+                                "add %[output1], %[output1], %[out_strides]\n"
+                                : [output1] "+r"(output1)
+                                : [out_strides] "r"(out_strides));
+                            count2 -= unroll2;
 
-                        asm volatile(
-                            "vse32.v v5, (%[output2])\n"
-                            "add %[output2], %[output2], %[out_strides]\n"
-                            : [output2] "+r"(output2)
-                            : [out_strides] "r"(out_strides));
+                            asm volatile(
+                                "vse32.v v5, (%[output2])\n"
+                                "add %[output2], %[output2], %[out_strides]\n"
+                                : [output2] "+r"(output2)
+                                : [out_strides] "r"(out_strides));
 
-                        asm volatile(
-                            "vse32.v v2, (%[output1])\n"
-                            "add %[output1], %[output1], %[out_strides]\n"
-                            : [output1] "+r"(output1)
-                            : [out_strides] "r"(out_strides));
+                            asm volatile(
+                                "vse32.v v2, (%[output1])\n"
+                                "add %[output1], %[output1], %[out_strides]\n"
+                                : [output1] "+r"(output1)
+                                : [out_strides] "r"(out_strides));
 
-                        asm volatile(
-                            "vse32.v v6, (%[output2])\n"
-                            "add %[output2], %[output2], %[out_strides]\n"
-                            : [output2] "+r"(output2)
-                            : [out_strides] "r"(out_strides));
+                            asm volatile(
+                                "vse32.v v6, (%[output2])\n"
+                                "add %[output2], %[output2], %[out_strides]\n"
+                                : [output2] "+r"(output2)
+                                : [out_strides] "r"(out_strides));
 
-                        asm volatile(
-                            "vse32.v v3, (%[output1])\n"
-                            "add %[output1], %[output1], %[out_strides]\n"
-                            : [output1] "+r"(output1)
-                            : [out_strides] "r"(out_strides));
+                            asm volatile(
+                                "vse32.v v3, (%[output1])\n"
+                                "add %[output1], %[output1], %[out_strides]\n"
+                                : [output1] "+r"(output1)
+                                : [out_strides] "r"(out_strides));
 
-                        asm volatile(
-                            "vse32.v v7, (%[output2])\n"
-                            "add %[output2], %[output2], %[out_strides]\n"
-                            : [output2] "+r"(output2)
-                            : [out_strides] "r"(out_strides));
+                            asm volatile(
+                                "vse32.v v7, (%[output2])\n"
+                                "add %[output2], %[output2], %[out_strides]\n"
+                                : [output2] "+r"(output2)
+                                : [out_strides] "r"(out_strides));
 
-                        asm volatile(
-                            "vse32.v v4, (%[output1])\n"
-                            "add %[output1], %[output1], %[out_strides]\n"
-                            : [output1] "+r"(output1)
-                            : [out_strides] "r"(out_strides));
+                            asm volatile(
+                                "vse32.v v4, (%[output1])\n"
+                                "add %[output1], %[output1], %[out_strides]\n"
+                                : [output1] "+r"(output1)
+                                : [out_strides] "r"(out_strides));
 
-                        asm volatile(
-                            "vse32.v v8, (%[output2])\n"
-                            "add %[output2], %[output2], %[out_strides]\n"
-                            : [output2] "+r"(output2)
-                            : [out_strides] "r"(out_strides));
+                            asm volatile(
+                                "vse32.v v8, (%[output2])\n"
+                                "add %[output2], %[output2], %[out_strides]\n"
+                                : [output2] "+r"(output2)
+                                : [out_strides] "r"(out_strides));
+                        }
+
+                        in_ptr += unroll1;
+                        out_ptr += unroll1;
+                        count1 -= unroll1;
                     }
 
-                    in_ptr += unroll1;
-                    out_ptr += unroll1;
-                    count1 -= unroll1;
-                }
+                    // count1 left
+                    for (size_t i = 0; i < count1; i++) {
+                        for (size_t j = 0; j < vl; j++) {
+                            asm volatile(
+                                "vlse32.v v1, (%[in_ptr]), %[in_high_strides]\n"
+                                "add %[in_ptr], %[in_ptr], %[in_low_strides]\n"
+                                : [in_ptr] "+r"(in_ptr)
+                                : [in_high_strides] "r"(in_high_strides),
+                                  [in_low_strides] "r"(in_low_strides));
 
-                // count1 left
-                auto input1 = in_ptr;
-                auto output1 = out_ptr;
-                for (size_t i = 0; i < count1; i++) {
-                    for (size_t j = 0; j < vl; j++) {
-                        asm volatile(
-                            "vlse32.v v1, (%[input1]), %[in_high_strides]\n"
-                            "add %[input1], %[input1], %[in_low_strides]\n"
-                            : [input1] "+r"(input1)
-                            : [in_high_strides] "r"(in_high_strides),
-                              [in_low_strides] "r"(in_low_strides));
-
-                        asm volatile(
-                            "vse32.v v1, (%[output1])\n"
-                            "add %[output1], %[output1], %[out_strides]\n"
-                            : [output1] "+r"(output1)
-                            : [out_strides] "r"(out_strides));
+                            asm volatile(
+                                "vse32.v v1, (%[out_ptr])\n"
+                                "add %[out_ptr], %[out_ptr], %[out_strides]\n"
+                                : [out_ptr] "+r"(out_ptr)
+                                : [out_strides] "r"(out_strides));
+                        }
                     }
-                }
 
-                out_offset += high_stride;
-                high_idx++;
-                low_idx += high_idx / high_dim;
-                high_idx %= high_dim;
-                count -= high_stride;
+                    out_offset += high_stride;
+                    high_idx++;
+                    low_idx += high_idx / high_dim;
+                    high_idx %= high_dim;
+                    count -= high_stride;
+                }
+            } else {
+                while (count / high_dim) {
+                    auto in_ptr = pin + out_offset + low_idx * low_extra;
+                    auto count1 = high_dim;
+                    while (count1 / unroll1) {
+                        auto input1 = in_ptr;
+                        auto input2 = in_ptr + vl;
+                        auto output1 = out_ptr;
+                        auto output2 = out_ptr + 1;
+                        auto count2 = vl;
+                        while (count2 / unroll2) {
+                            // load input1 + input2
+                            asm volatile(
+                                "vl1re32.v v1, (%[input1])\n"
+                                "add %[input1], %[input1], %[in_low_strides]\n"
+                                : [input1] "+r"(input1)
+                                : [in_low_strides] "r"(in_low_strides));
+
+                            asm volatile(
+                                "vl1re32.v v5, (%[input2])\n"
+                                "add %[input2], %[input2], %[in_low_strides]\n"
+                                : [input2] "+r"(input2)
+                                : [in_low_strides] "r"(in_low_strides));
+
+                            asm volatile(
+                                "vl1re32.v v2, (%[input1])\n"
+                                "add %[input1], %[input1], %[in_low_strides]\n"
+                                : [input1] "+r"(input1)
+                                : [in_low_strides] "r"(in_low_strides));
+
+                            asm volatile(
+                                "vl1re32.v v6, (%[input2])\n"
+                                "add %[input2], %[input2], %[in_low_strides]\n"
+                                : [input2] "+r"(input2)
+                                : [in_low_strides] "r"(in_low_strides));
+
+                            asm volatile(
+                                "vl1re32.v v3, (%[input1])\n"
+                                "add %[input1], %[input1], %[in_low_strides]\n"
+                                : [input1] "+r"(input1)
+                                : [in_low_strides] "r"(in_low_strides));
+
+                            asm volatile(
+                                "vl1re32.v v7, (%[input2])\n"
+                                "add %[input2], %[input2], %[in_low_strides]\n"
+                                : [input2] "+r"(input2)
+                                : [in_low_strides] "r"(in_low_strides));
+
+                            asm volatile(
+                                "vl1re32.v v4, (%[input1])\n"
+                                "add %[input1], %[input1], %[in_low_strides]\n"
+                                : [input1] "+r"(input1)
+                                : [in_low_strides] "r"(in_low_strides));
+
+                            asm volatile(
+                                "vl1re32.v v8, (%[input2])\n"
+                                "add %[input2], %[input2], %[in_low_strides]\n"
+                                : [input2] "+r"(input2)
+                                : [in_low_strides] "r"(in_low_strides));
+
+                            // store output1 + output2
+                            asm volatile(
+                                "vs1r.v v1, (%[output1])\n"
+                                "add %[output1], %[output1], %[out_strides]\n"
+                                : [output1] "+r"(output1)
+                                : [out_strides] "r"(out_strides));
+                            count2 -= unroll2;
+
+                            asm volatile(
+                                "vs1r.v v5, (%[output2])\n"
+                                "add %[output2], %[output2], %[out_strides]\n"
+                                : [output2] "+r"(output2)
+                                : [out_strides] "r"(out_strides));
+
+                            asm volatile(
+                                "vs1r.v v2, (%[output1])\n"
+                                "add %[output1], %[output1], %[out_strides]\n"
+                                : [output1] "+r"(output1)
+                                : [out_strides] "r"(out_strides));
+
+                            asm volatile(
+                                "vs1r.v v6, (%[output2])\n"
+                                "add %[output2], %[output2], %[out_strides]\n"
+                                : [output2] "+r"(output2)
+                                : [out_strides] "r"(out_strides));
+
+                            asm volatile(
+                                "vs1r.v v3, (%[output1])\n"
+                                "add %[output1], %[output1], %[out_strides]\n"
+                                : [output1] "+r"(output1)
+                                : [out_strides] "r"(out_strides));
+
+                            asm volatile(
+                                "vs1r.v v7, (%[output2])\n"
+                                "add %[output2], %[output2], %[out_strides]\n"
+                                : [output2] "+r"(output2)
+                                : [out_strides] "r"(out_strides));
+
+                            asm volatile(
+                                "vs1r.v v4, (%[output1])\n"
+                                "add %[output1], %[output1], %[out_strides]\n"
+                                : [output1] "+r"(output1)
+                                : [out_strides] "r"(out_strides));
+
+                            asm volatile(
+                                "vs1r.v v8, (%[output2])\n"
+                                "add %[output2], %[output2], %[out_strides]\n"
+                                : [output2] "+r"(output2)
+                                : [out_strides] "r"(out_strides));
+                        }
+
+                        in_ptr += unroll1 * vl;
+                        out_ptr += unroll1;
+                        count1 -= unroll1;
+                    }
+
+                    // count1 left
+                    for (size_t i = 0; i < count1; i++) {
+                        for (size_t j = 0; j < vl; j++) {
+                            asm volatile(
+                                "vl1re32.v v1, (%[in_ptr])\n"
+                                "add %[in_ptr], %[in_ptr], %[in_low_strides]\n"
+                                "vs1r.v v1, (%[out_ptr])\n"
+                                "add %[out_ptr], %[out_ptr], %[out_strides]\n"
+                                : [in_ptr] "+r"(in_ptr), [out_ptr] "+r"(out_ptr)
+                                : [in_low_strides] "r"(in_low_strides),
+                                  [out_strides] "r"(out_strides));
+                        }
+                    }
+
+                    low_idx++;
+                    out_offset += high_dim;
+                    count -= high_dim;
+                }
             }
         } else {
             ukernels::u_pack2d<false, TIn, TOut, float, vector<float, vl, vl>,
@@ -973,161 +1107,308 @@ class u_unpack_2d_fixed<low_stride, NTT_VLEN / 32, high_stride, NTT_VLEN / 32,
         constexpr auto out_high_strides = high_stride * sizeof(float);
         asm("vsetvli zero, %[vl], e32, m1\n" ::[vl] "r"(vl));
 
-        while (count / high_stride) {
-            auto out_ptr = output + in_offset + low_idx * low_extra +
-                           high_idx * high_extra;
-            auto count1 = high_stride;
-            while (count1 / unroll1) {
-                auto input1 = in_ptr;
-                auto input2 = in_ptr + in_stride;
-                auto output1 = out_ptr;
-                auto output2 = out_ptr + 1;
-                auto count2 = vl;
-                while (count2 / unroll2) {
-                    // load input1 + input2
-                    asm volatile("vl1re32.v v1, (%[input1])\n"
-                                 "add %[input1], %[input1], %[in_strides]\n"
-                                 : [input1] "+r"(input1)
-                                 : [in_strides] "r"(in_strides));
+        auto rank = input.shape().rank();
+        if (PackAxis2 != rank - 1) {
+            while (count / high_stride) {
+                auto out_ptr = output + in_offset + low_idx * low_extra +
+                               high_idx * high_extra;
+                auto count1 = high_stride;
+                while (count1 / unroll1) {
+                    auto input1 = in_ptr;
+                    auto input2 = in_ptr + in_stride;
+                    auto output1 = out_ptr;
+                    auto output2 = out_ptr + 1;
+                    auto count2 = vl;
+                    while (count2 / unroll2) {
+                        // load input1 + input2
+                        asm volatile("vl1re32.v v1, (%[input1])\n"
+                                     "add %[input1], %[input1], %[in_strides]\n"
+                                     : [input1] "+r"(input1)
+                                     : [in_strides] "r"(in_strides));
 
-                    asm volatile("vl1re32.v v5, (%[input2])\n"
-                                 "add %[input2], %[input2], %[in_strides]\n"
-                                 : [input2] "+r"(input2)
-                                 : [in_strides] "r"(in_strides));
+                        asm volatile("vl1re32.v v5, (%[input2])\n"
+                                     "add %[input2], %[input2], %[in_strides]\n"
+                                     : [input2] "+r"(input2)
+                                     : [in_strides] "r"(in_strides));
 
-                    asm volatile("vl1re32.v v2, (%[input1])\n"
-                                 "add %[input1], %[input1], %[in_strides]\n"
-                                 : [input1] "+r"(input1)
-                                 : [in_strides] "r"(in_strides));
+                        asm volatile("vl1re32.v v2, (%[input1])\n"
+                                     "add %[input1], %[input1], %[in_strides]\n"
+                                     : [input1] "+r"(input1)
+                                     : [in_strides] "r"(in_strides));
 
-                    asm volatile("vl1re32.v v6, (%[input2])\n"
-                                 "add %[input2], %[input2], %[in_strides]\n"
-                                 : [input2] "+r"(input2)
-                                 : [in_strides] "r"(in_strides));
+                        asm volatile("vl1re32.v v6, (%[input2])\n"
+                                     "add %[input2], %[input2], %[in_strides]\n"
+                                     : [input2] "+r"(input2)
+                                     : [in_strides] "r"(in_strides));
 
-                    asm volatile("vl1re32.v v3, (%[input1])\n"
-                                 "add %[input1], %[input1], %[in_strides]\n"
-                                 : [input1] "+r"(input1)
-                                 : [in_strides] "r"(in_strides));
+                        asm volatile("vl1re32.v v3, (%[input1])\n"
+                                     "add %[input1], %[input1], %[in_strides]\n"
+                                     : [input1] "+r"(input1)
+                                     : [in_strides] "r"(in_strides));
 
-                    asm volatile("vl1re32.v v7, (%[input2])\n"
-                                 "add %[input2], %[input2], %[in_strides]\n"
-                                 : [input2] "+r"(input2)
-                                 : [in_strides] "r"(in_strides));
+                        asm volatile("vl1re32.v v7, (%[input2])\n"
+                                     "add %[input2], %[input2], %[in_strides]\n"
+                                     : [input2] "+r"(input2)
+                                     : [in_strides] "r"(in_strides));
 
-                    asm volatile("vl1re32.v v4, (%[input1])\n"
-                                 "add %[input1], %[input1], %[in_strides]\n"
-                                 : [input1] "+r"(input1)
-                                 : [in_strides] "r"(in_strides));
+                        asm volatile("vl1re32.v v4, (%[input1])\n"
+                                     "add %[input1], %[input1], %[in_strides]\n"
+                                     : [input1] "+r"(input1)
+                                     : [in_strides] "r"(in_strides));
 
-                    asm volatile("vl1re32.v v8, (%[input2])\n"
-                                 "add %[input2], %[input2], %[in_strides]\n"
-                                 : [input2] "+r"(input2)
-                                 : [in_strides] "r"(in_strides));
+                        asm volatile("vl1re32.v v8, (%[input2])\n"
+                                     "add %[input2], %[input2], %[in_strides]\n"
+                                     : [input2] "+r"(input2)
+                                     : [in_strides] "r"(in_strides));
 
-                    // store output1 + output2
-                    asm volatile(
-                        "vsse32.v v1, (%[output1]), %[out_high_strides]\n"
-                        "add %[output1], %[output1], %[out_low_strides]\n"
-                        : [output1] "+r"(output1)
-                        : [out_high_strides] "r"(out_high_strides),
-                          [out_low_strides] "r"(out_low_strides));
-                    count2 -= unroll2;
+                        // store output1 + output2
+                        asm volatile(
+                            "vsse32.v v1, (%[output1]), %[out_high_strides]\n"
+                            "add %[output1], %[output1], %[out_low_strides]\n"
+                            : [output1] "+r"(output1)
+                            : [out_high_strides] "r"(out_high_strides),
+                              [out_low_strides] "r"(out_low_strides));
+                        count2 -= unroll2;
 
-                    asm volatile(
-                        "vsse32.v v5, (%[output2]), %[out_high_strides]\n"
-                        "add %[output2], %[output2], %[out_low_strides]\n"
-                        : [output2] "+r"(output2)
-                        : [out_high_strides] "r"(out_high_strides),
-                          [out_low_strides] "r"(out_low_strides));
+                        asm volatile(
+                            "vsse32.v v5, (%[output2]), %[out_high_strides]\n"
+                            "add %[output2], %[output2], %[out_low_strides]\n"
+                            : [output2] "+r"(output2)
+                            : [out_high_strides] "r"(out_high_strides),
+                              [out_low_strides] "r"(out_low_strides));
 
-                    asm volatile(
-                        "vsse32.v v2, (%[output1]), %[out_high_strides]\n"
-                        "add %[output1], %[output1], %[out_low_strides]\n"
-                        : [output1] "+r"(output1)
-                        : [out_high_strides] "r"(out_high_strides),
-                          [out_low_strides] "r"(out_low_strides));
+                        asm volatile(
+                            "vsse32.v v2, (%[output1]), %[out_high_strides]\n"
+                            "add %[output1], %[output1], %[out_low_strides]\n"
+                            : [output1] "+r"(output1)
+                            : [out_high_strides] "r"(out_high_strides),
+                              [out_low_strides] "r"(out_low_strides));
 
-                    asm volatile(
-                        "vsse32.v v6, (%[output2]), %[out_high_strides]\n"
-                        "add %[output2], %[output2], %[out_low_strides]\n"
-                        : [output2] "+r"(output2)
-                        : [out_high_strides] "r"(out_high_strides),
-                          [out_low_strides] "r"(out_low_strides));
+                        asm volatile(
+                            "vsse32.v v6, (%[output2]), %[out_high_strides]\n"
+                            "add %[output2], %[output2], %[out_low_strides]\n"
+                            : [output2] "+r"(output2)
+                            : [out_high_strides] "r"(out_high_strides),
+                              [out_low_strides] "r"(out_low_strides));
 
-                    asm volatile(
-                        "vsse32.v v3, (%[output1]), %[out_high_strides]\n"
-                        "add %[output1], %[output1], %[out_low_strides]\n"
-                        : [output1] "+r"(output1)
-                        : [out_high_strides] "r"(out_high_strides),
-                          [out_low_strides] "r"(out_low_strides));
+                        asm volatile(
+                            "vsse32.v v3, (%[output1]), %[out_high_strides]\n"
+                            "add %[output1], %[output1], %[out_low_strides]\n"
+                            : [output1] "+r"(output1)
+                            : [out_high_strides] "r"(out_high_strides),
+                              [out_low_strides] "r"(out_low_strides));
 
-                    asm volatile(
-                        "vsse32.v v7, (%[output2]), %[out_high_strides]\n"
-                        "add %[output2], %[output2], %[out_low_strides]\n"
-                        : [output2] "+r"(output2)
-                        : [out_high_strides] "r"(out_high_strides),
-                          [out_low_strides] "r"(out_low_strides));
+                        asm volatile(
+                            "vsse32.v v7, (%[output2]), %[out_high_strides]\n"
+                            "add %[output2], %[output2], %[out_low_strides]\n"
+                            : [output2] "+r"(output2)
+                            : [out_high_strides] "r"(out_high_strides),
+                              [out_low_strides] "r"(out_low_strides));
 
-                    asm volatile(
-                        "vsse32.v v4, (%[output1]), %[out_high_strides]\n"
-                        "add %[output1], %[output1], %[out_low_strides]\n"
-                        : [output1] "+r"(output1)
-                        : [out_high_strides] "r"(out_high_strides),
-                          [out_low_strides] "r"(out_low_strides));
+                        asm volatile(
+                            "vsse32.v v4, (%[output1]), %[out_high_strides]\n"
+                            "add %[output1], %[output1], %[out_low_strides]\n"
+                            : [output1] "+r"(output1)
+                            : [out_high_strides] "r"(out_high_strides),
+                              [out_low_strides] "r"(out_low_strides));
 
-                    asm volatile(
-                        "vsse32.v v8, (%[output2]), %[out_high_strides]\n"
-                        "add %[output2], %[output2], %[out_low_strides]\n"
-                        : [output2] "+r"(output2)
-                        : [out_high_strides] "r"(out_high_strides),
-                          [out_low_strides] "r"(out_low_strides));
+                        asm volatile(
+                            "vsse32.v v8, (%[output2]), %[out_high_strides]\n"
+                            "add %[output2], %[output2], %[out_low_strides]\n"
+                            : [output2] "+r"(output2)
+                            : [out_high_strides] "r"(out_high_strides),
+                              [out_low_strides] "r"(out_low_strides));
+                    }
+
+                    // count2 left
+                    while (count2 % unroll2) {
+                        asm volatile(
+                            "vl1re32.v v1, (%[input1])\n"
+                            "add %[input1], %[input1], %[in_strides]\n"
+                            "vl1re32.v v2, (%[input2])\n"
+                            "add %[input2], %[input2], %[in_strides]\n"
+                            "vsse32.v v1, (%[output1]), %[out_high_strides]\n"
+                            "add %[output1], %[output1], %[out_low_strides]\n"
+                            "vsse32.v v2, (%[output2]), %[out_high_strides]\n"
+                            "add %[output2], %[output2], %[out_low_strides]\n"
+                            : [input1] "+r"(input1), [input2] "+r"(input2),
+                              [output1] "+r"(output1), [output2] "+r"(output2)
+                            : [in_strides] "r"(in_strides),
+                              [out_high_strides] "r"(out_high_strides),
+                              [out_low_strides] "r"(out_low_strides));
+                        count2--;
+                    }
+
+                    in_ptr += in_stride * unroll1;
+                    out_ptr += unroll1;
+                    count1 -= unroll1;
                 }
 
-                // count2 left
-                while (count2 % unroll2) {
-                    asm volatile(
-                        "vl1re32.v v1, (%[input1])\n"
-                        "add %[input1], %[input1], %[in_strides]\n"
-                        "vl1re32.v v2, (%[input2])\n"
-                        "add %[input2], %[input2], %[in_strides]\n"
-                        "vsse32.v v1, (%[output1]), %[out_high_strides]\n"
-                        "add %[output1], %[output1], %[out_low_strides]\n"
-                        "vsse32.v v2, (%[output2]), %[out_high_strides]\n"
-                        "add %[output2], %[output2], %[out_low_strides]\n"
-                        : [input1] "+r"(input1), [input2] "+r"(input2),
-                          [output1] "+r"(output1), [output2] "+r"(output2)
-                        : [in_strides] "r"(in_strides),
-                          [out_high_strides] "r"(out_high_strides),
-                          [out_low_strides] "r"(out_low_strides));
-                    count2--;
+                // count1 left
+                for (size_t i = 0; i < count1; i++) {
+                    for (size_t j = 0; j < vl; j++) {
+                        asm volatile(
+                            "vl1re32.v v1, (%[in_ptr])\n"
+                            "add %[in_ptr], %[in_ptr], %[in_strides]\n"
+                            "vsse32.v v1, (%[out_ptr]), %[out_high_strides]\n"
+                            "add %[out_ptr], %[out_ptr], %[out_low_strides]\n"
+                            : [in_ptr] "+r"(in_ptr), [out_ptr] "+r"(out_ptr)
+                            : [in_strides] "r"(in_strides),
+                              [out_high_strides] "r"(out_high_strides),
+                              [out_low_strides] "r"(out_low_strides));
+                    }
                 }
 
-                in_ptr += in_stride * unroll1;
-                out_ptr += unroll1;
-                count1 -= unroll1;
+                in_offset += high_stride;
+                high_idx++;
+                low_idx += high_idx / high_dim;
+                high_idx %= high_dim;
+                count -= high_stride;
             }
+        } else {
+            while (count / high_dim) {
+                auto out_ptr = output + in_offset + low_idx * low_extra;
+                auto count1 = high_dim;
+                while (count1 / unroll1) {
+                    auto input1 = in_ptr;
+                    auto input2 = in_ptr + in_stride;
+                    auto output1 = out_ptr;
+                    auto output2 = out_ptr + vl;
+                    auto count2 = vl;
+                    while (count2 / unroll2) {
+                        // load input1 + input2
+                        asm volatile("vl1re32.v v1, (%[input1])\n"
+                                     "add %[input1], %[input1], %[in_strides]\n"
+                                     : [input1] "+r"(input1)
+                                     : [in_strides] "r"(in_strides));
 
-            // count1 left
-            for (size_t i = 0; i < count1; i++) {
-                for (size_t j = 0; j < vl; j++) {
-                    asm volatile(
-                        "vl1re32.v v1, (%[in_ptr])\n"
-                        "add %[in_ptr], %[in_ptr], %[in_strides]\n"
-                        "vsse32.v v1, (%[out_ptr]), %[out_high_strides]\n"
-                        "add %[out_ptr], %[out_ptr], %[out_low_strides]\n"
-                        : [in_ptr] "+r"(in_ptr), [out_ptr] "+r"(out_ptr)
-                        : [in_strides] "r"(in_strides),
-                          [out_high_strides] "r"(out_high_strides),
-                          [out_low_strides] "r"(out_low_strides));
+                        asm volatile("vl1re32.v v5, (%[input2])\n"
+                                     "add %[input2], %[input2], %[in_strides]\n"
+                                     : [input2] "+r"(input2)
+                                     : [in_strides] "r"(in_strides));
+
+                        asm volatile("vl1re32.v v2, (%[input1])\n"
+                                     "add %[input1], %[input1], %[in_strides]\n"
+                                     : [input1] "+r"(input1)
+                                     : [in_strides] "r"(in_strides));
+
+                        asm volatile("vl1re32.v v6, (%[input2])\n"
+                                     "add %[input2], %[input2], %[in_strides]\n"
+                                     : [input2] "+r"(input2)
+                                     : [in_strides] "r"(in_strides));
+
+                        asm volatile("vl1re32.v v3, (%[input1])\n"
+                                     "add %[input1], %[input1], %[in_strides]\n"
+                                     : [input1] "+r"(input1)
+                                     : [in_strides] "r"(in_strides));
+
+                        asm volatile("vl1re32.v v7, (%[input2])\n"
+                                     "add %[input2], %[input2], %[in_strides]\n"
+                                     : [input2] "+r"(input2)
+                                     : [in_strides] "r"(in_strides));
+
+                        asm volatile("vl1re32.v v4, (%[input1])\n"
+                                     "add %[input1], %[input1], %[in_strides]\n"
+                                     : [input1] "+r"(input1)
+                                     : [in_strides] "r"(in_strides));
+
+                        asm volatile("vl1re32.v v8, (%[input2])\n"
+                                     "add %[input2], %[input2], %[in_strides]\n"
+                                     : [input2] "+r"(input2)
+                                     : [in_strides] "r"(in_strides));
+
+                        // store output1 + output2
+                        asm volatile(
+                            "vs1r.v v1, (%[output1])\n"
+                            "add %[output1], %[output1], %[out_low_strides]\n"
+                            : [output1] "+r"(output1)
+                            : [out_low_strides] "r"(out_low_strides));
+                        count2 -= unroll2;
+
+                        asm volatile(
+                            "vs1r.v v5, (%[output2])\n"
+                            "add %[output2], %[output2], %[out_low_strides]\n"
+                            : [output2] "+r"(output2)
+                            : [out_low_strides] "r"(out_low_strides));
+
+                        asm volatile(
+                            "vs1r.v v2, (%[output1])\n"
+                            "add %[output1], %[output1], %[out_low_strides]\n"
+                            : [output1] "+r"(output1)
+                            : [out_low_strides] "r"(out_low_strides));
+
+                        asm volatile(
+                            "vs1r.v v6, (%[output2])\n"
+                            "add %[output2], %[output2], %[out_low_strides]\n"
+                            : [output2] "+r"(output2)
+                            : [out_low_strides] "r"(out_low_strides));
+
+                        asm volatile(
+                            "vs1r.v v3, (%[output1])\n"
+                            "add %[output1], %[output1], %[out_low_strides]\n"
+                            : [output1] "+r"(output1)
+                            : [out_low_strides] "r"(out_low_strides));
+
+                        asm volatile(
+                            "vs1r.v v7, (%[output2])\n"
+                            "add %[output2], %[output2], %[out_low_strides]\n"
+                            : [output2] "+r"(output2)
+                            : [out_low_strides] "r"(out_low_strides));
+
+                        asm volatile(
+                            "vs1r.v v4, (%[output1])\n"
+                            "add %[output1], %[output1], %[out_low_strides]\n"
+                            : [output1] "+r"(output1)
+                            : [out_low_strides] "r"(out_low_strides));
+
+                        asm volatile(
+                            "vs1r.v v8, (%[output2])\n"
+                            "add %[output2], %[output2], %[out_low_strides]\n"
+                            : [output2] "+r"(output2)
+                            : [out_low_strides] "r"(out_low_strides));
+                    }
+
+                    // count2 left
+                    while (count2 % unroll2) {
+                        asm volatile(
+                            "vl1re32.v v1, (%[input1])\n"
+                            "add %[input1], %[input1], %[in_strides]\n"
+                            "vl1re32.v v2, (%[input2])\n"
+                            "add %[input2], %[input2], %[in_strides]\n"
+                            "vs1r.v v1, (%[output1])\n"
+                            "add %[output1], %[output1], %[out_low_strides]\n"
+                            "vs1r.v v2, (%[output2])\n"
+                            "add %[output2], %[output2], %[out_low_strides]\n"
+                            : [input1] "+r"(input1), [input2] "+r"(input2),
+                              [output1] "+r"(output1), [output2] "+r"(output2)
+                            : [in_strides] "r"(in_strides),
+                              [out_low_strides] "r"(out_low_strides));
+                        count2--;
+                    }
+
+                    in_ptr += in_stride * unroll1;
+                    out_ptr += unroll1 * vl;
+                    count1 -= unroll1;
                 }
-            }
 
-            in_offset += high_stride;
-            high_idx++;
-            low_idx += high_idx / high_dim;
-            high_idx %= high_dim;
-            count -= high_stride;
+                // count1 left
+                for (size_t i = 0; i < count1; i++) {
+                    for (size_t j = 0; j < vl; j++) {
+                        asm volatile(
+                            "vl1re32.v v1, (%[in_ptr])\n"
+                            "add %[in_ptr], %[in_ptr], %[in_strides]\n"
+                            "vs1r.v v1, (%[out_ptr])\n"
+                            "add %[out_ptr], %[out_ptr], %[out_low_strides]\n"
+                            : [in_ptr] "+r"(in_ptr), [out_ptr] "+r"(out_ptr)
+                            : [in_strides] "r"(in_strides),
+                              [out_low_strides] "r"(out_low_strides));
+                    }
+                }
+
+                in_offset += high_dim;
+                low_idx += 1;
+                count -= high_dim;
+            }
         }
     }
 };
@@ -1235,161 +1516,308 @@ class u_unpack_2d_ranked<NTT_VLEN / 32, NTT_VLEN / 32, T1, float, true,
         auto out_high_strides = high_stride * sizeof(float);
         asm("vsetvli zero, %[vl], e32, m1\n" ::[vl] "r"(vl));
 
-        while (count / high_stride) {
-            auto out_ptr = output + in_offset + low_idx * low_extra +
-                           high_idx * high_extra;
-            auto count1 = high_stride;
-            while (count1 / unroll1) {
-                auto input1 = in_ptr;
-                auto input2 = in_ptr + in_stride;
-                auto output1 = out_ptr;
-                auto output2 = out_ptr + 1;
-                auto count2 = vl;
-                while (count2 / unroll2) {
-                    // load input1 + input2
-                    asm volatile("vl1re32.v v1, (%[input1])\n"
-                                 "add %[input1], %[input1], %[in_strides]\n"
-                                 : [input1] "+r"(input1)
-                                 : [in_strides] "r"(in_strides));
+        auto rank = input.shape().rank();
+        if (PackAxis2 != rank - 1) {
+            while (count / high_stride) {
+                auto out_ptr = output + in_offset + low_idx * low_extra +
+                               high_idx * high_extra;
+                auto count1 = high_stride;
+                while (count1 / unroll1) {
+                    auto input1 = in_ptr;
+                    auto input2 = in_ptr + in_stride;
+                    auto output1 = out_ptr;
+                    auto output2 = out_ptr + 1;
+                    auto count2 = vl;
+                    while (count2 / unroll2) {
+                        // load input1 + input2
+                        asm volatile("vl1re32.v v1, (%[input1])\n"
+                                     "add %[input1], %[input1], %[in_strides]\n"
+                                     : [input1] "+r"(input1)
+                                     : [in_strides] "r"(in_strides));
 
-                    asm volatile("vl1re32.v v5, (%[input2])\n"
-                                 "add %[input2], %[input2], %[in_strides]\n"
-                                 : [input2] "+r"(input2)
-                                 : [in_strides] "r"(in_strides));
+                        asm volatile("vl1re32.v v5, (%[input2])\n"
+                                     "add %[input2], %[input2], %[in_strides]\n"
+                                     : [input2] "+r"(input2)
+                                     : [in_strides] "r"(in_strides));
 
-                    asm volatile("vl1re32.v v2, (%[input1])\n"
-                                 "add %[input1], %[input1], %[in_strides]\n"
-                                 : [input1] "+r"(input1)
-                                 : [in_strides] "r"(in_strides));
+                        asm volatile("vl1re32.v v2, (%[input1])\n"
+                                     "add %[input1], %[input1], %[in_strides]\n"
+                                     : [input1] "+r"(input1)
+                                     : [in_strides] "r"(in_strides));
 
-                    asm volatile("vl1re32.v v6, (%[input2])\n"
-                                 "add %[input2], %[input2], %[in_strides]\n"
-                                 : [input2] "+r"(input2)
-                                 : [in_strides] "r"(in_strides));
+                        asm volatile("vl1re32.v v6, (%[input2])\n"
+                                     "add %[input2], %[input2], %[in_strides]\n"
+                                     : [input2] "+r"(input2)
+                                     : [in_strides] "r"(in_strides));
 
-                    asm volatile("vl1re32.v v3, (%[input1])\n"
-                                 "add %[input1], %[input1], %[in_strides]\n"
-                                 : [input1] "+r"(input1)
-                                 : [in_strides] "r"(in_strides));
+                        asm volatile("vl1re32.v v3, (%[input1])\n"
+                                     "add %[input1], %[input1], %[in_strides]\n"
+                                     : [input1] "+r"(input1)
+                                     : [in_strides] "r"(in_strides));
 
-                    asm volatile("vl1re32.v v7, (%[input2])\n"
-                                 "add %[input2], %[input2], %[in_strides]\n"
-                                 : [input2] "+r"(input2)
-                                 : [in_strides] "r"(in_strides));
+                        asm volatile("vl1re32.v v7, (%[input2])\n"
+                                     "add %[input2], %[input2], %[in_strides]\n"
+                                     : [input2] "+r"(input2)
+                                     : [in_strides] "r"(in_strides));
 
-                    asm volatile("vl1re32.v v4, (%[input1])\n"
-                                 "add %[input1], %[input1], %[in_strides]\n"
-                                 : [input1] "+r"(input1)
-                                 : [in_strides] "r"(in_strides));
+                        asm volatile("vl1re32.v v4, (%[input1])\n"
+                                     "add %[input1], %[input1], %[in_strides]\n"
+                                     : [input1] "+r"(input1)
+                                     : [in_strides] "r"(in_strides));
 
-                    asm volatile("vl1re32.v v8, (%[input2])\n"
-                                 "add %[input2], %[input2], %[in_strides]\n"
-                                 : [input2] "+r"(input2)
-                                 : [in_strides] "r"(in_strides));
+                        asm volatile("vl1re32.v v8, (%[input2])\n"
+                                     "add %[input2], %[input2], %[in_strides]\n"
+                                     : [input2] "+r"(input2)
+                                     : [in_strides] "r"(in_strides));
 
-                    // store output1 + output2
-                    asm volatile(
-                        "vsse32.v v1, (%[output1]), %[out_high_strides]\n"
-                        "add %[output1], %[output1], %[out_low_strides]\n"
-                        : [output1] "+r"(output1)
-                        : [out_high_strides] "r"(out_high_strides),
-                          [out_low_strides] "r"(out_low_strides));
-                    count2 -= unroll2;
+                        // store output1 + output2
+                        asm volatile(
+                            "vsse32.v v1, (%[output1]), %[out_high_strides]\n"
+                            "add %[output1], %[output1], %[out_low_strides]\n"
+                            : [output1] "+r"(output1)
+                            : [out_high_strides] "r"(out_high_strides),
+                              [out_low_strides] "r"(out_low_strides));
+                        count2 -= unroll2;
 
-                    asm volatile(
-                        "vsse32.v v5, (%[output2]), %[out_high_strides]\n"
-                        "add %[output2], %[output2], %[out_low_strides]\n"
-                        : [output2] "+r"(output2)
-                        : [out_high_strides] "r"(out_high_strides),
-                          [out_low_strides] "r"(out_low_strides));
+                        asm volatile(
+                            "vsse32.v v5, (%[output2]), %[out_high_strides]\n"
+                            "add %[output2], %[output2], %[out_low_strides]\n"
+                            : [output2] "+r"(output2)
+                            : [out_high_strides] "r"(out_high_strides),
+                              [out_low_strides] "r"(out_low_strides));
 
-                    asm volatile(
-                        "vsse32.v v2, (%[output1]), %[out_high_strides]\n"
-                        "add %[output1], %[output1], %[out_low_strides]\n"
-                        : [output1] "+r"(output1)
-                        : [out_high_strides] "r"(out_high_strides),
-                          [out_low_strides] "r"(out_low_strides));
+                        asm volatile(
+                            "vsse32.v v2, (%[output1]), %[out_high_strides]\n"
+                            "add %[output1], %[output1], %[out_low_strides]\n"
+                            : [output1] "+r"(output1)
+                            : [out_high_strides] "r"(out_high_strides),
+                              [out_low_strides] "r"(out_low_strides));
 
-                    asm volatile(
-                        "vsse32.v v6, (%[output2]), %[out_high_strides]\n"
-                        "add %[output2], %[output2], %[out_low_strides]\n"
-                        : [output2] "+r"(output2)
-                        : [out_high_strides] "r"(out_high_strides),
-                          [out_low_strides] "r"(out_low_strides));
+                        asm volatile(
+                            "vsse32.v v6, (%[output2]), %[out_high_strides]\n"
+                            "add %[output2], %[output2], %[out_low_strides]\n"
+                            : [output2] "+r"(output2)
+                            : [out_high_strides] "r"(out_high_strides),
+                              [out_low_strides] "r"(out_low_strides));
 
-                    asm volatile(
-                        "vsse32.v v3, (%[output1]), %[out_high_strides]\n"
-                        "add %[output1], %[output1], %[out_low_strides]\n"
-                        : [output1] "+r"(output1)
-                        : [out_high_strides] "r"(out_high_strides),
-                          [out_low_strides] "r"(out_low_strides));
+                        asm volatile(
+                            "vsse32.v v3, (%[output1]), %[out_high_strides]\n"
+                            "add %[output1], %[output1], %[out_low_strides]\n"
+                            : [output1] "+r"(output1)
+                            : [out_high_strides] "r"(out_high_strides),
+                              [out_low_strides] "r"(out_low_strides));
 
-                    asm volatile(
-                        "vsse32.v v7, (%[output2]), %[out_high_strides]\n"
-                        "add %[output2], %[output2], %[out_low_strides]\n"
-                        : [output2] "+r"(output2)
-                        : [out_high_strides] "r"(out_high_strides),
-                          [out_low_strides] "r"(out_low_strides));
+                        asm volatile(
+                            "vsse32.v v7, (%[output2]), %[out_high_strides]\n"
+                            "add %[output2], %[output2], %[out_low_strides]\n"
+                            : [output2] "+r"(output2)
+                            : [out_high_strides] "r"(out_high_strides),
+                              [out_low_strides] "r"(out_low_strides));
 
-                    asm volatile(
-                        "vsse32.v v4, (%[output1]), %[out_high_strides]\n"
-                        "add %[output1], %[output1], %[out_low_strides]\n"
-                        : [output1] "+r"(output1)
-                        : [out_high_strides] "r"(out_high_strides),
-                          [out_low_strides] "r"(out_low_strides));
+                        asm volatile(
+                            "vsse32.v v4, (%[output1]), %[out_high_strides]\n"
+                            "add %[output1], %[output1], %[out_low_strides]\n"
+                            : [output1] "+r"(output1)
+                            : [out_high_strides] "r"(out_high_strides),
+                              [out_low_strides] "r"(out_low_strides));
 
-                    asm volatile(
-                        "vsse32.v v8, (%[output2]), %[out_high_strides]\n"
-                        "add %[output2], %[output2], %[out_low_strides]\n"
-                        : [output2] "+r"(output2)
-                        : [out_high_strides] "r"(out_high_strides),
-                          [out_low_strides] "r"(out_low_strides));
+                        asm volatile(
+                            "vsse32.v v8, (%[output2]), %[out_high_strides]\n"
+                            "add %[output2], %[output2], %[out_low_strides]\n"
+                            : [output2] "+r"(output2)
+                            : [out_high_strides] "r"(out_high_strides),
+                              [out_low_strides] "r"(out_low_strides));
+                    }
+
+                    // count2 left
+                    while (count2 % unroll2) {
+                        asm volatile(
+                            "vl1re32.v v1, (%[input1])\n"
+                            "add %[input1], %[input1], %[in_strides]\n"
+                            "vl1re32.v v2, (%[input2])\n"
+                            "add %[input2], %[input2], %[in_strides]\n"
+                            "vsse32.v v1, (%[output1]), %[out_high_strides]\n"
+                            "add %[output1], %[output1], %[out_low_strides]\n"
+                            "vsse32.v v2, (%[output2]), %[out_high_strides]\n"
+                            "add %[output2], %[output2], %[out_low_strides]\n"
+                            : [input1] "+r"(input1), [input2] "+r"(input2),
+                              [output1] "+r"(output1), [output2] "+r"(output2)
+                            : [in_strides] "r"(in_strides),
+                              [out_high_strides] "r"(out_high_strides),
+                              [out_low_strides] "r"(out_low_strides));
+                        count2--;
+                    }
+
+                    in_ptr += in_stride * unroll1;
+                    out_ptr += unroll1;
+                    count1 -= unroll1;
                 }
 
-                // count2 left
-                while (count2 % unroll2) {
-                    asm volatile(
-                        "vl1re32.v v1, (%[input1])\n"
-                        "add %[input1], %[input1], %[in_strides]\n"
-                        "vl1re32.v v2, (%[input2])\n"
-                        "add %[input2], %[input2], %[in_strides]\n"
-                        "vsse32.v v1, (%[output1]), %[out_high_strides]\n"
-                        "add %[output1], %[output1], %[out_low_strides]\n"
-                        "vsse32.v v2, (%[output2]), %[out_high_strides]\n"
-                        "add %[output2], %[output2], %[out_low_strides]\n"
-                        : [input1] "+r"(input1), [input2] "+r"(input2),
-                          [output1] "+r"(output1), [output2] "+r"(output2)
-                        : [in_strides] "r"(in_strides),
-                          [out_high_strides] "r"(out_high_strides),
-                          [out_low_strides] "r"(out_low_strides));
-                    count2--;
+                // count1 left
+                for (size_t i = 0; i < count1; i++) {
+                    for (size_t j = 0; j < vl; j++) {
+                        asm volatile(
+                            "vl1re32.v v1, (%[in_ptr])\n"
+                            "add %[in_ptr], %[in_ptr], %[in_strides]\n"
+                            "vsse32.v v1, (%[out_ptr]), %[out_high_strides]\n"
+                            "add %[out_ptr], %[out_ptr], %[out_low_strides]\n"
+                            : [in_ptr] "+r"(in_ptr), [out_ptr] "+r"(out_ptr)
+                            : [in_strides] "r"(in_strides),
+                              [out_high_strides] "r"(out_high_strides),
+                              [out_low_strides] "r"(out_low_strides));
+                    }
                 }
 
-                in_ptr += in_stride * unroll1;
-                out_ptr += unroll1;
-                count1 -= unroll1;
+                in_offset += high_stride;
+                high_idx++;
+                low_idx += high_idx / high_dim;
+                high_idx %= high_dim;
+                count -= high_stride;
             }
+        } else {
+            while (count / high_dim) {
+                auto out_ptr = output + in_offset + low_idx * low_extra;
+                auto count1 = high_dim;
+                while (count1 / unroll1) {
+                    auto input1 = in_ptr;
+                    auto input2 = in_ptr + in_stride;
+                    auto output1 = out_ptr;
+                    auto output2 = out_ptr + vl;
+                    auto count2 = vl;
+                    while (count2 / unroll2) {
+                        // load input1 + input2
+                        asm volatile("vl1re32.v v1, (%[input1])\n"
+                                     "add %[input1], %[input1], %[in_strides]\n"
+                                     : [input1] "+r"(input1)
+                                     : [in_strides] "r"(in_strides));
 
-            // count1 left
-            for (size_t i = 0; i < count1; i++) {
-                for (size_t j = 0; j < vl; j++) {
-                    asm volatile(
-                        "vl1re32.v v1, (%[in_ptr])\n"
-                        "add %[in_ptr], %[in_ptr], %[in_strides]\n"
-                        "vsse32.v v1, (%[out_ptr]), %[out_high_strides]\n"
-                        "add %[out_ptr], %[out_ptr], %[out_low_strides]\n"
-                        : [in_ptr] "+r"(in_ptr), [out_ptr] "+r"(out_ptr)
-                        : [in_strides] "r"(in_strides),
-                          [out_high_strides] "r"(out_high_strides),
-                          [out_low_strides] "r"(out_low_strides));
+                        asm volatile("vl1re32.v v5, (%[input2])\n"
+                                     "add %[input2], %[input2], %[in_strides]\n"
+                                     : [input2] "+r"(input2)
+                                     : [in_strides] "r"(in_strides));
+
+                        asm volatile("vl1re32.v v2, (%[input1])\n"
+                                     "add %[input1], %[input1], %[in_strides]\n"
+                                     : [input1] "+r"(input1)
+                                     : [in_strides] "r"(in_strides));
+
+                        asm volatile("vl1re32.v v6, (%[input2])\n"
+                                     "add %[input2], %[input2], %[in_strides]\n"
+                                     : [input2] "+r"(input2)
+                                     : [in_strides] "r"(in_strides));
+
+                        asm volatile("vl1re32.v v3, (%[input1])\n"
+                                     "add %[input1], %[input1], %[in_strides]\n"
+                                     : [input1] "+r"(input1)
+                                     : [in_strides] "r"(in_strides));
+
+                        asm volatile("vl1re32.v v7, (%[input2])\n"
+                                     "add %[input2], %[input2], %[in_strides]\n"
+                                     : [input2] "+r"(input2)
+                                     : [in_strides] "r"(in_strides));
+
+                        asm volatile("vl1re32.v v4, (%[input1])\n"
+                                     "add %[input1], %[input1], %[in_strides]\n"
+                                     : [input1] "+r"(input1)
+                                     : [in_strides] "r"(in_strides));
+
+                        asm volatile("vl1re32.v v8, (%[input2])\n"
+                                     "add %[input2], %[input2], %[in_strides]\n"
+                                     : [input2] "+r"(input2)
+                                     : [in_strides] "r"(in_strides));
+
+                        // store output1 + output2
+                        asm volatile(
+                            "vs1r.v v1, (%[output1])\n"
+                            "add %[output1], %[output1], %[out_low_strides]\n"
+                            : [output1] "+r"(output1)
+                            : [out_low_strides] "r"(out_low_strides));
+                        count2 -= unroll2;
+
+                        asm volatile(
+                            "vs1r.v v5, (%[output2])\n"
+                            "add %[output2], %[output2], %[out_low_strides]\n"
+                            : [output2] "+r"(output2)
+                            : [out_low_strides] "r"(out_low_strides));
+
+                        asm volatile(
+                            "vs1r.v v2, (%[output1])\n"
+                            "add %[output1], %[output1], %[out_low_strides]\n"
+                            : [output1] "+r"(output1)
+                            : [out_low_strides] "r"(out_low_strides));
+
+                        asm volatile(
+                            "vs1r.v v6, (%[output2])\n"
+                            "add %[output2], %[output2], %[out_low_strides]\n"
+                            : [output2] "+r"(output2)
+                            : [out_low_strides] "r"(out_low_strides));
+
+                        asm volatile(
+                            "vs1r.v v3, (%[output1])\n"
+                            "add %[output1], %[output1], %[out_low_strides]\n"
+                            : [output1] "+r"(output1)
+                            : [out_low_strides] "r"(out_low_strides));
+
+                        asm volatile(
+                            "vs1r.v v7, (%[output2])\n"
+                            "add %[output2], %[output2], %[out_low_strides]\n"
+                            : [output2] "+r"(output2)
+                            : [out_low_strides] "r"(out_low_strides));
+
+                        asm volatile(
+                            "vs1r.v v4, (%[output1])\n"
+                            "add %[output1], %[output1], %[out_low_strides]\n"
+                            : [output1] "+r"(output1)
+                            : [out_low_strides] "r"(out_low_strides));
+
+                        asm volatile(
+                            "vs1r.v v8, (%[output2])\n"
+                            "add %[output2], %[output2], %[out_low_strides]\n"
+                            : [output2] "+r"(output2)
+                            : [out_low_strides] "r"(out_low_strides));
+                    }
+
+                    // count2 left
+                    while (count2 % unroll2) {
+                        asm volatile(
+                            "vl1re32.v v1, (%[input1])\n"
+                            "add %[input1], %[input1], %[in_strides]\n"
+                            "vl1re32.v v2, (%[input2])\n"
+                            "add %[input2], %[input2], %[in_strides]\n"
+                            "vs1r.v v1, (%[output1])\n"
+                            "add %[output1], %[output1], %[out_low_strides]\n"
+                            "vs1r.v v2, (%[output2])\n"
+                            "add %[output2], %[output2], %[out_low_strides]\n"
+                            : [input1] "+r"(input1), [input2] "+r"(input2),
+                              [output1] "+r"(output1), [output2] "+r"(output2)
+                            : [in_strides] "r"(in_strides),
+                              [out_low_strides] "r"(out_low_strides));
+                        count2--;
+                    }
+
+                    in_ptr += in_stride * unroll1;
+                    out_ptr += unroll1 * vl;
+                    count1 -= unroll1;
                 }
-            }
 
-            in_offset += high_stride;
-            high_idx++;
-            low_idx += high_idx / high_dim;
-            high_idx %= high_dim;
-            count -= high_stride;
+                // count1 left
+                for (size_t i = 0; i < count1; i++) {
+                    for (size_t j = 0; j < vl; j++) {
+                        asm volatile(
+                            "vl1re32.v v1, (%[in_ptr])\n"
+                            "add %[in_ptr], %[in_ptr], %[in_strides]\n"
+                            "vs1r.v v1, (%[out_ptr])\n"
+                            "add %[out_ptr], %[out_ptr], %[out_low_strides]\n"
+                            : [in_ptr] "+r"(in_ptr), [out_ptr] "+r"(out_ptr)
+                            : [in_strides] "r"(in_strides),
+                              [out_low_strides] "r"(out_low_strides));
+                    }
+                }
+
+                in_offset += high_dim;
+                low_idx += 1;
+                count -= high_dim;
+            }
         }
     }
 };
