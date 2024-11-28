@@ -70,14 +70,14 @@ int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
 
-    benchmark_ntt_expand<1, 16, 16, 16, 16, 16, 16, 16>("N");
-    benchmark_ntt_expand<16, 1, 16, 16, 16, 16, 16, 16>("C");
-    benchmark_ntt_expand<16, 16, 1, 16, 16, 16, 16, 16>("H");
-    benchmark_ntt_expand<16, 16, 16, 1, 16, 16, 16, 16>("W");
-    benchmark_ntt_expand<1, 1, 16, 16, 16, 16, 16, 16>("NC");
-    benchmark_ntt_expand<16, 1, 1, 16, 16, 16, 16, 16>("CH");
-    benchmark_ntt_expand<16, 16, 1, 1, 16, 16, 16, 16>("HW");
-    benchmark_ntt_expand<1, 16, 1, 16, 16, 16, 16, 16>("NH");
-    benchmark_ntt_expand<16, 1, 16, 1, 16, 16, 16, 16>("CW");
-    benchmark_ntt_expand<1, 16, 16, 1, 16, 16, 16, 16>("NW");
+    benchmark_ntt_expand<1, 32, 32, 32, 32, 32, 32, 32>("N");
+    benchmark_ntt_expand<32, 1, 32, 32, 32, 32, 32, 32>("C");
+    benchmark_ntt_expand<32, 32, 1, 32, 32, 32, 32, 32>("H");
+    benchmark_ntt_expand<32, 32, 32, 1, 32, 32, 32, 32>("W");
+    benchmark_ntt_expand<1, 1, 32, 32, 32, 32, 32, 32>("NC");
+    benchmark_ntt_expand<32, 1, 1, 32, 32, 32, 32, 32>("CH");
+    benchmark_ntt_expand<32, 32, 1, 1, 32, 32, 32, 32>("HW");
+    benchmark_ntt_expand<1, 32, 1, 32, 32, 32, 32, 32>("NH");
+    benchmark_ntt_expand<32, 1, 32, 1, 32, 32, 32, 32>("CW");
+    benchmark_ntt_expand<1, 32, 32, 1, 32, 32, 32, 32>("NW");
 }
