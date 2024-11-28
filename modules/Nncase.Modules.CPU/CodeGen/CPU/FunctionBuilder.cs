@@ -116,8 +116,8 @@ internal class FunctionBuilder
                                     WriteVectorRdata<ulong>(tensor, range, vt.Lanes);
                                     break;
                                 case var _ when et == DataTypes.Float8E4M3:
-                                    WriteVectorRdata<Float8E4M3>(tensor, range, vt.Lanes);                                    
-                                    break;                                
+                                    WriteVectorRdata<Float8E4M3>(tensor, range, vt.Lanes);
+                                    break;
 
                                 // case var _ when et == DataTypes.BFloat16:
                                 //     WriteVectorRdata<BFloat16>(tensor, range, vt.Lanes);
