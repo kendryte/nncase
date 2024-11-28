@@ -940,6 +940,52 @@ public sealed class PackSlice : PackRule
     }
 }
 
+public sealed class PackCast : PackRule
+{
+    public PackCast(int rank, int lane)
+        : base(rank, lane)
+    {
+    }
+
+    public override Pattern Pattern { get; } = IsCast(
+      "target",
+      _ => true,
+      IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() });
+
+    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
+    {
+        var rets = new List<Expr>();
+        var op = (IR.Tensors.Cast)result["target"];
+        var input = (Expr)result["input"];
+        var inShape = input.CheckedShape.ToValueArray();
+
+        void AddCandidate(int[] packedAxes, int[] lanes)
+        {
+            var packedInput = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+            var Cast = IR.F.Tensors.Cast(packedInput, op.NewType, op.CastMode);
+            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(Cast, lanes, packedAxes), inShape, padsInput);
+            if (Cast.CheckedType is not InvalidType)
+            {
+                rets.Add(post);
+            }
+        }
+
+        for (int i = 0; i < input.CheckedShape.Count; i++)
+        {
+            AddCandidate(new[] { i }, new[] { Lane });
+            for (int j = i + 1; j < input.CheckedShape.Count; j++)
+            {
+                if (Rank > 1)
+                {
+                    AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                }
+            }
+        }
+
+        return rets;
+    }
+}
+
 [RuleGenerator]
 public sealed partial class FoldPackUnpack : RewriteRule<Pattern>
 {
