@@ -55,6 +55,9 @@ internal class FunctionBuilder
                 var dt = tensor.ElementType;
                 switch (dt)
                 {
+                    case var _ when dt == DataTypes.Boolean:
+                        WriteRdataSeg<byte>(tensor, range);
+                        break;
                     case var _ when dt == DataTypes.Float32:
                         WriteRdataSeg<float>(tensor, range);
                         break;
@@ -91,6 +94,9 @@ internal class FunctionBuilder
                             var et = vt.ElemType;
                             switch (et)
                             {
+                                case var _ when et == DataTypes.Boolean:
+                                    WriteVectorRdata<byte>(tensor, range, vt.Lanes);
+                                    break;
                                 case var _ when et == DataTypes.Float32:
                                     WriteVectorRdata<float>(tensor, range, vt.Lanes);
                                     break;

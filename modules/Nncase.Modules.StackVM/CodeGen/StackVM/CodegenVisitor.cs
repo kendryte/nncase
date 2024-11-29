@@ -409,6 +409,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         var dt = tensor.ElementType;
         var buffer = dt switch
         {
+            var t when t == DataTypes.Boolean => WriteRdata<byte>(tensor.ToArray<byte>().AsSpan(), _alignment),
             var t when t == DataTypes.Float32 => WriteRdata<float>(tensor.ToArray<float>().AsSpan(), _alignment),
             var t when t == DataTypes.Float64 => WriteRdata<double>(tensor.ToArray<double>().AsSpan(), _alignment),
             var t when t == DataTypes.Int8 => WriteRdata<sbyte>(tensor.ToArray<sbyte>().AsSpan(), _alignment),
