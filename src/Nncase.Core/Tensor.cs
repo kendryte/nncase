@@ -233,6 +233,13 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         return tensor;
     }
 
+    public static Tensor From(DataType dataType, ITensorInitializer initializer, ReadOnlySpan<int> dimensions)
+    {
+        var tensor = Zeros(dataType, dimensions);
+        tensor.Initialize(initializer);
+        return tensor;
+    }
+
     /// <summary>
     /// Create tensor from a memory, Set the shape as [n].
     /// </summary>
@@ -530,6 +537,8 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     private protected abstract object GetValueCore(int index);
 
     private protected abstract void SetValueCore(int index, object? value);
+
+    private protected abstract void Initialize(ITensorInitializer initializer);
 
     private static Tensor CreateTensorFromBytesImpl<T>(Memory<byte> buffer, int[] dimensions)
         where T : unmanaged, IEquatable<T>

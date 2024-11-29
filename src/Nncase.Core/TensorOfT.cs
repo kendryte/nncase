@@ -17,7 +17,6 @@ using NetFabric.Hyperlinq;
 using Nncase.Buffers;
 using Nncase.IR;
 using Nncase.Utilities;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Nncase;
 
@@ -556,6 +555,9 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     {
         SetValue(index, (T)Convert.ChangeType(value, typeof(T))!);
     }
+
+    private protected override void Initialize(ITensorInitializer initializer) =>
+        initializer.Initialize(this);
 
     private static void Indent(StringBuilder builder, int tabs, int spacesPerTab = 4)
     {

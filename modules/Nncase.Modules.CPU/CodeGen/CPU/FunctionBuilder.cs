@@ -57,7 +57,7 @@ internal class FunctionBuilder
                 var size = range.Max - range.Min;
                 if ((ulong)tensor.Length * (ulong)tensor.ElementType.SizeInBytes != size)
                 {
-                    throw new InvalidDataException("The Buffer Szie Not Equal!");
+                    throw new InvalidDataException("The Buffer Size Not Equal!");
                 }
 
                 tensor.Serialize(_rdataWriter.BaseStream);
@@ -79,116 +79,6 @@ internal class FunctionBuilder
         }
 
         throw new NotSupportedException("the function name is invalid");
-    }
-
-    private void WriteRdataSeg<T>(Tensor tensor, ValueRange<ulong> range)
-        where T : unmanaged, INumber<T>
-    {
-        var buffer = tensor.ToArray<T>().AsSpan();
-        var dt = tensor.ElementType;
-        var size = range.Max - range.Min;
-        if ((ulong)buffer.Length * (ulong)dt.SizeInBytes != size)
-        {
-            throw new InvalidDataException("The Buffer Szie Not Equal!");
-        }
-
-        var chunck = 1024 * 1024 * 1024L / dt.SizeInBytes;
-        int written = 0;
-        long length = buffer.Length;
-        _rdataWriter.Position((long)range.Min);
-        while (length > 0)
-        {
-            var sizeToWrite = (int)System.Math.Min(length, chunck);
-            _rdataWriter.Write(MemoryMarshal.Cast<T, byte>(buffer.Slice(written, sizeToWrite)));
-            written += sizeToWrite;
-            length -= sizeToWrite;
-        }
-    }
-
-    private void WriteRdataSeg<T, TVector>(Tensor tensor, ValueRange<ulong> range)
-        where T : unmanaged, INumber<T>
-        where TVector : unmanaged, IEquatable<TVector>
-    {
-        var buffer = tensor.ToArray<TVector>().AsSpan();
-        var dt = tensor.ElementType;
-        var size = range.Max - range.Min;
-        if ((ulong)buffer.Length * (ulong)dt.SizeInBytes != size)
-        {
-            throw new InvalidDataException("The Buffer Size Not Equal!");
-        }
-
-        var chunck = 1024 * 1024 * 1024L / dt.SizeInBytes;
-        int written = 0;
-        long length = buffer.Length;
-        _rdataWriter.Position((long)range.Min);
-        while (length > 0)
-        {
-            var sizeToWrite = (int)System.Math.Min(length, chunck);
-            _rdataWriter.Write(MemoryMarshal.Cast<TVector, byte>(buffer.Slice(written, sizeToWrite)));
-            written += sizeToWrite;
-            length -= sizeToWrite;
-        }
-    }
-
-    private void WriteVectorRdata<T>(Tensor tensor, ValueRange<ulong> range, IRArray<int> lanes)
-        where T : unmanaged, INumber<T>, IEquatable<T>
-    {
-        switch (lanes)
-        {
-            case var _ when lanes.ToArray().SequenceEqual([4]):
-                WriteRdataSeg<T, Vector4<T>>(tensor, range);
-                break;
-            case var _ when lanes.ToArray().SequenceEqual([4, 4]):
-                WriteRdataSeg<T, Vector4x4<T>>(tensor, range);
-                break;
-            case var _ when lanes.ToArray().SequenceEqual([8]):
-                WriteRdataSeg<T, Vector8<T>>(tensor, range);
-                break;
-            case var _ when lanes.ToArray().SequenceEqual([8, 8]):
-                WriteRdataSeg<T, Vector8x8<T>>(tensor, range);
-                break;
-            case var _ when lanes.ToArray().SequenceEqual([16]):
-                WriteRdataSeg<T, Vector16<T>>(tensor, range);
-                break;
-            case var _ when lanes.ToArray().SequenceEqual([16, 16]):
-                WriteRdataSeg<T, Vector16x16<T>>(tensor, range);
-                break;
-            case var _ when lanes.ToArray().SequenceEqual([32]):
-                WriteRdataSeg<T, Vector32<T>>(tensor, range);
-                break;
-            case var _ when lanes.ToArray().SequenceEqual([32, 16]):
-                WriteRdataSeg<T, Vector32x16<T>>(tensor, range);
-                break;
-            case var _ when lanes.ToArray().SequenceEqual([32, 32]):
-                WriteRdataSeg<T, Vector32x32<T>>(tensor, range);
-                break;
-            case var _ when lanes.ToArray().SequenceEqual([32, 64]):
-                WriteRdataSeg<T, Vector32x64<T>>(tensor, range);
-                break;
-            case var _ when lanes.ToArray().SequenceEqual([64]):
-                WriteRdataSeg<T, Vector64<T>>(tensor, range);
-                break;
-            case var _ when lanes.ToArray().SequenceEqual([128]):
-                WriteRdataSeg<T, Vector128<T>>(tensor, range);
-                break;
-            case var _ when lanes.ToArray().SequenceEqual([32, 128]):
-                WriteRdataSeg<T, Vector32x128<T>>(tensor, range);
-                break;
-            case var _ when lanes.ToArray().SequenceEqual([64, 32]):
-                WriteRdataSeg<T, Vector64x32<T>>(tensor, range);
-                break;
-            case var _ when lanes.ToArray().SequenceEqual([64, 64]):
-                WriteRdataSeg<T, Vector64x64<T>>(tensor, range);
-                break;
-            case var _ when lanes.ToArray().SequenceEqual([64, 128]):
-                WriteRdataSeg<T, Vector64x128<T>>(tensor, range);
-                break;
-            case var _ when lanes.ToArray().SequenceEqual([128, 64]):
-                WriteRdataSeg<T, Vector128x64<T>>(tensor, range);
-                break;
-            default:
-                throw new NotSupportedException($"Not supported onnx constant vector type");
-        }
     }
 
     [StructLayout(LayoutKind.Sequential)]

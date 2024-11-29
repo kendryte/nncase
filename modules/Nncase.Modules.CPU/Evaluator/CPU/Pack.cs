@@ -46,22 +46,7 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
             }
 
             var dt = input.DataType.ToDataType();
-            return dt switch
-            {
-                var t when t == DataTypes.Boolean => ToVectorTensor(input.GetBuffer<byte>(), target.Lanes, input.Shape),
-                var t when t == DataTypes.Float32 => ToVectorTensor(input.GetBuffer<float>(), target.Lanes, input.Shape),
-                var t when t == DataTypes.Float64 => ToVectorTensor(input.GetBuffer<double>(), target.Lanes, input.Shape),
-                var t when t == DataTypes.Int8 => ToVectorTensor(input.GetBuffer<sbyte>(), target.Lanes, input.Shape),
-                var t when t == DataTypes.Int32 => ToVectorTensor(input.GetBuffer<int>(), target.Lanes, input.Shape),
-                var t when t == DataTypes.Int64 => ToVectorTensor(input.GetBuffer<long>(), target.Lanes, input.Shape),
-                var t when t == DataTypes.UInt8 => ToVectorTensor(input.GetBuffer<byte>(), target.Lanes, input.Shape),
-                var t when t == DataTypes.UInt32 => ToVectorTensor(input.GetBuffer<uint>(), target.Lanes, input.Shape),
-                var t when t == DataTypes.UInt64 => ToVectorTensor(input.GetBuffer<ulong>(), target.Lanes, input.Shape),
-
-                // var t when t == DataTypes.BFloat16 => ToVectorTensor(input.GetBuffer<BFloat16>(), target.Lanes, input.Shape),
-                var t when t == DataTypes.Float16 => ToVectorTensor(input.GetBuffer<Half>(), target.Lanes, input.Shape),
-                _ => throw new NotSupportedException($"Not supported onnx constant data type {dt}"),
-            };
+            return Value.FromTensor(input.ToTensor(new TensorType(new VectorType(input.DataType.ToDataType(), target.Lanes), new Shape(input.Shape.SkipLast(target.Lanes.Count).Select(i => (int)i)))));
         }
     }
 
@@ -144,40 +129,5 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
         }
 
         return new DistributedType(tensorType, ndsbp, input.Placement);
-    }
-
-    private IValue ToVectorTensor<TV, T>(Span<T> input, IRArray<int> lanes, IRArray<long> inShape)
-        where T : unmanaged, IEquatable<T>, INumber<T>
-        where TV : unmanaged, IEquatable<TV>
-    {
-        var tensorArray = MemoryMarshal.Cast<T, TV>(input).ToArray();
-        var oshape = inShape.SkipLast(lanes.Count).Select(i => (int)i).ToArray();
-        return Value.FromTensor(Tensor.From(tensorArray, oshape));
-    }
-
-    private IValue ToVectorTensor<T>(Span<T> input, IRArray<int> lanes, IRArray<long> inShape)
-        where T : unmanaged, INumber<T>, IEquatable<T>
-    {
-        return lanes switch
-        {
-            var l when l.ToArray().SequenceEqual([4]) => ToVectorTensor<Vector4<T>, T>(input, lanes, inShape),
-            var l when l.ToArray().SequenceEqual([4, 4]) => ToVectorTensor<Vector4x4<T>, T>(input, lanes, inShape),
-            var l when l.ToArray().SequenceEqual([8]) => ToVectorTensor<Vector8<T>, T>(input, lanes, inShape),
-            var l when l.ToArray().SequenceEqual([8, 8]) => ToVectorTensor<Vector8x8<T>, T>(input, lanes, inShape),
-            var l when l.ToArray().SequenceEqual([16]) => ToVectorTensor<Vector16<T>, T>(input, lanes, inShape),
-            var l when l.ToArray().SequenceEqual([16, 16]) => ToVectorTensor<Vector16x16<T>, T>(input, lanes, inShape),
-            var l when l.ToArray().SequenceEqual([32]) => ToVectorTensor<Vector32<T>, T>(input, lanes, inShape),
-            var l when l.ToArray().SequenceEqual([32, 16]) => ToVectorTensor<Vector32x16<T>, T>(input, lanes, inShape),
-            var l when l.ToArray().SequenceEqual([32, 32]) => ToVectorTensor<Vector32x32<T>, T>(input, lanes, inShape),
-            var l when l.ToArray().SequenceEqual([32, 64]) => ToVectorTensor<Vector32x64<T>, T>(input, lanes, inShape),
-            var l when l.ToArray().SequenceEqual([64]) => ToVectorTensor<Vector64<T>, T>(input, lanes, inShape),
-            var l when l.ToArray().SequenceEqual([128]) => ToVectorTensor<Vector128<T>, T>(input, lanes, inShape),
-            var l when l.ToArray().SequenceEqual([32, 128]) => ToVectorTensor<Vector32x128<T>, T>(input, lanes, inShape),
-            var l when l.ToArray().SequenceEqual([64, 32]) => ToVectorTensor<Vector64x32<T>, T>(input, lanes, inShape),
-            var l when l.ToArray().SequenceEqual([64, 64]) => ToVectorTensor<Vector64x64<T>, T>(input, lanes, inShape),
-            var l when l.ToArray().SequenceEqual([64, 128]) => ToVectorTensor<Vector64x128<T>, T>(input, lanes, inShape),
-            var l when l.ToArray().SequenceEqual([128, 64]) => ToVectorTensor<Vector128x64<T>, T>(input, lanes, inShape),
-            _ => throw new NotSupportedException($"Not supported onnx constant vector type"),
-        };
     }
 }
