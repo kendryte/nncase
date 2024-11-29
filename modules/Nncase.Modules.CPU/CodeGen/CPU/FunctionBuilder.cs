@@ -53,13 +53,14 @@ internal class FunctionBuilder
             foreach (var (@const, range) in function.SchedResult.Rdatas)
             {
                 var tensor = ((TensorConst)@const).Value;
-                _rdataWriter.Position(checked((long)range.Min));
                 var size = range.Max - range.Min;
+                rdataPoolSize = System.Math.Max(range.Max, rdataPoolSize);
                 if ((ulong)tensor.Length * (ulong)tensor.ElementType.SizeInBytes != size)
                 {
                     throw new InvalidDataException("The Buffer Size Not Equal!");
                 }
 
+                _rdataWriter.Position(checked((long)range.Min));
                 tensor.Serialize(_rdataWriter.BaseStream);
             }
 
