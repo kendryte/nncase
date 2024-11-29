@@ -49,6 +49,7 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
             return dt switch
             {
                 var t when t == DataTypes.Boolean => ToVectorTensor(input.GetBuffer<byte>(), target.Lanes, input.Shape),
+                var t when t == DataTypes.Float32 => ToVectorTensor(input.GetBuffer<float>(), target.Lanes, input.Shape),
                 var t when t == DataTypes.Float64 => ToVectorTensor(input.GetBuffer<double>(), target.Lanes, input.Shape),
                 var t when t == DataTypes.Int8 => ToVectorTensor(input.GetBuffer<sbyte>(), target.Lanes, input.Shape),
                 var t when t == DataTypes.Int32 => ToVectorTensor(input.GetBuffer<int>(), target.Lanes, input.Shape),
