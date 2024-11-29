@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance;
 using Nncase.Buffers;
 using Nncase.IR;
+using Nncase.TIR;
 
 namespace Nncase;
 
@@ -57,6 +58,9 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
 
     private static readonly MethodInfo _tensorCreateFromArrayFunc =
         typeof(Tensor).GetMethod(nameof(CreateTensorFromArrayImpl), BindingFlags.Static | BindingFlags.NonPublic)!;
+
+    private static readonly MethodInfo _tensorCreateEmptyFunc =
+        typeof(Tensor).GetMethod(nameof(CreateTensorEmptyImpl), BindingFlags.Static | BindingFlags.NonPublic)!;
 
     private static readonly MethodInfo _tensorCastFunc =
         typeof(Tensor).GetMethod(nameof(Cast))!;
@@ -316,6 +320,13 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         return FromBytes(type.DType, buffer, type.Shape.ToValueArray());
     }
 
+    public static Tensor FromStream(DataType type, Stream stream, ReadOnlySpan<int> dimensions)
+    {
+        var tensor = Tensor.Zeros(type, dimensions);
+        tensor.Deserialize(stream);
+        return tensor;
+    }
+
     /// <summary>
     /// Create tensor from an array.
     /// </summary>
@@ -392,6 +403,11 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         return Tensor.FromScalar<T>(value, dimensions);
     }
 
+    public static Tensor Zeros(DataType dataType, ReadOnlySpan<int> dimensions)
+    {
+        return (Tensor)_tensorCreateEmptyFunc.MakeGenericMethod(dataType.CLRType).Invoke(null, new object[] { dimensions.ToArray() })!;
+    }
+
     /// <summary>
     /// Return a tensor of given shape and type, filled with ones.
     /// </summary>
@@ -441,6 +457,10 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="includeWhitespace">Include whitespace.</param>
     /// <returns>String of this tensor.</returns>
     public abstract string GetArrayString(bool includeWhitespace = true);
+
+    public abstract void Deserialize(Stream stream);
+
+    public abstract void Serialize(Stream stream);
 
     int IStructuralComparable.CompareTo(object? other, IComparer comparer)
     {
@@ -522,5 +542,11 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     {
         var mmgr = new ArrayMemoryManager<T>(array);
         return new Tensor<T>(mmgr.Memory, dimensions);
+    }
+
+    private static Tensor CreateTensorEmptyImpl<T>(int[] dimensions)
+        where T : unmanaged, IEquatable<T>
+    {
+        return new Tensor<T>(dimensions);
     }
 }

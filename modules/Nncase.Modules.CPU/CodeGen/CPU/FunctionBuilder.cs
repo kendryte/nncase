@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
+using System.Drawing;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -52,94 +53,14 @@ internal class FunctionBuilder
             foreach (var (@const, range) in function.SchedResult.Rdatas)
             {
                 var tensor = ((TensorConst)@const).Value;
-                var dt = tensor.ElementType;
-                switch (dt)
+                _rdataWriter.Position(checked((long)range.Min));
+                var size = range.Max - range.Min;
+                if ((ulong)tensor.Length * (ulong)tensor.ElementType.SizeInBytes != size)
                 {
-                    case var _ when dt == DataTypes.Boolean:
-                        WriteRdataSeg<byte>(tensor, range);
-                        break;
-                    case var _ when dt == DataTypes.Float32:
-                        WriteRdataSeg<float>(tensor, range);
-                        break;
-                    case var _ when dt == DataTypes.Float64:
-                        WriteRdataSeg<double>(tensor, range);
-                        break;
-                    case var _ when dt == DataTypes.Int8:
-                        WriteRdataSeg<sbyte>(tensor, range);
-                        break;
-                    case var _ when dt == DataTypes.Int32:
-                        WriteRdataSeg<int>(tensor, range);
-                        break;
-                    case var _ when dt == DataTypes.Int64:
-                        WriteRdataSeg<long>(tensor, range);
-                        break;
-                    case var _ when dt == DataTypes.UInt8:
-                        WriteRdataSeg<byte>(tensor, range);
-                        break;
-                    case var _ when dt == DataTypes.UInt32:
-                        WriteRdataSeg<uint>(tensor, range);
-                        break;
-                    case var _ when dt == DataTypes.UInt64:
-                        WriteRdataSeg<ulong>(tensor, range);
-                        break;
-
-                    // case var _ when t == DataTypes.BFloat16:
-                    //     WriteRdataSeg<BFloat16>(tensor, range);
-                    //     break;
-                    case var _ when dt == DataTypes.Float16:
-                        WriteRdataSeg<Half>(tensor, range);
-                        break;
-                    case var _ when dt is VectorType vt:
-                        {
-                            var et = vt.ElemType;
-                            switch (et)
-                            {
-                                case var _ when et == DataTypes.Boolean:
-                                    WriteVectorRdata<byte>(tensor, range, vt.Lanes);
-                                    break;
-                                case var _ when et == DataTypes.Float32:
-                                    WriteVectorRdata<float>(tensor, range, vt.Lanes);
-                                    break;
-                                case var _ when et == DataTypes.Float64:
-                                    WriteVectorRdata<double>(tensor, range, vt.Lanes);
-                                    break;
-                                case var _ when et == DataTypes.Int8:
-                                    WriteVectorRdata<sbyte>(tensor, range, vt.Lanes);
-                                    break;
-                                case var _ when et == DataTypes.Int32:
-                                    WriteVectorRdata<int>(tensor, range, vt.Lanes);
-                                    break;
-                                case var _ when et == DataTypes.Int64:
-                                    WriteVectorRdata<long>(tensor, range, vt.Lanes);
-                                    break;
-                                case var _ when et == DataTypes.UInt8:
-                                    WriteVectorRdata<byte>(tensor, range, vt.Lanes);
-                                    break;
-                                case var _ when et == DataTypes.UInt32:
-                                    WriteVectorRdata<uint>(tensor, range, vt.Lanes);
-                                    break;
-                                case var _ when et == DataTypes.UInt64:
-                                    WriteVectorRdata<ulong>(tensor, range, vt.Lanes);
-                                    break;
-                                case var _ when et == DataTypes.Float8E4M3:
-                                    WriteVectorRdata<Float8E4M3>(tensor, range, vt.Lanes);
-                                    break;
-
-                                // case var _ when et == DataTypes.BFloat16:
-                                //     WriteVectorRdata<BFloat16>(tensor, range, vt.Lanes);
-                                //     break;
-                                case var _ when et == DataTypes.Float16:
-                                    WriteVectorRdata<Half>(tensor, range, vt.Lanes);
-                                    break;
-                                default:
-                                    throw new NotSupportedException($"Not supported onnx constant data type {dt}");
-                            }
-                        }
-
-                        break;
-                    default:
-                        throw new NotSupportedException($"Not supported onnx constant data type {dt}");
+                    throw new InvalidDataException("The Buffer Szie Not Equal!");
                 }
+
+                tensor.Serialize(_rdataWriter.BaseStream);
             }
 
             // 3. build function.

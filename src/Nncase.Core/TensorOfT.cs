@@ -11,10 +11,13 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using CommunityToolkit.HighPerformance;
 using CommunityToolkit.HighPerformance.Helpers;
 using NetFabric.Hyperlinq;
 using Nncase.Buffers;
 using Nncase.IR;
+using Nncase.Utilities;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Nncase;
 
@@ -323,6 +326,16 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
         }
 
         return builder.ToString();
+    }
+
+    public override void Deserialize(Stream stream)
+    {
+        SpanUtility.Deserialize(Buffer.Span, stream);
+    }
+
+    public override void Serialize(Stream stream)
+    {
+        SpanUtility.Serialize((ReadOnlySpan<T>)Buffer.Span, stream);
     }
 
     /// <summary>
