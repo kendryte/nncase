@@ -138,11 +138,10 @@ class u_pack<M, N, MStrides, true, float, vector<float, 8>> {
 };
 
 template <class TIn, class TOut, size_t... Axes>
-requires(sizeof...(Axes) > 0 &&
-         (std::get<sizeof...(Axes) - 1>(std::array<size_t, sizeof...(Axes)>{
-              Axes...}) ==
-          (TIn::rank() - 1))) class u_pack2d<true, TIn, TOut, float,
-                                             vector<float, 8, 8>, Axes...> {
+    requires(sizeof...(Axes) > 0 &&
+             (std::get<sizeof...(Axes) - 1>(std::array<size_t, sizeof...(Axes)>{
+                  Axes...}) == (TIn::rank() - 1)))
+class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>, Axes...> {
   public:
     constexpr void operator()(const TIn &input, TOut &output) noexcept {
         using TVec = vector<float, 8, 8>;
@@ -158,12 +157,14 @@ requires(sizeof...(Axes) > 0 &&
             loop<2>([&](auto i) {
                 in_index[axes[i]] = in_index[axes[i]] * lanes[i];
             });
-            auto in_ptr =
-                reinterpret_cast<const vector<float, 8> *>(&input(in_index));
-            auto out_ptr =
-                reinterpret_cast<vector<float, 8> *>(&output(out_index));
+            auto in_ptr = reinterpret_cast<const float *>(&input(in_index));
+            auto out_ptr = reinterpret_cast<float *>(&output(out_index));
             for (size_t i = 0; i < lanes[0]; i++) {
-                out_ptr[i] = in_ptr[i * out_shape[out_rank - 1]];
+                // out_ptr[i] = in_ptr[i * out_shape[out_rank - 1]];
+                __m256 data = _mm256_loadu_ps(in_ptr);
+                _mm256_storeu_ps(out_ptr, data);
+                in_ptr += lanes[1] * out_shape[out_rank - 1];
+                out_ptr += lanes[1];
             }
         });
     }
