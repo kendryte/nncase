@@ -458,6 +458,8 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         where T : unmanaged, INumber<T>
     {
         _context.RdataWriter.AlignPosition(alignment);
+        var symbol = AddSymbol(WellknownSectionNames.Rdata);
+
         var chunck = 1024 * 1024 * 1024L / sizeof(T);
         int written = 0;
         long length = data.Length;
@@ -469,7 +471,6 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
             length -= sizeToWrite;
         }
 
-        var symbol = AddSymbol(WellknownSectionNames.Rdata);
         return symbol;
     }
 
