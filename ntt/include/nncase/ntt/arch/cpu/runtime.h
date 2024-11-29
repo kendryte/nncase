@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 #pragma once
-#include "../distributed.h"
-#include "../runtime.h"
+#include "../../distributed.h"
+#include "../../runtime.h"
+#include "topology.h"
 #include <cstdarg>
 
 #ifdef __APPLE__
@@ -48,29 +49,6 @@ extern size_t tdim;
 extern size_t bdim;
 extern size_t cdim;
 } // namespace nncase::ntt::runtime
-
-namespace nncase::ntt {
-template <> struct program_id_getter<0> {
-    static size_t id() noexcept {
-        return runtime::cpu_thread_context_t::current().tid;
-    }
-    static size_t dim() noexcept { return runtime::tdim; }
-};
-
-template <> struct program_id_getter<1> {
-    static size_t id() noexcept {
-        return runtime::cpu_thread_context_t::current().bid;
-    }
-    static size_t dim() noexcept { return runtime::bdim; }
-};
-
-template <> struct program_id_getter<2> {
-    static size_t id() noexcept {
-        return runtime::cpu_thread_context_t::current().cid;
-    }
-    static size_t dim() noexcept { return runtime::cdim; }
-};
-} // namespace nncase::ntt
 
 extern "C" NTT_RUNTIME_API void
 block_entry(const nncase::ntt::runtime::cpu_block_entry_params_t &params);

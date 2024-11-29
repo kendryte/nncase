@@ -137,6 +137,32 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         _ => throw new NotSupportedException(type.DType.GetType().Name),
     };
 
+    public override string VisitType(DistributedType type)
+    {
+        var shape = type.TensorType.Shape.ToArray();
+        foreach (var (s, r) in type.NdSBP.Select((s, r) => (s, r)))
+        {
+            if (s is SBPSplit split)
+            {
+                if (shape[split.Axis].IsFixed)
+                {
+                    shape[split.Axis] = shape[split.Axis] / type.Placement.Hierarchy[r];
+                }
+            }
+        }
+
+        var sshape = shape.Select(s => s.ToString()).ToArray();
+        foreach (var (s, r) in type.NdSBP.Select((s, r) => (s, r)))
+        {
+            if (s is SBPSplit split)
+            {
+                sshape[split.Axis] += $"@{type.Placement.Name[r]}";
+            }
+        }
+
+        return $"Dist({VisitType(type.TensorType)}, ({string.Join(',', type.NdSBP)}), [{string.Join(',', sshape)}])";
+    }
+
     /// <inheritdoc/>
     public override string VisitType(CallableType type) =>
         $"({string.Join(", ", type.Parameters.Select(VisitType))}) -> {VisitType(type.ReturnType)}";
@@ -577,7 +603,8 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
 
         _scope.Push();
         var memSpan = Visit(expr.MemSpan);
-        _scope.Append($"T.Buffer({expr.Name}, {VisitType(expr.ElemType)}, {memSpan.Span}, [{string.Join(',', expr.Dimensions.AsValueEnumerable().Select(Visit).Select(e => e.Span.ToString()).ToArray())}], [{string.Join(',', expr.Strides.AsValueEnumerable().Select(Visit).Select(e => e.Span.ToString()).ToArray())}])");
+        var distributedType = expr.DistributedType == null ? string.Empty : VisitType(expr.DistributedType);
+        _scope.Append($"T.Buffer({expr.Name}, {VisitType(expr.ElemType)}, {memSpan.Span}, [{string.Join(',', expr.Dimensions.AsValueEnumerable().Select(Visit).Select(e => e.Span.ToString()).ToArray())}], [{string.Join(',', expr.Strides.AsValueEnumerable().Select(Visit).Select(e => e.Span.ToString()).ToArray())}], {distributedType})");
         doc = new(_scope.Pop(), expr.Name, true);
         _exprMemo.Add(expr, doc);
         return doc;

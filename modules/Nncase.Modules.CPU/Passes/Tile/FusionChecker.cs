@@ -481,7 +481,7 @@ public sealed class FusionChecker
             }
 
             var memSpan = new MemSpan(start, size, location);
-            var buffer = new TIR.Buffer(bfname, dtype, memSpan, shape.Select(s => (Expr)s).ToArray(), strides.Select(s => (Expr)s).ToArray());
+            var buffer = new TIR.Buffer(bfname, dtype, memSpan, shape.Select(s => (Expr)s).ToArray(), strides.Select(s => (Expr)s).ToArray(), null);
             UpdateLifeness(i, kv.Key, buffer, location == MemoryLocation.L2Data);
         }
 
