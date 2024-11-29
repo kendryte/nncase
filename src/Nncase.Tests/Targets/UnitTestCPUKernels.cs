@@ -464,6 +464,27 @@ public sealed class UnitTestCPUKernels : TestClassBase
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
     }
 
+    [Theory]
+    [InlineData(new object[] { new[] { 1, 48, 512 }, new[] { 1, 512, 1024 }, new[] { 1, 48, 64, 16 }, new[] { 8 }, 0 })]
+    public async Task TestMatMulReshape(int[] lhsShape, int[] rhsShape, int[] newShape, int[] hierarchy, int number)
+    {
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((int)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
+        var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
+        var matmul = IR.F.Tensors.MatMul(lhs, rhs);
+        var reshaped = IR.F.Tensors.Reshape(matmul, newShape);
+        var feedDict = new Dictionary<Var, IValue>()
+        {
+            { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
+            { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
+        };
+
+        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, new[] { reshaped });
+    }
+
     [Theory(Skip = "ToBig")]
     [InlineData(new object[] { false, 0 })]
     [InlineData(new object[] { true, 1 })] // enable packing

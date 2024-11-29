@@ -506,7 +506,18 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                 var inType = (DistributedType)args[0].CheckedType;
                 var tensorType = inType.TensorType with { Shape = newShape };
                 foreach (var boxing in Utilities.DistributedUtility.GetLeafCandidateNDSBPs(tensorType, inType.Placement).
-                    Select(ndsbp => IR.F.CPU.Boxing(args[0], new DistributedType(tensorType, ndsbp, inType.Placement), true)))
+                    Select(ndsbp =>
+                    {
+                        var outType = new DistributedType(tensorType, ndsbp, inType.Placement);
+                        if (DistributedUtility.IsNoReshardReshape(inType, outType))
+                        {
+                            return IR.F.Tensors.Reshape(args[0], newShape);
+                        }
+                        else
+                        {
+                            return IR.F.CPU.Boxing(args[0], outType, true);
+                        }
+                    }))
                 {
                     if (boxing.CheckedType is InvalidType)
                     {

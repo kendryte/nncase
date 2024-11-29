@@ -81,6 +81,59 @@ public static class DistributedUtility
         return divisors.Select((d, axis) => (d, axis)).All(p => p.d == 0 ? true : IsDivideExactly(tensorType.Shape[p.axis].FixedValue, p.d));
     }
 
+    public static bool IsNoReshardReshape(DistributedType inType, DistributedType outType)
+    {
+        var inShape = inType.TensorType.Shape.ToValueArray();
+        var newShape = outType.TensorType.Shape.ToValueArray();
+        if (!IRUtility.TryGetShapeMapMatrix(inShape, newShape, out var mat))
+        {
+            return false;
+        }
+
+        var (forwardDict, backwardDict) = IRUtility.ShapeMapMatrixAsDict(mat);
+
+        var noReshard = true;
+
+        for (int meshAxis = 0; meshAxis < inType.NdSBP.Count; meshAxis++)
+        {
+            switch (inType.NdSBP[meshAxis], outType.NdSBP[meshAxis])
+            {
+                case (SBPSplit si, SBPSplit so):
+                    {
+                        var mapedOutAxes = forwardDict[si.Axis];
+
+                        // when input axis is splited-by-reshape, we can direct obtain the tensor which splited-by-sbp on the first maped axis.
+                        if (mapedOutAxes.Count > 1)
+                        {
+                            if (mapedOutAxes.First() != so.Axis)
+                            {
+                                noReshard = false;
+                            }
+                        }
+                        else
+                        {
+                            // when input axis is merged-by-reshape, we can direct obtain the tensor which splited-by-sbp on the first maped axis.
+                            var outAxis = mapedOutAxes.First();
+
+                            // when the outAxis is merged dim, only support no transpose order and no pad.
+                            var inAxes = backwardDict[outAxis];
+                            if (!(inAxes.First() == si.Axis && outAxis == so.Axis))
+                            {
+                                noReshard = false;
+                            }
+                        }
+                    }
+
+                    break;
+                default:
+                    noReshard = false;
+                    break;
+            }
+        }
+
+        return noReshard;
+    }
+
     public static IReadOnlyList<int> GetDivisors(DistributedType distributedType)
     {
         var shape = distributedType.TensorType.Shape.ToValueArray();
