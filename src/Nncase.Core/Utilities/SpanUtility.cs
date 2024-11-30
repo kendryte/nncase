@@ -23,25 +23,25 @@ public static class SpanUtility
         return MemoryMarshal.CreateReadOnlySpan(ref castFirst, froms.Length);
     }
 
-    public static void Deserialize<T>(Span<T> span, Stream stream)
+    public static unsafe void Deserialize<T>(Span<T> span, Stream stream)
         where T : unmanaged
     {
         var position = 0;
         while (position < span.Length)
         {
-            var length = Math.Min(span.Length - position, 1024 * 1024 * 16);
+            var length = Math.Min(span.Length - position, 1024 * 1024 * 1024 / sizeof(T));
             stream.ReadExactly(span.Slice(position, length).AsBytes());
             position += length;
         }
     }
 
-    public static void Serialize<T>(ReadOnlySpan<T> span, Stream stream)
+    public static unsafe void Serialize<T>(ReadOnlySpan<T> span, Stream stream)
         where T : unmanaged
     {
         var position = 0;
         while (position < span.Length)
         {
-            var length = Math.Min(span.Length - position, 1024 * 1024 * 16);
+            var length = Math.Min(span.Length - position, 1024 * 1024 * 1024 / sizeof(T));
             stream.Write(span.Slice(position, length).AsBytes());
             position += length;
         }
