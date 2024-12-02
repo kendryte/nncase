@@ -18,6 +18,7 @@
 #include "../tensor_ops.h"
 #include "../ukernels.h"
 #include "../utility.h"
+#include <type_traits>
 
 namespace nncase::ntt {
 namespace detail {
@@ -118,7 +119,7 @@ class unary_impl<ranked_shape<Rank>, InStrides, OutStrides> {
 
 template <template <class T> class Op, class TIn, class TOut>
 void unary(const TIn &input, TOut &&output) {
-    Op<typename TIn::element_type> op;
+    Op<std::decay_t<typename TIn::element_type>> op;
     detail::unary_impl<common_shape_t<typename TIn::shape_type,
                                       typename std::decay_t<TOut>::shape_type>,
                        typename TIn::strides_type,
