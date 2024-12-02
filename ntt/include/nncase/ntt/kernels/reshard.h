@@ -162,8 +162,8 @@ struct reshard_impl<SrcTensor, DestTensor> {
         const ranked_shape<Rank> &non_split_mesh_axes) noexcept {
         ranked_shape<Rank> non_split_mesh_dims;
         for (size_t i = 0; i < non_split_mesh_axes.rank(); i++) {
-            non_split_mesh_dims[i] =
-                mesh_type::shape_type::at(non_split_mesh_axes[i]);
+            auto axis = non_split_mesh_axes[i];
+            non_split_mesh_dims[i] = mesh_type::shape_type::at(axis);
         }
         return non_split_mesh_dims;
     }
@@ -174,7 +174,8 @@ struct reshard_impl<SrcTensor, DestTensor> {
         const typename mesh_type::index_type &shard_index) noexcept {
         ranked_shape<Rank> non_split_mesh_indexes;
         for (size_t i = 0; i < non_split_mesh_axes.rank(); i++) {
-            non_split_mesh_indexes[i] = shard_index[i];
+            auto axis = non_split_mesh_axes[i];
+            non_split_mesh_indexes[i] = shard_index[axis];
         }
         return non_split_mesh_indexes;
     }
@@ -183,8 +184,10 @@ struct reshard_impl<SrcTensor, DestTensor> {
     static constexpr auto
     get_non_split_tensor_axes_split_counts(const Shape &shape) noexcept {
         constexpr auto non_split_mesh_axes = get_non_split_mesh_axes();
+        constexpr auto non_split_mesh_dims =
+            get_non_split_mesh_dims(non_split_mesh_axes);
         constexpr auto expected_split_count =
-            (std::ptrdiff_t)non_split_mesh_axes.length();
+            (std::ptrdiff_t)non_split_mesh_dims.length();
 
         // Split non-split axes into split_count groups, based on each size of
         // the tensor dimensions.
