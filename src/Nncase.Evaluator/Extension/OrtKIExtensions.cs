@@ -53,12 +53,12 @@ public static class OrtKIExtensions
 
     public static Tensor ToTensor(this OrtKISharp.Tensor tensor)
     {
-        return Tensor.FromBytes(tensor.DataType.ToDataType(), tensor.BytesBuffer.ToArray(), tensor.Shape.ToInts());
+        return Tensor.From(tensor.DataType.ToDataType(), new TensorInitializerWithOrt(tensor), tensor.Shape.ToInts());
     }
 
     public static Tensor ToTensor(this OrtKISharp.Tensor tensor, TensorType tensorType)
     {
-        return Tensor.FromBytes(tensorType.DType, tensor.BytesBuffer.ToArray(), tensorType.Shape.IsFixed ? tensorType.Shape : tensor.Shape.ToInts());
+        return Tensor.From(tensorType.DType, new TensorInitializerWithOrt(tensor), tensorType.Shape.IsFixed ? tensorType.Shape : tensor.Shape.ToInts());
     }
 
     public static TensorValue ToValue(this OrtKISharp.Tensor tensor)
@@ -132,5 +132,21 @@ public static class OrtKIExtensions
     private static OrtKISharp.Tensor ToOrtTensor(Tensor tensor, OrtDataType ortDataType, int[] shape)
     {
         return OrtKISharp.Tensor.MakeTensor(tensor.PinBuffer(), ortDataType, shape.ToLongs());
+    }
+
+    private sealed class TensorInitializerWithOrt : ITensorInitializer
+    {
+        private readonly OrtKISharp.Tensor _tensor;
+
+        public TensorInitializerWithOrt(OrtKISharp.Tensor tensor)
+        {
+            _tensor = tensor;
+        }
+
+        public void Initialize<T>(Tensor<T> tensor)
+            where T : unmanaged, IEquatable<T>
+        {
+            _tensor.GetBuffer<T>().CopyTo(tensor.Buffer.Span);
+        }
     }
 }

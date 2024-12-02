@@ -174,11 +174,11 @@ internal sealed class DDrBufferRewriter : ExprRewriter
         return memSpan;
     }
 
-    private ulong ComputeSize(IValue v) => v.AsTensors().Select(t => (ulong)t.BytesBuffer.Length).Sum();
+    private ulong ComputeSize(IValue v) => v.AsTensors().Select(t => (ulong)t.Length * (ulong)t.ElementType.SizeInBytes).Sum();
 
     private ulong ComputeSize(Const @const) => @const switch
     {
-        TensorConst { Value: Tensor tc } => (ulong)tc.BytesBuffer.Length,
+        TensorConst { Value: Tensor tc } => (ulong)tc.Length * (ulong)tc.ElementType.SizeInBytes,
         TupleConst tc => ComputeSize(tc.Value),
         _ => throw new NotSupportedException(),
     };
