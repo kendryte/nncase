@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using CommunityToolkit.HighPerformance;
 
 namespace Nncase.Utilities;
 
@@ -20,5 +21,29 @@ public static class SpanUtility
         ref var first = ref MemoryMarshal.GetReference(froms);
         ref var castFirst = ref Unsafe.As<TFrom, TTo>(ref first);
         return MemoryMarshal.CreateReadOnlySpan(ref castFirst, froms.Length);
+    }
+
+    public static unsafe void Deserialize<T>(Span<T> span, Stream stream)
+        where T : unmanaged
+    {
+        var position = 0;
+        while (position < span.Length)
+        {
+            var length = Math.Min(span.Length - position, 1024 * 1024 * 1024 / sizeof(T));
+            stream.ReadExactly(span.Slice(position, length).AsBytes());
+            position += length;
+        }
+    }
+
+    public static unsafe void Serialize<T>(ReadOnlySpan<T> span, Stream stream)
+        where T : unmanaged
+    {
+        var position = 0;
+        while (position < span.Length)
+        {
+            var length = Math.Min(span.Length - position, 1024 * 1024 * 1024 / sizeof(T));
+            stream.Write(span.Slice(position, length).AsBytes());
+            position += length;
+        }
     }
 }

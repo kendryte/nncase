@@ -5,7 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
 using System.Reactive;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
@@ -403,7 +406,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     private TextSnippet Visit(TensorConst expr, Tensor tensor)
     {
-        var buffer = WriteRdata(tensor.BytesBuffer, _alignment);
+        var buffer = WriteRdata(tensor, _alignment);
 
         // stack: dtype shape strides buffer
         var snippet = BeginTextSnippet(expr);
@@ -428,11 +431,11 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         return symbol;
     }
 
-    private Symbol WriteRdata(ReadOnlySpan<byte> data, int alignment)
+    private Symbol WriteRdata(Tensor tensor, int alignment)
     {
         _context.RdataWriter.AlignPosition(alignment);
         var symbol = AddSymbol(WellknownSectionNames.Rdata);
-        _context.RdataWriter.Write(data);
+        tensor.Serialize(_context.RdataWriter.BaseStream);
         return symbol;
     }
 
