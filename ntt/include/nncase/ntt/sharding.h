@@ -43,6 +43,13 @@ struct I {
         const typename Mesh::index_type & /* shard_index */) noexcept {
         return 0;
     }
+
+    template <class Mesh>
+    static constexpr size_t
+    local_dim(size_t global_dim,
+              const typename Mesh::index_type & /* shard_index */) noexcept {
+        return global_dim;
+    }
 };
 
 // Split
@@ -68,6 +75,15 @@ template <size_t... Axes> struct S {
         auto local_dim = S::local_dim<Mesh>(global_dim);
         return submesh_linear_offset * local_dim;
     }
+
+    template <class Mesh>
+    static constexpr size_t
+    local_dim(size_t global_dim,
+              const typename Mesh::index_type &shard_index) noexcept {
+        auto local_dim = S::local_dim<Mesh>(global_dim);
+        auto global_offset = S::global_offset<Mesh>(global_dim, shard_index);
+        return std::min(global_dim - global_offset, local_dim);
+    }
 };
 } // namespace shard_policy
 
@@ -81,6 +97,8 @@ template <topology Scope, size_t... Dims> struct mesh {
                   "Invalid mesh shape.");
 
     static constexpr topology scope = Scope;
+
+    static constexpr size_t rank() noexcept { return shape_type::rank(); }
 
     static constexpr program_id_type
     remote_program_id(index_type index) noexcept;
