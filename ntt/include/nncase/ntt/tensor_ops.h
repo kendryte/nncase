@@ -333,24 +333,6 @@ struct cast<TTensor1, TTensor2> {
         return value;
     }
 
-    constexpr void operator()(const TTensor1 &v, TTensor2 &v0, TTensor2 &v1,
-                              TTensor2 &v2, TTensor2 &v3) const noexcept {
-        size_t count = 0;
-        static_assert(TTensor1::rank() == 1 && TTensor2::rank() == 1);
-        apply(v0.shape(), [&](auto index) { v0(index) = op_(v(count++)); });
-        apply(v1.shape(), [&](auto index) { v1(index) = op_(v(count++)); });
-        apply(v2.shape(), [&](auto index) { v2(index) = op_(v(count++)); });
-        apply(v3.shape(), [&](auto index) { v3(index) = op_(v(count++)); });
-    }
-
-    constexpr void operator()(const TTensor1 &v, TTensor2 &v0,
-                              TTensor2 &v1) const noexcept {
-        size_t count = 0;
-        static_assert(TTensor1::rank() == 1 && TTensor2::rank() == 1);
-        apply(v0.shape(), [&](auto index) { v0(index) = op_(v(count++)); });
-        apply(v1.shape(), [&](auto index) { v1(index) = op_(v(count++)); });
-    }
-
     constexpr auto operator()(const TTensor1 &v) const noexcept
         requires(IsVector<TTensor1> && (TTensor1::size() != TTensor2::size()))
     {
