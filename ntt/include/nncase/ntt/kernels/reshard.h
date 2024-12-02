@@ -159,7 +159,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
 
     static constexpr auto get_non_split_mesh_dims() noexcept {
         constexpr auto non_split_mesh_axes = get_non_split_mesh_axes();
-        ranked_shape<non_split_mesh_axes.rank()> non_split_mesh_dims;
+        ranked_shape<non_split_mesh_axes.rank()> non_split_mesh_dims{};
         for (size_t i = 0; i < non_split_mesh_dims.rank(); i++) {
             auto axis = non_split_mesh_axes[i];
             non_split_mesh_dims[i] = mesh_type::shape_type::at(axis);
@@ -170,7 +170,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
     static constexpr auto get_non_split_mesh_indexes(
         const typename mesh_type::index_type &shard_index) noexcept {
         constexpr auto non_split_mesh_axes = get_non_split_mesh_axes();
-        ranked_shape<non_split_mesh_axes.rank()> non_split_mesh_indexes;
+        ranked_shape<non_split_mesh_axes.rank()> non_split_mesh_indexes{};
         for (size_t i = 0; i < non_split_mesh_axes.rank(); i++) {
             auto axis = non_split_mesh_axes[i];
             non_split_mesh_indexes[i] = shard_index[axis];
