@@ -310,26 +310,22 @@ struct cast<TTensor1, TTensor2> {
         return value;
     }
 
-    constexpr auto operator()(const TTensor1 &v0, const TTensor1 &v1,
-                              const TTensor1 &v2,
-                              const TTensor1 &v3) const noexcept {
-        TTensor2 value;
-        size_t count = 0;
-        static_assert(TTensor1::rank() == 1 && TTensor2::rank() == 1);
-        apply(v0.shape(), [&](auto index) { value(count++) = op_(v0(index)); });
-        apply(v1.shape(), [&](auto index) { value(count++) = op_(v1(index)); });
-        apply(v2.shape(), [&](auto index) { value(count++) = op_(v2(index)); });
-        apply(v3.shape(), [&](auto index) { value(count++) = op_(v3(index)); });
-        return value;
-    }
+    template <typename... TTensors>
+    constexpr auto operator()(const TTensors &...tensors) const noexcept
+        requires(sizeof...(tensors) > 1)
+    {
+        static_assert((... && (std::decay_t<TTensors>::rank() == 1)));
 
-    constexpr auto operator()(const TTensor1 &v0,
-                              const TTensor1 &v1) const noexcept {
         TTensor2 value;
         size_t count = 0;
-        static_assert(TTensor1::rank() == 1 && TTensor2::rank() == 1);
-        apply(v0.shape(), [&](auto index) { value(count++) = op_(v0(index)); });
-        apply(v1.shape(), [&](auto index) { value(count++) = op_(v1(index)); });
+
+        auto process_tensor = [&](const auto &tensor) {
+            apply(tensor.shape(),
+                  [&](auto index) { value(count++) = op_(tensor(index)); });
+        };
+
+        (..., process_tensor(tensors));
+
         return value;
     }
 
