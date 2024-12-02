@@ -49,7 +49,8 @@ struct tensor_unary_impl<Op, TTensor> {
 };
 
 template <template <class T> class Op, IsTensor TTensor>
-requires(TTensor::rank() == 2) struct tensor_unary_impl<Op, TTensor> {
+    requires(TTensor::rank() == 2)
+struct tensor_unary_impl<Op, TTensor> {
     using sub_vector_type =
         fixed_tensor_alike_t<TTensor, TTensor::shape().at(1)>;
 
@@ -100,8 +101,8 @@ struct tensor_binary_impl<Op, TTensor, T2> {
 };
 
 template <template <class T1, class T2> class Op, IsTensor T1, IsTensor T2>
-requires(T1::rank() == 2 &&
-         T2::rank() == 2) struct tensor_binary_impl<Op, T1, T2> {
+    requires(T1::rank() == 2 && T2::rank() == 2)
+struct tensor_binary_impl<Op, T1, T2> {
     using sub_vector_type = fixed_tensor_alike_t<T1, T1::shape().at(1)>;
 
     constexpr T1 operator()(const T1 &v1, const T2 &v2) const noexcept {
@@ -184,8 +185,8 @@ template <IsTensor TTensor> struct inner_product<TTensor, TTensor> {
 
     constexpr auto operator()(const TTensor &v1,
                               const TTensor &v2) const noexcept {
-        using result_type = decltype(
-            op_(std::declval<element_type>(), std::declval<element_type>()));
+        using result_type = decltype(op_(std::declval<element_type>(),
+                                         std::declval<element_type>()));
         result_type value{};
         apply(v1.shape(),
               [&](auto index) { value += op_(v1(index), v2(index)); });
@@ -348,6 +349,31 @@ struct cast<TTensor1, TTensor2> {
         static_assert(TTensor1::rank() == 1 && TTensor2::rank() == 1);
         apply(v0.shape(), [&](auto index) { v0(index) = op_(v(count++)); });
         apply(v1.shape(), [&](auto index) { v1(index) = op_(v(count++)); });
+    }
+
+    constexpr auto operator()(const TTensor1 &v) const noexcept
+        requires(IsVector<TTensor1> && (TTensor1::size() != TTensor2::size()))
+    {
+
+        static_assert(TTensor1::rank() == 1 && TTensor2::rank() == 1);
+        static_assert(ntt::IsVector<TTensor2>);
+        static_assert(TTensor2::rank() == 1);
+        using value_type1 = typename TTensor1::element_type;
+        using value_type2 = typename TTensor2::element_type;
+        constexpr auto lanes1 = TTensor1::shape();
+        constexpr auto lanes2 = TTensor2::shape();
+        constexpr auto type_scale = lanes1[0] / lanes2[0];
+
+        using TOut = ntt::vector<value_type2, type_scale, lanes2[0]>;
+        TOut Output;
+
+        size_t count = 0;
+        for (size_t i = 0; i < type_scale; i++) {
+            apply(Output(i).shape(),
+                  [&](auto index) { Output(i)(index) = op_(v(count++)); });
+        }
+
+        return Output;
     }
 
   private:

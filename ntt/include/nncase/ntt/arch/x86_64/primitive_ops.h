@@ -191,36 +191,42 @@ template <> struct cast<ntt::vector<bool, 8>, ntt::vector<float, 8>> {
 
 // cast
 template <> struct cast<ntt::vector<bool, 32>, ntt::vector<float, 8>> {
-    void operator()(const ntt::vector<bool, 32> &v, ntt::vector<float, 8> &v0,
-                    ntt::vector<float, 8> &v1, ntt::vector<float, 8> &v2,
-                    ntt::vector<float, 8> &v3) const noexcept {
+    auto operator()(const ntt::vector<bool, 32> &v) const noexcept {
+
+        ntt::vector<float, 4, 8> output;
         __m256i mask0 = _mm256_setr_epi32(
             v(0) ? -1 : 0, v(1) ? -1 : 0, v(2) ? -1 : 0, v(3) ? -1 : 0,
             v(4) ? -1 : 0, v(5) ? -1 : 0, v(6) ? -1 : 0, v(7) ? -1 : 0);
 
         // Convert to float (1.0f for true, 0.0f for false)
-        v0 = _mm256_and_ps(_mm256_castsi256_ps(mask0), _mm256_set1_ps(1.0f));
+        output(0) =
+            _mm256_and_ps(_mm256_castsi256_ps(mask0), _mm256_set1_ps(1.0f));
 
         __m256i mask1 = _mm256_setr_epi32(
             v(8) ? -1 : 0, v(9) ? -1 : 0, v(10) ? -1 : 0, v(11) ? -1 : 0,
             v(12) ? -1 : 0, v(13) ? -1 : 0, v(14) ? -1 : 0, v(15) ? -1 : 0);
 
         // Convert to float (1.0f for true, 0.0f for false)
-        v1 = _mm256_and_ps(_mm256_castsi256_ps(mask1), _mm256_set1_ps(1.0f));
+        output(1) =
+            _mm256_and_ps(_mm256_castsi256_ps(mask1), _mm256_set1_ps(1.0f));
 
         __m256i mask2 = _mm256_setr_epi32(
             v(16) ? -1 : 0, v(17) ? -1 : 0, v(18) ? -1 : 0, v(19) ? -1 : 0,
             v(20) ? -1 : 0, v(21) ? -1 : 0, v(22) ? -1 : 0, v(23) ? -1 : 0);
 
         // Convert to float (1.0f for true, 0.0f for false)
-        v2 = _mm256_and_ps(_mm256_castsi256_ps(mask2), _mm256_set1_ps(1.0f));
+        output(2) =
+            _mm256_and_ps(_mm256_castsi256_ps(mask2), _mm256_set1_ps(1.0f));
 
         __m256i mask3 = _mm256_setr_epi32(
             v(24) ? -1 : 0, v(25) ? -1 : 0, v(26) ? -1 : 0, v(27) ? -1 : 0,
             v(28) ? -1 : 0, v(29) ? -1 : 0, v(30) ? -1 : 0, v(31) ? -1 : 0);
 
         // Convert to float (1.0f for true, 0.0f for false)
-        v3 = _mm256_and_ps(_mm256_castsi256_ps(mask3), _mm256_set1_ps(1.0f));
+        output(3) =
+            _mm256_and_ps(_mm256_castsi256_ps(mask3), _mm256_set1_ps(1.0f));
+
+        return output;
     }
 };
 
