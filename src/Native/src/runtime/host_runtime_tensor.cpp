@@ -161,22 +161,24 @@ result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
                   std::move(data_deleter), pool, physical_address);
 }
 #ifdef LINUX_RUNTIME
-result<runtime_tensor> hrt::create_from_dmabuf(typecode_t datatype, dims_t shape, int fd, void* vaddr, host_runtime_tensor::memory_pool_t pool) noexcept
+result<runtime_tensor> hrt::create_from_dmabuf(typecode_t datatype, dims_t shape, int device_fd, int vbuffer_fd, void* vaddr, host_runtime_tensor::memory_pool_t pool) noexcept
 {
-    struct paddr_import_dmabuf importbuf;
-    
-    importbuf.fd = fd;
-    int ret = ioctl(fd, PADDR_IMPORT_DMABUF, &importbuf);
-    if (ret)
-    {
-        perror("ioctl PADDR_IMPORT_DMABUF error");
+    struct paddr_from_dmabuf importbuf;
+
+    importbuf.fd = vbuffer_fd;
+    int ret = ioctl(device_fd, PADDR_FROM_DMABUF, &importbuf);
+    if (ret) {
+        perror("ioctl PADDR_FROM_DMABUF error");
         return err(std::errc::io_error);
     }
-    
+
     auto paddr = importbuf.paddr;
 
-    return ok(hrt::create(datatype, shape, { (gsl::byte *)vaddr, compute_size(shape) },
-        false, pool, paddr).expect("cannot create input tensor"));
+    return ok(hrt::create(datatype, shape,
+                          {(gsl::byte *)vaddr,
+                           compute_size(shape) * get_bytes(datatype)},
+                          false, pool, paddr)
+                  .expect("cannot create input tensor"));
 }
 #endif
 

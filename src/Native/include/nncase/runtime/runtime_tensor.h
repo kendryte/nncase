@@ -60,13 +60,15 @@ NNCASE_API bool operator!=(const runtime_tensor &lhs,
 namespace host_runtime_tensor {
 
 #ifdef LINUX_RUNTIME
-struct paddr_import_dmabuf
+struct paddr_from_dmabuf
 {
     int fd;
     uintptr_t paddr;
 };
 
-#define PADDR_IMPORT_DMABUF _IOWR('A', 0, struct paddr_import_dmabuf)
+#define PADDR_FROM_DMABUF _IOWR('A', 0, struct paddr_from_dmabuf)
+#define PADDR_FROM_DMABUF_DELETER _IOW('A', 1, int)
+
 #endif // LINUX_RUNTIME
 
 typedef enum memory_pool_ {
@@ -103,7 +105,7 @@ create(typecode_t datatype, dims_t shape, strides_t strides,
        uintptr_t physical_address = 0) noexcept;
 #ifdef LINUX_RUNTIME
 NNCASE_API result<runtime_tensor>
-create_from_dmabuf(typecode_t datatype, dims_t shape, int fd, void *vaddr, memory_pool_t pool = pool_shared_first) noexcept;
+create_from_dmabuf(typecode_t datatype, dims_t shape, int device_fd, int vbuffer_fd, void *vaddr, memory_pool_t pool = pool_shared_first) noexcept;
 #endif
 
 NNCASE_API result<memory_pool_t>
