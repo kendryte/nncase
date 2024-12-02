@@ -27,17 +27,14 @@ void expand_impl(const TIn &input, TOut &&output) noexcept {
     constexpr auto in_rank = TIn::shape_type::rank();
     constexpr auto in_shape = typename TIn::shape_type{};
     constexpr auto out_shape = std::decay_t<TOut>::shape();
-    // constexpr auto input_strides = TIn::strides();
-    // constexpr auto output_strides = std::decay_t<TOut>::strides();
 
     using TIElem = typename TIn::element_type;
     using TOElem = typename std::decay_t<TOut>::element_type;
 
-    static_assert(IsScalar<TOElem> && IsScalar<TIElem>,
-                  "Only support scalar type for now");
+    constexpr auto dims_ext = out_shape.rank() - in_rank;
 
     apply(out_shape, [&](auto index) {
-        const auto in_index = get_reduced_offset<in_rank>(index, in_shape);
+        const auto in_index = get_reduced_offset<in_rank, decltype(index), decltype(in_shape), dims_ext>(index, in_shape);
         output(index) = input(in_index);
     });
 }

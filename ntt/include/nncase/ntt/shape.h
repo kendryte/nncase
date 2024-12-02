@@ -84,6 +84,10 @@ struct fixed_shape : detail::fixed_dims_base<Dims...> {
     template <size_t I> struct append { using type = fixed_shape<Dims..., I>; };
 
     static constexpr size_t length() noexcept { return (Dims * ... * 1); }
+    static constexpr size_t size() noexcept { return sizeof...(Dims); }
+
+    constexpr auto begin() const { return &detail::fixed_dims_base<Dims...>::operator[](0); }
+    constexpr auto end() const { return &detail::fixed_dims_base<Dims...>::operator[](0) + sizeof...(Dims); }
 };
 
 template <size_t Rank> struct ranked_shape : detail::ranked_dims_base<Rank> {
@@ -313,18 +317,6 @@ constexpr size_t linear_offset(const Index &index,
     return offset;
 }
 
-template <class Strides>
-ranked_shape<Strides::rank()> unravel_index(const size_t offset,
-                                            const Strides &strides) noexcept {
-    size_t remain = offset;
-    ranked_shape<Strides::rank()> index;
-    for (size_t i = 0; i < Strides::rank(); i++) {
-        index[i] = remain / strides[i];
-        remain = remain % strides[i];
-    }
-    return index;
-}
-
 template <class Shape, class Strides>
 constexpr size_t linear_size(const Shape &shape,
                              const Strides &strides) noexcept {
@@ -340,13 +332,6 @@ constexpr size_t linear_size(const Shape &shape,
     return size;
 }
 
-/**
- * @brief calculate the number of contigous dimensions.
- *
- * @param shape fixed/ranked
- * @param strides fixed/ranked
- * @return constexpr size_t contigous dimension numbers.
- */
 template <class Shape, class Strides>
 constexpr size_t contiguous_dims(const Shape &shape, const Strides &strides) {
     auto def_strides = default_strides(shape);
@@ -379,6 +364,15 @@ constexpr bool in_bound(const Index &index, const Shape &shape) {
     return false;
 }
 
+template <size_t Rank, class Index, class Shape, size_t DimsExt>
+constexpr ranked_shape<Rank> get_reduced_offset(Index in_offset, Shape reduced_shape) {
+    ranked_shape<Rank> off;
+    for (size_t i = 0; i < reduced_shape.rank(); i++) {
+        off.at(i) = (in_offset.at(i + DimsExt) >= reduced_shape.at(i)) ? 0 : in_offset.at(i + DimsExt);
+    }
+    return off;
+}
+
 template <size_t Rank, class Index, class Shape>
 ranked_shape<Rank> get_reduced_offset(Index in_offset, Shape reduced_shape) {
     ranked_shape<Rank> off;
@@ -392,6 +386,20 @@ ranked_shape<Rank> get_reduced_offset(Index in_offset, Shape reduced_shape) {
 
     return off;
 }
+
+// template <size_t Rank, class Index, class Shape>
+// ranked_shape<Rank> get_reduced_offset(Index in_offset, Shape reduced_shape) {
+//     ranked_shape<Rank> off;
+//     const auto dims_ext = in_offset.rank() - reduced_shape.rank();
+//     loop<reduced_shape.rank()>([&](auto i) {
+//         if (in_offset.at(i + dims_ext) >= reduced_shape.at(i))
+//             off.at(i) = 0;
+//         else
+//             off.at(i) = in_offset.at(i + dims_ext);
+//     });
+
+//     return off;
+// }
 
 template <size_t Axes, size_t Rank, class Index>
 ranked_shape<Rank> get_reduced_offset(Index in_offset) {
