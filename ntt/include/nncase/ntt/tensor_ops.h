@@ -358,7 +358,6 @@ struct cast<TTensor1, TTensor2> {
         static_assert(TTensor1::rank() == 1 && TTensor2::rank() == 1);
         static_assert(ntt::IsVector<TTensor2>);
         static_assert(TTensor2::rank() == 1);
-        using value_type1 = typename TTensor1::element_type;
         using value_type2 = typename TTensor2::element_type;
         constexpr auto lanes1 = TTensor1::shape();
         constexpr auto lanes2 = TTensor2::shape();
