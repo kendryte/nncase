@@ -1,5 +1,5 @@
 [conf]
-tools.cmake.cmaketoolchain:user_toolchain+={{ os.path.join(profile_dir, "riscv64-unknown-linux.toolchain.cmake") }}
+tools.cmake.cmaketoolchain:user_toolchain+={{ os.path.join(profile_dir, "k230.linux.toolchain.cmake") }}
 tools.cmake.cmaketoolchain:generator=Ninja
 
 [settings]
@@ -10,3 +10,4 @@ compiler=gcc
 compiler.cppstd=17
 compiler.libcxx=libstdc++11
 compiler.version=12
+

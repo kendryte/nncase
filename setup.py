@@ -1,5 +1,4 @@
 from distutils.command.install_data import install_data
-import imp
 from posixpath import dirname
 from setuptools import find_packages, setup, Extension
 from setuptools.command.build_ext import build_ext
@@ -202,17 +201,27 @@ class BuildCMakeExt(build_ext):
         if not extdir.endswith(os.path.sep):
             extdir += os.path.sep
 
-        bin_dir = os.path.abspath(os.path.join(self.build_temp, 'install'))
-        cmake_args = ['-G', 'Ninja', '-DDOTNET_INIT_FOR_CONFIG=OFF']
-        if platform.system() == 'Windows':
-            cmake_args += ['-DCMAKE_C_COMPILER=clang-cl']
-            cmake_args += ['-DCMAKE_CXX_COMPILER=clang-cl']
-        cmake_args += ['-DPython3_ROOT_DIR=' + os.path.dirname(sys.executable)]
+        toolchain_arch = ""
+        if platform.machine() == "AMD64" or platform.machine() == "x86_64":
+            toolchain_arch = "x86_64"
+        elif platform.machine() == "arm64":
+            toolchain_arch = "aarch64"
+        elif platform.machine() == "riscv64":
+            toolchain_arch = "aarch64"
 
-        cfg = 'Debug' if self.debug else 'Release'
-        build_args = ['--config', cfg]
-        cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-        install_args = ['--prefix', bin_dir]
+        toolchain_os = ""
+        if platform.system() == "Windows":
+            toolchain_os = "windows"
+        elif platform.system() == "Linux":
+            toolchain_os = "linux"
+        elif platform.system() == "Darwin":
+            toolchain_os = "macos"
+
+        bin_dir = os.path.abspath(os.path.join(self.build_temp, 'install'))
+        host_toolchain_path = os.path.join(ext.sourcedir, "toolchains", f"{toolchain_arch}-{toolchain_os}.profile.jinja")
+
+        build_type = 'Debug' if self.debug else 'Release'
+        build_dir = os.path.join(self.build_temp, build_type)
 
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
@@ -222,15 +231,17 @@ class BuildCMakeExt(build_ext):
         self.announce("Configuring cmake project", level=3)
 
         # Change your cmake arguments below as necessary
-        # Below is just an example set of arguments for building Blender as a Python module
-
-        self.spawn(['cmake', '-S' + ext.sourcedir, '-B' + self.build_temp] +
-                   cmake_args)
 
         self.announce("Building binaries", level=3)
 
-        self.spawn(["cmake", "--build", self.build_temp] + build_args)
-        self.spawn(["cmake", "--install", self.build_temp] + install_args)
+        self.spawn(["conan", "remote", "add", "sunnycase", "https://conan.sunnycase.moe", "--index", "0", "--force"])
+        self.spawn(["conan", "install", ext.sourcedir, "--build=missing", "-s",
+            "build_type=" + build_type, f"-pr:a={host_toolchain_path}",
+            "-o", "&:runtime=False", "-o", "&:python=True", "-o", "&:tests=False", "-o", f"&:python_root={os.path.dirname(sys.executable)}",
+            "-c", f"tools.cmake.cmake_layout:build_folder={self.build_temp}"])
+        self.spawn(["cmake", "-B", build_dir, "-S", ext.sourcedir, "--preset", "conan-release"])
+        self.spawn(["cmake", "--build", build_dir])
+        self.spawn(["cmake", "--install", build_dir, "--prefix", bin_dir])
 
         # Build finished, now copy the files into the copy directory
         # The copy directory is the parent directory of the extension (.pyd)

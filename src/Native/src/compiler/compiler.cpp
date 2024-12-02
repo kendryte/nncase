@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <absl/debugging/failure_signal_handler.h>
 #include <filesystem>
 #include <fstream>
 #include <hostfxr.h>
