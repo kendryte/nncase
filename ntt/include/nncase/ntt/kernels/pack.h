@@ -34,30 +34,40 @@ template <class TIn, class TOut, size_t... Axes> class pack_impl {
         constexpr auto elem_rank = TVec::rank();
         constexpr auto lanes = TVec::shape();
 
-        auto out_shape = output.shape();
-        constexpr auto rank = out_rank + elem_rank;
-        ranked_shape<rank> domain{};
-        for (size_t i = 0, j = 0; i < rank; i++) {
-            if (i < out_rank)
-                domain[i] = out_shape[i];
-            else
-                domain[i] = lanes[j++];
-        }
+        auto conti_dims_input = contiguous_dims(input.shape(), input.strides());
+        auto conti_dims_output =
+            contiguous_dims(output.shape(), output.strides());
 
-        apply(domain, [&](auto index) {
-            auto out_index = slice_index<out_rank>(index);
-            auto in_index = slice_index<in_rank>(index);
-            auto elem_index = slice_index<elem_rank>(index, out_rank);
-            bool skip = false;
-            loop<axes.size()>([&](auto i) {
-                in_index[axes[i]] =
-                    in_index[axes[i]] * lanes[i] + index[out_rank + i];
-                if (in_index[axes[i]] >= input.shape()[axes[i]]) {
-                    skip = true;
-                }
+        if (sizeof...(Axes) == 2 && axes[0] + 1 == axes[1] &&
+            conti_dims_input == in_rank && conti_dims_output == out_rank) {
+            ntt::u_pack2d<TIn, TOut, Axes...>(input, output);
+        } else {
+            auto out_shape = output.shape();
+            constexpr auto rank = out_rank + elem_rank;
+            ranked_shape<rank> domain{};
+            for (size_t i = 0, j = 0; i < rank; i++) {
+                if (i < out_rank)
+                    domain[i] = out_shape[i];
+                else
+                    domain[i] = lanes[j++];
+            }
+
+            apply(domain, [&](auto index) {
+                auto out_index = slice_index<out_rank>(index);
+                auto in_index = slice_index<in_rank>(index);
+                auto elem_index = slice_index<elem_rank>(index, out_rank);
+                bool skip = false;
+                loop<axes.size()>([&](auto i) {
+                    in_index[axes[i]] =
+                        in_index[axes[i]] * lanes[i] + index[out_rank + i];
+                    if (in_index[axes[i]] >= input.shape()[axes[i]]) {
+                        skip = true;
+                    }
+                });
+                output(out_index)(elem_index) =
+                    skip ? (TElem)0 : input(in_index);
             });
-            output(out_index)(elem_index) = skip ? (TElem)0 : input(in_index);
-        });
+        }
     }
 };
 
@@ -72,7 +82,20 @@ class pack_impl<TIn, TOut, PackAxis> {
     constexpr void operator()(const TIn &input, TOut &output) {
         auto in_p = input.elements().data();
         auto out_p = output.elements().data();
-        apply<0>(input, output, in_p, out_p);
+        constexpr auto rank = TIn::rank();
+        constexpr auto in_shape = TIn::shape();
+        constexpr auto in_conti_dims =
+            contiguous_dims(in_shape, TIn::strides());
+        constexpr auto out_conti_dims =
+            contiguous_dims(TOut::shape(), TOut::strides());
+        if constexpr ((in_conti_dims == rank) && (out_conti_dims == rank) &&
+                      (PackAxis == rank - 1) &&
+                      (in_shape.length() % VecLen == 0)) {
+            ntt::u_memcpy(reinterpret_cast<const TVec *>(in_p), 1, out_p, 1,
+                          output.shape().length());
+        } else {
+            apply<0>(input, output, in_p, out_p);
+        }
     }
 
   private:

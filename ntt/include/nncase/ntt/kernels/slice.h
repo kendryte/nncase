@@ -60,7 +60,8 @@ void slice(const TIn &input, TOut &&output) {
         in_steps[TAxes::at(i)] = TStride::at(i);
     });
 
-    auto out_step = output.strides()[rank - 1];
+    auto in_strides = input.strides();
+    auto out_strides = output.strides();
     apply(domain, [&](auto index) {
         auto pout =
             output.buffer().data() + linear_offset(index, output.strides());
@@ -68,7 +69,8 @@ void slice(const TIn &input, TOut &&output) {
             [&](auto i) { index[i] = in_starts[i] + index[i] * in_steps[i]; });
         auto pin =
             input.buffer().data() + linear_offset(index, input.strides());
-        u_memcpy(pin, in_steps[rank - 1], pout, out_step, count);
+        u_memcpy(pin, in_strides[rank - 1] * in_steps[rank - 1], pout,
+                 out_strides[rank - 1], count);
     });
 }
 } // namespace nncase::ntt

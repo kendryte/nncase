@@ -25,24 +25,24 @@ using namespace ortki;
 TEST(MatmulTestFloat, NoPack) {
     // init
     using tensor_type = ntt::tensor<float, ntt::fixed_shape<32, 32>>;
-    std::unique_ptr<tensor_type> ntt_lhs(new tensor_type);
-    std::unique_ptr<tensor_type> ntt_rhs(new tensor_type);
-    NttTest::init_tensor(*ntt_lhs, -2.f, 2.f);
-    NttTest::init_tensor(*ntt_rhs, -2.f, 2.f);
+    tensor_type ntt_lhs;
+    tensor_type ntt_rhs;
+    NttTest::init_tensor(ntt_lhs, -2.f, 2.f);
+    NttTest::init_tensor(ntt_rhs, -2.f, 2.f);
 
     // ntt
-    std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
-    ntt::matmul<false>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+    tensor_type ntt_output1;
+    ntt::matmul<false>(ntt_lhs, ntt_rhs, ntt_output1);
 
     // ort
-    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
-    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_lhs = NttTest::ntt2ort(ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(ntt_rhs);
     auto ort_output = ortki_MatMul(ort_lhs, ort_rhs);
 
     // compare
-    std::unique_ptr<tensor_type> ntt_output2(new tensor_type);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    tensor_type ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
 TEST(MatmulTestFloat, Pack_K) {
@@ -50,33 +50,33 @@ TEST(MatmulTestFloat, Pack_K) {
 
     // init
     using tensor_type = ntt::tensor<float, ntt::fixed_shape<32, 32>>;
-    std::unique_ptr<tensor_type> ntt_lhs(new tensor_type);
-    std::unique_ptr<tensor_type> ntt_rhs(new tensor_type);
-    NttTest::init_tensor(*ntt_lhs, -2.f, 2.f);
-    NttTest::init_tensor(*ntt_rhs, -2.f, 2.f);
+    tensor_type ntt_lhs;
+    tensor_type ntt_rhs;
+    NttTest::init_tensor(ntt_lhs, -2.f, 2.f);
+    NttTest::init_tensor(ntt_rhs, -2.f, 2.f);
 
     alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<32, 32 / P>>
         p_ntt_lhs;
     alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<32 / P, 32>>
         p_ntt_rhs;
-    ntt::pack<1>(*ntt_lhs, p_ntt_lhs);
-    ntt::pack<0>(*ntt_rhs, p_ntt_rhs);
+    ntt::pack<1>(ntt_lhs, p_ntt_lhs);
+    ntt::pack<0>(ntt_rhs, p_ntt_rhs);
 
     // ntt
-    std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
-    ntt::matmul<false>(p_ntt_lhs, p_ntt_rhs, *ntt_output1,
-                       ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{},
-                       ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{});
+    tensor_type ntt_output1;
+    ntt::matmul<false>(p_ntt_lhs, p_ntt_rhs, ntt_output1, ntt::fixed_shape<1>{},
+                       ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
+                       ntt::fixed_shape<0>{});
 
     // ort
-    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
-    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_lhs = NttTest::ntt2ort(ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(ntt_rhs);
     auto ort_output = ortki_MatMul(ort_lhs, ort_rhs);
 
     // compare
-    std::unique_ptr<tensor_type> ntt_output2(new tensor_type);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    tensor_type ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
 TEST(MatmulTestFloat, Pack_M) {
@@ -84,33 +84,33 @@ TEST(MatmulTestFloat, Pack_M) {
 
     // init
     using tensor_type = ntt::tensor<float, ntt::fixed_shape<32, 32>>;
-    std::unique_ptr<tensor_type> ntt_lhs(new tensor_type);
-    std::unique_ptr<tensor_type> ntt_rhs(new tensor_type);
-    NttTest::init_tensor(*ntt_lhs, -2.f, 2.f);
-    NttTest::init_tensor(*ntt_rhs, -2.f, 2.f);
+    tensor_type ntt_lhs;
+    tensor_type ntt_rhs;
+    NttTest::init_tensor(ntt_lhs, -2.f, 2.f);
+    NttTest::init_tensor(ntt_rhs, -2.f, 2.f);
 
     alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<32 / P, 32>>
         p_ntt_lhs;
-    ntt::pack<0>(*ntt_lhs, p_ntt_lhs);
+    ntt::pack<0>(ntt_lhs, p_ntt_lhs);
 
     // ntt
-    std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
+    tensor_type ntt_output1;
     alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<32 / P, 32>>
         tmp;
-    ntt::matmul<false>(p_ntt_lhs, *ntt_rhs, tmp, ntt::fixed_shape<0>{},
+    ntt::matmul<false>(p_ntt_lhs, ntt_rhs, tmp, ntt::fixed_shape<0>{},
                        ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
                        ntt::fixed_shape<0>{});
-    unpack<0>(tmp, *ntt_output1);
+    unpack<0>(tmp, ntt_output1);
 
     // ort
-    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
-    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_lhs = NttTest::ntt2ort(ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(ntt_rhs);
     auto ort_output = ortki_MatMul(ort_lhs, ort_rhs);
 
     // compare
-    std::unique_ptr<tensor_type> ntt_output2(new tensor_type);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    tensor_type ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
 TEST(MatmulTestFloat, Pack_N) {
@@ -118,33 +118,33 @@ TEST(MatmulTestFloat, Pack_N) {
 
     // init
     using tensor_type = ntt::tensor<float, ntt::fixed_shape<32, 32>>;
-    std::unique_ptr<tensor_type> ntt_lhs(new tensor_type);
-    std::unique_ptr<tensor_type> ntt_rhs(new tensor_type);
-    NttTest::init_tensor(*ntt_lhs, -2.f, 2.f);
-    NttTest::init_tensor(*ntt_rhs, -2.f, 2.f);
+    tensor_type ntt_lhs;
+    tensor_type ntt_rhs;
+    NttTest::init_tensor(ntt_lhs, -2.f, 2.f);
+    NttTest::init_tensor(ntt_rhs, -2.f, 2.f);
 
     alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<32, 32 / P>>
         p_ntt_rhs;
-    ntt::pack<1>(*ntt_rhs, p_ntt_rhs);
+    ntt::pack<1>(ntt_rhs, p_ntt_rhs);
 
     // ntt
-    std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
+    tensor_type ntt_output1;
     alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<32, 32 / P>>
         tmp;
-    ntt::matmul<false>(*ntt_lhs, p_ntt_rhs, tmp, ntt::fixed_shape<>{},
+    ntt::matmul<false>(ntt_lhs, p_ntt_rhs, tmp, ntt::fixed_shape<>{},
                        ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
                        ntt::fixed_shape<0>{});
-    unpack<1>(tmp, *ntt_output1);
+    unpack<1>(tmp, ntt_output1);
 
     // ort
-    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
-    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_lhs = NttTest::ntt2ort(ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(ntt_rhs);
     auto ort_output = ortki_MatMul(ort_lhs, ort_rhs);
 
     // compare
-    std::unique_ptr<tensor_type> ntt_output2(new tensor_type);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    tensor_type ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
 TEST(MatmulTestFloat, Pack_M_N) {
@@ -152,37 +152,37 @@ TEST(MatmulTestFloat, Pack_M_N) {
 
     // init
     using tensor_type = ntt::tensor<float, ntt::fixed_shape<32, 32>>;
-    std::unique_ptr<tensor_type> ntt_lhs(new tensor_type);
-    std::unique_ptr<tensor_type> ntt_rhs(new tensor_type);
-    NttTest::init_tensor(*ntt_lhs, -2.f, 2.f);
-    NttTest::init_tensor(*ntt_rhs, -2.f, 2.f);
+    tensor_type ntt_lhs;
+    tensor_type ntt_rhs;
+    NttTest::init_tensor(ntt_lhs, -2.f, 2.f);
+    NttTest::init_tensor(ntt_rhs, -2.f, 2.f);
 
     alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<32 / P, 32>>
         p_ntt_lhs;
     alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<32, 32 / P>>
         p_ntt_rhs;
-    ntt::pack<0>(*ntt_lhs, p_ntt_lhs);
-    ntt::pack<1>(*ntt_rhs, p_ntt_rhs);
+    ntt::pack<0>(ntt_lhs, p_ntt_lhs);
+    ntt::pack<1>(ntt_rhs, p_ntt_rhs);
 
     // ntt
-    std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
+    tensor_type ntt_output1;
     alignas(32)
         ntt::tensor<ntt::vector<float, P, P>, ntt::fixed_shape<32 / P, 32 / P>>
             tmp;
     ntt::matmul<false>(p_ntt_lhs, p_ntt_rhs, tmp, ntt::fixed_shape<0>{},
                        ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
                        ntt::fixed_shape<0>{});
-    unpack<0, 1>(tmp, *ntt_output1);
+    unpack<0, 1>(tmp, ntt_output1);
 
     // ort
-    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
-    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_lhs = NttTest::ntt2ort(ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(ntt_rhs);
     auto ort_output = ortki_MatMul(ort_lhs, ort_rhs);
 
     // compare
-    std::unique_ptr<tensor_type> ntt_output2(new tensor_type);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    tensor_type ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
 TEST(MatmulTestFloat, Pack_M_K) {
@@ -190,37 +190,37 @@ TEST(MatmulTestFloat, Pack_M_K) {
 
     // init
     using tensor_type = ntt::tensor<float, ntt::fixed_shape<32, 32>>;
-    std::unique_ptr<tensor_type> ntt_lhs(new tensor_type);
-    std::unique_ptr<tensor_type> ntt_rhs(new tensor_type);
-    NttTest::init_tensor(*ntt_lhs, -2.f, 2.f);
-    NttTest::init_tensor(*ntt_rhs, -2.f, 2.f);
+    tensor_type ntt_lhs;
+    tensor_type ntt_rhs;
+    NttTest::init_tensor(ntt_lhs, -2.f, 2.f);
+    NttTest::init_tensor(ntt_rhs, -2.f, 2.f);
 
     alignas(32)
         ntt::tensor<ntt::vector<float, P, P>, ntt::fixed_shape<32 / P, 32 / P>>
             p_ntt_lhs;
     alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<32 / P, 32>>
         p_ntt_rhs;
-    ntt::pack<0, 1>(*ntt_lhs, p_ntt_lhs);
-    ntt::pack<0>(*ntt_rhs, p_ntt_rhs);
+    ntt::pack<0, 1>(ntt_lhs, p_ntt_lhs);
+    ntt::pack<0>(ntt_rhs, p_ntt_rhs);
 
     // ntt
-    std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
+    tensor_type ntt_output1;
     alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<32 / P, 32>>
         tmp;
     ntt::matmul<false>(p_ntt_lhs, p_ntt_rhs, tmp, ntt::fixed_shape<0, 1>{},
                        ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
                        ntt::fixed_shape<0>{});
-    unpack<0>(tmp, *ntt_output1);
+    unpack<0>(tmp, ntt_output1);
 
     // ort
-    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
-    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_lhs = NttTest::ntt2ort(ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(ntt_rhs);
     auto ort_output = ortki_MatMul(ort_lhs, ort_rhs);
 
     // compare
-    std::unique_ptr<tensor_type> ntt_output2(new tensor_type);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    tensor_type ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
 TEST(MatmulTestFloat, Pack_K_N) {
@@ -228,37 +228,37 @@ TEST(MatmulTestFloat, Pack_K_N) {
 
     // init
     using tensor_type = ntt::tensor<float, ntt::fixed_shape<32, 32>>;
-    std::unique_ptr<tensor_type> ntt_lhs(new tensor_type);
-    std::unique_ptr<tensor_type> ntt_rhs(new tensor_type);
-    NttTest::init_tensor(*ntt_lhs, -2.f, 2.f);
-    NttTest::init_tensor(*ntt_rhs, -2.f, 2.f);
+    tensor_type ntt_lhs;
+    tensor_type ntt_rhs;
+    NttTest::init_tensor(ntt_lhs, -2.f, 2.f);
+    NttTest::init_tensor(ntt_rhs, -2.f, 2.f);
 
     alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<32, 32 / P>>
         p_ntt_lhs;
     alignas(32)
         ntt::tensor<ntt::vector<float, P, P>, ntt::fixed_shape<32 / P, 32 / P>>
             p_ntt_rhs;
-    ntt::pack<1>(*ntt_lhs, p_ntt_lhs);
-    ntt::pack<0, 1>(*ntt_rhs, p_ntt_rhs);
+    ntt::pack<1>(ntt_lhs, p_ntt_lhs);
+    ntt::pack<0, 1>(ntt_rhs, p_ntt_rhs);
 
     // ntt
-    std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
+    tensor_type ntt_output1;
     alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<32, 32 / P>>
         tmp;
     ntt::matmul<false>(p_ntt_lhs, p_ntt_rhs, tmp, ntt::fixed_shape<1>{},
                        ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
                        ntt::fixed_shape<0>{});
-    unpack<1>(tmp, *ntt_output1);
+    unpack<1>(tmp, ntt_output1);
 
     // ort
-    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
-    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_lhs = NttTest::ntt2ort(ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(ntt_rhs);
     auto ort_output = ortki_MatMul(ort_lhs, ort_rhs);
 
     // compare
-    std::unique_ptr<tensor_type> ntt_output2(new tensor_type);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    tensor_type ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
 TEST(MatmulTestFloat, Pack_M_K_N) {
@@ -266,10 +266,10 @@ TEST(MatmulTestFloat, Pack_M_K_N) {
 
     // init
     using tensor_type = ntt::tensor<float, ntt::fixed_shape<32, 32>>;
-    std::unique_ptr<tensor_type> ntt_lhs(new tensor_type);
-    std::unique_ptr<tensor_type> ntt_rhs(new tensor_type);
-    NttTest::init_tensor(*ntt_lhs, -2.f, 2.f);
-    NttTest::init_tensor(*ntt_rhs, -2.f, 2.f);
+    tensor_type ntt_lhs;
+    tensor_type ntt_rhs;
+    NttTest::init_tensor(ntt_lhs, -2.f, 2.f);
+    NttTest::init_tensor(ntt_rhs, -2.f, 2.f);
 
     alignas(32)
         ntt::tensor<ntt::vector<float, P, P>, ntt::fixed_shape<32 / P, 32 / P>>
@@ -277,28 +277,28 @@ TEST(MatmulTestFloat, Pack_M_K_N) {
     alignas(32)
         ntt::tensor<ntt::vector<float, P, P>, ntt::fixed_shape<32 / P, 32 / P>>
             p_ntt_rhs;
-    ntt::pack<0, 1>(*ntt_lhs, p_ntt_lhs);
-    ntt::pack<0, 1>(*ntt_rhs, p_ntt_rhs);
+    ntt::pack<0, 1>(ntt_lhs, p_ntt_lhs);
+    ntt::pack<0, 1>(ntt_rhs, p_ntt_rhs);
 
     // ntt
-    std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
+    tensor_type ntt_output1;
     alignas(32)
         ntt::tensor<ntt::vector<float, P, P>, ntt::fixed_shape<32 / P, 32 / P>>
             tmp;
     ntt::matmul<false>(p_ntt_lhs, p_ntt_rhs, tmp, ntt::fixed_shape<0, 1>{},
                        ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
                        ntt::fixed_shape<0>{});
-    unpack<0, 1>(tmp, *ntt_output1);
+    unpack<0, 1>(tmp, ntt_output1);
 
     // ort
-    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
-    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_lhs = NttTest::ntt2ort(ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(ntt_rhs);
     auto ort_output = ortki_MatMul(ort_lhs, ort_rhs);
 
     // compare
-    std::unique_ptr<tensor_type> ntt_output2(new tensor_type);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    tensor_type ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
 int main(int argc, char *argv[]) {

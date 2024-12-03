@@ -46,19 +46,25 @@ void benchmark_ntt_gather_pack1d_dim0_contiguous() {
     tensor_pa_type pa;
     tensor_pc_type pc;
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-    std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
+    std::iota(tb.elements().begin(), tb.elements().end(), 0);
     std::ranges::for_each(tb.elements(), [](size_t &x) { x *= Period; });
     ntt::pack<1>(ta, pa);
 
     // warm up
-    for (size_t i = 0; i < warmup_size; i++)
+    for (size_t i = 0; i < warmup_size; i++) {
         ntt::gather<0>(pa, tb, pc);
+#if __x86_64__
+        asm volatile("" ::"g"(pc));
+#endif
+    }
 
     // run
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
         ntt::gather<0>(pa, tb, pc);
+#if __x86_64__
         asm volatile("" ::"g"(pc));
+#endif
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -94,7 +100,7 @@ void benchmark_ntt_gather_pack1d_dim0_no_contiguous() {
     tensor_pa_type pa;
     tensor_pc_type pc;
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-    std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
+    std::iota(tb.elements().begin(), tb.elements().end(), 0);
     std::ranges::for_each(tb.elements(), [](size_t &x) { x *= Period; });
     ntt::pack<1>(ta, pa);
 
@@ -127,7 +133,7 @@ void benchmark_ntt_gather_pack1d_dim1_contiguous() {
 #endif
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    constexpr size_t M = 4;
+    constexpr size_t M = 8;
     constexpr size_t N = 512;
     constexpr size_t Period = 1;
     using tensor_a_type = ntt::tensor<float, ntt::fixed_shape<M, N>>;
@@ -143,7 +149,7 @@ void benchmark_ntt_gather_pack1d_dim1_contiguous() {
     tensor_pa_type pa;
     tensor_pc_type pc;
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-    std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
+    std::iota(tb.elements().begin(), tb.elements().end(), 0);
     std::ranges::for_each(tb.elements(), [](size_t &x) { x *= Period; });
     ntt::pack<1>(ta, pa);
 
@@ -192,7 +198,7 @@ void benchmark_ntt_gather_pack1d_dim1_no_contiguous() {
     tensor_pa_type pa;
     tensor_pc_type pc;
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-    std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
+    std::iota(tb.elements().begin(), tb.elements().end(), 0);
     std::ranges::for_each(tb.elements(), [](size_t &x) { x *= Period; });
     ntt::pack<1>(ta, pa);
 
@@ -239,7 +245,8 @@ void benchmark_ntt_gather_pack2d_dim0_contiguous() {
     tensor_pa_type pa;
     tensor_pc_type pc;
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-    std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
+    std::iota(tb.elements().begin(), tb.elements().end(), 0);
+    NttTest::init_tensor(pa, -10.f, 10.f);
     ntt::pack<0, 1>(ta, pa);
 
     // warm up
@@ -285,7 +292,7 @@ void benchmark_ntt_gather_pack2d_dim1_contiguous() {
     tensor_pa_type pa;
     tensor_pc_type pc;
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-    std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
+    std::iota(tb.elements().begin(), tb.elements().end(), 0);
     ntt::pack<0, 1>(ta, pa);
 
     // warm up

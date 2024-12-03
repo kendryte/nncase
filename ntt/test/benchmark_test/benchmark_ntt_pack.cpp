@@ -2,7 +2,7 @@
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * You may obntt_inputin a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -10,9 +10,10 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.
+ * limintt_inputtions under the License.
  */
 #include "ntt_test.h"
+#include <algorithm>
 #include <cstddef>
 #include <iomanip>
 #include <iostream>
@@ -23,87 +24,59 @@
 
 using namespace nncase;
 
-template <size_t... PackDims> std::string pack_pattern() {
-    if constexpr (sizeof...(PackDims) == 1) {
-        constexpr size_t pack_dims[] = {PackDims...};
-        if constexpr (pack_dims[0] == 0) {
-            return "pack1d_dim0";
-        } else if constexpr (pack_dims[0] == 1) {
-            return "pack1d_dim1";
-        } else {
-            std::cerr << "Invalid PackDims" << std::endl;
-            std::abort();
-        }
-    } else if constexpr (sizeof...(PackDims) == 2) {
-        return "pack2d";
-    } else {
-        std::cerr << "Invalid PackDims for pack2d" << std::endl;
-        std::abort();
-    }
-};
-
-template <size_t... PackDims> void benchmark_ntt_pack() {
-    constexpr size_t pack_dims[] = {PackDims...};
-    constexpr size_t NumDims = sizeof...(PackDims);
-
-    if constexpr (sizeof...(PackDims) != 2 && sizeof...(PackDims) != 1) {
-        std::cerr << "unsupported data type" << std::endl;
-        std::abort();
-    }
-
-    auto pattern = pack_pattern<PackDims...>();
-
+template <typename ElementType, size_t N, size_t C, size_t H, size_t W,
+          size_t... pack_dims>
+void benchmark_ntt_pack(const std::string &mode, const size_t run_size) {
+    constexpr size_t axes[] = {pack_dims...};
+    constexpr size_t axes_size = sizeof...(pack_dims);
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t P0 =
-        pack_dims[0] == 0 ? NTT_VLEN / (sizeof(float) * 8) : 1;
-    constexpr size_t P1 =
-        [=] {
-            if constexpr (sizeof...(PackDims) == 2)
-                return pack_dims[1] == 1;
-            else
-                return pack_dims[0] == 1;
-        }()
-            ? NTT_VLEN / (sizeof(float) * 8)
+        std::any_of(axes, axes + axes_size, [](size_t i) { return i == 0; })
+            ? P
             : 1;
+    constexpr size_t P1 =
+        std::any_of(axes, axes + axes_size, [](size_t i) { return i == 1; })
+            ? P
+            : 1;
+    constexpr size_t P2 =
+        std::any_of(axes, axes + axes_size, [](size_t i) { return i == 2; })
+            ? P
+            : 1;
+    constexpr size_t P3 =
+        std::any_of(axes, axes + axes_size, [](size_t i) { return i == 3; })
+            ? P
+            : 1;
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
+    using tensor_type2 =
+        ntt::tensor<ElementType,
+                    ntt::fixed_shape<N / P0, C / P1, H / P2, W / P3>>;
 
-    using ElementType =
-        std::conditional_t<NumDims == 2, ntt::vector<float, P0, P1>,
-                           ntt::vector<float, P>>;
-
-    // pay attention to the following code
-    constexpr size_t warmup_size = 10;
-#if __riscv
-    constexpr size_t run_size = 300;
-#elif __x86_64__
-    constexpr size_t run_size = 2000;
-#else
-    constexpr size_t run_size = 2000;
-#endif
-    constexpr size_t M = 64;
-    constexpr size_t N = 64;
-    using tensor_a_type = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    using tensor_b_type =
-        ntt::tensor<ElementType, ntt::fixed_shape<M / P0, M / P1>>;
-
-    tensor_a_type ta;
-    tensor_b_type tb;
-    std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+    alignas(32) tensor_type1 ntt_input;
+    alignas(32) tensor_type2 ntt_output;
+    NttTest::init_tensor(ntt_input, -10.f, 10.f);
 
     // warm up
-    for (size_t i = 0; i < warmup_size; i++)
-        ntt::pack<PackDims...>(ta, tb);
+    constexpr size_t warmup_size = 10;
+    for (size_t i = 0; i < warmup_size; i++) {
+        ntt::pack<pack_dims...>(ntt_input, ntt_output);
+#if __x86_64__
+        asm volatile("" ::"g"(ntt_output));
+#endif
+    }
 
     // run
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
-        ntt::pack<PackDims...>(ta, tb);
-        asm volatile("" ::"g"(tb));
+        ntt::pack<pack_dims...>(ntt_input, ntt_output);
+#if __x86_64__
+        asm volatile("" ::"g"(ntt_output));
+#endif
     }
     auto t2 = NttTest::get_cpu_cycle();
 
-    auto element_size = tensor_b_type::size() * ElementType::size() / 8;
-    std::cout << __FUNCTION__ << "_" << pattern << " took "
-              << std::setprecision(1) << std::fixed
+    auto element_size = tensor_type2::size() * ElementType::size() / P;
+    std::cout << __FUNCTION__ << "_" << mode << " took " << std::setprecision(1)
+              << std::fixed
               << static_cast<float>(t2 - t1) / run_size / element_size
               << " cycles" << std::endl;
 }
@@ -111,8 +84,40 @@ template <size_t... PackDims> void benchmark_ntt_pack() {
 int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
+    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    benchmark_ntt_pack<0>();
-    benchmark_ntt_pack<1>();
-    benchmark_ntt_pack<0, 1>();
+#if __riscv
+    benchmark_ntt_pack<ntt::vector<float, P>, 16 * P, 3, 4, 4, 0>("N", 300);
+    benchmark_ntt_pack<ntt::vector<float, P>, 3, 16 * P, 4, 4, 1>("C", 300);
+    benchmark_ntt_pack<ntt::vector<float, P>, 3, 4, 16 * P, 4, 2>("H", 300);
+    benchmark_ntt_pack<ntt::vector<float, P>, 3, 4, 4, 16 * P, 3>("W", 300);
+    benchmark_ntt_pack<ntt::vector<float, P, P>, 4 * P, 3 * P, 4, 4, 0, 1>("NC",
+                                                                           300);
+    benchmark_ntt_pack<ntt::vector<float, P, P>, 2, 3 * P, 4 * P, 8, 1, 2>("CH",
+                                                                           300);
+    benchmark_ntt_pack<ntt::vector<float, P, P>, 4, 4, 3 * P, 4 * P, 2, 3>("HW",
+                                                                           300);
+#elif __x86_64__
+    benchmark_ntt_pack<ntt::vector<float, P>, P * 8, 2, 2, 2, 0>("N", 2000);
+    benchmark_ntt_pack<ntt::vector<float, P>, 2, 8 * P, 2, 4, 1>("C", 2000);
+    benchmark_ntt_pack<ntt::vector<float, P>, 2, 2, 8 * P, 8, 2>("H", 2000);
+    benchmark_ntt_pack<ntt::vector<float, P>, 2, 2, 2, 8 * P, 3>("W", 2000);
+    benchmark_ntt_pack<ntt::vector<float, P, P>, 4 * P, 8 * P, 2, 4, 0, 1>("NC",
+                                                                           1);
+    benchmark_ntt_pack<ntt::vector<float, P, P>, 2, 4 * P, 8 * P, 8, 1, 2>(
+        "CH", 2000);
+    benchmark_ntt_pack<ntt::vector<float, P, P>, 4, 4, 8 * P, 8 * P, 2, 3>(
+        "HW", 2000);
+#else
+    benchmark_ntt_pack<ntt::vector<float, P>, 16 * P, 3, 4, 4, 0>("N", 300);
+    benchmark_ntt_pack<ntt::vector<float, P>, 3, 16 * P, 4, 4, 1>("C", 300);
+    benchmark_ntt_pack<ntt::vector<float, P>, 3, 4, 16 * P, 4, 2>("H", 300);
+    benchmark_ntt_pack<ntt::vector<float, P>, 3, 4, 4, 16 * P, 3>("W", 300);
+    benchmark_ntt_pack<ntt::vector<float, P, P>, 4 * P, 3 * P, 4, 4, 0, 1>("NC",
+                                                                           300);
+    benchmark_ntt_pack<ntt::vector<float, P, P>, 2, 3 * P, 4 * P, 8, 1, 2>("CH",
+                                                                           300);
+    benchmark_ntt_pack<ntt::vector<float, P, P>, 4, 4, 3 * P, 4 * P, 2, 3>("HW",
+                                                                           300);
+#endif
 }
