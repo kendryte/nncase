@@ -50,9 +50,6 @@ void benchmark_ntt_transpose(const std::string &mode) {
     for (size_t i = 0; i < warmup_size; i++) {
         ntt::transpose<ntt::fixed_shape<perm_n, perm_c, perm_h, perm_w>>(
             ntt_input, ntt_output);
-#if __x86_64__
-        asm volatile("" ::"g"(ntt_output));
-#endif
     }
 
     // run
