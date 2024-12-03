@@ -74,6 +74,25 @@ void expand_impl(const TIn &input, TOut &&output) noexcept {
         });
     }
 }
+
+template <IsRankedTensor TIn, IsRankedTensor TOut>
+void expand_impl(const TIn &input, TOut &&output) noexcept {
+    constexpr auto in_rank = TIn::shape_type::rank();
+    auto in_shape = input.shape();
+    auto out_shape = output.shape();
+
+    using TIElem = typename TIn::element_type;
+    using TOElem = typename std::decay_t<TOut>::element_type;
+
+    static_assert(IsScalar<TOElem> && IsScalar<TIElem>,
+                  "Only support scalar type for now");
+
+    apply(out_shape, [&](auto index) {
+        const auto in_index = get_reduced_offset<in_rank>(index, in_shape);
+        output(index) = input(in_index);
+    });
+}
+
 } // namespace expand_detail
 
 template <typename TIn, typename TOut>
