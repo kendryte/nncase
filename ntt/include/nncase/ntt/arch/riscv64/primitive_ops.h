@@ -1472,6 +1472,21 @@ REGISTER_RVV_KERNEL_1_4(CAST_BOOL_FLOAT32)
         }                                                                      \
     };
 
+template <> struct cast<ntt::vector<bool, NTT_VL(sizeof(bool) * 8, *, 1)>, ntt::vector<float, NTT_VL(sizeof(float) * 8, *, 1)>> {
+    auto operator()(const ntt::vector<bool, NTT_VL(sizeof(bool) * 8, *, 1)> &v) const noexcept {
+        constexpr auto vl = NTT_VL(sizeof(float) * 8, *, 1);
+        ntt::vector<float, 4, vl> output;
+        auto zero = __riscv_vfmv_v_f_f32m4(0.f, vl);
+        auto mask = __riscv_vmsne_vx_u8m1_b8(v, 0, vl);
+        auto dst = __riscv_vfmerge_vfm_f32m4(zero, 1.f, mask, vl);
+        output(0) = __riscv_vget_v_f32m4_f32m1(dst, 0);
+        output(1) = __riscv_vget_v_f32m4_f32m1(dst, 1);
+        output(2) = __riscv_vget_v_f32m4_f32m1(dst, 2);
+        output(3) = __riscv_vget_v_f32m4_f32m1(dst, 3);
+        return output;
+    }
+};
+
 #define REGISTER_RVV_CAST_OP(from, to, kernel)                                 \
     RVV_CAST_OP_1_1(from, to, NTT_VL(sizeof(from) * 8, *, 1), kernel)          \
     RVV_CAST_OP_1_1(from, to, NTT_VL(sizeof(from) * 8, *, 2), kernel)          \
