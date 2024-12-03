@@ -15,7 +15,6 @@
 #pragma once
 #include "../../ukernels.h"
 #include "nncase/ntt/vector.h"
-#include <iostream>
 
 namespace nncase::ntt::ukernels {
 
@@ -425,6 +424,21 @@ class u_unpack_1d_fixed<axis_stride, 8, T1, float, true, PackAxis> {
                 }
             });
         }
+    }
+};
+
+template <IsFixedTensor TIn, IsFixedTensor TOut>
+class u_transpose<ntt::fixed_shape<0, 1, 2, 3>, TIn, TOut, true> {
+  public:
+    constexpr void operator()(const TIn &input, TOut &output) noexcept {
+
+        using TIElem = typename TIn::element_type;
+        using TOElem = typename std::decay_t<TOut>::element_type;
+
+        auto in_ptr = reinterpret_cast<const TIElem *>(input.elements().data());
+        auto out_ptr = reinterpret_cast<TOElem *>(output.elements().data());
+        auto pattern_size = TIn::size() * sizeof(TIElem);
+        std::memcpy(out_ptr, in_ptr, pattern_size);
     }
 };
 
