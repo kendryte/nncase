@@ -126,7 +126,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
             constexpr auto non_split_tensor_axes = get_non_split_tensor_axes();
 #if defined(__GNUC__) && !defined(__clang__)
             constexpr auto split_counts =
-                get_non_split_tensor_axes_split_counts(glglobal_shape_type{});
+                get_non_split_tensor_axes_split_counts(global_shape_type{});
             constexpr auto split_count_strides = default_strides(split_counts);
 #else
             auto split_counts =
