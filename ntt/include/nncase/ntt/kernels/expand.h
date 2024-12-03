@@ -87,10 +87,43 @@ void expand_impl(const TIn &input, TOut &&output) noexcept {
     static_assert(IsScalar<TOElem> && IsScalar<TIElem>,
                   "Only support scalar type for now");
 
-    apply(out_shape, [&](auto index) {
-        const auto in_index = get_reduced_offset<in_rank>(index, in_shape);
-        output(index) = input(in_index);
-    });
+    auto conti_dims_input = contiguous_dims(input.shape(), input.strides());
+    auto conti_dims_output = contiguous_dims(output.shape(), output.strides());
+
+    auto expand_dims_cnt = 0;
+    auto before_expand_dims = 1;
+    auto after_expand_dims = 1;
+    auto expand_dim = 0;
+    for (size_t i = 0; i < in_rank; i++) {
+        if (in_shape[i] != out_shape[i]) {
+            expand_dims_cnt++;
+            expand_dim = out_shape[i];
+        }
+        if (expand_dims_cnt == 0) {
+            before_expand_dims *= in_shape[i];
+        } else {
+            after_expand_dims *= in_shape[i];
+        }
+    }
+
+    auto in_ptr = reinterpret_cast<const TIElem *>(input.elements().data());
+    auto out_ptr = reinterpret_cast<TOElem *>(output.elements().data());
+    auto pattern_size = after_expand_dims * sizeof(TIElem);
+    if (conti_dims_input == in_rank && conti_dims_output == in_rank &&
+        expand_dims_cnt == 1 && after_expand_dims > 256) {
+        for (size_t i = 0; i < before_expand_dims; i++) {
+            for (size_t j = 0; j < expand_dim; j++) {
+                std::memcpy(out_ptr, in_ptr, pattern_size);
+                out_ptr += after_expand_dims;
+            }
+            in_ptr += after_expand_dims;
+        }
+    } else {
+        apply(out_shape, [&](auto index) {
+            const auto in_index = get_reduced_offset<in_rank>(index, in_shape);
+            output(index) = input(in_index);
+        });
+    }
 }
 
 } // namespace expand_detail
