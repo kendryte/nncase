@@ -66,7 +66,7 @@ void benchmark_ntt_transpose(const std::string &mode) {
     }
     auto t2 = NttTest::get_cpu_cycle();
 
-    auto element_size = tensor_type2::size() / P;
+    auto element_size = tensor_type2::size();
     std::cout << __FUNCTION__ << "_" << mode << " took " << std::setprecision(1)
               << std::fixed
               << static_cast<float>(t2 - t1) / run_size / element_size
