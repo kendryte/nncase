@@ -31,4 +31,16 @@ void transpose(const TIn &input, TOut &&output) {
         output(out_index) = input(index);
     });
 }
+
+template <IsFixedDims TPerm, IsRankedTensor TIn, IsRankedTensor TOut>
+void transpose(const TIn &input, TOut &&output) {
+    AUTO_NTT_PROFILER
+    auto domain = input.shape();
+    auto out_index = ranked_shape<domain.rank()>{};
+    apply(domain, [&](auto index) {
+        loop<domain.rank()>(
+            [&](auto i) { out_index[i] = index[TPerm::at(i)]; });
+        output(out_index) = input(index);
+    });
+}
 } // namespace nncase::ntt
