@@ -286,7 +286,7 @@ constexpr auto default_strides(const Shape &shape) noexcept {
     if constexpr (is_fixed_dims_v<Shape>) {
         return default_strides_t<Shape>{};
     } else {
-        ranked_strides<Shape::rank()> strides;
+        ranked_strides<Shape::rank()> strides{};
         if constexpr (strides.rank()) {
             strides[strides.rank() - 1] = 1;
             if constexpr (strides.rank() > 1) {

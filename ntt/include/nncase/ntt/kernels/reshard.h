@@ -123,17 +123,18 @@ struct reshard_impl<SrcTensor, DestTensor> {
             constexpr auto non_split_mesh_dims = get_non_split_mesh_dims();
             constexpr auto non_split_mesh_strides =
                 default_strides(non_split_mesh_dims);
+            constexpr auto non_split_tensor_axes = get_non_split_tensor_axes();
+            constexpr auto split_counts =
+                get_non_split_tensor_axes_split_counts(global_shape);
+            constexpr auto split_count_strides = default_strides(split_counts);
+
             auto non_split_mesh_indexes =
                 get_non_split_mesh_indexes(shard_index);
             auto non_split_mesh_linear_offset =
                 linear_offset(non_split_mesh_indexes, non_split_mesh_strides);
 
-            auto split_counts =
-                get_non_split_tensor_axes_split_counts(global_shape);
-            auto split_count_strides = default_strides(split_counts);
             auto local_split_id = unravel_index(non_split_mesh_linear_offset,
                                                 split_count_strides);
-            auto non_split_tensor_axes = get_non_split_tensor_axes();
 
             for (size_t i = 0; i < non_split_tensor_axes.rank(); i++) {
                 auto axis = non_split_tensor_axes[i];
@@ -188,21 +189,23 @@ struct reshard_impl<SrcTensor, DestTensor> {
         // Split non-split axes into split_count groups, based on each size of
         // the tensor dimensions.
         constexpr auto non_split_tensor_axes = get_non_split_tensor_axes();
-        ranked_shape<non_split_tensor_axes.rank()> split_counts;
+        ranked_shape<non_split_tensor_axes.rank()> split_counts{};
 
         // 1. Calculate the initial split counts.
         {
             std::array<float, non_split_tensor_axes.rank()> log_dims;
             for (size_t i = 0; i < non_split_tensor_axes.rank(); i++) {
-                auto dim = shape.at(non_split_tensor_axes[i]);
+                auto dim = (float)shape.at(non_split_tensor_axes[i]);
                 log_dims[i] = std::log(dim);
             }
 
             auto total_log_dim =
                 std::accumulate(log_dims.begin(), log_dims.end(), 0.f);
             for (size_t i = 0; i < non_split_tensor_axes.rank(); i++) {
-                auto split_factor = log_dims[i] / total_log_dim *
-                                    std::log(expected_split_count);
+                auto split_factor = total_log_dim == 0.f
+                                        ? 0.f
+                                        : (log_dims[i] / total_log_dim *
+                                           std::log(expected_split_count));
                 auto dim = shape.at(non_split_tensor_axes[i]);
                 split_counts[i] = std::max(
                     size_t(1),

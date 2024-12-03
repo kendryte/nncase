@@ -45,6 +45,22 @@ template <class Op, class T, bool Arch> struct u_unary {
         }
     }
 };
+
+template <class T, bool Arch> struct u_unary<ops::copy<T>, T, Arch> {
+  public:
+    constexpr void operator()(const T *input, size_t input_stride, T *output,
+                              size_t output_stride, size_t count) noexcept {
+        if (input_stride == 1 && output_stride == 1) {
+            memcpy(output, input, count * sizeof(T));
+        } else {
+            for (size_t i = 0; i < count; i++) {
+                *output = *input;
+                input += input_stride;
+                output += output_stride;
+            }
+        }
+    }
+};
 } // namespace ukernels
 
 template <class Op, class T>
