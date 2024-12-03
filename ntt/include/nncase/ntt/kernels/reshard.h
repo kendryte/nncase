@@ -125,7 +125,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
                 default_strides(non_split_mesh_dims);
             constexpr auto non_split_tensor_axes = get_non_split_tensor_axes();
             constexpr auto split_counts =
-                get_non_split_tensor_axes_split_counts(global_shape);
+                get_non_split_tensor_axes_split_counts(global_shape_type{});
             constexpr auto split_count_strides = default_strides(split_counts);
 
             auto non_split_mesh_indexes =
