@@ -23,8 +23,8 @@ using namespace nncase;
 using namespace ortki;
 
 TEST(ClampTestFloat, NoPack) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 32;
+    constexpr size_t N = 32;
     float min_input = static_cast<float>(-10);
     float max_input = static_cast<float>(10);
     float min_clamp = static_cast<float>(-6);
@@ -32,15 +32,15 @@ TEST(ClampTestFloat, NoPack) {
 
     // init
     using tensor_type = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type> ntt_input(new tensor_type);
-    NttTest::init_tensor(*ntt_input, min_input, max_input);
+    alignas(32) tensor_type ntt_input;
+    NttTest::init_tensor(ntt_input, min_input, max_input);
 
     // ntt
-    std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
-    ntt::clamp(*ntt_input, *ntt_output1, min_clamp, max_clamp);
+    alignas(32) tensor_type ntt_output1;
+    ntt::clamp(ntt_input, ntt_output1, min_clamp, max_clamp);
 
     // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
+    auto ort_input = NttTest::ntt2ort(ntt_input);
     float min_buf[] = {min_clamp};
     int64_t shape[] = {std::size(min_buf)};
     auto min = make_tensor(reinterpret_cast<void *>(min_buf), DataType_FLOAT,
@@ -51,14 +51,14 @@ TEST(ClampTestFloat, NoPack) {
     auto ort_output = ortki_Clip(ort_input, min, max);
 
     // compare
-    std::unique_ptr<tensor_type> ntt_output2(new tensor_type);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    alignas(32) tensor_type ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
 TEST(ClampTestFloat, PackM) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 32;
+    constexpr size_t N = 32;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     float min_input = static_cast<float>(-10);
     float max_input = static_cast<float>(10);
@@ -67,21 +67,21 @@ TEST(ClampTestFloat, PackM) {
 
     // init
     using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, min_input, max_input);
+    alignas(32) tensor_type1 ntt_input;
+    NttTest::init_tensor(ntt_input, min_input, max_input);
 
     // ntt
     using tensor_type2 =
         ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>>;
-    std::unique_ptr<tensor_type2> pack_input(new tensor_type2);
-    std::unique_ptr<tensor_type2> pack_output(new tensor_type2);
-    ntt::pack<0>(*ntt_input, *pack_input);
-    ntt::clamp(*pack_input, *pack_output, min_clamp, max_clamp);
-    std::unique_ptr<tensor_type1> ntt_output1(new tensor_type1);
-    ntt::unpack<0>(*pack_output, *ntt_output1);
+    alignas(32) tensor_type2 pack_input;
+    alignas(32) tensor_type2 pack_output;
+    ntt::pack<0>(ntt_input, pack_input);
+    ntt::clamp(pack_input, pack_output, min_clamp, max_clamp);
+    alignas(32) tensor_type1 ntt_output1;
+    ntt::unpack<0>(pack_output, ntt_output1);
 
     // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
+    auto ort_input = NttTest::ntt2ort(ntt_input);
     float min_buf[] = {min_clamp};
     int64_t shape[] = {std::size(min_buf)};
     auto min = make_tensor(reinterpret_cast<void *>(min_buf), DataType_FLOAT,
@@ -92,14 +92,14 @@ TEST(ClampTestFloat, PackM) {
     auto ort_output = ortki_Clip(ort_input, min, max);
 
     // compare
-    std::unique_ptr<tensor_type1> ntt_output2(new tensor_type1);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    alignas(32) tensor_type1 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
 TEST(ClampTestFloat, PackN) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 32;
+    constexpr size_t N = 32;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     float min_input = static_cast<float>(-10);
     float max_input = static_cast<float>(10);
@@ -108,21 +108,21 @@ TEST(ClampTestFloat, PackN) {
 
     // init
     using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, min_input, max_input);
+    alignas(32) tensor_type1 ntt_input;
+    NttTest::init_tensor(ntt_input, min_input, max_input);
 
     // ntt
     using tensor_type2 =
         ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>>;
-    std::unique_ptr<tensor_type2> pack_input(new tensor_type2);
-    std::unique_ptr<tensor_type2> pack_output(new tensor_type2);
-    ntt::pack<1>(*ntt_input, *pack_input);
-    ntt::clamp(*pack_input, *pack_output, min_clamp, max_clamp);
-    std::unique_ptr<tensor_type1> ntt_output1(new tensor_type1);
-    ntt::unpack<1>(*pack_output, *ntt_output1);
+    alignas(32) tensor_type2 pack_input;
+    alignas(32) tensor_type2 pack_output;
+    ntt::pack<1>(ntt_input, pack_input);
+    ntt::clamp(pack_input, pack_output, min_clamp, max_clamp);
+    alignas(32) tensor_type1 ntt_output1;
+    ntt::unpack<1>(pack_output, ntt_output1);
 
     // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
+    auto ort_input = NttTest::ntt2ort(ntt_input);
     float min_buf[] = {min_clamp};
     int64_t shape[] = {std::size(min_buf)};
     auto min = make_tensor(reinterpret_cast<void *>(min_buf), DataType_FLOAT,
@@ -133,9 +133,9 @@ TEST(ClampTestFloat, PackN) {
     auto ort_output = ortki_Clip(ort_input, min, max);
 
     // compare
-    std::unique_ptr<tensor_type1> ntt_output2(new tensor_type1);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    alignas(32) tensor_type1 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
 int main(int argc, char *argv[]) {

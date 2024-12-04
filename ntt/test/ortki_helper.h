@@ -18,7 +18,6 @@
 #include "nncase/ntt/shape.h"
 #include "nncase/ntt/tensor_traits.h"
 #include <assert.h>
-#include <iostream>
 #include <ortki/c_api.h>
 #include <string>
 
@@ -50,7 +49,7 @@ template <typename T> ortki::DataType primitive_type2ort_type() {
     else if (std::is_same_v<T, bool>)
         ort_type = ortki::DataType_BOOL;
     else {
-        std::cerr << "unsupported data type" << std::endl;
+        std::cerr << __FUNCTION__ << ": unsupported data type" << std::endl;
         std::abort();
     }
 
@@ -81,22 +80,43 @@ ortki::OrtKITensor *
 ntt2ort(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &tensor) {
     void *buffer = reinterpret_cast<void *>(tensor.elements().data());
     auto ort_type = primitive_type2ort_type<T>();
-    auto rank = tensor.shape().rank() + 1;
-    std::vector<size_t> v(rank);
-    for (size_t i = 0; i < tensor.shape().rank(); i++)
+    auto r1 = tensor.shape().rank();
+    auto r2 = r1 + 1;
+    std::vector<size_t> v(r2, N);
+    for (size_t i = 0; i < r1; i++)
         v[i] = tensor.shape()[i];
 
-    v[tensor.shape().rank()] = N;
+    const int64_t *shape = reinterpret_cast<const int64_t *>(v.data());
+    return make_tensor(buffer, ort_type, shape, r2);
+}
+
+template <typename T, typename Shape,
+          typename Stride = ntt::default_strides_t<Shape>, size_t N>
+ortki::OrtKITensor *
+ntt2ort(ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &tensor) {
+    void *buffer = reinterpret_cast<void *>(tensor.elements().data());
+    auto ort_type = primitive_type2ort_type<T>();
+    auto r1 = tensor.shape().rank();
+    auto r2 = r1 + 2;
+    std::vector<size_t> v(r2, N);
+    for (size_t i = 0; i < r1; i++)
+        v[i] = tensor.shape()[i];
 
     const int64_t *shape = reinterpret_cast<const int64_t *>(v.data());
-    return make_tensor(buffer, ort_type, shape, rank);
+    return make_tensor(buffer, ort_type, shape, r2);
 }
 
 template <ntt::IsTensor TTensor>
 void ort2ntt(ortki::OrtKITensor *ort_tensor, TTensor &ntt_tensor) {
     size_t size = 0;
     void *ort_ptr = tensor_buffer(ort_tensor, &size);
-    assert(tensor_length(ort_tensor) == ntt_tensor.shape().length());
+    using element_type = ntt::element_or_scalar_t<TTensor>;
+    if constexpr (ntt::IsVector<element_type>) {
+        assert(tensor_length(ort_tensor) ==
+               ntt_tensor.shape().length() * element_type::size());
+    } else {
+        assert(tensor_length(ort_tensor) == ntt_tensor.shape().length());
+    }
     if constexpr (ntt::IsVector<TTensor>) {
         memcpy(&ntt_tensor.buffer(), ort_ptr, size);
     } else {

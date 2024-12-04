@@ -70,7 +70,9 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
             {
                 var replacedExprs = (from result in results
                                      let oldExpr = ((ENode)result.Root).Expr
-                                     from newExpr in rule.GetReplaceCandidates(result, context)
+                                     let candidates = rule.GetReplaceCandidates(result, context)
+                                     where candidates != null
+                                     from newExpr in candidates
                                      where newExpr != null
                                      select (oldExpr, eGraph.Find((ENode)result.Root), newExpr.InheritMetaData(oldExpr))).ToList();
 
