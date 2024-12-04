@@ -350,7 +350,7 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                        'float-uint32': '5',
                                        'uint32-float': '5',
                                        'float-bool': '20.3',
-                                       'bool-float': '20.3',
+                                       'bool-float': '21.2',
                                        'float-f8e4m3': '500',
                                        },
                               'clamp': {'Pack': '6.3'},

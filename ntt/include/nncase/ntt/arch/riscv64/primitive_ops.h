@@ -1417,38 +1417,10 @@ REGISTER_RVV_CLAMP_OP(float, clamp_float32)
         return __riscv_vfcvt_f_xu_v_f32m##lmul(v, vl);                         \
     }
 
-#define CAST_FLOAT32_BOOL(lmul1, lmul2, mlen)                                  \
-    inline vuint8m##lmul2##_t cast_float32_bool(const vfloat32m##lmul1##_t &v, \
-                                                const size_t vl) {             \
-        auto zero = __riscv_vmv_v_x_u8m##lmul2(0, vl);                         \
-        auto mask = __riscv_vmfne_vf_f32m##lmul1##_b##mlen(v, 0.f, vl);        \
-        return __riscv_vmerge_vxm_u8m##lmul2(zero, 1, mask, vl);               \
-    }
-
-inline vuint8m1_t cast_float32_bool(const vfloat32m1_t &v0,
-                                    const vfloat32m1_t &v1,
-                                    const vfloat32m1_t &v2,
-                                    const vfloat32m1_t &v3, const size_t vl) {
-    auto v = __riscv_vcreate_v_f32m1_f32m4(v0, v1, v2, v3);
-    auto zero = __riscv_vmv_v_x_u8m1(0, vl);
-    auto mask = __riscv_vmfne_vf_f32m4_b8(v, 0.f, vl);
-    return __riscv_vmerge_vxm_u8m1(zero, 1, mask, vl);
-}
-
-#define CAST_BOOL_FLOAT32(lmul1, lmul2, mlen)                                  \
-    inline vfloat32m##lmul2##_t cast_bool_float32(const vuint8m##lmul1##_t &v, \
-                                                  const size_t vl) {           \
-        auto zero = __riscv_vfmv_v_f_f32m##lmul2(0.f, vl);                     \
-        auto mask = __riscv_vmsne_vx_u8m##lmul1##_b##mlen(v, 0, vl);           \
-        return __riscv_vfmerge_vfm_f32m##lmul2(zero, 1.f, mask, vl);           \
-    }
-
 REGISTER_RVV_KERNEL(CAST_FLOAT32_INT32)
 REGISTER_RVV_KERNEL(CAST_INT32_FLOAT32)
 REGISTER_RVV_KERNEL(CAST_FLOAT32_UINT32)
 REGISTER_RVV_KERNEL(CAST_UINT32_FLOAT32)
-REGISTER_RVV_KERNEL_4_1(CAST_FLOAT32_BOOL)
-REGISTER_RVV_KERNEL_1_4(CAST_BOOL_FLOAT32)
 
 // register cast op
 #define RVV_CAST_OP_1_1(from_dtype, to_dtype, vl, kernel)                      \
@@ -1472,21 +1444,6 @@ REGISTER_RVV_KERNEL_1_4(CAST_BOOL_FLOAT32)
         }                                                                      \
     };
 
-template <> struct cast<ntt::vector<bool, NTT_VL(sizeof(bool) * 8, *, 1)>, ntt::vector<float, NTT_VL(sizeof(float) * 8, *, 1)>> {
-    auto operator()(const ntt::vector<bool, NTT_VL(sizeof(bool) * 8, *, 1)> &v) const noexcept {
-        constexpr auto vl = NTT_VL(sizeof(float) * 8, *, 1);
-        ntt::vector<float, 4, vl> output;
-        auto zero = __riscv_vfmv_v_f_f32m4(0.f, vl);
-        auto mask = __riscv_vmsne_vx_u8m1_b8(v, 0, vl);
-        auto dst = __riscv_vfmerge_vfm_f32m4(zero, 1.f, mask, vl);
-        output(0) = __riscv_vget_v_f32m4_f32m1(dst, 0);
-        output(1) = __riscv_vget_v_f32m4_f32m1(dst, 1);
-        output(2) = __riscv_vget_v_f32m4_f32m1(dst, 2);
-        output(3) = __riscv_vget_v_f32m4_f32m1(dst, 3);
-        return output;
-    }
-};
-
 #define REGISTER_RVV_CAST_OP(from, to, kernel)                                 \
     RVV_CAST_OP_1_1(from, to, NTT_VL(sizeof(from) * 8, *, 1), kernel)          \
     RVV_CAST_OP_1_1(from, to, NTT_VL(sizeof(from) * 8, *, 2), kernel)          \
@@ -1507,7 +1464,43 @@ REGISTER_RVV_CAST_OP(float, int, cast_float32_int32)
 REGISTER_RVV_CAST_OP(int, float, cast_int32_float32)
 REGISTER_RVV_CAST_OP(float, unsigned int, cast_float32_uint32)
 REGISTER_RVV_CAST_OP(unsigned int, float, cast_uint32_float32)
-REGISTER_RVV_CAST_OP_4_1(float, bool, cast_float32_bool)
-REGISTER_RVV_CAST_OP_1_4(bool, float, cast_bool_float32)
+
+// cast float to bool
+template <>
+struct cast<ntt::vector<float, NTT_VL(sizeof(float) * 8, *, 1)>,
+            ntt::vector<bool, NTT_VL(sizeof(bool) * 8, *, 1)>> {
+    auto
+    operator()(const ntt::vector<float, NTT_VL(sizeof(float) * 8, *, 1)> &v0,
+               const ntt::vector<float, NTT_VL(sizeof(float) * 8, *, 1)> &v1,
+               const ntt::vector<float, NTT_VL(sizeof(float) * 8, *, 1)> &v2,
+               const ntt::vector<float, NTT_VL(sizeof(float) * 8, *, 1)> &v3)
+        const noexcept {
+        constexpr auto vl = NTT_VL(sizeof(bool) * 8, *, 1);
+        auto src = __riscv_vcreate_v_f32m1_f32m4(v0, v1, v2, v3);
+        auto zero = __riscv_vmv_v_x_u8m1(0, vl);
+        auto mask = __riscv_vmfne_vf_f32m4_b8(src, 0.f, vl);
+        return __riscv_vmerge_vxm_u8m1(zero, 1, mask, vl);
+    }
+};
+
+// cast bool to float
+template <>
+struct cast<ntt::vector<bool, NTT_VL(sizeof(bool) * 8, *, 1)>,
+            ntt::vector<float, NTT_VL(sizeof(float) * 8, *, 1)>> {
+    auto operator()(const ntt::vector<bool, NTT_VL(sizeof(bool) * 8, *, 1)> &v)
+        const noexcept {
+        constexpr auto vl = NTT_VL(sizeof(float) * 8, *, 1);
+        ntt::vector<float, 4, vl> output;
+        auto zero = __riscv_vfmv_v_f_f32m4(0.f, vl);
+        auto mask = __riscv_vmsne_vx_u8m1_b8(v, 0, vl);
+        auto dst = __riscv_vfmerge_vfm_f32m4(zero, 1.f, mask, vl);
+        output(0) = __riscv_vget_v_f32m4_f32m1(dst, 0);
+        output(1) = __riscv_vget_v_f32m4_f32m1(dst, 1);
+        output(2) = __riscv_vget_v_f32m4_f32m1(dst, 2);
+        output(3) = __riscv_vget_v_f32m4_f32m1(dst, 3);
+        return output;
+    }
+};
+
 #endif
 } // namespace nncase::ntt::ops
