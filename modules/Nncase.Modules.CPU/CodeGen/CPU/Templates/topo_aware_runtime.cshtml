@@ -48,7 +48,7 @@ namespace tar {
 @if (Model.CollectivePoolSize > 0) {
 @:alignas(@Model.Alignment) uint8_t collective_pool_ptr[@Model.CollectivePoolSize];
 } else {
-@:uint8_t* collective_pool_ptr = nullptr;
+@:alignas(@Model.Alignment) uint8_t collective_pool_ptr[1];
 }
 
 enum reduce_kind {
