@@ -1476,7 +1476,15 @@ struct cast<ntt::vector<float, NTT_VL(sizeof(float) * 8, *, 1)>,
                const ntt::vector<float, NTT_VL(sizeof(float) * 8, *, 1)> &v3)
         const noexcept {
         constexpr auto vl = NTT_VL(sizeof(bool) * 8, *, 1);
+#if 0
         auto src = __riscv_vcreate_v_f32m1_f32m4(v0, v1, v2, v3);
+#else
+        auto src = __riscv_vundefined_f32m4();
+        src = __riscv_vset_v_f32m1_f32m4(src, 0, v0);
+        src = __riscv_vset_v_f32m1_f32m4(src, 1, v1);
+        src = __riscv_vset_v_f32m1_f32m4(src, 2, v2);
+        src = __riscv_vset_v_f32m1_f32m4(src, 3, v3);
+#endif
         auto zero = __riscv_vmv_v_x_u8m1(0, vl);
         auto mask = __riscv_vmfne_vf_f32m4_b8(src, 0.f, vl);
         return __riscv_vmerge_vxm_u8m1(zero, 1, mask, vl);
@@ -1490,9 +1498,9 @@ struct cast<ntt::vector<bool, NTT_VL(sizeof(bool) * 8, *, 1)>,
     auto operator()(const ntt::vector<bool, NTT_VL(sizeof(bool) * 8, *, 1)> &v)
         const noexcept {
         constexpr auto vl = NTT_VL(sizeof(float) * 8, *, 1);
+        auto mask = __riscv_vreinterpret_v_u8m1_b8(v);
         ntt::vector<float, 4, vl> output;
         auto zero = __riscv_vfmv_v_f_f32m4(0.f, vl);
-        auto mask = __riscv_vmsne_vx_u8m1_b8(v, 0, vl);
         auto dst = __riscv_vfmerge_vfm_f32m4(zero, 1.f, mask, vl);
         output(0) = __riscv_vget_v_f32m4_f32m1(dst, 0);
         output(1) = __riscv_vget_v_f32m4_f32m1(dst, 1);
