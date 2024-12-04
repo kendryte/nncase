@@ -46,6 +46,4 @@ public static class PackUtility
 
         return isPadded ? IR.F.Tensors.Slice(input, Enumerable.Repeat(0, shape.Length).ToArray(), ends, shape.Length) : input;
     }
-
-
 }

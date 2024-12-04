@@ -409,10 +409,15 @@ public sealed class UnitTestCPUKernels : TestClassBase
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, posts);
     }
 
-    [Fact]
-    public async Task TestTransposeMatmul()
+    [Theory]
+    [InlineData([new[] { 2, 4 }, 0])]
+    public async Task TestTransposeMatmul(int[] hierarchy, int number)
     {
-        ((CpuTargetOptions)CompileOptions.TargetOptions).Packing = true;
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Packing = true;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((int)MathF.Pow(2, 30), hierarchy.Length).ToArray();
 
         var v13 = new Var("v13", new TensorType(DataTypes.Float32, new[] { 1, 1, 384, 128 }));
         var v15 = new Var("v15", new TensorType(DataTypes.Float32, new[] { 1, 64, 384, 128 }));
@@ -435,7 +440,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         };
 
         var posts = new[] { pre };
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{0}"), feedDict, posts);
+        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, posts);
     }
 
     [Theory]
@@ -497,6 +502,10 @@ public sealed class UnitTestCPUKernels : TestClassBase
         }
 
         ((CpuTargetOptions)CompileOptions.TargetOptions).Packing = packing;
+        var hierarchy = new[] { 2, 4 };
+        ((CpuTargetOptions)CompileOptions.TargetOptions).Hierarchies[0] = hierarchy;
+        ((CpuTargetOptions)CompileOptions.TargetOptions).HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        ((CpuTargetOptions)CompileOptions.TargetOptions).HierarchySizes = Enumerable.Repeat((int)MathF.Pow(2, 30), hierarchy.Length).ToArray();
         var vhidden_in = new Var("vhidden_in", new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 }));
         var vattn_mask = new Var("vattn_mask", new TensorType(DataTypes.Float32, new[] { 1, 1, 384, 384 }));
         var vposition_ids = new Var("vposition_ids", new TensorType(DataTypes.Int64, new[] { 1, 384 }));
