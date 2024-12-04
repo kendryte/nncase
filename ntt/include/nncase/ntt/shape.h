@@ -350,7 +350,7 @@ constexpr size_t linear_size(const Shape &shape,
 template <class Shape, class Strides>
 constexpr size_t contiguous_dims(const Shape &shape, const Strides &strides) {
     auto def_strides = default_strides(shape);
-    for (int32_t i = strides.rank() - 1; i >= 0; --i) {
+    for (ptrdiff_t i = (ptrdiff_t)strides.rank() - 1; i >= 0; --i) {
         if (strides[i] != def_strides[i]) {
             return shape.rank() - i - 1;
         }
