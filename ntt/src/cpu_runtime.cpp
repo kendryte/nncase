@@ -88,16 +88,12 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
     for (size_t tid = 0; tid < tdim; tid++) {
         threads.emplace_back([tid, params] {
 #ifdef __APPLE__
-            pthread_setspecific(cpu_thread_context_key,
-                                new cpu_thread_context_t
+            pthread_setspecific(
+                cpu_thread_context_key, new cpu_thread_context_t
 #else
             cpu_thread_context_t::current() =
 #endif
-                                {
-                                    .tid = tid,
-                                    .bid = params.bid,
-                                    .cid = params.cid,
-                                }
+                { .tid = tid, .bid = params.bid, .cid = params.cid, }
 #ifdef __APPLE__
             );
 #else

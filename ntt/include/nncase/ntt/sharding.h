@@ -16,6 +16,9 @@
 #include "distributed.h"
 #include "primitive_ops.h"
 #include "shape.h"
+#include "utility.h"
+#include <cstddef>
+#include <tuple>
 
 namespace nncase::ntt::distributed {
 namespace shard_policy {
@@ -33,6 +36,20 @@ struct I {
     static constexpr size_t local_dim(size_t global_dim) noexcept {
         return global_dim;
     }
+
+    template <class Mesh>
+    static constexpr size_t global_offset(
+        size_t /* global_dim */,
+        const typename Mesh::index_type & /* shard_index */) noexcept {
+        return 0;
+    }
+
+    template <class Mesh>
+    static constexpr size_t
+    local_dim(size_t global_dim,
+              const typename Mesh::index_type & /* shard_index */) noexcept {
+        return global_dim;
+    }
 };
 
 // Split
@@ -44,17 +61,54 @@ template <size_t... Axes> struct S {
         auto divider = (1 * ... * Mesh::shape_type::at(Axes));
         return ntt::ceil_div(global_dim, divider);
     }
+
+    template <class Mesh>
+    static constexpr size_t
+    global_offset(size_t global_dim,
+                  const typename Mesh::index_type &shard_index) noexcept {
+        using submesh_shape = fixed_shape<Mesh::shape_type::at(Axes)...>;
+        using submesh_strides = default_strides_t<submesh_shape>;
+        ranked_shape<submesh_shape::rank()> submesh_index{
+            shard_index.at(Axes)...};
+        auto submesh_linear_offset =
+            ntt::linear_offset(submesh_index, submesh_strides{});
+        auto local_dim = S::local_dim<Mesh>(global_dim);
+        return submesh_linear_offset * local_dim;
+    }
+
+    template <class Mesh>
+    static constexpr size_t
+    local_dim(size_t global_dim,
+              const typename Mesh::index_type &shard_index) noexcept {
+        auto local_dim = S::local_dim<Mesh>(global_dim);
+        auto global_offset = S::global_offset<Mesh>(global_dim, shard_index);
+        return std::min(global_dim - global_offset, local_dim);
+    }
 };
 } // namespace shard_policy
 
 template <topology Scope, size_t... Dims> struct mesh {
+    using index_type = ranked_shape<sizeof...(Dims)>;
     using shape_type = fixed_shape<Dims...>;
+    using strides_type = default_strides_t<shape_type>;
+    using program_id_type = ranked_shape<static_cast<size_t>(Scope) + 1>;
 
     static_assert(shape_type::length() == topology_size<Scope>(),
                   "Invalid mesh shape.");
 
-    static constexpr ranked_shape<topology_levels>
-    remote_program_id(ranked_shape<shape_type::rank()> index) noexcept;
+    static constexpr topology scope = Scope;
+
+    static constexpr size_t rank() noexcept { return shape_type::rank(); }
+
+    static constexpr program_id_type
+    remote_program_id(index_type index) noexcept;
+
+    static constexpr index_type
+    index_from_program_id(program_id_type program_id) noexcept;
+
+    static constexpr index_type local_index() noexcept {
+        return index_from_program_id(program_ids<Scope>());
+    }
 };
 
 template <class Mesh, class ImplicitPolicy, class... AxisPolicies>
@@ -64,6 +118,25 @@ struct sharding {
     using axis_policy_type = std::tuple<AxisPolicies...>;
 
     static constexpr size_t axis_policies_size = sizeof...(AxisPolicies);
+
+    static constexpr size_t rank() noexcept { return sizeof...(AxisPolicies); }
+
+    template <class GlobalShape>
+    static constexpr ranked_shape<rank()>
+    global_offset(const GlobalShape &global_shape,
+                  const typename Mesh::index_type &shard_index) noexcept {
+        auto get_dim = [&]<size_t Axis> {
+            return std::tuple_element_t<Axis, axis_policy_type>::
+                template global_offset<Mesh>(global_shape.at(Axis),
+                                             shard_index);
+        };
+        auto get_all_dims = [&]<size_t... Is>(std::index_sequence<Is...>) {
+            return ranked_shape<rank()> {
+                get_dim.template operator()<Is>()...
+            };
+        };
+        return get_all_dims(std::make_index_sequence<rank()>{});
+    }
 };
 
 namespace detail {
@@ -72,10 +145,10 @@ constexpr size_t get_submesh_rank() noexcept;
 
 template <class Mesh, topology Scope>
 constexpr size_t get_submesh_end() noexcept {
-    if (static_cast<size_t>(Scope) == topology_levels - 1) {
+    if constexpr (static_cast<size_t>(Scope) == topology_levels - 1) {
         return Mesh::shape_type::rank();
     } else {
-        auto next_topology =
+        constexpr auto next_topology =
             static_cast<topology>(static_cast<size_t>(Scope) + 1);
         return get_submesh_end<Mesh, next_topology>() -
                get_submesh_rank<Mesh, next_topology>();
@@ -147,19 +220,61 @@ program_id_in_mesh(ranked_shape<Mesh::shape_type::rank()> index) noexcept {
     return 0;
 }
 
+template <class Mesh, topology Topology>
+constexpr size_t
+mesh_index_from_program_id(ranked_shape<Mesh::shape_type::rank()> &index,
+                           size_t index_offset, size_t program_id) noexcept {
+    constexpr auto submesh_rank = get_submesh_rank<Mesh, Topology>();
+    if constexpr (submesh_rank) {
+        constexpr auto submesh_start = get_submesh_start<Mesh, Topology>();
+        using submesh_shape_t =
+            decltype(slice_fixed_dims<submesh_rank, submesh_start>(
+                typename Mesh::shape_type{}));
+        using submesh_strides_t = default_strides_t<submesh_shape_t>;
+        for (size_t i = 0; i < submesh_rank; i++) {
+            auto divider = submesh_strides_t::at(i);
+            index.at(i + index_offset) = program_id / divider;
+            program_id = program_id % divider;
+        }
+    }
+    return submesh_rank;
+}
+
 template <class Mesh, size_t... TopologyIndexes>
-constexpr ranked_shape<topology_levels>
+constexpr typename Mesh::program_id_type
 program_ids_in_mesh(ranked_shape<Mesh::shape_type::rank()> index,
                     std::index_sequence<TopologyIndexes...>) noexcept {
-    return ranked_shape<topology_levels>{
+    return typename Mesh::program_id_type{
         program_id_in_mesh<Mesh, (topology)TopologyIndexes>(index)...};
+}
+
+template <class Mesh, size_t... TopologyIndexes>
+constexpr typename Mesh::index_type
+mesh_index_from_program_id(typename Mesh::program_id_type program_id,
+                           std::index_sequence<TopologyIndexes...>) noexcept {
+    typename Mesh::index_type index{};
+    size_t index_offset = 0;
+    auto f = [&]<size_t TopologyIndex> {
+        index_offset +=
+            mesh_index_from_program_id<Mesh, (topology)TopologyIndex>(
+                index, index_offset, program_id.at(TopologyIndex));
+    };
+    (f.template operator()<TopologyIndexes>(), ...);
+    return index;
 }
 } // namespace detail
 
 template <topology Scope, size_t... Dims>
-constexpr ranked_shape<topology_levels> mesh<Scope, Dims...>::remote_program_id(
-    ranked_shape<shape_type::rank()> index) noexcept {
+constexpr auto mesh<Scope, Dims...>::remote_program_id(
+    index_type index) noexcept -> program_id_type {
     return detail::program_ids_in_mesh<mesh>(
-        index, std::make_index_sequence<topology_levels>{});
+        index, std::make_index_sequence<program_id_type::rank()>{});
+}
+
+template <topology Scope, size_t... Dims>
+constexpr auto mesh<Scope, Dims...>::index_from_program_id(
+    program_id_type program_id) noexcept -> index_type {
+    return detail::mesh_index_from_program_id<mesh>(
+        program_id, std::make_index_sequence<program_id_type::rank()>{});
 }
 } // namespace nncase::ntt::distributed

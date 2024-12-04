@@ -149,7 +149,7 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
             tensor(index) = static_cast<double>(dis(gen)) >= 0.5;
         });
     } else {
-        std::cerr << "unsupported data type" << std::endl;
+        std::cerr << __FUNCTION__ << ": unsupported data type" << std::endl;
         std::abort();
     }
 }
@@ -157,6 +157,14 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
 template <typename T, typename Shape,
           typename Stride = ntt::default_strides_t<Shape>, size_t N>
 void init_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &tensor,
+                 T start = static_cast<T>(0), T stop = static_cast<T>(1)) {
+    ntt::apply(tensor.shape(),
+               [&](auto &index) { init_tensor(tensor(index), start, stop); });
+}
+
+template <typename T, typename Shape,
+          typename Stride = ntt::default_strides_t<Shape>, size_t N>
+void init_tensor(ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &tensor,
                  T start = static_cast<T>(0), T stop = static_cast<T>(1)) {
     ntt::apply(tensor.shape(),
                [&](auto &index) { init_tensor(tensor(index), start, stop); });
@@ -230,6 +238,60 @@ bool compare_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
     nncase::ntt::apply(lhs.shape(), [&](auto index) {
         const ntt::vector<T, N> lvalue = lhs(index);
         const ntt::vector<T, N> rvalue = rhs(index);
+
+        nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
+            auto d1 = (double)(lvalue(idx));
+            auto d2 = (double)(rvalue(idx));
+            v1.push_back(d1);
+            v2.push_back(d2);
+            if (d1 != d2) {
+                std::cout << "index = (";
+                for (size_t i = 0; i < index.rank(); i++)
+                    std::cout << index[i] << " ";
+                std::cout << "): lhs = " << d1 << ", rhs = " << d2 << std::endl;
+                pass = false;
+            }
+        });
+    });
+
+    if (!pass) {
+        double dotProduct =
+            std::inner_product(v1.begin(), v1.end(), v2.begin(), (double)0.0);
+        double norm1 = std::sqrt(
+            std::inner_product(v1.begin(), v1.end(), v1.begin(), (double)0.0));
+        double norm2 = std::sqrt(
+            std::inner_product(v2.begin(), v2.end(), v2.begin(), (double)0.0));
+        double cosine_similarity = dotProduct / (norm1 * norm2);
+        pass = cosine_similarity > threshold;
+        if (!pass)
+            std::cerr << "cosine_similarity = " << cosine_similarity
+                      << std::endl;
+    }
+    return pass;
+}
+
+template <typename T, typename Shape,
+          typename Stride = ntt::default_strides_t<Shape>, size_t N>
+bool compare_tensor(ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &lhs,
+                    ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &rhs,
+                    double threshold = 0.999f) {
+    if (lhs.shape().rank() != rhs.shape().rank()) {
+        return false;
+    }
+
+    for (size_t i = 0; i < lhs.shape().rank(); i++)
+        if (lhs.shape()[i] != rhs.shape()[i])
+            return false;
+
+    std::vector<double> v1;
+    std::vector<double> v2;
+    v1.reserve(lhs.shape().length() * N);
+    v2.reserve(rhs.shape().length() * N);
+
+    bool pass = true;
+    nncase::ntt::apply(lhs.shape(), [&](auto index) {
+        const ntt::vector<T, N, N> lvalue = lhs(index);
+        const ntt::vector<T, N, N> rvalue = rhs(index);
 
         nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
             auto d1 = (double)(lvalue(idx));

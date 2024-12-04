@@ -11,10 +11,12 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using CommunityToolkit.HighPerformance;
 using CommunityToolkit.HighPerformance.Helpers;
 using NetFabric.Hyperlinq;
 using Nncase.Buffers;
 using Nncase.IR;
+using Nncase.Utilities;
 
 namespace Nncase;
 
@@ -325,6 +327,16 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
         return builder.ToString();
     }
 
+    public override void Deserialize(Stream stream)
+    {
+        SpanUtility.Deserialize(Buffer.Span, stream);
+    }
+
+    public override void Serialize(Stream stream)
+    {
+        SpanUtility.Serialize((ReadOnlySpan<T>)Buffer.Span, stream);
+    }
+
     /// <summary>
     /// Gets an enumerator that enumerates the elements of the <see cref="Tensor{T}"/>.
     /// </summary>
@@ -543,6 +555,9 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     {
         SetValue(index, (T)Convert.ChangeType(value, typeof(T))!);
     }
+
+    private protected override void Initialize(ITensorInitializer initializer) =>
+        initializer.Initialize(this);
 
     private static void Indent(StringBuilder builder, int tabs, int spacesPerTab = 4)
     {

@@ -5,6 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http.Headers;
+using System.Numerics;
+using System.Runtime.InteropServices;
+using CommunityToolkit.HighPerformance;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.CPU;
@@ -41,7 +45,8 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
                 input = input.Pack(lanes, axis);
             }
 
-            return Value.FromTensor(Tensor.FromBytes(new VectorType(input.DataType.ToDataType(), target.Lanes), input.BytesBuffer.ToArray(), input.Shape.ToArray().SkipLast(target.Lanes.Count).Select(i => (int)i).ToArray()));
+            var dt = input.DataType.ToDataType();
+            return Value.FromTensor(input.ToTensor(new TensorType(new VectorType(input.DataType.ToDataType(), target.Lanes), new Shape(input.Shape.SkipLast(target.Lanes.Count).Select(i => (int)i)))));
         }
     }
 

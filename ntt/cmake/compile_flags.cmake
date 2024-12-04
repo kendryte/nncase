@@ -31,6 +31,10 @@ else()
     add_compile_options(-ffp-contract=on)
 endif()
 
+if (NOT MSVC)
+    add_compile_options(-fvisibility=hidden)
+endif()
+
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES
    "(x86)|(X86)|(amd64)|(AMD64)|(x86_64)|(X86_64)")
     if (MSVC)
