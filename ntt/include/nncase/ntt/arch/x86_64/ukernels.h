@@ -380,6 +380,21 @@ class u_unpack_2d_fixed<low_axis_stride, 8, high_axis_stride, 8, TIn, float,
     }
 };
 
+template <IsFixedTensor TIn, IsFixedTensor TOut>
+class u_transpose<ntt::fixed_shape<0, 1, 2, 3>, TIn, TOut, true> {
+  public:
+    constexpr void operator()(const TIn &input, TOut &output) noexcept {
+
+        using TIElem = typename TIn::element_type;
+        using TOElem = typename std::decay_t<TOut>::element_type;
+
+        auto in_ptr = reinterpret_cast<const TIElem *>(input.elements().data());
+        auto out_ptr = reinterpret_cast<TOElem *>(output.elements().data());
+        auto pattern_size = TIn::size() * sizeof(TIElem);
+        std::memcpy(out_ptr, in_ptr, pattern_size);
+    }
+};
+
 // reduce
 template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
     static constexpr size_t unroll = 8;
