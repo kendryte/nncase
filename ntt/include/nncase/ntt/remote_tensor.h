@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 #pragma once
+#include "nncase/ntt/arch/cpu/topology.h"
 #include "sharding.h"
 #include "tensor.h"
 
 namespace nncase::ntt::distributed {
-template <class T, class Shape, class Strides> class remote_tensor_view {
+template <class T, class Shape, topology Scope, class Strides>
+class remote_tensor_view {
   public:
-    static remote_tensor_view create(ranked_shape<topology_levels> program_ids,
+    static remote_tensor_view create(program_ids_t<Scope> program_ids,
                                      T *local_address) noexcept;
 };
 } // namespace nncase::ntt::distributed
