@@ -81,6 +81,46 @@ void benchmark_ntt_transpose(const std::string &mode) {
               << " cycles" << std::endl;
 }
 
+template <size_t N, size_t C, size_t H, size_t W, size_t perm_n, size_t perm_c,
+          size_t perm_h, size_t perm_w>
+void benchmark_ntt_transpose_warmup([[maybe_unused]] const std::string &mode) {
+
+    constexpr size_t run_size = 2000;
+    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+
+    constexpr std::array<size_t, 4> org_dims = {N, C, H, W};
+    constexpr std::array<size_t, 4> new_dims = {
+        org_dims[perm_n], org_dims[perm_c], org_dims[perm_h], org_dims[perm_w]};
+
+    using tensor_type1 =
+        ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<N, C, H, W>>;
+    using tensor_type2 = ntt::tensor<
+        ntt::vector<float, P>,
+        ntt::fixed_shape<new_dims[0], new_dims[1], new_dims[2], new_dims[3]>>;
+
+    alignas(32) tensor_type1 ntt_input;
+    alignas(32) tensor_type2 ntt_output;
+    NttTest::init_tensor(ntt_input, -10.f, 10.f);
+
+    // warm up
+    constexpr size_t warmup_size = 10;
+    for (size_t i = 0; i < warmup_size; i++) {
+        ntt::transpose<ntt::fixed_shape<perm_n, perm_c, perm_h, perm_w>>(
+            ntt_input, ntt_output);
+    }
+
+    // run
+    [[maybe_unused]] auto t1 = NttTest::get_cpu_cycle();
+    for (size_t i = 0; i < run_size; i++) {
+        ntt::transpose<ntt::fixed_shape<perm_n, perm_c, perm_h, perm_w>>(
+            ntt_input, ntt_output);
+#if __x86_64__
+        asm volatile("" ::"g"(ntt_output));
+#endif
+    }
+    [[maybe_unused]] auto t2 = NttTest::get_cpu_cycle();
+}
+
 int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
@@ -102,6 +142,7 @@ int main(int argc, char *argv[]) {
     constexpr size_t w = 8;
 #endif
 
+    benchmark_ntt_transpose_warmup<n, c, h, w, 0, 1, 2, 3>("NCHW");
     benchmark_ntt_transpose<n, c, h, w, 0, 1, 2, 3>("NCHW");
     benchmark_ntt_transpose<n, c, h, w, 0, 1, 3, 2>("NCWH");
     benchmark_ntt_transpose<n, c, h, w, 0, 2, 1, 3>("NHCW");
