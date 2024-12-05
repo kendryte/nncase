@@ -133,7 +133,7 @@ internal sealed class DDrBufferRewriter : ExprRewriter
 
     protected override TIR.MemSpan RewriteLeafMemSpan(TIR.MemSpan memSpan)
     {
-        if (memSpan is { Location: MemoryLocation.Rdata, Start: Call { Target: IR.Buffers.DDrOf, Arguments: var arg } } && arg[0] is Const @const)
+        if (memSpan is { Location: MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata, Start: Call { Target: IR.Buffers.DDrOf, Arguments: var arg } } && arg[0] is Const @const)
         {
             if (!ModuleRdataMaps.TryGetValue(Entry.ModuleKind, out var moduleRdataMap))
             {
@@ -160,7 +160,19 @@ internal sealed class DDrBufferRewriter : ExprRewriter
                 moduleUsage[memSpan.Location] = upbounds;
                 memRange = new(alignStart, upbounds);
                 moduleRdataMap.Add(@const, memRange);
-                Entry.SchedResult.Rdatas.Add(@const, memRange);
+                if (memSpan.Location == MemoryLocation.Rdata)
+                {
+                    Entry.SchedResult.Rdatas.Add(@const, memRange);
+                }
+                else if (memSpan.Location == MemoryLocation.ThreadLocalRdata)
+                {
+                    Entry.SchedResult.LocalRdatas.Add(@const, memRange);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Unsupported memory location {memSpan.Location}");
+                }
+
                 Changed = true;
             }
 
@@ -174,12 +186,10 @@ internal sealed class DDrBufferRewriter : ExprRewriter
         return memSpan;
     }
 
-    private ulong ComputeSize(IValue v) => v.AsTensors().Select(t => (ulong)t.Length * (ulong)t.ElementType.SizeInBytes).Sum();
-
     private ulong ComputeSize(Const @const) => @const switch
     {
-        TensorConst { Value: Tensor tc } => (ulong)tc.Length * (ulong)tc.ElementType.SizeInBytes,
-        TupleConst tc => ComputeSize(tc.Value),
+        TensorConst tc => (ulong)TensorUtilities.GetTensorSizeAndStrides(tc.ValueType).Size,
+        TupleConst tc => tc.Value.AsTensors().Select(t => (ulong)t.Length * (ulong)t.ElementType.SizeInBytes).Sum(),
         _ => throw new NotSupportedException(),
     };
 }

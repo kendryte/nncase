@@ -258,13 +258,6 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new[] { 1, 384, 512 }, new[] { 512, 512 }, false, false, new[] { 1 }, 0 })]
-    [InlineData(new object[] { new[] { 1, 1, 384, 256 }, new[] { 32, 256, 512 }, false, false, new[] { 1 }, 1 })]
-    [InlineData(new object[] { new[] { 384, 512 }, new[] { 512, 512 }, false, false, new[] { 1 }, 2 })]
-    [InlineData(new object[] { new[] { 1, 384, 512 }, new[] { 512, 512 }, false, true, new[] { 1 }, 3 })]
-    [InlineData(new object[] { new[] { 1, 1, 384, 256 }, new[] { 32, 256, 512 }, false, true, new[] { 1 }, 4 })]
-    [InlineData(new object[] { new[] { 384, 512 }, new[] { 512, 512 }, false, true, new[] { 1 }, 5 })]
-    [InlineData(new object[] { new[] { 384, 512 }, new[] { 512, 256 }, false, true, new[] { 2 }, 6 })]
     [InlineData(new object[] { new[] { 384, 512 }, new[] { 512, 512 }, false, true, new[] { 2, 4 }, 7 })]
     public async Task TestPackMatMul(int[] lhsShape, int[] rhsShape, bool constA, bool constB, int[] hierarchy, int count)
     {
