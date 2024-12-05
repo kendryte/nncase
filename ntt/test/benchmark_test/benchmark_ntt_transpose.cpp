@@ -113,7 +113,7 @@ void benchmark_ntt_transpose_warmup([[maybe_unused]] const std::string &mode) {
         org_dims[perm_n], org_dims[perm_c], org_dims[perm_h], org_dims[perm_w]};
 
     using tensor_type1 =
-        ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<n, c, h, w>> ;
+        ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<n, c, h, w>>;
     using tensor_type2 = ntt::tensor<
         ntt::vector<float, P>,
         ntt::fixed_shape<new_dims[0], new_dims[1], new_dims[2], new_dims[3]>>;
