@@ -44,7 +44,7 @@ result<void> cpu_runtime_function::run(std::span<std::byte *> params) noexcept {
                     .rdata = module().rdata().data(),
                     .local_rdata_header =
                         module().local_rdata_header(tid_offset),
-                    .local_rdata = module().local_rdata(tid_offset),
+                    .local_rdata = module().local_rdata_content().data(),
 #ifdef __APPLE__
                     .cpu_thread_context_key = module().cpu_thread_context_key(),
 #endif

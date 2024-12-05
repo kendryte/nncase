@@ -38,13 +38,18 @@ class cpu_runtime_module : public runtime_module {
     std::span<const std::byte> text() const noexcept { return text_; }
     std::span<const std::byte> rdata() const noexcept { return rdata_; }
 
+    const std::span<const std::byte> local_rdata() const noexcept {
+        return local_rdata_;
+    }
+
     const uint64_t *local_rdata_header(size_t offset) const noexcept {
         return reinterpret_cast<const uint64_t *>(local_rdata_.data()) +
                offset * 2;
     }
 
-    const std::byte *local_rdata(size_t offset) const noexcept {
-        return local_rdata_.data() + local_rdata_header(offset)[0];
+    const std::span<const std::byte> local_rdata_content() const noexcept {
+        return local_rdata_.subspan(cdim_ * bdim_ * tdim_ * 2 *
+                                    sizeof(uint64_t));
     }
 
 #ifdef __APPLE__

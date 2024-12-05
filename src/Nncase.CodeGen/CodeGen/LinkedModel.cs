@@ -146,12 +146,7 @@ internal sealed class LinkedModel : ILinkedModel
 
     private unsafe void Serialize(BinaryWriter writer, ILinkedSection section)
     {
-        var header = new SectionHeader
-        {
-            Flags = section.Flags,
-            BodySize = section.SizeInFile,
-            MemorySize = section.SizeInMemory,
-        };
+        var header = default(SectionHeader);
         FillSectionName(ref header, section.Name);
 
         var headerPos = writer.Position();
@@ -165,6 +160,9 @@ internal sealed class LinkedModel : ILinkedModel
         var endPos = writer.Position();
 
         // Write header
+        header.Flags = section.Flags;
+        header.BodySize = section.SizeInFile;
+        header.MemorySize = section.SizeInMemory;
         header.Size = (ulong)(endPos - headerPos);
         writer.Position(headerPos);
         writer.Write(ref header);

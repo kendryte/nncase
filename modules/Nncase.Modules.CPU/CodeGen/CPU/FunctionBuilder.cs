@@ -66,6 +66,7 @@ internal class FunctionBuilder
                 var localStrides = TensorUtilities.GetStrides(dividedDims);
                 for (int i = 0; i < _localRdataWriters.Count; i++)
                 {
+                    var localRdataWriter = _localRdataWriters[i];
                     var shardIndex = DistributedUtility.GetUnraveledIndex(i, TargetOptions.Hierarchies[0]);
                     (var localOffset, var localShape) = DistributedUtility.GetLocalOffsetAndShape(distributedType, shardIndex);
                     var linearOffset = TensorUtilities.GetIndex(tensor.Strides, localOffset);
@@ -75,8 +76,8 @@ internal class FunctionBuilder
                         throw new InvalidDataException("The Buffer Size Not Equal!");
                     }
 
-                    _localRdataWriters[i].Position(checked((long)range.Min));
-                    tensor.Serialize(_rdataWriter.BaseStream, linearOffset, localShape, localStrides);
+                    localRdataWriter.Position(checked((long)range.Min));
+                    tensor.Serialize(localRdataWriter.BaseStream, linearOffset, localShape, localStrides);
                 }
             }
 

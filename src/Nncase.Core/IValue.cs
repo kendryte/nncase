@@ -68,6 +68,13 @@ public static class Value
         return new TensorValue(tensor, ndSBP, placement);
     }
 
+    public static TensorValue FromTensorLike(Tensor tensor, IRType type)
+        => type switch
+        {
+            DistributedType dt => FromTensor(tensor, dt.NdSBP, dt.Placement),
+            _ => FromTensor(tensor),
+        };
+
     /// <summary>
     /// Create value form tensors.
     /// </summary>

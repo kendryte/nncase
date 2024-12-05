@@ -22,13 +22,11 @@ public class LinkedMultipleContentsSection : ILinkedSection
             throw new ArgumentOutOfRangeException(nameof(alignment));
         }
 
-        _headerSize = MathUtility.AlignUp((uint)(sizeof(ulong) * 2 * contents.Count), alignment);
-        SizeInFile = _headerSize + (ulong)contents.Sum(x => MathUtility.AlignUp(x.Length, alignment));
+        _headerSize = (uint)(sizeof(ulong) * 2 * contents.Count);
         _contents = contents;
         Name = name;
         Flags = flags;
         Alignment = alignment;
-        SizeInMemory = SizeInFile;
     }
 
     public string Name { get; }
@@ -37,9 +35,9 @@ public class LinkedMultipleContentsSection : ILinkedSection
 
     public uint Alignment { get; }
 
-    public ulong SizeInFile { get; }
+    public ulong SizeInFile { get; private set; }
 
-    public ulong SizeInMemory { get; }
+    public ulong SizeInMemory { get; private set; }
 
     public void Serialize(Stream output)
     {
@@ -48,13 +46,13 @@ public class LinkedMultipleContentsSection : ILinkedSection
 
         // 1. Skip header
         var headerPos = writer.Position();
-        writer.Position(headerPos + _headerSize);
+        var contentBegin = writer.Position(headerPos + _headerSize);
 
         // 2. Write contents
         foreach (var content in _contents)
         {
             writer.AlignPosition(Alignment);
-            var offset = writer.Position() - headerPos;
+            var offset = writer.Position() - contentBegin;
             content.Seek(0, SeekOrigin.Begin);
             content.CopyTo(output);
             contentPositions.Add(((ulong)offset, (ulong)content.Length));
@@ -70,5 +68,6 @@ public class LinkedMultipleContentsSection : ILinkedSection
         }
 
         writer.Position(endPos);
+        SizeInFile = SizeInMemory = (ulong)(endPos - headerPos);
     }
 }
