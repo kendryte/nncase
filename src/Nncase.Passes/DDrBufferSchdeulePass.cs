@@ -137,7 +137,7 @@ internal sealed class DDrBufferRewriter : ExprRewriter
         {
             if (!ModuleRdataMaps.TryGetValue(Entry.ModuleKind, out var moduleRdataMap))
             {
-                moduleRdataMap = new();
+                moduleRdataMap = new(ReferenceEqualityComparer.Instance);
                 ModuleRdataMaps.Add(Entry.ModuleKind, moduleRdataMap);
             }
 
@@ -162,6 +162,11 @@ internal sealed class DDrBufferRewriter : ExprRewriter
                 moduleRdataMap.Add(@const, memRange);
                 if (memSpan.Location == MemoryLocation.Rdata)
                 {
+                    if (@const.CheckedType is DistributedType)
+                    {
+                        throw new InvalidOperationException("DistributedType is not supported in rdata");
+                    }
+
                     Entry.SchedResult.Rdatas.Add(@const, memRange);
                 }
                 else if (memSpan.Location == MemoryLocation.ThreadLocalRdata)
