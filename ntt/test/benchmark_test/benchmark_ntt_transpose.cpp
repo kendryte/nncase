@@ -80,10 +80,10 @@ int main(int argc, char *argv[]) {
     constexpr size_t h = 6;
     constexpr size_t w = 8;
 #elif __x86_64__
-    constexpr size_t n = 16;
-    constexpr size_t c = 16;
-    constexpr size_t h = 16;
-    constexpr size_t w = 16;
+    constexpr size_t n = 6;
+    constexpr size_t c = 6;
+    constexpr size_t h = 6;
+    constexpr size_t w = 6;
 #else
     constexpr size_t n = 4;
     constexpr size_t c = 5;
