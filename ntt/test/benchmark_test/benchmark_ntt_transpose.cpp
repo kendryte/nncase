@@ -93,6 +93,8 @@ int main(int argc, char *argv[]) {
 
     benchmark_ntt_transpose<n, c, h, w, 0, 1, 2, 3>("NCHW");
     benchmark_ntt_transpose<n, c, h, w, 0, 1, 3, 2>("NCWH");
+    benchmark_ntt_transpose<n, c, h, w, 0, 1, 2, 3>("NCHW");
+    benchmark_ntt_transpose<n, c, h, w, 0, 1, 3, 2>("NCWH");
     benchmark_ntt_transpose<n, c, h, w, 0, 2, 1, 3>("NHCW");
     benchmark_ntt_transpose<n, c, h, w, 0, 2, 3, 1>("NHWC");
     benchmark_ntt_transpose<n, c, h, w, 0, 3, 1, 2>("NWCH");
