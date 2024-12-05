@@ -74,28 +74,45 @@ int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
 
-    benchmark_ntt_transpose<16, 16, 16, 16, 0, 1, 2, 3>("NCHW");
-    benchmark_ntt_transpose<16, 16, 16, 16, 0, 1, 3, 2>("NCWH");
-    benchmark_ntt_transpose<16, 16, 16, 16, 0, 2, 1, 3>("NHCW");
-    benchmark_ntt_transpose<16, 16, 16, 16, 0, 2, 3, 1>("NHWC");
-    benchmark_ntt_transpose<16, 16, 16, 16, 0, 3, 1, 2>("NWCH");
-    benchmark_ntt_transpose<16, 16, 16, 16, 0, 3, 2, 1>("NWHC");
-    benchmark_ntt_transpose<16, 16, 16, 16, 1, 0, 2, 3>("CNHW");
-    benchmark_ntt_transpose<16, 16, 16, 16, 1, 0, 3, 2>("CNWH");
-    benchmark_ntt_transpose<16, 16, 16, 16, 1, 2, 0, 3>("CHNW");
-    benchmark_ntt_transpose<16, 16, 16, 16, 1, 2, 3, 0>("CHWN");
-    benchmark_ntt_transpose<16, 16, 16, 16, 1, 3, 0, 2>("CWNH");
-    benchmark_ntt_transpose<16, 16, 16, 16, 1, 3, 2, 0>("CWHN");
-    benchmark_ntt_transpose<16, 16, 16, 16, 2, 0, 1, 3>("HNCW");
-    benchmark_ntt_transpose<16, 16, 16, 16, 2, 0, 3, 1>("HNWC");
-    benchmark_ntt_transpose<16, 16, 16, 16, 2, 1, 0, 3>("HCNW");
-    benchmark_ntt_transpose<16, 16, 16, 16, 2, 1, 3, 0>("HCWN");
-    benchmark_ntt_transpose<16, 16, 16, 16, 2, 3, 0, 1>("HWNC");
-    benchmark_ntt_transpose<16, 16, 16, 16, 2, 3, 1, 0>("HWCN");
-    benchmark_ntt_transpose<16, 16, 16, 16, 3, 0, 1, 2>("WNCH");
-    benchmark_ntt_transpose<16, 16, 16, 16, 3, 0, 2, 1>("WNHC");
-    benchmark_ntt_transpose<16, 16, 16, 16, 3, 1, 0, 2>("WCNH");
-    benchmark_ntt_transpose<16, 16, 16, 16, 3, 1, 2, 0>("WCHN");
-    benchmark_ntt_transpose<16, 16, 16, 16, 3, 2, 0, 1>("WHNC");
-    benchmark_ntt_transpose<16, 16, 16, 16, 3, 2, 1, 0>("WHCN");
+#if __riscv
+    constexpr size_t n = 4;
+    constexpr size_t c = 5;
+    constexpr size_t h = 6;
+    constexpr size_t w = 8;
+#elif __x86_64__
+    constexpr size_t n = 16;
+    constexpr size_t c = 16;
+    constexpr size_t h = 16;
+    constexpr size_t w = 16;
+#else
+    constexpr size_t n = 4;
+    constexpr size_t c = 5;
+    constexpr size_t h = 6;
+    constexpr size_t w = 8;
+#endif
+
+    benchmark_ntt_transpose<n, c, h, w, 0, 1, 2, 3>("NCHW");
+    benchmark_ntt_transpose<n, c, h, w, 0, 1, 3, 2>("NCWH");
+    benchmark_ntt_transpose<n, c, h, w, 0, 2, 1, 3>("NHCW");
+    benchmark_ntt_transpose<n, c, h, w, 0, 2, 3, 1>("NHWC");
+    benchmark_ntt_transpose<n, c, h, w, 0, 3, 1, 2>("NWCH");
+    benchmark_ntt_transpose<n, c, h, w, 0, 3, 2, 1>("NWHC");
+    benchmark_ntt_transpose<n, c, h, w, 1, 0, 2, 3>("CNHW");
+    benchmark_ntt_transpose<n, c, h, w, 1, 0, 3, 2>("CNWH");
+    benchmark_ntt_transpose<n, c, h, w, 1, 2, 0, 3>("CHNW");
+    benchmark_ntt_transpose<n, c, h, w, 1, 2, 3, 0>("CHWN");
+    benchmark_ntt_transpose<n, c, h, w, 1, 3, 0, 2>("CWNH");
+    benchmark_ntt_transpose<n, c, h, w, 1, 3, 2, 0>("CWHN");
+    benchmark_ntt_transpose<n, c, h, w, 2, 0, 1, 3>("HNCW");
+    benchmark_ntt_transpose<n, c, h, w, 2, 0, 3, 1>("HNWC");
+    benchmark_ntt_transpose<n, c, h, w, 2, 1, 0, 3>("HCNW");
+    benchmark_ntt_transpose<n, c, h, w, 2, 1, 3, 0>("HCWN");
+    benchmark_ntt_transpose<n, c, h, w, 2, 3, 0, 1>("HWNC");
+    benchmark_ntt_transpose<n, c, h, w, 2, 3, 1, 0>("HWCN");
+    benchmark_ntt_transpose<n, c, h, w, 3, 0, 1, 2>("WNCH");
+    benchmark_ntt_transpose<n, c, h, w, 3, 0, 2, 1>("WNHC");
+    benchmark_ntt_transpose<n, c, h, w, 3, 1, 0, 2>("WCNH");
+    benchmark_ntt_transpose<n, c, h, w, 3, 1, 2, 0>("WCHN");
+    benchmark_ntt_transpose<n, c, h, w, 3, 2, 0, 1>("WHNC");
+    benchmark_ntt_transpose<n, c, h, w, 3, 2, 1, 0>("WHCN");
 }
