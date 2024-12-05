@@ -63,6 +63,17 @@ void benchmark_ntt_transpose(const std::string &mode) {
     }
     auto t2 = NttTest::get_cpu_cycle();
 
+    // run
+    t1 = NttTest::get_cpu_cycle();
+    for (size_t i = 0; i < run_size; i++) {
+        ntt::transpose<ntt::fixed_shape<perm_n, perm_c, perm_h, perm_w>>(
+            ntt_input, ntt_output);
+#if __x86_64__
+        asm volatile("" ::"g"(ntt_output));
+#endif
+    }
+    t2 = NttTest::get_cpu_cycle();
+
     auto element_size = tensor_type2::size();
     std::cout << __FUNCTION__ << "_" << mode << " took " << std::setprecision(1)
               << std::fixed
@@ -91,18 +102,18 @@ int main(int argc, char *argv[]) {
     constexpr size_t w = 8;
 #endif
 
-    benchmark_ntt_transpose<n, c, h, w, 1, 0, 2, 3>("CNHW");
-    benchmark_ntt_transpose<n, c, h, w, 1, 0, 3, 2>("CNWH");
-    benchmark_ntt_transpose<n, c, h, w, 1, 2, 0, 3>("CHNW");
-    benchmark_ntt_transpose<n, c, h, w, 1, 2, 3, 0>("CHWN");
-    benchmark_ntt_transpose<n, c, h, w, 1, 3, 0, 2>("CWNH");
-    benchmark_ntt_transpose<n, c, h, w, 1, 3, 2, 0>("CWHN");
     benchmark_ntt_transpose<n, c, h, w, 0, 1, 2, 3>("NCHW");
     benchmark_ntt_transpose<n, c, h, w, 0, 1, 3, 2>("NCWH");
     benchmark_ntt_transpose<n, c, h, w, 0, 2, 1, 3>("NHCW");
     benchmark_ntt_transpose<n, c, h, w, 0, 2, 3, 1>("NHWC");
     benchmark_ntt_transpose<n, c, h, w, 0, 3, 1, 2>("NWCH");
     benchmark_ntt_transpose<n, c, h, w, 0, 3, 2, 1>("NWHC");
+    benchmark_ntt_transpose<n, c, h, w, 1, 0, 2, 3>("CNHW");
+    benchmark_ntt_transpose<n, c, h, w, 1, 0, 3, 2>("CNWH");
+    benchmark_ntt_transpose<n, c, h, w, 1, 2, 0, 3>("CHNW");
+    benchmark_ntt_transpose<n, c, h, w, 1, 2, 3, 0>("CHWN");
+    benchmark_ntt_transpose<n, c, h, w, 1, 3, 0, 2>("CWNH");
+    benchmark_ntt_transpose<n, c, h, w, 1, 3, 2, 0>("CWHN");
     benchmark_ntt_transpose<n, c, h, w, 2, 0, 1, 3>("HNCW");
     benchmark_ntt_transpose<n, c, h, w, 2, 0, 3, 1>("HNWC");
     benchmark_ntt_transpose<n, c, h, w, 2, 1, 0, 3>("HCNW");
