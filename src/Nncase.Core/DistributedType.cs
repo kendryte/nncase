@@ -15,13 +15,13 @@ using DryIoc.ImTools;
 namespace Nncase.IR;
 
 [JsonDerivedType(typeof(SBPSplit), "S")]
-[JsonDerivedType(typeof(SBPPartialSum), "P")]
+[JsonDerivedType(typeof(SBPPartial), "P")]
 [JsonDerivedType(typeof(SBPBroadCast), "B")]
 public abstract record SBP
 {
-    public static SBPPartialSum P => SBPPartialSum.Instance;
-
     public static SBPBroadCast B => SBPBroadCast.Instance;
+
+    public static SBPPartial P(ReduceOp op = ReduceOp.Sum) => new SBPPartial(op);
 
     public static SBPSplit S(int axis) => new SBPSplit(axis);
 }
@@ -31,10 +31,8 @@ public sealed record SBPSplit(int Axis) : SBP
     public override string ToString() => $"S({Axis})";
 }
 
-public sealed record SBPPartialSum : SBP
+public sealed record SBPPartial(ReduceOp Op) : SBP
 {
-    public static readonly SBPPartialSum Instance = new SBPPartialSum();
-
     public override string ToString() => "P";
 }
 

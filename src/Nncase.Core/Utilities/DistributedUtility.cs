@@ -33,43 +33,6 @@ public static class DistributedUtility
         return ndsbps.CartesianProduct().Select(ndsbp => ndsbp.ToArray()).Where(ndsbp => IsDistributable(tensorType, ndsbp, placement)).Select(ndsbp => new IRArray<SBP>(ndsbp)).ToArray();
     }
 
-    public static IReadOnlyList<IRArray<SBP>> GetPartialCandidateNDSBPs(DistributedType distributedType)
-    {
-        IRArray<SBP> ndsbp = distributedType.NdSBP;
-        TensorType tensorType = distributedType.TensorType;
-        Placement placement = distributedType.Placement;
-        if (!ndsbp.Any(sbp => sbp is SBPPartialSum))
-        {
-            return Array.Empty<IRArray<SBP>>();
-        }
-
-        var candidateNdsbps = new List<SBP>[placement.Rank];
-        for (int i = 0; i < placement.Rank; i++)
-        {
-            candidateNdsbps[i] = new List<SBP>();
-            var innerSplitedAxes = distributedType.NdSBP.Skip(i + 1).OfType<SBPSplit>().Select(sbp => sbp.Axis).ToList();
-            if (ndsbp[i] is SBPPartialSum)
-            {
-                candidateNdsbps[i].Add(SBP.B);
-
-                // note separate reduce boxing and reshard boxing.
-                // for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
-                // {
-                //     if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && placement.Hierarchy[i] > 1 && IsDivideExactly(s, placement.Hierarchy[i]) && !innerSplitedAxes.Contains(axis))
-                //     {
-                //         candidateNdsbps[i].Add(SBP.S(axis));
-                //     }
-                // }
-            }
-            else
-            {
-                candidateNdsbps[i].Add(ndsbp[i]);
-            }
-        }
-
-        return candidateNdsbps.CartesianProduct().Select(ndsbp => ndsbp.ToArray()).Where(ndsbp => IsDistributable(tensorType, ndsbp, placement)).Select(ndsbp => new IRArray<SBP>(ndsbp)).ToArray();
-    }
-
     public static bool IsDistributable(TensorType tensorType, ReadOnlySpan<SBP> ndsbp, Placement placement)
     {
         if (!tensorType.Shape.IsFixed)
@@ -79,59 +42,6 @@ public static class DistributedUtility
 
         var divisors = GetDivisors(new DistributedType(tensorType, new IRArray<SBP>(ndsbp.ToArray()), placement));
         return divisors.Select((d, axis) => (d, axis)).All(p => p.d == 0 ? true : IsDivideExactly(tensorType.Shape[p.axis].FixedValue, p.d));
-    }
-
-    public static bool IsNoReshardReshape(DistributedType inType, DistributedType outType)
-    {
-        var inShape = inType.TensorType.Shape.ToValueArray();
-        var newShape = outType.TensorType.Shape.ToValueArray();
-        if (!IRUtility.TryGetShapeMapMatrix(inShape, newShape, out var mat))
-        {
-            return false;
-        }
-
-        var (forwardDict, backwardDict) = IRUtility.ShapeMapMatrixAsDict(mat);
-
-        var noReshard = true;
-
-        for (int meshAxis = 0; meshAxis < inType.NdSBP.Count; meshAxis++)
-        {
-            switch (inType.NdSBP[meshAxis], outType.NdSBP[meshAxis])
-            {
-                case (SBPSplit si, SBPSplit so):
-                    {
-                        var mapedOutAxes = forwardDict[si.Axis];
-
-                        // when input axis is splited-by-reshape, we can direct obtain the tensor which splited-by-sbp on the first maped axis.
-                        if (mapedOutAxes.Count > 1)
-                        {
-                            if (mapedOutAxes.First() != so.Axis)
-                            {
-                                noReshard = false;
-                            }
-                        }
-                        else
-                        {
-                            // when input axis is merged-by-reshape, we can direct obtain the tensor which splited-by-sbp on the first maped axis.
-                            var outAxis = mapedOutAxes.First();
-
-                            // when the outAxis is merged dim, only support no transpose order and no pad.
-                            var inAxes = backwardDict[outAxis];
-                            if (!(inAxes.First() == si.Axis && outAxis == so.Axis))
-                            {
-                                noReshard = false;
-                            }
-                        }
-                    }
-
-                    break;
-                default:
-                    noReshard = false;
-                    break;
-            }
-        }
-
-        return noReshard;
     }
 
     public static IReadOnlyList<int> GetDivisors(DistributedType distributedType)

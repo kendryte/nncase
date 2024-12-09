@@ -12,12 +12,12 @@ using Xunit;
 namespace Nncase.Tests.DistributedTest;
 
 [AutoSetupTestMethod(InitSession = true)]
-public class UnitTestDistributeScheme : TestClassBase
+public class UnitTestDistributeSchema : TestClassBase
 {
     [Fact]
     public void TestExportScheme()
     {
-        var scheme = new DistributedScheme("1", "llama", new DistributedScheme.Node[] { new("hidden_in", new SBP[] { SBP.S(1), SBP.S(2), SBP.B, SBP.P }, new[] { 8, 4, 4 }, "cbt") });
+        var scheme = new DistributedSchema("1", "llama", new DistributedSchema.Node[] { new("hidden_in", new SBP[] { SBP.S(1), SBP.S(2), SBP.B, SBP.P() }, new[] { 8, 4, 4 }, "cbt") });
         var except = @"{
   ""Version"": ""1"",
   ""Model"": ""llama"",
@@ -37,7 +37,8 @@ public class UnitTestDistributeScheme : TestClassBase
           ""$type"": ""B""
         },
         {
-          ""$type"": ""P""
+          ""$type"": ""P"",
+          ""Op"": ""Sum""
         }
       ],
       ""Hierarchy"": [
@@ -56,7 +57,7 @@ public class UnitTestDistributeScheme : TestClassBase
 #endif
         Assert.Equal(except, export);
 
-        var obj = JsonSerializer.Deserialize<DistributedScheme>(export);
+        var obj = JsonSerializer.Deserialize<DistributedSchema>(export);
     }
 
     [Fact]

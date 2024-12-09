@@ -15,27 +15,105 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
 {
     private const int _burstLength = 256;
 
-    public IRType Visit(ITypeInferenceContext context, Boxing target)
+    public static IRType VisitType(IRType inType, IRType outType, bool isReshape = false)
     {
-        var check = (DistributedType inv, DistributedType outv) =>
+        IRType VisitD2D(DistributedType inv, DistributedType outv)
+        {
+            if (inv.TensorType != outv.TensorType)
             {
-                // TODO: add more invalid cases
-                if (inv.NdSBP.Distinct().Count() == 1 && outv.NdSBP.Distinct().Count() == 1 && inv.NdSBP[0] == outv.NdSBP[0])
-                {
-                    return (IRType)new InvalidType("Same NDSBP");
-                }
-                else
+                if (!inv.NdSBP.Any(sbp => sbp is SBPPartial))
                 {
                     return outv;
                 }
-            };
+            }
 
-        return (context.GetArgumentType(target, Boxing.Input), target.NewType) switch
+            // TODO: add more invalid cases
+            if (inv.NdSBP.Distinct().Count() == 1 && outv.NdSBP.Distinct().Count() == 1 && inv.NdSBP[0] == outv.NdSBP[0])
+            {
+                return new InvalidType("Same NDSBP");
+            }
+
+            if (inv.NdSBP.Any(sbp => sbp is SBPPartial))
+            {
+                if (inv.NdSBP.Where(sbp => sbp is SBPPartial).Distinct().Count() != 1)
+                {
+                    return new InvalidType("Not supported different Partial in input");
+                }
+
+                var nonPartialSumPos = Enumerable.Range(0, inv.NdSBP.Count).Where(i => inv.NdSBP[i] is not SBPPartial);
+                if (nonPartialSumPos.Any(i => inv.NdSBP[i] is SBPSplit && outv.NdSBP[i] is SBPBroadCast))
+                {
+                    return new InvalidType("Not supported input is Split output is BroadCast");
+                }
+
+                var partialSumPos = Enumerable.Range(0, inv.NdSBP.Count).Where(i => inv.NdSBP[i] is SBPPartial);
+                if (partialSumPos.Any(i => inv.NdSBP[i] is SBPPartial && outv.NdSBP[i] is SBPSplit))
+                {
+                    return new InvalidType("Not supported input is Partial output is Split");
+                }
+
+                return outv;
+            }
+
+            if (outv.NdSBP.Any(sbp => sbp is SBPPartial))
+            {
+                if (outv.NdSBP.Where(sbp => sbp is SBPPartial).Distinct().Count() != 1)
+                {
+                    return new InvalidType("Not supported different Partial in output");
+                }
+
+                var nonPartialSumPos = Enumerable.Range(0, outv.NdSBP.Count).Where(i => outv.NdSBP[i] is not SBPPartial);
+                if (nonPartialSumPos.Any(i => inv.NdSBP[i] is SBPSplit && outv.NdSBP[i] is SBPBroadCast))
+                {
+                    return new InvalidType("Not supported input is Split output is BroadCast");
+                }
+
+                var partialSumPos = Enumerable.Range(0, outv.NdSBP.Count).Where(i => outv.NdSBP[i] is SBPPartial);
+                if (partialSumPos.Any(i => (inv.NdSBP[i] is SBPBroadCast or SBPSplit) && outv.NdSBP[i] is SBPPartial))
+                {
+                    return new InvalidType("Not supported input is (Split or BroadCast) output is Partial");
+                }
+
+                return outv;
+            }
+
+            return outv;
+        }
+
+        IRType VisitD2T(DistributedType inv, TensorType outv)
+        {
+            if (inv.NdSBP.Any(s => s is SBPPartial))
+            {
+                return new InvalidType("Not supported input is Partial output is Unshard");
+            }
+
+            return outv;
+        }
+
+        IRType VisitT2D(TensorType inv, DistributedType outv)
+        {
+            if (outv.NdSBP.Any(s => s is SBPPartial))
+            {
+                return new InvalidType("Not supported input is Unshard output is Partial");
+            }
+
+            return outv;
+        }
+
+        return (inType, outType) switch
         {
             (InvalidType inv, _) => inv,
-            (DistributedType inv, DistributedType outv) => check(inv, outv),
-            _ => target.NewType,
+            (_, InvalidType inv) => inv,
+            (DistributedType d, DistributedType d1) => VisitD2D(d, d1),
+            (TensorType t, DistributedType d) => VisitT2D(t, d),
+            (DistributedType d, TensorType t) => VisitD2T(d, t),
+            _ => new InvalidType($"not support boxing {inType} to {outType}"),
         };
+    }
+
+    public IRType Visit(ITypeInferenceContext context, Boxing target)
+    {
+        return VisitType(context.GetArgumentType(target, Boxing.Input), target.NewType);
     }
 
     public Cost Visit(ICostEvaluateContext context, Boxing target)
@@ -45,31 +123,25 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
         var cost = new Cost() { [CostFactorNames.MemoryLoad] = 0, [CostFactorNames.MemoryStore] = 0 };
         switch (inType, returnType)
         {
-            case (TensorType tensorType, DistributedType distTensorType):
+            case (TensorType _, DistributedType distTensorType):
                 switch (context.CompileOptions.TargetOptions)
                 {
-                    case Targets.CpuTargetOptions { UnifiedMemoryArch: true }:
-                        break;
                     default:
                         cost = new Cost()
                         {
-                            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(tensorType),
-                            [CostFactorNames.MemoryStore] = (UInt128)((float)CostUtility.GetMemoryAccess(distTensorType) / DistributedUtility.GetDividedTensorEfficiency(distTensorType, _burstLength)),
+                            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(distTensorType),
                         };
                         break;
                 }
 
                 break;
-            case (DistributedType distTensorType, TensorType tensorType):
+            case (DistributedType distTensorType, TensorType _):
                 switch (context.CompileOptions.TargetOptions)
                 {
-                    case Targets.CpuTargetOptions { UnifiedMemoryArch: true }:
-                        break;
                     default:
                         cost = new Cost()
                         {
-                            [CostFactorNames.MemoryLoad] = (UInt128)((float)CostUtility.GetMemoryAccess(distTensorType) / DistributedUtility.GetDividedTensorEfficiency(distTensorType, _burstLength)),
-                            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(tensorType),
+                            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(distTensorType),
                         };
                         break;
                 }
@@ -80,8 +152,8 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                 {
                     var fullLoadStore = new Cost()
                     {
-                        [CostFactorNames.MemoryStore] = (UInt128)((float)CostUtility.GetMemoryAccess(a) / DistributedUtility.GetDividedTensorEfficiency(a, _burstLength)),
-                        [CostFactorNames.MemoryLoad] = (UInt128)((float)CostUtility.GetMemoryAccess(b) / DistributedUtility.GetDividedTensorEfficiency(b, _burstLength)),
+                        [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(a),
+                        [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(b),
                     };
 
                     float scatterPart = 1;
@@ -117,10 +189,10 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                                     [CostFactorNames.CPUCycles] = 1,
                                 };
                                 break;
-                            case (SBPPartialSum, SBP sbpout):
+                            case (SBPPartial, SBP sbpout):
                                 switch (sbpout)
                                 {
-                                    case SBPPartialSum:
+                                    case SBPPartial:
                                         break;
                                     case SBPBroadCast or SBPSplit:
                                         gatherPart *= a.Placement.Hierarchy[i];
@@ -133,7 +205,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                                 }
 
                                 break;
-                            case (SBPBroadCast, SBPPartialSum):
+                            case (SBPBroadCast, SBPPartial):
                                 // note this case only for tests.
                                 cost += new Cost()
                                 {
@@ -166,15 +238,15 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
             case (DistributedType a, DistributedType b) when a.TensorType != b.TensorType && a.Placement == b.Placement:
                 cost = new Cost()
                 {
-                    [CostFactorNames.MemoryStore] = (UInt128)((float)CostUtility.GetMemoryAccess(a) / DistributedUtility.GetDividedTensorEfficiency(a, _burstLength)),
-                    [CostFactorNames.MemoryLoad] = (UInt128)((float)CostUtility.GetMemoryAccess(b) / DistributedUtility.GetDividedTensorEfficiency(b, _burstLength)),
+                    [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(a),
+                    [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(b),
                 };
                 break;
             case (DistributedType a, DistributedType b) when a.Placement != b.Placement:
                 cost = new Cost()
                 {
-                    [CostFactorNames.MemoryStore] = (UInt128)((float)CostUtility.GetMemoryAccess(a) / DistributedUtility.GetDividedTensorEfficiency(a, _burstLength)),
-                    [CostFactorNames.MemoryLoad] = (UInt128)((float)CostUtility.GetMemoryAccess(b) / DistributedUtility.GetDividedTensorEfficiency(b, _burstLength)),
+                    [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(a),
+                    [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(b),
                 };
                 break;
             case (DistributedType a, DistributedType b) when a == b:

@@ -50,7 +50,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                     if (ax == lk && bx == rk)
                     {
                         // split on k
-                        ndsbp[i] = SBP.P;
+                        ndsbp[i] = SBP.P();
                     }
                     else if ((ax == lk && bx != rk) || (ax != lk && bx == rk) || (ax == lm && bx == rn))
                     {

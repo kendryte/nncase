@@ -47,70 +47,57 @@ extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata) {
 }
 
 #ifdef NNCASE_STANDALONE
-#include <memory>
-
-static void *local_alloc(size_t bytes, size_t alignment) {
-#ifdef WIN32
-    return _aligned_malloc(bytes, alignment);
-#else
-    size_t mask = alignment - 1;
-    size_t aligned_bytes = bytes + (-bytes & mask);
-    return aligned_alloc(alignment, aligned_bytes);
-#endif
-}
-
-static void local_free(void *ptr) {
-#ifdef WIN32
-    _aligned_free(ptr);
-#else
-    free(ptr);
-#endif
-}
-
-static nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
-    .acosf = acosf,
-    .acoshf = acoshf,
-    .asinf = asinf,
-    .asinhf = asinhf,
-    .copysignf = copysignf,
-    .cosf = cosf,
-    .coshf = coshf,
-    .erff = erff,
-    .expf = expf,
-    .fmodf = fmodf,
-    .logf = logf,
-    .nearbyintf = nearbyintf,
-    .powf = powf,
-    .roundf = roundf,
-    .sinf = sinf,
-    .sinhf = sinhf,
-    .sqrtf = sqrtf,
-    .tanhf = tanhf,
-    .sram_address = nullptr,
-    .failfast = nullptr,
-
-#ifndef WIN32
-    .memcpy = memcpy,
-    .memmove = memmove,
-    .memset = memset,
-#endif
-};
-
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
-  uint8_t *inputs[@inputCount];
+  std::byte *inputs[@inputCount];
   size_t align = @(Model.Alignment);
   @foreach(var (b,i) in Model.PrimFunction.Parameters.ToArray().OfType<Nncase.TIR.Buffer>().Select((b,i)=>(Model.GetInfo(b),i)))
   {
-  @:inputs[@i] = (uint8_t *)local_alloc(sizeof(@Html.Raw(b.ElemType)) * @b.Size, align);
+  @:inputs[@i] = (std::byte *)nncase::ntt::runtime::thread_alloc(sizeof(@Html.Raw(b.ElemType)) * @b.Size, align);
   }
 
-  uint8_t* rdata = (uint8_t *)local_alloc(@Model.RDataSize, align);
+  std::byte* rdata = (std::byte *)nncase::ntt::runtime::thread_alloc(@Model.RDataSize, align);
 
-  kernel_entry(&nncase_cpu_mt_, inputs, rdata);
+#ifdef __APPLE__
+  pthread_key_t cpu_thread_context_key_ = {};
+  pthread_key_create(&cpu_thread_context_key_, [](void *ptr) { delete (nncase::ntt::runtime::cpu_thread_context_t *)ptr; });
+#endif
+
+  std::vector<std::thread> blocks;
+  for (size_t cid = 0; cid < cdim(); cid++) {
+    for (size_t bid = 0; bid < bdim(); bid++) {
+      blocks.emplace_back([cid, bid, inputs, rdata, &cpu_thread_context_key_] {
+        nncase::ntt::runtime::cpu_block_entry_params_t block_entry_params{
+            .tdim = tdim(),
+            .bdim = bdim(),
+            .cdim = cdim(),
+            .bid = bid,
+            .cid = cid,
+            .cpu_id_offset = (cid * bdim() + bid) * tdim(),
+            .inouts = inputs,
+            .rdata = rdata,
+#ifdef __APPLE__
+            .cpu_thread_context_key = cpu_thread_context_key_,
+#endif
+        };
+
+        block_entry(block_entry_params);
+      });
+    }
+  }
+
+  for (auto &block : blocks) {
+    block.join();
+  }
+    
+    
+#ifdef __APPLE__
+  pthread_key_delete(cpu_thread_context_key_);
+#endif
+
   for (size_t i = 0; i < @inputCount; i++) {
-    local_free(inputs[i]);
+    nncase::ntt::runtime::thread_free(inputs[i]);
   }
-  local_free(rdata);
+  nncase::ntt::runtime::thread_free(rdata);
   return 0;
 }
 #endif

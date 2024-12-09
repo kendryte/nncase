@@ -121,12 +121,14 @@ public sealed class UnitTestCPUKernels : TestClassBase
             var newsbp = ndsbp.ToArray();
             foreach (var axis in comb)
             {
-                newsbp[axis] = SBP.P;
+                newsbp[axis] = SBP.P();
             }
 
-            var partial = IR.F.CPU.Boxing(broadcast, new DistributedType(inputType, newsbp, placement));
+            var partial = IR.F.CPU.ForceBoxing(broadcast, new DistributedType(inputType, newsbp, placement));
             var sumed = IR.F.CPU.Boxing(partial, new DistributedType(inputType, ndsbp, placement));
-            posts.Add(IR.F.CPU.Boxing(sumed, inputType));
+            var post = IR.F.CPU.Boxing(sumed, inputType);
+            post.Metadata = new Passes.Distributed.AutoDistributedMetadata(true);
+            posts.Add(post);
         }
 
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
@@ -315,25 +317,65 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData([ReduceOp.Sum, new[] { 1, 64, 384, 128 }, new[] { 3 }, 0, true, 0])]
-    [InlineData([ReduceOp.Mean, new[] { 1, 384, 128 }, new[] { 2 }, 0, true, 1])]
-    public async Task TestPackReduce(ReduceOp reduceOp, int[] shape, int[] axes, float init, bool keepDims, int count)
+    [InlineData([ReduceOp.Sum, new[] { 1, 64, 384, 128 }, new[] { 3 }, 0, true, new[] { 1 }, new int[] { }, 0])]
+    [InlineData([ReduceOp.Mean, new[] { 1, 384, 128 }, new[] { 2 }, 0, true, new[] { 1 }, new int[] { }, 1])]
+    [InlineData([ReduceOp.Mean, new[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, new int[] { 2 }, 2])]
+    [InlineData([ReduceOp.Max, new[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, new int[] { 2 }, 3])]
+    [InlineData([ReduceOp.Min, new[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, new int[] { 2 }, 4])]
+    [InlineData([ReduceOp.Sum, new[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, new int[] { 2 }, 5])]
+    [InlineData([ReduceOp.Mean, new[] { 1, 3, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, new int[] { 2 }, 6])]
+    public async Task TestPackReduce(ReduceOp reduceOp, int[] shape, int[] axes, float init, bool keepDims, int[] hierarchy, int[] splitedAxes, int number)
     {
-        var input = new Var(new TensorType(DataTypes.Float32, shape));
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((int)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+
+        var tensorType = new TensorType(DataTypes.Float32, shape);
+        var input = new Var(tensorType);
         var pre = IR.F.Tensors.Reduce(reduceOp, input, axes, init, keepDims);
 
         var feedDict = new Dictionary<Var, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
 
+        IEnumerable<Expr> posts;
         var rule = new Passes.Rules.CPU.PackReduce(Rank, Lane);
         if (!CompilerServices.TryMatch(pre, rule.Pattern, out var result))
         {
             return;
         }
 
-        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result, new Passes.RunPassContext()));
+
+        if (splitedAxes.Any(i => i != -1))
+        {
+            foreach (var post in posts)
+            {
+                if (post is Call { Target: IR.CPU.Pack } callPack && callPack.Arguments[0] is Call { Target: IR.CPU.PackedReduce } packedReduceCall)
+                {
+                    packedReduceCall.Arguments[0].Metadata = new() { OutputNames = new[] { "reduceIn" } };
+                }
+                else if (post is Call { Target: IR.Math.Reduce } reduceCall)
+                {
+                    reduceCall.Arguments[0].Metadata = new() { OutputNames = new[] { "reduceIn" } };
+                }
+            }
+
+            var scheme = new Passes.Distributed.DistributedSchema("1", "llama", [new("reduceIn", splitedAxes.Select<int, SBP>(s => s > 0 ? SBP.S(s) : SBP.B).ToArray(), hierarchy, targetOptions.HierarchyNames)]);
+            var export = System.Text.Json.JsonSerializer.Serialize(scheme, new System.Text.Json.JsonSerializerOptions() { WriteIndented = true });
+            var dumpper = Diagnostics.DumpScope.Current.CreateSubDummper($"Theory{number}");
+            targetOptions.DistributedScheme = Path.Join(dumpper.Directory, "schema.json");
+            using (var stream = dumpper.OpenFile("schema.json"))
+            {
+                using (var writer = new StreamWriter(stream))
+                {
+                    writer.Write(export);
+                }
+            }
+        }
+
+        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, posts);
     }
 
     [Theory]
@@ -470,8 +512,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new[] { 1, 48, 512 }, new[] { 1, 512, 1024 }, new[] { 1, 48, 64, 16 }, new[] { 8 }, 0 })]
-    public async Task TestMatMulReshape(int[] lhsShape, int[] rhsShape, int[] newShape, int[] hierarchy, int number)
+    [InlineData(new object[] { new[] { 1, 48, 512 }, new[] { 1, 512, 1024 }, new[] { 1, 48, 64, 16 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 8 }, 0 })]
+    [InlineData(new object[] { new[] { 1, 48, 512 }, new[] { 1, 512, 1024 }, new[] { 1, 64, 768 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 8 }, 1 })]
+    public async Task TestMatMulReshapeUnary(int[] lhsShape, int[] rhsShape, int[] newShape, UnaryOp[] unaryOps, int[] hierarchy, int number)
     {
         var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
@@ -481,13 +524,19 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
         var matmul = IR.F.Tensors.MatMul(lhs, rhs);
         var reshaped = IR.F.Tensors.Reshape(matmul, newShape);
+        var unary = reshaped;
+        foreach (var item in unaryOps)
+        {
+            unary = IR.F.Math.Unary(item, unary);
+        }
+
         var feedDict = new Dictionary<Var, IValue>()
         {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
         };
 
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, new[] { reshaped });
+        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, new[] { unary });
     }
 
     [Theory(Skip = "ToBig")]
@@ -635,6 +684,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         }
 
         var main = new Function(fusion.Body, kernelCase.Vars.ToArray());
+        main.Metadata = fusion.Body.Metadata;
 
         var module = new IR.IRModule(main);
         var inputs = kernelCase.Inputs.ToArray();

@@ -46,13 +46,8 @@ using namespace nncase::ntt::distributed::shard_policy;
 
     public static string TopoAwareRuntimeDef(CpuTargetOptions options, ulong dataAlign, ulong collective_pool_size)
     {
-        if (options.Hierarchies[0].Any(i => i > 1))
-        {
-            var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/topo_aware_runtime.cshtml", new CpuTargetOptionsModel(options, dataAlign, collective_pool_size)).Result;
-            return content;
-        }
-
-        return string.Empty;
+        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/topo_aware_runtime.cshtml", new CpuTargetOptionsModel(options, dataAlign, collective_pool_size)).Result;
+        return content;
     }
 
     public static string TopologyDef(CpuTargetOptions options)
