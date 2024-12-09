@@ -124,142 +124,54 @@ trans_shape(const std::array<size_t, Rank> dims,
 }
 
 template <IsFixedDims TPerm, IsFixedTensor TIn, IsFixedTensor TOut, size_t Rank,
-          bool Arch>
-class u_transpose;
-
-template <IsFixedDims TPerm, IsFixedTensor TIn, IsFixedTensor TOut, bool Arch>
-class u_transpose<TPerm, TIn, TOut, 1, Arch> {
+          std::array<size_t, Rank> DimsCompressed,
+          std::array<size_t, Rank> PermCompressed,
+          std::array<size_t, Rank> ShapeTransed, bool Arch>
+class u_transpose {
   public:
-    constexpr void operator()(const TIn &input, TOut &output) noexcept {
-
-        auto domain = input.shape();
-        auto out_index = ranked_shape<domain.rank()>{};
+    template <class TInView, class TOutView>
+    __attribute__((always_inline)) constexpr void
+    operator()(TInView &input, TOutView &output) noexcept {
+        constexpr auto domain = input.shape();
+        auto out_index = ranked_shape<Rank>{};
         apply(domain, [&](auto index) {
-            loop<domain.rank()>(
-                [&](auto i) { out_index[i] = index[TPerm::at(i)]; });
+            loop<Rank>(
+                [&](auto i) { out_index[i] = index[PermCompressed[i]]; });
             output(out_index) = input(index);
-        });
-    }
-};
-
-template <IsFixedDims TPerm, IsFixedTensor TIn, IsFixedTensor TOut, bool Arch>
-class u_transpose<TPerm, TIn, TOut, 2, Arch> {
-  public:
-    __attribute__((always_inline)) constexpr void
-    operator()(const TIn &input, TOut &output) noexcept {
-
-        constexpr std::array<size_t, 2> dims_compressed =
-            compress_dimensions<TPerm, TIn, 2>();
-        constexpr std::array<size_t, 2> perm_compressed =
-            compress_perm<TPerm, 2>();
-        constexpr auto shape_transed =
-            trans_shape<2>(dims_compressed, perm_compressed);
-        constexpr auto data_length = TIn::size();
-
-        using TElem = typename TIn::element_type;
-
-        auto compressed_input = ntt::tensor_view<
-            TElem, ntt::fixed_shape<dims_compressed[0], dims_compressed[1]>>(
-            std::span<TElem, data_length>((TElem *)(input.elements().data()),
-                                          data_length));
-
-        // auto t1 = get_cpu_cycle();
-        auto compressed_output = ntt::tensor_view<
-            TElem, ntt::fixed_shape<shape_transed[0], shape_transed[1]>>(
-            std::span<TElem, data_length>((TElem *)(output.elements().data()),
-                                          data_length));
-
-        constexpr auto domain = compressed_input.shape();
-        auto out_index = ranked_shape<2>{};
-        apply(domain, [&](auto index) {
-            loop<2>([&](auto i) { out_index[i] = index[perm_compressed[i]]; });
-            compressed_output(out_index) = compressed_input(index);
-        });
-    }
-};
-
-template <IsFixedDims TPerm, IsFixedTensor TIn, IsFixedTensor TOut, bool Arch>
-class u_transpose<TPerm, TIn, TOut, 3, Arch> {
-  public:
-    __attribute__((always_inline)) constexpr void
-    operator()(const TIn &input, TOut &output) noexcept {
-
-        constexpr std::array<size_t, 3> dims_compressed =
-            compress_dimensions<TPerm, TIn, 3>();
-        constexpr std::array<size_t, 3> perm_compressed =
-            compress_perm<TPerm, 3>();
-        constexpr auto shape_transed =
-            trans_shape<3>(dims_compressed, perm_compressed);
-        constexpr auto data_length = TIn::size();
-
-        using TElem = typename TIn::element_type;
-
-        auto compressed_input = ntt::tensor_view<
-            TElem, ntt::fixed_shape<dims_compressed[0], dims_compressed[1],
-                                    dims_compressed[2]>>(
-            std::span<TElem, data_length>((TElem *)(input.elements().data()),
-                                          data_length));
-
-        // auto t1 = get_cpu_cycle();
-        auto compressed_output = ntt::tensor_view<
-            TElem, ntt::fixed_shape<shape_transed[0], shape_transed[1],
-                                    shape_transed[2]>>(
-            std::span<TElem, data_length>((TElem *)(output.elements().data()),
-                                          data_length));
-
-        constexpr auto domain = compressed_input.shape();
-        auto out_index = ranked_shape<3>{};
-        apply(domain, [&](auto index) {
-            loop<3>([&](auto i) { out_index[i] = index[perm_compressed[i]]; });
-            compressed_output(out_index) = compressed_input(index);
-        });
-    }
-};
-
-template <IsFixedDims TPerm, IsFixedTensor TIn, IsFixedTensor TOut, bool Arch>
-class u_transpose<TPerm, TIn, TOut, 4, Arch> {
-  public:
-    __attribute__((always_inline)) constexpr void
-    operator()(const TIn &input, TOut &output) noexcept {
-        constexpr std::array<size_t, 4> dims_compressed =
-            compress_dimensions<TPerm, TIn, 4>();
-        constexpr std::array<size_t, 4> perm_compressed =
-            compress_perm<TPerm, 4>();
-        constexpr auto shape_transed =
-            trans_shape<4>(dims_compressed, perm_compressed);
-        constexpr auto data_length = TIn::size();
-
-        using TElem = typename TIn::element_type;
-
-        auto compressed_input = ntt::tensor_view<
-            TElem, ntt::fixed_shape<dims_compressed[0], dims_compressed[1],
-                                    dims_compressed[2], dims_compressed[3]>>(
-            std::span<TElem, data_length>((TElem *)(input.elements().data()),
-                                          data_length));
-
-        auto compressed_output = ntt::tensor_view<
-            TElem, ntt::fixed_shape<shape_transed[0], shape_transed[1],
-                                    shape_transed[2], shape_transed[3]>>(
-            std::span<TElem, data_length>((TElem *)(output.elements().data()),
-                                          data_length));
-
-        constexpr auto domain = compressed_input.shape();
-        auto out_index = ranked_shape<4>{};
-        apply(domain, [&](auto index) {
-            loop<4>([&](auto i) { out_index[i] = index[perm_compressed[i]]; });
-            compressed_output(out_index) = compressed_input(index);
         });
     }
 };
 } // namespace ukernels
 
-template <IsFixedDims TPerm, IsFixedTensor TIn, IsFixedTensor TOut, size_t Rank>
-constexpr void u_transpose(const TIn &input, TOut &&output) noexcept {
+template <IsFixedDims TPerm, IsFixedTensor TIn, IsFixedTensor TOut, size_t Rank,
+          size_t... Index>
+constexpr void u_transpose(const TIn &input, TOut &&output,
+                           std::index_sequence<Index...>) noexcept {
+
+    constexpr std::array<size_t, Rank> dims_compressed =
+        ukernels::compress_dimensions<TPerm, TIn, Rank>();
+    constexpr std::array<size_t, Rank> perm_compressed =
+        ukernels::compress_perm<TPerm, Rank>();
+    constexpr auto shape_transed =
+        ukernels::trans_shape<Rank>(dims_compressed, perm_compressed);
+    constexpr auto data_length = TIn::size();
+
+    using TElem = typename TIn::element_type;
+
+    auto compressed_input =
+        ntt::tensor_view<TElem, ntt::fixed_shape<dims_compressed[Index]...>>(
+            std::span<TElem, data_length>((TElem *)(input.elements().data()),
+                                          data_length));
+
+    auto compressed_output =
+        ntt::tensor_view<TElem, ntt::fixed_shape<shape_transed[Index]...>>(
+            std::span<TElem, data_length>((TElem *)(output.elements().data()),
+                                          data_length));
     ukernels::u_transpose<TPerm, std::decay_t<TIn>, std::decay_t<TOut>, Rank,
-                          true>
+                          dims_compressed, perm_compressed, shape_transed, true>
         impl;
 
-    impl(input, output);
+    impl(compressed_input, compressed_output);
 }
 
 } // namespace nncase::ntt

@@ -44,7 +44,8 @@ void transpose(const TIn &input, TOut &&output) {
 
     if (cdims_input == TIn::rank() && cdims_output == output_rank &&
         segs_cnt <= 4) {
-        ntt::u_transpose<TPerm, TIn, TOut, segs_cnt>(input, output);
+        ntt::u_transpose<TPerm, TIn, TOut, segs_cnt>(
+            input, output, std::make_index_sequence<segs_cnt>{});
     } else {
         auto domain = input.shape();
         auto out_index = ranked_shape<domain.rank()>{};
