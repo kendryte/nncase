@@ -290,7 +290,7 @@ constexpr auto default_strides(const Shape &shape) noexcept {
     if constexpr (is_fixed_dims_v<Shape>) {
         return default_strides_t<Shape>{};
     } else {
-        ranked_strides<Shape::rank()> strides;
+        ranked_strides<Shape::rank()> strides{};
         if constexpr (strides.rank()) {
             strides[strides.rank() - 1] = 1;
             if constexpr (strides.rank() > 1) {
@@ -335,7 +335,7 @@ constexpr size_t linear_size(const Shape &shape,
 template <class Shape, class Strides>
 constexpr size_t contiguous_dims(const Shape &shape, const Strides &strides) {
     auto def_strides = default_strides(shape);
-    for (int32_t i = strides.rank() - 1; i >= 0; --i) {
+    for (ptrdiff_t i = (ptrdiff_t)strides.rank() - 1; i >= 0; --i) {
         if (strides[i] != def_strides[i]) {
             return shape.rank() - i - 1;
         }

@@ -1,5 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
+using System.Drawing;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -50,16 +52,16 @@ internal class FunctionBuilder
             ulong rdataPoolSize = ulong.MinValue;
             foreach (var (@const, range) in function.SchedResult.Rdatas)
             {
-                var bytes = ((TensorConst)@const).Value.BytesBuffer;
+                var tensor = ((TensorConst)@const).Value;
                 var size = range.Max - range.Min;
                 rdataPoolSize = System.Math.Max(range.Max, rdataPoolSize);
-                if ((uint)bytes.Length != size)
+                if ((ulong)tensor.Length * (ulong)tensor.ElementType.SizeInBytes != size)
                 {
                     throw new InvalidDataException("The Buffer Size Not Equal!");
                 }
 
                 _rdataWriter.Position(checked((long)range.Min));
-                _rdataWriter.Write(bytes);
+                tensor.Serialize(_rdataWriter.BaseStream);
             }
 
             // 3. build function.

@@ -71,6 +71,10 @@ template <class T> struct ceil {
     constexpr T operator()(const T &v) const noexcept { return std::ceil(v); }
 };
 
+template <class T> struct copy {
+    constexpr T operator()(const T &v) const noexcept { return v; }
+};
+
 template <class T> struct cos {
     constexpr T operator()(const T &v) const noexcept { return std::cos(v); }
 };
@@ -348,6 +352,7 @@ NTT_DEFINE_UNARY_FUNC_IMPL(acosh)
 NTT_DEFINE_UNARY_FUNC_IMPL(asin)
 NTT_DEFINE_UNARY_FUNC_IMPL(asinh)
 NTT_DEFINE_UNARY_FUNC_IMPL(ceil)
+NTT_DEFINE_UNARY_FUNC_IMPL(copy)
 NTT_DEFINE_UNARY_FUNC_IMPL(cos)
 NTT_DEFINE_UNARY_FUNC_IMPL(cosh)
 NTT_DEFINE_UNARY_FUNC_IMPL(exp)

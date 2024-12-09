@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "nncase/ntt/runtime.h"
-#include "nncase/ntt/runtime/cpu_runtime.h"
 #include "runtime_function.h"
+#include <nncase/ntt/arch/cpu/runtime.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>

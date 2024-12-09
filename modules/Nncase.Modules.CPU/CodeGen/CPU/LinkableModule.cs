@@ -80,6 +80,14 @@ internal sealed class LinkableModule : ILinkableModule
                 }
             }
 
+            using (var fs = File.Open(Path.Join(dumpPath, "topology_def.h"), FileMode.Create))
+            {
+                using (var writer = new StreamWriter(fs))
+                {
+                    writer.Write(func.FunctionCSource.TopologyDef);
+                }
+            }
+
             using (var fs = File.Open(Path.Join(dumpPath, "CMakeLists.txt"), FileMode.Create))
             {
                 using (var writer = new StreamWriter(fs))

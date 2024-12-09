@@ -16,105 +16,371 @@
 #include "ortki_helper.h"
 #include <gtest/gtest.h>
 #include <iostream>
+#include <nncase/float8.h>
 #include <nncase/ntt/ntt.h>
 #include <ortki/operators.h>
 
 using namespace nncase;
 using namespace ortki;
 
-TEST(ExpandTestFloat, NoPack) {
-    constexpr size_t M = 1024;
+TEST(Expand, W) {
+
+    constexpr size_t N = 8;
+    constexpr size_t C = 8;
+    constexpr size_t H = 8;
+    constexpr size_t W = 1;
+
+    constexpr size_t expand_n = 8;
+    constexpr size_t expand_c = 8;
+    constexpr size_t expand_h = 8;
+    constexpr size_t expand_w = 8;
+
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
+    using tensor_type2 =
+        ntt::tensor<float,
+                    ntt::fixed_shape<expand_n, expand_c, expand_h, expand_w>>;
+
+    alignas(32) tensor_type1 ntt_input;
+    [[maybe_unused]] alignas(32) tensor_type2 ntt_output1;
+    std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);
+
+    ntt::expand(ntt_input, ntt_output1);
+
+    auto ort_input = NttTest::ntt2ort(ntt_input);
+    int64_t data[] = {expand_n, expand_c, expand_h, expand_w};
+    int64_t data_shape[] = {std::size(data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                             data_shape, std::size(data_shape));
+    auto ort_output = ortki_Expand(ort_input, shape);
+
+    alignas(32) tensor_type2 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+}
+
+TEST(Expand, H) {
+
+    constexpr size_t N = 8;
+    constexpr size_t C = 8;
+    constexpr size_t H = 1;
+    constexpr size_t W = 8;
+
+    constexpr size_t expand_n = 8;
+    constexpr size_t expand_c = 8;
+    constexpr size_t expand_h = 8;
+    constexpr size_t expand_w = 8;
+
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
+    using tensor_type2 =
+        ntt::tensor<float,
+                    ntt::fixed_shape<expand_n, expand_c, expand_h, expand_w>>;
+
+    alignas(32) tensor_type1 ntt_input;
+    [[maybe_unused]] alignas(32) tensor_type2 ntt_output1;
+    std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);
+
+    ntt::expand(ntt_input, ntt_output1);
+
+    auto ort_input = NttTest::ntt2ort(ntt_input);
+    int64_t data[] = {expand_n, expand_c, expand_h, expand_w};
+    int64_t data_shape[] = {std::size(data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                             data_shape, std::size(data_shape));
+    auto ort_output = ortki_Expand(ort_input, shape);
+
+    alignas(32) tensor_type2 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+}
+
+TEST(Expand, C) {
+
+    constexpr size_t N = 8;
+    constexpr size_t C = 1;
+    constexpr size_t H = 8;
+    constexpr size_t W = 8;
+
+    constexpr size_t expand_n = 8;
+    constexpr size_t expand_c = 8;
+    constexpr size_t expand_h = 8;
+    constexpr size_t expand_w = 8;
+
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
+    using tensor_type2 =
+        ntt::tensor<float,
+                    ntt::fixed_shape<expand_n, expand_c, expand_h, expand_w>>;
+
+    alignas(32) tensor_type1 ntt_input;
+    [[maybe_unused]] alignas(32) tensor_type2 ntt_output1;
+    std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);
+
+    ntt::expand(ntt_input, ntt_output1);
+
+    auto ort_input = NttTest::ntt2ort(ntt_input);
+    int64_t data[] = {expand_n, expand_c, expand_h, expand_w};
+    int64_t data_shape[] = {std::size(data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                             data_shape, std::size(data_shape));
+    auto ort_output = ortki_Expand(ort_input, shape);
+
+    alignas(32) tensor_type2 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+}
+
+TEST(Expand, N) {
+
     constexpr size_t N = 1;
-    constexpr size_t K = 2048;
+    constexpr size_t C = 8;
+    constexpr size_t H = 8;
+    constexpr size_t W = 8;
 
-    float min_input = static_cast<float>(-10);
-    float max_input = static_cast<float>(10);
+    constexpr size_t expand_n = 8;
+    constexpr size_t expand_c = 8;
+    constexpr size_t expand_h = 8;
+    constexpr size_t expand_w = 8;
 
-    // init
-    using input_tensor_type = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    using output_tensor_type = ntt::tensor<float, ntt::fixed_shape<M, K>>;
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
+    using tensor_type2 =
+        ntt::tensor<float,
+                    ntt::fixed_shape<expand_n, expand_c, expand_h, expand_w>>;
 
-    std::unique_ptr<input_tensor_type> ntt_input(new input_tensor_type);
-    NttTest::init_tensor(*ntt_input, min_input, max_input);
+    alignas(32) tensor_type1 ntt_input;
+    [[maybe_unused]] alignas(32) tensor_type2 ntt_output1;
+    std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);
 
-    // ntt
-    std::unique_ptr<output_tensor_type> ntt_output1(new output_tensor_type);
-    ntt::expand(*ntt_input, *ntt_output1);
+    ntt::expand(ntt_input, ntt_output1);
 
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t target_shape[] = {M, K};
-    int64_t shape_size = 2;
-    int64_t shape[] = {shape_size};
-    auto shape_tensor = make_tensor(reinterpret_cast<void*>(target_shape), DataType_INT64, shape, 1);
-    auto ort_output = ortki_Expand(ort_input, shape_tensor);
+    auto ort_input = NttTest::ntt2ort(ntt_input);
+    int64_t data[] = {expand_n, expand_c, expand_h, expand_w};
+    int64_t data_shape[] = {std::size(data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                             data_shape, std::size(data_shape));
+    auto ort_output = ortki_Expand(ort_input, shape);
 
-    // compare
-    std::unique_ptr<output_tensor_type> ntt_output2(new output_tensor_type);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    alignas(32) tensor_type2 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(ExpandTestFloat, NoPack1) {
-    constexpr size_t M = 1;
-    constexpr size_t K = 2;
+TEST(Expand, NC) {
 
-    float min_input = static_cast<float>(-10);
-    float max_input = static_cast<float>(10);
+    constexpr size_t N = 1;
+    constexpr size_t C = 1;
+    constexpr size_t H = 8;
+    constexpr size_t W = 8;
 
-    // init
-    using input_tensor_type = ntt::tensor<float, ntt::fixed_shape<M>>;
-    using output_tensor_type = ntt::tensor<float, ntt::fixed_shape<M, K>>;
-    std::unique_ptr<input_tensor_type> ntt_input(new input_tensor_type);
-    NttTest::init_tensor(*ntt_input, min_input, max_input);
+    constexpr size_t expand_n = 8;
+    constexpr size_t expand_c = 8;
+    constexpr size_t expand_h = 8;
+    constexpr size_t expand_w = 8;
 
-   // ntt
-    std::unique_ptr<output_tensor_type> ntt_output1(new output_tensor_type);
-    ntt::expand(*ntt_input, *ntt_output1);
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
+    using tensor_type2 =
+        ntt::tensor<float,
+                    ntt::fixed_shape<expand_n, expand_c, expand_h, expand_w>>;
 
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t target_shape[] = {M, K};
-    int64_t shape_size = 2;
-    int64_t shape[] = {shape_size};
-    auto shape_tensor = make_tensor(reinterpret_cast<void*>(target_shape), DataType_INT64, shape, 1);
-    auto ort_output = ortki_Expand(ort_input, shape_tensor);
+    alignas(32) tensor_type1 ntt_input;
+    [[maybe_unused]] alignas(32) tensor_type2 ntt_output1;
+    std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);
 
-    // compare
-    std::unique_ptr<output_tensor_type> ntt_output2(new output_tensor_type);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    ntt::expand(ntt_input, ntt_output1);
+
+    auto ort_input = NttTest::ntt2ort(ntt_input);
+    int64_t data[] = {expand_n, expand_c, expand_h, expand_w};
+    int64_t data_shape[] = {std::size(data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                             data_shape, std::size(data_shape));
+    auto ort_output = ortki_Expand(ort_input, shape);
+
+    alignas(32) tensor_type2 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(ExpandTestFloat, Pack_M_K) {
-    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+TEST(Expand, CH) {
 
-    // init
-    using input_tensor_type = ntt::tensor<float, ntt::fixed_shape<32, 1>>;
-    std::unique_ptr<input_tensor_type> ntt_input(new input_tensor_type);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    constexpr size_t N = 8;
+    constexpr size_t C = 1;
+    constexpr size_t H = 1;
+    constexpr size_t W = 8;
 
-    constexpr size_t pack_dim = (31 + P) / P; 
-    alignas(32) ntt::tensor<ntt::vector<float, 128>, ntt::fixed_shape<pack_dim, 1>> p_ntt_lhs;
-    ntt::pack<0>(*ntt_input, p_ntt_lhs);
+    constexpr size_t expand_n = 8;
+    constexpr size_t expand_c = 8;
+    constexpr size_t expand_h = 8;
+    constexpr size_t expand_w = 8;
 
-    // ntt
-    using output_tensor_type = ntt::tensor<float, ntt::fixed_shape<32, 2>>;
-    std::unique_ptr<output_tensor_type> ntt_output1(new output_tensor_type);
-    ntt::expand(*ntt_input, *ntt_output1);
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
+    using tensor_type2 =
+        ntt::tensor<float,
+                    ntt::fixed_shape<expand_n, expand_c, expand_h, expand_w>>;
 
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t target_shape[] = {32, 2};
-    int64_t shape_size = 2;
-    int64_t shape[] = {shape_size};
-    auto shape_tensor = make_tensor(reinterpret_cast<void*>(target_shape), DataType_INT64, shape, 1);
-    auto ort_output = ortki_Expand(ort_input, shape_tensor);
-    std::unique_ptr<output_tensor_type> ntt_output2(new output_tensor_type);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
+    alignas(32) tensor_type1 ntt_input;
+    [[maybe_unused]] alignas(32) tensor_type2 ntt_output1;
+    std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);
 
-    // compare
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    ntt::expand(ntt_input, ntt_output1);
+
+    auto ort_input = NttTest::ntt2ort(ntt_input);
+    int64_t data[] = {expand_n, expand_c, expand_h, expand_w};
+    int64_t data_shape[] = {std::size(data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                             data_shape, std::size(data_shape));
+    auto ort_output = ortki_Expand(ort_input, shape);
+
+    alignas(32) tensor_type2 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+}
+
+TEST(Expand, HW) {
+
+    constexpr size_t N = 8;
+    constexpr size_t C = 8;
+    constexpr size_t H = 1;
+    constexpr size_t W = 1;
+
+    constexpr size_t expand_n = 8;
+    constexpr size_t expand_c = 8;
+    constexpr size_t expand_h = 8;
+    constexpr size_t expand_w = 8;
+
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
+    using tensor_type2 =
+        ntt::tensor<float,
+                    ntt::fixed_shape<expand_n, expand_c, expand_h, expand_w>>;
+
+    alignas(32) tensor_type1 ntt_input;
+    [[maybe_unused]] alignas(32) tensor_type2 ntt_output1;
+    std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);
+
+    ntt::expand(ntt_input, ntt_output1);
+
+    auto ort_input = NttTest::ntt2ort(ntt_input);
+    int64_t data[] = {expand_n, expand_c, expand_h, expand_w};
+    int64_t data_shape[] = {std::size(data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                             data_shape, std::size(data_shape));
+    auto ort_output = ortki_Expand(ort_input, shape);
+
+    alignas(32) tensor_type2 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+}
+
+TEST(Expand, NH) {
+
+    constexpr size_t N = 1;
+    constexpr size_t C = 8;
+    constexpr size_t H = 1;
+    constexpr size_t W = 8;
+
+    constexpr size_t expand_n = 8;
+    constexpr size_t expand_c = 8;
+    constexpr size_t expand_h = 8;
+    constexpr size_t expand_w = 8;
+
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
+    using tensor_type2 =
+        ntt::tensor<float,
+                    ntt::fixed_shape<expand_n, expand_c, expand_h, expand_w>>;
+
+    alignas(32) tensor_type1 ntt_input;
+    [[maybe_unused]] alignas(32) tensor_type2 ntt_output1;
+    std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);
+
+    ntt::expand(ntt_input, ntt_output1);
+
+    auto ort_input = NttTest::ntt2ort(ntt_input);
+    int64_t data[] = {expand_n, expand_c, expand_h, expand_w};
+    int64_t data_shape[] = {std::size(data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                             data_shape, std::size(data_shape));
+    auto ort_output = ortki_Expand(ort_input, shape);
+
+    alignas(32) tensor_type2 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+}
+
+TEST(Expand, CW) {
+
+    constexpr size_t N = 8;
+    constexpr size_t C = 1;
+    constexpr size_t H = 8;
+    constexpr size_t W = 1;
+
+    constexpr size_t expand_n = 8;
+    constexpr size_t expand_c = 8;
+    constexpr size_t expand_h = 8;
+    constexpr size_t expand_w = 8;
+
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
+    using tensor_type2 =
+        ntt::tensor<float,
+                    ntt::fixed_shape<expand_n, expand_c, expand_h, expand_w>>;
+
+    alignas(32) tensor_type1 ntt_input;
+    [[maybe_unused]] alignas(32) tensor_type2 ntt_output1;
+    std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);
+
+    ntt::expand(ntt_input, ntt_output1);
+
+    auto ort_input = NttTest::ntt2ort(ntt_input);
+    int64_t data[] = {expand_n, expand_c, expand_h, expand_w};
+    int64_t data_shape[] = {std::size(data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                             data_shape, std::size(data_shape));
+    auto ort_output = ortki_Expand(ort_input, shape);
+
+    alignas(32) tensor_type2 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+}
+
+TEST(Expand, NW) {
+
+    constexpr size_t N = 1;
+    constexpr size_t C = 8;
+    constexpr size_t H = 8;
+    constexpr size_t W = 1;
+
+    constexpr size_t expand_n = 8;
+    constexpr size_t expand_c = 8;
+    constexpr size_t expand_h = 8;
+    constexpr size_t expand_w = 8;
+
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
+    using tensor_type2 =
+        ntt::tensor<float,
+                    ntt::fixed_shape<expand_n, expand_c, expand_h, expand_w>>;
+
+    alignas(32) tensor_type1 ntt_input;
+    [[maybe_unused]] alignas(32) tensor_type2 ntt_output1;
+    std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);
+
+    ntt::expand(ntt_input, ntt_output1);
+
+    auto ort_input = NttTest::ntt2ort(ntt_input);
+    int64_t data[] = {expand_n, expand_c, expand_h, expand_w};
+    int64_t data_shape[] = {std::size(data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                             data_shape, std::size(data_shape));
+    auto ort_output = ortki_Expand(ort_input, shape);
+
+    alignas(32) tensor_type2 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
 int main(int argc, char *argv[]) {

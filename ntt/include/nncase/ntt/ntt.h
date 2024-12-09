@@ -30,6 +30,7 @@
 #include "kernels/pad.h"
 #include "kernels/reduce.h"
 #include "kernels/reduce_arg.h"
+#include "kernels/reshard.h"
 #include "kernels/resize_image.h"
 #include "kernels/scatter_nd.h"
 #include "kernels/slice.h"
@@ -38,6 +39,9 @@
 #include "kernels/unpack.h"
 #include "kernels/where.h"
 #include "primitive_ops.h"
+#include "remote_tensor.h"
+#include "sharded_tensor.h"
+#include "sharding.h"
 #include "tensor.h"
 #include "tensor_ops.h"
 #include "ukernels.h"
@@ -60,4 +64,6 @@
 #include "arch/riscv64/ukernels.h"
 #endif
 
-#include "runtime/cpu_runtime.h"
+#include "arch/cpu/distributed.h"
+#include "arch/cpu/runtime.h"
+#include "arch/cpu/topology.h"

@@ -13,27 +13,62 @@
  * limitations under the License.
  */
 #pragma once
-#include "tensor.h"
+#include "arch/cpu/topology.h"
+#include "shape.h"
 #include <cstddef>
+#include <cstdint>
 
-namespace nncase::ntt {
-template <size_t Axis> struct program_id_getter {
+#ifdef NNCASE_CPU_MODULE
+#include <topology_def.h>
+#elif !defined(NNCASE_NTT_TOPOLOGY_DEFINED)
+namespace nncase::ntt::distributed {
+constexpr std::array<size_t, 1> topology_dims = {1};
+}
+#endif
+
+namespace nncase::ntt::distributed {
+inline constexpr size_t topology_levels =
+    static_cast<size_t>(topology::count__);
+
+template <topology Scope>
+using program_ids_t = ranked_shape<static_cast<size_t>(Scope) + 1>;
+
+constexpr size_t program_dim(topology topo) noexcept {
+    int32_t index =
+        static_cast<int32_t>(topo) - (topology_levels - topology_dims.size());
+    return index < 0 ? 1 : topology_dims[index];
+}
+
+template <topology Scope = static_cast<topology>(topology_levels - 1)>
+constexpr size_t topology_size() noexcept {
+    return [] {
+        size_t size = 1;
+        for (size_t i = 0; i <= static_cast<size_t>(Scope); i++) {
+            size *= program_dim(static_cast<topology>(i));
+        }
+        return size;
+    }();
+}
+
+template <topology Topology> struct program_id_getter {
     static size_t id() noexcept;
-    static size_t dim() noexcept;
 };
 
-template <size_t Axis> size_t program_id() noexcept {
-    return program_id_getter<Axis>::id();
+template <topology Topology> size_t program_id() noexcept {
+    return program_id_getter<Topology>::id();
 }
 
-template <size_t Axis> size_t program_dim() noexcept {
-    return program_id_getter<Axis>::dim();
+template <topology Scope = (topology)(topology_levels - 1)>
+auto program_ids() noexcept {
+    auto f = []<size_t... Is>(std::index_sequence<Is...>) {
+        return program_ids_t<Scope>{program_id<static_cast<topology>(Is)>()...};
+    };
+    return f(std::make_index_sequence<static_cast<size_t>(Scope) + 1>());
 }
 
-inline size_t tid() noexcept { return program_id<0>(); }
-inline size_t tdim() noexcept { return program_dim<0>(); }
-inline size_t bid() noexcept { return program_id<1>(); }
-inline size_t bdim() noexcept { return program_dim<1>(); }
-inline size_t cid() noexcept { return program_id<2>(); }
-inline size_t cdim() noexcept { return program_dim<2>(); }
-} // namespace nncase::ntt
+template <topology Scope> class topology_synchronizer;
+
+template <topology Scope = (topology)0> void topology_synchronize() noexcept {
+    topology_synchronizer<Scope>::synchronize();
+}
+} // namespace nncase::ntt::distributed

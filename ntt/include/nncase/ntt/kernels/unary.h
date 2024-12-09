@@ -18,6 +18,7 @@
 #include "../tensor_ops.h"
 #include "../ukernels.h"
 #include "../utility.h"
+#include <type_traits>
 
 namespace nncase::ntt {
 namespace detail {
@@ -100,7 +101,7 @@ class unary_impl<ranked_shape<Rank>, InStrides, OutStrides> {
             auto output_p =
                 output.buffer().data() + linear_offset(index, output.strides());
             unary_contiguous<Op>(input_p, output_p, inner_size);
-        } else if constexpr (Axis < Rank - 1) {
+        } else if constexpr (Axis + 1 < Rank) {
             const auto dim = input.shape()[Axis];
             for (index[Axis] = 0; index[Axis] < dim; index[Axis]++) {
                 apply<Op, TIn, TOut, Axis + 1>(op, index, conti_dims, input,
@@ -118,7 +119,7 @@ class unary_impl<ranked_shape<Rank>, InStrides, OutStrides> {
 
 template <template <class T> class Op, class TIn, class TOut>
 void unary(const TIn &input, TOut &&output) {
-    Op<typename TIn::element_type> op;
+    Op<std::decay_t<typename TIn::element_type>> op;
     detail::unary_impl<common_shape_t<typename TIn::shape_type,
                                       typename std::decay_t<TOut>::shape_type>,
                        typename TIn::strides_type,

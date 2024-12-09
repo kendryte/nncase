@@ -39,6 +39,8 @@ public static class CSourceBuiltn
     public const string KernelHeader = @"#pragma once
 #include <nncase/ntt/ntt.h>
 using namespace nncase::ntt;
+using namespace nncase::ntt::distributed;
+using namespace nncase::ntt::distributed::shard_policy;
 
 ";
 
@@ -51,6 +53,12 @@ using namespace nncase::ntt;
         }
 
         return string.Empty;
+    }
+
+    public static string TopologyDef(CpuTargetOptions options)
+    {
+        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/topology_def.h.cshtml", options).Result;
+        return content;
     }
 
     public static string CMakeDef(string name)

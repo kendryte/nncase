@@ -48,7 +48,7 @@ namespace tar {
 @if (Model.CollectivePoolSize > 0) {
 @:alignas(@Model.Alignment) uint8_t collective_pool_ptr[@Model.CollectivePoolSize];
 } else {
-@:uint8_t* collective_pool_ptr = nullptr;
+@:alignas(@Model.Alignment) uint8_t collective_pool_ptr[1];
 }
 
 enum reduce_kind {
@@ -107,7 +107,7 @@ class tensor_reduce_sync_impl {
   public:
     void reduce_group_sync() const noexcept {
         @foreach(var comb in combinations) {
-          var reduce_group_index = string.Join(", ", Enumerable.Range(0, hierarchy.Length).Select(i => comb.Contains(i) ? "0" : "ntt::" + hierarchyNames[i] + "id()"));
+          var reduce_group_index = string.Join(", ", Enumerable.Range(0, hierarchy.Length).Select(i => comb.Contains(i) ? "0" : "ntt::distributed::" + hierarchyNames[i] + "id()"));
         @:if constexpr (Kind == tar::reduce_kind::@(GetName(comb, string.Empty))) {
         @:    tar::@(GetName(comb))(@(reduce_group_index)).arrive_and_wait();
         @:} 
@@ -151,7 +151,7 @@ class tensor_reduce_sync_impl {
     }
 
     @{
-      var cur_index = string.Join(", ", Enumerable.Range(0, hierarchy.Length).Select(i => "ntt::" + hierarchyNames[i] + "id()"));
+      var cur_index = string.Join(", ", Enumerable.Range(0, hierarchy.Length).Select(i => "ntt::distributed::" + hierarchyNames[i] + "id()"));
     }
 
     template <class TIn, class TOut> void operator()(TIn &src, TOut &&dest) {

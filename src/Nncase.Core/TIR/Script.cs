@@ -221,7 +221,7 @@ public static class T
     /// <summary>
     /// create the buffer by tensortype.
     /// </summary>
-    public static Buffer CreateBuffer(TensorType tensorType, MemoryLocation location, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    public static Buffer CreateBuffer(TensorType tensorType, MemoryLocation location, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "", DistributedType? distributedType = null)
     {
         if (name.StartsWith("var "))
         {
@@ -232,7 +232,7 @@ public static class T
         var strides = TensorUtilities.GetStrides(dimensions);
         var size = (int)TensorUtilities.GetProduct(dimensions.ToArray()) * tensorType.DType.SizeInBytes;
         var memspan = new MemSpan(size, location);
-        buffer = new Buffer(name, tensorType.DType, memspan, dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray());
+        buffer = new Buffer(name, tensorType.DType, memspan, dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray(), distributedType);
         return buffer;
     }
 
@@ -249,7 +249,7 @@ public static class T
         var strides = TensorUtilities.GetStrides(dimensions);
         var size = TensorUtilities.GetProduct(dimensions.ToArray()) * dataType.SizeInBytes;
         var memspan = new MemSpan(size, location);
-        buffer = new Buffer(name, dataType, memspan, dimensions, strides);
+        buffer = new Buffer(name, dataType, memspan, dimensions, strides, null);
         return buffer;
     }
 
@@ -260,11 +260,11 @@ public static class T
             name = name[4..];
         }
 
-        buffer = new Buffer(name, dataType, memSpan, dimensions, strides);
+        buffer = new Buffer(name, dataType, memSpan, dimensions, strides, null);
         return buffer;
     }
 
-    public static Buffer AttachBuffer(Expr start, TensorType tensorType, MemoryLocation location, int hierarchy, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    public static Buffer AttachBuffer(Expr start, TensorType tensorType, MemoryLocation location, int hierarchy, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "", DistributedType? distributedType = null)
     {
         if (name.StartsWith("var "))
         {
@@ -275,7 +275,7 @@ public static class T
         var strides = TensorUtilities.GetStrides(dimensions);
         var size = (ulong)TensorUtilities.GetProduct(dimensions.ToArray()) * (ulong)tensorType.DType.SizeInBytes;
         var memspan = new MemSpan(start, size, location, hierarchy);
-        buffer = new Buffer(name, tensorType.DType, memspan, dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray());
+        buffer = new Buffer(name, tensorType.DType, memspan, dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray(), distributedType);
         return buffer;
     }
 
@@ -293,7 +293,7 @@ public static class T
         var strides = TensorUtilities.GetStrides(dimensions);
         var size = (int)TensorUtilities.GetProduct(dimensions.ToArray()) * @const.CheckedDataType.SizeInBytes;
         var memspan = new MemSpan(IR.F.Buffer.DDrOf(@const), size, MemoryLocation.Rdata);
-        buffer = new Buffer(name, @const.CheckedDataType, memspan, dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray());
+        buffer = new Buffer(name, @const.CheckedDataType, memspan, dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray(), null);
         return buffer;
     }
 
@@ -310,7 +310,7 @@ public static class T
         var dimensions = tensorType.Shape.ToValueArray();
         var strides = TensorUtilities.GetStrides(dimensions);
         var size = (int)TensorUtilities.GetProduct(dimensions.ToArray()) * tensorType.DType.SizeInBytes;
-        buffer = new Buffer(name, tensorType.DType, originBuffer.MemSpan.SubSpan(offset, size), dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray());
+        buffer = new Buffer(name, tensorType.DType, originBuffer.MemSpan.SubSpan(offset, size), dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray(), null);
         return buffer;
     }
 
@@ -328,7 +328,7 @@ public static class T
         var dimensions = tensorType.Shape.ToValueArray();
         var strides = TensorUtilities.GetStrides(dimensions);
         var size = (int)TensorUtilities.GetProduct(dimensions.ToArray()) * tensorType.DType.SizeInBytes;
-        buffer = new Buffer(name, tensorType.DType, new MemSpan(@var, size, location, hierarchy), dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray());
+        buffer = new Buffer(name, tensorType.DType, new MemSpan(@var, size, location, hierarchy), dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray(), null);
         return buffer;
     }
 

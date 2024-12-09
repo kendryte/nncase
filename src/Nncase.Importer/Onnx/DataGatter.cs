@@ -114,11 +114,10 @@ public sealed partial class OnnxImporter
             var externalData = tensor.ExternalData;
             var location = Path.Join(parent, externalData[0].Value);
             var offset = externalDataCount > 1L ? long.Parse(externalData[1].Value) : 0;
-            using var br = new BinaryReader(new FileStream(location, FileMode.Open));
-            var length = externalDataCount > 1 ? int.Parse(externalData[2].Value) : (int)br.BaseStream.Length;
-            br.BaseStream.Seek(offset, SeekOrigin.Begin);
-            var buffer = br.ReadBytes(length);
-            return Tensor.FromBytes(type, buffer, shape);
+            using var fs = new FileStream(location, FileMode.Open);
+            var length = externalDataCount > 1 ? long.Parse(externalData[2].Value) : fs.Length;
+            fs.Seek(offset, SeekOrigin.Begin);
+            return Tensor.FromStream(type, fs, shape);
         }
 
         return dt switch

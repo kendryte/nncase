@@ -92,7 +92,7 @@ public class CPUTarget : ITarget
             passManager.AddWithName<EGraphRulesPass>("AutoPacking").Configure(p =>
             {
                 // todo config it in the target options.
-                var rank = 1;
+                var rank = 2;
                 var lane = System.Runtime.Intrinsics.Vector256.IsHardwareAccelerated ? 8 : 4;
                 p.Add<Passes.Rules.CPU.PackReduce>(rank, lane);
                 p.Add<Passes.Rules.CPU.PackSwish>(rank, lane);

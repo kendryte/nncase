@@ -15,6 +15,6 @@ using Nncase.TIR;
 
 namespace Nncase.CodeGen;
 
-internal sealed record KernelCSource(string Main, string Kernel, string TopoRuntime)
+internal sealed record KernelCSource(string Main, string Kernel, string TopoRuntime, string TopologyDef)
 {
 }

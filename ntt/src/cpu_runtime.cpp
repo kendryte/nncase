@@ -16,9 +16,10 @@
 #include <cstddef>
 #include <cstring>
 #include <exception>
+#include <nncase/ntt/arch/cpu/runtime.h>
 #include <nncase/ntt/distributed.h>
-#include <nncase/ntt/runtime/cpu_runtime.h>
 #include <thread>
+#include <vector>
 
 #ifdef WIN32
 #include <Windows.h>
@@ -87,16 +88,12 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
     for (size_t tid = 0; tid < tdim; tid++) {
         threads.emplace_back([tid, params] {
 #ifdef __APPLE__
-            pthread_setspecific(cpu_thread_context_key,
-                                new cpu_thread_context_t
+            pthread_setspecific(
+                cpu_thread_context_key, new cpu_thread_context_t
 #else
             cpu_thread_context_t::current() =
 #endif
-                                {
-                                    .tid = tid,
-                                    .bid = params.bid,
-                                    .cid = params.cid,
-                                }
+                { .tid = tid, .bid = params.bid, .cid = params.cid, }
 #ifdef __APPLE__
             );
 #else
@@ -117,7 +114,6 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
             CPU_SET(cpu_id, &cpuset);
             pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 #endif
-            cpu_thread_context_t::current().tid = tid;
             thread_main(params.inouts, params.rdata);
         });
     }
