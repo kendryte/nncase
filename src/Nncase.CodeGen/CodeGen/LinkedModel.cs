@@ -161,6 +161,7 @@ internal sealed class LinkedModel : ILinkedModel
 
         // Write header
         header.Flags = section.Flags;
+        header.Alignment = section.Alignment;
         header.BodySize = section.SizeInFile;
         header.MemorySize = section.SizeInMemory;
         header.Size = (ulong)(endPos - headerPos);
