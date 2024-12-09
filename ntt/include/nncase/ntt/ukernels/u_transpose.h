@@ -100,12 +100,6 @@ template <IsFixedDims TPerm, size_t Rank>
 constexpr std::array<size_t, Rank> compress_perm() {
     std::array<size_t, Rank> new_dims{};
 
-    // size_t cnt = 0;
-    // for (size_t i = 0; i < TPerm::rank(); ++i) {
-    //     if (TPerm::at(i) >= (TPerm::rank() - Rank)) {
-    //         new_dims[cnt++] = TPerm::at(i) - (TPerm::rank() - Rank);
-    //     }
-    // }
     constexpr std::array<segment, Rank> segments = get_segments<TPerm, Rank>();
 
     for (size_t i = 0; i < Rank; i += 1) {
@@ -126,14 +120,6 @@ trans_shape(const std::array<size_t, Rank> dims,
         dims_transed[i] = dims[perm[i]];
     }
 
-    // stride_compressed[Rank - 1] = 1;
-
-    // for (size_t i = Rank - 1; i > 0; --i) {
-    //     stride_compressed[i - 1] = dims_transed[i] * stride_compressed[i];
-    // }
-
-    // return stride_compressed;
-
     return dims_transed;
 }
 
@@ -146,13 +132,13 @@ class u_transpose<TPerm, TIn, TOut, 1, Arch> {
   public:
     constexpr void operator()(const TIn &input, TOut &output) noexcept {
 
-        using TIElem = typename TIn::element_type;
-        using TOElem = typename std::decay_t<TOut>::element_type;
-
-        auto in_ptr = reinterpret_cast<const TIElem *>(input.elements().data());
-        auto out_ptr = reinterpret_cast<TOElem *>(output.elements().data());
-        auto pattern_size = TIn::size() * sizeof(TIElem);
-        std::memcpy(out_ptr, in_ptr, pattern_size);
+        auto domain = input.shape();
+        auto out_index = ranked_shape<domain.rank()>{};
+        apply(domain, [&](auto index) {
+            loop<domain.rank()>(
+                [&](auto i) { out_index[i] = index[TPerm::at(i)]; });
+            output(out_index) = input(index);
+        });
     }
 };
 
