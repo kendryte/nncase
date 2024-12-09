@@ -80,6 +80,17 @@ void benchmark_ntt_transpose(const std::string &mode) {
     }
     auto t2 = NttTest::get_cpu_cycle();
 
+    // run
+    t1 = NttTest::get_cpu_cycle();
+    for (size_t i = 0; i < run_size; i++) {
+        ntt::transpose<ntt::fixed_shape<perm_n, perm_c, perm_h, perm_w>>(
+            ntt_input, ntt_output);
+#if __x86_64__
+        asm volatile("" ::"g"(ntt_output));
+#endif
+    }
+    t2 = NttTest::get_cpu_cycle();
+
     auto element_size = tensor_type2::size();
     std::cout << __FUNCTION__ << "_" << mode << " took " << std::setprecision(1)
               << std::fixed

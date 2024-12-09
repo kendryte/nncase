@@ -14,7 +14,7 @@ if (MSVC)
     string(REGEX REPLACE "/GR" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GR-")
 else()
-    add_compile_options(-Wno-multichar -Wno-unused-value -fno-common -ffunction-sections -fno-exceptions -fdata-sections -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-stack-protector)
+    add_compile_options(-Wno-multichar -Wno-unused-value -fno-common -ffunction-sections -fno-exceptions -fdata-sections -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-stack-protector -finline-functions -finline-limit=1000)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
 
     if (APPLE)
