@@ -82,7 +82,11 @@ PYBIND11_MODULE(_nncaseruntime, m) {
         .def(py::init())
         .def("load_model",
              [](interpreter &interp, std::span<const std::byte> buffer) {
-                 interp.load_model(buffer, true).unwrap_or_throw();
+                 interp.load_model(buffer, false).unwrap_or_throw();
+             })
+        .def("load_model",
+             [](interpreter &interp, std::istream &stream) {
+                 interp.load_model(stream).unwrap_or_throw();
              })
         .def_property_readonly("inputs_size", &interpreter::inputs_size)
         .def_property_readonly("outputs_size", &interpreter::outputs_size)

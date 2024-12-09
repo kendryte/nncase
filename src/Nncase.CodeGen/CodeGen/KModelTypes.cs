@@ -55,7 +55,7 @@ public unsafe struct SectionHeader
 {
     public fixed byte Name[ModelInfo.MaxSectionNameLength];
     public uint Flags;
-    public uint Reserved0;
+    public uint Alignment;
     public ulong Size;
     public ulong BodyStart;
     public ulong BodySize;

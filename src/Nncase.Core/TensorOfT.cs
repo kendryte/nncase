@@ -337,6 +337,33 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
         SpanUtility.Serialize((ReadOnlySpan<T>)Buffer.Span, stream);
     }
 
+    public override void Serialize(Stream baseStream, long offset, int[] shape, int[] strides)
+    {
+        var slice = new T[TensorUtilities.GetSize(shape, strides, 1)];
+        var index = new int[shape.Length];
+
+        void Copy(int axis)
+        {
+            if (axis + 1 < shape.Length)
+            {
+                for (index[axis] = 0; index[axis] < shape[axis]; index[axis]++)
+                {
+                    Copy(axis + 1);
+                }
+            }
+            else
+            {
+                var length = shape.LastOrDefault(1);
+                var src = Buffer.Span.Slice((int)offset + TensorUtilities.GetIndex(Strides, index), length);
+                var dest = slice.AsSpan(TensorUtilities.GetIndex(strides, index), length);
+                src.CopyTo(dest);
+            }
+        }
+
+        Copy(0);
+        SpanUtility.Serialize((ReadOnlySpan<T>)slice.AsSpan(), baseStream);
+    }
+
     /// <summary>
     /// Gets an enumerator that enumerates the elements of the <see cref="Tensor{T}"/>.
     /// </summary>

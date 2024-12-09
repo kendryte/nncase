@@ -79,11 +79,12 @@ public sealed class RTInterpreter : SafeHandle
     /// Load kmodel.
     /// </summary>
     /// <param name="modelBuffer">KModel buffer.</param>
-    public unsafe void LoadModel(Memory<byte> modelBuffer)
+    /// <param name="copyBuffer">Copy buffer to native memory.</param>
+    public unsafe void LoadModel(Memory<byte> modelBuffer, bool copyBuffer = false)
     {
         _pinnedModelBuffer.Dispose();
         _pinnedModelBuffer = modelBuffer.Pin();
-        Native.InterpLoadModel(this, _pinnedModelBuffer.Pointer, (uint)modelBuffer.Length, false).ThrowIfFailed();
+        Native.InterpLoadModel(this, _pinnedModelBuffer.Pointer, (uint)modelBuffer.Length, copyBuffer).ThrowIfFailed();
     }
 
     public unsafe void LoadModel(string modelPath)

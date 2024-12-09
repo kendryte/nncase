@@ -21,6 +21,7 @@ BEGIN_NS_NNCASE_RUNTIME
 
 struct buffer_allocate_options {
     size_t flags;
+    uint32_t alignment;
 };
 
 inline constexpr size_t HOST_BUFFER_ALLOCATE_CPU_ONLY = 1;
@@ -28,6 +29,7 @@ inline constexpr size_t HOST_BUFFER_ALLOCATE_SHARED = 2;
 
 struct buffer_attach_options {
     size_t flags;
+    uint32_t alignment;
     uintptr_t physical_address;
     std::function<void(std::byte *)> deleter;
 };

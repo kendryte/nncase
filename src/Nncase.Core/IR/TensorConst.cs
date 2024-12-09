@@ -185,5 +185,5 @@ public sealed class TensorConst : Const, IEquatable<TensorConst?>
     public bool Equals(TensorConst? other) => other is not null && (ReferenceEquals(this, other) || GetHashCode() == other.GetHashCode()) && EqualityComparer<Tensor>.Default.Equals(Value, other.Value);
 
     /// <inheritdoc/>
-    protected override int GetHashCodeCore() => HashCode.Combine(Value);
+    protected override int GetHashCodeCore() => HashCode.Combine(Value, ValueType);
 }

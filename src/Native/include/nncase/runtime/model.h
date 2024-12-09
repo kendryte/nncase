@@ -66,7 +66,7 @@ struct module_header {
 struct section_header {
     char name[MAX_SECTION_NAME_LENGTH];
     uint32_t flags;
-    uint32_t reserved0;
+    uint32_t alignment;
     uint64_t size;
     uint64_t body_start;
     uint64_t body_size;

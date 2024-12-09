@@ -48,8 +48,8 @@ public class ShapeBucketTest : TransformTestBase
         var input = Testing.Rand<float>(1, 2, 16, 16);
         var fixedShape = new[] { 1, 3, 24, 24 };
         var p = new Call(new BucketPad(), input, fixedShape);
-        var (_, kmodel) = Testing.BuildKModel("test", new IRModule(new Function(p)), CompileSession);
-        var result = Testing.RunKModel(kmodel, "call_arg", Array.Empty<Tensor>());
+        var (kmodelPath, _) = Testing.BuildKModel("test", new IRModule(new Function(p)), CompileSession);
+        var result = Testing.RunKModel(kmodelPath, "call_arg", Array.Empty<Tensor>());
         var pads = fixedShape - Cast(ShapeOf(input), DataTypes.Int32);
         var paddings = Transpose(
             Stack(new IR.Tuple(Enumerable.Repeat(0, fixedShape.Length).ToArray(), pads), 0),

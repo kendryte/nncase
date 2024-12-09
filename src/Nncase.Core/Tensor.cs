@@ -469,6 +469,8 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
 
     public abstract void Serialize(Stream stream);
 
+    public abstract void Serialize(Stream baseStream, long offset, int[] shape, int[] strides);
+
     int IStructuralComparable.CompareTo(object? other, IComparer comparer)
     {
         return CompareTo(other, comparer);

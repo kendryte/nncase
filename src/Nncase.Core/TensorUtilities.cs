@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
+using Nncase.Utilities;
 
 namespace Nncase;
 
@@ -415,4 +416,31 @@ public static class TensorUtilities
         size += 1;
         return size * elementSize;
     }
+
+    public static (long Size, int[] Strides) GetTensorSizeAndStrides(TensorType tensorType, DistributedType? distributedType)
+    {
+        int[] dims;
+        int[] strides;
+        if (distributedType is null)
+        {
+            dims = tensorType.Shape.ToValueArray();
+            strides = GetStrides(dims);
+        }
+        else
+        {
+            var dividedType = DistributedUtility.GetDividedTensorType(distributedType);
+            dims = dividedType.Shape.ToValueArray();
+            strides = GetStrides(dims);
+        }
+
+        return (GetProduct(dims) * tensorType.DType.SizeInBytes, strides);
+    }
+
+    public static (long Size, int[] Strides) GetTensorSizeAndStrides(IRType type)
+        => type switch
+        {
+            TensorType tensorType => GetTensorSizeAndStrides(tensorType, null),
+            DistributedType distributedType => GetTensorSizeAndStrides(distributedType.TensorType, distributedType),
+            _ => throw new NotSupportedException(),
+        };
 }

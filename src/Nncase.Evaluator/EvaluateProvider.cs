@@ -59,6 +59,11 @@ internal sealed class EvaluateProvider : IEvaluateProvider
             evaluator_cache.Add(op_type, evaluator);
         }
 
-        return evaluator.Visit(context, op);
+        var value = evaluator.Visit(context, op);
+        return value switch
+        {
+            TensorValue tv => Value.FromTensorLike(tv.AsTensor(), context.CurrentCall.CheckedType),
+            _ => value,
+        };
     }
 }

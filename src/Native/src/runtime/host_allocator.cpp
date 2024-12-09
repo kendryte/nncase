@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <cstddef>
+#include <cstdint>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
 
@@ -91,6 +93,26 @@ class host_buffer_impl : public host_buffer_node {
 
 class host_buffer_allocator : public buffer_allocator {
   public:
+    static void *host_alloc(size_t bytes, size_t alignment) {
+        if (alignment < sizeof(max_align_t))
+            alignment = sizeof(max_align_t);
+        size_t mask = alignment - 1;
+        size_t aligned_bytes = bytes + (-bytes & mask);
+#ifdef WIN32
+        return _aligned_malloc(aligned_bytes, alignment);
+#else
+        return aligned_alloc(alignment, aligned_bytes);
+#endif
+    }
+
+    static void host_free(void *ptr) {
+#ifdef WIN32
+        _aligned_free(ptr);
+#else
+        free(ptr);
+#endif
+    }
+
     result<buffer_t>
     allocate([[maybe_unused]] size_t bytes,
              [[maybe_unused]] const buffer_allocate_options &options) override {
@@ -100,14 +122,15 @@ class host_buffer_allocator : public buffer_allocator {
                   << std::setfill(' ') << bytes << std::endl;
         used_mem += bytes;
 #endif
-        auto data = new (std::nothrow) std::byte[bytes];
-        if (!data)
+        std::byte *data =
+            bytes ? (std::byte *)host_alloc(bytes, options.alignment) : nullptr;
+        if (bytes && !data)
             return err(std::errc::not_enough_memory);
         auto paddr =
             options.flags & HOST_BUFFER_ALLOCATE_SHARED ? (uintptr_t)data : 0;
         return ok<buffer_t>(object_t<host_buffer_impl>(
-            std::in_place, data, bytes, [](std::byte *p) { delete[] p; }, paddr,
-            *this, host_sync_status_t::valid, true));
+            std::in_place, data, bytes, [](std::byte *p) { host_free(p); },
+            paddr, *this, host_sync_status_t::valid, true));
     }
 
     result<buffer_t>
@@ -117,6 +140,9 @@ class host_buffer_allocator : public buffer_allocator {
                          ? (options.physical_address ? options.physical_address
                                                      : (uintptr_t)data.data())
                          : 0;
+        auto alignment = std::max(options.alignment, uint32_t(1));
+        if ((uintptr_t)data.data() & (alignment - 1))
+            return err(std::errc::bad_address);
         return ok<buffer_t>(object_t<host_buffer_impl>(
             std::in_place, data.data(), data.size_bytes(),
             []([[maybe_unused]] std::byte *p) {}, paddr, *this,

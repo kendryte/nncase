@@ -16,7 +16,7 @@
 
 //alignas(@(Model.Alignment)) static thread_local uint8_t local_data[@(Model.DataSize)];
 
-extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata) {
+extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata, const std::byte *local_rdata) {
   /* prepare inputs */
   @{
     var names = new List<string>();
@@ -32,8 +32,16 @@ extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata) {
   @foreach(var (b,i) in Model.RDataBuffers.OfType<Nncase.TIR.Buffer>().Select((b,i)=>(Model.GetInfo(b),i)))
   {
     names.Add(b.Name);
+    if (b.Distributed == null)
+    {
   @:std::span<@Html.Raw(b.ElemType), @b.Size> p@(b.Name)((@Html.Raw(b.ElemType) *)(rdata + @b.Offset), @b.Size);
   @:tensor_view<@Html.Raw(b.ElemType), @Html.Raw(b.Dimensions), @Html.Raw(b.Strides)> @(b.Name)(p@(b.Name));
+    }
+    else
+    {
+  @:std::span<@Html.Raw(b.ElemType), @b.Size> p@(b.Name)((@Html.Raw(b.ElemType) *)(local_rdata + @b.Offset), @b.Size);
+  @:sharded_tensor_view<@Html.Raw(b.ElemType), @Html.Raw(b.Dimensions), @Html.Raw(b.Distributed), @Html.Raw(b.Strides)> @(b.Name)(p@(b.Name));
+    }
   @:
   }
 

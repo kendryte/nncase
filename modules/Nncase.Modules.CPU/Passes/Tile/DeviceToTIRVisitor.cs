@@ -583,7 +583,7 @@ internal sealed class DeviceToTIRConverter
     {
         var topLevel = top.MemSpan.Location switch
         {
-            MemoryLocation.Input or MemoryLocation.Output or MemoryLocation.Rdata => 0,
+            MemoryLocation.Input or MemoryLocation.Output or MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata => 0,
             MemoryLocation.L2Data => 1,
             _ => throw new InvalidDataException(),
         };

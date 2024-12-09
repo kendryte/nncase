@@ -256,19 +256,6 @@ public static class Testing
         }
     }
 
-    public static IValue RunKModel(byte[] kmodel, string dump_path, Tensor[] input_tensors)
-    {
-        using (var interp = Nncase.Runtime.Interop.RTInterpreter.Create())
-        {
-            interp.SetDumpRoot(dump_path);
-            interp.LoadModel(kmodel);
-            var entry = interp.Entry!;
-
-            var rtInputs = input_tensors.Select(Nncase.Runtime.Interop.RTTensor.FromTensor).ToArray();
-            return entry.Invoke(rtInputs).ToValue();
-        }
-    }
-
     public static IValue RunKModel(string kmodel_path, string dump_path, Tensor[] input_tensors)
     {
         using (var interp = Nncase.Runtime.Interop.RTInterpreter.Create())
@@ -282,12 +269,12 @@ public static class Testing
         }
     }
 
-    public static IValue RunKModel(byte[] kmodel, string dump_path, Runtime.Interop.RTTensor[] input_tensors)
+    public static IValue RunKModel(string kmodel_path, string dump_path, Runtime.Interop.RTTensor[] input_tensors)
     {
         using (var interp = Nncase.Runtime.Interop.RTInterpreter.Create())
         {
             interp.SetDumpRoot(dump_path);
-            interp.LoadModel(kmodel);
+            interp.LoadModel(kmodel_path);
             var entry = interp.Entry!;
             return entry.Invoke(input_tensors).ToValue();
         }
