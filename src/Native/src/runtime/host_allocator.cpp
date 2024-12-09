@@ -94,13 +94,13 @@ class host_buffer_impl : public host_buffer_node {
 class host_buffer_allocator : public buffer_allocator {
   public:
     static void *host_alloc(size_t bytes, size_t alignment) {
-#ifdef WIN32
-        return _aligned_malloc(bytes, alignment);
-#else
         if (alignment < sizeof(max_align_t))
             alignment = sizeof(max_align_t);
         size_t mask = alignment - 1;
         size_t aligned_bytes = bytes + (-bytes & mask);
+#ifdef WIN32
+        return _aligned_malloc(aligned_bytes, alignment);
+#else
         return aligned_alloc(alignment, aligned_bytes);
 #endif
     }
@@ -122,8 +122,9 @@ class host_buffer_allocator : public buffer_allocator {
                   << std::setfill(' ') << bytes << std::endl;
         used_mem += bytes;
 #endif
-        auto data = (std::byte *)host_alloc(bytes, options.alignment);
-        if (!data)
+        std::byte *data =
+            bytes ? (std::byte *)host_alloc(bytes, options.alignment) : nullptr;
+        if (bytes && !data)
             return err(std::errc::not_enough_memory);
         auto paddr =
             options.flags & HOST_BUFFER_ALLOCATE_SHARED ? (uintptr_t)data : 0;
@@ -139,9 +140,7 @@ class host_buffer_allocator : public buffer_allocator {
                          ? (options.physical_address ? options.physical_address
                                                      : (uintptr_t)data.data())
                          : 0;
-        auto alignment = options.alignment < sizeof(max_align_t)
-                             ? sizeof(max_align_t)
-                             : options.alignment;
+        auto alignment = std::max(options.alignment, uint32_t(1));
         if ((uintptr_t)data.data() & (alignment - 1))
             return err(std::errc::bad_address);
         return ok<buffer_t>(object_t<host_buffer_impl>(

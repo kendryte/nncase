@@ -30,6 +30,7 @@ from shutil import which
 from typing import List
 import platform
 import warnings
+from rich.text import Text
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 import _nncase
@@ -185,8 +186,13 @@ class Compiler:
     def gencode(self, stream: io.RawIOBase) -> None:
         self._compiler.gencode(stream)
 
-    @warnings.deprecated("gencode_tobytes may not meet the requirements of model alignment, use gencode instead")
     def gencode_tobytes(self) -> bytes:
+        print(
+            Text(
+                "WARNING: The gencode_tobytes may not meet the requirements of model alignment, use gencode instead.",
+                style="bold red",
+            )
+        )
         code = io.BytesIO()
         self.gencode(code)
         return code.getvalue()

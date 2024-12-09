@@ -429,24 +429,12 @@ struct ostream : private streambuf_capsule, streambuf::ostream {
     ostream(py::object &python_file_obj, std::size_t buffer_size = 0)
         : streambuf_capsule(python_file_obj, buffer_size),
           streambuf::ostream(python_streambuf) {}
-
-    ~ostream() {
-        if (this->good()) {
-            this->flush();
-        }
-    }
 };
 
 struct istream : private streambuf_capsule, streambuf::istream {
     istream(py::object &python_file_obj, std::size_t buffer_size = 0)
         : streambuf_capsule(python_file_obj, buffer_size),
           streambuf::istream(python_streambuf) {}
-
-    ~istream() {
-        if (this->good()) {
-            this->sync();
-        }
-    }
 };
 
 namespace pybind11 {
