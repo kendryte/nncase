@@ -132,7 +132,7 @@ class u_transpose {
     template <class TInView, class TOutView>
     __attribute__((always_inline)) constexpr void
     operator()(TInView &input, TOutView &output) noexcept {
-        constexpr auto domain = input.shape();
+        constexpr auto domain = TInView::shape();
         auto out_index = ranked_shape<Rank>{};
         apply(domain, [&](auto index) {
             loop<Rank>(
