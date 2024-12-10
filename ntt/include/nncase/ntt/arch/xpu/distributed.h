@@ -18,29 +18,6 @@
 #include <atomic>
 
 namespace nncase::ntt::distributed {
-template <> struct program_id_getter<topology::thread> {
-    static size_t id() noexcept {
-        return runtime::xpu_thread_context_t::current().tid;
-    }
-};
-
-template <> struct program_id_getter<topology::block> {
-    static size_t id() noexcept {
-        return runtime::xpu_thread_context_t::current().bid;
-    }
-};
-
-template <> struct program_id_getter<topology::die> {
-    static size_t id() noexcept {
-        return runtime::xpu_thread_context_t::current().did;
-    }
-};
-
-template <> struct program_id_getter<topology::chip> {
-    static size_t id() noexcept {
-        return runtime::xpu_thread_context_t::current().cid;
-    }
-};
 
 inline size_t tid() noexcept { return program_id<topology::thread>(); }
 inline size_t bid() noexcept { return program_id<topology::block>(); }
@@ -51,6 +28,34 @@ inline constexpr size_t tdim() noexcept { return program_dim(topology::thread); 
 inline constexpr size_t bdim() noexcept { return program_dim(topology::block); }
 inline constexpr size_t ddim() noexcept { return program_dim(topology::die); }
 inline constexpr size_t cdim() noexcept { return program_dim(topology::chip); }
+
+template <> struct program_id_getter<topology::thread> {
+    static size_t id() noexcept {
+        size_t current_id = device_thread_id();
+        return current_id % tdim();
+    }
+};
+
+template <> struct program_id_getter<topology::block> {
+    static size_t id() noexcept {
+        size_t current_id = device_thread_id();
+        return ((current_id % (ddim() * bdim() * tdim())) % (bdim() * tdim())) / tdim();
+    }
+};
+
+template <> struct program_id_getter<topology::die> {
+    static size_t id() noexcept {
+        size_t current_id = device_thread_id();
+        return (current_id % (ddim() * bdim() * tdim())) / (bdim() * tdim());
+    }
+};
+
+template <> struct program_id_getter<topology::chip> {
+    static size_t id() noexcept {
+        size_t current_id = device_thread_id();
+        return current_id / (ddim() * bdim() * tdim());
+    }
+};
 
 namespace detail {
 struct thread_barrier {
@@ -89,44 +94,48 @@ void arrive_and_wait(std::atomic<int32_t> vars[2], int32_t value = 0)
 }
 } // namespace detail
 
+__device__ static ntt::distributed::detail::thread_barrier thread_barriers[cdim()][ddim()][bdim()];
 template <> class topology_synchronizer<topology::thread> {
   private:
   public:
     static void synchronize() noexcept {
-        detail::arrive_and_wait(barriers_[cid()][did()][bid()].barrier, tdim());
+        detail::arrive_and_wait(thread_barriers[cid()][did()][bid()].barrier, tdim());
     }
 
   private:
     inline static detail::thread_barrier barriers_[cdim()][ddim()][bdim()];
 };
 
+__device__ static ntt::distributed::detail::block_barrier block_barriers[cdim()][ddim()];
 template <> class topology_synchronizer<topology::block> {
   private:
   public:
     static void synchronize() noexcept {
-        detail::arrive_and_wait(barriers_[cid()][did()].barrier,  bdim() * tdim());
+        detail::arrive_and_wait(block_barriers[cid()][did()].barrier,  bdim() * tdim());
     }
 
   private:
     inline static detail::block_barrier barriers_[cdim()][ddim()];
 };
 
+__device__ static ntt::distributed::detail::die_barrier die_barriers[cdim()];
 template <> class topology_synchronizer<topology::die> {
   private:
   public:
     static void synchronize() noexcept {
-        detail::arrive_and_wait(barriers_[cid()].barrier,  ddim() * bdim() * tdim());
+        detail::arrive_and_wait(die_barriers[cid()].barrier,  ddim() * bdim() * tdim());
     }
 
   private:
-    inline static detail::block_barrier barriers_[cdim()];
+    inline static detail::die_barrier barriers_[cdim()];
 };
 
+__device__ static ntt::distributed::detail::chip_barrier chip_barrier;
 template <> class topology_synchronizer<topology::chip> {
   private:
   public:
     static void synchronize() noexcept {
-        detail::arrive_and_wait(barrier_.barrier, cdim() * ddim() * bdim() * tdim());
+        detail::arrive_and_wait(chip_barrier.barrier, cdim() * ddim() * bdim() * tdim());
     }
 
   private:
