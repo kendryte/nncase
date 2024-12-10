@@ -14,7 +14,12 @@
  * limitations under the License.
  */
 #pragma once
+#if defined(NNCASE_XPU_MODULE)
+#include "nncase/ntt/arch/xpu/topology.h"
+#else
 #include "nncase/ntt/arch/cpu/topology.h"
+#endif
+
 #include "remote_tensor.h"
 #include "sharding.h"
 #include "tensor.h"

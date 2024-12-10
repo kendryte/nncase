@@ -13,12 +13,17 @@
  * limitations under the License.
  */
 #pragma once
+#if defined(NNCASE_XPU_MODULE)
+#include "arch/xpu/topology.h"
+#else
 #include "arch/cpu/topology.h"
+#endif
+
 #include "shape.h"
 #include <cstddef>
 #include <cstdint>
 
-#ifdef NNCASE_CPU_MODULE
+#if defined(NNCASE_CPU_MODULE) || defined(NNCASE_XPU_MODULE)
 #include <topology_def.h>
 #elif !defined(NNCASE_NTT_TOPOLOGY_DEFINED)
 namespace nncase::ntt::distributed {
