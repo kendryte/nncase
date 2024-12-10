@@ -193,16 +193,26 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
     public void FilterByScheme(Expr expr, DistributedSearchGraph cluster)
     {
+        bool Matched(SearchableNode node, (IRArray<SBP> NdSBP, Placement Placement) tp)
+        {
+            return node.IRType is DistributedType dtype && dtype.NdSBP == tp.NdSBP && dtype.Placement == tp.Placement;
+        }
+
         foreach (var name in expr.Metadata.OutputNames ?? Array.Empty<string>())
         {
             if (Scheme.TryGetValue(name, out var tp))
             {
                 if (cluster.Kind is SearchGraphKind.DistributedCluster)
                 {
+                    if (!cluster.Clusters.OfType<DistributedSearchGraph>().Any(b => Matched(b.Vertices.First(), tp)))
+                    {
+                        return;
+                    }
+
                     var removes = new List<DistributedSearchGraph>();
                     foreach (var bucket in cluster.Clusters.OfType<DistributedSearchGraph>())
                     {
-                        bucket.RemoveVertexIf(v => !(v.IRType is DistributedType dtype && dtype.NdSBP == tp.NdSBP && dtype.Placement == tp.Placement));
+                        bucket.RemoveVertexIf(v => !Matched(v, tp));
                         if (bucket.VertexCount == 0)
                         {
                             removes.Add(bucket);
@@ -212,6 +222,11 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                     foreach (var r in removes)
                     {
                         cluster.RemoveCluster(r);
+                    }
+
+                    foreach (var bucket in cluster.Clusters.OfType<DistributedSearchGraph>().Where(b => Matched(b.Vertices.First(), tp)))
+                    {
+                        bucket.RemoveVertexIf(v => _rootSearchGraph.TryGetOutEdges(v, out var edges) && !edges.Any());
                     }
                 }
             }

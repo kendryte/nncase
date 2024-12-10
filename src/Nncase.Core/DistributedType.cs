@@ -33,7 +33,7 @@ public sealed record SBPSplit(int Axis) : SBP
 
 public sealed record SBPPartial(ReduceOp Op) : SBP
 {
-    public override string ToString() => "P";
+    public override string ToString() => $"P({Op})";
 }
 
 public sealed record SBPBroadCast : SBP

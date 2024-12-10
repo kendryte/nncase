@@ -52,6 +52,11 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                     return new InvalidType("Not supported input is Partial output is Split");
                 }
 
+                if (inv.TensorType != outv.TensorType)
+                {
+                    return new InvalidType("Not supported Partial to BroadCast with Reshape");
+                }
+
                 return outv;
             }
 

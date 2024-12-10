@@ -46,7 +46,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                         // when input axis is splited-by-reshape, we can direct obtain the tensor which splited-by-sbp on the first maped axis.
                         if (mapedOutAxes.Count > 1)
                         {
-                            ndsbp[meshAxis] = SBP.S(mapedOutAxes.First());
+                            ndsbp[meshAxis] = SBP.S(mapedOutAxes.Where(axis => newShape[axis] > 1).First());
                         }
                         else
                         {

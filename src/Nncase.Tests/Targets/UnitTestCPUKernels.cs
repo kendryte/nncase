@@ -198,11 +198,17 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { BinaryOp.Add, new[] { 8, 2 }, new int[] { 8, 2 }, 0 })] // normal
-    [InlineData(new object[] { BinaryOp.Mul, new[] { 1, 8, 64, 2 * 8 }, new int[] { 1, 1, 64, 2 * 8 }, 1 })] // broadcast
-    [InlineData(new object[] { BinaryOp.Add, new[] { 8, 16 }, new int[] { 16 }, 2 })] // normal
-    public async Task TestPackBinary(BinaryOp op, int[] lhsShape, int[] rhsShape, int count)
+    [InlineData(new object[] { BinaryOp.Add, new[] { 8, 2 }, new int[] { 8, 2 }, new int[] { 1 }, new int[] { }, 0 })] // normal
+    [InlineData(new object[] { BinaryOp.Mul, new[] { 1, 8, 64, 2 * 8 }, new int[] { 1, 1, 64, 2 * 8 }, new int[] { 1 }, new int[] { }, 1 })] // broadcast
+    [InlineData(new object[] { BinaryOp.Add, new[] { 8, 16 }, new int[] { 16 }, new int[] { 1 }, new int[] { }, 2 })] // normal
+    [InlineData(new object[] { BinaryOp.Mul, new[] { 1, 8, 64, 2 * 8 }, new int[] { 1, 1, 64, 2 * 8 }, new[] { 4 }, new[] { 1 }, 3 })] // broadcast
+    public async Task TestPackBinary(BinaryOp op, int[] lhsShape, int[] rhsShape, int[] hierarchy, int[] sbps, int count)
     {
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((int)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+
         var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
         var pre = IR.F.Math.Binary(op, lhs, rhs);
@@ -215,6 +221,28 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rule = new Passes.Rules.CPU.PackBinary(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+
+        if (sbps.Any(i => i != -1))
+        {
+            foreach (var post in posts)
+            {
+                var call = ExprCollector.Collect(post).Where(e => e is Call { Target: IR.CPU.PackedBinary or IR.Math.Binary }).First();
+                call.Metadata = new() { OutputNames = new[] { "call" } };
+            }
+
+            var scheme = new Passes.Distributed.DistributedSchema("1", "llama", [new("call", sbps.Select<int, SBP>(s => s > 0 ? SBP.S(s) : SBP.B).ToArray(), hierarchy, targetOptions.HierarchyNames)]);
+            var export = System.Text.Json.JsonSerializer.Serialize(scheme, new System.Text.Json.JsonSerializerOptions() { WriteIndented = true });
+            var dumpper = Diagnostics.DumpScope.Current.CreateSubDummper($"Theory{count}");
+            targetOptions.DistributedScheme = Path.Join(dumpper.Directory, "schema.json");
+            using (var stream = dumpper.OpenFile("schema.json"))
+            {
+                using (var writer = new StreamWriter(stream))
+                {
+                    writer.Write(export);
+                }
+            }
+        }
+
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
     }
 
@@ -352,7 +380,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         {
             foreach (var post in posts)
             {
-                if (post is Call { Target: IR.CPU.Pack } callPack && callPack.Arguments[0] is Call { Target: IR.CPU.PackedReduce } packedReduceCall)
+                if (post is Call { Target: IR.CPU.Unpack } callUnPack && callUnPack.Arguments[0] is Call { Target: IR.CPU.PackedReduce } packedReduceCall)
                 {
                     packedReduceCall.Arguments[0].Metadata = new() { OutputNames = new[] { "reduceIn" } };
                 }
