@@ -81,9 +81,20 @@ struct fixed_shape : detail::fixed_dims_base<Dims...> {
         using type = fixed_shape<I, Dims...>;
     };
 
-    template <size_t I> struct append { using type = fixed_shape<Dims..., I>; };
+    template <size_t I> struct append {
+        using type = fixed_shape<Dims..., I>;
+    };
 
     static constexpr size_t length() noexcept { return (Dims * ... * 1); }
+    static constexpr size_t size() noexcept { return sizeof...(Dims); }
+
+    constexpr auto begin() const {
+        return &detail::fixed_dims_base<Dims...>::operator[](0);
+    }
+    constexpr auto end() const {
+        return &detail::fixed_dims_base<Dims...>::operator[](0) +
+               sizeof...(Dims);
+    }
 };
 
 template <size_t Rank> struct ranked_shape : detail::ranked_dims_base<Rank> {
@@ -359,10 +370,10 @@ constexpr size_t contiguous_dims(const Shape &shape, const Strides &strides) {
 }
 
 template <class Shape, class Strides>
-inline constexpr size_t max_size_v = (is_fixed_dims_v<Shape> &&
-                                      is_fixed_dims_v<Strides>)
-                                         ? linear_size(Shape{}, Strides{})
-                                         : std::dynamic_extent;
+inline constexpr size_t max_size_v =
+    (is_fixed_dims_v<Shape> && is_fixed_dims_v<Strides>)
+        ? linear_size(Shape{}, Strides{})
+        : std::dynamic_extent;
 
 template <class Index, class Shape>
 constexpr bool in_bound(const Index &index, const Shape &shape) {
@@ -377,6 +388,18 @@ constexpr bool in_bound(const Index &index, const Shape &shape) {
     }
 
     return false;
+}
+
+template <size_t Rank, class Index, class Shape, size_t DimsExt>
+constexpr ranked_shape<Rank> get_reduced_offset(Index in_offset,
+                                                Shape reduced_shape) {
+    ranked_shape<Rank> off;
+    for (size_t i = 0; i < reduced_shape.rank(); i++) {
+        off.at(i) = (in_offset.at(i + DimsExt) >= reduced_shape.at(i))
+                        ? 0
+                        : in_offset.at(i + DimsExt);
+    }
+    return off;
 }
 
 template <size_t Rank, class Index, class Shape>
