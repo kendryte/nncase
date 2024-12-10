@@ -26,7 +26,11 @@
 #include <type_traits>
 
 namespace tar {
+#if defined(NNCASE_XPU_MODULE)    
+__device__ extern uint8_t collective_pool_ptr[];
+#else
 extern uint8_t collective_pool_ptr[];
+#endif
 }
 
 namespace nncase::ntt {
