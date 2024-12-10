@@ -52,7 +52,7 @@ public sealed record Placement(IRArray<int> Hierarchy, string Name)
     // }
     public int Rank => Hierarchy.Count;
 
-    public override string ToString() => $"@ [{string.Join(',', Hierarchy.Zip(Name).Select(t => t.First.ToString() + '@' + t.Second.ToString()))}]";
+    public override string ToString() => $"[{string.Join(',', Hierarchy.Zip(Name).Select(t => t.Second.ToString() + ':' + t.First.ToString()))}]";
 }
 
 public sealed record DistributedType(TensorType TensorType, IRArray<SBP> NdSBP, Placement Placement) : IRType

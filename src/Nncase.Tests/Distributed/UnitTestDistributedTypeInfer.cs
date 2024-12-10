@@ -31,6 +31,12 @@ public sealed class UnitTestDistributedTypeInfer
             new DistributedType(new(DataTypes.Float32, new[] { 1, 48, 64, 16 }), new SBP[] { SBP.S(2) }, new(new[] { 8 }, "t"))
         },
         {
+            // split on splited-by-reshape axis, but less than split factor.
+            new DistributedType(new(DataTypes.Float32, new[] { 1, 48, 1024 }), new SBP[] { SBP.S(2) }, new(new[] { 128 }, "t")),
+            new[] { 1, 48, 64, 16 },
+            new InvalidType("not support")
+        },
+        {
             // split on sequeezed axis.
             new DistributedType(new(DataTypes.Float32, new[] { 1, 1, 48, 1024 }), new SBP[] { SBP.S(2) }, new(new[] { 8 }, "t")),
             new[] { 1, 48, 64, 16 },
