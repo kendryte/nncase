@@ -191,6 +191,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
             {
                 case SBPSplit { Axis: int ix } when axes.Contains(ix):
                     ndsbp[i] = SBP.P(target.ReduceOp);
+                    break;
                 default:
                     ndsbp[i] = input.NdSBP[i];
                     break;
