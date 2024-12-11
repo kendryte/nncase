@@ -95,6 +95,34 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
+    [InlineData([new[] { 1, 77, 768 }, new[] { 2, 32, 4 }, new int[] { 2, -1, 2, 2, 2, -1 }, 0])]
+    public async Task TestReshard(int[] shape, int[] hierarchy, int[] sbps, int count)
+    {
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((int)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        var inputType = new TensorType(DataTypes.Float32, shape);
+        var input = new Var(inputType);
+        var feedDict = new Dictionary<Var, IValue>() {
+            // { input, IR.F.Tensors.ConstantOfShape(shape, 1.0f).Evaluate() },
+            { input, IR.F.Random.Normal(DataTypes.Float32, 1.0f, 1.0f, 1, shape).Evaluate() },
+        };
+
+        var placement = new Placement(hierarchy, targetOptions.HierarchyNames);
+        var ndsbps = sbps.Chunk(hierarchy.Length).Select<int[], SBP[]>(sbp => sbp.Select<int, SBP>(s => s > 0 ? SBP.S(s) : SBP.B).ToArray()).ToArray();
+        Expr boxed = input;
+        foreach (var ndsbp in ndsbps)
+        {
+            boxed = IR.F.CPU.Boxing(boxed, new DistributedType(inputType, ndsbp, placement));
+        }
+
+        var post = IR.F.CPU.Boxing(boxed, inputType);
+        post.Metadata = new Passes.Distributed.AutoDistributedMetadata(true);
+        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, new[] { post });
+    }
+
+    [Theory]
     [InlineData([new[] { 32, 64 }, new[] { 2 }, 0])]
     [InlineData([new[] { 8, 4 }, new[] { 4, 2 }, 1])]
     [InlineData([new[] { 32, 64, 128 }, new[] { 8, 4, 2 }, 2])]

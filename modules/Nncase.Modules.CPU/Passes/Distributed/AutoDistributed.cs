@@ -336,22 +336,34 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             }
         }
 
-        // 3. convert broadcast to split.
-        foreach (var (bType, bBucket) in bucketMemo.Where(kv => kv.Key is DistributedType dtype && !dtype.NdSBP.Any(s => s is SBPPartial) && dtype.NdSBP.Any(s => s is SBPBroadCast)))
+        // 3. add bidirectional connections.
+        foreach (var (lType, lBucket) in bucketMemo.Where(kv => kv.Key is DistributedType))
         {
-            foreach (var (sType, sBucket) in bucketMemo.Where(kv => kv.Key is DistributedType dtype &&
-                ((DistributedType)bType).NdSBP.Zip(dtype.NdSBP).Any(p => p.First is SBPBroadCast && p.Second is SBPSplit) &&
-                !((DistributedType)bType).NdSBP.Zip(dtype.NdSBP).Any(p => p.First is SBPSplit && p.Second is SBPBroadCast)))
+            foreach (var (rType, rBucket) in bucketMemo.Where(kv => kv.Key is DistributedType distributedType && distributedType != lType))
             {
-                if (Evaluator.IR.CPU.BoxingEvaluator.VisitType(bType, sType) is not InvalidType)
+                if (Evaluator.IR.CPU.BoxingEvaluator.VisitType(lType, rType) is not InvalidType)
                 {
-                    var snode = new SearchableNode(new Boxing(sType), sType);
-                    sBucket.AddVertex(snode);
-                    callCluster.AddEdge(new(snode, bBucket.Vertices.First(), 0, bBucket));
+                    var rnode = new SearchableNode(new Boxing(rType), rType);
+                    rBucket.AddVertex(rnode);
+                    callCluster.AddEdge(new(rnode, lBucket.Vertices.First(), 0, lBucket));
                 }
             }
         }
 
+        // foreach (var (bType, bBucket) in bucketMemo.Where(kv => kv.Key is DistributedType dtype && !dtype.NdSBP.Any(s => s is SBPPartial) && dtype.NdSBP.Any(s => s is SBPBroadCast)))
+        // {
+        //     foreach (var (sType, sBucket) in bucketMemo.Where(kv => kv.Key is DistributedType dtype &&
+        //         ((DistributedType)bType).NdSBP.Zip(dtype.NdSBP).Any(p => p.First is SBPBroadCast && p.Second is SBPSplit) &&
+        //         !((DistributedType)bType).NdSBP.Zip(dtype.NdSBP).Any(p => p.First is SBPSplit && p.Second is SBPBroadCast)))
+        //     {
+        //         if (Evaluator.IR.CPU.BoxingEvaluator.VisitType(bType, sType) is not InvalidType)
+        //         {
+        //             var snode = new SearchableNode(new Boxing(sType), sType);
+        //             sBucket.AddVertex(snode);
+        //             callCluster.AddEdge(new(snode, bBucket.Vertices.First(), 0, bBucket));
+        //         }
+        //     }
+        // }
         // 4. add not infered type in search space.
         var addedBuckets = bucketMemo.Values.ToArray();
         foreach (var nType in GetLeafCandidateDistTypes(expr.CheckedTensorType, Placements))
@@ -770,6 +782,53 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             }
         }
 
+        // 3. no cycle
+        {
+            var hgraph = ToHyperGraph(_rootSearchGraph, rootCluster);
+            var class_cycles = hgraph.FindCycles();
+            foreach (var cycle in class_cycles)
+            {
+                if (cycle.Count == 1)
+                {
+                    foreach (var n in cycle[0].Vertices)
+                    {
+                        _rootSearchGraph.TryGetOutEdges(n, out var edgs);
+                        if (edgs.Select(e => e.InputGraph).Contains(cycle[0]))
+                        {
+                            cpmodel.AddAssumption(varMemo[n].Not());
+                        }
+                    }
+                }
+                else
+                {
+                    // build clauses.
+                    var clauses = new List<List<BoolVar>>();
+                    for (int i = 0; i < cycle.Count; i++)
+                    {
+                        var next_hop = (i + 1) % cycle.Count;
+                        var u = hgraph.Edges(cycle[i])!;
+                        var v = u[cycle[next_hop]];
+                        clauses.Add(v.Select(n => varMemo[n]).ToList());
+                    }
+
+                    var clauseMemo = new Dictionary<int, BoolVar>();
+                    for (int i = 0; i < clauses.Count; i++)
+                    {
+                        var clause = clauses[i];
+                        if (clause.Count > 1)
+                        {
+                            var tmpV = cpmodel.NewBoolVar(string.Empty);
+                            cpmodel.AddBoolAnd(clause.Select(c => c.Not())).OnlyEnforceIf(tmpV);
+                            cpmodel.AddBoolOr(clause).OnlyEnforceIf(tmpV.Not());
+                            clauseMemo.Add(i, tmpV);
+                        }
+                    }
+
+                    cpmodel.AddBoolOr(clauses.Select((c, i) => (c, i)).Select(p => p.c.Count == 1 ? p.c[0].Not() : clauseMemo[p.i]));
+                }
+            }
+        }
+
         // 3. add pick weights for all enode.
         cpmodel.Minimize(LinearExpr.WeightedSum(_rootSearchGraph.Vertices.Select(n => varMemo[n]), _rootSearchGraph.Vertices.Select(n => checked((long)costMemo[n].Score))));
 
@@ -829,6 +888,41 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
 
         return new ExprBuildVisitor(_rootSearchGraph, picks).Visit(rootCluster.Clusters.OfType<DistributedSearchGraph>());
+    }
+
+    private HyperGraph<DistributedSearchGraph, SearchableNode> ToHyperGraph(DistributedSearchGraph root, DistributedSearchGraph rootCluster)
+    {
+        var hgraph = new HyperGraph<DistributedSearchGraph, SearchableNode>();
+        var visited = new HashSet<DistributedSearchGraph>();
+        var queue = new Queue<DistributedSearchGraph>();
+        var rootBuckets = rootCluster.Clusters.OfType<DistributedSearchGraph>().ToArray();
+        if (rootBuckets.Length != 1)
+        {
+            throw new InvalidOperationException("The root Cluster should contains only one bucket!");
+        }
+
+        queue.Enqueue(rootBuckets[0]);
+        visited.Add(rootBuckets[0]);
+        while (queue.Any())
+        {
+            var front = queue.Dequeue();
+            foreach (var node in front.Vertices)
+            {
+                root.TryGetOutEdges(node, out var edges);
+                foreach (var edge in edges)
+                {
+                    var canonical = edge.InputGraph;
+                    hgraph.Connect(front, canonical, node);
+                    if (!visited.Contains(canonical))
+                    {
+                        visited.Add(canonical);
+                        queue.Enqueue(canonical);
+                    }
+                }
+            }
+        }
+
+        return hgraph;
     }
 }
 
