@@ -317,7 +317,10 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     }
                     else
                     {
+                        IndentScope.Writer.IndWrite($"{{\n");
+                        IndentScope.Writer.Write($"auto_profiler profiler(\"reshard({VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[0], local: false).Name})\");\n");
                         IndentScope.Writer.Write($"reshard({VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[0], local: false).Name});\n");
+                        IndentScope.Writer.IndWrite($"}}\n");
                     }
 
                     break;
@@ -350,7 +353,10 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     }
                     else
                     {
+                        IndentScope.Writer.IndWrite($"{{\n");
+                        IndentScope.Writer.Write($"auto_profiler profiler(\"reshard({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name})\");\n");
                         IndentScope.Writer.Write($"reshard({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name});\n");
+                        IndentScope.Writer.IndWrite($"}}\n");
                     }
 
                     break;
@@ -561,7 +567,10 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                 _ => Visit(x),
             }).ToArray();
             _refFuncs.Add(deviceFunc);
+            IndentScope.Writer.IndWrite($"{{\n");
+            IndentScope.Writer.IndWrite($"auto_profiler profiler(\"{deviceFunc.Name}\");\n");
             IndentScope.Writer.IndWrite($"{deviceFunc.Name}({string.Join(",", arguments.Select(arg => arg.Name))});\n");
+            IndentScope.Writer.IndWrite($"}}\n");
         }
         else
         {
