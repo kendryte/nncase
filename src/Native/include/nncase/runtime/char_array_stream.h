@@ -56,7 +56,8 @@ class char_array_stream : public stream {
         return ok(n);
     }
 
-    result<void> write(const void *buffer, size_t bytes) noexcept override {
+    result<void> write([[maybe_unused]] const void *buffer,
+                       [[maybe_unused]] size_t bytes) noexcept override {
         return err(std::errc::not_supported);
     }
 
