@@ -42,11 +42,12 @@ result<void> run_core(const std::string &kmodel_path,
     std::ifstream kmodel(kmodel_path, std::ios::binary | std::ios::in);
     if (!kmodel.is_open())
         return err(std::errc::no_such_file_or_directory);
+    runtime::std_istream stream(kmodel);
     interpreter interp;
     // auto dump_path =
     //     std::filesystem::path(arg_file_path).parent_path().string();
     // nncase_interp_set_dump_root(interp, dump_path.c_str());
-    try_(interp.load_model(kmodel));
+    try_(interp.load_model(stream));
 
     try_var(entry, interp.entry_function());
 

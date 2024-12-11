@@ -15,7 +15,10 @@
 #include <atomic>
 #include <nncase/compiler.h>
 #include <nncase/compiler_defs.h>
+#include <nncase/runtime/stream.h>
 #include <pybind11/pybind11.h>
+
+namespace py = pybind11;
 
 namespace pybind11::detail {
 extern std::atomic_bool g_python_shutdown;
@@ -142,4 +145,123 @@ template <> struct type_caster<nncase::clr::cstream> {
 };
 
 #undef NNCASE_CSTREAM_IMPL_COMMON
+
+class pystream : public nncase::runtime::stream {
+  public:
+    pystream(py::object stream)
+        : stream_(std::move(stream)),
+          py_readinto_(getattr(stream_, "readinto", py::none())),
+          py_write_(getattr(stream_, "write", py::none())),
+          py_seek_(getattr(stream_, "seek", py::none())),
+          py_tell_(getattr(stream_, "tell", py::none())) {
+        /* Some Python file objects (e.g. sys.stdout and sys.stdin)
+         have non-functional seek and tell. If so, assign None to
+         py_tell and py_seek.
+       */
+        if (!py_tell_.is_none()) {
+            try {
+                py_tell_();
+            } catch (py::error_already_set &err) {
+                py_tell_ = py::none();
+                py_seek_ = py::none();
+                err.restore();
+                PyErr_Clear();
+            }
+        }
+    }
+
+    nncase::result<std::streampos> tell() const noexcept override {
+        if (!py_tell_.is_none()) {
+            try {
+                return nncase::ok(py_tell_().cast<std::streamoff>());
+            } catch (...) {
+            }
+        } else {
+            return nncase::err(std::errc::not_supported);
+        }
+        return nncase::err(std::errc::io_error);
+    }
+
+    nncase::result<void> seek(std::streamoff offset,
+                              std::ios::seekdir dir) noexcept override {
+        if (!py_seek_.is_none()) {
+            try {
+                py_seek_(offset, dir);
+                return nncase::ok();
+            } catch (...) {
+            }
+        } else {
+            return nncase::err(std::errc::not_supported);
+        }
+        return nncase::err(std::errc::io_error);
+    }
+
+    nncase::result<size_t> read(void *buffer, size_t bytes) noexcept override {
+        if (!py_readinto_.is_none()) {
+            try {
+                auto mem =
+                    py::memoryview::from_memory(buffer, py::ssize_t(bytes));
+                return nncase::ok(py_readinto_(mem).cast<size_t>());
+            } catch (...) {
+            }
+        } else {
+            return nncase::err(std::errc::not_supported);
+        }
+        return nncase::err(std::errc::io_error);
+    }
+
+    nncase::result<void> write(const void *buffer,
+                               size_t bytes) noexcept override {
+        if (!py_write_.is_none()) {
+            try {
+                auto mem =
+                    py::memoryview::from_memory(buffer, py::ssize_t(bytes));
+                py_write_(mem);
+                return nncase::ok();
+            } catch (...) {
+            }
+        } else {
+            return nncase::err(std::errc::not_supported);
+        }
+        return nncase::err(std::errc::io_error);
+    }
+
+  private:
+    py::object stream_;
+    py::object py_readinto_;
+    py::object py_write_;
+    py::object py_seek_;
+    py::object py_tell_;
+};
+
+template <> struct type_caster<nncase::runtime::stream> {
+  public:
+    bool load(handle src, bool) {
+        if (getattr(src, "read", py::none()).is_none() &&
+            getattr(src, "write", py::none()).is_none()) {
+            return false;
+        }
+
+        obj = py::reinterpret_borrow<object>(src);
+        value = std::make_unique<pystream>(obj);
+
+        return true;
+    }
+
+  protected:
+    py::object obj;
+    std::unique_ptr<nncase::runtime::stream> value;
+
+  public:
+    static constexpr auto name = _("pystream");
+    static handle cast(NNCASE_UNUSED const nncase::runtime::stream *src,
+                       NNCASE_UNUSED return_value_policy policy,
+                       NNCASE_UNUSED handle parent) {
+        return none().release();
+    }
+    operator nncase::runtime::stream *() { return value.get(); }
+    operator nncase::runtime::stream &() { return *value; }
+    template <typename _T>
+    using cast_op_type = pybind11::detail::cast_op_type<_T>;
+};
 } // namespace pybind11::detail

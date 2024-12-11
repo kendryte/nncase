@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "pystreambuf.h"
 #include "pytype_utils.h"
 #include "type_casters.h"
 #include <iostream>
@@ -393,7 +392,7 @@ PYBIND11_MODULE(_nncase, m) {
                  interp.load_model(buffer, false).unwrap_or_throw();
              })
         .def("load_model",
-             [](interpreter &interp, std::istream &stream) {
+             [](interpreter &interp, nncase::runtime::stream &stream) {
                  interp.load_model(stream).unwrap_or_throw();
              })
         .def_property_readonly("inputs_size", &interpreter::inputs_size)

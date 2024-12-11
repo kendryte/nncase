@@ -14,7 +14,7 @@
  */
 #include <cassert>
 #include <iostream>
-#include <nncase/runtime/char_array_buffer.h>
+#include <nncase/runtime/char_array_stream.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/interpreter.h>
@@ -31,10 +31,9 @@ interpreter::interpreter() noexcept : entry_function_(nullptr) {}
 result<void> interpreter::load_model(std::span<const std::byte> buffer,
                                      bool copy_buffer) noexcept {
     if (copy_buffer) {
-        char_array_buffer array_buffer(
+        char_array_stream array_stream(
             {reinterpret_cast<const char *>(buffer.data()), buffer.size()});
-        std::istream stream(&array_buffer);
-        return load_model(stream);
+        return load_model(array_stream);
     }
 
     span_reader reader(buffer);
@@ -63,7 +62,7 @@ result<void> interpreter::load_model(std::span<const std::byte> buffer,
     return ok();
 }
 
-result<void> interpreter::load_model(std::istream &stream) noexcept {
+result<void> interpreter::load_model(runtime::stream &stream) noexcept {
     stream_reader reader(stream);
     auto header = reader.read<model_header>();
     try_(initialize_model(header));
