@@ -554,6 +554,21 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 _rootSearchGraph.AddEdge(new(tpnode, buckets[i].Vertices.First(), i, buckets[i]));
             }
         }
+        else if (expr is TensorConst tc && tc.ValueType is TensorType tensorType)
+        {
+            if (!_inferedMemo.TryGetValue(tc, out var inferCluster))
+            {
+                inferCluster = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.DistributedCluster);
+                foreach (var dType in GetLeafCandidateDistTypes(tensorType, Placements))
+                {
+                    var bucket = reshardGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
+                    var dnode = new SearchableNode(new TensorConst(tc.Value, dType.NdSBP, dType.Placement), dType);
+                    bucket.AddVertex(dnode);
+                }
+
+                _inferedMemo.Add(expr, inferCluster);
+            }
+        }
         else
         {
             if (!_inferedMemo.TryGetValue(expr, out var inferCluster))
