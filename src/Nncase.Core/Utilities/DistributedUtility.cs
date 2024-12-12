@@ -206,6 +206,52 @@ public static class DistributedUtility
         return distributedType.TensorType with { Shape = new Shape(tiles) };
     }
 
+    public static int[] GetUnraveledIndex(int index, int[] hierarchies)
+    {
+        var strides = TensorUtilities.GetStrides(hierarchies);
+        int remain = index;
+        var unraveledIndex = new int[hierarchies.Length];
+        for (int i = 0; i < unraveledIndex.Length; i++)
+        {
+            unraveledIndex[i] = remain / strides[i];
+            remain = remain % strides[i];
+        }
+
+        return unraveledIndex;
+    }
+
+    public static (int[] Offset, int[] Shape) GetLocalOffsetAndShape(DistributedType distributedType, int[] shardIndex)
+    {
+        var globalShape = distributedType.TensorType.Shape.ToValueArray();
+        var offset = new int[distributedType.TensorType.Shape.Rank];
+        var shape = new int[distributedType.TensorType.Shape.Rank];
+        for (int axis = 0; axis < offset.Length; axis++)
+        {
+            var splits = (from d in distributedType.NdSBP.Select((s, i) => (s, i))
+                          let s = d.s as SBPSplit
+                          where s != null && s.Axis == axis
+                          select (Placement: d.i, DeviceIndex: shardIndex[d.i], DeviceDim: distributedType.Placement.Hierarchy[d.i])).ToArray();
+            if (splits.Any())
+            {
+                var subHierarchies = splits.Select(x => x.DeviceDim).ToArray();
+                var subHierarchyStrides = TensorUtilities.GetStrides(subHierarchies);
+                var subHierarchySize = (int)TensorUtilities.GetProduct(subHierarchies);
+                var subShardIndex = splits.Select(x => x.DeviceIndex).ToArray();
+                var linearIndex = TensorUtilities.GetIndex(subHierarchyStrides, subShardIndex);
+                var localDim = MathUtility.CeilDiv(globalShape[axis], subHierarchySize);
+                offset[axis] = linearIndex * localDim;
+                shape[axis] = Math.Min(localDim, globalShape[axis] - offset[axis]);
+            }
+            else
+            {
+                offset[axis] = 0;
+                shape[axis] = globalShape[axis];
+            }
+        }
+
+        return (offset, shape);
+    }
+
     private static (IReadOnlyList<int> Tile, IReadOnlyList<int> Shape) GetDividedTile(DistributedType distributedType)
     {
         var shape = distributedType.TensorType.Shape.ToValueArray();

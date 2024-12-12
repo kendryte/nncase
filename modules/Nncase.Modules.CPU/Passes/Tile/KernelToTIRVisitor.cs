@@ -318,11 +318,11 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                     case Var v:
                         loc = MemoryLocation.Data;
                         index = CheckRoot(v, ref loc);
-                        buffer = T.AttachBuffer((TensorType)v.CheckedType, MemoryLocation.Input, 1, out _, out _, name);
+                        buffer = T.AttachBuffer((TensorType)v.CheckedType, MemoryLocation.Input, 1, out _, out _, name, v.CheckedType as DistributedType);
 
                         if (index != -1)
                         {
-                            var bufferOut = T.AttachBuffer(IR.F.Buffer.DDrOf(buffer), (TensorType)v.CheckedType, MemoryLocation.Output, 1, out _, name + $"_viewed_out_{index}");
+                            var bufferOut = T.AttachBuffer(IR.F.Buffer.DDrOf(buffer), (TensorType)v.CheckedType, MemoryLocation.Output, 1, out _, name + $"_viewed_out_{index}", v.CheckedType as DistributedType);
                             _outputbuffers.Add((index, bufferOut));
                         }
 

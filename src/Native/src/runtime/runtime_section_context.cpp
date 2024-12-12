@@ -26,16 +26,20 @@ result<std::span<const std::byte>> runtime_section_context::get_or_read_section(
     std::span<const std::byte> src_span;
     stream_reader *sr = nullptr;
     size_t body_size;
+    uint32_t alignment;
 
     auto section_span_r = section(name);
     if (section_span_r.is_ok()) {
         src_span = std::move(section_span_r).unwrap();
         body_size = src_span.size_bytes();
+        auto header = reinterpret_cast<const section_header *>(src_span.data());
+        alignment = header->alignment;
 
         // Try to attach if section is pinned
         if (is_section_pinned()) {
             buffer_attach_options options{};
             options.flags = allocate_shared ? HOST_BUFFER_ATTACH_SHARED : 0;
+            options.alignment = alignment;
             auto buffer_r = buffer_allocator::host().attach(
                 {const_cast<std::byte *>(src_span.data()), src_span.size()},
                 options);
@@ -53,12 +57,14 @@ result<std::span<const std::byte>> runtime_section_context::get_or_read_section(
         section_header header;
         try_set(sr, seek_section(name, header));
         body_size = header.body_size;
+        alignment = header.alignment;
     }
 
     // Allocate buffer
     buffer_allocate_options options{};
     options.flags = allocate_shared ? HOST_BUFFER_ALLOCATE_SHARED
                                     : HOST_BUFFER_ALLOCATE_CPU_ONLY;
+    options.alignment = alignment;
     try_var(buffer, buffer_allocator::host().allocate(body_size, options));
     storage = buffer.as<host_buffer_t>().unwrap();
     std::span<const std::byte> span;

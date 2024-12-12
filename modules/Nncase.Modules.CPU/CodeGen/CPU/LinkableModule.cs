@@ -17,14 +17,18 @@ namespace Nncase.CodeGen.CPU;
 
 internal sealed class LinkableModule : ILinkableModule
 {
+    private readonly Stream _desc;
     private readonly Stream _rdata;
+    private readonly IReadOnlyList<Stream> _localRdatas;
 
     private readonly IReadOnlyList<ILinkableFunction> _functions;
     private readonly CompileOptions _options;
 
-    public LinkableModule(Stream rdata, IReadOnlyList<ILinkableFunction> functions, CompileOptions options)
+    public LinkableModule(Stream desc, Stream rdata, IReadOnlyList<Stream> localRdatas, IReadOnlyList<ILinkableFunction> functions, CompileOptions options)
     {
+        _desc = desc;
         _rdata = rdata;
+        _localRdatas = localRdatas;
         _functions = functions;
         _options = options;
     }
@@ -114,7 +118,7 @@ internal sealed class LinkableModule : ILinkableModule
             offset += func_text.Length;
         }
 
-        return new LinkedModule(linkedFunctions, manager.GetContent(WellknownSectionNames.Text)!, _rdata, rdataAlign);
+        return new LinkedModule(linkedFunctions, _desc, manager.GetContent(WellknownSectionNames.Text)!, _rdata, _localRdatas, rdataAlign);
     }
 
     private string CompileCSource(string sourcePath)

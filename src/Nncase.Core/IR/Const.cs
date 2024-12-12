@@ -150,7 +150,9 @@ public abstract class Const : Expr
     {
         if (value is TensorValue tv)
         {
-            return new TensorConst(tv.AsTensor());
+            return tv.Type is DistributedType distributedType
+                ? new TensorConst(tv.AsTensor(), distributedType.NdSBP, distributedType.Placement)
+                : new TensorConst(tv.AsTensor());
         }
         else
         {

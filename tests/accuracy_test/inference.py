@@ -58,21 +58,20 @@ class Inference:
                 self.infer_report_dict['remark'] += f',\nnncase(if_quant_type={if_quant_type}, w_quant_type={w_quant_type})'
 
         compiler.compile()
-        kmodel = compiler.gencode_tobytes()
         os.makedirs(infer_dir, exist_ok=True)
+        kmodel_path = os.path.join(infer_dir, self.cfg['kmodel_name'])
         if self.dynamic:
             self.dump_kmodel_desc(os.path.join(infer_dir, self.cfg['desc_name']))
-        if not in_ci:
-            with open(os.path.join(infer_dir, self.cfg['kmodel_name']), 'wb') as f:
-                f.write(kmodel)
+        with open(kmodel_path, 'wb') as f:
+            compiler.gencode(f)
 
         compile_opt = self.cfg['compile_opt']
         if running_on_evb:
-            self.run_evb(target, kmodel, compile_opt, infer_dir)
+            self.run_evb(target, kmodel_path, compile_opt, infer_dir)
         else:
-            self.run_simulator(target, kmodel, compile_opt, infer_dir)
+            self.run_simulator(target, kmodel_path, compile_opt, infer_dir)
 
-    def run_simulator(self, target, kmodel, compile_opt, infer_dir):
+    def run_simulator(self, target, kmodel_path, compile_opt, infer_dir):
         generator_cfg = self.cfg['generator']['inputs']
         method = generator_cfg['method']
         batch_number = generator_cfg['number']
@@ -80,14 +79,15 @@ class Inference:
 
         # get input file list
         file_list = []
-        assert(os.path.isdir(args))
+        assert (os.path.isdir(args))
         for file in os.listdir(args):
             if file.endswith('.bin'):
                 file_list.append(os.path.join(args, file))
         file_list.sort()
 
         sim = nncase.Simulator()
-        sim.load_model(kmodel)
+        with open(kmodel_path, 'rb') as f:
+            sim.load_model(f)
 
         number = generator_cfg['number']
         q = queue.Queue(maxsize=self.postprocess_qsize)
@@ -124,7 +124,7 @@ class Inference:
         for i in range(sim.outputs_size):
             output = sim.get_output_tensor(i).to_numpy()
             if compile_opt['preprocess']:
-                if(compile_opt['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
+                if (compile_opt['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
                     output = np.transpose(output, [0, 3, 1, 2])
                 elif (compile_opt['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
                     output = np.transpose(output, [0, 2, 3, 1])

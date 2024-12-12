@@ -14,6 +14,7 @@
  */
 #include <chrono>
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <nncase/io_utils.h>
 #include <nncase/runtime/interpreter.h>
@@ -38,16 +39,17 @@ result<void> write_tensor_buffer(value_t value, std::ofstream &of) {
 
 result<void> run_core(const std::string &kmodel_path,
                       const std::vector<std::string> &bins) {
-    auto kmodel = read_file(kmodel_path);
-    interpreter *interp = new interpreter();
+    std::ifstream kmodel(kmodel_path, std::ios::binary | std::ios::in);
+    if (!kmodel.is_open())
+        return err(std::errc::no_such_file_or_directory);
+    runtime::std_istream stream(kmodel);
+    interpreter interp;
     // auto dump_path =
     //     std::filesystem::path(arg_file_path).parent_path().string();
     // nncase_interp_set_dump_root(interp, dump_path.c_str());
-    try_(interp->load_model(
-        {reinterpret_cast<const std::byte *>(kmodel.data()), kmodel.size()},
-        false));
+    try_(interp.load_model(stream));
 
-    try_var(entry, interp->entry_function());
+    try_var(entry, interp.entry_function());
 
     if (entry->parameters_size() > bins.size())
         return err(std::errc::argument_list_too_long);

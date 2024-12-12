@@ -13,24 +13,21 @@
  * limitations under the License.
  */
 #pragma once
+#include "stream.h"
 #include <cstring>
-#include <istream>
-#include <iterator>
 #include <nncase/compiler_defs.h>
 #include <nncase/runtime/dbg.h>
-#include <string>
-#include <vector>
 
 BEGIN_NS_NNCASE_RUNTIME
 
 class stream_reader {
   public:
-    stream_reader(std::istream &stream) : stream_(stream) {}
+    stream_reader(runtime::stream &stream) : stream_(stream) {}
 
-    std::streampos tell() const noexcept { return stream_.tellg(); }
-    bool empty() const noexcept { return !stream_.eof(); }
-
-    void seek(std::streampos pos) noexcept { stream_.seekg(pos); }
+    std::streampos tell() const noexcept { return stream_.tell().unwrap(); }
+    void seek(std::streampos pos) noexcept {
+        stream_.seek(pos, std::ios::beg).unwrap();
+    }
 
     template <class T> T read() {
         T value;
@@ -51,17 +48,26 @@ class stream_reader {
     template <class T> T peek_unaligned() { return peek<T>(); }
 
     template <class T> void read(T &value) {
-        stream_.read(reinterpret_cast<char *>(&value), sizeof(value));
+        auto size =
+            stream_.read(reinterpret_cast<char *>(&value), sizeof(value))
+                .unwrap_or_throw();
+        if (size != sizeof(value))
+            std::abort();
     }
 
     template <class T> void read_span(std::span<T> span) {
-        stream_.read(reinterpret_cast<char *>(span.data()), span.size_bytes());
+        auto size =
+            stream_
+                .read(reinterpret_cast<char *>(span.data()), span.size_bytes())
+                .unwrap_or_throw();
+        if (size != span.size_bytes())
+            std::abort();
     }
 
-    void skip(size_t count) { stream_.seekg(count, std::ios::cur); }
+    void skip(size_t count) { stream_.seek(count, std::ios::cur).unwrap(); }
 
   private:
-    std::istream &stream_;
+    runtime::stream &stream_;
 };
 
 END_NS_NNCASE_RUNTIME
