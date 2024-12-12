@@ -105,7 +105,7 @@ typedef struct {
     int64_t (*get_position)(nncase_stream_handle_t handle);
     size_t (*read)(nncase_stream_handle_t handle, uint8_t *buffer,
                    size_t length);
-    int64_t (*seek)(nncase_stream_handle_t handle, int origin, int64_t offset);
+    int64_t (*seek)(nncase_stream_handle_t handle, int64_t offset, int origin);
     void (*write)(nncase_stream_handle_t handle, const uint8_t *buffer,
                   size_t length);
 } nncase_stream_mt_t;

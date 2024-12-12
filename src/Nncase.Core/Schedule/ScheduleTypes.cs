@@ -208,6 +208,7 @@ public sealed class SchedFunctionResult
     public SchedFunctionResult()
     {
         Rdatas = new(ReferenceEqualityComparer.Instance);
+        LocalRdatas = new(ReferenceEqualityComparer.Instance);
         DataUsage = 0;
         IsScheduled = false;
     }
@@ -216,6 +217,11 @@ public sealed class SchedFunctionResult
     /// Gets the buffer allocation.
     /// </summary>
     public Dictionary<IR.Const, ValueRange<ulong>> Rdatas { get; }
+
+    /// <summary>
+    /// Gets the buffer allocation.
+    /// </summary>
+    public Dictionary<IR.Const, ValueRange<ulong>> LocalRdatas { get; }
 
     /// <summary>
     /// Gets or sets the data section length.

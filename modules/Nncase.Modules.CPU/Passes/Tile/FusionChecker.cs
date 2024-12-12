@@ -442,7 +442,7 @@ public sealed class FusionChecker
 
             var location = kv.Key switch
             {
-                TensorConst { ValueType: DistributedType } => MemoryLocation.Rdata,
+                TensorConst { ValueType: DistributedType } => MemoryLocation.ThreadLocalRdata,
                 Var => MemoryLocation.Input,
                 Call { Target: IR.CPU.Store } => MemoryLocation.Output,
                 _ => MemoryLocation.L2Data,
@@ -460,7 +460,7 @@ public sealed class FusionChecker
             Expr start = location switch
             {
                 MemoryLocation.L2Data => IR.None.Default,
-                MemoryLocation.Rdata => IR.F.Buffer.DDrOf(kv.Key),
+                MemoryLocation.ThreadLocalRdata => IR.F.Buffer.DDrOf(kv.Key),
                 _ => TIR.F.CPU.PtrOf(bfname, kv.Key.CheckedDataType),
             };
 

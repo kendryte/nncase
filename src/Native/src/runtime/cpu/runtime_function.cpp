@@ -29,15 +29,8 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
 using namespace nncase::ntt::runtime;
 
-typedef struct {
-    uint32_t tdim;
-    uint32_t bdim;
-    uint32_t cdim;
-    uint32_t reserved0;
-} desc_header;
-
 cpu_runtime_function::cpu_runtime_function(runtime_module &rt_module)
-    : runtime_function(rt_module), block_entry_(nullptr), tdim_(0), bdim_(0) {}
+    : runtime_function(rt_module), block_entry_(nullptr) {}
 
 cpu_runtime_function::~cpu_runtime_function() {}
 
@@ -47,14 +40,6 @@ cpu_runtime_module &cpu_runtime_function::module() const noexcept {
 
 result<void> cpu_runtime_function::initialize_core(
     runtime_function_init_context &context) noexcept {
-    try_(context.read_section(
-        ".desc", [this](auto reader, size_t) -> result<void> {
-            auto header = reader.template read<desc_header>();
-            this->tdim_ = header.tdim;
-            this->bdim_ = header.bdim;
-            this->cdim_ = header.cdim;
-            return ok();
-        }));
     auto text = module().text().subspan(context.header().entrypoint,
                                         context.header().text_size);
     loader_.load(text);

@@ -67,7 +67,7 @@ public class UnitTestExpression
         var a = (Const)(int)1;
         var b = (Const)(uint)1U;
         Assert.NotEqual(a, b);
-        Assert.Equal(a.GetHashCode(), b.GetHashCode());
+        Assert.NotEqual(a.GetHashCode(), b.GetHashCode());
         var dict = new Dictionary<Expr, int>();
         dict.TryAdd(a, 0);
         dict.TryAdd(b, 1);

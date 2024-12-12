@@ -27,4 +27,5 @@ void *thread_alloc(size_t bytes, size_t alignment);
 void thread_free(void *ptr);
 } // namespace nncase::ntt::runtime
 
-extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata);
+extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata,
+                            const std::byte *local_rdata);
