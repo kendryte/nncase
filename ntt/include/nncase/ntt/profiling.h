@@ -21,13 +21,20 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace nncase::ntt {
 class ntt_profiler {
   public:
+    struct call_instance {
+        uint64_t start_time;
+        uint64_t end_time;
+    };
+
     struct function_stats {
         uint64_t call_count = 0;
         uint64_t total_time = 0;
+        std::vector<call_instance> calls;
     };
 
     static ntt_profiler &get_instance() {
@@ -35,80 +42,189 @@ class ntt_profiler {
         return instance;
     }
 
-    // record start time
+    // 记录开始时间
     uint64_t start_timing() { return get_current_time(); }
 
-    // record end time and calculate duration
+    // 记录结束时间和计算持续时间
     void end_timing(const std::string &function_name, uint64_t start_time) {
         uint64_t end_time = get_current_time();
-        uint64_t duration = end_time - start_time;
-
         auto &stats = function_stats_[function_name];
+        stats.calls.push_back({start_time, end_time});
         stats.call_count++;
-        stats.total_time += duration;
+        stats.total_time += end_time - start_time;
     }
 
     // print statistics
-    void print_statistics() const {
+    void console_print() const {
         uint64_t total_time = 0;
         for (const auto &[name, stats] : function_stats_) {
             total_time += stats.total_time;
         }
 
         std::cout << "\033[34m\nStatistics for NTT kernels. Total time: "
-                  << total_time
-                  << " microseconds. More info in: ./ntt_profiler.md\033[0m\n";
+                  << total_time << " microseconds. \033[0m\n";
         for (const auto &[name, stats] : function_stats_) {
             std::cout << "Function: " << name << "\n";
-            std::cout << "  Calls: " << stats.call_count << "\n";
-            std::cout << "  Total time: " << stats.total_time
+            std::cout << "\tCalls: " << stats.call_count << "\n";
+            std::cout << "\tTotal time: " << stats.total_time
                       << " microseconds\n";
-            std::cout << "  Time Ratio: " << std::fixed << std::setprecision(2)
+            std::cout << "\tTime Ratio: " << std::fixed << std::setprecision(2)
                       << static_cast<double>(stats.total_time) /
                              static_cast<double>(total_time)
                       << std::endl;
+            uint64_t call_count = 0;
+            for (const auto &call : stats.calls) {
+                std::cout << "\t\t" << "Call " << call_count++ << ": \n";
+                std::cout << "\t\tStart time: " << call.start_time
+                          << " microseconds\n";
+                std::cout << "\t\tEnd time: " << call.end_time
+                          << " microseconds\n";
+                std::cout << "\t\tDuration: " << call.end_time - call.start_time
+                          << " microseconds\n";
+            }
         }
     }
 
-    void write_markdown_report(const std::string &filename) const {
+    void csv_print(const std::string &filename) const {
+        std::ofstream csv_file(filename);
+        if (!csv_file.is_open()) {
+            std::cerr << "Failed to open file: " << filename << std::endl;
+            return;
+        }
+
+        // Write CSV headers
+        csv_file << "Function,Calls,Total Time (microseconds),Time Ratio,Call "
+                    "Index,Start Time (microseconds),End Time "
+                    "(microseconds),Duration (microseconds)\n";
 
         uint64_t total_time = 0;
         for (const auto &[name, stats] : function_stats_) {
             total_time += stats.total_time;
         }
 
-        std::ofstream ofs(filename);
-        if (!ofs) {
-            std::cerr << "Error opening file: " << filename << std::endl;
+        for (const auto &[name, stats] : function_stats_) {
+            double time_ratio = static_cast<double>(stats.total_time) /
+                                static_cast<double>(total_time);
+            for (size_t i = 0; i < stats.calls.size(); ++i) {
+                const auto &call = stats.calls[i];
+                uint64_t duration = call.end_time - call.start_time;
+
+                // Write each call's data to the CSV file
+                csv_file << name << ",";
+                csv_file << stats.call_count << ",";
+                csv_file << stats.total_time << ",";
+                csv_file << std::fixed << std::setprecision(2) << time_ratio
+                         << ",";
+                csv_file << i << ",";
+                csv_file << call.start_time << ",";
+                csv_file << call.end_time << ",";
+                csv_file << duration << "\n";
+            }
+        }
+
+        csv_file.close();
+    }
+
+    void markdown_print(const std::string &filename) const {
+
+        std::ofstream md_file(filename);
+        if (!md_file.is_open()) {
+            std::cerr << "Failed to open file: " << filename << std::endl;
             return;
         }
 
-        ofs << "# Statistics for NTT Kernels\n\n";
-        ofs << "**Total time:** `" << total_time << "` microseconds\n\n";
-        ofs << "| Function Name | Calls | Total Time (microseconds) | Time "
-               "Ratio |\n";
-        ofs << "|---------------|-------|--------------------------|-----------"
-               "-|\n";
-
+        uint64_t total_time = 0;
         for (const auto &[name, stats] : function_stats_) {
-            ofs << "| " << name << " | " << stats.call_count << " | "
-                << stats.total_time << " | " << std::fixed
-                << std::setprecision(2)
-                << static_cast<double>(stats.total_time) /
-                       static_cast<double>(total_time)
-                << " |\n";
+            total_time += stats.total_time;
         }
 
-        ofs << "\n*Note*: The `Time Ratio` is the fraction of the total time "
+        // Write the header of the Markdown file
+        md_file << "# NTT Kernel Statistics\n\n";
+        md_file << "Total time: **" << total_time << " microseconds**\n\n";
+
+        for (const auto &[name, stats] : function_stats_) {
+            md_file << "## Function: " << name << "\n";
+            md_file << "- Calls: **" << stats.call_count << "**\n";
+            md_file << "- Total Time: **" << stats.total_time
+                    << " microseconds**\n";
+            md_file << "- Time Ratio: **" << std::fixed << std::setprecision(2)
+                    << static_cast<double>(stats.total_time) /
+                           static_cast<double>(total_time)
+                    << "**\n\n";
+
+            // Write a table for the function calls
+            md_file << "| Call Index | Start Time (microseconds) | End Time "
+                       "(microseconds) | Duration (microseconds) |\n";
+            md_file << "|------------|----------------------------|------------"
+                       "--------------|-------------------------|\n";
+
+            for (size_t i = 0; i < stats.calls.size(); ++i) {
+                const auto &call = stats.calls[i];
+                uint64_t duration = call.end_time - call.start_time;
+
+                md_file << "| " << i << " | " << call.start_time << " | "
+                        << call.end_time << " | " << duration << " |\n";
+            }
+
+            md_file << "\n";
+        }
+
+        md_file
+            << "\n*Note*: The `Time Ratio` is the fraction of the total time "
                "taken by each function.\n";
+
+        md_file.close();
+    }
+
+    void json_print(const std::string &filename) const {
+
+        std::ofstream json_file(filename);
+        if (!json_file.is_open()) {
+            std::cerr << "Failed to open file: " << filename << std::endl;
+            return;
+        }
+
+        // Write the JSON preamble
+        json_file << "[\n";
+
+        bool first_function = true;
+
+        for (const auto &[name, stats] : function_stats_) {
+            for (const auto &call : stats.calls) {
+                if (!first_function) {
+                    json_file << ",\n";
+                }
+                first_function = false;
+
+                json_file << "  {\n";
+                json_file << "    \"name\": \"" << name << "\",\n";
+                json_file
+                    << "    \"ph\": \"X\",\n"; // "X" indicates a complete event
+                json_file << "    \"ts\": " << call.start_time << ",\n";
+                json_file << "    \"dur\": "
+                          << (call.end_time - call.start_time) << ",\n";
+                json_file << "    \"pid\": 0,\n"; // Process ID (arbitrary, use
+                                                  // 0 for simplicity)
+                json_file << "    \"tid\": 0\n";  // Thread ID (arbitrary, use 0
+                                                  // for simplicity)
+                json_file << "  }";
+            }
+        }
+
+        // End the JSON array
+        json_file << "\n]\n";
+
+        json_file.close();
     }
 
   private:
     ntt_profiler() = default;
 
     ~ntt_profiler() {
-        print_statistics();
-        write_markdown_report("ntt_profiler.md");
+        console_print();
+        markdown_print("ntt_profiler.md");
+        csv_print("ntt_profiler.csv");
+        json_print("ntt_profiler.json");
     }
 
     uint64_t get_current_time() const {
@@ -137,5 +253,5 @@ class auto_profiler {
 };
 
 // #define AUTO_NTT_PROFILER auto_profiler profiler(__FUNCTION__);
-// #define DISP_NTT_PROFILER ntt_profiler::get_instance().print_statistics();
+// #define DISP_NTT_PROFILER ntt_profiler::get_instance().console_print();
 } // namespace nncase::ntt
