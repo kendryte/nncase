@@ -116,9 +116,9 @@ template <> struct type_caster<nncase::clr::cstream> {
                 return pyhandle.attr("readinto")(mem).cast<size_t>();
             },
         .seek =
-            [](nncase_stream_handle_t handle, int origin, int64_t offset) {
+            [](nncase_stream_handle_t handle, int64_t offset, int origin) {
                 NNCASE_CSTREAM_IMPL_COMMON;
-                return pyhandle.attr("seek")(origin, offset).cast<int64_t>();
+                return pyhandle.attr("seek")(offset, origin).cast<int64_t>();
             },
         .write =
             [](nncase_stream_handle_t handle, const uint8_t *buffer,
@@ -186,7 +186,7 @@ class pystream : public nncase::runtime::stream {
                               std::ios::seekdir dir) noexcept override {
         if (!py_seek_.is_none()) {
             try {
-                py_seek_(offset, dir);
+                py_seek_((int64_t)offset, (int)dir);
                 return nncase::ok();
             } catch (...) {
             }
