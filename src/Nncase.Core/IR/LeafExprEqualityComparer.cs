@@ -42,11 +42,6 @@ public sealed class LeafExprEqualityComparer : IEqualityComparer<Expr>
             return false;
         }
 
-        if (x.GetHashCode() != y.GetHashCode())
-        {
-            return false;
-        }
-
         return (x, y) switch
         {
             (Var tx, Var ty) => tx.Equals(ty),
