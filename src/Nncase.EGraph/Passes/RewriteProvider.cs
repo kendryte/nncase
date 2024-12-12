@@ -52,8 +52,8 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
               Select(rule =>
             {
                 EGraphMatcher.TryMatchRoot(eGraph.Nodes, rule.Pattern, out var results);
-                return (rule, results!);
-            }).Where(p => p.Item2 is not null).ToArray();
+                return (Rule: rule, Results: results!);
+            }).Where(p => p.Results is not null).ToArray();
 
             if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
             {
@@ -66,29 +66,31 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
                 }
             }
 
-            foreach (var (rule, results) in matches)
+            var flattenMatches = (from match in matches
+                                  from result in match.Results
+                                  select (match.Rule, Result: result)).ToArray();
+
+            var replacedExprs = (from match in flattenMatches.AsParallel()
+                                 let oldENode = (ENode)match.Result.Root
+                                 let candidates = match.Rule.GetReplaceCandidates(match.Result, context)
+                                 where candidates != null
+                                 from newExpr in candidates
+                                 where newExpr != null
+                                 select (oldENode, NewExpr: newExpr.InheritMetaData(oldENode.Expr))).ToArray();
+
+            foreach (var (oldENode, newExpr) in replacedExprs)
             {
-                var replacedExprs = (from result in results
-                                     let oldExpr = ((ENode)result.Root).Expr
-                                     let candidates = rule.GetReplaceCandidates(result, context)
-                                     where candidates != null
-                                     from newExpr in candidates
-                                     where newExpr != null
-                                     select (oldExpr, eGraph.Find((ENode)result.Root), newExpr.InheritMetaData(oldExpr))).ToList();
+                var oldEClass = eGraph.Find(oldENode);
+                var typeInferSuccess = CompilerServices.InferenceType(newExpr);
+                Trace.Assert(typeInferSuccess);
 
-                foreach (var (oldExpr, oldEClass, newExpr) in replacedExprs)
+                var newEClass = eGraph.Add(newExpr);
+                if (_logger.IsEnabled(LogLevel.Trace))
                 {
-                    var typeInferSuccess = CompilerServices.InferenceType(newExpr);
-                    Trace.Assert(typeInferSuccess);
-
-                    var newEClass = eGraph.Add(newExpr);
-                    if (_logger.IsEnabled(LogLevel.Trace))
-                    {
-                        _logger.LogTrace("Version {Version} : Merge {OldClass} to {NewClass}", eGraph.Version, oldEClass, newEClass);
-                    }
-
-                    eGraph.Union(oldEClass, newEClass);
+                    _logger.LogTrace("Version {Version} : Merge {OldClass} to {NewClass}", eGraph.Version, oldEClass, newEClass);
                 }
+
+                eGraph.Union(oldEClass, newEClass);
             }
 
             if (last_version == eGraph.Version)

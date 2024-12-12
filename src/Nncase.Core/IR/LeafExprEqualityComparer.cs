@@ -22,6 +22,11 @@ public sealed class LeafExprEqualityComparer : IEqualityComparer<Expr>
     /// <inheritdoc/>
     public bool Equals(Expr? x, Expr? y)
     {
+        if (ReferenceEquals(x, y))
+        {
+            return true;
+        }
+
         if (x == null && y == null)
         {
             return true;
@@ -33,6 +38,11 @@ public sealed class LeafExprEqualityComparer : IEqualityComparer<Expr>
         }
 
         if (x.GetType() != y.GetType())
+        {
+            return false;
+        }
+
+        if (x.GetHashCode() != y.GetHashCode())
         {
             return false;
         }

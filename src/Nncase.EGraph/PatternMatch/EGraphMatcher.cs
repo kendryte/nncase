@@ -28,16 +28,11 @@ public sealed class EGraphMatcher
     public static bool TryMatchRoot(IEnumerable<ENode> enodes, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
     {
         var matcher = new EGraphMatcher();
-        var matchScopes = new List<MatchScope>();
-
-        foreach (var enode in enodes)
-        {
-            if (pattern.MatchLeaf(enode.Expr))
-            {
-                var scopes = matcher.Visit(new[] { new MatchScope(enode) }, pattern, enode);
-                matchScopes.AddRange(scopes);
-            }
-        }
+        var matchScopes = (from enode in enodes.AsParallel()
+                           where pattern.MatchLeaf(enode.Expr)
+                           let scopes = matcher.Visit([new MatchScope(enode)], pattern, enode)
+                           from scope in scopes
+                           select scope).ToList();
 
         if (matchScopes.Count == 0)
         {
