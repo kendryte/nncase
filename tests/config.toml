@@ -150,9 +150,9 @@ threshold = 0.9
 
 [target.xpu.target_options]
 Hierarchies = [[1, 2, 8, 4, 4]]
-HierarchyNames = "dcbt"
-HierarchySizes = [1073741824, 1048576]
-MemoryCapacities = [262144, 268435456]
+HierarchyNames = "cdxyt"
+HierarchySizes = [268435456, 1048576]
+MemoryCapacities = [262144, 67108864]
 MemoryBandWidths = [64, 32]
 UnifiedMemoryArch = false
 Packing = true
