@@ -16,6 +16,11 @@
 #include "../../distributed.h"
 #include "runtime.h"
 #include <atomic>
+#ifdef SYS_MODE
+#define DEVICE_SEC __device__
+#else
+#define DEVICE_SEC
+#endif
 
 namespace nncase::ntt::distributed {
 
@@ -31,29 +36,45 @@ inline constexpr size_t cdim() noexcept { return program_dim(topology::chip); }
 
 template <> struct program_id_getter<topology::thread> {
     static size_t id() noexcept {
+#ifdef SYS_MODE
         size_t current_id = device_thread_id();
         return current_id % tdim();
+#else
+        return runtime::xpu_thread_context_t::current().tid;
+#endif
     }
 };
 
 template <> struct program_id_getter<topology::block> {
     static size_t id() noexcept {
+#ifdef SYS_MODE
         size_t current_id = device_thread_id();
         return ((current_id % (ddim() * bdim() * tdim())) % (bdim() * tdim())) / tdim();
+#else
+        return runtime::xpu_thread_context_t::current().bid;
+#endif
     }
 };
 
 template <> struct program_id_getter<topology::die> {
     static size_t id() noexcept {
+#ifdef SYS_MODE
         size_t current_id = device_thread_id();
         return (current_id % (ddim() * bdim() * tdim())) / (bdim() * tdim());
+#else
+        return runtime::xpu_thread_context_t::current().did;
+#endif
     }
 };
 
 template <> struct program_id_getter<topology::chip> {
     static size_t id() noexcept {
+#ifdef SYS_MODE
         size_t current_id = device_thread_id();
         return current_id / (ddim() * bdim() * tdim());
+#else
+        return runtime::xpu_thread_context_t::current().cid;
+#endif
     }
 };
 
@@ -94,7 +115,7 @@ void arrive_and_wait(std::atomic<int32_t> vars[2], int32_t value = 0)
 }
 } // namespace detail
 
-__device__ static ntt::distributed::detail::thread_barrier thread_barriers[cdim()][ddim()][bdim()];
+DEVICE_SEC static ntt::distributed::detail::thread_barrier thread_barriers[cdim()][ddim()][bdim()];
 template <> class topology_synchronizer<topology::thread> {
   private:
   public:
@@ -106,7 +127,7 @@ template <> class topology_synchronizer<topology::thread> {
     inline static detail::thread_barrier barriers_[cdim()][ddim()][bdim()];
 };
 
-__device__ static ntt::distributed::detail::block_barrier block_barriers[cdim()][ddim()];
+DEVICE_SEC static ntt::distributed::detail::block_barrier block_barriers[cdim()][ddim()];
 template <> class topology_synchronizer<topology::block> {
   private:
   public:
@@ -118,7 +139,7 @@ template <> class topology_synchronizer<topology::block> {
     inline static detail::block_barrier barriers_[cdim()][ddim()];
 };
 
-__device__ static ntt::distributed::detail::die_barrier die_barriers[cdim()];
+DEVICE_SEC static ntt::distributed::detail::die_barrier die_barriers[cdim()];
 template <> class topology_synchronizer<topology::die> {
   private:
   public:
@@ -130,7 +151,7 @@ template <> class topology_synchronizer<topology::die> {
     inline static detail::die_barrier barriers_[cdim()];
 };
 
-__device__ static ntt::distributed::detail::chip_barrier chip_barrier;
+DEVICE_SEC static ntt::distributed::detail::chip_barrier chip_barrier;
 template <> class topology_synchronizer<topology::chip> {
   private:
   public:

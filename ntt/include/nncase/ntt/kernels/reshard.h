@@ -26,7 +26,7 @@
 #include <type_traits>
 
 namespace tar {
-#if defined(NNCASE_XPU_MODULE)    
+#if defined(NNCASE_XPU_MODULE) && defined(SYS_MODE)
 __device__ extern uint8_t collective_pool_ptr[];
 #else
 extern uint8_t collective_pool_ptr[];
