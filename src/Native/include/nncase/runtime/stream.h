@@ -47,8 +47,13 @@ class NNCASE_API std_istream : public stream {
     }
 
     result<size_t> read(void *buffer, size_t bytes) noexcept override {
-        auto size = stream_.readsome(reinterpret_cast<char *>(buffer), bytes);
-        return stream_.fail() ? err(std::errc::io_error) : ok(size);
+        stream_.read(reinterpret_cast<char *>(buffer), bytes);
+        auto count = stream_.gcount();
+        if (stream_.eof()) {
+            stream_.clear();
+            return ok(count);
+        }
+        return stream_.fail() ? err(std::errc::io_error) : ok(count);
     }
 
     result<void> write([[maybe_unused]] const void *buffer,
