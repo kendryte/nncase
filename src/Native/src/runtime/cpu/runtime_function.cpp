@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "runtime_function.h"
+#include <nncase/ntt/arch/cpu/runtime.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -26,14 +27,10 @@
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
-
-typedef struct {
-    uint64_t DataPoolSize;
-    uint64_t DataAlign;
-} desc_header;
+using namespace nncase::ntt::runtime;
 
 cpu_runtime_function::cpu_runtime_function(runtime_module &rt_module)
-    : runtime_function(rt_module), kernel_entry_(nullptr), data_pool_size_(0) {}
+    : runtime_function(rt_module), block_entry_(nullptr) {}
 
 cpu_runtime_function::~cpu_runtime_function() {}
 
@@ -43,17 +40,10 @@ cpu_runtime_module &cpu_runtime_function::module() const noexcept {
 
 result<void> cpu_runtime_function::initialize_core(
     runtime_function_init_context &context) noexcept {
-    try_(context.read_section(
-        ".desc", [this](auto reader, size_t) -> result<void> {
-            auto header = reader.template read<desc_header>();
-            this->data_pool_size_ = header.DataPoolSize;
-            this->data_align_ = header.DataAlign;
-            return ok();
-        }));
     auto text = module().text().subspan(context.header().entrypoint,
                                         context.header().text_size);
     loader_.load(text);
-    kernel_entry_ = (kernel_entry_t)loader_.entry();
+    block_entry_ = (block_entry_t)loader_.entry();
     return ok();
 }
 

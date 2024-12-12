@@ -33,8 +33,13 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                     var nonPartialSumPos = Enumerable.Range(0, inv.NdSBP.Count).Where(i => inv.NdSBP[i] is not SBPPartialSum);
                     if (nonPartialSumPos.Any(i => inv.NdSBP[i] is SBPSplit && outv.NdSBP[i] is SBPBroadCast))
                     {
-                        // TODO: S[i]->S[i] may be a problem
-                        return new InvalidType("Not supported NDSBP");
+                        return new InvalidType("Not supported input is Splite output is BroadCast");
+                    }
+
+                    var partialSumPos = Enumerable.Range(0, inv.NdSBP.Count).Where(i => inv.NdSBP[i] is SBPPartialSum);
+                    if (partialSumPos.Any(i => inv.NdSBP[i] is SBPPartialSum && outv.NdSBP[i] is SBPSplit))
+                    {
+                        return new InvalidType("Not supported input is Partial output is Split");
                     }
 
                     return outv;
@@ -148,6 +153,13 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                                 }
 
                                 break;
+                            case (SBPBroadCast, SBPPartialSum):
+                                // note this case only for tests.
+                                cost += new Cost()
+                                {
+                                    [CostFactorNames.CPUCycles] = 1,
+                                };
+                                break;
                             default:
                                 throw new NotSupportedException($"{a} to {b}");
                         }
@@ -200,7 +212,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
         return target.NewType switch
         {
             TensorType t => Value.FromTensor(Tensor.FromBytes(input.ElementType, input.BytesBuffer.ToArray(), t.Shape)),
-            DistributedType d => Value.FromTensor(Tensor.FromBytes(input.ElementType, input.BytesBuffer.ToArray(), d.TensorType.Shape)),
+            DistributedType d => Value.FromTensor(Tensor.FromBytes(input.ElementType, input.BytesBuffer.ToArray(), d.TensorType.Shape), d.NdSBP, d.Placement),
             _ => Value.FromTensor(input),
         };
     }

@@ -20,14 +20,15 @@ BEGIN_NS_NNCASE_RUNTIME
 
 class pe_loader {
   public:
-    pe_loader() noexcept : image_(nullptr) {}
+    pe_loader() noexcept : image_(nullptr), entry_(nullptr) {}
     ~pe_loader();
 
     void load(std::span<const std::byte> pe);
     void *entry() const noexcept;
 
   private:
-    std::byte *image_;
+    void *image_;
+    void *entry_;
 };
 
 END_NS_NNCASE_RUNTIME

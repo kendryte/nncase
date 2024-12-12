@@ -26,18 +26,22 @@ class nncaseConan(ConanFile):
         "shared": [True, False],
         "fPIC": [True, False],
         "runtime": [True, False],
+        "k230_runtime": [True, False],
+        "k80_runtime": [True, False],
+        "vulkan_runtime": [True, False],
         "tests": [True, False],
         "python": [True, False],
-        "vulkan_runtime": [True, False],
         "python_root": ["ANY"]
     }
     default_options = {
         "shared": False,
         "fPIC": True,
         "runtime": False,
+        "k230_runtime": False,
+        "k80_runtime": False,
+        "vulkan_runtime": False,
         "tests": False,
         "python": True,
-        "vulkan_runtime": False,
         "python_root": ""
     }
 
@@ -82,6 +86,8 @@ class nncaseConan(ConanFile):
     def generate(self):
         tc = CMakeToolchain(self, generator="Ninja")
         tc.variables['BUILDING_RUNTIME'] = self.options.runtime
+        tc.variables['ENABLE_K230_RUNTIME'] = self.options.k230_runtime
+        tc.variables['ENABLE_K80_RUNTIME'] = self.options.k80_runtime
         tc.variables['ENABLE_VULKAN_RUNTIME'] = self.options.vulkan_runtime
         tc.variables['BUILD_PYTHON_BINDING'] = self.options.python
         tc.variables['BUILD_TESTING'] = self.options.tests

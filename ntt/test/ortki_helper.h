@@ -1,0 +1,138 @@
+/* Copyright 2019-2024 Canaan Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#pragma once
+#include "nncase/ntt/apply.h"
+#include "nncase/ntt/ntt.h"
+#include "nncase/ntt/shape.h"
+#include "nncase/ntt/tensor_traits.h"
+#include <assert.h>
+#include <ortki/c_api.h>
+#include <string>
+
+namespace nncase {
+namespace NttTest {
+
+template <typename T> ortki::DataType primitive_type2ort_type() {
+    ortki::DataType ort_type = ortki::DataType_FLOAT;
+    if (std::is_same_v<T, int8_t>)
+        ort_type = ortki::DataType_INT8;
+    else if (std::is_same_v<T, int16_t>)
+        ort_type = ortki::DataType_INT16;
+    else if (std::is_same_v<T, int32_t>)
+        ort_type = ortki::DataType_INT32;
+    else if (std::is_same_v<T, int64_t>)
+        ort_type = ortki::DataType_INT64;
+    else if (std::is_same_v<T, uint8_t>)
+        ort_type = ortki::DataType_UINT8;
+    else if (std::is_same_v<T, uint16_t>)
+        ort_type = ortki::DataType_UINT16;
+    else if (std::is_same_v<T, uint32_t>)
+        ort_type = ortki::DataType_UINT32;
+    else if (std::is_same_v<T, uint64_t>)
+        ort_type = ortki::DataType_UINT64;
+    else if (std::is_same_v<T, float>)
+        ort_type = ortki::DataType_FLOAT;
+    else if (std::is_same_v<T, double>)
+        ort_type = ortki::DataType_DOUBLE;
+    else if (std::is_same_v<T, bool>)
+        ort_type = ortki::DataType_BOOL;
+    else {
+        std::cerr << __FUNCTION__ << ": unsupported data type" << std::endl;
+        std::abort();
+    }
+
+    return ort_type;
+}
+
+template <ntt::IsTensor TTensor> ortki::OrtKITensor *ntt2ort(TTensor &tensor) {
+    using T = typename std::decay_t<TTensor>::element_type;
+    void *buffer;
+    if constexpr (ntt::IsVector<TTensor>) {
+        buffer = &tensor.buffer();
+    } else {
+        buffer = tensor.elements().data();
+    }
+    auto ort_type = primitive_type2ort_type<T>();
+    auto rank = tensor.shape().rank();
+    std::vector<size_t> v(rank);
+    for (size_t i = 0; i < rank; i++)
+        v[i] = tensor.shape()[i];
+
+    const int64_t *shape = reinterpret_cast<const int64_t *>(v.data());
+    return make_tensor(buffer, ort_type, shape, rank);
+}
+
+template <typename T, typename Shape,
+          typename Stride = ntt::default_strides_t<Shape>, size_t N>
+ortki::OrtKITensor *
+ntt2ort(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &tensor) {
+    void *buffer = reinterpret_cast<void *>(tensor.elements().data());
+    auto ort_type = primitive_type2ort_type<T>();
+    auto r1 = tensor.shape().rank();
+    auto r2 = r1 + 1;
+    std::vector<size_t> v(r2, N);
+    for (size_t i = 0; i < r1; i++)
+        v[i] = tensor.shape()[i];
+
+    const int64_t *shape = reinterpret_cast<const int64_t *>(v.data());
+    return make_tensor(buffer, ort_type, shape, r2);
+}
+
+template <typename T, typename Shape,
+          typename Stride = ntt::default_strides_t<Shape>, size_t N>
+ortki::OrtKITensor *
+ntt2ort(ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &tensor) {
+    void *buffer = reinterpret_cast<void *>(tensor.elements().data());
+    auto ort_type = primitive_type2ort_type<T>();
+    auto r1 = tensor.shape().rank();
+    auto r2 = r1 + 2;
+    std::vector<size_t> v(r2, N);
+    for (size_t i = 0; i < r1; i++)
+        v[i] = tensor.shape()[i];
+
+    const int64_t *shape = reinterpret_cast<const int64_t *>(v.data());
+    return make_tensor(buffer, ort_type, shape, r2);
+}
+
+template <ntt::IsTensor TTensor>
+void ort2ntt(ortki::OrtKITensor *ort_tensor, TTensor &ntt_tensor) {
+    size_t size = 0;
+    void *ort_ptr = tensor_buffer(ort_tensor, &size);
+    using element_type = ntt::element_or_scalar_t<TTensor>;
+    if constexpr (ntt::IsVector<element_type>) {
+        assert(tensor_length(ort_tensor) ==
+               ntt_tensor.shape().length() * element_type::size());
+    } else {
+        assert(tensor_length(ort_tensor) == ntt_tensor.shape().length());
+    }
+    if constexpr (ntt::IsVector<TTensor>) {
+        memcpy(&ntt_tensor.buffer(), ort_ptr, size);
+    } else {
+        memcpy(ntt_tensor.elements().data(), ort_ptr, size);
+    }
+}
+
+template <typename T, typename Shape,
+          typename Stride = ntt::default_strides_t<Shape>, size_t N>
+void ort2ntt(ortki::OrtKITensor *ort_tensor,
+             ntt::tensor<ntt::vector<T, N>, Shape, Stride> &ntt_tensor) {
+    size_t size = 0;
+    void *ort_ptr = tensor_buffer(ort_tensor, &size);
+    assert(tensor_length(ort_tensor) ==
+           ntt_tensor.size() * ntt_tensor(0).size());
+    memcpy(ntt_tensor.elements().data(), ort_ptr, size);
+}
+} // namespace NttTest
+} // namespace nncase

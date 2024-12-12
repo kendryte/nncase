@@ -118,7 +118,7 @@ public class UnitTestInterop : TestClassBase
     public void TestRTInterpreterLoadModel()
     {
         var interp = RTInterpreter.Create();
-        interp.LoadModel(_kmodel);
+        interp.LoadModel(_kmodel, true);
         var entry = interp.Entry;
         Assert.NotNull(entry);
         Assert.Equal(1u, entry!.ParamsCount);
@@ -128,7 +128,7 @@ public class UnitTestInterop : TestClassBase
     public void TestRTInterpreterRunModel()
     {
         var interp = RTInterpreter.Create();
-        interp.LoadModel(_kmodel);
+        interp.LoadModel(_kmodel, true);
         var entry = interp.Entry;
         Assert.NotNull(entry);
 

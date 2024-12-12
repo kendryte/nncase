@@ -24,6 +24,7 @@ using GetItem = Nncase.IR.Tensors.GetItem;
 
 namespace Nncase.Tests.TargetTest;
 
+[Collection(nameof(NotThreadSafeResourceCollection))]
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestCPUTarget : TestClassBase
 {
@@ -256,11 +257,10 @@ public class UnitTestCPUTarget : TestClassBase
         CompileSession.Compiler.ImportIRModule(module);
         CompileSession.Compiler.CompileAsync().Wait();
 
-        byte[] kmodel;
-        using (var output = new MemoryStream())
+        var kmodelPath = Path.Combine(CompileSession.CompileOptions.DumpDir, $"{name}.kmodel");
+        using (var kmodelFile = Dumpper.OpenFile($"{name}.kmodel"))
         {
-            CompileSession.Compiler.Gencode(output);
-            kmodel = output.ToArray();
+            CompileSession.Compiler.Gencode(kmodelFile);
         }
 
         if (Dumpper.IsEnabled(DumpFlags.CodeGen))
@@ -269,15 +269,10 @@ public class UnitTestCPUTarget : TestClassBase
             {
                 inputFile.Write(input.BytesBuffer);
             }
-
-            using (var kmodelFile = Dumpper.OpenFile($"{name}.kmodel"))
-            {
-                kmodelFile.Write(kmodel);
-            }
         }
 
         var interp = RTInterpreter.Create();
-        interp.LoadModel(kmodel);
+        interp.LoadModel(kmodelPath);
         var entry = interp.Entry;
         Assert.NotNull(entry);
 

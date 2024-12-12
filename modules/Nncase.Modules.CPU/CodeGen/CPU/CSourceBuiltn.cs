@@ -8,7 +8,7 @@ using Razor.Templating.Core;
 
 namespace Nncase.CodeGen.CPU;
 
-public record BufferRenderInfo(string Name, string ElemType, ulong Offset, ulong Size, string Dimensions, string Strides)
+public record BufferRenderInfo(string Name, string ElemType, ulong Offset, ulong Size, string Dimensions, string Strides, string? Distributed)
 {
 }
 
@@ -26,8 +26,13 @@ public record KernelMainModel(TIR.PrimFunction PrimFunction, TIR.Buffer[] RDataB
         var size = ((IR.TensorConst)buffer.MemSpan.Size).Value.Cast<ulong>()[0] / (ulong)buffer.ElemType.SizeInBytes;
         var dims = KernelUtility.DimensionsToC(buffer.Dimensions);
         var strides = KernelUtility.StridesToC(buffer.Strides);
-        return new(buffer.Name, elemType, offset, size, dims, strides);
+        var distributed = buffer.DistributedType == null ? null : KernelUtility.DistributedToC(buffer.DistributedType);
+        return new(buffer.Name, elemType, offset, size, dims, strides, distributed);
     }
+}
+
+public record CpuTargetOptionsModel(CpuTargetOptions Options, ulong Alignment, ulong CollectivePoolSize)
+{
 }
 
 public static class CSourceBuiltn
@@ -35,19 +40,38 @@ public static class CSourceBuiltn
     public const string KernelHeader = @"#pragma once
 #include <nncase/ntt/ntt.h>
 using namespace nncase::ntt;
+using namespace nncase::ntt::distributed;
+using namespace nncase::ntt::distributed::shard_policy;
 
 ";
 
+    public static string TopoAwareRuntimeDef(CpuTargetOptions options, ulong dataAlign, ulong collective_pool_size)
+    {
+        if (options.Hierarchies[0].Any(i => i > 1))
+        {
+            var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/topo_aware_runtime.cshtml", new CpuTargetOptionsModel(options, dataAlign, collective_pool_size)).Result;
+            return content;
+        }
+
+        return string.Empty;
+    }
+
+    public static string TopologyDef(CpuTargetOptions options)
+    {
+        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/topology_def.h.cshtml", options).Result;
+        return content;
+    }
+
     public static string CMakeDef(string name)
     {
-        var cmakePath = CMakePath(Path.Combine(Path.GetDirectoryName(typeof(CSourceBuiltn).Assembly.Location)!, "Runtime", "src", "cpu_runtime.cmake"));
+        var cmakePath = CMakePath(Path.Combine(Path.GetDirectoryName(typeof(CSourceBuiltn).Assembly.Location)!, "Runtime", "cmake", "ntt_module.cmake"));
         var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/CMakeLists.txt.cshtml", new { CMakePath = cmakePath }).Result;
         return content;
     }
 
     public static string MakeMain(TIR.PrimFunction primFunction, ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, IEnumerable<TIR.Buffer> rdataBuffers, CpuTargetOptions options)
     {
-        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/main.cpp.cshtml", new KernelMainModel(primFunction, rdataBuffers.ToArray(), options, dataAlign, dataUsage, rdataPoolSize)).Result;
+        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/thread_main.cpp.cshtml", new KernelMainModel(primFunction, rdataBuffers.ToArray(), options, dataAlign, dataUsage, rdataPoolSize)).Result;
         return content;
     }
 

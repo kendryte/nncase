@@ -1,0 +1,124 @@
+@using System.Linq
+@using NetFabric.Hyperlinq
+@using Nncase
+@model Nncase.CodeGen.CPU.KernelMainModel
+@{
+  var inputCount = Model.PrimFunction.Parameters.Length;
+}
+
+#include <nncase/ntt/runtime.h>
+#include "topo_aware_runtime.h"
+#include "../device.h"
+@foreach(var (s,i) in Model.Options.MemoryCapacities.Select((s,i) => (s,i)).Skip(1).SkipLast(1)){
+@:uint8_t L@(i)Data[@(s)];
+}
+#include "kernel.h"
+
+//alignas(@(Model.Alignment)) static thread_local uint8_t local_data[@(Model.DataSize)];
+
+extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata, const std::byte *local_rdata) {
+  /* prepare inputs */
+  @{
+    var names = new List<string>();
+  }
+  @foreach(var (b,i) in Model.PrimFunction.Parameters.ToArray().OfType<Nncase.TIR.Buffer>().Select((b,i)=>(Model.GetInfo(b),i)))
+  {
+    names.Add(b.Name);
+  @:std::span<@Html.Raw(b.ElemType), @b.Size> p@(b.Name)((@Html.Raw(b.ElemType) *)inouts[@i], @b.Size);
+  @:tensor_view<@Html.Raw(b.ElemType), @Html.Raw(b.Dimensions), @Html.Raw(b.Strides)> @(b.Name)(p@(b.Name));
+  @:
+  }
+  /* prepare rdatas */
+  @foreach(var (b,i) in Model.RDataBuffers.OfType<Nncase.TIR.Buffer>().Select((b,i)=>(Model.GetInfo(b),i)))
+  {
+    names.Add(b.Name);
+    if (b.Distributed == null)
+    {
+  @:std::span<@Html.Raw(b.ElemType), @b.Size> p@(b.Name)((@Html.Raw(b.ElemType) *)(rdata + @b.Offset), @b.Size);
+  @:tensor_view<@Html.Raw(b.ElemType), @Html.Raw(b.Dimensions), @Html.Raw(b.Strides)> @(b.Name)(p@(b.Name));
+    }
+    else
+    {
+  @:std::span<@Html.Raw(b.ElemType), @b.Size> p@(b.Name)((@Html.Raw(b.ElemType) *)(local_rdata + @b.Offset), @b.Size);
+  @:sharded_tensor_view<@Html.Raw(b.ElemType), @Html.Raw(b.Dimensions), @Html.Raw(b.Distributed), @Html.Raw(b.Strides)> @(b.Name)(p@(b.Name));
+    }
+  @:
+  }
+
+  @if (Model.Options.Hierarchies.Length > 1) {
+    throw new NotSupportedException($"not support multi form topology!");
+  }
+  
+  auto local_data = (uint8_t *)nncase::ntt::runtime::thread_alloc(@Model.DataSize, @Model.Alignment);
+  @(Model.PrimFunction.Name)(@(string.Join(", ", names)), local_data);
+  nncase::ntt::runtime::thread_free(local_data);
+}
+
+#ifdef NNCASE_STANDALONE
+#include <memory>
+
+static void *local_alloc(size_t bytes, size_t alignment) {
+#ifdef WIN32
+    return _aligned_malloc(bytes, alignment);
+#else
+    size_t mask = alignment - 1;
+    size_t aligned_bytes = bytes + (-bytes & mask);
+    return aligned_alloc(alignment, aligned_bytes);
+#endif
+}
+
+static void local_free(void *ptr) {
+#ifdef WIN32
+    _aligned_free(ptr);
+#else
+    free(ptr);
+#endif
+}
+
+static nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
+    .acosf = acosf,
+    .acoshf = acoshf,
+    .asinf = asinf,
+    .asinhf = asinhf,
+    .copysignf = copysignf,
+    .cosf = cosf,
+    .coshf = coshf,
+    .erff = erff,
+    .expf = expf,
+    .fmodf = fmodf,
+    .logf = logf,
+    .nearbyintf = nearbyintf,
+    .powf = powf,
+    .roundf = roundf,
+    .sinf = sinf,
+    .sinhf = sinhf,
+    .sqrtf = sqrtf,
+    .tanhf = tanhf,
+    .sram_address = nullptr,
+    .failfast = nullptr,
+
+#ifndef WIN32
+    .memcpy = memcpy,
+    .memmove = memmove,
+    .memset = memset,
+#endif
+};
+
+int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
+  uint8_t *inputs[@inputCount];
+  size_t align = @(Model.Alignment);
+  @foreach(var (b,i) in Model.PrimFunction.Parameters.ToArray().OfType<Nncase.TIR.Buffer>().Select((b,i)=>(Model.GetInfo(b),i)))
+  {
+  @:inputs[@i] = (uint8_t *)local_alloc(sizeof(@Html.Raw(b.ElemType)) * @b.Size, align);
+  }
+
+  uint8_t* rdata = (uint8_t *)local_alloc(@Model.RDataSize, align);
+
+  kernel_entry(&nncase_cpu_mt_, inputs, rdata);
+  for (size_t i = 0; i < @inputCount; i++) {
+    local_free(inputs[i]);
+  }
+  local_free(rdata);
+  return 0;
+}
+#endif

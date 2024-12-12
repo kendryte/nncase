@@ -33,17 +33,26 @@ template <typename T, std::size_t Alignment> class aligned_allocator {
     aligned_allocator(const aligned_allocator<U, Alignment> &) noexcept {}
 
     T *allocate(std::size_t n) {
-        if (n > std::numeric_limits<std::size_t>::max() / sizeof(T))
+        size_t mask = alignment - 1;
+        size_t bytes = n * sizeof(T);
+        size_t aligned_bytes = bytes + (-bytes & mask);
+        if (aligned_bytes > std::numeric_limits<std::size_t>::max())
             throw std::bad_alloc();
 
         if (auto ptr =
-                static_cast<T *>(aligned_alloc(alignment, n * sizeof(T))))
+                static_cast<T *>(aligned_alloc(alignment, aligned_bytes)))
             return ptr;
 
         throw std::bad_alloc();
     }
 
-    void deallocate(T *p, std::size_t) noexcept { std::free(p); }
+    void deallocate(T *p, std::size_t) noexcept {
+#ifdef _WIN32
+        _aligned_free(p);
+#else
+        std::free(p);
+#endif
+    }
 
     template <typename U> struct rebind {
         using other = aligned_allocator<U, Alignment>;

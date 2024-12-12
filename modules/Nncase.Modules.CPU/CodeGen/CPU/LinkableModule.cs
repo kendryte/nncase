@@ -17,14 +17,18 @@ namespace Nncase.CodeGen.CPU;
 
 internal sealed class LinkableModule : ILinkableModule
 {
+    private readonly Stream _desc;
     private readonly Stream _rdata;
+    private readonly IReadOnlyList<Stream> _localRdatas;
 
     private readonly IReadOnlyList<ILinkableFunction> _functions;
     private readonly CompileOptions _options;
 
-    public LinkableModule(Stream rdata, IReadOnlyList<ILinkableFunction> functions, CompileOptions options)
+    public LinkableModule(Stream desc, Stream rdata, IReadOnlyList<Stream> localRdatas, IReadOnlyList<ILinkableFunction> functions, CompileOptions options)
     {
+        _desc = desc;
         _rdata = rdata;
+        _localRdatas = localRdatas;
         _functions = functions;
         _options = options;
     }
@@ -56,7 +60,7 @@ internal sealed class LinkableModule : ILinkableModule
                 Directory.CreateDirectory(dumpPath);
             }
 
-            using (var fs = File.Open(Path.Join(dumpPath, "main.cpp"), FileMode.Create))
+            using (var fs = File.Open(Path.Join(dumpPath, "thread_main.cpp"), FileMode.Create))
             {
                 using (var writer = new StreamWriter(fs))
                 {
@@ -69,6 +73,22 @@ internal sealed class LinkableModule : ILinkableModule
                 using (var writer = new StreamWriter(fs))
                 {
                     writer.Write(func.FunctionCSource.Kernel);
+                }
+            }
+
+            using (var fs = File.Open(Path.Join(dumpPath, "topo_aware_runtime.h"), FileMode.Create))
+            {
+                using (var writer = new StreamWriter(fs))
+                {
+                    writer.Write(func.FunctionCSource.TopoRuntime);
+                }
+            }
+
+            using (var fs = File.Open(Path.Join(dumpPath, "topology_def.h"), FileMode.Create))
+            {
+                using (var writer = new StreamWriter(fs))
+                {
+                    writer.Write(func.FunctionCSource.TopologyDef);
                 }
             }
 
@@ -85,8 +105,10 @@ internal sealed class LinkableModule : ILinkableModule
         var textWriter = manager.GetWriter(WellknownSectionNames.Text);
         var linkedFunctions = new List<LinkedFunction>();
         int offset = 0;
+        ulong rdataAlign = 8;
         foreach (var func in _functions.OfType<LinkableKernelFunction>())
         {
+            rdataAlign = Math.Max(rdataAlign, func.PrimFunction.SchedResult.DataAlign);
             var dumpPath = Path.Join(_options.DumpDir, func.PrimFunction.Name);
             var elfPath = CompileCSource(dumpPath);
 
@@ -96,15 +118,13 @@ internal sealed class LinkableModule : ILinkableModule
             offset += func_text.Length;
         }
 
-        return new LinkedModule(linkedFunctions, manager.GetContent(WellknownSectionNames.Text)!, _rdata);
+        return new LinkedModule(linkedFunctions, _desc, manager.GetContent(WellknownSectionNames.Text)!, _rdata, _localRdatas, rdataAlign);
     }
 
     private string CompileCSource(string sourcePath)
     {
         var compiler = new CSourceCompiler();
-        var binDir = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? Path.Join(sourcePath, "build", "nncase_cpu_module.exe")
-            : Path.Join(sourcePath, "build", "nncase_cpu_module");
+        var binDir = Path.Join(sourcePath, "build", "nncase_ntt_module");
         return compiler.Compile(sourcePath, binDir);
     }
 }

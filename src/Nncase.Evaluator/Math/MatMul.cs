@@ -38,7 +38,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var oRank = outType.Shape.Rank;
         var aPad = oRank - aRank;
         var bPad = oRank - bRank;
-        var (lm, lk, rk, _) = dimInfo ?? new(aRank - 2, aRank - 1, bRank - 2, bRank - 1);
+        var (lm, lk, rk, rn) = dimInfo ?? new(aRank - 2, aRank - 1, bRank - 2, bRank - 1);
 
         var ndsbp = new SBP[a.Placement.Rank];
         for (int i = 0; i < a.Placement.Rank; i++)
@@ -46,14 +46,15 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             var invalid = new InvalidType($"({a.NdSBP[i]}, {b.NdSBP[i]}) not support");
             switch (a.NdSBP[i], b.NdSBP[i])
             {
-                // split on k
                 case (SBPSplit { Axis: int ax }, SBPSplit { Axis: int bx }):
                     if (ax == lk && bx == rk)
                     {
+                        // split on k
                         ndsbp[i] = SBP.P;
                     }
-                    else if ((ax == lk && bx != rk) || (ax != lk && bx == rk))
+                    else if ((ax == lk && bx != rk) || (ax != lk && bx == rk) || (ax == lm && bx == rn))
                     {
+                        // not support (k, not k), (not k, k), (m, n)
                         return invalid;
                     }
                     else
@@ -90,12 +91,25 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                     }
 
                     // invalid (B, S) if A is not broacast matmul
-                    if (bx < rk && !(aRank <= 2 || (bx + bPad - aPad >= 0 && a.TensorType.Shape[bx + bPad - aPad] == 1)))
+                    if (bx < (bRank - 2) && !(aRank <= 2 || (bx + bPad - aPad >= 0 && a.TensorType.Shape[bx + bPad - aPad] == 1)))
                     {
                         return invalid;
                     }
 
-                    ndsbp[i] = SBP.S(bx + bPad);
+                    // bx can be lm,rn,or any broadcast axis.
+                    if (bx == rn)
+                    {
+                        ndsbp[i] = SBP.S(oRank - 1);
+                    }
+                    else if (bx == lm)
+                    {
+                        ndsbp[i] = SBP.S(oRank - 2);
+                    }
+                    else
+                    {
+                        ndsbp[i] = SBP.S(bx + bPad);
+                    }
+
                     break;
                 case (SBPBroadCast, SBPBroadCast):
                     ndsbp[i] = SBP.B;

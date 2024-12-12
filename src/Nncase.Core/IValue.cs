@@ -57,6 +57,25 @@ public static class Value
     }
 
     /// <summary>
+    /// Create value form a tensor.
+    /// </summary>
+    /// <param name="tensor">The single tensor.</param>
+    /// <param name="ndSBP">NdSBP.</param>
+    /// <param name="placement">Placement.</param>
+    /// <returns>Created value.</returns>
+    public static TensorValue FromTensor(Tensor tensor, IRArray<SBP> ndSBP, Placement placement)
+    {
+        return new TensorValue(tensor, ndSBP, placement);
+    }
+
+    public static TensorValue FromTensorLike(Tensor tensor, IRType type)
+        => type switch
+        {
+            DistributedType dt => FromTensor(tensor, dt.NdSBP, dt.Placement),
+            _ => FromTensor(tensor),
+        };
+
+    /// <summary>
     /// Create value form tensors.
     /// </summary>
     /// <param name="tensors">The single tensor.</param>
@@ -158,6 +177,19 @@ public sealed class TensorValue : IValue, IEquatable<TensorValue?>
     {
         _value = tensor;
         Type = new TensorType(_value.ElementType, _value.Shape);
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TensorValue"/> class.
+    /// </summary>
+    /// <param name="tensor">Tensor.</param>
+    /// <param name="ndSBP">NdSBP.</param>
+    /// <param name="placement">Placement.</param>
+    public TensorValue(Tensor tensor, IRArray<SBP> ndSBP, Placement placement)
+    {
+        _value = tensor;
+        var tensorType = new TensorType(_value.ElementType, _value.Shape);
+        Type = new DistributedType(tensorType, ndSBP, placement);
     }
 
     /// <inheritdoc/>

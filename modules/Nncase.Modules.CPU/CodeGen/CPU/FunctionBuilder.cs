@@ -1,12 +1,13 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
-using System.Runtime.InteropServices;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.CodeGen.CPU;
 using Nncase.IR;
 using Nncase.Targets;
+using Nncase.Utilities;
 
 namespace Nncase.CodeGen.CPU;
 
@@ -15,18 +16,19 @@ namespace Nncase.CodeGen.CPU;
 /// </summary>
 internal class FunctionBuilder
 {
-    public const string KernelHeaderSectionName = ".desc";
     private readonly uint _id;
     private readonly SectionManager _sectionManager;
     private readonly BinaryWriter _textWriter;
     private readonly BinaryWriter _rdataWriter;
+    private readonly IReadOnlyList<BinaryWriter> _localRdataWriters;
 
-    public FunctionBuilder(uint id, BinaryWriter rdataWriter, Targets.CpuTargetOptions targetOptions)
+    public FunctionBuilder(uint id, BinaryWriter rdataWriter, IReadOnlyList<BinaryWriter> localRdataWriters, Targets.CpuTargetOptions targetOptions)
     {
         _id = id;
         _sectionManager = new();
         _textWriter = _sectionManager.GetWriter(WellknownSectionNames.Text);
         _rdataWriter = rdataWriter;
+        _localRdataWriters = localRdataWriters;
         TargetOptions = targetOptions;
     }
 
@@ -36,29 +38,47 @@ internal class FunctionBuilder
     {
         if (function.Name.EndsWith("kernel"))
         {
-            // 1. write the kernel header
-            using (var writer = _sectionManager.GetWriter(KernelHeaderSectionName))
-            {
-                var header = default(DescHeader);
-                header.DataPoolSize = function.SchedResult.DataUsage;
-                header.DataAlign = function.SchedResult.DataAlign;
-                writer.Write(ref header);
-            }
-
-            // 2. write the rdata
+            // 1. write the rdata
             ulong rdataPoolSize = ulong.MinValue;
             foreach (var (@const, range) in function.SchedResult.Rdatas)
             {
-                var bytes = ((TensorConst)@const).Value.BytesBuffer;
+                var tensor = ((TensorConst)@const).Value;
                 var size = range.Max - range.Min;
-                rdataPoolSize = System.Math.Max((ulong)range.Max, rdataPoolSize);
-                if ((uint)bytes.Length != size)
+                rdataPoolSize = System.Math.Max(range.Max, rdataPoolSize);
+                if ((ulong)tensor.Length * (ulong)tensor.ElementType.SizeInBytes != size)
                 {
                     throw new InvalidDataException("The Buffer Size Not Equal!");
                 }
 
-                _rdataWriter.Position(range.Min);
-                _rdataWriter.Write(bytes);
+                _rdataWriter.Position(checked((long)range.Min));
+                tensor.Serialize(_rdataWriter.BaseStream);
+            }
+
+            // 2. write the local rdata
+            ulong localRdataPoolSize = ulong.MinValue;
+            foreach (var (@const, range) in function.SchedResult.LocalRdatas)
+            {
+                var tensor = ((TensorConst)@const).Value;
+                var distributedType = (DistributedType)@const.CheckedType;
+                var size = range.Max - range.Min;
+                localRdataPoolSize = System.Math.Max(range.Max, localRdataPoolSize);
+                var dividedDims = DistributedUtility.GetDividedTensorType(distributedType).Shape.ToValueArray();
+                var localStrides = TensorUtilities.GetStrides(dividedDims);
+                for (int i = 0; i < _localRdataWriters.Count; i++)
+                {
+                    var localRdataWriter = _localRdataWriters[i];
+                    var shardIndex = DistributedUtility.GetUnraveledIndex(i, TargetOptions.Hierarchies[0]);
+                    (var localOffset, var localShape) = DistributedUtility.GetLocalOffsetAndShape(distributedType, shardIndex);
+                    var linearOffset = TensorUtilities.GetIndex(tensor.Strides, localOffset);
+
+                    if ((ulong)TensorUtilities.GetProduct(localShape) * (ulong)tensor.ElementType.SizeInBytes > size)
+                    {
+                        throw new InvalidDataException("The Buffer Size Not Equal!");
+                    }
+
+                    localRdataWriter.Position(checked((long)range.Min));
+                    tensor.Serialize(localRdataWriter.BaseStream, linearOffset, localShape, localStrides);
+                }
             }
 
             // 3. build function.
@@ -66,7 +86,7 @@ internal class FunctionBuilder
             visitor.Visit(function);
             var functionCSource = visitor.GetCSource();
 
-            return new LinkableKernelFunction(_id, function, functionCSource, _sectionManager.GetContent(WellknownSectionNames.Text)!, new LinkedSection(_sectionManager.GetContent(KernelHeaderSectionName), KernelHeaderSectionName, 0, 8, (uint)sizeof(DescHeader)));
+            return new LinkableKernelFunction(_id, function, functionCSource, _sectionManager.GetContent(WellknownSectionNames.Text)!);
         }
         else
         {
@@ -77,15 +97,5 @@ internal class FunctionBuilder
         }
 
         throw new NotSupportedException("the function name is invalid");
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private unsafe struct DescHeader
-    {
-        [MarshalAs(UnmanagedType.U8)]
-        public ulong DataPoolSize;
-
-        [MarshalAs(UnmanagedType.U8)]
-        public ulong DataAlign;
     }
 }

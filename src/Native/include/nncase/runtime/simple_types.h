@@ -14,10 +14,10 @@
  */
 #pragma once
 #include "../compiler_defs.h"
-#include "bfloat16.h"
-#include "half.h"
 #include "small_vector.hpp"
 #include <array>
+#include <nncase/bfloat16.h>
+#include <nncase/half.h>
 
 namespace nncase {
 typedef enum : uint8_t {

@@ -1,0 +1,13 @@
+[conf]
+tools.cmake.cmaketoolchain:generator=Ninja
+tools.build:cflags=["-march=rv64gcv"]
+tools.build:cxxflags=["-march=rv64gcv"]
+
+[settings]
+os=Linux
+arch=riscv64
+build_type=Release
+compiler=gcc
+compiler.cppstd=20
+compiler.libcxx=libstdc++11
+compiler.version=14

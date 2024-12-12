@@ -171,12 +171,6 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             case IR.CPU.ResizeImage resize:
                 _mainBody.Add(TIR.F.CPU.ResizeImage(arguments[0], ret, resize.PackedAxes.ToArray(), resize.PadedNums.ToArray(), resize.NewSize.ToArray(), resize.ResizeMode, resize.TransformationMode, resize.NearestMode));
                 break;
-            case IR.Tensors.Unsqueeze unsqueeze:
-                _mainBody.Add(TIR.F.CPU.Reshape(arguments[0], ret, expr.CheckedShape.ToValueArray()));
-                break;
-            case IR.Tensors.Reshape reshape:
-                _mainBody.Add(TIR.F.CPU.Reshape(arguments[0], ret, expr.CheckedShape.ToValueArray()));
-                break;
             case IR.Tensors.Slice slice:
                 _mainBody.Add(TIR.F.CPU.Slice(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[3]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[4]).Value.ToArray<int>(), expr.CheckedType is DistributedType dt_slice ? dt_slice : null!));
                 break;
@@ -218,13 +212,16 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             case IR.CPU.PackedReduce pr:
                 _mainBody.Add(TIR.F.CPU.Reduce(arguments[0], ret, pr.PackedAxes.ToArray(), pr.PadedNums.ToArray(), pr.Axes, pr.KeepDims, pr.ReduceOp));
                 break;
-            case IR.Tensors.GetItem:
-                break;
             case IR.Math.Compare compare:
                 _mainBody.Add(TIR.F.CPU.Compare(compare.CompareOp, arguments[0], arguments[1], ret));
                 break;
             case IR.Tensors.ScatterND scatterND:
                 _mainBody.Add(TIR.F.CPU.ScatterND(arguments[0], arguments[1], arguments[2], ret));
+                break;
+            case IR.Tensors.GetItem:
+            case IR.Tensors.Reshape:
+            case IR.Tensors.Unsqueeze:
+                // optimized.
                 break;
             default:
                 throw new NotSupportedException();
@@ -233,10 +230,19 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
         return default;
     }
 
+    private static void ReShapeReSchedule(object? sender, IReadOnlyDictionary<Expr, ScheduleBuffer> buffers)
+    {
+        foreach (var reshape in buffers.Keys.OfType<Call>().Where(e => e is Call { Target: IR.Tensors.Reshape } && buffers[e].MemInterval.Size == 0))
+        {
+            buffers[reshape].MemInterval.Start = buffers[reshape[IR.Tensors.Reshape.Input]].MemInterval.Start;
+        }
+    }
+
     private TIR.Buffer GetBuffer(Expr expr) => _buffersMap.GetValueOrDefault(expr, null!);
 
     private void AllocBuffers(Fusion fusion)
     {
+        _bufferScheduler.FinishedSchedule += ReShapeReSchedule;
         var buffers = _lifeTimeCollector.Collect(fusion.Body);
         _bufferScheduler.Schedule(buffers);
 
@@ -266,11 +272,12 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                         }
 
                         TensorType? dividedType = null;
-                        if (c.CheckedType is TensorType tensorType)
+                        var distributedType = c.CheckedType as DistributedType;
+                        if (distributedType == null)
                         {
-                            dividedType = tensorType;
+                            dividedType = (TensorType)expr.CheckedType;
                         }
-                        else if (c.CheckedType is DistributedType distributedType)
+                        else if (distributedType != null)
                         {
                             hierarchy = 1;
                             if (DistributedUtility.TryGetDividedTensorType(distributedType, out var type))
@@ -283,11 +290,11 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                         {
                             if (index == -1)
                             {
-                                T.AttachBuffer(Tensor.FromPointer((ulong)buffers[expr].MemInterval.Start, dividedType.DType), (TensorType)dividedType, loc, hierarchy, out buffer, name);
+                                T.AttachBuffer(Tensor.FromPointer((ulong)buffers[expr].MemInterval.Start, dividedType.DType), (TensorType)dividedType, loc, hierarchy, out buffer, name, distributedType);
                             }
                             else
                             {
-                                T.CreateBuffer(dividedType, loc, out buffer, name);
+                                T.CreateBuffer(dividedType, loc, out buffer, name, distributedType);
                             }
                         }
                         else if (c.CheckedType is DistributedType)
@@ -308,11 +315,11 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                     case Var v:
                         loc = MemoryLocation.Data;
                         index = CheckRoot(v, ref loc);
-                        buffer = T.AttachBuffer((TensorType)v.CheckedType, MemoryLocation.Input, 1, out _, out _, name);
+                        buffer = T.AttachBuffer((TensorType)v.CheckedType, MemoryLocation.Input, 1, out _, out _, name, v.CheckedType as DistributedType);
 
                         if (index != -1)
                         {
-                            var bufferOut = T.AttachBuffer(IR.F.Buffer.DDrOf(buffer), (TensorType)v.CheckedType, MemoryLocation.Output, 1, out _, name + $"_viewed_out_{index}");
+                            var bufferOut = T.AttachBuffer(IR.F.Buffer.DDrOf(buffer), (TensorType)v.CheckedType, MemoryLocation.Output, 1, out _, name + $"_viewed_out_{index}", v.CheckedType as DistributedType);
                             _outputbuffers.Add((index, bufferOut));
                         }
 
@@ -363,15 +370,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 break;
             case (DistributedType inType, DistributedType outType):
                 {
-                    if (inType.NdSBP.Any(sbp => sbp is SBPPartialSum))
-                    {
-                        _mainBody.Add(TIR.F.CPU.GatherReduceScatter(arguments[0], ret, inType, outType));
-                    }
-                    else
-                    {
-                        _mainBody.Add(TIR.F.CPU.TensorStore(arguments[0], None.Default, inType.NdSBP, inType.Placement));
-                        _mainBody.Add(TIR.F.CPU.TensorLoad(ret, None.Default, outType.NdSBP, outType.Placement));
-                    }
+                    _mainBody.Add(TIR.F.CPU.GatherReduceScatter(arguments[0], ret, inType, outType));
                 }
 
                 break;
