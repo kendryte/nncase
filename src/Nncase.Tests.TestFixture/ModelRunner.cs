@@ -57,9 +57,9 @@ namespace Nncase.Tests
                 .ToDictionary(x => x.First, x => (IValue)Value.FromTensor(x.Second));
             CompileOptions.QuantizeOptions.CalibrationDataset = new SelfInputCalibrationDatasetProvider(samples);
             await CompileSession.Compiler.CompileAsync();
-            var (kmodelPath, expectKmodel) = Testing.BuildKModel("test.kmodel", m, CompileSession);
+            var (kmodelPath, _) = Testing.BuildKModel("test.kmodel", m, CompileSession);
             Testing.DumpInterpModel(kmodelPath, inputs, Path.Join(Dumpper.Directory, "interp"));
-            var outputs = Testing.RunKModel(expectKmodel, Dumpper.Directory, inputs).AsTensors();
+            var outputs = Testing.RunKModel(kmodelPath, Dumpper.Directory, inputs).AsTensors();
             DumpUtility.WriteKmodelData(inputs, outputs, kmodelPath, Path.Join(Dumpper.Directory, "kmodel_data"), isDynamic);
         }
 

@@ -8,7 +8,7 @@ using Razor.Templating.Core;
 
 namespace Nncase.CodeGen.CPU;
 
-public record BufferRenderInfo(string Name, string ElemType, ulong Offset, ulong Size, string Dimensions, string Strides)
+public record BufferRenderInfo(string Name, string ElemType, ulong Offset, ulong Size, string Dimensions, string Strides, string? Distributed)
 {
 }
 
@@ -26,7 +26,8 @@ public record KernelMainModel(TIR.PrimFunction PrimFunction, TIR.Buffer[] RDataB
         var size = ((IR.TensorConst)buffer.MemSpan.Size).Value.Cast<ulong>()[0] / (ulong)buffer.ElemType.SizeInBytes;
         var dims = KernelUtility.DimensionsToC(buffer.Dimensions);
         var strides = KernelUtility.StridesToC(buffer.Strides);
-        return new(buffer.Name, elemType, offset, size, dims, strides);
+        var distributed = buffer.DistributedType == null ? null : KernelUtility.DistributedToC(buffer.DistributedType);
+        return new(buffer.Name, elemType, offset, size, dims, strides, distributed);
     }
 }
 
