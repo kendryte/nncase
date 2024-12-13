@@ -16,7 +16,7 @@
 
 //alignas(@(Model.Alignment)) static thread_local uint8_t local_data[@(Model.DataSize)];
 
-extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata) {
+extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata, const bool enable_profiling) {
   /* prepare inputs */
   @{
     var names = new List<string>();
