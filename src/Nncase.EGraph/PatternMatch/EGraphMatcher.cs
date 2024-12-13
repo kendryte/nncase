@@ -28,7 +28,7 @@ public sealed class EGraphMatcher
     public static bool TryMatchRoot(IEnumerable<ENode> enodes, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
     {
         var matcher = new EGraphMatcher();
-        var matchScopes = (from enode in enodes.AsParallel()
+        var matchScopes = (from enode in enodes
                            where pattern.MatchLeaf(enode.Expr)
                            let scopes = matcher.Visit([new MatchScope(enode)], pattern, enode)
                            from scope in scopes
