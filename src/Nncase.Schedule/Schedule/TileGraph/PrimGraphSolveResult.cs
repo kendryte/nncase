@@ -305,7 +305,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
     {
         DistributedType GetTensorType(IRType type) => type switch
         {
-            TensorType t => null!,
+            TensorType => null!,
             DistributedType dt => dt,
             _ => throw new NotSupportedException(),
         };
