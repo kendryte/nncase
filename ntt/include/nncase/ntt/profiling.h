@@ -230,8 +230,8 @@ class ntt_profiler {
 
             auto pid = instance_id_.cid * BLOCK_COUNTER + instance_id_.bid;
             auto tid = instance_id_.tid;
-            json_file << "[\n"
-                      << "  {\n"
+            json_file << "[\n";
+            json_file << "  {\n"
                       << "    \"name\": \"process_name\",\n"
                       << "    \"ph\": \"M\",\n"
                       << "    \"pid\": " << pid << ",\n"
