@@ -70,10 +70,8 @@ class ntt_profiler {
                instance_id_.tid != -1;
     }
 
-    // 记录开始时间
     uint64_t start_timing() { return get_current_time(); }
 
-    // 记录结束时间和计算持续时间
     void end_timing(const std::string &function_name, uint64_t start_time) {
         uint64_t end_time = get_current_time();
         auto &stats = function_stats_[function_name];
@@ -244,16 +242,17 @@ class ntt_profiler {
 
                     json_file << "  {\n";
                     json_file << "    \"name\": \"" << name << "\",\n";
-                    json_file << "    \"ph\": \"X\",\n"; // "X" indicates a
-                                                         // complete event
+                    json_file << "    \"ph\": \"X\",\n";
+
                     json_file << "    \"ts\": " << call.start_time << ",\n";
                     json_file
                         << "    \"dur\": " << (call.end_time - call.start_time)
                         << ",\n";
-                    json_file << "    \"pid\": 0,\n"; // Process ID (arbitrary,
-                                                      // use 0 for simplicity)
-                    json_file << "    \"tid\": 0\n";  // Thread ID (arbitrary,
-                                                      // use 0 for simplicity)
+                    json_file
+                        << "    \"pid\": "
+                        << instance_id_.cid * BLOCK_COUNTER + instance_id_.bid
+                        << ",\n";
+                    json_file << "    \"tid\": " << instance_id_.tid << "\n";
                     json_file << "  }";
                 }
             }
@@ -302,6 +301,4 @@ class auto_profiler {
     uint64_t start_time_;
 };
 
-// #define AUTO_NTT_PROFILER auto_profiler profiler(__FUNCTION__);
-// #define DISP_NTT_PROFILER ntt_profiler::get_instance().console_print();
 } // namespace nncase::ntt
