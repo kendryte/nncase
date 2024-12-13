@@ -228,38 +228,51 @@ class ntt_profiler {
                 return;
             }
 
-            // Write the JSON preamble
-            json_file << "[\n";
-
-            bool first_function = true;
+            auto pid = instance_id_.cid * BLOCK_COUNTER + instance_id_.bid;
+            auto tid = instance_id_.tid;
+            json_file << "[\n"
+                      << "  {\n"
+                      << "    \"name\": \"process_name\",\n"
+                      << "    \"ph\": \"M\",\n"
+                      << "    \"pid\": " << pid << ",\n"
+                      << "    \"tid\": " << tid << ",\n"
+                      << "    \"args\": {\n"
+                      << "      \"name\": \"cid*B+bid\"\n"
+                      << "    }\n"
+                      << "  },\n"
+                      << "  {\n"
+                      << "    \"name\": \"thread_name\",\n"
+                      << "    \"ph\": \"M\",\n"
+                      << "    \"pid\": " << pid << ",\n"
+                      << "    \"tid\": " << tid << ",\n"
+                      << "    \"args\": {\n"
+                      << "      \"name\": \"tid\"\n"
+                      << "    }\n"
+                      << "  }";
 
             for (const auto &[name, stats] : function_stats_) {
                 for (const auto &call : stats.calls) {
-                    if (!first_function) {
-                        json_file << ",\n";
-                    }
-                    first_function = false;
 
+                    json_file << ",\n";
                     json_file << "  {\n";
                     json_file << "    \"name\": \"" << name << "\",\n";
-                    json_file << "    \"ph\": \"X\",\n";
-
+                    json_file << "    \"ph\": \"B\",\n";
                     json_file << "    \"ts\": " << call.start_time << ",\n";
-                    json_file
-                        << "    \"dur\": " << (call.end_time - call.start_time)
-                        << ",\n";
-                    json_file
-                        << "    \"pid\": "
-                        << instance_id_.cid * BLOCK_COUNTER + instance_id_.bid
-                        << ",\n";
-                    json_file << "    \"tid\": " << instance_id_.tid << "\n";
+                    json_file << "    \"pid\": " << pid << ",\n";
+                    json_file << "    \"tid\": " << tid << "\n";
+                    json_file << "  }";
+
+                    json_file << ",\n";
+                    json_file << "  {\n";
+                    json_file << "    \"name\": \"" << name << "\",\n";
+                    json_file << "    \"ph\": \"E\",\n";
+                    json_file << "    \"ts\": " << call.end_time << ",\n";
+                    json_file << "    \"pid\": " << pid << ",\n";
+                    json_file << "    \"tid\": " << tid << "\n";
                     json_file << "  }";
                 }
             }
-
-            // End the JSON array
             json_file << "\n]\n";
-
             json_file.close();
         }
     }
