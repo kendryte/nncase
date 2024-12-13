@@ -60,7 +60,7 @@ class host_buffer_impl : public host_buffer_node {
     }
 
     bool has_physical_address() const noexcept override {
-        return physical_address_;
+        return data_ == nullptr || physical_address_;
     }
 
     result<uintptr_t> physical_address() noexcept override {
