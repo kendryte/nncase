@@ -321,21 +321,6 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             return default;
         }
 
-        // 2. convert partial to broadcast.
-        foreach (var (pType, pBucket) in bucketMemo.Where(kv => kv.Key is DistributedType dtype && dtype.NdSBP.Any(s => s is SBPPartial)))
-        {
-            foreach (var (bType, bBucket) in bucketMemo.Where(kv => kv.Key is DistributedType dtype && !dtype.NdSBP.Any(s => s is SBPPartial)))
-            {
-                if (Evaluator.IR.CPU.BoxingEvaluator.VisitType(pType, bType) is not InvalidType)
-                {
-                    // partial to broadcast
-                    var bnode = new SearchableNode(new Boxing(bType), bType);
-                    bBucket.AddVertex(bnode);
-                    callCluster.AddEdge(new(bnode, pBucket.Vertices.First(), 0, pBucket));
-                }
-            }
-        }
-
         // 3. add bidirectional connections.
         foreach (var (lType, lBucket) in bucketMemo.Where(kv => kv.Key is DistributedType))
         {
@@ -350,20 +335,6 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             }
         }
 
-        // foreach (var (bType, bBucket) in bucketMemo.Where(kv => kv.Key is DistributedType dtype && !dtype.NdSBP.Any(s => s is SBPPartial) && dtype.NdSBP.Any(s => s is SBPBroadCast)))
-        // {
-        //     foreach (var (sType, sBucket) in bucketMemo.Where(kv => kv.Key is DistributedType dtype &&
-        //         ((DistributedType)bType).NdSBP.Zip(dtype.NdSBP).Any(p => p.First is SBPBroadCast && p.Second is SBPSplit) &&
-        //         !((DistributedType)bType).NdSBP.Zip(dtype.NdSBP).Any(p => p.First is SBPSplit && p.Second is SBPBroadCast)))
-        //     {
-        //         if (Evaluator.IR.CPU.BoxingEvaluator.VisitType(bType, sType) is not InvalidType)
-        //         {
-        //             var snode = new SearchableNode(new Boxing(sType), sType);
-        //             sBucket.AddVertex(snode);
-        //             callCluster.AddEdge(new(snode, bBucket.Vertices.First(), 0, bBucket));
-        //         }
-        //     }
-        // }
         // 4. add not infered type in search space.
         var addedBuckets = bucketMemo.Values.ToArray();
         foreach (var nType in GetLeafCandidateDistTypes(expr.CheckedTensorType, Placements))

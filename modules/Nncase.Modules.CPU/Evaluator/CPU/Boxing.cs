@@ -13,8 +13,6 @@ namespace Nncase.Evaluator.IR.CPU;
 
 public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Boxing>, IEvaluator<Boxing>
 {
-    private const int _burstLength = 256;
-
     public static IRType VisitType(IRType inType, IRType outType, bool isReshape = false)
     {
         IRType VisitD2D(DistributedType inv, DistributedType outv)
@@ -163,6 +161,8 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
 
                     float scatterPart = 1;
                     float gatherPart = 1;
+                    float reducePart = 1;
+                    float latency = 0;
                     for (int i = 0; i < a.Placement.Rank; i++)
                     {
                         switch (a.NdSBP[i], b.NdSBP[i])
@@ -200,6 +200,8 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                                     case SBPPartial:
                                         break;
                                     case SBPBroadCast or SBPSplit:
+                                        latency = MathF.Max(latency, ((ICpuTargetOptions)context.CompileOptions.TargetOptions).HierarchyLatencies[i]);
+                                        reducePart *= a.Placement.Hierarchy[i];
                                         gatherPart *= a.Placement.Hierarchy[i];
                                         if (i == 0)
                                         {
@@ -227,6 +229,14 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                         cost += new Cost()
                         {
                             [CostFactorNames.MemoryStore] = (UInt128)((gatherPart - 1) * (float)CostUtility.GetMemoryAccess(DistributedUtility.GetDividedTensorType(a)) / gatherPart),
+                        };
+                    }
+
+                    if (reducePart > 1f)
+                    {
+                        cost += new Cost()
+                        {
+                            [CostFactorNames.Comm] = (UInt128)((reducePart - 1) * latency),
                         };
                     }
 
