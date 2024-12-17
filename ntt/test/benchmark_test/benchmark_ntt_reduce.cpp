@@ -41,9 +41,9 @@ std::string benchmark_ntt_reduce_add_reduceN_noPack() {
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_sum<ntt::fixed_shape<1>>(ta, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -74,9 +74,9 @@ std::string benchmark_ntt_reduce_add_reduceN_packN() {
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_sum<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(
             taP, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -104,9 +104,9 @@ std::string benchmark_ntt_reduce_add_reduceM_noPack() {
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_sum<ntt::fixed_shape<0>>(ta, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -137,9 +137,9 @@ std::string benchmark_ntt_reduce_add_reduceM_packM() {
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_sum<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(
             taP, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -167,9 +167,9 @@ std::string benchmark_ntt_reduce_add_reduceMN_noPack() {
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_sum<ntt::fixed_shape<0, 1>>(ta, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -201,9 +201,9 @@ std::string benchmark_ntt_reduce_add_reduceMN_packN() {
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_sum<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(
             taP, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -235,9 +235,9 @@ std::string benchmark_ntt_reduce_add_reduceMN_packM() {
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_sum<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(
             taP, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -265,9 +265,9 @@ std::string benchmark_ntt_reduce_max_reduceN_noPack() {
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_max<ntt::fixed_shape<1>>(ta, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -298,9 +298,9 @@ std::string benchmark_ntt_reduce_max_reduceN_packN() {
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_max<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(
             taP, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -328,9 +328,9 @@ std::string benchmark_ntt_reduce_max_reduceM_noPack() {
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_max<ntt::fixed_shape<0>>(ta, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -361,9 +361,9 @@ std::string benchmark_ntt_reduce_max_reduceM_packM() {
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_max<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(
             taP, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -391,9 +391,9 @@ std::string benchmark_ntt_reduce_max_reduceMN_noPack() {
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_max<ntt::fixed_shape<0, 1>>(ta, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -425,9 +425,9 @@ std::string benchmark_ntt_reduce_max_reduceMN_packN() {
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_max<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(
             taP, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -459,9 +459,9 @@ std::string benchmark_ntt_reduce_max_reduceMN_packM() {
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_max<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(
             taP, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -489,9 +489,9 @@ std::string benchmark_ntt_reduce_min_reduceN_noPack() {
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_min<ntt::fixed_shape<1>>(ta, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -522,9 +522,9 @@ std::string benchmark_ntt_reduce_min_reduceN_packN() {
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_min<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(
             taP, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -552,9 +552,9 @@ std::string benchmark_ntt_reduce_min_reduceM_noPack() {
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_min<ntt::fixed_shape<0>>(ta, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -585,9 +585,9 @@ std::string benchmark_ntt_reduce_min_reduceM_packM() {
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_min<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(
             taP, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -616,9 +616,9 @@ std::string benchmark_ntt_reduce_min_reduceMN_noPack() {
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_min<ntt::fixed_shape<0, 1>>(ta, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -650,9 +650,9 @@ std::string benchmark_ntt_reduce_min_reduceMN_packN() {
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_min<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(
             taP, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -684,9 +684,9 @@ std::string benchmark_ntt_reduce_min_reduceMN_packM() {
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_min<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(
             taP, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -714,9 +714,9 @@ std::string benchmark_ntt_reduce_mean_reduceN_noPack() {
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_mean<ntt::fixed_shape<1>>(ta, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -747,9 +747,9 @@ std::string benchmark_ntt_reduce_mean_reduceN_packN() {
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_mean<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(
             taP, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -777,9 +777,9 @@ std::string benchmark_ntt_reduce_mean_reduceM_noPack() {
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_mean<ntt::fixed_shape<0>>(ta, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -810,9 +810,9 @@ std::string benchmark_ntt_reduce_mean_reduceM_packM() {
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_mean<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(
             taP, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -840,9 +840,9 @@ std::string benchmark_ntt_reduce_mean_reduceMN_noPack() {
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_mean<ntt::fixed_shape<0, 1>>(ta, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -874,9 +874,9 @@ std::string benchmark_ntt_reduce_mean_reduceMN_packN() {
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_mean<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(
             taP, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
@@ -908,9 +908,9 @@ std::string benchmark_ntt_reduce_mean_reduceMN_packM() {
     for (size_t i = 0; i < run_num; i++) {
         ntt::reduce_mean<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(
             taP, tb[warmup_num + i]);
+        asm volatile("" ::"g"(tb));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tb));
 
     std::ostringstream oss;
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"

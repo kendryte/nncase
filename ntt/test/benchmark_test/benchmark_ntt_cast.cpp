@@ -76,18 +76,14 @@ void benchmark_ntt_cast(T1 init_low, T1 init_high) {
     // warm up
     for (size_t i = 0; i < warmup_size; i++) {
         ntt::cast(*ntt_input, *ntt_output);
-#if __x86_64__
         asm volatile("" ::"g"(ntt_output));
-#endif
     }
 
     // run
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
         ntt::cast(*ntt_input, *ntt_output);
-#if __x86_64__
         asm volatile("" ::"g"(ntt_output));
-#endif
     }
     auto t2 = NttTest::get_cpu_cycle();
 
