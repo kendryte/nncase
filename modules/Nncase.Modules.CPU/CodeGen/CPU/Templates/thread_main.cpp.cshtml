@@ -16,7 +16,7 @@
 
 //alignas(@(Model.Alignment)) static thread_local uint8_t local_data[@(Model.DataSize)];
 
-extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata, const bool enable_profiling) {
+extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata) {
   /* prepare inputs */
   @{
     var names = new List<string>();
@@ -42,7 +42,7 @@ extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata, co
   }
   
   auto local_data = (uint8_t *)nncase::ntt::runtime::thread_alloc(@Model.DataSize, @Model.Alignment);
-  @(Model.PrimFunction.Name)(@(string.Join(", ", names)), local_data, enable_profiling);
+  @(Model.PrimFunction.Name)(@(string.Join(", ", names)), local_data);
   nncase::ntt::runtime::thread_free(local_data);
 }
 

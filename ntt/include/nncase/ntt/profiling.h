@@ -301,10 +301,10 @@ class ntt_profiler {
 // auto_profiler, start timing and end timing
 class auto_profiler {
   public:
-    auto_profiler(const std::string &function_name,
-                  const bool en_profiler = false)
-        : en_profiler_(en_profiler) {
-        if (en_profiler) {
+    auto_profiler(const std::string &function_name) {
+
+        en_profiler_ = get_profiler_option();
+        if (en_profiler_) {
             function_name_ = function_name,
             start_time_ = ntt_profiler::get_instance().start_timing();
         }

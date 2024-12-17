@@ -116,7 +116,7 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
             CPU_SET(cpu_id, &cpuset);
             pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 #endif
-            thread_main(params.inouts, params.rdata, (bool)params.en_profiler);
+            thread_main(params.inouts, params.rdata);
         });
     }
 

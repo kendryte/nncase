@@ -17,6 +17,7 @@
 #include "shape.h"
 #include <cstddef>
 #include <cstdint>
+#include <string>
 
 #ifdef NNCASE_CPU_MODULE
 #include <topology_def.h>
@@ -57,6 +58,8 @@ template <topology Topology> struct program_id_getter {
 template <topology Topology> size_t program_id() noexcept {
     return program_id_getter<Topology>::id();
 }
+
+bool get_profiler_option() noexcept;
 
 template <topology Scope = (topology)(topology_levels - 1)>
 auto program_ids() noexcept {
