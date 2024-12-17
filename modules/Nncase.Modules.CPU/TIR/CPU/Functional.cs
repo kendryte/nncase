@@ -45,14 +45,14 @@ public partial class CPU
         return new Call(new TIR.CPU.Binary(binaryOp), lhs, rhs, output);
     }
 
-    public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC, IRArray<int> lhsPackedAxes, IRArray<int> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<int> rhsPadedNums, bool transA = false, bool transB = false)
+    public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC, IRArray<int> lhsPackedAxes, IRArray<int> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<int> rhsPadedNums, bool transA = false, bool transB = false, bool fusedReduce = false)
     {
-        return new Call(new Matmul(lhsPackedAxes, lhsPadedNums, rhsPackedAxes, rhsPadedNums, transA, transB), lhs, rhs, output, loadC);
+        return new Call(new Matmul(lhsPackedAxes, lhsPadedNums, rhsPackedAxes, rhsPadedNums, transA, transB, fusedReduce), lhs, rhs, output, loadC);
     }
 
     public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC)
     {
-        return new Call(new Matmul(new IRArray<int>(), new IRArray<int>(), new IRArray<int>(), new IRArray<int>(), false, false), lhs, rhs, output, loadC);
+        return new Call(new Matmul(new IRArray<int>(), new IRArray<int>(), new IRArray<int>(), new IRArray<int>(), false, false, false), lhs, rhs, output, loadC);
     }
 
     public static Expr Pack(Expr input, Expr output, IRArray<int> lanes, IRArray<int> axes)
