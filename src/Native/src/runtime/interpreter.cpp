@@ -209,6 +209,10 @@ result<void> interpreter::output_tensor(size_t index,
     return ok();
 }
 
+result<void> interpreter::en_profiler() noexcept {
+    return options().set("en_profiler", (uint8_t)1);
+}
+
 result<void> interpreter::run() noexcept {
     std::vector<value_t> params(inputs_size(), nullptr);
     for (size_t i = 0; i < params.size(); i++) {
