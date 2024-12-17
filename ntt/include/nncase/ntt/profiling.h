@@ -301,17 +301,26 @@ class ntt_profiler {
 // auto_profiler, start timing and end timing
 class auto_profiler {
   public:
-    auto_profiler(const std::string &function_name)
-        : function_name_(function_name),
-          start_time_(ntt_profiler::get_instance().start_timing()) {}
+    auto_profiler(const std::string &function_name,
+                  const bool en_profiler = false)
+        : en_profiler_(en_profiler) {
+        if (en_profiler) {
+            function_name_ = function_name,
+            start_time_ = ntt_profiler::get_instance().start_timing();
+        }
+    }
 
     ~auto_profiler() {
-        ntt_profiler::get_instance().end_timing(function_name_, start_time_);
+        if (en_profiler_) {
+            ntt_profiler::get_instance().end_timing(function_name_,
+                                                    start_time_);
+        }
     }
 
   private:
     std::string function_name_;
     uint64_t start_time_;
+    bool en_profiler_;
 };
 
 } // namespace nncase::ntt

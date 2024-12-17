@@ -32,6 +32,7 @@ struct cpu_block_entry_params_t {
     size_t cpu_id_offset;
     std::byte *const *inouts;
     const std::byte *rdata;
+    uint8_t en_profiler;
 #ifdef __APPLE__
     pthread_key_t cpu_thread_context_key;
 #endif
@@ -41,6 +42,7 @@ struct cpu_thread_context_t {
     size_t tid;
     size_t bid;
     size_t cid;
+    uint8_t en_profiler;
 
     static cpu_thread_context_t &current() noexcept;
 };

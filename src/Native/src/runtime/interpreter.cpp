@@ -26,7 +26,9 @@
 using namespace nncase;
 using namespace nncase::runtime;
 
-interpreter::interpreter() noexcept : entry_function_(nullptr) {}
+interpreter::interpreter() noexcept : entry_function_(nullptr) {
+    auto _ = options().set("en_profiler", (uint8_t)0);
+}
 
 result<void> interpreter::load_model(std::span<const std::byte> buffer,
                                      bool copy_buffer) noexcept {

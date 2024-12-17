@@ -29,9 +29,11 @@ using namespace nncase::ntt::runtime;
 
 result<void> cpu_runtime_function::run(std::span<std::byte *> params) noexcept {
     std::vector<std::thread> blocks;
+    try_var(en_profiler,
+            module().interp().options().get_scalar_opt<uint8_t>("en_profiler"));
     for (size_t cid = 0; cid < cdim_; cid++) {
         for (size_t bid = 0; bid < bdim_; bid++) {
-            blocks.emplace_back([cid, bid, params, this] {
+            blocks.emplace_back([cid, bid, params, en_profiler, this] {
                 cpu_block_entry_params_t block_entry_params{
                     .tdim = tdim_,
                     .bdim = bdim_,
@@ -41,6 +43,7 @@ result<void> cpu_runtime_function::run(std::span<std::byte *> params) noexcept {
                     .cpu_id_offset = (cid * bdim_ + bid) * tdim_,
                     .inouts = params.data(),
                     .rdata = module().rdata().data(),
+                    .en_profiler = en_profiler,
 #ifdef __APPLE__
                     .cpu_thread_context_key = module().cpu_thread_context_key(),
 #endif

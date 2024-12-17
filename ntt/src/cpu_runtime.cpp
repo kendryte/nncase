@@ -88,16 +88,14 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
     for (size_t tid = 0; tid < tdim; tid++) {
         threads.emplace_back([tid, params] {
 #ifdef __APPLE__
-            pthread_setspecific(cpu_thread_context_key,
-                                new cpu_thread_context_t
+            pthread_setspecific(cpu_thread_context_key, new cpu_thread_context_t
 #else
             cpu_thread_context_t::current() =
 #endif
-                                {
-                                    .tid = tid,
-                                    .bid = params.bid,
-                                    .cid = params.cid,
-                                }
+                                {.tid = tid,
+                                 .bid = params.bid,
+                                 .cid = params.cid,
+                                 .en_profiler = params.en_profiler}
 #ifdef __APPLE__
             );
 #else
@@ -118,7 +116,7 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
             CPU_SET(cpu_id, &cpuset);
             pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 #endif
-            thread_main(params.inouts, params.rdata, false);
+            thread_main(params.inouts, params.rdata, (bool)params.en_profiler);
         });
     }
 
