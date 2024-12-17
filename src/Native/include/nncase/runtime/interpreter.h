@@ -19,8 +19,8 @@
 #include "result.h"
 #include "runtime_module.h"
 #include "runtime_tensor.h"
-#include <istream>
 #include <memory>
+#include <nncase/runtime/stream.h>
 #include <nncase/shape.h>
 #include <nncase/tensor.h>
 #include <nncase/type.h>
@@ -68,7 +68,7 @@ class NNCASE_API interpreter {
     [[nodiscard]] result<void> load_model(std::span<const std::byte> buffer,
                                           bool copy_buffer = false) noexcept;
 
-    [[nodiscard]] result<void> load_model(std::istream &stream) noexcept;
+    [[nodiscard]] result<void> load_model(runtime::stream &stream) noexcept;
 
     options_dict &options() noexcept;
     result<runtime_module *> find_module_by_id(size_t index) noexcept;

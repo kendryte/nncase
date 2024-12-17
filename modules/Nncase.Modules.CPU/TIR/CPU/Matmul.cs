@@ -26,5 +26,7 @@ public sealed partial class Matmul : CPUKernelOp
 
     public bool TransposeB { get; }
 
+    public bool FusedReduce { get; }
+
     public override string DisplayProperty() => $"LhsPackedAxes: {LhsPackedAxes}, LhsPadedNums: {LhsPadedNums}, RhsPackedAxes: {RhsPackedAxes}, RhsPadedNums: {RhsPadedNums}, TransposeA: {TransposeA}, TransposeB: {TransposeB}";
 }

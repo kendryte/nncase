@@ -26,7 +26,11 @@
 #include <type_traits>
 
 namespace tar {
+#if defined(NNCASE_XPU_MODULE) && defined(SYS_MODE)
+__device__ extern uint8_t collective_pool_ptr[];
+#else
 extern uint8_t collective_pool_ptr[];
+#endif
 }
 
 namespace nncase::ntt {
@@ -208,7 +212,11 @@ struct reshard_impl<SrcTensor, DestTensor> {
             auto total_log_dim =
                 std::accumulate(log_dims.begin(), log_dims.end(), 0.f);
             for (size_t i = 0; i < non_split_tensor_axes.rank(); i++) {
+#if defined(__NEWLIB__)
+                float split_factor = total_log_dim == 0.f
+#else
                 auto split_factor = total_log_dim == 0.f
+#endif
                                         ? 0.f
                                         : (log_dims[i] / total_log_dim *
                                            std::log(expected_split_count));

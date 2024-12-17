@@ -75,9 +75,8 @@ def _make_module(name, target):
 
     # compile
     compiler.compile()
-    kmodel = compiler.gencode_tobytes()
     with open(os.path.join(MODEL_DIR, target, name + ".kmodel"), 'wb') as f:
-        f.write(kmodel)
+        compiler.gencode(f)
 
 
 def _make_cpu_models():

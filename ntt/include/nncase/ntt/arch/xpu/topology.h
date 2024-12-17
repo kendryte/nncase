@@ -13,19 +13,7 @@
  * limitations under the License.
  */
 #pragma once
-#include <cstddef>
-#include <cstdint>
 
-#if defined(_MSC_VER)
-#define NTT_RUNTIME_API __declspec(dllexport)
-#else
-#define NTT_RUNTIME_API __attribute__((visibility("default")))
-#endif
-
-namespace nncase::ntt::runtime {
-void *thread_alloc(size_t bytes, size_t alignment);
-void thread_free(void *ptr);
-} // namespace nncase::ntt::runtime
-
-extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata,
-                            const std::byte *local_rdata);
+namespace nncase::ntt::distributed {
+enum class topology { chip, die, block, thread, count__ };
+} // namespace nncase::ntt::distributed

@@ -64,6 +64,12 @@
 #include "arch/riscv64/ukernels.h"
 #endif
 
+#ifdef NNCASE_XPU_MODULE
+#include "arch/xpu/distributed.h"
+#include "arch/xpu/runtime.h"
+#include "arch/xpu/topology.h"
+#else
 #include "arch/cpu/distributed.h"
 #include "arch/cpu/runtime.h"
 #include "arch/cpu/topology.h"
+#endif
