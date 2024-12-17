@@ -34,11 +34,11 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_NONE() {
     auto start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < run_num; i++) {
         ntt::matmul<false>(ta, tb, tc);
+        asm volatile("" ::"g"(tc));
     }
     // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
     auto stop = std::chrono::high_resolution_clock::now();
 
-    asm volatile("" ::"g"(tc));
 
     auto ops = M * N * K * 2;
     // auto t = get_time(&start, &end) / run_num;
@@ -82,10 +82,10 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_K() {
         ntt::matmul<false>(pa, pb, tc, ntt::fixed_shape<1>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
                            ntt::fixed_shape<0>{});
+        asm volatile("" ::"g"(tc));
     }
     // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
     auto stop = std::chrono::high_resolution_clock::now();
-    asm volatile("" ::"g"(tc));
 
     auto ops = M * N * K * 2;
     // auto t = get_time(&start, &end) / run_num;
@@ -127,10 +127,10 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M() {
         ntt::matmul<false>(pa, tb, pc, ntt::fixed_shape<0>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
                            ntt::fixed_shape<0>{});
+        asm volatile("" ::"g"(pc));
     }
     // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
     auto stop = std::chrono::high_resolution_clock::now();
-    asm volatile("" ::"g"(pc));
 
     auto ops = M * N * K * 2;
     // auto t = get_time(&start, &end) / run_num;
@@ -172,10 +172,10 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_N() {
         ntt::matmul<false>(ta, pb, pc, ntt::fixed_shape<>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
                            ntt::fixed_shape<0>{});
+        asm volatile("" ::"g"(pc));
     }
     // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
     auto stop = std::chrono::high_resolution_clock::now();
-    asm volatile("" ::"g"(pc));
 
     auto ops = M * N * K * 2;
     // auto t = get_time(&start, &end) / run_num;
@@ -221,10 +221,10 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_N() {
         ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
                            ntt::fixed_shape<0>{});
+        asm volatile("" ::"g"(pc));
     }
     // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
     auto stop = std::chrono::high_resolution_clock::now();
-    asm volatile("" ::"g"(pc));
 
     auto ops = M * N * K * 2;
     // auto t = get_time(&start, &end) / run_num;
@@ -270,10 +270,10 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_K() {
         ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0, 1>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
                            ntt::fixed_shape<0>{});
+        asm volatile("" ::"g"(pc));
     }
     // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
     auto stop = std::chrono::high_resolution_clock::now();
-    asm volatile("" ::"g"(pc));
 
     auto ops = M * N * K * 2;
     // auto t = get_time(&start, &end) / run_num;
@@ -319,10 +319,10 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_K_N() {
         ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<1>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
                            ntt::fixed_shape<0>{});
+        asm volatile("" ::"g"(pc));
     }
     // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
     auto stop = std::chrono::high_resolution_clock::now();
-    asm volatile("" ::"g"(pc));
 
     auto ops = M * N * K * 2;
     // auto t = get_time(&start, &end) / run_num;
@@ -370,10 +370,10 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_K_N() {
         ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0, 1>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
                            ntt::fixed_shape<0>{});
+        asm volatile("" ::"g"(pc));
     }
     // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
     auto stop = std::chrono::high_resolution_clock::now();
-    asm volatile("" ::"g"(pc));
 
     auto ops = M * N * K * 2;
     // auto t = get_time(&start, &end) / run_num;

@@ -19,12 +19,18 @@ else()
 
     if (APPLE)
         add_compile_options(-fno-stack-check -Wno-c++11-narrowing)
+        if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
+            add_compile_options(-mllvm -inline-threshold=500)
+        endif()
     else()
         add_compile_options(-Wnarrowing)
+        if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
+            add_compile_options(-finline-functions -finline-limit=500)
+        endif()
     endif()
 endif()
 
-# fp contract
+# fp contra
 if (MSVC)
     add_compile_options(/fp:contract)
 else()

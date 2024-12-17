@@ -54,9 +54,7 @@ void benchmark_ntt_slice(T init_low, T init_high, const std::string &mode) {
                    ntt::fixed_shape<axes[0], axes[1]>,
                    ntt::fixed_shape<step_dim0, step_dim1>>(*ntt_input,
                                                            *ntt_output);
-#if __x86_64__
         asm volatile("" ::"g"(ntt_output));
-#endif
     }
 
     // run
@@ -67,9 +65,7 @@ void benchmark_ntt_slice(T init_low, T init_high, const std::string &mode) {
                    ntt::fixed_shape<axes[0], axes[1]>,
                    ntt::fixed_shape<step_dim0, step_dim1>>(*ntt_input,
                                                            *ntt_output);
-#if __x86_64__
         asm volatile("" ::"g"(ntt_output));
-#endif
     }
     auto t2 = NttTest::get_cpu_cycle();
 

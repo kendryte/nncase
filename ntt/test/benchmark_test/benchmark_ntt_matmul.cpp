@@ -33,9 +33,9 @@ void benchmark_ntt_matmul_no_pack() {
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
         ntt::matmul<false>(ta, tb, tc);
+        asm volatile("" ::"g"(tc));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tc));
 
     std::cout << __FUNCTION__ << " took " << std::setprecision(0) << std::fixed
               << static_cast<float>(t2 - t1) / run_num << " cycles"
@@ -78,9 +78,9 @@ void benchmark_ntt_matmul_pack_K() {
         ntt::matmul<false>(pa, pb, tc, ntt::fixed_shape<1>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
                            ntt::fixed_shape<0>{});
+        asm volatile("" ::"g"(tc));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(tc));
 
     std::cout << __FUNCTION__ << " took " << std::setprecision(0) << std::fixed
               << static_cast<float>(t2 - t1) / run_num << " cycles"
@@ -115,9 +115,7 @@ void benchmark_ntt_matmul_pack_M() {
         ntt::matmul<false>(pa, tb, pc, ntt::fixed_shape<0>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
                            ntt::fixed_shape<0>{});
-#if __x86_64__
         asm volatile("" ::"g"(pc));
-#endif
     }
 
     auto t1 = NttTest::get_cpu_cycle();
@@ -125,9 +123,7 @@ void benchmark_ntt_matmul_pack_M() {
         ntt::matmul<false>(pa, tb, pc, ntt::fixed_shape<0>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
                            ntt::fixed_shape<0>{});
-#if __x86_64__
         asm volatile("" ::"g"(pc));
-#endif
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -170,9 +166,9 @@ void benchmark_ntt_matmul_pack_N() {
         ntt::matmul<false>(ta, pb, pc, ntt::fixed_shape<>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
                            ntt::fixed_shape<0>{});
+        asm volatile("" ::"g"(pc));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(pc));
 
     std::cout << __FUNCTION__ << " took " << std::setprecision(0) << std::fixed
               << static_cast<float>(t2 - t1) / run_num << " cycles"
@@ -217,9 +213,9 @@ void benchmark_ntt_matmul_pack_M_N() {
         ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
                            ntt::fixed_shape<0>{});
+        asm volatile("" ::"g"(pc));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(pc));
 
     std::cout << __FUNCTION__ << " took " << std::setprecision(0) << std::fixed
               << static_cast<float>(t2 - t1) / run_num << " cycles"
@@ -264,9 +260,9 @@ void benchmark_ntt_matmul_pack_M_K() {
         ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0, 1>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
                            ntt::fixed_shape<0>{});
+        asm volatile("" ::"g"(pc));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(pc));
 
     std::cout << __FUNCTION__ << " took " << std::setprecision(0) << std::fixed
               << static_cast<float>(t2 - t1) / run_num << " cycles"
@@ -311,9 +307,9 @@ void benchmark_ntt_matmul_pack_K_N() {
         ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<1>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
                            ntt::fixed_shape<0>{});
+        asm volatile("" ::"g"(pc));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(pc));
 
     std::cout << __FUNCTION__ << " took " << std::setprecision(0) << std::fixed
               << static_cast<float>(t2 - t1) / run_num << " cycles"
@@ -360,9 +356,9 @@ void benchmark_ntt_matmul_pack_M_K_N() {
         ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0, 1>{},
                            ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
                            ntt::fixed_shape<0>{});
+        asm volatile("" ::"g"(pc));
     }
     auto t2 = NttTest::get_cpu_cycle();
-    asm volatile("" ::"g"(pc));
 
     std::cout << __FUNCTION__ << " took " << std::setprecision(0) << std::fixed
               << static_cast<float>(t2 - t1) / run_num << " cycles"
