@@ -20,7 +20,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -72,7 +72,8 @@ class ntt_profiler {
 
     uint64_t start_timing() { return get_current_time(); }
 
-    void end_timing(const std::string &function_name, uint64_t start_time) {
+    void end_timing(const std::string_view &function_name,
+                    uint64_t start_time) {
         uint64_t end_time = get_current_time();
         auto &stats = function_stats_[function_name];
         stats.calls.push_back({start_time, end_time});
@@ -120,9 +121,9 @@ class ntt_profiler {
         }
     }
 
-    void csv_print(const std::string &filename) const {
+    void csv_print(const std::string_view &filename) const {
         if (is_valid()) {
-            std::ofstream csv_file(filename);
+            std::ofstream csv_file(filename.data());
             if (!csv_file.is_open()) {
                 std::cerr << "Failed to open file: " << filename << std::endl;
                 return;
@@ -163,10 +164,10 @@ class ntt_profiler {
         }
     }
 
-    void markdown_print(const std::string &filename) const {
+    void markdown_print(const std::string_view &filename) const {
 
         if (is_valid()) {
-            std::ofstream md_file(filename);
+            std::ofstream md_file(filename.data());
             if (!md_file.is_open()) {
                 std::cerr << "Failed to open file: " << filename << std::endl;
                 return;
@@ -219,10 +220,10 @@ class ntt_profiler {
         }
     }
 
-    void json_print(const std::string &filename) const {
+    void json_print(const std::string_view &filename) const {
 
         if (is_valid()) {
-            std::ofstream json_file(filename);
+            std::ofstream json_file(filename.data());
             if (!json_file.is_open()) {
                 std::cerr << "Failed to open file: " << filename << std::endl;
                 return;
@@ -293,7 +294,7 @@ class ntt_profiler {
             .count();
     }
 
-    std::unordered_map<std::string, function_stats> function_stats_;
+    std::unordered_map<std::string_view, function_stats> function_stats_;
 
     instance_id instance_id_ = {-1, -1, -1};
 };
@@ -301,7 +302,7 @@ class ntt_profiler {
 // auto_profiler, start timing and end timing
 class auto_profiler {
   public:
-    auto_profiler(const std::string &function_name) {
+    auto_profiler(const std::string_view &function_name) {
 
         en_profiler_ = get_profiler_option();
         if (en_profiler_) {
@@ -318,7 +319,7 @@ class auto_profiler {
     }
 
   private:
-    std::string function_name_;
+    std::string_view function_name_;
     uint64_t start_time_;
     bool en_profiler_;
 };
