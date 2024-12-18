@@ -107,7 +107,7 @@ public class UnitTestK210Target : TestClassBase
         }
 
         var interp = RTInterpreter.Create();
-        interp.LoadModel(kmodel);
+        interp.LoadModel($"{name}.kmodel");
         var entry = interp.Entry;
 
         var rtInput = RTTensor.FromTensor(input);

@@ -22,6 +22,76 @@
 using namespace nncase;
 using namespace ortki;
 
+TEST(PackTestFloat, fixed_shape_3D_dim_W_odd) {
+    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    constexpr size_t coefficient = 3;
+    constexpr size_t C = 1;
+    constexpr size_t H = 77;
+    constexpr size_t W = coefficient * P;
+    float min_input = -10.0f;
+    float max_input = 10.0f;
+
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<C, H, W>>;
+    using tensor_type2 =
+        ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<C, H, coefficient>>;
+    alignas(32) tensor_type1 ntt_input;
+    NttTest::init_tensor(ntt_input, min_input, max_input);
+
+    // ntt
+    alignas(32) tensor_type2 ntt_output1;
+    ntt::pack<2>(ntt_input, ntt_output1);
+
+    // ort
+    auto ort_input = NttTest::ntt2ort(ntt_input);
+    int64_t data[] = {C, H, coefficient, P};
+    int64_t data_shape[] = {std::size(data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                             data_shape, std::size(data_shape));
+    auto ort_output = ortki_Reshape(ort_input, shape, 0);
+
+    // compare
+    alignas(32) tensor_type2 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+}
+
+TEST(PackTestFloat, fixed_shape_3D_dim_W_even) {
+    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    constexpr size_t coefficient = 3;
+    constexpr size_t C = 2;
+    constexpr size_t H = 77;
+    constexpr size_t W = coefficient * P;
+    float min_input = -10.0f;
+    float max_input = 10.0f;
+
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<C, H, W>>;
+    using tensor_type2 =
+        ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<C, H, coefficient>>;
+    alignas(32) tensor_type1 ntt_input;
+    NttTest::init_tensor(ntt_input, min_input, max_input);
+
+    // ntt
+    alignas(32) tensor_type2 ntt_output1;
+    ntt::pack<2>(ntt_input, ntt_output1);
+
+    // ort
+    auto ort_input = NttTest::ntt2ort(ntt_input);
+    int64_t data[] = {C, H, coefficient, P};
+    int64_t data_shape[] = {std::size(data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape = make_tensor(reinterpret_cast<void *>(data), ort_type,
+                             data_shape, std::size(data_shape));
+    auto ort_output = ortki_Reshape(ort_input, shape, 0);
+
+    // compare
+    alignas(32) tensor_type2 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+}
+
 TEST(PackTestFloat, fixed_shape_dim_N) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t N = 2 * P;

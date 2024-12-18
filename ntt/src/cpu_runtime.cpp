@@ -116,7 +116,9 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
             CPU_SET(cpu_id, &cpuset);
             pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 #endif
-            thread_main(params.inouts, params.rdata);
+            auto local_rdata_offset = params.local_rdata_header[tid * 2];
+            auto local_rdata = params.local_rdata + local_rdata_offset;
+            thread_main(params.inouts, params.rdata, local_rdata);
         });
     }
 

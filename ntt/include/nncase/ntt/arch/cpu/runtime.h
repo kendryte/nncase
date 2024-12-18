@@ -17,6 +17,7 @@
 #include "../../runtime.h"
 #include "topology.h"
 #include <cstdarg>
+#include <cstdint>
 
 #ifdef __APPLE__
 #include <pthread.h>
@@ -33,6 +34,8 @@ struct cpu_block_entry_params_t {
     std::byte *const *inouts;
     const std::byte *rdata;
     uint8_t en_profiler;
+    const uint64_t *local_rdata_header;
+    const std::byte *local_rdata;
 #ifdef __APPLE__
     pthread_key_t cpu_thread_context_key;
 #endif

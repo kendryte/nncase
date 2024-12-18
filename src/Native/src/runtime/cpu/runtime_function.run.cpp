@@ -31,19 +31,24 @@ result<void> cpu_runtime_function::run(std::span<std::byte *> params) noexcept {
     std::vector<std::thread> blocks;
     try_var(en_profiler,
             module().interp().options().get_scalar_opt<uint8_t>("en_profiler"));
-    for (size_t cid = 0; cid < cdim_; cid++) {
-        for (size_t bid = 0; bid < bdim_; bid++) {
-            blocks.emplace_back([cid, bid, params, en_profiler, this] {
+    for (size_t cid = 0; cid < module().cdim(); cid++) {
+        for (size_t bid = 0; bid < module().bdim(); bid++) {
+            auto tid_offset = (cid * module().bdim() + bid) * module().tdim();
+            blocks.emplace_back([cid, bid, params, tid_offset, en_profiler,
+                                 this] {
                 cpu_block_entry_params_t block_entry_params{
-                    .tdim = tdim_,
-                    .bdim = bdim_,
-                    .cdim = cdim_,
+                    .tdim = module().tdim(),
+                    .bdim = module().bdim(),
+                    .cdim = module().cdim(),
                     .bid = bid,
                     .cid = cid,
-                    .cpu_id_offset = (cid * bdim_ + bid) * tdim_,
+                    .cpu_id_offset = tid_offset,
                     .inouts = params.data(),
                     .rdata = module().rdata().data(),
                     .en_profiler = en_profiler,
+                    .local_rdata_header =
+                        module().local_rdata_header(tid_offset),
+                    .local_rdata = module().local_rdata_content().data(),
 #ifdef __APPLE__
                     .cpu_thread_context_key = module().cpu_thread_context_key(),
 #endif
