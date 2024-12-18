@@ -152,7 +152,9 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
     }
 
     public IRArray<Placement> Placements { get; }
+
     public bool Bidirectional { get; }
+
     public CompileOptions CompileOptions { get; }
 
     public CpuTargetOptions TargetOptions { get; }
