@@ -1,4 +1,3 @@
-
 /* Copyright 2019-2021 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,20 +13,7 @@
  * limitations under the License.
  */
 #pragma once
-#if defined(NNCASE_XPU_MODULE)
-#include "nncase/ntt/arch/xpu/topology.h"
-#else
-#include "nncase/ntt/arch/cpu/topology.h"
-#endif
-
-#include "sharding.h"
-#include "tensor.h"
 
 namespace nncase::ntt::distributed {
-template <class T, class Shape, topology Scope, class Strides>
-class remote_tensor_view {
-  public:
-    static remote_tensor_view create(program_ids_t<Scope> program_ids,
-                                     T *local_address) noexcept;
-};
+enum class topology { chip, die, block, thread, count__ };
 } // namespace nncase::ntt::distributed

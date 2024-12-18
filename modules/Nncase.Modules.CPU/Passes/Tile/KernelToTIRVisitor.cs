@@ -113,7 +113,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Binary(packed_binary.BinaryOp, arguments[0], arguments[1], ret));
                 break;
             case IR.CPU.PackedMatMul packed_mat_mul:
-                _mainBody.Add(TIR.F.CPU.Matmul(arguments[0], arguments[1], ret, None.Default, packed_mat_mul.LhsPackedAxes, packed_mat_mul.LhsPadedNums, packed_mat_mul.RhsPackedAxes, packed_mat_mul.RhsPadedNums));
+                _mainBody.Add(TIR.F.CPU.Matmul(arguments[0], arguments[1], ret, None.Default, packed_mat_mul.LhsPackedAxes, packed_mat_mul.LhsPadedNums, packed_mat_mul.RhsPackedAxes, packed_mat_mul.RhsPadedNums, packed_mat_mul.TransposeA, packed_mat_mul.TransposeB, packed_mat_mul.FusedReduce));
                 break;
             case IR.Math.MatMul matmul:
                 _mainBody.Add(TIR.F.CPU.Matmul(arguments[0], arguments[1], ret, None.Default));

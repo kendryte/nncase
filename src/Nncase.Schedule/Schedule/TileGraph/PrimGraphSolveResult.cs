@@ -90,6 +90,8 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
             foreach (var (bid, bufferInfo) in nodeMemo.BufferInfoMap)
             {
                 var place = bufferInfo.Places[i];
+                var expr = bid.Node.Grid.Buffers[bid.Index];
+                var distributedType = GetBufferDistributedType(expr);
                 for (int sl = 0; sl < place.Length; sl++)
                 {
                     // skip the top level allocate
@@ -115,7 +117,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                                 var offset = LevelBufferOffsets[sl][new(value, bid)];
                                 var dtype = viewInfo.Buffer.CheckedDataType;
                                 var shape = bufferInfo.Shapes[i].Select(i => (Expr)(int)i).ToArray();
-                                subView = new TIR.Buffer($"{bid}_L{value.Level}_Copy", dtype, new MemSpan(Tensor.FromPointer(offset, dtype), bufferInfo.SizeVars[i], MemoryLocation.Data, 0), shape, TensorUtilities.GetStrides(shape), null);
+                                subView = new TIR.Buffer($"{bid}_L{value.Level}_Copy", dtype, new MemSpan(Tensor.FromPointer(offset, dtype), bufferInfo.SizeVars[i], MemoryLocation.Data, 0), shape, TensorUtilities.GetStrides(shape), distributedType);
                             }
                         }
 
@@ -299,6 +301,23 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         };
     }
 
+    private DistributedType GetBufferDistributedType(Expr expr)
+    {
+        DistributedType GetTensorType(IRType type) => type switch
+        {
+            TensorType => null!,
+            DistributedType dt => dt,
+            _ => throw new NotSupportedException(),
+        };
+
+        return expr switch
+        {
+            IR.Buffers.BufferOf bufof => GetTensorType(bufof.Input.CheckedType),
+            Call { Target: IR.Buffers.Uninitialized } c => GetTensorType(c.CheckedType),
+            _ => throw new NotSupportedException(),
+        };
+    }
+
     /// <summary>
     /// declare the input/output buffer.
     /// </summary>
@@ -306,6 +325,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
     {
         var expr = bid.Node.Grid.Buffers[bid.Index];
         var tensorType = GetBufferTensorType(expr);
+        var distributedType = GetBufferDistributedType(expr);
         if (!PrimBufferMemo.TryGetValue(bid, out var buffer))
         {
             MemoryLocation loc = MemoryLocation.Data;
@@ -318,7 +338,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                 loc = MemoryLocation.Output;
             }
 
-            buffer = T.AttachBuffer(None.Default, tensorType, loc, 1, out _, $"{bid}");
+            buffer = T.AttachBuffer(None.Default, tensorType, loc, 1, out _, $"{bid}", distributedType);
 
             PrimBufferMemo.Add(bid, buffer);
         }

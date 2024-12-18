@@ -1050,7 +1050,7 @@ public sealed partial class TransposePackMatMulInputs : RewriteRule<Pattern>
         if (tperm.SequenceEqual(perm))
         {
             var npack = IR.F.CPU.Pack(transInput, [rhsPack.Lanes[1], rhsPack.Lanes[0]], [rhsPack.Axes[1], rhsPack.Axes[0]]);
-            var newMatmul = new IR.CPU.PackedMatMul(matmul.LhsPackedAxes, matmul.LhsPadedNums, new[] { matmul.RhsPackedAxes[1], matmul.RhsPackedAxes[0] }, new[] { matmul.RhsPadedNums[1], matmul.RhsPadedNums[0] }, false, true);
+            var newMatmul = new IR.CPU.PackedMatMul(matmul.LhsPackedAxes, matmul.LhsPadedNums, new[] { matmul.RhsPackedAxes[1], matmul.RhsPackedAxes[0] }, new[] { matmul.RhsPadedNums[1], matmul.RhsPadedNums[0] }, false, true, matmul.FusedReduce);
             return new Call(newMatmul, lhs, npack);
         }
 
