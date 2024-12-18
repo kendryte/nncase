@@ -40,17 +40,20 @@ public sealed class AutoDistributedMetadata : IRMetadata
 }
 
 /// <summary>
-/// auto distributed the xpu fusion.
+/// auto distributed the function.
 /// </summary>
 [RuleGenerator]
 public sealed partial class AutoDistributedPass : FunctionPass
 {
     private readonly CompileOptions _compileOptions;
 
-    public AutoDistributedPass(CompileOptions compileOptions)
+    public AutoDistributedPass(bool bidirectional, CompileOptions compileOptions)
     {
+        Bidirectional = bidirectional;
         _compileOptions = compileOptions;
     }
+
+    public bool Bidirectional { get; }
 
     protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
     {
@@ -59,7 +62,7 @@ public sealed partial class AutoDistributedPass : FunctionPass
             return Task.FromResult(input);
         }
 
-        var rewriter = new AutoDistributedRewriter(_compileOptions, _compileOptions.TargetOptions is CpuTargetOptions options ? options : new CpuTargetOptions());
+        var rewriter = new AutoDistributedRewriter(Bidirectional, _compileOptions, _compileOptions.TargetOptions is CpuTargetOptions options ? options : new CpuTargetOptions());
         return Task.FromResult(rewriter.Rewirte(input));
     }
 }
@@ -127,9 +130,10 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
     private readonly DistributedSearchGraph _rootSearchGraph;
 
-    public AutoDistributedRewriter(CompileOptions compileOptions, CpuTargetOptions targetOptions)
+    public AutoDistributedRewriter(bool bidirectional, CompileOptions compileOptions, CpuTargetOptions targetOptions)
     {
         Placements = targetOptions.Hierarchies.Select(h => new Placement(h, targetOptions.HierarchyNames)).ToArray();
+        Bidirectional = bidirectional;
         CompileOptions = compileOptions;
         TargetOptions = targetOptions;
         if (Path.Exists(TargetOptions.DistributedScheme) && System.Text.Json.JsonSerializer.Deserialize<DistributedSchema>(File.ReadAllText(TargetOptions.DistributedScheme)) is DistributedSchema scheme)
@@ -148,7 +152,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
     }
 
     public IRArray<Placement> Placements { get; }
-
+    public bool Bidirectional { get; }
     public CompileOptions CompileOptions { get; }
 
     public CpuTargetOptions TargetOptions { get; }
@@ -322,15 +326,18 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
 
         // 3. add bidirectional connections.
-        foreach (var (lType, lBucket) in bucketMemo.Where(kv => kv.Key is DistributedType))
+        if (Bidirectional)
         {
-            foreach (var (rType, rBucket) in bucketMemo.Where(kv => kv.Key is DistributedType distributedType && distributedType != lType))
+            foreach (var (lType, lBucket) in bucketMemo.Where(kv => kv.Key is DistributedType))
             {
-                if (Evaluator.IR.CPU.BoxingEvaluator.VisitType(lType, rType) is not InvalidType)
+                foreach (var (rType, rBucket) in bucketMemo.Where(kv => kv.Key is DistributedType distributedType && distributedType != lType))
                 {
-                    var rnode = new SearchableNode(new Boxing(rType), rType);
-                    rBucket.AddVertex(rnode);
-                    callCluster.AddEdge(new(rnode, lBucket.Vertices.First(), 0, lBucket));
+                    if (Evaluator.IR.CPU.BoxingEvaluator.VisitType(lType, rType) is not InvalidType)
+                    {
+                        var rnode = new SearchableNode(new Boxing(rType), rType);
+                        rBucket.AddVertex(rnode);
+                        callCluster.AddEdge(new(rnode, lBucket.Vertices.First(), 0, lBucket));
+                    }
                 }
             }
         }

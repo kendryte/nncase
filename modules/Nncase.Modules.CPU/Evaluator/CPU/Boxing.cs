@@ -31,53 +31,15 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                 return new InvalidType("Same NDSBP");
             }
 
-            if (inv.NdSBP.Any(sbp => sbp is SBPPartial))
+            for (int i = 0; i < inv.NdSBP.Count; i++)
             {
-                if (inv.NdSBP.Where(sbp => sbp is SBPPartial).Distinct().Count() != 1)
+                switch (inv.NdSBP[i], outv.NdSBP[i])
                 {
-                    return new InvalidType("Not supported different Partial in input");
+                    case (SBPPartial, SBPSplit):
+                        return new InvalidType("partial to split");
+                    case (not SBPPartial, SBPPartial):
+                        return new InvalidType("split/broadcast to partial");
                 }
-
-                var nonPartialSumPos = Enumerable.Range(0, inv.NdSBP.Count).Where(i => inv.NdSBP[i] is not SBPPartial);
-                if (nonPartialSumPos.Any(i => inv.NdSBP[i] is SBPSplit && outv.NdSBP[i] is SBPBroadCast))
-                {
-                    return new InvalidType("Not supported input is Split output is BroadCast");
-                }
-
-                var partialSumPos = Enumerable.Range(0, inv.NdSBP.Count).Where(i => inv.NdSBP[i] is SBPPartial);
-                if (partialSumPos.Any(i => inv.NdSBP[i] is SBPPartial && outv.NdSBP[i] is SBPSplit))
-                {
-                    return new InvalidType("Not supported input is Partial output is Split");
-                }
-
-                if (inv.TensorType != outv.TensorType)
-                {
-                    return new InvalidType("Not supported Partial to BroadCast with Reshape");
-                }
-
-                return outv;
-            }
-
-            if (outv.NdSBP.Any(sbp => sbp is SBPPartial))
-            {
-                if (outv.NdSBP.Where(sbp => sbp is SBPPartial).Distinct().Count() != 1)
-                {
-                    return new InvalidType("Not supported different Partial in output");
-                }
-
-                var nonPartialSumPos = Enumerable.Range(0, outv.NdSBP.Count).Where(i => outv.NdSBP[i] is not SBPPartial);
-                if (nonPartialSumPos.Any(i => inv.NdSBP[i] is SBPSplit && outv.NdSBP[i] is SBPBroadCast))
-                {
-                    return new InvalidType("Not supported input is Split output is BroadCast");
-                }
-
-                var partialSumPos = Enumerable.Range(0, outv.NdSBP.Count).Where(i => outv.NdSBP[i] is SBPPartial);
-                if (partialSumPos.Any(i => (inv.NdSBP[i] is SBPBroadCast or SBPSplit) && outv.NdSBP[i] is SBPPartial))
-                {
-                    return new InvalidType("Not supported input is (Split or BroadCast) output is Partial");
-                }
-
-                return outv;
             }
 
             return outv;
@@ -199,7 +161,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                                 {
                                     case SBPPartial:
                                         break;
-                                    case SBPBroadCast or SBPSplit:
+                                    case SBPBroadCast:
                                         latency = MathF.Max(latency, ((ICpuTargetOptions)context.CompileOptions.TargetOptions).HierarchyLatencies[i]);
                                         reducePart *= a.Placement.Hierarchy[i];
                                         gatherPart *= a.Placement.Hierarchy[i];
@@ -209,6 +171,8 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                                         }
 
                                         break;
+                                    case SBPSplit:
+                                        throw new NotSupportedException("split to partial");
                                 }
 
                                 break;
