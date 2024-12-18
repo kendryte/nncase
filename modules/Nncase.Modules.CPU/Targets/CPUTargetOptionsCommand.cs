@@ -50,9 +50,9 @@ public sealed class CpuTargetOptionsCommand : Command
             name: "--hierarchies",
             description: "the distributed hierarchies of hardware. eg. `8,4 4,8` for dynamic cluster search or `4` for fixed hardware.",
             parseArgument: ArgumentParsers.ParseNestedIntArray)
-          {
-              AllowMultipleArgumentsPerToken = true,
-          };
+        {
+            AllowMultipleArgumentsPerToken = true,
+        };
         Add(HierarchiesOption);
         HierarchyNamesOption = new Option<string>(
             name: "--hierarchy-names",
@@ -63,41 +63,41 @@ public sealed class CpuTargetOptionsCommand : Command
             name: "--hierarchy-sizes",
             description: "the memory capacity of hierarchies.",
             getDefaultValue: () => new int[] { 1073741824 })
-          {
-              AllowMultipleArgumentsPerToken = true,
-          };
+        {
+            AllowMultipleArgumentsPerToken = true,
+        };
         Add(HierarchySizesOption);
         HierarchyLatenciesOption = new Option<IEnumerable<int>>(
             name: "--hierarchy-latencies",
             description: "the latency of hierarchies.",
             getDefaultValue: () => new int[] { 10000 })
-          {
-              AllowMultipleArgumentsPerToken = true,
-          };
+        {
+            AllowMultipleArgumentsPerToken = true,
+        };
         Add(HierarchyLatenciesOption);
         HierarchyBandWidthsOption = new Option<IEnumerable<int>>(
             name: "--hierarchy-bandwiths",
             description: "the bandwidth of hierarchies.",
             getDefaultValue: () => new int[] { 1 })
-          {
-              AllowMultipleArgumentsPerToken = true,
-          };
+        {
+            AllowMultipleArgumentsPerToken = true,
+        };
         Add(HierarchyBandWidthsOption);
         MemoryCapacitiesOption = new Option<IEnumerable<int>>(
             name: "--memory-capacities",
             description: "the memory capacity of single core. eg. `32 64` for sram,main",
             getDefaultValue: () => new int[] { 524288, 2147483647 })
-          {
-              AllowMultipleArgumentsPerToken = true,
-          };
+        {
+            AllowMultipleArgumentsPerToken = true,
+        };
         Add(MemoryCapacitiesOption);
         MemoryBandWidthsOption = new Option<IEnumerable<int>>(
             name: "--memory-bandwidths",
             description: "the memory bandwidth of single core. eg. `64 8` for sram,main",
             getDefaultValue: () => new int[] { 64, 8 })
-          {
-              AllowMultipleArgumentsPerToken = true,
-          };
+        {
+            AllowMultipleArgumentsPerToken = true,
+        };
         Add(MemoryBandWidthsOption);
         DistributedSchemeOption = new Option<string>(
             name: "--distributed--scheme",

@@ -52,7 +52,9 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                             if (restSize < (inShape[si.Axis] / inType.Placement.Hierarchy[meshAxis]))
                             {
                                 ndsbp[meshAxis] = SBP.S(firstValidAxis);
-                            } else {
+                            }
+                            else
+                            {
                                 return invalidType;
                             }
                         }
