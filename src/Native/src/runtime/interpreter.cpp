@@ -27,8 +27,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 
 interpreter::interpreter() noexcept : entry_function_(nullptr) {
-    auto ret = options().set("en_profiler", (uint8_t)0);
-    (void)ret;
+    options().set("en_profiler", (uint8_t)0);
 }
 
 result<void> interpreter::load_model(std::span<const std::byte> buffer,
@@ -208,8 +207,8 @@ result<void> interpreter::output_tensor(size_t index,
     return ok();
 }
 
-result<void> interpreter::en_profiler() noexcept {
-    return options().set("en_profiler", (uint8_t)1);
+void interpreter::en_profiler(uint8_t en_profiler) noexcept {
+    options().set("en_profiler", (uint8_t)en_profiler);
 }
 
 result<void> interpreter::run() noexcept {

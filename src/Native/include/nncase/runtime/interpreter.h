@@ -44,9 +44,8 @@ class NNCASE_API options_dict {
             return err(std::errc::result_out_of_range);
     }
 
-    template <class T> result<void> set(std::string name, T value) {
+    template <class T> void set(std::string name, T value) {
         values_[name] = value;
-        return ok();
     }
 
   private:
@@ -86,7 +85,7 @@ class NNCASE_API interpreter {
     result<void> input_tensor(size_t index, runtime_tensor tensor) noexcept;
     result<runtime_tensor> output_tensor(size_t index) noexcept;
     result<void> output_tensor(size_t index, runtime_tensor tensor) noexcept;
-    result<void> en_profiler() noexcept;
+    void en_profiler(uint8_t en_profiler) noexcept;
 
     result<void> run() noexcept;
 
