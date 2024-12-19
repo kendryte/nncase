@@ -33,7 +33,7 @@ namespace nncase::ntt {
 #define BLOCK_COUNTER 3
 #define THREAD_COUNTER 4
 
-class ntt_profiler {
+class timer_storage {
   public:
     struct instance_id {
         int cid = -1;
@@ -52,9 +52,9 @@ class ntt_profiler {
         std::vector<call_instance> calls;
     };
 
-    static ntt_profiler &get_instance() {
-        static ntt_profiler instances[CHIP_COUNTER][BLOCK_COUNTER]
-                                     [THREAD_COUNTER];
+    static timer_storage &get_instance() {
+        static timer_storage instances[CHIP_COUNTER][BLOCK_COUNTER]
+                                      [THREAD_COUNTER];
 
         auto cid = program_id<topology::chip>();
         auto bid = program_id<topology::block>();
@@ -279,13 +279,13 @@ class ntt_profiler {
     }
 
   private:
-    ntt_profiler() = default;
+    timer_storage() = default;
 
-    ~ntt_profiler() {
+    ~timer_storage() {
         console_print();
-        markdown_print("ntt_profiler.md");
-        csv_print("ntt_profiler.csv");
-        json_print("ntt_profiler.json");
+        markdown_print("nncase_profiling.md");
+        csv_print("nncase_profiling.csv");
+        json_print("nncase_profiling.json");
     }
 
     uint64_t get_current_time() const {
@@ -307,14 +307,14 @@ class auto_profiler {
         en_profiler_ = get_profiler_option();
         if (en_profiler_) {
             function_name_ = function_name,
-            start_time_ = ntt_profiler::get_instance().start_timing();
+            start_time_ = timer_storage::get_instance().start_timing();
         }
     }
 
     ~auto_profiler() {
         if (en_profiler_) {
-            ntt_profiler::get_instance().end_timing(function_name_,
-                                                    start_time_);
+            timer_storage::get_instance().end_timing(function_name_,
+                                                     start_time_);
         }
     }
 
