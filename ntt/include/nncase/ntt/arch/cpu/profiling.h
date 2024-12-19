@@ -17,6 +17,7 @@
 
 #include "distributed.h"
 #include <chrono>
+#include <cstddef>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -52,28 +53,13 @@ class timer_storage {
         std::vector<call_instance> calls;
     };
 
-    static timer_storage &get_instance() {
-        static timer_storage instances[CHIP_COUNTER][BLOCK_COUNTER]
-                                      [THREAD_COUNTER];
-
-        auto cid = program_id<topology::chip>();
-        auto bid = program_id<topology::block>();
-        auto tid = program_id<topology::thread>();
-
-        instances[cid][bid][tid].instance_id_ = {(int)cid, (int)bid, (int)tid};
-
-        return instances[cid][bid][tid];
-    }
-
     bool is_valid() const {
         return instance_id_.cid != -1 && instance_id_.bid != -1 &&
                instance_id_.tid != -1;
     }
 
-    uint64_t start_timing() { return get_current_time(); }
-
-    void end_timing(std::string_view function_name, uint64_t start_time) {
-        uint64_t end_time = get_current_time();
+    void set_time(std::string_view function_name, uint64_t start_time,
+                  uint64_t end_time) {
         auto &stats = function_stats_[function_name];
         stats.calls.push_back({start_time, end_time});
         stats.call_count++;
@@ -278,7 +264,6 @@ class timer_storage {
         }
     }
 
-  private:
     timer_storage() = default;
 
     ~timer_storage() {
@@ -288,39 +273,54 @@ class timer_storage {
         json_print("nncase_profiling.json");
     }
 
-    uint64_t get_current_time() const {
+    void set_id(instance_id id) { instance_id_ = id; }
+
+  private:
+    instance_id instance_id_ = {-1, -1, -1};
+    std::unordered_map<std::string_view, function_stats> function_stats_;
+};
+
+static timer_storage timer_storages[CHIP_COUNTER][BLOCK_COUNTER]
+                                   [THREAD_COUNTER];
+
+// auto_profiler, start timing and end timing
+class auto_profiler {
+  public:
+    inline uint64_t get_current_time() const {
         return std::chrono::duration_cast<std::chrono::microseconds>(
                    std::chrono::high_resolution_clock::now().time_since_epoch())
             .count();
     }
 
-    std::unordered_map<std::string_view, function_stats> function_stats_;
-
-    instance_id instance_id_ = {-1, -1, -1};
-};
-
-// auto_profiler, start timing and end timing
-class auto_profiler {
-  public:
-    auto_profiler(std::string_view function_name) {
+    auto_profiler(std::string_view function_name)
+        : cid_(program_id<topology::chip>()),
+          bid_(program_id<topology::block>()),
+          tid_(program_id<topology::thread>()) {
 
         en_profiler_ = get_profiler_option();
         if (en_profiler_) {
-            function_name_ = function_name,
-            start_time_ = timer_storage::get_instance().start_timing();
+            timer_storage_ = &timer_storages[cid_][bid_][tid_];
+            function_name_ = function_name;
+            start_time_ = get_current_time();
         }
     }
 
     ~auto_profiler() {
         if (en_profiler_) {
-            timer_storage::get_instance().end_timing(function_name_,
-                                                     start_time_);
+            timer_storage_->set_id({cid_, bid_, tid_});
+            end_time_ = get_current_time();
+            timer_storage_->set_time(function_name_, start_time_, end_time_);
         }
     }
 
   private:
     std::string_view function_name_;
     uint64_t start_time_;
+    uint64_t end_time_;
+    int cid_;
+    int bid_;
+    int tid_;
+    timer_storage *timer_storage_;
     bool en_profiler_;
 };
 

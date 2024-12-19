@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "arch/cpu/profiling.h"
 #include "distributed.h"
 #include "kernels/binary.h"
 #include "kernels/cast.h"
@@ -39,7 +40,6 @@
 #include "kernels/unpack.h"
 #include "kernels/where.h"
 #include "primitive_ops.h"
-#include "profiling.h"
 #include "remote_tensor.h"
 #include "sharded_tensor.h"
 #include "sharding.h"
