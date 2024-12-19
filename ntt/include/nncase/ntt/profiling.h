@@ -72,8 +72,7 @@ class ntt_profiler {
 
     uint64_t start_timing() { return get_current_time(); }
 
-    void end_timing(const std::string_view &function_name,
-                    uint64_t start_time) {
+    void end_timing(std::string_view function_name, uint64_t start_time) {
         uint64_t end_time = get_current_time();
         auto &stats = function_stats_[function_name];
         stats.calls.push_back({start_time, end_time});
@@ -108,7 +107,8 @@ class ntt_profiler {
                           << std::endl;
                 uint64_t call_count = 0;
                 for (const auto &call : stats.calls) {
-                    std::cout << "\t\t" << "Call " << call_count++ << ": \n";
+                    std::cout << "\t\t"
+                              << "Call " << call_count++ << ": \n";
                     std::cout << "\t\tStart time: " << call.start_time
                               << " microseconds\n";
                     std::cout << "\t\tEnd time: " << call.end_time
@@ -121,7 +121,7 @@ class ntt_profiler {
         }
     }
 
-    void csv_print(const std::string_view &filename) const {
+    void csv_print(std::string_view filename) const {
         if (is_valid()) {
             std::ofstream csv_file(filename.data());
             if (!csv_file.is_open()) {
@@ -164,7 +164,7 @@ class ntt_profiler {
         }
     }
 
-    void markdown_print(const std::string_view &filename) const {
+    void markdown_print(std::string_view filename) const {
 
         if (is_valid()) {
             std::ofstream md_file(filename.data());
@@ -220,7 +220,7 @@ class ntt_profiler {
         }
     }
 
-    void json_print(const std::string_view &filename) const {
+    void json_print(std::string_view filename) const {
 
         if (is_valid()) {
             std::ofstream json_file(filename.data());
@@ -302,7 +302,7 @@ class ntt_profiler {
 // auto_profiler, start timing and end timing
 class auto_profiler {
   public:
-    auto_profiler(const std::string_view &function_name) {
+    auto_profiler(std::string_view function_name) {
 
         en_profiler_ = get_profiler_option();
         if (en_profiler_) {
