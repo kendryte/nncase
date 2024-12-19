@@ -46,7 +46,7 @@ public sealed partial class CPUOutputBoxingFusion : FusionMaker
 
     private Call? GetReplace(Call call, Op op, Boxing boxing, IReadOnlyList<Expr> callParams)
     {
-        if (!PassUtility.IsCpuSupported(op, call, callParams))
+        if (!PassUtility.IsCpuSupported(op, call, callParams, ModuleKind))
         {
             return null;
         }
@@ -142,7 +142,7 @@ public sealed partial class CPUSingleFusion : FusionMaker
 
     private Call? GetReplace(Call call, Op op, IReadOnlyList<Expr> callParams)
     {
-        if (!PassUtility.IsCpuSupported(op, call, callParams))
+        if (!PassUtility.IsCpuSupported(op, call, callParams, ModuleKind))
         {
             return null;
         }

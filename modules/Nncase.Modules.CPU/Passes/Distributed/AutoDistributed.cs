@@ -38,14 +38,17 @@ public sealed partial class AutoDistributedPass : FunctionPass
 {
     private readonly CompileOptions _compileOptions;
 
-    public AutoDistributedPass(CompileOptions compileOptions)
+    private readonly string _moduleKind;
+
+    public AutoDistributedPass(CompileOptions compileOptions, string moduleKind = "cpu")
     {
         _compileOptions = compileOptions;
+        _moduleKind = moduleKind;
     }
 
     protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
     {
-        var rewriter = new AutoDistributedRewriter(_compileOptions, _compileOptions.TargetOptions is CpuTargetOptions options ? options : new CpuTargetOptions());
+        var rewriter = new AutoDistributedRewriter(_compileOptions, _compileOptions.TargetOptions is CpuTargetOptions options ? options : new CpuTargetOptions(), _moduleKind);
         return Task.FromResult(rewriter.Rewirte(input));
     }
 }
@@ -54,7 +57,9 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
 {
     private readonly Dictionary<Expr, IEquality> _equalMemo = new();
 
-    public AutoDistributedRewriter(CompileOptions compileOptions, CpuTargetOptions targetOptions)
+    private readonly string _moduleKind;
+
+    public AutoDistributedRewriter(CompileOptions compileOptions, CpuTargetOptions targetOptions, string moduleKind = "cpu")
     {
         Placements = targetOptions.Hierarchies.Select(h => new Placement(h, targetOptions.HierarchyNames)).ToArray();
         CompileOptions = compileOptions;
@@ -67,6 +72,8 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         {
             Scheme = new Dictionary<string, (IRArray<SBP> NdSBP, Placement Placement)>();
         }
+
+        _moduleKind = moduleKind;
     }
 
     public IRArray<Placement> Placements { get; }
@@ -332,7 +339,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             return new Dictionary<IRType, List<Expr>> { { expr.CheckedType, new() { expr } } };
         }
 
-        var isSupported = PassUtility.IsCpuSupported(op, expr, expr.Arguments.ToArray());
+        var isSupported = PassUtility.IsCpuSupported(op, expr, expr.Arguments.ToArray(), _moduleKind);
         foreach (var param in op.Parameters)
         {
             VisitLeafArgument(param.ParameterKind, expr.Arguments[param.Index], isSupported);
