@@ -16,6 +16,7 @@
 #include "../../distributed.h"
 #include "runtime.h"
 #include <barrier>
+#include <string>
 
 namespace nncase::ntt::distributed {
 template <> struct program_id_getter<topology::thread> {
@@ -35,6 +36,10 @@ template <> struct program_id_getter<topology::chip> {
         return runtime::cpu_thread_context_t::current().cid;
     }
 };
+
+inline bool get_profiler_option() noexcept {
+    return runtime::cpu_thread_context_t::current().en_profiler;
+}
 
 inline size_t tid() noexcept { return program_id<topology::thread>(); }
 inline size_t bid() noexcept { return program_id<topology::block>(); }
