@@ -33,43 +33,6 @@ public static class DistributedUtility
         return ndsbps.CartesianProduct().Select(ndsbp => ndsbp.ToArray()).Where(ndsbp => IsDistributable(tensorType, ndsbp, placement)).Select(ndsbp => new IRArray<SBP>(ndsbp)).ToArray();
     }
 
-    public static IReadOnlyList<IRArray<SBP>> GetPartialCandidateNDSBPs(DistributedType distributedType)
-    {
-        IRArray<SBP> ndsbp = distributedType.NdSBP;
-        TensorType tensorType = distributedType.TensorType;
-        Placement placement = distributedType.Placement;
-        if (!ndsbp.Any(sbp => sbp is SBPPartialSum))
-        {
-            return Array.Empty<IRArray<SBP>>();
-        }
-
-        var candidateNdsbps = new List<SBP>[placement.Rank];
-        for (int i = 0; i < placement.Rank; i++)
-        {
-            candidateNdsbps[i] = new List<SBP>();
-            var innerSplitedAxes = distributedType.NdSBP.Skip(i + 1).OfType<SBPSplit>().Select(sbp => sbp.Axis).ToList();
-            if (ndsbp[i] is SBPPartialSum)
-            {
-                candidateNdsbps[i].Add(SBP.B);
-
-                // note separate reduce boxing and reshard boxing.
-                // for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
-                // {
-                //     if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && placement.Hierarchy[i] > 1 && IsDivideExactly(s, placement.Hierarchy[i]) && !innerSplitedAxes.Contains(axis))
-                //     {
-                //         candidateNdsbps[i].Add(SBP.S(axis));
-                //     }
-                // }
-            }
-            else
-            {
-                candidateNdsbps[i].Add(ndsbp[i]);
-            }
-        }
-
-        return candidateNdsbps.CartesianProduct().Select(ndsbp => ndsbp.ToArray()).Where(ndsbp => IsDistributable(tensorType, ndsbp, placement)).Select(ndsbp => new IRArray<SBP>(ndsbp)).ToArray();
-    }
-
     public static bool IsDistributable(TensorType tensorType, ReadOnlySpan<SBP> ndsbp, Placement placement)
     {
         if (!tensorType.Shape.IsFixed)

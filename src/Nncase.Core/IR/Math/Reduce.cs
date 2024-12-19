@@ -18,9 +18,9 @@ public sealed partial class Reduce : Op
     public static readonly ParameterInfo Input = new(typeof(Reduce), 0, "input", ParameterKind.Input);
 
     /// <summary>
-    /// Gets axis.
+    /// Gets axes.
     /// </summary>
-    public static readonly ParameterInfo Axis = new(typeof(Reduce), 1, "axis", IsIntegral() & HasRank(1));
+    public static readonly ParameterInfo Axes = new(typeof(Reduce), 1, "axes", IsIntegral() & HasRank(1));
 
     /// <summary>
     /// Gets initial value.

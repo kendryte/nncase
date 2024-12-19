@@ -21,7 +21,7 @@ public sealed partial class GetItem : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(GetItem), 0, "input", IsTensor() | (IsTuple() & !IsUnit()));
+    public static readonly ParameterInfo Input = new(typeof(GetItem), 0, "input", IsTensor() | (IsTuple() & !IsUnit()), ParameterKind.Input);
 
     /// <summary>
     /// Gets index.

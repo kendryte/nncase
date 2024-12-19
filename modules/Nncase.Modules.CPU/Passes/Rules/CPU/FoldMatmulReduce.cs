@@ -15,7 +15,7 @@ public sealed partial class FoldPackedMatmulReduce : IRewriteRule
     public IPattern Pattern { get; } =
         IsBoxing(
             target_name: "boxing",
-            op => op.NewType is DistributedType dt && dt.NdSBP.All(s => s != SBP.P),
+            op => op.NewType is DistributedType dt && dt.NdSBP.All(s => s is not SBPPartial),
             IsPackedMatMul(
                 "mm",
                 "call",
@@ -25,7 +25,7 @@ public sealed partial class FoldPackedMatmulReduce : IRewriteRule
 
     public Expr? GetReplace(Call call, PackedMatMul mm, Expr lhs, Expr rhs)
     {
-        if (call.CheckedType is DistributedType dt && dt.NdSBP.Any(s => s == SBP.P))
+        if (call.CheckedType is DistributedType dt && dt.NdSBP.Any(s => s is SBPPartial))
         {
             var newMatmul = new IR.CPU.PackedMatMul(mm.LhsPackedAxes, mm.LhsPadedNums, mm.RhsPackedAxes, mm.RhsPadedNums, mm.TransposeA, mm.TransposeB, true);
             return new Call(newMatmul, lhs, rhs);

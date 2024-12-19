@@ -144,7 +144,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         var ndsbp = new SBP[inType.Placement.Rank];
         for (int i = 0; i < inType.Placement.Rank; i++)
         {
-            if (inType.NdSBP[i] is SBPPartialSum && unaryOp != UnaryOp.Neg)
+            if (inType.NdSBP[i] is SBPPartial && unaryOp != UnaryOp.Neg)
             {
                 return invalid;
             }

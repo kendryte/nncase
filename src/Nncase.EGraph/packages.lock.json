@@ -181,6 +181,14 @@
           "OrtKISharp": "[0.0.2, )"
         }
       },
+      "nncase.graph": {
+        "type": "Project",
+        "dependencies": {
+          "Nncase.Core": "[1.0.0, )",
+          "Nncase.Evaluator": "[1.0.0, )",
+          "QuikGraph": "[2.5.0, )"
+        }
+      },
       "CommunityToolkit.HighPerformance": {
         "type": "CentralTransitive",
         "requested": "[8.2.2, )",
@@ -239,6 +247,12 @@
         "dependencies": {
           "libortki": "0.0.2"
         }
+      },
+      "QuikGraph": {
+        "type": "CentralTransitive",
+        "requested": "[2.5.0, )",
+        "resolved": "2.5.0",
+        "contentHash": "sG+mrPpXwxlXknRK5VqWUGiOmDACa9X+3ftlkQIMgOZUqxVOQSe0+HIU9PTjwqazy0pqSf8MPDXYFGl0GYWcKw=="
       },
       "System.CommandLine": {
         "type": "CentralTransitive",

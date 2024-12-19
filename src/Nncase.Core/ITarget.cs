@@ -19,6 +19,10 @@ public interface ICpuTargetOptions : ITargetOptions
 
     int[] MemoryBandWidths { get; }
 
+    public int[] HierarchyLatencies { get; }
+
+    public int[] HierarchyBandWidths { get; }
+
     bool UnifiedMemoryArch { get; }
 }
 
