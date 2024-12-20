@@ -52,8 +52,6 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                         // split on k
                         if (a.Placement.HierarchyKind == HierarchyKind.SMT && i == a.Placement.Rank - 1)
                         {
-                            System.Console.WriteLine(a.Placement.HierarchyKind);
-
                             // not split k on threads
                             return invalid;
                         }
