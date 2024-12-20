@@ -812,6 +812,7 @@ public static unsafe class CApi
     {
         Get<CpuTargetOptions>(handle).UnifiedMemoryArch = value != 0;
     }
+
     [UnmanagedCallersOnly]
     private static MemoryAccessArchitecture CpuTargetOptionsGetMemoryAccessArch(IntPtr handle)
     {
@@ -823,6 +824,7 @@ public static unsafe class CApi
     {
         Get<CpuTargetOptions>(handle).MemoryAccessArch = value;
     }
+
     [UnmanagedCallersOnly]
     private static NocArchitecture CpuTargetOptionsGetNocArch(IntPtr handle)
     {
@@ -834,6 +836,7 @@ public static unsafe class CApi
     {
         Get<CpuTargetOptions>(handle).NocArch = value;
     }
+
     [UnmanagedCallersOnly]
     private static HierarchyKind CpuTargetOptionsGetHierarchyKind(IntPtr handle)
     {
