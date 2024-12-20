@@ -150,7 +150,7 @@ public sealed class MultiReshapeCase : IRewriteCase
         typeof(Passes.Rules.Neutral.FoldConstCall),
         typeof(Passes.Rules.Neutral.FoldNopTranspose),
         typeof(Passes.Rules.Neutral.FoldTwoTransposes),
-        typeof(Passes.Rules.Neutral.CombineTransposeUnary),
+        typeof(Passes.Rules.Neutral.CombineUnaryTranspose),
         typeof(Passes.Rules.Neutral.CombineTransposePad),
         typeof(Passes.Rules.Neutral.CombinePadTranspose),
         typeof(Passes.Rules.Neutral.CombineBinaryTranspose),
@@ -2980,6 +2980,44 @@ public sealed class MatMulTransposeCase : IRewriteCase
         typeof(Passes.Rules.CPU.PackMatMul),
         typeof(Passes.Rules.CPU.FoldPackUnpack),
         typeof(Passes.Rules.CPU.TransposePackMatMulInputs),
+    };
+
+    public Dictionary<Var, IValue> FeedDict { get; }
+}
+
+public sealed class PaperCase : IRewriteCase
+{
+    public PaperCase()
+    {
+        var atype = new TensorType(DataTypes.Float32, new[] { 30, 40, 20 });
+        var a = new Var(atype);
+        var btype = new TensorType(DataTypes.Float32, new[] { 30, 20, 40 });
+        var b = new Var(btype);
+        {
+            // A: [2, 0, 1],  invA: [1,2,0]
+            // B: [1, 0, 2],  invB: [1,0,2]
+            var transA = IR.F.Tensors.Transpose(a, new[] { 2, 0, 1 }); // 20,30,40;
+            var transB = IR.F.Tensors.Transpose(b, new[] { 1, 0, 2 }); // 20,30,40;
+            var exp = IR.F.Math.Cos(transA + transB); // 20,30,40;
+            var transC = IR.F.Tensors.Transpose(exp, new[] { 1, 2, 0 }); // 30,40,20
+            PreExpr = new IR.Function(transC, a, b);
+        }
+
+        FeedDict = new Dictionary<Var, IValue>()
+        {
+            { a, IR.F.Random.Normal(atype.DType, 0, 1, 2, atype.Shape.ToValueArray()).Evaluate() },
+            { b, IR.F.Random.Normal(btype.DType, 0, 1, 2, btype.Shape.ToValueArray()).Evaluate() },
+        };
+    }
+
+    public Function PreExpr { get; }
+
+    public IEnumerable<System.Type> Rules => new[] {
+        typeof(Passes.Rules.Neutral.CombineBinaryLeftTranspose),
+        typeof(Passes.Rules.Neutral.CombineBinaryRightTranspose),
+        typeof(Passes.Rules.Neutral.CombineUnaryTranspose),
+        typeof(Passes.Rules.Neutral.FoldTwoTransposes),
+        typeof(Passes.Rules.Neutral.FoldNopTranspose),
     };
 
     public Dictionary<Var, IValue> FeedDict { get; }

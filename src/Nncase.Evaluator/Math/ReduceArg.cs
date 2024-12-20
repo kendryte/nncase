@@ -129,7 +129,7 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
 
                         ndsbp[i] = keepdim ? SBP.S(saxis) : SBP.S(saxis > axis ? saxis - 1 : saxis);
                         break;
-                    case SBPPartialSum:
+                    case SBPPartial:
                         return new InvalidType("not support partial sum.");
                     case SBPBroadCast:
                         ndsbp[i] = SBP.B;

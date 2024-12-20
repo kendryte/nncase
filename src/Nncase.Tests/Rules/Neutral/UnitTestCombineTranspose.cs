@@ -357,7 +357,7 @@ public class UnitTestCombineTranspose : TransformTestBase
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = IR.F.Math.Unary(opType, Tensors.Transpose(a, perm));
-        TestMatched<CombineTransposeUnary>(rootPre, normal);
+        TestMatched<CombineUnaryTranspose>(rootPre, normal);
     }
 
     [Theory]

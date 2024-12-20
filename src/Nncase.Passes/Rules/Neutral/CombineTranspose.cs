@@ -49,6 +49,40 @@ public sealed partial class CombineBinaryTranspose : IRewriteRule
 }
 
 /// <summary>
+/// Combine Transpose with Binary left
+/// binary(transpose(a,p),b) => transpose(binary(a, transpose(b,invP)),p).
+/// </summary>
+[RuleGenerator]
+public sealed partial class CombineBinaryLeftTranspose : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } = IsBinary("binary", "binaryCall", x => true, IsTranspose(IsWildcard("x"), IsTensorConst("perm")), IsWildcard("y"));
+
+    private Expr? GetReplace(Binary binary, Call binaryCall, Expr x, Expr y, int[] perm)
+    {
+        var invPerm = perm.Select((p, i) => (p, i)).OrderBy(tp => tp.p).Select(p => p.i).ToArray();
+        return Transpose(Binary(binary.BinaryOp, x, Transpose(y, invPerm)).InheritMetaData(binaryCall), perm);
+    }
+}
+
+/// <summary>
+/// Combine Transpose with Binary right
+/// binary(a,transpose(b,p)) => transpose(binary(transpose(a,invP),b),p).
+/// </summary>
+[RuleGenerator]
+public sealed partial class CombineBinaryRightTranspose : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } = IsBinary("binary", "binaryCall", x => true, IsWildcard("x"), IsTranspose(IsWildcard("y"), IsTensorConst("perm")));
+
+    private Expr? GetReplace(Binary binary, Call binaryCall, Expr x, Expr y, int[] perm)
+    {
+        var invPerm = perm.Select((p, i) => (p, i)).OrderBy(tp => tp.p).Select(p => p.i).ToArray();
+        return Transpose(Binary(binary.BinaryOp, Transpose(x, invPerm), y).InheritMetaData(binaryCall), perm);
+    }
+}
+
+/// <summary>
 /// Combine Transpose with Const Binary, if Const has rank 1.
 /// binary(transpose(a,p),const(b)) => transpose(binary(a,const(b)),p) or binary(const(a),transpose(b,p)) => transpose(binary(const(a),b),p).
 /// </summary>
@@ -390,10 +424,10 @@ public sealed partial class CombineTransposeReshape : IRewriteRule
 
 /// <summary>
 /// Combine Transpose with Unary
-/// reduce(transpose(x,p), a) => transpose(reduce(x, invtranspose(a, p)), p).
+/// unary(transpose(x,p), a) => transpose(unary(x, p)).
 /// </summary>
 [RuleGenerator]
-public sealed partial class CombineTransposeUnary : IRewriteRule
+public sealed partial class CombineUnaryTranspose : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsUnary("unary", "unaryCall", x => true, IsTranspose(IsWildcard("input"), IsWildcard("perm")));

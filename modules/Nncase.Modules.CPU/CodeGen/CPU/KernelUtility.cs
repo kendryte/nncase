@@ -80,7 +80,7 @@ public static class KernelUtility
             }
         }
 
-        var implicitPolicy = ndSBP.Any(x => x is SBPPartialSum) ? "P<reduce_op::sum>" : "B";
+        var implicitPolicy = ndSBP.Any(x => x is SBPPartial) ? "P<reduce_op::sum>" : "B";
         sb.Append($">, {implicitPolicy}");
 
         for (int axis = 0; axis < distributedType.TensorType.Shape.Rank; axis++)

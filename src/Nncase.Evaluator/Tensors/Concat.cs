@@ -197,7 +197,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
                 return new InvalidType("not support distribute on concat axis");
             }
 
-            if (sbps.Any(sbp => sbp is SBPPartialSum))
+            if (sbps.Any(sbp => sbp is SBPPartial))
             {
                 return new InvalidType("not support distribute with partialsum");
             }

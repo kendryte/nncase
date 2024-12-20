@@ -56,7 +56,7 @@ public sealed partial class CombinePadUnary : IRewriteRule
 /// Combine <see cref="IR.Math.Unary"/>(<see cref="IR.Tensors.Transpose"/>).
 /// </summary>
 [RuleGenerator]
-public sealed partial class CombineTranposeUnary : IRewriteRule
+public sealed partial class CombineTransposeUnary : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsUnary(

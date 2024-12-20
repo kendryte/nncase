@@ -166,7 +166,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.WithMarker.FoldTransposeBinaryActTranspose>();
             p.Add<Passes.Rules.WithMarker.CombineReshapePad>();
             p.Add<Passes.Rules.WithMarker.CombinePadTranspose>();
-            p.Add<Passes.Rules.Neutral.CombineTransposeUnary>();
+            p.Add<Passes.Rules.Neutral.CombineUnaryTranspose>();
             if (_compileSession.CompileOptions.ShapeBucketOptions.Enable)
             {
                 p.Add<Passes.Rules.WithMarker.CombineTransposePad>();

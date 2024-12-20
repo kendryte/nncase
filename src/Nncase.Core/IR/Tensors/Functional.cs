@@ -109,8 +109,8 @@ public static class Tensors
 
     public static Call Range(Expr begin, Expr end, Expr step) => new Call(new Range(), begin, end, step);
 
-    public static Call Reduce(ReduceOp reduceOp, Expr input, Expr axis, Expr initValue, Expr keepDims) =>
-        new Call(new Reduce(reduceOp), input, axis, initValue, keepDims);
+    public static Call Reduce(ReduceOp reduceOp, Expr input, Expr axes, Expr initValue, Expr keepDims) =>
+        new Call(new Reduce(reduceOp), input, axes, initValue, keepDims);
 
     public static Call ReduceArg(ReduceArgOp reduceArgOp, PrimType destType, Expr input, Expr axis, Expr keepDims, Expr selectLastIndex) =>
         new Call(new ReduceArg(reduceArgOp, destType), input, axis, keepDims, selectLastIndex);
