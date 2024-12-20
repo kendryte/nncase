@@ -266,15 +266,15 @@ PYBIND11_MODULE(_nncase, m) {
         py::overload_cast<bool>(&cpu_target_options::unified_memory_arch)) 
       .def_property(
         "MemoryAccessArch",
-        []() {},
+        py::overload_cast<>(&cpu_target_options::memory_access_arch),
         py::overload_cast<memory_access_architecture_t>(&cpu_target_options::memory_access_arch)) 
       .def_property(
         "NocArch",
-        []() {},
+        py::overload_cast<>(&cpu_target_options::noc_arch),
         py::overload_cast<noc_architecture_t>(&cpu_target_options::noc_arch)) 
       .def_property(
         "HierarchyKind",
-        []() {},
+        py::overload_cast<>(&cpu_target_options::hierarchy_kind),
         py::overload_cast<hierarchy_kind_t>(&cpu_target_options::hierarchy_kind)) 
       .def_property(
         "Hierarchies",
