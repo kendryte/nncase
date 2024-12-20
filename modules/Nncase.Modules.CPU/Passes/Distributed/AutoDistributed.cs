@@ -397,19 +397,6 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
     private DistributedSearchGraph VisitLeafArgument(ParameterKind parameterKind, Expr expr, bool isSupported)
     {
-        DistributedSearchGraph TryInsertNonDistStarter(Expr e)
-        {
-            if (!_inferedMemo.TryGetValue(e, out var attrCluster))
-            {
-                attrCluster = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.StandaloneCluster);
-                var bucketGraph = attrCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
-                bucketGraph.AddVertex(new SearchableNode(e, e.CheckedType));
-                _inferedMemo.Add(e, attrCluster);
-            }
-
-            return attrCluster;
-        }
-
         DistributedSearchGraph? argCluster = null;
         switch (parameterKind, expr)
         {
@@ -420,7 +407,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 }
                 else
                 {
-                    argCluster = TryInsertNonDistStarter(e);
+                    argCluster = TryInstertTerminator(e);
                 }
 
                 break;
@@ -473,11 +460,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             case (ParameterKind.Input, Expr e):
                 if (isSupported)
                 {
-                    argCluster = _inferedMemo[e];
-                    if (argCluster.Kind is SearchGraphKind.StandaloneCluster)
-                    {
-                        argCluster = TryAddOriginator(e);
-                    }
+                    argCluster = TryAddOriginator(e);
                 }
                 else
                 {
@@ -486,7 +469,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
                 break;
             case (ParameterKind.Attribute, Expr e):
-                argCluster = TryInsertNonDistStarter(e);
+                argCluster = TryInstertTerminator(e);
                 break;
             default:
                 throw new InvalidOperationException();
@@ -503,23 +486,11 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         _ => false,
     };
 
-    private DistributedSearchGraph TryAddOriginator(Expr expr)
+    private DistributedSearchGraph CreateOriginatorCluster(Expr expr, bool init)
     {
-        if (_reshardMemo.TryGetValue(expr, out var reshardGraph))
-        {
-            if (reshardGraph.Kind != SearchGraphKind.DistributedCluster)
-            {
-                throw new NotSupportedException();
-            }
-
-            return reshardGraph;
-        }
-
-        reshardGraph = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.DistributedCluster);
-        _reshardMemo.Add(expr, reshardGraph);
-
         if (expr is IR.Tuple tp)
         {
+            var distCluster = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.DistributedCluster);
             var buckets = new DistributedSearchGraph[tp.Fields.Length];
             foreach (var (f, fGraph, i) in tp.Fields.AsValueEnumerable().Select((f, i) => (f, Visit(f), i)))
             {
@@ -527,52 +498,83 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             }
 
             var tpnode = new SearchableNode(new IR.Tuple(), new TupleType(buckets.Select(g => g.Vertices.First().IRType).ToArray()));
-            var bucket = reshardGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
+            var bucket = distCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
             bucket.AddVertex(tpnode);
             for (int i = 0; i < tp.Fields.Length; i++)
             {
                 _rootSearchGraph.AddEdge(new(tpnode, buckets[i].Vertices.First(), i, buckets[i]));
             }
+
+            return distCluster;
         }
         else if (expr is TensorConst tc && tc.ValueType is TensorType tensorType)
         {
-            if (!_inferedMemo.TryGetValue(tc, out var inferCluster))
+            var distCluster = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.DistributedCluster);
+            foreach (var dType in GetLeafCandidateDistTypes(tensorType, Placements))
             {
-                inferCluster = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.DistributedCluster);
-                foreach (var dType in GetLeafCandidateDistTypes(tensorType, Placements))
-                {
-                    var bucket = reshardGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
-                    var dnode = new SearchableNode(new TensorConst(tc.Value, dType.NdSBP, dType.Placement), dType);
-                    bucket.AddVertex(dnode);
-                }
-
-                _inferedMemo.Add(expr, inferCluster);
+                var bucket = distCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
+                var dnode = new SearchableNode(new TensorConst(tc.Value, dType.NdSBP, dType.Placement), dType);
+                bucket.AddVertex(dnode);
             }
+
+            return distCluster;
         }
         else
         {
-            if (!_inferedMemo.TryGetValue(expr, out var inferCluster))
+            if (init)
             {
-                var onode = new SearchableNode(expr, expr.CheckedType);
-                inferCluster = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.StandaloneCluster);
-                var obucket = inferCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
-                obucket.AddVertex(onode);
-                _inferedMemo.Add(expr, inferCluster);
+                var standCluster = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.StandaloneCluster);
+                var bucket = standCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
+                var node = new SearchableNode(expr, expr.CheckedType);
+                bucket.AddVertex(node);
+                return standCluster;
             }
-
-            foreach (var dType in GetLeafCandidateDistTypes((TensorType)inferCluster.Vertices.First().IRType, Placements))
+            else
             {
-                var bucket = reshardGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
-                var dnode = new SearchableNode(new Boxing(dType), dType);
-                bucket.AddVertex(dnode);
-                _rootSearchGraph.AddEdge(new(dnode, inferCluster.Vertices.First(), 0, inferCluster.Clusters.OfType<DistributedSearchGraph>().First()));
+                var distCluster = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.DistributedCluster);
+                var inferCluster = _inferedMemo[expr];
+                foreach (var dType in GetLeafCandidateDistTypes((TensorType)inferCluster.Vertices.First().IRType, Placements))
+                {
+                    var bucket = distCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
+                    var dnode = new SearchableNode(new Boxing(dType), dType);
+                    bucket.AddVertex(dnode);
+                    _rootSearchGraph.AddEdge(new(dnode, inferCluster.Vertices.First(), 0, inferCluster.Clusters.OfType<DistributedSearchGraph>().First()));
+                }
+
+                return distCluster;
             }
         }
-
-        return reshardGraph;
     }
 
-    private DistributedSearchGraph InstertTerminator(Expr expr)
+    private DistributedSearchGraph TryAddOriginator(Expr expr)
+    {
+        if (!_inferedMemo.TryGetValue(expr, out var inferCluster))
+        {
+            inferCluster = CreateOriginatorCluster(expr, true);
+            _inferedMemo.Add(expr, inferCluster);
+        }
+
+        if (inferCluster.Kind is SearchGraphKind.DistributedCluster)
+        {
+            return inferCluster;
+        }
+
+        // unshard to standalone
+        if (!_reshardMemo.TryGetValue(expr, out var distCluster))
+        {
+            distCluster = CreateOriginatorCluster(expr, false);
+            _reshardMemo.Add(expr, distCluster);
+        }
+
+        if (distCluster.Kind != SearchGraphKind.DistributedCluster)
+        {
+            throw new InvalidOperationException("The inference and reshard cluster cannot be distributed either.");
+        }
+
+        return distCluster;
+    }
+
+    private DistributedSearchGraph CreateTerminatorCluster(Expr expr, bool init)
     {
         var standCluster = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.StandaloneCluster);
 
@@ -594,16 +596,25 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
         else
         {
-            var onode = new SearchableNode(new Boxing(expr.CheckedType), expr.CheckedType);
-            var inputBuckets = _inferedMemo[expr].Clusters.OfType<DistributedSearchGraph>().ToArray();
-
-            var bucket = standCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
-            bucket.AddVertex(onode);
-            foreach (var inputBucket in inputBuckets)
+            if (init)
             {
-                if (Evaluator.IR.CPU.BoxingEvaluator.VisitType(inputBucket.Vertices.First().IRType, onode.IRType) is not InvalidType)
+                var bucket = standCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
+                var node = new SearchableNode(expr, expr.CheckedType);
+                bucket.AddVertex(node);
+            }
+            else
+            {
+                var onode = new SearchableNode(new Boxing(expr.CheckedType), expr.CheckedType);
+                var inputBuckets = _inferedMemo[expr].Clusters.OfType<DistributedSearchGraph>().ToArray();
+
+                var bucket = standCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
+                bucket.AddVertex(onode);
+                foreach (var inputBucket in inputBuckets)
                 {
-                    _rootSearchGraph.AddEdge(new(onode, inputBucket.Vertices.First(), 0, inputBucket));
+                    if (Evaluator.IR.CPU.BoxingEvaluator.VisitType(inputBucket.Vertices.First().IRType, onode.IRType) is not InvalidType)
+                    {
+                        _rootSearchGraph.AddEdge(new(onode, inputBucket.Vertices.First(), 0, inputBucket));
+                    }
                 }
             }
         }
@@ -615,7 +626,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
     {
         if (!_inferedMemo.TryGetValue(expr, out var inferCluster))
         {
-            inferCluster = InstertTerminator(expr);
+            inferCluster = CreateTerminatorCluster(expr, true);
             _inferedMemo.Add(expr, inferCluster);
             return inferCluster;
         }
@@ -628,7 +639,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         // unshard to standalone
         if (!_reshardMemo.TryGetValue(expr, out var standCluster))
         {
-            standCluster = InstertTerminator(expr);
+            standCluster = CreateTerminatorCluster(expr, false);
             _reshardMemo.Add(expr, standCluster);
             return standCluster;
         }
