@@ -30,10 +30,6 @@ using namespace nncase::ntt::distributed;
 
 namespace nncase::ntt {
 
-#define CHIP_COUNTER 2
-#define BLOCK_COUNTER 3
-#define THREAD_COUNTER 4
-
 // static nncase::ntt::runtime::timer_record
 //     timer_records[CHIP_COUNTER][BLOCK_COUNTER][THREAD_COUNTER];
 
@@ -85,8 +81,8 @@ class auto_profiler {
         return runtime::cpu_thread_context_t::current().en_profiler;
     }
 
-    inline runtime::timer_record *get_timer_record() noexcept {
-        return &(runtime::cpu_thread_context_t::current().timer_records[0]);
+    inline nncase::ntt::runtime::timer_record *get_timer_record() noexcept {
+        return runtime::cpu_thread_context_t::current().timer_records;
     }
 };
 

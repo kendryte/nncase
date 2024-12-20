@@ -48,7 +48,9 @@ result<void> cpu_runtime_function::run(std::span<std::byte *> params) noexcept {
                     .inouts = params.data(),
                     .rdata = module().rdata().data(),
                     .en_profiler = en_profiler,
-                    .timer_records = const_cast<timer_record *>(timer_records),
+                    .timer_records = const_cast<timer_record *>(
+                        &timer_records[cid * module().bdim() * module().tdim() +
+                                       bid * module().tdim()]),
                     .local_rdata_header =
                         module().local_rdata_header(tid_offset),
                     .local_rdata = module().local_rdata_content().data(),
