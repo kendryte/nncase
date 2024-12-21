@@ -123,7 +123,7 @@ int nncase_interp_load_model_from_path(nncase::runtime::interpreter *interp,
 int nncase_interp_set_dump_root(nncase::runtime::interpreter *interp,
                                 const char *path) {
     if (interp && path) {
-        c_try(interp->options().set("dump_root", path));
+        interp->options().set("dump_root", path);
 #ifndef NNCASE_BAREMETAL
         interp->dump_manager()->set_dump_root(path);
 #endif

@@ -68,6 +68,10 @@ class Inference:
             outputs = self.run_evb(target, kmodel_path, compile_opt, infer_dir)
         else:
             sim = nncase.Simulator()
+            if self.cfg['compile_opt']['en_profiler']:
+                sim.en_profiler(True)
+            else:
+                sim.en_profiler(False)
             with open(kmodel_path, 'rb') as f:
                 sim.load_model(f)
             self.set_infer_input(sim, compile_opt)

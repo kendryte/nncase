@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "arch/cpu/profiling.h"
 #include "distributed.h"
 #include "kernels/binary.h"
 #include "kernels/cast.h"

@@ -145,6 +145,24 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 
     public ulong RdataPoolSize { get; }
 
+    public static void WriteWithProfiler(string functionName)
+    {
+        IndentScope.Writer.IndWrite("{\n");
+        IndentScope.Writer.Write($"constexpr std::string_view function_name = \"{functionName}\";\n");
+        IndentScope.Writer.Write($"auto_profiler profiler(function_name);\n");
+        IndentScope.Writer.Write($"{functionName};\n");
+        IndentScope.Writer.IndWrite("}\n");
+    }
+
+    public static void WriteIndWithProfiler(string functionName)
+    {
+        IndentScope.Writer.IndWrite("{\n");
+        IndentScope.Writer.IndWrite($"constexpr std::string_view function_name = \"{functionName}\";\n");
+        IndentScope.Writer.IndWrite($"auto_profiler profiler(function_name);\n");
+        IndentScope.Writer.IndWrite($"{functionName};\n");
+        IndentScope.Writer.IndWrite("}\n");
+    }
+
     public KernelCSource GetCSource()
     {
         var ctype = $"void {VisitEntry.Name}({string.Join(", ", VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}").ToArray().Concat(_exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata).Select(Visit).Select(s => $" {s.Type} {s.Name}").ToArray()))}, uint8_t* data)";
@@ -318,7 +336,8 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     }
                     else
                     {
-                        IndentScope.Writer.Write($"reshard({VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[0], local: false).Name});\n");
+                        string function_name = $"reshard({VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[0], local: false).Name})";
+                        WriteWithProfiler(function_name);
                     }
 
                     break;
@@ -351,7 +370,8 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     }
                     else
                     {
-                        IndentScope.Writer.Write($"reshard({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name});\n");
+                        string function_name = $"reshard({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name})";
+                        WriteWithProfiler(function_name);
                     }
 
                     break;
@@ -562,7 +582,8 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                 _ => Visit(x),
             }).ToArray();
             _refFuncs.Add(deviceFunc);
-            IndentScope.Writer.IndWrite($"{deviceFunc.Name}({string.Join(",", arguments.Select(arg => arg.Name))});\n");
+            string function_name = $"{deviceFunc.Name}({string.Join(",", arguments.Select(arg => arg.Name))})";
+            WriteIndWithProfiler(function_name);
         }
         else
         {
