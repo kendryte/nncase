@@ -90,7 +90,8 @@ class timer_record {
                           << std::endl;
                 uint64_t call_count = 0;
                 for (const auto &call : stats.calls) {
-                    std::cout << "\t\t" << "Call " << call_count++ << ": \n";
+                    std::cout << "\t\t"
+                              << "Call " << call_count++ << ": \n";
                     std::cout << "\t\tStart time: " << call.start_time
                               << " microseconds\n";
                     std::cout << "\t\tEnd time: " << call.end_time
@@ -298,8 +299,8 @@ struct cpu_thread_context_t {
     size_t tid;
     size_t bid;
     size_t cid;
-    uint8_t en_profiler;
     timer_record *timer_records;
+    uint8_t en_profiler;
 
     static cpu_thread_context_t &current() noexcept;
 };
