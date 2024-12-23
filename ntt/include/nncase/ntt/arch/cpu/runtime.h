@@ -212,32 +212,21 @@ class timer_record {
                 return;
             }
 
-            auto pid = instance_id_.cid * instance_id_.bid;
-            auto tid = instance_id_.tid;
+            std::string pid = "\"cid: " + std::to_string(instance_id_.cid) +
+                              ", bid: " + std::to_string(instance_id_.bid) +
+                              "\"";
+            std::string tid =
+                "\"tid: " + std::to_string(instance_id_.tid) + "\"";
             json_file << "[\n";
-            json_file << "  {\n"
-                      << "    \"name\": \"process_name\",\n"
-                      << "    \"ph\": \"M\",\n"
-                      << "    \"pid\": " << pid << ",\n"
-                      << "    \"tid\": " << tid << ",\n"
-                      << "    \"args\": {\n"
-                      << "      \"name\": \"cid*B+bid\"\n"
-                      << "    }\n"
-                      << "  },\n"
-                      << "  {\n"
-                      << "    \"name\": \"thread_name\",\n"
-                      << "    \"ph\": \"M\",\n"
-                      << "    \"pid\": " << pid << ",\n"
-                      << "    \"tid\": " << tid << ",\n"
-                      << "    \"args\": {\n"
-                      << "      \"name\": \"tid\"\n"
-                      << "    }\n"
-                      << "  }";
 
+            bool first = true;
             for (const auto &[name, stats] : function_stats_) {
                 for (const auto &call : stats.calls) {
 
-                    json_file << ",\n";
+                    if (!first) {
+                        json_file << ",\n";
+                    }
+                    first = false;
                     json_file << "  {\n";
                     json_file << "    \"name\": \"" << name << "\",\n";
                     json_file << "    \"ph\": \"B\",\n";
@@ -256,6 +245,7 @@ class timer_record {
                     json_file << "  }";
                 }
             }
+
             json_file << "\n]\n";
             json_file.close();
         }
