@@ -397,66 +397,9 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
     private DistributedSearchGraph VisitLeafArgument(ParameterKind parameterKind, Expr expr, bool isSupported)
     {
-        DistributedSearchGraph? argCluster = null;
+        DistributedSearchGraph argCluster;
         switch (parameterKind, expr)
         {
-            case (ParameterKind.Input, Expr e) when e is Const or Var:
-                if (isSupported)
-                {
-                    argCluster = TryAddOriginator(expr);
-                }
-                else
-                {
-                    argCluster = TryInstertTerminator(e);
-                }
-
-                break;
-            case (ParameterKind.Input, IR.Tuple tp):
-                if (isSupported)
-                {
-                    if (!_inferedMemo.TryGetValue(tp, out var inferCluster))
-                    {
-                        inferCluster = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.DistributedCluster);
-                        var fClusters = new DistributedSearchGraph[tp.Fields.Length];
-                        foreach (var (f, i) in tp.Fields.AsValueEnumerable().Select((f, i) => (f, i)))
-                        {
-                            fClusters[i] = VisitLeafArgument(ParameterKind.Input, f, isSupported);
-                        }
-
-                        var bucketMemo = new Dictionary<TupleType, DistributedSearchGraph>();
-                        foreach (var combBuckets in fClusters.Select(c => c.Clusters.OfType<DistributedSearchGraph>()).CartesianProduct())
-                        {
-                            var tpType = new TupleType(combBuckets.Select(b => b.Vertices.First().IRType).ToArray());
-                            var tpNode = new SearchableNode(new IR.Tuple(), tpType);
-                            if (!bucketMemo.TryGetValue(tpType, out var bucket))
-                            {
-                                bucket = inferCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
-                                bucketMemo.Add(tpType, bucket);
-                            }
-
-                            bucket.AddVertex(tpNode);
-                            foreach (var (fbucket, i) in combBuckets.Select((b, i) => (b, i)))
-                            {
-                                _rootSearchGraph.AddEdge(new(tpNode, fbucket.Vertices.First(), i, fbucket));
-                            }
-                        }
-
-                        _inferedMemo.Add(tp, inferCluster);
-                    }
-
-                    if (inferCluster.Kind != SearchGraphKind.DistributedCluster)
-                    {
-                        throw new NotSupportedException("tuple infer cluster is not dist cluster");
-                    }
-
-                    argCluster = inferCluster;
-                }
-                else
-                {
-                    throw new NotSupportedException("not support tuple input.");
-                }
-
-                break;
             case (ParameterKind.Input, Expr e):
                 if (isSupported)
                 {
