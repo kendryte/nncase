@@ -147,6 +147,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 
     public static void WriteWithProfiler(string functionName)
     {
+        functionName = functionName.TrimEnd(new char[] { ';', '\n' });
         IndentScope.Writer.IndWrite("{\n");
         IndentScope.Writer.Write($"constexpr std::string_view function_name = \"{functionName}\";\n");
         IndentScope.Writer.Write($"auto_profiler profiler(function_name);\n");
@@ -156,6 +157,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 
     public static void WriteIndWithProfiler(string functionName)
     {
+        functionName = functionName.TrimEnd(new char[] { ';', '\n' });
         IndentScope.Writer.IndWrite("{\n");
         IndentScope.Writer.IndWrite($"constexpr std::string_view function_name = \"{functionName}\";\n");
         IndentScope.Writer.IndWrite($"auto_profiler profiler(function_name);\n");
