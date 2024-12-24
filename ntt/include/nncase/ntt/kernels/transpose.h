@@ -14,7 +14,6 @@
  */
 #pragma once
 #include "../apply.h"
-#include "../profiler.h"
 #include "../utility.h"
 #include <tuple>
 
@@ -22,7 +21,6 @@ namespace nncase::ntt {
 
 template <IsFixedDims TPerm, IsFixedTensor TIn, IsFixedTensor TOut>
 void transpose(const TIn &input, TOut &&output) {
-    AUTO_NTT_PROFILER
     constexpr auto domain = typename TIn::shape_type{};
     auto out_index = ranked_shape<domain.rank()>{};
     apply(domain, [&](auto index) {

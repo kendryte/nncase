@@ -14,7 +14,6 @@
  */
 #pragma once
 #include "../apply.h"
-#include "../profiler.h"
 #include "../shape_infer/matmul.h"
 #include "../ukernels.h"
 #include "nncase/ntt/primitive_ops.h"
@@ -220,8 +219,6 @@ void matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output,
                   "currently only support no pad!");
     static_assert(RhsPadedNums::rank() == 0 || RhsPadedNums::length() == 0,
                   "currently only support no pad!");
-
-    AUTO_NTT_PROFILER
 
     detail::matmul_impl<false, false, AccumulateC, TLhs, TRhs,
                         std::decay_t<TOut>, LhsPackedAxes, LhsPadedNums,

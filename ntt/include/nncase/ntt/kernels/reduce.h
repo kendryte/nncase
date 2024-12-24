@@ -15,7 +15,6 @@
 #pragma once
 #include "../apply.h"
 #include "../primitive_ops.h"
-#include "../profiler.h"
 #include "../shape_infer/reduce.h"
 #include "../tensor_ops.h"
 #include "../tensor_traits.h"
@@ -182,7 +181,6 @@ void reduce(const TIn &input, TOut &&output) noexcept {
                       (PadedNums::rank() == 2 && PadedNums::at(0) == 0 &&
                        PadedNums::at(1) == 0),
                   "not support padding");
-    AUTO_NTT_PROFILER
     detail::reduce_impl<Op, false, std::decay_t<TIn>, std::decay_t<TOut>, Axes,
                         PackedAxes, PadedNums>
         impl;
