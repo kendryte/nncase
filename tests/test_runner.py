@@ -359,7 +359,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     is_enum = True
                 except:
                     pass
-                exec(f"target_options.{k} = { e + v + e if isinstance(v, str) and not is_enum else v}")
+                exec(
+                    f"target_options.{k} = { e + v + e if isinstance(v, str) and not is_enum else v}")
         return target_options
 
     def get_compile_options(self, target, dump_dir):
