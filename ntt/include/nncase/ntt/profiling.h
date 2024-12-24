@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <string_view>
 #include <unordered_map>
+#include <vector>
 
 namespace nncase::ntt::runtime {
 
