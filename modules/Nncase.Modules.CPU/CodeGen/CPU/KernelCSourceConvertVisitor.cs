@@ -290,7 +290,6 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
         };
 
         string str = string.Empty;
-        string functionName = string.Empty;
         if (expr.Target is Op kop && kop is TIR.CPU.CPUKernelOp or TIR.Memcopy)
         {
             foreach (var item in expr.Arguments.ToArray().OfType<TIR.Buffer>())
@@ -304,12 +303,11 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
             switch (kop)
             {
                 case TIR.CPU.Unary unary:
-                    functionName = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unary.cshtml", new UnaryKernelTemplateModel
+                    IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unary.cshtml", new UnaryKernelTemplateModel
                     {
                         Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
                         UnaryOp = unary.UnaryOp,
-                    }).Result;
-                    WriteWithProfiler(functionName);
+                    }).Result);
                     break;
                 case TIR.CPU.TensorLoad load:
                     if (args.Length == 1)
@@ -336,13 +334,12 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 
                         _collective_pool_size = Math.Max(_collective_pool_size, (ulong)(TensorUtilities.GetProduct(fullShape) * args[0].CheckedDataType.SizeInBytes));
                         var indices = args[0].Dimensions.ToArray().Select(e => Visit(e).Name).ToSlicing(load.NdSbp, load.Placement)[0];
-                        functionName = $"tac::tensor_boxing_load_sync<fixed_shape<{string.Join(',', fullShape)}>>({indices}, {VisitBuffer(args[0], local: true).Name});\n";
-                        WriteWithProfiler(functionName);
+                        IndentScope.Writer.Write($"tac::tensor_boxing_load_sync<fixed_shape<{string.Join(',', fullShape)}>>({indices}, {VisitBuffer(args[0], local: true).Name});\n");
                     }
                     else
                     {
-                        functionName = $"reshard({VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[0], local: false).Name})";
-                        WriteWithProfiler(functionName);
+                        string function_name = $"reshard({VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[0], local: false).Name})";
+                        WriteWithProfiler(function_name);
                     }
 
                     break;
@@ -371,116 +368,101 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 
                         _collective_pool_size = Math.Max(_collective_pool_size, (ulong)(TensorUtilities.GetProduct(fullShape) * args[0].CheckedDataType.SizeInBytes));
                         var indices = args[0].Dimensions.ToArray().Select(e => Visit(e).Name).ToSlicing(store.NdSbp, store.Placement)[0];
-                        functionName = $"tac::tensor_boxing_store_sync<fixed_shape<{string.Join(',', fullShape)}>>({indices}, {VisitBuffer(args[0], local: true).Name});\n";
-                        WriteWithProfiler(functionName);
+                        IndentScope.Writer.Write($"tac::tensor_boxing_store_sync<fixed_shape<{string.Join(',', fullShape)}>>({indices}, {VisitBuffer(args[0], local: true).Name});\n");
                     }
                     else
                     {
-                        functionName = $"reshard({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name})";
-                        WriteWithProfiler(functionName);
+                        string function_name = $"reshard({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name})";
+                        WriteWithProfiler(function_name);
                     }
 
                     break;
                 case TIR.CPU.Binary binary:
                     {
-                        functionName = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
+                        IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
                         {
                             Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
                             BinaryOp = binary.BinaryOp,
-                        }).Result;
-
-                        WriteWithProfiler(functionName);
+                        }).Result);
                     }
 
                     break;
                 case TIR.CPU.Im2col im2col:
-                    functionName = $"im2col({VisitBuffer(args[0], local: true).Name}, fixed_shape<{string.Join(",", im2col.Kernel)}>{{}}, fixed_shape<{string.Join(",", im2col.Stride)}>{{}}, fixed_shape<{string.Join(",", im2col.Padding)}>{{}}, fixed_shape<{string.Join(",", im2col.PackedAxes)}>{{}}, fixed_shape<{string.Join(",", im2col.PadedNums)}>{{}}, {VisitBuffer(args[1], local: true).Name});\n";
-                    WriteIndWithProfiler(functionName);
+                    IndentScope.Writer.IndWrite($"im2col({VisitBuffer(args[0], local: true).Name}, fixed_shape<{string.Join(",", im2col.Kernel)}>{{}}, fixed_shape<{string.Join(",", im2col.Stride)}>{{}}, fixed_shape<{string.Join(",", im2col.Padding)}>{{}}, fixed_shape<{string.Join(",", im2col.PackedAxes)}>{{}}, fixed_shape<{string.Join(",", im2col.PadedNums)}>{{}}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
                 case TIR.CPU.Pack pack:
                     {
-                        functionName = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Pack.cshtml", new TypedKernelTemplateModel<TIR.CPU.Pack>(pack)
+                        IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Pack.cshtml", new TypedKernelTemplateModel<TIR.CPU.Pack>(pack)
                         {
                             Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
                             Indent = string.Join(string.Empty, Enumerable.Repeat(' ', IndentScope.Writer.Indent)),
-                        }).Result;
-                        WriteWithProfiler(functionName);
+                        }).Result);
                     }
 
                     break;
 
                 case TIR.CPU.Unpack unpack:
                     {
-                        functionName = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unpack.cshtml", new TypedKernelTemplateModel<TIR.CPU.Unpack>(unpack)
+                        IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unpack.cshtml", new TypedKernelTemplateModel<TIR.CPU.Unpack>(unpack)
                         {
                             Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
                             Indent = string.Join(string.Empty, Enumerable.Repeat(' ', IndentScope.Writer.Indent)),
-                        }).Result;
-                        WriteWithProfiler(functionName);
+                        }).Result);
                     }
 
                     break;
                 case TIR.CPU.PackedLayerNorm packedLayerNorm:
                     {
-                        functionName = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedLayerNorm.cshtml", new TypedKernelTemplateModel<TIR.CPU.PackedLayerNorm>(packedLayerNorm)
+                        IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedLayerNorm.cshtml", new TypedKernelTemplateModel<TIR.CPU.PackedLayerNorm>(packedLayerNorm)
                         {
                             Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
                             Args = args.ToArray(),
-                        }).Result;
-                        WriteWithProfiler(functionName);
+                        }).Result);
                     }
 
                     break;
                 case TIR.CPU.InstanceNorm instanceNorm:
-                    functionName = $"instance_norm({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {args[0].ElemType.ToC()} {{ {instanceNorm.Epsilon} }}, fixed_shape<{string.Join(",", instanceNorm.PackedAxes)}>{{}}, fixed_shape<{string.Join(",", instanceNorm.PadedNums)}>{{}} );\n";
-                    WriteWithProfiler(functionName);
+                    IndentScope.Writer.Write($"instance_norm({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {args[0].ElemType.ToC()} {{ {instanceNorm.Epsilon} }}, fixed_shape<{string.Join(",", instanceNorm.PackedAxes)}>{{}}, fixed_shape<{string.Join(",", instanceNorm.PadedNums)}>{{}} );\n");
 
                     break;
                 case TIR.CPU.ResizeImage resize:
-                    functionName = $"resize({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, fixed_shape<{string.Join(",", resize.PackedAxes)}>{{}}, fixed_shape<{string.Join(",", resize.PadedNums)}>{{}}, fixed_shape<{string.Join(",", resize.NewSize)}>{{}}, image_resize_mode_t::{resize.ResizeMode.ToC()}, image_resize_transformation_mode_t::{resize.TransformationMode.ToC()}, image_resize_nearest_mode_t::{resize.NearestMode.ToC()});\n";
-                    WriteIndWithProfiler(functionName);
+                    IndentScope.Writer.IndWrite($"resize({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, fixed_shape<{string.Join(",", resize.PackedAxes)}>{{}}, fixed_shape<{string.Join(",", resize.PadedNums)}>{{}}, fixed_shape<{string.Join(",", resize.NewSize)}>{{}}, image_resize_mode_t::{resize.ResizeMode.ToC()}, image_resize_transformation_mode_t::{resize.TransformationMode.ToC()}, image_resize_nearest_mode_t::{resize.NearestMode.ToC()});\n");
                     break;
                 case TIR.CPU.PackedSoftmax packedsoftmax:
                     {
-                        functionName = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedSoftMax.cshtml", new TypedKernelTemplateModel<TIR.CPU.PackedSoftmax>(packedsoftmax)
+                        IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedSoftMax.cshtml", new TypedKernelTemplateModel<TIR.CPU.PackedSoftmax>(packedsoftmax)
                         {
                             Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
                             Args = args.ToArray(),
-                        }).Result;
-                        WriteWithProfiler(functionName);
+                        }).Result);
                     }
 
                     break;
                 case TIR.CPU.PackedBinary packedBinary:
                     {
-                        functionName = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
+                        IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
                         {
                             BinaryOp = packedBinary.BinaryOp,
                             Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
-                        }).Result;
-                        WriteWithProfiler(functionName);
+                        }).Result);
                     }
 
                     break;
                 case TIR.CPU.Conv2D conv:
-                    functionName = $"conv2d({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, fixed_shape<{string.Join(",", conv.Stride)}>{{}}, fixed_shape<{string.Join(",", conv.Padding)}>{{}}, fixed_shape<{string.Join(",", conv.Dilation)}>{{}}, {conv.Groups});\n";
-                    WriteIndWithProfiler(functionName);
+                    IndentScope.Writer.IndWrite($"conv2d({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, fixed_shape<{string.Join(",", conv.Stride)}>{{}}, fixed_shape<{string.Join(",", conv.Padding)}>{{}}, fixed_shape<{string.Join(",", conv.Dilation)}>{{}}, {conv.Groups});\n");
                     break;
                 case TIR.CPU.Matmul matmul:
-                    functionName = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Matmul.cshtml", new TypedKernelTemplateModel<TIR.CPU.Matmul>(matmul)
+                    IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Matmul.cshtml", new TypedKernelTemplateModel<TIR.CPU.Matmul>(matmul)
                     {
                         Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
-                    }).Result;
-                    WriteWithProfiler(functionName);
+                    }).Result);
 
                     break;
                 case TIR.Memcopy copy:
-                    functionName = $"tensor_copy({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n";
-                    WriteWithProfiler(functionName);
+                    IndentScope.Writer.Write($"tensor_copy({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
                 case TIR.CPU.Gather gather:
-                    functionName = $"gather<{gather.Axis}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n";
-                    WriteWithProfiler(functionName);
+                    IndentScope.Writer.Write($"gather<{gather.Axis}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
                     break;
                 case TIR.CPU.Swish swish:
                     if (swish.Beta != 1.0f)
@@ -488,81 +470,67 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                         throw new NotSupportedException();
                     }
 
-                    functionName = $"unary<ops::swish>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n";
-                    WriteWithProfiler(functionName);
+                    IndentScope.Writer.Write($"unary<ops::swish>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
                 case TIR.CPU.Slice slice:
-                    functionName = $"slice<fixed_shape<{string.Join(",", slice.Begins)}>, fixed_shape<{string.Join(",", slice.Ends)}>, fixed_shape<{string.Join(",", slice.Axes)}>, fixed_shape<{string.Join(",", slice.Strides)}>>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n";
-                    WriteWithProfiler(functionName);
+                    IndentScope.Writer.Write($"slice<fixed_shape<{string.Join(",", slice.Begins)}>, fixed_shape<{string.Join(",", slice.Ends)}>, fixed_shape<{string.Join(",", slice.Axes)}>, fixed_shape<{string.Join(",", slice.Strides)}>>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
                 case TIR.CPU.Concat concat:
-                    functionName = $"concat<{concat.Axis}>(std::make_tuple({string.Join(",", args.SkipLast(1).Select(x => VisitBuffer(x, local: true)).Select(s => s.Name))}), {VisitBuffer(args[^1], local: true).Name});\n";
-                    WriteWithProfiler(functionName);
+                    IndentScope.Writer.Write($"concat<{concat.Axis}>(std::make_tuple({string.Join(",", args.SkipLast(1).Select(x => VisitBuffer(x, local: true)).Select(s => s.Name))}), {VisitBuffer(args[^1], local: true).Name});\n");
                     break;
                 case TIR.CPU.Transpose transpose:
-                    functionName = $"transpose<fixed_shape<{string.Join(",", transpose.Perm)}>>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n";
-                    WriteWithProfiler(functionName);
+                    IndentScope.Writer.Write($"transpose<fixed_shape<{string.Join(",", transpose.Perm)}>>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
                 case TIR.CPU.Pad pad:
-                    functionName = $"pad<{string.Join(",", pad.Paddings)}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {args[0].CheckedDataType.ToC()} {{ {pad.PadValue} }} );\n";
-                    WriteWithProfiler(functionName);
+                    IndentScope.Writer.Write($"pad<{string.Join(",", pad.Paddings)}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {args[0].CheckedDataType.ToC()} {{ {pad.PadValue} }} );\n");
                     break;
                 case TIR.CPU.Reduce reduce:
-                    functionName = $"reduce_{reduce.ReduceOp.ToC()}<fixed_shape<{string.Join(",", reduce.Axes)}>, fixed_shape<{string.Join(",", reduce.PackedAxes)}>, fixed_shape<{string.Join(",", reduce.PadedNums)}>>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n";
-                    WriteWithProfiler(functionName);
+                    IndentScope.Writer.Write($"reduce_{reduce.ReduceOp.ToC()}<fixed_shape<{string.Join(",", reduce.Axes)}>, fixed_shape<{string.Join(",", reduce.PackedAxes)}>, fixed_shape<{string.Join(",", reduce.PadedNums)}>>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
                 case TIR.CPU.ReduceArg reduceArg:
-                    functionName = $"reduce_arg<ops::{reduceArg.ReduceArgOp.ToC()[4..]}, {reduceArg.Axis}, {reduceArg.SelectLastIndex.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}, {reduceArg.KeepDims.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, fixed_shape<>{{}}, fixed_shape<>{{}});\n";
-                    WriteWithProfiler(functionName);
+                    IndentScope.Writer.Write($"reduce_arg<ops::{reduceArg.ReduceArgOp.ToC()[4..]}, {reduceArg.Axis}, {reduceArg.SelectLastIndex.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}, {reduceArg.KeepDims.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, fixed_shape<>{{}}, fixed_shape<>{{}});\n");
                     break;
                 case TIR.CPU.Clamp clamp:
                     string min = clamp.Min is float.NegativeInfinity ? float.MinValue.ToString() : clamp.Min.ToString();
                     string max = clamp.Max is float.PositiveInfinity ? float.MaxValue.ToString() : clamp.Max.ToString();
-                    functionName = $"clamp({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, (float){min}, (float){max});\n";
-                    WriteWithProfiler(functionName);
+                    IndentScope.Writer.Write($"clamp({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, (float){min}, (float){max});\n");
                     break;
                 case TIR.CPU.Cast cast:
-                    functionName = $"cast({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n";
-                    WriteWithProfiler(functionName);
+                    IndentScope.Writer.Write($"cast({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
                 case TIR.CPU.Where where:
-                    functionName = $"where({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name});\n";
-                    WriteWithProfiler(functionName);
+                    IndentScope.Writer.Write($"where({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name});\n");
                     break;
                 case TIR.CPU.Expand expand:
-                    functionName = $"expand({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n";
-                    WriteWithProfiler(functionName);
+                    IndentScope.Writer.Write($"expand({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
                 case TIR.CPU.Erf erf:
-                    functionName = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unary.cshtml", new UnaryKernelTemplateModel
+                    IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unary.cshtml", new UnaryKernelTemplateModel
                     {
                         Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
                         UnaryOp = UnaryOp.Erf,
-                    }).Result;
-                    WriteWithProfiler(functionName);
+                    }).Result);
                     break;
                 case TIR.CPU.Compare compare:
                     {
-                        functionName = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Compare.cshtml", new CompareKernelTemplateModel
+                        IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Compare.cshtml", new CompareKernelTemplateModel
                         {
                             Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
                             CompareOp = compare.CompareOp,
-                        }).Result;
-                        WriteWithProfiler(functionName);
+                        }).Result);
                     }
 
                     break;
                 case TIR.CPU.ScatterND scatterND:
-                    functionName = $"scatter_nd({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name});\n";
-                    WriteWithProfiler(functionName);
+                    IndentScope.Writer.Write($"scatter_nd({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name});\n");
+
                     break;
                 case TIR.CPU.GatherReduceScatter grs:
                     {
                         if (grs.InType.NdSBP.Any(s => s is SBPPartialSum))
                         {
                             var reduceKind = "tar::reduce_kind::" + string.Join("_", grs.InType.NdSBP.Select((s, i) => (s is SBPPartialSum ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
-                            functionName = $"tac::tensor_reduce_sync<ops::add, {reduceKind}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n";
-                            WriteIndWithProfiler(functionName);
+                            IndentScope.Writer.IndWrite($"tac::tensor_reduce_sync<ops::add, {reduceKind}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                         }
                         else
                         {
@@ -587,8 +555,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                             }
 
                             _collective_pool_size = Math.Max(_collective_pool_size, (ulong)(TensorUtilities.GetProduct(fullShape) * args[0].CheckedDataType.SizeInBytes));
-                            functionName = $"reshard({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: false).Name});\n";
-                            WriteWithProfiler(functionName);
+                            IndentScope.Writer.Write($"reshard({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: false).Name});\n");
                         }
                     }
 
@@ -617,8 +584,8 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                 _ => Visit(x),
             }).ToArray();
             _refFuncs.Add(deviceFunc);
-            functionName = $"{deviceFunc.Name}({string.Join(",", arguments.Select(arg => arg.Name))})";
-            WriteIndWithProfiler(functionName);
+            string function_name = $"{deviceFunc.Name}({string.Join(",", arguments.Select(arg => arg.Name))})";
+            WriteIndWithProfiler(function_name);
         }
         else
         {
