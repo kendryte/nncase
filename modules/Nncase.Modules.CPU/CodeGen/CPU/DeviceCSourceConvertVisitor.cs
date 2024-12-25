@@ -36,6 +36,26 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
     public PrimFunction VisitEntry => (TIR.PrimFunction)VisitRoot!;
 
+    public static void WriteWithProfiler(string functionName)
+    {
+        functionName = functionName.TrimEnd(new char[] { ';', '\n' });
+        IndentScope.Writer.IndWrite("{\n");
+        IndentScope.Writer.Write($"constexpr std::string_view function_name = \"{functionName}\";\n");
+        IndentScope.Writer.Write($"auto_profiler profiler(function_name);\n");
+        IndentScope.Writer.Write($"{functionName};\n");
+        IndentScope.Writer.IndWrite("}\n");
+    }
+
+    public static void WriteIndWithProfiler(string functionName)
+    {
+        functionName = functionName.TrimEnd(new char[] { ';', '\n' });
+        IndentScope.Writer.IndWrite("{\n");
+        IndentScope.Writer.IndWrite($"constexpr std::string_view function_name = \"{functionName}\";\n");
+        IndentScope.Writer.IndWrite($"auto_profiler profiler(function_name);\n");
+        IndentScope.Writer.IndWrite($"{functionName};\n");
+        IndentScope.Writer.IndWrite("}\n");
+    }
+
     public string GetHeader()
     {
         return _deviceBuilder.ToString();
@@ -287,7 +307,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 IndentScope.Writer.IndWrite($"tensor_copy({arguments[1].Name}, {arguments[0].Name});\n");
                 break;
             case TIR.CPU.Unary op:
-                IndentScope.Writer.IndWrite(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unary.cshtml", new UnaryKernelTemplateModel
+                WriteIndWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unary.cshtml", new UnaryKernelTemplateModel
                 {
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
                     UnaryOp = op.UnaryOp,
