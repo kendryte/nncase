@@ -145,21 +145,41 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 
     public ulong RdataPoolSize { get; }
 
-    public static void WriteWithProfiler(string functionName)
+    public static void WriteWithProfiler(string functionName, string tagName = "")
     {
         functionName = functionName.TrimEnd(new char[] { ';', '\n' });
+        if (tagName == string.Empty)
+        {
+            int index = functionName.IndexOf('(', StringComparison.Ordinal); // 找到第一个 '(' 的位置
+            if (index != -1)
+            {
+                tagName = functionName.Substring(0, index); // 截取从头到 '(' 之前的部分
+            }
+        }
+
+        tagName = tagName == string.Empty ? functionName : tagName;
         IndentScope.Writer.IndWrite("{\n");
-        IndentScope.Writer.Write($"constexpr std::string_view function_name = \"{functionName}\";\n");
+        IndentScope.Writer.Write($"constexpr std::string_view function_name = \"{tagName}\";\n");
         IndentScope.Writer.Write($"auto_profiler profiler(function_name);\n");
         IndentScope.Writer.Write($"{functionName};\n");
         IndentScope.Writer.IndWrite("}\n");
     }
 
-    public static void WriteIndWithProfiler(string functionName)
+    public static void WriteIndWithProfiler(string functionName, string tagName = "")
     {
         functionName = functionName.TrimEnd(new char[] { ';', '\n' });
+        if (tagName == string.Empty)
+        {
+            int index = functionName.IndexOf('(', StringComparison.Ordinal); // 找到第一个 '(' 的位置
+            if (index != -1)
+            {
+                tagName = functionName.Substring(0, index); // 截取从头到 '(' 之前的部分
+            }
+        }
+
+        tagName = tagName == string.Empty ? functionName : tagName;
         IndentScope.Writer.IndWrite("{\n");
-        IndentScope.Writer.IndWrite($"constexpr std::string_view function_name = \"{functionName}\";\n");
+        IndentScope.Writer.IndWrite($"constexpr std::string_view function_name = \"{tagName}\";\n");
         IndentScope.Writer.IndWrite($"auto_profiler profiler(function_name);\n");
         IndentScope.Writer.IndWrite($"{functionName};\n");
         IndentScope.Writer.IndWrite("}\n");

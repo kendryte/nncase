@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "../../distributed.h"
+#include "../../profiling.h"
 #include "../../runtime.h"
 #include "topology.h"
 #include <cstdarg>
@@ -31,32 +32,21 @@
 
 namespace nncase::ntt::runtime {
 
-class timer_record {
+struct record_id {
+    int cid = -1;
+    int bid = -1;
+    int tid = -1;
+};
+
+class timer_record : public nncase::ntt::runtime::timer_record_base<record_id> {
   public:
-    struct record_id {
-        int cid = -1;
-        int bid = -1;
-        int tid = -1;
-    };
-
-    struct call_instance {
-        uint64_t start_time;
-        uint64_t end_time;
-    };
-
-    struct function_stats {
-        uint64_t call_count = 0;
-        uint64_t total_time = 0;
-        std::vector<call_instance> calls;
-    };
-
-    bool is_valid() const {
+    bool is_valid() const override {
         return instance_id_.cid != -1 && instance_id_.bid != -1 &&
                instance_id_.tid != -1;
     }
 
     void set_time(std::string_view function_name, uint64_t start_time,
-                  uint64_t end_time) {
+                  uint64_t end_time) override {
         auto &stats = function_stats_[function_name];
         stats.calls.push_back({start_time, end_time});
         stats.call_count++;
@@ -64,7 +54,7 @@ class timer_record {
     }
 
     // print statistics
-    void console_print() const {
+    void console_print() const override {
 
         if (is_valid()) {
             uint64_t total_time = 0;
@@ -90,8 +80,7 @@ class timer_record {
                           << std::endl;
                 uint64_t call_count = 0;
                 for (const auto &call : stats.calls) {
-                    std::cout << "\t\t"
-                              << "Call " << call_count++ << ": \n";
+                    std::cout << "\t\t" << "Call " << call_count++ << ": \n";
                     std::cout << "\t\tStart time: " << call.start_time
                               << " microseconds\n";
                     std::cout << "\t\tEnd time: " << call.end_time
@@ -104,7 +93,7 @@ class timer_record {
         }
     }
 
-    void csv_print(std::string_view filename) const {
+    void csv_print(std::string_view filename) const override {
         if (is_valid()) {
             std::ofstream csv_file(filename.data());
             if (!csv_file.is_open()) {
@@ -147,7 +136,7 @@ class timer_record {
         }
     }
 
-    void markdown_print(std::string_view filename) const {
+    void markdown_print(std::string_view filename) const override {
 
         if (is_valid()) {
             std::ofstream md_file(filename.data());
@@ -203,7 +192,7 @@ class timer_record {
         }
     }
 
-    void json_print(std::string_view filename) const {
+    void json_print(std::string_view filename) const override {
 
         if (is_valid()) {
             std::ofstream json_file(filename.data());
@@ -260,11 +249,7 @@ class timer_record {
         json_print("nncase_profiling.json");
     }
 
-    void set_id(record_id id) { instance_id_ = id; }
-
-  private:
-    record_id instance_id_ = {-1, -1, -1};
-    std::unordered_map<std::string_view, function_stats> function_stats_;
+    void set_id(record_id id) override { instance_id_ = id; }
 };
 
 struct cpu_block_entry_params_t {
