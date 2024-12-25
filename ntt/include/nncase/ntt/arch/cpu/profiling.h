@@ -49,6 +49,10 @@ class auto_profiler {
 
         en_profiler_ = get_profiler_option();
         if (en_profiler_) {
+
+            // [[maybe_unused]] auto temp = program_ids();
+            // std::cout << "cid: " << cid_ << ", bid: " << bid_
+            //           << ", tid: " << tid_ << std::endl;
             timer_storage_ = get_timer_record();
             function_name_ = function_name;
             start_time_ = get_current_time();
