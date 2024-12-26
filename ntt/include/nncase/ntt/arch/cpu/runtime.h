@@ -191,20 +191,10 @@ class timer_record : public nncase::ntt::runtime::timer_record_base<record_id> {
                         first = false;
                         json_file << "  {\n";
                         json_file << "    \"name\": \"" << name << "\",\n";
-                        json_file << "    \"ph\": \"B\",\n";
+                        json_file << "    \"ph\": \"X\",\n";
                         json_file << "    \"ts\": " << call.start_time << ",\n";
-                        json_file << "    \"pid\": " << pid << ",\n";
-                        json_file << "    \"tid\": " << tid << ",\n";
-                        json_file << "    \"args\": { \"level:\":\""
-                                  << ntt::runtime::to_string(stats.level)
-                                  << " \"}\n";
-                        json_file << "  }";
-
-                        json_file << ",\n";
-                        json_file << "  {\n";
-                        json_file << "    \"name\": \"" << name << "\",\n";
-                        json_file << "    \"ph\": \"E\",\n";
-                        json_file << "    \"ts\": " << call.end_time << ",\n";
+                        json_file << "    \"dur\": "
+                                  << (call.end_time - call.start_time) << ",\n";
                         json_file << "    \"pid\": " << pid << ",\n";
                         json_file << "    \"tid\": " << tid << ",\n";
                         json_file << "    \"args\": { \"level:\":\""
@@ -224,20 +214,10 @@ class timer_record : public nncase::ntt::runtime::timer_record_base<record_id> {
                         first = false;
                         json_file << "  {\n";
                         json_file << "    \"name\": \"" << name << "\",\n";
-                        json_file << "    \"ph\": \"B\",\n";
+                        json_file << "    \"ph\": \"X\",\n";
                         json_file << "    \"ts\": " << call.start_time << ",\n";
-                        json_file << "    \"pid\": " << pid << ",\n";
-                        json_file << "    \"tid\": " << tid << ",\n";
-                        json_file << "    \"args\": { \"level:\":\""
-                                  << ntt::runtime::to_string(stats.level)
-                                  << " \"}\n";
-                        json_file << "  }";
-
-                        json_file << ",\n";
-                        json_file << "  {\n";
-                        json_file << "    \"name\": \"" << name << "\",\n";
-                        json_file << "    \"ph\": \"E\",\n";
-                        json_file << "    \"ts\": " << call.end_time << ",\n";
+                        json_file << "    \"dur\": "
+                                  << (call.end_time - call.start_time) << ",\n";
                         json_file << "    \"pid\": " << pid << ",\n";
                         json_file << "    \"tid\": " << tid << ",\n";
                         json_file << "    \"args\": { \"level:\":\""
@@ -274,7 +254,7 @@ struct cpu_block_entry_params_t {
     size_t cpu_id_offset;
     std::byte *const *inouts;
     const std::byte *rdata;
-    uint8_t en_profiler;
+    uint8_t enable_profiling;
     timer_record *timer_records;
     const uint64_t *local_rdata_header;
     const std::byte *local_rdata;
@@ -288,7 +268,7 @@ struct cpu_thread_context_t {
     size_t bid;
     size_t cid;
     timer_record *timer_records;
-    uint8_t en_profiler;
+    uint8_t enable_profiling;
 
     static cpu_thread_context_t &current() noexcept;
 };

@@ -86,7 +86,7 @@ class NNCASE_API interpreter {
     result<void> input_tensor(size_t index, runtime_tensor tensor) noexcept;
     result<runtime_tensor> output_tensor(size_t index) noexcept;
     result<void> output_tensor(size_t index, runtime_tensor tensor) noexcept;
-    void en_profiler(uint8_t en_profiler) noexcept;
+    void enable_profiling(uint8_t enable_profiling) noexcept;
 
     result<void> run() noexcept;
 

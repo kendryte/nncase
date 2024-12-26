@@ -96,7 +96,7 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
                                  .bid = params.bid,
                                  .cid = params.cid,
                                  .timer_records = &(params.timer_records[tid]),
-                                 .en_profiler = params.en_profiler}
+                                 .enable_profiling = params.enable_profiling}
 #ifdef __APPLE__
             );
 #else
