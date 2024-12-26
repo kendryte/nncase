@@ -147,13 +147,19 @@ inline dims_t unsqueeze_infer_shape(gsl::span<const size_t> in_shape,
     if (in_shape.size() == 0 && axes.size() == 1) {
         return dims_t{1};
     }
-    auto new_shape = in_shape.size() == 0 ? dims_t{1} : dims_t(in_shape);
-    for (size_t i = 0; i < axes.size(); i++) {
-        if (axes[i] >= 0) {
-            new_shape.insert(new_shape.begin() + axes[i], 1);
+    dims_t new_shape(in_shape.size() + axes.size());
+    for (auto axis : axes) {
+        if (axis >= 0) {
+            new_shape[axis] = 1;
         } else {
-            new_shape.insert(new_shape.end() + axes[i] + 1, 1);
+            new_shape[in_shape.size() + axis] = 1;
         }
+    }
+
+    size_t in_shape_index = 0;
+    for (size_t i = 0; i < new_shape.size(); i++) {
+        if (new_shape[i] == 0)
+            new_shape[i] = in_shape[in_shape_index++];
     }
     return new_shape;
 }

@@ -88,6 +88,9 @@ result<void> slice_contiguous_impl(
     } else if (dims == 4) {
         _slice_contiguous_dim_copy<4>(begins, ends, line_copy, in_index,
                                       std::true_type{});
+    } else if (dims == 5) {
+        _slice_contiguous_dim_copy<5>(begins, ends, line_copy, in_index,
+                                      std::true_type{});
     } else {
         assert(false);
     }
