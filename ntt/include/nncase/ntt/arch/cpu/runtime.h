@@ -104,8 +104,8 @@ class timer_record : public nncase::ntt::runtime::timer_record_base<record_id> {
                    "(microseconds),Call Index,Start Time (microseconds),End "
                    "Time (microseconds),Duration (microseconds)\n";
 
-            uint64_t call_count = 0;
             for (const auto &[name, stats] : function_stats_) {
+                uint64_t call_count = 0;
                 for (const auto &call : stats.calls) {
                     csv_file << instance_id_.cid << "," << instance_id_.bid
                              << "," << instance_id_.tid << "," << name << ","
