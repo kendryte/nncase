@@ -51,7 +51,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         tagName = tagName == string.Empty ? functionName : tagName;
         IndentScope.Writer.IndWrite("{\n");
         IndentScope.Writer.Write($"constexpr std::string_view function_name = \"{tagName}\";\n");
-        IndentScope.Writer.Write($"auto_profiler profiler(function_name);\n");
+        IndentScope.Writer.Write($"auto_profiler profiler(function_name, runtime::profiling_level::device);\n");
         IndentScope.Writer.Write($"{functionName};\n");
         IndentScope.Writer.IndWrite("}\n");
     }
@@ -71,7 +71,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         tagName = tagName == string.Empty ? functionName : tagName;
         IndentScope.Writer.IndWrite("{\n");
         IndentScope.Writer.IndWrite($"constexpr std::string_view function_name = \"{tagName}\";\n");
-        IndentScope.Writer.IndWrite($"auto_profiler profiler(function_name);\n");
+        IndentScope.Writer.IndWrite($"auto_profiler profiler(function_name, runtime::profiling_level::device);\n");
         IndentScope.Writer.IndWrite($"{functionName};\n");
         IndentScope.Writer.IndWrite("}\n");
     }

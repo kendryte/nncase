@@ -53,34 +53,32 @@ class timer_record : public nncase::ntt::runtime::timer_record_base<record_id> {
         stats.total_time += end_time - start_time;
     }
 
+    void set_level(std::string_view filename, profiling_level level) override {
+        auto &stats = function_stats_[filename];
+        stats.level = level;
+    }
+
     // print statistics
     void console_print() const override {
 
         if (is_valid()) {
-            uint64_t total_time = 0;
-            for (const auto &[name, stats] : function_stats_) {
-                total_time += stats.total_time;
-            }
 
             std::cout << "\033[34m\n"
                       << "Core Id:" << instance_id_.cid
                       << ", Block Id:" << instance_id_.bid
                       << ", Thread Id:" << instance_id_.tid << "\033[0m\n";
-            std::cout << "\033[34mStatistics for NTT kernels. Total time: "
-                      << total_time << " microseconds. \033[0m\n";
+            std::cout << "\033[34mStatistics for NTT kernels. \033[0m\n";
             for (const auto &[name, stats] : function_stats_) {
                 std::cout << "Function: " << name << "\n";
+                std::cout << "Level: " << ntt::runtime::to_string(stats.level)
+                          << "\n";
                 std::cout << "\tCalls: " << stats.call_count << "\n";
                 std::cout << "\tTotal time: " << stats.total_time
                           << " microseconds\n";
-                std::cout << "\tTime Ratio: " << std::fixed
-                          << std::setprecision(2)
-                          << static_cast<double>(stats.total_time) /
-                                 static_cast<double>(total_time)
-                          << std::endl;
                 uint64_t call_count = 0;
                 for (const auto &call : stats.calls) {
-                    std::cout << "\t\t" << "Call " << call_count++ << ": \n";
+                    std::cout << "\t\t"
+                              << "Call " << call_count++ << ": \n";
                     std::cout << "\t\tStart time: " << call.start_time
                               << " microseconds\n";
                     std::cout << "\t\tEnd time: " << call.end_time
@@ -101,34 +99,21 @@ class timer_record : public nncase::ntt::runtime::timer_record_base<record_id> {
                 return;
             }
 
-            // Write CSV headers
             csv_file
-                << "Function,Calls,Total Time (microseconds),Time Ratio,Call "
-                   "Index,Start Time (microseconds),End Time "
-                   "(microseconds),Duration (microseconds)\n";
+                << "Core Id,Block Id,Thread Id,Function,Level,Calls,Total Time "
+                   "(microseconds),Call Index,Start Time (microseconds),End "
+                   "Time (microseconds),Duration (microseconds)\n";
 
-            uint64_t total_time = 0;
+            uint64_t call_count = 0;
             for (const auto &[name, stats] : function_stats_) {
-                total_time += stats.total_time;
-            }
-
-            for (const auto &[name, stats] : function_stats_) {
-                double time_ratio = static_cast<double>(stats.total_time) /
-                                    static_cast<double>(total_time);
-                for (size_t i = 0; i < stats.calls.size(); ++i) {
-                    const auto &call = stats.calls[i];
-                    uint64_t duration = call.end_time - call.start_time;
-
-                    // Write each call's data to the CSV file
-                    csv_file << name << ",";
-                    csv_file << stats.call_count << ",";
-                    csv_file << stats.total_time << ",";
-                    csv_file << std::fixed << std::setprecision(2) << time_ratio
-                             << ",";
-                    csv_file << i << ",";
-                    csv_file << call.start_time << ",";
-                    csv_file << call.end_time << ",";
-                    csv_file << duration << "\n";
+                for (const auto &call : stats.calls) {
+                    csv_file << instance_id_.cid << "," << instance_id_.bid
+                             << "," << instance_id_.tid << "," << name << ","
+                             << ntt::runtime::to_string(stats.level) << ","
+                             << stats.call_count << "," << stats.total_time
+                             << "," << call_count++ << "," << call.start_time
+                             << "," << call.end_time << ","
+                             << (call.end_time - call.start_time) << "\n";
                 }
             }
 
@@ -145,48 +130,36 @@ class timer_record : public nncase::ntt::runtime::timer_record_base<record_id> {
                 return;
             }
 
-            uint64_t total_time = 0;
+            md_file << "### Core Information\n";
+            md_file << "| Core Id | Block Id | Thread Id |\n";
+            md_file << "|---------|----------|-----------|\n";
+            md_file << "| " << instance_id_.cid << " | " << instance_id_.bid
+                    << " | " << instance_id_.tid << " |\n";
+
+            md_file << "\n### NTT Kernels Statistics\n";
+
             for (const auto &[name, stats] : function_stats_) {
-                total_time += stats.total_time;
-            }
+                md_file << "#### Function: " << name << "\n";
+                md_file << "| Level | Calls | Total Time (microseconds) |\n";
+                md_file << "|-------|-------|---------------------------|\n";
+                md_file << "| " << ntt::runtime::to_string(stats.level) << " | "
+                        << stats.call_count << " | " << stats.total_time
+                        << " |\n";
 
-            // Write the header of the Markdown file
-            md_file << "# NTT Kernel Statistics\n\n";
-            md_file << "Total time: **" << total_time << " microseconds**\n\n";
+                md_file << "\n**Call Details:**\n";
+                md_file << "| Call Index | Start Time (microseconds) | End "
+                           "Time (microseconds) | Duration (microseconds) |\n";
+                md_file << "|------------|---------------------------|---------"
+                           "----------------|-------------------------|\n";
 
-            for (const auto &[name, stats] : function_stats_) {
-                md_file << "## Function: " << name << "\n";
-                md_file << "- Calls: **" << stats.call_count << "**\n";
-                md_file << "- Total Time: **" << stats.total_time
-                        << " microseconds**\n";
-                md_file << "- Time Ratio: **" << std::fixed
-                        << std::setprecision(2)
-                        << static_cast<double>(stats.total_time) /
-                               static_cast<double>(total_time)
-                        << "**\n\n";
-
-                // Write a table for the function calls
-                md_file
-                    << "| Call Index | Start Time (microseconds) | End Time "
-                       "(microseconds) | Duration (microseconds) |\n";
-                md_file
-                    << "|------------|----------------------------|------------"
-                       "--------------|-------------------------|\n";
-
-                for (size_t i = 0; i < stats.calls.size(); ++i) {
-                    const auto &call = stats.calls[i];
-                    uint64_t duration = call.end_time - call.start_time;
-
-                    md_file << "| " << i << " | " << call.start_time << " | "
-                            << call.end_time << " | " << duration << " |\n";
+                uint64_t call_count = 0;
+                for (const auto &call : stats.calls) {
+                    md_file << "| " << call_count++ << " | " << call.start_time
+                            << " | " << call.end_time << " | "
+                            << (call.end_time - call.start_time) << " |\n";
                 }
-
                 md_file << "\n";
             }
-
-            md_file << "\n*Note*: The `Time Ratio` is the fraction of the "
-                       "total time "
-                       "taken by each function.\n";
 
             md_file.close();
         }
@@ -211,27 +184,67 @@ class timer_record : public nncase::ntt::runtime::timer_record_base<record_id> {
             bool first = true;
             for (const auto &[name, stats] : function_stats_) {
                 for (const auto &call : stats.calls) {
+                    if (stats.level == profiling_level::kernel) {
+                        if (!first) {
+                            json_file << ",\n";
+                        }
+                        first = false;
+                        json_file << "  {\n";
+                        json_file << "    \"name\": \"" << name << "\",\n";
+                        json_file << "    \"ph\": \"B\",\n";
+                        json_file << "    \"ts\": " << call.start_time << ",\n";
+                        json_file << "    \"pid\": " << pid << ",\n";
+                        json_file << "    \"tid\": " << tid << ",\n";
+                        json_file << "    \"args\": { \"level:\":\""
+                                  << ntt::runtime::to_string(stats.level)
+                                  << " \"}\n";
+                        json_file << "  }";
 
-                    if (!first) {
                         json_file << ",\n";
+                        json_file << "  {\n";
+                        json_file << "    \"name\": \"" << name << "\",\n";
+                        json_file << "    \"ph\": \"E\",\n";
+                        json_file << "    \"ts\": " << call.end_time << ",\n";
+                        json_file << "    \"pid\": " << pid << ",\n";
+                        json_file << "    \"tid\": " << tid << ",\n";
+                        json_file << "    \"args\": { \"level:\":\""
+                                  << ntt::runtime::to_string(stats.level)
+                                  << " \"}\n";
+                        json_file << "  }";
                     }
-                    first = false;
-                    json_file << "  {\n";
-                    json_file << "    \"name\": \"" << name << "\",\n";
-                    json_file << "    \"ph\": \"B\",\n";
-                    json_file << "    \"ts\": " << call.start_time << ",\n";
-                    json_file << "    \"pid\": " << pid << ",\n";
-                    json_file << "    \"tid\": " << tid << "\n";
-                    json_file << "  }";
+                }
+            }
 
-                    json_file << ",\n";
-                    json_file << "  {\n";
-                    json_file << "    \"name\": \"" << name << "\",\n";
-                    json_file << "    \"ph\": \"E\",\n";
-                    json_file << "    \"ts\": " << call.end_time << ",\n";
-                    json_file << "    \"pid\": " << pid << ",\n";
-                    json_file << "    \"tid\": " << tid << "\n";
-                    json_file << "  }";
+            for (const auto &[name, stats] : function_stats_) {
+                for (const auto &call : stats.calls) {
+                    if (stats.level == profiling_level::device) {
+                        if (!first) {
+                            json_file << ",\n";
+                        }
+                        first = false;
+                        json_file << "  {\n";
+                        json_file << "    \"name\": \"" << name << "\",\n";
+                        json_file << "    \"ph\": \"B\",\n";
+                        json_file << "    \"ts\": " << call.start_time << ",\n";
+                        json_file << "    \"pid\": " << pid << ",\n";
+                        json_file << "    \"tid\": " << tid << ",\n";
+                        json_file << "    \"args\": { \"level:\":\""
+                                  << ntt::runtime::to_string(stats.level)
+                                  << " \"}\n";
+                        json_file << "  }";
+
+                        json_file << ",\n";
+                        json_file << "  {\n";
+                        json_file << "    \"name\": \"" << name << "\",\n";
+                        json_file << "    \"ph\": \"E\",\n";
+                        json_file << "    \"ts\": " << call.end_time << ",\n";
+                        json_file << "    \"pid\": " << pid << ",\n";
+                        json_file << "    \"tid\": " << tid << ",\n";
+                        json_file << "    \"args\": { \"level:\":\""
+                                  << ntt::runtime::to_string(stats.level)
+                                  << " \"}\n";
+                        json_file << "  }";
+                    }
                 }
             }
 

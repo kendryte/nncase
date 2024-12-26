@@ -21,6 +21,19 @@
 
 namespace nncase::ntt::runtime {
 
+enum class profiling_level { kernel, device };
+
+static std::string to_string(profiling_level level) {
+    switch (level) {
+    case profiling_level::kernel:
+        return "kernel";
+    case profiling_level::device:
+        return "device";
+    default:
+        return "unknown";
+    }
+}
+
 template <class TOPOLOGY> class timer_record_base {
   public:
     struct call_instance {
@@ -31,6 +44,7 @@ template <class TOPOLOGY> class timer_record_base {
     struct function_stats {
         uint64_t call_count = 0;
         uint64_t total_time = 0;
+        profiling_level level;
         std::vector<call_instance> calls;
     };
 
@@ -55,6 +69,9 @@ template <class TOPOLOGY> class timer_record_base {
 
     // 设置记录 ID
     virtual void set_id(TOPOLOGY id) = 0;
+
+    virtual void set_level(std::string_view filename,
+                           profiling_level level) = 0;
 
     // 虚析构函数，确保子类正确释放资源
     virtual ~timer_record_base() = default;

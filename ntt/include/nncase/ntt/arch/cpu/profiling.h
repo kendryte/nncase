@@ -49,13 +49,17 @@ class auto_profiler {
 
         en_profiler_ = get_profiler_option();
         if (en_profiler_) {
-
-            // [[maybe_unused]] auto temp = program_ids();
-            // std::cout << "cid: " << cid_ << ", bid: " << bid_
-            //           << ", tid: " << tid_ << std::endl;
             timer_storage_ = get_timer_record();
             function_name_ = function_name;
             start_time_ = get_current_time();
+        }
+    }
+
+    auto_profiler(std::string_view function_name,
+                  runtime::profiling_level level)
+        : auto_profiler(function_name) { // 调用另一个构造函数
+        if (en_profiler_) {
+            level_ = level; // 设置 level
         }
     }
 
@@ -64,6 +68,7 @@ class auto_profiler {
             timer_storage_->set_id({cid_, bid_, tid_});
             end_time_ = get_current_time();
             timer_storage_->set_time(function_name_, start_time_, end_time_);
+            timer_storage_->set_level(function_name_, level_);
         }
     }
 
@@ -74,6 +79,7 @@ class auto_profiler {
     int cid_;
     int bid_;
     int tid_;
+    nncase::ntt::runtime::profiling_level level_;
     nncase::ntt::runtime::timer_record *timer_storage_;
     bool en_profiler_;
 
