@@ -134,8 +134,23 @@ public class RecordFusionShape : FunctionPass
         {
             // 一组里面多个key seg
             return _dimVarValues.Select(pair => (pair.Key, Value: pair.Value[i])).ToArray();
-        });
-        var list = _once ? tmpList.TakeLast(1).ToArray() : tmpList.ToArray();
+        }).Where(kvalues =>
+        {
+            if (kvalues.Length == 2 && kvalues[0].Key.Name == "seq_len" && kvalues[1].Key.Name == "history_len")
+            {
+#pragma warning disable SA1008 // Opening parenthesis should be spaced correctly
+                return (kvalues[0].Value, kvalues[1].Value) switch
+                {
+                    (1, > 0) => true,
+                    ( > 0, 0) => true,
+                    _ => false,
+                };
+#pragma warning restore SA1008 // Opening parenthesis should be spaced correctly
+            }
+
+            return true;
+        }).ToArray();
+        var list = _once ? tmpList[^1..] : tmpList;
 
         var body = ((Function)main).Body;
         var tmpFusionShapeList = list.Select((seg, i) =>
