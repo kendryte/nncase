@@ -143,7 +143,8 @@ result<void> layernorm_impl(const float *input, float *output,
         const float *src = input + batch * inner_size;
         float *dest = output + batch * inner_size;
 
-        float mean = get_mean(src, inner_size);
+        // float mean = get_mean(src, inner_size);
+        float mean = 0.f;
 
         float var_data = get_var(src, inner_size, mean);
 
