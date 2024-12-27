@@ -17,7 +17,6 @@ from onnx import version_converter, helper, external_data_helper
 import onnxsim
 import onnxruntime as ort
 import onnx
-import torch
 import shutil
 import os
 import numpy as np
@@ -31,13 +30,13 @@ class OnnxTestRunner(TestRunner):
         super().__init__(case_name, overwrite_configs)
         self.model_type = "onnx"
 
-    def from_torch(self, module, in_shape, opset_version=11):
-        # export model
-        dummy_input = torch.randn(*in_shape)
-        model_file = os.path.join(self.case_dir, 'test.onnx')
-        torch.onnx.export(module, dummy_input, model_file,
-                          operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK, opset_version=opset_version)
-        return model_file
+    # def from_torch(self, module, in_shape, opset_version=11):
+    #     # export model
+    #     dummy_input = torch.randn(*in_shape)
+    #     model_file = os.path.join(self.case_dir, 'test.onnx')
+    #     torch.onnx.export(module, dummy_input, model_file,
+    #                       operator_export_type=torch.onnx.OperatorExportTypes.ONNX, opset_version=opset_version)
+    #     return model_file
 
     def from_onnx_helper(self, model_def):
         try:
@@ -64,7 +63,6 @@ class OnnxTestRunner(TestRunner):
             shutil.copy(model_file, new_file)
             for tensor in external_data_helper._get_all_tensors(onnx.load(model_file, load_external_data=False)):
                 if external_data_helper.uses_external_data(tensor):
-                    has_external_data = True
                     info = external_data_helper.ExternalDataInfo(tensor)
                     file_location = external_data_helper._sanitize_path(info.location)
                     external_data_src_path = os.path.join(
@@ -78,8 +76,8 @@ class OnnxTestRunner(TestRunner):
         if not self.inputs:
             self.parse_model(model_file)
 
-        if not has_external_data:
-            model_file = self.do_preprocess(model_file)
+        # if not has_external_data:
+        #     model_file = self.do_preprocess(model_file)
 
         super().run(model_file)
 
@@ -149,7 +147,9 @@ class OnnxTestRunner(TestRunner):
             if dim_value is not digit, it should be fixed.
             dim_value range: [0, inf)
             """
+            # print("d.dim_param:", d.dim_param)
             if d.dim_param != "":
+                # print("self.shape_vars:",self.shape_vars)
                 if len(self.shape_vars):
                     # we should eval dim_param instead of get var value
                     # e.g. dim_param = dec_len - 1
@@ -172,7 +172,8 @@ class OnnxTestRunner(TestRunner):
             onnx_type = e.type.tensor_type
             input_dict = {}
             input_dict['name'] = e.name
-            input_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
+            # input_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
+            input_dict['dtype'] = onnx.helper.tensor_dtype_to_np_dtype(onnx_type.elem_type)
             shape = translate_shape(onnx_type.shape.dim, self.default_shape)
             input_dict['shape'] = shape
             input_dict['model_shape'] = shape
@@ -190,7 +191,7 @@ class OnnxTestRunner(TestRunner):
         if self.dynamic and onnx_model.ByteSize() < 2147483648:
             input_shapes = list(map(lambda input: {input['name']: input['shape']}, self.inputs))
             input_shapes = dict(ChainMap(*input_shapes))
-            (onnx_model, _) = onnxsim.simplify(onnx_model, input_shapes=input_shapes)
+            # (onnx_model, _) = onnxsim.simplify(onnx_model, input_shapes=input_shapes)
 
         # output
         for e in onnx_model.graph.output:
@@ -200,29 +201,29 @@ class OnnxTestRunner(TestRunner):
             if onnx_type.elem_type == 0:
                 output_dict['dtype'] = 'float32'
             else:
-                output_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
+                output_dict['dtype'] = onnx.helper.tensor_dtype_to_np_dtype(onnx_type.elem_type)
             output_dict['model_shape'] = [i.dim_value for i in onnx_type.shape.dim]
             self.outputs.append(output_dict)
 
     def cpu_infer(self, model_file: bytes):
         # create session
-        try:
-            print('[onnx]: using simplified model')
-            sess = ort.InferenceSession(model_file)
-        except Exception as e:
-            print(e)
-            try:
-                print('[onnx]: using origin model')
-                model_file = os.path.join(self.case_dir, 'test.onnx')
-                sess = ort.InferenceSession(model_file)
-            except Exception as e:
-                print(e)
-                print('[onnx]: using converted model')
-                onnx_model = onnx.load(model_file)
-                onnx_model = version_converter.convert_version(onnx_model, 8)
-                model_file = os.path.join(self.case_dir, 'converted.onnx')
-                onnx.save_model(onnx_model, model_file)
-                sess = ort.InferenceSession(model_file)
+        # try:
+        print('[onnx]: using simplified model')
+        sess = ort.InferenceSession(model_file)
+        # except Exception as e:
+        #     print(e)
+        #     try:
+        #         print('[onnx]: using origin model')
+        #         model_file = os.path.join(self.case_dir, 'test.onnx')
+        #         sess = ort.InferenceSession(model_file)
+        #     except Exception as e:
+        #         print(e)
+        #         print('[onnx]: using converted model')
+        #         onnx_model = onnx.load(model_file)
+        #         onnx_model = version_converter.convert_version(onnx_model, 8)
+        #         model_file = os.path.join(self.case_dir, 'converted.onnx')
+        #         onnx.save_model(onnx_model, model_file)
+        #         sess = ort.InferenceSession(model_file)
 
         input_dict = {}
         for i, input in enumerate(self.inputs):
@@ -240,7 +241,6 @@ class OnnxTestRunner(TestRunner):
                 dump_bin_file(os.path.join(self.case_dir, f'cpu_result_{i}.bin'), output)
                 dump_txt_file(os.path.join(self.case_dir, f'cpu_result_{i}.txt'), output)
                 i += 1
-
         return outputs
 
     def import_model(self, compiler, model_content, import_options):

@@ -10,7 +10,7 @@ swapRB = false
 input_type = 'uint8'
 input_shape = [1, 224, 224, 3]
 input_range = [0, 255]
-input_file = ""
+input_file = "/mnt/model/qwen/onnx/llm.onnx.data"
 mean = [0, 0, 0]
 std = [1, 1, 1]
 input_layout = 'NHWC'
@@ -19,9 +19,9 @@ model_layout = 'NHWC'
 letterbox_value = 0
 dump_asm = true
 dump_ir = false
-shape_bucket_enable = false
-shape_bucket_range_info = { }
-shape_bucket_segments_count = 4
+shape_bucket_enable = true
+shape_bucket_range_info = { "seq_len" = [1,128], "history_len" = [0,128] }
+shape_bucket_segments_count = 2
 shape_bucket_fix_var_map = { }
 
 [ptq_opt]
@@ -73,7 +73,7 @@ args = []
 
 [generator.calibs]
 method = 'random'
-number = 5
+number = 1
 batch = 1
 
 [generator.calibs.random]
@@ -93,54 +93,15 @@ args = []
 
 [target]
 
-[target.cpu]
-eval = true
-infer = true
-similarity_name = 'cosine'
-
-[target.cpu.mode.noptq]
-enabled = false
-threshold = 0.999
-
-[target.cpu.mode.ptq]
-enabled = true
-threshold = 0.98
-
-[target.k510]
-eval = true
-infer = true
-similarity_name = 'cosine'
-
-[target.k510.mode.noptq]
-enabled = false
-threshold = 0.99
-
-[target.k510.mode.ptq]
-enabled = true
-threshold = 0.98
-
 [target.k230]
 eval = true
 infer = true
 similarity_name = 'cosine'
 
 [target.k230.mode.noptq]
-enabled = false
-threshold = 0.999
-
-[target.k230.mode.ptq]
-enabled = true
-threshold = 0.96
-
-[target.xpu]
-eval = false
-infer = true
-similarity_name = 'cosine'
-
-[target.xpu.mode.noptq]
 enabled = true
 threshold = 0.999
 
-[target.xpu.mode.ptq]
-enabled = false
-threshold = 0.9
+#[target.k230.mode.ptq]
+#enabled = true
+#threshold = 0.96
