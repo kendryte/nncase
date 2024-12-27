@@ -1034,7 +1034,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
             for (int i = 0; i < segments.Length; i++)
             {
-                context.FixedShapeCache[segments.Length - 1 - i] = tmpAllFixedShapes[i + 1];
+                context.FixedShapeCache[segments.Length - 1 - i] = tmpAllFixedShapes[segments[i]];
             }
         }
 

@@ -74,6 +74,46 @@ public class FusionShapeUpdater : ExprVisitor<Expr, Unit>
     }
 }
 
+public class FusionShapeUpdater2 : ExprVisitor<Expr, Unit>
+{
+    private readonly Dictionary<Expr, ValueOrShape> _memo;
+
+    public FusionShapeUpdater2(Dictionary<Expr, ValueOrShape> memo)
+    {
+        _memo = memo;
+    }
+
+    public Dictionary<BucketFusion, FusionShapeData> FusionShape { get; } = new();
+
+    protected override Expr DefaultVisitLeaf(Expr expr) => expr;
+
+    protected override Expr VisitLeafCall(Call expr)
+    {
+        if (expr.Target is BucketFusion f)
+        {
+            var argShape = expr.Arguments.ToArray().Select(arg =>
+            {
+                var exp = arg is Marker m ? m.Target : arg;
+                return GetValueOfShape(_memo[exp].IRType!);
+            }).ToArray();
+            var shape = GetValueOfShape(_memo[expr].IRType!);
+            FusionShape[f] = new FusionShapeData(shape, argShape);
+        }
+
+        return expr;
+    }
+
+    private IValue GetValueOfShape(IRType type)
+    {
+        return type switch
+        {
+            TensorType t => Value.FromTensor(t.Shape.ToValueArray()),
+            TupleType tp => Value.FromTensors(tp.Select(tp => GetValueOfShape(tp).AsTensor()).ToArray()),
+            _ => throw new InvalidOperationException(),
+        };
+    }
+}
+
 public class RecordFusionShape : FunctionPass
 {
     private readonly bool _once;
@@ -87,6 +127,28 @@ public class RecordFusionShape : FunctionPass
     }
 
     public Dictionary<BucketFusion, FusionShapeData[]> FusionShapeInfo { get; set; }
+
+    public static Dictionary<Var, IRType>
+            MakeDummyInputType(IReadOnlyDictionary<Var, Expr[]> info, Dictionary<Var, IValue> varInfo)
+    {
+        return info.ToDictionary(
+            pair => pair.Key,
+            pair =>
+            {
+                if (pair.Key.CheckedShape.IsFixed)
+                {
+                    return pair.Key.CheckedType;
+                }
+
+                // todo: dummy input可能会有问题...
+                var shapeExpr = pair.Key.CheckedShape.IsScalar
+                    ? (Expr)Array.Empty<int>()
+                    : Stack(new IR.Tuple(pair.Value.Select(x => Cast(x, DataTypes.Int64)).ToArray()), 0);
+
+                var shape = shapeExpr.Evaluate(varInfo).AsTensor();
+                return new TensorType(pair.Key.CheckedDataType, new Shape(shape.ToArray<int>()));
+            });
+    }
 
     // make dummy value from InputInfo
     // VarInfo:(DimVar -> Value)
@@ -121,7 +183,7 @@ public class RecordFusionShape : FunctionPass
         var options = CompileSession.CompileOptions.ShapeBucketOptions;
         var varMap = options.VarMap;
 
-        var staticShape = false; // IsStaticShpae; have problem here.
+        var staticShape = IsStaticShpae; // have problem here.
         var segmentCount = staticShape
                            && SingleDimVar(options)
             ? options.RangeInfo.First().Value.Max
@@ -171,9 +233,23 @@ public class RecordFusionShape : FunctionPass
             {
                 var varValues = seg.ToDictionary(pair => pair.Key, pair => (IValue)Value.FromTensor(pair.Value));
                 var exprValues = seg.ToDictionary(pair => (Expr)pair.Key, pair => (IValue)Value.FromTensor(pair.Value));
+#if true
                 var input = MakeDummyInput(varMap, varValues);
                 var memo = EvaluatorUtil.GetMemo(body, ConcatDictionary(input, varValues));
                 var f = new FusionShapeUpdater(ConcatDictionary(memo, exprValues));
+#else
+                var input = MakeDummyInputType(varMap, varValues);
+                var eval = new PartialShapeEvaluator(input.ToDictionary(p => p.Key, p => new ValueOrShape(p.Value, null)), varValues);
+                eval.Visit(body);
+                var memo = eval.ExprMemo;
+                foreach (var (k, v) in exprValues)
+                {
+                    var x = v.AsTensor();
+                    memo.Add(k, new(new TensorType(x.ElementType, x.Shape), v));
+                }
+
+                var f = new FusionShapeUpdater2(memo);
+#endif
                 f.Visit(main);
                 GC.Collect();
                 return f.FusionShape;
@@ -188,4 +264,204 @@ public class RecordFusionShape : FunctionPass
 
         return Task.FromResult(main);
     }
+}
+
+public record ValueOrShape
+{
+    public ValueOrShape(IRType? irType, IValue? value)
+    {
+        if (irType is InvalidType)
+        {
+            throw new InvalidOperationException();
+        }
+
+        IRType = irType;
+        Value = value;
+        _concreteValue = null;
+    }
+
+    public IRType? IRType { get; }
+
+    public IValue? Value { get; }
+
+    private IValue? _concreteValue;
+
+    public bool HasValue => Value != null;
+
+    public IValue Concrete()
+    {
+        if (_concreteValue != null)
+        {
+            return _concreteValue;
+        }
+
+        if (Value is IValue value)
+        {
+            _concreteValue = value;
+            return _concreteValue;
+        }
+
+        if (IRType is TensorType { Shape: { IsFixed: true } } ttype)
+        {
+            _concreteValue = new TensorValue(Tensor.FromScalar<int>(0, ttype.Shape.ToValueArray()).CastTo(ttype.DType));
+            return _concreteValue;
+        }
+
+        throw new NotSupportedException();
+    }
+}
+
+internal sealed class PartialShapeEvaluator : ExprVisitor<ValueOrShape, Unit>
+{
+    public PartialShapeEvaluator(Dictionary<Var, ValueOrShape> inputDict, Dictionary<Var, IValue> dimDict)
+    {
+        FeedDict = inputDict;
+        DimDict = dimDict;
+    }
+
+    public Dictionary<Var, ValueOrShape> FeedDict { get; }
+
+    public Dictionary<Var, IValue> DimDict { get; }
+
+    protected override ValueOrShape VisitLeafBaseFunction(BaseFunction expr) => new(expr.CheckedType, null);
+
+    protected override ValueOrShape VisitLeafOp(Op expr) => new(expr.CheckedType, null);
+
+    protected override ValueOrShape VisitLeafVar(Var expr)
+    {
+        if (FeedDict.TryGetValue(expr, out var value))
+        {
+            return value;
+        }
+        else if (DimDict.TryGetValue(expr, out var dimValue) && dimValue is TensorValue dimtv)
+        {
+            return new(dimtv.Type, dimtv);
+        }
+        else
+        {
+            throw new NotSupportedException("11");
+        }
+    }
+
+    protected override ValueOrShape DefaultVisit(Expr expr) => base.DefaultVisit(expr);
+
+    protected override ValueOrShape VisitLeafTuple(IR.Tuple expr)
+    {
+        var value = Value.FromTensors(expr.Fields.AsValueEnumerable().Select(Visit).Select(vs => vs.Concrete().AsTensor()).ToArray());
+        return new(value.Type, value);
+    }
+
+    protected override ValueOrShape VisitLeafCall(Call expr)
+    {
+        var args = expr.Arguments.AsValueEnumerable().Select(Visit).ToArray();
+        ValueOrShape result;
+        switch (expr.Target)
+        {
+            case IR.Tensors.ShapeOf:
+                {
+                    var shapeArr = ((TensorType)args[0].IRType!).Shape.Select(x => (long)x.FixedValue).ToArray();
+                    var value = Value.FromTensor(Tensor.From<long>(shapeArr));
+                    result = new(value.Type, value);
+                }
+
+                break;
+            case Op op:
+                {
+                    if (args.All(x => x is { HasValue: true }))
+                    {
+                        var tmpCall = new Call(op, args.Select(a => Const.FromValue(a.Concrete())).ToArray());
+                        var ctx = new EvaluateContext(args)
+                        {
+                            CurrentCall = tmpCall,
+                        };
+                        var value = CompilerServices.EvaluateOp(op, ctx);
+                        result = new(value.Type, value);
+                    }
+                    else
+                    {
+                        var ctx = new TypeInferenceContext(args);
+                        result = new(CompilerServices.InferenceOp(op, ctx, new()), null);
+                    }
+                }
+
+                break;
+            case Fusion fusion:
+                {
+                    var eval = new PartialShapeEvaluator(fusion.Parameters.ToArray().Zip(args).ToDictionary(p => p.First, p => p.Second), DimDict);
+                    result = eval.Visit(fusion.Body);
+                }
+
+                break;
+            case Function func:
+                {
+                    var eval = new PartialShapeEvaluator(func.Parameters.ToArray().Zip(args).ToDictionary(p => p.First, p => p.Second), DimDict);
+                    result = eval.Visit(func.Body);
+                }
+
+                break;
+            default:
+                throw new NotSupportedException("fuck!");
+                break;
+        }
+
+        return result;
+    }
+
+    protected override ValueOrShape VisitLeafConst(Const expr) => new(expr.CheckedType, Value.FromConst(expr));
+}
+
+internal sealed class EvaluateContext : IEvaluateContext
+{
+    public EvaluateContext(ValueOrShape[] args)
+    {
+        Args = args;
+    }
+
+    public ValueOrShape[] Args { get; }
+
+    public Call CurrentCall { get; set; }
+
+    public IValue GetArgumentValue(Op op, ParameterInfo parameter)
+    {
+        return op.GetType() == parameter.OwnerType
+            ? Args[parameter.Index].Value!
+            : throw new ArgumentOutOfRangeException($"Operator {op} doesn't have parameter: {parameter.Name}.");
+    }
+}
+
+internal sealed class TypeInferenceContext : ITypeInferenceContext
+{
+    private readonly Expr[] _exprs;
+
+    public TypeInferenceContext(ValueOrShape[] args)
+    {
+        Args = args;
+        _exprs = new Expr[args.Length];
+    }
+
+    public ValueOrShape[] Args { get; }
+
+    public Expr GetArgument(Op op, ParameterInfo parameter)
+    {
+        if (op.GetType() == parameter.OwnerType)
+        {
+            if (_exprs[parameter.Index] is null)
+            {
+                _exprs[parameter.Index] = Const.FromValue(Args[parameter.Index].Concrete());
+            }
+
+            return _exprs[parameter.Index];
+        }
+        else
+        {
+            throw new ArgumentOutOfRangeException($"Operator {op} doesn't have parameter: {parameter.Name}.");
+        }
+    }
+
+    public Expr[] GetArguments(Op op, params ParameterInfo[] paramsInfo)
+    {
+        return paramsInfo.Select(info => GetArgument(op, info)).ToArray();
+    }
+
+    public IRType GetArgumentType(Op op, ParameterInfo parameter) => Args[parameter.Index].IRType!;
 }
