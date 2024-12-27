@@ -1125,7 +1125,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         // let bind
         if (newBody is If @if)
         {
-            var parameters = context.Arguments.ToArray().Concat(condList).ToArray();
+            var parameters = context.Arguments.ToArray().Concat(condList).Append(context.SliceShape).ToArray();
             newBody = IR.F.Math.Require(true, @if.With(paramList: parameters));
         }
 
