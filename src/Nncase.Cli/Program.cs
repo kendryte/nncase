@@ -123,6 +123,12 @@ internal partial class Program
             },
         };
 
+#if false
+        compileOptions.ShapeBucketOptions.Enable = true;
+        compileOptions.ShapeBucketOptions.RangeInfo = new() { { "history_len", (0, 128) }, { "seq_len", (1, 128) } };
+        compileOptions.ShapeBucketOptions.SegmentsCount = 2;
+#endif
+
         foreach (var item in context.ParseResult.GetValueForOption(compilecmd.FixedVars)!)
         {
             compileOptions.ShapeBucketOptions.FixVarMap.Add(item.Name, item.Value);
