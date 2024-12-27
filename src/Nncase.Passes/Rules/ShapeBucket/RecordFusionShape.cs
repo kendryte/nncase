@@ -233,7 +233,7 @@ public class RecordFusionShape : FunctionPass
             {
                 var varValues = seg.ToDictionary(pair => pair.Key, pair => (IValue)Value.FromTensor(pair.Value));
                 var exprValues = seg.ToDictionary(pair => (Expr)pair.Key, pair => (IValue)Value.FromTensor(pair.Value));
-#if true
+#if false
                 var input = MakeDummyInput(varMap, varValues);
                 var memo = EvaluatorUtil.GetMemo(body, ConcatDictionary(input, varValues));
                 var f = new FusionShapeUpdater(ConcatDictionary(memo, exprValues));

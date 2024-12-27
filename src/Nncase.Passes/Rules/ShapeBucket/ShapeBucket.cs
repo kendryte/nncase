@@ -146,7 +146,7 @@ public partial class CallToFusion : RewriteRule<Pattern>
         var originType = call.CheckedType;
         CurrentCall = call;
 
-        DumpIR((Expr)matchResult.Root, "origin", RelPath);
+        // DumpIR((Expr)matchResult.Root, "origin", RelPath);
         if (!Check(call))
         {
             return null;
@@ -160,11 +160,10 @@ public partial class CallToFusion : RewriteRule<Pattern>
         var set = MakeEffectVarArray(CompileSession, varMap, args);
         var fusionVars = MakeNewParam(args);
         var newCall = MakeNewCall(call, fusionVars, argsMarkerData);
-        System.Console.WriteLine(call.Arguments[0]);
         var f = MakeNewFusion(fusionVars, args, newCall, set);
         var outerCall = MakeNewOuterCall(newCall, f, args);
 
-        DumpIR(outerCall, "after", RelPath);
+        // DumpIR(outerCall, "after", RelPath);
         Counter++;
 
         if (!outerCall.InferenceType())

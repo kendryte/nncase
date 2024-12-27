@@ -125,7 +125,7 @@ internal partial class Program
 
 #if true
         compileOptions.ShapeBucketOptions.Enable = true;
-        compileOptions.ShapeBucketOptions.RangeInfo = new() { { "history_len", (0, 12) }, { "seq_len", (1, 12) } };
+        compileOptions.ShapeBucketOptions.RangeInfo = new() { { "history_len", (0, 128) }, { "seq_len", (1, 128) } };
         compileOptions.ShapeBucketOptions.SegmentsCount = 2;
 #endif
 
