@@ -323,6 +323,8 @@ internal sealed class PartialShapeEvaluator : ExprVisitor<ValueOrShape, Unit>
 
     public Dictionary<Var, IValue> DimDict { get; }
 
+    protected override ValueOrShape VisitLeafMarker(Marker expr) => Visit(expr.Target);
+
     protected override ValueOrShape VisitLeafBaseFunction(BaseFunction expr) => new(expr.CheckedType, null);
 
     protected override ValueOrShape VisitLeafOp(Op expr) => new(expr.CheckedType, null);
