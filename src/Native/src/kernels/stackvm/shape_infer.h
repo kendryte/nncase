@@ -17,6 +17,7 @@
  */
 #pragma once
 #include "nncase/kernels/kernel_utils.h"
+#include <cstddef>
 #include <nncase/kernels/kernel_context.h>
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/error.h>
@@ -147,12 +148,12 @@ inline dims_t unsqueeze_infer_shape(gsl::span<const size_t> in_shape,
     if (in_shape.size() == 0 && axes.size() == 1) {
         return dims_t{1};
     }
-    dims_t new_shape(in_shape.size() + axes.size());
+    dims_t new_shape(in_shape.size() + axes.size(), 0);
     for (auto axis : axes) {
         if (axis >= 0) {
             new_shape[axis] = 1;
         } else {
-            new_shape[in_shape.size() + axis] = 1;
+            new_shape[new_shape.size() + axis] = 1;
         }
     }
 

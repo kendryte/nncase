@@ -40,7 +40,7 @@ NNCASE_API result<void> layer_norm(typecode_t type, const gsl::byte *input,
                                    gsl::byte *output, const gsl::byte *scale,
                                    const gsl::byte *bias,
                                    gsl::span<const size_t> in_shape,
-                                   int32_t axis, float epsilon);
+                                   int32_t axis, float epsilon, bool use_mean);
 
 NNCASE_API result<void>
 batch_to_space(tensor input, tensor block_shape, tensor crops,
