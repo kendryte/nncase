@@ -233,7 +233,11 @@ internal class Compiler : ICompiler
         var singleVar = options.VarMap.Values.SelectMany(x => x).OfType<Var>().ToHashSet().Count <= 1;
         CheckShapeBucketOptions(options);
 
-        if (HasNotBucketOp(_module!.Entry!) || !singleVar)
+        if (IsLLMMode(options))
+        {
+            p.AddWithName<SplitLLMStage>("SplitLLMStage");
+        }
+        else if (HasNotBucketOp(_module!.Entry!) || !singleVar)
         {
             ToFusion(p);
             MergeOp(p, true);

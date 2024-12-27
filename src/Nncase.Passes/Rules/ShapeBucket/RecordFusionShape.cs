@@ -121,7 +121,7 @@ public class RecordFusionShape : FunctionPass
         var options = CompileSession.CompileOptions.ShapeBucketOptions;
         var varMap = options.VarMap;
 
-        var staticShape = IsStaticShpae;
+        var staticShape = false; // IsStaticShpae; have problem here.
         var segmentCount = staticShape
                            && SingleDimVar(options)
             ? options.RangeInfo.First().Value.Max
