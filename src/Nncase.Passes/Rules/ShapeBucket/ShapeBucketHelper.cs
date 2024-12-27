@@ -133,6 +133,13 @@ public static class ShapeBucketRegister
         }
     }
 
+    public static bool IsLLMMode(ShapeBucketOptions options)
+    {
+        var set = new HashSet<string>() { "seq_len", "history_len" };
+        set.ExceptWith(options.RangeInfo.Keys.Select(v => v.ToString()));
+        return set.Count == 0 && options.FixVarMap.Count == 0;
+    }
+
     public static bool HasNotBucketOp(Expr entry)
     {
         var counter = new OpCollector();
@@ -385,7 +392,7 @@ public static class ShapeBucketHelper
         var visitor = new FindVar();
         args.ForEach(arg =>
         {
-            DumpIR(arg, "argExpr");
+            // DumpIR(arg, "argExpr");
             var argShapeExpr = arg.EvaluateShapeExpr(varMap);
             visitor.Visit(argShapeExpr);
         });

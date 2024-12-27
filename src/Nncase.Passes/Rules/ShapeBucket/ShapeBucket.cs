@@ -145,7 +145,8 @@ public partial class CallToFusion : RewriteRule<Pattern>
 
         var originType = call.CheckedType;
         CurrentCall = call;
-        DumpIR((Expr)matchResult.Root, "origin", RelPath);
+
+        // DumpIR((Expr)matchResult.Root, "origin", RelPath);
         if (!Check(call))
         {
             return null;
@@ -161,18 +162,19 @@ public partial class CallToFusion : RewriteRule<Pattern>
         var newCall = MakeNewCall(call, fusionVars, argsMarkerData);
         var f = MakeNewFusion(fusionVars, args, newCall, set);
         var outerCall = MakeNewOuterCall(newCall, f, args);
-        DumpIR(outerCall, "after", RelPath);
+
+        // DumpIR(outerCall, "after", RelPath);
         Counter++;
 
         if (!outerCall.InferenceType())
         {
-            DumpIR(outerCall, "InvalidType");
+            // DumpIR(outerCall, "InvalidType");
             throw new InvalidOperationException();
         }
 
         if (outerCall.CheckedType != originType)
         {
-            DumpIR(outerCall, "TypeChanged");
+            // DumpIR(outerCall, "TypeChanged");
             throw new InvalidOperationException();
         }
 
@@ -671,7 +673,7 @@ public class FusionBucketContext
             var result = arg.EvaluateShapeExpr(cache);
             if (!result.InferenceType())
             {
-                DumpIR(result, "InvalidInputShapeExpr");
+                // DumpIR(result, "InvalidInputShapeExpr");
                 throw new InvalidOperationException();
             }
 
@@ -942,7 +944,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
         if (body.CheckedType is InvalidType)
         {
-            DumpIR(body, "InvalidBody");
+            // DumpIR(body, "InvalidBody");
             throw new InvalidOperationException();
         }
 
@@ -978,7 +980,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         var call = ReplaceClone(context.FusionBody, fusionVars.Zip(fixInputs).ToArray());
         if (!call.InferenceType())
         {
-            DumpIR(call, "InvalidType");
+            // DumpIR(call, "InvalidType");
             throw new InvalidOperationException();
         }
 
@@ -1072,8 +1074,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
         _relPath = $"{_counter}";
 
-        DumpIR(outerCall, $"BucketOriginFusion_{_counter}_{fusion.Name}", _relPath);
-
+        // DumpIR(outerCall, $"BucketOriginFusion_{_counter}_{fusion.Name}", _relPath);
         var options = CompileSession.CompileOptions.ShapeBucketOptions;
         var shapeInfos = Array.Empty<FusionShapeData>();
         if (!FusionShapeInfo.TryGetValue(fusion, out shapeInfos))
@@ -1103,7 +1104,8 @@ public partial class FusionBucket : RewriteRule<Pattern>
         if (IsFixed(totalCount, minFixedShapeList, maxFixedShapeList))
         {
             var fix = FixInput(context, minFixedShapeList);
-            DumpIR(fix, "BucketResultFix", _relPath);
+
+            // DumpIR(fix, "BucketResultFix", _relPath);
             _counter++;
             return fix;
         }
@@ -1127,7 +1129,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
             newBody = IR.F.Math.Require(true, @if.With(paramList: parameters));
         }
 
-        DumpIR(newBody, "BucketResult", _relPath);
+        // DumpIR(newBody, "BucketResult", _relPath);
         _counter++;
         if (newBody.CheckedType is InvalidType)
         {
@@ -1345,7 +1347,8 @@ public partial class RebuildBucket : RewriteRule<Pattern>
         if (ShouldBeRebuild(context))
         {
             var rebuild = FusionBucket.RestoreBodyWithArgs(context.Arguments, context.Parameters, context.FusionBody);
-            DumpIR(rebuild, $"{_counter++}_{_name}");
+
+            // DumpIR(rebuild, $"{_counter++}_{_name}");
             return rebuild;
         }
 
@@ -1366,7 +1369,7 @@ public partial class RebuildBucket : RewriteRule<Pattern>
 
     private static bool DumpError(Expr entry)
     {
-        DumpIR(entry, "FailedEntry");
+        // DumpIR(entry, "FailedEntry");
         throw new InvalidOperationException();
     }
 
@@ -1374,7 +1377,8 @@ public partial class RebuildBucket : RewriteRule<Pattern>
     {
         var varInfo = context.DimVarValue(0);
         var entry = FusionBucket.MakeNewBody(context, varInfo, 0);
-        DumpIR(entry, $"{_counter}_{_name}");
+
+        // DumpIR(entry, $"{_counter}_{_name}");
         return entry switch
         {
             IR.Tuple tuple => tuple.Fields.ToArray().Any(ShouldBeRebuild),
@@ -1431,8 +1435,8 @@ public class FullBucket : FunctionPass
         var options = CompileSession.CompileOptions.ShapeBucketOptions;
         var tmpFusion = new BucketFusion("stackvm", cloneMain.Body, cloneMain.Parameters, Array.Empty<Var>());
         var call = new Call(tmpFusion, main.Parameters.ToArray());
-        DumpIR(tmpFusion, "FullBucketResult");
 
+        // DumpIR(tmpFusion, "FullBucketResult");
         var shapeList = new Dictionary<BucketFusion, FusionShapeData[]>();
         var tmpF = new Function(call, main.Parameters.ToArray());
         new RecordFusionShape(shapeList).RunAsync(tmpF, ctx).Wait();

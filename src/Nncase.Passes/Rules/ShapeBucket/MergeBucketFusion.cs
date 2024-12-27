@@ -44,7 +44,8 @@ public class MergeBucketFusionPass : FunctionPass
             await new MergeSeqBucketFusion().RunAsync(main, context);
             IRHelpers.DCE(main);
             await new MergeMultiUsersFusion().RunAsync(main, context);
-            DumpIR(main, $"{i}_before", "FoldNopTuple");
+
+            // DumpIR(main, $"{i}_before", "FoldNopTuple");
             await new FoldNopTuple().RunAsync(main, context);
 
             CheckRepeat(main);
@@ -56,7 +57,7 @@ public class MergeBucketFusionPass : FunctionPass
             }
         }
 
-        DumpIR(main, "MergeBucketFusionEnd");
+        // DumpIR(main, "MergeBucketFusionEnd");
         return main;
     }
 }
@@ -125,11 +126,12 @@ public class MergeSeqBucketFusion : FunctionPass
 
         // 2. merge
         var post = MergeFusion(main);
-        DumpIR(post, "AfterMergeFusion", mergeRelPath);
 
+        // DumpIR(post, "AfterMergeFusion", mergeRelPath);
         // 3. translate fusion to BucketFusion
         TranslateFusionToBucket(set, post, CompileSession);
-        DumpIR(post, "AfterTranslateFusion", mergeRelPath);
+
+        // DumpIR(post, "AfterTranslateFusion", mergeRelPath);
         return Task.FromResult<BaseFunction>(post);
     }
 
@@ -217,7 +219,8 @@ public class MergeMultiUsersFusion : FunctionPass
         var main = (Function)input;
         var c = new ReplaceVisitor();
         c.Replace(main);
-        DumpIR(main, "AfterMergeUser", MergeRelPath);
+
+        // DumpIR(main, "AfterMergeUser", MergeRelPath);
         return Task.FromResult(input);
     }
 
@@ -275,7 +278,7 @@ public class MergeMultiUsersFusion : FunctionPass
         if (outerCall.Users.ToArray().OfType<Call>().All(user => user.Target is GetItem))
         {
             // Console.WriteLine("MeregForGetItem");
-            Console.WriteLine(MergeRelPath);
+            // Console.WriteLine(MergeRelPath);
         }
 
         // todo: with tuple
@@ -290,8 +293,9 @@ public class MergeMultiUsersFusion : FunctionPass
             Op op => op.GetType().Name,
             _ => string.Empty,
         }));
-        Console.WriteLine($"Merge {fusion.Name}");
-        Console.WriteLine(otherName);
+
+        // Console.WriteLine($"Merge {fusion.Name}");
+        // Console.WriteLine(otherName);
         var fusionDict = outerCall.Arguments.ToArray().Zip(fusion.Parameters.ToArray()).ToArray();
 
         // 这个vars用于确定output的args里面哪些要加入，哪些要消除，另外还要包含多个user的那个
@@ -312,11 +316,11 @@ public class MergeMultiUsersFusion : FunctionPass
 
         if (!newCall.InferenceType())
         {
-            DumpIR(newCall, "newCallInvalid");
+            // DumpIR(newCall, "newCallInvalid");
             throw new InvalidOperationException("InvalidNewCallInMergeMultiUser");
         }
 
-        DumpIR(newCall, "newCall", MergeRelPath);
+        // DumpIR(newCall, "newCall", MergeRelPath);
         ArgsChecker(newArgs);
         return (newCall, userInfos);
     }
@@ -609,7 +613,8 @@ public class MergeMultiUsersFusion : FunctionPass
                 if (newCall != null)
                 {
                     UpdateUse(users, newCall, outerCall);
-                    DumpIR(Root, "rootAfterMerge", RelPath);
+
+                    // DumpIR(Root, "rootAfterMerge", RelPath);
                     Root.InferenceType();
                     if (Root.CheckedType is InvalidType)
                     {
@@ -715,7 +720,7 @@ internal record FusionVarMapper(Var[] NewParams, (Expr UserArg, Var RelativeNewV
         var data = ArgMap.Where(pair => NewParams.Contains(pair.RelativeNewVar)).DistinctBy(x => x.RelativeNewVar).ToArray();
         if (data.Length != NewParams.Length)
         {
-            Console.WriteLine("error");
+            // Console.WriteLine("error");
         }
 
         return data.Select(pair => pair.UserArg).ToArray();
