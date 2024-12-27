@@ -1300,6 +1300,7 @@ public partial class RebuildBucket : RewriteRule<Pattern>
     public RebuildBucket(Dictionary<BucketFusion, FusionShapeData[]> shapeInfo)
     {
         _shapeInfo = shapeInfo;
+        _counter = 0;
     }
 
     // todo: pattern not match??

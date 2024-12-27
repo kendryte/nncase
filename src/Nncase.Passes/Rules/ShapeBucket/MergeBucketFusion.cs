@@ -36,7 +36,8 @@ public class MergeBucketFusionPass : FunctionPass
     {
         // bool greedy and dynamic
         var main = (Function)input;
-        int i = 0;
+
+        // int i = 0;
         while (true)
         {
             var preHash = main.GetHashCode();
