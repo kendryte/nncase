@@ -78,6 +78,10 @@ public class CPUTarget : ITarget
 
     public void RegisterTargetDependentBeforeCodeGen(IPassManager passManager, CompileOptions options)
     {
+        passManager.AddWithName<DataflowPass>("QuantizeWeights").Configure(p =>
+        {
+            p.Add<Passes.Rules.Neutral.FloatConstToBFloat16>();
+        });
     }
 
     /// <inheritdoc/>
