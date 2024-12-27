@@ -110,7 +110,7 @@ NNCASE_STACKVM_DISPATCH_END()
 
 NNCASE_STACKVM_DISPATCH_BEGIN(LEA_GP)
 try_var(reg, module().reg(op.gpid));
-stack_.push((intptr_t)reg + op.offset);
+stack_.push((intptr_t)reg + (intptr_t)op.offset);
 NNCASE_STACKVM_DISPATCH_END()
 
 #define LDELEM_IMPL(type)                                                      \
