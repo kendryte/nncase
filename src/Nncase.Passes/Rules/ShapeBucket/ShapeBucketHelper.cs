@@ -196,12 +196,12 @@ public static class ShapeBucketRegister
         ToFusion(p, true);
         MergeOp(p, false);
 
-        // todo: lost to fusion
-        p.AddWithName<DataflowPass>("LostToFusion").Configure(p =>
-        {
-            p.Add<TransposeToFusion>(true);
-            p.Add<ActToFusion>(true);
-        });
+        // // todo: lost to fusion
+        // p.AddWithName<DataflowPass>("LostToFusion").Configure(p =>
+        // {
+        //     p.Add<TransposeToFusion>(true);
+        //     p.Add<ActToFusion>(true);
+        // });
 
         MergeFusion(p, singleVar, false);
     }
