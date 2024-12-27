@@ -28,6 +28,7 @@ class op_profile {
     op_profile(const std::string &op_name, uint8_t op_type)
         : op_name_(op_name), op_type_(op_type) {
         begin_ = get_ms_time();
+        std::cout << op_name << std::endl;
     }
 
     ~op_profile() {

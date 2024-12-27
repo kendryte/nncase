@@ -146,7 +146,7 @@ public partial class CallToFusion : RewriteRule<Pattern>
         var originType = call.CheckedType;
         CurrentCall = call;
 
-        // DumpIR((Expr)matchResult.Root, "origin", RelPath);
+        DumpIR((Expr)matchResult.Root, "origin", RelPath);
         if (!Check(call))
         {
             return null;
@@ -160,10 +160,11 @@ public partial class CallToFusion : RewriteRule<Pattern>
         var set = MakeEffectVarArray(CompileSession, varMap, args);
         var fusionVars = MakeNewParam(args);
         var newCall = MakeNewCall(call, fusionVars, argsMarkerData);
+        System.Console.WriteLine(call.Arguments[0]);
         var f = MakeNewFusion(fusionVars, args, newCall, set);
         var outerCall = MakeNewOuterCall(newCall, f, args);
 
-        // DumpIR(outerCall, "after", RelPath);
+        DumpIR(outerCall, "after", RelPath);
         Counter++;
 
         if (!outerCall.InferenceType())
@@ -188,12 +189,7 @@ public partial class CallToFusion : RewriteRule<Pattern>
     protected virtual (Expr, int)[] CollectInputs(Call call) =>
         call.Arguments.ToArray().Select((arg, i) =>
         {
-            if (arg is Marker m && m.Target is not TensorConst)
-            {
-                return (m, i);
-            }
-
-            return (arg, -1);
+            return (arg, i);
         }).Where(pair => pair.Item2 != -1).Select(pair => (pair.arg, pair.Item2)).ToArray();
 
     protected virtual void Init(IMatchResult result)
@@ -312,22 +308,19 @@ public class MarkerCallToFusion<T> : CallToFusion
     {
     }
 
-    public override Pattern Pattern => IsRangeOfMarker(
-        "callMarker",
-        IsCallWildcard("call", IsOp<T>()),
-        IsTensorConst());
+    public override Pattern Pattern => IsCallWildcard("call", IsOp<T>());
 
-    protected Marker? CallMarker { get; set; }
+    // protected Marker? CallMarker { get; set; }
 
-    protected override Expr ProcessForNewBody(Var[] fusionVars, Expr[] args, Expr expr) =>
-        CallMarker!.With(target: expr);
+    // protected override Expr ProcessForNewBody(Var[] fusionVars, Expr[] args, Expr expr) =>
+    //     CallMarker!.With(target: expr);
 
-    protected override Expr ProcessForOuterCall(Expr expr) => CallMarker!.With(target: expr);
+    // protected override Expr ProcessForOuterCall(Expr expr) => CallMarker!.With(target: expr);
 
-    protected override void Init(IMatchResult result)
-    {
-        CallMarker = (Marker)result["callMarker"];
-    }
+    // protected override void Init(IMatchResult result)
+    // {
+    //     CallMarker = (Marker)result["callMarker"];
+    // }
 }
 
 public class MultiUserCallToFusion : CallToFusion
@@ -438,35 +431,33 @@ public class TFConv2DTransposeToFusion : MarkerCallToFusion<Conv2DTranspose>
         base.Init(result);
     }
 
-    protected override Expr ReplaceVarsWithArg(Var[] fusionVars, Expr[] args, Expr newCall)
-    {
-        var convTranspose = (Call)CallMarker!.Target;
-        var c = ReplaceCallFirstParam(
-            convTranspose.Target,
-            convTranspose.Arguments.ToArray(),
-            _transposeInputMarker!.With(target:
-                ReplaceCallFirstParam(
-                    _transpose!.Target,
-                    _transpose!.Arguments.ToArray(),
-                    _transposeInputMarker.With(target:
-                        ReplaceCallFirstParam(_originCall!.Target, _originCall!.Arguments.ToArray(), fusionVars[0])))));
-        return CallMarker.With(target: base.ReplaceVarsWithArg(fusionVars, args, c));
-    }
+    // protected override Expr ReplaceVarsWithArg(Var[] fusionVars, Expr[] args, Expr newCall)
+    // {
+    //     var convTranspose = (Call)CallMarker!.Target;
+    //     var c = ReplaceCallFirstParam(
+    //         convTranspose.Target,
+    //         convTranspose.Arguments.ToArray(),
+    //         _transposeInputMarker!.With(target:
+    //             ReplaceCallFirstParam(
+    //                 _transpose!.Target,
+    //                 _transpose!.Arguments.ToArray(),
+    //                 _transposeInputMarker.With(target:
+    //                     ReplaceCallFirstParam(_originCall!.Target, _originCall!.Arguments.ToArray(), fusionVars[0])))));
+    //     return CallMarker.With(target: base.ReplaceVarsWithArg(fusionVars, args, c));
+    // }
 
-    protected override Expr ProcessForNewBody(Var[] fusionVars, Expr[] args, Expr expr)
-    {
-        // 1. reconstruct new body
-
-        // 2. replace
-        var newBody = fusionVars.Zip(args).Aggregate(expr, (newBody, tuple) =>
-        {
-            var (fusionVar, arg) = tuple;
-            return ReplaceUtility.ReplaceExpr(newBody, arg, fusionVar);
-        });
-        return CallMarker!.With(target: newBody);
-
-        // return ReplaceClone(callMarker.With(target: newBody), fusionVars.Zip(args).ToArray());
-    }
+    // protected override Expr ProcessForNewBody(Var[] fusionVars, Expr[] args, Expr expr)
+    // {
+    //     // 1. reconstruct new body
+    //     // 2. replace
+    //     var newBody = fusionVars.Zip(args).Aggregate(expr, (newBody, tuple) =>
+    //     {
+    //         var (fusionVar, arg) = tuple;
+    //         return ReplaceUtility.ReplaceExpr(newBody, arg, fusionVar);
+    //     });
+    //     return CallMarker!.With(target: newBody);
+    //     // return ReplaceClone(callMarker.With(target: newBody), fusionVars.Zip(args).ToArray());
+    // }
 }
 
 public class Conv2DTransposeToFusion : MarkerCallToFusion<Conv2DTranspose>
@@ -1034,7 +1025,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
             for (int i = 0; i < segments.Length; i++)
             {
-                context.FixedShapeCache[segments.Length - 1 - i] = tmpAllFixedShapes[i + 1];
+                context.FixedShapeCache[segments.Length - 1 - i] = tmpAllFixedShapes[segments[i]];
             }
         }
 
