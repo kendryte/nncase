@@ -1350,6 +1350,7 @@ public partial class RebuildBucket : RewriteRule<Pattern>
             var rebuild = FusionBucket.RestoreBodyWithArgs(context.Arguments, context.Parameters, context.FusionBody);
 
             // DumpIR(rebuild, $"{_counter++}_{_name}");
+            _counter++;
             return rebuild;
         }
 
