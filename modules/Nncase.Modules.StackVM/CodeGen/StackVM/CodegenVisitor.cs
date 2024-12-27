@@ -119,9 +119,10 @@ internal class CodeGenContext
     private readonly List<BasicBlock> _basicBlocks = new();
     private readonly HashSet<ModuleType> _custom_call_modules = new();
 
-    public CodeGenContext(BinaryWriter rdataWriter)
+    public CodeGenContext(BinaryWriter rdataWriter, Dictionary<TensorConst, Symbol> constSymbols)
     {
         RdataWriter = rdataWriter;
+        ConstSymbols = constSymbols;
     }
 
     public Dictionary<TextSnippet, HashSet<TextSnippet>> AllocInfo { get; set; } = new();
@@ -133,6 +134,8 @@ internal class CodeGenContext
     public IReadOnlyList<BasicBlock> BasicBlocks => _basicBlocks;
 
     public IReadOnlySet<ModuleType> CustomCallModules => _custom_call_modules;
+
+    public Dictionary<TensorConst, Symbol> ConstSymbols { get; }
 
     public void AddBasicBlock(BasicBlock basicBlock)
     {
@@ -403,7 +406,11 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     private TextSnippet Visit(TensorConst expr, Tensor tensor)
     {
-        var buffer = WriteRdata(tensor.BytesBuffer, _alignment);
+        if (!_context.ConstSymbols.TryGetValue(expr, out var buffer))
+        {
+            buffer = WriteRdata(tensor.BytesBuffer, _alignment);
+            _context.ConstSymbols.Add(expr, buffer);
+        }
 
         // stack: dtype shape strides buffer
         var snippet = BeginTextSnippet(expr);
