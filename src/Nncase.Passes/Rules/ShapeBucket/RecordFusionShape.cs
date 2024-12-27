@@ -136,10 +136,24 @@ public class RecordFusionShape : FunctionPass
             return _dimVarValues.Select(pair => (pair.Key, Value: pair.Value[i])).ToArray();
         }).Where(kvalues =>
         {
-            if (kvalues.Length == 2 && kvalues[0].Key.Name == "seq_len" && kvalues[1].Key.Name == "history_len")
+            if (kvalues.Length == 2)
             {
 #pragma warning disable SA1008 // Opening parenthesis should be spaced correctly
-                return (kvalues[0].Value, kvalues[1].Value) switch
+                (int, int) vv;
+                if (kvalues[0].Key.Name == "seq_len" && kvalues[1].Key.Name == "history_len")
+                {
+                    vv = (kvalues[0].Value, kvalues[1].Value);
+                }
+                else if (kvalues[1].Key.Name == "seq_len" && kvalues[0].Key.Name == "history_len")
+                {
+                    vv = (kvalues[1].Value, kvalues[0].Value);
+                }
+                else
+                {
+                    return true;
+                }
+
+                return vv switch
                 {
                     (1, > 0) => true,
                     ( > 0, 0) => true,
