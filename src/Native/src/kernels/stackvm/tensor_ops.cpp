@@ -796,8 +796,8 @@ result<value_t> nncase::kernels::stackvm::bucket_pad(
         return err(std::errc::invalid_argument);
     }
 
-    auto paddings = std::vector<int>(8);
     auto rank = shape_value.size();
+    auto paddings = std::vector<int>(rank * 2);
     for (int i = 0; i < rank; ++i) {
         paddings[2 * i + 0] = 0;
         paddings[2 * i + 1] = shape_value[i] - in_shape[i];

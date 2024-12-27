@@ -444,9 +444,11 @@ inline result<paddings_t> value_as_paddings([[maybe_unused]] value_t value) {
         if (cmp_type<int32_t>(dt)) {
             pads[i].before = *(IN_CAST(int32_t, input) + 2 * i);
             pads[i].after = *(IN_CAST(int32_t, input) + 2 * i + 1);
+            pads[i].interior = 0;
         } else if (cmp_type<int64_t>(dt)) {
             pads[i].before = *(IN_CAST(int64_t, input) + 2 * i);
             pads[i].after = *(IN_CAST(int64_t, input) + 2 * i + 1);
+            pads[i].interior = 0;
         } else {
             return err(nncase_errc::datatype_mismatch);
         }
