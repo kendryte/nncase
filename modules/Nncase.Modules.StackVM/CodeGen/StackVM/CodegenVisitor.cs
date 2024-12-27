@@ -463,7 +463,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     private void LeaGp(byte gpid, Symbol symbol, int offset = 0)
     {
-        AddSymbolRef(symbol, 2, 4, false, offset);
+        AddSymbolRef(symbol, 2, 8, false, offset);
         Emitter.LeaGP(gpid, 0);
     }
 
