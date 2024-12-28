@@ -613,6 +613,7 @@ public class FusionBucketContext
         Arguments = OuterCall.Arguments.ToArray();
         Parameters = Fusion.Parameters.ToArray();
         FixedShapeCache = new();
+        ShapeInfos = shapeInfos;
         SliceShape = ComputeSliceShape(shapeInfos, options.RangeInfo.First().Value.Max);
         _index = index;
     }
@@ -637,6 +638,8 @@ public class FusionBucketContext
 
     // segIndex -> fixed shape list
     public Dictionary<int, int[][]> FixedShapeCache { get; }
+
+    public FusionShapeData[] ShapeInfos { get; }
 
     public Expr FusionBody => Fusion.Body;
 
@@ -868,19 +871,13 @@ public partial class FusionBucket : RewriteRule<Pattern>
     public static Expr PreProcess(FusionBucketContext context, Var param, Dictionary<Var, Expr[]> inputInfo, Dictionary<Var, IValue> varValues, Dictionary<Var, Expr[]> fusionInputData, int segIndex, int inputIndex)
     {
         // Console.WriteLine($"seg index{segIndex}");
-        if (context.FixedShapeCache.TryGetValue(segIndex, out var cachedFixedShape))
-        {
-            // replace index by value
-            var shape = cachedFixedShape[inputIndex];
-            if ((param.CheckedShape.IsFixed && shape.SequenceEqual(param.CheckedShape.ToValueArray())) || param.CheckedShape.IsScalar)
-            {
-                return param;
-            }
-
-            return new Call(new BucketPad(), param, shape);
-        }
-
-        throw new InvalidDataException("Shape Cache not found");
+        var shapeBucketOptions = CompileSessionScope.Current!.CompileOptions.ShapeBucketOptions;
+        var varInfo = shapeBucketOptions.RangeInfo.First().Value;
+        var segments = ShapeBucketHelper.ComputeSegmentList(shapeBucketOptions.SegmentsCount, varInfo.Min, varInfo.Max);
+        var segValue = segments[segIndex] - varInfo.Min;
+        var inputShapeInfo = context.ShapeInfos[segValue].InputShapes[inputIndex];
+        var shape = inputShapeInfo.AsTensor().Cast<long>();
+        return new Call(new BucketPad(), param, shape);
     }
 
     public static (Dictionary<Var, IValue> MinDict, Dictionary<Var, IValue> MaxDict) GetBoundDict(
