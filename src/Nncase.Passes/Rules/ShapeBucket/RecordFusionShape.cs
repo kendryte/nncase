@@ -268,6 +268,8 @@ public class RecordFusionShape : FunctionPass
 
 public record ValueOrShape
 {
+    private IValue? _concreteValue;
+
     public ValueOrShape(IRType? irType, IValue? value)
     {
         if (irType is InvalidType)
@@ -283,8 +285,6 @@ public record ValueOrShape
     public IRType? IRType { get; }
 
     public IValue? Value { get; }
-
-    private IValue? _concreteValue;
 
     public bool HasValue => Value != null;
 
@@ -403,7 +403,6 @@ internal sealed class PartialShapeEvaluator : ExprVisitor<ValueOrShape, Unit>
                 break;
             default:
                 throw new NotSupportedException("fuck!");
-                break;
         }
 
         return result;
@@ -417,6 +416,7 @@ internal sealed class EvaluateContext : IEvaluateContext
     public EvaluateContext(ValueOrShape[] args)
     {
         Args = args;
+        CurrentCall = null!;
     }
 
     public ValueOrShape[] Args { get; }

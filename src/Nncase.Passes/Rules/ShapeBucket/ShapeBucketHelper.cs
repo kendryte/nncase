@@ -28,11 +28,12 @@ public static class CallValidator
         typeof(Conv2D).TypeHandle,
         typeof(Conv2DTranspose).TypeHandle,
         typeof(MatMul).TypeHandle,
-        //typeof(Transpose).TypeHandle,
-        //typeof(Pad).TypeHandle,
-        //typeof(Unsqueeze).TypeHandle,
-        //typeof(Squeeze).TypeHandle,
-        //typeof(Unary).TypeHandle,
+
+        // typeof(Transpose).TypeHandle,
+        // typeof(Pad).TypeHandle,
+        // typeof(Unsqueeze).TypeHandle,
+        // typeof(Squeeze).TypeHandle,
+        // typeof(Unary).TypeHandle,
     };
 
     private static readonly HashSet<RuntimeTypeHandle> MaybeDynamic = new()
@@ -43,7 +44,6 @@ public static class CallValidator
         // typeof(Slice).TypeHandle,
         // typeof(Gather).TypeHandle,
         // typeof(ShapeOf).TypeHandle,
-
         typeof(Cast).TypeHandle,
 
         // typeof(Reshape).TypeHandle,

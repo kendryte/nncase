@@ -55,11 +55,9 @@ public sealed partial class LiftCEInIf : RewriteRule<Pattern>
         //     {
         //         Visit(param, context);
         //     }
-
         //     Visit(expr.Condition, context);
         //     return default;
         // }
-
         protected override Unit DefaultVisitLeaf(Expr expr, List<Expr> context)
         {
             context.Add(expr);

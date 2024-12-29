@@ -125,6 +125,7 @@ public sealed class SplitLLMStage : ModulePass
     {
         ToFusion(p);
         MergeOp(p, true);
+
         // LostToFusion(p, singleVar);
         // MergeOp(p, true);
         // ClearMarker(p);
