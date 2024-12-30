@@ -265,7 +265,7 @@ internal sealed class SatExprBuildVisitor
                 expr = tp.With(fields: children);
                 break;
             case Marker mk:
-                expr = mk.With(target: children[0], attribute: children[1]);
+                expr = mk.With(target: children[0], attribute: children[1], metadata: mk.Metadata);
                 break;
             case IR.If @if:
                 expr = @if.With(condition: children[^3], then: children[^2], @else: children[^1], paramList: children[..^3].ToArray());

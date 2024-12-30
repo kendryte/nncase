@@ -2,34 +2,23 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Reactive;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Transactions;
 using DryIoc;
 using DryIoc.ImTools;
-using GiGraph.Dot.Types.Geometry;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
-using Nncase.CodeGen;
-using Nncase.Diagnostics;
-using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
-using Nncase.IR.ShapeExpr;
 using Nncase.IR.Tensors;
-using Nncase.Passes.Analysis;
 using Nncase.Passes.Rules.Lower;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Passes.Rules.ShapeExpr;
-using Nncase.Passes.Transforms;
 using Nncase.PatternMatch;
 using Nncase.Utilities;
 using static Nncase.IR.F.Tensors;
@@ -39,10 +28,6 @@ using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 using static Nncase.Utilities.ReplaceUtility;
 using BaseFunction = Nncase.IR.BaseFunction;
-using Dimension = Nncase.IR.Dimension;
-using FoldConstCall = Nncase.Passes.Mutators.FoldConstCall;
-using Stack = Nncase.IR.Tensors.Stack;
-using Tuple = System.Tuple;
 
 namespace Nncase.Passes.Rules.ShapeBucket;
 
@@ -485,6 +470,72 @@ public class MatmulToFusion : MarkerCallToFusion<MatMul>
     public MatmulToFusion(bool isDynamic = false)
         : base(isDynamic)
     {
+    }
+
+    public override bool Check(Call call)
+    {
+        if (System.Environment.GetEnvironmentVariable("NNCASE_QWEN_QUANT_LAYERS") is string quant_layers)
+        {
+            var enable_layers = quant_layers.Split(",").Select(int.Parse).ToArray();
+
+            if (call.Metadata.OutputNames is var names && names is not null)
+            {
+                foreach (var name in names)
+                {
+                    // qkv 3 matmul
+                    var qkvPattern = new Regex("/layers.(.+)/self_attn/(.)_proj/Linear_matmul");
+
+                    if (qkvPattern.Match(name) is Match { Success: true } m)
+                    {
+                        var layer = int.Parse(m.Groups[1].Value);
+                        if (enable_layers.Contains(layer))
+                        {
+                            return true;
+                        }
+                    }
+
+                    // mlp 3 matmul
+                    var mlpPattern = new Regex("/mlp/(.*)_proj_?(.*)/FakeLinear_output_0");
+                    if (mlpPattern.Match(name) is Match { Success: true } m1)
+                    {
+                        var layer = m1.Groups[2].Length == 0 ? 0 : int.Parse(m1.Groups[2].Value);
+                        if (enable_layers.Contains(layer))
+                        {
+                            return true;
+                        }
+                    }
+
+                    // middle 1 matmul.
+                    var midPattern = new Regex("/FakeLinear_(.*)_output_0");
+                    if (midPattern.Match(name) is Match { Success: true } m2)
+                    {
+                        var layer = int.Parse(m2.Groups[1].Value);
+                        if (enable_layers.Contains(layer / 4))
+                        {
+                            return true;
+                        }
+                    }
+
+                    var botPattern = new Regex("MatMul_(/d+)?_?output_0");
+                    if (botPattern.Match(name) is Match { Success: true } m3)
+                    {
+                        var layer = m3.Groups[1].Value.Length == 0 ? 0 : int.Parse(m3.Groups[1].Value);
+                        if (enable_layers.Contains(layer))
+                        {
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 

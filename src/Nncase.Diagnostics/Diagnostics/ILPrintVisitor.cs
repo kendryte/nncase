@@ -316,7 +316,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         var args = expr.Arguments.AsValueEnumerable().Select(Visit).ToArray();
         name = AllocateTempVar(expr);
         _scope.IndWrite($"{name} = {target}({property}{string.Join(", ", args)})");
-        AppendCheckedType(expr.CheckedType);
+        AppendCheckedType(expr.CheckedType, " " + string.Join(",", expr.Metadata.OutputNames ?? Array.Empty<string>()));
         return name;
     }
 

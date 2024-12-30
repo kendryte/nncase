@@ -18,7 +18,8 @@ public partial class ExprCloner<TContext>
     {
         return expr.With(
             target: Clone(expr.Target, context),
-            arguments: CloneArray(expr.Arguments, context)
+            arguments: CloneArray(expr.Arguments, context),
+            metadata: expr.Metadata
         );
     }
 
@@ -65,7 +66,8 @@ public partial class ExprCloner<TContext>
     {
         return expr.With(
             target: Clone(expr.Target, context),
-            attribute: Clone(expr.Attribute, context)
+            attribute: Clone(expr.Attribute, context),
+            metadata: expr.Metadata
         );
     }
 
