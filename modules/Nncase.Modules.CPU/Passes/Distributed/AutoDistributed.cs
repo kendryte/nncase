@@ -30,6 +30,11 @@ public record EqualityClass(bool Tuple, List<IEquality> Children) : IEquality
 {
 }
 
+public sealed class AutoDistributedMetaData : IRMetadata
+{
+    public bool Skip { get; set; }
+}
+
 /// <summary>
 /// auto distributed the xpu fusion.
 /// </summary>
@@ -45,6 +50,11 @@ public sealed partial class AutoDistributedPass : FunctionPass
 
     protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
     {
+        if (input.Metadata is AutoDistributedMetaData { Skip: true })
+        {
+            return Task.FromResult(input);
+        }
+
         var rewriter = new AutoDistributedRewriter(_compileOptions, _compileOptions.TargetOptions is CpuTargetOptions options ? options : new CpuTargetOptions());
         return Task.FromResult(rewriter.Rewirte(input));
     }
