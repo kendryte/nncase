@@ -13,11 +13,11 @@
   if (info.PropertyType.IsEnum)
   {
     var enumName = info.PropertyType.Name.ToSnake();
-@:typedef enum {
+@:enum @(enumName)_t : uint8_t {
 foreach(var (name, value) in info.PropertyType.RenderEnumFields(LangMode.UnCPP)){
 @:  @(enumName)_@(name.ToSnake()) = @(value),
 }
-@:} @(enumName)_t;
+@:};
   }
 }
 /* end the auto generated block by tools/stackvm_gen/CApiGen at @Raw(DateTimeOffset.Now.ToString()). */
@@ -29,6 +29,9 @@ foreach(var (name, value) in info.PropertyType.RenderEnumFields(LangMode.UnCPP))
     clr_object_handle_t (*@(optionsName)_create)();
 @foreach (var info in Model.OptionInfos) 
 {
+  if (info.PropertyType.IsEnum) {
+    @:@(info.RenderSignature(SignMode.Type, LangMode.UnCPP)) (*@(optionsName)_get_@(info.PropertyName.ToSnake()))(clr_object_handle_t handle);
+  }
     @:void (*@(optionsName)_set_@(info.PropertyName.ToSnake()))(clr_object_handle_t handle, @(info.RenderSignature(SignMode.Type | SignMode.Param, LangMode.UnCPP)));
 }
     /* end the auto generated block by tools/stackvm_gen/CApiGen at @Raw(DateTimeOffset.Now.ToString()). */
@@ -46,6 +49,12 @@ class @(optionsName) : public clr_object_base {
     }
 @foreach( var info in Model.OptionInfos)
 {
+  if (info.PropertyType.IsEnum) {
+@:
+@:    @(info.RenderSignature(SignMode.Type, LangMode.Pyb)) @(info.PropertyName.ToSnake())() {
+@:        return (@(info.PropertyType.Name.ToSnake())_t)nncase_clr_api()->@(optionsName)_get_@(info.PropertyName.ToSnake())(obj_.get());
+@:    }
+  }
 @:
 @:    void @(info.PropertyName.ToSnake())(@(info.RenderSignature(SignMode.Type | SignMode.Param, LangMode.Pyb))) {
   if (info.PropertyType.IsNestedArrayType(out var stacks) && stacks.Count > 1)

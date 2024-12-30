@@ -156,4 +156,5 @@ HierarchySizes = [1069547520, 2097152]
 MemoryCapacities = [524288, 267386880]
 MemoryBandWidths = [64, 32]
 UnifiedMemoryArch = false
-Packing = false
+Packing = true
+HierarchyKind = "nncase.HierarchyKind.SMT"

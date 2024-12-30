@@ -18,7 +18,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
 {
     private readonly Dictionary<ITileable, Dictionary<BufferIdentity, SubViewInfo>> _subViewMemo;
 
-    public TreeSolveResult(BufferGraph primBufferGraph, long objectiveValue, Dictionary<int, Dictionary<NodeWithBuffer, long>> levelNodeBufferBoxs, Dictionary<int, Dictionary<NodeWithBuffer, Tuple<int, int>>> levelTreeBufferLifeness, Dictionary<OpNode, OpNodeInfo<long>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<long>> levelBufferInfos, Dictionary<ITileable, DomainInfo<long>> domainInfos, ICpuTargetOptions targetOptions)
+    public TreeSolveResult(BufferGraph primBufferGraph, long objectiveValue, Dictionary<int, Dictionary<NodeWithBuffer, long>> levelNodeBufferBoxs, Dictionary<int, Dictionary<NodeWithBuffer, Tuple<int, int>>> levelTreeBufferLifeness, Dictionary<OpNode, OpNodeInfo<long>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<long>> levelBufferInfos, Dictionary<ITileable, DomainInfo<long>> domainInfos, ICpuTargetOptions targetOptions, string moduleKind)
         : base(null!, primitiveBufferInfo, levelBufferInfos, domainInfos, targetOptions)
     {
         PrimBufferGraph = primBufferGraph;
@@ -26,6 +26,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         ObjectiveValue = objectiveValue;
         LevelBufferSizes = levelNodeBufferBoxs;
         LevelBufferLifeness = levelTreeBufferLifeness;
+        ModuleKind = moduleKind;
         LevelBufferOffsets = new();
         PrimBufferMemo = new();
         _subViewMemo = new();
@@ -46,6 +47,8 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
     public Dictionary<int, Dictionary<NodeWithBuffer, ulong>> LevelBufferOffsets { get; }
 
     public Dictionary<int, Dictionary<NodeWithBuffer, Tuple<int, int>>> LevelBufferLifeness { get; }
+
+    public string ModuleKind { get; }
 
     public Unit Visit(TileNode value, Context context)
     {
@@ -240,7 +243,13 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                 {
                     xstarts.Add(solver.MakeIntConst(LevelBufferLifeness[level][key].Item1));
                     xsizes.Add(LevelBufferLifeness[level][key].Item2 - LevelBufferLifeness[level][key].Item1);
-                    ystarts.Add(solver.MakeIntVar(0, TargetOptions.MemoryCapacities[level] - size));
+                    var ystart = solver.MakeIntVar(0, TargetOptions.MemoryCapacities[level] - size);
+                    ystarts.Add(ystart);
+                    if (ModuleKind == "xpu")
+                    {
+                        solver.Add(solver.MakeEquality(solver.MakeIntConst(0), solver.MakeModulo(ystart, 128)));
+                    }
+
                     ysizes.Add(size);
                     validKeys.Add(key);
                 }
