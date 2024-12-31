@@ -50,17 +50,19 @@ void benchmark_ntt_cast(T1 init_low, T1 init_high) {
     constexpr size_t warmup_size = 10;
 #if __riscv
     constexpr size_t run_size = 300;
-    constexpr size_t size = 600;
+    constexpr size_t size = 3200;
 #elif __x86_64__
     constexpr size_t run_size = 2000;
     constexpr size_t size = 16000;
 #else
     constexpr size_t run_size = 2000;
-    constexpr size_t size = 2000;
+    constexpr size_t size = 3200;
 #endif
 
     constexpr size_t M = NTT_VLEN / (sizeof(T1) * 8);
     constexpr size_t N = NTT_VLEN / (sizeof(T2) * 8);
+    constexpr auto ratio = sizeof(T1) / sizeof(T2);
+    constexpr size_t times = ratio <= 1 ? 1 : ratio;
 
     using tensor_type1 =
         ntt::tensor<ntt::vector<T1, M>, ntt::fixed_shape<size / M>>;
@@ -74,24 +76,20 @@ void benchmark_ntt_cast(T1 init_low, T1 init_high) {
     // warm up
     for (size_t i = 0; i < warmup_size; i++) {
         ntt::cast(*ntt_input, *ntt_output);
-#if __x86_64__
         asm volatile("" ::"g"(ntt_output));
-#endif
     }
 
     // run
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
         ntt::cast(*ntt_input, *ntt_output);
-#if __x86_64__
         asm volatile("" ::"g"(ntt_output));
-#endif
     }
     auto t2 = NttTest::get_cpu_cycle();
 
     std::cout << __FUNCTION__ << "_" << op << " took " << std::setprecision(1)
               << std::fixed
-              << static_cast<float>(t2 - t1) / (size / M) / run_size
+              << static_cast<float>(t2 - t1) / (size / M) * times / run_size
               << " cycles" << std::endl;
 }
 
