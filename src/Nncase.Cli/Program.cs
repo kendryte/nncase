@@ -33,6 +33,7 @@ internal partial class Program
         // 2. import the model
         var target = CompilerServices.GetTarget(targetKind);
         using var compileSession = CompileSession.Create(target, compileOptions);
+        using var compileSessionScope = new CompileSessionScope(compileSession);
         var compiler = compileSession.Compiler;
         IR.IRModule module = await compiler.ImportModuleAsync(Path.GetExtension(compileOptions.InputFile).Trim('.'), compileOptions.InputFile);
 

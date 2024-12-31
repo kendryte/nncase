@@ -48,9 +48,9 @@ public sealed partial class StackVMEmitter
     public TensorEmitter T { get; }
 
     /// <summary>
-    /// Gets position.
+    /// Gets or sets position.
     /// </summary>
-    public long Position => _writer.Position();
+    public long Position { get => _writer.Position(); set => _writer.Position(value); }
 
     /// <summary>
     /// write data type.

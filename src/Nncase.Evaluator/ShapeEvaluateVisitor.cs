@@ -34,11 +34,6 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
         return base.DispatchVisit(expr);
     }
 
-    protected override Expr VisitLeafIf(If expr)
-    {
-        return new If(expr.Condition, Visit(expr.Then), Visit(expr.Else));
-    }
-
     /// <inheritdoc/>
     protected override Expr VisitLeafConst(Const expr)
     {
@@ -57,15 +52,15 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
         _context.CurrentCall = expr;
 
         // function, VarMap merge expr
-        return expr.Target switch
-        {
-            Op op => CompilerServices.EvaluateOpShapeExpr(op, _context),
-            Function func => CompilerServices.EvaluateShapeExpr(func.Body, MergeArgsVarMap(func.Parameters, expr.Arguments)),
-            Fusion { ModuleKind: "stackvm" } func => CompilerServices.EvaluateShapeExpr(
-                func.Body,
-                MergeArgsVarMap(func.Parameters, expr.Arguments)),
-            _ => throw new NotImplementedException(expr.Target.ToString()),
-        };
+        return EvaluateCallable(expr.Target, expr.Arguments);
+    }
+
+    protected override Expr VisitLeafIf(If expr)
+    {
+        _context.CurrentCall = expr;
+
+        // return new If(expr.Condition, EvaluateCallable(expr.Then, expr.Arguments), EvaluateCallable(expr.Else, expr.Arguments));
+        throw new NotSupportedException();
     }
 
     /// <inheritdoc/>
@@ -107,6 +102,19 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
         }
 
         throw new InvalidOperationException();
+    }
+
+    private Expr EvaluateCallable(Expr callable, ReadOnlySpan<Expr> arguments)
+    {
+        return callable switch
+        {
+            Op op => CompilerServices.EvaluateOpShapeExpr(op, _context),
+            Function func => CompilerServices.EvaluateShapeExpr(func.Body, MergeArgsVarMap(func.Parameters, arguments)),
+            Fusion { ModuleKind: "stackvm" } func => CompilerServices.EvaluateShapeExpr(
+                func.Body,
+                MergeArgsVarMap(func.Parameters, arguments)),
+            _ => throw new NotImplementedException(callable.ToString()),
+        };
     }
 
     private Dictionary<Var, Expr[]> MergeArgsVarMap(ReadOnlySpan<Var> paramList, ReadOnlySpan<Expr> args)

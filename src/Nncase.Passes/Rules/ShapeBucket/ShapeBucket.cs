@@ -913,9 +913,10 @@ public partial class FusionBucket : RewriteRule<Pattern>
             (sum, seg) =>
             {
                 // 根据var，也就是target为这个fusion的call的参数来进行判断落在哪个段
-                var cond = value <= (long)seg;
+                var (valueVar, sliceShapeVar, newVars, allNewVars) = MakeSliceVars(context);
+                var cond = valueVar <= (long)seg;
                 condList.Add(cond);
-                var sameCond = IR.F.Math.Equal(value, (long)seg);
+                var sameCond = IR.F.Math.Equal(valueVar, (long)seg);
 
                 // select var value for current segment
                 var varInfo = context.DimVarValue(i);
@@ -923,41 +924,47 @@ public partial class FusionBucket : RewriteRule<Pattern>
                 var elseBody = sum;
                 i++;
 
-                var result = new If(cond, thenBody, elseBody);
+                var call = new If(cond, thenBody, elseBody, allNewVars);
+                var result = new Function(call, allNewVars);
+                result.InferenceType();
                 return result;
             });
 
-        body.InferenceType();
+        var call = new Call(body, context.Parameters.Append(value).Append(context.SliceShape).ToArray());
+        call.InferenceType();
 
-        if (body.CheckedType is InvalidType)
+        if (call.CheckedType is InvalidType)
         {
             // DumpIR(body, "InvalidBody");
             throw new InvalidOperationException();
         }
 
-        if (body.Users.Count > 1)
+        if (call.Users.Count > 1)
         {
             throw new InvalidOperationException();
         }
 
-        return (body, condList);
+        return (call, condList);
     }
 
-    public static Expr MakeSplitEntry(FusionBucketContext context, Dictionary<Var, IValue> varInfo, int segIndex, Expr sameCond, bool sameOpt = false)
+    public static Function MakeSplitEntry(FusionBucketContext context, Dictionary<Var, IValue> varInfo, int segIndex, Expr sameCond, bool sameOpt = false)
     {
+        var (_, sliceShapeVar, newVars, allNewVars) = MakeSliceVars(context);
         var originBody = context.FusionBody;
-        var call = MakeNewBody(context, varInfo, segIndex);
+        var call = MakeNewBody(context, varInfo, newVars, segIndex);
 
-        var slice = MakeSlice(context, call, originBody);
-        return sameOpt
-            ? new If(sameCond, call, slice)
-            : slice;
+        var slice = MakeSlice(context, call, originBody, sliceShapeVar);
+        // return sameOpt
+        //     ? new If(sameCond, call, slice)
+        //     : slice;
+        var func = new Function(slice, allNewVars);
+        return func;
     }
 
-    public static Expr MakeNewBody(FusionBucketContext context, Dictionary<Var, IValue> varInfo, int segIndex)
+    public static Expr MakeNewBody(FusionBucketContext context, Dictionary<Var, IValue> varInfo, Var[] newVars, int segIndex)
     {
         var fusionVars = context.Parameters;
-        var fixInputs = fusionVars
+        var fixInputs = newVars
             .Select((arg, i) =>
                 PreProcess(context, arg, context.VarMap, varInfo, context.FusionInputShapeExpr, segIndex, i)).ToArray();
 
@@ -1110,11 +1117,11 @@ public partial class FusionBucket : RewriteRule<Pattern>
         var newBody = ReplaceFusionVarWithCallArgs(fusion, context.Arguments, body);
 
         // let bind
-        if (newBody is If @if)
-        {
-            var parameters = context.Arguments.ToArray().Concat(condList).Append(context.SliceShape).ToArray();
-            newBody = IR.F.Math.Require(true, @if.With(paramList: parameters));
-        }
+        // if (newBody is If @if)
+        // {
+        //     var parameters = context.Arguments.ToArray().Concat(condList).Append(context.SliceShape).ToArray();
+        //     newBody = IR.F.Math.Require(true, @if.With(paramList: parameters));
+        // }
 
         // DumpIR(newBody, "BucketResult", _relPath);
         _counter++;
@@ -1136,6 +1143,14 @@ public partial class FusionBucket : RewriteRule<Pattern>
         return ReplaceClone(context.FusionBody, context.Parameters.Zip(fixedShapeInput).ToArray());
     }
 
+    private static (Var ValueVar, Var SliceShapeVar, Var[] NewVars, Var[] AllNewVars) MakeSliceVars(FusionBucketContext context)
+    {
+        var valueVar = new Var("value", DataTypes.Int64);
+        var sliceShapeVar = new Var("slice_shape", context.SliceShape.CheckedType);
+        var newVars = context.Parameters.Select(x => x.With()).ToArray();
+        return (valueVar, sliceShapeVar, newVars, newVars.Append(valueVar).Append(sliceShapeVar).ToArray());
+    }
+
     private static void PrintShapeInfos(FusionShapeData[] shapeInfos)
     {
         for (var i = 0; i < shapeInfos.Length; i++)
@@ -1151,9 +1166,8 @@ public partial class FusionBucket : RewriteRule<Pattern>
         }
     }
 
-    private static Expr MakeSlice(FusionBucketContext context, Expr call, Expr originBody)
+    private static Expr MakeSlice(FusionBucketContext context, Expr call, Expr originBody, Var sliceShape)
     {
-        var sliceShape = context.SliceShape;
         if (call.CheckedType is TupleType tuple)
         {
             var fields = Enumerable.Range(0, tuple.Count)
@@ -1258,7 +1272,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
             return result;
         });
 
-    private static Expr MakeFailure(FusionBucketContext context)
+    private static Function MakeFailure(FusionBucketContext context)
     {
         // return RestoreBodyWithArgs(context.Arguments, context.Parameters, context.FusionBody);
         var failure = context.FusionBody.CheckedType switch
@@ -1271,7 +1285,8 @@ public partial class FusionBucket : RewriteRule<Pattern>
             TensorType tensorType => (Expr)ConstantOfShape(new[] { 1 }, Cast(0, tensorType.DType)),
             _ => throw new ArgumentOutOfRangeException("context"),
         };
-        return IR.F.Math.Require(false, failure, "input dim large than limit");
+        var body = IR.F.Math.Require(false, failure, "input dim large than limit");
+        return new Function(body, MakeSliceVars(context).AllNewVars);
     }
 }
 
@@ -1365,7 +1380,7 @@ public partial class RebuildBucket : RewriteRule<Pattern>
     private bool ShouldBeRebuild(FusionBucketContext context)
     {
         var varInfo = context.DimVarValue(0);
-        var entry = FusionBucket.MakeNewBody(context, varInfo, 0);
+        var entry = FusionBucket.MakeNewBody(context, varInfo, context.Parameters, 0);
 
         // DumpIR(entry, $"{_counter}_{_name}");
         return entry switch

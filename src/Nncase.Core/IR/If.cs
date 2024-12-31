@@ -6,31 +6,38 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
+using Nncase.Utilities;
 
 namespace Nncase.IR;
 
 /// <summary>
 /// if(Condition) then { Then } else { Else }.
 /// </summary>
-public sealed class If : Expr
+public sealed class If : BaseCall
 {
-    public If(Expr condition, Expr then, Expr @else, params Expr[] paramList)
-        : base(paramList.Concat(new[] { condition, then, @else }))
+    public If(Expr condition, BaseFunction then, BaseFunction @else, ReadOnlySpan<Expr> arguments)
+        : base(ArrayUtility.Concat(condition, then, @else, arguments))
     {
     }
 
-    public Expr Condition => Operands[^3];
+    public If(Expr condition, BaseFunction then, BaseFunction @else, params Expr[] arguments)
+        : this(condition, then, @else, (ReadOnlySpan<Expr>)arguments)
+    {
+    }
 
-    public Expr Then => Operands[^2];
+    public Expr Condition => Operands[0];
 
-    public Expr Else => Operands[^1];
+    public BaseFunction Then => (BaseFunction)Operands[1];
 
-    public Expr[] ParamList => Operands[..^3].ToArray();
+    public BaseFunction Else => (BaseFunction)Operands[2];
+
+    public override ReadOnlySpan<Expr> Arguments => Operands[3..];
 
     /// <inheritdoc/>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitIf(this, context);
 
-    public If With(Expr? condition = null, Expr? then = null, Expr? @else = null, Expr[]? paramList = null)
-        => new If(condition ?? Condition, then ?? Then, @else ?? Else, paramList ?? ParamList);
+    public If With(Expr? condition = null, BaseFunction? then = null, BaseFunction? @else = null, Expr[]? arguments = null)
+        => new If(condition ?? Condition, then ?? Then, @else ?? Else, arguments ?? Arguments);
 }

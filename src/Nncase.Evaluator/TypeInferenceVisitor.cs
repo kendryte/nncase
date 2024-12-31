@@ -157,7 +157,8 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     /// <inheritdoc/>
     protected override IRType VisitLeafIf(If expr)
     {
-        return TypeInference.CommonType(expr.Then.CheckedType, expr.Else.CheckedType);
+        _context.CurrentCall = expr;
+        return TypeInference.CommonType(BaseFunctionInfer(expr, expr.Then), BaseFunctionInfer(expr, expr.Else));
     }
 
     /// <inheritdoc/>
@@ -362,7 +363,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
         IsFullyInferenced &= type is not InvalidType;
     }
 
-    private IRType BaseFunctionInfer(Call call, BaseFunction func)
+    private IRType BaseFunctionInfer(BaseCall call, BaseFunction func)
     {
         if (func.CheckedType is InvalidType)
         {

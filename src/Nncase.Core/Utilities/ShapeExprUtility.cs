@@ -19,7 +19,31 @@ public static class ShapeExprUtility
     {
         var rank = new Call(new Rank(), inShape);
         var i64Axis = Cast(axis, DataTypes.Int64);
-        return new If(i64Axis < 0L, i64Axis + rank, i64Axis);
+        var i64AxisVar1 = new Var(typeAnnotation: DataTypes.Int64);
+        var then = new Function(i64AxisVar1 + rank, i64AxisVar1);
+        var i64AxisVar2 = new Var(typeAnnotation: DataTypes.Int64);
+        var @else = new Function(i64AxisVar2, i64AxisVar2);
+        return new If(i64Axis < 0L, then, @else, i64Axis);
+    }
+
+    public static Expr If(Expr condition, Func<Var, Expr> thenExpr, Func<Var, Expr> elseExpr, Expr arg)
+    {
+        var var1 = new Var();
+        var var2 = new Var();
+        var thenFunc = new Function(thenExpr(var1), var1);
+        var elseFunc = new Function(elseExpr(var2), var2);
+        return new If(condition, thenFunc, elseFunc, arg);
+    }
+
+    public static Expr If(Expr condition, Func<Var, Var, Expr> thenExpr, Func<Var, Var, Expr> elseExpr, Expr arg1, Expr arg2)
+    {
+        var var11 = new Var();
+        var var21 = new Var();
+        var var12 = new Var();
+        var var22 = new Var();
+        var thenFunc = new Function(thenExpr(var11, var12), var11, var12);
+        var elseFunc = new Function(elseExpr(var21, var22), var21, var22);
+        return new If(condition, thenFunc, elseFunc, arg1, arg2);
     }
 
     public static Expr Slice(Expr shape, int begin, int end)

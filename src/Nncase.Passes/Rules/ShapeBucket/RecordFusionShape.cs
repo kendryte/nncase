@@ -419,7 +419,7 @@ internal sealed class EvaluateContext : IEvaluateContext
 
     public ValueOrShape[] Args { get; }
 
-    public Call CurrentCall { get; set; }
+    public BaseCall CurrentCall { get; set; }
 
     public IValue GetArgumentValue(Op op, ParameterInfo parameter)
     {

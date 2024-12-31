@@ -127,7 +127,7 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
             }).ToArray();
 
             var remainSize = inRank - 1 - m;
-            var remainShape = new If(remainSize > 0, ShapeExprUtility.Slice(inShape, 1 + m, int.MaxValue), Array.Empty<long>());
+            var remainShape = ShapeExprUtility.If(remainSize > 0, (inShape, m) => ShapeExprUtility.Slice(inShape, 1 + m, int.MaxValue), (inShape, m) => Array.Empty<long>(), inShape, m);
             var outLast = remainShape;
             var outShape = Concat(new IR.Tuple(Stack(new IR.Tuple(outFirst.Concat(outMid).ToArray()), 0), outLast), 0);
 
