@@ -348,7 +348,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             VisitLeafArgument(param.ParameterKind, expr.Arguments[param.Index], isSupported);
         }
 
-#if true
+#if false
         var results = expr.Arguments.ToArray().
             Select(Visit).
             CartesianProduct().
