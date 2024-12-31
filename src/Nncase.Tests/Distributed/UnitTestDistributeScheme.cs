@@ -81,7 +81,7 @@ public class UnitTestDistributeScheme : TestClassBase
             func = new(output);
         }
 
-        var pass = new Passes.Distributed.AutoDistributedPass(CompileOptions);
+        var pass = new AutoDistributedPass(true, "cpu", CompileOptions);
 
         var result = await pass.RunAsync(func, new());
 

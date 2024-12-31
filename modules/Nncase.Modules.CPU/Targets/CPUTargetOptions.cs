@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR;
 
 namespace Nncase.Targets;
 
@@ -57,6 +58,12 @@ public class CpuTargetOptions : ICpuTargetOptions
     [DefaultValue(NocArchitecture.Mesh)]
     [CommandLine.FromAmong(NocArchitecture.Mesh, NocArchitecture.CrossBar)]
     public NocArchitecture NocArch { get; set; } = NocArchitecture.Mesh;
+
+    [DisplayName("--hierarchy-kind")]
+    [Description("Hierarchy Kind.")]
+    [DefaultValue(HierarchyKind.Parallel)]
+    [CommandLine.FromAmong(HierarchyKind.Parallel, HierarchyKind.SMT)]
+    public HierarchyKind HierarchyKind { get; set; } = HierarchyKind.Parallel;
 
     [DisplayName("--hierarchies")]
     [Description("the distributed hierarchies of hardware. eg. `8,4 4,8` for dynamic cluster search or `4` for fixed hardware.")]
