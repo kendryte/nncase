@@ -13,6 +13,7 @@ using Nncase.CodeGen;
 using Nncase.CodeGen.StackVM;
 using Nncase.IR;
 using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.Quantization;
 
 namespace Nncase.Targets;
@@ -39,6 +40,33 @@ public class CPUTarget : ITarget
     /// <inheritdoc/>
     public void RegisterTargetInDependentPass(IPassManager passManager, CompileOptions options)
     {
+        passManager.AddWithName<DataflowPass>("TargetDependentNeutralOptimize").Configure(p =>
+        {
+            // p.Add<BroadcastTransposeOutputNames>();
+            // p.Add<BroadcastReshapeOutputNames>();
+            // p.Add<BroadcastNopPadOutputNames>();
+            // p.Add<IntegralPromotion>();
+            // p.Add<FoldConstCall>();
+            // p.Add<FoldShapeOf>();
+            // p.Add<TransposeToReshape>();
+            // p.Add<ExpandToBroadcast>();
+            // p.Add<MatMulToConv2DWithMarker>();
+            // p.Add<BroadcastMatMulToConv2DWithMarker>();
+            //s p.Add<MatMulToConv2D>();
+            // p.Add<BroadcastMatMulToConv2D>();
+            // p.Add<BroadcastMatMul>();
+            p.Add<ReshapeBatchMatmul>();
+            // p.Add<SplitBatchMatMul>();
+            // p.Add<BatchNormToBinary>();
+            p.Add<FoldTwoReshapes>();
+            p.Add<FoldNopReshape>();
+            // p.Add<FoldTwoReduce>();
+            // p.Add<CombineBinaryReshape>();
+            // p.Add<CombineConstBinaryReshape>();
+            // p.Add<CombineUnaryReshape>();
+            // p.Add<CombineActivationsReshape>();
+            // p.Add<FoldNopBroadcast>();
+        });
     }
 
     /// <inheritdoc/>

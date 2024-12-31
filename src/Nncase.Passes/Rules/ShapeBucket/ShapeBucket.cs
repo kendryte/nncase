@@ -188,7 +188,12 @@ public partial class CallToFusion : RewriteRule<Pattern>
     protected virtual (Expr, int)[] CollectInputs(Call call) =>
         call.Arguments.ToArray().Select((arg, i) =>
         {
-            return (arg, i);
+            if (arg is not TensorConst)
+            {
+                return (arg, i);
+            }
+
+            return (arg, -1);
         }).Where(pair => pair.Item2 != -1).Select(pair => (pair.arg, pair.Item2)).ToArray();
 
     protected virtual void Init(IMatchResult result)
