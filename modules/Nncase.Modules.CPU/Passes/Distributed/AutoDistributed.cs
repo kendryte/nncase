@@ -47,10 +47,13 @@ public sealed partial class AutoDistributedPass : FunctionPass
 {
     private readonly CompileOptions _compileOptions;
 
-    public AutoDistributedPass(bool bidirectional, CompileOptions compileOptions)
+    private readonly string _moduleKind;
+
+    public AutoDistributedPass(bool bidirectional, CompileOptions compileOptions, string moduleKind = "cpu")
     {
         Bidirectional = bidirectional;
         _compileOptions = compileOptions;
+        _moduleKind = moduleKind;
     }
 
     public bool Bidirectional { get; }
@@ -62,7 +65,8 @@ public sealed partial class AutoDistributedPass : FunctionPass
             return Task.FromResult(input);
         }
 
-        var rewriter = new AutoDistributedRewriter(Bidirectional, _compileOptions, _compileOptions.TargetOptions is CpuTargetOptions options ? options : new CpuTargetOptions());
+        var rewriter = new AutoDistributedRewriter(Bidirectional, _compileOptions, _compileOptions.TargetOptions is CpuTargetOptions options ? options : new CpuTargetOptions(), _moduleKind);
+
         return Task.FromResult(rewriter.Rewirte(input));
     }
 }
@@ -130,15 +134,18 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
     private readonly DistributedSearchGraph _rootSearchGraph;
 
-    public AutoDistributedRewriter(bool bidirectional, CompileOptions compileOptions, CpuTargetOptions targetOptions)
+    private readonly string _moduleKind;
+
+    public AutoDistributedRewriter(bool bidirectional, CompileOptions compileOptions, CpuTargetOptions targetOptions, string moduleKind)
     {
         Placements = targetOptions.Hierarchies.Select(h => new Placement(h, targetOptions.HierarchyNames)).ToArray();
         Bidirectional = bidirectional;
         CompileOptions = compileOptions;
         TargetOptions = targetOptions;
+        _moduleKind = moduleKind;
         if (Path.Exists(TargetOptions.DistributedScheme) && System.Text.Json.JsonSerializer.Deserialize<DistributedSchema>(File.ReadAllText(TargetOptions.DistributedScheme)) is DistributedSchema scheme)
         {
-            Scheme = scheme.Outputs.ToDictionary(n => n.Name, n => (new IRArray<SBP>(n.NdSBP), new Placement(n.Hierarchy, n.HierarchyName)));
+            Scheme = scheme.Outputs.ToDictionary(n => n.Name, n => (new IRArray<SBP>(n.NdSBP), new Placement(n.Hierarchy, n.HierarchyName, targetOptions.HierarchyKind)));
         }
         else
         {
@@ -277,7 +284,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
         else
         {
-            isSupported = PassUtility.IsCpuSupported(op, expr, expr.Arguments.ToArray());
+            isSupported = PassUtility.IsCpuSupported(op, expr, expr.Arguments.ToArray(), _moduleKind);
             foreach (var param in op.Parameters)
             {
                 argClusters[param.Index] = VisitLeafArgument(param.ParameterKind, expr.Arguments[param.Index], isSupported);

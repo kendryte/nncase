@@ -50,7 +50,13 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                     if (ax == lk && bx == rk)
                     {
                         // split on k
-                        ndsbp[i] = SBP.P();
+                        if (a.Placement.HierarchyKind == HierarchyKind.SMT && i == a.Placement.Rank - 1)
+                        {
+                            // not split k on threads
+                            return invalid;
+                        }
+
+                        ndsbp[i] = SBP.P(ReduceOp.Sum);
                     }
                     else if ((ax == lk && bx != rk) || (ax != lk && bx == rk) || (ax == lm && bx == rn))
                     {
