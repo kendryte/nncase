@@ -126,7 +126,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
             var partial = IR.F.CPU.Boxing(broadcast, new DistributedType(inputType, newsbp, placement));
             var sumed = IR.F.CPU.Boxing(partial, new DistributedType(inputType, ndsbp, placement));
-            posts.Add(IR.F.CPU.Boxing(sumed, inputType));
+            var post = IR.F.CPU.Boxing(sumed, inputType);
+            post.Metadata = new Passes.Distributed.AutoDistributedMetaData() { Skip = true };
+            posts.Add(post);
         }
 
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
