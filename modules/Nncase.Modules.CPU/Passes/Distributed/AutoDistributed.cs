@@ -363,19 +363,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         }
 
         Dictionary<IRType, List<Expr>> results;
-        if (!_bidirectional)
-        {
-            results = expr.Arguments.ToArray().
-                Select(Visit).
-                CartesianProduct().
-                Select(args => args.ToArray()).
-                Select(args => isSupported ? BuildEquivalCalls(op, args.Select(kv => kv.Value[0]).ToArray()).ToArray() :
-                                BuildNotSupportedCalls(op, args.Select(kv => kv.Value[0]).ToArray())).
-                SelectMany(i => i).
-                GroupBy(c => c.CheckedType).
-                ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
-        }
-        else
+        if (_bidirectional && isSupported)
         {
             results = expr.Arguments.ToArray().
                                 Select(Visit).
@@ -389,6 +377,18 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                                 SelectMany(i => i).
                                 GroupBy(c => c.CheckedType).
                                 ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
+        }
+        else
+        {
+            results = expr.Arguments.ToArray().
+                Select(Visit).
+                CartesianProduct().
+                Select(args => args.ToArray()).
+                Select(args => isSupported ? BuildEquivalCalls(op, args.Select(kv => kv.Value[0]).ToArray()).ToArray() :
+                                BuildNotSupportedCalls(op, args.Select(kv => kv.Value[0]).ToArray())).
+                SelectMany(i => i).
+                GroupBy(c => c.CheckedType).
+                ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
         }
 
         if (results.Count == 0)
