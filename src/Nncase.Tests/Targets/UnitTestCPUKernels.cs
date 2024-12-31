@@ -535,7 +535,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData([new[] { 4 }, 0])]
+    [InlineData([new[] { 2, 4 }, 0])]
     public async Task TestTransposeMatmul(int[] hierarchy, int number)
     {
         var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;

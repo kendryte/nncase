@@ -73,15 +73,18 @@ public sealed partial class AutoDistributedPass : FunctionPass
 
 internal sealed class SearchableNode
 {
-    public SearchableNode(Expr expr, IRType type)
+    public SearchableNode(Expr expr, IRType type, bool isBidirect = false)
     {
         Expr = expr;
         IRType = type;
+        IsBidirect = isBidirect;
     }
 
     public Expr Expr { get; }
 
     public IRType IRType { get; }
+
+    public bool IsBidirect { get; }
 }
 
 internal sealed record CrossEdge : IEdge<SearchableNode>
@@ -343,7 +346,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 {
                     if (Evaluator.IR.CPU.BoxingEvaluator.VisitType(lType, rType) is not InvalidType)
                     {
-                        var rnode = new SearchableNode(new Boxing(rType), rType);
+                        var rnode = new SearchableNode(new Boxing(rType), rType, true);
                         rBucket.AddVertex(rnode);
                         callCluster.AddEdge(new(rnode, lBucket.Vertices.First(), 0, lBucket));
                     }
@@ -360,7 +363,6 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 bucket = callCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
                 var node = new SearchableNode(new Boxing(nType), nType);
                 bucket.AddVertex(node);
-
                 var linked = false;
                 foreach (var addedBucket in addedBuckets)
                 {
@@ -389,6 +391,9 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         return default;
     }
 
+    /// <summary>
+    /// some times we didn't use all args.
+    /// </summary>
     private IEnumerable<(Call Call, bool[] Used)> BuildEquivalentCalls(Expr target, Expr[] tempArgs)
     {
         IEnumerable<(Call Call, bool[] Used)> calls = [(new Call(target, tempArgs), Enumerable.Repeat(true, tempArgs.Length).ToArray())];
@@ -400,6 +405,15 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
 
         return calls;
+    }
+
+    private IReadOnlyList<IRArray<SBP>> GetDiverseCandidateSBPs(DistributedType distributedType, IEnumerable<Placement> placements)
+    {
+        return placements.Select(
+            placement =>
+                DistributedUtility.GetLeafCandidateNDSBPs(distributedType.TensorType, placement).
+                Where(ndsbp => ndsbp != distributedType.NdSBP)).
+            SelectMany(e => e).ToArray();
     }
 
     private DistributedSearchGraph VisitLeafArgument(ParameterKind parameterKind, Expr expr, bool isSupported)
@@ -739,48 +753,16 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
 
         // 3. no cycle
+        foreach (var cluster in _rootSearchGraph.Clusters.OfType<DistributedSearchGraph>())
         {
-            var hgraph = ToHyperGraph(_rootSearchGraph, rootCluster);
-            var class_cycles = hgraph.FindCycles();
-            foreach (var cycle in class_cycles)
+            foreach (var sourceBucket in cluster.Clusters.OfType<DistributedSearchGraph>())
             {
-                if (cycle.Count == 1)
+                foreach (var destBucket in cluster.Clusters.OfType<DistributedSearchGraph>().Where(b => !ReferenceEquals(b, sourceBucket)))
                 {
-                    foreach (var n in cycle[0].Vertices)
+                    foreach (var (src, dest) in sourceBucket.Vertices.Where(v => v.IsBidirect).Zip(destBucket.Vertices.Where(v => v.IsBidirect)))
                     {
-                        _rootSearchGraph.TryGetOutEdges(n, out var edgs);
-                        if (edgs.Select(e => e.InputGraph).Contains(cycle[0]))
-                        {
-                            cpmodel.AddAssumption(varMemo[n].Not());
-                        }
+                        cpmodel.AddBoolAnd([varMemo[src].Not(), varMemo[dest].Not()]);
                     }
-                }
-                else
-                {
-                    // build clauses.
-                    var clauses = new List<List<BoolVar>>();
-                    for (int i = 0; i < cycle.Count; i++)
-                    {
-                        var next_hop = (i + 1) % cycle.Count;
-                        var u = hgraph.Edges(cycle[i])!;
-                        var v = u[cycle[next_hop]];
-                        clauses.Add(v.Select(n => varMemo[n]).ToList());
-                    }
-
-                    var clauseMemo = new Dictionary<int, BoolVar>();
-                    for (int i = 0; i < clauses.Count; i++)
-                    {
-                        var clause = clauses[i];
-                        if (clause.Count > 1)
-                        {
-                            var tmpV = cpmodel.NewBoolVar(string.Empty);
-                            cpmodel.AddBoolAnd(clause.Select(c => c.Not())).OnlyEnforceIf(tmpV);
-                            cpmodel.AddBoolOr(clause).OnlyEnforceIf(tmpV.Not());
-                            clauseMemo.Add(i, tmpV);
-                        }
-                    }
-
-                    cpmodel.AddBoolOr(clauses.Select((c, i) => (c, i)).Select(p => p.c.Count == 1 ? p.c[0].Not() : clauseMemo[p.i]));
                 }
             }
         }
