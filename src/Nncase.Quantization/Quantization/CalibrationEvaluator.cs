@@ -294,7 +294,7 @@ public class CalibrationEvaluator : IDisposable
 
         public IValue[] Arguments { get; }
 
-        public Call CurrentCall { get; }
+        public BaseCall CurrentCall { get; }
 
         public IValue GetArgumentValue(Op op, ParameterInfo parameter)
         {

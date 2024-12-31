@@ -253,6 +253,8 @@ internal class Compiler : ICompiler
         {
             p.AddWithName<FullBucket>("FullBucket");
         }
+
+        p.AddWithName<AddFunctionToModule>("AddIfToModule");
     }
 
     public void ClearFixShape(IPassManager p)

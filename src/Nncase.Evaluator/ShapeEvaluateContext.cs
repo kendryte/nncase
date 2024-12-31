@@ -33,7 +33,7 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
 
     public IReadOnlyDictionary<Var, Expr[]> VarMap { get; }
 
-    public Call? CurrentCall { get; set; }
+    public BaseCall? CurrentCall { get; set; }
 
     // memo used by reference, can't make new _memo with memo.concat(cache)
     public Dictionary<Expr, Expr> Cache { get; set; }
@@ -100,7 +100,7 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
         return StackScalar(Cast(GetArgumentShape(op, parameter)[0], DataTypes.Int64));
     }
 
-    private Call GetCurrentCall() => CurrentCall ?? throw new InvalidOperationException("Current call is not set.");
+    private BaseCall GetCurrentCall() => CurrentCall ?? throw new InvalidOperationException("Current call is not set.");
 
     private Expr GetResultFromMemo(Expr expr)
     {

@@ -44,7 +44,7 @@ public sealed class SplitLLMStage : ModulePass
                 var kvShape = IR.F.Tensors.ShapeOf(entry.Parameters[3]); // %past_key_values: f32[24,2,1,?,2,64]
                 var kvLen = IR.F.Tensors.GetItem(kvShape, 3);
                 var cond = IR.F.Math.Equal(kvLen, 0L);
-                newBody = new IR.If(cond, new Call(prefill, entry.Parameters.ToArray()), new Call(decode, entry.Parameters.ToArray()));
+                newBody = new IR.If(cond, prefill, decode, entry.Parameters.ToArray());
             }
 
             input.Replace(0, entry.With(body: newBody));
@@ -129,7 +129,7 @@ public sealed class SplitLLMStage : ModulePass
         // LostToFusion(p, singleVar);
         // MergeOp(p, true);
         // ClearMarker(p);
-        // MergeFusion(p, singleVar, true);
+        MergeFusion(p, singleVar, true);
         // Rebuild(p, singleVar);
         Bucket(p);
         Simplify(p);

@@ -49,6 +49,25 @@ public static class ArrayUtility
         return array;
     }
 
+    public static T[] Concat<T>(T value1, T value2, ReadOnlySpan<T> values)
+    {
+        var array = new T[values.Length + 2];
+        array[0] = value1;
+        array[1] = value2;
+        values.CopyTo(array.AsSpan(2));
+        return array;
+    }
+
+    public static T[] Concat<T>(T value1, T value2, T value3, ReadOnlySpan<T> values)
+    {
+        var array = new T[values.Length + 3];
+        array[0] = value1;
+        array[1] = value2;
+        array[2] = value3;
+        values.CopyTo(array.AsSpan(3));
+        return array;
+    }
+
     public static T[] Concat<T>(ReadOnlySpan<T> values1, ReadOnlySpan<T> values2)
     {
         var array = new T[values1.Length + values2.Length];

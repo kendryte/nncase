@@ -28,34 +28,35 @@ public static class CallValidator
         typeof(Conv2D).TypeHandle,
         typeof(Conv2DTranspose).TypeHandle,
         typeof(MatMul).TypeHandle,
+        typeof(Transpose).TypeHandle,
+        typeof(Pad).TypeHandle,
 
-        // typeof(Transpose).TypeHandle,
-        // typeof(Pad).TypeHandle,
         // typeof(Unsqueeze).TypeHandle,
         // typeof(Squeeze).TypeHandle,
-        // typeof(Unary).TypeHandle,
+        typeof(Unary).TypeHandle,
     };
 
     private static readonly HashSet<RuntimeTypeHandle> MaybeDynamic = new()
     {
-        // typeof(Concat).TypeHandle,
-        // typeof(Stack).TypeHandle,
-        // typeof(Binary).TypeHandle,
-        // typeof(Slice).TypeHandle,
-        // typeof(Gather).TypeHandle,
-        // typeof(ShapeOf).TypeHandle,
+        typeof(Concat).TypeHandle,
+        typeof(Stack).TypeHandle,
+        typeof(Binary).TypeHandle,
+        typeof(Slice).TypeHandle,
+        typeof(Gather).TypeHandle,
+        typeof(ShapeOf).TypeHandle,
+
         typeof(Cast).TypeHandle,
 
         // typeof(Reshape).TypeHandle,
-        // typeof(Expand).TypeHandle,
-        // typeof(ConstantOfShape).TypeHandle,
+        typeof(Expand).TypeHandle,
+        typeof(ConstantOfShape).TypeHandle,
 
         // typeof(Where).TypeHandle,
-        // typeof(Compare).TypeHandle,
-        // typeof(Reduce).TypeHandle,
-        // typeof(Clamp).TypeHandle,
-        // typeof(Tile).TypeHandle,
-        // typeof(CumSum).TypeHandle,
+        typeof(Compare).TypeHandle,
+        typeof(Reduce).TypeHandle,
+        typeof(Clamp).TypeHandle,
+        typeof(Tile).TypeHandle,
+        typeof(CumSum).TypeHandle,
     };
 
     public static bool IsMaybeDynamic(Expr target) => MaybeDynamic.Contains(target.GetType().TypeHandle);
@@ -196,11 +197,11 @@ public static class ShapeBucketRegister
         MergeOp(p, false);
 
         // todo: lost to fusion
-        p.AddWithName<DataflowPass>("LostToFusion").Configure(p =>
-        {
-            p.Add<TransposeToFusion>(true);
-            p.Add<ActToFusion>(true);
-        });
+        // p.AddWithName<DataflowPass>("LostToFusion").Configure(p =>
+        // {
+        //     p.Add<TransposeToFusion>(true);
+        //     p.Add<ActToFusion>(true);
+        // });
 
         MergeFusion(p, singleVar, false);
     }
