@@ -837,6 +837,10 @@ public class FusionBucketContext
         if (staticShape)
         {
             var len = FusionBucket.GetVarValue(this);
+            var shapeBucketOptions = CompileSessionScope.Current!.CompileOptions.ShapeBucketOptions;
+            var varInfo = shapeBucketOptions.RangeInfo.First().Value;
+            var segments = ShapeBucketHelper.ComputeSegmentList(shapeBucketOptions.SegmentsCount, varInfo.Min, varInfo.Max);
+            var offset = len - (long)varInfo.Min;
 
             // todo: reverse
             if (originBody.CheckedType is TupleType tuple)
@@ -844,10 +848,9 @@ public class FusionBucketContext
                 var outputCount = tuple.Fields.Count;
                 var outShapes = Enumerable.Range(0, outputCount).Select(i =>
                 {
-                    var arr = new[] { shapeInfos.First().Outshape.AsTensors()[i] }
-                        .Concat(shapeInfos.Select(info => info.Outshape.AsTensors()[i]).Reverse()).ToArray();
+                    var arr = shapeInfos.Select(info => info.Outshape.AsTensors()[i]).Reverse().ToArray();
                     var outShapeList = Cast(Stack(new IR.Tuple(arr.Select(x => (Expr)x).ToArray()), 0), DataTypes.Int64);
-                    return outShapeList[len];
+                    return outShapeList[offset];
                 }).ToArray();
                 return new IR.Tuple(outShapes);
             }
@@ -855,10 +858,9 @@ public class FusionBucketContext
             {
                 // 80 79 ... 1 -> 1 1 ... 79 80
                 // len is 1 - 80
-                var arr = new[] { shapeInfos.First().Outshape.AsTensor() }
-                    .Concat(shapeInfos.Select(x => x.Outshape.AsTensor()).Reverse()).ToArray();
+                var arr = shapeInfos.Select(x => x.Outshape.AsTensor()).Reverse().ToArray();
                 var outShapeList = Cast(Stack(new IR.Tuple(arr.Select(x => (Expr)x).ToArray()), 0), DataTypes.Int64);
-                return outShapeList[len];
+                return outShapeList[offset];
             }
         }
 
@@ -938,7 +940,14 @@ public partial class FusionBucket : RewriteRule<Pattern>
         var segValue = segments[segIndex] - varInfo.Min;
         var inputShapeInfo = context.ShapeInfos[segValue].InputShapes[inputIndex];
         var shape = inputShapeInfo.AsTensor().Cast<long>();
-        return new Call(new BucketPad(), param, shape);
+        if (param.CheckedShape.IsFixed)
+        {
+            return param;
+        }
+        else
+        {
+            return new Call(new BucketPad(), param, shape);
+        }
     }
 
     public static (Dictionary<Var, IValue> MinDict, Dictionary<Var, IValue> MaxDict) GetBoundDict(
@@ -1241,8 +1250,9 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
     private static Expr MakeSliceForTensor(Expr sliceShape, Expr call, FusionBucketContext context)
     {
-        var simplifyCall = CompilerServices.Rewrite(
-            call,
+        var slice = MakeSliceImpl(call, sliceShape);
+        var simplifySlice = CompilerServices.Rewrite(
+            slice,
             new IRewriteRule[]
             {
                 new FoldStackGetItem(),
@@ -1260,13 +1270,26 @@ public partial class FusionBucket : RewriteRule<Pattern>
             },
             new());
 
-        var body = MakeSliceImpl(simplifyCall, sliceShape);
-        return body;
+        return simplifySlice;
     }
 
-    private static bool IsFixed(int totalCount, int[][] minFixedShapeList, int[][] maxFixedShapeList) =>
-        totalCount == 0 || (minFixedShapeList[0].SequenceEqual(maxFixedShapeList[0]) &&
-                            minFixedShapeList[1].SequenceEqual(maxFixedShapeList[1]));
+    private static bool IsFixed(int totalCount, int[][] minFixedShapeList, int[][] maxFixedShapeList)
+    {
+        if (totalCount == 0)
+        {
+            return true;
+        }
+
+        for (int i = 0; i < minFixedShapeList.Length; i++)
+        {
+            if (!minFixedShapeList[i].SequenceEqual(maxFixedShapeList[i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     private static void PrintMinMaxShape(int[][] minFixedShapeList, int[][] maxFixedShapeList, string relPath)
     {
