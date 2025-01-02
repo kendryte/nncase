@@ -276,7 +276,7 @@ public partial class CallToFusion : RewriteRule<Pattern>
         }).ToArray();
 
         // arguments用到其他input的地方就要replace对应的input
-        var newCall = call.With(arguments: newArgs);
+        var newCall = call.With(arguments: newArgs, metadata: call.Metadata);
 
         // var newCall = ReplaceUtility.ReplaceCallParams(call.Target, call.Arguments.ToArray(), inputsWithMarkerAndIndex);
         var newCallWithMarker = ProcessForOuterCall(newCall);
