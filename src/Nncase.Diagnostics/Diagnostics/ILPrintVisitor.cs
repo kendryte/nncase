@@ -390,9 +390,16 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         _scope.IndWriteLine("{");
 
         // 2. Function body
-        using (_scope.IndentUp())
+        if (_scope.IndentLevel == 0 || _displayCallable)
         {
-            var body = Visit(expr.Body);
+            using (_scope.IndentUp())
+            {
+                var body = Visit(expr.Body);
+            }
+        }
+        else
+        {
+            _scope.IndWriteLine("...");
         }
 
         // 3. Function closing
@@ -418,21 +425,14 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         _scope.IndWriteLine("{");
 
         // 2. Function body
-        if (_displayCallable)
+        using (_scope.IndentUp())
         {
-            using (_scope.IndentUp())
+            var body_builder = new StringBuilder();
+            using (var body_writer = new StringWriter(body_builder))
             {
-                var body_builder = new StringBuilder();
-                using (var body_writer = new StringWriter(body_builder))
-                {
-                    var visitor = new ILPrintVisitor(body_writer, true, _scope.IndentLevel).Visit(expr.Body);
-                    _scope.Append(body_writer.ToString());
-                }
+                var visitor = new ILPrintVisitor(body_writer, _displayCallable, _scope.IndentLevel).Visit(expr.Body);
+                _scope.Append(body_writer.ToString());
             }
-        }
-        else
-        {
-            _scope.IndWriteLine("...");
         }
 
         // 3. Function closing
@@ -462,7 +462,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         {
             using (_scope.IndentUp())
             {
-                using (var bodys = new StringReader(CompilerServices.Print(expr.Target)))
+                using (var bodys = new StringReader(CompilerServices.Print(expr.Target, false, false)))
                 {
                     while (bodys.ReadLine() is string line)
                     {

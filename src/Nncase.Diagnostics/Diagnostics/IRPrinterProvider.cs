@@ -130,13 +130,13 @@ internal sealed class IRPrinterProvider : IIRPrinterProvider
     }
 
     /// <inheritdoc/>
-    public string Print(Expr expr, bool useScript)
+    public string Print(Expr expr, bool useScript, bool dispalycallable)
     {
         var sb = new StringBuilder();
         using var dumpWriter = new StringWriter(sb);
         var text = expr is PrimFunction || useScript
-            ? new ScriptPrintVisitor(dumpWriter, true).Visit(expr).Serialize()
-            : new ILPrintVisitor(dumpWriter, true, 0).Visit(expr);
+            ? new ScriptPrintVisitor(dumpWriter, dispalycallable).Visit(expr).Serialize()
+            : new ILPrintVisitor(dumpWriter, dispalycallable, 0).Visit(expr);
 
         return useScript ? text : expr switch
         {
