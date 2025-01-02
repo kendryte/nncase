@@ -472,7 +472,7 @@ public class MatmulToFusion : MarkerCallToFusion<MatMul>
     {
     }
 
-    public override bool Check(Call call)
+    public static bool CheckQWEN(Call call)
     {
         if (System.Environment.GetEnvironmentVariable("NNCASE_QWEN_QUANT_LAYERS") is string quant_layers)
         {
@@ -536,6 +536,11 @@ public class MatmulToFusion : MarkerCallToFusion<MatMul>
         }
 
         return true;
+    }
+
+    public override bool Check(Call call)
+    {
+        return CheckQWEN(call);
     }
 }
 
