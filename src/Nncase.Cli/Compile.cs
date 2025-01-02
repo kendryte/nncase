@@ -64,6 +64,10 @@ internal sealed class CompileCommand : Command
           name: "--dataset",
           description: $"calibration dataset, used in post quantization",
           getDefaultValue: () => string.Empty);
+        QuantScheme = new Option<string>(
+          name: "--quant-scheme",
+          description: $"quant scheme",
+          getDefaultValue: () => string.Empty);
         DatasetFormat = new Option<DatasetFormat>(
           name: "--dataset-format",
           description: $"datset format.",
@@ -152,6 +156,7 @@ internal sealed class CompileCommand : Command
         AddGlobalOption(QuantType);
         AddGlobalOption(WQuantType);
         AddGlobalOption(Dataset);
+        AddGlobalOption(QuantScheme);
         AddGlobalOption(DatasetFormat);
         AddGlobalOption(ModelQuantMode);
         AddGlobalOption(CalibMethod);
@@ -184,6 +189,8 @@ internal sealed class CompileCommand : Command
     public Option<QuantType> WQuantType { get; }
 
     public Option<string> Dataset { get; }
+
+    public Option<string> QuantScheme { get; }
 
     public Option<DatasetFormat> DatasetFormat { get; }
 

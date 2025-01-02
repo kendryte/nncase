@@ -121,6 +121,7 @@ internal partial class Program
                     _ => throw new ArgumentException("Invalid weights quant type"),
                 },
                 ModelQuantMode = context.ParseResult.GetValueForOption(compilecmd.ModelQuantMode),
+                QuantScheme = context.ParseResult.GetValueForOption(compilecmd.QuantScheme)!,
             },
         };
 
