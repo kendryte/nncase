@@ -85,7 +85,7 @@ template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
 };
 
 // cast
-template <> struct u_cast_policy<true> { static constexpr size_t unroll = 8; };
+template <> struct u_cast_policy<true> { static constexpr size_t unroll = 4; };
 
 // matmul
 template <>
