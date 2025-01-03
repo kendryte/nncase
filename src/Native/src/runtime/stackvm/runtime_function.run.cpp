@@ -47,7 +47,9 @@ stackvm_runtime_function::run(gsl::span<const gsl::byte> text) noexcept {
 
                 if(op.is_prim_func)
                 {
+#ifdef ENABLE_OP_PROFILE
                     op_profile p("KPU", (uint8_t)opcode);
+#endif
                     switch (opcode) {
 #include "ops/control.inl"
 #include "ops/conversion.inl"
@@ -91,12 +93,9 @@ stackvm_runtime_function::run(gsl::span<const gsl::byte> text) noexcept {
     }
     else {
         auto tensor_func = reader_.read_unaligned<tensor_function_t>();
-        // if (to_string(tensor_func) != "EXTCALL")
-        // {
 #ifdef ENABLE_OP_PROFILE
             op_profile p(to_string(tensor_func), (uint8_t)opcode);
 #endif
-            // }
             try_(visit(tensor_func, reader_))
         }
     }
