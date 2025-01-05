@@ -37,7 +37,7 @@ public sealed class PrimFunctionWrapper : BaseFunction
     /// <param name="target">Target.</param>
     /// <param name="parametersCount">Arguments count.</param>
     public PrimFunctionWrapper(PrimFunction target, int parametersCount)
-        : this($"func_{_globalFuncIndex++}", target, parametersCount)
+        : this($"primfunc_wrapper_{_globalFuncIndex++}", target, parametersCount)
     {
     }
 

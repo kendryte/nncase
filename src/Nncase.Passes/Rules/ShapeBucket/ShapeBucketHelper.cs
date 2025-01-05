@@ -31,8 +31,8 @@ public static class CallValidator
         typeof(Transpose).TypeHandle,
         typeof(Pad).TypeHandle,
 
-        // typeof(Unsqueeze).TypeHandle,
-        // typeof(Squeeze).TypeHandle,
+        typeof(Unsqueeze).TypeHandle,
+        typeof(Squeeze).TypeHandle,
         typeof(Unary).TypeHandle,
     };
 
@@ -47,7 +47,7 @@ public static class CallValidator
 
         typeof(Cast).TypeHandle,
 
-        // typeof(Reshape).TypeHandle,
+        typeof(Reshape).TypeHandle,
         typeof(Expand).TypeHandle,
         typeof(ConstantOfShape).TypeHandle,
 

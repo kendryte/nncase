@@ -943,15 +943,22 @@ public partial class FusionBucket : RewriteRule<Pattern>
         var varInfo = shapeBucketOptions.RangeInfo.First().Value;
         var segments = ShapeBucketHelper.ComputeSegmentList(shapeBucketOptions.SegmentsCount, varInfo.Min, varInfo.Max);
         var segValue = segments[segIndex] - varInfo.Min;
-        var inputShapeInfo = context.ShapeInfos[segValue].InputShapes[inputIndex];
-        var shape = inputShapeInfo.AsTensor().Cast<long>();
-        if (param.CheckedShape.IsFixed)
+        var inputShapeInfo = context.ShapeInfos[segValue];
+        if (inputShapeInfo.InputFromShapes[inputIndex])
         {
-            return param;
+            return inputShapeInfo.InputValues[inputIndex]!.AsTensor();
         }
         else
         {
-            return new Call(new BucketPad(), param, shape);
+            var shape = inputShapeInfo.InputShapes[inputIndex].AsTensor().Cast<long>();
+            if (param.CheckedShape.IsFixed)
+            {
+                return param;
+            }
+            else
+            {
+                return new Call(new BucketPad(), param, shape);
+            }
         }
     }
 
@@ -1033,7 +1040,25 @@ public partial class FusionBucket : RewriteRule<Pattern>
         //     ? new If(sameCond, call, slice)
         //     : slice;
         var func = new Function(slice, allNewVars);
-        return func;
+        var simplifyFunc = (Function)CompilerServices.Rewrite(
+            func,
+            new IRewriteRule[]
+            {
+                new FoldStackGetItem(),
+                new FoldShapeOf(),
+                new FoldTwoReshapes(),
+                new FoldTwoCasts(),
+                new FoldTwoSlices(),
+                new FoldNopBinary(),
+                new FoldNopCast(),
+                new Neutral.FoldConstCall(),
+                new FoldNopReshape(),
+                new FoldNopSlice(),
+                new FoldIf(),
+                new FoldBroadcastShape(),
+            },
+            new());
+        return simplifyFunc;
     }
 
     public static Expr MakeNewBody(FusionBucketContext context, Dictionary<Var, IValue> varInfo, Var[] newVars, int segIndex)
@@ -1255,27 +1280,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
     private static Expr MakeSliceForTensor(Expr sliceShape, Expr call, FusionBucketContext context)
     {
-        var slice = MakeSliceImpl(call, sliceShape);
-        var simplifySlice = CompilerServices.Rewrite(
-            slice,
-            new IRewriteRule[]
-            {
-                new FoldStackGetItem(),
-                new FoldShapeOf(),
-                new FoldTwoReshapes(),
-                new FoldTwoCasts(),
-                new FoldTwoSlices(),
-                new FoldNopBinary(),
-                new FoldNopCast(),
-                new Neutral.FoldConstCall(),
-                new FoldNopReshape(),
-                new FoldNopSlice(),
-                new FoldIf(),
-                new FoldBroadcastShape(),
-            },
-            new());
-
-        return simplifySlice;
+        return MakeSliceImpl(call, sliceShape);
     }
 
     private static bool IsFixed(int totalCount, int[][] minFixedShapeList, int[][] maxFixedShapeList)
@@ -1549,22 +1554,6 @@ public class FullBucket : FunctionPass
 
         return Task.FromResult((BaseFunction)main.With(body: newBody));
     }
-
-    private static FusionShapeData[] MakeShapeData((Var Key, int Value)[][] list, ShapeBucketOptions options) =>
-        list.Select(seg =>
-        {
-            var varValues = seg.ToDictionary(pair => pair.Key, pair => (IValue)Value.FromTensor(pair.Value));
-            var inShape = options.VarMap.Select(pair =>
-            {
-                var shapeExpr = pair.Key.CheckedShape.IsScalar
-                    ? (Expr)Array.Empty<int>()
-                    : Stack(new IR.Tuple(pair.Value.Select(x => Cast(x, DataTypes.Int64)).ToArray()), 0);
-
-                var shape = shapeExpr.Evaluate(varValues).AsTensor();
-                return shape;
-            }).ToArray();
-            return new FusionShapeData(Value.None, inShape.Select(Value.FromTensor).ToArray());
-        }).ToArray();
 
     private static (Var Key, int Value)[][] InputConfList(Dictionary<Var, int[]> dimVarValues) =>
         Enumerable.Range(0, dimVarValues.First().Value.Length).Select(i =>

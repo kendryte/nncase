@@ -22,56 +22,21 @@ namespace Nncase.Passes.Rules.ShapeBucket;
 
 public class FusionShapeData
 {
-    public FusionShapeData(IValue outshape, IValue[] inputShapes)
+    public FusionShapeData(IValue outshape, IValue[] inputShapes, IValue?[] inputValues, bool[] inputFromShapes)
     {
         Outshape = outshape;
         InputShapes = inputShapes;
+        InputValues = inputValues;
+        InputFromShapes = inputFromShapes;
     }
 
     public IValue Outshape { get; }
 
     public IValue[] InputShapes { get; }
-}
 
-public class FusionShapeUpdater : ExprVisitor<Expr, Unit>
-{
-    private readonly Dictionary<Expr, IValue> _memo;
+    public IValue?[] InputValues { get; }
 
-    public FusionShapeUpdater(Dictionary<Expr, IValue> memo)
-    {
-        _memo = memo;
-    }
-
-    public Dictionary<BucketFusion, FusionShapeData> FusionShape { get; } = new();
-
-    protected override Expr DefaultVisitLeaf(Expr expr) => expr;
-
-    protected override Expr VisitLeafCall(Call expr)
-    {
-        if (expr.Target is BucketFusion f)
-        {
-            var argShape = expr.Arguments.ToArray().Select(arg =>
-            {
-                var exp = arg is Marker m ? m.Target : arg;
-                return GetShape(_memo[exp]);
-            }).ToArray();
-            var shape = GetShape(_memo[expr]);
-            FusionShape[f] = new FusionShapeData(shape, argShape);
-        }
-
-        return expr;
-    }
-
-    private IValue GetShape(IValue value)
-    {
-        var shapes = value.AsTensors().Select(x => x.Shape.ToValueArray()).ToArray();
-        if (shapes.Length == 1)
-        {
-            return Value.FromTensor(shapes[0]);
-        }
-
-        return new TupleValue(shapes.Select(x => Value.FromTensor(x)).ToArray());
-    }
+    public bool[] InputFromShapes { get; }
 }
 
 public class FusionShapeUpdater2 : ExprVisitor<Expr, Unit>
@@ -91,13 +56,14 @@ public class FusionShapeUpdater2 : ExprVisitor<Expr, Unit>
     {
         if (expr.Target is BucketFusion f)
         {
-            var argShape = expr.Arguments.ToArray().Select(arg =>
+            var argData = expr.Arguments.ToArray().Select(arg =>
             {
                 var exp = arg is Marker m ? m.Target : arg;
-                return GetValueOfShape(_memo[exp].IRType!);
+                var valueOrShape = _memo[exp];
+                return (Shape: GetValueOfShape(valueOrShape.IRType!), Value: valueOrShape.Value, FromShape: valueOrShape.FromShape);
             }).ToArray();
             var shape = GetValueOfShape(_memo[expr].IRType!);
-            FusionShape[f] = new FusionShapeData(shape, argShape);
+            FusionShape[f] = new FusionShapeData(shape, argData.Select(x => x.Shape).ToArray(), argData.Select(x => x.Value).ToArray(), argData.Select(x => x.FromShape).ToArray());
         }
 
         return expr;
@@ -239,13 +205,13 @@ public class RecordFusionShape : FunctionPass
                 var f = new FusionShapeUpdater(ConcatDictionary(memo, exprValues));
 #else
                 var input = MakeDummyInputType(varMap, varValues);
-                var eval = new PartialShapeEvaluator(input.ToDictionary(p => p.Key, p => new ValueOrShape(p.Value, null)), varValues);
+                var eval = new PartialShapeEvaluator(input.ToDictionary(p => p.Key, p => new ValueOrShape(p.Value, null, false)), varValues);
                 eval.Visit(body);
                 var memo = eval.ExprMemo;
                 foreach (var (k, v) in exprValues)
                 {
                     var x = v.AsTensor();
-                    memo.Add(k, new(new TensorType(x.ElementType, x.Shape), v));
+                    memo.Add(k, new(new TensorType(x.ElementType, x.Shape), v, true));
                 }
 
                 var f = new FusionShapeUpdater2(memo);
@@ -270,7 +236,7 @@ public record ValueOrShape
 {
     private IValue? _concreteValue;
 
-    public ValueOrShape(IRType? irType, IValue? value)
+    public ValueOrShape(IRType? irType, IValue? value, bool fromShape)
     {
         if (irType is InvalidType)
         {
@@ -280,6 +246,7 @@ public record ValueOrShape
         IRType = irType;
         Value = value;
         _concreteValue = null;
+        FromShape = fromShape;
     }
 
     public IRType? IRType { get; }
@@ -287,6 +254,8 @@ public record ValueOrShape
     public IValue? Value { get; }
 
     public bool HasValue => Value != null;
+
+    public bool FromShape { get; }
 
     public IValue Concrete()
     {
@@ -325,9 +294,9 @@ internal sealed class PartialShapeEvaluator : ExprVisitor<ValueOrShape, Unit>
 
     protected override ValueOrShape VisitLeafMarker(Marker expr) => Visit(expr.Target);
 
-    protected override ValueOrShape VisitLeafBaseFunction(BaseFunction expr) => new(expr.CheckedType, null);
+    protected override ValueOrShape VisitLeafBaseFunction(BaseFunction expr) => new(expr.CheckedType, null, false);
 
-    protected override ValueOrShape VisitLeafOp(Op expr) => new(expr.CheckedType, null);
+    protected override ValueOrShape VisitLeafOp(Op expr) => new(expr.CheckedType, null, false);
 
     protected override ValueOrShape VisitLeafVar(Var expr)
     {
@@ -337,7 +306,7 @@ internal sealed class PartialShapeEvaluator : ExprVisitor<ValueOrShape, Unit>
         }
         else if (DimDict.TryGetValue(expr, out var dimValue) && dimValue is TensorValue dimtv)
         {
-            return new(dimtv.Type, dimtv);
+            return new(dimtv.Type, dimtv, true);
         }
         else
         {
@@ -349,8 +318,11 @@ internal sealed class PartialShapeEvaluator : ExprVisitor<ValueOrShape, Unit>
 
     protected override ValueOrShape VisitLeafTuple(IR.Tuple expr)
     {
-        var value = Value.FromTensors(expr.Fields.AsValueEnumerable().Select(Visit).Select(vs => vs.Concrete().AsTensor()).ToArray());
-        return new(value.Type, value);
+        var valueOrShapes = expr.Fields.AsValueEnumerable().Select(Visit).ToArray();
+        var value = Value.FromTensors(valueOrShapes.Select(vs => vs.Concrete().AsTensor()).ToArray());
+
+        // FIX ME: TupleType's from shape is not correct
+        return new(value.Type, value, valueOrShapes.Any(x => x.FromShape));
     }
 
     protected override ValueOrShape VisitLeafCall(Call expr)
@@ -363,7 +335,7 @@ internal sealed class PartialShapeEvaluator : ExprVisitor<ValueOrShape, Unit>
                 {
                     var shapeArr = ((TensorType)args[0].IRType!).Shape.Select(x => (long)x.FixedValue).ToArray();
                     var value = Value.FromTensor(Tensor.From<long>(shapeArr));
-                    result = new(value.Type, value);
+                    result = new(value.Type, value, true);
                 }
 
                 break;
@@ -371,18 +343,19 @@ internal sealed class PartialShapeEvaluator : ExprVisitor<ValueOrShape, Unit>
                 {
                     if (args.All(x => x is { HasValue: true }))
                     {
+                        var fromShape = args.All(x => x.FromShape);
                         var tmpCall = new Call(op, args.Select(a => Const.FromValue(a.Concrete())).ToArray());
                         var ctx = new EvaluateContext(args)
                         {
                             CurrentCall = tmpCall,
                         };
                         var value = CompilerServices.EvaluateOp(op, ctx);
-                        result = new(value.Type, value);
+                        result = new(value.Type, value, fromShape);
                     }
                     else
                     {
                         var ctx = new TypeInferenceContext(args);
-                        result = new(CompilerServices.InferenceOp(op, ctx, new()), null);
+                        result = new(CompilerServices.InferenceOp(op, ctx, new()), null, false);
                     }
                 }
 
@@ -408,7 +381,7 @@ internal sealed class PartialShapeEvaluator : ExprVisitor<ValueOrShape, Unit>
         return result;
     }
 
-    protected override ValueOrShape VisitLeafConst(Const expr) => new(expr.CheckedType, Value.FromConst(expr));
+    protected override ValueOrShape VisitLeafConst(Const expr) => new(expr.CheckedType, Value.FromConst(expr), true);
 }
 
 internal sealed class EvaluateContext : IEvaluateContext
