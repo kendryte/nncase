@@ -456,7 +456,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
                 }
 
                 Expr canditateVar = newVar.First();
-                if (x is Marker mm)
+                if (x is Marker mm && mm.Attribute is TensorConst) // Const range of marker
                 {
                     canditateVar = mm.With(target: canditateVar);
                 }
