@@ -126,10 +126,43 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
             var partial = IR.F.CPU.Boxing(broadcast, new DistributedType(inputType, newsbp, placement));
             var sumed = IR.F.CPU.Boxing(partial, new DistributedType(inputType, ndsbp, placement));
-            posts.Add(IR.F.CPU.Boxing(sumed, inputType));
+            var post = IR.F.CPU.Boxing(sumed, inputType);
+            post.Metadata = new Passes.Distributed.AutoDistributedMetaData() { Skip = true };
+            posts.Add(post);
         }
 
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+    }
+
+    [Fact]
+    public async Task TestPartialReshapeBoxing()
+    {
+        var hierarchy = new[] { 2, 4 };
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((int)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        var lhsType = new TensorType(DataTypes.Float32, new[] { 1, 4, 8 });
+        var rhsType = new TensorType(DataTypes.Float32, new[] { 8, 16 });
+        var lhs = new Var(lhsType);
+        var rhs = new Var(rhsType);
+
+        var feedDict = new Dictionary<Var, IValue>() {
+            { lhs, IR.F.Random.Normal(DataTypes.Float32, 1.0f, 1.0f, 1, lhsType.Shape.ToValueArray()).Evaluate() },
+            { rhs, IR.F.Random.Normal(DataTypes.Float32, 1.0f, 1.0f, 1, rhsType.Shape.ToValueArray()).Evaluate() },
+        };
+
+        var placement = new Placement(hierarchy, targetOptions.HierarchyNames);
+        var lhsBoxing = IR.F.CPU.Boxing(lhs, new DistributedType(lhsType, new SBP[] { SBP.S(2), SBP.B }, placement));
+        var rhsBoxing = IR.F.CPU.Boxing(rhs, new DistributedType(rhsType, new SBP[] { SBP.S(0), SBP.S(1) }, placement));
+        var matmul = IR.F.Tensors.MatMul(lhsBoxing, rhsBoxing);
+        var newShape = new[] { 1, 4, 8, 2 };
+        var reshape = IR.F.CPU.Boxing(matmul, new DistributedType(new TensorType(DataTypes.Float32, newShape), new SBP[] { SBP.B, SBP.S(2) }, placement), true);
+        var sumed = IR.F.CPU.Boxing(reshape, new DistributedType(new TensorType(DataTypes.Float32, newShape), new SBP[] { SBP.S(1), SBP.S(2) }, placement));
+        var post = IR.F.CPU.Boxing(sumed, new TensorType(DataTypes.Float32, newShape));
+        post.Metadata = new Passes.Distributed.AutoDistributedMetaData() { Skip = true };
+
+        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{0}"), feedDict, new[] { post });
     }
 
     [Fact]
@@ -464,8 +497,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
     }
 
-    [Theory(Skip = "ToBig")]
-    [InlineData(new object[] { false, 0 })]
+    [Theory]
+
+    // [InlineData(new object[] { false, 0 })]
     [InlineData(new object[] { true, 1 })] // enable packing
     public async Task TestDecodeLayer(bool packing, int count)
     {
@@ -475,7 +509,12 @@ public sealed class UnitTestCPUKernels : TestClassBase
             return;
         }
 
-        ((CpuTargetOptions)CompileOptions.TargetOptions).Packing = packing;
+        var cpuOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        cpuOptions.Packing = packing;
+        cpuOptions.Hierarchies = new[] { new[] { 2, 64 } };
+        cpuOptions.HierarchyNames = "bt";
+        cpuOptions.MemoryCapacities = [524288, 2147483647];
+        cpuOptions.MemoryBandWidths = [128, 64];
         var vhidden_in = new Var("vhidden_in", new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 }));
         var vattn_mask = new Var("vattn_mask", new TensorType(DataTypes.Float32, new[] { 1, 1, 384, 384 }));
         var vposition_ids = new Var("vposition_ids", new TensorType(DataTypes.Int64, new[] { 1, 384 }));
@@ -605,6 +644,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         }
 
         var main = new Function(fusion.Body, kernelCase.Vars.ToArray());
+        main.Metadata = fusion.Body.Metadata;
 
         var module = new IR.IRModule(main);
         var inputs = kernelCase.Inputs.ToArray();
