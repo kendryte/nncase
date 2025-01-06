@@ -430,7 +430,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
             var body_builder = new StringBuilder();
             using (var body_writer = new StringWriter(body_builder))
             {
-                var visitor = new ILPrintVisitor(body_writer, _displayCallable, _scope.IndentLevel).Visit(expr.Body);
+                var visitor = new ILPrintVisitor(body_writer, false, _scope.IndentLevel).Visit(expr.Body);
                 _scope.Append(body_writer.ToString());
             }
         }

@@ -362,14 +362,16 @@ internal sealed class PartialShapeEvaluator : ExprVisitor<ValueOrShape, Unit>
                 break;
             case Fusion fusion:
                 {
-                    var eval = new PartialShapeEvaluator(fusion.Parameters.ToArray().Zip(args).ToDictionary(p => p.First, p => p.Second), DimDict);
+                    var feedDict = new Dictionary<Var, ValueOrShape>(FeedDict.Concat(fusion.Parameters.ToArray().Zip(args).Select(x => new KeyValuePair<Var, ValueOrShape>(x.First, x.Second))));
+                    var eval = new PartialShapeEvaluator(feedDict, DimDict);
                     result = eval.Visit(fusion.Body);
                 }
 
                 break;
             case Function func:
                 {
-                    var eval = new PartialShapeEvaluator(func.Parameters.ToArray().Zip(args).ToDictionary(p => p.First, p => p.Second), DimDict);
+                    var feedDict = new Dictionary<Var, ValueOrShape>(FeedDict.Concat(func.Parameters.ToArray().Zip(args).Select(x => new KeyValuePair<Var, ValueOrShape>(x.First, x.Second))));
+                    var eval = new PartialShapeEvaluator(feedDict, DimDict);
                     result = eval.Visit(func.Body);
                 }
 
