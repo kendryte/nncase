@@ -6,6 +6,7 @@ using NetFabric.Hyperlinq;
 using Nncase.IR.Affine;
 using QuikGraph;
 using QuikGraph.Graphviz;
+using static Nncase.TIR.TIRExtensions;
 
 namespace Nncase.Schedule.TileGraph;
 
@@ -192,7 +193,8 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
         // perpare return infos.
         var bufferResults = new BufferResult[value.ReadAccesses.Length + 1];
         BufferIdentity obid = new(value.Wrapped, value.ReadAccesses.Length);
-        bufferResults[value.ReadAccesses.Length] = new(obid, new(TimeStamp, TimeStamp + 1), value.DomainRelation.Map * accessMaps[^1]);
+        var inplaceMemo = obid.Node.Op.GetInPlaceMemo();
+        bufferResults[value.ReadAccesses.Length] = new(obid, new(inplaceMemo.ContainsKey(obid.Index) ? TimeStamp + 1 : TimeStamp, TimeStamp + 1), value.DomainRelation.Map * accessMaps[^1]);
 
         for (int i = 0; i < value.ReadAccesses.Length; i++)
         {

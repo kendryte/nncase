@@ -2,11 +2,12 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Reactive;
-using Google.OrTools.ConstraintSolver;
+using Google.OrTools.Sat;
 using Nncase.IR;
 using Nncase.IR.Affine;
 using Nncase.TIR;
 using Nncase.TIR.Builders;
+using static Nncase.TIR.TIRExtensions;
 
 namespace Nncase.Schedule.TileGraph;
 
@@ -225,59 +226,58 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         foreach (var (level, nodeBufferSizes) in LevelBufferSizes)
         {
             var nodeBufferOffsets = LevelBufferOffsets[level] = new();
-            var solver = new Solver("buffer scheduler");
-            var xstarts = new List<IntVar>();
-            var xsizes = new List<long>();
-            var ystarts = new List<IntVar>();
-            var ysizes = new List<long>();
-            var validKeys = new List<NodeWithBuffer>();
-
+            var model = new CpModel();
+            var rectangles = new Dictionary<NodeWithBuffer, (IntervalVar XInterval, IntervalVar YInterval)>();
+            int count = 0;
+            var cons = model.AddNoOverlap2D();
             foreach (var (key, size) in nodeBufferSizes)
             {
                 if (size > 0)
                 {
-                    xstarts.Add(solver.MakeIntConst(LevelBufferLifeness[level][key].Item1));
-                    xsizes.Add(LevelBufferLifeness[level][key].Item2 - LevelBufferLifeness[level][key].Item1);
-                    ystarts.Add(solver.MakeIntVar(0, TargetOptions.MemoryCapacities[level] - size));
-                    ysizes.Add(size);
-                    validKeys.Add(key);
+                    var x = model.NewFixedSizeIntervalVar(LevelBufferLifeness[level][key].Item1, LevelBufferLifeness[level][key].Item2 - LevelBufferLifeness[level][key].Item1, $"x{count}");
+                    var ystart = model.NewIntVar(0, TargetOptions.MemoryCapacities[level] - size, $"ystart{count}");
+                    var y = model.NewFixedSizeIntervalVar(ystart, size, $"y{count}");
+                    cons.AddRectangle(x, y);
+                    rectangles.Add(key, (x, y));
+                    count++;
                 }
             }
 
-            solver.Add(solver.MakeNonOverlappingBoxesConstraint(xstarts.ToArray(), ystarts.ToArray(), xsizes.ToArray(), ysizes.ToArray()));
-            var collector = solver.MakeFirstSolutionCollector();
-            foreach (var item in ystarts)
+            // process inplace buffer.
+            foreach (var (k, (x, y)) in rectangles)
             {
-                collector.Add(item);
+                var inplaceMemo = k.Id.Node.Op.GetInPlaceMemo();
+                if (!inplaceMemo.TryGetValue(k.Id.Index, out var sourceIndex))
+                {
+                    continue;
+                }
+
+                // 1. when source buffer is isolated. we can find it in rectangles.
+                foreach (var sourceKey in rectangles.Keys.Where(n => ReferenceEquals(n.Node, k.Node) && n.Id.Index == sourceIndex))
+                {
+                    model.Add(rectangles[sourceKey].YInterval.StartExpr() == y.StartExpr());
+                }
+
+                // 2. source buffer has been reused. we need find it in defuseMap firstly.
+                foreach (var (defId, _) in TileNodeMemo[k.Node].DefUseMap.Where(kv => ReferenceEquals(kv.Value.Node, k.Id.Node) && kv.Value.Index == sourceIndex))
+                {
+                    foreach (var defKey in rectangles.Keys.Where(n => ReferenceEquals(n.Node, k.Node) && n.Id == defId))
+                    {
+                        model.Add(rectangles[defKey].YInterval.StartExpr() == y.StartExpr());
+                    }
+                }
             }
 
-            var defaultPhaseParameters = new DefaultPhaseParameters();
-            if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
-            {
-                defaultPhaseParameters.display_level = DefaultPhaseParameters.NORMAL;
-            }
-            else
-            {
-                defaultPhaseParameters.display_level = DefaultPhaseParameters.NONE;
-            }
-
-            var decisionBuilder = solver.MakeDefaultPhase(ystarts.ToArray(), defaultPhaseParameters);
-            var monitors = new List<SearchMonitor>() { collector, solver.MakeSolutionsLimit(1), };
-            if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
-            {
-                monitors.Add(solver.MakeSearchLog(10000));
-            }
-
-            var status = solver.Solve(decisionBuilder, monitors.ToArray());
-            if (!status)
+            var solver = new CpSolver();
+            var status = solver.Solve(model);
+            if (status is not CpSolverStatus.Optimal)
             {
                 throw new InvalidOperationException("can't schedule buffers!");
             }
 
-            var sol = collector.Solution(0);
-            for (int i = 0; i < ystarts.Count; i++)
+            foreach (var (k, (_, y)) in rectangles)
             {
-                nodeBufferOffsets[validKeys[i]] = (ulong)sol.Value(ystarts[i]);
+                nodeBufferOffsets[k] = (ulong)solver.Value(y.StartExpr());
             }
         }
     }

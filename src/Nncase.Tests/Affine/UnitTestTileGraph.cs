@@ -40,6 +40,10 @@ public sealed class UnitTestTileGraph : TestClassBase
         { FunctionSamples.Get1, [new(2, 1, 2)], (_) => { }, 2 },
         { FunctionSamples.Get1, [new(1, 0, 2), new(2, 1, 2)], (_) => { }, 3 },
         { FunctionSamples.Get4, [new(2, 0, 2)], (_) => { }, 4 },
+
+        // just for check single op tiling results
+        { FunctionSamples.Get1Matmul, [], (_) => { }, 5 },
+        { FunctionSamples.Get1Exp, [], (_) => { }, 6 },
     };
 
     public static readonly TheoryData<Func<Function>, int> MCTSDatas = new()

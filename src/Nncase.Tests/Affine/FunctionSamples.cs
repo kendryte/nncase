@@ -36,6 +36,31 @@ public static class FunctionSamples
         return func;
     }
 
+    public static Function Get1Matmul()
+    {
+        Function func;
+        {
+            var a = new Var(new TensorType(DataTypes.Float32, new[] { 128, 256 }));
+            var b = new Var(new TensorType(DataTypes.Float32, new[] { 256, 384 }));
+            var c = IR.F.Tensors.MatMul(a, b);
+            func = new(c, a, b);
+        }
+
+        return func;
+    }
+
+    public static Function Get1Exp()
+    {
+        Function func;
+        {
+            var a = new Var(new TensorType(DataTypes.Float32, new[] { 128, 384 }));
+            var d = IR.F.Math.Exp(a);
+            func = new(d, a);
+        }
+
+        return func;
+    }
+
     /// <summary>
     /// Tileflow default case with pack M.
     /// </summary>
