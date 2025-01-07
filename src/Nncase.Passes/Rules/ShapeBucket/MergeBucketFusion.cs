@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
@@ -22,6 +23,206 @@ using static Nncase.Utilities.ReplaceUtility;
 using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Passes.Rules.ShapeBucket;
+
+#if true
+internal sealed class EffectVarEqualityComparer : IEqualityComparer<Var[]>
+{
+    public bool Equals(Var[]? x, Var[]? y) => System.Collections.StructuralComparisons.StructuralEqualityComparer.Equals(x, y);
+
+    public int GetHashCode([DisallowNull] Var[] obj) => System.Collections.StructuralComparisons.StructuralEqualityComparer.GetHashCode(obj);
+}
+
+public sealed class MergeBucketFusionPass : FunctionPass
+{
+    protected override Task<BaseFunction> RunCoreAsync(BaseFunction baseFunction, RunPassContext context)
+    {
+        if (baseFunction is not Function function)
+        {
+            return Task.FromResult(baseFunction);
+        }
+
+        var effectVarSets = ExprCollector.Collect(function).OfType<BucketFusion>().Select(f => f.EffectVar).Distinct(new EffectVarEqualityComparer());
+        foreach (var set in effectVarSets)
+        {
+            var hashSet = new HashSet<Var>(set);
+            function = Perform(function, hashSet);
+        }
+
+        return Task.FromResult<BaseFunction>(function);
+    }
+
+    private static GraphPartition.Compat CheckCompat(Expr expr, HashSet<Var> effectVarSet)
+    {
+        switch (expr)
+        {
+            case Call { Target: BucketFusion fusion }:
+                if (effectVarSet.SetEquals(fusion.EffectVar))
+                {
+                    return GraphPartition.Compat.COMPATIBLE;
+                }
+                else
+                {
+                    return GraphPartition.Compat.INCOMPATIBLE;
+                }
+
+            case Marker { Target: Call c } m:
+                if (CheckCompat(c, effectVarSet) is GraphPartition.Compat.COMPATIBLE)
+                {
+                    if (m.Users.Any(u => CheckCompat(u, effectVarSet) is GraphPartition.Compat.COMPATIBLE))
+                    {
+                        return GraphPartition.Compat.COMPATIBLE;
+                    }
+                    else
+                    {
+                        return GraphPartition.Compat.INCOMPATIBLE;
+                    }
+                }
+                else
+                {
+                    return GraphPartition.Compat.INCOMPATIBLE;
+                }
+
+            default:
+                return GraphPartition.Compat.INCOMPATIBLE;
+        }
+    }
+
+    private Function Perform(Function pre, HashSet<Var> effectVarSet)
+    {
+        // Function post;
+        var ctx = new GraphPartition.GraphContext();
+        var convertor = new GraphPartition.GraphConvertor(x => CheckCompat(x, effectVarSet));
+        convertor.Visit(pre.Body, ctx);
+
+        // ctx.Graph.DumpDot(DumpScope.Current.Directory + $"function_{i}.dot");
+        ctx.SummarizeGraph();
+
+        // ctx.GraphSummary.DumpDot(DumpScope.Current.Directory + $"function_{i}_summary.dot");
+        var dfsVisitor = new QuikGraph.Algorithms.TopologicalSort.SourceFirstTopologicalSortAlgorithm<GraphPartition.Vertex, GraphPartition.Edge>(ctx.GraphSummary);
+        dfsVisitor.Compute();
+        var exprMemo = new Dictionary<Expr, Expr>(ReferenceEqualityComparer.Instance);
+        for (var vi = 0; vi < dfsVisitor.SortedVertices.Length; vi++)
+        {
+            var vertex = dfsVisitor.SortedVertices[vi];
+            var subgraph = ctx.SubgraphMap[ctx.SummaryVertexSubgraphMap[vertex]];
+            if (vertex.CompatType == GraphPartition.Compat.INCOMPATIBLE)
+            {
+                var sg = new GraphPartition.Graph();
+                subgraph.Nodes.ForEach(n => sg.AddVertex(n));
+                subgraph.InteriorEdges.ForEach(e => sg.AddEdge(e));
+
+                // sg.DumpDot(DumpScope.Current.Directory + $"_Incompatible_{subgraph.Index}_{vi}.dot");
+                var sgVisitor = new QuikGraph.Algorithms.TopologicalSort.SourceFirstTopologicalSortAlgorithm<GraphPartition.Vertex, GraphPartition.Edge>(sg);
+                sgVisitor.Compute();
+                foreach (var v in sgVisitor.SortedVertices)
+                {
+                    var expr = v.Expr switch
+                    {
+                        Call c => c.With(arguments: c.Arguments.AsValueEnumerable().Select(arg => exprMemo[arg]).ToArray()),
+                        IR.Tuple t => t.With(fields: t.Fields.AsValueEnumerable().Select(arg => exprMemo[arg]).ToArray()),
+                        _ => v.Expr,
+                    };
+                    exprMemo.Add(v.Expr, expr);
+                }
+            }
+            else
+            {
+                Diagnostics.DumpScope.Current.DumpIR(vertex.Expr, $"pre{vi}", null, true);
+
+                var varMap = ctx.VarMap[ctx.SummaryVertexSubgraphMap[vertex]];
+                var newInputs = varMap.Values.ToArray();
+                var merger = new BucketFusionMerger(varMap);
+                var clonedRoot = merger.Clone(vertex.Expr, default);
+                Diagnostics.DumpScope.Current.DumpIR(clonedRoot, $"post{vi}", null, true);
+
+                var newCall = new Call(new BucketFusion(string.Join("_", merger.BucketFusions.Select(f => f.Name)), Callable.StackVMModuleKind, clonedRoot, newInputs, effectVarSet.ToArray()), ctx.VarMap[ctx.SummaryVertexSubgraphMap[vertex]].Keys.Select(e => exprMemo[e]).ToArray());
+                if (ctx.OutputMap[subgraph.Index].Count > 1)
+                {
+                    ctx.OutputMap[subgraph.Index].ToList().ForEach(e => exprMemo.Add(e.Key, new Call(new GetItem(), newCall, e.Value)));
+                }
+                else
+                {
+                    exprMemo.Add(ctx.OutputMap[subgraph.Index].Keys.First(), newCall);
+                }
+            }
+        }
+
+        var post = pre.With(pre.Name, exprMemo[pre.Body], pre.Parameters.ToArray());
+        return post;
+    }
+}
+
+internal sealed class SubFusionCloner : ExprCloner<Unit>
+{
+    private readonly Dictionary<Var, Expr> _feedDict;
+
+    public SubFusionCloner(Dictionary<Var, Expr> feedDict)
+    {
+        _feedDict = feedDict;
+    }
+
+    protected override Expr VisitLeafVar(Var expr, Unit context)
+    {
+        return _feedDict[expr];
+    }
+
+    protected override Expr VisitLeafConst(Const expr, Unit context)
+    {
+        return expr;
+    }
+}
+
+internal sealed class BucketFusionMerger : ExprCloner<Unit>
+{
+    private readonly Dictionary<Expr, Var> _extractDict;
+
+    public BucketFusionMerger(Dictionary<Expr, Var> extractDict)
+    {
+        _extractDict = extractDict;
+        BucketFusions = new();
+    }
+
+    public List<BucketFusion> BucketFusions { get; }
+
+    protected override Expr DispatchVisit(Expr expr, Unit context)
+    {
+        if (HasVisited(expr, out var result))
+        {
+            return result;
+        }
+
+        if (_extractDict.TryGetValue(expr, out var @param))
+        {
+            return MarkVisited(expr, @param);
+        }
+
+        return MarkVisited(expr, base.DispatchVisit(expr, context));
+    }
+
+    protected override Expr VisitLeafCall(Call expr, Unit context)
+    {
+        if (expr.Target is BucketFusion fusion)
+        {
+            BucketFusions.Add(fusion);
+            var cloner = new SubFusionCloner(fusion.Parameters.ToArray().Zip(expr.Arguments.ToArray()).ToDictionary(p => p.First, p => ExprMemo[p.Second]));
+            return cloner.Clone(fusion.Body, default);
+        }
+
+        return base.VisitLeafCall(expr, context);
+    }
+
+    protected override Expr VisitLeafVar(Var expr, Unit context)
+    {
+        return expr;
+    }
+
+    protected override Expr VisitLeafConst(Const expr, Unit context)
+    {
+        return expr;
+    }
+}
+
+#else
 
 public class MergeBucketFusionPass : FunctionPass
 {
@@ -62,6 +263,7 @@ public class MergeBucketFusionPass : FunctionPass
         return main;
     }
 }
+#endif
 
 [RuleGenerator]
 public partial class MergeTupleFusion : RewriteRule<Pattern>

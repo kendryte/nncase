@@ -314,8 +314,6 @@ internal sealed class PartialShapeEvaluator : ExprVisitor<ValueOrShape, Unit>
         }
     }
 
-    protected override ValueOrShape DefaultVisit(Expr expr) => base.DefaultVisit(expr);
-
     protected override ValueOrShape VisitLeafTuple(IR.Tuple expr)
     {
         var valueOrShapes = expr.Fields.AsValueEnumerable().Select(Visit).ToArray();

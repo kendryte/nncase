@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="QuikGraph.Graphviz" />
     <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
     <ProjectReference Include="..\Nncase.EGraph\Nncase.EGraph.csproj" />
     <ProjectReference Include="..\Nncase.Graph\Nncase.Graph.csproj" />

@@ -213,7 +213,7 @@ public static class ShapeBucketRegister
             return;
         }
 
-        p.AddWithName<MergeBucketFusionPass>("MergeBucketFusionPass", greedy);
+        p.AddWithName<MergeBucketFusionPass>("MergeBucketFusionPass");
     }
 
     public static void LostToFusion(IPassManager p, bool singleVar) =>
