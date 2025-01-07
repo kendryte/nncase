@@ -69,7 +69,7 @@ public sealed partial class CombineConstBinaryReshape : IRewriteRule
     public CombineConstBinaryReshape()
     {
         var shape = IsTensorConst("shape");
-        var input = IsReshape(IsWildcard("input"), shape);
+        var input = IsReshape(IsWildcard("input") with { TypePattern = HasFixedShape() }, shape);
         var @const = IsConst("constInput") with { TypePattern = HasRank(1) | HasRank(0) };
         Pattern = IsAlt(IsCallWildcard("call", IsOp<Binary>("binary"), input, @const), IsCallWildcard("call", IsOp<Binary>("binary"), @const, input));
     }
