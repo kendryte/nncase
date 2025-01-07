@@ -30,6 +30,11 @@ public record EqualityClass(bool Tuple, List<IEquality> Children) : IEquality
 {
 }
 
+public sealed class AutoDistributedMetaData : IRMetadata
+{
+    public bool Skip { get; set; }
+}
+
 /// <summary>
 /// auto distributed the xpu fusion.
 /// </summary>
@@ -38,14 +43,25 @@ public sealed partial class AutoDistributedPass : FunctionPass
 {
     private readonly CompileOptions _compileOptions;
 
-    public AutoDistributedPass(CompileOptions compileOptions)
+    private readonly bool _bidirectional;
+
+    private readonly string _moduleKind;
+
+    public AutoDistributedPass(bool bidirectional, string moduleKind, CompileOptions compileOptions)
     {
         _compileOptions = compileOptions;
+        _bidirectional = bidirectional;
+        _moduleKind = moduleKind;
     }
 
     protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
     {
-        var rewriter = new AutoDistributedRewriter(_compileOptions, _compileOptions.TargetOptions is CpuTargetOptions options ? options : new CpuTargetOptions());
+        if (input.Metadata is AutoDistributedMetaData { Skip: true })
+        {
+            return Task.FromResult(input);
+        }
+
+        var rewriter = new AutoDistributedRewriter(_compileOptions, _compileOptions.TargetOptions is CpuTargetOptions options ? options : new CpuTargetOptions(), _moduleKind, _bidirectional);
         return Task.FromResult(rewriter.Rewirte(input));
     }
 }
@@ -54,19 +70,27 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
 {
     private readonly Dictionary<Expr, IEquality> _equalMemo = new();
 
-    public AutoDistributedRewriter(CompileOptions compileOptions, CpuTargetOptions targetOptions)
+    private readonly string _moduleKind;
+
+    private readonly bool _bidirectional;
+
+    public AutoDistributedRewriter(CompileOptions compileOptions, CpuTargetOptions targetOptions, string moduleKind = "cpu", bool bidirectional = false)
     {
-        Placements = targetOptions.Hierarchies.Select(h => new Placement(h, targetOptions.HierarchyNames)).ToArray();
+        Placements = targetOptions.Hierarchies.Select(h => new Placement(h, targetOptions.HierarchyNames, targetOptions.HierarchyKind)).ToArray();
         CompileOptions = compileOptions;
         TargetOptions = targetOptions;
         if (Path.Exists(TargetOptions.DistributedScheme) && System.Text.Json.JsonSerializer.Deserialize<DistributedScheme>(File.ReadAllText(TargetOptions.DistributedScheme)) is DistributedScheme scheme)
         {
-            Scheme = scheme.Outputs.ToDictionary(n => n.Name, n => (new IRArray<SBP>(n.NdSBP), new Placement(n.Hierarchy, n.HierarchyName)));
+            Scheme = scheme.Outputs.ToDictionary(n => n.Name, n => (new IRArray<SBP>(n.NdSBP), new Placement(n.Hierarchy, n.HierarchyName, targetOptions.HierarchyKind)));
         }
         else
         {
             Scheme = new Dictionary<string, (IRArray<SBP> NdSBP, Placement Placement)>();
         }
+
+        _moduleKind = moduleKind;
+
+        _bidirectional = bidirectional;
     }
 
     public IRArray<Placement> Placements { get; }
@@ -332,36 +356,41 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             return new Dictionary<IRType, List<Expr>> { { expr.CheckedType, new() { expr } } };
         }
 
-        var isSupported = PassUtility.IsCpuSupported(op, expr, expr.Arguments.ToArray());
+        var isSupported = PassUtility.IsCpuSupported(op, expr, expr.Arguments.ToArray(), _moduleKind);
         foreach (var param in op.Parameters)
         {
             VisitLeafArgument(param.ParameterKind, expr.Arguments[param.Index], isSupported);
         }
 
-#if true
-        var results = expr.Arguments.ToArray().
-            Select(Visit).
-            CartesianProduct().
-            Select(args => args.ToArray()).
-            Select(args => isSupported ? BuildEquivalCalls(op, args.Select(kv => kv.Value[0]).ToArray()).ToArray() :
-                            BuildNotSupportedCalls(op, args.Select(kv => kv.Value[0]).ToArray())).
-            SelectMany(i => i).
-            GroupBy(c => c.CheckedType).
-            ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
-#else
-        var results = expr.Arguments.ToArray().
-                            Select(Visit).
-                            CartesianProduct().
-                            Select(args => args.ToArray()).
-                            Select(args => args.Select(kv => kv.Value[0]).Select(arg => arg.CheckedType switch
-                            {
-                                DistributedType d => GetDiverseCandidateSBPs(d, Placements).Select(ndsbp => IR.F.CPU.Boxing(arg, new DistributedType(d.TensorType, ndsbp, d.Placement))).Concat(new[] { arg }).ToArray(),
-                                _ => new[] { arg },
-                            }).ToList().CartesianProduct().Select(arg => BuildEquivalCalls(op, arg.ToArray())).SelectMany(i => i).ToArray()).
-                            SelectMany(i => i).
-                            GroupBy(c => c.CheckedType).
-                            ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
-#endif
+        Dictionary<IRType, List<Expr>> results;
+        if (_bidirectional && isSupported)
+        {
+            results = expr.Arguments.ToArray().
+                                Select(Visit).
+                                CartesianProduct().
+                                Select(args => args.ToArray()).
+                                Select(args => args.Select(kv => kv.Value[0]).Select(arg => arg.CheckedType switch
+                                {
+                                    DistributedType d => GetDiverseCandidateSBPs(d, Placements).Select(ndsbp => IR.F.CPU.Boxing(arg, new DistributedType(d.TensorType, ndsbp, d.Placement))).Concat(new[] { arg }).ToArray(),
+                                    _ => new[] { arg },
+                                }).ToList().CartesianProduct().Select(arg => BuildEquivalCalls(op, arg.ToArray())).SelectMany(i => i).ToArray()).
+                                SelectMany(i => i).
+                                GroupBy(c => c.CheckedType).
+                                ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
+        }
+        else
+        {
+            results = expr.Arguments.ToArray().
+                Select(Visit).
+                CartesianProduct().
+                Select(args => args.ToArray()).
+                Select(args => isSupported ? BuildEquivalCalls(op, args.Select(kv => kv.Value[0]).ToArray()).ToArray() :
+                                BuildNotSupportedCalls(op, args.Select(kv => kv.Value[0]).ToArray())).
+                SelectMany(i => i).
+                GroupBy(c => c.CheckedType).
+                ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
+        }
+
         if (results.Count == 0)
         {
             return expr.Arguments.ToArray().

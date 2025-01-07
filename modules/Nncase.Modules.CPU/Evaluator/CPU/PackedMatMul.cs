@@ -106,7 +106,7 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
             rhs = OrtKI.Transpose(rhs, perm);
         }
 
-        var matmul = OrtKI.MatMul(lhs, rhs);
+        var matmul = Math.MatMulEvaluator.InferValue(lhs.DataType.ToDataType(), lhs.ToTensor(), rhs.ToTensor()).AsTensor().ToOrtTensor();
         if (outLanes.Length > 0)
         {
             foreach (var (lane, axis) in outLanes.Zip(axes))
@@ -208,6 +208,10 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
                     bool packingK = target.LhsPackedAxes.Count == 1 && target.RhsPackedAxes.Count == 1 &&
                      target.LhsPackedAxes[0] == a.TensorType.Shape.Rank - 1 && target.RhsPackedAxes[0] == b.TensorType.Shape.Rank - 2;
                     rType = Math.MatMulEvaluator.VisitDistributedType(a, b, packingK, new(lm, lk, rk, rn));
+                    if (target.FusedReduce)
+                    {
+                        rType = Math.MatMulEvaluator.ConvertPartialToBroadcast((DistributedType)rType);
+                    }
                 }
 
                 break;

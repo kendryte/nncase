@@ -85,7 +85,7 @@ template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
 };
 
 // cast
-template <> struct u_cast_policy<true> { static constexpr size_t unroll = 8; };
+template <> struct u_cast_policy<true> { static constexpr size_t unroll = 4; };
 
 // matmul
 template <>
@@ -508,67 +508,67 @@ template <> struct u_memcpy<vector<float, NTT_VLEN / 32>, true> {
         constexpr auto unroll = policy_t::unroll;
         constexpr auto vl = NTT_VLEN / 32;
         constexpr auto unit = sizeof(vector<float, vl>);
-        in_stride *= unit;
-        out_stride *= unit;
+        auto in_strides = in_stride * unit;
+        auto out_strides = out_stride * unit;
         asm("vsetvli zero, %[vl], e32, m1\n" ::[vl] "r"(vl));
 
         while (count / unroll) {
 #if 0
             asm volatile(
                 "vl1re32.v v1, (%[input])\n"
-                "add %[input], %[input], %[in_stride]\n"
+                "add %[input], %[input], %[in_strides]\n"
                 "vl1re32.v v2, (%[input])\n"
-                "add %[input], %[input], %[in_stride]\n"
+                "add %[input], %[input], %[in_strides]\n"
                 "vs1r.v v1, (%[output])\n"
-                "add %[output], %[output], %[out_stride]\n"
+                "add %[output], %[output], %[out_strides]\n"
                 "vl1re32.v v3, (%[input])\n"
-                "add %[input], %[input], %[in_stride]\n"
+                "add %[input], %[input], %[in_strides]\n"
                 "vs1r.v v2, (%[output])\n"
-                "add %[output], %[output], %[out_stride]\n"
+                "add %[output], %[output], %[out_strides]\n"
                 "vl1re32.v v4, (%[input])\n"
-                "add %[input], %[input], %[in_stride]\n"
+                "add %[input], %[input], %[in_strides]\n"
                 "vs1r.v v3, (%[output])\n"
-                "add %[output], %[output], %[out_stride]\n"
+                "add %[output], %[output], %[out_strides]\n"
                 "vs1r.v v4, (%[output])\n"
-                "add %[output], %[output], %[out_stride]\n"
+                "add %[output], %[output], %[out_strides]\n"
                 : [input] "+r"(input), [output] "+r"(output)
-                : [in_stride] "r"(in_stride), [out_stride] "r"(out_stride));
+                : [in_strides] "r"(in_strides), [out_strides] "r"(out_strides));
 #else
             asm volatile(
                 "vl1re32.v v1, (%[input])\n"
-                "add %[input], %[input], %[in_stride]\n"
+                "add %[input], %[input], %[in_strides]\n"
                 "vl1re32.v v2, (%[input])\n"
-                "add %[input], %[input], %[in_stride]\n"
+                "add %[input], %[input], %[in_strides]\n"
                 "vs1r.v v1, (%[output])\n"
-                "add %[output], %[output], %[out_stride]\n"
+                "add %[output], %[output], %[out_strides]\n"
                 "vl1re32.v v3, (%[input])\n"
-                "add %[input], %[input], %[in_stride]\n"
+                "add %[input], %[input], %[in_strides]\n"
                 "vs1r.v v2, (%[output])\n"
-                "add %[output], %[output], %[out_stride]\n"
+                "add %[output], %[output], %[out_strides]\n"
                 "vl1re32.v v4, (%[input])\n"
-                "add %[input], %[input], %[in_stride]\n"
+                "add %[input], %[input], %[in_strides]\n"
                 "vs1r.v v3, (%[output])\n"
-                "add %[output], %[output], %[out_stride]\n"
+                "add %[output], %[output], %[out_strides]\n"
                 "vl1re32.v v5, (%[input])\n"
-                "add %[input], %[input], %[in_stride]\n"
+                "add %[input], %[input], %[in_strides]\n"
                 "vs1r.v v4, (%[output])\n"
-                "add %[output], %[output], %[out_stride]\n"
+                "add %[output], %[output], %[out_strides]\n"
                 "vl1re32.v v6, (%[input])\n"
-                "add %[input], %[input], %[in_stride]\n"
+                "add %[input], %[input], %[in_strides]\n"
                 "vs1r.v v5, (%[output])\n"
-                "add %[output], %[output], %[out_stride]\n"
+                "add %[output], %[output], %[out_strides]\n"
                 "vl1re32.v v7, (%[input])\n"
-                "add %[input], %[input], %[in_stride]\n"
+                "add %[input], %[input], %[in_strides]\n"
                 "vs1r.v v6, (%[output])\n"
-                "add %[output], %[output], %[out_stride]\n"
+                "add %[output], %[output], %[out_strides]\n"
                 "vl1re32.v v8, (%[input])\n"
-                "add %[input], %[input], %[in_stride]\n"
+                "add %[input], %[input], %[in_strides]\n"
                 "vs1r.v v7, (%[output])\n"
-                "add %[output], %[output], %[out_stride]\n"
+                "add %[output], %[output], %[out_strides]\n"
                 "vs1r.v v8, (%[output])\n"
-                "add %[output], %[output], %[out_stride]\n"
+                "add %[output], %[output], %[out_strides]\n"
                 : [input] "+r"(input), [output] "+r"(output)
-                : [in_stride] "r"(in_stride), [out_stride] "r"(out_stride));
+                : [in_strides] "r"(in_strides), [out_strides] "r"(out_strides));
 #endif
             count -= unroll;
         }

@@ -353,7 +353,14 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         if target == 'cpu' or target == 'xpu':
             target_options = nncase.CpuTargetOptions()
             for k, v in values.items():
-                exec(f"target_options.{k} = {e + v + e if isinstance(v, str) else v}")
+                is_enum = False
+                try:
+                    exec(f"target_options.{k}")
+                    is_enum = True
+                except:
+                    pass
+                exec(
+                    f"target_options.{k} = { e + v + e if isinstance(v, str) and not is_enum else v}")
         return target_options
 
     def get_compile_options(self, target, dump_dir):

@@ -39,6 +39,8 @@ public sealed partial class PackedMatMul : Op
 
     public bool TransposeB { get; }
 
+    public bool FusedReduce { get; }
+
     public static (PackKind Lhs, PackKind Rhs) GetPackKind(IRArray<int> lhsPackedAxes, IRArray<int> rhsPackedAxes)
     {
         switch (lhsPackedAxes.Count, rhsPackedAxes.Count)

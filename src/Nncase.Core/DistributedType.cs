@@ -14,6 +14,12 @@ using DryIoc.ImTools;
 
 namespace Nncase.IR;
 
+public enum HierarchyKind : byte
+{
+    Parallel = 0,
+    SMT = 1,
+}
+
 [JsonDerivedType(typeof(SBPSplit), "S")]
 [JsonDerivedType(typeof(SBPPartialSum), "P")]
 [JsonDerivedType(typeof(SBPBroadCast), "B")]
@@ -45,8 +51,8 @@ public sealed record SBPBroadCast : SBP
     public override string ToString() => "B";
 }
 
-// public sealed record Placement(Placement.DeviceKind Kind, IRArray<int> Hierarchy, string Name)
-public sealed record Placement(IRArray<int> Hierarchy, string Name)
+// public sealed record Placement(Placement.DeviceKind Kind, IRArray<int> Hierarchy, string Name, HierarchyKind HierarchyKind)
+public sealed record Placement(IRArray<int> Hierarchy, string Name, HierarchyKind HierarchyKind = HierarchyKind.Parallel)
 {
     // public enum DeviceKind : uint
     // {

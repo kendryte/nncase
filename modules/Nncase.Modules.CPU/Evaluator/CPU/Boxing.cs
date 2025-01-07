@@ -42,6 +42,11 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                         return new InvalidType("Not supported input is Partial output is Split");
                     }
 
+                    if (target.IsReshape)
+                    {
+                        return new InvalidType("partial not support reshape");
+                    }
+
                     return outv;
                 }
                 else

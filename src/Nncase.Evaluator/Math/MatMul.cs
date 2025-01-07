@@ -50,6 +50,12 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                     if (ax == lk && bx == rk)
                     {
                         // split on k
+                        if (a.Placement.HierarchyKind == HierarchyKind.SMT && i == a.Placement.Rank - 1)
+                        {
+                            // not split k on threads
+                            return invalid;
+                        }
+
                         ndsbp[i] = SBP.P;
                     }
                     else if ((ax == lk && bx != rk) || (ax != lk && bx == rk) || (ax == lm && bx == rn))
@@ -120,6 +126,12 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         }
 
         return new DistributedType(outType, ndsbp, a.Placement);
+    }
+
+    public static IRType ConvertPartialToBroadcast(DistributedType a)
+    {
+        var ndsbp = a.NdSBP.Select(x => x == SBP.P ? SBP.B : x).ToArray();
+        return new DistributedType(a.TensorType, ndsbp, a.Placement);
     }
 
     public static IRType VisitTensorType(TensorType lhs, TensorType rhs, bool packingK = false, DimInfo? dimInfo = null)

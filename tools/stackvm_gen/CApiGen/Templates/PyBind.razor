@@ -29,7 +29,11 @@
     var info = Model.OptionInfos[i];
       @:.def_property(
       @:  "@(info.PropertyName)",
+    if (info.PropertyType.IsEnum) {
+      @:  py::overload_cast<>(&@(Model.OptionsType.Name.ToSnake())::@(info.PropertyName.ToSnake())),
+    } else {
       @:  []() {},
+    }
       @:  py::overload_cast<@(info.PropertyType.RenderType(LangMode.Pyb))>(&@(Model.OptionsType.Name.ToSnake())::@(info.PropertyName.ToSnake()))) @if (i == Model.OptionInfos.Count - 1) { @(";") }
 }
 

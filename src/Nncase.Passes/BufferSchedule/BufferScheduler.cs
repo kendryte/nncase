@@ -31,9 +31,10 @@ public sealed class ConstrainEventArgs : EventArgs
 
 public class BufferScheduler
 {
-    public BufferScheduler(long capacity = 2147483648L)
+    public BufferScheduler(long capacity = 2147483648L, long alignment = 1L)
     {
         MemoryCapacity = capacity;
+        Alignment = alignment;
         FinishedConstrain = null!;
         FinishedSchedule = GetItemReSchedule;
     }
@@ -43,6 +44,8 @@ public class BufferScheduler
     public event EventHandler<IReadOnlyDictionary<Expr, ScheduleBuffer>> FinishedSchedule;
 
     public long MemoryCapacity { get; }
+
+    public long Alignment { get; }
 
     public static void GetItemReSchedule(object? sender, IReadOnlyDictionary<Expr, ScheduleBuffer> buffers)
     {
@@ -117,6 +120,7 @@ public class BufferScheduler
             }
 
             var memStartVar = model.NewIntVar(0, upbound, $"{item.Name}_{item.Number}_y_start");
+            model.AddModuloEquality(0, memStartVar, Alignment);
             var yInterval = model.NewFixedSizeIntervalVar(memStartVar, item.MemInterval.Stop, $"{item.Name}_{item.Number}_y");
             noOverlap.AddRectangle(xInterval, yInterval);
             yStarts.Add(memStartVar);
