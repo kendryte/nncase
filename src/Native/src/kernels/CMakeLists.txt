@@ -3,12 +3,6 @@
 set(SRCS kernel_context.cpp)
 
 if (BUILDING_RUNTIME)
-    # used for rvv
-    if(ENABLE_RVV)
-        add_definitions(-D__riscv_vector=1)
-        add_compile_options(-march=rv64imafdcv)
-    endif()
-
     add_library(kernels OBJECT ${SRCS})
     target_include_directories(kernels PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
     target_link_libraries(kernels PUBLIC gsl::gsl-lite)
@@ -25,9 +19,9 @@ else()
     #     if(os_name STREQUAL "linux")
     #         target_link_libraries(kernels PRIVATE -lpthread)
     #     endif()
-    #     target_compile_definitions(kernels PRIVATE "-DNNCASE_HALIDE")        
+    #     target_compile_definitions(kernels PRIVATE "-DNNCASE_HALIDE")
     # endif()
-    
+
     target_compile_definitions(kernels PUBLIC -DNNCASE_DLL -DNNCASE_SIMULATOR)
     set_property(TARGET kernels PROPERTY POSITION_INDEPENDENT_CODE ON)
 endif()

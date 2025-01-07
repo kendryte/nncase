@@ -51,7 +51,6 @@ option(BUILD_BENCHMARK "Build benchmark programs" ON)
 option(BUILD_TESTING "Build test programs" OFF)
 option(ENABLE_OP_PROFILE "Profile ops cast time" OFF)
 option(ENABLE_DUMP_MANAGER "Enable dump manager" OFF)
-option(ENABLE_RVV "Some kernel impl by rvv" OFF)
 option(ENABLE_DUMP_MEM "Dump mem usage" OFF)
 
 if (BUILDING_RUNTIME)

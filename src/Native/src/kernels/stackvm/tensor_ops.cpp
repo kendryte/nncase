@@ -559,8 +559,13 @@ nncase::kernels::stackvm::mat_mul(value_t lhs, value_t rhs, value_t output,
             matmul_infer_shape(lhs_tensor->shape(), rhs_tensor->shape()));
     try_output(out_mem, output, lhs_tensor->dtype(), out_shape);
     try_typecode(typecode, lhs_tensor);
-    try_(reference::matmul(typecode, lhs_mem, rhs_mem, out_mem,
-                           lhs_tensor->shape(), rhs_tensor->shape()));
+    if (is_contiguous(lhs_tensor) && is_contiguous(rhs_tensor) && is_contiguous(output_tensor)) {
+        try_(optimized::matmul(typecode, lhs_mem, rhs_mem, out_mem,
+                        lhs_tensor->shape(), rhs_tensor->shape(), context));
+    } else {
+        try_(reference::matmul(typecode, lhs_mem, rhs_mem, out_mem,
+                            lhs_tensor->shape(), rhs_tensor->shape()));
+    }
     return ok(output);
 }
 
