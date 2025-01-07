@@ -127,14 +127,13 @@ public sealed class MergeBucketFusionPass : FunctionPass
             }
             else
             {
-                Diagnostics.DumpScope.Current.DumpIR(vertex.Expr, $"pre{vi}", null, true);
-
+                // Diagnostics.DumpScope.Current.DumpIR(vertex.Expr, $"pre{vi}", null, true);
                 var varMap = ctx.VarMap[ctx.SummaryVertexSubgraphMap[vertex]];
                 var newInputs = varMap.Values.ToArray();
                 var merger = new BucketFusionMerger(varMap);
                 var clonedRoot = merger.Clone(vertex.Expr, default);
-                Diagnostics.DumpScope.Current.DumpIR(clonedRoot, $"post{vi}", null, true);
 
+                // Diagnostics.DumpScope.Current.DumpIR(clonedRoot, $"post{vi}", null, true);
                 var newCall = new Call(new BucketFusion(string.Join("_", merger.BucketFusions.Select(f => f.Name)), Callable.StackVMModuleKind, clonedRoot, newInputs, effectVarSet.ToArray()), ctx.VarMap[ctx.SummaryVertexSubgraphMap[vertex]].Keys.Select(e => exprMemo[e]).ToArray());
                 if (ctx.OutputMap[subgraph.Index].Count > 1)
                 {
