@@ -120,6 +120,7 @@ public sealed class MergeBucketFusionPass : FunctionPass
                     {
                         Call c => c.With(arguments: c.Arguments.AsValueEnumerable().Select(arg => exprMemo[arg]).ToArray()),
                         IR.Tuple t => t.With(fields: t.Fields.AsValueEnumerable().Select(arg => exprMemo[arg]).ToArray()),
+                        Marker m => m.With(target: exprMemo[m.Target], attribute: m.Attribute),
                         _ => v.Expr,
                     };
                     exprMemo.Add(v.Expr, expr);
