@@ -278,7 +278,10 @@ internal partial class Quantizer
 
                 var quantSchemeString = JsonConvert.SerializeObject(quantScheme, Newtonsoft.Json.Formatting.Indented);
                 _quantizeOptions.QuantSchemeInnerCheck = quantSchemeString;
-                    File.WriteAllText("./tests_output/QuantScheme.json", quantSchemeString);
+                if (Path.Exists(DumpScope.Current.Directory))
+                {
+                    File.WriteAllText(Path.Join(DumpScope.Current.Directory, "..", "..", "QuantScheme.json"), quantSchemeString);
+                }
             }
 
             if (_quantizeOptions.DumpQuantError)
