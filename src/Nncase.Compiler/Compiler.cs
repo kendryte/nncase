@@ -71,6 +71,10 @@ internal class Compiler : ICompiler
 
     public void BroadcastOutputNamesAfterImportPass(IPassManager passManager)
     {
+        passManager.AddWithName<DataflowPass>("FoldQuantDeQuant").Configure(p =>
+        {
+            p.Add<Passes.Rules.Neutral.FoldQuantDeQuant>();
+        });
         passManager.AddWithName<DataflowPass>("BroadcastOutputNamesAfterImportPass").Configure(p =>
         {
             p.Add<Passes.Rules.Neutral.BroadcastTransposeOutputNames>();
