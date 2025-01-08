@@ -336,7 +336,7 @@ public static class CostUtility
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
-            [CostFactorNames.CPUCycles] = 1,
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret, 1),
         };
     }
 }
