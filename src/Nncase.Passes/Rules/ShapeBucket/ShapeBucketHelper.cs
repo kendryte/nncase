@@ -34,6 +34,7 @@ public static class CallValidator
         typeof(Unsqueeze).TypeHandle,
         typeof(Squeeze).TypeHandle,
         typeof(Unary).TypeHandle,
+        typeof(Binary).TypeHandle,
     };
 
     private static readonly HashSet<RuntimeTypeHandle> MaybeDynamic = new()
