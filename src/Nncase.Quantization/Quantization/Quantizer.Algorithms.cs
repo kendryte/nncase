@@ -26,8 +26,8 @@ internal partial class Quantizer
         {
             if (float.IsFinite(value))
             {
-                min = Math.Min(min, value);
-                max = Math.Max(max, value);
+                min = System.Math.Min(min, value);
+                max = System.Math.Max(max, value);
             }
         }
 
