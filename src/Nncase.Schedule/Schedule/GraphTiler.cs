@@ -101,7 +101,7 @@ public static class GraphTiler
 
             if (!solveMemo.TryGetValue(primTree, out var memo))
             {
-                var result = SolvePrimGraph(primTree, bufferGraphMemo, targetOptions, moduleKind);
+                var result = SolvePrimGraph(primTree, bufferGraphMemo, targetOptions);
                 (inputBids, outputBids) = (result.Inputs, result.Outputs);
                 result.ScheduleBuffers();
                 var bodyBuilder = T.Sequential();
@@ -139,7 +139,7 @@ public static class GraphTiler
         return (resultMemo, objectValue);
     }
 
-    public static TreeSolveResult SolvePrimGraph(TileNode primTree, Dictionary<TieredTileGraph, BufferGraph> bufferGraphMemo, ICpuTargetOptions targetOptions, string moduleKind)
+    public static TreeSolveResult SolvePrimGraph(TileNode primTree, Dictionary<TieredTileGraph, BufferGraph> bufferGraphMemo, ICpuTargetOptions targetOptions)
     {
         int[] memoryCapacities = targetOptions.MemoryCapacities;
         int[] memoryBandWidths = targetOptions.MemoryBandWidths;
@@ -372,12 +372,12 @@ public static class GraphTiler
 
             var lastTimeStamp = new HashSet<NodeWithBuffer>();
             var constraints = new List<Constraint>();
-            for (int i = beginTime; i < endTime; i++)
+            for (int i = beginTime; i <= endTime; i++)
             {
                 var curTimeStamp = new HashSet<NodeWithBuffer>();
                 foreach (var (key, liveness) in nodeBufferLiveness)
                 {
-                    if ((i + 0.5) >= liveness.Item1 && (i + 0.5) <= liveness.Item2)
+                    if (i >= liveness.Item1 && i <= liveness.Item2)
                     {
                         curTimeStamp.Add(key);
                     }
@@ -409,7 +409,6 @@ public static class GraphTiler
             var loopTrip = tileNodeMemo[tnode].TripCounts[^1];
             var kernelInfo = opNode.GetKernelInfo(targetOptions);
 
-            // NOTE if we can't get accurate compute cycles，we better do not use it.
             // make inner dimension increase.
             // var noContiguous = new IntExpr[opNodeInfo.Shapes.Length];
             // for (int i = 0; i < opNodeInfo.Shapes.Length; i++)
@@ -435,9 +434,8 @@ public static class GraphTiler
             {
                 var binfo = bid.Node.GetKernelInfo(targetOptions).BufferInfos;
                 var reused = nodeInfo.DefUseMap.ContainsKey(bid);
-                for (int storeLevel = 0; storeLevel < Math.Min(tileNode.Level, topLevel - 1); storeLevel++)
+                for (int storeLevel = 0; storeLevel < Math.Min(tileNode.Level, topLevel - 1); storeLevel++) // skip the buffer which store at top level
                 {
-                    // skip the buffer which store at top level
                     var volumes = Enumerable.Repeat((IntExpr)solver.MakeIntConst(1), bufferInfo.Places.Length).ToArray();
                     for (int i = 0; i < bufferInfo.Places.Length; i++)
                     {
@@ -640,7 +638,7 @@ public static class GraphTiler
             DumpAssgin(primTree, new TreeSolverPythonPrinter(sol, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions), tileVarConstraints, eachLevelStoreBufferNumsConstrains, levelBufferSizes, levelDataReads, levelDataWrites, memoryCycles, computeCycles, totalCyclesVar);
         }
 
-        return new TreeSolveResult(bufferGraphMemo[primTree.Wrapped], sol.ObjectiveValue(), levelBufferSizesAssgin, levelBufferLifeness, opNodeMemoAssgin, tileNodeMemoAssgin, tileableNodeMemoAssgin, targetOptions, moduleKind);
+        return new TreeSolveResult(bufferGraphMemo[primTree.Wrapped], sol.ObjectiveValue(), levelBufferSizesAssgin, levelBufferLifeness, opNodeMemoAssgin, tileNodeMemoAssgin, tileableNodeMemoAssgin, targetOptions);
     }
 
     public static void DumpAssgin(ITreeNode tree, TreeSolverPythonPrinter printer, Dictionary<OpNode, Constraint[]> tileVarConstraints, Dictionary<BufferIdentity, Constraint[]> lowestStoreBufferNumsConstrains, Dictionary<int, Dictionary<NodeWithBuffer, IntExpr>> levelBufferSizes, IntExpr[] levelDataReads, IntExpr[] levelDataWrites, IntExpr[] memoryCycles, IntExpr computeCycles, IntVar totalCycles)

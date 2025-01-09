@@ -193,8 +193,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
         // perpare return infos.
         var bufferResults = new BufferResult[value.ReadAccesses.Length + 1];
         BufferIdentity obid = new(value.Wrapped, value.ReadAccesses.Length);
-        var inplaceMemo = obid.Node.Op.GetInPlaceMemo();
-        bufferResults[value.ReadAccesses.Length] = new(obid, new(inplaceMemo.ContainsKey(obid.Index) ? TimeStamp + 1 : TimeStamp, TimeStamp + 1), value.DomainRelation.Map * accessMaps[^1]);
+        bufferResults[value.ReadAccesses.Length] = new(obid, new(TimeStamp, TimeStamp + 1), value.DomainRelation.Map * accessMaps[^1]);
 
         for (int i = 0; i < value.ReadAccesses.Length; i++)
         {
