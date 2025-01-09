@@ -94,7 +94,11 @@ public sealed class AutoTilePass : ModulePass
                 var cloner = new ReplacingExprCloner(ctx.VarMap[si].ToDictionary(kv => kv.Key, kv => (Expr)kv.Value));
                 var clonedCall = cloner.Clone(vertex.Expr, default); // replaces some exprs that are in the subgraph with var, avoid tiling the grids out of the subgraph.
                 using var scope = new Diagnostics.DumpScope($"tiling_func{funcNumber}_subfunc{subFuncNumber}");
+#if false
                 var tiledCall = GraphTiler.MCTSTiling(clonedCall, ModuleKind, $"{funcNumber}_{subFuncNumber}", memo, (ICpuTargetOptions)CompileOptions.TargetOptions);
+#else
+                var tiledCall = GraphTiler.Tiling(clonedCall, ModuleKind, $"{funcNumber}_{subFuncNumber}", memo, (ICpuTargetOptions)CompileOptions.TargetOptions);
+#endif
 
                 var varMap = ctx.VarMap[si].ToDictionary(kv => (Expr)kv.Value, kv => exprMemo[kv.Key]);
                 var substitutor = new Mutators.Substitutor(e =>
