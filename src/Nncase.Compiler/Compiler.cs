@@ -260,6 +260,19 @@ internal class Compiler : ICompiler
         }
 
         p.AddWithName<AddFunctionToModule>("AddIfToModule");
+
+        // 1. Optimize if
+        // 2. Optimize prefill/decode
+        for (int i = 0; i < 2; i++)
+        {
+            p.AddWithName<DataflowPass>("RemoveUnusedVars").Configure(c =>
+            {
+                c.Add<RemoveUnusedVarsByCall>();
+                c.Add<RemoveUnusedVarsByIf>();
+            });
+            p.AddWithName<AddFunctionToModule>("AddNewFunctionToModule");
+            p.AddWithName<RemoveUnusedFunctions>("RemoveUnusedFunctions");
+        }
     }
 
     public void ClearFixShape(IPassManager p)

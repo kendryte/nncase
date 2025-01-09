@@ -86,4 +86,27 @@ public static class ArrayUtility
 
         return array;
     }
+
+    public static T[] SelectByIndices<T>(ReadOnlySpan<T> source, ReadOnlySpan<int> indices)
+    {
+        var result = new T[indices.Length];
+        for (int i = 0; i < indices.Length; i++)
+        {
+            result[i] = source[indices[i]];
+        }
+
+        return result;
+    }
+
+    public static T[] SelectByIndices<T>(ReadOnlySpan<T> source, IEnumerable<int> indices)
+    {
+        var result = new T[indices.Count()];
+        int i = 0;
+        foreach (var index in indices)
+        {
+            result[i++] = source[index];
+        }
+
+        return result;
+    }
 }
