@@ -10,6 +10,7 @@ using Nncase.IR;
 using Nncase.IR.Tensors;
 using Nncase.IR.F;
 using Nncase.TIR;
+using Math = System.Math;
 using Tuple = System.Tuple;
 
 namespace Nncase.Quantization;
@@ -32,64 +33,6 @@ internal partial class Quantizer
         }
 
         return new ValueRange<float>(min, max);
-    }
-
-    private static Shape get_shape(Shape oldShape, int axis)
-    {
-        var newShape = new List<int>();
-        newShape.Add(axis);
-        foreach (var i in oldShape)
-        {
-            if (i != axis)
-            {
-                newShape.Add(i.FixedValue);
-            }
-        }
-
-        return new Shape(newShape.ToArray());
-    }
-
-    private static List<ValueRange<float>> GetMinMaxByChannel(Tensor<float> tensor, int axis = 1)
-    {
-        var rangeList = new List<ValueRange<float>>();
-        var shape = tensor.Shape;
-
-        int allSize = 1;
-        var s = shape.ToArray();
-        foreach (var dimension in s)
-        {
-            allSize *= dimension.FixedValue;
-        }
-
-        var newTensor = IR.Tensors.Transpose(tensor, get_shape(shape, axis));
-
-        var buffer = newTensor.Buffer.Span;
-        var channelSize = allSize / newTensor.Shape[0].FixedValue;
-        int count = 0;
-        var min = float.MaxValue;
-        var max = float.MinValue;
-        foreach (var data in buffer)
-        {
-            if (count % channelSize == 0 && count != 0)
-            {
-                rangeList.Add(new ValueRange<float>(min, max));
-                min = float.MaxValue;
-                max = float.MinValue;
-            }
-            else
-            {
-                if (float.IsFinite(data))
-                {
-                    min = Math.Min(min, data);
-                    max = Math.Max(max, data);
-                }
-            }
-
-            count++;
-        }
-
-        rangeList.Add(new ValueRange<float>(min, max));
-        return rangeList;
     }
 
     private static List<float> Smooth(List<float> p, int boxPts = 512)
