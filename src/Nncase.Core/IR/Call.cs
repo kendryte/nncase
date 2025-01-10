@@ -123,11 +123,10 @@ public sealed class Call : BaseCall, IParameterList<Expr>
 
     public Call With(Expr? target = null, Expr[]? arguments = null, IRMetadata? metadata = null)
     {
-        var call = new Call(target ?? Target, arguments ?? Arguments);
-        if (metadata != null && metadata!.OutputNames != null)
+        var call = new Call(target ?? Target, arguments ?? Arguments)
         {
-            call.Metadata.OutputNames = metadata.OutputNames;
-        }
+            Metadata = metadata ?? Metadata,
+        };
 
         return call;
     }

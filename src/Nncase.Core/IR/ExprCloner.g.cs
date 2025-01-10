@@ -18,8 +18,7 @@ public partial class ExprCloner<TContext>
     {
         return expr.With(
             target: Clone(expr.Target, context),
-            arguments: CloneArray(expr.Arguments, context),
-            metadata: expr.Metadata
+            arguments: CloneArray(expr.Arguments, context)
         );
     }
 
@@ -67,8 +66,7 @@ public partial class ExprCloner<TContext>
     {
         return expr.With(
             target: Clone(expr.Target, context),
-            attribute: Clone(expr.Attribute, context),
-            metadata: expr.Metadata
+            attribute: Clone(expr.Attribute, context)
         );
     }
 
@@ -122,6 +120,15 @@ public partial class ExprCloner<TContext>
     }
 
     /// <inheritdoc />
+    protected override Expr VisitLeafMemSpan(TIR.MemSpan expr, TContext context)
+    {
+        return expr.With(
+            start: Clone(expr.Start, context),
+            size: Clone(expr.Size, context)
+        );
+    }
+
+    /// <inheritdoc />
     protected override Expr VisitLeafVar(Var expr, TContext context)
     {
         return expr.With(
@@ -139,6 +146,16 @@ public partial class ExprCloner<TContext>
             writes: CloneArray(expr.Writes, context),
             allocBuffers: CloneArray(expr.AllocBuffers, context),
             predicate: Clone(expr.Predicate, context)
+        );
+    }
+
+    /// <inheritdoc />
+    protected override Expr VisitLeafBuffer(TIR.Buffer expr, TContext context)
+    {
+        return expr.With(
+            memSpan: Clone(expr.MemSpan, context),
+            dimensions: CloneArray(expr.Dimensions, context),
+            strides: CloneArray(expr.Strides, context)
         );
     }
 

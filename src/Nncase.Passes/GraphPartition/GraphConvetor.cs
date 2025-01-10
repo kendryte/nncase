@@ -13,6 +13,8 @@ namespace Nncase.Passes.GraphPartition;
 
 public sealed class GraphContext
 {
+    public bool Mutated { get; set; }
+
     public Graph Graph { get; set; } = new();
 
     public Graph GraphSummary { get; set; } = new();
@@ -90,6 +92,7 @@ public sealed class GraphContext
             {
                 SubgraphMap = new SortedDictionary<int, Subgraph>(tmpSubgraphMap, tmpSubgraphMap.Comparer);
                 OriginalVertexSubgraphMap = tmpvertexSubgraphMap;
+                Mutated = true;
             }
         };
         dfsVisitEdge.Compute();
