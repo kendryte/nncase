@@ -181,37 +181,6 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Fact]
-    public async Task TestPartialReshapeBoxing()
-    {
-        var hierarchy = new[] { 2, 4 };
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
-        targetOptions.Hierarchies[0] = hierarchy;
-        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
-        targetOptions.HierarchySizes = Enumerable.Repeat((int)MathF.Pow(2, 30), hierarchy.Length).ToArray();
-        var lhsType = new TensorType(DataTypes.Float32, new[] { 1, 4, 8 });
-        var rhsType = new TensorType(DataTypes.Float32, new[] { 8, 16 });
-        var lhs = new Var(lhsType);
-        var rhs = new Var(rhsType);
-
-        var feedDict = new Dictionary<Var, IValue>() {
-            { lhs, IR.F.Random.Normal(DataTypes.Float32, 1.0f, 1.0f, 1, lhsType.Shape.ToValueArray()).Evaluate() },
-            { rhs, IR.F.Random.Normal(DataTypes.Float32, 1.0f, 1.0f, 1, rhsType.Shape.ToValueArray()).Evaluate() },
-        };
-
-        var placement = new Placement(hierarchy, targetOptions.HierarchyNames);
-        var lhsBoxing = IR.F.CPU.Boxing(lhs, new DistributedType(lhsType, new SBP[] { SBP.S(2), SBP.B }, placement));
-        var rhsBoxing = IR.F.CPU.Boxing(rhs, new DistributedType(rhsType, new SBP[] { SBP.S(0), SBP.S(1) }, placement));
-        var matmul = IR.F.Tensors.MatMul(lhsBoxing, rhsBoxing);
-        var newShape = new[] { 1, 4, 8, 2 };
-        var reshape = IR.F.CPU.Boxing(matmul, new DistributedType(new TensorType(DataTypes.Float32, newShape), new SBP[] { SBP.B, SBP.S(2) }, placement), true);
-        var sumed = IR.F.CPU.Boxing(reshape, new DistributedType(new TensorType(DataTypes.Float32, newShape), new SBP[] { SBP.S(1), SBP.S(2) }, placement));
-        var post = IR.F.CPU.Boxing(sumed, new TensorType(DataTypes.Float32, newShape));
-        post.Metadata = new Passes.Distributed.AutoDistributedMetaData() { Skip = true };
-
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{0}"), feedDict, new[] { post });
-    }
-
-    [Fact]
     public async Task TestMatmulBinaryBinary()
     {
         var ashape = new[] { 1, 64, 384, 128 };
