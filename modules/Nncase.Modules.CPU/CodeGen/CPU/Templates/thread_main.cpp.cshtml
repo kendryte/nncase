@@ -73,7 +73,11 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
   std::vector<std::thread> blocks;
   for (size_t cid = 0; cid < cdim(); cid++) {
     for (size_t bid = 0; bid < bdim(); bid++) {
-      blocks.emplace_back([cid, bid, inputs, rdata, &cpu_thread_context_key_] {
+      blocks.emplace_back([cid, bid, inputs, rdata
+#ifdef __APPLE__
+      , &cpu_thread_context_key_
+#endif
+      ] {
         nncase::ntt::runtime::cpu_block_entry_params_t block_entry_params{
             .tdim = tdim(),
             .bdim = bdim(),

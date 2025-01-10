@@ -39,6 +39,11 @@ public sealed class AutoDistributedMetadata : IRMetadata
     public bool Skip { get; }
 }
 
+public sealed class AutoDistributedMetaData : IRMetadata
+{
+    public bool Skip { get; set; }
+}
+
 /// <summary>
 /// auto distributed the function.
 /// </summary>
@@ -47,12 +52,15 @@ public sealed partial class AutoDistributedPass : FunctionPass
 {
     private readonly CompileOptions _compileOptions;
 
+    private readonly bool _bidirectional;
+
     private readonly string _moduleKind;
 
-    public AutoDistributedPass(bool bidirectional, CompileOptions compileOptions, string moduleKind = "cpu")
+    public AutoDistributedPass(bool bidirectional, string moduleKind, CompileOptions compileOptions)
     {
         Bidirectional = bidirectional;
         _compileOptions = compileOptions;
+        _bidirectional = bidirectional;
         _moduleKind = moduleKind;
     }
 
@@ -60,13 +68,12 @@ public sealed partial class AutoDistributedPass : FunctionPass
 
     protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
     {
-        if (input.Metadata is AutoDistributedMetadata { Skip: true })
+        if (input.Metadata is AutoDistributedMetaData { Skip: true })
         {
             return Task.FromResult(input);
         }
 
-        var rewriter = new AutoDistributedRewriter(Bidirectional, _compileOptions, _compileOptions.TargetOptions is CpuTargetOptions options ? options : new CpuTargetOptions(), _moduleKind);
-
+        var rewriter = new AutoDistributedRewriter(_compileOptions, _compileOptions.TargetOptions is CpuTargetOptions options ? options : new CpuTargetOptions(), _moduleKind, _bidirectional);
         return Task.FromResult(rewriter.Rewirte(input));
     }
 }
@@ -139,7 +146,9 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
     private readonly string _moduleKind;
 
-    public AutoDistributedRewriter(bool bidirectional, CompileOptions compileOptions, CpuTargetOptions targetOptions, string moduleKind)
+    private readonly bool _bidirectional;
+
+    public AutoDistributedRewriter(CompileOptions compileOptions, CpuTargetOptions targetOptions, string moduleKind = "cpu", bool bidirectional = false)
     {
         Placements = targetOptions.Hierarchies.Select(h => new Placement(h, targetOptions.HierarchyNames)).ToArray();
         Bidirectional = bidirectional;
@@ -159,6 +168,8 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         _inferedMemo = new(ReferenceEqualityComparer.Instance);
         _rootGraph = new(true);
         _rootSearchGraph = new(_rootGraph, SearchGraphKind.Root);
+        _moduleKind = moduleKind;
+        _bidirectional = bidirectional;
     }
 
     public IRArray<Placement> Placements { get; }

@@ -114,7 +114,7 @@ public class CPUTarget : ITarget
             });
         }
 
-        passManager.Add<Passes.Distributed.AutoDistributedPass>(true);
+        passManager.Add<Passes.Distributed.AutoDistributedPass>(true, Kind);
 
         passManager.Add<CPUFunctionPartitionPass>();
 

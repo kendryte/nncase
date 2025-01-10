@@ -194,6 +194,11 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                         {
                             [CostFactorNames.MemoryStore] = (UInt128)((gatherPart - 1) * (float)CostUtility.GetMemoryAccess(DistributedUtility.GetDividedTensorType(a)) / gatherPart),
                         };
+
+                        if (a.Placement.HierarchyKind == HierarchyKind.SMT && (a.NdSBP[1] is SBPPartialSum))
+                        {
+                            cost[CostFactorNames.MemoryStore] *= 8;
+                        }
                     }
 
                     if (reducePart > 1f)
