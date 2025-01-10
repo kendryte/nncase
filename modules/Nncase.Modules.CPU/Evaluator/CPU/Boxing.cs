@@ -17,6 +17,11 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
     {
         IRType VisitD2D(DistributedType inv, DistributedType outv)
         {
+            if (inv == outv)
+            {
+                return new InvalidType("Same DistributedType");
+            }
+
             if (inv.TensorType != outv.TensorType)
             {
                 if (!inv.NdSBP.Any(sbp => sbp is SBPPartial))
