@@ -253,6 +253,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                 }
             }
 
+#if false
             // process inplace buffer.
             foreach (var (k, (x, y)) in rectangles)
             {
@@ -277,6 +278,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                     }
                 }
             }
+#endif
 
             var solver = new CpSolver();
             var status = solver.Solve(model);
