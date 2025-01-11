@@ -437,7 +437,7 @@ struct stind_r4_op_t {};
 
 struct lea_gp_op_t {
     uint8_t gpid;
-    int32_t offset;
+    int64_t offset;
 };
 
 struct ldelem_i1_op_t {};

@@ -385,7 +385,7 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
             // 4. connect edge.
             foreach (var (child, port_name) in connect_list)
             {
-                if (child is BaseFunction or Const)
+                if (child is BaseFunction or Const or If)
                 {
                     continue;
                 }

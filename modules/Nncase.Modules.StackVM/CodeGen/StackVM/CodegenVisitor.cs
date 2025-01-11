@@ -122,9 +122,10 @@ internal class CodeGenContext
     private readonly List<BasicBlock> _basicBlocks = new();
     private readonly HashSet<ModuleType> _custom_call_modules = new();
 
-    public CodeGenContext(BinaryWriter rdataWriter)
+    public CodeGenContext(BinaryWriter rdataWriter, Dictionary<TensorConst, Symbol> constSymbols)
     {
         RdataWriter = rdataWriter;
+        ConstSymbols = constSymbols;
     }
 
     public Dictionary<TextSnippet, HashSet<TextSnippet>> AllocInfo { get; set; } = new();
@@ -136,6 +137,8 @@ internal class CodeGenContext
     public IReadOnlyList<BasicBlock> BasicBlocks => _basicBlocks;
 
     public IReadOnlySet<ModuleType> CustomCallModules => _custom_call_modules;
+
+    public Dictionary<TensorConst, Symbol> ConstSymbols { get; }
 
     public void AddBasicBlock(BasicBlock basicBlock)
     {
@@ -297,41 +300,8 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
             paramSnippet.MaxUserParameters = Math.Max(paramSnippet.MaxUserParameters, expr.Arguments.Length);
         }
 
-        if (expr.Target is CustomOp custom_op)
-        {
-            _context.AddCustomCallModule(custom_op.ModuleType);
-            Emitter.CusCall(custom_op.RegisteredName, custom_op.SerializeFields(), checked((ushort)expr.Arguments.Length));
-        }
-        else if (expr.Target is Op op)
-        {
-            EmitTensorCall(op);
-        }
-        else if (expr.Target is PrimFunctionWrapper wrapper)
-        {
-            LdFunctionId(wrapper.Target);
-            Emitter.ExtCall(checked((ushort)wrapper.ParameterTypes.Count()), true);
-        }
-        else if (expr.Target is Function func)
-        {
-            LdFunctionId(func);
-            Emitter.ExtCall(checked((ushort)func.Parameters.Length), false);
-        }
-        else
-        {
-            throw new NotSupportedException(expr.Target.GetType().Name);
-        }
-
+        EmitCallable(expr.Target, expr.Arguments.Length);
         return snippet;
-    }
-
-    protected override TextSnippet VisitIf(If expr)
-    {
-        if (HasVisited(expr, out var result))
-        {
-            return result;
-        }
-
-        return MarkVisited(expr, VisitLeafIf(expr));
     }
 
     /// <summary>
@@ -347,50 +317,78 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     /// }
     /// 6. EndSnippet.
     /// </summary>
-    /// <param name="if">If expr.</param>
+    /// <param name="expr">If expr.</param>
     /// <returns>TextSnippet.</returns>
-    protected override TextSnippet VisitLeafIf(If @if)
+    protected override TextSnippet VisitLeafIf(If expr)
     {
-        foreach (var expr in @if.ParamList)
+        var condSnippet = Visit(expr.Condition);
+
+        var snippet = BeginTextSnippet(expr);
+        foreach (var param in expr.Arguments.ToArray().Reverse())
         {
-            Visit(expr);
+            var paramSnippet = Visit(param);
+            if (CodegenUtility.NormalReduceCount(paramSnippet, snippet))
+            {
+                snippet.AddInput(paramSnippet, true);
+            }
+            else
+            {
+                snippet.AddInput(paramSnippet, false);
+                _refTextSnippets.Add(paramSnippet);
+            }
+
+            paramSnippet.MaxUserParameters = Math.Max(paramSnippet.MaxUserParameters, expr.Arguments.Length + 1);
         }
 
-        var condSnippet = Visit(@if.Condition);
+        snippet.AddInput(condSnippet, true);
+        condSnippet.MaxUserParameters = Math.Max(condSnippet.MaxUserParameters, expr.Arguments.Length + 1);
+        Emitter.LdScalar();
 
-        var brFalse = BeginTextSnippet(@if);
+        var brFalsePos = Emitter.Position;
+        Emitter.BrFalse(0);
+        EmitCallable(expr.Then, expr.Arguments.Length);
+        var brPos = Emitter.Position;
+        Emitter.Br(0);
 
-        // todo: fix this
-        if (@if.Condition is Call c)
+        var elsePos = Emitter.Position;
+        EmitCallable(expr.Else, expr.Arguments.Length);
+        var endPos = Emitter.Position;
+
+        // fixup
+        Emitter.Position = brFalsePos;
+        Emitter.BrFalse((int)(elsePos - brFalsePos));
+
+        Emitter.Position = brPos;
+        Emitter.Br((int)(endPos - brPos));
+        Emitter.Position = endPos;
+        return snippet;
+    }
+
+    private void EmitCallable(Expr callable, int argumentsCount)
+    {
+        if (callable is CustomOp custom_op)
         {
-            condSnippet.MaxUserParameters = c.Arguments.Length;
+            _context.AddCustomCallModule(custom_op.ModuleType);
+            Emitter.CusCall(custom_op.RegisteredName, custom_op.SerializeFields(), checked((ushort)argumentsCount));
         }
-
-        brFalse.AddInput(condSnippet, true);
-        brFalse.Emitter.LdScalar();
-        brFalse.Emitter.BrFalse(0);
-
-        var (thenBlock, thenSet) = SubBlock(@if.Then);
-        var oldCurrentBlock = _currentBasicBlock;
-        _currentBasicBlock = thenBlock;
-        var br = BeginTextSnippet(@if);
-        br.Emitter.Br(0);
-        _currentBasicBlock = oldCurrentBlock;
-
-        var (elseBlock, elseSet) = SubBlock(@if.Else);
-
-        var endIf = new BasicBlock(new[] { thenBlock, elseBlock });
-        _currentBasicBlock = endIf;
-        _context.AddBasicBlock(endIf);
-
-        // because visit param is before VisitLeaf, we can't use ref of elseSnippet.Symbol to jump.
-        // snippet structure: | ... | else param1 | else param2 | ... | elseSnippet |
-        AddSymbolRef(brFalse, br.EndSymbol, -4, 4, true, 1);
-        var endSnippet = BeginTextSnippet(@if);
-        AddSymbolRef(br, endSnippet.BeginSymbol, -4, 4, true, 1);
-
-        MergeSnippetSet(thenSet, elseSet, endSnippet);
-        return endSnippet;
+        else if (callable is Op op)
+        {
+            EmitTensorCall(op);
+        }
+        else if (callable is PrimFunctionWrapper wrapper)
+        {
+            LdFunctionId(wrapper.Target);
+            Emitter.ExtCall(checked((ushort)wrapper.ParameterTypes.Count()), true);
+        }
+        else if (callable is Function func)
+        {
+            LdFunctionId(func);
+            Emitter.ExtCall(checked((ushort)func.Parameters.Length), false);
+        }
+        else
+        {
+            throw new NotSupportedException(callable.GetType().Name);
+        }
     }
 
     private void MergeSnippetSet(List<TextSnippet> thenSet, List<TextSnippet> elseSet, TextSnippet endSnippet)
@@ -406,7 +404,11 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     private TextSnippet Visit(TensorConst expr, Tensor tensor)
     {
-        var buffer = WriteRdata(tensor, _alignment);
+        if (!_context.ConstSymbols.TryGetValue(expr, out var buffer))
+        {
+            buffer = WriteRdata(tensor.BytesBuffer, _alignment);
+            _context.ConstSymbols.Add(expr, buffer);
+        }
 
         // stack: dtype shape strides buffer
         var snippet = BeginTextSnippet(expr);
@@ -466,7 +468,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     private void LeaGp(byte gpid, Symbol symbol, int offset = 0)
     {
-        AddSymbolRef(symbol, 2, 4, false, offset);
+        AddSymbolRef(symbol, 2, 8, false, offset);
         Emitter.LeaGP(gpid, 0);
     }
 

@@ -309,8 +309,8 @@ public sealed class Buffer : Expr
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.VisitBuffer(this, context);
 
-    public Buffer With(MemSpan? memSpan = null, Expr[]? dimensions = null, Expr[]? strides = null, Expr[]? globalShape = null, DistributedType? distributedType = null)
-        => new Buffer(Name, ElemType, memSpan ?? MemSpan, dimensions ?? Dimensions.ToArray(), strides ?? Strides.ToArray(), distributedType ?? DistributedType);
+    public Buffer With(string? name = null, DataType? elemType = null, MemSpan? memSpan = null, Expr[]? dimensions = null, Expr[]? strides = null, Expr[]? globalShape = null, DistributedType? distributedType = null)
+        => new Buffer(name ?? Name, elemType ?? ElemType, memSpan ?? MemSpan, dimensions ?? Dimensions.ToArray(), strides ?? Strides.ToArray(), distributedType ?? DistributedType);
 
     /// <inheritdoc/>
     public override bool Equals(object? obj)

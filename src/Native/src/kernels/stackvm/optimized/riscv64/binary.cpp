@@ -392,7 +392,7 @@ static int verify_shape(std::span<const size_t> in_a_shape,
 static std::span<const size_t>
 get_sample_span(std::span<const size_t> in_shape) {
     int not_one_index = 0;
-    for (int i = 0; i < in_shape.size(); ++i) {
+    for (int i = 0; i < (int)in_shape.size(); ++i) {
         if (in_shape[i] != 1) {
             not_one_index = i;
             break;
@@ -439,7 +439,7 @@ get_sample_span(std::span<const size_t> in_shape) {
                     (index != (int)(in_b_shape.size() - 1))) {                 \
                     int size_diff = in_a_shape.size() - in_b_shape.size();     \
                     int len_a_leave = 1;                                       \
-                    for (int i = index + 1; i < in_b_shape.size(); ++i) {      \
+                    for (int i = index + 1; i < (int)in_b_shape.size(); ++i) { \
                         len_a_leave *= in_a_shape[i + size_diff];              \
                     }                                                          \
                     for (int j = 0; j < outter_front_size; ++j) {              \

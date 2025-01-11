@@ -91,6 +91,7 @@ public interface IIRPrinterProvider
     /// </summary>
     /// <param name="expr"> the expression.</param>
     /// <param name="useScript"> tir mode.</param>
+    /// <param name="display_callable"> display callable.</param>
     /// <returns>the string.</returns>
-    string Print(Expr expr, bool useScript);
+    string Print(Expr expr, bool useScript, bool display_callable);
 }

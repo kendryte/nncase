@@ -291,10 +291,9 @@ public partial class MergePrevCallToFusion : MergeFusionBase
 
         // FusionArgs
         var inputShouldBeMerge = CollectInputShouldBeMerge(fusionArgsInfo);
-        var prefix = $"{Counter}_{_prevCallStr}_{fusion.Name}_origin";
 
-        DumpIR(fusionOuterCall, prefix, printPrefix: "MergePrevCallToFusion");
-
+        // var prefix = $"{Counter}_{_prevCallStr}_{fusion.Name}_origin";
+        // DumpIR(fusionOuterCall, prefix, printPrefix: "MergePrevCallToFusion");
         var indices = fusionArgsInfo.Select(x => x.Item2).ToHashSet();
         var fusionDict = fusionOuterCall.Arguments.ToArray().Zip(fusion.Parameters.ToArray())
             .Where((expr, i) => !indices.Contains(i))
@@ -305,11 +304,12 @@ public partial class MergePrevCallToFusion : MergeFusionBase
 
         // 所有要被合并的call替换args为Fusion的Var
         var newPrevCalls = MakeNewPrevCalls(inputShouldBeMerge, prevOutputMaybeMarker, newVarsMap);
-        DumpIR(new IR.Tuple(newPrevCalls), "newPrevCalls");
 
+        // DumpIR(new IR.Tuple(newPrevCalls), "newPrevCalls");
         var newVarsMapFlatten = newVarsMap.SelectMany(x => x).ToArray();
         var newBody = MakeNewBody(fusion, newVarsMapFlatten.Select(v => v.InputIndex).ToHashSet().ToArray(), newPrevCalls);
-        DumpIR(newBody, "newBody");
+
+        // DumpIR(newBody, "newBody");
         var newParams = MakeNewParam(fusion, newVarsMapFlatten, newBody).ToHashSet().ToArray();
         var newFusion = fusion.With(body: newBody, parameters: newParams);
         var newArgs = MakeNewArgs(fusionOuterCall, newVarsMapFlatten, inputShouldBeMerge).ToHashSet().ToArray();
@@ -325,7 +325,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
             return ReplaceExpr(sum, param, arg);
         });
 
-        DumpIR(call, $"{Counter++}_{_prevCallStr}_{fusion.Name}_after");
+        // DumpIR(call, $"{Counter++}_{_prevCallStr}_{fusion.Name}_after");
         ArgsChecker(newArgs);
         return call;
     }
@@ -455,14 +455,20 @@ public partial class MergePrevCallToFusion : MergeFusionBase
                     return new IR.Tuple(newFields);
                 }
 
-                return newVar.First();
+                Expr canditateVar = newVar.First();
+                if (x is Marker mm && mm.Attribute is TensorConst) // Const range of marker
+                {
+                    canditateVar = mm.With(target: canditateVar);
+                }
+
+                return canditateVar;
             }).ToArray();
             var newCall = input.With(arguments: newArgs);
 
             var call = prevOutputMaybeMarker[i] is Marker m ? m.With(target: newCall) : (Expr)newCall;
             if (!call.InferenceType())
             {
-                DumpIR(call, "InvalidInMakeNewPrevCalls");
+                // DumpIR(call, "InvalidInMakeNewPrevCalls");
                 throw new InvalidOperationException();
             }
 

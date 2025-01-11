@@ -125,7 +125,7 @@ internal sealed class EGraphCostEvaluator
             Call call => Visit(enode, call, returnType),
             IR.Tuple tuple => Visit(enode, tuple),
             Op op => Visit(enode, op),
-            If @if => Visit(enode, @if),
+            If @if => Visit(enode, @if, returnType),
             Marker marker => Visit(enode, marker),
             None none => Visit(enode, none),
             BaseFunction baseFunction => Visit(enode, baseFunction),
@@ -163,9 +163,36 @@ internal sealed class EGraphCostEvaluator
         return Visit(enode, costs => _accumulate ? costs.Sum() : Cost.Zero);
     }
 
-    private Cost? Visit(ENode enode, If @if)
+    private Cost? Visit(ENode enode, If @if, IRType returnType)
     {
-        return Visit(enode, cost => _accumulate ? cost[^3] + cost[^2] + cost[^1] : Cost.Zero);
+        return Visit(enode, costs =>
+        {
+            Cost? cost = null;
+
+            // then
+            foreach (var targetEnode in enode.Children[1].Nodes)
+            {
+                var newCost = Visit(targetEnode, returnType);
+
+                if (cost == null || (newCost != null && newCost < cost))
+                {
+                    cost = newCost;
+                }
+            }
+
+            // else
+            foreach (var targetEnode in enode.Children[2].Nodes)
+            {
+                var newCost = Visit(targetEnode, returnType);
+
+                if (cost == null || (newCost != null && newCost < cost))
+                {
+                    cost = newCost;
+                }
+            }
+
+            return UpdateCost(enode, cost == null ? null : (_accumulate ? cost + costs.Sum() : cost));
+        });
     }
 
     private Cost? Visit(ENode enode, Marker marker)

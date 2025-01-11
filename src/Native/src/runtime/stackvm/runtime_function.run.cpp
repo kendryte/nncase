@@ -38,22 +38,61 @@ stackvm_runtime_function::run(std::span<const std::byte> text) noexcept {
     while (!reader_.empty()) {
         pc_ = reader_.tell();
         opcode_t opcode = reader_.read<opcode_t>();
+        auto new_pc = reader_.tell();
         if (opcode != opcode_t::TENSOR) {
+            if (opcode == opcode_t::EXTCALL)
+            {
+                auto op = op_reader<opcode_t::EXTCALL>()(reader_);
+                reader_.seek(new_pc);
+
+                if(op.is_prim_func)
+                {
 #ifdef ENABLE_OP_PROFILE
-            op_profile p(to_string(opcode), (uint8_t)opcode);
+                    op_profile p("KPU", (uint8_t)opcode);
 #endif
-            switch (opcode) {
+                    switch (opcode) {
 #include "ops/control.inl"
 #include "ops/conversion.inl"
 #include "ops/loadstore.inl"
 #include "ops/scalar.inl"
 #include "ops/stack.inl"
-            default:
-                return err(nncase_errc::stackvm_illegal_target);
-                break;
+                    default:
+                        return err(nncase_errc::stackvm_illegal_target);
+                        break;
+                    }
+                }
+                else{
+                    switch (opcode) {
+#include "ops/control.inl"
+#include "ops/conversion.inl"
+#include "ops/loadstore.inl"
+#include "ops/scalar.inl"
+#include "ops/stack.inl"
+                    default:
+                        return err(nncase_errc::stackvm_illegal_target);
+                        break;
+                    }
+                }
             }
-        } else {
-            auto tensor_func = reader_.read_unaligned<tensor_function_t>();
+            else
+            {
+#ifdef ENABLE_OP_PROFILE
+                op_profile p(to_string(opcode), (uint8_t)opcode);
+#endif
+                switch (opcode) {
+#include "ops/control.inl"
+#include "ops/conversion.inl"
+#include "ops/loadstore.inl"
+#include "ops/scalar.inl"
+#include "ops/stack.inl"
+                default:
+                    return err(nncase_errc::stackvm_illegal_target);
+                    break;
+                }
+            }
+    }
+    else {
+        auto tensor_func = reader_.read_unaligned<tensor_function_t>();
 #ifdef ENABLE_OP_PROFILE
             op_profile p(to_string(tensor_func), (uint8_t)opcode);
 #endif

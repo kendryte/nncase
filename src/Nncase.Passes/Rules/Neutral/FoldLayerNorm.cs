@@ -1,11 +1,19 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using DryIoc;
 using Nncase.IR;
+using Nncase.IR.F;
 using Nncase.IR.Math;
+using Nncase.IR.NN;
+using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using static Nncase.IR.F.NN;
 using static Nncase.PatternMatch.F.Math;
+using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 
@@ -72,7 +80,14 @@ public sealed partial class FoldLayerNormPattern1 : RewriteRule<CallPattern>
         if (subCall[Binary.Lhs] == rd1Call[Reduce.Input] && divCall[Binary.Lhs] == subCall)
         {
             var axis = addBetaCall.CheckedShape.Count - gamma.CheckedShape.Count;
-            return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta);
+            bool cFirst = false;
+            var axes = rd1Call[Reduce.Axis].Evaluate().AsTensor().ToArray<int>();
+            if (axes.Length == 1 && axes[0] != input.CheckedShape.Count - 1 && axes[0] != -1)
+            {
+                cFirst = true;
+            }
+
+            return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta, channelFirst: cFirst);
         }
 
         return null;
@@ -133,7 +148,14 @@ public sealed partial class FoldLayerNormPattern2 : RewriteRule<CallPattern>
             divCall[Binary.Lhs] == subCall)
         {
             var axis = addBetaCall.CheckedShape.Count - gamma.CheckedShape.Count;
-            return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta);
+            bool cFirst = false;
+            var axes = rd1Call[Reduce.Axis].Evaluate().AsTensor().ToArray<int>();
+            if (axes.Length == 1 && axes[0] != input.CheckedShape.Count - 1 && axes[0] != -1)
+            {
+                cFirst = true;
+            }
+
+            return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta, channelFirst: cFirst);
         }
 
         return null;
@@ -202,7 +224,14 @@ public sealed partial class FoldLayerNormPattern3 : RewriteRule<CallPattern>
             mulXCall[Binary.Lhs] == subMuCall[Binary.Lhs] && mulXCall[Binary.Lhs] == rdMuCall[Reduce.Input])
         {
             var axis = addAllCall.CheckedShape.Count - gamma.CheckedShape.Count;
-            return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta);
+            bool cFirst = false;
+            var axes = rdMuCall[Reduce.Axis].Evaluate().AsTensor().ToArray<int>();
+            if (axes.Length == 1 && axes[0] != input.CheckedShape.Count - 1 && axes[0] != -1)
+            {
+                cFirst = true;
+            }
+
+            return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta, channelFirst: cFirst);
         }
 
         return null;
@@ -273,7 +302,14 @@ public sealed partial class FoldLayerNormPattern4 : RewriteRule<CallPattern>
             subCall[Binary.Lhs] == mulXCall[Binary.Lhs] && subCall[Binary.Rhs] == mulMuCall[Binary.Lhs] && mulXCall[Binary.Lhs] == meanCall[Reduce.Input])
         {
             var axis = addAllCall.CheckedShape.Count - gamma.CheckedShape.Count;
-            return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta);
+            bool cFirst = false;
+            var axes = meanCall[Reduce.Axis].Evaluate().AsTensor().ToArray<int>();
+            if (axes.Length == 1 && axes[0] != input.CheckedShape.Count - 1 && axes[0] != -1)
+            {
+                cFirst = true;
+            }
+
+            return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta, channelFirst: cFirst);
         }
 
         return null;
@@ -321,15 +357,94 @@ public sealed partial class FoldLayerNormPattern5 : RewriteRule<CallPattern>
                                         IsTensorConst("two"))),
                             IsTensorConst("eps"))))));
 
-    private Expr? GetReplace(Call pow2Call, TensorConst eps, TensorConst gamma, Expr input, TensorConst one, TensorConst two)
+    private Expr? GetReplace(Call pow2Call, Call rdVarCall, TensorConst eps, TensorConst gamma, Expr input, TensorConst one, TensorConst two)
     {
         if (input == pow2Call[Binary.Lhs] && one.Value.Cast<float>()[0] == 1f && two.Value.Cast<float>()[0] == 2f)
         {
             var axis = pow2Call.CheckedShape.Count - gamma.CheckedShape.Count;
             var beta = Tensor.FromScalar(0f, gamma.CheckedShape);
-            return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta, hasMean: false);
+            bool cFirst = false;
+            var axes = rdVarCall[Reduce.Axis].Evaluate().AsTensor().ToArray<int>();
+            if (axes.Length == 1 && axes[0] != input.CheckedShape.Count - 1 && axes[0] != -1)
+            {
+                cFirst = true;
+            }
+
+            return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta, hasMean: false, channelFirst: cFirst);
         }
 
         return null;
+    }
+}
+
+[RuleGenerator]
+public sealed partial class ConvertLayerNormChannelFirstToLast : RewriteRule<CallPattern>
+{
+    public override CallPattern Pattern { get; } =
+        IsLayerNorm(
+            "ln",
+            "_",
+            _ => true,
+            IsWildcard("x"),
+            IsWildcard("scale"),
+            IsWildcard("bias"));
+
+    private static List<int> GetPermWithAxis(long axis, int shapeSize)
+    {
+        var perm = new List<int>();
+        for (int i = 0; i < shapeSize; i++)
+        {
+            if (i != axis)
+            {
+                perm.Add(i);
+            }
+        }
+
+        perm.Add((int)axis);
+        return perm;
+    }
+
+    private Expr? GetReplace(LayerNorm ln, Expr x, Expr scale, Expr bias)
+    {
+        if (!ln.ChannelFirst)
+        {
+            return null;
+        }
+
+        int axis = ln.Axis;
+        float eps = ln.Epsilon;
+        bool useMean = ln.UseMean;
+        if ((axis == x.CheckedShape.Count - 1) || (axis == -1))
+        {
+            return null;
+        }
+
+        var inPerm = GetPermWithAxis(axis, x.CheckedShape.Count);
+        var outPerm = new List<int>();
+        for (int i = 0; i < inPerm.Count; i++)
+        {
+            outPerm.Add(inPerm[inPerm[i]]);
+        }
+
+        var newScale = scale;
+        var newBias = bias;
+
+        // the permutation of scale and bias must be the same.
+        if (scale.CheckedShape.Count != 1 && bias.CheckedShape.Count != 1)
+        {
+            int axisGap = x.CheckedShape.Count - scale.CheckedShape.Count;
+            if (axisGap > axis)
+            {
+                // Never reach here.
+                return null;
+            }
+
+            var constPerm = GetPermWithAxis(axis - axisGap, scale.CheckedShape.Count);
+
+            newScale = Tensors.Transpose(scale, constPerm.ToArray());
+            newBias = Tensors.Transpose(bias, constPerm.ToArray());
+        }
+
+        return Tensors.Transpose(LayerNorm(x.CheckedShape.Count - 1, eps, Tensors.Transpose(x, inPerm.ToArray()), newScale, newBias, useMean, true), outPerm.ToArray());
     }
 }

@@ -34,6 +34,7 @@ internal partial class Program
         // 2. import the model
         var target = CompilerServices.GetTarget(targetKind);
         using var compileSession = CompileSession.Create(target, compileOptions);
+        using var compileSessionScope = new CompileSessionScope(compileSession);
         var compiler = compileSession.Compiler;
         IR.IRModule module = await compiler.ImportModuleAsync(Path.GetExtension(compileOptions.InputFile).Trim('.'), compileOptions.InputFile, compileOptions.IsBenchmarkOnly);
 
@@ -58,7 +59,7 @@ internal partial class Program
         await compiler.CompileAsync();
 
         // 5. code gen
-        using (var os = File.OpenWrite(outputFile))
+        using (var os = File.Open(outputFile, FileMode.Create, FileAccess.Write))
         {
             compiler.Gencode(os);
         }
@@ -122,8 +123,15 @@ internal partial class Program
                     _ => throw new ArgumentException("Invalid weights quant type"),
                 },
                 ModelQuantMode = context.ParseResult.GetValueForOption(compilecmd.ModelQuantMode),
+                QuantScheme = context.ParseResult.GetValueForOption(compilecmd.QuantScheme)!,
             },
         };
+
+#if true
+        compileOptions.ShapeBucketOptions.Enable = true;
+        compileOptions.ShapeBucketOptions.RangeInfo = new() { { "history_len", (0, 64) }, { "seq_len", (1, 64) } };
+        compileOptions.ShapeBucketOptions.SegmentsCount = 2;
+#endif
 
         foreach (var item in context.ParseResult.GetValueForOption(compilecmd.FixedVars)!)
         {

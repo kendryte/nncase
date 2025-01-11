@@ -93,8 +93,9 @@ public interface ICompilerServicesProvider
     /// </summary>
     /// <param name="expr"> the expression. </param>
     /// <param name="useScript">Print script format.</param>
+    /// <param name="display_callable">display callable.</param>
     /// <returns>the string.</returns>
-    string Print(Expr expr, bool useScript);
+    string Print(Expr expr, bool useScript, bool display_callable);
 
     /// <summary>
     /// Evaluate the expression tree.
@@ -485,7 +486,7 @@ public static class CompilerServices
     /// <returns>Result.</returns>
     public static string PrintOp(Op op, IIRPrinterContext context, bool iLmode) => Provider.PrintOp(op, context, iLmode);
 
-    public static void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable = true) =>
+    public static void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable = false) =>
       Provider.DumpIR(expr, prefix, dumpPath, display_callable);
 
     /// <summary>
@@ -494,7 +495,7 @@ public static class CompilerServices
     /// not support prim func/prim func wrapper.
     /// </remarks>
     /// </summary>
-    public static void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable = true) =>
+    public static void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable = false) =>
       Provider.DumpDotIR(expr, prefix, dumpPath, display_callable);
 
     /// <summary>
@@ -518,7 +519,7 @@ public static class CompilerServices
 
     public static string Print(IRType type) => Provider.Print(type);
 
-    public static string Print(Expr expr, bool useScript = false) => Provider.Print(expr, useScript);
+    public static string Print(Expr expr, bool useScript = false, bool display_callable = false) => Provider.Print(expr, useScript, display_callable);
 
     /// <summary>
     /// Get target.
@@ -642,7 +643,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     public string Print(IRType type) => _irprinterProvider.Print(type);
 
     /// <inheritdoc/>
-    public string Print(Expr expr, bool useScript) => _irprinterProvider.Print(expr, useScript);
+    public string Print(Expr expr, bool useScript, bool display_callable) => _irprinterProvider.Print(expr, useScript, display_callable);
 
     /// <inheritdoc/>
     public bool TryMatch(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)

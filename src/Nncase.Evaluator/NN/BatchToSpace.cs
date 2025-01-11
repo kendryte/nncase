@@ -131,7 +131,7 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
 
         var inRank = Cast(ShapeOf(inShape)[0], DataTypes.Int32);
         var remainSize = inRank - 1 - m;
-        var remainShape = new If(remainSize > 0, ShapeExprUtility.Slice(inShape, 1 + m, int.MaxValue), Array.Empty<long>());
+        var remainShape = ShapeExprUtility.If(remainSize > 0, (inShape, m) => ShapeExprUtility.Slice(inShape, 1 + m, int.MaxValue), (inShape, m) => Array.Empty<long>(), inShape, m);
 
         var outShapeList = Concat(new IR.Tuple(Stack(new IR.Tuple(new[] { d0 }), 0), Stack(new IR.Tuple(cropSection), 0), remainShape), 0);
 

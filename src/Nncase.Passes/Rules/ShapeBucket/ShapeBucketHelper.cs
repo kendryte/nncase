@@ -30,9 +30,11 @@ public static class CallValidator
         typeof(MatMul).TypeHandle,
         typeof(Transpose).TypeHandle,
         typeof(Pad).TypeHandle,
+
         typeof(Unsqueeze).TypeHandle,
         typeof(Squeeze).TypeHandle,
         typeof(Unary).TypeHandle,
+        typeof(Binary).TypeHandle,
     };
 
     private static readonly HashSet<RuntimeTypeHandle> MaybeDynamic = new()
@@ -133,6 +135,13 @@ public static class ShapeBucketRegister
         }
     }
 
+    public static bool IsLLMMode(ShapeBucketOptions options)
+    {
+        var set = new HashSet<string>() { "seq_len", "history_len" };
+        set.ExceptWith(options.RangeInfo.Keys.Select(v => v.ToString()));
+        return set.Count == 0 && options.FixVarMap.Count == 0;
+    }
+
     public static bool HasNotBucketOp(Expr entry)
     {
         var counter = new OpCollector();
@@ -189,11 +198,11 @@ public static class ShapeBucketRegister
         MergeOp(p, false);
 
         // todo: lost to fusion
-        p.AddWithName<DataflowPass>("LostToFusion").Configure(p =>
-        {
-            p.Add<TransposeToFusion>(true);
-            p.Add<ActToFusion>(true);
-        });
+        // p.AddWithName<DataflowPass>("LostToFusion").Configure(p =>
+        // {
+        //     p.Add<TransposeToFusion>(true);
+        //     p.Add<ActToFusion>(true);
+        // });
 
         MergeFusion(p, singleVar, false);
     }
@@ -205,7 +214,7 @@ public static class ShapeBucketRegister
             return;
         }
 
-        p.AddWithName<MergeBucketFusionPass>("MergeBucketFusionPass", greedy);
+        p.AddWithName<MergeBucketFusionPass>("MergeBucketFusionPass");
     }
 
     public static void LostToFusion(IPassManager p, bool singleVar) =>
@@ -385,7 +394,7 @@ public static class ShapeBucketHelper
         var visitor = new FindVar();
         args.ForEach(arg =>
         {
-            DumpIR(arg, "argExpr");
+            // DumpIR(arg, "argExpr");
             var argShapeExpr = arg.EvaluateShapeExpr(varMap);
             visitor.Visit(argShapeExpr);
         });

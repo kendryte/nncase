@@ -66,22 +66,21 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
             return input;
         }
 
-        if (context.GetArgument(target, Unsqueeze.Dim) is TensorConst tdims)
+        if (context.GetArgument(target, Unsqueeze.Dim) is TensorConst axes)
         {
-            var dimsValue = tdims.Value.Cast<int>();
-            var outShape = input.Shape.ToList();
-            foreach (var dimVal in dimsValue)
+            var axesValue = axes.Value.ToArray<int>();
+            var outShape = new Dimension[input.Shape.Rank + axesValue.Length];
+            axesValue = axesValue.Select(axis => axis < 0 ? axis + outShape.Length : axis).ToArray();
+            var offset = 0;
+            for (int i = 0; i < outShape.Length; i++)
             {
-                if (dimVal >= 0)
+                if (axesValue.Contains(i))
                 {
-                    outShape.Insert(dimVal, 1);
+                    outShape[i] = 1;
                 }
                 else
                 {
-                    var index = System.Math.Max(outShape.Count + dimVal + 1, 0);
-                    outShape.Insert(index, 1);
-
-                    // count == 3, dimVal == -4
+                    outShape[i] = input.Shape[offset++];
                 }
             }
 

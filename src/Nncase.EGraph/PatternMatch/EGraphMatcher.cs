@@ -66,6 +66,7 @@ public sealed class EGraphMatcher
             (FusionPattern fusionPattern, Fusion fusion) => VisitLeaf(matchScopes, fusionPattern, enode, fusion),
             (FunctionPattern functionPat, Function func) => Visit(matchScopes, functionPat, enode, func),
             (CallPattern callPat, Call call) => Visit(matchScopes, callPat, enode, call),
+            (IfPattern ifPat, If @if) => Visit(matchScopes, ifPat, enode, @if),
             (MarkerPattern mkPat, Marker mk) => Visit(matchScopes, mkPat, enode, mk),
             (TuplePattern tuplePat, IR.Tuple tuple) => Visit(matchScopes, tuplePat, enode, tuple),
             (IOpPattern opPat, Op op) => VisitLeaf(matchScopes, opPat, enode, op),
@@ -158,6 +159,35 @@ public sealed class EGraphMatcher
                 {
                     context.NewScopes.AddRange(newScopes);
                     context.MatchCandidates(pattern, expr);
+                }
+            }
+        }
+
+        return context.NewScopes;
+    }
+
+    private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, IfPattern pattern, ENode enode, If expr)
+    {
+        var context = new MatchContext(matchScopes, pattern, expr);
+
+        if (context.HasCandidates
+            && pattern.MatchLeaf(expr)
+            && pattern.Then.MatchLeaf(expr.Then)
+            && pattern.Else.MatchLeaf(expr.Else)
+            && pattern.Arguments.MatchLeaf(expr.Arguments))
+        {
+            var newScopes = Visit(context.Candidates, pattern.Then, enode.Children[0]);
+            if (newScopes.Count > 0)
+            {
+                newScopes = Visit(newScopes, pattern.Else, enode.Children[1]);
+                if (newScopes.Count > 0)
+                {
+                    newScopes = Visit(newScopes, pattern.Arguments, enode.Children.Skip(2));
+                    if (newScopes.Count > 0)
+                    {
+                        context.NewScopes.AddRange(newScopes);
+                        context.MatchCandidates(pattern, expr);
+                    }
                 }
             }
         }

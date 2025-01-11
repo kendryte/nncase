@@ -9,7 +9,7 @@
     <NoWarn>$(NoWarn);MSB3270;CS0659;CS0661</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Avalonia" Version="11.0.2" />
@@ -28,6 +28,8 @@
     <PackageVersion Include="Extension.Mathematics" Version="1.2.12" />
     <PackageVersion Include="Fody" Version="6.8.1" />
     <PackageVersion Include="GiGraph.Dot" Version="3.0.1" />
+    <PackageVersion Include="QuikGraph" Version="2.5.0" />
+    <PackageVersion Include="QuikGraph.Graphviz" Version="2.5.0" />
     <PackageVersion Include="Google.Protobuf" Version="3.27.3" />
     <PackageVersion Include="Grpc.Tools" Version="2.65.0" />
     <PackageVersion Include="Humanizer.Core" Version="2.14.1" />

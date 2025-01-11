@@ -71,6 +71,10 @@ internal class Compiler : ICompiler
 
     public void BroadcastOutputNamesAfterImportPass(IPassManager passManager)
     {
+        passManager.AddWithName<DataflowPass>("FoldQuantDeQuant").Configure(p =>
+        {
+            p.Add<Passes.Rules.Neutral.FoldQuantDeQuant>();
+        });
         passManager.AddWithName<DataflowPass>("BroadcastOutputNamesAfterImportPass").Configure(p =>
         {
             p.Add<Passes.Rules.Neutral.BroadcastTransposeOutputNames>();
@@ -108,6 +112,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern4>();
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern5>();
+            p.Add<Passes.Rules.Neutral.ConvertLayerNormChannelFirstToLast>();
             p.Add<Passes.Rules.Neutral.FoldGeluWithScale>();
             p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
             p.Add<Passes.Rules.Neutral.FoldSwishPattern1>();
@@ -120,6 +125,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldTwoSlices>();
             p.Add<Passes.Rules.Neutral.FocusFull>();
             p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
+            p.Add<Passes.Rules.Neutral.ReshapeExpand>();
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
             p.Add<Passes.Rules.Neutral.FoldShapeOf>();
             p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
@@ -142,6 +148,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldTwoPads>();
             p.Add<Passes.Rules.Neutral.SwapBinaryArgs>();
             p.Add<Passes.Rules.Neutral.FoldDilatedConv2D>();
+            p.Add<Passes.Rules.Neutral.PowOf2ToSquare>();
             p.Add<Passes.Rules.Neutral.ScalarConstToTensor>();
         });
 
@@ -243,7 +250,11 @@ internal class Compiler : ICompiler
         var singleVar = options.VarMap.Values.SelectMany(x => x).OfType<Var>().ToHashSet().Count <= 1;
         CheckShapeBucketOptions(options);
 
-        if (HasNotBucketOp(_module!.Entry!) || !singleVar)
+        if (IsLLMMode(options))
+        {
+            p.AddWithName<SplitLLMStage>("SplitLLMStage");
+        }
+        else if (HasNotBucketOp(_module!.Entry!) || !singleVar)
         {
             ToFusion(p);
             MergeOp(p, true);
@@ -258,6 +269,21 @@ internal class Compiler : ICompiler
         else
         {
             p.AddWithName<FullBucket>("FullBucket");
+        }
+
+        p.AddWithName<AddFunctionToModule>("AddIfToModule");
+
+        // 1. Optimize if
+        // 2. Optimize prefill/decode
+        for (int i = 0; i < 2; i++)
+        {
+            p.AddWithName<DataflowPass>("RemoveUnusedVars").Configure(c =>
+            {
+                c.Add<RemoveUnusedVarsByCall>();
+                c.Add<RemoveUnusedVarsByIf>();
+            });
+            p.AddWithName<AddFunctionToModule>("AddNewFunctionToModule");
+            p.AddWithName<RemoveUnusedFunctions>("RemoveUnusedFunctions");
         }
     }
 

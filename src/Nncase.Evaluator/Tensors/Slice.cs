@@ -88,7 +88,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         var axes = context.GetArgument(target, Slice.Axes);
         var size = context.GetArgument(target, Slice.Input).CheckedShape.Rank;
 
-        Expr Translate(Expr x, Expr dim) => new If(x < 0, dim + x, Clamp(x, 0, dim));
+        Expr Translate(Expr x, Expr dim) => ShapeExprUtility.If(x < 0, (x, dim) => dim + x, (x, dim) => Clamp(x, 0, dim), x, dim);
 
         var axesValue = ((TensorConst)axes).Value.ToArray<int>();
         int j = 0;
@@ -105,8 +105,8 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
             Expr end = Cast(Clamp(ends[j], (long)int.MinValue, (long)int.MaxValue), DataTypes.Int32);
             var stride = Cast(Clamp(strides[j], (long)int.MinValue, (long)int.MaxValue), DataTypes.Int32);
             var strideIsNeg = stride < 0;
-            begin = new If(strideIsNeg, Clamp(begin, 0, dim - 1), Translate(begin, dim));
-            end = new If(strideIsNeg, Clamp(end, -1, dim), Translate(end, dim));
+            begin = ShapeExprUtility.If(strideIsNeg, (begin, dim) => Clamp(begin, 0, dim - 1), (begin, dim) => Translate(begin, dim), begin, dim);
+            end = ShapeExprUtility.If(strideIsNeg, (end, dim) => Clamp(end, -1, dim), (end, dim) => Translate(end, dim), end, dim);
             j++;
             return Ceil(Abs(end - begin) / Abs(stride));
         }).ToArray();

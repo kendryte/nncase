@@ -318,32 +318,39 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         var args = expr.Arguments.AsValueEnumerable().Select(Visit).ToArray();
         name = AllocateTempVar(expr);
         _scope.IndWrite($"{name} = {target}({property}{string.Join(", ", args)})");
-        AppendCheckedType(expr.CheckedType);
+        AppendCheckedType(expr.CheckedType, " " + string.Join(",", expr.Metadata.OutputNames ?? Array.Empty<string>()));
         return name;
     }
 
     /// <inheritdoc/>
     protected override string VisitIf(If expr)
     {
-        foreach (var expr1 in expr.ParamList)
+        if (_names.TryGetValue(expr, out var name))
         {
-            Visit(expr1);
+            return name;
         }
 
-        _scope.IndWriteLine($"if({Visit(expr.Condition)}, Params: ({string.Join(",", expr.ParamList.AsValueEnumerable().Select(Visit))})) " + "{");
+        var thenFunc = Visit(expr.Then);
+        var elseFunc = Visit(expr.Else);
+        var args = expr.Arguments.AsValueEnumerable().Select(Visit).ToArray();
+        name = AllocateTempVar(expr);
+        _scope.IndWrite($"{name} = if({Visit(expr.Condition)}, {string.Join(", ", args)})");
+        AppendCheckedType(expr.CheckedType);
+        _scope.IndWriteLine("{");
         using (_scope.IndentUp())
         {
-            Visit(expr.Then);
+            _scope.IndWriteLine(thenFunc);
         }
 
         _scope.IndWriteLine("} else {");
+
         using (_scope.IndentUp())
         {
-            Visit(expr.Else);
+            _scope.IndWriteLine(elseFunc);
         }
 
         _scope.IndWriteLine("}");
-        return "if";
+        return name;
     }
 
     /// <inheritdoc/>
@@ -385,9 +392,16 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         _scope.IndWriteLine("{");
 
         // 2. Function body
-        using (_scope.IndentUp())
+        if (_scope.IndentLevel == 0 || _displayCallable)
         {
-            var body = Visit(expr.Body);
+            using (_scope.IndentUp())
+            {
+                var body = Visit(expr.Body);
+            }
+        }
+        else
+        {
+            _scope.IndWriteLine("...");
         }
 
         // 3. Function closing
@@ -413,21 +427,14 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         _scope.IndWriteLine("{");
 
         // 2. Function body
-        if (_displayCallable)
+        using (_scope.IndentUp())
         {
-            using (_scope.IndentUp())
+            var body_builder = new StringBuilder();
+            using (var body_writer = new StringWriter(body_builder))
             {
-                var body_builder = new StringBuilder();
-                using (var body_writer = new StringWriter(body_builder))
-                {
-                    var visitor = new ILPrintVisitor(body_writer, true, _scope.IndentLevel).Visit(expr.Body);
-                    _scope.Append(body_writer.ToString());
-                }
+                var visitor = new ILPrintVisitor(body_writer, false, _scope.IndentLevel).Visit(expr.Body);
+                _scope.Append(body_writer.ToString());
             }
-        }
-        else
-        {
-            _scope.IndWriteLine("...");
         }
 
         // 3. Function closing
@@ -457,7 +464,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         {
             using (_scope.IndentUp())
             {
-                using (var bodys = new StringReader(CompilerServices.Print(expr.Target)))
+                using (var bodys = new StringReader(CompilerServices.Print(expr.Target, false, false)))
                 {
                     while (bodys.ReadLine() is string line)
                     {

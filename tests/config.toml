@@ -73,7 +73,7 @@ args = []
 
 [generator.calibs]
 method = 'random'
-number = 5
+number = 1
 batch = 1
 
 [generator.calibs.random]

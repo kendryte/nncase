@@ -459,7 +459,7 @@ public partial class StackVMEmitter
     }
 
     ///<summary>Load a global pointer with offset to stack.</summary>
-    public void LeaGP(byte gpid, int offset)
+    public void LeaGP(byte gpid, long offset)
     {
         Write((byte)22);
         Write(gpid);

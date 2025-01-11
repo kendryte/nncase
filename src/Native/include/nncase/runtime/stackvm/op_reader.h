@@ -266,7 +266,7 @@ template <> struct op_reader<opcode_t::LEA_GP> {
     lea_gp_op_t operator()(NNCASE_UNUSED span_reader &reader) const {
         lea_gp_op_t op;
         op.gpid = reader.read_unaligned<uint8_t>();
-        op.offset = reader.read_unaligned<int32_t>();
+        op.offset = reader.read_unaligned<int64_t>();
         return op;
     }
 };

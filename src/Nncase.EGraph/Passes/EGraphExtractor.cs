@@ -580,6 +580,9 @@ internal sealed class SatExprBuildVisitor
             case Function func:
                 expr = children.Length == 0 ? func : func.With(body: children[0], parameters: children[1..].OfType<Var>().ToArray());
                 break;
+            case If @if:
+                expr = @if.With(condition: children[0], then: (BaseFunction)children[1], @else: (BaseFunction)children[2], arguments: children[3..]);
+                break;
             case Call call:
                 expr = call.With(target: children[0], arguments: children[1..], call.Metadata);
                 break;
@@ -587,10 +590,7 @@ internal sealed class SatExprBuildVisitor
                 expr = tp.With(fields: children);
                 break;
             case Marker mk:
-                expr = mk.With(target: children[0], attribute: children[1]);
-                break;
-            case IR.If @if:
-                expr = @if.With(condition: children[^3], then: children[^2], @else: children[^1], paramList: children[..^3].ToArray());
+                expr = mk.With(target: children[0], attribute: children[1], metadata: mk.Metadata);
                 break;
             default:
                 throw new NotSupportedException(enode.Expr.GetType().Name);

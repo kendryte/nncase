@@ -56,7 +56,8 @@ public partial class ExprCloner<TContext>
         return expr.With(
             condition: Clone(expr.Condition, context),
             then: Clone(expr.Then, context),
-            @else: Clone(expr.Else, context)
+            @else: Clone(expr.Else, context),
+            arguments: CloneArray(expr.Arguments, context)
         );
     }
 

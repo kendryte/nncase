@@ -266,6 +266,9 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         CheckInferShape(us1, new[] { 3, 1 });
         var us2 = Unsqueeze(v1, new[] { 0 });
         CheckInferShape(us2, new[] { 1, 3 });
+        var v2 = Var(new[] { 2, 1, 64 });
+        var uv2 = Unsqueeze(v2, new[] { 3, 1 });
+        CheckInferShape(uv2, new[] { 2, 1, 1, 1, 64 });
     }
 
     private void CheckReshape(Expr input, int[] reshapeArgs, int[] expectShape)

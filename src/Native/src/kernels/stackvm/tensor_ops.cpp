@@ -47,7 +47,7 @@ result<value_t> nncase::kernels::stackvm::batch_normalization(
 }
 
 result<value_t> nncase::kernels::stackvm::layer_norm(
-    int32_t axis, float epsilon, [[maybe_unused]] bool use_mean, value_t input,
+    int32_t axis, float epsilon, bool use_mean, value_t input,
     value_t scale, value_t bias, value_t output,
     [[maybe_unused]] kernel_context &context) {
     try_input(input_mem, input);
@@ -558,8 +558,13 @@ nncase::kernels::stackvm::mat_mul(value_t lhs, value_t rhs, value_t output,
             matmul_infer_shape(lhs_tensor->shape(), rhs_tensor->shape()));
     try_output(out_mem, output, lhs_tensor->dtype(), out_shape);
     try_typecode(typecode, lhs_tensor);
-    try_(reference::matmul(typecode, lhs_mem, rhs_mem, out_mem,
-                           lhs_tensor->shape(), rhs_tensor->shape()));
+    if (is_contiguous(lhs_tensor) && is_contiguous(rhs_tensor) && is_contiguous(output_tensor)) {
+        try_(optimized::matmul(typecode, lhs_mem, rhs_mem, out_mem,
+                        lhs_tensor->shape(), rhs_tensor->shape(), context));
+    } else {
+        try_(reference::matmul(typecode, lhs_mem, rhs_mem, out_mem,
+                            lhs_tensor->shape(), rhs_tensor->shape()));
+    }
     return ok(output);
 }
 
@@ -795,8 +800,8 @@ result<value_t> nncase::kernels::stackvm::bucket_pad(
         return err(std::errc::invalid_argument);
     }
 
-    auto paddings = std::vector<int>(8);
     auto rank = shape_value.size();
+    auto paddings = std::vector<int>(rank * 2);
     for (int i = 0; i < rank; ++i) {
         paddings[2 * i + 0] = 0;
         paddings[2 * i + 1] = shape_value[i] - in_shape[i];

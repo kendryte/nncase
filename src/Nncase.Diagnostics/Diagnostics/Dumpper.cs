@@ -34,7 +34,7 @@ internal sealed class Dumpper : IDumpper
         return new Dumpper(subDumpFlags, Path.Join(_dumpDirectory, subDirectory));
     }
 
-    public void DumpIR(Expr expr, string prefix, string? reletivePath = null, bool displayCallable = true)
+    public void DumpIR(Expr expr, string prefix, string? reletivePath = null, bool displayCallable = false)
     {
         var path = Path.Join(_dumpDirectory, reletivePath);
         CompilerServices.DumpIR(expr, prefix, EnsureWritable(path), displayCallable);

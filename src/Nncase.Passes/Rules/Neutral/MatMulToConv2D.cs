@@ -14,6 +14,7 @@ using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Math;
+using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.Utility;
 using static Nncase.Utilities.MetadataUtility;
 using Shape = Nncase.IR.Shape;
@@ -251,5 +252,56 @@ public sealed partial class SplitBatchMatMul : IRewriteRule
         }
 
         return Concat(new IR.Tuple(ofSlices), 0).InheritMetaData(matMulCall);
+    }
+}
+
+[RuleGenerator]
+public sealed partial class Conv2DToMatmul : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } =
+        IsConv2D(
+            null,
+            "conv2d",
+            PadMode.Constant,
+            IsWildcard("input") with { TypePattern = HasFixedShape() },
+            IsTensorConst("weights"),
+            IsTensorConst("bias"),
+            IsTensorConst("strides"),
+            IsTensorConst("paddings"),
+            IsTensorConst("dilation"),
+            IsTensorConst("groups"),
+            IsTensorConst("fusedClamp")) with
+        {
+            TypePattern = HasFixedShape(),
+        };
+
+    private Expr? GetReplace(Expr conv2d, Expr input, Expr weights, Tensor<float> bias, int[] strides, Tensor<int> paddings, int[] dilation, int groups, float[] fusedClamp)
+    {
+        var inDType = input.CheckedDataType;
+        var inShape = input.CheckedShape;
+        var wShape = weights.CheckedShape;
+        var outShape = conv2d.CheckedShape;
+        var inChannels = inShape[1].FixedValue;
+        var outChannels = outShape[1].FixedValue;
+        var filterH = wShape[2].FixedValue;
+        var filterW = wShape[3].FixedValue;
+
+        if (!(inShape[^1] == 1 && inShape[^2] == 1 && outShape[^1] == 1 && outShape[^2] == 1 &&
+            filterH == 1 && filterW == 1 && groups == 1 && strides.All(s => s == 1) &&
+            paddings.ToArray().All(p => p == 0) && dilation.ToArray().All(d => d == 1)))
+        {
+            return null;
+        }
+
+        var if_shape = new Shape(new[] { inShape[0].FixedValue, inShape[1].FixedValue });
+        var w_shape = new Shape(new[] { wShape[0].FixedValue, wShape[1].FixedValue });
+
+        var if_reshape = Reshape(input, if_shape);
+        var w_reshape = Reshape(weights, w_shape);
+        var w_tp = Transpose(w_reshape, Tensor.From<int>(new[] { 1, 0 }));
+        var mm = MatMul(if_reshape, w_tp);
+
+        return IR.F.Math.Clamp(IR.F.Math.Add(Reshape(mm, outShape), Tensor.From(bias.ToArray(), new[] { 1, outChannels, 1, 1 })), fusedClamp[0], fusedClamp[1]);
     }
 }
