@@ -31,9 +31,9 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
 
     private readonly ICpuTargetOptions _targetOptions;
 
-    private int _permformCount;
-
     private readonly TieredTileGraph _graph;
+
+    private int _permformCount;
 
     public MCTState(TieredTileGraph graph, string moduleKind, string prefix, string searchPath, Dictionary<TileNode, GraphTiler.TiledFunc> solveMemo, ICpuTargetOptions targetOptions)
     {
