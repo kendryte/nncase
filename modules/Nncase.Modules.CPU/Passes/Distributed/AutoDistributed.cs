@@ -26,19 +26,6 @@ internal enum SearchGraphKind : int
     Bucket,
 }
 
-public sealed class AutoDistributedMetadata : IRMetadata
-{
-    public AutoDistributedMetadata(bool skip)
-    {
-        Skip = skip;
-    }
-
-    /// <summary>
-    /// Gets a value indicating whether skip auto distributed.
-    /// </summary>
-    public bool Skip { get; }
-}
-
 public sealed class AutoDistributedMetaData : IRMetadata
 {
     public bool Skip { get; set; }

@@ -133,7 +133,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         }
 
         var post = IR.F.CPU.Boxing(boxed, inputType);
-        post.Metadata = new Passes.Distributed.AutoDistributedMetadata(true);
+        post.Metadata = new Passes.Distributed.AutoDistributedMetaData() { Skip = true };
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, new[] { post });
     }
 
