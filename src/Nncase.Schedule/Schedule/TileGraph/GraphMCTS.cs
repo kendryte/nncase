@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Collections;
@@ -33,7 +33,7 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
 
     private int _permformCount;
 
-    private TieredTileGraph _graph;
+    private readonly TieredTileGraph _graph;
 
     public MCTState(TieredTileGraph graph, string moduleKind, string prefix, string searchPath, Dictionary<TileNode, GraphTiler.TiledFunc> solveMemo, ICpuTargetOptions targetOptions)
     {
