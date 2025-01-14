@@ -34,7 +34,7 @@ public sealed class AutoTilePass : ModulePass
 
     protected override Task<IRModule> RunCoreAsync(IRModule input, RunPassContext context)
     {
-        var memo = new Dictionary<Schedule.TileGraph.TileNode, GraphTiler.TiledFunc>();
+        _ = new Dictionary<Schedule.TileGraph.TileNode, GraphTiler.TiledFunc>();
         var funcNums = input.Functions.Count;
         for (int i = 0; i < funcNums; i++)
         {
@@ -224,12 +224,12 @@ internal sealed class AutoTileReConstructor : ExprReConstructor<ExprVertex, Expr
 
         Expr cloned = clones.Count == 1 ? clones[0] : new IR.Tuple(clones.ToArray());
         var tiled = Tiler.Tile(cloned, ModuleKind, (ICpuTargetOptions)CompileOptions.TargetOptions);
-// #if false
-//        var tiledCall = GraphTiler.MCTSTiling(clonedCall, ModuleKind, memo, (ICpuTargetOptions)CompileOptions.TargetOptions);
-// #else
-//        var tiledCall = GraphTiler.Tiling(clonedCall, ModuleKind, memo, (ICpuTargetOptions)CompileOptions.TargetOptions);
-// #endif
 
+        // #if false
+        //        var tiledCall = GraphTiler.MCTSTiling(clonedCall, ModuleKind, memo, (ICpuTargetOptions)CompileOptions.TargetOptions);
+        // #else
+        //        var tiledCall = GraphTiler.Tiling(clonedCall, ModuleKind, memo, (ICpuTargetOptions)CompileOptions.TargetOptions);
+        // #endif
         var substitutor = new Mutators.Substitutor(e =>
         {
             if (e is Var v && argumentDict.TryGetValue(v, out var arg))
