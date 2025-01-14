@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="QuikGraph" />
+    <PackageReference Include="QuikGraph.Graphviz" />
     <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
     <ProjectReference Include="..\Nncase.Evaluator\Nncase.Evaluator.csproj" />
   </ItemGroup>
