@@ -14,132 +14,11 @@ using QuikGraph.Graphviz;
 
 namespace Nncase.Schedule;
 
-public static class GraphTiler
+public class GraphTiler
 {
-    public static Expr MCTSTiling(Expr preExpr, string moduleKind, string prefix, Dictionary<TileNode, TiledFunc> solveMemo, ICpuTargetOptions targetOptions)
-    {
-        var topLevel = targetOptions.MemoryCapacities.Length;
-        var rootGraph = GraphBuilder.Build(preExpr, topLevel, out var exprMemo);
-        var rootState = new MCTState(rootGraph, moduleKind, prefix, "0", solveMemo, targetOptions);
-        var rootNode = new MCTNode(rootState);
-        var searcher = new MCTSearcher();
-        searcher.Search(rootNode);
-        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
-        {
-            rootNode.Dump("SearchTree");
-        }
+    public int DeviceFuncionCount { get; private set; }
 
-        var bestState = (MCTState)searcher.BestMCTNode!.State;
-        var replaces = new Dictionary<Expr, Expr>();
-        foreach (var (oldExpr, v) in exprMemo)
-        {
-            if (bestState.Results.TryGetValue(v, out var newExpr))
-            {
-                replaces.Add(oldExpr, newExpr);
-            }
-        }
-
-        var cloner = new ReplacingExprCloner(replaces);
-        return cloner.Clone(preExpr, default);
-    }
-
-    public int DeviceFuncionCount { get; set; }
-
-    public Expr Tile(Expr preExpr, string moduleKind, Dictionary<TileNode, TiledFunc> solveMemo, ICpuTargetOptions targetOptions)
-    {
-        var topLevel = targetOptions.MemoryCapacities.Length;
-        var rootGraph = GraphBuilder.Build(preExpr, topLevel, out var exprMemo);
-        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
-        {
-            rootGraph.Dump($"tile_graph");
-        }
-
-        var (resultMemo, _) = SolveRootGraph(rootGraph, moduleKind, prefix, solveMemo, targetOptions);
-        var cloner = new ReplacingExprCloner(exprMemo.ToDictionary(kv => (Expr)kv.Key, kv => resultMemo[kv.Value]));
-        return cloner.Clone(preExpr, default);
-    }
-
-    public static (Dictionary<TieredTileGraph, Expr> ResultMemo, long ObjectValue) SolveRootGraph(TieredTileGraph rootGraph, string moduleKind, string prefix, Dictionary<TileNode, TiledFunc> solveMemo, ICpuTargetOptions targetOptions)
-    {
-        // bufferize root graph.
-        var bufferGraphMemo = rootGraph.Bufferize();
-        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
-        {
-            bufferGraphMemo[rootGraph].Dump($"tile_buffer_graph");
-        }
-
-        // condense the root graph.
-        var condensedGraph = rootGraph.Condense();
-        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
-        {
-            using (var file = Diagnostics.DumpScope.Current.OpenFile($"condensed_tile_graph.dot"))
-            {
-                using var writer = new StreamWriter(file);
-                writer.Write(condensedGraph.ToGraphviz(init =>
-                {
-                    init.FormatVertex += (_, arg) =>
-                    {
-                        if (arg.Vertex is TieredTileGraph t)
-                        {
-                            arg.VertexFormat.Label = t.ToString();
-                        }
-                    };
-                }));
-            }
-        }
-
-        // convert root graph as tree.
-        var rootTree = TileNode.FromTileGraph(rootGraph, out var treeGraphMemo);
-
-        var argumentsMemo = bufferGraphMemo[rootGraph].GetInputsOutputs().Inputs.ToDictionary(k => k, k => k.Node.Grid.GetArgument(k.Index));
-        var resultMemo = new Dictionary<TieredTileGraph, Expr>();
-        long objectValue = 0;
-        foreach (var (primGraph, i) in condensedGraph.TopologicalSort().Select((s, i) => (s, i)))
-        {
-            using var subSubScope = new Diagnostics.DumpScope($"device_func_{DeviceFuncionCount}", Diagnostics.DumpFlags.Tiling);
-            var primTree = treeGraphMemo[primGraph];
-            HashSet<BufferIdentity> inputBids;
-            HashSet<BufferIdentity> outputBids;
-
-            if (!solveMemo.TryGetValue(primTree, out var memo))
-            {
-                var result = SolvePrimGraph(primTree, bufferGraphMemo, targetOptions, moduleKind);
-                (inputBids, outputBids) = (result.Inputs, result.Outputs);
-                result.ScheduleBuffers();
-                var bodyBuilder = T.Sequential();
-                result.Visit(primTree, new(bodyBuilder, Array.Empty<Expr>()));
-                var parameters = inputBids.Concat(outputBids).Select(k => result.PrimBufferMemo[k]).ToArray();
-                var funcBuilder = T.PrimFunc($"device_func_{DeviceFuncionCount++}", moduleKind, parameters).Body(bodyBuilder);
-                var primFunc = funcBuilder.Build();
-                memo = new(new PrimFunctionWrapper(primFunc, inputBids.Count, inputBids.Concat(outputBids).Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType).ToArray()), result.ObjectiveValue);
-                solveMemo.Add(primTree, memo);
-            }
-            else
-            {
-                (inputBids, outputBids) = bufferGraphMemo[primGraph].GetInputsOutputs();
-            }
-
-            objectValue += memo.ObjectValue;
-            var finalCall = new Call(memo.Func, inputBids.Select(bid => argumentsMemo[bid]).ToArray());
-            resultMemo.Add(primGraph, finalCall);
-
-            // save the output.
-            foreach (var outputBid in outputBids)
-            {
-                if (!argumentsMemo.TryGetValue(outputBid, out var _))
-                {
-                    foreach (var outEdge in bufferGraphMemo[rootGraph].OutEdges(outputBid).Where(e => e.Tag is BufferEdgeKind.Outer))
-                    {
-                        argumentsMemo.Add(outEdge.Target, finalCall);
-                    }
-
-                    argumentsMemo.Add(outputBid, finalCall);
-                }
-            }
-        }
-
-        return (resultMemo, objectValue);
-    }
+    public Dictionary<TileNode, TiledFunc> SolveMemo { get; } = new Dictionary<TileNode, TiledFunc>(new ITreeNodeComparer());
 
     public static TreeSolveResult SolvePrimGraph(TileNode primTree, Dictionary<TieredTileGraph, BufferGraph> bufferGraphMemo, ICpuTargetOptions targetOptions, string moduleKind)
     {
@@ -703,6 +582,128 @@ public static class GraphTiler
             TreeSolverPrinter.WriteIntExpr(writer, "ComputeCycles", computeCycles, printer.Solution);
             TreeSolverPrinter.WriteIntExpr(writer, "TotalCycles", totalCycles, printer.Solution);
         }
+    }
+
+    public (Dictionary<TieredTileGraph, Expr> ResultMemo, long ObjectValue) SolveRootGraph(TieredTileGraph rootGraph, string moduleKind, ICpuTargetOptions targetOptions)
+    {
+        // bufferize root graph.
+        var bufferGraphMemo = rootGraph.Bufferize();
+        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
+        {
+            bufferGraphMemo[rootGraph].Dump($"tile_buffer_graph");
+        }
+
+        // condense the root graph.
+        var condensedGraph = rootGraph.Condense();
+        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
+        {
+            using (var file = Diagnostics.DumpScope.Current.OpenFile($"condensed_tile_graph.dot"))
+            {
+                using var writer = new StreamWriter(file);
+                writer.Write(condensedGraph.ToGraphviz(init =>
+                {
+                    init.FormatVertex += (_, arg) =>
+                    {
+                        if (arg.Vertex is TieredTileGraph t)
+                        {
+                            arg.VertexFormat.Label = t.ToString();
+                        }
+                    };
+                }));
+            }
+        }
+
+        // convert root graph as tree.
+        var rootTree = TileNode.FromTileGraph(rootGraph, out var treeGraphMemo);
+
+        var argumentsMemo = bufferGraphMemo[rootGraph].GetInputsOutputs().Inputs.ToDictionary(k => k, k => k.Node.Grid.GetArgument(k.Index));
+        var resultMemo = new Dictionary<TieredTileGraph, Expr>();
+        long objectValue = 0;
+        foreach (var (primGraph, i) in condensedGraph.TopologicalSort().Select((s, i) => (s, i)))
+        {
+            using var subSubScope = new Diagnostics.DumpScope($"device_func_{DeviceFuncionCount}", Diagnostics.DumpFlags.Tiling);
+            var primTree = treeGraphMemo[primGraph];
+            HashSet<BufferIdentity> inputBids;
+            HashSet<BufferIdentity> outputBids;
+
+            if (!SolveMemo.TryGetValue(primTree, out var memo))
+            {
+                var result = SolvePrimGraph(primTree, bufferGraphMemo, targetOptions, moduleKind);
+                (inputBids, outputBids) = (result.Inputs, result.Outputs);
+                result.ScheduleBuffers();
+                var bodyBuilder = T.Sequential();
+                result.Visit(primTree, new(bodyBuilder, Array.Empty<Expr>()));
+                var parameters = inputBids.Concat(outputBids).Select(k => result.PrimBufferMemo[k]).ToArray();
+                var funcBuilder = T.PrimFunc($"device_func_{DeviceFuncionCount++}", moduleKind, parameters).Body(bodyBuilder);
+                var primFunc = funcBuilder.Build();
+                memo = new(new PrimFunctionWrapper(primFunc, inputBids.Count, inputBids.Concat(outputBids).Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType).ToArray()), result.ObjectiveValue);
+                SolveMemo.Add(primTree, memo);
+            }
+            else
+            {
+                (inputBids, outputBids) = bufferGraphMemo[primGraph].GetInputsOutputs();
+            }
+
+            objectValue += memo.ObjectValue;
+            var finalCall = new Call(memo.Func, inputBids.Select(bid => argumentsMemo[bid]).ToArray());
+            resultMemo.Add(primGraph, finalCall);
+
+            // save the output.
+            foreach (var outputBid in outputBids)
+            {
+                if (!argumentsMemo.TryGetValue(outputBid, out var _))
+                {
+                    foreach (var outEdge in bufferGraphMemo[rootGraph].OutEdges(outputBid).Where(e => e.Tag is BufferEdgeKind.Outer))
+                    {
+                        argumentsMemo.Add(outEdge.Target, finalCall);
+                    }
+
+                    argumentsMemo.Add(outputBid, finalCall);
+                }
+            }
+        }
+
+        return (resultMemo, objectValue);
+    }
+
+    public Expr Tile(Expr preExpr, string moduleKind, ICpuTargetOptions targetOptions)
+    {
+#if true
+        var topLevel = targetOptions.MemoryCapacities.Length;
+        var rootGraph = GraphBuilder.Build(preExpr, topLevel, out var exprMemo);
+        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
+        {
+            rootGraph.Dump($"tile_graph");
+        }
+
+        var (resultMemo, _) = SolveRootGraph(rootGraph, moduleKind, targetOptions);
+        var cloner = new ReplacingExprCloner(exprMemo.ToDictionary(kv => (Expr)kv.Key, kv => resultMemo[kv.Value]));
+        return cloner.Clone(preExpr, default);
+#else
+        var topLevel = targetOptions.MemoryCapacities.Length;
+        var rootGraph = GraphBuilder.Build(preExpr, topLevel, out var exprMemo);
+        var rootState = new MCTState(rootGraph, moduleKind, "0", SolveMemo, targetOptions);
+        var rootNode = new MCTNode(rootState);
+        var searcher = new MCTSearcher();
+        searcher.Search(rootNode);
+        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
+        {
+            rootNode.Dump("SearchTree");
+        }
+
+        var bestState = (MCTState)searcher.BestMCTNode!.State;
+        var replaces = new Dictionary<Expr, Expr>();
+        foreach (var (oldExpr, v) in exprMemo)
+        {
+            if (bestState.Results.TryGetValue(v, out var newExpr))
+            {
+                replaces.Add(oldExpr, newExpr);
+            }
+        }
+
+        var cloner = new ReplacingExprCloner(replaces);
+        return cloner.Clone(preExpr, default);
+#endif
     }
 
     private static void DumpGantt(Dictionary<NodeWithBuffer, IntExpr> nodeBufferSizes, Dictionary<NodeWithBuffer, Tuple<int, int>> nodeBufferLiveness, TileNode primTree, int storeLevel)

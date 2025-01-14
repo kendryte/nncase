@@ -360,8 +360,8 @@ public sealed class UnitTestTileGraph : TestClassBase
         builder.Visit(post);
         var tileGraph = builder.RootGraph;
 
-        var memo = new Dictionary<TileNode, Schedule.GraphTiler.TiledFunc>(new ITreeNodeComparer());
-        var state = new MCTState(tileGraph, "cpu", count.ToString(), string.Empty, memo, targetOptions);
+        var tiler = new Schedule.GraphTiler();
+        var state = new MCTState(tileGraph, "cpu", count.ToString(), tiler, targetOptions);
         var rootNode = new MCTNode(state);
         var searcher = new MCTSearcher();
         searcher.Search(rootNode);
