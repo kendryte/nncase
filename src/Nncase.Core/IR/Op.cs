@@ -18,6 +18,20 @@ public enum ParameterKind : int
     Attribute,
 }
 
+[AttributeUsage(System.AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
+public sealed class ParameterInPlaceAttribute : System.Attribute
+{
+    public ParameterInPlaceAttribute(int sourceIndex, int destIndex)
+    {
+        SourceIndex = sourceIndex;
+        DestIndex = destIndex;
+    }
+
+    public int SourceIndex { get; }
+
+    public int DestIndex { get; }
+}
+
 /// <summary>
 /// Parameter information.
 /// </summary>

@@ -12,6 +12,7 @@ using Nncase.Graphs;
 using Nncase.IR;
 using Nncase.IR.Affine;
 using QuikGraph;
+using QuikGraph.Algorithms;
 using QuikGraph.Collections;
 
 namespace Nncase.Schedule.TileGraph;
@@ -105,7 +106,7 @@ public sealed class TileNode : ITreeNode
     public static TileNode FromTileGraph(TieredTileGraph rootGraph, out Dictionary<TieredTileGraph, TileNode> memo)
     {
         memo = new();
-        return ConvertToTree(null, rootGraph, memo);
+        return ConvertToTree(null, rootGraph, rootGraph, memo);
     }
 
     TReturn ITreeNode.Accept<TArg1, TReturn>(ITreeNodeVisitor<TArg1, TReturn> visitor, TArg1 arg1) => visitor.Visit(this, arg1);
@@ -115,26 +116,66 @@ public sealed class TileNode : ITreeNode
         return _wrapped.ToString();
     }
 
-    private static TileNode ConvertToTree(ITreeNode? parent, TieredTileGraph tileGraph, Dictionary<TieredTileGraph, TileNode> memo)
+    private static TileNode ConvertToTree(ITreeNode? parent, TieredTileGraph tileGraph, TieredTileGraph rootGraph, Dictionary<TieredTileGraph, TileNode> memo)
     {
         if (!memo.TryGetValue(tileGraph, out var tnode))
         {
             if (tileGraph.ClustersCount == 0)
             {
+                // sort
+                var tempGraph = new AdjacencyGraph<TileGrid, Edge<TileGrid>>(allowParallelEdges: false);
+                var childVertices = tileGraph.Vertices.ToArray();
+                tempGraph.AddVertexRange(childVertices);
+                foreach (var edge in rootGraph.Edges)
+                {
+                    var producers = childVertices.Where(c => c.Equals(edge.Source)).ToArray();
+                    var consumers = childVertices.Where(c => c.Equals(edge.Target)).ToArray();
+                    foreach (var producer in producers)
+                    {
+                        foreach (var consumer in consumers)
+                        {
+                            if (!ReferenceEquals(producer, consumer))
+                            {
+                                tempGraph.AddEdge(new(producer, consumer));
+                            }
+                        }
+                    }
+                }
+
                 tnode = new TileNode(parent, tileGraph, tileGraph.VertexCount);
                 int count = 0;
-                foreach (var item in tileGraph.Vertices)
+                foreach (var item in tempGraph.TopologicalSort())
                 {
                     tnode._children[count++] = new OpNode(tnode, item);
                 }
             }
             else
             {
+                // sort child clusters
+                var tempGraph = new AdjacencyGraph<TieredTileGraph, Edge<TieredTileGraph>>(allowParallelEdges: false);
+                var childClusters = tileGraph.Clusters.OfType<TieredTileGraph>().ToArray();
+                tempGraph.AddVertexRange(childClusters);
+                foreach (var edge in rootGraph.Edges)
+                {
+                    var producers = childClusters.Where(c => c.ContainsVertex(edge.Source)).ToArray();
+                    var consumers = childClusters.Where(c => c.ContainsVertex(edge.Target)).ToArray();
+                    foreach (var producer in producers)
+                    {
+                        foreach (var consumer in consumers)
+                        {
+                            if (!ReferenceEquals(producer, consumer))
+                            {
+                                tempGraph.AddEdge(new(producer, consumer));
+                            }
+                        }
+                    }
+                }
+
                 tnode = new TileNode(parent, tileGraph, tileGraph.ClustersCount);
                 int count = 0;
-                foreach (var item in tileGraph.Clusters.OfType<TieredTileGraph>())
+                foreach (var item in tempGraph.TopologicalSort())
                 {
-                    tnode._children[count++] = ConvertToTree(tnode, item, memo);
+                    tnode._children[count++] = ConvertToTree(tnode, item, rootGraph, memo);
                 }
             }
 
