@@ -38,7 +38,7 @@ public sealed class TreeSolverWritesInitializer : TreeSolverBase<IntExpr>, ITree
         // 1. child domain map to parent domain.
         foreach (var (bid, bufferInfo) in TileNodeMemo[value].BufferInfoMap)
         {
-            var parentTripCounts = partentTileInfo is null ? Solver.MakeIntConst(1) : bufferTripCounts[partentTileInfo.GetCacheBid(bid)];
+            var parentTripCounts = partentTileInfo is null ? Solver.MakeIntConst(1) : bufferTripCounts[partentTileInfo.GetByChildBuffer(bid)];
 
             for (int i = 0; i < domainInfo.TileVars.Length + 1; i++)
             {

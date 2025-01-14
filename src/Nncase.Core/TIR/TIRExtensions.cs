@@ -17,6 +17,15 @@ namespace Nncase.TIR;
 public static class TIRExtensions
 {
     /// <summary>
+    /// Get the tir op buffer allocation reuse information.
+    /// </summary>
+    /// <returns> map dest index to source index. </returns>
+    public static Dictionary<int, int> GetInPlaceMemo(this Op op)
+    {
+        return op.GetType().GetCustomAttributes(typeof(ParameterInPlaceAttribute), true).OfType<ParameterInPlaceAttribute>().ToDictionary(a => a.DestIndex, a => a.SourceIndex);
+    }
+
+    /// <summary>
     /// convert IEnumerable to tir Sequential.
     /// </summary>
     /// <param name="enumerable"> instance.</param>
