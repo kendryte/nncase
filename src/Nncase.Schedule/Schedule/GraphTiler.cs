@@ -20,20 +20,22 @@ public sealed class GraphTiler
 
     private int _useCached;
 
-    public Expr Tile(Expr preExpr, string moduleKind, string itemNumber, ICpuTargetOptions targetOptions)
+    public int DeviceFuncionCount { get; set; }
+
+    public Expr Tile(Expr preExpr, string moduleKind, ICpuTargetOptions targetOptions)
     {
         var topLevel = targetOptions.MemoryCapacities.Length;
         var rootGraph = GraphBuilder.Build(preExpr, topLevel, out var exprMemo);
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {
-            rootGraph.Dump($"device_func{itemNumber}_original");
+            rootGraph.Dump($"tile_graph");
         }
 
         // bufferize root graph.
         var bufferGraphMemo = rootGraph.Bufferize();
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {
-            bufferGraphMemo[rootGraph].Dump($"device_func{itemNumber}_original_buffer");
+            bufferGraphMemo[rootGraph].Dump($"tile_buffer_graph");
         }
 
 #if true
@@ -41,7 +43,7 @@ public sealed class GraphTiler
         var condensedGraph = rootGraph.Condense();
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {
-            using (var file = Diagnostics.DumpScope.Current.OpenFile($"device_func{itemNumber}_condensed.dot"))
+            using (var file = Diagnostics.DumpScope.Current.OpenFile($"condensed_tile_graph.dot"))
             {
                 using var writer = new StreamWriter(file);
                 writer.Write(condensedGraph.ToGraphviz(init =>
@@ -64,7 +66,7 @@ public sealed class GraphTiler
         var resultMemo = new Dictionary<TieredTileGraph, Expr>();
         foreach (var (primGraph, i) in condensedGraph.TopologicalSort().Select((s, i) => (s, i)))
         {
-            using var subscope = new Diagnostics.DumpScope($"device_func{itemNumber}_{i}", Diagnostics.DumpFlags.Tiling);
+            using var subSubScope = new Diagnostics.DumpScope($"device_func_{DeviceFuncionCount}", Diagnostics.DumpFlags.Tiling);
             var primTree = treeGraphMemo[primGraph];
             var primBufferGraph = bufferGraphMemo[primGraph];
             HashSet<BufferIdentity> inputBids;
@@ -78,7 +80,7 @@ public sealed class GraphTiler
                 var bodyBuilder = T.Sequential();
                 result.Visit(primTree, new(bodyBuilder, Array.Empty<Expr>()));
                 var parameters = inputBids.Concat(outputBids).Select(k => result.PrimBufferMemo[k]).ToArray();
-                var funcBuilder = T.PrimFunc($"device_func{itemNumber}_{i}", moduleKind, parameters).Body(bodyBuilder);
+                var funcBuilder = T.PrimFunc($"device_func_{DeviceFuncionCount++}", moduleKind, parameters).Body(bodyBuilder);
                 var primFunc = funcBuilder.Build();
                 wrapper = new PrimFunctionWrapper(primFunc, inputBids.Count, inputBids.Concat(outputBids).Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType).ToArray());
                 _primFuncMemo.Add(primTree, wrapper);

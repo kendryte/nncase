@@ -38,14 +38,16 @@ public sealed class AutoTilePass : ModulePass
         var funcNums = input.Functions.Count;
         for (int i = 0; i < funcNums; i++)
         {
-            var post = Rewrite(input.Functions[i], i, tiler);
+            var pre = input.Functions[i];
+            using var scope = new Diagnostics.DumpScope(pre.Name);
+            var post = Rewrite(pre, tiler);
             input.Replace(i, post);
         }
 
         return Task.FromResult(input);
     }
 
-    private BaseFunction Rewrite(BaseFunction pre, int funcNumber, GraphTiler tiler)
+    private BaseFunction Rewrite(BaseFunction pre, GraphTiler tiler)
     {
         if (!(pre is IR.Fusion fusion && fusion.ModuleKind == ModuleKind))
         {
@@ -82,8 +84,8 @@ public sealed class AutoTilePass : ModulePass
 
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Rewrite))
         {
-            condenseAlgo.CondensedGraph.Dump($"{funcName}Condensed", init => { });
-            condenseAlgo.ClusteredGraph.Dump($"{funcName}Cluster", algo =>
+            condenseAlgo.CondensedGraph.Dump($"Condensed", init => { });
+            condenseAlgo.ClusteredGraph.Dump($"Cluster", algo =>
             {
                 algo.FormatVertex += (s, arg) =>
                 {
@@ -93,7 +95,7 @@ public sealed class AutoTilePass : ModulePass
         }
 
         // 3. reconstruction
-        var constructor = new AutoTileReConstructor(tiler, funcNumber, ModuleKind, CompileOptions, condenseAlgo);
+        var constructor = new AutoTileReConstructor(tiler, ModuleKind, CompileOptions, condenseAlgo);
         var post = constructor.Construct();
         return fusion.With(fusion.Name, fusion.ModuleKind, post, fusion.Parameters.ToArray());
     }
@@ -129,25 +131,71 @@ internal sealed class AutoTileExprGraphConvertor : ExprGraphConvertor<ExprVertex
 
 internal sealed class AutoTileReConstructor : ExprReConstructor<ExprVertex, ExprEdge>
 {
-    public AutoTileReConstructor(GraphTiler tiler, int funcNumber, string moduleKind, CompileOptions compileOptions, CondensationGraphAlgorithm<ExprVertex, ExprEdge> algo)
+    public AutoTileReConstructor(GraphTiler tiler, string moduleKind, CompileOptions compileOptions, CondensationGraphAlgorithm<ExprVertex, ExprEdge> algo)
         : base(algo)
     {
         Tiler = tiler;
-        FuncNumber = funcNumber;
         ModuleKind = moduleKind;
         CompileOptions = compileOptions;
     }
 
     public GraphTiler Tiler { get; }
 
-    public int FuncNumber { get; }
-
     public string ModuleKind { get; }
 
     public CompileOptions CompileOptions { get; }
 
+    protected override Expr OnAtomCluster(ClusteredBidirectionalGraph<ExprVertex, ExprEdge> cluster, int sortIndex)
+    {
+        using var subscope = new Diagnostics.DumpScope($"cluster_{sortIndex}", Diagnostics.DumpFlags.Tiling);
+        var pairs = GetClusterArgumentPairs(cluster);
+        var vertex = cluster.Vertices.First();
+        var expr = vertex.Expr;
+        if (expr is Grid)
+        {
+            var extractDict = new Dictionary<Expr, Expr>(ReferenceEqualityComparer.Instance);
+            var argumentDict = new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance);
+            foreach (var (pre, post) in pairs)
+            {
+                if (pre is Const)
+                {
+                    continue;
+                }
+
+                var @var = new Var(pre.CheckedType);
+                var added = extractDict.TryAdd(pre, @var);
+                if (added)
+                {
+                    argumentDict.Add(@var, post);
+                }
+            }
+
+            var cloner = new ExprClusterCloner(extractDict);
+            Expr cloned = cloner.Clone(expr, default);
+            var tiled = Tiler.Tile(cloned, ModuleKind, (ICpuTargetOptions)CompileOptions.TargetOptions);
+            var substitutor = new Mutators.Substitutor(e =>
+            {
+                if (e is Var v && argumentDict.TryGetValue(v, out var arg))
+                {
+                    return arg;
+                }
+
+                return null;
+            });
+
+            var substited = substitutor.Rewrite(tiled, default);
+            return substited;
+        }
+        else
+        {
+            var cloner = new ExprClusterCloner(pairs.ToDictionary(p => p.Pre, p => p.Post, new ReferenceEqualityComparer<Expr>()));
+            return cloner.Clone(expr, default);
+        }
+    }
+
     protected override Expr OnComplexCluster(ClusteredBidirectionalGraph<ExprVertex, ExprEdge> cluster, int sortIndex)
     {
+        using var subscope = new Diagnostics.DumpScope($"cluster_{sortIndex}", Diagnostics.DumpFlags.Tiling);
         var pairs = GetClusterArgumentPairs(cluster);
         var extractDict = new Dictionary<Expr, Expr>(ReferenceEqualityComparer.Instance);
         var argumentDict = new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance);
@@ -175,7 +223,7 @@ internal sealed class AutoTileReConstructor : ExprReConstructor<ExprVertex, Expr
         }
 
         Expr cloned = clones.Count == 1 ? clones[0] : new IR.Tuple(clones.ToArray());
-        var tiled = Tiler.Tile(cloned, ModuleKind, $"{FuncNumber}_{sortIndex}", (ICpuTargetOptions)CompileOptions.TargetOptions);
+        var tiled = Tiler.Tile(cloned, ModuleKind, (ICpuTargetOptions)CompileOptions.TargetOptions);
 
         var substitutor = new Mutators.Substitutor(e =>
         {
