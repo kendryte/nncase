@@ -26,7 +26,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
     public IValue Visit(IEvaluateContext context, Reduce reduce)
     {
         var input = context.GetOrtArgumentValue(reduce, Reduce.Input);
-        var axis = context.GetArgumentValueAsArray<long>(reduce, Reduce.Axis);
+        var axis = context.GetArgumentValueAsArray<long>(reduce, Reduce.Axes);
         var keepDims = context.GetArgumentValueAsScalar<long>(reduce, Reduce.KeepDims);
 
         // when HasBindedMixQuantInfo is true, eval will do simulation of quant/dequant for some inputs, this is used for evaluate accumulated quant error for layers.
@@ -64,7 +64,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
             ReduceOp.Prod => OrtKI.ReduceProd(input, axis, keepDims),
             ReduceOp.Sum => OrtKI.ReduceSum(
                 input,
-                context.GetInt64OrtTensorArgumentValue(reduce, Reduce.Axis),
+                context.GetInt64OrtTensorArgumentValue(reduce, Reduce.Axes),
                 keepDims,
                 0),
             _ => throw new ArgumentOutOfRangeException(nameof(reduce)),
@@ -116,7 +116,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
     public Expr Visit(IShapeEvaluateContext context, Reduce target)
     {
         var keepDims = context.GetArgument(target, Reduce.KeepDims);
-        var axis = context.GetArgument(target, Reduce.Axis);
+        var axis = context.GetArgument(target, Reduce.Axes);
         if (keepDims is TensorConst keepDimsV &&
             axis is TensorConst axisValue)
         {
@@ -169,8 +169,8 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
 
     private IRType Visit(ITypeInferenceContext context, Reduce target, TensorType input)
     {
-        context.CheckArgumentType<TensorType>(target, Reduce.Axis);
-        var args = context.GetArguments(target, Reduce.KeepDims, Reduce.Axis);
+        context.CheckArgumentType<TensorType>(target, Reduce.Axes);
+        var args = context.GetArguments(target, Reduce.KeepDims, Reduce.Axes);
         return TypeInference.ReduceType(input, args[0], args[1]);
     }
 
@@ -181,8 +181,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
             throw new InvalidOperationException();
         }
 
-        var axis = ((TensorConst)context.GetArgument(target, Reduce.Axis)).Value.ToArray<int>();
-        var invalid = new InvalidType($"{input}, not support");
+        var axes = ((TensorConst)context.GetArgument(target, Reduce.Axes)).Value.ToArray<int>();
 
         var ndsbp = new SBP[input.Placement.Rank];
 
@@ -190,8 +189,9 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
         {
             switch (input.NdSBP[i])
             {
-                case SBPSplit { Axis: int ix } when axis.Contains(ix):
-                    return invalid;
+                case SBPSplit { Axis: int ix } when axes.Contains(ix):
+                    ndsbp[i] = SBP.P(target.ReduceOp);
+                    break;
                 default:
                     ndsbp[i] = input.NdSBP[i];
                     break;

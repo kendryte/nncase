@@ -24,8 +24,6 @@ public sealed partial class Boxing : Op
 
     public IRType NewType { get; }
 
-    public bool IsReshape { get; }
-
     /// <inheritdoc/>
-    public override string DisplayProperty() => $"NewType: {NewType}, IsReshape: {IsReshape}";
+    public override string DisplayProperty() => $"NewType: {NewType}";
 }

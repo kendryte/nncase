@@ -55,9 +55,9 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
                 case (SBPBroadCast, SBPBroadCast):
                     ndsbp[i] = SBP.B;
                     break;
-                case (SBPPartialSum, SBPPartialSum):
-                case (SBPPartialSum, _):
-                case (_, SBPPartialSum):
+                case (SBPPartial, SBPPartial):
+                case (SBPPartial, _):
+                case (_, SBPPartial):
                     return new InvalidType("not support lhs or rhs partial.");
             }
         }

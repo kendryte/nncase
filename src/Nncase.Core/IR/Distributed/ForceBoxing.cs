@@ -8,23 +8,22 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.PatternMatch;
-using static Nncase.IR.TypePatternUtility;
 
-namespace Nncase.IR.Tensors;
+namespace Nncase.IR.Distributed;
 
 /// <summary>
-/// Shape expression.
+/// Force Boxing, only can change broadcast to partial, just use for test ccl.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed partial class GetItem : Op
+public sealed partial class ForceBoxing : Op
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(GetItem), 0, "input", IsTensor() | (IsTuple() & !IsUnit()), ParameterKind.Input);
+    public static readonly ParameterInfo Input = new(typeof(ForceBoxing), 0, "input", ParameterKind.Input);
 
-    /// <summary>
-    /// Gets index.
-    /// </summary>
-    public static readonly ParameterInfo Index = new(typeof(GetItem), 1, "index", IsIntegral() & (HasRank(0) | HasRank(1)));
+    public DistributedType NewType { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"NewType: {NewType}";
 }

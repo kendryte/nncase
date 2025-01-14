@@ -3,7 +3,7 @@
 
 namespace Nncase.Passes.Distributed;
 
-public record class DistributedScheme(string Version, string Model, DistributedScheme.Node[] Outputs)
+public record class DistributedSchema(string Version, string Model, DistributedSchema.Node[] Outputs)
 {
     public record class Node(string Name, IR.SBP[] NdSBP, int[] Hierarchy, string HierarchyName)
     {

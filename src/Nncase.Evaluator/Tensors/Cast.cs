@@ -74,7 +74,7 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
         var ndsbp = new SBP[inType.Placement.Rank];
         for (int i = 0; i < inType.Placement.Rank; i++)
         {
-            if (inType.NdSBP[i] is SBPPartialSum)
+            if (inType.NdSBP[i] is SBPPartial)
             {
                 return invalid;
             }

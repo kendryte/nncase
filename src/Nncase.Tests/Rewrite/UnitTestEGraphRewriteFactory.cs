@@ -30,10 +30,12 @@ public sealed class UnitTestEGraphRewriteFactory : TestClassBase
     {
         new MatMulTransposeCase(),
         new FlattenReshapeMultiBranchCase(),
+        new PaperCase(),
     };
 
     public static TheoryData<IRewriteCase> DataAll => new()
     {
+        new MatMulTransposeCase(),
         new ReshapeTransposeReshapeCase(),
         new FoldConv2DBnCase(),
         new ActivationsTransposePRelu(),

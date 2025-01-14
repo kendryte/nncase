@@ -14,5 +14,6 @@ internal class DistributedModule : IApplicationPart
     public void ConfigureServices(IRegistrator registrator)
     {
         registrator.RegisterManyInterface<BoxingEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<ForceBoxingEvaluator>(reuse: Reuse.Singleton);
     }
 }

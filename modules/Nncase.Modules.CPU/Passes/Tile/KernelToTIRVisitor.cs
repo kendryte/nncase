@@ -97,6 +97,9 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             case IR.Distributed.Boxing boxing:
                 GenerateBoxing(boxing, arguments, ret, expr);
                 break;
+            case IR.Distributed.ForceBoxing forceBoxing:
+                _mainBody.Add(T.Memcopy(ret, arguments[0]));
+                break;
             case Binary binary:
                 GenerateBinary(binary, arguments, ret, expr);
                 break;

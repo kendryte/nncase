@@ -114,8 +114,9 @@ public class UnitTestGraphPartition : TestClassBase
     [Fact]
     public async Task TestLineDiffModuleC2I()
     {
-        var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-        var main = new Function("main", IR.F.Math.Abs(IR.F.Distributed.Boxing(input, input.CheckedType)), input);
+        var inType = new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 });
+        var input = new Var("input", inType);
+        var main = new Function("main", IR.F.Distributed.Boxing(IR.F.Math.Abs(IR.F.Distributed.Boxing(input, new DistributedType(inType, new SBP[] { SBP.B }, new(new[] { 2 }, "t")))), inType), input);
 
         Assert.True(CompilerServices.InferenceType(main));
 
@@ -149,8 +150,9 @@ public class UnitTestGraphPartition : TestClassBase
     [Fact]
     public async Task TestLineDiffModuleI2C()
     {
-        var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-        var main = new Function("main", IR.F.Distributed.Boxing(IR.F.Math.Abs(input), input.CheckedType), input);
+        var inType = new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 });
+        var input = new Var("input", inType);
+        var main = new Function("main", IR.F.Distributed.Boxing(IR.F.Math.Abs(IR.F.Distributed.Boxing(input, new DistributedType(inType, new SBP[] { SBP.B }, new(new[] { 2 }, "t")))), inType), input);
 
         Assert.True(CompilerServices.InferenceType(main));
 

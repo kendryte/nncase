@@ -23,6 +23,69 @@ namespace Nncase.Evaluator.Tensors;
 /// </summary>
 public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, ICostEvaluator<Reshape>, IShapeEvaluator<Reshape>, IMetricEvaluator<Reshape>
 {
+    public static IRType VisitDistributedType(DistributedType inType, long[] newShape)
+    {
+        var inShape = inType.TensorType.Shape.ToValueArray();
+        IRType invalidType = new InvalidType($"not supported reshape {inType} to [{string.Join(",", newShape)}]");
+        if (!IRUtility.TryGetShapeMapMatrix(inShape, newShape, out var mat))
+        {
+            return invalidType;
+        }
+
+        var (forwardDict, backwardDict) = IRUtility.ShapeMapMatrixAsDict(mat);
+        var ndsbp = new SBP[inType.NdSBP.Count];
+        for (int meshAxis = 0; meshAxis < inType.NdSBP.Count; meshAxis++)
+        {
+            var inSBP = inType.NdSBP[meshAxis];
+            switch (inSBP)
+            {
+                case SBPSplit si:
+                    {
+                        var mapedOutAxes = forwardDict[si.Axis];
+
+                        // when input axis is splited-by-reshape, we can direct obtain the tensor which splited-by-sbp on the first maped axis.
+                        if (mapedOutAxes.Count > 1)
+                        {
+                            var firstValidAxis = mapedOutAxes.Where(axis => newShape[axis] > 1).First();
+                            var restAxes = mapedOutAxes.Skip(mapedOutAxes.IndexOf(firstValidAxis) + 1).ToArray();
+                            var restSize = restAxes.Aggregate(1, (x, i) => x * newShape[i]);
+                            if (restSize < (inShape[si.Axis] / inType.Placement.Hierarchy[meshAxis]))
+                            {
+                                ndsbp[meshAxis] = SBP.S(firstValidAxis);
+                            }
+                            else
+                            {
+                                return invalidType;
+                            }
+                        }
+                        else
+                        {
+                            // when input axis is merged-by-reshape, we can direct obtain the tensor which splited-by-sbp on the first maped axis.
+                            var outAxis = mapedOutAxes.First();
+
+                            // when the outAxis is merged dim, only support no transpose order and no pad.
+                            var inAxes = backwardDict[outAxis];
+                            if (inAxes.Where(inAxis => inShape[inAxis] != 1).First() == si.Axis)
+                            {
+                                ndsbp[meshAxis] = SBP.S(outAxis);
+                            }
+                            else
+                            {
+                                return invalidType;
+                            }
+                        }
+                    }
+
+                    break;
+                default:
+                    ndsbp[meshAxis] = inSBP;
+                    break;
+            }
+        }
+
+        return new DistributedType(new TensorType(inType.TensorType.DType, newShape), ndsbp, inType.Placement);
+    }
+
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Reshape reshape)
     {
@@ -137,79 +200,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
             return invalid;
         }
 
-        var newShape = outTensorType.Shape;
-        var oldShape = inputType.TensorType.Shape;
-
-        // check is unsequeeze/sequeeze
-        if (Enumerable.SequenceEqual(oldShape.Where(i => i != 1).ToArray(), newShape.Where(i => i != 1).ToArray()))
-        {
-            if (oldShape.Count < newShape.Count)
-            {
-                var axis = 0;
-                var axisMap = new Dictionary<int, int>();
-                if (!oldShape.IsScalar)
-                {
-                    for (var n = 0; n < newShape.Count; n++)
-                    {
-                        if (newShape[n] == oldShape[axis])
-                        {
-                            axisMap.Add(axis++, n);
-                            if (axis >= oldShape.Count)
-                            {
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                var ndsbp = new SBP[inputType.Placement.Rank];
-                for (int i = 0; i < inputType.Placement.Rank; i++)
-                {
-                    ndsbp[i] = inputType.NdSBP[i] switch
-                    {
-                        SBPSplit { Axis: int sx } => SBPSplit.S(axisMap[sx]),
-                        SBP sbp => sbp,
-                    };
-                }
-
-                return inputType with { TensorType = outTensorType, NdSBP = new(ndsbp) };
-            }
-            else if (oldShape.Count > newShape.Count)
-            {
-                var axis = 0;
-                var axisMap = new Dictionary<int, int>();
-                for (var o = 0; o < oldShape.Count; o++)
-                {
-                    if (axis < newShape.Count && oldShape[o] == newShape[axis])
-                    {
-                        axisMap.Add(o, axis++);
-                        if (axis >= newShape.Count)
-                        {
-                            break;
-                        }
-                    }
-                }
-
-                var ndsbp = new SBP[inputType.Placement.Rank];
-                for (int i = 0; i < inputType.Placement.Rank; i++)
-                {
-                    ndsbp[i] = inputType.NdSBP[i] switch
-                    {
-                        SBPSplit { Axis: int sx } => SBPSplit.S(axisMap[sx]),
-                        SBP sbp => sbp,
-                    };
-                }
-
-                return inputType with { TensorType = outTensorType, NdSBP = new(ndsbp) };
-            }
-        }
-
-        // not the squeeze or unsqueeze
-        if (!inputType.NdSBP.Any(sbp => sbp is SBPSplit))
-        {
-            return inputType with { TensorType = outTensorType, NdSBP = inputType.NdSBP };
-        }
-
-        return invalid;
+        var newShape = outTensorType.Shape.ToValueArray();
+        return VisitDistributedType(inputType, newShape);
     }
 }

@@ -8,9 +8,9 @@ using Nncase.IR;
 using Nncase.Utilities;
 using Xunit;
 
-namespace Nncase.Tests.Rules.Packing;
+namespace Nncase.Tests.CoreTest;
 
-public sealed class PackUtilityTest
+public sealed class UnitTestIRUtilities
 {
     [Theory]
     [InlineData(new object[] { new long[] { 1, 3, 2, 3, 1, 1, 7 }, new long[] { 1, 1, 3, 6, 1, 7 }, true })]
@@ -18,7 +18,7 @@ public sealed class PackUtilityTest
     [InlineData(new object[] { new long[] { 4, 4096 }, new long[] { 1, 4, 64, 64 }, true })]
     public void TestComputeReshapeMapping(long[] inShape, long[] newShape, bool valid)
     {
-        Assert.Equal(valid, PackUtility.TryGetShapeMapMatrix(inShape, newShape, out var mat));
+        Assert.Equal(valid, IRUtility.TryGetShapeMapMatrix(inShape, newShape, out var mat));
         if (valid)
         {
 #if DEBUG
