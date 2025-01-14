@@ -110,6 +110,8 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, int*, nuint, nuint*, void> CpuTargetOptionsSetHierarchiesPtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CpuTargetOptionsSetHierarchyNamesPtr;
     public delegate* unmanaged<IntPtr, int*, nuint, void> CpuTargetOptionsSetHierarchySizesPtr;
+    public delegate* unmanaged<IntPtr, int*, nuint, void> CpuTargetOptionsSetHierarchyLatenciesPtr;
+    public delegate* unmanaged<IntPtr, int*, nuint, void> CpuTargetOptionsSetHierarchyBandWidthsPtr;
     public delegate* unmanaged<IntPtr, int*, nuint, void> CpuTargetOptionsSetMemoryCapacitiesPtr;
     public delegate* unmanaged<IntPtr, int*, nuint, void> CpuTargetOptionsSetMemoryBandWidthsPtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CpuTargetOptionsSetDistributedSchemePtr;
@@ -202,6 +204,8 @@ public static unsafe class CApi
         mt->CpuTargetOptionsSetHierarchiesPtr = &CpuTargetOptionsSetHierarchies;
         mt->CpuTargetOptionsSetHierarchyNamesPtr = &CpuTargetOptionsSetHierarchyNames;
         mt->CpuTargetOptionsSetHierarchySizesPtr = &CpuTargetOptionsSetHierarchySizes;
+        mt->CpuTargetOptionsSetHierarchyLatenciesPtr = &CpuTargetOptionsSetHierarchyLatencies;
+        mt->CpuTargetOptionsSetHierarchyBandWidthsPtr = &CpuTargetOptionsSetHierarchyBandWidths;
         mt->CpuTargetOptionsSetMemoryCapacitiesPtr = &CpuTargetOptionsSetMemoryCapacities;
         mt->CpuTargetOptionsSetMemoryBandWidthsPtr = &CpuTargetOptionsSetMemoryBandWidths;
         mt->CpuTargetOptionsSetDistributedSchemePtr = &CpuTargetOptionsSetDistributedScheme;
@@ -865,6 +869,18 @@ public static unsafe class CApi
     private static void CpuTargetOptionsSetHierarchySizes(IntPtr handle, int* value, nuint shape0)
     {
         Get<CpuTargetOptions>(handle).HierarchySizes = To1DArray(value, shape0);
+    }
+
+    [UnmanagedCallersOnly]
+    private static void CpuTargetOptionsSetHierarchyLatencies(IntPtr handle, int* value, nuint shape0)
+    {
+        Get<CpuTargetOptions>(handle).HierarchyLatencies = To1DArray(value, shape0);
+    }
+
+    [UnmanagedCallersOnly]
+    private static void CpuTargetOptionsSetHierarchyBandWidths(IntPtr handle, int* value, nuint shape0)
+    {
+        Get<CpuTargetOptions>(handle).HierarchyBandWidths = To1DArray(value, shape0);
     }
 
     [UnmanagedCallersOnly]

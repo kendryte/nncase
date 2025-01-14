@@ -12,17 +12,17 @@ using Nncase.PatternMatch;
 namespace Nncase.IR.CPU;
 
 /// <summary>
-/// Boxing expression.
+/// Force Boxing, only can change broadcast to partial, just use for test ccl.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed partial class Boxing : Op
+public sealed partial class ForceBoxing : Op
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Boxing), 0, "input", ParameterKind.Input);
+    public static readonly ParameterInfo Input = new(typeof(ForceBoxing), 0, "input", ParameterKind.Input);
 
-    public IRType NewType { get; }
+    public DistributedType NewType { get; }
 
     /// <inheritdoc/>
     public override string DisplayProperty() => $"NewType: {NewType}";
