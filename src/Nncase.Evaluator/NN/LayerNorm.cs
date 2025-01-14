@@ -99,7 +99,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
 
         // return Value.FromTensor(OrtKI.LayerNormalization(input, scale, bias, layerNorm.Axis, layerNorm.Epsilon, 1));
         var shape = input.Shape.ToValueArray();
-        var output = LayerNormImpl(shape, input.Buffer.Span, scale.Buffer.Span, bias.Buffer.Span, layerNorm.Axis, layerNorm.Epsilon, layerNorm.UseMean);
+        var output = LayerNormImpl(shape.ToInts(), input.Buffer.Span, scale.Buffer.Span, bias.Buffer.Span, layerNorm.Axis, layerNorm.Epsilon, layerNorm.UseMean);
         return Value.FromTensor(Tensor.From(output, shape));
     }
 

@@ -64,7 +64,7 @@ public class ShapeBucketTest : TransformTestBase
     [Fact]
     public async Task TestSingleVarFusionBucket()
     {
-        var mainVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown, 24, 24 }));
+        var mainVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown(), 24, 24 }));
         var dimVar = Scalar("dimVar");
         CompileOptions.ShapeBucketOptions.Enable = true;
         CompileOptions.ShapeBucketOptions.SegmentsCount = 2;
@@ -73,7 +73,7 @@ public class ShapeBucketTest : TransformTestBase
         CompileOptions.ShapeBucketOptions.VarMap = new Dictionary<Var, Expr[]> { { mainVar, new Expr[] { 1, dimVar, 24, 24 } } };
 
         var input = Testing.Rand<float>(1, 3, 24, 24);
-        var fusionVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown, 24, 24 }));
+        var fusionVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown(), 24, 24 }));
         var f = new BucketFusion("MatMul_0", "stackvm", IR.F.Math.MatMul(fusionVar, fusionVar), new[] { fusionVar }, new[] { dimVar });
         var main = new Function("main", new Call(f, mainVar), mainVar);
         var shape = new Dictionary<BucketFusion, FusionShapeData[]>();
@@ -87,7 +87,7 @@ public class ShapeBucketTest : TransformTestBase
     [Fact]
     public async Task TestRebuild()
     {
-        var mainVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown, 24, 24 }));
+        var mainVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown(), 24, 24 }));
         var dimVar = Scalar("dimVar");
         CompileOptions.ShapeBucketOptions.Enable = true;
         CompileOptions.ShapeBucketOptions.SegmentsCount = 2;
@@ -96,7 +96,7 @@ public class ShapeBucketTest : TransformTestBase
         CompileOptions.ShapeBucketOptions.VarMap = new Dictionary<Var, Expr[]> { { mainVar, new Expr[] { 1, dimVar, 24, 24 } } };
 
         var input = Testing.Rand<float>(1, 3, 24, 24);
-        var fusionVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown, 24, 24 }));
+        var fusionVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown(), 24, 24 }));
         var shapeVar = new Var(new TensorType(DataTypes.Int64, new[] { 4 }));
         var body = IR.F.Math.MatMul(Reshape(fusionVar, shapeVar), fusionVar);
         var f = new BucketFusion("MatMul_0", "stackvm", body, new[] { fusionVar, shapeVar }, new[] { dimVar });
@@ -113,7 +113,7 @@ public class ShapeBucketTest : TransformTestBase
     [Fact]
     public async Task TestTupleOutput()
     {
-        var mainVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown, 24, 24 }));
+        var mainVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown(), 24, 24 }));
         var dimVar = Scalar("dimVar");
         CompileOptions.ShapeBucketOptions.Enable = true;
         CompileOptions.ShapeBucketOptions.SegmentsCount = 2;
@@ -122,7 +122,7 @@ public class ShapeBucketTest : TransformTestBase
         CompileOptions.ShapeBucketOptions.VarMap = new Dictionary<Var, Expr[]> { { mainVar, new Expr[] { 1, dimVar, 24, 24 } } };
 
         var input = Testing.Rand<float>(1, 3, 24, 24);
-        var fusionVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown, 24, 24 }));
+        var fusionVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown(), 24, 24 }));
         var mm = IR.F.Math.MatMul(fusionVar, fusionVar);
         var body = new IR.Tuple(mm, mm);
         var f = new BucketFusion("MatMul_0", "stackvm", body, new[] { fusionVar }, new[] { dimVar });
@@ -138,8 +138,8 @@ public class ShapeBucketTest : TransformTestBase
     [Fact]
     public async Task TestDoubleVarFusionBucket()
     {
-        var mainVarLhs = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown, 24, 24 }));
-        var mainVarRhs = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown, 24, 24 }));
+        var mainVarLhs = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown(), 24, 24 }));
+        var mainVarRhs = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown(), 24, 24 }));
         var dimVar1 = Scalar("dimVar1");
         var dimVar2 = Scalar("dimVar2");
         CompileOptions.ShapeBucketOptions.Enable = true;
@@ -158,7 +158,7 @@ public class ShapeBucketTest : TransformTestBase
 
         var inputLhs = Testing.Rand<float>(1, 3, 24, 24);
         var inputRhs = Testing.Rand<float>(1, 3, 24, 24);
-        var fusionVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown, 24, 24 }));
+        var fusionVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown(), 24, 24 }));
         var f = new BucketFusion("MatMul_0", "stackvm", IR.F.Math.MatMul(fusionVar, fusionVar), new[] { fusionVar }, new[] { dimVar1 });
         var main = new Function("main", new Call(f, mainVarLhs, mainVarRhs), mainVarLhs, mainVarRhs);
         var shape = new Dictionary<BucketFusion, FusionShapeData[]>();
@@ -176,8 +176,8 @@ public class ShapeBucketTest : TransformTestBase
     [Fact]
     public async Task TestDoubleVarWithMultiDimEffect()
     {
-        var mainVarLhs = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown, 24, 24 }));
-        var mainVarRhs = new Var(new TensorType(DataTypes.Float32, new[] { Dimension.Unknown, 1, 24, 24 }));
+        var mainVarLhs = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown(), 24, 24 }));
+        var mainVarRhs = new Var(new TensorType(DataTypes.Float32, new[] { Dimension.Unknown(), 1, 24, 24 }));
         var dimVar1 = Scalar("dimVar1");
         var dimVar2 = Scalar("dimVar2");
         CompileOptions.ShapeBucketOptions.Enable = true;
@@ -196,7 +196,7 @@ public class ShapeBucketTest : TransformTestBase
 
         var inputLhs = Testing.Rand<float>(1, 3, 24, 24);
         var inputRhs = Testing.Rand<float>(3, 1, 24, 24);
-        var fusionVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown, 24, 24 }));
+        var fusionVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown(), 24, 24 }));
         var f = new BucketFusion("MatMul_0", "stackvm", IR.F.Math.MatMul(fusionVar, fusionVar), new[] { fusionVar }, new[] { dimVar1 });
         var main = new Function("main", new Call(f, mainVarLhs, mainVarRhs), mainVarLhs, mainVarRhs);
         var shape = new Dictionary<BucketFusion, FusionShapeData[]>();

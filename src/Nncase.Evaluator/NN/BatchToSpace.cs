@@ -39,7 +39,7 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         var targetSpatial = ZipExec(spatial, blockShape, (x, y) => x * y);
 
         var ccat1 = spatial.Concat(blockShape).ToArray();
-        var re1 = Tensor.From(ccat1, new[] { ccat1.Length / blockLen, blockLen });
+        var re1 = Tensor.From(ccat1, [ccat1.Length / blockLen, blockLen]);
         var interLeave = OrtKI.Transpose(re1.ToOrtTensor(), new long[] { 1, 0 }).ToArray<int>();
         var shape1 = new int[] { -1 }.Concat(interLeave).Concat(depth).ToArray();
 
@@ -125,7 +125,7 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         var blockSize = Prod(blockShape);
         var batch = inShape[0];
         var d0 = batch / blockSize;
-        var m = blockShape.CheckedShape[0].FixedValue;
+        var m = (int)blockShape.CheckedShape[0].FixedValue;
         var cropSection = Enumerable.Range(0, m).Select(
             i => (inShape[i + 1] * blockShape[0]) - crops[i, 0] - crops[i, 1]).ToArray();
 
@@ -200,7 +200,7 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
             var blockSize = blockShapeArr.Aggregate(1, (a, b) => a * b);
             var d0 = batch / blockSize;
             Trace.Assert(blockShape.Shape[0] == crops.Shape[0]);
-            var m = blockShape.Shape[0].FixedValue;
+            var m = (int)blockShape.Shape[0].FixedValue;
             var cropsV = cropsValue.Value.Cast<int>();
             var cropSection = Enumerable.Range(0, m).Select(
                 i => (inShape[i + 1] * blockShapeArr[i]) - cropsV[i, 0] - cropsV[i, 1]);
@@ -216,7 +216,8 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         }
         else
         {
-            return new TensorType(input.DType, Enumerable.Repeat(Dimension.Unknown, input.Shape.Count).ToArray());
+            // return new TensorType(input.DType, Enumerable.Repeat(Dimension.Unknown, input.Shape.Count).ToArray());
+            throw new NotImplementedException();
         }
     }
 }

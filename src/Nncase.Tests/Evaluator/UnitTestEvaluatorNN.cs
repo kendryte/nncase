@@ -167,15 +167,15 @@ public class UnitTestEvaluatorNN : TestClassBase
     public void TestBatchToSpace()
     {
         var a = new float[] { 1, 3, 9, 11, 2, 4, 10, 12, 5, 7, 13, 15, 6, 8, 14, 16 };
-        var input = Tensor.From(a, new[] { 4, 1, 2, 2 });
+        var input = Tensor.From(a, [4, 1, 2, 2]);
         var shape = new long[] { 2, 2 };
         var b = new float[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
-        var expect = Tensor.From(b, new[] { 1, 1, 4, 4 });
+        var expect = Tensor.From(b, [1, 1, 4, 4]);
         var crops = new long[] { 0, 0, 0, 0 };
         var expr = IR.F.NN.BatchToSpace(
             input,
-            Tensor.From(shape, new[] { 2 }),
-            Tensor.From(crops, new[] { 2, 2 }));
+            Tensor.From(shape, [2]),
+            Tensor.From(crops, [2, 2]));
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor());
     }
@@ -202,7 +202,7 @@ public class UnitTestEvaluatorNN : TestClassBase
             weight.ToTensor(),
             bias.ToTensor(),
             stride: new[] { 1, 1 },
-            padding: Tensor.From<int>(new int[] { 1, 1, 1, 1 }, new[] { 2, 2 }),
+            padding: Tensor.From<int>(new int[] { 1, 1, 1, 1 }, [2, 2]),
             dilation: new[] { 1, 1 },
             PadMode.Constant,
             1);
@@ -235,7 +235,7 @@ public class UnitTestEvaluatorNN : TestClassBase
             weight.ToTensor(),
             bias.ToTensor(),
             stride: new[] { 1, 1 },
-            padding: Tensor.From<int>(new int[] { 1, 1, 1, 1 }, new[] { 2, 2 }),
+            padding: Tensor.From<int>(new int[] { 1, 1, 1, 1 }, [2, 2]),
             dilation: new[] { 1, 1 },
             Nncase.PadMode.Constant,
             1,
@@ -270,8 +270,8 @@ public class UnitTestEvaluatorNN : TestClassBase
             bias.ToTensor(),
             outShape,
             stride: new[] { 1, 1 },
-            padding: Tensor.From<long>(new long[] { 1, 1, 1, 1 }, new[] { 4 }),
-            outputPadding: Tensor.From<long>(new long[] { 0, 0 }, new[] { 2 }),
+            padding: Tensor.From<long>(new long[] { 1, 1, 1, 1 }, [4]),
+            outputPadding: Tensor.From<long>(new long[] { 0, 0 }, [2]),
             dilation: new[] { 1, 1 },
             PadMode.Constant,
             1);
@@ -347,14 +347,14 @@ public class UnitTestEvaluatorNN : TestClassBase
         var a = new float[] { 0F, 2F, 3F, 2F, 2F, 2F };
         var b = new float[] { 0F, 0.4F, 0.6F, 0.4F, 0.4F, 0.4F };
         {
-            var expect = Tensor.From(b, new[] { 6 });
-            var input = Tensor.From(a, new[] { 6 });
+            var expect = Tensor.From(b, [6]);
+            var input = Tensor.From(a, [6]);
             DoL2Normalization(expect, input);
         }
 
         {
-            var expect = Tensor.From(b, new[] { 1, 2, 3 });
-            var input = Tensor.From(a, new[] { 1, 2, 3 });
+            var expect = Tensor.From(b, [1, 2, 3]);
+            var input = Tensor.From(a, [1, 2, 3]);
             DoL2Normalization(expect, input);
         }
     }
@@ -422,7 +422,7 @@ public class UnitTestEvaluatorNN : TestClassBase
     public void TestOneHotTF()
     {
         var a = new int[] { 1, 2, 0, 3 };
-        var indices = Tensor.From(a, new[] { 4 });
+        var indices = Tensor.From(a, [4]);
         var depth = 5;
         var values = Tensor.From(new float[] { 0, 1 }, new Shape(new[] { 2 }));
         var axis = 0L;
@@ -439,7 +439,7 @@ public class UnitTestEvaluatorNN : TestClassBase
     public void TestOneHotOnnx()
     {
         var a = new float[] { 1, 2, 0, 3 };
-        var indices = Tensor.From(a, new[] { 4 });
+        var indices = Tensor.From(a, [4]);
         var depth = 5F;
         var values = Tensor.From(new float[] { 0, 1 }, new Shape(new[] { 2 }));
         var axis = 1L;
@@ -654,16 +654,16 @@ public class UnitTestEvaluatorNN : TestClassBase
     public void TestSpaceToBatch()
     {
         var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
-        var input = Tensor.From(a, new[] { 1, 4, 4, 1 });
+        var input = Tensor.From(a, [1, 4, 4, 1]);
         var shape = new long[] { 2, 2 };
 
         var output = new float[] { 1, 3, 9, 11, 2, 4, 10, 12, 5, 7, 13, 15, 6, 8, 14, 16 };
-        var expect = Tensor.From(output, new[] { 4, 2, 2, 1 });
+        var expect = Tensor.From(output, [4, 2, 2, 1]);
         var crops = new long[] { 0, 0, 0, 0 };
         var expr = NCHWToNHWC(IR.F.NN.SpaceToBatch(
             NHWCToNCHW(input).Evaluate().AsTensor(),
-            Tensor.From(shape, new[] { 2 }),
-            Tensor.From(crops, new[] { 2, 2 })));
+            Tensor.From(shape, [2]),
+            Tensor.From(crops, [2, 2])));
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor());
     }

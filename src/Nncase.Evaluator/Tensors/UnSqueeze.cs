@@ -28,7 +28,6 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
     public IRType Visit(ITypeInferenceContext context, Unsqueeze target)
     {
         var input = context.CheckArgumentType<IRType>(target, Unsqueeze.Input);
-        _ = context.CheckArgumentType<TensorType>(target, Unsqueeze.Dim);
         if (input is TensorType tensorType)
         {
             return Visit(context, target, tensorType);
@@ -66,7 +65,7 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
             return input;
         }
 
-        if (context.GetArgument(target, Unsqueeze.Dim) is TensorConst axes)
+        if (context.GetDimensionArgument(target, Unsqueeze.Dim) is TensorConst axes)
         {
             var axesValue = axes.Value.ToArray<int>();
             var outShape = new Dimension[input.Shape.Rank + axesValue.Length];
@@ -87,7 +86,7 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
             return input with { Shape = new Shape(outShape) };
         }
 
-        return input with { Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Rank + 1)) };
+        return input with { Shape = Shape.Unknown(input.Shape.Rank + 1) };
     }
 
     private IRType Visit(ITypeInferenceContext context, Unsqueeze target, DistributedType input)

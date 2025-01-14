@@ -203,7 +203,6 @@ public static class ShapeBucketRegister
         //     p.Add<TransposeToFusion>(true);
         //     p.Add<ActToFusion>(true);
         // });
-
         MergeFusion(p, singleVar, false);
     }
 

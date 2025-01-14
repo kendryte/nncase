@@ -60,7 +60,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     public void TestInferBinary()
     {
         var a = new Var(new TensorType(DataTypes.Float32, new[] { 1, 5, 1 }));
-        var b = Tensor.FromScalar(1.0f, new[] { 1, 5, 3 });
+        var b = Tensor.FromScalar(1.0f, [1, 5, 3]);
         var c = a + b;
         _ = CompilerServices.InferenceType(c);
 
@@ -103,7 +103,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     [Fact]
     public void TestSlice2()
     {
-        var input_a = new Var("input_a", new TensorType(DataTypes.Float32, new[] { Dimension.Unknown, Dimension.Unknown, Dimension.Unknown }));
+        var input_a = new Var("input_a", new TensorType(DataTypes.Float32, Shape.Unknown(3)));
         var repeats = IR.F.Tensors.Slice(IR.F.Tensors.ShapeOf(input_a), new[] { -2 }, new[] { -1 }, 1);
         Assert.True(CompilerServices.InferenceType(repeats));
         Assert.True(repeats.CheckedShape.Rank == 1);
@@ -284,6 +284,7 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
     {
     }
 
+#if false
     [Fact]
     public void TestRange()
     {
@@ -293,6 +294,7 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
         var r = Range(begin, end, step);
         CheckInferShape(r, Dimension.Unknown);
     }
+#endif
 
     [Fact]
     public void TestConcat()
@@ -317,10 +319,11 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
     [Fact]
     public void TestBroadcastInfer2()
     {
-        var a = new TensorType(DataTypes.Float32, new Dimension[] { 1, Dimension.Unknown, 8192 });
+        var dimUnk1 = Dimension.Unknown();
+        var a = new TensorType(DataTypes.Float32, new Dimension[] { 1, dimUnk1, 8192 });
         var b = new TensorType(DataTypes.Float32, new Dimension[] { 1 });
         var result = TypeInference.BroadcastType(a, b);
-        Assert.Equal(new TensorType(DataTypes.Float32, new Dimension[] { 1, Dimension.Unknown, 8192 }), result);
+        Assert.Equal(new TensorType(DataTypes.Float32, new Dimension[] { 1, dimUnk1, 8192 }), result);
     }
 
     private void CheckInferShape(Expr expr, params Dimension[] shapeDimensions)

@@ -91,11 +91,12 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
             return input;
         }
 
-        if (context.GetArgument(target, Reshape.Shape) is TensorConst shapeConst)
+        var shape = context.GetDimensionArgument(target, Reshape.Shape);
+        if (shape is TensorConst shapeConst)
         {
-            var shapeValue = shapeConst.Value.ToArray<int>();
+            var shapeValue = shapeConst.Value.ToArray<long>();
             var negCount = shapeValue.Count(IsMinus1);
-            var shapeSize = shapeValue.Aggregate(1, (x, y) => x * y);
+            var shapeSize = shapeValue.Aggregate(1L, (x, y) => x * y);
             if (negCount > 1)
             {
                 return new InvalidType(
@@ -133,14 +134,18 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
             {
                 return input with
                 {
-                    Shape = new Shape(shapeValue.Select(x => x == -1 ? Dimension.Unknown : x).ToArray()),
+                    Shape = new Shape(shapeValue.Select(x => x == -1 ? Dimension.Unknown() : x).ToArray()),
                 };
             }
         }
 
-        var targetType = context.CheckArgumentType<TensorType>(target, Reshape.Shape);
-        var outShape = ReshapeTo(targetType);
-        return input with { Shape = outShape };
+        if (!shape.CheckedShape.IsRanked || !shape.CheckedShape[0].IsFixed)
+        {
+            return input with { Shape = Shape.Unranked };
+        }
+
+        var newShape = Shape.Unknown((int)shape.CheckedShape[0].FixedValue);
+        return input with { Shape = newShape };
     }
 
     private IRType Visit(ITypeInferenceContext context, Reshape target, DistributedType inputType)
@@ -157,24 +162,27 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
             return invalid;
         }
 
-        var newShape = outTensorType.Shape.ToValueArray();
-        var oldShape = inputType.TensorType.Shape.ToValueArray();
+        var newShape = outTensorType.Shape;
+        var oldShape = inputType.TensorType.Shape;
 
         // check is unsequeeze/sequeeze
         if (Enumerable.SequenceEqual(oldShape.Where(i => i != 1).ToArray(), newShape.Where(i => i != 1).ToArray()))
         {
-            if (oldShape.Length < newShape.Length)
+            if (oldShape.Count < newShape.Count)
             {
                 var axis = 0;
                 var axisMap = new Dictionary<int, int>();
-                for (var n = 0; n < newShape.Length; n++)
+                if (!oldShape.IsScalar)
                 {
-                    if (newShape[n] == oldShape[axis])
+                    for (var n = 0; n < newShape.Count; n++)
                     {
-                        axisMap.Add(axis++, n);
-                        if (axis >= oldShape.Length)
+                        if (newShape[n] == oldShape[axis])
                         {
-                            break;
+                            axisMap.Add(axis++, n);
+                            if (axis >= oldShape.Count)
+                            {
+                                break;
+                            }
                         }
                     }
                 }
@@ -191,16 +199,16 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
 
                 return inputType with { TensorType = outTensorType, NdSBP = new(ndsbp) };
             }
-            else if (oldShape.Length > newShape.Length)
+            else if (oldShape.Count > newShape.Count)
             {
                 var axis = 0;
                 var axisMap = new Dictionary<int, int>();
-                for (var o = 0; o < oldShape.Length; o++)
+                for (var o = 0; o < oldShape.Count; o++)
                 {
-                    if (axis < newShape.Length && oldShape[o] == newShape[axis])
+                    if (axis < newShape.Count && oldShape[o] == newShape[axis])
                     {
                         axisMap.Add(o, axis++);
-                        if (axis >= newShape.Length)
+                        if (axis >= newShape.Count)
                         {
                             break;
                         }

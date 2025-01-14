@@ -34,7 +34,7 @@ public sealed partial class RemoveUnusedVarsByCall : IRewriteRule
         for (int i = 0; i < function.Parameters.Length; i++)
         {
             var var = function.Parameters[i];
-            if (var.Users.Count == 1)
+            if (var.Users.Count() == 1)
             {
                 unusedVars++;
             }
@@ -87,8 +87,8 @@ public sealed partial class RemoveUnusedVarsByIf : IRewriteRule
         {
             var thenVar = thenFunc.Parameters[i];
             var elseVar = elseFunc.Parameters[i];
-            if (thenVar.Users.Count == 1
-                && elseVar.Users.Count == 1)
+            if (thenVar.Users.Count() == 1
+                && elseVar.Users.Count() == 1)
             {
                 unusedVars++;
             }

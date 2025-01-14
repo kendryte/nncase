@@ -14,7 +14,7 @@ public sealed class UnitTestTensorOfTHelper
     public void TestToArray()
     {
         var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-        var tensor = Tensor.From(a, new int[] { 1, 1, 2, 4 });
+        var tensor = Tensor.From(a, [1, 1, 2, 4]);
         var b = tensor.ToArray();
         Assert.Equal(a, b);
     }
@@ -27,7 +27,7 @@ public sealed class UnitTestTensorOfTHelper
         var t1 = (Tensor<float>)scalar;
         Assert.Equal(scalar, t1.ToScalar());
 
-        var t2 = new Tensor<float>(new int[] { 1, 3, 16, 16 });
+        var t2 = new Tensor<float>([1, 3, 16, 16]);
         Assert.Throws<InvalidOperationException>(() => t2.ToScalar());
     }
 }

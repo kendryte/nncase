@@ -53,12 +53,12 @@ public static class OrtKIExtensions
 
     public static Tensor ToTensor(this OrtKISharp.Tensor tensor)
     {
-        return Tensor.From(tensor.DataType.ToDataType(), new TensorInitializerWithOrt(tensor), tensor.Shape.ToInts());
+        return Tensor.From(tensor.DataType.ToDataType(), new TensorInitializerWithOrt(tensor), tensor.Shape);
     }
 
     public static Tensor ToTensor(this OrtKISharp.Tensor tensor, TensorType tensorType)
     {
-        return Tensor.From(tensorType.DType, new TensorInitializerWithOrt(tensor), tensorType.Shape.IsFixed ? tensorType.Shape : tensor.Shape.ToInts());
+        return Tensor.From(tensorType.DType, new TensorInitializerWithOrt(tensor), tensorType.Shape.IsFixed ? tensorType.Shape : tensor.Shape);
     }
 
     public static TensorValue ToValue(this OrtKISharp.Tensor tensor)
@@ -68,8 +68,8 @@ public static class OrtKIExtensions
 
     public static OrtKISharp.Tensor ToOrtTensor(this Tensor tensor) => tensor.ElementType switch
     {
-        VectorType vectorType => ToOrtTensor(tensor, vectorType.ElemType.ToOrtType(), tensor.Dimensions.ToArray().Concat(vectorType.Lanes.ToArray()).ToArray()),
-        PrimType primType => ToOrtTensor(tensor, primType.ToOrtType(), tensor.Dimensions.ToArray()),
+        VectorType vectorType => ToOrtTensor(tensor, vectorType.ElemType.ToOrtType(), tensor.Dimensions.ToInts().Concat(vectorType.Lanes).ToArray()),
+        PrimType primType => ToOrtTensor(tensor, primType.ToOrtType(), tensor.Dimensions.ToInts()),
         _ => throw new NotSupportedException(),
     };
 

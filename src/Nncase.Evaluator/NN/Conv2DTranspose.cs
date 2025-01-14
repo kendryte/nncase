@@ -111,7 +111,7 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
             outCache[i] = outCache[i] + biasArray[biasIdx];
         }
 
-        return new TensorValue(Tensor.From(outCache, new[] { (int)outputShape[0], (int)outputShape[1], (int)outputShape[2], (int)outputShape[3] }));
+        return new TensorValue(Tensor.From(outCache, [outputShape[0], outputShape[1], outputShape[2], outputShape[3]]));
     }
 
     /// <inheritdoc/>

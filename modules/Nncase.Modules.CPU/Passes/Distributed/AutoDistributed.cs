@@ -113,12 +113,29 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
 
     public static IReadOnlyList<Expr> GetLeafCandidateBoxings(Expr expr, IEnumerable<Placement> placements)
     {
-        return placements.Select(
-            placement =>
-                Utilities.DistributedUtility.GetLeafCandidateNDSBPs((TensorType)expr.CheckedType, placement).
-                Select(ndsbp =>
-                    IR.F.CPU.Boxing(expr, new DistributedType((TensorType)expr.CheckedType, ndsbp, placement)))).
-            SelectMany(e => e).ToArray();
+        if (expr.CheckedType is InvalidType)
+        {
+            return [expr];
+        }
+
+        if (expr is IR.Tuple tuple)
+        {
+            return tuple.Fields.ToArray().
+                Select(e => IsDistributed(e.CheckedType) ? [e] : GetLeafCandidateBoxings(e, placements)).
+                CartesianProduct().
+                Select(fs => new IR.Tuple(fs.ToArray())).
+                ToArray();
+        }
+        else
+        {
+            // Don't use expr.CheckedTensorType
+            return placements.Select(
+                placement =>
+                    Utilities.DistributedUtility.GetLeafCandidateNDSBPs((TensorType)expr.CheckedType, placement).
+                    Select(ndsbp =>
+                        IR.F.CPU.Boxing(expr, new DistributedType((TensorType)expr.CheckedType, ndsbp, placement)))).
+                SelectMany(e => e).ToArray();
+        }
     }
 
     public static IReadOnlyList<IRArray<SBP>> GetDiverseCandidateSBPs(DistributedType distributedType, IEnumerable<Placement> placements)
@@ -408,7 +425,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         }
 
         // TODO: refactor here
-        if (expr.Target is not ScatterND && expr.Target is not Boxing && (expr.CheckedType is TensorType or DistributedType) && expr.CheckedShape.IsFixed && !expr.CheckedShape.ToValueArray().Contains(0) && results.Count == 1 && results.First().Key is DistributedType dt && dt.NdSBP.All(sbp => sbp is SBPBroadCast))
+        if (expr.Target is not ScatterND && expr.Target is not Boxing && (expr.CheckedType is TensorType or DistributedType) && expr.CheckedShape.All(x => x != 0) && results.Count == 1 && results.First().Key is DistributedType dt && dt.NdSBP.All(sbp => sbp is SBPBroadCast))
         {
             return expr.Arguments.ToArray().
                     Select(Visit).
@@ -427,6 +444,13 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         FilterByScheme(expr, results);
         return results;
     }
+
+    private static bool IsDistributed(IRType type) => type switch
+    {
+        DistributedType => true,
+        TupleType t => t.All(IsDistributed),
+        _ => false,
+    };
 
     private Dictionary<IRType, List<Expr>> VisitLeafArgument(ParameterKind parameterKind, Expr expr, bool isSupported)
     {
@@ -499,6 +523,11 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             }
         }
 
+        if (!buckets.Any())
+        {
+            throw new InvalidOperationException();
+        }
+
         return buckets;
     }
 
@@ -524,10 +553,6 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         var valid = call.InferenceType();
         if (!valid)
         {
-            // 1. dispose current call
-            using var pinner = new ExprPinner(args);
-            call.Dispose();
-
             if (target is Reshape)
             {
                 // the reshape need force boxing.
@@ -537,11 +562,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                 foreach (var boxing in Utilities.DistributedUtility.GetLeafCandidateNDSBPs(tensorType, inType.Placement).
                     Select(ndsbp => IR.F.CPU.Boxing(args[0], new DistributedType(tensorType, ndsbp, inType.Placement), true)))
                 {
-                    if (boxing.CheckedType is InvalidType)
-                    {
-                        boxing.Dispose();
-                    }
-                    else
+                    if (boxing.CheckedType is not InvalidType)
                     {
                         calls.Add(boxing);
                     }
@@ -580,11 +601,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                 var extraBoxings = partialBoxings.Any() ? partialBoxings.Select(getExtraBoxings).SelectMany(i => i) : getExtraBoxings(call);
                 foreach (var boxing in extraBoxings)
                 {
-                    if (boxing.CheckedType is InvalidType)
-                    {
-                        boxing.Dispose();
-                    }
-                    else
+                    if (boxing.CheckedType is not InvalidType)
                     {
                         calls.Add(boxing);
                     }
@@ -592,6 +609,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             }
         }
 
+        // GC.Collect();
         return calls;
     }
 
@@ -615,7 +633,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             candidateNdsbps[i] = new List<SBP> { SBP.B };
             for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
             {
-                if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && Utilities.DistributedUtility.IsDivideExactly(s, type.Placement.Hierarchy[i]))
+                if (tensorType.Shape[axis] is { IsFixed: true, FixedValue: long s } && Utilities.DistributedUtility.IsDivideExactly(s, type.Placement.Hierarchy[i]))
                 {
                     candidateNdsbps[i].Add(SBP.S(axis));
                 }
@@ -628,13 +646,6 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             Select(ndsbp => new DistributedType(tensorType, new IRArray<SBP>(ndsbp), type.Placement)).
             Select(disttype => IR.F.CPU.Boxing(expr, disttype)).ToArray();
     }
-
-    private bool IsDistributed(IRType type) => type switch
-    {
-        DistributedType => true,
-        TupleType t => t.All(IsDistributed),
-        _ => false,
-    };
 
     private Expr InstertTerminator(Expr expr)
     {
@@ -673,6 +684,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
 
     private void BranchCut()
     {
+        GC.Collect();
         bool changed = true;
         while (changed)
         {
@@ -688,11 +700,6 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                             if (item.Users.Any())
                             {
                                 throw new InvalidOperationException("this item can't have more than zero users!");
-                            }
-
-                            using (new ExprPinner(item.Operands.ToArray()))
-                            {
-                                item.Dispose();
                             }
                         }
 

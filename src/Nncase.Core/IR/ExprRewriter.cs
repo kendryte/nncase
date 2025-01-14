@@ -70,20 +70,8 @@ public abstract partial class ExprRewriter<TContext> : ExprVisitor<Expr, IRType,
 
     private void DCE(Expr root, ExprScope exprScope)
     {
-        using var exprPin = new ExprPinner(root);
-        foreach (var expr in ExprMemo)
-        {
-            expr.Key.DisposeIfNoUsers();
-            expr.Value.DisposeIfNoUsers();
-        }
-
-        foreach (var expr in exprScope.Exprs)
-        {
-            if (expr is not ExprUser)
-            {
-                expr.DisposeIfNoUsers();
-            }
-        }
+        // using var exprPin = new ExprPinner(root);
+        // GC.Collect();
     }
 }
 

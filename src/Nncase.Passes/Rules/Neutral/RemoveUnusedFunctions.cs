@@ -36,7 +36,7 @@ public sealed class RemoveUnusedFunctions : ModulePass
             foreach (var func in input.Functions)
             {
                 if (!ReferenceEquals(func, input.Entry)
-                    && func.Users.Count == 1)
+                    && func.Users.Count() == 1)
                 {
                     funcsToRemove.Add(func);
                 }

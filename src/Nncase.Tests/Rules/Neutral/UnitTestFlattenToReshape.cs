@@ -37,7 +37,7 @@ public class UnitTestFlattenToReshape : TransformTestBase
     public static IEnumerable<object[]> TestFlattenToReshapeNegativeData =>
         new[]
         {
-            new object[] { new[] { 2, 4, IR.Dimension.Unknown }, 1 },
+            new object[] { new[] { 2, 4, IR.Dimension.Unknown() }, 1 },
         };
 
     [Theory]

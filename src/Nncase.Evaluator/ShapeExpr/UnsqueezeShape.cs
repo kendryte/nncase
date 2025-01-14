@@ -28,7 +28,8 @@ public partial class UnsqueezeShapeEvaluator : IEvaluator<UnsqueezeShape>, IType
         var dims = context.CheckArgumentType<TensorType>(target, UnsqueezeShape.Dim);
         if (!input.Shape.IsFixed)
         {
-            return new TensorType(DataTypes.Int64, new[] { Dimension.Unknown });
+            // return new TensorType(DataTypes.Int64, new[] { Dimension.Unknown });
+            throw new NotImplementedException();
         }
 
         return new TensorType(DataTypes.Int64, new[] { input.Shape.Size + dims.Shape[0] });

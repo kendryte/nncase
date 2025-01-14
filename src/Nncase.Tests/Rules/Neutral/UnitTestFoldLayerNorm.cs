@@ -107,7 +107,7 @@ public class UnitTestFoldLayerNorm : TransformTestBase
             var v2 = IR.F.Tensors.Reduce(ReduceOp.Mean, v0, axes, initValue, keepDims);
             var v3 = IR.F.Math.Binary(BinaryOp.Sub, v0, v2);
             var v4 = IR.F.Math.Binary(BinaryOp.Pow, v3, 2f);
-            var v5 = IR.F.Tensors.Reduce(ReduceOp.Mean, v4, Tensor.From(axes, new[] { 1 }), initValue, keepDims);
+            var v5 = IR.F.Tensors.Reduce(ReduceOp.Mean, v4, Tensor.From(axes, [1]), initValue, keepDims);
             var v6 = IR.F.Math.Binary(BinaryOp.Add, v5, 1e-05f);
             var v7 = IR.F.Math.Unary(UnaryOp.Sqrt, v6);
             var v8 = IR.F.Math.Binary(BinaryOp.Div, v3, v7);
@@ -134,7 +134,7 @@ public class UnitTestFoldLayerNorm : TransformTestBase
             var v2 = IR.F.Tensors.Reduce(ReduceOp.Mean, v0, axes, initValue, keepDims);
             var v3 = IR.F.Math.Binary(BinaryOp.Sub, v0, v2);
             var v4 = IR.F.Math.Binary(BinaryOp.Pow, v3, 2f);
-            var v5 = IR.F.Tensors.Reduce(ReduceOp.Mean, v4, Tensor.From(axes, new[] { 1 }), initValue, keepDims);
+            var v5 = IR.F.Tensors.Reduce(ReduceOp.Mean, v4, Tensor.From(axes, [1]), initValue, keepDims);
             var v6 = IR.F.Math.Binary(BinaryOp.Add, v5, 1e-05f);
             var v7 = IR.F.Math.Unary(UnaryOp.Sqrt, v6);
             var v8 = IR.F.Math.Binary(BinaryOp.Div, v4, v7);
@@ -167,7 +167,7 @@ public class UnitTestFoldLayerNorm : TransformTestBase
             var v3 = IR.F.Tensors.Reduce(ReduceOp.Mean, v0, axes, initValue, keepDims);
             var v4 = IR.F.Math.Binary(BinaryOp.Sub, v0, v3);
             var v5 = IR.F.Math.Unary(UnaryOp.Square, v4);
-            var v6 = IR.F.Tensors.Reduce(ReduceOp.Mean, v5, Tensor.From(axes, new[] { 1 }), initValue, keepDims);
+            var v6 = IR.F.Tensors.Reduce(ReduceOp.Mean, v5, Tensor.From(axes, [1]), initValue, keepDims);
             var v7 = IR.F.Math.Binary(BinaryOp.Add, v6, 1e-05f);
             var v8 = IR.F.Math.Unary(UnaryOp.Rsqrt, v7);
             var v9 = IR.F.Math.Binary(BinaryOp.Mul, v8, 0.5f);
@@ -196,7 +196,7 @@ public class UnitTestFoldLayerNorm : TransformTestBase
             var v3 = IR.F.Tensors.Reduce(ReduceOp.Mean, v0, axes, initValue, keepDims);
             var v4 = IR.F.Math.Binary(BinaryOp.Sub, v0, v3);
             var v5 = IR.F.Math.Unary(UnaryOp.Sqrt, v4);
-            var v6 = IR.F.Tensors.Reduce(ReduceOp.Mean, v5, Tensor.From(axes, new[] { 1 }), initValue, keepDims);
+            var v6 = IR.F.Tensors.Reduce(ReduceOp.Mean, v5, Tensor.From(axes, [1]), initValue, keepDims);
             var v7 = IR.F.Math.Binary(BinaryOp.Add, v6, 1e-05f);
             var v8 = IR.F.Math.Unary(UnaryOp.Rsqrt, v7);
             var v9 = IR.F.Math.Binary(BinaryOp.Mul, v8, 0.5f);
@@ -228,10 +228,10 @@ public class UnitTestFoldLayerNorm : TransformTestBase
         Expr rootPre;
         {
             var v1 = input;
-            var v2 = IR.F.Tensors.Reduce(ReduceOp.Mean, v1, Tensor.From(axes, new[] { 1 }), initValue, keepDims);
+            var v2 = IR.F.Tensors.Reduce(ReduceOp.Mean, v1, Tensor.From(axes, [1]), initValue, keepDims);
             var v3 = IR.F.Math.Binary(BinaryOp.Sub, v1, v2);
             var v4 = IR.F.Math.Binary(BinaryOp.Mul, v3, v3);
-            var v5 = IR.F.Tensors.Reduce(ReduceOp.Mean, v4, Tensor.From(axes, new[] { 1 }), initValue, keepDims);
+            var v5 = IR.F.Tensors.Reduce(ReduceOp.Mean, v4, Tensor.From(axes, [1]), initValue, keepDims);
             var v6 = IR.F.Math.Binary(BinaryOp.Add, v5, 1e-05f);
             var v7 = IR.F.Math.Unary(UnaryOp.Rsqrt, v6);
             var v8 = IR.F.Math.Binary(BinaryOp.Mul, v7, 0.05f);
@@ -249,10 +249,10 @@ public class UnitTestFoldLayerNorm : TransformTestBase
         var beta = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape[^1]);
         {
             var v1 = input1;
-            var v2 = IR.F.Tensors.Reduce(ReduceOp.Mean, v1, Tensor.From(axes, new[] { 1 }), initValue, keepDims);
+            var v2 = IR.F.Tensors.Reduce(ReduceOp.Mean, v1, Tensor.From(axes, [1]), initValue, keepDims);
             var v3 = IR.F.Math.Binary(BinaryOp.Sub, v1, v2);
             var v4 = IR.F.Math.Binary(BinaryOp.Mul, v3, v3);
-            var v5 = IR.F.Tensors.Reduce(ReduceOp.Mean, v4, Tensor.From(axes, new[] { 1 }), initValue, keepDims);
+            var v5 = IR.F.Tensors.Reduce(ReduceOp.Mean, v4, Tensor.From(axes, [1]), initValue, keepDims);
             var v6 = IR.F.Math.Binary(BinaryOp.Add, v5, 1e-05f);
             var v7 = IR.F.Math.Unary(UnaryOp.Rsqrt, v6);
             var v8 = IR.F.Math.Binary(BinaryOp.Mul, v7, gamma.Evaluate().AsTensor());
@@ -281,7 +281,7 @@ public class UnitTestFoldLayerNorm : TransformTestBase
             var v3 = IR.F.Tensors.Reduce(ReduceOp.Mean, v0, axes, initValue, keepDims);
             var v4 = IR.F.Math.Binary(BinaryOp.Sub, v0, v3);
             var v5 = IR.F.Math.Unary(UnaryOp.Sqrt, v4);
-            var v6 = IR.F.Tensors.Reduce(ReduceOp.Mean, v5, Tensor.From(axes, new[] { 1 }), initValue, keepDims);
+            var v6 = IR.F.Tensors.Reduce(ReduceOp.Mean, v5, Tensor.From(axes, [1]), initValue, keepDims);
             var v7 = IR.F.Math.Binary(BinaryOp.Add, v6, 1e-05f);
             var v8 = IR.F.Math.Unary(UnaryOp.Rsqrt, v7);
             var v9 = IR.F.Math.Binary(BinaryOp.Mul, v8, 0.5f);

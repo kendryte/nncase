@@ -761,7 +761,7 @@ internal partial class Quantizer
                 minMaxArr[i] = i % 2 == 0 ? value[i / 2].Min : value[i / 2].Max;
             }
 
-            var shape = oc == 1 ? new[] { 2 } : new[] { oc, 2 };
+            long[] shape = oc == 1 ? [2] : [oc, 2];
             var rangeEclass = _graph.Add(new TensorConst(Tensor.From(minMaxArr, shape)));
             var rangeOfEclass = _graph.Find(range.Key);
             range.Key.Expr.CheckedType = rangeEclass.CheckedType;

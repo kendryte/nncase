@@ -60,7 +60,7 @@ public sealed partial class XAddNegX : IRewriteRule
 
     public IPattern Pattern { get; }
 
-    private Expr? GetReplace(Expr x) => Tensor.FromBytes(x.CheckedDataType, new byte[x.CheckedDataType.SizeInBytes], Array.Empty<int>());
+    private Expr? GetReplace(Expr x) => Tensor.FromBytes(x.CheckedDataType, new byte[x.CheckedDataType.SizeInBytes], Array.Empty<long>());
 }
 
 /// <summary>

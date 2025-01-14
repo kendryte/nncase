@@ -35,10 +35,10 @@ public sealed class Im2colEvaluator : ITypeInferencer<Im2col>, ICostEvaluator<Im
     {
         var inputTensor = context.GetArgumentValueAsTensor(target, Im2col.Input);
         var lanes = inputTensor.ElementType.SizeInBytes / 4;
-        int batch = inputTensor.Shape[0].FixedValue;
-        int inChannel = inputTensor.Shape[1].FixedValue;
-        int height = inputTensor.Shape[2].FixedValue;
-        int width = inputTensor.Shape[3].FixedValue;
+        int batch = (int)inputTensor.Shape[0].FixedValue;
+        int inChannel = (int)inputTensor.Shape[1].FixedValue;
+        int height = (int)inputTensor.Shape[2].FixedValue;
+        int width = (int)inputTensor.Shape[3].FixedValue;
         int pad_h_before = target.Padding[0];
         int pad_h_after = target.Padding[1];
         int pad_w_before = target.Padding[2];
@@ -96,7 +96,7 @@ public sealed class Im2colEvaluator : ITypeInferencer<Im2col>, ICostEvaluator<Im
             }
         }
 
-        return Value.FromTensor(Tensor.FromBytes(inputTensor.ElementType, System.Runtime.InteropServices.MemoryMarshal.Cast<float, byte>(outputTensor).ToArray(), new[] { inChannel * kernel_h * kernel_w, batch * output_h * output_w }));
+        return Value.FromTensor(Tensor.FromBytes(inputTensor.ElementType, System.Runtime.InteropServices.MemoryMarshal.Cast<float, byte>(outputTensor).ToArray(), [inChannel * kernel_h * kernel_w, batch * output_h * output_w]));
     }
 
     private IRType Visit(DistributedType dt, Im2col target)
@@ -143,8 +143,8 @@ public sealed class Im2colEvaluator : ITypeInferencer<Im2col>, ICostEvaluator<Im
 
     private IRType Visit(TensorType tt, Im2col target)
     {
-        int height = tt.Shape[2].FixedValue;
-        int width = tt.Shape[3].FixedValue;
+        int height = (int)tt.Shape[2].FixedValue;
+        int width = (int)tt.Shape[3].FixedValue;
         int pad_h_before = target.Padding[0];
         int pad_h_after = target.Padding[1];
         int pad_w_before = target.Padding[2];

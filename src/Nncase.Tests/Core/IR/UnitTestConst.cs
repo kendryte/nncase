@@ -197,7 +197,7 @@ public sealed class UnitTestConst
     [Fact]
     public void TestFromTupleValue()
     {
-        var dims = new int[] { 1, 3, 16, 16 };
+        var dims = new long[] { 1, 3, 16, 16 };
         var t1 = Tensor.Ones<float>(dims);
         var t2 = Tensor.Zeros<float>(dims);
         var tensors = new Tensor[] { t1, t2 };

@@ -85,10 +85,10 @@ public class UnitTestKLQuant : TestClassBase
             biasValue.Add(((i * 1.0f / 16) - 0.5f) * 2);
         }
 
-        var weights = Tensor.From<float>(weightsValue.ToArray(), new[] { 16, 3, 3, 3 });
-        var bias = Tensor.From<float>(biasValue.ToArray(), new[] { 16 });
-        var stride = Tensor.From<int>(new[] { 1, 1 }, new[] { 2 });
-        var dilation = Tensor.From<int>(new[] { 1, 1 }, new[] { 2 });
+        var weights = Tensor.From<float>(weightsValue.ToArray(), [16, 3, 3, 3]);
+        var bias = Tensor.From<float>(biasValue.ToArray(), [16]);
+        var stride = Tensor.From<int>(new[] { 1, 1 }, [2]);
+        var dilation = Tensor.From<int>(new[] { 1, 1 }, [2]);
         var padding = new[] { new[] { 0, 1 }, new[] { 0, 0 } };
 
         var conv = IR.F.NN.Conv2D(input, weights, bias, stride, Pad(padding), dilation, PadMode.Constant, 1);
@@ -201,7 +201,7 @@ public class UnitTestKLQuant : TestClassBase
             QuantAlgorithmUtility.SquantWeights(weights, range, inputWeightsShape, quantMode, bits, false));
     }
 
-    private Expr Pad(int[][] p) => Const.FromTensor(Tensor.From<int>(p.SelectMany(i => i).ToArray(), new[] { 2, 2 }));
+    private Expr Pad(int[][] p) => Const.FromTensor(Tensor.From<int>(p.SelectMany(i => i).ToArray(), [2, 2]));
 
     public sealed class DumpVisitor : ExprVisitor<int, IRType>
     {
@@ -255,7 +255,7 @@ public class UnitTestKLQuant : TestClassBase
                     CompilerServices.InferenceType(var);
                     var shape = var.CheckedShape.Select(d => d.IsUnknown ? 1 : d.FixedValue).ToArray();
 
-                    var shapeSize = 1;
+                    long shapeSize = 1;
                     for (int j = 0; j < shape.Length; j++)
                     {
                         shapeSize *= shape[j];

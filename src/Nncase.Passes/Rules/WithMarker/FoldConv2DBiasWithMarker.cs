@@ -30,8 +30,6 @@ namespace Nncase.Passes.Rules.Neutral;
 [RuleGenerator]
 public sealed partial class FoldConv2DBiasWithMarker : IRewriteRule
 {
-    private static int _counter;
-
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsRangeOfMarker(
         "binarym",

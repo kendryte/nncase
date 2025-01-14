@@ -34,7 +34,7 @@ public sealed partial class FoldNopReshape : IRewriteRule
 
     private Expr? GetReplace(Expr input, TensorConst newShape)
     {
-        var newShapeArray = newShape.Value.ToArray<int>();
+        var newShapeArray = newShape.Value.ToArray<long>();
         if ((newShapeArray.Count(x => x == -1) == 1 && newShapeArray.Length == input.CheckedShape.Count
              && input.CheckedShape.Zip(newShapeArray).Count(t => t.Second != -1 && t.First.FixedValue == t.Second) == newShapeArray.Length - 1)
             || input.CheckedShape.ToValueArray().SequenceEqual(newShapeArray))
@@ -72,7 +72,7 @@ public sealed partial class FoldReshapeBinaryConstReshape : IRewriteRule
     public IPattern Pattern { get; } =
         IsReshape(IsSwappableBinary("binary", null, b => b.BinaryOp is BinaryOp.Add or BinaryOp.Mul, IsReshape(IsWildcard("input") with { TypePattern = HasFixedShape() }, IsTensorConst("unsqShape")), IsTensorConst("binaryConst")), IsTensorConst("sqShape"));
 
-    private Expr? GetReplace(Expr input, Binary binary, int[] unsqShape, TensorConst binaryConst, int[] sqShape)
+    private Expr? GetReplace(Expr input, Binary binary, long[] unsqShape, TensorConst binaryConst, long[] sqShape)
     {
         var inShape = input.CheckedShape.ToValueArray();
         if (!(sqShape.SequenceEqual(inShape) && RulesUtility.FindSqueezeAxis(unsqShape, sqShape) is int axis && axis != -1 && (

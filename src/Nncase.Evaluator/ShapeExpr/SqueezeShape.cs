@@ -28,7 +28,8 @@ public partial class SqueezeShapeEvaluator : IEvaluator<SqueezeShape>, ITypeInfe
         var dims = context.CheckArgumentType<TensorType>(target, SqueezeShape.Dim);
         if (!input.CheckedShape.IsFixed)
         {
-            return new TensorType(DataTypes.Int64, new[] { Dimension.Unknown });
+            // return new TensorType(DataTypes.Int64, new[] { Dimension.Unknown });
+            throw new NotImplementedException();
         }
 
         return new TensorType(DataTypes.Int64, new[] { input.CheckedShape.Size - dims.Shape[0] });

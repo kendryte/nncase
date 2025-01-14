@@ -33,7 +33,7 @@ public partial class SplitSpaceToBatch : RewriteRule<Pattern>
 
     public Expr? GetReplace(Expr input, Expr blockShape, Expr paddings)
     {
-        var spatialSize = blockShape.CheckedShape.Size;
+        var spatialSize = (int)blockShape.CheckedShape.Size;
         var remainShapeSize = input.CheckedShape.Rank - spatialSize - 1;
         var newPaddings = Enumerable.Repeat((Expr)0, (1 + spatialSize + remainShapeSize) * 2).ToArray();
         for (int i = 0; i < spatialSize; i++)
@@ -104,7 +104,7 @@ public partial class SplitBatchToSpace : RewriteRule<Pattern>
     {
         // to nhwc
         var input0 = NCHWToNHWC(input);
-        var blockLen = blockShape.CheckedShape.Size;
+        var blockLen = (int)blockShape.CheckedShape.Size;
         var xLen = input0.CheckedShape.Rank;
         var xShape = Cast(ShapeOf(input0), DataTypes.Int32);
         var spatial = ShapeExprUtility.Slice(xShape, 1, blockLen + 1);
@@ -144,7 +144,7 @@ public partial class SplitBatchToSpace : RewriteRule<Pattern>
         return transposeResult;
     }
 
-    private static IEnumerable<int> BoostRange(int start, int end, int step = 1)
+    private static IEnumerable<long> BoostRange(int start, int end, int step = 1)
     {
         int x = start;
         do

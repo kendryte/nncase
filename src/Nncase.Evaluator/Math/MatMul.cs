@@ -150,7 +150,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             return new InvalidType("MatMul lhs and rhs have different DType");
         }
 
-        if (lhs.Shape[lk] != rhs.Shape[rk] && lhs.Shape[lk] != Dimension.Unknown && rhs.Shape[rk] != Dimension.Unknown)
+        if (lhs.Shape[lk] != rhs.Shape[rk] && lhs.Shape[lk].IsFixed && rhs.Shape[rk].IsFixed)
         {
             return new InvalidType("MatMul lhs and rhs have not compatiable shape");
         }
@@ -214,8 +214,8 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var rhsShape = lhs.Shape.Rank <= rhs.Shape.Rank ? rhs.Shape.ToArray() : Enumerable.Repeat((Dimension)1, lhs.Shape.Rank - rhs.Shape.Rank).Concat(rhs.Shape).ToArray();
 
         var bigShape = Enumerable.Zip(lhsShape, rhsShape).SkipLast(2).Select(t =>
-            t.First == Dimension.Unknown || t.Second == Dimension.Unknown
-                ? Dimension.Unknown
+            t.First.IsUnknown || t.Second.IsUnknown
+                ? (Dimension)IR.F.Math.Max(t.First.Value, t.Second.Value)
                 : System.Math.Max(t.First.FixedValue, t.Second.FixedValue)).ToArray();
 
         // batch and channel

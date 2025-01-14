@@ -7,7 +7,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
-using Nncase.IR.Tensors;
 using Nncase.IR.F;
 using Nncase.TIR;
 using Math = System.Math;

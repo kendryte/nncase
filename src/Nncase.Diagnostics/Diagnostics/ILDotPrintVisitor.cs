@@ -22,6 +22,8 @@ using GiGraph.Dot.Types.Records;
 using GiGraph.Dot.Types.Styling;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Nncase.IR.Affine;
+using Nncase.IR.Buffers;
 
 namespace Nncase.Diagnostics;
 
@@ -158,6 +160,95 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
         }
 
         return new(expr.Name);
+    }
+
+    protected override ILDotOption VisitBufferOf(BufferOf expr)
+    {
+        if (!_exprMemo.TryGetValue(expr, out var result))
+        {
+            var id = _idCounter++;
+            string exprId = "\"" + id.ToString() + "\"";
+
+            var table = new DotHtmlTable
+            {
+                BorderWidth = 0,
+                CellBorderWidth = 1,
+                CellSpacing = 0,
+            };
+
+            var connect_list = new List<(Expr, string)>();
+
+            // 1. the connect type.
+            table.AddRow(row =>
+            {
+                row.AddCell("BufferOf"); // key wrods type.
+                row.AddCell(Visit(expr.Input).Str); // target.
+            });
+
+            // 3. make crrent node.
+            var dotNode = _dotGraph.Nodes.Add(exprId);
+            dotNode.ToPlainHtmlNode(table);
+
+            // 4. connect edge.
+            // _dotGraph.Edges.Add(Visit(expr.Input).DotNode, dotNode);
+            result = new(dotNode);
+            _exprMemo.Add(expr, result);
+        }
+
+        return result;
+    }
+
+    protected override ILDotOption VisitGrid(Grid expr)
+    {
+        if (!_exprMemo.TryGetValue(expr, out var result))
+        {
+            var id = _idCounter++;
+            string exprId = "\"" + id.ToString() + "\"";
+
+            var table = new DotHtmlTable
+            {
+                BorderWidth = 0,
+                CellBorderWidth = 1,
+                CellSpacing = 0,
+            };
+
+            var connect_list = new List<(Expr, string)>();
+
+            // 1. the connect type.
+            table.AddRow(row =>
+            {
+                row.AddCell("Grid"); // key wrods type.
+                int count = 0;
+                foreach (var child in expr.Buffers)
+                {
+                    var childnode = Visit(child);
+                    var portName = $"P{count++}";
+                    row.AddCell(childnode.IsDotNode ? string.Empty : childnode.Str, cell => cell.PortName = portName);
+                    if (childnode.IsDotNode)
+                    {
+                        connect_list.Add((child, portName));
+                    }
+                }
+            });
+
+            // 3. make crrent node.
+            var dotNode = _dotGraph.Nodes.Add(exprId);
+            dotNode.ToPlainHtmlNode(table);
+
+            // 4. connect edge.
+            foreach (var (child, port_name) in connect_list)
+            {
+                _dotGraph.Edges.Add(Visit(child).DotNode, dotNode, edge =>
+                {
+                    edge.Head.Endpoint.Port = new DotEndpointPort(port_name);
+                });
+            }
+
+            result = new(dotNode);
+            _exprMemo.Add(expr, result);
+        }
+
+        return result;
     }
 
     protected override ILDotOption VisitTuple(IR.Tuple expr)

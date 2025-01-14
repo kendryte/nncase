@@ -62,7 +62,7 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
     {
         if (target.IsTfWhere)
         {
-            return new TensorType(DataTypes.Int64, new Shape(Dimension.Unknown, cond.Shape.Rank));
+            return new TensorType(DataTypes.Int64, new Shape(Dimension.Unknown(), cond.Shape.Rank));
         }
 
         return TypeInference.BroadcastType(x.DType, cond, x, y);

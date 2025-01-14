@@ -25,66 +25,66 @@ namespace Nncase.Tests.Rules.NeutralTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestCombineReshape : TransformTestBase
 {
-    public static readonly TheoryData<BinaryOp, int[], int[], int[], bool> CombineConstBinaryReshapePositiveData = new()
+    public static readonly TheoryData<BinaryOp, long[], long[], long[], bool> CombineConstBinaryReshapePositiveData = new()
     {
-        // BinaryOp binaryOp, int[] lShape, int[] rShape, int[] shape, bool leftConst
-        { BinaryOp.Add, new[] { 32, 1, 32, 64 }, new[] { 64 }, new[] { 1, 32, 32, 64 }, false },
-        { BinaryOp.Sub, new[] { 1, 32, 32, 64 }, new[] { 1 }, new[] { 1, 1024, 1, 64 }, false },
-        { BinaryOp.Div, new[] { 64 }, new[] { 32, 1, 32, 64, }, new[] { 1, 32, 32, 64 }, true },
-        { BinaryOp.Mul, new[] { 1 }, new[] { 1, 32, 32, 64, }, new[] { 1, 1024, 64, 1 }, true },
-        { BinaryOp.Sub, new[] { 1 }, new[] { 1, 32, 32, 64, }, new[] { 1, 1024, 64, 1 }, true },
+        // BinaryOp binaryOp, long[] lShape, long[] rShape, long[] shape, bool leftConst
+        { BinaryOp.Add, new long[] { 32, 1, 32, 64 }, new long[] { 64 }, new long[] { 1, 32, 32, 64 }, false },
+        { BinaryOp.Sub, new long[] { 1, 32, 32, 64 }, new long[] { 1 }, new long[] { 1, 1024, 1, 64 }, false },
+        { BinaryOp.Div, new long[] { 64 }, new long[] { 32, 1, 32, 64, }, new long[] { 1, 32, 32, 64 }, true },
+        { BinaryOp.Mul, new long[] { 1 }, new long[] { 1, 32, 32, 64, }, new long[] { 1, 1024, 64, 1 }, true },
+        { BinaryOp.Sub, new long[] { 1 }, new long[] { 1, 32, 32, 64, }, new long[] { 1, 1024, 64, 1 }, true },
     };
 
-    public static readonly TheoryData<int[], int[], int[]> TestCombineReshapeTransposeNegativeData =
+    public static readonly TheoryData<long[], long[], long[]> TestCombineReshapeTransposeNegativeData =
     new()
     {
-        { new[] { 1, 77, 1, 64 }, new[] { 2, 1, 3, 0 }, new[] { 77, 64, 1 } },
-        { new[] { 1, 77, 12, 64 }, new[] { 1, 0, 2, 3 }, new[] { 1, 77, 768 } },
+        { new long[] { 1, 77, 1, 64 }, new long[] { 2, 1, 3, 0 }, new long[] { 77, 64, 1 } },
+        { new long[] { 1, 77, 12, 64 }, new long[] { 1, 0, 2, 3 }, new long[] { 1, 77, 768 } },
     };
 
     public static IEnumerable<object[]> CombineBinaryReshapePositiveData =>
         new[]
         {
-            new object[] { new[] { 5, 4 }, new[] { 5, 4 }, new[] { 1, 20 } },
-            new object[] { new[] { 4, 4 }, new[] { 4, 4 }, new[] { 2, 8 } },
-            new object[] { new[] { 4 }, new[] { 4 }, new[] { 4 } },
-            new object[] { new[] { 1, 3, 4 }, new[] { 1, 3, 4 }, new[] { 1, 4, 3 } },
-            new object[] { new[] { 1, 3, 2, 4 }, new[] { 1, 3, 2, 4 }, new[] { 1, 1, 6, 4 } },
+            new object[] { new long[] { 5, 4 }, new long[] { 5, 4 }, new long[] { 1, 20 } },
+            new object[] { new long[] { 4, 4 }, new long[] { 4, 4 }, new long[] { 2, 8 } },
+            new object[] { new long[] { 4 }, new long[] { 4 }, new long[] { 4 } },
+            new object[] { new long[] { 1, 3, 4 }, new long[] { 1, 3, 4 }, new long[] { 1, 4, 3 } },
+            new object[] { new long[] { 1, 3, 2, 4 }, new long[] { 1, 3, 2, 4 }, new long[] { 1, 1, 6, 4 } },
         };
 
     public static IEnumerable<object[]> CombineConstBinaryReshapeNegativeData =>
         new[]
         {
-            new object[] { new[] { 1, 32, 32, 64, }, new[] { 32, 64 }, new[] { 1, 16, 64, 64 } },
+            new object[] { new long[] { 1, 32, 32, 64, }, new long[] { 32, 64 }, new long[] { 1, 16, 64, 64 } },
         };
 
     public static IEnumerable<object[]> CombineBinaryReshapeNegativeData =>
         new[]
         {
-            new object[] { new[] { 5, 4 }, new[] { 4, 5 }, new[] { 1, 20 } },
+            new object[] { new long[] { 5, 4 }, new long[] { 4, 5 }, new long[] { 1, 20 } },
         };
 
     public static IEnumerable<object[]> TestCombineUnaryReshapePositiveData =>
         new[]
         {
-            new object[] { UnaryOp.Exp, new[] { 1, 3, 4 }, new[] { 1, 4, 3 } },
-            new object[] { UnaryOp.Sqrt, new[] { 1, 3, 4 }, new[] { 3, 4, 1 } },
-            new object[] { UnaryOp.Log, new[] { 1, 3, 4, 5 }, new[] { 3, 1, 1, 20 } },
-            new object[] { UnaryOp.Abs, new[] { 1, 3, 4, 5 }, new[] { 1, 12, 5, 1 } },
+            new object[] { UnaryOp.Exp, new long[] { 1, 3, 4 }, new long[] { 1, 4, 3 } },
+            new object[] { UnaryOp.Sqrt, new long[] { 1, 3, 4 }, new long[] { 3, 4, 1 } },
+            new object[] { UnaryOp.Log, new long[] { 1, 3, 4, 5 }, new long[] { 3, 1, 1, 20 } },
+            new object[] { UnaryOp.Abs, new long[] { 1, 3, 4, 5 }, new long[] { 1, 12, 5, 1 } },
         };
 
     public static IEnumerable<object[]> TestCombineReshapePadPositiveData =>
         new[]
         {
-            new object[] { new[] { 1, 3, 4 }, new[] { 1, 5, 8 }, new[] { 0, 0, 1, 1, 2, 2 } },
-            new object[] { new[] { 1, 3, 4 }, new[] { 1, 4, 5, 7 }, new[] { 1, 2, 1, 1, 2, 1 } },
+            new object[] { new long[] { 1, 3, 4 }, new long[] { 1, 5, 8 }, new long[] { 0, 0, 1, 1, 2, 2 } },
+            new object[] { new long[] { 1, 3, 4 }, new long[] { 1, 4, 5, 7 }, new long[] { 1, 2, 1, 1, 2, 1 } },
         };
 
     public static IEnumerable<object[]> TestCombineReshapePadNegativeData =>
         new[]
         {
-            new object[] { new[] { 1, 3, 4 }, new[] { 5, 8 }, new[] { 0, 0, 1, 1, 2, 2 } },
-            new object[] { new[] { 1, 3, 4 }, new[] { 1, 4, 1, 35 }, new[] { 1, 2, 1, 1, 2, 1 } },
+            new object[] { new long[] { 1, 3, 4 }, new long[] { 5, 8 }, new long[] { 0, 0, 1, 1, 2, 2 } },
+            new object[] { new long[] { 1, 3, 4 }, new long[] { 1, 4, 1, 35 }, new long[] { 1, 2, 1, 1, 2, 1 } },
         };
 
     public static TheoryData<(int Count, IR.Expr Act)> TestCombineActivationsReshapePositiveData => new()
@@ -104,7 +104,7 @@ public class UnitTestCombineReshape : TransformTestBase
 
     [Theory]
     [MemberData(nameof(CombineConstBinaryReshapePositiveData))]
-    public void TestCombineConstBinaryReshapePositive(BinaryOp binaryOp, int[] lShape, int[] rShape, int[] shape, bool leftConst)
+    public void TestCombineConstBinaryReshapePositive(BinaryOp binaryOp, long[] lShape, long[] rShape, long[] shape, bool leftConst)
     {
         Expr lhs = leftConst ? lShape.Sum() == 1 ? 0.5f : Const.FromValue(Random.Normal(DataTypes.Float32, 0, 1, 3, lShape).Evaluate()) : new Var("lhs", new TensorType(DataTypes.Float32, lShape));
         Expr rhs = leftConst ? new Var("b", new TensorType(DataTypes.Float32, rShape)) :
@@ -140,7 +140,7 @@ public class UnitTestCombineReshape : TransformTestBase
 
     [Theory]
     [MemberData(nameof(CombineBinaryReshapeNegativeData))]
-    public void TestCombineBinaryReshapeNegative(int[] lShape, int[] rShape, int[] shape)
+    public void TestCombineBinaryReshapeNegative(long[] lShape, long[] rShape, long[] shape)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, lShape);
         var b = Tensor.From<float>(Random.Normal(DataTypes.Float32, 0, 1, 0, rShape).Evaluate().AsTensor().ToArray<float>(), rShape);
@@ -151,7 +151,7 @@ public class UnitTestCombineReshape : TransformTestBase
 
     [Theory]
     [MemberData(nameof(CombineConstBinaryReshapeNegativeData))]
-    public void TestCombineConstBinaryReshapeNegative(int[] lShape, int[] rShape, int[] shape)
+    public void TestCombineConstBinaryReshapeNegative(long[] lShape, long[] rShape, long[] shape)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, lShape);
         var b = Tensor.From<float>(Random.Normal(DataTypes.Float32, 0, 1, 0, rShape).Evaluate().AsTensor().ToArray<float>(), rShape);
@@ -162,7 +162,7 @@ public class UnitTestCombineReshape : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestCombineUnaryReshapePositiveData))]
-    public void TestCombineUnaryReshapePositive(UnaryOp opType, int[] inShape, int[] shape)
+    public void TestCombineUnaryReshapePositive(UnaryOp opType, long[] inShape, long[] shape)
     {
         var a = new Var();
         var normal = new Dictionary<Var, IValue>();
@@ -192,7 +192,7 @@ public class UnitTestCombineReshape : TransformTestBase
         var a = new Var("input", new TensorType(DataTypes.Float32, inShape));
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
-        var rootPre = Tensors.Reshape(NN.Pad(a, Tensor.From(pads, new[] { pads.Length / 2, 2 }), PadMode.Constant, 0f), shape);
+        var rootPre = Tensors.Reshape(NN.Pad(a, Tensor.From(pads, [pads.Length / 2, 2]), PadMode.Constant, 0f), shape);
         TestMatched<CombineReshapePad>(rootPre, normal);
     }
 
@@ -201,7 +201,7 @@ public class UnitTestCombineReshape : TransformTestBase
     public void TestCombineReshapePadNegative(int[] inShape, int[] shape, int[] pads)
     {
         var a = new Var("input", new TensorType(DataTypes.Float32, inShape));
-        var rootPre = Tensors.Reshape(NN.Pad(a, Tensor.From(pads, new[] { pads.Length / 2, 2 }), PadMode.Constant, 0f), shape);
+        var rootPre = Tensors.Reshape(NN.Pad(a, Tensor.From(pads, [pads.Length / 2, 2]), PadMode.Constant, 0f), shape);
         TestNotMatch<CombineReshapePad>(rootPre);
     }
 
@@ -220,7 +220,7 @@ public class UnitTestCombineReshape : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestCombineReshapeTransposeNegativeData))]
-    public void TestCombineReshapeTransposeNegative(int[] inShape, int[] perm, int[] newshape)
+    public void TestCombineReshapeTransposeNegative(long[] inShape, long[] perm, long[] newshape)
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, inShape));
         var rootPre = Tensors.Reshape(Tensors.Transpose(input, perm), newshape);

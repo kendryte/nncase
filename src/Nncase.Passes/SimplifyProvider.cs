@@ -1,0 +1,73 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.CommandLine;
+using System.CommandLine.Invocation;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Nncase.CodeGen;
+using Nncase.Diagnostics;
+using Nncase.IR;
+using Nncase.Passes.Rules.Neutral;
+using Nncase.Quantization;
+
+namespace Nncase.Passes;
+
+internal sealed class SimplifyTarget : ITarget
+{
+    public string Kind => "Simplify";
+
+    public Task AdaRoundWeights(ICalibrationDatasetProvider calibrationDataset, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, QuantizeOptions quantizeOptions) => throw new NotImplementedException();
+
+    public Task<Dictionary<ENode, List<Tuple<List<DataType>, List<List<QuantParam>>, float>>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, QuantizeOptions quantizeOptions) => throw new NotImplementedException();
+
+    public IModuleBuilder CreateModuleBuilder(string moduleKind, CompileOptions options) => throw new NotImplementedException();
+
+    public void ParseTargetDependentOptions(IConfigurationSection configure) => throw new NotImplementedException();
+
+    public (Command Command, Func<InvocationContext, Command, ITargetOptions> Parser) RegisterCommandAndParser() => throw new NotImplementedException();
+
+    public void RegisterQuantizePass(IPassManager passManager, CompileOptions options) => throw new NotImplementedException();
+
+    public void RegisterTargetDependentAfterQuantPass(IPassManager passManager, CompileOptions options) => throw new NotImplementedException();
+
+    public void RegisterTargetDependentBeforeCodeGen(IPassManager passManager, CompileOptions options) => throw new NotImplementedException();
+
+    public void RegisterTargetDependentPass(IPassManager passManager, CompileOptions options) => throw new NotImplementedException();
+
+    public void RegisterTargetInDependentPass(IPassManager passManager, CompileOptions options) => throw new NotImplementedException();
+}
+
+internal sealed class SimplifyProvider : ISimplifyProvider
+{
+    private readonly CompileSession _compileSession;
+    private readonly IRewriteRule[] _rules;
+
+    public SimplifyProvider()
+    {
+        _compileSession = CompileSession.Create(new SimplifyTarget(), new CompileOptions());
+        using var compileScope = new CompileSessionScope(_compileSession);
+        _rules = [
+            new FoldConstCall(),
+        ];
+    }
+
+    public Expr SimplifyForDimension(Expr expr)
+    {
+#if false
+        if (expr is not (Const or Var))
+        {
+            using var compileScope = new CompileSessionScope(CompileSessionScope.Current ?? _compileSession);
+            using var dumpScope = new DumpScope(NullDumpper.Instance);
+            expr = CompilerServices.Rewrite(expr, _rules, new RunPassContext());
+        }
+
+        return expr;
+#else
+        return expr;
+#endif
+    }
+}

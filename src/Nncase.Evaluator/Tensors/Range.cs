@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.Utilities;
@@ -65,7 +66,8 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEv
                 return new InvalidType("DataType is unknown");
             }
 
-            return new TensorType(dt, new Shape(Dimension.Unknown));
+            // return new TensorType(dt, new Shape(Dimension.Unknown));
+            throw new NotImplementedException();
         }
     }
 

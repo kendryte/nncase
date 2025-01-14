@@ -31,5 +31,5 @@ public sealed partial class SpaceToBatch : Op
     /// <summary>
     /// Gets paddings.
     /// </summary>
-    public static readonly ParameterInfo Paddings = new(typeof(SpaceToBatch), 2, "paddings", HasShape(new[] { Dimension.Unknown, 2 }) & IsIntegral());
+    public static readonly ParameterInfo Paddings = new(typeof(SpaceToBatch), 2, "paddings", HasShape(new[] { Dimension.Any, 2 }) & IsIntegral());
 }

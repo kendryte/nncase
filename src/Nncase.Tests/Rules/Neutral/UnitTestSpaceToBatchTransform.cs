@@ -34,7 +34,7 @@ public class UnitTestSpaceToBatchToPad : TransformTestBase
         new[]
         {
             new object[] { new[] { 1, 128, 128, new IR.Dimension(1) }, new[] { 2, 2 }, new[,] { { 0, 0 }, { 0, 0 } } },
-            new object[] { new[] { 1, 128, 128, IR.Dimension.Unknown }, new[] { 1, 1 }, new[,] { { 1, 1 }, { 1, 1 } } },
+            new object[] { new[] { 1, 128, 128, IR.Dimension.Unknown() }, new[] { 1, 1 }, new[,] { { 1, 1 }, { 1, 1 } } },
         };
 
     [Theory]

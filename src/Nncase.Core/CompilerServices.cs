@@ -224,6 +224,8 @@ public interface ICompilerServicesProvider
     IEGraph ERewrite(IEGraph expr, IEnumerable<IRewriteRule> rules, RunPassContext options);
 
     MicroKernelInfo GetOpMicroKernelInfo(Op op, MicroKernelContext context);
+
+    Expr SimplifyForDimension(Expr value);
 }
 
 internal interface ICompilerServicesProviderInternal
@@ -528,6 +530,8 @@ public static class CompilerServices
     /// <returns>Target.</returns>
     public static ITarget GetTarget(string name) => Provider.GetTarget(name);
 
+    public static Expr SimplifyForDimension(Expr value) => Provider.SimplifyForDimension(value);
+
     internal static DryIoc.IContainer CreateScope()
     {
         var container = (DryIoc.IContainer)_serviceProvider!;
@@ -554,6 +558,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     private readonly IMetricEvaluateProvider _metricEvaluateProvider;
     private readonly IMatchProvider _matchProvider;
     private readonly IRewriteProvider _rewriteProvider;
+    private readonly ISimplifyProvider _simplifyProvider;
     private readonly IEGraphMatchProvider _eGraphMatchProvider;
     private readonly IEGraphRewriteProvider _eGraphrewriteProvider;
     private readonly ITargetProvider _targetProvider;
@@ -569,6 +574,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         IDataTypeServiceProvider dataTypeServiceProvider,
         IMatchProvider matchProvider,
         IRewriteProvider rewriteProvider,
+        ISimplifyProvider simplifyProvider,
         IEGraphMatchProvider eGraphMatchProvider,
         IEGraphRewriteProvider eGraphrewriteProvider,
         ITargetProvider targetProvider,
@@ -584,6 +590,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         DataTypeService = dataTypeServiceProvider;
         _matchProvider = matchProvider;
         _rewriteProvider = rewriteProvider;
+        _simplifyProvider = simplifyProvider;
         _eGraphMatchProvider = eGraphMatchProvider;
         _eGraphrewriteProvider = eGraphrewriteProvider;
         _targetProvider = targetProvider;
@@ -719,4 +726,6 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     }
 
     public MicroKernelInfo GetOpMicroKernelInfo(Op op, MicroKernelContext context) => _microKernelInfoGetter.GetInfo(op, context);
+
+    public Expr SimplifyForDimension(Expr value) => _simplifyProvider.SimplifyForDimension(value);
 }

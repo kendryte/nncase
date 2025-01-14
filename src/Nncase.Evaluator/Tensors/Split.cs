@@ -74,7 +74,7 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
 
             if (input.Shape.IsUnranked)
             {
-                return new TupleType(Enumerable.Repeat((IRType)(input with { Shape = Shape.Unranked }), sections_v.Length));
+                return new TupleType(Enumerable.Repeat((IRType)(input with { Shape = Shape.Unranked }), (int)sections_v.Length));
             }
 
             var inshape = input.Shape.ToArray();
@@ -111,13 +111,14 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
         if (context.GetArgument(target, Split.Axis) is TensorConst axisCon)
         {
             var axisV = Util.PositiveIndex(axisCon.Value.ToScalar<int>(), input.Shape.Rank);
-            splitedShape[axisV] = Dimension.Unknown;
+            splitedShape[axisV] = Dimension.Unknown();
         }
         else
         {
-            splitedShape = splitedShape.Select(s => Dimension.Unknown).ToArray();
+            splitedShape = splitedShape.Select(s => Dimension.Unknown()).ToArray();
         }
 
-        return new TupleType(new IRType[] { input with { Shape = splitedShape } }, true);
+        // return new TupleType(new IRType[] { input with { Shape = splitedShape } }, true);
+        throw new NotImplementedException();
     }
 }

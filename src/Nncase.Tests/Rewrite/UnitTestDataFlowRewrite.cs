@@ -174,8 +174,8 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var dilationW = 1;
         var padH = Util.GetWindowedPadding(inH, fH, strideH, dilationH, true);
         var padW = Util.GetWindowedPadding(inW, fW, strideW, dilationW, true);
-        var stride = Tensor.From<int>(new[] { strideH, strideW }, new[] { 2 });
-        var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, new[] { 2 });
+        var stride = Tensor.From<int>(new[] { strideH, strideW }, [2]);
+        var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, [2]);
         var padding = Util.ConcatPadding(padH, padW);
 
         var conv = NN.Conv2D(
@@ -197,7 +197,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var max = Binary(BinaryOp.Max, convAfterTranspose, mul);
 
         // ReduceWindow2D
-        var doubleV = Tensor.From<int>(new[] { 2, 2 }, new[] { 2 });
+        var doubleV = Tensor.From<int>(new[] { 2, 2 }, [2]);
         var initValue = (Const)0;
         var (rInH, rInW) = Util.GetHW(max);
         var rPadH = Util.GetWindowedPadding(rInH, 2, 2, dilationH, true);
@@ -276,12 +276,12 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         Assert.Equal(new long[] { 3, 1, 1 }, afterShape);
         var b = Reshape(v, afterShape);
         b.InferenceType();
-        Assert.Equal(new[] { 3, 1, 1 }, b.Evaluate().AsTensor().Dimensions.ToArray());
+        Assert.Equal([3, 1, 1], b.Evaluate().AsTensor().Dimensions.ToArray());
 
         var a = OnnxImporter.ReshapeToByChannel(v);
         var after = await RunShapeInferPass("ReshapeToByChannel", a);
         Assert.True(after.InferenceType());
-        Assert.Equal(new[] { 3, 1, 1 }, after.Evaluate().AsTensor().Dimensions.ToArray());
+        Assert.Equal([3, 1, 1], after.Evaluate().AsTensor().Dimensions.ToArray());
     }
 
     [Fact]

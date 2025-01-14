@@ -185,7 +185,7 @@ public static class MetricUtility
 
     public static UInt128 ResizeCubicFLOPs => 8;
 
-    public static UInt128 GetFLOPs(IRType type, int scale = 1)
+    public static UInt128 GetFLOPs(IRType type, long scale = 1)
     {
         return type switch
         {

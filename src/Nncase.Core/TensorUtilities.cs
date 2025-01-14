@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
@@ -30,17 +31,18 @@ public static class TensorUtilities
     /// <summary>
     /// get the product from the start index on the dimensions.
     /// </summary>
-    public static long GetProduct(ReadOnlySpan<int> dimensions, int startIndex = 0)
+    public static T GetProductGeneric<T>(ReadOnlySpan<T> dimensions, int startIndex = 0)
+        where T : struct, ISignedNumber<T>, IComparisonOperators<T, T, bool>
     {
         if (dimensions.Length == 0)
         {
-            return 1;
+            return T.One;
         }
 
-        long product = 1;
+        T product = T.One;
         for (int i = startIndex; i < dimensions.Length; i++)
         {
-            if (dimensions[i] < 0)
+            if (dimensions[i] < T.Zero)
             {
                 throw new ArgumentOutOfRangeException($"{nameof(dimensions)}[{i}]");
             }
@@ -55,6 +57,16 @@ public static class TensorUtilities
 
         return product;
     }
+
+    /// <summary>
+    /// get the product from the start index on the dimensions.
+    /// </summary>
+    public static int GetProduct(ReadOnlySpan<int> dimensions, int startIndex = 0) => GetProductGeneric(dimensions, startIndex);
+
+    /// <summary>
+    /// get the product from the start index on the dimensions.
+    /// </summary>
+    public static long GetProduct(ReadOnlySpan<long> dimensions, int startIndex = 0) => GetProductGeneric(dimensions, startIndex);
 
     /// <summary>
     /// Get the Expr Product.
@@ -76,7 +88,7 @@ public static class TensorUtilities
         return product;
     }
 
-    public static bool IsAscending(ReadOnlySpan<int> values)
+    public static bool IsAscending(ReadOnlySpan<long> values)
     {
         for (int i = 1; i < values.Length; i++)
         {
@@ -89,7 +101,7 @@ public static class TensorUtilities
         return true;
     }
 
-    public static bool IsDescending(ReadOnlySpan<int> values)
+    public static bool IsDescending(ReadOnlySpan<long> values)
     {
         for (int i = 1; i < values.Length; i++)
         {
@@ -105,16 +117,17 @@ public static class TensorUtilities
     /// <summary>
     /// Gets the set of strides that can be used to calculate the offset of n-dimensions in a 1-dimensional layout.
     /// </summary>
-    public static int[] GetStrides(ReadOnlySpan<int> dimensions, bool reverseStride = false)
+    public static T[] GetStridesGeneric<T>(ReadOnlySpan<T> dimensions, bool reverseStride = false)
+        where T : struct, ISignedNumber<T>
     {
         if (dimensions.IsEmpty)
         {
-            return Array.Empty<int>();
+            return Array.Empty<T>();
         }
 
-        int[] strides = new int[dimensions.Length];
+        var strides = new T[dimensions.Length];
 
-        int stride = 1;
+        T stride = T.One;
         if (reverseStride)
         {
             for (int i = 0; i < strides.Length; i++)
@@ -134,6 +147,16 @@ public static class TensorUtilities
 
         return strides;
     }
+
+    /// <summary>
+    /// Gets the set of strides that can be used to calculate the offset of n-dimensions in a 1-dimensional layout.
+    /// </summary>
+    public static int[] GetStrides(ReadOnlySpan<int> dimensions, bool reverseStride = false) => GetStridesGeneric(dimensions, reverseStride);
+
+    /// <summary>
+    /// Gets the set of strides that can be used to calculate the offset of n-dimensions in a 1-dimensional layout.
+    /// </summary>
+    public static long[] GetStrides(ReadOnlySpan<long> dimensions, bool reverseStride = false) => GetStridesGeneric(dimensions, reverseStride);
 
     /// <summary>
     /// get strides.
@@ -195,22 +218,23 @@ public static class TensorUtilities
     /// <summary>
     /// Calculates the 1-d index for n-d indices in layout specified by strides.
     /// </summary>
-    public static int GetIndex(ReadOnlySpan<int> strides, ReadOnlySpan<int> indices, int startFromDimension = 0)
+    public static T GetIndexGeneric<T>(ReadOnlySpan<T> strides, ReadOnlySpan<T> indices, int startFromDimension = 0)
+        where T : struct, IBinaryNumber<T>, IComparisonOperators<T, T, bool>
     {
         // Scalar
         if (strides.Length == 0)
         {
-            if (indices.Length != 1 || indices[0] != 0)
+            if (indices.Length != 1 || indices[0] != T.Zero)
             {
                 throw new ArgumentOutOfRangeException(nameof(indices));
             }
 
-            return 0;
+            return T.Zero;
         }
 
         Trace.Assert(strides.Length == indices.Length);
 
-        int index = 0;
+        T index = T.Zero;
         for (int i = startFromDimension; i < indices.Length; i++)
         {
             index += strides[i] * indices[i];
@@ -218,6 +242,16 @@ public static class TensorUtilities
 
         return index;
     }
+
+    /// <summary>
+    /// Calculates the 1-d index for n-d indices in layout specified by strides.
+    /// </summary>
+    public static int GetIndex(ReadOnlySpan<int> strides, ReadOnlySpan<int> indices, int startFromDimension = 0) => GetIndexGeneric(strides, indices, startFromDimension);
+
+    /// <summary>
+    /// Calculates the 1-d index for n-d indices in layout specified by strides.
+    /// </summary>
+    public static long GetIndex(ReadOnlySpan<long> strides, ReadOnlySpan<long> indices, int startFromDimension = 0) => GetIndexGeneric(strides, indices, startFromDimension);
 
     /// <summary>
     /// get index.
@@ -249,12 +283,12 @@ public static class TensorUtilities
     /// <summary>
     /// Calculates the n-d indices from the 1-d index in a layout specificed by strides.
     /// </summary>
-    public static void GetIndices(ReadOnlySpan<int> strides, bool reverseStride, int index, int[] indices, int startFromDimension = 0)
+    public static void GetIndices(ReadOnlySpan<long> strides, bool reverseStride, long index, long[] indices, int startFromDimension = 0)
     {
         Trace.Assert(reverseStride ? IsAscending(strides) : IsDescending(strides), "Index decomposition requires ordered strides");
         Trace.Assert(strides.Length == indices.Length);
 
-        int remainder = index;
+        long remainder = index;
         for (int i = startFromDimension; i < strides.Length; i++)
         {
             // reverse the index for reverseStride so that we divide by largest stride first
@@ -269,12 +303,12 @@ public static class TensorUtilities
     /// <summary>
     /// Calculates the n-d indices from the 1-d index in a layout specificed by strides.
     /// </summary>
-    public static void GetIndices(ReadOnlySpan<int> strides, bool reverseStride, int index, Span<int> indices, int startFromDimension = 0)
+    public static void GetIndices(ReadOnlySpan<long> strides, bool reverseStride, long index, Span<long> indices, int startFromDimension = 0)
     {
         Trace.Assert(reverseStride ? IsAscending(strides) : IsDescending(strides), "Index decomposition requires ordered strides");
         Trace.Assert(strides.Length == indices.Length);
 
-        int remainder = index;
+        long remainder = index;
         for (int i = startFromDimension; i < strides.Length; i++)
         {
             // reverse the index for reverseStride so that we divide by largest stride first
@@ -289,14 +323,14 @@ public static class TensorUtilities
     /// <summary>
     /// Takes an 1-d index over n-d sourceStrides and recalculates it assuming same n-d coordinates over a different n-d strides.
     /// </summary>
-    public static int TransformIndexByStrides(int index, int[] sourceStrides, bool sourceReverseStride, int[] transformStrides)
+    public static long TransformIndexByStrides(long index, long[] sourceStrides, bool sourceReverseStride, long[] transformStrides)
     {
         Trace.Assert(index >= 0);
         Trace.Assert(sourceReverseStride ? IsAscending(sourceStrides) : IsDescending(sourceStrides), "Index decomposition requires ordered strides");
         Trace.Assert(sourceStrides.Length == transformStrides.Length);
 
-        int transformIndex = 0;
-        int remainder = index;
+        long transformIndex = 0;
+        long remainder = index;
 
         for (int i = 0; i < sourceStrides.Length; i++)
         {
@@ -316,7 +350,7 @@ public static class TensorUtilities
     /// <summary>
     /// check this dimension and strides is contiguous.
     /// </summary>
-    public static bool IsContiguous(ReadOnlySpan<int> dimensions, ReadOnlySpan<int> strides)
+    public static bool IsContiguous(ReadOnlySpan<long> dimensions, ReadOnlySpan<long> strides)
     {
         return System.Collections.StructuralComparisons.StructuralEqualityComparer.Equals(GetStrides(dimensions), strides.ToArray());
     }
@@ -324,7 +358,7 @@ public static class TensorUtilities
     /// <summary>
     /// check the dimensions selected range is contiguous.
     /// </summary>
-    public static bool IsContiguousSlice(ReadOnlySpan<int> dimensions, ReadOnlySpan<System.Range> slices, out int contiguousStart)
+    public static bool IsContiguousSlice(ReadOnlySpan<long> dimensions, ReadOnlySpan<System.Range> slices, out int contiguousStart)
     {
         if (dimensions.Length != slices.Length)
         {
@@ -341,7 +375,7 @@ public static class TensorUtilities
             status = (end - start) switch
             {
                 // is full
-                int x when x == dimensions[i] => status switch
+                long x when x == dimensions[i] => status switch
                 {
                     SliceStatus.IsSlice => x == 1 ?
                                                     SliceStatus.IsSlice :
@@ -353,7 +387,7 @@ public static class TensorUtilities
                 },
 
                 // when has
-                int x when x > 0 && x < dimensions[i] => status switch
+                long x when x > 0 && x < dimensions[i] => status switch
                 {
                     SliceStatus.IsSlice => x == 1 ?
                                                 SliceStatus.IsSlice :
@@ -377,7 +411,7 @@ public static class TensorUtilities
         return true;
     }
 
-    public static bool IsContiguousSlice(ReadOnlySpan<int> dimensions, ReadOnlySpan<System.Range> slices) => IsContiguousSlice(dimensions, slices, out _);
+    public static bool IsContiguousSlice(ReadOnlySpan<long> dimensions, ReadOnlySpan<System.Range> slices) => IsContiguousSlice(dimensions, slices, out _);
 
     public static long[] ToLongs(this ReadOnlySpan<int> ints)
     {
@@ -397,7 +431,7 @@ public static class TensorUtilities
         var ints = new int[longs.Length];
         for (int i = 0; i < ints.Length; i++)
         {
-            ints[i] = (int)longs[i];
+            ints[i] = checked((int)longs[i]);
         }
 
         return ints;
@@ -405,7 +439,7 @@ public static class TensorUtilities
 
     public static int[] ToInts(this long[] longs) => ToInts((ReadOnlySpan<long>)longs);
 
-    public static long GetSize(Span<int> shapes, Span<int> strides, int elementSize)
+    public static long GetSize(Span<long> shapes, Span<long> strides, int elementSize)
     {
         long size = 0;
         for (int i = 0; i < shapes.Length; i++)
@@ -417,10 +451,10 @@ public static class TensorUtilities
         return size * elementSize;
     }
 
-    public static (long Size, int[] Strides) GetTensorSizeAndStrides(TensorType tensorType, DistributedType? distributedType)
+    public static (long Size, long[] Strides) GetTensorSizeAndStrides(TensorType tensorType, DistributedType? distributedType)
     {
-        int[] dims;
-        int[] strides;
+        long[] dims;
+        long[] strides;
         if (distributedType is null)
         {
             dims = tensorType.Shape.ToValueArray();
@@ -436,7 +470,7 @@ public static class TensorUtilities
         return (GetProduct(dims) * tensorType.DType.SizeInBytes, strides);
     }
 
-    public static (long Size, int[] Strides) GetTensorSizeAndStrides(IRType type)
+    public static (long Size, long[] Strides) GetTensorSizeAndStrides(IRType type)
         => type switch
         {
             TensorType tensorType => GetTensorSizeAndStrides(tensorType, null),

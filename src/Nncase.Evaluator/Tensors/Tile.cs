@@ -61,19 +61,18 @@ public class TileEvaluator : IEvaluator<Tile>, ITypeInferencer<Tile>, ICostEvalu
 
     private IRType Visit(ITypeInferenceContext context, Tile target, TensorType input, TensorType repeat)
     {
-        if (input.Shape.IsUnranked)
+        var inShape = input.Shape;
+        var repeats = context.GetArgument(target, Tile.Repeats);
+        if (repeats is TensorConst tc)
         {
-            return input;
+            var repeatsValue = tc.Value.ToArray<int>();
+            var shape = input.Shape.Zip(repeatsValue).Select(p => p.First * p.Second);
+            return input with { Shape = new Shape(shape) };
         }
-
-        if (context.GetArgument(target, Tile.Repeats) is TensorConst repeats && input.Shape.IsFixed)
+        else
         {
-            var shape = input.Shape.ToValueArray().Zip(repeats.Value.ToArray<int>()).Select(p => p.First * p.Second);
-            return input with { Shape = new Shape(shape.ToArray<int>()) };
+            var shape = input.Shape.Select((p, i) => p * repeats[i]);
+            return input with { Shape = new Shape(shape) };
         }
-
-        return new TensorType(
-            input.DType,
-            new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Rank)));
     }
 }

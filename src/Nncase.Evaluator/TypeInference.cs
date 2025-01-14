@@ -56,6 +56,27 @@ public static class TypeInference
         };
     }
 
+    public static TensorType CheckArgumentTensorTypeOrBroadcast(this ITypeInferenceContext context, Op op, ParameterInfo parameter, string? reason = null)
+    {
+        TensorType WrapperException(TensorType t)
+        {
+            try
+            {
+                return parameter.Pattern.Check(t, $"{op.GetType().Name}.{parameter.Name}");
+            }
+            catch (System.InvalidOperationException e)
+            {
+                throw new TypeInferenceInterruptException(new InvalidType(e.Message));
+            }
+        }
+
+        return context.GetArgumentType(op, parameter) switch
+        {
+            DistributedType d when d.NdSBP.All(x => x is SBPBroadCast) => WrapperException(d.TensorType),
+            IRType t => CheckArgumentType<TensorType>(context, op, parameter, reason),
+        };
+    }
+
     /// <summary>
     /// Throw <seealso cref="TypeInferenceInterruptException"/> if type is <seealso cref="AnyType"/> or <seealso cref="InvalidType"/>.
     /// </summary>
@@ -121,7 +142,7 @@ public static class TypeInference
                 var inExtend = outputRank - inShape.Rank;
                 var inDimIndex = dimIndex - inExtend;
                 var inDim = inDimIndex < 0 ? 1 : inShape[inDimIndex];
-                if (inDim is Dimension { Value: 0 })
+                if (inDim is Dimension { IsFixed: true, FixedValue: 0 })
                 {
                     return new InvalidType("Input dimension should not be 0.");
                 }
@@ -129,29 +150,33 @@ public static class TypeInference
                 inputDims[i] = inDim;
             }
 
-            if (inputDims.All(x => x.IsFixed))
+            var non1Dims = inputDims.Where(x => x.IsUnknown || x.FixedValue != 1).ToArray();
+            if (non1Dims.Length == 0)
             {
-                // 1. Sort descending
-                Array.Sort(inputDims, (a, b) => b.FixedValue.CompareTo(a.FixedValue));
-
-                // 2. Find first 1
-                var firstOneIndex = inputDims.IndexOf(1);
-                var expectedDim = inputDims[0];
-
-                // 3. Dims before 1 are all same or 1 is not found, it's ok to broadcast
-                if ((firstOneIndex == -1 && inputDims.AsValueEnumerable().Distinct().Count() == 1) ||
-                    ((firstOneIndex != -1) && inputDims[..firstOneIndex].AsValueEnumerable().All(x => x == expectedDim)))
-                {
-                    outputShape[dimIndex] = expectedDim;
-                }
-                else
-                {
-                    return new InvalidType("Inputs are not compatible to broadcast.");
-                }
+                outputShape[dimIndex] = 1;
             }
             else
             {
-                outputShape[dimIndex] = Dimension.Unknown;
+                var expectedDim = non1Dims[0];
+                if (non1Dims.Length == 1)
+                {
+                    outputShape[dimIndex] = expectedDim;
+                }
+                else if (non1Dims.All(x => x.IsFixed))
+                {
+                    if (non1Dims.All(x => x == expectedDim))
+                    {
+                        outputShape[dimIndex] = expectedDim;
+                    }
+                    else
+                    {
+                        return new InvalidType("Inputs are not compatible to broadcast.");
+                    }
+                }
+                else
+                {
+                    outputShape[dimIndex] = Dimension.Unknown(); // IR.F.Math.Max(non1Dims.Select(x => x.Value));
+                }
             }
         }
 
@@ -170,8 +195,7 @@ public static class TypeInference
 
         var outShape = input.Shape.ToList();
         outShape[1] = weights.Shape[0];
-        if (
-            stride is TensorConst strideValue &&
+        if (stride is TensorConst strideValue &&
             padding is TensorConst paddingValue &&
             dilation is TensorConst dilation_con &&
             groups is TensorConst groups_con &&
@@ -193,21 +217,22 @@ public static class TypeInference
             }
 
             outShape[2] = GetWindowedOutputSize(
-                input.Shape[2].FixedValue + ts_padding[0, 0] + ts_padding[0, 1],
-                weights.Shape[2].FixedValue,
+                (int)input.Shape[2].FixedValue + ts_padding[0, 0] + ts_padding[0, 1],
+                (int)weights.Shape[2].FixedValue,
                 ts_stride[0],
                 ts_dilation[0],
                 false);
             outShape[3] = GetWindowedOutputSize(
-                input.Shape[3].FixedValue + ts_padding[1, 0] + ts_padding[1, 1],
-                weights.Shape[3].FixedValue,
+                (int)input.Shape[3].FixedValue + ts_padding[1, 0] + ts_padding[1, 1],
+                (int)weights.Shape[3].FixedValue,
                 ts_stride[1],
                 ts_dilation[1],
                 false);
         }
         else
         {
-            outShape[2] = outShape[3] = Dimension.Unknown;
+            // outShape[2] = outShape[3] = Dimension.Unknown;
+            throw new NotImplementedException();
         }
 
         return input with { Shape = new Shape(outShape) };
@@ -236,7 +261,7 @@ public static class TypeInference
         {
             var tpads = paddings.Value.Cast<int>();
             var newShape = input.Shape.ToList();
-            int channel = tpads.Dimensions[0];
+            int channel = (int)tpads.Dimensions[0];
             for (int i = 0; i < channel; i++)
             {
                 newShape[newShape.Count - channel + i] += tpads[i, 0] + tpads[i, 1];
@@ -274,11 +299,11 @@ public static class TypeInference
             var padh = ts_padding[0, 0] + ts_padding[0, 1];
             var padw = ts_padding[1, 0] + ts_padding[1, 1];
             outShape[2] = input.Shape[2].IsUnknown
-                ? Dimension.Unknown
-                : GetWindowedOutputSize(input.Shape[2].FixedValue + padh, ts_filter[0], ts_stride[0], 1, false, ceilModeV);
+                ? throw new NotImplementedException()
+                : GetWindowedOutputSize((int)input.Shape[2].FixedValue + padh, ts_filter[0], ts_stride[0], 1, false, ceilModeV);
             outShape[3] = input.Shape[3].IsUnknown
-                ? Dimension.Unknown
-                : GetWindowedOutputSize(input.Shape[3].FixedValue + padw, ts_filter[1], ts_stride[1], 1, false, ceilModeV);
+                ? throw new NotImplementedException()
+                : GetWindowedOutputSize((int)input.Shape[3].FixedValue + padw, ts_filter[1], ts_stride[1], 1, false, ceilModeV);
 
             return input with { Shape = new Shape(outShape) };
         }
@@ -429,6 +454,7 @@ public static class TypeInference
         }
         else
         {
+#if false
             switch (out_shape.Length)
             {
                 case 2 or 3:
@@ -440,6 +466,8 @@ public static class TypeInference
                     out_shape[^1] = Dimension.Unknown;
                     break;
             }
+#endif
+            throw new NotImplementedException();
         }
 
         // for roi amount.
@@ -454,21 +482,7 @@ public static class TypeInference
     /// <summary>
     /// input x is -1?.
     /// </summary>
-    public static bool IsMinus1(int x) => x == -1;
-
-    public static Shape ReshapeTo(TensorType tensorType)
-    {
-        var shape = tensorType.Shape;
-        if (shape.IsRanked && shape[0].IsFixed)
-        {
-            Trace.Assert(shape.Count != 0);
-            return Shape.Unknown(shape[0].FixedValue);
-        }
-        else
-        {
-            return Shape.Unranked;
-        }
-    }
+    public static bool IsMinus1(long x) => x == -1;
 
     /// <summary>
     /// Infer CommonType for inputs.

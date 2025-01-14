@@ -23,6 +23,8 @@ public interface ITypeInferenceContext
     /// <returns>The argument expression.</returns>
     Expr GetArgument(Op op, ParameterInfo parameter);
 
+    Expr GetDimensionArgument(Op op, ParameterInfo parameter) => CompilerServices.SimplifyForDimension(GetArgument(op, parameter));
+
     /// <summary>
     /// Get arguments expression.
     /// </summary>

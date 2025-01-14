@@ -267,10 +267,10 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
     /// <inheritdoc/>
     public override string VisitType(TensorType type) => type.DType switch
     {
-        PrimType ptype => ptype.GetDisplayName() + (type.Shape.IsScalar ? string.Empty : type.Shape.ToString()),
+        PrimType ptype => ptype.GetDisplayName() + (type.Shape.IsScalar ? string.Empty : VisitShape(type.Shape)),
         PointerType { ElemType: PrimType etype } => $"*{etype.GetDisplayName()}",
         ValueType => $"{type.DType}",
-        VectorType vtype => $"{vtype.ElemType.GetDisplayName()}<{string.Join(",", vtype.Lanes)}>" + (type.Shape.IsScalar ? string.Empty : type.Shape.ToString()),
+        VectorType vtype => $"{vtype.ElemType.GetDisplayName()}<{string.Join(",", vtype.Lanes)}>" + (type.Shape.IsScalar ? string.Empty : VisitShape(type.Shape)),
         _ => throw new NotSupportedException(type.DType.GetType().Name),
     };
 
@@ -705,6 +705,23 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         _names.Add(expr, name);
         return name;
     }
+
+    private string VisitShape(Shape shape) =>
+        shape.Kind switch
+        {
+            ShapeKind.Invalid => "Invalid",
+            ShapeKind.Unranked => "Unranked",
+            _ => $"[{string.Join(',', shape.Select(VisitDimension))}]",
+        };
+
+    private string VisitDimension(Dimension dimension) =>
+        dimension.Kind switch
+        {
+            DimensionKind.Any => "any",
+            DimensionKind.Fixed => dimension.FixedValue.ToString(),
+            DimensionKind.Unknown => dimension.Value is Var var ? $"%{var.Name}" : "?",
+            _ => throw new NotSupportedException(dimension.Kind.ToString()),
+        };
 
     private void AppendCheckedType(IRType? type, string end = "", bool hasNewLine = true)
     {

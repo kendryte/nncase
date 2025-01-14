@@ -50,16 +50,6 @@ public sealed partial class BroadcastEvaluator : IEvaluator<Broadcast>, ITypeInf
     private IRType Visit(TensorType input, TensorType shape, ITypeInferenceContext context, Broadcast op)
     {
         var shapeValue = context.GetArgument(op, Broadcast.Shape);
-        if (shapeValue is TensorConst constShapeValue && input.Shape.IsFixed)
-        {
-            return TypeInference.BroadcastType(input, new TensorType(input.DType, constShapeValue.Value.ToArray<int>()));
-        }
-
-        if (shape.Shape[0].IsFixed)
-        {
-            return input with { Shape = Enumerable.Repeat(Dimension.Unknown, shape.Shape[0].FixedValue).ToArray() };
-        }
-
-        return input with { Shape = IR.Shape.Unranked };
+        return TypeInference.BroadcastType(input, new TensorType(input.DType, Shape.FromExpr(shapeValue)));
     }
 }

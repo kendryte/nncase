@@ -42,9 +42,9 @@ public partial class NcnnImporter
             1 => (ReduceOp.Mean, 0f),
             _ => throw new NotSupportedException($"Unsupported pooling type: {poolingType}."),
         };
-        var filter = Tensor.From(new[] { kernelH, kernelW }, new[] { 2 });
-        var stride = Tensor.From(new[] { strideH, strideW }, new[] { 2 });
-        var dilation = Tensor.FromScalar(0, new[] { 2, 2 });
+        var filter = Tensor.From(new[] { kernelH, kernelW }, [2]);
+        var stride = Tensor.From(new[] { strideH, strideW }, [2]);
+        var dilation = Tensor.FromScalar(0, [2, 2]);
 
         if (globalPooling)
         {
@@ -52,7 +52,7 @@ public partial class NcnnImporter
         }
         else if (adaptivePooling)
         {
-            var padding = Tensor.FromScalar(0, new[] { 2, 2 });
+            var padding = Tensor.FromScalar(0, [2, 2]);
             var inShape = Tensors.ShapeOf(input);
             var w = inShape[3];
             var h = inShape[2];

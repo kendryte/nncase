@@ -147,12 +147,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
                     }
 
                     var d = GetTensorType(inType).Shape[i];
-                    if (d.IsUnknown)
-                    {
-                        return Dimension.Unknown;
-                    }
-
-                    if (d.FixedValue != GetTensorType(inputs[0]).Shape[i])
+                    if (d.IsFixed && d.FixedValue != GetTensorType(inputs[0]).Shape[i])
                     {
                         allAxisDimIsSame = false;
                     }
@@ -165,7 +160,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
                 else
                 {
                     invalidType = new InvalidType("Concat dims that except the shape of axis dim are different");
-                    return Dimension.Unknown;
+                    return -1;
                 }
             }
         });
@@ -227,18 +222,8 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
     // else get sum of dims
     private Dimension AxisDim(TupleType inputs, int axisValue)
     {
-        var allAxisDimIsFixed = inputs.Fields.Aggregate(
-            true,
-            (prod, next) => prod && (next switch { TensorType t => t, DistributedType d => d.TensorType, _ => throw new NotSupportedException() }).Shape[axisValue].IsFixed);
-        if (allAxisDimIsFixed)
-        {
-            return inputs.Fields.Aggregate(
-                0,
-                (prod, next) => prod + (next switch { TensorType t => t, DistributedType d => d.TensorType, _ => throw new NotSupportedException() }).Shape[axisValue].FixedValue);
-        }
-        else
-        {
-            return Dimension.Unknown;
-        }
+        return inputs.Fields.Aggregate(
+            (Dimension)0,
+            (prod, next) => prod + (next switch { TensorType t => t, DistributedType d => d.TensorType, _ => throw new NotSupportedException() }).Shape[axisValue].Value);
     }
 }

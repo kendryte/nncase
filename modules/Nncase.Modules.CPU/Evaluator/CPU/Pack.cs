@@ -35,7 +35,7 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
 
             var output = Cast(inputOrt.ToTensor(), context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType).Evaluate().AsTensor();
 
-            return Value.FromTensor(Tensor.FromBytes(new VectorType(output.ElementType, target.Lanes), output.BytesBuffer.ToArray(), inputOrt.Shape.SkipLast(target.Lanes.Count).Select(i => (int)i).ToArray()));
+            return Value.FromTensor(Tensor.FromBytes(new VectorType(output.ElementType, target.Lanes), output.BytesBuffer.ToArray(), inputOrt.Shape.SkipLast(target.Lanes.Count).Select(i => i).ToArray()));
         }
         else
         {

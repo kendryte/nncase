@@ -267,10 +267,10 @@ public sealed class UnitTestShape
     public void TestToValueList()
     {
         int index = 1;
-        var items = new int[] { 3, 2 };
+        var items = new long[] { 3, 2 };
         var dimensions = new Dimension[] { 3, 2 };
-        var a = new int[] { 1, 2 };
-        List<int> expected = new();
+        var a = new long[] { 1, 2 };
+        List<long> expected = new();
         expected.AddRange(a);
         expected.InsertRange(index, items);
 
@@ -283,10 +283,10 @@ public sealed class UnitTestShape
     public void TestToValueArray()
     {
         int index = 1;
-        var items = new int[] { 3, 2 };
+        var items = new long[] { 3, 2 };
         var dimensions = new Dimension[] { 3, 2 };
-        var a = new int[] { 1, 2 };
-        List<int> list = new();
+        var a = new long[] { 1, 2 };
+        List<long> list = new();
         list.AddRange(a);
         list.InsertRange(index, items);
         var expected = list.ToArray();

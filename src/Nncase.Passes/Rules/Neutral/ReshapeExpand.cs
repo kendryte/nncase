@@ -52,7 +52,8 @@ public partial class ReshapeExpand : RewriteRule<Pattern>
             newShape.Add(dim);
         }
 
-        if (newShape.Count == shape.Length) // No 1 exists
+        // No 1 exists
+        if (newShape.Count == shape.Length)
         {
             return null;
         }

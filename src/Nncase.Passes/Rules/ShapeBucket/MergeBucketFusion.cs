@@ -24,13 +24,6 @@ using Tuple = Nncase.IR.Tuple;
 namespace Nncase.Passes.Rules.ShapeBucket;
 
 #if true
-internal sealed class EffectVarEqualityComparer : IEqualityComparer<Var[]>
-{
-    public bool Equals(Var[]? x, Var[]? y) => System.Collections.StructuralComparisons.StructuralEqualityComparer.Equals(x, y);
-
-    public int GetHashCode([DisallowNull] Var[] obj) => System.Collections.StructuralComparisons.StructuralEqualityComparer.GetHashCode(obj);
-}
-
 public sealed class MergeBucketFusionPass : FunctionPass
 {
     protected override Task<BaseFunction> RunCoreAsync(BaseFunction baseFunction, RunPassContext context)
@@ -146,9 +139,16 @@ public sealed class MergeBucketFusionPass : FunctionPass
             }
         }
 
-        var post = pre.With(pre.Name, exprMemo[pre.Body], pre.Parameters.ToArray());
+        var post = pre.With(name: pre.Name, body: exprMemo[pre.Body], parameters: pre.Parameters.ToArray());
         return post;
     }
+}
+
+internal sealed class EffectVarEqualityComparer : IEqualityComparer<Var[]>
+{
+    public bool Equals(Var[]? x, Var[]? y) => System.Collections.StructuralComparisons.StructuralEqualityComparer.Equals(x, y);
+
+    public int GetHashCode([DisallowNull] Var[] obj) => System.Collections.StructuralComparisons.StructuralEqualityComparer.GetHashCode(obj);
 }
 
 internal sealed class SubFusionCloner : ExprCloner<Unit>

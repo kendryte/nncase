@@ -140,9 +140,9 @@ unary(typecode_t dtype, runtime::stackvm::unary_op_t op, const std::byte *in,
       kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
-matmul(typecode_t typecode, const gsl::byte *input_a, const gsl::byte *input_b,
-    gsl::byte *output, gsl::span<const size_t> in_a_shape,
-    gsl::span<const size_t> in_b_shape,
+matmul(typecode_t typecode, const std::byte *input_a, const std::byte *input_b,
+    std::byte *output, std::span<const size_t> in_a_shape,
+    std::span<const size_t> in_b_shape,
     [[maybe_unused]] kernel_context &context) noexcept;
 
 // template <typename T>

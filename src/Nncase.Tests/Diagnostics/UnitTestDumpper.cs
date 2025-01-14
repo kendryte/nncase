@@ -187,7 +187,7 @@ public sealed class UnitTestDumpper : TestClassBase
     [Fact]
     public void TestDumperCSharpIRFunction()
     {
-        var x = IR.F.Math.Quantize(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), Tensor.From<QuantParam>(new QuantParam[] { new(1, 2.0f), new(2, 3.0f) }, new[] { 2 }), DataTypes.UInt8);
+        var x = IR.F.Math.Quantize(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), Tensor.From<QuantParam>(new QuantParam[] { new(1, 2.0f), new(2, 3.0f) }, [2]), DataTypes.UInt8);
         var y = new Var("y", new TensorType(DataTypes.UInt8, new int[] { 1, 2, 2, 2 }));
         var z = IR.F.Random.Normal(DataTypes.UInt8, 0, 1, 0, new[] { 1, 2, 2, 2 });
         var m = IR.F.Random.Normal(DataTypes.UInt8, 0, 1, 0, new[] { 1, 20, 2, 2 });

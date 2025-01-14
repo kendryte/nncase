@@ -24,8 +24,8 @@ public class UninitializedEvaluator : IEvaluator<Uninitialized>, ITypeInferencer
         }
         else
         {
-            var shape = context.CheckArgumentType<TensorType>(target, Uninitialized.Shape);
-            tensorType = new TensorType(target.DType, new(Enumerable.Repeat(Dimension.Unknown, shape.Shape[0].FixedValue)));
+            var shape = context.GetArgument(target, Uninitialized.Shape);
+            tensorType = new TensorType(target.DType, Shape.FromExpr(shape));
         }
 
         return target.Placement.Rank == 0 ? tensorType : new DistributedType(tensorType, target.NdSBP, target.Placement);

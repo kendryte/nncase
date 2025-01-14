@@ -254,5 +254,5 @@ public sealed record VectorType(DataType ElemType, IR.IRArray<int> Lanes) : Data
         _ => throw new NotSupportedException(),
     };
 
-    public override int SizeInBytes => ElemType.SizeInBytes * (int)TensorUtilities.GetProduct(Lanes.ToArray());
+    public override int SizeInBytes => ElemType.SizeInBytes * (int)TensorUtilities.GetProduct(TensorUtilities.ToLongs(Lanes.ToArray()));
 }

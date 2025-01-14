@@ -78,10 +78,10 @@ public partial class NcnnImporter
             paddingW = new Expr[] { padLeft, padRight };
         }
 
-        var stride = Tensor.From(new[] { strideH, strideW }, new[] { 2 });
-        var dilation = Tensor.From(new[] { dilationH, dilationW }, new[] { 2 });
+        var stride = Tensor.From(new[] { strideH, strideW }, [2]);
+        var dilation = Tensor.From(new[] { dilationH, dilationW }, [2]);
         var clampRange = ToFloatClampRange(activationType, activationParams);
-        var clamp = Tensor.From(new[] { clampRange.Min, clampRange.Max }, new[] { 2 });
+        var clamp = Tensor.From(new[] { clampRange.Min, clampRange.Max }, [2]);
         var padding = Util.ConcatPadding(paddingH, paddingW);
         var weights = _modelBin.LoadFloat32(new[] { numOutput, numInput, kernelH, kernelW }, true);
         var bias = biasTerm != 0 ? _modelBin.LoadFloat32(new[] { numOutput }, false) : Tensor.FromScalar(0f, numOutput);

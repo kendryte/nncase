@@ -83,12 +83,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
             VerifySubField(expr, r, TypePatternUtility.IsIntegralScalar());
         }
 
-        var type = new TensorType(expr.ElemType, expr.Dimensions.AsValueEnumerable().Select(e => e switch
-        {
-            TensorConst { Value: { Shape: { IsScalar: true } } t } => new Dimension(t.ToScalar<int>()),
-            _ => Dimension.Unknown,
-        }).ToArray());
-
+        var type = new TensorType(expr.ElemType, new Shape(expr.Dimensions));
         return type;
     }
 

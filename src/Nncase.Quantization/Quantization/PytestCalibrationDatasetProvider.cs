@@ -58,7 +58,7 @@ public sealed class PytestCalibrationDatasetProvider : ICalibrationDatasetProvid
                 {
                     case TensorType tensorType:
                         {
-                            int[] shape = Array.Empty<int>();
+                            long[] shape = Array.Empty<long>();
                             if (tensorType.Shape.IsFixed)
                             {
                                 shape = tensorType.Shape.ToValueArray();
@@ -113,17 +113,17 @@ public sealed class PytestCalibrationDatasetProvider : ICalibrationDatasetProvid
     {
         public string FileName => $"{Name}_{InputIndex}_{Number}.bin";
 
-        public int[] GetShape()
+        public long[] GetShape()
         {
             using var stream = File.OpenRead($"{Name}_{InputIndex}_{Number}.txt");
             using var reader = new StreamReader(stream);
             var line = reader.ReadLine();
-            int[] shape = Array.Empty<int>();
+            long[] shape = Array.Empty<long>();
             if (line is string shapeString)
             {
                 string pattern = @"\d+";
                 MatchCollection matches = Regex.Matches(shapeString, pattern);
-                shape = matches.Select(m => int.Parse(m.Value)).ToArray();
+                shape = matches.Select(m => long.Parse(m.Value)).ToArray();
             }
 
             return shape;

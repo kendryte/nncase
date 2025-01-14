@@ -75,7 +75,7 @@ public static class Testing
     /// <summary>
     /// create the rand value by gived datatype.
     /// </summary>
-    public static Tensor Rand(DataType dataType, params int[] shape)
+    public static Tensor Rand(DataType dataType, params long[] shape)
     {
         return IR.F.Random.Normal(dataType, 0, 1, 1, shape).Evaluate().AsTensor();
     }
@@ -100,7 +100,7 @@ public static class Testing
     /// <summary>
     /// create the seq value by gived datatype.
     /// </summary>
-    public static Tensor<T> Seq<T>(params int[] shape)
+    public static Tensor<T> Seq<T>(params long[] shape)
         where T : unmanaged, IEquatable<T>
     {
         return Tensor.FromArray(Enumerable.Range(0, (int)TensorUtilities.GetProduct(shape)).ToArray())

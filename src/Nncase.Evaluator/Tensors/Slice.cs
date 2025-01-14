@@ -43,10 +43,10 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     public IRType Visit(ITypeInferenceContext context, Slice target)
     {
         var input = context.CheckArgumentType<IRType>(target, Slice.Input);
-        context.CheckArgumentType<TensorType>(target, Slice.Begins);
-        context.CheckArgumentType<TensorType>(target, Slice.Ends);
-        context.CheckArgumentType<TensorType>(target, Slice.Axes);
-        context.CheckArgumentType<TensorType>(target, Slice.Strides);
+        context.CheckArgumentTensorTypeOrBroadcast(target, Slice.Begins);
+        context.CheckArgumentTensorTypeOrBroadcast(target, Slice.Ends);
+        context.CheckArgumentTensorTypeOrBroadcast(target, Slice.Axes);
+        context.CheckArgumentTensorTypeOrBroadcast(target, Slice.Strides);
         return input switch
         {
             TensorType t => Visit(context, target, t),
@@ -117,7 +117,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     /// <param name="axisConst">Axis.</param>
     /// <param name="input">Input type.</param>
     /// <param name="f">(index in axis, axis, inDim) -> outDim.</param>
-    private Shape ApplyAxis(TensorConst axisConst, TensorType input, Func<int, int, int, Dimension> f)
+    private Shape ApplyAxis(TensorConst axisConst, TensorType input, Func<int, int, Dimension, Dimension> f)
     {
         if (input.Shape.IsUnranked)
         {
@@ -132,9 +132,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
             var axis = axisV < 0
                 ? axisV + input.Shape.Rank
                 : axisV;
-            outShape[axis] = input.Shape[axis].IsFixed
-                ? f(i, axis, input.Shape[axis].FixedValue)
-                : Dimension.Unknown;
+            outShape[axis] = f(i, axis, input.Shape[axis]);
         }
 
         return outShape;
@@ -197,29 +195,27 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
                         {
                             // document in onnx operators:
                             // for positive stepping and [0, dims[axes[i]]-1] for negative stepping.
-                            var begin = ts_begins[i] < 0 ? inDim + ts_begins[i] : System.Math.Clamp(ts_begins[i], 0L, inDim - 1);
+                            var begin = ts_begins[i] < 0 ? inDim + ts_begins[i] : Dimension.Clamp(ts_begins[i], 0L, inDim - 1);
 
                             // while for negative stepping it is clamped to [-1, dims[axes[i]]-1].
-                            var end = ts_ends[i] == long.MinValue + 1 ? -1 : (ts_ends[i] < 0 ? ts_ends[i] + inDim : System.Math.Clamp(ts_ends[i], -1L, inDim));
-                            return (int)System.Math.Ceiling((float)System.Math.Abs(end - begin) /
-                                                                System.Math.Abs(stride));
+                            var end = ts_ends[i] == long.MinValue + 1 ? -1 : (ts_ends[i] < 0 ? ts_ends[i] + inDim : Dimension.Clamp(ts_ends[i], -1L, inDim));
+                            return Dimension.CeilDiv(Dimension.Abs(end - begin), Dimension.Abs(stride));
                         }
                         else
                         {
                             // starts[i] is clamped into the range [0, dims[axes[i]]]
-                            var begin = ts_begins[i] < 0 ? inDim + ts_begins[i] : System.Math.Clamp(ts_begins[i], 0L, inDim);
+                            var begin = ts_begins[i] < 0 ? inDim + ts_begins[i] : Dimension.Clamp(ts_begins[i], 0L, inDim);
 
                             // end[i] is clamped into the range [0, dims[axes[i]]]
-                            var end = ts_ends[i] < 0 ? inDim + ts_ends[i] : System.Math.Clamp(ts_ends[i], 0L, inDim);
-                            return (int)System.Math.Ceiling((float)System.Math.Abs(end - begin) /
-                                                            System.Math.Abs(stride));
+                            var end = ts_ends[i] < 0 ? inDim + ts_ends[i] : Dimension.Clamp(ts_ends[i], 0L, inDim);
+                            return Dimension.CeilDiv(Dimension.Abs(end - begin), Dimension.Abs(stride));
                         }
                     });
-                    return input with { Shape = outShape };
                 }
                 else
                 {
-                    outShape = ApplyAxis(axes_con, input, (i, axis, inDim) => Dimension.Unknown);
+                    // outShape = ApplyAxis(axes_con, input, (i, axis, inDim) => Dimension.Unknown);
+                    outShape = Shape.Unknown(input.Shape.Rank);
                 }
             }
             else

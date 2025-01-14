@@ -78,8 +78,8 @@ public static class DataGenerator
         var input = Random.Normal(DataTypes.Float32, new[] { 1, 3, 24, 32 });
         var weights = Random.Normal(DataTypes.Float32, new[] { 16, 3, 3, 3 }).Evaluate();
         var bias = Random.Normal(DataTypes.Float32, new[] { 16 }).Evaluate();
-        var stride = Tensor.From(new[] { 1, 1 }, new[] { 2 });
-        var dilation = Tensor.From(new[] { 1, 1 }, new[] { 2 });
+        var stride = Tensor.From(new[] { 1, 1 }, [2]);
+        var dilation = Tensor.From(new[] { 1, 1 }, [2]);
         var padding = new[,]
         {
             { 0, 1 },
@@ -208,7 +208,7 @@ public static class DataGenerator
     // data[1]
     // ...
     // data[n]
-    private static (DataType DataType, int[] Shape, string[] Data, int EndIndex) ParseDumpFile(string[] content, int baseIndex)
+    private static (DataType DataType, long[] Shape, string[] Data, int EndIndex) ParseDumpFile(string[] content, int baseIndex)
     {
         var dtIndex = baseIndex;
         var shapeIndex = baseIndex + 1;
@@ -249,20 +249,20 @@ public static class DataGenerator
 
     // format
     // shape: x x x x
-    private static int[] ParseShape(string shapeStr)
+    private static long[] ParseShape(string shapeStr)
     {
         var s = shapeStr.TrimEnd().Split(":")[1];
         if (s == "scalar")
         {
-            return Array.Empty<int>();
+            return Array.Empty<long>();
         }
 
-        return s.Split(" ").Select(x => int.Parse(x)).ToArray();
+        return s.Split(" ").Select(x => long.Parse(x)).ToArray();
     }
 
     private static DataType ParseDataType(string dt) => DataType.FromTypeCode((Runtime.TypeCode)int.Parse(dt.Split(":")[1]));
 
-    private record DumpData(DataType Dt, int[] Shape, string[] Data)
+    private record DumpData(DataType Dt, long[] Shape, string[] Data)
     {
     }
 }

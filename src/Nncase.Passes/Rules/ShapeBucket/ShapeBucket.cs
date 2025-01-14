@@ -1035,6 +1035,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         var call = MakeNewBody(context, varInfo, newVars, segIndex);
 
         var slice = MakeSlice(context, call, originBody, sliceShapeVar);
+
         // return sameOpt
         //     ? new If(sameCond, call, slice)
         //     : slice;

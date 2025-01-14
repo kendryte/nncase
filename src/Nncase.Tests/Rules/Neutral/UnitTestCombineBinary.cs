@@ -40,9 +40,9 @@ public class UnitTestCombineBinary
             };
             var clampShapes = new object[]
             {
-              Array.Empty<int>(),
-              new[] { 32 },
-              new[] { 24, 24, 32 },
+              Array.Empty<long>(),
+              new long[] { 32 },
+              new long[] { 24, 24, 32 },
             };
             var mins = new object[]
             {
@@ -58,8 +58,8 @@ public class UnitTestCombineBinary
                 {
                 p[0],
                 p[1],
-                Tensor.FromScalar<float>((float)p[3],  (int[])p[2]), // min
-                Tensor.FromScalar<float>((float)p[4],  (int[])p[2]), // max
+                Tensor.FromScalar<float>((float)p[3],  (long[])p[2]), // min
+                Tensor.FromScalar<float>((float)p[4],  (long[])p[2]), // max
                 });
         }
     }

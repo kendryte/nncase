@@ -406,15 +406,15 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     {
         if (!_context.ConstSymbols.TryGetValue(expr, out var buffer))
         {
-            buffer = WriteRdata(tensor.BytesBuffer, _alignment);
+            buffer = WriteRdata(tensor, _alignment);
             _context.ConstSymbols.Add(expr, buffer);
         }
 
         // stack: dtype shape strides buffer
         var snippet = BeginTextSnippet(expr);
         LeaGp(_rdataGpid, buffer);
-        LdStrides(tensor.Strides);
-        LdShape(tensor.Dimensions);
+        LdStrides(tensor.Strides.ToInts());
+        LdShape(tensor.Dimensions.ToInts());
         LdDataType(tensor.ElementType);
         Emitter.LdTensor();
         return snippet;

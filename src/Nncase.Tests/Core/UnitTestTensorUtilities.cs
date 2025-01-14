@@ -16,104 +16,104 @@ public sealed class UnitTestTensorUtilities
         new[]
         {
             new object[] { 23, new int[] { 24, 12, 4, 1 }, new int[] { 0, 1, 2, 3 }, 0 },
-            new object[] { 23, new int[] { 24, 12, 4, 1 }, new int[] { 0, 1, 2, 3 }, 1 },
-            new object[] { 11, new int[] { 24, 12, 4, 1 }, new int[] { 0, 1, 2, 3 }, 2 },
-            new object[] { 3, new int[] { 24, 12, 4, 1 }, new int[] { 0, 1, 2, 3 }, 3 },
+            [23, new int[] { 24, 12, 4, 1 }, new int[] { 0, 1, 2, 3 }, 1],
+            [11, new int[] { 24, 12, 4, 1 }, new int[] { 0, 1, 2, 3 }, 2],
+            [3, new int[] { 24, 12, 4, 1 }, new int[] { 0, 1, 2, 3 }, 3],
         };
 
     public static unsafe IEnumerable<object[]> TestGetIndexOverload2Data =>
         new[]
         {
             new object[] { 23, new Expr[] { 24, 12, 4, 1 }, new Expr[] { 0, 1, 2, 3 }, 0 },
-            new object[] { 23, new Expr[] { 24, 12, 4, 1 }, new Expr[] { 0, 1, 2, 3 }, 1 },
-            new object[] { 11, new Expr[] { 24, 12, 4, 1 }, new Expr[] { 0, 1, 2, 3 }, 2 },
-            new object[] { 3, new Expr[] { 24, 12, 4, 1 }, new Expr[] { 0, 1, 2, 3 }, 3 },
+            [23, new Expr[] { 24, 12, 4, 1 }, new Expr[] { 0, 1, 2, 3 }, 1],
+            [11, new Expr[] { 24, 12, 4, 1 }, new Expr[] { 0, 1, 2, 3 }, 2],
+            [3, new Expr[] { 24, 12, 4, 1 }, new Expr[] { 0, 1, 2, 3 }, 3],
         };
 
     public static unsafe IEnumerable<object[]> TestSplitStridesData =>
         new[]
         {
             new object[] { new int[] { 24, 12, 4, 1 }, Array.Empty<int>(), new int[] { 24, 12, 4, 1 }, Array.Empty<int>(), new int[4], 0, Array.Empty<int>(), 0 },
-            new object[] { new int[] { 12, 4, 1 }, new int[] { 24 }, new int[] { 24, 12, 4, 1 }, new int[] { 0 }, new int[3], 0, new int[1], 0 },
-            new object[] { new int[] { 24, 4, 1 }, new int[] { 12 }, new int[] { 24, 12, 4, 1 }, new int[] { 1 }, new int[3], 0, new int[1], 0 },
-            new object[] { new int[] { 24, 12, 1 }, new int[] { 4 }, new int[] { 24, 12, 4, 1 }, new int[] { 2 }, new int[3], 0, new int[1], 0 },
-            new object[] { new int[] { 24, 12, 4 }, new int[] { 1 }, new int[] { 24, 12, 4, 1 }, new int[] { 3 }, new int[3], 0, new int[1], 0 },
-            new object[] { new int[] { 4, 1, }, new int[] { 24, 12 }, new int[] { 24, 12, 4, 1 }, new int[] { 0, 1 }, new int[2], 0, new int[2], 0 },
-            new object[] { new int[] { 12, 1 }, new int[] { 24, 4 }, new int[] { 24, 12, 4, 1 }, new int[] { 0, 2 }, new int[2], 0, new int[2], 0 },
-            new object[] { Array.Empty<int>(), new int[] { 24, 12, 4, 1 }, new int[] { 24, 12, 4, 1 }, new int[] { 0, 1, 2, 3 }, Array.Empty<int>(), 0, new int[4], 0 },
+            [new int[] { 12, 4, 1 }, new int[] { 24 }, new int[] { 24, 12, 4, 1 }, new int[] { 0 }, new int[3], 0, new int[1], 0],
+            [new int[] { 24, 4, 1 }, new int[] { 12 }, new int[] { 24, 12, 4, 1 }, new int[] { 1 }, new int[3], 0, new int[1], 0],
+            [new int[] { 24, 12, 1 }, new int[] { 4 }, new int[] { 24, 12, 4, 1 }, new int[] { 2 }, new int[3], 0, new int[1], 0],
+            [new int[] { 24, 12, 4 }, new int[] { 1 }, new int[] { 24, 12, 4, 1 }, new int[] { 3 }, new int[3], 0, new int[1], 0],
+            [new int[] { 4, 1, }, new int[] { 24, 12 }, new int[] { 24, 12, 4, 1 }, new int[] { 0, 1 }, new int[2], 0, new int[2], 0],
+            [new int[] { 12, 1 }, new int[] { 24, 4 }, new int[] { 24, 12, 4, 1 }, new int[] { 0, 2 }, new int[2], 0, new int[2], 0],
+            [Array.Empty<int>(), new int[] { 24, 12, 4, 1 }, new int[] { 24, 12, 4, 1 }, new int[] { 0, 1, 2, 3 }, Array.Empty<int>(), 0, new int[4], 0],
         };
 
     public static unsafe IEnumerable<object[]> TestTransformIndexByStridesData =>
         new[]
         {
-            new object[] { 4, 20, new int[] { 24, 12, 4, 1 }, false, new int[] { 6, 2, 1, 1 } },
-            new object[] { 5, 20, new int[] { 1, 4, 12, 24 }, true, new int[] { 6, 2, 1, 1 } },
+            new object[] { 4, 20, new long[] { 24, 12, 4, 1 }, false, new long[] { 6, 2, 1, 1 } },
+            [5, 20, new long[] { 1, 4, 12, 24 }, true, new long[] { 6, 2, 1, 1 }],
         };
 
     [Fact]
     public void TestIsContiguousSlice()
     {
-        var dim1 = new[] { 1, 512, 14, 14 };
+        var dim1 = new long[] { 1, 512, 14, 14 };
         int start;
         Assert.True(TensorUtilities.IsContiguousSlice(
           dim1,
-          new[] { 0..1, 0..512, 0..14, 0..14 },
+          [0..1, 0..512, 0..14, 0..14],
           out start));
         Assert.Equal(0, start);
 
         Assert.True(TensorUtilities.IsContiguousSlice(
           dim1,
-          new[] { 0..1, 0..1, 0..1, 0..14 },
+          [0..1, 0..1, 0..1, 0..14],
           out start));
         Assert.Equal(0, start);
 
         Assert.True(TensorUtilities.IsContiguousSlice(
           dim1,
-          new[] { 0..1, 0..1, 0..1, 7..14 },
+          [0..1, 0..1, 0..1, 7..14],
           out start));
         Assert.Equal(0, start);
 
         Assert.True(TensorUtilities.IsContiguousSlice(
           dim1,
-          new[] { 0..1, 0..1, 7..14, 0..14 },
+          [0..1, 0..1, 7..14, 0..14],
           out start));
         Assert.Equal(0, start);
 
         Assert.False(TensorUtilities.IsContiguousSlice(
           dim1,
-          new[] { 0..1, 0..512, 0..7, 0..14 },
+          [0..1, 0..512, 0..7, 0..14],
           out start));
         Assert.Equal(2, start);
 
         Assert.False(TensorUtilities.IsContiguousSlice(
             dim1,
-            new[] { 0..1, 0..512, 0..7, 0..14, 0..1 },
+            [0..1, 0..512, 0..7, 0..14, 0..1],
             out start));
         Assert.Equal(4, start);
 
         Assert.False(TensorUtilities.IsContiguousSlice(
           dim1,
-          new[] { 0..1, 10..512, 0..1, 0..1 },
+          [0..1, 10..512, 0..1, 0..1],
           out start));
         Assert.Equal(2, start);
 
         Assert.False(TensorUtilities.IsContiguousSlice(
           dim1,
-          new[] { 0..1, 0..512, 0..7, 0..1 },
+          [0..1, 0..512, 0..7, 0..1],
           out start));
         Assert.Equal(3, start);
 
-        var dim2 = new[] { 1, 512, 1, 196 };
+        var dim2 = new long[] { 1, 512, 1, 196 };
 
         Assert.True(TensorUtilities.IsContiguousSlice(
               dim2,
-              new[] { 0..1, 0..128, 0..1, 0..196 },
+              [0..1, 0..128, 0..1, 0..196],
               out start));
         Assert.Equal(0, start);
 
         Assert.True(TensorUtilities.IsContiguousSlice(
               dim2,
-              new[] { 0..1, 0..1, 0..1, 10..15 },
+              [0..1, 0..1, 0..1, 10..15],
               out start));
         Assert.Equal(0, start);
     }
@@ -147,26 +147,26 @@ public sealed class UnitTestTensorUtilities
     [Fact]
     public void TestIsAsending()
     {
-        var a = Enumerable.Range(1, 100).ToArray();
+        var a = Enumerable.Range(1, 100).ToArray().ToLongs();
         Assert.True(TensorUtilities.IsAscending(a));
 
-        var b = Enumerable.Repeat(1, 100).ToArray();
+        var b = Enumerable.Repeat(1, 100).ToArray().ToLongs();
         Assert.True(TensorUtilities.IsAscending(b));
 
-        var c = Enumerable.Range(1, 100).Reverse().ToArray();
+        var c = Enumerable.Range(1, 100).Reverse().ToArray().ToLongs();
         Assert.False(TensorUtilities.IsAscending(c));
     }
 
     [Fact]
     public void TestIsDescending()
     {
-        var a = Enumerable.Range(1, 100).ToArray();
+        var a = Enumerable.Range(1, 100).ToArray().ToLongs();
         Assert.False(TensorUtilities.IsDescending(a));
 
-        var b = Enumerable.Repeat(1, 100).ToArray();
+        var b = Enumerable.Repeat(1, 100).ToArray().ToLongs();
         Assert.True(TensorUtilities.IsDescending(b));
 
-        var c = Enumerable.Range(1, 100).Reverse().ToArray();
+        var c = Enumerable.Range(1, 100).Reverse().ToArray().ToLongs();
         Assert.True(TensorUtilities.IsDescending(c));
     }
 
@@ -215,11 +215,11 @@ public sealed class UnitTestTensorUtilities
     [Fact]
     public void TestGetSize()
     {
-        var shapes = new[] { 1, 2, 4, 8 };
-        var strides = new[] { 1, 1, 1, 1 };
+        var shapes = new long[] { 1, 2, 4, 8 };
+        var strides = new long[] { 1, 1, 1, 1 };
         var elementSize = 1;
         var getSize = TensorUtilities.GetSize(shapes, strides, elementSize);
-        var result = 1;
+        long result = 1;
         for (int i = 0; i < shapes.Length; i++)
         {
             result += (shapes[i] - 1) * strides[i];
@@ -243,11 +243,11 @@ public sealed class UnitTestTensorUtilities
     {
         // stride is empty
         var stride1 = Array.Empty<int>();
-        Assert.Equal(0, TensorUtilities.GetIndex(stride1, new int[] { 0 }));
+        Assert.Equal(0, TensorUtilities.GetIndex(stride1, [0]));
 
         // exception
-        Assert.Throws<ArgumentOutOfRangeException>(() => TensorUtilities.GetIndex(stride1, new int[] { 0, 1 }));
-        Assert.Throws<ArgumentOutOfRangeException>(() => TensorUtilities.GetIndex(stride1, new int[] { 1 }));
+        Assert.Throws<ArgumentOutOfRangeException>(() => TensorUtilities.GetIndex(stride1, [0, 1]));
+        Assert.Throws<ArgumentOutOfRangeException>(() => TensorUtilities.GetIndex(stride1, [1]));
     }
 
     [Theory]
@@ -268,7 +268,7 @@ public sealed class UnitTestTensorUtilities
         Assert.Equal(0, actual1.Evaluate().AsTensor().ToScalar<int>());
 
         // exception
-        Assert.Throws<ArgumentOutOfRangeException>(() => TensorUtilities.GetIndex(stride1, new Expr[] { 0, 1 }));
+        Assert.Throws<ArgumentOutOfRangeException>(() => TensorUtilities.GetIndex(stride1, [0, 1]));
     }
 
     [Theory]
@@ -282,7 +282,7 @@ public sealed class UnitTestTensorUtilities
 
     [Theory]
     [MemberData(nameof(TestTransformIndexByStridesData))]
-    public void TestTransformIndexByStrides(int expect, int index, int[] sourceStrides, bool sourceReverseStride, int[] transformStrides)
+    public void TestTransformIndexByStrides(int expect, int index, long[] sourceStrides, bool sourceReverseStride, long[] transformStrides)
     {
         var actual = TensorUtilities.TransformIndexByStrides(index, sourceStrides, sourceReverseStride, transformStrides);
         Assert.Equal(expect, actual);
@@ -291,8 +291,8 @@ public sealed class UnitTestTensorUtilities
     [Fact]
     public void TestIsContiguous()
     {
-        Assert.True(TensorUtilities.IsContiguous(new int[] { 1, 2, 3, 4 }, new int[] { 24, 12, 4, 1 }));
-        Assert.False(TensorUtilities.IsContiguous(new int[] { 1, 2, 3, 4 }, new int[] { 24, 12, 4 }));
-        Assert.False(TensorUtilities.IsContiguous(new int[] { 1, 2, 3, 4 }, new int[] { 24, 12, 3, 1 }));
+        Assert.True(TensorUtilities.IsContiguous([1, 2, 3, 4], [24, 12, 4, 1]));
+        Assert.False(TensorUtilities.IsContiguous([1, 2, 3, 4], [24, 12, 4]));
+        Assert.False(TensorUtilities.IsContiguous([1, 2, 3, 4], [24, 12, 3, 1]));
     }
 }

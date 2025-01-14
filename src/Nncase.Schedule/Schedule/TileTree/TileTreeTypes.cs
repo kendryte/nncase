@@ -153,7 +153,7 @@ public sealed class TileNode : ITileAbleNode
 
 public sealed class OpNode : ITileAbleNode
 {
-    public OpNode(Grid grid, Op op, int opId, IEnumerable<string> dimNames, IEnumerable<int> domainBounds, IEnumerable<IEnumerable<int>> bufferShapes, IEnumerable<Dependence> dependences)
+    public OpNode(Grid grid, Op op, int opId, IEnumerable<string> dimNames, IEnumerable<long> domainBounds, IEnumerable<IEnumerable<long>> bufferShapes, IEnumerable<Dependence> dependences)
     {
         Level = 0;
         Grid = grid;
@@ -188,9 +188,9 @@ public sealed class OpNode : ITileAbleNode
 
     public ImmutableArray<Dependence> Dependences { get; }
 
-    public ImmutableArray<int> DomainBounds { get; }
+    public ImmutableArray<long> DomainBounds { get; }
 
-    public ImmutableArray<ImmutableArray<int>> BufferShapes { get; }
+    public ImmutableArray<ImmutableArray<long>> BufferShapes { get; }
 
     public ReadOnlySpan<AffineMap> ReadAccesses => Grid.AccessMaps[..^1];
 

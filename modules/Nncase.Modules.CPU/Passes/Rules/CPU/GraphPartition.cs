@@ -92,7 +92,7 @@ public sealed partial class CPUOutputBoxingFusion : FusionMaker
                 case Const c:
                     if (parameter is TensorConst { Value: Tensor { Shape.IsScalar: true } } tc)
                     {
-                        newInput = Const.FromTensor(Tensor.FromBytes(tc.CheckedDataType, tc.Value.BytesBuffer.ToArray(), new[] { 1 }));
+                        newInput = Const.FromTensor(Tensor.FromBytes(tc.CheckedDataType, tc.Value.BytesBuffer.ToArray(), [1]));
                     }
                     else
                     {

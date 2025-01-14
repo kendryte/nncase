@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance.Helpers;
@@ -29,13 +30,12 @@ public class IRMetadata
 /// <summary>
 /// Expression.
 /// </summary>
-public abstract partial class Expr : IDisposable
+public abstract partial class Expr
 {
     private readonly Expr[] _operands;
-    private readonly ConcurrentDictionary<Expr, Unit> _users = new(ReferenceEqualityComparer.Instance);
+    private readonly ConditionalWeakTable<Expr, object?> _users = new();
     private IRType? _checkedType;
     private int? _hashCodeCache;
-    private bool _disposedValue;
 
     internal Expr(IEnumerable<Expr> operands)
     {
@@ -160,17 +160,17 @@ public abstract partial class Expr : IDisposable
     /// <summary>
     /// Gets users.
     /// </summary>
-    public IEnumerable<Expr> Users => EnsureAlive()._users.Keys;
+    public IEnumerable<Expr> Users => _users.Select(x => x.Key).ToArray();
 
     /// <summary>
     /// Gets operands.
     /// </summary>
-    public ReadOnlySpan<Expr> Operands => EnsureAlive()._operands;
+    public ReadOnlySpan<Expr> Operands => _operands;
 
     /// <summary>
     /// Gets a value indicating whether the expr is alive.
     /// </summary>
-    public bool IsAlive => !_disposedValue;
+    public bool IsAlive => Users.Any();
 
     /// <summary>
     /// Gets or sets raw checked type.
@@ -219,30 +219,15 @@ public abstract partial class Expr : IDisposable
     /// <inheritdoc/>
     public sealed override int GetHashCode() => _hashCodeCache ??= GetHashCodeCore();
 
-    public void Dispose()
-    {
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
-    }
-
-    public void DisposeIfNoUsers()
-    {
-        if (_users.Keys.Count == 0)
-        {
-            Dispose();
-        }
-    }
-
     internal void AddUser(Expr user)
     {
-        EnsureAlive();
         Trace.Assert(!ReferenceEquals(this, user));
-        _users.TryAdd(user.EnsureAlive(), default);
+        _users.TryAdd(user, default);
     }
 
     internal void RemoveUser(Expr user)
     {
-        _users.Remove(user, out _);
+        _users.Remove(user);
     }
 
     internal void ReplaceOperand(int index, Expr newOperand)
@@ -262,7 +247,6 @@ public abstract partial class Expr : IDisposable
 
     internal void ReplaceScopedUsesWith(Expr newOperand, IReadOnlySet<Expr>? scope)
     {
-        EnsureAlive();
         if (!ReferenceEquals(this, newOperand))
         {
             foreach (var user in Users.ToArray())
@@ -291,20 +275,6 @@ public abstract partial class Expr : IDisposable
     protected virtual int GetHashCodeCore()
     {
         return HashCode.Combine(GetType(), HashCode<Expr>.Combine(Operands));
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!_disposedValue)
-        {
-            foreach (var operand in _operands)
-            {
-                operand.RemoveUser(this);
-                operand.DisposeIfNoUsers();
-            }
-
-            _disposedValue = true;
-        }
     }
 
     private bool IsDescendantOf(Expr other, Dictionary<Expr, bool> visited)
@@ -379,15 +349,5 @@ public abstract partial class Expr : IDisposable
         {
             user.InvalidateHashCodeCache();
         }
-    }
-
-    private Expr EnsureAlive()
-    {
-        if (_disposedValue)
-        {
-            throw new ObjectDisposedException(null);
-        }
-
-        return this;
     }
 }

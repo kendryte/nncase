@@ -96,7 +96,7 @@ public sealed partial class CombineConstBinaryTranspose : IRewriteRule
                 return Transpose(Binary(binary.BinaryOp, x, y).InheritMetaData(binaryCall), perm);
             }
 
-            var newShape = new List<int>() { x.CheckedShape[0].FixedValue };
+            var newShape = new List<long>() { x.CheckedShape[0].FixedValue };
             if (x.CheckedShape[0].FixedValue != 1)
             {
                 for (int i = 0; i < expandDim; i++)
@@ -116,7 +116,7 @@ public sealed partial class CombineConstBinaryTranspose : IRewriteRule
                 return Transpose(Binary(binary.BinaryOp, x, y).InheritMetaData(binaryCall), perm);
             }
 
-            var newShape = new List<int>() { y.CheckedShape[0].FixedValue };
+            var newShape = new List<long>() { y.CheckedShape[0].FixedValue };
             if (y.CheckedShape[0].FixedValue != 1)
             {
                 for (int i = 0; i < expandDim; i++)
@@ -148,10 +148,10 @@ public sealed partial class CombineTransposeConstBinary : RewriteRule<CallPatter
 
     private Const GetNewConst(TensorConst oldConst, Expr input, TensorConst perm)
     {
-        int[] newConstShape;
+        long[] newConstShape;
         if (oldConst.Value.Shape.Rank < input.CheckedShape.Rank)
         {
-            newConstShape = Enumerable.Repeat(1, input.CheckedShape.Rank - oldConst.Value.Shape.Rank).Concat(oldConst.Value.Shape.ToValueArray()).ToArray();
+            newConstShape = Enumerable.Repeat(1L, input.CheckedShape.Rank - oldConst.Value.Shape.Rank).Concat(oldConst.Value.Shape.ToValueArray()).ToArray();
         }
         else
         {
@@ -361,7 +361,7 @@ public sealed partial class CombineTransposeReshape : IRewriteRule
         { TypePattern = HasFixedShape() },
         IsTensorConst("perm"));
 
-    private Expr? GetReplace(Call trans, Expr input, int[] newShape, int[] perm)
+    private Expr? GetReplace(Call trans, Expr input, long[] newShape, int[] perm)
     {
         var inShape = input.CheckedShape.ToValueArray();
         var outShape = trans.CheckedShape.ToValueArray();

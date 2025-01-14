@@ -79,7 +79,7 @@ public sealed partial class CombineConstBinaryReshape : IRewriteRule
 
     private Expr? GetReplace(Binary binary, Call call, IReadOnlyList<Expr> callParams, Expr input, TensorConst constInput, TensorConst shape)
     {
-        var oldShape = shape.Value.ToArray<int>();
+        var oldShape = shape.Value.ToArray<long>();
         var significantShape = oldShape.Where(x => x > 1).ToArray();
 
         bool leftConst = ReferenceEquals(callParams[0], constInput);
@@ -98,7 +98,7 @@ public sealed partial class CombineConstBinaryReshape : IRewriteRule
             if (significantShape.SequenceEqual(significantInputShape) && oldShape.Length > 0 && oldShape[^1] == constSize)
             {
                 var broadcastIndex = Array.LastIndexOf(input.CheckedShape.ToValueArray(), constSize);
-                var newConstShape = Enumerable.Repeat(1, input.CheckedShape.Rank - 1 - broadcastIndex).ToList();
+                var newConstShape = Enumerable.Repeat(1L, input.CheckedShape.Rank - 1 - broadcastIndex).ToList();
                 newConstShape.Insert(0, constSize);
 
                 var res = Reshape(Binary(binary.BinaryOp, leftConst ? Reshape(constInput, newConstShape.ToArray()) : input, leftConst ? input : Reshape(constInput, newConstShape.ToArray())).InheritMetaData(call), call.CheckedShape);
@@ -192,8 +192,8 @@ public sealed partial class CombineReshapePad : IRewriteRule
             && Enumerable.SequenceEqual(reshapeCall.CheckedShape.ToValueArray()[(reshapeRank - padRank)..], padCall.CheckedShape.ToValueArray()))
         {
             return Pad(
-            Reshape(input, Enumerable.Repeat(1, reshapeRank - padRank).Concat(input.CheckedShape.ToValueArray()).ToArray()).InheritMetaData(reshapeCall),
-            Tensor.From(Enumerable.Repeat(0, (reshapeRank - padRank) * 2).Concat(pads).ToArray(), new[] { reshapeRank, 2 }),
+            Reshape(input, Enumerable.Repeat(1L, reshapeRank - padRank).Concat(input.CheckedShape.ToValueArray()).ToArray()).InheritMetaData(reshapeCall),
+            Tensor.From(Enumerable.Repeat(0, (reshapeRank - padRank) * 2).Concat(pads).ToArray(), [reshapeRank, 2]),
             pad.PadMode,
             value).InheritMetaData(padCall);
         }
@@ -229,7 +229,7 @@ public sealed partial class CombineReshapeTranspose : IRewriteRule
         { TypePattern = HasFixedShape() },
         IsTensorConst("newShape"));
 
-    private Expr? GetReplace(Expr input, Call trans, int[] newShape, int[] perm)
+    private Expr? GetReplace(Expr input, Call trans, long[] newShape, int[] perm)
     {
         var transShape = trans.CheckedShape.ToValueArray();
 

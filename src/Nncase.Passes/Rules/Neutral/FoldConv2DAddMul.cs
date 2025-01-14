@@ -91,7 +91,7 @@ public sealed partial class FoldConv2DAddMul : RewriteRule<CallPattern>
 
     private Expr? GetReplace(Call conv2dCall, IR.NN.Conv2D conv2d, Tensor<float> weights, Tensor<float> bias, Expr strides, Expr paddings, Expr dilation, Expr groups, Expr fusedClamp, Tensor<float> addConst, Tensor<float> mulConst, Expr input)
     {
-        int ic = weights.Shape[1].FixedValue;
+        long ic = weights.Shape[1].FixedValue;
         if (mulConst.Length != ic || addConst.Length != ic)
         {
             return null;

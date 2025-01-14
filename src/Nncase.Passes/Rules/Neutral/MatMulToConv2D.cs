@@ -56,8 +56,8 @@ public sealed partial class MatMulToConv2D : IRewriteRule
             if_reshape,
             w_reshape,
             Tensor.FromScalar(0.0f, w_shape[0].FixedValue),
-            Tensor.FromScalar(1, new[] { 2 }),
-            Tensor.FromScalar(0, new[] { 2, 2 }),
+            Tensor.FromScalar(1, [2]),
+            Tensor.FromScalar(0, [2, 2]),
             new int[] { 1, 1 },
             PadMode.Constant,
             1).InheritMetaData(matMulCall);
@@ -101,8 +101,8 @@ public sealed partial class BroadcastMatMulToConv2D : IRewriteRule
             if_reshape,
             w_reshape,
             Tensor.FromScalar(0.0f, w_shape[0].FixedValue),
-            Tensor.FromScalar(1, new[] { 2 }),
-            Tensor.FromScalar(0, new[] { 2, 2 }),
+            Tensor.FromScalar(1, [2]),
+            Tensor.FromScalar(0, [2, 2]),
             new int[] { 1, 1 },
             PadMode.Constant,
             1).InheritMetaData(matMulCall);
@@ -148,8 +148,8 @@ public sealed partial class BroadcastMatMul : IRewriteRule
             newOutputShape[^2] = aShape[^2].FixedValue;
             newOutputShape[^1] = bShape[^1].FixedValue;
 
-            var ifShape = new int[] { -1, aShape[^2].FixedValue, aShape[^1].FixedValue };
-            var wShape = new int[] { -1, newBShape[^2], newBShape[^1] };
+            var ifShape = new long[] { -1, aShape[^2].FixedValue, aShape[^1].FixedValue };
+            var wShape = new long[] { -1, newBShape[^2], newBShape[^1] };
             var bBroadCast = IR.F.Tensors.Broadcast(b, newBShape);
             List<string> outputNames = new() { b.Metadata.OutputNames![0] + "_bBroadCast" };
             bBroadCast.Metadata.OutputNames = outputNames;
@@ -165,8 +165,8 @@ public sealed partial class BroadcastMatMul : IRewriteRule
             newOutputShape[^2] = aShape[^2].FixedValue;
             newOutputShape[^1] = bShape[^1].FixedValue;
 
-            var ifShape = new int[] { -1, newAShape[^2], newAShape[^1] };
-            var wShape = new int[] { -1, bShape[^2].FixedValue, bShape[^1].FixedValue };
+            var ifShape = new long[] { -1, newAShape[^2], newAShape[^1] };
+            var wShape = new long[] { -1, bShape[^2].FixedValue, bShape[^1].FixedValue };
             var aBroadCast = IR.F.Tensors.Broadcast(a, newAShape);
             List<string> outputNames = new() { a.Metadata.OutputNames![0] + "_aBroadCast" };
             aBroadCast.Metadata.OutputNames = outputNames;
@@ -187,8 +187,8 @@ public sealed partial class BroadcastMatMul : IRewriteRule
                 newOutputShape[i] = System.Math.Max(aShape[i].FixedValue, bShape[i].FixedValue);
             }
 
-            var ifShape = new int[] { -1, newAShape[^2], newAShape[^1] };
-            var wShape = new int[] { -1, newBShape[^2], newBShape[^1] };
+            var ifShape = new long[] { -1, newAShape[^2], newAShape[^1] };
+            var wShape = new long[] { -1, newBShape[^2], newBShape[^1] };
             var bBroadCast = IR.F.Tensors.Broadcast(b, newBShape);
             List<string> bOutputNames = new() { b.Metadata.OutputNames?[0] + "_bBroadCast" };
             bBroadCast.Metadata.OutputNames = bOutputNames;

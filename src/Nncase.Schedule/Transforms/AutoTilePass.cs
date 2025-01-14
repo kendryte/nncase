@@ -53,9 +53,9 @@ public sealed class AutoTilePass : ModulePass
         var ctx = new GraphContext();
         var convertor = new GraphConvertor(x => x switch
         {
-            Grid => true,
-            IR.Tuple tp => tp.Fields.AsValueEnumerable().All(f => f is Grid),
-            _ => false,
+            Grid => Compat.COMPATIBLE,
+            IR.Tuple tp => tp.Fields.AsValueEnumerable().All(f => f is Grid) ? Compat.COMPATIBLE : Compat.INCOMPATIBLE,
+            _ => Compat.INCOMPATIBLE,
         });
         convertor.Visit(fusion.Body, ctx);
 

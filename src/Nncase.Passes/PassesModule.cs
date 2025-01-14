@@ -15,5 +15,6 @@ internal class PassesModule : IApplicationPart
     {
         registrator.Register<IPassManagerFactory, PassManagerFactory>(reuse: Reuse.Singleton);
         registrator.Register<IAnalyzerManager, AnalyzerManager>(reuse: Reuse.Singleton);
+        registrator.Register<ISimplifyProvider, SimplifyProvider>(reuse: Reuse.Singleton);
     }
 }

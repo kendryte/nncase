@@ -15,11 +15,11 @@ public static class DistributedUtility
         for (int i = 0; i < placement.Rank; i++)
         {
             var ndsbp = new List<SBP>();
-            if (!tensorType.Shape.ToValueArray().Contains(0))
+            if (tensorType.Shape.All(x => x.IsUnknown || x.FixedValue != 0))
             {
                 for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
                 {
-                    if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && placement.Hierarchy[i] > 1 && IsDivideExactly(s, placement.Hierarchy[i]))
+                    if (tensorType.Shape[axis] is { IsFixed: true, FixedValue: long s } && placement.Hierarchy[i] > 1 && IsDivideExactly(s, placement.Hierarchy[i]))
                     {
                         ndsbp.Add(SBP.S(axis));
                     }
@@ -72,7 +72,7 @@ public static class DistributedUtility
 
     public static bool IsDistributable(TensorType tensorType, ReadOnlySpan<SBP> ndsbp, Placement placement)
     {
-        if (!tensorType.Shape.IsFixed)
+        if (!tensorType.Shape.IsRanked)
         {
             return false;
         }
@@ -83,8 +83,8 @@ public static class DistributedUtility
 
     public static IReadOnlyList<int> GetDivisors(DistributedType distributedType)
     {
-        var shape = distributedType.TensorType.Shape.ToValueArray();
-        var divisors = Enumerable.Repeat(0, shape.Length).ToArray();
+        var rank = distributedType.TensorType.Shape.Rank;
+        var divisors = Enumerable.Repeat(0, rank).ToArray();
         for (int i = 0; i < distributedType.NdSBP.Count; i++)
         {
             if (distributedType.NdSBP[i] is SBPSplit { Axis: int axis })
@@ -154,7 +154,7 @@ public static class DistributedUtility
         }).ToArray();
     }
 
-    public static List<int[]> TryGetNonUniformDividedSlice(DistributedType distributedType)
+    public static List<long[]> TryGetNonUniformDividedSlice(DistributedType distributedType)
     {
         var shape = distributedType.TensorType.Shape.ToValueArray();
         var hierarchies = Enumerable.Range(0, shape.Length).Select(i => new List<int>()).ToArray();
@@ -166,9 +166,9 @@ public static class DistributedUtility
             }
         }
 
-        var spliList = hierarchies.Select<List<int>, int[]>((divs, axis) =>
+        var spliList = hierarchies.Select<List<int>, long[]>((divs, axis) =>
         {
-            int[] dim;
+            long[] dim;
             if (divs.Any())
             {
                 var divsor = (int)TensorUtilities.GetProduct(divs.Select(h => distributedType.Placement.Hierarchy[h]).ToArray());
@@ -188,8 +188,8 @@ public static class DistributedUtility
             return dim;
         }).ToList();
 
-        IEnumerable<int[]> ret = new[] { Array.Empty<int>() };
-        foreach (int[] array in spliList)
+        IEnumerable<long[]> ret = new[] { Array.Empty<long>() };
+        foreach (long[] array in spliList)
         {
             ret = from seq in ret
                   from item in array
@@ -199,7 +199,7 @@ public static class DistributedUtility
         return ret.ToList();
     }
 
-    public static bool IsDivideBy(int input, int divisor)
+    public static bool IsDivideBy(long input, int divisor)
     {
         if (input >= divisor)
         {
@@ -209,7 +209,7 @@ public static class DistributedUtility
         return false;
     }
 
-    public static bool IsDivideExactly(int input, int divisor)
+    public static bool IsDivideExactly(long input, int divisor)
     {
         if (input >= divisor && input % divisor == 0)
         {
@@ -227,11 +227,11 @@ public static class DistributedUtility
             return 1f;
         }
 
-        return Enumerable.Range(0, tiles.Count).Select(i => tiles[i].Ranges(0, shape[i])).CartesianProduct().Select(rgs =>
+        return Enumerable.Range(0, tiles.Count).Select(i => ((int)tiles[i].FixedValue).Ranges(0, (int)shape[i].FixedValue)).CartesianProduct().Select(rgs =>
         {
             var slice = rgs.ToArray();
-            var iscontiguous = TensorUtilities.IsContiguousSlice(shape.ToArray(), slice, out var contiguousStart);
-            var size = TensorUtilities.GetProduct(tiles.ToArray(), contiguousStart) * distributedType.TensorType.DType.SizeInBytes;
+            var iscontiguous = TensorUtilities.IsContiguousSlice(shape.ToValueArray(), slice, out var contiguousStart);
+            var size = TensorUtilities.GetProduct(tiles.ToValueArray(), contiguousStart) * distributedType.TensorType.DType.SizeInBytes;
             var (div, rem) = Math.DivRem(size, burstLength);
             return ((div * 1.0f) + ((float)rem / burstLength)) / (div + 1);
         }).Average();
@@ -240,7 +240,7 @@ public static class DistributedUtility
     public static TensorType GetDividedTensorType(DistributedType distributedType)
     {
         var (tiles, _) = GetDividedTile(distributedType);
-        return distributedType.TensorType with { Shape = new Shape(tiles) };
+        return distributedType.TensorType with { Shape = tiles };
     }
 
     public static int[] GetUnraveledIndex(int index, int[] hierarchies)
@@ -257,11 +257,11 @@ public static class DistributedUtility
         return unraveledIndex;
     }
 
-    public static (int[] Offset, int[] Shape) GetLocalOffsetAndShape(DistributedType distributedType, int[] shardIndex)
+    public static (long[] Offset, long[] Shape) GetLocalOffsetAndShape(DistributedType distributedType, int[] shardIndex)
     {
         var globalShape = distributedType.TensorType.Shape.ToValueArray();
-        var offset = new int[distributedType.TensorType.Shape.Rank];
-        var shape = new int[distributedType.TensorType.Shape.Rank];
+        var offset = new long[distributedType.TensorType.Shape.Rank];
+        var shape = new long[distributedType.TensorType.Shape.Rank];
         for (int axis = 0; axis < offset.Length; axis++)
         {
             var splits = (from d in distributedType.NdSBP.Select((s, i) => (s, i))
@@ -289,10 +289,10 @@ public static class DistributedUtility
         return (offset, shape);
     }
 
-    private static (IReadOnlyList<int> Tile, IReadOnlyList<int> Shape) GetDividedTile(DistributedType distributedType)
+    private static (Shape Tile, Shape Shape) GetDividedTile(DistributedType distributedType)
     {
-        var shape = distributedType.TensorType.Shape.ToValueArray();
-        var tiles = distributedType.TensorType.Shape.ToValueArray();
+        var shape = distributedType.TensorType.Shape.ToArray();
+        var tiles = distributedType.TensorType.Shape.ToArray();
         foreach (var (s, i) in distributedType.NdSBP.Select((s, i) => (s, i)).Where(t => t.s is SBPSplit).Select(t => ((SBPSplit)t.s, t.i)))
         {
             tiles[s.Axis] /= distributedType.Placement.Hierarchy[i];

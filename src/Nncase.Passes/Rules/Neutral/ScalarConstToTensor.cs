@@ -25,7 +25,7 @@ public partial class ScalarConstToTensor : RewriteRule<Pattern>
     {
         if (call.Arguments.AsValueEnumerable().Any(a => a is TensorConst { Value: Tensor { Shape.IsScalar: true } }))
         {
-            var arguments = call.Arguments.AsValueEnumerable().Select(e => e switch { TensorConst { Value: Tensor { Shape.IsScalar: true } } tc => Const.FromTensor(Tensor.FromBytes(tc.CheckedDataType, tc.Value.BytesBuffer.ToArray(), new[] { 1 })), _ => e }).ToArray();
+            var arguments = call.Arguments.AsValueEnumerable().Select(e => e switch { TensorConst { Value: Tensor { Shape.IsScalar: true } } tc => Const.FromTensor(Tensor.FromBytes(tc.CheckedDataType, tc.Value.BytesBuffer.ToArray(), [1])), _ => e }).ToArray();
             return call.With(arguments: arguments);
         }
 

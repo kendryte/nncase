@@ -73,6 +73,21 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
         }
     }
 
+    public IRType Visit(ITypeInferenceContext context, GetItem target)
+    {
+        var input = context.CheckArgumentType<IRType>(target, GetItem.Input);
+        var index = context.CheckArgumentType<TensorType>(target, GetItem.Index);
+
+        return input switch
+        {
+            TensorType t => Visit(context, target, t, index),
+            DistributedType d => Visit(context, target, d, index),
+            TupleType t => Visit(context, target, t, index),
+            AnyType => AnyType.Default,
+            _ => new InvalidType(input.GetType().Name),
+        };
+    }
+
     private IValue Visit(IValue input, IValue index)
     {
         if (input.Type is TensorType ttype)
@@ -85,88 +100,99 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
             var indicesValue = indices.Select((x, i) => x < 0 ? x + tensor.Shape[i].FixedValue : x).ToArray();
             var linearIndex =
                 TensorUtilities.GetIndex(tensor.Strides, indicesValue);
-            var returnDims = tensor.Dimensions.AsValueEnumerable().Skip(indexTensor.Length).ToArray();
-            var elementsCount = (int)TensorUtilities.GetProduct(returnDims);
+            var returnDims = tensor.Dimensions.AsValueEnumerable().Skip((int)indexTensor.Length).ToArray();
+            var elementsCount = TensorUtilities.GetProduct(returnDims);
 
-            var src = tensor.BytesBuffer.Slice(elementSize * linearIndex, elementSize * elementsCount);
+            var src = tensor.BytesBuffer.Slice(checked((int)(elementSize * linearIndex)), checked((int)(elementSize * elementsCount)));
             return Value.FromTensor(Tensor.FromBytes(new TensorType(ttype.DType, returnDims), src.ToArray()));
         }
 
         return input[index.AsTensor().ToScalar<int>()];
     }
 
-    private IRType Visit(ITypeInferenceContext context, GetItem target, IRType input, TensorType index)
+    private IRType Visit(ITypeInferenceContext context, GetItem target, TensorType input, TensorType index)
     {
-        IRType ret = new InvalidType("Need Be Reset!");
         var indexExpr = context.GetArgument(target, GetItem.Index);
-        switch (input)
+        if (input.Shape.IsUnranked)
         {
-            case TensorType tensorType:
-                if (tensorType.Shape.IsUnranked)
-                {
-                    return input;
-                }
+            return input;
+        }
 
-                if (indexExpr is TensorConst indexV)
-                {
-                    var indices = indexV.Value.ToArray<int>();
-                    if (indices.Length > tensorType.Shape.Rank)
-                    {
-                        return new InvalidType("GetItem index count should smaller than in shape rank");
-                    }
+        if (indexExpr is TensorConst indexV)
+        {
+            var indices = indexV.Value.ToArray<int>();
+            if (indices.Length > input.Shape.Rank)
+            {
+                return new InvalidType("GetItem index count should smaller than in shape rank");
+            }
 
-                    if (indices.Length == tensorType.Shape.Rank)
+            if (indices.Length == input.Shape.Rank)
+            {
+                foreach (var (i, dim) in indices.Zip(input.Shape))
+                {
+                    if (dim.IsFixed && i >= dim.FixedValue)
                     {
-                        foreach (var (i, dim) in indices.Zip(tensorType.Shape))
-                        {
-                            if (dim.IsFixed && i >= dim.FixedValue)
-                            {
-                                return new InvalidType("GetItem index value shoud smaller than shape dim");
-                            }
-                        }
+                        return new InvalidType("GetItem index value shoud smaller than shape dim");
                     }
                 }
+            }
+        }
 
-                var shape = index.Shape switch
+        var shape = index.Shape switch
+        {
+            { IsScalar: true } => new Shape(input.Shape.Skip(1)),
+            { IsFixed: true } => index.Shape[0].FixedValue == input.Shape.Rank ?
+                                 Shape.Scalar :
+                                 new Shape(input.Shape.Skip((int)index.Shape[0].FixedValue)),
+            _ => Shape.Unranked,
+        };
+        return new TensorType(input.DType, shape);
+    }
+
+    private IRType Visit(ITypeInferenceContext context, GetItem target, TupleType input, TensorType index)
+    {
+        var indexExpr = context.GetArgument(target, GetItem.Index);
+        if (indexExpr is TensorConst @const)
+        {
+            var indexValue = @const.Value.ToScalar<int>();
+            if (indexValue < input.Count)
+            {
+                return input[indexValue];
+            }
+            else
+            {
+                if (input.IsVariadic)
                 {
-                    { IsScalar: true } => new Shape(tensorType.Shape.Skip(1)),
-                    { IsFixed: true } => index.Shape[0].FixedValue == tensorType.Shape.Rank ?
-                                         Shape.Scalar :
-                                         new Shape(tensorType.Shape.Skip(index.Shape[0].FixedValue)),
-                    _ => Shape.Unranked,
-                };
-                ret = new TensorType(tensorType.DType, shape);
-                break;
-            case TupleType tupleType:
-                if (indexExpr is TensorConst @const)
-                {
-                    var indexValue = @const.Value.ToScalar<int>();
-                    if (indexValue < tupleType.Count)
-                    {
-                        ret = tupleType[indexValue];
-                    }
-                    else
-                    {
-                        if (tupleType.IsVariadic)
-                        {
-                            ret = tupleType[0];
-                        }
-                        else
-                        {
-                            ret = new InvalidType($"The Input Tuple Count = {tupleType.Count}, But Index = {indexValue}");
-                        }
-                    }
+                    return input[0];
                 }
                 else
                 {
-                    ret = AnyType.Default;
+                    return new InvalidType($"The Input Tuple Count = {input.Count}, But Index = {indexValue}");
                 }
+            }
+        }
+        else
+        {
+            return AnyType.Default;
+        }
+    }
 
-                break;
-            default:
-                break;
+    private IRType Visit(ITypeInferenceContext context, GetItem target, DistributedType input, TensorType index)
+    {
+        var outputType = (TensorType)Visit(context, target, input.TensorType, index);
+        var ndsbp = input.NdSBP.ToArray();
+        for (var i = 0; i < ndsbp.Length; i++)
+        {
+            if (ndsbp[i] is SBPSplit { Axis: int axis })
+            {
+                if ((index.Shape.IsScalar && axis == 0)
+                    || axis < index.Shape[0].FixedValue)
+                {
+                    ndsbp[i] = SBP.B;
+                }
+            }
         }
 
-        return ret;
+        return new DistributedType(outputType, ndsbp, input.Placement);
     }
 }

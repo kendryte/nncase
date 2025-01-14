@@ -247,7 +247,7 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
             var outshape = new List<Dimension> { padded_shape[0] };
             foreach (var i in Enumerable.Range(1, m))
             {
-                outshape.Add(padded_shape[i].IsUnknown ? Dimension.Unknown :
+                outshape.Add(padded_shape[i].IsUnknown ? padded_shape[i] / ts_block_shape[i - 1] :
                                     padded_shape[i].FixedValue % ts_block_shape[i - 1] == 0 ?
                                       padded_shape[i].FixedValue / ts_block_shape[i - 1] :
                                       throw new TypeInferenceInterruptException(
@@ -261,7 +261,7 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
 
             foreach (var block in ts_block_shape)
             {
-                outshape[0] = outshape[0].IsUnknown ? Dimension.Unknown : outshape[0].FixedValue * block;
+                outshape[0] = outshape[0].FixedValue * block;
             }
 
             var outputShape = ShapeNHWCToNCHW(inShape, outshape);
@@ -269,6 +269,7 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
             return input with { Shape = new Shape(outputShape) };
         }
 
-        return new TensorType(input.DType, Enumerable.Repeat(Dimension.Unknown, input.Shape.Count).ToArray());
+        // return new TensorType(input.DType, Enumerable.Repeat(Dimension.Unknown, input.Shape.Count).ToArray());
+        throw new NotImplementedException();
     }
 }

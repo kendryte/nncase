@@ -129,7 +129,7 @@ public sealed class AddPreProcess : ModulePass
             // Letterbox
             if (inputShape.Length == 4)
             {
-                int modelH, modelW;
+                long modelH, modelW;
 
                 if (modelLayout != "NCHW")
                 {
@@ -179,13 +179,13 @@ public sealed class AddPreProcess : ModulePass
                 switch (mean.Length)
                 {
                     case 3 when inputShape.Length == 4:
-                        meanCall = (Expr)Tensor.From(mean, new[] { 1, mean.Length, 1, 1 });
-                        stdCall = (Expr)Tensor.From(std, new[] { 1, std.Length, 1, 1 });
+                        meanCall = (Expr)Tensor.From(mean, [1, mean.Length, 1, 1]);
+                        stdCall = (Expr)Tensor.From(std, [1, std.Length, 1, 1]);
                         break;
 
                     default:
-                        meanCall = (Expr)Tensor.From(new float[] { mean[0] }, new[] { 1 });
-                        stdCall = (Expr)Tensor.From(new float[] { std[0] }, new[] { 1 });
+                        meanCall = (Expr)Tensor.From(new float[] { mean[0] }, [1]);
+                        stdCall = (Expr)Tensor.From(new float[] { std[0] }, [1]);
                         break;
                 }
 

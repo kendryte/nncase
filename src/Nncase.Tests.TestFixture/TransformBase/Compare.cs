@@ -24,11 +24,11 @@ public static class TensorUtil
         return Math.Max(0, 1 - (4 - shape.Length));
     }
 
-    public static (int Channels, int Size) GetShapeInfo(int[] shape, int channelAxis = 1)
+    public static (long Channels, long Size) GetShapeInfo(long[] shape, int channelAxis = 1)
     {
         var i = channelAxis + 1;
-        var channels = shape[..i].Aggregate(1, (a, b) => a * b);
-        var size = shape[i..].Aggregate(1, (a, b) => a * b);
+        var channels = shape[..i].Aggregate(1L, (a, b) => a * b);
+        var size = shape[i..].Aggregate(1L, (a, b) => a * b);
         return (channels, size);
     }
 
@@ -36,17 +36,17 @@ public static class TensorUtil
     {
         var channelAxis = GetChannelAxis(tensor.Shape);
         var (channels, size) = GetShapeInfo(tensor.Dimensions.ToArray(), channelAxis);
-        return Enumerable.Range(0, channels).Select(i =>
+        return Enumerable.Range(0, checked((int)channels)).Select(i =>
                 SliceTensor(tensor, size * i, size, channelAxis))
             .ToArray();
     }
 
-    private static Tensor SliceTensor(Tensor tensor, int start, int length, int channelAxis = 1)
+    private static Tensor SliceTensor(Tensor tensor, long start, long length, int channelAxis = 1)
     {
         var s = tensor.ElementType.SizeInBytes;
         return Tensor.FromBytes(
             tensor.ElementType,
-            tensor.BytesBuffer.Slice(start * s, length * s).ToArray(),
+            tensor.BytesBuffer.Slice(checked((int)start * s), checked((int)length * s)).ToArray(),
             tensor.Dimensions[(channelAxis + 1)..]);
     }
 }
@@ -436,13 +436,13 @@ public class LazyCompartor
 
 public record DetailCompareResultInfo(float[] CosList, AccuracyLossInfo[] AccuracyLossInfos)
 {
-    public int[] Shape => AccuracyLossInfos.First().Shape;
+    public long[] Shape => AccuracyLossInfos.First().Shape;
 
     public IEnumerable<CompareResultByChannel> Enumerable()
     {
         var tensorShape = Shape;
         var (channels, size) = GetShapeInfo(tensorShape, GetChannelAxis(tensorShape));
-        return System.Linq.Enumerable.Range(0, channels).Select(c => new CompareResultByChannel(CosList[c], AccuracyLossInfos[(c * size)..((c + 1) * size)]));
+        return System.Linq.Enumerable.Range(0, checked((int)channels)).Select(c => new CompareResultByChannel(CosList[c], AccuracyLossInfos[checked((int)(c * size))..checked((int)((c + 1) * size))]));
     }
 }
 
@@ -460,7 +460,7 @@ public record DetailCompareResult(DetailCompareResultInfo[] Infos)
 
 public record CompareResultByChannel(float Cos, AccuracyLossInfo[] LossInfo)
 {
-    public int[] Shape => LossInfo.First().Shape;
+    public long[] Shape => LossInfo.First().Shape;
 
     // todo: more analysis strategy
     public AccuracyLossInfo[] Losses => LossInfo.Where(deviation =>
@@ -481,7 +481,7 @@ public record CompareResultByChannel(float Cos, AccuracyLossInfo[] LossInfo)
 
 public record AccuracyLossInfo(float V1, float V2, int[] Index, OriginValue V1Tensor, OriginValue V2Tensor)
 {
-    public int[] Shape => V1Tensor.Value.AsTensor().Shape.ToValueArray();
+    public long[] Shape => V1Tensor.Value.AsTensor().Shape.ToValueArray();
 
     public float Loss => Math.Abs(V1 - V2);
 

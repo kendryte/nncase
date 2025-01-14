@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
+using Nncase.IR.Tensors;
 
 namespace Nncase.IR
 {
@@ -114,6 +115,24 @@ namespace Nncase.IR
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Shape"/> class.
+        /// </summary>
+        /// <param name="dimensions">Dimensions.</param>
+        public Shape(IEnumerable<Expr> dimensions)
+            : this(dimensions.Select(i => (Dimension)i).ToArray())
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Shape"/> class.
+        /// </summary>
+        /// <param name="dimensions">Dimensions.</param>
+        public Shape(ReadOnlySpan<Expr> dimensions)
+            : this(dimensions.AsValueEnumerable().Select(i => (Dimension)i).ToArray())
+        {
+        }
+
         private Shape(ShapeKind kind, IEnumerable<Dimension> dimensions)
         {
             Kind = kind;
@@ -184,7 +203,7 @@ namespace Nncase.IR
         /// <summary>
         /// Gets get Total Elements.
         /// </summary>
-        public int Size => Enumerable.Range(0, Rank).Aggregate(1, (size, i) => size * _dimensions[i].FixedValue);
+        public long Size => Enumerable.Range(0, Rank).Aggregate(1L, (size, i) => size * _dimensions[i].FixedValue);
 
         /// <inheritdoc/>
         public int Count => ((IReadOnlyCollection<Dimension>)_dimensions).Count;
@@ -195,11 +214,13 @@ namespace Nncase.IR
                 ? ((IReadOnlyList<Dimension>)_dimensions)[index]
                 : ((IReadOnlyList<Dimension>)_dimensions)[Rank + index];
 
-        public static implicit operator ReadOnlySpan<int>(Shape shape) => shape._dimensions.Select(x => (int)(x.Value ?? -1)).ToArray();
+        public static implicit operator ReadOnlySpan<long>(Shape shape) => shape._dimensions.Select(x => x.FixedValue).ToArray();
 
         public static implicit operator Shape(Dimension[] dimensions) => new Shape(dimensions);
 
         public static implicit operator Shape(int[] dimensions) => new Shape(dimensions);
+
+        public static implicit operator Shape(long[] dimensions) => new Shape(dimensions);
 
         public static bool operator ==(Shape lhs, Shape rhs)
         {
@@ -216,7 +237,36 @@ namespace Nncase.IR
         /// </summary>
         public static Shape Unknown(int rank)
         {
-            return new Shape(ShapeKind.HasUnknownDimension, Enumerable.Repeat(Dimension.Unknown, rank));
+            return new Shape(ShapeKind.HasUnknownDimension, Enumerable.Range(0, rank).Select(x => Dimension.Unknown()));
+        }
+
+        /// <summary>
+        /// Gets a shape with rank unknwon dimension.
+        /// </summary>
+        public static Shape FromExpr(Expr value)
+        {
+            if (value is TensorConst tc)
+            {
+                return new Shape(tc.Value.ToArray<long>());
+            }
+            else if (value is Call { Target: Concat } concat)
+            {
+                if (concat.Arguments[Concat.Input.Index] is Tuple tuple)
+                {
+                    return new Shape(tuple.Fields);
+                }
+            }
+
+            var shape = value.CheckedShape;
+            if (shape.Rank != 1 || !shape.IsFixed)
+            {
+                // throw new ArgumentException($"Invalid shape expr: {value}", nameof(value));
+                return Shape.Unranked;
+            }
+
+            var rank = (int)shape[0].FixedValue;
+            // return new Shape(Enumerable.Range(0, rank).Select(x => (Dimension)value[x]));
+            return Shape.Unknown(rank);
         }
 
         /// <summary>
@@ -254,7 +304,7 @@ namespace Nncase.IR
         /// <summary>
         /// convert to the int list.
         /// </summary>
-        public List<int> ToValueList()
+        public List<long> ToValueList()
         {
             return _dimensions.Select(dim => dim.FixedValue).ToList();
         }
@@ -262,7 +312,7 @@ namespace Nncase.IR
         /// <summary>
         /// convert the int array.
         /// </summary>
-        public int[] ToValueArray()
+        public long[] ToValueArray()
         {
             return _dimensions.Select(dim => dim.FixedValue).ToArray();
         }

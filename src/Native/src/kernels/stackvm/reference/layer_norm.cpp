@@ -30,10 +30,6 @@ static void layernorm_impl(int inner_size, const T *src, const T *scale,
         for (auto i = 0; i < inner_size; i++)
             mean1 += src[i] / inner_size;
     }
-    if (use_mean) {
-        for (auto i = 0; i < inner_size; i++)
-            mean1 += src[i] / inner_size;
-    }
 
     std::vector<T> sub(inner_size, 0);
     for (auto i = 0; i < inner_size; i++)
@@ -86,7 +82,6 @@ result<void> layer_norm_impl2(const T *input, T *output, const T *scale,
 #define LAYER_NORM_IMPL(type)                                                  \
     return layer_norm_impl2(IN_CAST(type, input), OUT_CAST(type, output),      \
                             IN_CAST(type, scale), IN_CAST(type, bias),         \
-                            in_shape, axis, epsilon, use_mean)
                             in_shape, axis, epsilon, use_mean)
 
 #define TYPE_SELECT_LAYER_NORM(_typecode, _impl)                               \

@@ -29,7 +29,7 @@ public class ScatterNDEvaluator : IEvaluator<ScatterND>, ITypeInferencer<Scatter
         var input = context.GetArgumentValueAsTensor(target, ScatterND.Input);
         var indices = context.GetArgumentValueAsTensor<int>(target, ScatterND.Indices);
         var updates = context.GetArgumentValueAsTensor(target, ScatterND.Updates);
-        var update_indices = indices.Shape.ToValueArray().Take(0..(indices.Shape.Rank - 1)).Select(i => Enumerable.Range(0, i));
+        var update_indices = indices.Shape.ToValueArray().Take(0..(indices.Shape.Rank - 1)).Select(i => Enumerable.Range(0, (int)i).Select(x => (long)x));
         var output = Tensor.FromBytes(input.ElementType, input.BytesBuffer.ToArray(), input.Shape);
         var indicesSpan = indices.Buffer.Span;
         var updatesSpan = updates.BytesBuffer;
@@ -41,9 +41,9 @@ public class ScatterNDEvaluator : IEvaluator<ScatterND>, ITypeInferencer<Scatter
         var outputSpanStride = output.Strides.ToArray().SkipLast(updatesRemain.Count()).Select(s => s * input.ElementType.SizeInBytes).ToArray();
         foreach (var idx in LinqExtensions.CartesianProduct(update_indices))
         {
-            var index = indicesSpan.Slice(TensorUtilities.GetIndex(indicesSpanStride, idx.ToArray()), indices.Shape.ToValueArray()[^1]);
-            var updatesSlice = updatesSpan.Slice(TensorUtilities.GetIndex(updatesSliceStride, idx.ToArray()), updateSize);
-            updatesSlice.CopyTo(outputSpan.Slice(TensorUtilities.GetIndex(outputSpanStride, index.ToArray())));
+            var index = indicesSpan.Slice(checked((int)TensorUtilities.GetIndex(indicesSpanStride, idx.ToArray())), checked((int)indices.Shape.ToValueArray()[^1]));
+            var updatesSlice = updatesSpan.Slice(checked((int)TensorUtilities.GetIndex(updatesSliceStride, idx.ToArray())), checked((int)updateSize));
+            updatesSlice.CopyTo(outputSpan.Slice(checked((int)TensorUtilities.GetIndex(outputSpanStride, index.ToArray().ToLongs()))));
         }
 
         return Value.FromTensor(output);

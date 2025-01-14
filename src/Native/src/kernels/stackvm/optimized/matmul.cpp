@@ -24,10 +24,10 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 using namespace nncase::kernels::stackvm::optimized;
 
-result<void> optimized::matmul(typecode_t typecode, const gsl::byte *input_a, const gsl::byte *input_b,
-                                gsl::byte *output,
-                                gsl::span<const size_t> in_a_shape,
-                                gsl::span<const size_t> in_b_shape,
+result<void> optimized::matmul(typecode_t typecode, const std::byte *input_a, const std::byte *input_b,
+                                std::byte *output,
+                                std::span<const size_t> in_a_shape,
+                                std::span<const size_t> in_b_shape,
                                 [[maybe_unused]] kernel_context &context) noexcept {
     return stackvm::reference::matmul(typecode, input_a, input_b, output, in_a_shape, in_b_shape, context);
 }

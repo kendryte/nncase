@@ -422,8 +422,8 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData([new int[] { 2, 8, 16, 2 }, new int[] { 0, 2, 1, 3 }, 2, 0])]
-    public async Task TestTranspose(int[] shape, int[] perm, int rank, int number)
+    [InlineData([new long[] { 2, 8, 16, 2 }, new int[] { 0, 2, 1, 3 }, 2, 0])]
+    public async Task TestTranspose(long[] shape, int[] perm, int rank, int number)
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));
         Expr pre; // f32[1,3,28,28]

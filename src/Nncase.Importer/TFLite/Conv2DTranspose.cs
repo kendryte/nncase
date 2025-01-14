@@ -36,8 +36,8 @@ namespace Nncase.Importer.TFLite
             var strideW = options.StrideW;
             var dilationH = 1;
             var dilationW = 1;
-            var stride = Tensor.From<int>(new[] { strideH, strideW }, new[] { 2 });
-            var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, new[] { 2 });
+            var stride = Tensor.From<int>(new[] { strideH, strideW }, [2]);
+            var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, [2]);
             var oldWShape = F.Tensors.ShapeOf(weights);
             var wShape = F.Tensors.Stack(new IR.Tuple(oldWShape[0], oldWShape[3], oldWShape[1], oldWShape[2]), 0);
             var padding = F.ShapeExpr.GetPaddings(F.Tensors.Stack(new IR.Tuple(newOutShape), 0), wShape, stride, dilation, options.Padding == tflite.Padding.SAME, false);

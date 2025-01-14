@@ -49,3 +49,8 @@ public interface IEGraphRewriteProvider
     /// <returns>Rewrited EGraph.</returns>
     IEGraph ERewrite(IEGraph eGraph, IEnumerable<IRewriteRule> rules, RunPassContext options);
 }
+
+public interface ISimplifyProvider
+{
+    Expr SimplifyForDimension(Expr expr);
+}

@@ -223,7 +223,7 @@ public static class BinFileUtil
         using (var stream = new FileStream(Path.Join(path), FileMode.Open, FileAccess.Read, FileShare.None))
         using (var reader = new BinaryReader(stream))
         {
-            var bytes = reader.ReadBytes(shape.Prod().FixedValue * dt.SizeInBytes);
+            var bytes = reader.ReadBytes(checked((int)shape.Prod().FixedValue * dt.SizeInBytes));
             return Tensor.FromBytes(dt, bytes, shape);
         }
     }

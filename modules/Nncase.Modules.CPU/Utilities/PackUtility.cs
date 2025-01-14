@@ -7,7 +7,7 @@ namespace Nncase.Utilities;
 
 public static class PackUtility
 {
-    public static Expr PadForPack(Expr input, int[] shape, int[] packedAxes, int[] lanes, Expr value, out int[] padNums)
+    public static Expr PadForPack(Expr input, long[] shape, int[] packedAxes, int[] lanes, Expr value, out int[] padNums)
     {
         var isPadded = false;
         var pads = new int[shape.Length, 2];
@@ -16,7 +16,7 @@ public static class PackUtility
             var axis = packedAxes[i];
             if (shape[axis] % lanes[i] != 0)
             {
-                pads[axis, 1] = MathUtility.AlignUp(shape[axis], lanes[i]) - shape[axis];
+                pads[axis, 1] = (int)(MathUtility.AlignUp(shape[axis], lanes[i]) - shape[axis]);
                 isPadded = true;
             }
         }
@@ -35,7 +35,7 @@ public static class PackUtility
         return input;
     }
 
-    public static Expr SliceForPack(Expr input, int[] shape, int[] padNums)
+    public static Expr SliceForPack(Expr input, long[] shape, int[] padNums)
     {
         bool isPadded = false;
         var ends = shape.ToArray();
@@ -44,7 +44,7 @@ public static class PackUtility
             isPadded = true;
         }
 
-        return isPadded ? IR.F.Tensors.Slice(input, Enumerable.Repeat(0, shape.Length).ToArray(), ends, shape.Length) : input;
+        return isPadded ? IR.F.Tensors.Slice(input, Enumerable.Repeat(0L, shape.Length).ToArray(), ends, shape.Length) : input;
     }
 
     /// <summary>
@@ -54,11 +54,11 @@ public static class PackUtility
     /// <param name="newShape">new shape.</param>
     /// <param name="mat">mat.</param>
     /// <returns>bool.</returns>
-    public static bool TryGetShapeMapMatrix(int[] inShape, int[] newShape, out int[,] mat)
+    public static bool TryGetShapeMapMatrix(long[] inShape, long[] newShape, out int[,] mat)
     {
-        int ProdIn(int[,] cmat, int i)
+        long ProdIn(int[,] cmat, int i)
         {
-            var prod = 1;
+            long prod = 1;
             for (int j = 0; j < inShape.Length; j++)
             {
                 var v = cmat[i, j] * inShape[j];
@@ -71,9 +71,9 @@ public static class PackUtility
             return prod;
         }
 
-        int ProdOut(int[,] cmat, int j)
+        long ProdOut(int[,] cmat, int j)
         {
-            var prod = 1;
+            long prod = 1;
             for (int i = 0; i < newShape.Length; i++)
             {
                 var v = cmat[i, j] * newShape[i];

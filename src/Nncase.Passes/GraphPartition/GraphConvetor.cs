@@ -266,18 +266,25 @@ public sealed class GraphContext
     }
 }
 
-public sealed class GraphConvertor : ExprVisitor<Unit, Unit, GraphContext>
+public class GraphConvertor : ExprVisitor<Vertex, Unit, GraphContext>
 {
-    private int _nodeCount;
-
-    public GraphConvertor(Func<Expr, bool> predicate)
+    public GraphConvertor(Func<Expr, Compat> predicate)
     {
         Predicate = predicate;
     }
 
-    public Func<Expr, bool> Predicate { get; }
+    public int NodeGlobalIndex { get; protected set; }
 
-    protected override Unit VisitGrid(Grid expr, GraphContext context)
+    public Func<Expr, Compat> Predicate { get; }
+
+    protected virtual void UpdateContext(Vertex target, GraphContext context)
+    {
+        context.Graph.AddVertex(target);
+        context.SubgraphMap.Add(NodeGlobalIndex, new Subgraph(NodeGlobalIndex, new() { target }, new List<Edge>(), new List<Edge>(), new List<Edge>()));
+        NodeGlobalIndex++;
+    }
+
+    protected override Vertex VisitGrid(Grid expr, GraphContext context)
     {
         foreach (var operand in expr.Reads)
         {
@@ -287,21 +294,10 @@ public sealed class GraphConvertor : ExprVisitor<Unit, Unit, GraphContext>
         return VisitLeafGrid(expr, context);
     }
 
-    protected override Unit VisitLeafGrid(Grid expr, GraphContext context)
+    protected override Vertex VisitLeafGrid(Grid expr, GraphContext context)
     {
-        Vertex target;
-        if (Predicate(expr))
-        {
-            target = new Vertex(expr, Compat.COMPATIBLE);
-        }
-        else
-        {
-            target = new Vertex(expr, Compat.INCOMPATIBLE);
-        }
-
-        context.Graph.AddVertex(target);
-        context.SubgraphMap.Add(_nodeCount, new Subgraph(_nodeCount, new() { target }, new List<Edge>(), new List<Edge>(), new List<Edge>()));
-        _nodeCount++;
+        var target = new Vertex(expr, Predicate(expr));
+        UpdateContext(target, context);
         foreach (var operand in expr.Reads)
         {
             if (context.Graph.Vertices.Any(v => ReferenceEquals(v.Expr, operand)))
@@ -325,61 +321,58 @@ public sealed class GraphConvertor : ExprVisitor<Unit, Unit, GraphContext>
             }
         }
 
-        return default;
+        return target;
     }
 
-    protected override Unit VisitLeafVar(Var expr, GraphContext context)
+    protected override Vertex VisitLeafVar(Var expr, GraphContext context)
     {
-        Vertex target;
+        var target = new Vertex(expr, Predicate(expr));
+        UpdateContext(target, context);
+        foreach (var operand in expr.Operands)
+        {
+            if (ExprMemo.TryGetValue(operand, out var source) && source is not null)
+            {
+                switch (source.CompatType, target.CompatType)
+                {
+                    case (Compat.COMPATIBLE, Compat.INCOMPATIBLE):
+                        context.Graph.AddEdge(new Edge(EdgeTypes.C2I, source, target));
+                        break;
+                    case (Compat.INCOMPATIBLE, Compat.COMPATIBLE):
+                        context.Graph.AddEdge(new Edge(EdgeTypes.I2C, source, target));
+                        break;
+                    case (Compat.INCOMPATIBLE, Compat.INCOMPATIBLE):
+                        context.Graph.AddEdge(new Edge(EdgeTypes.I2I, source, target));
+                        break;
+                    default:
+                        context.Graph.AddEdge(new Edge(EdgeTypes.C2C, source, target));
+                        break;
+                }
+            }
+        }
 
-        target = new Vertex(expr, Compat.INCOMPATIBLE);
-
-        context.Graph.AddVertex(target);
-        context.SubgraphMap.Add(_nodeCount, new Subgraph(_nodeCount, new() { target }, new List<Edge>(), new List<Edge>(), new List<Edge>()));
-        _nodeCount++;
-
-        return default;
+        return target;
     }
 
-    protected override Unit VisitLeafConst(Const expr, GraphContext context)
+    protected override Vertex VisitLeafConst(Const expr, GraphContext context)
     {
         Vertex target;
         target = new Vertex(expr, expr.CheckedType is DistributedType ? Compat.COMPATIBLE : Compat.INCOMPATIBLE);
-
-        context.Graph.AddVertex(target);
-        context.SubgraphMap.Add(_nodeCount, new Subgraph(_nodeCount, new() { target }, new List<Edge>(), new List<Edge>(), new List<Edge>()));
-        _nodeCount++;
-
-        return default;
+        UpdateContext(target, context);
+        return target;
     }
 
-    protected override Unit VisitLeafNone(None expr, GraphContext context)
+    protected override Vertex VisitLeafNone(None expr, GraphContext context)
     {
         Vertex target;
         target = new Vertex(expr, Compat.INCOMPATIBLE);
-
-        context.Graph.AddVertex(target);
-        context.SubgraphMap.Add(_nodeCount, new Subgraph(_nodeCount, new() { target }, new List<Edge>(), new List<Edge>(), new List<Edge>()));
-        _nodeCount++;
-
-        return default;
+        UpdateContext(target, context);
+        return target;
     }
 
-    protected override Unit VisitLeafCall(Call expr, GraphContext context)
+    protected override Vertex VisitLeafCall(Call expr, GraphContext context)
     {
-        Vertex target;
-        if (Predicate(expr))
-        {
-            target = new Vertex(expr, Compat.COMPATIBLE);
-        }
-        else
-        {
-            target = new Vertex(expr, Compat.INCOMPATIBLE);
-        }
-
-        context.Graph.AddVertex(target);
-        context.SubgraphMap.Add(_nodeCount, new Subgraph(_nodeCount, new() { target }, new List<Edge>(), new List<Edge>(), new List<Edge>()));
-        _nodeCount++;
+        var target = new Vertex(expr, Predicate(expr));
+        UpdateContext(target, context);
         foreach (var operand in expr.Arguments)
         {
             if (context.Graph.Vertices.Any(v => ReferenceEquals(v.Expr, operand)))
@@ -403,23 +396,20 @@ public sealed class GraphConvertor : ExprVisitor<Unit, Unit, GraphContext>
             }
         }
 
-        return default;
+        return target;
     }
 
-    protected override Unit VisitLeafTuple(IR.Tuple expr, GraphContext context)
+    protected override Vertex VisitLeafTuple(IR.Tuple expr, GraphContext context)
     {
         Vertex target;
         var compatType = context.Graph.Vertices.First(v => ReferenceEquals(v.Expr, expr.Fields[0])).CompatType;
-        if (!Predicate(expr))
+        if (Predicate(expr) != Compat.COMPATIBLE)
         {
             compatType = Compat.INCOMPATIBLE;
         }
 
         target = new Vertex(expr, compatType);
-
-        context.Graph.AddVertex(target);
-        context.SubgraphMap.Add(_nodeCount, new Subgraph(_nodeCount, new() { target }, new List<Edge>(), new List<Edge>(), new List<Edge>()));
-        _nodeCount++;
+        UpdateContext(target, context);
         foreach (var field in expr.Fields)
         {
             if (context.Graph.Vertices.Any(v => ReferenceEquals(v.Expr, field)))
@@ -443,11 +433,11 @@ public sealed class GraphConvertor : ExprVisitor<Unit, Unit, GraphContext>
             }
         }
 
-        return default;
+        return target;
     }
 
-    protected override Unit DefaultVisitLeaf(Expr expr, GraphContext context)
+    protected override Vertex DefaultVisitLeaf(Expr expr, GraphContext context)
     {
-        return default;
+        return null!;
     }
 }

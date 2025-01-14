@@ -30,7 +30,7 @@ public sealed class NodeInfo : IDisposable
     private readonly ExprPinner _pinner;
     private readonly TIR.Buffer? _buffer;
 
-    public NodeInfo(TIR.Buffer? buffer, int[] tileShape, int[] outShape)
+    public NodeInfo(TIR.Buffer? buffer, long[] tileShape, long[] outShape)
     {
         _buffer = buffer;
         TileShape = tileShape;
@@ -47,9 +47,9 @@ public sealed class NodeInfo : IDisposable
 
     public TIR.Buffer Buffer => _buffer!;
 
-    public IReadOnlyList<int> OutShape { get; }
+    public IReadOnlyList<long> OutShape { get; }
 
-    public int[] TileShape { get; set; }
+    public long[] TileShape { get; set; }
 
     public void Dispose() => _pinner.Dispose();
 }
@@ -60,10 +60,10 @@ public sealed record TileFragment(BucketCondition Condition, IReadOnlyDictionary
 
 public sealed class FusionChecker
 {
-    private readonly List<KeyValuePair<Expr, int[]>> _initTileList;
+    private readonly List<KeyValuePair<Expr, long[]>> _initTileList;
     private IReadOnlyList<TileFragment>? _checkedResult;
 
-    public FusionChecker(List<KeyValuePair<Expr, int[]>> initTileList)
+    public FusionChecker(List<KeyValuePair<Expr, long[]>> initTileList)
     {
         _initTileList = initTileList;
     }
@@ -181,16 +181,16 @@ public sealed class FusionChecker
         return _checkedResult = conditions.Zip(tileMaps).Select(p => new TileFragment(p.First, p.Second)).ToList();
     }
 
-    private static List<Dictionary<Expr, int>> GetCandidateKs(Dictionary<Expr, int[]> bucket)
+    private static List<Dictionary<Expr, long>> GetCandidateKs(Dictionary<Expr, long[]> bucket)
     {
-        var allKs = new Dictionary<Expr, List<int>>();
+        var allKs = new Dictionary<Expr, List<long>>();
         foreach (var kv in bucket)
         {
             if (kv.Key is Call { Target: MatMul op } call)
             {
                 var k = bucket[call[op.Parameters.First()]].Last();
-                var ks = new List<int>();
-                for (int i = 32; i < k; i += 32)
+                var ks = new List<long>();
+                for (long i = 32; i < k; i += 32)
                 {
                     ks.Add(i);
                 }
@@ -200,20 +200,20 @@ public sealed class FusionChecker
             }
         }
 
-        IEnumerable<IEnumerable<KeyValuePair<Expr, int>>> ret = new[] { Enumerable.Empty<KeyValuePair<Expr, int>>() };
+        IEnumerable<IEnumerable<KeyValuePair<Expr, long>>> ret = new[] { Enumerable.Empty<KeyValuePair<Expr, long>>() };
         foreach (var kvp in allKs)
         {
             ret = from seq in ret
                   from item in kvp.Value
-                  select seq.Concat(new[] { new KeyValuePair<Expr, int>(kvp.Key, item) });
+                  select seq.Concat(new[] { new KeyValuePair<Expr, long>(kvp.Key, item) });
         }
 
         return ret.Select(seq => seq.ToDictionary(kv => kv.Key, kv => kv.Value)).ToList();
     }
 
-    private (List<Dictionary<Expr, int[]>> Buckets, List<BucketCondition> Conditions) GetSplitBuckets()
+    private (List<Dictionary<Expr, long[]>> Buckets, List<BucketCondition> Conditions) GetSplitBuckets()
     {
-        var buckets = new Dictionary<BucketCondition, Dictionary<Expr, int[]>>();
+        var buckets = new Dictionary<BucketCondition, Dictionary<Expr, long[]>>();
         foreach (var s in GetCandidateBuckets())
         {
             buckets.Add(s, new());
@@ -341,7 +341,7 @@ public sealed class FusionChecker
             }
         }
 
-        List<Dictionary<Expr, int[]>> ret = new();
+        List<Dictionary<Expr, long[]>> ret = new();
         List<BucketCondition> conditions = new();
         foreach (BucketCondition s in GetCandidateBuckets())
         {
@@ -379,7 +379,7 @@ public sealed class FusionChecker
         Select(p => p.ToArray()).
         Select(a => new BucketCondition(a[0], a[1], a[2]));
 
-    private bool TryAllocate(Dictionary<Expr, NodeInfo> tileMap, Dictionary<Expr, int[]> bucket, bool finalAllocate = false)
+    private bool TryAllocate(Dictionary<Expr, NodeInfo> tileMap, Dictionary<Expr, long[]> bucket, bool finalAllocate = false)
     {
         var tileList = new List<KeyValuePair<Expr, NodeInfo>>();
         var exprs = ExprCollector.Collect(_initTileList.Last().Key).Where(e => e is not Op);
@@ -402,7 +402,7 @@ public sealed class FusionChecker
         return false;
     }
 
-    private Dictionary<Expr, TIR.Buffer> TryAllocate(List<KeyValuePair<Expr, NodeInfo>> tileList, Dictionary<Expr, int[]> bucket, bool finalAllocate = false)
+    private Dictionary<Expr, TIR.Buffer> TryAllocate(List<KeyValuePair<Expr, NodeInfo>> tileList, Dictionary<Expr, long[]> bucket, bool finalAllocate = false)
     {
         // TODO:
         // 1. 支持不同数据类型的检查
@@ -519,7 +519,7 @@ public sealed class FusionChecker
         return ret;
     }
 
-    private void Visit(Call expr, Dictionary<Expr, NodeInfo> tileMap, Dictionary<Expr, int[]> bucketMap, List<Dictionary<Expr, int>> candidateKs, int k = -1)
+    private void Visit(Call expr, Dictionary<Expr, NodeInfo> tileMap, Dictionary<Expr, long[]> bucketMap, List<Dictionary<Expr, long>> candidateKs, int k = -1)
     {
         switch (expr.Target)
         {
@@ -537,7 +537,7 @@ public sealed class FusionChecker
         }
     }
 
-    private void VisitIdenity(Call call, Dictionary<Expr, NodeInfo> tileMap, Dictionary<Expr, int[]> bucketMap, List<Dictionary<Expr, int>> candidateKs, int k = -1)
+    private void VisitIdenity(Call call, Dictionary<Expr, NodeInfo> tileMap, Dictionary<Expr, long[]> bucketMap, List<Dictionary<Expr, long>> candidateKs, int k = -1)
     {
         var inTileShape = tileMap[call].TileShape;
         var input = call.Arguments[0];
@@ -560,16 +560,16 @@ public sealed class FusionChecker
         }
     }
 
-    private void VisitMatmul(IR.Math.MatMul op, Call call, Dictionary<Expr, NodeInfo> tileMap, Dictionary<Expr, int[]> bucketMap, List<Dictionary<Expr, int>> candidateKs, int k)
+    private void VisitMatmul(IR.Math.MatMul op, Call call, Dictionary<Expr, NodeInfo> tileMap, Dictionary<Expr, long[]> bucketMap, List<Dictionary<Expr, long>> candidateKs, int k)
     {
         var lhs = call.Arguments[0];
         var rhs = call.Arguments[1];
 
         var outTileShape = tileMap[call].TileShape;
-        var inTileShapeA = Enumerable.Repeat(1, lhs.CheckedShape.Rank).ToArray();
+        var inTileShapeA = Enumerable.Repeat(1L, lhs.CheckedShape.Rank).ToArray();
         inTileShapeA[^2] = outTileShape[^2];
         inTileShapeA[^1] = candidateKs[k][call];
-        var inTileShapeB = Enumerable.Repeat(1, rhs.CheckedShape.Rank).ToArray();
+        var inTileShapeB = Enumerable.Repeat(1L, rhs.CheckedShape.Rank).ToArray();
         inTileShapeB[^2] = candidateKs[k][call];
         inTileShapeB[^1] = outTileShape[^1];
 
@@ -610,7 +610,7 @@ public sealed class FusionChecker
         }
     }
 
-    private void VisitBinary(IR.Math.Binary op, Call call, Dictionary<Expr, NodeInfo> tileMap, Dictionary<Expr, int[]> bucketMap, List<Dictionary<Expr, int>> candidateKs, int k)
+    private void VisitBinary(IR.Math.Binary op, Call call, Dictionary<Expr, NodeInfo> tileMap, Dictionary<Expr, long[]> bucketMap, List<Dictionary<Expr, long>> candidateKs, int k)
     {
         var lhs = call.Arguments[0];
         var rhs = call.Arguments[1];

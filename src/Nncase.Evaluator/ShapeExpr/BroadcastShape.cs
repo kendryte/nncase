@@ -30,7 +30,8 @@ public partial class BroadcastShapeEvaluator : IEvaluator<BroadcastShape>, IType
 
     public IRType Visit(ITypeInferenceContext context, BroadcastShape target)
     {
-        return new TensorType(DataTypes.Int64, new[] { Dimension.Unknown });
+        // return new TensorType(DataTypes.Int64, new[] { Dimension.Unknown });
+        throw new NotImplementedException();
     }
 
     public Cost Visit(ICostEvaluateContext context, BroadcastShape target)

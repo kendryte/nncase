@@ -101,13 +101,13 @@ public class BufferSizeCalculator : ExprFunctor<BufferSizeCalculator.Result, Buf
 
     public override Result VisitType(TupleType tupleType)
     {
-        var size = 0;
+        long size = 0;
         foreach (var item in tupleType)
         {
             size += VisitType(item).Size;
         }
 
-        return new(size, Array.Empty<int>(), Array.Empty<int>());
+        return new(size, Array.Empty<long>(), Array.Empty<long>());
     }
 
     protected override Result VisitCall(Call expr)
@@ -128,9 +128,9 @@ public class BufferSizeCalculator : ExprFunctor<BufferSizeCalculator.Result, Buf
         return VisitType(expr.CheckedType);
     }
 
-    public sealed record Result(int Size, int[] Shape, int[] Stride)
+    public sealed record Result(long Size, long[] Shape, long[] Stride)
     {
-        public static readonly Result Empty = new(0, Array.Empty<int>(), Array.Empty<int>());
+        public static readonly Result Empty = new(0, Array.Empty<long>(), Array.Empty<long>());
     }
 }
 

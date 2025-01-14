@@ -25,7 +25,7 @@ public sealed class Interval
 
 public class ScheduleBuffer
 {
-    public ScheduleBuffer(string name, int number, Interval timeInterval, Interval memInterval, int[] shape, int[] strides, bool inplace)
+    public ScheduleBuffer(string name, int number, Interval timeInterval, Interval memInterval, long[] shape, long[] strides, bool inplace)
     {
         Name = name;
         Number = number;
@@ -44,9 +44,9 @@ public class ScheduleBuffer
 
     public Interval MemInterval { get; }
 
-    public int[] Shape { get; }
+    public long[] Shape { get; }
 
-    public int[] Strides { get; }
+    public long[] Strides { get; }
 
     public bool Inplace { get; }
 

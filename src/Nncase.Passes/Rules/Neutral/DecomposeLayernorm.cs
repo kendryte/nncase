@@ -45,13 +45,13 @@ public sealed partial class DecomposeLayerNorm : IRewriteRule
                 var mean = IR.F.Tensors.ReduceMean(input, new[] { ln.Axis }, 0f, true);
                 var sub = IR.F.Math.Sub(input, mean);
                 var sigma = IR.F.Tensors.ReduceMean(IR.F.Math.Square(sub), new[] { ln.Axis }, 0f, true);
-                var rsigma = IR.F.Math.Rsqrt(IR.F.Math.Add(sigma, Tensor.From<float>(new[] { ln.Epsilon }, new[] { 1 })));
+                var rsigma = IR.F.Math.Rsqrt(IR.F.Math.Add(sigma, Tensor.From<float>(new[] { ln.Epsilon }, [1])));
                 return IR.F.Math.Add(IR.F.Math.Mul(IR.F.Math.Mul(sub, rsigma), scale), bias);
             }
             else
             {
                 var sigma = IR.F.Tensors.ReduceMean(IR.F.Math.Square(input), new[] { ln.Axis }, 0f, true);
-                var rsigma = IR.F.Math.Rsqrt(IR.F.Math.Add(sigma, Tensor.From<float>(new[] { ln.Epsilon }, new[] { 1 })));
+                var rsigma = IR.F.Math.Rsqrt(IR.F.Math.Add(sigma, Tensor.From<float>(new[] { ln.Epsilon }, [1])));
                 return IR.F.Math.Add(IR.F.Math.Mul(IR.F.Math.Mul(input, rsigma), scale), bias);
             }
         }
