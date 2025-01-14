@@ -56,7 +56,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                             return invalid;
                         }
 
-                        ndsbp[i] = SBP.P;
+                        ndsbp[i] = SBP.P(ReduceOp.Sum);
                     }
                     else if ((ax == lk && bx != rk) || (ax != lk && bx == rk) || (ax == lm && bx == rn))
                     {
@@ -130,7 +130,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
 
     public static IRType ConvertPartialToBroadcast(DistributedType a)
     {
-        var ndsbp = a.NdSBP.Select(x => x == SBP.P ? SBP.B : x).ToArray();
+        var ndsbp = a.NdSBP.Select(x => x is SBPPartial ? SBP.B : x).ToArray();
         return new DistributedType(a.TensorType, ndsbp, a.Placement);
     }
 
