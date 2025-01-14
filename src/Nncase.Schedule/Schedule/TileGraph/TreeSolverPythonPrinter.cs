@@ -45,7 +45,20 @@ public sealed class TreeSolverPythonPrinter : TreeSolverBase<IntExpr>, ITreeNode
             }
             else if (parent is TileNode parentTile)
             {
-                parentBounds = (int)_bounds[parentTile][i];
+                if (i < _bounds[parentTile].Count)
+                {
+                    parentBounds = (int)_bounds[parentTile][i];
+                }
+                else
+                {
+                    value.Walk(child =>
+                    {
+                        if (child is OpNode opNode && opNode.OpId == value.OpId)
+                        {
+                            parentBounds = opNode.DomainBounds[i];
+                        }
+                    });
+                }
             }
 
             var tile = Solution.Value(domainInfo.TileVars[i].Var());
@@ -97,7 +110,7 @@ public sealed class TreeSolverPythonPrinter : TreeSolverBase<IntExpr>, ITreeNode
     {
         var (parent, writer) = context;
         var opinfo = OpNodeMemo[value];
-        var shapes = string.Join(", ", opinfo.Shapes.Select((sp, i) => $"buf{i}[" + string.Join(',', sp.Select(s => Solution.Value(s.Var()))) + "]"));
+        var shapes = string.Join(", ", opinfo.Shapes.Select((sp, i) => $"{new BufferIdentity(value.Wrapped, i)}[" + string.Join(',', sp.Select(s => Solution.Value(s.Var()))) + "]"));
         var size = string.Join(", ", opinfo.Sizes.Select(s => Solution.Value(s.Var())));
         writer.WriteLine($"{value.Op.GetType()}({value.Op.DisplayProperty()}, {shapes})  # size: {size}");
         return default;

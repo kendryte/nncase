@@ -4,6 +4,7 @@ using Nncase.IR;
 
 namespace Nncase.TIR.CPU;
 
+[ParameterInPlace(0, 1)]
 public sealed partial class Unary : CPUKernelOp
 {
     public static readonly ParameterInfo Input = new(typeof(Unary), 0, "input");
