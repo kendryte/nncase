@@ -114,12 +114,7 @@ public class CPUTarget : ITarget
             });
         }
 
-        // need refactor tiling.
-        passManager.Add<Passes.Distributed.AutoDistributedPass>(true, "cpu");
-        passManager.AddWithName<DataflowPass>("FoldBoxing").Configure(p =>
-        {
-            p.Add<Passes.Rules.Neutral.FoldConstCall>();
-        });
+        passManager.Add<Passes.Distributed.AutoDistributedPass>(true, Kind);
 
         passManager.Add<CPUFunctionPartitionPass>();
 

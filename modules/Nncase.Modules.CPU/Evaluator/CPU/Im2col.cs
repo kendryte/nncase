@@ -130,7 +130,7 @@ public sealed class Im2colEvaluator : ITypeInferencer<Im2col>, ICostEvaluator<Im
                     }
 
                     break;
-                case SBPPartialSum:
+                case SBPPartial:
                     return new InvalidType($"can't be partial sum");
                 default:
                     ndsbp[i] = sbp;
