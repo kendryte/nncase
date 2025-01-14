@@ -176,7 +176,7 @@ internal sealed class DistributedReConstructor : ExprReConstructor<ExprVertex, E
         }
 
         var cloned = PostProcess(clones);
-        var fusion = new Fusion($"{FuncName}_fusion_{sortIndex}", ModuleKind, cloned, paramDict.Values.OfType<Var>().ToArray());
+        var fusion = new Fusion($"{FuncName}_{sortIndex}_kernel", ModuleKind, cloned, paramDict.Values.OfType<Var>().ToArray());
         return new Call(fusion, paramDict.Values.OfType<Var>().Select(v => argumentDict[v]).ToArray());
     }
 
