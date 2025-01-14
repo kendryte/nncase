@@ -7,10 +7,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
+using Nncase.Graphs;
 using Nncase.IR;
 using Nncase.IR.Affine;
 using Nncase.Passes.GraphPartition;
 using Nncase.Schedule;
+using QuikGraph;
+using QuikGraph.Algorithms;
 
 namespace Nncase.Passes.Transforms;
 
@@ -49,75 +52,142 @@ public sealed class AutoTilePass : ModulePass
             return pre;
         }
 
-        // Function post;
-        var ctx = new GraphContext();
-        var convertor = new GraphConvertor(x => x switch
-        {
-            Grid => true,
-            IR.Tuple tp => tp.Fields.AsValueEnumerable().All(f => f is Grid),
-            _ => false,
-        });
-        convertor.Visit(fusion.Body, ctx);
+        var funcName = pre.Name;
 
-        ctx.SummarizeGraph(true);
-
-        var dfsVisitor = new QuikGraph.Algorithms.TopologicalSort.SourceFirstTopologicalSortAlgorithm<Vertex, Edge>(ctx.GraphSummary);
-        dfsVisitor.Compute();
-        var exprMemo = new Dictionary<Expr, Expr>(ReferenceEqualityComparer.Instance);
-        for (var subFuncNumber = 0; subFuncNumber < dfsVisitor.SortedVertices.Length; subFuncNumber++)
+        // 1. convert to quikgraph
+        var graph = new BidirectionalGraph<ExprVertex, ExprEdge>(false);
         {
-            var vertex = dfsVisitor.SortedVertices[subFuncNumber];
-            var subgraph = ctx.SubgraphMap[ctx.SummaryVertexSubgraphMap[vertex]];
-            if (vertex.CompatType == Compat.INCOMPATIBLE)
+            var convertor = new AutoTileExprGraphConvertor();
+            convertor.Visit(fusion.Body, graph);
+        }
+
+        // 2. perform condensation
+        var condenseAlgo = new CondensationGraphAlgorithm<ExprVertex, ExprEdge>(graph);
+        condenseAlgo.IsEdgeCompatible += (algo, arg) =>
+        {
+            return (arg.Edge.Source.Expr, arg.Edge.Target.Expr) switch
             {
-                var sg = new Graph();
-                subgraph.Nodes.ForEach(n => sg.AddVertex(n));
-                subgraph.InteriorEdges.ForEach(e => sg.AddEdge(e));
+                (Grid, Grid) => true,
+                (Grid, IR.Tuple tp) => tp.Fields.AsValueEnumerable().All(x => x is Grid),
+                _ => false,
+            };
+        };
 
-                // sg.DumpDot(DumpScope.Current.Directory + $"_Incompatible_{subgraph.Index}_{vi}.dot");
-                var sgVisitor = new QuikGraph.Algorithms.TopologicalSort.SourceFirstTopologicalSortAlgorithm<Vertex, Edge>(sg);
-                sgVisitor.Compute();
-                foreach (var v in sgVisitor.SortedVertices)
+        condenseAlgo.IsGraphCompatible += (algo, edge) =>
+        {
+            return algo.CondensedGraph.IsDirectedAcyclicGraph();
+        };
+
+        condenseAlgo.Compute();
+
+        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Rewrite))
+        {
+            condenseAlgo.CondensedGraph.Dump($"{funcName}Condensed", init => { });
+            condenseAlgo.ClusteredGraph.Dump($"{funcName}Cluster", algo =>
+            {
+                algo.FormatVertex += (s, arg) =>
                 {
-                    var expr = v.Expr switch
-                    {
-                        Call c => c.With(arguments: c.Arguments.AsValueEnumerable().Select(arg => exprMemo[arg]).ToArray()),
-                        IR.Tuple t => t.With(fields: t.Fields.AsValueEnumerable().Select(arg => exprMemo[arg]).ToArray()),
-                        _ => v.Expr,
-                    };
-                    exprMemo.Add(v.Expr, expr);
-                }
+                    arg.VertexFormat.Label = $"{arg.Vertex.Expr.GetType().Name}";
+                };
+            });
+        }
+
+        // 3. reconstruction
+        var constructor = new AutoTileReConstructor(tiler, funcNumber, ModuleKind, CompileOptions, condenseAlgo);
+        var post = constructor.Construct();
+        return fusion.With(fusion.Name, fusion.ModuleKind, post, fusion.Parameters.ToArray());
+    }
+}
+
+internal sealed class AutoTileExprGraphConvertor : ExprGraphConvertor<ExprVertex, ExprEdge>
+{
+    protected override ExprVertex VisitGrid(Grid expr, IMutableVertexAndEdgeListGraph<ExprVertex, ExprEdge> context)
+    {
+        foreach (var read in expr.Reads)
+        {
+            Visit(read, context);
+        }
+
+        return VisitLeafGrid(expr, context);
+    }
+
+    protected override ExprVertex VisitLeafGrid(Grid expr, IMutableVertexAndEdgeListGraph<ExprVertex, ExprEdge> graph)
+    {
+        var target = (ExprVertex)ExprVertex.Create(expr);
+        graph.AddVertex(target);
+        int count = 0;
+        foreach (var item in expr.Reads)
+        {
+            var source = Visit(item, graph);
+            var edge = (ExprEdge)ExprEdge.Create(source, target, count++);
+            graph.AddEdge(edge);
+        }
+
+        return target;
+    }
+}
+
+internal sealed class AutoTileReConstructor : ExprReConstructor<ExprVertex, ExprEdge>
+{
+    public AutoTileReConstructor(GraphTiler tiler, int funcNumber, string moduleKind, CompileOptions compileOptions, CondensationGraphAlgorithm<ExprVertex, ExprEdge> algo)
+        : base(algo)
+    {
+        Tiler = tiler;
+        FuncNumber = funcNumber;
+        ModuleKind = moduleKind;
+        CompileOptions = compileOptions;
+    }
+
+    public GraphTiler Tiler { get; }
+
+    public int FuncNumber { get; }
+
+    public string ModuleKind { get; }
+
+    public CompileOptions CompileOptions { get; }
+
+    protected override Expr OnComplexCluster(ClusteredBidirectionalGraph<ExprVertex, ExprEdge> cluster, int sortIndex)
+    {
+        var pairs = GetClusterArgumentPairs(cluster);
+        var extractDict = new Dictionary<Expr, Expr>(ReferenceEqualityComparer.Instance);
+        var argumentDict = new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance);
+        foreach (var (pre, post) in pairs)
+        {
+            if (pre is Const)
+            {
+                continue;
             }
-            else
+
+            var @var = new Var(pre.CheckedType);
+            var added = extractDict.TryAdd(pre, @var);
+            if (added)
             {
-                var si = ctx.SummaryVertexSubgraphMap[vertex];
-                var cloner = new ReplacingExprCloner(ctx.VarMap[si].ToDictionary(kv => kv.Key, kv => (Expr)kv.Value));
-                var clonedCall = cloner.Clone(vertex.Expr, default); // replaces some exprs that are in the subgraph with var, avoid tiling the grids out of the subgraph.
-                var tiledCall = tiler.Tile(clonedCall, ModuleKind, $"{funcNumber}_{subFuncNumber}", (ICpuTargetOptions)CompileOptions.TargetOptions);
-
-                var varMap = ctx.VarMap[si].ToDictionary(kv => (Expr)kv.Value, kv => exprMemo[kv.Key]);
-                var substitutor = new Mutators.Substitutor(e =>
-                {
-                    if (varMap.TryGetValue(e, out var arg))
-                    {
-                        return arg;
-                    }
-
-                    return null;
-                });
-
-                var cleanedCall = substitutor.Rewrite(tiledCall, default);
-                if (ctx.OutputMap[subgraph.Index].Count > 1)
-                {
-                    ctx.OutputMap[subgraph.Index].ToList().ForEach(e => exprMemo.Add(e.Key, IR.F.Tensors.GetItem(cleanedCall, e.Value)));
-                }
-                else
-                {
-                    exprMemo.Add(ctx.OutputMap[subgraph.Index].Keys.First(), cleanedCall);
-                }
+                argumentDict.Add(@var, post);
             }
         }
 
-        return fusion.With(fusion.Name, fusion.ModuleKind, exprMemo[fusion.Body], fusion.Parameters.ToArray());
+        var cloner = new ExprClusterCloner(extractDict);
+        var outVertices = cluster.OutVertices().ToArray();
+        var clones = new List<Expr>();
+        foreach (var outVertex in outVertices)
+        {
+            clones.Add(cloner.Clone(outVertex.Expr, default));
+        }
+
+        Expr cloned = clones.Count == 1 ? clones[0] : new IR.Tuple(clones.ToArray());
+        var tiled = Tiler.Tile(cloned, ModuleKind, $"{FuncNumber}_{sortIndex}", (ICpuTargetOptions)CompileOptions.TargetOptions);
+
+        var substitutor = new Mutators.Substitutor(e =>
+        {
+            if (e is Var v && argumentDict.TryGetValue(v, out var arg))
+            {
+                return arg;
+            }
+
+            return null;
+        });
+
+        var substited = substitutor.Rewrite(tiled, default);
+        return substited;
     }
 }
