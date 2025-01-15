@@ -365,7 +365,9 @@ public sealed class UnitTestTileGraph : TestClassBase
         var rootNode = new MCTNode(state);
         var searcher = new MCTSearcher();
         searcher.Search(rootNode);
+#if DEBUG
         rootNode.Dump("mct");
+#endif
     }
 
     [Theory]

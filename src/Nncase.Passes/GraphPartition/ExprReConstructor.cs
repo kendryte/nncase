@@ -38,7 +38,7 @@ public class ExprReConstructor<TVertex, TEdge>
         return ClusterMemo[dfsVisitor.SortedVertices[^1]];
     }
 
-    protected IEnumerable<(Expr Pre, Expr Post)> GetClusterArgumentPairs(ClusteredBidirectionalGraph<TVertex, TEdge> cluster)
+    protected virtual IEnumerable<(Expr Pre, Expr Post)> GetClusterArgumentPairs(ClusteredBidirectionalGraph<TVertex, TEdge> cluster)
     {
         var pairs = new List<(Expr Pre, Expr Post)>();
         foreach (var inEdge in cluster.InEdges(Algo.ClusteredGraph))
@@ -46,15 +46,16 @@ public class ExprReConstructor<TVertex, TEdge>
             // get in Expr
             Expr postArg;
             var sourceCluster = Algo.VertexMap[inEdge.Source];
-            var sourcerOutVertices = sourceCluster.OutVertices().ToArray();
-            if (sourcerOutVertices.Length == 1)
+            var sourceOutVertices = sourceCluster.OutVertices(Algo.ClusteredGraph).ToArray();
+            if (sourceOutVertices.Length == 1)
             {
                 postArg = ClusterMemo[sourceCluster];
             }
             else
             {
-                var sourceOutIndex = sourcerOutVertices.IndexOf(inEdge.Source);
-                postArg = IR.F.Tensors.GetItem(ClusterMemo[sourceCluster], sourceOutIndex);
+                var sourceOutIndex = sourceOutVertices.IndexOf(inEdge.Source);
+                var postResult = ClusterMemo[sourceCluster];
+                postArg = postResult is IR.Tuple tp ? tp.Fields[sourceOutIndex] : IR.F.Tensors.GetItem(postResult, sourceOutIndex);
             }
 
             pairs.Add((inEdge.Source.Expr, postArg));

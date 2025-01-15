@@ -214,8 +214,9 @@ internal sealed class AutoTileReConstructor : ExprReConstructor<ExprVertex, Expr
             }
         }
 
+        // todo sometimes internal grid have outside dependence, so we can't fuse it when tiling.
         var cloner = new ExprClusterCloner(extractDict);
-        var outVertices = cluster.OutVertices().ToArray();
+        var outVertices = cluster.OutVertices(Algo.ClusteredGraph).ToArray();
         var clones = new List<Expr>();
         foreach (var outVertex in outVertices)
         {
