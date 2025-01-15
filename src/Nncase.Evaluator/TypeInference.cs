@@ -150,32 +150,33 @@ public static class TypeInference
                 inputDims[i] = inDim;
             }
 
-            var non1Dims = inputDims.Where(x => x.IsUnknown || x.FixedValue != 1).ToArray();
-            if (non1Dims.Length == 0)
+            var non1Dims = inputDims.Where(x => x.IsUnknown || x.FixedValue != 1).ToHashSet();
+            if (non1Dims.Count == 0)
             {
                 outputShape[dimIndex] = 1;
             }
             else
             {
-                var expectedDim = non1Dims[0];
-                if (non1Dims.Length == 1)
+                var expectedDim = non1Dims.First();
+                if (non1Dims.Count == 1)
                 {
                     outputShape[dimIndex] = expectedDim;
                 }
-                else if (non1Dims.All(x => x.IsFixed))
+                else if (non1Dims.Any(x => x.IsFixed))
                 {
-                    if (non1Dims.All(x => x == expectedDim))
+                    var fixedDim = non1Dims.First(x => x.IsFixed).FixedValue;
+                    if (non1Dims.Any(x => x.IsFixed && x.FixedValue != fixedDim))
                     {
-                        outputShape[dimIndex] = expectedDim;
+                        return new InvalidType("Inputs are not compatible to broadcast.");
                     }
                     else
                     {
-                        return new InvalidType("Inputs are not compatible to broadcast.");
+                        outputShape[dimIndex] = fixedDim;
                     }
                 }
                 else
                 {
-                    outputShape[dimIndex] = Dimension.Unknown(); // IR.F.Math.Max(non1Dims.Select(x => x.Value));
+                    outputShape[dimIndex] = IR.F.Math.Max(non1Dims.Select(x => x.Value));
                 }
             }
         }

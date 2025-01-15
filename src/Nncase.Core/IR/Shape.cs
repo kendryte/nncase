@@ -39,6 +39,70 @@ namespace Nncase.IR
         Fixed,
     }
 
+    public record struct FixedAndDynamicDimension(long Fixed, Dimension? Dynamic)
+    {
+        public static implicit operator FixedAndDynamicDimension((long Fixed, Dimension? Dynamic) value) => new FixedAndDynamicDimension(value.Fixed, value.Dynamic);
+
+        public static FixedAndDynamicDimension operator *(FixedAndDynamicDimension a, FixedAndDynamicDimension b)
+        {
+            var dyn = (a.Dynamic, b.Dynamic) switch
+            {
+                (null, null) => null,
+                (null, Dimension x) => x,
+                (Dimension x, null) => x,
+                (Dimension x, Dimension y) => x * y,
+            };
+            return new FixedAndDynamicDimension(a.Fixed * b.Fixed, dyn);
+        }
+
+        public static FixedAndDynamicDimension operator /(FixedAndDynamicDimension a, long b)
+        {
+            if (a.Fixed % b == 0 || a.Dynamic is null)
+            {
+                return new FixedAndDynamicDimension(a.Fixed / b, a.Dynamic);
+            }
+
+            return new FixedAndDynamicDimension(1, a.Fixed * a.Dynamic.Value / b);
+        }
+
+        public static FixedAndDynamicDimension operator /(FixedAndDynamicDimension a, FixedAndDynamicDimension b)
+        {
+            if (a.Fixed % b.Fixed == 0)
+            {
+                return (a.Dynamic, b.Dynamic) switch
+                {
+                    (null, null) => new FixedAndDynamicDimension(a.Fixed / b.Fixed, null),
+                    (null, Dimension y) => new FixedAndDynamicDimension(1, a.Fixed / b.Fixed / y),
+                    (Dimension x, null) => new FixedAndDynamicDimension(a.Fixed / b.Fixed, x),
+                    (Dimension x, Dimension y) when x == y => new FixedAndDynamicDimension(a.Fixed / b.Fixed, null),
+                    (Dimension x, Dimension y) => new FixedAndDynamicDimension(1, a.Fixed / b.Fixed * x / y),
+                };
+            }
+
+            return (a.Dynamic, b.Dynamic) switch
+            {
+                (null, null) => new FixedAndDynamicDimension(a.Fixed / b.Fixed, null),
+                (null, Dimension y) => new FixedAndDynamicDimension(1, a.Fixed / (b.Fixed * y)),
+                (Dimension x, null) => new FixedAndDynamicDimension(1, a.Fixed * x / b.Fixed),
+                (Dimension x, Dimension y) when x == y => new FixedAndDynamicDimension(a.Fixed / b.Fixed, null),
+                (Dimension x, Dimension y) => new FixedAndDynamicDimension(1, a.Fixed * x / (b.Fixed * y)),
+            };
+        }
+
+        public static FixedAndDynamicDimension Abs(FixedAndDynamicDimension value) =>
+            new(System.Math.Abs(value.Fixed), value.Dynamic is null ? null : Dimension.Abs(value.Dynamic.Value));
+
+        public Dimension ToDimension()
+        {
+            return Dynamic is null ? new Dimension(Fixed) : new Dimension(Fixed) * Dynamic.Value;
+        }
+
+        public Expr ToExpr()
+        {
+            return Dynamic is null ? Fixed : Fixed * Dynamic.Value;
+        }
+    }
+
     /// <summary>
     /// Tensor shape.
     /// </summary>
@@ -265,8 +329,7 @@ namespace Nncase.IR
             }
 
             var rank = (int)shape[0].FixedValue;
-            // return new Shape(Enumerable.Range(0, rank).Select(x => (Dimension)value[x]));
-            return Shape.Unknown(rank);
+            return new Shape(Enumerable.Range(0, rank).Select(x => (Dimension)value[x]));
         }
 
         /// <summary>
@@ -275,6 +338,25 @@ namespace Nncase.IR
         public Dimension Prod()
         {
             return _dimensions.Aggregate(new Dimension(1), (x, y) => x * y);
+        }
+
+        public FixedAndDynamicDimension ProdFixedAndDynamic()
+        {
+            var fixedValue = 1L;
+            var dynamicValue = new Dimension(1);
+            foreach (var dim in _dimensions)
+            {
+                if (dim.IsFixed)
+                {
+                    fixedValue *= dim.FixedValue;
+                }
+                else
+                {
+                    dynamicValue *= dim;
+                }
+            }
+
+            return new(fixedValue, dynamicValue.IsFixed ? null : dynamicValue);
         }
 
         /// <summary>
@@ -387,6 +469,16 @@ namespace Nncase.IR
             }
 
             return true;
+        }
+
+        public IR.Tuple ToTuple()
+        {
+            if (IsUnranked)
+            {
+                throw new InvalidOperationException("Cannot convert unranked shape to tuple");
+            }
+
+            return new IR.Tuple(_dimensions.Select(x => x.ToExpr()).ToArray());
         }
 
         private static ShapeKind KindOf(ReadOnlySpan<Dimension> dimensions)

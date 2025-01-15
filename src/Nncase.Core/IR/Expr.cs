@@ -25,6 +25,8 @@ public class IRMetadata
     /// Gets or sets outputs names.
     /// </summary>
     public IReadOnlyList<string>? OutputNames { get; set; }
+
+    public ValueRange<double> Range { get; set; } = ValueRange<double>.Full;
 }
 
 /// <summary>

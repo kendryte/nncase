@@ -6,6 +6,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Nncase.CodeGen;
@@ -45,6 +47,7 @@ internal sealed class SimplifyProvider : ISimplifyProvider
 {
     private readonly CompileSession _compileSession;
     private readonly IRewriteRule[] _rules;
+    private readonly ConditionalWeakTable<Expr, Expr> _simplifiedExprs = new();
 
     public SimplifyProvider()
     {
@@ -57,12 +60,19 @@ internal sealed class SimplifyProvider : ISimplifyProvider
 
     public Expr SimplifyForDimension(Expr expr)
     {
-#if false
+#if true
         if (expr is not (Const or Var))
         {
-            using var compileScope = new CompileSessionScope(CompileSessionScope.Current ?? _compileSession);
-            using var dumpScope = new DumpScope(NullDumpper.Instance);
-            expr = CompilerServices.Rewrite(expr, _rules, new RunPassContext());
+            if (!_simplifiedExprs.TryGetValue(expr, out var simplifiedExpr))
+            {
+                using var compileScope = new CompileSessionScope(CompileSessionScope.Current ?? _compileSession);
+                using var dumpScope = new DumpScope(NullDumpper.Instance);
+                simplifiedExpr = CompilerServices.Rewrite(expr, _rules, new RunPassContext());
+                _simplifiedExprs.Add(expr, simplifiedExpr);
+                _simplifiedExprs.TryAdd(simplifiedExpr, simplifiedExpr);
+            }
+
+            return simplifiedExpr;
         }
 
         return expr;

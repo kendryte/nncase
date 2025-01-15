@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DryIoc;
 using Microsoft.Extensions.DependencyInjection;
+using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.Evaluator;
 using Nncase.IR;
@@ -531,6 +532,16 @@ public static class CompilerServices
     public static ITarget GetTarget(string name) => Provider.GetTarget(name);
 
     public static Expr SimplifyForDimension(Expr value) => Provider.SimplifyForDimension(value);
+
+    public static Expr FastSimplifyForDimension(Expr value)
+    {
+        if (value is Call call && call.Arguments.AsValueEnumerable().All(x => x is Const))
+        {
+            return SimplifyForDimension(value);
+        }
+
+        return value;
+    }
 
     internal static DryIoc.IContainer CreateScope()
     {

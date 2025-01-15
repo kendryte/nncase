@@ -16,6 +16,7 @@ using Nncase.CodeGen.CPU;
 using Nncase.CodeGen.StackVM;
 using Nncase.IR;
 using Nncase.Passes;
+using Nncase.Passes.Rules.ShapeBucket;
 using Nncase.Passes.Transforms;
 using Nncase.Quantization;
 
@@ -121,6 +122,7 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
         });
 
+        passManager.Add<AddFunctionToModule>();
         passManager.Add<CPUFunctionPartitionPass>();
 
         passManager.Add<CPUFusionToModulePass>();

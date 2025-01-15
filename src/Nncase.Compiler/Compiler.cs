@@ -143,6 +143,8 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.UnSqueezeToReshape>();
             p.Add<Passes.Rules.ShapeExpr.GatherToGetItem>();
             p.Add<Passes.Rules.ShapeExpr.FoldGetItemShapeOf>();
+            p.Add<Passes.Rules.Neutral.FoldGetItemConcat>();
+            p.Add<Passes.Rules.Neutral.FoldIf>();
             p.Add<Passes.Rules.Neutral.FoldNopReduce>();
             p.Add<Passes.Rules.Neutral.SliceToGetItem>();
             p.Add<Passes.Rules.Neutral.FoldTwoPads>();

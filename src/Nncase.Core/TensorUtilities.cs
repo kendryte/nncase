@@ -42,11 +42,6 @@ public static class TensorUtilities
         T product = T.One;
         for (int i = startIndex; i < dimensions.Length; i++)
         {
-            if (dimensions[i] < T.Zero)
-            {
-                throw new ArgumentOutOfRangeException($"{nameof(dimensions)}[{i}]");
-            }
-
             // we use a long which should be much larger than is ever used here,
             // but still force checked
             checked
@@ -75,10 +70,10 @@ public static class TensorUtilities
     {
         if (dimensions.Length == 0)
         {
-            return 1;
+            return 1L;
         }
 
-        Expr product = 1;
+        Expr product = 1L;
         for (int i = startIndex; i < dimensions.Length; i++)
         {
             var dimension = dimensions[i];

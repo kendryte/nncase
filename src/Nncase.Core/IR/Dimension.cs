@@ -54,11 +54,11 @@ namespace Nncase.IR
 
         public Dimension(Expr value)
         {
-            value = CompilerServices.SimplifyForDimension(value);
+            value = CompilerServices.FastSimplifyForDimension(value);
             if (value is TensorConst tc)
             {
                 Kind = DimensionKind.Fixed;
-                _fixedValue = tc.Value.ToScalar<int>();
+                _fixedValue = tc.Value.ToScalar<long>();
             }
             else
             {
@@ -129,6 +129,8 @@ namespace Nncase.IR
         public static Dimension operator +(Dimension lhs, Dimension rhs) => (lhs.IsFixed, rhs.IsFixed) switch
         {
             (true, true) => lhs.FixedValue + rhs.FixedValue,
+            (true, _) when lhs.FixedValue == 0 => rhs,
+            (_, true) when rhs.FixedValue == 0 => lhs,
             (_, _) => new Dimension(lhs.Value + rhs.Value),
         };
 
@@ -137,12 +139,15 @@ namespace Nncase.IR
         public static Dimension operator -(Dimension lhs, Dimension rhs) => (lhs.IsFixed, rhs.IsFixed) switch
         {
             (true, true) => lhs.FixedValue - rhs.FixedValue,
+            (_, true) when rhs.FixedValue == 0 => lhs,
             (_, _) => new Dimension(lhs.Value - rhs.Value),
         };
 
         public static Dimension operator *(Dimension lhs, Dimension rhs) => (lhs.IsFixed, rhs.IsFixed) switch
         {
             (true, true) => lhs.FixedValue * rhs.FixedValue,
+            (true, _) when lhs.FixedValue == 1 => rhs,
+            (_, true) when rhs.FixedValue == 1 => lhs,
             (_, _) => new Dimension(lhs.Value * rhs.Value),
         };
 
@@ -159,7 +164,7 @@ namespace Nncase.IR
                 return System.Math.Abs(value.FixedValue);
             }
 
-            return IR.F.Math.Abs(value.Value);
+            return value.Value.Metadata.Range.Min >= 0 ? value.Value : IR.F.Math.Abs(value.Value);
         }
 
         public static Dimension Clamp(Dimension value, Dimension min, Dimension max)
@@ -230,5 +235,7 @@ namespace Nncase.IR
 
             return dimension.Kind == DimensionKind.Fixed && Value == dimension.Value;
         }
+
+        public Expr ToExpr() => IsFixed ? FixedValue : Value;
     }
 }

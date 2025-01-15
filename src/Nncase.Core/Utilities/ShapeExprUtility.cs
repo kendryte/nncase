@@ -28,8 +28,8 @@ public static class ShapeExprUtility
 
     public static Expr If(Expr condition, Func<Var, Expr> thenExpr, Func<Var, Expr> elseExpr, Expr arg)
     {
-        var var1 = new Var();
-        var var2 = new Var();
+        var var1 = new Var(arg.CheckedType);
+        var var2 = var1.With();
         var thenFunc = new Function(thenExpr(var1), var1);
         var elseFunc = new Function(elseExpr(var2), var2);
         return new If(condition, thenFunc, elseFunc, arg);
@@ -37,13 +37,26 @@ public static class ShapeExprUtility
 
     public static Expr If(Expr condition, Func<Var, Var, Expr> thenExpr, Func<Var, Var, Expr> elseExpr, Expr arg1, Expr arg2)
     {
-        var var11 = new Var();
-        var var21 = new Var();
-        var var12 = new Var();
-        var var22 = new Var();
+        var var11 = new Var(arg1.CheckedType);
+        var var21 = var11.With();
+        var var12 = new Var(arg2.CheckedType);
+        var var22 = var12.With();
         var thenFunc = new Function(thenExpr(var11, var12), var11, var12);
         var elseFunc = new Function(elseExpr(var21, var22), var21, var22);
         return new If(condition, thenFunc, elseFunc, arg1, arg2);
+    }
+
+    public static Expr If(Expr condition, Func<Var, Var, Var, Expr> thenExpr, Func<Var, Var, Var, Expr> elseExpr, Expr arg1, Expr arg2, Expr arg3)
+    {
+        var var11 = new Var(arg1.CheckedType);
+        var var21 = var11.With();
+        var var12 = new Var(arg2.CheckedType);
+        var var22 = var12.With();
+        var var13 = new Var(arg3.CheckedType);
+        var var23 = var13.With();
+        var thenFunc = new Function(thenExpr(var11, var12, var13), var11, var12, var13);
+        var elseFunc = new Function(elseExpr(var21, var22, var23), var21, var22, var23);
+        return new If(condition, thenFunc, elseFunc, arg1, arg2, arg3);
     }
 
     public static Expr Slice(Expr shape, int begin, int end)

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR.Tensors;
 using static Nncase.IR.F.Math;
 
 namespace Nncase.IR;
@@ -20,6 +21,21 @@ public partial class Expr
     /// </summary>
     /// <param name="index"> expr. </param>
     public Expr this[Expr index] => F.Tensors.GetItem(this, index);
+
+    /// <summary>
+    /// get the item from the expr.
+    /// </summary>
+    /// <returns> expr. </returns>
+    public Expr this[params long[] indices] =>
+        this switch
+        {
+            TensorConst tc => Tensor.FromScalar(tc.Value.ElementType, tc.Value[indices]),
+            TupleConst tc => tc.Value[(int)indices.Single()].AsTensor(),
+            IR.Tuple t => t.Fields[(int)indices.Single()],
+            Call { Target: Concat { Axis: 0 } } c when indices.Length == 1 => c[Concat.Input][indices[0]][0],
+            Call { Target: Reshape } c when c[Reshape.Shape] is TensorConst tc && tc.Value.Length == 1 && tc.Value.ToScalar<long>() == 1 => c[Reshape.Input],
+            _ => this[indices.Select(x => (Expr)x).ToArray()],
+        };
 
     /// <summary>
     /// get the item from the expr.

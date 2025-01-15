@@ -76,7 +76,7 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
     public IRType Visit(ITypeInferenceContext context, GetItem target)
     {
         var input = context.CheckArgumentType<IRType>(target, GetItem.Input);
-        var index = context.CheckArgumentType<TensorType>(target, GetItem.Index);
+        var index = context.CheckArgumentTensorTypeOrBroadcast(target, GetItem.Index);
 
         return input switch
         {

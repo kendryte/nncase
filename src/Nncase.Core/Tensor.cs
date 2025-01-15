@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance;
+using Google.Protobuf.WellKnownTypes;
 using Nncase.Buffers;
 using Nncase.IR;
 using Nncase.TIR;
@@ -181,6 +182,19 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         where T : unmanaged, IEquatable<T>
     {
         var tensor = new Tensor<T>(ReadOnlySpan<long>.Empty);
+        tensor[0] = value;
+        return tensor;
+    }
+
+    /// <summary>
+    /// Create a scalar tensor from a scalar.
+    /// </summary>
+    /// <param name="type">Data type.</param>
+    /// <param name="value">Value.</param>
+    /// <returns>Created tensor.</returns>
+    public static Tensor FromScalar(DataType type, object value)
+    {
+        var tensor = Zeros(type, ReadOnlySpan<long>.Empty);
         tensor[0] = value;
         return tensor;
     }

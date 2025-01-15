@@ -86,66 +86,38 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
 
     private IRType Visit(ITypeInferenceContext context, Reshape target, TensorType input)
     {
-        if (input.Shape.IsUnranked)
-        {
-            return input;
-        }
-
         var shape = context.GetDimensionArgument(target, Reshape.Shape);
-        if (shape is TensorConst shapeConst)
-        {
-            var shapeValue = shapeConst.Value.ToArray<long>();
-            var negCount = shapeValue.Count(IsMinus1);
-            var shapeSize = shapeValue.Aggregate(1L, (x, y) => x * y);
-            if (negCount > 1)
-            {
-                return new InvalidType(
-                    $"Reshape at most one dimension of the new shape can be -1," +
-                    $" shape:{shapeValue}");
-            }
-
-            if (input.Shape.IsFixed)
-            {
-                var inputSize = input.Shape.Prod().FixedValue;
-                if (negCount < 1)
-                {
-                    if (inputSize != shapeSize)
-                    {
-                        return new InvalidType("Reshape input shape size and param shape size must be same," +
-                                               $" shape:{shapeValue.ToArray().Aggregate(string.Empty, (s, i) => s + i + " ")}, input shape${string.Join(",", input.Shape)}");
-                    }
-
-                    return input with { Shape = new Shape(shapeValue) };
-                }
-                else
-                {
-                    shapeSize = -shapeSize;
-                    var negIndex = shapeValue.Select((dim, index) => (dim, index)).First(x => IsMinus1(x.dim)).index;
-                    if (inputSize % shapeSize != 0)
-                    {
-                        return new InvalidType("Reshape input size must be divisible by shapeSize when has -1");
-                    }
-
-                    shapeValue[negIndex] = inputSize / shapeSize;
-                    return input with { Shape = new Shape(shapeValue) };
-                }
-            }
-            else
-            {
-                return input with
-                {
-                    Shape = new Shape(shapeValue.Select(x => x == -1 ? Dimension.Unknown() : x).ToArray()),
-                };
-            }
-        }
-
-        if (!shape.CheckedShape.IsRanked || !shape.CheckedShape[0].IsFixed)
+        var shapeType = context.CheckArgumentTensorTypeOrBroadcast(target, Reshape.Shape);
+        if (shapeType.Shape.IsUnranked || !shapeType.Shape[0].IsFixed)
         {
             return input with { Shape = Shape.Unranked };
         }
 
-        var newShape = Shape.Unknown((int)shape.CheckedShape[0].FixedValue);
-        return input with { Shape = newShape };
+        var rank = (int)shapeType.Shape[0].FixedValue;
+        var shapeDims = new Shape(Enumerable.Range(0, rank).Select(i => (Dimension)shape[i]).ToArray());
+        var outputShape = new Dimension[rank];
+
+        var minus1Dim = FixedAndDynamicDimension.Abs(input.Shape.ProdFixedAndDynamic() / shapeDims.ProdFixedAndDynamic());
+        for (var i = 0; i < rank; i++)
+        {
+            var shapeDim = shapeDims[i];
+            if (shapeDim.IsFixed)
+            {
+                outputShape[i] = shapeDim.FixedValue == -1 ? minus1Dim.ToDimension() : shapeDim;
+            }
+            else
+            {
+                var outputDim = ShapeExprUtility.If(
+                        Equal(shapeDim.Value, -1L),
+                        (shapeDim, minus1Dim) => minus1Dim,
+                        (shapeDim, minus1Dim) => shapeDim,
+                        shapeDim.Value,
+                        minus1Dim.ToExpr());
+                outputShape[i] = outputDim;
+            }
+        }
+
+        return input with { Shape = outputShape };
     }
 
     private IRType Visit(ITypeInferenceContext context, Reshape target, DistributedType inputType)
