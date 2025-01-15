@@ -15,6 +15,7 @@
 #pragma once
 #include "tensor_traits.h"
 #include "vector.h"
+#include  "../half.h"
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
