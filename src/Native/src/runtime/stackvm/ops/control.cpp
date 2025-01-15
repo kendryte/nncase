@@ -21,6 +21,7 @@
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
+using namespace nncase::runtime::host_runtime_tensor;
 
 result<void>
 stackvm_runtime_function::visit(NNCASE_UNUSED const extcall_op_t &op) noexcept {
@@ -56,7 +57,7 @@ stackvm_runtime_function::visit(NNCASE_UNUSED const extcall_op_t &op) noexcept {
             dims_t dims;
             for (auto &d : shape)
                 dims.push_back(d.fixed_value());
-            try_var(t, runtime::detail::create(ttype->dtype(), dims));
+            try_var(t, runtime::detail::create(ttype->dtype(), dims, host_runtime_tensor::pool_shared));
             outputs.emplace_back(t);
             params.emplace_back(t);
         }
