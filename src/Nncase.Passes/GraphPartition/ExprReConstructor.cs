@@ -122,23 +122,13 @@ public class ExprClusterCloner : ExprCloner<Unit>
         return MarkVisited(expr, base.DispatchVisit(expr, context));
     }
 
-    protected override Expr VisitLeafVar(Var expr, Unit context)
-    {
-        return expr;
-    }
+    protected override Expr VisitLeafFunction(Function expr, Unit context) => expr;
 
-    protected override Expr VisitLeafConst(Const expr, Unit context)
-    {
-        return expr;
-    }
+    protected override Expr VisitLeafVar(Var expr, Unit context) => expr;
 
-    protected override Expr VisitLeafNone(None expr, Unit context)
-    {
-        return expr;
-    }
+    protected override Expr VisitLeafConst(Const expr, Unit context) => expr;
 
-    protected override Expr VisitLeafOp(Op expr, Unit context)
-    {
-        return expr;
-    }
+    protected override Expr VisitLeafNone(None expr, Unit context) => expr;
+
+    protected override Expr VisitLeafOp(Op expr, Unit context) => expr;
 }
