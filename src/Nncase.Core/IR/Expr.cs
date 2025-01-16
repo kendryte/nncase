@@ -47,6 +47,8 @@ public abstract partial class Expr
         {
             operand.AddUser(this);
         }
+
+        RefreshDepth();
     }
 
     internal Expr(Expr[] operands)
@@ -57,7 +59,11 @@ public abstract partial class Expr
         {
             operand.AddUser(this);
         }
+
+        RefreshDepth();
     }
+
+    public int Depth { get; private set; }
 
     public IRMetadata Metadata { get; set; } = new();
 
@@ -318,6 +324,7 @@ public abstract partial class Expr
         InvalidateTypeInference();
         InvalidateHashCodeCache();
         InvalidateRange();
+        RefreshDepth();
     }
 
     private void InvalidateTypeInference()
@@ -369,5 +376,10 @@ public abstract partial class Expr
         {
             user.InvalidateRange();
         }
+    }
+
+    private void RefreshDepth()
+    {
+        Depth = _operands.Length == 0 ? 0 : _operands.Max(x => x.Depth) + 1;
     }
 }

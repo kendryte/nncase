@@ -721,7 +721,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         {
             DimensionKind.Any => "any",
             DimensionKind.Fixed => dimension.FixedValue.ToString(),
-            DimensionKind.Unknown => dimension.Value is Var var ? $"%{var.Name}" : "?",
+            DimensionKind.Unknown => dimension.Value is Var var ? $"%{var.Name}" : (dimension.Value.Depth > 4 ? "..." : CompilerServices.Print(dimension.Value, true)),
             _ => throw new NotSupportedException(dimension.Kind.ToString()),
         };
 

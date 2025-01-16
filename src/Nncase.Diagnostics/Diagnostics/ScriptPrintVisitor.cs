@@ -325,6 +325,44 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     }
 
     /// <inheritdoc/>
+    protected override IPrintSymbol VisitIf(If expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var doc))
+        {
+            return doc;
+        }
+
+        doc = new(new($"if ..."));
+        _exprMemo.Add(expr, doc!);
+        return doc!;
+
+        // var target = Visit(expr.Target);
+        // var args = expr.Arguments.AsValueEnumerable().Select(Visit).ToArray();
+        // _context.CurrentCall = expr;
+        // _scope.Push();
+        // switch (expr.Target)
+        // {
+        //     case Op op:
+        //         _scope.Append(CompilerServices.PrintOp(op, _context, false));
+        //         break;
+        //     case Function:
+        //         _scope.Append($"{target.Name}({string.Join(", ", from a in args select a.ToString())})");
+        //         break;
+        //     case TIR.PrimFunction:
+        //         _scope.AppendLine(string.Empty);
+        //         _scope.IndWrite($"{target.Name}({string.Join(", ", from a in args select a.ToString())})");
+        //         break;
+        //     default:
+        //         _scope.Append($"{target}({string.Join(", ", from a in args select a.ToString())})");
+        //         break;
+        // }
+
+        // doc = new(_scope.Pop());
+        // _exprMemo.Add(expr, doc);
+        // return doc;
+    }
+
+    /// <inheritdoc/>
     protected override IPrintSymbol VisitTensorConst(TensorConst @const)
     {
         if (_exprMemo.TryGetValue(@const, out var doc))
