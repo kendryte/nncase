@@ -46,3 +46,30 @@ public sealed partial class FoldNopBinary : IRewriteRule
         return null;
     }
 }
+
+/// <summary>
+/// Fold nop <see cref="IR.Math.Binary"/>.
+/// </summary>
+[RuleGenerator]
+public sealed partial class FoldSameBinary : IRewriteRule
+{
+    private readonly Pattern _operandPattern = IsWildcard("operand");
+
+    /// <inheritdoc/>
+    public IPattern Pattern { get; }
+
+    public FoldSameBinary()
+    {
+        Pattern = IsBinary(
+            "binary",
+            "call",
+            x => x.BinaryOp is BinaryOp.Min or BinaryOp.Max,
+            _operandPattern,
+            _operandPattern);
+    }
+
+    private Expr? GetReplace(Expr operand)
+    {
+        return operand;
+    }
+}

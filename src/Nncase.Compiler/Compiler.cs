@@ -154,6 +154,19 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.ScalarConstToTensor>();
         });
 
+        passManager.Add<InferRangePass>();
+        passManager.AddWithName<DataflowPass>("OptimizeByRange").Configure(p =>
+        {
+            p.Add<InferRange>();
+            p.Add<FoldNopAbsByRange>();
+            p.Add<FoldNopCompareByRange>();
+            p.Add<FoldNopIf>();
+            p.Add<FoldNopBinary>();
+            p.Add<FoldSameBinary>();
+            p.Add<FoldNopWhere>();
+            p.Add<InlineFunction>(20);
+        });
+
         passManager.AddWithName<DataflowPass>("DeComposePass").Configure(p =>
         {
             p.Add<Passes.Rules.Neutral.SwapBinaryArgs>();

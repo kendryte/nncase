@@ -16,6 +16,7 @@ using Nncase.CodeGen.CPU;
 using Nncase.CodeGen.StackVM;
 using Nncase.IR;
 using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.Passes.Rules.ShapeBucket;
 using Nncase.Passes.Transforms;
 using Nncase.Quantization;

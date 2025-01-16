@@ -164,7 +164,7 @@ namespace Nncase.IR
                 return System.Math.Abs(value.FixedValue);
             }
 
-            return value.Value.Metadata.Range.Min >= 0 ? value.Value : IR.F.Math.Abs(value.Value);
+            return value.Value.Metadata.Range?.Min >= 0 ? value.Value : IR.F.Math.Abs(value.Value);
         }
 
         public static Dimension Clamp(Dimension value, Dimension min, Dimension max)

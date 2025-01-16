@@ -26,7 +26,7 @@ public class IRMetadata
     /// </summary>
     public IReadOnlyList<string>? OutputNames { get; set; }
 
-    public ValueRange<double> Range { get; set; } = ValueRange<double>.Full;
+    public ValueRange<double>? Range { get; set; }
 }
 
 /// <summary>
@@ -317,6 +317,7 @@ public abstract partial class Expr
     {
         InvalidateTypeInference();
         InvalidateHashCodeCache();
+        InvalidateRange();
     }
 
     private void InvalidateTypeInference()
@@ -350,6 +351,23 @@ public abstract partial class Expr
         foreach (var user in Users)
         {
             user.InvalidateHashCodeCache();
+        }
+    }
+
+    private void InvalidateRange()
+    {
+        if (Metadata.Range is not null)
+        {
+            Metadata.Range = null;
+            InvalidateUsersRange();
+        }
+    }
+
+    private void InvalidateUsersRange()
+    {
+        foreach (var user in Users)
+        {
+            user.InvalidateRange();
         }
     }
 }

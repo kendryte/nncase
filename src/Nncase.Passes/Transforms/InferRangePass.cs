@@ -1,0 +1,114 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reactive;
+using System.Text;
+using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
+using Nncase.Diagnostics;
+using Nncase.IR;
+using Nncase.IR.Math;
+using Nncase.IR.Tensors;
+using Nncase.Passes.Rules;
+
+namespace Nncase.Passes.Transforms;
+
+/// <summary>
+/// Shape inference.
+/// </summary>
+public sealed class InferRangePass : FunctionPass
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="InferRangePass"/> class.
+    /// </summary>
+    public InferRangePass()
+    {
+    }
+
+    /// <inheritdoc/>
+    protected override Task<BaseFunction> RunCoreAsync(BaseFunction pre, RunPassContext options)
+    {
+        var visitor = new InferRangeVisitor();
+        visitor.Visit(pre);
+        return Task.FromResult(pre);
+    }
+}
+
+internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
+{
+    public InferRangeVisitor()
+    {
+    }
+
+    protected override ValueRange<double> DispatchVisit(Expr expr)
+    {
+        if (expr.Metadata.Range is null)
+        {
+            expr.Metadata.Range = base.DispatchVisit(expr);
+        }
+
+        return expr.Metadata.Range!.Value;
+    }
+
+    protected override ValueRange<double> DefaultVisitLeaf(Expr expr)
+    {
+        return expr.Metadata.Range ?? ValueRange<double>.Full;
+    }
+
+    /// <inheritdoc/>
+    protected override ValueRange<double> VisitLeafCall(Call expr)
+    {
+        var range = expr.Target switch
+        {
+            Op op => InferenceOp(op, expr),
+            BaseFunction func => ValueRange<double>.Full,
+            _ => ValueRange<double>.Full,
+        };
+        return range;
+    }
+
+    protected override ValueRange<double> VisitLeafTensorConst(TensorConst expr)
+    {
+        var value = expr.Value.ToArray<double>();
+        return new ValueRange<double>(value.Min(), value.Max());
+    }
+
+    protected override ValueRange<double> VisitLeafTuple(IR.Tuple expr)
+    {
+        var ranges = expr.Fields.AsValueEnumerable().Select(Visit).ToArray();
+        return new ValueRange<double>(ranges.Min(x => x.Min), ranges.Max(x => x.Max));
+    }
+
+    private ValueRange<double> InferenceOp(Op op, Call expr)
+    {
+        return op switch
+        {
+            Reshape => expr[Reshape.Input].Metadata.Range!.Value,
+            Slice => expr[Slice.Input].Metadata.Range!.Value,
+            Gather => expr[Gather.Input].Metadata.Range!.Value,
+            GetItem => expr[GetItem.Input].Metadata.Range!.Value,
+            Concat => expr[Concat.Input].Metadata.Range!.Value,
+            Binary binary => InferenceBinary(expr, binary.BinaryOp),
+            _ => ValueRange<double>.Full,
+        };
+    }
+
+    private ValueRange<double> InferenceBinary(Call expr, BinaryOp op)
+    {
+        var lhs = expr[Binary.Lhs].Metadata.Range!.Value;
+        var rhs = expr[Binary.Rhs].Metadata.Range!.Value;
+
+        return op switch
+        {
+            BinaryOp.Add => new(lhs.Min + rhs.Min, lhs.Max + rhs.Max),
+            BinaryOp.Sub => new(lhs.Min - rhs.Max, lhs.Max - rhs.Min),
+            BinaryOp.Mul => new(lhs.Min * rhs.Min, lhs.Max * rhs.Max),
+            BinaryOp.Max => new(Math.Max(lhs.Min, rhs.Min), Math.Max(lhs.Max, rhs.Max)),
+            BinaryOp.Min => new(Math.Min(lhs.Min, rhs.Min), Math.Min(lhs.Max, rhs.Max)),
+            _ => ValueRange<double>.Full,
+        };
+    }
+}

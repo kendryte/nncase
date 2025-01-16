@@ -14,6 +14,7 @@ using Nncase.CodeGen;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.Passes.Rules.Neutral;
+using Nncase.Passes.Rules.ShapeExpr;
 using Nncase.Quantization;
 
 namespace Nncase.Passes;
@@ -55,6 +56,11 @@ internal sealed class SimplifyProvider : ISimplifyProvider
         using var compileScope = new CompileSessionScope(_compileSession);
         _rules = [
             new FoldConstCall(),
+            new SliceToGetItem(),
+            new GatherToGetItem(),
+            new FoldGetItemShapeOf(),
+            new FoldGetItemConcat(),
+            new FoldSplitShapeOf(),
         ];
     }
 

@@ -318,7 +318,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         var args = expr.Arguments.AsValueEnumerable().Select(Visit).ToArray();
         name = AllocateTempVar(expr);
         _scope.IndWrite($"{name} = {target}({property}{string.Join(", ", args)})");
-        AppendCheckedType(expr.CheckedType, " " + string.Join(",", expr.Metadata.OutputNames ?? Array.Empty<string>()));
+        AppendCheckedType(expr.CheckedType, expr.Metadata.Range, " " + string.Join(",", expr.Metadata.OutputNames ?? Array.Empty<string>()));
         return name;
     }
 
@@ -335,7 +335,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         var args = expr.Arguments.AsValueEnumerable().Select(Visit).ToArray();
         name = AllocateTempVar(expr);
         _scope.IndWrite($"{name} = if({Visit(expr.Condition)}, {string.Join(", ", args)})");
-        AppendCheckedType(expr.CheckedType);
+        AppendCheckedType(expr.CheckedType, expr.Metadata.Range);
         _scope.IndWriteLine("{");
         using (_scope.IndentUp())
         {
@@ -388,7 +388,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
 
         // 1. Function signature
         _scope.IndWrite($"{name} = fn({StringUtility.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit))})");
-        AppendCheckedType(expr.CheckedType);
+        AppendCheckedType(expr.CheckedType, expr.Metadata.Range);
         _scope.IndWriteLine("{");
 
         // 2. Function body
@@ -423,7 +423,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
 
         // 1. Function signature
         _scope.IndWrite($"{name} = fusion<{expr.ModuleKind}>({StringUtility.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit))})");
-        AppendCheckedType(expr.CheckedType);
+        AppendCheckedType(expr.CheckedType, expr.Metadata.Range);
         _scope.IndWriteLine("{");
 
         // 2. Function body
@@ -457,7 +457,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
 
         // 1. Function signature
         _scope.IndWrite($"{name} = prim_wrapper({string.Join(", ", expr.ParameterTypes.Select(x => x == null ? string.Empty : VisitType(x)))})");
-        AppendCheckedType(expr.CheckedType, " {");
+        AppendCheckedType(expr.CheckedType, expr.Metadata.Range, " {");
 
         // 2. Function body
         if (_displayCallable)
@@ -501,7 +501,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         var fields = expr.Fields.AsValueEnumerable().Select(Visit).ToArray();
         name = AllocateTempVar(expr);
         _scope.IndWrite($"{name} = ({string.Join(", ", fields)})");
-        AppendCheckedType(expr.CheckedType);
+        AppendCheckedType(expr.CheckedType, expr.Metadata.Range);
         _scope.IndWriteLine();
         return name;
     }
@@ -549,7 +549,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         var attr = Visit(expr.Attribute);
         name = AllocateTempVar(expr);
         _scope.IndWrite($"{name} = {target}@({expr.Name} = {attr})");
-        AppendCheckedType(expr.CheckedType);
+        AppendCheckedType(expr.CheckedType, expr.Metadata.Range);
         return name;
     }
 
@@ -593,7 +593,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
 
         // 1. For Loop signature
         _scope.Append($"{name} = Grid({string.Join(", ", reads)})");
-        AppendCheckedType(expr.CheckedType);
+        AppendCheckedType(expr.CheckedType, expr.Body.Metadata.Range);
         _scope.IndWriteLine(" {");
 
         using (_scope.IndentUp())
@@ -619,7 +619,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
             var domain_parameters = Visit(expr.DomainParameter);
             var parameters = expr.BodyParameters.AsValueEnumerable().Select(Visit).ToArray();
             _scope.IndWrite($"Body: ({domain_parameters}, {string.Join(", ", parameters)})");
-            AppendCheckedType(expr.Body.CheckedType, " {", hasNewLine: true);
+            AppendCheckedType(expr.Body.CheckedType, expr.Body.Metadata.Range, " {", hasNewLine: true);
             using (_scope.IndentUp())
             {
                 var ss = CompilerServices.Print(expr.Body, true);
@@ -652,7 +652,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
 
         // 1. For Loop signature
         _scope.Append($"For {expr.Mode}({Visit(expr.LoopVar)} in Range({Visit(expr.Domain.Start)}, {Visit(expr.Domain.Stop)}, {Visit(expr.Domain.Step)})");
-        AppendCheckedType(expr.CheckedType, " {");
+        AppendCheckedType(expr.CheckedType, expr.Metadata.Range, " {");
 
         // 2. For Body
         using (_scope.IndentUp())
@@ -680,7 +680,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
 
         // 1. Sequential signature
         _scope.Append($"Sequential");
-        AppendCheckedType(expr.CheckedType, " {", hasNewLine: true);
+        AppendCheckedType(expr.CheckedType, expr.Metadata.Range, " {", hasNewLine: true);
 
         // 2. For Body
         using (_scope.IndentUp())
@@ -723,17 +723,18 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
             _ => throw new NotSupportedException(dimension.Kind.ToString()),
         };
 
-    private void AppendCheckedType(IRType? type, string end = "", bool hasNewLine = true)
+    private void AppendCheckedType(IRType? type, ValueRange<double>? range, string end = "", bool hasNewLine = true)
     {
+        var rangeText = range is not null ? $" [{range.Value.Min}, {range.Value.Max}]" : string.Empty;
         if (type is not null)
         {
             if (hasNewLine)
             {
-                _scope.AppendLine($": // {VisitType(type)}{end}");
+                _scope.AppendLine($": // {VisitType(type)}{end}, {rangeText}");
             }
             else
             {
-                _scope.Append($": // {VisitType(type)}{end}");
+                _scope.Append($": // {VisitType(type)}{end}, {rangeText}");
             }
         }
         else
