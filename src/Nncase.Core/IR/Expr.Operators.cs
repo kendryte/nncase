@@ -31,6 +31,7 @@ public partial class Expr
         {
             TensorConst tc => Tensor.FromScalar(tc.Value.ElementType, tc.Value[indices]),
             TupleConst tc => tc.Value[(int)indices.Single()].AsTensor(),
+            ShapeConst sc => new DimensionConst(sc.Value[(int)indices.Single()]),
             IR.Tuple t => t.Fields[(int)indices.Single()],
             Call { Target: Concat { Axis: 0 } } c when indices.Length == 1 => c[Concat.Input][indices[0]][0],
             Call { Target: Reshape } c when c[Reshape.Shape] is TensorConst tc && tc.Value.Length == 1 && tc.Value.ToScalar<long>() == 1 => c[Reshape.Input],

@@ -69,6 +69,16 @@ public partial class ExprFunctor<TExprResult, TTypeResult, TContext>
     internal protected virtual TExprResult VisitTensorConst(TensorConst expr, TContext context) => VisitConst(expr, context);
 
     /// <summary>
+    /// Visit <see cref="ShapeConst"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitShapeConst(ShapeConst expr, TContext context) => VisitConst(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="DimensionConst"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimensionConst(DimensionConst expr, TContext context) => VisitConst(expr, context);
+
+    /// <summary>
     /// Visit <see cref="IR.Tuple"/>.
     /// </summary>
     internal protected virtual TExprResult VisitTuple(IR.Tuple expr, TContext context) => DefaultVisit(expr, context);
@@ -304,6 +314,20 @@ public partial class ExprFunctor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitTensorConst(TensorConst expr, Unit context) => VisitTensorConst(expr);
+    /// <summary>
+    /// Visit <see cref="ShapeConst"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitShapeConst(ShapeConst expr) => base.VisitShapeConst(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitShapeConst(ShapeConst expr, Unit context) => VisitShapeConst(expr);
+    /// <summary>
+    /// Visit <see cref="DimensionConst"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimensionConst(DimensionConst expr) => base.VisitDimensionConst(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimensionConst(DimensionConst expr, Unit context) => VisitDimensionConst(expr);
     /// <summary>
     /// Visit <see cref="IR.Tuple"/>.
     /// </summary>

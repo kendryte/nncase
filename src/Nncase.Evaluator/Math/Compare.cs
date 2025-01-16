@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
@@ -67,25 +68,31 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
     /// <inheritdoc />
     public IValue Visit(IEvaluateContext context, Compare target)
     {
-        var lhs = context.GetArgumentValueAsTensor(target, Compare.Lhs);
-        var rhs = context.GetArgumentValueAsTensor(target, Compare.Rhs);
-        if (lhs.Shape.IsScalar && rhs.Shape.IsScalar && lhs.ElementType == DataTypes.Int32 && rhs.ElementType == DataTypes.Int32)
+        var lhsValue = context.GetArgumentValue(target, Compare.Lhs);
+        var rhsValue = context.GetArgumentValue(target, Compare.Rhs);
+        switch (lhsValue, rhsValue)
         {
-            return Value.FromTensor(Tensor.FromScalar(Compute(target.CompareOp, lhs.ToScalar<int>(), rhs.ToScalar<int>())));
+            case (TensorValue lhsTV, TensorValue rhsTV):
+                var lhs = lhsTV.AsTensor();
+                var rhs = rhsTV.AsTensor();
+                if (lhs.Shape.IsScalar && rhs.Shape.IsScalar && lhs.ElementType == DataTypes.Int32 && rhs.ElementType == DataTypes.Int32)
+                {
+                    return Value.FromTensor(Tensor.FromScalar(Compute(target.CompareOp, lhs.ToScalar<int>(), rhs.ToScalar<int>())));
+                }
+                else
+                {
+                    return Compute(target.CompareOp, lhs.ToOrtTensor(), rhs.ToOrtTensor());
+                }
+
+            case (ShapeValue lhsTV, TensorValue rhsTV):
+                return Value.FromTensor(Tensor.FromArray(lhsTV.Dimensions.ToArray().Zip(rhsTV.AsTensor().ToArray<long>()).Select(p => Compute(target.CompareOp, p.First, p.Second)).ToArray()));
+            case (TensorValue lhsTV, ShapeValue rhsTV):
+                return Value.FromTensor(Tensor.FromArray(lhsTV.AsTensor().ToArray<long>().Zip(rhsTV.Dimensions.ToArray()).Select(p => Compute(target.CompareOp, p.First, p.Second)).ToArray()));
+            default:
+                break;
         }
 
-        var a = context.GetOrtArgumentValue(target, Compare.Lhs);
-        var b = context.GetOrtArgumentValue(target, Compare.Rhs);
-        return target.CompareOp switch
-        {
-            CompareOp.Equal => OrtKI.Equal(a, b).ToValue(),
-            CompareOp.LowerOrEqual => OrtKI.LessOrEqual(a, b).ToValue(),
-            CompareOp.GreaterOrEqual => OrtKI.GreaterOrEqual(a, b).ToValue(),
-            CompareOp.GreaterThan => OrtKI.Greater(a, b).ToValue(),
-            CompareOp.LowerThan => OrtKI.Less(a, b).ToValue(),
-            CompareOp.NotEqual => OrtKI.Not(OrtKI.Equal(a, b)).ToValue(),
-            _ => throw new ArgumentOutOfRangeException(target.CompareOp.ToString()),
-        };
+        throw new NotSupportedException();
     }
 
     /// <inheritdoc/>
@@ -149,7 +156,41 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
         return ShapeExprUtility.BroadcastShape(lhs, rhs);
     }
 
-    private bool Compute(CompareOp op, int a, int b) => op switch
+    private bool Compute(CompareOp op, Dimension a, long b)
+    {
+        return (a, b) switch
+        {
+            (Dimension { IsFixed: true } da, _) => Compute(op, da.FixedValue, b),
+            (Dimension { IsFixed: false } da, _) => Compute(op, da.Value, b),
+        };
+    }
+
+    private bool Compute(CompareOp op, long a, Dimension b)
+    {
+        return (a, b) switch
+        {
+            (_, Dimension { IsFixed: true } db) => Compute(op, a, db.FixedValue),
+            (_, Dimension { IsFixed: false } db) => Compute(op, a, db.Value),
+        };
+    }
+
+    private IValue Compute(CompareOp op, OrtKISharp.Tensor a, OrtKISharp.Tensor b)
+    {
+        return op switch
+        {
+            CompareOp.Equal => OrtKI.Equal(a, b).ToValue(),
+            CompareOp.LowerOrEqual => OrtKI.LessOrEqual(a, b).ToValue(),
+            CompareOp.GreaterOrEqual => OrtKI.GreaterOrEqual(a, b).ToValue(),
+            CompareOp.GreaterThan => OrtKI.Greater(a, b).ToValue(),
+            CompareOp.LowerThan => OrtKI.Less(a, b).ToValue(),
+            CompareOp.NotEqual => OrtKI.Not(OrtKI.Equal(a, b)).ToValue(),
+            _ => throw new ArgumentOutOfRangeException(op.ToString()),
+        };
+    }
+
+    private bool Compute<T>(CompareOp op, T a, T b)
+        where T : System.Numerics.IEqualityOperators<T, T, bool>, System.Numerics.IComparisonOperators<T, T, bool>
+    => op switch
     {
         CompareOp.Equal => a == b,
         CompareOp.LowerOrEqual => a <= b,
@@ -159,6 +200,20 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
         CompareOp.NotEqual => a != b,
         _ => throw new ArgumentOutOfRangeException(nameof(op)),
     };
+
+    private bool Compute(CompareOp op, Expr a, long b)
+        => (op, a, b) switch
+        {
+            (CompareOp.Equal, Expr, -1) => false,
+            _ => throw new ArgumentOutOfRangeException(nameof(op)),
+        };
+
+    private bool Compute(CompareOp op, long a, Expr b)
+        => (op, a, b) switch
+        {
+            (CompareOp.Equal, -1, Expr) => false,
+            _ => throw new ArgumentOutOfRangeException(nameof(op)),
+        };
 
     private IRType Visit(TensorType lhs, TensorType rhs)
     {

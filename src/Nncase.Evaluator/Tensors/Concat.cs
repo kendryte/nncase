@@ -23,11 +23,45 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
     IShapeEvaluator<Concat>, IMetricEvaluator<Concat>
 {
     /// <inheritdoc/>
-    public IValue Visit(IEvaluateContext context, Concat cat)
+    public IValue Visit(IEvaluateContext context, Concat target)
     {
-        var inputs = context.GetArgumentValueAsTensors(cat, Concat.Input);
-        var axis = cat.Axis;
-        return OrtKI.Concat(inputs.Select(t => t.ToOrtTensor()).ToArray(), axis).ToValue();
+        var inputValue = context.GetArgumentValue(target, Concat.Input);
+        var axis = target.Axis;
+        switch (inputValue)
+        {
+            case TupleValue tpv:
+                if (tpv.All(v => v is TensorValue))
+                {
+                    var inputs = tpv.AsTensors();
+                    return OrtKI.Concat(inputs.Select(t => t.ToOrtTensor()).ToArray(), axis).ToValue();
+                }
+                else if (tpv.Any(v => v is ShapeValue))
+                {
+                    var dims = new List<Dimension>();
+                    foreach (var fv in tpv)
+                    {
+                        switch (fv)
+                        {
+                            case TensorValue ftv:
+                                dims.Add(new Dimension(ftv.AsTensor().Cast<int>()[axis]));
+                                break;
+                            case ShapeValue fsv:
+                                dims.Add(fsv.Dimensions[axis]);
+                                break;
+                            default:
+                                throw new ArgumentOutOfRangeException(nameof(target), "ShapeValue's field not support");
+                        }
+                    }
+
+                    return new ShapeValue(dims.ToArray());
+                }
+
+                break;
+            default:
+                break;
+        }
+
+        throw new ArgumentOutOfRangeException(nameof(target));
     }
 
     /// <inheritdoc/>

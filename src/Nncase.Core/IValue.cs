@@ -92,14 +92,18 @@ public static class Value
     /// <returns>Created value.</returns>
     public static IValue FromConst(Const @const)
     {
-        if (@const is TensorConst tc)
+        switch (@const)
         {
-            return FromTensor(tc.Value);
-        }
-        else
-        {
-            var tpc = (TupleConst)@const;
-            return tpc.Value;
+            case TensorConst tc:
+                return FromTensor(tc.Value);
+            case TupleConst tpc:
+                return tpc.Value;
+            case ShapeConst spc:
+                return new ShapeValue(spc.Value.ToArray());
+            case DimensionConst dc:
+                return new DimensionValue(dc.Value);
+            default:
+                throw new ArgumentOutOfRangeException(nameof(@const));
         }
     }
 }
@@ -253,6 +257,109 @@ public sealed class TensorValue : IValue, IEquatable<TensorValue?>
 
         return _value.Shape.ToString();
     }
+}
+
+public sealed class DimensionValue : IValue, IEquatable<DimensionValue?>
+{
+    private readonly Dimension _value;
+
+    public DimensionValue(Dimension value)
+    {
+        _value = value;
+    }
+
+    public IRType Type => new TensorType(DataTypes.Int64, Shape.Scalar);
+
+    public int Count => 0;
+
+    public Dimension Dimension => _value;
+
+    public IValue this[int index] => throw new NotSupportedException("scalar can't index");
+
+    public Tensor AsTensor() => throw new NotImplementedException();
+
+    public Tensor[] AsTensors() => throw new NotImplementedException();
+
+    public bool Equals(DimensionValue? other) => EqualityComparer<Dimension>.Default.Equals(_value, other?._value);
+
+    public override int GetHashCode() => EqualityComparer<Dimension>.Default.GetHashCode(_value);
+
+    public override bool Equals(object? obj)
+    {
+        return Equals(obj as DimensionValue);
+    }
+
+    public IEnumerator<IValue> GetEnumerator()
+    {
+        yield break;
+    }
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+}
+
+public sealed class ShapeValue : IValue, IEquatable<ShapeValue?>
+{
+    private readonly Dimension[] _values;
+
+    public ShapeValue(params Dimension[] values)
+    {
+        _values = values;
+    }
+
+    public ShapeValue(IEnumerable<IValue> values)
+    {
+        var dims = new List<Dimension>();
+        foreach (var item in values)
+        {
+            if (item is DimensionValue dimValue)
+            {
+                dims.Add(dimValue.Dimension);
+            }
+            else if (item is ShapeValue shapeValue)
+            {
+                dims.AddRange(shapeValue._values);
+            }
+            else
+            {
+                throw new NotSupportedException("only support dimension/shape value for constructor");
+            }
+        }
+
+        _values = dims.ToArray();
+    }
+
+    public IRType Type => new TensorType(DataTypes.Int64, new[] { _values.Length });
+
+    public int Count => _values.Length;
+
+    public Span<Dimension> Dimensions => _values;
+
+    public IValue this[int index] => new DimensionValue(_values[index]);
+
+    public Tensor AsTensor() => throw new NotImplementedException();
+
+    public Tensor[] AsTensors() => throw new NotImplementedException();
+
+    public bool Equals(ShapeValue? other) => StructuralComparisons.StructuralEqualityComparer.Equals(_values, other?._values);
+
+    public override int GetHashCode() => StructuralComparisons.StructuralEqualityComparer.GetHashCode(_values);
+
+    public override bool Equals(object? obj)
+    {
+        return Equals(obj as ShapeValue);
+    }
+
+    public IEnumerator<IValue> GetEnumerator()
+    {
+        foreach (var item in _values)
+        {
+            yield return new DimensionValue(item);
+        }
+    }
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    public override string ToString() => $"[{string.Join(",", _values.AsValueEnumerable().Select(v => v.ToString()))}]";
 }
 
 /// <summary>

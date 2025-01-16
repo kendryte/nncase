@@ -258,6 +258,8 @@ public partial class EGraphPrinter
             {
                 TensorConst tc => tc.Value.Shape.Size <= 8 ? tc.Value.GetArrayString(false) : string.Empty,
                 TupleConst => string.Empty,
+                ShapeConst sc => VisitShape(sc.Value),
+                DimensionConst dc => VisitDimension(dc.Value),
                 _ => throw new ArgumentOutOfRangeException(nameof(expr)),
             };
             valueStr = valueStr != string.Empty ? " : " + valueStr : string.Empty;
@@ -282,5 +284,23 @@ public partial class EGraphPrinter
         protected override string VisitTuple(IR.Tuple expr) => "Tuple";
 
         protected override string VisitNone(None expr) => "None";
+
+        private string VisitShape(Shape shape) =>
+        shape.Kind switch
+        {
+            ShapeKind.Invalid => "Invalid",
+            ShapeKind.Unranked => "Unranked",
+            _ => $"[{string.Join(',', shape.Select(VisitDimension))}]",
+        };
+
+        private string VisitDimension(Dimension dimension) =>
+            dimension.Kind switch
+            {
+                DimensionKind.Any => "any",
+                DimensionKind.Fixed => dimension.FixedValue.ToString(),
+                DimensionKind.Unknown => dimension.Value is Var var ? $"%{var.Name}" : "?",
+                _ => throw new NotSupportedException(dimension.Kind.ToString()),
+            };
+
     }
 }

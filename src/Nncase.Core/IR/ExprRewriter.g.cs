@@ -80,6 +80,18 @@ public partial class ExprRewriter<TContext>
     }
 
     /// <inheritdoc/>
+    protected sealed override Expr VisitLeafShapeConst(ShapeConst expr, TContext context)
+    {
+        return RewriteLeafShapeConst(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override Expr VisitLeafDimensionConst(DimensionConst expr, TContext context)
+    {
+        return RewriteLeafDimensionConst(expr, context);
+    }
+
+    /// <inheritdoc/>
     protected sealed override Expr VisitLeafTuple(IR.Tuple expr, TContext context)
     {
         return RewriteLeafTuple(expr, context);
@@ -319,6 +331,16 @@ public partial class ExprRewriter<TContext>
     /// Rewrite leaf <see cref="TensorConst"/>.
     /// </summary>
     protected virtual Expr RewriteLeafTensorConst(TensorConst expr, TContext context) => RewriteLeafConst(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="ShapeConst"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafShapeConst(ShapeConst expr, TContext context) => RewriteLeafConst(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimensionConst"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimensionConst(DimensionConst expr, TContext context) => RewriteLeafConst(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="IR.Tuple"/>.
@@ -566,6 +588,22 @@ public partial class ExprRewriter
 
     /// <inheritdoc />
     protected sealed override Expr RewriteLeafTensorConst(TensorConst expr, Unit context) => RewriteLeafTensorConst(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="ShapeConst"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafShapeConst(ShapeConst expr) => RewriteLeafConst(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafShapeConst(ShapeConst expr, Unit context) => RewriteLeafShapeConst(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimensionConst"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimensionConst(DimensionConst expr) => RewriteLeafConst(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafDimensionConst(DimensionConst expr, Unit context) => RewriteLeafDimensionConst(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="IR.Tuple"/>.

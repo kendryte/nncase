@@ -119,8 +119,7 @@ internal sealed class EGraphCostEvaluator
         return enode.Expr switch
         {
             Var var => Visit(enode, var),
-            TensorConst con => Visit(enode, con),
-            TupleConst con => Visit(enode, con),
+            Const con => Visit(enode, con),
             Function func => Visit(enode, func),
             Call call => Visit(enode, call, returnType),
             IR.Tuple tuple => Visit(enode, tuple),
@@ -138,7 +137,7 @@ internal sealed class EGraphCostEvaluator
         return VisitLeaf(enode, () => Cost.Zero);
     }
 
-    private Cost Visit(ENode enode, TensorConst tc)
+    private Cost Visit(ENode enode, Const @const)
     {
         return VisitLeaf(enode, () => Cost.Zero);
     }
@@ -151,11 +150,6 @@ internal sealed class EGraphCostEvaluator
     private Cost? Visit(ENode enode, Function func)
     {
         return Visit(enode, costs => Cost.Zero);
-    }
-
-    private Cost? Visit(ENode enode, TupleConst tc)
-    {
-        return Visit(enode, costs => costs.Sum());
     }
 
     private Cost? Visit(ENode enode, IR.Tuple tuple)

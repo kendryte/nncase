@@ -30,13 +30,55 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Slice sl)
     {
-        var input = context.GetOrtArgumentValue(sl, Slice.Input);
-        var begins = context.GetInt64OrtTensorArgumentValue(sl, Slice.Begins);
-        var ends = context.GetInt64OrtTensorArgumentValue(sl, Slice.Ends);
-        var axes = context.GetInt64OrtTensorArgumentValue(sl, Slice.Axes);
-        var strides = context.GetInt64OrtTensorArgumentValue(sl, Slice.Strides);
-        var sliced = OrtKI.Slice(input, begins, ends, axes, strides);
-        return Value.FromTensor(context.CurrentCall.CheckedType is AnyType ? sliced.ToTensor() : sliced.ToTensor(context.CurrentCall.CheckedTensorType));
+        var inputValue = context.GetArgumentValue(sl, Slice.Input);
+        var beginsValue = context.GetArgumentValue(sl, Slice.Begins);
+        var endsValue = context.GetArgumentValue(sl, Slice.Ends);
+        var axesValue = context.GetArgumentValue(sl, Slice.Axes);
+        var stridesValue = context.GetArgumentValue(sl, Slice.Strides);
+        switch (inputValue, beginsValue, endsValue, axesValue, stridesValue)
+        {
+            case (_, TensorValue beginsTValue, TensorValue endsTValue, TensorValue axesTValue, TensorValue stridesTValue):
+                var beginsTensor = beginsTValue.AsTensor();
+                var endsTensor = endsTValue.AsTensor();
+                var axesTensor = axesTValue.AsTensor();
+                var stridesTensor = stridesTValue.AsTensor();
+                if (inputValue is ShapeValue inputSValue && beginsTensor.Shape.Rank == 1 && endsTensor.Shape.Rank == 1 && axesTensor.Shape.Rank == 1 && stridesTensor.Shape.Rank == 1)
+                {
+                    // var input = inputShapeValue.AsTensor().Cast<long>().ToOrtTensor();
+                    var begins = beginsTensor.ToScalar<long>();
+                    var ends = endsTensor.ToScalar<long>();
+                    var axes = axesTensor.ToScalar<long>();
+                    if (axes != 0)
+                    {
+                        throw new NotSupportedException("slice ShapeConst Axes != 0");
+                    }
+
+                    var strides = stridesTensor.ToScalar<long>();
+                    var sliced = new List<IValue>();
+                    for (long i = begins; i < ends; i += strides)
+                    {
+                        sliced.Add(inputSValue[checked((int)i)]);
+                    }
+
+                    return new ShapeValue(sliced);
+                }
+                else if (inputValue is TensorValue inputTValue)
+                {
+                    var input = inputTValue.AsTensor().Cast<long>().ToOrtTensor();
+                    var begins = beginsTensor.Cast<long>().ToOrtTensor();
+                    var ends = endsTensor.Cast<long>().ToOrtTensor();
+                    var axes = axesTensor.Cast<long>().ToOrtTensor();
+                    var strides = stridesTensor.Cast<long>().ToOrtTensor();
+                    var sliced = OrtKI.Slice(input, begins, ends, axes, strides);
+                    return Value.FromTensor(context.CurrentCall.CheckedType is AnyType ? sliced.ToTensor() : sliced.ToTensor(context.CurrentCall.CheckedTensorType));
+                }
+
+                break;
+            default:
+                break;
+        }
+
+        throw new NotSupportedException("input value is neither shapevalue or tensorvalue");
     }
 
     /// <inheritdoc/>

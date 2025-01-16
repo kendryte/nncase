@@ -148,16 +148,20 @@ public abstract class Const : Expr
     /// <returns>Created constant expression.</returns>
     public static Const FromValue(IValue value)
     {
-        if (value is TensorValue tv)
+        switch (value)
         {
-            return tv.Type is DistributedType distributedType
-                ? new TensorConst(tv.AsTensor(), distributedType.NdSBP, distributedType.Placement)
-                : new TensorConst(tv.AsTensor());
-        }
-        else
-        {
-            var tpv = (TupleValue)value;
-            return new TupleConst(tpv);
+            case TensorValue tv:
+                return tv.Type is DistributedType distributedType
+                    ? new TensorConst(tv.AsTensor(), distributedType.NdSBP, distributedType.Placement)
+                    : new TensorConst(tv.AsTensor());
+            case TupleValue tpv:
+                return new TupleConst(tpv);
+            case ShapeValue sv:
+                return new ShapeConst(sv.Dimensions.ToArray());
+            case DimensionValue dv:
+                return new DimensionConst(dv.Dimension);
+            default:
+                throw new ArgumentOutOfRangeException(nameof(value));
         }
     }
 }

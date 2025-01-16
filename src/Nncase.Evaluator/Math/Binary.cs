@@ -79,45 +79,61 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     /// <inheritdoc />
     public IValue Visit(IEvaluateContext context, Binary binary)
     {
-        var lhs = context.GetArgumentValueAsTensor(binary, Binary.Lhs);
-        var rhs = context.GetArgumentValueAsTensor(binary, Binary.Rhs);
-        if (lhs.Shape.IsScalar && rhs.Shape.IsScalar)
+        var lhsValue = context.GetArgumentValue(binary, Binary.Lhs);
+        var rhsValue = context.GetArgumentValue(binary, Binary.Rhs);
+        switch (lhsValue, rhsValue)
         {
-            if (lhs.ElementType == DataTypes.Int32 && rhs.ElementType == DataTypes.Int32)
-            {
-                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<int>(), rhs.ToScalar<int>())));
-            }
-            else if (lhs.ElementType == DataTypes.Int64 && rhs.ElementType == DataTypes.Int64)
-            {
-                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<long>(), rhs.ToScalar<long>())));
-            }
-            else if (lhs.ElementType == DataTypes.Float32 && rhs.ElementType == DataTypes.Float32)
-            {
-                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<float>(), rhs.ToScalar<float>())));
-            }
-            else if (lhs.ElementType == DataTypes.Boolean && rhs.ElementType == DataTypes.Boolean)
-            {
-                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<bool>(), rhs.ToScalar<bool>())));
-            }
-            else if (lhs.ElementType == DataTypes.UInt32 && rhs.ElementType == DataTypes.UInt32)
-            {
-                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<uint>(), rhs.ToScalar<uint>())));
-            }
-            else if (lhs.ElementType is PointerType && (rhs.ElementType == DataTypes.UInt32 || rhs.ElementType == DataTypes.UInt64))
-            {
-                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<ulong>(), rhs.ToScalar<ulong>())));
-            }
-            else if ((lhs.ElementType == DataTypes.UInt32 || lhs.ElementType == DataTypes.UInt64) && rhs.ElementType is PointerType)
-            {
-                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<ulong>(), rhs.ToScalar<ulong>())));
-            }
-            else
-            {
+            case (TensorValue lhsTV, TensorValue rhsTV):
+                var lhs = lhsTV.AsTensor();
+                var rhs = rhsTV.AsTensor();
+                if (lhs.Shape.IsScalar && rhs.Shape.IsScalar)
+                {
+                    if (lhs.ElementType == DataTypes.Int32 && rhs.ElementType == DataTypes.Int32)
+                    {
+                        return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<int>(), rhs.ToScalar<int>())));
+                    }
+                    else if (lhs.ElementType == DataTypes.Int64 && rhs.ElementType == DataTypes.Int64)
+                    {
+                        return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<long>(), rhs.ToScalar<long>())));
+                    }
+                    else if (lhs.ElementType == DataTypes.Float32 && rhs.ElementType == DataTypes.Float32)
+                    {
+                        return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<float>(), rhs.ToScalar<float>())));
+                    }
+                    else if (lhs.ElementType == DataTypes.Boolean && rhs.ElementType == DataTypes.Boolean)
+                    {
+                        return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<bool>(), rhs.ToScalar<bool>())));
+                    }
+                    else if (lhs.ElementType == DataTypes.UInt32 && rhs.ElementType == DataTypes.UInt32)
+                    {
+                        return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<uint>(), rhs.ToScalar<uint>())));
+                    }
+                    else if (lhs.ElementType is PointerType && (rhs.ElementType == DataTypes.UInt32 || rhs.ElementType == DataTypes.UInt64))
+                    {
+                        return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<ulong>(), rhs.ToScalar<ulong>())));
+                    }
+                    else if ((lhs.ElementType == DataTypes.UInt32 || lhs.ElementType == DataTypes.UInt64) && rhs.ElementType is PointerType)
+                    {
+                        return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<ulong>(), rhs.ToScalar<ulong>())));
+                    }
+                    else
+                    {
+                        return Ort_compute(binary, lhs, rhs);
+                    }
+                }
+
                 return Ort_compute(binary, lhs, rhs);
-            }
+            case (DimensionValue { Dimension: { IsFixed: true } } lhsDV, TensorValue { Type: TensorType { Shape: { IsScalar: true } } } rhsTV):
+                return Value.FromTensor(Compute(binary.BinaryOp, lhsDV.Dimension.FixedValue, rhsTV.AsTensor().ToScalar<long>()));
+            case (TensorValue { Type: TensorType { Shape: { IsScalar: true } } } lhsTV, DimensionValue { Dimension: { IsFixed: true } } rhsDV):
+                return Value.FromTensor(Compute(binary.BinaryOp, lhsTV.AsTensor().ToScalar<long>(), rhsDV.Dimension.FixedValue));
+            case (DimensionValue { Dimension: { IsFixed: true } } lhsDV, DimensionValue { Dimension: { IsFixed: true } } rhsDV):
+                return Value.FromTensor(Compute(binary.BinaryOp, lhsDV.Dimension.FixedValue, rhsDV.Dimension.FixedValue));
+            default:
+                break;
         }
 
-        return Ort_compute(binary, lhs, rhs);
+        throw new NotSupportedException($"binary notsupport {lhsValue} {rhsValue}");
     }
 
     /// <inheritdoc/>

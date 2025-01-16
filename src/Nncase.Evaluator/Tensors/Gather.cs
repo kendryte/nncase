@@ -22,10 +22,33 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Gather gather)
     {
-        var input = context.GetOrtArgumentValue(gather, Gather.Input);
+        var inputValue = context.GetArgumentValue(gather, Gather.Input);
+        var indexValue = context.GetArgumentValue(gather, Gather.Index);
         var axis = gather.Axis;
-        var index = context.GetOrtArgumentValue(gather, Gather.Index);
-        return OrtKI.Gather(input, index, axis).ToValue();
+        switch (inputValue, indexValue)
+        {
+            case (_, TensorValue indexTValue):
+                if (inputValue is TensorValue inputTValue)
+                {
+                    return OrtKI.Gather(inputTValue.AsTensor().ToOrtTensor(), indexTValue.AsTensor().ToOrtTensor(), axis).ToValue();
+                }
+                else if (inputValue is ShapeValue inputSValue && axis == 0)
+                {
+                    var indexTensor = indexTValue.AsTensor();
+                    if (!indexTensor.Shape.IsScalar)
+                    {
+                        throw new NotSupportedException("Gather ShapeConst the index must be scalar!");
+                    }
+
+                    return inputSValue[indexTensor.ToScalar<int>()];
+                }
+
+                break;
+            default:
+                break;
+        }
+
+        throw new NotSupportedException();
     }
 
     /// <inheritdoc/>

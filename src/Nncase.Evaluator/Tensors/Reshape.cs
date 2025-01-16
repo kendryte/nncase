@@ -97,6 +97,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         var shapeDims = new Shape(Enumerable.Range(0, rank).Select(i => (Dimension)shape[i]).ToArray());
         var outputShape = new Dimension[rank];
 
+        // todo use egraph simplify.
         var minus1Dim = FixedAndDynamicDimension.Abs(input.Shape.ProdFixedAndDynamic() / shapeDims.ProdFixedAndDynamic());
         for (var i = 0; i < rank; i++)
         {
@@ -107,13 +108,21 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
             }
             else
             {
-                var outputDim = ShapeExprUtility.If(
-                        Equal(shapeDim.Value, -1L),
-                        (shapeDim, minus1Dim) => minus1Dim,
-                        (shapeDim, minus1Dim) => shapeDim,
-                        shapeDim.Value,
-                        minus1Dim.ToExpr());
-                outputShape[i] = outputDim;
+                switch (shapeDim)
+                {
+                    case Dimension { Value: Var }:
+                        outputShape[i] = shapeDim;
+                        break;
+                    default:
+                        var outputDim = ShapeExprUtility.If(
+                                Equal(shapeDim.Value, -1L),
+                                (shapeDim, minus1Dim) => minus1Dim,
+                                (shapeDim, minus1Dim) => shapeDim,
+                                shapeDim.Value,
+                                minus1Dim.ToExpr());
+                        outputShape[i] = outputDim;
+                        break;
+                }
             }
         }
 

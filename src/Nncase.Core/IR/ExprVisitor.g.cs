@@ -89,6 +89,20 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     }
 
     /// <inheritdoc />
+    protected internal override TExprResult VisitShapeConst(ShapeConst expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        return VisitLeafShapeConst(expr, context);
+    }
+
+    /// <inheritdoc />
+    protected internal override TExprResult VisitDimensionConst(DimensionConst expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        return VisitLeafDimensionConst(expr, context);
+    }
+
+    /// <inheritdoc />
     protected internal override TExprResult VisitTuple(IR.Tuple expr, TContext context)
     {
         VisitOperands(expr, context);
@@ -351,6 +365,16 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected virtual TExprResult VisitLeafTensorConst(TensorConst expr, TContext context) => VisitLeafConst(expr, context);
 
     /// <summary>
+    /// Visit leaf <see cref="ShapeConst"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafShapeConst(ShapeConst expr, TContext context) => VisitLeafConst(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimensionConst"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimensionConst(DimensionConst expr, TContext context) => VisitLeafConst(expr, context);
+
+    /// <summary>
     /// Visit leaf <see cref="IR.Tuple"/>.
     /// </summary>
     protected virtual TExprResult VisitLeafTuple(IR.Tuple expr, TContext context) => DefaultVisitLeaf(expr, context);
@@ -572,6 +596,20 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitTensorConst(TensorConst expr, Unit context) => VisitTensorConst(expr);
+    /// <summary>
+    /// Visit <see cref="ShapeConst"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitShapeConst(ShapeConst expr) => base.VisitShapeConst(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitShapeConst(ShapeConst expr, Unit context) => VisitShapeConst(expr);
+    /// <summary>
+    /// Visit <see cref="DimensionConst"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimensionConst(DimensionConst expr) => base.VisitDimensionConst(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimensionConst(DimensionConst expr, Unit context) => VisitDimensionConst(expr);
     /// <summary>
     /// Visit <see cref="IR.Tuple"/>.
     /// </summary>
@@ -862,6 +900,22 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     protected sealed override TExprResult VisitLeafTensorConst(TensorConst expr, Unit context) => VisitLeafTensorConst(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="ShapeConst"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafShapeConst(ShapeConst expr) => base.VisitLeafShapeConst(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafShapeConst(ShapeConst expr, Unit context) => VisitLeafShapeConst(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimensionConst"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimensionConst(DimensionConst expr) => base.VisitLeafDimensionConst(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafDimensionConst(DimensionConst expr, Unit context) => VisitLeafDimensionConst(expr);
 
     /// <summary>
     /// Visit leaf <see cref="IR.Tuple"/>.

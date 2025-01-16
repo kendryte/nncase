@@ -365,6 +365,8 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         {
             TensorConst tc => tc.Value.Shape.Size <= 8 ? tc.Value.GetArrayString(false) : string.Empty,
             TupleConst => string.Empty,
+            ShapeConst sc => VisitShape(sc.Value),
+            DimensionConst dc => VisitDimension(dc.Value),
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         };
         valueStr = valueStr != string.Empty ? " : " + valueStr : string.Empty;

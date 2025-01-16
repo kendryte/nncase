@@ -114,7 +114,11 @@ namespace Nncase.IR
         /// Convert <see cref="Expr"/> to a <see cref="Dimension"/> expression.
         /// </summary>
         /// <param name="value">Dimension value.</param>
-        public static implicit operator Dimension(Expr value) => new(value);
+        public static implicit operator Dimension(Expr value) => value switch
+        {
+            DimensionConst dc => dc.Value,
+            _ => new(value),
+        };
 
         public static bool operator ==(Dimension left, Dimension right)
         {

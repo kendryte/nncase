@@ -48,10 +48,39 @@ public partial class FoldConstCall : RewriteRule<CallPattern>
 public partial class FoldShapeOf : RewriteRule<CallPattern>
 {
     /// <inheritdoc/>
-    public override CallPattern Pattern { get; } = IsShapeOf(IsWildcard("wc") with { TypePattern = HasFixedShape() });
+    public override CallPattern Pattern { get; } = IsShapeOf(IsWildcard("wc") with { TypePattern = HasRank() });
 
     private Const GetReplace(Expr wc)
     {
-        return Const.FromTensor(wc.CheckedShape.ToValueArray().Select(x => (long)x).ToArray());
+        if (wc.CheckedShape.IsFixed)
+        {
+            return Const.FromTensor(wc.CheckedShape.ToValueArray().Select(x => (long)x).ToArray());
+        }
+        else
+        {
+            return new ShapeConst(wc.CheckedShape);
+        }
     }
 }
+
+/// <summary>
+/// concat([1, seq_len, 2, 3], 0) => tuple([1,seq_len,2,3]).
+/// </summary>
+// [RuleGenerator]
+// public partial class FoldConcatShape : RewriteRule<CallPattern>
+// {
+//     /// <inheritdoc/>
+//     public override CallPattern Pattern { get; } = IsConcat("concat", _ => true, IsTuple("tuple", IsVArgsRepeat("fileds", exprs =>
+//         {
+//             var patterns = new Pattern[exprs.Length];
+//             for (int i = 0; i < exprs.Length; i++)
+//             {
+//                 patterns[i] = IsWildcard($"input_{i}") with { TypePattern = IsIntegralScalar() };
+//             }
+//             return patterns;
+//         })));
+//     private Const GetReplace(Expr wc)
+//     {
+//         return Const.FromTensor(wc.CheckedShape.ToValueArray().Select(x => (long)x).ToArray());
+//     }
+// }

@@ -621,6 +621,12 @@ internal sealed class SatExprBuildVisitor
             case Marker mk:
                 expr = mk.With(target: children[0], attribute: children[1], metadata: mk.Metadata);
                 break;
+            case ShapeConst sc:
+                expr = sc;
+                break;
+            case DimensionConst dc:
+                expr = dc;
+                break;
             default:
                 throw new NotSupportedException(enode.Expr.GetType().Name);
         }
