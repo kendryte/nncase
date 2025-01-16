@@ -496,6 +496,12 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                 case (ParameterKind.Attribute, TensorConst e):
                     updateBuckets(buckets, new[] { e.With() }); // remove all old users.
                     break;
+                case (ParameterKind.Attribute, ShapeConst e):
+                    updateBuckets(buckets, new[] { e.With() }); // remove all old users.
+                    break;
+                case (ParameterKind.Attribute, DimensionConst e):
+                    updateBuckets(buckets, new[] { e.With() }); // remove all old users.
+                    break;
                 case (ParameterKind.Attribute, None e):
                     updateBuckets(buckets, new[] { e.With() });
                     break;

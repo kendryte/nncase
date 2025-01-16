@@ -64,7 +64,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
                 }
                 else if (inputValue is TensorValue inputTValue)
                 {
-                    var input = inputTValue.AsTensor().Cast<long>().ToOrtTensor();
+                    var input = inputTValue.AsTensor().ToOrtTensor();
                     var begins = beginsTensor.Cast<long>().ToOrtTensor();
                     var ends = endsTensor.Cast<long>().ToOrtTensor();
                     var axes = axesTensor.Cast<long>().ToOrtTensor();

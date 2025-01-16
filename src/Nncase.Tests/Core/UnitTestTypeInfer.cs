@@ -343,6 +343,22 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
         Assert.Equal(new TensorType(DataTypes.Float32, new Dimension[] { 1, dimVar, 896 }), resultb);
     }
 
+    [Fact]
+    public void TestConcatInfer()
+    {
+        var seq_len = new Var("seq_len", new TensorType(DataTypes.Int64, Shape.Scalar));
+        var hist_len = new Var("his_len", new TensorType(DataTypes.Int64, Shape.Scalar));
+        var lhs = new Var(new TensorType(DataTypes.Float32, new Dimension[] { 1, seq_len, 2, 64 }));
+        var rhs = new Var(new TensorType(DataTypes.Float32, new Dimension[] { 1, hist_len, 2, 64 }));
+        var reshape = Concat(new IR.Tuple(new[] { lhs, rhs }), 1);
+        var result = reshape.CheckedType;
+        Assert.IsType<TensorType>(result);
+        Assert.IsType<Call>(((TensorType)result).Shape[1].Value);
+        var call = (Call)((TensorType)result).Shape[1].Value;
+        Assert.Equal(seq_len, call.Arguments[0]);
+        Assert.Equal(hist_len, call.Arguments[1]);
+    }
+
     private void CheckInferShape(Expr expr, params Dimension[] shapeDimensions)
     {
         CheckInferShape(expr, new Shape(shapeDimensions));
