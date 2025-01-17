@@ -153,7 +153,7 @@ public sealed class MCTNode : SearchNode<MergePoint>
         }
     }
 
-    public void Dump(System.CodeDom.Compiler.IndentedTextWriter writer)
+    public override void Dump(System.CodeDom.Compiler.IndentedTextWriter writer)
     {
         writer.WriteLine($"- name: {this}");
         writer.WriteLine($"  Action: {Action}");
@@ -161,7 +161,7 @@ public sealed class MCTNode : SearchNode<MergePoint>
         writer.WriteLine($"  VisitTimes: {VisitTimes}");
         writer.WriteLine($"  Children:");
         writer.Indent += 1;
-        foreach (var item in Children.OfType<MCTNode>())
+        foreach (var item in Children)
         {
             item.Dump(writer);
         }

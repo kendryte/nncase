@@ -41,4 +41,6 @@ public abstract class SearchNode<T>
     public bool IsRootNode => Parent is null;
 
     public abstract void Update(double reward);
+
+    public abstract void Dump(System.CodeDom.Compiler.IndentedTextWriter writer);
 }
