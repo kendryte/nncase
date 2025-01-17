@@ -64,27 +64,19 @@ public sealed class CPUFunctionPartitionPass : ModulePass
             }
 
             bool isSupport = false;
-            switch (arg.Edge.Target.Expr)
+            switch (arg.Edge.Source.Expr, arg.Edge.Target.Expr)
             {
-                case Call call:
-                    if (call.Target is IR.CPU.Boxing { NewType: TensorType } && call.Arguments[0].CheckedType is DistributedType)
+                case (Call callee, Call caller):
+                    switch (callee.CheckedType, caller.CheckedType)
                     {
-                        isSupport = true;
-                    }
-                    else if (call.Target is IR.CPU.Boxing { NewType: DistributedType })
-                    {
-                        if (arg.Edge.Source.Expr.CheckedType is not TensorType)
-                        {
+                        case (DistributedType, TensorType) when caller.Target is IR.CPU.Boxing:
+                        case (DistributedType, DistributedType):
                             isSupport = true;
-                        }
-                    }
-                    else if (call.CheckedType is DistributedType)
-                    {
-                        isSupport = true;
+                            break;
                     }
 
                     break;
-                case IR.Tuple tp:
+                case (Call field, IR.Tuple tp):
                     isSupport = tp.Fields.AsValueEnumerable().All(f => f is Call c && CheckField(c)) ? true : false;
                     break;
                 default:
@@ -141,7 +133,7 @@ internal sealed class DistributedReConstructor : ExprReConstructor<ExprVertex, E
         var argumentDict = new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance);
         foreach (var (pre, post) in pairs)
         {
-            if (pre is Const)
+            if (pre is not (Call or Var))
             {
                 continue;
             }
