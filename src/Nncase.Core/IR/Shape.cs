@@ -182,7 +182,7 @@ namespace Nncase.IR
         public int Rank => _dimensions.Length;
 
         /// <summary>
-        /// Gets get Total Elements.
+        /// Gets Total Elements.
         /// </summary>
         public int Size => Enumerable.Range(0, Rank).Aggregate(1, (size, i) => size * _dimensions[i].FixedValue);
 

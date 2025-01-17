@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Clawfoot.Extensions.Newtonsoft" />
     <PackageReference Include="LanguageExt.Core" PrivateAssets="compile" />
   </ItemGroup>
 

@@ -48,6 +48,16 @@ public class UnitTestImporter : TestClassBase
         Assert.True(module.Entry!.InferenceType());
     }
 
+    [Fact]
+    public async Task TestImportHuggingFace()
+    {
+        var file = "/home/curio/github/Qwen2.5-0.5B/"; // TODO: need a relative path!
+        var module = Importers.ImportHuggingFace(file, CompileSession);
+        await InferShapeAsync(module);
+        Assert.NotNull(module.Entry);
+        Assert.True(module.Entry!.InferenceType());
+    }
+
     private Task InferShapeAsync(IRModule module)
     {
         var pmgr = CompileSession.CreatePassManager("InferShapePasses");
