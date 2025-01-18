@@ -48,6 +48,11 @@ public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>
             // see UnitTestCombineQuantize.TestCombineQuantizeConcatNegative
             foreach (var e in tupleInputs)
             {
+                if (e.CheckedShape.Any(s => s.Value == 0))
+                {
+                    return null;
+                }
+
                 if (userAnalysis[e].Count() > 1)
                 {
                     foreach (var user in userAnalysis[e])
