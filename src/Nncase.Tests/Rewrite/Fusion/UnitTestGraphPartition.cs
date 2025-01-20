@@ -754,6 +754,46 @@ public class UnitTestGraphPartition : TestClassBase
     }
 
     [Fact]
+    public async Task TestConcat4SameModule()
+    {
+        var ttype = new TensorType(DataTypes.Float32, new int[] { 3, 32, 32 });
+        var input = new Var("input", ttype);
+        var v0 = IR.F.CPU.Boxing(input, new DistributedType(ttype, new[] { SBP.B }, new Placement(new[] { 1 }, "t")));
+        var v1 = IR.F.Tensors.Concat(new IR.Tuple(v0, v0, v0), 0);
+        var v2 = IR.F.CPU.Boxing(v1, new TensorType(DataTypes.Float32, new int[] { 9, 32, 32 }));
+        var main = new Function("main", v2, input);
+
+        Assert.True(CompilerServices.InferenceType(main));
+
+        var tv = new TestVisitor(false);
+        tv.Visit(main);
+        var pre_number = tv.CountCallOp<IR.Tensors.Concat>();
+
+        var input_tensor = Testing.Rand<float>(3, 32, 32);
+        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        {
+            { input, Value.FromTensor(input_tensor) },
+        };
+        var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
+        var module = new IRModule(main);
+
+        var prmg = CompileSession.CreatePassManager("prmg");
+        prmg.Add<Nncase.Passes.CPUFunctionPartitionPass>();
+
+        await prmg.RunAsync(module);
+
+        tv.Clear();
+        tv.Visit(module.Entry!);
+        var post_number = tv.CountCallOp<IR.Tensors.Concat>();
+        var post_result = CompilerServices.Evaluate(((Function)module.Entry!).Body, feed_dict);
+
+        Assert.All(tv.ExprMemo.Keys.OfType<Fusion>(), (f) => Assert.Equal(1, f.Parameters.Length));
+        Assert.Equal(1, pre_number);
+        Assert.Equal(0, post_number);
+        Assert.True(Comparator.Compare(pre_result, post_result));
+    }
+
+    [Fact]
     public async Task TestSplitSameModule()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 2, 32, 32 }));

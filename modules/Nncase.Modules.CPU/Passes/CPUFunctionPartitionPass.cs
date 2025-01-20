@@ -76,6 +76,13 @@ public sealed class CPUFunctionPartitionPass : ModulePass
                     }
 
                     break;
+                case (IR.Tuple tpArg, Call caller):
+                    if (tpArg.Fields.AsValueEnumerable().All(f => f.CheckedType is DistributedType) && caller.CheckedType is DistributedType)
+                    {
+                        isSupport = true;
+                    }
+
+                    break;
                 case (Call field, IR.Tuple tp):
                     isSupport = tp.Fields.AsValueEnumerable().All(f => f is Call c && CheckField(c)) ? true : false;
                     break;
