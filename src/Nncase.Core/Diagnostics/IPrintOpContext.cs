@@ -6,14 +6,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR;
 
-namespace Nncase.IR;
+namespace Nncase.Diagnostics;
 
 /// <summary>
 /// ir printer context interface.
 /// </summary>
-public interface IIRPrinterContext
+public interface IPrintOpContext
 {
+    /// <summary>
+    /// Gets the print flags.
+    /// </summary>
+    PrinterFlags Flags { get; }
+
     /// <summary>
     /// Get argument expression.
     /// </summary>
@@ -35,18 +41,16 @@ public interface IIRPrinterContext
     IPrintSymbol[] GetArguments(Op op);
 
     /// <summary>
-    /// we can explict visit the expr which not in the params.
-    /// </summary>
-    /// <param name="expr">give the expr.</param>
-    /// <returns> symobl. </returns>
-    IPrintSymbol Visit(Expr expr);
-
-    /// <summary>
     /// get the default Serialize.
     /// </summary>
     /// <param name="op">Operator.</param>
     /// <returns>string.</returns>/
-    string GetDefault(Op op) => $"{Get(op)}({string.Join(", ", op.Parameters.Select(p => p.Name + ": " + GetArgument(op, p).Serialize()))})";
+    string GetDefault(Op op)
+    {
+        var prop = op.DisplayProperty();
+        var sep = prop.Length > 0 ? "," : string.Empty;
+        return $"{Get(op)}({prop}{sep}{string.Join(", ", op.Parameters.Select(p => GetArgument(op, p).ToString()))})";
+    }
 
     /// <summary>
     /// get indent string.

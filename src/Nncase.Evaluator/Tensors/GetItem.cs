@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Nncase.Utilities;
@@ -21,7 +22,7 @@ namespace Nncase.Evaluator.Tensors;
 [TypeInferGenerator]
 public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<GetItem>, IOpPrinter<GetItem>, ICostEvaluator<GetItem>, IShapeEvaluator<GetItem>, IMetricEvaluator<GetItem>
 {
-    public string Visit(IIRPrinterContext context, GetItem target, bool iLmode)
+    public string Visit(IPrintOpContext context, GetItem target)
     {
         return $"{context.GetArgument(target, GetItem.Input)}[{context.GetArgument(target, GetItem.Index)}]";
     }

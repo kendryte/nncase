@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
+using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.TIR;
@@ -84,7 +85,7 @@ public sealed class MeshNetEvaluator : Evaluator.ITypeInferencer<MeshNet>, IOpPr
 {
     public IRType Visit(ITypeInferenceContext context, MeshNet target) => TupleType.Void;
 
-    public string Visit(IIRPrinterContext context, MeshNet target, bool iLmode)
+    public string Visit(IPrintOpContext context, MeshNet target)
     {
         return $"I.MeshNet({context.GetArgument(target, MeshNet.MeshFunc).Name}, {context.GetArgument(target, MeshNet.Input)})";
     }

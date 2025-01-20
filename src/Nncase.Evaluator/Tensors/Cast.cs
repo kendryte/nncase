@@ -3,6 +3,7 @@
 
 using System;
 using Nncase.CostModel;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using OrtKISharp;
@@ -34,7 +35,7 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     }
 
     /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Cast target, bool iLmode)
+    public string Visit(IPrintOpContext context, Cast target)
     {
         return $"{CompilerServices.Print(target.NewType)}({context.GetArgument(target, Cast.Input)})";
     }

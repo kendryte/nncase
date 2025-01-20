@@ -114,13 +114,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                         outputShape[i] = shapeDim;
                         break;
                     default:
-                        var outputDim = ShapeExprUtility.If(
-                                Equal(shapeDim.Value, -1L),
-                                (shapeDim, minus1Dim) => minus1Dim,
-                                (shapeDim, minus1Dim) => shapeDim,
-                                shapeDim.Value,
-                                minus1Dim.ToExpr());
-                        outputShape[i] = outputDim;
+                        outputShape[i] = Select(Equal(shapeDim.Value, -1L), shapeDim.Value, minus1Dim.ToExpr());
                         break;
                 }
             }

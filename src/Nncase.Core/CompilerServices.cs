@@ -13,6 +13,7 @@ using DryIoc;
 using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
+using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Affine;
@@ -44,20 +45,17 @@ public interface ICompilerServicesProvider
     /// <returns>Inference result.</returns>
     IRType InferenceOp(Op op, ITypeInferenceContext context, Dictionary<Type, ITypeInferencer> inferencer_cache);
 
-    /// <summary>
-    /// printer op.
-    /// </summary>
-    /// <param name="op">Target operator.</param>
-    /// <param name="context">Context.</param>
-    /// <param name="iLmode">if is print is il or script.</param>
-    /// <returns>Result.</returns>
-    string PrintOp(Op op, IIRPrinterContext context, bool iLmode);
+    string? PrintOp(Op op, IPrintOpContext context);
+
+    string Print(IRType type, Diagnostics.PrinterFlags flags);
+
+    string Print(Expr expr, Diagnostics.PrinterFlags flags);
 
     /// <summary>
     /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.{ext}`
     /// else write to {dumpPath}/{prefix}_{expr.Type.name}.il`.
     /// </summary>
-    void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable);
+    void DumpIR(Expr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags);
 
     /// <summary>
     /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.dot`.
@@ -65,7 +63,7 @@ public interface ICompilerServicesProvider
     /// not support prim func/prim func wrapper.
     /// </remarks>
     /// </summary>
-    void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable);
+    void DumpDotIR(Expr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags);
 
     /// <summary>
     /// dump the expr as csharp code.
@@ -74,7 +72,7 @@ public interface ICompilerServicesProvider
     /// <param name="prefix">file prefix.</param>
     /// <param name="dumpDir">file dump ir.</param>
     /// <param name="randConst">false for save const into bin.</param>
-    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst);
+    void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst);
 
     /// <summary>
     /// dump the expr as csharp code.
@@ -82,21 +80,7 @@ public interface ICompilerServicesProvider
     /// <param name="expr">expression.</param>
     /// <param name="prefix">file prefix.</param>
     /// <param name="dumpDir">file dump ir.</param>
-    public void DumpPatternIR(Expr expr, string prefix, string dumpDir);
-
-    /// <summary>
-    /// print ir type.
-    /// </summary>
-    string Print(IRType type);
-
-    /// <summary>
-    /// print ir type.
-    /// </summary>
-    /// <param name="expr"> the expression. </param>
-    /// <param name="useScript">Print script format.</param>
-    /// <param name="display_callable">display callable.</param>
-    /// <returns>the string.</returns>
-    string Print(Expr expr, bool useScript, bool display_callable);
+    void DumpPatternIR(Expr expr, string prefix, string dumpDir);
 
     /// <summary>
     /// Evaluate the expression tree.
@@ -485,12 +469,11 @@ public static class CompilerServices
     /// </summary>
     /// <param name="op">Target operator.</param>
     /// <param name="context">Context.</param>
-    /// <param name="iLmode">if is print is il or script.</param>
     /// <returns>Result.</returns>
-    public static string PrintOp(Op op, IIRPrinterContext context, bool iLmode) => Provider.PrintOp(op, context, iLmode);
+    public static string? PrintOp(Op op, IPrintOpContext context) => Provider.PrintOp(op, context);
 
-    public static void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable = false) =>
-      Provider.DumpIR(expr, prefix, dumpPath, display_callable);
+    public static void DumpIR(Expr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags = Diagnostics.PrinterFlags.Normal) =>
+      Provider.DumpIR(expr, prefix, dumpPath, flags);
 
     /// <summary>
     /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.dot`.
@@ -498,8 +481,8 @@ public static class CompilerServices
     /// not support prim func/prim func wrapper.
     /// </remarks>
     /// </summary>
-    public static void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable = false) =>
-      Provider.DumpDotIR(expr, prefix, dumpPath, display_callable);
+    public static void DumpDotIR(Expr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags = Diagnostics.PrinterFlags.Normal) =>
+      Provider.DumpDotIR(expr, prefix, dumpPath, flags);
 
     /// <summary>
     /// dump the expr as csharp code.
@@ -520,9 +503,9 @@ public static class CompilerServices
     public static void DumpPatternIR(Expr expr, string prefix, string dumpDir) =>
       Provider.DumpPatternIR(expr, prefix, dumpDir);
 
-    public static string Print(IRType type) => Provider.Print(type);
+    public static string Print(IRType type, Diagnostics.PrinterFlags flags = Diagnostics.PrinterFlags.Minimal | Diagnostics.PrinterFlags.SkipDimensionExpr) => Provider.Print(type, flags);
 
-    public static string Print(Expr expr, bool useScript = false, bool display_callable = false) => Provider.Print(expr, useScript, display_callable);
+    public static string Print(Expr expr, Diagnostics.PrinterFlags flags = Diagnostics.PrinterFlags.Minimal | Diagnostics.PrinterFlags.SkipDimensionExpr) => Provider.Print(expr, flags);
 
     /// <summary>
     /// Get target.
@@ -564,7 +547,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
 {
     private readonly IEvaluateProvider _evaluateProvider;
     private readonly ITypeInferenceProvider _typeInferenceProvider;
-    private readonly IIRPrinterProvider _irprinterProvider;
+    private readonly IPrinterProvider _irprinterProvider;
     private readonly ICostEvaluateProvider _costEvaluateProvider;
     private readonly IMetricEvaluateProvider _metricEvaluateProvider;
     private readonly IMatchProvider _matchProvider;
@@ -579,7 +562,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     public CompilerServicesProvider(
         IEvaluateProvider evaluateProvider,
         ITypeInferenceProvider typeInferenceProvider,
-        IIRPrinterProvider irprinterProvider,
+        IPrinterProvider irprinterProvider,
         ICostEvaluateProvider costEvaluateProvider,
         IMetricEvaluateProvider metricEvaluateProvider,
         IDataTypeServiceProvider dataTypeServiceProvider,
@@ -636,18 +619,21 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     }
 
     /// <inheritdoc/>
-    public string PrintOp(Op op, IIRPrinterContext context, bool iLmode)
-    {
-        return _irprinterProvider.PrintOp(op, context, iLmode);
-    }
+    public string? PrintOp(Op op, IPrintOpContext context) => _irprinterProvider.PrintOp(op, context);
 
     /// <inheritdoc/>
-    public void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable) =>
-      _irprinterProvider.DumpIR(expr, prefix, dumpPath, display_callable);
+    public string Print(IRType type, PrinterFlags flags) => _irprinterProvider.Print(type, flags);
 
     /// <inheritdoc/>
-    public void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable) =>
-    _irprinterProvider.DumpDotIR(expr, prefix, dumpPath, display_callable);
+    public string Print(Expr expr, PrinterFlags flags) => _irprinterProvider.Print(expr, flags);
+
+    /// <inheritdoc/>
+    public void DumpIR(Expr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags) =>
+      _irprinterProvider.DumpIR(expr, prefix, dumpPath, flags);
+
+    /// <inheritdoc/>
+    public void DumpDotIR(Expr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags) =>
+    _irprinterProvider.DumpDotIR(expr, prefix, dumpPath, flags);
 
     /// <inheritdoc/>
     public void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst) =>
@@ -656,12 +642,6 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     /// <inheritdoc/>
     public void DumpPatternIR(Expr expr, string prefix, string dumpDir) =>
     _irprinterProvider.DumpPatternIR(expr, prefix, dumpDir);
-
-    /// <inheritdoc/>
-    public string Print(IRType type) => _irprinterProvider.Print(type);
-
-    /// <inheritdoc/>
-    public string Print(Expr expr, bool useScript, bool display_callable) => _irprinterProvider.Print(expr, useScript, display_callable);
 
     /// <inheritdoc/>
     public bool TryMatch(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)

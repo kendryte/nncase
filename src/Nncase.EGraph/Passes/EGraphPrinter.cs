@@ -263,7 +263,7 @@ public partial class EGraphPrinter
                 _ => throw new ArgumentOutOfRangeException(nameof(expr)),
             };
             valueStr = valueStr != string.Empty ? " : " + valueStr : string.Empty;
-            name = $"{CompilerServices.Print(expr.CheckedType!)}{valueStr}";
+            name = $"{CompilerServices.Print(expr.CheckedType)}{valueStr}";
             _constNames.Add(expr, name);
             return name;
         }
@@ -301,6 +301,5 @@ public partial class EGraphPrinter
                 DimensionKind.Unknown => dimension.Value is Var var ? $"%{var.Name}" : "?",
                 _ => throw new NotSupportedException(dimension.Kind.ToString()),
             };
-
     }
 }

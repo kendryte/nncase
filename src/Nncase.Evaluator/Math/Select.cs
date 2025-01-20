@@ -3,6 +3,7 @@
 
 using System;
 using Nncase.CostModel;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Math;
 using OrtKISharp;
@@ -18,13 +19,18 @@ namespace Nncase.Evaluator.Math;
 public partial class SelectEvaluator : IEvaluator<Select>, ITypeInferencer<Select>, IOpPrinter<Select>
 {
     /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Select target, bool iLmode)
+    public string Visit(IPrintOpContext context, Select target)
     {
-        var condition = context.GetArgument(target, Select.Predicate);
-        var true_value = context.GetArgument(target, Select.TrueValue);
-        var false_value = context.GetArgument(target, Select.FalseValue);
+        if (context.Flags.HasFlag(PrinterFlags.Script) | context.Flags.HasFlag(PrinterFlags.Inline))
+        {
+            var condition = context.GetArgument(target, Select.Predicate);
+            var true_value = context.GetArgument(target, Select.TrueValue);
+            var false_value = context.GetArgument(target, Select.FalseValue);
 
-        return $"({condition} ? {true_value} : {false_value})";
+            return $"({condition} ? {true_value} : {false_value})";
+        }
+
+        return context.GetDefault(target);
     }
 
     private IValue Visit(bool predicate, IValue trueValue, IValue falseValue)

@@ -55,9 +55,6 @@ public sealed partial class FoldSameBinary : IRewriteRule
 {
     private readonly Pattern _operandPattern = IsWildcard("operand");
 
-    /// <inheritdoc/>
-    public IPattern Pattern { get; }
-
     public FoldSameBinary()
     {
         Pattern = IsBinary(
@@ -67,6 +64,9 @@ public sealed partial class FoldSameBinary : IRewriteRule
             _operandPattern,
             _operandPattern);
     }
+
+    /// <inheritdoc/>
+    public IPattern Pattern { get; }
 
     private Expr? GetReplace(Expr operand)
     {

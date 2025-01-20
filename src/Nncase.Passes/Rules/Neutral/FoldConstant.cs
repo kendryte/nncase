@@ -62,25 +62,3 @@ public partial class FoldShapeOf : RewriteRule<CallPattern>
         }
     }
 }
-
-/// <summary>
-/// concat([1, seq_len, 2, 3], 0) => tuple([1,seq_len,2,3]).
-/// </summary>
-// [RuleGenerator]
-// public partial class FoldConcatShape : RewriteRule<CallPattern>
-// {
-//     /// <inheritdoc/>
-//     public override CallPattern Pattern { get; } = IsConcat("concat", _ => true, IsTuple("tuple", IsVArgsRepeat("fileds", exprs =>
-//         {
-//             var patterns = new Pattern[exprs.Length];
-//             for (int i = 0; i < exprs.Length; i++)
-//             {
-//                 patterns[i] = IsWildcard($"input_{i}") with { TypePattern = IsIntegralScalar() };
-//             }
-//             return patterns;
-//         })));
-//     private Const GetReplace(Expr wc)
-//     {
-//         return Const.FromTensor(wc.CheckedShape.ToValueArray().Select(x => (long)x).ToArray());
-//     }
-// }

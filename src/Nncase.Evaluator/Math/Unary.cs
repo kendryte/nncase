@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using Nncase.CostModel;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Math;
 using OrtKISharp;
@@ -112,20 +113,27 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
     }
 
     /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Unary target, bool iLmode)
+    public string Visit(IPrintOpContext context, Unary target)
     {
-        var op_str = target.UnaryOp switch
+        var shortName = target.UnaryOp switch
         {
             UnaryOp.BitwiseNot => "!",
             UnaryOp.LogicalNot => "!",
-            var op => op.ToString(),
+            UnaryOp.Neg => "-",
+            _ => null,
         };
-        if (!iLmode)
+
+        if (context.Flags.HasFlag(PrinterFlags.Inline))
         {
-            return $"{op_str}({string.Join(", ", target.Parameters.Select(p => p.Name + ": " + context.GetArgument(target, p).Serialize()))})";
+            if (shortName is not null)
+            {
+                return $"{shortName}{context.GetArgument(target, Unary.Input)}";
+            }
+
+            return $"{target.UnaryOp}({context.GetArgument(target, Unary.Input)})";
         }
 
-        throw new NotSupportedException("ILmode = true");
+        return context.GetDefault(target);
     }
 
     public Expr Visit(IShapeEvaluateContext context, Unary target)

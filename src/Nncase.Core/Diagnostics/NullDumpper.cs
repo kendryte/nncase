@@ -27,7 +27,7 @@ public sealed class NullDumpper : IDumpper
     public IDumpper CreateSubDummper(string subDirectory, DumpFlags? dumpFlags) => this;
 
     /// <inheritdoc/>
-    public void DumpIR(Expr expr, string prefix, string? reletivePath = null, bool displayCallable = false)
+    public void DumpIR(Expr expr, string prefix, string? reletivePath = null, PrinterFlags flags = PrinterFlags.Minimal)
     {
     }
 

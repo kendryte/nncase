@@ -6,8 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR;
 
-namespace Nncase.IR;
+namespace Nncase.Diagnostics;
 
 /// <summary>
 /// Type inferencer interface.
@@ -19,9 +20,8 @@ public interface IOpPrinter
     /// </summary>
     /// <param name="context">Context.</param>
     /// <param name="target">Target operator.</param>
-    /// <param name="iLmode">if is print is il or script.</param>
     /// <returns>Result.</returns>
-    string Visit(IIRPrinterContext context, Op target, bool iLmode);
+    string Visit(IPrintOpContext context, Op target);
 }
 
 /// <summary>
@@ -35,12 +35,11 @@ public interface IOpPrinter<T> : IOpPrinter
     /// </summary>
     /// <param name="context">Context.</param>
     /// <param name="target">Target operator.</param>
-    /// <param name="iLmode">if is print like il.</param>
     /// <returns>Result.</returns>
-    string Visit(IIRPrinterContext context, T target, bool iLmode);
+    string Visit(IPrintOpContext context, T target);
 
-    string IOpPrinter.Visit(IIRPrinterContext ctx, Op target, bool iLmode)
+    string IOpPrinter.Visit(IPrintOpContext ctx, Op target)
     {
-        return Visit(ctx, (T)target, iLmode);
+        return Visit(ctx, (T)target);
     }
 }

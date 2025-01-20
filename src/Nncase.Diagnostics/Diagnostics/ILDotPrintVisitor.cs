@@ -53,17 +53,17 @@ internal sealed class ILDotOption
 
 internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
 {
-    private readonly bool _display_callable;
     private readonly DotGraph _dotGraph;
     private readonly List<(string, DotGraph)> _subdotGraphs;
     private readonly Dictionary<Expr, ILDotOption> _exprMemo = new(ReferenceEqualityComparer.Instance);
+    private readonly PrinterFlags _flags;
     private int _idCounter;
 
     private BaseFunction? _entryBaseFunc;
 
-    public ILDotPrintVisitor(bool display_callable)
+    public ILDotPrintVisitor(PrinterFlags flags)
     {
-        _display_callable = display_callable;
+        _flags = flags;
         _dotGraph = new(directed: true);
         _subdotGraphs = new();
     }
@@ -122,9 +122,9 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
         _entryBaseFunc ??= expr;
         if (!object.ReferenceEquals(_entryBaseFunc, expr))
         {
-            if (_display_callable)
+            if (_flags.HasFlag(PrinterFlags.Detailed))
             {
-                var visitor = new ILDotPrintVisitor(_display_callable);
+                var visitor = new ILDotPrintVisitor(_flags);
                 visitor.Visit(expr);
                 _subdotGraphs.Add((expr.Name, visitor._dotGraph));
                 _subdotGraphs.AddRange(visitor._subdotGraphs);
@@ -143,11 +143,11 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
     protected override ILDotOption VisitFunction(Function expr)
     {
         _entryBaseFunc ??= expr;
-        if (!object.ReferenceEquals(_entryBaseFunc, expr))
+        if (!ReferenceEquals(_entryBaseFunc, expr))
         {
-            if (_display_callable)
+            if (_flags.HasFlag(PrinterFlags.Detailed))
             {
-                var visitor = new ILDotPrintVisitor(_display_callable);
+                var visitor = new ILDotPrintVisitor(_flags);
                 visitor.Visit(expr);
                 _subdotGraphs.Add((expr.Name, visitor._dotGraph));
                 _subdotGraphs.AddRange(visitor._subdotGraphs);

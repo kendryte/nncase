@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using Nncase.CostModel;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.Utilities;
@@ -134,19 +135,25 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
         };
     }
 
-    public string Visit(IIRPrinterContext context, Compare target, bool iLmode)
+    public string Visit(IPrintOpContext context, Compare target)
     {
-        var op = target.CompareOp switch
+        if (context.Flags.HasFlag(PrinterFlags.Inline) || context.Flags.HasFlag(PrinterFlags.Script))
         {
-            CompareOp.Equal => "==",
-            CompareOp.LowerOrEqual => "<=",
-            CompareOp.GreaterOrEqual => ">=",
-            CompareOp.GreaterThan => ">",
-            CompareOp.LowerThan => "<",
-            CompareOp.NotEqual => "!=",
-            _ => throw new ArgumentOutOfRangeException(target.CompareOp.ToString()),
-        };
-        return $"{context.GetArgument(target, Compare.Lhs)} {op} {context.GetArgument(target, Compare.Rhs)}";
+            var op = target.CompareOp switch
+            {
+                CompareOp.Equal => "==",
+                CompareOp.LowerOrEqual => "<=",
+                CompareOp.GreaterOrEqual => ">=",
+                CompareOp.GreaterThan => ">",
+                CompareOp.LowerThan => "<",
+                CompareOp.NotEqual => "!=",
+                _ => throw new ArgumentOutOfRangeException(target.CompareOp.ToString()),
+            };
+
+            return $"({context.GetArgument(target, Compare.Lhs)} {op} {context.GetArgument(target, Compare.Rhs)})";
+        }
+
+        return context.GetDefault(target);
     }
 
     public Expr Visit(IShapeEvaluateContext context, Compare target)

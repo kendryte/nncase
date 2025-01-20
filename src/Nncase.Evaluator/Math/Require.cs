@@ -3,6 +3,7 @@
 
 using System;
 using Nncase.CostModel;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Math;
 using OrtKISharp;
@@ -18,11 +19,12 @@ namespace Nncase.Evaluator.Math;
 public partial class RequireEvaluator : IEvaluator<Require>, ITypeInferencer<Require>, IOpPrinter<Require>, ICostEvaluator<Require>, IShapeEvaluator<Require>, IMetricEvaluator<Require>
 {
     /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Require target, bool iLmode)
+    public string Visit(IPrintOpContext context, Require target)
     {
         var condition = context.GetArgument(target, Require.Predicate);
         var value = context.GetArgument(target, Require.Value);
-        return $"IR.F.Math.Require({condition}, {value})";
+        return $"Require({condition}, {value})";
+
     }
 
     public Cost Visit(ICostEvaluateContext context, Require target)
