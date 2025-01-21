@@ -142,6 +142,7 @@ public sealed partial class OnnxImporter : BaseImporter
             "HardSwish" => VisitHardSwish(op),
             "Identity" => VisitIdentity(op),
             "InstanceNormalization" => VisitInstanceNormalization(op),
+            "LayerNormalization" => VisitLayerNormalization(op),
             "LpNormalization" => VisitLpNormalization(op),
             "LeakyRelu" => VisitLeakyRelu(op),
             "Less" => VisitCompare(op, CompareOp.LowerThan),

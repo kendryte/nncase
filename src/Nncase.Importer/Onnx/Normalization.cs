@@ -38,6 +38,15 @@ namespace Nncase.Importer
             return F.NN.InstanceNormalization(input, scale, bias, eps);
         }
 
+        private Expr VisitLayerNormalization(NodeProto op)
+        {
+            var input = GetInputExpr(op, 0);
+            var (scale, bias) = GetInputExprs(op, 1, 2);
+            var eps = GetFloatAttribute(op, "epsilon", 1e-05f);
+            var axis = GetIntAttribute(op, "axis", -1);
+            return F.NN.LayerNorm(checked((int)axis), eps, input, scale, bias);
+        }
+
         private Expr VisitLpNormalization(in NodeProto op)
         {
             var input = GetInputExpr(op, 0);
