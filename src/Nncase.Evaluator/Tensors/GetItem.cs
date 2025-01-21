@@ -97,7 +97,7 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
 
     private IRType Visit(ITypeInferenceContext context, GetItem target, IRType input, TensorType index)
     {
-        IRType ret = new InvalidType("Need Be Reset!");
+        IRType ret = new InvalidType("GetItem typeinfer error!");
         var indexExpr = context.GetArgument(target, GetItem.Index);
         switch (input)
         {

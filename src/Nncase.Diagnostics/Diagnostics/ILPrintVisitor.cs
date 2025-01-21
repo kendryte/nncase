@@ -574,14 +574,14 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
     /// <inheritdoc/>
     protected override string VisitGrid(IR.Affine.Grid expr)
     {
+        var reads = expr.Reads.AsValueEnumerable().Select(Visit).ToArray();
+        var buffers = expr.Buffers.AsValueEnumerable().Select(Visit).ToArray();
         if (_names.TryGetValue(expr, out var name))
         {
             return name;
         }
 
         name = AllocateTempVar(expr);
-        var reads = expr.Reads.AsValueEnumerable().Select(Visit).ToArray();
-        var buffers = expr.Buffers.AsValueEnumerable().Select(Visit).ToArray();
         _scope.Push();
 
         // 1. For Loop signature

@@ -10,7 +10,7 @@ using Nncase.TIR.CPU;
 
 namespace Nncase.Evaluator.TIR.CPU;
 
-public sealed class UnaryEvaluator : ITypeInferencer<Unary>, IKernelInfoEvaluator<Unary>
+public sealed class UnaryEvaluator : ITypeInferencer<Unary>, IKernelInfoEvaluator<Unary>, IOpPrinter<Unary>
 {
     public IRType Visit(ITypeInferenceContext context, Unary target)
     {
@@ -29,6 +29,11 @@ public sealed class UnaryEvaluator : ITypeInferencer<Unary>, IKernelInfoEvaluato
         bufferInfos[0] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Read);
         bufferInfos[1] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Write);
         return new MicroKernelInfo(primitives, multipliers, bufferInfos, GetComputeCycle);
+    }
+
+    public string Visit(IIRPrinterContext context, Unary target, bool iLmode)
+    {
+        return $"Unary({target.DisplayProperty()}, {context.GetArgument(target, Unary.Input)}, {context.GetArgument(target, Unary.Output)})";
     }
 
     private static IntExpr GetComputeCycle(IntExpr[][] bufferShapes, Solver solver, MicroKernelContext context)

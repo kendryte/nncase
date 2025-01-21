@@ -113,9 +113,10 @@ public class UnitTestGraphPartition : TestClassBase
     [Fact]
     public async Task TestLineDiffModuleC2I()
     {
-        var inType = new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 });
-        var input = new Var("input", inType);
-        var main = new Function("main", IR.F.CPU.Boxing(IR.F.Math.Abs(IR.F.CPU.Boxing(input, new DistributedType(inType, new SBP[] { SBP.B }, new(new[] { 2 }, "t")))), inType), input);
+        var ttype = new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 });
+        var input = new Var("input", ttype);
+        var unary = IR.F.CPU.Boxing(input, new DistributedType(ttype, new[] { SBP.B }, new(new[] { 1 }, "b")));
+        var main = new Function("main", IR.F.Math.Abs(IR.F.CPU.Boxing(unary, ttype)), input);
 
         Assert.True(CompilerServices.InferenceType(main));
 
@@ -149,9 +150,10 @@ public class UnitTestGraphPartition : TestClassBase
     [Fact]
     public async Task TestLineDiffModuleI2C()
     {
-        var inType = new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 });
-        var input = new Var("input", inType);
-        var main = new Function("main", IR.F.CPU.Boxing(IR.F.Math.Abs(IR.F.CPU.Boxing(input, new DistributedType(inType, new SBP[] { SBP.B }, new(new[] { 2 }, "t")))), inType), input);
+        var ttype = new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 });
+        var input = new Var("input", ttype);
+        var unary = IR.F.CPU.Boxing(IR.F.Math.Abs(input), new DistributedType(ttype, new[] { SBP.B }, new(new[] { 1 }, "b")));
+        var main = new Function("main", IR.F.CPU.Boxing(IR.F.Math.Abs(unary), ttype), input);
 
         Assert.True(CompilerServices.InferenceType(main));
 
@@ -177,7 +179,7 @@ public class UnitTestGraphPartition : TestClassBase
         var post_number = tv.CountCallFusion<Fusion>();
         var post_result = CompilerServices.Evaluate(((Function)module.Entry!).Body, feed_dict);
 
-        Assert.Equal(1, pre_number);
+        Assert.Equal(2, pre_number);
         Assert.Equal(1, post_number);
         Assert.Equal(pre_result, post_result);
     }
@@ -412,13 +414,14 @@ public class UnitTestGraphPartition : TestClassBase
     [Fact]
     public async Task TestCircle2DiffModule()
     {
-        var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-        var v_0 = IR.F.CPU.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
-        var v_1 = IR.F.Math.Cos(IR.F.CPU.Boxing(v_0, input.CheckedType));
+        var ttype = new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 });
+        var input = new Var("input", ttype);
+        var v_0 = IR.F.CPU.Boxing(input, new DistributedType(ttype, new[] { SBP.B }, new(new[] { 1 }, "t")));
+        var v_1 = IR.F.Math.Cos(IR.F.CPU.Boxing(v_0, ttype));
         var v_2 = IR.F.Math.Sin(v_0);
-        var v_3 = IR.F.Math.Add(IR.F.CPU.Boxing(v_1, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t"))), v_2);
+        var v_3 = IR.F.Math.Add(IR.F.CPU.Boxing(v_1, new DistributedType(ttype, new[] { SBP.B }, new(new[] { 1 }, "t"))), v_2);
         var v_4 = IR.F.Math.Neg(v_3);
-        var main = new Function("main", v_4, new[] { input });
+        var main = new Function("main", IR.F.CPU.Boxing(v_4, ttype), new[] { input });
 
         Assert.True(CompilerServices.InferenceType(main));
 
@@ -446,7 +449,7 @@ public class UnitTestGraphPartition : TestClassBase
 
         Assert.Equal(3, pre_number);
         Assert.Equal(1, post_number);
-        Assert.Equal(pre_result, post_result);
+        Assert.True(Comparator.AllEqual(pre_result, post_result));
     }
 
     [Fact]
@@ -748,6 +751,46 @@ public class UnitTestGraphPartition : TestClassBase
         Assert.Equal(1, pre_number);
         Assert.Equal(1, post_number);
         Assert.Equal(pre_result, post_result);
+    }
+
+    [Fact]
+    public async Task TestConcat4SameModule()
+    {
+        var ttype = new TensorType(DataTypes.Float32, new int[] { 3, 32, 32 });
+        var input = new Var("input", ttype);
+        var v0 = IR.F.CPU.Boxing(input, new DistributedType(ttype, new[] { SBP.B }, new Placement(new[] { 1 }, "t")));
+        var v1 = IR.F.Tensors.Concat(new IR.Tuple(v0, v0, v0), 0);
+        var v2 = IR.F.CPU.Boxing(v1, new TensorType(DataTypes.Float32, new int[] { 9, 32, 32 }));
+        var main = new Function("main", v2, input);
+
+        Assert.True(CompilerServices.InferenceType(main));
+
+        var tv = new TestVisitor(false);
+        tv.Visit(main);
+        var pre_number = tv.CountCallOp<IR.Tensors.Concat>();
+
+        var input_tensor = Testing.Rand<float>(3, 32, 32);
+        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        {
+            { input, Value.FromTensor(input_tensor) },
+        };
+        var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
+        var module = new IRModule(main);
+
+        var prmg = CompileSession.CreatePassManager("prmg");
+        prmg.Add<Nncase.Passes.CPUFunctionPartitionPass>();
+
+        await prmg.RunAsync(module);
+
+        tv.Clear();
+        tv.Visit(module.Entry!);
+        var post_number = tv.CountCallOp<IR.Tensors.Concat>();
+        var post_result = CompilerServices.Evaluate(((Function)module.Entry!).Body, feed_dict);
+
+        Assert.All(tv.ExprMemo.Keys.OfType<Fusion>(), (f) => Assert.Equal(1, f.Parameters.Length));
+        Assert.Equal(1, pre_number);
+        Assert.Equal(0, post_number);
+        Assert.True(Comparator.Compare(pre_result, post_result));
     }
 
     [Fact]

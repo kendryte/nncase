@@ -19,15 +19,13 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
 {
     private readonly string _path = string.Empty;
 
+    private readonly GraphTiler _graphTiler;
+
     private readonly List<MergePoint> _mergePoints = new();
 
     private readonly List<int> _legalIndex = new();
 
-    private readonly Dictionary<TileNode, GraphTiler.TiledFunc> _solveMemo;
-
     private readonly string _moduleKind;
-
-    private readonly string _prefix;
 
     private readonly ICpuTargetOptions _targetOptions;
 
@@ -35,16 +33,15 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
 
     private int _permformCount;
 
-    public MCTState(TieredTileGraph graph, string moduleKind, string prefix, string searchPath, Dictionary<TileNode, GraphTiler.TiledFunc> solveMemo, ICpuTargetOptions targetOptions)
+    public MCTState(TieredTileGraph graph, string moduleKind, string searchPath, GraphTiler graphTiler, ICpuTargetOptions targetOptions)
     {
         _graph = graph;
         _moduleKind = moduleKind;
-        _prefix = prefix;
-        _solveMemo = solveMemo;
         _targetOptions = targetOptions;
         _mergePoints.AddRange(graph.GetMergePoints());
         _legalIndex.AddRange(Enumerable.Range(0, _mergePoints.Count));
         _path = searchPath;
+        _graphTiler = graphTiler;
         Results = new(new LeafTileGraphComparer());
     }
 
@@ -70,7 +67,7 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
         var newGraph = _graph.Clone();
         if (newGraph.Merge(mergePoint))
         {
-            return new MCTState(newGraph, _moduleKind, _prefix, $"{_path}.{_permformCount}", _solveMemo, _targetOptions);
+            return new MCTState(newGraph, _moduleKind, $"{_path}.{_permformCount}", _graphTiler, _targetOptions);
         }
 
         return null;
@@ -83,7 +80,7 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
             using var scope = new Diagnostics.DumpScope($"RollOut{_path}");
             try
             {
-                var res = GraphTiler.SolveRootGraph(_graph, _moduleKind, _prefix, _solveMemo, _targetOptions);
+                var res = _graphTiler.SolveRootGraph(_graph, _moduleKind, _targetOptions);
                 ObjectValue = res.ObjectValue;
                 foreach (var item in res.ResultMemo)
                 {
@@ -156,7 +153,7 @@ public sealed class MCTNode : SearchNode<MergePoint>
         }
     }
 
-    public void Dump(System.CodeDom.Compiler.IndentedTextWriter writer)
+    public override void Dump(System.CodeDom.Compiler.IndentedTextWriter writer)
     {
         writer.WriteLine($"- name: {this}");
         writer.WriteLine($"  Action: {Action}");
@@ -164,7 +161,7 @@ public sealed class MCTNode : SearchNode<MergePoint>
         writer.WriteLine($"  VisitTimes: {VisitTimes}");
         writer.WriteLine($"  Children:");
         writer.Indent += 1;
-        foreach (var item in Children.OfType<MCTNode>())
+        foreach (var item in Children)
         {
             item.Dump(writer);
         }
