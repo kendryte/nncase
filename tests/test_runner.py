@@ -426,7 +426,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 input_shape[0] *= generator_cfg['batch']
 
             for batch_idx in range(batch_number):
-                idx = input_idx * batch_number + batch_idx
+                idx = batch_idx * len(inputs) + input_idx
                 if method == 'random':
                     data = generator.from_random(input_shape, dtype, args)
                 elif method == 'bin':
