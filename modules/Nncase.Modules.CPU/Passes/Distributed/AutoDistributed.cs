@@ -556,6 +556,12 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 _rootSearchGraph.AddEdge(new(tpnode, buckets[i].Vertices.First(), i, buckets[i]));
             }
         }
+        else if (expr is TensorConst tc && tc.ValueType is TensorType tensorType)
+        {
+            var bucket = standCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
+            var node = new SearchableNode(expr, expr.CheckedType);
+            bucket.AddVertex(node);
+        }
         else
         {
             if (init)

@@ -9,7 +9,7 @@ using Nncase.TIR.CPU;
 
 namespace Nncase.Evaluator.TIR.CPU;
 
-public sealed class BinaryEvaluator : ITypeInferencer<Binary>, IKernelInfoEvaluator<Binary>
+public sealed class BinaryEvaluator : ITypeInferencer<Binary>, IKernelInfoEvaluator<Binary>, IOpPrinter<Binary>
 {
     public IRType Visit(ITypeInferenceContext context, Binary target)
     {
@@ -27,6 +27,11 @@ public sealed class BinaryEvaluator : ITypeInferencer<Binary>, IKernelInfoEvalua
         bufferInfos[1] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Read);
         bufferInfos[2] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Write);
         return new MicroKernelInfo(primitives, multipliers, bufferInfos, GetComputeCycle);
+    }
+
+    public string Visit(IIRPrinterContext context, Binary target, bool iLmode)
+    {
+        return $"Binary({target.DisplayProperty()}, {context.GetArgument(target, Binary.Lhs)}, {context.GetArgument(target, Binary.Rhs)}, {context.GetArgument(target, Binary.Output)})";
     }
 
     private static IntExpr GetComputeCycle(IntExpr[][] bufferShapes, Solver solver, MicroKernelContext context)

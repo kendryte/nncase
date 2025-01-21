@@ -341,7 +341,10 @@ public sealed class UnitTestTileGraph : TestClassBase
         tileGraph.Dump($"g{count}_m");
 #endif
 
-        Schedule.GraphTiler.SolveRootGraph(tileGraph, Targets.CPUTarget.Kind, count.ToString(), new(), targetOptions);
+        var tiler = new Schedule.GraphTiler();
+        using var scope = new Diagnostics.DumpScope($"{count}");
+        var result = tiler.Tile(post, Nncase.Targets.CPUTarget.Kind, (ICpuTargetOptions)CompileOptions.TargetOptions);
+        action(result);
     }
 
     [Theory]
@@ -357,12 +360,14 @@ public sealed class UnitTestTileGraph : TestClassBase
         builder.Visit(post);
         var tileGraph = builder.RootGraph;
 
-        var memo = new Dictionary<TileNode, Schedule.GraphTiler.TiledFunc>(new ITreeNodeComparer());
-        var state = new MCTState(tileGraph, "cpu", count.ToString(), string.Empty, memo, targetOptions);
+        var tiler = new Schedule.GraphTiler();
+        var state = new MCTState(tileGraph, "cpu", count.ToString(), tiler, targetOptions);
         var rootNode = new MCTNode(state);
         var searcher = new MCTSearcher();
         searcher.Search(rootNode);
+#if DEBUG
         rootNode.Dump("mct");
+#endif
     }
 
     [Theory]
