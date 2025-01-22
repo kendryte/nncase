@@ -128,6 +128,10 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.CPU.Affine.LowerBinary>();
             p.Add<Passes.Rules.CPU.Affine.LowerPackedBinary>();
             p.Add<Passes.Rules.CPU.Affine.LowerMatmul>();
+            p.Add<Passes.Rules.CPU.Affine.LowerTranspose>();
+            p.Add<Passes.Rules.CPU.Affine.LowerUnpack>();
+
+            // p.Add<Passes.Rules.CPU.Affine.LowerReduce>();
         });
 
         // concat/reshape lower

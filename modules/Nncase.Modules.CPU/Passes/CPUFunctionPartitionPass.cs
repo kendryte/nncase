@@ -113,15 +113,15 @@ public sealed class CPUFunctionPartitionPass : ModulePass
         }
 
         // 3. reconstruction
-        var constructor = new DistributedReConstructor(funcName, ModuleKind, condenseAlgo);
+        var constructor = new DistributedReconstructor(funcName, ModuleKind, condenseAlgo);
         var post = constructor.Construct();
         return post;
     }
 }
 
-internal sealed class DistributedReConstructor : ExprReConstructor<ExprVertex, ExprEdge>
+internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, ExprEdge>
 {
-    public DistributedReConstructor(string funcName, string moduleKind, CondensationGraphAlgorithm<ExprVertex, ExprEdge> algo)
+    public DistributedReconstructor(string funcName, string moduleKind, CondensationGraphAlgorithm<ExprVertex, ExprEdge> algo)
         : base(algo)
     {
         FuncName = funcName;

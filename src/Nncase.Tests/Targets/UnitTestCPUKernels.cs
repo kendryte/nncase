@@ -223,8 +223,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     [Theory]
     [InlineData(new object[] { new[] { 4, 8, 16, 32 }, new[] { 1 }, 0 })]
-    [InlineData(new object[] { new[] { 4, 8, 16, 32 }, new[] { 2 }, 1 })]
-    [InlineData(new object[] { new[] { 4, 8, 16, 32 }, new[] { 4 }, 2 })]
+    [InlineData(new object[] { new[] { 1, 64, 384, 128 }, new[] { 4 }, 1 })]
     public async Task TestUnary(int[] shape, int[] hierarchy, int count)
     {
         var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
@@ -515,6 +514,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     [Theory]
     [InlineData([new int[] { 2, 8, 16, 2 }, new int[] { 0, 2, 1, 3 }, 2, 0])]
+    [InlineData([new int[] { 1, 64, 384, 128 }, new int[] { 0, 2, 1, 3 }, 2, 1])]
     public async Task TestTranspose(int[] shape, int[] perm, int rank, int number)
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));

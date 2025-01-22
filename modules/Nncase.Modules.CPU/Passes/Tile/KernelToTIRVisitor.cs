@@ -106,7 +106,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Pack(arguments[0], ret, pack.Lanes, pack.Axes));
                 break;
             case IR.CPU.Unpack unpack:
-                _mainBody.Add(TIR.F.CPU.Unpack(arguments[0], ret, unpack.Axes));
+                _mainBody.Add(TIR.F.CPU.Unpack(arguments[0], ret, unpack.Lanes, unpack.Axes));
                 break;
             case IR.CPU.PackedBinary packed_binary:
                 // _mainBody.Add(TIR.F.CPU.Binary(arguments[0], arguments[1], ret, packed_binary.BinaryOp, packed_binary.LhsPackedAxes, packed_binary.LhsPadedNums, packed_binary.RhsPackedAxes, packed_binary.RhsPadedNums));
