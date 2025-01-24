@@ -41,9 +41,26 @@ public sealed class SplitLLMStage : ModulePass
             input.Add(decode);
             Expr newBody;
             {
-                var kvShape = IR.F.Tensors.ShapeOf(entry.Parameters[3]); // %past_key_values: f32[24,2,1,?,2,64]
-                var kvLen = IR.F.Tensors.GetItem(kvShape, 3);
-                var cond = IR.F.Math.Equal(kvLen, 0L);
+                Expr? history_len = null;
+                for (int j = 0; j < entry.Parameters.Length; j++)
+                {
+                    var paramVar = entry.Parameters[j];
+                    var dimExprs = CompileOptions.ShapeBucketOptions.VarMap[paramVar];
+                    for (int i = 0; i < dimExprs.Length; i++)
+                    {
+                        if (dimExprs[i] is Var { Name: "history_len" } && history_len is null)
+                        {
+                            history_len = IR.F.Tensors.GetItem(IR.F.Tensors.ShapeOf(paramVar), i);
+                        }
+                    }
+                }
+
+                if (history_len is null)
+                {
+                    throw new NotSupportedException("Can't get the history len from the function inputs!");
+                }
+
+                var cond = IR.F.Math.Equal(history_len, 0L);
                 newBody = new IR.If(cond, prefill, decode, entry.Parameters.ToArray());
             }
 
