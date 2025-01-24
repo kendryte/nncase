@@ -134,20 +134,21 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
                     || (call.Target is LSTM && (i == 1 || i == 2))
                     || (call.Target is MatMul && i == 1 && callParams[1] is TensorConst);
 
+                    bool isMatmulArg0 = call.Target is MatMul && i == 0;
                     if (!configExist && !useAutoMixQuant)
                     {
                         if (isWeights)
                         {
-                            pairs.Add(callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i], isWeights), CompileSession.CompileOptions.QuantizeOptions.WQuantType));
+                            pairs.Add(callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i], isWeights, isMatmulArg0), CompileSession.CompileOptions.QuantizeOptions.WQuantType));
                         }
                         else
                         {
-                            pairs.Add(callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i], isWeights), CompileSession.CompileOptions.QuantizeOptions.QuantType));
+                            pairs.Add(callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i], isWeights, isMatmulArg0), CompileSession.CompileOptions.QuantizeOptions.QuantType));
                         }
                     }
                     else
                     {
-                        pairs.Add(callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i], isWeights)));
+                        pairs.Add(callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i], isWeights, isMatmulArg0)));
                     }
                 }
             }

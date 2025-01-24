@@ -391,15 +391,14 @@ public static class Math
 
     public static Call RangeOf(Expr input)
     {
-        var call = (Call)new Call(new RangeOf(), input).InheritMetaData(input);
+        var call = (Call)new Call(new RangeOf(false, false), input).InheritMetaData(input);
 
         return call;
     }
 
-    public static Call RangeOf(Expr input, bool isRangeOfWeight)
+    public static Call RangeOf(Expr input, bool isRangeOfWeight, bool isMatmulArg0 = false)
     {
-        var rangeOf = new RangeOf();
-        rangeOf.IsRangeOfWeight = isRangeOfWeight;
+        var rangeOf = new RangeOf(isRangeOfWeight, isMatmulArg0);
         var call = (Call)new Call(rangeOf, input).InheritMetaData(input);
 
         return call;
@@ -407,7 +406,7 @@ public static class Math
 
     public static Call QuantParamOf(QuantMode mode, Expr range, Expr bits) => new Call(new QuantParamOf(mode), range, bits);
 
-    public static Call Quantize(Expr input, Expr quantParam, DataType targetType) => new Call(new Quantize(targetType), input, quantParam);
+    public static Call Quantize(Expr input, Expr quantParam, DataType targetType, QuantParam[] byChannelQuantParams = null!) => new Call(new Quantize(targetType, byChannelQuantParams), input, quantParam);
 
     public static Call Dequantize(Expr input, Expr quantParam, DataType targetType) => new Call(new Dequantize(targetType), input, quantParam);
 

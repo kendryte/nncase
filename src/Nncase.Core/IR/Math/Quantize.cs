@@ -24,6 +24,8 @@ public sealed partial class Quantize : Op
 
     public DataType TargetType { get; }
 
+    public IRArray<QuantParam> ByChannelQuantParams { get; }
+
     /// <inheritdoc/>
     public override string DisplayProperty() => $"{TargetType.GetCSharpName()}";
 }

@@ -70,6 +70,45 @@ public class CalibrationEvaluator : IDisposable
         return awareTensors;
     }
 
+    public IReadOnlyDictionary<ENode, IValue> EvaluateValues()
+    {
+        bool completed;
+        var awareTensors = new Dictionary<ENode, IValue>(ReferenceEqualityComparer.Instance);
+
+        do
+        {
+            completed = true;
+            var oldValues = _values.Count;
+            foreach (var enode in _awareEnodes)
+            {
+                var value = Visit(enode);
+                if (value == null)
+                {
+                    completed = false;
+                }
+                else
+                {
+                    if (value != Value.None)
+                    {
+                        awareTensors[enode] = value;
+                    }
+                    else
+                    {
+                        awareTensors[enode] = Value.FromTensor(Enumerable.Repeat(0, 0).Select(x => (float)x).ToArray());
+                        _values.TryAdd(enode, Value.None);
+                    }
+                }
+            }
+
+            if (_awareEnodes.Any() && _values.Count == oldValues)
+            {
+                throw new InvalidOperationException("Endless evaluation found.");
+            }
+        }
+        while (!completed);
+        return awareTensors;
+    }
+
     /// <inheritdoc/>
     public void Dispose()
     {

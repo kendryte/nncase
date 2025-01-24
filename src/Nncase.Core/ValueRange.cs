@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DryIoc.ImTools;
 
 namespace Nncase;
 
@@ -35,6 +36,29 @@ public record struct ValueRange<T>(T Min, T Max)
         var min = Min.CompareTo(range.Min) < 0 ? Min : range.Min;
         var max = Max.CompareTo(range.Max) > 0 ? Max : range.Max;
         return (min, max);
+    }
+
+    public static void Union(ValueRange<T>[] ranges, ValueRange<T>[] other)
+    {
+        if (ranges.Length != other.Length)
+        {
+            throw new ArgumentException("The length of ranges and other must be equal.");
+        }
+
+        for (var i = 0; i < ranges.Length; i++)
+        {
+            ranges[i] = ranges[i].Union(other[i]);
+        }
+    }
+
+    public static T[] ToArray(ValueRange<T> range)
+    {
+        return new T[] { range.Min, range.Max };
+    }
+
+    public static T[] ToArray(ValueRange<T>[] ranges)
+    {
+        return ranges.Select(ToArray).SelectMany(r => r).ToArray();
     }
 
     private static class Limits

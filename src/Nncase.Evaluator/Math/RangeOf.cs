@@ -2,8 +2,10 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.Intrinsics.X86;
+using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
@@ -31,6 +33,52 @@ public class RangeOfEvaluator : IEvaluator<RangeOf>, ITypeInferencer<RangeOf>, I
             }
         }
 
+        if (target.IsMatmulArg0)
+        {
+            var k = context.CurrentCall.Arguments[0].CheckedShape.ToValueArray().Last();
+            var m = context.CurrentCall.Arguments[0].CheckedShape.Prod().Value! / k;
+
+            var rangeByK = new float[k * 2];
+            for (int i = 0; i < k; i++)
+            {
+                var minM = float.MaxValue;
+                var maxM = float.MinValue;
+                for (int j = 0; j < m; j++)
+                {
+                    var value = input.Buffer.Span[(j * k) + i];
+                    if (float.IsFinite(value))
+                    {
+                        minM = System.Math.Min(minM, value);
+                        maxM = System.Math.Max(maxM, value);
+                    }
+                }
+
+                rangeByK[(i * 2) + 0] = minM;
+                rangeByK[(i * 2) + 1] = maxM;
+            }
+
+            var rangeByM = new float[(int)(m * 2)];
+            for (int i = 0; i < m; i++)
+            {
+                var minK = float.MaxValue;
+                var maxK = float.MinValue;
+                for (int j = 0; j < k; j++)
+                {
+                    var value = input.Buffer.Span[(i * k) + j];
+                    if (float.IsFinite(value))
+                    {
+                        minK = System.Math.Min(minK, value);
+                        maxK = System.Math.Max(maxK, value);
+                    }
+                }
+
+                rangeByM[(i * 2) + 0] = minK;
+                rangeByM[(i * 2) + 1] = maxK;
+            }
+
+            return new TupleValue(new IValue[] { Value.FromTensor(new[] { min, max }), Value.FromTensor(Tensor.FromArray(rangeByK)), Value.FromTensor(Tensor.FromArray(rangeByM)) });
+        }
+
         return Value.FromTensor(new[] { min, max });
     }
 
@@ -38,6 +86,13 @@ public class RangeOfEvaluator : IEvaluator<RangeOf>, ITypeInferencer<RangeOf>, I
     public IRType Visit(ITypeInferenceContext context, RangeOf target)
     {
         var input = context.CheckArgumentType<TensorType>(target, RangeOf.Input);
+        if (target.IsMatmulArg0)
+        {
+            var k = context.GetArgument(target, RangeOf.Input).CheckedShape.ToValueArray().Last();
+            var m = context.GetArgument(target, RangeOf.Input).CheckedShape.Prod().Value! / k;
+            return new TupleType(new[] { input with { Shape = new Shape(2) }, input with { Shape = new Shape(k * 2) }, input with { Shape = new Shape((int)m * 2) } });
+        }
+
         return input with { Shape = new Shape(2) };
     }
 
@@ -45,7 +100,15 @@ public class RangeOfEvaluator : IEvaluator<RangeOf>, ITypeInferencer<RangeOf>, I
     public Cost Visit(ICostEvaluateContext context, RangeOf target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, RangeOf.Input);
-        var outputType = context.GetReturnType<TensorType>();
+        IRType outputType;
+        if (target.IsMatmulArg0)
+        {
+            outputType = context.GetReturnType<TupleType>().ToArray()[0];
+        }
+        else
+        {
+            outputType = context.GetReturnType<TensorType>();
+        }
 
         return new()
         {

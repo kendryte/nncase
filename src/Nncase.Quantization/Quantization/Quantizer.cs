@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 using Newtonsoft.Json;
 using Nncase.Diagnostics;
 using Nncase.IR;
@@ -161,18 +162,18 @@ internal partial class Quantizer
 
             ranges = ranges.ToDictionary(item => item.Key, item => FixUpRange(item.Value));
 
-            if (_quantizeOptions.CalibrationMethod is CalibMethod.Kld)
-            {
-                // 1.1. Get histograms
-                var histograms = await GetHistogramsAsync(_quantizeOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);
+            // if (_quantizeOptions.CalibrationMethod is CalibMethod.Kld)
+            // {
+            //     // 1.1. Get histograms
+            //     var histograms = await GetHistogramsAsync(_quantizeOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);
 
-                // 1.2. Select best ranges
-                ranges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, _quantizeOptions.CalibrationMethod);
+            //     // 1.2. Select best ranges
+            //     var optRanges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, _quantizeOptions.CalibrationMethod);
 
-                // 1.3. Assign ranges
-                AssignRanges(ranges);
-            }
-            else
+            //     // 1.3. Assign ranges
+            //     AssignRanges(optRanges);
+            // }
+            // else
             { // 2. Assign ranges
                 AssignRanges(ranges);
             }
@@ -207,7 +208,16 @@ internal partial class Quantizer
                         quantScheme.Outputs[index].DataRangeMode = "by_tensor";
                         quantScheme.Outputs[index].DataType = ((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight == true ? _quantizeOptions.WQuantType.ToString() : _quantizeOptions.QuantType.ToString();
                         quantScheme.Outputs[index].DataRange = new ValueRange<float>[1];
-                        quantScheme.Outputs[index].DataRange![0] = range.Value;
+                        if (range.Value is TensorConst tensorConst)
+                        {
+                            quantScheme.Outputs[index].DataRange![0] = new ValueRange<float>(tensorConst.Value.ToArray<float>()[0], tensorConst.Value.ToArray<float>()[1]);
+                        }
+                        else
+                        {
+                            var rangeByTensor = ((TupleConst)range.Value).Value.AsTensors()[0].ToArray<float>();
+                            quantScheme.Outputs[index].DataRange![0] = new ValueRange<float>(rangeByTensor[0], rangeByTensor[1]);
+                        }
+
                         outputNames.Add(range.Key.Expr.Metadata.OutputNames[0]);
                         index++;
                     }
@@ -252,7 +262,16 @@ internal partial class Quantizer
                         else
                         {
                             var valueRanges = new ValueRange<float>[1];
-                            valueRanges[0] = range.Value;
+                            if (range.Value is TensorConst tensorConst)
+                            {
+                                valueRanges[0] = new ValueRange<float>(tensorConst.Value.ToArray<float>()[0], tensorConst.Value.ToArray<float>()[1]);
+                            }
+                            else
+                            {
+                                var rangeByTensor = ((TupleConst)range.Value).Value.AsTensors()[0].ToArray<float>();
+                                valueRanges[0] = new ValueRange<float>(rangeByTensor[0], rangeByTensor[1]);
+                            }
+
                             byChannelRanges.Add(range.Key, valueRanges);
                         }
                     }
@@ -284,10 +303,10 @@ internal partial class Quantizer
                 }
             }
 
-            if (_quantizeOptions.DumpQuantError)
-            {
-                await DumpQuantError(ranges);
-            }
+            // if (_quantizeOptions.DumpQuantError)
+            // {
+            //     await DumpQuantError(ranges);
+            // }
         }
         else
         {
@@ -343,13 +362,13 @@ internal partial class Quantizer
         }
     }
 
-    private async Task RunPassAsync(ICalibrationDatasetProvider calibrationDataset, Action<IReadOnlyDictionary<ENode, Tensor>> func)
+    private async Task RunPassAsync(ICalibrationDatasetProvider calibrationDataset, Action<IReadOnlyDictionary<ENode, IValue>> func)
     {
         await foreach (var sample in calibrationDataset.Samples)
         {
             using var dumpScope = new DumpScope("ep1");
             var evaluator = new CalibrationEvaluator(sample, _rangeOfs);
-            var values = evaluator.Evaluate();
+            var values = evaluator.EvaluateValues();
             func(values);
             GC.Collect();
         }
@@ -386,22 +405,108 @@ internal partial class Quantizer
         return range;
     }
 
-    private async Task<IDictionary<ENode, ValueRange<float>>> GetRangesAsync(ICalibrationDatasetProvider calibrationDataset)
+    private ValueRange<float>[] FixUpRange(ValueRange<float>[] ranges, bool symmetric = false)
     {
-        var ranges = new Dictionary<ENode, ValueRange<float>>(ReferenceEqualityComparer.Instance);
+        return ranges.Select(r => FixUpRange(r, symmetric)).ToArray();
+    }
+
+    private Const FixUpRange(Const ranges, bool symmetric = false)
+    {
+        if (ranges is TensorConst rangeTensor)
+        {
+            var values = rangeTensor.Value.ToArray<float>();
+            var range = new ValueRange<float>(values[0], values[1]);
+            range = FixUpRange(range, symmetric);
+            return Const.FromTensor(ValueRange<float>.ToArray(range));
+        }
+        else
+        {
+            var rangeTensors = ((TupleConst)ranges).Value.AsTensors();
+            var newRange = new ValueRange<float>[rangeTensors.Length][];
+            for (var i = 0; i < rangeTensors.Length; i++)
+            {
+                var t = rangeTensors[i];
+                var rangeValueArray = t.Cast<float>().Buffer.Span.ToArray();
+                var range = rangeValueArray.Where((_, index) => index % 2 == 0)
+                    .Zip(rangeValueArray.Where((_, index) => index % 2 != 0), (first, second) => (first, second))
+                    .Select(item => new ValueRange<float>(item.first, item.second))
+                    .ToArray();
+                range = FixUpRange(range, symmetric);
+                newRange[i] = range;
+            }
+
+            return new TupleConst(new TupleValue(newRange.Select(r => new TensorValue(Tensor.FromArray(ValueRange<float>.ToArray(r)))).ToArray()));
+        }
+    }
+
+    private async Task<IDictionary<ENode, Const>> GetRangesAsync(ICalibrationDatasetProvider calibrationDataset)
+    {
+        var ranges = new Dictionary<ENode, Const>(ReferenceEqualityComparer.Instance);
         await RunPassAsync(calibrationDataset, (values) =>
         {
             foreach (var value in values)
             {
-                var tensor = value.Value.Cast<float>();
-                var range = GetMinMax(tensor);
-                if (ranges.TryGetValue(value.Key, out var oldRange))
+                var tensors = value.Value.AsTensors();
+                var newRange = new ValueRange<float>[tensors.Length][];
+                for (var i = 0; i < newRange.Length; i++)
                 {
-                    ranges[value.Key] = oldRange.Union(range);
+                    // var range = GetMinMax(t);
+                    var t = tensors[i];
+                    var rangeValueArray = t.Cast<float>().Buffer.Span.ToArray();
+                    var range = rangeValueArray.Where((_, index) => index % 2 == 0)
+                        .Zip(rangeValueArray.Where((_, index) => index % 2 != 0), (first, second) => (first, second))
+                        .Select(item => new ValueRange<float>(item.first, item.second))
+                        .ToArray();
+                    newRange[i] = range;
+                }
+
+                if (ranges.TryGetValue(value.Key, out var oldRangeValue))
+                {
+                    var oldRange = new ValueRange<float>[tensors.Length][];
+                    if (newRange.Length == 1)
+                    {
+                        var oldRangeValueArray = ((TensorConst)oldRangeValue).Value.ToArray<float>();
+                        oldRange[0] = new[] { new ValueRange<float>(oldRangeValueArray[0], oldRangeValueArray[1]) };
+                    }
+                    else
+                    {
+                        var oldRangeTensors = ((TupleConst)oldRangeValue).Value.AsTensors();
+                        for (var i = 0; i < newRange.Length; i++)
+                        {
+                            var t = oldRangeTensors[i];
+                            var rangeValueArray = t.Cast<float>().Buffer.Span.ToArray();
+                            var range = rangeValueArray.Where((_, index) => index % 2 == 0)
+                                .Zip(rangeValueArray.Where((_, index) => index % 2 != 0), (first, second) => (first, second))
+                                .Select(item => new ValueRange<float>(item.first, item.second))
+                                .ToArray();
+                            oldRange[i] = range;
+                        }
+                    }
+
+                    for (var i = 0; i < newRange.Length; i++)
+                    {
+                        ValueRange<float>.Union(newRange[i], oldRange[i]);
+                    }
+
+                    if (newRange.Length == 1)
+                    {
+                        ranges[value.Key] = Const.FromTensor(ValueRange<float>.ToArray(newRange[0]));
+                    }
+                    else
+                    {
+                        ranges[value.Key] = new TupleConst(new TupleValue(newRange.Select(r => new TensorValue(Tensor.FromArray(ValueRange<float>.ToArray(r)))).ToArray()));
+                    }
                 }
                 else
                 {
-                    ranges.Add(value.Key, range);
+                    if (newRange.Length == 1)
+                    {
+                        ranges.Add(value.Key, Const.FromTensor(ValueRange<float>.ToArray(newRange[0])));
+                    }
+                    else
+                    {
+                        ranges.Add(value.Key, new TupleConst(new TupleValue(newRange.Select(r => new TensorValue(Tensor.FromArray(ValueRange<float>.ToArray(r)))).ToArray())));
+                    }
                 }
             }
         });
@@ -536,9 +641,9 @@ internal partial class Quantizer
         return histograms;
     }
 
-    private IDictionary<ENode, ValueRange<float>> GetOptRanges(IDictionary<ENode, QuantizeHistogram<float>> histograms, IDictionary<ENode, ValueRange<float>> ranges, int srcBinSize, int dstBinSize, CalibMethod calibrationMethod)
+    private IDictionary<ENode, Const> GetOptRanges(IDictionary<ENode, QuantizeHistogram<float>> histograms, IDictionary<ENode, ValueRange<float>> ranges, int srcBinSize, int dstBinSize, CalibMethod calibrationMethod)
     {
-        var optRanges = new Dictionary<ENode, ValueRange<float>>(ReferenceEqualityComparer.Instance);
+        var optRanges = new Dictionary<ENode, Const>(ReferenceEqualityComparer.Instance);
         if (calibrationMethod == CalibMethod.Kld)
         {
             foreach (KeyValuePair<ENode, QuantizeHistogram<float>> histogram in histograms)
@@ -576,7 +681,7 @@ internal partial class Quantizer
 
                 var optMin = ((betterThreshold.Item1 - 0.5f) * srcBinInterval) + ranges[histogram.Key].Min;
                 var optMax = ((betterThreshold.Item2 + 0.5f) * srcBinInterval) + ranges[histogram.Key].Min;
-                optRanges.Add(histogram.Key, new ValueRange<float>(optMin, optMax));
+                optRanges.Add(histogram.Key, Const.FromTensor(new float[] { optMin, optMax }));
             }
 
             return optRanges;
@@ -587,12 +692,12 @@ internal partial class Quantizer
         }
     }
 
-    private void AssignRanges(IDictionary<ENode, ValueRange<float>> ranges)
+    private void AssignRanges(IDictionary<ENode, Const> ranges)
     {
         // note union the constant in the rangeof eclass, when extact the graph will replace the rangeof expression with the constant ValueRange.
         foreach (var range in ranges)
         {
-            var value = new[] { range.Value.Min, range.Value.Max };
+            var value = range.Value;
             var rangeEclass = _graph.Add(value);
             var rangeOfEclass = _graph.Find(range.Key);
             _graph.Union(rangeOfEclass, rangeEclass);
@@ -720,7 +825,7 @@ internal partial class Quantizer
     /// </summary>
     private void MarkRangeOfs()
     {
-        if (EGraphMatcher.TryMatchRoot(_graph.Nodes, IsRangeOf(IsWildcard()), out var matches))
+        if (EGraphMatcher.TryMatchRoot(_graph.Nodes, IsRangeOf(_ => true, IsWildcard()), out var matches))
         {
             foreach (var match in matches)
             {
