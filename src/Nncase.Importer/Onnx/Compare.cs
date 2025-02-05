@@ -8,7 +8,7 @@ using static Nncase.IR.F.Math;
 
 namespace Nncase.Importer
 {
-    public partial class OnnxImporter
+    public partial class OnnxGraphImporter
     {
         private Expr VisitCompare(in NodeProto op, CompareOp compareOp)
         {

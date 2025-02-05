@@ -13,7 +13,7 @@ using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Importer.TFLite
 {
-    public partial class TFLiteImporter
+    public partial class TFLiteGraphImporter
     {
         private Expr VisitConv2DTranspose(in tflite.Operator op)
         {

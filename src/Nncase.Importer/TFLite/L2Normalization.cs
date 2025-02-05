@@ -7,7 +7,7 @@ using F = Nncase.IR.F;
 
 namespace Nncase.Importer.TFLite
 {
-    public partial class TFLiteImporter
+    public partial class TFLiteGraphImporter
     {
         private Expr VisitL2Normalization(in tflite.Operator op)
         {

@@ -278,7 +278,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         b.InferenceType();
         Assert.Equal(new[] { 3, 1, 1 }, b.Evaluate().AsTensor().Dimensions.ToArray());
 
-        var a = OnnxImporter.ReshapeToByChannel(v);
+        var a = OnnxGraphImporter.ReshapeToByChannel(v);
         var after = await RunShapeInferPass("ReshapeToByChannel", a);
         Assert.True(after.InferenceType());
         Assert.Equal(new[] { 3, 1, 1 }, after.Evaluate().AsTensor().Dimensions.ToArray());

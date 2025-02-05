@@ -44,6 +44,11 @@ public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>, ICostEvalu
         var x = context.CheckArgumentType<TensorType>(target, LSTM.X);
         var initH = context.CheckArgumentType<TensorType>(target, LSTM.InitialH);
         var initC = context.CheckArgumentType<TensorType>(target, LSTM.InitialC);
+        if (x.Shape.IsUnranked)
+        {
+            x = x with { Shape = Shape.Unknown(3) };
+        }
+
         if (x.Shape.Rank != 3)
         {
             return new InvalidType("LSTM First input tensor must have rank 3");

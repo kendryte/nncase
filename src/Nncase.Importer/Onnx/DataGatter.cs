@@ -13,7 +13,7 @@ using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Importer;
 
-public sealed partial class OnnxImporter
+public sealed partial class OnnxGraphImporter
 {
     private static readonly Dictionary<TensorProto.Types.DataType, DataType> _typeMap = new()
     {
@@ -34,32 +34,36 @@ public sealed partial class OnnxImporter
     public Shape GetShape(ValueInfoProto v)
     {
         var shape = v.Type.TensorType.Shape.Dim;
-        var dimArr = GetDimArray(shape, d => d, _ => Dimension.Unknown, d => (Dimension)d.DimValue);
+        var dimArr = GetDimArray(v.Name, shape, d => d, (_, _) => Dimension.Unknown, d => (Dimension)d.DimValue);
         return new Shape(dimArr);
     }
 
     public Expr[] GetOriginShape(ValueInfoProto v)
     {
         var shape = v.Type.TensorType.Shape.Dim;
-        return GetDimArray(shape, d => d, dim => _dynVarMap[dim.DimParam], dim => (Expr)dim.DimValue);
+        return GetDimArray(v.Name, shape, d => d, (dim, i) => _dynVarMap[GetDimParam(v.Name, dim, i)], dim => (Expr)dim.DimValue);
     }
 
     public T[] GetDimArray<T>(
+        string input,
         RepeatedField<TensorShapeProto.Types.Dimension> shape,
         Func<int, T> fixVarF,
-        Func<TensorShapeProto.Types.Dimension, T> dynamicF,
+        Func<TensorShapeProto.Types.Dimension, int, T> dynamicF,
         Func<TensorShapeProto.Types.Dimension, T> fixF)
     {
-        return shape.Select(x =>
+        return shape.Select((x, i) =>
         {
             if (IsDynamicDim(x))
             {
-                if (_fixVarMap.TryGetValue(x.DimParam, out var dim))
+                var bucketOptions = CompileSession.CompileOptions.ShapeBucketOptions;
+                var fixVarMap = bucketOptions.FixVarMap;
+                var dimParam = GetDimParam(input, x, i);
+                if (fixVarMap.TryGetValue(dimParam, out var dim))
                 {
                     return fixVarF(dim);
                 }
 
-                return dynamicF(x);
+                return dynamicF(x, i);
             }
 
             return fixF(x);
@@ -81,7 +85,10 @@ public sealed partial class OnnxImporter
         return new TensorType(GetDataType(v), GetShape(v));
     }
 
-    private static bool IsDynamicDim(TensorShapeProto.Types.Dimension x) => x.DimParam != string.Empty;
+    private static bool IsDynamicDim(TensorShapeProto.Types.Dimension x) => x.ValueCase != TensorShapeProto.Types.Dimension.ValueOneofCase.DimValue;
+
+    private string GetDimParam(string input, TensorShapeProto.Types.Dimension dim, int i) =>
+        string.IsNullOrEmpty(dim.DimParam) ? $"{input}_d{i}" : dim.DimParam;
 
     private bool EmptyTensor(TensorProto tensor)
     {
@@ -173,24 +180,35 @@ public sealed partial class OnnxImporter
         };
     }
 
-    private Expr GetInputExpr(NodeProto n, int index)
+    private Expr GetInputExpr(string id)
     {
-        // todo:is null?
-        var id = n.Input[index];
-        if (_outputTensors!.TryGetValue(id, out var expr))
+        if (!_outputTensors.TryGetValue(id, out var expr))
         {
-            expr.Metadata.OutputNames = new string[] { n.Input[index] };
-            return expr;
+            var constTensor = _graph.Initializer.FirstOrDefault(x => x.Name == id);
+            if (constTensor != null)
+            {
+                expr = GetTensor(constTensor);
+            }
+            else if (_parent != null)
+            {
+                var parentExpr = _parent.GetInputExpr(id);
+                var newVar = new Var(id, parentExpr.CheckedType);
+                Inputs.Add(newVar);
+                _outputTensors.Add(id, newVar);
+                expr = newVar;
+            }
         }
 
-        Expr ret = _graph.Initializer
-            .Find(x => x.Name == id)
-            .Match(
-                GetTensor,
-                () => throw new InvalidDataException($"Cannot load tensor data (tensor:{id})."));
-        ret.Metadata.OutputNames = new string[] { n.Input[index] };
-        return ret;
+        if (expr is null)
+        {
+            throw new InvalidOperationException($"Cannot load tensor data (tensor:{id}).");
+        }
+
+        expr.Metadata.OutputNames = new string[] { id };
+        return expr;
     }
+
+    private Expr GetInputExpr(NodeProto n, int index) => GetInputExpr(n.Input[index]);
 
     private DataType GetInputDataType(NodeProto n, int index)
     {

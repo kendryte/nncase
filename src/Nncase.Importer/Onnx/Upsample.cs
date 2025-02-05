@@ -14,7 +14,7 @@ using F = Nncase.IR.F;
 
 namespace Nncase.Importer
 {
-    public partial class OnnxImporter
+    public partial class OnnxGraphImporter
     {
         private Expr VisitUpsample(in NodeProto op)
         {

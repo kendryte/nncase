@@ -8,7 +8,7 @@ using F = Nncase.IR.F;
 
 namespace Nncase.Importer
 {
-    public partial class OnnxImporter
+    public partial class OnnxGraphImporter
     {
         private Expr VisitGemm(in NodeProto op)
         {

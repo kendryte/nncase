@@ -11,7 +11,7 @@ using F = Nncase.IR.F;
 
 namespace Nncase.Importer
 {
-    public partial class OnnxImporter
+    public partial class OnnxGraphImporter
     {
         // isGlobal used for GlobalXXXPool
         private Expr VisitReduceWindow2D(in NodeProto op, ReduceOp reduceOp, Expr initValue, bool isGlobal = false)

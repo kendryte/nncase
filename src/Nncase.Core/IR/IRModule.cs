@@ -19,7 +19,6 @@ public sealed class IRModule
 {
     private readonly List<BaseFunction> _functions;
     private readonly ExprUser _exprUser = new();
-    private int? _entryIndex;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="IRModule"/> class.
@@ -28,7 +27,6 @@ public sealed class IRModule
     public IRModule(BaseFunction main)
     {
         _functions = new() { main };
-        _entryIndex = 0;
         main.AddUser(_exprUser);
     }
 
@@ -49,11 +47,7 @@ public sealed class IRModule
     /// <summary>
     /// Gets or sets entry function.
     /// </summary>
-    public BaseFunction? Entry
-    {
-        get => _entryIndex.HasValue ? _functions[_entryIndex.Value] : null;
-        set => _entryIndex = value != null ? _functions.FindIndex(x => object.ReferenceEquals(x, value)) : null;
-    }
+    public BaseFunction? Entry { get; set; }
 
     /// <summary>
     /// Add function.
@@ -81,6 +75,11 @@ public sealed class IRModule
             old.DisposeIfNoUsers();
         }
 
+        if (ReferenceEquals(old, Entry))
+        {
+            Entry = function;
+        }
+
         old = function;
     }
 
@@ -103,5 +102,10 @@ public sealed class IRModule
         }
 
         _functions.RemoveAt(index);
+
+        if (ReferenceEquals(function, Entry))
+        {
+            Entry = null;
+        }
     }
 }

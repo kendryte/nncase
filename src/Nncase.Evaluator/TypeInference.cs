@@ -449,6 +449,11 @@ public static class TypeInference
                 return new InvalidType($"Inputs DType of if should be same, then: {a.DType}, else: {b.DType}");
             }
 
+            if (a.Shape.IsUnranked || b.Shape.IsUnranked || a.Shape.Rank != b.Shape.Rank)
+            {
+                return new TensorType(a.DType, Shape.Unranked);
+            }
+
             return new TensorType(a.DType, Shape.Unknown(a.Shape.Rank));
         }
 

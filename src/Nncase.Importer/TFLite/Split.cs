@@ -12,7 +12,7 @@ using F = Nncase.IR.F;
 
 namespace Nncase.Importer.TFLite
 {
-    public partial class TFLiteImporter
+    public partial class TFLiteGraphImporter
     {
         private Expr VisitSplit(in tflite.Operator op)
         {

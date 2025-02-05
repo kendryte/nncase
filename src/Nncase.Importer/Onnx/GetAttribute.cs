@@ -13,7 +13,7 @@ using F = Nncase.IR.F;
 
 namespace Nncase.Importer
 {
-    public sealed partial class OnnxImporter
+    public sealed partial class OnnxGraphImporter
     {
         // todo:refactor, remove x=>x by add extension and replace if with ?
         private Option<T> GetAttr<T>(NodeProto n, string attr, AttributeType type, Func<AttributeProto, T> func)
@@ -71,6 +71,11 @@ namespace Nncase.Importer
         private bool GetBoolAttribute(NodeProto n, string attr, bool defaultValue)
         {
             return GetIntAttribute(n, attr, defaultValue ? 1 : 0) != 0;
+        }
+
+        private GraphProto GetGraphAttribute(NodeProto n, string attr)
+        {
+            return GetAttrUnSafe(n, attr, AttributeType.Graph, x => x.G);
         }
 
         private Expr ComputeDefaultAxes(Expr input)

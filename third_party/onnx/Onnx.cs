@@ -24,7 +24,7 @@ namespace Onnx {
     static OnnxReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "Cgtvbm54LnByb3RvMxIEb25ueCLMBQoOQXR0cmlidXRlUHJvdG8SDAoEbmFt",
+            "Cgtvbm54LnByb3RvMxIEb25ueCLbBQoOQXR0cmlidXRlUHJvdG8SDAoEbmFt",
             "ZRgBIAEoCRIVCg1yZWZfYXR0cl9uYW1lGBUgASgJEhIKCmRvY19zdHJpbmcY",
             "DSABKAkSMAoEdHlwZRgUIAEoDjIiLm9ubnguQXR0cmlidXRlUHJvdG8uQXR0",
             "cmlidXRlVHlwZRIJCgFmGAIgASgCEgkKAWkYAyABKAMSCQoBcxgEIAEoDBIc",
@@ -40,96 +40,110 @@ namespace Onnx {
             "CgZURU5TT1IQBBIJCgVHUkFQSBAFEhEKDVNQQVJTRV9URU5TT1IQCxIOCgpU",
             "WVBFX1BST1RPEA0SCgoGRkxPQVRTEAYSCAoESU5UUxAHEgsKB1NUUklOR1MQ",
             "CBILCgdURU5TT1JTEAkSCgoGR1JBUEhTEAoSEgoOU1BBUlNFX1RFTlNPUlMQ",
-            "DBIPCgtUWVBFX1BST1RPUxAOIlEKDlZhbHVlSW5mb1Byb3RvEgwKBG5hbWUY",
-            "ASABKAkSHQoEdHlwZRgCIAEoCzIPLm9ubnguVHlwZVByb3RvEhIKCmRvY19z",
-            "dHJpbmcYAyABKAkilgEKCU5vZGVQcm90bxINCgVpbnB1dBgBIAMoCRIOCgZv",
-            "dXRwdXQYAiADKAkSDAoEbmFtZRgDIAEoCRIPCgdvcF90eXBlGAQgASgJEg4K",
-            "BmRvbWFpbhgHIAEoCRInCglhdHRyaWJ1dGUYBSADKAsyFC5vbm54LkF0dHJp",
-            "YnV0ZVByb3RvEhIKCmRvY19zdHJpbmcYBiABKAki1gEKEVRyYWluaW5nSW5m",
-            "b1Byb3RvEigKDmluaXRpYWxpemF0aW9uGAEgASgLMhAub25ueC5HcmFwaFBy",
-            "b3RvEiMKCWFsZ29yaXRobRgCIAEoCzIQLm9ubnguR3JhcGhQcm90bxI8ChZp",
-            "bml0aWFsaXphdGlvbl9iaW5kaW5nGAMgAygLMhwub25ueC5TdHJpbmdTdHJp",
-            "bmdFbnRyeVByb3RvEjQKDnVwZGF0ZV9iaW5kaW5nGAQgAygLMhwub25ueC5T",
-            "dHJpbmdTdHJpbmdFbnRyeVByb3RvIusCCgpNb2RlbFByb3RvEhIKCmlyX3Zl",
-            "cnNpb24YASABKAMSLgoMb3BzZXRfaW1wb3J0GAggAygLMhgub25ueC5PcGVy",
-            "YXRvclNldElkUHJvdG8SFQoNcHJvZHVjZXJfbmFtZRgCIAEoCRIYChBwcm9k",
-            "dWNlcl92ZXJzaW9uGAMgASgJEg4KBmRvbWFpbhgEIAEoCRIVCg1tb2RlbF92",
-            "ZXJzaW9uGAUgASgDEhIKCmRvY19zdHJpbmcYBiABKAkSHwoFZ3JhcGgYByAB",
-            "KAsyEC5vbm54LkdyYXBoUHJvdG8SNAoObWV0YWRhdGFfcHJvcHMYDiADKAsy",
-            "HC5vbm54LlN0cmluZ1N0cmluZ0VudHJ5UHJvdG8SLgoNdHJhaW5pbmdfaW5m",
-            "bxgUIAMoCzIXLm9ubnguVHJhaW5pbmdJbmZvUHJvdG8SJgoJZnVuY3Rpb25z",
-            "GBkgAygLMhMub25ueC5GdW5jdGlvblByb3RvIjQKFlN0cmluZ1N0cmluZ0Vu",
-            "dHJ5UHJvdG8SCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJImsKEFRlbnNv",
-            "ckFubm90YXRpb24SEwoLdGVuc29yX25hbWUYASABKAkSQgoccXVhbnRfcGFy",
-            "YW1ldGVyX3RlbnNvcl9uYW1lcxgCIAMoCzIcLm9ubnguU3RyaW5nU3RyaW5n",
-            "RW50cnlQcm90byLYAgoKR3JhcGhQcm90bxIdCgRub2RlGAEgAygLMg8ub25u",
-            "eC5Ob2RlUHJvdG8SDAoEbmFtZRgCIAEoCRImCgtpbml0aWFsaXplchgFIAMo",
-            "CzIRLm9ubnguVGVuc29yUHJvdG8SMwoSc3BhcnNlX2luaXRpYWxpemVyGA8g",
-            "AygLMhcub25ueC5TcGFyc2VUZW5zb3JQcm90bxISCgpkb2Nfc3RyaW5nGAog",
-            "ASgJEiMKBWlucHV0GAsgAygLMhQub25ueC5WYWx1ZUluZm9Qcm90bxIkCgZv",
-            "dXRwdXQYDCADKAsyFC5vbm54LlZhbHVlSW5mb1Byb3RvEigKCnZhbHVlX2lu",
-            "Zm8YDSADKAsyFC5vbm54LlZhbHVlSW5mb1Byb3RvEjcKF3F1YW50aXphdGlv",
-            "bl9hbm5vdGF0aW9uGA4gAygLMhYub25ueC5UZW5zb3JBbm5vdGF0aW9uIrgF",
-            "CgtUZW5zb3JQcm90bxIMCgRkaW1zGAEgAygDEhEKCWRhdGFfdHlwZRgCIAEo",
-            "BRIqCgdzZWdtZW50GAMgASgLMhkub25ueC5UZW5zb3JQcm90by5TZWdtZW50",
-            "EhYKCmZsb2F0X2RhdGEYBCADKAJCAhABEhYKCmludDMyX2RhdGEYBSADKAVC",
-            "AhABEhMKC3N0cmluZ19kYXRhGAYgAygMEhYKCmludDY0X2RhdGEYByADKANC",
-            "AhABEgwKBG5hbWUYCCABKAkSEgoKZG9jX3N0cmluZxgMIAEoCRIQCghyYXdf",
-            "ZGF0YRgJIAEoDBIzCg1leHRlcm5hbF9kYXRhGA0gAygLMhwub25ueC5TdHJp",
-            "bmdTdHJpbmdFbnRyeVByb3RvEjUKDWRhdGFfbG9jYXRpb24YDiABKA4yHi5v",
-            "bm54LlRlbnNvclByb3RvLkRhdGFMb2NhdGlvbhIXCgtkb3VibGVfZGF0YRgK",
-            "IAMoAUICEAESFwoLdWludDY0X2RhdGEYCyADKARCAhABGiUKB1NlZ21lbnQS",
-            "DQoFYmVnaW4YASABKAMSCwoDZW5kGAIgASgDItoBCghEYXRhVHlwZRINCglV",
-            "TkRFRklORUQQABIJCgVGTE9BVBABEgkKBVVJTlQ4EAISCAoESU5UOBADEgoK",
-            "BlVJTlQxNhAEEgkKBUlOVDE2EAUSCQoFSU5UMzIQBhIJCgVJTlQ2NBAHEgoK",
-            "BlNUUklORxAIEggKBEJPT0wQCRILCgdGTE9BVDE2EAoSCgoGRE9VQkxFEAsS",
-            "CgoGVUlOVDMyEAwSCgoGVUlOVDY0EA0SDQoJQ09NUExFWDY0EA4SDgoKQ09N",
-            "UExFWDEyOBAPEgwKCEJGTE9BVDE2EBAiKQoMRGF0YUxvY2F0aW9uEgsKB0RF",
-            "RkFVTFQQABIMCghFWFRFUk5BTBABImgKEVNwYXJzZVRlbnNvclByb3RvEiEK",
-            "BnZhbHVlcxgBIAEoCzIRLm9ubnguVGVuc29yUHJvdG8SIgoHaW5kaWNlcxgC",
-            "IAEoCzIRLm9ubnguVGVuc29yUHJvdG8SDAoEZGltcxgDIAMoAyKVAQoQVGVu",
-            "c29yU2hhcGVQcm90bxItCgNkaW0YASADKAsyIC5vbm54LlRlbnNvclNoYXBl",
-            "UHJvdG8uRGltZW5zaW9uGlIKCURpbWVuc2lvbhITCglkaW1fdmFsdWUYASAB",
-            "KANIABITCglkaW1fcGFyYW0YAiABKAlIABISCgpkZW5vdGF0aW9uGAMgASgJ",
-            "QgcKBXZhbHVlIs4ECglUeXBlUHJvdG8SLQoLdGVuc29yX3R5cGUYASABKAsy",
-            "Fi5vbm54LlR5cGVQcm90by5UZW5zb3JIABIxCg1zZXF1ZW5jZV90eXBlGAQg",
-            "ASgLMhgub25ueC5UeXBlUHJvdG8uU2VxdWVuY2VIABInCghtYXBfdHlwZRgF",
-            "IAEoCzITLm9ubnguVHlwZVByb3RvLk1hcEgAEjEKDW9wdGlvbmFsX3R5cGUY",
-            "CSABKAsyGC5vbm54LlR5cGVQcm90by5PcHRpb25hbEgAEjoKEnNwYXJzZV90",
-            "ZW5zb3JfdHlwZRgIIAEoCzIcLm9ubnguVHlwZVByb3RvLlNwYXJzZVRlbnNv",
-            "ckgAEhIKCmRlbm90YXRpb24YBiABKAkaQgoGVGVuc29yEhEKCWVsZW1fdHlw",
-            "ZRgBIAEoBRIlCgVzaGFwZRgCIAEoCzIWLm9ubnguVGVuc29yU2hhcGVQcm90",
-            "bxouCghTZXF1ZW5jZRIiCgllbGVtX3R5cGUYASABKAsyDy5vbm54LlR5cGVQ",
-            "cm90bxo8CgNNYXASEAoIa2V5X3R5cGUYASABKAUSIwoKdmFsdWVfdHlwZRgC",
-            "IAEoCzIPLm9ubnguVHlwZVByb3RvGi4KCE9wdGlvbmFsEiIKCWVsZW1fdHlw",
-            "ZRgBIAEoCzIPLm9ubnguVHlwZVByb3RvGkgKDFNwYXJzZVRlbnNvchIRCgll",
-            "bGVtX3R5cGUYASABKAUSJQoFc2hhcGUYAiABKAsyFi5vbm54LlRlbnNvclNo",
-            "YXBlUHJvdG9CBwoFdmFsdWUiNQoST3BlcmF0b3JTZXRJZFByb3RvEg4KBmRv",
-            "bWFpbhgBIAEoCRIPCgd2ZXJzaW9uGAIgASgDIuUBCg1GdW5jdGlvblByb3Rv",
-            "EgwKBG5hbWUYASABKAkSDQoFaW5wdXQYBCADKAkSDgoGb3V0cHV0GAUgAygJ",
-            "EhEKCWF0dHJpYnV0ZRgGIAMoCRIdCgRub2RlGAcgAygLMg8ub25ueC5Ob2Rl",
-            "UHJvdG8SEgoKZG9jX3N0cmluZxgIIAEoCRIuCgxvcHNldF9pbXBvcnQYCSAD",
-            "KAsyGC5vbm54Lk9wZXJhdG9yU2V0SWRQcm90bxIOCgZkb21haW4YCiABKAlK",
-            "BAgCEANKBAgDEARSDXNpbmNlX3ZlcnNpb25SBnN0YXR1cyrkAQoHVmVyc2lv",
-            "bhISCg5fU1RBUlRfVkVSU0lPThAAEhkKFUlSX1ZFUlNJT05fMjAxN18xMF8x",
-            "MBABEhkKFUlSX1ZFUlNJT05fMjAxN18xMF8zMBACEhgKFElSX1ZFUlNJT05f",
-            "MjAxN18xMV8zEAMSGAoUSVJfVkVSU0lPTl8yMDE5XzFfMjIQBBIYChRJUl9W",
-            "RVJTSU9OXzIwMTlfM18xOBAFEhgKFElSX1ZFUlNJT05fMjAxOV85XzE5EAYS",
-            "FwoTSVJfVkVSU0lPTl8yMDIwXzVfOBAHEg4KCklSX1ZFUlNJT04QCCouCg5P",
-            "cGVyYXRvclN0YXR1cxIQCgxFWFBFUklNRU5UQUwQABIKCgZTVEFCTEUQAUIC",
-            "SANiBnByb3RvMw=="));
+            "DBIPCgtUWVBFX1BST1RPUxAOSgQIDBANSgQIEBAUUgF2IocBCg5WYWx1ZUlu",
+            "Zm9Qcm90bxIMCgRuYW1lGAEgASgJEh0KBHR5cGUYAiABKAsyDy5vbm54LlR5",
+            "cGVQcm90bxISCgpkb2Nfc3RyaW5nGAMgASgJEjQKDm1ldGFkYXRhX3Byb3Bz",
+            "GAQgAygLMhwub25ueC5TdHJpbmdTdHJpbmdFbnRyeVByb3RvIt4BCglOb2Rl",
+            "UHJvdG8SDQoFaW5wdXQYASADKAkSDgoGb3V0cHV0GAIgAygJEgwKBG5hbWUY",
+            "AyABKAkSDwoHb3BfdHlwZRgEIAEoCRIOCgZkb21haW4YByABKAkSEAoIb3Zl",
+            "cmxvYWQYCCABKAkSJwoJYXR0cmlidXRlGAUgAygLMhQub25ueC5BdHRyaWJ1",
+            "dGVQcm90bxISCgpkb2Nfc3RyaW5nGAYgASgJEjQKDm1ldGFkYXRhX3Byb3Bz",
+            "GAkgAygLMhwub25ueC5TdHJpbmdTdHJpbmdFbnRyeVByb3RvItYBChFUcmFp",
+            "bmluZ0luZm9Qcm90bxIoCg5pbml0aWFsaXphdGlvbhgBIAEoCzIQLm9ubngu",
+            "R3JhcGhQcm90bxIjCglhbGdvcml0aG0YAiABKAsyEC5vbm54LkdyYXBoUHJv",
+            "dG8SPAoWaW5pdGlhbGl6YXRpb25fYmluZGluZxgDIAMoCzIcLm9ubnguU3Ry",
+            "aW5nU3RyaW5nRW50cnlQcm90bxI0Cg51cGRhdGVfYmluZGluZxgEIAMoCzIc",
+            "Lm9ubnguU3RyaW5nU3RyaW5nRW50cnlQcm90byLrAgoKTW9kZWxQcm90bxIS",
+            "Cgppcl92ZXJzaW9uGAEgASgDEi4KDG9wc2V0X2ltcG9ydBgIIAMoCzIYLm9u",
+            "bnguT3BlcmF0b3JTZXRJZFByb3RvEhUKDXByb2R1Y2VyX25hbWUYAiABKAkS",
+            "GAoQcHJvZHVjZXJfdmVyc2lvbhgDIAEoCRIOCgZkb21haW4YBCABKAkSFQoN",
+            "bW9kZWxfdmVyc2lvbhgFIAEoAxISCgpkb2Nfc3RyaW5nGAYgASgJEh8KBWdy",
+            "YXBoGAcgASgLMhAub25ueC5HcmFwaFByb3RvEjQKDm1ldGFkYXRhX3Byb3Bz",
+            "GA4gAygLMhwub25ueC5TdHJpbmdTdHJpbmdFbnRyeVByb3RvEi4KDXRyYWlu",
+            "aW5nX2luZm8YFCADKAsyFy5vbm54LlRyYWluaW5nSW5mb1Byb3RvEiYKCWZ1",
+            "bmN0aW9ucxgZIAMoCzITLm9ubnguRnVuY3Rpb25Qcm90byI0ChZTdHJpbmdT",
+            "dHJpbmdFbnRyeVByb3RvEgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCSJr",
+            "ChBUZW5zb3JBbm5vdGF0aW9uEhMKC3RlbnNvcl9uYW1lGAEgASgJEkIKHHF1",
+            "YW50X3BhcmFtZXRlcl90ZW5zb3JfbmFtZXMYAiADKAsyHC5vbm54LlN0cmlu",
+            "Z1N0cmluZ0VudHJ5UHJvdG8i1AMKCkdyYXBoUHJvdG8SHQoEbm9kZRgBIAMo",
+            "CzIPLm9ubnguTm9kZVByb3RvEgwKBG5hbWUYAiABKAkSJgoLaW5pdGlhbGl6",
+            "ZXIYBSADKAsyES5vbm54LlRlbnNvclByb3RvEjMKEnNwYXJzZV9pbml0aWFs",
+            "aXplchgPIAMoCzIXLm9ubnguU3BhcnNlVGVuc29yUHJvdG8SEgoKZG9jX3N0",
+            "cmluZxgKIAEoCRIjCgVpbnB1dBgLIAMoCzIULm9ubnguVmFsdWVJbmZvUHJv",
+            "dG8SJAoGb3V0cHV0GAwgAygLMhQub25ueC5WYWx1ZUluZm9Qcm90bxIoCgp2",
+            "YWx1ZV9pbmZvGA0gAygLMhQub25ueC5WYWx1ZUluZm9Qcm90bxI3ChdxdWFu",
+            "dGl6YXRpb25fYW5ub3RhdGlvbhgOIAMoCzIWLm9ubnguVGVuc29yQW5ub3Rh",
+            "dGlvbhI0Cg5tZXRhZGF0YV9wcm9wcxgQIAMoCzIcLm9ubnguU3RyaW5nU3Ry",
+            "aW5nRW50cnlQcm90b0oECAMQBEoECAQQBUoECAYQClIKaXJfdmVyc2lvblIQ",
+            "cHJvZHVjZXJfdmVyc2lvblIMcHJvZHVjZXJfdGFnUgZkb21haW4izQYKC1Rl",
+            "bnNvclByb3RvEgwKBGRpbXMYASADKAMSEQoJZGF0YV90eXBlGAIgASgFEioK",
+            "B3NlZ21lbnQYAyABKAsyGS5vbm54LlRlbnNvclByb3RvLlNlZ21lbnQSFgoK",
+            "ZmxvYXRfZGF0YRgEIAMoAkICEAESFgoKaW50MzJfZGF0YRgFIAMoBUICEAES",
+            "EwoLc3RyaW5nX2RhdGEYBiADKAwSFgoKaW50NjRfZGF0YRgHIAMoA0ICEAES",
+            "DAoEbmFtZRgIIAEoCRISCgpkb2Nfc3RyaW5nGAwgASgJEhAKCHJhd19kYXRh",
+            "GAkgASgMEjMKDWV4dGVybmFsX2RhdGEYDSADKAsyHC5vbm54LlN0cmluZ1N0",
+            "cmluZ0VudHJ5UHJvdG8SNQoNZGF0YV9sb2NhdGlvbhgOIAEoDjIeLm9ubngu",
+            "VGVuc29yUHJvdG8uRGF0YUxvY2F0aW9uEhcKC2RvdWJsZV9kYXRhGAogAygB",
+            "QgIQARIXCgt1aW50NjRfZGF0YRgLIAMoBEICEAESNAoObWV0YWRhdGFfcHJv",
+            "cHMYECADKAsyHC5vbm54LlN0cmluZ1N0cmluZ0VudHJ5UHJvdG8aJQoHU2Vn",
+            "bWVudBINCgViZWdpbhgBIAEoAxILCgNlbmQYAiABKAMiuQIKCERhdGFUeXBl",
+            "Eg0KCVVOREVGSU5FRBAAEgkKBUZMT0FUEAESCQoFVUlOVDgQAhIICgRJTlQ4",
+            "EAMSCgoGVUlOVDE2EAQSCQoFSU5UMTYQBRIJCgVJTlQzMhAGEgkKBUlOVDY0",
+            "EAcSCgoGU1RSSU5HEAgSCAoEQk9PTBAJEgsKB0ZMT0FUMTYQChIKCgZET1VC",
+            "TEUQCxIKCgZVSU5UMzIQDBIKCgZVSU5UNjQQDRINCglDT01QTEVYNjQQDhIO",
+            "CgpDT01QTEVYMTI4EA8SDAoIQkZMT0FUMTYQEBIQCgxGTE9BVDhFNE0zRk4Q",
+            "ERISCg5GTE9BVDhFNE0zRk5VWhASEg4KCkZMT0FUOEU1TTIQExISCg5GTE9B",
+            "VDhFNU0yRk5VWhAUEgkKBVVJTlQ0EBUSCAoESU5UNBAWIikKDERhdGFMb2Nh",
+            "dGlvbhILCgdERUZBVUxUEAASDAoIRVhURVJOQUwQASJoChFTcGFyc2VUZW5z",
+            "b3JQcm90bxIhCgZ2YWx1ZXMYASABKAsyES5vbm54LlRlbnNvclByb3RvEiIK",
+            "B2luZGljZXMYAiABKAsyES5vbm54LlRlbnNvclByb3RvEgwKBGRpbXMYAyAD",
+            "KAMilQEKEFRlbnNvclNoYXBlUHJvdG8SLQoDZGltGAEgAygLMiAub25ueC5U",
+            "ZW5zb3JTaGFwZVByb3RvLkRpbWVuc2lvbhpSCglEaW1lbnNpb24SEwoJZGlt",
+            "X3ZhbHVlGAEgASgDSAASEwoJZGltX3BhcmFtGAIgASgJSAASEgoKZGVub3Rh",
+            "dGlvbhgDIAEoCUIHCgV2YWx1ZSLOBAoJVHlwZVByb3RvEi0KC3RlbnNvcl90",
+            "eXBlGAEgASgLMhYub25ueC5UeXBlUHJvdG8uVGVuc29ySAASMQoNc2VxdWVu",
+            "Y2VfdHlwZRgEIAEoCzIYLm9ubnguVHlwZVByb3RvLlNlcXVlbmNlSAASJwoI",
+            "bWFwX3R5cGUYBSABKAsyEy5vbm54LlR5cGVQcm90by5NYXBIABIxCg1vcHRp",
+            "b25hbF90eXBlGAkgASgLMhgub25ueC5UeXBlUHJvdG8uT3B0aW9uYWxIABI6",
+            "ChJzcGFyc2VfdGVuc29yX3R5cGUYCCABKAsyHC5vbm54LlR5cGVQcm90by5T",
+            "cGFyc2VUZW5zb3JIABISCgpkZW5vdGF0aW9uGAYgASgJGkIKBlRlbnNvchIR",
+            "CgllbGVtX3R5cGUYASABKAUSJQoFc2hhcGUYAiABKAsyFi5vbm54LlRlbnNv",
+            "clNoYXBlUHJvdG8aLgoIU2VxdWVuY2USIgoJZWxlbV90eXBlGAEgASgLMg8u",
+            "b25ueC5UeXBlUHJvdG8aPAoDTWFwEhAKCGtleV90eXBlGAEgASgFEiMKCnZh",
+            "bHVlX3R5cGUYAiABKAsyDy5vbm54LlR5cGVQcm90bxouCghPcHRpb25hbBIi",
+            "CgllbGVtX3R5cGUYASABKAsyDy5vbm54LlR5cGVQcm90bxpICgxTcGFyc2VU",
+            "ZW5zb3ISEQoJZWxlbV90eXBlGAEgASgFEiUKBXNoYXBlGAIgASgLMhYub25u",
+            "eC5UZW5zb3JTaGFwZVByb3RvQgcKBXZhbHVlIjUKEk9wZXJhdG9yU2V0SWRQ",
+            "cm90bxIOCgZkb21haW4YASABKAkSDwoHdmVyc2lvbhgCIAEoAyKGAwoNRnVu",
+            "Y3Rpb25Qcm90bxIMCgRuYW1lGAEgASgJEg0KBWlucHV0GAQgAygJEg4KBm91",
+            "dHB1dBgFIAMoCRIRCglhdHRyaWJ1dGUYBiADKAkSLQoPYXR0cmlidXRlX3By",
+            "b3RvGAsgAygLMhQub25ueC5BdHRyaWJ1dGVQcm90bxIdCgRub2RlGAcgAygL",
+            "Mg8ub25ueC5Ob2RlUHJvdG8SEgoKZG9jX3N0cmluZxgIIAEoCRIuCgxvcHNl",
+            "dF9pbXBvcnQYCSADKAsyGC5vbm54Lk9wZXJhdG9yU2V0SWRQcm90bxIOCgZk",
+            "b21haW4YCiABKAkSEAoIb3ZlcmxvYWQYDSABKAkSKAoKdmFsdWVfaW5mbxgM",
+            "IAMoCzIULm9ubnguVmFsdWVJbmZvUHJvdG8SNAoObWV0YWRhdGFfcHJvcHMY",
+            "DiADKAsyHC5vbm54LlN0cmluZ1N0cmluZ0VudHJ5UHJvdG9KBAgCEANKBAgD",
+            "EARSDXNpbmNlX3ZlcnNpb25SBnN0YXR1cyqXAgoHVmVyc2lvbhISCg5fU1RB",
+            "UlRfVkVSU0lPThAAEhkKFUlSX1ZFUlNJT05fMjAxN18xMF8xMBABEhkKFUlS",
+            "X1ZFUlNJT05fMjAxN18xMF8zMBACEhgKFElSX1ZFUlNJT05fMjAxN18xMV8z",
+            "EAMSGAoUSVJfVkVSU0lPTl8yMDE5XzFfMjIQBBIYChRJUl9WRVJTSU9OXzIw",
+            "MTlfM18xOBAFEhgKFElSX1ZFUlNJT05fMjAxOV85XzE5EAYSFwoTSVJfVkVS",
+            "U0lPTl8yMDIwXzVfOBAHEhgKFElSX1ZFUlNJT05fMjAyMV83XzMwEAgSFwoT",
+            "SVJfVkVSU0lPTl8yMDIzXzVfNRAJEg4KCklSX1ZFUlNJT04QCiouCg5PcGVy",
+            "YXRvclN0YXR1cxIQCgxFWFBFUklNRU5UQUwQABIKCgZTVEFCTEUQAUICSANi",
+            "BnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Onnx.Version), typeof(global::Onnx.OperatorStatus), }, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.AttributeProto), global::Onnx.AttributeProto.Parser, new[]{ "Name", "RefAttrName", "DocString", "Type", "F", "I", "S", "T", "G", "SparseTensor", "Tp", "Floats", "Ints", "Strings", "Tensors", "Graphs", "SparseTensors", "TypeProtos" }, null, new[]{ typeof(global::Onnx.AttributeProto.Types.AttributeType) }, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.ValueInfoProto), global::Onnx.ValueInfoProto.Parser, new[]{ "Name", "Type", "DocString" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.NodeProto), global::Onnx.NodeProto.Parser, new[]{ "Input", "Output", "Name", "OpType", "Domain", "Attribute", "DocString" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.ValueInfoProto), global::Onnx.ValueInfoProto.Parser, new[]{ "Name", "Type", "DocString", "MetadataProps" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.NodeProto), global::Onnx.NodeProto.Parser, new[]{ "Input", "Output", "Name", "OpType", "Domain", "Overload", "Attribute", "DocString", "MetadataProps" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.TrainingInfoProto), global::Onnx.TrainingInfoProto.Parser, new[]{ "Initialization", "Algorithm", "InitializationBinding", "UpdateBinding" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.ModelProto), global::Onnx.ModelProto.Parser, new[]{ "IrVersion", "OpsetImport", "ProducerName", "ProducerVersion", "Domain", "ModelVersion", "DocString", "Graph", "MetadataProps", "TrainingInfo", "Functions" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.StringStringEntryProto), global::Onnx.StringStringEntryProto.Parser, new[]{ "Key", "Value" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.TensorAnnotation), global::Onnx.TensorAnnotation.Parser, new[]{ "TensorName", "QuantParameterTensorNames" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.GraphProto), global::Onnx.GraphProto.Parser, new[]{ "Node", "Name", "Initializer", "SparseInitializer", "DocString", "Input", "Output", "ValueInfo", "QuantizationAnnotation" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.TensorProto), global::Onnx.TensorProto.Parser, new[]{ "Dims", "DataType", "Segment", "FloatData", "Int32Data", "StringData", "Int64Data", "Name", "DocString", "RawData", "ExternalData", "DataLocation", "DoubleData", "Uint64Data" }, null, new[]{ typeof(global::Onnx.TensorProto.Types.DataType), typeof(global::Onnx.TensorProto.Types.DataLocation) }, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.TensorProto.Types.Segment), global::Onnx.TensorProto.Types.Segment.Parser, new[]{ "Begin", "End" }, null, null, null, null)}),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.GraphProto), global::Onnx.GraphProto.Parser, new[]{ "Node", "Name", "Initializer", "SparseInitializer", "DocString", "Input", "Output", "ValueInfo", "QuantizationAnnotation", "MetadataProps" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.TensorProto), global::Onnx.TensorProto.Parser, new[]{ "Dims", "DataType", "Segment", "FloatData", "Int32Data", "StringData", "Int64Data", "Name", "DocString", "RawData", "ExternalData", "DataLocation", "DoubleData", "Uint64Data", "MetadataProps" }, null, new[]{ typeof(global::Onnx.TensorProto.Types.DataType), typeof(global::Onnx.TensorProto.Types.DataLocation) }, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.TensorProto.Types.Segment), global::Onnx.TensorProto.Types.Segment.Parser, new[]{ "Begin", "End" }, null, null, null, null)}),
             new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.SparseTensorProto), global::Onnx.SparseTensorProto.Parser, new[]{ "Values", "Indices", "Dims" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.TensorShapeProto), global::Onnx.TensorShapeProto.Parser, new[]{ "Dim" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.TensorShapeProto.Types.Dimension), global::Onnx.TensorShapeProto.Types.Dimension.Parser, new[]{ "DimValue", "DimParam", "Denotation" }, new[]{ "Value" }, null, null, null)}),
             new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.TypeProto), global::Onnx.TypeProto.Parser, new[]{ "TensorType", "SequenceType", "MapType", "OptionalType", "SparseTensorType", "Denotation" }, new[]{ "Value" }, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.TypeProto.Types.Tensor), global::Onnx.TypeProto.Types.Tensor.Parser, new[]{ "ElemType", "Shape" }, null, null, null, null),
@@ -138,7 +152,7 @@ namespace Onnx {
             new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.TypeProto.Types.Optional), global::Onnx.TypeProto.Types.Optional.Parser, new[]{ "ElemType" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.TypeProto.Types.SparseTensor), global::Onnx.TypeProto.Types.SparseTensor.Parser, new[]{ "ElemType", "Shape" }, null, null, null, null)}),
             new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.OperatorSetIdProto), global::Onnx.OperatorSetIdProto.Parser, new[]{ "Domain", "Version" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.FunctionProto), global::Onnx.FunctionProto.Parser, new[]{ "Name", "Input", "Output", "Attribute", "Node", "DocString", "OpsetImport", "Domain" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Onnx.FunctionProto), global::Onnx.FunctionProto.Parser, new[]{ "Name", "Input", "Output", "Attribute", "AttributeProto", "Node", "DocString", "OpsetImport", "Domain", "Overload", "ValueInfo", "MetadataProps" }, null, null, null, null)
           }));
     }
     #endregion
@@ -212,13 +226,24 @@ namespace Onnx {
     /// </summary>
     [pbr::OriginalName("IR_VERSION_2020_5_8")] IrVersion202058 = 7,
     /// <summary>
-    /// IR VERSION 8 published on &lt;TBD>
+    /// IR VERSION 8 published on July 30, 2021
     /// Introduce TypeProto.SparseTensor
     /// Introduce TypeProto.Optional
     /// Added a list of FunctionProtos local to the model
     /// Deprecated since_version and operator status from FunctionProto
     /// </summary>
-    [pbr::OriginalName("IR_VERSION")] IrVersion = 8,
+    [pbr::OriginalName("IR_VERSION_2021_7_30")] IrVersion2021730 = 8,
+    /// <summary>
+    /// IR VERSION 9 published on May 5, 2023
+    /// Added AttributeProto to FunctionProto so that default attribute values can be set.
+    /// Added FLOAT8E4M3FN, FLOAT8E4M3FNUZ, FLOAT8E5M2, FLOAT8E5M2FNUZ.
+    /// </summary>
+    [pbr::OriginalName("IR_VERSION_2023_5_5")] IrVersion202355 = 9,
+    /// <summary>
+    /// IR VERSION 10 published on TBD
+    /// Added UINT4, INT4.
+    /// </summary>
+    [pbr::OriginalName("IR_VERSION")] IrVersion = 10,
   }
 
   /// <summary>
@@ -1155,6 +1180,7 @@ namespace Onnx {
       name_ = other.name_;
       type_ = other.type_ != null ? other.type_.Clone() : null;
       docString_ = other.docString_;
+      metadataProps_ = other.metadataProps_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1210,6 +1236,20 @@ namespace Onnx {
       }
     }
 
+    /// <summary>Field number for the "metadata_props" field.</summary>
+    public const int MetadataPropsFieldNumber = 4;
+    private static readonly pb::FieldCodec<global::Onnx.StringStringEntryProto> _repeated_metadataProps_codec
+        = pb::FieldCodec.ForMessage(34, global::Onnx.StringStringEntryProto.Parser);
+    private readonly pbc::RepeatedField<global::Onnx.StringStringEntryProto> metadataProps_ = new pbc::RepeatedField<global::Onnx.StringStringEntryProto>();
+    /// <summary>
+    /// Named metadata values; keys should be distinct.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Onnx.StringStringEntryProto> MetadataProps {
+      get { return metadataProps_; }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -1228,6 +1268,7 @@ namespace Onnx {
       if (Name != other.Name) return false;
       if (!object.Equals(Type, other.Type)) return false;
       if (DocString != other.DocString) return false;
+      if(!metadataProps_.Equals(other.metadataProps_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1238,6 +1279,7 @@ namespace Onnx {
       if (Name.Length != 0) hash ^= Name.GetHashCode();
       if (type_ != null) hash ^= Type.GetHashCode();
       if (DocString.Length != 0) hash ^= DocString.GetHashCode();
+      hash ^= metadataProps_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1268,6 +1310,7 @@ namespace Onnx {
         output.WriteRawTag(26);
         output.WriteString(DocString);
       }
+      metadataProps_.WriteTo(output, _repeated_metadataProps_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1290,6 +1333,7 @@ namespace Onnx {
         output.WriteRawTag(26);
         output.WriteString(DocString);
       }
+      metadataProps_.WriteTo(ref output, _repeated_metadataProps_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -1309,6 +1353,7 @@ namespace Onnx {
       if (DocString.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(DocString);
       }
+      size += metadataProps_.CalculateSize(_repeated_metadataProps_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -1333,6 +1378,7 @@ namespace Onnx {
       if (other.DocString.Length != 0) {
         DocString = other.DocString;
       }
+      metadataProps_.Add(other.metadataProps_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -1363,6 +1409,10 @@ namespace Onnx {
             DocString = input.ReadString();
             break;
           }
+          case 34: {
+            metadataProps_.AddEntriesFrom(input, _repeated_metadataProps_codec);
+            break;
+          }
         }
       }
     #endif
@@ -1391,6 +1441,10 @@ namespace Onnx {
           }
           case 26: {
             DocString = input.ReadString();
+            break;
+          }
+          case 34: {
+            metadataProps_.AddEntriesFrom(ref input, _repeated_metadataProps_codec);
             break;
           }
         }
@@ -1448,8 +1502,10 @@ namespace Onnx {
       name_ = other.name_;
       opType_ = other.opType_;
       domain_ = other.domain_;
+      overload_ = other.overload_;
       attribute_ = other.attribute_.Clone();
       docString_ = other.docString_;
+      metadataProps_ = other.metadataProps_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1492,7 +1548,7 @@ namespace Onnx {
     private string name_ = "";
     /// <summary>
     /// An optional identifier for this node in a graph.
-    /// This field MAY be absent in ths version of the IR.
+    /// This field MAY be absent in this version of the IR.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -1533,6 +1589,21 @@ namespace Onnx {
       }
     }
 
+    /// <summary>Field number for the "overload" field.</summary>
+    public const int OverloadFieldNumber = 8;
+    private string overload_ = "";
+    /// <summary>
+    /// Overload identifier, used only to map this to a model-local function.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Overload {
+      get { return overload_; }
+      set {
+        overload_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
     /// <summary>Field number for the "attribute" field.</summary>
     public const int AttributeFieldNumber = 5;
     private static readonly pb::FieldCodec<global::Onnx.AttributeProto> _repeated_attribute_codec
@@ -1562,6 +1633,20 @@ namespace Onnx {
       }
     }
 
+    /// <summary>Field number for the "metadata_props" field.</summary>
+    public const int MetadataPropsFieldNumber = 9;
+    private static readonly pb::FieldCodec<global::Onnx.StringStringEntryProto> _repeated_metadataProps_codec
+        = pb::FieldCodec.ForMessage(74, global::Onnx.StringStringEntryProto.Parser);
+    private readonly pbc::RepeatedField<global::Onnx.StringStringEntryProto> metadataProps_ = new pbc::RepeatedField<global::Onnx.StringStringEntryProto>();
+    /// <summary>
+    /// Named metadata values; keys should be distinct.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Onnx.StringStringEntryProto> MetadataProps {
+      get { return metadataProps_; }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -1582,8 +1667,10 @@ namespace Onnx {
       if (Name != other.Name) return false;
       if (OpType != other.OpType) return false;
       if (Domain != other.Domain) return false;
+      if (Overload != other.Overload) return false;
       if(!attribute_.Equals(other.attribute_)) return false;
       if (DocString != other.DocString) return false;
+      if(!metadataProps_.Equals(other.metadataProps_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1596,8 +1683,10 @@ namespace Onnx {
       if (Name.Length != 0) hash ^= Name.GetHashCode();
       if (OpType.Length != 0) hash ^= OpType.GetHashCode();
       if (Domain.Length != 0) hash ^= Domain.GetHashCode();
+      if (Overload.Length != 0) hash ^= Overload.GetHashCode();
       hash ^= attribute_.GetHashCode();
       if (DocString.Length != 0) hash ^= DocString.GetHashCode();
+      hash ^= metadataProps_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1635,6 +1724,11 @@ namespace Onnx {
         output.WriteRawTag(58);
         output.WriteString(Domain);
       }
+      if (Overload.Length != 0) {
+        output.WriteRawTag(66);
+        output.WriteString(Overload);
+      }
+      metadataProps_.WriteTo(output, _repeated_metadataProps_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1664,6 +1758,11 @@ namespace Onnx {
         output.WriteRawTag(58);
         output.WriteString(Domain);
       }
+      if (Overload.Length != 0) {
+        output.WriteRawTag(66);
+        output.WriteString(Overload);
+      }
+      metadataProps_.WriteTo(ref output, _repeated_metadataProps_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -1685,10 +1784,14 @@ namespace Onnx {
       if (Domain.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Domain);
       }
+      if (Overload.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Overload);
+      }
       size += attribute_.CalculateSize(_repeated_attribute_codec);
       if (DocString.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(DocString);
       }
+      size += metadataProps_.CalculateSize(_repeated_metadataProps_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -1712,10 +1815,14 @@ namespace Onnx {
       if (other.Domain.Length != 0) {
         Domain = other.Domain;
       }
+      if (other.Overload.Length != 0) {
+        Overload = other.Overload;
+      }
       attribute_.Add(other.attribute_);
       if (other.DocString.Length != 0) {
         DocString = other.DocString;
       }
+      metadataProps_.Add(other.metadataProps_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -1759,6 +1866,14 @@ namespace Onnx {
             Domain = input.ReadString();
             break;
           }
+          case 66: {
+            Overload = input.ReadString();
+            break;
+          }
+          case 74: {
+            metadataProps_.AddEntriesFrom(input, _repeated_metadataProps_codec);
+            break;
+          }
         }
       }
     #endif
@@ -1800,6 +1915,14 @@ namespace Onnx {
           }
           case 58: {
             Domain = input.ReadString();
+            break;
+          }
+          case 66: {
+            Overload = input.ReadString();
+            break;
+          }
+          case 74: {
+            metadataProps_.AddEntriesFrom(ref input, _repeated_metadataProps_codec);
             break;
           }
         }
@@ -1915,7 +2038,7 @@ namespace Onnx {
     ///
     /// An execution of the training algorithm step is performed by executing the
     /// graph obtained by combining the inference graph (namely "ModelProto.graph")
-    /// and the "algorithm" graph. That is, the actual the actual
+    /// and the "algorithm" graph. That is, the actual
     /// input/initializer/output/node/value_info/sparse_initializer list of
     /// the training graph is the concatenation of
     /// "ModelProto.graph.input/initializer/output/node/value_info/sparse_initializer"
@@ -2465,15 +2588,15 @@ namespace Onnx {
     /// <summary>
     /// A list of function protos local to the model.
     ///
-    /// Name of the function "FunctionProto.name" should be unique within the domain "FunctionProto.domain".
+    /// The (domain, name, overload) tuple must be unique across the function protos in this list.
     /// In case of any conflicts the behavior (whether the model local functions are given higher priority,
-    /// or standard opserator sets are given higher priotity or this is treated as error) is defined by 
+    /// or standard operator sets are given higher priotity or this is treated as error) is defined by
     /// the runtimes.
-    /// 
+    ///
     /// The operator sets imported by FunctionProto should be compatible with the ones
-    /// imported by ModelProto and other model local FunctionProtos. 
-    /// Example, if same operator set say 'A' is imported by a FunctionProto and ModelProto 
-    /// or by 2 FunctionProtos then versions for the operator set may be different but, 
+    /// imported by ModelProto and other model local FunctionProtos.
+    /// Example, if same operator set say 'A' is imported by a FunctionProto and ModelProto
+    /// or by 2 FunctionProtos then versions for the operator set may be different but,
     /// the operator schema returned for op_type, domain, version combination
     /// for both the versions should be same for every node in the function body.
     ///
@@ -3330,6 +3453,7 @@ namespace Onnx {
       output_ = other.output_.Clone();
       valueInfo_ = other.valueInfo_.Clone();
       quantizationAnnotation_ = other.quantizationAnnotation_.Clone();
+      metadataProps_ = other.metadataProps_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -3471,6 +3595,20 @@ namespace Onnx {
       get { return quantizationAnnotation_; }
     }
 
+    /// <summary>Field number for the "metadata_props" field.</summary>
+    public const int MetadataPropsFieldNumber = 16;
+    private static readonly pb::FieldCodec<global::Onnx.StringStringEntryProto> _repeated_metadataProps_codec
+        = pb::FieldCodec.ForMessage(130, global::Onnx.StringStringEntryProto.Parser);
+    private readonly pbc::RepeatedField<global::Onnx.StringStringEntryProto> metadataProps_ = new pbc::RepeatedField<global::Onnx.StringStringEntryProto>();
+    /// <summary>
+    /// Named metadata values; keys should be distinct.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Onnx.StringStringEntryProto> MetadataProps {
+      get { return metadataProps_; }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -3495,6 +3633,7 @@ namespace Onnx {
       if(!output_.Equals(other.output_)) return false;
       if(!valueInfo_.Equals(other.valueInfo_)) return false;
       if(!quantizationAnnotation_.Equals(other.quantizationAnnotation_)) return false;
+      if(!metadataProps_.Equals(other.metadataProps_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -3511,6 +3650,7 @@ namespace Onnx {
       hash ^= output_.GetHashCode();
       hash ^= valueInfo_.GetHashCode();
       hash ^= quantizationAnnotation_.GetHashCode();
+      hash ^= metadataProps_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -3544,6 +3684,7 @@ namespace Onnx {
       valueInfo_.WriteTo(output, _repeated_valueInfo_codec);
       quantizationAnnotation_.WriteTo(output, _repeated_quantizationAnnotation_codec);
       sparseInitializer_.WriteTo(output, _repeated_sparseInitializer_codec);
+      metadataProps_.WriteTo(output, _repeated_metadataProps_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -3569,6 +3710,7 @@ namespace Onnx {
       valueInfo_.WriteTo(ref output, _repeated_valueInfo_codec);
       quantizationAnnotation_.WriteTo(ref output, _repeated_quantizationAnnotation_codec);
       sparseInitializer_.WriteTo(ref output, _repeated_sparseInitializer_codec);
+      metadataProps_.WriteTo(ref output, _repeated_metadataProps_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -3592,6 +3734,7 @@ namespace Onnx {
       size += output_.CalculateSize(_repeated_output_codec);
       size += valueInfo_.CalculateSize(_repeated_valueInfo_codec);
       size += quantizationAnnotation_.CalculateSize(_repeated_quantizationAnnotation_codec);
+      size += metadataProps_.CalculateSize(_repeated_metadataProps_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -3617,6 +3760,7 @@ namespace Onnx {
       output_.Add(other.output_);
       valueInfo_.Add(other.valueInfo_);
       quantizationAnnotation_.Add(other.quantizationAnnotation_);
+      metadataProps_.Add(other.metadataProps_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -3668,6 +3812,10 @@ namespace Onnx {
             sparseInitializer_.AddEntriesFrom(input, _repeated_sparseInitializer_codec);
             break;
           }
+          case 130: {
+            metadataProps_.AddEntriesFrom(input, _repeated_metadataProps_codec);
+            break;
+          }
         }
       }
     #endif
@@ -3717,6 +3865,10 @@ namespace Onnx {
           }
           case 122: {
             sparseInitializer_.AddEntriesFrom(ref input, _repeated_sparseInitializer_codec);
+            break;
+          }
+          case 130: {
+            metadataProps_.AddEntriesFrom(ref input, _repeated_metadataProps_codec);
             break;
           }
         }
@@ -3779,6 +3931,7 @@ namespace Onnx {
       dataLocation_ = other.dataLocation_;
       doubleData_ = other.doubleData_.Clone();
       uint64Data_ = other.uint64Data_.Clone();
+      metadataProps_ = other.metadataProps_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -3856,11 +4009,13 @@ namespace Onnx {
         = pb::FieldCodec.ForInt32(42);
     private readonly pbc::RepeatedField<int> int32Data_ = new pbc::RepeatedField<int>();
     /// <summary>
-    /// For int32, uint8, int8, uint16, int16, bool, and float16 values
-    /// float16 values must be bit-wise converted to an uint16_t prior
+    /// For int32, uint8, int8, uint16, int16, uint4, int4, bool, float8 and float16 values
+    /// float16 and float8 values must be bit-wise converted to an uint16_t prior
     /// to writing to the buffer.
+    /// uint4 and int4 values must be packed to 4bitx2 prior to writing to the buffer, the first element is stored in
+    /// the 4 LSB and the second element is stored in the 4 MSB.
     /// When this field is present, the data_type field MUST be
-    /// INT32, INT16, INT8, UINT16, UINT8, BOOL, or FLOAT16
+    /// INT32, INT16, INT8, INT4, UINT16, UINT8, UINT4, BOOL, FLOAT16, BFLOAT16, FLOAT8E4M3FN, FLOAT8E4M3FNUZ, FLOAT8E5M2, FLOAT8E5M2FNUZ
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -3945,6 +4100,7 @@ namespace Onnx {
     /// Complex64 elements must be written as two consecutive FLOAT values, real component first.
     /// Complex128 elements must be written as two consecutive DOUBLE values, real component first.
     /// Boolean type MUST be written one byte per tensor element (00000001 for true, 00000000 for false).
+    /// uint4 and int4 values must be packed to 4bitx2, the first element is stored in the 4 LSB and the second element is stored in the 4 MSB.
     ///
     /// Note: the advantage of specific field rather than the raw_data field is
     /// that in some cases (e.g. int data), protobuf does a better packing via
@@ -4033,6 +4189,20 @@ namespace Onnx {
       get { return uint64Data_; }
     }
 
+    /// <summary>Field number for the "metadata_props" field.</summary>
+    public const int MetadataPropsFieldNumber = 16;
+    private static readonly pb::FieldCodec<global::Onnx.StringStringEntryProto> _repeated_metadataProps_codec
+        = pb::FieldCodec.ForMessage(130, global::Onnx.StringStringEntryProto.Parser);
+    private readonly pbc::RepeatedField<global::Onnx.StringStringEntryProto> metadataProps_ = new pbc::RepeatedField<global::Onnx.StringStringEntryProto>();
+    /// <summary>
+    /// Named metadata values; keys should be distinct.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Onnx.StringStringEntryProto> MetadataProps {
+      get { return metadataProps_; }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -4062,6 +4232,7 @@ namespace Onnx {
       if (DataLocation != other.DataLocation) return false;
       if(!doubleData_.Equals(other.doubleData_)) return false;
       if(!uint64Data_.Equals(other.uint64Data_)) return false;
+      if(!metadataProps_.Equals(other.metadataProps_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -4083,6 +4254,7 @@ namespace Onnx {
       if (DataLocation != global::Onnx.TensorProto.Types.DataLocation.Default) hash ^= DataLocation.GetHashCode();
       hash ^= doubleData_.GetHashCode();
       hash ^= uint64Data_.GetHashCode();
+      hash ^= metadataProps_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -4133,6 +4305,7 @@ namespace Onnx {
         output.WriteRawTag(112);
         output.WriteEnum((int) DataLocation);
       }
+      metadataProps_.WriteTo(output, _repeated_metadataProps_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -4175,6 +4348,7 @@ namespace Onnx {
         output.WriteRawTag(112);
         output.WriteEnum((int) DataLocation);
       }
+      metadataProps_.WriteTo(ref output, _repeated_metadataProps_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -4211,6 +4385,7 @@ namespace Onnx {
       }
       size += doubleData_.CalculateSize(_repeated_doubleData_codec);
       size += uint64Data_.CalculateSize(_repeated_uint64Data_codec);
+      size += metadataProps_.CalculateSize(_repeated_metadataProps_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -4252,6 +4427,7 @@ namespace Onnx {
       }
       doubleData_.Add(other.doubleData_);
       uint64Data_.Add(other.uint64Data_);
+      metadataProps_.Add(other.metadataProps_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -4330,6 +4506,10 @@ namespace Onnx {
           }
           case 112: {
             DataLocation = (global::Onnx.TensorProto.Types.DataLocation) input.ReadEnum();
+            break;
+          }
+          case 130: {
+            metadataProps_.AddEntriesFrom(input, _repeated_metadataProps_codec);
             break;
           }
         }
@@ -4412,6 +4592,10 @@ namespace Onnx {
             DataLocation = (global::Onnx.TensorProto.Types.DataLocation) input.ReadEnum();
             break;
           }
+          case 130: {
+            metadataProps_.AddEntriesFrom(ref input, _repeated_metadataProps_codec);
+            break;
+          }
         }
       }
     }
@@ -4482,6 +4666,35 @@ namespace Onnx {
         /// This format has 1 sign bit, 8 exponent bits, and 7 mantissa bits.
         /// </summary>
         [pbr::OriginalName("BFLOAT16")] Bfloat16 = 16,
+        /// <summary>
+        /// Non-IEEE floating-point format based on papers
+        /// FP8 Formats for Deep Learning, https://arxiv.org/abs/2209.05433,
+        /// 8-bit Numerical Formats For Deep Neural Networks, https://arxiv.org/pdf/2206.02915.pdf.
+        /// Operators supported FP8 are Cast, CastLike, QuantizeLinear, DequantizeLinear.
+        /// The computation usually happens inside a block quantize / dequantize
+        /// fused by the runtime.
+        /// </summary>
+        [pbr::OriginalName("FLOAT8E4M3FN")] Float8E4M3Fn = 17,
+        /// <summary>
+        /// float 8, mostly used for coefficients, supports nan, not inf, no negative zero
+        /// </summary>
+        [pbr::OriginalName("FLOAT8E4M3FNUZ")] Float8E4M3Fnuz = 18,
+        /// <summary>
+        /// follows IEEE 754, supports nan, inf, mostly used for gradients
+        /// </summary>
+        [pbr::OriginalName("FLOAT8E5M2")] Float8E5M2 = 19,
+        /// <summary>
+        /// follows IEEE 754, supports nan, not inf, mostly used for gradients, no negative zero
+        /// </summary>
+        [pbr::OriginalName("FLOAT8E5M2FNUZ")] Float8E5M2Fnuz = 20,
+        /// <summary>
+        /// 4-bit data-types
+        /// </summary>
+        [pbr::OriginalName("UINT4")] Uint4 = 21,
+        /// <summary>
+        /// Signed integer in range [-8, 7], using two's-complement representation
+        /// </summary>
+        [pbr::OriginalName("INT4")] Int4 = 22,
       }
 
       /// <summary>
@@ -5299,7 +5512,7 @@ namespace Onnx {
         /// Standard denotation can optionally be used to denote tensor
         /// dimensions with standard semantic descriptions to ensure
         /// that operations are applied to the correct axis of a tensor.
-        /// Refer to https://github.com/onnx/onnx/blob/master/docs/DimensionDenotation.md#denotation-definition
+        /// Refer to https://github.com/onnx/onnx/blob/main/docs/DimensionDenotation.md#denotation-definition
         /// for pre-defined dimension denotations.
         /// </summary>
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -5671,7 +5884,7 @@ namespace Onnx {
     /// <summary>
     /// An optional denotation can be used to denote the whole
     /// type with a standard semantic description as to what is
-    /// stored inside. Refer to https://github.com/onnx/onnx/blob/master/docs/TypeDenotation.md#type-denotation-definition
+    /// stored inside. Refer to https://github.com/onnx/onnx/blob/main/docs/TypeDenotation.md#type-denotation-definition
     /// for pre-defined type denotations.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -7454,10 +7667,14 @@ namespace Onnx {
       input_ = other.input_.Clone();
       output_ = other.output_.Clone();
       attribute_ = other.attribute_.Clone();
+      attributeProto_ = other.attributeProto_.Clone();
       node_ = other.node_.Clone();
       docString_ = other.docString_;
       opsetImport_ = other.opsetImport_.Clone();
       domain_ = other.domain_;
+      overload_ = other.overload_;
+      valueInfo_ = other.valueInfo_.Clone();
+      metadataProps_ = other.metadataProps_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -7471,9 +7688,8 @@ namespace Onnx {
     public const int NameFieldNumber = 1;
     private string name_ = "";
     /// <summary>
-    /// The name of the function, similar usage of op_type in OperatorProto.
-    /// Combined with FunctionProto.domain, this forms the unique identity of
-    /// the FunctionProto.
+    /// The name of the function, similar to op_type in NodeProto.
+    /// This is part of the unique-id (domain, name, overload) of FunctionProtos in a model.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -7515,12 +7731,30 @@ namespace Onnx {
         = pb::FieldCodec.ForString(50);
     private readonly pbc::RepeatedField<string> attribute_ = new pbc::RepeatedField<string>();
     /// <summary>
-    /// The attributes of the function.
+    /// The attribute parameters of the function.
+    /// It is for function parameters without default values.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public pbc::RepeatedField<string> Attribute {
       get { return attribute_; }
+    }
+
+    /// <summary>Field number for the "attribute_proto" field.</summary>
+    public const int AttributeProtoFieldNumber = 11;
+    private static readonly pb::FieldCodec<global::Onnx.AttributeProto> _repeated_attributeProto_codec
+        = pb::FieldCodec.ForMessage(90, global::Onnx.AttributeProto.Parser);
+    private readonly pbc::RepeatedField<global::Onnx.AttributeProto> attributeProto_ = new pbc::RepeatedField<global::Onnx.AttributeProto>();
+    /// <summary>
+    /// The attribute protos of the function.
+    /// It is for function attributes with default values.
+    /// A function attribute shall be represented either as
+    /// a string attribute or an AttributeProto, not both.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Onnx.AttributeProto> AttributeProto {
+      get { return attributeProto_; }
     }
 
     /// <summary>Field number for the "node" field.</summary>
@@ -7567,8 +7801,8 @@ namespace Onnx {
     public const int DomainFieldNumber = 10;
     private string domain_ = "";
     /// <summary>
-    /// The domain which this function belongs to. Combined with FunctionProto.name, this forms the unique identity of
-    /// the FunctionProto.
+    /// The domain which this function belongs to.
+    /// This is part of the unique-id (domain, name, overload) of FunctionProtos in a model.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -7577,6 +7811,53 @@ namespace Onnx {
       set {
         domain_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
+    }
+
+    /// <summary>Field number for the "overload" field.</summary>
+    public const int OverloadFieldNumber = 13;
+    private string overload_ = "";
+    /// <summary>
+    /// The overload identifier of the function.
+    /// This is part of the unique-id (domain, name, overload) of FunctionProtos in a model.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Overload {
+      get { return overload_; }
+      set {
+        overload_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "value_info" field.</summary>
+    public const int ValueInfoFieldNumber = 12;
+    private static readonly pb::FieldCodec<global::Onnx.ValueInfoProto> _repeated_valueInfo_codec
+        = pb::FieldCodec.ForMessage(98, global::Onnx.ValueInfoProto.Parser);
+    private readonly pbc::RepeatedField<global::Onnx.ValueInfoProto> valueInfo_ = new pbc::RepeatedField<global::Onnx.ValueInfoProto>();
+    /// <summary>
+    /// Information for the values in the function. The ValueInfoProto.name's
+    /// must be distinct and refer to names in the function (including inputs,
+    /// outputs, and intermediate values). It is optional for a value to appear
+    /// in value_info list.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Onnx.ValueInfoProto> ValueInfo {
+      get { return valueInfo_; }
+    }
+
+    /// <summary>Field number for the "metadata_props" field.</summary>
+    public const int MetadataPropsFieldNumber = 14;
+    private static readonly pb::FieldCodec<global::Onnx.StringStringEntryProto> _repeated_metadataProps_codec
+        = pb::FieldCodec.ForMessage(114, global::Onnx.StringStringEntryProto.Parser);
+    private readonly pbc::RepeatedField<global::Onnx.StringStringEntryProto> metadataProps_ = new pbc::RepeatedField<global::Onnx.StringStringEntryProto>();
+    /// <summary>
+    /// Named metadata values; keys should be distinct.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Onnx.StringStringEntryProto> MetadataProps {
+      get { return metadataProps_; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -7598,10 +7879,14 @@ namespace Onnx {
       if(!input_.Equals(other.input_)) return false;
       if(!output_.Equals(other.output_)) return false;
       if(!attribute_.Equals(other.attribute_)) return false;
+      if(!attributeProto_.Equals(other.attributeProto_)) return false;
       if(!node_.Equals(other.node_)) return false;
       if (DocString != other.DocString) return false;
       if(!opsetImport_.Equals(other.opsetImport_)) return false;
       if (Domain != other.Domain) return false;
+      if (Overload != other.Overload) return false;
+      if(!valueInfo_.Equals(other.valueInfo_)) return false;
+      if(!metadataProps_.Equals(other.metadataProps_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -7613,10 +7898,14 @@ namespace Onnx {
       hash ^= input_.GetHashCode();
       hash ^= output_.GetHashCode();
       hash ^= attribute_.GetHashCode();
+      hash ^= attributeProto_.GetHashCode();
       hash ^= node_.GetHashCode();
       if (DocString.Length != 0) hash ^= DocString.GetHashCode();
       hash ^= opsetImport_.GetHashCode();
       if (Domain.Length != 0) hash ^= Domain.GetHashCode();
+      if (Overload.Length != 0) hash ^= Overload.GetHashCode();
+      hash ^= valueInfo_.GetHashCode();
+      hash ^= metadataProps_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -7652,6 +7941,13 @@ namespace Onnx {
         output.WriteRawTag(82);
         output.WriteString(Domain);
       }
+      attributeProto_.WriteTo(output, _repeated_attributeProto_codec);
+      valueInfo_.WriteTo(output, _repeated_valueInfo_codec);
+      if (Overload.Length != 0) {
+        output.WriteRawTag(106);
+        output.WriteString(Overload);
+      }
+      metadataProps_.WriteTo(output, _repeated_metadataProps_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -7679,6 +7975,13 @@ namespace Onnx {
         output.WriteRawTag(82);
         output.WriteString(Domain);
       }
+      attributeProto_.WriteTo(ref output, _repeated_attributeProto_codec);
+      valueInfo_.WriteTo(ref output, _repeated_valueInfo_codec);
+      if (Overload.Length != 0) {
+        output.WriteRawTag(106);
+        output.WriteString(Overload);
+      }
+      metadataProps_.WriteTo(ref output, _repeated_metadataProps_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -7695,6 +7998,7 @@ namespace Onnx {
       size += input_.CalculateSize(_repeated_input_codec);
       size += output_.CalculateSize(_repeated_output_codec);
       size += attribute_.CalculateSize(_repeated_attribute_codec);
+      size += attributeProto_.CalculateSize(_repeated_attributeProto_codec);
       size += node_.CalculateSize(_repeated_node_codec);
       if (DocString.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(DocString);
@@ -7703,6 +8007,11 @@ namespace Onnx {
       if (Domain.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Domain);
       }
+      if (Overload.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Overload);
+      }
+      size += valueInfo_.CalculateSize(_repeated_valueInfo_codec);
+      size += metadataProps_.CalculateSize(_repeated_metadataProps_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -7721,6 +8030,7 @@ namespace Onnx {
       input_.Add(other.input_);
       output_.Add(other.output_);
       attribute_.Add(other.attribute_);
+      attributeProto_.Add(other.attributeProto_);
       node_.Add(other.node_);
       if (other.DocString.Length != 0) {
         DocString = other.DocString;
@@ -7729,6 +8039,11 @@ namespace Onnx {
       if (other.Domain.Length != 0) {
         Domain = other.Domain;
       }
+      if (other.Overload.Length != 0) {
+        Overload = other.Overload;
+      }
+      valueInfo_.Add(other.valueInfo_);
+      metadataProps_.Add(other.metadataProps_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -7776,6 +8091,22 @@ namespace Onnx {
             Domain = input.ReadString();
             break;
           }
+          case 90: {
+            attributeProto_.AddEntriesFrom(input, _repeated_attributeProto_codec);
+            break;
+          }
+          case 98: {
+            valueInfo_.AddEntriesFrom(input, _repeated_valueInfo_codec);
+            break;
+          }
+          case 106: {
+            Overload = input.ReadString();
+            break;
+          }
+          case 114: {
+            metadataProps_.AddEntriesFrom(input, _repeated_metadataProps_codec);
+            break;
+          }
         }
       }
     #endif
@@ -7821,6 +8152,22 @@ namespace Onnx {
           }
           case 82: {
             Domain = input.ReadString();
+            break;
+          }
+          case 90: {
+            attributeProto_.AddEntriesFrom(ref input, _repeated_attributeProto_codec);
+            break;
+          }
+          case 98: {
+            valueInfo_.AddEntriesFrom(ref input, _repeated_valueInfo_codec);
+            break;
+          }
+          case 106: {
+            Overload = input.ReadString();
+            break;
+          }
+          case 114: {
+            metadataProps_.AddEntriesFrom(ref input, _repeated_metadataProps_codec);
             break;
           }
         }

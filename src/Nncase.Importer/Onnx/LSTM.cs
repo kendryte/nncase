@@ -12,7 +12,7 @@ using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Importer
 {
-    public partial class OnnxImporter
+    public partial class OnnxGraphImporter
     {
         private Expr VisitLSTM(in NodeProto op)
         {

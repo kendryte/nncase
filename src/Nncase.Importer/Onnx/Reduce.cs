@@ -9,7 +9,7 @@ using F = Nncase.IR.F;
 
 namespace Nncase.Importer
 {
-    public partial class OnnxImporter
+    public partial class OnnxGraphImporter
     {
         private Expr VisitReduce(in NodeProto op, ReduceOp reduceOp, Expr initValue)
         {

@@ -7,7 +7,7 @@ using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Importer.TFLite
 {
-    public partial class TFLiteImporter
+    public partial class TFLiteGraphImporter
     {
         private Expr VisitShape(in tflite.Operator op)
         {

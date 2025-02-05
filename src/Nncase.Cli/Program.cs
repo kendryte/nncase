@@ -125,7 +125,7 @@ internal partial class Program
             },
         };
 
-#if true
+#if false
         compileOptions.ShapeBucketOptions.Enable = true;
         compileOptions.ShapeBucketOptions.RangeInfo = new() { { "history_len", (0, 64) }, { "seq_len", (1, 64) } };
         compileOptions.ShapeBucketOptions.SegmentsCount = 2;

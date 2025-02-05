@@ -13,7 +13,7 @@ using F = Nncase.IR.F;
 
 namespace Nncase.Importer.TFLite;
 
-public partial class TFLiteImporter
+public partial class TFLiteGraphImporter
 {
     private static Expr Activate(Expr input, tflite.ActivationFunctionType activation)
     {
