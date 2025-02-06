@@ -132,9 +132,9 @@ public partial class CPU
         return new Call(new Im2col(kernel, stride, padding, packedAxes, padedNums), input, output);
     }
 
-    public static Expr Reduce(Expr input, Expr ret, int[] packedAxes, int[] padedNums, IRArray<int> axis, bool keepDims, ReduceOp reduceOp)
+    public static Expr Reduce(Expr input, Expr ret, Expr loadPrevious, int[] packedAxes, int[] padedNums, IRArray<int> axis, bool keepDims, ReduceOp reduceOp)
     {
-        return new Call(new TIR.CPU.Reduce(packedAxes, padedNums, axis, keepDims, reduceOp), input, ret);
+        return new Call(new TIR.CPU.Reduce(packedAxes, padedNums, axis, keepDims, reduceOp), input, ret, loadPrevious);
     }
 
     public static Expr ReduceArg(Buffer input, Buffer ret, int axis, bool keepDims, bool selectLastIndex, ReduceArgOp reduceArgOp, DataType destType)

@@ -22,7 +22,7 @@ public partial class LowerReduce : RewriteRule<Pattern>
 
     public override Pattern Pattern { get; } = IsCall(
             "call",
-            IsOp<IR.CPU.PackedReduce>("op"),
+            IsOp<IR.CPU.PackedReduce>("op", r => r.ReduceOp != ReduceOp.Mean),
             IsWildcard("input") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") });
 
     private Expr? GetReplace(Expr call, IR.CPU.PackedReduce op, Expr input)
@@ -59,10 +59,33 @@ public partial class LowerReduce : RewriteRule<Pattern>
         };
 
         return IR.F.Affine.Grid(ModuleKind)
-            .Domain(rank, out var _)
+            .Domain(rank, out var domainVar)
             .Read(input, AffineMap.Identity(rank), out var intile)
             .Write(outBuffer, affinemap, out var outTile)
-            .Body(TIR.F.CPU.Reduce(intile, outTile, op.PackedAxes.ToArray(), op.PadedNums.ToArray(), op.Axes, op.KeepDims, op.ReduceOp))
+            .Body(TIR.F.CPU.Reduce(intile, outTile, GetLoadPreviousExpr(op.Axes, domainVar), op.PackedAxes.ToArray(), op.PadedNums.ToArray(), op.Axes, op.KeepDims, op.ReduceOp))
             .Build();
+    }
+
+    private Expr GetLoadPreviousExpr(IRArray<int> axes, Expr domainVar)
+    {
+        Expr? outExpr = null;
+        foreach (var axis in axes)
+        {
+            if (outExpr is null)
+            {
+                outExpr = IR.F.Math.NotEqual(domainVar[axis][0], 0L);
+            }
+            else
+            {
+                outExpr = IR.F.Math.LogicalAnd(outExpr, IR.F.Math.NotEqual(domainVar[axis][0], 0L));
+            }
+        }
+
+        if (outExpr is null)
+        {
+            throw new NotSupportedException("reduce axes is empty");
+        }
+
+        return outExpr;
     }
 }

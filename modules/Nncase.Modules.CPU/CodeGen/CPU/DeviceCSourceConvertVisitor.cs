@@ -350,7 +350,14 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 }).Result);
                 break;
             case TIR.CPU.Reduce reduce:
-                IndentScope.Writer.IndWrite($"reduce_{reduce.ReduceOp.ToC()}<fixed_shape<{string.Join(",", reduce.Axes)}>, fixed_shape<{string.Join(",", reduce.PackedAxes)}>, fixed_shape<{string.Join(",", reduce.PadedNums)}>>({arguments[0].Name}, {arguments[1].Name});\n");
+                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Reduce.cshtml", new TypedKernelTemplateModel<TIR.CPU.Reduce>(reduce)
+                {
+                    Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
+                    Indent = new string(' ', IndentScope.Writer.Indent),
+                }).Result);
+                break;
+            case TIR.CPU.Cast cast:
+                IndentScope.Writer.IndWrite($"cast({arguments[0].Name}, {arguments[1].Name});\n");
                 break;
             default:
                 throw new NotSupportedException();

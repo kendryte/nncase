@@ -130,8 +130,8 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.CPU.Affine.LowerMatmul>();
             p.Add<Passes.Rules.CPU.Affine.LowerTranspose>();
             p.Add<Passes.Rules.CPU.Affine.LowerUnpack>();
-
-            // p.Add<Passes.Rules.CPU.Affine.LowerReduce>();
+            p.Add<Passes.Rules.CPU.Affine.LowerReduce>();
+            p.Add<Passes.Rules.CPU.Affine.LowerCast>();
         });
 
         // concat/reshape lower
