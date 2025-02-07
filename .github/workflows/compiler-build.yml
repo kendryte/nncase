@@ -121,6 +121,7 @@ jobs:
                 <EnvironmentVariables>
                   <LD_LIBRARY_PATH>${{github.workspace}}/install/lib</LD_LIBRARY_PATH>
                   <DYLD_LIBRARY_PATH>${{github.workspace}}/install/lib</DYLD_LIBRARY_PATH>
+                  <NNCASE_TILING_MAX_SOLUTIONS>1</NNCASE_TILING_MAX_SOLUTIONS>
                 </EnvironmentVariables>
               </RunConfiguration>
             </RunSettings>
@@ -229,6 +230,7 @@ jobs:
         shell: bash
         env:
           NNCASE_COMPILER: ${{github.workspace}}/install/Nncase.Compiler.dll
+          NNCASE_TILING_MAX_SOLUTIONS: 1
         run: |
           dotnet tool install --global dotnet-coverage
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_basic.xml pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/onnx_basic.xml

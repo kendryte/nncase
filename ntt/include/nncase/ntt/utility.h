@@ -35,6 +35,12 @@ inline constexpr auto slice(A<Dims...>, std::index_sequence<Ints...>) noexcept {
     return A<A<Dims...>::at(Ints + OffSet)...>{};
 }
 
+template <size_t Rank, size_t Value = 1, template <size_t...> class A,
+          size_t... Ints>
+inline constexpr auto make_sames(std::index_sequence<Ints...>) noexcept {
+    return A<(Ints ? Value : Value)...>{};
+}
+
 template <template <size_t...> class T, size_t... ADims, size_t... BDims,
           size_t... I>
 inline constexpr bool is_same_seq(const T<ADims...> &a, const T<BDims...> &b,
@@ -72,6 +78,13 @@ fixed_reduce_source_shape_type(std::index_sequence<Ints...>) noexcept {
     return fixed_shape<(Axes::contains(Ints) ? TTensor::shape_type::at(Ints)
                                              : 1)...>{};
 }
+
+template <template <size_t...> class A, size_t... Dims, size_t... Perms,
+          size_t... Ints>
+inline constexpr auto permute_fixed_dims(A<Dims...> a, A<Perms...> perms,
+                                         std::index_sequence<Ints...>) {
+    return A<(a[perms[Ints]])...>{};
+}
 } // namespace utility_detail
 
 template <class U, class T, size_t Extent>
@@ -105,6 +118,16 @@ inline constexpr auto slice_fixed_dims(A<Dims...> a) noexcept {
         a, std::make_index_sequence<OutRank>{});
 }
 
+template <size_t Rank, size_t OffSet = 0, size_t Value = 1,
+          template <size_t...> class A, size_t... Dims>
+inline constexpr auto fill_fixed_dims(A<Dims...> a) noexcept {
+    constexpr auto left = slice_fixed_dims<OffSet, 0>(a);
+    constexpr auto mid = utility_detail::make_sames<Rank, Value, A>(
+        std::make_index_sequence<Rank>{});
+    constexpr auto right = slice_fixed_dims<OffSet, 0>(a);
+    return concat_fixed_dims(concat_fixed_dims(left, mid), right);
+}
+
 template <template <size_t...> class T, size_t... ADims, size_t... BDims>
 inline constexpr bool is_same_seq(const T<ADims...> &a, const T<BDims...> &b) {
     return sizeof...(ADims) == sizeof...(BDims) &&
@@ -121,6 +144,14 @@ inline constexpr auto make_index_sequence(A<Dims...>) {
 template <int32_t Offset, template <size_t...> class A, size_t... Dims>
 inline constexpr auto shift_fixed_dims(A<Dims...> a) {
     return utility_detail::shift_fixed_dims<Offset>(a);
+}
+
+template <template <size_t...> class A, size_t... Dims, size_t... Perms>
+inline constexpr auto permute_fixed_dims(A<Dims...> a, A<Perms...> perms) {
+    static_assert(sizeof...(Dims) == sizeof...(Perms),
+                  "the dims and perms length must be same");
+    return utility_detail::permute_fixed_dims(
+        a, perms, std::make_index_sequence<sizeof...(Dims)>{});
 }
 
 template <IsFixedDims Axes, IsFixedTensor TTensor>

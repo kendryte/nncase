@@ -410,7 +410,7 @@ public class GraphTiler
         var searchAbleVars = new List<IntVar>();
         foreach (var (node, diminfo) in tileableNodeMemo)
         {
-            searchAbleVars.AddRange(diminfo.TileVars.Select(i => i.Var()));
+            searchAbleVars.AddRange(diminfo.TileVars.Select(i => i.Var()).Reverse());
             collector.Add(diminfo.TileVars.Select(i => i.Var()).ToArray());
             collector.Add(diminfo.ForwardExtents.Select(x => x.Var()).ToArray());
         }
@@ -465,7 +465,7 @@ public class GraphTiler
 
         var decisionBuilder = solver.MakeDefaultPhase(searchAbleVars.ToArray(), defaultPhaseParameters);
         var solve_max_time = 30;
-        if (System.Environment.GetEnvironmentVariable("TILING_SOLVE_MAX_TIME") is string s_solve_max_time)
+        if (System.Environment.GetEnvironmentVariable("NNCASE_TILING_MAX_TIME") is string s_solve_max_time)
         {
             try
             {
@@ -477,7 +477,7 @@ public class GraphTiler
         }
 
         var solve_max_solutions = 15;
-        if (System.Environment.GetEnvironmentVariable("TILING_SOLVE_MAX_SOLUTIONS") is string s_solve_max_solutions)
+        if (System.Environment.GetEnvironmentVariable("NNCASE_TILING_MAX_SOLUTIONS") is string s_solve_max_solutions)
         {
             try
             {
