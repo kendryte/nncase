@@ -24,6 +24,8 @@ public sealed partial class Unpack : CPUKernelOp
 
     public static readonly ParameterInfo Output = new(typeof(Unpack), 1, "output", ParameterKind.Input);
 
+    public IRArray<int> Lanes { get; }
+
     public IRArray<int> Axes { get; }
 
     /// <inheritdoc/>

@@ -18,6 +18,8 @@ public sealed partial class Reduce : CPUKernelOp
     // public static readonly ParameterInfo InitValue = new(typeof(Reduce), 1, "initValue");
     public static readonly ParameterInfo Output = new(typeof(Reduce), 1, "output");
 
+    public static readonly ParameterInfo LoadPrevious = new(typeof(Reduce), 2, "loadPrevious");
+
     public IRArray<int> PackedAxes { get; }
 
     public IRArray<int> PadedNums { get; }

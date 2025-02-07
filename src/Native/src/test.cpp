@@ -1091,7 +1091,7 @@ int main() {
         ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pa;
         ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pb;
         ntt::pack<1>(ta, pa);
-        ntt::transpose<ntt::fixed_shape<1, 0>>(pa, pb);
+        ntt::transpose<ntt::fixed_shape<1, 0>>(pa, pb.view());
         assert(pb(0, 0)(0) == 0.0f);
         assert(pb(0, 0)(1) == 1.0f);
         assert(pb(0, 0)(2) == 2.0f);
@@ -1180,23 +1180,33 @@ int main() {
 
     // reduce
     {{// pack 1d
-      ntt::tensor<float, ntt::fixed_shape<2, 8>> ta;
-    ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<2, 2>> tav;
-    std::fill(ta.elements().begin(), ta.elements().begin() + 8, 1.f);
-    std::fill(ta.elements().begin() + 8, ta.elements().end(), 3.2f);
+      ntt::tensor<float, ntt::fixed_shape<2, 16>> ta;
+    ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<2, 4>> tav;
+    std::fill(ta.elements().begin(), ta.elements().begin() + 16, 1.f);
+    std::fill(ta.elements().begin() + 16, ta.elements().end(), 3.2f);
     ntt::pack<1>(ta, tav.view());
 
     ntt::tensor<float, ntt::fixed_shape<2, 1>> tb;
     ntt::reduce_sum<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(tav, tb);
-    assert(are_floats_equal(tb(0, 0), 8.f));
-    assert(are_floats_equal(tb(1, 0), 25.6f));
+    assert(are_floats_equal(tb(0, 0), 16.f));
+    assert(are_floats_equal(tb(1, 0), 51.2f));
+
+    // pack 1d and tiled.
+    ntt::tensor<float, ntt::fixed_shape<2, 1>> tc;
+    ntt::reduce_sum<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(
+        tav.view(ntt::make_ranked_shape(0, 0), ntt::fixed_shape<2, 2>()), tc);
+    ntt::reduce_sum<ntt::fixed_shape<1>, ntt::fixed_shape<1>,
+                    ntt::fixed_shape<>, true>(
+        tav.view(ntt::make_ranked_shape(0, 2), ntt::fixed_shape<2, 2>()), tc);
+    assert(are_floats_equal(tb(0, 0), 16.f));
+    assert(are_floats_equal(tb(1, 0), 51.2f));
 }
 
 {
     // pack 2d, inner reduce 0
-    ntt::tensor<float, ntt::fixed_shape<1, 8, 8>> ta;
+    ntt::tensor<float, ntt::fixed_shape<1, 32, 8>> ta;
     ntt::tensor<float, ntt::fixed_shape<1, 1, 8>> tb, upb;
-    ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<1, 2, 2>> pa;
+    ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<1, 8, 2>> pa;
     ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 1, 2>> pb;
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     ntt::pack<1, 2>(ta, pa.view());
@@ -1210,14 +1220,31 @@ int main() {
     ntt::apply(tb.shape(), [&]([[maybe_unused]] auto index) {
         assert(tb(index) == upb(index));
     });
+
+    // tiling on reduced axis
+    ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 1, 2>> pc;
+    ntt::tensor<float, ntt::fixed_shape<1, 1, 8>> upc;
+    ntt::reduce_sum<ntt::fixed_shape<1>, ntt::fixed_shape<1, 2>,
+                    ntt::fixed_shape<0, 0>, false>(
+        pa.view(ntt::make_ranked_shape(0, 0, 0), ntt::fixed_shape<1, 4, 2>()),
+        pc);
+    ntt::reduce_sum<ntt::fixed_shape<1>, ntt::fixed_shape<1, 2>,
+                    ntt::fixed_shape<0, 0>, true>(
+        pa.view(ntt::make_ranked_shape(0, 4, 0), ntt::fixed_shape<1, 4, 2>()),
+        pc);
+
+    ntt::unpack<2>(pc, upc.view());
+    ntt::apply(tb.shape(), [&]([[maybe_unused]] auto index) {
+        assert(tb(index) == upc(index));
+    });
 }
 
 {
     // pack 2d, inner reduce 1
-    ntt::tensor<float, ntt::fixed_shape<1, 8, 8>> ta;
-    ntt::tensor<float, ntt::fixed_shape<1, 8, 1>> tb, upb;
-    ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<1, 2, 2>> pa;
-    ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 2, 1>> pb;
+    ntt::tensor<float, ntt::fixed_shape<1, 8, 16>> ta;
+    ntt::tensor<float, ntt::fixed_shape<1, 8, 1>> tb, upb, upc;
+    ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<1, 2, 4>> pa;
+    ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<1, 2, 1>> pb, pc;
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     ntt::pack<1, 2>(ta, pa.view());
 
@@ -1229,6 +1256,26 @@ int main() {
     ntt::unpack<1>(pb, upb.view());
     ntt::apply(tb.shape(), [&]([[maybe_unused]] auto index) {
         assert(tb(index) == upb(index));
+    });
+
+    // tiling on reduced axis
+    ntt::reduce_max<ntt::fixed_shape<2>>(ta, tb);
+    ntt::reduce_max<ntt::fixed_shape<2>, ntt::fixed_shape<1, 2>,
+                    ntt::fixed_shape<0, 0>, false>(
+        pa.view(ntt::make_ranked_shape(0, 0, 0), ntt::fixed_shape<1, 2, 1>()),
+        pc);
+    ntt::reduce_max<ntt::fixed_shape<2>, ntt::fixed_shape<1, 2>,
+                    ntt::fixed_shape<0, 0>, true>(
+        pa.view(ntt::make_ranked_shape(0, 0, 1), ntt::fixed_shape<1, 2, 2>()),
+        pc);
+    ntt::reduce_max<ntt::fixed_shape<2>, ntt::fixed_shape<1, 2>,
+                    ntt::fixed_shape<0, 0>, true>(
+        pa.view(ntt::make_ranked_shape(0, 0, 3), ntt::fixed_shape<1, 2, 1>()),
+        pc);
+
+    ntt::unpack<1>(pc, upc.view());
+    ntt::apply(tb.shape(), [&]([[maybe_unused]] auto index) {
+        assert(tb(index) == upc(index));
     });
 }
 }

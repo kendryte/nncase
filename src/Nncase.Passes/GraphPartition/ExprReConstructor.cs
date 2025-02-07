@@ -12,11 +12,11 @@ using QuikGraph;
 
 namespace Nncase.Passes.GraphPartition;
 
-public class ExprReConstructor<TVertex, TEdge>
+public class ExprReconstructor<TVertex, TEdge>
     where TVertex : IExprVertex
     where TEdge : class, IExprEdge<TVertex>
 {
-    public ExprReConstructor(CondensationGraphAlgorithm<TVertex, TEdge> algo)
+    public ExprReconstructor(CondensationGraphAlgorithm<TVertex, TEdge> algo)
     {
         Algo = algo;
         ClusterMemo = new(ReferenceEqualityComparer.Instance);

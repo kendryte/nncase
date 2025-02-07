@@ -402,7 +402,7 @@ constexpr TResult mma(const T1 &v1, const T2 &v2, const TResult &v3) noexcept {
     return ops::mma<AccC, TransA, T1, T2, TResult>()(v1, v2, v3);
 }
 
-template <template <class T1, class T2> class BinaryOp, IsScalar TResult,
+template <template <class T1, class T2> class BinaryOp, IsTensorOrScalar TResult,
           IsTensorOrScalar T>
 constexpr TResult reduce(const T &v, TResult init_value) noexcept {
     return ops::reduce<BinaryOp, TResult, T>()(v, init_value);

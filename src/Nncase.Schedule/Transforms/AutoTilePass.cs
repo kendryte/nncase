@@ -95,7 +95,7 @@ public sealed class AutoTilePass : ModulePass
         }
 
         // 3. reconstruction
-        var constructor = new AutoTileReConstructor(tiler, ModuleKind, CompileOptions, condenseAlgo);
+        var constructor = new AutoTileReconstructor(tiler, ModuleKind, CompileOptions, condenseAlgo);
         var post = constructor.Construct();
         return fusion.With(fusion.Name, fusion.ModuleKind, post, fusion.Parameters.ToArray());
     }
@@ -129,9 +129,9 @@ internal sealed class AutoTileExprGraphConvertor : ExprGraphConvertor<ExprVertex
     }
 }
 
-internal sealed class AutoTileReConstructor : ExprReConstructor<ExprVertex, ExprEdge>
+internal sealed class AutoTileReconstructor : ExprReconstructor<ExprVertex, ExprEdge>
 {
-    public AutoTileReConstructor(GraphTiler tiler, string moduleKind, CompileOptions compileOptions, CondensationGraphAlgorithm<ExprVertex, ExprEdge> algo)
+    public AutoTileReconstructor(GraphTiler tiler, string moduleKind, CompileOptions compileOptions, CondensationGraphAlgorithm<ExprVertex, ExprEdge> algo)
         : base(algo)
     {
         Tiler = tiler;
