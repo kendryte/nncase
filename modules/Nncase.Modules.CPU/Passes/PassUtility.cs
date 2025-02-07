@@ -87,15 +87,6 @@ public static class PassUtility
 
                 break;
 
-            case IR.Tensors.Cast cast:
-                var inType = arguments.ToArray()[0].CheckedDataType;
-                if (inType == DataTypes.Float16 || inType == DataTypes.BFloat16 || cast.NewType == DataTypes.Float16 || cast.NewType == DataTypes.BFloat16)
-                {
-                    return false;
-                }
-
-                break;
-
             case IR.Tensors.Expand expand:
                 if (arguments.ToArray()[0].CheckedShape.Rank != arguments.ToArray()[1].CheckedShape.Size)
                 {

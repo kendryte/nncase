@@ -335,12 +335,15 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new[] { 1, 256, 64, 64 }, Runtime.TypeCode.Float8E4M3, 0 })]
-    public async Task TestPackCast(int[] shape, Nncase.Runtime.TypeCode type, int count)
+    [InlineData(new object[] { new[] { 1, 256, 64, 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, 0 })]
+    [InlineData(new object[] { new[] { 1, 64, 64, 256 }, Runtime.TypeCode.Float16, Runtime.TypeCode.BFloat16, 1 })]
+    [InlineData(new object[] { new[] { 1, 64, 256, 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float16, 2 })]
+    public async Task TestPackCast(int[] shape, Nncase.Runtime.TypeCode type1, Nncase.Runtime.TypeCode type2, int count)
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));
-        var casted = IR.F.Tensors.Cast(input, DataType.FromTypeCode(type));
-        var pre = IR.F.Tensors.Cast(casted, DataTypes.Float32);
+        var casted1 = IR.F.Tensors.Cast(input, DataType.FromTypeCode(type1));
+        var casted2 = IR.F.Tensors.Cast(casted1, DataType.FromTypeCode(type2));
+        var pre = IR.F.Tensors.Cast(casted2, DataTypes.Float32);
 
         var feedDict = new Dictionary<Var, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },

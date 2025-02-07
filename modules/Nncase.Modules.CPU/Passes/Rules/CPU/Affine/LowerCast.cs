@@ -35,9 +35,9 @@ public partial class LowerCast : RewriteRule<Pattern>
       _ => true,
       IsWildcard("input") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") });
 
-    private Expr GetReplace(Cast cast, Expr input)
+    private Expr GetReplace(Cast cast, Expr call, Expr input)
     {
-        var outBuffer = input.CheckedType switch
+        var outBuffer = call.CheckedType switch
         {
             TensorType t => IR.F.Buffer.Uninitialized(t.DType, TIR.MemoryLocation.Data, t.Shape.ToValueArray()),
             DistributedType dt => IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape.ToValueArray(), dt.NdSBP, dt.Placement),
