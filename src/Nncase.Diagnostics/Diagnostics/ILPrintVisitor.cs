@@ -264,8 +264,6 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         {
             TensorConst tc => VisitTensorValue(tc.Value, tc.ValueType),
             TupleConst tp => VisitValue(tp.Value),
-            ShapeConst sc => VisitShape(sc.Value),
-            DimensionConst dc => VisitDimension(dc.Value),
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         };
 
@@ -528,44 +526,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         return name;
     }
 
-    private string GetNextSSANumber()
-    {
-        if (_names.TryGetValue(expr, out var name))
-        {
-            return name;
-        }
-
-        _scope.Push();
-
-        // 1. Sequential signature
-        _scope.Append($"Sequential");
-        AppendCheckedType(expr.CheckedType, expr.Metadata.Range, " {", hasNewLine: true);
-
-        // 2. For Body
-        using (_scope.IndentUp())
-        {
-            foreach (var item in expr.Fields)
-            {
-                Visit(item);
-            }
-        }
-
-        // 3. For closing
-        _scope.IndWriteLine("}");
-
-        // 4. extact whole il
-        _scope.IndWrite(_scope.Pop());
-        return string.Empty;
-    }
-
-    private string AllocateTempVar(Expr expr)
-    {
-        var name = $"%{_localId++}";
-        _names.Add(expr, name);
-        return name;
-    }
-
-    private string VisitShape(Shape shape) =>
+    protected override string VisitShape(Shape shape) =>
         shape.Kind switch
         {
             ShapeKind.Invalid => "Invalid",
@@ -573,12 +534,17 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
             _ => $"[{string.Join(',', shape.Select(VisitDimension))}]",
         };
 
+    private string GetNextSSANumber()
+    {
+        return $"%{_stackedSSANumbers[^1]++}";
+    }
+
     private string VisitDimension(Dimension dimension) =>
         dimension.Kind switch
         {
-            DimensionKind.Any => "any",
+            DimensionKind.Unknown => "?",
             DimensionKind.Fixed => $"{dimension.FixedValue}L",
-            DimensionKind.Unknown => VisitDimensionExpr(dimension.Value),
+            DimensionKind.Dynamic => VisitDimensionExpr(dimension.Value),
             _ => throw new NotSupportedException(dimension.Kind.ToString()),
         };
 
@@ -597,7 +563,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
 
     private void AppendCheckedType(IRType? type, ValueRange<double>? range, string end = "", bool hasNewLine = true)
     {
-        var rangeText = range is not null ? $"[{range.Value.Min}, {range.Value.Max}]" : string.Empty;
+        var rangeText = range is not null ? $" [{range.Value.Min}, {range.Value.Max}]" : string.Empty;
         if (type is not null)
         {
             if (hasNewLine)
@@ -621,8 +587,6 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         {
             TensorValue tv => VisitTensorValue(tv.AsTensor()),
             TupleValue tp => $"({StringUtility.Join(",", tp.AsValueEnumerable().Select(VisitValue))})",
-            ShapeValue sv => $"[{StringUtility.Join(",", sv.Dimensions.AsValueEnumerable().Select(VisitDimension))}]",
-            DimensionValue dv => VisitDimension(dv.Dimension),
             _ => throw new NotSupportedException(nameof(value)),
         };
     }
