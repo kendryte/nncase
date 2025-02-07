@@ -45,6 +45,7 @@ public abstract partial class Expr
         _operands = operands.ToArray();
         foreach (var operand in _operands)
         {
+            ValidateOperand(operand);
             operand.AddUser(this);
         }
 
@@ -57,6 +58,7 @@ public abstract partial class Expr
         _operands = operands;
         foreach (var operand in _operands)
         {
+            ValidateOperand(operand);
             operand.AddUser(this);
         }
 
@@ -285,6 +287,14 @@ public abstract partial class Expr
         return HashCode.Combine(GetType(), HashCode<Expr>.Combine(Operands));
     }
 
+    protected virtual void OnOperandsReplaced()
+    {
+        InvalidateTypeInference();
+        InvalidateHashCodeCache();
+        InvalidateRange();
+        RefreshDepth();
+    }
+
     private bool IsDescendantOf(Expr other, Dictionary<Expr, bool> visited)
     {
         if (visited.TryGetValue(this, out var result))
@@ -319,12 +329,12 @@ public abstract partial class Expr
         return IsDescendantOf(other, new Dictionary<Expr, bool>(ReferenceEqualityComparer.Instance));
     }
 
-    private void OnOperandsReplaced()
+    private void ValidateOperand(Expr operand)
     {
-        InvalidateTypeInference();
-        InvalidateHashCodeCache();
-        InvalidateRange();
-        RefreshDepth();
+        if (operand is Shape)
+        {
+            throw new ArgumentException($"{operand.GetType()} can't be an operand.");
+        }
     }
 
     private void InvalidateTypeInference()

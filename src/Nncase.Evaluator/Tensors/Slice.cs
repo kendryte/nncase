@@ -30,55 +30,13 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Slice sl)
     {
-        var inputValue = context.GetArgumentValue(sl, Slice.Input);
-        var beginsValue = context.GetArgumentValue(sl, Slice.Begins);
-        var endsValue = context.GetArgumentValue(sl, Slice.Ends);
-        var axesValue = context.GetArgumentValue(sl, Slice.Axes);
-        var stridesValue = context.GetArgumentValue(sl, Slice.Strides);
-        switch (inputValue, beginsValue, endsValue, axesValue, stridesValue)
-        {
-            case (_, TensorValue beginsTValue, TensorValue endsTValue, TensorValue axesTValue, TensorValue stridesTValue):
-                var beginsTensor = beginsTValue.AsTensor();
-                var endsTensor = endsTValue.AsTensor();
-                var axesTensor = axesTValue.AsTensor();
-                var stridesTensor = stridesTValue.AsTensor();
-                if (inputValue is ShapeValue inputSValue && beginsTensor.Shape.Rank == 1 && endsTensor.Shape.Rank == 1 && axesTensor.Shape.Rank == 1 && stridesTensor.Shape.Rank == 1)
-                {
-                    // var input = inputShapeValue.AsTensor().Cast<long>().ToOrtTensor();
-                    var begins = beginsTensor.ToScalar<long>();
-                    var ends = endsTensor.ToScalar<long>();
-                    var axes = axesTensor.ToScalar<long>();
-                    if (axes != 0)
-                    {
-                        throw new NotSupportedException("slice ShapeConst Axes != 0");
-                    }
-
-                    var strides = stridesTensor.ToScalar<long>();
-                    var sliced = new List<IValue>();
-                    for (long i = begins; i < ends; i += strides)
-                    {
-                        sliced.Add(inputSValue[checked((int)i)]);
-                    }
-
-                    return new ShapeValue(sliced);
-                }
-                else if (inputValue is TensorValue inputTValue)
-                {
-                    var input = inputTValue.AsTensor().ToOrtTensor();
-                    var begins = beginsTensor.Cast<long>().ToOrtTensor();
-                    var ends = endsTensor.Cast<long>().ToOrtTensor();
-                    var axes = axesTensor.Cast<long>().ToOrtTensor();
-                    var strides = stridesTensor.Cast<long>().ToOrtTensor();
-                    var sliced = OrtKI.Slice(input, begins, ends, axes, strides);
-                    return Value.FromTensor(context.CurrentCall.CheckedType is AnyType ? sliced.ToTensor() : sliced.ToTensor(context.CurrentCall.CheckedTensorType));
-                }
-
-                break;
-            default:
-                break;
-        }
-
-        throw new NotSupportedException("input value is neither shapevalue or tensorvalue");
+        var input = context.GetOrtArgumentValue(sl, Slice.Input);
+        var begins = context.GetInt64OrtTensorArgumentValue(sl, Slice.Begins);
+        var ends = context.GetInt64OrtTensorArgumentValue(sl, Slice.Ends);
+        var axes = context.GetInt64OrtTensorArgumentValue(sl, Slice.Axes);
+        var strides = context.GetInt64OrtTensorArgumentValue(sl, Slice.Strides);
+        var sliced = OrtKI.Slice(input, begins, ends, axes, strides);
+        return Value.FromTensor(context.CurrentCall.CheckedType is AnyType ? sliced.ToTensor() : sliced.ToTensor(context.CurrentCall.CheckedTensorType));
     }
 
     /// <inheritdoc/>
@@ -188,7 +146,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         else
         {
             return ShapeExprUtility.If(
-                x.Value < 0,
+                x.Value < 0L,
                 (x, dim) => dim + x,
                 (x, dim) => Clamp(x, lowerBound, dim + upperBoundBias),
                 x.Value,
@@ -241,7 +199,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
 
                 // while for negative stepping it is clamped to [-1, dims[axes[i]]-1].
                 var end = TranslateBeginEnd(ends[i], inDim, -1, -1);
-                return Dimension.CeilDiv(Dimension.Abs(end - begin), Dimension.Abs(stride));
+                return Dimension.CeilDiv(end - begin, Dimension.Abs(stride));
             }
             else
             {
@@ -250,7 +208,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
 
                 // end[i] is clamped into the range [0, dims[axes[i]]]
                 var end = TranslateBeginEnd(ends[i], inDim, 0, 0);
-                return Dimension.CeilDiv(Dimension.Abs(end - begin), Dimension.Abs(stride));
+                return Dimension.CeilDiv(end - begin, Dimension.Abs(stride));
             }
         });
         return input with { Shape = outShape };

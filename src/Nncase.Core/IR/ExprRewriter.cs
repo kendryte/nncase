@@ -22,8 +22,9 @@ public abstract partial class ExprRewriter<TContext> : ExprVisitor<Expr, IRType,
     /// Initializes a new instance of the <see cref="ExprRewriter{TContext}"/> class.
     /// </summary>
     /// <param name="visitOtherFunctions">Vist other functions.</param>
-    public ExprRewriter(bool visitOtherFunctions = false)
-        : base(visitOtherFunctions)
+    /// <param name="visitAttributes">Visit attributes.</param>
+    public ExprRewriter(bool visitOtherFunctions = false, bool visitAttributes = false)
+        : base(visitOtherFunctions, visitAttributes)
     {
     }
 
@@ -45,6 +46,18 @@ public abstract partial class ExprRewriter<TContext> : ExprVisitor<Expr, IRType,
         DCE(newExpr, exprScope);
         return newExpr;
     }
+
+    public override IRType VisitTypeLeaf(AnyType type, TContext context) => type;
+
+    public override IRType VisitTypeLeaf(CallableType type, TContext context) => type;
+
+    public override IRType VisitTypeLeaf(InvalidType type, TContext context) => type;
+
+    public override IRType VisitTypeLeaf(TensorType type, TContext context) => type;
+
+    public override IRType VisitTypeLeaf(TupleType type, TContext context) => type;
+
+    public override IRType VisitTypeLeaf(DistributedType type, TContext context) => type;
 
     /// <summary>
     /// Default rewrite leaf routine.
@@ -68,6 +81,20 @@ public abstract partial class ExprRewriter<TContext> : ExprVisitor<Expr, IRType,
         }
     }
 
+    protected override void VisitAttributes(Expr expr, TContext context)
+    {
+        var type = expr.RawCheckedType;
+        if (type != null)
+        {
+            var newType = VisitType(type, context);
+            if (!ReferenceEquals(type, newType))
+            {
+                expr.CheckedType = newType;
+                SetMutated();
+            }
+        }
+    }
+
     private void DCE(Expr root, ExprScope exprScope)
     {
         // using var exprPin = new ExprPinner(root);
@@ -84,8 +111,9 @@ public abstract partial class ExprRewriter : ExprRewriter<Unit>
     /// Initializes a new instance of the <see cref="ExprRewriter"/> class.
     /// </summary>
     /// <param name="visitOtherFunctions">Vist other functions.</param>
-    protected ExprRewriter(bool visitOtherFunctions = false)
-        : base(visitOtherFunctions)
+    /// <param name="visitAttributes">Visit attributes.</param>
+    protected ExprRewriter(bool visitOtherFunctions = false, bool visitAttributes = false)
+        : base(visitOtherFunctions, visitAttributes)
     {
     }
 

@@ -34,7 +34,7 @@ public class UnitTestReshapeBatchMatmul : TransformTestBase
     public static IEnumerable<object[]> TestReshapeBatchMatmulNegativeData =>
         new[]
         {
-            new object[] { new[] { 2, 1, 4 }, new[] { 4, Dimension.Unknown() } },
+            new object[] { new[] { 2, 1, 4 }, new[] { 4, Dimension.Unknown } },
         };
 
     [Theory]

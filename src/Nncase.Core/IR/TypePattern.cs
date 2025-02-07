@@ -128,7 +128,7 @@ public static partial class TypePatternUtility
       inshape =>
         inshape.Rank == target_shape.Rank &&
         inshape.Zip(target_shape).All(
-          (dim) => dim.Second.IsAny ? true : dim.Second == dim.First),
+          (dim) => dim.Second.IsAssignableFrom(dim.First)),
       $"Shape = {target_shape}");
 
     /// <summary>

@@ -30,7 +30,7 @@ public class UnitTestUnSqueezeToReshape : TransformTestBase
         };
 
     public static IEnumerable<object[]> TestUnSqueezeToReshapeNegativeData =>
-        new[] { new object[] { new[] { 2, 4, IR.Dimension.Unknown() }, new[] { -1 } }, };
+        new[] { new object[] { new[] { 2, 4, IR.Dimension.Unknown }, new[] { -1 } }, };
 
     [Theory]
     [MemberData(nameof(TestUnSqueezeToReshapePositiveData))]

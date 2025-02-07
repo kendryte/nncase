@@ -189,7 +189,7 @@ public static class MetricUtility
     {
         return type switch
         {
-            TensorType t => (UInt128)t.Shape.Aggregate(scale, (acc, x) => acc * (x.IsFixed ? x.FixedValue : 1)),
+            TensorType t => (UInt128)t.Shape.ProdWithDynamicAsOne(scale),
             TupleType t => t.Fields.Sum(f => GetFLOPs(f, scale)),
             _ => 0,
         };

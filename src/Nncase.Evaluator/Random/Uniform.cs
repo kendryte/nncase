@@ -32,7 +32,7 @@ public class UniformEvaluator : IEvaluator<Uniform>, ITypeInferencer<Uniform>, I
     {
         if (context.GetArgument(target, Uniform.Shape) is TensorConst shapeValue)
         {
-            return new TensorType(target.Type, new Shape(shapeValue.Value.Cast<int>()));
+            return new TensorType(target.Type, new Shape(shapeValue.Value.ToArray<long>()));
         }
         else
         {

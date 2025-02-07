@@ -40,8 +40,11 @@ public sealed class InferRangePass : FunctionPass
 internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
 {
     public InferRangeVisitor()
+        : base(visitAttributes: true)
     {
     }
+
+    public override Unit DefaultVisitTypeLeaf(IRType type, Unit context) => default;
 
     protected override ValueRange<double> DispatchVisit(Expr expr)
     {
@@ -64,7 +67,7 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
         var range = expr.Target switch
         {
             Op op => InferenceOp(op, expr),
-            BaseFunction func => ValueRange<double>.Full,
+            BaseFunction => ValueRange<double>.Full,
             _ => ValueRange<double>.Full,
         };
         return range;
@@ -74,6 +77,17 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
     {
         var value = expr.Value.ToArray<double>();
         return new ValueRange<double>(value.Min(), value.Max());
+    }
+
+    protected override ValueRange<double> VisitLeafShape(Shape expr)
+    {
+        if (!expr.Any())
+        {
+            return ValueRange<double>.Full;
+        }
+
+        var ranges = expr.Select(x => x.IsFixed ? new ValueRange<double>(x.FixedValue, x.FixedValue) : Visit(x.Value)).ToArray();
+        return new ValueRange<double>(ranges.Min(x => x.Min), ranges.Max(x => x.Max));
     }
 
     protected override ValueRange<double> VisitLeafTuple(IR.Tuple expr)
@@ -86,12 +100,15 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
     {
         return op switch
         {
-            Reshape => expr[Reshape.Input].Metadata.Range!.Value,
-            Slice => expr[Slice.Input].Metadata.Range!.Value,
-            Gather => expr[Gather.Input].Metadata.Range!.Value,
-            GetItem => expr[GetItem.Input].Metadata.Range!.Value,
-            Concat => expr[Concat.Input].Metadata.Range!.Value,
+            Reshape => Visit(expr[Reshape.Input]),
+            Slice => Visit(expr[Slice.Input]),
+            Gather => Visit(expr[Gather.Input]),
+            GetItem => Visit(expr[GetItem.Input]),
+            Concat => Visit(expr[Concat.Input]),
             Binary binary => InferenceBinary(expr, binary.BinaryOp),
+            Squeeze => Visit(expr[Squeeze.Input]),
+            Unsqueeze => Visit(expr[Unsqueeze.Input]),
+            Stack => Visit(expr[Stack.Inputs]),
             _ => ValueRange<double>.Full,
         };
     }
@@ -105,10 +122,40 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
         {
             BinaryOp.Add => new(lhs.Min + rhs.Min, lhs.Max + rhs.Max),
             BinaryOp.Sub => new(lhs.Min - rhs.Max, lhs.Max - rhs.Min),
-            BinaryOp.Mul => new(lhs.Min * rhs.Min, lhs.Max * rhs.Max),
+            BinaryOp.Mul => VisitMul(lhs, rhs),
+            BinaryOp.Div => VisitDiv(lhs, rhs),
             BinaryOp.Max => new(Math.Max(lhs.Min, rhs.Min), Math.Max(lhs.Max, rhs.Max)),
             BinaryOp.Min => new(Math.Min(lhs.Min, rhs.Min), Math.Min(lhs.Max, rhs.Max)),
             _ => ValueRange<double>.Full,
         };
+    }
+
+    private ValueRange<double> VisitDiv(ValueRange<double> lhs, ValueRange<double> rhs)
+    {
+        if (rhs.Min <= 0 && rhs.Max >= 0)
+        {
+            return ValueRange<double>.Full;
+        }
+
+        var values = new[]
+        {
+            lhs.Min / rhs.Min,
+            lhs.Min / rhs.Max,
+            lhs.Max / rhs.Min,
+            lhs.Max / rhs.Max,
+        };
+        return new ValueRange<double>(values.Min(), values.Max());
+    }
+
+    private ValueRange<double> VisitMul(ValueRange<double> lhs, ValueRange<double> rhs)
+    {
+        var values = new[]
+        {
+            lhs.Min * rhs.Min,
+            lhs.Min * rhs.Max,
+            lhs.Max * rhs.Min,
+            lhs.Max * rhs.Max,
+        };
+        return new ValueRange<double>(values.Min(), values.Max());
     }
 }

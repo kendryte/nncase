@@ -46,7 +46,7 @@ public class FlattenEvaluator : IEvaluator<Flatten>, ITypeInferencer<Flatten>, I
         {
             var axisValue = Util.PositiveIndex(axisV.Value.ToScalar<int>(), input);
             var first = input.Shape.Take(axisValue).Aggregate((Dimension)1, (x, y) => x * y);
-            var second = input.Shape.Take(axisValue..input.Shape.Count).Aggregate((Dimension)1, (x, y) => x * y);
+            var second = input.Shape.Take(axisValue..input.Shape.Rank).Aggregate((Dimension)1, (x, y) => x * y);
             return input with { Shape = new[] { first, second } };
         }
 

@@ -15,7 +15,7 @@ public static class DistributedUtility
         for (int i = 0; i < placement.Rank; i++)
         {
             var ndsbp = new List<SBP>();
-            if (tensorType.Shape.All(x => x.IsUnknown || x.FixedValue != 0))
+            if (tensorType.Shape.All(x => x.IsDynamic || x.FixedValue != 0))
             {
                 for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
                 {
@@ -227,7 +227,7 @@ public static class DistributedUtility
             return 1f;
         }
 
-        return Enumerable.Range(0, tiles.Count).Select(i => ((int)tiles[i].FixedValue).Ranges(0, (int)shape[i].FixedValue)).CartesianProduct().Select(rgs =>
+        return Enumerable.Range(0, tiles.Rank).Select(i => ((int)tiles[i].FixedValue).Ranges(0, (int)shape[i].FixedValue)).CartesianProduct().Select(rgs =>
         {
             var slice = rgs.ToArray();
             var iscontiguous = TensorUtilities.IsContiguousSlice(shape.ToValueArray(), slice, out var contiguousStart);

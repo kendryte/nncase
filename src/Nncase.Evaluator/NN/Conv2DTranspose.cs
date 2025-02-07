@@ -120,7 +120,7 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
         var input = context.CheckArgumentType<TensorType>(target, Conv2DTranspose.Input);
         if (context.GetArgument(target, Conv2DTranspose.OutputShape) is TensorConst outShapeValue)
         {
-            return new TensorType(input.DType, new Shape(outShapeValue.Value.Cast<int>()));
+            return new TensorType(input.DType, new Shape(outShapeValue.Value.ToArray<long>()));
         }
         else
         {

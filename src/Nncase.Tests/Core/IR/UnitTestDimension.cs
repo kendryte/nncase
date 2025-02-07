@@ -34,7 +34,7 @@ public sealed class UnitTestDimension
         Assert.False(d1.IsUnknown);
         Assert.True(d1.IsFixed);
 
-        var d2 = Dimension.Unknown();
+        var d2 = Dimension.Unknown;
         Assert.Equal(DimensionKind.Unknown, d2.Kind);
         Assert.True(d2.IsUnknown);
         Assert.False(d2.IsFixed);
@@ -67,7 +67,7 @@ public sealed class UnitTestDimension
         var v2 = 1;
         Dimension d1 = v1;
         Dimension d2 = v2;
-        var d3 = Dimension.Unknown();
+        var d3 = Dimension.Unknown;
 
         var d4 = d1 + d2;
         Assert.Equal(v1 + v2, d4.Value);
@@ -88,7 +88,7 @@ public sealed class UnitTestDimension
         var v2 = 1;
         Dimension d1 = v1;
         Dimension d2 = v2;
-        var d3 = Dimension.Unknown();
+        var d3 = Dimension.Unknown;
 
         var d4 = d1 - d2;
         Assert.Equal(v1 - v2, d4.Value);
@@ -105,7 +105,7 @@ public sealed class UnitTestDimension
         var v2 = 1;
         Dimension d1 = v1;
         Dimension d2 = v2;
-        var d3 = Dimension.Unknown();
+        var d3 = Dimension.Unknown;
 
         var d4 = d1 * d2;
         Assert.Equal(v1 * v2, d4.Value);
@@ -122,7 +122,7 @@ public sealed class UnitTestDimension
         var v2 = 1;
         Dimension d1 = v1;
         Dimension d2 = v2;
-        var d3 = Dimension.Unknown();
+        var d3 = Dimension.Unknown;
 
         var d4 = d1 / d2;
         Assert.Equal(v1 / v2, d4.Value);

@@ -94,7 +94,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         }
 
         var rank = (int)shapeType.Shape[0].FixedValue;
-        var shapeDims = new Shape(Enumerable.Range(0, rank).Select(i => (Dimension)shape[i]).ToArray());
+        var shapeDims = new Shape(Enumerable.Range(0, rank).Select(i => shape[i]).ToArray());
         var outputShape = new Dimension[rank];
 
         // todo use egraph simplify.

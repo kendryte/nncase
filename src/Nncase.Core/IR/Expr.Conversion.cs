@@ -105,14 +105,6 @@ public abstract partial class Expr
     public static implicit operator Expr(bool value) => (Const)value;
 
     /// <summary>
-    /// Create <see cref="Expr"/> from a <see cref="Shape"/>.
-    /// </summary>
-    /// <param name="shape">Shape.</param>
-    public static implicit operator Expr(Shape shape) =>
-        shape.IsFixed ? Const.FromShape(shape)
-                      : IR.F.Tensors.Stack(new IR.Tuple(shape.Select(x => x.ToExpr()).ToArray()), 0);
-
-    /// <summary>
     /// Create <see cref="Expr"/> from an array of<see cref="int"/>.
     /// </summary>
     /// <param name="array">Array.</param>

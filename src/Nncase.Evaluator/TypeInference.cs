@@ -150,7 +150,7 @@ public static class TypeInference
                 inputDims[i] = inDim;
             }
 
-            var non1Dims = inputDims.Where(x => x.IsUnknown || x.FixedValue != 1).ToHashSet();
+            var non1Dims = inputDims.Where(x => x.IsDynamic || x.IsUnknown || x.FixedValue != 1).ToHashSet();
             if (non1Dims.Count == 0)
             {
                 outputShape[dimIndex] = 1;
@@ -420,7 +420,7 @@ public static class TypeInference
             }
 
             var permt = permValue.Value.ToArray<int>();
-            if (input.Shape.Count != permt.Length)
+            if (input.Shape.Rank != permt.Length)
             {
                 return new InvalidType("Transpose shoud perm.size == inShape.size");
             }
@@ -503,6 +503,11 @@ public static class TypeInference
             if (a.DType != b.DType)
             {
                 return new InvalidType($"Inputs DType of if should be same, then: {a.DType}, else: {b.DType}");
+            }
+
+            if (a.Shape.IsUnranked || b.Shape.IsUnranked || a.Shape.Rank != b.Shape.Rank)
+            {
+                return new TensorType(a.DType, Shape.Unranked);
             }
 
             return new TensorType(a.DType, Shape.Unknown(a.Shape.Rank));

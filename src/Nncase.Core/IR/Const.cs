@@ -156,10 +156,6 @@ public abstract class Const : Expr
                     : new TensorConst(tv.AsTensor());
             case TupleValue tpv:
                 return new TupleConst(tpv);
-            case ShapeValue sv:
-                return new ShapeConst(sv.Dimensions.ToArray());
-            case DimensionValue dv:
-                return new DimensionConst(dv.Dimension);
             default:
                 throw new ArgumentOutOfRangeException(nameof(value));
         }

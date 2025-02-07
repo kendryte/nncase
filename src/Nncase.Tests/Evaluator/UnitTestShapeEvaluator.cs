@@ -48,7 +48,7 @@ public class UnitTestShapeEvaluator : TestClassBase
     [Fact]
     public void TestWithVar()
     {
-        var input = new Var(new TensorType(DataTypes.Float32, new[] { 1, 3, Dimension.Unknown(), 6 }));
+        var input = new Var(new TensorType(DataTypes.Float32, new[] { 1, 3, Dimension.Unknown, 6 }));
         var dimVar = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
         var newShape = new Expr[] { 1, 3, dimVar, 6 };
         var varMap = new Dictionary<Var, Expr[]> { { input, newShape } };
@@ -182,7 +182,7 @@ public class UnitTestShapeEvaluator : TestClassBase
     public void UnitTestGetItem()
     {
         var dimVar = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
-        var input = new Var(new TensorType(DataTypes.Int32, new[] { Dimension.Unknown() }));
+        var input = new Var(new TensorType(DataTypes.Int32, new[] { Dimension.Unknown }));
         var expr = input[1];
         var dict = new Dictionary<Var, Expr[]> { { input, new[] { dimVar } } };
         var shape = expr.EvaluateShapeExpr(dict);
@@ -200,7 +200,7 @@ public class UnitTestShapeEvaluator : TestClassBase
     public void UnitTestGetItemSingle()
     {
         var dimVar = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
-        var input = new Var(new TensorType(DataTypes.Int32, new[] { Dimension.Unknown() }));
+        var input = new Var(new TensorType(DataTypes.Int32, new[] { Dimension.Unknown }));
         var expr = input[0];
         var dict = new Dictionary<Var, Expr[]> { { input, new[] { dimVar } } };
         var shape = expr.EvaluateShapeExpr(dict);
@@ -260,7 +260,7 @@ public class UnitTestShapeEvaluator : TestClassBase
     public void TestSpaceTobatch()
     {
         var dimVar = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
-        var input = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown(), 192 }));
+        var input = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown, 192 }));
         var paddings = Tensor.From(new[] { 0, 1 }, [1, 2]);
         var expr = NCHWToNHWC(SpaceToBatch(NHWCToNCHW(input), new[] { 3 }, paddings));
         var dict = new Dictionary<Var, Expr[]> { { input, new Expr[] { 1, dimVar, 192 } } };
@@ -280,7 +280,7 @@ public class UnitTestShapeEvaluator : TestClassBase
     public void TestBatchToSpace()
     {
         var dimVar = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
-        var input = new Var(new TensorType(DataTypes.Float32, new[] { Dimension.Unknown(), 69, 192 }));
+        var input = new Var(new TensorType(DataTypes.Float32, new[] { Dimension.Unknown, 69, 192 }));
         var paddings = Tensor.From(new[] { 0, 1 }, [1, 2]);
         var expr = BatchToSpace(input, new[] { 3 }, paddings);
         var dict = new Dictionary<Var, Expr[]> { { input, new Expr[] { dimVar, 69, 192 } } };
@@ -357,7 +357,7 @@ public class UnitTestShapeEvaluator : TestClassBase
 
     private void TestOpShapeEval(Func<Expr, Expr> exprCtor)
     {
-        var (input, newShape) = MakeInput(new[] { 1, 3, Dimension.Unknown(), 24 });
+        var (input, newShape) = MakeInput(new[] { 1, 3, Dimension.Unknown, 24 });
         TestOpShapeEval(exprCtor, input, newShape);
     }
 }

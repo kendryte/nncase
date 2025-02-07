@@ -19,35 +19,9 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Unsqueeze unSqueeze)
     {
-        var inputValue = context.GetArgumentValue(unSqueeze, Unsqueeze.Input);
-        var axesValue = context.GetArgumentValue(unSqueeze, Unsqueeze.Dim);
-
-        switch (inputValue, axesValue)
-        {
-            case (_, TensorValue axesTValue):
-                var axesTensor = axesTValue.AsTensor();
-                if (inputValue is TensorValue inputTValue)
-                {
-                    var input = inputTValue.AsTensor().ToOrtTensor();
-                    var axes = axesTensor.Cast<long>().ToOrtTensor();
-                    return Value.FromTensor(OrtKI.Unsqueeze(input, axes).ToTensor(context.CurrentCall.CheckedTensorType));
-                }
-                else if (inputValue is DimensionValue inputDValue)
-                {
-                    if (axesTensor.Shape.Rank > 1 || axesTensor.ToScalar<int>() != 0)
-                    {
-                        throw new NotSupportedException("only support scalar dim when input is DimensionValue!");
-                    }
-
-                    return new ShapeValue(new[] { inputDValue });
-                }
-
-                break;
-            default:
-                break;
-        }
-
-        throw new NotSupportedException();
+        var input = context.GetOrtArgumentValue(unSqueeze, Unsqueeze.Input);
+        var axes = context.GetInt64OrtTensorArgumentValue(unSqueeze, Unsqueeze.Dim);
+        return Value.FromTensor(OrtKI.Unsqueeze(input, axes).ToTensor(context.CurrentCall.CheckedTensorType));
     }
 
     /// <inheritdoc/>

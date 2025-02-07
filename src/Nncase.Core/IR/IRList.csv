@@ -8,9 +8,8 @@ Marker,true,false,Default,,Target;Attribute
 None,true,false,Default,,
 Op,true,false,Default,,
 PrimFunctionWrapper,true,true,BaseFunction,,Target
+Shape,true,false,Default,IR.,@Dimensions
 TensorConst,true,false,Const,,
-ShapeConst,true,false,Const,,
-DimensionConst,true,false,Const,,
 Tuple,true,false,Default,IR.,@Fields
 TupleConst,true,false,Const,,
 MemSpan,true,false,Default,TIR.,Start;Size;

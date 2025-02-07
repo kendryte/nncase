@@ -98,21 +98,15 @@ public partial class ExprCloner<TContext>
     }
 
     /// <inheritdoc />
+    protected override Expr VisitLeafShape(IR.Shape expr, TContext context)
+    {
+        return expr.With(
+            dimensions: CloneArray(expr.Dimensions, context)
+        );
+    }
+
+    /// <inheritdoc />
     protected override Expr VisitLeafTensorConst(TensorConst expr, TContext context)
-    {
-        return expr.With(
-        );
-    }
-
-    /// <inheritdoc />
-    protected override Expr VisitLeafShapeConst(ShapeConst expr, TContext context)
-    {
-        return expr.With(
-        );
-    }
-
-    /// <inheritdoc />
-    protected override Expr VisitLeafDimensionConst(DimensionConst expr, TContext context)
     {
         return expr.With(
         );

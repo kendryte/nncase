@@ -48,17 +48,10 @@ public partial class FoldConstCall : RewriteRule<CallPattern>
 public partial class FoldShapeOf : RewriteRule<CallPattern>
 {
     /// <inheritdoc/>
-    public override CallPattern Pattern { get; } = IsShapeOf(IsWildcard("wc") with { TypePattern = HasRank() });
+    public override CallPattern Pattern { get; } = IsShapeOf(IsWildcard("wc") with { TypePattern = HasFixedShape() });
 
     private Const GetReplace(Expr wc)
     {
-        if (wc.CheckedShape.IsFixed)
-        {
-            return Const.FromTensor(wc.CheckedShape.ToValueArray().Select(x => (long)x).ToArray());
-        }
-        else
-        {
-            return new ShapeConst(wc.CheckedShape);
-        }
+        return Const.FromTensor(wc.CheckedShape.ToValueArray().Select(x => (long)x).ToArray());
     }
 }

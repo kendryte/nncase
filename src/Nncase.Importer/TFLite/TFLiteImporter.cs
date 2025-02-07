@@ -156,7 +156,7 @@ public sealed partial class TFLiteImporter : BaseImporter
         }
 
         return Enumerable.Range(0, tensor.ShapeLength).Select(i =>
-            tensor.ShapeSignature(i) < 0 ? Dimension.Unknown() : tensor.Shape(i)).ToArray();
+            tensor.ShapeSignature(i) < 0 ? Dimension.Unknown : tensor.Shape(i)).ToArray();
     }
 
     private void Visit(in tflite.Operator op)

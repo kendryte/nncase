@@ -454,7 +454,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
             return doc;
         }
 
-        doc = (ScriptSymobl)_scope.GetUniqueVarSymbol(expr);
+        doc = (ScriptSymobl)_scope.GetUniqueVarSymbol(expr, "%");
         _exprMemo.Add(expr, doc);
         return doc;
     }
@@ -699,6 +699,18 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         }
 
         doc = new ScriptSymobl(new("None"), "None", false);
+        _exprMemo.Add(expr, doc);
+        return doc;
+    }
+
+    protected override IPrintSymbol VisitShape(Shape expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var doc))
+        {
+            return doc;
+        }
+
+        doc = new ScriptSymobl(new("Shape"), "Shape", false);
         _exprMemo.Add(expr, doc);
         return doc;
     }

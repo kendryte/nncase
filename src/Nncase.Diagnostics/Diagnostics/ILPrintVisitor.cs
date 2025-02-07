@@ -530,7 +530,39 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
 
     private string GetNextSSANumber()
     {
-        return $"%{_stackedSSANumbers[^1]++}";
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        _scope.Push();
+
+        // 1. Sequential signature
+        _scope.Append($"Sequential");
+        AppendCheckedType(expr.CheckedType, expr.Metadata.Range, " {", hasNewLine: true);
+
+        // 2. For Body
+        using (_scope.IndentUp())
+        {
+            foreach (var item in expr.Fields)
+            {
+                Visit(item);
+            }
+        }
+
+        // 3. For closing
+        _scope.IndWriteLine("}");
+
+        // 4. extact whole il
+        _scope.IndWrite(_scope.Pop());
+        return string.Empty;
+    }
+
+    private string AllocateTempVar(Expr expr)
+    {
+        var name = $"%{_localId++}";
+        _names.Add(expr, name);
+        return name;
     }
 
     private string VisitShape(Shape shape) =>
@@ -565,7 +597,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
 
     private void AppendCheckedType(IRType? type, ValueRange<double>? range, string end = "", bool hasNewLine = true)
     {
-        var rangeText = range is not null ? $" [{range.Value.Min}, {range.Value.Max}]" : string.Empty;
+        var rangeText = range is not null ? $"[{range.Value.Min}, {range.Value.Max}]" : string.Empty;
         if (type is not null)
         {
             if (hasNewLine)

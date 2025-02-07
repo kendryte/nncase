@@ -71,7 +71,7 @@ public class TileEvaluator : IEvaluator<Tile>, ITypeInferencer<Tile>, ICostEvalu
         }
         else
         {
-            var shape = input.Shape.Select((p, i) => p * repeats[i]);
+            var shape = input.Shape.Select((p, i) => p * (Dimension)repeats[i]);
             return input with { Shape = new Shape(shape) };
         }
     }

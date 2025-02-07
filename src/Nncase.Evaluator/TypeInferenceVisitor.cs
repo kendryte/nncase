@@ -238,6 +238,11 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
         return type;
     }
 
+    protected override IRType VisitLeafShape(Shape expr)
+    {
+        return NoneType.Default;
+    }
+
     protected override IRType VisitLeafGrid(Grid expr)
     {
         VerifySubField(expr, expr.DomainParameter);

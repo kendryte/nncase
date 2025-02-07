@@ -60,6 +60,7 @@ internal sealed class SimplifyProvider : ISimplifyProvider
             new GatherToGetItem(),
             new FoldGetItemShapeOf(),
             new FoldGetItemConcat(),
+            new FoldGetItemReshape(),
             new FoldSplitShapeOf(),
         ];
     }

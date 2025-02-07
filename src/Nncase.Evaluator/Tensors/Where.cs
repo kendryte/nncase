@@ -23,41 +23,24 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Where where)
     {
-        var condValue = context.GetArgumentValue(where, Where.Cond);
-        var xValue = context.GetArgumentValue(where, Where.X);
-        var yValue = context.GetArgumentValue(where, Where.Y);
-        switch (condValue, xValue, yValue)
+        var xt = context.GetArgumentValueAsTensor(where, Where.X);
+        var yt = context.GetArgumentValueAsTensor(where, Where.Y);
+        if (where.IsTfWhere)
         {
-            case (TensorValue condTV, TensorValue xTV, _):
-                if (yValue is TensorValue yTV)
-                {
-                    if (where.IsTfWhere)
-                    {
-                        var condTensor = condTV.AsTensor().Cast<bool>();
-                        if (condTensor.Rank > 1)
-                        {
-                            throw new NotImplementedException();
-                        }
+            var condTensor = context.GetArgumentValueAsTensor<bool>(where, Where.Cond);
+            if (condTensor.Rank > 1)
+            {
+                throw new NotImplementedException();
+            }
 
-                        var result = condTensor.Select((b, i) => (b, i)).Where(t => t.b).Select(t => (long)t.i).ToArray();
-                        return Value.FromTensor(Tensor.From<long>(result, new Shape(result.Length, condTensor.Rank)));
-                    }
-                    else
-                    {
-                        return OrtKI.Where(condTV.AsTensor().ToOrtTensor(), xTV.AsTensor().ToOrtTensor(), yTV.AsTensor().ToOrtTensor()).ToValue();
-                    }
-                }
-                else if (yValue is ShapeValue ySV)
-                {
-                    return new ShapeValue(condTV.AsTensor().Cast<bool>().Zip(xValue.AsTensor().Cast<long>().Zip(ySV.Dimensions.ToArray())).Select(tp => tp.First ? new Dimension(tp.Second.First) : tp.Second.Second).ToArray());
-                }
-
-                break;
-            default:
-                break;
+            var result = condTensor.Select((b, i) => (b, i)).Where(t => t.b).Select(t => (long)t.i).ToArray();
+            return Value.FromTensor(Tensor.From<long>(result, new Shape(result.Length, condTensor.Rank)));
         }
 
-        throw new NotSupportedException();
+        var cond = context.GetOrtArgumentValue(where, Where.Cond);
+        var x = context.GetOrtArgumentValue(where, Where.X);
+        var y = context.GetOrtArgumentValue(where, Where.Y);
+        return OrtKI.Where(cond, x, y).ToValue();
     }
 
     /// <inheritdoc/>
@@ -79,7 +62,7 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
     {
         if (target.IsTfWhere)
         {
-            return new TensorType(DataTypes.Int64, new Shape(Dimension.Unknown(), cond.Shape.Rank));
+            return new TensorType(DataTypes.Int64, Shape.Unknown(cond.Shape.Rank));
         }
 
         return TypeInference.BroadcastType(x.DType, cond, x, y);

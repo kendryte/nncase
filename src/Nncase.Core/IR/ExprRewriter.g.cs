@@ -74,21 +74,15 @@ public partial class ExprRewriter<TContext>
     }
 
     /// <inheritdoc/>
+    protected sealed override Expr VisitLeafShape(IR.Shape expr, TContext context)
+    {
+        return RewriteLeafShape(expr, context);
+    }
+
+    /// <inheritdoc/>
     protected sealed override Expr VisitLeafTensorConst(TensorConst expr, TContext context)
     {
         return RewriteLeafTensorConst(expr, context);
-    }
-
-    /// <inheritdoc/>
-    protected sealed override Expr VisitLeafShapeConst(ShapeConst expr, TContext context)
-    {
-        return RewriteLeafShapeConst(expr, context);
-    }
-
-    /// <inheritdoc/>
-    protected sealed override Expr VisitLeafDimensionConst(DimensionConst expr, TContext context)
-    {
-        return RewriteLeafDimensionConst(expr, context);
     }
 
     /// <inheritdoc/>
@@ -328,19 +322,14 @@ public partial class ExprRewriter<TContext>
     protected virtual Expr RewriteLeafPrimFunctionWrapper(PrimFunctionWrapper expr, TContext context) => RewriteLeafBaseFunction(expr, context);
 
     /// <summary>
+    /// Rewrite leaf <see cref="IR.Shape"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafShape(IR.Shape expr, TContext context) => DefaultRewriteLeaf(expr, context);
+
+    /// <summary>
     /// Rewrite leaf <see cref="TensorConst"/>.
     /// </summary>
     protected virtual Expr RewriteLeafTensorConst(TensorConst expr, TContext context) => RewriteLeafConst(expr, context);
-
-    /// <summary>
-    /// Rewrite leaf <see cref="ShapeConst"/>.
-    /// </summary>
-    protected virtual Expr RewriteLeafShapeConst(ShapeConst expr, TContext context) => RewriteLeafConst(expr, context);
-
-    /// <summary>
-    /// Rewrite leaf <see cref="DimensionConst"/>.
-    /// </summary>
-    protected virtual Expr RewriteLeafDimensionConst(DimensionConst expr, TContext context) => RewriteLeafConst(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="IR.Tuple"/>.
@@ -582,28 +571,20 @@ public partial class ExprRewriter
     protected sealed override Expr RewriteLeafPrimFunctionWrapper(PrimFunctionWrapper expr, Unit context) => RewriteLeafPrimFunctionWrapper(expr);
 
     /// <summary>
+    /// Rewrite leaf <see cref="IR.Shape"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafShape(IR.Shape expr) => DefaultRewriteLeaf(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafShape(IR.Shape expr, Unit context) => RewriteLeafShape(expr);
+
+    /// <summary>
     /// Rewrite leaf <see cref="TensorConst"/>.
     /// </summary>
     protected virtual Expr RewriteLeafTensorConst(TensorConst expr) => RewriteLeafConst(expr);
 
     /// <inheritdoc />
     protected sealed override Expr RewriteLeafTensorConst(TensorConst expr, Unit context) => RewriteLeafTensorConst(expr);
-
-    /// <summary>
-    /// Rewrite leaf <see cref="ShapeConst"/>.
-    /// </summary>
-    protected virtual Expr RewriteLeafShapeConst(ShapeConst expr) => RewriteLeafConst(expr);
-
-    /// <inheritdoc />
-    protected sealed override Expr RewriteLeafShapeConst(ShapeConst expr, Unit context) => RewriteLeafShapeConst(expr);
-
-    /// <summary>
-    /// Rewrite leaf <see cref="DimensionConst"/>.
-    /// </summary>
-    protected virtual Expr RewriteLeafDimensionConst(DimensionConst expr) => RewriteLeafConst(expr);
-
-    /// <inheritdoc />
-    protected sealed override Expr RewriteLeafDimensionConst(DimensionConst expr, Unit context) => RewriteLeafDimensionConst(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="IR.Tuple"/>.
