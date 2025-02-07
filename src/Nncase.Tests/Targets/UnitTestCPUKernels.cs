@@ -223,8 +223,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     [Theory]
     [InlineData(new object[] { new[] { 4, 8, 16, 32 }, new[] { 1 }, 0 })]
-    [InlineData(new object[] { new[] { 4, 8, 16, 32 }, new[] { 2 }, 1 })]
-    [InlineData(new object[] { new[] { 4, 8, 16, 32 }, new[] { 4 }, 2 })]
+    [InlineData(new object[] { new[] { 1, 64, 384, 128 }, new[] { 4 }, 1 })]
     public async Task TestUnary(int[] shape, int[] hierarchy, int count)
     {
         var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
@@ -330,6 +329,27 @@ public sealed class UnitTestCPUKernels : TestClassBase
         };
 
         var rule = new Passes.Rules.CPU.PackResizeImage(Rank, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+    }
+
+    [Theory]
+    [InlineData(new object[] { new[] { 1, 256, 64, 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, 0 })]
+    [InlineData(new object[] { new[] { 1, 64, 64, 256 }, Runtime.TypeCode.Float16, Runtime.TypeCode.BFloat16, 1 })]
+    [InlineData(new object[] { new[] { 1, 64, 256, 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float16, 2 })]
+    public async Task TestPackCast(int[] shape, Nncase.Runtime.TypeCode type1, Nncase.Runtime.TypeCode type2, int count)
+    {
+        var input = new Var(new TensorType(DataTypes.Float32, shape));
+        var casted1 = IR.F.Tensors.Cast(input, DataType.FromTypeCode(type1));
+        var casted2 = IR.F.Tensors.Cast(casted1, DataType.FromTypeCode(type2));
+        var pre = IR.F.Tensors.Cast(casted2, DataTypes.Float32);
+
+        var feedDict = new Dictionary<Var, IValue>() {
+            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
+        };
+
+        var rule = new Passes.Rules.CPU.PackCast(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
@@ -515,6 +535,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     [Theory]
     [InlineData([new int[] { 2, 8, 16, 2 }, new int[] { 0, 2, 1, 3 }, 2, 0])]
+    [InlineData([new int[] { 1, 64, 384, 128 }, new int[] { 0, 2, 1, 3 }, 2, 1])]
     public async Task TestTranspose(int[] shape, int[] perm, int rank, int number)
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));

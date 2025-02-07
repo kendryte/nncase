@@ -106,7 +106,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Pack(arguments[0], ret, pack.Lanes, pack.Axes));
                 break;
             case IR.CPU.Unpack unpack:
-                _mainBody.Add(TIR.F.CPU.Unpack(arguments[0], ret, unpack.Axes));
+                _mainBody.Add(TIR.F.CPU.Unpack(arguments[0], ret, unpack.Lanes, unpack.Axes));
                 break;
             case IR.CPU.PackedBinary packed_binary:
                 // _mainBody.Add(TIR.F.CPU.Binary(arguments[0], arguments[1], ret, packed_binary.BinaryOp, packed_binary.LhsPackedAxes, packed_binary.LhsPadedNums, packed_binary.RhsPackedAxes, packed_binary.RhsPadedNums));
@@ -193,7 +193,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Pad(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToArray<float>()[0]));
                 break;
             case IR.Math.Reduce reduce:
-                _mainBody.Add(TIR.F.CPU.Reduce(arguments[0], ret, Array.Empty<int>(), Array.Empty<int>(), ((TensorConst)expr.Arguments[1]).Value.ToArray<int>().OrderBy(a => a).ToArray(), ((TensorConst)expr.Arguments[3]).Value.ToArray<bool>()[0], reduce.ReduceOp));
+                _mainBody.Add(TIR.F.CPU.Reduce(arguments[0], ret, false, Array.Empty<int>(), Array.Empty<int>(), ((TensorConst)expr.Arguments[1]).Value.ToArray<int>().OrderBy(a => a).ToArray(), ((TensorConst)expr.Arguments[3]).Value.ToArray<bool>()[0], reduce.ReduceOp));
                 break;
             case IR.Buffers.Uninitialized:
                 break;
@@ -213,7 +213,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Erf(arguments[0], ret));
                 break;
             case IR.CPU.PackedReduce pr:
-                _mainBody.Add(TIR.F.CPU.Reduce(arguments[0], ret, pr.PackedAxes.ToArray(), pr.PadedNums.ToArray(), pr.Axes, pr.KeepDims, pr.ReduceOp));
+                _mainBody.Add(TIR.F.CPU.Reduce(arguments[0], ret, false, pr.PackedAxes.ToArray(), pr.PadedNums.ToArray(), pr.Axes, pr.KeepDims, pr.ReduceOp));
                 break;
             case IR.Math.Compare compare:
                 _mainBody.Add(TIR.F.CPU.Compare(compare.CompareOp, arguments[0], arguments[1], ret));
