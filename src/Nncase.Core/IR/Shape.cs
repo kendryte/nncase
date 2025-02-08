@@ -96,7 +96,12 @@ public record struct FixedAndDynamicDimension(long Fixed, Dimension? Dynamic)
 
     public Dimension ToDimension()
     {
-        return Dynamic is null ? new Dimension(Fixed) : new Dimension(Fixed) * Dynamic.Value;
+        return (Fixed, Dynamic) switch
+        {
+            (_, null) => Fixed,
+            (1, Dimension x) => x,
+            _ => Fixed * Dynamic.Value,
+        };
     }
 
     public Expr ToExpr()
@@ -126,7 +131,7 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
     /// </summary>
     /// <param name="dimensions">Dimensions.</param>
     public Shape(ReadOnlySpan<int> dimensions)
-        : this(dimensions.AsValueEnumerable().Select(x => (Expr)x).ToArray())
+        : this(dimensions.AsValueEnumerable().Select(x => (Expr)(long)x).ToArray())
     {
     }
 
@@ -146,16 +151,6 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
     public Shape(ReadOnlySpan<Dimension> dimensions)
         : this(dimensions.AsValueEnumerable().Select(x => x.ToExpr()).ToArray())
     {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Shape"/> class.
-    /// </summary>
-    /// <param name="dimensions">Dimensions.</param>
-    public Shape(params Expr[] dimensions)
-        : base(dimensions.ToArray())
-    {
-        RefreshKind();
     }
 
     /// <summary>
@@ -199,7 +194,7 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
     /// </summary>
     /// <param name="dimensions">Dimensions.</param>
     public Shape(IEnumerable<int> dimensions)
-        : this(dimensions.Select(x => (Expr)x).ToArray())
+        : this(dimensions.Select(x => (Expr)(long)x).ToArray())
     {
     }
 
@@ -219,6 +214,24 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
     public Shape(IEnumerable<Dimension> dimensions)
         : this(dimensions.Select(x => x.ToExpr()).ToArray())
     {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Shape"/> class.
+    /// </summary>
+    /// <param name="dimensions">Dimensions.</param>
+    public Shape(params Expr[] dimensions)
+        : base(dimensions.ToArray())
+    {
+        foreach (var dim in dimensions)
+        {
+            if (dim.CheckedType != TensorType.Scalar(DataTypes.Int64))
+            {
+                throw new ArgumentException($"Invalid dimension type: {dim.CheckedType}");
+            }
+        }
+
+        RefreshKind();
     }
 
     private Shape(ShapeKind kind)
@@ -355,7 +368,7 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
         {
             if (concat.Arguments[Concat.Input.Index] is Tuple tuple)
             {
-                return new Shape(tuple.Fields);
+                return new Shape(tuple.Fields.AsValueEnumerable().Select(x => x[0]).ToArray());
             }
         }
 

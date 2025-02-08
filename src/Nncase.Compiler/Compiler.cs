@@ -162,6 +162,7 @@ internal class Compiler : ICompiler
             p.Add<FoldNopAbsByRange>();
             p.Add<FoldNopCompareByRange>();
             p.Add<FoldNopIf>();
+            p.Add<FoldNopSelect>();
             p.Add<FoldNopBinary>();
             p.Add<FoldSameBinary>();
             p.Add<FoldNopWhere>();
