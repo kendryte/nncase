@@ -829,7 +829,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             Dump(stream, picks, costMemo);
         }
 
-        return new ExprBuildVisitor(_rootSearchGraph, picks).Visit(rootCluster.Clusters.OfType<DistributedSearchGraph>());
+        return new ExprBuildVisitor(_rootSearchGraph, picks).Visit(rootCluster.Clusters.OfType<DistributedSearchGraph>(), null);
     }
 
     private HyperGraph<DistributedSearchGraph, SearchableNode> ToHyperGraph(DistributedSearchGraph root, DistributedSearchGraph rootCluster)
@@ -881,23 +881,29 @@ internal sealed class ExprBuildVisitor
         _memo = new();
     }
 
-    public Expr Visit(IEnumerable<DistributedSearchGraph> rootBuckets)
+    public Expr Visit(IEnumerable<DistributedSearchGraph> currentBuckets, SearchableNode? parent)
     {
-        var rootPicks = rootBuckets.SelectMany(b => b.Vertices).Where(v => _picks.TryGetValue(v, out var pick) && pick).ToArray();
-        if (rootPicks.Length != 1)
+        var currentPicks = currentBuckets.SelectMany(b => b.Vertices).Where(v => _picks.TryGetValue(v, out var pick) && pick).ToArray();
+        if (currentPicks.Length != 1 && parent is null)
         {
-            throw new InvalidProgramException("the one cluster only can pick one vertex!");
+            throw new InvalidProgramException("the root cluster only can pick one vertex!");
         }
 
-        var root = rootPicks[0];
-        if (!_memo.TryGetValue(root, out var expr))
+        if (currentPicks.Length > 1 && parent is not null)
         {
-            _rootSearchGraph.TryGetOutEdges(root, out var edges);
-            var children = edges.GroupBy(e => e.InputIndex).Select(g => Visit(g.Select(e => e.InputGraph))).ToArray();
-            switch (root.Expr)
+            currentPicks = currentPicks.Where(cur => _rootSearchGraph.TryGetEdge(parent, cur, out _)).ToArray();
+        }
+
+        // todo is currentPicks still > 1, we should find the low cost one.
+        var current = currentPicks[0];
+        if (!_memo.TryGetValue(current, out var expr))
+        {
+            _rootSearchGraph.TryGetOutEdges(current, out var edges);
+            var children = edges.GroupBy(e => e.InputIndex).Select(g => Visit(g.Select(e => e.InputGraph), current)).ToArray();
+            switch (current.Expr)
             {
                 case Var or TensorConst or TupleConst or None:
-                    expr = root.Expr;
+                    expr = current.Expr;
                     break;
                 case BaseFunction func:
                     expr = new Call(target: func, arguments: children);
@@ -912,10 +918,10 @@ internal sealed class ExprBuildVisitor
                     expr = @if.With(condition: children[^3], then: children[^2], @else: children[^1], paramList: children[..^3].ToArray());
                     break;
                 default:
-                    throw new NotSupportedException(root.Expr.GetType().Name);
+                    throw new NotSupportedException(current.Expr.GetType().Name);
             }
 
-            _memo.Add(root, expr);
+            _memo.Add(current, expr);
         }
 
         return expr;
