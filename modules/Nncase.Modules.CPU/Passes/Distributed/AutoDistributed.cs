@@ -706,7 +706,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                     CostModel.Cost cost;
                     switch (enode.Expr)
                     {
-                        case Const or Var or If or IR.Tuple or BaseFunction:
+                        case Const or Var or If or IR.Tuple or BaseFunction or IR.None:
                             cost = new CostModel.Cost() { [CostModel.CostFactorNames.CPUCycles] = 1 };
                             break;
                         case Op op:
