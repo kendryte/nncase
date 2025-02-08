@@ -23,6 +23,10 @@ public interface ICpuTargetOptions : ITargetOptions
 
     public int[] HierarchyBandWidths { get; }
 
+    public int[] HierarchySizes { get; }
+
+    public int[][] Hierarchies { get; }
+
     bool UnifiedMemoryArch { get; }
 }
 

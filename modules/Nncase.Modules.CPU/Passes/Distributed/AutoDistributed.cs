@@ -18,7 +18,7 @@ using QuikGraph.Graphviz;
 
 namespace Nncase.Passes.Distributed;
 
-internal enum SearchGraphKind : int
+public enum SearchGraphKind : int
 {
     Root,
     DistributedCluster,
@@ -51,7 +51,33 @@ public sealed partial class AutoDistributedPass : FunctionPass
         _moduleKind = moduleKind;
     }
 
+    public event Action<CpModel, DistributedSearchGraph, Dictionary<SearchableNode, BoolVar>, CompileOptions, ICpuTargetOptions>? OnExtract;
+
     public bool Bidirectional { get; }
+
+    public static void AllConstantMemoryConstrains(CpModel model, DistributedSearchGraph searchGraph, Dictionary<SearchableNode, BoolVar> vars, CompileOptions compileOptions, ICpuTargetOptions targetOptions)
+    {
+        var consts = vars.Keys.Where(k => k.Expr is Call { Target: IR.CPU.Boxing { NewType: DistributedType } } call && call.Arguments[0] is TensorConst tc && tc.Value.Length >= 8).ToArray();
+        model.Add(LinearExpr.WeightedSum(consts.Select(k => vars[k]), consts.Select(k =>
+        {
+            var type = DistributedUtility.GetDividedTensorType((DistributedType)k.Expr.CheckedType);
+            return TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
+        })) < (2L * 512L * 1024L * 1024L));
+    }
+
+    public static void SingleMemoryConstrains(CpModel model, DistributedSearchGraph searchGraph, Dictionary<SearchableNode, BoolVar> vars, CompileOptions compileOptions, ICpuTargetOptions targetOptions)
+    {
+        // var cpuTargetOptions = targetOptions;
+        foreach (var searchableNode in searchGraph.Vertices.Where(x => x.IRType is DistributedType))
+        {
+            if (targetOptions.HierarchySizes.Length > 1)
+            {
+                var type = DistributedUtility.GetDividedTensorType((DistributedType)searchableNode.IRType);
+                var size = TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
+                model.Add(vars[searchableNode] * size < targetOptions.HierarchySizes[^2] / targetOptions.Hierarchies[0][^1]);
+            }
+        }
+    }
 
     protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
     {
@@ -61,11 +87,12 @@ public sealed partial class AutoDistributedPass : FunctionPass
         }
 
         var rewriter = new AutoDistributedRewriter(_compileOptions, _compileOptions.TargetOptions is CpuTargetOptions options ? options : new CpuTargetOptions(), _moduleKind, _bidirectional);
+        rewriter.OnExtract += OnExtract;
         return Task.FromResult(rewriter.Rewirte(input));
     }
 }
 
-internal sealed class SearchableNode
+public sealed class SearchableNode
 {
     public SearchableNode(Expr expr, IRType type, bool isBidirect = false)
     {
@@ -81,7 +108,7 @@ internal sealed class SearchableNode
     public bool IsBidirect { get; }
 }
 
-internal sealed record CrossEdge : IEdge<SearchableNode>
+public sealed record CrossEdge : IEdge<SearchableNode>
 {
     public CrossEdge(SearchableNode root, SearchableNode input, int inputIndex, DistributedSearchGraph inputGraph)
     {
@@ -104,7 +131,7 @@ internal sealed record CrossEdge : IEdge<SearchableNode>
     public SearchableNode Target => Input;
 }
 
-internal sealed class DistributedSearchGraph : TieredAdjacencyGraph<SearchableNode, CrossEdge>
+public sealed class DistributedSearchGraph : TieredAdjacencyGraph<SearchableNode, CrossEdge>
 {
     public DistributedSearchGraph([NotNull] AdjacencyGraph<SearchableNode, CrossEdge> wrappedGraph, SearchGraphKind kind)
     : base(wrappedGraph)
@@ -159,6 +186,8 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         _bidirectional = bidirectional;
     }
 
+    public event Action<CpModel, DistributedSearchGraph, Dictionary<SearchableNode, BoolVar>, CompileOptions, ICpuTargetOptions>? OnExtract;
+
     public IRArray<Placement> Placements { get; }
 
     public bool Bidirectional { get; }
@@ -169,40 +198,9 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
     public IReadOnlyDictionary<string, (IRArray<SBP> NdSBP, Placement Placement)> Scheme { get; }
 
-    public static void MemoryExtractConstrains(CpModel model, IReadOnlyDictionary<ENode, BoolVar> vars)
-    {
-        var consts = vars.Keys.Where(k => k.Expr is Call { Target: IR.CPU.Boxing { NewType: DistributedType } } call && call.Arguments[0] is TensorConst tc && tc.Value.Length >= 8).ToArray();
-        model.Add(LinearExpr.WeightedSum(consts.Select(k => vars[k]), consts.Select(k =>
-        {
-            var type = DistributedUtility.GetDividedTensorType((DistributedType)k.Expr.CheckedType);
-            return TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
-        })) < (2L * 512L * 1024L * 1024L));
-    }
-
     public static IReadOnlyList<DistributedType> GetLeafCandidateDistTypes(TensorType tensorType, IEnumerable<Placement> placements)
     {
         return placements.Select(placement => DistributedUtility.GetLeafCandidateNDSBPs(tensorType, placement).Select(ndsbp => new DistributedType(tensorType, ndsbp, placement))).SelectMany(e => e).ToArray();
-    }
-
-    public void SingleNodeMemoryExtractConstrains(CpModel model, IReadOnlyDictionary<ENode, BoolVar> vars)
-    {
-        var distTypes = vars.Keys.Where(k => k.Expr.CheckedType is DistributedType dt).ToArray();
-        foreach (var k in distTypes)
-        {
-            if (TargetOptions.HierarchySizes.Length > 1)
-            {
-                var type = DistributedUtility.GetDividedTensorType((DistributedType)k.Expr.CheckedType);
-                var size = TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
-
-                if (k.Expr is Call { Target: IR.CPU.Boxing boxing } call && boxing.NewType is DistributedType distributedType && call.Arguments[0].CheckedType is DistributedType inType && inType.NdSBP.Any(sbp => sbp is SBPPartial) && distributedType != call.Arguments[0].CheckedType)
-                {
-                    type = DistributedUtility.GetDividedTensorType(inType);
-                    size += TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
-                }
-
-                model.Add(vars[k] * size < TargetOptions.HierarchySizes[^2] / TargetOptions.Hierarchies[0][^1]);
-            }
-        }
     }
 
     public void FilterByScheme(Expr expr, DistributedSearchGraph cluster)
@@ -777,7 +775,10 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             }
         }
 
-        // 3. add pick weights for all enode.
+        // 4. add custom constraints.
+        OnExtract?.Invoke(cpmodel, _rootSearchGraph, varMemo, CompileOptions, TargetOptions);
+
+        // 5. add pick weights for all enode.
         cpmodel.Minimize(LinearExpr.WeightedSum(_rootSearchGraph.Vertices.Select(n => varMemo[n]), _rootSearchGraph.Vertices.Select(n => checked((long)costMemo[n].Score))));
 
         if (cpmodel.Validate().Any())
