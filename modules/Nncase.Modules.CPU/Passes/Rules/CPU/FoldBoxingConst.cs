@@ -32,3 +32,21 @@ public partial class FoldBoxingConst : RewriteRule<Pattern>
         return new TensorConst(input, type.NdSBP, type.Placement);
     }
 }
+
+[RuleGenerator]
+public partial class UnfoldDistributedConst : RewriteRule<Pattern>
+{
+    /// <inheritdoc/>
+    public override Pattern Pattern { get; } = IsTensorConst("input");
+
+    private Expr? GetReplace(TensorConst input)
+    {
+        var type = input.CheckedType;
+        if (type is DistributedType)
+        {
+            return IR.F.CPU.Boxing(input.Value, type);
+        }
+
+        return null;
+    }
+}
