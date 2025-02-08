@@ -328,6 +328,11 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             }
         }
 
+        if (callCluster.VertexCount == 0)
+        {
+            throw new InvalidDataException($"Can't add any valid candidates for {expr.Target}");
+        }
+
         _inferedMemo.Add(expr, callCluster);
 
         if (!isSupported)
@@ -453,18 +458,16 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         if (expr is IR.Tuple tp)
         {
             var distCluster = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.DistributedCluster);
-            var buckets = new DistributedSearchGraph[tp.Fields.Length];
-            foreach (var (f, fGraph, i) in tp.Fields.AsValueEnumerable().Select((f, i) => (f, Visit(f), i)))
-            {
-                buckets[i] = TryAddOriginator(f).Clusters.OfType<DistributedSearchGraph>().First();
-            }
 
-            var tpnode = new SearchableNode(new IR.Tuple(), new TupleType(buckets.Select(g => g.Vertices.First().IRType).ToArray()));
-            var bucket = distCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
-            bucket.AddVertex(tpnode);
-            for (int i = 0; i < tp.Fields.Length; i++)
+            foreach (var buckets in tp.Fields.ToArray().Select(f => TryAddOriginator(f).Clusters.OfType<DistributedSearchGraph>()).CartesianProduct().Select(x => x.ToArray()))
             {
-                _rootSearchGraph.AddEdge(new(tpnode, buckets[i].Vertices.First(), i, buckets[i]));
+                var tpnode = new SearchableNode(new IR.Tuple(), new TupleType(buckets.Select(g => g.Vertices.First().IRType).ToArray()));
+                var bucket = distCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
+                bucket.AddVertex(tpnode);
+                for (int i = 0; i < buckets.Length; i++)
+                {
+                    _rootSearchGraph.AddEdge(new(tpnode, buckets[i].Vertices.First(), i, buckets[i]));
+                }
             }
 
             return distCluster;
@@ -711,7 +714,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                             break;
                         case Op op:
                             {
-                                if (!_rootSearchGraph.TryGetOutEdges(enode, out var edges))
+                                if (!_rootSearchGraph.TryGetOutEdges(enode, out var edges) || !edges.Any())
                                 {
                                     throw new NotSupportedException("graph doesn't contain the vertex.");
                                 }
@@ -757,15 +760,18 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
 
         // 3. no cycle
-        foreach (var cluster in _rootSearchGraph.Clusters.OfType<DistributedSearchGraph>())
+        if (Bidirectional)
         {
-            foreach (var sourceBucket in cluster.Clusters.OfType<DistributedSearchGraph>())
+            foreach (var cluster in _rootSearchGraph.Clusters.OfType<DistributedSearchGraph>())
             {
-                foreach (var destBucket in cluster.Clusters.OfType<DistributedSearchGraph>().Where(b => !ReferenceEquals(b, sourceBucket)))
+                foreach (var sourceBucket in cluster.Clusters.OfType<DistributedSearchGraph>())
                 {
-                    foreach (var (src, dest) in sourceBucket.Vertices.Where(v => v.IsBidirect).Zip(destBucket.Vertices.Where(v => v.IsBidirect)))
+                    foreach (var destBucket in cluster.Clusters.OfType<DistributedSearchGraph>().Where(b => !ReferenceEquals(b, sourceBucket)))
                     {
-                        cpmodel.AddBoolAnd([varMemo[src].Not(), varMemo[dest].Not()]);
+                        foreach (var (src, dest) in sourceBucket.Vertices.Where(v => v.IsBidirect).Zip(destBucket.Vertices.Where(v => v.IsBidirect)))
+                        {
+                            cpmodel.AddBoolAnd([varMemo[src].Not(), varMemo[dest].Not()]);
+                        }
                     }
                 }
             }
