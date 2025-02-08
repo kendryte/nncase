@@ -102,7 +102,7 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
             {
                 ndsbp[i] = input.NdSBP[i] switch
                 {
-                    SBPSplit { Axis: int axis } => SBP.S(axis + dimsValue.Select(i => i <= axis).Count(b => b)),
+                    SBPSplit { Axis: int axis } => SBP.S(axis + dimsValue.Select(i => i < 0 ? i + tensorType.Shape.Rank : i).Select(i => i <= axis).Count(b => b)),
                     SBP sbp => sbp,
                 };
             }

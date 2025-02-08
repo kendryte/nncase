@@ -137,21 +137,32 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                                 if (bid.Node.Op.GetType().Name.Contains("Matmul", StringComparison.Ordinal) && bid.IsOutput)
                                 {
                                     var kdim = bid.Node.WriteAccess.Domains.Length - 2;
-                                    var relatedWithK = bufferInfo.Masks[i].IsRelated(kdim);
                                     var val = value;
                                     bool isLoopRelated = false;
                                     while (val.Parent is TileNode parent)
                                     {
-                                        if (TileableNodeMemo.TryGetValue(val, out var m) && m.TileVars[kdim] != 1)
+                                        var m = TileableNodeMemo[val];
+                                        if (val.Level == value.Level)
                                         {
-                                            isLoopRelated = true;
-                                            break;
+                                            if (i > kdim && m.TileVars[kdim] != 1)
+                                            {
+                                                isLoopRelated = true;
+                                                break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (m.TileVars[kdim] != 1)
+                                            {
+                                                isLoopRelated = true;
+                                                break;
+                                            }
                                         }
 
                                         val = parent;
                                     }
 
-                                    if (relatedWithK && isLoopRelated)
+                                    if (isLoopRelated)
                                     {
                                         letBuilder.Body(T.Memcopy(subViewVar, srcBufView));
                                     }
