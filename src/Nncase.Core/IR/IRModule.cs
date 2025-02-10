@@ -27,6 +27,7 @@ public sealed class IRModule
     public IRModule(BaseFunction main)
     {
         _functions = new() { main };
+        Entry = main;
         main.AddUser(_exprUser);
     }
 

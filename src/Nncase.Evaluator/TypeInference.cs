@@ -459,6 +459,8 @@ public static class TypeInference
 
         return (thenType, elseType) switch
         {
+            (NoneType then, IRType @else) => @else,
+            (IRType then, NoneType @else) => then,
             (TensorType then, TensorType @else) => CommonTypeImpl(then, @else),
             (TupleType then, TupleType @else) => then.Count != @else.Count
                 ? new InvalidType($"tuple Inputs of if should be same count, then: {then.Count}, else: {@else.Count}")
