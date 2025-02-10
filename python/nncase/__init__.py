@@ -33,7 +33,7 @@ import warnings
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 import _nncase
-from _nncase import RuntimeTensor, TensorDesc, Simulator, CpuTargetOptions, NocArchitecture, HierarchyKind, MemoryAccessArchitecture
+from _nncase import RuntimeTensor, TensorDesc, Simulator, CpuTargetOptions, NocArchitecture, HierarchyKind, MemoryAccessArchitecture, AutoDistributedSearchStrategy
 
 
 def _initialize():
