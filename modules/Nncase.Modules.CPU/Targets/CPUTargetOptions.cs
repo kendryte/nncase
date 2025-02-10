@@ -30,6 +30,13 @@ public enum NocArchitecture : byte
     CrossBar = 1,
 }
 
+public enum AutoDistributedSearchStrategy : uint
+{
+    ExpandPartial = 0,
+    ExpandAll,
+    NoExpand,
+}
+
 public class CpuTargetOptions : ICpuTargetOptions
 {
     [DisplayName("--model-name")]
@@ -111,6 +118,12 @@ public class CpuTargetOptions : ICpuTargetOptions
     [Description("the distributed scheme path.")]
     [DefaultValue("")]
     public string DistributedScheme { get; set; } = string.Empty;
+
+    [DisplayName("--distributed-search-strategy")]
+    [Description("the distributed search strategy.")]
+    [DefaultValue(AutoDistributedSearchStrategy.ExpandPartial)]
+    [CommandLine.FromAmong(AutoDistributedSearchStrategy.ExpandPartial, AutoDistributedSearchStrategy.ExpandAll, AutoDistributedSearchStrategy.NoExpand)]
+    public AutoDistributedSearchStrategy DistributedSearchStrategy { get; set; } = AutoDistributedSearchStrategy.ExpandPartial;
 
     [DisplayName("--custom-op-scheme")]
     [Description("the custom-op scheme path.")]

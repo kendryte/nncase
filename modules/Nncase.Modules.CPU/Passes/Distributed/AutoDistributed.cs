@@ -39,21 +39,15 @@ public sealed partial class AutoDistributedPass : FunctionPass
 {
     private readonly CompileOptions _compileOptions;
 
-    private readonly bool _bidirectional;
-
     private readonly string _moduleKind;
 
-    public AutoDistributedPass(bool bidirectional, string moduleKind, CompileOptions compileOptions)
+    public AutoDistributedPass(string moduleKind, CompileOptions compileOptions)
     {
-        Bidirectional = bidirectional;
         _compileOptions = compileOptions;
-        _bidirectional = bidirectional;
         _moduleKind = moduleKind;
     }
 
     public event Action<CpModel, DistributedSearchGraph, Dictionary<SearchableNode, BoolVar>, CompileOptions, ICpuTargetOptions>? OnExtract;
-
-    public bool Bidirectional { get; }
 
     public static void AllConstantMemoryConstrains(CpModel model, DistributedSearchGraph searchGraph, Dictionary<SearchableNode, BoolVar> vars, CompileOptions compileOptions, ICpuTargetOptions targetOptions)
     {
@@ -70,11 +64,13 @@ public sealed partial class AutoDistributedPass : FunctionPass
         // var cpuTargetOptions = targetOptions;
         foreach (var searchableNode in searchGraph.Vertices.Where(x => x.IRType is DistributedType))
         {
-            if (targetOptions.HierarchySizes.Length > 1)
+            var distType = (DistributedType)searchableNode.IRType;
+            if (targetOptions.HierarchySizes.Length > 1 && searchableNode.Expr is TensorConst && distType.TensorType.Shape.ToValueArray().SequenceEqual(new[] { 32, 128, 2 }) && distType.NdSBP.All(sbp => sbp is SBPBroadCast))
             {
-                var type = DistributedUtility.GetDividedTensorType((DistributedType)searchableNode.IRType);
-                var size = TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
-                model.Add(vars[searchableNode] * size < targetOptions.HierarchySizes[^2] / targetOptions.Hierarchies[0][^1]);
+                // var type = DistributedUtility.GetDividedTensorType((DistributedType)searchableNode.IRType);
+                // var size = TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
+                // model.Add(vars[searchableNode] * size < targetOptions.HierarchySizes[^2] / targetOptions.Hierarchies[0][^1]);
+                model.AddAssumption(vars[searchableNode].Not());
             }
         }
     }
@@ -86,7 +82,7 @@ public sealed partial class AutoDistributedPass : FunctionPass
             return Task.FromResult(input);
         }
 
-        var rewriter = new AutoDistributedRewriter(_compileOptions, _compileOptions.TargetOptions is CpuTargetOptions options ? options : new CpuTargetOptions(), _moduleKind, _bidirectional);
+        var rewriter = new AutoDistributedRewriter(_compileOptions, _compileOptions.TargetOptions is CpuTargetOptions options ? options : new CpuTargetOptions(), _moduleKind);
         rewriter.OnExtract += OnExtract;
         return Task.FromResult(rewriter.Rewirte(input));
     }
@@ -160,12 +156,9 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
     private readonly string _moduleKind;
 
-    private readonly bool _bidirectional;
-
-    public AutoDistributedRewriter(CompileOptions compileOptions, CpuTargetOptions targetOptions, string moduleKind = "cpu", bool bidirectional = false)
+    public AutoDistributedRewriter(CompileOptions compileOptions, CpuTargetOptions targetOptions, string moduleKind = "cpu")
     {
         Placements = targetOptions.Hierarchies.Select(h => new Placement(h, targetOptions.HierarchyNames)).ToArray();
-        Bidirectional = bidirectional;
         CompileOptions = compileOptions;
         TargetOptions = targetOptions;
         _moduleKind = moduleKind;
@@ -183,14 +176,11 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         _rootGraph = new(true);
         _rootSearchGraph = new(_rootGraph, SearchGraphKind.Root);
         _moduleKind = moduleKind;
-        _bidirectional = bidirectional;
     }
 
     public event Action<CpModel, DistributedSearchGraph, Dictionary<SearchableNode, BoolVar>, CompileOptions, ICpuTargetOptions>? OnExtract;
 
     public IRArray<Placement> Placements { get; }
-
-    public bool Bidirectional { get; }
 
     public CompileOptions CompileOptions { get; }
 
@@ -338,21 +328,60 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             return default;
         }
 
-        // 3. add bidirectional connections.
-        if (Bidirectional)
+        // 3. add expand connections.
+        switch (TargetOptions.DistributedSearchStrategy)
         {
-            foreach (var (lType, lBucket) in bucketMemo.Where(kv => kv.Key is DistributedType))
-            {
-                foreach (var (rType, rBucket) in bucketMemo.Where(kv => kv.Key is DistributedType distributedType && distributedType != lType))
+            case AutoDistributedSearchStrategy.ExpandAll:
+                foreach (var (lType, lBucket) in bucketMemo.Where(kv => kv.Key is DistributedType))
                 {
-                    if (Evaluator.IR.CPU.BoxingEvaluator.VisitType(lType, rType) is not InvalidType)
+                    foreach (var (rType, rBucket) in bucketMemo.Where(kv => kv.Key is DistributedType distributedType && distributedType != lType))
                     {
-                        var rnode = new SearchableNode(new Boxing(rType), rType, true);
-                        rBucket.AddVertex(rnode);
-                        callCluster.AddEdge(new(rnode, lBucket.Vertices.First(), 0, lBucket));
+                        if (Evaluator.IR.CPU.BoxingEvaluator.VisitType(lType, rType) is not InvalidType)
+                        {
+                            var rnode = new SearchableNode(new Boxing(rType), rType, true);
+                            rBucket.AddVertex(rnode);
+                            callCluster.AddEdge(new(rnode, lBucket.Vertices.First(), 0, lBucket));
+                        }
                     }
                 }
-            }
+
+                break;
+            case AutoDistributedSearchStrategy.ExpandPartial:
+#pragma warning disable SA1008 // Opening parenthesis should be spaced correctly
+                // partial -> broadcast
+                foreach (var (lType, lBucket) in bucketMemo.Where(kv => kv.Key is DistributedType ldistType && ldistType.NdSBP.Any(sbp => sbp is SBPPartial)))
+                {
+                    var ldistType = (DistributedType)lType;
+                    foreach (var (rType, rBucket) in bucketMemo.Where(kv => kv.Key is DistributedType rdistType && ldistType.NdSBP.Zip(rdistType.NdSBP).All(p => (p.First, p.Second) switch { (SBPPartial, SBPBroadCast) => true, (SBP a, SBP b) => a == b })))
+                    {
+                        if (Evaluator.IR.CPU.BoxingEvaluator.VisitType(lType, rType) is not InvalidType)
+                        {
+                            var rnode = new SearchableNode(new Boxing(rType), rType);
+                            rBucket.AddVertex(rnode);
+                            callCluster.AddEdge(new(rnode, lBucket.Vertices.First(), 0, lBucket));
+                        }
+                    }
+                }
+
+                // broadcast -> split
+                foreach (var (lType, lBucket) in bucketMemo.Where(kv => kv.Key is DistributedType ldistType && ldistType.NdSBP.All(sbp => sbp is SBPSplit or SBPBroadCast)))
+                {
+                    var ldistType = (DistributedType)lType;
+                    foreach (var (rType, rBucket) in bucketMemo.Where(kv => kv.Key is DistributedType rdistType && ldistType.NdSBP.Zip(rdistType.NdSBP).All(p => (p.First, p.Second) switch { (SBPBroadCast, SBPBroadCast or SBPSplit) => true, (SBP a, SBP b) => a == b }) && ldistType != rdistType))
+                    {
+                        if (Evaluator.IR.CPU.BoxingEvaluator.VisitType(lType, rType) is not InvalidType)
+                        {
+                            var rnode = new SearchableNode(new Boxing(rType), rType);
+                            rBucket.AddVertex(rnode);
+                            callCluster.AddEdge(new(rnode, lBucket.Vertices.First(), 0, lBucket));
+                        }
+                    }
+                }
+#pragma warning restore SA1008 // Opening parenthesis should be spaced correctly
+
+                break;
+            default:
+                throw new ArgumentOutOfRangeException($"{TargetOptions.DistributedSearchStrategy}");
         }
 
         // 4. add not infered type in search space.
@@ -758,7 +787,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
 
         // 3. no cycle
-        if (Bidirectional)
+        if (TargetOptions.DistributedSearchStrategy is AutoDistributedSearchStrategy.ExpandAll)
         {
             foreach (var cluster in _rootSearchGraph.Clusters.OfType<DistributedSearchGraph>())
             {

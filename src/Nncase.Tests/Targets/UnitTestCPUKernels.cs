@@ -647,6 +647,40 @@ public sealed class UnitTestCPUKernels : TestClassBase
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, new[] { unary });
     }
 
+    [Theory]
+    [InlineData([true, new[] { 4, 4 }, 0])] // enable packing
+    public async Task TestLlamaBMM(bool packing, int[] hierarchy, int number)
+    {
+        var options = (CpuTargetOptions)CompileOptions.TargetOptions;
+        options.Packing = packing;
+        options.Hierarchies[0] = hierarchy;
+        options.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        options.HierarchySizes = Enumerable.Repeat((int)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        options.HierarchyLatencies = Enumerable.Repeat(10000, hierarchy.Length).ToArray();
+
+        var var_5 = new Var("var_5", new TensorType(DataTypes.Float32, new[] { 1, 384, 4096 }));
+        var var_9 = new Var("var_9", new TensorType(DataTypes.Float32, new[] { 1, 384, 4096 }));
+        Expr pre;
+        {
+            var v33 = IR.F.Math.MatMul(var_9, IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 5, new[] { 4096, 4096 }).Evaluate().AsTensor());
+            var v34 = IR.F.Math.Binary(BinaryOp.Add, var_5, v33);
+            var v35 = IR.F.NN.LayerNorm(2, 1E-06f, v34, IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 6, new[] { 4096 }).Evaluate().AsTensor(), IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 7, new[] { 4096 }).Evaluate().AsTensor(), false);
+            var v36 = IR.F.Math.MatMul(v35, IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 8, new[] { 4096, 11008 }).Evaluate().AsTensor());
+            pre = v36;
+        }
+
+        var input_tensor1 = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 100, new[] { 1, 384, 4096 }).Evaluate().AsTensor();
+        var input_tensor5 = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 104, new[] { 1, 384, 4096 }).Evaluate().AsTensor();
+        var feedDict = new Dictionary<Var, IValue>()
+        {
+            { var_5, Value.FromTensor(input_tensor1) },
+            { var_9, Value.FromTensor(input_tensor5) },
+        };
+
+        var posts = new[] { pre };
+        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, posts);
+    }
+
     [Theory(Skip = "ToBig")]
     [InlineData(new object[] { false, 0 })]
     [InlineData(new object[] { true, 1 })] // enable packing
@@ -837,6 +871,10 @@ public sealed class UnitTestCPUKernels : TestClassBase
     private async Task Compile(IRModule module)
     {
         var pmgr = CompileSession.CreatePassManager("pmgr");
+        pmgr.AddWithName<Passes.DataflowPass>("PreProcess").Configure(p =>
+        {
+            p.Add<Passes.Rules.Neutral.DecomposeLayerNorm>();
+        });
         CompileSession.Target.RegisterTargetDependentAfterQuantPass(pmgr, CompileSession.CompileOptions);
         CompileSession.Target.RegisterTargetDependentBeforeCodeGen(pmgr, CompileSession.CompileOptions);
         await pmgr.RunAsync(module);
