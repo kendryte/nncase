@@ -537,7 +537,30 @@ public static class TypeInference
                 ? new InvalidType($"tuple Inputs of if should be same count, then: {then.Count}, else: {@else.Count}")
                 : new TupleType(then.Zip(@else).Select(tuple => CommonType(tuple.First, tuple.Second))),
             (DistributedType then, DistributedType @else) => DistributedCommonTypeImpl(then, @else),
-            _ => new InvalidType($"Inputs of if should be same IRType Kind, but then:{thenType}, else: {elseType}"),
+            (InvalidType then, _) => then,
+            (_, InvalidType @else) => @else,
+            _ => AnyType.Default,
         };
+    }
+
+    public static IRType[] BroadcastDistributeTypes(params IRType[] types)
+    {
+        var placement = types.OfType<DistributedType>().FirstOrDefault()?.Placement;
+        if (placement != null)
+        {
+            var newTypes = types.ToArray();
+            var ndsbp = new IRArray<SBP>(Enumerable.Repeat(SBP.B, placement.Rank));
+            foreach (ref var newType in newTypes.AsSpan())
+            {
+                if (newType is TensorType tensorType)
+                {
+                    newType = new DistributedType(tensorType, ndsbp, placement);
+                }
+            }
+
+            return newTypes;
+        }
+
+        return types;
     }
 }

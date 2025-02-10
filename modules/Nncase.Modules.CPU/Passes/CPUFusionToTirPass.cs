@@ -28,7 +28,7 @@ public sealed class CpuBufferSizeCalculator : BufferSchedule.BufferSizeCalculato
 {
     protected override Result VisitCall(Call expr)
     {
-        if (expr is Call { Target: IR.CPU.Boxing boxing } && boxing.NewType is TensorType ttype)
+        if (expr is Call { Target: IR.Distributed.Boxing boxing } && boxing.NewType is TensorType ttype)
         {
             var res = VisitType(ttype);
             return new(0, res.Shape, res.Stride);

@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Nncase.CodeGen;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.Passes.Mutators;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Passes.Rules.ShapeExpr;
 using Nncase.Quantization;
@@ -55,7 +56,7 @@ internal sealed class SimplifyProvider : ISimplifyProvider
         _compileSession = CompileSession.Create(new SimplifyTarget(), new CompileOptions());
         using var compileScope = new CompileSessionScope(_compileSession);
         _rules = [
-            new FoldConstCall(),
+            new Rules.Neutral.FoldConstCall(),
             new SliceToGetItem(),
             new GatherToGetItem(),
             new FoldGetItemShapeOf(),
@@ -68,13 +69,19 @@ internal sealed class SimplifyProvider : ISimplifyProvider
     public Expr SimplifyForDimension(Expr expr)
     {
 #if true
-        if (expr is not (Const or Var))
+        if (expr.CheckedType is DistributedType || expr is not (Const or Var))
         {
             if (!_simplifiedExprs.TryGetValue(expr, out var simplifiedExpr))
             {
+                simplifiedExpr = expr;
+                if (expr.CheckedType is DistributedType)
+                {
+                    simplifiedExpr = new RemoveBoxingCloner().Clone(expr, default);
+                }
+
                 using var compileScope = new CompileSessionScope(CompileSessionScope.Current ?? _compileSession);
                 using var dumpScope = new DumpScope(NullDumpper.Instance);
-                simplifiedExpr = CompilerServices.Rewrite(expr, _rules, new RunPassContext());
+                simplifiedExpr = CompilerServices.Rewrite(simplifiedExpr, _rules, new RunPassContext());
                 _simplifiedExprs.Add(expr, simplifiedExpr);
                 _simplifiedExprs.TryAdd(simplifiedExpr, simplifiedExpr);
             }

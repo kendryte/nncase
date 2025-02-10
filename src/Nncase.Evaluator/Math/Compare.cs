@@ -119,8 +119,8 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
     {
         var lhs = context.CheckArgumentType<IRType>(target, Compare.Lhs);
         var rhs = context.CheckArgumentType<IRType>(target, Compare.Rhs);
-
-        return (lhs, rhs) switch
+        var operandTypes = TypeInference.BroadcastDistributeTypes(lhs, rhs);
+        return (operandTypes[0], operandTypes[1]) switch
         {
             (TensorType a, TensorType b) => Visit(a, b),
             (DistributedType a, DistributedType b) => Visit(a, b),

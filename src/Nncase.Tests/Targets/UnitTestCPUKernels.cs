@@ -115,7 +115,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var placement = new Placement(hierarchy, targetOptions.HierarchyNames);
         var ndsbp = Enumerable.Repeat<SBP>(SBP.B, hierarchy.Length).ToArray();
         var posts = new List<Call>();
-        var broadcast = IR.F.CPU.Boxing(input, new DistributedType(inputType, ndsbp, placement));
+        var broadcast = IR.F.Distributed.Boxing(input, new DistributedType(inputType, ndsbp, placement));
         foreach (var comb in LinqUtility.Combination(hierarchy.Length))
         {
             var newsbp = ndsbp.ToArray();
@@ -124,9 +124,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
                 newsbp[axis] = SBP.P;
             }
 
-            var partial = IR.F.CPU.Boxing(broadcast, new DistributedType(inputType, newsbp, placement));
-            var sumed = IR.F.CPU.Boxing(partial, new DistributedType(inputType, ndsbp, placement));
-            var post = IR.F.CPU.Boxing(sumed, inputType);
+            var partial = IR.F.Distributed.Boxing(broadcast, new DistributedType(inputType, newsbp, placement));
+            var sumed = IR.F.Distributed.Boxing(partial, new DistributedType(inputType, ndsbp, placement));
+            var post = IR.F.Distributed.Boxing(sumed, inputType);
             post.Metadata = new Passes.Distributed.AutoDistributedMetaData() { Skip = true };
             posts.Add(post);
         }
@@ -153,13 +153,13 @@ public sealed class UnitTestCPUKernels : TestClassBase
         };
 
         var placement = new Placement(hierarchy, targetOptions.HierarchyNames);
-        var lhsBoxing = IR.F.CPU.Boxing(lhs, new DistributedType(lhsType, new SBP[] { SBP.S(2), SBP.B }, placement));
-        var rhsBoxing = IR.F.CPU.Boxing(rhs, new DistributedType(rhsType, new SBP[] { SBP.S(0), SBP.S(1) }, placement));
+        var lhsBoxing = IR.F.Distributed.Boxing(lhs, new DistributedType(lhsType, new SBP[] { SBP.S(2), SBP.B }, placement));
+        var rhsBoxing = IR.F.Distributed.Boxing(rhs, new DistributedType(rhsType, new SBP[] { SBP.S(0), SBP.S(1) }, placement));
         var matmul = IR.F.Tensors.MatMul(lhsBoxing, rhsBoxing);
         var newShape = new[] { 1, 4, 8, 2 };
-        var reshape = IR.F.CPU.Boxing(matmul, new DistributedType(new TensorType(DataTypes.Float32, newShape), new SBP[] { SBP.B, SBP.S(2) }, placement), true);
-        var sumed = IR.F.CPU.Boxing(reshape, new DistributedType(new TensorType(DataTypes.Float32, newShape), new SBP[] { SBP.S(1), SBP.S(2) }, placement));
-        var post = IR.F.CPU.Boxing(sumed, new TensorType(DataTypes.Float32, newShape));
+        var reshape = IR.F.Distributed.Boxing(matmul, new DistributedType(new TensorType(DataTypes.Float32, newShape), new SBP[] { SBP.B, SBP.S(2) }, placement), true);
+        var sumed = IR.F.Distributed.Boxing(reshape, new DistributedType(new TensorType(DataTypes.Float32, newShape), new SBP[] { SBP.S(1), SBP.S(2) }, placement));
+        var post = IR.F.Distributed.Boxing(sumed, new TensorType(DataTypes.Float32, newShape));
         post.Metadata = new Passes.Distributed.AutoDistributedMetaData() { Skip = true };
 
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{0}"), feedDict, new[] { post });

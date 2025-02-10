@@ -6,6 +6,7 @@ using Google.OrTools.Sat;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.CPU;
+using Nncase.IR.Distributed;
 using Nncase.IR.Imaging;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
@@ -93,7 +94,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             case IR.Math.Clamp clamp:
                 GenerateClamp(arguments, ret, ((TensorConst)expr[IR.Math.Clamp.Min]).Value.ToScalar<float>(), ((TensorConst)expr[IR.Math.Clamp.Max]).Value.ToScalar<float>());
                 break;
-            case IR.CPU.Boxing boxing:
+            case IR.Distributed.Boxing boxing:
                 GenerateBoxing(boxing, arguments, ret, expr);
                 break;
             case Binary binary:
@@ -352,7 +353,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
         _mainBody.Add(TIR.F.CPU.Clamp(arguments[0], ret, min, max));
     }
 
-    private void GenerateBoxing(IR.CPU.Boxing boxing, Buffer[] arguments, Buffer ret, Call expr)
+    private void GenerateBoxing(IR.Distributed.Boxing boxing, Buffer[] arguments, Buffer ret, Call expr)
     {
         switch (expr.Arguments[0].CheckedType, boxing.NewType)
         {

@@ -6,10 +6,10 @@ using System.Collections.Generic;
 using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
-using Nncase.IR.CPU;
+using Nncase.IR.Distributed;
 using Nncase.Utilities;
 
-namespace Nncase.Evaluator.IR.CPU;
+namespace Nncase.Evaluator.IR.Distributed;
 
 public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Boxing>, IEvaluator<Boxing>
 {

@@ -53,6 +53,8 @@ public abstract partial class ExprRewriter<TContext> : ExprVisitor<Expr, IRType,
 
     public override IRType VisitTypeLeaf(InvalidType type, TContext context) => type;
 
+    public override IRType VisitTypeLeaf(NoneType type, TContext context) => type;
+
     public override IRType VisitTypeLeaf(TensorType type, TContext context) => type;
 
     public override IRType VisitTypeLeaf(TupleType type, TContext context) => type;

@@ -87,6 +87,6 @@ public class UnitTestDistributeScheme : TestClassBase
 
         Dumpper.DumpIR(result, "result");
 
-        Assert.True(result is Function { Body: Call { Target: IR.CPU.Boxing } boxing } && boxing.Arguments[0] is Call { Target: IR.Math.Unary { UnaryOp: UnaryOp.Cos } } unary && unary.CheckedType is DistributedType dt && dt == new DistributedType(new(DataTypes.Float32, new[] { 1, 512, 8192 }), new[] { SBP.S(1), SBP.S(2), SBP.S(2) }, new(new[] { 8, 8, 4 }, "cbt")));
+        Assert.True(result is Function { Body: Call { Target: IR.Distributed.Boxing } boxing } && boxing.Arguments[0] is Call { Target: IR.Math.Unary { UnaryOp: UnaryOp.Cos } } unary && unary.CheckedType is DistributedType dt && dt == new DistributedType(new(DataTypes.Float32, new[] { 1, 512, 8192 }), new[] { SBP.S(1), SBP.S(2), SBP.S(2) }, new(new[] { 8, 8, 4 }, "cbt")));
     }
 }

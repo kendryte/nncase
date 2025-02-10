@@ -31,8 +31,8 @@ public sealed class CPUFunctionPartitionPass : ModulePass
                 var ctx = new GraphPartition.GraphContext();
                 var convertor = new GraphPartition.GraphConvertor(x => x switch
                 {
-                    Call call => (call.Target is IR.CPU.Boxing || call.CheckedType is DistributedType) ? Compat.COMPATIBLE : Compat.INCOMPATIBLE,
-                    IR.Tuple tp => tp.Fields.ToArray().Any(f => f is Call { Target: IR.CPU.Boxing } b && b.CheckedType is TensorType) ? Compat.INCOMPATIBLE : Compat.COMPATIBLE,
+                    Call call => (call.Target is IR.Distributed.Boxing || call.CheckedType is DistributedType) ? Compat.COMPATIBLE : Compat.INCOMPATIBLE,
+                    IR.Tuple tp => tp.Fields.ToArray().Any(f => f is Call { Target: IR.Distributed.Boxing } b && b.CheckedType is TensorType) ? Compat.INCOMPATIBLE : Compat.COMPATIBLE,
                     _ => Compat.INCOMPATIBLE,
                 });
                 convertor.Visit(pre.Body, ctx);
@@ -82,7 +82,7 @@ public sealed class CPUFunctionPartitionPass : ModulePass
 
                         if (clonedRoot is IR.Tuple tuple)
                         {
-                            clonedRoot = new IR.Tuple(tuple.Fields.AsValueEnumerable().Select(f => f.CheckedType is DistributedType d ? IR.F.CPU.Boxing(f, d.TensorType) : f).ToArray());
+                            clonedRoot = new IR.Tuple(tuple.Fields.AsValueEnumerable().Select(f => f.CheckedType is DistributedType d ? IR.F.Distributed.Boxing(f, d.TensorType) : f).ToArray());
                         }
 
                         var rootCall = new Call(new Fusion($"Function_{i}_fusion_{vi}_kernel", ModuleKind, clonedRoot, newInputs), ctx.VarMap[ctx.SummaryVertexSubgraphMap[vertex]].Keys.Select(e => exprMemo[e]).ToArray());

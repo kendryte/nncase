@@ -221,11 +221,12 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
     /// </summary>
     /// <param name="dimensions">Dimensions.</param>
     public Shape(params Expr[] dimensions)
-        : base(dimensions.ToArray())
+        : base(dimensions.Select(CompilerServices.FastSimplifyForDimension).ToArray())
     {
-        foreach (var dim in dimensions)
+        foreach (var dim in Dimensions)
         {
-            if (dim.CheckedType != TensorType.Scalar(DataTypes.Int64))
+            if (dim.CheckedType != TensorType.Scalar(DataTypes.Int64)
+                && dim.CheckedType != NoneType.Default)
             {
                 throw new ArgumentException($"Invalid dimension type: {dim.CheckedType}");
             }

@@ -30,8 +30,8 @@ public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEv
     public IRType Visit(ITypeInferenceContext context, Clamp target)
     {
         var input = context.CheckArgumentType<IRType>(target, Clamp.Input);
-        var min = context.CheckArgumentType<TensorType>(target, Clamp.Min);
-        var max = context.CheckArgumentType<TensorType>(target, Clamp.Max);
+        var min = context.CheckArgumentTensorTypeOrBroadcast(target, Clamp.Min);
+        var max = context.CheckArgumentTensorTypeOrBroadcast(target, Clamp.Max);
 
         return input switch
         {

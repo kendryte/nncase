@@ -3,8 +3,10 @@
 
 using Nncase.IR;
 using Nncase.IR.CPU;
+using Nncase.IR.Distributed;
 using Nncase.PatternMatch;
 using static Nncase.PatternMatch.F.CPU;
+using static Nncase.PatternMatch.F.Distributed;
 using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Passes.Rules.CPU;
@@ -57,7 +59,7 @@ public sealed partial class SwapUnpackReduce : IRewriteRule
         if (call.CheckedType is DistributedType dt && dt.NdSBP.Any(s => s == SBP.P))
         {
             var newType = new DistributedType(dt.TensorType, dt.NdSBP.Select(s => s is SBPPartialSum ? SBP.B : s).ToArray(), dt.Placement);
-            var newBoxing = IR.F.CPU.Boxing(call, newType, boxing.IsReshape);
+            var newBoxing = IR.F.Distributed.Boxing(call, newType, boxing.IsReshape);
             return IR.F.CPU.Unpack(newBoxing, [.. unpack.Lanes], [.. unpack.Axes]);
         }
 

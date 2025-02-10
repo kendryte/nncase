@@ -15,6 +15,7 @@ using Nncase.CostModel;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.CPU;
+using Nncase.IR.Distributed;
 using Nncase.IR.F;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
@@ -79,7 +80,7 @@ public class UnitTestGraphPartition : TestClassBase
     public async Task TestLineSmaeModuleC()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-        var main = new Function("main", IR.F.Math.Abs(IR.F.CPU.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")))), input);
+        var main = new Function("main", IR.F.Math.Abs(IR.F.Distributed.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")))), input);
 
         Assert.True(CompilerServices.InferenceType(main));
 
@@ -114,7 +115,7 @@ public class UnitTestGraphPartition : TestClassBase
     public async Task TestLineDiffModuleC2I()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-        var main = new Function("main", IR.F.Math.Abs(IR.F.CPU.Boxing(input, input.CheckedType)), input);
+        var main = new Function("main", IR.F.Math.Abs(IR.F.Distributed.Boxing(input, input.CheckedType)), input);
 
         Assert.True(CompilerServices.InferenceType(main));
 
@@ -149,7 +150,7 @@ public class UnitTestGraphPartition : TestClassBase
     public async Task TestLineDiffModuleI2C()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-        var main = new Function("main", IR.F.CPU.Boxing(IR.F.Math.Abs(input), input.CheckedType), input);
+        var main = new Function("main", IR.F.Distributed.Boxing(IR.F.Math.Abs(input), input.CheckedType), input);
 
         Assert.True(CompilerServices.InferenceType(main));
 
@@ -225,8 +226,8 @@ public class UnitTestGraphPartition : TestClassBase
     {
         var input1 = new Var("input1", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
         var input2 = new Var("input2", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-        var v_0 = IR.F.CPU.Boxing(input1, new DistributedType(input1.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
-        var v_1 = IR.F.CPU.Boxing(input2, new DistributedType(input2.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
+        var v_0 = IR.F.Distributed.Boxing(input1, new DistributedType(input1.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
+        var v_1 = IR.F.Distributed.Boxing(input2, new DistributedType(input2.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
         var v_2 = IR.F.Math.Binary(BinaryOp.Add, v_0, v_1);
         var main = new Function("main", v_2, input1, input2);
 
@@ -299,7 +300,7 @@ public class UnitTestGraphPartition : TestClassBase
     public async Task TestHandInHandSameModuleC()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-        var v_0 = IR.F.CPU.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
+        var v_0 = IR.F.Distributed.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
         var v_1 = IR.F.Math.Binary(BinaryOp.Add, v_0, v_0);
         var main = new Function("main", v_1, input);
         Assert.True(CompilerServices.InferenceType(main));
@@ -334,7 +335,7 @@ public class UnitTestGraphPartition : TestClassBase
     public async Task TestCircle1SameModule()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-        var v_0 = IR.F.CPU.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
+        var v_0 = IR.F.Distributed.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
         var v_1 = IR.F.Math.Unary(UnaryOp.Cos, v_0);
         var v_2 = IR.F.Math.Binary(BinaryOp.Add, v_0, v_1);
 
@@ -372,7 +373,7 @@ public class UnitTestGraphPartition : TestClassBase
     public async Task TestCircle2SameModule()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-        var v_0 = IR.F.CPU.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
+        var v_0 = IR.F.Distributed.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
         var v_1 = IR.F.Math.Unary(UnaryOp.Cos, v_0);
         var v_2 = IR.F.Math.Unary(UnaryOp.Neg, v_0);
         var v_3 = IR.F.Math.Binary(BinaryOp.Add, v_1, v_2);
@@ -411,10 +412,10 @@ public class UnitTestGraphPartition : TestClassBase
     public async Task TestCircle2DiffModule()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-        var v_0 = IR.F.CPU.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
-        var v_1 = IR.F.Math.Cos(IR.F.CPU.Boxing(v_0, input.CheckedType));
+        var v_0 = IR.F.Distributed.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
+        var v_1 = IR.F.Math.Cos(IR.F.Distributed.Boxing(v_0, input.CheckedType));
         var v_2 = IR.F.Math.Sin(v_0);
-        var v_3 = IR.F.Math.Add(IR.F.CPU.Boxing(v_1, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t"))), v_2);
+        var v_3 = IR.F.Math.Add(IR.F.Distributed.Boxing(v_1, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t"))), v_2);
         var v_4 = IR.F.Math.Neg(v_3);
         var main = new Function("main", v_4, new[] { input });
 
@@ -451,7 +452,7 @@ public class UnitTestGraphPartition : TestClassBase
     public async Task TestCircle3SameModule()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-        var v_0 = IR.F.CPU.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
+        var v_0 = IR.F.Distributed.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
         var v_1 = IR.F.Math.Unary(UnaryOp.Abs, v_0);
         var v_2 = IR.F.Math.Unary(UnaryOp.Cos, v_0);
         var v_3 = IR.F.Math.Unary(UnaryOp.Neg, v_2);
@@ -490,7 +491,7 @@ public class UnitTestGraphPartition : TestClassBase
     public async Task TestCircle4SameModule()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-        var v_0 = IR.F.CPU.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
+        var v_0 = IR.F.Distributed.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
         var v_1 = IR.F.Math.Unary(UnaryOp.Abs, v_0);
         var v_2 = IR.F.Math.Unary(UnaryOp.Cos, v_1);
         var v_3 = IR.F.Math.Binary(BinaryOp.Add, v_0, v_2);
@@ -528,8 +529,8 @@ public class UnitTestGraphPartition : TestClassBase
     public async Task TestCircle5SameModule()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-        var v_0 = IR.F.CPU.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
-        var v_1 = IR.F.CPU.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
+        var v_0 = IR.F.Distributed.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
+        var v_1 = IR.F.Distributed.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
         var v_2 = IR.F.Math.Binary(BinaryOp.Add, v_0, v_1);
         var main = new Function("main", v_2, new[] { input });
 
@@ -565,8 +566,8 @@ public class UnitTestGraphPartition : TestClassBase
     public async Task TestTuple1SameModule()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-        var v_0 = IR.F.CPU.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
-        var v_1 = IR.F.CPU.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
+        var v_0 = IR.F.Distributed.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
+        var v_1 = IR.F.Distributed.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
         var v_2 = new IR.Tuple(v_0, v_1);
         var main = new Function("main", v_2, new[] { input });
         Assert.True(CompilerServices.InferenceType(main));
@@ -601,7 +602,7 @@ public class UnitTestGraphPartition : TestClassBase
     public async Task TestTuple2SameModule()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-        var v_0 = IR.F.CPU.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
+        var v_0 = IR.F.Distributed.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
         var v_1 = IR.F.Math.Unary(UnaryOp.Abs, v_0);
         var v_2 = IR.F.Math.Unary(UnaryOp.Abs, v_1);
         var v_3 = new IR.Tuple(v_0, v_2);
@@ -639,8 +640,8 @@ public class UnitTestGraphPartition : TestClassBase
     public async Task TestConcat1SameModule()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-        var v_0 = IR.F.CPU.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
-        var v_1 = IR.F.CPU.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
+        var v_0 = IR.F.Distributed.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
+        var v_1 = IR.F.Distributed.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
         var v_2 = new Call(new IR.Tensors.Concat(2), new IR.Tuple(v_0, v_1));
         var main = new Function("main", v_2, new[] { input });
 
@@ -677,7 +678,7 @@ public class UnitTestGraphPartition : TestClassBase
     public async Task TestConcat2SameModule()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-        var v_0 = IR.F.CPU.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
+        var v_0 = IR.F.Distributed.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")));
         var v_1 = IR.F.Math.Unary(UnaryOp.Abs, v_0);
         var v_2 = IR.F.Math.Unary(UnaryOp.Cos, v_0);
         var v_3 = new Call(new IR.Tensors.Concat(2), new IR.Tuple(v_1, v_2));

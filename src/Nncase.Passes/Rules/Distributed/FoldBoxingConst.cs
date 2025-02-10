@@ -7,12 +7,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
-using Nncase.IR.CPU;
+using Nncase.IR.Distributed;
 using Nncase.PatternMatch;
 using static Nncase.IR.F.NN;
 
 using static Nncase.IR.TypePatternUtility;
-using static Nncase.PatternMatch.F.CPU;
+using static Nncase.PatternMatch.F.Distributed;
 using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Passes.Rules;
