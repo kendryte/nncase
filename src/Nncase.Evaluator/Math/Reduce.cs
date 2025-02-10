@@ -190,6 +190,11 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
             switch (input.NdSBP[i])
             {
                 case SBPSplit { Axis: int ix } when axes.Contains(ix):
+                    if (target.ReduceOp is ReduceOp.Mean)
+                    {
+                        return new InvalidType($"Not support reduce mean for now.");
+                    }
+
                     ndsbp[i] = SBP.P(target.ReduceOp);
                     break;
                 default:
