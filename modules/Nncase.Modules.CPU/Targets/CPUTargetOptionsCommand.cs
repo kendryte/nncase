@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase;
 using Nncase.CommandLine;
+using Nncase.IR;
 
 namespace Nncase.Targets;
 
