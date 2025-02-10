@@ -68,19 +68,19 @@ public sealed class UnitTestDistributedTypeInfer
         },
         {
             // mesh dim 0 split on first merged-by-reshape axis.
-            new DistributedType(new(DataTypes.Float32, new[] { 1, 48, 64, 16 }), new SBP[] { SBP.S(1), SBP.S(2) }, new(new[] { 8 }, "t")),
+            new DistributedType(new(DataTypes.Float32, new[] { 1, 48, 64, 16 }), new SBP[] { SBP.S(1), SBP.S(2) }, new(new[] { 4, 8 }, "bt")),
             new[] { 1, 48, 1024 },
-            new DistributedType(new(DataTypes.Float32, new[] { 1, 48, 1024 }), new SBP[] { SBP.S(1), SBP.S(2) }, new(new[] { 8 }, "t"))
+            new DistributedType(new(DataTypes.Float32, new[] { 1, 48, 1024 }), new SBP[] { SBP.S(1), SBP.S(2) }, new(new[] { 4, 8 }, "bt"))
         },
         {
             // mesh dim 1 split on first merged-by-reshape axis.
-            new DistributedType(new(DataTypes.Float32, new[] { 1, 48, 64, 16 }), new SBP[] { SBP.S(2), SBP.S(1),  }, new(new[] { 8 }, "t")),
+            new DistributedType(new(DataTypes.Float32, new[] { 1, 48, 64, 16 }), new SBP[] { SBP.S(2), SBP.S(1),  }, new(new[] { 4, 8 }, "bt")),
             new[] { 1, 48, 1024 },
-            new DistributedType(new(DataTypes.Float32, new[] { 1, 48, 1024 }), new SBP[] { SBP.S(2), SBP.S(1), }, new(new[] { 8 }, "t"))
+            new DistributedType(new(DataTypes.Float32, new[] { 1, 48, 1024 }), new SBP[] { SBP.S(2), SBP.S(1), }, new(new[] { 4, 8 }, "bt"))
         },
         {
             // split on second merged-by-reshape axis.
-            new DistributedType(new(DataTypes.Float32, new[] { 1, 48, 64, 16 }), new SBP[] { SBP.S(1), SBP.S(3) }, new(new[] { 8 }, "t")),
+            new DistributedType(new(DataTypes.Float32, new[] { 1, 48, 64, 16 }), new SBP[] { SBP.S(1), SBP.S(3) }, new(new[] { 4, 8 }, "bt")),
             new[] { 1, 48, 1024 },
             new InvalidType("not support")
         },
@@ -89,6 +89,12 @@ public sealed class UnitTestDistributedTypeInfer
             new DistributedType(new(DataTypes.Float32, new[] { 2, 30 }), new SBP[] { SBP.S(0) }, new(new[] { 6 }, "t")),
             new[] { 3, 20 },
             new InvalidType("unmapable")
+        },
+        {
+            // insufficient-data reshape
+            new DistributedType(new(DataTypes.Float32, new[] { 512, 4096 }), new SBP[] { SBP.B, SBP.S(0), SBP.S(1), SBP.S(1), SBP.S(1) }, new(new[] { 1, 2, 8, 4, 4 }, "cdxyt")),
+            new[] { 512, 64, 64 },
+            new InvalidType("insufficient data")
         },
     };
 

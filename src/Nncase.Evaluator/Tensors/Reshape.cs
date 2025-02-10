@@ -33,6 +33,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         }
 
         var (forwardDict, backwardDict) = IRUtility.ShapeMapMatrixAsDict(mat);
+        var splitedShape = DistributedUtility.GetDividedTensorType(inType).Shape.ToValueArray();
         var ndsbp = new SBP[inType.NdSBP.Count];
         for (int meshAxis = 0; meshAxis < inType.NdSBP.Count; meshAxis++)
         {
@@ -49,7 +50,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                             var firstValidAxis = mapedOutAxes.Where(axis => newShape[axis] > 1).First();
                             var restAxes = mapedOutAxes.Skip(mapedOutAxes.IndexOf(firstValidAxis) + 1).ToArray();
                             var restSize = restAxes.Aggregate(1, (x, i) => x * newShape[i]);
-                            if (restSize < (inShape[si.Axis] / inType.Placement.Hierarchy[meshAxis]))
+                            if (restSize < splitedShape[si.Axis])
                             {
                                 ndsbp[meshAxis] = SBP.S(firstValidAxis);
                             }
