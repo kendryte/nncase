@@ -158,3 +158,4 @@ HierarchyLatencies = [10000, 10000, 10000, 10000, 10000]
 UnifiedMemoryArch = false
 Packing = true
 HierarchyKind = "nncase.HierarchyKind.SMT"
+DistributedSearchStrategy = "nncase.AutoDistributedSearchStrategy.ExpandPartial"

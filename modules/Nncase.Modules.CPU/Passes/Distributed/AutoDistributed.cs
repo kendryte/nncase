@@ -352,7 +352,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 foreach (var (lType, lBucket) in bucketMemo.Where(kv => kv.Key is DistributedType ldistType && ldistType.NdSBP.Any(sbp => sbp is SBPPartial)))
                 {
                     var ldistType = (DistributedType)lType;
-                    foreach (var (rType, rBucket) in bucketMemo.Where(kv => kv.Key is DistributedType rdistType && ldistType.NdSBP.Zip(rdistType.NdSBP).All(p => (p.First, p.Second) switch { (SBPPartial, SBPBroadCast) => true, (SBP a, SBP b) => a == b })))
+                    foreach (var (rType, rBucket) in bucketMemo.Where(kv => kv.Key is DistributedType rdistType && ldistType.NdSBP.Zip(rdistType.NdSBP).All(p => (p.First, p.Second) switch { (SBPPartial, SBPBroadCast) => true, (SBP a, SBP b) => a == b }) && !rdistType.NdSBP.Any(sbp => sbp is SBPPartial)))
                     {
                         if (Evaluator.IR.CPU.BoxingEvaluator.VisitType(lType, rType) is not InvalidType)
                         {
