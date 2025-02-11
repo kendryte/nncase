@@ -252,7 +252,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             _bufferScheduler.Dump($"{fusion.Name}_buffers", buffers);
         }
 
-        DataUsage = buffers.Max(b => (ulong)b.Value.MemInterval.Stop);
+        DataUsage = buffers.Any() ? buffers.Max(b => (ulong)b.Value.MemInterval.Stop) : 0;
 
         var candidates = ExprCollector.Collect(fusion).Where(e => e is Call or Var or TensorConst);
         MaxDTypeSize = (ulong)candidates.Select(e => e.CheckedDataType.SizeInBytes).Max();

@@ -20,6 +20,7 @@ public sealed class RemoveBoxingCloner : ExprCloner<Unit>
 {
     public RemoveBoxingCloner()
     {
+        CloneUnmutated = false;
     }
 
     protected override Expr VisitLeafCall(Call expr, Unit context)

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 using Nncase.TIR;
 
 namespace Nncase.IR;
@@ -35,6 +36,11 @@ public partial class ExprCloner<TContext> : ExprVisitor<Expr, IRType, TContext>
     {
     }
 
+    /// <summary>
+    /// Gets or sets a value indicating whether clone unmutated, defaults to true.
+    /// </summary>
+    public bool CloneUnmutated { get; set; } = true;
+
     public T Clone<T>(T expr, TContext context)
         where T : Expr
         => (T)Visit(expr, context);
@@ -49,6 +55,18 @@ public partial class ExprCloner<TContext> : ExprVisitor<Expr, IRType, TContext>
         }
 
         return array;
+    }
+
+    protected bool IsMutated(Expr expr, TContext context)
+    {
+        var newExpr = Visit(expr, context);
+        return !ReferenceEquals(expr, newExpr);
+    }
+
+    protected bool IsMutatedArray<T>(ReadOnlySpan<T> values, TContext context)
+        where T : Expr
+    {
+        return values.AsValueEnumerable().Any(v => IsMutated(v, context));
     }
 }
 

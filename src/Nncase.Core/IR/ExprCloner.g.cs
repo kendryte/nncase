@@ -16,367 +16,1122 @@ public partial class ExprCloner<TContext>
     /// <inheritdoc />
     protected override Expr VisitLeafCall(Call expr, TContext context)
     {
-        return expr.With(
-            target: Clone(expr.Target, context),
-            arguments: CloneArray(expr.Arguments, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Target, context))
+            {
+                return true;
+            }
+
+            if (IsMutatedArray(expr.Arguments, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                target: Clone(expr.Target, context),
+                arguments: CloneArray(expr.Arguments, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafFunction(Function expr, TContext context)
     {
+        bool IsOperandsMutated()
+        {
+            if (IsMutatedArray(expr.Parameters, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Body, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         if (!CanVisitFunctionBody(expr))
         {
             return expr;
         }
 
-        return expr.With(
-            parameters: CloneArray(expr.Parameters, context),
-            body: Clone(expr.Body, context)
-        );
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                parameters: CloneArray(expr.Parameters, context),
+                body: Clone(expr.Body, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafFusion(Fusion expr, TContext context)
     {
+        bool IsOperandsMutated()
+        {
+            if (IsMutatedArray(expr.Parameters, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Body, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         if (!CanVisitFunctionBody(expr))
         {
             return expr;
         }
 
-        return expr.With(
-            parameters: CloneArray(expr.Parameters, context),
-            body: Clone(expr.Body, context)
-        );
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                parameters: CloneArray(expr.Parameters, context),
+                body: Clone(expr.Body, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafIf(If expr, TContext context)
     {
-        return expr.With(
-            condition: Clone(expr.Condition, context),
-            then: Clone(expr.Then, context),
-            @else: Clone(expr.Else, context),
-            arguments: CloneArray(expr.Arguments, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Condition, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Then, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Else, context))
+            {
+                return true;
+            }
+
+            if (IsMutatedArray(expr.Arguments, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                condition: Clone(expr.Condition, context),
+                then: Clone(expr.Then, context),
+                @else: Clone(expr.Else, context),
+                arguments: CloneArray(expr.Arguments, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafMarker(Marker expr, TContext context)
     {
-        return expr.With(
-            target: Clone(expr.Target, context),
-            attribute: Clone(expr.Attribute, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Target, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Attribute, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                target: Clone(expr.Target, context),
+                attribute: Clone(expr.Attribute, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafNone(None expr, TContext context)
     {
-        return expr.With(
-        );
+        bool IsOperandsMutated()
+        {
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafOp(Op expr, TContext context)
     {
-        return expr.With(
-        );
+        bool IsOperandsMutated()
+        {
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafPrimFunctionWrapper(PrimFunctionWrapper expr, TContext context)
     {
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Target, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         if (!CanVisitFunctionBody(expr))
         {
             return expr;
         }
 
-        return expr.With(
-            target: Clone(expr.Target, context)
-        );
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                target: Clone(expr.Target, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafShape(IR.Shape expr, TContext context)
     {
-        return expr.With(
-            dimensions: CloneArray(expr.Dimensions, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutatedArray(expr.Dimensions, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                dimensions: CloneArray(expr.Dimensions, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafTensorConst(TensorConst expr, TContext context)
     {
-        return expr.With(
-        );
+        bool IsOperandsMutated()
+        {
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafTuple(IR.Tuple expr, TContext context)
     {
-        return expr.With(
-            fields: CloneArray(expr.Fields, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutatedArray(expr.Fields, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                fields: CloneArray(expr.Fields, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafTupleConst(TupleConst expr, TContext context)
     {
-        return expr.With(
-        );
+        bool IsOperandsMutated()
+        {
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafMemSpan(TIR.MemSpan expr, TContext context)
     {
-        return expr.With(
-            start: Clone(expr.Start, context),
-            size: Clone(expr.Size, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Start, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Size, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                start: Clone(expr.Start, context),
+                size: Clone(expr.Size, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafVar(Var expr, TContext context)
     {
-        return expr.With(
-        );
+        bool IsOperandsMutated()
+        {
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafBlock(TIR.Block expr, TContext context)
     {
-        return expr.With(
-            body: Clone(expr.Body, context),
-            initBody: Clone(expr.InitBody, context),
-            iterVars: CloneArray(expr.IterVars, context),
-            reads: CloneArray(expr.Reads, context),
-            writes: CloneArray(expr.Writes, context),
-            allocBuffers: CloneArray(expr.AllocBuffers, context),
-            predicate: Clone(expr.Predicate, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Body, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.InitBody, context))
+            {
+                return true;
+            }
+
+            if (IsMutatedArray(expr.IterVars, context))
+            {
+                return true;
+            }
+
+            if (IsMutatedArray(expr.Reads, context))
+            {
+                return true;
+            }
+
+            if (IsMutatedArray(expr.Writes, context))
+            {
+                return true;
+            }
+
+            if (IsMutatedArray(expr.AllocBuffers, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Predicate, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                body: Clone(expr.Body, context),
+                initBody: Clone(expr.InitBody, context),
+                iterVars: CloneArray(expr.IterVars, context),
+                reads: CloneArray(expr.Reads, context),
+                writes: CloneArray(expr.Writes, context),
+                allocBuffers: CloneArray(expr.AllocBuffers, context),
+                predicate: Clone(expr.Predicate, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafBuffer(TIR.Buffer expr, TContext context)
     {
-        return expr.With(
-            memSpan: Clone(expr.MemSpan, context),
-            dimensions: CloneArray(expr.Dimensions, context),
-            strides: CloneArray(expr.Strides, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.MemSpan, context))
+            {
+                return true;
+            }
+
+            if (IsMutatedArray(expr.Dimensions, context))
+            {
+                return true;
+            }
+
+            if (IsMutatedArray(expr.Strides, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                memSpan: Clone(expr.MemSpan, context),
+                dimensions: CloneArray(expr.Dimensions, context),
+                strides: CloneArray(expr.Strides, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafBufferRegion(TIR.BufferRegion expr, TContext context)
     {
-        return expr.With(
-            buffer: Clone(expr.Buffer, context),
-            region: CloneArray(expr.Region, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Buffer, context))
+            {
+                return true;
+            }
+
+            if (IsMutatedArray(expr.Region, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                buffer: Clone(expr.Buffer, context),
+                region: CloneArray(expr.Region, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafFor(TIR.For expr, TContext context)
     {
-        return expr.With(
-            loopVar: Clone(expr.LoopVar, context),
-            domain: Clone(expr.Domain, context),
-            body: Clone(expr.Body, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.LoopVar, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Domain, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Body, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                loopVar: Clone(expr.LoopVar, context),
+                domain: Clone(expr.Domain, context),
+                body: Clone(expr.Body, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafIfThenElse(TIR.IfThenElse expr, TContext context)
     {
-        return expr.With(
-            condition: Clone(expr.Condition, context),
-            then: Clone(expr.Then, context),
-            @else: Clone(expr.Else, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Condition, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Then, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Else, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                condition: Clone(expr.Condition, context),
+                then: Clone(expr.Then, context),
+                @else: Clone(expr.Else, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafLet(TIR.Let expr, TContext context)
     {
-        return expr.With(
-            var: Clone(expr.Var, context),
-            expression: Clone(expr.Expression, context),
-            body: Clone(expr.Body, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Var, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Expression, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Body, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                var: Clone(expr.Var, context),
+                expression: Clone(expr.Expression, context),
+                body: Clone(expr.Body, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafPrimFunction(TIR.PrimFunction expr, TContext context)
     {
+        bool IsOperandsMutated()
+        {
+            if (IsMutatedArray(expr.Parameters, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Body, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         if (!CanVisitFunctionBody(expr))
         {
             return expr;
         }
 
-        return expr.With(
-            parameters: CloneArray(expr.Parameters, context),
-            body: Clone(expr.Body, context)
-        );
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                parameters: CloneArray(expr.Parameters, context),
+                body: Clone(expr.Body, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafSequential(TIR.Sequential expr, TContext context)
     {
-        return expr.With(
-            fields: CloneArray(expr.Fields, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutatedArray(expr.Fields, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                fields: CloneArray(expr.Fields, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafRange(TIR.Range expr, TContext context)
     {
-        return expr.With(
-            start: Clone(expr.Start, context),
-            stop: Clone(expr.Stop, context),
-            step: Clone(expr.Step, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Start, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Stop, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Step, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                start: Clone(expr.Start, context),
+                stop: Clone(expr.Stop, context),
+                step: Clone(expr.Step, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafIterVar(TIR.IterVar expr, TContext context)
     {
-        return expr.With(
-            value: Clone(expr.Value, context),
-            dom: Clone(expr.Dom, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Value, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Dom, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                value: Clone(expr.Value, context),
+                dom: Clone(expr.Dom, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafAffineDim(Affine.AffineDim expr, TContext context)
     {
-        return expr.With(
-        );
+        bool IsOperandsMutated()
+        {
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafAffineExtent(Affine.AffineExtent expr, TContext context)
     {
-        return expr.With(
-        );
+        bool IsOperandsMutated()
+        {
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafAffineSymbol(Affine.AffineSymbol expr, TContext context)
     {
-        return expr.With(
-        );
+        bool IsOperandsMutated()
+        {
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafAffineConstant(Affine.AffineConstant expr, TContext context)
     {
-        return expr.With(
-        );
+        bool IsOperandsMutated()
+        {
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafAffineAddBinary(Affine.AffineAddBinary expr, TContext context)
     {
-        return expr.With(
-            lhs: Clone(expr.Lhs, context),
-            rhs: Clone(expr.Rhs, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Lhs, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Rhs, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                lhs: Clone(expr.Lhs, context),
+                rhs: Clone(expr.Rhs, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafAffineMulBinary(Affine.AffineMulBinary expr, TContext context)
     {
-        return expr.With(
-            lhs: Clone(expr.Lhs, context),
-            rhs: Clone(expr.Rhs, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Lhs, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Rhs, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                lhs: Clone(expr.Lhs, context),
+                rhs: Clone(expr.Rhs, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafAffineDivBinary(Affine.AffineDivBinary expr, TContext context)
     {
-        return expr.With(
-            lhs: Clone(expr.Lhs, context),
-            rhs: Clone(expr.Rhs, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Lhs, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Rhs, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                lhs: Clone(expr.Lhs, context),
+                rhs: Clone(expr.Rhs, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafAffineDomain(Affine.AffineDomain expr, TContext context)
     {
-        return expr.With(
-            offset: Clone(expr.Offset, context),
-            extent: Clone(expr.Extent, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Offset, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Extent, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                offset: Clone(expr.Offset, context),
+                extent: Clone(expr.Extent, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafAffineRange(Affine.AffineRange expr, TContext context)
     {
-        return expr.With(
-            offset: Clone(expr.Offset, context),
-            extent: Clone(expr.Extent, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Offset, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Extent, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                offset: Clone(expr.Offset, context),
+                extent: Clone(expr.Extent, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafAffineMap(Affine.AffineMap expr, TContext context)
     {
-        return expr.With(
-            domains: CloneArray(expr.Domains, context),
-            symbols: CloneArray(expr.Symbols, context),
-            results: CloneArray(expr.Results, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutatedArray(expr.Domains, context))
+            {
+                return true;
+            }
+
+            if (IsMutatedArray(expr.Symbols, context))
+            {
+                return true;
+            }
+
+            if (IsMutatedArray(expr.Results, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                domains: CloneArray(expr.Domains, context),
+                symbols: CloneArray(expr.Symbols, context),
+                results: CloneArray(expr.Results, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafAffineRelation(Affine.AffineRelation expr, TContext context)
     {
-        return expr.With(
-            domains: CloneArray(expr.Domains, context),
-            symbols: CloneArray(expr.Symbols, context),
-            results: CloneArray(expr.Results, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutatedArray(expr.Domains, context))
+            {
+                return true;
+            }
+
+            if (IsMutatedArray(expr.Symbols, context))
+            {
+                return true;
+            }
+
+            if (IsMutatedArray(expr.Results, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                domains: CloneArray(expr.Domains, context),
+                symbols: CloneArray(expr.Symbols, context),
+                results: CloneArray(expr.Results, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafGrid(Affine.Grid expr, TContext context)
     {
-        return expr.With(
-            domainParameter: Clone(expr.DomainParameter, context),
-            bodyParameters: CloneArray(expr.BodyParameters, context),
-            accessMaps: CloneArray(expr.AccessMaps, context),
-            buffers: CloneArray(expr.Buffers, context),
-            reads: CloneArray(expr.Reads, context),
-            body: Clone(expr.Body, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.DomainParameter, context))
+            {
+                return true;
+            }
+
+            if (IsMutatedArray(expr.BodyParameters, context))
+            {
+                return true;
+            }
+
+            if (IsMutatedArray(expr.AccessMaps, context))
+            {
+                return true;
+            }
+
+            if (IsMutatedArray(expr.Buffers, context))
+            {
+                return true;
+            }
+
+            if (IsMutatedArray(expr.Reads, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Body, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                domainParameter: Clone(expr.DomainParameter, context),
+                bodyParameters: CloneArray(expr.BodyParameters, context),
+                accessMaps: CloneArray(expr.AccessMaps, context),
+                buffers: CloneArray(expr.Buffers, context),
+                reads: CloneArray(expr.Reads, context),
+                body: Clone(expr.Body, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafLoad(Affine.Load expr, TContext context)
     {
-        return expr.With(
-            source: Clone(expr.Source, context),
-            region: Clone(expr.Region, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Source, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Region, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                source: Clone(expr.Source, context),
+                region: Clone(expr.Region, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafFor(Affine.For expr, TContext context)
     {
-        return expr.With(
-            domain: Clone(expr.Domain, context),
-            body: Clone(expr.Body, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Domain, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Body, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                domain: Clone(expr.Domain, context),
+                body: Clone(expr.Body, context)
+            );
+        }
+
+        return expr;
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafBufferOf(Buffers.BufferOf expr, TContext context)
     {
-        return expr.With(
-            input: Clone(expr.Input, context)
-        );
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Input, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                input: Clone(expr.Input, context)
+            );
+        }
+
+        return expr;
     }
 
 }

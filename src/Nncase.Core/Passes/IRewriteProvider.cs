@@ -53,4 +53,6 @@ public interface IEGraphRewriteProvider
 public interface ISimplifyProvider
 {
     Expr SimplifyForDimension(Expr expr);
+
+    long[] GetMaxShape(Shape shape);
 }

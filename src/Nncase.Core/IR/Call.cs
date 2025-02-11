@@ -125,7 +125,7 @@ public sealed class Call : BaseCall, IParameterList<Expr>
     {
         var call = new Call(target ?? Target, arguments ?? Arguments)
         {
-            Metadata = metadata ?? Metadata,
+            Metadata = metadata ?? new IRMetadata { OutputNames = Metadata.OutputNames },
         };
 
         return call;

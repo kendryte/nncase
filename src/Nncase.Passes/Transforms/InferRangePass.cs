@@ -115,8 +115,8 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
 
     private ValueRange<double> InferenceBinary(Call expr, BinaryOp op)
     {
-        var lhs = expr[Binary.Lhs].Metadata.Range!.Value;
-        var rhs = expr[Binary.Rhs].Metadata.Range!.Value;
+        var lhs = Visit(expr[Binary.Lhs]);
+        var rhs = Visit(expr[Binary.Rhs]);
 
         return op switch
         {

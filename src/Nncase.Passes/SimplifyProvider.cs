@@ -16,6 +16,7 @@ using Nncase.IR;
 using Nncase.Passes.Mutators;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Passes.Rules.ShapeExpr;
+using Nncase.Passes.Transforms;
 using Nncase.Quantization;
 
 namespace Nncase.Passes;
@@ -93,5 +94,32 @@ internal sealed class SimplifyProvider : ISimplifyProvider
 #else
         return expr;
 #endif
+    }
+
+    public long[] GetMaxShape(Shape shape)
+    {
+        if (shape.IsFixed)
+        {
+            return shape.ToValueArray();
+        }
+
+        var maxShape = new long[shape.Rank];
+        if (!shape.Metadata.Range.HasValue)
+        {
+            new InferRangeVisitor().Visit(shape);
+        }
+
+        for (int i = 0; i < shape.Rank; i++)
+        {
+            var max = shape.Dimensions[i].Metadata.Range!.Value.Max;
+            if (max >= int.MaxValue)
+            {
+                throw new ArgumentOutOfRangeException($"shape dimension is too large: {max}");
+            }
+
+            maxShape[i] = (long)max;
+        }
+
+        return maxShape;
     }
 }

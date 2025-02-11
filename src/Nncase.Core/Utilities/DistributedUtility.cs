@@ -105,13 +105,10 @@ public static class DistributedUtility
     {
         tensorType = null;
         var divisors = GetDivisors(distributedType);
-        if (divisors.Select((d, i) => (d, i)).All(p => p.d == 0 || IsDivideExactly(distributedType.TensorType.Shape[p.i].FixedValue, p.d)))
-        {
-            tensorType = new TensorType(distributedType.TensorType.DType, distributedType.TensorType.Shape.Zip(divisors).Select(p => p.Second == 0 ? p.First.FixedValue : p.First.FixedValue / p.Second).ToArray());
-            return true;
-        }
-
-        return false;
+        tensorType = new TensorType(
+            distributedType.TensorType.DType,
+            distributedType.TensorType.Shape.Zip(divisors).Select(p => p.Second == 0 ? p.First : Dimension.CeilDiv(p.First, p.Second)).ToArray());
+        return true;
     }
 
     public static Expr[] TryGetNonUniformDividedShape(DistributedType distributedType)

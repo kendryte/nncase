@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reactive;
 using Nncase;
 using Nncase.IR;
+using Nncase.Passes.Transforms;
 using Nncase.Utilities;
 
 namespace Nncase.Passes.BufferSchedule;
@@ -79,19 +80,19 @@ public class BufferSizeCalculator : ExprFunctor<BufferSizeCalculator.Result, Buf
 
     public override Result VisitType(TensorType type)
     {
-        var shape = type.Shape.ToValueArray();
-        var stride = TensorUtilities.GetStrides(shape);
-        return new(TensorUtilities.GetSize(shape, stride, type.DType.SizeInBytes), shape, stride);
+        var maxShape = CompilerServices.GetMaxShape(type.Shape);
+        var stride = TensorUtilities.GetStrides(maxShape);
+        return new(TensorUtilities.GetSize(maxShape, stride, type.DType.SizeInBytes), type.Shape, stride);
     }
 
     public override Result VisitType(DistributedType distributedType)
     {
         if (DistributedUtility.TryGetDividedTensorType(distributedType, out var tt))
         {
-            var shape = tt.Shape.ToValueArray();
-            var stride = TensorUtilities.GetStrides(shape);
-            var size = TensorUtilities.GetSize(shape, stride, tt.DType.SizeInBytes);
-            return new(size, shape, stride);
+            var maxShape = CompilerServices.GetMaxShape(tt.Shape);
+            var stride = TensorUtilities.GetStrides(maxShape);
+            var size = TensorUtilities.GetSize(maxShape, stride, tt.DType.SizeInBytes);
+            return new(size, tt.Shape, stride);
         }
         else
         {
@@ -104,7 +105,7 @@ public class BufferSizeCalculator : ExprFunctor<BufferSizeCalculator.Result, Buf
         long size = 0;
         foreach (var item in tupleType)
         {
-            size += VisitType(item).Size;
+            size += VisitType(item).MaxSize;
         }
 
         return new(size, Array.Empty<long>(), Array.Empty<long>());
@@ -119,18 +120,14 @@ public class BufferSizeCalculator : ExprFunctor<BufferSizeCalculator.Result, Buf
                 var res = VisitType(expr.CheckedType);
                 return new(0, res.Shape, res.Stride);
             }
-            else
-            {
-                throw new NotSupportedException("getItem index is not const scalar!");
-            }
         }
 
         return VisitType(expr.CheckedType);
     }
 
-    public sealed record Result(long Size, long[] Shape, long[] Stride)
+    public sealed record Result(long MaxSize, Shape Shape, long[] Stride)
     {
-        public static readonly Result Empty = new(0, Array.Empty<long>(), Array.Empty<long>());
+        public static readonly Result Empty = new(0, Shape.Invalid, Array.Empty<long>());
     }
 }
 
@@ -176,7 +173,7 @@ public class LifeTimeCollector : ExprVisitor<Unit, Unit>
             };
 
             var rest = Calculator.Visit(k);
-            d.Add(k, new(name, count++, v, new(0, rest.Size), rest.Shape, rest.Stride, false));
+            d.Add(k, new(name, count++, v, new(0, rest.MaxSize), rest.Shape, rest.Stride, false));
         }
 
         return d;

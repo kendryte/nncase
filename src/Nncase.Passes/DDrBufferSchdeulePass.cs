@@ -193,7 +193,7 @@ internal sealed class DDrBufferRewriter : ExprRewriter
 
     private ulong ComputeSize(Const @const) => @const switch
     {
-        TensorConst tc => (ulong)TensorUtilities.GetTensorSizeAndStrides(tc.ValueType).Size,
+        TensorConst tc => (ulong)TensorUtilities.GetTensorMaxSizeAndStrides(tc.ValueType).MaxSize,
         TupleConst tc => tc.Value.AsTensors().Select(t => (ulong)t.Length * (ulong)t.ElementType.SizeInBytes).Sum(),
         _ => throw new NotSupportedException(),
     };

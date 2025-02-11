@@ -211,6 +211,8 @@ public interface ICompilerServicesProvider
     MicroKernelInfo GetOpMicroKernelInfo(Op op, MicroKernelContext context);
 
     Expr SimplifyForDimension(Expr value);
+
+    long[] GetMaxShape(Shape shape);
 }
 
 internal interface ICompilerServicesProviderInternal
@@ -516,6 +518,8 @@ public static class CompilerServices
 
     public static Expr SimplifyForDimension(Expr value) => Provider.SimplifyForDimension(value);
 
+    public static long[] GetMaxShape(Shape shape) => Provider.GetMaxShape(shape);
+
     public static Expr FastSimplifyForDimension(Expr value)
     {
         if ((value is Call call && call.Arguments.AsValueEnumerable().All(x => x is Const))
@@ -720,4 +724,6 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     public MicroKernelInfo GetOpMicroKernelInfo(Op op, MicroKernelContext context) => _microKernelInfoGetter.GetInfo(op, context);
 
     public Expr SimplifyForDimension(Expr value) => _simplifyProvider.SimplifyForDimension(value);
+
+    public long[] GetMaxShape(Shape shape) => _simplifyProvider.GetMaxShape(shape);
 }

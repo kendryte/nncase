@@ -446,30 +446,30 @@ public static class TensorUtilities
         return size * elementSize;
     }
 
-    public static (long Size, long[] Strides) GetTensorSizeAndStrides(TensorType tensorType, DistributedType? distributedType)
+    public static (long MaxSize, long[] Strides) GetTensorMaxSizeAndStrides(TensorType tensorType, DistributedType? distributedType)
     {
         long[] dims;
         long[] strides;
         if (distributedType is null)
         {
-            dims = tensorType.Shape.ToValueArray();
+            dims = CompilerServices.GetMaxShape(tensorType.Shape);
             strides = GetStrides(dims);
         }
         else
         {
             var dividedType = DistributedUtility.GetDividedTensorType(distributedType);
-            dims = dividedType.Shape.ToValueArray();
+            dims = CompilerServices.GetMaxShape(dividedType.Shape);
             strides = GetStrides(dims);
         }
 
         return (GetProduct(dims) * tensorType.DType.SizeInBytes, strides);
     }
 
-    public static (long Size, long[] Strides) GetTensorSizeAndStrides(IRType type)
+    public static (long MaxSize, long[] Strides) GetTensorMaxSizeAndStrides(IRType type)
         => type switch
         {
-            TensorType tensorType => GetTensorSizeAndStrides(tensorType, null),
-            DistributedType distributedType => GetTensorSizeAndStrides(distributedType.TensorType, distributedType),
+            TensorType tensorType => GetTensorMaxSizeAndStrides(tensorType, null),
+            DistributedType distributedType => GetTensorMaxSizeAndStrides(distributedType.TensorType, distributedType),
             _ => throw new NotSupportedException(),
         };
 }

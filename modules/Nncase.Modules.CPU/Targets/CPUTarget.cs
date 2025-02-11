@@ -124,23 +124,13 @@ public class CPUTarget : ITarget
         });
 
         passManager.Add<InferRangePass>();
-        passManager.AddWithName<DataflowPass>("OptimizeByRange").Configure(p =>
-        {
-            p.Add<InferRange>();
-            p.Add<FoldNopAbsByRange>();
-            p.Add<FoldNopCompareByRange>();
-            p.Add<FoldNopIf>();
-            p.Add<FoldNopSelect>();
-            p.Add<FoldNopBinary>();
-            p.Add<FoldSameBinary>();
-            p.Add<FoldNopWhere>();
-            p.Add<InlineFunction>(20);
-        });
+        passManager.Add<OptimizeByRangePass>();
 
         passManager.Add<AddFunctionToModule>();
         passManager.Add<CPUFunctionPartitionPass>();
 
         passManager.Add<CPUFusionToModulePass>();
+        passManager.Add<OptimizeByRangePass>();
 
         passManager.AddWithName<DataflowPass>("LowerToAffine").Configure(p =>
         {
