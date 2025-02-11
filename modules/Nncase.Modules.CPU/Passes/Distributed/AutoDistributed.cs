@@ -421,6 +421,73 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         return default;
     }
 
+    private static void DumpAction(GraphvizAlgorithm<SearchableNode, CrossEdge> alg, IReadOnlyDictionary<SearchableNode, bool>? pickMemo = null, IReadOnlyDictionary<SearchableNode, CostModel.Cost>? costMemo = null)
+    {
+        alg.GraphFormat.RankDirection = QuikGraph.Graphviz.Dot.GraphvizRankDirection.LR;
+        alg.FormatCluster += (_, arg) =>
+        {
+            if (arg.Cluster is DistributedSearchGraph tg)
+            {
+                arg.GraphFormat.LabelLocation = QuikGraph.Graphviz.Dot.GraphvizLabelLocation.T;
+                arg.GraphFormat.LabelJustification = QuikGraph.Graphviz.Dot.GraphvizLabelJustification.L;
+                arg.GraphFormat.Label = tg.Kind.ToString();
+                if (tg.Kind is SearchGraphKind.Bucket)
+                {
+                    arg.GraphFormat.Label += ": " + tg.Vertices.First().IRType.ToString();
+                }
+            }
+        };
+
+        alg.FormatVertex += (_, arg) =>
+        {
+            var row0 = new QuikGraph.Graphviz.Dot.GraphvizRecordCell();
+            var col1 = new QuikGraph.Graphviz.Dot.GraphvizRecordCell();
+            row0.Cells.Add(col1);
+
+            col1.Cells.Add(new() { Text = CompilerServices.Print(arg.Vertex.Expr) });
+            if (arg.Vertex.Expr is IR.Tuple && arg.Vertex.IRType is TupleType tpTuple)
+            {
+                for (int i = 0; i < tpTuple.Fields.Count; i++)
+                {
+                    col1.Cells.Add(new() { Text = i.ToString(), Port = $"P{i}" });
+                }
+            }
+            else if (arg.Vertex.Expr is Op op)
+            {
+                for (int i = 0; i < op.Parameters.Count(); i++)
+                {
+                    col1.Cells.Add(new() { Text = i.ToString(), Port = $"P{i}" });
+                }
+            }
+
+            arg.VertexFormat.Record.Cells.Add(row0);
+            arg.VertexFormat.Shape = QuikGraph.Graphviz.Dot.GraphvizVertexShape.Record;
+            arg.VertexFormat.Style = QuikGraph.Graphviz.Dot.GraphvizVertexStyle.Filled;
+            if (costMemo is not null && costMemo.TryGetValue(arg.Vertex, out var cost))
+            {
+                var row1 = new QuikGraph.Graphviz.Dot.GraphvizRecordCell();
+                foreach (var (k, v) in cost.Factors)
+                {
+                    row1.Cells.Add(new() { Text = $"{k}: {v}" });
+                }
+
+                row1.Cells.Add(new() { Text = $"Score: {cost.Score}" });
+                col1.Cells.Add(row1);
+            }
+
+            if (pickMemo is not null && pickMemo.TryGetValue(arg.Vertex, out var picked) && picked == true)
+            {
+                arg.VertexFormat.FillColor = QuikGraph.Graphviz.Dot.GraphvizColor.SkyBlue;
+            }
+        };
+
+        alg.FormatEdge += (_, arg) =>
+        {
+            arg.EdgeFormat.Direction = QuikGraph.Graphviz.Dot.GraphvizEdgeDirection.Back;
+            arg.EdgeFormat.TailPort = $"P{arg.Edge.InputIndex}";
+        };
+    }
+
     /// <summary>
     /// some times we didn't use all args.
     /// </summary>
@@ -653,72 +720,12 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
     private void Dump(Stream stream, IReadOnlyDictionary<SearchableNode, bool> pickMemo, IReadOnlyDictionary<SearchableNode, CostModel.Cost> costMemo)
     {
         using var writer = new StreamWriter(stream);
-        writer.Write(_rootSearchGraph.ToGraphviz(alg =>
-        {
-            alg.GraphFormat.RankDirection = QuikGraph.Graphviz.Dot.GraphvizRankDirection.LR;
-            alg.FormatCluster += (_, arg) =>
-            {
-                if (arg.Cluster is DistributedSearchGraph tg)
-                {
-                    arg.GraphFormat.LabelLocation = QuikGraph.Graphviz.Dot.GraphvizLabelLocation.T;
-                    arg.GraphFormat.LabelJustification = QuikGraph.Graphviz.Dot.GraphvizLabelJustification.L;
-                    arg.GraphFormat.Label = tg.Kind.ToString();
-                    if (tg.Kind is SearchGraphKind.Bucket)
-                    {
-                        arg.GraphFormat.Label += ": " + tg.Vertices.First().IRType.ToString();
-                    }
-                }
-            };
+        writer.Write(_rootSearchGraph.ToGraphviz(alg => DumpAction(alg, pickMemo, costMemo)));
+    }
 
-            alg.FormatVertex += (_, arg) =>
-            {
-                var row0 = new QuikGraph.Graphviz.Dot.GraphvizRecordCell();
-                var col1 = new QuikGraph.Graphviz.Dot.GraphvizRecordCell();
-                row0.Cells.Add(col1);
-
-                col1.Cells.Add(new() { Text = CompilerServices.Print(arg.Vertex.Expr) });
-                if (arg.Vertex.Expr is IR.Tuple && arg.Vertex.IRType is TupleType tpTuple)
-                {
-                    for (int i = 0; i < tpTuple.Fields.Count; i++)
-                    {
-                        col1.Cells.Add(new() { Text = i.ToString(), Port = $"P{i}" });
-                    }
-                }
-                else if (arg.Vertex.Expr is Op op)
-                {
-                    for (int i = 0; i < op.Parameters.Count(); i++)
-                    {
-                        col1.Cells.Add(new() { Text = i.ToString(), Port = $"P{i}" });
-                    }
-                }
-
-                arg.VertexFormat.Record.Cells.Add(row0);
-                arg.VertexFormat.Shape = QuikGraph.Graphviz.Dot.GraphvizVertexShape.Record;
-                arg.VertexFormat.Style = QuikGraph.Graphviz.Dot.GraphvizVertexStyle.Filled;
-                if (costMemo.TryGetValue(arg.Vertex, out var cost))
-                {
-                    var row1 = new QuikGraph.Graphviz.Dot.GraphvizRecordCell();
-                    foreach (var (k, v) in cost.Factors)
-                    {
-                        row1.Cells.Add(new() { Text = $"{k}: {v}" });
-                    }
-
-                    row1.Cells.Add(new() { Text = $"Score: {cost.Score}" });
-                    col1.Cells.Add(row1);
-                }
-
-                if (pickMemo.TryGetValue(arg.Vertex, out var picked) && picked == true)
-                {
-                    arg.VertexFormat.FillColor = QuikGraph.Graphviz.Dot.GraphvizColor.SkyBlue;
-                }
-            };
-
-            alg.FormatEdge += (_, arg) =>
-            {
-                arg.EdgeFormat.Direction = QuikGraph.Graphviz.Dot.GraphvizEdgeDirection.Back;
-                arg.EdgeFormat.TailPort = $"P{arg.Edge.InputIndex}";
-            };
-        }));
+    private void Dump(DistributedSearchGraph searchGraph, string name, IReadOnlyDictionary<SearchableNode, bool>? pickMemo = null, IReadOnlyDictionary<SearchableNode, CostModel.Cost>? costMemo = null)
+    {
+        searchGraph.Dump(name, alg => DumpAction(alg, pickMemo, costMemo));
     }
 
     private Expr SolveAndExtract(DistributedSearchGraph rootCluster)
