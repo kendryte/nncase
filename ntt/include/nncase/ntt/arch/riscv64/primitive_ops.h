@@ -17,6 +17,7 @@
 #include "nncase/ntt/arch/riscv64/arch_types.h"
 #include "nncase/ntt/vector.h"
 #include "rvv_mathfun.h"
+#include "nncase/half.h"
 
 #ifdef __riscv_vector
 #include <riscv_vector.h>
@@ -694,6 +695,26 @@ REGISTER_RVV_UNARY_OP(erf, float, erf_float32)
 
 REGISTER_RVV_KERNEL(ADD_FLOAT32)
 REGISTER_RVV_BINARY_OP(add, float, add_float32)
+
+#define ADD_FLOAT16(lmul, mlen)                                                \
+    inline vfloat16m##lmul##_t add_float16(const vfloat16m##lmul##_t &v1,      \
+                                           const vfloat16m##lmul##_t &v2,      \
+                                           const size_t vl) {                  \
+        return __riscv_vfadd_vv_f16m##lmul(v1, v2, vl);                        \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t add_float16(const vfloat16m##lmul##_t &v,       \
+                                           const half &s, const size_t vl) {  \
+        return __riscv_vfadd_vf_f16m##lmul(v, s, vl);                          \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t add_float16(                                    \
+        const half &s, const vfloat16m##lmul##_t &v, const size_t vl) {   \
+        return __riscv_vfadd_vf_f16m##lmul(v, s, vl);                          \
+    }
+
+REGISTER_RVV_KERNEL(ADD_FLOAT16)
+REGISTER_RVV_BINARY_OP(add, half, add_float16)
 
 // sub
 #define SUB_FLOAT32(lmul, mlen)                                                \
