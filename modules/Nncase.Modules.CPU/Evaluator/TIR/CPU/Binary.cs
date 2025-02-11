@@ -3,6 +3,7 @@
 
 using Google.OrTools.ConstraintSolver;
 using Nncase.IR;
+using Nncase.Diagnostics;
 using Nncase.IR.Affine;
 using Nncase.Schedule;
 using Nncase.TIR.CPU;
@@ -29,10 +30,11 @@ public sealed class BinaryEvaluator : ITypeInferencer<Binary>, IKernelInfoEvalua
         return new MicroKernelInfo(primitives, multipliers, bufferInfos, GetComputeCycle);
     }
 
-    public string Visit(IIRPrinterContext context, Binary target, bool iLmode)
+    public string Visit(IPrintOpContext context, Binary target)
     {
         return $"Binary({target.DisplayProperty()}, {context.GetArgument(target, Binary.Lhs)}, {context.GetArgument(target, Binary.Rhs)}, {context.GetArgument(target, Binary.Output)})";
     }
+
 
     private static IntExpr GetComputeCycle(IntExpr[][] bufferShapes, Solver solver, MicroKernelContext context)
     {

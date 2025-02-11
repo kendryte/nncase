@@ -196,6 +196,31 @@ internal class EGraphExtractor
 
         return hgraph;
     }
+
+    private HashSet<ENode> CollectNodes(EClass root)
+    {
+        var visited = new HashSet<ENode>();
+        void Visit(ENode node)
+        {
+            if (visited.Add(node))
+            {
+                foreach (var child in node.Children)
+                {
+                    foreach (var n in child.Nodes)
+                    {
+                        Visit(n);
+                    }
+                }
+            }
+        }
+
+        foreach (var n in root.Nodes)
+        {
+            Visit(n);
+        }
+
+        return visited;
+    }
 }
 
 internal sealed class PrintCostCallBack : CpSolverSolutionCallback

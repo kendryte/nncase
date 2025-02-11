@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Google.OrTools.ConstraintSolver;
+using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Affine;
@@ -31,7 +32,7 @@ public sealed class UnaryEvaluator : ITypeInferencer<Unary>, IKernelInfoEvaluato
         return new MicroKernelInfo(primitives, multipliers, bufferInfos, GetComputeCycle);
     }
 
-    public string Visit(IIRPrinterContext context, Unary target, bool iLmode)
+    public string Visit(IPrintOpContext context, Unary target)
     {
         return $"Unary({target.DisplayProperty()}, {context.GetArgument(target, Unary.Input)}, {context.GetArgument(target, Unary.Output)})";
     }

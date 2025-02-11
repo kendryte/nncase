@@ -81,7 +81,7 @@ public sealed partial class FoldLayerNormPattern1 : RewriteRule<CallPattern>
         {
             var axis = addBetaCall.CheckedShape.Count - gamma.CheckedShape.Count;
             bool cFirst = false;
-            var axes = rd1Call[Reduce.Axis].Evaluate().AsTensor().ToArray<int>();
+            var axes = rd1Call[Reduce.Axes].Evaluate().AsTensor().ToArray<int>();
             if (axes.Length == 1 && axes[0] != input.CheckedShape.Count - 1 && axes[0] != -1)
             {
                 cFirst = true;
@@ -149,7 +149,7 @@ public sealed partial class FoldLayerNormPattern2 : RewriteRule<CallPattern>
         {
             var axis = addBetaCall.CheckedShape.Count - gamma.CheckedShape.Count;
             bool cFirst = false;
-            var axes = rd1Call[Reduce.Axis].Evaluate().AsTensor().ToArray<int>();
+            var axes = rd1Call[Reduce.Axes].Evaluate().AsTensor().ToArray<int>();
             if (axes.Length == 1 && axes[0] != input.CheckedShape.Count - 1 && axes[0] != -1)
             {
                 cFirst = true;
@@ -225,7 +225,7 @@ public sealed partial class FoldLayerNormPattern3 : RewriteRule<CallPattern>
         {
             var axis = addAllCall.CheckedShape.Count - gamma.CheckedShape.Count;
             bool cFirst = false;
-            var axes = rdMuCall[Reduce.Axis].Evaluate().AsTensor().ToArray<int>();
+            var axes = rdMuCall[Reduce.Axes].Evaluate().AsTensor().ToArray<int>();
             if (axes.Length == 1 && axes[0] != input.CheckedShape.Count - 1 && axes[0] != -1)
             {
                 cFirst = true;
@@ -303,7 +303,7 @@ public sealed partial class FoldLayerNormPattern4 : RewriteRule<CallPattern>
         {
             var axis = addAllCall.CheckedShape.Count - gamma.CheckedShape.Count;
             bool cFirst = false;
-            var axes = meanCall[Reduce.Axis].Evaluate().AsTensor().ToArray<int>();
+            var axes = meanCall[Reduce.Axes].Evaluate().AsTensor().ToArray<int>();
             if (axes.Length == 1 && axes[0] != input.CheckedShape.Count - 1 && axes[0] != -1)
             {
                 cFirst = true;
@@ -364,7 +364,7 @@ public sealed partial class FoldLayerNormPattern5 : RewriteRule<CallPattern>
             var axis = pow2Call.CheckedShape.Count - gamma.CheckedShape.Count;
             var beta = Tensor.FromScalar(0f, gamma.CheckedShape);
             bool cFirst = false;
-            var axes = rdVarCall[Reduce.Axis].Evaluate().AsTensor().ToArray<int>();
+            var axes = rdVarCall[Reduce.Axes].Evaluate().AsTensor().ToArray<int>();
             if (axes.Length == 1 && axes[0] != input.CheckedShape.Count - 1 && axes[0] != -1)
             {
                 cFirst = true;

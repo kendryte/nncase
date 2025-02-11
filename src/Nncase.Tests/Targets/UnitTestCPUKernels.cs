@@ -129,10 +129,10 @@ public sealed class UnitTestCPUKernels : TestClassBase
         Expr boxed = input;
         foreach (var ndsbp in ndsbps)
         {
-            boxed = IR.F.CPU.Boxing(boxed, new DistributedType(inputType, ndsbp, placement));
+            boxed = IR.F.Distributed.Boxing(boxed, new DistributedType(inputType, ndsbp, placement));
         }
 
-        var post = IR.F.CPU.Boxing(boxed, inputType);
+        var post = IR.F.Distributed.Boxing(boxed, inputType);
         post.Metadata = new Passes.Distributed.AutoDistributedMetaData() { Skip = true };
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, new[] { post });
     }
@@ -534,9 +534,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData([new int[] { 2, 8, 16, 2 }, new int[] { 0, 2, 1, 3 }, 2, 0])]
-    [InlineData([new int[] { 1, 64, 384, 128 }, new int[] { 0, 2, 1, 3 }, 2, 1])]
-    public async Task TestTranspose(int[] shape, int[] perm, int rank, int number)
+    [InlineData([new long[] { 2, 8, 16, 2 }, new int[] { 0, 2, 1, 3 }, 2, 0])]
+    [InlineData([new long[] { 1, 64, 384, 128 }, new int[] { 0, 2, 1, 3 }, 2, 1])]
+    public async Task TestTranspose(long[] shape, int[] perm, int rank, int number)
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));
         Expr pre; // f32[1,3,28,28]

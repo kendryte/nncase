@@ -23,7 +23,7 @@ using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Passes.Rules.ShapeBucket;
 
-#if true
+#if false
 public sealed class MergeBucketFusionPass : FunctionPass
 {
     protected override Task<BaseFunction> RunCoreAsync(BaseFunction baseFunction, RunPassContext context)
@@ -41,106 +41,6 @@ public sealed class MergeBucketFusionPass : FunctionPass
         }
 
         return Task.FromResult<BaseFunction>(function);
-    }
-
-    private static GraphPartition.Compat CheckCompat(Expr expr, HashSet<Var> effectVarSet)
-    {
-        switch (expr)
-        {
-            case Call { Target: BucketFusion fusion }:
-                if (effectVarSet.SetEquals(fusion.EffectVar))
-                {
-                    return GraphPartition.Compat.COMPATIBLE;
-                }
-                else
-                {
-                    return GraphPartition.Compat.INCOMPATIBLE;
-                }
-
-            case Marker { Target: Call c } m:
-                if (CheckCompat(c, effectVarSet) is GraphPartition.Compat.COMPATIBLE)
-                {
-                    if (m.Users.Any(u => CheckCompat(u, effectVarSet) is GraphPartition.Compat.COMPATIBLE))
-                    {
-                        return GraphPartition.Compat.COMPATIBLE;
-                    }
-                    else
-                    {
-                        return GraphPartition.Compat.INCOMPATIBLE;
-                    }
-                }
-                else
-                {
-                    return GraphPartition.Compat.INCOMPATIBLE;
-                }
-
-            default:
-                return GraphPartition.Compat.INCOMPATIBLE;
-        }
-    }
-
-    private Function Perform(Function pre, HashSet<Var> effectVarSet)
-    {
-        // Function post;
-        var ctx = new GraphPartition.GraphContext();
-        var convertor = new GraphPartition.GraphConvertor(x => CheckCompat(x, effectVarSet));
-        convertor.Visit(pre.Body, ctx);
-
-        // ctx.Graph.DumpDot(DumpScope.Current.Directory + $"function_{i}.dot");
-        ctx.SummarizeGraph();
-
-        // ctx.GraphSummary.DumpDot(DumpScope.Current.Directory + $"function_{i}_summary.dot");
-        var dfsVisitor = new QuikGraph.Algorithms.TopologicalSort.SourceFirstTopologicalSortAlgorithm<GraphPartition.Vertex, GraphPartition.Edge>(ctx.GraphSummary);
-        dfsVisitor.Compute();
-        var exprMemo = new Dictionary<Expr, Expr>(ReferenceEqualityComparer.Instance);
-        for (var vi = 0; vi < dfsVisitor.SortedVertices.Length; vi++)
-        {
-            var vertex = dfsVisitor.SortedVertices[vi];
-            var subgraph = ctx.SubgraphMap[ctx.SummaryVertexSubgraphMap[vertex]];
-            if (vertex.CompatType == GraphPartition.Compat.INCOMPATIBLE)
-            {
-                var sg = new GraphPartition.Graph();
-                subgraph.Nodes.ForEach(n => sg.AddVertex(n));
-                subgraph.InteriorEdges.ForEach(e => sg.AddEdge(e));
-
-                // sg.DumpDot(DumpScope.Current.Directory + $"_Incompatible_{subgraph.Index}_{vi}.dot");
-                var sgVisitor = new QuikGraph.Algorithms.TopologicalSort.SourceFirstTopologicalSortAlgorithm<GraphPartition.Vertex, GraphPartition.Edge>(sg);
-                sgVisitor.Compute();
-                foreach (var v in sgVisitor.SortedVertices)
-                {
-                    var expr = v.Expr switch
-                    {
-                        Call c => c.With(arguments: c.Arguments.AsValueEnumerable().Select(arg => exprMemo[arg]).ToArray()),
-                        IR.Tuple t => t.With(fields: t.Fields.AsValueEnumerable().Select(arg => exprMemo[arg]).ToArray()),
-                        Marker m => m.With(target: exprMemo[m.Target], attribute: exprMemo[m.Attribute]),
-                        _ => v.Expr,
-                    };
-                    exprMemo.Add(v.Expr, expr);
-                }
-            }
-            else
-            {
-                // Diagnostics.DumpScope.Current.DumpIR(vertex.Expr, $"pre{vi}", null, true);
-                var varMap = ctx.VarMap[ctx.SummaryVertexSubgraphMap[vertex]];
-                var newInputs = varMap.Values.ToArray();
-                var merger = new BucketFusionMerger(varMap);
-                var clonedRoot = merger.Clone(vertex.Expr, default);
-
-                // Diagnostics.DumpScope.Current.DumpIR(clonedRoot, $"post{vi}", null, true);
-                var newCall = new Call(new BucketFusion(string.Join("_", merger.BucketFusions.Select(f => f.Name)), Callable.StackVMModuleKind, clonedRoot, newInputs, effectVarSet.ToArray()), ctx.VarMap[ctx.SummaryVertexSubgraphMap[vertex]].Keys.Select(e => exprMemo[e]).ToArray());
-                if (ctx.OutputMap[subgraph.Index].Count > 1)
-                {
-                    ctx.OutputMap[subgraph.Index].ToList().ForEach(e => exprMemo.Add(e.Key, new Call(new GetItem(), newCall, e.Value)));
-                }
-                else
-                {
-                    exprMemo.Add(ctx.OutputMap[subgraph.Index].Keys.First(), newCall);
-                }
-            }
-        }
-
-        var post = pre.With(name: pre.Name, body: exprMemo[pre.Body], parameters: pre.Parameters.ToArray());
-        return post;
     }
 }
 

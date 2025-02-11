@@ -759,10 +759,10 @@ public class UnitTestGraphPartition : TestClassBase
     {
         var ttype = new TensorType(DataTypes.Float32, new int[] { 3, 32, 32 });
         var input = new Var("input", ttype);
-        var v0 = IR.F.CPU.Boxing(input, new DistributedType(ttype, new[] { SBP.B }, new Placement(new[] { 1 }, "t")));
+        var v0 = IR.F.Distributed.Boxing(input, new DistributedType(ttype, new[] { SBP.B }, new Placement(new[] { 1 }, "t")));
         var v1 = IR.F.Tensors.Concat(new IR.Tuple(v0, v0, v0), 0);
-        var v2 = IR.F.CPU.Boxing(v1, new TensorType(DataTypes.Float32, new int[] { 9, 32, 32 }));
-        var main = new Function("main", v2, input);
+        var v2 = IR.F.Distributed.Boxing(v1, new TensorType(DataTypes.Float32, new int[] { 9, 32, 32 }));
+        var main = new Function("main", v2, [input]);
 
         Assert.True(CompilerServices.InferenceType(main));
 

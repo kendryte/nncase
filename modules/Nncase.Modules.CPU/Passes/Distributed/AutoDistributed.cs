@@ -909,7 +909,7 @@ internal sealed class ExprBuildVisitor
                     expr = tp.With(fields: children);
                     break;
                 case IR.If @if:
-                    expr = @if.With(condition: children[^3], then: children[^2], @else: children[^1], paramList: children[..^3].ToArray());
+                    expr = @if.With(condition: children[^3], then: (BaseFunction)children[^2], @else: (BaseFunction)children[^1], arguments: children[..^3].ToArray());
                     break;
                 default:
                     throw new NotSupportedException(root.Expr.GetType().Name);

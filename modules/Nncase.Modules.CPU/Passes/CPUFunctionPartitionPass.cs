@@ -55,7 +55,7 @@ public sealed class CPUFunctionPartitionPass : ModulePass
         {
             bool CheckField(Expr f)
             {
-                if (f is Call c && c.Target is IR.CPU.Boxing { NewType: TensorType } && c.Arguments[0].CheckedType is DistributedType)
+                if (f is Call c && c.Target is IR.Distributed.Boxing { NewType: TensorType } && c.Arguments[0].CheckedType is DistributedType)
                 {
                     return true;
                 }
@@ -69,7 +69,7 @@ public sealed class CPUFunctionPartitionPass : ModulePass
                 case (Call callee, Call caller):
                     switch (callee.CheckedType, caller.CheckedType)
                     {
-                        case (DistributedType, TensorType) when caller.Target is IR.CPU.Boxing:
+                        case (DistributedType, TensorType) when caller.Target is IR.Distributed.Boxing:
                         case (DistributedType, DistributedType):
                             isSupport = true;
                             break;
@@ -150,7 +150,7 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
             if (pre.CheckedType is DistributedType d)
             {
                 @var = new Var(d.TensorType);
-                extract = IR.F.CPU.Boxing(@var, d);
+                extract = IR.F.Distributed.Boxing(@var, d);
             }
             else
             {
@@ -205,7 +205,7 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
 
                 case Expr e when e.CheckedType is DistributedType d:
                     changed = true;
-                    return IR.F.CPU.Boxing(e, d.TensorType);
+                    return IR.F.Distributed.Boxing(e, d.TensorType);
                 default:
                     return cloned;
             }
