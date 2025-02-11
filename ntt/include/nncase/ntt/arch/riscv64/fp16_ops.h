@@ -39,6 +39,17 @@ namespace nncase::ntt::ops{
 REGISTER_RVV_KERNEL(ABS_FLOAT16)
 REGISTER_RVV_UNARY16_OP(abs, half, abs_float16)
 
+// acos
+#if 0
+#define ACOS_FLOAT16(lmul, mlen) \
+    inline vfloat16m##lmul##_t acos_float16(const vfloat16m##lmul##_t &v , const size_t vl) { \
+        auto x = __riscv_vabs_v_f16m##lmul(v,vl);
+        auto c1 = __riscv_vfmv_v_f_f16m#lmul(-0.0187293f16, vl);
+    }
+#else
+
+#endif
+//end acos
 
 #endif
 }

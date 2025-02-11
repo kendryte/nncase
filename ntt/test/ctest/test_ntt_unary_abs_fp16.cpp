@@ -17,7 +17,7 @@ using namespace nncase;
 // }
 
 TEST(UnaryTestAbs, v) {
-    ntt::vector<half, NTT_VLEN / (sizeof(half) * 8)> ntt_input;
+    ntt::vector<half, NTT_VLEN / (sizeof(half) * 1)> ntt_input;
     NttTest::init_tensor(ntt_input, static_cast<half>(-10), static_cast<half>(10));
     auto ntt_output1 = ntt::abs(ntt_input);
     std::cout << ntt_output1(0) << std::endl;
@@ -25,3 +25,29 @@ TEST(UnaryTestAbs, v) {
     ;
 }
 
+TEST(UnaryTestAbs, v2) {
+    ntt::vector<half, NTT_VLEN / (sizeof(half) * 2)> ntt_input;
+    NttTest::init_tensor(ntt_input, static_cast<half>(-10), static_cast<half>(10));
+    auto ntt_output1 = ntt::abs(ntt_input);
+    std::cout << ntt_output1(0) << std::endl;
+    std::cout << ntt_input(0) << std::endl;
+    ;
+}
+
+TEST(UnaryTestAbs, v4) {
+    ntt::vector<half, NTT_VLEN / (sizeof(half) * 4)> ntt_input;
+    NttTest::init_tensor(ntt_input, static_cast<half>(-10), static_cast<half>(10));
+    auto ntt_output1 = ntt::abs(ntt_input);
+    std::cout << ntt_output1(0) << std::endl;
+    std::cout << ntt_input(0) << std::endl;
+    ;
+}
+
+TEST(UnaryTestAbs, v8) {
+    ntt::vector<half, NTT_VLEN / (sizeof(half) * 8)> ntt_input;
+    NttTest::init_tensor(ntt_input, static_cast<half>(-10), static_cast<half>(10));
+    auto ntt_output1 = ntt::abs(ntt_input);
+    std::cout << ntt_output1(0) << std::endl;
+    std::cout << ntt_input(0) << std::endl;
+    ;
+}
