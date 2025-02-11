@@ -15,7 +15,7 @@ public sealed partial class FoldPackedMatmulReduce : IRewriteRule
     public IPattern Pattern { get; } =
         IsBoxing(
             target_name: "boxing",
-            op => op.NewType is DistributedType dt && dt.NdSBP.All(s => s != SBP.P),
+            op => op.NewType is DistributedType dt && dt.NdSBP.All(s => s is not SBPPartial),
             IsPackedMatMul(
                 "mm",
                 "call",
@@ -25,7 +25,7 @@ public sealed partial class FoldPackedMatmulReduce : IRewriteRule
 
     public Expr? GetReplace(Call call, PackedMatMul mm, Expr lhs, Expr rhs)
     {
-        if (call.CheckedType is DistributedType dt && dt.NdSBP.Any(s => s == SBP.P))
+        if (call.CheckedType is DistributedType dt && dt.NdSBP.Any(s => s is SBPPartial))
         {
             var newMatmul = new IR.CPU.PackedMatMul(mm.LhsPackedAxes, mm.LhsPadedNums, mm.RhsPackedAxes, mm.RhsPadedNums, mm.TransposeA, mm.TransposeB, true);
             return new Call(newMatmul, lhs, rhs);
@@ -41,7 +41,7 @@ public sealed partial class SwapUnpackReduce : IRewriteRule
     public IPattern Pattern { get; } =
         IsBoxing(
             target_name: "boxing",
-            op => op.NewType is DistributedType dt && dt.NdSBP.All(s => s != SBP.P),
+            op => op.NewType is DistributedType dt && dt.NdSBP.All(s => s is not SBPPartial),
             IsUnpack(
                 target_name: "unpack",
                 _ => true,
@@ -54,10 +54,10 @@ public sealed partial class SwapUnpackReduce : IRewriteRule
 
     public Expr? GetReplace(Call call, Boxing boxing, Unpack unpack)
     {
-        if (call.CheckedType is DistributedType dt && dt.NdSBP.Any(s => s == SBP.P))
+        if (call.CheckedType is DistributedType dt && dt.NdSBP.Any(s => s is SBPPartial))
         {
-            var newType = new DistributedType(dt.TensorType, dt.NdSBP.Select(s => s is SBPPartialSum ? SBP.B : s).ToArray(), dt.Placement);
-            var newBoxing = IR.F.CPU.Boxing(call, newType, boxing.IsReshape);
+            var newType = new DistributedType(dt.TensorType, dt.NdSBP.Select(s => s is SBPPartial ? SBP.B : s).ToArray(), dt.Placement);
+            var newBoxing = IR.F.CPU.Boxing(call, newType);
             return IR.F.CPU.Unpack(newBoxing, [.. unpack.Lanes], [.. unpack.Axes]);
         }
 

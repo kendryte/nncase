@@ -36,6 +36,31 @@ public static class FunctionSamples
         return func;
     }
 
+    public static Function Get1Matmul()
+    {
+        Function func;
+        {
+            var a = new Var(new TensorType(DataTypes.Float32, new[] { 128, 256 }));
+            var b = new Var(new TensorType(DataTypes.Float32, new[] { 256, 384 }));
+            var c = IR.F.Tensors.MatMul(a, b);
+            func = new(c, a, b);
+        }
+
+        return func;
+    }
+
+    public static Function Get1Exp()
+    {
+        Function func;
+        {
+            var a = new Var(new TensorType(DataTypes.Float32, new[] { 128, 384 }));
+            var d = IR.F.Math.Exp(a);
+            func = new(d, a);
+        }
+
+        return func;
+    }
+
     /// <summary>
     /// Tileflow default case with pack M.
     /// </summary>
@@ -123,6 +148,23 @@ public static class FunctionSamples
             var c = IR.F.Math.Binary(BinaryOp.Mul, a, b);
             var d = IR.F.Math.Neg(c);
             func = new IR.Function("main", new IR.Tuple(c, d), a, b);
+        }
+
+        return func;
+    }
+
+    /// <summary>
+    /// get single op for mcts.
+    /// </summary>
+    public static Function Get6()
+    {
+        Function func;
+        {
+            var shape = new[] { 1, 12, 14, 14 };
+            var a = new IR.Var("a", new IR.TensorType(DataTypes.Float32, shape));
+            var b = new IR.Var("b", new IR.TensorType(DataTypes.Float32, shape));
+            var c = IR.F.Math.Binary(BinaryOp.Mul, a, b);
+            func = new IR.Function("main", c, a, b);
         }
 
         return func;

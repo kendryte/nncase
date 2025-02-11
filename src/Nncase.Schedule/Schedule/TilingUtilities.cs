@@ -54,7 +54,7 @@ public static class TilingUtilities
 
         if (solutionCollector.SolutionCount() < 1)
         {
-            throw new InvalidOperationException();
+            throw new InvalidOperationException("Tiling bounds infer failed!");
         }
 
         var dims = dimVars.Select(x => (int)solutionCollector.Value(0, x)).ToArray();

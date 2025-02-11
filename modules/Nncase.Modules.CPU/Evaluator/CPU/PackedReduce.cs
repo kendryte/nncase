@@ -108,8 +108,6 @@ public sealed class PackedReduceEvaluator : IEvaluator<PackedReduce>, ITypeInfer
         }
 
         var axes = target.Axes.ToArray();
-        var invalid = new InvalidType($"{input}, not support");
-
         var ndsbp = new SBP[input.Placement.Rank];
 
         for (int i = 0; i < input.Placement.Rank; i++)
@@ -117,7 +115,8 @@ public sealed class PackedReduceEvaluator : IEvaluator<PackedReduce>, ITypeInfer
             switch (input.NdSBP[i])
             {
                 case SBPSplit { Axis: int ix } when axes.Contains(ix):
-                    return invalid;
+                    ndsbp[i] = SBP.P(target.ReduceOp);
+                    break;
                 default:
                     ndsbp[i] = input.NdSBP[i];
                     break;

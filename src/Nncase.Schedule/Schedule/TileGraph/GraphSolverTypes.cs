@@ -26,6 +26,7 @@ public sealed record BufferIdentity(TileGrid Node, int Index)
 /// <param name="Places">
 /// Places[create loop][store level]:
 /// create loop in [0, domain rank] , 0 means out all, 1 means out loop0, domain rank means in loopN.
+/// note only the nodes which store at top level have valid Places[0], else the Places[0] is empty.
 /// store level in [0, create level == top level ? create level : top level - 1), 0 means level 1, 1 means level 2. </param>
 /// <param name="Shapes">the buffer shape according to the placement.</param>
 /// <param name="SizeVars">the buffer size according to the placement.</param>
@@ -47,33 +48,19 @@ public sealed record TileNodeBufferInfo<T>(Tuple<int, int> Liveness, AffineMap M
 /// <param name="BufferInfoMap">buffer info memo.</param>
 public sealed record TileNodeInfo<T>(T[] TripCounts, T[][] BackWardExtents, Dictionary<BufferIdentity, BufferIdentity> DefUseMap, Dictionary<BufferIdentity, TileNodeBufferInfo<T>> BufferInfoMap)
 {
-    public BufferIdentity GetCacheBid(BufferIdentity bid)
+    public BufferIdentity GetByChildBuffer(BufferIdentity cbid)
     {
-        if (DefUseMap.TryGetValue(bid, out var sinkId))
+        if (DefUseMap.Values.Contains(cbid))
         {
-            return sinkId;
+            return DefUseMap.Where(kv => kv.Value == cbid).First().Key;
         }
 
-        if (!BufferInfoMap.ContainsKey(bid))
+        if (!BufferInfoMap.ContainsKey(cbid))
         {
-            throw new KeyNotFoundException(bid.ToString());
+            throw new KeyNotFoundException(cbid.ToString());
         }
 
-        return bid;
-    }
-
-    public bool TryGetBufferInfo(BufferIdentity bid, [MaybeNullWhen(false)] out TileNodeBufferInfo<T> info)
-    {
-        if (DefUseMap.TryGetValue(bid, out var sinkId))
-        {
-            BufferInfoMap.TryGetValue(sinkId, out info);
-        }
-        else
-        {
-            BufferInfoMap.TryGetValue(bid, out info);
-        }
-
-        return info is not null;
+        return cbid;
     }
 }
 

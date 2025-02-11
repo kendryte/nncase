@@ -21,8 +21,8 @@
 
 using namespace nncase;
 using namespace nncase::runtime;
-// constexpr size_t loop_count = 10;
-constexpr size_t loop_count = 1;
+constexpr size_t loop_count = 10;
+// constexpr size_t loop_count = 1;
 
 #define TRY(x)                                                                 \
     if (x)                                                                     \
@@ -70,6 +70,8 @@ result<void> run_core(const std::string &kmodel_path,
         parameters.push_back(_.impl());
     }
 
+    // warm up
+    try_var(ret, entry->invoke({parameters.data(), parameters.size()}));
     double total_time = 0.0;
     for (size_t i = 0; i < loop_count; i++) {
         auto start_time = std::chrono::steady_clock::now();

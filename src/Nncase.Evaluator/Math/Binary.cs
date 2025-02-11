@@ -56,10 +56,10 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
                 case (SBPBroadCast, SBPBroadCast):
                     ndsbp[i] = SBP.B;
                     break;
-                case (SBPPartialSum, SBPPartialSum):
+                case (SBPPartial, SBPPartial):
                     if (op == BinaryOp.Add)
                     {
-                        ndsbp[i] = SBP.P;
+                        ndsbp[i] = SBP.P();
                     }
                     else
                     {
@@ -67,8 +67,8 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
                     }
 
                     break;
-                case (SBPPartialSum, _):
-                case (_, SBPPartialSum):
+                case (SBPPartial, _):
+                case (_, SBPPartial):
                     return new InvalidType("not support lhs or rhs partial.");
             }
         }

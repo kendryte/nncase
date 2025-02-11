@@ -52,7 +52,10 @@ internal static class OrToolsExtensions
         var vec = new long[inputs.Length];
         for (int i = 0; i < inputs.Length; i++)
         {
-            vec[i] = sol.Value(inputs[i].Var());
+            if (inputs[i] is not null)
+            {
+                vec[i] = sol.Value(inputs[i].Var());
+            }
         }
 
         return vec;

@@ -42,18 +42,14 @@ void benchmark_ntt_clamp(T init_low, T init_high, T clamp_low, T clamp_high) {
     // warm up
     for (size_t i = 0; i < warmup_size; i++) {
         ntt::clamp(*ntt_input, *ntt_output, clamp_low, clamp_high);
-#if __x86_64__
         asm volatile("" ::"g"(ntt_output));
-#endif
     }
 
     // run
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
         ntt::clamp(*ntt_input, *ntt_output, clamp_low, clamp_high);
-#if __x86_64__
         asm volatile("" ::"g"(ntt_output));
-#endif
     }
     auto t2 = NttTest::get_cpu_cycle();
 

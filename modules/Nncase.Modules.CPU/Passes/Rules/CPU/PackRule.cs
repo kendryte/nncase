@@ -768,12 +768,12 @@ public sealed class PackReshape : PackRule
         var inShape = input.CheckedShape.ToValueArray();
 
         // 1. find the mapping transforms
-        if (!PackUtility.TryGetShapeMapMatrix(inShape, newShape, out var mat))
+        if (!IRUtility.TryGetShapeMapMatrix(inShape, newShape, out var mat))
         {
             return new List<Expr> { };
         }
 
-        var (forwardDict, backwardDict) = PackUtility.ShapeMapMatrixAsDict(mat);
+        var (forwardDict, backwardDict) = IRUtility.ShapeMapMatrixAsDict(mat);
 
         void AddCandidate(int[] packedAxes, int[] lanes)
         {

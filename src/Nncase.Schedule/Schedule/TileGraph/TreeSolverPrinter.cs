@@ -34,6 +34,11 @@ public sealed class TreeSolverPrinter : TreeSolverBase<IntExpr>, ITreeNodeVisito
         writer.Indent++;
         for (int i = 0; i < intExprs.Length; i++)
         {
+            if (intExprs[i] is null)
+            {
+                continue;
+            }
+
             string value = string.Empty;
             if (solution is Assignment assignment && intExprs[i] is IntExpr expr)
             {
@@ -77,6 +82,7 @@ public sealed class TreeSolverPrinter : TreeSolverBase<IntExpr>, ITreeNodeVisito
             writer.WriteLine($"{bid}:");
             {
                 writer.Indent++;
+                WriteIntExprMatrix(writer, "Places", info.Places, Solution);
                 WriteIntExprMatrix(writer, "Shapes", info.Shapes, Solution);
                 WriteIntExprVector(writer, "SizeVars", info.SizeVars, Solution);
                 WriteIntExprVector(writer, "SizeExprs", info.SizeExprs, Solution);

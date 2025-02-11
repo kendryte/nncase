@@ -2,11 +2,12 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Reactive;
-using Google.OrTools.ConstraintSolver;
+using Google.OrTools.Sat;
 using Nncase.IR;
 using Nncase.IR.Affine;
 using Nncase.TIR;
 using Nncase.TIR.Builders;
+using static Nncase.TIR.TIRExtensions;
 
 namespace Nncase.Schedule.TileGraph;
 
@@ -101,7 +102,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                     if (!(value.Level == PrimBufferGraph.Level && i == 0 && sl == (PrimBufferGraph.Level - 1)) && place[sl] == 1)
                     {
                         var kernelInfo = bid.Node.GetKernelInfo(TargetOptions);
-                        var viewInfo = GetParentSubViewInfo(sl + 1, value, bid, bufferInfo.Map, forwardOffsets[i], bufferInfo.Shapes[i]);
+                        var viewInfo = GetParentSubViewInfo(sl, value, bid, bufferInfo.Map, forwardOffsets[i], bufferInfo.Shapes[i]);
                         Expr subView;
                         if (viewInfo.InnerAllocated)
                         {
@@ -136,21 +137,32 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                                 if (bid.Node.Op.GetType().Name.Contains("Matmul", StringComparison.Ordinal) && bid.IsOutput)
                                 {
                                     var kdim = bid.Node.WriteAccess.Domains.Length - 2;
-                                    var relatedWithK = bufferInfo.Masks[i].IsRelated(kdim);
                                     var val = value;
                                     bool isLoopRelated = false;
                                     while (val.Parent is TileNode parent)
                                     {
-                                        if (TileableNodeMemo.TryGetValue(val, out var m) && m.TileVars[kdim] != 1)
+                                        var m = TileableNodeMemo[val];
+                                        if (val.Level == value.Level)
                                         {
-                                            isLoopRelated = true;
-                                            break;
+                                            if (i > kdim && m.TileVars[kdim] != 1)
+                                            {
+                                                isLoopRelated = true;
+                                                break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (m.TileVars[kdim] != 1)
+                                            {
+                                                isLoopRelated = true;
+                                                break;
+                                            }
                                         }
 
                                         val = parent;
                                     }
 
-                                    if (relatedWithK && isLoopRelated)
+                                    if (isLoopRelated)
                                     {
                                         letBuilder.Body(T.Memcopy(subViewVar, srcBufView));
                                     }
@@ -230,65 +242,65 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         foreach (var (level, nodeBufferSizes) in LevelBufferSizes)
         {
             var nodeBufferOffsets = LevelBufferOffsets[level] = new();
-            var solver = new Solver("buffer scheduler");
-            var xstarts = new List<IntVar>();
-            var xsizes = new List<long>();
-            var ystarts = new List<IntVar>();
-            var ysizes = new List<long>();
-            var validKeys = new List<NodeWithBuffer>();
-
+            var model = new CpModel();
+            var rectangles = new Dictionary<NodeWithBuffer, (IntervalVar XInterval, IntervalVar YInterval)>();
+            int count = 0;
+            var cons = model.AddNoOverlap2D();
             foreach (var (key, size) in nodeBufferSizes)
             {
                 if (size > 0)
                 {
-                    xstarts.Add(solver.MakeIntConst(LevelBufferLifeness[level][key].Item1));
-                    xsizes.Add(LevelBufferLifeness[level][key].Item2 - LevelBufferLifeness[level][key].Item1);
-                    var ystart = solver.MakeIntVar(0, TargetOptions.MemoryCapacities[level] - size);
-                    ystarts.Add(ystart);
+                    var x = model.NewFixedSizeIntervalVar(LevelBufferLifeness[level][key].Item1, LevelBufferLifeness[level][key].Item2 - LevelBufferLifeness[level][key].Item1, $"x{count}");
+                    var ystart = model.NewIntVar(0, TargetOptions.MemoryCapacities[level] - size, $"ystart{count}");
                     if (ModuleKind == "xpu")
                     {
-                        solver.Add(solver.MakeEquality(solver.MakeIntConst(0), solver.MakeModulo(ystart, 128)));
+                        model.AddModuloEquality(0, ystart, 128);
                     }
 
-                    ysizes.Add(size);
-                    validKeys.Add(key);
+                    var y = model.NewFixedSizeIntervalVar(ystart, size, $"y{count}");
+                    cons.AddRectangle(x, y);
+                    rectangles.Add(key, (x, y));
+                    count++;
                 }
             }
 
-            solver.Add(solver.MakeNonOverlappingBoxesConstraint(xstarts.ToArray(), ystarts.ToArray(), xsizes.ToArray(), ysizes.ToArray()));
-            var collector = solver.MakeFirstSolutionCollector();
-            foreach (var item in ystarts)
+#if false
+            // process inplace buffer.
+            foreach (var (k, (x, y)) in rectangles)
             {
-                collector.Add(item);
-            }
+                var inplaceMemo = k.Id.Node.Op.GetInPlaceMemo();
+                if (!inplaceMemo.TryGetValue(k.Id.Index, out var sourceIndex))
+                {
+                    continue;
+                }
 
-            var defaultPhaseParameters = new DefaultPhaseParameters();
-            if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
-            {
-                defaultPhaseParameters.display_level = DefaultPhaseParameters.NORMAL;
-            }
-            else
-            {
-                defaultPhaseParameters.display_level = DefaultPhaseParameters.NONE;
-            }
+                // 1. when source buffer is isolated. we can find it in rectangles.
+                foreach (var sourceKey in rectangles.Keys.Where(n => ReferenceEquals(n.Node, k.Node) && n.Id.Index == sourceIndex))
+                {
+                    model.Add(rectangles[sourceKey].YInterval.StartExpr() == y.StartExpr());
+                }
 
-            var decisionBuilder = solver.MakeDefaultPhase(ystarts.ToArray(), defaultPhaseParameters);
-            var monitors = new List<SearchMonitor>() { collector, solver.MakeSolutionsLimit(1), };
-            if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
-            {
-                monitors.Add(solver.MakeSearchLog(10000));
+                // 2. source buffer has been reused. we need find it in defuseMap firstly.
+                foreach (var (defId, _) in TileNodeMemo[k.Node].DefUseMap.Where(kv => ReferenceEquals(kv.Value.Node, k.Id.Node) && kv.Value.Index == sourceIndex))
+                {
+                    foreach (var defKey in rectangles.Keys.Where(n => ReferenceEquals(n.Node, k.Node) && n.Id == defId))
+                    {
+                        model.Add(rectangles[defKey].YInterval.StartExpr() == y.StartExpr());
+                    }
+                }
             }
+#endif
 
-            var status = solver.Solve(decisionBuilder, monitors.ToArray());
-            if (!status)
+            var solver = new CpSolver();
+            var status = solver.Solve(model);
+            if (status is not CpSolverStatus.Optimal)
             {
                 throw new InvalidOperationException("can't schedule buffers!");
             }
 
-            var sol = collector.Solution(0);
-            for (int i = 0; i < ystarts.Count; i++)
+            foreach (var (k, (_, y)) in rectangles)
             {
-                nodeBufferOffsets[validKeys[i]] = (ulong)sol.Value(ystarts[i]);
+                nodeBufferOffsets[k] = (ulong)solver.Value(y.StartExpr());
             }
         }
     }
@@ -328,9 +340,9 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
     }
 
     /// <summary>
-    /// declare the input/output buffer.
+    /// get declare of the input/output buffer which was stored on top level.
     /// </summary>
-    private TIR.Buffer GetParentDeclareBuffer(int storeLevel, ITileable node, BufferIdentity bid)
+    private TIR.Buffer GetTopLevelDeclareBuffer(BufferIdentity bid)
     {
         var expr = bid.Node.Grid.Buffers[bid.Index];
         var tensorType = GetBufferTensorType(expr);
@@ -361,7 +373,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         var parentNode = node.Parent;
         while (parentNode is TileNode parentTileNode && parentTileNode.OpId != -1)
         {
-            var pbid = TileNodeMemo[parentTileNode].GetCacheBid(cbid);
+            var pbid = TileNodeMemo[parentTileNode].GetByChildBuffer(cbid);
             if (_subViewMemo.TryGetValue(parentTileNode, out var subViewMap) && subViewMap.TryGetValue(pbid, out var subViewInfo))
             {
                 parentBuffer = subViewInfo.Buffer;
@@ -401,15 +413,15 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
             var (outputs, inputs) = PrimBufferGraph.GetInputsOutputs();
             if (outputs.Contains(bid))
             {
-                parentBuffer = GetParentDeclareBuffer(storeLevel, node, bid);
+                parentBuffer = GetTopLevelDeclareBuffer(bid);
             }
             else if (inputs.Contains(bid))
             {
-                parentBuffer = GetParentDeclareBuffer(storeLevel, node, bid);
+                parentBuffer = GetTopLevelDeclareBuffer(bid);
             }
             else if (node is TileNode tileNode)
             {
-                parentBuffer = GetParentAllocateBuffer(storeLevel, tileNode, bid, shape, out innerAllocated);
+                parentBuffer = GetInnerAllocateBuffer(storeLevel, tileNode, bid, shape, out innerAllocated);
             }
         }
 
@@ -417,9 +429,9 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
     }
 
     /// <summary>
-    /// Get the local allocate buffer.
+    /// Allocate a buffer which store at inner level.
     /// </summary>
-    private TIR.Buffer GetParentAllocateBuffer(int storeLevel, TileNode node, BufferIdentity bid, int[] shape, out bool innerAllocated)
+    private TIR.Buffer GetInnerAllocateBuffer(int storeLevel, TileNode node, BufferIdentity bid, int[] shape, out bool innerAllocated)
     {
         var expr = bid.Node.Grid.Buffers[bid.Index];
         var tensorType = GetBufferTensorType(expr);
