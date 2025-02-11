@@ -350,7 +350,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
     {
         if (Flags.HasFlag(PrinterFlags.Inline))
         {
-            throw new NotSupportedException($"Inline Mode with {typeof(PrimFunctionWrapper)}");
+            return expr.Name;
         }
 
         using var subScope = NestedScope();
@@ -365,7 +365,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         {
             using (IndentScope())
             {
-                using (var bodys = new StringReader(CompilerServices.Print(expr.Target, Flags)))
+                using (var bodys = new StringReader(CompilerServices.Print(expr.Target, Flags | PrinterFlags.Script)))
                 {
                     while (bodys.ReadLine() is string line)
                     {

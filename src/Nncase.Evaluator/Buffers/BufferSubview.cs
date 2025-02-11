@@ -22,7 +22,7 @@ public partial class BufferSubviewEvaluator : ITypeInferencer<BufferSubview>
         var shape = shapeExpr switch
         {
             IR.Tuple t => new Shape(t.Fields),
-            TupleConst tc => new Shape(tc.Value.AsTensor().ToArray<long>()),
+            TupleConst tc => new Shape(tc.Value.AsTensors().Select(t => t.ToScalar<long>()).ToArray()),
             _ => throw new ArgumentException("Invalid shape argument."),
         };
         return new TensorType(buffer.CheckedDataType, shape);

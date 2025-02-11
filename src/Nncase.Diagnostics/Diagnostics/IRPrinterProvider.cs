@@ -33,7 +33,7 @@ internal sealed class IRPrinterProvider : IPrinterProvider
     public void DumpIR(Expr expr, string prefix, string dumpPath, PrinterFlags flags)
     {
         var nprefix = prefix.Any() ? prefix + "_" : prefix;
-        string ext = flags.HasFlag(PrinterFlags.Script) ? "script" : "il";
+        string ext = (flags.HasFlag(PrinterFlags.Script) || expr is PrimFunction) ? "script" : "il";
         string name = expr is Callable c ? c.Name : expr.GetType().Name;
         string filePath = Path.Combine(dumpPath, $"{nprefix}{name}.{ext}");
         if (string.IsNullOrEmpty(dumpPath))

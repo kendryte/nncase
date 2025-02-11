@@ -63,7 +63,7 @@ internal sealed class Dumpper : IDumpper
         var flag = PrinterFlags.Minimal;
         foreach (var func in module.Functions)
         {
-            DumpIR(func, string.Empty, reletivePath, (func is Function or Fusion) ? flag : (flag | PrinterFlags.Script));
+            DumpIR(func, string.Empty, reletivePath, (func is Function or Fusion or PrimFunctionWrapper) ? flag : (flag | PrinterFlags.Script));
         }
     }
 
