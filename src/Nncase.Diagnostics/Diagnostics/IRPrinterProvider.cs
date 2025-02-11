@@ -51,7 +51,7 @@ internal sealed class IRPrinterProvider : IPrinterProvider
                 new ScriptPrintVisitor(dumpWriter, flags).Visit(expr);
                 break;
             default:
-                new ILPrintVisitor(dumpWriter, flags).Visit(expr);
+                new ILPrintVisitor(dumpWriter, flags, new Dictionary<Expr, string>()).Visit(expr);
                 break;
         }
     }
@@ -126,7 +126,7 @@ internal sealed class IRPrinterProvider : IPrinterProvider
     {
         var stream = Stream.Null;
         using var dumpWriter = new IndentedWriter(stream);
-        return new ILPrintVisitor(dumpWriter, flags).VisitType(type);
+        return new ILPrintVisitor(dumpWriter, flags, new Dictionary<Expr, string>()).VisitType(type);
     }
 
     /// <inheritdoc/>
@@ -142,7 +142,7 @@ internal sealed class IRPrinterProvider : IPrinterProvider
             }
             else
             {
-                new ILPrintVisitor(writer, flags).Visit(expr);
+                new ILPrintVisitor(writer, flags, new Dictionary<Expr, string>()).Visit(expr);
             }
         }
 

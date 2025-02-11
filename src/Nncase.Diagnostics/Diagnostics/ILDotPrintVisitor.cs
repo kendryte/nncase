@@ -10,9 +10,11 @@ using System.Text;
 using System.Threading.Tasks;
 using GiGraph.Dot.Entities.Clusters;
 using GiGraph.Dot.Entities.Graphs;
+using GiGraph.Dot.Entities.Html.Builder;
 using GiGraph.Dot.Entities.Html.Table;
 using GiGraph.Dot.Entities.Nodes;
 using GiGraph.Dot.Extensions;
+using GiGraph.Dot.Output.Options;
 using GiGraph.Dot.Types.Colors;
 using GiGraph.Dot.Types.Edges;
 using GiGraph.Dot.Types.Fonts;
@@ -51,11 +53,24 @@ internal sealed class ILDotOption
     public bool IsDotNode => _dotNode is not null;
 }
 
+internal sealed class DotHtmlUnescapedText : GiGraph.Dot.Entities.Html.DotHtmlEntity, GiGraph.Dot.Entities.Html.IDotHtmlEntity
+{
+    private readonly string _text;
+
+    public DotHtmlUnescapedText(string text)
+    {
+        _text = text;
+    }
+
+    protected override string ToHtml(DotSyntaxOptions options, DotSyntaxRules syntaxRules) => _text;
+}
+
 internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
 {
     private readonly DotGraph _dotGraph;
     private readonly List<(string, DotGraph)> _subdotGraphs;
     private readonly Dictionary<Expr, ILDotOption> _exprMemo = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<Var, int> _varColorMemo = new(ReferenceEqualityComparer.Instance);
     private readonly PrinterFlags _flags;
     private int _idCounter;
 
@@ -81,6 +96,22 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
         {
             SaveToFileCore(subGraph, name + "_" + sub_name, prefix, dumpDir);
         }
+    }
+
+    public override string DefaultVisitType(IRType type)
+    {
+        var feedDict = new Dictionary<Expr, string>();
+
+        foreach (var var in CollectShapeExprs(type).OfType<Var>())
+        {
+            UpdateVarColor(var);
+            var exprName = $"%{var.Name}#{var.GlobalVarIndex}";
+            feedDict.Add(var, new DotHtmlBuilder().AppendText(exprName, new DotFont(GetVarColor(var))).Build().ToHtml());
+        }
+
+        var stream = Stream.Null;
+        using var dumpWriter = new IndentedWriter(stream);
+        return new ILPrintVisitor(dumpWriter, PrinterFlags.Minimal, feedDict).VisitType(type).AsHtml();
     }
 
     /// <inheritdoc/>
@@ -120,7 +151,7 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
     protected override ILDotOption VisitFusion(Fusion expr)
     {
         _entryBaseFunc ??= expr;
-        if (!object.ReferenceEquals(_entryBaseFunc, expr))
+        if (!ReferenceEquals(_entryBaseFunc, expr))
         {
             if (_flags.HasFlag(PrinterFlags.Detailed))
             {
@@ -377,7 +408,10 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
             });
             table.AddRow(row =>
             {
-                row.AddCell(expr.CheckedType is null ? "Null" : CompilerServices.Print(expr.CheckedType), cell => cell.ColumnSpan = 3);
+                var cell = new DotHtmlTableCell();
+                cell.SetContent(new DotHtmlUnescapedText(VisitType(expr.CheckedType).AsHtml()));
+                cell.ColumnSpan = 3;
+                row.Add(cell);
             });
 
             // 3. make crrent node.
@@ -414,8 +448,17 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
         {
             var id = _idCounter++;
             string exprId = "\"" + id.ToString() + "\"";
-            var dotNode = new DotNode(exprId) { Label = expr.Name + "_" + expr.GlobalVarIndex, Shape = DotNodeShape.Rectangle };
-            _dotGraph.Nodes.Add(dotNode);
+            var exprName = $"%{expr.Name}#{expr.GlobalVarIndex}";
+            var table = new DotHtmlTable();
+            table.AddRow(row => { row.AddCell(exprName); });
+            table.AddRow(row =>
+            {
+                var cell = new DotHtmlTableCell();
+                cell.SetContent(new DotHtmlUnescapedText(VisitType(expr.TypeAnnotation).AsHtml()));
+                row.Add(cell);
+            });
+            var dotNode = _dotGraph.Nodes.Add(exprId);
+            dotNode.ToPlainHtmlNode(table);
             result = new(dotNode);
             _exprMemo.Add(expr, result);
         }
@@ -466,7 +509,10 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
             });
             table.AddRow(row =>
             {
-                row.AddCell(expr.CheckedType is null ? "Null" : CompilerServices.Print(expr.CheckedType), cell => cell.ColumnSpan = connect_list.Count + 2);
+                var cell = new DotHtmlTableCell();
+                cell.SetContent(new DotHtmlUnescapedText(VisitType(expr.CheckedType).AsHtml()));
+                cell.ColumnSpan = connect_list.Count + 2;
+                row.Add(cell);
             });
 
             // 3. make crrent node.
@@ -509,5 +555,60 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
         {
             Visit(expr);
         }
+    }
+
+    private void UpdateVarColor(Var expr)
+    {
+        if (!_varColorMemo.TryGetValue(expr, out var _))
+        {
+            _varColorMemo.Add(expr, _varColorMemo.Keys.Count);
+        }
+    }
+
+    private DotColor GetVarColor(Var expr)
+    {
+        return new DotColor(Utility.BaseColors[_varColorMemo[expr] % Utility.BaseColors.Length]);
+    }
+
+    private List<Expr> CollectShapeExprs(IRType irType)
+    {
+        var shapes = new List<Shape>();
+
+        void InnerCollect(IRType type)
+        {
+            switch (type)
+            {
+                case TensorType t:
+                    shapes.Add(t.Shape);
+                    break;
+                case DistributedType dt:
+                    shapes.Add(dt.TensorType.Shape);
+                    break;
+                case TupleType tt:
+                    foreach (var field in tt.Fields)
+                    {
+                        InnerCollect(field);
+                    }
+
+                    break;
+            }
+        }
+
+        InnerCollect(irType);
+        var collector = new ShapeExprWalker();
+        foreach (var shape in shapes)
+        {
+            collector.Visit(shape);
+        }
+
+        return collector.ExprMemo.Keys.ToList();
+    }
+}
+
+internal sealed class ShapeExprWalker : ExprWalker
+{
+    public ShapeExprWalker()
+        : base(false, false)
+    {
     }
 }

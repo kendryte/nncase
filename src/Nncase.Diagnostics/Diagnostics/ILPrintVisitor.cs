@@ -97,11 +97,11 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
     private readonly List<int> _stackedScopeDepthOffSets;
     private readonly List<int> _stackedVisitDepthOffSets;
 
-    public ILPrintVisitor(IndentedWriter printer, PrinterFlags printerFlags)
+    public ILPrintVisitor(IndentedWriter printer, PrinterFlags printerFlags, IReadOnlyDictionary<Expr, string> feedDict)
     {
         _writer = printer;
         Flags = printerFlags;
-        _stackedMemos = new() { new(ReferenceEqualityComparer.Instance) };
+        _stackedMemos = new() { new(feedDict, ReferenceEqualityComparer.Instance) };
         _stackedSSANumbers = [0];
         _stackedScopeDepthOffSets = [0];
         _stackedVisitDepthOffSets = [0];

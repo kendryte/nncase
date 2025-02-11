@@ -237,6 +237,19 @@ internal class Compiler : ICompiler
 
         _compileSession.Target.RegisterTargetInDependentPass(passManager, _compileSession.CompileOptions);
 
+        passManager.AddWithName<DataflowPass>("OptimizeByRange").Configure(p =>
+        {
+            p.Add<InferRange>();
+            p.Add<FoldNopAbsByRange>();
+            p.Add<FoldNopCompareByRange>();
+            p.Add<FoldNopIf>();
+            p.Add<FoldNopSelect>();
+            p.Add<FoldNopBinary>();
+            p.Add<FoldSameBinary>();
+            p.Add<FoldNopWhere>();
+            p.Add<InlineFunction>(20);
+        });
+
         passManager.AddWithName<DataflowPass>("BroadcastMarker").Configure(p =>
         {
             p.Add<FoldTransposeActTranspose>();
