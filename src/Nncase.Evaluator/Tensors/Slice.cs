@@ -145,12 +145,10 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         }
         else
         {
-            return ShapeExprUtility.If(
+            return Select(
                 x.Value < 0L,
-                (x, dim) => dim + x,
-                (x, dim) => Clamp(x, lowerBound, dim + upperBoundBias),
-                x.Value,
-                dim.Value);
+                (dim + x).ToExpr(),
+                Dimension.Clamp(x, lowerBound, dim + upperBoundBias).ToExpr());
         }
     }
 

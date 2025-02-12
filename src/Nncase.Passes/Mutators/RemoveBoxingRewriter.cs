@@ -25,7 +25,21 @@ public sealed class RemoveBoxingCloner : ExprCloner<Unit>
 
     protected override Expr VisitLeafCall(Call expr, Unit context)
     {
-        return expr.Target is Boxing ? Visit(expr[Boxing.Input], context) : base.VisitLeafCall(expr, context);
+        if (expr.Target is Boxing boxing)
+        {
+            var input = Visit(expr[Boxing.Input], context);
+            if (boxing.NewType is DistributedType dt && dt.TensorType != input.CheckedType)
+            {
+                // Reshape
+                return IR.F.Tensors.Reshape(input, dt.TensorType.Shape.ToValueArrayExpr());
+            }
+            else
+            {
+                return input;
+            }
+        }
+
+        return base.VisitLeafCall(expr, context);
     }
 
     protected override Expr VisitLeafTensorConst(TensorConst expr, Unit context)

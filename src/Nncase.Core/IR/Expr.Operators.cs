@@ -35,8 +35,20 @@ public partial class Expr
             IR.Tuple t => t[(int)indices.Single()],
             Call { Target: Concat { Axis: 0 } } c when indices.Length == 1 => c[Concat.Input][indices[0]][0],
             Call { Target: Reshape } c when c[Reshape.Shape] is TensorConst tc && tc.Value.Length == 1 && tc.Value.ToScalar<long>() == 1 => c[Reshape.Input],
+            Call { Target: Stack } c when indices.Length == 1 => c[Stack.Inputs][indices[0]],
+            Call { Target: Fusion } c when indices.Length == 1 => GetItemOfBaseFunction(c, indices[0]),
             _ => this[indices.Select(x => (Expr)x).ToArray()],
         };
+
+    private Expr GetItemOfBaseFunction(Call c, long v)
+    {
+        if (c.CheckedType is TupleType tt && tt.Count == 3 && v == 3)
+        {
+            Console.WriteLine();
+        }
+
+        return c[(Expr)v];
+    }
 
     /// <summary>
     /// get the item from the expr.

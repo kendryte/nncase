@@ -19,7 +19,7 @@ public partial class FoldGetItemReshape : RewriteRule<Pattern>
 
     public Pattern ReshapePattern => IsReshape(IsWildcard("input"), new long[] { 1 });
 
-    private Expr? GetReplace(Expr input, int index)
+    private Expr? GetReplace(Expr input)
     {
         return input;
     }

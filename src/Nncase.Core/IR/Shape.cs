@@ -467,6 +467,12 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
         return this.Select(x => x.FixedValue).ToArray();
     }
 
+    public Expr ToValueArrayExpr()
+    {
+        var tuple = new IR.Tuple(Dimensions);
+        return IR.F.Tensors.Stack(tuple, 0);
+    }
+
     /// <inheritdoc/>
     public override string ToString() => Kind switch
     {
