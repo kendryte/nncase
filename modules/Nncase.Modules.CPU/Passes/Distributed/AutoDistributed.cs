@@ -8,7 +8,7 @@ using Google.OrTools.Sat;
 using NetFabric.Hyperlinq;
 using Nncase.Graphs;
 using Nncase.IR;
-using Nncase.IR.CPU;
+using Nncase.IR.Distributed;
 using Nncase.Targets;
 using Nncase.Utilities;
 using QuikGraph;
@@ -194,7 +194,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 var type = DistributedUtility.GetDividedTensorType((DistributedType)k.Expr.CheckedType);
                 var size = TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
 
-                if (k.Expr is Call { Target: IR.CPU.Boxing boxing } call && boxing.NewType is DistributedType distributedType && call.Arguments[0].CheckedType is DistributedType inType && inType.NdSBP.Any(sbp => sbp is SBPPartial) && distributedType != call.Arguments[0].CheckedType)
+                if (k.Expr is Call { Target: Boxing boxing } call && boxing.NewType is DistributedType distributedType && call.Arguments[0].CheckedType is DistributedType inType && inType.NdSBP.Any(sbp => sbp is SBPPartial) && distributedType != call.Arguments[0].CheckedType)
                 {
                     type = DistributedUtility.GetDividedTensorType(inType);
                     size += TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
@@ -342,7 +342,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             {
                 foreach (var (rType, rBucket) in bucketMemo.Where(kv => kv.Key is DistributedType distributedType && distributedType != lType))
                 {
-                    if (Evaluator.IR.CPU.BoxingEvaluator.VisitType(lType, rType) is not InvalidType)
+                    if (Evaluator.IR.Distributed.BoxingEvaluator.VisitType(lType, rType) is not InvalidType)
                     {
                         var rnode = new SearchableNode(new Boxing(rType), rType, true);
                         rBucket.AddVertex(rnode);
@@ -365,7 +365,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 foreach (var addedBucket in addedBuckets)
                 {
                     var addedNode = addedBucket.Vertices.First();
-                    if (Evaluator.IR.CPU.BoxingEvaluator.VisitType(addedNode.IRType, nType) is not InvalidType)
+                    if (Evaluator.IR.Distributed.BoxingEvaluator.VisitType(addedNode.IRType, nType) is not InvalidType)
                     {
                         callCluster.AddEdge(new(node, addedNode, 0, addedBucket));
                         linked |= true;
@@ -579,7 +579,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 bucket.AddVertex(onode);
                 foreach (var inputBucket in inputBuckets)
                 {
-                    if (Evaluator.IR.CPU.BoxingEvaluator.VisitType(inputBucket.Vertices.First().IRType, onode.IRType) is not InvalidType)
+                    if (Evaluator.IR.Distributed.BoxingEvaluator.VisitType(inputBucket.Vertices.First().IRType, onode.IRType) is not InvalidType)
                     {
                         _rootSearchGraph.AddEdge(new(onode, inputBucket.Vertices.First(), 0, inputBucket));
                     }

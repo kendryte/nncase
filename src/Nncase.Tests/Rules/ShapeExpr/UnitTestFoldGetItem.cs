@@ -25,16 +25,18 @@ public class UnitTestFoldGetItem : TransformTestBase
         TestMatched<FoldStackGetItem>(s);
     }
 
-    // [Fact]
-    // public void TestFoldStackGetItemDyn()
-    // {
-    //     var input = Tensor.From(new[] { 1, 2, 3 });
-    //     var inputVar = new Var(new TensorType(input.ElementType, input.Shape));
-    //     var abs = IR.F.Math.Abs(inputVar);
-    //     var s = Stack(new IR.Tuple(new[] { abs[0], abs[1], abs[2] }), 0);
-    //     var body = new If(true, new[] { 3, 2, 1 }, s);
-    //     TestMatched<FoldStackGetItem>(body, new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input) } });
-    // }
+#if false
+    [Fact]
+    public void TestFoldStackGetItemDyn()
+    {
+        var input = Tensor.From(new[] { 1, 2, 3 });
+        var inputVar = new Var(new TensorType(input.ElementType, input.Shape));
+        var abs = IR.F.Math.Abs(inputVar);
+        var s = Stack(new IR.Tuple(new[] { abs[0], abs[1], abs[2] }), 0);
+        var body = new If(true, new[] { 3, 2, 1 }, s);
+        TestMatched<FoldStackGetItem>(body, new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input) } });
+    }
+#endif
 
     [Fact]
     public void TestFoldSqueezeGetItem()

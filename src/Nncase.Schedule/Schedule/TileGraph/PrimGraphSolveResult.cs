@@ -431,7 +431,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
     /// <summary>
     /// Allocate a buffer which store at inner level.
     /// </summary>
-    private TIR.Buffer GetParentAllocateBuffer(int storeLevel, TileNode node, BufferIdentity bid, long[] shape, out bool innerAllocated)
+    private TIR.Buffer GetInnerAllocateBuffer(int storeLevel, TileNode node, BufferIdentity bid, long[] shape, out bool innerAllocated)
     {
         var expr = bid.Node.Grid.Buffers[bid.Index];
         var tensorType = GetBufferTensorType(expr);

@@ -48,7 +48,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                         {
                             var firstValidAxis = mapedOutAxes.Where(axis => newShape[axis] > 1).First();
                             var restAxes = mapedOutAxes.Skip(mapedOutAxes.IndexOf(firstValidAxis) + 1).ToArray();
-                            var restSize = restAxes.Aggregate(1, (x, i) => x * newShape[i]);
+                            var restSize = restAxes.Aggregate(1L, (x, i) => x * newShape[i]);
                             if (restSize < (inShape[si.Axis] / inType.Placement.Hierarchy[meshAxis]))
                             {
                                 ndsbp[meshAxis] = SBP.S(firstValidAxis);
