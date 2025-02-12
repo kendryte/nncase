@@ -44,8 +44,41 @@ public static class EGraphExtensions
         }
 
         // 2. start the cost evaluator
-        var costModel = new CostModel.EGraphCostEvaluator(root.Find(), compileOptions, basefunc_cost_evaluator, false).Evaluate();
+        // var costModel = new CostModel.EGraphCostEvaluator(root.Find(), compileOptions, basefunc_cost_evaluator, false).Evaluate();
+        var enodeCostMemo = new Dictionary<ENode, Cost>();
+        var opCostMemo = new Dictionary<CostMemoKey, Cost>();
+        foreach (var enode in eGraph.Nodes)
+        {
+            switch (enode.Expr)
+            {
+                case Call { Target: Expr target } call:
+                    switch (target)
+                    {
+                        case Op op:
+                            var returnType = enode.Expr.CheckedType;
+                            var key = new CostMemoKey(enode, new CostMemoKeyPartial(op, returnType, enode.Children.Skip(1).Select(x => x.CheckedType).ToArray()));
+                            if (!opCostMemo.TryGetValue(key, out var newCost))
+                            {
+                                var context = new EGraphOpCostEvaluateContext(returnType, enode.Children.Skip(1).Select(x => x.CheckedType).ToArray(), enode.Children.Skip(1).ToArray(), compileOptions);
+                                newCost = CompilerServices.EvaluateOpCost(op, context);
+                                opCostMemo.Add(key, newCost);
+                            }
 
-        return new EGraphExtractor(costModel).Extract(root.Find(), eGraph, constrains ?? Array.Empty<EGraphExtractConstrains>());
+                            enodeCostMemo[enode] = Cost.Zero;
+                            break;
+                        default:
+                            enodeCostMemo[enode] = Cost.Zero;
+                            break;
+                    }
+
+                    break;
+                default:
+                    enodeCostMemo[enode] = Cost.Zero;
+                    break;
+            }
+        }
+
+        var egraphCostModel = new EGraphCostModel(enodeCostMemo);
+        return new EGraphExtractor(egraphCostModel).Extract(root.Find(), eGraph, constrains ?? Array.Empty<EGraphExtractConstrains>());
     }
 }
