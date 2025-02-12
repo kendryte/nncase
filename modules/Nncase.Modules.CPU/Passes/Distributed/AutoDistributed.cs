@@ -1648,16 +1648,16 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         {
             if (target is Reshape && args[0].CheckedType is DistributedType inType && args[1] is TensorConst constNewShape)
             {
-                // var newShape = constNewShape.Value.ToArray<int>();
-                // var tensorType = new TensorType(inType.TensorType.DType, newShape);
-                // foreach (var boxing in DistributedUtility.GetLeafCandidateNDSBPs(tensorType, inType.Placement).
-                // Select(ndsbp => IR.F.CPU.Boxing(args[0], new DistributedType(tensorType, ndsbp, inType.Placement))))
-                // {
-                //     if (boxing.CheckedType is not InvalidType)
-                //     {
-                //         calls.Add(boxing);
-                //     }
-                // }
+                var newShape = constNewShape.Value.ToArray<int>();
+                var tensorType = new TensorType(inType.TensorType.DType, newShape);
+                foreach (var boxing in DistributedUtility.GetLeafCandidateNDSBPs(tensorType, inType.Placement).
+                Select(ndsbp => IR.F.CPU.Boxing(args[0], new DistributedType(tensorType, ndsbp, inType.Placement))))
+                {
+                    if (boxing.CheckedType is not InvalidType)
+                    {
+                        calls.Add(boxing);
+                    }
+                }
             }
             else
             {
