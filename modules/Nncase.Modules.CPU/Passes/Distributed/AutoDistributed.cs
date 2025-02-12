@@ -646,7 +646,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 var col1 = new QuikGraph.Graphviz.Dot.GraphvizRecordCell();
                 row0.Cells.Add(col1);
 
-                col1.Cells.Add(new() { Text = CompilerServices.Print(arg.Vertex.Expr) });
+                col1.Cells.Add(new() { Text = arg.Vertex.Expr.GetType().ToString() });
                 if (arg.Vertex.Expr is IR.Tuple && arg.Vertex.IRType is TupleType tpTuple)
                 {
                     for (int i = 0; i < tpTuple.Fields.Count; i++)
