@@ -348,6 +348,52 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 break;
             case AutoDistributedSearchStrategy.ExpandPartial:
 #pragma warning disable SA1008 // Opening parenthesis should be spaced correctly
+#if true
+                foreach (var (lType, lBucket) in bucketMemo.Where(kv => kv.Key is DistributedType ldistType && ldistType.NdSBP.Any(sbp => sbp is SBPPartial)))
+                {
+                    var ldistType = (DistributedType)lType;
+                    foreach (var rType in GetLeafCandidateDistTypes(expr.CheckedTensorType, Placements).Where(rdistType => ldistType.NdSBP.Zip(rdistType.NdSBP).All(p => (p.First, p.Second) switch { (SBPPartial, SBPBroadCast) => true, (SBP a, SBP b) => a == b })))
+                    {
+                        if (!bucketMemo.TryGetValue(rType, out var rbucket))
+                        {
+                            rbucket = callCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
+                            bucketMemo.Add(rType, rbucket);
+                        }
+
+                        if (Evaluator.IR.CPU.BoxingEvaluator.VisitType(lType, rType) is InvalidType)
+                        {
+                            throw new InvalidOperationException("the partial to broadcast shouldn't be invalid!");
+                        }
+
+                        var rnode = new SearchableNode(new Boxing(rType), rType);
+                        rbucket.AddVertex(rnode);
+                        callCluster.AddEdge(new(rnode, lBucket.Vertices.First(), 0, lBucket));
+                    }
+                }
+
+                {
+                    if (bucketMemo.Count == 1 && bucketMemo.Keys.First() is DistributedType ldistType && ldistType.NdSBP.All(sbp => sbp is SBPBroadCast))
+                    {
+                        foreach (var rdistType in GetLeafCandidateDistTypes(expr.CheckedTensorType, Placements).Where(rdistType => ldistType.NdSBP.Zip(rdistType.NdSBP).All(p => (p.First, p.Second) switch { (SBPBroadCast, SBPSplit) => true, (SBP a, SBP b) => a == b } && ldistType != rdistType)))
+                        {
+                            if (!bucketMemo.TryGetValue(rdistType, out var rbucket))
+                            {
+                                rbucket = callCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
+                                bucketMemo.Add(rdistType, rbucket);
+                            }
+
+                            if (Evaluator.IR.CPU.BoxingEvaluator.VisitType(ldistType, rdistType) is InvalidType)
+                            {
+                                throw new InvalidOperationException("the broadcast to split shouldn't be invalid!");
+                            }
+
+                            var rnode = new SearchableNode(new Boxing(rdistType), rdistType);
+                            rbucket.AddVertex(rnode);
+                            callCluster.AddEdge(new(rnode, bucketMemo[ldistType].Vertices.First(), 0, bucketMemo[ldistType]));
+                        }
+                    }
+                }
+#else
                 // partial -> broadcast
                 foreach (var (lType, lBucket) in bucketMemo.Where(kv => kv.Key is DistributedType ldistType && ldistType.NdSBP.Any(sbp => sbp is SBPPartial)))
                 {
@@ -377,6 +423,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                         }
                     }
                 }
+#endif
 #pragma warning restore SA1008 // Opening parenthesis should be spaced correctly
 
                 break;
@@ -385,6 +432,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
 
         // 4. add not infered type in search space.
+#if false
         var addedBuckets = bucketMemo.Values.ToArray();
         foreach (var nType in GetLeafCandidateDistTypes(expr.CheckedTensorType, Placements))
         {
@@ -415,6 +463,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 }
             }
         }
+#endif
 
         // 5. filter
         FilterByScheme(expr, callCluster);
