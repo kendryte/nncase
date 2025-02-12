@@ -686,7 +686,7 @@ template <typename T, size_t vl> void test_vector() {
     _TEST_VECTOR(T, 8)
 
 TEST(UnaryTestAdd, vector) {
-    TEST_VECTOR(float)
+    TEST_VECTOR(half)
     TEST_VECTOR(int32_t)
     TEST_VECTOR(int64_t)
 }

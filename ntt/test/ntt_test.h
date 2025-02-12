@@ -193,8 +193,10 @@ bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
 
     bool pass = true;
     nncase::ntt::apply(lhs.shape(), [&](auto index) {
-        auto d1 = (double)lhs(index);
-        auto d2 = (double)rhs(index);
+        auto d1 = static_cast<double>(
+            static_cast<typename TTensor::element_type>(lhs(index)));
+        auto d2 = static_cast<double>(
+            static_cast<typename TTensor::element_type>(rhs(index)));
         v1.push_back(d1);
         v2.push_back(d2);
         if (d1 != d2) {
