@@ -167,7 +167,7 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
         }
 
         var cloner = new ExprClusterCloner(extractDict);
-        var outVertices = cluster.OutVertices().ToArray();
+        var outVertices = cluster.OutVertices(Algo.ClusteredGraph).ToArray();
         var clones = new List<Expr>();
         foreach (var outVertex in outVertices)
         {

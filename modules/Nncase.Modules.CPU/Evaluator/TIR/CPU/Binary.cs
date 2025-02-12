@@ -2,8 +2,8 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Google.OrTools.ConstraintSolver;
-using Nncase.IR;
 using Nncase.Diagnostics;
+using Nncase.IR;
 using Nncase.IR.Affine;
 using Nncase.Schedule;
 using Nncase.TIR.CPU;
@@ -34,7 +34,6 @@ public sealed class BinaryEvaluator : ITypeInferencer<Binary>, IKernelInfoEvalua
     {
         return $"Binary({target.DisplayProperty()}, {context.GetArgument(target, Binary.Lhs)}, {context.GetArgument(target, Binary.Rhs)}, {context.GetArgument(target, Binary.Output)})";
     }
-
 
     private static IntExpr GetComputeCycle(IntExpr[][] bufferShapes, Solver solver, MicroKernelContext context)
     {
