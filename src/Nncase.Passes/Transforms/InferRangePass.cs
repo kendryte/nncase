@@ -109,8 +109,16 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
             Squeeze => Visit(expr[Squeeze.Input]),
             Unsqueeze => Visit(expr[Unsqueeze.Input]),
             Stack => Visit(expr[Stack.Inputs]),
+            Select => InferenceSelect(expr),
             _ => ValueRange<double>.Full,
         };
+    }
+
+    private ValueRange<double> InferenceSelect(Call expr)
+    {
+        var then = Visit(expr[Select.TrueValue]);
+        var @else = Visit(expr[Select.FalseValue]);
+        return new(Math.Min(then.Min, @else.Min), Math.Max(then.Max, @else.Max));
     }
 
     private ValueRange<double> InferenceBinary(Call expr, BinaryOp op)

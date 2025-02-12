@@ -421,8 +421,11 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
         return new(fixedValue, dynamicValue);
     }
 
-    public long ProdWithDynamicAsOne(long scale = 1) =>
-        Enumerable.Range(0, Rank).Aggregate(scale, (acc, x) => acc * (this[x].IsFixed ? this[x].FixedValue : 1));
+    public long ProdWithDynamicAsMaxValue(long scale = 1)
+    {
+        var maxShape = CompilerServices.GetMaxShape(this);
+        return Enumerable.Range(0, Rank).Aggregate(scale, (acc, x) => acc * maxShape[x]);
+    }
 
     /// <summary>
     /// return new shape after insert dim.

@@ -202,7 +202,7 @@ public static class CostUtility
     {
         return type switch
         {
-            TensorType t => (UInt128)t.Shape.ProdWithDynamicAsOne() * (UInt128)t.DType.SizeInBytes,
+            TensorType t => (UInt128)t.Shape.ProdWithDynamicAsMaxValue() * (UInt128)t.DType.SizeInBytes,
             TupleType t => t.Fields.Sum(GetMemoryAccess),
             DistributedType t => GetMemoryAccess(Utilities.DistributedUtility.GetDividedTensorType(t)),
             _ => 0,
@@ -218,7 +218,7 @@ public static class CostUtility
     {
         return type switch
         {
-            TensorType t => (UInt128)Math.Ceiling((float)t.Shape.ProdWithDynamicAsOne() * t.DType.SizeInBytes * bits / 8),
+            TensorType t => (UInt128)Math.Ceiling((float)t.Shape.ProdWithDynamicAsMaxValue() * t.DType.SizeInBytes * bits / 8),
             TupleType t => t.Fields.Sum(x => GetFakeMemoryAccess(x, bits)),
             _ => 0,
         };
@@ -228,7 +228,7 @@ public static class CostUtility
     {
         return type switch
         {
-            TensorType t => (UInt128)(t.Shape.ProdWithDynamicAsOne() * cyclesPerElement),
+            TensorType t => (UInt128)(t.Shape.ProdWithDynamicAsMaxValue() * cyclesPerElement),
             TupleType t => t.Fields.Sum(GetMemoryAccess),
             DistributedType t => GetCPUCycles(Utilities.DistributedUtility.GetDividedTensorType(t)),
             _ => 0,
