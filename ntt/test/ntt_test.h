@@ -139,9 +139,9 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
             //     std::cout << index[i] << " ";
             // std::cout << ") = " << tensor(index) << std::endl;
         });
-    }else if(std::is_same_v<T,half>){
+    } else if (std::is_same_v<T, half>) {
         std::uniform_real_distribution<float> dis(start, stop);
-         ntt::apply(tensor.shape(), [&](auto &index) {
+        ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<half>(dis(gen));
         });
     } else if (std::is_same_v<T, double>) {
