@@ -116,7 +116,8 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         return placements.Select(
             placement =>
                 Utilities.DistributedUtility.GetLeafCandidateNDSBPs((TensorType)expr.CheckedType, placement).
-                Select(ndsbp =>
+                Select<IRArray<SBP>, Expr>(ndsbp => expr is TensorConst tc ?
+                    new TensorConst(tc.Value, ndsbp, placement) :
                     IR.F.CPU.Boxing(expr, new DistributedType((TensorType)expr.CheckedType, ndsbp, placement)))).
             SelectMany(e => e).ToArray();
     }
