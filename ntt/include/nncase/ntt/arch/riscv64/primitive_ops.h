@@ -780,6 +780,27 @@ REGISTER_RVV_BINARY_OP(sub, half, sub_float16)
 REGISTER_RVV_KERNEL(MUL_FLOAT32)
 REGISTER_RVV_BINARY_OP(mul, float, mul_float32)
 
+// mul fp16
+#define MUL_FLOAT16(lmul, mlen)                                                \
+    inline vfloat16m##lmul##_t mul_float16(const vfloat16m##lmul##_t &v1,      \
+                                           const vfloat16m##lmul##_t &v2,      \
+                                           const size_t vl) {                  \
+        return __riscv_vfmul_vv_f16m##lmul(v1, v2, vl);                        \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t mul_float16(const vfloat16m##lmul##_t &v,       \
+                                           const half &s, const size_t vl) {  \
+        return __riscv_vfmul_vf_f16m##lmul(v, s, vl);                          \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t mul_float16(                                    \
+        const half &s, const vfloat16m##lmul##_t &v, const size_t vl) {       \
+        return __riscv_vfmul_vf_f16m##lmul(v, s, vl);                          \
+    }
+
+REGISTER_RVV_KERNEL(MUL_FLOAT16)
+REGISTER_RVV_BINARY_OP(mul, half, mul_float16)
+
 // div fp32
 #define DIV_FLOAT32(lmul, mlen)                                                \
     inline vfloat32m##lmul##_t div_float32(const vfloat32m##lmul##_t &v1,      \
