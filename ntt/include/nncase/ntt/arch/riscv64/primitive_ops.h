@@ -675,7 +675,7 @@ REGISTER_RVV_UNARY_OP(erf, float, erf_float32)
     RVV_BINARY_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)          \
     RVV_BINARY_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)
 
-// add
+// add fp32
 #define ADD_FLOAT32(lmul, mlen)                                                \
     inline vfloat32m##lmul##_t add_float32(const vfloat32m##lmul##_t &v1,      \
                                            const vfloat32m##lmul##_t &v2,      \
@@ -696,6 +696,7 @@ REGISTER_RVV_UNARY_OP(erf, float, erf_float32)
 REGISTER_RVV_KERNEL(ADD_FLOAT32)
 REGISTER_RVV_BINARY_OP(add, float, add_float32)
 
+// add fp16
 #define ADD_FLOAT16(lmul, mlen)                                                \
     inline vfloat16m##lmul##_t add_float16(const vfloat16m##lmul##_t &v1,      \
                                            const vfloat16m##lmul##_t &v2,      \
@@ -704,19 +705,19 @@ REGISTER_RVV_BINARY_OP(add, float, add_float32)
     }                                                                          \
                                                                                \
     inline vfloat16m##lmul##_t add_float16(const vfloat16m##lmul##_t &v,       \
-                                           const half &s, const size_t vl) {  \
+                                           const half &s, const size_t vl) {   \
         return __riscv_vfadd_vf_f16m##lmul(v, s, vl);                          \
     }                                                                          \
                                                                                \
     inline vfloat16m##lmul##_t add_float16(                                    \
-        const half &s, const vfloat16m##lmul##_t &v, const size_t vl) {   \
+        const half &s, const vfloat16m##lmul##_t &v, const size_t vl) {        \
         return __riscv_vfadd_vf_f16m##lmul(v, s, vl);                          \
     }
 
 REGISTER_RVV_KERNEL(ADD_FLOAT16)
 REGISTER_RVV_BINARY_OP(add, half, add_float16)
 
-// sub
+// sub fp32
 #define SUB_FLOAT32(lmul, mlen)                                                \
     inline vfloat32m##lmul##_t sub_float32(const vfloat32m##lmul##_t &v1,      \
                                            const vfloat32m##lmul##_t &v2,      \
@@ -737,7 +738,28 @@ REGISTER_RVV_BINARY_OP(add, half, add_float16)
 REGISTER_RVV_KERNEL(SUB_FLOAT32)
 REGISTER_RVV_BINARY_OP(sub, float, sub_float32)
 
-// mul
+// sub fp16
+#define SUB_FLOAT16(lmul, mlen)                                                \
+    inline vfloat16m##lmul##_t sub_float16(const vfloat16m##lmul##_t &v1,      \
+                                           const vfloat16m##lmul##_t &v2,      \
+                                           const size_t vl) {                  \
+        return __riscv_vfsub_vv_f16m##lmul(v1, v2, vl);                        \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t sub_float16(const vfloat16m##lmul##_t &v,       \
+                                           const half &s, const size_t vl) {   \
+        return __riscv_vfsub_vf_f16m##lmul(v, s, vl);                          \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t sub_float16(                                    \
+        const half &s, const vfloat16m##lmul##_t &v, const size_t vl) {        \
+        return __riscv_vfrsub_vf_f16m##lmul(v, s, vl);                         \
+    }
+
+REGISTER_RVV_KERNEL(SUB_FLOAT16)
+REGISTER_RVV_BINARY_OP(sub, half, sub_float16)
+
+// mul fp32
 #define MUL_FLOAT32(lmul, mlen)                                                \
     inline vfloat32m##lmul##_t mul_float32(const vfloat32m##lmul##_t &v1,      \
                                            const vfloat32m##lmul##_t &v2,      \
@@ -758,7 +780,7 @@ REGISTER_RVV_BINARY_OP(sub, float, sub_float32)
 REGISTER_RVV_KERNEL(MUL_FLOAT32)
 REGISTER_RVV_BINARY_OP(mul, float, mul_float32)
 
-// div
+// div fp32
 #define DIV_FLOAT32(lmul, mlen)                                                \
     inline vfloat32m##lmul##_t div_float32(const vfloat32m##lmul##_t &v1,      \
                                            const vfloat32m##lmul##_t &v2,      \
@@ -778,6 +800,27 @@ REGISTER_RVV_BINARY_OP(mul, float, mul_float32)
 
 REGISTER_RVV_KERNEL(DIV_FLOAT32)
 REGISTER_RVV_BINARY_OP(div, float, div_float32)
+
+// div fp16
+#define DIV_FLOAT16(lmul, mlen)                                                \
+    inline vfloat16m##lmul##_t div_float16(const vfloat16m##lmul##_t &v1,      \
+                                           const vfloat16m##lmul##_t &v2,      \
+                                           const size_t vl) {                  \
+        return __riscv_vfdiv_vv_f16m##lmul(v1, v2, vl);                        \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t div_float16(const vfloat16m##lmul##_t &v,       \
+                                           const half &s, const size_t vl) {   \
+        return __riscv_vfdiv_vf_f16m##lmul(v, s, vl);                          \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t div_float16(                                    \
+        const half &s, const vfloat16m##lmul##_t &v, const size_t vl) {        \
+        return __riscv_vfrdiv_vf_f16m##lmul(v, s, vl);                         \
+    }
+
+REGISTER_RVV_KERNEL(DIV_FLOAT16)
+REGISTER_RVV_BINARY_OP(div, half, div_float16)
 
 // mod
 #define MOD_FLOAT32(lmul, mlen)                                                \

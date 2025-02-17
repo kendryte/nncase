@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "ntt_test.h"
+#include "nncase/half.h"
 #include <iomanip>
 #include <nncase/ntt/ntt.h>
 
@@ -54,8 +55,8 @@ int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
 
-    constexpr size_t N = NTT_VLEN / (sizeof(float) * 8);
-    benchmark_ntt_binary<ntt::ops::add, float, N>("add", -10.f, 10.f, -10.f,
+    constexpr size_t N = NTT_VLEN / (sizeof(half) * 8);
+    benchmark_ntt_binary<ntt::ops::add, half, N>("add", -10.f, 10.f, -10.f,
                                                   10.f);
     benchmark_ntt_binary<ntt::ops::sub, float, N>("sub", -10.f, 10.f, -10.f,
                                                   10.f);
