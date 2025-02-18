@@ -150,6 +150,8 @@ public class LifeTimeCollector : ExprVisitor<Unit, Unit>
 
     public BufferSizeCalculator Calculator { get; }
 
+    public HashSet<Var> DimVars { get; } = new(ReferenceEqualityComparer.Instance);
+
     public IReadOnlyDictionary<Expr, ScheduleBuffer> Collect(Expr expr)
     {
         Visit(expr);
@@ -174,6 +176,7 @@ public class LifeTimeCollector : ExprVisitor<Unit, Unit>
 
             var rest = Calculator.Visit(k);
             d.Add(k, new(name, count++, v, new(0, rest.MaxSize), rest.Shape, rest.Stride, false));
+            UpdateDimVars(rest);
         }
 
         return d;
@@ -186,5 +189,26 @@ public class LifeTimeCollector : ExprVisitor<Unit, Unit>
         Updater.Visit(expr, new(LivenessMap, TimeStamp));
         TimeStamp += 2;
         return default;
+    }
+
+    private void UpdateDimVars(BufferSizeCalculator.Result result)
+    {
+        new DimVarUpdater(DimVars).Visit(result.Shape);
+    }
+
+    private sealed class DimVarUpdater : ExprWalker
+    {
+        private readonly HashSet<Var> _dimVars;
+
+        public DimVarUpdater(HashSet<Var> dimVars)
+        {
+            _dimVars = dimVars;
+        }
+
+        protected override Unit VisitLeafVar(Var expr)
+        {
+            _dimVars.Add(expr);
+            return default;
+        }
     }
 }

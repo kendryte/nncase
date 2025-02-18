@@ -24,6 +24,9 @@ internal static class CSourceUtilities
             case BinaryOp.Min:
                 str = $"std::min({lhs}, {rhs})";
                 break;
+            case BinaryOp.Max:
+                str = $"std::max({lhs}, {rhs})";
+                break;
             default:
                 throw new NotSupportedException();
         }

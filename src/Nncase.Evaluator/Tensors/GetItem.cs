@@ -156,7 +156,11 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
         if (indexExpr is TensorConst @const)
         {
             var indexValue = @const.Value.ToScalar<int>();
-            if (indexValue < input.Count)
+            if (indexValue < 0)
+            {
+                return new InvalidType($"The Input Tuple Count = {input.Count}, But Index = {indexValue}");
+            }
+            else if (indexValue < input.Count)
             {
                 return input[indexValue];
             }

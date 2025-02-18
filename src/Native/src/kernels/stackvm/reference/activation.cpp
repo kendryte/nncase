@@ -33,7 +33,6 @@ UNARY_TEMPLATE(relu, std::max((double)0, x))
 UNARY_TEMPLATE(softsign, x / (1 + std::abs(x)))
 UNARY_TEMPLATE(softplus, std::log(1 + std::exp(x)))
 UNARY_TEMPLATE(sigmoid, 1 / (1 + exp(-x)))
-UNARY_TEMPLATE(swish, x / (1 + exp(-x)))
 UNARY_TEMPLATE(hard_swish,
                x *std::max((double)0.f,
                            std::min((double)1.f, (double)(1.f / 6 * x + 0.5))))
@@ -48,6 +47,7 @@ UNARY_WITH_MUL_TEMPLATE_V2(leaky_relu, alpha, x < 0 ? alpha * x : x)
 UNARY_WITH_MUL_TEMPLATE_V2(gelu, alpha,
                            0.5f * (alpha * x) *
                                (1.f + erff(alpha * x / sqrtf(2.f))))
+UNARY_WITH_MUL_TEMPLATE_V2(swish, alpha, x / (1 + exp(-alpha * x)))
 ACTIVATION_TEMPLATE_V2(selu,
                        x <= 0 ? gamma * (alpha * std::exp(x) - alpha)
                               : x * gamma,

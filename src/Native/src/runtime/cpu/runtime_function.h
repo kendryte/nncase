@@ -43,7 +43,7 @@ class cpu_runtime_function final : public runtime_function {
                                 value_t return_value) noexcept override;
 
   private:
-    result<void> run(std::span<std::byte *> params) noexcept;
+    result<void> run(std::span<nncase::ntt::runtime::thread_inout_desc> inouts) noexcept;
 
   private:
 #if WIN32

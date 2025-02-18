@@ -44,9 +44,9 @@ class gather_impl<fixed_shape<Dims...>, fixed_strides<InStrides...>,
             (const slice_type *)(indices.elements().data()), indices_len,
             segments);
 
-        auto domain_before_axis = slice_fixed_dims<Axis>(input.shape());
+        auto domain_before_axis = slice_dims<Axis>(input.shape());
         constexpr auto domain_after_axis =
-            slice_fixed_dims<rank - Axis - 1, Axis + 1>(TA::shape());
+            slice_dims<rank - Axis - 1, Axis + 1>(TA::shape());
 
         auto addr_output_byte =
             reinterpret_cast<unsigned char *>(output.buffer().data());

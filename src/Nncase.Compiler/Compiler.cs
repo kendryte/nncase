@@ -344,7 +344,11 @@ internal class Compiler : ICompiler
         }
 
         await RunPassAsync(
-            p => target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions),
+            p =>
+            {
+                target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions);
+                p.Add<ReplaceDimVarWithShapeOfPass>();
+            },
             "TargetDependentBeforeCodeGen",
             progress,
             token);

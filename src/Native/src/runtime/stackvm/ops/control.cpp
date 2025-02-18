@@ -49,16 +49,9 @@ stackvm_runtime_function::visit(NNCASE_UNUSED const extcall_op_t &op) noexcept {
     if (op.is_prim_func) {
         std::vector<value_t> outputs;
         for (size_t i = op.args; i < func->parameters_size(); i++) {
-            try_var(type, func->parameter_type(i));
-            try_var(ttype, type.as<tensor_type>());
-            auto &shape = ttype->shape();
-            CHECK_WITH_ERR(shape.is_fixed(), std::errc::invalid_argument);
-            dims_t dims;
-            for (auto &d : shape)
-                dims.push_back(d.fixed_value());
-            try_var(t, runtime::detail::create(ttype->dtype(), dims));
-            outputs.emplace_back(t);
-            params.emplace_back(t);
+            try_var(output, pop_object<value_t>());
+            outputs.emplace_back(output);
+            params.emplace_back(output);
         }
 
         try_var(retval, func->invoke(params));

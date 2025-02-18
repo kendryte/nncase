@@ -53,6 +53,8 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
 
     public IEnumerable<TIR.Buffer> InputBuffers => VisitRootFusion.Parameters.ToArray().Select(p => _buffersMap[p]).OfType<TIR.Buffer>().Where(b => b.MemSpan.Location.HasFlag(MemoryLocation.Input));
 
+    public IEnumerable<Var> DimVars => _lifeTimeCollector.DimVars;
+
     public void Convert(Fusion post)
     {
         VisitRootFusion = post;

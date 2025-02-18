@@ -8,6 +8,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.Utilities;
 
@@ -73,14 +74,14 @@ public static class TensorUtilities
             return 1L;
         }
 
-        Expr product = 1L;
+        Dimension product = 1L;
         for (int i = startIndex; i < dimensions.Length; i++)
         {
             var dimension = dimensions[i];
             product *= dimension;
         }
 
-        return product;
+        return product.ToExpr();
     }
 
     public static bool IsAscending(ReadOnlySpan<long> values)
@@ -163,9 +164,9 @@ public static class TensorUtilities
             return Array.Empty<Expr>();
         }
 
-        var strides = new Expr[dimensions.Length];
+        var strides = new Dimension[dimensions.Length];
 
-        Expr stride = 1;
+        Dimension stride = 1;
         if (reverseStride)
         {
             for (int i = 0; i < strides.Length; i++)
@@ -183,7 +184,7 @@ public static class TensorUtilities
             }
         }
 
-        return strides;
+        return strides.Select(x => x.ToExpr()).ToArray();
     }
 
     public static void SplitStrides(int[] strides, int[] splitAxes, int[] newStrides, int stridesOffset, int[] splitStrides, int splitStridesOffset)
@@ -219,7 +220,7 @@ public static class TensorUtilities
         // Scalar
         if (strides.Length == 0)
         {
-            if (indices.Length != 1 || indices[0] != T.Zero)
+            if (indices.Length != 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(indices));
             }
@@ -256,17 +257,17 @@ public static class TensorUtilities
         // Scalar
         if (strides.Length == 0)
         {
-            if (indices.Length != 1)
+            if (indices.Length != 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(indices));
             }
 
-            return IR.F.Math.Require(IR.F.Math.Equal(indices[0], 0), 0);
+            return 0L;
         }
 
         Trace.Assert(strides.Length == indices.Length);
 
-        IR.Expr index = 0;
+        IR.Expr index = 0L;
         for (int i = startFromDimension; i < indices.Length; i++)
         {
             index += strides[i] * indices[i];
@@ -462,7 +463,34 @@ public static class TensorUtilities
             strides = GetStrides(dims);
         }
 
-        return (GetProduct(dims) * tensorType.DType.SizeInBytes, strides);
+        var maxSize = GetProduct(dims) * tensorType.DType.SizeInBytes;
+        return (maxSize, strides);
+    }
+
+    public static (Expr MaxSize, Expr[] Strides) GetTensorMaxSizeAndStridesExpr(TensorType tensorType, DistributedType? distributedType)
+    {
+        var (maxSize, strides) = GetTensorMaxSizeAndStrides(tensorType, distributedType);
+        return (maxSize, strides.Select(x => (Expr)x).ToArray());
+    }
+
+    public static (Expr Size, Expr[] Strides) GetTensorSizeAndContiguousStrides(TensorType tensorType, DistributedType? distributedType)
+    {
+        Expr[] dims;
+        Expr[] strides;
+        if (distributedType is null)
+        {
+            dims = tensorType.Shape.Dimensions.ToArray();
+            strides = GetStrides(dims);
+        }
+        else
+        {
+            var dividedType = DistributedUtility.GetDividedTensorType(distributedType);
+            dims = dividedType.Shape.Dimensions.ToArray();
+            strides = GetStrides(dims);
+        }
+
+        var size = (Dimension)GetProduct(dims) * tensorType.DType.SizeInBytes;
+        return (size.ToExpr(), strides);
     }
 
     public static (long MaxSize, long[] Strides) GetTensorMaxSizeAndStrides(IRType type)

@@ -174,7 +174,16 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             return symbol;
         }
 
-        var type = $"tensor_view<{expr.ElemType.ToC()}, {KernelUtility.DimensionsToC(expr.Dimensions)}, {KernelUtility.StridesToC(expr.Strides)}> ";
+        var dimensions = expr.DistributedType is null ? expr.Dimensions : expr.DistributedType.TensorType.Shape.Dimensions;
+        var isFixedDimensions = dimensions.AsValueEnumerable().All(x => x is TensorConst);
+        var isFixedStrides = expr.Strides.AsValueEnumerable().All(x => x is TensorConst);
+        var dimensionSymbols = dimensions.AsValueEnumerable().Select(Visit).ToArray();
+        var strideSymbols = expr.Strides.AsValueEnumerable().Select(Visit).ToArray();
+
+        var dtypeStr = expr.ElemType.ToC();
+        var dimensionStr = KernelUtility.DimensionsToC(isFixedDimensions, dimensionSymbols, true);
+        var strideStr = KernelUtility.StridesToC(isFixedStrides, strideSymbols, true);
+        var type = $"tensor_view<{dtypeStr}, {dimensionStr}, {strideStr}> ";
 
         symbol = new(type, expr.Name);
         _exprMemo.Add(expr, symbol);
@@ -192,11 +201,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         {
             TupleType x when x == TupleType.Void => string.Empty,
             TensorType { IsScalar: true } x => x.DType.ToC(),
-            TensorType { Shape: { IsRanked: true } } x => x.Shape.IsFixed switch
-            {
-                true => $"tensor_view<{x.DType.ToC()}, fixed_shape<{x.Shape.ToString()[1..^1]}>>",
-                false => "auto",
-            },
+            TensorType => "auto",
             _ => throw new NotSupportedException(),
         };
 
@@ -269,14 +274,16 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             case IR.Buffers.AllocateBufferView op:
                 {
                     var buffer = (TIR.Buffer)expr.Arguments[0];
-                    if (buffer.CheckedShape.IsFixed)
-                    {
-                        str = $"{{span_cast<{buffer.ElemType.ToC()}>({Visit(buffer.MemSpan).Name}), {KernelUtility.DimensionsToC(buffer.Dimensions)}{{}}, {KernelUtility.StridesToC(buffer.Strides)}{{}}}}";
-                    }
-                    else
-                    {
-                        str = $"{{span_cast<{buffer.ElemType.ToC()}>({Visit(buffer.MemSpan).Name}), make_ranked_shape({StringUtility.Join(", ", buffer.Dimensions.AsValueEnumerable().Select(x => Visit(x).Name))})}}";
-                    }
+                    var dimensions = buffer.DistributedType is null ? buffer.Dimensions : buffer.DistributedType.TensorType.Shape.Dimensions;
+                    var isFixedDimensions = dimensions.AsValueEnumerable().All(x => x is TensorConst);
+                    var isFixedStrides = buffer.Strides.AsValueEnumerable().All(x => x is TensorConst);
+                    var dimensionSymbols = dimensions.AsValueEnumerable().Select(Visit).ToArray();
+                    var strideSymbols = buffer.Strides.AsValueEnumerable().Select(Visit).ToArray();
+
+                    var dtypeStr = buffer.ElemType.ToC();
+                    var dimensionStr = KernelUtility.DimensionsToC(isFixedDimensions, dimensionSymbols, false);
+                    var strideStr = KernelUtility.StridesToC(isFixedStrides, strideSymbols, false);
+                    str = $"{{span_cast<{dtypeStr}>({Visit(buffer.MemSpan).Name}), {dimensionStr}, {strideStr}}}";
                 }
 
                 break;
@@ -380,7 +387,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         string str;
         if (expr is TensorConst { Value: Tensor { ElementType: PrimType ptype, Shape: { IsScalar: true } } scalar })
         {
-            str = scalar[0].ToString() switch
+            str = scalar[Array.Empty<long>()].ToString() switch
             {
                 "True" => "1",
                 "False" => "0",

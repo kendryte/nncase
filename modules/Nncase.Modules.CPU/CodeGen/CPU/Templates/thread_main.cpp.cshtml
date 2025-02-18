@@ -1,6 +1,7 @@
 @using System.Linq
 @using NetFabric.Hyperlinq
 @using Nncase
+@using Nncase.IR
 @model Nncase.CodeGen.CPU.KernelMainModel
 @{
   var inputCount = Model.PrimFunction.Parameters.Length;
@@ -19,16 +20,29 @@
 
 //alignas(@(Model.Alignment)) static thread_local uint8_t local_data[@(Model.DataSize)];
 
-extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata, const std::byte *local_rdata) {
+extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *inouts, const std::byte *rdata, const std::byte *local_rdata) {
   /* prepare inputs */
   @{
     var names = new List<string>();
   }
-  @foreach(var (b,i) in Model.PrimFunction.Parameters.ToArray().OfType<Nncase.TIR.Buffer>().Select((b,i)=>(Model.GetInfo(b),i)))
+  @foreach(var (input,i) in Model.PrimFunction.Parameters.ToArray().Select((input,i)=>(input,i)))
   {
-    names.Add(b.Name);
-  @:std::span<@Html.Raw(b.ElemType), @b.Size> p@(b.Name)((@Html.Raw(b.ElemType) *)inouts[@i], @b.Size);
-  @:tensor_view<@Html.Raw(b.ElemType), @Html.Raw(b.Dimensions), @Html.Raw(b.Strides)> @(b.Name)(p@(b.Name));
+    if (input is Nncase.TIR.Buffer buf)
+    {
+      var b = Model.GetInfo(buf);
+      names.Add(b.Name);
+      var sizeStr = b.Size is TensorConst tc ? ($", {tc.Value.ToScalar<long>()}", $"{tc.Value.ToScalar<long>()}") : (string.Empty, $"inouts[{i}].size / {b.ElemSize}");
+      var dimStr = b.IsFixedDimensions ? string.Empty : $", make_ranked_shape({string.Join(", ", Enumerable.Range(0, b.Rank).Select(d => b.Dimensions[d] is TensorConst tc ? $"{tc.Value.ToScalar<long>()}" : $"inouts[{i}].shape[{d}]"))})";
+      var strideStr = b.IsFixedStrides ? string.Empty : $", make_ranked_strides({string.Join(", ", Enumerable.Range(0, b.Rank).Select(d => b.Strides[d] is TensorConst tc ? $"{tc.Value.ToScalar<long>()}" : $"inouts[{i}].strides[{d}]"))})";
+  @:std::span<@Html.Raw(b.ElemType)@Html.Raw(sizeStr.Item1)> p@(b.Name)((@Html.Raw(b.ElemType) *)inouts[@i].data, @Html.Raw(sizeStr.Item2));
+  @:tensor_view<@Html.Raw(b.ElemType), @Html.Raw(b.DimensionsStr), @Html.Raw(b.StridesStr)> @(b.Name)(p@(b.Name)@Html.Raw(dimStr)@Html.Raw(strideStr));
+    }
+    else
+    {
+      var dimVar = (Nncase.IR.Var)input;
+      names.Add(dimVar.Name);
+  @:int64_t @Html.Raw(dimVar.Name) = *(int64_t *)inouts[@i].data;
+    }
   @:
   }
   /* prepare rdatas */
@@ -38,12 +52,12 @@ extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata, co
     if (b.Distributed == null)
     {
   @:std::span<@Html.Raw(b.ElemType), @b.Size> p@(b.Name)((@Html.Raw(b.ElemType) *)(rdata + @b.Offset), @b.Size);
-  @:tensor_view<@Html.Raw(b.ElemType), @Html.Raw(b.Dimensions), @Html.Raw(b.Strides)> @(b.Name)(p@(b.Name));
+  @:tensor_view<@Html.Raw(b.ElemType), @Html.Raw(b.DimensionsStr), @Html.Raw(b.StridesStr)> @(b.Name)(p@(b.Name));
     }
     else
     {
   @:std::span<@Html.Raw(b.ElemType), @b.Size> p@(b.Name)((@Html.Raw(b.ElemType) *)(local_rdata + @b.Offset), @b.Size);
-  @:sharded_tensor_view<@Html.Raw(b.ElemType), @Html.Raw(b.Dimensions), @Html.Raw(b.Distributed), @Html.Raw(b.Strides)> @(b.Name)(p@(b.Name));
+  @:sharded_tensor_view<@Html.Raw(b.ElemType), @Html.Raw(b.DimensionsStr), @Html.Raw(b.Distributed), @Html.Raw(b.StridesStr)> @(b.Name)(p@(b.Name));
     }
   @:
   }

@@ -75,4 +75,9 @@ public static class IRHelpers
             Trace.Assert(user.Users.Any());
         }
     }
+
+    public static void ReplaceAllUsesWith(Expr old, Expr @new)
+    {
+        old.ReplaceAllUsesWith(@new);
+    }
 }

@@ -493,7 +493,12 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
                     Op op => op.Parameters.Select(info => info.Name),
                     Fusion fusion => fusion.Parameters.AsValueEnumerable().Select(v => v.Name).ToArray(),
                     Function func => func.Parameters.AsValueEnumerable().Select(v => v.Name).ToArray(),
-                    PrimFunctionWrapper wrapper => wrapper.Target.Parameters.AsValueEnumerable().Select(b => ((TIR.Buffer)b).Name).ToArray(),
+                    PrimFunctionWrapper wrapper => wrapper.Target.Parameters.AsValueEnumerable().Select(x => x switch
+                    {
+                        TIR.Buffer b => b.Name,
+                        Var v => v.Name,
+                        _ => throw new ArgumentException($"Unsupported parameter: {x}"),
+                    }).ToArray(),
                     _ => throw new NotSupportedException($"Target type {expr.Target.GetType()} is not supported."),
                 }))
                 {

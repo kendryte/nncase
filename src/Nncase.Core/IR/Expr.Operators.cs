@@ -26,17 +26,28 @@ public partial class Expr
     /// get the item from the expr.
     /// </summary>
     /// <returns> expr. </returns>
+    public Expr this[long index] =>
+        this switch
+        {
+            TensorConst tc => Tensor.FromScalar(tc.Value.ElementType, tc.Value[index]),
+            TupleConst tc => tc.Value[(int)index].AsTensor(),
+            Shape shape => shape.Dimensions[(int)index],
+            IR.Tuple t => t[(int)index],
+            Call { Target: Concat { Axis: 0 } } c => c[Concat.Input][index][0],
+            Call { Target: Reshape } c when c[Reshape.Shape] is TensorConst tc && tc.Value.Length == 1 && tc.Value.Cast<long>()[0] == 1 => c[Reshape.Input],
+            Call { Target: Stack } c => c[Stack.Inputs][index],
+            Call { Target: Fusion } c => GetItemOfBaseFunction(c, index),
+            _ => this[(Expr)index],
+        };
+
+    /// <summary>
+    /// get the item from the expr.
+    /// </summary>
+    /// <returns> expr. </returns>
     public Expr this[params long[] indices] =>
         this switch
         {
             TensorConst tc => Tensor.FromScalar(tc.Value.ElementType, tc.Value[indices]),
-            TupleConst tc => tc.Value[(int)indices.Single()].AsTensor(),
-            Shape shape => shape.Dimensions[(int)indices.Single()],
-            IR.Tuple t => t[(int)indices.Single()],
-            Call { Target: Concat { Axis: 0 } } c when indices.Length == 1 => c[Concat.Input][indices[0]][0],
-            Call { Target: Reshape } c when c[Reshape.Shape] is TensorConst tc && tc.Value.Length == 1 && tc.Value.ToScalar<long>() == 1 => c[Reshape.Input],
-            Call { Target: Stack } c when indices.Length == 1 => c[Stack.Inputs][indices[0]],
-            Call { Target: Fusion } c when indices.Length == 1 => GetItemOfBaseFunction(c, indices[0]),
             _ => this[indices.Select(x => (Expr)x).ToArray()],
         };
 

@@ -182,7 +182,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         where T : unmanaged, IEquatable<T>
     {
         var tensor = new Tensor<T>(ReadOnlySpan<long>.Empty);
-        tensor[0] = value;
+        tensor[Array.Empty<long>()] = value;
         return tensor;
     }
 
@@ -195,7 +195,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     public static Tensor FromScalar(DataType type, object value)
     {
         var tensor = Zeros(type, ReadOnlySpan<long>.Empty);
-        tensor[0] = value;
+        tensor[Array.Empty<long>()] = value;
         return tensor;
     }
 

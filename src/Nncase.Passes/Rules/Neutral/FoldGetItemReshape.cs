@@ -15,7 +15,7 @@ namespace Nncase.Passes.Rules.Neutral;
 [RuleGenerator]
 public partial class FoldGetItemReshape : RewriteRule<Pattern>
 {
-    public override Pattern Pattern => IsGetItem(null, "getItem", ReshapePattern, new long[] { 0 });
+    public override Pattern Pattern => IsGetItem(null, "getItem", ReshapePattern, IsTensorConst("index", IsScalar() | HasShape(new Shape(1L))));
 
     public Pattern ReshapePattern => IsReshape(IsWildcard("input"), new long[] { 1 });
 

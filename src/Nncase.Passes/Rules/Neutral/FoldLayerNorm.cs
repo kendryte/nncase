@@ -87,7 +87,7 @@ public sealed partial class FoldLayerNormPattern1 : RewriteRule<CallPattern>
                 cFirst = true;
             }
 
-            return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta, channelFirst: cFirst);
+            return LayerNorm(axis, eps.Value.Cast<float>().Single(), input, gamma, beta, channelFirst: cFirst);
         }
 
         return null;
@@ -155,7 +155,7 @@ public sealed partial class FoldLayerNormPattern2 : RewriteRule<CallPattern>
                 cFirst = true;
             }
 
-            return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta, channelFirst: cFirst);
+            return LayerNorm(axis, eps.Value.Cast<float>().Single(), input, gamma, beta, channelFirst: cFirst);
         }
 
         return null;
@@ -231,7 +231,7 @@ public sealed partial class FoldLayerNormPattern3 : RewriteRule<CallPattern>
                 cFirst = true;
             }
 
-            return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta, channelFirst: cFirst);
+            return LayerNorm(axis, eps.Value.Cast<float>().Single(), input, gamma, beta, channelFirst: cFirst);
         }
 
         return null;
@@ -309,7 +309,7 @@ public sealed partial class FoldLayerNormPattern4 : RewriteRule<CallPattern>
                 cFirst = true;
             }
 
-            return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta, channelFirst: cFirst);
+            return LayerNorm(axis, eps.Value.Cast<float>().Single(), input, gamma, beta, channelFirst: cFirst);
         }
 
         return null;
@@ -359,7 +359,7 @@ public sealed partial class FoldLayerNormPattern5 : RewriteRule<CallPattern>
 
     private Expr? GetReplace(Call pow2Call, Call rdVarCall, TensorConst eps, TensorConst gamma, Expr input, TensorConst one, TensorConst two)
     {
-        if (input == pow2Call[Binary.Lhs] && one.Value.Cast<float>()[0] == 1f && two.Value.Cast<float>()[0] == 2f)
+        if (input == pow2Call[Binary.Lhs] && one.Value.Cast<float>().Single() == 1f && two.Value.Cast<float>().Single() == 2f)
         {
             var axis = pow2Call.CheckedShape.Count - gamma.CheckedShape.Count;
             var beta = Tensor.FromScalar(0f, gamma.CheckedShape);
@@ -370,7 +370,7 @@ public sealed partial class FoldLayerNormPattern5 : RewriteRule<CallPattern>
                 cFirst = true;
             }
 
-            return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta, hasMean: false, channelFirst: cFirst);
+            return LayerNorm(axis, eps.Value.Cast<float>().Single(), input, gamma, beta, hasMean: false, channelFirst: cFirst);
         }
 
         return null;

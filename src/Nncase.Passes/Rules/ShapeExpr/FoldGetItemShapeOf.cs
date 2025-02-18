@@ -21,7 +21,7 @@ public partial class FoldGetItemShapeOf : RewriteRule<Pattern>
 
     public Pattern ShapeOfPattern => IsShapeOf(IsWildcard("input") with { TypePattern = HasRank() });
 
-    private Expr? GetReplace(Expr input, int index, Call getItem)
+    private Expr? GetReplace(Expr input, Tensor<int> index, Call getItem)
     {
         DataType dt = DataTypes.Int64;
 
@@ -30,7 +30,7 @@ public partial class FoldGetItemShapeOf : RewriteRule<Pattern>
             dt = cast.NewType;
         }
 
-        var dim = input.CheckedShape[index];
+        var dim = input.CheckedShape[index.Single()];
         return dim.IsFixed ? Tensor.FromScalar(dt, Convert.ChangeType(dim.FixedValue, dt.CLRType)) : dim.Value;
     }
 }
