@@ -246,19 +246,10 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
     /// </summary>
     public static Shape Invalid { get; } = new Shape(ShapeKind.Invalid);
 
-    private static readonly Shape _unranked = new Shape(ShapeKind.Unranked);
-
     /// <summary>
     /// Gets an unranked shape.
     /// </summary>
-    public static Shape Unranked
-    {
-        get
-        {
-            Console.WriteLine();
-            return _unranked;
-        }
-    }
+    public static Shape Unranked { get; } = new Shape(ShapeKind.Unranked);
 
     /// <summary>
     /// Gets a scalar shape.

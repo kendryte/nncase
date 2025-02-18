@@ -522,7 +522,11 @@ public static class CompilerServices
 
     public static Expr FastSimplifyForDimension(Expr value)
     {
-        if ((value is Call call && call.Arguments.AsValueEnumerable().All(x => x is Const))
+        if (value is Const or Var or None)
+        {
+            return value;
+        }
+        else if ((value is Call call && call.Arguments.AsValueEnumerable().All(x => x is Const))
             || value.CheckedType is DistributedType)
         {
             return SimplifyForDimension(value);

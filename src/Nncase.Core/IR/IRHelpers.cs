@@ -19,30 +19,6 @@ public static class IRHelpers
     public static void DCE(BaseFunction function)
     {
         GC.Collect();
-        return;
-        using var exprPin = new ExprPinner(function);
-        var exprs = ExprCollector.Collect(function);
-        var users = new HashSet<Expr>(ReferenceEqualityComparer.Instance);
-
-        void AddUsers(Expr expr)
-        {
-            if (expr is not ExprUser
-                && expr.IsAlive
-                && users.Add(expr))
-            {
-                foreach (var user in expr.Users)
-                {
-                    AddUsers(user);
-                }
-            }
-        }
-
-        foreach (var expr in exprs)
-        {
-            AddUsers(expr);
-        }
-
-        GC.Collect();
     }
 
     [Conditional("DEBUG")]

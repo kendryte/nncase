@@ -36,7 +36,6 @@ public partial class Expr
             Call { Target: Concat { Axis: 0 } } c => c[Concat.Input][index][0],
             Call { Target: Reshape } c when c[Reshape.Shape] is TensorConst tc && tc.Value.Length == 1 && tc.Value.Cast<long>()[0] == 1 => c[Reshape.Input],
             Call { Target: Stack } c => c[Stack.Inputs][index],
-            Call { Target: Fusion } c => GetItemOfBaseFunction(c, index),
             _ => this[(Expr)index],
         };
 
@@ -50,16 +49,6 @@ public partial class Expr
             TensorConst tc => Tensor.FromScalar(tc.Value.ElementType, tc.Value[indices]),
             _ => this[indices.Select(x => (Expr)x).ToArray()],
         };
-
-    private Expr GetItemOfBaseFunction(Call c, long v)
-    {
-        if (c.CheckedType is TupleType tt && tt.Count == 3 && v == 3)
-        {
-            Console.WriteLine();
-        }
-
-        return c[(Expr)v];
-    }
 
     /// <summary>
     /// get the item from the expr.
