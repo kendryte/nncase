@@ -31,19 +31,19 @@ namespace Nncase.Tests.Rules.NeutralTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestCombineQuantize : TransformTestBase
 {
-    public static TheoryData<int[][], int, DataType, QuantParam> CombineQuantizeConcatPositiveData => new() { { new int[][] { new int[] { 1, 32, 160, 160 }, new int[] { 1, 32, 160, 160 } }, 1, DataTypes.UInt8, new(2, 0.25185302f) }, { new int[][] { new int[] { 1, 64, 80, 80 }, new int[] { 1, 64, 80, 80 } }, 1, DataTypes.UInt8, new(20, 0.042551044f) }, };
+    public static TheoryData<long[][], int, DataType, QuantParam> CombineQuantizeConcatPositiveData => new() { { new long[][] { [1, 32, 160, 160], [1, 32, 160, 160] }, 1, DataTypes.UInt8, new(2, 0.25185302f) }, { new long[][] { [1, 64, 80, 80], [1, 64, 80, 80] }, 1, DataTypes.UInt8, new(20, 0.042551044f) }, };
 
-    public static TheoryData<int[][], DataType, QuantParam> CombineQuantizeReshapePositiveData => new() { { new int[][] { new int[] { 1, 32, 160, 160 }, new int[] { 1, 160, 32, 160 } }, DataTypes.UInt8, new(2, 0.25185302f) }, { new int[][] { new int[] { 1, 64, 80, 80 }, new int[] { 1, 64, 1, 6400 } }, DataTypes.UInt8, new(20, 0.042551044f) }, };
+    public static TheoryData<long[][], DataType, QuantParam> CombineQuantizeReshapePositiveData => new() { { new long[][] { [1, 32, 160, 160], [1, 160, 32, 160]}, DataTypes.UInt8, new(2, 0.25185302f) }, { new long[][] { [1, 64, 80, 80], [1, 64, 1, 6400] }, DataTypes.UInt8, new(20, 0.042551044f) }, };
 
-    public static TheoryData<int[][], DataType, QuantParam> CombineQuantizeTransposePositiveData => new()
+    public static TheoryData<long[][], DataType, QuantParam> CombineQuantizeTransposePositiveData => new()
     {
-        { new int[][] { new int[] { 1, 32, 160, 160 }, new int[] { 0, 3, 1, 2 } }, DataTypes.UInt8, new(2, 0.25185302f) },
-        { new int[][] { new int[] { 1, 64, 80, 80 }, new int[] { 3, 2, 1, 0 } }, DataTypes.UInt8, new(20, 0.042551044f) },
+        { new long[][] { [1, 32, 160, 160], [0, 3, 1, 2] }, DataTypes.UInt8, new(2, 0.25185302f) },
+        { new long[][] { [1, 64, 80, 80], [3, 2, 1, 0] }, DataTypes.UInt8, new(20, 0.042551044f) },
     };
 
     [Theory]
     [MemberData(nameof(CombineQuantizeConcatPositiveData))]
-    public void TestCombineQuantizeConcatPositive(int[][] inShapes, int axis, DataType destType, QuantParam quantParam)
+    public void TestCombineQuantizeConcatPositive(long[][] inShapes, int axis, DataType destType, QuantParam quantParam)
     {
         var parameters = new List<Var>();
         var feedDict = new Dictionary<Var, IValue>();
@@ -73,7 +73,7 @@ public class UnitTestCombineQuantize : TransformTestBase
 
     [Theory]
     [MemberData(nameof(CombineQuantizeReshapePositiveData))]
-    public void TestCombineQuantizeReshapePositive(int[][] shapes, DataType destType, QuantParam quantParam)
+    public void TestCombineQuantizeReshapePositive(long[][] shapes, DataType destType, QuantParam quantParam)
     {
         var parameters = new List<Var>();
         var feedDict = new Dictionary<Var, IValue>();
@@ -87,7 +87,7 @@ public class UnitTestCombineQuantize : TransformTestBase
 
     [Theory]
     [MemberData(nameof(CombineQuantizeReshapePositiveData))]
-    public void TestCombineReshapeQuantizePositive(int[][] shapes, DataType destType, QuantParam quantParam)
+    public void TestCombineReshapeQuantizePositive(long[][] shapes, DataType destType, QuantParam quantParam)
     {
         var parameters = new List<Var>();
         var feedDict = new Dictionary<Var, IValue>();
@@ -121,7 +121,7 @@ public class UnitTestCombineQuantize : TransformTestBase
 
     [Theory]
     [MemberData(nameof(CombineQuantizeTransposePositiveData))]
-    public void TestCombineQuantizeTransposePositive(int[][] shape_and_perm, DataType destType, QuantParam quantParam)
+    public void TestCombineQuantizeTransposePositive(long[][] shape_and_perm, DataType destType, QuantParam quantParam)
     {
         var parameters = new List<Var>();
         var feedDict = new Dictionary<Var, IValue>();
