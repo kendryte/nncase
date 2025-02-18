@@ -40,7 +40,7 @@ inline constexpr auto reduced_shape_by_axes_impl(
 
 template <size_t AxesFirst, size_t... AxesRest, size_t... Dims, size_t... Ints>
 inline constexpr auto
-reduced_shape_by_axes_impl(const fixed_shape<Dims...> shape,
+reduced_shape_by_axes_impl([[maybe_unused]] const fixed_shape<Dims...> shape,
                            const fixed_shape<AxesFirst, AxesRest...>,
                            const std::index_sequence<Ints...> ints) {
     return reduced_shape_by_axes_impl(

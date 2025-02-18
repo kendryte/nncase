@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 #include "kernel_test.h"
+#include "nncase/runtime/util.h"
+#include <cstddef>
 #include <gtest/gtest.h>
 #include <iostream>
 #include <nncase/kernels/stackvm/tensor_ops.h>
@@ -41,12 +43,20 @@ class SwishTest : public KernelTest,
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
+
+        float alpha_value = 1.f;
+        alpha = hrt::create(nncase::dt_float32, {1},
+                            as_span<std::byte>(std::span(&alpha_value, 1)),
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+        init_tensor(alpha);
     }
 
     void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;
+    runtime_tensor alpha;
 };
 
 INSTANTIATE_TEST_SUITE_P(Swish, SwishTest,
@@ -67,7 +77,8 @@ TEST_P(SwishTest, Swish) {
                         .expect("create tensor failed");
 
     // actual
-    auto output = kernels::stackvm::swish(input.impl()).expect("swish failed");
+    auto output = kernels::stackvm::swish(input.impl(), alpha.impl())
+                      .expect("swish failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     bool result = is_same_tensor(expected, actual) ||
