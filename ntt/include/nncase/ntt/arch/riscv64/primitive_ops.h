@@ -843,7 +843,7 @@ REGISTER_RVV_BINARY_OP(div, float, div_float32)
 REGISTER_RVV_KERNEL(DIV_FLOAT16)
 REGISTER_RVV_BINARY_OP(div, half, div_float16)
 
-// mod
+// mod fp32
 #define MOD_FLOAT32(lmul, mlen)                                                \
     inline vfloat32m##lmul##_t mod_float32(const vfloat32m##lmul##_t &v1,      \
                                            const vfloat32m##lmul##_t &v2,      \
@@ -877,7 +877,41 @@ REGISTER_RVV_BINARY_OP(div, half, div_float16)
 REGISTER_RVV_KERNEL(MOD_FLOAT32)
 REGISTER_RVV_BINARY_OP(mod, float, mod_float32)
 
-// min
+// mod fp16
+#define MOD_FLOAT16(lmul, mlen)                                                \
+    inline vfloat16m##lmul##_t mod_float16(const vfloat16m##lmul##_t &v1,      \
+                                           const vfloat16m##lmul##_t &v2,      \
+                                           const size_t vl) {                  \
+        auto quotient = __riscv_vfcvt_f_x_v_f16m##lmul(                        \
+            __riscv_vfcvt_rtz_x_f_v_i16m##lmul(                                \
+                __riscv_vfdiv_vv_f16m##lmul(v1, v2, vl), vl),                  \
+            vl);                                                               \
+        return __riscv_vfnmsub_vv_f16m##lmul(quotient, v2, v1, vl);            \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t mod_float16(const vfloat16m##lmul##_t &v,       \
+                                           const half &s, const size_t vl) {  \
+        auto quotient = __riscv_vfcvt_f_x_v_f16m##lmul(                        \
+            __riscv_vfcvt_rtz_x_f_v_i16m##lmul(                                \
+                __riscv_vfdiv_vf_f16m##lmul(v, s, vl), vl),                    \
+            vl);                                                               \
+        return __riscv_vfnmsub_vf_f16m##lmul(quotient, s, v, vl);              \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t mod_float16(                                    \
+        const half &s, const vfloat16m##lmul##_t &v2, const size_t vl) {      \
+        auto v1 = __riscv_vfmv_v_f_f16m##lmul(s, vl);                          \
+        auto quotient = __riscv_vfcvt_f_x_v_f16m##lmul(                        \
+            __riscv_vfcvt_rtz_x_f_v_i16m##lmul(                                \
+                __riscv_vfrdiv_vf_f16m##lmul(v2, s, vl), vl),                  \
+            vl);                                                               \
+        return __riscv_vfnmsub_vv_f16m##lmul(quotient, v2, v1, vl);            \
+    }
+
+REGISTER_RVV_KERNEL(MOD_FLOAT16)
+REGISTER_RVV_BINARY_OP(mod, half, mod_float16)
+
+// min fp32
 template <> struct min<float, float> {
     auto operator()(const float &s1, const float &s2) const noexcept {
         float ret;
@@ -908,7 +942,38 @@ template <> struct min<float, float> {
 REGISTER_RVV_KERNEL(MIN_FLOAT32)
 REGISTER_RVV_BINARY_OP(min, float, min_float32)
 
-// max
+// min fp16
+template <> struct min<half, half> {
+    auto operator()(const half &s1, const half &s2) const noexcept {
+        half ret;
+        __asm("fmin.h %[ret], %[s1], %[s2];"
+              : [ret] "=f"(ret)
+              : [s1] "f"(s1), [s2] "f"(s2));
+        return ret;
+    }
+};
+
+#define MIN_FLOAT16(lmul, mlen)                                                \
+    inline vfloat16m##lmul##_t min_float16(                                    \
+        const vfloat16m##lmul##_t &v1, const vfloat16m##lmul##_t &v2,          \
+        const size_t vl) {                                                     \
+        return __riscv_vfmin_vv_f16m##lmul(v1, v2, vl);                        \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t min_float16(const vfloat16m##lmul##_t &v,       \
+                                           const half &s, const size_t vl) {   \
+        return __riscv_vfmin_vf_f16m##lmul(v, s, vl);                          \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t min_float16(                                    \
+        const half &s, const vfloat16m##lmul##_t &v, const size_t vl) {        \
+        return __riscv_vfmin_vf_f16m##lmul(v, s, vl);                          \
+    }
+
+REGISTER_RVV_KERNEL(MIN_FLOAT16)
+REGISTER_RVV_BINARY_OP(min, half, min_float16)
+
+// max fp32
 template <> struct max<float, float> {
     auto operator()(const float &s1, const float &s2) const noexcept {
         float ret;
@@ -939,7 +1004,38 @@ template <> struct max<float, float> {
 REGISTER_RVV_KERNEL(MAX_FLOAT32)
 REGISTER_RVV_BINARY_OP(max, float, max_float32)
 
-// pow
+// max fp16
+template <> struct max<half, half> {
+    auto operator()(const half &s1, const half &s2) const noexcept {
+        half ret;
+        __asm("fmax.h %[ret], %[s1], %[s2];"
+              : [ret] "=f"(ret)
+              : [s1] "f"(s1), [s2] "f"(s2));
+        return ret;
+    }
+};
+
+#define MAX_FLOAT16(lmul, mlen)                                                \
+    inline vfloat16m##lmul##_t max_float16(                                   \
+        const vfloat16m##lmul##_t &v1, const vfloat16m##lmul##_t &v2,         \
+        const size_t vl) {                                                    \
+        return __riscv_vfmax_vv_f16m##lmul(v1, v2, vl);                       \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t max_float16(const vfloat16m##lmul##_t &v,      \
+                                           const half &s, const size_t vl) {  \
+        return __riscv_vfmax_vf_f16m##lmul(v, s, vl);                         \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t max_float16(                                   \
+        const half &s, const vfloat16m##lmul##_t &v, const size_t vl) {       \
+        return __riscv_vfmax_vf_f16m##lmul(v, s, vl);                         \
+    }
+
+REGISTER_RVV_KERNEL(MAX_FLOAT16)
+REGISTER_RVV_BINARY_OP(max, half, max_float16)
+
+// pow fp32
 #define POW_FLOAT32(lmul, mlen)                                                \
     inline vfloat32m##lmul##_t pow_float32(const vfloat32m##lmul##_t &v1,      \
                                            const vfloat32m##lmul##_t &v2,      \
@@ -961,6 +1057,29 @@ REGISTER_RVV_BINARY_OP(max, float, max_float32)
 
 REGISTER_RVV_KERNEL(POW_FLOAT32)
 REGISTER_RVV_BINARY_OP(pow, float, pow_float32)
+
+// pow fp16
+// #define POW_FLOAT16(lmul, mlen)                                                
+//     inline vfloat16m##lmul##_t pow_float16(const vfloat16m##lmul##_t &v1,      
+//                                            const vfloat16m##lmul##_t &v2,      
+//                                            const size_t vl) {                  
+//         return pow_ps(v1, v2, vl);                                             
+//     }                                                                          
+//                                                                                
+//     inline vfloat16m##lmul##_t pow_float16(                                    
+//         const vfloat16m##lmul##_t &v1, const half &s, const size_t vl) {       
+//         auto v2 = __riscv_vfmv_v_f_f16m##lmul(s, vl);                          
+//         return pow_ps(v1, v2, vl);                                             
+//     }                                                                          
+//                                                                                
+//     inline vfloat16m##lmul##_t pow_float16(                                    
+//         const half &s, const vfloat16m##lmul##_t &v2, const size_t vl) {       
+//         auto v1 = __riscv_vfmv_v_f_f16m##lmul(s, vl);                          
+//         return pow_ps(v1, v2, vl);                                             
+//     }
+
+// REGISTER_RVV_KERNEL(POW_FLOAT16)
+// REGISTER_RVV_BINARY_OP(pow, half, pow_float16)
 
 // floor_mod
 #define FLOOR_MOD_INT32(lmul, mlen)                                            \

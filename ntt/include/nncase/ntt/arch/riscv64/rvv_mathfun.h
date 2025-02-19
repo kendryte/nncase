@@ -95,6 +95,7 @@ _RVV_FLOAT32_LOG_OP(2, 16)
 _RVV_FLOAT32_LOG_OP(4, 8)
 _RVV_FLOAT32_LOG_OP(8, 4)
 
+
 #define c_exp_hi 88.3762626647949f
 #define c_exp_lo -88.3762626647949f
 
@@ -158,6 +159,10 @@ _RVV_FLOAT_EXP_OP(1, 32, 32, 0x7f, 23)
 _RVV_FLOAT_EXP_OP(2, 16, 32, 0x7f, 23)
 _RVV_FLOAT_EXP_OP(4, 8, 32, 0x7f, 23)
 _RVV_FLOAT_EXP_OP(8, 4, 32, 0x7f, 23)
+// _RVV_FLOAT_EXP_OP(1, 32, 16, 0x7f, 23)
+// _RVV_FLOAT_EXP_OP(2, 16, 16, 0x7f, 23)
+// _RVV_FLOAT_EXP_OP(4, 8, 16, 0x7f, 23)
+// _RVV_FLOAT_EXP_OP(8, 4, 16, 0x7f, 23)
 
 #if 0
 // from glibc 2.40: max_ulp_error = 3
@@ -394,6 +399,10 @@ _RVV_FLOAT_POW_OP(1, 32, 32)
 _RVV_FLOAT_POW_OP(2, 16, 32)
 _RVV_FLOAT_POW_OP(4, 8, 32)
 _RVV_FLOAT_POW_OP(8, 4, 32)
+// _RVV_FLOAT_POW_OP(1, 32, 16)
+// _RVV_FLOAT_POW_OP(2, 16, 16)
+// _RVV_FLOAT_POW_OP(4, 8, 16)
+// _RVV_FLOAT_POW_OP(8, 4, 16)
 
 struct sv_erff_data {
     float erf[513];
