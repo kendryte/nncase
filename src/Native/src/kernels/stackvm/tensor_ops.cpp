@@ -47,9 +47,8 @@ result<value_t> nncase::kernels::stackvm::batch_normalization(
 }
 
 result<value_t> nncase::kernels::stackvm::layer_norm(
-    int32_t axis, float epsilon, bool use_mean, value_t input,
-    value_t scale, value_t bias, value_t output,
-    [[maybe_unused]] kernel_context &context) {
+    int32_t axis, float epsilon, bool use_mean, value_t input, value_t scale,
+    value_t bias, value_t output, [[maybe_unused]] kernel_context &context) {
     try_input(input_mem, input);
     try_input(scale_mem, scale);
     try_input(bias_mem, bias);
@@ -364,6 +363,11 @@ result<value_t> nncase::kernels::stackvm::scatter_nd(value_t input,
     auto dtype = input_tensor->dtype();
     auto out_shape = input_tensor->shape();
     try_output(out_mem, output, dtype, out_shape);
+    for (int i = 0; i < input_tensor->shape().size(); ++i) {
+        if (*((int64_t *)indices_mem + i) < 0) {
+            *((int64_t *)indices_mem + i) += input_tensor->shape()[i];
+        }
+    }
     try_(reference::scatter_nd(dtype, input_mem, out_mem, input_tensor->shape(),
                                indices_tensor->dtype(), indices_mem,
                                indices_tensor->shape(), updates_memm,
@@ -559,12 +563,14 @@ nncase::kernels::stackvm::mat_mul(value_t lhs, value_t rhs, value_t output,
             matmul_infer_shape(lhs_tensor->shape(), rhs_tensor->shape()));
     try_output(out_mem, output, lhs_tensor->dtype(), out_shape);
     try_typecode(typecode, lhs_tensor);
-    if (is_contiguous(lhs_tensor) && is_contiguous(rhs_tensor) && is_contiguous(output_tensor)) {
+    if (is_contiguous(lhs_tensor) && is_contiguous(rhs_tensor) &&
+        is_contiguous(output_tensor)) {
         try_(optimized::matmul(typecode, lhs_mem, rhs_mem, out_mem,
-                        lhs_tensor->shape(), rhs_tensor->shape(), context));
+                               lhs_tensor->shape(), rhs_tensor->shape(),
+                               context));
     } else {
         try_(reference::matmul(typecode, lhs_mem, rhs_mem, out_mem,
-                            lhs_tensor->shape(), rhs_tensor->shape()));
+                               lhs_tensor->shape(), rhs_tensor->shape()));
     }
     return ok(output);
 }
@@ -1035,24 +1041,29 @@ result<value_t> nncase::kernels::stackvm::slice(value_t input, value_t begins,
         slice_infer_shape(in_shape, begin_values, end_values, strides_values);
     try_output(out_mem, output, input_tensor->dtype(), out_shape);
 
-    bool neg_strides = false;
-    for (auto &&stride : strides_value) {
-        if (stride < 0) {
-            neg_strides = true;
-            break;
-        }
-    }
-    if (neg_strides) {
-        try_(reference::slice(input_tensor->dtype(), in_mem, out_mem, in_shape,
-                              input_tensor->strides(), output_tensor->strides(),
-                              begin_values, end_values, strides_values,
-                              context));
-    } else {
-        try_(optimized::slice(input_tensor->dtype(), in_mem, out_mem, in_shape,
-                              input_tensor->strides(), output_tensor->strides(),
-                              begin_values, end_values, strides_values,
-                              context));
-    }
+    // bool neg_strides = false;
+    // for (auto &&stride : strides_value) {
+    //     if (stride < 0) {
+    //         neg_strides = true;
+    //         break;
+    //     }
+    // }
+    try_(reference::slice(input_tensor->dtype(), in_mem, out_mem, in_shape,
+                          input_tensor->strides(), output_tensor->strides(),
+                          begin_values, end_values, strides_values, context));
+    // if (neg_strides) {
+    //     try_(reference::slice(input_tensor->dtype(), in_mem, out_mem,
+    //     in_shape,
+    //                           input_tensor->strides(),
+    //                           output_tensor->strides(), begin_values,
+    //                           end_values, strides_values, context));
+    // } else {
+    //     try_(optimized::slice(input_tensor->dtype(), in_mem, out_mem,
+    //     in_shape,
+    //                           input_tensor->strides(),
+    //                           output_tensor->strides(), begin_values,
+    //                           end_values, strides_values, context));
+    // }
     return ok(output);
 }
 
