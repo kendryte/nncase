@@ -29,8 +29,8 @@ namespace Nncase.Importer
             List<string> wOutputNames = new() { weights.Metadata.OutputNames![0] };
             if (isConv1D)
             {
-                dilation.Add(1);
-                strides.Add(1);
+                dilation.Insert(0, 1);
+                strides.Insert(0, 1);
                 input = To4D(input);
                 weights = To4D(weights);
             }
@@ -43,13 +43,13 @@ namespace Nncase.Importer
             conv.Metadata.OutputNames = outputNames;
             if (isConv1D)
             {
-                conv = Squeeze(conv, new[] { 3 });
+                conv = Squeeze(conv, new[] { 2 });
             }
 
             return conv;
         }
 
-        private Call To4D(Expr input) => Unsqueeze(input, new[] { 3 });
+        private Call To4D(Expr input) => Unsqueeze(input, new[] { 2 });
 
         private bool IsConv1D(Expr weights)
         {
@@ -75,7 +75,7 @@ namespace Nncase.Importer
             var paddings = GetIntsAttribute(op, "pads", 0, 4);
             if (isConv1D)
             {
-                paddings = new[] { paddings[0], 0, paddings[1], 0 };
+                paddings = new[] { 0, paddings[0], 0, paddings[1] };
             }
 
             return ToNncasePadFormat(paddings);
