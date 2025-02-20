@@ -30,15 +30,6 @@ public class ScatterNDEvaluator : IEvaluator<ScatterND>, ITypeInferencer<Scatter
         var update_indices = indices.Shape.ToValueArray().Take(0..(indices.Shape.Rank - 1)).Select(i => Enumerable.Range(0, i));
         var output = Tensor.FromBytes(input.ElementType, input.BytesBuffer.ToArray(), input.Shape);
         var indicesSpan = indices.Buffer.Span;
-        for (int i = 0; i < indicesSpan.Length; i++)
-        {
-            // 如果 indices 中的值是负数，调整为正数
-            if (indicesSpan[i] < 0)
-            {
-                indicesSpan[i] += input.Shape[i].FixedValue; // 加上该维度的大小
-            }
-        }
-
         var updatesSpan = updates.BytesBuffer;
         var updatesRemain = updates.Shape.ToValueArray().Skip(indices.Rank - 1).TakeOrDefault(updates.Shape.Rank - indices.Rank + 1, 1);
         var updateSize = updatesRemain.Any() ? updatesRemain.Aggregate((x, y) => x * y) * input.ElementType.SizeInBytes : input.ElementType.SizeInBytes;

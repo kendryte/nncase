@@ -29,7 +29,7 @@ namespace Nncase.Importer
                     () => GetDataType(op.Input[0]));
             var mean = GetFloatAttribute(op, "mean", 0.0f);
             var scale = GetFloatAttribute(op, "scale", 1.0f);
-            var seed = GetFloatAttribute(op, "seed", 123.0f);
+            var seed = GetFloatAttribute(op, "seed", float.NaN);
             return F.Random.NormalLike(dtype, input, mean, scale, seed);
         }
 
