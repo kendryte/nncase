@@ -123,6 +123,31 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                 };
             }
         }
+        else if (context.GetArgument(target, Reshape.Shape) is Call { Target: IR.Tensors.Concat } c && c[IR.Tensors.Concat.Input] is IR.Tuple tuple)
+        {
+            var shapeValue = new List<Dimension>();
+            foreach (var item in tuple.Fields)
+            {
+                if (item is TensorConst tensorConst)
+                {
+                    var value = tensorConst.Value.Cast<int>().Single();
+                    if (value == -1)
+                    {
+                        shapeValue.Add(Dimension.Unknown);
+                    }
+                    else
+                    {
+                        shapeValue.Add(value);
+                    }
+                }
+                else
+                {
+                    shapeValue.Add(Dimension.Unknown);
+                }
+            }
+
+            return input with { Shape = new Shape(shapeValue) };
+        }
 
         var targetType = context.CheckArgumentType<TensorType>(target, Reshape.Shape);
         var outShape = ReshapeTo(targetType);

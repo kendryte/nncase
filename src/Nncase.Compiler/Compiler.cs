@@ -112,6 +112,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern4>();
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern5>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern6>();
             p.Add<Passes.Rules.Neutral.ConvertLayerNormChannelFirstToLast>();
             p.Add<Passes.Rules.Neutral.FoldGeluWithScale>();
             p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
@@ -348,6 +349,8 @@ internal class Compiler : ICompiler
                 p.AddWithName<DataflowPass>("OptimizeShape").Configure(p =>
                 {
                     p.Add<FoldNopIf>();
+                    p.Add<FoldNopCompareByRange>();
+                    p.Add<FoldNopWhere>();
                     p.Add<FoldConstCall>();
                     p.Add<FoldShapeOf>();
                     p.Add<InlineFunctionWithSingleCall>();

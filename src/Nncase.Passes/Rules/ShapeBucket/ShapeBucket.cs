@@ -560,6 +560,14 @@ public class TransposeToFusion : MarkerCallToFusion<Transpose>
     }
 }
 
+public class ExpandToFusion : MarkerCallToFusion<Expand>
+{
+    public ExpandToFusion(bool isDynamic = false)
+        : base(isDynamic)
+    {
+    }
+}
+
 public class ReshapeToFusion : CallToFusion
 {
     public ReshapeToFusion(bool isDynamic = false)

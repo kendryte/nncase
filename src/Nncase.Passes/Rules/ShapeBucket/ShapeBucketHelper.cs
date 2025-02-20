@@ -226,6 +226,7 @@ public static class ShapeBucketRegister
             if (singleVar)
             {
                 c.Add<BinaryToFusion>();
+                c.Add<ExpandToFusion>();
             }
         });
 

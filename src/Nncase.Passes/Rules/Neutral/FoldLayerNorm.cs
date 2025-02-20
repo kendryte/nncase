@@ -377,6 +377,73 @@ public sealed partial class FoldLayerNormPattern5 : RewriteRule<CallPattern>
     }
 }
 
+// pattern from litgpt without mean and beta
+[RuleGenerator]
+public sealed partial class FoldLayerNormPattern6 : RewriteRule<CallPattern>
+{
+    private readonly Pattern _inputPattern = IsWildcard("input");
+
+    public FoldLayerNormPattern6()
+    {
+        Pattern = IsBinary(
+            "mulGamma",
+            "mulGammaCall",
+            BinaryOp.Mul,
+            IsBinary(
+                "mulX",
+                "mulXCall",
+                BinaryOp.Mul,
+                _inputPattern,
+                IsBinary(
+                    "rsqrt",
+                    "rsqrtCall",
+                    BinaryOp.Div,
+                    IsTensorConst("one"),
+                    IsUnary(
+                        "sqrt",
+                        "sqrtCall",
+                        UnaryOp.Sqrt,
+                        IsBinary(
+                            "addEps",
+                            "addEpsCall",
+                            BinaryOp.Add,
+                            IsReduce(
+                                "rdVar",
+                                "rdVarCall",
+                                ReduceOp.Mean,
+                                IsBinary(
+                                        "pow2",
+                                        "pow2Call",
+                                        BinaryOp.Mul,
+                                        _inputPattern,
+                                        _inputPattern)),
+                            IsTensorConst("eps"))))),
+            IsTensorConst("gamma"));
+    }
+
+    /// <inheritdoc/>
+    public override CallPattern Pattern { get; }
+
+    private Expr? GetReplace(Call pow2Call, Call rdVarCall, TensorConst eps, TensorConst gamma, Expr input, TensorConst one)
+    {
+        if (one.Value.Cast<float>()[0] == 1f)
+        {
+            var axis = pow2Call.CheckedShape.Count - gamma.CheckedShape.Count;
+            var beta = Tensor.FromScalar(0f, gamma.CheckedShape);
+            bool cFirst = false;
+            var axes = rdVarCall[Reduce.Axis].Evaluate().AsTensor().ToArray<int>();
+            if (axes.Length == 1 && axes[0] != input.CheckedShape.Count - 1 && axes[0] != -1)
+            {
+                cFirst = true;
+            }
+
+            return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta, hasMean: false, channelFirst: cFirst);
+        }
+
+        return null;
+    }
+}
+
 [RuleGenerator]
 public sealed partial class ConvertLayerNormChannelFirstToLast : RewriteRule<CallPattern>
 {
