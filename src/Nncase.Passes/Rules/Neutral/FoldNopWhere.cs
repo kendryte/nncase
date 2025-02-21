@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
@@ -24,8 +25,14 @@ public sealed partial class FoldNopWhere : RewriteRule<Pattern>
         IsWildcard("lhs"),
         IsWildcard("rhs"));
 
-    private Expr? GetReplace(bool condition, Expr lhs, Expr rhs)
+    private Expr? GetReplace(TensorConst condition, Expr lhs, Expr rhs)
     {
-        return condition ? lhs : rhs;
+        var condValue = condition.Value.ToArray<bool>();
+        if (condValue.Length == 1)
+        {
+            return condValue.First() ? lhs : rhs;
+        }
+
+        return null;
     }
 }
