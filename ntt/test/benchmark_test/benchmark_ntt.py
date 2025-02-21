@@ -531,3 +531,4 @@ if __name__ == '__main__':
     benchmark_list = sorted(ntt_matmul_riscv64.benchmark_list, key=lambda d: (d['pack_mode']))
     md_file = ntt_matmul_riscv64_report_file('benchmark_ntt_matmul_riscv64.md')
     generate_benchmark_ntt_md(benchmark_list, 'pack_mode', md_file)
+
