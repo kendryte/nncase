@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NetFabric.Hyperlinq;
@@ -71,6 +72,24 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
         if (shape_expr is TensorConst constShape)
         {
             return input with { Shape = new Shape(constShape.Value.Cast<int>()) };
+        }
+        else if (shape_expr is Call { Target: IR.Tensors.Concat } c && c[IR.Tensors.Concat.Input] is IR.Tuple tuple)
+        {
+            var shapeValue = new List<Dimension>();
+            foreach (var item in tuple.Fields)
+            {
+                if (item is TensorConst tensorConst)
+                {
+                    var value = tensorConst.Value.Cast<int>().Single();
+                    shapeValue.Add(value);
+                }
+                else
+                {
+                    shapeValue.Add(Dimension.Unknown);
+                }
+            }
+
+            return input with { Shape = new Shape(shapeValue) };
         }
         else
         {
