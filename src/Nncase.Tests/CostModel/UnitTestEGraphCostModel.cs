@@ -15,7 +15,7 @@ public sealed class UnitTestEGraphCostModel
     [Fact]
     public void TestEGraphExtractMinBy()
     {
-        var a = new Call(new IR.Math.RangeOf());
+        var a = new Call(new IR.Math.RangeOf(false, false));
         var b = (Const)new[] { 1, 2, 3 };
         var c = new Call(new IR.Math.Unary(UnaryOp.Abs));
         var d = new Call(new IR.Math.Clamp());
