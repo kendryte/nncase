@@ -47,6 +47,9 @@ public static class TypeSerializer
             case AnyType:
                 writer.Write((byte)TypeSignatureToken.Any);
                 break;
+            case NoneType:
+                writer.Write((byte)TypeSignatureToken.None);
+                break;
             case TensorType t:
                 writer.Write((byte)TypeSignatureToken.Tensor);
                 Serialize(writer, t.DType);
