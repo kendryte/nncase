@@ -108,20 +108,9 @@ public static class TypeInference
             return TensorType.Unranked(dataType);
         }
 
-        // If any input is not fixed, result is not fixed
-        if (inputs.Any(x => !x.Shape.IsFixed))
-        {
-            // todo:
-            // 1. multi same rank
-            // 2. can broadcast rank -> biggest shape
-            // 3. invalid rank
-            var rank = inputs.OrderByDescending(x => x.Shape.Rank).First().Shape.Rank;
-            return new TensorType(dataType, Shape.Unknown(rank));
-        }
-
         var outputRank = inputs.Select(x => x.Shape.Rank).Max();
         var outputShape = new Dimension[outputRank];
-        Span<int> inputDims = stackalloc int[inputs.Length];
+        var inputDims = new Dimension[inputs.Length];
 
         for (int dimIndex = 0; dimIndex < outputShape.Length; dimIndex++)
         {
@@ -130,8 +119,8 @@ public static class TypeInference
                 var inShape = inputs[i].Shape;
                 var inExtend = outputRank - inShape.Rank;
                 var inDimIndex = dimIndex - inExtend;
-                var inDim = inDimIndex < 0 ? 1 : inShape[inDimIndex].Value!.Value;
-                if (inDim == 0)
+                var inDim = inDimIndex < 0 ? 1 : inShape[inDimIndex];
+                if (inDim is Dimension { IsFixed: true, FixedValue: 0 })
                 {
                     return new InvalidType("Input dimension should not be 0.");
                 }
@@ -139,22 +128,34 @@ public static class TypeInference
                 inputDims[i] = inDim;
             }
 
-            // 1. Sort descending
-            inputDims.Sort((a, b) => b.CompareTo(a));
-
-            // 2. Find first 1
-            var firstOneIndex = inputDims.IndexOf(1);
-            var expectedDim = inputDims[0];
-
-            // 3. Dims before 1 are all same or 1 is not found, it's ok to broadcast
-            if ((firstOneIndex == -1 && inputDims.AsValueEnumerable().Distinct().Count() == 1) ||
-                ((firstOneIndex != -1) && inputDims[..firstOneIndex].AsValueEnumerable().All(x => x == expectedDim)))
+            var non1Dims = inputDims.Where(x => x.IsUnknown || x.FixedValue != 1).ToHashSet();
+            if (non1Dims.Count == 0)
             {
-                outputShape[dimIndex] = expectedDim;
+                outputShape[dimIndex] = 1;
             }
             else
             {
-                return new InvalidType("Inputs are not compatible to broadcast.");
+                var expectedDim = non1Dims.First();
+                if (non1Dims.Count == 1)
+                {
+                    outputShape[dimIndex] = expectedDim;
+                }
+                else if (non1Dims.Any(x => x.IsFixed))
+                {
+                    var fixedDim = non1Dims.First(x => x.IsFixed).FixedValue;
+                    if (non1Dims.Any(x => x.IsFixed && x.FixedValue != fixedDim))
+                    {
+                        return new InvalidType("Inputs are not compatible to broadcast.");
+                    }
+                    else
+                    {
+                        outputShape[dimIndex] = fixedDim;
+                    }
+                }
+                else
+                {
+                    outputShape[dimIndex] = Dimension.Unknown;
+                }
             }
         }
 
@@ -449,11 +450,18 @@ public static class TypeInference
                 return new InvalidType($"Inputs DType of if should be same, then: {a.DType}, else: {b.DType}");
             }
 
+            if (a.Shape.IsUnranked || b.Shape.IsUnranked || a.Shape.Rank != b.Shape.Rank)
+            {
+                return new TensorType(a.DType, Shape.Unranked);
+            }
+
             return new TensorType(a.DType, Shape.Unknown(a.Shape.Rank));
         }
 
         return (thenType, elseType) switch
         {
+            (NoneType then, IRType @else) => @else,
+            (IRType then, NoneType @else) => then,
             (TensorType then, TensorType @else) => CommonTypeImpl(then, @else),
             (TupleType then, TupleType @else) => then.Count != @else.Count
                 ? new InvalidType($"tuple Inputs of if should be same count, then: {then.Count}, else: {@else.Count}")

@@ -10,7 +10,7 @@ using Unsqueeze = Nncase.IR.Tensors.Unsqueeze;
 
 namespace Nncase.Importer.TFLite
 {
-    public partial class TFLiteImporter
+    public partial class TFLiteGraphImporter
     {
         private Expr VisitSpaceToBatchND(in tflite.Operator op)
         {

@@ -13,7 +13,7 @@ using TensorType = tflite.TensorType;
 
 namespace Nncase.Importer.TFLite
 {
-    public partial class TFLiteImporter
+    public partial class TFLiteGraphImporter
     {
         private Expr VisitPad(in tflite.Operator op)
         {

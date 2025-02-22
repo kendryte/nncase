@@ -10,7 +10,7 @@ using static Nncase.IR.F.NN;
 
 namespace Nncase.Importer
 {
-    public partial class OnnxImporter
+    public partial class OnnxGraphImporter
     {
         private Expr VisitQuantizeLinear(in NodeProto op)
         {

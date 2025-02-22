@@ -23,6 +23,7 @@ BEGIN_NS_NNCASE_RUNTIME
 typedef enum : uint8_t {
     type_sig_invalid,
     type_sig_any,
+    type_sig_none,
     type_sig_tensor,
     type_sig_tuple,
     type_sig_callable,

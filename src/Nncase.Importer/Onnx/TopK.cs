@@ -8,7 +8,7 @@ using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Importer
 {
-    public partial class OnnxImporter
+    public partial class OnnxGraphImporter
     {
         private Expr VisitTopK(in NodeProto op)
         {

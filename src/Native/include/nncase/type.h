@@ -75,6 +75,23 @@ class NNCASE_API invalid_type_node : public type_node {
     std::string reason_;
 };
 
+class none_type_node;
+
+/** @brief None type */
+class none_type : public object_t<none_type_node> {
+  public:
+    using object_t::object_t;
+
+    static none_type value;
+};
+
+/** @brief None type node */
+class NNCASE_API none_type_node : public type_node {
+    DEFINE_OBJECT_KIND(object_node, object_none_type);
+
+  public:
+};
+
 /** @brief Tensor type node */
 class NNCASE_API tensor_type_node : public type_node {
     DEFINE_OBJECT_KIND(object_node, object_tensor_type);

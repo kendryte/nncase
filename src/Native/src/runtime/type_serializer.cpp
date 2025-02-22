@@ -27,6 +27,8 @@ result<type> deserialize_type_impl(TReader &sr) noexcept {
         return ok<type>(invalid_type::value);
     case type_sig_any:
         return ok<type>(any_type::value);
+    case type_sig_none:
+        return ok<type>(none_type::value);
     case type_sig_tensor: {
         checked_try_var(elem_type, deserialize_datatype(sr));
         shape_t shape(unranked_shape);

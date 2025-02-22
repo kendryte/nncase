@@ -11,7 +11,7 @@ using F = Nncase.IR.F;
 
 namespace Nncase.Importer
 {
-    public partial class OnnxImporter
+    public partial class OnnxGraphImporter
     {
         // isGlobal used for GlobalXXXPool
         private Expr VisitReduceWindow2D(in NodeProto op, ReduceOp reduceOp, Expr initValue, bool isGlobal = false)
@@ -37,8 +37,8 @@ namespace Nncase.Importer
             var pads = GetPadsAttribute(op, isPool1D);
             if (isPool1D)
             {
-                strides.Add(1);
-                kernelShape = Concat(new Tuple(kernelShape, new[] { 1L }), 0);
+                strides.Insert(0, 1);
+                kernelShape = Concat(new Tuple(new[] { 1L }, kernelShape), 0);
                 input = To4D(input);
             }
 
@@ -55,7 +55,7 @@ namespace Nncase.Importer
 
             if (isPool1D)
             {
-                pdp = Squeeze(pdp, new[] { 3 });
+                pdp = Squeeze(pdp, new[] { 2 });
             }
 
             return pdp;

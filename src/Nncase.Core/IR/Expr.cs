@@ -99,7 +99,7 @@ public abstract partial class Expr : IDisposable
                 default:
                     if (DumpScope.Current.IsEnabled(DumpFlags.Compile))
                     {
-                        DumpScope.Current.DumpIR(this, "CheckedShapeError");
+                        DumpScope.Current.DumpIR(this, "CheckedShapeError", displayCallable: true);
                     }
 
                     throw new InvalidOperationException("Only The Expr Have CheckedType Can Get It's Shape");

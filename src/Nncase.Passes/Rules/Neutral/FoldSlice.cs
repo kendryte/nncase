@@ -21,7 +21,7 @@ public sealed partial class FoldNopSlice : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsSlice(
-        IsWildcard("input") with { TypePattern = HasFixedShape() },
+        IsWildcard("input") with { TypePattern = HasRank() },
         IsTensorConst("begins"),
         IsTensorConst("ends"),
         IsTensorConst("axes"),
@@ -34,7 +34,7 @@ public sealed partial class FoldNopSlice : IRewriteRule
         {
             var axis = axes[i];
             if (begins[i] != 0
-                || ends[i] != inShape[axis].FixedValue
+                || ends[i] != inShape[axis]
                 || strides[i] != 1)
             {
                 return null;

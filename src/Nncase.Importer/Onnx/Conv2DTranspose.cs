@@ -16,7 +16,7 @@ using F = Nncase.IR.F;
 
 namespace Nncase.Importer
 {
-    public partial class OnnxImporter
+    public partial class OnnxGraphImporter
     {
         private Expr VisitConv2DTranspose(NodeProto op)
         {
@@ -30,8 +30,8 @@ namespace Nncase.Importer
             var isConv1D = IsConv1D(weights);
             if (isConv1D)
             {
-                dilation.Add(1);
-                strides.Add(1);
+                dilation.Insert(0, 1);
+                strides.Insert(0, 1);
                 input = To4D(input);
                 weights = To4D(weights);
             }
@@ -69,7 +69,7 @@ namespace Nncase.Importer
 
             if (isConv1D)
             {
-                conv = Squeeze(conv, new[] { 3 });
+                conv = Squeeze(conv, new[] { 2 });
             }
 
             return conv;

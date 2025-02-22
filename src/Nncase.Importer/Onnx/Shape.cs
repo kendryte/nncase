@@ -10,7 +10,7 @@ using F = Nncase.IR.F;
 
 namespace Nncase.Importer
 {
-    public partial class OnnxImporter
+    public partial class OnnxGraphImporter
     {
         private Expr VisitShape(in NodeProto op)
         {
@@ -37,6 +37,11 @@ namespace Nncase.Importer
             var start = GetIntAttribute(op, "start", 0);
             var inShape = F.Tensors.ShapeOf(input);
             var end = GetOptionIntAttribute(op, "end");
+            if (start == 0 && end.IsNone)
+            {
+                return inShape;
+            }
+
             Expr endValue = end ? new[] { end.Value() } : F.Tensors.ShapeOf(inShape);
             return F.Tensors.Slice(
                 inShape,

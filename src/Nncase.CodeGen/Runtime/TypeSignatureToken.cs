@@ -27,6 +27,11 @@ public enum TypeSignatureToken : byte
     Any,
 
     /// <summary>
+    /// <see cref="NoneType"/>.
+    /// </summary>
+    None,
+
+    /// <summary>
     /// <see cref="TensorType"/>.
     /// </summary>
     Tensor,

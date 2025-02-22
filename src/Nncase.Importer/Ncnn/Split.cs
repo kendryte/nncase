@@ -14,7 +14,7 @@ using Nncase.IR.NN;
 
 namespace Nncase.Importer.Ncnn;
 
-public partial class NcnnImporter
+public partial class NcnnGraphImporter
 {
     private Expr VisitSplit(NcnnLayer layer)
     {

@@ -9,7 +9,7 @@ using Onnx;
 
 namespace Nncase.Importer
 {
-    public sealed partial class OnnxImporter
+    public sealed partial class OnnxGraphImporter
     {
         private DataType GetDataType(string name)
         {

@@ -12,7 +12,7 @@ using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Importer.TFLite
 {
-    public partial class TFLiteImporter
+    public partial class TFLiteGraphImporter
     {
         private Expr MakeResizeSizes(Expr input, Expr newSize)
         {

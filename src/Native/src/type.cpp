@@ -18,3 +18,4 @@ using namespace nncase;
 
 any_type any_type::value(std::in_place);
 invalid_type invalid_type::value(std::in_place);
+none_type none_type::value(std::in_place);

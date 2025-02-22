@@ -226,6 +226,7 @@ public static class ShapeBucketRegister
             if (singleVar)
             {
                 c.Add<BinaryToFusion>();
+                c.Add<ExpandToFusion>();
             }
         });
 
@@ -335,10 +336,10 @@ public static class ShapeBucketHelper
             throw new InvalidOperationException("Args has tuple");
         }
 
-        if (newArgs.ToHashSet().Count != newArgs.Length)
-        {
-            throw new InvalidOperationException("Has Repeat args");
-        }
+        // if (newArgs.ToHashSet().Count != newArgs.Length)
+        // {
+        //     throw new InvalidOperationException("Has Repeat args");
+        // }
     }
 
     // clone origin Expr and Do replace for var

@@ -116,7 +116,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     /// <param name="axisConst">Axis.</param>
     /// <param name="input">Input type.</param>
     /// <param name="f">(index in axis, axis, inDim) -> outDim.</param>
-    private Shape ApplyAxis(TensorConst axisConst, TensorType input, Func<int, int, int, Dimension> f)
+    private Shape ApplyAxis(TensorConst axisConst, TensorType input, Func<int, int, Dimension, Dimension> f)
     {
         if (input.Shape.IsUnranked)
         {
@@ -131,9 +131,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
             var axis = axisV < 0
                 ? axisV + input.Shape.Rank
                 : axisV;
-            outShape[axis] = input.Shape[axis].IsFixed
-                ? f(i, axis, input.Shape[axis].FixedValue)
-                : Dimension.Unknown;
+            outShape[axis] = f(i, axis, input.Shape[axis]);
         }
 
         return outShape;
@@ -189,29 +187,41 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
 
                     outShape = ApplyAxis(axes_con, input, (i, axis, inDim) =>
                     {
-                        var stride = ts_strides[i];
-
-                        // reverse stride
-                        if (stride < 0)
+                        if (ts_begins[i] == -1 && ts_ends[i] >= int.MaxValue)
                         {
-                            // document in onnx operators:
-                            // for positive stepping and [0, dims[axes[i]]-1] for negative stepping.
-                            var begin = ts_begins[i] < 0 ? inDim + ts_begins[i] : System.Math.Clamp(ts_begins[i], 0L, inDim - 1);
+                            return 1;
+                        }
+                        else if (inDim.IsFixed)
+                        {
+                            var inDimValue = inDim.FixedValue;
+                            var stride = ts_strides[i];
 
-                            // while for negative stepping it is clamped to [-1, dims[axes[i]]-1].
-                            var end = ts_ends[i] == long.MinValue + 1 ? -1 : (ts_ends[i] < 0 ? ts_ends[i] + inDim : System.Math.Clamp(ts_ends[i], -1L, inDim));
-                            return (int)System.Math.Ceiling((float)System.Math.Abs(end - begin) /
+                            // reverse stride
+                            if (stride < 0)
+                            {
+                                // document in onnx operators:
+                                // for positive stepping and [0, dims[axes[i]]-1] for negative stepping.
+                                var begin = ts_begins[i] < 0 ? inDimValue + ts_begins[i] : System.Math.Clamp(ts_begins[i], 0L, inDimValue - 1);
+
+                                // while for negative stepping it is clamped to [-1, dims[axes[i]]-1].
+                                var end = ts_ends[i] == long.MinValue + 1 ? -1 : (ts_ends[i] < 0 ? ts_ends[i] + inDimValue : System.Math.Clamp(ts_ends[i], -1L, inDimValue));
+                                return (int)System.Math.Ceiling((float)System.Math.Abs(end - begin) /
+                                                                    System.Math.Abs(stride));
+                            }
+                            else
+                            {
+                                // starts[i] is clamped into the range [0, dims[axes[i]]]
+                                var begin = ts_begins[i] < 0 ? inDimValue + ts_begins[i] : System.Math.Clamp(ts_begins[i], 0L, inDimValue);
+
+                                // end[i] is clamped into the range [0, dims[axes[i]]]
+                                var end = ts_ends[i] < 0 ? inDimValue + ts_ends[i] : System.Math.Clamp(ts_ends[i], 0L, inDimValue);
+                                return (int)System.Math.Ceiling((float)System.Math.Abs(end - begin) /
                                                                 System.Math.Abs(stride));
+                            }
                         }
                         else
                         {
-                            // starts[i] is clamped into the range [0, dims[axes[i]]]
-                            var begin = ts_begins[i] < 0 ? inDim + ts_begins[i] : System.Math.Clamp(ts_begins[i], 0L, inDim);
-
-                            // end[i] is clamped into the range [0, dims[axes[i]]]
-                            var end = ts_ends[i] < 0 ? inDim + ts_ends[i] : System.Math.Clamp(ts_ends[i], 0L, inDim);
-                            return (int)System.Math.Ceiling((float)System.Math.Abs(end - begin) /
-                                                            System.Math.Abs(stride));
+                            return Dimension.Unknown;
                         }
                     });
                     return input with { Shape = outShape };

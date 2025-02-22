@@ -53,8 +53,13 @@ public partial class RequireEvaluator : IEvaluator<Require>, ITypeInferencer<Req
         return value;
     }
 
-    private IRType Visit(TensorType predicate, IRType value)
+    private IRType Visit(TensorType predicate, IRType value, Require target, ITypeInferenceContext context)
     {
+        if (context.GetArgument(target, Require.Predicate) is TensorConst tc && !tc.Value.ToScalar<bool>())
+        {
+            return NoneType.Default;
+        }
+
         return value;
     }
 }

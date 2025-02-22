@@ -9,7 +9,7 @@ using Where = Nncase.IR.Tensors.Where;
 
 namespace Nncase.Importer.TFLite
 {
-    public partial class TFLiteImporter
+    public partial class TFLiteGraphImporter
     {
         private Expr VisitWhere(in tflite.Operator op)
         {

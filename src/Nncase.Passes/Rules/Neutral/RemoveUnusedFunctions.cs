@@ -35,6 +35,7 @@ public sealed class RemoveUnusedFunctions : ModulePass
             var funcsToRemove = new HashSet<BaseFunction>(ReferenceEqualityComparer.Instance);
             foreach (var func in input.Functions)
             {
+                IRHelpers.DCE(func);
                 if (!ReferenceEquals(func, input.Entry)
                     && func.Users.Count == 1)
                 {

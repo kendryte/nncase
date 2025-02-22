@@ -112,6 +112,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern4>();
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern5>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern6>();
             p.Add<Passes.Rules.Neutral.ConvertLayerNormChannelFirstToLast>();
             p.Add<Passes.Rules.Neutral.FoldGeluWithScale>();
             p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
@@ -134,6 +135,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldNopCast>();
             p.Add<Passes.Rules.Neutral.FoldNopReshape>();
             p.Add<Passes.Rules.Neutral.FoldNopSlice>();
+            p.Add<Passes.Rules.Neutral.FoldZeroConcat>();
             p.Add<Passes.Rules.Neutral.FoldSqueezeUnsqueeze>();
             p.Add<Passes.Rules.Neutral.FoldUnsqueezeSqueeze>();
             p.Add<Passes.Rules.Neutral.FoldTwoTransposes>();
@@ -341,7 +343,24 @@ internal class Compiler : ICompiler
         var preprocess_option = _compileSession.CompileOptions;
 
         await RunPassAsync(pmg => BroadcastOutputNamesAfterImportPass(pmg), "BroadcastOutputNamesAfterImport");
-        await RunPassAsync(pmg => pmg.Add<ShapeInferPass>(), "ShapeInferAfterImport");
+        await RunPassAsync(
+            p =>
+            {
+                p.Add<ShapeInferPass>();
+                p.AddWithName<DataflowPass>("OptimizeShape").Configure(p =>
+                {
+                    p.Add<FoldNopIf>();
+                    p.Add<FoldNopCompareByRange>();
+                    p.Add<FoldNopWhere>();
+                    p.Add<FoldConstCall>();
+                    p.Add<FoldShapeOf>();
+                    p.Add<InlineFunctionWithSingleCall>();
+                });
+
+                p.AddWithName<AddFunctionToModule>("AddNewFunctionToModule");
+                p.AddWithName<RemoveUnusedFunctions>("RemoveUnusedFunctions");
+            },
+            "ShapeInferAfterImport");
         await RunPassAsync(pmg => AddPreAndPostProcess(pmg), "AddPreAndPostProcessAfterImport");
 
         var inferSucc = CompilerServices.InferenceType(module.Entry!);

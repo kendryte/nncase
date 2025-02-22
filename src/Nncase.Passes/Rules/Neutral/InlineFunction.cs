@@ -1,0 +1,55 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reactive;
+using NetFabric.Hyperlinq;
+using Nncase.IR;
+using Nncase.IR.Math;
+using Nncase.IR.NN;
+using Nncase.PatternMatch;
+using static Nncase.IR.TypePatternUtility;
+using static Nncase.PatternMatch.Utility;
+
+namespace Nncase.Passes.Rules.Neutral;
+
+[RuleGenerator]
+public sealed partial class InlineFunctionWithSingleCall : RewriteRule<Pattern>
+{
+    public InlineFunctionWithSingleCall()
+    {
+    }
+
+    public override Pattern Pattern => IsWildcard("expr", expr => expr is Call call && call.Target is Function);
+
+    private Expr? GetReplace(Call expr)
+    {
+        var target = (Function)expr.Target;
+        var count = target.Users.Count(x => x is Call);
+        if (count == 1)
+        {
+            var mapper = target.Parameters.ToArray().Zip(expr.Arguments.ToArray(), (p, a) => (p, a)).ToDictionary(x => x.p, x => x.a);
+            var cloner = new FunctionBodyCloner(mapper);
+            return cloner.Visit(target.Body, Unit.Default);
+        }
+
+        return null;
+    }
+}
+
+internal sealed class FunctionBodyCloner : ExprCloner<Unit>
+{
+    private readonly Dictionary<Var, Expr> _mapper;
+
+    public FunctionBodyCloner(Dictionary<Var, Expr> mapper)
+    {
+        _mapper = mapper;
+    }
+
+    protected override Expr VisitLeafVar(Var expr, Unit context)
+    {
+        return _mapper[expr];
+    }
+}
