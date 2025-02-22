@@ -41,11 +41,6 @@ namespace Nncase.IR
         /// <param name="value">Dimension value.</param>
         public Dimension(int value)
         {
-            if (value < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), "Dimension should not be lower than 0.");
-            }
-
             Kind = DimensionKind.Fixed;
             Value = value;
         }
