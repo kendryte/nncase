@@ -400,7 +400,7 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
             return null;
         }
 
-        var outputShape = GetOutputShape(lShape.ToValueList(), rShape.ToValueList());
+        var outputShape = binaryCall.CheckedShape.ToValueArray();
 
         return Reshape(Binary(binary.BinaryOp, Reshape(lhs, newLShape.ToArray()).With(metadata: lhs.Metadata), Reshape(rhs, newRShape.ToArray()).With(metadata: rhs.Metadata)).With(metadata: binaryCall.Metadata), outputShape.ToArray());
     }
