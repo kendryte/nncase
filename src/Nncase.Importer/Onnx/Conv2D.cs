@@ -40,7 +40,7 @@ namespace Nncase.Importer
             pads.InferenceType();
 
             // if (weights.Metadata.OutputNames?[0] == "onnx::Conv_959" || weights.Metadata.OutputNames?[0] == "onnx::Conv_955" || weights.Metadata.OutputNames?[0] == "onnx::Conv_947")
-            if (weights.Metadata.OutputNames?[0] == "onnx::Conv_959")
+            if (false)
             {
                 // var biasOrg = ((TensorConst)bias).Value.ToArray<float>().Select(b => b / 64.0f).ToArray();
                 // var newBias = Tensor.From(biasOrg, bias.CheckedShape);
