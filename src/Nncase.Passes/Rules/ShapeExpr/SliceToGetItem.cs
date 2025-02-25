@@ -24,21 +24,22 @@ namespace Nncase.Passes.Rules.Neutral;
 public partial class SliceToGetItem : RewriteRule<Pattern>
 {
     public override Pattern Pattern => IsSlice(
-            IsWildcard("input") with { TypePattern = HasRank(1) },
-            IsTensorConst("begins"),
+            IsWildcard("input"),
+            IsTensorConst("begins") with { TypePattern = HasRank(1) },
             IsTensorConst("ends"),
-            IsTensorConst("axes"),
+            IsTensorConst("axes", axes => axes.Value.ToArray<int>()[0] == 0),
             IsTensorConst("strides", strides => strides.Value.ToArray<int>()[0] == 1));
 
     private Expr? GetReplace(Expr input, long[] begins, long[] ends)
     {
         if ((ends[0] - begins[0]) == 1)
         {
-            return IR.F.Tensors.Reshape(input[begins[0]], new long[] { 1 });
+            return IR.F.Tensors.Unsqueeze(input[begins[0]], new long[] { 0 });
         }
-        else if (begins[0] == -1 && input.CheckedShape[0].IsFixed)
+        else if (begins[0] == -1 && ends[0] >= int.MaxValue)
         {
-            return IR.F.Tensors.Reshape(input[input.CheckedShape[0].FixedValue - 1], new long[] { 1 });
+            var index = IR.F.Tensors.ShapeOf(input)[0] - 1L;
+            return IR.F.Tensors.Unsqueeze(input[index], new long[] { 0 });
         }
 
         return null;
