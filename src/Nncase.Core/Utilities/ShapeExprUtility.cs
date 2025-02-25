@@ -99,4 +99,21 @@ public static class ShapeExprUtility
 
         return shape;
     }
+
+    public static Dimension[] GetPermutation(Dimension[] indices, int[] dims)
+    {
+        // format dims to non-negative
+        var newDims = dims.Select(x => x < 0 ? x + indices.Length : x).ToArray();
+
+        if (dims.Length == 2)
+        {
+            var newIndices = indices;
+            (newIndices[dims[0]], newIndices[dims[1]]) = (newIndices[dims[1]], newIndices[dims[0]]);
+            return newIndices;
+        }
+        else
+        {
+            throw new NotImplementedException("GetPermuation in Transpose need 2D perm");
+        }
+    }
 }

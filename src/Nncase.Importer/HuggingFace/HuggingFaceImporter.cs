@@ -15,49 +15,51 @@ using Newtonsoft.Json.Linq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Tuple = Nncase.IR.Tuple;
-using TorchSharp;
-using static TorchSharp.torch.nn;
 
 namespace Nncase.Importer;
 
 public sealed partial class HuggingFaceImporter : BaseImporter
 {
-    private string _modelDir;
-    private Dictionary<string, object> _config;
-	private List<string> _modelArchitectures;
+    private Dictionary<string, object>? _config;
+    private Dictionary<string, Tensor>? _constTensors;
 
-    private Dictionary<string, Nncase.Tensor>? _constTensors;
-
+    private List<Var>? _inputs;
+    private List<Var>? _outputs;
     private Dictionary<string, Var> _dynVarMap = new();
     private Dictionary<string, int> _fixVarMap = new();
 
     public HuggingFaceImporter(string huggingFaceDir, CompileSession compileSession)
         : base(compileSession)
     {
-        _modelDir = huggingFaceDir;
-
         // 读取 config.json 文件
-        getConfigInfo(Path.Combine(huggingFaceDir, "config.json"));
-        getAllWeights(Path.Combine(huggingFaceDir, "model.safetensors"));
-
-
-        if (String.Equals(_config["architectures"], "Qwen2ForCausalLM"))
-        {
-            _modelArchitectures = new List<string>() {"Qwen2Model", "Linear"};
-			//{ "Embedding", "Qwen2DecoderLayer", "Qwen2MLP", "Qwen2RMSNorm", "Qwen2RotaryEmbedding" };
-        }
+        _config = HuggingFaceUtils.getConfigInfo(Path.Combine(huggingFaceDir, "config.json"));
+        _constTensors = HuggingFaceUtils.getAllWeights(Path.Combine(huggingFaceDir, "model.safetensors"));
     }
 
     protected override (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
     {
         throw new NotImplementedException();
+        switch (_config!["architectures"]!)
+        {
+            case "Qwen2ForCausalLM":
+                Qwen2CreateInputs();
+                break;
+            default:
+                throw new NotImplementedException();
+        }
     }
 
     protected override void ConvertOp()
     {
-        foreach (var architecture in _modelArchitectures)
+        switch (_config!["architectures"]!)
         {
-			Visit(architecture);
+            case "Qwen2ForCausalLM":
+                _config["pad_token_id"] = 0;
+                Debug.Assert(_constTensors != null, nameof(_constTensors) + " != null");
+                VisitQwen2ForCausalLM();
+                break;
+            default:
+                throw new NotImplementedException();
         }
     }
 
@@ -65,50 +67,4 @@ public sealed partial class HuggingFaceImporter : BaseImporter
     {
         throw new NotImplementedException();
     }
-
-	private void Visit(string op)
-    {
-        switch (op)
-        {
-            case "Qwen2Model":
-                VisitQwen2Model(_config, _constTensors);
-                break;
-        }
-    }
-
-    private void getConfigInfo(string path)
-    {
-        if (File.Exists(path))
-        {
-            var configJson = File.ReadAllText(path);
-            _config = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, object>>(configJson);
-            foreach (var key in _config.Keys.ToList())
-            {
-                if (_config[key] is JArray jArray)
-                {
-                    _config[key] = string.Join(", ", jArray.Select(token => token.ToString()));
-                }
-            }
-        }
-        else
-        {
-            throw new FileNotFoundException($"{_config?["architectures"]}'s config.json not found in the specified directory.", path);
-        }
-    }
-
-    private void getAllWeights(string path)
-    {
-        var constTensor = HuggingFaceUtils.LoadStateDict(path);
-        foreach (var item in constTensor)
-        {
-            Console.WriteLine($"{item.Key}");
-            if (item.Value is Tensor tensor)
-            {
-                _constTensors ??= new();
-                _constTensors.Add(item.Key, tensor.CastTo(DataTypes.Float32));
-            }
-        }
-    }
-
-
 }

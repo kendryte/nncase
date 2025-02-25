@@ -51,7 +51,7 @@ public class UnitTestImporter : TestClassBase
     [Fact]
     public async Task TestImportHuggingFace()
     {
-        var file = "/home/curio/github/Qwen2.5-0.5B/"; // TODO: need a relative path!
+        var file = "/home/curio/github/Qwen2.5-0.5B-Instruct/"; // TODO: need a relative path!
         var module = Importers.ImportHuggingFace(file, CompileSession);
         await InferShapeAsync(module);
         Assert.NotNull(module.Entry);
