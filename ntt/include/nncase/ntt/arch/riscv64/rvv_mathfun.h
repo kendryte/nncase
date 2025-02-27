@@ -14,6 +14,7 @@
  */
 
 #pragma once
+#include "nncase/half.h"
 #include <cmath>
 
 #if __riscv_vector
@@ -33,6 +34,7 @@
 #define c_cephes_log_q1 -2.12194440e-4
 #define c_cephes_log_q2 0.693359375
 
+using namespace nncase;
 /*
 log(x) = x - x^2 / 2 + p8x^3 + ... + p0x^11 + (q1 + q2) * e
        = x + x^2(-1/2 + p8x + ... +  x^2(p1 + p0x)) + (q1 + q2) * e
@@ -72,7 +74,7 @@ log(x) = x - x^2 / 2 + p8x^3 + ... + p0x^11 + (q1 + q2) * e
         auto c3 = __riscv_vfmv_v_f_f32m##LMUL(c_cephes_log_p3, vl);            \
         auto c5 = __riscv_vfmv_v_f_f32m##LMUL(c_cephes_log_p5, vl);            \
         auto c7 = __riscv_vfmv_v_f_f32m##LMUL(c_cephes_log_p7, vl);            \
-        auto minus_half = __riscv_vfmv_v_f_f32m##LMUL(-0.5f, vl);              \
+        auto minus = __riscv_vfmv_v_f_f32m##LMUL(-0.5f, vl);              \
         auto x2 = __riscv_vfmul_vv_f32m##LMUL(x, x, vl);                       \
         y1 = __riscv_vfmadd_vf_f32m##LMUL(y1, c_cephes_log_p0, c1, vl);        \
         y2 = __riscv_vfmadd_vf_f32m##LMUL(y2, c_cephes_log_p2, c3, vl);        \
@@ -81,7 +83,7 @@ log(x) = x - x^2 / 2 + p8x^3 + ... + p0x^11 + (q1 + q2) * e
         y4 = __riscv_vfmadd_vf_f32m##LMUL(y4, c_cephes_log_p6, c7, vl);        \
         y1 = __riscv_vfmadd_vv_f32m##LMUL(y1, x2, y3, vl);                     \
         y5 =                                                                   \
-            __riscv_vfmadd_vf_f32m##LMUL(y5, c_cephes_log_p8, minus_half, vl); \
+            __riscv_vfmadd_vf_f32m##LMUL(y5, c_cephes_log_p8, minus, vl); \
         y1 = __riscv_vfmadd_vv_f32m##LMUL(y1, x2, y4, vl);                     \
         y1 = __riscv_vfmadd_vv_f32m##LMUL(y1, x2, y5, vl);                     \
         e = __riscv_vfmul_vf_f32m##LMUL(e, c_cephes_log_q1 + c_cephes_log_q2,  \
@@ -95,70 +97,64 @@ _RVV_FLOAT32_LOG_OP(2, 16)
 _RVV_FLOAT32_LOG_OP(4, 8)
 _RVV_FLOAT32_LOG_OP(8, 4)
 
-// 特殊掩码（非浮点数值，保留原定义）
-#define c_inv_mant_mask ~0x7f800000u
-
-// 浮点常量转换结果（FP16）
-#define c_cephes_SQRTHF_half 0x3951      // ~0.70703125（√2/2 的近似值）
-#define c_cephes_log_p0_half 0x241D      // ~0.0703125（原值 7.0376836292E-2）
-#define c_cephes_log_p1_half 0xB8ED      // ~-0.115234（原值 -1.1514610310E-1）
-#define c_cephes_log_p2_half 0x3A1A      // ~0.11621094（原值 1.1676998740E-1）
-#define c_cephes_log_p3_half 0xBA1A      // ~-0.123046875（原值 -1.2420140846E-1）
-#define c_cephes_log_p4_half 0x3B2D      // ~0.14257812（原值 1.4249322787E-1）
-#define c_cephes_log_p5_half 0xBB2D      // ~-0.16601562（原值 -1.6668057665E-1）
-#define c_cephes_log_p6_half 0x3C00      // ~0.19921875（原值 2.0000714765E-1）
-#define c_cephes_log_p7_half 0xBC00      // ~-0.25（原值 -2.4999993993E-1）
-#define c_cephes_log_p8_half 0x3CAA      // ~0.3330078（原值 3.3333331174E-1）
-#define c_cephes_log_q1_half 0x95A5      // ~-0.00021219（原值 -2.12194440e-4）
-#define c_cephes_log_q2_half 0x38E0      // 0.693359375（精确表示）
-
-#define _RVV_FLOAT16_LOG_OP(LMUL, MLEN)                                      \
-    static inline vfloat16m##LMUL##_t log_ps(vfloat16m##LMUL##_t x,          \
-                                             size_t vl) {                    \
-        auto ux = __riscv_vreinterpret_v_f16m##LMUL##_i16m##LMUL(x);         \
-        auto emm0 = __riscv_vsra_vx_i16m##LMUL(ux, 10, vl);                  \
-                                                                             \
-        /* 处理尾数部分：清除指数位 */                                       \
-        ux = __riscv_vand_vx_i16m##LMUL(ux, 0x03FF, vl); /* FP16尾数掩码 */  \
-        emm0 = __riscv_vsub_vx_i16m##LMUL(emm0, 0x0F, vl); /* FP16指数偏置15*/\
-        ux = __riscv_vor_vx_i16m##LMUL(ux, 0x3C00 /* FP16的0.5 */, vl);      \
-        x = __riscv_vreinterpret_v_i16m##LMUL##_f16m##LMUL(ux);              \
-                                                                             \
-        auto e = __riscv_vfcvt_f_x_v_f16m##LMUL(emm0, vl);                   \
-        /* 条件分支：x < SQRTHF 时的调整 */                                  \
-        auto mask =                                                          \
-            __riscv_vmflt_vf_f16m##LMUL##_b##MLEN(x, c_cephes_SQRTHF_half, vl);   \
-        x = __riscv_vfadd_vv_f16m##LMUL##_m(mask, x, x, vl);                \
-        e = __riscv_vfsub_vf_f16m##LMUL##_m(mask, e, 0X3C00, vl);             \
-        x = __riscv_vfsub_vf_f16m##LMUL(x, 0X3C00, vl);                       \
-                                                                             \
-        /* 多项式展开计算（系数已转为FP16） */                              \
-        auto y1 = __riscv_vmv_v_v_f16m##LMUL(x, vl);                        \
-        auto y2 = __riscv_vmv_v_v_f16m##LMUL(x, vl);                        \
-        auto y3 = __riscv_vmv_v_v_f16m##LMUL(x, vl);                        \
-        auto y4 = __riscv_vmv_v_v_f16m##LMUL(x, vl);                        \
-        auto y5 = __riscv_vmv_v_v_f16m##LMUL(x, vl);                        \
-        auto c1 = __riscv_vfmv_v_f_f16m##LMUL(c_cephes_log_p1_half, vl);         \
-        auto c3 = __riscv_vfmv_v_f_f16m##LMUL(c_cephes_log_p3_half, vl);         \
-        auto c5 = __riscv_vfmv_v_f_f16m##LMUL(c_cephes_log_p5_half, vl);         \
-        auto c7 = __riscv_vfmv_v_f_f16m##LMUL(c_cephes_log_p7_half, vl);         \
-        auto minus_half = __riscv_vfmv_v_f_f16m##LMUL(0xB800, vl);           \
-        auto x2 = __riscv_vfmul_vv_f16m##LMUL(x, x, vl);                    \
-                                                                             \
-        y1 = __riscv_vfmadd_vf_f16m##LMUL(y1, c_cephes_log_p0_half, c1, vl);     \
-        y2 = __riscv_vfmadd_vf_f16m##LMUL(y2, c_cephes_log_p2_half, c3, vl);     \
-        y3 = __riscv_vfmadd_vf_f16m##LMUL(y3, c_cephes_log_p4_half, c5, vl);     \
-        y1 = __riscv_vfmadd_vv_f16m##LMUL(y1, x2, y2, vl);                  \
-        y4 = __riscv_vfmadd_vf_f16m##LMUL(y4, c_cephes_log_p6_half, c7, vl);     \
-        y1 = __riscv_vfmadd_vv_f16m##LMUL(y1, x2, y3, vl);                  \
-        y5 = __riscv_vfmadd_vf_f16m##LMUL(y5, c_cephes_log_p8_half, minus_half, vl);\
-        y1 = __riscv_vfmadd_vv_f16m##LMUL(y1, x2, y4, vl);                  \
-        y1 = __riscv_vfmadd_vv_f16m##LMUL(y1, x2, y5, vl);                  \
-                                                                             \
-        /* 合并指数和尾数结果 */                                            \
-        e = __riscv_vfmul_vf_f16m##LMUL(e, c_cephes_log_q1_half + c_cephes_log_q2_half, vl);\
-        y1 = __riscv_vfmadd_vv_f16m##LMUL(y1, x2, x, vl);                   \
-        return __riscv_vfadd_vv_f16m##LMUL(y1, e, vl);                      \
+#define _RVV_FLOAT16_LOG_OP(LMUL, MLEN)                                        \
+    static inline vfloat16m##LMUL##_t log_ps(vfloat16m##LMUL##_t x,            \
+                                             size_t vl) {                      \
+        auto ux = __riscv_vreinterpret_v_f16m##LMUL##_i16m##LMUL(x);           \
+        auto emm0 = __riscv_vsra_vx_i16m##LMUL(ux, 10, vl);                    \
+                                                                               \
+        /* 处理尾数部分：清除指数位 */                                         \
+        ux = __riscv_vand_vx_i16m##LMUL(ux, 0x03FF, vl);   /* FP16尾数掩码 */  \
+        emm0 = __riscv_vsub_vx_i16m##LMUL(emm0, 0x0F, vl); /* FP16指数偏置15*/ \
+        ux = __riscv_vor_vx_i16m##LMUL(ux, 0x3C00 /* FP16的0.5 */, vl);        \
+        x = __riscv_vreinterpret_v_i16m##LMUL##_f16m##LMUL(ux);                \
+                                                                               \
+        auto e = __riscv_vfcvt_f_x_v_f16m##LMUL(emm0, vl);                     \
+        /* 条件分支：x < SQRTHF 时的调整 */                                    \
+        auto mask = __riscv_vmflt_vf_f16m##LMUL##_b##MLEN(                     \
+            x, half::round_to_half(c_cephes_SQRTHF), vl);                      \
+        x = __riscv_vfadd_vv_f16m##LMUL##_m(mask, x, x, vl);                   \
+        e = __riscv_vfsub_vf_f16m##LMUL##_m(mask, e, half::round_to_half(1.f), \
+                                            vl);                               \
+        x = __riscv_vfsub_vf_f16m##LMUL(x, half::round_to_half(1.f), vl);      \
+                                                                               \
+        /* 多项式展开计算（系数已转为FP16） */                                 \
+        auto y1 = __riscv_vmv_v_v_f16m##LMUL(x, vl);                           \
+        auto y2 = __riscv_vmv_v_v_f16m##LMUL(x, vl);                           \
+        auto y3 = __riscv_vmv_v_v_f16m##LMUL(x, vl);                           \
+        auto y4 = __riscv_vmv_v_v_f16m##LMUL(x, vl);                           \
+        auto y5 = __riscv_vmv_v_v_f16m##LMUL(x, vl);                           \
+        auto c1 = __riscv_vfmv_v_f_f16m##LMUL(                                 \
+            half::round_to_half(c_cephes_log_p1), vl);                         \
+        auto c3 = __riscv_vfmv_v_f_f16m##LMUL(                                 \
+            half::round_to_half(c_cephes_log_p3), vl);                         \
+        auto c5 = __riscv_vfmv_v_f_f16m##LMUL(                                 \
+            half::round_to_half(c_cephes_log_p5), vl);                         \
+        auto c7 = __riscv_vfmv_v_f_f16m##LMUL(                                 \
+            half::round_to_half(c_cephes_log_p7), vl);                         \
+        auto minus = __riscv_vfmv_v_f_f16m##LMUL(0xB800, vl);                  \
+        auto x2 = __riscv_vfmul_vv_f16m##LMUL(x, x, vl);                       \
+                                                                               \
+        y1 = __riscv_vfmadd_vf_f16m##LMUL(                                     \
+            y1, half::round_to_half(c_cephes_log_p0), c1, vl);                 \
+        y2 = __riscv_vfmadd_vf_f16m##LMUL(                                     \
+            y2, half::round_to_half(c_cephes_log_p2), c3, vl);                 \
+        y3 = __riscv_vfmadd_vf_f16m##LMUL(                                     \
+            y3, half::round_to_half(c_cephes_log_p4), c5, vl);                 \
+        y1 = __riscv_vfmadd_vv_f16m##LMUL(y1, x2, y2, vl);                     \
+        y4 = __riscv_vfmadd_vf_f16m##LMUL(                                     \
+            y4, half::round_to_half(c_cephes_log_p6), c7, vl);                 \
+        y1 = __riscv_vfmadd_vv_f16m##LMUL(y1, x2, y3, vl);                     \
+        y5 = __riscv_vfmadd_vf_f16m##LMUL(                                     \
+            y5, half::round_to_half(c_cephes_log_p8), minus, vl);              \
+        y1 = __riscv_vfmadd_vv_f16m##LMUL(y1, x2, y4, vl);                     \
+        y1 = __riscv_vfmadd_vv_f16m##LMUL(y1, x2, y5, vl);                     \
+                                                                               \
+        /* 合并指数和尾数结果 */                                               \
+        e = __riscv_vfmul_vf_f16m##LMUL(                                       \
+            e, half::round_to_half(c_cephes_log_q1 + c_cephes_log_q2), vl);    \
+        y1 = __riscv_vfmadd_vv_f16m##LMUL(y1, x2, x, vl);                      \
+        return __riscv_vfadd_vv_f16m##LMUL(y1, e, vl);                         \
     }
 
 _RVV_FLOAT16_LOG_OP(1, 16)
@@ -230,29 +226,23 @@ _RVV_FLOAT_EXP_OP(2, 16, 32, 0x7f, 23)
 _RVV_FLOAT_EXP_OP(4, 8, 32, 0x7f, 23)
 _RVV_FLOAT_EXP_OP(8, 4, 32, 0x7f, 23)
 
-#define c_exp_hi_half 0x5996        // 88.375
-#define c_exp_lo_half 0xD996        // -88.375
-#define c_cephes_LOG2EF_half 0x3DCF // ~1.4424
-#define c_cephes_exp_C1_half 0x38E0 // 0.693359375（精确表示）
-#define c_cephes_exp_C2_half 0x95A5 // -0.00021219（近似）
-#define c_cephes_exp_p0_half 0x145F // ~0.00019872
-#define c_cephes_exp_p1_half 0x1A37 // ~0.00139809
-#define c_cephes_exp_p2_half 0x221B // ~0.00830078
-#define c_cephes_exp_p3_half 0x2B0A // ~0.0416565
-#define c_cephes_exp_p4_half 0x32CD // ~0.166656
-#define c_cephes_exp_p5_half 0x3800 // 0.5（精确表示）
-
 // e^x = 1 + x + 1/2!x^2 + 1/3!x^3 + 1/4!x^4 + 1/5!x^5 + 1/6!x^6 + 1/7!x^7
-#define _RVV_FLOAT16_EXP_OP(LMUL, MLEN, TLEN, E, M)                              \
-    static inline __attribute__((optimize("no-schedule-insns2")))              \
-        vfloat##TLEN##m##LMUL##_t                                              \
-        exp_ps(vfloat##TLEN##m##LMUL##_t x, size_t vl) {                       \
-        auto a1 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_LOG2EF_half, vl);      \
-        auto c1 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_exp_p1_half, vl);      \
-        auto c3 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_exp_p3_half, vl);      \
-        auto c5 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_exp_p5_half, vl);      \
-        x = __riscv_vfmin_vf_f##TLEN##m##LMUL(x, c_exp_hi_half, vl);                \
-        x = __riscv_vfmax_vf_f##TLEN##m##LMUL(x, c_exp_lo_half, vl);                \
+#define _RVV_FLOAT16_EXP_OP(LMUL, MLEN, TLEN, E, M)                            \
+    static inline __attribute__((                                              \
+        optimize("no-schedule-insns2"))) vfloat##TLEN##m##LMUL##_t             \
+    exp_ps(vfloat##TLEN##m##LMUL##_t x, size_t vl) {                           \
+        auto a1 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(                           \
+            half::round_to_half(c_cephes_LOG2EF), vl);                         \
+        auto c1 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(                           \
+            half::round_to_half(c_cephes_exp_p1), vl);                         \
+        auto c3 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(                           \
+            half::round_to_half(c_cephes_exp_p3), vl);                         \
+        auto c5 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(                           \
+            half::round_to_half(c_cephes_exp_p5), vl);                         \
+        x = __riscv_vfmin_vf_f##TLEN##m##LMUL(                                 \
+            x, half::round_to_half(c_exp_hi), vl);                             \
+        x = __riscv_vfmax_vf_f##TLEN##m##LMUL(                                 \
+            x, half::round_to_half(c_exp_lo), vl);                             \
                                                                                \
         /* express exp(x) as exp(g + n*log(2)) */                              \
         a1 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(a1, x, c5, vl);                \
@@ -261,20 +251,27 @@ _RVV_FLOAT_EXP_OP(8, 4, 32, 0x7f, 23)
         auto tmp = __riscv_vfcvt_f_x_v_f##TLEN##m##LMUL(                       \
             __riscv_vfcvt_x_f_v_i##TLEN##m##LMUL(a1, vl), vl);                 \
         auto mask = __riscv_vmfgt_vv_f##TLEN##m##LMUL##_b##MLEN(tmp, a1, vl);  \
-        tmp = __riscv_vfsub_vf_f##TLEN##m##LMUL##_m(mask, tmp, 0x3C00, vl);       \
+        tmp = __riscv_vfsub_vf_f##TLEN##m##LMUL##_m(                           \
+            mask, tmp, half::round_to_half(1.f), vl);                          \
                                                                                \
-        auto b1 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_exp_p0_half, vl);      \
-        x = __riscv_vfnmsac_vf_f##TLEN##m##LMUL(x, c_cephes_exp_C1_half, tmp, vl);  \
+        auto b1 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(                           \
+            half::round_to_half(c_cephes_exp_p0), vl);                         \
+        x = __riscv_vfnmsac_vf_f##TLEN##m##LMUL(                               \
+            x, half::round_to_half(c_cephes_exp_C1), tmp, vl);                 \
         auto a2 = __riscv_vfcvt_x_f_v_i##TLEN##m##LMUL(tmp, vl);               \
-        auto b2 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_exp_p2_half, vl);      \
-        x = __riscv_vfnmsac_vf_f##TLEN##m##LMUL(x, c_cephes_exp_C2_half, tmp, vl);  \
-        auto b3 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_exp_p4_half, vl);      \
+        auto b2 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(                           \
+            half::round_to_half(c_cephes_exp_p2), vl);                         \
+        x = __riscv_vfnmsac_vf_f##TLEN##m##LMUL(                               \
+            x, half::round_to_half(c_cephes_exp_C2), tmp, vl);                 \
+        auto b3 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(                           \
+            half::round_to_half(c_cephes_exp_p4), vl);                         \
         auto x2 = __riscv_vfmul_vv_f##TLEN##m##LMUL(x, x, vl);                 \
         b1 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(b1, x, c1, vl);                \
         b2 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(b2, x, c3, vl);                \
         b3 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(b3, x, c5, vl);                \
         b1 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(b1, x2, b2, vl);               \
-        x = __riscv_vfadd_vf_f##TLEN##m##LMUL(x, 0x3C00, vl);                     \
+        x = __riscv_vfadd_vf_f##TLEN##m##LMUL(x, half::round_to_half(1.f),     \
+                                              vl);                             \
         b1 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(b1, x2, b3, vl);               \
         auto a = __riscv_vsll_vx_i##TLEN##m##LMUL(a2, M, vl);                  \
         b1 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(b1, x2, x, vl);                \
