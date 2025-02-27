@@ -151,6 +151,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.SwapBinaryArgs>();
             p.Add<Passes.Rules.Neutral.FoldDilatedConv2D>();
             p.Add<Passes.Rules.Neutral.PowOf2ToSquare>();
+            p.Add<Passes.Rules.Neutral.SplitBatchMatMulOfLitGPT>();
         });
 
         passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
