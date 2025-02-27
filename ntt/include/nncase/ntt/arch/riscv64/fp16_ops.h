@@ -5,6 +5,7 @@
 #include "nncase/ntt/vector.h"
 #include "../../../half.h"
 #include "rvv_mathfun.h"
+#include "rvv_mathfun_fp16.h"
 #ifdef __riscv_vector
 #include <riscv_vector.h>
 #endif
@@ -167,29 +168,18 @@ REGISTER_RVV_UNARY16_OP(floor, half, floor_float16)
 REGISTER_RVV_FP16_KERNEL(NEG_FLOAT16)
 REGISTER_RVV_UNARY16_OP(neg, half, neg_float16)
 
-
-#define ROUND_FLOAT16(lmul, mlen)                                              \
-    inline vfloat16m##lmul##_t round_float16(const vfloat16m##lmul##_t &v,     \
-                                             const size_t vl) {                \
-        return __riscv_vfcvt_f_x_v_f16m##lmul(                                 \
-            __riscv_vfcvt_x_f_v_i16m##lmul(v, vl), vl);                        \
-    }
-REGISTER_RVV_FP16_KERNEL(ROUND_FLOAT16)
-REGISTER_RVV_UNARY16_OP(round, half, round_float16)
-
-
 #define RSQRT_FLOAT16(lmul, mlen)                                              \
     inline vfloat16m##lmul##_t rsqrt_float16(const vfloat16m##lmul##_t &v,     \
                                              const size_t vl) {                \
-        auto one_point_five = __riscv_vfmv_v_f_f16m##lmul(1.5f, vl);           \
+        auto one_point_five = __riscv_vfmv_v_f_f16m##lmul(static_cast<_Float16>(1.5f), vl);           \
                                                                                \
         auto ux = __riscv_vreinterpret_v_f16m##lmul##_u16m##lmul(v);           \
         ux = __riscv_vsrl_vx_u16m##lmul(ux, 1, vl);                            \
-        ux = __riscv_vrsub_vx_u16m##lmul(ux, 0x5f375a86, vl);                  \
+        ux = __riscv_vrsub_vx_u16m##lmul(ux, static_cast<uint16_t>(0x5f375a86), vl);                  \
         auto y = __riscv_vreinterpret_v_u16m##lmul##_f16m##lmul(ux);           \
                                                                                \
         auto y2 = __riscv_vfmul_vv_f16m##lmul(y, y, vl);                       \
-        auto x = __riscv_vfmul_vf_f16m##lmul(v, -0.5f, vl);                    \
+        auto x = __riscv_vfmul_vf_f16m##lmul(v, static_cast<_Float16>(-0.5f), vl);                    \
         y2 = __riscv_vfmadd_vv_f16m##lmul(y2, x, one_point_five, vl);          \
         y = __riscv_vfmul_vv_f16m##lmul(y, y2, vl);                            \
                                                                                \
@@ -206,18 +196,28 @@ REGISTER_RVV_UNARY16_OP(round, half, round_float16)
         y = __riscv_vfmul_vv_f16m##lmul(y, y2, vl);                            \
         return y;                                                              \
     }
+
 REGISTER_RVV_FP16_KERNEL(RSQRT_FLOAT16)
 REGISTER_RVV_UNARY16_OP(rsqrt, half, rsqrt_float16)
 
 
+#define ROUND_FLOAT16(lmul, mlen)                                              \
+    inline vfloat16m##lmul##_t round_float16(const vfloat16m##lmul##_t &v,     \
+                                             const size_t vl) {                \
+        return __riscv_vfcvt_f_x_v_f16m##lmul(                                 \
+            __riscv_vfcvt_x_f_v_i16m##lmul(v, vl), vl);                        \
+    }
+REGISTER_RVV_FP16_KERNEL(ROUND_FLOAT16)
+REGISTER_RVV_UNARY16_OP(round, half, round_float16)
+
 #define SIGN_FLOAT16(lmul, mlen)                                               \
     inline vfloat16m##lmul##_t sign_float16(const vfloat16m##lmul##_t &v,      \
                                             const size_t vl) {                 \
-        auto ret = __riscv_vfmv_v_f_f16m##lmul(0.f, vl);                       \
-        auto gt_mask = __riscv_vmfgt_vf_f16m##lmul##_b##mlen(v, 0.f, vl);      \
-        ret = __riscv_vfmerge_vfm_f16m##lmul(ret, 1.f, gt_mask, vl);           \
-        auto lt_mask = __riscv_vmflt_vf_f16m##lmul##_b##mlen(v, 0.f, vl);      \
-        return __riscv_vfmerge_vfm_f16m##lmul(ret, -1.f, lt_mask, vl);         \
+        auto ret = __riscv_vfmv_v_f_f16m##lmul(static_cast<_Float16>(0.f), vl);                       \
+        auto gt_mask = __riscv_vmfgt_vf_f16m##lmul##_b##mlen(v, static_cast<_Float16>(0.f), vl);      \
+        ret = __riscv_vfmerge_vfm_f16m##lmul(ret, static_cast<_Float16>(1.f), gt_mask, vl);           \
+        auto lt_mask = __riscv_vmflt_vf_f16m##lmul##_b##mlen(v, static_cast<_Float16>(0.f), vl);      \
+        return __riscv_vfmerge_vfm_f16m##lmul(ret, static_cast<_Float16>(-1.f), lt_mask, vl);         \
     }
 
 REGISTER_RVV_FP16_KERNEL(SIGN_FLOAT16)

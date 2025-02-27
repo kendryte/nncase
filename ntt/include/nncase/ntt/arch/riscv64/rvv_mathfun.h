@@ -19,6 +19,7 @@
 #if __riscv_vector
 #include <riscv_vector.h>
 
+// 0111 1111 1000 0000  0000 0000 0000 
 #define c_inv_mant_mask ~0x7f800000u
 #define c_cephes_SQRTHF 0.707106781186547524
 #define c_cephes_log_p0 7.0376836292E-2
