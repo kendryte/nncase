@@ -181,19 +181,6 @@ public sealed partial class BroadcastMatMul : IRewriteRule
             newOutputShape[^1] = bShape[^1].FixedValue;
 
             // lit-gpt
-            if (newAShape.Length == 5 && newAShape.SkipLast(3).SequenceEqual(new[] { 1, 1 }) && newBShape.SkipLast(3).SequenceEqual(new[] { 1, 1 }))
-            {
-                return Reshape(
-                            MatMul(
-                                Reshape(
-                                    a,
-                                    newAShape.Skip(1).ToArray()),
-                                Reshape(
-                                    b,
-                                    newBShape.Skip(1).ToArray())).InheritMetaData(matMulCall),
-                            newOutputShape);
-            }
-
             if (newAShape.Length == 3 || (newAShape.Length == 4 && newAShape[0] == newBShape[0] && newAShape[0] == 1))
             {
                 return null;
@@ -286,33 +273,33 @@ public sealed partial class SplitBatchMatMulOfLitGPT : IRewriteRule
             "matMul",
             "matMulCall",
             _ => true,
-            IsWildcard("a") with { TypePattern = HasRank(5) },
-            IsWildcard("b") with { TypePattern = HasRank(5) });
+            IsWildcard("a") with { TypePattern = HasRank(4) },
+            IsWildcard("b") with { TypePattern = HasRank(4) });
 
     private Expr? GetReplace(Call matMulCall, Expr a, Expr b)
     {
         var aShape = a.CheckedShape;
         var bShape = b.CheckedShape;
 
-        if (aShape[0].FixedValue == 1 && aShape[1].FixedValue == 2 && aShape[2].FixedValue == 7
-        && bShape[0].FixedValue == 1 && bShape[1].FixedValue == 2 && bShape[2].FixedValue == 1 && b is not TensorConst)
+        if (aShape[0].FixedValue == 2 && aShape[1].FixedValue == 7
+        && bShape[0].FixedValue == 2 && bShape[1].FixedValue == 1 && b is not TensorConst)
         {
-            var ifSlices = new Expr[aShape[1].FixedValue];
-            var wSlices = new Expr[aShape[1].FixedValue];
-            var mmSlices = new Expr[aShape[1].FixedValue];
-            var ofSlices = new Expr[aShape[1].FixedValue];
+            var ifSlices = new Expr[aShape[0].FixedValue];
+            var wSlices = new Expr[aShape[0].FixedValue];
+            var mmSlices = new Expr[aShape[0].FixedValue];
+            var ofSlices = new Expr[aShape[0].FixedValue];
 
-            for (var i = 0; i < aShape[1].FixedValue; i++)
+            for (var i = 0; i < aShape[0].FixedValue; i++)
             {
                 var begin = new[] { i };
                 var ifEnd = new[] { i + 1 };
                 var wEnd = new[] { i + 1 };
-                ifSlices[i] = Slice(a, begin, ifEnd, new[] { 1 }, new[] { 1 });
-                wSlices[i] = Slice(b, begin, wEnd, new[] { 1 }, new[] { 1 });
+                ifSlices[i] = Slice(a, begin, ifEnd, new[] { 0 }, new[] { 1 });
+                wSlices[i] = Slice(b, begin, wEnd, new[] { 0 }, new[] { 1 });
                 mmSlices[i] = MatMul(ifSlices[i], wSlices[i]);
             }
 
-            return Concat(new IR.Tuple(mmSlices), 1).InheritMetaData(matMulCall);
+            return Concat(new IR.Tuple(mmSlices), 0).InheritMetaData(matMulCall);
         }
 
         return null;
