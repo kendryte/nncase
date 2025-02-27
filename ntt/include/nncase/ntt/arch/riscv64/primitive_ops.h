@@ -1059,27 +1059,27 @@ REGISTER_RVV_KERNEL(POW_FLOAT32)
 REGISTER_RVV_BINARY_OP(pow, float, pow_float32)
 
 // pow fp16
-// #define POW_FLOAT16(lmul, mlen)                                                
-//     inline vfloat16m##lmul##_t pow_float16(const vfloat16m##lmul##_t &v1,      
-//                                            const vfloat16m##lmul##_t &v2,      
-//                                            const size_t vl) {                  
-//         return pow_ps(v1, v2, vl);                                             
-//     }                                                                          
-//                                                                                
-//     inline vfloat16m##lmul##_t pow_float16(                                    
-//         const vfloat16m##lmul##_t &v1, const half &s, const size_t vl) {       
-//         auto v2 = __riscv_vfmv_v_f_f16m##lmul(s, vl);                          
-//         return pow_ps(v1, v2, vl);                                             
-//     }                                                                          
-//                                                                                
-//     inline vfloat16m##lmul##_t pow_float16(                                    
-//         const half &s, const vfloat16m##lmul##_t &v2, const size_t vl) {       
-//         auto v1 = __riscv_vfmv_v_f_f16m##lmul(s, vl);                          
-//         return pow_ps(v1, v2, vl);                                             
-//     }
+#define POW_FLOAT16(lmul, mlen)                                                \
+    inline vfloat16m##lmul##_t pow_float16(const vfloat16m##lmul##_t &v1,      \
+                                           const vfloat16m##lmul##_t &v2,      \
+                                           const size_t vl) {                  \
+        return pow_ps(v1, v2, vl);                                             \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t pow_float16(                                    \
+        const vfloat16m##lmul##_t &v1, const half &s, const size_t vl) {       \
+        auto v2 = __riscv_vfmv_v_f_f16m##lmul(s, vl);                          \
+        return pow_ps(v1, v2, vl);                                             \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t pow_float16(                                    \
+        const half &s, const vfloat16m##lmul##_t &v2, const size_t vl) {       \
+        auto v1 = __riscv_vfmv_v_f_f16m##lmul(s, vl);                          \
+        return pow_ps(v1, v2, vl);                                             \
+    }
 
-// REGISTER_RVV_KERNEL(POW_FLOAT16)
-// REGISTER_RVV_BINARY_OP(pow, half, pow_float16)
+REGISTER_RVV_KERNEL(POW_FLOAT16)
+REGISTER_RVV_BINARY_OP(pow, half, pow_float16)
 
 // floor_mod
 #define FLOOR_MOD_INT32(lmul, mlen)                                            \
