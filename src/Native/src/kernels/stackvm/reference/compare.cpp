@@ -33,16 +33,24 @@ result<void> compare_impl(TOp &&op, const T *input_a, const T *input_b,
                           gsl::span<const size_t> in_b_strides,
                           gsl::span<const size_t> out_shape,
                           gsl::span<const size_t> out_strides) noexcept {
-    return apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {
-        const auto in_a_index =
-            kernels::detail::get_reduced_offset(index, in_a_shape);
-        const auto in_b_index =
-            kernels::detail::get_reduced_offset(index, in_b_shape);
-        const auto a = input_a[offset(in_a_strides, in_a_index)];
-        const auto b = input_b[offset(in_b_strides, in_b_index)];
-        output[offset(out_strides, index)] = static_cast<bool>(op(a, b));
+    // optimize for scalar
+    if (in_a_shape.size() == 0 && in_b_shape.size() == 0) {
+        output[0] = static_cast<bool>(op(input_a[0], input_b[0]));
         return ok();
-    });
+    } else {
+        return apply(
+            out_shape, [&](gsl::span<const size_t> index) -> result<void> {
+                const auto in_a_index =
+                    kernels::detail::get_reduced_offset(index, in_a_shape);
+                const auto in_b_index =
+                    kernels::detail::get_reduced_offset(index, in_b_shape);
+                const auto a = input_a[offset(in_a_strides, in_a_index)];
+                const auto b = input_b[offset(in_b_strides, in_b_index)];
+                output[offset(out_strides, index)] =
+                    static_cast<bool>(op(a, b));
+                return ok();
+            });
+    }
 }
 } // namespace
 
