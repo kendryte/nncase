@@ -48,7 +48,7 @@ struct store<ntt::vector<float, NTT_VLEN / 32>,
     void operator()(ntt::vector<float, NTT_VLEN / 32> &dest,
                     const ntt::vector<float, NTT_VLEN / 32> &v) const noexcept {
         __riscv_vse32_v_f32m1((float *)&dest, v, NTT_VLEN / 32);
-    } 
+    }
 };
 
 #define RVV_UNARY_OP(op, dtype, vl, kernel)                                    \
@@ -70,7 +70,7 @@ struct store<ntt::vector<float, NTT_VLEN / 32>,
 #define ABS_FLOAT32(lmul, mlen)                                                \
     inline vfloat32m##lmul##_t abs_float32(const vfloat32m##lmul##_t &v,       \
                                            const size_t vl) {                  \
-        return __riscv_vfabs_v_f32m##lmul(v, vl); \
+        return __riscv_vfabs_v_f32m##lmul(v, vl);                              \
     }
 
 REGISTER_RVV_KERNEL(ABS_FLOAT32)
