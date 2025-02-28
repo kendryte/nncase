@@ -329,4 +329,44 @@ REGISTER_RVV_UNARY16_OP(log, half, log_float16)
 REGISTER_RVV_FP16_KERNEL(POW_FLOAT16)
 REGISTER_RVV_BINARY_FP16_OP(pow, half, pow_float16)
 
+// floor_mod
+#define FLOOR_MOD_INT16(lmul, mlen)                                            \
+    inline vint16m##lmul##_t floor_mod_int16(const vint16m##lmul##_t &v1,      \
+                                             const vint16m##lmul##_t &v2,      \
+                                             const size_t vl) {                \
+        auto remainder = __riscv_vrem_vv_i16m##lmul(v1, v2, vl);               \
+        auto tmp = __riscv_vxor_vv_i16m##lmul(v1, v2, vl);                     \
+        auto mask1 = __riscv_vmsne_vx_i16m##lmul##_b##mlen(remainder, 0, vl);  \
+        auto mask2 = __riscv_vmslt_vx_i16m##lmul##_b##mlen(tmp, 0, vl);        \
+        mask1 = __riscv_vmand_mm_b##mlen(mask1, mask2, vl);                    \
+        remainder = __riscv_vadd_vv_i16m##lmul##_m(mask1, remainder, v2, vl);  \
+        return remainder;                                                      \
+    }                                                                          \
+                                                                               \
+    inline vint16m##lmul##_t floor_mod_int16(                                  \
+        const vint16m##lmul##_t &v1, const int16_t &s, const size_t vl) {      \
+        auto remainder = __riscv_vrem_vx_i16m##lmul(v1, s, vl);                \
+        auto tmp = __riscv_vxor_vx_i16m##lmul(v1, s, vl);                      \
+        auto mask1 = __riscv_vmsne_vx_i16m##lmul##_b##mlen(remainder, 0, vl);  \
+        auto mask2 = __riscv_vmslt_vx_i16m##lmul##_b##mlen(tmp, 0, vl);        \
+        mask1 = __riscv_vmand_mm_b##mlen(mask1, mask2, vl);                    \
+        remainder = __riscv_vadd_vx_i16m##lmul##_m(mask1, remainder, s, vl);  \
+        return remainder;                                                      \
+    }                                                                          \
+                                                                               \
+    inline vint16m##lmul##_t floor_mod_int16(                                  \
+        const int16_t &s, const vint16m##lmul##_t &v2, const size_t vl) {      \
+        auto v1 = __riscv_vmv_v_x_i16m##lmul(s, vl);                           \
+        auto remainder = __riscv_vrem_vv_i16m##lmul(v1, v2, vl);               \
+        auto tmp = __riscv_vxor_vv_i16m##lmul(v1, v2, vl);                     \
+        auto mask1 = __riscv_vmsne_vx_i16m##lmul##_b##mlen(remainder, 0, vl);  \
+        auto mask2 = __riscv_vmslt_vx_i16m##lmul##_b##mlen(tmp, 0, vl);        \
+        mask1 = __riscv_vmand_mm_b##mlen(mask1, mask2, vl);                    \
+        remainder = __riscv_vadd_vv_i16m##lmul##_m(mask1, remainder, v2, vl);  \
+        return remainder;                                                      \
+    }
+
+REGISTER_RVV_FP16_KERNEL(FLOOR_MOD_INT16)
+REGISTER_RVV_BINARY_FP16_OP(floor_mod, int16_t, floor_mod_int16)
+
 } // namespace nncase::ntt::ops
