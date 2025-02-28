@@ -62,10 +62,10 @@ struct store<ntt::vector<float, NTT_VLEN / 32>,
 
 // unary with float
 #define REGISTER_RVV_UNARY_OP(OP, dtype, kernel)                               \
-    RVV_UNARY_OP(OP, float, NTT_VL(sizeof(dtype) * 8, *, 1), kernel)           \
-    RVV_UNARY_OP(OP, float, NTT_VL(sizeof(dtype) * 8, *, 2), kernel)           \
-    RVV_UNARY_OP(OP, float, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)           \
-    RVV_UNARY_OP(OP, float, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)
+    RVV_UNARY_OP(OP, dtype, NTT_VL(sizeof(dtype) * 8, *, 1), kernel)           \
+    RVV_UNARY_OP(OP, dtype, NTT_VL(sizeof(dtype) * 8, *, 2), kernel)           \
+    RVV_UNARY_OP(OP, dtype, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)           \
+    RVV_UNARY_OP(OP, dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)
 
 // abs
 #define ABS_FLOAT32(lmul, mlen)                                                \
@@ -416,7 +416,7 @@ REGISTER_RVV_UNARY_OP(cos, float, cos_float32)
 REGISTER_RVV_KERNEL(COSH_FLOAT32)
 REGISTER_RVV_UNARY_OP(cosh, float, cosh_float32)
 
-// exp
+// exp fp32
 #define EXP_FLOAT32(lmul, mlen)                                                \
     inline vfloat32m##lmul##_t exp_float32(const vfloat32m##lmul##_t &v,       \
                                            const size_t vl) {                  \
@@ -425,6 +425,16 @@ REGISTER_RVV_UNARY_OP(cosh, float, cosh_float32)
 
 REGISTER_RVV_KERNEL(EXP_FLOAT32)
 REGISTER_RVV_UNARY_OP(exp, float, exp_float32)
+
+// exp fp16
+#define EXP_FLOAT16(lmul, mlen)                                                \
+    inline vfloat16m##lmul##_t exp_float16(const vfloat16m##lmul##_t &v,       \
+                                           const size_t vl) {                  \
+        return exp_ps(v, vl);                                                  \
+    }
+
+REGISTER_RVV_KERNEL(EXP_FLOAT16)
+REGISTER_RVV_UNARY_OP(exp, half, exp_float16)
 
 // floor
 #define FLOOR_FLOAT32(lmul, mlen)                                              \
@@ -439,7 +449,7 @@ REGISTER_RVV_UNARY_OP(exp, float, exp_float32)
 REGISTER_RVV_KERNEL(FLOOR_FLOAT32)
 REGISTER_RVV_UNARY_OP(floor, float, floor_float32)
 
-// log
+// log fp32
 #define LOG_FLOAT32(lmul, mlen)                                                \
     inline vfloat32m##lmul##_t log_float32(const vfloat32m##lmul##_t &v,       \
                                            const size_t vl) {                  \
@@ -448,6 +458,17 @@ REGISTER_RVV_UNARY_OP(floor, float, floor_float32)
 
 REGISTER_RVV_KERNEL(LOG_FLOAT32)
 REGISTER_RVV_UNARY_OP(log, float, log_float32)
+
+// log fp16
+#define LOG_FLOAT16(lmul, mlen)                                                \
+    inline vfloat16m##lmul##_t log_float16(const vfloat16m##lmul##_t &v,       \
+                                           const size_t vl) {                  \
+        return log_ps(v, vl);                                                  \
+    }
+
+REGISTER_RVV_KERNEL(LOG_FLOAT16)
+REGISTER_RVV_UNARY_OP(log, half, log_float16)
+
 
 // neg
 #define NEG_FLOAT32(lmul, mlen)                                                \
