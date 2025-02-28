@@ -391,43 +391,59 @@ result<value_t> nncase::kernels::stackvm::get_item(
                 begins_value[i] += input_tensor->shape()[i];
             }
         }
-
-        if (begins_value.size() == 1) {
-            dims_t out_shape(input_tensor->shape().begin() + 1,
-                             input_tensor->shape().end());
-            strides_t out_strides(input_tensor->strides().begin() + 1,
-                                  input_tensor->strides().end());
-            auto elem_size = input_tensor->dtype()->size_bytes();
-            auto out_length = input_tensor->strides()[0] * elem_size;
-            auto in_buffer = input_tensor->buffer();
-            auto out_start = in_buffer.start() + begins_value[0] * out_length;
-            auto out_buffer =
-                buffer_slice(in_buffer.buffer(), out_start, out_length);
-            output = tensor(std::in_place, input_tensor->dtype(), out_shape,
-                            out_strides, out_buffer);
-        } else {
-            auto n = begins_value.size();
-            auto in_shape = input_tensor->shape();
-            auto ends_value = axes_t(n, 0);
-            auto axes_value = axes_t(n, 0);
-            for (size_t i = 0; i < n; ++i) {
-                ends_value[i] = begins_value[i] + 1;
-                axes_value[i] = i;
-            }
-            auto strides_value = axes_t(n, 1);
-
-            auto &&[begin_values, end_values, strides_values] = slice_fill(
-                in_shape, begins_value, ends_value, strides_value, axes_value);
-            auto out_shape = slice_infer_shape(in_shape, begin_values,
-                                               end_values, strides_values);
+        if (input_tensor->shape().size() == 1 && begins_value.size() == 1) {
+            auto i = begins_value[0];
+            auto out_shape = dims_t{};
             try_output(out_mem, output, input_tensor->dtype(), out_shape);
-            CONTIGUOUS_KERNEL(
-                slice, input_tensor, input_tensor->dtype(), in_mem, out_mem,
-                in_shape, input_tensor->strides(), output_tensor->strides(),
-                begin_values, end_values, strides_values, context);
-            output = tensor_reshape(
-                output_tensor, dims_t(out_shape.begin() + n, out_shape.end()));
+#define RETURN_RESULT(_in_type)                                                \
+    if (cmp_type<_in_type>(input_tensor->dtype())) {                           \
+        OUT_CAST(_in_type, out_mem)[0] = IN_CAST(_in_type, in_mem)[i];         \
+        return ok(output);                                                     \
+    }
+            RETURN_RESULT_SELECT(RETURN_RESULT);
+#undef RETURN_RESULT
+            return err(std::errc::not_supported);
         }
+
+        if (input_tensor->shape().size() == 2 && begins_value.size() == 1) {
+            auto get_item_index = begins_value[0];
+            auto out_shape = dims_t{input_tensor->shape()[1]};
+            try_output(out_mem, output, input_tensor->dtype(), out_shape);
+            auto size = input_tensor->shape()[1];
+#define RETURN_RESULT(_in_type)                                                \
+    if (cmp_type<_in_type>(input_tensor->dtype())) {                           \
+        for (int i = 0; i < size; ++i) {                                       \
+            OUT_CAST(_in_type, out_mem)                                        \
+            [i] = IN_CAST(_in_type, in_mem)[get_item_index * size + i];        \
+        }                                                                      \
+        return ok(output);                                                     \
+    }
+            RETURN_RESULT_SELECT(RETURN_RESULT);
+#undef RETURN_RESULT
+            return err(std::errc::not_supported);
+        }
+
+        auto n = begins_value.size();
+        auto in_shape = input_tensor->shape();
+        auto ends_value = axes_t(n, 0);
+        auto axes_value = axes_t(n, 0);
+        for (size_t i = 0; i < n; ++i) {
+            ends_value[i] = begins_value[i] + 1;
+            axes_value[i] = i;
+        }
+        auto strides_value = axes_t(n, 1);
+
+        auto &&[begin_values, end_values, strides_values] = slice_fill(
+            in_shape, begins_value, ends_value, strides_value, axes_value);
+        auto out_shape = slice_infer_shape(in_shape, begin_values, end_values,
+                                           strides_values);
+        try_output(out_mem, output, input_tensor->dtype(), out_shape);
+        CONTIGUOUS_KERNEL(slice, input_tensor, input_tensor->dtype(), in_mem,
+                          out_mem, in_shape, input_tensor->strides(),
+                          output_tensor->strides(), begin_values, end_values,
+                          strides_values, context);
+        output = tensor_reshape(output_tensor,
+                                dims_t(out_shape.begin() + n, out_shape.end()));
         KERNEL_FINISH;
     }
 }
