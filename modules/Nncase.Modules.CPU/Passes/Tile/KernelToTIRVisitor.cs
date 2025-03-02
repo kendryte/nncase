@@ -456,7 +456,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
         _mainBody.Add(TIR.F.CPU.Cast(arguments[0], ret, dataType, castMode));
     }
 
-    private void GenerateExpand(int[] shape, DistributedType distributedType, ReadOnlySpan<Buffer> arguments, Buffer ret)
+    private void GenerateExpand(long[] shape, DistributedType distributedType, ReadOnlySpan<Buffer> arguments, Buffer ret)
     {
         _mainBody.Add(TIR.F.CPU.Expand(shape, distributedType, arguments[0], ret));
     }

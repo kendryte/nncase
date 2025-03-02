@@ -101,7 +101,12 @@ public sealed partial class CombineConstBinaryReshape : IRewriteRule
                 var newConstShape = Enumerable.Repeat(1L, input.CheckedShape.Rank - 1 - broadcastIndex).ToList();
                 newConstShape.Insert(0, constSize);
 
-                var res = Reshape(Binary(binary.BinaryOp, leftConst ? Reshape(constInput, newConstShape.ToArray()) : input, leftConst ? input : Reshape(constInput, newConstShape.ToArray())).InheritMetaData(call), call.CheckedShape);
+                var res = Reshape(
+                    Binary(
+                        binary.BinaryOp,
+                        leftConst ? Reshape(constInput, newConstShape.ToArray()) : input,
+                        leftConst ? input : Reshape(constInput, newConstShape.ToArray())).InheritMetaData(call),
+                    call.CheckedShape.ToValueArrayExpr());
                 res.InferenceType();
                 return res;
             }

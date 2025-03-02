@@ -14,7 +14,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Squeeze"/>.
 /// </summary>
-public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, ICostEvaluator<Squeeze>, IShapeEvaluator<Squeeze>, IMetricEvaluator<Squeeze>
+public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, ICostEvaluator<Squeeze>, IMetricEvaluator<Squeeze>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Squeeze squeeze)
@@ -28,7 +28,8 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, I
     public IRType Visit(ITypeInferenceContext context, Squeeze target)
     {
         var input = context.CheckArgumentType<TensorType>(target, Squeeze.Input);
-        return Visit(context, target, input);
+        var dims = context.CheckArgumentType<TensorType>(target, Squeeze.Dim);
+        return Visit(context, target, input, dims);
     }
 
     public Cost Visit(ICostEvaluateContext context, Squeeze target)
@@ -36,19 +37,12 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, I
         return CostUtility.GetReshapeCost();
     }
 
-    public Expr Visit(IShapeEvaluateContext context, Squeeze target)
-    {
-        var input = context.GetArgumentShape(target, Squeeze.Input);
-        var dims = context.GetArgument(target, Squeeze.Dim);
-        return IR.F.ShapeExpr.SqueezeShape(input, dims);
-    }
-
     public Metric Visit(IMetricEvaluateContext context, Squeeze target)
     {
         return Metric.Zero;
     }
 
-    private IRType Visit(ITypeInferenceContext context, Squeeze target, TensorType input)
+    private IRType Visit(ITypeInferenceContext context, Squeeze target, TensorType input, TensorType dims)
     {
         if (input.Shape.IsUnranked)
         {
@@ -57,14 +51,14 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, I
 
         if (context.GetArgument(target, Squeeze.Dim) is TensorConst dim_con)
         {
-            var dims = dim_con.Value.Cast<int>();
+            var dimsValue = dim_con.Value.Cast<int>();
             var outshape = input.Shape.ToList();
-            if (dims.Length == 0)
+            if (dimsValue.Length == 0)
             {
                 return input with { Shape = new Shape(outshape.Where(x => x != 1).ToArray()) };
             }
 
-            foreach (var dimV in dims)
+            foreach (var dimV in dimsValue)
             {
                 var dimValue = Util.PositiveIndex(dimV, input.Shape.Rank);
                 outshape[dimValue] = int.MaxValue;
@@ -72,8 +66,11 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, I
 
             return input with { Shape = new Shape(outshape.Where(x => x != int.MaxValue)) };
         }
+        else if (dims.Shape.IsFixed)
+        {
+            return input with { Shape = Shape.Unknown(input.Shape.Rank - (int)dims.Shape.Prod().FixedValue) };
+        }
 
-        // return input with { Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Count - 1)) };
-        throw new NotImplementedException();
+        return input with { Shape = Shape.Unranked };
     }
 }

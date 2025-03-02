@@ -40,13 +40,13 @@ public sealed class UnitTestTIRUtilities
         // Act
         var paddings1 = TIRUtilities.ComputePaddings(bounds, shape);
         var expect1 = bounds.Select((bound, i) =>
-            ((IR.Expr)IR.F.Math.Max(-bound.Start, 0), (IR.Expr)IR.F.Math.Max(bound.Stop - shape[i].FixedValue, 0))).ToArray();
+            ((IR.Expr)IR.F.Math.Max(-bound.Start, 0L), (IR.Expr)IR.F.Math.Max((bound.Stop - shape[i]).ToExpr(), 0L))).ToArray();
 
         var paddings2 = TIRUtilities.ComputePaddings(bounds, targetbounds);
         var expect2 = bounds.Zip(targetbounds).
             Select(it =>
-                ((IR.Expr)IR.F.Math.Max(-it.First.Start, 0),
-                    (IR.Expr)IR.F.Math.Max(it.First.Stop - (it.Second.Stop - it.Second.Start), 0))).ToArray();
+                ((IR.Expr)IR.F.Math.Max(-it.First.Start, 0L),
+                    (IR.Expr)IR.F.Math.Max(it.First.Stop - (it.Second.Stop - it.Second.Start), 0L))).ToArray();
 
         // Assert
         Assert.Equal(3, paddings1.Count);
@@ -74,15 +74,15 @@ public sealed class UnitTestTIRUtilities
         };
         IReadOnlyList<(IR.Expr Before, IR.Expr After)> paddings = new List<(IR.Expr Before, IR.Expr After)>()
         {
-            (IR.F.Math.Max(-1, 0), IR.F.Math.Max(0 - 32 - 1, 0)),
-            (IR.F.Math.Max(0, 0), IR.F.Math.Max(0 - 16 - 0, 0)),
-            (IR.F.Math.Max(-2, 0), IR.F.Math.Max(0 - 8 - 2, 0)),
+            (IR.F.Math.Max(-1L, 0L), IR.F.Math.Max(0 - 32 - 1L, 0L)),
+            (IR.F.Math.Max(0L, 0L), IR.F.Math.Max(0 - 16 - 0L, 0L)),
+            (IR.F.Math.Max(-2L, 0L), IR.F.Math.Max(0 - 8 - 2L, 0L)),
         };
         _ = new List<(IR.Expr Before, IR.Expr After)>()
         {
-            (IR.F.Math.Max(-1, 0), IR.F.Math.Max(0 - 32 - 1, 0)),
-            (IR.F.Math.Max(0, 0), IR.F.Math.Max(0 - 16 - 0, 0)),
-            (IR.F.Math.Max(-2, 0), IR.F.Math.Max(0 - 8 - 2, 0)),
+            (IR.F.Math.Max(-1L, 0L), IR.F.Math.Max(0 - 32 - 1L, 0L)),
+            (IR.F.Math.Max(0L, 0L), IR.F.Math.Max(0 - 16 - 0L, 0L)),
+            (IR.F.Math.Max(-2L, 0L), IR.F.Math.Max(0 - 8 - 2L, 0L)),
         };
 
         // Act
@@ -118,7 +118,7 @@ public sealed class UnitTestTIRUtilities
         var clampedBounds1 = TIRUtilities.ClampBounds(bounds, shape);
         var expect = bounds.Zip(shape).Select(
             t => new TIR.Range(
-                IR.F.Math.Max(0, t.First.Start),
+                IR.F.Math.Max(0L, t.First.Start),
                 IR.F.Math.Min(t.Second.FixedValue, t.First.Stop),
                 t.First.Step)).ToArray();
 
@@ -143,9 +143,9 @@ public sealed class UnitTestTIRUtilities
         };
         IReadOnlyList<(IR.Expr Before, IR.Expr After)> paddings = new List<(IR.Expr Before, IR.Expr After)>()
         {
-            (IR.F.Math.Max(-1, 0), IR.F.Math.Max(0 - 32 - 1, 0)),
-            (IR.F.Math.Max(0, 0), IR.F.Math.Max(0 - 16 - 0, 0)),
-            (IR.F.Math.Max(-2, 0), IR.F.Math.Max(0 - 8 - 2, 0)),
+            (IR.F.Math.Max(-1L, 0L), IR.F.Math.Max(0 - 32 - 1L, 0L)),
+            (IR.F.Math.Max(0L, 0L), IR.F.Math.Max(0 - 16 - 0L, 0L)),
+            (IR.F.Math.Max(-2L, 0L), IR.F.Math.Max(0 - 8 - 2L, 0L)),
         };
 
         // Act

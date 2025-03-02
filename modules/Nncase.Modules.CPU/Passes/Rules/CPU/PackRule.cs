@@ -689,7 +689,7 @@ public sealed class PackConv2D : PackRule
         IsTensorConst("groups"),
         IsTensorConst("fusedClamp"));
 
-    public static Expr AddCandidate(Expr input, Expr weights, Expr bias, int[] strides, int[] padding, int[] wShape, long[] outShape)
+    public static Expr AddCandidate(Expr input, Expr weights, Expr bias, int[] strides, int[] padding, long[] wShape, long[] outShape)
     {
         var col = IR.F.CPU.Im2col(input, new[] { wShape[2], wShape[3] }, strides, padding);
         var newW = IR.F.Tensors.Reshape(weights, new[] { wShape[0], wShape[1] * wShape[2] * wShape[3] });
@@ -704,7 +704,7 @@ public sealed class PackConv2D : PackRule
         return IR.F.Tensors.Transpose(IR.F.Tensors.Reshape(add, new[] { outShape[1], outShape[0], outShape[2], outShape[3] }), new[] { 1, 0, 2, 3 });
     }
 
-    public static Expr AddPackedCandidate(Expr input, Expr weights, Expr bias, int[] strides, int[] padding, int[] wShape, long[] outShape, int lane)
+    public static Expr AddPackedCandidate(Expr input, Expr weights, Expr bias, int[] strides, int[] padding, long[] wShape, long[] outShape, int lane)
     {
         var col = IR.F.CPU.Im2col(IR.F.CPU.Pack(input, new[] { lane }, new[] { 1 }), new[] { wShape[2], wShape[3] }, strides, padding, new[] { 1 }, new[] { 0 });
         var newW = IR.F.Tensors.Reshape(IR.F.CPU.Pack(weights, new[] { lane }, new[] { 1 }), new[] { wShape[0], wShape[1] / lane * wShape[2] * wShape[3] });
@@ -733,7 +733,7 @@ public sealed class PackConv2D : PackRule
         var dilation = ((TensorConst)result["dilation"]).Value.ToArray<int>();
         var groups = ((TensorConst)result["groups"]).Value.ToScalar<int>();
         var fusedClamp = ((TensorConst)result["fusedClamp"]).Value.ToArray<float>();
-        var wShape = weights.CheckedShape.ToValueArray().ToInts();
+        var wShape = weights.CheckedShape.ToValueArray();
         var outShape = ((Expr)result[Pattern]).CheckedShape.ToValueArray();
         if (groups != 1 || wShape[1] % Lane != 0 || dilation[0] != 1 || dilation[1] != 1 || fusedClamp[0] != float.NegativeInfinity || fusedClamp[1] != float.PositiveInfinity)
         {

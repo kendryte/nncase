@@ -58,7 +58,11 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     public Tensor(Memory<T> buffer, ReadOnlySpan<long> dimensions)
         : base(DataType.FromType<T>(), dimensions)
     {
-        Trace.Assert(Length == buffer.Length);
+        if (Length != buffer.Length)
+        {
+            throw new ArgumentException("Buffer length should be same as tensor length.");
+        }
+
         Buffer = buffer;
     }
 

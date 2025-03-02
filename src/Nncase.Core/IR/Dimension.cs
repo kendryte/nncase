@@ -134,6 +134,7 @@ public struct Dimension : IEquatable<Dimension?>
         (true, true) => lhs.FixedValue + rhs.FixedValue,
         (true, _) when lhs.FixedValue == 0 => rhs,
         (_, true) when rhs.FixedValue == 0 => lhs,
+        (_, _) when lhs.IsUnknown || rhs.IsUnknown => Unknown,
         (_, _) => new Dimension(lhs.Value + rhs.Value),
     };
 
@@ -143,6 +144,7 @@ public struct Dimension : IEquatable<Dimension?>
     {
         (true, true) => lhs.FixedValue - rhs.FixedValue,
         (_, true) when rhs.FixedValue == 0 => lhs,
+        (_, _) when lhs.IsUnknown || rhs.IsUnknown => Unknown,
         (_, _) => new Dimension(lhs.Value - rhs.Value),
     };
 
@@ -151,12 +153,14 @@ public struct Dimension : IEquatable<Dimension?>
         (true, true) => lhs.FixedValue * rhs.FixedValue,
         (true, _) when lhs.FixedValue == 1 => rhs,
         (_, true) when rhs.FixedValue == 1 => lhs,
+        (_, _) when lhs.IsUnknown || rhs.IsUnknown => Unknown,
         (_, _) => new Dimension(lhs.Value * rhs.Value),
     };
 
     public static Dimension operator /(Dimension lhs, Dimension rhs) => (lhs.IsFixed, rhs.IsFixed) switch
     {
         (true, true) => lhs.FixedValue / rhs.FixedValue,
+        (_, _) when lhs.IsUnknown || rhs.IsUnknown => Unknown,
         (_, _) => new Dimension(lhs.Value / rhs.Value),
     };
 
@@ -232,6 +236,7 @@ public struct Dimension : IEquatable<Dimension?>
         (Kind, dimension.Kind) switch
         {
             (DimensionKind.Dynamic, DimensionKind.Dynamic) => Value == dimension.Value,
+            (DimensionKind.Dynamic, DimensionKind.Fixed) => Value.Metadata.Range?.Contains(dimension.FixedValue) ?? true,
             (DimensionKind.Fixed, DimensionKind.Fixed) => FixedValue == dimension.FixedValue,
             (DimensionKind.Unknown, _) => true,
             (_, _) => false,

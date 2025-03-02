@@ -20,7 +20,7 @@ namespace Nncase.Evaluator.Tensors;
 /// </summary>
 [EvaluatorGenerator]
 [TypeInferGenerator]
-public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<GetItem>, IOpPrinter<GetItem>, ICostEvaluator<GetItem>, IShapeEvaluator<GetItem>, IMetricEvaluator<GetItem>
+public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<GetItem>, IOpPrinter<GetItem>, ICostEvaluator<GetItem>, IMetricEvaluator<GetItem>
 {
     public string Visit(IPrintOpContext context, GetItem target)
     {
@@ -43,35 +43,6 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
         {
             [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(returnType),
         };
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, GetItem target)
-    {
-        // [n] 1-> 1
-        // [n, c] 1 -> c
-        // [n, c] 2 -> 1
-        // 前面n维度减去index的值的长度
-        var input = context.GetArgumentShape(target, GetItem.Input);
-        var index = context.GetArgument(target, GetItem.Index);
-        if (input is IR.Tuple)
-        {
-            return input[index];
-        }
-        else
-        {
-            _ = 0;
-            Expr len;
-            if (index.CheckedShape.IsScalar)
-            {
-                len = 1;
-            }
-            else
-            {
-                len = context.GetArgumentShape(target, GetItem.Index)[0];
-            }
-
-            return ShapeExprUtility.Slice(input, len, int.MaxValue);
-        }
     }
 
     public IRType Visit(ITypeInferenceContext context, GetItem target)

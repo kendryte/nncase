@@ -148,7 +148,7 @@ public static partial class Utility
     /// <returns>ConstPattern.</returns>
     public static TensorConstPattern IsConst<T>(string? name, T value)
         where T : unmanaged, IEquatable<T>
-    => new(x => x.Value is Tensor<T> { Length: 1 } t && EqualityComparer<T>.Default.Equals(t[0], value), name);
+    => new(x => x.Value is Tensor<T> { Rank: 0 } t && EqualityComparer<T>.Default.Equals(t[Array.Empty<long>()], value), name);
 
     public static TensorConstPattern IsConst<T>(T value)
         where T : unmanaged, IEquatable<T> => IsConst<T>(null, value);

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 using Nncase.IR.Tensors;
 using static Nncase.IR.F.Math;
 
@@ -29,11 +30,11 @@ public partial class Expr
     public Expr this[long index] =>
         this switch
         {
-            TensorConst tc => Tensor.FromScalar(tc.Value.ElementType, tc.Value[index]),
+            TensorConst tc when tc.Value.Rank == 1 => Tensor.FromScalar(tc.Value.ElementType, tc.Value[index]),
             TupleConst tc => tc.Value[(int)index].AsTensor(),
             Shape shape => shape.Dimensions[(int)index],
             IR.Tuple t => t[(int)index],
-            Call { Target: Concat { Axis: 0 } } c => c[Concat.Input][index][0],
+            Call { Target: Concat { Axis: 0 } } c when c[Concat.Input] is IR.Tuple tp && tp.Fields[0].CheckedType is TensorType { Shape: { IsFixed: true, Size: 1 } } => c[Concat.Input][index][0],
             Call { Target: Reshape } c when c[Reshape.Shape] is TensorConst tc && tc.Value.Length == 1 && tc.Value.Cast<long>()[0] == 1 => c[Reshape.Input],
             Call { Target: Stack } c => c[Stack.Inputs][index],
             _ => this[(Expr)index],
@@ -46,7 +47,7 @@ public partial class Expr
     public Expr this[params long[] indices] =>
         this switch
         {
-            TensorConst tc => Tensor.FromScalar(tc.Value.ElementType, tc.Value[indices]),
+            TensorConst tc when tc.Value.Rank == indices.Length => Tensor.FromScalar(tc.Value.ElementType, tc.Value[indices]),
             _ => this[indices.Select(x => (Expr)x).ToArray()],
         };
 

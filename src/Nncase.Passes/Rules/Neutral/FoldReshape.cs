@@ -76,12 +76,12 @@ public sealed partial class FoldReshapeBinaryConstReshape : IRewriteRule
     {
         var inShape = input.CheckedShape.ToValueArray();
         if (!(sqShape.SequenceEqual(inShape) && RulesUtility.FindSqueezeAxis(unsqShape, sqShape) is int axis && axis != -1 && (
-            (binaryConst.Value.Shape.Rank == unsqShape.Length && binaryConst.Value.Shape[axis].Value == 1) || (Evaluator.TypeInference.BroadcastType((TensorType)input.CheckedType, (TensorType)binaryConst.CheckedType) is TensorType outType && outType.Shape.ToValueArray().SequenceEqual(inShape)))))
+            (binaryConst.Value.Shape.Rank == unsqShape.Length && binaryConst.Value.Shape[axis].FixedValue == 1) || (Evaluator.TypeInference.BroadcastType((TensorType)input.CheckedType, (TensorType)binaryConst.CheckedType) is TensorType outType && outType.Shape.ToValueArray().SequenceEqual(inShape)))))
         {
             return null;
         }
 
-        return IR.F.Math.Binary(binary.BinaryOp, input, (binaryConst.Value.Shape.Rank == unsqShape.Length && binaryConst.Value.Shape[axis].Value == 1) ? IR.F.Tensors.Squeeze(binaryConst, new[] { axis }) : binaryConst);
+        return IR.F.Math.Binary(binary.BinaryOp, input, (binaryConst.Value.Shape.Rank == unsqShape.Length && binaryConst.Value.Shape[axis].FixedValue == 1) ? IR.F.Tensors.Squeeze(binaryConst, new[] { axis }) : binaryConst);
     }
 }
 

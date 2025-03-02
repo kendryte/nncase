@@ -131,10 +131,6 @@ public interface ICompilerServicesProvider
     /// <returns>Evaluate result.</returns>
     Metric EvaluateOpMetric(Op op, IMetricEvaluateContext context);
 
-    Expr EvaluateShapeExpr(Expr expr, ShapeExprCache? cache);
-
-    Expr EvaluateOpShapeExpr(Op expr, IShapeEvaluateContext context);
-
     /// <summary>
     /// Match expression.
     /// </summary>
@@ -333,16 +329,6 @@ public static class CompilerServices
         return Provider.EvaluateOpCost(op, context);
     }
 
-    public static Expr EvaluateShapeExpr(this Expr expr, ShapeExprCache? cache = null)
-    {
-        return Provider.EvaluateShapeExpr(expr, cache);
-    }
-
-    public static Expr EvaluateOpShapeExpr(Op op, IShapeEvaluateContext context)
-    {
-        return Provider.EvaluateOpShapeExpr(op, context);
-    }
-
     /// <summary>
     /// Match expression.
     /// </summary>
@@ -522,7 +508,11 @@ public static class CompilerServices
 
     public static Expr FastSimplifyForDimension(Expr value)
     {
-        if (value is Const or Var or None)
+        if (value is TensorConst tc)
+        {
+            return tc.Value.ElementType == DataTypes.Int64 ? tc : new TensorConst(tc.Value.Cast<long>());
+        }
+        else if (value is Const or Var or None)
         {
             return value;
         }
@@ -565,7 +555,6 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     private readonly IEGraphMatchProvider _eGraphMatchProvider;
     private readonly IEGraphRewriteProvider _eGraphrewriteProvider;
     private readonly ITargetProvider _targetProvider;
-    private readonly IShapeEvaluateProvider _shapeEvaluateProvider;
     private readonly IMicroKernelInfoProvider _microKernelInfoGetter;
 
     public CompilerServicesProvider(
@@ -581,7 +570,6 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         IEGraphMatchProvider eGraphMatchProvider,
         IEGraphRewriteProvider eGraphrewriteProvider,
         ITargetProvider targetProvider,
-        IShapeEvaluateProvider shapeEvaluateProvider,
         IMicroKernelInfoProvider microKernelInfoGetter)
     {
         // _compileOptions = compileOptions.Value;
@@ -597,7 +585,6 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         _eGraphMatchProvider = eGraphMatchProvider;
         _eGraphrewriteProvider = eGraphrewriteProvider;
         _targetProvider = targetProvider;
-        _shapeEvaluateProvider = shapeEvaluateProvider;
         _microKernelInfoGetter = microKernelInfoGetter;
     }
 
@@ -687,18 +674,6 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
 
     /// <inheritdoc/>
     public Metric EvaluateOpMetric(Op op, IMetricEvaluateContext context) => _metricEvaluateProvider.EvaluateOpMetric(op, context);
-
-    /// <inheritdoc/>
-    public Expr EvaluateShapeExpr(Expr expr, ShapeExprCache? cache = null)
-    {
-        return _shapeEvaluateProvider.EvaluateShapeExpr(expr, cache ?? ShapeExprCache.Default);
-    }
-
-    /// <inheritdoc/>
-    public Expr EvaluateOpShapeExpr(Op op, IShapeEvaluateContext context)
-    {
-        return _shapeEvaluateProvider.EvaluateOpShapeExpr(op, context);
-    }
 
     public bool TryMatchRoot(IEnumerable<ENode> enodes, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
     {

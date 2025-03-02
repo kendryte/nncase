@@ -19,21 +19,21 @@ namespace Nncase.Tests.Rules.NeutralTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestReluToClamp : TransformTestBase
 {
-    public static readonly TheoryData<Nncase.IR.NN.ActivationOp, int[]> ReluToClampPositiveData = new()
+    public static readonly TheoryData<Nncase.IR.NN.ActivationOp, long[]> ReluToClampPositiveData = new()
     {
-        { new IR.NN.Relu(), new[] { 1, 2, 3, 4 } },
-        { new IR.NN.Relu6(), new[] { 4, 3, 2, 1 } },
+        { new IR.NN.Relu(), new long[] { 1, 2, 3, 4 } },
+        { new IR.NN.Relu6(), new long[] { 4, 3, 2, 1 } },
     };
 
-    public static readonly TheoryData<Nncase.IR.NN.ActivationOp, int[]> ReluToClampNegativeData = new()
+    public static readonly TheoryData<Nncase.IR.NN.ActivationOp, long[]> ReluToClampNegativeData = new()
     {
-        { new IR.NN.LeakyRelu(), new[] { 1, 2, 3, 4 } },
-        { new IR.NN.LeakyRelu(), new[] { 4, 3, 2, 1 } },
+        { new IR.NN.LeakyRelu(), new long[] { 1, 2, 3, 4 } },
+        { new IR.NN.LeakyRelu(), new long[] { 4, 3, 2, 1 } },
     };
 
     [Theory]
     [MemberData(nameof(ReluToClampPositiveData))]
-    public void TestPositive(Nncase.IR.NN.ActivationOp op, int[] shape)
+    public void TestPositive(Nncase.IR.NN.ActivationOp op, long[] shape)
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));
         var rootPre = new Call(op, input);
@@ -54,7 +54,7 @@ public class UnitTestReluToClamp : TransformTestBase
 
     [Theory]
     [MemberData(nameof(ReluToClampNegativeData))]
-    public void TestNegative(Nncase.IR.NN.ActivationOp op, int[] shape)
+    public void TestNegative(Nncase.IR.NN.ActivationOp op, long[] shape)
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));
         var rootPre = new Call(op, input);

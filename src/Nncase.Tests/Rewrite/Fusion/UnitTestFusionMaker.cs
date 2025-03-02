@@ -227,7 +227,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
     [Fact]
     public async Task TestComplexFusionTensorConstInput()
     {
-        var inShape = new[] { 1, 24, 32, 3 };
+        var inShape = new long[] { 1, 24, 32, 3 };
         var input = DataGenerator.DefaultRandom(inShape);
         var v1 = WrapperWith(x => Transpose(x[0], new[] { 0, 3, 1, 2 }), input); // f32[1,3,24,32]
         var pre = new Function("main", v1, Array.Empty<Var>());
@@ -284,9 +284,9 @@ public sealed class UnitTestFusionMaker : TestClassBase
         var x = new Var(new TensorType(DataTypes.Float32, new[] { 1, 3, 2 }));
         var initC = new Var(new TensorType(DataTypes.Float32, new[] { 1, numberOfGates * hiddenSize, inputSize }));
         var initH = new Var(new TensorType(DataTypes.Float32, new[] { 1, numberOfGates * hiddenSize, hiddenSize }));
-        var b = DataGenerator.DefaultRandom(new[] { 1, 1, 1, 1 });
-        var w = DataGenerator.DefaultRandom(new[] { 1, 1, 1, 1 });
-        var r = DataGenerator.DefaultRandom(new[] { 1, 1, 1, 1 });
+        var b = DataGenerator.DefaultRandom([1, 1, 1, 1]);
+        var w = DataGenerator.DefaultRandom([1, 1, 1, 1]);
+        var r = DataGenerator.DefaultRandom([1, 1, 1, 1]);
         var lstm = IR.F.RNN.LSTM(
             LSTMDirection.Bidirectional,
             LSTMLayout.One,

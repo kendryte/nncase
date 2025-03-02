@@ -24,14 +24,14 @@ public class UnitTestFlattenToReshape : TransformTestBase
     public static IEnumerable<object[]> TestFlattenToReshapePositiveData =>
         new[]
         {
-            new object[] { new[] { 2, 2, 4, 8 }, 0 },
-            new object[] { new[] { 3, 2, 4, 8 }, 1 },
-            new object[] { new[] { 4, 4, 4, 6 }, 2 },
-            new object[] { new[] { 5, 4, 4, 6 }, 3 },
-            new object[] { new[] { 6, 2, 4, 8 }, -1 },
-            new object[] { new[] { 7, 2, 4, 8 }, -2 },
-            new object[] { new[] { 8, 4, 4, 6 }, -3 },
-            new object[] { new[] { 9, 4, 4, 6 }, -4 },
+            new object[] { new long[] { 2, 2, 4, 8 }, 0 },
+            new object[] { new long[] { 3, 2, 4, 8 }, 1 },
+            new object[] { new long[] { 4, 4, 4, 6 }, 2 },
+            new object[] { new long[] { 5, 4, 4, 6 }, 3 },
+            new object[] { new long[] { 6, 2, 4, 8 }, -1 },
+            new object[] { new long[] { 7, 2, 4, 8 }, -2 },
+            new object[] { new long[] { 8, 4, 4, 6 }, -3 },
+            new object[] { new long[] { 9, 4, 4, 6 }, -4 },
         };
 
     public static IEnumerable<object[]> TestFlattenToReshapeNegativeData =>
@@ -42,7 +42,7 @@ public class UnitTestFlattenToReshape : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestFlattenToReshapePositiveData))]
-    public void TestFlattenToReshapePositive(int[] shape, int axis)
+    public void TestFlattenToReshapePositive(long[] shape, int axis)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Flatten(a, axis);

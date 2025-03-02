@@ -148,7 +148,7 @@ public class HardSwishEvaluator : IEvaluator<HardSwish>, ITypeInferencer<HardSwi
 /// <summary>
 /// Evaluator for <see cref="LeakyRelu"/>.
 /// </summary>
-public class LeakyReluEvaluator : IEvaluator<LeakyRelu>, ITypeInferencer<LeakyRelu>, ICostEvaluator<LeakyRelu>, IShapeEvaluator<LeakyRelu>, IMetricEvaluator<LeakyRelu>
+public class LeakyReluEvaluator : IEvaluator<LeakyRelu>, ITypeInferencer<LeakyRelu>, ICostEvaluator<LeakyRelu>, IMetricEvaluator<LeakyRelu>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, LeakyRelu leakyRelu)
@@ -186,8 +186,6 @@ public class LeakyReluEvaluator : IEvaluator<LeakyRelu>, ITypeInferencer<LeakyRe
         };
     }
 
-    public Expr Visit(IShapeEvaluateContext context, LeakyRelu target) => context.GetArgumentShape(target, LeakyRelu.Input);
-
     private IRType Visit(TensorType input)
     {
         return input;
@@ -197,7 +195,7 @@ public class LeakyReluEvaluator : IEvaluator<LeakyRelu>, ITypeInferencer<LeakyRe
 /// <summary>
 /// Evaluator for <see cref="Relu"/>.
 /// </summary>
-public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>, ICostEvaluator<Relu>, IShapeEvaluator<Relu>, IMetricEvaluator<Relu>
+public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>, ICostEvaluator<Relu>, IMetricEvaluator<Relu>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Relu relu)
@@ -228,8 +226,6 @@ public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>, ICostEvalu
             [MetricFactorNames.FLOPs] = MetricUtility.GetFLOPs(outputType) * 1,
         };
     }
-
-    public Expr Visit(IShapeEvaluateContext context, Relu target) => context.GetArgumentShape(target, Relu.Input);
 
     private IRType Visit(TensorType input)
     {
@@ -330,7 +326,7 @@ public class SeluEvaluator : IEvaluator<Selu>, ITypeInferencer<Selu>, ICostEvalu
 /// <summary>
 /// Evaluator for <see cref="Sigmoid"/>.
 /// </summary>
-public class SigmoidEvaluator : IEvaluator<Sigmoid>, ITypeInferencer<Sigmoid>, ICostEvaluator<Sigmoid>, IShapeEvaluator<Sigmoid>, IMetricEvaluator<Sigmoid>
+public class SigmoidEvaluator : IEvaluator<Sigmoid>, ITypeInferencer<Sigmoid>, ICostEvaluator<Sigmoid>, IMetricEvaluator<Sigmoid>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Sigmoid sigmoid)
@@ -363,8 +359,6 @@ public class SigmoidEvaluator : IEvaluator<Sigmoid>, ITypeInferencer<Sigmoid>, I
             [MetricFactorNames.FLOPs] = MetricUtility.GetFLOPs(outputType) * (3 + MetricUtility.ExpFLOPs),
         };
     }
-
-    public Expr Visit(IShapeEvaluateContext context, Sigmoid target) => context.GetArgumentShape(target, Sigmoid.Input);
 
     private IRType Visit(TensorType input)
     {
@@ -472,7 +466,7 @@ public class PReluEvaluator : IEvaluator<PRelu>, ITypeInferencer<PRelu>, ICostEv
 /// <summary>
 /// Evaluator for <see cref="Erf"/>.
 /// </summary>
-public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluator<Erf>, IShapeEvaluator<Erf>
+public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluator<Erf>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Erf erf)
@@ -510,8 +504,6 @@ public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluato
         };
     }
 
-    public Expr Visit(IShapeEvaluateContext context, Erf target) => context.GetArgumentShape(target, Erf.Input);
-
     private IRType Visit(IRType input)
     {
         if (input is DistributedType d && d.NdSBP.Any(s => s is SBPPartial))
@@ -526,7 +518,7 @@ public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluato
 /// <summary>
 /// Evaluator for <see cref="Sigmoid"/>.
 /// </summary>
-public class SwishEvaluator : IEvaluator<Swish>, ITypeInferencer<Swish>, ICostEvaluator<Swish>, IMetricEvaluator<Swish>, IShapeEvaluator<Swish>
+public class SwishEvaluator : IEvaluator<Swish>, ITypeInferencer<Swish>, ICostEvaluator<Swish>, IMetricEvaluator<Swish>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Swish swish)
@@ -565,8 +557,6 @@ public class SwishEvaluator : IEvaluator<Swish>, ITypeInferencer<Swish>, ICostEv
         };
     }
 
-    public Expr Visit(IShapeEvaluateContext context, Swish target) => context.GetArgumentShape(target, Swish.Input);
-
     private IRType Visit(IRType input)
     {
         if (input is DistributedType d && d.NdSBP.Any(s => s is SBPPartial))
@@ -581,7 +571,7 @@ public class SwishEvaluator : IEvaluator<Swish>, ITypeInferencer<Swish>, ICostEv
 /// <summary>
 /// Evaluator for <see cref="Gelu"/>.
 /// </summary>
-public class GeluEvaluator : IEvaluator<Gelu>, ITypeInferencer<Gelu>, ICostEvaluator<Gelu>, IShapeEvaluator<Gelu>, IMetricEvaluator<Gelu>
+public class GeluEvaluator : IEvaluator<Gelu>, ITypeInferencer<Gelu>, ICostEvaluator<Gelu>, IMetricEvaluator<Gelu>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Gelu gelu)
@@ -621,8 +611,6 @@ public class GeluEvaluator : IEvaluator<Gelu>, ITypeInferencer<Gelu>, ICostEvalu
             [MetricFactorNames.FLOPs] = MetricUtility.GetFLOPs(outputType) * (MetricUtility.ExpFLOPs + MetricUtility.SqrtFLOPs + 6),
         };
     }
-
-    public Expr Visit(IShapeEvaluateContext context, Gelu target) => context.GetArgumentShape(target, Gelu.Input);
 
     private IRType Visit(IRType input)
     {

@@ -335,7 +335,7 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
     private ParentSubViewInfo GetParentSubViewInfo(int storeLevel, ITileAbleNode node, BufferIdentity bid, AffineMap map, Expr[] forwardOffsets, IntExpr[] shapeExprs)
     {
         var offset = new IR.Tuple(map.Apply(forwardOffsets, Enumerable.Repeat<Expr>(0, forwardOffsets.Length).ToArray()).Select(i => i.Start).ToArray());
-        var shape = shapeExprs.Select(s => (int)_sol.Value(s.Var())).ToArray();
+        var shape = shapeExprs.Select(s => _sol.Value(s.Var())).ToArray();
         bool innerAllocated = false;
         if (TryGetParerntBuffer(node, bid, out var parentBuffer, out var parentOffsets))
         {
@@ -368,7 +368,7 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
     /// <summary>
     /// Get the local allocate buffer.
     /// </summary>
-    private TIR.Buffer GetParentAllocateBuffer(int storeLevel, TileNode node, BufferIdentity bid, int[] shape, out bool innerAllocated)
+    private TIR.Buffer GetParentAllocateBuffer(int storeLevel, TileNode node, BufferIdentity bid, long[] shape, out bool innerAllocated)
     {
         var expr = bid.Node.Grid.Buffers[bid.Index];
         var tensorType = GetBufferTensorType(expr);
@@ -398,7 +398,7 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
     {
     }
 
-    public sealed record ParentSubViewInfo(Expr Buffer, IR.Tuple Offsets, int[] Shape, bool InnerAllocated)
+    public sealed record ParentSubViewInfo(Expr Buffer, IR.Tuple Offsets, long[] Shape, bool InnerAllocated)
     {
     }
 

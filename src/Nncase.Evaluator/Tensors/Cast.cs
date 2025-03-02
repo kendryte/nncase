@@ -13,7 +13,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Cast"/>.
 /// </summary>
-public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter<Cast>, ICostEvaluator<Cast>, IShapeEvaluator<Cast>, IMetricEvaluator<Cast>
+public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter<Cast>, ICostEvaluator<Cast>, IMetricEvaluator<Cast>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Cast cast)
@@ -60,8 +60,6 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
             [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) * 2,
         };
     }
-
-    public Expr Visit(IShapeEvaluateContext context, Cast target) => context.GetArgumentShape(target, Cast.Input);
 
     private IRType Visit(Cast target, TensorType input)
     {

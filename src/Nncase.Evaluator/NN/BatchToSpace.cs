@@ -19,7 +19,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="BatchToSpace"/>.
 /// </summary>
-public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<BatchToSpace>, ICostEvaluator<BatchToSpace>, IMetricEvaluator<BatchToSpace>, IShapeEvaluator<BatchToSpace>
+public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<BatchToSpace>, ICostEvaluator<BatchToSpace>, IMetricEvaluator<BatchToSpace>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, BatchToSpace s)
@@ -99,53 +99,6 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         {
             [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(returnType),
         };
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, BatchToSpace target)
-    {
-        var inShape = context.GetArgumentShape(target, BatchToSpace.Input);
-        var input = context.GetArgument(target, BatchToSpace.Input);
-        if (input.CheckedShape.Rank == 4)
-        {
-            inShape = Stack(new IR.Tuple(inShape[0], inShape[2], inShape[3], inShape[1]), 0);
-        }
-
-        if (input.CheckedShape.Rank == 3)
-        {
-            inShape = Stack(new IR.Tuple(inShape[0], inShape[2], inShape[1]), 0);
-        }
-
-        var blockShape = Cast(context.GetArgument(target, BatchToSpace.BlockShape), DataTypes.Int64);
-        if (!blockShape.CheckedShape.IsFixed)
-        {
-            throw new NotImplementedException();
-        }
-
-        var crops = Cast(context.GetArgument(target, BatchToSpace.Crops), DataTypes.Int64);
-        var blockSize = Prod(blockShape);
-        var batch = inShape[0];
-        var d0 = batch / blockSize;
-        var m = (int)blockShape.CheckedShape[0].FixedValue;
-        var cropSection = Enumerable.Range(0, m).Select(
-            i => (inShape[i + 1] * blockShape[0]) - crops[i, 0] - crops[i, 1]).ToArray();
-
-        var inRank = Cast(ShapeOf(inShape)[0], DataTypes.Int32);
-        var remainSize = inRank - 1 - m;
-        var remainShape = ShapeExprUtility.If(remainSize > 0, (inShape, m) => ShapeExprUtility.Slice(inShape, 1 + m, int.MaxValue), (inShape, m) => Array.Empty<long>(), inShape, m);
-
-        var outShapeList = Concat(new IR.Tuple(Stack(new IR.Tuple(new[] { d0 }), 0), Stack(new IR.Tuple(cropSection), 0), remainShape), 0);
-
-        if (input.CheckedShape.Rank == 4)
-        {
-            return Stack(new IR.Tuple(outShapeList[0], outShapeList[3], outShapeList[1], outShapeList[2]), 0);
-        }
-
-        if (input.CheckedShape.Rank == 3)
-        {
-            return Stack(new IR.Tuple(outShapeList[0], outShapeList[2], outShapeList[1]), 0);
-        }
-
-        throw new NotImplementedException();
     }
 
     private static IEnumerable<int> BoostRange(int start, int end, int step = 1)

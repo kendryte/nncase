@@ -21,16 +21,16 @@ namespace Nncase.Tests.Rules.NeutralTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestFoldLayerNorm : TransformTestBase
 {
-    public static TheoryData<int[]> FoldLayerNormData => new()
+    public static TheoryData<long[]> FoldLayerNormData => new()
     {
-        new[] { 1, 3, 16 },
-        new[] { 1, 2, 4 },
-        new[] { 1, 1, 5 },
+        new long[] { 1, 3, 16 },
+        new long[] { 1, 2, 4 },
+        new long[] { 1, 1, 5 },
     };
 
     [Theory]
     [MemberData(nameof(FoldLayerNormData))]
-    public void TestFoldLayerNormPositive1(int[] shape)
+    public void TestFoldLayerNormPositive1(long[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
@@ -59,7 +59,7 @@ public class UnitTestFoldLayerNorm : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldLayerNormData))]
-    public void TestFoldLayerNormNegative1(int[] shape)
+    public void TestFoldLayerNormNegative1(long[] shape)
     {
         // note shape is nchw
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));
@@ -94,7 +94,7 @@ public class UnitTestFoldLayerNorm : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldLayerNormData))]
-    public void TestFoldLayerNormPositive2(int[] shape)
+    public void TestFoldLayerNormPositive2(long[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
@@ -121,7 +121,7 @@ public class UnitTestFoldLayerNorm : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldLayerNormData))]
-    public void TestFoldLayerNormNegative2(int[] shape)
+    public void TestFoldLayerNormNegative2(long[] shape)
     {
         // note shape is nchw
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));
@@ -154,7 +154,7 @@ public class UnitTestFoldLayerNorm : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldLayerNormData))]
-    public void TestFoldLayerNormPositive3(int[] shape)
+    public void TestFoldLayerNormPositive3(long[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
@@ -183,7 +183,7 @@ public class UnitTestFoldLayerNorm : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldLayerNormData))]
-    public void TestFoldLayerNormNegative3(int[] shape)
+    public void TestFoldLayerNormNegative3(long[] shape)
     {
         // note shape is nchw
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));
@@ -218,7 +218,7 @@ public class UnitTestFoldLayerNorm : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldLayerNormData))]
-    public void TestFoldLayerNormPositive4(int[] shape)
+    public void TestFoldLayerNormPositive4(long[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
@@ -268,7 +268,7 @@ public class UnitTestFoldLayerNorm : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldLayerNormData))]
-    public void TestFoldLayerNormNegative4(int[] shape)
+    public void TestFoldLayerNormNegative4(long[] shape)
     {
         // note shape is nchw
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));

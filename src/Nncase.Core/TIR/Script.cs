@@ -94,7 +94,7 @@ public static class T
     /// <returns> for builder. </returns>
     public static ISequentialBuilder<For> ForLoop(out Var loopVar, Range domain, LoopMode mode, [CallerArgumentExpression("loopVar")] string var_name = "v")
     {
-        var newLoopVar = loopVar = new Var(var_name.StartsWith("var ") ? var_name[4..] : var_name, domain.Start.CheckedType);
+        var newLoopVar = loopVar = new Var(var_name.StartsWith("var ") ? var_name[4..] : var_name, DataTypes.Int64);
         return new SequentialBuilder<For>(body => new For(newLoopVar, domain, mode, body));
     }
 
@@ -364,9 +364,9 @@ public static class T
 
     public static ISequentialBuilder<For> ForSegment(out (Expr B, Expr E) seg, Expr low, Expr chunck, Expr high)
     {
-        var count = IR.F.Tensors.Cast((high - low) / IR.F.Tensors.Cast(chunck, DataTypes.Float32), DataTypes.Int32);
+        var count = IR.F.Math.CeilDiv(high - low, chunck);
         var forloop = T.Serial(out var i, (0, count));
-        seg = (i * chunck, IR.F.Math.Min((i + 1) * chunck, high));
+        seg = (i * chunck, IR.F.Math.Min((i + 1L) * chunck, high));
         return forloop;
     }
 

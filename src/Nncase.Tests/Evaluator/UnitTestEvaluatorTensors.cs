@@ -147,7 +147,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
 
         {
             var shape = new long[] { 1, 3, 16, 16 };
-            var value = new float[1];
+            var value = 0f;
             var expect = Tensor.Zeros<float>(new Shape(shape));
             DoConstantOfShape(shape, value, expect);
         }
@@ -162,7 +162,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
         {
             var s = new long[] { 1, 3, 16, 16 };
             var shape = new Var(new TensorType(DataTypes.Int64, new int[] { s.Length }));
-            var value = new float[1];
+            var value = 0f;
             var expect = Tensor.Zeros<float>(new Shape(s));
 
             var expr = IR.F.Tensors.ConstantOfShape(shape, value);
@@ -253,7 +253,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
         var begin = 0F;
         var end = 100F;
         var step = 2F;
-        var start = new Var(new TensorType(DataTypes.Float32, new int[] { 1 }));
+        var start = new Var(TensorType.Scalar(DataTypes.Float32));
         var expect = OrtKI.Range(begin, end, step);
 
         var expr = IR.F.Tensors.Range(start, end, step);
@@ -479,7 +479,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
     {
         var shape = new long[] { 1, 3, 16, 16 };
         var dim = 1L;
-        var axis = new Var(new TensorType(DataTypes.Int64, new int[] { 1 }));
+        var axis = new Var(TensorType.Scalar(DataTypes.Int64));
         var sections = new long[] { 1, 2 };
 
         var input = OrtKI.Random(shape);
@@ -487,7 +487,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
 
         var expr = IR.F.Tensors.Split(input.ToTensor(), axis, sections);
         CompilerServices.InferenceType(expr);
-        var d = new Dictionary<Var, IValue>() { { axis, Value.FromTensor(Tensor.FromScalar(dim)) } };
+        var d = new Dictionary<Var, IValue>() { { axis, Value.FromTensor(dim) } };
         Assert.Equal(expect.Select(t => t.ToTensor()).ToArray(), expr.Evaluate(d).AsTensors());
     }
 

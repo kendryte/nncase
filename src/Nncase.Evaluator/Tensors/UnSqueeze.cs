@@ -14,7 +14,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Unsqueeze"/>.
 /// </summary>
-public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsqueeze>, ICostEvaluator<Unsqueeze>, IShapeEvaluator<Unsqueeze>, IMetricEvaluator<Unsqueeze>
+public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsqueeze>, ICostEvaluator<Unsqueeze>, IMetricEvaluator<Unsqueeze>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Unsqueeze unSqueeze)
@@ -47,13 +47,6 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
         {
             [CostFactorNames.CPUCycles] = 1,
         };
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Unsqueeze target)
-    {
-        var input = context.GetArgumentShape(target, Unsqueeze.Input);
-        var dims = context.GetArgument(target, Unsqueeze.Dim);
-        return IR.F.ShapeExpr.UnsqueezeShape(input, dims);
     }
 
     public Metric Visit(IMetricEvaluateContext context, Unsqueeze target) => Metric.Zero;

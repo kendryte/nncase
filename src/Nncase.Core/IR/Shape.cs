@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance.Helpers;
 using NetFabric.Hyperlinq;
+using Nncase.Diagnostics;
 using Nncase.IR.Tensors;
 using Nncase.Utilities;
 
@@ -93,6 +94,23 @@ public record struct FixedAndDynamicDimension(long Fixed, Dimension? Dynamic)
 
     public static FixedAndDynamicDimension Abs(FixedAndDynamicDimension value) =>
         new(System.Math.Abs(value.Fixed), value.Dynamic is null ? (Dimension?)null : Dimension.Abs(value.Dynamic.Value));
+
+    public static FixedAndDynamicDimension? TryDivExactly(FixedAndDynamicDimension a, FixedAndDynamicDimension b)
+    {
+        if (a.Fixed % b.Fixed == 0)
+        {
+            return (a.Dynamic, b.Dynamic) switch
+            {
+                (null, null) => new FixedAndDynamicDimension(a.Fixed / b.Fixed, null),
+                (null, Dimension y) => new FixedAndDynamicDimension(1, a.Fixed / b.Fixed / y),
+                (Dimension x, null) => new FixedAndDynamicDimension(a.Fixed / b.Fixed, x),
+                (Dimension x, Dimension y) when x == y => new FixedAndDynamicDimension(a.Fixed / b.Fixed, null),
+                (Dimension x, Dimension y) => new FixedAndDynamicDimension(1, a.Fixed / b.Fixed * x / y),
+            };
+        }
+
+        return null;
+    }
 
     public Dimension ToDimension()
     {
@@ -225,9 +243,15 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
     {
         foreach (var dim in Dimensions)
         {
-            if (dim.CheckedType != TensorType.Scalar(DataTypes.Int64)
-                && dim.CheckedType != NoneType.Default)
+            var dtype = dim is Const c ? c.ValueType : dim.CheckedType;
+            if (dtype != TensorType.Scalar(DataTypes.Int64)
+                && dtype != NoneType.Default)
             {
+                if (DumpScope.Current.IsEnabled(DumpFlags.Compile))
+                {
+                    DumpScope.Current.DumpIR(this, "InvalidDimension");
+                }
+
                 throw new ArgumentException($"Invalid dimension type: {dim.CheckedType}");
             }
         }
@@ -460,6 +484,11 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
 
     public Expr ToValueArrayExpr()
     {
+        if (IsFixed)
+        {
+            return ToValueArray();
+        }
+
         var tuple = new IR.Tuple(Dimensions);
         return IR.F.Tensors.Stack(tuple, 0);
     }

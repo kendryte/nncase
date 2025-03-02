@@ -14,7 +14,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Unary"/>.
 /// </summary>
-public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEvaluator<Unary>, IOpPrinter<Unary>, IShapeEvaluator<Unary>, IMetricEvaluator<Unary>
+public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEvaluator<Unary>, IOpPrinter<Unary>, IMetricEvaluator<Unary>
 {
     public static IValue InferValue(Tensor input_tensor, UnaryOp unaryOp)
     {
@@ -134,11 +134,6 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         }
 
         return context.GetDefault(target);
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Unary target)
-    {
-        return context.GetArgumentShape(target, Unary.Input);
     }
 
     private static IRType Visit(TensorType input)

@@ -250,8 +250,12 @@ public class IsaExtractor
         var fields = new List<InstructionField>();
         foreach (var f in t.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
         {
-            int metadataToken = f.MetadataToken;
-            props.Add((metadataToken, f));
+            var b = f.GetCustomAttribute<BrowsableAttribute>(true);
+            if (b == null || b.Browsable)
+            {
+                int metadataToken = f.MetadataToken;
+                props.Add((metadataToken, f));
+            }
         }
 
         props.Sort((a, b) => a.Item1 - b.Item1);

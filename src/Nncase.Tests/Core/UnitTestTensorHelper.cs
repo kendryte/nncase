@@ -23,7 +23,7 @@ public sealed class UnitTestTensorHelper
     [Fact]
     public void TestToScalar1()
     {
-        var t = Tensor.Ones<float>([1]);
+        var t = Tensor.Ones<float>([]);
         Assert.Equal(1F, t.ToScalar<float>());
     }
 

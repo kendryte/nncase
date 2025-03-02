@@ -33,7 +33,7 @@ public class UnitTestCombineQuantize : TransformTestBase
 {
     public static TheoryData<long[][], int, DataType, QuantParam> CombineQuantizeConcatPositiveData => new() { { new long[][] { [1, 32, 160, 160], [1, 32, 160, 160] }, 1, DataTypes.UInt8, new(2, 0.25185302f) }, { new long[][] { [1, 64, 80, 80], [1, 64, 80, 80] }, 1, DataTypes.UInt8, new(20, 0.042551044f) }, };
 
-    public static TheoryData<long[][], DataType, QuantParam> CombineQuantizeReshapePositiveData => new() { { new long[][] { [1, 32, 160, 160], [1, 160, 32, 160]}, DataTypes.UInt8, new(2, 0.25185302f) }, { new long[][] { [1, 64, 80, 80], [1, 64, 1, 6400] }, DataTypes.UInt8, new(20, 0.042551044f) }, };
+    public static TheoryData<long[][], DataType, QuantParam> CombineQuantizeReshapePositiveData => new() { { new long[][] { [1, 32, 160, 160], [1, 160, 32, 160] }, DataTypes.UInt8, new(2, 0.25185302f) }, { new long[][] { [1, 64, 80, 80], [1, 64, 1, 6400] }, DataTypes.UInt8, new(20, 0.042551044f) }, };
 
     public static TheoryData<long[][], DataType, QuantParam> CombineQuantizeTransposePositiveData => new()
     {

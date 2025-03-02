@@ -15,10 +15,10 @@ namespace Nncase.Tests.Rules.NeutralTest;
 
 public class UnitTestCombineBinary
 {
-    public static readonly TheoryData<int[], Tensor<float>, Tensor<float>, Tensor<float>> CombineClampBinaryPositiveData2 = new()
+    public static readonly TheoryData<long[], Tensor<float>, Tensor<float>, Tensor<float>> CombineClampBinaryPositiveData2 = new()
     {
         {
-            new[] { 1, 4, 3, 3 },
+            new long[] { 1, 4, 3, 3 },
             Tensor.From(new float[] { 0.23068452f, 0.8913302f, 0.36510944f, -2.4865444f }),
             Tensor.From(new float[] { 0.64266944f, -0.61224914f, -0.61040306f, 0.16890381f }),
             Tensor.From(new float[] { float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity })
@@ -31,7 +31,7 @@ public class UnitTestCombineBinary
         {
             var inputShapes = new object[]
             {
-              new[] { 1, 32, 24, 24 },
+              new long[] { 1, 32, 24, 24 },
             };
             var constTensor = new object[]
             {
@@ -66,7 +66,7 @@ public class UnitTestCombineBinary
 
     [Theory]
     [MemberData(nameof(CombineClampBinaryPositiveData))]
-    public void TestCombineClampAddPositive(int[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
+    public void TestCombineClampAddPositive(long[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
     {
         var (input, rootPre) = GetCombineClampBinaryCase(BinaryOp.Add, inputShape, constTensor, min, max);
 
@@ -93,7 +93,7 @@ public class UnitTestCombineBinary
     [Theory]
     [MemberData(nameof(CombineClampBinaryPositiveData))]
     [MemberData(nameof(CombineClampBinaryPositiveData2))]
-    public void TestCombineClampMulPositive(int[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
+    public void TestCombineClampMulPositive(long[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
     {
         var (input, rootPre) = GetCombineClampBinaryCase(BinaryOp.Mul, inputShape, constTensor, min, max);
 
@@ -119,13 +119,13 @@ public class UnitTestCombineBinary
 
     [Theory]
     [MemberData(nameof(CombineClampBinaryPositiveData))]
-    public void TestCombineClampAddNegative(int[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
+    public void TestCombineClampAddNegative(long[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
     {
         var (input, constInput, rootPre) = GetCombineClampBinaryNegativeCase(BinaryOp.Add, inputShape, constTensor, min, max);
         _ = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
         {
           { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, inputShape).Evaluate() },
-          { constInput, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, constTensor.Shape).Evaluate() },
+          { constInput, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, constTensor.Shape.ToValueArrayExpr()).Evaluate() },
         };
 
         CompilerServices.InferenceType(rootPre);
@@ -143,13 +143,13 @@ public class UnitTestCombineBinary
 
     [Theory]
     [MemberData(nameof(CombineClampBinaryPositiveData))]
-    public void TestCombineClampMulNegative(int[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
+    public void TestCombineClampMulNegative(long[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
     {
         var (input, constInput, rootPre) = GetCombineClampBinaryNegativeCase(BinaryOp.Mul, inputShape, constTensor, min, max);
         _ = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
         {
           { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inputShape).Evaluate() },
-          { constInput, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, constTensor.Shape).Evaluate() },
+          { constInput, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, constTensor.Shape.ToValueArrayExpr()).Evaluate() },
         };
 
         CompilerServices.InferenceType(rootPre);
@@ -165,7 +165,7 @@ public class UnitTestCombineBinary
         Assert.Equal(preHashCode, rootPost.GetHashCode());
     }
 
-    private (Var Input, Expr Root) GetCombineClampBinaryCase(BinaryOp op, int[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
+    private (Var Input, Expr Root) GetCombineClampBinaryCase(BinaryOp op, long[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
     {
         Expr rootPre;
         var input = new Var("input", new TensorType(DataTypes.Float32, inputShape));
@@ -179,7 +179,7 @@ public class UnitTestCombineBinary
         return (input, rootPre);
     }
 
-    private (Var Input, Var ConstInput, Expr Root) GetCombineClampBinaryNegativeCase(BinaryOp op, int[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
+    private (Var Input, Var ConstInput, Expr Root) GetCombineClampBinaryNegativeCase(BinaryOp op, long[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
     {
         Expr rootPre;
         var input = new Var("input", new TensorType(DataTypes.Float32, inputShape));

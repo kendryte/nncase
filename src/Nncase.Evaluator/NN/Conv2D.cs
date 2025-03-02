@@ -17,7 +17,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="Conv2D"/>.
 /// </summary>
-public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICostEvaluator<Conv2D>, IShapeEvaluator<Conv2D>, IMetricEvaluator<Conv2D>
+public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICostEvaluator<Conv2D>, IMetricEvaluator<Conv2D>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Conv2D conv)
@@ -95,17 +95,6 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
             [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(weightType) + CostUtility.GetMemoryAccess(returnType),
             [MetricFactorNames.FLOPs] = (UInt128)(inputShape[0] * weightShape[0] * weightShape[1] * outputShape[2] * outputShape[3] * weightShape[2] * weightShape[3]),
         };
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Conv2D target)
-    {
-        var input = context.GetArgumentShape(target, Conv2D.Input);
-        var weights = context.GetArgumentShape(target, Conv2D.Weights);
-        var pad = context.GetArgument(target, Conv2D.Padding);
-        var stride = context.GetArgument(target, Conv2D.Stride);
-        var dilation = context.GetArgument(target, Conv2D.Dilation);
-        var groups = context.GetArgument(target, Conv2D.Groups);
-        return IR.F.ShapeExpr.Conv2DShape(input, weights, pad, stride, dilation, groups);
     }
 
     private IRType Visit(ITypeInferenceContext context, Conv2D target, TensorType input, TensorType weights)

@@ -30,6 +30,13 @@ namespace Nncase.Tests.ReWriteTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestDataFlowRewrite : RewriteFixtrue
 {
+    public UnitTestDataFlowRewrite()
+    {
+#if DEBUG
+        CompileOptions.DumpFlags = Diagnostics.DumpFlags.Compile;
+#endif
+    }
+
     [Fact]
     public void TestFoldConstCall()
     {

@@ -187,12 +187,12 @@ public static class TensorUtilities
         return strides.Select(x => x.ToExpr()).ToArray();
     }
 
-    public static void SplitStrides(int[] strides, int[] splitAxes, int[] newStrides, int stridesOffset, int[] splitStrides, int splitStridesOffset)
+    public static void SplitStrides(long[] strides, int[] splitAxes, long[] newStrides, long stridesOffset, long[] splitStrides, long splitStridesOffset)
     {
         int newStrideIndex = 0;
         for (int i = 0; i < strides.Length; i++)
         {
-            int stride = strides[i];
+            long stride = strides[i];
             bool isSplit = false;
             for (int j = 0; j < splitAxes.Length; j++)
             {
@@ -228,7 +228,10 @@ public static class TensorUtilities
             return T.Zero;
         }
 
-        Trace.Assert(strides.Length == indices.Length);
+        if (strides.Length != indices.Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(indices));
+        }
 
         T index = T.Zero;
         for (int i = startFromDimension; i < indices.Length; i++)
@@ -265,7 +268,10 @@ public static class TensorUtilities
             return 0L;
         }
 
-        Trace.Assert(strides.Length == indices.Length);
+        if (strides.Length != indices.Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(indices));
+        }
 
         IR.Expr index = 0L;
         for (int i = startFromDimension; i < indices.Length; i++)
@@ -282,7 +288,10 @@ public static class TensorUtilities
     public static void GetIndices(ReadOnlySpan<long> strides, bool reverseStride, long index, long[] indices, int startFromDimension = 0)
     {
         Trace.Assert(reverseStride ? IsAscending(strides) : IsDescending(strides), "Index decomposition requires ordered strides");
-        Trace.Assert(strides.Length == indices.Length);
+        if (strides.Length != indices.Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(indices));
+        }
 
         long remainder = index;
         for (int i = startFromDimension; i < strides.Length; i++)
@@ -302,7 +311,10 @@ public static class TensorUtilities
     public static void GetIndices(ReadOnlySpan<long> strides, bool reverseStride, long index, Span<long> indices, int startFromDimension = 0)
     {
         Trace.Assert(reverseStride ? IsAscending(strides) : IsDescending(strides), "Index decomposition requires ordered strides");
-        Trace.Assert(strides.Length == indices.Length);
+        if (strides.Length != indices.Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(indices));
+        }
 
         long remainder = index;
         for (int i = startFromDimension; i < strides.Length; i++)
@@ -323,7 +335,10 @@ public static class TensorUtilities
     {
         Trace.Assert(index >= 0);
         Trace.Assert(sourceReverseStride ? IsAscending(sourceStrides) : IsDescending(sourceStrides), "Index decomposition requires ordered strides");
-        Trace.Assert(sourceStrides.Length == transformStrides.Length);
+        if (sourceStrides.Length != transformStrides.Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(transformStrides));
+        }
 
         long transformIndex = 0;
         long remainder = index;

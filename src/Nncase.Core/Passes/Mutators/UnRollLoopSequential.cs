@@ -55,11 +55,11 @@ public sealed class UnRollLoopSequential : ExprRewriter
     /// </summary>
     private static IEnumerable<TensorConst> MakeGrid(TIR.For loop)
     {
-        int start = ((TensorConst)loop.Domain.Start).Value.ToScalar<int>();
-        int stop = ((TensorConst)loop.Domain.Stop).Value.ToScalar<int>();
-        int step = ((TensorConst)loop.Domain.Step).Value.ToScalar<int>();
+        long start = ((TensorConst)loop.Domain.Start).Value.ToScalar<long>();
+        long stop = ((TensorConst)loop.Domain.Stop).Value.ToScalar<long>();
+        long step = ((TensorConst)loop.Domain.Step).Value.ToScalar<long>();
 
-        for (int i = start; i < stop; i += step)
+        for (long i = start; i < stop; i += step)
         {
             yield return i;
         }

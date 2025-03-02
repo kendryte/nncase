@@ -102,7 +102,7 @@ public sealed class UnitTestTensorOfT
     {
         var scalar = 1F;
         var a = (Tensor<float>)scalar;
-        Assert.Equal(scalar, a[0]);
+        Assert.Equal(scalar, a[Array.Empty<long>()]);
     }
 
     [Fact]

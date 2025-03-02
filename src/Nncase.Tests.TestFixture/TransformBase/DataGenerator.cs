@@ -17,7 +17,7 @@ public static class DataGenerator
 
     public static int DefaultChannel => 2;
 
-    public static int[] DefaultShape => new[] { 3, 2, 4, 8 };
+    public static long[] DefaultShape => [3, 2, 4, 8];
 
     public static IEnumerable<T> EnumValues<T>()
     {
@@ -26,7 +26,7 @@ public static class DataGenerator
 
     public static Expr DefaultRandom()
     {
-        return DefaultRandom(DataTypes.Float32, new[] { 3, DefaultChannel, 4, 8 });
+        return DefaultRandom(DataTypes.Float32, [3, DefaultChannel, 4, 8]);
     }
 
     public static Expr DefaultRandom(DataType dt)
@@ -34,36 +34,36 @@ public static class DataGenerator
         return DefaultRandom(dt, DefaultShape);
     }
 
-    public static Expr DefaultRandom(int[] shape)
+    public static Expr DefaultRandom(long[] shape)
     {
         return DefaultRandom(DataTypes.Float32, shape);
     }
 
-    public static Expr DefaultRandom(DataType dt, int[] shape)
+    public static Expr DefaultRandom(DataType dt, long[] shape)
     {
         // if (dt.IsIntegral())
         // {
         //     return Testing.Rand(dt, shape);
         // }
         return
-            Random.Normal(DataTypes.Float32, new Shape(shape)).Evaluate().AsTensor().CastTo(dt);
+            Random.Normal(DataTypes.Float32, shape).Evaluate().AsTensor().CastTo(dt);
     }
 
     public static Expr RandomLimitOne()
     {
-        return Sigmoid(Random.Normal(DataTypes.Float32, new Shape(DefaultShape)));
+        return Sigmoid(Random.Normal(DataTypes.Float32, DefaultShape));
     }
 
     public static Expr RandomGNNEScalar()
     {
         return Sigmoid(
-            Random.Normal(DataTypes.Float32, new Shape(1, 1, 1, 1))).Evaluate().AsTensor();
+            Random.Normal(DataTypes.Float32, new long[] { 1, 1, 1, 1 })).Evaluate().AsTensor();
     }
 
     public static Expr RandomScalar()
     {
         return Sigmoid(
-            Random.Normal(DataTypes.Float32, new[] { 1 })).Evaluate().AsTensor();
+            Random.Normal(DataTypes.Float32, new long[] { 1 })).Evaluate().AsTensor();
     }
 
     // nncase format DeQuantizeParam
@@ -75,9 +75,9 @@ public static class DataGenerator
 
     public static Expr DefaultConv()
     {
-        var input = Random.Normal(DataTypes.Float32, new[] { 1, 3, 24, 32 });
-        var weights = Random.Normal(DataTypes.Float32, new[] { 16, 3, 3, 3 }).Evaluate();
-        var bias = Random.Normal(DataTypes.Float32, new[] { 16 }).Evaluate();
+        var input = Random.Normal(DataTypes.Float32, new long[] { 1, 3, 24, 32 });
+        var weights = Random.Normal(DataTypes.Float32, new long[] { 16, 3, 3, 3 }).Evaluate();
+        var bias = Random.Normal(DataTypes.Float32, new long[] { 16 }).Evaluate();
         var stride = Tensor.From(new[] { 1, 1 }, [2]);
         var dilation = Tensor.From(new[] { 1, 1 }, [2]);
         var padding = new[,]

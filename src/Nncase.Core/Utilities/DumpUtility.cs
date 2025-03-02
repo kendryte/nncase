@@ -110,7 +110,7 @@ public static class DumpUtility
         return string.Join(" ", arr);
     }
 
-    public static string SerializeShape(int[] shape)
+    public static string SerializeShape(long[] shape)
     {
         return $"shape:{SerializeByRow(shape)}";
     }

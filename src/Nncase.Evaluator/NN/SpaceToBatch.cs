@@ -19,7 +19,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="SpaceToBatch"/>.
 /// </summary>
-public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<SpaceToBatch>, ICostEvaluator<SpaceToBatch>, IMetricEvaluator<SpaceToBatch>, IShapeEvaluator<SpaceToBatch>
+public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<SpaceToBatch>, ICostEvaluator<SpaceToBatch>, IMetricEvaluator<SpaceToBatch>
 {
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, SpaceToBatch target)
@@ -94,49 +94,6 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
         var blockShape = context.CheckArgumentType<TensorType>(target, SpaceToBatch.BlockShape);
         var paddings = context.CheckArgumentType<TensorType>(target, SpaceToBatch.Paddings);
         return Visit(context, target, input, blockShape, paddings);
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, SpaceToBatch target)
-    {
-        var inShape = context.GetArgumentShape(target, SpaceToBatch.Input);
-        var inputExpr = context.GetArgument(target, SpaceToBatch.Input);
-        inShape = ShapeValueNCHWToNHWC(inputExpr, inShape);
-
-        var blockShape = context.GetArgument(target, SpaceToBatch.BlockShape);
-        var padding = Cast(context.GetArgument(target, SpaceToBatch.Paddings), DataTypes.Int64);
-        var input = context.GetArgument(target, SpaceToBatch.Input);
-        if (blockShape is TensorConst blockConst)
-        {
-            var blockShapeValue = blockConst.Value.ToArray<long>();
-            var m = blockShapeValue.Length;
-            var inRank = input.CheckedShape.Rank;
-
-            var paddedShape = new[] { inShape[0] }
-                .Concat(Enumerable.Range(0, inRank)
-                .Select(i =>
-                {
-                    return inShape[i + 1] + padding[2 * i, 0] + padding[2 * i, 1];
-                }))
-                .ToArray();
-            var outFirst = new[] { paddedShape[0] * IR.F.Tensors.Prod(blockShapeValue) };
-
-            // var inRank = Cast(ShapeOf(inShape)[0], DataTypes.Int32);
-            var outMid = Enumerable.Range(0, m).Select(i =>
-            {
-                return paddedShape[i + 1] / blockShapeValue[i];
-            }).ToArray();
-
-            var remainSize = inRank - 1 - m;
-            var remainShape = ShapeExprUtility.If(remainSize > 0, (inShape, m) => ShapeExprUtility.Slice(inShape, 1 + m, int.MaxValue), (inShape, m) => Array.Empty<long>(), inShape, m);
-            var outLast = remainShape;
-            var outShape = Concat(new IR.Tuple(Stack(new IR.Tuple(outFirst.Concat(outMid).ToArray()), 0), outLast), 0);
-
-            outShape = ShapeValueNHWCToNCHW(inputExpr, outShape);
-
-            return outShape;
-        }
-
-        throw new NotImplementedException();
     }
 
     private static Call ShapeValueNHWCToNCHW(Expr inputExpr, Call outShape)

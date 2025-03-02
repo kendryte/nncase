@@ -429,6 +429,8 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         return (Tensor)_tensorCreateEmptyFunc.MakeGenericMethod(dataType.CLRType).Invoke(null, new object[] { dimensions.ToArray() })!;
     }
 
+    public static Tensor Zero(DataType dataType) => Zeros(dataType, []);
+
     /// <summary>
     /// Return a tensor of given shape and type, filled with ones.
     /// </summary>
@@ -441,6 +443,14 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         var value = (T)Convert.ChangeType(1, typeof(T));
         return Tensor.FromScalar<T>(value, dimensions);
     }
+
+    public static Tensor Ones(DataType dataType, ReadOnlySpan<long> dimensions)
+    {
+        var value = Convert.ChangeType(1, typeof(T));
+        return Tensor.FromScalar(dataType, value);
+    }
+
+    public static Tensor One(DataType dataType) => Ones(dataType, []);
 
     /// <summary>
     /// Cast to typed tensor.

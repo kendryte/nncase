@@ -10,11 +10,6 @@ namespace Nncase.Utilities;
 
 public static class ShapeExprUtility
 {
-    public static Expr BroadcastShape(Expr lhsShape, params Expr[] rhsShape)
-    {
-        return IR.F.ShapeExpr.BroadcastShape(new[] { lhsShape }.Concat(rhsShape).ToArray());
-    }
-
     public static Expr Positive(Expr axis, Expr inShape)
     {
         var rank = new Call(new Rank(), inShape);

@@ -89,7 +89,7 @@ public class UnitTestCombineTranspose : TransformTestBase
         {
             new object[]
             {
-                new long[] { 1, 3, 1, 2 }, new long[] { 0, 3, 1, 2 },
+                new long[] { 1, 3, 1, 2 }, new int[] { 0, 3, 1, 2 },
                 new[,]
                 {
                     { 0, 0 },
@@ -100,7 +100,7 @@ public class UnitTestCombineTranspose : TransformTestBase
             },
             new object[]
             {
-                new long[] { 1, 2, 3, 4 }, new long[] { 0, 2, 3, 1 },
+                new long[] { 1, 2, 3, 4 }, new int[] { 0, 2, 3, 1 },
                 new[,]
                 {
                     { 4, 4 },
@@ -111,7 +111,7 @@ public class UnitTestCombineTranspose : TransformTestBase
             },
             new object[]
             {
-                new long[] { 1, 2, 3, 4 }, new long[] { 0, 3, 1, 2 },
+                new long[] { 1, 2, 3, 4 }, new int[] { 0, 3, 1, 2 },
                 new[,]
                 {
                     { 1, 1 },
@@ -122,7 +122,7 @@ public class UnitTestCombineTranspose : TransformTestBase
             },
             new object[]
             {
-                new long[] { 5, 2, 3, 4 }, new long[] { 3, 0, 1, 2 },
+                new long[] { 5, 2, 3, 4 }, new int[] { 3, 0, 1, 2 },
                 new[,]
                 {
                     { 2, 2 },
@@ -133,7 +133,7 @@ public class UnitTestCombineTranspose : TransformTestBase
             },
             new object[]
             {
-                new long[] { 1, 2, 3, 4 }, new long[] { 0, 3, 1, 2 },
+                new long[] { 1, 2, 3, 4 }, new int[] { 0, 3, 1, 2 },
                 new[,]
                 {
                     { 1, 1 },
@@ -162,7 +162,7 @@ public class UnitTestCombineTranspose : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestCombineTransposeConcatPositiveData))]
-    public void TestCombineTransposeConcatPositive(int[] inShape, int[] perm, int axis, int concatNum)
+    public void TestCombineTransposeConcatPositive(long[] inShape, int[] perm, int axis, int concatNum)
     {
         var inputList = new List<Var>();
         for (int i = 0; i < concatNum; i++)
@@ -188,7 +188,7 @@ public class UnitTestCombineTranspose : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestCombineTransposeConcatNegativeData))]
-    public void TestCombineTransposeConcatNegative(int[] inShape, int[][] perm, int axis, int concatNum, bool lastInputIsTp)
+    public void TestCombineTransposeConcatNegative(long[] inShape, int[][] perm, int axis, int concatNum, bool lastInputIsTp)
     {
         var inputList = new List<Call>();
         foreach (var i in Enumerable.Range(0, concatNum - 1))
@@ -239,7 +239,7 @@ public class UnitTestCombineTranspose : TransformTestBase
 
     [Theory]
     [MemberData(nameof(CombineBinaryTransposePositiveData))]
-    public void TestCombineBinaryTransposePositive(int[] lShape, int[] rShape, int[] perm)
+    public void TestCombineBinaryTransposePositive(long[] lShape, long[] rShape, int[] perm)
     {
         var a = new Var("a", new TensorType(DataTypes.Float32, lShape));
         var b = new Var("b", new TensorType(DataTypes.Float32, rShape));

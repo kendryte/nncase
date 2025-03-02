@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
@@ -44,10 +45,10 @@ public sealed partial class FoldHardSwish1 : RewriteRule<CallPattern>
     private Expr? GetReplace(Expr input, Call addCall, Tensor<float> divConst, Tensor<float> addConst, Tensor<float> clampMin, Tensor<float> clampMax)
     {
         if (addCall[Binary.Lhs] == input
-            && Math.Abs(divConst[0] - 6f) < 1e-6f
-            && Math.Abs(addConst[0] - 3f) < 1e-6f
-            && Math.Abs(clampMin[0]) < 1e-6f
-            && Math.Abs(clampMax[0] - 6f) < 1e-6)
+            && Math.Abs(divConst.Single() - 6f) < 1e-6f
+            && Math.Abs(addConst.Single() - 3f) < 1e-6f
+            && Math.Abs(clampMin.Single()) < 1e-6f
+            && Math.Abs(clampMax.Single() - 6f) < 1e-6)
         {
             return HardSwish(input);
         }
@@ -84,8 +85,8 @@ public sealed partial class FoldHardSwish2 : RewriteRule<CallPattern>
     private Expr? GetReplace(Expr input, Call addCall, Tensor<float> mul1_6Const, Tensor<float> addConst)
     {
         if (addCall[Binary.Lhs] == input
-            && Math.Abs(addConst[0] - 3f) < 1e-6f
-            && Math.Abs(mul1_6Const[0] - 0.1666666716337204f) < 1e-6f)
+            && Math.Abs(addConst.Single() - 3f) < 1e-6f
+            && Math.Abs(mul1_6Const.Single() - 0.1666666716337204f) < 1e-6f)
         {
             return HardSwish(input);
         }
@@ -124,10 +125,10 @@ public sealed partial class FoldHardSwish3 : RewriteRule<CallPattern>
     private Expr? GetReplace(Expr input, Call addCall, Tensor<float> div6Const, Tensor<float> addConst, Tensor<float> clampMin, Tensor<float> clampMax)
     {
         if (addCall[Binary.Lhs] == input
-            && Math.Abs(addConst[0] - 3f) < 1e-6f
-            && Math.Abs(div6Const[0] - 6f) < 1e-6f
-            && Math.Abs(clampMin[0]) < 1e-6f
-            && Math.Abs(clampMax[0] - 6f) < 1e-6f)
+            && Math.Abs(addConst.Single() - 3f) < 1e-6f
+            && Math.Abs(div6Const.Single() - 6f) < 1e-6f
+            && Math.Abs(clampMin.Single()) < 1e-6f
+            && Math.Abs(clampMax.Single() - 6f) < 1e-6f)
         {
             return HardSwish(input);
         }

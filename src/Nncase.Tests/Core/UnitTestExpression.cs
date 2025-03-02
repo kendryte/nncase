@@ -557,7 +557,7 @@ public class UnitTestExpression
         {
             if (expr is TensorConst tc && tc.Value.Shape.IsScalar)
             {
-                return Expression.Constant(tc.Value[0], tc.Value.ElementType.CLRType);
+                return Expression.Constant(tc.Value[Array.Empty<long>()], tc.Value.ElementType.CLRType);
             }
 
             throw new ArgumentOutOfRangeException(nameof(expr));

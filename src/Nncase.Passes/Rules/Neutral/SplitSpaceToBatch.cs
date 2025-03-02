@@ -106,7 +106,7 @@ public partial class SplitBatchToSpace : RewriteRule<Pattern>
         var input0 = NCHWToNHWC(input);
         var blockLen = (int)blockShape.CheckedShape.Size;
         var xLen = input0.CheckedShape.Rank;
-        var xShape = Cast(ShapeOf(input0), DataTypes.Int32);
+        var xShape = ShapeOf(input0);
         var spatial = ShapeExprUtility.Slice(xShape, 1, blockLen + 1);
         var depth = ShapeExprUtility.Slice(xShape, blockLen + 1, xLen);
         var targetSpatial = spatial * blockShape;
@@ -114,7 +114,7 @@ public partial class SplitBatchToSpace : RewriteRule<Pattern>
         var ccat1 = Concat(new IR.Tuple(spatial, blockShape), 0);
         var re1 = Reshape(ccat1, new[] { ccat1.CheckedShape[0].FixedValue / blockLen, blockLen });
         var interLeave = Reshape(Transpose(re1, new long[] { 1, 0 }), new long[] { -1 });
-        var shape1 = Concat(new IR.Tuple(new int[] { -1 }, interLeave, depth), 0);
+        var shape1 = Concat(new IR.Tuple(new long[] { -1 }, interLeave, depth), 0);
 
         var g1 = BoostRange(2, (2 * blockLen) + 1, 2);
         var g2 = BoostRange(1, (2 * blockLen) + 1, 2);

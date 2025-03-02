@@ -18,7 +18,7 @@ namespace Nncase.Tests.CoreTest;
 
 public class UnitTypeInferBase : TestClassBase
 {
-    public void CheckInferShape(Expr expr, params int[] shapeDimensions)
+    public void CheckInferShape(Expr expr, params long[] shapeDimensions)
     {
         CheckInferShape(expr, new Shape(shapeDimensions));
     }
@@ -33,6 +33,11 @@ public class UnitTypeInferBase : TestClassBase
     {
         Assert.True(CompilerServices.InferenceType(expr));
         Assert.Equal(new TensorType(dt, shape), expr.CheckedType);
+    }
+
+    public void CheckInferShape(Expr expr, params Dimension[] shapeDimensions)
+    {
+        CheckInferShape(expr, new Shape(shapeDimensions));
     }
 
     public Var Var(Shape shape, DataType dt) => new Var(new TensorType(dt, shape));
@@ -116,7 +121,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         var end = new[] { 3 };
         var stride = new[] { 1 };
         var axes = new[] { 0 };
-        var slice = Slice(new Shape(1, 7, 7, 768), begin, end, axes, stride);
+        var slice = Slice(new Shape(1, 7, 7, 768).ToValueArrayExpr(), begin, end, axes, stride);
         CompilerServices.InferenceType(slice);
         var post = slice.Evaluate();
         Assert.Equal(new Shape(2), ((TensorType)post.Type).Shape);
@@ -333,12 +338,12 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
         var dimC = (Dimension)dimVar;
         var a = new Var(new TensorType(DataTypes.Float32, new Shape(1, dimVar, 128)));
         var constShape = new Shape(1, dimC, 2, 64);
-        var reshape = Reshape(a, constShape);
+        var reshape = Reshape(a, constShape.ToValueArrayExpr());
         var result = reshape.CheckedType;
         Assert.Equal(new TensorType(DataTypes.Float32, new Shape(1, dimVar, 2, 64)), result);
 
         var b = new Var(new TensorType(DataTypes.Float32, new Shape(1, dimVar, 14, 64)));
-        var reshapeb = Reshape(b, new Shape(1, dimC, -1));
+        var reshapeb = Reshape(b, new Shape(1, dimC, -1).ToValueArrayExpr());
         var resultb = reshapeb.CheckedType;
         Assert.Equal(new TensorType(DataTypes.Float32, new Shape(1, dimVar, 896)), resultb);
     }
@@ -357,10 +362,5 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
         var call = (Call)((TensorType)result).Shape[1].Value;
         Assert.Equal(seq_len, call.Arguments[0]);
         Assert.Equal(hist_len, call.Arguments[1]);
-    }
-
-    private void CheckInferShape(Expr expr, params Dimension[] shapeDimensions)
-    {
-        CheckInferShape(expr, new Shape(shapeDimensions));
     }
 }

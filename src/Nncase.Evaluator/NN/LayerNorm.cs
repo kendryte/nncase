@@ -14,13 +14,13 @@ namespace Nncase.Evaluator.NN;
 /// Evaluator for <see cref="LayerNorm"/>.
 /// </summary>
 public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNorm>, ICostEvaluator<LayerNorm>,
-    IShapeEvaluator<LayerNorm>, IMetricEvaluator<LayerNorm>
+    IMetricEvaluator<LayerNorm>
 {
 #if true
-    public static float[] LayerNormImpl(int[] inShape, Span<float> input, Span<float> scale, Span<float> bias, int axis, float epsilon, bool useMean = true)
+    public static float[] LayerNormImpl(long[] inShape, Span<float> input, Span<float> scale, Span<float> bias, int axis, float epsilon, bool useMean = true)
     {
-        int outerSize = 1;
-        int innerSize = 1;
+        long outerSize = 1;
+        long innerSize = 1;
         float[] outputArray = new float[input.Length];
         if (axis < 0)
         {
@@ -44,7 +44,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
             {
                 for (int i = 0; i < innerSize; i++)
                 {
-                    mean1 += input[(i + (batch * innerSize)) % input.Length];
+                    mean1 += input[checked((int)(i + (batch * innerSize)) % input.Length)];
                 }
 
                 mean1 /= innerSize;
@@ -53,7 +53,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
             float[] sub = new float[innerSize];
             for (int i = 0; i < innerSize; i++)
             {
-                sub[i] = input[(i + (batch * innerSize)) % input.Length] - mean1;
+                sub[i] = input[checked((int)(i + (batch * innerSize)) % input.Length)] - mean1;
             }
 
             float[] pow = new float[innerSize];
@@ -99,7 +99,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
 
         // return Value.FromTensor(OrtKI.LayerNormalization(input, scale, bias, layerNorm.Axis, layerNorm.Epsilon, 1));
         var shape = input.Shape.ToValueArray();
-        var output = LayerNormImpl(shape.ToInts(), input.Buffer.Span, scale.Buffer.Span, bias.Buffer.Span, layerNorm.Axis, layerNorm.Epsilon, layerNorm.UseMean);
+        var output = LayerNormImpl(shape, input.Buffer.Span, scale.Buffer.Span, bias.Buffer.Span, layerNorm.Axis, layerNorm.Epsilon, layerNorm.UseMean);
         return Value.FromTensor(Tensor.From(output, shape));
     }
 
@@ -165,8 +165,6 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
             [MetricFactorNames.Parallel] = 4,
         };
     }
-
-    public Expr Visit(IShapeEvaluateContext context, LayerNorm target) => context.GetArgumentShape(target, LayerNorm.Input);
 
     private IRType Visit(TensorType input)
     {

@@ -83,7 +83,7 @@ public static class Testing
     /// <summary>
     /// create the rand value by gived datatype.
     /// </summary>
-    public static Tensor<T> Rand<T>(params int[] shape)
+    public static Tensor<T> Rand<T>(params long[] shape)
         where T : unmanaged, IEquatable<T>
     {
         return IR.F.Random.Normal(DataType.FromType<T>(), 0, 1, 1, shape).Evaluate().AsTensor().Cast<T>();
@@ -92,7 +92,7 @@ public static class Testing
     /// <summary>
     /// create the seq value by gived datatype.
     /// </summary>
-    public static Tensor Seq(DataType dataType, params int[] shape)
+    public static Tensor Seq(DataType dataType, params long[] shape)
     {
         return (Tensor)typeof(Testing).GetMethod("Seq", new[] { typeof(int[]) })!.MakeGenericMethod(dataType.CLRType).Invoke(null, new object[] { shape })!;
     }

@@ -15,7 +15,7 @@ using Xunit;
 
 namespace Nncase.Tests.AffineTest;
 
-[Collection(nameof(TargetTest.NotThreadSafeResourceCollection))]
+[Collection(nameof(NotThreadSafeResourceCollection))]
 [TestFixture.AutoSetupTestMethod(InitSession = true)]
 public sealed class UnitTestTileGraph : TestClassBase
 {

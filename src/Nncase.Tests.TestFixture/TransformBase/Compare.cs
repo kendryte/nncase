@@ -19,7 +19,7 @@ public static class TensorUtil
         return GetChannelAxis(shape.ToValueArray());
     }
 
-    public static int GetChannelAxis(int[] shape)
+    public static int GetChannelAxis(long[] shape)
     {
         return Math.Max(0, 1 - (4 - shape.Length));
     }

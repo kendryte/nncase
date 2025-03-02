@@ -19,7 +19,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="MatMul"/>.
 /// </summary>
-public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICostEvaluator<MatMul>, IShapeEvaluator<MatMul>, IMetricEvaluator<MatMul>
+public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICostEvaluator<MatMul>, IMetricEvaluator<MatMul>
 {
     public static IRType VisitDistributedType(DistributedType a, DistributedType b, bool packingK = false, DimInfo? dimInfo = null)
     {
@@ -305,13 +305,6 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             [MetricFactorNames.FLOPs] = m * n * ((2 * k) - 1),
             [MetricFactorNames.Parallel] = 4,
         };
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, MatMul target)
-    {
-        var lhs = context.GetArgumentShape(target, MatMul.Lhs);
-        var rhs = context.GetArgumentShape(target, MatMul.Rhs);
-        return Cast(IR.F.ShapeExpr.MatMulShape(lhs, rhs), DataTypes.Int32);
     }
 
     public record DimInfo(int Lm, int Lk, int Rk, int Rn)

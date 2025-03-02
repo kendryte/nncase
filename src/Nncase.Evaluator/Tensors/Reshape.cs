@@ -21,7 +21,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Range"/>.
 /// </summary>
-public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, ICostEvaluator<Reshape>, IShapeEvaluator<Reshape>, IMetricEvaluator<Reshape>
+public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, ICostEvaluator<Reshape>, IMetricEvaluator<Reshape>
 {
     public static IRType VisitDistributedType(DistributedType inType, Shape newSymbolShape)
     {
@@ -215,13 +215,6 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         };
     }
 
-    public Expr Visit(IShapeEvaluateContext context, Reshape target)
-    {
-        var inShape = context.GetArgumentShape(target, Reshape.Input);
-        var shape = context.GetArgument(target, Reshape.Shape);
-        return IR.F.ShapeExpr.ReshapeShape(inShape, shape);
-    }
-
     public Metric Visit(IMetricEvaluateContext context, Reshape target)
     {
         return Metric.Zero;
@@ -238,10 +231,21 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
 
         var rank = (int)shapeType.Shape[0].FixedValue;
         var shapeDims = new Shape(Enumerable.Range(0, rank).Select(i => shape[i]).ToArray());
+        var minus1DimCount = shapeDims.Count(x => x.IsFixed && x.FixedValue == -1);
         var outputShape = new Dimension[rank];
 
-        // todo use egraph simplify.
-        var minus1Dim = FixedAndDynamicDimension.Abs(input.Shape.ProdFixedAndDynamic() / shapeDims.ProdFixedAndDynamic());
+        if (minus1DimCount > 1)
+        {
+            return new InvalidType($"More than one -1 in the shape is not supported");
+        }
+
+        var minus1DimValue = FixedAndDynamicDimension.TryDivExactly(input.Shape.ProdFixedAndDynamic(), shapeDims.ProdFixedAndDynamic());
+        if (!minus1DimValue.HasValue || (minus1DimValue.Value.Dynamic is null && minus1DimValue.Value.Fixed > 1))
+        {
+            return new InvalidType($"Cannot reshape {input.Shape} to {shapeDims}");
+        }
+
+        var minus1Dim = FixedAndDynamicDimension.Abs(minus1DimValue.Value);
         for (var i = 0; i < rank; i++)
         {
             var shapeDim = shapeDims[i];

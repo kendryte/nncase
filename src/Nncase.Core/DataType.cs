@@ -156,6 +156,12 @@ public abstract record DataType
             throw new ArgumentException("Unsupported CLR type.");
         }
 
+        // Workaround for creating a shape.
+        if (t == typeof(long))
+        {
+            return new Int64Type();
+        }
+
         return CompilerServices.DataTypeService.GetDataTypeFromType(t);
     }
 

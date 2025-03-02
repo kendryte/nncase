@@ -14,7 +14,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Range"/>.
 /// </summary>
-public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEvaluator<Range>, IMetricEvaluator<Range>, IShapeEvaluator<Range>
+public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEvaluator<Range>, IMetricEvaluator<Range>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Range range)
@@ -31,43 +31,30 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEv
         var begin = context.GetArgument(target, Range.Begin);
         var end = context.GetArgument(target, Range.End);
         var step = context.GetArgument(target, Range.Step);
-        if (begin is TensorConst beginValue
-             && end is TensorConst endValue
-             && step is TensorConst stepValue)
+        var dType = begin.CheckedDataType;
+        if (!(begin.CheckedDataType == end.CheckedDataType &&
+              end.CheckedDataType == step.CheckedDataType))
         {
-            var dType = begin.CheckedDataType;
-            if (!(begin.CheckedDataType == end.CheckedDataType &&
-                  end.CheckedDataType == step.CheckedDataType))
-            {
-                return new InvalidType($"Range Begin End Step must be same type, " +
-                                       $"but get begin:{begin.CheckedDataType}," +
-                                       $"end:{end.CheckedDataType}," +
-                                       $"step:{step.CheckedDataType}");
-            }
+            return new InvalidType($"Range Begin End Step must be same type, " +
+                                   $"but get begin:{begin.CheckedDataType}," +
+                                   $"end:{end.CheckedDataType}," +
+                                   $"step:{step.CheckedDataType}");
+        }
 
-            return new TensorType(
-                dType,
-                new Shape((beginValue.Value.ToScalar<int>() + endValue.Value.ToScalar<int>()) /
-                          stepValue.Value.ToScalar<int>()));
+        if (!begin.CheckedShape.IsScalar)
+        {
+            return new InvalidType($"Range Begin must be scalar, but get {begin.CheckedShape}");
+        }
+
+        if (begin is TensorConst beginConst && end is TensorConst endConst && step is TensorConst stepConst)
+        {
+            var dim = (long)MathF.Ceiling(beginConst.Value.ToScalar<float>() + endConst.Value.ToScalar<float>()) / stepConst.Value.ToScalar<float>();
+            return new TensorType(dType, new Shape(dim));
         }
         else
         {
-            DataType dt;
-            if (begin.CheckedType is TensorType beginCheckedType)
-            {
-                dt = beginCheckedType.DType;
-            }
-            else if (end.CheckedType is TensorType endCheckedType)
-            {
-                dt = endCheckedType.DType;
-            }
-            else
-            {
-                return new InvalidType("DataType is unknown");
-            }
-
-            // return new TensorType(dt, new Shape(Dimension.Unknown));
-            throw new NotImplementedException();
+            var dim = IR.F.Tensors.Cast(IR.F.Math.CeilDiv(begin + end, step), DataTypes.Int64);
+            return new TensorType(dType, new Shape(dim));
         }
     }
 
@@ -90,13 +77,5 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEv
         {
             [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(ret),
         };
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Range target)
-    {
-        var begin = context.GetArgument(target, Range.Begin);
-        var end = context.GetArgument(target, Range.End);
-        var step = context.GetArgument(target, Range.Step);
-        return IR.F.Tensors.Cast(StackOne((end - begin) / step), DataTypes.Int64);
     }
 }

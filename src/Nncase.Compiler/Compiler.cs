@@ -23,7 +23,6 @@ using Nncase.Passes.Rules.ShapeExpr;
 using Nncase.Passes.Rules.WithMarker;
 using Nncase.Passes.Transforms;
 using Nncase.Quantization;
-using static Nncase.Passes.Rules.ShapeBucket.ShapeBucketRegister;
 using CombinePadTranspose = Nncase.Passes.Rules.WithMarker.CombinePadTranspose;
 using CombineReshapePad = Nncase.Passes.Rules.Neutral.CombineReshapePad;
 using FoldConstCall = Nncase.Passes.Rules.Neutral.FoldConstCall;
@@ -258,54 +257,6 @@ internal class Compiler : ICompiler
         // });
     }
 
-    public void RegisterShapeBucket(IPassManager p)
-    {
-        var options = _compileSession.CompileOptions.ShapeBucketOptions;
-        if (!options.Enable)
-        {
-            return;
-        }
-
-        var singleVar = options.VarMap.Values.SelectMany(x => x).OfType<Var>().ToHashSet().Count <= 1;
-        CheckShapeBucketOptions(options);
-
-        if (IsLLMMode(options))
-        {
-            p.AddWithName<SplitLLMStage>("SplitLLMStage");
-        }
-        else if (HasNotBucketOp(_module!.Entry!) || !singleVar)
-        {
-            ToFusion(p);
-            MergeOp(p, true);
-            LostToFusion(p, singleVar);
-            MergeOp(p, true);
-            ClearMarker(p);
-            MergeFusion(p, singleVar, true);
-            Rebuild(p, singleVar);
-            Bucket(p);
-            Simplify(p);
-        }
-        else
-        {
-            p.AddWithName<FullBucket>("FullBucket");
-        }
-
-        p.AddWithName<AddFunctionToModule>("AddIfToModule");
-
-        // 1. Optimize if
-        // 2. Optimize prefill/decode
-        for (int i = 0; i < 2; i++)
-        {
-            p.AddWithName<DataflowPass>("RemoveUnusedVars").Configure(c =>
-            {
-                c.Add<RemoveUnusedVarsByCall>();
-                c.Add<RemoveUnusedVarsByIf>();
-            });
-            p.AddWithName<AddFunctionToModule>("AddNewFunctionToModule");
-            p.AddWithName<RemoveUnusedFunctions>("RemoveUnusedFunctions");
-        }
-    }
-
     public void ClearFixShape(IPassManager p)
     {
         p.AddWithName<DataflowPass>("ClearUnused").Configure(c =>
@@ -322,7 +273,6 @@ internal class Compiler : ICompiler
         await RunPassAsync(p => RegisterTargetIndependQuantPass(p), "TargetIndependentQuantPass", progress, token);
         if (_compileSession.CompileOptions.ShapeBucketOptions.Enable)
         {
-            await RunPassAsync(p => RegisterShapeBucket(p), "ShapeBucket", progress, token);
             await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass", progress, token);
         }
 

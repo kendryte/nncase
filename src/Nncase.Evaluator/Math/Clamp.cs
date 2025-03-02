@@ -15,7 +15,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Clamp"/>.
 /// </summary>
-public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEvaluator<Clamp>, IShapeEvaluator<Clamp>, IMetricEvaluator<Clamp>
+public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEvaluator<Clamp>, IMetricEvaluator<Clamp>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Clamp clamp)
@@ -56,8 +56,6 @@ public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEv
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, 2),
         };
     }
-
-    public Expr Visit(IShapeEvaluateContext context, Clamp target) => context.GetArgumentShape(target, Clamp.Input);
 
     public Metric Visit(IMetricEvaluateContext context, Clamp target)
     {

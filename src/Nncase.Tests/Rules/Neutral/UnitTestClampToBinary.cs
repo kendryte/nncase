@@ -22,14 +22,14 @@ public class UnitTestClampToBinary : TransformTestBase
     public static IEnumerable<object[]> ClampToBinaryPositiveData =>
         new[]
         {
-            new object[] { new[] { 1, 32, 24, 24 }, new[] { float.MinValue }, new[] { float.MaxValue }, },
-            new object[] { new[] { 1, 32, 24, 24 }, new[] { -1.0f }, new[] { 1.0f }, },
-            new object[] { new[] { 1, 32, 24, 24 }, new[] { float.MinValue }, new[] { 1.0f }, },
+            new object[] { new long[] { 1, 32, 24, 24 }, new[] { float.MinValue }, new[] { float.MaxValue }, },
+            new object[] { new long[] { 1, 32, 24, 24 }, new[] { -1.0f }, new[] { 1.0f }, },
+            new object[] { new long[] { 1, 32, 24, 24 }, new[] { float.MinValue }, new[] { 1.0f }, },
         };
 
     [Theory]
     [MemberData(nameof(ClampToBinaryPositiveData))]
-    public void TestCombineClampPositive(int[] inputShape, float[] min, float[] max)
+    public void TestCombineClampPositive(long[] inputShape, float[] min, float[] max)
     {
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, inputShape);
         Expr rootPre;

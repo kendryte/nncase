@@ -25,7 +25,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Slice"/>.
 /// </summary>
-public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEvaluator<Slice>, IShapeEvaluator<Slice>, IMetricEvaluator<Slice>
+public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEvaluator<Slice>, IMetricEvaluator<Slice>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Slice sl)
@@ -75,43 +75,6 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         {
             [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) * 2,
         };
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Slice target)
-    {
-        var inShape = context.GetArgumentShape(target, Slice.Input);
-
-        // avoid i64 when slice created by tf or user
-        var begins = Cast(context.GetArgument(target, Slice.Begins), DataTypes.Int64);
-        var ends = Cast(context.GetArgument(target, Slice.Ends), DataTypes.Int64);
-        var strides = Cast(context.GetArgument(target, Slice.Strides), DataTypes.Int64);
-        var axes = context.GetArgument(target, Slice.Axes);
-        var size = context.GetArgument(target, Slice.Input).CheckedShape.Rank;
-
-        Expr Translate(Expr x, Expr dim) => ShapeExprUtility.If(x < 0, (x, dim) => dim + x, (x, dim) => Clamp(x, 0, dim), x, dim);
-
-        var axesValue = ((TensorConst)axes).Value.ToArray<int>();
-        int j = 0;
-        var outDims = Enumerable.Range(0, size).Select(i =>
-        {
-            var dim = Cast(inShape[i], DataTypes.Int32);
-            if (!axesValue.Contains(i))
-            {
-                return dim;
-            }
-
-            // avoid: (int)long.MaxValue = -1
-            Expr begin = Cast(Clamp(begins[j], (long)int.MinValue, (long)int.MaxValue), DataTypes.Int32);
-            Expr end = Cast(Clamp(ends[j], (long)int.MinValue, (long)int.MaxValue), DataTypes.Int32);
-            var stride = Cast(Clamp(strides[j], (long)int.MinValue, (long)int.MaxValue), DataTypes.Int32);
-            var strideIsNeg = stride < 0;
-            begin = ShapeExprUtility.If(strideIsNeg, (begin, dim) => Clamp(begin, 0, dim - 1), (begin, dim) => Translate(begin, dim), begin, dim);
-            end = ShapeExprUtility.If(strideIsNeg, (end, dim) => Clamp(end, -1, dim), (end, dim) => Translate(end, dim), end, dim);
-            j++;
-            return Ceil(Abs(end - begin) / Abs(stride));
-        }).ToArray();
-
-        return Cast(Stack(new IR.Tuple(outDims), 0), DataTypes.Int64);
     }
 
     /// <param name="axes">Axes.</param>

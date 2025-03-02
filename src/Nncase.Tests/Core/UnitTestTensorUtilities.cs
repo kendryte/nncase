@@ -15,32 +15,32 @@ public sealed class UnitTestTensorUtilities
     public static unsafe IEnumerable<object[]> TestGetIndexOverload1Data =>
         new[]
         {
-            new object[] { 23, new int[] { 24, 12, 4, 1 }, new int[] { 0, 1, 2, 3 }, 0 },
-            [23, new int[] { 24, 12, 4, 1 }, new int[] { 0, 1, 2, 3 }, 1],
-            [11, new int[] { 24, 12, 4, 1 }, new int[] { 0, 1, 2, 3 }, 2],
-            [3, new int[] { 24, 12, 4, 1 }, new int[] { 0, 1, 2, 3 }, 3],
+            new object[] { 23, new long[] { 24, 12, 4, 1 }, new long[] { 0, 1, 2, 3 }, 0 },
+            [23, new long[] { 24, 12, 4, 1 }, new long[] { 0, 1, 2, 3 }, 1],
+            [11, new long[] { 24, 12, 4, 1 }, new long[] { 0, 1, 2, 3 }, 2],
+            [3, new long[] { 24, 12, 4, 1 }, new long[] { 0, 1, 2, 3 }, 3],
         };
 
     public static unsafe IEnumerable<object[]> TestGetIndexOverload2Data =>
         new[]
         {
-            new object[] { 23, new Expr[] { 24, 12, 4, 1 }, new Expr[] { 0, 1, 2, 3 }, 0 },
-            [23, new Expr[] { 24, 12, 4, 1 }, new Expr[] { 0, 1, 2, 3 }, 1],
-            [11, new Expr[] { 24, 12, 4, 1 }, new Expr[] { 0, 1, 2, 3 }, 2],
-            [3, new Expr[] { 24, 12, 4, 1 }, new Expr[] { 0, 1, 2, 3 }, 3],
+            new object[] { 23, new Expr[] { 24L, 12L, 4L, 1L }, new Expr[] { 0L, 1L, 2L, 3L }, 0 },
+            [23, new Expr[] { 24L, 12L, 4L, 1L }, new Expr[] { 0L, 1L, 2L, 3L }, 1],
+            [11, new Expr[] { 24L, 12L, 4L, 1L }, new Expr[] { 0L, 1L, 2L, 3L }, 2],
+            [3, new Expr[] { 24L, 12L, 4L, 1L }, new Expr[] { 0L, 1L, 2L, 3L }, 3],
         };
 
     public static unsafe IEnumerable<object[]> TestSplitStridesData =>
         new[]
         {
-            new object[] { new int[] { 24, 12, 4, 1 }, Array.Empty<int>(), new int[] { 24, 12, 4, 1 }, Array.Empty<int>(), new int[4], 0, Array.Empty<int>(), 0 },
-            [new int[] { 12, 4, 1 }, new int[] { 24 }, new int[] { 24, 12, 4, 1 }, new int[] { 0 }, new int[3], 0, new int[1], 0],
-            [new int[] { 24, 4, 1 }, new int[] { 12 }, new int[] { 24, 12, 4, 1 }, new int[] { 1 }, new int[3], 0, new int[1], 0],
-            [new int[] { 24, 12, 1 }, new int[] { 4 }, new int[] { 24, 12, 4, 1 }, new int[] { 2 }, new int[3], 0, new int[1], 0],
-            [new int[] { 24, 12, 4 }, new int[] { 1 }, new int[] { 24, 12, 4, 1 }, new int[] { 3 }, new int[3], 0, new int[1], 0],
-            [new int[] { 4, 1, }, new int[] { 24, 12 }, new int[] { 24, 12, 4, 1 }, new int[] { 0, 1 }, new int[2], 0, new int[2], 0],
-            [new int[] { 12, 1 }, new int[] { 24, 4 }, new int[] { 24, 12, 4, 1 }, new int[] { 0, 2 }, new int[2], 0, new int[2], 0],
-            [Array.Empty<int>(), new int[] { 24, 12, 4, 1 }, new int[] { 24, 12, 4, 1 }, new int[] { 0, 1, 2, 3 }, Array.Empty<int>(), 0, new int[4], 0],
+            new object[] { new long[] { 24, 12, 4, 1 }, Array.Empty<long>(), new long[] { 24, 12, 4, 1 }, Array.Empty<int>(), new long[4], 0, Array.Empty<long>(), 0L },
+            [new long[] { 12, 4, 1 }, new long[] { 24 }, new long[] { 24, 12, 4, 1 }, new int[] { 0 }, new long[3], 0, new long[1], 0L],
+            [new long[] { 24, 4, 1 }, new long[] { 12 }, new long[] { 24, 12, 4, 1 }, new int[] { 1 }, new long[3], 0, new long[1], 0L],
+            [new long[] { 24, 12, 1 }, new long[] { 4 }, new long[] { 24, 12, 4, 1 }, new int[] { 2 }, new long[3], 0, new long[1], 0L],
+            [new long[] { 24, 12, 4 }, new long[] { 1 }, new long[] { 24, 12, 4, 1 }, new int[] { 3 }, new long[3], 0, new long[1], 0L],
+            [new long[] { 4, 1, }, new long[] { 24, 12 }, new long[] { 24, 12, 4, 1 }, new int[] { 0, 1 }, new long[2], 0, new long[2], 0L],
+            [new long[] { 12, 1 }, new long[] { 24, 4 }, new long[] { 24, 12, 4, 1 }, new int[] { 0, 2 }, new long[2], 0, new long[2], 0L],
+            [Array.Empty<long>(), new long[] { 24, 12, 4, 1 }, new long[] { 24, 12, 4, 1 }, new int[] { 0, 1, 2, 3 }, Array.Empty<long>(), 0, new long[4], 0L],
         };
 
     public static unsafe IEnumerable<object[]> TestTransformIndexByStridesData =>
@@ -126,7 +126,7 @@ public sealed class UnitTestTensorUtilities
         Assert.Equal(a.Aggregate(1L, (x, y) => x * y), TensorUtilities.GetProduct(a));
 
         var b = new int[] { 1, -1, 16, 16 };
-        Assert.Throws<ArgumentOutOfRangeException>(() => TensorUtilities.GetProduct(b));
+        Assert.Equal(b.Aggregate(1L, (x, y) => x * y), TensorUtilities.GetProduct(b));
     }
 
     // IR.Expr GetProduct(IEnumerable<IR.Expr> dimensions, int startIndex = 0)
@@ -230,7 +230,7 @@ public sealed class UnitTestTensorUtilities
 
     [Theory]
     [MemberData(nameof(TestSplitStridesData))]
-    public void TestSplitStrides(int[] expectNewStrides, int[] expectSplitStrides, int[] strides, int[] splitAxes, int[] newStrides, int stridesOffset, int[] splitStrides, int splitStridesOffset)
+    public void TestSplitStrides(long[] expectNewStrides, long[] expectSplitStrides, long[] strides, int[] splitAxes, long[] newStrides, long stridesOffset, long[] splitStrides, long splitStridesOffset)
     {
         TensorUtilities.SplitStrides(strides, splitAxes, newStrides, stridesOffset, splitStrides, splitStridesOffset);
         Assert.Equal(expectNewStrides, newStrides);
@@ -243,7 +243,7 @@ public sealed class UnitTestTensorUtilities
     {
         // stride is empty
         var stride1 = Array.Empty<int>();
-        Assert.Equal(0, TensorUtilities.GetIndex(stride1, [0]));
+        Assert.Equal(0, TensorUtilities.GetIndex(stride1, []));
 
         // exception
         Assert.Throws<ArgumentOutOfRangeException>(() => TensorUtilities.GetIndex(stride1, [0, 1]));
@@ -252,7 +252,7 @@ public sealed class UnitTestTensorUtilities
 
     [Theory]
     [MemberData(nameof(TestGetIndexOverload1Data))]
-    public void TestGetIndexOverload1(int expect, int[] strides, int[] indices, int startFromDimension)
+    public void TestGetIndexOverload1(long expect, long[] strides, long[] indices, int startFromDimension)
     {
         Assert.Equal(expect, TensorUtilities.GetIndex(strides, indices, startFromDimension));
     }
@@ -263,7 +263,7 @@ public sealed class UnitTestTensorUtilities
     {
         // stride is empty
         var stride1 = Array.Empty<Expr>();
-        var indices = new Expr[] { 0 };
+        var indices = Array.Empty<Expr>();
         var actual1 = TensorUtilities.GetIndex(stride1, indices);
         Assert.Equal(0, actual1.Evaluate().AsTensor().ToScalar<int>());
 

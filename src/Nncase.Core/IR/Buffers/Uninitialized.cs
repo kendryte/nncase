@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
 using Nncase.PatternMatch;
 using static Nncase.IR.TypePatternUtility;
 
@@ -21,8 +22,10 @@ public sealed partial class Uninitialized : Op
 
     public TIR.MemoryLocation MemoryLocation { get; }
 
+    [Browsable(false)]
     public IRArray<SBP> NdSBP { get; }
 
+    [Browsable(false)]
     public Placement Placement { get; }
 
     /// <inheritdoc/>

@@ -16,19 +16,21 @@ public sealed class UnitTestDimension
     [Fact]
     public void TestValue()
     {
-        var v1 = 1;
+        long v1 = 1;
         var d1 = new Dimension(v1);
         Assert.Equal(v1, d1.Value);
         Assert.Equal(v1, d1.FixedValue);
 
-        var v2 = -1;
-        Assert.Throws<ArgumentOutOfRangeException>(() => new Dimension(v2));
+        long v2 = -1;
+        var d2 = new Dimension(v2);
+        Assert.Equal(v2, d2.Value);
+        Assert.Equal(v2, d2.FixedValue);
     }
 
     [Fact]
     public void TestKind()
     {
-        var v1 = 1;
+        long v1 = 1;
         var d1 = new Dimension(v1);
         Assert.Equal(DimensionKind.Fixed, d1.Kind);
         Assert.False(d1.IsUnknown);
@@ -63,8 +65,8 @@ public sealed class UnitTestDimension
     [Fact]
     public void TestOperatorAdd()
     {
-        var v1 = 2;
-        var v2 = 1;
+        long v1 = 2;
+        long v2 = 1;
         Dimension d1 = v1;
         Dimension d2 = v2;
         var d3 = Dimension.Unknown;
@@ -84,8 +86,8 @@ public sealed class UnitTestDimension
     [Fact]
     public void TestOperatorSubtract()
     {
-        var v1 = 2;
-        var v2 = 1;
+        long v1 = 2;
+        long v2 = 1;
         Dimension d1 = v1;
         Dimension d2 = v2;
         var d3 = Dimension.Unknown;
@@ -101,8 +103,8 @@ public sealed class UnitTestDimension
     [Fact]
     public void TestOperatorMul()
     {
-        var v1 = 2;
-        var v2 = 1;
+        long v1 = 2;
+        long v2 = 1;
         Dimension d1 = v1;
         Dimension d2 = v2;
         var d3 = Dimension.Unknown;
@@ -118,8 +120,8 @@ public sealed class UnitTestDimension
     [Fact]
     public void TestOperatorDiv()
     {
-        var v1 = 2;
-        var v2 = 1;
+        long v1 = 2;
+        long v2 = 1;
         Dimension d1 = v1;
         Dimension d2 = v2;
         var d3 = Dimension.Unknown;

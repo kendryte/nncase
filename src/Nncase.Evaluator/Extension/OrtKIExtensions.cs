@@ -68,8 +68,8 @@ public static class OrtKIExtensions
 
     public static OrtKISharp.Tensor ToOrtTensor(this Tensor tensor) => tensor.ElementType switch
     {
-        VectorType vectorType => ToOrtTensor(tensor, vectorType.ElemType.ToOrtType(), tensor.Dimensions.ToInts().Concat(vectorType.Lanes).ToArray()),
-        PrimType primType => ToOrtTensor(tensor, primType.ToOrtType(), tensor.Dimensions.ToInts()),
+        VectorType vectorType => ToOrtTensor(tensor, vectorType.ElemType.ToOrtType(), tensor.Dimensions.ToArray().Concat(vectorType.Lanes.Select(x => (long)x)).ToArray()),
+        PrimType primType => ToOrtTensor(tensor, primType.ToOrtType(), tensor.Dimensions.ToArray()),
         _ => throw new NotSupportedException(),
     };
 
@@ -80,7 +80,7 @@ public static class OrtKIExtensions
             throw new InvalidOperationException("Tensor is not a scala in ScalarToOrtTensor");
         }
 
-        return ToOrtTensor(tensor, tensor.ElementType.ToOrtType(), new[] { 1 });
+        return ToOrtTensor(tensor, tensor.ElementType.ToOrtType(), [1]);
     }
 
     public static OrtDataType ToOrtType(this DataType dt)
@@ -129,9 +129,9 @@ public static class OrtKIExtensions
         return OrtKI.Reshape(unpacked, shape.ToArray(), 0);
     }
 
-    private static OrtKISharp.Tensor ToOrtTensor(Tensor tensor, OrtDataType ortDataType, int[] shape)
+    private static OrtKISharp.Tensor ToOrtTensor(Tensor tensor, OrtDataType ortDataType, long[] shape)
     {
-        return OrtKISharp.Tensor.MakeTensor(tensor.PinBuffer(), ortDataType, shape.ToLongs());
+        return OrtKISharp.Tensor.MakeTensor(tensor.PinBuffer(), ortDataType, shape);
     }
 
     private sealed class TensorInitializerWithOrt : ITensorInitializer

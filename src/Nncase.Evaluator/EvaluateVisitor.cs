@@ -80,9 +80,7 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
                         throw new ArgumentException($"DataType mismatch. The Var {expr.Name} Require {expr.CheckedDataType} But Give {resultType.DType}");
                     }
 
-                    var s = expr.CheckedShape.Zip(resultType.Shape).ToArray();
-                    var matchedShape = s.Aggregate(true, (b, dims) => b && (dims.First.IsUnknown || dims.Second.IsUnknown || dims.First == dims.Second));
-                    if (!matchedShape)
+                    if (!expr.CheckedShape.IsAssignableFrom(resultType.Shape))
                     {
                         throw new ArgumentException(
                             $"Shape mismatch. The Var {expr.Name} Require {expr.CheckedShape} But Give {resultType.Shape}");

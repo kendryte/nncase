@@ -86,9 +86,9 @@ public class UnitTestAddMarker : TestClassBase
         var x = Random.Normal(DataTypes.Float32, new[] { seqLength, batchSize, inputSize });
         var initC = Random.Normal(DataTypes.Float32, new[] { numberDirections, batchSize, hiddenSize });
         var initH = Random.Normal(DataTypes.Float32, new[] { numberDirections, batchSize, hiddenSize });
-        var b = DataGenerator.DefaultRandom(new[] { numberDirections, 8 * hiddenSize });
-        var w = DataGenerator.DefaultRandom(new[] { numberDirections, 4 * hiddenSize, inputSize });
-        var r = DataGenerator.DefaultRandom(new[] { numberDirections, 4 * hiddenSize, hiddenSize });
+        var b = DataGenerator.DefaultRandom([numberDirections, 8 * hiddenSize]);
+        var w = DataGenerator.DefaultRandom([numberDirections, 4 * hiddenSize, inputSize]);
+        var r = DataGenerator.DefaultRandom([numberDirections, 4 * hiddenSize, hiddenSize]);
         var p = new float[numberDirections, 3 * hiddenSize];
         var lstm = IR.F.RNN.LSTM(LSTMDirection.Forward, LSTMLayout.Zero, new[] { "Sigmoid", "Tanh", "Tanh" }, x, w, r, b, new[] { seqLength }, initH, initC, p, 0, 0, float.NaN, hiddenSize, 0, 3);
         var main = new Function(lstm);
@@ -116,9 +116,9 @@ public class UnitTestAddMarker : TestClassBase
         var x = Random.Normal(DataTypes.Float32, new[] { seqLength, batchSize, inputSize });
         var initC = Random.Normal(DataTypes.Float32, new[] { numberDirections, batchSize, hiddenSize });
         var initH = initC;
-        var b = DataGenerator.DefaultRandom(new[] { numberDirections, 8 * hiddenSize });
-        var w = DataGenerator.DefaultRandom(new[] { numberDirections, 4 * hiddenSize, inputSize });
-        var r = DataGenerator.DefaultRandom(new[] { numberDirections, 4 * hiddenSize, hiddenSize });
+        var b = DataGenerator.DefaultRandom([numberDirections, 8 * hiddenSize]);
+        var w = DataGenerator.DefaultRandom([numberDirections, 4 * hiddenSize, inputSize]);
+        var r = DataGenerator.DefaultRandom([numberDirections, 4 * hiddenSize, hiddenSize]);
         var p = new float[numberDirections, 3 * hiddenSize];
         var lstm = IR.F.RNN.LSTM(LSTMDirection.Forward, LSTMLayout.Zero, new[] { "Sigmoid", "Tanh", "Tanh" }, x, w, r, b, new[] { seqLength }, initH, initC, p, 0, 0, float.NaN, hiddenSize, 0, 2);
         var main = new Function(lstm);

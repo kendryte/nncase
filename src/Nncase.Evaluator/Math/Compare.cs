@@ -14,7 +14,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Compare"/>.
 /// </summary>
-public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, ICostEvaluator<Compare>, IOpPrinter<Compare>, IShapeEvaluator<Compare>, IMetricEvaluator<Compare>
+public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, ICostEvaluator<Compare>, IOpPrinter<Compare>, IMetricEvaluator<Compare>
 {
     public static IRType CheckSBP(TensorType tensorType, DistributedType a, DistributedType b)
     {
@@ -147,13 +147,6 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
         }
 
         return context.GetDefault(target);
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Compare target)
-    {
-        var lhs = context.GetArgumentShape(target, Compare.Lhs);
-        var rhs = context.GetArgumentShape(target, Compare.Rhs);
-        return ShapeExprUtility.BroadcastShape(lhs, rhs);
     }
 
     private bool Compute(CompareOp op, int a, int b) => op switch

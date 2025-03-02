@@ -11,17 +11,17 @@ namespace Nncase.Tests.Rules.NeutralTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestFoldNopIf : TransformTestBase
 {
-    // [Fact]
-    // public void CondIsConst()
-    // {
-    //     TestMatched<FoldNopIf>(new If(true, 1, 2));
-    //     TestMatched<FoldNopIf>(new If(false, 1, 2));
-    // }
+    [Fact]
+    public void CondIsConst()
+    {
+        TestMatched<FoldNopIf>(new If(true, new Function(1), new Function(2)));
+        TestMatched<FoldNopIf>(new If(false, new Function(1), new Function(2)));
+    }
 
-    // [Fact]
-    // public void CondIsExpr()
-    // {
-    //     var input = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));
-    //     TestNotMatch<FoldNopIf>(new If(input, 1, 2));
-    // }
+    [Fact]
+    public void CondIsExpr()
+    {
+        var input = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));
+        TestNotMatch<FoldNopIf>(new If(input, new Function(1), new Function(2)));
+    }
 }

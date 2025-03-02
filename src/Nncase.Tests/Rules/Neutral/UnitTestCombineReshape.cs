@@ -76,15 +76,15 @@ public class UnitTestCombineReshape : TransformTestBase
     public static IEnumerable<object[]> TestCombineReshapePadPositiveData =>
         new[]
         {
-            new object[] { new long[] { 1, 3, 4 }, new long[] { 1, 5, 8 }, new long[] { 0, 0, 1, 1, 2, 2 } },
-            new object[] { new long[] { 1, 3, 4 }, new long[] { 1, 4, 5, 7 }, new long[] { 1, 2, 1, 1, 2, 1 } },
+            new object[] { new long[] { 1, 3, 4 }, new long[] { 1, 5, 8 }, new int[] { 0, 0, 1, 1, 2, 2 } },
+            new object[] { new long[] { 1, 3, 4 }, new long[] { 1, 4, 5, 7 }, new int[] { 1, 2, 1, 1, 2, 1 } },
         };
 
     public static IEnumerable<object[]> TestCombineReshapePadNegativeData =>
         new[]
         {
-            new object[] { new long[] { 1, 3, 4 }, new long[] { 5, 8 }, new long[] { 0, 0, 1, 1, 2, 2 } },
-            new object[] { new long[] { 1, 3, 4 }, new long[] { 1, 4, 1, 35 }, new long[] { 1, 2, 1, 1, 2, 1 } },
+            new object[] { new long[] { 1, 3, 4 }, new long[] { 5, 8 }, new int[] { 0, 0, 1, 1, 2, 2 } },
+            new object[] { new long[] { 1, 3, 4 }, new long[] { 1, 4, 1, 35 }, new int[] { 1, 2, 1, 1, 2, 1 } },
         };
 
     public static TheoryData<(int Count, IR.Expr Act)> TestCombineActivationsReshapePositiveData => new()
@@ -126,7 +126,7 @@ public class UnitTestCombineReshape : TransformTestBase
 
     [Theory]
     [MemberData(nameof(CombineBinaryReshapePositiveData))]
-    public void TestCombineBinaryReshapePositive(int[] lShape, int[] rShape, int[] shape)
+    public void TestCombineBinaryReshapePositive(long[] lShape, long[] rShape, long[] shape)
     {
         var a = new Var("a", new TensorType(DataTypes.Float32, lShape));
         var b = new Var("b", new TensorType(DataTypes.Float32, rShape));
@@ -187,7 +187,7 @@ public class UnitTestCombineReshape : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestCombineReshapePadPositiveData))]
-    public void TestCombineReshapePadPositive(int[] inShape, int[] shape, int[] pads)
+    public void TestCombineReshapePadPositive(long[] inShape, long[] shape, int[] pads)
     {
         var a = new Var("input", new TensorType(DataTypes.Float32, inShape));
         var normal = new Dictionary<Var, IValue>();
@@ -198,7 +198,7 @@ public class UnitTestCombineReshape : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestCombineReshapePadNegativeData))]
-    public void TestCombineReshapePadNegative(int[] inShape, int[] shape, int[] pads)
+    public void TestCombineReshapePadNegative(long[] inShape, long[] shape, int[] pads)
     {
         var a = new Var("input", new TensorType(DataTypes.Float32, inShape));
         var rootPre = Tensors.Reshape(NN.Pad(a, Tensor.From(pads, [pads.Length / 2, 2]), PadMode.Constant, 0f), shape);
@@ -207,7 +207,7 @@ public class UnitTestCombineReshape : TransformTestBase
 
     [Theory]
     [ClassData(typeof(CombineReshapeTransposePostiveData))]
-    public void TestCombineReshapeTransposePostive(int[] inShape, int[] perm, int[] newshape)
+    public void TestCombineReshapeTransposePostive(long[] inShape, long[] perm, long[] newshape)
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, inShape));
         var feed_dict = new Dictionary<Var, IValue>
@@ -227,18 +227,18 @@ public class UnitTestCombineReshape : TransformTestBase
         TestNotMatch<CombineReshapeTranspose>(rootPre);
     }
 
-    private sealed class CombineReshapeTransposePostiveData : TheoryData<int[], int[], int[]>
+    private sealed class CombineReshapeTransposePostiveData : TheoryData<long[], long[], long[]>
     {
         public CombineReshapeTransposePostiveData()
         {
             var inshapes = new[] {
-                new[] { 1, 77, 12, 64 },
-                new[] { 77, 1, 12, 64 },
-                new[] { 77, 12, 1, 64 },
-                new[] { 77, 12, 64, 1 },
+                new long[] { 1, 77, 12, 64 },
+                new long[] { 77, 1, 12, 64 },
+                new long[] { 77, 12, 1, 64 },
+                new long[] { 77, 12, 64, 1 },
              };
 
-            var perms = new[] { 0, 1, 2, 3 }.Permutate().ToArray();
+            var perms = new long[] { 0, 1, 2, 3 }.Permutate().ToArray();
 
             foreach (var (inshape, perm) in new[] { inshapes, perms }.CartesianProduct().Select(i => i.ToArray()).Select(i => (i[0], i[1])))
             {

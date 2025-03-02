@@ -22,16 +22,16 @@ namespace Nncase.Tests.Rules.NeutralTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestFoldHardSwish : TransformTestBase
 {
-    public static TheoryData<int[]> FoldGeneralHardSwishData => new()
+    public static TheoryData<long[]> FoldGeneralHardSwishData => new()
     {
-        new[] { 1, 3, 16, 16 },
-        new[] { 1, 2, 4, 8 },
-        new[] { 1, 1, 5, 5 },
+        new long[] { 1, 3, 16, 16 },
+        new long[] { 1, 2, 4, 8 },
+        new long[] { 1, 1, 5, 5 },
     };
 
     [Theory]
     [MemberData(nameof(FoldGeneralHardSwishData))]
-    public void TestFoldHardSwish1Positive(int[] shape)
+    public void TestFoldHardSwish1Positive(long[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
@@ -50,7 +50,7 @@ public class UnitTestFoldHardSwish : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldGeneralHardSwishData))]
-    public void TestFoldHardSwish1Negative(int[] shape)
+    public void TestFoldHardSwish1Negative(long[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
@@ -69,7 +69,7 @@ public class UnitTestFoldHardSwish : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldGeneralHardSwishData))]
-    public void TestFoldHardSwish2Positive(int[] shape)
+    public void TestFoldHardSwish2Positive(long[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
@@ -88,7 +88,7 @@ public class UnitTestFoldHardSwish : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldGeneralHardSwishData))]
-    public void TestFoldHardSwish2Negative(int[] shape)
+    public void TestFoldHardSwish2Negative(long[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
@@ -107,7 +107,7 @@ public class UnitTestFoldHardSwish : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldGeneralHardSwishData))]
-    public void TestFoldHardSwish3Positive(int[] shape)
+    public void TestFoldHardSwish3Positive(long[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
@@ -126,7 +126,7 @@ public class UnitTestFoldHardSwish : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldGeneralHardSwishData))]
-    public void TestFoldHardSwish3Negative(int[] shape)
+    public void TestFoldHardSwish3Negative(long[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
@@ -145,7 +145,7 @@ public class UnitTestFoldHardSwish : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldGeneralHardSwishData))]
-    public void TestFoldHardSwish4Positive(int[] shape)
+    public void TestFoldHardSwish4Positive(long[] shape)
     {
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
         Expr rootPre;
@@ -161,7 +161,7 @@ public class UnitTestFoldHardSwish : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldGeneralHardSwishData))]
-    public void TestFoldHardSwish4Negative(int[] shape)
+    public void TestFoldHardSwish4Negative(long[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
@@ -178,7 +178,7 @@ public class UnitTestFoldHardSwish : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldGeneralHardSwishData))]
-    public void TestFoldHardSwish5Positive(int[] shape)
+    public void TestFoldHardSwish5Positive(long[] shape)
     {
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
         Expr rootPre;
@@ -194,7 +194,7 @@ public class UnitTestFoldHardSwish : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldGeneralHardSwishData))]
-    public void TestFoldHardSwish5Negative(int[] shape)
+    public void TestFoldHardSwish5Negative(long[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);

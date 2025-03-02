@@ -150,9 +150,9 @@ public sealed class UnitTestShape
         Assert.False(s.HasUnknownDimension);
         Assert.False(s.IsRanked);
         Assert.False(s.IsScalar);
-        Assert.Equal(0, s.Rank);
+        Assert.Throws<InvalidOperationException>(() => s.Rank);
         Assert.Empty(s);
-        Assert.Equal(1, s.Size);
+        Assert.Throws<InvalidOperationException>(() => s.Size);
     }
 
     [Fact]
@@ -166,9 +166,9 @@ public sealed class UnitTestShape
         Assert.False(s.HasUnknownDimension);
         Assert.False(s.IsRanked);
         Assert.False(s.IsScalar);
-        Assert.Equal(0, s.Rank);
+        Assert.Throws<InvalidOperationException>(() => s.Rank);
         Assert.Empty(s);
-        Assert.Equal(1, s.Size);
+        Assert.Throws<InvalidOperationException>(() => s.Size);
     }
 
     [Fact]

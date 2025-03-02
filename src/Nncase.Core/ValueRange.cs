@@ -37,6 +37,8 @@ public record struct ValueRange<T>(T Min, T Max)
         return (min, max);
     }
 
+    public bool Contains(T value) => Min.CompareTo(value) <= 0 && Max.CompareTo(value) >= 0;
+
     private static class Limits
     {
         public static T MinValue

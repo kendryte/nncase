@@ -49,9 +49,9 @@ public sealed partial class MatMulToConv2D : IRewriteRule
         var w_shape = new Shape(new[] { bShape[1].FixedValue, bShape[0].FixedValue, 1, 1 });
         var of_shape = new Shape(new[] { aShape[0].FixedValue, bShape[1].FixedValue });
 
-        var if_reshape = Reshape(a, if_shape);
+        var if_reshape = Reshape(a, if_shape.ToValueArrayExpr());
         var w_tp = Transpose(b, Tensor.From<int>(new[] { 1, 0 })).InheritMetaData(b);
-        var w_reshape = Reshape(w_tp, w_shape).InheritMetaData(b);
+        var w_reshape = Reshape(w_tp, w_shape.ToValueArrayExpr()).InheritMetaData(b);
         var conv2d = Conv2D(
             if_reshape,
             w_reshape,
@@ -61,7 +61,7 @@ public sealed partial class MatMulToConv2D : IRewriteRule
             new int[] { 1, 1 },
             PadMode.Constant,
             1).InheritMetaData(matMulCall);
-        return Reshape(conv2d, of_shape).InheritMetaData(matMulCall);
+        return Reshape(conv2d, of_shape.ToValueArrayExpr()).InheritMetaData(matMulCall);
     }
 }
 
@@ -93,9 +93,9 @@ public sealed partial class BroadcastMatMulToConv2D : IRewriteRule
         var w_shape = new Shape(new[] { bShape[1].FixedValue, bShape[0].FixedValue, 1, 1 });
         var of_shape = new Shape(new[] { aShape[0].FixedValue, aShape[1].FixedValue, bShape[1].FixedValue });
 
-        var if_reshape = Reshape(a, if_shape);
+        var if_reshape = Reshape(a, if_shape.ToValueArrayExpr());
         var w_tp = Transpose(b, Tensor.From<int>(new[] { 1, 0 })).InheritMetaData(b);
-        var w_reshape = Reshape(w_tp, w_shape).InheritMetaData(b);
+        var w_reshape = Reshape(w_tp, w_shape.ToValueArrayExpr()).InheritMetaData(b);
 
         var conv2d = Conv2D(
             if_reshape,
@@ -106,7 +106,7 @@ public sealed partial class BroadcastMatMulToConv2D : IRewriteRule
             new int[] { 1, 1 },
             PadMode.Constant,
             1).InheritMetaData(matMulCall);
-        return Reshape(conv2d, of_shape).InheritMetaData(matMulCall);
+        return Reshape(conv2d, of_shape.ToValueArrayExpr()).InheritMetaData(matMulCall);
     }
 }
 
@@ -245,10 +245,10 @@ public sealed partial class SplitBatchMatMul : IRewriteRule
             var begin = new[] { i };
             var ifEnd = new[] { i + 1 };
             var wEnd = new[] { i + 1 };
-            ifSlices[i] = Reshape(Slice(a, begin, ifEnd, new[] { 0 }, new[] { 1 }), if_shape);
-            wSlices[i] = Reshape(Slice(b, begin, wEnd, new[] { 0 }, new[] { 1 }), w_shape);
+            ifSlices[i] = Reshape(Slice(a, begin, ifEnd, new[] { 0 }, new[] { 1 }), if_shape.ToValueArrayExpr());
+            wSlices[i] = Reshape(Slice(b, begin, wEnd, new[] { 0 }, new[] { 1 }), w_shape.ToValueArrayExpr());
             mmSlices[i] = MatMul(ifSlices[i], wSlices[i]);
-            ofSlices[i] = Reshape(mmSlices[i], new Shape(1, aShape[1].FixedValue, bShape[2].FixedValue));
+            ofSlices[i] = Reshape(mmSlices[i], new Shape(1, aShape[1].FixedValue, bShape[2].FixedValue).ToValueArrayExpr());
         }
 
         return Concat(new IR.Tuple(ofSlices), 0).InheritMetaData(matMulCall);
