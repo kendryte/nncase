@@ -19,6 +19,7 @@
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/util.h>
+#include "../optimized/opt_common.h"
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -101,9 +102,7 @@ pad_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
 
 template <class T>
 void copy_data_v(T *src, T *dst, int blocks_in, int blocks_out, T value) {
-    for (int i = 0; i < blocks_in; ++i) {
-        dst[i] = src[i];
-    }
+    opt_memcpy(dst, src, blocks_in * sizeof(T));
     dst += blocks_in;
     for (int i = 0; i < blocks_out - blocks_in; ++i) {
         dst[i] = value;
