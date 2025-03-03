@@ -247,4 +247,11 @@ public sealed class UnitTestTensorOfT
         var t4 = new Tensor<int>(memory, [1, 1, 2, 4]);
         Assert.StrictEqual(t1, t4);
     }
+
+    [Fact]
+    public void TestEmpty()
+    {
+        var t1 = new Tensor<float>([0]);
+        Assert.Equal(0, t1.Length);
+    }
 }

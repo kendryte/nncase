@@ -1,22 +1,22 @@
 /* Copyright 2019-2024 Canaan Inc.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 // #include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
+#include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/util.h>
 
 #include "../../reference/ref_ops.h"
@@ -35,8 +35,8 @@ namespace {
 
 template <typename T>
 result<void> matmul_unit_impl(const T *input_a, const T *input_b, T *output,
-                              gsl::span<const size_t> in_a_shape,
-                              gsl::span<const size_t> in_b_shape) noexcept {
+                              std::span<const size_t> in_a_shape,
+                              std::span<const size_t> in_b_shape) noexcept {
     int32_t a_rows = static_cast<int32_t>(in_a_shape[0]);
     int32_t a_cols = static_cast<int32_t>(in_a_shape[1]);
     int32_t b_cols = static_cast<int32_t>(in_b_shape[1]);
@@ -62,8 +62,8 @@ result<void> matmul_unit_impl(const T *input_a, const T *input_b, T *output,
 #if 0
 template <>
 result<void> matmul_unit_impl(const float *input_a, const float *input_b, float *output,
-                              gsl::span<const size_t> in_a_shape,
-                              gsl::span<const size_t> in_b_shape) noexcept {
+                              std::span<const size_t> in_a_shape,
+                              std::span<const size_t> in_b_shape) noexcept {
     int32_t M = static_cast<int32_t>(in_a_shape[0]);
     int32_t K = static_cast<int32_t>(in_a_shape[1]);
     int32_t N = static_cast<int32_t>(in_b_shape[1]);
@@ -96,24 +96,24 @@ result<void> matmul_unit_impl(const float *input_a, const float *input_b, float 
 #else
 template <>
 result<void> matmul_unit_impl(const float *A, const float *B, float *C,
-                              gsl::span<const size_t> in_a_shape,
-                              gsl::span<const size_t> in_b_shape) noexcept {
+                              std::span<const size_t> in_a_shape,
+                              std::span<const size_t> in_b_shape) noexcept {
     int32_t M = static_cast<int32_t>(in_a_shape[0]);
     int32_t K = static_cast<int32_t>(in_a_shape[1]);
     int32_t N = static_cast<int32_t>(in_b_shape[1]);
     size_t vl;
     for (int k = 0; k < K; k++) {
         for (int m = 0; m < M; m++) {
-            float a = A[m*K + k];
+            float a = A[m * K + k];
             for (int n = 0; n < N; n += vl) {
-                vl = vsetvl_e32m1(N - n);
-                vfloat32m1_t b = vle32_v_f32m1(&B[k*N + n], vl);
-                vfloat32m1_t c = vle32_v_f32m1(&C[m*N + n], vl);
+                vl = __riscv_vsetvl_e32m1(N - n);
+                vfloat32m1_t b = __riscv_vle32_v_f32m1(&B[k * N + n], vl);
+                vfloat32m1_t c = __riscv_vle32_v_f32m1(&C[m * N + n], vl);
                 if (k == 0)
-                    c = vfmul_vf_f32m1(b, a, vl);
+                    c = __riscv_vfmul_vf_f32m1(b, a, vl);
                 else
-                    c = vfmacc_vf_f32m1(c, a, b, vl);
-                vse32_v_f32m1(&C[m*N + n], c, vl);
+                    c = __riscv_vfmacc_vf_f32m1(c, a, b, vl);
+                __riscv_vse32_v_f32m1(&C[m * N + n], c, vl);
             }
         }
     }
@@ -125,8 +125,8 @@ result<void> matmul_unit_impl(const float *A, const float *B, float *C,
 
 template <typename T>
 result<void> matmul_impl(const T *input_a, const T *input_b, T *output,
-                         gsl::span<const size_t> in_a_shape_,
-                         gsl::span<const size_t> in_b_shape_) noexcept {
+                         std::span<const size_t> in_a_shape_,
+                         std::span<const size_t> in_b_shape_) noexcept {
     dims_t in_a_shape = in_a_shape_;
     dims_t in_b_shape = in_b_shape_;
     if (in_a_shape.size() == 1) {
@@ -165,8 +165,8 @@ result<void> matmul_impl(const T *input_a, const T *input_b, T *output,
 
 template result<void>
 matmul_impl<float>(const float *input_a, const float *input_b, float *output,
-                   gsl::span<const size_t> in_a_shape,
-                   gsl::span<const size_t> in_b_shape) noexcept;
+                   std::span<const size_t> in_a_shape,
+                   std::span<const size_t> in_b_shape) noexcept;
 
 #define MATMUL_IMPL(_ty)                                                       \
     return matmul_impl(IN_CAST(_ty, input_a), IN_CAST(_ty, input_b),           \
@@ -175,9 +175,9 @@ matmul_impl<float>(const float *input_a, const float *input_b, float *output,
 } // namespace
 
 result<void> nncase::kernels::stackvm::optimized::matmul(
-    typecode_t typecode, const gsl::byte *input_a, const gsl::byte *input_b,
-    gsl::byte *output, gsl::span<const size_t> in_a_shape,
-    gsl::span<const size_t> in_b_shape,
+    typecode_t typecode, const std::byte *input_a, const std::byte *input_b,
+    std::byte *output, std::span<const size_t> in_a_shape,
+    std::span<const size_t> in_b_shape,
     [[maybe_unused]] kernel_context &context) noexcept {
     TYPE_SELECT(typecode, MATMUL_IMPL);
 }

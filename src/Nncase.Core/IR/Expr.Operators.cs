@@ -55,7 +55,20 @@ public partial class Expr
     /// get the item from the expr.
     /// </summary>
     /// <returns> expr. </returns>
-    public Expr this[params Expr[] indices] => F.Tensors.GetItem(this, F.Tensors.Stack(new IR.Tuple(indices), 0));
+    public Expr this[params Expr[] indices]
+    {
+        get
+        {
+            if (indices.Length == 0)
+            {
+                return this;
+            }
+            else
+            {
+                return F.Tensors.GetItem(this, F.Tensors.Stack(new IR.Tuple(indices), 0));
+            }
+        }
+    }
 
     /// <summary>
     /// Unary neg.

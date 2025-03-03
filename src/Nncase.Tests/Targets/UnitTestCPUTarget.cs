@@ -33,7 +33,7 @@ public class UnitTestCPUTarget : TestClassBase
         DefaultTargetName = CPUTarget.Kind;
         CompileOptions.TargetOptions = new CpuTargetOptions();
 #if DEBUG
-        CompileOptions.DumpFlags = DumpFlags.PassIR | DumpFlags.Rewrite | DumpFlags.EGraphCost | DumpFlags.CodeGen;
+        CompileOptions.DumpFlags = DumpFlags.PassIR | DumpFlags.Rewrite | DumpFlags.EGraphCost | DumpFlags.CodeGen | DumpFlags.Compile;
 #else
         CompileOptions.DumpFlags = DumpFlags.CodeGen;
 #endif

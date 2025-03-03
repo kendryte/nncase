@@ -185,6 +185,28 @@ public sealed class UnitTestShape
         Assert.Equal(0, s.Rank);
         Assert.Empty(s);
         Assert.Equal(1, s.Size);
+        Assert.Empty(s.ToValueArray());
+        Assert.Empty(s.ToValueList());
+        Assert.Equal((Expr)Tensor.Zeros<long>([0]), s.ToValueArrayExpr());
+    }
+
+    [Fact]
+    public void TestScalar2()
+    {
+        var s = new Shape(Array.Empty<Dimension>());
+        Assert.True(s.IsReadOnly);
+        Assert.True(s.IsFixed);
+        Assert.False(s.IsInvalid);
+        Assert.False(s.IsUnranked);
+        Assert.False(s.HasUnknownDimension);
+        Assert.True(s.IsRanked);
+        Assert.True(s.IsScalar);
+        Assert.Equal(0, s.Rank);
+        Assert.Empty(s);
+        Assert.Equal(1, s.Size);
+        Assert.Empty(s.ToValueArray());
+        Assert.Empty(s.ToValueList());
+        Assert.Equal((Expr)Tensor.Zeros<long>([0]), s.ToValueArrayExpr());
     }
 
     [Fact]
