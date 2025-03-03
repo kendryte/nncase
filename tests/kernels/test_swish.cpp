@@ -44,10 +44,7 @@ class SwishTest : public KernelTest,
                 .expect("create tensor failed");
         init_tensor(input);
 
-        float alpha_value = 1.f;
-        alpha = hrt::create(nncase::dt_float32, {1},
-                            as_span<std::byte>(std::span(&alpha_value, 1)),
-                            true, host_runtime_tensor::pool_cpu_only)
+        alpha = hrt::create(typecode, {1}, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
         init_tensor(alpha);
     }
@@ -64,9 +61,11 @@ INSTANTIATE_TEST_SUITE_P(Swish, SwishTest,
 
 TEST_P(SwishTest, Swish) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
+    auto a_ort = runtime_tensor_2_ort_tensor(alpha);
 
     // expected
-    auto output_ort = ortki_Mul(l_ort, ortki_Sigmoid(l_ort));
+    auto scaledInput = ortki_Mul(a_ort, l_ort);
+    auto output_ort = ortki_Mul(l_ort, ortki_Sigmoid(scaledInput));
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
