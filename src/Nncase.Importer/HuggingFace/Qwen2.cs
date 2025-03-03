@@ -26,18 +26,44 @@ namespace Nncase.Importer
 {
     public partial class HuggingFaceImporter
     {
-        private void Qwen2CreateInputs()
+        protected (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) Qwen2CreateInputs()
         {
             _inputs = new List<Var>();
-            _inputs.Add(new Var("input_ids",
-                new TensorType(DataTypes.Float32, new Shape(Dimension.Unknown, 1, (int)_config!["hidden_size"]))));
+            _dynVarMap = new Dictionary<string, Var>();
+            var varMap = new Dictionary<string, Var>();
 
-            // attention mask shape dependent on the pre-process of the model.
-            _inputs.Add(new Var("attention_mask",
-                new TensorType(DataTypes.Float32, new Shape(1, 1, Dimension.Unknown, Dimension.Unknown))));
-            _inputs.Add(new Var("position_ids", new TensorType(DataTypes.Float32, new Shape(1, Dimension.Unknown))));
-            _inputs.Add(new Var("past_key_values",
-                new TensorType(DataTypes.Float32, new Shape(24, 2, 1, Dimension.Unknown, 2, 64))));
+            var bucketOptions = CompileSession.CompileOptions.ShapeBucketOptions;
+            _fixVarMap = bucketOptions.FixVarMap;
+
+            // local test set
+            // _fixVarMap["sequence_length"] = 10;
+            // _fixVarMap["history_len"] = 0;
+
+            if (!_fixVarMap.ContainsKey("sequence_length"))
+                _dynVarMap["sequence_length"] = new Var("sequence_length", new TensorType(DataTypes.Int32, Shape.Scalar));
+            if(!_fixVarMap.ContainsKey("history_len"))
+                _dynVarMap["history_len"] = new Var("history_len", new TensorType(DataTypes.Int32, Shape.Scalar));
+
+            var inputIdsShapeExpr = new Expr[] {  _dynVarMap["sequence_length"] , 1, (int)_config!["hidden_size"] };
+            var attentionMaskShapeExpr = new Expr[] { 1, 1, _dynVarMap["sequence_length"], _dynVarMap["sequence_length"] };
+            var positionIdsShapeExpr = new Expr[] { 1, _dynVarMap["sequence_length"] };
+            var pastKeyValueShapeExpr = new Expr[] { 24, 2, 1, _dynVarMap["history_len"], 2, 64 };
+
+
+            var inputIds = new Var("input_ids", new TensorType(DataTypes.Float32, new Shape(Dimension.Unknown, 1, (int)_config!["hidden_size"])));
+            var attentionMask = new Var("attention_mask", new TensorType(DataTypes.Float32, new Shape(1, 1, Dimension.Unknown, Dimension.Unknown)));
+            var positionIds = new Var("position_ids", new TensorType(DataTypes.Float32, new Shape(1, Dimension.Unknown)));
+            var pastKeyValue = new Var("past_key_values", new TensorType(DataTypes.Float32, new Shape(24, 2, 1, Dimension.Unknown, 2, 64)));
+
+            _inputs.Add(inputIds);
+            _inputs.Add(attentionMask);
+            _inputs.Add(positionIds);
+            _inputs.Add(pastKeyValue);
+            varMap[inputIds] =  inputIdsShapeExpr;
+            varMap[attentionMask] =  attentionMaskShapeExpr;
+            varMap[positionIds] =  positionIdsShapeExpr;
+            varMap[pastKeyValue] =  pastKeyValueShapeExpr;
+            return (_inputs, varMap);
         }
 
         private Tuple<Call, HuggingFaceUtils.DynamicCache> VisitQwen2ForCausalLM()
@@ -84,11 +110,7 @@ namespace Nncase.Importer
             )
             */
 
-            /*
-             * 1. Qwen2Model
-             *
-             * 1.1 embedding
-             */
+
             var input_ids = new Var();
             var (lastHiddenStates, pastKeyValues, allSelfAttns, allHiddenStates) = Qwen2Model(input_ids,
                 inputEmbeds: null, new HuggingFaceUtils.DynamicCache(), cachePosition: null, positionIds: null,
@@ -109,6 +131,9 @@ namespace Nncase.Importer
             bool? outputHiddenStates = false
         )
         {
+            /*
+             * 1.1 embedding
+             */
             if (inputEmbeds == null)
             {
                 var embedTokensWeight = _constTensors["model.embed_tokens.weight"];

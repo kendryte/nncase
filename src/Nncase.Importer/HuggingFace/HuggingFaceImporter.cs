@@ -25,8 +25,10 @@ public sealed partial class HuggingFaceImporter : BaseImporter
 
     private List<Var>? _inputs;
     private List<Var>? _outputs;
-    private Dictionary<string, Var> _dynVarMap = new();
-    private Dictionary<string, int> _fixVarMap = new();
+    private Dictionary<string, Var> _dynVarMap ;
+    private Dictionary<string, int> _fixVarMap ;
+
+    private Dictionary<Var, Expr[]> _varMap ;
 
     public HuggingFaceImporter(string huggingFaceDir, CompileSession compileSession)
         : base(compileSession)
@@ -38,15 +40,17 @@ public sealed partial class HuggingFaceImporter : BaseImporter
 
     protected override (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
     {
-        throw new NotImplementedException();
+        // throw new NotImplementedException();
         switch (_config!["architectures"]!)
         {
             case "Qwen2ForCausalLM":
-                Qwen2CreateInputs();
-                break;
+                return Qwen2CreateInputs();
+
             default:
                 throw new NotImplementedException();
         }
+
+        return (null,null);
     }
 
     protected override void ConvertOp()
