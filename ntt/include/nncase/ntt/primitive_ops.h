@@ -557,5 +557,14 @@ constexpr TResult mma<AccC, TransA, T1, T2, TResult>::operator()(
 
     return output;
 }
+
+// where
+template <class T1, class T2, class T3> struct where {
+    constexpr auto operator()(const T1 &condition, const T2 &x,
+                              const T3 &y) const {
+        return condition ? x : y;
+    }
+};
+
 } // namespace ops
 } // namespace nncase::ntt

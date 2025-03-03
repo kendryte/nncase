@@ -1494,5 +1494,108 @@ REGISTER_RVV_CAST_OP(float, unsigned int, cast_float32_uint32)
 REGISTER_RVV_CAST_OP(unsigned int, float, cast_uint32_float32)
 REGISTER_RVV_CAST_OP_4_1(float, bool, cast_float32_bool)
 REGISTER_RVV_CAST_OP_1_4(bool, float, cast_bool_float32)
+
+// where
+#define RVV_WHERE_OP(dtype, vl, lmul, mlen)                                    \
+    template <>                                                                \
+    struct where<ntt::vector<dtype, vl>, ntt::vector<dtype, vl>,               \
+                 ntt::vector<dtype, vl>> {                                     \
+        ntt::vector<dtype, vl>                                                 \
+        operator()(const ntt::vector<dtype, vl> &condition,                    \
+                   const ntt::vector<dtype, vl> &x,                            \
+                   const ntt::vector<dtype, vl> &y) const noexcept {           \
+            /* Generate boolean mask */                                        \
+            vbool##mlen##_t mask =                                             \
+                __riscv_vmfne_vf_f32m##lmul##_b##mlen(condition, 0.f, vl);     \
+            /* Select elements based on mask */                                \
+            return __riscv_vmerge_vvm_f32m##lmul(x, y, mask, vl);              \
+        }                                                                      \
+    };
+
+#define REGISTER_RVV_WHERE_OP(dtype)                                           \
+    RVV_WHERE_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 1), 1, 32)                \
+    RVV_WHERE_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 2), 2, 16)                \
+    RVV_WHERE_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 4), 4, 8)                 \
+    RVV_WHERE_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 8), 8, 4)
+
+REGISTER_RVV_WHERE_OP(float)
+
+// compare
+#define RVV_COMPARE_OP(op, dtype, vl, kernel)                                  \
+    template <> struct op<ntt::vector<dtype, vl>> {                            \
+        auto operator()(const ntt::vector<dtype, vl> &v1,                      \
+                        const ntt::vector<dtype, vl> &v2) const noexcept {     \
+            return kernel(v1, v2, vl);                                         \
+        }                                                                      \
+    };                                                                         \
+
+#define REGISTER_RVV_COMPARE_OP(op, dtype, kernel)                             \
+    RVV_COMPARE_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 1), kernel)         \
+    RVV_COMPARE_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 2), kernel)         \
+    RVV_COMPARE_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)         \
+    RVV_COMPARE_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)
+
+#define EQUAL_FLOAT32(lmul, mlen)                                              \
+    inline vbool##mlen##_t equal_float32(const vfloat32m##lmul##_t &v1,        \
+                                         const vfloat32m##lmul##_t &v2,        \
+                                         const size_t vl) {                    \
+        return __riscv_vmfeq_vv_f32m##lmul##_b##mlen(v1, v2, vl);              \
+    }                                                                          
+                                                                               
+REGISTER_RVV_KERNEL(EQUAL_FLOAT32)
+REGISTER_RVV_COMPARE_OP(equal, float, equal_float32)
+
+#define NOT_EQUAL_FLOAT32(lmul, mlen)                                          \
+    inline vbool##mlen##_t not_equal_float32(const vfloat32m##lmul##_t &v1,    \
+                                             const vfloat32m##lmul##_t &v2,    \
+                                             const size_t vl) {                \
+        return __riscv_vmfne_vv_f32m##lmul##_b##mlen(v1, v2, vl);              \
+    }
+
+REGISTER_RVV_KERNEL(NOT_EQUAL_FLOAT32)
+REGISTER_RVV_COMPARE_OP(not_equal, float, not_equal_float32)
+
+#define LESS_FLOAT32(lmul, mlen)                                               \
+    inline vbool##mlen##_t less_float32(const vfloat32m##lmul##_t &v1,         \
+                                        const vfloat32m##lmul##_t &v2,         \
+                                        const size_t vl) {                     \
+        return __riscv_vmflt_vv_f32m##lmul##_b##mlen(v1, v2, vl);              \
+    }
+
+REGISTER_RVV_KERNEL(LESS_FLOAT32)
+REGISTER_RVV_COMPARE_OP(less, float, less_float32)
+
+#define LESS_OR_EQUAL_FLOAT32(lmul, mlen)                                      \
+    inline vbool##mlen##_t less_or_equal_float32(                              \
+        const vfloat32m##lmul##_t &v1, const vfloat32m##lmul##_t &v2,          \
+        const size_t vl) {                                                     \
+        return __riscv_vmfle_vv_f32m##lmul##_b##mlen(v1, v2, vl);              \
+    }
+
+REGISTER_RVV_KERNEL(LESS_OR_EQUAL_FLOAT32)
+REGISTER_RVV_COMPARE_OP(less_or_equal, float, less_or_equal_float32)
+
+#define GREATER_FLOAT32(lmul, mlen)                                            \
+    inline vbool##mlen##_t greater_float32(const vfloat32m##lmul##_t &v1,      \
+                                           const vfloat32m##lmul##_t &v2,      \
+                                           const size_t vl) {                  \
+        return __riscv_vmfgt_vv_f32m##lmul##_b##mlen(v1, v2, vl);              \
+    }
+
+REGISTER_RVV_KERNEL(GREATER_FLOAT32)
+REGISTER_RVV_COMPARE_OP(greater, float, greater_float32)
+
+#define GREATER_OR_EQUAL_FLOAT32(lmul, mlen)                                   \
+    inline vbool##mlen##_t greater_or_equal_float32(                           \
+        const vfloat32m##lmul##_t &v1, const vfloat32m##lmul##_t &v2,          \
+        const size_t vl) {                                                     \
+        return __riscv_vmfge_vv_f32m##lmul##_b##mlen(v1, v2, vl);              \
+    }
+
+REGISTER_RVV_KERNEL(GREATER_OR_EQUAL_FLOAT32)
+REGISTER_RVV_COMPARE_OP(greater_or_equal, float, greater_or_equal_float32)
+
+// scatterND
+
 #endif
 } // namespace nncase::ntt::ops

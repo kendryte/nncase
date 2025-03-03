@@ -28,9 +28,9 @@ namespace nncase::ntt::ops {
 
 // unary with half
 #define REGISTER_RVV_UNARY16_OP(OP, dtype, kernel)                             \
-    RVV_UNARY16_OP(OP, dtype, NTT_VL(sizeof(dtype) * 8, *, 1), kernel)          \
-    RVV_UNARY16_OP(OP, dtype, NTT_VL(sizeof(dtype) * 8, *, 2), kernel)          \
-    RVV_UNARY16_OP(OP, dtype, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)          \
+    RVV_UNARY16_OP(OP, dtype, NTT_VL(sizeof(dtype) * 8, *, 1), kernel)         \
+    RVV_UNARY16_OP(OP, dtype, NTT_VL(sizeof(dtype) * 8, *, 2), kernel)         \
+    RVV_UNARY16_OP(OP, dtype, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)         \
     RVV_UNARY16_OP(OP, dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)
 
 #define ABS_FLOAT16(lmul, mlen)                                                \
@@ -275,7 +275,7 @@ REGISTER_RVV_FP16_KERNEL(LOG_FLOAT16)
 REGISTER_RVV_UNARY16_OP(log, half, log_float16)
 
 // binary
-#define RVV_BINARY_fp16_OP(op, dtype, vl, kernel)                                   \
+#define RVV_BINARY_fp16_OP(op, dtype, vl, kernel)                              \
     template <> struct op<ntt::vector<dtype, vl>, ntt::vector<dtype, vl>> {    \
         ntt::vector<dtype, vl>                                                 \
         operator()(const ntt::vector<dtype, vl> &v1,                           \
@@ -283,14 +283,12 @@ REGISTER_RVV_UNARY16_OP(log, half, log_float16)
             return kernel(v1, v2, vl);                                         \
         }                                                                      \
     };                                                                         \
-                                                                               \
     template <> struct op<ntt::vector<dtype, vl>, dtype> {                     \
         ntt::vector<dtype, vl> operator()(const ntt::vector<dtype, vl> &v,     \
                                           const dtype &s) const noexcept {     \
             return kernel(v, s, vl);                                           \
         }                                                                      \
     };                                                                         \
-                                                                               \
     template <> struct op<dtype, ntt::vector<dtype, vl>> {                     \
         ntt::vector<dtype, vl>                                                 \
         operator()(const dtype &s,                                             \
@@ -300,30 +298,28 @@ REGISTER_RVV_UNARY16_OP(log, half, log_float16)
     };
 
 // binary op
-#define REGISTER_RVV_BINARY_FP16_OP(op, dtype, kernel)                              \
+#define REGISTER_RVV_BINARY_FP16_OP(op, dtype, kernel)                         \
     RVV_BINARY_fp16_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 1), kernel)     \
     RVV_BINARY_fp16_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 2), kernel)     \
     RVV_BINARY_fp16_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)     \
-    RVV_BINARY_fp16_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)
+    RVV_BINARY_fp16_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)     
 
 // pow
 #define POW_FLOAT16(lmul, mlen)                                                \
     inline vfloat16m##lmul##_t pow_float16(const vfloat16m##lmul##_t &v1,      \
                                            const vfloat16m##lmul##_t &v2,      \
                                            const size_t vl) {                  \
-        return pow_ps_fp16(v1, v2, vl);                                             \
+        return pow_ps_fp16(v1, v2, vl);                                        \
     }                                                                          \
-                                                                               \
     inline vfloat16m##lmul##_t pow_float16(const vfloat16m##lmul##_t &v1,      \
-                                           const half &s, const size_t vl) {  \
+                                           const half &s, const size_t vl) {   \
         auto v2 = __riscv_vfmv_v_f_f16m##lmul(s, vl);                          \
-        return pow_ps_fp16(v1, v2, vl);                                             \
+        return pow_ps_fp16(v1, v2, vl);                                        \
     }                                                                          \
-                                                                               \
     inline vfloat16m##lmul##_t pow_float16(                                    \
-        const half &s, const vfloat16m##lmul##_t &v2, const size_t vl) {      \
+        const half &s, const vfloat16m##lmul##_t &v2, const size_t vl) {       \
         auto v1 = __riscv_vfmv_v_f_f16m##lmul(s, vl);                          \
-        return pow_ps_fp16(v1, v2, vl);                                             \
+        return pow_ps_fp16(v1, v2, vl);                                        \
     }
 
 REGISTER_RVV_FP16_KERNEL(POW_FLOAT16)
@@ -350,7 +346,7 @@ REGISTER_RVV_BINARY_FP16_OP(pow, half, pow_float16)
         auto mask1 = __riscv_vmsne_vx_i16m##lmul##_b##mlen(remainder, 0, vl);  \
         auto mask2 = __riscv_vmslt_vx_i16m##lmul##_b##mlen(tmp, 0, vl);        \
         mask1 = __riscv_vmand_mm_b##mlen(mask1, mask2, vl);                    \
-        remainder = __riscv_vadd_vx_i16m##lmul##_m(mask1, remainder, s, vl);  \
+        remainder = __riscv_vadd_vx_i16m##lmul##_m(mask1, remainder, s, vl);   \
         return remainder;                                                      \
     }                                                                          \
                                                                                \
