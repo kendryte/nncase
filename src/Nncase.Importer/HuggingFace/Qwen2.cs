@@ -30,7 +30,7 @@ namespace Nncase.Importer
         {
             _inputs = new List<Var>();
             _dynVarMap = new Dictionary<string, Var>();
-            var varMap = new Dictionary<string, Var>();
+            var varMap = new Dictionary<Var, Expr[]>();
 
             var bucketOptions = CompileSession.CompileOptions.ShapeBucketOptions;
             _fixVarMap = bucketOptions.FixVarMap;
@@ -40,29 +40,35 @@ namespace Nncase.Importer
             // _fixVarMap["history_len"] = 0;
 
             if (!_fixVarMap.ContainsKey("sequence_length"))
-                _dynVarMap["sequence_length"] = new Var("sequence_length", new TensorType(DataTypes.Int32, Shape.Scalar));
-            if(!_fixVarMap.ContainsKey("history_len"))
+                _dynVarMap["sequence_length"] =
+                    new Var("sequence_length", new TensorType(DataTypes.Int32, Shape.Scalar));
+            if (!_fixVarMap.ContainsKey("history_len"))
                 _dynVarMap["history_len"] = new Var("history_len", new TensorType(DataTypes.Int32, Shape.Scalar));
 
-            var inputIdsShapeExpr = new Expr[] {  _dynVarMap["sequence_length"] , 1, (int)_config!["hidden_size"] };
-            var attentionMaskShapeExpr = new Expr[] { 1, 1, _dynVarMap["sequence_length"], _dynVarMap["sequence_length"] };
+            var inputIdsShapeExpr = new Expr[] { (Expr)_dynVarMap["sequence_length"], (Expr)1, (Expr)_config!["hidden_size"] };
+            var attentionMaskShapeExpr =
+                new Expr[] { 1, 1, _dynVarMap["sequence_length"], _dynVarMap["sequence_length"] };
             var positionIdsShapeExpr = new Expr[] { 1, _dynVarMap["sequence_length"] };
             var pastKeyValueShapeExpr = new Expr[] { 24, 2, 1, _dynVarMap["history_len"], 2, 64 };
 
 
-            var inputIds = new Var("input_ids", new TensorType(DataTypes.Float32, new Shape(Dimension.Unknown, 1, (int)_config!["hidden_size"])));
-            var attentionMask = new Var("attention_mask", new TensorType(DataTypes.Float32, new Shape(1, 1, Dimension.Unknown, Dimension.Unknown)));
-            var positionIds = new Var("position_ids", new TensorType(DataTypes.Float32, new Shape(1, Dimension.Unknown)));
-            var pastKeyValue = new Var("past_key_values", new TensorType(DataTypes.Float32, new Shape(24, 2, 1, Dimension.Unknown, 2, 64)));
+            var inputIds = new Var("input_ids",
+                new TensorType(DataTypes.Float32, new Shape(Dimension.Unknown, 1, (int)_config!["hidden_size"])));
+            var attentionMask = new Var("attention_mask",
+                new TensorType(DataTypes.Float32, new Shape(1, 1, Dimension.Unknown, Dimension.Unknown)));
+            var positionIds = new Var("position_ids",
+                new TensorType(DataTypes.Float32, new Shape(1, Dimension.Unknown)));
+            var pastKeyValue = new Var("past_key_values",
+                new TensorType(DataTypes.Float32, new Shape(24, 2, 1, Dimension.Unknown, 2, 64)));
 
             _inputs.Add(inputIds);
             _inputs.Add(attentionMask);
             _inputs.Add(positionIds);
             _inputs.Add(pastKeyValue);
-            varMap[inputIds] =  inputIdsShapeExpr;
-            varMap[attentionMask] =  attentionMaskShapeExpr;
-            varMap[positionIds] =  positionIdsShapeExpr;
-            varMap[pastKeyValue] =  pastKeyValueShapeExpr;
+            varMap[inputIds] = inputIdsShapeExpr;
+            varMap[attentionMask] = attentionMaskShapeExpr;
+            varMap[positionIds] = positionIdsShapeExpr;
+            varMap[pastKeyValue] = pastKeyValueShapeExpr;
             return (_inputs, varMap);
         }
 
