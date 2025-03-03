@@ -86,6 +86,12 @@ public sealed class CPUFunctionPartitionPass : ModulePass
                 case (Call field, IR.Tuple tp):
                     isSupport = tp.Fields.AsValueEnumerable().All(f => f is Call c && CheckField(c)) ? true : false;
                     break;
+                case (If callee, _):
+                    isSupport = false;
+                    break;
+                case (_, If caller):
+                    isSupport = false;
+                    break;
                 default:
                     break;
             }

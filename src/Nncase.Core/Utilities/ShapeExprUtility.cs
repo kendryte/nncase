@@ -21,6 +21,13 @@ public static class ShapeExprUtility
         return new If(i64Axis < 0L, then, @else, i64Axis);
     }
 
+    public static Expr If(Expr condition, Func<Expr> thenExpr, Func<Expr> elseExpr)
+    {
+        var thenFunc = new Function(thenExpr());
+        var elseFunc = new Function(elseExpr());
+        return new If(condition, thenFunc, elseFunc);
+    }
+
     public static Expr If(Expr condition, Func<Var, Expr> thenExpr, Func<Var, Expr> elseExpr, Expr arg)
     {
         var var1 = new Var(arg.CheckedType);
