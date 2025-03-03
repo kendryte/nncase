@@ -146,7 +146,7 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
         var argumentDict = new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance);
         foreach (var (pre, post) in pairs)
         {
-            if (pre is not (Call or Var))
+            if (pre is not (Call or Var or If))
             {
                 continue;
             }

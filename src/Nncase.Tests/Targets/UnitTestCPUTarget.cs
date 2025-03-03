@@ -189,6 +189,7 @@ public class UnitTestCPUTarget : TestClassBase
     [MemberData(nameof(TestIfData))]
     public void TestIf(bool input)
     {
+        using var dumpScope = new Diagnostics.DumpScope($"{input}", CompileOptions.DumpFlags);
         var condVar = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));
         var then = new Function(IR.F.Math.Abs(3f));
         var @else = new Function(IR.F.NN.Relu(Cast(3, DataTypes.Float32)));
