@@ -196,16 +196,10 @@ public static class TypeInference
 
         var outShape = input.Shape.ToList();
         outShape[1] = weights.Shape[0];
-        if (stride is TensorConst strideValue &&
-            padding is TensorConst paddingValue &&
-            dilation is TensorConst dilation_con &&
-            groups is TensorConst groups_con &&
+        if (groups is TensorConst groups_con &&
             input.Shape.IsFixed &&
             weights.Shape.IsFixed)
         {
-            var ts_stride = strideValue.Value.Cast<int>();
-            var ts_padding = paddingValue.Value.Cast<int>();
-            var ts_dilation = dilation_con.Value.Cast<int>();
             var groups_v = groups_con.Value.ToScalar<int>();
             if (!(input.Shape[1].FixedValue >= groups_v && (input.Shape[1].FixedValue % groups_v) == 0))
             {
@@ -216,27 +210,54 @@ public static class TypeInference
             {
                 return new InvalidType($"The input channel {input.Shape[1]} / {groups_v} != {weights.Shape[1]}");
             }
+        }
 
-            outShape[2] = GetWindowedOutputSize(
-                (int)input.Shape[2].FixedValue + ts_padding[0, 0] + ts_padding[0, 1],
-                (int)weights.Shape[2].FixedValue,
-                ts_stride[0],
-                ts_dilation[0],
-                false);
-            outShape[3] = GetWindowedOutputSize(
-                (int)input.Shape[3].FixedValue + ts_padding[1, 0] + ts_padding[1, 1],
-                (int)weights.Shape[3].FixedValue,
-                ts_stride[1],
-                ts_dilation[1],
-                false);
+        outShape[2] = GetWindowedOutputSize(
+            input.Shape[2] + padding[0, 0] + padding[0, 1],
+            weights.Shape[2],
+            stride[0],
+            dilation[0],
+            false);
+        outShape[3] = GetWindowedOutputSize(
+            input.Shape[3] + padding[1, 0] + padding[1, 1],
+            weights.Shape[3],
+            stride[1],
+            dilation[1],
+            false);
+
+        return input with { Shape = new Shape(outShape) };
+    }
+
+    /// <summary>
+    /// get padding windows output size.
+    /// </summary>
+    public static Dimension GetWindowedOutputSize(Dimension size, Dimension filter, Dimension stride, Dimension dilation, bool same, bool ceilMode = false)
+    {
+        var effective_filter_size = ((filter - 1L) * dilation) + 1L;
+        if (same)
+        {
+            return (size + stride - 1L) / stride;
         }
         else
         {
-            // outShape[2] = outShape[3] = Dimension.Unknown;
-            throw new NotImplementedException();
+            if (!ceilMode)
+            {
+                return (size - effective_filter_size + stride) / stride;
+            }
+            else
+            {
+                return Dimension.CeilDiv(size - effective_filter_size + stride, stride);
+            }
         }
+    }
 
-        return input with { Shape = new Shape(outShape) };
+    /// <summary>
+    /// GetWindowedOutputSize.
+    /// </summary>
+    public static int GetWindowedOutputSize(int size, int filter, int stride, int dilation, (int Before, int After) padding)
+    {
+        var effective_filter_size = ((filter - 1) * dilation) + 1;
+        return (size + padding.Before + padding.After - effective_filter_size + stride) / stride;
     }
 
     /// <summary>

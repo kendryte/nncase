@@ -53,13 +53,17 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
 
     private IRType? CheckType(TupleType inputs)
     {
-        bool? allScalar = null;
         DataType? allDType = null;
         foreach (var (i, input) in Enumerable.Range(0, inputs.Count).Select(i => (i, inputs[i])))
         {
             TensorType type;
             if (input is TensorType a)
             {
+                if (a.IsScalar)
+                {
+                    return new InvalidType($"Scalar tensor (at {i}) cannot be concatenated");
+                }
+
                 type = a;
             }
             else if (input is DistributedType { TensorType: TensorType b })
@@ -76,18 +80,12 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
                 return new TensorType(type.DType, Shape.Unranked);
             }
 
-            allScalar = (allScalar ?? type.IsScalar) & type.IsScalar;
             allDType ??= type.DType;
             if (allDType != type.DType)
             {
                 return new InvalidType(
                     $"The ConCat Item[{i}] Must Be {allDType} But Get {type.DType.GetDisplayName()}");
             }
-        }
-
-        if (allScalar == true && allDType is not null)
-        {
-            return new TensorType(allDType, new[] { inputs.Count });
         }
 
         return null;

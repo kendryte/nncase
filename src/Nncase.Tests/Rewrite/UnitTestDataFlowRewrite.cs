@@ -258,7 +258,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var secondSize = await RunShapeInferPass("secondSize", secondBefore, input);
         Assert.Equal(224, ((TensorConst)secondSize).Value.ToScalar<int>());
 
-        var beforeShape = Concat(new Tuple(firstSize, secondSize), 0);
+        var beforeShape = Stack(new Tuple(firstSize, secondSize), 0);
         var afterShape = ShapeOf(input);
         var softMax = Reshape(
             NN.Softmax(

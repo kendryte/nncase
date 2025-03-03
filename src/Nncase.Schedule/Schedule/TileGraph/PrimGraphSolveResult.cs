@@ -392,7 +392,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
 
     private ParentSubViewInfo GetParentSubViewInfo(int storeLevel, ITreeNode node, BufferIdentity bid, AffineMap map, Expr[] forwardOffsets, long[] shapeExprs)
     {
-        var offset = new IR.Tuple(map.Apply(forwardOffsets, Enumerable.Repeat<Expr>(0, forwardOffsets.Length).ToArray()).Select(i => i.Start).ToArray());
+        var offset = new IR.Tuple(map.Apply(forwardOffsets, Enumerable.Repeat<Expr>(0L, forwardOffsets.Length).ToArray()).Select(i => i.Start).ToArray());
         var shape = shapeExprs.ToArray();
         bool innerAllocated = false;
         if (TryGetParerntBuffer(node, bid, out var parentBuffer, out var parentOffsets))

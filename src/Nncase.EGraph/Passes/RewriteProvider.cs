@@ -79,6 +79,11 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
                 foreach (var (oldExpr, oldEClass, newExpr) in replacedExprs)
                 {
                     var typeInferSuccess = CompilerServices.InferenceType(newExpr);
+                    if (!typeInferSuccess && DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
+                    {
+                        DumpScope.Current.DumpIR(newExpr, $"{rule}_InferFailed", "Rewrite");
+                    }
+
                     if (!typeInferSuccess)
                     {
                         throw new InvalidOperationException($"Type inference failed for {newExpr}");

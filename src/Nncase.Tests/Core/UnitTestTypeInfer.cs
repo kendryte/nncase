@@ -264,6 +264,15 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     }
 
     [Fact]
+    public void TestConcatScalar()
+    {
+        var v1 = Var(Shape.Scalar);
+        var v2 = Var(Shape.Scalar);
+        var cat = Concat(new Tuple(v1, v2), -1);
+        Assert.IsType<InvalidType>(cat.CheckedType);
+    }
+
+    [Fact]
     public void TestUnsqueeze()
     {
         var v1 = Var(new[] { 3 });

@@ -60,8 +60,13 @@ public sealed partial class CombineBinaryLeftTranspose : IRewriteRule
 
     private Expr? GetReplace(Binary binary, Call binaryCall, Expr x, Expr y, int[] perm)
     {
-        var invPerm = perm.Select((p, i) => (p, i)).OrderBy(tp => tp.p).Select(p => p.i).ToArray();
-        return Transpose(Binary(binary.BinaryOp, x, Transpose(y, invPerm)).InheritMetaData(binaryCall), perm);
+        if (x.CheckedShape.Rank == y.CheckedShape.Rank)
+        {
+            var invPerm = perm.Select((p, i) => (p, i)).OrderBy(tp => tp.p).Select(p => p.i).ToArray();
+            return Transpose(Binary(binary.BinaryOp, x, Transpose(y, invPerm)).InheritMetaData(binaryCall), perm);
+        }
+
+        return null;
     }
 }
 
@@ -77,8 +82,13 @@ public sealed partial class CombineBinaryRightTranspose : IRewriteRule
 
     private Expr? GetReplace(Binary binary, Call binaryCall, Expr x, Expr y, int[] perm)
     {
-        var invPerm = perm.Select((p, i) => (p, i)).OrderBy(tp => tp.p).Select(p => p.i).ToArray();
-        return Transpose(Binary(binary.BinaryOp, Transpose(x, invPerm), y).InheritMetaData(binaryCall), perm);
+        if (x.CheckedShape.Rank == y.CheckedShape.Rank)
+        {
+            var invPerm = perm.Select((p, i) => (p, i)).OrderBy(tp => tp.p).Select(p => p.i).ToArray();
+            return Transpose(Binary(binary.BinaryOp, Transpose(x, invPerm), y).InheritMetaData(binaryCall), perm);
+        }
+
+        return null;
     }
 }
 

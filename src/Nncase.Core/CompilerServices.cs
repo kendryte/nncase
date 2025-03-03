@@ -512,9 +512,18 @@ public static class CompilerServices
         {
             return tc.Value.ElementType == DataTypes.Int64 ? tc : new TensorConst(tc.Value.Cast<long>());
         }
-        else if (value is Const or Var or None)
+        else if (value is None)
         {
             return value;
+        }
+        else if (value is Var)
+        {
+            return value.CheckedType is TensorType tt && tt.DType == DataTypes.Int64 ? value : IR.F.Tensors.Cast(value, DataTypes.Int64);
+        }
+        else if ((value.CheckedType is TensorType tt && tt.DType != DataTypes.Int64)
+                || (value.CheckedType is DistributedType dt && dt.TensorType.DType != DataTypes.Int64))
+        {
+            return SimplifyForDimension(IR.F.Tensors.Cast(value, DataTypes.Int64));
         }
         else if ((value is Call call && call.Arguments.AsValueEnumerable().All(x => x is Const))
             || value.CheckedType is DistributedType)

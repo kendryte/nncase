@@ -30,15 +30,14 @@ using namespace nncase::runtime::stackvm;
 result<value_t> nncase::kernels::stackvm::allocate(
     [[maybe_unused]] typecode_t elem_type,
     [[maybe_unused]] runtime::stackvm::memory_location_t location,
-    [[maybe_unused]] bool malloc, [[maybe_unused]] bool can_fold_const_call,
-    [[maybe_unused]] value_t size, [[maybe_unused]] value_t output,
-    [[maybe_unused]] kernel_context &context) {
+    [[maybe_unused]] bool malloc, [[maybe_unused]] value_t size,
+    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
     return err(std::errc::not_supported);
 }
 
 result<value_t> nncase::kernels::stackvm::allocate_buffer_view(
-    [[maybe_unused]] bool can_fold_const_call, [[maybe_unused]] value_t buffer,
-    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
+    [[maybe_unused]] value_t buffer, [[maybe_unused]] value_t output,
+    [[maybe_unused]] kernel_context &context) {
     return err(std::errc::not_supported);
 }
 
@@ -138,23 +137,22 @@ result<value_t> nncase::kernels::stackvm::buffer_index_of(
 }
 
 result<value_t> nncase::kernels::stackvm::buffer_load(
-    [[maybe_unused]] bool can_fold_const_call, [[maybe_unused]] value_t input,
-    [[maybe_unused]] value_t indices, [[maybe_unused]] value_t output,
-    [[maybe_unused]] kernel_context &context) {
+    [[maybe_unused]] value_t input, [[maybe_unused]] value_t indices,
+    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
     return err(std::errc::not_supported);
 }
 
 result<value_t> nncase::kernels::stackvm::buffer_store(
-    [[maybe_unused]] bool can_fold_const_call, [[maybe_unused]] value_t input,
-    [[maybe_unused]] value_t indices, [[maybe_unused]] value_t value,
-    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
+    [[maybe_unused]] value_t input, [[maybe_unused]] value_t indices,
+    [[maybe_unused]] value_t value, [[maybe_unused]] value_t output,
+    [[maybe_unused]] kernel_context &context) {
     return err(std::errc::not_supported);
 }
 
 result<value_t> nncase::kernels::stackvm::buffer_subview(
-    [[maybe_unused]] bool can_fold_const_call, [[maybe_unused]] value_t buffer,
-    [[maybe_unused]] value_t offset, [[maybe_unused]] value_t shape,
-    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
+    [[maybe_unused]] value_t buffer, [[maybe_unused]] value_t offset,
+    [[maybe_unused]] value_t shape, [[maybe_unused]] value_t output,
+    [[maybe_unused]] kernel_context &context) {
     return err(std::errc::not_supported);
 }
 
@@ -208,7 +206,6 @@ result<value_t> nncase::kernels::stackvm::concat(int32_t axis, value_t input,
 }
 
 result<value_t> nncase::kernels::stackvm::condition(
-    [[maybe_unused]] bool can_fold_const_call,
     [[maybe_unused]] value_t predicate, [[maybe_unused]] value_t value,
     [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
     return err(std::errc::not_supported);
@@ -296,9 +293,10 @@ result<value_t> nncase::kernels::stackvm::conv2d_transpose(
     return ok(output);
 }
 
-result<value_t> nncase::kernels::stackvm::ddr_of(
-    [[maybe_unused]] bool can_fold_const_call, [[maybe_unused]] value_t input,
-    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
+result<value_t>
+nncase::kernels::stackvm::ddr_of([[maybe_unused]] value_t input,
+                                 [[maybe_unused]] value_t output,
+                                 [[maybe_unused]] kernel_context &context) {
     return err(std::errc::not_supported);
 }
 
@@ -625,8 +623,8 @@ nncase::kernels::stackvm::mat_mul(value_t lhs, value_t rhs, value_t output,
 }
 
 result<value_t> nncase::kernels::stackvm::match_buffer(
-    [[maybe_unused]] bool can_fold_const_call, [[maybe_unused]] value_t input,
-    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
+    [[maybe_unused]] value_t input, [[maybe_unused]] value_t output,
+    [[maybe_unused]] kernel_context &context) {
     return err(std::errc::not_supported);
 }
 
@@ -830,10 +828,9 @@ nncase::kernels::stackvm::relu6([[maybe_unused]] value_t input,
 }
 
 result<value_t> nncase::kernels::stackvm::require(
-    [[maybe_unused]] std::string message,
-    [[maybe_unused]] bool can_fold_const_call,
-    [[maybe_unused]] value_t predicate, [[maybe_unused]] value_t value,
-    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
+    [[maybe_unused]] std::string message, [[maybe_unused]] value_t predicate,
+    [[maybe_unused]] value_t value, [[maybe_unused]] value_t output,
+    [[maybe_unused]] kernel_context &context) {
     try_to_scalar(cond, predicate, bool);
     if (!cond) {
         printf("%s\n", message.data());

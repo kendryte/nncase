@@ -168,15 +168,15 @@ public sealed class UnitTestTIRUtilities
     [Fact]
     public void TestTypePatternUtility()
     {
-        var actual1 = TypePatternUtility.GetWindowedOutputSize(3, 3, 1, 1, true);
+        var actual1 = TypeInference.GetWindowedOutputSize(3, 3, 1, 1, true);
         var expect1 = 3;
         Assert.Equal(expect1, actual1);
 
-        var actual2 = TypePatternUtility.GetWindowedOutputSize(3, 3, 1, 1, false, true);
+        var actual2 = TypeInference.GetWindowedOutputSize(3, 3, 1, 1, false, true);
         var expect2 = 1;
         Assert.Equal(expect2, actual2);
 
-        var actual3 = TypePatternUtility.GetWindowedOutputSize(3, 3, 1, 1, (1, 1));
+        var actual3 = TypeInference.GetWindowedOutputSize(3, 3, 1, 1, (1, 1));
         var expect3 = 3;
         Assert.Equal(expect3, actual3);
     }

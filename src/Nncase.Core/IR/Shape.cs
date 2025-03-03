@@ -249,7 +249,7 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
             {
                 if (DumpScope.Current.IsEnabled(DumpFlags.Compile))
                 {
-                    DumpScope.Current.DumpIR(this, "InvalidDimension");
+                    DumpScope.Current.DumpIR(dim, "InvalidDimension");
                 }
 
                 throw new ArgumentException($"Invalid dimension type: {dim.CheckedType}");
