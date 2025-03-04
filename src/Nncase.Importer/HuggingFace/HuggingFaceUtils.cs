@@ -203,7 +203,7 @@ static class HuggingFaceUtils
            head_dim = getattr(config, "head_dim", config.hidden_size // config.num_attention_heads)
            dim = int(head_dim * partial_rotary_factor)
          */
-        var baseRoPETheta = (float)config["rope_theta"];
+        var baseRoPETheta = (float)(double)config["rope_theta"];
         var partialRotaryFactor =
             1.0; // config.partial_rotary_factor if hasattr(config, "partial_rotary_factor") else 1.0
 
@@ -215,8 +215,8 @@ static class HuggingFaceUtils
         }
         else
         {
-            int hiddenSize = (int)config["hidden_size"];
-            int numAttentionHeads = (int)config["num_attention_heads"];
+            int hiddenSize = (int)(long)config["hidden_size"];
+            int numAttentionHeads = (int)(long)config["num_attention_heads"];
             headDim = hiddenSize / numAttentionHeads;
         }
 
@@ -235,13 +235,13 @@ static class HuggingFaceUtils
     public class DynamicCache
     {
         public int seenTokens = 0;
-        public List<object> keyCache;
-        public List<object> ValueCache;
+        public List<object>? keyCache;
+        public List<object>? ValueCache;
 
         public int GetSeqLength(int layerCount = 0)
         {
-            bool isEmptyLayer = keyCache.Count == 0 || keyCache.Count <= layerCount || (int)keyCache[layerCount] == 0;
-            var layer = (Call)keyCache[(Index)layerCount!];
+            bool isEmptyLayer = keyCache?.Count == 0 || keyCache?.Count <= layerCount || (int)keyCache?[layerCount] == 0;
+            var layer = (Call)keyCache?[(Index)layerCount!];
             return isEmptyLayer ? 0 : layer.CheckedShape[-2].FixedValue;
         }
 
