@@ -164,7 +164,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
 
         // Assert.True(CompilerServices.InferenceType(padding));
         var paddingPost = await RunShapeInferPass("padding", padding, input);
-        Assert.Equal(Tensor.From(new[] { 1, 1, 1, 1 }, new Shape(2, 2)), paddingPost);
+        Assert.Equal(Tensor.From(new long[] { 1, 1, 1, 1 }, new Shape(2, 2)), paddingPost);
     }
 
     [Fact]

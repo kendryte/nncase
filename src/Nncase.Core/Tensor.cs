@@ -230,6 +230,18 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     }
 
     /// <summary>
+    /// Create a scalar tensor from a scalar.
+    /// </summary>
+    /// <param name="type">Data type.</param>
+    /// <param name="value">Value.</param>
+    /// <param name="dimensions">Fill dimensions.</param>
+    /// <returns>Created tensor.</returns>
+    public static Tensor FromScalar(DataType type, object value, ReadOnlySpan<long> dimensions)
+    {
+        return From(type, new ScalarTensorInitializer(value), dimensions);
+    }
+
+    /// <summary>
     /// Create tensor from a range.
     /// </summary>
     /// <param name="start">Start value.</param>
@@ -446,8 +458,8 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
 
     public static Tensor Ones(DataType dataType, ReadOnlySpan<long> dimensions)
     {
-        var value = Convert.ChangeType(1, typeof(T));
-        return Tensor.FromScalar(dataType, value);
+        var value = Convert.ChangeType(1, dataType.CLRType);
+        return Tensor.FromScalar(dataType, value, dimensions);
     }
 
     public static Tensor One(DataType dataType) => Ones(dataType, []);
@@ -583,5 +595,22 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         where T : unmanaged, IEquatable<T>
     {
         return new Tensor<T>(dimensions);
+    }
+
+    private sealed class ScalarTensorInitializer : ITensorInitializer
+    {
+        public ScalarTensorInitializer(object value)
+        {
+            Value = value;
+        }
+
+        public object Value { get; }
+
+        public void Initialize<T>(Tensor<T> tensor)
+            where T : unmanaged, IEquatable<T>
+        {
+            var value = (T)Convert.ChangeType(Value, typeof(T));
+            tensor.Fill(value);
+        }
     }
 }

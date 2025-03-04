@@ -61,11 +61,12 @@ public class UnitTestCombineQuantize : TransformTestBase
     [Fact]
     public void TestCombineQuantizeConcatNegative()
     {
+        CompileOptions.DumpFlags = Diagnostics.DumpFlags.Compile | Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.ImportOps;
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 256, 20, 20 })); // f32[1,256,20,20]
         var v251 = ReduceWindow2D(ReduceOp.Max, input, -3.4028235E+38, new[] { 5L, 5L }, new[] { 1L, 1L }, new[,] { { 2L, 2L }, { 2L, 2L } }, new[] { 1L, 1L }, false, false); // f32[1,256,20,20]
         var v253 = ReduceWindow2D(ReduceOp.Max, v251, -3.4028235E+38, new[] { 5L, 5L }, new[] { 1L, 1L }, new[,] { { 2L, 2L }, { 2L, 2L } }, new[] { 1L, 1L }, false, false); // f32[1,256,20,20]
         var v255 = ReduceWindow2D(ReduceOp.Max, v253, -3.4028235E+38, new[] { 5L, 5L }, new[] { 1L, 1L }, new[,] { { 2L, 2L }, { 2L, 2L } }, new[] { 1L, 1L }, false, false); // f32[1,256,20,20]
-        var body = IR.F.Math.Quantize(IR.F.Tensors.Concat(new IR.Tuple(input, v251, v253, v255), 1), new QuantParam(1, 0.323f), DataTypes.UInt8);
+        var body = IR.F.Math.Quantize(IR.F.Tensors.Concat(new IR.Tuple(v253, v255), 1), new QuantParam(1, 0.323f), DataTypes.UInt8);
         _ = new Dictionary<Var, IValue>() { { input, IR.F.Random.Uniform(DataTypes.Float32, 1.0f, -1.0f, 0, new[] { 1, 256, 20, 20 }).Evaluate() }, };
         var rootPre = new Function(body, input);
         TestNotMatch<CombineQuantizeConcat>(rootPre);

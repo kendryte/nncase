@@ -133,28 +133,28 @@ public class UnitTestEvaluatorTensors : TestClassBase
     {
         {
             var shape = new long[] { 1, 3, 16, 16 };
-            var value = 1F;
+            var value = new[] { 1F };
             var expect = Tensor.Ones<float>(new Shape(shape));
             DoConstantOfShape(shape, value, expect);
         }
 
         {
             var shape = new long[] { 1, 3, 16, 16 };
-            var value = 1L;
+            var value = new[] { 1L };
             var expect = Tensor.Ones<long>(new Shape(shape));
             DoConstantOfShape(shape, value, expect);
         }
 
         {
             var shape = new long[] { 1, 3, 16, 16 };
-            var value = 0f;
+            var value = new[] { 0F };
             var expect = Tensor.Zeros<float>(new Shape(shape));
             DoConstantOfShape(shape, value, expect);
         }
 
         {
             var shape = new long[] { 0 };
-            var value = 0F;
+            var value = new[] { 0F };
             var expect = Tensor.Zeros<float>(new Shape(shape));
             DoConstantOfShape(shape, value, expect);
         }
@@ -162,7 +162,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
         {
             var s = new long[] { 1, 3, 16, 16 };
             var shape = new Var(new TensorType(DataTypes.Int64, new int[] { s.Length }));
-            var value = 0f;
+            var value = new[] { 0F };
             var expect = Tensor.Zeros<float>(new Shape(s));
 
             var expr = IR.F.Tensors.ConstantOfShape(shape, value);

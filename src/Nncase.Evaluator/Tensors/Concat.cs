@@ -134,8 +134,9 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
                         continue;
                     }
 
-                    var d = GetTensorType(inType).Shape[i];
-                    if (d.IsFixed && d.FixedValue != GetTensorType(inputs[0]).Shape[i])
+                    var a = GetTensorType(inType).Shape[i];
+                    var b = GetTensorType(inputs[0]).Shape[i];
+                    if (a.IsFixed && b.IsFixed && a != b)
                     {
                         allAxisDimIsSame = false;
                     }
