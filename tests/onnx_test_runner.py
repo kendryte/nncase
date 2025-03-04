@@ -20,6 +20,7 @@ import onnx
 import shutil
 import os
 import numpy as np
+import torch
 from test_runner import *
 from test_utils import *
 from collections import ChainMap
