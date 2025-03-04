@@ -109,7 +109,13 @@ public record struct FixedAndDynamicDimension(long Fixed, Dimension? Dynamic)
             };
         }
 
-        return null;
+        return (a.Dynamic, b.Dynamic) switch
+        {
+            (null, _) => null,
+            (Dimension x, null) => new FixedAndDynamicDimension(1, a.Fixed * x / b.Fixed),
+            (Dimension x, Dimension y) when x == y => null,
+            (Dimension x, Dimension y) => new FixedAndDynamicDimension(1, a.Fixed * x / (b.Fixed * y)),
+        };
     }
 
     public Dimension ToDimension()

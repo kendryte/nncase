@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Nncase.Diagnostics;
+using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Passes.Transforms;
@@ -152,14 +153,14 @@ public sealed class UnitTestDumpper : TestClassBase
             var strideW = 2;
             var dilationH = 1;
             var dilationW = 1;
-            var padH = Util.GetWindowedPadding(inH, fH, strideH, dilationH, true);
-            var padW = Util.GetWindowedPadding(inW, fW, strideW, dilationW, true);
+            var padH = TypeInference.GetWindowedPadding(inH, fH, strideH, dilationH, true);
+            var padW = TypeInference.GetWindowedPadding(inW, fW, strideW, dilationW, true);
             var padding = Stack(
               new IR.Tuple(
                 Stack(new IR.Tuple(new Expr[] { 0, 0 }), 0),
                 Stack(new IR.Tuple(new Expr[] { 0, 0 }), 0),
-                Stack(new IR.Tuple(padH), 0),
-                Stack(new IR.Tuple(padW), 0)),
+                Stack(new IR.Tuple(padH.Select(x => x.ToExpr()).ToArray()), 0),
+                Stack(new IR.Tuple(padW.Select(x => x.ToExpr()).ToArray()), 0)),
               0);
             var body = IR.F.NN.Pad(input, padding, PadMode.Constant, 0.0f);
             main = new Function("main", body, input);

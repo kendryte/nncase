@@ -292,9 +292,6 @@ internal partial class CodeGenVisitor
             case IR.Tensors.Where top:
                 Emitter.T.Where(top.IsTfWhere);
                 break;
-            case IR.ShapeExpr.GetPaddings top:
-                Emitter.T.GetPaddings();
-                break;
             case IR.RNN.LSTM top:
                 Emitter.T.LSTM(top.Direction, top.Layout, top.Activations);
                 break;

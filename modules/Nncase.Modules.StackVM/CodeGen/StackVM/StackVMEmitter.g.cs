@@ -916,13 +916,6 @@ public partial class StackVMEmitter
         }
 
         ///<summary>.</summary>
-        public void GetPaddings()
-        {
-            _emitter.Write((byte)100);
-            _emitter.Write((ushort)37);
-        }
-
-        ///<summary>.</summary>
         public void Hardmax()
         {
             _emitter.Write((byte)100);

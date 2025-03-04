@@ -20,7 +20,7 @@ public class ConstantOfShapeEvaluator : IEvaluator<ConstantOfShape>, ITypeInfere
     {
         var shape = context.GetArgumentValueAsArray<long>(target, ConstantOfShape.Shape);
         var value = context.GetArgumentValueAsTensor(target, ConstantOfShape.Value);
-        var result = Enumerable.Repeat(value.ToScalar<float>(), shape.Aggregate(1, (i, i1) => i * (int)i1)).ToArray();
+        var result = Enumerable.Repeat(value.Cast<float>()[0], shape.Aggregate(1, (i, i1) => i * (int)i1)).ToArray();
         return OrtKI.Cast(Tensor.From<float>(result, shape).ToOrtTensor(), (int)value.ElementType.ToOrtType()).ToValue();
     }
 

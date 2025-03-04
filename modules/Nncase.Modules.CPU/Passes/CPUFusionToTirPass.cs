@@ -147,7 +147,7 @@ internal sealed class CPUFusionToTirPass : ModulePass
     private void AddDimVarsToWrapperCallers(PrimFunctionWrapper primWrapper, IEnumerable<Var> dimVars, IEnumerable<TIR.Buffer> outputBuffers)
     {
         var callers = primWrapper.Users.OfType<Call>().ToArray();
-        var outputBufferShapes = outputBuffers.Select(x => (x.ElemType, Shape: new Shape(x.Dimensions).ToValueArrayExpr().Clone())).ToArray();
+        var outputBufferShapes = outputBuffers.Select(x => (x.ElemType, Shape: new Shape(x.Dimensions).ToValueArrayExpr())).ToArray();
         foreach (var caller in callers)
         {
             var outputAllocs = outputBufferShapes.Select(x => IR.F.Buffer.Uninitialized(x.ElemType, TIR.MemoryLocation.Data, x.Shape));

@@ -164,6 +164,13 @@ public struct Dimension : IEquatable<Dimension?>
         (_, _) => new Dimension(lhs.Value / rhs.Value),
     };
 
+    public static Dimension operator %(Dimension lhs, Dimension rhs) => (lhs.IsFixed, rhs.IsFixed) switch
+    {
+        (true, true) => lhs.FixedValue % rhs.FixedValue,
+        (_, _) when lhs.IsUnknown || rhs.IsUnknown => Unknown,
+        (_, _) => new Dimension(lhs.Value % rhs.Value),
+    };
+
     public static Dimension Abs(Dimension value)
     {
         if (value.IsFixed)
@@ -192,6 +199,26 @@ public struct Dimension : IEquatable<Dimension?>
         }
 
         return IR.F.Math.CeilDiv(lhs.Value, rhs.Value);
+    }
+
+    public static Dimension Max(Dimension lhs, Dimension rhs)
+    {
+        if (lhs.IsFixed && rhs.IsFixed)
+        {
+            return System.Math.Max(lhs.FixedValue, rhs.FixedValue);
+        }
+
+        return IR.F.Math.Max(lhs.Value, rhs.Value);
+    }
+
+    public static Dimension Min(Dimension lhs, Dimension rhs)
+    {
+        if (lhs.IsFixed && rhs.IsFixed)
+        {
+            return System.Math.Min(lhs.FixedValue, rhs.FixedValue);
+        }
+
+        return IR.F.Math.Min(lhs.Value, rhs.Value);
     }
 
     /// <inheritdoc/>

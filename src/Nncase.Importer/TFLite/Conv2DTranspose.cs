@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NetFabric.Hyperlinq;
+using Nncase.Evaluator;
 using Nncase.IR;
 using F = Nncase.IR.F;
 using TensorType = tflite.TensorType;
@@ -18,7 +19,7 @@ namespace Nncase.Importer.TFLite
         private Expr VisitConv2DTranspose(in tflite.Operator op)
         {
             var outShape = GetInputExprs(op, 0);
-            var newOutShape = new[] { outShape[0], outShape[3], outShape[1], outShape[2] };
+            var newOutShape = new Shape(outShape[0], outShape[3], outShape[1], outShape[2]);
             var (input, weights) = GetInputExprs(op, 2, 1);
             Expr bias;
             if (op.InputsLength > 3)
@@ -38,16 +39,16 @@ namespace Nncase.Importer.TFLite
             var dilationW = 1;
             var stride = Tensor.From<int>(new[] { strideH, strideW }, [2]);
             var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, [2]);
-            var oldWShape = F.Tensors.ShapeOf(weights);
-            var wShape = F.Tensors.Stack(new IR.Tuple(oldWShape[0], oldWShape[3], oldWShape[1], oldWShape[2]), 0);
-            var padding = F.ShapeExpr.GetPaddings(F.Tensors.Stack(new IR.Tuple(newOutShape), 0), wShape, stride, dilation, options.Padding == tflite.Padding.SAME, false);
+            var oldWShape = weights.CheckedShape;
+            var wShape = new Shape(oldWShape[0], oldWShape[3], oldWShape[1], oldWShape[2]);
+            var padding = TypeInference.GetPaddings(newOutShape, wShape, stride, dilation, options.Padding == tflite.Padding.SAME, false);
             var clamp = ValueRange<float>.Full;
 
             var conv2DTranspose = F.NN.Conv2DTranspose(
                     F.Tensors.NHWCToNCHW(input),
                     F.Tensors.NHWCToNCHW(weights),
                     bias,
-                    IR.F.Tensors.Stack(new IR.Tuple(newOutShape), 0),
+                    newOutShape.ToValueArrayExpr(),
                     stride,
                     padding,
                     Tensor.From<long>(new long[] { 0, 0, 0, 0 }),

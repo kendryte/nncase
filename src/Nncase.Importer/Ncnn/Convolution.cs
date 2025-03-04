@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
+using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Buffers;
 using Nncase.IR.F;
@@ -48,12 +49,12 @@ public partial class NcnnImporter
 
         var input = CHWToNCHW(GetInputExprs(layer, 0));
 
-        Expr[] paddingH;
-        Expr[] paddingW;
+        Dimension[] paddingH;
+        Dimension[] paddingW;
 
         if (padLeft is -233 or -234)
         {
-            var inShape = Tensors.ShapeOf(input);
+            var inShape = input.CheckedShape;
             var w = inShape[3];
             var h = inShape[2];
             var padW = kernelExtentW + ((w - 1) / strideW * strideW) - w;
@@ -62,27 +63,27 @@ public partial class NcnnImporter
             if (padLeft == -233)
             {
                 // SAME_UPPER
-                paddingH = new[] { padH / 2, padH - (padH / 2) };
-                paddingW = new[] { padW / 2, padW - (padW / 2) };
+                paddingH = [padH / 2L, padH - (padH / 2L)];
+                paddingW = [padW / 2L, padW - (padW / 2L)];
             }
             else
             {
                 // SAME_LOWER
-                paddingH = new[] { padH - (padH / 2), padH / 2 };
-                paddingW = new[] { padW - (padW / 2), padW / 2 };
+                paddingH = [padH - (padH / 2L), padH / 2L];
+                paddingW = [padW - (padW / 2L), padW / 2L];
             }
         }
         else
         {
-            paddingH = new Expr[] { padTop, padBottom };
-            paddingW = new Expr[] { padLeft, padRight };
+            paddingH = [padTop, padBottom];
+            paddingW = [padLeft, padRight];
         }
 
         var stride = Tensor.From(new[] { strideH, strideW }, [2]);
         var dilation = Tensor.From(new[] { dilationH, dilationW }, [2]);
         var clampRange = ToFloatClampRange(activationType, activationParams);
         var clamp = Tensor.From(new[] { clampRange.Min, clampRange.Max }, [2]);
-        var padding = Util.ConcatPadding(paddingH, paddingW);
+        var padding = TypeInference.ConcatPadding(paddingH, paddingW);
         var weights = _modelBin.LoadFloat32(new[] { numOutput, numInput, kernelH, kernelW }, true);
         var bias = biasTerm != 0 ? _modelBin.LoadFloat32(new[] { numOutput }, false) : Tensor.FromScalar(0f, numOutput);
 

@@ -260,6 +260,43 @@ public static class TypeInference
         return (size + padding.Before + padding.After - effective_filter_size + stride) / stride;
     }
 
+    public static Expr GetPaddings(Shape inputShape, Shape weightsShape, Expr strides, Expr dilations, bool same, bool lower = false)
+    {
+        var padH = GetWindowedPadding(inputShape[2], weightsShape[2], strides[0], dilations[0], same, lower);
+        var padW = GetWindowedPadding(inputShape[3], weightsShape[3], strides[1], dilations[1], same, lower);
+        return ConcatPadding(padH, padW);
+    }
+
+    public static Expr ConcatPadding(Dimension[] padH, Dimension[] padW)
+    {
+        // return [[padh_before, padh_after],
+        //         [padw_before, padw_after]]
+        var padHExpr = new Shape(padH).ToValueArrayExpr();
+        var padWExpr = new Shape(padW).ToValueArrayExpr();
+        var result = IR.F.Tensors.Stack(new IR.Tuple(padHExpr, padWExpr), 0);
+        return padHExpr is Const && padWExpr is Const ? result.Evaluate().AsTensor() : result;
+    }
+
+    public static Dimension[] GetWindowedPadding(Dimension inputSize, Dimension filter, Dimension stride, Dimension dilation, bool same, bool lower = false)
+    {
+        var outputSize = GetWindowedOutputSize(inputSize, filter, stride, dilation, same, false);
+        return GetWindowedPaddingValue(inputSize, outputSize, filter, stride, dilation, lower);
+    }
+
+    public static Dimension[] GetWindowedPaddingValue(Dimension inputSize, Dimension outputSize, Dimension filter, Dimension stride, Dimension dilation, bool lower)
+    {
+        var effectiveFilterSize = ((filter - 1L) * dilation) + 1L;
+        var padding = Dimension.Max(0L, ((outputSize - 1L) * stride) + effectiveFilterSize - inputSize);
+        var before = padding / 2L;
+        var after = padding - (padding / 2L);
+        if (lower)
+        {
+            return [Dimension.Max(before, after), Dimension.Min(before, after)];
+        }
+
+        return [before, after];
+    }
+
     /// <summary>
     /// Pad Type Infer.
     /// </summary>
@@ -302,35 +339,25 @@ public static class TypeInference
     /// </summary>
     public static IRType ReduceWindow2DType(TensorType input, Expr filter, Expr stride, Expr padding, Expr ceilMode)
     {
-        var outShape = input.Shape.ToList();
-        if (
-            filter is TensorConst filterValue &&
-            stride is TensorConst strideValue &&
-            padding is TensorConst paddingValue &&
-            ceilMode is TensorConst ceilModeValue)
+        if (padding.CheckedShape.Rank != 2)
         {
-            var ts_filter = filterValue.Value.Cast<int>();
-            var ts_stride = strideValue.Value.Cast<int>();
-            var ceilModeV = ceilModeValue.Value.ToScalar<bool>();
-            var ts_padding = paddingValue.Value.Cast<int>();
-            if (ts_padding.Rank != 2)
-            {
-                return new InvalidType($"The padding shape {ts_padding.Shape} is not support!");
-            }
+            return new InvalidType($"The padding shape {padding.CheckedShape} is not support!");
+        }
 
-            var padh = ts_padding[0, 0] + ts_padding[0, 1];
-            var padw = ts_padding[1, 0] + ts_padding[1, 1];
-            outShape[2] = input.Shape[2].IsUnknown
-                ? throw new NotImplementedException()
-                : GetWindowedOutputSize((int)input.Shape[2].FixedValue + padh, ts_filter[0], ts_stride[0], 1, false, ceilModeV);
-            outShape[3] = input.Shape[3].IsUnknown
-                ? throw new NotImplementedException()
-                : GetWindowedOutputSize((int)input.Shape[3].FixedValue + padw, ts_filter[1], ts_stride[1], 1, false, ceilModeV);
+        var outShape = input.Shape.ToArray();
+        if (ceilMode is TensorConst ceilModeValue)
+        {
+            var ceilModeV = ceilModeValue.Value.ToScalar<bool>();
+
+            var padh = padding[0, 0] + padding[0, 1];
+            var padw = padding[1, 0] + padding[1, 1];
+            outShape[2] = GetWindowedOutputSize(input.Shape[2] + padh, filter[0], filter[0], 1L, false, ceilModeV);
+            outShape[3] = GetWindowedOutputSize(input.Shape[3] + padw, filter[1], filter[1], 1L, false, ceilModeV);
 
             return input with { Shape = new Shape(outShape) };
         }
 
-        return input with { Shape = Shape.Unknown(4) };
+        throw new NotImplementedException("CeilMode is not constant");
     }
 
     /// <summary>
