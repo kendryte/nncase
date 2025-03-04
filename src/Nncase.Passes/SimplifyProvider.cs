@@ -6,6 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -96,14 +97,15 @@ internal sealed class SimplifyProvider : ISimplifyProvider
 #endif
     }
 
-    public long[] GetMaxShape(Shape shape)
+    public bool TryGetMaxShape(Shape shape, [MaybeNullWhen(false)] out long[] maxShape)
     {
         if (shape.IsFixed)
         {
-            return shape.ToValueArray();
+            maxShape = shape.ToValueArray();
+            return true;
         }
 
-        var maxShape = new long[shape.Rank];
+        maxShape = new long[shape.Rank];
         if (!shape.Metadata.Range.HasValue)
         {
             new InferRangeVisitor().Visit(shape);
@@ -114,12 +116,13 @@ internal sealed class SimplifyProvider : ISimplifyProvider
             var max = shape.Dimensions[i].Metadata.Range!.Value.Max;
             if (max >= int.MaxValue)
             {
-                throw new ArgumentOutOfRangeException($"shape dimension is too large: {max}");
+                maxShape = null;
+                return false;
             }
 
             maxShape[i] = (long)max;
         }
 
-        return maxShape;
+        return true;
     }
 }

@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -54,5 +55,5 @@ public interface ISimplifyProvider
 {
     Expr SimplifyForDimension(Expr expr);
 
-    long[] GetMaxShape(Shape shape);
+    bool TryGetMaxShape(Shape shape, [MaybeNullWhen(false)] out long[] maxShape);
 }

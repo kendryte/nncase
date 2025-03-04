@@ -442,10 +442,16 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
         return new(fixedValue, dynamicValue);
     }
 
-    public long ProdWithDynamicAsMaxValue(long scale = 1)
+    public long ProdWithDynamicAsMaxValue(int dynamicValue = short.MaxValue, long scale = 1)
     {
-        var maxShape = CompilerServices.GetMaxShape(this);
-        return Enumerable.Range(0, Rank).Aggregate(scale, (acc, x) => acc * maxShape[x]);
+        if (CompilerServices.TryGetMaxShape(this, out var maxShape))
+        {
+            return Enumerable.Range(0, Rank).Aggregate(scale, (acc, x) => acc * maxShape[x]);
+        }
+        else
+        {
+            return dynamicValue;
+        }
     }
 
     /// <summary>

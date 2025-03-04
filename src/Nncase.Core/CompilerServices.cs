@@ -208,7 +208,7 @@ public interface ICompilerServicesProvider
 
     Expr SimplifyForDimension(Expr value);
 
-    long[] GetMaxShape(Shape shape);
+    bool TryGetMaxShape(Shape shape, [MaybeNullWhen(false)] out long[] maxShape);
 }
 
 internal interface ICompilerServicesProviderInternal
@@ -504,7 +504,17 @@ public static class CompilerServices
 
     public static Expr SimplifyForDimension(Expr value) => Provider.SimplifyForDimension(value);
 
-    public static long[] GetMaxShape(Shape shape) => Provider.GetMaxShape(shape);
+    public static bool TryGetMaxShape(Shape shape, [MaybeNullWhen(false)] out long[] maxShape) => Provider.TryGetMaxShape(shape, out maxShape);
+
+    public static long[] GetMaxShape(Shape shape)
+    {
+        if (TryGetMaxShape(shape, out var maxShape))
+        {
+            return maxShape;
+        }
+
+        throw new InvalidOperationException("Failed to get max shape.");
+    }
 
     public static Expr FastSimplifyForDimension(Expr value)
     {
@@ -713,5 +723,5 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
 
     public Expr SimplifyForDimension(Expr value) => _simplifyProvider.SimplifyForDimension(value);
 
-    public long[] GetMaxShape(Shape shape) => _simplifyProvider.GetMaxShape(shape);
+    public bool TryGetMaxShape(Shape shape, [MaybeNullWhen(false)] out long[] maxShape) => _simplifyProvider.TryGetMaxShape(shape, out maxShape);
 }

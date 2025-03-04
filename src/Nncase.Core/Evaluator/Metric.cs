@@ -189,7 +189,7 @@ public static class MetricUtility
     {
         return type switch
         {
-            TensorType t => (UInt128)t.Shape.ProdWithDynamicAsMaxValue(scale),
+            TensorType t => (UInt128)t.Shape.ProdWithDynamicAsMaxValue(scale: scale),
             TupleType t => t.Fields.Sum(f => GetFLOPs(f, scale)),
             _ => 0,
         };

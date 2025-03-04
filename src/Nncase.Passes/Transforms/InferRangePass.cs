@@ -75,8 +75,19 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
 
     protected override ValueRange<double> VisitLeafTensorConst(TensorConst expr)
     {
-        var value = expr.Value.ToArray<double>();
-        return new ValueRange<double>(value.Min(), value.Max());
+        // QuantParam
+        if (expr.Value.ElementType is QuantParamType)
+        {
+            var value = expr.Value.ToArray<QuantParam>();
+            var min = Math.Min(value.Min(x => x.ZeroPoint), value.Min(x => x.Scale));
+            var max = Math.Max(value.Max(x => x.ZeroPoint), value.Max(x => x.Scale));
+            return new ValueRange<double>(min, max);
+        }
+        else
+        {
+            var value = expr.Value.ToArray<double>();
+            return new ValueRange<double>(value.Min(), value.Max());
+        }
     }
 
     protected override ValueRange<double> VisitLeafShape(Shape expr)
