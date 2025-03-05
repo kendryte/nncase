@@ -221,6 +221,16 @@ public struct Dimension : IEquatable<Dimension?>
         return IR.F.Math.Min(lhs.Value, rhs.Value);
     }
 
+    public static Dimension Select(Dimension value, Dimension compare, Dimension trueValue, Dimension falseValue)
+    {
+        if (value.IsFixed && compare.IsFixed)
+        {
+            return value.FixedValue == compare.FixedValue ? trueValue : falseValue;
+        }
+
+        return IR.F.Math.Select(IR.F.Math.Equal(value.Value, compare.Value), trueValue.ToExpr(), falseValue.ToExpr());
+    }
+
     /// <inheritdoc/>
     public override string ToString() => Kind switch
     {

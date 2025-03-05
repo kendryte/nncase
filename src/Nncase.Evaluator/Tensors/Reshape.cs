@@ -230,7 +230,9 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         }
 
         var rank = (int)shapeType.Shape[0].FixedValue;
-        var shapeDims = new Shape(Enumerable.Range(0, rank).Select(i => shape[i]).ToArray());
+        var shapeDims = new Shape((from i in Enumerable.Range(0, rank)
+                                   let dim = shape[i]
+                                   select i < input.Shape.Rank ? Dimension.Select(dim, 0, input.Shape[i], dim) : dim).ToArray());
         var minus1DimCount = shapeDims.Count(x => x.IsFixed && x.FixedValue == -1);
         var outputShape = new Dimension[rank];
 

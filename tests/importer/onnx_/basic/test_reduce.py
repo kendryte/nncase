@@ -107,7 +107,6 @@ keepdims_lists = [
 ]
 
 op_version_lists = [
-    1,
     11,
     13
 ]
