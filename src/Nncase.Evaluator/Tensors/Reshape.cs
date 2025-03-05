@@ -263,7 +263,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                         outputShape[i] = shapeDim;
                         break;
                     default:
-                        outputShape[i] = Select(NotEqual(shapeDim.Value, -1L), shapeDim.Value, minus1Dim.ToExpr());
+                        outputShape[i] = Dimension.Select(shapeDim, -1L, minus1Dim.ToDimension(), shapeDim);
                         break;
                 }
             }

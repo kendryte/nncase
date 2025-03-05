@@ -344,6 +344,7 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
     public void TestReshapeInfer()
     {
         var dimVar = new Var("seq_len", new TensorType(DataTypes.Int64, Shape.Scalar));
+        dimVar.Metadata.Range = new(1, 512);
         var dimC = (Dimension)dimVar;
         var a = new Var(new TensorType(DataTypes.Float32, new Shape(1, dimVar, 128)));
         var constShape = new Shape(1, dimC, 2, 64);

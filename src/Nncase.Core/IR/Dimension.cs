@@ -227,6 +227,12 @@ public struct Dimension : IEquatable<Dimension?>
         {
             return value.FixedValue == compare.FixedValue ? trueValue : falseValue;
         }
+        else if (value.Value.Metadata?.Range is { Min: var min, Max: var max }
+                && compare.IsFixed
+                && (min > compare.FixedValue || max < compare.FixedValue))
+        {
+            return falseValue;
+        }
 
         return IR.F.Math.Select(IR.F.Math.Equal(value.Value, compare.Value), trueValue.ToExpr(), falseValue.ToExpr());
     }
