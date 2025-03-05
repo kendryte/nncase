@@ -56,7 +56,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         DefaultTargetName = CPUTarget.Kind;
         CompileOptions.TargetOptions = new CpuTargetOptions();
 #if DEBUG
-        CompileOptions.DumpFlags = Diagnostics.DumpFlags.PassIR | Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.CodeGen | Diagnostics.DumpFlags.EGraphCost | Diagnostics.DumpFlags.Tiling;
+        CompileOptions.DumpFlags = Diagnostics.DumpFlags.PassIR | Diagnostics.DumpFlags.Compile | Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.CodeGen | Diagnostics.DumpFlags.EGraphCost | Diagnostics.DumpFlags.Tiling;
 #endif
     }
 
@@ -138,10 +138,10 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData([new long[] { 32, 64 }, new long[] { 2 }, 0])]
-    [InlineData([new long[] { 8, 4 }, new long[] { 4, 2 }, 1])]
-    [InlineData([new long[] { 32, 64, 128 }, new long[] { 8, 4, 2 }, 2])]
-    [InlineData([new long[] { 64, 128 }, new long[] { 2, 4, 8 }, 3])]
+    [InlineData([new long[] { 32, 64 }, new int[] { 2 }, 0])]
+    [InlineData([new long[] { 8, 4 }, new int[] { 4, 2 }, 1])]
+    [InlineData([new long[] { 32, 64, 128 }, new int[] { 8, 4, 2 }, 2])]
+    [InlineData([new long[] { 64, 128 }, new int[] { 2, 4, 8 }, 3])]
     public async Task TestGatherReduceScatter(long[] shape, int[] hierarchy, int count)
     {
         var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
@@ -243,11 +243,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { BinaryOp.Add, new[] { 8, 2 }, new int[] { 8, 2 }, new int[] { 1 }, new int[] { }, 0 })] // normal
-    [InlineData(new object[] { BinaryOp.Mul, new[] { 1, 8, 64, 2 * 8 }, new int[] { 1, 1, 64, 2 * 8 }, new int[] { 1 }, new int[] { }, 1 })] // broadcast
-    [InlineData(new object[] { BinaryOp.Add, new[] { 8, 16 }, new int[] { 16 }, new int[] { 1 }, new int[] { }, 2 })] // normal
-    [InlineData(new object[] { BinaryOp.Mul, new[] { 1, 8, 64, 2 * 8 }, new int[] { 1, 1, 64, 2 * 8 }, new[] { 4 }, new[] { 1 }, 3 })] // broadcast
-    public async Task TestPackBinary(BinaryOp op, int[] lhsShape, int[] rhsShape, int[] hierarchy, int[] sbps, int count)
+    [InlineData(new object[] { BinaryOp.Add, new long[] { 8, 2 }, new long[] { 8, 2 }, new int[] { 1 }, new int[] { }, 0 })] // normal
+    [InlineData(new object[] { BinaryOp.Mul, new long[] { 1, 8, 64, 2 * 8 }, new long[] { 1, 1, 64, 2 * 8 }, new int[] { 1 }, new int[] { }, 1 })] // broadcast
+    [InlineData(new object[] { BinaryOp.Add, new long[] { 8, 16 }, new long[] { 16 }, new int[] { 1 }, new int[] { }, 2 })] // normal
+    [InlineData(new object[] { BinaryOp.Mul, new long[] { 1, 8, 64, 2 * 8 }, new long[] { 1, 1, 64, 2 * 8 }, new[] { 4 }, new[] { 1 }, 3 })] // broadcast
+    public async Task TestPackBinary(BinaryOp op, long[] lhsShape, long[] rhsShape, int[] hierarchy, int[] sbps, int count)
     {
         var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
@@ -317,9 +317,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new long[] { 1, 4, 32, 32 }, ImageResizeMode.Bilinear, new[] { 1, 4, 64, 64 }, 0 })]
-    [InlineData(new object[] { new long[] { 1, 8, 32, 32 }, ImageResizeMode.NearestNeighbor, new[] { 1, 8, 64, 64 }, 1 })]
-    public async Task TestResizeImage(long[] shape, ImageResizeMode resizeMode, int[] newSize, int count)
+    [InlineData(new object[] { new long[] { 1, 4, 32, 32 }, ImageResizeMode.Bilinear, new long[] { 1, 4, 64, 64 }, 0 })]
+    [InlineData(new object[] { new long[] { 1, 8, 32, 32 }, ImageResizeMode.NearestNeighbor, new long[] { 1, 8, 64, 64 }, 1 })]
+    public async Task TestResizeImage(long[] shape, ImageResizeMode resizeMode, long[] newSize, int count)
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pre = IR.F.Imaging.ResizeImage(resizeMode, input, Array.Empty<float>(), newSize);
@@ -356,15 +356,15 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new[] { 1, 384, 512 }, new[] { 512, 512 }, false, false, new[] { 1 }, 0 })]
-    [InlineData(new object[] { new[] { 1, 1, 384, 256 }, new[] { 32, 256, 512 }, false, false, new[] { 1 }, 1 })]
-    [InlineData(new object[] { new[] { 384, 512 }, new[] { 512, 512 }, false, false, new[] { 1 }, 2 })]
-    [InlineData(new object[] { new[] { 1, 384, 512 }, new[] { 512, 512 }, false, true, new[] { 1 }, 3 })]
-    [InlineData(new object[] { new[] { 1, 1, 384, 256 }, new[] { 32, 256, 512 }, false, true, new[] { 1 }, 4 })]
-    [InlineData(new object[] { new[] { 384, 512 }, new[] { 512, 512 }, false, true, new[] { 1 }, 5 })]
-    [InlineData(new object[] { new[] { 384, 512 }, new[] { 512, 256 }, false, true, new[] { 2 }, 6 })]
-    [InlineData(new object[] { new[] { 384, 512 }, new[] { 512, 512 }, false, true, new[] { 2, 4 }, 7 })]
-    public async Task TestPackMatMul(int[] lhsShape, int[] rhsShape, bool constA, bool constB, int[] hierarchy, int count)
+    [InlineData(new object[] { new long[] { 1, 384, 512 }, new long[] { 512, 512 }, false, false, new[] { 1 }, 0 })]
+    [InlineData(new object[] { new long[] { 1, 1, 384, 256 }, new long[] { 32, 256, 512 }, false, false, new[] { 1 }, 1 })]
+    [InlineData(new object[] { new long[] { 384, 512 }, new long[] { 512, 512 }, false, false, new[] { 1 }, 2 })]
+    [InlineData(new object[] { new long[] { 1, 384, 512 }, new long[] { 512, 512 }, false, true, new[] { 1 }, 3 })]
+    [InlineData(new object[] { new long[] { 1, 1, 384, 256 }, new long[] { 32, 256, 512 }, false, true, new[] { 1 }, 4 })]
+    [InlineData(new object[] { new long[] { 384, 512 }, new long[] { 512, 512 }, false, true, new[] { 1 }, 5 })]
+    [InlineData(new object[] { new long[] { 384, 512 }, new long[] { 512, 256 }, false, true, new[] { 2 }, 6 })]
+    [InlineData(new object[] { new long[] { 384, 512 }, new long[] { 512, 512 }, false, true, new[] { 2, 4 }, 7 })]
+    public async Task TestPackMatMul(long[] lhsShape, long[] rhsShape, bool constA, bool constB, int[] hierarchy, int count)
     {
         var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
@@ -399,8 +399,8 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new long[] { 384, 128 }, 0, new[] { 1, 384 }, 0 })]
-    public async Task TestGather(long[] shape, int axis, int[] indicesShape, int count)
+    [InlineData(new object[] { new long[] { 384, 128 }, 0, new long[] { 1, 384 }, 0 })]
+    public async Task TestGather(long[] shape, int axis, long[] indicesShape, int count)
     {
         var vhidden_in = new Var("vhidden_in", new TensorType(DataTypes.Float32, shape));
         var vposition_ids = new Var("vposition_ids", new TensorType(DataTypes.Int64, indicesShape));
@@ -415,14 +415,14 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData([ReduceOp.Sum, new[] { 1, 64, 384, 128 }, new[] { 3 }, 0, true, new[] { 1 }, new int[] { }, 0])]
-    [InlineData([ReduceOp.Mean, new[] { 1, 384, 128 }, new[] { 2 }, 0, true, new[] { 1 }, new int[] { }, 1])]
-    [InlineData([ReduceOp.Mean, new[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, new int[] { 2 }, 2])]
-    [InlineData([ReduceOp.Max, new[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, new int[] { 2 }, 3])]
-    [InlineData([ReduceOp.Min, new[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, new int[] { 2 }, 4])]
-    [InlineData([ReduceOp.Sum, new[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, new int[] { 2 }, 5])]
-    [InlineData([ReduceOp.Mean, new[] { 1, 3, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, new int[] { 2 }, 6])]
-    [InlineData([ReduceOp.Sum, new[] { 1, 64, 384, 384 }, new[] { 3 }, 0, true, new[] { 64 }, new int[] { }, 7])]
+    [InlineData([ReduceOp.Sum, new long[] { 1, 64, 384, 128 }, new[] { 3 }, 0, true, new[] { 1 }, new int[] { }, 0])]
+    [InlineData([ReduceOp.Mean, new long[] { 1, 384, 128 }, new[] { 2 }, 0, true, new[] { 1 }, new int[] { }, 1])]
+    [InlineData([ReduceOp.Mean, new long[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, new int[] { 2 }, 2])]
+    [InlineData([ReduceOp.Max, new long[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, new int[] { 2 }, 3])]
+    [InlineData([ReduceOp.Min, new long[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, new int[] { 2 }, 4])]
+    [InlineData([ReduceOp.Sum, new long[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, new int[] { 2 }, 5])]
+    [InlineData([ReduceOp.Mean, new long[] { 1, 3, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, new int[] { 2 }, 6])]
+    [InlineData([ReduceOp.Sum, new long[] { 1, 64, 384, 384 }, new[] { 3 }, 0, true, new[] { 64 }, new int[] { }, 7])]
     public async Task TestPackReduce(ReduceOp reduceOp, long[] shape, int[] axes, float init, bool keepDims, int[] hierarchy, int[] splitedAxes, int number)
     {
         var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
@@ -506,10 +506,10 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData([new[] { 1, 384, 8192 }, new[] { 1, 384, 64, 128 }, 1, new[] { 1 }, 0])]
-    [InlineData([new[] { 1, 8192, 384 }, new[] { 1, 64, 128, 384 }, 1, new[] { 1 }, 1])]
-    [InlineData([new[] { 1, 8192, 384 }, new[] { 1, 64, 128, 384 }, 1, new[] { 8 }, 2])]
-    public async Task TestPackReshape(int[] inshape, int[] outshape, int packRank, int[] hierarchy, int number)
+    [InlineData([new long[] { 1, 384, 8192 }, new long[] { 1, 384, 64, 128 }, 1, new[] { 1 }, 0])]
+    [InlineData([new long[] { 1, 8192, 384 }, new long[] { 1, 64, 128, 384 }, 1, new[] { 1 }, 1])]
+    [InlineData([new long[] { 1, 8192, 384 }, new long[] { 1, 64, 128, 384 }, 1, new[] { 8 }, 2])]
+    public async Task TestPackReshape(long[] inshape, long[] outshape, int packRank, int[] hierarchy, int number)
     {
         var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
@@ -581,10 +581,10 @@ public sealed class UnitTestCPUKernels : TestClassBase
         }
 
         var feedDict = new Dictionary<Var, IValue>() {
-            { v13, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v13.CheckedShape).Evaluate() },
-            { v15, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v15.CheckedShape).Evaluate() },
-            { v19, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v19.CheckedShape).Evaluate() },
-            { v24, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v24.CheckedShape).Evaluate() },
+            { v13, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v13.CheckedShape.ToValueArrayExpr()).Evaluate() },
+            { v15, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v15.CheckedShape.ToValueArrayExpr()).Evaluate() },
+            { v19, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v19.CheckedShape.ToValueArrayExpr()).Evaluate() },
+            { v24, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v24.CheckedShape.ToValueArrayExpr()).Evaluate() },
         };
 
         var posts = new[] { pre };
@@ -592,10 +592,10 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new int[] { 1, 1, 4, 4 }, new int[] { 8, 1, 3, 3 }, new int[] { 1, 1, 1, 1 }, new int[] { 1, 1 }, 0 })]
-    [InlineData(new object[] { new int[] { 3, 2, 4, 4 }, new int[] { 8, 2, 3, 3 }, new int[] { 0, 0, 1, 1 }, new int[] { 1, 2 }, 1 })]
-    [InlineData(new object[] { new int[] { 3, 2, 4, 4 }, new int[] { 8, 2, 3, 3 }, new int[] { 1, 0, 1, 1 }, new int[] { 2, 1 }, 2 })]
-    [InlineData(new object[] { new int[] { 1, 512, 64, 64 }, new int[] { 512, 512, 3, 3 }, new int[] { 1, 1, 1, 1 }, new int[] { 1, 1 }, 3 })]
+    [InlineData(new object[] { new long[] { 1, 1, 4, 4 }, new long[] { 8, 1, 3, 3 }, new int[] { 1, 1, 1, 1 }, new int[] { 1, 1 }, 0 })]
+    [InlineData(new object[] { new long[] { 3, 2, 4, 4 }, new long[] { 8, 2, 3, 3 }, new int[] { 0, 0, 1, 1 }, new int[] { 1, 2 }, 1 })]
+    [InlineData(new object[] { new long[] { 3, 2, 4, 4 }, new long[] { 8, 2, 3, 3 }, new int[] { 1, 0, 1, 1 }, new int[] { 2, 1 }, 2 })]
+    [InlineData(new object[] { new long[] { 1, 512, 64, 64 }, new long[] { 512, 512, 3, 3 }, new int[] { 1, 1, 1, 1 }, new int[] { 1, 1 }, 3 })]
     public async Task TestConv2DAndIm2col(long[] inputShape, long[] wShape, int[] padding, int[] strides, int count)
     {
         var dilation = new[] { 1, 1 };
@@ -618,9 +618,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new[] { 1, 48, 512 }, new[] { 1, 512, 1024 }, new[] { 1, 48, 64, 16 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 8 }, 0 })]
-    [InlineData(new object[] { new[] { 1, 48, 512 }, new[] { 1, 512, 1024 }, new[] { 1, 64, 768 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 8 }, 1 })]
-    public async Task TestMatMulReshapeUnary(int[] lhsShape, int[] rhsShape, long[] newShape, UnaryOp[] unaryOps, int[] hierarchy, int number)
+    [InlineData(new object[] { new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new long[] { 1, 48, 64, 16 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 8 }, 0 })]
+    [InlineData(new object[] { new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new long[] { 1, 64, 768 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 8 }, 1 })]
+    public async Task TestMatMulReshapeUnary(long[] lhsShape, long[] rhsShape, long[] newShape, UnaryOp[] unaryOps, int[] hierarchy, int number)
     {
         var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
