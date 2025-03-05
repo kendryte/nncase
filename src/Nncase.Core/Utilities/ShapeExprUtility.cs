@@ -3,6 +3,7 @@
 
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.IR.F;
 using Nncase.IR.Tensors;
 using static Nncase.IR.F.Tensors;
 
@@ -100,16 +101,17 @@ public static class ShapeExprUtility
         return shape;
     }
 
-    public static Dimension[] GetPermutation(Dimension[] indices, int[] dims)
+    public static Tensor GetPermutation(Call tensor, int[] dims)
     {
+        var r = Rank(ShapeOf(tensor)).CheckedShape.ToArray().Length;
         // format dims to non-negative
-        var newDims = dims.Select(x => x < 0 ? x + indices.Length : x).ToArray();
+        // var newDims = dims.Select(x => x < 0 ? x + r : x).ToArray();
+        var fullDims = Enumerable.Range(0, r).ToArray();
 
         if (dims.Length == 2)
         {
-            var newIndices = indices;
-            (newIndices[dims[0]], newIndices[dims[1]]) = (newIndices[dims[1]], newIndices[dims[0]]);
-            return newIndices;
+            (fullDims[dims[0]], fullDims[dims[1]]) = (fullDims[dims[1]], fullDims[dims[0]]);
+            return Tensor.FromArray(fullDims);
         }
         else
         {

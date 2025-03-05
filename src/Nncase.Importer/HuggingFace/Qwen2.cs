@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Xml;
 using CommunityToolkit.HighPerformance;
+using LanguageExt;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
@@ -15,12 +16,11 @@ using Nncase.IR.Tensors;
 using Nncase.TIR;
 using Nncase.Utilities;
 using static Nncase.IR.F.Math;
-using static Nncase.IR.F.Tensors;
 using static Nncase.IR.F.NN;
+using static Nncase.IR.F.Tensors;
 using Buffer = System.Buffer;
 using F = Nncase.IR.F;
 using Tuple = System.Tuple;
-using LanguageExt;
 
 namespace Nncase.Importer
 {
@@ -39,29 +39,53 @@ namespace Nncase.Importer
             // local test set
             // _fixVarMap["sequence_length"] = 10;
             // _fixVarMap["history_len"] = 0;
-
             if (!_fixVarMap.ContainsKey("sequence_length"))
-                _dynVarMap["sequence_length"] =
-                    new Var("sequence_length", new TensorType(DataTypes.Int32, Shape.Scalar));
+            {
+                _dynVarMap["sequence_length"] = new Var(
+                    "sequence_length",
+                    new TensorType(DataTypes.Int32, Shape.Scalar)
+                );
+            }
+
             if (!_fixVarMap.ContainsKey("history_len"))
-                _dynVarMap["history_len"] = new Var("history_len", new TensorType(DataTypes.Int32, Shape.Scalar));
+            {
+                _dynVarMap["history_len"] = new Var(
+                    "history_len",
+                    new TensorType(DataTypes.Int32, Shape.Scalar)
+                );
+            }
 
             var inputIdsShapeExpr = new Expr[] { _dynVarMap["sequence_length"], 1, hiddenSize };
-            var attentionMaskShapeExpr =
-                new Expr[] { 1, 1, _dynVarMap["sequence_length"], _dynVarMap["sequence_length"] };
+            var attentionMaskShapeExpr = new Expr[]
+            {
+                1,
+                1,
+                _dynVarMap["sequence_length"],
+                _dynVarMap["sequence_length"],
+            };
             var positionIdsShapeExpr = new Expr[] { 1, _dynVarMap["sequence_length"] };
             var pastKeyValueShapeExpr = new Expr[] { 24, 2, 1, _dynVarMap["history_len"], 2, 64 };
 
+            var inputIds = new Var(
+                "input_ids",
+                new TensorType(DataTypes.Int32, new Shape(Dimension.Unknown, 1, (int)hiddenSize))
+            );
 
-            var inputIds = new Var("input_ids",
-                new TensorType(DataTypes.Int32, new Shape(Dimension.Unknown, 1, (int)hiddenSize)));
-
-            var attentionMask = new Var("attention_mask",
-                new TensorType(DataTypes.Float32, new Shape(1, 1, Dimension.Unknown, Dimension.Unknown)));
-            var positionIds = new Var("position_ids",
-                new TensorType(DataTypes.Float32, new Shape(1, Dimension.Unknown)));
-            var pastKeyValue = new Var("past_key_values",
-                new TensorType(DataTypes.Float32, new Shape(24, 2, 1, Dimension.Unknown, 2, 64)));
+            var attentionMask = new Var(
+                "attention_mask",
+                new TensorType(
+                    DataTypes.Float32,
+                    new Shape(1, 1, Dimension.Unknown, Dimension.Unknown)
+                )
+            );
+            var positionIds = new Var(
+                "position_ids",
+                new TensorType(DataTypes.Float32, new Shape(1, Dimension.Unknown))
+            );
+            var pastKeyValue = new Var(
+                "past_key_values",
+                new TensorType(DataTypes.Float32, new Shape(24, 2, 1, Dimension.Unknown, 2, 64))
+            );
 
             _inputs.Add(inputIds);
             _inputs.Add(attentionMask);
@@ -119,18 +143,27 @@ namespace Nncase.Importer
             )
             */
 
-
             var input_ids = _inputs[0];
             var attention_mask = _inputs[1];
             var position_ids = _inputs[2];
             var pastKeyValues = _inputs[3];
+
             // var (lastHiddenStates, pastKeyValues, allSelfAttns, allHiddenStates) = Qwen2Model(input_ids,
             //     inputEmbeds: null, new HuggingFaceUtils.DynamicCache(), cachePosition: null, positionIds: null,
             //     useCache: false, outputAttentions: false, outputHiddenStates: false);
-            var (lastHiddenStates, allSelfAttnsKV) = Qwen2Model(input_ids,
-                attention_mask, position_ids, pastKeyValues);
-            var lmHead = F.Math.MatMul(lastHiddenStates,
-                F.Tensors.Transpose(_constTensors["model.embed_tokens.weight"], new Dimension[] { 1, 0 }));
+            var (lastHiddenStates, allSelfAttnsKV) = Qwen2Model(
+                input_ids,
+                attention_mask,
+                position_ids,
+                pastKeyValues
+            );
+            var lmHead = F.Math.MatMul(
+                lastHiddenStates,
+                F.Tensors.Transpose(
+                    _constTensors["model.embed_tokens.weight"],
+                    new Dimension[] { 1, 0 }
+                )
+            );
             var attentionKVCache = Concat(allSelfAttnsKV.ToArray(), 0);
             return Tuple.Create(lmHead, attentionKVCache);
         }
@@ -168,6 +201,7 @@ namespace Nncase.Importer
             }
 
             var inputEmbeds = Gather(embedTokensWeight, 0, input_ids);
+
             // }
 
             // if (useCache == true && pastKeyValues == null)
@@ -197,40 +231,47 @@ namespace Nncase.Importer
             //     attention_mask, inputs_embeds, cache_position, past_key_values, output_attentions
             // )
             // Call? causalMask = null;
-
             var hiddenStates = inputEmbeds;
-            var positionEmbeddings = this.RotaryEmbedding(hiddenStates, positionIds);
+            var positionEmbeddings = RotaryEmbedding(hiddenStates, positionIds);
 
-            List<Call> allHiddenStates = new List<Call>();
-            List<Call> allSelfAttns = new List<Call>();
+            var allHiddenStates = new List<Call>();
+            var allSelfAttns = new List<Call>();
             /*
-             * 1.2 DecodeLayer * _config["num_hidden_layers"]
-             * DecodeLayer:
-             *
-             */
-            var decodeLayer = new List<Tuple<Call, Call>>();
+            * 1.2 DecodeLayer * _config["num_hidden_layers"]
+            * DecodeLayer:
+            *
+            */
+            _ = new List<Tuple<Call, Call>>();
             for (int i = 0; i < (int)(long)_config["num_hidden_layers"]; i++)
             {
                 // if (outputAttentions == true)
                 // {
                 allHiddenStates.Add(hiddenStates);
+
                 // }
 
                 // var (hiddenStatesTmp, selfAttenWeights) = DecodeLayer(i, hiddenStates, causalMask, positionIds,
                 //     pastKeyValues, outputAttentions,
                 //     useCache, cachePosition, positionEmbeddings);
-                var (hiddenStatesTmp, selfAttenKV) =
-                    DecodeLayer(i, hiddenStates, attentionMask, pastKeyValues, positionEmbeddings);
+                var (hiddenStatesTmp, selfAttenKV) = DecodeLayer(
+                    i,
+                    hiddenStates,
+                    attentionMask,
+                    pastKeyValues,
+                    positionEmbeddings
+                );
 
                 hiddenStates = hiddenStatesTmp;
 
                 // if (outputAttentions == true)
                 // {
                 allSelfAttns.Add(selfAttenKV);
+
                 // }
             }
 
             var lastHiddenStates = Qwen2LayerNorm(hiddenStates, "model.norm.weight");
+
             // if (outputAttentions == true)
             // {
             // allHiddenStates.Add(lastHiddenStates);
@@ -243,28 +284,45 @@ namespace Nncase.Importer
         // private Tuple<Call, Call> DecodeLayer(int count, Call hiddenStates, Call? attentionMask, Call positionIds,
         //     HuggingFaceUtils.DynamicCache pastKeyValues, bool? outputAttentions, bool? useCache, Expr cachePosition,
         //     Tuple<Call, Call> positionEmbeddings)
-        private Tuple<Call, Call> DecodeLayer(int count, Call hiddenStates, Var? attentionMask, Var pastKeyValues,
-            Tuple<Call, Call> positionEmbeddings)
+        private Tuple<Call, Call> DecodeLayer(
+            int count,
+            Call hiddenStates,
+            Var? attentionMask,
+            Var pastKeyValues,
+            Tuple<Call, Call> positionEmbeddings
+        )
         {
             var residual = hiddenStates;
-            hiddenStates = Qwen2LayerNorm(hiddenStates, $"model.layers.{count}.input_layernorm.weight");
+            hiddenStates = Qwen2LayerNorm(
+                hiddenStates,
+                $"model.layers.{count}.input_layernorm.weight"
+            );
 
             // self attention
-            var (hiddenStatesTmp, selfAttenKV) =
-                Qwen2SelfAtten(count, hiddenStates, attentionMask, positionEmbeddings);
+            var (hiddenStatesTmp, selfAttenKV) = Qwen2SelfAtten(
+                count,
+                hiddenStates,
+                attentionMask,
+                positionEmbeddings
+            );
             hiddenStates = hiddenStatesTmp;
             hiddenStates = residual + hiddenStates;
 
             // fully Connected
             residual = hiddenStates;
-            hiddenStates = Qwen2LayerNorm(hiddenStates, $"model.layers.{count}.post_attention_layernorm.weight");
+            hiddenStates = Qwen2LayerNorm(
+                hiddenStates,
+                $"model.layers.{count}.post_attention_layernorm.weight"
+            );
             hiddenStates = Qwen2Mlp(count, hiddenStates);
             hiddenStates = residual + hiddenStates;
 
             var output = hiddenStates;
+
             // if (outputAttentions == true && selfAttenKV is not null)
             // {
             return Tuple.Create<Call, Call>(output, selfAttenKV);
+
             // }
 
             // return Tuple.Create<Call, Call>(output, null);
@@ -277,7 +335,10 @@ namespace Nncase.Importer
             var downProjW = _constTensors![$"model.layers.{count}.mlp.down_proj.weight"];
 
             var tmp = F.Math.MatMul(hiddenStates, gateProjW);
-            return F.Math.MatMul(Sigmoid(tmp) * tmp * F.Math.MatMul(hiddenStates, upProjW), downProjW);
+            return F.Math.MatMul(
+                Sigmoid(tmp) * tmp * F.Math.MatMul(hiddenStates, upProjW),
+                downProjW
+            );
         }
 
         // Qwen2RMSNorm : Qwen2LayerNorm : input_layernorm
@@ -292,23 +353,28 @@ namespace Nncase.Importer
 
         // Qwen2Attention : SelfAtten
         // llama config find in : https://www.restack.io/p/transformer-models-answer-llama-config-json-cat-ai
-        private Tuple<Call, Call> Qwen2SelfAtten(int count, Call hiddenStates, Var attentionMask,
-            Tuple<Call, Call> positionEmbeddings)
+        private Tuple<Call, Call> Qwen2SelfAtten(
+            int count,
+            Call hiddenStates,
+            Var attentionMask,
+            Tuple<Call, Call> positionEmbeddings
+        )
         {
-            var hidden_dim = (int)(long)_config!["hidden_size"] / (int)(long)_config["num_attention_heads"];
+            _ = (int)(long)_config!["hidden_size"] / (int)(long)_config["num_attention_heads"];
             if (_config!.Keys.Contains("head_dim"))
             {
-                hidden_dim = (int)(long)_config["head_dim"];
+                _ = (int)(long)_config["head_dim"];
             }
 
             // bak: 1/21 16:42 dongliang: for 循环提取dims,然后拼起来,以防动态var失效.
             var hidden_shape = ShapeOf(hiddenStates);
+
             // hidden_shape.RemoveAt(hidden_shape.Count - 1);
             // hidden_shape.Add(-1);
             var inputShape = hidden_shape; // inputShape is hiddenStates.shape[:-1].Add(-1)
+
             // hidden_shape.Add(new Dimension(hidden_dim));
             // hidden_shape = Concat(new IR.Tuple(hidden_shape, Tensor.FromScalar(hidden_dim)), 0);
-
             var qProjW = _constTensors![$"model.layers.{count}.self_attn.q_proj.weight"];
             var qProjB = _constTensors![$"model.layers.{count}.self_attn.q_proj.bias"];
             var queryStates = Binary(BinaryOp.Add, F.Math.MatMul(hiddenStates, qProjW), qProjB);
@@ -322,6 +388,7 @@ namespace Nncase.Importer
             var valueStates = Binary(BinaryOp.Add, F.Math.MatMul(hiddenStates, vProjW), vProjB);
 
             var (cos, sin) = positionEmbeddings;
+
             // apply_rotary_pos_emb
             (queryStates, keyStates) = ApplyRotaryPosEmb(queryStates, keyStates, cos, sin);
 
@@ -333,10 +400,15 @@ namespace Nncase.Importer
             //     slidingWindow = (int)_config!["sliding_window"];
             // }
 
-
             // qwen use sdpa attention
-            var (hiddenStatesTmp, selfAttenWeight) = SdpaAttention(queryStates, keyStates, valueStates,
-                attentionMask, /*TODO: 这里可能不需要,如果使用输入*/ 0.0f, false);
+            var (hiddenStatesTmp, selfAttenWeight) = SdpaAttention(
+                queryStates,
+                keyStates,
+                valueStates,
+                attentionMask, /*TODO: 这里可能不需要,如果使用输入*/
+                0.0f,
+                false
+            );
             hiddenStates = hiddenStatesTmp;
 
             // inputShape.Add(-1);
@@ -348,8 +420,14 @@ namespace Nncase.Importer
             return Tuple.Create(hiddenStates, selfAttenWeight);
         }
 
-        private Tuple<Call, Call> SdpaAttention(Call queryStates, Call keyStates, Call valueStates, Expr? attentionMask,
-            float? scaling, bool? isCausal)
+        private Tuple<Call, Call> SdpaAttention(
+            Call queryStates,
+            Call keyStates,
+            Call valueStates,
+            Expr? attentionMask,
+            float? scaling,
+            bool? isCausal
+        )
         {
             /*
              * def scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.0,
@@ -382,8 +460,13 @@ namespace Nncase.Importer
             var casualMask = attentionMask;
             if (attentionMask != null)
             {
-                casualMask = Slice(casualMask, new[] { 0, 0, 0, 0 },
-                    new[] { -1, -1, -1, keyStates.CheckedShape[-2].FixedValue }, new[] { -1 }, new[] { 1 });
+                casualMask = Slice(
+                    casualMask,
+                    new[] { 0, 0, 0, 0 },
+                    Stack(new IR.Tuple(-1, -1, -1, ShapeOf(keyStates)[-2]), 0),
+                    new[] { -1 },
+                    new[] { 1 }
+                );
             }
 
             if (isCausal == null)
@@ -391,31 +474,29 @@ namespace Nncase.Importer
                 isCausal = casualMask == null && queryStates.CheckedShape[2].FixedValue > 1;
             }
 
-            var (l, s) = (queryStates.CheckedShape[-2], keyStates.CheckedShape[-2]);
-            var scaleFactor = 1 / Math.Sqrt(queryStates.CheckedShape[-1].FixedValue);
-            var attnBias = (Call)Tensor.FromScalar(0f, new Shape(l, s));
+            var (l, s) = (ShapeOf(queryStates)[-2], ShapeOf(keyStates)[-2]);
+            var scaleFactor = 1 / F.Math.Sqrt(ShapeOf(queryStates)[-1]);
+            var attnBias = (Call)
+                F.Tensors.Broadcast(Tensor.FromScalar(0f), F.Tensors.Stack(new IR.Tuple(l, s), 0));
 
             // TODO: 也许需要处理attentionMask为空的情况,在这里生成下三角为0 ,其他为-inf的功能.
             // if (isCausal == true)
             // {
             //     var tempMask = (Call)Tensor.FromScalar(0f, new Shape(l, s));
             // }
-
             if (attentionMask != null)
             {
                 attnBias = Binary(BinaryOp.Add, attnBias, attentionMask);
             }
-
-            var attnWeight = IR.F.Math.MatMul(queryStates,
-                                 Transpose(keyStates,
-                                     ShapeExprUtility.GetPermutation(keyStates.CheckedShape.ToArray(), [-2, -1]))) *
-                             scaleFactor;
+            var attnWeight =
+                IR.F.Math.MatMul(
+                    queryStates,
+                    Transpose(keyStates, ShapeExprUtility.GetPermutation(keyStates, [-2, -1]))
+                ) * scaleFactor;
             attnWeight += attnBias;
             attnWeight = Softmax(attnWeight, -1);
             var attnOutput = F.Math.MatMul(attnWeight, valueStates);
-            attnOutput = Transpose(
-                attnOutput,
-                ShapeExprUtility.GetPermutation(attnOutput.CheckedShape.ToArray(), [1, 2]));
+            attnOutput = Transpose(attnOutput, ShapeExprUtility.GetPermutation(attnOutput, [1, 2]));
             return Tuple.Create(attnOutput, (Call)null);
         }
 
@@ -423,10 +504,19 @@ namespace Nncase.Importer
         {
             cos = Unsqueeze(cos, 1);
             sin = Unsqueeze(sin, 1);
+
             // q_embed = (q * cos) + (rotate_half(q) * sin)
             // k_embed = (k * cos) + (rotate_half(k) * sin)
-            var qEmbed = Binary(BinaryOp.Add, Binary(BinaryOp.Mul, q, cos), Binary(BinaryOp.Mul, RotateHalf(q), sin));
-            var kEmbed = Binary(BinaryOp.Add, Binary(BinaryOp.Mul, k, cos), Binary(BinaryOp.Mul, RotateHalf(k), sin));
+            var qEmbed = Binary(
+                BinaryOp.Add,
+                Binary(BinaryOp.Mul, q, cos),
+                Binary(BinaryOp.Mul, RotateHalf(q), sin)
+            );
+            var kEmbed = Binary(
+                BinaryOp.Add,
+                Binary(BinaryOp.Mul, k, cos),
+                Binary(BinaryOp.Mul, RotateHalf(k), sin)
+            );
             return Tuple.Create(qEmbed, kEmbed);
         }
 
@@ -435,20 +525,19 @@ namespace Nncase.Importer
             // rope type not in config, so it is default. :_compute_default_rope_parameters
             // if "dynamic" in self.rope_type:
             //      self._dynamic_frequency_update(position_ids, device=x.device)
+            var (inv_freq, _) = RoPEInit("default");
 
-            var (inv_freq, attentionScaling) = RoPEInit("default");
             // var a = x.CheckedShape[0];
+            var invFreqExpanded = Tensor.FromArray(inv_freq.ToArray()); // Unsqueeze(Unsqueeze(Tensor.FromArray(inv_freq.ToArray()), new[] { 0 }),new[] { -1 });
 
-            var invFreqExpanded =
-                Tensor.FromArray(inv_freq
-                    .ToArray()); //Unsqueeze(Unsqueeze(Tensor.FromArray(inv_freq.ToArray()), new[] { 0 }),new[] { -1 });
             // var invFreqExpanded = Broadcast(
             //     inv_freq_tensor,
             //     new Dimension[] { x.CheckedShape[0], inv_freq.Count, 1 });
             var positionIdsExpanded = Unsqueeze(Reshape(positionIds, new[] { -1, 1 }), 1);
 
             var freqs = Binary(BinaryOp.Mul, invFreqExpanded, positionIdsExpanded);
-            //F.Tensors.Transpose(F.Math.MatMul(invFreqExpanded, positionIdsExpanded),new Dimension[] { 0, 2, 1 });
+
+            // F.Tensors.Transpose(F.Math.MatMul(invFreqExpanded, positionIdsExpanded),new Dimension[] { 0, 2, 1 });
             var emb = F.Tensors.Concat(new IR.Tuple(freqs, freqs), -1);
             var cos = F.Math.Unary(UnaryOp.Cos, emb);
             var sin = F.Math.Unary(UnaryOp.Sin, emb);
@@ -456,7 +545,7 @@ namespace Nncase.Importer
             return Tuple.Create(cos, sin);
         }
 
-        private Tuple<List<double>, float> RoPEInit(string type)
+        private Tuple<List<double>, float> RoPEInit(string type = "default")
         {
             switch (type)
             {
@@ -467,18 +556,29 @@ namespace Nncase.Importer
             }
         }
 
-        //def rotate_half(x):
+        // def rotate_half(x):
         // """Rotates half the hidden dims of the input."""
         // x1 = x[..., : x.shape[-1] // 2]
         // x2 = x[..., x.shape[-1] // 2 :]
         // return torch.cat((-x2, x1), dim=-1)
         private Call RotateHalf(Expr x)
         {
-            var x1 = Slice(x, new Dimension[] { 0, 0, 0, 0 }, new Dimension[] { x.CheckedShape[0], x.CheckedShape[1], x.CheckedShape[2], x.CheckedShape[-1] / 2 }, new[] { 1, 1, 1, 1 },
-                new[] { 1, 1, 1, 1 });
-            var x2 = Slice(x, new Dimension[] { 0, 0, 0, x.CheckedShape[-1] / 2 }, new Dimension[] { x.CheckedShape[0], x.CheckedShape[1], x.CheckedShape[2], x.CheckedShape[3] }, new[] { 1, 1, 1, 1 },
-                new[] { 1, 1, 1, 1 });
-            return Concat(new[] { Binary(BinaryOp.Mul, x2, -1), x1 }, -1);
+            var xS3 = ShapeOf(x)[3];
+            var x1 = Slice(
+                x,
+                new[] { 0, 0, 0, 0 },
+                F.Tensors.Stack(new IR.Tuple(-1, -1, -1, xS3 / 2), 0),
+                new[] { 1, 1, 1, 1 },
+                new[] { 1, 1, 1, 1 }
+            );
+            var x2 = Slice(
+                x,
+                F.Tensors.Stack(new IR.Tuple(0, 0, 0, xS3 / 2), 0),
+                F.Tensors.Stack(new IR.Tuple(-1, -1, -1, -1), 0),
+                new[] { 1, 1, 1, 1 },
+                new[] { 1, 1, 1, 1 }
+            );
+            return Concat(new IR.Tuple(Binary(BinaryOp.Mul, x2, -1), x1), -1);
         }
     }
 }

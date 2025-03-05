@@ -20,22 +20,22 @@ namespace Nncase.Importer;
 
 public sealed partial class HuggingFaceImporter : BaseImporter
 {
-    private Dictionary<string, object>? _config;
-    private Dictionary<string, Tensor>? _constTensors;
+    private readonly Dictionary<string, object>? _config;
+    private readonly Dictionary<string, Tensor>? _constTensors;
 
     private List<Var>? _inputs;
-    private List<Var>? _outputs;
-    private Dictionary<string, Var> _dynVarMap ;
-    private Dictionary<string, int> _fixVarMap ;
+    private readonly List<Var>? _outputs;
+    private Dictionary<string, Var> _dynVarMap;
+    private Dictionary<string, int> _fixVarMap;
 
-    private Dictionary<Var, Expr[]> _varMap ;
+    private readonly Dictionary<Var, Expr[]> _varMap;
 
     public HuggingFaceImporter(string huggingFaceDir, CompileSession compileSession)
         : base(compileSession)
     {
         // 读取 config.json 文件
-        _config = HuggingFaceUtils.getConfigInfo(Path.Combine(huggingFaceDir, "config.json"));
-        _constTensors = HuggingFaceUtils.getAllWeights(Path.Combine(huggingFaceDir, "model.safetensors"));
+        _config = HuggingFaceUtils.GetConfigInfo(Path.Combine(huggingFaceDir, "config.json"));
+        _constTensors = HuggingFaceUtils.GetAllWeights(Path.Combine(huggingFaceDir, "model.safetensors"));
     }
 
     protected override (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
@@ -50,7 +50,7 @@ public sealed partial class HuggingFaceImporter : BaseImporter
                 throw new NotImplementedException();
         }
 
-        return (null,null);
+        return (null, null);
     }
 
     protected override void ConvertOp()
