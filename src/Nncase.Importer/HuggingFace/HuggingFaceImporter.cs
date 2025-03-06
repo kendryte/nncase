@@ -60,9 +60,9 @@ public sealed partial class HuggingFaceImporter : BaseImporter
             case "Qwen2ForCausalLM":
                 _config["pad_token_id"] = 0;
                 Debug.Assert(_constTensors != null, nameof(_constTensors) + " != null");
-                var (lm_head,kvcache)=VisitQwen2ForCausalLM();
+                var (lm_head, _) = VisitQwen2ForCausalLM();
                 Console.WriteLine("------------>visit result:");
-                var str=CompilerServices.Print(lm_head);
+                var str = CompilerServices.Print(lm_head);
                 Console.WriteLine(str);
                 break;
             default:
