@@ -104,14 +104,13 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     {
         if (x.IsFixed)
         {
-            return x.FixedValue < 0 ? dim + x : Dimension.Clamp(x, lowerBound, dim + upperBoundBias);
+            var newX = x.FixedValue < 0 ? dim + x : x;
+            return Dimension.Clamp(newX, lowerBound, dim + upperBoundBias);
         }
         else
         {
-            return Select(
-                x.Value < 0L,
-                (dim + x).ToExpr(),
-                Dimension.Clamp(x, lowerBound, dim + upperBoundBias).ToExpr());
+            var newX = Select(x.Value < 0L, (dim + x).ToExpr(), x.ToExpr());
+            return Dimension.Clamp(newX, lowerBound, dim + upperBoundBias);
         }
     }
 
@@ -160,7 +159,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
 
                 // while for negative stepping it is clamped to [-1, dims[axes[i]]-1].
                 var end = TranslateBeginEnd(ends[i], inDim, -1, -1);
-                return Dimension.CeilDiv(end - begin, Dimension.Abs(stride));
+                return Dimension.CeilDiv(begin - end, Dimension.Abs(stride));
             }
             else
             {
