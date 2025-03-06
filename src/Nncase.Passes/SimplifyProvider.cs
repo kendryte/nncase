@@ -51,7 +51,6 @@ internal sealed class SimplifyProvider : ISimplifyProvider
 {
     private readonly CompileSession _compileSession;
     private readonly IRewriteRule[] _rules;
-    private readonly ConditionalWeakTable<Expr, Expr> _simplifiedExprs = new();
 
     public SimplifyProvider()
     {
@@ -73,21 +72,15 @@ internal sealed class SimplifyProvider : ISimplifyProvider
 #if true
         if (expr.CheckedType is DistributedType || expr is not (Const or Var))
         {
-            if (!_simplifiedExprs.TryGetValue(expr, out var simplifiedExpr))
+            var simplifiedExpr = expr;
+            if (expr.CheckedType is DistributedType)
             {
-                simplifiedExpr = expr;
-                if (expr.CheckedType is DistributedType)
-                {
-                    simplifiedExpr = new RemoveBoxingCloner().Clone(expr, default);
-                }
-
-                using var compileScope = new CompileSessionScope(CompileSessionScope.Current ?? _compileSession);
-                using var dumpScope = new DumpScope(NullDumpper.Instance);
-                simplifiedExpr = CompilerServices.Rewrite(simplifiedExpr, _rules, new RunPassContext());
-                _simplifiedExprs.Add(expr, simplifiedExpr);
-                _simplifiedExprs.TryAdd(simplifiedExpr, simplifiedExpr);
+                simplifiedExpr = new RemoveBoxingCloner().Clone(expr, default);
             }
 
+            using var compileScope = new CompileSessionScope(CompileSessionScope.Current ?? _compileSession);
+            using var dumpScope = new DumpScope(NullDumpper.Instance);
+            simplifiedExpr = CompilerServices.Rewrite(simplifiedExpr, _rules, new RunPassContext());
             return simplifiedExpr;
         }
 
