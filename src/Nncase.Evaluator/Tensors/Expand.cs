@@ -62,15 +62,17 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
     private IRType Visit(ITypeInferenceContext context, Expand target, TensorType input, TensorType shape)
     {
         var shapeExpr = context.GetArgument(target, Expand.Shape);
-        return input with { Shape = Shape.FromExpr(shapeExpr) };
+        var newShape = TypeInference.ExpandShape(input.Shape, Shape.FromExpr(shapeExpr));
+        return input with { Shape = newShape };
     }
 
     private IRType Visit(ITypeInferenceContext context, Expand target, DistributedType input, TensorType shape)
     {
         var invalid = new InvalidType(input.ToString());
-        var newShape = Shape.FromExpr(context.GetArgument(target, Expand.Shape));
-        if (newShape.IsRanked)
+        var shapeExpr = Shape.FromExpr(context.GetArgument(target, Expand.Shape));
+        if (input.TensorType.Shape.IsRanked && shapeExpr.IsRanked)
         {
+            var newShape = TypeInference.ExpandShape(input.TensorType.Shape, shapeExpr);
             var ndsbp = new SBP[input.Placement.Rank];
             for (int i = 0; i < input.Placement.Rank; i++)
             {

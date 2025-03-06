@@ -590,4 +590,26 @@ public static class TypeInference
 
         return types;
     }
+
+    public static Shape ExpandShape(Shape inShape, Shape expandShape)
+    {
+        if (inShape.IsUnranked || expandShape.IsUnranked)
+        {
+            return Shape.Unranked;
+        }
+
+        var dimExtends = expandShape.Rank - inShape.Rank;
+        var newDims = expandShape.ToArray();
+
+        // dimsExtends may be negative
+        for (int i = Math.Max(0, dimExtends); i < newDims.Length; i++)
+        {
+            var inDimIndex = i - dimExtends;
+            ref var dimValue = ref newDims[i];
+            dimValue = Dimension.Select(dimValue, 1L, inShape[inDimIndex], dimValue);
+        }
+
+        newDims = inShape.Take(dimExtends < 0 ? -dimExtends : 0).Concat(newDims).ToArray();
+        return new Shape(newDims);
+    }
 }
