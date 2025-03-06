@@ -391,6 +391,184 @@ result<void> optimized_softmax_impl(const T *input, T *output,
     }
     return ok();
 }
+
+template <typename T>
+result<void>
+optimized_softmax_half_impl(const T *input, T *output,
+                                   gsl::span<const size_t> in_shape,
+                                   int32_t axis, __float16_t beta) noexcept {
+    std::cout << (float)beta << std::endl;
+    size_t ndim = in_shape.size();
+    size_t positive_axis = axis < 0 ? ndim + axis : axis;
+    size_t axis_dim = in_shape[positive_axis];
+
+    size_t out_side = 1;
+    for (size_t i = 0; i < positive_axis; i++)
+        out_side *= in_shape[i];
+
+    size_t in_side = 1;
+    for (size_t i = positive_axis + 1; i < ndim; i++)
+        in_side *= in_shape[i];
+
+    // axis == -1
+    if (positive_axis == (ndim - 1)) {
+        const __float16_t *ptr_input = input;
+        __float16_t *ptr_output = output;
+
+        for (size_t i = 0; i < out_side; i++) {
+            auto n = axis_dim;
+            const __float16_t *ptr_input_vl = ptr_input;
+            __float16_t *ptr_output_vl = ptr_output;
+
+            // max
+            __float16_t max = std::numeric_limits<__float16_t>::lowest();
+            while (n) {
+                auto vl = vsetvl_e16m4(n);
+
+                auto v = vle16_v_f16m4(ptr_input_vl, vl);
+                auto s = vfmv_s_f_f16m1(vundefined_f16m1(), max, vl);
+
+                s = vfredmax_vs_f16m4_f16m1(s, v, s, vl);
+                max = vfmv_f_s_f16m1_f16(s);
+                ptr_input_vl += vl;
+                n -= vl;
+            }
+
+            // exp((x - max) * beta) and sum(exp)
+            __float16_t sum = 0.f;
+            ptr_input_vl = ptr_input;
+            n = axis_dim;
+            while (n) {
+                auto vl = vsetvl_e16m4(n);
+
+                auto v_in = vle16_v_f16m4(ptr_input_vl, vl);
+                auto s = vfmv_s_f_f16m1(vundefined_f16m1(), sum, vl);
+
+                auto v_out = exp_ph(
+                    vfmul_vf_f16m4(vfsub_vf_f16m4(v_in, max, vl), beta, vl),
+                    vl);
+                s = vfredosum_vs_f16m4_f16m1(s, v_out, s, vl);
+
+                vse16_v_f16m4(ptr_output_vl, v_out, vl);
+                sum = vfmv_f_s_f16m1_f16(s);
+                ptr_input_vl += vl;
+                ptr_output_vl += vl;
+                n -= vl;
+            }
+
+            // div
+            ptr_input_vl = ptr_input;
+            ptr_output_vl = ptr_output;
+            n = axis_dim;
+            sum = 1.0f / sum;
+            while (n) {
+                auto vl = vsetvl_e16m4(n);
+
+                auto v_out = vle16_v_f16m4(ptr_output_vl, vl);
+                v_out = vfmul_vf_f16m4(v_out, sum, vl);
+                vse16_v_f16m4(ptr_output_vl, v_out, vl);
+                ptr_output_vl += vl;
+                n -= vl;
+            }
+
+            ptr_input += axis_dim;
+            ptr_output += axis_dim;
+        }
+    } else {
+        dims_t axes{positive_axis};
+        auto reduced_shape =
+            kernels::detail::get_reduced_shape(in_shape, axes, true);
+        auto reduced_size = compute_size(reduced_shape);
+        std::vector<__float16_t> max(
+            reduced_size, std::numeric_limits<__float16_t>::lowest());
+        std::vector<__float16_t> sum(reduced_size, 0.f);
+
+        for (size_t i = 0; i < out_side; i++) {
+            const __float16_t *ptr_input = input + i * axis_dim * in_side;
+            const __float16_t *ptr_input_vl = ptr_input;
+
+            __float16_t *ptr_output = output + i * axis_dim * in_side;
+            __float16_t *ptr_output_vl = ptr_output;
+
+            __float16_t *ptr_max = max.data() + i * in_side;
+            __float16_t *ptr_max_vl = ptr_max;
+
+            __float16_t *ptr_sum = sum.data() + i * in_side;
+            __float16_t *ptr_sum_vl = ptr_sum;
+
+            // max
+            for (size_t j = 0; j < axis_dim; j++) {
+                ptr_max_vl = ptr_max;
+                auto n = in_side;
+                while (n) {
+                    auto vl = vsetvl_e16m4(n);
+
+                    auto v_in = vle16_v_f16m4(ptr_input_vl, vl);
+                    auto v_max = vle16_v_f16m4(ptr_max_vl, vl);
+
+                    v_max = vfmax_vv_f16m4(v_in, v_max, vl);
+                    vse16_v_f16m4(ptr_max_vl, v_max, vl);
+
+                    ptr_input_vl += vl;
+                    ptr_max_vl += vl;
+                    n -= vl;
+                }
+            }
+
+            // exp((x - max) * beta) and sum(exp)
+            ptr_input_vl = ptr_input;
+            ptr_output_vl = ptr_output;
+            for (size_t j = 0; j < axis_dim; j++) {
+                ptr_max_vl = ptr_max;
+                ptr_sum_vl = ptr_sum;
+                auto n = in_side;
+                while (n) {
+                    auto vl = vsetvl_e16m4(n);
+
+                    auto v_in = vle16_v_f16m4(ptr_input_vl, vl);
+                    auto v_max = vle16_v_f16m4(ptr_max_vl, vl);
+                    auto v_sum = vle16_v_f16m4(ptr_sum_vl, vl);
+
+                    auto v_out =
+                        exp_ph(vfmul_vf_f16m4(vfsub_vv_f16m4(v_in, v_max, vl),
+                                              beta, vl),
+                               vl);
+                    vse16_v_f16m4(ptr_output_vl, v_out, vl);
+
+                    v_sum = vfadd_vv_f16m4(v_sum, v_out, vl);
+                    vse16_v_f16m4(ptr_sum_vl, v_sum, vl);
+
+                    ptr_input_vl += vl;
+                    ptr_output_vl += vl;
+                    ptr_max_vl += vl;
+                    ptr_sum_vl += vl;
+                    n -= vl;
+                }
+            }
+
+            // div
+            ptr_output_vl = ptr_output;
+            for (size_t j = 0; j < axis_dim; j++) {
+                ptr_sum_vl = ptr_sum;
+                auto n = in_side;
+                while (n) {
+                    auto vl = vsetvl_e16m4(n);
+
+                    auto v_out = vle16_v_f16m4(ptr_output_vl, vl);
+                    auto v_sum = vle16_v_f16m4(ptr_sum_vl, vl);
+
+                    v_out = vfdiv_vv_f16m4(v_out, v_sum, vl);
+                    vse16_v_f16m4(ptr_output_vl, v_out, vl);
+
+                    ptr_output_vl += vl;
+                    ptr_sum_vl += vl;
+                    n -= vl;
+                }
+            }
+        }
+    }
+    return ok();
+}
 #endif
 } // namespace
 
@@ -410,6 +588,11 @@ result<void> optimized::softmax([[maybe_unused]] typecode_t typecode,
                                 gsl::span<const size_t> out_strides,
                                 int32_t axis, float beta) noexcept {
 #if __riscv_vector
+    if (typecode == typecode_t::dt_float16) {
+        return optimized_softmax_half_impl(IN_CAST(__float16_t, input),
+                                           OUT_CAST(__float16_t, output),
+                                           in_shape, axis, __float16_t(beta));
+    }
     return optimized_softmax_impl(
         IN_CAST(float, input), OUT_CAST(float, output), in_shape, axis, beta);
 //    TYPE_SELECT_SOFTMAX(typecode, SOFTMAX_IMPL);

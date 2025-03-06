@@ -1066,7 +1066,7 @@ nncase::kernels::stackvm::softmax(value_t input, value_t axis, value_t output,
     try_output_like_input(out_mem, output, input_tensor);
     try_positive_axis(axis_value, axis, input_tensor);
     try_typecode(type, input_tensor);
-    if (type == dt_float32) {
+    if (type == dt_float32 || type == dt_float16) {
         CONTIGUOUS_KERNEL(softmax, input_tensor, type, in_mem, out_mem,
                           input_tensor->shape(), input_tensor->strides(),
                           output_tensor->strides(), axis_value, 1.f);
