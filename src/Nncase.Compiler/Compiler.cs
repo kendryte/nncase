@@ -144,6 +144,9 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.SwapBinaryArgs>();
             p.Add<Passes.Rules.Neutral.FoldDilatedConv2D>();
             p.Add<Passes.Rules.Neutral.PowOf2ToSquare>();
+            p.Add<Passes.Rules.Neutral.ConvertSoftmaxToHalf>();
+            p.Add<Passes.Rules.Neutral.SwapCastReshape>();
+            p.Add<Passes.Rules.Neutral.SwapReshapeCast>();
         });
 
         passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
