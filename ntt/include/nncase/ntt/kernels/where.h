@@ -15,45 +15,139 @@
 #pragma once
 #include "../apply.h"
 #include "../loop.h"
+#include "../shape_infer/binary.h"
 #include "../tensor_ops.h"
+#include "../tensor_traits.h"
+#include "../ukernels.h"
 #include "../utility.h"
+#include <type_traits>
 
 namespace nncase::ntt {
+namespace detail {
+template <class TCond, class TX, class TY, class TOut> class where_impl {
+  public:
+    template <class Op>
+    constexpr void operator()(Op &op, const TCond &cond, const TX &x,
+                              const TY &y, TOut &output) {
+        auto out_shape = shape_infer::binary_output_shape(x.shape(), y.shape());
 
-namespace where_detail {
+        apply(out_shape, [&](auto index) {
+            const auto cond_index =
+                shape_infer::reduced_index_by_shape(index, cond.shape());
+            const auto x_index =
+                shape_infer::reduced_index_by_shape(index, x.shape());
+            const auto y_index =
+                shape_infer::reduced_index_by_shape(index, y.shape());
+
+            output(index) = op(cond(cond_index), x(x_index), y(y_index));
+        });
+    }
+};
 
 template <IsFixedTensor TCond, IsFixedTensor TX, IsFixedTensor TY,
           IsFixedTensor TOut>
-void where_impl(const TCond &cond, const TX &x, const TY &y,
-                TOut &&output) noexcept {
-    constexpr auto cond_shape = typename TCond::shape_type{};
-    constexpr auto x_shape = typename TX::shape_type{};
-    constexpr auto y_shape = typename TY::shape_type{};
-    constexpr auto out_shape = typename std::decay_t<TOut>::shape_type{};
-    // constexpr auto input_strides = TIn::strides();
-    // constexpr auto output_strides = std::decay_t<TOut>::strides();
+class where_impl<TCond, TX, TY, TOut> {
+  public:
+    template <class Op>
+    constexpr void operator()(Op &op, const TCond &cond, const TX &x,
+                              const TY &y, TOut &output) {
+        constexpr auto conti_dims =
+            std::min({contiguous_dims(TCond::shape(), TCond::strides()),
+                      contiguous_dims(TX::shape(), TX::strides()),
+                      contiguous_dims(TY::shape(), TY::strides()),
+                      contiguous_dims(TOut::shape(), TOut::strides())});
+        auto cond_p = cond.elements().data();
+        auto x_p = x.elements().data();
+        auto y_p = y.elements().data();
+        auto out_p = output.elements().data();
+        apply<0, conti_dims>(cond, x, y, output, cond_p, x_p, y_p, out_p);
+    }
 
-    static_assert(IsScalar<typename std::decay_t<TOut>::element_type>,
-                  "Only support scalar type for now");
+  private:
+    template <class Op, size_t Axis, size_t ContiguousDims, class TCondP,
+              class TXP, class TYP, class TOutP>
+    constexpr void apply(Op &op, const TCond &cond, const TX &x, const TY &y,
+                         TOut &output, TCondP cond_p, TXP x_p, TYP y_p,
+                         TOutP out_p) {
+        if constexpr (Axis + ContiguousDims >= TOut::rank()) {
+            constexpr auto rest_rank = TOut::rank() - Axis;
+            constexpr auto cond_rest_dims =
+                slice_fixed_dims<rest_rank, TCond::rank() - rest_rank>(
+                    TCond::shape());
+            constexpr auto x_rest_dims =
+                slice_fixed_dims<rest_rank, TX::rank() - rest_rank>(
+                    TX::shape());
+            constexpr auto y_rest_dims =
+                slice_fixed_dims<rest_rank, TY::rank() - rest_rank>(
+                    TY::shape());
 
-    apply(out_shape, [&](auto index) {
-        const auto cond_index =
-            get_reduced_offset<cond_shape.rank()>(index, cond_shape);
-        const auto x_index = get_reduced_offset<x_shape.rank()>(index, x_shape);
-        const auto y_index = get_reduced_offset<y_shape.rank()>(index, y_shape);
+            if constexpr (is_same_seq(x_rest_dims, y_rest_dims) &&
+                          is_same_seq(cond_rest_dims, y_rest_dims)) {
+                return where_non_broadcast<Op>(cond_p, x_p, y_p, out_p,
+                                               cond_rest_dims.length());
+            } else if constexpr (x_rest_dims.length() == 1) {
+                return where_x_broadcast<Op>(cond_p, x_p, y_p, out_p,
+                                             y_rest_dims.length());
+            } else if constexpr (y_rest_dims.length() == 1) {
+                return where_y_broadcast<Op>(cond_p, x_p, y_p, out_p,
+                                             x_rest_dims.length());
+            } else if constexpr (cond_rest_dims.length() == 1) {
+                return where_cond_broadcast<Op>(cond_p, x_p, y_p, out_p,
+                                                x_rest_dims.length());
+            }
+        }
 
-        const auto a = cond(cond_index);
-        const auto b = x(x_index);
-        const auto c = y(y_index);
+        if constexpr (Axis < TOut::shape().rank()) {
+            for (size_t i = 0; i < TOut::shape()[Axis]; i++) {
+                apply<Axis + 1, ContiguousDims>(op, cond, x, y, output, cond_p,
+                                                x_p, y_p, out_p);
+                cond_p +=
+                    utility_detail::get_safe_stride(cond, Axis, TOut::shape());
+                x_p += utility_detail::get_safe_stride(x, Axis, TOut::shape());
+                y_p += utility_detail::get_safe_stride(y, Axis, TOut::shape());
+                out_p += output.strides()[Axis];
+            }
+        }
+    }
 
-        output(index) = a ? b : c;
-    });
-}
-} // namespace where_detail
+    template <class Op, class TCondElem, class TXElem, class TYElem,
+              class TOutElem>
+    void where_non_broadcast(const TCondElem *cond, const TXElem *x,
+                             const TYElem *y, TOutElem *output, size_t extent) {
+        ntt::u_where(cond, 1, x, 1, y, 1, output, 1, extent);
+    }
 
-template <typename TCond, typename TX, typename TY, typename TOut>
-void where(const TCond &cond, const TX &x, const TY &y,
-           TOut &&output) noexcept {
-    where_detail::where_impl(cond, x, y, output);
+    template <class Op, class TCondElem, class TXElem, class TYElem,
+              class TOutElem>
+    void where_x_broadcast(const TCondElem *cond, const TXElem *x,
+                           const TYElem *y, TOutElem *output, size_t extent) {
+        ntt::u_where(cond, 1, x, 0, y, 1, output, 1, extent);
+    }
+
+    template <class Op, class TCondElem, class TXElem, class TYElem,
+              class TOutElem>
+    void where_y_broadcast(const TCondElem *cond, const TXElem *x,
+                           const TYElem *y, TOutElem *output, size_t extent) {
+        ntt::u_where(cond, 1, x, 1, y, 0, output, 1, extent);
+    }
+
+    template <class Op, class TCondElem, class TXElem, class TYElem,
+              class TOutElem>
+    void where_cond_broadcast(const TCondElem *cond, const TXElem *x,
+                              const TYElem *y, TOutElem *output,
+                              size_t extent) {
+        ntt::u_where(cond, 0, x, 1, y, 1, output, 1, extent);
+    }
+};
+} // namespace detail
+
+template <template <class T1, class T2, class T3> class Op, class TCond,
+          class TX, class TY, class TOut>
+void where(const TCond &cond, const TX &x, const TY &y, TOut &&output) {
+    Op<typename TCond::element_type, typename TX::element_type,
+       typename TY::element_type>
+        op;
+    detail::where_impl<std::decay_t<TCond>, std::decay_t<TX>, std::decay_t<TY>,
+                       std::decay_t<TOut>>()(op, cond, x, y, output);
 }
 } // namespace nncase::ntt
