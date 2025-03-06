@@ -1548,6 +1548,65 @@ REGISTER_RVV_WHERE_OP(float)
 REGISTER_RVV_KERNEL_4_1(EQUAL_FLOAT32)
 REGISTER_RVV_COMPARE_OP(equal, float, equal_float32)
 
+#define NOT_EQUAL_FLOAT32(lmul1, lmul2, mlen)                                  \
+    inline vuint8m##lmul2##_t not_equal_float32(                               \
+        const vfloat32m##lmul1##_t &v1, const vfloat32m##lmul1##_t &v2,        \
+        const size_t vl) {                                                     \
+        auto mask = __riscv_vmfne_vv_f32m##lmul1##_b##mlen(v1, v2, vl);        \
+        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
+        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+    }
+
+REGISTER_RVV_KERNEL_4_1(NOT_EQUAL_FLOAT32)
+REGISTER_RVV_COMPARE_OP(not_equal, float, not_equal_float32)
+
+#define LESS_FLOAT32(lmul1, lmul2, mlen)                                       \
+    inline vuint8m##lmul2##_t less_float32(const vfloat32m##lmul1##_t &v1,     \
+                                           const vfloat32m##lmul1##_t &v2,     \
+                                           const size_t vl) {                  \
+        auto mask = __riscv_vmflt_vv_f32m##lmul1##_b##mlen(v1, v2, vl);        \
+        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
+        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+    }
+
+REGISTER_RVV_KERNEL_4_1(LESS_FLOAT32)
+REGISTER_RVV_COMPARE_OP(less, float, less_float32)
+
+#define LESS_OR_EQUAL_FLOAT32(lmul1, lmul2, mlen)                              \
+    inline vuint8m##lmul2##_t less_or_equal_float32(                           \
+        const vfloat32m##lmul1##_t &v1, const vfloat32m##lmul1##_t &v2,        \
+        const size_t vl) {                                                     \
+        auto mask = __riscv_vmfle_vv_f32m##lmul1##_b##mlen(v1, v2, vl);        \
+        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
+        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+    }
+
+REGISTER_RVV_KERNEL_4_1(LESS_OR_EQUAL_FLOAT32)
+REGISTER_RVV_COMPARE_OP(less_or_equal, float, less_or_equal_float32)
+
+#define GREATER_FLOAT32(lmul1, lmul2, mlen)                                    \
+    inline vuint8m##lmul2##_t greater_float32(const vfloat32m##lmul1##_t &v1,  \
+                                              const vfloat32m##lmul1##_t &v2,  \
+                                              const size_t vl) {               \
+        auto mask = __riscv_vmfgt_vv_f32m##lmul1##_b##mlen(v1, v2, vl);        \
+        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
+        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+    }
+
+REGISTER_RVV_KERNEL_4_1(GREATER_FLOAT32)
+REGISTER_RVV_COMPARE_OP(greater, float, greater_float32)
+
+#define GREATER_OR_EQUAL_FLOAT32(lmul1, lmul2, mlen)                           \
+    inline vuint8m##lmul2##_t greater_or_equal_float32(                        \
+        const vfloat32m##lmul1##_t &v1, const vfloat32m##lmul1##_t &v2,        \
+        const size_t vl) {                                                     \
+        auto mask = __riscv_vmfge_vv_f32m##lmul1##_b##mlen(v1, v2, vl);        \
+        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
+        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+    }
+
+REGISTER_RVV_KERNEL_4_1(GREATER_OR_EQUAL_FLOAT32)
+REGISTER_RVV_COMPARE_OP(greater_or_equal, float, greater_or_equal_float32)
 
 // scatterND
 

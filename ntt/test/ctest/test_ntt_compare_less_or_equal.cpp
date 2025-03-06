@@ -27,10 +27,10 @@ template <typename T, size_t vl> void test_vector() {
     ntt::vector<T, vl> ntt_lhs, ntt_rhs;
     NttTest::init_tensor(ntt_lhs, static_cast<T>(-10), static_cast<T>(10));
     NttTest::init_tensor(ntt_rhs, static_cast<T>(-10), static_cast<T>(10));
-    auto ntt_output1 = ntt::equal(ntt_lhs, ntt_rhs);
+    auto ntt_output1 = ntt::less_or_equal(ntt_lhs, ntt_rhs);
     auto ort_lhs = NttTest::ntt2ort(ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(ntt_rhs);
-    auto ort_output = ortki_Equal(ort_lhs, ort_rhs);
+    auto ort_output = ortki_LessOrEqual(ort_lhs, ort_rhs);
     ntt::vector<bool, vl> ntt_output2;
     NttTest::ort2ntt(ort_output, ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
@@ -45,7 +45,7 @@ template <typename T, size_t vl> void test_vector() {
     _TEST_VECTOR(T, 4)                                                         \
     _TEST_VECTOR(T, 8)
 
-TEST(CompareTestEqual, vector) {
+TEST(CompareTestLessOrEqual, vector) {
     TEST_VECTOR(float)
     // TEST_VECTOR(int32_t)
     // TEST_VECTOR(int64_t)
