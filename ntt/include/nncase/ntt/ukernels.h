@@ -16,6 +16,7 @@
 #include "ukernels/u_binary.h"
 #include "ukernels/u_cast.h"
 #include "ukernels/u_clamp.h"
+#include "ukernels/u_compare.h"
 #include "ukernels/u_matmul.h"
 #include "ukernels/u_memcpy.h"
 #include "ukernels/u_mul_add.h"

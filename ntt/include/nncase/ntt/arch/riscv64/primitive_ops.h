@@ -1523,11 +1523,12 @@ REGISTER_RVV_WHERE_OP(float)
 // compare
 #define RVV_COMPARE_OP(op, dtype, vl, kernel)                                  \
     template <> struct op<ntt::vector<dtype, vl>> {                            \
-        auto operator()(const ntt::vector<dtype, vl> &v1,                      \
-                        const ntt::vector<dtype, vl> &v2) const noexcept {     \
+        ntt::vector<bool, vl>                                                  \
+        operator()(const ntt::vector<dtype, vl> &v1,                           \
+                   const ntt::vector<dtype, vl> &v2) const noexcept {          \
             return kernel(v1, v2, vl);                                         \
         }                                                                      \
-    };                                                                         \
+    };
 
 #define REGISTER_RVV_COMPARE_OP(op, dtype, kernel)                             \
     RVV_COMPARE_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 1), kernel)         \
@@ -1535,65 +1536,18 @@ REGISTER_RVV_WHERE_OP(float)
     RVV_COMPARE_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)         \
     RVV_COMPARE_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)
 
-#define EQUAL_FLOAT32(lmul, mlen)                                              \
-    inline vbool##mlen##_t equal_float32(const vfloat32m##lmul##_t &v1,        \
-                                         const vfloat32m##lmul##_t &v2,        \
-                                         const size_t vl) {                    \
-        return __riscv_vmfeq_vv_f32m##lmul##_b##mlen(v1, v2, vl);              \
+#define EQUAL_FLOAT32(lmul1, lmul2, mlen)                                      \
+    inline vuint8m##lmul2##_t equal_float32(const vfloat32m##lmul1##_t &v1,     \
+                                            const vfloat32m##lmul1##_t &v2,     \
+                                            const size_t vl) {                 \
+        auto mask = __riscv_vmfeq_vv_f32m##lmul1##_b##mlen(v1, v2, vl);         \
+        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
+        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
     }                                                                          
                                                                                
-REGISTER_RVV_KERNEL(EQUAL_FLOAT32)
+REGISTER_RVV_KERNEL_4_1(EQUAL_FLOAT32)
 REGISTER_RVV_COMPARE_OP(equal, float, equal_float32)
 
-#define NOT_EQUAL_FLOAT32(lmul, mlen)                                          \
-    inline vbool##mlen##_t not_equal_float32(const vfloat32m##lmul##_t &v1,    \
-                                             const vfloat32m##lmul##_t &v2,    \
-                                             const size_t vl) {                \
-        return __riscv_vmfne_vv_f32m##lmul##_b##mlen(v1, v2, vl);              \
-    }
-
-REGISTER_RVV_KERNEL(NOT_EQUAL_FLOAT32)
-REGISTER_RVV_COMPARE_OP(not_equal, float, not_equal_float32)
-
-#define LESS_FLOAT32(lmul, mlen)                                               \
-    inline vbool##mlen##_t less_float32(const vfloat32m##lmul##_t &v1,         \
-                                        const vfloat32m##lmul##_t &v2,         \
-                                        const size_t vl) {                     \
-        return __riscv_vmflt_vv_f32m##lmul##_b##mlen(v1, v2, vl);              \
-    }
-
-REGISTER_RVV_KERNEL(LESS_FLOAT32)
-REGISTER_RVV_COMPARE_OP(less, float, less_float32)
-
-#define LESS_OR_EQUAL_FLOAT32(lmul, mlen)                                      \
-    inline vbool##mlen##_t less_or_equal_float32(                              \
-        const vfloat32m##lmul##_t &v1, const vfloat32m##lmul##_t &v2,          \
-        const size_t vl) {                                                     \
-        return __riscv_vmfle_vv_f32m##lmul##_b##mlen(v1, v2, vl);              \
-    }
-
-REGISTER_RVV_KERNEL(LESS_OR_EQUAL_FLOAT32)
-REGISTER_RVV_COMPARE_OP(less_or_equal, float, less_or_equal_float32)
-
-#define GREATER_FLOAT32(lmul, mlen)                                            \
-    inline vbool##mlen##_t greater_float32(const vfloat32m##lmul##_t &v1,      \
-                                           const vfloat32m##lmul##_t &v2,      \
-                                           const size_t vl) {                  \
-        return __riscv_vmfgt_vv_f32m##lmul##_b##mlen(v1, v2, vl);              \
-    }
-
-REGISTER_RVV_KERNEL(GREATER_FLOAT32)
-REGISTER_RVV_COMPARE_OP(greater, float, greater_float32)
-
-#define GREATER_OR_EQUAL_FLOAT32(lmul, mlen)                                   \
-    inline vbool##mlen##_t greater_or_equal_float32(                           \
-        const vfloat32m##lmul##_t &v1, const vfloat32m##lmul##_t &v2,          \
-        const size_t vl) {                                                     \
-        return __riscv_vmfge_vv_f32m##lmul##_b##mlen(v1, v2, vl);              \
-    }
-
-REGISTER_RVV_KERNEL(GREATER_OR_EQUAL_FLOAT32)
-REGISTER_RVV_COMPARE_OP(greater_or_equal, float, greater_or_equal_float32)
 
 // scatterND
 

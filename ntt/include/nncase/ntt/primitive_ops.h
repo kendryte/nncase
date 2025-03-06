@@ -566,5 +566,31 @@ template <class T1, class T2, class T3> struct where {
     }
 };
 
+// scatterND
+// template <class TDest, class TIndices, class TUpdates> struct scatterND {
+//     TDest operator()(const TDest &dest, const TIndices &indices,
+//                      const TUpdates &updates) const noexcept {
+//         // 创建目标张量的副本
+//         TDest result = dest;
+
+//         // 获取索引张量的维度信息
+//         constexpr size_t indices_rank = TIndices::rank();
+//         constexpr size_t last_dim = TIndices::shape().at(indices_rank - 1);
+
+//         // 遍历索引张量的所有位置（最后一个维度除外）
+//         for (size_t i = 0; i < TIndices::shape().at(0); ++i) {
+//             // 构造目标索引
+//             std::array<size_t, last_dim> dest_index;
+//             for (size_t j = 0; j < last_dim; ++j) {
+//                 dest_index[j] = indices(i, j);
+//             }
+
+//             // 应用更新
+//             result(dest_index) = updates(i);
+//         }
+//         return result;
+//     }
+// };
+
 } // namespace ops
 } // namespace nncase::ntt
