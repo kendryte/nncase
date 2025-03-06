@@ -33,28 +33,24 @@ result<void> compare_impl(TOp &&op, const T *input_a, const T *input_b,
                           gsl::span<const size_t> in_b_strides,
                           gsl::span<const size_t> out_shape,
                           gsl::span<const size_t> out_strides) noexcept {
-    return apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {
-        const auto in_a_index =
-            kernels::detail::get_reduced_offset(index, in_a_shape);
-        const auto in_b_index =
-            kernels::detail::get_reduced_offset(index, in_b_shape);
-        const auto a = input_a[offset(in_a_strides, in_a_index)];
-        const auto b = input_b[offset(in_b_strides, in_b_index)];
-        output[offset(out_strides, index)] = static_cast<bool>(op(a, b));
+    // optimize for scalar
+    if (in_a_shape.size() == 0 && in_b_shape.size() == 0) {
+        output[0] = static_cast<bool>(op(input_a[0], input_b[0]));
         return ok();
-    });
-}
-
-result<value_t> init_bool_value(bool value) noexcept {
-    value_t output;
-    try_output(out_mem, output, datatype_t::from_type<bool>(), dims_t{});
-    *reinterpret_cast<bool *>(out_mem) = value;
-    return ok(output);
-}
-
-template <bool Val> result<value_t> scalar_bool_val() noexcept {
-    static auto val = init_bool_value(Val);
-    return val;
+    } else {
+        return apply(
+            out_shape, [&](gsl::span<const size_t> index) -> result<void> {
+                const auto in_a_index =
+                    kernels::detail::get_reduced_offset(index, in_a_shape);
+                const auto in_b_index =
+                    kernels::detail::get_reduced_offset(index, in_b_shape);
+                const auto a = input_a[offset(in_a_strides, in_a_index)];
+                const auto b = input_b[offset(in_b_strides, in_b_index)];
+                output[offset(out_strides, index)] =
+                    static_cast<bool>(op(a, b));
+                return ok();
+            });
+    }
 }
 } // namespace
 
@@ -111,23 +107,12 @@ kernels::stackvm::compare(compare_op_t compare_op, value_t lhs, value_t rhs,
     }
 
     try_typecode(typecode, lhs_tensor);
-    // optimize for scalar
-    if (lhs_tensor->shape().size() == 0 && rhs_tensor->shape().size() == 0 &&
-        typecode == nncase::dt_int64 &&
-        compare_op == compare_op_t::lower_or_equal) {
-        auto lhs_val = reinterpret_cast<const int64_t *>(lhs_mem)[0];
-        auto rhs_val = reinterpret_cast<const int64_t *>(rhs_mem)[0];
-        return lhs_val <= rhs_val ? scalar_bool_val<true>()
-                                  : scalar_bool_val<false>();
-    } else {
-        auto out_shape = nncase::kernels::detail::get_binary_output_shape(
-            lhs_tensor->shape(), rhs_tensor->shape());
-        try_output(out_mem, output, datatype_t::from_type<bool>(), out_shape);
-        try_(compare_impl(typecode, compare_op, lhs_mem, rhs_mem, out_mem,
-                          lhs_tensor->shape(), lhs_tensor->strides(),
-                          rhs_tensor->shape(), rhs_tensor->strides(),
-                          output_tensor->shape(), output_tensor->strides(),
-                          context));
-        return ok(output);
-    }
+    auto out_shape = nncase::kernels::detail::get_binary_output_shape(
+        lhs_tensor->shape(), rhs_tensor->shape());
+    try_output(out_mem, output, datatype_t::from_type<bool>(), out_shape);
+    try_(compare_impl(
+        typecode, compare_op, lhs_mem, rhs_mem, out_mem, lhs_tensor->shape(),
+        lhs_tensor->strides(), rhs_tensor->shape(), rhs_tensor->strides(),
+        output_tensor->shape(), output_tensor->strides(), context));
+    return ok(output);
 }
