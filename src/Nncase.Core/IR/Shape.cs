@@ -349,7 +349,9 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
     /// </summary>
     /// <param name="index">Index, allowing negative value.</param>
     /// <returns>Dimension.</returns>
-    public Dimension this[int index] => index >= 0 ? Dimensions[index] : Dimensions[Rank + index];
+    public new Dimension this[int index] => index >= 0 ? Dimensions[index] : Dimensions[Rank + index];
+
+    public new Dimension this[Index index] => Dimensions[index];
 
     public static implicit operator ReadOnlySpan<long>(Shape shape) => shape.Select(x => x.FixedValue).ToArray();
 

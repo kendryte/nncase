@@ -70,6 +70,30 @@ public partial class Expr
         }
     }
 
+    public Expr this[int index] => this[(long)index];
+
+    public Expr this[Index index]
+    {
+        get
+        {
+            if (index.IsFromEnd)
+            {
+                var shape = (CheckedType as TensorType)?.Shape;
+                if (shape?.IsRanked == true)
+                {
+                    var newIndex = shape[0] - index.Value;
+                    return newIndex.IsFixed ? this[newIndex.FixedValue] : this[newIndex.ToExpr()];
+                }
+                else
+                {
+                    return this[IR.F.Tensors.ShapeOf(this)[0] - (long)index.Value];
+                }
+            }
+
+            return this[(long)index.Value];
+        }
+    }
+
     /// <summary>
     /// Unary neg.
     /// </summary>

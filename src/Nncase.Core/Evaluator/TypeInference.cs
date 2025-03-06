@@ -485,47 +485,26 @@ public static class TypeInference
     /// </summary>
     public static IRType ResizeType(TensorType input, Expr newSize, TensorType? inputbbox)
     {
-        var out_shape = input.Shape.ToArray();
-        if (newSize is TensorConst new_size_con)
+        var outShape = input.Shape.ToArray();
+        switch (outShape.Length)
         {
-            var ts_new_size = new_size_con.Value.ToArray<int>();
-            switch (out_shape.Length)
-            {
-                case 2 or 3: // [h,w] ,[h,w,c]
-                    out_shape[0] = ts_new_size[0];
-                    out_shape[1] = ts_new_size[1];
-                    break;
-                case > 3: // resize [n,c,h,w]
-                    out_shape[^2] = ts_new_size[^2]; // h
-                    out_shape[^1] = ts_new_size[^1]; // w
-                    break;
-            }
-        }
-        else
-        {
-#if false
-            switch (out_shape.Length)
-            {
-                case 2 or 3:
-                    out_shape[0] = Dimension.Unknown;
-                    out_shape[1] = Dimension.Unknown;
-                    break;
-                case > 3:
-                    out_shape[^2] = Dimension.Unknown;
-                    out_shape[^1] = Dimension.Unknown;
-                    break;
-            }
-#endif
-            throw new NotImplementedException();
+            case 2 or 3: // [h,w] ,[h,w,c]
+                outShape[0] = newSize[0];
+                outShape[1] = newSize[1];
+                break;
+            case > 3: // resize [n,c,h,w]
+                outShape[^2] = newSize[^2]; // h
+                outShape[^1] = newSize[^1]; // w
+                break;
         }
 
         // for roi amount.
-        if (inputbbox is not null && out_shape.Length == 4)
+        if (inputbbox is not null && outShape.Length == 4)
         {
-            out_shape[0] = out_shape[0] * inputbbox.Shape[0].FixedValue;
+            outShape[0] = outShape[0] * inputbbox.Shape[0].FixedValue;
         }
 
-        return input with { Shape = new Shape(out_shape) };
+        return input with { Shape = new Shape(outShape) };
     }
 
     /// <summary>
