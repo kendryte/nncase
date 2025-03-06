@@ -54,15 +54,17 @@ public sealed partial class MatMulToConv2DWithMarker : IRewriteRule
             return null;
         }
 
+        var batchGT1 = aShape[^2].FixedValue > 1;
         var if_shape = new Shape(new[] { aShape[^2].FixedValue, aShape[^1].FixedValue, 1, 1 });
         var w_shape = new Shape(new[] { bShape[^1].FixedValue, bShape[^2].FixedValue, 1, 1 });
         var of_shape = new Shape(new[] { aShape[^2].FixedValue, bShape[^1].FixedValue });
 
         var if_reshape = Reshape(a, if_shape);
+        var if_tp = Transpose(am.With(target: if_reshape), new[] { 3, 1, 2, 0 });
         var w_tp = Transpose(b, Tensor.From<int>(new[] { 1, 0 })).InheritMetaData(b);
         var w_reshape = Reshape(w_tp, w_shape).InheritMetaData(b);
         var conv2d = Conv2D(
-            am.With(target: if_reshape),
+            batchGT1 ? am.With(target: if_tp) : am.With(target: if_reshape),
             bm.With(target: w_reshape),
             Tensor.FromScalar(0.0f, w_shape[0].FixedValue),
             Tensor.FromScalar(1, new[] { 2 }),
@@ -70,7 +72,8 @@ public sealed partial class MatMulToConv2DWithMarker : IRewriteRule
             new int[] { 1, 1 },
             PadMode.Constant,
             1).InheritMetaData(matMulCall);
-        var m = Reshape(marker.With(target: conv2d), of_shape).InheritMetaData(matMulCall);
+        var of_tp = Transpose(marker.With(target: conv2d), new[] { 3, 1, 2, 0 });
+        var m = Reshape(batchGT1 ? marker.With(target: of_tp) : marker.With(target: conv2d), of_shape).InheritMetaData(matMulCall);
         DumpScope.Current.DumpIR(m, $"{_counter++}", "withMarker");
         return m;
     }
@@ -103,16 +106,18 @@ public sealed partial class BroadcastMatMulToConv2DWithMarker : IRewriteRule
             return null;
         }
 
+        var batchGT1 = aShape[0].FixedValue * aShape[1].FixedValue > 1;
         var if_shape = new Shape(new[] { aShape[0].FixedValue * aShape[1].FixedValue, aShape[2].FixedValue, 1, 1 });
         var w_shape = new Shape(new[] { bShape[1].FixedValue, bShape[0].FixedValue, 1, 1 });
         var of_shape = new Shape(new[] { aShape[0].FixedValue, aShape[1].FixedValue, bShape[1].FixedValue });
 
         var if_reshape = Reshape(am, if_shape);
+        var if_tp = Transpose(am.With(target: if_reshape), new[] { 3, 1, 2, 0 });
         var w_tp = Transpose(b, Tensor.From<int>(new[] { 1, 0 })).InheritMetaData(b);
         var w_reshape = Reshape(w_tp, w_shape).InheritMetaData(b);
 
         var conv2d = Conv2D(
-            am.With(target: if_reshape),
+            batchGT1 ? am.With(target: if_tp) : am.With(target: if_reshape),
             bm.With(target: w_reshape),
             Tensor.FromScalar(0.0f, w_shape[0].FixedValue),
             Tensor.FromScalar(1, new[] { 2 }),
@@ -120,7 +125,8 @@ public sealed partial class BroadcastMatMulToConv2DWithMarker : IRewriteRule
             new int[] { 1, 1 },
             PadMode.Constant,
             1).InheritMetaData(matMulCall);
-        var m = Reshape(marker.With(target: conv2d), of_shape).InheritMetaData(matMulCall);
+        var of_tp = Transpose(marker.With(target: conv2d), new[] { 3, 1, 2, 0 });
+        var m = Reshape(batchGT1 ? marker.With(target: of_tp) : marker.With(target: conv2d), of_shape).InheritMetaData(matMulCall);
         return m;
     }
 }
