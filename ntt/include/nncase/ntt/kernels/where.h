@@ -60,7 +60,7 @@ class where_impl<TCond, TX, TY, TOut> {
         auto x_p = x.elements().data();
         auto y_p = y.elements().data();
         auto out_p = output.elements().data();
-        apply<0, conti_dims>(cond, x, y, output, cond_p, x_p, y_p, out_p);
+        apply<Op, 0, conti_dims>(op, cond, x, y, output, cond_p, x_p, y_p, out_p);
     }
 
   private:
@@ -99,8 +99,8 @@ class where_impl<TCond, TX, TY, TOut> {
 
         if constexpr (Axis < TOut::shape().rank()) {
             for (size_t i = 0; i < TOut::shape()[Axis]; i++) {
-                apply<Axis + 1, ContiguousDims>(op, cond, x, y, output, cond_p,
-                                                x_p, y_p, out_p);
+                apply<Op, Axis + 1, ContiguousDims>(op, cond, x, y, output,
+                                                    cond_p, x_p, y_p, out_p);
                 cond_p +=
                     utility_detail::get_safe_stride(cond, Axis, TOut::shape());
                 x_p += utility_detail::get_safe_stride(x, Axis, TOut::shape());
@@ -114,21 +114,24 @@ class where_impl<TCond, TX, TY, TOut> {
               class TOutElem>
     void where_non_broadcast(const TCondElem *cond, const TXElem *x,
                              const TYElem *y, TOutElem *output, size_t extent) {
-        ntt::u_where(cond, 1, x, 1, y, 1, output, 1, extent);
+        ntt::u_where<Op, TCondElem, TXElem, TYElem, TOutElem>(
+            cond, 1, x, 1, y, 1, output, 1, extent);
     }
 
     template <class Op, class TCondElem, class TXElem, class TYElem,
               class TOutElem>
     void where_x_broadcast(const TCondElem *cond, const TXElem *x,
                            const TYElem *y, TOutElem *output, size_t extent) {
-        ntt::u_where(cond, 1, x, 0, y, 1, output, 1, extent);
+        ntt::u_where<Op, TCondElem, TXElem, TYElem, TOutElem>(
+            cond, 1, x, 0, y, 1, output, 1, extent);
     }
 
     template <class Op, class TCondElem, class TXElem, class TYElem,
               class TOutElem>
     void where_y_broadcast(const TCondElem *cond, const TXElem *x,
                            const TYElem *y, TOutElem *output, size_t extent) {
-        ntt::u_where(cond, 1, x, 1, y, 0, output, 1, extent);
+        ntt::u_where<Op, TCondElem, TXElem, TYElem, TOutElem>(
+            cond, 1, x, 1, y, 0, output, 1, extent);
     }
 
     template <class Op, class TCondElem, class TXElem, class TYElem,
@@ -136,7 +139,8 @@ class where_impl<TCond, TX, TY, TOut> {
     void where_cond_broadcast(const TCondElem *cond, const TXElem *x,
                               const TYElem *y, TOutElem *output,
                               size_t extent) {
-        ntt::u_where(cond, 0, x, 1, y, 1, output, 1, extent);
+        ntt::u_where<Op, TCondElem, TXElem, TYElem, TOutElem>(
+            cond, 0, x, 1, y, 1, output, 1, extent);
     }
 };
 } // namespace detail

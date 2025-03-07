@@ -1496,29 +1496,35 @@ REGISTER_RVV_CAST_OP_4_1(float, bool, cast_float32_bool)
 REGISTER_RVV_CAST_OP_1_4(bool, float, cast_bool_float32)
 
 // where
-#define RVV_WHERE_OP(dtype, vl, lmul, mlen)                                    \
+#define WHERE_FLOAT32(lmul1, lmul2, mlen)                                      \
+    inline vfloat32m##lmul1##_t where_float32(                                 \
+        const vuint8m##lmul2##_t &condition, const vfloat32m##lmul1##_t &x,    \
+        const vfloat32m##lmul1##_t &y, const size_t vl) {                      \
+        vbool##mlen##_t mask =                                                 \
+            __riscv_vmsne_vx_u8m##lmul2##_b##mlen(condition, 0.f, vl);         \
+        return __riscv_vmerge_vvm_f32m##lmul1(x, y, mask, vl);                 \
+    }
+
+#define RVV_WHERE_OP(dtype, vl, kernel)                                        \
     template <>                                                                \
-    struct where<ntt::vector<dtype, vl>, ntt::vector<dtype, vl>,               \
+    struct where<ntt::vector<bool, vl>, ntt::vector<dtype, vl>,                \
                  ntt::vector<dtype, vl>> {                                     \
         ntt::vector<dtype, vl>                                                 \
-        operator()(const ntt::vector<dtype, vl> &condition,                    \
+        operator()(const ntt::vector<bool, vl> &condition,                     \
                    const ntt::vector<dtype, vl> &x,                            \
                    const ntt::vector<dtype, vl> &y) const noexcept {           \
-            /* Generate boolean mask */                                        \
-            vbool##mlen##_t mask =                                             \
-                __riscv_vmfne_vf_f32m##lmul##_b##mlen(condition, 0.f, vl);     \
-            /* Select elements based on mask */                                \
-            return __riscv_vmerge_vvm_f32m##lmul(x, y, mask, vl);              \
+            return kernel(condition, x, y, vl);                                \
         }                                                                      \
     };
 
-#define REGISTER_RVV_WHERE_OP(dtype)                                           \
-    RVV_WHERE_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 1), 1, 32)                \
-    RVV_WHERE_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 2), 2, 16)                \
-    RVV_WHERE_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 4), 4, 8)                 \
-    RVV_WHERE_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 8), 8, 4)
+#define REGISTER_RVV_WHERE_OP(dtype, kernel)                                   \
+    RVV_WHERE_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 1), kernel)               \
+    RVV_WHERE_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 2), kernel)               \
+    RVV_WHERE_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)               \
+    RVV_WHERE_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)
 
-REGISTER_RVV_WHERE_OP(float)
+REGISTER_RVV_KERNEL_4_1(WHERE_FLOAT32)
+REGISTER_RVV_WHERE_OP(float, where_float32)
 
 // compare
 #define RVV_COMPARE_OP(op, dtype, vl, kernel)                                  \
@@ -1537,14 +1543,14 @@ REGISTER_RVV_WHERE_OP(float)
     RVV_COMPARE_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)
 
 #define EQUAL_FLOAT32(lmul1, lmul2, mlen)                                      \
-    inline vuint8m##lmul2##_t equal_float32(const vfloat32m##lmul1##_t &v1,     \
-                                            const vfloat32m##lmul1##_t &v2,     \
+    inline vuint8m##lmul2##_t equal_float32(const vfloat32m##lmul1##_t &v1,    \
+                                            const vfloat32m##lmul1##_t &v2,    \
                                             const size_t vl) {                 \
-        auto mask = __riscv_vmfeq_vv_f32m##lmul1##_b##mlen(v1, v2, vl);         \
+        auto mask = __riscv_vmfeq_vv_f32m##lmul1##_b##mlen(v1, v2, vl);        \
         auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
         return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
-    }                                                                          
-                                                                               
+    }
+
 REGISTER_RVV_KERNEL_4_1(EQUAL_FLOAT32)
 REGISTER_RVV_COMPARE_OP(equal, float, equal_float32)
 

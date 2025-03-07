@@ -23,54 +23,42 @@
 using namespace nncase;
 using namespace ortki;
 
-// TEST(where, Pack) {
-//     constexpr size_t M = 2;
-//     constexpr size_t N = 2;
-//     // constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-//     float min_input = -100.0f;
-//     float max_input = 100.0f;
+TEST(where, Pack) {
+    constexpr size_t M = 2;
+    constexpr size_t N = 2;
+    // constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    float min_input = -100.0f;
+    float max_input = 100.0f;
 
-//     using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-//     using tensor_type2 = ntt::tensor<bool, ntt::fixed_shape<M, N>>;
-//     using tensor_type3 =
-//         ntt::tensor<ntt::vector<float, 2>, ntt::fixed_shape<M / 2, N>>;
-//     using tensor_type4 =
-//         ntt::tensor<ntt::vector<bool, 2>, ntt::fixed_shape<M / 2, N>>;
-//     // init
-//     alignas(2) tensor_type2 condition;
-//     condition(0, 0) = true;
-//     condition(0, 1) = false;
-//     condition(1, 0) = false;
-//     condition(1, 1) = true;
-//     alignas(2) tensor_type1 ntt_input1;
-//     NttTest::init_tensor(ntt_input1, min_input, max_input);
-//     alignas(2) tensor_type1 ntt_input2;
-//     NttTest::init_tensor(ntt_input2, min_input, max_input);
-    
-//     // ntt
-//     alignas(2) tensor_type4 pack_condition;
-//     alignas(2) tensor_type3 pack_input1;
-//     alignas(2) tensor_type3 pack_input2;
-//     alignas(2) tensor_type3 pack_output;
-//     ntt::pack<0>(condition, pack_condition);
-//     ntt::pack<0>(ntt_input1, pack_input1);
-//     ntt::pack<0>(ntt_input2, pack_input2);
-//     ntt::where(pack_condition, pack_input1, pack_input2, pack_output);
-//     alignas(2) tensor_type1 ntt_output1;
-//     ntt::unpack<0>(pack_output, ntt_output1);
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
+    using tensor_type2 = ntt::tensor<bool, ntt::fixed_shape<M, N>>;
+    // init
+    tensor_type2 condition;
+    condition(0, 0) = true;
+    condition(0, 1) = false;
+    condition(1, 0) = false;
+    condition(1, 1) = true;
+    tensor_type1 ntt_input1;
+    NttTest::init_tensor(ntt_input1, min_input, max_input);
+    tensor_type1 ntt_input2;
+    NttTest::init_tensor(ntt_input2, min_input, max_input);
+    tensor_type1 ntt_output1;
+    // ntt
+    ntt::where<ntt::ops::where>(condition, ntt_input1, ntt_input2, ntt_output1);
 
-//     // ort
-//     auto ort_condition = NttTest::ntt2ort(condition);
-//     auto ort_input1 = NttTest::ntt2ort(ntt_input1);
-//     auto ort_input2 = NttTest::ntt2ort(ntt_input2);
-//     auto ort_output = ortki_Where(ort_condition, ort_input1, ort_input2);
+    // ort
+    auto ort_condition = NttTest::ntt2ort(condition);
+    auto ort_input1 = NttTest::ntt2ort(ntt_input1);
+    auto ort_input2 = NttTest::ntt2ort(ntt_input2);
+    auto ort_output = ortki_Where(ort_condition, ort_input1, ort_input2);
 
-//     // compare
-//     alignas(2) tensor_type1 ntt_output2;
-//     NttTest::ort2ntt(ort_output, ntt_output2);
-//     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
-// }
-// int main(int argc, char *argv[]) {
-//     ::testing::InitGoogleTest(&argc, argv);
-//     return RUN_ALL_TESTS();
-// }
+    // compare
+    alignas(2) tensor_type1 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+}
+
+int main(int argc, char *argv[]) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
