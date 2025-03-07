@@ -45,6 +45,7 @@ public sealed partial class NcnnImporter : BaseImporter
     private readonly NcnnModel _model;
     private readonly NcnnModelBin _modelBin;
     private readonly Dictionary<string, Expr> _outputTensors = new Dictionary<string, Expr>();
+    private readonly List<Var> _inputs = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NcnnImporter"/> class.
@@ -62,22 +63,13 @@ public sealed partial class NcnnImporter : BaseImporter
     /// <inheritdoc/>
     protected override (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
     {
-        var inputs = new List<Var>();
         var varMap = new Dictionary<Var, Expr[]>();
-
-        foreach (var layer in _model.Layers.Where(x => x.Type == "Input"))
-        {
-            var input = new Var(layer.Name, TensorType.Unranked(DataTypes.Float32));
-            inputs.Add(input);
-            _outputTensors.Add(layer.Name, input);
-        }
-
-        return (inputs, varMap);
+        return (_inputs, varMap);
     }
 
     protected override void ConvertOp()
     {
-        foreach (var layer in _model.Layers.Where(x => x.Type != "Input"))
+        foreach (var layer in _model.Layers)
         {
             Visit(layer);
         }
@@ -128,6 +120,7 @@ public sealed partial class NcnnImporter : BaseImporter
     {
         var output = layer.Type switch
         {
+            "Input" => VisitInput(layer),
             "Concat" => VisitConcat(layer),
             "Convolution" => VisitConvolution(layer),
             "ConvolutionDepthWise" => VisitConvolution(layer),

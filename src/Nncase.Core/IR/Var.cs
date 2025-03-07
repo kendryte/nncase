@@ -97,7 +97,7 @@ public sealed class Var : Expr, IEquatable<Var?>
     /// <summary>
     /// get the size var. it can be used in tensor shape. like n>=0, m>=0.
     /// </summary>
-    public static Var SizeVar(string name) => Scalar(name, DataTypes.Int32);
+    public static Var SizeVar(string name) => Scalar(name, DataTypes.Int64);
 
     /// <inheritdoc/>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
