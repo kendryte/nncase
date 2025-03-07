@@ -24,7 +24,7 @@ public sealed partial class HuggingFaceImporter : BaseImporter
     private readonly Dictionary<string, Tensor>? _constTensors;
 
     private List<Var>? _inputs;
-    private readonly List<Var>? _outputs;
+    private Dictionary<string, Expr>? _outputs = new Dictionary<string, Expr> { } ;
     private Dictionary<string, Var> _dynVarMap;
     private Dictionary<string, int> _fixVarMap;
 
@@ -60,10 +60,7 @@ public sealed partial class HuggingFaceImporter : BaseImporter
             case "Qwen2ForCausalLM":
                 _config["pad_token_id"] = 0;
                 Debug.Assert(_constTensors != null, nameof(_constTensors) + " != null");
-                var (lm_head, _) = VisitQwen2ForCausalLM();
-                Console.WriteLine("------------>visit result:");
-                var str = CompilerServices.Print(lm_head);
-                Console.WriteLine(str);
+                VisitQwen2ForCausalLM();
                 break;
             default:
                 throw new NotImplementedException();
@@ -72,6 +69,14 @@ public sealed partial class HuggingFaceImporter : BaseImporter
 
     protected override Expr CreateOutputs()
     {
-        throw new NotImplementedException();
+         switch (_config!["architectures"]!)
+        {
+            case "Qwen2ForCausalLM":
+                return Qwen2CreateOutputs();
+
+            default:
+                throw new NotImplementedException();
+
+        }
     }
 }

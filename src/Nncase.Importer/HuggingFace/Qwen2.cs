@@ -98,8 +98,25 @@ namespace Nncase.Importer
             return (_inputs, varMap);
         }
 
+        private Expr Qwen2CreateOutputs() {
+            // TODO: use self.config.output_attention to judge wether output kvache
+            var lm_head = _outputs!["lm_head"];
+            Expr? kv_cache = null;
+            if (_outputs.ContainsKey("kv_cache"))
+            {
+                kv_cache = _outputs["kv_cache"];
+            }
+
+            if (kv_cache is null)
+            {
+                return lm_head;
+            }
+
+            return new IR.Tuple([lm_head, kv_cache]);
+        }
+
         // private Tuple<Call, HuggingFaceUtils.DynamicCache> VisitQwen2ForCausalLM()
-        private Tuple<Call, Call> VisitQwen2ForCausalLM()
+        private void VisitQwen2ForCausalLM()
         {
             if (_constTensors == null)
             {
@@ -160,13 +177,18 @@ namespace Nncase.Importer
                 lastHiddenStates,
                 _constTensors["model.embed_tokens.weight"]);
 
+            _outputs!["lm_head"] = lmHead;
             Call attentionKVCache = null;
+
+            //TODO: using config.output_attentions to judge whether need kv cache
             if (CheckNeedKVcache(allSelfAttnsKV))
             {
                 attentionKVCache = Concat(allSelfAttnsKV.ToArray(), 0);
             }
 
-            return Tuple.Create(lmHead, attentionKVCache);
+            if (attentionKVCache is not null) {
+                _outputs!["kv_cache"] = attentionKVCache;
+            }
         }
 
         // private Tuple<Call, HuggingFaceUtils.DynamicCache, List<Call>, List<Call>> Qwen2Model(
