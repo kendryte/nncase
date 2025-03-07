@@ -24,7 +24,7 @@ public sealed partial class HuggingFaceImporter : BaseImporter
     private readonly Dictionary<string, Tensor>? _constTensors;
 
     private List<Var>? _inputs;
-    private Dictionary<string, Expr>? _outputs = new Dictionary<string, Expr> { } ;
+    private readonly Dictionary<string, Expr>? _outputs = new Dictionary<string, Expr> { };
     private Dictionary<string, Var> _dynVarMap;
     private Dictionary<string, int> _fixVarMap;
 
@@ -69,14 +69,13 @@ public sealed partial class HuggingFaceImporter : BaseImporter
 
     protected override Expr CreateOutputs()
     {
-         switch (_config!["architectures"]!)
+        switch (_config!["architectures"]!)
         {
             case "Qwen2ForCausalLM":
                 return Qwen2CreateOutputs();
 
             default:
                 throw new NotImplementedException();
-
         }
     }
 }

@@ -98,7 +98,8 @@ namespace Nncase.Importer
             return (_inputs, varMap);
         }
 
-        private Expr Qwen2CreateOutputs() {
+        private Expr Qwen2CreateOutputs()
+        {
             // TODO: use self.config.output_attention to judge wether output kvache
             var lm_head = _outputs!["lm_head"];
             Expr? kv_cache = null;
@@ -180,13 +181,14 @@ namespace Nncase.Importer
             _outputs!["lm_head"] = lmHead;
             Call attentionKVCache = null;
 
-            //TODO: using config.output_attentions to judge whether need kv cache
+            // TODO: using config.output_attentions to judge whether need kv cache
             if (CheckNeedKVcache(allSelfAttnsKV))
             {
                 attentionKVCache = Concat(allSelfAttnsKV.ToArray(), 0);
             }
 
-            if (attentionKVCache is not null) {
+            if (attentionKVCache is not null)
+            {
                 _outputs!["kv_cache"] = attentionKVCache;
             }
         }
