@@ -55,7 +55,7 @@ public class ExprReconstructor<TVertex, TEdge>
             {
                 var sourceOutIndex = sourceOutVertices.IndexOf(inEdge.Source);
                 var postResult = ClusterMemo[sourceCluster];
-                postArg = postResult is IR.Tuple tp ? tp.Fields[sourceOutIndex] : IR.F.Tensors.GetItem(postResult, sourceOutIndex);
+                postArg = postResult[sourceOutIndex];
             }
 
             pairs.Add((inEdge.Source.Expr, postArg));

@@ -19,7 +19,7 @@ public sealed partial class Im2col : Op
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(Im2col), 0, "input", ParameterKind.Input);
 
-    public IRArray<int> Kernel { get; }
+    public IRArray<long> Kernel { get; }
 
     public IRArray<int> Stride { get; }
 

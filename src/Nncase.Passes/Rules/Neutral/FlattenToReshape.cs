@@ -34,6 +34,6 @@ public sealed partial class FlattenToReshape : IRewriteRule
     {
         var postiveAxis = axis >= 0 ? axis : input.CheckedShape.Count + axis;
         var newShape = postiveAxis == 0 ? new Shape(1, input.CheckedShape.Size) : new Shape(input.CheckedShape.ToValueArray()[..postiveAxis].Aggregate((a, b) => a * b), input.CheckedShape.ToValueArray()[postiveAxis..].Aggregate((a, b) => a * b));
-        return Reshape(input, newShape);
+        return Reshape(input, newShape.ToValueArrayExpr());
     }
 }

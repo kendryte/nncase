@@ -17,7 +17,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Stack"/>.
 /// </summary>
-public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEvaluator<Stack>, IShapeEvaluator<Stack>, IMetricEvaluator<Stack>
+public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEvaluator<Stack>, IMetricEvaluator<Stack>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Stack stack)
@@ -53,18 +53,6 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret, 1),
         };
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Stack target)
-    {
-        var inShape = context.GetArgumentShape(target, Stack.Inputs);
-        Expr one = new[] { 1L };
-        if (inShape[0].CheckedShape.IsScalar)
-        {
-            one = 1L;
-        }
-
-        return IR.F.Tensors.Concat(new IR.Tuple(inShape[0], one), 0);
     }
 
     public Metric Visit(IMetricEvaluateContext context, Stack target)

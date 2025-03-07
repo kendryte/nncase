@@ -19,6 +19,7 @@ public sealed partial class FoldIf : RewriteRule<Pattern>
     private Expr? GetReplace(If expr)
     {
         var cond = ((TensorConst)expr.Condition).Value.ToScalar<bool>();
-        return cond ? expr.Then : expr.Else;
+        var target = cond ? expr.Then : expr.Else;
+        return new Call(target, expr.Arguments);
     }
 }

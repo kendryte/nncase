@@ -23,9 +23,17 @@
 #endif
 
 namespace nncase::ntt::runtime {
+struct thread_inout_desc {
+    std::byte *data;
+    size_t size;
+    const size_t *shape;
+    const size_t *strides;
+};
+
 void *thread_alloc(size_t bytes, size_t alignment);
 void thread_free(void *ptr);
 } // namespace nncase::ntt::runtime
 
-extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata,
-                            const std::byte *local_rdata);
+extern "C" void
+thread_main(const nncase::ntt::runtime::thread_inout_desc *inouts,
+            const std::byte *rdata, const std::byte *local_rdata);

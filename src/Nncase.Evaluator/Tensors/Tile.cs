@@ -17,7 +17,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Tile"/>.
 /// </summary>
-public class TileEvaluator : IEvaluator<Tile>, ITypeInferencer<Tile>, ICostEvaluator<Tile>, IShapeEvaluator<Tile>, IMetricEvaluator<Tile>
+public class TileEvaluator : IEvaluator<Tile>, ITypeInferencer<Tile>, ICostEvaluator<Tile>, IMetricEvaluator<Tile>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Tile tile)
@@ -42,13 +42,6 @@ public class TileEvaluator : IEvaluator<Tile>, ITypeInferencer<Tile>, ICostEvalu
         return CostUtility.GetBroadcastCost(input, ret);
     }
 
-    public Expr Visit(IShapeEvaluateContext context, Tile target)
-    {
-        var inShape = context.GetArgumentShape(target, Tile.Input);
-        var repeats = context.GetArgument(target, Tile.Repeats);
-        return inShape * IR.F.Tensors.Cast(repeats, DataTypes.Int64);
-    }
-
     public Metric Visit(IMetricEvaluateContext context, Tile target)
     {
         var input = context.GetArgumentType<TensorType>(target, Tile.Input);
@@ -61,19 +54,18 @@ public class TileEvaluator : IEvaluator<Tile>, ITypeInferencer<Tile>, ICostEvalu
 
     private IRType Visit(ITypeInferenceContext context, Tile target, TensorType input, TensorType repeat)
     {
-        if (input.Shape.IsUnranked)
+        var inShape = input.Shape;
+        var repeats = context.GetArgument(target, Tile.Repeats);
+        if (repeats is TensorConst tc)
         {
-            return input;
+            var repeatsValue = tc.Value.ToArray<int>();
+            var shape = input.Shape.Zip(repeatsValue).Select(p => p.First * p.Second);
+            return input with { Shape = new Shape(shape) };
         }
-
-        if (context.GetArgument(target, Tile.Repeats) is TensorConst repeats && input.Shape.IsFixed)
+        else
         {
-            var shape = input.Shape.ToValueArray().Zip(repeats.Value.ToArray<int>()).Select(p => p.First * p.Second);
-            return input with { Shape = new Shape(shape.ToArray<int>()) };
+            var shape = input.Shape.Select((p, i) => p * (Dimension)repeats[i]);
+            return input with { Shape = new Shape(shape) };
         }
-
-        return new TensorType(
-            input.DType,
-            new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Rank)));
     }
 }

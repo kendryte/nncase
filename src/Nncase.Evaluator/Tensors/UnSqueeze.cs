@@ -14,7 +14,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Unsqueeze"/>.
 /// </summary>
-public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsqueeze>, ICostEvaluator<Unsqueeze>, IShapeEvaluator<Unsqueeze>, IMetricEvaluator<Unsqueeze>
+public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsqueeze>, ICostEvaluator<Unsqueeze>, IMetricEvaluator<Unsqueeze>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Unsqueeze unSqueeze)
@@ -28,7 +28,6 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
     public IRType Visit(ITypeInferenceContext context, Unsqueeze target)
     {
         var input = context.CheckArgumentType<IRType>(target, Unsqueeze.Input);
-        _ = context.CheckArgumentType<TensorType>(target, Unsqueeze.Dim);
         if (input is TensorType tensorType)
         {
             return Visit(context, target, tensorType);
@@ -50,13 +49,6 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
         };
     }
 
-    public Expr Visit(IShapeEvaluateContext context, Unsqueeze target)
-    {
-        var input = context.GetArgumentShape(target, Unsqueeze.Input);
-        var dims = context.GetArgument(target, Unsqueeze.Dim);
-        return IR.F.ShapeExpr.UnsqueezeShape(input, dims);
-    }
-
     public Metric Visit(IMetricEvaluateContext context, Unsqueeze target) => Metric.Zero;
 
     private IRType Visit(ITypeInferenceContext context, Unsqueeze target, TensorType input)
@@ -66,29 +58,28 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
             return input;
         }
 
-        if (context.GetArgument(target, Unsqueeze.Dim) is TensorConst tdims)
+        if (context.GetDimensionArgument(target, Unsqueeze.Dim) is TensorConst axes)
         {
-            var dimsValue = tdims.Value.Cast<int>();
-            var outShape = input.Shape.ToList();
-            foreach (var dimVal in dimsValue)
+            var axesValue = axes.Value.ToArray<int>();
+            var outShape = new Dimension[input.Shape.Rank + axesValue.Length];
+            axesValue = axesValue.Select(axis => axis < 0 ? axis + outShape.Length : axis).ToArray();
+            var offset = 0;
+            for (int i = 0; i < outShape.Length; i++)
             {
-                if (dimVal >= 0)
+                if (axesValue.Contains(i))
                 {
-                    outShape.Insert(dimVal, 1);
+                    outShape[i] = 1;
                 }
                 else
                 {
-                    var index = System.Math.Max(outShape.Count + dimVal + 1, 0);
-                    outShape.Insert(index, 1);
-
-                    // count == 3, dimVal == -4
+                    outShape[i] = input.Shape[offset++];
                 }
             }
 
             return input with { Shape = new Shape(outShape) };
         }
 
-        return input with { Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Rank + 1)) };
+        return input with { Shape = Shape.Unknown(input.Shape.Rank + 1) };
     }
 
     private IRType Visit(ITypeInferenceContext context, Unsqueeze target, DistributedType input)

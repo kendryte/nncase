@@ -3,6 +3,7 @@
 
 using System;
 using Nncase.CostModel;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.Utilities;
@@ -13,7 +14,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Compare"/>.
 /// </summary>
-public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, ICostEvaluator<Compare>, IOpPrinter<Compare>, IShapeEvaluator<Compare>, IMetricEvaluator<Compare>
+public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, ICostEvaluator<Compare>, IOpPrinter<Compare>, IMetricEvaluator<Compare>
 {
     public static IRType CheckSBP(TensorType tensorType, DistributedType a, DistributedType b)
     {
@@ -118,8 +119,8 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
     {
         var lhs = context.CheckArgumentType<IRType>(target, Compare.Lhs);
         var rhs = context.CheckArgumentType<IRType>(target, Compare.Rhs);
-
-        return (lhs, rhs) switch
+        var operandTypes = TypeInference.BroadcastDistributeTypes(lhs, rhs);
+        return (operandTypes[0], operandTypes[1]) switch
         {
             (TensorType a, TensorType b) => Visit(a, b),
             (DistributedType a, DistributedType b) => Visit(a, b),
@@ -127,26 +128,25 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
         };
     }
 
-    public string Visit(IIRPrinterContext context, Compare target, bool iLmode)
+    public string Visit(IPrintOpContext context, Compare target)
     {
-        var op = target.CompareOp switch
+        if (context.Flags.HasFlag(PrinterFlags.Inline) || context.Flags.HasFlag(PrinterFlags.Script))
         {
-            CompareOp.Equal => "==",
-            CompareOp.LowerOrEqual => "<=",
-            CompareOp.GreaterOrEqual => ">=",
-            CompareOp.GreaterThan => ">",
-            CompareOp.LowerThan => "<",
-            CompareOp.NotEqual => "!=",
-            _ => throw new ArgumentOutOfRangeException(target.CompareOp.ToString()),
-        };
-        return $"{context.GetArgument(target, Compare.Lhs)} {op} {context.GetArgument(target, Compare.Rhs)}";
-    }
+            var op = target.CompareOp switch
+            {
+                CompareOp.Equal => "==",
+                CompareOp.LowerOrEqual => "<=",
+                CompareOp.GreaterOrEqual => ">=",
+                CompareOp.GreaterThan => ">",
+                CompareOp.LowerThan => "<",
+                CompareOp.NotEqual => "!=",
+                _ => throw new ArgumentOutOfRangeException(target.CompareOp.ToString()),
+            };
 
-    public Expr Visit(IShapeEvaluateContext context, Compare target)
-    {
-        var lhs = context.GetArgumentShape(target, Compare.Lhs);
-        var rhs = context.GetArgumentShape(target, Compare.Rhs);
-        return ShapeExprUtility.BroadcastShape(lhs, rhs);
+            return $"({context.GetArgument(target, Compare.Lhs)} {op} {context.GetArgument(target, Compare.Rhs)})";
+        }
+
+        return context.GetDefault(target);
     }
 
     private bool Compute(CompareOp op, int a, int b) => op switch

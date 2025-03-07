@@ -18,8 +18,8 @@ public class UnitTestBroadcastMarker : TransformTestBase
     {
         var input = Testing.Rand<float>(1, 3, 24, 24);
         var a = IR.F.Math.MatMul(
-            Reshape(new Marker(WellknownMarkerNames.RangeOf, input, new[] { -1f, 1f }), input.Shape),
-            Reshape(new Marker(WellknownMarkerNames.RangeOf, input, new[] { -2f, 2f }), input.Shape));
+            Reshape(new Marker(WellknownMarkerNames.RangeOf, input, new[] { -1f, 1f }), input.Shape.ToValueArrayExpr()),
+            Reshape(new Marker(WellknownMarkerNames.RangeOf, input, new[] { -2f, 2f }), input.Shape.ToValueArrayExpr()));
         var result = TestMatched<BroadcastInputMarker>(a);
         TestNotMatch<BroadcastInputMarker>(result);
     }
@@ -28,7 +28,7 @@ public class UnitTestBroadcastMarker : TransformTestBase
     public void TestBroadcastOutputMarker()
     {
         var input = Testing.Rand<float>(1, 3, 24, 24);
-        var a = new Marker(WellknownMarkerNames.RangeOf, Reshape(Abs(input), input.Shape), new[] { -1f, 1f });
+        var a = new Marker(WellknownMarkerNames.RangeOf, Reshape(Abs(input), input.Shape.ToValueArrayExpr()), new[] { -1f, 1f });
         var result = TestMatched<BroadcastOutputMarker>(a);
         TestNotMatch<BroadcastOutputMarker>(result);
     }

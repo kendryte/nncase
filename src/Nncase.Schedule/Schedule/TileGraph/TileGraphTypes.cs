@@ -45,7 +45,7 @@ public sealed record DomainRelation(int DomainOp, int RangeOp, AffineMap Map)
 
 public sealed class TileGrid : ITileable
 {
-    public TileGrid(Grid grid, Op op, int opId, IEnumerable<string> dimNames, IEnumerable<int> domainBounds, IEnumerable<IEnumerable<int>> bufferShapes)
+    public TileGrid(Grid grid, Op op, int opId, IEnumerable<string> dimNames, IEnumerable<long> domainBounds, IEnumerable<IEnumerable<long>> bufferShapes)
     {
         Level = 0;
         Grid = grid;
@@ -66,9 +66,9 @@ public sealed class TileGrid : ITileable
 
     public Op Op { get; }
 
-    public ImmutableArray<int> DomainBounds { get; }
+    public ImmutableArray<long> DomainBounds { get; }
 
-    public ImmutableArray<ImmutableArray<int>> BufferShapes { get; }
+    public ImmutableArray<ImmutableArray<long>> BufferShapes { get; }
 
     public ReadOnlySpan<AffineMap> ReadAccesses => Grid.AccessMaps[..^1];
 

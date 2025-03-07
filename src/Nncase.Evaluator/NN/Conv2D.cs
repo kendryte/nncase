@@ -17,7 +17,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="Conv2D"/>.
 /// </summary>
-public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICostEvaluator<Conv2D>, IShapeEvaluator<Conv2D>, IMetricEvaluator<Conv2D>
+public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICostEvaluator<Conv2D>, IMetricEvaluator<Conv2D>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Conv2D conv)
@@ -97,17 +97,6 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
         };
     }
 
-    public Expr Visit(IShapeEvaluateContext context, Conv2D target)
-    {
-        var input = context.GetArgumentShape(target, Conv2D.Input);
-        var weights = context.GetArgumentShape(target, Conv2D.Weights);
-        var pad = context.GetArgument(target, Conv2D.Padding);
-        var stride = context.GetArgument(target, Conv2D.Stride);
-        var dilation = context.GetArgument(target, Conv2D.Dilation);
-        var groups = context.GetArgument(target, Conv2D.Groups);
-        return IR.F.ShapeExpr.Conv2DShape(input, weights, pad, stride, dilation, groups);
-    }
-
     private IRType Visit(ITypeInferenceContext context, Conv2D target, TensorType input, TensorType weights)
     {
         var args = context.GetArguments(target, Conv2D.Stride, Conv2D.Padding, Conv2D.Dilation, Conv2D.Groups);
@@ -129,7 +118,7 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
             return new InvalidType(string.Empty);
         }
 
-        if (input.Placement != weights.Placement)
+        if (input.Placement != weights.Placement || input.Placement != bias.Placement)
         {
             return new InvalidType("placement not equal");
         }

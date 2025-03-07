@@ -17,19 +17,19 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
 {
     public const int Lanes = 32;
 
-    public static TheoryData<int[][], int[][], int> PackedConcatData { get; } = new()
+    public static TheoryData<long[][], int[][], int> PackedConcatData { get; } = new()
     {
-        { new[] { new[] { 1, 64, 384, 64 }, new[] { 1, 64, 384, 64 } }, new[] { new[] { 2, 3 }, new[] { 2, 3 } }, 1 },
+        { new[] { new long[] { 1, 64, 384, 64 }, new long[] { 1, 64, 384, 64 } }, new[] { new[] { 2, 3 }, new[] { 2, 3 } }, 1 },
     };
 
     [Theory]
-    [InlineData(new object[] { false, new int[] { 1, 1, 4, 4 }, new int[] { 8, 1, 3, 3 }, new int[] { 1, 1, 1, 1 }, new int[] { 1, 1 } })]
-    [InlineData(new object[] { false, new int[] { 3, 2, 4, 4 }, new int[] { 8, 2, 3, 3 }, new int[] { 0, 0, 1, 1 }, new int[] { 1, 2 } })]
-    [InlineData(new object[] { false, new int[] { 3, 2, 4, 4 }, new int[] { 8, 2, 3, 3 }, new int[] { 1, 0, 1, 1 }, new int[] { 2, 1 } })]
-    [InlineData(new object[] { true, new int[] { 1, 4, 4, 4 }, new int[] { 8, 4, 3, 3 }, new int[] { 1, 1, 1, 1 }, new int[] { 1, 1 } })]
-    [InlineData(new object[] { true, new int[] { 3, 8, 4, 4 }, new int[] { 8, 8, 3, 3 }, new int[] { 0, 0, 1, 1 }, new int[] { 1, 2 } })]
-    [InlineData(new object[] { true, new int[] { 3, 8, 4, 4 }, new int[] { 8, 8, 3, 3 }, new int[] { 1, 0, 1, 1 }, new int[] { 2, 1 } })]
-    public void TestIm2colConv(bool pack, int[] inputShape, int[] weightShape, int[] padding, int[] strides)
+    [InlineData(new object[] { false, new long[] { 1, 1, 4, 4 }, new long[] { 8, 1, 3, 3 }, new int[] { 1, 1, 1, 1 }, new int[] { 1, 1 } })]
+    [InlineData(new object[] { false, new long[] { 3, 2, 4, 4 }, new long[] { 8, 2, 3, 3 }, new int[] { 0, 0, 1, 1 }, new int[] { 1, 2 } })]
+    [InlineData(new object[] { false, new long[] { 3, 2, 4, 4 }, new long[] { 8, 2, 3, 3 }, new int[] { 1, 0, 1, 1 }, new int[] { 2, 1 } })]
+    [InlineData(new object[] { true, new long[] { 1, 4, 4, 4 }, new long[] { 8, 4, 3, 3 }, new int[] { 1, 1, 1, 1 }, new int[] { 1, 1 } })]
+    [InlineData(new object[] { true, new long[] { 3, 8, 4, 4 }, new long[] { 8, 8, 3, 3 }, new int[] { 0, 0, 1, 1 }, new int[] { 1, 2 } })]
+    [InlineData(new object[] { true, new long[] { 3, 8, 4, 4 }, new long[] { 8, 8, 3, 3 }, new int[] { 1, 0, 1, 1 }, new int[] { 2, 1 } })]
+    public void TestIm2colConv(bool pack, long[] inputShape, long[] weightShape, int[] padding, int[] strides)
     {
         var dilation = new[] { 1, 1 };
         var groups = 1;
@@ -84,7 +84,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
     [InlineData(new object[] { new[] { 32, 69, 128 }, 1, new[] { 1 } })]
     [InlineData(new object[] { new[] { 32, 64, 135 }, 2, new[] { 2 } })]
     [InlineData(new object[] { new[] { 32, 64, 128 }, 0, new[] { 0, 1 } })]
-    public void TestPackedSoftmax(int[] shape, int axis, int[] packedAxes)
+    public void TestPackedSoftmax(long[] shape, int axis, int[] packedAxes)
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pre = IR.F.NN.Softmax(input, axis);
@@ -108,7 +108,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
     [InlineData(new object[] { new[] { 36, 64, 128 }, 0 })] // padded but packed not on axis
     [InlineData(new object[] { new[] { 32, 69, 128 }, 1 })]
     [InlineData(new object[] { new[] { 32, 64, 135 }, 2 })]
-    public void TestPackSoftmaxRule(int[] shape, int axis)
+    public void TestPackSoftmaxRule(long[] shape, int axis)
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pre = IR.F.NN.Softmax(input, axis);
@@ -142,7 +142,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
     [InlineData(new object[] { new[] { 32, 57, 128 }, 1, new[] { 1 } })]
     [InlineData(new object[] { new[] { 32, 64, 81 }, 1, new[] { 2 } })]
     [InlineData(new object[] { new[] { 32, 64, 99 }, 2, new[] { 2 } })]
-    public void TestPackedLayerNorm(int[] shape, int axis, int[] packedAxes)
+    public void TestPackedLayerNorm(long[] shape, int axis, int[] packedAxes)
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pshape = shape.Skip(axis).ToArray();
@@ -193,7 +193,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
     [InlineData(new object[] { new[] { 32, 57, 128 }, 1 })]
     [InlineData(new object[] { new[] { 32, 64, 81 }, 1 })]
     [InlineData(new object[] { new[] { 32, 64, 99 }, 2 })]
-    public void TestPackLayerNormRule(int[] shape, int axis)
+    public void TestPackLayerNormRule(long[] shape, int axis)
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pshape = shape.Skip(axis).ToArray();
@@ -290,7 +290,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
     [Theory]
     [InlineData(new object[] { new[] { 12, 128, 768 } })]
     [InlineData(new object[] { new[] { 1, 128, 768 } })]
-    public void TestPackUnaryRule(int[] shape)
+    public void TestPackUnaryRule(long[] shape)
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pre = IR.F.Math.Unary(UnaryOp.Neg, input);
@@ -387,7 +387,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
     [Theory]
     [InlineData(new object[] { new[] { 1, 77, 768 }, new[] { 2 } })]
     [InlineData(new object[] { new[] { 1, 77, 768 }, new[] { 1 } })]
-    public void TestPackedSwish(int[] shape, int[] packedAxes)
+    public void TestPackedSwish(long[] shape, int[] packedAxes)
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pre = IR.F.NN.Swish(input, 1.23f);
@@ -406,7 +406,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
 
     [Theory]
     [InlineData(new object[] { new[] { 1, 77, 768 } })]
-    public void TestPackSwishRule(int[] shape)
+    public void TestPackSwishRule(long[] shape)
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pre = IR.F.NN.Swish(input, 1.23f);
@@ -431,7 +431,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
     [InlineData(new object[] { new[] { 1, 32, 64, 96 }, new[] { 1, 0, 3, 2 } })]
     [InlineData(new object[] { new[] { 1, 32, 64, 96 }, new[] { 0, 3, 2, 1 } })]
     [InlineData(new object[] { new[] { 1, 32, 64, 96 }, new[] { 3, 0, 2, 1 } })]
-    public void TestPackTransposeRule(int[] shape, int[] perm)
+    public void TestPackTransposeRule(long[] shape, int[] perm)
     {
         // NOTE the big shape will make ortki crash
         var input = new Var(new TensorType(DataTypes.Float32, shape));
@@ -449,7 +449,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
 
     [Theory]
     [InlineData(new object[] { new[] { 1, 384, 4096 }, new[] { 1 } })]
-    public void TestPackUnsqueezeRule(int[] shape, int[] axes)
+    public void TestPackUnsqueezeRule(long[] shape, int[] axes)
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pre = IR.F.Tensors.Unsqueeze(input, axes);
@@ -468,7 +468,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
     [InlineData(new object[] { new[] { 1, 384, 128 }, new[] { 1, 1, 384, 128 } })]
     [InlineData(new object[] { new[] { 1, 384, 32, 128 }, new[] { 1, 384, 4096 } })]
     [InlineData(new object[] { new[] { 1, 384, 64, 128 }, new[] { 1, 384, 8192 } })]
-    public void TestPackReshapeRule(int[] shape, int[] newShape)
+    public void TestPackReshapeRule(long[] shape, long[] newShape)
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pre = IR.F.Tensors.Reshape(input, newShape);
@@ -489,7 +489,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
     [Theory]
     [InlineData(new object[] { new[] { 1, 32, 384, 128 }, new[] { 64L }, new[] { long.MaxValue }, 3 })]
     [InlineData(new object[] { new[] { 1, 32, 384, 128 }, new[] { 0L }, new[] { 64L }, 3 })]
-    public void TestPackSliceRule(int[] shape, long[] start, long[] stop, long axis)
+    public void TestPackSliceRule(long[] shape, long[] start, long[] stop, long axis)
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pre = IR.F.Tensors.Slice(input, start, stop, new[] { axis }, new[] { 1 });

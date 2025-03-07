@@ -112,16 +112,15 @@ in_shapes = [
 
 minimums = [
     None,
-    # -1.0,
+    -1.0,
 ]
 
 maximums = [
-    # None,
+    None,
     6.0
 ]
 
 op_versions_and_value_formats = [
-    [1, 'attribute'],
     [6, 'attribute'],
     [11, 'initializer'],
     [11, 'constant'],

@@ -16,6 +16,8 @@ using Nncase.CodeGen.CPU;
 using Nncase.CodeGen.StackVM;
 using Nncase.IR;
 using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
+using Nncase.Passes.Rules.ShapeBucket;
 using Nncase.Passes.Transforms;
 using Nncase.Quantization;
 
@@ -116,9 +118,14 @@ public class CPUTarget : ITarget
 
         passManager.Add<Passes.Distributed.AutoDistributedPass>(true, Kind);
 
+        passManager.Add<InferRangePass>();
+        passManager.Add<OptimizeByRangePass>();
+
+        passManager.Add<AddFunctionToModule>();
         passManager.Add<CPUFunctionPartitionPass>();
 
         passManager.Add<CPUFusionToModulePass>();
+        passManager.Add<OptimizeByRangePass>();
 
         passManager.AddWithName<DataflowPass>("LowerToAffine").Configure(p =>
         {

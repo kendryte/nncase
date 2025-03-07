@@ -19,7 +19,7 @@ public sealed class PackedReduceEvaluator : IEvaluator<PackedReduce>, ITypeInfer
     public IValue Visit(IEvaluateContext context, PackedReduce target)
     {
         var input = context.GetOrtArgumentValue(target, PackedReduce.Input);
-        var inshape = input.Shape.SkipLast(target.PackedAxes.Count).Select(i => (int)i).ToArray();
+        var inshape = input.Shape.SkipLast(target.PackedAxes.Count).Select(i => i).ToArray();
         var inlanes = input.Shape.TakeLast(target.PackedAxes.Count).Select(i => (int)i).ToArray();
         var unpackedInput = CPUEvaluatorUtility.UnpackTensor(input, target.PackedAxes, target.PadedNums, out _);
         var axes = target.Axes.Select(i => (long)i).ToArray();

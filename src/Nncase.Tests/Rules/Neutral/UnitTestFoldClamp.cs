@@ -41,7 +41,7 @@ public class UnitTestFoldClamp : TransformTestBase
     [MemberData(nameof(TestFoldNopClampPositiveData))]
     public void TestFoldNopCastPositive(float min, float max, int index)
     {
-        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
+        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new long[] { 1, 3, 8, 8 });
         var rootPre = Math.Clamp(a, min, max);
         TestMatched<FoldNopClamp>(rootPre);
     }
@@ -50,7 +50,7 @@ public class UnitTestFoldClamp : TransformTestBase
     [MemberData(nameof(TestFoldNopClampNegativeData))]
     public void TestFoldNopCastNegative(float min, float max, int index)
     {
-        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
+        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new long[] { 1, 3, 8, 8 });
         var rootPre = Math.Clamp(a, min, max);
         TestNotMatch<FoldNopClamp>(rootPre);
     }

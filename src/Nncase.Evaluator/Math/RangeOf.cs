@@ -14,7 +14,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="RangeOf"/>.
 /// </summary>
-public class RangeOfEvaluator : IEvaluator<RangeOf>, ITypeInferencer<RangeOf>, ICostEvaluator<RangeOf>, IShapeEvaluator<RangeOf>, IMetricEvaluator<RangeOf>
+public class RangeOfEvaluator : IEvaluator<RangeOf>, ITypeInferencer<RangeOf>, ICostEvaluator<RangeOf>, IMetricEvaluator<RangeOf>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, RangeOf target)
@@ -65,6 +65,4 @@ public class RangeOfEvaluator : IEvaluator<RangeOf>, ITypeInferencer<RangeOf>, I
             [MetricFactorNames.FLOPs] = MetricUtility.GetFLOPs(inputType, 2),
         };
     }
-
-    public Expr Visit(IShapeEvaluateContext context, RangeOf target) => context.GetArgumentShape(target, RangeOf.Input);
 }

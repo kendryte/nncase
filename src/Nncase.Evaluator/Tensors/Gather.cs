@@ -17,7 +17,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Gather"/>.
 /// </summary>
-public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICostEvaluator<Gather>, IShapeEvaluator<Gather>, IMetricEvaluator<Gather>
+public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICostEvaluator<Gather>, IMetricEvaluator<Gather>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Gather gather)
@@ -54,15 +54,6 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(retType),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(retType),
         };
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Gather target)
-    {
-        var inShape = context.GetArgumentShape(target, Gather.Input);
-        var axis = ShapeExprUtility.Positive(target.Axis, inShape);
-        var indexShape = context.GetArgumentShape(target, Gather.Index);
-        var outShape = ShapeExprUtility.ReplaceList(inShape, axis, indexShape);
-        return outShape;
     }
 
     public Metric Visit(IMetricEvaluateContext context, Gather target)

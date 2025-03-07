@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Nncase.Diagnostics;
+using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Passes.Transforms;
@@ -152,14 +153,14 @@ public sealed class UnitTestDumpper : TestClassBase
             var strideW = 2;
             var dilationH = 1;
             var dilationW = 1;
-            var padH = Util.GetWindowedPadding(inH, fH, strideH, dilationH, true);
-            var padW = Util.GetWindowedPadding(inW, fW, strideW, dilationW, true);
+            var padH = TypeInference.GetWindowedPadding(inH, fH, strideH, dilationH, true);
+            var padW = TypeInference.GetWindowedPadding(inW, fW, strideW, dilationW, true);
             var padding = Stack(
               new IR.Tuple(
                 Stack(new IR.Tuple(new Expr[] { 0, 0 }), 0),
                 Stack(new IR.Tuple(new Expr[] { 0, 0 }), 0),
-                Stack(new IR.Tuple(padH), 0),
-                Stack(new IR.Tuple(padW), 0)),
+                Stack(new IR.Tuple(padH.Select(x => x.ToExpr()).ToArray()), 0),
+                Stack(new IR.Tuple(padW.Select(x => x.ToExpr()).ToArray()), 0)),
               0);
             var body = IR.F.NN.Pad(input, padding, PadMode.Constant, 0.0f);
             main = new Function("main", body, input);
@@ -187,7 +188,7 @@ public sealed class UnitTestDumpper : TestClassBase
     [Fact]
     public void TestDumperCSharpIRFunction()
     {
-        var x = IR.F.Math.Quantize(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), Tensor.From<QuantParam>(new QuantParam[] { new(1, 2.0f), new(2, 3.0f) }, new[] { 2 }), DataTypes.UInt8);
+        var x = IR.F.Math.Quantize(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), Tensor.From<QuantParam>(new QuantParam[] { new(1, 2.0f), new(2, 3.0f) }, [2]), DataTypes.UInt8);
         var y = new Var("y", new TensorType(DataTypes.UInt8, new int[] { 1, 2, 2, 2 }));
         var z = IR.F.Random.Normal(DataTypes.UInt8, 0, 1, 0, new[] { 1, 2, 2, 2 });
         var m = IR.F.Random.Normal(DataTypes.UInt8, 0, 1, 0, new[] { 1, 20, 2, 2 });

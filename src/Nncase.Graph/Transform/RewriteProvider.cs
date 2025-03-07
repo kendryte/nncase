@@ -53,7 +53,10 @@ internal class RewriteProvider : IRewriteProvider
                     DumpScope.Current.DumpIR(post, $"{count}_End_InferFailed", "Rewrite");
                 }
 
-                Trace.Assert(inferSuccess);
+                if (!inferSuccess)
+                {
+                    throw new InvalidOperationException("Type infer failed after rewrite.");
+                }
             }
 
             if (!isMutated)

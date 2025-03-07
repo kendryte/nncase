@@ -222,6 +222,7 @@ class BuildCMakeExt(build_ext):
 
         build_type = 'Debug' if self.debug else 'Release'
         build_dir = os.path.join(self.build_temp, build_type)
+        python_root = os.path.dirname(sys.executable).replace("\\", "/")
 
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
@@ -237,7 +238,7 @@ class BuildCMakeExt(build_ext):
         self.spawn(["conan", "remote", "add", "sunnycase", "https://conan.sunnycase.moe", "--index", "0", "--force"])
         self.spawn(["conan", "install", ext.sourcedir, "--build=missing", "-s",
             "build_type=" + build_type, f"-pr:a={host_toolchain_path}",
-            "-o", "&:runtime=False", "-o", "&:python=True", "-o", "&:tests=False", "-o", f"&:python_root={os.path.dirname(sys.executable)}",
+            "-o", "&:runtime=False", "-o", "&:python=True", "-o", "&:tests=False", "-o", f"&:python_root={python_root}",
             "-c", f"tools.cmake.cmake_layout:build_folder={self.build_temp}"])
         self.spawn(["cmake", "-B", build_dir, "-S", ext.sourcedir, "--preset", "conan-release"])
         self.spawn(["cmake", "--build", build_dir])

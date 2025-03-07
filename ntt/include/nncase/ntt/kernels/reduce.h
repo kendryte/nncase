@@ -109,7 +109,7 @@ class reduce_impl {
             // Mean
             if constexpr (Op == reduce_op::mean) {
                 size_t inner_size =
-                    slice_fixed_dims<Axes::rank(), Axes::at(0)>(input.shape())
+                    slice_dims<Axes::rank(), Axes::at(0)>(input.shape())
                         .length();
                 if constexpr (IsVector<TOutElem>) {
                     inner_size *= TInElem::shape_type::length();
@@ -130,7 +130,7 @@ class reduce_impl {
                                 ranked_shape<TIn::rank()> index,
                                 TInElem &reduced_in) {
         auto src_tensor =
-            input.view(index, fixed_reduce_source_shape_type<Axes, TIn>());
+            input.view(index, reduce_source_shape_type<Axes>(input.shape()));
         auto conti_dims =
             contiguous_dims(src_tensor.shape(), src_tensor.strides());
         if (conti_dims > 1) {

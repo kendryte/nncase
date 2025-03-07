@@ -28,6 +28,7 @@ internal class EGraphExtractor
     public Expr Extract(EClass root, IEGraph eGraph, EGraphExtractConstrains[] constrains)
     {
         var cpmodel = new CpModel();
+        var nodes = CollectNodes(root);
 
         // 0. create bool var for all enode.
         var varMemo = new Dictionary<ENode, BoolVar>();
@@ -35,7 +36,10 @@ internal class EGraphExtractor
         {
             foreach (var (e, i) in cls.Nodes.Select((e, i) => (e, i)))
             {
-                varMemo.Add(e, cpmodel.NewBoolVar($"{cls.Id}_{i}"));
+                if (nodes.Contains(e))
+                {
+                    varMemo.Add(e, cpmodel.NewBoolVar($"{cls.Id}_{i}"));
+                }
             }
         }
 
@@ -43,7 +47,7 @@ internal class EGraphExtractor
         cpmodel.AddBoolOr(root.Nodes.Select(n => varMemo[n]).ToArray());
 
         // 2. when pick node, must pick one child node.
-        foreach (var n in eGraph.Nodes)
+        foreach (var n in nodes)
         {
             var ns = new[] { varMemo[n].Not() };
             foreach (var child in n.Children)
@@ -104,7 +108,7 @@ internal class EGraphExtractor
         }
 
         // 3. add pick weights for all enode.
-        cpmodel.Minimize(LinearExpr.WeightedSum(eGraph.Nodes.Select(n => varMemo[n]), eGraph.Nodes.Select(n => checked((long)_costModel[n].Score))));
+        cpmodel.Minimize(LinearExpr.WeightedSum(nodes.Select(n => varMemo[n]), nodes.Select(n => checked((long)_costModel[n].Score))));
 
         if (cpmodel.Validate().Any())
         {
@@ -156,7 +160,7 @@ internal class EGraphExtractor
             throw new InvalidProgramException("SatExtract Failed!");
         }
 
-        var picks = eGraph.Nodes.ToDictionary(e => e, e => solver.BooleanValue(varMemo[e]));
+        var picks = nodes.ToDictionary(e => e, e => solver.BooleanValue(varMemo[e]));
         using (var dumpStream = enableDump ? DumpScope.Current.OpenFile("Costs/Pick.dot") : Stream.Null)
         {
             EGraphPrinter.DumpEgraphAsDot(eGraph, _costModel, picks, root.Find(), dumpStream);
@@ -191,6 +195,31 @@ internal class EGraphExtractor
         }
 
         return hgraph;
+    }
+
+    private HashSet<ENode> CollectNodes(EClass root)
+    {
+        var visited = new HashSet<ENode>();
+        void Visit(ENode node)
+        {
+            if (visited.Add(node))
+            {
+                foreach (var child in node.Children)
+                {
+                    foreach (var n in child.Nodes)
+                    {
+                        Visit(n);
+                    }
+                }
+            }
+        }
+
+        foreach (var n in root.Nodes)
+        {
+            Visit(n);
+        }
+
+        return visited;
     }
 }
 
@@ -266,6 +295,9 @@ internal sealed class SatExprBuildVisitor
             case Function func:
                 expr = children.Length == 0 ? func : func.With(body: children[0], parameters: children[1..].OfType<Var>().ToArray());
                 break;
+            case If @if:
+                expr = @if.With(condition: children[0], then: (BaseFunction)children[1], @else: (BaseFunction)children[2], arguments: children[3..]);
+                break;
             case Call call:
                 expr = call.With(target: children[0], arguments: children[1..], call.Metadata);
                 break;
@@ -273,10 +305,10 @@ internal sealed class SatExprBuildVisitor
                 expr = tp.With(fields: children);
                 break;
             case Marker mk:
-                expr = mk.With(target: children[0], attribute: children[1]);
+                expr = mk.With(target: children[0], attribute: children[1], metadata: mk.Metadata);
                 break;
-            case IR.If @if:
-                expr = @if.With(condition: children[^3], then: children[^2], @else: children[^1], paramList: children[..^3].ToArray());
+            case Shape shape:
+                expr = shape.With(children);
                 break;
             default:
                 throw new NotSupportedException(enode.Expr.GetType().Name);

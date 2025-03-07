@@ -13,7 +13,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Rank"/>.
 /// </summary>
-public class RankEvaluator : IEvaluator<Rank>, ITypeInferencer<Rank>, ICostEvaluator<Rank>, IShapeEvaluator<Rank>, IMetricEvaluator<Rank>
+public class RankEvaluator : IEvaluator<Rank>, ITypeInferencer<Rank>, ICostEvaluator<Rank>, IMetricEvaluator<Rank>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Rank rank)
@@ -40,8 +40,6 @@ public class RankEvaluator : IEvaluator<Rank>, ITypeInferencer<Rank>, ICostEvalu
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(inputType, CostUtility.GetCPUCyclesOfBinary(BinaryOp.Mul)),
         };
     }
-
-    public Expr Visit(IShapeEvaluateContext context, Rank target) => 1;
 
     public Metric Visit(IMetricEvaluateContext context, Rank target)
     {

@@ -17,6 +17,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitCall(Call expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafCall(expr, context);
     }
 
@@ -26,6 +31,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
         if (CanVisitFunctionBody(expr))
         {
             VisitOperands(expr, context);
+        }
+
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
         }
 
         return VisitLeafFunction(expr, context);
@@ -39,6 +49,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
             VisitOperands(expr, context);
         }
 
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafFusion(expr, context);
     }
 
@@ -46,6 +61,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitIf(If expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafIf(expr, context);
     }
 
@@ -53,6 +73,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitMarker(Marker expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafMarker(expr, context);
     }
 
@@ -60,6 +85,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitNone(None expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafNone(expr, context);
     }
 
@@ -67,6 +97,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitOp(Op expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafOp(expr, context);
     }
 
@@ -78,13 +113,35 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
             VisitOperands(expr, context);
         }
 
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafPrimFunctionWrapper(expr, context);
+    }
+
+    /// <inheritdoc />
+    protected internal override TExprResult VisitShape(IR.Shape expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafShape(expr, context);
     }
 
     /// <inheritdoc />
     protected internal override TExprResult VisitTensorConst(TensorConst expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafTensorConst(expr, context);
     }
 
@@ -92,6 +149,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitTuple(IR.Tuple expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafTuple(expr, context);
     }
 
@@ -99,6 +161,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitTupleConst(TupleConst expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafTupleConst(expr, context);
     }
 
@@ -106,6 +173,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitMemSpan(TIR.MemSpan expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafMemSpan(expr, context);
     }
 
@@ -113,6 +185,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitVar(Var expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafVar(expr, context);
     }
 
@@ -120,6 +197,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitBlock(TIR.Block expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafBlock(expr, context);
     }
 
@@ -127,6 +209,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitBuffer(TIR.Buffer expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafBuffer(expr, context);
     }
 
@@ -134,6 +221,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitBufferRegion(TIR.BufferRegion expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafBufferRegion(expr, context);
     }
 
@@ -141,6 +233,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitFor(TIR.For expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafFor(expr, context);
     }
 
@@ -148,6 +245,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitIfThenElse(TIR.IfThenElse expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafIfThenElse(expr, context);
     }
 
@@ -155,6 +257,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitLet(TIR.Let expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafLet(expr, context);
     }
 
@@ -166,6 +273,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
             VisitOperands(expr, context);
         }
 
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafPrimFunction(expr, context);
     }
 
@@ -173,6 +285,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitSequential(TIR.Sequential expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafSequential(expr, context);
     }
 
@@ -180,6 +297,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitRange(TIR.Range expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafRange(expr, context);
     }
 
@@ -187,6 +309,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitIterVar(TIR.IterVar expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafIterVar(expr, context);
     }
 
@@ -194,6 +321,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitAffineDim(Affine.AffineDim expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafAffineDim(expr, context);
     }
 
@@ -201,6 +333,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitAffineExtent(Affine.AffineExtent expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafAffineExtent(expr, context);
     }
 
@@ -208,6 +345,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitAffineSymbol(Affine.AffineSymbol expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafAffineSymbol(expr, context);
     }
 
@@ -215,6 +357,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitAffineConstant(Affine.AffineConstant expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafAffineConstant(expr, context);
     }
 
@@ -222,6 +369,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitAffineAddBinary(Affine.AffineAddBinary expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafAffineAddBinary(expr, context);
     }
 
@@ -229,6 +381,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitAffineMulBinary(Affine.AffineMulBinary expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafAffineMulBinary(expr, context);
     }
 
@@ -236,6 +393,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitAffineDivBinary(Affine.AffineDivBinary expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafAffineDivBinary(expr, context);
     }
 
@@ -243,6 +405,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitAffineDomain(Affine.AffineDomain expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafAffineDomain(expr, context);
     }
 
@@ -250,6 +417,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitAffineRange(Affine.AffineRange expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafAffineRange(expr, context);
     }
 
@@ -257,6 +429,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitAffineMap(Affine.AffineMap expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafAffineMap(expr, context);
     }
 
@@ -264,6 +441,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitAffineRelation(Affine.AffineRelation expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafAffineRelation(expr, context);
     }
 
@@ -271,6 +453,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitGrid(Affine.Grid expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafGrid(expr, context);
     }
 
@@ -278,6 +465,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitLoad(Affine.Load expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafLoad(expr, context);
     }
 
@@ -285,6 +477,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitFor(Affine.For expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafFor(expr, context);
     }
 
@@ -292,6 +489,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected internal override TExprResult VisitBufferOf(Buffers.BufferOf expr, TContext context)
     {
         VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeafBufferOf(expr, context);
     }
 
@@ -344,6 +546,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     /// Visit leaf <see cref="PrimFunctionWrapper"/>.
     /// </summary>
     protected virtual TExprResult VisitLeafPrimFunctionWrapper(PrimFunctionWrapper expr, TContext context) => VisitLeafBaseFunction(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="IR.Shape"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafShape(IR.Shape expr, TContext context) => DefaultVisitLeaf(expr, context);
 
     /// <summary>
     /// Visit leaf <see cref="TensorConst"/>.
@@ -565,6 +772,13 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitPrimFunctionWrapper(PrimFunctionWrapper expr, Unit context) => VisitPrimFunctionWrapper(expr);
+    /// <summary>
+    /// Visit <see cref="IR.Shape"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitShape(IR.Shape expr) => base.VisitShape(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitShape(IR.Shape expr, Unit context) => VisitShape(expr);
     /// <summary>
     /// Visit <see cref="TensorConst"/>.
     /// </summary>
@@ -854,6 +1068,14 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     protected sealed override TExprResult VisitLeafPrimFunctionWrapper(PrimFunctionWrapper expr, Unit context) => VisitLeafPrimFunctionWrapper(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="IR.Shape"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafShape(IR.Shape expr) => base.VisitLeafShape(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafShape(IR.Shape expr, Unit context) => VisitLeafShape(expr);
 
     /// <summary>
     /// Visit leaf <see cref="TensorConst"/>.

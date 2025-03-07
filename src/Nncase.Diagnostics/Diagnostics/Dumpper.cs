@@ -34,16 +34,16 @@ internal sealed class Dumpper : IDumpper
         return new Dumpper(subDumpFlags, Path.Join(_dumpDirectory, subDirectory));
     }
 
-    public void DumpIR(Expr expr, string prefix, string? reletivePath = null, bool displayCallable = true)
+    public void DumpIR(Expr expr, string prefix, string? reletivePath = null, PrinterFlags flags = PrinterFlags.Minimal)
     {
         var path = Path.Join(_dumpDirectory, reletivePath);
-        CompilerServices.DumpIR(expr, prefix, EnsureWritable(path), displayCallable);
+        CompilerServices.DumpIR(expr, prefix, EnsureWritable(path), flags);
     }
 
     public void DumpDotIR(Expr expr, string prefix, string? reletivePath = null)
     {
         var path = Path.Join(_dumpDirectory, reletivePath);
-        CompilerServices.DumpDotIR(expr, prefix, EnsureWritable(path), false);
+        CompilerServices.DumpDotIR(expr, prefix, EnsureWritable(path), PrinterFlags.Minimal);
     }
 
     public void DumpCSharpIR(Expr expr, string prefix, string? reletivePath = null)
@@ -60,9 +60,10 @@ internal sealed class Dumpper : IDumpper
 
     public void DumpModule(IRModule module, string? reletivePath = null)
     {
+        var flag = PrinterFlags.Minimal;
         foreach (var func in module.Functions)
         {
-            DumpIR(func, string.Empty, reletivePath, false);
+            DumpIR(func, string.Empty, reletivePath, (func is Function or Fusion or PrimFunctionWrapper) ? flag : (flag | PrinterFlags.Script));
         }
     }
 

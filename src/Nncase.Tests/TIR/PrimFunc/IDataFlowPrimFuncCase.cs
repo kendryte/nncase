@@ -26,7 +26,7 @@ public interface IDataFlowPrimFuncCase
 
 internal static class PrimFuncBuilder
 {
-    public static readonly int[] Dimensions = new[] { 1, 4, 8, 9 };
+    public static readonly long[] Dimensions = [1, 4, 8, 9];
 
     private static int _count;
 

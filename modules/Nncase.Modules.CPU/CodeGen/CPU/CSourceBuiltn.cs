@@ -3,12 +3,13 @@
 using System.Runtime.CompilerServices;
 using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
+using Nncase.IR;
 using Nncase.Targets;
 using Razor.Templating.Core;
 
 namespace Nncase.CodeGen.CPU;
 
-public record BufferRenderInfo(string Name, string ElemType, ulong Offset, ulong Size, string Dimensions, string Strides, string? Distributed)
+public record BufferRenderInfo(string Name, string ElemType, int ElemSize, int Rank, ulong Offset, Expr Size, bool IsFixedDimensions, bool IsFixedStrides, Expr[] Dimensions, string DimensionsStr, Expr[] Strides, string StridesStr, string? Distributed)
 {
 }
 
@@ -19,15 +20,18 @@ public record KernelMainModel(TIR.PrimFunction PrimFunction, TIR.Buffer[] RDataB
         ulong offset = 0;
         if (buffer.MemSpan.Start is IR.TensorConst tc)
         {
-            offset = tc.Value.Cast<ulong>()[0];
+            offset = tc.Value.ToScalar<ulong>();
         }
 
         var elemType = buffer.ElemType.ToC();
-        var size = ((IR.TensorConst)buffer.MemSpan.Size).Value.Cast<ulong>()[0] / (ulong)buffer.ElemType.SizeInBytes;
-        var dims = KernelUtility.DimensionsToC(buffer.Dimensions);
-        var strides = KernelUtility.StridesToC(buffer.Strides);
+        var rank = buffer.Dimensions.Length;
+        var size = (Dimension)buffer.MemSpan.Size / buffer.ElemType.SizeInBytes;
+        var isFixedDims = buffer.Dimensions.AsValueEnumerable().All(d => d is IR.TensorConst);
+        var isFixedStrides = buffer.Strides.AsValueEnumerable().All(d => d is IR.TensorConst);
+        var dims = KernelUtility.DimensionsTypeToC(isFixedDims, buffer.Dimensions);
+        var strides = KernelUtility.StridesTypeToC(isFixedStrides, buffer.Strides);
         var distributed = buffer.DistributedType == null ? null : KernelUtility.DistributedToC(buffer.DistributedType);
-        return new(buffer.Name, elemType, offset, size, dims, strides, distributed);
+        return new(buffer.Name, elemType, buffer.ElemType.SizeInBytes, rank, offset, size.ToExpr(), isFixedDims, isFixedStrides, buffer.Dimensions.ToArray(), dims, buffer.Strides.ToArray(), strides, distributed);
     }
 }
 

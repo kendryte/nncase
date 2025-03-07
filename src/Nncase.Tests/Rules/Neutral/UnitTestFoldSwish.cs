@@ -24,16 +24,16 @@ namespace Nncase.Tests.Rules.NeutralTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestFoldSwish : TransformTestBase
 {
-    public static TheoryData<int[]> FoldSwishData => new()
+    public static TheoryData<long[]> FoldSwishData => new()
     {
-        new[] { 1, 3, 16, 16 },
-        new[] { 1, 2, 4, 8 },
-        new[] { 1, 1, 5, 5 },
+        new long[] { 1, 3, 16, 16 },
+        new long[] { 1, 2, 4, 8 },
+        new long[] { 1, 1, 5, 5 },
     };
 
     [Theory]
     [MemberData(nameof(FoldSwishData))]
-    public void TestFoldSwishPattern1Positive1(int[] shape)
+    public void TestFoldSwishPattern1Positive1(long[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
@@ -50,7 +50,7 @@ public class UnitTestFoldSwish : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldSwishData))]
-    public void TestFoldSwishPattern1Negative1(int[] shape)
+    public void TestFoldSwishPattern1Negative1(long[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
@@ -67,7 +67,7 @@ public class UnitTestFoldSwish : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldSwishData))]
-    public void TestFoldSwishPattern2Positive2(int[] shape)
+    public void TestFoldSwishPattern2Positive2(long[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
@@ -85,7 +85,7 @@ public class UnitTestFoldSwish : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldSwishData))]
-    public void TestFoldSwishPattern2Negative2(int[] shape)
+    public void TestFoldSwishPattern2Negative2(long[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);

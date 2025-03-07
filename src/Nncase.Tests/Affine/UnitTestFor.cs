@@ -57,8 +57,8 @@ public class UnitTestFor
                 AffineMap.FromCallable((AffineDomain m, AffineDomain n, AffineDomain k) => new AffineRange[] { new AffineRange(k.Offset, k.Extent), new AffineRange(n.Offset, n.Extent) }),
             },
             AffineMap.FromCallable((AffineDomain m, AffineDomain n) => new AffineRange[] { new AffineRange(m.Offset, m.Extent), new AffineRange(n.Offset, n.Extent), new AffineRange(F.Affine.Dim(2), F.Affine.Extent(2)) }));
-        var a = Const.FromTensor(Tensor.FromScalar(1f, new[] { dimM, dimK }));
-        var b = Const.FromTensor(Tensor.FromScalar(2f, new[] { dimK, dimN }));
+        var a = Const.FromTensor(Tensor.FromScalar(1f, [dimM, dimK]));
+        var b = Const.FromTensor(Tensor.FromScalar(2f, [dimK, dimN]));
 
         var aT2 = F.Affine.For(2, aAccessMap, a[aAccessMap]);
         var bT2 = F.Affine.For(2, bAccessMap, b[bAccessMap]);

@@ -13,7 +13,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="IndexOf"/>.
 /// </summary>
-public class IndexOfEvaluator : IEvaluator<IndexOf>, ITypeInferencer<IndexOf>, ICostEvaluator<IndexOf>, IShapeEvaluator<IndexOf>, IMetricEvaluator<IndexOf>
+public class IndexOfEvaluator : IEvaluator<IndexOf>, ITypeInferencer<IndexOf>, ICostEvaluator<IndexOf>, IMetricEvaluator<IndexOf>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, IndexOf indexOf)
@@ -41,8 +41,6 @@ public class IndexOfEvaluator : IEvaluator<IndexOf>, ITypeInferencer<IndexOf>, I
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(inputType, CostUtility.GetCPUCyclesOfBinary(BinaryOp.Mul)),
         };
     }
-
-    public Expr Visit(IShapeEvaluateContext context, IndexOf target) => System.Array.Empty<int>();
 
     public Metric Visit(IMetricEvaluateContext context, IndexOf target)
     {

@@ -261,7 +261,7 @@ public partial class EGraphPrinter
                 _ => throw new ArgumentOutOfRangeException(nameof(expr)),
             };
             valueStr = valueStr != string.Empty ? " : " + valueStr : string.Empty;
-            name = $"{CompilerServices.Print(expr.CheckedType!)}{valueStr}";
+            name = $"{CompilerServices.Print(expr.CheckedType)}{valueStr}";
             _constNames.Add(expr, name);
             return name;
         }
@@ -282,5 +282,22 @@ public partial class EGraphPrinter
         protected override string VisitTuple(IR.Tuple expr) => "Tuple";
 
         protected override string VisitNone(None expr) => "None";
+
+        protected override string VisitShape(Shape shape) =>
+            shape.Kind switch
+            {
+                ShapeKind.Invalid => "Invalid",
+                ShapeKind.Unranked => "Unranked",
+                _ => $"[{string.Join(',', shape.Select(VisitDimension))}]",
+            };
+
+        private string VisitDimension(Dimension dimension) =>
+            dimension.Kind switch
+            {
+                DimensionKind.Unknown => "?",
+                DimensionKind.Fixed => dimension.FixedValue.ToString(),
+                DimensionKind.Dynamic => dimension.Value is Var var ? $"%{var.Name}" : "...",
+                _ => throw new NotSupportedException(dimension.Kind.ToString()),
+            };
     }
 }

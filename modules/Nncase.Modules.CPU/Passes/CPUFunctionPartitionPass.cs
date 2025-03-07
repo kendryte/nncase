@@ -55,7 +55,7 @@ public sealed class CPUFunctionPartitionPass : ModulePass
         {
             bool CheckField(Expr f)
             {
-                if (f is Call c && c.Target is IR.CPU.Boxing { NewType: TensorType } && c.Arguments[0].CheckedType is DistributedType)
+                if (f is Call c && c.Target is IR.Distributed.Boxing { NewType: TensorType } && c.Arguments[0].CheckedType is DistributedType)
                 {
                     return true;
                 }
@@ -69,7 +69,7 @@ public sealed class CPUFunctionPartitionPass : ModulePass
                 case (Call callee, Call caller):
                     switch (callee.CheckedType, caller.CheckedType)
                     {
-                        case (DistributedType, TensorType) when caller.Target is IR.CPU.Boxing:
+                        case (DistributedType, TensorType) when caller.Target is IR.Distributed.Boxing:
                         case (DistributedType, DistributedType):
                             isSupport = true;
                             break;
@@ -85,6 +85,12 @@ public sealed class CPUFunctionPartitionPass : ModulePass
                     break;
                 case (Call field, IR.Tuple tp):
                     isSupport = tp.Fields.AsValueEnumerable().All(f => f is Call c && CheckField(c)) ? true : false;
+                    break;
+                case (If callee, _):
+                    isSupport = false;
+                    break;
+                case (_, If caller):
+                    isSupport = false;
                     break;
                 default:
                     break;
@@ -140,7 +146,7 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
         var argumentDict = new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance);
         foreach (var (pre, post) in pairs)
         {
-            if (pre is not (Call or Var))
+            if (pre is not (Call or Var or If))
             {
                 continue;
             }
@@ -150,7 +156,7 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
             if (pre.CheckedType is DistributedType d)
             {
                 @var = new Var(d.TensorType);
-                extract = IR.F.CPU.Boxing(@var, d);
+                extract = IR.F.Distributed.Boxing(@var, d);
             }
             else
             {
@@ -167,7 +173,7 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
         }
 
         var cloner = new ExprClusterCloner(extractDict);
-        var outVertices = cluster.OutVertices().ToArray();
+        var outVertices = cluster.OutVertices(Algo.ClusteredGraph).ToArray();
         var clones = new List<Expr>();
         foreach (var outVertex in outVertices)
         {
@@ -205,7 +211,7 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
 
                 case Expr e when e.CheckedType is DistributedType d:
                     changed = true;
-                    return IR.F.CPU.Boxing(e, d.TensorType);
+                    return IR.F.Distributed.Boxing(e, d.TensorType);
                 default:
                     return cloned;
             }

@@ -15,7 +15,7 @@ public sealed class UnitTestTensorHelper
     public void TestToArray()
     {
         var a = new float[] { 1, 1, 1, 1, 1, 1, 1, 1 };
-        var t = Tensor.Ones<float>(new int[] { 1, 1, 2, 4 });
+        var t = Tensor.Ones<float>([1, 1, 2, 4]);
         var b = t.ToArray<float>();
         Assert.Equal(a, b);
     }
@@ -23,14 +23,14 @@ public sealed class UnitTestTensorHelper
     [Fact]
     public void TestToScalar1()
     {
-        var t = Tensor.Ones<float>(new int[] { 1 });
+        var t = Tensor.Ones<float>([]);
         Assert.Equal(1F, t.ToScalar<float>());
     }
 
     [Fact]
     public void TestToScalar2()
     {
-        var t = Tensor.Ones<float>(new int[] { 1, 3, 16, 16 });
+        var t = Tensor.Ones<float>([1, 3, 16, 16]);
         Assert.Throws<InvalidOperationException>(() => t.ToScalar<float>());
     }
 
@@ -41,10 +41,10 @@ public sealed class UnitTestTensorHelper
         string expected = "hello, world!";
         var bytes = utf8.GetBytes(expected);
 
-        var t1 = Tensor.FromBytes(DataTypes.Utf8Char, new Memory<byte>(bytes), new int[] { bytes.Length });
+        var t1 = Tensor.FromBytes(DataTypes.Utf8Char, new Memory<byte>(bytes), [bytes.Length]);
         Assert.Equal(expected, t1.ToStr());
 
-        var t2 = Tensor.Ones<float>(new int[] { 1, 3, 16, 16 });
+        var t2 = Tensor.Ones<float>([1, 3, 16, 16]);
         Assert.Throws<InvalidCastException>(() => t2.ToStr());
     }
 }

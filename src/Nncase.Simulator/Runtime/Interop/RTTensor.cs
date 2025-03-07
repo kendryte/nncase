@@ -196,8 +196,8 @@ public class RTTensor : RTValue
             tensor.BytesBuffer.CopyTo(mem.Memory.Span);
         }
 
-        var dims = MemoryMarshal.Cast<int, uint>(tensor.Dimensions);
-        var strides = MemoryMarshal.Cast<int, uint>(tensor.Strides);
+        var dims = MemoryMarshal.Cast<int, uint>(tensor.Dimensions.ToInts());
+        var strides = MemoryMarshal.Cast<int, uint>(tensor.Strides.ToInts());
         return Create(RTDataType.FromTypeCode(dtype.TypeCode), dims, strides, new RTBufferSlice { Buffer = buffer, Start = 0, SizeBytes = sizeBytes });
     }
 

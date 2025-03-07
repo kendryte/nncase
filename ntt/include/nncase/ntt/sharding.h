@@ -228,7 +228,7 @@ mesh_index_from_program_id(ranked_shape<Mesh::shape_type::rank()> &index,
     if constexpr (submesh_rank) {
         constexpr auto submesh_start = get_submesh_start<Mesh, Topology>();
         using submesh_shape_t =
-            decltype(slice_fixed_dims<submesh_rank, submesh_start>(
+            decltype(slice_dims<submesh_rank, submesh_start>(
                 typename Mesh::shape_type{}));
         using submesh_strides_t = default_strides_t<submesh_shape_t>;
         for (size_t i = 0; i < submesh_rank; i++) {

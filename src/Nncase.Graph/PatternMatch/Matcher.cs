@@ -165,12 +165,12 @@ internal sealed partial class Matcher : ExprFunctor<bool, Unit, IPattern>
     private bool VisitVArgsPattern<T>(ReadOnlySpan<T> exprs, VArgsPattern vArgsPattern)
         where T : Expr
     {
-        bool isMatch = vArgsPattern.MatchLeaf(SpanUtility.UnsafeCast<T, Expr>(exprs));
+        bool isMatch = vArgsPattern.MatchLeaf(SpanUtility.UnsafeCast<T, Expr>(exprs), out var fieldsPattern);
         if (isMatch)
         {
             for (int i = 0; i < exprs.Length; i++)
             {
-                isMatch = Visit(exprs[i], vArgsPattern.Fields[i]);
+                isMatch = Visit(exprs[i], fieldsPattern[i]);
                 if (!isMatch)
                 {
                     break;

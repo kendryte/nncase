@@ -83,12 +83,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
             VerifySubField(expr, r, TypePatternUtility.IsIntegralScalar());
         }
 
-        var type = new TensorType(expr.ElemType, expr.Dimensions.AsValueEnumerable().Select(e => e switch
-        {
-            TensorConst { Value: { Shape: { IsScalar: true } } t } => new Dimension(t.ToScalar<int>()),
-            _ => Dimension.Unknown,
-        }).ToArray());
-
+        var type = new TensorType(expr.ElemType, new Shape(expr.Dimensions));
         return type;
     }
 
@@ -158,7 +153,8 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     /// <inheritdoc/>
     protected override IRType VisitLeafIf(If expr)
     {
-        return TypeInference.CommonType(expr.Then.CheckedType, expr.Else.CheckedType);
+        _context.CurrentCall = expr;
+        return TypeInference.CommonType(BaseFunctionInfer(expr, expr.Then), BaseFunctionInfer(expr, expr.Else));
     }
 
     /// <inheritdoc/>
@@ -240,6 +236,11 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     {
         var type = new CallableType(expr.ReturnType, new(expr.ParameterTypes));
         return type;
+    }
+
+    protected override IRType VisitLeafShape(Shape expr)
+    {
+        return NoneType.Default;
     }
 
     protected override IRType VisitLeafGrid(Grid expr)
@@ -406,7 +407,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
         IsFullyInferenced &= type is not InvalidType;
     }
 
-    private IRType BaseFunctionInfer(Call call, BaseFunction func)
+    private IRType BaseFunctionInfer(BaseCall call, BaseFunction func)
     {
         if (func.CheckedType is InvalidType)
         {

@@ -27,12 +27,13 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
 using namespace nncase::ntt::runtime;
 
-result<void> cpu_runtime_function::run(std::span<std::byte *> params) noexcept {
+result<void>
+cpu_runtime_function::run(std::span<thread_inout_desc> inouts) noexcept {
     std::vector<std::thread> blocks;
     for (size_t cid = 0; cid < module().cdim(); cid++) {
         for (size_t bid = 0; bid < module().bdim(); bid++) {
             auto tid_offset = (cid * module().bdim() + bid) * module().tdim();
-            blocks.emplace_back([cid, bid, params, tid_offset, this] {
+            blocks.emplace_back([cid, bid, inouts, tid_offset, this] {
                 cpu_block_entry_params_t block_entry_params{
                     .tdim = module().tdim(),
                     .bdim = module().bdim(),
@@ -40,7 +41,7 @@ result<void> cpu_runtime_function::run(std::span<std::byte *> params) noexcept {
                     .bid = bid,
                     .cid = cid,
                     .cpu_id_offset = tid_offset,
-                    .inouts = params.data(),
+                    .inouts = inouts.data(),
                     .rdata = module().rdata().data(),
                     .local_rdata_header =
                         module().local_rdata_header(tid_offset),

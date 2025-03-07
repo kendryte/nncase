@@ -185,11 +185,11 @@ public static class MetricUtility
 
     public static UInt128 ResizeCubicFLOPs => 8;
 
-    public static UInt128 GetFLOPs(IRType type, int scale = 1)
+    public static UInt128 GetFLOPs(IRType type, long scale = 1)
     {
         return type switch
         {
-            TensorType t => (UInt128)t.Shape.Aggregate(scale, (acc, x) => acc * (x.IsFixed ? x.FixedValue : 1)),
+            TensorType t => (UInt128)t.Shape.ProdWithDynamicAsMaxValue(scale: scale),
             TupleType t => t.Fields.Sum(f => GetFLOPs(f, scale)),
             _ => 0,
         };

@@ -19,7 +19,7 @@ public interface IEvaluateContext
     /// <summary>
     /// Gets current call expression.
     /// </summary>
-    Call CurrentCall { get; }
+    BaseCall CurrentCall { get; }
 
     /// <summary>
     /// Get argument value.

@@ -105,12 +105,6 @@ public abstract partial class Expr
     public static implicit operator Expr(bool value) => (Const)value;
 
     /// <summary>
-    /// Create <see cref="Expr"/> from a <see cref="Shape"/>.
-    /// </summary>
-    /// <param name="shape">Shape.</param>
-    public static implicit operator Expr(Shape shape) => Const.FromShape(shape);
-
-    /// <summary>
     /// Create <see cref="Expr"/> from an array of<see cref="int"/>.
     /// </summary>
     /// <param name="array">Array.</param>

@@ -44,7 +44,7 @@ public sealed partial class MatMulToConv2DWithMarker : IRewriteRule
     {
         var aShape = a.CheckedShape;
         var bShape = b.CheckedShape;
-        if (aShape.Count > 2 && aShape.ToValueArray()[..^2].Aggregate(1, (sum, x) => sum * x) != 1)
+        if (aShape.Count > 2 && aShape.ToValueArray()[..^2].Aggregate(1L, (sum, x) => sum * x) != 1)
         {
             return null;
         }
@@ -65,8 +65,8 @@ public sealed partial class MatMulToConv2DWithMarker : IRewriteRule
             am.With(target: if_reshape),
             bm.With(target: w_reshape),
             Tensor.FromScalar(0.0f, w_shape[0].FixedValue),
-            Tensor.FromScalar(1, new[] { 2 }),
-            Tensor.FromScalar(0, new[] { 2, 2 }),
+            Tensor.FromScalar(1, [2]),
+            Tensor.FromScalar(0, [2, 2]),
             new int[] { 1, 1 },
             PadMode.Constant,
             1).InheritMetaData(matMulCall);
@@ -115,8 +115,8 @@ public sealed partial class BroadcastMatMulToConv2DWithMarker : IRewriteRule
             am.With(target: if_reshape),
             bm.With(target: w_reshape),
             Tensor.FromScalar(0.0f, w_shape[0].FixedValue),
-            Tensor.FromScalar(1, new[] { 2 }),
-            Tensor.FromScalar(0, new[] { 2, 2 }),
+            Tensor.FromScalar(1, [2]),
+            Tensor.FromScalar(0, [2, 2]),
             new int[] { 1, 1 },
             PadMode.Constant,
             1).InheritMetaData(matMulCall);

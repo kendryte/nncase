@@ -55,9 +55,9 @@ public sealed class OpNode : ITreeNode
 
     public Op Op => _wrapped.Op;
 
-    public ImmutableArray<int> DomainBounds => _wrapped.DomainBounds;
+    public ImmutableArray<long> DomainBounds => _wrapped.DomainBounds;
 
-    public ImmutableArray<ImmutableArray<int>> BufferShapes => _wrapped.BufferShapes;
+    public ImmutableArray<ImmutableArray<long>> BufferShapes => _wrapped.BufferShapes;
 
     public ReadOnlySpan<AffineMap> ReadAccesses => _wrapped.ReadAccesses;
 

@@ -27,30 +27,30 @@ public class UnitTestFoldBinary : TransformTestBase
     public static IEnumerable<object[]> TestFoldNopBinaryNegativeData =>
       new[]
         {
-        new object[] { BinaryOp.Add, new[] { 3 }, 1f },
-        new object[] { BinaryOp.Sub, new[] { 3, 4 }, 1f },
-        new object[] { BinaryOp.Mul, new[] { 3 }, 2f },
-        new object[] { BinaryOp.Div, new[] { 3 }, 2f },
+        new object[] { BinaryOp.Add, new long[] { 3 }, 1f },
+        new object[] { BinaryOp.Sub, new long[] { 3, 4 }, 1f },
+        new object[] { BinaryOp.Mul, new long[] { 3 }, 2f },
+        new object[] { BinaryOp.Div, new long[] { 3 }, 2f },
 
         // new object[] { BinaryOp.Mod ,new[] { 3}, 2f},
-        new object[] { BinaryOp.Pow, new[] { 3 }, 2f },
+        new object[] { BinaryOp.Pow, new long[] { 3 }, 2f },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     public static IEnumerable<object[]> TestFoldNopBinaryPositiveData =>
         new[]
         {
-            new object[] { BinaryOp.Add, new[] { 3 }, 0f },
-            new object[] { BinaryOp.Sub, new[] { 3, 4 }, 0f },
-            new object[] { BinaryOp.Mul, new[] { 3 }, 1f },
-            new object[] { BinaryOp.Div, new[] { 3 }, 1f },
+            new object[] { BinaryOp.Add, new long[] { 3 }, 0f },
+            new object[] { BinaryOp.Sub, new long[] { 3, 4 }, 0f },
+            new object[] { BinaryOp.Mul, new long[] { 3 }, 1f },
+            new object[] { BinaryOp.Div, new long[] { 3 }, 1f },
 
             // new object[] { BinaryOp.Mod ,new[] { 3}, 1f},
-            new object[] { BinaryOp.Pow, new[] { 3 }, 1f },
+            new object[] { BinaryOp.Pow, new long[] { 3 }, 1f },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
     [MemberData(nameof(TestFoldNopBinaryNegativeData))]
-    public void TestFoldNopBinaryNegative(BinaryOp binaryOp, int[] aShape, float bValue, int index)
+    public void TestFoldNopBinaryNegative(BinaryOp binaryOp, long[] aShape, float bValue, int index)
     {
         var a = new Var();
         var rootPre = Math.Binary(binaryOp, Math.Binary(binaryOp, a, bValue), bValue);
@@ -59,7 +59,7 @@ public class UnitTestFoldBinary : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestFoldNopBinaryPositiveData))]
-    public void TestFoldNopBinaryPositive(BinaryOp binaryOp, int[] aShape, float bValue, int index)
+    public void TestFoldNopBinaryPositive(BinaryOp binaryOp, long[] aShape, float bValue, int index)
     {
         var a = new Var();
         var normal = new Dictionary<Var, IValue>();

@@ -19,8 +19,8 @@ public sealed class UnitTestDumpUtility
     [Fact]
     public void TestValueDumper()
     {
-        ValueDumper.DumpTensor(new TensorValue(new Tensor<int>(new[] { 1 })), "./test1");
-        ValueDumper.DumpTensors(new[] { new TensorValue(new Tensor<int>(new[] { 1 })) }, "./test2");
+        ValueDumper.DumpTensor(new TensorValue(new Tensor<int>([1])), "./test1");
+        ValueDumper.DumpTensors(new[] { new TensorValue(new Tensor<int>([1])) }, "./test2");
         Assert.True(File.Exists("./test1"));
         Assert.True(Directory.Exists("./test2"));
     }
@@ -36,11 +36,11 @@ public sealed class UnitTestDumpUtility
 
         DumpUtility.SerializeShape(new[] { 1, 1, 1 });
         DumpUtility.PathJoinByCreate("./", "test4");
-        DumpUtility.WriteBinFile("./test5", new Tensor<int>(new[] { 1 }));
+        DumpUtility.WriteBinFile("./test5", new Tensor<int>([1]));
         Assert.True(File.Exists("./test3"));
         Assert.True(Directory.Exists("./test4"));
         Assert.True(File.Exists("./test5"));
-        DumpUtility.WriteKmodelData(new Tensor[] { new Tensor<int>(new[] { 1 }) }, new Tensor[] { new Tensor<int>(new[] { 1 }) }, "./test3", "./", true);
+        DumpUtility.WriteKmodelData(new Tensor[] { new Tensor<int>([1]) }, new Tensor[] { new Tensor<int>([1]) }, "./test3", "./", true);
         Assert.True(File.Exists("./test.kmodel"));
         Assert.True(File.Exists("./kmodel.desc"));
         File.Delete("./test.kmodel");
@@ -49,8 +49,8 @@ public sealed class UnitTestDumpUtility
     [Fact]
     public void TestBinFileUtil()
     {
-        BinFileUtil.WriteBinInputs(new Tensor[] { new Tensor<int>(new[] { 1 }) }, "./");
-        BinFileUtil.WriteBinOutputs(new Tensor[] { new Tensor<int>(new[] { 1 }) }, "./");
+        BinFileUtil.WriteBinInputs(new Tensor[] { new Tensor<int>([1]) }, "./");
+        BinFileUtil.WriteBinOutputs(new Tensor[] { new Tensor<int>([1]) }, "./");
         Assert.True(File.Exists("./input_0_0.bin"));
         Assert.True(File.Exists("./nncase_result_0.bin"));
         BinFileUtil.ReadBinFile("./nncase_result_0.bin", DataTypes.Float32, new Shape(1));

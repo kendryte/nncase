@@ -15,7 +15,7 @@ namespace Nncase.Evaluator;
 
 internal sealed class TypeInferenceContext : ITypeInferenceContext
 {
-    public Call? CurrentCall { get; set; }
+    public BaseCall? CurrentCall { get; set; }
 
     public Expr GetArgument(Op op, ParameterInfo parameter)
     {
@@ -37,5 +37,5 @@ internal sealed class TypeInferenceContext : ITypeInferenceContext
     public IRType GetArgumentType(Op op, ParameterInfo parameter) =>
         GetArgument(op, parameter).CheckedType ?? throw new InvalidOperationException("Incomplete type inference.");
 
-    private Call GetCurrentCall() => CurrentCall ?? throw new InvalidOperationException("Current call is not set.");
+    private BaseCall GetCurrentCall() => CurrentCall ?? throw new InvalidOperationException("Current call is not set.");
 }

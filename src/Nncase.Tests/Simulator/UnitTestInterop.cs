@@ -104,8 +104,8 @@ public class UnitTestInterop : TestClassBase
         var dtype = RTDataType.FromTypeCode(Runtime.TypeCode.Float32);
         Assert.NotNull(rtTensor);
         Assert.Equal(dtype, rtTensor.ElementType);
-        Assert.Equal(MemoryMarshal.Cast<int, uint>(tensor.Dimensions).ToArray(), rtTensor.Dimensions.ToArray());
-        Assert.Equal(MemoryMarshal.Cast<int, uint>(tensor.Strides).ToArray(), rtTensor.Strides.ToArray());
+        Assert.Equal(MemoryMarshal.Cast<int, uint>(tensor.Dimensions.ToInts()).ToArray(), rtTensor.Dimensions.ToArray());
+        Assert.Equal(MemoryMarshal.Cast<int, uint>(tensor.Strides.ToInts()).ToArray(), rtTensor.Strides.ToArray());
 
         var buffer = rtTensor.Buffer.Buffer.AsHost()!;
         using (var mmOwner = buffer.Map(RTMapAccess.Read))

@@ -156,6 +156,12 @@ public abstract record DataType
             throw new ArgumentException("Unsupported CLR type.");
         }
 
+        // Workaround for creating a shape.
+        if (t == typeof(long))
+        {
+            return new Int64Type();
+        }
+
         return CompilerServices.DataTypeService.GetDataTypeFromType(t);
     }
 
@@ -254,5 +260,5 @@ public sealed record VectorType(DataType ElemType, IR.IRArray<int> Lanes) : Data
         _ => throw new NotSupportedException(),
     };
 
-    public override int SizeInBytes => ElemType.SizeInBytes * (int)TensorUtilities.GetProduct(Lanes.ToArray());
+    public override int SizeInBytes => ElemType.SizeInBytes * (int)TensorUtilities.GetProduct(TensorUtilities.ToLongs(Lanes.ToArray()));
 }
