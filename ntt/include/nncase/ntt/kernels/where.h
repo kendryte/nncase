@@ -60,7 +60,8 @@ class where_impl<TCond, TX, TY, TOut> {
         auto x_p = x.elements().data();
         auto y_p = y.elements().data();
         auto out_p = output.elements().data();
-        apply<Op, 0, conti_dims>(op, cond, x, y, output, cond_p, x_p, y_p, out_p);
+        apply<Op, 0, conti_dims>(op, cond, x, y, output, cond_p, x_p, y_p,
+                                 out_p);
     }
 
   private:
