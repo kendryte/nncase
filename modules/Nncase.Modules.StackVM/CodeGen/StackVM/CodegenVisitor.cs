@@ -161,7 +161,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     private readonly List<TextSnippet> _refTextSnippets = new();
 
     private TextSnippet? _currentTextSnippet;
-    private BasicBlock? _currentBasicBlock;
+    private readonly BasicBlock? _currentBasicBlock;
 
     public CodeGenVisitor(BaseFunction function, CodeGenContext context)
     {

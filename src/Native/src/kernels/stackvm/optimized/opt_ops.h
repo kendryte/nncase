@@ -141,9 +141,9 @@ unary(typecode_t dtype, runtime::stackvm::unary_op_t op, const std::byte *in,
 
 NNCASE_API result<void>
 matmul(typecode_t typecode, const std::byte *input_a, const std::byte *input_b,
-    std::byte *output, std::span<const size_t> in_a_shape,
-    std::span<const size_t> in_b_shape,
-    [[maybe_unused]] kernel_context &context) noexcept;
+       std::byte *output, std::span<const size_t> in_a_shape,
+       std::span<const size_t> in_b_shape,
+       [[maybe_unused]] kernel_context &context) noexcept;
 
 // template <typename T>
 NNCASE_API result<void>

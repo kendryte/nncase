@@ -40,13 +40,11 @@ stackvm_runtime_function::run(std::span<const std::byte> text) noexcept {
         opcode_t opcode = reader_.read<opcode_t>();
         auto new_pc = reader_.tell();
         if (opcode != opcode_t::TENSOR) {
-            if (opcode == opcode_t::EXTCALL)
-            {
+            if (opcode == opcode_t::EXTCALL) {
                 auto op = op_reader<opcode_t::EXTCALL>()(reader_);
                 reader_.seek(new_pc);
 
-                if(op.is_prim_func)
-                {
+                if (op.is_prim_func) {
 #ifdef ENABLE_OP_PROFILE
                     op_profile p("KPU", (uint8_t)opcode);
 #endif
@@ -60,8 +58,7 @@ stackvm_runtime_function::run(std::span<const std::byte> text) noexcept {
                         return err(nncase_errc::stackvm_illegal_target);
                         break;
                     }
-                }
-                else{
+                } else {
                     switch (opcode) {
 #include "ops/control.inl"
 #include "ops/conversion.inl"
@@ -73,9 +70,7 @@ stackvm_runtime_function::run(std::span<const std::byte> text) noexcept {
                         break;
                     }
                 }
-            }
-            else
-            {
+            } else {
 #ifdef ENABLE_OP_PROFILE
                 op_profile p(to_string(opcode), (uint8_t)opcode);
 #endif
@@ -90,9 +85,8 @@ stackvm_runtime_function::run(std::span<const std::byte> text) noexcept {
                     break;
                 }
             }
-    }
-    else {
-        auto tensor_func = reader_.read_unaligned<tensor_function_t>();
+        } else {
+            auto tensor_func = reader_.read_unaligned<tensor_function_t>();
 #ifdef ENABLE_OP_PROFILE
             op_profile p(to_string(tensor_func), (uint8_t)opcode);
 #endif
