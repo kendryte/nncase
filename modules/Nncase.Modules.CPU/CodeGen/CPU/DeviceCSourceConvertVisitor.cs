@@ -41,10 +41,10 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         functionName = functionName.TrimEnd(new char[] { ';', '\n' });
         if (tagName == string.Empty)
         {
-            int index = functionName.IndexOf('(', StringComparison.Ordinal); // 找到第一个 '(' 的位置
+            int index = functionName.IndexOf('(', StringComparison.Ordinal);
             if (index != -1)
             {
-                tagName = functionName.Substring(0, index); // 截取从头到 '(' 之前的部分
+                tagName = functionName.Substring(0, index);
             }
         }
 
@@ -61,10 +61,10 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         functionName = functionName.TrimEnd(new char[] { ';', '\n' });
         if (tagName == string.Empty)
         {
-            int index = functionName.IndexOf('(', StringComparison.Ordinal); // 找到第一个 '(' 的位置
+            int index = functionName.IndexOf('(', StringComparison.Ordinal);
             if (index != -1)
             {
-                tagName = functionName.Substring(0, index); // 截取从头到 '(' 之前的部分
+                tagName = functionName.Substring(0, index);
             }
         }
 
