@@ -146,6 +146,8 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 
     public ulong RdataPoolSize { get; }
 
+    public ulong LocalRdataPoolSize { get; }
+
     public static void WriteWithProfiler(string functionName, string tagName = "")
     {
         functionName = functionName.TrimEnd(new char[] { ';', '\n' });
@@ -185,7 +187,6 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
         IndentScope.Writer.IndWrite($"{functionName};\n");
         IndentScope.Writer.IndWrite("}\n");
     }
-    public ulong LocalRdataPoolSize { get; }
 
     public KernelCSource GetCSource()
     {
