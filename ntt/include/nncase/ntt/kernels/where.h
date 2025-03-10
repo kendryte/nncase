@@ -73,14 +73,12 @@ class where_impl<TCond, TX, TY, TOut> {
         if constexpr (Axis + ContiguousDims >= TOut::rank()) {
             constexpr auto rest_rank = TOut::rank() - Axis;
             constexpr auto cond_rest_dims =
-                slice_fixed_dims<rest_rank, TCond::rank() - rest_rank>(
+                slice_dims<rest_rank, TCond::rank() - rest_rank>(
                     TCond::shape());
             constexpr auto x_rest_dims =
-                slice_fixed_dims<rest_rank, TX::rank() - rest_rank>(
-                    TX::shape());
+                slice_dims<rest_rank, TX::rank() - rest_rank>(TX::shape());
             constexpr auto y_rest_dims =
-                slice_fixed_dims<rest_rank, TY::rank() - rest_rank>(
-                    TY::shape());
+                slice_dims<rest_rank, TY::rank() - rest_rank>(TY::shape());
 
             if constexpr (is_same_seq(x_rest_dims, y_rest_dims) &&
                           is_same_seq(cond_rest_dims, y_rest_dims)) {
