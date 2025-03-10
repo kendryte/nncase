@@ -44,17 +44,15 @@ public sealed partial class MatMulToConv2D : IRewriteRule
             return null;
         }
 
-        var batchGT1 = aShape[0].FixedValue > 1;
         var if_shape = new Shape(new[] { aShape[0].FixedValue, aShape[1].FixedValue, 1, 1 });
         var w_shape = new Shape(new[] { bShape[1].FixedValue, bShape[0].FixedValue, 1, 1 });
         var of_shape = new Shape(new[] { aShape[0].FixedValue, bShape[1].FixedValue });
 
         var if_reshape = Reshape(a, if_shape);
-        var if_tp = Transpose(if_reshape, new[] { 3, 1, 2, 0 });
         var w_tp = Transpose(b, Tensor.From<int>(new[] { 1, 0 })).InheritMetaData(b);
         var w_reshape = Reshape(w_tp, w_shape).InheritMetaData(b);
         var conv2d = Conv2D(
-            batchGT1 ? if_tp : if_reshape,
+            if_reshape,
             w_reshape,
             Tensor.FromScalar(0.0f, w_shape[0].FixedValue),
             Tensor.FromScalar(1, new[] { 2 }),
@@ -62,8 +60,7 @@ public sealed partial class MatMulToConv2D : IRewriteRule
             new int[] { 1, 1 },
             PadMode.Constant,
             1).InheritMetaData(matMulCall);
-        var of_tp = Transpose(conv2d, new[] { 3, 1, 2, 0 });
-        return Reshape(batchGT1 ? of_tp : conv2d, of_shape).InheritMetaData(matMulCall);
+        return Reshape(conv2d, of_shape).InheritMetaData(matMulCall);
     }
 }
 
@@ -91,18 +88,16 @@ public sealed partial class BroadcastMatMulToConv2D : IRewriteRule
             return null;
         }
 
-        var batchGT1 = aShape[0].FixedValue * aShape[1].FixedValue > 1;
         var if_shape = new Shape(new[] { aShape[0].FixedValue * aShape[1].FixedValue, aShape[2].FixedValue, 1, 1 });
         var w_shape = new Shape(new[] { bShape[1].FixedValue, bShape[0].FixedValue, 1, 1 });
         var of_shape = new Shape(new[] { aShape[0].FixedValue, aShape[1].FixedValue, bShape[1].FixedValue });
 
         var if_reshape = Reshape(a, if_shape);
-        var if_tp = Transpose(if_reshape, new[] { 3, 1, 2, 0 });
         var w_tp = Transpose(b, Tensor.From<int>(new[] { 1, 0 })).InheritMetaData(b);
         var w_reshape = Reshape(w_tp, w_shape).InheritMetaData(b);
 
         var conv2d = Conv2D(
-            batchGT1 ? if_tp : if_reshape,
+            if_reshape,
             w_reshape,
             Tensor.FromScalar(0.0f, w_shape[0].FixedValue),
             Tensor.FromScalar(1, new[] { 2 }),
@@ -110,8 +105,7 @@ public sealed partial class BroadcastMatMulToConv2D : IRewriteRule
             new int[] { 1, 1 },
             PadMode.Constant,
             1).InheritMetaData(matMulCall);
-        var of_tp = Transpose(conv2d, new[] { 3, 1, 2, 0 });
-        return Reshape(batchGT1 ? of_tp : conv2d, of_shape).InheritMetaData(matMulCall);
+        return Reshape(conv2d, of_shape).InheritMetaData(matMulCall);
     }
 }
 
