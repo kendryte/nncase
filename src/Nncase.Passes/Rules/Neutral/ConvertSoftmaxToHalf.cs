@@ -40,20 +40,13 @@ public sealed partial class ConvertSoftmaxToHalf : IRewriteRule
     {
         if (input.CheckedDataType != DataTypes.Float16)
         {
-            Console.WriteLine("ConvertSoftmaxToHalf");
-            // Convert input to half
             var inputHalf = Cast(input, DataTypes.Float16);
-
-            // Create new softmax with half input
             var newSoftmax = Softmax(inputHalf, axis);
-
-            // Convert output back to original type
             var output = Cast(newSoftmax, input.CheckedDataType);
 
             return output;
         }
+
         return null;
     }
-
 }
-
