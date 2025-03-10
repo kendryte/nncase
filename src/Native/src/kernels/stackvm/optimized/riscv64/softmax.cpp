@@ -397,7 +397,6 @@ result<void>
 optimized_softmax_half_impl(const T *input, T *output,
                                    gsl::span<const size_t> in_shape,
                                    int32_t axis, __float16_t beta) noexcept {
-    std::cout << (float)beta << std::endl;
     size_t ndim = in_shape.size();
     size_t positive_axis = axis < 0 ? ndim + axis : axis;
     size_t axis_dim = in_shape[positive_axis];
