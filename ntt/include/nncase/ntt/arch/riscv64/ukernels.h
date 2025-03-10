@@ -510,7 +510,7 @@ template <> struct u_memcpy<vector<float, NTT_VLEN / 32>, true> {
         constexpr auto unit = sizeof(vector<float, vl>);
         auto in_strides = in_stride * unit;
         auto out_strides = out_stride * unit;
-        asm("vsetvli zero, %[vl], e32, m1\n" ::[vl] "r"(vl));
+        asm("vsetvli zero, %[vl], e32, m1, ta, ma\n" ::[vl] "r"(vl));
 
         while (count / unroll) {
 #if 0
@@ -602,7 +602,7 @@ class u_pack<NTT_VLEN / 32, N, MStrides, true, float,
             constexpr auto unroll = policy_t::unroll;
             constexpr auto in_strides1 = sizeof(float) * MStrides;
             constexpr auto in_strides2 = sizeof(float);
-            asm("vsetvli zero, %[vl], e32, m1\n" ::[vl] "r"(vl));
+            asm("vsetvli zero, %[vl], e32, m1, ta, ma\n" ::[vl] "r"(vl));
 
             auto count = N;
             while (count / unroll) {
@@ -701,7 +701,7 @@ class u_pack2d<true, TIn, TOut, float,
             auto low_extra = low_stride * (vl * vl - 1);
             auto high_extra = high_stride * (vl - 1);
             auto out_strides = sizeof(vector<float, vl>);
-            asm("vsetvli zero, %[vl], e32, m1\n" ::[vl] "r"(vl));
+            asm("vsetvli zero, %[vl], e32, m1, ta, ma\n" ::[vl] "r"(vl));
 
             auto count = output.shape().length();
             if (PackAxis2 != rank - 1) {
@@ -1014,7 +1014,7 @@ struct u_unpack_1d_fixed<axis_stride, NTT_VLEN / 32, T1, float, true,
         constexpr auto unroll = policy_t::unroll;
         auto in_strides = in_stride * sizeof(vector<float, vl>);
         auto out_strides = axis_stride * sizeof(float);
-        asm("vsetvli zero, %[vl], e32, m1\n" ::[vl] "r"(vl));
+        asm("vsetvli zero, %[vl], e32, m1, ta, ma\n" ::[vl] "r"(vl));
         size_t in_offset = 0;
         size_t axis_idx = 0;
         constexpr size_t extra = (vl - 1) * axis_stride;
@@ -1105,7 +1105,7 @@ class u_unpack_2d_fixed<low_stride, NTT_VLEN / 32, high_stride, NTT_VLEN / 32,
         auto in_strides = sizeof(vector<float, vl>);
         constexpr auto out_low_strides = low_stride * vl * sizeof(float);
         constexpr auto out_high_strides = high_stride * sizeof(float);
-        asm("vsetvli zero, %[vl], e32, m1\n" ::[vl] "r"(vl));
+        asm("vsetvli zero, %[vl], e32, m1, ta, ma\n" ::[vl] "r"(vl));
 
         auto rank = input.shape().rank();
         if (PackAxis2 != rank - 1) {
@@ -1424,7 +1424,7 @@ struct u_unpack_1d_ranked<NTT_VLEN / 32, vector<float, NTT_VLEN / 32>, float,
         constexpr auto unroll = policy_t::unroll;
         auto in_strides = in_stride * sizeof(vector<float, vl>);
         auto out_strides = axis_stride * sizeof(float);
-        asm("vsetvli zero, %[vl], e32, m1\n" ::[vl] "r"(vl));
+        asm("vsetvli zero, %[vl], e32, m1, ta, ma\n" ::[vl] "r"(vl));
         size_t in_offset = 0;
         size_t axis_idx = 0;
         size_t extra = (vl - 1) * axis_stride;
@@ -1514,7 +1514,7 @@ class u_unpack_2d_ranked<NTT_VLEN / 32, NTT_VLEN / 32, T1, float, true,
         auto in_strides = sizeof(vector<float, vl>);
         auto out_low_strides = low_stride * vl * sizeof(float);
         auto out_high_strides = high_stride * sizeof(float);
-        asm("vsetvli zero, %[vl], e32, m1\n" ::[vl] "r"(vl));
+        asm("vsetvli zero, %[vl], e32, m1, ta, ma\n" ::[vl] "r"(vl));
 
         auto rank = input.shape().rank();
         if (PackAxis2 != rank - 1) {
