@@ -41,7 +41,7 @@ public sealed class FusionMerger : ExprCloner<Unit>
         {
             if (expr.CheckedType is DistributedType d)
             {
-                return IR.F.CPU.Boxing(newVar, d);
+                return IR.F.Distributed.Boxing(newVar, d);
             }
             else
             {

@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
+using Nncase.IR.Tensors;
 using static Nncase.IR.F.Math;
 
 namespace Nncase.IR;
@@ -25,7 +27,72 @@ public partial class Expr
     /// get the item from the expr.
     /// </summary>
     /// <returns> expr. </returns>
-    public Expr this[params Expr[] indices] => F.Tensors.GetItem(this, F.Tensors.Stack(new IR.Tuple(indices), 0));
+    public Expr this[long index] =>
+        this switch
+        {
+            TensorConst tc when tc.Value.Rank == 1 => Tensor.FromScalar(tc.Value.ElementType, tc.Value[index]),
+            TupleConst tc => tc.Value[(int)index].AsTensor(),
+            Shape shape => shape.Dimensions[(int)index],
+            IR.Tuple t => t[(int)index],
+            Call { Target: Concat { Axis: 0 } } c when c[Concat.Input] is IR.Tuple tp && tp.Fields[0].CheckedType is TensorType { Shape: { IsFixed: true, Size: 1 } } => c[Concat.Input][index][0],
+            Call { Target: Reshape } c when c[Reshape.Shape] is TensorConst tc && tc.Value.Length == 1 && tc.Value.Cast<long>()[0] == 1 => c[Reshape.Input],
+            Call { Target: Stack } c => c[Stack.Inputs][index],
+            _ => this[(Expr)index],
+        };
+
+    /// <summary>
+    /// get the item from the expr.
+    /// </summary>
+    /// <returns> expr. </returns>
+    public Expr this[params long[] indices] =>
+        this switch
+        {
+            TensorConst tc when tc.Value.Rank == indices.Length => Tensor.FromScalar(tc.Value.ElementType, tc.Value[indices]),
+            _ => this[indices.Select(x => (Expr)x).ToArray()],
+        };
+
+    /// <summary>
+    /// get the item from the expr.
+    /// </summary>
+    /// <returns> expr. </returns>
+    public Expr this[params Expr[] indices]
+    {
+        get
+        {
+            if (indices.Length == 0)
+            {
+                return this;
+            }
+            else
+            {
+                return F.Tensors.GetItem(this, F.Tensors.Stack(new IR.Tuple(indices), 0));
+            }
+        }
+    }
+
+    public Expr this[int index] => this[(long)index];
+
+    public Expr this[Index index]
+    {
+        get
+        {
+            if (index.IsFromEnd)
+            {
+                var shape = (CheckedType as TensorType)?.Shape;
+                if (shape?.IsRanked == true)
+                {
+                    var newIndex = shape[0] - index.Value;
+                    return newIndex.IsFixed ? this[newIndex.FixedValue] : this[newIndex.ToExpr()];
+                }
+                else
+                {
+                    return this[IR.F.Tensors.ShapeOf(this)[0] - (long)index.Value];
+                }
+            }
+
+            return this[(long)index.Value];
+        }
+    }
 
     /// <summary>
     /// Unary neg.

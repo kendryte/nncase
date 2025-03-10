@@ -174,7 +174,16 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             return symbol;
         }
 
-        var type = $"tensor_view<{expr.ElemType.ToC()}, {KernelUtility.DimensionsToC(expr.Dimensions)}, {KernelUtility.StridesToC(expr.Strides)}> ";
+        var dimensions = expr.DistributedType is null ? expr.Dimensions : expr.DistributedType.TensorType.Shape.Dimensions;
+        var isFixedDimensions = dimensions.AsValueEnumerable().All(x => x is TensorConst);
+        var isFixedStrides = expr.Strides.AsValueEnumerable().All(x => x is TensorConst);
+        var dimensionSymbols = dimensions.AsValueEnumerable().Select(Visit).ToArray();
+        var strideSymbols = expr.Strides.AsValueEnumerable().Select(Visit).ToArray();
+
+        var dtypeStr = expr.ElemType.ToC();
+        var dimensionStr = KernelUtility.DimensionsToC(isFixedDimensions, dimensionSymbols, true);
+        var strideStr = KernelUtility.StridesToC(isFixedStrides, strideSymbols, true);
+        var type = $"tensor_view<{dtypeStr}, {dimensionStr}, {strideStr}> ";
 
         symbol = new(type, expr.Name);
         _exprMemo.Add(expr, symbol);
@@ -192,11 +201,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         {
             TupleType x when x == TupleType.Void => string.Empty,
             TensorType { IsScalar: true } x => x.DType.ToC(),
-            TensorType { Shape: { IsRanked: true } } x => x.Shape.IsFixed switch
-            {
-                true => $"tensor_view<{x.DType.ToC()}, fixed_shape<{x.Shape.ToString()[1..^1]}>>",
-                false => "auto",
-            },
+            TensorType => "auto",
             _ => throw new NotSupportedException(),
         };
 
@@ -269,14 +274,16 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             case IR.Buffers.AllocateBufferView op:
                 {
                     var buffer = (TIR.Buffer)expr.Arguments[0];
-                    if (buffer.CheckedShape.IsFixed)
-                    {
-                        str = $"{{span_cast<{buffer.ElemType.ToC()}>({Visit(buffer.MemSpan).Name}), {KernelUtility.DimensionsToC(buffer.Dimensions)}{{}}, {KernelUtility.StridesToC(buffer.Strides)}{{}}}}";
-                    }
-                    else
-                    {
-                        str = $"{{span_cast<{buffer.ElemType.ToC()}>({Visit(buffer.MemSpan).Name}), make_ranked_shape({StringUtility.Join(", ", buffer.Dimensions.AsValueEnumerable().Select(x => Visit(x).Name))})}}";
-                    }
+                    var dimensions = buffer.DistributedType is null ? buffer.Dimensions : buffer.DistributedType.TensorType.Shape.Dimensions;
+                    var isFixedDimensions = dimensions.AsValueEnumerable().All(x => x is TensorConst);
+                    var isFixedStrides = buffer.Strides.AsValueEnumerable().All(x => x is TensorConst);
+                    var dimensionSymbols = dimensions.AsValueEnumerable().Select(Visit).ToArray();
+                    var strideSymbols = buffer.Strides.AsValueEnumerable().Select(Visit).ToArray();
+
+                    var dtypeStr = buffer.ElemType.ToC();
+                    var dimensionStr = KernelUtility.DimensionsToC(isFixedDimensions, dimensionSymbols, false);
+                    var strideStr = KernelUtility.StridesToC(isFixedStrides, strideSymbols, false);
+                    str = $"{{span_cast<{dtypeStr}>({Visit(buffer.MemSpan).Name}), {dimensionStr}, {strideStr}}}";
                 }
 
                 break;
@@ -324,7 +331,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Matmul.cshtml", new TypedKernelTemplateModel<TIR.CPU.Matmul>(matmul)
                 {
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
-                    Indent = string.Join(string.Empty, Enumerable.Repeat(' ', IndentScope.Writer.Indent)),
+                    Indent = new string(' ', IndentScope.Writer.Indent),
                 }).Result);
 
                 break;
@@ -332,8 +339,32 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Pack.cshtml", new TypedKernelTemplateModel<TIR.CPU.Pack>(pack)
                 {
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
-                    Indent = string.Join(string.Empty, Enumerable.Repeat(' ', IndentScope.Writer.Indent)),
+                    Indent = new string(' ', IndentScope.Writer.Indent),
                 }).Result);
+                break;
+            case TIR.CPU.Transpose transpose:
+                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Transpose.cshtml", new TypedKernelTemplateModel<TIR.CPU.Transpose>(transpose)
+                {
+                    Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
+                    Indent = new string(' ', IndentScope.Writer.Indent),
+                }).Result);
+                break;
+            case TIR.CPU.Unpack unpack:
+                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unpack.cshtml", new TypedKernelTemplateModel<TIR.CPU.Unpack>(unpack)
+                {
+                    Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
+                    Indent = new string(' ', IndentScope.Writer.Indent),
+                }).Result);
+                break;
+            case TIR.CPU.Reduce reduce:
+                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Reduce.cshtml", new TypedKernelTemplateModel<TIR.CPU.Reduce>(reduce)
+                {
+                    Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
+                    Indent = new string(' ', IndentScope.Writer.Indent),
+                }).Result);
+                break;
+            case TIR.CPU.Cast cast:
+                IndentScope.Writer.IndWrite($"cast({arguments[0].Name}, {arguments[1].Name});\n");
                 break;
             default:
                 throw new NotSupportedException();
@@ -356,7 +387,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         string str;
         if (expr is TensorConst { Value: Tensor { ElementType: PrimType ptype, Shape: { IsScalar: true } } scalar })
         {
-            str = scalar[0].ToString() switch
+            str = scalar[Array.Empty<long>()].ToString() switch
             {
                 "True" => "1",
                 "False" => "0",

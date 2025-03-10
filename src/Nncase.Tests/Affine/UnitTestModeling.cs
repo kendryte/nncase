@@ -543,6 +543,23 @@ public sealed class UnitTestModeling : TestClassBase
         System.Console.WriteLine(sol.Value(aplace));
         System.Console.WriteLine(sol.Value(cplace));
     }
+
+    [Fact]
+    public void TestSolveZeroLiveness()
+    {
+        // note checked [0,3] is not overlapping with [3,3]
+        var model = new Google.OrTools.Sat.CpModel();
+        var cons = model.AddNoOverlap2D();
+        var x1 = model.NewFixedSizeIntervalVar(0, 3, "x");
+        var y1 = model.NewFixedSizeIntervalVar(model.NewIntVar(0, 16384, "ystart"), 49152, "y");
+        var x2 = model.NewFixedSizeIntervalVar(3, 0, "x2");
+        var y2 = model.NewFixedSizeIntervalVar(model.NewIntVar(0, 16384, "ystart2"), 49152, "y2");
+        cons.AddRectangle(x1, y1);
+        cons.AddRectangle(x2, y2);
+        var solver = new Google.OrTools.Sat.CpSolver();
+        var status = solver.Solve(model);
+        Assert.Equal(Google.OrTools.Sat.CpSolverStatus.Optimal, status);
+    }
 }
 
 internal sealed record VTensor(string Name, char[] Dims)

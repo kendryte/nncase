@@ -24,10 +24,10 @@ public class UnitTestSqueezeToReshape : TransformTestBase
     public static IEnumerable<object[]> TestSqueezeToReshapePositiveData =>
         new[]
         {
-            new object[] { new[] { 1, 2, 4, 8 }, new[] { 0 } },
-            new object[] { new[] { 2, 1, 1, 8 }, Array.Empty<int>() },
-            new object[] { new[] { 1, 4, 1, 6 }, new[] { 0, 2 } },
-            new object[] { new[] { 1, 4, 1, 6 }, new[] { -4, -2 } },
+            new object[] { new long[] { 1, 2, 4, 8 }, new[] { 0 } },
+            new object[] { new long[] { 2, 1, 1, 8 }, Array.Empty<int>() },
+            new object[] { new long[] { 1, 4, 1, 6 }, new[] { 0, 2 } },
+            new object[] { new long[] { 1, 4, 1, 6 }, new[] { -4, -2 } },
         };
 
     public static IEnumerable<object[]> TestSqueezeToReshapeNegativeData =>
@@ -38,7 +38,7 @@ public class UnitTestSqueezeToReshape : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestSqueezeToReshapePositiveData))]
-    public void TestSqueezeToReshapePositive(int[] shape, int[] axes)
+    public void TestSqueezeToReshapePositive(long[] shape, int[] axes)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Squeeze(a, axes);

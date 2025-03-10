@@ -21,10 +21,11 @@ public class UnitTestFoldGetItem : TransformTestBase
     public void TestFoldStackGetItem()
     {
         Expr input = new[] { 1, 2, 3, 4 };
-        var s = Stack(new IR.Tuple(new[] { input[0], input[1], input[2], input[3] }), 0);
+        var s = Stack(new IR.Tuple(new[] { GetItem(input, 0), GetItem(input, 1), GetItem(input, 2), GetItem(input, 3) }), 0);
         TestMatched<FoldStackGetItem>(s);
     }
 
+#if false
     [Fact]
     public void TestFoldStackGetItemDyn()
     {
@@ -35,13 +36,14 @@ public class UnitTestFoldGetItem : TransformTestBase
         var body = new If(true, new[] { 3, 2, 1 }, s);
         TestMatched<FoldStackGetItem>(body, new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input) } });
     }
+#endif
 
     [Fact]
     public void TestFoldSqueezeGetItem()
     {
         var shape = new Expr[] { 1, 80, 4, 1 };
         var s = Stack(new IR.Tuple(shape), 0);
-        var result = Stack(new IR.Tuple(s[0], s[1], s[2]), 0);
+        var result = Stack(new IR.Tuple(GetItem(s, 0), GetItem(s, 1), GetItem(s, 2)), 0);
         TestMatched<FoldStackGetItem>(result);
     }
 

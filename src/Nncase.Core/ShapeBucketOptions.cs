@@ -19,6 +19,29 @@ namespace Nncase
 
         public static ShapeBucketOptions Default => new();
 
+        public static ShapeBucketOptions CloneFrom(ShapeBucketOptions from)
+        {
+            var options = new ShapeBucketOptions();
+            options.Enable = from.Enable;
+            foreach (var (k, v) in from.VarMap)
+            {
+                options.VarMap.Add(k, v);
+            }
+
+            foreach (var (k, v) in from.RangeInfo)
+            {
+                options.RangeInfo.Add(k, v);
+            }
+
+            options.SegmentsCount = from.SegmentsCount;
+            foreach (var (k, v) in from.FixVarMap)
+            {
+                options.FixVarMap.Add(k, v);
+            }
+
+            return options;
+        }
+
         public static ShapeBucketOptions Create(bool enable, Dictionary<Var, Expr[]> varMap, Dictionary<string, (int Min, int Max)> rangeInfo, int segmentsCount, Dictionary<string, int> fixVarMap)
         {
             var options = new ShapeBucketOptions();

@@ -114,8 +114,8 @@ public class UnitTestEGraphRewrite : TestClassBase
     [Fact]
     public void TestTransposeBinaryMotion()
     {
-        var c0 = (Call)NHWCToNCHW(Tensor.FromScalar(1, new[] { 2, 2, 3, 4 }));
-        var c1 = (Call)NHWCToNCHW(Tensor.FromScalar(1, new[] { 2, 2, 1, 1 }));
+        var c0 = (Call)NHWCToNCHW(Tensor.FromScalar(1, [2, 2, 3, 4]));
+        var c1 = (Call)NHWCToNCHW(Tensor.FromScalar(1, [2, 2, 1, 1]));
         Assert.Equal(c0.Arguments[1].GetHashCode(), c1.Arguments[1].GetHashCode());
 
         Expr pre = c0 + c1;

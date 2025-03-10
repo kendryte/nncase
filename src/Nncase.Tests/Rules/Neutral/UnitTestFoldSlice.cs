@@ -23,22 +23,22 @@ public class UnitTestFoldSlice : TransformTestBase
     public static IEnumerable<object[]> TestFoldNopSlicePositiveData =>
         new[]
         {
-            new object[] { new[] { 2 }, new[] { 0 }, new[] { 2 }, new[] { 0 }, new[] { 1 } },
-            new object[] { new[] { 2, 4,  }, new[] { 0 }, new[] { 4 }, new[] { 1 }, new[] { 1 } },
-            new object[] { new[] { 2, 4,  }, new[] { 0, 0 }, new[] { 2, 4 }, new[] { 0, 1 }, new[] { 1, 1 } },
-            new object[] { new[] { 2, 4, 6, 8 }, new[] { 0 }, new[] { 6 }, new[] { 2 }, new[] { 1 } },
-            new object[] { new[] { 2, 4, 6, 8 }, new[] { 0, 0 }, new[] { 4, 6 }, new[] { 1, 2 }, new[] { 1, 1 } },
+            new object[] { new long[] { 2 }, new long[] { 0 }, new long[] { 2 }, new[] { 0 }, new[] { 1 } },
+            new object[] { new long[] { 2, 4,  }, new long[] { 0 }, new long[] { 4 }, new[] { 1 }, new[] { 1 } },
+            new object[] { new long[] { 2, 4,  }, new long[] { 0, 0 }, new long[] { 2, 4 }, new[] { 0, 1 }, new[] { 1, 1 } },
+            new object[] { new long[] { 2, 4, 6, 8 }, new long[] { 0 }, new long[] { 6 }, new[] { 2 }, new[] { 1 } },
+            new object[] { new long[] { 2, 4, 6, 8 }, new long[] { 0, 0 }, new long[] { 4, 6 }, new[] { 1, 2 }, new[] { 1, 1 } },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     public static IEnumerable<object[]> TestFoldNopSliceNegativeData =>
         new[]
         {
-            new object[] { new[] { 2 }, new[] { 0 }, new[] { 1 }, new[] { 0 }, new[] { 1 } },
-            new object[] { new[] { 2, 4,  }, new[] { 0 }, new[] { 2 }, new[] { 1 }, new[] { 2 } },
-            new object[] { new[] { 2, 4,  }, new[] { 0, 2 }, new[] { 2, 4 }, new[] { 0, 1 }, new[] { 1, 3 } },
-            new object[] { new[] { 2, 4, 6, 8 }, new[] { 2 }, new[] { 6 }, new[] { 2 }, new[] { -1 } },
-            new object[] { new[] { 2, 4, 6, 8 }, new[] { 0, 1 }, new[] { 4, 6 }, new[] { 1, 2 }, new[] { 1, 1 } },
-            new object[] { new[] { 2, 4, 6, 8 }, new[] { 0, 0 }, new[] { -1, 6 }, new[] { 1, 2 }, new[] { -1, -1 } },
+            new object[] { new long[] { 2 }, new long[] { 0 }, new long[] { 1 }, new[] { 0 }, new[] { 1 } },
+            new object[] { new long[] { 2, 4,  }, new long[] { 0 }, new long[] { 2 }, new[] { 1 }, new[] { 2 } },
+            new object[] { new long[] { 2, 4,  }, new long[] { 0, 2 }, new long[] { 2, 4 }, new[] { 0, 1 }, new[] { 1, 3 } },
+            new object[] { new long[] { 2, 4, 6, 8 }, new long[] { 2 }, new long[] { 6 }, new[] { 2 }, new[] { -1 } },
+            new object[] { new long[] { 2, 4, 6, 8 }, new long[] { 0, 1 }, new long[] { 4, 6 }, new[] { 1, 2 }, new[] { 1, 1 } },
+            new object[] { new long[] { 2, 4, 6, 8 }, new long[] { 0, 0 }, new long[] { -1, 6 }, new[] { 1, 2 }, new[] { -1, -1 } },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     public static IEnumerable<object[]> TestFoldTwoSlicePositiveData =>
@@ -46,70 +46,70 @@ public class UnitTestFoldSlice : TransformTestBase
         {
             new object[]
             {
-                new[] { 1, 4, 6, 8 },
-                new[] { 0 }, new[] { 6 }, new[] { 3 }, new[] { 3 },
-                new[] { 0 }, new[] { 4 }, new[] { 2 }, new[] { 2 },
+                new long[] { 1, 4, 6, 8 },
+                new long[] { 0 }, new long[] { 6 }, new[] { 3 }, new[] { 3 },
+                new long[] { 0 }, new long[] { 4 }, new[] { 2 }, new[] { 2 },
             }, // Diff axis
             new object[]
             {
-                new[] { 4, 4, 6, 8 },
-                new[] { 0 }, new[] { 6 }, new[] { 3 }, new[] { 3 },
-                new[] { 0 }, new[] { 4 }, new[] { 2 }, new[] { 2 },
+                new long[] { 4, 4, 6, 8 },
+                new long[] { 0 }, new long[] { 6 }, new[] { 3 }, new[] { 3 },
+                new long[] { 0 }, new long[] { 4 }, new[] { 2 }, new[] { 2 },
             }, // negative axis
             new object[]
             {
-                new[] { 3, 4, 6, 8 },
-                new[] { 0 }, new[] { -1 }, new[] { 3 }, new[] { 3 },
-                new[] { -5 }, new[] { 4 }, new[] { 2 }, new[] { 2 },
+                new long[] { 3, 4, 6, 8 },
+                new long[] { 0 }, new long[] { -1 }, new[] { 3 }, new[] { 3 },
+                new long[] { -5 }, new long[] { 4 }, new[] { 2 }, new[] { 2 },
             }, // negative begin|end
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
-    public static TheoryData<int[], int[], int[], int[], int[], int[], int[], int[], int[], int> TestFoldTwoSlicePositiveData2 { get; } = new()
+    public static TheoryData<long[], long[], long[], int[], int[], long[], long[], int[], int[], int> TestFoldTwoSlicePositiveData2 { get; } = new()
     {
       {
-        new[] { 1, 3, 640, 640 },
-        new[] { 0 },
-        new[] { int.MaxValue },
+        new long[] { 1, 3, 640, 640 },
+        new long[] { 0 },
+        new long[] { int.MaxValue },
         new[] { 2 },
         new[] { 2 },
-        new[] { 0 },
-        new[] { int.MaxValue },
+        new long[] { 0 },
+        new long[] { int.MaxValue },
         new[] { 3 },
         new[] { 2 },
         0
       },
       {
-        new[] { 1, 3, 640, 640 },
-        new[] { 0 },
-        new[] { int.MaxValue },
+        new long[] { 1, 3, 640, 640 },
+        new long[] { 0 },
+        new long[] { int.MaxValue },
         new[] { 2 },
         new[] { 2 },
-        new[] { 1 },
-        new[] { int.MaxValue },
+        new long[] { 1 },
+        new long[] { int.MaxValue },
         new[] { 3 },
         new[] { 2 },
         1
       },
       {
-        new[] { 1, 3, 640, 640 },
-        new[] { 1 },
-        new[] { int.MaxValue },
+        new long[] { 1, 3, 640, 640 },
+        new long[] { 1 },
+        new long[] { int.MaxValue },
         new[] { 2 },
         new[] { 2 },
-        new[] { 0 },
-        new[] { int.MaxValue },
+        new long[] { 0 },
+        new long[] { int.MaxValue },
         new[] { 3 },
         new[] { 2 },
         2
       },
       {
-        new[] { 1, 3, 640, 640 },
-        new[] { 1 },
-        new[] { int.MaxValue },
+        new long[] { 1, 3, 640, 640 },
+        new long[] { 1 },
+        new long[] { int.MaxValue },
         new[] { 2 },
         new[] { 2 },
-        new[] { 1 },
-        new[] { int.MaxValue },
+        new long[] { 1 },
+        new long[] { int.MaxValue },
         new[] { 3 },
         new[] { 2 },
         3
@@ -118,7 +118,7 @@ public class UnitTestFoldSlice : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestFoldNopSlicePositiveData))]
-    public void TestFoldNopSlicePositive(int[] shape, int[] begins, int[] ends, int[] axes, int[] strides, int index)
+    public void TestFoldNopSlicePositive(long[] shape, long[] begins, long[] ends, int[] axes, int[] strides, int index)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Slice(a, begins, ends, axes, strides);
@@ -127,7 +127,7 @@ public class UnitTestFoldSlice : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestFoldNopSliceNegativeData))]
-    public void TestFoldNopSliceNegative(int[] shape, int[] begins, int[] ends, int[] axes, int[] strides, int index)
+    public void TestFoldNopSliceNegative(long[] shape, long[] begins, long[] ends, int[] axes, int[] strides, int index)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Slice(a, begins, ends, axes, strides);
@@ -137,7 +137,7 @@ public class UnitTestFoldSlice : TransformTestBase
     [Theory]
     [MemberData(nameof(TestFoldTwoSlicePositiveData2))]
     [MemberData(nameof(TestFoldTwoSlicePositiveData))]
-    public void TestFoldTwoSlicePositive(int[] shape, int[] begins1, int[] ends1, int[] axes1, int[] strides1, int[] begins2, int[] ends2, int[] axes2, int[] strides2, int index)
+    public void TestFoldTwoSlicePositive(long[] shape, long[] begins1, long[] ends1, int[] axes1, int[] strides1, long[] begins2, long[] ends2, int[] axes2, int[] strides2, int index)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var first_slice = Tensors.Slice(a, begins1, ends1, axes1, strides1);

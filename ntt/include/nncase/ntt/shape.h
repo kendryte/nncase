@@ -310,6 +310,15 @@ constexpr auto default_strides(const Shape &shape) noexcept {
     }
 }
 
+template <class Strides, class Shape>
+constexpr Strides default_strides_with_type(const Shape &shape) noexcept {
+    if constexpr (is_fixed_dims_v<Strides>) {
+        return {};
+    } else {
+        return default_strides(shape);
+    }
+}
+
 template <class Index, class Strides>
 constexpr size_t linear_offset(const Index &index,
                                const Strides &strides) noexcept {
@@ -444,11 +453,12 @@ constexpr auto squeeze_shape(fixed_shape<Axes...> axes, TShape shape) noexcept {
     } else {
         ranked_shape<shape.rank() - axes.rank()> new_shape;
         size_t cnt = 0;
-        for (size_t axis = 0; axis < axes.rank(); axis++) {
+        for (size_t axis = 0; axis < shape.rank(); axis++) {
             if (!axes.contains(axis)) {
                 new_shape[cnt++] = shape[axis];
             }
         }
+        return new_shape;
     }
 }
 
@@ -460,11 +470,12 @@ constexpr auto squeeze_strides(fixed_shape<Axes...> axes,
     } else {
         ranked_strides<strides.rank() - axes.rank()> new_strides;
         size_t cnt = 0;
-        for (size_t axis = 0; axis < axes.rank(); axis++) {
+        for (size_t axis = 0; axis < strides.rank(); axis++) {
             if (!axes.contains(axis)) {
                 new_strides[cnt++] = strides[axis];
             }
         }
+        return new_strides;
     }
 }
 

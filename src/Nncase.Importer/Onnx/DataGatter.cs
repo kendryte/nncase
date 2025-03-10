@@ -31,12 +31,7 @@ public sealed partial class OnnxImporter
         { TensorProto.Types.DataType.Uint8, DataTypes.UInt8 },
     };
 
-    public Shape GetShape(ValueInfoProto v)
-    {
-        var shape = v.Type.TensorType.Shape.Dim;
-        var dimArr = GetDimArray(shape, d => d, _ => Dimension.Unknown, d => (Dimension)d.DimValue);
-        return new Shape(dimArr);
-    }
+    public Shape GetShape(ValueInfoProto v) => new Shape(GetOriginShape(v));
 
     public Expr[] GetOriginShape(ValueInfoProto v)
     {
@@ -86,6 +81,23 @@ public sealed partial class OnnxImporter
     private bool EmptyTensor(TensorProto tensor)
     {
         return tensor.Dims.Count == 1 && tensor.Dims[0] == 0;
+    }
+
+    private Tensor GetExternalTensor<T>(BinaryReader br, DataType dataType, long length, Shape shape)
+        where T : unmanaged, IEquatable<T>
+    {
+        var tensorArray = new T[length / dataType.SizeInBytes];
+        var totalRead = 0;
+        int chunk = 1024 * 1024 * 1024;
+        for (long l = length; l > 0; l -= chunk)
+        {
+            var tmpBuffer = br.ReadBytes((int)Math.Min(chunk, l));
+
+            Buffer.BlockCopy(tmpBuffer, 0, tensorArray, totalRead, tmpBuffer.Length);
+            totalRead += tmpBuffer.Length / dataType.SizeInBytes;
+        }
+
+        return Tensor.From(tensorArray, shape);
     }
 
     private Tensor GetTensor(TensorProto tensor)

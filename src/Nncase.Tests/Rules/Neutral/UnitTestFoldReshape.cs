@@ -21,51 +21,51 @@ namespace Nncase.Tests.Rules.NeutralTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestFoldReshape : TransformTestBase
 {
-    public static TheoryData<int[], int[], int[], int[]> TestReshapeBinaryConstReshapePositiveData => new()
+    public static TheoryData<long[], long[], long[], long[]> TestReshapeBinaryConstReshapePositiveData => new()
     {
-        { new[] { 12, 77, 77 }, new[] { 1, 12, 77, 77 }, new[] { 1, 1, 77, 77 }, new[] { 12, 77, 77 } },
-        { new[] { 12, 77, 77 }, new[] { 1, 12, 77, 77 }, new[] { 77 }, new[] { 12, 77, 77 } },
+        { new long[] { 12, 77, 77 }, new long[] { 1, 12, 77, 77 }, new long[] { 1, 1, 77, 77 }, new long[] { 12, 77, 77 } },
+        { new long[] { 12, 77, 77 }, new long[] { 1, 12, 77, 77 }, new long[] { 77 }, new long[] { 12, 77, 77 } },
     };
 
     public static IEnumerable<object[]> TestFoldNopReshapePositiveData =>
         new[]
         {
-            new object[] { new[] { 4 }, new[] { 4 } },
-            new object[] { new[] { 2, 3 }, new[] { 2, 3 } },
-            new object[] { new[] { 2, 4 }, new[] { -1, 4 } },
+            new object[] { new long[] { 4 }, new long[] { 4 } },
+            new object[] { new long[] { 2, 3 }, new long[] { 2, 3 } },
+            new object[] { new long[] { 2, 4 }, new long[] { -1, 4 } },
         };
 
     public static IEnumerable<object[]> TestFoldNopReshapeNegativeData =>
         new[]
         {
-            new object[] { new[] { 4 }, new[] { 2, 2 } },
-            new object[] { new[] { 2, 3 }, new[] { 3, 2 } },
+            new object[] { new long[] { 4 }, new long[] { 2, 2 } },
+            new object[] { new long[] { 2, 3 }, new long[] { 3, 2 } },
         };
 
     public static IEnumerable<object[]> TestFoldTwoReshapesPositiveData =>
         new[]
         {
-            new object[] { new[] { 4 }, new[] { 2, 2 }, new[] { 1, 4 } },
-            new object[] { new[] { 2, 4 }, new[] { 8 }, new[] { 4, 2 } },
+            new object[] { new long[] { 4 }, new long[] { 2, 2 }, new long[] { 1, 4 } },
+            new object[] { new long[] { 2, 4 }, new long[] { 8 }, new long[] { 4, 2 } },
         };
 
     public static IEnumerable<object[]> TestReshapeToTransposePositiveData =>
         new[]
         {
-            new object[] { new[] { 1, 1, 400, 192 }, new[] { 1, 400, 1, 192 } },
-            new object[] { new[] { 1, 1, 1, 1 }, new[] { 1, 1, 1, 1 } },
-            new object[] { new[] { 4, 4, 4, 4 }, new[] { 4, 4, 4, 4 } },
+            new object[] { new long[] { 1, 1, 400, 192 }, new long[] { 1, 400, 1, 192 } },
+            new object[] { new long[] { 1, 1, 1, 1 }, new long[] { 1, 1, 1, 1 } },
+            new object[] { new long[] { 4, 4, 4, 4 }, new long[] { 4, 4, 4, 4 } },
         };
 
     public static IEnumerable<object[]> TestReshapeToTransposeNegativeData =>
         new[]
         {
-            new object[] { new[] { 1, 1, 4, 4 }, new[] { 1, 1, 2, 8 } },
+            new object[] { new long[] { 1, 1, 4, 4 }, new long[] { 1, 1, 2, 8 } },
         };
 
     [Theory]
     [MemberData(nameof(TestFoldNopReshapePositiveData))]
-    public void TestFoldNopReshapePositive(int[] shape, int[] newShape)
+    public void TestFoldNopReshapePositive(long[] shape, long[] newShape)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Reshape(a, newShape);
@@ -74,7 +74,7 @@ public class UnitTestFoldReshape : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestFoldNopReshapeNegativeData))]
-    public void TestFoldNopReshapeNegative(int[] shape, int[] newShape)
+    public void TestFoldNopReshapeNegative(long[] shape, long[] newShape)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Reshape(a, newShape);
@@ -83,7 +83,7 @@ public class UnitTestFoldReshape : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestFoldTwoReshapesPositiveData))]
-    public void TestFoldTwoReshapesPositive(int[] shape, int[] newShape1, int[] newShape2)
+    public void TestFoldTwoReshapesPositive(long[] shape, long[] newShape1, long[] newShape2)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Reshape(Tensors.Reshape(a, newShape1), newShape2);
@@ -92,7 +92,7 @@ public class UnitTestFoldReshape : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestReshapeToTransposePositiveData))]
-    public void TestReshapeToTransposePositive(int[] shape, int[] newShape)
+    public void TestReshapeToTransposePositive(long[] shape, long[] newShape)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Reshape(a, newShape);
@@ -101,7 +101,7 @@ public class UnitTestFoldReshape : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestReshapeToTransposeNegativeData))]
-    public void TestReshapeToTransposeNegative(int[] shape, int[] newShape)
+    public void TestReshapeToTransposeNegative(long[] shape, long[] newShape)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Reshape(a, newShape);
@@ -110,7 +110,7 @@ public class UnitTestFoldReshape : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestReshapeBinaryConstReshapePositiveData))]
-    public void TestReshapeBinaryConstReshapePositive(int[] inShape, int[] unsqShape, int[] constShape, int[] sqShape)
+    public void TestReshapeBinaryConstReshapePositive(long[] inShape, long[] unsqShape, long[] constShape, long[] sqShape)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, inShape);
         var v0 = Tensors.Reshape(a, unsqShape);

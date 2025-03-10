@@ -29,10 +29,13 @@ public sealed class UnitTestEGraphRewriteFactory : TestClassBase
     public static TheoryData<IRewriteCase> DataOne => new()
     {
         new MatMulTransposeCase(),
+        new FlattenReshapeMultiBranchCase(),
+        new PaperCase(),
     };
 
     public static TheoryData<IRewriteCase> DataAll => new()
     {
+        new MatMulTransposeCase(),
         new ReshapeTransposeReshapeCase(),
         new FoldConv2DBnCase(),
         new ActivationsTransposePRelu(),

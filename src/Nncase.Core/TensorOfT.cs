@@ -34,7 +34,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// Initializes a new instance of the <see cref="Tensor{T}"/> class.
     /// </summary>
     /// <param name="length">Size of the 1-dimensional tensor.</param>
-    public Tensor(int length)
+    public Tensor(long length)
         : base(DataType.FromType<T>(), length)
     {
         Buffer = new T[length];
@@ -44,7 +44,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// Initializes a new instance of the <see cref="Tensor{T}"/> class.
     /// </summary>
     /// <param name="dimensions">An span of integers that represent the size of each dimension of the DenseTensor to create.</param>
-    public Tensor(ReadOnlySpan<int> dimensions)
+    public Tensor(ReadOnlySpan<long> dimensions)
         : base(DataType.FromType<T>(), dimensions)
     {
         Buffer = new T[Length];
@@ -55,10 +55,14 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// </summary>
     /// <param name="buffer">Buffer memory.</param>
     /// <param name="dimensions">An span of integers that represent the size of each dimension of the DenseTensor to create.</param>
-    public Tensor(Memory<T> buffer, ReadOnlySpan<int> dimensions)
+    public Tensor(Memory<T> buffer, ReadOnlySpan<long> dimensions)
         : base(DataType.FromType<T>(), dimensions)
     {
-        Trace.Assert(Length == buffer.Length);
+        if (Length != buffer.Length)
+        {
+            throw new ArgumentException("Buffer length should be same as tensor length.");
+        }
+
         Buffer = buffer;
     }
 
@@ -72,11 +76,11 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// <inheritdoc/>
     public override Span<byte> BytesBuffer => MemoryMarshal.AsBytes(Buffer.Span);
 
-    int ICollection<T>.Count => Length;
+    int ICollection<T>.Count => checked((int)Length);
 
     bool ICollection<T>.IsReadOnly => false;
 
-    int IReadOnlyCollection<T>.Count => Length;
+    int IReadOnlyCollection<T>.Count => checked((int)Length);
 
     T IReadOnlyList<T>.this[int index] => GetValue(index);
 
@@ -92,7 +96,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// <param name="indices">A one-dimensional array of integers that represent the indices specifying the
     /// position of the element to get.</param>
     /// <returns>The value at the specified position in this Tensor.</returns>
-    public new T this[ReadOnlySpan<int> indices]
+    public new T this[ReadOnlySpan<long> indices]
     {
         get => GetValue(TensorUtilities.GetIndex(Strides, indices));
         set => SetValue(TensorUtilities.GetIndex(Strides, indices), value);
@@ -104,7 +108,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// <param name="indices">A one-dimensional array of integers that represent the indices specifying the
     /// position of the element to get.</param>
     /// <returns>The value at the specified position in this Tensor.</returns>
-    public new T this[params int[] indices]
+    public new T this[params long[] indices]
     {
         get => this[indices.AsSpan()];
         set => this[indices.AsSpan()] = value;
@@ -134,7 +138,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// <typeparam name="TResult">Type contained in the returned Tensor.</typeparam>
     /// <param name="dimensions">An span of integers that represent the size of each dimension of the DenseTensor to create.</param>
     /// <returns>A new tensor with the same layout as this tensor but different type and dimensions.</returns>
-    public Tensor<TResult> CloneEmpty<TResult>(ReadOnlySpan<int> dimensions)
+    public Tensor<TResult> CloneEmpty<TResult>(ReadOnlySpan<long> dimensions)
         where TResult : unmanaged, IEquatable<TResult>
     {
         return new Tensor<TResult>(dimensions);
@@ -146,9 +150,9 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// </summary>
     /// <param name="index">An integer index computed as a dot-product of indices.</param>
     /// <returns>The value at the specified position in this Tensor.</returns>
-    public T GetValue(int index)
+    public T GetValue(long index)
     {
-        return Buffer.Span[index];
+        return Buffer.Span[checked((int)index)];
     }
 
     /// <summary>
@@ -156,7 +160,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// </summary>
     /// <param name="dimensions">An span of integers that represent the size of each dimension of the DenseTensor to create.</param>
     /// <returns>A new tensor that reinterprets backing Buffer of this tensor with different dimensions.</returns>
-    public Tensor<T> Reshape(ReadOnlySpan<int> dimensions)
+    public Tensor<T> Reshape(ReadOnlySpan<long> dimensions)
     {
         if (Length != TensorUtilities.GetProduct(dimensions))
         {
@@ -172,9 +176,9 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// </summary>
     /// <param name="index">An integer index computed as a dot-product of indices.</param>
     /// <param name="value">The new value to set at the specified position in this Tensor.</param>
-    public void SetValue(int index, T value)
+    public void SetValue(long index, T value)
     {
-        Buffer.Span[index] = value;
+        Buffer.Span[checked((int)index)] = value;
     }
 
     /// <summary>
@@ -202,7 +206,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// <param name="item">The object to locate in the <see cref="Tensor{T}"/>.</param>
     /// <param name="indices">The index of item if found in the tensor.</param>
     /// <returns>true if item is found in the <see cref="Tensor{T}"/>; otherwise, false.</returns>
-    public bool TryGetIndicesOf(T item, Span<int> indices)
+    public bool TryGetIndicesOf(T item, Span<long> indices)
     {
         if (indices.Length != Rank)
         {
@@ -232,12 +236,12 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
 
         var builder = new StringBuilder();
 
-        var indices = new int[Rank];
+        var indices = new long[Rank];
         var innerDimension = Rank - 1;
         var innerLength = Dimensions[innerDimension];
 
         int indent = 0;
-        for (int outerIndex = 0; outerIndex < Length; outerIndex += innerLength)
+        for (long outerIndex = 0; outerIndex < Length; outerIndex += innerLength)
         {
             TensorUtilities.GetIndices(Strides, false, outerIndex, indices);
 
@@ -337,10 +341,10 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
         SpanUtility.Serialize((ReadOnlySpan<T>)Buffer.Span, stream);
     }
 
-    public override void Serialize(Stream baseStream, long offset, int[] shape, int[] strides)
+    public override void Serialize(Stream baseStream, long offset, long[] shape, long[] strides)
     {
         var slice = new T[TensorUtilities.GetSize(shape, strides, 1)];
-        var index = new int[shape.Length];
+        var index = new long[shape.Length];
 
         void Copy(int axis)
         {
@@ -354,8 +358,8 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
             else
             {
                 var length = shape.LastOrDefault(1);
-                var src = Buffer.Span.Slice((int)offset + TensorUtilities.GetIndex(Strides, index), length);
-                var dest = slice.AsSpan(TensorUtilities.GetIndex(strides, index), length);
+                var src = Buffer.Span.Slice(checked((int)(offset + TensorUtilities.GetIndex(Strides, index))), checked((int)length));
+                var dest = slice.AsSpan(checked((int)TensorUtilities.GetIndex(strides, index)), checked((int)length));
                 src.CopyTo(dest);
             }
         }
@@ -573,12 +577,12 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
         }
     }
 
-    private protected override object GetValueCore(int index)
+    private protected override object GetValueCore(long index)
     {
         return GetValue(index);
     }
 
-    private protected override void SetValueCore(int index, object? value)
+    private protected override void SetValueCore(long index, object? value)
     {
         SetValue(index, (T)Convert.ChangeType(value, typeof(T))!);
     }
@@ -642,7 +646,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
         }
 
         var bufferA = Buffer;
-        var indices = new int[Rank];
+        var indices = new long[Rank];
         int result = 0;
 
         for (int i = 0; i < bufferA.Length; i++)
@@ -701,7 +705,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
         }
 
         var bufferA = Buffer;
-        var indices = new int[Rank];
+        var indices = new long[Rank];
 
         for (int i = 0; i < bufferA.Length; i++)
         {

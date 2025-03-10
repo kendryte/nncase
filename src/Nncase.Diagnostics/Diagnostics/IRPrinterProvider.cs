@@ -15,7 +15,7 @@ namespace Nncase.Diagnostics;
 /// <summary>
 /// IR printer.
 /// </summary>
-internal sealed class IRPrinterProvider : IIRPrinterProvider
+internal sealed class IRPrinterProvider : IPrinterProvider
 {
     private readonly IServiceProvider _serviceProvider;
 
@@ -30,12 +30,12 @@ internal sealed class IRPrinterProvider : IIRPrinterProvider
     }
 
     /// <inheritdoc/>
-    public void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable)
+    public void DumpIR(Expr expr, string prefix, string dumpPath, PrinterFlags flags)
     {
         var nprefix = prefix.Any() ? prefix + "_" : prefix;
-        string ext = expr is PrimFunction ? "script" : "il";
+        string ext = (flags.HasFlag(PrinterFlags.Script) || expr is PrimFunction) ? "script" : "il";
         string name = expr is Callable c ? c.Name : expr.GetType().Name;
-        string file_path = Path.Combine(dumpPath, $"{nprefix}{name}.{ext}");
+        string filePath = Path.Combine(dumpPath, $"{nprefix}{name}.{ext}");
         if (string.IsNullOrEmpty(dumpPath))
         {
             throw new ArgumentException("The dumpPath Is Empty!", nameof(dumpPath));
@@ -43,21 +43,21 @@ internal sealed class IRPrinterProvider : IIRPrinterProvider
 
         Directory.CreateDirectory(dumpPath);
 
-        using var dumpFile = File.Open(file_path, FileMode.Create);
-        using var dumpWriter = new StreamWriter(dumpFile);
-        switch (expr)
+        using var dumpFile = File.Open(filePath, FileMode.Create);
+        using var dumpWriter = new IndentedWriter(dumpFile);
+        switch (ext)
         {
-            case PrimFunction or Sequential or Let or IfThenElse or For:
-                new ScriptPrintVisitor(dumpWriter, display_callable).Visit(expr);
+            case "script":
+                new ScriptPrintVisitor(dumpWriter, flags).Visit(expr);
                 break;
             default:
-                new ILPrintVisitor(dumpWriter, display_callable, 0).Visit(expr);
+                new ILPrintVisitor(dumpWriter, flags, new Dictionary<Expr, string>()).Visit(expr);
                 break;
         }
     }
 
     /// <inheritdoc/>
-    public void DumpDotIR(Expr expr, string prefix, string dumpDir, bool display_callable)
+    public void DumpDotIR(Expr expr, string prefix, string dumpDir, PrinterFlags flags)
     {
         if (string.IsNullOrEmpty(dumpDir))
         {
@@ -68,7 +68,7 @@ internal sealed class IRPrinterProvider : IIRPrinterProvider
 
         string name = expr is Callable c ? c.Name : expr.GetType().Name;
 
-        var visitor = new ILDotPrintVisitor(display_callable);
+        var visitor = new ILDotPrintVisitor(flags);
         visitor.Visit(expr);
         visitor.SaveToFile(name, prefix, dumpDir);
     }
@@ -122,39 +122,45 @@ internal sealed class IRPrinterProvider : IIRPrinterProvider
     }
 
     /// <inheritdoc/>
-    public string Print(IRType type)
+    public string Print(IRType type, PrinterFlags flags)
     {
-        var sb = new StringBuilder();
-        using var dumpWriter = new StringWriter(sb);
-        return new ILPrintVisitor(dumpWriter, true, 0).VisitType(type);
+        var stream = Stream.Null;
+        using var dumpWriter = new IndentedWriter(stream);
+        return new ILPrintVisitor(dumpWriter, flags, new Dictionary<Expr, string>()).VisitType(type);
     }
 
     /// <inheritdoc/>
-    public string Print(Expr expr, bool useScript)
+    public string Print(Expr expr, PrinterFlags flags)
     {
-        var sb = new StringBuilder();
-        using var dumpWriter = new StringWriter(sb);
-        var text = expr is PrimFunction || useScript
-            ? new ScriptPrintVisitor(dumpWriter, true).Visit(expr).Serialize()
-            : new ILPrintVisitor(dumpWriter, true, 0).Visit(expr);
+        using var stream = new MemoryStream(128 * 1024 * 1024);
 
-        return useScript ? text : expr switch
+        using (var writer = new IndentedWriter(stream))
         {
-            Const or None or Var or Op => text,
-            _ => sb.ToString(),
-        };
+            if (flags.HasFlag(PrinterFlags.Script))
+            {
+                new ScriptPrintVisitor(writer, flags).Visit(expr);
+            }
+            else
+            {
+                new ILPrintVisitor(writer, flags, new Dictionary<Expr, string>()).Visit(expr);
+            }
+        }
+
+        stream.Seek(0, SeekOrigin.Begin);
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
     }
 
     /// <inheritdoc/>
-    public string PrintOp(Op op, IIRPrinterContext context, bool iLmode)
+    public string? PrintOp(Op op, IPrintOpContext context)
     {
         // TODO: Add printers cache.
         var irprinterType = typeof(IOpPrinter<>).MakeGenericType(op.GetType());
         if (_serviceProvider.GetService(irprinterType) is IOpPrinter irprinter)
         {
-            return irprinter.Visit(context, op, iLmode);
+            return irprinter.Visit(context, op);
         }
 
-        return $"{context.Get(op)}({string.Join(", ", context.GetArguments(op).Select(s => s.ToString()))})";
+        return null;
     }
 }

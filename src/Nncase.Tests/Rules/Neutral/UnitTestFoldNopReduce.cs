@@ -25,10 +25,10 @@ public class UnitTestFoldNopReduce : TransformTestBase
 
     public static IEnumerable<object[]> ShouldNotMatchData => new[]
     {
-        new object[] { new[] { 3 } },
-        new object[] { new[] { 1, 3 } },
-        new object[] { new[] { 1, 3, 4 } },
-        new object[] { new[] { 1, 2, 3, 4 } },
+        new object[] { new long[] { 3 } },
+        new object[] { new long[] { 1, 3 } },
+        new object[] { new long[] { 1, 3, 4 } },
+        new object[] { new long[] { 1, 2, 3, 4 } },
     };
 
     [Theory]
@@ -41,7 +41,7 @@ public class UnitTestFoldNopReduce : TransformTestBase
 
     [Theory]
     [MemberData(nameof(ShouldNotMatchData))]
-    public void ShouldNotMatch(int[] shape)
+    public void ShouldNotMatch(long[] shape)
     {
         TestNotMatch<FoldNopReduce>(Reduce(ReduceOp.Mean, Testing.Rand<int>(shape), new[] { 0 }, 0, false));
     }

@@ -40,7 +40,7 @@ public sealed class Sequential : Expr
     /// <summary>
     /// get the fields.
     /// </summary>
-    public Expr this[int index] => Fields[index];
+    public new Expr this[int index] => Fields[index];
 
     public static Sequential Flatten(ReadOnlySpan<object> exprOrBuilders)
     {

@@ -49,7 +49,7 @@ public sealed partial class AddToConv2D : IRewriteRule
                 con_weights,
                 bias: Tensor.FromScalar(0.0f, channels),
                 stride: new[] { 1, 1 },
-                padding: Tensor.From(new[] { 0, 0, 0, 0 }, new[] { 2, 2 }),
+                padding: Tensor.From(new[] { 0, 0, 0, 0 }, [2, 2]),
                 dilation: new[] { 1, 1 },
                 padMode: PadMode.Constant,
                 groups: 1);

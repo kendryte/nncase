@@ -73,7 +73,7 @@ public class GatherNDEvaluator : IEvaluator<GatherND>, ITypeInferencer<GatherND>
 
             // result shape = index_shape[:-1] + input_shape[index_shape[-1] + batch_dims:]
             var dimensions = index.Shape.ToArray()[..(index.Shape.Rank - 1)];
-            var d = lastIndexDims.FixedValue + batchDimsValue.Value.ToScalar<int>();
+            var d = (int)lastIndexDims.FixedValue + batchDimsValue.Value.ToScalar<int>();
             var shapeValue = dimensions.Concat(input.Shape.ToArray()[d..]);
             return new TensorType(input.DType, new IR.Shape(shapeValue));
         }

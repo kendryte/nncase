@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.TIR;
+using Nncase.Utilities;
 
 namespace Nncase.IR;
 
@@ -40,7 +41,7 @@ public sealed class PrimFunctionWrapper : BaseFunction
     /// <param name="parametersCount">Arguments count.</param>
     /// <param name="hints">the type hints.</param>
     public PrimFunctionWrapper(PrimFunction target, int parametersCount, params IRType[] hints)
-        : this($"func_{_globalFuncIndex++}", target, parametersCount, hints)
+        : this($"primfuncwrapper_{_globalFuncIndex++}", target, parametersCount, hints)
     {
     }
 
@@ -71,6 +72,6 @@ public sealed class PrimFunctionWrapper : BaseFunction
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitPrimFunctionWrapper(this, context);
 
-    public PrimFunctionWrapper With(string? name = null, PrimFunction? target = null, int? parametersCount = null)
-        => new PrimFunctionWrapper(name ?? Name, target ?? Target, parametersCount ?? ParametersCount);
+    public PrimFunctionWrapper With(string? name = null, PrimFunction? target = null, int? parametersCount = null, IRType[]? hints = null)
+        => new PrimFunctionWrapper(name ?? Name, target ?? Target, parametersCount ?? ParametersCount, hints ?? TypeHints.ToArray());
 }

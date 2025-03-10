@@ -229,7 +229,7 @@ public partial class SimulateViewModel : ViewModelBase
         var list = result
             .Select(t =>
                 np.frombuffer(t.BytesBuffer.ToArray(), t.ElementType.CLRType)
-                    .reshape(t.Shape.ToValueArray()))
+                    .reshape(t.Shape.ToValueArray().ToInts()))
             .ToArray();
 
         for (int i = 0; i < list.Length; i++)

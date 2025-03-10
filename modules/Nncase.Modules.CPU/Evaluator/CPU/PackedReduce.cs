@@ -19,7 +19,7 @@ public sealed class PackedReduceEvaluator : IEvaluator<PackedReduce>, ITypeInfer
     public IValue Visit(IEvaluateContext context, PackedReduce target)
     {
         var input = context.GetOrtArgumentValue(target, PackedReduce.Input);
-        var inshape = input.Shape.SkipLast(target.PackedAxes.Count).Select(i => (int)i).ToArray();
+        var inshape = input.Shape.SkipLast(target.PackedAxes.Count).Select(i => i).ToArray();
         var inlanes = input.Shape.TakeLast(target.PackedAxes.Count).Select(i => (int)i).ToArray();
         var unpackedInput = CPUEvaluatorUtility.UnpackTensor(input, target.PackedAxes, target.PadedNums, out _);
         var axes = target.Axes.Select(i => (long)i).ToArray();
@@ -108,8 +108,6 @@ public sealed class PackedReduceEvaluator : IEvaluator<PackedReduce>, ITypeInfer
         }
 
         var axes = target.Axes.ToArray();
-        var invalid = new InvalidType($"{input}, not support");
-
         var ndsbp = new SBP[input.Placement.Rank];
 
         for (int i = 0; i < input.Placement.Rank; i++)
@@ -117,7 +115,8 @@ public sealed class PackedReduceEvaluator : IEvaluator<PackedReduce>, ITypeInfer
             switch (input.NdSBP[i])
             {
                 case SBPSplit { Axis: int ix } when axes.Contains(ix):
-                    return invalid;
+                    ndsbp[i] = SBP.P(target.ReduceOp);
+                    break;
                 default:
                     ndsbp[i] = input.NdSBP[i];
                     break;

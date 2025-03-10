@@ -332,7 +332,7 @@ namespace IsaGen
 
         [DisplayName("offset")]
         [Description("Signed immediate offset")]
-        public int Offset { get; set; }
+        public long Offset { get; set; }
     }
 
     [DisplayName("LDELEM_I1")]

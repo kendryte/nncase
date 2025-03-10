@@ -243,7 +243,7 @@ internal sealed class DeviceToTIRConverter
         var tileShape = GetTile(call);
         var fullShape = GetShape(call);
 
-        Expr[] PostProcessAffineMap(List<Expr> iters, IReadOnlyList<int> inShape, IReadOnlyList<int> outShape)
+        Expr[] PostProcessAffineMap(List<Expr> iters, IReadOnlyList<long> inShape, IReadOnlyList<long> outShape)
         {
             var ralign = outShape.Count - inShape.Count;
             for (int i = outShape.Count - 1; i >= 0; i--)
@@ -451,7 +451,7 @@ internal sealed class DeviceToTIRConverter
         var rhsRegion = GetBufferRegion(call.Arguments[1], (TIR.Buffer inBuffer) => new BufferRegion(inBuffer, outRegion.Region));
         TileScope.CurrentBlock.Alloc(outRegion.Buffer);
 
-        Expr[] PostProcessAffineMap(List<Expr> iters, IReadOnlyList<int> inShape, IReadOnlyList<int> outShape)
+        Expr[] PostProcessAffineMap(List<Expr> iters, IReadOnlyList<long> inShape, IReadOnlyList<long> outShape)
         {
             var ralign = outShape.Count - inShape.Count;
             for (int i = outShape.Count - 1; i >= 0; i--)
@@ -604,9 +604,9 @@ internal sealed class DeviceToTIRConverter
         return newLoopvars;
     }
 
-    private IReadOnlyList<int> GetTile(Expr expr) => _tileMemo[expr].TileShape;
+    private IReadOnlyList<long> GetTile(Expr expr) => _tileMemo[expr].TileShape;
 
-    private IReadOnlyList<int> GetShape(Expr expr) => _tileMemo[expr].OutShape;
+    private IReadOnlyList<long> GetShape(Expr expr) => _tileMemo[expr].OutShape;
 
     private BufferRegion GetBufferRegion(Expr expr, Func<TIR.Buffer, TIR.BufferRegion> createFunc)
     {

@@ -20,14 +20,17 @@ namespace Nncase.IR;
 public abstract partial class ExprVisitor<TExprResult, TTypeResult, TContext> : ExprFunctor<TExprResult, TTypeResult, TContext>
 {
     private readonly bool _visitOtherFunctions;
+    private readonly bool _visitAttributes;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExprVisitor{TExprResult, TTypeResult, TContext}"/> class.
     /// </summary>
     /// <param name="visitOtherFunctions">Vist other functions.</param>
-    public ExprVisitor(bool visitOtherFunctions = false)
+    /// <param name="visitAttributes">Visit attributes.</param>
+    public ExprVisitor(bool visitOtherFunctions = false, bool visitAttributes = false)
     {
         _visitOtherFunctions = visitOtherFunctions;
+        _visitAttributes = visitAttributes;
     }
 
     /// <summary>
@@ -80,6 +83,17 @@ public abstract partial class ExprVisitor<TExprResult, TTypeResult, TContext> : 
     }
 
     /// <inheritdoc/>
+    public override TTypeResult VisitType(NoneType type, TContext context)
+    {
+        if (HasVisited(type, out var result))
+        {
+            return result;
+        }
+
+        return MarkVisited(type, VisitTypeLeaf(type, context));
+    }
+
+    /// <inheritdoc/>
     public override TTypeResult VisitType(TensorType type, TContext context)
     {
         if (HasVisited(type, out var result))
@@ -87,6 +101,7 @@ public abstract partial class ExprVisitor<TExprResult, TTypeResult, TContext> : 
             return result;
         }
 
+        Visit(type.Shape, context);
         return MarkVisited(type, VisitTypeLeaf(type, context));
     }
 
@@ -106,6 +121,18 @@ public abstract partial class ExprVisitor<TExprResult, TTypeResult, TContext> : 
         return MarkVisited(type, VisitTypeLeaf(type, context));
     }
 
+    /// <inheritdoc/>
+    public override TTypeResult VisitType(DistributedType type, TContext context)
+    {
+        if (HasVisited(type, out var result))
+        {
+            return result;
+        }
+
+        VisitType(type.TensorType, context);
+        return MarkVisited(type, VisitTypeLeaf(type, context));
+    }
+
     /// <summary>
     /// Visit any type leaf.
     /// </summary>
@@ -115,6 +142,11 @@ public abstract partial class ExprVisitor<TExprResult, TTypeResult, TContext> : 
     /// Visit invalid type leaf.
     /// </summary>
     public virtual TTypeResult VisitTypeLeaf(InvalidType type, TContext context) => DefaultVisitTypeLeaf(type, context);
+
+    /// <summary>
+    /// Visit none type leaf.
+    /// </summary>
+    public virtual TTypeResult VisitTypeLeaf(NoneType type, TContext context) => DefaultVisitTypeLeaf(type, context);
 
     /// <summary>
     /// Visit tensor type leaf.
@@ -130,6 +162,11 @@ public abstract partial class ExprVisitor<TExprResult, TTypeResult, TContext> : 
     /// Visit tuple type leaf.
     /// </summary>
     public virtual TTypeResult VisitTypeLeaf(CallableType type, TContext context) => DefaultVisitTypeLeaf(type, context);
+
+    /// <summary>
+    /// Visit distributed type leaf.
+    /// </summary>
+    public virtual TTypeResult VisitTypeLeaf(DistributedType type, TContext context) => DefaultVisitTypeLeaf(type, context);
 
     /// <summary>
     /// Default visit leaf routine.
@@ -191,6 +228,12 @@ public abstract partial class ExprVisitor<TExprResult, TTypeResult, TContext> : 
         return ReferenceEquals(baseFunction, VisitRoot);
     }
 
+    protected bool CanVisitAttributes(Expr expr)
+    {
+        // Avoid infinite loop
+        return _visitAttributes && expr is not Shape;
+    }
+
     /// <summary>
     /// Default leaf visit routine.
     /// </summary>
@@ -217,6 +260,17 @@ public abstract partial class ExprVisitor<TExprResult, TTypeResult, TContext> : 
             Visit(operand, context);
         }
     }
+
+    protected virtual void VisitAttributes(Expr expr, TContext context)
+    {
+        if (_visitAttributes)
+        {
+            if (expr.RawCheckedType != null)
+            {
+                VisitType(expr.RawCheckedType, context);
+            }
+        }
+    }
 }
 
 /// <summary>
@@ -230,8 +284,9 @@ public abstract partial class ExprVisitor<TExprResult, TTypeResult> : ExprVisito
     /// Initializes a new instance of the <see cref="ExprVisitor{TExprResult, TTypeResult}"/> class.
     /// </summary>
     /// <param name="visitOtherFunctions">Vist other functions.</param>
-    public ExprVisitor(bool visitOtherFunctions = false)
-        : base(visitOtherFunctions)
+    /// <param name="visitAttributes">Visit attributes.</param>
+    public ExprVisitor(bool visitOtherFunctions = false, bool visitAttributes = false)
+        : base(visitOtherFunctions, visitAttributes)
     {
     }
 

@@ -94,7 +94,11 @@ public class PrimFuncPass : Pass<PrimFunction, PrimFunction>, IMutatorsAddable
                         DumpScope.Current.DumpIR(post, $"{count++}_{mutator.GetType().Name}");
                     }
 
-                    Trace.Assert(typeInferSuccess);
+                    if (!typeInferSuccess)
+                    {
+                        throw new InvalidOperationException("Type inference failed.");
+                    }
+
                     break;
                 }
             }

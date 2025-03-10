@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.TIR;
 
@@ -21,7 +22,7 @@ public class LoadEvaluator : ITypeInferencer<Load>, IOpPrinter<Load>
     }
 
     /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Load target, bool iLmode)
+    public string Visit(IPrintOpContext context, Load target)
     {
         var lhs = context.GetArgument(target, Load.Handle);
         var rhs = context.GetArgument(target, Load.Index);

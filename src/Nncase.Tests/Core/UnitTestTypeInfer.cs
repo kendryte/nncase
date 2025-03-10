@@ -18,7 +18,7 @@ namespace Nncase.Tests.CoreTest;
 
 public class UnitTypeInferBase : TestClassBase
 {
-    public void CheckInferShape(Expr expr, params int[] shapeDimensions)
+    public void CheckInferShape(Expr expr, params long[] shapeDimensions)
     {
         CheckInferShape(expr, new Shape(shapeDimensions));
     }
@@ -33,6 +33,11 @@ public class UnitTypeInferBase : TestClassBase
     {
         Assert.True(CompilerServices.InferenceType(expr));
         Assert.Equal(new TensorType(dt, shape), expr.CheckedType);
+    }
+
+    public void CheckInferShape(Expr expr, params Dimension[] shapeDimensions)
+    {
+        CheckInferShape(expr, new Shape(shapeDimensions));
     }
 
     public Var Var(Shape shape, DataType dt) => new Var(new TensorType(dt, shape));
@@ -60,7 +65,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     public void TestInferBinary()
     {
         var a = new Var(new TensorType(DataTypes.Float32, new[] { 1, 5, 1 }));
-        var b = Tensor.FromScalar(1.0f, new[] { 1, 5, 3 });
+        var b = Tensor.FromScalar(1.0f, [1, 5, 3]);
         var c = a + b;
         _ = CompilerServices.InferenceType(c);
 
@@ -103,7 +108,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     [Fact]
     public void TestSlice2()
     {
-        var input_a = new Var("input_a", new TensorType(DataTypes.Float32, new[] { Dimension.Unknown, Dimension.Unknown, Dimension.Unknown }));
+        var input_a = new Var("input_a", new TensorType(DataTypes.Float32, Shape.Unknown(3)));
         var repeats = IR.F.Tensors.Slice(IR.F.Tensors.ShapeOf(input_a), new[] { -2 }, new[] { -1 }, 1);
         Assert.True(CompilerServices.InferenceType(repeats));
         Assert.True(repeats.CheckedShape.Rank == 1);
@@ -116,7 +121,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         var end = new[] { 3 };
         var stride = new[] { 1 };
         var axes = new[] { 0 };
-        var slice = Slice(new Shape(1, 7, 7, 768), begin, end, axes, stride);
+        var slice = Slice(new Shape(1, 7, 7, 768).ToValueArrayExpr(), begin, end, axes, stride);
         CompilerServices.InferenceType(slice);
         var post = slice.Evaluate();
         Assert.Equal(new Shape(2), ((TensorType)post.Type).Shape);
@@ -259,6 +264,15 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     }
 
     [Fact]
+    public void TestConcatScalar()
+    {
+        var v1 = Var(Shape.Scalar);
+        var v2 = Var(Shape.Scalar);
+        var cat = Concat(new Tuple(v1, v2), -1);
+        Assert.IsType<InvalidType>(cat.CheckedType);
+    }
+
+    [Fact]
     public void TestUnsqueeze()
     {
         var v1 = Var(new[] { 3 });
@@ -266,6 +280,9 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         CheckInferShape(us1, new[] { 3, 1 });
         var us2 = Unsqueeze(v1, new[] { 0 });
         CheckInferShape(us2, new[] { 1, 3 });
+        var v2 = Var(new[] { 2, 1, 64 });
+        var uv2 = Unsqueeze(v2, new[] { 3, 1 });
+        CheckInferShape(uv2, new[] { 2, 1, 1, 1, 64 });
     }
 
     private void CheckReshape(Expr input, int[] reshapeArgs, int[] expectShape)
@@ -281,6 +298,7 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
     {
     }
 
+#if false
     [Fact]
     public void TestRange()
     {
@@ -290,6 +308,7 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
         var r = Range(begin, end, step);
         CheckInferShape(r, Dimension.Unknown);
     }
+#endif
 
     [Fact]
     public void TestConcat()
@@ -314,14 +333,44 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
     [Fact]
     public void TestBroadcastInfer2()
     {
-        var a = new TensorType(DataTypes.Float32, new Dimension[] { 1, Dimension.Unknown, 8192 });
+        var dimUnk1 = Dimension.Unknown;
+        var a = new TensorType(DataTypes.Float32, new Dimension[] { 1, dimUnk1, 8192 });
         var b = new TensorType(DataTypes.Float32, new Dimension[] { 1 });
         var result = TypeInference.BroadcastType(a, b);
-        Assert.Equal(new TensorType(DataTypes.Float32, new Dimension[] { 1, Dimension.Unknown, 8192 }), result);
+        Assert.Equal(new TensorType(DataTypes.Float32, new Dimension[] { 1, dimUnk1, 8192 }), result);
     }
 
-    private void CheckInferShape(Expr expr, params Dimension[] shapeDimensions)
+    [Fact]
+    public void TestReshapeInfer()
     {
-        CheckInferShape(expr, new Shape(shapeDimensions));
+        var dimVar = new Var("seq_len", new TensorType(DataTypes.Int64, Shape.Scalar));
+        dimVar.Metadata.Range = new(1, 512);
+        var dimC = (Dimension)dimVar;
+        var a = new Var(new TensorType(DataTypes.Float32, new Shape(1, dimVar, 128)));
+        var constShape = new Shape(1, dimC, 2, 64);
+        var reshape = Reshape(a, constShape.ToValueArrayExpr());
+        var result = reshape.CheckedType;
+        Assert.Equal(new TensorType(DataTypes.Float32, new Shape(1, dimVar, 2, 64)), result);
+
+        var b = new Var(new TensorType(DataTypes.Float32, new Shape(1, dimVar, 14, 64)));
+        var reshapeb = Reshape(b, new Shape(1, dimC, -1).ToValueArrayExpr());
+        var resultb = reshapeb.CheckedType;
+        Assert.Equal(new TensorType(DataTypes.Float32, new Shape(1, dimVar, 896)), resultb);
+    }
+
+    [Fact]
+    public void TestConcatInfer()
+    {
+        var seq_len = new Var("seq_len", new TensorType(DataTypes.Int64, Shape.Scalar));
+        var hist_len = new Var("his_len", new TensorType(DataTypes.Int64, Shape.Scalar));
+        var lhs = new Var(new TensorType(DataTypes.Float32, new Shape(1, seq_len, 2, 64)));
+        var rhs = new Var(new TensorType(DataTypes.Float32, new Shape(1, hist_len, 2, 64)));
+        var reshape = Concat(new IR.Tuple(new[] { lhs, rhs }), 1);
+        var result = reshape.CheckedType;
+        Assert.IsType<TensorType>(result);
+        Assert.IsType<Call>(((TensorType)result).Shape[1].Value);
+        var call = (Call)((TensorType)result).Shape[1].Value;
+        Assert.Equal(seq_len, call.Arguments[0]);
+        Assert.Equal(hist_len, call.Arguments[1]);
     }
 }

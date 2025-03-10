@@ -6,6 +6,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR;
+using Nncase.IR.F;
+using Nncase.TIR;
+using Math = System.Math;
+using Tuple = System.Tuple;
 
 namespace Nncase.Quantization;
 
@@ -21,8 +26,8 @@ internal partial class Quantizer
         {
             if (float.IsFinite(value))
             {
-                min = Math.Min(min, value);
-                max = Math.Max(max, value);
+                min = System.Math.Min(min, value);
+                max = System.Math.Max(max, value);
             }
         }
 

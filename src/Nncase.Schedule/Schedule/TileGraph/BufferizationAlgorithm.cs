@@ -63,9 +63,9 @@ public sealed class BufferizationAlgorithm : AlgorithmBase<TieredTileGraph>
     {
         if (!BufferGraphMemo.TryGetValue(rootGraph, out _))
         {
-            var wrappedGraph = new AdjacencyGraph<BufferIdentity, EquatableTaggedEdge<BufferIdentity, BufferEdgeKind>>();
+            var wrappedGraph = new AdjacencyGraph<BufferIdentity, EquatableTaggedEdge<BufferIdentity, BufferEdgeKind>>(allowParallelEdges: false);
             var rootBufferGraph = new BufferGraph(rootGraph.Level, wrappedGraph);
-            Visit(rootGraph, rootBufferGraph);
+            Visit(rootGraph, rootBufferGraph, rootGraph);
             foreach (var edge in rootGraph.Edges)
             {
                 var source = new BufferIdentity(edge.Source, edge.Source.ReadAccesses.Length);
@@ -77,12 +77,14 @@ public sealed class BufferizationAlgorithm : AlgorithmBase<TieredTileGraph>
         }
     }
 
-    private void Visit(TieredTileGraph graph, BufferGraph bufferGraph)
+    private HashSet<TileGrid> Visit(TieredTileGraph graph, BufferGraph bufferGraph, TieredTileGraph rootGraph)
     {
+        var opnodes = new HashSet<TileGrid>();
         if (graph.ClustersCount == 0)
         {
             foreach (var item in graph.Vertices)
             {
+                opnodes.Add(item);
                 var outBid = new BufferIdentity(item, item.ReadAccesses.Length);
                 for (int i = 0; i < item.ReadAccesses.Length; i++)
                 {
@@ -97,10 +99,22 @@ public sealed class BufferizationAlgorithm : AlgorithmBase<TieredTileGraph>
                 if (!BufferGraphMemo.TryGetValue(graph, out _))
                 {
                     var childBufferGraph = bufferGraph.CreateCluster<BufferGraph>(childGraph.Level, childGraph.OpId);
-                    Visit(childGraph, childBufferGraph);
+                    opnodes.UnionWith(Visit(childGraph, childBufferGraph, rootGraph));
                     BufferGraphMemo.Add(childGraph, childBufferGraph);
                 }
             }
+
+            foreach (var edge in rootGraph.Edges)
+            {
+                if (opnodes.Contains(edge.Source) && opnodes.Contains(edge.Target))
+                {
+                    var source = new BufferIdentity(edge.Source, edge.Source.ReadAccesses.Length);
+                    var target = new BufferIdentity(edge.Target, edge.Tag);
+                    bufferGraph.AddEdge(new(source, target, BufferEdgeKind.Outer));
+                }
+            }
         }
+
+        return opnodes;
     }
 }

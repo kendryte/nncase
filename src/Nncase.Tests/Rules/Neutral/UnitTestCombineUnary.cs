@@ -35,7 +35,7 @@ public class UnitTestCombineUnary : TransformTestBase
         {
             new object[]
             {
-                UnaryOp.Exp, new[] { 1, 3, 4, 5 },  new[,]
+                UnaryOp.Exp, new long[] { 1, 3, 4, 5 },  new[,]
             {
                 { 1, 1 },
                 { 2, 2 },
@@ -46,7 +46,7 @@ public class UnitTestCombineUnary : TransformTestBase
 
             // new object[]
             // {
-            //     UnaryOp.Abs, new[] { 1, 3, 4, 5 },  new[,]
+            //     UnaryOp.Abs, new long[] { 1, 3, 4, 5 },  new[,]
             // {
             //     { 1, 1 },
             //     { -1, -1 },
@@ -56,7 +56,7 @@ public class UnitTestCombineUnary : TransformTestBase
             // },
             new object[]
             {
-                UnaryOp.Floor, new[] { 1, 3, 4, 5 },  new[,]
+                UnaryOp.Floor, new long[] { 1, 3, 4, 5 },  new[,]
             {
                 { 1, 1 },
                 { 0, 0 },
@@ -66,7 +66,7 @@ public class UnitTestCombineUnary : TransformTestBase
             },
             new object[]
             {
-                UnaryOp.Floor, new[] { 1, 3, 4, 5 },  new[,]
+                UnaryOp.Floor, new long[] { 1, 3, 4, 5 },  new[,]
             {
                 { 1, 1 },
                 { 0, 0 },
@@ -79,34 +79,34 @@ public class UnitTestCombineUnary : TransformTestBase
     public static IEnumerable<object[]> TestCombineSliceUnaryPositiveData =>
         new[]
         {
-            new object[] { UnaryOp.Exp, new[] { 6 },  new[] { 0 }, new[] { 4 }, new[] { 0 }, new[] { 1 } },
-            new object[] { UnaryOp.Abs, new[] { 4, 5 },  new[] { 0, 0 }, new[] { 2, 3 }, new[] { 0, 1 }, new[] { 1, 2 } },
-            new object[] { UnaryOp.Sqrt, new[] { 3, 4, 5 },  new[] { 0, 0, 1 }, new[] { 2, 3, 4 }, new[] { 0, 1, 2 }, new[] { 1, 2, 3 } },
-            new object[] { UnaryOp.Square, new[] { 3, 2, 4, 5 },  new[] { 0, 0, 1, 1 }, new[] { -1, 2, 3, 4 }, new[] { -4, 1, 2, 3 }, new[] { 1, 2, 3, 2 } },
+            new object[] { UnaryOp.Exp, new long[] { 6 },  new long[] { 0 }, new long[] { 4 }, new[] { 0 }, new[] { 1 } },
+            new object[] { UnaryOp.Abs, new long[] { 4, 5 },  new long[] { 0, 0 }, new long[] { 2, 3 }, new[] { 0, 1 }, new[] { 1, 2 } },
+            new object[] { UnaryOp.Sqrt, new long[] { 3, 4, 5 },  new long[] { 0, 0, 1 }, new long[] { 2, 3, 4 }, new[] { 0, 1, 2 }, new[] { 1, 2, 3 } },
+            new object[] { UnaryOp.Square, new long[] { 3, 2, 4, 5 },  new long[] { 0, 0, 1, 1 }, new long[] { -1, 2, 3, 4 }, new[] { -4, 1, 2, 3 }, new[] { 1, 2, 3, 2 } },
         };
 
     // TODO: CombineReshapeUnary
     public static IEnumerable<object[]> TestCombineReshapeUnaryPositiveData =>
         new[]
         {
-            new object[] { UnaryOp.Exp, new[] { 6 }, new[] { 2, 3 } },
-            new object[] { UnaryOp.Abs, new[] { 4, 5 }, new[] { 2, 2, 5 }, },
-            new object[] { UnaryOp.Sqrt, new[] { 3, 4, 5 }, new[] { 3, 2, 2, 5 } },
-            new object[] { UnaryOp.Square, new[] { 3, 2, 4, 5 }, new[] { 3, 4, 1, 10 } },
+            new object[] { UnaryOp.Exp, new long[] { 6 }, new[] { 2, 3 } },
+            new object[] { UnaryOp.Abs, new long[] { 4, 5 }, new[] { 2, 2, 5 }, },
+            new object[] { UnaryOp.Sqrt, new long[] { 3, 4, 5 }, new[] { 3, 2, 2, 5 } },
+            new object[] { UnaryOp.Square, new long[] { 3, 2, 4, 5 }, new[] { 3, 4, 1, 10 } },
         };
 
     public static IEnumerable<object[]> TestCombineTranposeUnaryPositiveData =>
         new[]
         {
-            new object[] { UnaryOp.Exp, new[] { 6 }, new[] { 0 } },
-            new object[] { UnaryOp.Abs, new[] { 4, 5 }, new[] { 1, 0 }, },
-            new object[] { UnaryOp.Sqrt, new[] { 3, 4, 5 }, new[] { 2, 0, 1 } },
-            new object[] { UnaryOp.Square, new[] { 3, 2, 4, 5 }, new[] { 3, 1, 2, 0 } },
+            new object[] { UnaryOp.Exp, new long[] { 6 }, new[] { 0 } },
+            new object[] { UnaryOp.Abs, new long[] { 4, 5 }, new[] { 1, 0 }, },
+            new object[] { UnaryOp.Sqrt, new long[] { 3, 4, 5 }, new[] { 2, 0, 1 } },
+            new object[] { UnaryOp.Square, new long[] { 3, 2, 4, 5 }, new[] { 3, 1, 2, 0 } },
         };
 
     [Theory]
     [MemberData(nameof(TestCombinePadUnaryPositiveData))]
-    public void TestCombinePadUnaryPositive(UnaryOp opType, int[] inShape, int[,] paddings, PadMode padM, float padValue)
+    public void TestCombinePadUnaryPositive(UnaryOp opType, long[] inShape, int[,] paddings, PadMode padM, float padValue)
     {
         var a = new Var();
         var normal = new Dictionary<Var, IValue>();
@@ -120,7 +120,7 @@ public class UnitTestCombineUnary : TransformTestBase
     {
         var a = new Var();
         var feeds = new Dictionary<Var, IValue>();
-        feeds.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 4, 5 }).Evaluate());
+        feeds.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, new long[] { 1, 3, 4, 5 }).Evaluate());
         var pre = IR.F.Math.Unary(UnaryOp.Abs, Pad(a, new int[,] { { 1, 1 }, { -1, -1 }, { 1, 1 }, { 3, 3 } }, PadMode.Reflect, 0.0f));
         var rules = new[] { new CombinePadUnary() };
         Assert.True(pre.InferenceType(), "TestInferFailed:" + pre.CheckedType);
@@ -142,7 +142,7 @@ public class UnitTestCombineUnary : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestCombineSliceUnaryPositiveData))]
-    public void TestCombineSliceUnaryPositive(UnaryOp opType, int[] inShape, int[] begins, int[] ends, int[] axes, int[] strides)
+    public void TestCombineSliceUnaryPositive(UnaryOp opType, long[] inShape, long[] begins, long[] ends, int[] axes, int[] strides)
     {
         var a = new Var();
         var normal = new Dictionary<Var, IValue>();
@@ -153,7 +153,7 @@ public class UnitTestCombineUnary : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestCombineReshapeUnaryPositiveData))]
-    public void TestCombineReshapeUnaryPositive(UnaryOp opType, int[] inShape, int[] outShape)
+    public void TestCombineReshapeUnaryPositive(UnaryOp opType, long[] inShape, int[] outShape)
     {
         var a = new Var("input", new TensorType(DataTypes.Float32, inShape));
         var normal = new Dictionary<Var, IValue>();
@@ -164,12 +164,12 @@ public class UnitTestCombineUnary : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestCombineTranposeUnaryPositiveData))]
-    public void TestCombineTranposeUnaryPositive(UnaryOp opType, int[] inShape, int[] perm)
+    public void TestCombineTranposeUnaryPositive(UnaryOp opType, long[] inShape, int[] perm)
     {
         var a = new Var();
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = IR.F.Math.Unary(opType, Tensors.Transpose(a, perm));
-        TestMatched<CombineTranposeUnary>(rootPre, normal);
+        TestMatched<CombineTransposeUnary>(rootPre, normal);
     }
 }

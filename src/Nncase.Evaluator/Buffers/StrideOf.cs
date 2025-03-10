@@ -15,5 +15,5 @@ namespace Nncase.Evaluator.Buffers;
 [TypeInferGenerator]
 public partial class StrideOfEvaluator : ITypeInferencer<StrideOf>
 {
-    private IRType Visit(TensorType input) => new TensorType(DataTypes.Int32, new[] { input.Shape.Count });
+    private IRType Visit(TensorType input) => new TensorType(DataTypes.Int32, new[] { input.Shape.Rank });
 }

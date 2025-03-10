@@ -49,9 +49,9 @@ public sealed record VArgsPattern(PatternGenerator FieldsGenerator, string? Name
 
     public IEnumerator<Pattern> GetEnumerator() => Fields.GetEnumerator();
 
-    public bool MatchLeaf(ReadOnlySpan<Expr> input)
+    public bool MatchLeaf(ReadOnlySpan<Expr> input, out IReadOnlyList<Pattern> fields)
     {
-        Fields = FieldsGenerator(input);
+        Fields = fields = FieldsGenerator(input);
 
         if (input.Length != Fields.Count)
         {

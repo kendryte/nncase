@@ -53,11 +53,11 @@ public sealed partial class CombineReshapePad : IRewriteRule
             var newPad = Pad(
                 marker.With(target: Reshape(
                         marker.With(target: input),
-                        Enumerable.Repeat(1, reshapeRank - padRank).Concat(input.CheckedShape.ToValueArray()).ToArray())
+                        Enumerable.Repeat(1L, reshapeRank - padRank).Concat(input.CheckedShape.ToValueArray()).ToArray())
                     .InheritMetaData(reshapeCall)),
                 Tensor.From(
                     Enumerable.Repeat(0, (reshapeRank - padRank) * 2).Concat(pads).ToArray(),
-                    new[] { reshapeRank, 2 }),
+                    [reshapeRank, 2]),
                 pad.PadMode,
                 value).InheritMetaData(padCall);
             var outMarker = result.GetValueOrDefault("outMarker");

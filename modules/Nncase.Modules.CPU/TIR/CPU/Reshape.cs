@@ -31,5 +31,5 @@ public sealed partial class Reshape : CPUKernelOp
     /// <summary>
     /// Gets begins.
     /// </summary>
-    public IRArray<int> NewShape { get; }
+    public IRArray<long> NewShape { get; }
 }

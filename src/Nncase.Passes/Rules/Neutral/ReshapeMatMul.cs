@@ -33,7 +33,7 @@ public partial class ReshapeMatMul : RewriteRule<Pattern>
         var shapeA = a.CheckedShape.ToValueArray();
         if (a.CheckedShape.Rank == 4)
         {
-            var c = shapeA.Take(a.CheckedShape.Rank - 2).Aggregate(1, (sum, x) => x * sum);
+            var c = shapeA.Take(a.CheckedShape.Rank - 2).Aggregate(1L, (sum, x) => x * sum);
             var newShapeA = new long[] { c, shapeA[^2], shapeA[^1] };
             lhs = IR.F.Tensors.Reshape(a, newShapeA);
         }
@@ -47,7 +47,7 @@ public partial class ReshapeMatMul : RewriteRule<Pattern>
         var shapeB = b.CheckedShape.ToValueArray();
         if (b.CheckedShape.Rank == 4)
         {
-            var c = shapeB.Take(b.CheckedShape.Rank - 2).Aggregate(1, (sum, x) => x * sum);
+            var c = shapeB.Take(b.CheckedShape.Rank - 2).Aggregate(1L, (sum, x) => x * sum);
             var newShapeB = new long[] { c, shapeB[^2], shapeB[^1] };
             rhs = IR.F.Tensors.Reshape(b, newShapeB);
         }

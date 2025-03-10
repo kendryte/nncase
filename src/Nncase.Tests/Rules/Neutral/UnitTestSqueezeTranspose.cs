@@ -154,7 +154,7 @@ public class UnitTestSqueezeTranspose : TransformTestBase
     [MemberData(nameof(Squeeze5DTransposePositiveData))]
     public void TestSqueeze5DTransposePositive(int[] perm)
     {
-        var input = Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { 1, 3, 24, 56, 32 });
+        var input = Random.Normal(DataTypes.Float32, 0, 1, 1, new long[] { 1, 3, 24, 56, 32 });
 
         var rootPre = Tensors.Transpose(input, perm);
         TestMatched<Squeeze5DTranspose>(rootPre);

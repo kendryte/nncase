@@ -38,7 +38,7 @@ public class NormalEvaluator : IEvaluator<Normal>, ITypeInferencer<Normal>, ICos
     {
         if (context.GetArgument(target, Normal.Shape) is TensorConst shapeValue)
         {
-            return new TensorType(target.Type, new Shape(shapeValue.Value.Cast<int>()));
+            return new TensorType(target.Type, new Shape(shapeValue.Value.ToArray<long>()));
         }
         else
         {

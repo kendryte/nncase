@@ -37,7 +37,7 @@ public sealed class TupleConst : Const, ITuple, IEquatable<TupleConst?>
     /// </summary>
     /// <param name="index">Index of the field.</param>
     /// <returns>Constant.</returns>
-    public IValue this[int index] => Value[index];
+    public new IValue this[int index] => Value[index];
 
     public static bool operator ==(TupleConst? left, TupleConst? right) => EqualityComparer<TupleConst>.Default.Equals(left, right);
 

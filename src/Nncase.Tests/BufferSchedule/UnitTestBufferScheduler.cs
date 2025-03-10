@@ -38,8 +38,8 @@ public sealed class UnitTestBufferScheduler : TestClassBase
         var dtype = new DistributedType(ttype, new[] { SBP.B }, new(new[] { 1 }, "b"));
         var a = new Var("a", ttype);
         var b = new Var("b", ttype);
-        var boxa = IR.F.CPU.Boxing(a, dtype);
-        var boxb = IR.F.CPU.Boxing(b, dtype);
+        var boxa = IR.F.Distributed.Boxing(a, dtype);
+        var boxb = IR.F.Distributed.Boxing(b, dtype);
         var tp = new IR.Tuple([boxa, boxb]);
         var tc = new TensorConst(Tensor.FromScalar(1.0f, [100]), new[] { SBP.B }, new(new[] { 1 }, "b"));
         var c = IR.F.Math.Sin(tc);
@@ -50,7 +50,7 @@ public sealed class UnitTestBufferScheduler : TestClassBase
         var h = IR.F.Math.Neg(g);
         var i = IR.F.Tensors.GetItem(tp, 1) + h;
 
-        var body = new IR.Tuple(IR.F.CPU.Boxing(IR.F.Tensors.GetItem(tp, 0), ttype), IR.F.CPU.Boxing(i, ttype));
+        var body = new IR.Tuple(IR.F.Distributed.Boxing(IR.F.Tensors.GetItem(tp, 0), ttype), IR.F.Distributed.Boxing(i, ttype));
         return new Fusion("kernel", Targets.CPUTarget.Kind, body, a, b);
     }
 

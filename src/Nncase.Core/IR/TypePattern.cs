@@ -128,7 +128,7 @@ public static partial class TypePatternUtility
       inshape =>
         inshape.Rank == target_shape.Rank &&
         inshape.Zip(target_shape).All(
-          (dim) => dim.Second == Dimension.Unknown ? true : dim.Second == dim.First),
+          (dim) => dim.Second.IsAssignableFrom(dim.First)),
       $"Shape = {target_shape}");
 
     /// <summary>
@@ -279,36 +279,4 @@ public static partial class TypePatternUtility
     /// is scalar quant param.
     /// </summary>
     public static TypePattern IsQuantParamType() => IsScalar() & HasDataType(new QuantParamType());
-
-    /// <summary>
-    /// get padding windows output size.
-    /// </summary>
-    public static int GetWindowedOutputSize(int size, int filter, int stride, int dilation, bool same, bool ceilMode = false)
-    {
-        var effective_filter_size = ((filter - 1) * dilation) + 1;
-        if (same)
-        {
-            return (size + stride - 1) / stride;
-        }
-        else
-        {
-            if (!ceilMode)
-            {
-                return (size - effective_filter_size + stride) / stride;
-            }
-            else
-            {
-                return (int)System.Math.Ceiling((float)(size - effective_filter_size + stride) / stride);
-            }
-        }
-    }
-
-    /// <summary>
-    /// GetWindowedOutputSize.
-    /// </summary>
-    public static int GetWindowedOutputSize(int size, int filter, int stride, int dilation, (int Before, int After) padding)
-    {
-        var effective_filter_size = ((filter - 1) * dilation) + 1;
-        return (size + padding.Before + padding.After - effective_filter_size + stride) / stride;
-    }
 }

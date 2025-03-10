@@ -31,11 +31,11 @@ public sealed partial class ExpandToBroadcast : IRewriteRule
     private Expr? GetReplace(Expr input, TensorConst shape)
     {
         var inputRank = input.CheckedShape.Rank;
-        var shapeSize = shape.Value.ToArray<int>().Length;
-        var outputShape = Enumerable.Repeat((Expr)1, System.Math.Max(inputRank, shapeSize)).ToArray();
+        var shapeSize = (int)shape.Value.Length;
+        var outputShape = Enumerable.Repeat((Expr)1L, System.Math.Max(inputRank, shapeSize)).ToArray();
         for (var i = 0; i < shapeSize; i++)
         {
-            outputShape[i + outputShape.Length - shapeSize] = shape.Value.ToArray<int>()[i];
+            outputShape[i + outputShape.Length - shapeSize] = shape.Value.Cast<long>()[i];
         }
 
         for (int i = 0; i < inputRank; i++)

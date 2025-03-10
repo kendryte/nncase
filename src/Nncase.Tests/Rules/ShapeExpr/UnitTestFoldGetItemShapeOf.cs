@@ -39,7 +39,10 @@ public class UnitTestFoldGetItemShapeOf : TransformTestBase
     [Fact]
     public void TestFoldGetItemShapeOfWithDynamic()
     {
-        var input = new Var(new TensorType(DataTypes.Int32, new[] { 1, 3, Dimension.Unknown, 24 }));
-        TestNotMatch<FoldGetItemShapeOf>(ShapeOf(input)[2]);
+        var dim = new Var(TensorType.Scalar(DataTypes.Int64));
+        var input = new Var(new TensorType(DataTypes.Float32, new Dimension[] { 1, 3, dim, 24 }));
+        var data = Testing.Rand<float>(1, 3, 24, 24);
+        var dict = new Dictionary<Var, IValue> { { dim, Value.FromTensor(24L) }, { input, Value.FromTensor(data) } };
+        TestMatched<FoldGetItemShapeOf>(ShapeOf(input)[2], dict);
     }
 }

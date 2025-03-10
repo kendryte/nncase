@@ -255,6 +255,8 @@ typedef struct {
     void (*cpu_target_options_set_hierarchies)(clr_object_handle_t handle, int32_t* value, size_t shape0, size_t* shape1);
     void (*cpu_target_options_set_hierarchy_names)(clr_object_handle_t handle, const char* value, size_t length);
     void (*cpu_target_options_set_hierarchy_sizes)(clr_object_handle_t handle, int32_t* value, size_t shape0);
+    void (*cpu_target_options_set_hierarchy_latencies)(clr_object_handle_t handle, int32_t* value, size_t shape0);
+    void (*cpu_target_options_set_hierarchy_band_widths)(clr_object_handle_t handle, int32_t* value, size_t shape0);
     void (*cpu_target_options_set_memory_capacities)(clr_object_handle_t handle, int32_t* value, size_t shape0);
     void (*cpu_target_options_set_memory_band_widths)(clr_object_handle_t handle, int32_t* value, size_t shape0);
     void (*cpu_target_options_set_distributed_scheme)(clr_object_handle_t handle, const char* value, size_t length);
@@ -576,6 +578,28 @@ class cpu_target_options : public clr_object_base {
         }
 
         nncase_clr_api()->cpu_target_options_set_hierarchy_sizes(obj_.get(), values.data(), shape0);
+    }
+
+    void hierarchy_latencies(std::vector<int> value) {
+        std::vector<int> values;
+        size_t shape0;
+        shape0 = value.size();
+        for (size_t i0 = 0; i0 < shape0; i0++) {
+          values.push_back(value[i0]);
+        }
+
+        nncase_clr_api()->cpu_target_options_set_hierarchy_latencies(obj_.get(), values.data(), shape0);
+    }
+
+    void hierarchy_band_widths(std::vector<int> value) {
+        std::vector<int> values;
+        size_t shape0;
+        shape0 = value.size();
+        for (size_t i0 = 0; i0 < shape0; i0++) {
+          values.push_back(value[i0]);
+        }
+
+        nncase_clr_api()->cpu_target_options_set_hierarchy_band_widths(obj_.get(), values.data(), shape0);
     }
 
     void memory_capacities(std::vector<int> value) {

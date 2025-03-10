@@ -38,14 +38,14 @@ public static class EvaluateContextExtensions
 internal sealed class EvaluateContext : IEvaluateContext
 {
     private readonly Dictionary<Expr, IValue> _exprMemo;
-    private Call? _currentCall;
+    private BaseCall? _currentCall;
 
     public EvaluateContext(Dictionary<Expr, IValue> exprMemo)
     {
         _exprMemo = exprMemo;
     }
 
-    public Call CurrentCall
+    public BaseCall CurrentCall
     {
         get => _currentCall ?? throw new InvalidOperationException("Current call is not set in evaluator.");
         set => _currentCall = value;

@@ -119,11 +119,12 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
     private readonly StringWriter _sharedWriter;
     private ulong _collective_pool_size;
 
-    public KernelCSourceConvertVisitor(ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, CpuTargetOptions targetOptions)
+    public KernelCSourceConvertVisitor(ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, ulong localRdataPoolSize, CpuTargetOptions targetOptions)
     {
         DataAlign = dataAlign;
         DataUsage = dataUsage;
         RdataPoolSize = rdataPoolSize;
+        LocalRdataPoolSize = localRdataPoolSize;
         _kernelBuilder = new StringBuilder();
         _sharedBuilder = new StringBuilder();
         _sharedWriter = new StringWriter(_sharedBuilder);
@@ -145,11 +146,13 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 
     public ulong RdataPoolSize { get; }
 
+    public ulong LocalRdataPoolSize { get; }
+
     public KernelCSource GetCSource()
     {
         var ctype = $"void {VisitEntry.Name}({string.Join(", ", VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}").ToArray().Concat(_exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata).Select(Visit).Select(s => $" {s.Type} {s.Name}").ToArray()))}, uint8_t* data)";
         return new(
-            CSourceBuiltn.MakeMain(VisitEntry, DataAlign, DataUsage, RdataPoolSize, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata), TargetOptions),
+            CSourceBuiltn.MakeMain(VisitEntry, DataAlign, DataUsage, RdataPoolSize, LocalRdataPoolSize, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata), TargetOptions),
             CSourceBuiltn.MakeKernel(ctype, _kernelBuilder.ToString()),
             CSourceBuiltn.TopoAwareRuntimeDef(TargetOptions, DataAlign, _collective_pool_size),
             CSourceBuiltn.TopologyDef(TargetOptions));
@@ -168,7 +171,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
             return symbol;
         }
 
-        symbol = new(string.Empty, expr.Name);
+        symbol = new(expr.CheckedDataType.ToC(), expr.Name);
         _exprMemo.Add(expr, symbol);
         return symbol;
     }
@@ -243,11 +246,21 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
             return symbol;
         }
 
+        var dimensions = expr.DistributedType is null ? expr.Dimensions : expr.DistributedType.TensorType.Shape.Dimensions;
+        var isFixedDimensions = dimensions.AsValueEnumerable().All(x => x is TensorConst);
+        var isFixedStrides = expr.Strides.AsValueEnumerable().All(x => x is TensorConst);
+        var dimensionSymbols = dimensions.AsValueEnumerable().Select(Visit).ToArray();
+        var strideSymbols = expr.Strides.AsValueEnumerable().Select(Visit).ToArray();
+
+        var dtypeStr = expr.ElemType.ToC();
+        var dimensionStr = KernelUtility.DimensionsToC(isFixedDimensions, dimensionSymbols, true);
+        var strideStr = KernelUtility.StridesToC(isFixedStrides, strideSymbols, true);
+
         var type = VisitEntry.Parameters.AsValueEnumerable().Contains(expr) || expr.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata || expr.MemSpan.Start is TensorConst
             ? (expr.DistributedType == null
-             ? $"tensor_view<{expr.ElemType.ToC()}, {KernelUtility.DimensionsToC(expr.Dimensions)}, {KernelUtility.StridesToC(expr.Strides)}> "
-             : $"sharded_tensor_view<{expr.ElemType.ToC()}, {KernelUtility.DimensionsToC(expr.DistributedType.TensorType.Shape)}, {KernelUtility.DistributedToC(expr.DistributedType)}, {KernelUtility.StridesToC(expr.Strides)}> ")
-            : $"tensor<{expr.ElemType.ToC()}, {KernelUtility.DimensionsToC(expr.Dimensions)}> ";
+             ? $"tensor_view<{dtypeStr}, {dimensionStr}, {strideStr}> "
+             : $"sharded_tensor_view<{dtypeStr}, {dimensionStr}, {KernelUtility.DistributedToC(expr.DistributedType)}, {strideStr}> ")
+            : $"tensor<{dtypeStr}, {dimensionStr}, {strideStr}> ";
 
         symbol = new(type, expr.Name);
         _exprMemo.Add(expr, symbol);
@@ -437,7 +450,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 
                     break;
                 case TIR.Memcopy copy:
-                    IndentScope.Writer.Write($"tensor_copy({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
+                    IndentScope.Writer.Write($"tensor_copy({VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[0], local: true).Name});\n");
                     break;
                 case TIR.CPU.Gather gather:
                     IndentScope.Writer.Write($"gather<{gather.Axis}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
@@ -505,18 +518,22 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     break;
                 case TIR.CPU.GatherReduceScatter grs:
                     {
-                        if (grs.InType.NdSBP.Any(s => s is SBPPartialSum))
+                        if (grs.InType.NdSBP.Any(s => s is SBPPartial))
                         {
-                            var reduceKind = "tar::reduce_kind::" + string.Join("_", grs.InType.NdSBP.Select((s, i) => (s is SBPPartialSum ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
-                            IndentScope.Writer.IndWrite($"tac::tensor_reduce_sync<ops::add, {reduceKind}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
+                            var sbpPartial = (SBPPartial)grs.InType.NdSBP.Where(s => s is SBPPartial).Distinct().First();
+                            var reduceKind = "tar::reduce_kind::" + string.Join("_", grs.InType.NdSBP.Select((s, i) => (s is SBPPartial ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
+                            IndentScope.Writer.IndWrite($"tac::tensor_reduce_sync<reduce_op::{sbpPartial.Op.ToC()}, {reduceKind}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                         }
                         else
                         {
                             var fullShape = Enumerable.Repeat(1, args[0].Dimensions.Length).ToArray();
-                            var splitAxisAndScale = grs.InType.NdSBP.Select((sbp, i) => sbp is SBPSplit s ? (s.Axis, grs.InType.Placement.Hierarchy[i]) : (0, 1)).ToArray();
-                            foreach (var s in splitAxisAndScale)
+                            if (fullShape.Any())
                             {
-                                fullShape[s.Item1] *= s.Item2;
+                                var splitAxisAndScale = grs.InType.NdSBP.Select((sbp, i) => sbp is SBPSplit s ? (s.Axis, grs.InType.Placement.Hierarchy[i]) : (0, 1)).ToArray();
+                                foreach (var s in splitAxisAndScale)
+                                {
+                                    fullShape[s.Item1] *= s.Item2;
+                                }
                             }
 
                             foreach (var (dimS, axis) in args[0].Dimensions.ToArray().Select((e, axis) => (Visit(e).Name, axis)))
@@ -612,7 +629,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
         string str;
         if (expr is TensorConst { Value: Tensor { ElementType: PrimType ptype, Shape: { IsScalar: true } } scalar })
         {
-            str = scalar[0].ToString() switch
+            str = scalar[Array.Empty<long>()].ToString() switch
             {
                 "True" => "1",
                 "False" => "0",
@@ -690,7 +707,24 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
         IndentScope.Writer.IndWrite($"{symbol.Type} {symbol.Name}");
         if (buffer.MemSpan.Start is not None)
         {
-            IndentScope.Writer.IndWrite($"({Visit(buffer.MemSpan).Name})");
+            var dimensions = buffer.DistributedType is null ? buffer.Dimensions : buffer.DistributedType.TensorType.Shape.Dimensions;
+            var isFixedDimensions = dimensions.AsValueEnumerable().All(x => x is TensorConst);
+            var isFixedStrides = buffer.Strides.AsValueEnumerable().All(x => x is TensorConst);
+            var spanStr = Visit(buffer.MemSpan).Name;
+
+            if (isFixedDimensions && isFixedStrides)
+            {
+                IndentScope.Writer.IndWrite($"({spanStr})");
+            }
+            else
+            {
+                var dimensionSymbols = dimensions.AsValueEnumerable().Select(Visit).ToArray();
+                var strideSymbols = buffer.Strides.AsValueEnumerable().Select(Visit).ToArray();
+
+                var dimensionStr = isFixedDimensions ? "{}" : KernelUtility.DimensionsToC(false, dimensionSymbols, false);
+                var strideStr = isFixedStrides ? "{}" : KernelUtility.StridesToC(false, strideSymbols, false);
+                IndentScope.Writer.IndWrite($"({spanStr}, {dimensionStr}, {strideStr})");
+            }
         }
 
         IndentScope.Writer.Write($";\n");

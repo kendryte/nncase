@@ -3,31 +3,35 @@
 using System.Runtime.CompilerServices;
 using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
+using Nncase.IR;
 using Nncase.Targets;
 using Razor.Templating.Core;
 
 namespace Nncase.CodeGen.CPU;
 
-public record BufferRenderInfo(string Name, string ElemType, ulong Offset, ulong Size, string Dimensions, string Strides, string? Distributed)
+public record BufferRenderInfo(string Name, string ElemType, int ElemSize, int Rank, ulong Offset, Expr Size, bool IsFixedDimensions, bool IsFixedStrides, Expr[] Dimensions, string DimensionsStr, Expr[] Strides, string StridesStr, string? Distributed)
 {
 }
 
-public record KernelMainModel(TIR.PrimFunction PrimFunction, TIR.Buffer[] RDataBuffers, CpuTargetOptions Options, ulong Alignment, ulong DataSize, ulong RDataSize)
+public record KernelMainModel(TIR.PrimFunction PrimFunction, TIR.Buffer[] RDataBuffers, CpuTargetOptions Options, ulong Alignment, ulong DataSize, ulong RDataSize, ulong LocalRdataPoolSize)
 {
     public BufferRenderInfo GetInfo(TIR.Buffer buffer)
     {
         ulong offset = 0;
         if (buffer.MemSpan.Start is IR.TensorConst tc)
         {
-            offset = tc.Value.Cast<ulong>()[0];
+            offset = tc.Value.ToScalar<ulong>();
         }
 
         var elemType = buffer.ElemType.ToC();
-        var size = ((IR.TensorConst)buffer.MemSpan.Size).Value.Cast<ulong>()[0] / (ulong)buffer.ElemType.SizeInBytes;
-        var dims = KernelUtility.DimensionsToC(buffer.Dimensions);
-        var strides = KernelUtility.StridesToC(buffer.Strides);
+        var rank = buffer.Dimensions.Length;
+        var size = (Dimension)buffer.MemSpan.Size / buffer.ElemType.SizeInBytes;
+        var isFixedDims = buffer.Dimensions.AsValueEnumerable().All(d => d is IR.TensorConst);
+        var isFixedStrides = buffer.Strides.AsValueEnumerable().All(d => d is IR.TensorConst);
+        var dims = KernelUtility.DimensionsTypeToC(isFixedDims, buffer.Dimensions);
+        var strides = KernelUtility.StridesTypeToC(isFixedStrides, buffer.Strides);
         var distributed = buffer.DistributedType == null ? null : KernelUtility.DistributedToC(buffer.DistributedType);
-        return new(buffer.Name, elemType, offset, size, dims, strides, distributed);
+        return new(buffer.Name, elemType, buffer.ElemType.SizeInBytes, rank, offset, size.ToExpr(), isFixedDims, isFixedStrides, buffer.Dimensions.ToArray(), dims, buffer.Strides.ToArray(), strides, distributed);
     }
 }
 
@@ -47,13 +51,8 @@ using namespace nncase::ntt::distributed::shard_policy;
 
     public static string TopoAwareRuntimeDef(CpuTargetOptions options, ulong dataAlign, ulong collective_pool_size)
     {
-        if (options.Hierarchies[0].Any(i => i > 1))
-        {
-            var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/topo_aware_runtime.cshtml", new CpuTargetOptionsModel(options, dataAlign, collective_pool_size)).Result;
-            return content;
-        }
-
-        return string.Empty;
+        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/topo_aware_runtime.cshtml", new CpuTargetOptionsModel(options, dataAlign, collective_pool_size)).Result;
+        return content;
     }
 
     public static string TopologyDef(CpuTargetOptions options)
@@ -69,9 +68,9 @@ using namespace nncase::ntt::distributed::shard_policy;
         return content;
     }
 
-    public static string MakeMain(TIR.PrimFunction primFunction, ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, IEnumerable<TIR.Buffer> rdataBuffers, CpuTargetOptions options)
+    public static string MakeMain(TIR.PrimFunction primFunction, ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, ulong localRdataPoolSize, IEnumerable<TIR.Buffer> rdataBuffers, CpuTargetOptions options)
     {
-        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/thread_main.cpp.cshtml", new KernelMainModel(primFunction, rdataBuffers.ToArray(), options, dataAlign, dataUsage, rdataPoolSize)).Result;
+        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/thread_main.cpp.cshtml", new KernelMainModel(primFunction, rdataBuffers.ToArray(), options, dataAlign, dataUsage, rdataPoolSize, localRdataPoolSize)).Result;
         return content;
     }
 
