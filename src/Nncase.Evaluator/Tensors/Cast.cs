@@ -3,6 +3,7 @@
 
 using System;
 using Nncase.CostModel;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using OrtKISharp;
@@ -12,7 +13,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Cast"/>.
 /// </summary>
-public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter<Cast>, ICostEvaluator<Cast>, IShapeEvaluator<Cast>, IMetricEvaluator<Cast>
+public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter<Cast>, ICostEvaluator<Cast>, IMetricEvaluator<Cast>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Cast cast)
@@ -34,7 +35,7 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     }
 
     /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Cast target, bool iLmode)
+    public string Visit(IPrintOpContext context, Cast target)
     {
         return $"{CompilerServices.Print(target.NewType)}({context.GetArgument(target, Cast.Input)})";
     }
@@ -60,8 +61,6 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
         };
     }
 
-    public Expr Visit(IShapeEvaluateContext context, Cast target) => context.GetArgumentShape(target, Cast.Input);
-
     private IRType Visit(Cast target, TensorType input)
     {
         return new TensorType(target.NewType, input.Shape);
@@ -73,7 +72,7 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
         var ndsbp = new SBP[inType.Placement.Rank];
         for (int i = 0; i < inType.Placement.Rank; i++)
         {
-            if (inType.NdSBP[i] is SBPPartialSum)
+            if (inType.NdSBP[i] is SBPPartial)
             {
                 return invalid;
             }

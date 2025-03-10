@@ -25,9 +25,9 @@ public class UnitTestSpaceToBatchToPad : TransformTestBase
     public static IEnumerable<object[]> TestSpaceToBatchToPadPositiveData =>
         new[]
         {
-            new object[] { new[] { 1, 128, 128, 3 }, new[] { 1, 1 }, new[,] { { 1, 1 }, { 1, 1 } } },
-            new object[] { new[] { 3, 64, 64, 16 }, new[] { 1, 1 }, new[,] { { 2, 2 }, { 0, 3 } } },
-            new object[] { new[] { 3, 32, 32, 16 }, new[] { 1, 1 }, new[,] { { 3, 8 }, { 7, 4 } } },
+            new object[] { new long[] { 1, 128, 128, 3 }, new[] { 1, 1 }, new[,] { { 1, 1 }, { 1, 1 } } },
+            new object[] { new long[] { 3, 64, 64, 16 }, new[] { 1, 1 }, new[,] { { 2, 2 }, { 0, 3 } } },
+            new object[] { new long[] { 3, 32, 32, 16 }, new[] { 1, 1 }, new[,] { { 3, 8 }, { 7, 4 } } },
         };
 
     public static IEnumerable<object[]> TestSpaceToBatchToPadNegativeData =>
@@ -39,7 +39,7 @@ public class UnitTestSpaceToBatchToPad : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestSpaceToBatchToPadPositiveData))]
-    public void TestSpaceToBatchToPadPositive(int[] shape, int[] blockShape, int[,] paddings)
+    public void TestSpaceToBatchToPadPositive(long[] shape, int[] blockShape, int[,] paddings)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = NCHWToNHWC(NN.SpaceToBatch(NHWCToNCHW(a), blockShape, paddings));

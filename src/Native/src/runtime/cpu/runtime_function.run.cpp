@@ -28,7 +28,8 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
 using namespace nncase::ntt::runtime;
 
-result<void> cpu_runtime_function::run(std::span<std::byte *> params) noexcept {
+result<void>
+cpu_runtime_function::run(std::span<thread_inout_desc> inouts) noexcept {
     std::vector<std::thread> blocks;
     timer_record timer_records[24];
     try_var(enable_profiling,
@@ -46,7 +47,7 @@ result<void> cpu_runtime_function::run(std::span<std::byte *> params) noexcept {
                     .bid = bid,
                     .cid = cid,
                     .cpu_id_offset = tid_offset,
-                    .inouts = params.data(),
+                    .inouts = inouts.data(),
                     .rdata = module().rdata().data(),
                     .enable_profiling = enable_profiling,
                     .timer_records = const_cast<timer_record *>(

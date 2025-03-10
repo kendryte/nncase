@@ -13,7 +13,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="FixShape"/>.
 /// </summary>
-public class FixShapeEvaluator : IEvaluator<FixShape>, ITypeInferencer<FixShape>, ICostEvaluator<FixShape>, IShapeEvaluator<FixShape>, IMetricEvaluator<FixShape>
+public class FixShapeEvaluator : IEvaluator<FixShape>, ITypeInferencer<FixShape>, ICostEvaluator<FixShape>, IMetricEvaluator<FixShape>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, FixShape fixShape)
@@ -50,6 +50,4 @@ public class FixShapeEvaluator : IEvaluator<FixShape>, ITypeInferencer<FixShape>
             [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(outputType),
         };
     }
-
-    public Expr Visit(IShapeEvaluateContext context, FixShape target) => context.GetArgument(target, FixShape.Shape);
 }

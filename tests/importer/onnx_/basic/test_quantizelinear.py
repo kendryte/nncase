@@ -34,8 +34,8 @@ def _make_module(in_shape, scale, zp, output_type):
     scale = helper.make_tensor(
         'scale',
         TensorProto.FLOAT,
-        dims=[len(scale)],
-        vals=scale
+        dims=[],
+        vals=[scale]
     )
     inputs.append('scale')
     initializers.append(scale)
@@ -45,8 +45,8 @@ def _make_module(in_shape, scale, zp, output_type):
         zero_point = helper.make_tensor(
             'zero_point',
             output_type,
-            dims=[len(zp)],
-            vals=zp
+            dims=[],
+            vals=[zp]
         )
         inputs.append('zero_point')
         initializers.append(zero_point)
@@ -82,11 +82,11 @@ in_shapes = [
 ]
 
 scales = [
-    [0.02],
+    0.02,
 ]
 
 zero_points = [
-    [100],
+    100,
 ]
 
 output_types = [

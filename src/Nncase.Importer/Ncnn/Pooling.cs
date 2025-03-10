@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Buffers;
 using Nncase.IR.F;
@@ -42,9 +43,9 @@ public partial class NcnnImporter
             1 => (ReduceOp.Mean, 0f),
             _ => throw new NotSupportedException($"Unsupported pooling type: {poolingType}."),
         };
-        var filter = Tensor.From(new[] { kernelH, kernelW }, new[] { 2 });
-        var stride = Tensor.From(new[] { strideH, strideW }, new[] { 2 });
-        var dilation = Tensor.FromScalar(0, new[] { 2, 2 });
+        var filter = Tensor.From(new[] { kernelH, kernelW }, [2]);
+        var stride = Tensor.From(new[] { strideH, strideW }, [2]);
+        var dilation = Tensor.FromScalar(0, [2, 2]);
 
         if (globalPooling)
         {
@@ -52,7 +53,7 @@ public partial class NcnnImporter
         }
         else if (adaptivePooling)
         {
-            var padding = Tensor.FromScalar(0, new[] { 2, 2 });
+            var padding = Tensor.FromScalar(0, [2, 2]);
             var inShape = Tensors.ShapeOf(input);
             var w = inShape[3];
             var h = inShape[2];
@@ -65,32 +66,32 @@ public partial class NcnnImporter
         }
         else
         {
-            Expr[] paddingH;
-            Expr[] paddingW;
+            Dimension[] paddingH;
+            Dimension[] paddingW;
 
             if (padMode == 1)
             {
                 // valid padding
-                paddingH = new Expr[] { padTop, padBottom };
-                paddingW = new Expr[] { padLeft, padRight };
+                paddingH = [padTop, padBottom];
+                paddingW = [padLeft, padRight];
             }
             else
             {
-                var inShape = Tensors.ShapeOf(input);
+                var inShape = input.CheckedShape;
                 var w = inShape[3];
                 var h = inShape[2];
 
                 if (padMode == 0)
                 {
                     // full padding
-                    var tailW = (w + padLeft + padRight - kernelW) % strideW;
-                    var tailH = (h + padTop + padBottom - kernelH) % strideH;
+                    var tailW = ((w + padLeft + padRight - kernelW) % strideW).ToExpr();
+                    var tailH = ((h + padTop + padBottom - kernelH) % strideH).ToExpr();
 
-                    var tailPadW = IR.F.Math.Select(IR.F.Math.Equal(tailW, 0), 0, tailW);
-                    var tailPadH = IR.F.Math.Select(IR.F.Math.Equal(tailH, 0), 0, tailH);
+                    var tailPadW = IR.F.Math.Select(IR.F.Math.Equal(tailW, 0L), 0L, tailW);
+                    var tailPadH = IR.F.Math.Select(IR.F.Math.Equal(tailH, 0L), 0L, tailH);
 
-                    paddingH = new Expr[] { padTop, padBottom + tailPadH };
-                    paddingW = new Expr[] { padLeft, padRight + tailPadW };
+                    paddingH = [padTop, padBottom + tailPadH];
+                    paddingW = [padLeft, padRight + tailPadW];
                 }
                 else if (padMode is 2 or 3)
                 {
@@ -101,14 +102,14 @@ public partial class NcnnImporter
                     if (padMode == 2)
                     {
                         // tensorflow padding=SAME or onnx padding=SAME_UPPER
-                        paddingH = new Expr[] { padH / 2, padH - (padH / 2) };
-                        paddingW = new Expr[] { padW / 2, padW - (padW / 2) };
+                        paddingH = [padH / 2, padH - (padH / 2)];
+                        paddingW = [padW / 2, padW - (padW / 2)];
                     }
                     else
                     {
                         // onnx padding=SAME_LOWER
-                        paddingH = new Expr[] { padH - (padH / 2), padH / 2 };
-                        paddingW = new Expr[] { padW - (padW / 2), padW / 2 };
+                        paddingH = [padH - (padH / 2), padH / 2];
+                        paddingW = [padW - (padW / 2), padW / 2];
                     }
                 }
                 else
@@ -117,7 +118,7 @@ public partial class NcnnImporter
                 }
             }
 
-            var padding = Util.ConcatPadding(paddingH, paddingW);
+            var padding = TypeInference.ConcatPadding(paddingH, paddingW);
             pooling = NN.ReduceWindow2D(reduceOp, input, initValue, filter, stride, padding, dilation, false, avgpoolCountIncludePad);
         }
 

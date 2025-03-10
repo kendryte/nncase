@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 
 namespace Nncase.Evaluator;
@@ -22,6 +23,12 @@ public interface ITypeInferenceContext
     /// <param name="parameter">Parameter.</param>
     /// <returns>The argument expression.</returns>
     Expr GetArgument(Op op, ParameterInfo parameter);
+
+    Expr GetDimensionArgument(Op op, ParameterInfo parameter)
+    {
+        var arg = GetArgument(op, parameter);
+        return CompilerServices.FastSimplifyForDimension(arg);
+    }
 
     /// <summary>
     /// Get arguments expression.

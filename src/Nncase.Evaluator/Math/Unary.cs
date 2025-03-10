@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using Nncase.CostModel;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Math;
 using OrtKISharp;
@@ -13,7 +14,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Unary"/>.
 /// </summary>
-public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEvaluator<Unary>, IOpPrinter<Unary>, IShapeEvaluator<Unary>, IMetricEvaluator<Unary>
+public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEvaluator<Unary>, IOpPrinter<Unary>, IMetricEvaluator<Unary>
 {
     public static IValue InferValue(Tensor input_tensor, UnaryOp unaryOp)
     {
@@ -112,25 +113,27 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
     }
 
     /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Unary target, bool iLmode)
+    public string Visit(IPrintOpContext context, Unary target)
     {
-        var op_str = target.UnaryOp switch
+        var shortName = target.UnaryOp switch
         {
             UnaryOp.BitwiseNot => "!",
             UnaryOp.LogicalNot => "!",
-            var op => op.ToString(),
+            UnaryOp.Neg => "-",
+            _ => null,
         };
-        if (!iLmode)
+
+        if (context.Flags.HasFlag(PrinterFlags.Inline))
         {
-            return $"{op_str}({string.Join(", ", target.Parameters.Select(p => p.Name + ": " + context.GetArgument(target, p).Serialize()))})";
+            if (shortName is not null)
+            {
+                return $"{shortName}{context.GetArgument(target, Unary.Input)}";
+            }
+
+            return $"{target.UnaryOp}({context.GetArgument(target, Unary.Input)})";
         }
 
-        throw new NotSupportedException("ILmode = true");
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Unary target)
-    {
-        return context.GetArgumentShape(target, Unary.Input);
+        return context.GetDefault(target);
     }
 
     private static IRType Visit(TensorType input)
@@ -144,7 +147,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         var ndsbp = new SBP[inType.Placement.Rank];
         for (int i = 0; i < inType.Placement.Rank; i++)
         {
-            if (inType.NdSBP[i] is SBPPartialSum && unaryOp != UnaryOp.Neg)
+            if (inType.NdSBP[i] is SBPPartial && unaryOp != UnaryOp.Neg)
             {
                 return invalid;
             }

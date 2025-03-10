@@ -19,20 +19,20 @@ namespace Nncase.Tests.Rules.NeutralTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestFoldConv2DAddMul : TransformTestBase
 {
-    public static readonly TheoryData<int[], (int, int), (int, int)> FoldConv2DAddMulPositiveData = new()
+    public static readonly TheoryData<long[], (int, int), (int, int)> FoldConv2DAddMulPositiveData = new()
     {
-        { new[] { 1, 256, 56, 56 }, (1, 1), (0, 0) },
-        { new[] { 1, 32, 64, 64 }, (1, 1), (0, 0) },
+        { [1, 256, 56, 56], (1, 1), (0, 0) },
+        { [1, 32, 64, 64], (1, 1), (0, 0) },
     };
 
-    public static readonly TheoryData<int[], (int, int), (int, int)> FoldConv2DAddMulNegativeData = new()
+    public static readonly TheoryData<long[], (int, int), (int, int)> FoldConv2DAddMulNegativeData = new()
     {
-        { new[] { 1, 32, 56, 56 }, (3, 3), (1, 1) },
+        { [1, 32, 56, 56], (3, 3), (1, 1) },
     };
 
     [Theory]
     [MemberData(nameof(FoldConv2DAddMulPositiveData))]
-    public void TestPositive(int[] shape, (int KernelH, int KernelW) kernel, (int PadH, int PadW) pad)
+    public void TestPositive(long[] shape, (int KernelH, int KernelW) kernel, (int PadH, int PadW) pad)
     {
         // note shape is nchw
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));
@@ -75,7 +75,7 @@ public class UnitTestFoldConv2DAddMul : TransformTestBase
     [Fact]
     public void TestPositive2()
     {
-        int[] shape = new[] { 1, 224, 224, 3 };
+        long[] shape = [1, 224, 224, 3];
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));
         Expr rootPre;
         {
@@ -138,7 +138,7 @@ public class UnitTestFoldConv2DAddMul : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldConv2DAddMulNegativeData))]
-    public void TestNegative(int[] shape, (int KernelH, int KernelW) kernel, (int PadH, int PadW) pad)
+    public void TestNegative(long[] shape, (int KernelH, int KernelW) kernel, (int PadH, int PadW) pad)
     {
         // note shape is nchw
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));

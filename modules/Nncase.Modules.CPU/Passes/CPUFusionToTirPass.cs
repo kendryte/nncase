@@ -8,6 +8,7 @@ using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.Passes.Analysis;
@@ -28,7 +29,7 @@ public sealed class CpuBufferSizeCalculator : BufferSchedule.BufferSizeCalculato
 {
     protected override Result VisitCall(Call expr)
     {
-        if (expr is Call { Target: IR.CPU.Boxing boxing } && boxing.NewType is TensorType ttype)
+        if (expr is Call { Target: IR.Distributed.Boxing boxing } && boxing.NewType is TensorType ttype)
         {
             var res = VisitType(ttype);
             return new(0, res.Shape, res.Stride);
@@ -118,12 +119,15 @@ internal sealed class CPUFusionToTirPass : ModulePass
                 var memCapacity = _compileOptions.TargetOptions is CpuTargetOptions copt ? copt.HierarchySizes[0] : throw new ArgumentException("TargetOptions is not CpuTargetOptions");
                 var visitor = new KernelToTIRVisitor(primBody, deviceFuncs, fusionCheckCache, new BufferSchedule.BufferScheduler(memCapacity), new BufferSchedule.LifeTimeCollector(new CpuLifeTimeUpdater(), new CpuBufferSizeCalculator()));
                 visitor.Convert(post);
-                var primFunc = T.PrimFunc(post.Name, post.ModuleKind, visitor.InputBuffers.Concat(visitor.OutputBuffers).ToArray()).Body(primBody.ToArray()).Build();
+                var dimVars = visitor.DimVars.ToArray();
+                var primFunc = T.PrimFunc(post.Name, post.ModuleKind, dimVars.Cast<Expr>().Concat(visitor.InputBuffers).Concat(visitor.OutputBuffers).ToArray()).Body(primBody.ToArray()).Build();
                 primFunc.SchedResult.DataUsage = visitor.DataUsage;
                 primFunc.SchedResult.DataAlign = Math.Max(8, visitor.MaxDTypeSize);
-                var primWrapper = new PrimFunctionWrapper(primFunc, visitor.InputBuffers.Count());
+                var primWrapper = new PrimFunctionWrapper(primFunc, dimVars.Length + visitor.InputBuffers.Count());
                 module.Replace(i, primWrapper);
                 kernelFuncs.Add(primWrapper);
+
+                AddDimVarsToWrapperCallers(primWrapper, dimVars, visitor.OutputBuffers);
             }
         }
 
@@ -138,5 +142,18 @@ internal sealed class CPUFusionToTirPass : ModulePass
         }
 
         return Task.FromResult(module);
+    }
+
+    private void AddDimVarsToWrapperCallers(PrimFunctionWrapper primWrapper, IEnumerable<Var> dimVars, IEnumerable<TIR.Buffer> outputBuffers)
+    {
+        var callers = primWrapper.Users.OfType<Call>().ToArray();
+        var outputBufferShapes = outputBuffers.Select(x => (x.ElemType, Shape: new Shape(x.Dimensions).ToValueArrayExpr())).ToArray();
+        foreach (var caller in callers)
+        {
+            var outputAllocs = outputBufferShapes.Select(x => IR.F.Buffer.Uninitialized(x.ElemType, TIR.MemoryLocation.Data, x.Shape));
+            var newArgs = dimVars.Cast<Expr>().Concat(caller.Arguments.ToArray()).Concat(outputAllocs).ToArray();
+            var newCaller = caller.With(arguments: newArgs);
+            IRHelpers.ReplaceAllUsesWith(caller, newCaller);
+        }
     }
 }

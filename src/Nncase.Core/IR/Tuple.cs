@@ -36,7 +36,7 @@ public sealed class Tuple : Expr, ITuple, IEquatable<Tuple?>
     /// <inheritdoc/>
     public int Count => Fields.Length;
 
-    public Expr this[int index] => Fields[index];
+    public new Expr this[int index] => Fields[index];
 
     /// <summary>
     /// cast the value tuple to ir array.

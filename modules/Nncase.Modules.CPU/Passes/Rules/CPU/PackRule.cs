@@ -386,7 +386,7 @@ public sealed class PackMatMul : PackRule
         }
     }
 
-    private sealed record RuleContext(List<Expr> Results, Expr Lhs, Expr Rhs, Expr Candidate, IReadOnlyList<int> LhsShape, IReadOnlyList<int> RhsShape)
+    private sealed record RuleContext(List<Expr> Results, Expr Lhs, Expr Rhs, Expr Candidate, IReadOnlyList<long> LhsShape, IReadOnlyList<long> RhsShape)
     {
     }
 }
@@ -486,7 +486,7 @@ public sealed class PackBinary : PackRule
         return rets;
     }
 
-    public IEnumerable<int[]> GeneratePackAxes(int[] shape)
+    public IEnumerable<int[]> GeneratePackAxes(long[] shape)
     {
         if (shape.Length == 0 || (shape.Length == 1 && shape[0] == 1))
         {
@@ -689,7 +689,7 @@ public sealed class PackConv2D : PackRule
         IsTensorConst("groups"),
         IsTensorConst("fusedClamp"));
 
-    public static Expr AddCandidate(Expr input, Expr weights, Expr bias, int[] strides, int[] padding, int[] wShape, int[] outShape)
+    public static Expr AddCandidate(Expr input, Expr weights, Expr bias, int[] strides, int[] padding, long[] wShape, long[] outShape)
     {
         var col = IR.F.CPU.Im2col(input, new[] { wShape[2], wShape[3] }, strides, padding);
         var newW = IR.F.Tensors.Reshape(weights, new[] { wShape[0], wShape[1] * wShape[2] * wShape[3] });
@@ -704,10 +704,12 @@ public sealed class PackConv2D : PackRule
         return IR.F.Tensors.Transpose(IR.F.Tensors.Reshape(add, new[] { outShape[1], outShape[0], outShape[2], outShape[3] }), new[] { 1, 0, 2, 3 });
     }
 
-    public static Expr AddPackedCandidate(Expr input, Expr weights, Expr bias, int[] strides, int[] padding, int[] wShape, int[] outShape, int lane)
+    public static Expr AddPackedCandidate(Expr input, Expr weights, Expr bias, int[] strides, int[] padding, long[] wShape, long[] outShape, int lane)
     {
-        var col = IR.F.CPU.Im2col(IR.F.CPU.Pack(input, new[] { lane }, new[] { 1 }), new[] { wShape[2], wShape[3] }, strides, padding, new[] { 1 }, new[] { 0 });
-        var newW = IR.F.Tensors.Reshape(IR.F.CPU.Pack(weights, new[] { lane }, new[] { 1 }), new[] { wShape[0], wShape[1] / lane * wShape[2] * wShape[3] });
+        var paddedInput = PackUtility.PadForPack(input, input.CheckedShape.ToValueArray(), new[] { 1 }, new[] { lane }, 0f, out _);
+        var col = IR.F.CPU.Im2col(IR.F.CPU.Pack(paddedInput, new[] { lane }, new[] { 1 }), new[] { wShape[2], wShape[3] }, strides, padding, new[] { 1 }, new[] { 0 });
+        var paddedW = PackUtility.PadForPack(weights, wShape, new[] { 1 }, new[] { lane }, 0f, out _);
+        var newW = IR.F.Tensors.Reshape(IR.F.CPU.Pack(paddedW, new[] { lane }, new[] { 1 }), new[] { wShape[0], MathUtility.CeilDiv(wShape[1], lane) * wShape[2] * wShape[3] });
         var matmul = IR.F.CPU.PackedMatMul(newW, col, new[] { 1 }, new[] { 0 }, new[] { 0 }, new[] { 0 }); // [oc, b*oh*ow]
         var newBias = IR.F.Tensors.Reshape(bias, new[] { wShape[0], 1 });
         var add = matmul + newBias;
@@ -764,16 +766,16 @@ public sealed class PackReshape : PackRule
         var rets = new List<Expr>();
 
         var input = (Expr)result["input"];
-        var newShape = ((TensorConst)result["newShape"]).Value.ToArray<int>();
+        var newShape = ((TensorConst)result["newShape"]).Value.ToArray<long>();
         var inShape = input.CheckedShape.ToValueArray();
 
         // 1. find the mapping transforms
-        if (!PackUtility.TryGetShapeMapMatrix(inShape, newShape, out var mat))
+        if (!IRUtility.TryGetShapeMapMatrix(inShape, newShape, out var mat))
         {
             return new List<Expr> { };
         }
 
-        var (forwardDict, backwardDict) = PackUtility.ShapeMapMatrixAsDict(mat);
+        var (forwardDict, backwardDict) = IRUtility.ShapeMapMatrixAsDict(mat);
 
         void AddCandidate(int[] packedAxes, int[] lanes)
         {

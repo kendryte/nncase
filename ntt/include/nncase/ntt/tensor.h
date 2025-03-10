@@ -44,7 +44,8 @@ struct fixed_tensor_alike_type<basic_tensor<T, Shape, Strides, MaxSize, IsView>,
 
 namespace detail {
 template <class T, class Shape, class Strides, size_t MaxSize, bool IsView,
-          bool IsFixedShape = is_fixed_dims_v<Shape> &&is_fixed_dims_v<Strides>>
+          bool IsFixedShape =
+              is_fixed_dims_v<Shape> && is_fixed_dims_v<Strides>>
 class tensor_impl;
 
 // dynamic tensor
@@ -98,7 +99,8 @@ class tensor_impl<T, Shape, Strides, MaxSize, true, false>
         : storage_type(std::in_place, std::move(buffer)),
           size_impl_type(shape, strides) {}
     tensor_impl(buffer_type buffer, Shape shape)
-        : tensor_impl(std::move(buffer), shape, default_strides(shape)) {}
+        : tensor_impl(std::move(buffer), shape,
+                      default_strides_with_type<Strides>(shape)) {}
 };
 
 // fixed view
@@ -238,8 +240,8 @@ class basic_tensor
 
     template <size_t... Axes>
     constexpr auto squeeze(fixed_shape<Axes...> axes) noexcept {
-        constexpr auto new_shape = squeeze_shape(axes, shape());
-        constexpr auto new_strides = squeeze_strides(axes, strides());
+        auto new_shape = squeeze_shape(axes, shape());
+        auto new_strides = squeeze_strides(axes, strides());
         return tensor_view<T, std::decay_t<decltype(new_shape)>,
                            std::decay_t<decltype(new_strides)>>(
             buffer(), new_shape, new_strides);

@@ -57,10 +57,15 @@ public sealed partial class OnnxImporter : BaseImporter
 
         var originInputs = _graph.Input
             .Where(n => !_constTensors.ContainsKey(n.Name));
-        var createdInputs = originInputs.Select(n => new Var(n.Name, GetIRType(n))).ToArray();
         _dynVarMap = _graph.Input.SelectMany(input => input.Type.TensorType.Shape.Dim.Where(d => IsDynamicDim(d)))
-            .Select(v => v.DimParam).ToHashSet().Select(v => new Var(v, new TensorType(DataTypes.Int32, Shape.Scalar)))
+            .Select(v => v.DimParam).ToHashSet().Select(v =>
+            {
+                var var = new Var(v, TensorType.Scalar(DataTypes.Int64));
+                var.Metadata.Range = new(0, 512); // FIX ME: Shape bucket
+                return var;
+            })
             .ToDictionary(v => v.Name, v => v);
+        var createdInputs = originInputs.Select(n => new Var(n.Name, GetIRType(n))).ToArray();
         var varMap = originInputs
             .Select((v, i) => (createdInputs[i], GetOriginShape(v)))
             .ToDictionary(tup => tup.Item1, tup => tup.Item2);

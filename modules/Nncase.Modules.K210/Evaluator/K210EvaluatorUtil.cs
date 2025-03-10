@@ -106,7 +106,7 @@ public static class K210EvaluatorUtil
         return ComputeSize(input.CheckedShape);
     }
 
-    public static int ComputeSize(int[] shape)
+    public static int ComputeSize(long[] shape)
     {
         return shape.Aggregate(1, (sum, x) => sum * x);
     }
@@ -116,7 +116,7 @@ public static class K210EvaluatorUtil
         return shape.Prod().FixedValue;
     }
 
-    public static int Linear_index(int[] shape, int[] index)
+    public static int Linear_index(long[] shape, int[] index)
     {
         int newIndex = index[0];
         for (int i = 1; i < shape.Length; i++)
@@ -127,7 +127,7 @@ public static class K210EvaluatorUtil
         return newIndex;
     }
 
-    public static int[] GetDefaultStrides(int[] shape)
+    public static int[] GetDefaultStrides(long[] shape)
     {
         var strides = new int[shape.Length];
         var dataSize = 1;

@@ -17,7 +17,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Split"/>.
 /// </summary>
-public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEvaluator<Split>, IShapeEvaluator<Split>, IMetricEvaluator<Split>
+public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEvaluator<Split>, IMetricEvaluator<Split>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Split target)
@@ -46,15 +46,6 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
         };
     }
 
-    public Expr Visit(IShapeEvaluateContext context, Split target)
-    {
-        var inShape = context.GetArgumentShape(target, Split.Input);
-        var axis = ((TensorConst)context.GetArgument(target, Split.Axis)).Value.ToScalar<int>();
-        var sections = ((TensorConst)context.GetArgument(target, Split.Sections)).Value.ToArray<int>();
-        var shapes = sections.Select(section => ShapeExprUtility.Replace(inShape, axis, section)).ToArray();
-        return new IR.Tuple(shapes);
-    }
-
     public Metric Visit(IMetricEvaluateContext context, Split target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, Split.Input);
@@ -74,7 +65,7 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
 
             if (input.Shape.IsUnranked)
             {
-                return new TupleType(Enumerable.Repeat((IRType)(input with { Shape = Shape.Unranked }), sections_v.Length));
+                return new TupleType(Enumerable.Repeat((IRType)(input with { Shape = Shape.Unranked }), (int)sections_v.Length));
             }
 
             var inshape = input.Shape.ToArray();
@@ -115,9 +106,9 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
         }
         else
         {
-            splitedShape = splitedShape.Select(s => Dimension.Unknown).ToArray();
+            splitedShape = Enumerable.Repeat(Dimension.Unknown, splitedShape.Rank).ToArray();
         }
 
-        return new TupleType(new IRType[] { input with { Shape = splitedShape } }, true);
+        return new TupleType(new IRType[] { input with { Shape = splitedShape } }, IsVariadic: true);
     }
 }

@@ -18,17 +18,17 @@ public sealed class UnitTestIValue
     public static IEnumerable<object[]> TestTensorValueCountData =>
         new[]
         {
-            new object[] { Tensor.Ones<float>(new int[] { 1, 3, 16, 16 }) },
-            new object[] { Tensor.Zeros<float>(new int[] { 1, 3, 16, 16 }) },
-            new object[] { Tensor.From(new int[] { 1, 2, 3, 4 }, new int[] { 2, 2 }) },
+            new object[] { Tensor.Ones<float>([1, 3, 16, 16]) },
+            new object[] { Tensor.Zeros<float>([1, 3, 16, 16]) },
+            new object[] { Tensor.From(new int[] { 1, 2, 3, 4 }, [2, 2]) },
         };
 
     public static IEnumerable<object[]> TestTupleValueCountData =>
         new[]
         {
-            new object[] { new Tensor[] { Tensor.Ones<float>(new int[] { 1, 3, 16, 16 }) } },
-            new object[] { new Tensor[] { Tensor.Ones<float>(new int[] { 1, 3, 16, 16 }), Tensor.Zeros<float>(new int[] { 1, 3, 16, 16 }) } },
-            new object[] { new Tensor[] { Tensor.Ones<float>(new int[] { 1, 3, 16, 16 }), Tensor.Zeros<float>(new int[] { 1, 3, 16, 16 }), Tensor.From(new int[] { 1, 2, 3, 4 }, new int[] { 2, 2 }) } },
+            new object[] { new Tensor[] { Tensor.Ones<float>([1, 3, 16, 16]) } },
+            new object[] { new Tensor[] { Tensor.Ones<float>([1, 3, 16, 16]), Tensor.Zeros<float>([1, 3, 16, 16]) } },
+            new object[] { new Tensor[] { Tensor.Ones<float>([1, 3, 16, 16]), Tensor.Zeros<float>([1, 3, 16, 16]), Tensor.From(new int[] { 1, 2, 3, 4 }, [2, 2]) } },
         };
 
     [Fact]
@@ -64,7 +64,7 @@ public sealed class UnitTestIValue
     [Fact]
     public void TestTensorValueType()
     {
-        var dims = new int[] { 1, 3, 16, 16 };
+        var dims = new long[] { 1, 3, 16, 16 };
         var a = new TensorValue(Tensor.Ones<float>(dims));
         Assert.Equal(new TensorType(DataTypes.Float32, dims), a.Type);
     }
@@ -80,7 +80,7 @@ public sealed class UnitTestIValue
     [Fact]
     public void TestTensorValueIndex()
     {
-        var ones = Tensor.Ones<float>(new int[] { 1, 3, 16, 16 });
+        var ones = Tensor.Ones<float>([1, 3, 16, 16]);
         var a = new TensorValue(ones);
         Assert.Equal(a, a[0]);
         Assert.Throws<ArgumentOutOfRangeException>(() => a[1]);
@@ -89,7 +89,7 @@ public sealed class UnitTestIValue
     [Fact]
     public void TestTensorValueAsTensor()
     {
-        var ones = Tensor.Ones<float>(new int[] { 1, 3, 16, 16 });
+        var ones = Tensor.Ones<float>([1, 3, 16, 16]);
         var a = new TensorValue(ones);
         Assert.Equal(ones, a.AsTensor());
     }
@@ -97,7 +97,7 @@ public sealed class UnitTestIValue
     [Fact]
     public void TestTensorValueAsTensors()
     {
-        var ones = Tensor.Ones<float>(new int[] { 1, 3, 16, 16 });
+        var ones = Tensor.Ones<float>([1, 3, 16, 16]);
         var a = new TensorValue(ones);
         Assert.Equal(ones, a.AsTensors()[0]);
     }
@@ -105,8 +105,8 @@ public sealed class UnitTestIValue
     [Fact]
     public void TestTensorValueCompare()
     {
-        var ones = Tensor.Ones<float>(new int[] { 1, 3, 16, 16 });
-        var zeros = Tensor.Zeros<float>(new int[] { 1, 3, 16, 16 });
+        var ones = Tensor.Ones<float>([1, 3, 16, 16]);
+        var zeros = Tensor.Zeros<float>([1, 3, 16, 16]);
         var a = new TensorValue(ones);
         var b = a;
         var c = new TensorValue(ones);
@@ -127,7 +127,7 @@ public sealed class UnitTestIValue
     [Fact]
     public void TestTensorValueGetHashCode()
     {
-        var ones = Tensor.Ones<float>(new int[] { 1, 3, 16, 16 });
+        var ones = Tensor.Ones<float>([1, 3, 16, 16]);
         var a = new TensorValue(ones);
         Assert.Equal(HashCode.Combine(ones), a.GetHashCode());
     }
@@ -135,7 +135,7 @@ public sealed class UnitTestIValue
     [Fact]
     public void TestTupleValueType()
     {
-        var dims = new int[] { 1, 3, 16, 16 };
+        var dims = new long[] { 1, 3, 16, 16 };
         var tensor1 = Tensor.Ones<float>(dims);
         var tensor2 = Tensor.Zeros<float>(dims);
         var tensors = new Tensor[] { tensor1, tensor2 };
@@ -154,7 +154,7 @@ public sealed class UnitTestIValue
     [Fact]
     public void TestTupleValueIndex()
     {
-        var dims = new int[] { 1, 3, 16, 16 };
+        var dims = new long[] { 1, 3, 16, 16 };
         var tensor1 = Tensor.Ones<float>(dims);
         var tensor2 = Tensor.Zeros<float>(dims);
         var tensors = new Tensor[] { tensor1, tensor2 };
@@ -166,7 +166,7 @@ public sealed class UnitTestIValue
     [Fact]
     public void TestTupleValueAsTensor()
     {
-        var dims = new int[] { 1, 3, 16, 16 };
+        var dims = new long[] { 1, 3, 16, 16 };
         var tensor1 = Tensor.Ones<float>(dims);
         var tensor2 = Tensor.Zeros<float>(dims);
         var tensors = new Tensor[] { tensor1, tensor2 };
@@ -177,7 +177,7 @@ public sealed class UnitTestIValue
     [Fact]
     public void TestTupleValueAsTensors()
     {
-        var dims = new int[] { 1, 3, 16, 16 };
+        var dims = new long[] { 1, 3, 16, 16 };
         var tensor1 = Tensor.Ones<float>(dims);
         var tensor2 = Tensor.Zeros<float>(dims);
         var tensors = new Tensor[] { tensor1, tensor2 };
@@ -189,8 +189,8 @@ public sealed class UnitTestIValue
     [Fact]
     public void TestTupleValueCompare()
     {
-        var ones = Tensor.Ones<float>(new int[] { 1, 3, 16, 16 });
-        var zeros = Tensor.Zeros<float>(new int[] { 1, 3, 16, 16 });
+        var ones = Tensor.Ones<float>([1, 3, 16, 16]);
+        var zeros = Tensor.Zeros<float>([1, 3, 16, 16]);
         var tensors = new Tensor[] { ones, zeros };
         var a = Value.FromTensors(tensors);
         var b = a;
@@ -204,7 +204,7 @@ public sealed class UnitTestIValue
     [Fact]
     public void TestTupleValueGetHashCode()
     {
-        var ones = Tensor.Ones<float>(new int[] { 1, 3, 16, 16 });
+        var ones = Tensor.Ones<float>([1, 3, 16, 16]);
         var tensors = new Tensor[] { ones, ones };
         var values = tensors.Select(x => new TensorValue(x)).ToArray();
         var a = new TupleValue(values);

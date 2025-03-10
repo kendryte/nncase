@@ -89,9 +89,9 @@ public sealed class UnitTestTIR
     [Fact]
     public void TestForSegment()
     {
-        var count = IR.F.Tensors.Cast(2 / IR.F.Tensors.Cast(2, DataTypes.Float32), DataTypes.Int32);
-        var expect = T.Serial(out _, (0, count));
-        var actual = T.ForSegment(out _, 1, 2, 3);
+        var count = IR.F.Tensors.Cast(2f / IR.F.Tensors.Cast(2, DataTypes.Float32), DataTypes.Int64);
+        var expect = T.Serial(out _, (0L, count));
+        var actual = T.ForSegment(out _, 1L, 2L, 3L);
         Assert.Equal(expect.ToString(), actual.ToString());
     }
 
@@ -183,9 +183,9 @@ public sealed class UnitTestTIR
     [Fact]
     public void TestRange()
     {
-        var expectedStart = int.MinValue;
-        var expectedStop = int.MaxValue;
-        var expectedStep = 1;
+        var expectedStart = long.MinValue;
+        var expectedStop = long.MaxValue;
+        var expectedStep = 1L;
 
         var range = Range.All;
 
@@ -194,25 +194,25 @@ public sealed class UnitTestTIR
         Assert.Equal(expectedStep, range.Step);
 
         var range0 = new Range(0, 1, 1);
-        Assert.Equal(0, range0.Start);
+        Assert.Equal(0L, range0.Start);
 
-        var range1 = range0 + 1;
+        var range1 = range0 + 1L;
 
         Assert.Equal(1, range1.Start.Evaluate().AsTensor().ToScalar<int>());
         Assert.Equal(2, range1.Stop.Evaluate().AsTensor().ToScalar<int>());
         Assert.Equal(1, range1.Step.Evaluate().AsTensor().ToScalar<int>());
 
-        var range2 = range0 - 1;
+        var range2 = range0 - 1L;
         Assert.Equal(-1, range2.Start.Evaluate().AsTensor().ToScalar<int>());
         Assert.Equal(0, range2.Stop.Evaluate().AsTensor().ToScalar<int>());
         Assert.Equal(1, range2.Step.Evaluate().AsTensor().ToScalar<int>());
 
-        var range3 = range0 * 2;
+        var range3 = range0 * 2L;
         Assert.Equal(0, range3.Start.Evaluate().AsTensor().ToScalar<int>());
         Assert.Equal(2, range3.Stop.Evaluate().AsTensor().ToScalar<int>());
         Assert.Equal(1, range3.Step.Evaluate().AsTensor().ToScalar<int>());
 
-        var range4 = range0 / 2;
+        var range4 = range0 / 2L;
         Assert.Equal(0, range4.Start.Evaluate().AsTensor().ToScalar<int>());
         Assert.Equal(0, range4.Stop.Evaluate().AsTensor().ToScalar<int>());
         Assert.Equal(1, range4.Step.Evaluate().AsTensor().ToScalar<int>());

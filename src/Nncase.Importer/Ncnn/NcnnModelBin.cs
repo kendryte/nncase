@@ -26,7 +26,7 @@ internal class NcnnModelBin
     {
         if (!detectType)
         {
-            var tensor = new Tensor<float>(shape);
+            var tensor = new Tensor<float>(shape.ToLongs());
             _stream.ReadExactly(tensor.BytesBuffer);
             return tensor;
         }
@@ -45,7 +45,7 @@ internal class NcnnModelBin
         if (tag == 0x01306B47)
         {
             // half-precision data
-            var tensor = new Tensor<Half>(shape);
+            var tensor = new Tensor<Half>(shape.ToLongs());
             _stream.ReadExactly(tensor.BytesBuffer);
             AlignStream(_stream, tensor.BytesBuffer.Length, 4);
             return tensor.Cast<float>(CastMode.KDefault);
@@ -53,7 +53,7 @@ internal class NcnnModelBin
         else if (tag == 0)
         {
             // raw data
-            var tensor = new Tensor<float>(shape);
+            var tensor = new Tensor<float>(shape.ToLongs());
             _stream.ReadExactly(tensor.BytesBuffer);
             return tensor;
         }

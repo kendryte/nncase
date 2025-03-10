@@ -34,12 +34,12 @@ public class UnitTestDumpQuantError : TestClassBase
             weightsValue.Add(i * 1.0f / (32 * 3 * 3 * 3));
         }
 
-        Expr weights = Tensor.From<float>(weightsValue.ToArray(), new[] { 32, 3, 3, 3 });
+        Expr weights = Tensor.From<float>(weightsValue.ToArray(), [32, 3, 3, 3]);
         weights.Metadata.OutputNames = new string[] { "weight" };
 
         var bias = Normal(DataTypes.Float32, new[] { 32 }).Evaluate().AsTensor();
-        var stride = Tensor.From(new[] { 1, 1 }, new[] { 2 });
-        var dilation = Tensor.From(new[] { 1, 1 }, new[] { 2 });
+        var stride = Tensor.From(new[] { 1, 1 }, [2]);
+        var dilation = Tensor.From(new[] { 1, 1 }, [2]);
         var padding = new[,] { { 0, 0 }, { 0, 0 } };
 
         var conv = Conv2D(input, weights, bias, stride, padding, dilation, PadMode.Constant, 1);
@@ -62,12 +62,12 @@ public class UnitTestDumpQuantError : TestClassBase
             weightsValue.Add(i * 1.0f / (32 * 3 * 3 * 3));
         }
 
-        Expr weights = Tensor.From<float>(weightsValue.ToArray(), new[] { 32, 3, 3, 3 });
+        Expr weights = Tensor.From<float>(weightsValue.ToArray(), [32, 3, 3, 3]);
         weights.Metadata.OutputNames = new string[] { "weight" };
 
         var bias = Normal(DataTypes.Float32, new[] { 32 }).Evaluate().AsTensor();
-        var stride = Tensor.From(new[] { 1, 1 }, new[] { 2 });
-        var dilation = Tensor.From(new[] { 1, 1 }, new[] { 2 });
+        var stride = Tensor.From(new[] { 1, 1 }, [2]);
+        var dilation = Tensor.From(new[] { 1, 1 }, [2]);
         var padding = new[,] { { 0, 0 }, { 0, 0 } };
 
         var conv = Conv2D(input, weights, bias, stride, padding, dilation, PadMode.Constant, 1);
@@ -128,7 +128,7 @@ public class UnitTestDumpQuantError : TestClassBase
                     CompilerServices.InferenceType(var);
                     var shape = var.CheckedShape.Select(d => d.IsUnknown ? 1 : d.FixedValue).ToArray();
 
-                    var shapeSize = 1;
+                    long shapeSize = 1;
                     for (int j = 0; j < shape.Length; j++)
                     {
                         shapeSize *= shape[j];

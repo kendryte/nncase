@@ -73,10 +73,26 @@ public sealed class CpuTargetOptionsCommand : Command
             AllowMultipleArgumentsPerToken = true,
         };
         Add(HierarchySizesOption);
+        HierarchyLatenciesOption = new Option<IEnumerable<int>>(
+            name: "--hierarchy-latencies",
+            description: "the latency of hierarchies.",
+            getDefaultValue: () => new int[] { 10000 })
+        {
+            AllowMultipleArgumentsPerToken = true,
+        };
+        Add(HierarchyLatenciesOption);
+        HierarchyBandWidthsOption = new Option<IEnumerable<int>>(
+            name: "--hierarchy-bandwiths",
+            description: "the bandwidth of hierarchies.",
+            getDefaultValue: () => new int[] { 1 })
+        {
+            AllowMultipleArgumentsPerToken = true,
+        };
+        Add(HierarchyBandWidthsOption);
         MemoryCapacitiesOption = new Option<IEnumerable<int>>(
             name: "--memory-capacities",
             description: "the memory capacity of single core. eg. `32 64` for sram,main",
-            getDefaultValue: () => new int[] { 65536, 2147483647 })
+            getDefaultValue: () => new int[] { 524288, 2147483647 })
         {
             AllowMultipleArgumentsPerToken = true,
         };
@@ -119,6 +135,10 @@ public sealed class CpuTargetOptionsCommand : Command
 
     public Option<IEnumerable<int>> HierarchySizesOption { get; }
 
+    public Option<IEnumerable<int>> HierarchyLatenciesOption { get; }
+
+    public Option<IEnumerable<int>> HierarchyBandWidthsOption { get; }
+
     public Option<IEnumerable<int>> MemoryCapacitiesOption { get; }
 
     public Option<IEnumerable<int>> MemoryBandWidthsOption { get; }
@@ -150,6 +170,8 @@ public sealed class CpuTargetOptionsBinder
             Hierarchies = context.ParseResult.GetValueForOption(_cmd.HierarchiesOption)!.ToArray(),
             HierarchyNames = context.ParseResult.GetValueForOption(_cmd.HierarchyNamesOption)!,
             HierarchySizes = context.ParseResult.GetValueForOption(_cmd.HierarchySizesOption)!.ToArray(),
+            HierarchyLatencies = context.ParseResult.GetValueForOption(_cmd.HierarchyLatenciesOption)!.ToArray(),
+            HierarchyBandWidths = context.ParseResult.GetValueForOption(_cmd.HierarchyBandWidthsOption)!.ToArray(),
             MemoryCapacities = context.ParseResult.GetValueForOption(_cmd.MemoryCapacitiesOption)!.ToArray(),
             MemoryBandWidths = context.ParseResult.GetValueForOption(_cmd.MemoryBandWidthsOption)!.ToArray(),
             DistributedScheme = context.ParseResult.GetValueForOption(_cmd.DistributedSchemeOption)!,

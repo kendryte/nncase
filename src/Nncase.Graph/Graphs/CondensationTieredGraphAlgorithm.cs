@@ -52,6 +52,7 @@ public sealed class CondensationTieredGraphAlgorithm<TGraph, TVertex, TEdge> : A
 
         var dfs = new DepthFirstSearchAlgorithm<TVertex, TEdge>(this, VisitedGraph, new Dictionary<TVertex, GraphColor>(VisitedGraph.VertexCount));
         dfs.TreeEdge += TreeEdge;
+        dfs.ForwardOrCrossEdge += TreeEdge;
         dfs.Compute();
     }
 

@@ -15,7 +15,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="ShapeOf"/>.
 /// </summary>
-public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>, ICostEvaluator<ShapeOf>, IShapeEvaluator<ShapeOf>, IMetricEvaluator<ShapeOf>
+public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>, ICostEvaluator<ShapeOf>, IMetricEvaluator<ShapeOf>
 {
     public IValue Visit(IEvaluateContext context, ShapeOf shape)
     {
@@ -27,14 +27,20 @@ public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>, I
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, ShapeOf target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, ShapeOf.Input);
-        return Visit(context, target, input);
+        var input = context.CheckArgumentType<IRType>(target, ShapeOf.Input);
+        return input switch
+        {
+            TensorType t => Visit(context, target, t),
+            DistributedType d => Visit(context, target, d),
+            AnyType => AnyType.Default,
+            _ => new InvalidType(input.GetType().Name),
+        };
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, ShapeOf target)
     {
-        var outputType = context.GetReturnType<TensorType>();
+        var outputType = context.GetReturnType<IRType>();
 
         return new()
         {
@@ -42,14 +48,9 @@ public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>, I
         };
     }
 
-    public Expr Visit(IShapeEvaluateContext context, ShapeOf target)
-    {
-        return context.GetArgumentShape(target, ShapeOf.Input);
-    }
-
     public Metric Visit(IMetricEvaluateContext context, ShapeOf target)
     {
-        var outputType = context.GetReturnType<TensorType>();
+        var outputType = context.GetReturnType<IRType>();
 
         return new()
         {
@@ -65,6 +66,18 @@ public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>, I
             return new TensorType(DataTypes.Int64, new Shape(input.Shape.Rank));
         }
 
-        return new TensorType(DataTypes.Int64, new Shape(Dimension.Unknown));
+        return new TensorType(DataTypes.Int64, Shape.Unknown(1));
+    }
+
+    private IRType Visit(ITypeInferenceContext context, ShapeOf target, DistributedType input)
+    {
+        var outType = Visit(context, target, input.TensorType);
+        if (outType is not TensorType tensorType)
+        {
+            return new InvalidType("not support input tensor type infer");
+        }
+
+        var ndsbp = Enumerable.Repeat(SBP.B, input.Placement.Rank).ToArray();
+        return new DistributedType(tensorType, ndsbp, input.Placement);
     }
 }

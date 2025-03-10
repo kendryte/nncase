@@ -53,7 +53,7 @@ public class UnitTestEvaluatorTypeInference
         Assert.Equal(expect5, actual5);
 
         var actual7 = TypeInference.CommonType(tupleType1, thenType3);
-        var expect7 = new InvalidType($"Inputs of if should be same IRType Kind, but then:{tupleType1}, else: {thenType3}");
+        var expect7 = AnyType.Default;
         Assert.Equal(expect7, actual7);
     }
 }

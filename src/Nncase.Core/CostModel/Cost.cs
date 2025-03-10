@@ -15,6 +15,8 @@ public static class CostFactorNames
     public static readonly string MemoryStore = "MemoryStore";
 
     public static readonly string CPUCycles = "CPUCycles";
+
+    public static readonly string Comm = "Comm";
 }
 
 /// <summary>
@@ -202,7 +204,7 @@ public static class CostUtility
     {
         return type switch
         {
-            TensorType t => (UInt128)(t.Shape.Aggregate(1D, (acc, x) => acc * (x.IsFixed ? x.FixedValue : 1)) * t.DType.SizeInBytes),
+            TensorType t => (UInt128)t.Shape.ProdWithDynamicAsMaxValue() * (UInt128)t.DType.SizeInBytes,
             TupleType t => t.Fields.Sum(GetMemoryAccess),
             DistributedType t => GetMemoryAccess(Utilities.DistributedUtility.GetDividedTensorType(t)),
             _ => 0,
@@ -218,7 +220,7 @@ public static class CostUtility
     {
         return type switch
         {
-            TensorType t => (UInt128)Math.Ceiling((float)t.Shape.Aggregate(1D, (acc, x) => acc * (x.IsFixed ? x.FixedValue : 1)) * t.DType.SizeInBytes * bits / 8),
+            TensorType t => (UInt128)Math.Ceiling((float)t.Shape.ProdWithDynamicAsMaxValue() * t.DType.SizeInBytes * bits / 8),
             TupleType t => t.Fields.Sum(x => GetFakeMemoryAccess(x, bits)),
             _ => 0,
         };
@@ -228,7 +230,7 @@ public static class CostUtility
     {
         return type switch
         {
-            TensorType t => (UInt128)(t.Shape.Aggregate(1D, (acc, x) => acc * (x.IsFixed ? x.FixedValue : 1)) * cyclesPerElement),
+            TensorType t => (UInt128)(t.Shape.ProdWithDynamicAsMaxValue() * cyclesPerElement),
             TupleType t => t.Fields.Sum(GetMemoryAccess),
             DistributedType t => GetCPUCycles(Utilities.DistributedUtility.GetDividedTensorType(t)),
             _ => 0,
@@ -336,7 +338,7 @@ public static class CostUtility
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
-            [CostFactorNames.CPUCycles] = 1,
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret, 1),
         };
     }
 }

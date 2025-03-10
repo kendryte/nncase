@@ -34,7 +34,7 @@ public partial class Tensor
             throw new InvalidOperationException("This tensor is not a scalar.");
         }
 
-        return tensor[0];
+        return tensor[Array.Empty<long>()];
     }
 
     /// <summary>

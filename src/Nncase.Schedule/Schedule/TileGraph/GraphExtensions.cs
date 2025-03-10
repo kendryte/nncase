@@ -116,6 +116,37 @@ public static class GraphExtensions
         return merger.Visit(graph);
     }
 
+    public static List<MergePoint> GetMergePoints(this TieredTileGraph graph)
+    {
+        var mergePoints = new List<MergePoint>();
+        if (graph.Level != -1)
+        {
+            throw new InvalidOperationException("only can merge at top level!");
+        }
+
+        var children = graph.Clusters.OfType<TieredTileGraph>().ToArray();
+        foreach (var producer in children)
+        {
+            foreach (var comsumer in children)
+            {
+                if (ReferenceEquals(producer, comsumer))
+                {
+                    continue;
+                }
+
+                foreach (var edge in graph.Edges)
+                {
+                    if (comsumer.ContainsVertex(edge.Source) && producer.ContainsVertex(edge.Target))
+                    {
+                        mergePoints.Add(new(edge.Target, edge.Source, producer.Level));
+                    }
+                }
+            }
+        }
+
+        return mergePoints;
+    }
+
     public static void Walk(this TieredTileGraph graph, Action<ITileable> func, bool postOrder = false)
     {
         if (!postOrder)

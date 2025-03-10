@@ -22,20 +22,20 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
 
         var outRank = context.CurrentCall.CheckedShape.Rank;
         var outLanes = Array.Empty<int>();
-        var outShape = Array.Empty<int>();
+        var outShape = Array.Empty<long>();
         var axes = Array.Empty<int>();
         var (lm, lk) = target.TransposeA ? (lhs.Rank - target.RhsPackedAxes.Count - 1, lhs.Rank - target.RhsPackedAxes.Count - 2) : (lhs.Rank - target.LhsPackedAxes.Count - 2, lhs.Rank - target.LhsPackedAxes.Count - 1);
         var (rk, rn) = target.TransposeB ? (rhs.Rank - target.RhsPackedAxes.Count - 1, rhs.Rank - target.RhsPackedAxes.Count - 2) : (rhs.Rank - target.RhsPackedAxes.Count - 2, rhs.Rank - target.RhsPackedAxes.Count - 1);
         if (target.LhsPackedAxes.Count == 0 && target.RhsPackedAxes.Count == 1)
         {
             outLanes = new[] { (int)rhs.Shape[^1] };
-            outShape = new[] { (int)lhs.Shape[lm], (int)rhs.Shape[rn] };
+            outShape = new[] { lhs.Shape[lm], rhs.Shape[rn] };
             axes = new[] { outRank - 1 };
         }
         else if (target.LhsPackedAxes.Count == 1 && target.RhsPackedAxes.Count == 0)
         {
             outLanes = new[] { (int)lhs.Shape[^1] };
-            outShape = new[] { (int)lhs.Shape[lm], (int)rhs.Shape[rn] };
+            outShape = new[] { lhs.Shape[lm], rhs.Shape[rn] };
             axes = new[] { outRank - 2 };
         }
         else if (target.LhsPackedAxes.Count == 1 && target.RhsPackedAxes.Count == 1)
@@ -51,24 +51,24 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
                 axes = new[] { outRank - 2, outRank - 1 };
             }
 
-            outShape = new[] { (int)lhs.Shape[lm], (int)rhs.Shape[rn] };
+            outShape = new[] { lhs.Shape[lm], rhs.Shape[rn] };
         }
         else if (target.LhsPackedAxes.Count == 1 && target.RhsPackedAxes.Count == 2)
         {
             outLanes = new[] { (int)rhs.Shape[^1] };
-            outShape = new[] { (int)lhs.Shape[lm], (int)rhs.Shape[rn] };
+            outShape = new[] { lhs.Shape[lm], rhs.Shape[rn] };
             axes = new[] { outRank - 1 };
         }
         else if (target.LhsPackedAxes.Count == 2 && target.RhsPackedAxes.Count == 1)
         {
             outLanes = new[] { (int)lhs.Shape[^2] };
-            outShape = new[] { (int)lhs.Shape[lm], (int)rhs.Shape[rn] };
+            outShape = new[] { lhs.Shape[lm], rhs.Shape[rn] };
             axes = new[] { outRank - 2 };
         }
         else if (target.LhsPackedAxes.Count == 2 && target.RhsPackedAxes.Count == 2)
         {
             outLanes = new[] { (int)lhs.Shape[^2], (int)rhs.Shape[^1] };
-            outShape = new[] { (int)lhs.Shape[lm], (int)rhs.Shape[rn] };
+            outShape = new[] { lhs.Shape[lm], rhs.Shape[rn] };
             axes = new[] { outRank - 2, outRank - 1 };
         }
         else
@@ -79,7 +79,7 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
         var maxRank = System.Math.Max(lhs.Shape.Length - target.LhsPackedAxes.Count, rhs.Shape.Length - target.RhsPackedAxes.Count);
         outShape = Enumerable.Repeat(1L, maxRank - lhs.Shape.Length + target.LhsPackedAxes.Count).Concat(lhs.Shape.SkipLast(2 + target.LhsPackedAxes.Count)).
          Zip(Enumerable.Repeat(1L, maxRank - rhs.Shape.Length + target.RhsPackedAxes.Count).Concat(rhs.Shape.SkipLast(2 + target.RhsPackedAxes.Count))).
-         Select(p => (int)System.Math.Max(p.First, p.Second)).
+         Select(p => System.Math.Max(p.First, p.Second)).
          Concat(outShape).ToArray();
 
         foreach (var axis in target.LhsPackedAxes.Reverse())

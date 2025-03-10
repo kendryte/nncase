@@ -37,6 +37,8 @@ class CpuTargetOptions:
     Hierarchies: List[List[int]]
     HierarchyNames: str
     HierarchySizes: List[int]
+    HierarchyLatencies: List[int]
+    HierarchyBandWidths: List[int]
     MemoryCapacities: List[int]
     MemoryBandWidths: List[int]
     DistributedScheme: str

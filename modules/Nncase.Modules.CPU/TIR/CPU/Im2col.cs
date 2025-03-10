@@ -24,7 +24,7 @@ public sealed partial class Im2col : CPUKernelOp
 
     public static readonly ParameterInfo Output = new(typeof(Im2col), 1, "output", ParameterKind.Input);
 
-    public IRArray<int> Kernel { get; }
+    public IRArray<long> Kernel { get; }
 
     public IRArray<int> Stride { get; }
 

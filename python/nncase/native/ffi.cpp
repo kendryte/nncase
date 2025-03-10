@@ -289,6 +289,14 @@ PYBIND11_MODULE(_nncase, m) {
         []() {},
         py::overload_cast<std::vector<int>>(&cpu_target_options::hierarchy_sizes)) 
       .def_property(
+        "HierarchyLatencies",
+        []() {},
+        py::overload_cast<std::vector<int>>(&cpu_target_options::hierarchy_latencies)) 
+      .def_property(
+        "HierarchyBandWidths",
+        []() {},
+        py::overload_cast<std::vector<int>>(&cpu_target_options::hierarchy_band_widths)) 
+      .def_property(
         "MemoryCapacities",
         []() {},
         py::overload_cast<std::vector<int>>(&cpu_target_options::memory_capacities)) 

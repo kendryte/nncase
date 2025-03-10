@@ -27,14 +27,21 @@ If 'XXX' belongs to quantization-related operators such as `FAKE_QUANT`, `DEQUAN
 A: Use `sudo gedit /proc/sys/fs/inotify/max_user_instances` to change 128 to a larger value.
 
 ### 2.3 `RuntimeError: Failed to initialize hostfxr`
+> `RuntimeError: Failed to get hostfxr path.`
 
-A：Need to install dotnet-sdk-7.0.
+A：Need to install dotnet-sdk-7.0. Do not install `dotnet` in `anaconda` virtual environment.
 
 - Linux:
 
     ```shell
     sudo apt-get update
     sudo apt-get install dotnet-sdk-7.0
+    ```
+
+    If you still have problems after installation, maybe you install dotnet in a virtual enviroment, set the environment variables. [dotnet error](https://stackoverflow.com/questions/52695238/whats-the-expected-value-for-dotnet-root-variable-when-installing-dotnet-core-f)
+
+    ```shell
+    export DOTNET_ROOT=/usr/share/dotnet
     ```
 
 - Windows: Refer to MicroSoft official website.

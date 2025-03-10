@@ -18,34 +18,7 @@ public static class IRHelpers
 
     public static void DCE(BaseFunction function)
     {
-        using var exprPin = new ExprPinner(function);
-        var exprs = ExprCollector.Collect(function);
-        var users = new HashSet<Expr>(ReferenceEqualityComparer.Instance);
-
-        void AddUsers(Expr expr)
-        {
-            if (expr is not ExprUser
-                && expr.IsAlive
-                && users.Add(expr))
-            {
-                foreach (var user in expr.Users)
-                {
-                    AddUsers(user);
-                }
-            }
-        }
-
-        foreach (var expr in exprs)
-        {
-            AddUsers(expr);
-        }
-
-        foreach (var user in users)
-        {
-            user.DisposeIfNoUsers();
-        }
-
-        DCESanity(function);
+        GC.Collect();
     }
 
     [Conditional("DEBUG")]
@@ -77,5 +50,10 @@ public static class IRHelpers
         {
             Trace.Assert(user.Users.Any());
         }
+    }
+
+    public static void ReplaceAllUsesWith(Expr old, Expr @new)
+    {
+        old.ReplaceAllUsesWith(@new);
     }
 }

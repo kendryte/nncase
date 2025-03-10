@@ -27,11 +27,11 @@ namespace Nncase.Tests.EvaluatorTest;
 
 public class UnitTestEvaluatorMath : TestClassBase
 {
-    public static readonly TheoryData<int[], int[], int[]> ClampInvalidTypeData = new()
+    public static readonly TheoryData<long[], long[], long[]> ClampInvalidTypeData = new()
     {
-        { new[] { 1, 2, 3, 4 }, new[] { 8 }, new[] { 8 } },
-        { new[] { 1, 2, 3, 4 }, new[] { 4 }, new[] { 8 } },
-        { new[] { 1, 2, 3, 4 }, new[] { 4 }, new[] { 1 } },
+        { [1, 2, 3, 4], [8], [8] },
+        { [1, 2, 3, 4], [4], [8] },
+        { [1, 2, 3, 4], [4], [1] },
     };
 
     [Fact]
@@ -117,7 +117,7 @@ public class UnitTestEvaluatorMath : TestClassBase
             var b = new bool[] { true, false, false, true, true, false, false, true };
             if (op == BinaryOp.LogicalAnd || op == BinaryOp.LogicalOr || op == BinaryOp.LogicalXor)
             {
-                TestBinaryRunNormal(op, OrtKISharp.Tensor.FromScalar(a), OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 }), a, Tensor.From(b, new[] { 2, 4 }));
+                TestBinaryRunNormal(op, OrtKISharp.Tensor.FromScalar(a), OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 }), a, Tensor.From(b, [2, 4]));
             }
         }
 
@@ -130,7 +130,7 @@ public class UnitTestEvaluatorMath : TestClassBase
             // if (op != BinaryOp.LogicalAnd && op != BinaryOp.LogicalOr && op != BinaryOp.LogicalXor)
             if (op == BinaryOp.LeftShift || op == BinaryOp.RightShift)
             {
-                TestBinaryRunNormal(op, OrtKISharp.Tensor.FromScalar(a), OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 }), a, Tensor.From(b, new[] { 2, 4 }));
+                TestBinaryRunNormal(op, OrtKISharp.Tensor.FromScalar(a), OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 }), a, Tensor.From(b, [2, 4]));
             }
         }
 
@@ -141,7 +141,7 @@ public class UnitTestEvaluatorMath : TestClassBase
             var b = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
             if (op != BinaryOp.LogicalAnd && op != BinaryOp.LogicalOr && op != BinaryOp.LogicalXor && op != BinaryOp.LeftShift && op != BinaryOp.RightShift)
             {
-                TestBinaryRunNormal(op, OrtKISharp.Tensor.FromScalar(a), OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 }), a, Tensor.From(b, new[] { 2, 4 }));
+                TestBinaryRunNormal(op, OrtKISharp.Tensor.FromScalar(a), OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 }), a, Tensor.From(b, [2, 4]));
             }
         }
 
@@ -152,7 +152,7 @@ public class UnitTestEvaluatorMath : TestClassBase
             var b = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
             if (op != BinaryOp.LogicalAnd && op != BinaryOp.LogicalOr && op != BinaryOp.LogicalXor && op != BinaryOp.LeftShift && op != BinaryOp.RightShift)
             {
-                TestBinaryRunNormal(op, OrtKISharp.Tensor.FromScalar(a), OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 }), a, Tensor.From(b, new[] { 2, 4 }));
+                TestBinaryRunNormal(op, OrtKISharp.Tensor.FromScalar(a), OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 }), a, Tensor.From(b, [2, 4]));
             }
         }
 
@@ -163,7 +163,7 @@ public class UnitTestEvaluatorMath : TestClassBase
             var b = new long[] { 1, 2, 3, 4, 5, 6, 7, 8 };
             if (op != BinaryOp.LogicalAnd && op != BinaryOp.LogicalOr && op != BinaryOp.LogicalXor && op != BinaryOp.LeftShift && op != BinaryOp.RightShift)
             {
-                TestBinaryRunNormal(op, OrtKISharp.Tensor.FromScalar(a), OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 }), a, Tensor.From(b, new[] { 2, 4 }));
+                TestBinaryRunNormal(op, OrtKISharp.Tensor.FromScalar(a), OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 }), a, Tensor.From(b, [2, 4]));
             }
         }
     }
@@ -184,7 +184,7 @@ public class UnitTestEvaluatorMath : TestClassBase
             var b = true;
             if (op == BinaryOp.LogicalAnd || op == BinaryOp.LogicalOr || op == BinaryOp.LogicalXor)
             {
-                TestBinaryRunNormal(op, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 }), OrtKISharp.Tensor.FromScalar(b), Tensor.From(a, new[] { 2, 4 }), b);
+                TestBinaryRunNormal(op, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 }), OrtKISharp.Tensor.FromScalar(b), Tensor.From(a, [2, 4]), b);
             }
         }
 
@@ -197,7 +197,7 @@ public class UnitTestEvaluatorMath : TestClassBase
             // if (op != BinaryOp.LogicalAnd && op != BinaryOp.LogicalOr && op != BinaryOp.LogicalXor)
             if (op == BinaryOp.LeftShift || op == BinaryOp.RightShift)
             {
-                TestBinaryRunNormal(op, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 }), OrtKISharp.Tensor.FromScalar(b), Tensor.From(a, new[] { 2, 4 }), b);
+                TestBinaryRunNormal(op, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 }), OrtKISharp.Tensor.FromScalar(b), Tensor.From(a, [2, 4]), b);
             }
         }
 
@@ -208,7 +208,7 @@ public class UnitTestEvaluatorMath : TestClassBase
             var b = 2f;
             if (op != BinaryOp.LogicalAnd && op != BinaryOp.LogicalOr && op != BinaryOp.LogicalXor && op != BinaryOp.LeftShift && op != BinaryOp.RightShift)
             {
-                TestBinaryRunNormal(op, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 }), OrtKISharp.Tensor.FromScalar(b), Tensor.From(a, new[] { 2, 4 }), b);
+                TestBinaryRunNormal(op, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 }), OrtKISharp.Tensor.FromScalar(b), Tensor.From(a, [2, 4]), b);
             }
         }
 
@@ -219,7 +219,7 @@ public class UnitTestEvaluatorMath : TestClassBase
             var b = 2;
             if (op != BinaryOp.LogicalAnd && op != BinaryOp.LogicalOr && op != BinaryOp.LogicalXor && op != BinaryOp.LeftShift && op != BinaryOp.RightShift)
             {
-                TestBinaryRunNormal(op, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 }), OrtKISharp.Tensor.FromScalar(b), Tensor.From(a, new[] { 2, 4 }), b);
+                TestBinaryRunNormal(op, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 }), OrtKISharp.Tensor.FromScalar(b), Tensor.From(a, [2, 4]), b);
             }
         }
 
@@ -230,7 +230,7 @@ public class UnitTestEvaluatorMath : TestClassBase
             var b = 2L;
             if (op != BinaryOp.LogicalAnd && op != BinaryOp.LogicalOr && op != BinaryOp.LogicalXor && op != BinaryOp.LeftShift && op != BinaryOp.RightShift)
             {
-                TestBinaryRunNormal(op, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 }), OrtKISharp.Tensor.FromScalar(b), Tensor.From(a, new[] { 2, 4 }), b);
+                TestBinaryRunNormal(op, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 }), OrtKISharp.Tensor.FromScalar(b), Tensor.From(a, [2, 4]), b);
             }
         }
     }
@@ -251,7 +251,7 @@ public class UnitTestEvaluatorMath : TestClassBase
             var b = new bool[] { true, false, true, false, true, false, false, true };
             if (op == BinaryOp.LogicalAnd || op == BinaryOp.LogicalOr || op == BinaryOp.LogicalXor)
             {
-                TestBinaryRunNormal(op, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 }), OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 }), Tensor.From(a, new[] { 2, 4 }), Tensor.From(b, new[] { 2, 4 }));
+                TestBinaryRunNormal(op, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 }), OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 }), Tensor.From(a, [2, 4]), Tensor.From(b, [2, 4]));
             }
         }
 
@@ -264,7 +264,7 @@ public class UnitTestEvaluatorMath : TestClassBase
             // if (op != BinaryOp.LogicalAnd && op != BinaryOp.LogicalOr && op != BinaryOp.LogicalXor)
             if (op == BinaryOp.LeftShift || op == BinaryOp.RightShift)
             {
-                TestBinaryRunNormal(op, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 }), OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 }), Tensor.From(a, new[] { 2, 4 }), Tensor.From(b, new[] { 2, 4 }));
+                TestBinaryRunNormal(op, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 }), OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 }), Tensor.From(a, [2, 4]), Tensor.From(b, [2, 4]));
             }
         }
 
@@ -275,7 +275,7 @@ public class UnitTestEvaluatorMath : TestClassBase
             var b = new float[] { 1, 1, 2, 2, 3, 3, 4, 4 };
             if (op != BinaryOp.LogicalAnd && op != BinaryOp.LogicalOr && op != BinaryOp.LogicalXor && op != BinaryOp.LeftShift && op != BinaryOp.RightShift)
             {
-                TestBinaryRunNormal(op, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 }), OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 }), Tensor.From(a, new[] { 2, 4 }), Tensor.From(b, new[] { 2, 4 }));
+                TestBinaryRunNormal(op, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 }), OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 }), Tensor.From(a, [2, 4]), Tensor.From(b, [2, 4]));
             }
         }
 
@@ -286,7 +286,7 @@ public class UnitTestEvaluatorMath : TestClassBase
             var b = new int[] { 1, 1, 2, 2, 3, 3, 4, 4 };
             if (op != BinaryOp.LogicalAnd && op != BinaryOp.LogicalOr && op != BinaryOp.LogicalXor && op != BinaryOp.LeftShift && op != BinaryOp.RightShift)
             {
-                TestBinaryRunNormal(op, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 }), OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 }), Tensor.From(a, new[] { 2, 4 }), Tensor.From(b, new[] { 2, 4 }));
+                TestBinaryRunNormal(op, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 }), OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 }), Tensor.From(a, [2, 4]), Tensor.From(b, [2, 4]));
             }
         }
 
@@ -297,7 +297,7 @@ public class UnitTestEvaluatorMath : TestClassBase
             var b = new long[] { 1, 1, 2, 2, 3, 3, 4, 4 };
             if (op != BinaryOp.LogicalAnd && op != BinaryOp.LogicalOr && op != BinaryOp.LogicalXor && op != BinaryOp.LeftShift && op != BinaryOp.RightShift)
             {
-                TestBinaryRunNormal(op, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 }), OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 }), Tensor.From(a, new[] { 2, 4 }), Tensor.From(b, new[] { 2, 4 }));
+                TestBinaryRunNormal(op, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 }), OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 }), Tensor.From(a, [2, 4]), Tensor.From(b, [2, 4]));
             }
         }
     }
@@ -322,11 +322,11 @@ public class UnitTestEvaluatorMath : TestClassBase
         var input = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         var min = 3f;
         var max = 6f;
-        var expr = IR.F.Math.Clamp(Tensor.From(input, new[] { 2, 4 }), min, max);
+        var expr = IR.F.Math.Clamp(Tensor.From(input, [2, 4]), min, max);
         CompilerServices.InferenceType(expr);
 
         var result = new float[] { 3, 3, 3, 4, 5, 6, 6, 6 };
-        var expect = Tensor.From(result, new[] { 2, 4 });
+        var expect = Tensor.From(result, [2, 4]);
         Assert.Equal(expect, expr.Evaluate().AsTensor());
     }
 
@@ -336,14 +336,14 @@ public class UnitTestEvaluatorMath : TestClassBase
         var input = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         var min = 3U;
         var max = 6L;
-        var expr = IR.F.Math.Clamp(Tensor.From(input, new[] { 2, 4 }), min, max);
+        var expr = IR.F.Math.Clamp(Tensor.From(input, [2, 4]), min, max);
         CompilerServices.InferenceType(expr);
         Assert.IsType<InvalidType>(expr.CheckedType);
     }
 
     [Theory]
     [MemberData(nameof(ClampInvalidTypeData))]
-    public void TestClampInvalidType2(int[] inputShape, int[] minShape, int[] maxShape)
+    public void TestClampInvalidType2(long[] inputShape, long[] minShape, long[] maxShape)
     {
         var input = Tensor.FromScalar<float>(3.3f, inputShape);
         var min = Tensor.FromScalar<float>(0.0f, minShape);
@@ -394,9 +394,9 @@ public class UnitTestEvaluatorMath : TestClassBase
             var ort_a = OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 });
             var ort_b = OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 });
 
-            var expr_a = Tensor.From(a, new[] { 2, 4 });
-            var expr_b = Tensor.From(b, new[] { 2, 4 });
-            _ = Tensor.From(result, new[] { 2, 4 }).ToOrtTensor();
+            var expr_a = Tensor.From(a, [2, 4]);
+            var expr_b = Tensor.From(b, [2, 4]);
+            _ = Tensor.From(result, [2, 4]).ToOrtTensor();
 
             var ops = new CompareOp[]
             {
@@ -445,7 +445,7 @@ public class UnitTestEvaluatorMath : TestClassBase
         var input1 = OrtKISharp.Tensor.MakeTensor(input, new long[] { 2, 4 });
         var expect = OrtKI.CumSum(input1, axis, exclusive ? 1L : 0L, reverse ? 1L : 0L);
 
-        var input2 = Tensor.From(input, new[] { 2, 4 });
+        var input2 = Tensor.From(input, [2, 4]);
         var expr = IR.F.Tensors.CumSum(input2, axis, exclusive, reverse);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
@@ -463,7 +463,7 @@ public class UnitTestEvaluatorMath : TestClassBase
         var expect = OrtKI.DequantizeLinear(input1, scale, zero_point, axis);
 
         var quant_param = new QuantParam(zero_point, scale);
-        var input2 = Tensor.From(input, new[] { 2, 4 });
+        var input2 = Tensor.From(input, [2, 4]);
         var expr = IR.F.Math.Dequantize(input2, quant_param, DataTypes.Float32);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
@@ -481,7 +481,7 @@ public class UnitTestEvaluatorMath : TestClassBase
         var expect = OrtKI.QuantizeLinear(input1, scale, zero_point, axis);
 
         var quantParam = new QuantParam(zero_point, scale);
-        var input2 = Tensor.From(input, new[] { 2, 4 });
+        var input2 = Tensor.From(input, [2, 4]);
         var expr = IR.F.Math.Quantize(input2, quantParam, DataTypes.UInt8);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
@@ -503,7 +503,7 @@ public class UnitTestEvaluatorMath : TestClassBase
             (int)DataTypes.Int16.ToOrtType());
 
         var quantParam = new QuantParam(zeroPoint, scale);
-        var input2 = Tensor.From(input, new[] { 2, 4 });
+        var input2 = Tensor.From(input, [2, 4]);
         var expr = IR.F.Math.Quantize(input2, quantParam, DataTypes.Int16);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
@@ -516,9 +516,9 @@ public class UnitTestEvaluatorMath : TestClassBase
         byte zero_point = 127;
         var scale = 0.01F;
 
-        var expect = Tensor.From(input, new[] { 2, 4 });
+        var expect = Tensor.From(input, [2, 4]);
         var expr = IR.F.Math.FakeDequantize(
-            Tensor.From(input, new[] { 2, 4 }),
+            Tensor.From(input, [2, 4]),
             new QuantParam(zero_point, scale),
             DataTypes.Float32);
         CompilerServices.InferenceType(expr);
@@ -532,9 +532,9 @@ public class UnitTestEvaluatorMath : TestClassBase
         byte zero_point = 127;
         var scale = 0.05F;
 
-        var expect = Tensor.From(input, new[] { 2, 4 });
+        var expect = Tensor.From(input, [2, 4]);
         var expr = IR.F.Math.FakeQuantize(
-            Tensor.From(input, new[] { 2, 4 }),
+            Tensor.From(input, [2, 4]),
             new QuantParam(zero_point, scale),
             DataTypes.UInt8);
         CompilerServices.InferenceType(expr);
@@ -549,8 +549,8 @@ public class UnitTestEvaluatorMath : TestClassBase
             var m1_ort = OrtKISharp.Tensor.MakeTensor(input, new long[] { 2, 4 });
             var m2_ort = OrtKISharp.Tensor.MakeTensor(input, new long[] { 4, 2 });
 
-            var m1 = Tensor.From(input, new[] { 2, 4 });
-            var m2 = Tensor.From(input, new[] { 4, 2 });
+            var m1 = Tensor.From(input, [2, 4]);
+            var m2 = Tensor.From(input, [4, 2]);
             var expect = OrtKI.MatMul(m1_ort, m2_ort);
 
             var expr = IR.F.Math.MatMul(m1, m2);
@@ -565,8 +565,8 @@ public class UnitTestEvaluatorMath : TestClassBase
             var m1_ort = OrtKISharp.Tensor.MakeTensor(input1, new long[] { 2, 2, 4 });
             var m2_ort = OrtKISharp.Tensor.MakeTensor(input2, new long[] { 4, 2 });
 
-            var m1 = Tensor.From(input1, new[] { 2, 2, 4 });
-            var m2 = Tensor.From(input2, new[] { 4, 2 });
+            var m1 = Tensor.From(input1, [2, 2, 4]);
+            var m2 = Tensor.From(input2, [4, 2]);
             var expect = OrtKI.MatMul(m1_ort, m2_ort);
 
             var expr = IR.F.Math.MatMul(m1, m2);
@@ -581,8 +581,8 @@ public class UnitTestEvaluatorMath : TestClassBase
         {
             var input1 = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
             var input2 = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-            var m1 = Tensor.From(input1, new[] { 2, 4 });
-            var m2 = Tensor.From(input2, new[] { 4, 2 });
+            var m1 = Tensor.From(input1, [2, 4]);
+            var m2 = Tensor.From(input2, [4, 2]);
 
             var expr = IR.F.Math.MatMul(m1, m2);
             CompilerServices.InferenceType(expr);
@@ -592,8 +592,8 @@ public class UnitTestEvaluatorMath : TestClassBase
         {
             var input1 = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
             var input2 = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
-            var m1 = Tensor.From(input1, new[] { 2, 4 });
-            var m2 = Tensor.From(input2, new[] { 1, 8 });
+            var m1 = Tensor.From(input1, [2, 4]);
+            var m2 = Tensor.From(input2, [1, 8]);
 
             var expr = IR.F.Math.MatMul(m1, m2);
             CompilerServices.InferenceType(expr);
@@ -638,8 +638,8 @@ public class UnitTestEvaluatorMath : TestClassBase
         var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         var result = new float[] { 5, 6, 7, 8 };
         var ort_a = OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 });
-        var expr_a = Tensor.From(a, new[] { 2, 4 });
-        _ = Tensor.From(result, new[] { 1, 4 }).ToOrtTensor();
+        var expr_a = Tensor.From(a, [2, 4]);
+        _ = Tensor.From(result, [1, 4]).ToOrtTensor();
 
         var ops = new ReduceOp[] { ReduceOp.Max, ReduceOp.Min, ReduceOp.Mean, ReduceOp.Prod, ReduceOp.Sum };
 
@@ -655,7 +655,7 @@ public class UnitTestEvaluatorMath : TestClassBase
                 _ => throw new ArgumentOutOfRangeException(nameof(op)),
             };
 
-            var expr = IR.F.Tensors.Reduce(op, expr_a, Tensor.From(axes, new[] { 1 }), initValue, keepDims);
+            var expr = IR.F.Tensors.Reduce(op, expr_a, Tensor.From(axes, [1]), initValue, keepDims);
             CompilerServices.InferenceType(expr);
             Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
         }
@@ -670,8 +670,8 @@ public class UnitTestEvaluatorMath : TestClassBase
         var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         var result = new int[] { 5, 6, 7, 8 };
         var ort_a = OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 });
-        var expr_a = Tensor.From(a, new[] { 2, 4 });
-        _ = Tensor.From(result, new[] { 1, 4 }).ToOrtTensor();
+        var expr_a = Tensor.From(a, [2, 4]);
+        _ = Tensor.From(result, [1, 4]).ToOrtTensor();
 
         var ops = new ReduceArgOp[] { ReduceArgOp.ArgMax, ReduceArgOp.ArgMin };
 
@@ -759,13 +759,13 @@ public class UnitTestEvaluatorMath : TestClassBase
             var f = new float[] { 1F, 1.1F, 1.2F, 1.3F };
             foreach (var op in ops)
             {
-                TestUnaryNormal(op, OrtKISharp.Tensor.MakeTensor(f, new long[] { 2, 2 }), Tensor.From(f, new[] { 2, 2 }));
+                TestUnaryNormal(op, OrtKISharp.Tensor.MakeTensor(f, new long[] { 2, 2 }), Tensor.From(f, [2, 2]));
             }
         }
 
         {
             bool[] a = new bool[] { true, false, false, true };
-            TestUnaryNormal(UnaryOp.LogicalNot, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 2 }), Tensor.From(a, new[] { 2, 2 }));
+            TestUnaryNormal(UnaryOp.LogicalNot, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 2 }), Tensor.From(a, [2, 2]));
 
             var expr = IR.F.Math.Unary(UnaryOp.BitwiseNot, a);
             CompilerServices.InferenceType(expr);

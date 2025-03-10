@@ -49,6 +49,50 @@ public sealed partial class CombineBinaryTranspose : IRewriteRule
 }
 
 /// <summary>
+/// Combine Transpose with Binary left
+/// binary(transpose(a,p),b) => transpose(binary(a, transpose(b,invP)),p).
+/// </summary>
+[RuleGenerator]
+public sealed partial class CombineBinaryLeftTranspose : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } = IsBinary("binary", "binaryCall", x => true, IsTranspose(IsWildcard("x"), IsTensorConst("perm")), IsWildcard("y"));
+
+    private Expr? GetReplace(Binary binary, Call binaryCall, Expr x, Expr y, int[] perm)
+    {
+        if (x.CheckedShape.Rank == y.CheckedShape.Rank)
+        {
+            var invPerm = perm.Select((p, i) => (p, i)).OrderBy(tp => tp.p).Select(p => p.i).ToArray();
+            return Transpose(Binary(binary.BinaryOp, x, Transpose(y, invPerm)).InheritMetaData(binaryCall), perm);
+        }
+
+        return null;
+    }
+}
+
+/// <summary>
+/// Combine Transpose with Binary right
+/// binary(a,transpose(b,p)) => transpose(binary(transpose(a,invP),b),p).
+/// </summary>
+[RuleGenerator]
+public sealed partial class CombineBinaryRightTranspose : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } = IsBinary("binary", "binaryCall", x => true, IsWildcard("x"), IsTranspose(IsWildcard("y"), IsTensorConst("perm")));
+
+    private Expr? GetReplace(Binary binary, Call binaryCall, Expr x, Expr y, int[] perm)
+    {
+        if (x.CheckedShape.Rank == y.CheckedShape.Rank)
+        {
+            var invPerm = perm.Select((p, i) => (p, i)).OrderBy(tp => tp.p).Select(p => p.i).ToArray();
+            return Transpose(Binary(binary.BinaryOp, Transpose(x, invPerm), y).InheritMetaData(binaryCall), perm);
+        }
+
+        return null;
+    }
+}
+
+/// <summary>
 /// Combine Transpose with Const Binary, if Const has rank 1.
 /// binary(transpose(a,p),const(b)) => transpose(binary(a,const(b)),p) or binary(const(a),transpose(b,p)) => transpose(binary(const(a),b),p).
 /// </summary>
@@ -96,7 +140,7 @@ public sealed partial class CombineConstBinaryTranspose : IRewriteRule
                 return Transpose(Binary(binary.BinaryOp, x, y).InheritMetaData(binaryCall), perm);
             }
 
-            var newShape = new List<int>() { x.CheckedShape[0].FixedValue };
+            var newShape = new List<long>() { x.CheckedShape[0].FixedValue };
             if (x.CheckedShape[0].FixedValue != 1)
             {
                 for (int i = 0; i < expandDim; i++)
@@ -116,7 +160,7 @@ public sealed partial class CombineConstBinaryTranspose : IRewriteRule
                 return Transpose(Binary(binary.BinaryOp, x, y).InheritMetaData(binaryCall), perm);
             }
 
-            var newShape = new List<int>() { y.CheckedShape[0].FixedValue };
+            var newShape = new List<long>() { y.CheckedShape[0].FixedValue };
             if (y.CheckedShape[0].FixedValue != 1)
             {
                 for (int i = 0; i < expandDim; i++)
@@ -148,10 +192,10 @@ public sealed partial class CombineTransposeConstBinary : RewriteRule<CallPatter
 
     private Const GetNewConst(TensorConst oldConst, Expr input, TensorConst perm)
     {
-        int[] newConstShape;
+        long[] newConstShape;
         if (oldConst.Value.Shape.Rank < input.CheckedShape.Rank)
         {
-            newConstShape = Enumerable.Repeat(1, input.CheckedShape.Rank - oldConst.Value.Shape.Rank).Concat(oldConst.Value.Shape.ToValueArray()).ToArray();
+            newConstShape = Enumerable.Repeat(1L, input.CheckedShape.Rank - oldConst.Value.Shape.Rank).Concat(oldConst.Value.Shape.ToValueArray()).ToArray();
         }
         else
         {
@@ -361,7 +405,7 @@ public sealed partial class CombineTransposeReshape : IRewriteRule
         { TypePattern = HasFixedShape() },
         IsTensorConst("perm"));
 
-    private Expr? GetReplace(Call trans, Expr input, int[] newShape, int[] perm)
+    private Expr? GetReplace(Call trans, Expr input, long[] newShape, int[] perm)
     {
         var inShape = input.CheckedShape.ToValueArray();
         var outShape = trans.CheckedShape.ToValueArray();
@@ -390,10 +434,10 @@ public sealed partial class CombineTransposeReshape : IRewriteRule
 
 /// <summary>
 /// Combine Transpose with Unary
-/// reduce(transpose(x,p), a) => transpose(reduce(x, invtranspose(a, p)), p).
+/// unary(transpose(x,p), a) => transpose(unary(x, p)).
 /// </summary>
 [RuleGenerator]
-public sealed partial class CombineTransposeUnary : IRewriteRule
+public sealed partial class CombineUnaryTranspose : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsUnary("unary", "unaryCall", x => true, IsTranspose(IsWildcard("input"), IsWildcard("perm")));

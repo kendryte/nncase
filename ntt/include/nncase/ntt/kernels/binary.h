@@ -68,10 +68,10 @@ class binary_impl<TLhs, TRhs, TOut> {
         if constexpr (Axis + ContiguousDims >= TOut::rank()) {
             constexpr auto rest_rank = TOut::rank() - Axis;
             constexpr auto lhs_rest_dims =
-                slice_fixed_dims<rest_rank, TLhs::rank() - rest_rank>(
+                slice_dims<rest_rank, TLhs::rank() - rest_rank>(
                     TLhs::shape());
             constexpr auto rhs_rest_dims =
-                slice_fixed_dims<rest_rank, TRhs::rank() - rest_rank>(
+                slice_dims<rest_rank, TRhs::rank() - rest_rank>(
                     TRhs::shape());
 
             // 1.1 Non broadcast

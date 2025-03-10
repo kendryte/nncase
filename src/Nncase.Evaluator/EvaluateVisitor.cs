@@ -41,12 +41,6 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
         _dumpManager.Dispose();
     }
 
-    protected override IValue VisitIf(If @if)
-    {
-        bool cond = Visit(@if.Condition).AsTensor().ToScalar<bool>();
-        return cond ? Visit(@if.Then) : Visit(@if.Else);
-    }
-
     /// <inheritdoc/>
     protected override IValue VisitLeafBaseFunction(BaseFunction expr) => NoneValue.Default;
 
@@ -86,9 +80,7 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
                         throw new ArgumentException($"DataType mismatch. The Var {expr.Name} Require {expr.CheckedDataType} But Give {resultType.DType}");
                     }
 
-                    var s = expr.CheckedShape.Zip(resultType.Shape).ToArray();
-                    var matchedShape = s.Aggregate(true, (b, dims) => b && (dims.First.IsUnknown || dims.Second.IsUnknown || dims.First == dims.Second));
-                    if (!matchedShape)
+                    if (!expr.CheckedShape.IsAssignableFrom(resultType.Shape))
                     {
                         throw new ArgumentException(
                             $"Shape mismatch. The Var {expr.Name} Require {expr.CheckedShape} But Give {resultType.Shape}");
@@ -120,14 +112,43 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
         return value;
     }
 
-    protected override IValue VisitLeafCall(Call expr)
+    protected override IValue VisitLeafCall(Call expr) => EvaluateCallable(expr.Target, expr.Arguments);
+
+    protected override IValue VisitIf(If expr)
     {
-        return expr.Target switch
+        if (HasVisited(expr, out var result))
+        {
+            return result;
+        }
+
+        Visit(expr.Condition);
+
+        foreach (var param in expr.Arguments)
+        {
+            Visit(param);
+        }
+
+        _context.CurrentCall = expr;
+        BeforeCallAction?.Invoke(expr);
+        var value = MarkVisited(expr, VisitLeafIf(expr));
+        AfterCallAction?.Invoke(expr);
+        return value;
+    }
+
+    protected override IValue VisitLeafIf(If expr)
+    {
+        bool cond = Visit(expr.Condition).AsTensor().ToScalar<bool>();
+        return cond ? EvaluateCallable(expr.Then, expr.Arguments) : EvaluateCallable(expr.Else, expr.Arguments);
+    }
+
+    private IValue EvaluateCallable(Expr callable, ReadOnlySpan<Expr> arguments)
+    {
+        return callable switch
         {
             Op op => CompilerServices.EvaluateOp(op, _context, _evaluator_cache),
-            Function func => CompilerServices.Evaluate(func.Body, CreateFunctionEvaluateArguments(func.Parameters, expr.Arguments), _evaluator_cache),
-            Fusion fusion => CompilerServices.Evaluate(fusion.Body, CreateFunctionEvaluateArguments(fusion.Parameters, expr.Arguments), _evaluator_cache),
-            _ => throw new NotImplementedException(expr.Target.ToString()),
+            Function func => CompilerServices.Evaluate(func.Body, CreateFunctionEvaluateArguments(func.Parameters, arguments), _evaluator_cache),
+            Fusion fusion => CompilerServices.Evaluate(fusion.Body, CreateFunctionEvaluateArguments(fusion.Parameters, arguments), _evaluator_cache),
+            _ => throw new NotImplementedException(callable.ToString()),
         };
     }
 

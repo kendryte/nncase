@@ -18,7 +18,7 @@ namespace Nncase.Evaluator.Tensors;
 /// Evaluator for <see cref="Transpose"/>.
 /// </summary>
 public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpose>, ICostEvaluator<Transpose>,
-    IShapeEvaluator<Transpose>, IMetricEvaluator<Transpose>
+    IMetricEvaluator<Transpose>
 {
     public static IRType Visit(TensorType input, Expr permExpr)
     {
@@ -139,12 +139,5 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
         {
             [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(returnType) * 2,
         };
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Transpose target)
-    {
-        var inShape = context.GetArgumentShape(target, Transpose.Input);
-        var perm = context.GetArgument(target, Transpose.Perm);
-        return IR.F.ShapeExpr.TransposeShape(inShape, perm);
     }
 }

@@ -17,7 +17,7 @@ public static class DataGenerator
 
     public static int DefaultChannel => 2;
 
-    public static int[] DefaultShape => new[] { 3, 2, 4, 8 };
+    public static long[] DefaultShape => [3, 2, 4, 8];
 
     public static IEnumerable<T> EnumValues<T>()
     {
@@ -26,7 +26,7 @@ public static class DataGenerator
 
     public static Expr DefaultRandom()
     {
-        return DefaultRandom(DataTypes.Float32, new[] { 3, DefaultChannel, 4, 8 });
+        return DefaultRandom(DataTypes.Float32, [3, DefaultChannel, 4, 8]);
     }
 
     public static Expr DefaultRandom(DataType dt)
@@ -34,36 +34,36 @@ public static class DataGenerator
         return DefaultRandom(dt, DefaultShape);
     }
 
-    public static Expr DefaultRandom(int[] shape)
+    public static Expr DefaultRandom(long[] shape)
     {
         return DefaultRandom(DataTypes.Float32, shape);
     }
 
-    public static Expr DefaultRandom(DataType dt, int[] shape)
+    public static Expr DefaultRandom(DataType dt, long[] shape)
     {
         // if (dt.IsIntegral())
         // {
         //     return Testing.Rand(dt, shape);
         // }
         return
-            Random.Normal(DataTypes.Float32, new Shape(shape)).Evaluate().AsTensor().CastTo(dt);
+            Random.Normal(DataTypes.Float32, shape).Evaluate().AsTensor().CastTo(dt);
     }
 
     public static Expr RandomLimitOne()
     {
-        return Sigmoid(Random.Normal(DataTypes.Float32, new Shape(DefaultShape)));
+        return Sigmoid(Random.Normal(DataTypes.Float32, DefaultShape));
     }
 
     public static Expr RandomGNNEScalar()
     {
         return Sigmoid(
-            Random.Normal(DataTypes.Float32, new Shape(1, 1, 1, 1))).Evaluate().AsTensor();
+            Random.Normal(DataTypes.Float32, new long[] { 1, 1, 1, 1 })).Evaluate().AsTensor();
     }
 
     public static Expr RandomScalar()
     {
         return Sigmoid(
-            Random.Normal(DataTypes.Float32, new[] { 1 })).Evaluate().AsTensor();
+            Random.Normal(DataTypes.Float32, new long[] { 1 })).Evaluate().AsTensor();
     }
 
     // nncase format DeQuantizeParam
@@ -75,11 +75,11 @@ public static class DataGenerator
 
     public static Expr DefaultConv()
     {
-        var input = Random.Normal(DataTypes.Float32, new[] { 1, 3, 24, 32 });
-        var weights = Random.Normal(DataTypes.Float32, new[] { 16, 3, 3, 3 }).Evaluate();
-        var bias = Random.Normal(DataTypes.Float32, new[] { 16 }).Evaluate();
-        var stride = Tensor.From(new[] { 1, 1 }, new[] { 2 });
-        var dilation = Tensor.From(new[] { 1, 1 }, new[] { 2 });
+        var input = Random.Normal(DataTypes.Float32, new long[] { 1, 3, 24, 32 });
+        var weights = Random.Normal(DataTypes.Float32, new long[] { 16, 3, 3, 3 }).Evaluate();
+        var bias = Random.Normal(DataTypes.Float32, new long[] { 16 }).Evaluate();
+        var stride = Tensor.From(new[] { 1, 1 }, [2]);
+        var dilation = Tensor.From(new[] { 1, 1 }, [2]);
         var padding = new[,]
         {
             { 0, 1 },
@@ -208,7 +208,7 @@ public static class DataGenerator
     // data[1]
     // ...
     // data[n]
-    private static (DataType DataType, int[] Shape, string[] Data, int EndIndex) ParseDumpFile(string[] content, int baseIndex)
+    private static (DataType DataType, long[] Shape, string[] Data, int EndIndex) ParseDumpFile(string[] content, int baseIndex)
     {
         var dtIndex = baseIndex;
         var shapeIndex = baseIndex + 1;
@@ -249,20 +249,20 @@ public static class DataGenerator
 
     // format
     // shape: x x x x
-    private static int[] ParseShape(string shapeStr)
+    private static long[] ParseShape(string shapeStr)
     {
         var s = shapeStr.TrimEnd().Split(":")[1];
         if (s == "scalar")
         {
-            return Array.Empty<int>();
+            return Array.Empty<long>();
         }
 
-        return s.Split(" ").Select(x => int.Parse(x)).ToArray();
+        return s.Split(" ").Select(x => long.Parse(x)).ToArray();
     }
 
     private static DataType ParseDataType(string dt) => DataType.FromTypeCode((Runtime.TypeCode)int.Parse(dt.Split(":")[1]));
 
-    private record DumpData(DataType Dt, int[] Shape, string[] Data)
+    private record DumpData(DataType Dt, long[] Shape, string[] Data)
     {
     }
 }

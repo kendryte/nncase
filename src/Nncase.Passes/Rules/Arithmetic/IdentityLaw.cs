@@ -60,7 +60,7 @@ public sealed partial class XAddNegX : IRewriteRule
 
     public IPattern Pattern { get; }
 
-    private Expr? GetReplace(Expr x) => Tensor.FromBytes(x.CheckedDataType, new byte[x.CheckedDataType.SizeInBytes], Array.Empty<int>());
+    private Expr? GetReplace(Expr x) => Tensor.FromBytes(x.CheckedDataType, new byte[x.CheckedDataType.SizeInBytes], Array.Empty<long>());
 }
 
 /// <summary>
@@ -173,7 +173,7 @@ public sealed partial class XDivX : IRewriteRule
 
     private Expr? GetReplace(Expr x)
     {
-        var value = ((Tensor)1).CastTo(x.CheckedDataType);
+        var value = Tensor.Ones(x.CheckedDataType, [1]);
         return Tensors.ConstantOfShape(Tensors.ShapeOf(x), value);
     }
 }

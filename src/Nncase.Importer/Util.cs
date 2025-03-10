@@ -65,55 +65,11 @@ namespace Nncase
             return new TensorConst(Tensor.From<int>(new[] { 0 }));
         }
 
-        /// <param name="padH">H [before, after]. </param>
-        /// <param name="padW">W [before, after]. </param>
-        public static Expr ConcatPadding(Expr[] padH, Expr[] padW)
-        {
-            // return [[padh_before, padh_after],
-            //         [padw_before, padw_after]]
-            return Stack(
-                new Tuple(
-                    Stack(new Tuple(padH), 0),
-                    Stack(new Tuple(padW), 0)),
-                0);
-        }
-
-        // todo:refactor and set private this
-        public static Expr[] GetWindowedPadding(Expr inputSize, Expr filter, Expr stride, Expr dilation, bool same, bool lower = false)
-        {
-            var i32InputSize = Cast(inputSize, DataTypes.Int32);
-            var i32Filter = Cast(filter, DataTypes.Int32);
-            var i32Stride = Cast(stride, DataTypes.Int32);
-            var i32Dilation = Cast(dilation, DataTypes.Int32);
-            var outputSize = IR.Util.GetWindowedOutputSize(i32InputSize, i32Filter, i32Stride, i32Dilation, same, false);
-            return GetWindowedPaddingValue(i32InputSize, outputSize, i32Filter, i32Stride, i32Dilation, lower);
-        }
-
-        // lower used for onnx when auto_pad attr is SAME_LOWER
-        public static Expr GetPaddings(Expr input, Expr weights, Expr stride, Expr dilation, bool same, bool lower = false)
-        {
-            return IR.F.ShapeExpr.GetPaddings(ShapeOf(input), ShapeOf(weights), stride, dilation, same, lower);
-        }
-
         public static Expr ComputeSplit(Expr input, long outputSize, long axis)
         {
             return F.Tensors.Expand(
                 Util.ShapeIndex(input, (int)axis) / outputSize, // Util.DynamicShapeIndex(input, Cast(axis, DataTypes.Int32)) / outputSize
                 Stack(new Tuple(outputSize), 0));
-        }
-
-        private static Expr[] GetWindowedPaddingValue(Expr inputSize, Expr outputSize, Expr filter, Expr stride, Expr dilation, bool lower)
-        {
-            var effectiveFilterSize = ((filter - 1) * dilation) + 1;
-            var padding = F.Math.Max(0, ((outputSize - 1) * stride) + effectiveFilterSize - inputSize);
-            var before = F.Tensors.Cast(padding / 2, DataTypes.Int32);
-            var after = F.Tensors.Cast(padding - (padding / 2), DataTypes.Int32);
-            if (lower)
-            {
-                return new[] { F.Math.Max(before, after), F.Math.Min(before, after) };
-            }
-
-            return new[] { before, after };
         }
     }
 }

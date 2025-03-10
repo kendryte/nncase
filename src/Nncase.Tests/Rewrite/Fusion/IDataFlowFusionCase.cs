@@ -391,14 +391,14 @@ internal class DataFlowType6FusionCaseRight : DataFlowType6FusionCaseLeft
 //            /    \                               /    \
 //         /         \                          /         \
 //        |      v2 = fusion2(v1)             |            |
-//        |      v3 = fusion3(v2)             |       v2 = fusion3_2(v1)
-//        |      v4 = fusion4_f(v3)           |       v3 = fusion4_f(v2)
+//        |      v3 = fusion3(v2)             |            |
+//        |      v4 = fusion4_f(v3)           |       v3 = fusion4_f(v0[1])
 //         \        /                           \        /
 //          \     /                              \     /
-//     fusion5(input,v4)            =>          fusion9_8(v0,v3)
+//     fusion5(input,v4)            =>          fusion9_8(v0[0],v3)
 internal class DataFlowType6_1FusionCaseLeft : IDataFlowFusionCase
 {
-    public int FinalFusionCount => 4;
+    public int FinalFusionCount => 3;
 
     public static Expr BuildBodyCore(Expr input, bool left)
     {
@@ -438,17 +438,17 @@ internal class DataFlowType6_1FusionCaseRight : DataFlowType6_1FusionCaseLeft
 //            /    \                                     /    \
 //         /         \                                /         \
 //        |      v5 = fusion5(v4)                    |           |
-//        |      v6 = fusion6(v5)                    |      v6 = fusion6_5(v4)
-//        |      v7 = fusion7_f(v6)                  |      v7 = fusion7_f(v6)
+//        |      v6 = fusion6(v5)                    |           |
+//        |      v7 = fusion7_f(v6)                  |      v7 = fusion7_f(v4[1])
 //         \        /                                 \        /
 //          \     /                                    \     /
-//     v9 = fusion8(v4,v7)            =>           v10 = fusion9_8(v4,v7)
+//     v9 = fusion8(v4,v7)            =>           v10 = fusion9_8(v4[0],v7)
 //             |
 //     v10 = fusion9(v9)
 // </summary>
 internal class DataFlowType7FusionCaseLeft : IDataFlowFusionCase
 {
-    public int FinalFusionCount => 4;
+    public int FinalFusionCount => 3;
 
     public static Expr BuildBodyCore(Expr input, bool left)
     {
@@ -495,7 +495,7 @@ internal class DataFlowType7FusionCaseRight : DataFlowType7FusionCaseLeft
 /// </summary>
 internal class DataFlowType8FusionCase : IDataFlowFusionCase
 {
-    public int FinalFusionCount => 9;
+    public int FinalFusionCount => 6;
 
     public static Expr BuildBodyCore(Expr input)
     {

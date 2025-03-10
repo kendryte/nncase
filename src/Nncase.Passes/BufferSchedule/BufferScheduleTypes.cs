@@ -1,21 +1,23 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using Nncase.IR;
+
 namespace Nncase.Passes.BufferSchedule;
 
 public sealed class Interval
 {
-    public Interval(int start, int end)
+    public Interval(long start, long end)
     {
         Start = start;
         Stop = end;
     }
 
-    public int Start { get; set; }
+    public long Start { get; set; }
 
-    public int Stop { get; set; }
+    public long Stop { get; set; }
 
-    public int Size => Stop - Start;
+    public long Size => Stop - Start;
 
     public override string ToString()
     {
@@ -25,7 +27,7 @@ public sealed class Interval
 
 public class ScheduleBuffer
 {
-    public ScheduleBuffer(string name, int number, Interval timeInterval, Interval memInterval, int[] shape, int[] strides, bool inplace)
+    public ScheduleBuffer(string name, int number, Interval timeInterval, Interval memInterval, Shape shape, long[] strides, bool inplace)
     {
         Name = name;
         Number = number;
@@ -44,9 +46,9 @@ public class ScheduleBuffer
 
     public Interval MemInterval { get; }
 
-    public int[] Shape { get; }
+    public Shape Shape { get; }
 
-    public int[] Strides { get; }
+    public long[] Strides { get; }
 
     public bool Inplace { get; }
 

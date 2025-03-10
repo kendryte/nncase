@@ -136,10 +136,10 @@ public class UnitTestExprConversion
     [Fact]
     public void TestShape()
     {
-        var a = new int[] { 1, 3, 16, 16 };
+        var a = new long[] { 1, 3, 16, 16 };
         var s = new Shape(a);
         var c = Const.FromShape(s);
-        Expr e = s;
+        Expr e = s.ToValueArrayExpr();
         Assert.Equal(c, e);
     }
 

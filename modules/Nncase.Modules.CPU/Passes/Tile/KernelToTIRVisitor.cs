@@ -6,6 +6,7 @@ using Google.OrTools.Sat;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.CPU;
+using Nncase.IR.Distributed;
 using Nncase.IR.Imaging;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
@@ -52,6 +53,8 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
 
     public IEnumerable<TIR.Buffer> InputBuffers => VisitRootFusion.Parameters.ToArray().Select(p => _buffersMap[p]).OfType<TIR.Buffer>().Where(b => b.MemSpan.Location.HasFlag(MemoryLocation.Input));
 
+    public IEnumerable<Var> DimVars => _lifeTimeCollector.DimVars;
+
     public void Convert(Fusion post)
     {
         VisitRootFusion = post;
@@ -93,8 +96,11 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             case IR.Math.Clamp clamp:
                 GenerateClamp(arguments, ret, ((TensorConst)expr[IR.Math.Clamp.Min]).Value.ToScalar<float>(), ((TensorConst)expr[IR.Math.Clamp.Max]).Value.ToScalar<float>());
                 break;
-            case IR.CPU.Boxing boxing:
+            case IR.Distributed.Boxing boxing:
                 GenerateBoxing(boxing, arguments, ret, expr);
+                break;
+            case IR.Distributed.ForceBoxing forceBoxing:
+                _mainBody.Add(T.Memcopy(ret, arguments[0]));
                 break;
             case Binary binary:
                 GenerateBinary(binary, arguments, ret, expr);
@@ -103,7 +109,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Pack(arguments[0], ret, pack.Lanes, pack.Axes));
                 break;
             case IR.CPU.Unpack unpack:
-                _mainBody.Add(TIR.F.CPU.Unpack(arguments[0], ret, unpack.Axes));
+                _mainBody.Add(TIR.F.CPU.Unpack(arguments[0], ret, unpack.Lanes, unpack.Axes));
                 break;
             case IR.CPU.PackedBinary packed_binary:
                 // _mainBody.Add(TIR.F.CPU.Binary(arguments[0], arguments[1], ret, packed_binary.BinaryOp, packed_binary.LhsPackedAxes, packed_binary.LhsPadedNums, packed_binary.RhsPackedAxes, packed_binary.RhsPadedNums));
@@ -190,7 +196,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Pad(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[2]).Value.ToArray<float>()[0]));
                 break;
             case IR.Math.Reduce reduce:
-                _mainBody.Add(TIR.F.CPU.Reduce(arguments[0], ret, Array.Empty<int>(), Array.Empty<int>(), ((TensorConst)expr.Arguments[1]).Value.ToArray<int>().OrderBy(a => a).ToArray(), ((TensorConst)expr.Arguments[3]).Value.ToArray<bool>()[0], reduce.ReduceOp));
+                _mainBody.Add(TIR.F.CPU.Reduce(arguments[0], ret, false, Array.Empty<int>(), Array.Empty<int>(), ((TensorConst)expr.Arguments[1]).Value.ToArray<int>().OrderBy(a => a).ToArray(), ((TensorConst)expr.Arguments[3]).Value.ToArray<bool>()[0], reduce.ReduceOp));
                 break;
             case IR.Buffers.Uninitialized:
                 break;
@@ -210,7 +216,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Erf(arguments[0], ret));
                 break;
             case IR.CPU.PackedReduce pr:
-                _mainBody.Add(TIR.F.CPU.Reduce(arguments[0], ret, pr.PackedAxes.ToArray(), pr.PadedNums.ToArray(), pr.Axes, pr.KeepDims, pr.ReduceOp));
+                _mainBody.Add(TIR.F.CPU.Reduce(arguments[0], ret, false, pr.PackedAxes.ToArray(), pr.PadedNums.ToArray(), pr.Axes, pr.KeepDims, pr.ReduceOp));
                 break;
             case IR.Math.Compare compare:
                 _mainBody.Add(TIR.F.CPU.Compare(compare.CompareOp, arguments[0], arguments[1], ret));
@@ -251,7 +257,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
             _bufferScheduler.Dump($"{fusion.Name}_buffers", buffers);
         }
 
-        DataUsage = buffers.Max(b => (ulong)b.Value.MemInterval.Stop);
+        DataUsage = buffers.Any() ? buffers.Max(b => (ulong)b.Value.MemInterval.Stop) : 0;
 
         var candidates = ExprCollector.Collect(fusion).Where(e => e is Call or Var or TensorConst);
         MaxDTypeSize = (ulong)candidates.Select(e => e.CheckedDataType.SizeInBytes).Max();
@@ -352,7 +358,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
         _mainBody.Add(TIR.F.CPU.Clamp(arguments[0], ret, min, max));
     }
 
-    private void GenerateBoxing(IR.CPU.Boxing boxing, Buffer[] arguments, Buffer ret, Call expr)
+    private void GenerateBoxing(IR.Distributed.Boxing boxing, Buffer[] arguments, Buffer ret, Call expr)
     {
         switch (expr.Arguments[0].CheckedType, boxing.NewType)
         {
@@ -450,7 +456,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
         _mainBody.Add(TIR.F.CPU.Cast(arguments[0], ret, dataType, castMode));
     }
 
-    private void GenerateExpand(int[] shape, DistributedType distributedType, ReadOnlySpan<Buffer> arguments, Buffer ret)
+    private void GenerateExpand(long[] shape, DistributedType distributedType, ReadOnlySpan<Buffer> arguments, Buffer ret)
     {
         _mainBody.Add(TIR.F.CPU.Expand(shape, distributedType, arguments[0], ret));
     }

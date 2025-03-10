@@ -35,6 +35,12 @@ inline constexpr auto slice(A<Dims...>, std::index_sequence<Ints...>) noexcept {
     return A<A<Dims...>::at(Ints + OffSet)...>{};
 }
 
+template <size_t Rank, size_t Value = 1, template <size_t...> class A,
+          size_t... Ints>
+inline constexpr auto make_sames(std::index_sequence<Ints...>) noexcept {
+    return A<(Ints ? Value : Value)...>{};
+}
+
 template <template <size_t...> class T, size_t... ADims, size_t... BDims,
           size_t... I>
 inline constexpr bool is_same_seq(const T<ADims...> &a, const T<BDims...> &b,
@@ -66,11 +72,24 @@ inline constexpr auto shift_fixed_dims(A<Dims...>) {
     return A<(Dims - Offset)...>{};
 }
 
-template <IsFixedDims Axes, IsFixedTensor TTensor, size_t... Ints>
+template <IsFixedDims Axes, class Shape, size_t... Ints>
 constexpr auto
 fixed_reduce_source_shape_type(std::index_sequence<Ints...>) noexcept {
-    return fixed_shape<(Axes::contains(Ints) ? TTensor::shape_type::at(Ints)
-                                             : 1)...>{};
+    return fixed_shape<(Axes::contains(Ints) ? Shape::at(Ints) : 1)...>{};
+}
+
+template <IsFixedDims Axes, size_t Rank, size_t... Ints>
+constexpr auto
+ranked_reduce_source_shape_type(const ranked_shape<Rank> &shape,
+                                std::index_sequence<Ints...>) noexcept {
+    return ranked_shape<Rank>{(Axes::contains(Ints) ? shape.at(Ints) : 1)...};
+}
+
+template <template <size_t...> class A, size_t... Dims, size_t... Perms,
+          size_t... Ints>
+inline constexpr auto permute_fixed_dims(A<Dims...> a, A<Perms...> perms,
+                                         std::index_sequence<Ints...>) {
+    return A<(a[perms[Ints]])...>{};
 }
 } // namespace utility_detail
 
@@ -100,9 +119,25 @@ inline constexpr auto concat_fixed_dims(T<PreDims...>,
 
 template <size_t OutRank, size_t OffSet = 0, template <size_t...> class A,
           size_t... Dims>
-inline constexpr auto slice_fixed_dims(A<Dims...> a) noexcept {
+inline constexpr auto slice_dims(A<Dims...> a) noexcept {
     return utility_detail::slice<OutRank, OffSet>(
         a, std::make_index_sequence<OutRank>{});
+}
+
+template <size_t OutRank, size_t OffSet = 0, size_t InRank>
+inline constexpr auto slice_dims(ranked_shape<InRank> a) noexcept {
+    return utility_detail::slice_index<OutRank>(
+        a, OffSet, std::make_index_sequence<OutRank>{});
+}
+
+template <size_t Rank, size_t OffSet = 0, size_t Value = 1,
+          template <size_t...> class A, size_t... Dims>
+inline constexpr auto fill_fixed_dims(A<Dims...> a) noexcept {
+    constexpr auto left = slice_dims<OffSet, 0>(a);
+    constexpr auto mid = utility_detail::make_sames<Rank, Value, A>(
+        std::make_index_sequence<Rank>{});
+    constexpr auto right = slice_dims<OffSet, 0>(a);
+    return concat_fixed_dims(concat_fixed_dims(left, mid), right);
 }
 
 template <template <size_t...> class T, size_t... ADims, size_t... BDims>
@@ -123,10 +158,24 @@ inline constexpr auto shift_fixed_dims(A<Dims...> a) {
     return utility_detail::shift_fixed_dims<Offset>(a);
 }
 
-template <IsFixedDims Axes, IsFixedTensor TTensor>
-constexpr auto fixed_reduce_source_shape_type() noexcept {
-    return utility_detail::fixed_reduce_source_shape_type<Axes, TTensor>(
-        std::make_index_sequence<TTensor::rank()>());
+template <template <size_t...> class A, size_t... Dims, size_t... Perms>
+inline constexpr auto permute_fixed_dims(A<Dims...> a, A<Perms...> perms) {
+    static_assert(sizeof...(Dims) == sizeof...(Perms),
+                  "the dims and perms length must be same");
+    return utility_detail::permute_fixed_dims(
+        a, perms, std::make_index_sequence<sizeof...(Dims)>{});
+}
+
+template <IsFixedDims Axes, class Shape>
+constexpr auto reduce_source_shape_type(const Shape &shape) noexcept {
+    if constexpr (is_fixed_dims_v<Shape>) {
+        return utility_detail::fixed_reduce_source_shape_type<Axes, Shape>(
+            std::make_index_sequence<Shape::rank()>());
+    } else {
+
+        return utility_detail::ranked_reduce_source_shape_type<Axes>(
+            shape, std::make_index_sequence<Shape::rank()>());
+    }
 }
 
 template <size_t InRank, IsFixedDims Axes, size_t OutRank>

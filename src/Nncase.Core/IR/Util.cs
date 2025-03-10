@@ -19,20 +19,6 @@ namespace Nncase.IR
             return index < 0 ? index + rank : index;
         }
 
-        public static Expr GetWindowedOutputSize(Expr size, Expr filter, Expr stride, Expr dilation, bool same, bool ceilMode)
-        {
-            var effectiveFilterSize = ((filter - 1) * dilation) + 1;
-            var falseBranch = !ceilMode
-                ? ((size - effectiveFilterSize + stride) / stride)
-                : F.Tensors.Cast(
-                    F.Math.Ceil(
-                        F.Tensors.Cast(size - effectiveFilterSize + stride, DataTypes.Float32) /
-                        F.Tensors.Cast(stride, DataTypes.Float32)),
-                    DataTypes.Int32);
-            var trueBranch = (size + stride - 1) / stride;
-            return same ? trueBranch : falseBranch;
-        }
-
         public static Expr GetConvTransposeOutputShape(Expr inShape, Expr wShape, Expr strides, Expr outPadding, Expr paddings, Expr dilations, string autoPad, Expr group)
         {
             inShape = Cast(inShape, DataTypes.Int64);

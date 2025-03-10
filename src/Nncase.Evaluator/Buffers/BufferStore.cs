@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Buffers;
 
@@ -12,14 +13,14 @@ namespace Nncase.Evaluator.Buffers;
 [TypeInferGenerator]
 public partial class BufferStoreEvaluator : ITypeInferencer<BufferStore>, IOpPrinter<BufferStore>
 {
-    public string Visit(IIRPrinterContext context, BufferStore target, bool iLmode)
+    public string Visit(IPrintOpContext context, BufferStore target)
     {
-        if (iLmode)
+        if (context.Flags.HasFlag(PrinterFlags.Inline) || context.Flags.HasFlag(PrinterFlags.Script))
         {
-            throw new System.NotSupportedException();
+            return $"{context.GetArgument(target, BufferStore.Input)}[{context.GetArgument(target, BufferStore.Indices)}] = {context.GetArgument(target, BufferStore.Value)}";
         }
 
-        return $"{context.GetArgument(target, BufferStore.Input)}[{context.GetArgument(target, BufferStore.Indices)}] = {context.GetArgument(target, BufferStore.Value)}";
+        return context.GetDefault(target);
     }
 
     private IRType Visit(TensorType input, TupleType indices, TensorType value)

@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reactive;
@@ -10,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Buffers;
 using Nncase.IR.Math;
@@ -18,236 +20,98 @@ using Nncase.Utilities;
 
 namespace Nncase.Diagnostics;
 
-/// <summary>
-/// a TextWirter, it's have _scope data struct.
-/// </summary>
-public sealed class ScopeWriter
+internal sealed class IndentedWriter : StreamWriter
 {
-    private readonly TextWriter _rootWriter;
-
-    /// <summary>
-    /// stack container.
-    /// </summary>
-    private readonly Stack<(StringBuilder, TextWriter)> _scopeStack = new();
-
-    /// <summary>
-    /// record the all var name's in this scope and parent's scope.
-    /// </summary>
-    private readonly Dictionary<string, int> _globalVarCountMap = new();
-
-    /// <summary>
-    /// the scopes var name stack.
-    /// </summary>
-    private readonly Stack<List<IPrintSymbol>> _varSymbolStack = new();
-
-    /// <summary>
-    /// current writer.
-    /// </summary>
-    private TextWriter _writer;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ScopeWriter"/> class.
-    /// ctor.
-    /// </summary>
-    /// <param name="textWriter">writer.</param>
-    /// <param name="indent_level">init indent level.</param>
-    public ScopeWriter(TextWriter textWriter, int indent_level = 0)
+    public IndentedWriter(Stream stream, bool leaveOpen = true)
+        : base(stream, leaveOpen: leaveOpen)
     {
-        IndentLevel = indent_level;
-        _rootWriter = textWriter;
-        _writer = textWriter;
-        _varSymbolStack.Push(new());
     }
 
-    /// <summary>
-    /// Gets or sets indent level.
-    /// </summary>
-    public int IndentLevel { get; set; }
+    public int Indent { get; set; }
 
-    /// <summary>
-    /// Gets current VarNamelist.
-    /// </summary>
-    private List<IPrintSymbol> VarSymbolList => _varSymbolStack.Peek();
-
-    /// <summary>
-    /// push the new string writer, tempoary record the current code into this frame.
-    /// </summary>
-    public void Push()
+    public IndentedWriter WInd()
     {
-        var builder = new StringBuilder();
-        TextWriter writer = new StringWriter(builder);
-        _scopeStack.Push((builder, writer));
-        _writer = writer;
-
-        _varSymbolStack.Push(new());
-    }
-
-    /// <summary>
-    /// get current frame string.
-    /// </summary>
-    public StringBuilder Pop()
-    {
-        var (builder, writer) = _scopeStack.Pop();
-        writer.Dispose();
-        if (_scopeStack.Count == 0)
+        for (int i = 0; i < Indent; i++)
         {
-            _writer = _rootWriter;
-        }
-        else
-        {
-            _writer = _scopeStack.Peek().Item2;
+            Write(' ');
         }
 
-        foreach (var name in _varSymbolStack.Pop())
-        {
-            _globalVarCountMap[name.Name]--;
-            if (_globalVarCountMap[name.Name] == 0)
-            {
-                _globalVarCountMap.Remove(name.Name);
-            }
-        }
-
-        // VarNameList
-        return builder;
-    }
-
-    /// <summary>
-    /// insert indent and write.
-    /// </summary>
-    public void IndWrite(string? value) => Indent().Write(value);
-
-    /// <summary>
-    /// write the string builder.
-    /// </summary>
-    public void IndWrite(StringBuilder? value) => Indent().Write(value);
-
-    /// <summary>
-    /// insert indent and write line.
-    /// </summary>
-    public void IndWriteLine(string? value = null) => Indent().WriteLine(value);
-
-    /// <summary>
-    /// wrtie string builder.
-    /// </summary>
-    public void IndWriteLine(StringBuilder? value) => Indent().WriteLine(value);
-
-    /// <summary>
-    /// Append the current line tail, without the indent.
-    /// </summary>
-    public void Append(string value) => _writer.Write(value);
-
-    /// <summary>
-    /// wrtie string builder.
-    /// </summary>
-    public void Append(StringBuilder value) => _writer.Write(value);
-
-    /// <summary>
-    /// Append the current line tail, without the indent, but add new line.
-    /// </summary>
-    public void AppendLine(string value) => _writer.WriteLine(value);
-
-    /// <summary>
-    /// wrtie string builder.
-    /// </summary>
-    public void AppendLine(StringBuilder value) => _writer.WriteLine(value);
-
-    /// <summary>
-    /// remove last char.
-    /// </summary>
-    public void RemoveLast()
-    {
-        var sb = _scopeStack.Peek().Item1;
-        sb.Remove(sb.Length - 1, 1);
-    }
-
-    /// <summary>
-    /// add the indent level, return the indent mananger for auto indent down.
-    /// </summary>
-    public IndentMananger IndentUp(int indent_diff = 2)
-    {
-        return new(this, indent_diff);
-    }
-
-    /// <summary>
-    /// get the unique var symbol.
-    /// </summary>
-    /// <param name="var">var name.</param>
-    /// <param name="prefix">prefix name.</param>
-    public IPrintSymbol GetUniqueVarSymbol(Var @var, string prefix = "")
-    {
-        if (!_globalVarCountMap.TryGetValue(prefix + @var.Name + "#" + @var.GlobalVarIndex.ToString(), out var count))
-        {
-            count = 0;
-        }
-
-        var symbol = new ScriptSymobl(new(prefix + @var.Name + "#" + @var.GlobalVarIndex.ToString() + (count == 0 ? string.Empty : $"_{count}")), @var.Name, false);
-        count++;
-        _globalVarCountMap[@var.Name] = count;
-        return symbol;
-    }
-
-    /// <summary>
-    /// insert the indent.
-    /// </summary>
-    private TextWriter Indent()
-    {
-        for (int i = 0; i < IndentLevel; i++)
-        {
-            _writer.Write(" ");
-        }
-
-        return _writer;
+        return this;
     }
 }
 
-/// <summary>
-/// mananger the wirte indent.
-/// </summary>
-public sealed class IndentMananger : IDisposable
+internal sealed class ScopeManager : IDisposable
 {
-    /// <summary>
-    /// the parent scope wirter.
-    /// </summary>
-    private readonly ScopeWriter _parent;
-
-    /// <summary>
-    /// the indent add/sub diff value.
-    /// </summary>
-    private readonly int _indentDiff;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="IndentMananger"/> class.
-    /// <see cref="IndentMananger"/>.
-    /// </summary>
-    public IndentMananger(ScopeWriter parent, int level_diff = 1)
+    public ScopeManager()
     {
-        _parent = parent;
-        _indentDiff = level_diff;
-        _parent.IndentLevel += _indentDiff;
     }
 
-    /// <summary>
-    /// reduce indentLevel.
-    /// </summary>
+    public event Action? ExitActions;
+
     public void Dispose()
     {
-        _parent.IndentLevel -= _indentDiff;
+        ExitActions?.Invoke();
     }
+}
+
+internal sealed record ILPrintSymbol(string Name) : IPrintSymbol
+{
+    public string Span => throw new NotImplementedException();
+
+    public bool IsRefSymobl => true;
+
+    public override string ToString() => Name;
+}
+
+internal sealed class PrintOpContext : IPrintOpContext
+{
+    public PrintOpContext(PrinterFlags flags, ILPrintSymbol op, ILPrintSymbol[] arguments)
+    {
+        Flags = flags;
+        Op = op;
+        Arguments = arguments;
+    }
+
+    public PrinterFlags Flags { get; }
+
+    public ILPrintSymbol Op { get; }
+
+    public ILPrintSymbol[] Arguments { get; }
+
+    public IPrintSymbol Get(Op op) => Op;
+
+    public IPrintSymbol GetArgument(Op op, ParameterInfo parameter) => Arguments[parameter.Index];
+
+    public IPrintSymbol[] GetArguments(Op op) => Arguments;
+
+    public string Indent() => string.Empty;
+
+    public IPrintSymbol Visit(Expr expr) => throw new NotImplementedException();
 }
 
 internal sealed class ILPrintVisitor : ExprFunctor<string, string>
 {
-    private readonly bool _displayCallable;
-    private readonly ScopeWriter _scope;
-    private readonly Dictionary<Expr, string> _names = new Dictionary<Expr, string>(ReferenceEqualityComparer.Instance);
+    private readonly IndentedWriter _writer;
+    private readonly List<Dictionary<Expr, string>> _stackedMemos;
+    private readonly List<int> _stackedSSANumbers;
+    private readonly List<int> _stackedScopeDepthOffSets;
+    private readonly List<int> _stackedVisitDepthOffSets;
 
-    private int _localId;
-
-    public ILPrintVisitor(TextWriter textWriter, bool display_callable, int indent_level)
+    public ILPrintVisitor(IndentedWriter printer, PrinterFlags printerFlags, IReadOnlyDictionary<Expr, string> feedDict)
     {
-        _displayCallable = display_callable;
-        _scope = new(textWriter, indent_level);
+        _writer = printer;
+        Flags = printerFlags;
+        _stackedMemos = new() { new(feedDict, ReferenceEqualityComparer.Instance) };
+        _stackedSSANumbers = [0];
+        _stackedScopeDepthOffSets = [0];
+        _stackedVisitDepthOffSets = [0];
     }
+
+    public PrinterFlags Flags { get; private set; }
+
+    public int ScopeDepth => _stackedMemos.Count;
+
+    public int VisitDepth { get; private set; }
 
     public override string DefaultVisitType(IRType type) => type.ToString();
 
@@ -267,10 +131,10 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
     /// <inheritdoc/>
     public override string VisitType(TensorType type) => type.DType switch
     {
-        PrimType ptype => ptype.GetDisplayName() + (type.Shape.IsScalar ? string.Empty : type.Shape.ToString()),
+        PrimType ptype => ptype.GetDisplayName() + (type.Shape.IsScalar ? string.Empty : VisitShape(type.Shape)),
         PointerType { ElemType: PrimType etype } => $"*{etype.GetDisplayName()}",
         ValueType => $"{type.DType}",
-        VectorType vtype => $"{vtype.ElemType.GetDisplayName()}<{string.Join(",", vtype.Lanes)}>" + (type.Shape.IsScalar ? string.Empty : type.Shape.ToString()),
+        VectorType vtype => $"{vtype.ElemType.GetDisplayName()}<{string.Join(",", vtype.Lanes)}>" + (type.Shape.IsScalar ? string.Empty : VisitShape(type.Shape)),
         _ => throw new NotSupportedException(type.DType.GetType().Name),
     };
 
@@ -305,175 +169,218 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         return $"{{{VisitType(type.TensorType)}, ({string.Join(',', type.NdSBP)}), [{string.Join(',', sshape)}]}}";
     }
 
-    /// <inheritdoc/>
-    protected override string VisitCall(Call expr)
+    protected override string DispatchVisit(Expr expr)
     {
-        if (_names.TryGetValue(expr, out var name))
+        if (_stackedMemos[^1].TryGetValue(expr, out var name))
         {
             return name;
         }
 
-        var target = Visit(expr.Target);
-        var property = expr.Target is Op op && op.DisplayProperty() is string prop && prop != string.Empty ? (prop + ", ") : string.Empty;
-        var args = expr.Arguments.AsValueEnumerable().Select(Visit).ToArray();
-        name = AllocateTempVar(expr);
-        _scope.IndWrite($"{name} = {target}({property}{string.Join(", ", args)})");
-        AppendCheckedType(expr.CheckedType);
+        VisitDepth++;
+        if (ShouldEnterVisit())
+        {
+            name = base.DispatchVisit(expr);
+        }
+        else
+        {
+            name = $"...";
+        }
+
+        VisitDepth--;
+        _stackedMemos[^1].Add(expr, name);
         return name;
+    }
+
+    /// <inheritdoc/>
+    protected override string VisitCall(Call expr)
+    {
+        var target = Visit(expr.Target);
+        var args = expr.Arguments.AsValueEnumerable().Select(Visit).ToArray();
+        var context = new PrintOpContext(Flags, new(target), args.Select(arg => new ILPrintSymbol(arg)).ToArray());
+        if (Flags.HasFlag(PrinterFlags.Inline))
+        {
+            string? callOpString = null;
+            if (expr.Target is Op op)
+            {
+                callOpString = CompilerServices.PrintOp(op, context);
+            }
+
+            callOpString ??= $"{target}({string.Join(", ", args)})";
+            return callOpString;
+        }
+        else
+        {
+            var name = GetNextSSANumber();
+            string property = string.Empty;
+            if (expr.Target is Op op)
+            {
+                property = op.DisplayProperty() is string prop && prop != string.Empty ? (prop + ", ") : string.Empty;
+            }
+
+            _writer.WInd().Write($"{name} = {target}({property}{string.Join(", ", args)})");
+            AppendCheckedType(expr.CheckedType, expr.Metadata.Range, " " + string.Join(",", expr.Metadata.OutputNames ?? Array.Empty<string>()));
+            return name;
+        }
     }
 
     /// <inheritdoc/>
     protected override string VisitIf(If expr)
     {
-        foreach (var expr1 in expr.ParamList)
+        var cond = Visit(expr.Condition);
+        var thenFunc = Visit(expr.Then);
+        var elseFunc = Visit(expr.Else);
+        var args = expr.Arguments.AsValueEnumerable().Select(Visit).ToArray();
+        if (Flags.HasFlag(PrinterFlags.Inline))
         {
-            Visit(expr1);
+            return $"({cond} ? {thenFunc}({string.Join(", ", args)}) : {elseFunc}({string.Join(", ", args)}))";
         }
-
-        _scope.IndWriteLine($"if({Visit(expr.Condition)}, Params: ({string.Join(",", expr.ParamList.AsValueEnumerable().Select(Visit))})) " + "{");
-        using (_scope.IndentUp())
+        else
         {
-            Visit(expr.Then);
-        }
+            var name = GetNextSSANumber();
+            _writer.WInd().Write($"{name} = if({cond}, {string.Join(", ", args)})");
+            AppendCheckedType(expr.CheckedType, expr.Metadata.Range);
+            _writer.WInd().WriteLine("{");
+            using (IndentScope())
+            {
+                _writer.WInd().WriteLine(thenFunc);
+            }
 
-        _scope.IndWriteLine("} else {");
-        using (_scope.IndentUp())
-        {
-            Visit(expr.Else);
-        }
+            _writer.WInd().WriteLine("} else {");
 
-        _scope.IndWriteLine("}");
-        return "if";
+            using (IndentScope())
+            {
+                _writer.WInd().WriteLine(elseFunc);
+            }
+
+            _writer.WInd().WriteLine("}");
+            return name;
+        }
     }
 
     /// <inheritdoc/>
     protected override string VisitConst(Const expr)
     {
-        if (_names.TryGetValue(expr, out var name))
-        {
-            return name;
-        }
-
         string valueStr = expr switch
         {
-            TensorConst tc => tc.Value.Shape.Size <= 8 ? tc.Value.GetArrayString(false) : string.Empty,
-            TupleConst => string.Empty,
+            TensorConst tc => VisitTensorValue(tc.Value, tc.ValueType),
+            TupleConst tp => VisitValue(tp.Value),
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         };
-        valueStr = valueStr != string.Empty ? " : " + valueStr : string.Empty;
-        name = $"const({VisitType(expr.CheckedType)}{valueStr})";
 
-        _names.Add(expr, name);
+        if (Flags.HasFlag(PrinterFlags.Inline))
+        {
+            return valueStr;
+        }
+
+        valueStr = valueStr != string.Empty ? " : " + valueStr : string.Empty;
+        var name = $"const({VisitType(expr.CheckedType)}{valueStr})";
         return name;
     }
 
     /// <inheritdoc/>
     protected override string VisitFunction(Function expr)
     {
-        if (_names.TryGetValue(expr, out var name))
+        using var subScope = NestedScope();
+        var name = $"%{expr.Name}";
+        if (Flags.HasFlag(PrinterFlags.Inline))
         {
             return name;
         }
 
-        name = $"%{expr.Name}";
-        _names.Add(expr, name);
-        _scope.Push();
-
         // 1. Function signature
-        _scope.IndWrite($"{name} = fn({StringUtility.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit))})");
-        AppendCheckedType(expr.CheckedType);
-        _scope.IndWriteLine("{");
+        _writer.WInd().Write($"{name} = fn({StringUtility.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit))})");
+        AppendCheckedType(expr.CheckedType, expr.Metadata.Range);
+        _writer.WInd().WriteLine("{");
 
         // 2. Function body
-        using (_scope.IndentUp())
+        if (ShouldEnterScope())
         {
-            var body = Visit(expr.Body);
+            using (IndentScope())
+            {
+                var body = Visit(expr.Body);
+            }
+        }
+        else
+        {
+            _writer.WInd().WriteLine("...");
         }
 
         // 3. Function closing
-        _scope.IndWriteLine("}");
-        _scope.Append(_scope.Pop());
+        _writer.WInd().WriteLine("}");
         return name;
     }
 
     protected override string VisitFusion(Fusion expr)
     {
-        if (_names.TryGetValue(expr, out var name))
+        if (Flags.HasFlag(PrinterFlags.Inline))
         {
-            return name;
-        }
-
-        name = $"%{expr.Name}";
-        _names.Add(expr, name);
-        _scope.Push();
-
-        // 1. Function signature
-        _scope.IndWrite($"{name} = fusion<{expr.ModuleKind}>({StringUtility.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit))})");
-        AppendCheckedType(expr.CheckedType);
-        _scope.IndWriteLine("{");
-
-        // 2. Function body
-        if (_displayCallable)
-        {
-            using (_scope.IndentUp())
-            {
-                var body_builder = new StringBuilder();
-                using (var body_writer = new StringWriter(body_builder))
-                {
-                    var visitor = new ILPrintVisitor(body_writer, true, _scope.IndentLevel).Visit(expr.Body);
-                    _scope.Append(body_writer.ToString());
-                }
-            }
+            return expr.Name;
         }
         else
         {
-            _scope.IndWriteLine("...");
-        }
+            using var subScope = NestedScope();
+            var name = $"%{expr.Name}";
 
-        // 3. Function closing
-        _scope.IndWriteLine("}");
-        _scope.Append(_scope.Pop());
-        return name;
+            // 1. Function signature
+            _writer.WInd().Write($"{name} = fusion<{expr.ModuleKind}>({StringUtility.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit))})");
+            AppendCheckedType(expr.CheckedType, expr.Metadata.Range);
+            _writer.WInd().WriteLine("{");
+
+            // 2. Function body
+            if (ShouldEnterScope())
+            {
+                using (IndentScope())
+                {
+                    Visit(expr.Body);
+                }
+            }
+            else
+            {
+                _writer.WInd().WriteLine("...");
+            }
+
+            // 3. Function closing
+            _writer.WInd().WriteLine("}");
+            return name;
+        }
     }
 
     /// <inheritdoc/>
     protected override string VisitPrimFunctionWrapper(PrimFunctionWrapper expr)
     {
-        if (_names.TryGetValue(expr, out var name))
+        if (Flags.HasFlag(PrinterFlags.Inline))
         {
-            return name;
+            return expr.Name;
         }
 
-        name = $"%{expr.Name}";
-        _names.Add(expr, name);
-        _scope.Push();
+        using var subScope = NestedScope();
+        var name = $"%{expr.Name}";
 
         // 1. Function signature
-        _scope.IndWrite($"{name} = prim_wrapper({string.Join(", ", expr.ParameterTypes.Select(x => x == null ? string.Empty : VisitType(x)))})");
-        AppendCheckedType(expr.CheckedType, " {");
+        _writer.WInd().Write($"{name} = prim_wrapper({string.Join(", ", expr.ParameterTypes.Select(x => x == null ? string.Empty : VisitType(x)))})");
+        AppendCheckedType(expr.CheckedType, expr.Metadata.Range, " {");
 
         // 2. Function body
-        if (_displayCallable)
+        if (ShouldEnterScope())
         {
-            using (_scope.IndentUp())
+            using (IndentScope())
             {
-                using (var bodys = new StringReader(CompilerServices.Print(expr.Target)))
+                using (var bodys = new StringReader(CompilerServices.Print(expr.Target, Flags | PrinterFlags.Script)))
                 {
                     while (bodys.ReadLine() is string line)
                     {
-                        _scope.IndWriteLine(line);
+                        _writer.WInd().WriteLine(line);
                     }
                 }
             }
         }
         else
         {
-            _scope.IndWriteLine("...");
+            _writer.WInd().WriteLine("...");
         }
 
         // 3. Function closing
-        _scope.IndWriteLine("}");
-        _scope.Append(_scope.Pop());
+        _writer.WInd().WriteLine("}");
         return name;
     }
 
@@ -486,235 +393,297 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
     /// <inheritdoc/>
     protected override string VisitTuple(IR.Tuple expr)
     {
-        if (_names.TryGetValue(expr, out var name))
+        var fields = expr.Fields.AsValueEnumerable().Select(Visit).ToArray();
+        if (Flags.HasFlag(PrinterFlags.Inline))
         {
+            return $"({string.Join(", ", fields)})";
+        }
+        else
+        {
+            var name = GetNextSSANumber();
+            _writer.WInd().Write($"{name} = ({string.Join(", ", fields)})");
+            AppendCheckedType(expr.CheckedType, expr.Metadata.Range);
+            _writer.WInd().WriteLine();
             return name;
         }
-
-        var fields = expr.Fields.AsValueEnumerable().Select(Visit).ToArray();
-        name = AllocateTempVar(expr);
-        _scope.IndWrite($"{name} = ({string.Join(", ", fields)})");
-        AppendCheckedType(expr.CheckedType);
-        _scope.IndWriteLine();
-        return name;
     }
 
     /// <inheritdoc/>
     protected override string VisitVar(Var expr)
     {
-        if (_names.TryGetValue(expr, out var name))
+        var name = $"%{expr.Name}#{expr.GlobalVarIndex}";
+        if (Flags.HasFlag(PrinterFlags.Inline))
         {
             return name;
         }
 
-        name = $"%{expr.Name}#{expr.GlobalVarIndex}";
-        _names.Add(expr, name);
-        if (expr.CheckedType is IRType type)
-        {
-            name += $": {VisitType(type)}";
-        }
-
+        name += $": {VisitType(expr.TypeAnnotation)}";
         return name;
     }
 
     /// <inheritdoc/>
     protected override string VisitNone(None expr)
     {
-        if (_names.TryGetValue(expr, out var name))
-        {
-            return name;
-        }
-
-        name = $"None";
-        _names.Add(expr, name);
-        return name;
+        return $"None";
     }
 
     /// <inheritdoc/>
     protected override string VisitMarker(Marker expr)
     {
-        if (_names.TryGetValue(expr, out var name))
+        if (Flags.HasFlag(PrinterFlags.Inline))
         {
-            return name;
+            throw new NotSupportedException($"Inline Mode with {typeof(Marker)}");
         }
 
+        var name = GetNextSSANumber();
         var target = Visit(expr.Target);
         var attr = Visit(expr.Attribute);
-        name = AllocateTempVar(expr);
-        _scope.IndWrite($"{name} = {target}@({expr.Name} = {attr})");
-        AppendCheckedType(expr.CheckedType);
+        _writer.WInd().Write($"{name} = {target}@({expr.Name} = {attr})");
+        AppendCheckedType(expr.CheckedType, expr.Metadata.Range);
         return name;
     }
 
     protected override string VisitBuffer(TIR.Buffer expr)
     {
-        if (_names.TryGetValue(expr, out var name))
+        if (Flags.HasFlag(PrinterFlags.Inline))
         {
-            return name;
+            throw new NotSupportedException($"Inline Mode with {typeof(TIR.Buffer)}");
         }
 
-        name = AllocateTempVar(expr);
+        var name = GetNextSSANumber();
         var type = expr.DistributedType == null ? VisitType(expr.CheckedType) : VisitType(expr.DistributedType);
-        _scope.IndWriteLine($"{name} = buffer({type})");
+        _writer.WInd().WriteLine($"{name} = buffer({type})");
         return name;
     }
 
     protected override string VisitBufferOf(BufferOf expr)
     {
-        if (_names.TryGetValue(expr, out var name))
+        if (Flags.HasFlag(PrinterFlags.Inline))
         {
-            return name;
+            throw new NotSupportedException($"Inline Mode with {typeof(BufferOf)}");
         }
 
-        name = $"bufferof({Visit(expr.Input)})";
-        _names.Add(expr, name);
+        var name = $"bufferof({Visit(expr.Input)})";
         return name;
     }
 
     /// <inheritdoc/>
     protected override string VisitGrid(IR.Affine.Grid expr)
     {
-        if (_names.TryGetValue(expr, out var name))
+        if (Flags.HasFlag(PrinterFlags.Inline))
         {
-            return name;
+            throw new NotSupportedException($"Inline Mode with {typeof(IR.Affine.Grid)}");
         }
 
-        name = AllocateTempVar(expr);
+        var name = GetNextSSANumber();
         var reads = expr.Reads.AsValueEnumerable().Select(Visit).ToArray();
         var buffers = expr.Buffers.AsValueEnumerable().Select(Visit).ToArray();
-        _scope.Push();
 
         // 1. For Loop signature
-        _scope.Append($"{name} = Grid({string.Join(", ", reads)})");
-        AppendCheckedType(expr.CheckedType);
-        _scope.IndWriteLine(" {");
+        _writer.Write($"{name} = Grid({string.Join(", ", reads)})");
+        AppendCheckedType(expr.CheckedType, expr.Body.Metadata.Range);
+        _writer.WInd().WriteLine(" {");
 
-        using (_scope.IndentUp())
+        using (IndentScope())
         {
             // 2. In buffers
-            _scope.IndWriteLine($"Reads:");
-            using (_scope.IndentUp())
+            _writer.WInd().WriteLine($"Reads:");
+            using (IndentScope())
             {
                 for (int i = 0; i < buffers.Length - 1; i++)
                 {
-                    _scope.IndWriteLine($"{buffers[i]}: {expr.AccessMaps[i]}");
+                    _writer.WInd().WriteLine($"{buffers[i]}: {expr.AccessMaps[i]}");
                 }
             }
 
             // 3. Out buffer
-            _scope.IndWriteLine($"Write:");
-            using (_scope.IndentUp())
+            _writer.WInd().WriteLine($"Write:");
+            using (IndentScope())
             {
-                _scope.IndWriteLine($"{buffers[^1]}: {expr.AccessMaps[^1]}");
+                _writer.WInd().WriteLine($"{buffers[^1]}: {expr.AccessMaps[^1]}");
             }
 
             // 4. For Body
             var domain_parameters = Visit(expr.DomainParameter);
             var parameters = expr.BodyParameters.AsValueEnumerable().Select(Visit).ToArray();
-            _scope.IndWrite($"Body: ({domain_parameters}, {string.Join(", ", parameters)})");
-            AppendCheckedType(expr.Body.CheckedType, " {", hasNewLine: true);
-            using (_scope.IndentUp())
+            _writer.WInd().Write($"Body: ({domain_parameters}, {string.Join(", ", parameters)})");
+            AppendCheckedType(expr.Body.CheckedType, expr.Body.Metadata.Range, " {", hasNewLine: true);
+            using (IndentScope())
             {
-                var ss = CompilerServices.Print(expr.Body, true);
+                var ss = CompilerServices.Print(expr.Body, Flags | PrinterFlags.Script);
                 foreach (var line in ss.Split('\n'))
                 {
-                    _scope.IndWriteLine(line);
+                    _writer.WInd().WriteLine(line);
                 }
             }
 
-            _scope.IndWriteLine("}");
+            _writer.WInd().WriteLine("}");
         }
 
         // 3. For closing
-        _scope.IndWriteLine("}");
+        _writer.WInd().WriteLine("}");
 
-        _scope.IndWrite(_scope.Pop());
         return name;
     }
 
-    /// <inheritdoc/>
-    protected override string VisitFor(For expr)
+    protected override string VisitShape(Shape shape) =>
+        shape.Kind switch
+        {
+            ShapeKind.Invalid => "Invalid",
+            ShapeKind.Unranked => "Unranked",
+            _ => $"[{string.Join(',', shape.Select(VisitDimension))}]",
+        };
+
+    private string GetNextSSANumber()
     {
-        if (_names.TryGetValue(expr, out var name))
-        {
-            return name;
-        }
-
-        // the for loop will not used by other expression, so we need save the whole `For` il
-        _scope.Push();
-
-        // 1. For Loop signature
-        _scope.Append($"For {expr.Mode}({Visit(expr.LoopVar)} in Range({Visit(expr.Domain.Start)}, {Visit(expr.Domain.Stop)}, {Visit(expr.Domain.Step)})");
-        AppendCheckedType(expr.CheckedType, " {");
-
-        // 2. For Body
-        using (_scope.IndentUp())
-        {
-            Visit(expr.Body);
-        }
-
-        // 3. For closing
-        _scope.IndWriteLine("}");
-
-        // 4. extact whole il
-        _scope.IndWrite(_scope.Pop());
-        return string.Empty;
+        return $"%{_stackedSSANumbers[^1]++}";
     }
 
-    /// <inheritdoc/>
-    protected override string VisitSequential(Sequential expr)
-    {
-        if (_names.TryGetValue(expr, out var name))
+    private string VisitDimension(Dimension dimension) =>
+        dimension.Kind switch
         {
-            return name;
+            DimensionKind.Unknown => "?",
+            DimensionKind.Fixed => $"{dimension.FixedValue}L",
+            DimensionKind.Dynamic => VisitDimensionExpr(dimension.Value),
+            _ => throw new NotSupportedException(dimension.Kind.ToString()),
+        };
+
+    private string VisitDimensionExpr(Expr expr)
+    {
+        if (Flags.HasFlag(PrinterFlags.SkipDimensionExpr))
+        {
+            return "...";
         }
 
-        _scope.Push();
-
-        // 1. Sequential signature
-        _scope.Append($"Sequential");
-        AppendCheckedType(expr.CheckedType, " {", hasNewLine: true);
-
-        // 2. For Body
-        using (_scope.IndentUp())
+        using (NestedScope(Flags | PrinterFlags.Inline, visitDepthDiff: -VisitDepth, scopeDepthDiff: -1))
         {
-            foreach (var item in expr.Fields)
-            {
-                Visit(item);
-            }
+            return Visit(expr);
         }
-
-        // 3. For closing
-        _scope.IndWriteLine("}");
-
-        // 4. extact whole il
-        _scope.IndWrite(_scope.Pop());
-        return string.Empty;
     }
 
-    private string AllocateTempVar(Expr expr)
+    private void AppendCheckedType(IRType? type, ValueRange<double>? range, string end = "", bool hasNewLine = true)
     {
-        var name = $"%{_localId++}";
-        _names.Add(expr, name);
-        return name;
-    }
-
-    private void AppendCheckedType(IRType? type, string end = "", bool hasNewLine = true)
-    {
+        var rangeText = range is not null ? $" [{range.Value.Min}, {range.Value.Max}]" : string.Empty;
         if (type is not null)
         {
             if (hasNewLine)
             {
-                _scope.AppendLine($": // {VisitType(type)}{end}");
+                _writer.WriteLine($": // {VisitType(type)}{end}, {rangeText}");
             }
             else
             {
-                _scope.Append($": // {VisitType(type)}{end}");
+                _writer.WriteLine($": // {VisitType(type)}{end}, {rangeText}");
             }
         }
         else
         {
-            _scope.Append("\n");
+            _writer.WriteLine();
         }
+    }
+
+    private string VisitValue(IValue value)
+    {
+        return value switch
+        {
+            TensorValue tv => VisitTensorValue(tv.AsTensor()),
+            TupleValue tp => $"({StringUtility.Join(",", tp.AsValueEnumerable().Select(VisitValue))})",
+            _ => throw new NotSupportedException(nameof(value)),
+        };
+    }
+
+    private string VisitTensorValue(Tensor tensor, IRType? valueType = null)
+    {
+        var length = 8;
+        if (Flags.HasFlag(PrinterFlags.Normal))
+        {
+            length = 32;
+        }
+        else if (Flags.HasFlag(PrinterFlags.Detailed))
+        {
+            length = int.MaxValue;
+        }
+
+        if (tensor.Length <= length)
+        {
+            return tensor.GetArrayString(false);
+        }
+
+        if (Flags.HasFlag(PrinterFlags.Inline))
+        {
+            return VisitType(valueType ?? new TensorType(tensor.ElementType, tensor.Shape));
+        }
+
+        return string.Empty;
+    }
+
+    private bool ShouldEnterVisit()
+    {
+        if (Flags.HasFlag(PrinterFlags.Inline))
+        {
+            if (Flags.HasFlag(PrinterFlags.Minimal) && (_stackedVisitDepthOffSets[^1] + VisitDepth) < 8)
+            {
+                return true;
+            }
+            else if (Flags.HasFlag(PrinterFlags.Normal) && (_stackedVisitDepthOffSets[^1] + VisitDepth) < 16)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private bool ShouldEnterScope()
+    {
+        if (Flags.HasFlag(PrinterFlags.Minimal) && (_stackedScopeDepthOffSets[^1] + ScopeDepth) <= 2)
+        {
+            return true;
+        }
+        else if (Flags.HasFlag(PrinterFlags.Normal) && (_stackedScopeDepthOffSets[^1] + ScopeDepth) <= 4)
+        {
+            return true;
+        }
+        else if (Flags.HasFlag(PrinterFlags.Detailed))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private ScopeManager NestedScope(PrinterFlags? flags = null, int indentDiff = 0, int visitDepthDiff = 0, int scopeDepthDiff = 0)
+    {
+        var parentFlags = Flags;
+        Flags = flags ?? parentFlags;
+        _writer.Indent += indentDiff;
+        _stackedSSANumbers.Add(_stackedSSANumbers[^1]);
+        _stackedMemos.Add(new(_stackedMemos[^1], ReferenceEqualityComparer.Instance));
+        _stackedScopeDepthOffSets.Add(scopeDepthDiff);
+        _stackedVisitDepthOffSets.Add(visitDepthDiff);
+        var manager = new ScopeManager();
+        manager.ExitActions += () =>
+        {
+            _writer.Indent -= indentDiff;
+            Flags = parentFlags;
+            _stackedSSANumbers[^2] = _stackedSSANumbers[^1];
+            var i = _stackedSSANumbers.Count - 1;
+            _stackedSSANumbers.RemoveAt(i);
+            _stackedMemos.RemoveAt(i);
+            _stackedScopeDepthOffSets.RemoveAt(i);
+            _stackedVisitDepthOffSets.RemoveAt(i);
+        };
+        return manager;
+    }
+
+    private ScopeManager IndentScope(int indentDiff = 2)
+    {
+        _writer.Indent += indentDiff;
+        var manager = new ScopeManager();
+        manager.ExitActions += () => _writer.Indent -= indentDiff;
+        return manager;
     }
 }

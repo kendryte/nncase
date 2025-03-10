@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Nncase.Evaluator;
 using Nncase.IR;
 using Onnx;
 using static Nncase.IR.F.Tensors;
@@ -102,8 +103,8 @@ namespace Nncase.Importer
         private Expr AutoPad(NodeProto op, string autoPad, Expr input, Expr weights, long[] strides, long[] dilation, bool isConv1D = false) => autoPad switch
         {
             "NOTSET" => GetPadsAttribute(op, isConv1D),
-            "SAME_UPPER" => Util.GetPaddings(input, weights, strides, dilation, true),
-            "SAME_LOWER" => Util.GetPaddings(input, weights, strides, dilation, true, true),
+            "SAME_UPPER" => TypeInference.GetPaddings(input.CheckedShape, weights.CheckedShape, strides, dilation, true),
+            "SAME_LOWER" => TypeInference.GetPaddings(input.CheckedShape, weights.CheckedShape, strides, dilation, true, true),
             "VALID" => GetPadsAttribute(op, isConv1D),
 
             // when VALID, I'm not sure this is correct

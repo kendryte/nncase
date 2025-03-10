@@ -74,7 +74,7 @@ public class CpuTargetOptions : ICpuTargetOptions
 
     [DisplayName("--hierarchy-names")]
     [Description("the name identify of hierarchies.")]
-    [DefaultValue("b")]
+    [DefaultValue("t")]
     public string HierarchyNames { get; set; } = "t";
 
     [DisplayName("--hierarchy-sizes")]
@@ -83,11 +83,23 @@ public class CpuTargetOptions : ICpuTargetOptions
     [CommandLine.AllowMultiplePerToken]
     public int[] HierarchySizes { get; set; } = new[] { 1 * (int)MathF.Pow(2, 30) };
 
+    [DisplayName("--hierarchy-latencies")]
+    [Description("the latency of hierarchies.")]
+    [DefaultValue("() => new int[] { 10000 }")]
+    [CommandLine.AllowMultiplePerToken]
+    public int[] HierarchyLatencies { get; set; } = new[] { 10000 };
+
+    [DisplayName("--hierarchy-bandwiths")]
+    [Description("the bandwidth of hierarchies.")]
+    [DefaultValue("() => new int[] { 1 }")]
+    [CommandLine.AllowMultiplePerToken]
+    public int[] HierarchyBandWidths { get; set; } = new[] { 1 };
+
     [DisplayName("--memory-capacities")]
     [Description("the memory capacity of single core. eg. `32 64` for sram,main")]
-    [DefaultValue("() => new int[] { 65536, 2147483647 }")]
+    [DefaultValue("() => new int[] { 524288, 2147483647 }")]
     [CommandLine.AllowMultiplePerToken]
-    public int[] MemoryCapacities { get; set; } = new[] { 65536, int.MaxValue };
+    public int[] MemoryCapacities { get; set; } = new[] { 524288, int.MaxValue };
 
     [DisplayName("--memory-bandwidths")]
     [Description("the memory bandwidth of single core. eg. `64 8` for sram,main")]

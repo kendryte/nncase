@@ -22,7 +22,7 @@ public sealed class UnitTestGetReplaceUtility
     [Fact]
     public void TestGetReplaceUtility()
     {
-        Assert.Throws<InvalidOperationException>(() => Utility.Get4DGNNEShape(new[] { 0, 1, 2, 3, 4 }));
+        Assert.Throws<InvalidOperationException>(() => Utility.Get4DGNNEShape([0, 1, 2, 3, 4]));
     }
 
     [Fact]
@@ -30,7 +30,7 @@ public sealed class UnitTestGetReplaceUtility
     {
         var input = IR.F.Random.Normal(DataTypes.UInt8, new[] { 1, 2, 3, 4 });
         Fx inputCtor = expr => IR.F.Tensors.Flatten(expr, 1);
-        var originOutShape = new[] { 1, 2, 3, 4 };
+        var originOutShape = new long[] { 1, 2, 3, 4 };
 
         var output = Utility.WithTmp4DShape(inputCtor, originOutShape)(input);
 

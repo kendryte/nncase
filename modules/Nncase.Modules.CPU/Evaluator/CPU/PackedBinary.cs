@@ -95,7 +95,7 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
     private IRType Visit(PackedBinary target, TensorType a, TensorType b)
     {
         var rank = System.Math.Max(a.Shape.Rank, b.Shape.Rank);
-        var outShape = new int[rank];
+        var outShape = new long[rank];
         var lhsOrginShape = a.Shape.ToValueArray();
         var rhsOrginShape = b.Shape.ToValueArray();
         for (int i = 0; i < target.LhsPackedAxes.Count; i++)
@@ -127,7 +127,7 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
                 case ( >= 0, >= 0):
                     switch (lhsOrginShape[aAxis], rhsOrginShape[bAxis])
                     {
-                        case (int l, int r) when l == r:
+                        case (long l, long r) when l == r:
                             outShape[rank + i] = a.Shape[aAxis].FixedValue;
                             orginKinds[rank + i] = DimKind.E;
                             break;

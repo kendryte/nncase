@@ -20,7 +20,7 @@ public static class TilingUtilities
         };
     }
 
-    public static int[] GetBufferShape(Expr buffer)
+    public static long[] GetBufferShape(Expr buffer)
     {
         return buffer.CheckedType switch
         {
@@ -30,7 +30,7 @@ public static class TilingUtilities
         };
     }
 
-    public static int[] InferDomainBounds(int[][] bufferShapes, AffineMap[] accessMaps)
+    public static long[] InferDomainBounds(long[][] bufferShapes, AffineMap[] accessMaps)
     {
         var solver = new Solver("affineSolver");
         var converter = new AffineExprToIntExprConverter(solver);
@@ -54,10 +54,10 @@ public static class TilingUtilities
 
         if (solutionCollector.SolutionCount() < 1)
         {
-            throw new InvalidOperationException();
+            throw new InvalidOperationException("Tiling bounds infer failed!");
         }
 
-        var dims = dimVars.Select(x => (int)solutionCollector.Value(0, x)).ToArray();
+        var dims = dimVars.Select(x => solutionCollector.Value(0, x)).ToArray();
         return dims;
     }
 }

@@ -41,13 +41,13 @@ void scatter_nd_impl(const TIn &input, const TIndex &indices,
 
     ntt::tensor_copy(input, output);
     constexpr auto k = indices_shape.rank() - 1;
-    auto update_indices = slice_fixed_dims<k>(indices_shape);
-    auto update_indices_strides = slice_fixed_dims<k>(indices_strides);
+    auto update_indices = slice_dims<k>(indices_shape);
+    auto update_indices_strides = slice_dims<k>(indices_strides);
 
-    auto in_strides_ = slice_fixed_dims<indices_shape.at(k)>(in_strides);
+    auto in_strides_ = slice_dims<indices_shape.at(k)>(in_strides);
 
     auto updates_strides_ =
-        slice_fixed_dims<update_indices.rank()>(updates_strides);
+        slice_dims<update_indices.rank()>(updates_strides);
     auto updates_size = sizeof(TIElem);
     for (auto i = update_indices.rank(); i < updates_shape.rank(); ++i) {
         updates_size *= updates_shape.at(i);

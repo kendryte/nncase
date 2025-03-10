@@ -28,7 +28,7 @@ public class UnitTestFusePadConv2D : TestClassBase
         {
             new object[]
             {
-                new[] { 1, 1, 2, 2 }, new[,]
+                new long[] { 1, 1, 2, 2 }, new[,]
             {
                 { 1, 0 },
                 { 0, 0 },
@@ -38,11 +38,11 @@ public class UnitTestFusePadConv2D : TestClassBase
             {
                 { 0, 0 },
                 { 0, 0 },
-            }, new[] { 3, 1, 1, 1 },
+            }, new long[] { 3, 1, 1, 1 },
             }, // fuse hw pad, keep n pad
             new object[]
             {
-                new[] { 1, 3, 4, 1 }, new[,]
+                new long[] { 1, 3, 4, 1 }, new[,]
             {
                 { 0, 0 },
                 { 0, 0 },
@@ -52,11 +52,11 @@ public class UnitTestFusePadConv2D : TestClassBase
             {
                 { 0, 2 },
                 { 3, 2 },
-            }, new[] { 1, 3, 2, 2 },
+            }, new long[] { 1, 3, 2, 2 },
             }, // fuse hw pad
             new object[]
             {
-                new[] { 1, 3, 4, 2 }, new[,]
+                new long[] { 1, 3, 4, 2 }, new[,]
             {
                 { 0, 0 },
                 { 0, 0 },
@@ -66,7 +66,7 @@ public class UnitTestFusePadConv2D : TestClassBase
             {
                 { 0, 2 },
                 { 3, 2 },
-            }, new[] { 1, 3, 2, 2 },
+            }, new long[] { 1, 3, 2, 2 },
             }, // nop pad
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
@@ -75,7 +75,7 @@ public class UnitTestFusePadConv2D : TestClassBase
         {
             new object[]
             {
-                new[] { 1, 3, 4, 2 }, new[,]
+                new long[] { 1, 3, 4, 2 }, new[,]
             {
                 { 1, 0 },
                 { 0, 0 },
@@ -85,11 +85,11 @@ public class UnitTestFusePadConv2D : TestClassBase
             {
                 { 0, 2 },
                 { 3, 2 },
-            }, new[] { 2, 3, 2, 2 },
+            }, new long[] { 2, 3, 2, 2 },
             }, // can't fuse n pad
             new object[]
             {
-                new[] { 1, 3, 4, 2 }, new[,]
+                new long[] { 1, 3, 4, 2 }, new[,]
             {
                 { 0, 0 },
                 { 0, 1 },
@@ -99,13 +99,13 @@ public class UnitTestFusePadConv2D : TestClassBase
             {
                 { 0, 2 },
                 { 3, 2 },
-            }, new[] { 1, 4, 2, 2 },
+            }, new long[] { 1, 4, 2, 2 },
             }, // can't fuse c pad
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
     [MemberData(nameof(TestFusePadConv2DPositiveData))]
-    public void TestFusePadConv2DPositive(int[] shape, int[,] pads1, int[,] pads2, int[] wShape, int index)
+    public void TestFusePadConv2DPositive(long[] shape, int[,] pads1, int[,] pads2, long[] wShape, int index)
     {
         var a = new Var();
         var w = Random.Normal(DataTypes.Float32, 0, 1, 0, wShape);
@@ -144,7 +144,7 @@ public class UnitTestFusePadConv2D : TestClassBase
 
     [Theory]
     [MemberData(nameof(TestFusePadConv2DNegativeData))]
-    public void TestFusePadConv2DNegative(int[] shape, int[,] pads1, int[,] pads2, int[] wShape, int index)
+    public void TestFusePadConv2DNegative(long[] shape, int[,] pads1, int[,] pads2, long[] wShape, int index)
     {
         var a = new Var();
         var w = Random.Normal(DataTypes.Float32, 0, 1, 0, wShape);

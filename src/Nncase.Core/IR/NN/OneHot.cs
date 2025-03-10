@@ -25,7 +25,7 @@ public sealed partial class OneHot : Op
     /// <summary>
     /// Gets depth.
     /// </summary>
-    public static readonly ParameterInfo Depth = new(typeof(OneHot), 1, "depth");
+    public static new readonly ParameterInfo Depth = new(typeof(OneHot), 1, "depth");
 
     /// <summary>
     /// Gets values.

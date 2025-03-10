@@ -111,6 +111,8 @@ internal class ParamDict
 
     public int Get(int id, int defaultValue) => _values.TryGetValue(id, out var value) ? value.IntValue : defaultValue;
 
+    public int? GetInt(int id) => _values.TryGetValue(id, out var value) ? value.IntValue : null;
+
     public float Get(int id, float defaultValue) => _values.TryGetValue(id, out var value) ? value.FloatValue : defaultValue;
 
     public Tensor<T> Get<T>(int id, Tensor<T> defaultValue)

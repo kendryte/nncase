@@ -21,10 +21,10 @@ ptq_options.export_quant_scheme = False
 ptq_options.export_weight_range_by_channel = False
 ```
 
-* **quant_scheme：导入量化参数配置文件的路径**
-* **quant_scheme_strict_mode：是否严格按照quant_scheme执行量化**
-* **export_quant_scheme：是否导出量化参数配置文件**
-* **export_weight_range_by_channel：是否导出** `bychannel`形式的weights量化参数，为了保证量化效果，该参数建议设置为 `True`
+* **quant_scheme**：导入量化参数配置文件的路径
+* **quant_scheme_strict_mode**：是否严格按照quant_scheme执行量化
+* **export_quant_scheme**：是否导出量化参数配置文件
+* **export_weight_range_by_channel**：是否导出 `bychannel`形式的weights量化参数，为了保证量化效果，该参数建议设置为 `True`
 
 ---
 
