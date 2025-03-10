@@ -39,7 +39,7 @@ cpu_runtime_function::run(std::span<thread_inout_desc> inouts) noexcept {
         for (size_t bid = 0; bid < module().bdim(); bid++) {
             auto tid_offset = (cid * module().bdim() + bid) * module().tdim();
             blocks.emplace_back([cid, bid, inouts, tid_offset, enable_profiling,
-                timer_records, this] {
+                                 timer_records, this] {
                 cpu_block_entry_params_t block_entry_params{
                     .tdim = module().tdim(),
                     .bdim = module().bdim(),
