@@ -10,9 +10,11 @@ using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.IR.Distributed;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.Passes.Rules;
+using Nncase.Utilities;
 
 namespace Nncase.Passes.Transforms;
 
@@ -108,6 +110,7 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
     {
         return op switch
         {
+            Boxing => Visit(expr[Boxing.Input]),
             Reshape => Visit(expr[Reshape.Input]),
             Slice => Visit(expr[Slice.Input]),
             Gather => Visit(expr[Gather.Input]),
@@ -139,11 +142,29 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
             BinaryOp.Add => new(lhs.Min + rhs.Min, lhs.Max + rhs.Max),
             BinaryOp.Sub => new(lhs.Min - rhs.Max, lhs.Max - rhs.Min),
             BinaryOp.Mul => VisitMul(lhs, rhs),
+            BinaryOp.CeilDiv => VisitCeilDiv(lhs, rhs),
             BinaryOp.Div => VisitDiv(lhs, rhs),
             BinaryOp.Max => new(Math.Max(lhs.Min, rhs.Min), Math.Max(lhs.Max, rhs.Max)),
             BinaryOp.Min => new(Math.Min(lhs.Min, rhs.Min), Math.Min(lhs.Max, rhs.Max)),
             _ => ValueRange<double>.Full,
         };
+    }
+
+    private ValueRange<double> VisitCeilDiv(ValueRange<double> lhs, ValueRange<double> rhs)
+    {
+        if (rhs.Min <= 0 && rhs.Max >= 0)
+        {
+            return ValueRange<double>.Full;
+        }
+
+        var values = new[]
+        {
+            MathUtility.CeilDiv(lhs.Min, rhs.Min),
+            MathUtility.CeilDiv(lhs.Min, rhs.Max),
+            MathUtility.CeilDiv(lhs.Max, rhs.Min),
+            MathUtility.CeilDiv(lhs.Max, rhs.Max),
+        };
+        return new ValueRange<double>(values.Min(), values.Max());
     }
 
     private ValueRange<double> VisitDiv(ValueRange<double> lhs, ValueRange<double> rhs)

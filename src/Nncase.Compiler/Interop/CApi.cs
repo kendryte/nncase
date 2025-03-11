@@ -109,7 +109,7 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, HierarchyKind, void> CpuTargetOptionsSetHierarchyKindPtr;
     public delegate* unmanaged<IntPtr, int*, nuint, nuint*, void> CpuTargetOptionsSetHierarchiesPtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CpuTargetOptionsSetHierarchyNamesPtr;
-    public delegate* unmanaged<IntPtr, int*, nuint, void> CpuTargetOptionsSetHierarchySizesPtr;
+    public delegate* unmanaged<IntPtr, long*, nuint, void> CpuTargetOptionsSetHierarchySizesPtr;
     public delegate* unmanaged<IntPtr, int*, nuint, void> CpuTargetOptionsSetHierarchyLatenciesPtr;
     public delegate* unmanaged<IntPtr, int*, nuint, void> CpuTargetOptionsSetHierarchyBandWidthsPtr;
     public delegate* unmanaged<IntPtr, int*, nuint, void> CpuTargetOptionsSetMemoryCapacitiesPtr;
@@ -866,7 +866,7 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
-    private static void CpuTargetOptionsSetHierarchySizes(IntPtr handle, int* value, nuint shape0)
+    private static void CpuTargetOptionsSetHierarchySizes(IntPtr handle, long* value, nuint shape0)
     {
         Get<CpuTargetOptions>(handle).HierarchySizes = To1DArray(value, shape0);
     }

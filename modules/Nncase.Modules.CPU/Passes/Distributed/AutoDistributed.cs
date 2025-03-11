@@ -1229,6 +1229,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             else
             {
                 var outputs = typeEquivalents.Select(g => InstertTerminator(g.Value[0]))
+                .Where(e => e.CheckedType is not InvalidType)
                 .Select(e => new EqualityNode(e))
                 .OfType<IEquality>().ToList();
 
@@ -1668,6 +1669,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             (Expr e, DistributedType type) => CreateFinalBoxing(e, type),
             (Expr e, TensorType type) => e,
             (Expr e, AnyType type) => e,
+            (Expr e, InvalidType) => e,
             (_, _) => throw new NotSupportedException(),
         };
     }

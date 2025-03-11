@@ -79,9 +79,9 @@ public class CpuTargetOptions : ICpuTargetOptions
 
     [DisplayName("--hierarchy-sizes")]
     [Description("the memory capacity of hierarchies.")]
-    [DefaultValue("() => new int[] { 1073741824 }")]
+    [DefaultValue("() => new long[] { 1099511627776 }")]
     [CommandLine.AllowMultiplePerToken]
-    public int[] HierarchySizes { get; set; } = new[] { 1 * (int)MathF.Pow(2, 30) };
+    public long[] HierarchySizes { get; set; } = new[] { 1 * (long)MathF.Pow(2, 40) };
 
     [DisplayName("--hierarchy-latencies")]
     [Description("the latency of hierarchies.")]

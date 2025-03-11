@@ -254,7 +254,7 @@ typedef struct {
     void (*cpu_target_options_set_hierarchy_kind)(clr_object_handle_t handle, uint8_t value);
     void (*cpu_target_options_set_hierarchies)(clr_object_handle_t handle, int32_t* value, size_t shape0, size_t* shape1);
     void (*cpu_target_options_set_hierarchy_names)(clr_object_handle_t handle, const char* value, size_t length);
-    void (*cpu_target_options_set_hierarchy_sizes)(clr_object_handle_t handle, int32_t* value, size_t shape0);
+    void (*cpu_target_options_set_hierarchy_sizes)(clr_object_handle_t handle, int64_t* value, size_t shape0);
     void (*cpu_target_options_set_hierarchy_latencies)(clr_object_handle_t handle, int32_t* value, size_t shape0);
     void (*cpu_target_options_set_hierarchy_band_widths)(clr_object_handle_t handle, int32_t* value, size_t shape0);
     void (*cpu_target_options_set_memory_capacities)(clr_object_handle_t handle, int32_t* value, size_t shape0);
@@ -569,8 +569,8 @@ class cpu_target_options : public clr_object_base {
         nncase_clr_api()->cpu_target_options_set_hierarchy_names(obj_.get(), value.data(), value.length());
     }
 
-    void hierarchy_sizes(std::vector<int> value) {
-        std::vector<int> values;
+    void hierarchy_sizes(std::vector<int64_t> value) {
+        std::vector<int64_t> values;
         size_t shape0;
         shape0 = value.size();
         for (size_t i0 = 0; i0 < shape0; i0++) {

@@ -43,7 +43,7 @@ public sealed class PackedReduceEvaluator : IEvaluator<PackedReduce>, ITypeInfer
         }
 
         var (outPackAxes, outPadNums, outLanes, outShape) = PackedReduce.ComputeOutputInfo(target, inshape, inlanes);
-        output = CPUEvaluatorUtility.RepackTensor(output, outLanes.ToArray(), outPackAxes, outPadNums);
+        output = CPUEvaluatorUtility.RepackTensor(output, outLanes.ToArray(), outPackAxes, outPadNums.Select(x => (int)x.FixedValue).ToArray());
 
         return Value.FromTensor(Tensor.FromBytes(outLanes.Length == 0 ? DataTypes.Float32 : new VectorType(DataTypes.Float32, outLanes.ToArray()), output.BytesBuffer.ToArray(), outShape));
     }

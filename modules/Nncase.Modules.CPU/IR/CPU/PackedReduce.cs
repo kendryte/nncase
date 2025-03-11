@@ -25,10 +25,10 @@ public sealed partial class PackedReduce : Op
 
     public IRArray<int> PadedNums { get; }
 
-    public static (int[] OutPackAxes, int[] OutPadNums, int[] OutLanes, long[] OutShape) ComputeOutputInfo(PackedReduce target, long[] inShape, int[] inLanes)
+    public static (int[] OutPackAxes, Dimension[] OutPadNums, int[] OutLanes, Shape OutShape) ComputeOutputInfo(PackedReduce target, Shape inShape, int[] inLanes)
     {
         var packedAxes = target.PackedAxes.ToList();
-        var padedNums = target.PadedNums.ToList();
+        var padedNums = target.PadedNums.Select(x => (Dimension)x).ToList();
         var lanes = inLanes.ToList();
         var shape = inShape.ToList(); // note the inshape is packed.
         var offset = 0;
@@ -59,7 +59,7 @@ public sealed partial class PackedReduce : Op
             }
         }
 
-        return (packedAxes.ToArray(), padedNums.ToArray(), lanes.ToArray(), shape.ToArray());
+        return (packedAxes.ToArray(), padedNums.ToArray(), lanes.ToArray(), new(shape));
     }
 
     public override string DisplayProperty() => $"ReduceOp.{ReduceOp}, Axes: {{{string.Join(",", Axes)}}}, InitValue: {InitValue}, KeepDims: {KeepDims}, PackedAxes: {{{string.Join(",", PackedAxes)}}}, PadedNums: {{{string.Join(",", PadedNums)}}}";

@@ -13,10 +13,14 @@ namespace Nncase.Utilities;
 public static class MathUtility
 {
     public static T AlignUp<T>(T value, T align)
-        where T : INumber<T> => (value + (align - T.One)) / align * align;
+        where T : IBinaryInteger<T> => (value + (align - T.One)) / align * align;
 
     public static T CeilDiv<T>(T value, T div)
-        where T : INumber<T> => (value + (div - T.One)) / div;
+        where T : IBinaryInteger<T> => (value + (div - T.One)) / div;
+
+    public static float CeilDiv(float value, float div) => MathF.Ceiling(value / div);
+
+    public static double CeilDiv(double value, double div) => Math.Ceiling(value / div);
 
     public static int Factorial(int n)
     {
