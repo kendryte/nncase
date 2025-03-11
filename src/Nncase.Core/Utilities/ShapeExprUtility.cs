@@ -101,7 +101,7 @@ public static class ShapeExprUtility
         return shape;
     }
 
-    public static Tensor GetPermutation(Call tensor, int[] dims)
+    public static Tensor GetPermutation(Expr tensor, int[] dims)
     {
         // string exprStr = CompilerServices.Print(tensor);
         // System.Console.WriteLine($"Expr详细信息: {exprStr}");
