@@ -1008,6 +1008,7 @@ using System.Runtime.CompilerServices;
 using Google.OrTools.Sat;
 using NetFabric.Hyperlinq;
 using Nncase.CodeGen;
+using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.CPU;
 using Nncase.IR.Distributed;
@@ -1560,8 +1561,8 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         {
             if (target is Reshape && args[0].CheckedType is DistributedType inType && args[1] is TensorConst constNewShape)
             {
-                var newShape = constNewShape.Value.ToArray<int>();
-                var tensorType = new TensorType(inType.TensorType.DType, newShape);
+                var outShape = TypeInference.ReshapeShape(inType.TensorType.Shape, constNewShape);
+                var tensorType = inType.TensorType with { Shape = outShape };
                 foreach (var boxing in DistributedUtility.GetLeafCandidateNDSBPs(tensorType, inType.Placement).
                 Select(ndsbp => IR.F.Distributed.Boxing(args[0], new DistributedType(tensorType, ndsbp, inType.Placement))))
                 {

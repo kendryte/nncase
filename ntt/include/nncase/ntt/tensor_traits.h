@@ -34,16 +34,16 @@ template <typename T>
 concept IsScalar = std::is_integral_v<T> || std::is_floating_point_v<T>;
 
 template <typename T>
-concept IsTensor = IsFixedTensor<T> || IsRankedTensor<T>;
-
-template <typename T>
-concept IsTensorOrScalar = IsTensor<T> || IsScalar<T>;
-
-template <typename T>
 concept IsShardedTensor = requires {
     typename T::sharding_type;
     typename T::mesh_type;
 };
+
+template <typename T>
+concept IsTensor = (IsFixedTensor<T> || IsRankedTensor<T>) && !IsShardedTensor<T>;
+
+template <typename T>
+concept IsTensorOrScalar = IsTensor<T> || IsScalar<T>;
 
 template <typename T>
 concept IsFixedDims = is_fixed_dims_v<T>;

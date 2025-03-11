@@ -264,7 +264,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         for k_target, v_target in targets.items():
             tmp_dir = os.path.join(self.case_dir, 'tmp')
             if v_target['eval'] or v_target['infer']:
-                compile_options = self.get_compile_options(k_target, tmp_dir)
+                compile_options = self.get_compile_options(k_target, model_file, tmp_dir)
                 compile_options.target_options = self.get_target_options(
                     k_target, v_target.get("target_options", None))
                 compiler = nncase.Compiler(compile_options)
@@ -363,7 +363,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     f"target_options.{k} = { e + v + e if isinstance(v, str) and not is_enum else v}")
         return target_options
 
-    def get_compile_options(self, target, dump_dir):
+    def get_compile_options(self, target, model_file: Union[List[str], str], dump_dir):
         compile_options = nncase.CompileOptions()
 
         # update preprocess option
@@ -377,6 +377,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
 
         compile_options.target = target
         compile_options.dump_dir = dump_dir
+        compile_options.input_file = model_file
 
         return compile_options
 

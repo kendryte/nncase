@@ -207,7 +207,7 @@ template <class Sharding, class GlobalShape>
 constexpr auto local_shard_shape(const GlobalShape &shape) noexcept {
     if constexpr (is_fixed_dims_v<GlobalShape>) {
         return get_fixed_local_shard_dim<Sharding>(
-            shape, std::make_index_sequence<GlobalShape::rank()>{});
+            GlobalShape{}, std::make_index_sequence<GlobalShape::rank()>{});
     } else {
         auto get_dims = [&]<size_t... Is>(std::index_sequence<Is...>) {
             return make_ranked_shape(

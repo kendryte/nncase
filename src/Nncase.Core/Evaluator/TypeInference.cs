@@ -599,4 +599,56 @@ public static class TypeInference
         newDims = inShape.Take(dimExtends < 0 ? -dimExtends : 0).Concat(newDims).ToArray();
         return new Shape(newDims);
     }
+
+    public static Shape ReshapeShape(Shape inShape, Expr newShape, TensorType? shapeType = null)
+    {
+        shapeType ??= (TensorType)newShape.CheckedType;
+
+        if (shapeType.Shape.IsUnranked || !shapeType.Shape[0].IsFixed)
+        {
+            return Shape.Unranked;
+        }
+
+        var rank = (int)shapeType.Shape[0].FixedValue;
+        var shapeDims = new Shape((from i in Enumerable.Range(0, rank)
+                                   let dim = newShape[i]
+                                   select i < inShape.Rank ? Dimension.Select(dim, 0, inShape[i], dim) : dim).ToArray());
+        var minus1DimCount = shapeDims.Count(x => x.IsFixed && x.FixedValue == -1);
+        var outputShape = new Dimension[rank];
+
+        if (minus1DimCount > 1)
+        {
+            throw new TypeInferenceInterruptException(new InvalidType($"More than one -1 in the shape is not supported"));
+        }
+
+        var minus1DimValue = FixedAndDynamicDimension.TryDivExactly(inShape.ProdFixedAndDynamic(), shapeDims.ProdFixedAndDynamic());
+        if (!minus1DimValue.HasValue || (minus1DimValue.Value.Dynamic is null && minus1DimValue.Value.Fixed > 1))
+        {
+            throw new TypeInferenceInterruptException(new InvalidType($"Cannot reshape {inShape} to {shapeDims}"));
+        }
+
+        var minus1Dim = FixedAndDynamicDimension.Abs(minus1DimValue.Value);
+        for (var i = 0; i < rank; i++)
+        {
+            var shapeDim = shapeDims[i];
+            if (shapeDim.IsFixed)
+            {
+                outputShape[i] = shapeDim.FixedValue == -1 ? minus1Dim.ToDimension() : shapeDim;
+            }
+            else
+            {
+                switch (shapeDim)
+                {
+                    case Dimension { Value: Var }:
+                        outputShape[i] = shapeDim;
+                        break;
+                    default:
+                        outputShape[i] = Dimension.Select(shapeDim, -1L, minus1Dim.ToDimension(), shapeDim);
+                        break;
+                }
+            }
+        }
+
+        return outputShape;
+    }
 }

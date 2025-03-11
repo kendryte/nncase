@@ -394,34 +394,62 @@ struct reshard_impl<SrcTensor, DestTensor> {
   private:
     void copy_to_global(const SrcTensor &src) noexcept {
         using local_tensor_type = typename SrcTensor::local_tensor_type;
-        constexpr auto global_size =
-            linear_size(typename SrcTensor::shape_type{},
-                        default_strides(typename SrcTensor::shape_type{}));
-        auto global_buffer =
-            std::span<typename local_tensor_type::element_type, global_size>(
+        using src_shape_type = typename SrcTensor::shape_type;
+        if constexpr (IsFixedDims<src_shape_type>) {
+            constexpr auto global_size = linear_size(
+                src_shape_type{}, default_strides(src_shape_type{}));
+            auto global_buffer = std::span<
+                typename local_tensor_type::element_type, global_size>(
                 reinterpret_cast<typename local_tensor_type::element_type *>(
                     tar::collective_pool_ptr),
                 global_size);
-        tensor_view<typename local_tensor_type::element_type,
-                    typename SrcTensor::shape_type>
-            global_tensor(global_buffer);
-        reshard(src, global_tensor);
+            tensor_view<typename local_tensor_type::element_type,
+                        src_shape_type>
+                global_tensor(global_buffer);
+            reshard(src, global_tensor);
+        } else {
+            const auto global_size =
+                linear_size(src.shape(), default_strides(src.shape()));
+            auto global_buffer = std::span<
+                typename local_tensor_type::element_type>(
+                reinterpret_cast<typename local_tensor_type::element_type *>(
+                    tar::collective_pool_ptr),
+                global_size);
+            tensor_view<typename local_tensor_type::element_type,
+                        src_shape_type>
+                global_tensor(global_buffer, src.shape());
+            reshard(src, global_tensor);
+        }
     }
 
     void copy_from_global(DestTensor &dest) noexcept {
         using local_tensor_type = typename DestTensor::local_tensor_type;
-        constexpr auto global_size =
-            linear_size(typename DestTensor::shape_type{},
-                        default_strides(typename DestTensor::shape_type{}));
-        auto global_buffer =
-            std::span<typename local_tensor_type::element_type, global_size>(
+        using dest_shape_type = typename DestTensor::shape_type;
+        if constexpr (IsFixedDims<dest_shape_type>) {
+            constexpr auto global_size = linear_size(
+                dest_shape_type{}, default_strides(dest_shape_type{}));
+            auto global_buffer = std::span<
+                typename local_tensor_type::element_type, global_size>(
                 reinterpret_cast<typename local_tensor_type::element_type *>(
                     tar::collective_pool_ptr),
                 global_size);
-        tensor_view<typename local_tensor_type::element_type,
-                    typename DestTensor::shape_type>
-            global_tensor(global_buffer);
-        reshard(global_tensor, dest);
+            tensor_view<typename local_tensor_type::element_type,
+                        dest_shape_type>
+                global_tensor(global_buffer);
+            reshard(global_tensor, dest);
+        } else {
+            const auto global_size =
+                linear_size(dest.shape(), default_strides(dest.shape()));
+            auto global_buffer = std::span<
+                typename local_tensor_type::element_type>(
+                reinterpret_cast<typename local_tensor_type::element_type *>(
+                    tar::collective_pool_ptr),
+                global_size);
+            tensor_view<typename local_tensor_type::element_type,
+                        dest_shape_type>
+                global_tensor(global_buffer, dest.shape());
+            reshard(global_tensor, dest);
+        }
         distributed::topology_synchronize();
     }
 };

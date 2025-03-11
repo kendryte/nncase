@@ -224,52 +224,8 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
     {
         var shape = context.GetDimensionArgument(target, Reshape.Shape);
         var shapeType = context.CheckArgumentTensorTypeOrBroadcast(target, Reshape.Shape);
-        if (shapeType.Shape.IsUnranked || !shapeType.Shape[0].IsFixed)
-        {
-            return input with { Shape = Shape.Unranked };
-        }
-
-        var rank = (int)shapeType.Shape[0].FixedValue;
-        var shapeDims = new Shape((from i in Enumerable.Range(0, rank)
-                                   let dim = shape[i]
-                                   select i < input.Shape.Rank ? Dimension.Select(dim, 0, input.Shape[i], dim) : dim).ToArray());
-        var minus1DimCount = shapeDims.Count(x => x.IsFixed && x.FixedValue == -1);
-        var outputShape = new Dimension[rank];
-
-        if (minus1DimCount > 1)
-        {
-            return new InvalidType($"More than one -1 in the shape is not supported");
-        }
-
-        var minus1DimValue = FixedAndDynamicDimension.TryDivExactly(input.Shape.ProdFixedAndDynamic(), shapeDims.ProdFixedAndDynamic());
-        if (!minus1DimValue.HasValue || (minus1DimValue.Value.Dynamic is null && minus1DimValue.Value.Fixed > 1))
-        {
-            return new InvalidType($"Cannot reshape {input.Shape} to {shapeDims}");
-        }
-
-        var minus1Dim = FixedAndDynamicDimension.Abs(minus1DimValue.Value);
-        for (var i = 0; i < rank; i++)
-        {
-            var shapeDim = shapeDims[i];
-            if (shapeDim.IsFixed)
-            {
-                outputShape[i] = shapeDim.FixedValue == -1 ? minus1Dim.ToDimension() : shapeDim;
-            }
-            else
-            {
-                switch (shapeDim)
-                {
-                    case Dimension { Value: Var }:
-                        outputShape[i] = shapeDim;
-                        break;
-                    default:
-                        outputShape[i] = Dimension.Select(shapeDim, -1L, minus1Dim.ToDimension(), shapeDim);
-                        break;
-                }
-            }
-        }
-
-        return input with { Shape = outputShape };
+        var outShape = TypeInference.ReshapeShape(input.Shape, shape, shapeType);
+        return input with { Shape = outShape };
     }
 
     private IRType Visit(ITypeInferenceContext context, Reshape target, DistributedType inputType)

@@ -117,6 +117,7 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
             GetItem => Visit(expr[GetItem.Input]),
             Concat => Visit(expr[Concat.Input]),
             Binary binary => InferenceBinary(expr, binary.BinaryOp),
+            Unary unary => InferenceUnary(expr, unary.UnaryOp),
             Squeeze => Visit(expr[Squeeze.Input]),
             Unsqueeze => Visit(expr[Unsqueeze.Input]),
             Stack => Visit(expr[Stack.Inputs]),
@@ -146,6 +147,18 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
             BinaryOp.Div => VisitDiv(lhs, rhs),
             BinaryOp.Max => new(Math.Max(lhs.Min, rhs.Min), Math.Max(lhs.Max, rhs.Max)),
             BinaryOp.Min => new(Math.Min(lhs.Min, rhs.Min), Math.Min(lhs.Max, rhs.Max)),
+            _ => ValueRange<double>.Full,
+        };
+    }
+
+    private ValueRange<double> InferenceUnary(Call expr, UnaryOp op)
+    {
+        var input = Visit(expr[Unary.Input]);
+
+        return op switch
+        {
+            UnaryOp.Abs => new(Math.Abs(input.Min), Math.Abs(input.Max)),
+            UnaryOp.Neg => new(-input.Max, -input.Min),
             _ => ValueRange<double>.Full,
         };
     }

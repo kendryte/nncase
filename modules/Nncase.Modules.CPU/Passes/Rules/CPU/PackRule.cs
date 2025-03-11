@@ -235,8 +235,8 @@ public sealed class PackMatMul : PackRule
         var lhs = (Expr)result["lhs"];
         var rhs = (Expr)result["rhs"];
         var candidate = (Expr)result[Pattern];
-        var lhsShape = lhs.CheckedShape.ToValueArray();
-        var rhsShape = rhs.CheckedShape.ToValueArray();
+        var lhsShape = lhs.CheckedShape;
+        var rhsShape = rhs.CheckedShape;
         var rcontext = new RuleContext(rets, lhs, rhs, candidate, lhsShape, rhsShape);
 
         // pack A's k and B's k
@@ -377,7 +377,7 @@ public sealed class PackMatMul : PackRule
         Expr post = matmul;
         if (unpackAxes.Any())
         {
-            post = PackUtility.SliceForPack(IR.F.CPU.Unpack(matmul, unpackLanes.ToArray(), unpackAxes.ToArray()), candidate.CheckedShape.ToValueArray(), unpadNums.ToArray());
+            post = PackUtility.SliceForPack(IR.F.CPU.Unpack(matmul, unpackLanes.ToArray(), unpackAxes.ToArray()), candidate.CheckedShape, unpadNums.ToArray());
         }
 
         if (post.CheckedType is not InvalidType)
@@ -386,7 +386,7 @@ public sealed class PackMatMul : PackRule
         }
     }
 
-    private sealed record RuleContext(List<Expr> Results, Expr Lhs, Expr Rhs, Expr Candidate, IReadOnlyList<long> LhsShape, IReadOnlyList<long> RhsShape)
+    private sealed record RuleContext(List<Expr> Results, Expr Lhs, Expr Rhs, Expr Candidate, Shape LhsShape, Shape RhsShape)
     {
     }
 }
@@ -457,8 +457,8 @@ public sealed class PackBinary : PackRule
         var lhs = (Expr)result["lhs"];
         var rhs = (Expr)result["rhs"];
         var candidate = (Expr)result[Pattern];
-        var lhsShape = lhs.CheckedShape.ToValueArray();
-        var rhsShape = rhs.CheckedShape.ToValueArray();
+        var lhsShape = lhs.CheckedShape;
+        var rhsShape = rhs.CheckedShape;
 
         void AddCandidate(int[] lhsPackedAxes, int[] rhsPackedAxes, int[] lhsLanes, int[] rhsLanes)
         {
@@ -466,7 +466,7 @@ public sealed class PackBinary : PackRule
             var packedRhs = IR.F.CPU.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
 
             var binary = IR.F.CPU.PackedBinary(packedLhs, packedRhs, op.BinaryOp, lhsPackedAxes, lhsPadNums.Select(x => (int)x.FixedValue).ToArray(), rhsPackedAxes, rhsPadNums.Select(x => (int)x.FixedValue).ToArray());
-            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(binary, lhsLanes.Length >= rhsLanes.Length ? lhsLanes : rhsLanes, lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPackedAxes : rhsPackedAxes), candidate.CheckedShape.ToValueArray(), lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPadNums : rhsPadNums);
+            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(binary, lhsLanes.Length >= rhsLanes.Length ? lhsLanes : rhsLanes, lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPackedAxes : rhsPackedAxes), candidate.CheckedShape, lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPadNums : rhsPadNums);
             if (post.CheckedType is not InvalidType)
             {
                 rets.Add(post);
@@ -486,20 +486,26 @@ public sealed class PackBinary : PackRule
         return rets;
     }
 
-    public IEnumerable<int[]> GeneratePackAxes(long[] shape)
+    public IEnumerable<int[]> GeneratePackAxes(Shape shape)
     {
-        if (shape.Length == 0 || (shape.Length == 1 && shape[0] == 1))
+        if (shape.IsUnranked || shape.Rank == 0 || (shape.Rank == 1 && shape[0].IsFixed && shape[0].FixedValue == 1))
         {
             yield return Array.Empty<int>();
         }
         else
         {
-            for (int i = 0; i < shape.Length; i++)
+            for (int i = 0; i < shape.Rank; i++)
             {
-                yield return new[] { i };
-                for (int j = i + 1; j < shape.Length; j++)
+                if (shape[i].IsFixed)
                 {
-                    yield return new[] { i, j };
+                    yield return new[] { i };
+                    for (int j = i + 1; j < shape.Rank; j++)
+                    {
+                        if (shape[j].IsFixed)
+                        {
+                            yield return new[] { i, j };
+                        }
+                    }
                 }
             }
         }
@@ -758,7 +764,7 @@ public sealed class PackReshape : PackRule
 
     public override Pattern Pattern { get; } = IsReshape(
       "target",
-      IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = !IsVector() },
+      IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = !IsVector() & HasFixedShape() },
       IsTensorConst("newShape") with { TypePattern = IsIntegral() });
 
     public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)

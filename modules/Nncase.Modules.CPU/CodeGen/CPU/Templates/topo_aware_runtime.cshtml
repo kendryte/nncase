@@ -230,25 +230,49 @@ class tensor_reduce_sync_impl {
             auto viewed_dest_tensor = dest.view(starts, new_shape);
 
             if (i == 0) {
-                auto src2_tensor =
-                    ntt::tensor_view<TElem, typename TIn::shape_type,
-                                     typename TIn::strides_type>(
-                        std::span<TElem, TIn::shape().length()>(
-                            (TElem *)tar::src_ptr_tensor(next_index),
-                            src.shape().length()));
-                auto viewed_src2_tensor = src2_tensor.view(starts, new_shape);
-                reduce_impl(viewed_src1_tensor, viewed_src2_tensor,
-                            viewed_dest_tensor);
+                if constexpr (ntt::IsFixedTensor<TIn>) {
+                    auto src2_tensor =
+                        ntt::tensor_view<TElem, typename TIn::shape_type,
+                                         typename TIn::strides_type>(
+                            std::span<TElem, TIn::shape().length()>(
+                                (TElem *)tar::src_ptr_tensor(next_index),
+                                src.shape().length()));
+                    auto viewed_src2_tensor = src2_tensor.view(starts, new_shape);
+                    reduce_impl(viewed_src1_tensor, viewed_src2_tensor,
+                                viewed_dest_tensor);
+                } else {
+                    auto src2_tensor =
+                        ntt::tensor_view<TElem, typename TIn::shape_type,
+                                         typename TIn::strides_type>(
+                            std::span<TElem>(
+                                (TElem *)tar::src_ptr_tensor(next_index),
+                                src.shape().length()), src.shape());
+                    auto viewed_src2_tensor = src2_tensor.view(starts, new_shape);
+                    reduce_impl(viewed_src1_tensor, viewed_src2_tensor,
+                                viewed_dest_tensor);
+                }
             } else {
-                auto src2_tensor =
-                    ntt::tensor_view<TElem, typename TOutBase::shape_type,
-                                     typename TOutBase::strides_type>(
-                        std::span<TElem, TOutBase::shape().length()>(
-                            (TElem *)tar::dest_ptr_tensor(next_index),
-                            dest.shape().length()));
-                auto viewed_src2_tensor = src2_tensor.view(starts, new_shape);
-                reduce_impl(viewed_src1_tensor, viewed_src2_tensor,
-                            viewed_dest_tensor);
+                if constexpr (ntt::IsFixedTensor<TOutBase>) {
+                    auto src2_tensor =
+                        ntt::tensor_view<TElem, typename TOutBase::shape_type,
+                                         typename TOutBase::strides_type>(
+                            std::span<TElem, TOutBase::shape().length()>(
+                                (TElem *)tar::dest_ptr_tensor(next_index),
+                                dest.shape().length()));
+                    auto viewed_src2_tensor = src2_tensor.view(starts, new_shape);
+                    reduce_impl(viewed_src1_tensor, viewed_src2_tensor,
+                                viewed_dest_tensor);
+                } else {
+                    auto src2_tensor =
+                        ntt::tensor_view<TElem, typename TOutBase::shape_type,
+                                         typename TOutBase::strides_type>(
+                            std::span<TElem>(
+                                (TElem *)tar::dest_ptr_tensor(next_index),
+                                dest.shape().length()), dest.shape());
+                    auto viewed_src2_tensor = src2_tensor.view(starts, new_shape);
+                    reduce_impl(viewed_src1_tensor, viewed_src2_tensor,
+                                viewed_dest_tensor);
+                }
             }
 
             reduce_group_sync();
