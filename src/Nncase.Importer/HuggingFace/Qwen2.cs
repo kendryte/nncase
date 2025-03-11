@@ -209,7 +209,7 @@ namespace Nncase.Importer
 
             _outputs!["lm_head"] = lmHead;
             var outAttention = (Call)null;
-            var kvCache =  (Call)null;
+            var kvCache = (Call)null;
 
             // TODO: using config.output_attentions to judge whether need kv cache
             if (CheckNeedOutput(allSelfAttns))
@@ -222,11 +222,13 @@ namespace Nncase.Importer
                 kvCache = Concat(new IR.Tuple(allSelfKV.ToArray()), 0);
             }
 
-            if (outAttention is not null) {
+            if (outAttention is not null)
+            {
                 _outputs!["out_attention"] = outAttention;
             }
 
-            if (kvCache is not null) {
+            if (kvCache is not null)
+            {
                 _outputs!["kvcache"] = kvCache;
             }
         }
@@ -296,8 +298,8 @@ namespace Nncase.Importer
             // TODO: outputAttentions need by config.output_attentions
             var historyLen = ShapeOf(pastKeyValues)[-2];
             var seqLen = ShapeOf(inputEmbeds)[1];
-            var cachePosition = Range(Cast(historyLen, DataTypes.Int32), Cast(historyLen + seqLen, DataTypes.Int32), 1 );
-            var casualMask = UpdatecasualMask(attentionMask, inputEmbeds, cachePosition, pastKeyValues,  outputAttentions: false);
+            var cachePosition = Range(Cast(historyLen, DataTypes.Int32), Cast(historyLen + seqLen, DataTypes.Int32), 1);
+            var casualMask = UpdatecasualMask(attentionMask, inputEmbeds, cachePosition, pastKeyValues, outputAttentions: false);
             var hiddenStates = inputEmbeds;
             var positionEmbeddings = RotaryEmbedding(hiddenStates, positionIds);
 
@@ -394,13 +396,14 @@ namespace Nncase.Importer
                                     DataType dtype,
                                     Expr cachePosition,
                                     Expr batchSize,
-                                    Expr pastKeyValues){
-
+                                    Expr pastKeyValues)
+        {
             var casualMask = (Expr)null!;
             if (attentionMask.CheckedShape.Rank == 4)
             {
                 casualMask = attentionMask;
-            } else
+            }
+            else
             {
                 // get the min value for current dtype
                 var valueRangeType = typeof(ValueRange<>).MakeGenericType(dtype.CLRType);
@@ -430,7 +433,7 @@ namespace Nncase.Importer
                 )
                 diagonal_attend_mask = torch.arange(target_length, device=device) > cache_position.reshape(-1, 1)
                 */
-                var diagonalAttendMask = Range(0, targtLen, 1) > Reshape(cachePosition, new int[]{-1, 1 });
+                var diagonalAttendMask = Range(0, targtLen, 1) > Reshape(cachePosition, new int[] { -1, 1 });
 
                 // TODO: maybe consider:
                 /*
@@ -447,7 +450,7 @@ namespace Nncase.Importer
 
                 // casualMask = casualMask[None, None, :, :].expand(batch_size, 1, -1, -1)
                 var expandShape = Stack(new IR.Tuple(Cast(batchSize, DataTypes.Int32), 1, -1, -1), 0);
-                casualMask = Unsqueeze(casualMask, new int[]{0, 0 });
+                casualMask = Unsqueeze(casualMask, new int[] { 0, 0 });
                 casualMask = Expand(casualMask, expandShape);
                 /*
                     mask_length = attention_mask.shape[-1]
@@ -462,7 +465,7 @@ namespace Nncase.Importer
                     Stack(new IR.Tuple(-1, -1, -1, Cast(maskLength, DataTypes.Int32)), 0),
                     new[] { -1 },
                     new[] { 1, 1, 1, 1 });
-                paddingMask += Unsqueeze(attentionMask, new int[]{1, 2 });
+                paddingMask += Unsqueeze(attentionMask, new int[] { 1, 2 });
 
                 /*
                     padding_mask = padding_mask == 0
@@ -486,12 +489,11 @@ namespace Nncase.Importer
                 //  just return maskPart
                 var leftPart = Slice(
                     casualMask,
-                    Stack(new IR.Tuple( 0, 0, 0, Cast(maskLength, DataTypes.Int32)), 0),
+                    Stack(new IR.Tuple(0, 0, 0, Cast(maskLength, DataTypes.Int32)), 0),
                     Stack(new IR.Tuple(-1, -1, -1, -1), 0),
                     new[] { -1 },
                     new[] { 1, 1, 1, 1 });
                 casualMask = Concat(new IR.Tuple(maskPart, leftPart), -1);
-
             }
 
             return casualMask;
@@ -544,7 +546,10 @@ namespace Nncase.Importer
 
         private bool CheckNeedOutput(List<Call> allSelfAttns)
         {
-            if (allSelfAttns.Length() == 0) return false;
+            if (allSelfAttns.Length() == 0)
+            {
+                return false;
+            }
 
             foreach (var call in allSelfAttns)
             {
@@ -853,7 +858,7 @@ namespace Nncase.Importer
             var numKVHeads = Cast(ShapeOf(hiddenStates)[1], DataTypes.Int32);
             var seqLen = Cast(ShapeOf(hiddenStates)[2], DataTypes.Int32);
             var headDim = Cast(ShapeOf(hiddenStates)[3], DataTypes.Int32);
-            hiddenStates = Unsqueeze(hiddenStates, new int[]{2 });
+            hiddenStates = Unsqueeze(hiddenStates, new int[] { 2 });
 
             hiddenStates = Expand(hiddenStates, Stack(new IR.Tuple(batch_size, numKVHeads, nRep, seqLen, headDim), 0));
             hiddenStates = Reshape(hiddenStates, Stack(new IR.Tuple(batch_size, numKVHeads * nRep, seqLen, headDim), 0));
@@ -986,14 +991,13 @@ namespace Nncase.Importer
             return Tuple.Create(key_states, value_states);
         }
 
-        private Call MergeKV(Call key, Call value){
+        private Call MergeKV(Call key, Call value)
+        {
             // [batchsize, num_heads, seq_length, head_dim]  ->[1,2,batchsize, num_heads, seq_length, head_dim]
-
             var keyStates = Unsqueeze(key, new[] { 0 });
             var valueStates = Unsqueeze(value, new[] { 0 });
             var mergedKeyValue = Concat(new IR.Tuple(keyStates, valueStates), 0);
             return Unsqueeze(mergedKeyValue, new[] { 0 });
         }
     }
-
 }

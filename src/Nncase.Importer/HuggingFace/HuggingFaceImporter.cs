@@ -49,7 +49,6 @@ public sealed partial class HuggingFaceImporter : BaseImporter
             default:
                 throw new NotImplementedException();
         }
-
     }
 
     protected override void ConvertOp()
