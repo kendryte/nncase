@@ -414,11 +414,6 @@ public sealed partial class CombineTransposeReshape : IRewriteRule
             return null;
         }
 
-        if (inShape.Length != perm.Length)
-        {
-            return null;
-        }
-
         // check reshape is sequeeze
         var axis = RulesUtility.FindSqueezeAxis(newShape, inShape);
         if (axis == -1)
