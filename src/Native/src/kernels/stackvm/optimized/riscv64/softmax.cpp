@@ -421,38 +421,73 @@ optimized_softmax_half_impl(const T *input, T *output,
 
             // max
             __float16_t max = std::numeric_limits<__float16_t>::lowest();
-            while (n) {
-                auto vl = vsetvl_e16m4(n);
 
-                auto v = vle16_v_f16m4(ptr_input_vl, vl);
-                auto s = vfmv_s_f_f16m1(vundefined_f16m1(), max, vl);
+            auto vl = vsetvl_e16m4(n);
+            vfloat16m4_t v_max = vfmv_v_f_f16m4(max, vl);
+            while ( n/vl > 0) {
+                vfloat16m4_t v_in = vle16_v_f16m4(ptr_input_vl, vl);
+                v_max = vfmax_vv_f16m4(v_max, v_in, vl);
 
-                s = vfredmax_vs_f16m4_f16m1(s, v, s, vl);
-                max = vfmv_f_s_f16m1_f16(s);
-                ptr_input_vl += vl;
                 n -= vl;
+                ptr_input_vl += vl;
             }
+            vfloat16m1_t reduced_max_ = vfredmax_vs_f16m4_f16m1(
+                vundefined_f16m1(), v_max, vfmv_v_f_f16m1(max, vl), vl);
+            max = vfmv_f_s_f16m1_f16(reduced_max_);
+
+            if (n > 0)
+            {
+                vl = vsetvl_e16m4(n);
+                v_max = vfmv_v_f_f16m4(max, vl);
+                vfloat16m4_t v_in = vle16_v_f16m4(ptr_input_vl, vl);
+                v_max = vfmax_vv_f16m4(v_max, v_in, vl);
+                reduced_max_ = vfredmax_vs_f16m4_f16m1(
+                    vundefined_f16m1(), v_max, vfmv_v_f_f16m1(max, vl),
+                    vl);
+                max = vfmv_f_s_f16m1_f16(reduced_max_);
+            }
+
 
             // exp((x - max) * beta) and sum(exp)
             __float16_t sum = 0.f;
             ptr_input_vl = ptr_input;
             n = axis_dim;
-            while (n) {
-                auto vl = vsetvl_e16m4(n);
+            vl = vsetvl_e16m4(n);
+            vfloat16m4_t v_sum = vfmv_v_f_f16m4(sum, vl);
+            while (n / vl > 0) {
 
                 auto v_in = vle16_v_f16m4(ptr_input_vl, vl);
-                auto s = vfmv_s_f_f16m1(vundefined_f16m1(), sum, vl);
+                // auto s = vfmv_s_f_f16m1(vundefined_f16m1(), sum, vl);
+
+                auto v_out = exp_ph(
+                    vfmul_vf_f16m4(vfsub_vf_f16m4(v_in, max, vl), beta, vl),
+                    vl);
+                v_sum = vfadd_vv_f16m4(v_sum, v_in, vl);
+                // s = vfredosum_vs_f16m4_f16m1(s, v_out, s, vl);
+                vse16_v_f16m4(ptr_output_vl, v_out, vl);
+                // sum = vfmv_f_s_f16m1_f16(s);
+                ptr_input_vl += vl;
+                ptr_output_vl += vl;
+                n -= vl;
+            }
+
+            vfloat16m1_t reduced_sum_ = vfredosum_vs_f16m4_f16m1(
+                vundefined_f16m1(), v_sum, vfmv_v_f_f16m1(0, vl), vl);
+            sum = vfmv_f_s_f16m1_f16(reduced_sum_);
+
+            if (n > 0)
+            {
+                vl = vsetvl_e16m4(n);
+                auto v_in = vle16_v_f16m4(ptr_input_vl, vl);
+                auto s = vfmv_v_f_f16m1(0, vl);
 
                 auto v_out = exp_ph(
                     vfmul_vf_f16m4(vfsub_vf_f16m4(v_in, max, vl), beta, vl),
                     vl);
                 s = vfredosum_vs_f16m4_f16m1(s, v_out, s, vl);
-
+                // s = vfredosum_vs_f16m4_f16m1(s, v_out, s, vl);
                 vse16_v_f16m4(ptr_output_vl, v_out, vl);
-                sum = vfmv_f_s_f16m1_f16(s);
-                ptr_input_vl += vl;
-                ptr_output_vl += vl;
-                n -= vl;
+                sum += vfmv_f_s_f16m1_f16(s);
             }
 
             // div
