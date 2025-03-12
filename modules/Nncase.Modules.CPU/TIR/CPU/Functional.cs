@@ -62,9 +62,9 @@ public partial class CPU
 
     public static Call Conv2D(Buffer input, Buffer weights, Buffer bias, Buffer output, int[] stride, int[] padding, int[] dilation, int groups, PadMode padMode, DistributedType distributedType) => new Call(new Conv2D(stride, padding, dilation, groups, padMode, distributedType), input, weights, bias, output);
 
-    public static Expr Unpack(Expr input, Expr output, IRArray<int> axes)
+    public static Expr Unpack(Expr input, Expr output, IRArray<int> lanes, IRArray<int> axes)
     {
-        return new Call(new Unpack(axes), input, output);
+        return new Call(new Unpack(lanes, axes), input, output);
     }
 
     public static Expr PackedSoftmax(Expr input, Expr output, int axis, IRArray<int> packedAxes)
@@ -102,7 +102,7 @@ public partial class CPU
         return new Call(new Concat(axis), inputs.Concat(new[] { ret }).ToArray());
     }
 
-    public static Expr Reshape(Buffer input, Buffer ret, int[] newShape)
+    public static Expr Reshape(Buffer input, Buffer ret, long[] newShape)
     {
         return new Call(new Reshape(newShape), input, ret);
     }
@@ -117,7 +117,7 @@ public partial class CPU
         return new Call(new Gather(axis), input, indcies, ret);
     }
 
-    public static Expr Transpose(Buffer buffer, Buffer ret, int[] perm)
+    public static Expr Transpose(Expr buffer, Expr ret, int[] perm)
     {
         return new Call(new Transpose(perm), buffer, ret);
     }
@@ -127,14 +127,14 @@ public partial class CPU
         return new Call(new Pad(pads, padValue), input, ret);
     }
 
-    public static Expr Im2col(Buffer input, Buffer output, IRArray<int> kernel, IRArray<int> stride, IRArray<int> padding, IRArray<int> packedAxes, IRArray<int> padedNums)
+    public static Expr Im2col(Buffer input, Buffer output, IRArray<long> kernel, IRArray<int> stride, IRArray<int> padding, IRArray<int> packedAxes, IRArray<int> padedNums)
     {
         return new Call(new Im2col(kernel, stride, padding, packedAxes, padedNums), input, output);
     }
 
-    public static Expr Reduce(Buffer input, Buffer ret, int[] packedAxes, int[] padedNums, IRArray<int> axis, bool keepDims, ReduceOp reduceOp)
+    public static Expr Reduce(Expr input, Expr ret, Expr loadPrevious, int[] packedAxes, int[] padedNums, IRArray<int> axis, bool keepDims, ReduceOp reduceOp)
     {
-        return new Call(new TIR.CPU.Reduce(packedAxes, padedNums, axis, keepDims, reduceOp), input, ret);
+        return new Call(new TIR.CPU.Reduce(packedAxes, padedNums, axis, keepDims, reduceOp), input, ret, loadPrevious);
     }
 
     public static Expr ReduceArg(Buffer input, Buffer ret, int axis, bool keepDims, bool selectLastIndex, ReduceArgOp reduceArgOp, DataType destType)

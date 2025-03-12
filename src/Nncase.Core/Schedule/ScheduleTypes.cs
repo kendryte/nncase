@@ -99,7 +99,7 @@ public class BufferAllocation
     /// <param name="shape">full shape.</param>
     /// <param name="strides">full stride.</param>
     /// <param name="strides_shape">stride shape.</param>
-    public BufferAllocation(MemoryLocation memory_locate, DataType d_type, ulong shared_module, ulong start, ulong size, int[] shape, int[] strides, int[] strides_shape)
+    public BufferAllocation(MemoryLocation memory_locate, DataType d_type, ulong shared_module, ulong start, ulong size, long[] shape, long[] strides, long[] strides_shape)
     {
         MemoryLocate = memory_locate;
         DType = d_type;
@@ -139,17 +139,17 @@ public class BufferAllocation
     /// <summary>
     /// Gets or sets full shape.
     /// </summary>
-    public int[] Shape { get; set; }
+    public long[] Shape { get; set; }
 
     /// <summary>
     /// Gets or sets full stride.
     /// </summary>
-    public int[] Strides { get; set; }
+    public long[] Strides { get; set; }
 
     /// <summary>
     /// Gets or sets stride shape.
     /// </summary>
-    public int[] StridesShape { get; set; }
+    public long[] StridesShape { get; set; }
 
     /// <summary>
     /// Gets get current buffer memory range.

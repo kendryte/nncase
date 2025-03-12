@@ -21,7 +21,7 @@ namespace Nncase.Quantization;
 /// </summary>
 public static class QuantAlgorithmUtility
 {
-    public static Tensor<float> SquantWeights(Tensor<float> inputWeights, Tensor<float> inputWeightsRanges, ReadOnlySpan<int> inputWeightsShape, QuantMode quantMode, int bits, bool isByChannel)
+    public static Tensor<float> SquantWeights(Tensor<float> inputWeights, Tensor<float> inputWeightsRanges, ReadOnlySpan<long> inputWeightsShape, QuantMode quantMode, int bits, bool isByChannel)
     {
         float qMax, qMin;
         if (quantMode == QuantMode.UnsignedMode)
@@ -51,7 +51,7 @@ public static class QuantAlgorithmUtility
             {
                 float[] deltaArr = new float[inputWeights.Length];
                 float[] zeroPointArr = new float[inputWeights.Length];
-                int eachChannelSize = inputWeights.Length / outChannel;
+                int eachChannelSize = checked((int)(inputWeights.Length / outChannel));
 
                 Parallel.For(0, outChannel, c =>
                 {
@@ -83,7 +83,7 @@ public static class QuantAlgorithmUtility
             {
                 float[] deltaArr = new float[inputWeights.Length];
                 float[] zeroPointArr = new float[inputWeights.Length];
-                int eachChannelSize = inputWeights.Length / outChannel;
+                int eachChannelSize = checked((int)(inputWeights.Length / outChannel));
 
                 Parallel.For(0, outChannel, c =>
                 {

@@ -19,7 +19,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="BatchToSpace"/>.
 /// </summary>
-public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<BatchToSpace>, ICostEvaluator<BatchToSpace>, IMetricEvaluator<BatchToSpace>, IShapeEvaluator<BatchToSpace>
+public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<BatchToSpace>, ICostEvaluator<BatchToSpace>, IMetricEvaluator<BatchToSpace>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, BatchToSpace s)
@@ -39,7 +39,7 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         var targetSpatial = ZipExec(spatial, blockShape, (x, y) => x * y);
 
         var ccat1 = spatial.Concat(blockShape).ToArray();
-        var re1 = Tensor.From(ccat1, new[] { ccat1.Length / blockLen, blockLen });
+        var re1 = Tensor.From(ccat1, [ccat1.Length / blockLen, blockLen]);
         var interLeave = OrtKI.Transpose(re1.ToOrtTensor(), new long[] { 1, 0 }).ToArray<int>();
         var shape1 = new int[] { -1 }.Concat(interLeave).Concat(depth).ToArray();
 
@@ -101,53 +101,6 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         };
     }
 
-    public Expr Visit(IShapeEvaluateContext context, BatchToSpace target)
-    {
-        var inShape = context.GetArgumentShape(target, BatchToSpace.Input);
-        var input = context.GetArgument(target, BatchToSpace.Input);
-        if (input.CheckedShape.Rank == 4)
-        {
-            inShape = Stack(new IR.Tuple(inShape[0], inShape[2], inShape[3], inShape[1]), 0);
-        }
-
-        if (input.CheckedShape.Rank == 3)
-        {
-            inShape = Stack(new IR.Tuple(inShape[0], inShape[2], inShape[1]), 0);
-        }
-
-        var blockShape = Cast(context.GetArgument(target, BatchToSpace.BlockShape), DataTypes.Int64);
-        if (!blockShape.CheckedShape.IsFixed)
-        {
-            throw new NotImplementedException();
-        }
-
-        var crops = Cast(context.GetArgument(target, BatchToSpace.Crops), DataTypes.Int64);
-        var blockSize = Prod(blockShape);
-        var batch = inShape[0];
-        var d0 = batch / blockSize;
-        var m = blockShape.CheckedShape[0].FixedValue;
-        var cropSection = Enumerable.Range(0, m).Select(
-            i => (inShape[i + 1] * blockShape[0]) - crops[i, 0] - crops[i, 1]).ToArray();
-
-        var inRank = Cast(ShapeOf(inShape)[0], DataTypes.Int32);
-        var remainSize = inRank - 1 - m;
-        var remainShape = new If(remainSize > 0, ShapeExprUtility.Slice(inShape, 1 + m, int.MaxValue), Array.Empty<long>());
-
-        var outShapeList = Concat(new IR.Tuple(Stack(new IR.Tuple(new[] { d0 }), 0), Stack(new IR.Tuple(cropSection), 0), remainShape), 0);
-
-        if (input.CheckedShape.Rank == 4)
-        {
-            return Stack(new IR.Tuple(outShapeList[0], outShapeList[3], outShapeList[1], outShapeList[2]), 0);
-        }
-
-        if (input.CheckedShape.Rank == 3)
-        {
-            return Stack(new IR.Tuple(outShapeList[0], outShapeList[2], outShapeList[1]), 0);
-        }
-
-        throw new NotImplementedException();
-    }
-
     private static IEnumerable<int> BoostRange(int start, int end, int step = 1)
     {
         int x = start;
@@ -200,7 +153,7 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
             var blockSize = blockShapeArr.Aggregate(1, (a, b) => a * b);
             var d0 = batch / blockSize;
             Trace.Assert(blockShape.Shape[0] == crops.Shape[0]);
-            var m = blockShape.Shape[0].FixedValue;
+            var m = (int)blockShape.Shape[0].FixedValue;
             var cropsV = cropsValue.Value.Cast<int>();
             var cropSection = Enumerable.Range(0, m).Select(
                 i => (inShape[i + 1] * blockShapeArr[i]) - cropsV[i, 0] - cropsV[i, 1]);
@@ -216,7 +169,8 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         }
         else
         {
-            return new TensorType(input.DType, Enumerable.Repeat(Dimension.Unknown, input.Shape.Count).ToArray());
+            // return new TensorType(input.DType, Enumerable.Repeat(Dimension.Unknown, input.Shape.Count).ToArray());
+            throw new NotImplementedException();
         }
     }
 }

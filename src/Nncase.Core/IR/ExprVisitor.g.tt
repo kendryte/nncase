@@ -49,6 +49,11 @@ foreach (var ir in irs.Where(x => x.IsDerived))
 <#
     }
 #>
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
         return VisitLeaf<#=ir.Name#>(expr, context);
     }
 

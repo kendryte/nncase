@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 #include "kernel_test.h"
+#include "nncase/runtime/util.h"
+#include <cstddef>
 #include <gtest/gtest.h>
 #include <iostream>
 #include <nncase/kernels/stackvm/tensor_ops.h>
@@ -41,12 +43,17 @@ class SwishTest : public KernelTest,
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
+
+        alpha = hrt::create(typecode, {1}, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+        init_tensor(alpha);
     }
 
     void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;
+    runtime_tensor alpha;
 };
 
 INSTANTIATE_TEST_SUITE_P(Swish, SwishTest,
@@ -54,9 +61,11 @@ INSTANTIATE_TEST_SUITE_P(Swish, SwishTest,
 
 TEST_P(SwishTest, Swish) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
+    auto a_ort = runtime_tensor_2_ort_tensor(alpha);
 
     // expected
-    auto output_ort = ortki_Mul(l_ort, ortki_Sigmoid(l_ort));
+    auto scaledInput = ortki_Mul(a_ort, l_ort);
+    auto output_ort = ortki_Mul(l_ort, ortki_Sigmoid(scaledInput));
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -67,7 +76,8 @@ TEST_P(SwishTest, Swish) {
                         .expect("create tensor failed");
 
     // actual
-    auto output = kernels::stackvm::swish(input.impl()).expect("swish failed");
+    auto output = kernels::stackvm::swish(input.impl(), alpha.impl())
+                      .expect("swish failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     bool result = is_same_tensor(expected, actual) ||

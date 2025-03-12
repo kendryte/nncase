@@ -13,3 +13,4 @@ if (NOT BUILDING_RUNTIME)
         target_compile_definitions(compiler PRIVATE -DNNCASE_DOTNET_INIT_FOR_CONFIG)
     endif ()
 endif()
+

@@ -28,30 +28,30 @@ public class UnitTestSimplifyArithmetic : TransformTestBase
     public static IEnumerable<object[]> TestReassociateMulPositiveData =>
         new[]
         {
-            new object[] { new[] { 3 } },
+            new object[] { new long[] { 3 } },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     public static IEnumerable<object[]> TestReassociateDivPositiveData =>
         new[]
         {
-            new object[] { new[] { 3 } },
+            new object[] { new long[] { 3 } },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     public static IEnumerable<object[]> TestXDivXPositiveData =>
         new[]
         {
-            new object[] { new[] { 3 } },
+            new object[] { new long[] { 3 } },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     public static IEnumerable<object[]> TestCommutateMulPositiveData =>
         new[]
         {
-            new object[] { new[] { 3 } },
+            new object[] { new long[] { 3 } },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
     [MemberData(nameof(TestReassociateMulPositiveData))]
-    public void TestReassociateMulPositive(int[] aShape, int index)
+    public void TestReassociateMulPositive(long[] aShape, int index)
     {
         var a = new Var();
         var b = new Var();
@@ -67,7 +67,7 @@ public class UnitTestSimplifyArithmetic : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestReassociateDivPositiveData))]
-    public void TestReassociateDivPositive(int[] aShape, int index)
+    public void TestReassociateDivPositive(long[] aShape, int index)
     {
         var a = new Var();
         var b = new Var();
@@ -82,7 +82,7 @@ public class UnitTestSimplifyArithmetic : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestXDivXPositiveData))]
-    public void TestXDivXPositive(int[] aShape, int index)
+    public void TestXDivXPositive(long[] aShape, int index)
     {
         var a = new Var(new TensorType(DataTypes.Float32, aShape));
         var normal = new Dictionary<Var, IValue>();
@@ -94,7 +94,7 @@ public class UnitTestSimplifyArithmetic : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestCommutateMulPositiveData))]
-    public void TestCommutateMulPositive(int[] aShape, int index)
+    public void TestCommutateMulPositive(long[] aShape, int index)
     {
         var a = new Var();
         var b = new Var();

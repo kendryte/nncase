@@ -23,7 +23,6 @@ using Nncase.Passes.Rules.ShapeExpr;
 using Nncase.Passes.Rules.WithMarker;
 using Nncase.Passes.Transforms;
 using Nncase.Quantization;
-using static Nncase.Passes.Rules.ShapeBucket.ShapeBucketRegister;
 using CombinePadTranspose = Nncase.Passes.Rules.WithMarker.CombinePadTranspose;
 using CombineReshapePad = Nncase.Passes.Rules.Neutral.CombineReshapePad;
 using FoldConstCall = Nncase.Passes.Rules.Neutral.FoldConstCall;
@@ -77,6 +76,10 @@ internal class Compiler : ICompiler
 
     public void BroadcastOutputNamesAfterImportPass(IPassManager passManager)
     {
+        passManager.AddWithName<DataflowPass>("FoldQuantDeQuant").Configure(p =>
+        {
+            p.Add<Passes.Rules.Neutral.FoldQuantDeQuant>();
+        });
         passManager.AddWithName<DataflowPass>("BroadcastOutputNamesAfterImportPass").Configure(p =>
         {
             p.Add<Passes.Rules.Neutral.BroadcastTransposeOutputNames>();
@@ -114,6 +117,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern4>();
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern5>();
+            p.Add<Passes.Rules.Neutral.ConvertLayerNormChannelFirstToLast>();
             p.Add<Passes.Rules.Neutral.FoldGeluWithScale>();
             p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
             p.Add<Passes.Rules.Neutral.FoldSwishPattern1>();
@@ -126,6 +130,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldTwoSlices>();
             p.Add<Passes.Rules.Neutral.FocusFull>();
             p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
+            p.Add<Passes.Rules.Neutral.ReshapeExpand>();
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
             p.Add<Passes.Rules.Neutral.FoldShapeOf>();
             p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
@@ -143,13 +148,20 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.UnSqueezeToReshape>();
             p.Add<Passes.Rules.ShapeExpr.GatherToGetItem>();
             p.Add<Passes.Rules.ShapeExpr.FoldGetItemShapeOf>();
+            p.Add<Passes.Rules.Neutral.FoldGetItemConcat>();
+            p.Add<Passes.Rules.Neutral.FoldGetItemReshape>();
+            p.Add<Passes.Rules.Neutral.FoldIf>();
             p.Add<Passes.Rules.Neutral.FoldNopReduce>();
             p.Add<Passes.Rules.Neutral.SliceToGetItem>();
             p.Add<Passes.Rules.Neutral.FoldTwoPads>();
             p.Add<Passes.Rules.Neutral.SwapBinaryArgs>();
             p.Add<Passes.Rules.Neutral.FoldDilatedConv2D>();
+            p.Add<Passes.Rules.Neutral.PowOf2ToSquare>();
             p.Add<Passes.Rules.Neutral.ScalarConstToTensor>();
         });
+
+        passManager.Add<InferRangePass>();
+        passManager.Add<OptimizeByRangePass>();
 
         passManager.AddWithName<DataflowPass>("DeComposePass").Configure(p =>
         {
@@ -219,6 +231,19 @@ internal class Compiler : ICompiler
 
         _compileSession.Target.RegisterTargetInDependentPass(passManager, _compileSession.CompileOptions);
 
+        passManager.AddWithName<DataflowPass>("OptimizeByRange").Configure(p =>
+        {
+            p.Add<InferRange>();
+            p.Add<FoldNopAbsByRange>();
+            p.Add<FoldNopCompareByRange>();
+            p.Add<FoldNopIf>();
+            p.Add<FoldNopSelect>();
+            p.Add<FoldNopBinary>();
+            p.Add<FoldSameBinary>();
+            p.Add<FoldNopWhere>();
+            p.Add<InlineFunction>(20);
+        });
+
         passManager.AddWithName<DataflowPass>("BroadcastMarker").Configure(p =>
         {
             p.Add<FoldTransposeActTranspose>();
@@ -238,35 +263,6 @@ internal class Compiler : ICompiler
         // });
     }
 
-    public void RegisterShapeBucket(IPassManager p)
-    {
-        var options = _compileSession.CompileOptions.ShapeBucketOptions;
-        if (!options.Enable)
-        {
-            return;
-        }
-
-        var singleVar = options.VarMap.Values.SelectMany(x => x).OfType<Var>().ToHashSet().Count <= 1;
-        CheckShapeBucketOptions(options);
-
-        if (HasNotBucketOp(_module!.Entry!) || !singleVar)
-        {
-            ToFusion(p);
-            MergeOp(p, true);
-            LostToFusion(p, singleVar);
-            MergeOp(p, true);
-            ClearMarker(p);
-            MergeFusion(p, singleVar, true);
-            Rebuild(p, singleVar);
-            Bucket(p);
-            Simplify(p);
-        }
-        else
-        {
-            p.AddWithName<FullBucket>("FullBucket");
-        }
-    }
-
     public void ClearFixShape(IPassManager p)
     {
         p.AddWithName<DataflowPass>("ClearUnused").Configure(c =>
@@ -283,7 +279,6 @@ internal class Compiler : ICompiler
         await RunPassAsync(p => RegisterTargetIndependQuantPass(p), "TargetIndependentQuantPass", progress, token);
         if (_compileSession.CompileOptions.ShapeBucketOptions.Enable)
         {
-            await RunPassAsync(p => RegisterShapeBucket(p), "ShapeBucket", progress, token);
             await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass", progress, token);
         }
 
@@ -305,7 +300,11 @@ internal class Compiler : ICompiler
         }
 
         await RunPassAsync(
-            p => target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions),
+            p =>
+            {
+                target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions);
+                p.Add<ReplaceDimVarWithShapeOfPass>();
+            },
             "TargetDependentBeforeCodeGen",
             progress,
             token);

@@ -13,14 +13,14 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="ConstantOfShape"/>.
 /// </summary>
-public class ConstantOfShapeEvaluator : IEvaluator<ConstantOfShape>, ITypeInferencer<ConstantOfShape>, ICostEvaluator<ConstantOfShape>, IShapeEvaluator<ConstantOfShape>, IMetricEvaluator<ConstantOfShape>
+public class ConstantOfShapeEvaluator : IEvaluator<ConstantOfShape>, ITypeInferencer<ConstantOfShape>, ICostEvaluator<ConstantOfShape>, IMetricEvaluator<ConstantOfShape>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ConstantOfShape target)
     {
-        var shape = context.GetArgumentValueAsArray<int>(target, ConstantOfShape.Shape);
+        var shape = context.GetArgumentValueAsArray<long>(target, ConstantOfShape.Shape);
         var value = context.GetArgumentValueAsTensor(target, ConstantOfShape.Value);
-        var result = Enumerable.Repeat(value.ToScalar<float>(), shape.Aggregate(1, (i, i1) => i * i1)).ToArray();
+        var result = Enumerable.Repeat(value.Cast<float>()[0], shape.Aggregate(1, (i, i1) => i * (int)i1)).ToArray();
         return OrtKI.Cast(Tensor.From<float>(result, shape).ToOrtTensor(), (int)value.ElementType.ToOrtType()).ToValue();
     }
 
@@ -28,17 +28,9 @@ public class ConstantOfShapeEvaluator : IEvaluator<ConstantOfShape>, ITypeInfere
     public IRType Visit(ITypeInferenceContext context, ConstantOfShape target)
     {
         var value = context.CheckArgumentType<TensorType>(target, ConstantOfShape.Value);
-        var shape = context.CheckArgumentType<TensorType>(target, ConstantOfShape.Shape);
+        var shape = context.GetArgument(target, ConstantOfShape.Shape);
         var type = value.DType;
-        if (context.GetArgument(target, ConstantOfShape.Shape) is TensorConst shapeValue)
-        {
-            return new TensorType(type, shapeValue.Value.ToArray<int>());
-        }
-        else
-        {
-            var outShape = TypeInference.ReshapeTo(shape);
-            return new TensorType(type, outShape);
-        }
+        return new TensorType(type, Shape.FromExpr(shape));
     }
 
     public Cost Visit(ICostEvaluateContext context, ConstantOfShape target)
@@ -59,10 +51,5 @@ public class ConstantOfShapeEvaluator : IEvaluator<ConstantOfShape>, ITypeInfere
         {
             [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(ret),
         };
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, ConstantOfShape target)
-    {
-        return context.GetArgument(target, ConstantOfShape.Shape);
     }
 }

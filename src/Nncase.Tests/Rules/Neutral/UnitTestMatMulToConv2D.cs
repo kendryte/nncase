@@ -27,13 +27,13 @@ public class UnitTestMatMulToConv2D : TransformTestBase
     public static IEnumerable<object[]> TestMatMulToConv2DPositiveData =>
         new[]
         {
-            new object[] { 0, new[] { 5, 4 }, new[] { 4, 6 } },
-            new object[] { 1, new[] { 1, 7 }, new[] { 7, 12 } },
+            new object[] { 0, new long[] { 5, 4 }, new long[] { 4, 6 } },
+            new object[] { 1, new long[] { 1, 7 }, new long[] { 7, 12 } },
         };
 
     [Theory]
     [MemberData(nameof(TestMatMulToConv2DPositiveData))]
-    public void TestMatMulToConv2DPositive(int count, int[] aShape, int[] bShape)
+    public void TestMatMulToConv2DPositive(int count, long[] aShape, long[] bShape)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, aShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, bShape).Evaluate();
@@ -48,13 +48,13 @@ public class UnitTestBroadcastMatMulToConv2D : TransformTestBase
     public static IEnumerable<object[]> TestBroadcastMatMulToConv2DPositiveData =>
         new[]
         {
-            new object[] { new[] { 3, 5, 4 }, new[] { 4, 6 } },
-            new object[] { new[] { 6, 1, 7 }, new[] { 7, 12 } },
+            new object[] { new long[] { 3, 5, 4 }, new long[] { 4, 6 } },
+            new object[] { new long[] { 6, 1, 7 }, new long[] { 7, 12 } },
         };
 
     [Theory]
     [MemberData(nameof(TestBroadcastMatMulToConv2DPositiveData))]
-    public void TestBroadcastMatMulToConv2DPositive(int[] aShape, int[] bShape)
+    public void TestBroadcastMatMulToConv2DPositive(long[] aShape, long[] bShape)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, aShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, bShape).Evaluate().AsTensor();
@@ -69,13 +69,13 @@ public class UnitTestSplitBatchMatMul : TransformTestBase
     public static IEnumerable<object[]> SplitBatchMatMulPositiveData =>
         new[]
         {
-            new object[] { 0, new[] { 3, 5, 4 }, new[] { 3, 4, 6 } },
-            new object[] { 1, new[] { 6, 1, 7 }, new[] { 6, 7, 12 } },
+            new object[] { 0, new long[] { 3, 5, 4 }, new long[] { 3, 4, 6 } },
+            new object[] { 1, new long[] { 6, 1, 7 }, new long[] { 6, 7, 12 } },
         };
 
     [Theory]
     [MemberData(nameof(SplitBatchMatMulPositiveData))]
-    public void TestSplitBatchMatMulPositive(int count, int[] aShape, int[] bShape)
+    public void TestSplitBatchMatMulPositive(int count, long[] aShape, long[] bShape)
     {
         SetupTestMethod(true);
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, aShape);
@@ -91,18 +91,18 @@ public class UnitTestBroadcastMatMul : TransformTestBase
     public static IEnumerable<object[]> BroadcastMatMulPositiveData =>
         new[]
         {
-            new object[] { 1, new[] { 2, 6, 1, 7 }, new[] { 1, 6, 7, 12 } },
-            new object[] { 1, new[] { 3, 2, 6, 1, 7 }, new[] { 1, 1, 6, 7, 12 } },
+            new object[] { 1, new long[] { 2, 6, 1, 7 }, new long[] { 1, 6, 7, 12 } },
+            new object[] { 1, new long[] { 3, 2, 6, 1, 7 }, new long[] { 1, 1, 6, 7, 12 } },
         };
 
     [Theory]
     [MemberData(nameof(BroadcastMatMulPositiveData))]
-    public void TestBroadcastMatMulPositive(int count, int[] aShape, int[] bShape)
+    public void TestBroadcastMatMulPositive(int count, long[] aShape, long[] bShape)
     {
         SetupTestMethod(true);
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, aShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, bShape).Evaluate().AsTensor();
-        var rootPre = IR.F.Tensors.Reshape(Math.MatMul(a, b), new int[] { -1, aShape[^2], bShape[^1] });
+        var rootPre = IR.F.Tensors.Reshape(Math.MatMul(a, b), new long[] { -1, aShape[^2], bShape[^1] });
         TestMatched<BroadcastMatMul>(rootPre);
     }
 }

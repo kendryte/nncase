@@ -143,7 +143,7 @@ concat_impl(std::span<const std::byte *const> inputs, T *output,
         out_ptr = output + offset(out_strides, out_index);
         const auto *in_ptr = reinterpret_cast<const T *>(inputs[n]) +
                              offset(in_strides[n], in_index);
-        memcpy(out_ptr, in_ptr, width * sizeof(T));
+        opt_memcpy(out_ptr, in_ptr, width * sizeof(T));
     };
 
     auto concat_last_dim = [&](size_t dim) {

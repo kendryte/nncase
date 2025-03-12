@@ -11,6 +11,7 @@ using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.CPU;
+using Nncase.IR.Distributed;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
@@ -21,6 +22,7 @@ using Nncase.Targets;
 
 using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.CPU;
+using static Nncase.PatternMatch.F.Distributed;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
@@ -92,7 +94,7 @@ public sealed partial class CPUOutputBoxingFusion : FusionMaker
                 case Const c:
                     if (parameter is TensorConst { Value: Tensor { Shape.IsScalar: true } } tc)
                     {
-                        newInput = Const.FromTensor(Tensor.FromBytes(tc.CheckedDataType, tc.Value.BytesBuffer.ToArray(), new[] { 1 }));
+                        newInput = Const.FromTensor(Tensor.FromBytes(tc.CheckedDataType, tc.Value.BytesBuffer.ToArray(), [1]));
                     }
                     else
                     {

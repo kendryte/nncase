@@ -139,7 +139,7 @@ public abstract class Const : Expr
     /// <summary>
     /// convert shape to const expr.
     /// </summary>
-    public static Const FromShape(Shape shape) => FromTensor(Tensor.From<int>(shape.ToValueArray()));
+    public static Const FromShape(Shape shape) => FromTensor(Tensor.From<long>(shape.ToValueArray()));
 
     /// <summary>
     /// Convert value to const expr.
@@ -148,16 +148,16 @@ public abstract class Const : Expr
     /// <returns>Created constant expression.</returns>
     public static Const FromValue(IValue value)
     {
-        if (value is TensorValue tv)
+        switch (value)
         {
-            return tv.Type is DistributedType distributedType
-                ? new TensorConst(tv.AsTensor(), distributedType.NdSBP, distributedType.Placement)
-                : new TensorConst(tv.AsTensor());
-        }
-        else
-        {
-            var tpv = (TupleValue)value;
-            return new TupleConst(tpv);
+            case TensorValue tv:
+                return tv.Type is DistributedType distributedType
+                    ? new TensorConst(tv.AsTensor(), distributedType.NdSBP, distributedType.Placement)
+                    : new TensorConst(tv.AsTensor());
+            case TupleValue tpv:
+                return new TupleConst(tpv);
+            default:
+                throw new ArgumentOutOfRangeException(nameof(value));
         }
     }
 }

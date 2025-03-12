@@ -22,11 +22,12 @@ internal static class CSourceExtensions
         { DataTypes.UInt16, "uint16_t" },
         { DataTypes.UInt32, "uint32_t" },
         { DataTypes.UInt64, "uint64_t" },
-        { DataTypes.Float16, "half" },
+        { DataTypes.Float16, "nncase::half" },
+        { DataTypes.BFloat16, "nncase::bfloat16" },
         { DataTypes.Float32, "float" },
         { DataTypes.Float64, "double" },
-        { DataTypes.Float8E4M3, "float_e4m3_t" },
-        { DataTypes.Float8E5M2, "float_e5m2_t" },
+        { DataTypes.Float8E4M3, "nncase::float_e4m3_t" },
+        { DataTypes.Float8E5M2, "nncase::float_e5m2_t" },
     };
 
     public static string ToC(this PrimType primType) =>

@@ -20,7 +20,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Reduce"/>.
 /// </summary>
-public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICostEvaluator<Reduce>, IShapeEvaluator<Reduce>, IMetricEvaluator<Reduce>
+public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICostEvaluator<Reduce>, IMetricEvaluator<Reduce>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Reduce reduce)
@@ -111,45 +111,6 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret, macPerElement),
         };
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Reduce target)
-    {
-        var keepDims = context.GetArgument(target, Reduce.KeepDims);
-        var axis = context.GetArgument(target, Reduce.Axes);
-        if (keepDims is TensorConst keepDimsV &&
-            axis is TensorConst axisValue)
-        {
-            var outShape = context.GetArgumentShape(target, Reduce.Input);
-            var input = context.GetArgument(target, Reduce.Input);
-            var inShape = context.GetArgumentShape(target, Reduce.Input);
-            var axes = axisValue.Value.Cast<int>();
-            var keepDimsValue = keepDimsV.Value.ToScalar<int>();
-            if (input.CheckedShape.IsRanked)
-            {
-                if (axes.Length == input.CheckedShape.Count && keepDimsValue == 0)
-                {
-                    return Array.Empty<long>();
-                }
-            }
-
-            foreach (var axValue in axes)
-            {
-                var ax = ShapeExprUtility.Positive(axValue, inShape);
-                if (keepDimsValue == 1)
-                {
-                    outShape = ShapeExprUtility.Replace(outShape, ax, 1L);
-                }
-                else
-                {
-                    outShape = ShapeExprUtility.Remove(outShape, ax);
-                }
-            }
-
-            return Cast(outShape, DataTypes.Int64);
-        }
-
-        throw new NotImplementedException();
     }
 
     public Metric Visit(IMetricEvaluateContext context, Reduce target)

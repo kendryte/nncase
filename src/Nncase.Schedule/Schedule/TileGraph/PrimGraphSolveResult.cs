@@ -120,7 +120,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                                 // for device we should use copy.
                                 var offset = LevelBufferOffsets[sl][new(value, bid)];
                                 var dtype = viewInfo.Buffer.CheckedDataType;
-                                var shape = bufferInfo.Shapes[i].Select(i => (Expr)(int)i).ToArray();
+                                var shape = bufferInfo.Shapes[i].Select(i => (Expr)i).ToArray();
                                 subView = new TIR.Buffer($"{bid}_L{value.Level}_Copy", dtype, new MemSpan(Tensor.FromPointer(offset, dtype), bufferInfo.SizeVars[i], MemoryLocation.Data, 0), shape, TensorUtilities.GetStrides(shape), distributedType);
                             }
                         }
@@ -137,21 +137,32 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                                 if (bid.Node.Op.GetType().Name.Contains("Matmul", StringComparison.Ordinal) && bid.IsOutput)
                                 {
                                     var kdim = bid.Node.WriteAccess.Domains.Length - 2;
-                                    var relatedWithK = bufferInfo.Masks[i].IsRelated(kdim);
                                     var val = value;
                                     bool isLoopRelated = false;
                                     while (val.Parent is TileNode parent)
                                     {
-                                        if (TileableNodeMemo.TryGetValue(val, out var m) && m.TileVars[kdim] != 1)
+                                        var m = TileableNodeMemo[val];
+                                        if (val.Level == value.Level)
                                         {
-                                            isLoopRelated = true;
-                                            break;
+                                            if (i > kdim && m.TileVars[kdim] != 1)
+                                            {
+                                                isLoopRelated = true;
+                                                break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (m.TileVars[kdim] != 1)
+                                            {
+                                                isLoopRelated = true;
+                                                break;
+                                            }
                                         }
 
                                         val = parent;
                                     }
 
-                                    if (relatedWithK && isLoopRelated)
+                                    if (isLoopRelated)
                                     {
                                         letBuilder.Body(T.Memcopy(subViewVar, srcBufView));
                                     }
@@ -381,8 +392,8 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
 
     private ParentSubViewInfo GetParentSubViewInfo(int storeLevel, ITreeNode node, BufferIdentity bid, AffineMap map, Expr[] forwardOffsets, long[] shapeExprs)
     {
-        var offset = new IR.Tuple(map.Apply(forwardOffsets, Enumerable.Repeat<Expr>(0, forwardOffsets.Length).ToArray()).Select(i => i.Start).ToArray());
-        var shape = shapeExprs.Select(s => (int)s).ToArray();
+        var offset = new IR.Tuple(map.Apply(forwardOffsets, Enumerable.Repeat<Expr>(0L, forwardOffsets.Length).ToArray()).Select(i => i.Start).ToArray());
+        var shape = shapeExprs.ToArray();
         bool innerAllocated = false;
         if (TryGetParerntBuffer(node, bid, out var parentBuffer, out var parentOffsets))
         {
@@ -420,7 +431,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
     /// <summary>
     /// Allocate a buffer which store at inner level.
     /// </summary>
-    private TIR.Buffer GetInnerAllocateBuffer(int storeLevel, TileNode node, BufferIdentity bid, int[] shape, out bool innerAllocated)
+    private TIR.Buffer GetInnerAllocateBuffer(int storeLevel, TileNode node, BufferIdentity bid, long[] shape, out bool innerAllocated)
     {
         var expr = bid.Node.Grid.Buffers[bid.Index];
         var tensorType = GetBufferTensorType(expr);
@@ -455,7 +466,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
     {
     }
 
-    public sealed record ParentSubViewInfo(Expr Buffer, IR.Tuple Offsets, int[] Shape, bool InnerAllocated)
+    public sealed record ParentSubViewInfo(Expr Buffer, IR.Tuple Offsets, long[] Shape, bool InnerAllocated)
     {
     }
 

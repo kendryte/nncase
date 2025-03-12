@@ -77,7 +77,7 @@ public class UnitTestFoldCast : TransformTestBase
     [MemberData(nameof(TestFoldTwoCastsPositiveData))]
     public void TestFoldTwoCastsPositive(DataType preType, DataType middleType, DataType postType)
     {
-        var a = Random.Normal(preType, 0, 1, 0, new[] { 1, 3, 8, 8 });
+        var a = Random.Normal(preType, 0, 1, 0, new long[] { 1, 3, 8, 8 });
         var rootPre = Tensors.Cast(Tensors.Cast(a, middleType), postType);
         TestMatched<FoldTwoCasts>(rootPre);
     }
@@ -86,7 +86,7 @@ public class UnitTestFoldCast : TransformTestBase
     [MemberData(nameof(TestFoldTwoCastsNegativeData))]
     public void TestFoldTwoCastsNegative(DataType preType, DataType middleType, DataType postType)
     {
-        var a = Random.Normal(preType, 0, 1, 0, new[] { 1, 3, 8, 8 });
+        var a = Random.Normal(preType, 0, 1, 0, new long[] { 1, 3, 8, 8 });
         var rootPre = Tensors.Cast(Tensors.Cast(a, middleType), postType);
         TestNotMatch<FoldTwoCasts>(rootPre);
     }
@@ -95,7 +95,7 @@ public class UnitTestFoldCast : TransformTestBase
     [MemberData(nameof(TestFoldNopCastPositiveData))]
     public void TestFoldNopCastPositive(DataType preType, DataType postType)
     {
-        var a = Random.Normal(preType, 0, 1, 0, new[] { 1, 3, 8, 8 });
+        var a = Random.Normal(preType, 0, 1, 0, new long[] { 1, 3, 8, 8 });
         var rootPre = Tensors.Cast(a, postType);
         TestMatched<FoldNopCast>(rootPre);
     }
@@ -104,7 +104,7 @@ public class UnitTestFoldCast : TransformTestBase
     [MemberData(nameof(TestFoldNopCastNegativeData))]
     public void TestFoldNopCastNegative(DataType preType, DataType postType)
     {
-        var a = Random.Normal(preType, 0, 1, 0, new[] { 1, 3, 8, 8 });
+        var a = Random.Normal(preType, 0, 1, 0, new long[] { 1, 3, 8, 8 });
         var rootPre = Tensors.Cast(a, postType);
         TestNotMatch<FoldNopCast>(rootPre);
     }

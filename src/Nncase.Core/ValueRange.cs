@@ -37,6 +37,8 @@ public record struct ValueRange<T>(T Min, T Max)
         return (min, max);
     }
 
+    public bool Contains(T value) => Min.CompareTo(value) <= 0 && Max.CompareTo(value) >= 0;
+
     private static class Limits
     {
         public static T MinValue
@@ -96,6 +98,11 @@ public record struct ValueRange<T>(T Min, T Max)
                 if (typeof(T) == typeof(Half))
                 {
                     return (T)(object)Half.NegativeInfinity;
+                }
+
+                if (typeof(T) == typeof(double))
+                {
+                    return (T)(object)double.NegativeInfinity;
                 }
 
                 throw new NotSupportedException();
@@ -159,6 +166,11 @@ public record struct ValueRange<T>(T Min, T Max)
                 if (typeof(T) == typeof(Half))
                 {
                     return (T)(object)Half.PositiveInfinity;
+                }
+
+                if (typeof(T) == typeof(double))
+                {
+                    return (T)(object)double.PositiveInfinity;
                 }
 
                 throw new NotSupportedException();

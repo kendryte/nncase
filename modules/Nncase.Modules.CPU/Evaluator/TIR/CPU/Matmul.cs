@@ -17,7 +17,7 @@ public sealed class MatmulEvaluator : ITypeInferencer<Matmul>, IKernelInfoEvalua
     {
         var domain = context.AccessMaps[0].Domains;
         var primitives = Enumerable.Repeat(1, domain.Length).ToArray();
-        var multipliers = Enumerable.Repeat(new ValueRange<int>(1, int.MaxValue), domain.Length).ToArray();
+        var multipliers = Enumerable.Repeat(new ValueRange<long>(1, int.MaxValue), domain.Length).ToArray();
 
         var (k, m, n) = (context.BufferShapes[0][^1], context.BufferShapes[2][^2], context.BufferShapes[2][^1]);
         var (lpack, rpack) = PackedMatMul.GetPackKind(op.LhsPackedAxes, op.RhsPackedAxes);

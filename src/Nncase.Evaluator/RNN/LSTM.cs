@@ -134,12 +134,7 @@ public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>, ICostEvalu
         // [batch_size, seq_length, num_directions, hidden_size]
         var yShape = x.Shape.ToList();
         yShape.Insert(seqLenIndex + 1, numDirections);
-        var hiddenSize = Dimension.Unknown;
-        if (context.GetArgument(target, LSTM.HiddenSize) is TensorConst hiddenSizeConst)
-        {
-            hiddenSize = hiddenSizeConst.Value.ToScalar<int>();
-        }
-
+        var hiddenSize = context.GetArgument(target, LSTM.HiddenSize);
         yShape[^1] = hiddenSize;
         return x with { Shape = yShape.ToArray() };
     }

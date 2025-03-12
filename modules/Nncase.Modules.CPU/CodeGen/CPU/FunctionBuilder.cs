@@ -82,7 +82,7 @@ internal class FunctionBuilder
             }
 
             // 3. build function.
-            var visitor = new KernelCSourceConvertVisitor(function.SchedResult.DataAlign, function.SchedResult.DataUsage, rdataPoolSize, TargetOptions);
+            var visitor = new KernelCSourceConvertVisitor(function.SchedResult.DataAlign, function.SchedResult.DataUsage, rdataPoolSize, localRdataPoolSize, TargetOptions);
             visitor.Visit(function);
             var functionCSource = visitor.GetCSource();
 

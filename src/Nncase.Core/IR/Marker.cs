@@ -103,11 +103,12 @@ public sealed class Marker : Expr, IEquatable<Marker?>
         return other is not null && base.Equals(other) && Name == other.Name;
     }
 
-    public Marker With(string? name = null, Expr? target = null, Expr? attribute = null, MixQuantInfo? mixQuantInfo = null, AdaQuantInfo? adaQuantInfo = null)
+    public Marker With(string? name = null, Expr? target = null, Expr? attribute = null, MixQuantInfo? mixQuantInfo = null, AdaQuantInfo? adaQuantInfo = null, IRMetadata? metadata = null)
         => new Marker(name ?? Name, target ?? Target, attribute ?? Attribute)
         {
             MixQuantInfo = mixQuantInfo ?? MixQuantInfo,
             AdaQuantInfo = adaQuantInfo ?? AdaQuantInfo,
+            Metadata = metadata ?? Metadata,
         };
 
     /// <inheritdoc/>

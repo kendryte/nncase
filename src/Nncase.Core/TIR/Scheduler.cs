@@ -75,12 +75,12 @@ public class Scheduler
     public For[] Split(For loop, params Expr[] factors)
     {
         // step 1. check the arguments
-        if (loop.Domain.Start != (Const)0)
+        if (loop.Domain.Start != (Const)0L)
         {
             throw new NotImplementedException("Loop Not Start With Zero");
         }
 
-        Expr tolLength = 1;
+        Expr tolLength = 1L;
         foreach (var factor in factors)
         {
             tolLength = tolLength * factor;
@@ -90,11 +90,11 @@ public class Scheduler
         _ = 1;
 
         // Step 2. Replace all occurrences of the original loop var with new variables
-        Expr substitute = 0;
+        Expr substitute = 0L;
         var newloopVars = new Var[factors.Length];
         foreach (var i in Enumerable.Range(0, factors.Length))
         {
-            var loopVar = new Var(TensorType.Scalar(DataTypes.Int32));
+            var loopVar = new Var(TensorType.Scalar(DataTypes.Int64));
             substitute = (substitute * factors[i]) + loopVar;
             newloopVars[i] = loopVar;
         }

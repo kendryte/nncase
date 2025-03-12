@@ -56,7 +56,7 @@ public partial class FoldSplitShapeOf : RewriteRule<Pattern>
             return null;
         }
 
-        if (getItemIndices.SequenceEqual(Enumerable.Range(0, shapeOf.CheckedShape[0].FixedValue)))
+        if (getItemIndices.SequenceEqual(Enumerable.Range(0, (int)shapeOf.CheckedShape[0].FixedValue)))
         {
             return shapeOf;
         }

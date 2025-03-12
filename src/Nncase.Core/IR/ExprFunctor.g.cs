@@ -64,6 +64,11 @@ public partial class ExprFunctor<TExprResult, TTypeResult, TContext>
     internal protected virtual TExprResult VisitPrimFunctionWrapper(PrimFunctionWrapper expr, TContext context) => VisitBaseFunction(expr, context);
 
     /// <summary>
+    /// Visit <see cref="IR.Shape"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitShape(IR.Shape expr, TContext context) => DefaultVisit(expr, context);
+
+    /// <summary>
     /// Visit <see cref="TensorConst"/>.
     /// </summary>
     internal protected virtual TExprResult VisitTensorConst(TensorConst expr, TContext context) => VisitConst(expr, context);
@@ -297,6 +302,13 @@ public partial class ExprFunctor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitPrimFunctionWrapper(PrimFunctionWrapper expr, Unit context) => VisitPrimFunctionWrapper(expr);
+    /// <summary>
+    /// Visit <see cref="IR.Shape"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitShape(IR.Shape expr) => base.VisitShape(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitShape(IR.Shape expr, Unit context) => VisitShape(expr);
     /// <summary>
     /// Visit <see cref="TensorConst"/>.
     /// </summary>

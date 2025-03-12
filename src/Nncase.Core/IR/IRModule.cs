@@ -78,7 +78,7 @@ public sealed class IRModule
         if (old.IsAlive)
         {
             old.ReplaceAllUsesWith(function);
-            old.DisposeIfNoUsers();
+            GC.Collect();
         }
 
         old = function;
@@ -97,11 +97,7 @@ public sealed class IRModule
         }
 
         function.RemoveUser(_exprUser);
-        if (function.IsAlive)
-        {
-            function.DisposeIfNoUsers();
-        }
-
         _functions.RemoveAt(index);
+        GC.Collect();
     }
 }

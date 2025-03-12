@@ -33,7 +33,7 @@ public class UnitTestCPUTarget : TestClassBase
         DefaultTargetName = CPUTarget.Kind;
         CompileOptions.TargetOptions = new CpuTargetOptions();
 #if DEBUG
-        CompileOptions.DumpFlags = DumpFlags.PassIR | DumpFlags.Rewrite | DumpFlags.EGraphCost | DumpFlags.CodeGen;
+        CompileOptions.DumpFlags = DumpFlags.PassIR | DumpFlags.Rewrite | DumpFlags.EGraphCost | DumpFlags.CodeGen | DumpFlags.Compile;
 #else
         CompileOptions.DumpFlags = DumpFlags.CodeGen;
 #endif
@@ -162,7 +162,7 @@ public class UnitTestCPUTarget : TestClassBase
     [MemberData(nameof(TestGetItemData))]
     public void TestGetItem(int[] index)
     {
-        var input = Tensor.From(new[] { 1, 2, 3, 4, 5, 6 }, new[] { 1, 2, 3 });
+        var input = Tensor.From(new[] { 1, 2, 3, 4, 5, 6 }, [1, 2, 3]);
         var x = new Var("x", new TensorType(DataTypes.Int32, new[] { 1, 2, 3 }));
         var second = GetItem(x, index);
         var main = new Function("main", second, new[] { x });
@@ -185,13 +185,14 @@ public class UnitTestCPUTarget : TestClassBase
         GenerateKModelAndRun(module, new[] { 1.0f }, new[] { 3.0f });
     }
 
-    [Theory(Skip = "CPU codegen currently doesn't support If")]
+    [Theory]
     [MemberData(nameof(TestIfData))]
     public void TestIf(bool input)
     {
+        using var dumpScope = new Diagnostics.DumpScope($"{input}", CompileOptions.DumpFlags);
         var condVar = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));
-        var then = IR.F.Math.Abs(3f);
-        var @else = IR.F.NN.Relu(Cast(3, DataTypes.Float32));
+        var then = new Function(IR.F.Math.Abs(3f));
+        var @else = new Function(IR.F.NN.Relu(Cast(3, DataTypes.Float32)));
         var @if = IR.F.Math.Abs(new If(condVar, then, @else));
 
         Assert.True(@if.InferenceType());
@@ -201,13 +202,13 @@ public class UnitTestCPUTarget : TestClassBase
         GenerateKModelAndRunFromFn(main, input, output);
     }
 
-    [Fact(Skip = "If")]
+    [Fact]
     public void TestStackVMNestIf()
     {
         var condVar = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));
         _ = (Expr)3 - 1;
-        var @else = (Expr)3 + 1;
-        var elseThen = (Expr)8 * 8;
+        var @else = new Function((Expr)3 + 1);
+        var elseThen = new Function((Expr)8 * 8);
         var elsif = new If(condVar, elseThen, @else);
 
         var main = new Function("main", 2 * elsif, new[] { condVar });
@@ -217,12 +218,13 @@ public class UnitTestCPUTarget : TestClassBase
         GenerateKModelAndRunFromFn(main, input, output);
     }
 
-    [Fact(Skip = "NotSupportIf")]
+    [Fact]
     public void TestNestIfWithThenBegin()
     {
+        CompileOptions.DumpFlags = DumpFlags.CodeGen;
         var condVar = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));
         var cast = Cast(condVar, DataTypes.Int32);
-        var i = new If(condVar, cast * new If(condVar, 3 + cast, 2), 6);
+        var i = ShapeExprUtility.If(condVar, (condVar, cast) => cast * ShapeExprUtility.If(condVar, cast => 3 + cast, cast => 2, cast), (condVar, cast) => 6, condVar, cast);
         var main = new Function("main", i, new[] { condVar });
         Dumpper.DumpIR(main, "main");
         var input = (Tensor)true;
@@ -230,11 +232,11 @@ public class UnitTestCPUTarget : TestClassBase
         GenerateKModelAndRunFromFn(main, input, output);
     }
 
-    [Fact(Skip = "NotSupportIf")]
+    [Fact]
     public void TestNestIfWithElseBegin()
     {
         var condVar = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));
-        var i = new If(condVar, 3, new If(condVar, 1, 2));
+        var i = ShapeExprUtility.If(condVar, condVar => 3, condVar => ShapeExprUtility.If(condVar, () => 1, () => 2), condVar);
         var main = new Function("main", i, new[] { condVar });
         var input = (Tensor)false;
         var output = (Tensor)2;

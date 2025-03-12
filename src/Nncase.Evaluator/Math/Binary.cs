@@ -4,6 +4,7 @@
 using System;
 using DryIoc;
 using Nncase.CostModel;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
@@ -15,7 +16,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Binary"/>.
 /// </summary>
-public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binary>, ICostEvaluator<Binary>, IOpPrinter<Binary>, IShapeEvaluator<Binary>, IMetricEvaluator<Binary>
+public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binary>, ICostEvaluator<Binary>, IOpPrinter<Binary>, IMetricEvaluator<Binary>
 {
     public static IRType CheckSBP(BinaryOp op, TensorType tensorType, DistributedType a, DistributedType b)
     {
@@ -125,7 +126,8 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     {
         var lhs = context.CheckArgumentType<IRType>(target, Binary.Lhs);
         var rhs = context.CheckArgumentType<IRType>(target, Binary.Rhs);
-        return (lhs, rhs) switch
+        var operandTypes = TypeInference.BroadcastDistributeTypes(lhs, rhs);
+        return (operandTypes[0], operandTypes[1]) switch
         {
             (TensorType a, TensorType b) => Visit(target, a, b),
             (DistributedType a, DistributedType b) => Visit(target, a, b),
@@ -165,36 +167,29 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     }
 
     /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Binary target, bool iLmode)
+    public string Visit(IPrintOpContext context, Binary target)
     {
         var lhs = context.GetArgument(target, Binary.Lhs);
         var rhs = context.GetArgument(target, Binary.Rhs);
-        if (iLmode)
+        if (context.Flags.HasFlag(PrinterFlags.Inline) || context.Flags.HasFlag(PrinterFlags.Script))
         {
-            return $"{target.BinaryOp}({lhs}, {rhs})";
+            return target.BinaryOp switch
+            {
+                BinaryOp.Add => $"({lhs} + {rhs})",
+                BinaryOp.Sub => $"({lhs} - {rhs})",
+                BinaryOp.Mul => $"({lhs} * {rhs})",
+                BinaryOp.Div => $"({lhs} / {rhs})",
+                BinaryOp.Mod => $"({lhs} % {rhs})",
+                BinaryOp.LogicalAnd => $"({lhs} & {rhs})",
+                BinaryOp.LogicalOr => $"({lhs} | {rhs})",
+                BinaryOp.LogicalXor => $"({lhs} ^ {rhs})",
+                BinaryOp.LeftShift => $"({lhs} << {rhs})",
+                BinaryOp.RightShift => $"({lhs} >> {rhs})",
+                _ => $"{target.BinaryOp}({lhs}, {rhs})",
+            };
         }
 
-        return target.BinaryOp switch
-        {
-            BinaryOp.Add => $"({lhs} + {rhs})",
-            BinaryOp.Sub => $"({lhs} - {rhs})",
-            BinaryOp.Mul => $"({lhs} * {rhs})",
-            BinaryOp.Div => $"({lhs} / {rhs})",
-            BinaryOp.Mod => $"({lhs} % {rhs})",
-            BinaryOp.LogicalAnd => $"({lhs} & {rhs})",
-            BinaryOp.LogicalOr => $"({lhs} | {rhs})",
-            BinaryOp.LogicalXor => $"({lhs} ^ {rhs})",
-            BinaryOp.LeftShift => $"({lhs} << {rhs})",
-            BinaryOp.RightShift => $"({lhs} >> {rhs})",
-            _ => $"{target.BinaryOp}({lhs}, {rhs})",
-        };
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Binary target)
-    {
-        var lhs = context.GetArgumentShape(target, Binary.Lhs);
-        var rhs = context.GetArgumentShape(target, Binary.Rhs);
-        return ShapeExprUtility.BroadcastShape(lhs, rhs);
+        return $"{target.BinaryOp}({lhs}, {rhs})";
     }
 
     private IRType Visit(Binary target, DistributedType a, DistributedType b)

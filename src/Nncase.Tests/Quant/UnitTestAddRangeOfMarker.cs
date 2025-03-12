@@ -103,7 +103,7 @@ public class UnitTestAddRangeOfMarker : TestClassBase
                     CompilerServices.InferenceType(var);
                     var shape = var.CheckedShape.Select(d => d.IsUnknown ? 1 : d.FixedValue).ToArray();
 
-                    var shapeSize = 1;
+                    long shapeSize = 1;
                     for (int j = 0; j < shape.Length; j++)
                     {
                         shapeSize *= shape[j];

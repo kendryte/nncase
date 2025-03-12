@@ -12,16 +12,6 @@ namespace Nncase.IR.F;
 
 public partial class CPU
 {
-    public static Call Boxing(Expr input, IRType type)
-    {
-        return new Call(new Boxing(type), input);
-    }
-
-    public static Call ForceBoxing(Expr input, DistributedType type)
-    {
-        return new Call(new ForceBoxing(type), input);
-    }
-
     public static Call Load(Expr input)
     {
         return new Call(new Load(), input);
@@ -97,12 +87,12 @@ public partial class CPU
         return new Call(new ResizeImage(packedAxes, padedNums, newSize, resizeMode, transformationMode, nearestMode), input);
     }
 
-    public static Expr Im2col(Expr input, int[] kernel, int[] stride, int[] padding)
+    public static Expr Im2col(Expr input, long[] kernel, int[] stride, int[] padding)
     {
         return new Call(new Im2col(kernel, stride, padding, Array.Empty<int>(), Array.Empty<int>()), input);
     }
 
-    public static Expr Im2col(Expr input, int[] kernel, int[] stride, int[] padding, int[] packedAxes, int[] padedNums)
+    public static Expr Im2col(Expr input, long[] kernel, int[] stride, int[] padding, int[] packedAxes, int[] padedNums)
     {
         return new Call(new Im2col(kernel, stride, padding, packedAxes, padedNums), input);
     }

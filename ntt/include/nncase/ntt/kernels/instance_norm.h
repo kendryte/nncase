@@ -61,11 +61,11 @@ void impl(const TIn &input, const TScale &scale, const TBias &bias,
     static_assert(is_same_seq(input_strides, output_strides),
                   "strides not match");
     constexpr size_t Axis = 2;
-    constexpr auto domain = slice_fixed_dims<Axis>(input_shape);
-    constexpr auto strides = slice_fixed_dims<Axis>(input_strides);
+    constexpr auto domain = slice_dims<Axis>(input_shape);
+    constexpr auto strides = slice_dims<Axis>(input_strides);
 
     constexpr size_t inner_size =
-        slice_fixed_dims<input_shape.rank() - Axis, Axis>(input_shape).length();
+        slice_dims<input_shape.rank() - Axis, Axis>(input_shape).length();
     // constexpr bool UseVectorReduce = PackedAxes::rank() == 1;
 
     // TElem finner_size = (TElem)inner_size;

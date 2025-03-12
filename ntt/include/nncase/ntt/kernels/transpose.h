@@ -14,7 +14,6 @@
  */
 #pragma once
 #include "../apply.h"
-#include "../profiler.h"
 #include "../utility.h"
 #include <tuple>
 
@@ -37,12 +36,12 @@ void transpose(const TIn &input, TOut &&output) {
     constexpr auto output_shape = std::decay_t<TOut>::shape();
     constexpr auto output_strides = std::decay_t<TOut>::strides();
     constexpr auto output_rank = std::decay_t<TOut>::rank();
+    constexpr auto input_rank = TIn::rank();
     constexpr auto cdims_input = contiguous_dims(input_shape, input_strides);
     constexpr auto cdims_output = contiguous_dims(output_shape, output_strides);
-
     constexpr auto segs_cnt = segments_cnt<TPerm>();
 
-    if (cdims_input == TIn::rank() && cdims_output == output_rank &&
+    if constexpr (cdims_input == input_rank && cdims_output == output_rank &&
         segs_cnt <= 4) {
         ntt::u_transpose<TPerm, TIn, TOut, segs_cnt>(
             input, output, std::make_index_sequence<segs_cnt>{});

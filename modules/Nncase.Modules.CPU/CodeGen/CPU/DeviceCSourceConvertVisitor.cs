@@ -36,6 +36,46 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
     public PrimFunction VisitEntry => (TIR.PrimFunction)VisitRoot!;
 
+    public static void WriteWithProfiler(string functionName, string tagName = "")
+    {
+        functionName = functionName.TrimEnd(new char[] { ';', '\n' });
+        if (tagName == string.Empty)
+        {
+            int index = functionName.IndexOf('(', StringComparison.Ordinal);
+            if (index != -1)
+            {
+                tagName = functionName.Substring(0, index);
+            }
+        }
+
+        tagName = tagName == string.Empty ? functionName : tagName;
+        IndentScope.Writer.IndWrite("{\n");
+        IndentScope.Writer.Write($"constexpr std::string_view function_name = \"{tagName}\";\n");
+        IndentScope.Writer.Write($"auto_profiler profiler(function_name, runtime::profiling_level::device);\n");
+        IndentScope.Writer.Write($"{functionName};\n");
+        IndentScope.Writer.IndWrite("}\n");
+    }
+
+    public static void WriteIndWithProfiler(string functionName, string tagName = "")
+    {
+        functionName = functionName.TrimEnd(new char[] { ';', '\n' });
+        if (tagName == string.Empty)
+        {
+            int index = functionName.IndexOf('(', StringComparison.Ordinal);
+            if (index != -1)
+            {
+                tagName = functionName.Substring(0, index);
+            }
+        }
+
+        tagName = tagName == string.Empty ? functionName : tagName;
+        IndentScope.Writer.IndWrite("{\n");
+        IndentScope.Writer.IndWrite($"constexpr std::string_view function_name = \"{tagName}\";\n");
+        IndentScope.Writer.IndWrite($"auto_profiler profiler(function_name, runtime::profiling_level::device);\n");
+        IndentScope.Writer.IndWrite($"{functionName};\n");
+        IndentScope.Writer.IndWrite("}\n");
+    }
+
     public string GetHeader()
     {
         return _deviceBuilder.ToString();
@@ -174,7 +214,16 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             return symbol;
         }
 
-        var type = $"tensor_view<{expr.ElemType.ToC()}, {KernelUtility.DimensionsToC(expr.Dimensions)}, {KernelUtility.StridesToC(expr.Strides)}> ";
+        var dimensions = expr.DistributedType is null ? expr.Dimensions : expr.DistributedType.TensorType.Shape.Dimensions;
+        var isFixedDimensions = dimensions.AsValueEnumerable().All(x => x is TensorConst);
+        var isFixedStrides = expr.Strides.AsValueEnumerable().All(x => x is TensorConst);
+        var dimensionSymbols = dimensions.AsValueEnumerable().Select(Visit).ToArray();
+        var strideSymbols = expr.Strides.AsValueEnumerable().Select(Visit).ToArray();
+
+        var dtypeStr = expr.ElemType.ToC();
+        var dimensionStr = KernelUtility.DimensionsToC(isFixedDimensions, dimensionSymbols, true);
+        var strideStr = KernelUtility.StridesToC(isFixedStrides, strideSymbols, true);
+        var type = $"tensor_view<{dtypeStr}, {dimensionStr}, {strideStr}> ";
 
         symbol = new(type, expr.Name);
         _exprMemo.Add(expr, symbol);
@@ -192,11 +241,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         {
             TupleType x when x == TupleType.Void => string.Empty,
             TensorType { IsScalar: true } x => x.DType.ToC(),
-            TensorType { Shape: { IsRanked: true } } x => x.Shape.IsFixed switch
-            {
-                true => $"tensor_view<{x.DType.ToC()}, fixed_shape<{x.Shape.ToString()[1..^1]}>>",
-                false => "auto",
-            },
+            TensorType => "auto",
             _ => throw new NotSupportedException(),
         };
 
@@ -205,7 +250,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         switch (expr.Target)
         {
             case PrimFunction deviceFunc:
-                IndentScope.Writer.IndWrite($"{deviceFunc.Name}({string.Join(",", arguments.Select(arg => arg.Name))});\n");
+                WriteIndWithProfiler($"{deviceFunc.Name}({string.Join(",", arguments.Select(arg => arg.Name))});\n");
                 break;
             case IR.Math.Binary op:
                 str = CSourceUtilities.ContertBinary(op, arguments);
@@ -269,14 +314,16 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             case IR.Buffers.AllocateBufferView op:
                 {
                     var buffer = (TIR.Buffer)expr.Arguments[0];
-                    if (buffer.CheckedShape.IsFixed)
-                    {
-                        str = $"{{span_cast<{buffer.ElemType.ToC()}>({Visit(buffer.MemSpan).Name}), {KernelUtility.DimensionsToC(buffer.Dimensions)}{{}}, {KernelUtility.StridesToC(buffer.Strides)}{{}}}}";
-                    }
-                    else
-                    {
-                        str = $"{{span_cast<{buffer.ElemType.ToC()}>({Visit(buffer.MemSpan).Name}), make_ranked_shape({StringUtility.Join(", ", buffer.Dimensions.AsValueEnumerable().Select(x => Visit(x).Name))})}}";
-                    }
+                    var dimensions = buffer.DistributedType is null ? buffer.Dimensions : buffer.DistributedType.TensorType.Shape.Dimensions;
+                    var isFixedDimensions = dimensions.AsValueEnumerable().All(x => x is TensorConst);
+                    var isFixedStrides = buffer.Strides.AsValueEnumerable().All(x => x is TensorConst);
+                    var dimensionSymbols = dimensions.AsValueEnumerable().Select(Visit).ToArray();
+                    var strideSymbols = buffer.Strides.AsValueEnumerable().Select(Visit).ToArray();
+
+                    var dtypeStr = buffer.ElemType.ToC();
+                    var dimensionStr = KernelUtility.DimensionsToC(isFixedDimensions, dimensionSymbols, false);
+                    var strideStr = KernelUtility.StridesToC(isFixedStrides, strideSymbols, false);
+                    str = $"{{span_cast<{dtypeStr}>({Visit(buffer.MemSpan).Name}), {dimensionStr}, {strideStr}}}";
                 }
 
                 break;
@@ -284,24 +331,24 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 str = $"(({op.NewType.ToC()}){arguments[0].Name})";
                 break;
             case TIR.Memcopy op:
-                IndentScope.Writer.IndWrite($"tensor_copy({arguments[1].Name}, {arguments[0].Name});\n");
+                WriteIndWithProfiler($"tensor_copy({arguments[1].Name}, {arguments[0].Name});\n");
                 break;
             case TIR.CPU.Unary op:
-                IndentScope.Writer.IndWrite(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unary.cshtml", new UnaryKernelTemplateModel
+                WriteIndWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unary.cshtml", new UnaryKernelTemplateModel
                 {
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
                     UnaryOp = op.UnaryOp,
                 }).Result);
                 break;
             case TIR.CPU.Binary op:
-                IndentScope.Writer.IndWrite(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
+                WriteIndWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
                 {
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
                     BinaryOp = op.BinaryOp,
                 }).Result);
                 break;
             case TIR.CPU.PackedBinary op:
-                IndentScope.Writer.IndWrite(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
+                WriteIndWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
                 {
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
                     BinaryOp = op.BinaryOp,
@@ -310,13 +357,13 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             case TIR.CPU.Swish swish:
                 if (swish.Beta == 1.0f)
                 {
-                    IndentScope.Writer.IndWrite($"unary<ops::swish>({arguments[0].Name}, {arguments[1].Name});\n");
+                    WriteIndWithProfiler($"unary<ops::swish>({arguments[0].Name}, {arguments[1].Name});\n");
                 }
                 else
                 {
                     IndentScope.Writer.IndWrite($"float beta[1] = {{{swish.Beta}}};\n");
                     IndentScope.Writer.IndWrite($"tensor_view<float, fixed_shape<1>> tb(std::span<float, 1>(beta, beta + 1));\n");
-                    IndentScope.Writer.IndWrite($"binary<ops::swishb>({arguments[0].Name}, tb, {arguments[1].Name});\n");
+                    WriteIndWithProfiler($"binary<ops::swishb>({arguments[0].Name}, tb, {arguments[1].Name});\n");
                 }
 
                 break;
@@ -324,16 +371,40 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Matmul.cshtml", new TypedKernelTemplateModel<TIR.CPU.Matmul>(matmul)
                 {
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
-                    Indent = string.Join(string.Empty, Enumerable.Repeat(' ', IndentScope.Writer.Indent)),
+                    Indent = new string(' ', IndentScope.Writer.Indent),
                 }).Result);
 
                 break;
             case TIR.CPU.Pack pack:
-                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Pack.cshtml", new TypedKernelTemplateModel<TIR.CPU.Pack>(pack)
+                WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Pack.cshtml", new TypedKernelTemplateModel<TIR.CPU.Pack>(pack)
                 {
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
-                    Indent = string.Join(string.Empty, Enumerable.Repeat(' ', IndentScope.Writer.Indent)),
+                    Indent = new string(' ', IndentScope.Writer.Indent),
                 }).Result);
+                break;
+            case TIR.CPU.Transpose transpose:
+                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Transpose.cshtml", new TypedKernelTemplateModel<TIR.CPU.Transpose>(transpose)
+                {
+                    Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
+                    Indent = new string(' ', IndentScope.Writer.Indent),
+                }).Result);
+                break;
+            case TIR.CPU.Unpack unpack:
+                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unpack.cshtml", new TypedKernelTemplateModel<TIR.CPU.Unpack>(unpack)
+                {
+                    Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
+                    Indent = new string(' ', IndentScope.Writer.Indent),
+                }).Result);
+                break;
+            case TIR.CPU.Reduce reduce:
+                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Reduce.cshtml", new TypedKernelTemplateModel<TIR.CPU.Reduce>(reduce)
+                {
+                    Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
+                    Indent = new string(' ', IndentScope.Writer.Indent),
+                }).Result);
+                break;
+            case TIR.CPU.Cast cast:
+                IndentScope.Writer.IndWrite($"cast({arguments[0].Name}, {arguments[1].Name});\n");
                 break;
             default:
                 throw new NotSupportedException();
@@ -356,7 +427,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         string str;
         if (expr is TensorConst { Value: Tensor { ElementType: PrimType ptype, Shape: { IsScalar: true } } scalar })
         {
-            str = scalar[0].ToString() switch
+            str = scalar[Array.Empty<long>()].ToString() switch
             {
                 "True" => "1",
                 "False" => "0",

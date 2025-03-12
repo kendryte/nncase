@@ -36,6 +36,6 @@ public sealed partial class SqueezeToReshape : IRewriteRule
         var newShape = axesArray.Length == 0
             ? input.CheckedShape.Where(d => !d.IsFixed || d.FixedValue != 1)
             : input.CheckedShape.Where((_, i) => !axesArray.Contains(i));
-        return Reshape(input, new Shape(newShape.ToArray()));
+        return Reshape(input, new Shape(newShape.ToArray()).ToValueArrayExpr());
     }
 }

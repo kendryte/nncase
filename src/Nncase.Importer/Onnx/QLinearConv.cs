@@ -29,20 +29,20 @@ namespace Nncase.Importer
             var group = GetIntAttribute(op, "group", 1);
             var strides = GetStrideAttribute(op);
 
-            int? stridesValueLen = ((TensorConst)strides).CheckedShape[0].Value;
+            int stridesValueLen = (int)((TensorConst)strides).CheckedShape[0].FixedValue;
             for (var i = 0; i < stridesValueLen; i++)
             {
                 System.Diagnostics.Trace.Assert(((TensorConst)strides).Value.Cast<long>()[i] <= (long)int.MaxValue);
             }
 
-            int? dilationValueLen = ((TensorConst)dilation).CheckedShape[0].Value;
+            int dilationValueLen = (int)((TensorConst)dilation).CheckedShape[0].FixedValue;
             for (var i = 0; i < dilationValueLen; i++)
             {
                 System.Diagnostics.Trace.Assert(((TensorConst)dilation).Value.Cast<long>()[i] <= (long)int.MaxValue);
             }
 
             var pads = AutoPad(op, autoPad, input, weights, strides.ToArray<long>(), dilation);
-            int[] strideArr = new int[stridesValueLen == null ? default : stridesValueLen.Value];
+            int[] strideArr = new int[stridesValueLen];
             for (var i = 0; i < stridesValueLen; i++)
             {
                 strideArr[i] = ((TensorConst)strides).Value.Cast<int>()[i];
@@ -50,7 +50,7 @@ namespace Nncase.Importer
 
             var strideConst = new TensorConst(Tensor.From<int>(strideArr));
 
-            int[] dilationArr = new int[dilationValueLen == null ? default : dilationValueLen.Value];
+            int[] dilationArr = new int[dilationValueLen];
             for (var i = 0; i < dilationValueLen; i++)
             {
                 dilationArr[i] = ((TensorConst)dilation).Value.Cast<int>()[i];
@@ -63,7 +63,7 @@ namespace Nncase.Importer
 
             if (bias == null)
             {
-                int? ocNumber = ((TensorConst)weights).CheckedShape[0].Value;
+                int? ocNumber = (int)((TensorConst)weights).CheckedShape[0].FixedValue;
                 var zeroBias = new TensorConst(new int[ocNumber == null ? default(int) : ocNumber.Value]);
                 var conv = F.NN.Conv2D(inputDeq, weightsDeq, zeroBias, strideConst, pads, dilationConst, PadMode.Constant, group);
                 return Quantize(conv, new QuantParam(((TensorConst)yZeroPoint).Value.ToScalar<int>(), ((TensorConst)yScale).Value.ToScalar<float>()), ((TensorConst)yZeroPoint).CheckedDataType);

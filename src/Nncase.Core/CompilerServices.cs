@@ -11,7 +11,9 @@ using System.Text;
 using System.Threading.Tasks;
 using DryIoc;
 using Microsoft.Extensions.DependencyInjection;
+using NetFabric.Hyperlinq;
 using Nncase.CostModel;
+using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Affine;
@@ -43,20 +45,17 @@ public interface ICompilerServicesProvider
     /// <returns>Inference result.</returns>
     IRType InferenceOp(Op op, ITypeInferenceContext context, Dictionary<Type, ITypeInferencer> inferencer_cache);
 
-    /// <summary>
-    /// printer op.
-    /// </summary>
-    /// <param name="op">Target operator.</param>
-    /// <param name="context">Context.</param>
-    /// <param name="iLmode">if is print is il or script.</param>
-    /// <returns>Result.</returns>
-    string PrintOp(Op op, IIRPrinterContext context, bool iLmode);
+    string? PrintOp(Op op, IPrintOpContext context);
+
+    string Print(IRType type, Diagnostics.PrinterFlags flags);
+
+    string Print(Expr expr, Diagnostics.PrinterFlags flags);
 
     /// <summary>
     /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.{ext}`
     /// else write to {dumpPath}/{prefix}_{expr.Type.name}.il`.
     /// </summary>
-    void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable);
+    void DumpIR(Expr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags);
 
     /// <summary>
     /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.dot`.
@@ -64,7 +63,7 @@ public interface ICompilerServicesProvider
     /// not support prim func/prim func wrapper.
     /// </remarks>
     /// </summary>
-    void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable);
+    void DumpDotIR(Expr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags);
 
     /// <summary>
     /// dump the expr as csharp code.
@@ -73,7 +72,7 @@ public interface ICompilerServicesProvider
     /// <param name="prefix">file prefix.</param>
     /// <param name="dumpDir">file dump ir.</param>
     /// <param name="randConst">false for save const into bin.</param>
-    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst);
+    void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst);
 
     /// <summary>
     /// dump the expr as csharp code.
@@ -81,20 +80,7 @@ public interface ICompilerServicesProvider
     /// <param name="expr">expression.</param>
     /// <param name="prefix">file prefix.</param>
     /// <param name="dumpDir">file dump ir.</param>
-    public void DumpPatternIR(Expr expr, string prefix, string dumpDir);
-
-    /// <summary>
-    /// print ir type.
-    /// </summary>
-    string Print(IRType type);
-
-    /// <summary>
-    /// print ir type.
-    /// </summary>
-    /// <param name="expr"> the expression. </param>
-    /// <param name="useScript">Print script format.</param>
-    /// <returns>the string.</returns>
-    string Print(Expr expr, bool useScript);
+    void DumpPatternIR(Expr expr, string prefix, string dumpDir);
 
     /// <summary>
     /// Evaluate the expression tree.
@@ -144,10 +130,6 @@ public interface ICompilerServicesProvider
     /// <param name="context">Evaluate context.</param>
     /// <returns>Evaluate result.</returns>
     Metric EvaluateOpMetric(Op op, IMetricEvaluateContext context);
-
-    Expr EvaluateShapeExpr(Expr expr, ShapeExprCache? cache);
-
-    Expr EvaluateOpShapeExpr(Op expr, IShapeEvaluateContext context);
 
     /// <summary>
     /// Match expression.
@@ -223,6 +205,10 @@ public interface ICompilerServicesProvider
     IEGraph ERewrite(IEGraph expr, IEnumerable<IRewriteRule> rules, RunPassContext options);
 
     MicroKernelInfo GetOpMicroKernelInfo(Op op, MicroKernelContext context);
+
+    Expr SimplifyForDimension(Expr value);
+
+    bool TryGetMaxShape(Shape shape, [MaybeNullWhen(false)] out long[] maxShape);
 }
 
 internal interface ICompilerServicesProviderInternal
@@ -341,16 +327,6 @@ public static class CompilerServices
     public static Cost EvaluateOpCost(Op op, ICostEvaluateContext context)
     {
         return Provider.EvaluateOpCost(op, context);
-    }
-
-    public static Expr EvaluateShapeExpr(this Expr expr, ShapeExprCache? cache = null)
-    {
-        return Provider.EvaluateShapeExpr(expr, cache);
-    }
-
-    public static Expr EvaluateOpShapeExpr(Op op, IShapeEvaluateContext context)
-    {
-        return Provider.EvaluateOpShapeExpr(op, context);
     }
 
     /// <summary>
@@ -481,12 +457,11 @@ public static class CompilerServices
     /// </summary>
     /// <param name="op">Target operator.</param>
     /// <param name="context">Context.</param>
-    /// <param name="iLmode">if is print is il or script.</param>
     /// <returns>Result.</returns>
-    public static string PrintOp(Op op, IIRPrinterContext context, bool iLmode) => Provider.PrintOp(op, context, iLmode);
+    public static string? PrintOp(Op op, IPrintOpContext context) => Provider.PrintOp(op, context);
 
-    public static void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable = true) =>
-      Provider.DumpIR(expr, prefix, dumpPath, display_callable);
+    public static void DumpIR(Expr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags = Diagnostics.PrinterFlags.Normal) =>
+      Provider.DumpIR(expr, prefix, dumpPath, flags);
 
     /// <summary>
     /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.dot`.
@@ -494,8 +469,8 @@ public static class CompilerServices
     /// not support prim func/prim func wrapper.
     /// </remarks>
     /// </summary>
-    public static void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable = true) =>
-      Provider.DumpDotIR(expr, prefix, dumpPath, display_callable);
+    public static void DumpDotIR(Expr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags = Diagnostics.PrinterFlags.Normal) =>
+      Provider.DumpDotIR(expr, prefix, dumpPath, flags);
 
     /// <summary>
     /// dump the expr as csharp code.
@@ -516,9 +491,9 @@ public static class CompilerServices
     public static void DumpPatternIR(Expr expr, string prefix, string dumpDir) =>
       Provider.DumpPatternIR(expr, prefix, dumpDir);
 
-    public static string Print(IRType type) => Provider.Print(type);
+    public static string Print(IRType type, Diagnostics.PrinterFlags flags = Diagnostics.PrinterFlags.Minimal | Diagnostics.PrinterFlags.SkipDimensionExpr) => Provider.Print(type, flags);
 
-    public static string Print(Expr expr, bool useScript = false) => Provider.Print(expr, useScript);
+    public static string Print(Expr expr, Diagnostics.PrinterFlags flags = Diagnostics.PrinterFlags.Minimal | Diagnostics.PrinterFlags.SkipDimensionExpr) => Provider.Print(expr, flags);
 
     /// <summary>
     /// Get target.
@@ -526,6 +501,48 @@ public static class CompilerServices
     /// <param name="name">Target name.</param>
     /// <returns>Target.</returns>
     public static ITarget GetTarget(string name) => Provider.GetTarget(name);
+
+    public static Expr SimplifyForDimension(Expr value) => Provider.SimplifyForDimension(value);
+
+    public static bool TryGetMaxShape(Shape shape, [MaybeNullWhen(false)] out long[] maxShape) => Provider.TryGetMaxShape(shape, out maxShape);
+
+    public static long[] GetMaxShape(Shape shape)
+    {
+        if (TryGetMaxShape(shape, out var maxShape))
+        {
+            return maxShape;
+        }
+
+        throw new InvalidOperationException("Failed to get max shape.");
+    }
+
+    public static Expr FastSimplifyForDimension(Expr value)
+    {
+        if (value is TensorConst tc)
+        {
+            return tc.Value.ElementType == DataTypes.Int64 ? tc : new TensorConst(tc.Value.Cast<long>());
+        }
+        else if (value is None)
+        {
+            return value;
+        }
+        else if (value is Var)
+        {
+            return value.CheckedType is TensorType tt && tt.DType == DataTypes.Int64 ? value : IR.F.Tensors.Cast(value, DataTypes.Int64);
+        }
+        else if ((value.CheckedType is TensorType tt && tt.DType != DataTypes.Int64)
+                || (value.CheckedType is DistributedType dt && dt.TensorType.DType != DataTypes.Int64))
+        {
+            return SimplifyForDimension(IR.F.Tensors.Cast(value, DataTypes.Int64));
+        }
+        else if ((value is Call call && call.Arguments.AsValueEnumerable().All(x => x is Const))
+            || value.CheckedType is DistributedType)
+        {
+            return SimplifyForDimension(value);
+        }
+
+        return value;
+    }
 
     internal static DryIoc.IContainer CreateScope()
     {
@@ -548,30 +565,30 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
 {
     private readonly IEvaluateProvider _evaluateProvider;
     private readonly ITypeInferenceProvider _typeInferenceProvider;
-    private readonly IIRPrinterProvider _irprinterProvider;
+    private readonly IPrinterProvider _irprinterProvider;
     private readonly ICostEvaluateProvider _costEvaluateProvider;
     private readonly IMetricEvaluateProvider _metricEvaluateProvider;
     private readonly IMatchProvider _matchProvider;
     private readonly IRewriteProvider _rewriteProvider;
+    private readonly ISimplifyProvider _simplifyProvider;
     private readonly IEGraphMatchProvider _eGraphMatchProvider;
     private readonly IEGraphRewriteProvider _eGraphrewriteProvider;
     private readonly ITargetProvider _targetProvider;
-    private readonly IShapeEvaluateProvider _shapeEvaluateProvider;
     private readonly IMicroKernelInfoProvider _microKernelInfoGetter;
 
     public CompilerServicesProvider(
         IEvaluateProvider evaluateProvider,
         ITypeInferenceProvider typeInferenceProvider,
-        IIRPrinterProvider irprinterProvider,
+        IPrinterProvider irprinterProvider,
         ICostEvaluateProvider costEvaluateProvider,
         IMetricEvaluateProvider metricEvaluateProvider,
         IDataTypeServiceProvider dataTypeServiceProvider,
         IMatchProvider matchProvider,
         IRewriteProvider rewriteProvider,
+        ISimplifyProvider simplifyProvider,
         IEGraphMatchProvider eGraphMatchProvider,
         IEGraphRewriteProvider eGraphrewriteProvider,
         ITargetProvider targetProvider,
-        IShapeEvaluateProvider shapeEvaluateProvider,
         IMicroKernelInfoProvider microKernelInfoGetter)
     {
         // _compileOptions = compileOptions.Value;
@@ -583,10 +600,10 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         DataTypeService = dataTypeServiceProvider;
         _matchProvider = matchProvider;
         _rewriteProvider = rewriteProvider;
+        _simplifyProvider = simplifyProvider;
         _eGraphMatchProvider = eGraphMatchProvider;
         _eGraphrewriteProvider = eGraphrewriteProvider;
         _targetProvider = targetProvider;
-        _shapeEvaluateProvider = shapeEvaluateProvider;
         _microKernelInfoGetter = microKernelInfoGetter;
     }
 
@@ -617,18 +634,21 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     }
 
     /// <inheritdoc/>
-    public string PrintOp(Op op, IIRPrinterContext context, bool iLmode)
-    {
-        return _irprinterProvider.PrintOp(op, context, iLmode);
-    }
+    public string? PrintOp(Op op, IPrintOpContext context) => _irprinterProvider.PrintOp(op, context);
 
     /// <inheritdoc/>
-    public void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable) =>
-      _irprinterProvider.DumpIR(expr, prefix, dumpPath, display_callable);
+    public string Print(IRType type, PrinterFlags flags) => _irprinterProvider.Print(type, flags);
 
     /// <inheritdoc/>
-    public void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable) =>
-    _irprinterProvider.DumpDotIR(expr, prefix, dumpPath, display_callable);
+    public string Print(Expr expr, PrinterFlags flags) => _irprinterProvider.Print(expr, flags);
+
+    /// <inheritdoc/>
+    public void DumpIR(Expr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags) =>
+      _irprinterProvider.DumpIR(expr, prefix, dumpPath, flags);
+
+    /// <inheritdoc/>
+    public void DumpDotIR(Expr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags) =>
+    _irprinterProvider.DumpDotIR(expr, prefix, dumpPath, flags);
 
     /// <inheritdoc/>
     public void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst) =>
@@ -637,12 +657,6 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     /// <inheritdoc/>
     public void DumpPatternIR(Expr expr, string prefix, string dumpDir) =>
     _irprinterProvider.DumpPatternIR(expr, prefix, dumpDir);
-
-    /// <inheritdoc/>
-    public string Print(IRType type) => _irprinterProvider.Print(type);
-
-    /// <inheritdoc/>
-    public string Print(Expr expr, bool useScript) => _irprinterProvider.Print(expr, useScript);
 
     /// <inheritdoc/>
     public bool TryMatch(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
@@ -680,18 +694,6 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     /// <inheritdoc/>
     public Metric EvaluateOpMetric(Op op, IMetricEvaluateContext context) => _metricEvaluateProvider.EvaluateOpMetric(op, context);
 
-    /// <inheritdoc/>
-    public Expr EvaluateShapeExpr(Expr expr, ShapeExprCache? cache = null)
-    {
-        return _shapeEvaluateProvider.EvaluateShapeExpr(expr, cache ?? ShapeExprCache.Default);
-    }
-
-    /// <inheritdoc/>
-    public Expr EvaluateOpShapeExpr(Op op, IShapeEvaluateContext context)
-    {
-        return _shapeEvaluateProvider.EvaluateOpShapeExpr(op, context);
-    }
-
     public bool TryMatchRoot(IEnumerable<ENode> enodes, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
     {
         return _eGraphMatchProvider.TryMatchRoot(enodes, pattern, out results);
@@ -718,4 +720,8 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     }
 
     public MicroKernelInfo GetOpMicroKernelInfo(Op op, MicroKernelContext context) => _microKernelInfoGetter.GetInfo(op, context);
+
+    public Expr SimplifyForDimension(Expr value) => _simplifyProvider.SimplifyForDimension(value);
+
+    public bool TryGetMaxShape(Shape shape, [MaybeNullWhen(false)] out long[] maxShape) => _simplifyProvider.TryGetMaxShape(shape, out maxShape);
 }

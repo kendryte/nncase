@@ -21,6 +21,7 @@ public class UnitTestImporter : TestClassBase
     [Fact]
     public async Task TestImportOnnx()
     {
+        CompileOptions.DumpFlags = Diagnostics.DumpFlags.Compile | Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.ImportOps;
         using var file = File.OpenRead(Path.Join(SolutionDirectory, "examples/user_guide/test.onnx"));
         var module = Importers.ImportOnnx(file, CompileSession);
         await InferShapeAsync(module);

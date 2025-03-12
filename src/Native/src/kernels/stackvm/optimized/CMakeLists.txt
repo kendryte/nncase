@@ -45,7 +45,7 @@ _TARGET_ARCH_FILES(TARGET kernels
                    FILES
                    binary.cpp
                    layer_norm.cpp
-                   #matmul.cpp
+                   matmul.cpp
                    sigmoid.cpp
                    softmax.cpp
                    unary.cpp

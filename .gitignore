@@ -308,4 +308,9 @@ cmake-build-*
 *.ipynb_checkpoints*
 # Auto generated files
 # generated/
+
+.mono/
 .history/
+
+# set dotnet version
+global.json

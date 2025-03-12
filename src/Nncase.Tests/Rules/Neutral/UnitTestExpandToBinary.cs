@@ -26,20 +26,20 @@ public class UnitTestExpandToBroadcast : TransformTestBase
     public static IEnumerable<object[]> TestExpandToBroadcastPositiveData =>
         new[]
         {
-            new object[] { new[] { 3, 1 }, new[] { 2, 1, 6 } },
-            new object[] { new[] { 3, 1 }, new[] { 3, 4 } },
-            new object[] { new[] { 1, 256, 1, 1 }, new[] { 1, 256, 56, 56 } },
+            new object[] { new long[] { 3, 1 }, new long[] { 2, 1, 6 } },
+            new object[] { new long[] { 3, 1 }, new long[] { 3, 4 } },
+            new object[] { new long[] { 1, 256, 1, 1 }, new long[] { 1, 256, 56, 56 } },
         };
 
     public static IEnumerable<object[]> TestExpandToBroadcastNegativeData =>
         new[]
         {
-            new object[] { new[] { 2, 4, 8 }, new Var(new TensorType(DataTypes.Int32,  new IR.Shape(3))) },
+            new object[] { new long[] { 2, 4, 8 }, new Var(new TensorType(DataTypes.Int32,  new IR.Shape(3))) },
         };
 
     [Theory]
     [MemberData(nameof(TestExpandToBroadcastPositiveData))]
-    public void TestExpandToBroadcastPositive(int[] inputShape, int[] shape)
+    public void TestExpandToBroadcastPositive(long[] inputShape, long[] shape)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, inputShape);
         var rootPre = Tensors.Expand(a, shape);
@@ -48,7 +48,7 @@ public class UnitTestExpandToBroadcast : TransformTestBase
 
     [Theory]
     [MemberData(nameof(TestExpandToBroadcastNegativeData))]
-    public void TestExpandToBroadcastNegative(int[] inputShape, Expr shape)
+    public void TestExpandToBroadcastNegative(long[] inputShape, Expr shape)
     {
         var a = new IR.Var(new IR.TensorType(DataTypes.Float32, inputShape));
         var rootPre = Tensors.Squeeze(a, shape);

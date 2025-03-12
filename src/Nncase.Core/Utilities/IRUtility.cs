@@ -12,11 +12,11 @@ public static class IRUtility
     /// <param name="newShape">new shape.</param>
     /// <param name="mat">mat [new shape dim, old shpe dim].</param>
     /// <returns>bool.</returns>
-    public static bool TryGetShapeMapMatrix(int[] inShape, int[] newShape, out int[,] mat)
+    public static bool TryGetShapeMapMatrix(long[] inShape, long[] newShape, out int[,] mat)
     {
-        int ProdIn(int[,] cmat, int i)
+        long ProdIn(int[,] cmat, int i)
         {
-            var prod = 1;
+            long prod = 1;
             for (int j = 0; j < inShape.Length; j++)
             {
                 var v = cmat[i, j] * inShape[j];
@@ -29,9 +29,9 @@ public static class IRUtility
             return prod;
         }
 
-        int ProdOut(int[,] cmat, int j)
+        long ProdOut(int[,] cmat, int j)
         {
-            var prod = 1;
+            long prod = 1;
             for (int i = 0; i < newShape.Length; i++)
             {
                 var v = cmat[i, j] * newShape[i];

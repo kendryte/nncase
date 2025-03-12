@@ -108,8 +108,8 @@ public class UnitTestDataFlowMatch : TestClassBase
     {
         var rule = new Passes.Rules.Neutral.FoldConstCall();
 
-        var z = Concat(new IR.Tuple((Const)2, (Const)1, (Const)2), 0);
-        CompilerServices.InferenceType(z);
+        var z = Stack(new IR.Tuple((Const)2, (Const)1, (Const)2), 0);
+        Assert.True(CompilerServices.InferenceType(z));
         Assert.True(CompilerServices.TryMatchRoot(z, rule.Pattern, out var _));
     }
 
@@ -119,12 +119,12 @@ public class UnitTestDataFlowMatch : TestClassBase
     {
         var rule = new Passes.Rules.Neutral.FoldConstCall();
 
-        var z = Concat(new IR.Tuple(new Var("x", TensorType.Scalar(DataTypes.Int32)), 1, 2), 0);
-        CompilerServices.InferenceType(z);
+        var z = Concat(new IR.Tuple(new Var("x", new TensorType(DataTypes.Int32, new[] { 1 })), new[] { 1 }, new[] { 2 }), 0);
+        Assert.True(CompilerServices.InferenceType(z));
         Assert.False(CompilerServices.TryMatchRoot(z, rule.Pattern, out var _));
 
-        var z1 = Concat(new IR.Tuple(4, 1, 1, 2), 0);
-        CompilerServices.InferenceType(z1);
+        var z1 = Concat(new IR.Tuple(new[] { 4 }, new[] { 1 }, new[] { 1 }, new[] { 2 }), 0);
+        Assert.True(CompilerServices.InferenceType(z1));
         Assert.True(CompilerServices.TryMatchRoot(z1, rule.Pattern, out var _));
     }
 

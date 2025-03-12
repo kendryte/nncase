@@ -13,9 +13,7 @@
  * limitations under the License.
  */
 #pragma once
-#include "../apply.h"
 #include "../primitive_ops.h"
-#include "../profiler.h"
 #include "../shape_infer/reduce.h"
 #include "../tensor_ops.h"
 #include "../tensor_traits.h"
@@ -57,7 +55,8 @@ class inner_reduce_impl<Op, Accumulate, TIn, TOut, 1> {
 };
 
 template <reduce_op Op, bool Accumulate, IsTensor TIn, IsTensor TOut,
-          IsFixedDims Axes, IsFixedDims PackedAxes, IsFixedDims PadedNums>
+          IsFixedDims Axes, IsFixedDims PackedAxes, IsFixedDims PadedNums,
+          bool LoadPrevious>
 class reduce_impl {
     using TInElem = typename TIn::element_type;
     using TOutElem = typename TOut::element_type;
@@ -81,8 +80,9 @@ class reduce_impl {
             auto reduced_in = (TInElem)initial_value();
             apply_reduce(input, reduce_source_offset<TIn::rank(), Axes>(index),
                          reduced_in);
+            TOutElem reduced_out;
             if constexpr (IsScalar<TOutElem>) {
-                output(index) = ntt::reduce<
+                reduced_out = ntt::reduce<
                     ukernels::reduce_to_binary_type<Op>::template type,
                     TOutElem>(reduced_in);
             } else if constexpr (IsTensor<TOutElem> && TInElem::rank() == 2 &&
@@ -91,15 +91,23 @@ class reduce_impl {
                     PackedAxes::at(0) == Axes::at(0) ? 0 : 1;
                 inner_reduce_impl<Op, false, TInElem, TOutElem, inner_axis>
                     inner_impl;
-                inner_impl(reduced_in, output(index));
+                inner_impl(reduced_in, reduced_out);
             } else {
-                output(index) = reduced_in;
+                reduced_out = reduced_in;
+            }
+
+            if constexpr (LoadPrevious) {
+                output(index) = ntt::reduce<
+                    ukernels::reduce_to_binary_type<Op>::template type>(
+                    reduced_out, output(index));
+            } else {
+                output(index) = reduced_out;
             }
 
             // Mean
             if constexpr (Op == reduce_op::mean) {
                 size_t inner_size =
-                    slice_fixed_dims<Axes::rank(), Axes::at(0)>(input.shape())
+                    slice_dims<Axes::rank(), Axes::at(0)>(input.shape())
                         .length();
                 if constexpr (IsVector<TOutElem>) {
                     inner_size *= TInElem::shape_type::length();
@@ -120,7 +128,7 @@ class reduce_impl {
                                 ranked_shape<TIn::rank()> index,
                                 TInElem &reduced_in) {
         auto src_tensor =
-            input.view(index, fixed_reduce_source_shape_type<Axes, TIn>());
+            input.view(index, reduce_source_shape_type<Axes>(input.shape()));
         auto conti_dims =
             contiguous_dims(src_tensor.shape(), src_tensor.strides());
         if (conti_dims > 1) {
@@ -175,45 +183,51 @@ class reduce_impl {
 } // namespace detail
 
 template <reduce_op Op, IsFixedDims Axes, IsFixedDims PackedAxes,
-          IsFixedDims PadedNums, class TIn, class TOut>
+          IsFixedDims PadedNums, bool LoadPrevious = false, class TIn,
+          class TOut>
 void reduce(const TIn &input, TOut &&output) noexcept {
     static_assert(PadedNums::rank() == 0 ||
                       (PadedNums::rank() == 1 && PadedNums::at(0) == 0) ||
                       (PadedNums::rank() == 2 && PadedNums::at(0) == 0 &&
                        PadedNums::at(1) == 0),
                   "not support padding");
-    AUTO_NTT_PROFILER
+    static_assert(!(LoadPrevious && Op == reduce_op::mean),
+                  "not support reduce mean splited on reduce axis");
     detail::reduce_impl<Op, false, std::decay_t<TIn>, std::decay_t<TOut>, Axes,
-                        PackedAxes, PadedNums>
+                        PackedAxes, PadedNums, LoadPrevious>
         impl;
     impl(input, output);
 }
 
 template <IsFixedDims Axes, IsFixedDims PackedAxes = fixed_shape<>,
-          IsFixedDims PadedNums = fixed_shape<>, class TIn, class TOut>
+          IsFixedDims PadedNums = fixed_shape<>, bool LoadPrevious = false,
+          class TIn, class TOut>
 void reduce_sum(const TIn &input, TOut &&output) noexcept {
-    return reduce<reduce_op::sum, Axes, PackedAxes, PadedNums>(
+    return reduce<reduce_op::sum, Axes, PackedAxes, PadedNums, LoadPrevious>(
         input, std::forward<TOut>(output));
 }
 
 template <IsFixedDims Axes, IsFixedDims PackedAxes = fixed_shape<>,
-          IsFixedDims PadedNums = fixed_shape<>, class TIn, class TOut>
+          IsFixedDims PadedNums = fixed_shape<>, bool LoadPrevious = false,
+          class TIn, class TOut>
 void reduce_min(const TIn &input, TOut &&output) noexcept {
-    return reduce<reduce_op::min, Axes, PackedAxes, PadedNums>(
+    return reduce<reduce_op::min, Axes, PackedAxes, PadedNums, LoadPrevious>(
         input, std::forward<TOut>(output));
 }
 
 template <IsFixedDims Axes, IsFixedDims PackedAxes = fixed_shape<>,
-          IsFixedDims PadedNums = fixed_shape<>, class TIn, class TOut>
+          IsFixedDims PadedNums = fixed_shape<>, bool LoadPrevious = false,
+          class TIn, class TOut>
 void reduce_max(const TIn &input, TOut &&output) noexcept {
-    return reduce<reduce_op::max, Axes, PackedAxes, PadedNums>(
+    return reduce<reduce_op::max, Axes, PackedAxes, PadedNums, LoadPrevious>(
         input, std::forward<TOut>(output));
 }
 
 template <IsFixedDims Axes, IsFixedDims PackedAxes = fixed_shape<>,
-          IsFixedDims PadedNums = fixed_shape<>, class TIn, class TOut>
+          IsFixedDims PadedNums = fixed_shape<>, bool LoadPrevious = false,
+          class TIn, class TOut>
 void reduce_mean(const TIn &input, TOut &&output) noexcept {
-    return reduce<reduce_op::mean, Axes, PackedAxes, PadedNums>(
+    return reduce<reduce_op::mean, Axes, PackedAxes, PadedNums, LoadPrevious>(
         input, std::forward<TOut>(output));
 }
 } // namespace nncase::ntt

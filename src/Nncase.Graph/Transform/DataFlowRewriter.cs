@@ -26,6 +26,7 @@ internal sealed class DataFlowRewriter : ExprRewriter
     private readonly HashSet<Expr> _dontInheritExprs = new HashSet<Expr>(ReferenceEqualityComparer.Instance);
 
     public DataFlowRewriter(IRewriteRule rule, RunPassContext options)
+        : base(visitAttributes: true)
     {
         _rule = rule;
         _options = options;

@@ -19,14 +19,14 @@ using Nncase.TIR.Builders;
 
 namespace Nncase.Schedule;
 
-internal sealed record AffineTilerMemo(IRArray<Shape> BufferShapes, IRArray<int> DomainBounds, IRArray<AffineMap> AffineMaps, Type OpType, int ElemSize)
+internal sealed record AffineTilerMemo(IRArray<Shape> BufferShapes, IRArray<long> DomainBounds, IRArray<AffineMap> AffineMaps, Type OpType, int ElemSize)
 {
 }
 
 internal sealed class AffineTiler
 {
     private readonly Grid _grid;
-    private readonly int[] _domainBounds;
+    private readonly long[] _domainBounds;
     private readonly ILogger _logger;
 
     public AffineTiler(Grid grid, ITargetOptions targetOptions, ILoggerFactory loggerFactory)

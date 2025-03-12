@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.TIR;
 
@@ -21,7 +22,7 @@ public class StoreEvaluator : ITypeInferencer<Store>, IOpPrinter<Store>
     }
 
     /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Store target, bool iLmode)
+    public string Visit(IPrintOpContext context, Store target)
     {
         var handle = context.GetArgument(target, Store.Handle);
         var value = context.GetArgument(target, Store.Value);

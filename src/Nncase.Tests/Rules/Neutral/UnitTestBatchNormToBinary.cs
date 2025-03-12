@@ -29,20 +29,20 @@ namespace Nncase.Tests.Rules.NeutralTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestBatchNormToBinary : TransformTestBase
 {
-    public static readonly TheoryData<int[]> BatchNormToBinaryPositiveData = new()
+    public static readonly TheoryData<long[]> BatchNormToBinaryPositiveData = new()
     {
-        new[] { 56, 56 },
-        new[] { 1, 64, 112, 112 },
+        new long[] { 56, 56 },
+        new long[] { 1, 64, 112, 112 },
     };
 
-    public static readonly TheoryData<int[]> BatchNormToBinaryNegativeData = new()
+    public static readonly TheoryData<long[]> BatchNormToBinaryNegativeData = new()
     {
-        new[] { 56 },
+        new long[] { 56 },
     };
 
     [Theory]
     [MemberData(nameof(BatchNormToBinaryPositiveData))]
-    public void TestBatchNormToBinaryPositive(int[] shape)
+    public void TestBatchNormToBinaryPositive(long[] shape)
     {
         var a = new Var("input", new TensorType(DataTypes.Float32, shape));
         var normal = new Dictionary<Var, IValue>();
@@ -61,7 +61,7 @@ public class UnitTestBatchNormToBinary : TransformTestBase
 
     [Theory]
     [MemberData(nameof(BatchNormToBinaryNegativeData))]
-    public void TestBatchNormToBinaryNegative(int[] shape)
+    public void TestBatchNormToBinaryNegative(long[] shape)
     {
         var a = new Var("input", new TensorType(DataTypes.Float32, shape));
         var oc = 1;

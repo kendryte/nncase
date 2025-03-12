@@ -27,6 +27,26 @@ using namespace nncase::kernels::stackvm;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
+result<value_t> nncase::kernels::stackvm::allocate(
+    [[maybe_unused]] typecode_t elem_type,
+    [[maybe_unused]] runtime::stackvm::memory_location_t location,
+    [[maybe_unused]] bool malloc, [[maybe_unused]] value_t size,
+    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
+    return err(std::errc::not_supported);
+}
+
+result<value_t> nncase::kernels::stackvm::allocate_buffer_view(
+    [[maybe_unused]] value_t buffer, [[maybe_unused]] value_t output,
+    [[maybe_unused]] kernel_context &context) {
+    return err(std::errc::not_supported);
+}
+
+result<value_t> nncase::kernels::stackvm::base_ment_of(
+    [[maybe_unused]] value_t input, [[maybe_unused]] value_t output,
+    [[maybe_unused]] kernel_context &context) {
+    return err(std::errc::not_supported);
+}
+
 result<value_t> nncase::kernels::stackvm::batch_normalization(
     value_t input, value_t scale, value_t bias, value_t input_mean,
     value_t input_var, value_t epsilon, [[maybe_unused]] value_t momentum,
@@ -47,8 +67,8 @@ result<value_t> nncase::kernels::stackvm::batch_normalization(
 }
 
 result<value_t> nncase::kernels::stackvm::layer_norm(
-    int32_t axis, float epsilon, [[maybe_unused]] bool use_mean, value_t input,
-    value_t scale, value_t bias, value_t output,
+    int32_t axis, float epsilon, [[maybe_unused]] bool channel_first,
+    bool use_mean, value_t input, value_t scale, value_t bias, value_t output,
     [[maybe_unused]] kernel_context &context) {
     try_input(input_mem, input);
     try_input(scale_mem, scale);
@@ -110,6 +130,32 @@ result<value_t> kernels::stackvm::broadcast(value_t input, value_t shape,
     return ok(output);
 }
 
+result<value_t> nncase::kernels::stackvm::buffer_index_of(
+    [[maybe_unused]] value_t input, [[maybe_unused]] value_t output,
+    [[maybe_unused]] kernel_context &context) {
+    return err(std::errc::not_supported);
+}
+
+result<value_t> nncase::kernels::stackvm::buffer_load(
+    [[maybe_unused]] value_t input, [[maybe_unused]] value_t indices,
+    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
+    return err(std::errc::not_supported);
+}
+
+result<value_t> nncase::kernels::stackvm::buffer_store(
+    [[maybe_unused]] value_t input, [[maybe_unused]] value_t indices,
+    [[maybe_unused]] value_t value, [[maybe_unused]] value_t output,
+    [[maybe_unused]] kernel_context &context) {
+    return err(std::errc::not_supported);
+}
+
+result<value_t> nncase::kernels::stackvm::buffer_subview(
+    [[maybe_unused]] value_t buffer, [[maybe_unused]] value_t offset,
+    [[maybe_unused]] value_t shape, [[maybe_unused]] value_t output,
+    [[maybe_unused]] kernel_context &context) {
+    return err(std::errc::not_supported);
+}
+
 result<value_t>
 nncase::kernels::stackvm::clamp(value_t input, value_t min, value_t max,
                                 value_t output,
@@ -160,7 +206,6 @@ result<value_t> nncase::kernels::stackvm::concat(int32_t axis, value_t input,
 }
 
 result<value_t> nncase::kernels::stackvm::condition(
-    [[maybe_unused]] bool can_fold_const_call,
     [[maybe_unused]] value_t predicate, [[maybe_unused]] value_t value,
     [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
     return err(std::errc::not_supported);
@@ -246,6 +291,13 @@ result<value_t> nncase::kernels::stackvm::conv2d_transpose(
         strides[1], dilations[0], dilations[1], pads[0], pads[1],
         value_range<float>{fused_clamp_value[0], fused_clamp_value[1]}));
     return ok(output);
+}
+
+result<value_t>
+nncase::kernels::stackvm::ddr_of([[maybe_unused]] value_t input,
+                                 [[maybe_unused]] value_t output,
+                                 [[maybe_unused]] kernel_context &context) {
+    return err(std::errc::not_supported);
 }
 
 result<value_t>
@@ -558,9 +610,22 @@ nncase::kernels::stackvm::mat_mul(value_t lhs, value_t rhs, value_t output,
             matmul_infer_shape(lhs_tensor->shape(), rhs_tensor->shape()));
     try_output(out_mem, output, lhs_tensor->dtype(), out_shape);
     try_typecode(typecode, lhs_tensor);
-    try_(reference::matmul(typecode, lhs_mem, rhs_mem, out_mem,
-                           lhs_tensor->shape(), rhs_tensor->shape()));
+    if (is_contiguous(lhs_tensor) && is_contiguous(rhs_tensor) &&
+        is_contiguous(output_tensor)) {
+        try_(optimized::matmul(typecode, lhs_mem, rhs_mem, out_mem,
+                               lhs_tensor->shape(), rhs_tensor->shape(),
+                               context));
+    } else {
+        try_(reference::matmul(typecode, lhs_mem, rhs_mem, out_mem,
+                               lhs_tensor->shape(), rhs_tensor->shape()));
+    }
     return ok(output);
+}
+
+result<value_t> nncase::kernels::stackvm::match_buffer(
+    [[maybe_unused]] value_t input, [[maybe_unused]] value_t output,
+    [[maybe_unused]] kernel_context &context) {
+    return err(std::errc::not_supported);
 }
 
 result<value_t>
@@ -763,10 +828,9 @@ nncase::kernels::stackvm::relu6([[maybe_unused]] value_t input,
 }
 
 result<value_t> nncase::kernels::stackvm::require(
-    [[maybe_unused]] std::string message,
-    [[maybe_unused]] bool can_fold_const_call,
-    [[maybe_unused]] value_t predicate, [[maybe_unused]] value_t value,
-    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
+    [[maybe_unused]] std::string message, [[maybe_unused]] value_t predicate,
+    [[maybe_unused]] value_t value, [[maybe_unused]] value_t output,
+    [[maybe_unused]] kernel_context &context) {
     try_to_scalar(cond, predicate, bool);
     if (!cond) {
         printf("%s\n", message.data());
@@ -795,8 +859,8 @@ result<value_t> nncase::kernels::stackvm::bucket_pad(
         return err(std::errc::invalid_argument);
     }
 
-    auto paddings = std::vector<int>(8);
     auto rank = shape_value.size();
+    auto paddings = std::vector<int>(rank * 2);
     for (int i = 0; i < rank; ++i) {
         paddings[2 * i + 0] = 0;
         paddings[2 * i + 1] = shape_value[i] - in_shape[i];
@@ -977,6 +1041,13 @@ nncase::kernels::stackvm::size_of([[maybe_unused]] value_t input,
     try_output(out_mem, output, dt_int64, dims_t{});
     *OUT_CAST(int64_t, out_mem) = compute_size(in_tensor);
     KERNEL_FINISH;
+}
+
+result<value_t>
+nncase::kernels::stackvm::stride_of([[maybe_unused]] value_t input,
+                                    [[maybe_unused]] value_t output,
+                                    [[maybe_unused]] kernel_context &context) {
+    return err(std::errc::not_supported);
 }
 
 inline bool is_nop_slice([[maybe_unused]] const axes_t &begin,
@@ -1347,10 +1418,11 @@ result<value_t> nncase::kernels::stackvm::fake_quantize(
     return err(std::errc::not_supported);
 }
 
-// result<value_t> nncase::kernels::stackvm::uninitialized(
-//    NNCASE_UNUSED typecode_t dtype,
-//    NNCASE_UNUSED runtime::stackvm::memory_location_t memory_location,
-//    NNCASE_UNUSED value_t shape, NNCASE_UNUSED value_t output,
-//    NNCASE_UNUSED kernel_context &context) {
-//    return err(std::errc::not_supported);
-//}
+result<value_t> nncase::kernels::stackvm::uninitialized(
+    typecode_t dtype,
+    [[maybe_unused]] runtime::stackvm::memory_location_t memory_location,
+    value_t shape, value_t output, [[maybe_unused]] kernel_context &context) {
+    try_dims(shape_value, shape);
+    try_alloc_output(output, dtype, shape_value, false);
+    KERNEL_FINISH;
+}

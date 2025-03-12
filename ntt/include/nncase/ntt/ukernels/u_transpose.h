@@ -145,7 +145,7 @@ class u_transpose {
 
 template <IsFixedDims TPerm, IsFixedTensor TIn, IsFixedTensor TOut, size_t Rank,
           size_t... Index>
-constexpr void u_transpose(const TIn &input, TOut &&output,
+constexpr void u_transpose(const TIn &input, TOut &output,
                            std::index_sequence<Index...>) noexcept {
 
     constexpr std::array<size_t, Rank> dims_compressed =

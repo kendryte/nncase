@@ -3,6 +3,7 @@
 
 using System;
 using Nncase.CostModel;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Math;
 using OrtKISharp;
@@ -32,11 +33,11 @@ public partial class ConditionEvaluator : IEvaluator<Condition>, ITypeInferencer
     }
 
     /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Condition target, bool iLmode)
+    public string Visit(IPrintOpContext context, Condition target)
     {
         var condition = context.GetArgument(target, Condition.Predicate);
         var true_value = context.GetArgument(target, Condition.Value);
-        return $"Condition({condition}, {true_value})";
+        return $"Assert({condition}, {true_value})";
     }
 
     private IRType Visit(TensorType predicate, TensorType value)

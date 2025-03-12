@@ -18,11 +18,19 @@ public sealed partial class Range : Expr
     /// <summary>
     /// the full range.
     /// </summary>
-    public static readonly Range All = new Range(int.MinValue, int.MaxValue, 1);
+    public static readonly Range All = new Range(long.MinValue, long.MaxValue, 1L);
 
     public Range(Expr start, Expr stop, Expr step)
-        : base(new[] { start, stop, step })
+        : base(new[] { start, stop, step }.Select(CompilerServices.FastSimplifyForDimension).ToArray())
     {
+        foreach (var dim in Operands)
+        {
+            if (dim.CheckedType != TensorType.Scalar(DataTypes.Int64)
+                && dim.CheckedType != NoneType.Default)
+            {
+                throw new ArgumentException($"Invalid range dimension type: {dim.CheckedType}");
+            }
+        }
     }
 
     /// <summary>

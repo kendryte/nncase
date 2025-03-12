@@ -45,7 +45,7 @@ public sealed class FoldConstCall : ExprRewriter
             if (expr.Target is IR.Tensors.GetItem && expr[IR.Tensors.GetItem.Input] is IR.Tuple tuple &&
                 expr[IR.Tensors.GetItem.Index] is TensorConst { Value: Tensor index })
             {
-                return tuple.Fields[index.ToScalar<int>()];
+                return tuple.Fields[index.Cast<int>().Single()];
             }
         }
 

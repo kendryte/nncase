@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance;
+using Google.Protobuf.WellKnownTypes;
 using Nncase.Buffers;
 using Nncase.IR;
 using Nncase.TIR;
@@ -65,15 +66,15 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     private static readonly MethodInfo _tensorCastFunc =
         typeof(Tensor).GetMethod(nameof(Cast))!;
 
-    private readonly int[] _dimensions;
-    private readonly int[] _strides;
+    private readonly long[] _dimensions;
+    private readonly long[] _strides;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Tensor"/> class.
     /// </summary>
     /// <param name="elementType">Element type.</param>
     /// <param name="length">Size of the 1-dimensional tensor.</param>
-    internal Tensor(DataType elementType, int length)
+    internal Tensor(DataType elementType, long length)
     {
         ElementType = elementType;
         Shape = new Shape(length);
@@ -87,12 +88,12 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// </summary>
     /// <param name="elementType">Element type.</param>
     /// <param name="dimensions">An span of integers that represent the size of each dimension of the DenseTensor to create.</param>
-    internal Tensor(DataType elementType, ReadOnlySpan<int> dimensions)
+    internal Tensor(DataType elementType, ReadOnlySpan<long> dimensions)
     {
         ElementType = elementType;
         _dimensions = dimensions.ToArray();
         Shape = dimensions.IsEmpty ? Shape.Scalar : new Shape(_dimensions);
-        Length = (int)TensorUtilities.GetProduct(dimensions);
+        Length = TensorUtilities.GetProduct(dimensions);
         _strides = TensorUtilities.GetStrides(dimensions);
     }
 
@@ -104,12 +105,12 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <summary>
     /// Gets dimensions.
     /// </summary>
-    public ReadOnlySpan<int> Dimensions => _dimensions;
+    public ReadOnlySpan<long> Dimensions => _dimensions;
 
     /// <summary>
     /// Gets strides.
     /// </summary>
-    public ReadOnlySpan<int> Strides => _strides;
+    public ReadOnlySpan<long> Strides => _strides;
 
     /// <summary>
     /// Gets shape.
@@ -124,14 +125,14 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <summary>
     /// Gets total length.
     /// </summary>
-    public int Length { get; }
+    public long Length { get; }
 
     /// <summary>
     /// Gets bytes buffer.
     /// </summary>
     public abstract Span<byte> BytesBuffer { get; }
 
-    int ICollection.Count => Length;
+    int ICollection.Count => checked((int)Length);
 
     bool ICollection.IsSynchronized => false;
 
@@ -153,7 +154,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="indices">A one-dimensional array of integers that represent the indices specifying the
     /// position of the element to get.</param>
     /// <returns>The value at the specified position in this Tensor.</returns>
-    public object this[ReadOnlySpan<int> indices]
+    public object this[ReadOnlySpan<long> indices]
     {
         get => GetValueCore(TensorUtilities.GetIndex(Strides, indices));
         set => SetValueCore(TensorUtilities.GetIndex(Strides, indices), value);
@@ -165,7 +166,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="indices">A one-dimensional array of integers that represent the indices specifying the
     /// position of the element to get.</param>
     /// <returns>The value at the specified position in this Tensor.</returns>
-    public object this[params int[] indices]
+    public object this[params long[] indices]
     {
         get => this[indices.AsSpan()];
         set => this[indices.AsSpan()] = value;
@@ -180,8 +181,21 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     public static Tensor<T> FromScalar<T>(T value)
         where T : unmanaged, IEquatable<T>
     {
-        var tensor = new Tensor<T>(ReadOnlySpan<int>.Empty);
-        tensor[0] = value;
+        var tensor = new Tensor<T>(ReadOnlySpan<long>.Empty);
+        tensor[Array.Empty<long>()] = value;
+        return tensor;
+    }
+
+    /// <summary>
+    /// Create a scalar tensor from a scalar.
+    /// </summary>
+    /// <param name="type">Data type.</param>
+    /// <param name="value">Value.</param>
+    /// <returns>Created tensor.</returns>
+    public static Tensor FromScalar(DataType type, object value)
+    {
+        var tensor = Zeros(type, ReadOnlySpan<long>.Empty);
+        tensor[Array.Empty<long>()] = value;
         return tensor;
     }
 
@@ -192,7 +206,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="value">Value.</param>
     /// <param name="length">Fill length.</param>
     /// <returns>Created tensor.</returns>
-    public static Tensor<T> FromScalar<T>(T value, int length)
+    public static Tensor<T> FromScalar<T>(T value, long length)
         where T : unmanaged, IEquatable<T>
     {
         var tensor = new Tensor<T>(MemoryMarshal.CreateReadOnlySpan(ref length, 1));
@@ -207,7 +221,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="value">Value.</param>
     /// <param name="dimensions">Fill dimensions.</param>
     /// <returns>Created tensor.</returns>
-    public static Tensor<T> FromScalar<T>(T value, ReadOnlySpan<int> dimensions)
+    public static Tensor<T> FromScalar<T>(T value, ReadOnlySpan<long> dimensions)
         where T : unmanaged, IEquatable<T>
     {
         var tensor = new Tensor<T>(dimensions);
@@ -216,14 +230,26 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     }
 
     /// <summary>
+    /// Create a scalar tensor from a scalar.
+    /// </summary>
+    /// <param name="type">Data type.</param>
+    /// <param name="value">Value.</param>
+    /// <param name="dimensions">Fill dimensions.</param>
+    /// <returns>Created tensor.</returns>
+    public static Tensor FromScalar(DataType type, object value, ReadOnlySpan<long> dimensions)
+    {
+        return From(type, new ScalarTensorInitializer(value), dimensions);
+    }
+
+    /// <summary>
     /// Create tensor from a range.
     /// </summary>
     /// <param name="start">Start value.</param>
     /// <param name="count">Count.</param>
     /// <returns>Created tensor.</returns>
-    public static Tensor<int> FromRange(int start, int count)
+    public static Tensor<long> FromRange(long start, long count)
     {
-        var tensor = new Tensor<int>(MemoryMarshal.CreateReadOnlySpan(ref count, 1));
+        var tensor = new Tensor<long>(MemoryMarshal.CreateReadOnlySpan(ref count, 1));
         var buffer = tensor.Buffer.Span;
         for (int i = 0; i < count; i++)
         {
@@ -233,7 +259,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         return tensor;
     }
 
-    public static Tensor From(DataType dataType, ITensorInitializer initializer, ReadOnlySpan<int> dimensions)
+    public static Tensor From(DataType dataType, ITensorInitializer initializer, ReadOnlySpan<long> dimensions)
     {
         var tensor = Zeros(dataType, dimensions);
         tensor.Initialize(initializer);
@@ -249,7 +275,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     public static Tensor<T> From<T>(Memory<T> memory)
         where T : unmanaged, IEquatable<T>
     {
-        var dim = memory.Length;
+        long dim = memory.Length;
         return new Tensor<T>(memory, MemoryMarshal.CreateReadOnlySpan(ref dim, 1));
     }
 
@@ -260,7 +286,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="memory">Memory.</param>
     /// <param name="dimensions">Dimensions.</param>
     /// <returns>Created tensor.</returns>
-    public static Tensor<T> From<T>(Memory<T> memory, ReadOnlySpan<int> dimensions)
+    public static Tensor<T> From<T>(Memory<T> memory, ReadOnlySpan<long> dimensions)
         where T : unmanaged, IEquatable<T>
     {
         return new Tensor<T>(memory, dimensions);
@@ -285,7 +311,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="array">Array.</param>
     /// <param name="dimensions">Dimensions.</param>
     /// <returns>Created tensor.</returns>
-    public static Tensor<T> From<T>(T[] array, ReadOnlySpan<int> dimensions)
+    public static Tensor<T> From<T>(T[] array, ReadOnlySpan<long> dimensions)
         where T : unmanaged, IEquatable<T>
     {
         return From(array.AsMemory(), dimensions);
@@ -298,7 +324,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="memory">Bytes memory.</param>
     /// <param name="dimensions">Dimensions.</param>
     /// <returns>Created tensor.</returns>
-    public static Tensor<T> FromBytes<T>(Memory<byte> memory, ReadOnlySpan<int> dimensions)
+    public static Tensor<T> FromBytes<T>(Memory<byte> memory, ReadOnlySpan<long> dimensions)
         where T : unmanaged, IEquatable<T>
     {
         return new Tensor<T>(memory.Cast<byte, T>(), dimensions);
@@ -311,7 +337,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="memory">Bytes memory.</param>
     /// <param name="dimensions">Dimensions.</param>
     /// <returns>Created tensor.</returns>
-    public static Tensor FromBytes(DataType type, Memory<byte> memory, ReadOnlySpan<int> dimensions)
+    public static Tensor FromBytes(DataType type, Memory<byte> memory, ReadOnlySpan<long> dimensions)
     {
         return (Tensor)_tensorCreateFromBytesFunc.MakeGenericMethod(type.CLRType).Invoke(null, new object[] { memory, dimensions.ToArray() })!;
     }
@@ -327,7 +353,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         return FromBytes(type.DType, buffer, type.Shape.ToValueArray());
     }
 
-    public static Tensor FromStream(DataType type, Stream stream, ReadOnlySpan<int> dimensions)
+    public static Tensor FromStream(DataType type, Stream stream, ReadOnlySpan<long> dimensions)
     {
         var tensor = Tensor.Zeros(type, dimensions);
         tensor.Deserialize(stream);
@@ -342,7 +368,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     public static unsafe Tensor FromArray(Array array)
     {
         var elemType = array.GetType().GetElementType()!;
-        var dims = new int[array.Rank];
+        var dims = new long[array.Rank];
         for (int i = 0; i < array.Rank; i++)
         {
             dims[i] = array.GetLength(i);
@@ -403,17 +429,19 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <typeparam name="T">unmanaged type.</typeparam>
     /// <param name="dimensions">dimensions.</param>
     /// <returns>Tensor{T}.</returns>
-    public static Tensor Zeros<T>(ReadOnlySpan<int> dimensions)
+    public static Tensor Zeros<T>(ReadOnlySpan<long> dimensions)
         where T : unmanaged, IEquatable<T>
     {
         var value = (T)Convert.ChangeType(0, typeof(T));
         return Tensor.FromScalar<T>(value, dimensions);
     }
 
-    public static Tensor Zeros(DataType dataType, ReadOnlySpan<int> dimensions)
+    public static Tensor Zeros(DataType dataType, ReadOnlySpan<long> dimensions)
     {
         return (Tensor)_tensorCreateEmptyFunc.MakeGenericMethod(dataType.CLRType).Invoke(null, new object[] { dimensions.ToArray() })!;
     }
+
+    public static Tensor Zero(DataType dataType) => Zeros(dataType, []);
 
     /// <summary>
     /// Return a tensor of given shape and type, filled with ones.
@@ -421,12 +449,20 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <typeparam name="T">unmanaged type.</typeparam>
     /// <param name="dimensions">dimensions.</param>
     /// <returns>Tensor{T}.</returns>
-    public static Tensor Ones<T>(ReadOnlySpan<int> dimensions)
+    public static Tensor Ones<T>(ReadOnlySpan<long> dimensions)
         where T : unmanaged, IEquatable<T>
     {
         var value = (T)Convert.ChangeType(1, typeof(T));
         return Tensor.FromScalar<T>(value, dimensions);
     }
+
+    public static Tensor Ones(DataType dataType, ReadOnlySpan<long> dimensions)
+    {
+        var value = Convert.ChangeType(1, dataType.CLRType);
+        return Tensor.FromScalar(dataType, value, dimensions);
+    }
+
+    public static Tensor One(DataType dataType) => Ones(dataType, []);
 
     /// <summary>
     /// Cast to typed tensor.
@@ -469,7 +505,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
 
     public abstract void Serialize(Stream stream);
 
-    public abstract void Serialize(Stream baseStream, long offset, int[] shape, int[] strides);
+    public abstract void Serialize(Stream baseStream, long offset, long[] shape, long[] strides);
 
     int IStructuralComparable.CompareTo(object? other, IComparer comparer)
     {
@@ -536,28 +572,45 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
 
     private protected abstract void CopyToCore(Array array, int index);
 
-    private protected abstract object GetValueCore(int index);
+    private protected abstract object GetValueCore(long index);
 
-    private protected abstract void SetValueCore(int index, object? value);
+    private protected abstract void SetValueCore(long index, object? value);
 
     private protected abstract void Initialize(ITensorInitializer initializer);
 
-    private static Tensor CreateTensorFromBytesImpl<T>(Memory<byte> buffer, int[] dimensions)
+    private static Tensor CreateTensorFromBytesImpl<T>(Memory<byte> buffer, long[] dimensions)
         where T : unmanaged, IEquatable<T>
     {
         return new Tensor<T>(buffer.Cast<byte, T>(), dimensions);
     }
 
-    private static Tensor CreateTensorFromArrayImpl<T>(Array array, int[] dimensions)
+    private static Tensor CreateTensorFromArrayImpl<T>(Array array, long[] dimensions)
         where T : unmanaged, IEquatable<T>
     {
         var mmgr = new ArrayMemoryManager<T>(array);
         return new Tensor<T>(mmgr.Memory, dimensions);
     }
 
-    private static Tensor CreateTensorEmptyImpl<T>(int[] dimensions)
+    private static Tensor CreateTensorEmptyImpl<T>(long[] dimensions)
         where T : unmanaged, IEquatable<T>
     {
         return new Tensor<T>(dimensions);
+    }
+
+    private sealed class ScalarTensorInitializer : ITensorInitializer
+    {
+        public ScalarTensorInitializer(object value)
+        {
+            Value = value;
+        }
+
+        public object Value { get; }
+
+        public void Initialize<T>(Tensor<T> tensor)
+            where T : unmanaged, IEquatable<T>
+        {
+            var value = (T)Convert.ChangeType(Value, typeof(T));
+            tensor.Fill(value);
+        }
     }
 }
