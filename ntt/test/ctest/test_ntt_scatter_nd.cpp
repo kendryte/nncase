@@ -25,10 +25,10 @@ using namespace ortki;
 
 TEST(ScatterNDTestFloat, fixed_shape) {
     // Define tensor types
-    using input_type = ntt::tensor<float, ntt::fixed_shape<5, 5, 5>>;
+    using input_type = ntt::tensor<float, ntt::fixed_shape<5, 5, 5, 5>>;
     using indices_type = ntt::tensor<int64_t, ntt::fixed_shape<2, 1>>;
-    using updates_type = ntt::tensor<float, ntt::fixed_shape<2, 5, 5>>;
-    using output_type = ntt::tensor<float, ntt::fixed_shape<5, 5, 5>>;
+    using updates_type = ntt::tensor<float, ntt::fixed_shape<2, 5, 5, 5>>;
+    using output_type = ntt::tensor<float, ntt::fixed_shape<5, 5, 5, 5>>;
 
     // Initialize tensors
     input_type input;
