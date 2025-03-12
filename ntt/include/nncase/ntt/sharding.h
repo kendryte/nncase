@@ -186,11 +186,21 @@ constexpr size_t get_local_shard_dim(const GlobalShape &shape) noexcept {
         .template local_dim<typename Sharding::mesh_type>(local_dim);
 }
 
-template <class Sharding, class GlobalShape, size_t... Axes>
-constexpr auto
-get_fixed_local_shard_dim(const GlobalShape &shape,
-                          std::index_sequence<Axes...>) noexcept {
-    return fixed_shape<get_local_shard_dim<Sharding, Axes>(shape)...>{};
+template <class Sharding, class GlobalShape>
+constexpr auto local_shard_shape(const GlobalShape &shape) noexcept {
+    if constexpr (is_fixed_dims_v<GlobalShape>) {
+        auto get_dims = [&]<size_t... Axes>(std::index_sequence<Axes...>) {
+            return fixed_shape<get_local_shard_dim<Sharding, Axes>(
+                GlobalShape{})...>{};
+        };
+        return get_dims(std::make_index_sequence<GlobalShape::rank()>{});
+    } else {
+        auto get_dims = [&]<size_t... Axes>(std::index_sequence<Axes...>) {
+            return make_ranked_shape(
+                get_local_shard_dim<Sharding, Axes>(shape)...);
+        };
+        return get_dims(std::make_index_sequence<GlobalShape::rank()>{});
+    }
 }
 
 template <class GlobalShape, class Sharding> struct local_shard_shape_type {
@@ -199,23 +209,8 @@ template <class GlobalShape, class Sharding> struct local_shard_shape_type {
 
 template <size_t... Dims, class Sharding>
 struct local_shard_shape_type<fixed_shape<Dims...>, Sharding> {
-    using type = decltype(get_fixed_local_shard_dim<Sharding>(
-        fixed_shape<Dims...>{}, std::make_index_sequence<sizeof...(Dims)>{}));
+    using type = decltype(local_shard_shape<Sharding>(fixed_shape<Dims...>{}));
 };
-
-template <class Sharding, class GlobalShape>
-constexpr auto local_shard_shape(const GlobalShape &shape) noexcept {
-    if constexpr (is_fixed_dims_v<GlobalShape>) {
-        return get_fixed_local_shard_dim<Sharding>(
-            GlobalShape{}, std::make_index_sequence<GlobalShape::rank()>{});
-    } else {
-        auto get_dims = [&]<size_t... Is>(std::index_sequence<Is...>) {
-            return make_ranked_shape(
-                get_local_shard_dim<Sharding, Is>(shape)...);
-        };
-        return get_dims(std::make_index_sequence<GlobalShape::rank()>{});
-    }
-}
 
 template <class Mesh, topology Topology>
 constexpr size_t
@@ -280,17 +275,15 @@ mesh_index_from_program_id(typename Mesh::program_id_type program_id,
 } // namespace detail
 
 template <topology Scope, size_t... Dims>
-constexpr auto
-mesh<Scope, Dims...>::remote_program_id(index_type index) noexcept
-    -> program_id_type {
+constexpr auto mesh<Scope, Dims...>::remote_program_id(
+    index_type index) noexcept -> program_id_type {
     return detail::program_ids_in_mesh<mesh>(
         index, std::make_index_sequence<program_id_type::rank()>{});
 }
 
 template <topology Scope, size_t... Dims>
-constexpr auto
-mesh<Scope, Dims...>::index_from_program_id(program_id_type program_id) noexcept
-    -> index_type {
+constexpr auto mesh<Scope, Dims...>::index_from_program_id(
+    program_id_type program_id) noexcept -> index_type {
     return detail::mesh_index_from_program_id<mesh>(
         program_id, std::make_index_sequence<program_id_type::rank()>{});
 }
