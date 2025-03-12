@@ -185,6 +185,8 @@ typedef struct {
     clr_object_handle_t (*compiler_import_ncnn_module)(
         clr_object_handle_t compiler, clr_object_handle_t param_stream,
         clr_object_handle_t bin_stream);
+    clr_object_handle_t (*compiler_import_huggingface_module)(
+        clr_object_handle_t compiler, const char *model_dir,size_t model_dir_length);
     void (*compiler_compile)(clr_object_handle_t compiler);
     void (*compiler_gencode)(clr_object_handle_t compiler,
                              clr_object_handle_t stream);
@@ -835,6 +837,12 @@ class compiler : public clr_object_base {
         return {std::in_place,
                 nncase_clr_api()->compiler_import_ncnn_module(
                     get(), param_stream.get(), bin_stream.get())};
+    }
+
+    ir_module import_huggingface_module(std::string_view modelDir) {
+        return {std::in_place,
+                nncase_clr_api()->compiler_import_huggingface_module(
+                    get(), modelDir.data(),modelDir.length())};
     }
 
     void compile() { nncase_clr_api()->compiler_compile(obj_.get()); }

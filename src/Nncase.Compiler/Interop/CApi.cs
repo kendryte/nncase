@@ -69,6 +69,7 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr> CompilerImportTFLiteModulePtr;
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr> CompilerImportOnnxModulePtr;
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr, IntPtr> CompilerImportNcnnModulePtr;
+    public delegate* unmanaged<IntPtr, byte*, nuint, IntPtr> CompilerImportHuggingfaceModulePtr;
     public delegate* unmanaged<IntPtr, void> CompilerCompilePtr;
     public delegate* unmanaged<IntPtr, IntPtr, void> CompilerGencodePtr;
     public delegate* unmanaged<Runtime.TypeCode, IntPtr> DataTypeFromTypeCodePtr;
@@ -163,6 +164,7 @@ public static unsafe class CApi
         mt->CompilerImportTFLiteModulePtr = &CompilerImportTFLiteModule;
         mt->CompilerImportOnnxModulePtr = &CompilerImportOnnxModule;
         mt->CompilerImportNcnnModulePtr = &CompilerImportNcnnModule;
+        mt->CompilerImportHuggingfaceModulePtr = &CompilerImportHuggingfaceModule;
         mt->CompilerCompilePtr = &CompilerCompile;
         mt->CompilerGencodePtr = &CompilerGencode;
         mt->DataTypeFromTypeCodePtr = &DataTypeFromTypeCode;
@@ -485,6 +487,16 @@ public static unsafe class CApi
         var ncnnBin = Get<CStream>(ncnnBinHandle);
         var module = compiler.ImportNcnnModuleAsync(ncnnParam, ncnnBin).Result;
         return GCHandle.ToIntPtr(GCHandle.Alloc(module));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr CompilerImportHuggingfaceModule(IntPtr compilerHandle, byte* modelDir, nuint modelDirLength)
+    {
+        var compiler = Get<Compiler>(compilerHandle);
+        var modelDirStr = ToString(modelDir, modelDirLength);
+        var module = compiler.ImportHuggingfaceAsync(modelDirStr).Result;
+        return GCHandle.ToIntPtr(GCHandle.Alloc(module));
+
     }
 
     [UnmanagedCallersOnly]

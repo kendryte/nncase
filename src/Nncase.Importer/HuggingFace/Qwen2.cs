@@ -243,7 +243,7 @@ namespace Nncase.Importer
         //     bool? outputAttentions = false,
         //     bool? outputHiddenStates = false
         // )
-        private Tuple<Call, List<Call>, List<Call>> Qwen2Model(
+        private Tuple<Expr, List<Expr>, List<Expr>> Qwen2Model(
             Var input_ids,
             Var attentionMask,
             Var positionIds,
@@ -263,8 +263,14 @@ namespace Nncase.Importer
                     embedTokensWeight[(int)_config["pad_token_id"], (int)i] = 0;
                 }
             }
-
-            var inputEmbeds = Gather(embedTokensWeight, 0, input_ids);
+            Expr? inputEmbeds;
+            if (input_ids.CheckedShape.Rank>2){
+                System.Console.WriteLine("input_ids rank >2 ,regard input_id as embedding...");
+                inputEmbeds = input_ids;
+            }
+            else{
+            inputEmbeds = Gather(embedTokensWeight, 0, input_ids);
+            }
 
             // }
 
@@ -303,9 +309,9 @@ namespace Nncase.Importer
             var hiddenStates = inputEmbeds;
             var positionEmbeddings = RotaryEmbedding(hiddenStates, positionIds);
 
-            var allHiddenStates = new List<Call>();
-            var allSelfAttns = new List<Call>();
-            var allKVcaches = new List<Call>();
+            var allHiddenStates = new List<Expr>();
+            var allSelfAttns = new List<Expr>();
+            var allKVcaches = new List<Expr>();
             /*
             * 1.2 DecodeLayer * _config["num_hidden_layers"]
             * DecodeLayer:
@@ -341,7 +347,7 @@ namespace Nncase.Importer
                 // }
             }
 
-            var lastHiddenStates = Qwen2LayerNorm(hiddenStates, "model.norm.weight");
+            Expr lastHiddenStates = Qwen2LayerNorm(hiddenStates, "model.norm.weight");
 
             // if (outputAttentions == true)
             // {
@@ -544,7 +550,7 @@ namespace Nncase.Importer
             return casualMask;
         }
 
-        private bool CheckNeedOutput(List<Call> allSelfAttns)
+        private bool CheckNeedOutput(List<Expr> allSelfAttns)
         {
             if (allSelfAttns.Length() == 0)
             {
@@ -565,13 +571,13 @@ namespace Nncase.Importer
         // private Tuple<Call, Call> DecodeLayer(int count, Call hiddenStates, Call? attentionMask, Call positionIds,
         //     HuggingFaceUtils.DynamicCache pastKeyValues, bool? outputAttentions, bool? useCache, Expr cachePosition,
         //     Tuple<Call, Call> positionEmbeddings)
-        private Tuple<Call, Call, Call> DecodeLayer(
+        private Tuple<Expr, Expr, Expr> DecodeLayer(
             int count,
-            Call hiddenStates,
+            Expr hiddenStates,
             Expr attentionMask,
             Var pastKeyValues,
             Expr cachePosition,
-            Tuple<Call, Call> positionEmbeddings)
+            Tuple<Expr, Expr> positionEmbeddings)
         {
             var residual = hiddenStates;
             hiddenStates = Qwen2LayerNorm(
@@ -602,14 +608,14 @@ namespace Nncase.Importer
 
             // if (outputAttentions == true && selfAttenKV is not null)
             // {
-            return Tuple.Create<Call, Call, Call>(output, outAttention, currentKV);
+            return Tuple.Create<Expr, Expr, Expr>(output, outAttention, currentKV);
 
             // }
 
             // return Tuple.Create<Call, Call>(output, null);
         }
 
-        private Call Qwen2Mlp(int count, Call hiddenStates)
+        private Call Qwen2Mlp(int count, Expr hiddenStates)
         {
             var gateProjW = _constTensors![$"model.layers.{count}.mlp.gate_proj.weight"];
             var upProjW = _constTensors![$"model.layers.{count}.mlp.up_proj.weight"];
@@ -622,7 +628,7 @@ namespace Nncase.Importer
         }
 
         // Qwen2RMSNorm : Qwen2LayerNorm : input_layernorm
-        private Call Qwen2LayerNorm(Call hiddenStates, string layerName)
+        private Call Qwen2LayerNorm(Expr hiddenStates, string layerName)
         {
             // fit layernorm partten 5
             var weight = _constTensors![$"{layerName}"];
@@ -633,13 +639,13 @@ namespace Nncase.Importer
 
         // Qwen2Attention : SelfAtten
         // llama config find in : https://www.restack.io/p/transformer-models-answer-llama-config-json-cat-ai
-        private Tuple<Call, Call, Call> Qwen2SelfAtten(
+        private Tuple<Expr, Expr, Expr> Qwen2SelfAtten(
             int count,
-            Call hiddenStates,
+            Expr hiddenStates,
             Expr attentionMask,
             Expr paskKeyValues,
             Expr cachePosition,
-            Tuple<Call, Call> positionEmbeddings)
+            Tuple<Expr, Expr> positionEmbeddings)
         {
             var head_dim = (int)(long)_config!["hidden_size"] / (int)(long)_config["num_attention_heads"];
             if (_config!.Keys.Contains("head_dim"))
@@ -799,7 +805,7 @@ namespace Nncase.Importer
             return Tuple.Create(attnOutput, (Call)null);
         }
 
-        private Tuple<Call, Call> EagerAttentionForward(Expr query, Expr key, Expr value, Expr? attentionMask, float scaling)
+        private Tuple<Expr, Expr> EagerAttentionForward(Expr query, Expr key, Expr value, Expr? attentionMask, float scaling)
         {
             /*
                 key_states = repeat_kv(key, module.num_key_value_groups)
@@ -820,7 +826,7 @@ namespace Nncase.Importer
             int numKVGroups = (int)((long)_config!["num_attention_heads"] / (long)_config!["num_key_value_heads"]);
             var keyStates = RepeatKV(key, numKVGroups);
             var valueStates = RepeatKV(value, numKVGroups);
-            var attnWeights = F.Math.MatMul(query, Transpose(keyStates, ShapeExprUtility.GetPermutation(keyStates, [2, 3]))) * scaling;
+            Expr attnWeights = F.Math.MatMul(query, Transpose(keyStates, ShapeExprUtility.GetPermutation(keyStates, [2, 3]))) * scaling;
             if (attentionMask is not null)
             {
                 var causalMask = Slice(
@@ -833,7 +839,7 @@ namespace Nncase.Importer
             }
 
             attnWeights = Softmax(attnWeights, -1);
-            var attnOutput = F.Math.MatMul(attnWeights, valueStates);
+            Expr attnOutput = F.Math.MatMul(attnWeights, valueStates);
             attnOutput = Transpose(attnOutput, ShapeExprUtility.GetPermutation(attnOutput, [1, 2]));
 
             // TODO: base on config to decide output attnWeights or not
@@ -865,7 +871,7 @@ namespace Nncase.Importer
             return hiddenStates;
         }
 
-        private Tuple<Call, Call> ApplyRotaryPosEmb(Call q, Call k, Call cos, Call sin)
+        private Tuple<Call, Call> ApplyRotaryPosEmb(Expr q, Expr k, Expr cos, Expr sin)
         {
             cos = Unsqueeze(cos, Tensor.From<long>(new long[] { 1 }));
             sin = Unsqueeze(sin, Tensor.From<long>(new long[] { 1 }));
@@ -883,7 +889,7 @@ namespace Nncase.Importer
             return Tuple.Create(qEmbed, kEmbed);
         }
 
-        private Tuple<Call, Call> RotaryEmbedding(Expr x, Expr positionIds)
+        private Tuple<Expr, Expr> RotaryEmbedding(Expr x, Expr positionIds)
         {
             // rope type not in config, so it is default. :_compute_default_rope_parameters
             // if "dynamic" in self.rope_type:
@@ -910,8 +916,8 @@ namespace Nncase.Importer
 
             // F.Tensors.Transpose(F.Math.MatMul(invFreqExpanded, positionIdsExpanded),new Dimension[] { 0, 2, 1 });
             var emb = F.Tensors.Concat(new IR.Tuple(freqs, freqs), -1);
-            var cos = F.Math.Unary(UnaryOp.Cos, emb);
-            var sin = F.Math.Unary(UnaryOp.Sin, emb);
+            Expr cos = F.Math.Unary(UnaryOp.Cos, emb);
+            Expr sin = F.Math.Unary(UnaryOp.Sin, emb);
 
             // TODO: add attention scaling
             return Tuple.Create(cos, sin);
@@ -991,7 +997,7 @@ namespace Nncase.Importer
             return Tuple.Create(key_states, value_states);
         }
 
-        private Call MergeKV(Call key, Call value)
+        private Expr MergeKV(Expr key, Expr value)
         {
             // [batchsize, num_heads, seq_length, head_dim]  ->[1,2,batchsize, num_heads, seq_length, head_dim]
             var keyStates = Unsqueeze(key, new[] { 0 });

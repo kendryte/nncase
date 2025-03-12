@@ -206,6 +206,10 @@ class Compiler:
         self._compile_options.input_format = "ncnn"
         self._import_ncnn_module(model_param, model_bin)
 
+    def import_huggingface(self, model_path: str, options: ImportOptions) -> None:
+        # self._compile_options.input_format = "huggingface" ???
+        self._import_huggingface_module(model_path)
+
     def use_ptq(self, ptq_dataset_options: PTQTensorOptions) -> None:
         dataset = [_nncase.RTValue.from_runtime_tensor(
             data) for data in ptq_dataset_options.cali_data]
@@ -302,6 +306,9 @@ class Compiler:
         param_stream = io.BytesIO(model_param) if isinstance(model_param, bytes) else model_param
         bin_stream = io.BytesIO(model_bin) if isinstance(model_bin, bytes) else model_bin
         self._module = IRModule(self._compiler.import_ncnn_module(param_stream, bin_stream))
+
+    def _import_huggingface_module(self, model_dir:str) -> None:
+        self._module = IRModule(self._compiler.import_huggingface_module(model_dir))
 
 
 def check_target(target: str):

@@ -33,6 +33,7 @@ public sealed partial class HuggingFaceImporter : BaseImporter
     public HuggingFaceImporter(string huggingFaceDir, CompileSession compileSession)
         : base(compileSession)
     {
+        // TODO: restructure for reading saftensors
         // 读取 config.json 文件
         _config = HuggingFaceUtils.GetConfigInfo(Path.Combine(huggingFaceDir, "config.json"));
         _constTensors = HuggingFaceUtils.GetAllWeights(Path.Combine(huggingFaceDir, "model.safetensors"));
