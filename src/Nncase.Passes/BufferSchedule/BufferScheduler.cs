@@ -112,8 +112,9 @@ public class BufferScheduler
         foreach (var (expr, item) in bufferMap)
         {
             var xInterval = model.NewIntervalVar(model.NewConstant(item.TimeInterval.Start), model.NewConstant(item.TimeInterval.Size), model.NewConstant(item.TimeInterval.Stop), item.Name + $"{item.Number}_x");
+            var memPoolSize = item.MemInterval.Stop - item.MemInterval.Start;
 
-            var upbound = MemoryCapacity - item.MemInterval.Stop;
+            var upbound = MemoryCapacity - memPoolSize;
             if (upbound <= 0)
             {
                 throw new System.NotSupportedException();
@@ -121,7 +122,7 @@ public class BufferScheduler
 
             var memStartVar = model.NewIntVar(0, upbound, $"{item.Name}_{item.Number}_y_start");
             model.AddModuloEquality(0, memStartVar, Alignment);
-            var yInterval = model.NewFixedSizeIntervalVar(memStartVar, item.MemInterval.Stop, $"{item.Name}_{item.Number}_y");
+            var yInterval = model.NewFixedSizeIntervalVar(memStartVar, memPoolSize, $"{item.Name}_{item.Number}_y");
             noOverlap.AddRectangle(xInterval, yInterval);
             yStarts.Add(memStartVar);
             model.AddModuloEquality(0, memStartVar, 32);

@@ -39,6 +39,11 @@ public sealed class CpuBufferSizeCalculator : BufferSchedule.BufferSizeCalculato
             var res = VisitType(expr.CheckedType);
             return new(0, res.Shape, res.Stride);
         }
+        else if (expr.Target is IR.Tensors.Unsqueeze)
+        {
+            var res = VisitType(expr.CheckedType);
+            return new(0, res.Shape, res.Stride);
+        }
 
         return base.VisitCall(expr);
     }
@@ -61,6 +66,10 @@ public sealed class CpuLifeTimeUpdater : BufferSchedule.LifeTimeUpdater
                     Visit(c, context);
                 }
                 else if (c.Target is IR.Tensors.Reshape)
+                {
+                    Visit(c, context);
+                }
+                else if (c.Target is IR.Tensors.Unsqueeze)
                 {
                     Visit(c, context);
                 }
