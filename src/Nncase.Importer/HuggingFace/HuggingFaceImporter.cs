@@ -24,7 +24,7 @@ public sealed partial class HuggingFaceImporter : BaseImporter
     private readonly Dictionary<string, Tensor>? _constTensors;
 
     private List<Var>? _inputs;
-    private readonly List<Var>? _outputs;
+    private readonly Dictionary<string, Expr>? _outputs = new Dictionary<string, Expr> { };
     private Dictionary<string, Var> _dynVarMap;
     private Dictionary<string, int> _fixVarMap;
 
@@ -33,6 +33,7 @@ public sealed partial class HuggingFaceImporter : BaseImporter
     public HuggingFaceImporter(string huggingFaceDir, CompileSession compileSession)
         : base(compileSession)
     {
+        // TODO: restructure for reading saftensors
         // 读取 config.json 文件
         _config = HuggingFaceUtils.GetConfigInfo(Path.Combine(huggingFaceDir, "config.json"));
         _constTensors = HuggingFaceUtils.GetAllWeights(Path.Combine(huggingFaceDir, "model.safetensors"));
@@ -49,8 +50,6 @@ public sealed partial class HuggingFaceImporter : BaseImporter
             default:
                 throw new NotImplementedException();
         }
-
-        return (null, null);
     }
 
     protected override void ConvertOp()
@@ -69,6 +68,13 @@ public sealed partial class HuggingFaceImporter : BaseImporter
 
     protected override Expr CreateOutputs()
     {
-        throw new NotImplementedException();
+        switch (_config!["architectures"]!)
+        {
+            case "Qwen2ForCausalLM":
+                return Qwen2CreateOutputs();
+
+            default:
+                throw new NotImplementedException();
+        }
     }
 }

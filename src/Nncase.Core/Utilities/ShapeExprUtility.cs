@@ -101,12 +101,23 @@ public static class ShapeExprUtility
         return shape;
     }
 
-    public static Tensor GetPermutation(Call tensor, int[] dims)
+    public static Tensor GetPermutation(Expr tensor, int[] dims)
     {
-        var r = Rank(ShapeOf(tensor)).CheckedShape.ToArray().Length;
+        // string exprStr = CompilerServices.Print(tensor);
+        // System.Console.WriteLine($"Expr详细信息: {exprStr}");
+        var r = tensor.CheckedShape.Rank;
+
+        // System.Console.WriteLine($"shape:{tensor.CheckedShape} rank:{r} dims:{dims[0]},{dims[1]}");
         // format dims to non-negative
         // var newDims = dims.Select(x => x < 0 ? x + r : x).ToArray();
         var fullDims = Enumerable.Range(0, r).ToArray();
+        for (int i = 0; i != dims.Length; i++)
+        {
+            if (dims[i] < 0)
+            {
+                dims[i] = r + dims[i];
+            }
+        }
 
         if (dims.Length == 2)
         {

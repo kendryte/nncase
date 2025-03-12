@@ -50,7 +50,7 @@ internal static class HuggingFaceUtils
         else
         {
             throw new FileNotFoundException(
-                $"{config?["architectures"]}'s config.json not found in the specified directory.",
+                "config.json not found in the specified directory.",
                 path);
         }
 
