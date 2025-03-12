@@ -307,7 +307,7 @@ class tensor_reduce_sync_impl {
             }
         } else {
             auto dest_tensor = ntt::tensor_view<TElem, typename TOutBase::shape_type, typename TOutBase::strides_type>(
-                                    std::span<TElem>((TElem *)tar::dest_ptr_tensor(dest_index), dest.shape().length()));
+                                    std::span<TElem>((TElem *)tar::dest_ptr_tensor(dest_index), dest.shape().length()), dest.shape());
             for (size_t i = 0; i < group_size - 1; i++) {
                 auto offset = (node_number_g + i) % (group_size);
                 auto starts = ntt::ranked_shape<Rank>();
