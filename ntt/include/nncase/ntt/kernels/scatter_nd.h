@@ -14,8 +14,6 @@
  */
 #pragma once
 #include "../apply.h"
-#include "nncase/ntt/kernels/copy.h"
-#include "nncase/ntt/primitive_ops.h"
 #include "../loop.h"
 #include "../tensor_ops.h"
 #include "../utility.h"
@@ -35,9 +33,9 @@ void scatter_nd_impl(const TIn &input, const TIndex &indices,
     constexpr auto updates_shape = typename TUpdates::shape_type{};
     [[maybe_unused]] constexpr auto out_shape =
         typename std::decay_t<TOut>::shape_type{};
-    // constexpr auto in_strides = typename TIn::strides_type();
+    constexpr auto in_strides = typename TIn::strides_type();
     constexpr auto indices_strides = typename TIndex::strides_type();
-    // constexpr auto updates_strides = typename TUpdates::strides_type();
+    constexpr auto updates_strides = typename TUpdates::strides_type();
     [[maybe_unused]] constexpr auto out_strides =
         typename std::decay_t<TOut>::strides_type{};
 
@@ -46,10 +44,10 @@ void scatter_nd_impl(const TIn &input, const TIndex &indices,
     auto update_indices = slice_dims<k>(indices_shape);
     auto update_indices_strides = slice_dims<k>(indices_strides);
 
-    // auto in_strides_ = slice_dims<indices_shape.at(k)>(in_strides);
+    auto in_strides_ = slice_dims<indices_shape.at(k)>(in_strides);
 
-    // auto updates_strides_ =
-    //     slice_dims<update_indices.rank()>(updates_strides);
+    auto updates_strides_ =
+        slice_dims<update_indices.rank()>(updates_strides);
     auto updates_size = sizeof(TIElem);
     for (auto i = update_indices.rank(); i < updates_shape.rank(); ++i) {
         updates_size *= updates_shape.at(i);
@@ -59,9 +57,8 @@ void scatter_nd_impl(const TIn &input, const TIndex &indices,
                   "Only support scalar type for now");
 
     apply(update_indices, [&](auto idx) {
-        // auto updates_begin =
-        //     updates.elements().data() + linear_offset(idx, updates_strides_);
-        auto updates_view = updates.view(idx, updates_shape);
+        auto updates_begin =
+            updates.elements().data() + linear_offset(idx, updates_strides_);
 
         auto data_indices_begin = indices.elements().data() +
                                   linear_offset(idx, update_indices_strides);
@@ -70,11 +67,10 @@ void scatter_nd_impl(const TIn &input, const TIndex &indices,
             data_indices_dim.at(i) = *(data_indices_begin + i);
         }
 
-        // auto data_begin = output.elements().data() +
-        //                   linear_offset(data_indices_dim, in_strides_);
-        auto data_view = output.view(data_indices_dim, updates_shape);
-        // memcpy(data_begin, updates_begin, updates_size);
-        tensor_copy(updates_view, data_view);
+        auto data_begin = output.elements().data() +
+                          linear_offset(data_indices_dim, in_strides_);
+
+        memcpy(data_begin, updates_begin, updates_size);
     });
 }
 } // namespace scatter_nd_detail

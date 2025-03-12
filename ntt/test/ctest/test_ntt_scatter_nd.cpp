@@ -25,10 +25,10 @@ using namespace ortki;
 
 TEST(ScatterNDTestFloat, fixed_shape) {
     // Define tensor types
-    using input_type = ntt::tensor<float, ntt::fixed_shape<10>>;
-    using indices_type = ntt::tensor<int64_t, ntt::fixed_shape<1, 1>>;
-    using updates_type = ntt::tensor<float, ntt::fixed_shape<1>>;
-    using output_type = ntt::tensor<float, ntt::fixed_shape<10>>;
+    using input_type = ntt::tensor<float, ntt::fixed_shape<5, 5, 5>>;
+    using indices_type = ntt::tensor<int64_t, ntt::fixed_shape<2, 1>>;
+    using updates_type = ntt::tensor<float, ntt::fixed_shape<2, 5, 5>>;
+    using output_type = ntt::tensor<float, ntt::fixed_shape<5, 5, 5>>;
 
     // Initialize tensors
     input_type input;
@@ -37,34 +37,25 @@ TEST(ScatterNDTestFloat, fixed_shape) {
     // Initialize input with zeros
     std::iota(input.elements().begin(), input.elements().end(), 0.f);
 
-    // Setup indices and updates
-    // int32_t indices_data[] = {1, 2};
-    // auto indices = ntt::tensor_view<int32_t,
-    //      ntt::fixed_shape<1, 2>>(std::span<int32_t, 2>(indices_data, 2));
+    std::unique_ptr<updates_type> updates(new updates_type);
+    NttTest::init_tensor(*updates, -10.0f, 10.0f);
 
-    // float updates_data[] = {10.0f, 5.0f};
-    // auto updates = ntt::tensor_view<float,
-    //      ntt::fixed_shape<2>>(std::span<float, 2>(updates_data, 2));
+    // Setup indices and updates
     indices_type indices;
     indices(0, 0) = 1;
-    updates_type updates;
-    updates(0) = 10.0f;
+    indices(1, 0) = 2;
 
     // Perform scatterND
-    ntt::scatter_nd(input, indices, updates, ntt_output1);
-       
+    ntt::scatter_nd(input, indices, *updates, ntt_output1);
 
     // Compare with ORT
     auto ort_input = NttTest::ntt2ort(input);
     auto ort_indices = NttTest::ntt2ort(indices);
-    auto ort_updates = NttTest::ntt2ort(updates);
+    auto ort_updates = NttTest::ntt2ort(*updates);
     auto ort_output = ortki_ScatterND(ort_input, ort_indices, ort_updates, "none");    
 
     output_type ntt_output2;
     NttTest::ort2ntt(ort_output, ntt_output2);
-    // for (int i = 0; i < 10; ++i) {
-    //     std::cout << ntt_output2.elements().data()[i] << " ";
-    // }
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
