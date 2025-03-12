@@ -225,9 +225,13 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.ScatterND(arguments[0], arguments[1], arguments[2], ret));
                 break;
             case IR.Tensors.GetItem:
+                // _mainBody.Add(TIR.F.CPU.GetItem(arguments[0], arguments[1], ret));
+                break;
             case IR.Tensors.Reshape:
+                // _mainBody.Add(TIR.F.CPU.Reshape(arguments[0], arguments[1], ret));
+                break;
             case IR.Tensors.Unsqueeze:
-                // optimized.
+                // _mainBody.Add(TIR.F.CPU.Unsqueeze(arguments[0], arguments[1], ((TensorConst)expr.Arguments[1]).Value.ToArray<int>()));
                 break;
             default:
                 throw new NotSupportedException();

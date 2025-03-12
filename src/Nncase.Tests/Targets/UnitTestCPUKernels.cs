@@ -820,8 +820,8 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new long[] { 1, -1, 64, 16 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 8 }, 0 })]
-    [InlineData(new object[] { new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new long[] { 1, -1, 768 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 8 }, 1 })]
+    [InlineData(new object[] { new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new long[] { 1, -1, 64, 16 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 1 }, 0 })]
+    [InlineData(new object[] { new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new long[] { 1, -1, 768 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 1 }, 1 })]
     public async Task TestDynamicMatMulReshapeUnary(long[] lhsShape, long[] rhsShape, long[] newShape, UnaryOp[] unaryOps, int[] hierarchy, int number)
     {
         CompileOptions.DumpFlags = Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.Compile;
@@ -887,6 +887,45 @@ public sealed class UnitTestCPUKernels : TestClassBase
         {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
+        };
+
+        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, new[] { unsqueezed });
+    }
+
+    [Theory]
+    [InlineData(new object[] { new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new long[] { 1, 48, -1, 16 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 1 }, 0 })]
+    public async Task TestDynamicReshapeAndUnsqueeze(long[] lhsShape, long[] rhsShape, long[] newShape, UnaryOp[] unaryOps, int[] hierarchy, int number)
+    {
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+
+        var dimN = Var.SizeVar("n");
+        dimN.Metadata.Range = new(1, 1200);
+        var rhsDims = rhsShape.Select(x => (Dimension)x).ToArray();
+        rhsDims[^1] = dimN;
+
+        var lhs = new Var(new TensorType(DataTypes.Float32, new Shape(lhsShape)));
+        var rhs = new Var(new TensorType(DataTypes.Float32, new Shape(rhsDims)));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(rhs, rhsDims.Select(x => x.ToExpr()).ToArray());
+        var matmul = IR.F.Tensors.MatMul(lhs, rhs);
+        var reshaped = IR.F.Tensors.Reshape(matmul, newShape);
+        var unary = reshaped;
+        foreach (var item in unaryOps)
+        {
+            unary = IR.F.Math.Unary(item, unary);
+        }
+
+        var unsqueezed = IR.F.Tensors.Unsqueeze(unary, 0);
+
+        var feedDict = new Dictionary<Var, IValue>()
+        {
+            { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
+            { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
+            { dimN, Value.FromTensor(rhsShape[^1]) },
         };
 
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, new[] { unsqueezed });

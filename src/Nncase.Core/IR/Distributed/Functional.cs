@@ -14,11 +14,6 @@ public partial class Distributed
 {
     public static Call Boxing(Expr input, IRType type)
     {
-        if ((type is TensorType tt && tt.Shape.Any(x => x == -1))
-            || (type is DistributedType { TensorType: var dt } && dt.Shape.Any(x => x == -1)))
-        {
-            throw new ArgumentException("Cannot box to dynamic shape tensor");
-        }
         return new Call(new Boxing(type), input);
     }
 

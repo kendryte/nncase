@@ -7,6 +7,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.PatternMatch;
 using static Nncase.IR.TypePatternUtility;
@@ -14,22 +15,22 @@ using static Nncase.IR.TypePatternUtility;
 namespace Nncase.TIR.CPU;
 
 /// <summary>
-/// Reshape expression.
+/// Gather expression.
 /// </summary>
-public sealed partial class Reshape : CPUKernelOp
+public sealed partial class GetItem : CPUKernelOp
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Reshape), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(GetItem), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets index.
     /// </summary>
-    public static readonly ParameterInfo NewShape = new(typeof(Gather), 1, "newShape", IsIntegral(), ParameterKind.Input);
+    public static readonly ParameterInfo Index = new(typeof(GetItem), 1, "index", IsIntegral(), ParameterKind.Input);
 
     /// <summary>
-    /// Gets input.
+    /// Gets index.
     /// </summary>
-    public static readonly ParameterInfo Output = new(typeof(Reshape), 1, "output");
+    public static readonly ParameterInfo Output = new(typeof(GetItem), 2, "output");
 }

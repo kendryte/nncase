@@ -602,7 +602,12 @@ public static class TypeInference
 
     public static Shape ReshapeShape(Shape inShape, Expr newShape, TensorType? shapeType = null)
     {
-        shapeType ??= (TensorType)newShape.CheckedType;
+        shapeType ??= newShape.CheckedType switch
+        {
+            TensorType t => t,
+            DistributedType dt when dt.NdSBP.All(x => x is SBPBroadCast) => dt.TensorType,
+            _ => throw new TypeInferenceInterruptException(new InvalidType("Invalid shape type")),
+        };
 
         if (shapeType.Shape.IsUnranked || !shapeType.Shape[0].IsFixed)
         {

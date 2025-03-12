@@ -144,7 +144,7 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
             BinaryOp.Sub => new(lhs.Min - rhs.Max, lhs.Max - rhs.Min),
             BinaryOp.Mul => VisitMul(lhs, rhs),
             BinaryOp.CeilDiv => VisitCeilDiv(lhs, rhs),
-            BinaryOp.Div => VisitDiv(lhs, rhs),
+            BinaryOp.Div => VisitDiv(lhs, rhs, expr[Binary.Rhs].CheckedDataType),
             BinaryOp.Max => new(Math.Max(lhs.Min, rhs.Min), Math.Max(lhs.Max, rhs.Max)),
             BinaryOp.Min => new(Math.Min(lhs.Min, rhs.Min), Math.Min(lhs.Max, rhs.Max)),
             _ => ValueRange<double>.Full,
@@ -157,7 +157,7 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
 
         return op switch
         {
-            UnaryOp.Abs => new(Math.Abs(input.Min), Math.Abs(input.Max)),
+            UnaryOp.Abs => VisitAbs(input),
             UnaryOp.Neg => new(-input.Max, -input.Min),
             _ => ValueRange<double>.Full,
         };
@@ -180,20 +180,45 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
         return new ValueRange<double>(values.Min(), values.Max());
     }
 
-    private ValueRange<double> VisitDiv(ValueRange<double> lhs, ValueRange<double> rhs)
+    private ValueRange<double> VisitAbs(ValueRange<double> input)
+    {
+        var values = new[]
+        {
+            Math.Abs(input.Min),
+            Math.Abs(input.Max),
+        };
+        return new ValueRange<double>(values.Min(), values.Max());
+    }
+
+    private ValueRange<double> VisitDiv(ValueRange<double> lhs, ValueRange<double> rhs, DataType rhsDataType)
     {
         if (rhs.Min <= 0 && rhs.Max >= 0)
         {
             return ValueRange<double>.Full;
         }
 
-        var values = new[]
+        double[] values;
+        if (rhsDataType.IsIntegral())
         {
-            lhs.Min / rhs.Min,
-            lhs.Min / rhs.Max,
-            lhs.Max / rhs.Min,
-            lhs.Max / rhs.Max,
-        };
+            values = new[]
+            {
+                Math.Floor(lhs.Min / rhs.Min),
+                Math.Floor(lhs.Min / rhs.Max),
+                Math.Floor(lhs.Max / rhs.Min),
+                Math.Floor(lhs.Max / rhs.Max),
+            };
+        }
+        else
+        {
+            values = new[]
+            {
+                lhs.Min / rhs.Min,
+                lhs.Min / rhs.Max,
+                lhs.Max / rhs.Min,
+                lhs.Max / rhs.Max,
+            };
+        }
+
         return new ValueRange<double>(values.Min(), values.Max());
     }
 

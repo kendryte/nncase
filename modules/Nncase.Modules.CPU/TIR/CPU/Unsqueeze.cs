@@ -14,22 +14,22 @@ using static Nncase.IR.TypePatternUtility;
 namespace Nncase.TIR.CPU;
 
 /// <summary>
-/// Reshape expression.
+/// Unsqueeze expression.
 /// </summary>
-public sealed partial class Reshape : CPUKernelOp
+public sealed partial class Unsqueeze : CPUKernelOp
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Reshape), 0, "input");
-
-    /// <summary>
-    /// Gets index.
-    /// </summary>
-    public static readonly ParameterInfo NewShape = new(typeof(Gather), 1, "newShape", IsIntegral(), ParameterKind.Input);
+    public static readonly ParameterInfo Input = new(typeof(Unsqueeze), 0, "input");
 
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Output = new(typeof(Reshape), 1, "output");
+    public static readonly ParameterInfo Output = new(typeof(Unsqueeze), 1, "output");
+
+    /// <summary>
+    /// Gets begins.
+    /// </summary>
+    public IRArray<int> Axes { get; }
 }

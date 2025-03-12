@@ -102,9 +102,9 @@ public partial class CPU
         return new Call(new Concat(axis), inputs.Concat(new[] { ret }).ToArray());
     }
 
-    public static Expr Reshape(Buffer input, Buffer ret, long[] newShape)
+    public static Expr Reshape(Buffer input, Buffer newShape, Buffer ret)
     {
-        return new Call(new Reshape(newShape), input, ret);
+        return new Call(new Reshape(), input, newShape, ret);
     }
 
     public static Expr Swish(Expr buffer, Expr ret, float v)
@@ -115,6 +115,11 @@ public partial class CPU
     public static Expr Gather(Buffer input, Buffer indcies, Buffer ret, int axis)
     {
         return new Call(new Gather(axis), input, indcies, ret);
+    }
+
+    public static Expr GetItem(Buffer input, Buffer index, Buffer ret)
+    {
+        return new Call(new GetItem(), input, index, ret);
     }
 
     public static Expr Transpose(Expr buffer, Expr ret, int[] perm)
@@ -180,5 +185,10 @@ public partial class CPU
     public static Call ScatterND(Expr input, Expr indices, Expr updates, Expr output)
     {
         return new Call(new TIR.CPU.ScatterND(), input, indices, updates, output);
+    }
+
+    public static Call Unsqueeze(Expr input, Expr output, IRArray<int> axes)
+    {
+        return new Call(new TIR.CPU.Unsqueeze(axes), input, output);
     }
 }
