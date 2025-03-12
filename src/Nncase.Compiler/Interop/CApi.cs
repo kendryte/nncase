@@ -496,7 +496,6 @@ public static unsafe class CApi
         var modelDirStr = ToString(modelDir, modelDirLength);
         var module = compiler.ImportHuggingfaceAsync(modelDirStr).Result;
         return GCHandle.ToIntPtr(GCHandle.Alloc(module));
-
     }
 
     [UnmanagedCallersOnly]

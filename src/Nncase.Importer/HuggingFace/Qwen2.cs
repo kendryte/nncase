@@ -263,13 +263,16 @@ namespace Nncase.Importer
                     embedTokensWeight[(int)_config["pad_token_id"], (int)i] = 0;
                 }
             }
+
             Expr? inputEmbeds;
-            if (input_ids.CheckedShape.Rank>2){
+            if (input_ids.CheckedShape.Rank > 2)
+            {
                 System.Console.WriteLine("input_ids rank >2 ,regard input_id as embedding...");
                 inputEmbeds = input_ids;
             }
-            else{
-            inputEmbeds = Gather(embedTokensWeight, 0, input_ids);
+            else
+            {
+                inputEmbeds = Gather(embedTokensWeight, 0, input_ids);
             }
 
             // }

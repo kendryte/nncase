@@ -307,7 +307,7 @@ class Compiler:
         bin_stream = io.BytesIO(model_bin) if isinstance(model_bin, bytes) else model_bin
         self._module = IRModule(self._compiler.import_ncnn_module(param_stream, bin_stream))
 
-    def _import_huggingface_module(self, model_dir:str) -> None:
+    def _import_huggingface_module(self, model_dir: str) -> None:
         self._module = IRModule(self._compiler.import_huggingface_module(model_dir))
 
 
