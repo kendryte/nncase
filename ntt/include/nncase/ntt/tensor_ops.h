@@ -220,6 +220,26 @@ struct outer_product<TTensor1, TTensor2> {
     ops::outer_product<element_type, element_type> op_;
 };
 
+template <IsFixedTensor TTensor1, IsFixedTensor TTensor2,
+          IsFixedTensor TTensor3>
+struct where<TTensor1, TTensor2, TTensor3> {
+    using element_type_bool = typename TTensor1::element_type;
+    using element_type = typename TTensor2::element;
+
+    constexpr auto operator()(const TTensor1 &v1, const TTensor2 &v2,
+                              const TTensor3 &v3) const noexcept {
+
+        TTensor3 value{};
+        apply(value.shape(), [&](auto index) {
+            value(index) = op_(v1(index), v2(index), v3(index));
+        });
+        return value;
+    }
+
+  private:
+    ops::where<element_type_bool, element_type, element_type> op_;
+};
+
 template <IsTensor TTensor, class T2> struct mul_add<TTensor, T2, TTensor> {
     using element_type = typename TTensor::element_type;
 

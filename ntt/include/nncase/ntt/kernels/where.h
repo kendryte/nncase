@@ -26,10 +26,9 @@ namespace nncase::ntt {
 namespace detail {
 template <class TCond, class TX, class TY, class TOut> class where_impl {
   public:
-    template <class Op>
-    constexpr void operator()(Op &op, const TCond &cond, const TX &x,
-                              const TY &y, TOut &output) {
-        auto out_shape = shape_infer::binary_output_shape(x.shape(), y.shape());
+    constexpr void operator()(const TCond &cond, const TX &x, const TY &y,
+                              TOut &output) {
+        constexpr auto out_shape = TOut::shape();
 
         apply(out_shape, [&](auto index) {
             const auto cond_index =
@@ -39,7 +38,7 @@ template <class TCond, class TX, class TY, class TOut> class where_impl {
             const auto y_index =
                 shape_infer::reduced_index_by_shape(index, y.shape());
 
-            output(index) = op(cond(cond_index), x(x_index), y(y_index));
+            output(index) = cond(cond_index) ? x(x_index) : y(y_index);
         });
     }
 };
@@ -48,9 +47,8 @@ template <IsFixedTensor TCond, IsFixedTensor TX, IsFixedTensor TY,
           IsFixedTensor TOut>
 class where_impl<TCond, TX, TY, TOut> {
   public:
-    template <class Op>
-    constexpr void operator()(Op &op, const TCond &cond, const TX &x,
-                              const TY &y, TOut &output) {
+    constexpr void operator()(const TCond &cond, const TX &x, const TY &y,
+                              TOut &output) {
         constexpr auto conti_dims =
             std::min({contiguous_dims(TCond::shape(), TCond::strides()),
                       contiguous_dims(TX::shape(), TX::strides()),
@@ -60,14 +58,13 @@ class where_impl<TCond, TX, TY, TOut> {
         auto x_p = x.elements().data();
         auto y_p = y.elements().data();
         auto out_p = output.elements().data();
-        apply<Op, 0, conti_dims>(op, cond, x, y, output, cond_p, x_p, y_p,
-                                 out_p);
+        apply<0, conti_dims>(cond, x, y, output, cond_p, x_p, y_p, out_p);
     }
 
   private:
-    template <class Op, size_t Axis, size_t ContiguousDims, class TCondP,
-              class TXP, class TYP, class TOutP>
-    constexpr void apply(Op &op, const TCond &cond, const TX &x, const TY &y,
+    template <size_t Axis, size_t ContiguousDims, class TCondP, class TXP,
+              class TYP, class TOutP>
+    constexpr void apply(const TCond &cond, const TX &x, const TY &y,
                          TOut &output, TCondP cond_p, TXP x_p, TYP y_p,
                          TOutP out_p) {
         if constexpr (Axis + ContiguousDims >= TOut::rank()) {
@@ -82,24 +79,24 @@ class where_impl<TCond, TX, TY, TOut> {
 
             if constexpr (is_same_seq(x_rest_dims, y_rest_dims) &&
                           is_same_seq(cond_rest_dims, y_rest_dims)) {
-                return where_non_broadcast<Op>(cond_p, x_p, y_p, out_p,
-                                               cond_rest_dims.length());
+                return where_non_broadcast(cond_p, x_p, y_p, out_p,
+                                           cond_rest_dims.length());
             } else if constexpr (x_rest_dims.length() == 1) {
-                return where_x_broadcast<Op>(cond_p, x_p, y_p, out_p,
-                                             y_rest_dims.length());
+                return where_x_broadcast(cond_p, x_p, y_p, out_p,
+                                         y_rest_dims.length());
             } else if constexpr (y_rest_dims.length() == 1) {
-                return where_y_broadcast<Op>(cond_p, x_p, y_p, out_p,
-                                             x_rest_dims.length());
+                return where_y_broadcast(cond_p, x_p, y_p, out_p,
+                                         x_rest_dims.length());
             } else if constexpr (cond_rest_dims.length() == 1) {
-                return where_cond_broadcast<Op>(cond_p, x_p, y_p, out_p,
-                                                x_rest_dims.length());
+                return where_cond_broadcast(cond_p, x_p, y_p, out_p,
+                                            x_rest_dims.length());
             }
         }
 
         if constexpr (Axis < TOut::shape().rank()) {
             for (size_t i = 0; i < TOut::shape()[Axis]; i++) {
-                apply<Op, Axis + 1, ContiguousDims>(op, cond, x, y, output,
-                                                    cond_p, x_p, y_p, out_p);
+                apply<Axis + 1, ContiguousDims>(cond, x, y, output, cond_p, x_p,
+                                                y_p, out_p);
                 cond_p +=
                     utility_detail::get_safe_stride(cond, Axis, TOut::shape());
                 x_p += utility_detail::get_safe_stride(x, Axis, TOut::shape());
@@ -109,48 +106,40 @@ class where_impl<TCond, TX, TY, TOut> {
         }
     }
 
-    template <class Op, class TCondElem, class TXElem, class TYElem,
-              class TOutElem>
+    template <class TCondElem, class TXElem, class TYElem, class TOutElem>
     void where_non_broadcast(const TCondElem *cond, const TXElem *x,
                              const TYElem *y, TOutElem *output, size_t extent) {
-        ntt::u_where<Op, TCondElem, TXElem, TYElem, TOutElem>(
-            cond, 1, x, 1, y, 1, output, 1, extent);
+        ntt::u_where<TCondElem, TXElem, TYElem, TOutElem>(cond, 1, x, 1, y, 1,
+                                                          output, 1, extent);
     }
 
-    template <class Op, class TCondElem, class TXElem, class TYElem,
-              class TOutElem>
+    template <class TCondElem, class TXElem, class TYElem, class TOutElem>
     void where_x_broadcast(const TCondElem *cond, const TXElem *x,
                            const TYElem *y, TOutElem *output, size_t extent) {
-        ntt::u_where<Op, TCondElem, TXElem, TYElem, TOutElem>(
-            cond, 1, x, 0, y, 1, output, 1, extent);
+        ntt::u_where<TCondElem, TXElem, TYElem, TOutElem>(cond, 1, x, 0, y, 1,
+                                                          output, 1, extent);
     }
 
-    template <class Op, class TCondElem, class TXElem, class TYElem,
-              class TOutElem>
+    template <class TCondElem, class TXElem, class TYElem, class TOutElem>
     void where_y_broadcast(const TCondElem *cond, const TXElem *x,
                            const TYElem *y, TOutElem *output, size_t extent) {
-        ntt::u_where<Op, TCondElem, TXElem, TYElem, TOutElem>(
-            cond, 1, x, 1, y, 0, output, 1, extent);
+        ntt::u_where<TCondElem, TXElem, TYElem, TOutElem>(cond, 1, x, 1, y, 0,
+                                                          output, 1, extent);
     }
 
-    template <class Op, class TCondElem, class TXElem, class TYElem,
-              class TOutElem>
+    template <class TCondElem, class TXElem, class TYElem, class TOutElem>
     void where_cond_broadcast(const TCondElem *cond, const TXElem *x,
                               const TYElem *y, TOutElem *output,
                               size_t extent) {
-        ntt::u_where<Op, TCondElem, TXElem, TYElem, TOutElem>(
-            cond, 0, x, 1, y, 1, output, 1, extent);
+        ntt::u_where<TCondElem, TXElem, TYElem, TOutElem>(cond, 0, x, 1, y, 1,
+                                                          output, 1, extent);
     }
 };
 } // namespace detail
 
-template <template <class T1, class T2, class T3> class Op, class TCond,
-          class TX, class TY, class TOut>
+template <class TCond, class TX, class TY, class TOut>
 void where(const TCond &cond, const TX &x, const TY &y, TOut &&output) {
-    Op<typename TCond::element_type, typename TX::element_type,
-       typename TY::element_type>
-        op;
     detail::where_impl<std::decay_t<TCond>, std::decay_t<TX>, std::decay_t<TY>,
-                       std::decay_t<TOut>>()(op, cond, x, y, output);
+                       std::decay_t<TOut>>()(cond, x, y, output);
 }
 } // namespace nncase::ntt

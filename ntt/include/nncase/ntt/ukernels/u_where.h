@@ -18,25 +18,22 @@
 namespace nncase::ntt {
 namespace ukernels {
 
-template <class Op, class T1, class T2, class T3, bool Arch>
-struct u_where_policy {
+template <class T1, class T2, class T3, bool Arch> struct u_where_policy {
     static constexpr size_t unroll = 1;
 };
 
-template <class Op, class T1, class T2, class T3, class TOut, bool Arch>
-struct u_where {
+template <class T1, class T2, class T3, class TOut, bool Arch> struct u_where {
   public:
     constexpr void operator()(const T1 *cond, size_t cond_stride, const T2 *x,
                               size_t x_stride, const T3 *y, size_t y_stride,
                               TOut *output, size_t output_stride,
                               size_t count) noexcept {
-        using policy_t = u_where_policy<Op, T1, T2, T3, Arch>;
+        using policy_t = u_where_policy<T1, T2, T3, Arch>;
         constexpr auto unroll = policy_t::unroll;
-        Op op;
 
         while (count >= unroll) {
             for (size_t i = 0; i < unroll; i++) {
-                *output = op(*cond, *x, *y);
+                *output = ntt::ops::where<T1, T2, T3>()(*cond, *x, *y);
                 cond += cond_stride;
                 x += x_stride;
                 y += y_stride;
@@ -46,7 +43,7 @@ struct u_where {
         }
 
         for (size_t i = 0; i < count; i++) {
-            *output = op(*cond, *x, *y);
+            *output = ntt::ops::where<T1, T2, T3>()(*cond, *x, *y);
             cond += cond_stride;
             x += x_stride;
             y += y_stride;
@@ -56,12 +53,12 @@ struct u_where {
 };
 } // namespace ukernels
 
-template <class Op, class T1, class T2, class T3, class TOut>
+template <class T1, class T2, class T3, class TOut>
 constexpr void u_where(const T1 *cond, size_t cond_stride, const T2 *x,
                        size_t x_stride, const T3 *y, size_t y_stride,
                        TOut *output, size_t output_stride,
                        size_t count) noexcept {
-    ukernels::u_where<Op, T1, T2, T3, TOut, true> impl;
+    ukernels::u_where<T1, T2, T3, TOut, true> impl;
     impl(cond, cond_stride, x, x_stride, y, y_stride, output, output_stride,
          count);
 }
