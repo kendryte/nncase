@@ -240,39 +240,39 @@ template <class T, class B> struct swishb {
 
 /**@}*/
 
-template <class T> struct equal {
-    constexpr auto operator()(const T &v1, const T &v2) const noexcept {
-        return std::equal_to<T>()(v1, v2);
+template <class T1, class T2> struct equal {
+    constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+        return v1 == v2;
     }
 };
 
-template <class T> struct not_equal {
-    constexpr auto operator()(const T &v1, const T &v2) const noexcept {
-        return std::not_equal_to<T>()(v1, v2);
+template <class T1, class T2> struct not_equal {
+    constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+        return v1 != v2;
     }
 };
 
-template <class T> struct less {
-    constexpr auto operator()(const T &v1, const T &v2) const noexcept {
-        return std::less<T>()(v1, v2);
+template <class T1, class T2> struct less {
+    constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+        return v1 < v2;
     }
 };
 
-template <class T> struct less_or_equal {
-    constexpr auto operator()(const T &v1, const T &v2) const noexcept {
-        return std::less_equal<T>()(v1, v2);
+template <class T1, class T2> struct less_or_equal {
+    constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+        return v1 <= v2;
     }
 };
 
-template <class T> struct greater {
-    constexpr auto operator()(const T &v1, const T &v2) const noexcept {
-        return std::greater<T>()(v1, v2);
+template <class T1, class T2> struct greater {
+    constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+        return v1 > v2;
     }
 };
 
-template <class T> struct greater_or_equal {
-    constexpr auto operator()(const T &v1, const T &v2) const noexcept {
-        return std::greater_equal<T>()(v1, v2);
+template <class T1, class T2> struct greater_or_equal {
+    constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+        return v1 >= v2;
     }
 };
 
@@ -343,10 +343,11 @@ constexpr void store(TDest &dest, const TSource &v) noexcept {
 }
 
 #define NTT_DEFINE_COMPARE_FUNC_IMPL(op)                                       \
-    template <IsTensorOrScalar T>                                              \
-    constexpr auto op(const T &v1, const T &v2) noexcept {                     \
-        return ops::op<T>()(v1, v2);                                           \
+    template <IsTensorOrScalar T1, IsTensorOrScalar T2>                        \
+    constexpr auto op(const T1 &v1, const T2 &v2) noexcept {                   \
+        return ops::op<T1, T2>()(v1, v2);                                      \
     }
+
 NTT_DEFINE_UNARY_FUNC_IMPL(abs)
 NTT_DEFINE_UNARY_FUNC_IMPL(acos)
 NTT_DEFINE_UNARY_FUNC_IMPL(acosh)
