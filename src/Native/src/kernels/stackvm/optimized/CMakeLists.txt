@@ -21,6 +21,7 @@ set(SRCS concat.cpp
          gather_nd.cpp
          quantize.cpp
          onehot.cpp
+         where.cpp
          transpose.cpp
 )
 
@@ -49,7 +50,6 @@ _TARGET_ARCH_FILES(TARGET kernels
                    sigmoid.cpp
                    softmax.cpp
                    unary.cpp
-                   where.cpp
                    log_softmax.cpp
                    reduce.cpp
 )
