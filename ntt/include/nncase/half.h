@@ -18,7 +18,6 @@
 #include <codecvt>
 #include <cstdint>
 #include <float.h>
-#include "bfloat16.h"
 #include <functional>
 #include <limits>
 
@@ -65,13 +64,6 @@ struct half {
 
     constexpr half(fp16_from_raw_t, uint16_t value) noexcept : value_(value) {}
 
-    operator _Float16() const noexcept{
-        return static_cast<_Float16>(float(*this));
-    }
-
-    operator bfloat16() const noexcept {
-        return bfloat16::round_to_bfloat16(float(*this));
-    }
     explicit operator float() const noexcept {
         const fp32 magic = {113 << 23};
         const unsigned int shifted_exp = 0x7c00
@@ -176,9 +168,6 @@ struct half {
     uint16_t value_;
 };
 
-
-
-
 #define DEFINE_FP16_BINARY_FP16RET(x)                                          \
     inline half operator x(half a, half b) noexcept {                          \
         return half::round_to_half(float(a) x float(b));                       \
@@ -188,14 +177,6 @@ struct half {
     inline bool operator x(half a, half b) noexcept {                          \
         return float(a) x float(b);                                            \
     }
-
-#define DEFINE_FP16_FP32_BINARY_BOOLRET(x) \
-    inline bool operator x(half a, float b) noexcept { \
-    return float(a) x b; \
-} 
-
-DEFINE_FP16_FP32_BINARY_BOOLRET(<)
-
 
 DEFINE_FP16_BINARY_FP16RET(+)
 DEFINE_FP16_BINARY_FP16RET(-)
@@ -227,11 +208,6 @@ inline bool operator==(const half &lhs, const half &rhs) noexcept {
 
 inline bool operator!=(const half &lhs, const half &rhs) noexcept {
     return lhs.raw() != rhs.raw();
-}
-
-inline std::ostream& operator<<(std::ostream& os, const half& a){
-    os << std::to_string(float(a));
-    return os;
 }
 } // namespace nncase
 
@@ -301,15 +277,11 @@ using nncase::half;
 inline bool isinf(const half &a) { return std::isinf(float(a)); }
 inline bool isnan(const half &a) { return std::isnan(float(a)); }
 inline bool isfinite(const half &a) { return std::isfinite(float(a)); }
-inline half fabs(const half &a) { return half::round_to_half(fabs(float(a))); }
 inline half abs(const half &a) { return half::round_to_half(fabsf(float(a))); }
 inline half exp(const half &a) { return half::round_to_half(expf(float(a))); }
 inline half log(const half &a) { return half::round_to_half(logf(float(a))); }
 inline half log10(const half &a) {
     return half::round_to_half(log10f(float(a)));
-}
-inline half fmod(const half &a, const half &b) {
-    return half::round_to_half(fmod(float(a), float(b)));
 }
 inline half sqrt(const half &a) { return half::round_to_half(sqrtf(float(a))); }
 inline half pow(const half &a, const half &b) {
