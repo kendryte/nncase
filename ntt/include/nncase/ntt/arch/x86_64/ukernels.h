@@ -66,6 +66,35 @@ SPECIALIZE_U_BINARY(floor_mod, 2)
 
 #undef SPECIALIZE_U_BINARY
 
+// compare
+#define SPECIALIZE_U_COMPARE(op, unroll_num)                                    \
+    template <typename T1, typename T2>                                        \
+    struct u_compare_policy<ntt::ops::op<vector<T1, 8>, vector<T2, 8>>,         \
+                           vector<T1, 8>, vector<T2, 8>, true> {               \
+        static constexpr size_t unroll = unroll_num;                           \
+    };                                                                         \
+                                                                               \
+    template <typename T1, typename T2>                                        \
+    struct u_compare_policy<ntt::ops::op<T1, vector<T2, 8>>, T1, vector<T2, 8>, \
+                           true> {                                             \
+        static constexpr size_t unroll = unroll_num;                           \
+    };                                                                         \
+                                                                               \
+    template <typename T1, typename T2>                                        \
+    struct u_compare_policy<ntt::ops::op<vector<T1, 8>, T2>, vector<T1, 8>, T2, \
+                           true> {                                             \
+        static constexpr size_t unroll = unroll_num;                           \
+    };
+
+SPECIALIZE_U_COMPARE(equal, 2)
+SPECIALIZE_U_COMPARE(not_equal, 2)
+SPECIALIZE_U_COMPARE(greater, 2)
+SPECIALIZE_U_COMPARE(greater_or_equal, 2)
+SPECIALIZE_U_COMPARE(less, 2)
+SPECIALIZE_U_COMPARE(less_or_equal, 2)
+
+#undef SPECIALIZE_U_COMPARE
+
 template <typename TElem>
 inline void permute_8x8(const TElem *src, TElem *dst, size_t in_stride,
                         size_t out_stride) noexcept {

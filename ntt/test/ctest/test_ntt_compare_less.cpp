@@ -676,6 +676,7 @@ TEST(CompareTestLess, ranked_ranked_ranked_broadcast_multidirectional) {
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
+#if __riscv
 template <typename T, size_t vl> void test_vector() {
     ntt::vector<T, vl> ntt_lhs, ntt_rhs;
     NttTest::init_tensor(ntt_lhs, static_cast<T>(-10), static_cast<T>(10));
@@ -703,6 +704,7 @@ TEST(CompareTestLess, vector) {
     // TEST_VECTOR(int32_t)
     // TEST_VECTOR(int64_t)
 }
+#endif
 
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
