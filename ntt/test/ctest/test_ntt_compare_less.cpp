@@ -23,6 +23,659 @@
 using namespace nncase;
 using namespace ortki;
 
+TEST(CompareTestLess, fixed_fixed_fixed) {
+    // init
+    using tensor_type = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
+    using tensor_type1 = ntt::tensor<uint8_t, ntt::fixed_shape<1, 3, 16, 16>>;
+    std::unique_ptr<tensor_type> ntt_lhs(new tensor_type);
+    std::unique_ptr<tensor_type> ntt_rhs(new tensor_type);
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    std::unique_ptr<tensor_type1> ntt_output1(new tensor_type1);
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type1> ntt_output2(new tensor_type1);
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, fixed_fixed_fixed_broadcast_lhs_scalar) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<1>>;
+    std::unique_ptr<tensor_type1> ntt_rhs(new tensor_type1);
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
+    std::unique_ptr<tensor_type2> ntt_lhs(new tensor_type2);
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::fixed_shape<1, 3, 16, 16>>;
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3);
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3);
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, fixed_fixed_fixed_broadcast_rhs_scalar) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1>>;
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::fixed_shape<1, 3, 16, 16>>;
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3);
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3);
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, fixed_fixed_fixed_broadcast_lhs_vector) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<16>>;
+    std::unique_ptr<tensor_type1> ntt_rhs(new tensor_type1);
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
+    std::unique_ptr<tensor_type2> ntt_lhs(new tensor_type2);
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::fixed_shape<1, 3, 16, 16>>;
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3);
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3);
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, fixed_fixed_fixed_broadcast_rhs_vector) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<16>>;
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::fixed_shape<1, 3, 16, 16>>;
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3);
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3);
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, fixed_fixed_fixed_broadcast_multidirectional) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<1, 3, 1, 16>>;
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<3, 1, 16, 1>>;
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::fixed_shape<3, 3, 16, 16>>;
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3);
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3);
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, fixed_ranked_ranked) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape = ntt::make_ranked_shape(1, 3, 16, 16);
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape));
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::ranked_shape<4>>;
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3(shape));
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, fixed_ranked_ranked_broadcast_lhs_scalar) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<1>>;
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape = ntt::make_ranked_shape(1, 3, 16, 16);
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape));
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::ranked_shape<4>>;
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3(shape));
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, fixed_ranked_ranked_broadcast_rhs_scalar) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<1>>;
+    auto shape1 = ntt::make_ranked_shape(1);
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape1));
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::ranked_shape<4>>;
+    auto shape3 = ntt::make_ranked_shape(1, 3, 16, 16);
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3(shape3));
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape3));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, fixed_ranked_ranked_broadcast_lhs_vector) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<16>>;
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape = ntt::make_ranked_shape(1, 3, 16, 16);
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape));
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::ranked_shape<4>>;
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3(shape));
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, fixed_ranked_ranked_broadcast_rhs_vector) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<1>>;
+    auto shape1 = ntt::make_ranked_shape(16);
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape1));
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::ranked_shape<4>>;
+    auto shape3 = ntt::make_ranked_shape(1, 3, 16, 16);
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3(shape3));
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape3));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, fixed_ranked_ranked_broadcast_multidirectional) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<1, 3, 1, 16>>;
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape1 = ntt::make_ranked_shape(3, 1, 16, 1);
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape1));
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::ranked_shape<4>>;
+    auto shape3 = ntt::make_ranked_shape(3, 3, 16, 16);
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3(shape3));
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape3));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, ranked_fixed_ranked) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape = ntt::make_ranked_shape(1, 3, 16, 16);
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape));
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::ranked_shape<4>>;
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3(shape));
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, ranked_fixed_ranked_broadcast_lhs_scalar) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<1>>;
+    auto shape1 = ntt::make_ranked_shape(1);
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape1));
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::ranked_shape<4>>;
+    auto shape3 = ntt::make_ranked_shape(1, 3, 16, 16);
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3(shape3));
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape3));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, ranked_fixed_ranked_broadcast_rhs_scalar) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape1 = ntt::make_ranked_shape(1, 3, 16, 16);
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape1));
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1>>;
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::ranked_shape<4>>;
+    auto shape3 = ntt::make_ranked_shape(1, 3, 16, 16);
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3(shape3));
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape3));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, ranked_fixed_ranked_broadcast_lhs_vector) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<1>>;
+    auto shape1 = ntt::make_ranked_shape(16);
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape1));
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::ranked_shape<4>>;
+    auto shape3 = ntt::make_ranked_shape(1, 3, 16, 16);
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3(shape3));
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape3));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, ranked_fixed_ranked_broadcast_rhs_vector) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape1 = ntt::make_ranked_shape(1, 3, 16, 16);
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape1));
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<16>>;
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::ranked_shape<4>>;
+    auto shape3 = ntt::make_ranked_shape(1, 3, 16, 16);
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3(shape3));
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape3));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, ranked_fixed_ranked_broadcast_multidirectional) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape1 = ntt::make_ranked_shape(1, 3, 1, 16);
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape1));
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<3, 1, 16, 1>>;
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::ranked_shape<4>>;
+    auto shape3 = ntt::make_ranked_shape(3, 3, 16, 16);
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3(shape3));
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape3));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, ranked_ranked_ranked) {
+    // init
+    using tensor_type = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape = ntt::make_ranked_shape(1, 3, 16, 16);
+    std::unique_ptr<tensor_type> ntt_lhs(new tensor_type(shape));
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    std::unique_ptr<tensor_type> ntt_rhs(new tensor_type(shape));
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type1 = ntt::tensor<uint8_t, ntt::ranked_shape<4>>;
+    std::unique_ptr<tensor_type1> ntt_output1(new tensor_type1(shape));
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type1> ntt_output2(new tensor_type1(shape));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, ranked_ranked_ranked_broadcast_lhs_scalar) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<1>>;
+    auto shape1 = ntt::make_ranked_shape(1);
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape1));
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape2 = ntt::make_ranked_shape(1, 3, 16, 16);
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape2));
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::ranked_shape<4>>;
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3(shape2));
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape2));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, ranked_ranked_ranked_broadcast_rhs_scalar) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape1 = ntt::make_ranked_shape(1, 3, 16, 16);
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape1));
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<1>>;
+    auto shape2 = ntt::make_ranked_shape(1);
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape2));
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::ranked_shape<4>>;
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3(shape1));
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape1));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, ranked_ranked_ranked_broadcast_lhs_vector) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<1>>;
+    auto shape1 = ntt::make_ranked_shape(16);
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape1));
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape2 = ntt::make_ranked_shape(1, 3, 16, 16);
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape2));
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::ranked_shape<4>>;
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3(shape2));
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape2));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, ranked_ranked_ranked_broadcast_rhs_vector) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape1 = ntt::make_ranked_shape(1, 3, 16, 16);
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape1));
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<1>>;
+    auto shape2 = ntt::make_ranked_shape(16);
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape2));
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::ranked_shape<4>>;
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3(shape1));
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape1));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
+TEST(CompareTestLess, ranked_ranked_ranked_broadcast_multidirectional) {
+    // init
+    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape1 = ntt::make_ranked_shape(1, 3, 1, 16);
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape1));
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+
+    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    auto shape2 = ntt::make_ranked_shape(3, 1, 16, 1);
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape2));
+    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+
+    // ntt
+    using tensor_type3 = ntt::tensor<uint8_t, ntt::ranked_shape<4>>;
+    auto shape3 = ntt::make_ranked_shape(3, 3, 16, 16);
+    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3(shape3));
+    ntt::compare<ntt::ops::less>(*ntt_lhs, *ntt_rhs, *ntt_output1);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);
+    auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);
+    auto ort_output = ortki_Less(ort_lhs, ort_rhs);
+
+    // compare
+    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3(shape3));
+    NttTest::ort2ntt(ort_output, *ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+}
+
 template <typename T, size_t vl> void test_vector() {
     ntt::vector<T, vl> ntt_lhs, ntt_rhs;
     NttTest::init_tensor(ntt_lhs, static_cast<T>(-10), static_cast<T>(10));

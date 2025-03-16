@@ -83,57 +83,10 @@ void benchmark_ntt_scatter_nd(T init_low, T init_high, int64_t idx0,
               << " cycles" << std::endl;
 }
 
-template <typename T, size_t N>
-void benchmark_ntt_tensor_copy(T init_low, T init_high) {
-// #if __riscv
-//     constexpr size_t size1 = 300;
-//     constexpr size_t size2 = 600;
-// #elif __x86_64__
-//     constexpr size_t size1 = 2000;
-//     constexpr size_t size2 = 2000;
-// #else
-//     constexpr size_t size1 = 2000;
-//     constexpr size_t size2 = 2000;
-// #endif
-    using input_type = ntt::tensor<float, ntt::fixed_shape<5, 6, 8, 32>>;
-    using output_type = ntt::tensor<float, ntt::fixed_shape<5, 6, 8, 32>>;
-
-    output_type ntt_output;
-
-    // Initialize input with random values
-    std::unique_ptr<input_type> input(new input_type);
-    NttTest::init_tensor(*input, init_low, init_high);
-
-    // warm up
-    constexpr size_t warmup_size = 10;
-    for (size_t i = 0; i < warmup_size; i++) {
-        ntt::tensor_copy(*input, ntt_output);
-        asm volatile("" ::"g"(ntt_output));
-    }
-
-    // run
-    constexpr size_t run_size = 2000;
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_size; i++) {
-        ntt::tensor_copy(*input, ntt_output);
-        asm volatile("" ::"g"(ntt_output));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    auto element_size = output_type::size();
-    std::cout << __FUNCTION__ << " took " << std::setprecision(1) << std::fixed
-              << static_cast<float>(t2 - t1) / run_size / element_size
-              << " cycles" << std::endl;
-}
-
 int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
 
     constexpr size_t N = NTT_VLEN / (sizeof(float) * 8);
-    // Roofline
-    benchmark_ntt_tensor_copy<float, N>(-10.f, 10.f);
-    // Real
-    benchmark_ntt_scatter_nd<float, N>(-10.f, 10.f, 1, 2, 3, 4, 5);
     benchmark_ntt_scatter_nd<float, N>(-10.f, 10.f, 1, 3, 5, 7, 9);
 }
