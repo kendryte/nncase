@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 #pragma once
+#include "arch/cpu/topology.h"
+#include "shape.h"
 #include <cstddef>
 #include <cstdint>
 
@@ -28,4 +30,4 @@ void thread_free(void *ptr);
 } // namespace nncase::ntt::runtime
 
 extern "C" void thread_main(std::byte *const *inouts, const std::byte *rdata,
-                            const std::byte *local_rdata);
+                            const std::byte *local_rdata, nncase::ntt::ranked_shape<(size_t)nncase::ntt::distributed::topology::count__> program_ids);
