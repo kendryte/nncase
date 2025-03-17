@@ -116,7 +116,7 @@ public class CPUTarget : ITarget
             });
         }
 
-        passManager.Add<Passes.Distributed.AutoDistributedPass>(true, Kind);
+        // passManager.Add<Passes.Distributed.AutoDistributedPass>(true, Kind);
 
         passManager.Add<InferRangePass>();
         passManager.Add<OptimizeByRangePass>();
@@ -127,23 +127,23 @@ public class CPUTarget : ITarget
         passManager.Add<CPUFusionToModulePass>();
         passManager.Add<OptimizeByRangePass>();
 
-        passManager.AddWithName<DataflowPass>("LowerToAffine").Configure(p =>
-        {
-            p.Add<Passes.Rules.CPU.Affine.LowerPack>();
-            p.Add<Passes.Rules.CPU.Affine.LowerUnary>();
-            p.Add<Passes.Rules.CPU.Affine.LowerSwish>();
-            p.Add<Passes.Rules.CPU.Affine.LowerBinary>();
-            p.Add<Passes.Rules.CPU.Affine.LowerPackedBinary>();
-            p.Add<Passes.Rules.CPU.Affine.LowerMatmul>();
-            p.Add<Passes.Rules.CPU.Affine.LowerTranspose>();
-            p.Add<Passes.Rules.CPU.Affine.LowerUnpack>();
-            p.Add<Passes.Rules.CPU.Affine.LowerReduce>();
-            p.Add<Passes.Rules.CPU.Affine.LowerCast>();
-        });
+        // passManager.AddWithName<DataflowPass>("LowerToAffine").Configure(p =>
+        // {
+        //     p.Add<Passes.Rules.CPU.Affine.LowerPack>();
+        //     p.Add<Passes.Rules.CPU.Affine.LowerUnary>();
+        //     p.Add<Passes.Rules.CPU.Affine.LowerSwish>();
+        //     p.Add<Passes.Rules.CPU.Affine.LowerBinary>();
+        //     p.Add<Passes.Rules.CPU.Affine.LowerPackedBinary>();
+        //     p.Add<Passes.Rules.CPU.Affine.LowerMatmul>();
+        //     p.Add<Passes.Rules.CPU.Affine.LowerTranspose>();
+        //     p.Add<Passes.Rules.CPU.Affine.LowerUnpack>();
+        //     p.Add<Passes.Rules.CPU.Affine.LowerReduce>();
+        //     p.Add<Passes.Rules.CPU.Affine.LowerCast>();
+        // });
 
         // concat/reshape lower
         // tile and lower to tir.
-        passManager.Add<AutoTilePass>(Kind);
+       //  passManager.Add<AutoTilePass>(Kind);
 
         passManager.Add<CPUFusionToTirPass>();
 
