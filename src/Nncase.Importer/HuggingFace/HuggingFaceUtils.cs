@@ -283,7 +283,7 @@ internal static class HuggingFaceUtils
         public List<object>? KeyCache;
         public List<object>? ValueCache;
 
-        public int GetSeqLength(int layerCount = 0)
+        public long GetSeqLength(int layerCount = 0)
         {
             bool isEmptyLayer =
                 KeyCache?.Count == 0
