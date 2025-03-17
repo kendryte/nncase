@@ -30,6 +30,21 @@ internal partial class Matcher
     }
 
     /// <inheritdoc/>
+    protected override bool VisitIf(If expr, IPattern pattern)
+    {
+        if (pattern is IfPattern exprPattern)
+        {
+            return exprPattern.MatchLeaf(expr)
+                && Visit(expr.Then, exprPattern.Then)
+                && Visit(expr.Else, exprPattern.Else)
+                && VisitVArgsPattern(expr.Arguments, exprPattern.Arguments)
+            ;
+        }
+
+        return DefaultVisit(expr, pattern);
+    }
+
+    /// <inheritdoc/>
     protected override bool VisitFunction(Function expr, IPattern pattern)
     {
         if (pattern is FunctionPattern exprPattern)

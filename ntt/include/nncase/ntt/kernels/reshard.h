@@ -31,7 +31,7 @@ __device__ extern uint8_t collective_pool_ptr[];
 #else
 extern uint8_t collective_pool_ptr[];
 #endif
-}
+} // namespace tar
 
 namespace nncase::ntt {
 template <class SrcTensor, class DestTensor>
@@ -128,15 +128,28 @@ struct reshard_impl<SrcTensor, DestTensor> {
             constexpr auto non_split_mesh_strides =
                 default_strides(non_split_mesh_dims);
             constexpr auto non_split_tensor_axes = get_non_split_tensor_axes();
+            auto [split_counts, split_count_strides] = [&] {
 #if defined(__GNUC__) && !defined(__clang__)
-            constexpr auto split_counts =
-                get_non_split_tensor_axes_split_counts(global_shape_type{});
-            constexpr auto split_count_strides = default_strides(split_counts);
+                if constexpr (is_fixed_dims_v<global_shape_type>) {
+                    constexpr auto split_counts =
+                        get_non_split_tensor_axes_split_counts(
+                            global_shape_type{});
+                    constexpr auto split_count_strides =
+                        default_strides(split_counts);
+                    return std::make_pair(split_counts, split_count_strides);
+                } else {
+                    auto split_counts =
+                        get_non_split_tensor_axes_split_counts(global_shape);
+                    auto split_count_strides = default_strides(split_counts);
+                    return std::make_pair(split_counts, split_count_strides);
+                }
 #else
-            auto split_counts =
-                get_non_split_tensor_axes_split_counts(global_shape);
-            auto split_count_strides = default_strides(split_counts);
+                auto split_counts =
+                    get_non_split_tensor_axes_split_counts(global_shape);
+                auto split_count_strides = default_strides(split_counts);
+                return std::make_pair(split_counts, split_count_strides);
 #endif
+            }();
 
             auto non_split_mesh_indexes =
                 get_non_split_mesh_indexes(shard_index);
@@ -217,9 +230,9 @@ struct reshard_impl<SrcTensor, DestTensor> {
 #else
                 auto split_factor = total_log_dim == 0.f
 #endif
-                                        ? 0.f
-                                        : (log_dims[i] / total_log_dim *
-                                           std::log(expected_split_count));
+                                         ? 0.f
+                                         : (log_dims[i] / total_log_dim *
+                                            std::log(expected_split_count));
                 auto dim = shape.at(non_split_tensor_axes[i]);
                 split_counts[i] = std::max(
                     size_t(1),

@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Google.OrTools.ConstraintSolver;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Affine;
 using Nncase.Schedule;
@@ -20,7 +21,7 @@ public sealed class BinaryEvaluator : ITypeInferencer<Binary>, IKernelInfoEvalua
     {
         var domain = context.AccessMaps[0].Domains;
         var primitives = Enumerable.Repeat(1, domain.Length).ToArray();
-        var multipliers = Enumerable.Repeat(new ValueRange<int>(1, int.MaxValue), domain.Length).ToArray();
+        var multipliers = Enumerable.Repeat(new ValueRange<long>(1, int.MaxValue), domain.Length).ToArray();
         var bufferInfos = new MicroKernelBufferInfo[context.BufferShapes.Length];
         var opt = (ICpuTargetOptions)context.TargetOptions;
         bufferInfos[0] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Read);
@@ -29,7 +30,7 @@ public sealed class BinaryEvaluator : ITypeInferencer<Binary>, IKernelInfoEvalua
         return new MicroKernelInfo(primitives, multipliers, bufferInfos, GetComputeCycle);
     }
 
-    public string Visit(IIRPrinterContext context, Binary target, bool iLmode)
+    public string Visit(IPrintOpContext context, Binary target)
     {
         return $"Binary({target.DisplayProperty()}, {context.GetArgument(target, Binary.Lhs)}, {context.GetArgument(target, Binary.Rhs)}, {context.GetArgument(target, Binary.Output)})";
     }

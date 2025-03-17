@@ -13,8 +13,6 @@ internal class CPUModule : IApplicationPart
 {
     public void ConfigureServices(IRegistrator registrator)
     {
-        registrator.RegisterManyInterface<BoxingEvaluator>(reuse: Reuse.Singleton);
-        registrator.RegisterManyInterface<ForceBoxingEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<LoadEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<StoreEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<PackEvaluator>(reuse: Reuse.Singleton);

@@ -25,7 +25,7 @@ public sealed partial class PackedReduce : Op
 
     public IRArray<int> PadedNums { get; }
 
-    public static (int[] OutPackAxes, int[] OutPadNums, int[] OutLanes, int[] OutShape) ComputeOutputInfo(PackedReduce target, int[] inShape, int[] inLanes)
+    public static (int[] OutPackAxes, int[] OutPadNums, int[] OutLanes, long[] OutShape) ComputeOutputInfo(PackedReduce target, long[] inShape, int[] inLanes)
     {
         var packedAxes = target.PackedAxes.ToList();
         var padedNums = target.PadedNums.ToList();

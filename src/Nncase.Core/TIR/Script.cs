@@ -94,7 +94,7 @@ public static class T
     /// <returns> for builder. </returns>
     public static ISequentialBuilder<For> ForLoop(out Var loopVar, Range domain, LoopMode mode, [CallerArgumentExpression("loopVar")] string var_name = "v")
     {
-        var newLoopVar = loopVar = new Var(var_name.StartsWith("var ") ? var_name[4..] : var_name, domain.Start.CheckedType);
+        var newLoopVar = loopVar = new Var(var_name.StartsWith("var ") ? var_name[4..] : var_name, DataTypes.Int64);
         return new SequentialBuilder<For>(body => new For(newLoopVar, domain, mode, body));
     }
 
@@ -198,7 +198,7 @@ public static class T
     /// ));
     /// </code>
     /// </summary>
-    public static ISequentialBuilder<PrimFunction> PrimFunc(string name, string module_kind, params Buffer[] parameters)
+    public static ISequentialBuilder<PrimFunction> PrimFunc(string name, string module_kind, params Expr[] parameters)
     {
         return new SequentialBuilder<PrimFunction>(body => new PrimFunction(name, module_kind, body, parameters));
     }
@@ -229,10 +229,12 @@ public static class T
             name = name[4..];
         }
 
-        var dimensions = tensorType.Shape.ToValueArray();
-        (var size, var strides) = TensorUtilities.GetTensorSizeAndStrides(tensorType, distributedType);
+        var dimensions = tensorType.Shape.Dimensions.ToArray();
+        (var size, var strides) = location is MemoryLocation.Input or MemoryLocation.Output
+            ? TensorUtilities.GetTensorSizeAndContiguousStrides(tensorType, distributedType)
+            : TensorUtilities.GetTensorMaxSizeAndStridesExpr(tensorType, distributedType);
         var memspan = new MemSpan(size, location);
-        buffer = new Buffer(name, tensorType.DType, memspan, dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray(), distributedType);
+        buffer = new Buffer(name, tensorType.DType, memspan, dimensions, strides, distributedType);
         return buffer;
     }
 
@@ -271,10 +273,12 @@ public static class T
             name = name[4..];
         }
 
-        var dimensions = tensorType.Shape.ToValueArray();
-        (var size, var strides) = TensorUtilities.GetTensorSizeAndStrides(tensorType, distributedType);
+        var dimensions = tensorType.Shape.Dimensions.ToArray();
+        (var size, var strides) = location is MemoryLocation.Input or MemoryLocation.Output
+            ? TensorUtilities.GetTensorSizeAndContiguousStrides(tensorType, distributedType)
+            : TensorUtilities.GetTensorMaxSizeAndStridesExpr(tensorType, distributedType);
         var memspan = new MemSpan(start, size, location, hierarchy);
-        buffer = new Buffer(name, tensorType.DType, memspan, dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray(), distributedType);
+        buffer = new Buffer(name, tensorType.DType, memspan, dimensions, strides, distributedType);
         return buffer;
     }
 
@@ -289,8 +293,8 @@ public static class T
         }
 
         var dimensions = @const.CheckedShape.ToValueArray();
-        (var size, var strides) = TensorUtilities.GetTensorSizeAndStrides(@const.CheckedTensorType, @const.ValueType as DistributedType);
-        var memspan = new MemSpan(IR.F.Buffer.DDrOf(@const), size, @const.ValueType is DistributedType ? MemoryLocation.ThreadLocalRdata : MemoryLocation.Rdata);
+        (var maxSize, var strides) = TensorUtilities.GetTensorMaxSizeAndStrides(@const.CheckedTensorType, @const.ValueType as DistributedType);
+        var memspan = new MemSpan(IR.F.Buffer.DDrOf(@const), maxSize, @const.ValueType is DistributedType ? MemoryLocation.ThreadLocalRdata : MemoryLocation.Rdata);
         buffer = new Buffer(name, @const.CheckedDataType, memspan, dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray(), @const.ValueType as DistributedType);
         return buffer;
     }
@@ -323,9 +327,11 @@ public static class T
         }
 
         @var = new Var(TensorType.Pointer(tensorType.DType));
-        var dimensions = tensorType.Shape.ToValueArray();
-        (var size, var strides) = TensorUtilities.GetTensorSizeAndStrides(tensorType, distributedType);
-        buffer = new Buffer(name, tensorType.DType, new MemSpan(@var, size, location, hierarchy), dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray(), null);
+        var dimensions = tensorType.Shape.Dimensions.ToArray();
+        (var size, var strides) = location is MemoryLocation.Input or MemoryLocation.Output
+            ? TensorUtilities.GetTensorSizeAndContiguousStrides(tensorType, distributedType)
+            : TensorUtilities.GetTensorMaxSizeAndStridesExpr(tensorType, distributedType);
+        buffer = new Buffer(name, tensorType.DType, new MemSpan(@var, size, location, hierarchy), dimensions, strides.Select(i => (Expr)i).ToArray(), null);
         return buffer;
     }
 
@@ -358,9 +364,9 @@ public static class T
 
     public static ISequentialBuilder<For> ForSegment(out (Expr B, Expr E) seg, Expr low, Expr chunck, Expr high)
     {
-        var count = IR.F.Tensors.Cast((high - low) / IR.F.Tensors.Cast(chunck, DataTypes.Float32), DataTypes.Int32);
+        var count = IR.F.Math.CeilDiv(high - low, chunck);
         var forloop = T.Serial(out var i, (0, count));
-        seg = (i * chunck, IR.F.Math.Min((i + 1) * chunck, high));
+        seg = (i * chunck, IR.F.Math.Min((i + 1L) * chunck, high));
         return forloop;
     }
 

@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -48,4 +49,11 @@ public interface IEGraphRewriteProvider
     /// <param name="options">Options.</param>
     /// <returns>Rewrited EGraph.</returns>
     IEGraph ERewrite(IEGraph eGraph, IEnumerable<IRewriteRule> rules, RunPassContext options);
+}
+
+public interface ISimplifyProvider
+{
+    Expr SimplifyForDimension(Expr expr);
+
+    bool TryGetMaxShape(Shape shape, [MaybeNullWhen(false)] out long[] maxShape);
 }

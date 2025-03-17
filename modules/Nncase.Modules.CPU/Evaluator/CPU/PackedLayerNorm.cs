@@ -14,7 +14,7 @@ using OrtKISharp;
 namespace Nncase.Evaluator.IR.CPU;
 
 public sealed class PackedLayerNormEvaluator : IEvaluator<PackedLayerNorm>, ITypeInferencer<PackedLayerNorm>, ICostEvaluator<PackedLayerNorm>,
-    IShapeEvaluator<PackedLayerNorm>, IMetricEvaluator<PackedLayerNorm>
+    IMetricEvaluator<PackedLayerNorm>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, PackedLayerNorm target)
@@ -29,7 +29,7 @@ public sealed class PackedLayerNormEvaluator : IEvaluator<PackedLayerNorm>, ITyp
         var unpackedScale = CPUEvaluatorUtility.UnpackTensor(scale, packAxes, padedNums, out _);
         var unpackedBias = CPUEvaluatorUtility.UnpackTensor(bias, packAxes, padedNums, out _);
 
-        var shape = unpackedInput.Shape.Select(i => (int)i).ToArray();
+        var shape = unpackedInput.Shape;
         var inputBuffer = unpackedInput.BytesBuffer.ToArray();
         var inputSpan = MemoryMarshal.Cast<byte, float>(inputBuffer);
         var scaleBuffer = unpackedScale.BytesBuffer.ToArray();
@@ -41,7 +41,7 @@ public sealed class PackedLayerNormEvaluator : IEvaluator<PackedLayerNorm>, ITyp
         var outputTensor = OrtKISharp.Tensor.MakeTensor(new Memory<float>(output), OrtDataType.Float, unpackedInput.Shape);
         outputTensor = CPUEvaluatorUtility.RepackTensor(outputTensor, lanes, target.PackedAxes, target.PadedNums);
 
-        return Value.FromTensor(Tensor.FromBytes(new VectorType(DataTypes.Float32, lanes), outputTensor.BytesBuffer.ToArray(), outputTensor.Shape.SkipLast(target.PackedAxes.Count).Select(i => (int)i).ToArray()));
+        return Value.FromTensor(Tensor.FromBytes(new VectorType(DataTypes.Float32, lanes), outputTensor.BytesBuffer.ToArray(), outputTensor.Shape.SkipLast(target.PackedAxes.Count).Select(i => i).ToArray()));
     }
 
     /// <inheritdoc/>
@@ -107,8 +107,6 @@ public sealed class PackedLayerNormEvaluator : IEvaluator<PackedLayerNorm>, ITyp
             [MetricFactorNames.Parallel] = 4,
         };
     }
-
-    public Expr Visit(IShapeEvaluateContext context, PackedLayerNorm target) => context.GetArgumentShape(target, PackedLayerNorm.Input);
 
     private IRType Visit(TensorType input)
     {

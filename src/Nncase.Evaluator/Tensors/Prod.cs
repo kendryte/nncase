@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Prod"/>.
 /// </summary>
-public class ProdEvaluator : IEvaluator<Prod>, ITypeInferencer<Prod>, ICostEvaluator<Prod>, IShapeEvaluator<Prod>, IMetricEvaluator<Prod>
+public class ProdEvaluator : IEvaluator<Prod>, ITypeInferencer<Prod>, ICostEvaluator<Prod>, IMetricEvaluator<Prod>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Prod prod)
@@ -42,8 +42,6 @@ public class ProdEvaluator : IEvaluator<Prod>, ITypeInferencer<Prod>, ICostEvalu
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(inputType, CostUtility.GetCPUCyclesOfBinary(BinaryOp.Mul)),
         };
     }
-
-    public Expr Visit(IShapeEvaluateContext context, Prod target) => 1;
 
     public Metric Visit(IMetricEvaluateContext context, Prod target)
     {

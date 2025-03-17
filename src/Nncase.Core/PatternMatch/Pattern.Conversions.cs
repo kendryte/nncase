@@ -46,6 +46,8 @@ public abstract partial record Pattern
 
     public static implicit operator Pattern(int[] span) => Const.FromTensor(Tensor.From<int>(span));
 
+    public static implicit operator Pattern(long[] span) => Const.FromTensor(Tensor.From<long>(span));
+
     public static implicit operator Pattern(float[] span) =>
         Const.FromTensor(Tensor.From<float>(span));
 

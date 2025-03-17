@@ -20,7 +20,7 @@ namespace Nncase.Evaluator.Tensors;
 /// Evaluator for <see cref="Concat"/>.
 /// </summary>
 public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICostEvaluator<Concat>,
-    IShapeEvaluator<Concat>, IMetricEvaluator<Concat>
+    IMetricEvaluator<Concat>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Concat cat)
@@ -49,27 +49,21 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
         };
     }
 
-    public Expr Visit(IShapeEvaluateContext context, Concat target)
-    {
-        var inShape = context.GetArgumentShape(target, Concat.Input);
-        var axisV = ShapeExprUtility.Positive(target.Axis, inShape[0]);
-        var inShapes = ((IR.Tuple)inShape).Fields.ToArray().Select(x => Cast(x, DataTypes.Int64)).ToArray();
-        var dim = inShapes.ToArray().Aggregate((Expr)0L, (sum, shape) => sum + shape[axisV]);
-        var outShape = ShapeExprUtility.Replace(inShapes[0], axisV, dim);
-        return outShape;
-    }
-
     public Metric Visit(IMetricEvaluateContext context, Concat target) => Metric.Zero;
 
     private IRType? CheckType(TupleType inputs)
     {
-        bool? allScalar = null;
         DataType? allDType = null;
         foreach (var (i, input) in Enumerable.Range(0, inputs.Count).Select(i => (i, inputs[i])))
         {
             TensorType type;
             if (input is TensorType a)
             {
+                if (a.IsScalar)
+                {
+                    return new InvalidType($"Scalar tensor (at {i}) cannot be concatenated");
+                }
+
                 type = a;
             }
             else if (input is DistributedType { TensorType: TensorType b })
@@ -86,18 +80,12 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
                 return new TensorType(type.DType, Shape.Unranked);
             }
 
-            allScalar = (allScalar ?? type.IsScalar) & type.IsScalar;
             allDType ??= type.DType;
             if (allDType != type.DType)
             {
                 return new InvalidType(
                     $"The ConCat Item[{i}] Must Be {allDType} But Get {type.DType.GetDisplayName()}");
             }
-        }
-
-        if (allScalar == true && allDType is not null)
-        {
-            return new TensorType(allDType, new[] { inputs.Count });
         }
 
         return null;
@@ -146,13 +134,9 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
                         continue;
                     }
 
-                    var d = GetTensorType(inType).Shape[i];
-                    if (d.IsUnknown)
-                    {
-                        return Dimension.Unknown;
-                    }
-
-                    if (d.FixedValue != GetTensorType(inputs[0]).Shape[i])
+                    var a = GetTensorType(inType).Shape[i];
+                    var b = GetTensorType(inputs[0]).Shape[i];
+                    if (a.IsFixed && b.IsFixed && a != b)
                     {
                         allAxisDimIsSame = false;
                     }
@@ -165,7 +149,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
                 else
                 {
                     invalidType = new InvalidType("Concat dims that except the shape of axis dim are different");
-                    return Dimension.Unknown;
+                    return -1;
                 }
             }
         });
@@ -227,18 +211,8 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
     // else get sum of dims
     private Dimension AxisDim(TupleType inputs, int axisValue)
     {
-        var allAxisDimIsFixed = inputs.Fields.Aggregate(
-            true,
-            (prod, next) => prod && (next switch { TensorType t => t, DistributedType d => d.TensorType, _ => throw new NotSupportedException() }).Shape[axisValue].IsFixed);
-        if (allAxisDimIsFixed)
-        {
-            return inputs.Fields.Aggregate(
-                0,
-                (prod, next) => prod + (next switch { TensorType t => t, DistributedType d => d.TensorType, _ => throw new NotSupportedException() }).Shape[axisValue].FixedValue);
-        }
-        else
-        {
-            return Dimension.Unknown;
-        }
+        return inputs.Fields.Aggregate(
+            (Dimension)0,
+            (prod, next) => prod + (next switch { TensorType t => t, DistributedType d => d.TensorType, _ => throw new NotSupportedException() }).Shape[axisValue]);
     }
 }

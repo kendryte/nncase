@@ -92,14 +92,14 @@ public static class Value
     /// <returns>Created value.</returns>
     public static IValue FromConst(Const @const)
     {
-        if (@const is TensorConst tc)
+        switch (@const)
         {
-            return FromTensor(tc.Value);
-        }
-        else
-        {
-            var tpc = (TupleConst)@const;
-            return tpc.Value;
+            case TensorConst tc:
+                return FromTensor(tc.Value);
+            case TupleConst tpc:
+                return tpc.Value;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(@const));
         }
     }
 }

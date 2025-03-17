@@ -44,15 +44,13 @@ public class FlattenEvaluator : IEvaluator<Flatten>, ITypeInferencer<Flatten>, I
     {
         if (context.GetArgument(target, Flatten.Axis) is TensorConst axisV)
         {
-            if (input.Shape.IsFixed)
-            {
-                var axisValue = Util.PositiveIndex(axisV.Value.ToScalar<int>(), input);
-                var first = input.Shape.Take(axisValue).Aggregate(1, (x, y) => x * y.FixedValue);
-                var second = input.Shape.Take(axisValue..input.Shape.Count).Aggregate(1, (x, y) => x * y.FixedValue);
-                return input with { Shape = new[] { first, second } };
-            }
+            var axisValue = Util.PositiveIndex(axisV.Value.ToScalar<int>(), input);
+            var first = input.Shape.Take(axisValue).Aggregate((Dimension)1, (x, y) => x * y);
+            var second = input.Shape.Take(axisValue..input.Shape.Rank).Aggregate((Dimension)1, (x, y) => x * y);
+            return input with { Shape = new[] { first, second } };
         }
 
-        return input with { Shape = Shape.Unknown(2) };
+        // return input with { Shape = Shape.Unknown(2) };
+        throw new NotImplementedException();
     }
 }

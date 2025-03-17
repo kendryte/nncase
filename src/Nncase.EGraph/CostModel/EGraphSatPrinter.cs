@@ -37,18 +37,20 @@ public partial class EGraphPrinter
         // 1. display each enode costs.
         foreach (var (enode, (dotnode, table)) in NodesMap)
         {
-            var cost = costModel[enode];
-            if (cost != CostModel.Cost.Zero)
+            if (costModel.TryGet(enode, out var cost))
             {
-                table.AddRow(row =>
+                if (cost != CostModel.Cost.Zero)
                 {
-                    foreach (var (k, v) in cost.Factors)
+                    table.AddRow(row =>
                     {
-                        row.AddCell($"{k}: {v:F2}");
-                    }
+                        foreach (var (k, v) in cost.Factors)
+                        {
+                            row.AddCell($"{k}: {v:F2}");
+                        }
 
-                    row.AddCell($"Score: {cost.Score:F2}");
-                });
+                        row.AddCell($"Score: {cost.Score:F2}");
+                    });
+                }
             }
 
             dotnode.ToPlainHtmlNode(table);

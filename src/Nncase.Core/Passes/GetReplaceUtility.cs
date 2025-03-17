@@ -61,11 +61,11 @@ public static class Utility
         return Apply(WithTmpTypeImpl, inputCtor);
     }
 
-    public static Fx WithTmp4DShape(Fx inputCtor, int[] originOutShape)
+    public static Fx WithTmp4DShape(Fx inputCtor, long[] originOutShape)
     {
         Fx WithTmpGNNEShape(Fx inCtor) =>
             input =>
-                ((Func<int[], Expr>)(shape =>
+                ((Func<long[], Expr>)(shape =>
                         Reshape(
                             inCtor(Reshape(input, Get4DGNNEShape(shape))),
                             originOutShape)))(input.CheckedShape.ToValueArray());
@@ -73,13 +73,13 @@ public static class Utility
         return Apply(WithTmpGNNEShape, inputCtor);
     }
 
-    internal static int[] Get4DGNNEShape(int[] dims)
+    internal static int[] Get4DGNNEShape(long[] dims)
     {
         if (dims.Length > 4)
         {
             throw new InvalidOperationException("dims Length should <= 4");
         }
 
-        return Enumerable.Repeat(1, 4 - dims.Length).Concat(dims).ToArray();
+        return Enumerable.Repeat(1, 4 - dims.Length).Concat(dims.Select(x => checked((int)x))).ToArray();
     }
 }

@@ -16,6 +16,223 @@ using Nncase.Utilities;
 
 namespace Nncase.Diagnostics;
 
+/// <summary>
+/// a TextWirter, it's have _scope data struct.
+/// </summary>
+public sealed class ScopeWriter
+{
+    private readonly TextWriter _rootWriter;
+
+    /// <summary>
+    /// stack container.
+    /// </summary>
+    private readonly Stack<(StringBuilder, TextWriter)> _scopeStack = new();
+
+    /// <summary>
+    /// record the all var name's in this scope and parent's scope.
+    /// </summary>
+    private readonly Dictionary<string, int> _globalVarCountMap = new();
+
+    /// <summary>
+    /// the scopes var name stack.
+    /// </summary>
+    private readonly Stack<List<IPrintSymbol>> _varSymbolStack = new();
+
+    /// <summary>
+    /// current writer.
+    /// </summary>
+    private TextWriter _writer;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ScopeWriter"/> class.
+    /// ctor.
+    /// </summary>
+    /// <param name="textWriter">writer.</param>
+    /// <param name="indent_level">init indent level.</param>
+    public ScopeWriter(TextWriter textWriter, int indent_level = 0)
+    {
+        IndentLevel = indent_level;
+        _rootWriter = textWriter;
+        _writer = textWriter;
+        _varSymbolStack.Push(new());
+    }
+
+    /// <summary>
+    /// Gets or sets indent level.
+    /// </summary>
+    public int IndentLevel { get; set; }
+
+    /// <summary>
+    /// Gets current VarNamelist.
+    /// </summary>
+    private List<IPrintSymbol> VarSymbolList => _varSymbolStack.Peek();
+
+    /// <summary>
+    /// push the new string writer, tempoary record the current code into this frame.
+    /// </summary>
+    public void Push()
+    {
+        var builder = new StringBuilder();
+        TextWriter writer = new StringWriter(builder);
+        _scopeStack.Push((builder, writer));
+        _writer = writer;
+
+        _varSymbolStack.Push(new());
+    }
+
+    /// <summary>
+    /// get current frame string.
+    /// </summary>
+    public StringBuilder Pop()
+    {
+        var (builder, writer) = _scopeStack.Pop();
+        writer.Dispose();
+        if (_scopeStack.Count == 0)
+        {
+            _writer = _rootWriter;
+        }
+        else
+        {
+            _writer = _scopeStack.Peek().Item2;
+        }
+
+        foreach (var name in _varSymbolStack.Pop())
+        {
+            _globalVarCountMap[name.Name]--;
+            if (_globalVarCountMap[name.Name] == 0)
+            {
+                _globalVarCountMap.Remove(name.Name);
+            }
+        }
+
+        // VarNameList
+        return builder;
+    }
+
+    /// <summary>
+    /// insert indent and write.
+    /// </summary>
+    public void IndWrite(string? value) => Indent().Write(value);
+
+    /// <summary>
+    /// write the string builder.
+    /// </summary>
+    public void IndWrite(StringBuilder? value) => Indent().Write(value);
+
+    /// <summary>
+    /// insert indent and write line.
+    /// </summary>
+    public void IndWriteLine(string? value = null) => Indent().WriteLine(value);
+
+    /// <summary>
+    /// wrtie string builder.
+    /// </summary>
+    public void IndWriteLine(StringBuilder? value) => Indent().WriteLine(value);
+
+    /// <summary>
+    /// Append the current line tail, without the indent.
+    /// </summary>
+    public void Append(string? value) => _writer.Write(value);
+
+    /// <summary>
+    /// wrtie string builder.
+    /// </summary>
+    public void Append(StringBuilder value) => _writer.Write(value);
+
+    /// <summary>
+    /// Append the current line tail, without the indent, but add new line.
+    /// </summary>
+    public void AppendLine(string? value) => _writer.WriteLine(value);
+
+    /// <summary>
+    /// wrtie string builder.
+    /// </summary>
+    public void AppendLine(StringBuilder value) => _writer.WriteLine(value);
+
+    /// <summary>
+    /// remove last char.
+    /// </summary>
+    public void RemoveLast()
+    {
+        var sb = _scopeStack.Peek().Item1;
+        sb.Remove(sb.Length - 1, 1);
+    }
+
+    /// <summary>
+    /// add the indent level, return the indent mananger for auto indent down.
+    /// </summary>
+    public IndentMananger IndentUp(int indent_diff = 2)
+    {
+        return new(this, indent_diff);
+    }
+
+    /// <summary>
+    /// get the unique var symbol.
+    /// </summary>
+    /// <param name="var">var name.</param>
+    /// <param name="prefix">prefix name.</param>
+    public IPrintSymbol GetUniqueVarSymbol(Var @var, string prefix = "")
+    {
+        if (!_globalVarCountMap.TryGetValue(prefix + @var.Name + "#" + @var.GlobalVarIndex.ToString(), out var count))
+        {
+            count = 0;
+        }
+
+        var symbol = new ScriptSymobl(new(prefix + @var.Name + "#" + @var.GlobalVarIndex.ToString() + (count == 0 ? string.Empty : $"_{count}")), @var.Name, false);
+        count++;
+        _globalVarCountMap[@var.Name] = count;
+        return symbol;
+    }
+
+    /// <summary>
+    /// insert the indent.
+    /// </summary>
+    private TextWriter Indent()
+    {
+        for (int i = 0; i < IndentLevel; i++)
+        {
+            _writer.Write(" ");
+        }
+
+        return _writer;
+    }
+}
+
+/// <summary>
+/// mananger the wirte indent.
+/// </summary>
+public sealed class IndentMananger : IDisposable
+{
+    /// <summary>
+    /// the parent scope wirter.
+    /// </summary>
+    private readonly ScopeWriter _parent;
+
+    /// <summary>
+    /// the indent add/sub diff value.
+    /// </summary>
+    private readonly int _indentDiff;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IndentMananger"/> class.
+    /// <see cref="IndentMananger"/>.
+    /// </summary>
+    public IndentMananger(ScopeWriter parent, int level_diff = 1)
+    {
+        _parent = parent;
+        _indentDiff = level_diff;
+        _parent.IndentLevel += _indentDiff;
+    }
+
+    /// <summary>
+    /// reduce indentLevel.
+    /// </summary>
+    public void Dispose()
+    {
+        _parent.IndentLevel -= _indentDiff;
+    }
+}
+
 internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
 {
     private readonly ScopeWriter _scope;

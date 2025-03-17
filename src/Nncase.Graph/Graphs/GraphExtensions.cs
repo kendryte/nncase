@@ -16,14 +16,23 @@ public static class GraphExtensions
     public static IEnumerable<TEdge> OutEdges<TVertex, TEdge>(this IBidirectionalGraph<TVertex, TEdge> subGraph, IBidirectionalGraph<TVertex, TEdge> parentGraph)
          where TEdge : IEdge<TVertex> => subGraph.Vertices.Select(v => parentGraph.OutEdges(v)).SelectMany(e => e).Where(e => !subGraph.ContainsVertex(e.Target));
 
+    /// <summary>
+    /// Get the in vertices which in degree is 0 in this graph.
+    /// </summary>
     public static IEnumerable<TVertex> InVertices<TVertex, TEdge>(this IBidirectionalGraph<TVertex, TEdge> graph)
          where TEdge : IEdge<TVertex>
         => graph.Vertices.Where(v => graph.InDegree(v) == 0);
 
+    /// <summary>
+    /// Get the out vertices which out degree is 0 in this graph.
+    /// </summary>
     public static IEnumerable<TVertex> OutVertices<TVertex, TEdge>(this IBidirectionalGraph<TVertex, TEdge> graph)
          where TEdge : IEdge<TVertex>
         => graph.Vertices.Where(v => graph.OutDegree(v) == 0);
 
+    /// <summary>
+    /// Get the out vertices which used by external in this graph.
+    /// </summary>
     public static IEnumerable<TVertex> OutVertices<TVertex, TEdge>(this IBidirectionalGraph<TVertex, TEdge> subGraph, IBidirectionalGraph<TVertex, TEdge> parentGraph)
          where TEdge : IEdge<TVertex>
     {

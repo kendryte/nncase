@@ -81,7 +81,7 @@ public class UnitTestEvaluator : TestClassBase
         var input = OrtKI.Random(1, 3, 224, 224).ToTensor();
         var image = Imaging.ResizeImage(ImageResizeMode.Bilinear, input, Array.Empty<int>(), new[] { 1, 3, 112, 112 }, isTFResize: true);
         image.InferenceType();
-        Assert.Equal(new[] { 1, 3, 112, 112 }, image.Evaluate().AsTensor().Dimensions.ToArray());
+        Assert.Equal([1, 3, 112, 112], image.Evaluate().AsTensor().Dimensions.ToArray());
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public class UnitTestEvaluator : TestClassBase
         var input = OrtKI.Random(1, 3, 224, 224).ToTensor();
         var image = Imaging.ResizeImage(ImageResizeMode.Bilinear, input, Array.Empty<float>(), new[] { 1, 3, 112, 112 }, isTFResize: false);
         image.InferenceType();
-        Assert.Equal(new[] { 1, 3, 112, 112 }, image.Evaluate().AsTensor().Dimensions.ToArray());
+        Assert.Equal([1, 3, 112, 112], image.Evaluate().AsTensor().Dimensions.ToArray());
     }
 
     [Fact]

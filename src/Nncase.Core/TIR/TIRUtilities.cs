@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR;
 
 namespace Nncase.TIR;
 
@@ -20,7 +21,7 @@ public static class TIRUtilities
     /// </summary>
     public static IReadOnlyList<(IR.Expr Before, IR.Expr After)> ComputePaddings(IReadOnlyList<TIR.Range> bounds, IR.Shape shape) =>
     bounds.Select((bound, i) =>
-      ((IR.Expr)IR.F.Math.Max(-bound.Start, 0), (IR.Expr)IR.F.Math.Max(bound.Stop - shape[i].FixedValue, 0))).ToArray();
+      ((IR.Expr)IR.F.Math.Max(-bound.Start, 0L), (IR.Expr)IR.F.Math.Max((bound.Stop - shape[i]).ToExpr(), 0L))).ToArray();
 
     /// <summary>
     /// give two bounds compute paddings.
@@ -28,8 +29,8 @@ public static class TIRUtilities
     public static IReadOnlyList<(IR.Expr Before, IR.Expr After)> ComputePaddings(IReadOnlyList<TIR.Range> bounds, IReadOnlyList<TIR.Range> target_bounds)
       => bounds.Zip(target_bounds).
         Select(it =>
-          ((IR.Expr)IR.F.Math.Max(-it.First.Start, 0),
-           (IR.Expr)IR.F.Math.Max(it.First.Stop - (it.Second.Stop - it.Second.Start), 0))).ToArray();
+          ((IR.Expr)IR.F.Math.Max(-it.First.Start, 0L),
+           (IR.Expr)IR.F.Math.Max(it.First.Stop - (it.Second.Stop - it.Second.Start), 0L))).ToArray();
 
     /// <summary>
     /// compute the no padding bounds.
@@ -68,7 +69,7 @@ public static class TIRUtilities
     public static IReadOnlyList<TIR.Range> ClampBounds(IReadOnlyList<TIR.Range> bounds, IR.Shape shape) =>
       bounds.Zip(shape).Select(
         t => new TIR.Range(
-            IR.F.Math.Max(0, t.First.Start),
+            IR.F.Math.Max(0L, t.First.Start),
             IR.F.Math.Min(t.Second.FixedValue, t.First.Stop),
             t.First.Step)).ToArray();
 

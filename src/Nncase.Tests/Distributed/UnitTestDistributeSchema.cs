@@ -79,13 +79,22 @@ public class UnitTestDistributeSchema : TestClassBase
 
     CompileOptions.TargetOptions = options;
 
-    Function func;
-    {
-      var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 512, 8192 }));
-      input.Metadata.OutputNames = new string[] { "hidden_in" };
-      var leaky = IR.F.Math.Unary(UnaryOp.Cos, input);
-      var output = leaky;
-      func = new(output);
+        Function func;
+        {
+            var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 512, 8192 }));
+            input.Metadata.OutputNames = new string[] { "hidden_in" };
+            var leaky = IR.F.Math.Unary(UnaryOp.Cos, input);
+            var output = leaky;
+            func = new(output);
+        }
+
+        var pass = new AutoDistributedPass(true, "cpu", CompileOptions);
+
+        var result = await pass.RunAsync(func, new());
+
+        Dumpper.DumpIR(result, "result");
+
+        Assert.True(result is Function { Body: Call { Target: IR.Distributed.Boxing } boxing } && boxing.Arguments[0] is Call { Target: IR.Math.Unary { UnaryOp: UnaryOp.Cos } } unary && unary.CheckedType is DistributedType dt && dt == new DistributedType(new(DataTypes.Float32, new[] { 1, 512, 8192 }), new[] { SBP.S(1), SBP.S(2), SBP.S(2) }, new(new[] { 8, 8, 4 }, "cbt")));
     }
 
     var pass = new AutoDistributedPass(true, "cpu", CompileOptions);

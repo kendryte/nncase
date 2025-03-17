@@ -26,7 +26,7 @@ internal sealed class TilingSolver
 
     public ITargetOptions TargetOptions { get; }
 
-    public GridSchedule Solve(int[] domainBounds, int[][] bufferShapes, AffineDim[] domain, AffineMap[] accessMaps, Op computation, int elemSize)
+    public GridSchedule Solve(long[] domainBounds, long[][] bufferShapes, AffineDim[] domain, AffineMap[] accessMaps, Op computation, int elemSize)
     {
         int[] memoryCapacitys = new[] { 512 * 1024, int.MaxValue };
         int[] memoryBandWidths = new[] { 128, 4 };
@@ -90,7 +90,7 @@ internal sealed class TilingSolver
         return new(masks);
     }
 
-    private GridSchedule? SolveWithPermutation(int[] domainBounds, int[][] bufferShapes, AffineDim[,] fullDomain, AffineMap[] accessMaps, LoopMasks[] loopMasks, int[] memoryCapacitys, int[] memoryBandWidths, string prefix, ref long bestObjective, Op computation, int elemSize)
+    private GridSchedule? SolveWithPermutation(long[] domainBounds, long[][] bufferShapes, AffineDim[,] fullDomain, AffineMap[] accessMaps, LoopMasks[] loopMasks, int[] memoryCapacitys, int[] memoryBandWidths, string prefix, ref long bestObjective, Op computation, int elemSize)
     {
         var totalLevel = memoryCapacitys.Length;
         var model = new Solver("tiling");

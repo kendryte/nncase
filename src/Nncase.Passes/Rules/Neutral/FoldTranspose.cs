@@ -135,6 +135,6 @@ public sealed partial class TransposeToReshape : IRewriteRule
         }
 
         context.MatchOptions.SuppressPattern(tp, Pattern);
-        return Reshape(input, tp.CheckedShape);
+        return Reshape(input, tp.CheckedShape.ToValueArrayExpr());
     }
 }

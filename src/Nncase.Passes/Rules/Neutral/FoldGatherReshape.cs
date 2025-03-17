@@ -20,10 +20,10 @@ public sealed partial class FoldGatherReshape : RewriteRule<Pattern>
         IsReshape(IsWildcard("input"), IsTensorConst("newShape")),
         IsTensorConst("index"));
 
-    private Expr? GetReplace(Expr input, int[] newShape, IR.Tensors.Gather gather, int index)
+    private Expr? GetReplace(Expr input, long[] newShape, IR.Tensors.Gather gather, int index)
     {
         int axis = gather.Axis;
-        if (newShape.SequenceEqual(new[] { 1 }) && axis == 1)
+        if (newShape.SequenceEqual(new[] { 1L }) && axis == 1)
         {
             return input[index];
         }

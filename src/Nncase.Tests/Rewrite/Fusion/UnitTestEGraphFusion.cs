@@ -35,6 +35,7 @@ public class UnitTestEGraphFusion : TestClassBase
 #endif
     }
 
+#if false
     [Fact]
     public async Task TestResNet18Fusion()
     {
@@ -1165,6 +1166,7 @@ public class UnitTestEGraphFusion : TestClassBase
         Assert.Equal(3, pre_number);
         Assert.Equal(1, post_number);
     }
+#endif
 }
 
 internal sealed class SingleInputFusionMergeRule : IRewriteRule

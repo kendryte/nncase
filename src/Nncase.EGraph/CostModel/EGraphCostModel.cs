@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,4 +21,9 @@ internal class EGraphCostModel
     }
 
     public Cost this[ENode enode] => _costs[enode];
+
+    public bool TryGet(ENode node, [MaybeNullWhen(false)] out Cost cost)
+    {
+        return _costs.TryGetValue(node, out cost);
+    }
 }

@@ -139,7 +139,7 @@ class pack_impl<TIn, TOut, PackAxis> {
         if constexpr (Axis + ContiguousDims == TOut::rank()) {
             constexpr auto rest_rank = TOut::rank() - Axis;
             constexpr auto rest_dims =
-                slice_fixed_dims<rest_rank, TOut::rank() - rest_rank>(
+                slice_dims<rest_rank, TOut::rank() - rest_rank>(
                     TOut::shape());
             constexpr auto N = rest_dims.length();
             ntt::u_pack<M, N, MStrides>(in_p, out_p);

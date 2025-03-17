@@ -242,6 +242,13 @@ public static class Math
     public static Call Max(Expr lhs, Expr rhs) => Binary(BinaryOp.Max, lhs, rhs);
 
     /// <summary>
+    /// Call max.
+    /// </summary>
+    /// <param name="values">value operands.</param>
+    /// <returns>Result expression.</returns>
+    public static Expr Max(IEnumerable<Expr> values) => values.Aggregate(Max);
+
+    /// <summary>
     /// Call pow.
     /// </summary>
     /// <param name="lhs">Left operand.</param>

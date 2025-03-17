@@ -63,7 +63,7 @@ TEST_P(RequireTest, Require) {
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     // actual
-    auto output = kernels::stackvm::require("input dim large than limit", false,
+    auto output = kernels::stackvm::require("input dim large than limit",
                                             predicate.impl(), lhs.impl())
                       .expect("require failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));

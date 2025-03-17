@@ -22,23 +22,23 @@ namespace Nncase.Tests.Rules.NeutralTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestFoldGelu : TransformTestBase
 {
-    public static TheoryData<int[]> FoldGeluWithScaleData => new()
+    public static TheoryData<long[]> FoldGeluWithScaleData => new()
     {
-        new[] { 1, 3, 16, 16 },
-        new[] { 1, 2, 4, 8 },
-        new[] { 1, 1, 5, 5 },
+        new long[] { 1, 3, 16, 16 },
+        new long[] { 1, 2, 4, 8 },
+        new long[] { 1, 1, 5, 5 },
     };
 
-    public static TheoryData<int[]> FoldGeneralGeluData => new()
+    public static TheoryData<long[]> FoldGeneralGeluData => new()
     {
-        new[] { 1, 3, 16, 16 },
-        new[] { 1, 2, 4, 8 },
-        new[] { 1, 1, 5, 5 },
+        new long[] { 1, 3, 16, 16 },
+        new long[] { 1, 2, 4, 8 },
+        new long[] { 1, 1, 5, 5 },
     };
 
     [Theory]
     [MemberData(nameof(FoldGeluWithScaleData))]
-    public void TestFoldGeluWithScalePositive(int[] shape)
+    public void TestFoldGeluWithScalePositive(long[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
@@ -59,7 +59,7 @@ public class UnitTestFoldGelu : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldGeluWithScaleData))]
-    public void TestFoldGeluWithScaleNegative(int[] shape)
+    public void TestFoldGeluWithScaleNegative(long[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
@@ -80,7 +80,7 @@ public class UnitTestFoldGelu : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldGeneralGeluData))]
-    public void TestFoldGeneralGeluPositive(int[] shape)
+    public void TestFoldGeneralGeluPositive(long[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
@@ -100,7 +100,7 @@ public class UnitTestFoldGelu : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldGeneralGeluData))]
-    public void TestFoldGeneralGeluNegative(int[] shape)
+    public void TestFoldGeneralGeluNegative(long[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);

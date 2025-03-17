@@ -13,7 +13,7 @@ public static class RulesUtility
     /// <param name="oldShape">old shape.</param>
     /// <param name="newShape">new shape.</param>
     /// <returns>axis, if not found return -1.</returns>
-    public static int FindSqueezeAxis(int[] oldShape, int[] newShape)
+    public static int FindSqueezeAxis(long[] oldShape, long[] newShape)
     {
         if (!IsSqueeze(oldShape, newShape) || oldShape.Length <= newShape.Length)
         {

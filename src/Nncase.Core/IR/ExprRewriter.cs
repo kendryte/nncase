@@ -22,8 +22,9 @@ public abstract partial class ExprRewriter<TContext> : ExprVisitor<Expr, IRType,
     /// Initializes a new instance of the <see cref="ExprRewriter{TContext}"/> class.
     /// </summary>
     /// <param name="visitOtherFunctions">Vist other functions.</param>
-    public ExprRewriter(bool visitOtherFunctions = false)
-        : base(visitOtherFunctions)
+    /// <param name="visitAttributes">Visit attributes.</param>
+    public ExprRewriter(bool visitOtherFunctions = false, bool visitAttributes = false)
+        : base(visitOtherFunctions, visitAttributes)
     {
     }
 
@@ -45,6 +46,20 @@ public abstract partial class ExprRewriter<TContext> : ExprVisitor<Expr, IRType,
         DCE(newExpr, exprScope);
         return newExpr;
     }
+
+    public override IRType VisitTypeLeaf(AnyType type, TContext context) => type;
+
+    public override IRType VisitTypeLeaf(CallableType type, TContext context) => type;
+
+    public override IRType VisitTypeLeaf(InvalidType type, TContext context) => type;
+
+    public override IRType VisitTypeLeaf(NoneType type, TContext context) => type;
+
+    public override IRType VisitTypeLeaf(TensorType type, TContext context) => type;
+
+    public override IRType VisitTypeLeaf(TupleType type, TContext context) => type;
+
+    public override IRType VisitTypeLeaf(DistributedType type, TContext context) => type;
 
     /// <summary>
     /// Default rewrite leaf routine.
@@ -68,22 +83,24 @@ public abstract partial class ExprRewriter<TContext> : ExprVisitor<Expr, IRType,
         }
     }
 
-    private void DCE(Expr root, ExprScope exprScope)
+    protected override void VisitAttributes(Expr expr, TContext context)
     {
-        using var exprPin = new ExprPinner(root);
-        foreach (var expr in ExprMemo)
+        var type = expr.RawCheckedType;
+        if (type != null)
         {
-            expr.Key.DisposeIfNoUsers();
-            expr.Value.DisposeIfNoUsers();
-        }
-
-        foreach (var expr in exprScope.Exprs)
-        {
-            if (expr is not ExprUser)
+            var newType = VisitType(type, context);
+            if (!ReferenceEquals(type, newType))
             {
-                expr.DisposeIfNoUsers();
+                expr.CheckedType = newType;
+                SetMutated();
             }
         }
+    }
+
+    private void DCE(Expr root, ExprScope exprScope)
+    {
+        // using var exprPin = new ExprPinner(root);
+        // GC.Collect();
     }
 }
 
@@ -96,8 +113,9 @@ public abstract partial class ExprRewriter : ExprRewriter<Unit>
     /// Initializes a new instance of the <see cref="ExprRewriter"/> class.
     /// </summary>
     /// <param name="visitOtherFunctions">Vist other functions.</param>
-    protected ExprRewriter(bool visitOtherFunctions = false)
-        : base(visitOtherFunctions)
+    /// <param name="visitAttributes">Visit attributes.</param>
+    protected ExprRewriter(bool visitOtherFunctions = false, bool visitAttributes = false)
+        : base(visitOtherFunctions, visitAttributes)
     {
     }
 

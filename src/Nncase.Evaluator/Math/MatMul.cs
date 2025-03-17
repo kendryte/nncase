@@ -19,7 +19,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="MatMul"/>.
 /// </summary>
-public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICostEvaluator<MatMul>, IShapeEvaluator<MatMul>, IMetricEvaluator<MatMul>
+public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICostEvaluator<MatMul>, IMetricEvaluator<MatMul>
 {
     public static IRType VisitDistributedType(DistributedType a, DistributedType b, bool packingK = false, DimInfo? dimInfo = null)
     {
@@ -255,7 +255,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             return new InvalidType("MatMul lhs and rhs have different DType");
         }
 
-        if (lhs.Shape[lk] != rhs.Shape[rk] && lhs.Shape[lk] != Dimension.Unknown && rhs.Shape[rk] != Dimension.Unknown)
+        if (lhs.Shape[lk] != rhs.Shape[rk] && lhs.Shape[lk].IsFixed && rhs.Shape[rk].IsFixed)
         {
             return new InvalidType("MatMul lhs and rhs have not compatiable shape");
         }
@@ -319,8 +319,8 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var rhsShape = lhs.Shape.Rank <= rhs.Shape.Rank ? rhs.Shape.ToArray() : Enumerable.Repeat((Dimension)1, lhs.Shape.Rank - rhs.Shape.Rank).Concat(rhs.Shape).ToArray();
 
         var bigShape = Enumerable.Zip(lhsShape, rhsShape).SkipLast(2).Select(t =>
-            t.First == Dimension.Unknown || t.Second == Dimension.Unknown
-                ? Dimension.Unknown
+            t.First.IsDynamic || t.Second.IsDynamic
+                ? (Dimension)IR.F.Math.Max(t.First.Value, t.Second.Value)
                 : System.Math.Max(t.First.FixedValue, t.Second.FixedValue)).ToArray();
 
         // batch and channel
@@ -410,13 +410,6 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             [MetricFactorNames.FLOPs] = m * n * ((2 * k) - 1),
             [MetricFactorNames.Parallel] = 4,
         };
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, MatMul target)
-    {
-        var lhs = context.GetArgumentShape(target, MatMul.Lhs);
-        var rhs = context.GetArgumentShape(target, MatMul.Rhs);
-        return Cast(IR.F.ShapeExpr.MatMulShape(lhs, rhs), DataTypes.Int32);
     }
 
     public record DimInfo(int Lm, int Lk, int Rk, int Rn)

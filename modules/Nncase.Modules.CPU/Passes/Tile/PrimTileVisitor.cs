@@ -15,7 +15,7 @@ internal sealed class PrimTileVisitor : ExprVisitor<Unit, Unit>
         Count = 0;
     }
 
-    public List<KeyValuePair<Expr, int[]>> TileList { get; }
+    public List<KeyValuePair<Expr, long[]>> TileList { get; }
 
     public List<KeyValuePair<Expr, string>> NameList { get; }
 
@@ -34,9 +34,9 @@ internal sealed class PrimTileVisitor : ExprVisitor<Unit, Unit>
                 {
                     var lhs = expr.Arguments[0];
                     var rhs = expr.Arguments[1];
-                    var inTileShapeA = Enumerable.Repeat(1, lhs.CheckedShape.Rank).ToArray();
+                    var inTileShapeA = Enumerable.Repeat(1L, lhs.CheckedShape.Rank).ToArray();
                     Array.Fill(inTileShapeA, 32, inTileShapeA.Length - 2, 2);
-                    var inTileShapeB = Enumerable.Repeat(1, rhs.CheckedShape.Rank).ToArray();
+                    var inTileShapeB = Enumerable.Repeat(1L, rhs.CheckedShape.Rank).ToArray();
                     Array.Fill(inTileShapeB, 32, inTileShapeB.Length - 2, 2);
 
                     if (!(lhs is Var or TensorConst))
@@ -61,7 +61,7 @@ internal sealed class PrimTileVisitor : ExprVisitor<Unit, Unit>
                         NameList.Add(new(rhs, nameof(IR.Math.MatMul) + "_" + Count.ToString() + "_rhs"));
                     }
 
-                    var outTileShape = Enumerable.Repeat(1, expr.CheckedShape.Rank).ToArray();
+                    var outTileShape = Enumerable.Repeat(1L, expr.CheckedShape.Rank).ToArray();
                     outTileShape[^1] = inTileShapeB[^1];
                     outTileShape[^2] = inTileShapeA[^2];
                     TileList.Add(new(expr, outTileShape));
@@ -73,7 +73,7 @@ internal sealed class PrimTileVisitor : ExprVisitor<Unit, Unit>
             case IR.Math.Unary or IR.CPU.Store or IR.CPU.Load:
                 {
                     var input = expr.Arguments[0];
-                    var inTileShape = Enumerable.Repeat(1, input.CheckedShape.Rank).ToArray();
+                    var inTileShape = Enumerable.Repeat(1L, input.CheckedShape.Rank).ToArray();
                     inTileShape[^1] = 32;
 
                     if (!(input is Var or TensorConst))
@@ -98,9 +98,9 @@ internal sealed class PrimTileVisitor : ExprVisitor<Unit, Unit>
                 {
                     var lhs = expr.Arguments[0];
                     var rhs = expr.Arguments[1];
-                    var inTileShapeA = Enumerable.Repeat(1, lhs.CheckedShape.Rank).ToArray();
+                    var inTileShapeA = Enumerable.Repeat(1L, lhs.CheckedShape.Rank).ToArray();
                     inTileShapeA[^1] = 32;
-                    var inTileShapeB = Enumerable.Repeat(1, rhs.CheckedShape.Rank).ToArray();
+                    var inTileShapeB = Enumerable.Repeat(1L, rhs.CheckedShape.Rank).ToArray();
                     inTileShapeB[^1] = 32;
 
                     if (!(lhs is Var or TensorConst))
@@ -125,7 +125,7 @@ internal sealed class PrimTileVisitor : ExprVisitor<Unit, Unit>
                         NameList.Add(new(rhs, nameof(IR.Math.Binary) + "_" + Count + "_rhs"));
                     }
 
-                    var outTileShape = Enumerable.Repeat(1, expr.CheckedShape.Rank).ToArray();
+                    var outTileShape = Enumerable.Repeat(1L, expr.CheckedShape.Rank).ToArray();
                     outTileShape[^1] = 32;
                     TileList.Add(new(expr, outTileShape));
                     NameList.Add(new(expr, nameof(IR.Math.Binary) + "_" + Count));

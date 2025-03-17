@@ -18,7 +18,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Where"/>.
 /// </summary>
-public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEvaluator<Where>, IShapeEvaluator<Where>, IMetricEvaluator<Where>
+public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEvaluator<Where>, IMetricEvaluator<Where>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Where where)
@@ -62,7 +62,7 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
     {
         if (target.IsTfWhere)
         {
-            return new TensorType(DataTypes.Int64, new Shape(Dimension.Unknown, cond.Shape.Rank));
+            return new TensorType(DataTypes.Int64, Shape.Unknown(cond.Shape.Rank));
         }
 
         return TypeInference.BroadcastType(x.DType, cond, x, y);
@@ -146,26 +146,6 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(cond, CostUtility.GetCPUCyclesOfCompare()),
         };
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Where target)
-    {
-        var x = context.GetArgumentShape(target, Where.X);
-        if (target.IsTfWhere)
-        {
-            var condValue = context.GetArgument(target, Where.Cond);
-            var condShape = context.GetArgumentShape(target, Where.Cond);
-            if (condValue.CheckedShape.Rank == 1)
-            {
-                return IR.F.Tensors.Stack(new IR.Tuple(new[] { condShape[0], x[0] }), 0);
-            }
-
-            throw new NotImplementedException();
-        }
-
-        var y = context.GetArgumentShape(target, Where.Y);
-        var cond = context.GetArgumentShape(target, Where.Cond);
-        return ShapeExprUtility.BroadcastShape(x, y, cond);
     }
 
     public Metric Visit(IMetricEvaluateContext context, Where target)

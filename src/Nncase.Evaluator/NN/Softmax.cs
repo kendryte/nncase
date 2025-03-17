@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="LogSoftmax"/>.
 /// </summary>
-public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSoftmax>, ICostEvaluator<LogSoftmax>, IShapeEvaluator<LogSoftmax>, IMetricEvaluator<LogSoftmax>
+public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSoftmax>, ICostEvaluator<LogSoftmax>, IMetricEvaluator<LogSoftmax>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, LogSoftmax logSoftMax)
@@ -42,8 +42,6 @@ public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSo
         };
     }
 
-    public Expr Visit(IShapeEvaluateContext context, LogSoftmax target) => context.GetArgumentShape(target, LogSoftmax.Input);
-
     public Metric Visit(IMetricEvaluateContext context, LogSoftmax target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, LogSoftmax.Input);
@@ -69,7 +67,7 @@ public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSo
 /// <summary>
 /// Evaluator for <see cref="Softmax"/>.
 /// </summary>
-public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, ICostEvaluator<Softmax>, IShapeEvaluator<Softmax>, IMetricEvaluator<Softmax>
+public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, ICostEvaluator<Softmax>, IMetricEvaluator<Softmax>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Softmax softMax)
@@ -118,8 +116,6 @@ public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, I
             [MetricFactorNames.Parallel] = 4,
         };
     }
-
-    public Expr Visit(IShapeEvaluateContext context, Softmax target) => context.GetArgumentShape(target, Softmax.Input);
 
     private IRType Visit(TensorType input)
     {

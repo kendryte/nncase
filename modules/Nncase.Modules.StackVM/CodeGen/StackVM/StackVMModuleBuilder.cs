@@ -16,6 +16,8 @@ namespace Nncase.CodeGen.StackVM;
 /// </summary>
 public class StackVMModuleBuilder : ModuleBuilder
 {
+    private readonly Dictionary<TensorConst, Symbol> _constSymbols = new();
+
     /// <inheritdoc/>
     public override string ModuleKind => StackVMRTModule.Kind;
 
@@ -28,6 +30,6 @@ public class StackVMModuleBuilder : ModuleBuilder
     /// <inheritdoc/>
     protected override FunctionBuilder CreateFunctionBuilder(uint id)
     {
-        return new StackVMFunctionBuilder(id, SectionManager);
+        return new StackVMFunctionBuilder(id, SectionManager, _constSymbols);
     }
 }

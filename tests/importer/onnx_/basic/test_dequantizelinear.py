@@ -15,6 +15,7 @@
 
 import pytest
 import onnx
+import numpy as np
 from onnx import helper
 from onnx import AttributeProto, TensorProto, GraphProto, numpy_helper
 from onnx_test_runner import OnnxTestRunner
@@ -34,8 +35,8 @@ def _make_module(in_shape, input_type, scale, zp):
     scale = helper.make_tensor(
         'scale',
         TensorProto.FLOAT,
-        dims=[len(scale)],
-        vals=scale
+        dims=[],
+        vals=[scale]
     )
     inputs.append('scale')
     initializers.append(scale)
@@ -45,8 +46,8 @@ def _make_module(in_shape, input_type, scale, zp):
         zero_point = helper.make_tensor(
             'zero_point',
             input_type,
-            dims=[len(zp)],
-            vals=zp
+            dims=[],
+            vals=[zp]
         )
         inputs.append('zero_point')
         initializers.append(zero_point)
@@ -87,13 +88,13 @@ input_types = [
 ]
 
 scales = [
-    [0.02],
+    0.02,
 ]
 
 zero_points = [
     None,
-    [100],
-    [0]
+    100,
+    0
 ]
 
 
@@ -103,7 +104,7 @@ zero_points = [
 @pytest.mark.parametrize('zero_point', zero_points)
 def test_dequantizelinear(in_shape, input_type, scale, zero_point, request):
 
-    if input_type == TensorProto.INT8 and zero_point is not None and zero_point[0] != 0:
+    if input_type == TensorProto.INT8 and zero_point is not None and zero_point != 0:
         return
 
     model_def = _make_module(in_shape, input_type, scale, zero_point)

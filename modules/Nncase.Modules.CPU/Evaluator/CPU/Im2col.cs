@@ -35,21 +35,21 @@ public sealed class Im2colEvaluator : ITypeInferencer<Im2col>, ICostEvaluator<Im
     {
         var inputTensor = context.GetArgumentValueAsTensor(target, Im2col.Input);
         var lanes = inputTensor.ElementType.SizeInBytes / 4;
-        int batch = inputTensor.Shape[0].FixedValue;
-        int inChannel = inputTensor.Shape[1].FixedValue;
-        int height = inputTensor.Shape[2].FixedValue;
-        int width = inputTensor.Shape[3].FixedValue;
+        int batch = (int)inputTensor.Shape[0].FixedValue;
+        int inChannel = (int)inputTensor.Shape[1].FixedValue;
+        int height = (int)inputTensor.Shape[2].FixedValue;
+        int width = (int)inputTensor.Shape[3].FixedValue;
         int pad_h_before = target.Padding[0];
         int pad_h_after = target.Padding[1];
         int pad_w_before = target.Padding[2];
         int pad_w_after = target.Padding[3];
-        int kernel_h = target.Kernel[0];
-        int kernel_w = target.Kernel[1];
+        long kernel_h = target.Kernel[0];
+        long kernel_w = target.Kernel[1];
         int stride_h = target.Stride[0];
         int stride_w = target.Stride[1];
-        int output_h = ((height + pad_h_before + pad_h_after -
+        long output_h = ((height + pad_h_before + pad_h_after -
                 ((1 * (kernel_h - 1)) + 1)) / stride_h) + 1;
-        int output_w = ((width + pad_w_before + pad_w_after -
+        long output_w = ((width + pad_w_before + pad_w_after -
          ((1 * (kernel_w - 1)) + 1)) / stride_w) + 1;
         var outputTensor = new float[inChannel * kernel_h * kernel_w * batch * output_h * output_w * lanes];
 
@@ -96,7 +96,7 @@ public sealed class Im2colEvaluator : ITypeInferencer<Im2col>, ICostEvaluator<Im
             }
         }
 
-        return Value.FromTensor(Tensor.FromBytes(inputTensor.ElementType, System.Runtime.InteropServices.MemoryMarshal.Cast<float, byte>(outputTensor).ToArray(), new[] { inChannel * kernel_h * kernel_w, batch * output_h * output_w }));
+        return Value.FromTensor(Tensor.FromBytes(inputTensor.ElementType, System.Runtime.InteropServices.MemoryMarshal.Cast<float, byte>(outputTensor).ToArray(), [inChannel * kernel_h * kernel_w, batch * output_h * output_w]));
     }
 
     private IRType Visit(DistributedType dt, Im2col target)
@@ -161,19 +161,19 @@ public sealed class Im2colEvaluator : ITypeInferencer<Im2col>, ICostEvaluator<Im
 
     private IRType Visit(TensorType tt, Im2col target)
     {
-        int height = tt.Shape[2].FixedValue;
-        int width = tt.Shape[3].FixedValue;
+        int height = (int)tt.Shape[2].FixedValue;
+        int width = (int)tt.Shape[3].FixedValue;
         int pad_h_before = target.Padding[0];
         int pad_h_after = target.Padding[1];
         int pad_w_before = target.Padding[2];
         int pad_w_after = target.Padding[3];
-        int kernel_h = target.Kernel[0];
-        int kernel_w = target.Kernel[1];
+        long kernel_h = target.Kernel[0];
+        long kernel_w = target.Kernel[1];
         int stride_h = target.Stride[0];
         int stride_w = target.Stride[1];
-        int output_h = ((height + pad_h_before + pad_h_after -
+        long output_h = ((height + pad_h_before + pad_h_after -
                 ((1 * (kernel_h - 1)) + 1)) / stride_h) + 1;
-        int output_w = ((width + pad_w_before + pad_w_after -
+        long output_w = ((width + pad_w_before + pad_w_after -
          ((1 * (kernel_w - 1)) + 1)) / stride_w) + 1;
         return tt with { Shape = new Dimension[] { tt.Shape[1] * kernel_h * kernel_w, tt.Shape[0] * output_h * output_w } };
     }

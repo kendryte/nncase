@@ -32,7 +32,7 @@ public sealed class TreeSolverPythonPrinter : TreeSolverBase<IntExpr>, ITreeNode
             var trip = Solution.Value(TileNodeMemo[value].TripCounts[i + 1].Var());
 
             // 2. write loop.
-            int parentBounds = 0;
+            long parentBounds = 0;
             if (parent is null)
             {
                 value.Walk(child =>

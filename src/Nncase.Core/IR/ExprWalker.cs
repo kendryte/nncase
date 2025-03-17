@@ -16,8 +16,9 @@ public abstract class ExprWalker<TContext> : ExprVisitor<Unit, Unit, TContext>
     /// Initializes a new instance of the <see cref="ExprWalker{TContext}"/> class.
     /// </summary>
     /// <param name="visitOtherFunctions">Vist other functions.</param>
-    public ExprWalker(bool visitOtherFunctions = false)
-        : base(visitOtherFunctions)
+    /// <param name="visitAttributes">Visit attributes.</param>
+    public ExprWalker(bool visitOtherFunctions = false, bool visitAttributes = false)
+        : base(visitOtherFunctions, visitAttributes)
     {
     }
 
@@ -30,8 +31,9 @@ public abstract class ExprWalker : ExprVisitor<Unit, Unit>
     /// Initializes a new instance of the <see cref="ExprWalker"/> class.
     /// </summary>
     /// <param name="visitOtherFunctions">Vist other functions.</param>
-    public ExprWalker(bool visitOtherFunctions = false)
-        : base(visitOtherFunctions)
+    /// <param name="visitAttributes">Visit attributes.</param>
+    public ExprWalker(bool visitOtherFunctions = false, bool visitAttributes = false)
+        : base(visitOtherFunctions, visitAttributes)
     {
     }
 

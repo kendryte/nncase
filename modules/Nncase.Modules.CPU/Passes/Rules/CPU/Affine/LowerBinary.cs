@@ -48,7 +48,7 @@ public partial class LowerBinary : RewriteRule<Pattern>
                 case ( >= 0, >= 0):
                     switch (lhsShape[lhsi], rhsShape[rhsi])
                     {
-                        case (int a, int b) when a == b:
+                        case (long a, long b) when a == b:
                             lhsRes[lhsi] = new AffineRange(domains[i].Offset, domains[i].Extent);
                             rhsRes[rhsi] = new AffineRange(domains[i].Offset, domains[i].Extent);
                             break;
@@ -132,7 +132,7 @@ public partial class LowerPackedBinary : RewriteRule<Pattern>
                 case ( >= 0, >= 0):
                     switch (lhsShape[lhsi], rhsShape[rhsi])
                     {
-                        case (int a, int b) when a == b:
+                        case (long a, long b) when a == b:
                             lhsRes[lhsi] = new AffineRange(domains[i].Offset, domains[i].Extent);
                             rhsRes[rhsi] = new AffineRange(domains[i].Offset, domains[i].Extent);
                             break;

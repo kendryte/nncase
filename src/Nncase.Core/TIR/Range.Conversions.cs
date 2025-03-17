@@ -16,25 +16,25 @@ public partial class Range
     /// Convert <see cref="ValueTuple{T1, T2}"/> to <see cref="Range"/>.
     /// </summary>
     /// <param name="value">value tuple.</param>
-    public static implicit operator Range((Expr Start, Expr Stop) value) => new(value.Start, value.Stop, 1);
+    public static implicit operator Range((Expr Start, Expr Stop) value) => new(value.Start, value.Stop, 1L);
 
     /// <summary>
     /// Convert <see cref="ValueTuple{T1, T2}"/> to <see cref="Range"/>.
     /// </summary>
     /// <param name="value">value tuple.</param>
-    public static implicit operator Range((Expr Start, int Stop) value) => new(value.Start, value.Stop, 1);
+    public static implicit operator Range((Expr Start, int Stop) value) => new(value.Start, value.Stop, 1L);
 
     /// <summary>
     /// Convert <see cref="ValueTuple{T1, T2}"/> to <see cref="Range"/>.
     /// </summary>
     /// <param name="value">value tuple.</param>
-    public static implicit operator Range((int Start, Expr Stop) value) => new(value.Start, value.Stop, 1);
+    public static implicit operator Range((int Start, Expr Stop) value) => new(value.Start, value.Stop, 1L);
 
     /// <summary>
     /// Convert <see cref="ValueTuple{T1, T2}"/> to <see cref="Range"/>.
     /// </summary>
     /// <param name="value">value tuple.</param>
-    public static implicit operator Range((int Start, int Stop) value) => new(value.Start, value.Stop, 1);
+    public static implicit operator Range((int Start, int Stop) value) => new(value.Start, value.Stop, 1L);
 
     /// <summary>
     /// Convert <see cref="ValueTuple{T1, T2, T3}"/> to <see cref="Range"/>.

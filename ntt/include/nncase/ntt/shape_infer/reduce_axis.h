@@ -18,11 +18,17 @@
 
 namespace nncase::ntt::shape_infer {
 namespace detail {
-template <size_t Axis, size_t... Dims, size_t... Ints>
+template <size_t Axis, class Shape, size_t... Ints>
 inline constexpr auto
-reduced_shape_by_axis_impl(const fixed_shape<Dims...> shape,
-                           const std::index_sequence<Ints...>) {
-    return fixed_shape<(Ints == Axis ? 1 : shape.at(Ints))...>{};
+fixed_reduced_shape_by_axis_impl(const std::index_sequence<Ints...>) {
+    return fixed_shape<(Ints == Axis ? 1 : Shape::at(Ints))...>{};
+}
+
+template <size_t Axis, size_t Rank, size_t... Ints>
+inline constexpr auto
+ranked_reduced_shape_by_axis_impl(const ranked_shape<Rank> shape,
+                                  const std::index_sequence<Ints...>) {
+    return ranked_shape<Rank>{(Ints == Axis ? 1 : shape.at(Ints))...};
 }
 
 template <size_t... Dims, size_t... Ints>
@@ -34,11 +40,11 @@ inline constexpr auto reduced_shape_by_axes_impl(
 
 template <size_t AxesFirst, size_t... AxesRest, size_t... Dims, size_t... Ints>
 inline constexpr auto
-reduced_shape_by_axes_impl(const fixed_shape<Dims...> shape,
+reduced_shape_by_axes_impl([[maybe_unused]] const fixed_shape<Dims...> shape,
                            const fixed_shape<AxesFirst, AxesRest...>,
                            const std::index_sequence<Ints...> ints) {
     return reduced_shape_by_axes_impl(
-        reduced_shape_by_axis_impl<AxesFirst>(shape, ints),
+        fixed_reduced_shape_by_axis_impl<AxesFirst, fixed_shape<Dims...>>(ints),
         fixed_shape<AxesRest...>{}, ints);
 }
 
@@ -51,10 +57,15 @@ reduced_shape_by_axes_impl(const fixed_shape<Dims...> shape,
  * @param shape input shape.
  * @return changed shape.
  */
-template <size_t Axis, size_t... Dims>
-inline constexpr auto reduced_shape_by_axis(const fixed_shape<Dims...> shape) {
-    return detail::reduced_shape_by_axis_impl<Axis>(
-        shape, std::make_index_sequence<sizeof...(Dims)>{});
+template <size_t Axis, class Shape>
+inline constexpr auto reduced_shape_by_axis(const Shape &shape) {
+    if constexpr (is_fixed_dims_v<Shape>) {
+        return detail::fixed_reduced_shape_by_axis_impl<Axis, Shape>(
+            std::make_index_sequence<Shape::rank()>{});
+    } else {
+        return detail::ranked_reduced_shape_by_axis_impl<Axis>(
+            shape, std::make_index_sequence<Shape::rank()>());
+    }
 }
 
 /**

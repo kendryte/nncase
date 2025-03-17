@@ -22,10 +22,48 @@ public interface IParameterList<T>
     public T this[ParameterInfo parameter] { get; }
 }
 
+public abstract class BaseCall : Expr, IParameterList<Expr>
+{
+    public BaseCall(IEnumerable<Expr> operands)
+        : base(operands)
+    {
+    }
+
+    public BaseCall(Expr[] operands)
+        : base(operands)
+    {
+    }
+
+    public abstract ReadOnlySpan<Expr> Arguments { get; }
+
+    // /// <summary>
+    // /// used by fake ir, represents that whether this op permit int 16 quant.
+    // /// </summary>
+    // public bool PermitInt16Quant = false;
+
+    /// <summary>
+    /// Gets or sets quant config with cosine, List of DataType represents data types for each input might be quantized, List of QuantParam represents quant params for each input.
+    /// may be deleted in the future since there is EnodeBestQuantConfigWithCosine, reserve it now for debug and for unexpected usage when EnodeBestQuantConfigWithCosine is not enough.
+    /// </summary>
+    public List<Tuple<List<DataType>, List<List<QuantParam>>, float>>? EnodeQuantConfigWithCosine { get; set; }
+
+    /// <summary>
+    /// Gets or sets quant config with cosine, List of DataType represents data types for each input might be quantized, List of QuantParam represents quant params for each input.
+    /// </summary>
+    public Tuple<List<DataType>, List<List<QuantParam>>, float>? EnodeBestQuantConfigWithCosine { get; set; }
+
+    /// <summary>
+    /// get param expr.
+    /// </summary>
+    public virtual Expr this[ParameterInfo parameter] => throw new NotSupportedException();
+
+    public virtual void ParametersForeach(Action<Expr, ParameterInfo> f) => throw new NotSupportedException();
+}
+
 /// <summary>
 /// Call expression.
 /// </summary>
-public sealed class Call : Expr, IParameterList<Expr>
+public sealed class Call : BaseCall, IParameterList<Expr>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="Call"/> class.
@@ -49,28 +87,12 @@ public sealed class Call : Expr, IParameterList<Expr>
 
     public Expr Target => Operands[0];
 
-    public ReadOnlySpan<Expr> Arguments => Operands[1..];
-
-    // /// <summary>
-    // /// used by fake ir, represents that whether this op permit int 16 quant.
-    // /// </summary>
-    // public bool PermitInt16Quant = false;
-
-    /// <summary>
-    /// Gets or sets quant config with cosine, List of DataType represents data types for each input might be quantized, List of QuantParam represents quant params for each input.
-    /// may be deleted in the future since there is EnodeBestQuantConfigWithCosine, reserve it now for debug and for unexpected usage when EnodeBestQuantConfigWithCosine is not enough.
-    /// </summary>
-    public List<Tuple<List<DataType>, List<List<QuantParam>>, float>>? EnodeQuantConfigWithCosine { get; set; }
-
-    /// <summary>
-    /// Gets or sets quant config with cosine, List of DataType represents data types for each input might be quantized, List of QuantParam represents quant params for each input.
-    /// </summary>
-    public Tuple<List<DataType>, List<List<QuantParam>>, float>? EnodeBestQuantConfigWithCosine { get; set; }
+    public override ReadOnlySpan<Expr> Arguments => Operands[1..];
 
     /// <summary>
     /// get param expr.
     /// </summary>
-    public Expr this[ParameterInfo parameter]
+    public override Expr this[ParameterInfo parameter]
     {
         get
         {
@@ -86,7 +108,7 @@ public sealed class Call : Expr, IParameterList<Expr>
         }
     }
 
-    public void ParametersForeach(Action<Expr, ParameterInfo> f)
+    public override void ParametersForeach(Action<Expr, ParameterInfo> f)
     {
         var parameterInfos = ((Op)Target).Parameters.ToArray();
         for (int i = 0; i < Arguments.Length; i++)
@@ -101,11 +123,10 @@ public sealed class Call : Expr, IParameterList<Expr>
 
     public Call With(Expr? target = null, Expr[]? arguments = null, IRMetadata? metadata = null)
     {
-        var call = new Call(target ?? Target, arguments ?? Arguments);
-        if (metadata != null && metadata!.OutputNames != null)
+        var call = new Call(target ?? Target, arguments ?? Arguments)
         {
-            call.Metadata.OutputNames = metadata.OutputNames;
-        }
+            Metadata = metadata ?? new IRMetadata { OutputNames = Metadata.OutputNames },
+        };
 
         return call;
     }

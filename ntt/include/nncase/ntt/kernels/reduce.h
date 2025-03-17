@@ -13,9 +13,7 @@
  * limitations under the License.
  */
 #pragma once
-#include "../apply.h"
 #include "../primitive_ops.h"
-#include "../profiler.h"
 #include "../shape_infer/reduce.h"
 #include "../tensor_ops.h"
 #include "../tensor_traits.h"
@@ -109,7 +107,7 @@ class reduce_impl {
             // Mean
             if constexpr (Op == reduce_op::mean) {
                 size_t inner_size =
-                    slice_fixed_dims<Axes::rank(), Axes::at(0)>(input.shape())
+                    slice_dims<Axes::rank(), Axes::at(0)>(input.shape())
                         .length();
                 if constexpr (IsVector<TOutElem>) {
                     inner_size *= TInElem::shape_type::length();
@@ -130,7 +128,7 @@ class reduce_impl {
                                 ranked_shape<TIn::rank()> index,
                                 TInElem &reduced_in) {
         auto src_tensor =
-            input.view(index, fixed_reduce_source_shape_type<Axes, TIn>());
+            input.view(index, reduce_source_shape_type<Axes>(input.shape()));
         auto conti_dims =
             contiguous_dims(src_tensor.shape(), src_tensor.strides());
         if (conti_dims > 1) {
@@ -195,7 +193,6 @@ void reduce(const TIn &input, TOut &&output) noexcept {
                   "not support padding");
     static_assert(!(LoadPrevious && Op == reduce_op::mean),
                   "not support reduce mean splited on reduce axis");
-    AUTO_NTT_PROFILER
     detail::reduce_impl<Op, false, std::decay_t<TIn>, std::decay_t<TOut>, Axes,
                         PackedAxes, PadedNums, LoadPrevious>
         impl;

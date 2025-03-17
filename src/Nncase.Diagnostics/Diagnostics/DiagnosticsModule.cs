@@ -15,7 +15,7 @@ internal class DiagnosticsModule : IApplicationPart
 {
     public void ConfigureServices(IRegistrator registrator)
     {
-        registrator.Register<IIRPrinterProvider, IRPrinterProvider>(reuse: Reuse.Singleton);
+        registrator.Register<IPrinterProvider, IRPrinterProvider>(reuse: Reuse.Singleton);
 
         registrator.Register<IDumpperFactory, DumpperFactory>(reuse: Reuse.Scoped);
     }

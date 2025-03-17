@@ -14,7 +14,6 @@
  */
 #pragma once
 #include "../apply.h"
-#include "../profiler.h"
 #include "../shape_infer/matmul.h"
 #include "../ukernels.h"
 #include "nncase/ntt/primitive_ops.h"
@@ -80,19 +79,19 @@ constexpr ukernels::mamtul_pack_kind get_matmul_pack_kind() noexcept {
     }
 }
 
-template <bool TransposedA, bool TransposedB, bool AccumulateC, class TLhs,
+template <bool AccumulateC, bool TransposedA, bool TransposedB, class TLhs,
           class TRhs, class TOut, typename LhsPackedAxes, typename LhsPadedNums,
           typename RhsPackedAxes, typename RhsPadedNums>
 class matmul_impl;
 
 /**
- * @brief Fixed 1D-packed matmul with non transposed A/B or tranposed B.
+ * @brief 1D-packed matmul with non transposed A/B or tranposed B.
  * @remarks Loop orders: (m, n, k)
  */
-template <bool AccumulateC, bool TransposedB, IsFixedTensor TLhs,
-          IsFixedTensor TRhs, IsFixedTensor TOut, typename LhsPackedAxes,
-          typename LhsPadedNums, typename RhsPackedAxes, typename RhsPadedNums>
-class matmul_impl<false, TransposedB, AccumulateC, TLhs, TRhs, TOut,
+template <bool AccumulateC, bool TransposedB, IsTensor TLhs, IsTensor TRhs,
+          IsTensor TOut, typename LhsPackedAxes, typename LhsPadedNums,
+          typename RhsPackedAxes, typename RhsPadedNums>
+class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
                   LhsPackedAxes, LhsPadedNums, RhsPackedAxes, RhsPadedNums> {
     using TOutElem = typename TOut::element_type;
 
@@ -107,19 +106,18 @@ class matmul_impl<false, TransposedB, AccumulateC, TLhs, TRhs, TOut,
 
   public:
     void operator()(const TLhs &lhs, const TRhs &rhs, TOut &output) {
-        auto domain =
-            slice_fixed_dims<TOut::rank() - 2>(typename TOut::shape_type{});
+        auto domain = slice_dims<TOut::rank() - 2>(output.shape());
         ntt::apply(domain, [&](auto out_offset_prefix) {
             ranked_shape<TOut::rank()> out_offset{};
             std::copy(out_offset_prefix.begin(), out_offset_prefix.end(),
                       out_offset.begin());
             auto lhs_offset =
-                shape_infer::reduced_index_by_shape(out_offset, TLhs::shape());
+                shape_infer::reduced_index_by_shape(out_offset, lhs.shape());
             auto rhs_offset =
-                shape_infer::reduced_index_by_shape(out_offset, TRhs::shape());
-            auto lhs_shape = shape_infer::sub_matmul_shape(TLhs::shape());
-            auto rhs_shape = shape_infer::sub_matmul_shape(TRhs::shape());
-            auto out_shape = shape_infer::sub_matmul_shape(TOut::shape());
+                shape_infer::reduced_index_by_shape(out_offset, rhs.shape());
+            auto lhs_shape = shape_infer::sub_matmul_shape(lhs.shape());
+            auto rhs_shape = shape_infer::sub_matmul_shape(rhs.shape());
+            auto out_shape = shape_infer::sub_matmul_shape(output.shape());
 
             auto a = lhs.view(lhs_offset, lhs_shape)
                          .squeeze(make_index_axes<lhs_shape.rank() - 2>());
@@ -221,9 +219,8 @@ void matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output,
     static_assert(RhsPadedNums::rank() == 0 || RhsPadedNums::length() == 0,
                   "currently only support no pad!");
 
-    AUTO_NTT_PROFILER
 
-    detail::matmul_impl<false, false, AccumulateC, TLhs, TRhs,
+    detail::matmul_impl<AccumulateC, false, false, TLhs, TRhs,
                         std::decay_t<TOut>, LhsPackedAxes, LhsPadedNums,
                         RhsPackedAxes, RhsPadedNums>
         impl;
@@ -251,7 +248,7 @@ void matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output,
     static_assert(RhsPadedNums::rank() == 0 || RhsPadedNums::length() == 0,
                   "currently only support no pad!");
 
-    detail::matmul_impl<TransposedA, TransposedB, AccumulateC, TLhs, TRhs,
+    detail::matmul_impl<AccumulateC, TransposedA, TransposedB, TLhs, TRhs,
                         std::decay_t<TOut>, LhsPackedAxes, LhsPadedNums,
                         RhsPackedAxes, RhsPadedNums>
         impl;

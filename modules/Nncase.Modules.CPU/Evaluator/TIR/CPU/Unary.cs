@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Google.OrTools.ConstraintSolver;
+using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Affine;
@@ -23,7 +24,7 @@ public sealed class UnaryEvaluator : ITypeInferencer<Unary>, IKernelInfoEvaluato
     {
         var domain = context.AccessMaps[0].Domains;
         var primitives = Enumerable.Repeat(1, domain.Length).ToArray();
-        var multipliers = Enumerable.Repeat(new ValueRange<int>(1, int.MaxValue), domain.Length).ToArray();
+        var multipliers = Enumerable.Repeat(new ValueRange<long>(1, int.MaxValue), domain.Length).ToArray();
         var bufferInfos = new MicroKernelBufferInfo[context.BufferShapes.Length];
         var opt = (ICpuTargetOptions)context.TargetOptions;
         bufferInfos[0] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Read);
@@ -31,7 +32,7 @@ public sealed class UnaryEvaluator : ITypeInferencer<Unary>, IKernelInfoEvaluato
         return new MicroKernelInfo(primitives, multipliers, bufferInfos, GetComputeCycle);
     }
 
-    public string Visit(IIRPrinterContext context, Unary target, bool iLmode)
+    public string Visit(IPrintOpContext context, Unary target)
     {
         return $"Unary({target.DisplayProperty()}, {context.GetArgument(target, Unary.Input)}, {context.GetArgument(target, Unary.Output)})";
     }

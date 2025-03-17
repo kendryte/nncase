@@ -48,7 +48,7 @@ public sealed partial class SpaceToBatchToPad : IRewriteRule
                 newPaddingsArray[i + 4] = paddingsArray[i];
             }
 
-            var newPaddings = Tensor.From(newPaddingsArray, new[] { 4, 2 });
+            var newPaddings = Tensor.From(newPaddingsArray, [4, 2]);
 
             return Pad(input, newPaddings, PadMode.Constant, 0f);
         }

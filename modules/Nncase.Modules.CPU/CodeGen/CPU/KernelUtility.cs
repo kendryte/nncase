@@ -7,62 +7,24 @@ using System.CommandLine;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 
 namespace Nncase.CodeGen.CPU;
 
 public static class KernelUtility
 {
-    public static string DimensionsToC(Shape dimensions)
-    {
-        var sb = new StringBuilder("fixed_shape<");
-        for (int i = 0; i < dimensions.Count; i++)
-        {
-            var value = dimensions[i].FixedValue;
-            sb.Append(value);
-            if (i != dimensions.Count - 1)
-            {
-                sb.Append(", ");
-            }
-        }
+    public static string DimensionsToC(bool isFixed, ReadOnlySpan<CSymbol> dimensions, bool isType) =>
+        DimensionsToC("shape", isFixed, dimensions, isType);
 
-        sb.Append('>');
-        return sb.ToString();
-    }
+    public static string StridesToC(bool isFixed, ReadOnlySpan<CSymbol> dimensions, bool isType) =>
+        DimensionsToC("strides", isFixed, dimensions, isType);
 
-    public static string DimensionsToC(ReadOnlySpan<Expr> dimensions)
-    {
-        var sb = new StringBuilder("fixed_shape<");
-        for (int i = 0; i < dimensions.Length; i++)
-        {
-            var value = ((TensorConst)dimensions[i]).Value.Cast<ulong>()[0];
-            sb.Append(value);
-            if (i != dimensions.Length - 1)
-            {
-                sb.Append(", ");
-            }
-        }
+    public static string DimensionsTypeToC(bool isFixed, ReadOnlySpan<Expr> dimensions) =>
+        DimensionsTypeToC("shape", isFixed, dimensions);
 
-        sb.Append('>');
-        return sb.ToString();
-    }
-
-    public static string StridesToC(ReadOnlySpan<Expr> dimensions)
-    {
-        var sb = new StringBuilder("fixed_strides<");
-        for (int i = 0; i < dimensions.Length; i++)
-        {
-            var value = ((TensorConst)dimensions[i]).Value.Cast<ulong>()[0];
-            sb.Append(value);
-            if (i != dimensions.Length - 1)
-            {
-                sb.Append(", ");
-            }
-        }
-
-        sb.Append('>');
-        return sb.ToString();
-    }
+    public static string StridesTypeToC(bool isFixed, ReadOnlySpan<Expr> dimensions) =>
+        DimensionsTypeToC("strides", isFixed, dimensions);
 
     public static string DistributedToC(DistributedType distributedType)
     {
@@ -98,5 +60,71 @@ public static class KernelUtility
 
         sb.Append('>');
         return sb.ToString();
+    }
+
+    private static string DimensionsToC(string typeName, bool isFixed, ReadOnlySpan<CSymbol> dimensions, bool isType)
+    {
+        if (isFixed)
+        {
+            var sb = new StringBuilder($"fixed_{typeName}<");
+            AppendDimValues(sb, dimensions);
+            sb.Append(isType ? ">" : ">{}");
+            return sb.ToString();
+        }
+        else
+        {
+            if (isType)
+            {
+                return $"ranked_{typeName}<{dimensions.Length}>";
+            }
+            else
+            {
+                var sb = new StringBuilder($"make_ranked_{typeName}(");
+                AppendDimValues(sb, dimensions);
+                sb.Append(')');
+                return sb.ToString();
+            }
+        }
+    }
+
+    private static string DimensionsTypeToC(string typeName, bool isFixed, ReadOnlySpan<Expr> dimensions)
+    {
+        if (isFixed)
+        {
+            var sb = new StringBuilder($"fixed_{typeName}<");
+            AppendDimValues(sb, dimensions);
+            sb.Append('>');
+            return sb.ToString();
+        }
+        else
+        {
+            return $"ranked_{typeName}<{dimensions.Length}>";
+        }
+    }
+
+    private static void AppendDimValues(StringBuilder sb, ReadOnlySpan<CSymbol> dimensions)
+    {
+        for (int i = 0; i < dimensions.Length; i++)
+        {
+            var value = dimensions[i].Name;
+            sb.Append(value);
+            if (i != dimensions.Length - 1)
+            {
+                sb.Append(", ");
+            }
+        }
+    }
+
+    private static void AppendDimValues(StringBuilder sb, ReadOnlySpan<Expr> dimensions)
+    {
+        for (int i = 0; i < dimensions.Length; i++)
+        {
+            var value = ((TensorConst)dimensions[i]).Value.ToScalar<long>();
+            sb.Append(value);
+            if (i != dimensions.Length - 1)
+            {
+                sb.Append(", ");
+            }
+        }
     }
 }

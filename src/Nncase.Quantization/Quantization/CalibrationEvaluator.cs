@@ -260,7 +260,7 @@ public class CalibrationEvaluator : IDisposable
             var valueArray = value.AsTensor().ToArray<float>();
             int index = 0;
 
-            int size = 0;
+            long size = 0;
             if (((Marker)enode.Expr).MixQuantInfo!.QuantParameter.Count != 1)
             {
                 size = value.AsTensor().Shape[1].FixedValue * value.AsTensor().Shape[2].FixedValue * value.AsTensor().Shape[3].FixedValue;
@@ -270,7 +270,7 @@ public class CalibrationEvaluator : IDisposable
             {
                 if (((Marker)enode.Expr).MixQuantInfo!.QuantParameter.Count != 1)
                 {
-                    index = i / size;
+                    index = checked(i / (int)size);
                 }
 
                 var valueArrayQuant = Math.Round((valueArray[i] / (double)((Marker)enode.Expr).MixQuantInfo!.QuantParameter[index].Scale) + ((Marker)enode.Expr).MixQuantInfo!.QuantParameter[index].ZeroPoint);
@@ -294,7 +294,7 @@ public class CalibrationEvaluator : IDisposable
 
         public IValue[] Arguments { get; }
 
-        public Call CurrentCall { get; }
+        public BaseCall CurrentCall { get; }
 
         public IValue GetArgumentValue(Op op, ParameterInfo parameter)
         {

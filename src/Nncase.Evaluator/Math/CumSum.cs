@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="CumSum"/>.
 /// </summary>
-public class CumSumEvaluator : IEvaluator<CumSum>, ITypeInferencer<CumSum>, ICostEvaluator<CumSum>, IShapeEvaluator<CumSum>, IMetricEvaluator<CumSum>
+public class CumSumEvaluator : IEvaluator<CumSum>, ITypeInferencer<CumSum>, ICostEvaluator<CumSum>, IMetricEvaluator<CumSum>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, CumSum cumSum)
@@ -43,8 +43,6 @@ public class CumSumEvaluator : IEvaluator<CumSum>, ITypeInferencer<CumSum>, ICos
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
         };
     }
-
-    public Expr Visit(IShapeEvaluateContext context, CumSum target) => context.GetArgumentShape(target, CumSum.Input);
 
     public Metric Visit(IMetricEvaluateContext context, CumSum target)
     {

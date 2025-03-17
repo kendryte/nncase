@@ -17,7 +17,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="BucketPad"/>.
 /// </summary>
-public class BucketPadEvaluator : IEvaluator<BucketPad>, ITypeInferencer<BucketPad>, ICostEvaluator<BucketPad>, IShapeEvaluator<BucketPad>, IMetricEvaluator<BucketPad>
+public class BucketPadEvaluator : IEvaluator<BucketPad>, ITypeInferencer<BucketPad>, ICostEvaluator<BucketPad>, IMetricEvaluator<BucketPad>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, BucketPad bucketPad)
@@ -70,8 +70,6 @@ public class BucketPadEvaluator : IEvaluator<BucketPad>, ITypeInferencer<BucketP
             [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(outputType),
         };
     }
-
-    public Expr Visit(IShapeEvaluateContext context, BucketPad target) => context.GetArgument(target, BucketPad.Shape);
 
     private IRType Visit(ITypeInferenceContext context, BucketPad target, TensorType input)
     {

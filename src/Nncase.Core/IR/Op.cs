@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -128,6 +129,7 @@ public abstract class Op : Expr
     /// <summary>
     /// Gets a value indicating whether mark this op can be fold when input's are const.
     /// </summary>
+    [Browsable(false)]
     public virtual bool CanFoldConstCall => true;
 
     /// <summary>

@@ -17,7 +17,7 @@ public class UnitTestCustomOpScheme : TestClassBase
   [Fact]
   public void TestExportScheme()
   {
-    var scheme = new CustomOpScheme("1", "matmul", new CustomOpScheme.Node[] { new CustomOpScheme.Node(string.Empty, "Matmul", new[] { new[] { 32, 32 }, new[] { 32, 32 } }, new[] { new SBP[] { SBP.B, SBP.B }, new SBP[] { SBP.B, SBP.S(new[] { 2 }) } }, 1, string.Empty) });
+    var scheme = new CustomOpScheme("1", "matmul", new CustomOpScheme.Node[] { new CustomOpScheme.Node(string.Empty, "Matmul", [[32, 32], [32, 32]], new[] { new SBP[] { SBP.B, SBP.B }, new SBP[] { SBP.B, SBP.S(new[] { 2 }) } }, 1, string.Empty) });
     var except = @"{
   ""Version"": ""1"",
   ""Model"": ""matmul"",

@@ -26,10 +26,10 @@ internal class StackVMFunctionBuilder : FunctionBuilder
     private readonly LocalsAllocator _localsAllocator = new LocalsAllocator();
     private readonly Dictionary<TextSnippet, ushort> _snippetLocals = new Dictionary<TextSnippet, ushort>();
 
-    public StackVMFunctionBuilder(uint id, SectionManager sectionManager)
+    public StackVMFunctionBuilder(uint id, SectionManager sectionManager, Dictionary<TensorConst, Symbol> constSymbols)
         : base(id, sectionManager)
     {
-        _context = new CodeGenContext(sectionManager.GetWriter(WellknownSectionNames.Rdata));
+        _context = new CodeGenContext(sectionManager.GetWriter(WellknownSectionNames.Rdata), constSymbols);
         _textEmitter = new StackVMEmitter(TextWriter);
     }
 

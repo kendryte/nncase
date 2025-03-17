@@ -47,7 +47,7 @@ public sealed partial class Squeeze5DTranspose : IRewriteRule
         var shape2 = perm1.Select(p => shape1[p]).ToArray();
 
         int[] perm2;
-        int[] shape3;
+        long[] shape3;
         switch (perm1.IndexOf(3))
         {
             case 0:
@@ -167,7 +167,7 @@ public sealed partial class Squeeze5DTranspose : IRewriteRule
                 throw new NotSupportedException("Not Supported perm!");
         }
 
-        return Reshape(Transpose(Reshape(tp1, shape3), perm2).With(metadata: call.Metadata), call.CheckedShape);
+        return Reshape(Transpose(Reshape(tp1, shape3), perm2).With(metadata: call.Metadata), call.CheckedShape.ToValueArrayExpr());
     }
 }
 
@@ -181,15 +181,15 @@ public sealed partial class SqueezeTransposeShape : IRewriteRule
         IsWildcard("input") with { TypePattern = HasFixedShape() & HasRank(x => x > 4, "more than 4D need to squeeze") },
         IsWildcard("perm"));
 
-    private Tuple<bool, List<int>, List<int>> SqueezeTranspose(List<int> oldShape, List<int> oldAxis)
+    private Tuple<bool, List<int>, List<long>> SqueezeTranspose(List<long> oldShape, List<int> oldAxis)
     {
         if (oldShape.Count <= 4)
         {
-            return new Tuple<bool, List<int>, List<int>>(false, oldAxis, oldShape);
+            return new Tuple<bool, List<int>, List<long>>(false, oldAxis, oldShape);
         }
 
         var newAxis = new List<int>(oldAxis);
-        var newShape = new List<int>(oldShape);
+        var newShape = new List<long>(oldShape);
         int squeezeTimes = oldShape.Count - 4;
 
         var foldIndexCouple = new List<Tuple<int, int>>();
@@ -203,7 +203,7 @@ public sealed partial class SqueezeTransposeShape : IRewriteRule
 
         if (foldIndexCouple.Count < squeezeTimes)
         {
-            return new Tuple<bool, List<int>, List<int>>(false, newAxis, newShape);
+            return new Tuple<bool, List<int>, List<long>>(false, newAxis, newShape);
         }
 
         while (squeezeTimes > 0 && foldIndexCouple.Count > 0)
@@ -229,7 +229,7 @@ public sealed partial class SqueezeTransposeShape : IRewriteRule
             }
         }
 
-        return new Tuple<bool, List<int>, List<int>>(true, newAxis, newShape);
+        return new Tuple<bool, List<int>, List<long>>(true, newAxis, newShape);
     }
 
     private Expr? GetReplace(Expr input, int[] perm, Expr call)
@@ -241,7 +241,7 @@ public sealed partial class SqueezeTransposeShape : IRewriteRule
             return null;
         }
 
-        var newOutputShape = new int[perm.Length];
+        var newOutputShape = new long[perm.Length];
         for (int i = 0; i < perm.Length; i++)
         {
             newOutputShape[i] = inputShape[perm[i]].FixedValue;
@@ -263,7 +263,7 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
     /// <param name="a"> left input shape.</param>
     /// <param name="b"> right input shape.</param>
     /// <returns> Squeeze flag, new lhs, new rhs. </returns>
-    public (bool SqueezeOrNot, List<int> NewAShape, List<int> NewBShape) SqueezeInputShape(List<int> a, List<int> b)
+    public (bool SqueezeOrNot, List<long> NewAShape, List<long> NewBShape) SqueezeInputShape(List<long> a, List<long> b)
     {
         var aSize = a.Count;
         var bSize = b.Count;
@@ -277,8 +277,8 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
             return (false, a, b);
         }
 
-        List<int> newA = a;
-        List<int> newB = b;
+        List<long> newA = a;
+        List<long> newB = b;
 
         if (aSize == bSize)
         {
@@ -353,9 +353,9 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
         return (true, newA, newB);
     }
 
-    private static List<int> SqueezeShape(List<int> shape)
+    private static List<long> SqueezeShape(List<long> shape)
     {
-        var newShape = new List<int> { 1, 1, 1, 1 };
+        var newShape = new List<long> { 1, 1, 1, 1 };
 
         for (int i = shape.Count - 1, k = 3; i >= 0; i--)
         {
@@ -369,7 +369,7 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
         return newShape;
     }
 
-    private static List<int> GetOutputShape(List<int> a, List<int> b)
+    private static List<long> GetOutputShape(List<long> a, List<long> b)
     {
         if (a.Count == 1)
         {

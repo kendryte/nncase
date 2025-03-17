@@ -112,7 +112,7 @@ public partial class CPU
         return new Call(new Concat(axis), inputs.Concat(new[] { ret }).ToArray());
     }
 
-    public static Expr Reshape(Buffer input, Buffer ret, int[] newShape)
+    public static Expr Reshape(Buffer input, Buffer ret, long[] newShape)
     {
         return new Call(new Reshape(newShape), input, ret);
     }
@@ -137,7 +137,7 @@ public partial class CPU
         return new Call(new Pad(pads, padValue), input, ret);
     }
 
-    public static Expr Im2col(Buffer input, Buffer output, IRArray<int> kernel, IRArray<int> stride, IRArray<int> padding, IRArray<int> packedAxes, IRArray<int> padedNums)
+    public static Expr Im2col(Buffer input, Buffer output, IRArray<long> kernel, IRArray<int> stride, IRArray<int> padding, IRArray<int> packedAxes, IRArray<int> padedNums)
     {
         return new Call(new Im2col(kernel, stride, padding, packedAxes, padedNums), input, output);
     }
