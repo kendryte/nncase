@@ -35,19 +35,11 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
         if (permExpr is TensorConst permValue)
         {
             var perm = permValue.Value.ToArray<int>();
-            var ndsbp = new SBP[input.Placement.Rank];
+            var ndsbp = new SBP[tensorType.Shape.Rank];
 
-            for (int i = 0; i < input.Placement.Rank; i++)
+            for (int i = 0; i < ndsbp.Length; i++)
             {
-                switch (input.NdSBP[i])
-                {
-                    case SBPSplit { Axis: int ix }:
-                        ndsbp[i] = SBP.S(perm.IndexOf(ix));
-                        break;
-                    default:
-                        ndsbp[i] = input.NdSBP[i];
-                        break;
-                }
+                ndsbp[i] = input.AxisPolices[perm[i]];
             }
 
             return new DistributedType(tensorType, ndsbp, input.Placement);

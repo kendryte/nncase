@@ -244,11 +244,11 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         }
 
         var axes = ((TensorConst)context.GetArgument(target, Slice.Axes)).Value.ToArray<int>();
-        if (input.NdSBP.Any(sbp => sbp is SBPSplit s && axes.Contains(s.Axis)))
+        if (Enumerable.Range(0, input.AxisPolices.Count).Any(i => input.AxisPolices[i] is SBPSplit && axes.Contains(i)))
         {
             return new InvalidType("not support input tensor type infer");
         }
 
-        return new DistributedType((TensorType)outType, input.NdSBP, input.Placement);
+        return new DistributedType((TensorType)outType, input.AxisPolices, input.Placement);
     }
 }

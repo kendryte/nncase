@@ -18,6 +18,7 @@
 #include <exception>
 #include <nncase/ntt/arch/cpu/runtime.h>
 #include <nncase/ntt/distributed.h>
+#include <nncase/ntt/shape.h>
 #include <thread>
 #include <vector>
 
@@ -120,7 +121,8 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
 #endif
             auto local_rdata_offset = params.local_rdata_header[tid * 2];
             auto local_rdata = params.local_rdata + local_rdata_offset;
-            thread_main(params.inouts, params.rdata, local_rdata);
+            auto program_ids = nncase::ntt::make_ranked_shape(params.cid, params.bid, tid);
+            thread_main(params.inouts, params.rdata, local_rdata, program_ids);
         });
     }
 

@@ -8,6 +8,7 @@ using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
+using Nncase.Utilities;
 using OrtKISharp;
 using static Nncase.Evaluator.EvaluatorUtil;
 using static Nncase.IR.F.Tensors;
@@ -124,7 +125,7 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
         var args = context.GetArguments(target, Conv2D.Stride, Conv2D.Padding, Conv2D.Dilation, Conv2D.Groups);
 
         // Not support split on h/w/r/s
-        if (input.NdSBP.Any(sbp => sbp is SBPSplit s && s.Axis >= 2) || weights.NdSBP.Any(sbp => sbp is SBPSplit s && s.Axis >= 2))
+        if (input.AxisPolices.Skip(2).Any(sbp => sbp is SBPSplit) || weights.AxisPolices.Skip(2).Any(sbp => sbp is SBPSplit))
         {
             return new InvalidType(string.Empty);
         }
@@ -134,17 +135,20 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
             return new InvalidType("placement not equal");
         }
 
+        var ndsbpsIf = DistributedUtility.AxisPolicesToNDSBP(input.AxisPolices, input.Placement.Rank);
+        var ndsbpsW = DistributedUtility.AxisPolicesToNDSBP(weights.AxisPolices, weights.Placement.Rank);
+        var ndsbpBias = DistributedUtility.AxisPolicesToNDSBP(bias.AxisPolices, bias.Placement.Rank);
         var ndsbp = new SBP[input.Placement.Rank];
-        for (int i = 0; i < input.Placement.Rank; i++)
+        for (int i = 0; i < ndsbp.Length; i++)
         {
-            var invalid = new InvalidType($"({input.NdSBP[i]}, {weights.NdSBP[i]}) not support");
-            switch (input.NdSBP[i], weights.NdSBP[i])
+            var invalid = new InvalidType($"({input.AxisPolices[i]}, {weights.AxisPolices[i]}) not support");
+            switch (input.AxisPolices[i], weights.AxisPolices[i])
             {
-                case (SBPSplit { Axis: int ax }, SBPSplit { Axis: int bx }):
+                case (SBPSplit sa, SBPSplit sb):
                     // split on ic
-                    if (ax == 1 && bx == 1)
+                    if (sa.Axes[0] == 1 && sb.Axes[0] == 1)
                     {
-                        if (bias.NdSBP[i] is SBPBroadCast)
+                        if (ndsbpBias[i] is SBPBroadCast)
                         {
                             ndsbp[i] = SBP.P();
                         }
@@ -159,10 +163,10 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
                     }
 
                     break;
-                case (SBPSplit { Axis: int ax }, SBPBroadCast):
-                    if (ax == 0 && bias.NdSBP[i] is SBPBroadCast)
+                case (SBPSplit sa, SBPBroadCast):
+                    if (sa.Axes[0] == 0 && ndsbpBias[i] is SBPBroadCast)
                     {
-                        ndsbp[i] = SBP.S(ax);
+                        ndsbp[i] = SBP.S([sa.Axes[0]]);
                     }
                     else
                     {
@@ -170,10 +174,10 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
                     }
 
                     break;
-                case (SBPBroadCast, SBPSplit { Axis: int bx }):
-                    if (bx == 0 && bias.NdSBP[i] is SBPSplit s && s.Axis == bx)
+                case (SBPBroadCast, SBPSplit sb):
+                    if (sb.Axes[0] == 0 && ndsbpBias[i] is SBPSplit s && s.Axes[0] == sb.Axes[0])
                     {
-                        ndsbp[i] = SBP.S(bx + 1);
+                        ndsbp[i] = SBP.S([sb.Axes[0] + 1]);
                     }
                     else
                     {
@@ -182,7 +186,7 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
 
                     break;
                 case (SBPBroadCast, SBPBroadCast):
-                    if (bias.NdSBP[i] is SBPBroadCast)
+                    if (ndsbpBias[i] is SBPBroadCast)
                     {
                         ndsbp[i] = SBP.B;
                     }
@@ -197,6 +201,8 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
             }
         }
 
-        return new DistributedType(outType, ndsbp, input.Placement);
+        var polices = DistributedUtility.NDSBPToAxisPolices(ndsbp, outType.Shape.Rank);
+
+        return new DistributedType(outType, polices, input.Placement);
     }
 }

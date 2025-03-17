@@ -207,7 +207,7 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 _mainBody.Add(TIR.F.CPU.Where(arguments[0], arguments[1], arguments[2], ret, expr.CheckedType is DistributedType dt_where ? dt_where : null!));
                 break;
             case IR.Tensors.Expand expand:
-                _mainBody.Add(TIR.F.CPU.Expand(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), expr.CheckedType is DistributedType dt_expand ? dt_expand.NdSBP : null!));
+                _mainBody.Add(TIR.F.CPU.Expand(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), expr.CheckedType is DistributedType dt_expand ? dt_expand.AxisPolices : null!));
                 break;
             case IR.NN.Erf erf:
                 _mainBody.Add(TIR.F.CPU.Erf(arguments[0], ret));
@@ -359,15 +359,15 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
     {
         switch (expr.Arguments[0].CheckedType, boxing.NewType)
         {
-            case (TensorType, DistributedType distTensorType):
+            case (TensorType, DistributedType distributedType):
                 {
-                    _mainBody.Add(TIR.F.CPU.TensorLoad(ret, arguments[0], distTensorType.NdSBP, distTensorType.Placement));
+                    _mainBody.Add(TIR.F.CPU.TensorLoad(ret, arguments[0], distributedType.AxisPolices, distributedType.Placement));
                 }
 
                 break;
-            case (DistributedType distTensorType, TensorType):
+            case (DistributedType distributedType, TensorType):
                 {
-                    _mainBody.Add(TIR.F.CPU.TensorStore(arguments[0], ret, distTensorType.NdSBP, distTensorType.Placement));
+                    _mainBody.Add(TIR.F.CPU.TensorStore(arguments[0], ret, distributedType.AxisPolices, distributedType.Placement));
                 }
 
                 break;

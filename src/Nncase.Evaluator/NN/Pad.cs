@@ -98,7 +98,7 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
             return new InvalidType("pad infer type failed");
         }
 
-        return new DistributedType(tensorType, input.NdSBP, input.Placement);
+        return new DistributedType(tensorType, input.AxisPolices, input.Placement);
     }
 
     /// <inheritdoc/>

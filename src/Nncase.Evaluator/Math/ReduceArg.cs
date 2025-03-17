@@ -115,19 +115,18 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
         {
             var axis = axisValue.Value.ToScalar<int>();
             axis = axis >= 0 ? axis : inshape.Rank + axis;
-            var keepdim = keepDimsValue.Value.ToScalar<bool>();
-            var ndsbp = new SBP[distributedType.Placement.Rank];
+            var ndsbp = new SBP[inshape.Rank];
             for (int i = 0; i < ndsbp.Length; i++)
             {
-                switch (distributedType.NdSBP[i])
+                switch (distributedType.AxisPolices[i])
                 {
-                    case SBPSplit { Axis: int saxis }:
-                        if (saxis == axis)
+                    case SBPSplit split:
+                        if (i == axis)
                         {
                             return new InvalidType("can't split on reduce axis.");
                         }
 
-                        ndsbp[i] = keepdim ? SBP.S(saxis) : SBP.S(saxis > axis ? saxis - 1 : saxis);
+                        ndsbp[i] = split;
                         break;
                     case SBPPartial:
                         return new InvalidType("not support partial sum.");
@@ -137,10 +136,10 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
                 }
             }
 
-            return distributedType with { NdSBP = new(ndsbp), TensorType = tensorType };
+            return distributedType with { AxisPolices = tensorType.Shape.Rank == ndsbp.Length ? ndsbp : ndsbp.Where((_, i) => i != axis).ToArray(), TensorType = tensorType };
         }
 
-        if (!distributedType.NdSBP.All(sbp => sbp is SBPBroadCast))
+        if (!distributedType.AxisPolices.All(sbp => sbp is SBPPartial))
         {
             return new InvalidType(string.Empty);
         }

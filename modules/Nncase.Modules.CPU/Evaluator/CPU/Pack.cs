@@ -99,23 +99,23 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
         }
 
         var divisor = Enumerable.Repeat(1, input.TensorType.Shape.Rank).ToList();
-        for (int i = 0; i < input.Placement.Rank; i++)
+        for (int i = 0; i < divisor.Count; i++)
         {
-            if (input.NdSBP[i] is SBPSplit { Axis: int axis })
+            if (input.AxisPolices[i] is SBPSplit split)
             {
-                divisor[axis] *= input.Placement.Hierarchy[i];
+                divisor[i] *= split.Axes.Select(s => input.Placement.Hierarchy[s]).Aggregate(1, (a, b) => a * b);
             }
         }
 
-        var ndsbp = new SBP[input.Placement.Rank];
-        for (int i = 0; i < input.Placement.Rank; i++)
+        var ndsbp = new SBP[input.TensorType.Shape.Rank];
+        for (int i = 0; i < input.TensorType.Shape.Rank; i++)
         {
-            if (input.NdSBP[i] is SBPSplit { Axis: int axis } && target.Axes.Contains(axis))
+            if (input.AxisPolices[i] is SBPSplit && target.Axes.Contains(i))
             {
-                var lane = target.Lanes[target.Axes.IndexOf(axis)];
-                if (input.TensorType.Shape[axis].FixedValue / lane % divisor[axis] == 0)
+                var lane = target.Lanes[target.Axes.IndexOf(i)];
+                if (input.TensorType.Shape[i].FixedValue / lane % divisor[i] == 0)
                 {
-                    ndsbp[i] = input.NdSBP[i];
+                    ndsbp[i] = input.AxisPolices[i];
                 }
                 else
                 {
@@ -124,7 +124,7 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
             }
             else
             {
-                ndsbp[i] = input.NdSBP[i];
+                ndsbp[i] = input.AxisPolices[i];
             }
         }
 

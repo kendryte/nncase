@@ -199,22 +199,23 @@ public class InstanceNormalizationEvaluator : IEvaluator<InstanceNormalization>,
             return invalid;
         }
 
-        var ndsbp = new SBP[input.Placement.Rank];
+        var ndsbp = new SBP[input.AxisPolices.Count];
 
         // scale & bias always on Channel
         const int rAxis = 1;
-
-        for (int i = 0; i < input.Placement.Rank; i++)
+        for (int i = 0; i < ndsbp.Length; i++)
         {
-            switch (input.NdSBP[i], scale.NdSBP[i], bias.NdSBP[i])
+            var scalePolicy = i - rAxis == 0 ? scale.AxisPolices[i - rAxis] : null;
+            var biasPolicy = i - rAxis == 0 ? bias.AxisPolices[i - rAxis] : null;
+            switch (input.AxisPolices[i], scalePolicy, biasPolicy)
             {
-                case (SBPSplit { Axis: int ix }, SBPSplit { Axis: int sx }, SBPSplit { Axis: int bx }) when ix == rAxis && sx == (ix - rAxis) && bx == sx:
-                    ndsbp[i] = SBP.S(ix);
+                case (SBPSplit si, SBPSplit ss, SBPSplit sb) when i == rAxis && si.Axes == ss.Axes && ss.Axes == sb.Axes:
+                    ndsbp[i] = si;
                     break;
-                case (SBPSplit { Axis: int ix }, SBPBroadCast, SBPBroadCast) when ix != rAxis:
-                    ndsbp[i] = SBP.S(ix);
+                case (SBPSplit si, _, _) when i != rAxis:
+                    ndsbp[i] = si;
                     break;
-                case (SBPBroadCast, SBPBroadCast, SBPBroadCast):
+                case (SBPBroadCast, SBPBroadCast or null, SBPBroadCast or null):
                     ndsbp[i] = SBP.B;
                     break;
                 default:

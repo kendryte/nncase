@@ -140,27 +140,27 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     public override string VisitType(DistributedType type)
     {
         var shape = type.TensorType.Shape.ToArray();
-        foreach (var (s, r) in type.NdSBP.Select((s, r) => (s, r)))
+        foreach (var (s, r) in type.AxisPolices.Select((s, r) => (s, r)))
         {
             if (s is SBPSplit split)
             {
-                if (shape[split.Axis].IsFixed)
+                if (shape[r].IsFixed)
                 {
-                    shape[split.Axis] = shape[split.Axis] / type.Placement.Hierarchy[r];
+                    shape[r] = shape[r] / split.Axes.Select(a => type.Placement.Hierarchy[a]).Aggregate(1, (a, b) => a * b);
                 }
             }
         }
 
         var sshape = shape.Select(s => s.ToString()).ToArray();
-        foreach (var (s, r) in type.NdSBP.Select((s, r) => (s, r)))
+        foreach (var (s, r) in type.AxisPolices.Select((s, r) => (s, r)))
         {
             if (s is SBPSplit split)
             {
-                sshape[split.Axis] += $"@{type.Placement.Name[r]}";
+                sshape[r] += string.Join(string.Empty, split.Axes.Select(a => $"@{type.Placement.Name[a]}"));
             }
         }
 
-        return $"Dist({VisitType(type.TensorType)}, ({string.Join(',', type.NdSBP)}), [{string.Join(',', sshape)}])";
+        return $"Dist({VisitType(type.TensorType)}, ({string.Join(',', type.AxisPolices)}), [{string.Join(',', sshape)}])";
     }
 
     /// <inheritdoc/>

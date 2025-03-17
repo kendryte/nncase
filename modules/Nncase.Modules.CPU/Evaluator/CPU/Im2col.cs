@@ -107,34 +107,52 @@ public sealed class Im2colEvaluator : ITypeInferencer<Im2col>, ICostEvaluator<Im
         }
 
         var outShape = tensorType.Shape.ToValueArray();
-        var ndsbp = new SBP[dt.NdSBP.Count];
-        for (int i = 0; i < dt.NdSBP.Count; i++)
-        {
-            var sbp = dt.NdSBP[i];
-            switch (sbp)
-            {
-                case SBPSplit { Axis: int axis }:
-                    if (axis == 0)
-                    {
-                        outShape[1] /= dt.Placement.Hierarchy[i];
-                        ndsbp[i] = SBP.S(1);
-                    }
-                    else if (axis == 1)
-                    {
-                        outShape[0] /= dt.Placement.Hierarchy[i];
-                        ndsbp[i] = SBP.S(0);
-                    }
-                    else
-                    {
-                        return new InvalidType($"can't split the axis {axis}");
-                    }
+        var ndsbp = new SBP[outShape.Length];
 
-                    break;
-                case SBPPartial:
-                    return new InvalidType($"can't be partial sum");
-                default:
-                    ndsbp[i] = sbp;
-                    break;
+        for (int i = 0; i < dt.AxisPolices.Count; i++)
+        {
+            var sbp = dt.AxisPolices[i];
+            if (i == 0)
+            {
+                switch (sbp)
+                {
+                    case SBPSplit split:
+                        outShape[1] /= split.Axes.Select(a => dt.Placement.Hierarchy[a]).Aggregate(1, (a, b) => a * b);
+                        ndsbp[1] = split;
+                        break;
+                    case SBPPartial:
+                        return new InvalidType($"can't be partial sum");
+                    default:
+                        ndsbp[1] = sbp;
+                        break;
+                }
+            }
+            else if (i == 1)
+            {
+                switch (sbp)
+                {
+                    case SBPSplit split:
+                        outShape[0] /= split.Axes.Select(a => dt.Placement.Hierarchy[a]).Aggregate(1, (a, b) => a * b);
+                        ndsbp[0] = split;
+                        break;
+                    case SBPPartial:
+                        return new InvalidType($"can't be partial sum");
+                    default:
+                        ndsbp[0] = sbp;
+                        break;
+                }
+            }
+            else
+            {
+                switch (sbp)
+                {
+                    case SBPSplit split:
+                        return new InvalidType($"can't split on {i}");
+                    case SBPPartial:
+                        return new InvalidType($"can't be partial sum");
+                    default:
+                        break;
+                }
             }
         }
 

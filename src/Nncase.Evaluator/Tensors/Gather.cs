@@ -102,28 +102,23 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
             return invalid;
         }
 
-        var ndsbp = new SBP[input.Placement.Rank];
-
-        for (int i = 0; i < input.Placement.Rank; i++)
+        if (input.AxisPolices.Any(sbp => sbp is SBPSplit split && input.AxisPolices.IndexOf(split) == axis))
         {
-            switch (input.NdSBP[i], index.NdSBP[i])
-            {
-                case (SBPSplit { Axis: int ix }, _) when ix == axis:
-                    return new InvalidType($"the input can't split on {axis}");
+            return new InvalidType($"the input can't split on {axis}");
+        }
 
-                case (SBPBroadCast, SBPSplit { Axis: int ix }):
-                    ndsbp[i] = SBP.S(ix);
-                    break;
-                case (SBPSplit { Axis: int ix }, SBPBroadCast):
-                    ndsbp[i] = SBP.S(ix - axis + index.TensorType.Shape.Rank - 1);
-                    break;
+        var ndsbp = input.AxisPolices[..axis].ToArray().Concat(index.AxisPolices).Concat(input.AxisPolices[(axis + 1)..].ToArray()).ToArray();
 
-                case (SBPBroadCast, SBPBroadCast):
-                    ndsbp[i] = SBP.B;
-                    break;
-                default:
-                    return invalid;
-            }
+        // one topo axis can only be spilt on one dim axis
+        if (!DistributedUtility.IsDistributable(ndsbp))
+        {
+            return invalid;
+        }
+
+        // not support partial
+        if (ndsbp.Any(sbp => sbp is SBPPartial))
+        {
+            return invalid;
         }
 
         return new DistributedType(tensorType, ndsbp, input.Placement);

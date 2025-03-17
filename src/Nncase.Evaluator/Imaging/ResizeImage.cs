@@ -133,15 +133,15 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
             return new InvalidType(string.Empty);
         }
 
-        var ndsbp = new SBP[input.Placement.Rank];
+        var ndsbp = new SBP[tensorType.Shape.Rank];
 
         var invalid = new InvalidType($"{input}, not support");
-        for (int i = 0; i < input.Placement.Rank; i++)
+        for (int i = 0; i < ndsbp.Length; i++)
         {
-            switch (input.NdSBP[i])
+            switch (input.AxisPolices[i])
             {
-                case SBPSplit { Axis: int ix } when ix < 2:
-                    ndsbp[i] = SBP.S(ix);
+                case SBPSplit split when i < 2:
+                    ndsbp[i] = split;
                     break;
                 case SBPBroadCast:
                     ndsbp[i] = SBP.B;

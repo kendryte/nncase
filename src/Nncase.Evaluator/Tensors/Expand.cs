@@ -85,15 +85,16 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
         if (shape_expr is TensorConst constShape)
         {
             var newShape = constShape.Value.ToArray<int>();
-            var ndsbp = new SBP[input.Placement.Rank];
-            for (int i = 0; i < input.Placement.Rank; i++)
+            var ndsbp = new SBP[newShape.Length];
+
+            for (int i = 0; i < ndsbp.Length; i++)
             {
-                if (input.NdSBP[i] is SBPSplit sbp && newShape[sbp.Axis] != input.TensorType.Shape[sbp.Axis])
+                if (input.AxisPolices[i] is SBPSplit && newShape[i] != input.TensorType.Shape[i])
                 {
                     return invalid;
                 }
 
-                ndsbp[i] = input.NdSBP[i];
+                ndsbp[i] = input.AxisPolices[i];
             }
 
             return new DistributedType(new TensorType(input.TensorType.DType, new Shape(newShape)), ndsbp, input.Placement);

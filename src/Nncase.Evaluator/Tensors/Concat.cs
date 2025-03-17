@@ -187,12 +187,12 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
             return new InvalidType("the inputs have different placement");
         }
 
-        var ndsbp = new SBP[distributedType.Placement.Rank];
+        var ndsbp = new SBP[tensorType.Shape.Rank];
 
-        for (int i = 0; i < distributedType.Placement.Rank; i++)
+        for (int i = 0; i < ndsbp.Length; i++)
         {
-            var sbps = inputs.OfType<DistributedType>().Select(d => d.NdSBP[i]).ToArray();
-            if (sbps.Any(sbp => sbp is SBPSplit { Axis: int x } && x == axis))
+            var sbps = inputs.OfType<DistributedType>().Select(d => d.AxisPolices[i]).ToArray();
+            if (sbps.Any(sbp => sbp is SBPSplit split && i == axis))
             {
                 return new InvalidType("not support distribute on concat axis");
             }

@@ -67,7 +67,7 @@ public static class KernelUtility
     public static string DistributedToC(DistributedType distributedType)
     {
         var placement = distributedType.Placement;
-        var ndSBP = distributedType.NdSBP;
+        var ndSBP = distributedType.AxisPolices;
 
         var sb = new StringBuilder("sharding<mesh<topology::thread, ");
         for (int i = 0; i < placement.Rank; i++)
@@ -85,12 +85,10 @@ public static class KernelUtility
 
         for (int axis = 0; axis < distributedType.TensorType.Shape.Rank; axis++)
         {
-            var value = from sbp in ndSBP.Select((x, i) => (x, i))
-                        where sbp.x is SBPSplit split && split.Axis == axis
-                        select sbp.i;
-            if (value.Any())
+            var value = ndSBP[axis];
+            if (value is SBPSplit s)
             {
-                sb.Append($", S<{string.Join(", ", value)}>");
+                sb.Append($", S<{string.Join(", ", s.Axes)}>");
             }
             else
             {

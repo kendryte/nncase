@@ -30,6 +30,12 @@ public partial class LowerMatmul : RewriteRule<Pattern>
 
     private Expr? GetReplace(Expr call, Op op, Expr lhs, Expr rhs)
     {
+        // TODO: summa not support tiling for now.
+        if (lhs.CheckedType is DistributedType ldt && ldt.AxisPolices.Last() is SBPSplit)
+        {
+            return null;
+        }
+
         var lhsShape = lhs.CheckedShape.ToValueArray();
         var rhsShape = rhs.CheckedShape.ToValueArray();
         var rank = Math.Max(lhs.CheckedShape.Rank, rhs.CheckedShape.Rank) + 1;
@@ -102,7 +108,7 @@ public partial class LowerMatmul : RewriteRule<Pattern>
         var outBuffer = call.CheckedType switch
         {
             TensorType t => IR.F.Buffer.Uninitialized(t.DType, TIR.MemoryLocation.Data, t.Shape.ToValueArray()),
-            DistributedType dt => IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape.ToValueArray(), dt.NdSBP, dt.Placement),
+            DistributedType dt => IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape.ToValueArray(), dt.AxisPolices, dt.Placement),
             _ => throw new ArgumentOutOfRangeException(nameof(call)),
         };
         return IR.F.Affine.Grid(ModuleKind)
