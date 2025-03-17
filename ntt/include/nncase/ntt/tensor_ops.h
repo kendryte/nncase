@@ -134,6 +134,75 @@ struct tensor_binary_impl<Op, TScalar, TTensor> {
     Op<TScalar, element_type2> op_;
 };
 
+// compare tensor imp
+template <template <class T1, class T2> class Op, class T1, class T2>
+struct tensor_compare_impl;
+
+template <template <class T1, class T2> class Op, IsTensor TTensor, class T2>
+struct tensor_compare_impl<Op, TTensor, T2> {
+    using element_type1 = typename TTensor::element_type;
+    using element_type2 = element_or_scalar_t<T2>;
+
+    constexpr TTensor operator()(const TTensor &v1,
+                                 const T2 &v2) const noexcept {
+        TTensor value;
+        if constexpr (IsTensor<T2>) {
+            if constexpr (TTensor::shape().rank() == 2 &&
+                          T2::shape().rank() == 1) {
+                apply(v1.shape(), [&](auto index) {
+                    value(index) = op_(v1(index), v2(*index.rbegin()));
+                });
+            } else {
+                apply(v1.shape(), [&](auto index) {
+                    value(index) = op_(v1(index), v2(index));
+                });
+            }
+        } else {
+            apply(v1.shape(),
+                  [&](auto index) { value(index) = op_(v1(index), v2); });
+        }
+
+        return value;
+    }
+
+  private:
+    Op<element_type1, element_type2> op_;
+};
+
+template <template <class T1, class T2> class Op, IsTensor T1, IsTensor T2>
+    requires(T1::rank() == 2 && T2::rank() == 2)
+struct tensor_compare_impl<Op, T1, T2> {
+    using sub_vector_type = fixed_tensor_alike_t<T1, T1::shape().at(1)>;
+
+    constexpr T1 operator()(const T1 &v1, const T2 &v2) const noexcept {
+        T1 value;
+        for (size_t m = 0; m < T1::shape().at(0); m++) {
+            value(m) = op_(v1(m), v2(m));
+        }
+        return value;
+    }
+
+  private:
+    Op<sub_vector_type, sub_vector_type> op_;
+};
+
+template <template <class T1, class T2> class Op, IsScalar TScalar,
+          IsTensor TTensor>
+struct tensor_compare_impl<Op, TScalar, TTensor> {
+    using element_type2 = typename TTensor::element_type;
+
+    constexpr TTensor operator()(const TScalar &v1,
+                                 const TTensor &v2) const noexcept {
+        TTensor value;
+        apply(v2.shape(),
+              [&](auto index) { value(index) = op_(v1, v2(index)); });
+        return value;
+    }
+
+  private:
+    Op<TScalar, element_type2> op_;
+};
+
 } // namespace detail
 
 #define NTT_DEFINE_TENSOR_UNARY_IMPL(op)                                       \
@@ -145,6 +214,12 @@ struct tensor_binary_impl<Op, TScalar, TTensor> {
     struct op<T1, T2> : detail::tensor_binary_impl<op, T1, T2> {};             \
     template <IsScalar T1, IsTensor T2>                                        \
     struct op<T1, T2> : detail::tensor_binary_impl<op, T1, T2> {}
+
+#define NTT_DEFINE_TENSOR_COMPARE_IMPL(op)                                      \
+    template <IsTensor T1, class T2>                                           \
+    struct op<T1, T2> : detail::tensor_compare_impl<op, T1, T2> {};             \
+    template <IsScalar T1, IsTensor T2>                                        \
+    struct op<T1, T2> : detail::tensor_compare_impl<op, T1, T2> {}
 
 NTT_DEFINE_TENSOR_UNARY_IMPL(abs);
 NTT_DEFINE_TENSOR_UNARY_IMPL(acos);
@@ -179,6 +254,13 @@ NTT_DEFINE_TENSOR_BINARY_IMPL(min);
 NTT_DEFINE_TENSOR_BINARY_IMPL(max);
 NTT_DEFINE_TENSOR_BINARY_IMPL(pow);
 NTT_DEFINE_TENSOR_BINARY_IMPL(swishb);
+
+NTT_DEFINE_TENSOR_COMPARE_IMPL(equal);
+NTT_DEFINE_TENSOR_COMPARE_IMPL(not_equal);
+NTT_DEFINE_TENSOR_COMPARE_IMPL(greater);
+NTT_DEFINE_TENSOR_COMPARE_IMPL(greater_or_equal);
+NTT_DEFINE_TENSOR_COMPARE_IMPL(less);
+NTT_DEFINE_TENSOR_COMPARE_IMPL(less_or_equal);
 
 template <IsTensor TTensor> struct inner_product<TTensor, TTensor> {
     using element_type = typename TTensor::element_type;
