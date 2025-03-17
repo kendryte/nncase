@@ -70,15 +70,12 @@ namespace Nncase.Importer
             // }
 
             var inputIdsShapeExpr = new Expr[] {    1L, //_dynVarMap["batch_size"],
-                                                    9L,//_dynVarMap["sequence_length"]
-                                                    896L // embeding_dim
+                                                    9L//_dynVarMap["sequence_length"]
                                                 };
             var attentionMaskShapeExpr = new Expr[]
             {
                 1L, // _dynVarMap["batch_size"],
-                1L, // head
                 9L, // _dynVarMap["sequence_length"]
-                9L, // _dynVarMap["sequence_length"],
             };
             var positionIdsShapeExpr = new Expr[] {
                                                 1L, // _dynVarMap["batch_size"],
@@ -95,10 +92,9 @@ namespace Nncase.Importer
 
             var inputIds = new Var(
                 "input_ids",
-                new TensorType(DataTypes.Float32, new Shape(
+                new TensorType(DataTypes.Int32, new Shape(
                                                      1L, // _dynVarMap["batch_size"],
-                                                     9L, // _dynVarMap["sequence_length"]
-                                                     896L // embeding_dim
+                                                     9L // _dynVarMap["sequence_length"]
                                                      )
                                 )
                 );
@@ -109,8 +105,6 @@ namespace Nncase.Importer
                     DataTypes.Float32,
                     new Shape(
                         1L, //_dynVarMap["batch_size"],
-                        1L, //head
-                        9L, //_dynVarMap["sequence_length"]
                         9L //_dynVarMap["sequence_length"]
 
                         )
