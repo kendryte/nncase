@@ -140,16 +140,20 @@ public static class ShapeExprUtility
         return shape;
     }
 
-    public static Tensor GetPermutation(Expr tensor, int[] dims)
+    public static Expr GetPermutation(Expr tensor, long[] dims)
     {
-        // string exprStr = CompilerServices.Print(tensor);
-        // System.Console.WriteLine($"Expr详细信息: {exprStr}");
+
         var r = tensor.CheckedShape.Rank;
 
         // System.Console.WriteLine($"shape:{tensor.CheckedShape} rank:{r} dims:{dims[0]},{dims[1]}");
         // format dims to non-negative
         // var newDims = dims.Select(x => x < 0 ? x + r : x).ToArray();
-        var fullDims = Enumerable.Range(0, r).ToArray();
+        List<long> fullDims = new List<long>();
+
+        for (int i = 0; i!= r; i++)
+        {
+            fullDims.Add((long)i);
+        }
         for (int i = 0; i != dims.Length; i++)
         {
             if (dims[i] < 0)
@@ -160,8 +164,8 @@ public static class ShapeExprUtility
 
         if (dims.Length == 2)
         {
-            (fullDims[dims[0]], fullDims[dims[1]]) = (fullDims[dims[1]], fullDims[dims[0]]);
-            return Tensor.FromArray(fullDims);
+            (fullDims[(int)dims[0]], fullDims[(int)dims[1]]) = (fullDims[(int)dims[1]], fullDims[(int)dims[0]]);
+            return Tensor.FromArray(fullDims.ToArray());
         }
         else
         {
