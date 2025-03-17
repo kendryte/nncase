@@ -115,3 +115,11 @@ class Generator:
 
     def from_numpy(self, path) -> np.ndarray:
         return np.load(path)
+    
+    def from_text(self, path) -> List[str]:
+        data = []
+        with open(path, "r") as f:
+            for i in f.readlines():
+                data.append(i.strip("\n"))
+        return data
+        
