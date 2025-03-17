@@ -15,7 +15,7 @@ public static class RulesUtility
     /// <returns>axis, if not found return -1.</returns>
     public static int FindSqueezeAxis(int[] oldShape, int[] newShape)
     {
-        if (oldShape.Length <= newShape.Length)
+        if (!IsSqueeze(oldShape, newShape) || oldShape.Length <= newShape.Length)
         {
             return -1;
         }
@@ -34,5 +34,18 @@ public static class RulesUtility
 
         var oneindex = (indices.Count == 1) ? indices[0] : -1;
         return oneindex;
+    }
+
+    /// <summary>
+    /// if two shapes are squeeze/unsqueeze.
+    /// </summary>
+    /// <param name="oldShape">old shape.</param>
+    /// <param name="newShape">new shape.</param>
+    /// <returns>bool.</returns>
+    public static bool IsSqueeze(int[] oldShape, int[] newShape)
+    {
+        var squeezedOldShape = oldShape.Where(x => x != 1).ToArray();
+        var squeezedNewShape = newShape.Where(x => x != 1).ToArray();
+        return squeezedOldShape.SequenceEqual(squeezedNewShape);
     }
 }
