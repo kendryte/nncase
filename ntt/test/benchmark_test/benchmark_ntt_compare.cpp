@@ -34,13 +34,7 @@ void benchmark_ntt_compare(std::string op_name, T lhs_low, T lhs_high, T rhs_low
 
     using tensor_type = ntt::tensor<ntt::vector<T, N>, ntt::fixed_shape<size2>>;
 
-#if __riscv
     using tensor_type1 = ntt::tensor<ntt::vector<bool, N>, ntt::fixed_shape<size2>>;
-#elif __x86_64__
-    using tensor_type1 = ntt::tensor<ntt::vector<T, N>, ntt::fixed_shape<size2>>; 
-#else 
-    using tensor_type1 = ntt::tensor<ntt::vector<bool, N>, ntt::fixed_shape<size2>>;    
-#endif    
                 
     tensor_type ntt_lhs, ntt_rhs;
     NttTest::init_tensor(ntt_lhs, lhs_low, lhs_high);
@@ -68,14 +62,14 @@ int main(int argc, char *argv[]) {
     constexpr size_t N = NTT_VLEN / (sizeof(float) * 8);
     benchmark_ntt_compare<ntt::ops::equal, float, N>("equal", -10.f, 10.f,
                                                      -10.f, 10.f);
-    benchmark_ntt_compare<ntt::ops::not_equal, float, N>("not_equal", -10.f,
-                                                         10.f, -10.f, 10.f);
-    benchmark_ntt_compare<ntt::ops::greater, float, N>("greater", -10.f, 10.f,
-                                                       -10.f, 10.f);
-    benchmark_ntt_compare<ntt::ops::greater_or_equal, float, N>(
-        "greater_or_equal", -10.f, 10.f, 1.f, 10.f);
-    benchmark_ntt_compare<ntt::ops::less, float, N>("less", -10.f, 10.f, -10.f,
-                                                    10.f);
-    benchmark_ntt_compare<ntt::ops::less_or_equal, float, N>(
-        "less_or_equal", -10.f, 10.f, -10.f, 10.f);
+    // benchmark_ntt_compare<ntt::ops::not_equal, float, N>("not_equal", -10.f,
+    //                                                      10.f, -10.f, 10.f);
+    // benchmark_ntt_compare<ntt::ops::greater, float, N>("greater", -10.f, 10.f,
+    //                                                    -10.f, 10.f);
+    // benchmark_ntt_compare<ntt::ops::greater_or_equal, float, N>(
+    //     "greater_or_equal", -10.f, 10.f, 1.f, 10.f);
+    // benchmark_ntt_compare<ntt::ops::less, float, N>("less", -10.f, 10.f, -10.f,
+    //                                                 10.f);
+    // benchmark_ntt_compare<ntt::ops::less_or_equal, float, N>(
+    //     "less_or_equal", -10.f, 10.f, -10.f, 10.f);
 }
