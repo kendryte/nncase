@@ -959,204 +959,174 @@ template <> struct clamp<ntt::vector<float, 8>, float> {
 
 // compare
 
-#include <immintrin.h>
-#include <cstring>
-
-// 假设 ntt::vector<bool, 8> 的内部存储为连续 8 bits（1 byte）
-// 使用联合体直接操作内存布局
-// union BoolVector8 {
-//     ntt::vector<bool, 8> vec;
-//     uint8_t mask_bytes[8];  // 每个元素对应一个布尔值（0x00 或 0xFF）
-
-//     explicit BoolVector8(uint8_t mask) {
-//         for (int i = 0; i < 8; ++i) {
-//             mask_bytes[i] = (mask & (1 << i)) ? 0xFF : 0x00;
-//         }
-//     }
-// };
-
-
-// vector vs vector
+// equal: vector vs vector
 template <> struct equal<ntt::vector<float, 8>, ntt::vector<float, 8>> {
-    ntt::vector<bool, 8>
+    ntt::vector<float, 8>
     operator()(const ntt::vector<float, 8> &v1,
                const ntt::vector<float, 8> &v2) const noexcept {
-        ntt::vector<bool, 8> output;
-        __m256i one_epi8 = _mm256_set1_epi8(1); 
-        auto cmp_mask = _mm256_cmp_ps(v1, v2, _CMP_EQ_OQ);
-        __m256i bool_vals = _mm256_and_si256(_mm256_castps_si256(cmp_mask), one_epi8); // 0xFF->1, 0x00->0
-        _mm256_storeu_si256((__m256i*)&output(0), bool_vals); // 存储到 bool 数组（int8_t）
-        return output;
+        return _mm256_cmp_ps(v1, v2, _CMP_EQ_OQ);
     }
 };
 
+// equal: vector vs scalar
+template <> struct equal<ntt::vector<float, 8>, float> {
+    ntt::vector<float, 8> operator()(const ntt::vector<float, 8> &v1,
+                                     const float &f2) const noexcept {
+        auto v2 = _mm256_set1_ps(f2);
+        return _mm256_cmp_ps(v1, v2, _CMP_EQ_OQ);
+    }
+};
 
-// vector vs scalar（同理）
-// template <>
-// struct equal<ntt::vector<float, 8>, float> {
-//     ntt::vector<bool, 8>
-//     operator()(const ntt::vector<float, 8>& v1,
-//                const float& f2) const noexcept {
-//         __m256 v2 = _mm256_set1_ps(f2);
-//         __m256 cmp = _mm256_cmp_ps(v1, v2, _CMP_EQ_OQ);
-//         uint8_t mask = static_cast<uint8_t>(_mm256_movemask_ps(cmp));
-//         return BoolVector8(mask).vec;
-//     }
-// };
+// equal: scalar vs vector
+template <> struct equal<float, ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const float &f1,
+               const ntt::vector<float, 8> &v2) const noexcept {
+        auto v1 = _mm256_set1_ps(f1);
+        return _mm256_cmp_ps(v1, v2, _CMP_EQ_OQ);
+    }
+};
 
-// // scalar vs vector（同理）
-// template <>
-// struct equal<float, ntt::vector<float, 8>> {
-//     ntt::vector<bool, 8>
-//     operator()(const float& f1,
-//                const ntt::vector<float, 8>& v2) const noexcept {
-//         __m256 v1 = _mm256_set1_ps(f1);
-//         __m256 cmp = _mm256_cmp_ps(v1, v2, _CMP_EQ_OQ);
-//         uint8_t mask = static_cast<uint8_t>(_mm256_movemask_ps(cmp));
-//         return BoolVector8(mask).vec;
-//     }
-// };
+// not_equal: vector vs vector
+template <> struct not_equal<ntt::vector<float, 8>, ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const ntt::vector<float, 8> &v1,
+               const ntt::vector<float, 8> &v2) const noexcept {
+        return _mm256_cmp_ps(v1, v2, _CMP_NEQ_OQ);
+    }
+};
 
-// // not_equal: vector vs vector
-// template <> struct not_equal<ntt::vector<float, 8>, ntt::vector<float, 8>> {
-//     ntt::vector<float, 8>
-//     operator()(const ntt::vector<float, 8> &v1,
-//                const ntt::vector<float, 8> &v2) const noexcept {
-//         return _mm256_cmp_ps(v1, v2, _CMP_NEQ_OQ);
-//     }
-// };
+// not_equal: vector vs scalar
+template <> struct not_equal<ntt::vector<float, 8>, float> {
+    ntt::vector<float, 8> operator()(const ntt::vector<float, 8> &v1,
+                                     const float &f2) const noexcept {
+        auto v2 = _mm256_set1_ps(f2);
+        return _mm256_cmp_ps(v1, v2, _CMP_NEQ_OQ);
+    }
+};
 
-// // not_equal: vector vs scalar
-// template <> struct not_equal<ntt::vector<float, 8>, float> {
-//     ntt::vector<float, 8> operator()(const ntt::vector<float, 8> &v1,
-//                                      const float &f2) const noexcept {
-//         auto v2 = _mm256_set1_ps(f2);
-//         return _mm256_cmp_ps(v1, v2, _CMP_NEQ_OQ);
-//     }
-// };
+// not_equal: scalar vs vector
+template <> struct not_equal<float, ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const float &f1,
+               const ntt::vector<float, 8> &v2) const noexcept {
+        auto v1 = _mm256_set1_ps(f1);
+        return _mm256_cmp_ps(v1, v2, _CMP_NEQ_OQ);
+    }
+};
 
-// // not_equal: scalar vs vector
-// template <> struct not_equal<float, ntt::vector<float, 8>> {
-//     ntt::vector<float, 8>
-//     operator()(const float &f1,
-//                const ntt::vector<float, 8> &v2) const noexcept {
-//         auto v1 = _mm256_set1_ps(f1);
-//         return _mm256_cmp_ps(v1, v2, _CMP_NEQ_OQ);
-//     }
-// };
+// greater: vector vs vector
+template <> struct greater<ntt::vector<float, 8>, ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const ntt::vector<float, 8> &v1,
+               const ntt::vector<float, 8> &v2) const noexcept {
+        return _mm256_cmp_ps(v1, v2, _CMP_GT_OQ);
+    }
+};
 
-// // greater: vector vs vector
-// template <> struct greater<ntt::vector<float, 8>, ntt::vector<float, 8>> {
-//     ntt::vector<float, 8>
-//     operator()(const ntt::vector<float, 8> &v1,
-//                const ntt::vector<float, 8> &v2) const noexcept {
-//         return _mm256_cmp_ps(v1, v2, _CMP_GT_OQ);
-//     }
-// };
+// greater: vector vs scalar
+template <> struct greater<ntt::vector<float, 8>, float> {
+    ntt::vector<float, 8> operator()(const ntt::vector<float, 8> &v1,
+                                     const float &f2) const noexcept {
+        auto v2 = _mm256_set1_ps(f2);
+        return _mm256_cmp_ps(v1, v2, _CMP_GT_OQ);
+    }
+};
 
-// // greater: vector vs scalar
-// template <> struct greater<ntt::vector<float, 8>, float> {
-//     ntt::vector<float, 8> operator()(const ntt::vector<float, 8> &v1,
-//                                      const float &f2) const noexcept {
-//         auto v2 = _mm256_set1_ps(f2);
-//         return _mm256_cmp_ps(v1, v2, _CMP_GT_OQ);
-//     }
-// };
+// greater: scalar vs vector
+template <> struct greater<float, ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const float &f1,
+               const ntt::vector<float, 8> &v2) const noexcept {
+        auto v1 = _mm256_set1_ps(f1);
+        return _mm256_cmp_ps(v1, v2, _CMP_GT_OQ);
+    }
+};
 
-// // greater: scalar vs vector
-// template <> struct greater<float, ntt::vector<float, 8>> {
-//     ntt::vector<float, 8>
-//     operator()(const float &f1,
-//                const ntt::vector<float, 8> &v2) const noexcept {
-//         auto v1 = _mm256_set1_ps(f1);
-//         return _mm256_cmp_ps(v1, v2, _CMP_GT_OQ);
-//     }
-// };
+// greater_or_equal: vector vs vector
+template <>
+struct greater_or_equal<ntt::vector<float, 8>, ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const ntt::vector<float, 8> &v1,
+               const ntt::vector<float, 8> &v2) const noexcept {
+        return _mm256_cmp_ps(v1, v2, _CMP_GE_OQ);
+    }
+};
 
-// // greater_or_equal: vector vs vector
-// template <>
-// struct greater_or_equal<ntt::vector<float, 8>, ntt::vector<float, 8>> {
-//     ntt::vector<float, 8>
-//     operator()(const ntt::vector<float, 8> &v1,
-//                const ntt::vector<float, 8> &v2) const noexcept {
-//         return _mm256_cmp_ps(v1, v2, _CMP_GE_OQ);
-//     }
-// };
+// greater_or_equal: vector vs scalar
+template <> struct greater_or_equal<ntt::vector<float, 8>, float> {
+    ntt::vector<float, 8> operator()(const ntt::vector<float, 8> &v1,
+                                     const float &f2) const noexcept {
+        auto v2 = _mm256_set1_ps(f2);
+        return _mm256_cmp_ps(v1, v2, _CMP_GE_OQ);
+    }
+};
 
-// // greater_or_equal: vector vs scalar
-// template <> struct greater_or_equal<ntt::vector<float, 8>, float> {
-//     ntt::vector<float, 8> operator()(const ntt::vector<float, 8> &v1,
-//                                      const float &f2) const noexcept {
-//         auto v2 = _mm256_set1_ps(f2);
-//         return _mm256_cmp_ps(v1, v2, _CMP_GE_OQ);
-//     }
-// };
+// greater_or_equal: scalar vs vector
+template <> struct greater_or_equal<float, ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const float &f1,
+               const ntt::vector<float, 8> &v2) const noexcept {
+        auto v1 = _mm256_set1_ps(f1);
+        return _mm256_cmp_ps(v1, v2, _CMP_GE_OQ);
+    }
+};
 
-// // greater_or_equal: scalar vs vector
-// template <> struct greater_or_equal<float, ntt::vector<float, 8>> {
-//     ntt::vector<float, 8>
-//     operator()(const float &f1,
-//                const ntt::vector<float, 8> &v2) const noexcept {
-//         auto v1 = _mm256_set1_ps(f1);
-//         return _mm256_cmp_ps(v1, v2, _CMP_GE_OQ);
-//     }
-// };
+// less: vector vs vector
+template <> struct less<ntt::vector<float, 8>, ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const ntt::vector<float, 8> &v1,
+               const ntt::vector<float, 8> &v2) const noexcept {
+        return _mm256_cmp_ps(v1, v2, _CMP_LT_OQ);
+    }
+};
 
-// // less: vector vs vector
-// template <> struct less<ntt::vector<float, 8>, ntt::vector<float, 8>> {
-//     ntt::vector<float, 8>
-//     operator()(const ntt::vector<float, 8> &v1,
-//                const ntt::vector<float, 8> &v2) const noexcept {
-//         return _mm256_cmp_ps(v1, v2, _CMP_LT_OQ);
-//     }
-// };
+// less: vector vs scalar
+template <> struct less<ntt::vector<float, 8>, float> {
+    ntt::vector<float, 8> operator()(const ntt::vector<float, 8> &v1,
+                                     const float &f2) const noexcept {
+        auto v2 = _mm256_set1_ps(f2);
+        return _mm256_cmp_ps(v1, v2, _CMP_LT_OQ);
+    }
+};
 
-// // less: vector vs scalar
-// template <> struct less<ntt::vector<float, 8>, float> {
-//     ntt::vector<float, 8> operator()(const ntt::vector<float, 8> &v1,
-//                                      const float &f2) const noexcept {
-//         auto v2 = _mm256_set1_ps(f2);
-//         return _mm256_cmp_ps(v1, v2, _CMP_LT_OQ);
-//     }
-// };
+// less: scalar vs vector
+template <> struct less<float, ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const float &f1,
+               const ntt::vector<float, 8> &v2) const noexcept {
+        auto v1 = _mm256_set1_ps(f1);
+        return _mm256_cmp_ps(v1, v2, _CMP_LT_OQ);
+    }
+};
 
-// // less: scalar vs vector
-// template <> struct less<float, ntt::vector<float, 8>> {
-//     ntt::vector<float, 8>
-//     operator()(const float &f1,
-//                const ntt::vector<float, 8> &v2) const noexcept {
-//         auto v1 = _mm256_set1_ps(f1);
-//         return _mm256_cmp_ps(v1, v2, _CMP_LT_OQ);
-//     }
-// };
+// less_or_equal: vector vs vector
+template <> struct less_or_equal<ntt::vector<float, 8>, ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const ntt::vector<float, 8> &v1,
+               const ntt::vector<float, 8> &v2) const noexcept {
+        return _mm256_cmp_ps(v1, v2, _CMP_LE_OQ);
+    }
+};
 
-// // less_or_equal: vector vs vector
-// template <> struct less_or_equal<ntt::vector<float, 8>, ntt::vector<float, 8>> {
-//     ntt::vector<float, 8>
-//     operator()(const ntt::vector<float, 8> &v1,
-//                const ntt::vector<float, 8> &v2) const noexcept {
-//         return _mm256_cmp_ps(v1, v2, _CMP_LE_OQ);
-//     }
-// };
+// less_or_equal: vector vs scalar
+template <> struct less_or_equal<ntt::vector<float, 8>, float> {
+    ntt::vector<float, 8> operator()(const ntt::vector<float, 8> &v1,
+                                     const float &f2) const noexcept {
+        auto v2 = _mm256_set1_ps(f2);
+        return _mm256_cmp_ps(v1, v2, _CMP_LE_OQ);
+    }
+};
 
-// // less_or_equal: vector vs scalar
-// template <> struct less_or_equal<ntt::vector<float, 8>, float> {
-//     ntt::vector<float, 8> operator()(const ntt::vector<float, 8> &v1,
-//                                      const float &f2) const noexcept {
-//         auto v2 = _mm256_set1_ps(f2);
-//         return _mm256_cmp_ps(v1, v2, _CMP_LE_OQ);
-//     }
-// };
-
-// // less_or_equal: scalar vs vector
-// template <> struct less_or_equal<float, ntt::vector<float, 8>> {
-//     ntt::vector<float, 8>
-//     operator()(const float &f1,
-//                const ntt::vector<float, 8> &v2) const noexcept {
-//         auto v1 = _mm256_set1_ps(f1);
-//         return _mm256_cmp_ps(v1, v2, _CMP_LE_OQ);
-//     }
-// };
+// less_or_equal: scalar vs vector
+template <> struct less_or_equal<float, ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const float &f1,
+               const ntt::vector<float, 8> &v2) const noexcept {
+        auto v1 = _mm256_set1_ps(f1);
+        return _mm256_cmp_ps(v1, v2, _CMP_LE_OQ);
+    }
+};
 
 // where
 
