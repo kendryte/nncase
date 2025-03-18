@@ -330,7 +330,7 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                            'less': '2.0',
                                            'less_or_equal': '2.0',
                                          },
-                                'where': {'pack': '2.0',},
+                                'where': {'pack': '2.5',},
                                 'scatterND': {'pack': '1.5',},
                                 }
                                
