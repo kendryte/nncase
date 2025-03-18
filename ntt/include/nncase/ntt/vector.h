@@ -87,8 +87,15 @@ class basic_vector
         }
     }
 
+    template <size_t Index>
+    static constexpr size_t lane() noexcept {
+        static_assert(Index < sizeof...(Lanes), "Dimension index out of bounds");
+        return std::get<Index>(std::make_tuple(Lanes...));
+    }
+    
   private:
     buffer_type buffer_;
+    static constexpr std::array<size_t, sizeof...(Lanes)> lanes = {Lanes...};
 };
 
 template <class T, size_t... Lanes> using vector = basic_vector<T, Lanes...>;
