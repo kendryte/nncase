@@ -126,7 +126,7 @@ template <> struct asin<ntt::vector<float, 8>> {
         // 计算符号掩码和绝对值
         const __m256 neg_mask = _mm256_cmp_ps(v, zero, _CMP_LT_OS); // v < 0.0
         const __m256 abs_mask = _mm256_set1_ps(-0.0f); // 位掩码，用于计算绝对值
-        __m256 x = _mm256_andnot_ps(abs_mask, v); // 绝对值
+        __m256 x = _mm256_andnot_ps(abs_mask, v);      // 绝对值
 
         // 初始化偏移量和乘法因子
         const __m256 mul1 =
@@ -959,8 +959,8 @@ template <> struct clamp<ntt::vector<float, 8>, float> {
 
 // compare
 
-#include <immintrin.h>
 #include <cstring>
+#include <immintrin.h>
 
 // 假设 ntt::vector<bool, 8> 的内部存储为连续 8 bits（1 byte）
 // 使用联合体直接操作内存布局
@@ -975,21 +975,33 @@ template <> struct clamp<ntt::vector<float, 8>, float> {
 //     }
 // };
 
-
 // vector vs vector
 template <> struct equal<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     ntt::vector<bool, 8>
     operator()(const ntt::vector<float, 8> &v1,
                const ntt::vector<float, 8> &v2) const noexcept {
         ntt::vector<bool, 8> output;
-        __m256i one_epi8 = _mm256_set1_epi8(1); 
+        __m256i one_epi32 = _mm256_set1_epi32(1); // 1 (32-bit)
         auto cmp_mask = _mm256_cmp_ps(v1, v2, _CMP_EQ_OQ);
-        __m256i bool_vals = _mm256_and_si256(_mm256_castps_si256(cmp_mask), one_epi8); // 0xFF->1, 0x00->0
-        _mm256_storeu_si256((__m256i*)&output(0), bool_vals); // 存储到 bool 数组（int8_t）
+        __m256i bool_vals =
+            _mm256_and_si256(_mm256_castps_si256(cmp_mask),
+                             one_epi32); // 0xFFFFFFFF → 1, 0x00000000 → 0
+
+        // **拆分 256-bit 向量为两个 128-bit**
+        __m128i low_128 = _mm256_extracti128_si256(bool_vals, 0);  // 低 128-bit
+        __m128i high_128 = _mm256_extracti128_si256(bool_vals, 1); // 高 128-bit
+
+        // **压缩 int32 -> int16**
+        __m128i packed16 = _mm_packs_epi32(low_128, high_128);
+
+        // **压缩 int16 -> int8**
+        __m128i packed8 = _mm_packs_epi16(packed16, _mm_setzero_si128());
+
+        // **存储 8-bit 结果到 bool 数组**
+        _mm_storel_epi64((__m128i *)&output(0), packed8);
         return output;
     }
 };
-
 
 // vector vs scalar（同理）
 // template <>
@@ -1131,7 +1143,8 @@ template <> struct equal<ntt::vector<float, 8>, ntt::vector<float, 8>> {
 // };
 
 // // less_or_equal: vector vs vector
-// template <> struct less_or_equal<ntt::vector<float, 8>, ntt::vector<float, 8>> {
+// template <> struct less_or_equal<ntt::vector<float, 8>, ntt::vector<float,
+// 8>> {
 //     ntt::vector<float, 8>
 //     operator()(const ntt::vector<float, 8> &v1,
 //                const ntt::vector<float, 8> &v2) const noexcept {
