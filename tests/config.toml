@@ -19,10 +19,11 @@ model_layout = 'NHWC'
 letterbox_value = 0
 dump_asm = true
 dump_ir = false
+enable_profiling = false
 shape_bucket_enable = false
-shape_bucket_range_info = { }
+shape_bucket_range_info = {}
 shape_bucket_segments_count = 4
-shape_bucket_fix_var_map = { }
+shape_bucket_fix_var_map = {}
 
 [ptq_opt]
 use_mix_quant = false
@@ -149,10 +150,10 @@ enabled = false
 threshold = 0.9
 
 [target.xpu.target_options]
-Hierarchies = [[1, 2, 8, 4, 4]]
-HierarchyNames = "cdxyt"
-HierarchySizes = [268435456, 1048576]
-MemoryCapacities = [262144, 67108864]
+Hierarchies = [[1, 64, 4]]
+HierarchyNames = "cbt"
+HierarchySizes = [1069547520, 2097152]
+MemoryCapacities = [524288, 267386880]
 MemoryBandWidths = [64, 32]
 UnifiedMemoryArch = false
 Packing = true
