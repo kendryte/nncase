@@ -58,9 +58,9 @@ public class UnitTestDistributeSchema : TestClassBase
         options.Converters.Add(new SBPConverter());
         options.WriteIndented = true;
         var export = JsonSerializer.Serialize(scheme, options);
-    #if DEBUG
+#if DEBUG
         System.Console.WriteLine(export);
-    #endif
+#endif
         Assert.Equal(except, export);
 
         var obj = JsonSerializer.Deserialize<DistributedSchema>(export, options);
@@ -72,9 +72,9 @@ public class UnitTestDistributeSchema : TestClassBase
         var path = Path.Join(SolutionDirectory, "src/Nncase.Tests/Distributed/hidden_in.json");
         var options = new Nncase.Targets.CpuTargetOptions()
         {
-        Hierarchies = new[] { new[] { 8, 8, 4 } },
-        HierarchyNames = "cbt",
-        DistributedScheme = path,
+            Hierarchies = new[] { new[] { 8, 8, 4 } },
+            HierarchyNames = "cbt",
+            DistributedScheme = path,
         };
 
         CompileOptions.TargetOptions = options;

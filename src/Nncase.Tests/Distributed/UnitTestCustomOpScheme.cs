@@ -14,11 +14,11 @@ namespace Nncase.Tests.DistributedTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestCustomOpScheme : TestClassBase
 {
-  [Fact]
-  public void TestExportScheme()
-  {
-    var scheme = new CustomOpScheme("1", "matmul", new CustomOpScheme.Node[] { new CustomOpScheme.Node(string.Empty, "Matmul", [[32, 32], [32, 32]], new[] { new SBP[] { SBP.B, SBP.B }, new SBP[] { SBP.B, SBP.S(new[] { 2 }) } }, 1, string.Empty) });
-    var except = @"{
+    [Fact]
+    public void TestExportScheme()
+    {
+        var scheme = new CustomOpScheme("1", "matmul", new CustomOpScheme.Node[] { new CustomOpScheme.Node(string.Empty, "Matmul", [[32, 32], [32, 32]], new[] { new SBP[] { SBP.B, SBP.B }, new SBP[] { SBP.B, SBP.S(new[] { 2 }) } }, 1, string.Empty) });
+        var except = @"{
   ""Version"": ""1"",
   ""Model"": ""matmul"",
   ""Outputs"": [
@@ -62,15 +62,15 @@ public class UnitTestCustomOpScheme : TestClassBase
   ]
 }";
 
-    var options = new JsonSerializerOptions();
-    options.Converters.Add(new SBPConverter());
-    options.WriteIndented = true;
-    var export = JsonSerializer.Serialize(scheme, options);
+        var options = new JsonSerializerOptions();
+        options.Converters.Add(new SBPConverter());
+        options.WriteIndented = true;
+        var export = JsonSerializer.Serialize(scheme, options);
 #if DEBUG
-    System.Console.WriteLine(export);
+        System.Console.WriteLine(export);
 #endif
-    Assert.Equal(except, export);
+        Assert.Equal(except, export);
 
-    var obj = JsonSerializer.Deserialize<CustomOpScheme>(export, options);
-  }
+        var obj = JsonSerializer.Deserialize<CustomOpScheme>(export, options);
+    }
 }
