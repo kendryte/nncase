@@ -1270,5 +1270,48 @@ template <> struct where<ntt::vector<bool, 8>, ntt::vector<float, 8>, float> {
     }
 };
 
+// where: vector condition, scalar X, scalar Y
+template <> struct where<ntt::vector<bool, 8>, float, float> {
+    ntt::vector<float, 8> operator()(const ntt::vector<bool, 8> &condition,
+                                     const float &x,
+                                     const float &y) const noexcept {
+        __m256 x_vec = _mm256_set1_ps(x);
+        __m256 y_vec = _mm256_set1_ps(y);
+        __m256i mask_i = _mm256_setr_epi32(
+            condition(0) ? 0xFFFFFFFF : 0, condition(1) ? 0xFFFFFFFF : 0,
+            condition(2) ? 0xFFFFFFFF : 0, condition(3) ? 0xFFFFFFFF : 0,
+            condition(4) ? 0xFFFFFFFF : 0, condition(5) ? 0xFFFFFFFF : 0,
+            condition(6) ? 0xFFFFFFFF : 0, condition(7) ? 0xFFFFFFFF : 0);
+        __m256 mask = _mm256_castsi256_ps(mask_i);
+
+        __m256 result = _mm256_blendv_ps(y_vec, x_vec, mask);
+        return ntt::vector<float, 8>(result);
+    }
+};
+
+// where: scalar condition, scalar X, vector Y
+template <> struct where<bool, float, ntt::vector<float, 8>> {
+    ntt::vector<float, 8>
+    operator()(const bool &condition, const float &x,
+               const ntt::vector<float, 8> &y) const noexcept {
+        __m256 mask = _mm256_set1_ps(condition ? -0.0f : 0.0f);
+        __m256 x_vec = _mm256_set1_ps(x);
+        __m256 result = _mm256_blendv_ps(y, x_vec, mask);
+        return ntt::vector<float, 8>(result);
+    }
+};
+
+// where: scalar condition, vector X, scalar Y
+template <> struct where<bool, ntt::vector<float, 8>, float> {
+    ntt::vector<float, 8> operator()(const bool &condition,
+                                     const ntt::vector<float, 8> &x,
+                                     const float &y) const noexcept {
+        __m256 mask = _mm256_set1_ps(condition ? -0.0f : 0.0f);
+        __m256 y_vec = _mm256_set1_ps(y);
+        __m256 result = _mm256_blendv_ps(y_vec, x, mask);
+        return ntt::vector<float, 8>(result);
+    }
+};
+
 #endif
 } // namespace nncase::ntt::ops

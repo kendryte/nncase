@@ -402,6 +402,59 @@ struct where<T1, TTensor, T2> {
     ops::where<bool, element_type, element_type> op_;
 };
 
+template <IsTensor T1, IsScalar T2, IsScalar T3>
+struct where<T1, T2, T3> {
+    static constexpr size_t vl = T1::template lane<0>();
+    using TOut = ntt::vector<T2, vl>;
+    using element_type = TOut::element_type;
+    constexpr auto operator()(const T1 &condition, const T2 &v1,
+                              const T3 &v2) const noexcept {
+        TOut value;
+        apply(condition.shape(), [&](auto index) {
+            value(index) = op_(condition(index), v1, v2);
+        });
+
+        return value;
+    }
+
+  private:
+    ops::where<bool, element_type, element_type> op_;
+};
+
+template <IsScalar T1, IsScalar T2, IsTensor T3>
+struct where<T1, T2, T3> {
+    using element_type = typename T3::element_type;
+    constexpr auto operator()(const T1 &condition, const T2 &v1,
+                              const T3 &v2) const noexcept {
+        T3 value;
+        apply(v2.shape(), [&](auto index) {
+            value(index) = op_(condition, v1, v2(index));
+        });
+
+        return value;
+    }
+
+  private:
+    ops::where<bool, element_type, element_type> op_;
+};
+
+template <IsScalar T1, IsTensor T2, IsScalar T3>
+struct where<T1, T2, T3> {
+    using element_type = typename T2::element_type;
+    constexpr auto operator()(const T1 &condition, const T2 &v1,
+                              const T3 &v2) const noexcept {
+        T2 value;
+        apply(v1.shape(), [&](auto index) {
+            value(index) = op_(condition, v1(index), v2);
+        });
+
+        return value;
+    }
+
+  private:
+    ops::where<bool, element_type, element_type> op_;
+};
+
 template <template <class T1, class T2> class Op, IsScalar TResult,
           IsTensor TTensor>
 struct reduce<Op, TResult, TTensor> {
