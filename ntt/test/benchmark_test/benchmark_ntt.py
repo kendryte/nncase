@@ -331,7 +331,7 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                            'less_or_equal': '2.0',
                                          },
                                 'where': {'pack': '2.5',},
-                                'scatterND': {'pack': '1.5',},
+                                'scatterND': {'unpack': '1.5',},
                                 }
                                
                               
@@ -488,7 +488,7 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                            'less_or_equal': '7.3',
                                           },
                                'where': {'pack': '4.3',},
-                               'scatterND': {'pack': '4.3'},
+                               'scatterND': {'unpack': '4.3'},
                               }
 
     def run(self):
