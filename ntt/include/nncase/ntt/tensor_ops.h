@@ -370,8 +370,7 @@ template <class T1, IsTensor T2, IsTensor T3> struct where<T1, T2, T3> {
 template <class T1, IsScalar T2, IsTensor TTensor>
 struct where<T1, T2, TTensor> {
     using cond_element_type = typename T1::element_type;
-    using element_type1 = typename T2::element_type;
-    using element_type2 = typename TTensor::element_type;
+    using element_type = typename TTensor::element_type;
 
     constexpr auto operator()(const T1 &condition, const T2 &v1,
                               const TTensor &v2) const noexcept {
@@ -384,14 +383,13 @@ struct where<T1, T2, TTensor> {
     }
 
   private:
-    ops::where<cond_element_type, element_type1, element_type2> op_;
+    ops::where<cond_element_type, element_type, element_type> op_;
 };
 
 template <class T1, IsTensor TTensor, IsScalar T2>
 struct where<T1, TTensor, T2> {
     using cond_element_type = typename T1::element_type;
-    using element_type1 = typename TTensor::element_type;
-    using element_type2 = typename T2::element_type;
+    using element_type = typename TTensor::element_type;
 
     constexpr auto operator()(const T1 &condition, const TTensor &v1,
                               const T2 &v2) const noexcept {
@@ -404,7 +402,7 @@ struct where<T1, TTensor, T2> {
     }
 
   private:
-    ops::where<cond_element_type, element_type1, element_type2> op_;
+    ops::where<cond_element_type, element_type, element_type> op_;
 };
 
 template <template <class T1, class T2> class Op, IsScalar TResult,
