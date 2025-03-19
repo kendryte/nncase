@@ -284,10 +284,9 @@ namespace Nncase.Importer
             var embedTokensWeight = _constTensors!["model.embed_tokens.weight"];
             if (_config!.Keys.Contains("pad_token_id"))
             {
-                // embedTokensWeight[(int)_config["pad_token_ids"]] = new float[embedTokensWeight.Shape[-1].FixedValue];
-                for (int i = 0; i < embedTokensWeight.Shape[-1].FixedValue; i++)
+                for (var i = 0; i < embedTokensWeight.Shape[-1].FixedValue; i++)
                 {
-                    embedTokensWeight[(int)_config["pad_token_id"], (int)i] = 0;
+                    embedTokensWeight[(long)_config["pad_token_id"], i] = 0;
                 }
             }
 

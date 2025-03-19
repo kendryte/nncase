@@ -36,6 +36,12 @@ public sealed partial class HuggingFaceImporter : BaseImporter
         // TODO: restructure for reading saftensors
         // 读取 config.json 文件
         _config = HuggingFaceUtils.GetConfigInfo(Path.Combine(huggingFaceDir, "config.json"));
+        var tmp_config = HuggingFaceUtils.GetConfigInfo(Path.Combine(huggingFaceDir, "generation_config.json"));
+        foreach (var pair in tmp_config)
+        {
+            _config[pair.Key] = pair.Value;
+        }
+
         _constTensors = HuggingFaceUtils.GetAllWeights(Path.Combine(huggingFaceDir, "model.safetensors"));
     }
 
@@ -57,7 +63,6 @@ public sealed partial class HuggingFaceImporter : BaseImporter
         switch (_config!["architectures"]!)
         {
             case "Qwen2ForCausalLM":
-                _config["pad_token_id"] = 0;
                 Debug.Assert(_constTensors != null, nameof(_constTensors) + " != null");
                 VisitQwen2ForCausalLM();
                 break;
