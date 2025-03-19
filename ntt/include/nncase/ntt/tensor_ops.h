@@ -134,7 +134,7 @@ struct tensor_binary_impl<Op, TScalar, TTensor> {
     Op<TScalar, element_type2> op_;
 };
 
-// compare tensor imp
+// compare tensor impl
 template <template <class T1, class T2> class Op, class T1, class T2>
 struct tensor_compare_impl;
 
@@ -341,6 +341,70 @@ struct mul_add<TScalar, TTensor, TTensor> {
 
   private:
     ops::mul_add<element_type, element_type, element_type> op_;
+};
+
+template <class T1, IsTensor T2, IsTensor T3> struct where<T1, T2, T3> {
+    using cond_element_type = typename T1::element_type;
+    using element_type = typename T2::element_type;
+
+    constexpr auto operator()(const T1 &condition, const T2 &v1,
+                              const T3 &v2) const noexcept {
+        T2 value;
+        if constexpr (IsTensor<T1>) {
+            apply(v1.shape(), [&](auto index) {
+                value(index) = op_(condition(index), v1(index), v2(index));
+            });
+        } else {
+            apply(v1.shape(), [&](auto index) {
+                value(index) = op_(condition, v1(index), v2(index));
+            });
+        }
+
+        return value;
+    }
+
+  private:
+    ops::where<cond_element_type, element_type, element_type> op_;
+};
+
+template <class T1, IsScalar T2, IsTensor TTensor>
+struct where<T1, T2, TTensor> {
+    using cond_element_type = typename T1::element_type;
+    using element_type1 = typename T2::element_type;
+    using element_type2 = typename TTensor::element_type;
+
+    constexpr auto operator()(const T1 &condition, const T2 &v1,
+                              const TTensor &v2) const noexcept {
+        TTensor value;
+        apply(v2.shape(), [&](auto index) {
+            value(index) = op_(condition(index), v1, v2(index));
+        });
+
+        return value;
+    }
+
+  private:
+    ops::where<cond_element_type, element_type1, element_type2> op_;
+};
+
+template <class T1, IsTensor TTensor, IsScalar T2>
+struct where<T1, TTensor, T2> {
+    using cond_element_type = typename T1::element_type;
+    using element_type1 = typename TTensor::element_type;
+    using element_type2 = typename T2::element_type;
+
+    constexpr auto operator()(const T1 &condition, const TTensor &v1,
+                              const T2 &v2) const noexcept {
+        TTensor value;
+        apply(v1.shape(), [&](auto index) {
+            value(index) = op_(condition(index), v1(index), v2);
+        });
+
+        return value;
+    }
+
+  private:
+    ops::where<cond_element_type, element_type1, element_type2> op_;
 };
 
 template <template <class T1, class T2> class Op, IsScalar TResult,
