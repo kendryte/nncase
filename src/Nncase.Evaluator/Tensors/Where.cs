@@ -82,11 +82,11 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
         }
 
         var targetType = (TensorType)TypeInference.BroadcastType(x.TensorType.DType, cond.TensorType, x.TensorType, y.TensorType);
-        if (cond.TensorType.Shape != targetType.Shape)
-        {
-            return invalid;
-        }
 
+        // if (cond.TensorType.Shape != targetType.Shape)
+        // {
+        //     return invalid;
+        // }
         var padCond = targetType.Shape.Rank - cond.TensorType.Shape.Rank;
         var padX = targetType.Shape.Rank - x.TensorType.Shape.Rank;
         var padY = targetType.Shape.Rank - y.TensorType.Shape.Rank;
@@ -117,7 +117,7 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
                         return invalid;
                     }
 
-                    var xyType = targetType = (TensorType)TypeInference.BroadcastType(x.TensorType.DType, x.TensorType, y.TensorType);
+                    var xyType = (TensorType)TypeInference.BroadcastType(x.TensorType.DType, x.TensorType, y.TensorType);
                     var padXY = targetType.Shape.Rank - xyType.Shape.Rank;
                     policyOut = CheckSBP(policyCond, policyXY, cond.TensorType.Shape, xyType.Shape, padCond, padXY, i);
                     break;

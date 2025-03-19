@@ -4,7 +4,6 @@
 using System.Diagnostics.CodeAnalysis;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
-using Nncase.IR.ShapeExpr;
 
 namespace Nncase.Utilities;
 

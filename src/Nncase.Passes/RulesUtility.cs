@@ -42,7 +42,7 @@ public static class RulesUtility
     /// <param name="oldShape">old shape.</param>
     /// <param name="newShape">new shape.</param>
     /// <returns>bool.</returns>
-    public static bool IsSqueeze(int[] oldShape, int[] newShape)
+    public static bool IsSqueeze(long[] oldShape, long[] newShape)
     {
         var squeezedOldShape = oldShape.Where(x => x != 1).ToArray();
         var squeezedNewShape = newShape.Where(x => x != 1).ToArray();

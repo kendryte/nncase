@@ -82,14 +82,14 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     public static TheoryData<ReduceOp, long[], int[], float, bool, int[], int[][], int> TestPackReduceData { get; } = new()
     {
-        { ReduceOp.Sum, new[] { 1, 64, 384, 128 }, new[] { 3 }, 0, true, new[] { 1 }, [], 0 },
-        { ReduceOp.Mean, new[] { 1, 384, 128 }, new[] { 2 }, 0, true, new[] { 1 }, [], 1 },
-        { ReduceOp.Mean, new[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, [[-1], [0], [-1]], 2 },
-        { ReduceOp.Max, new[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, [[-1], [0], [-1]], 3 },
-        { ReduceOp.Min, new[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, [[-1], [0], [-1]], 4 },
-        { ReduceOp.Sum, new[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, [[-1], [0], [-1]], 5 },
-        { ReduceOp.Mean, new[] { 1, 3, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, [[-1], [-1], [-1]], 6 },
-        { ReduceOp.Sum, new[] { 1, 64, 384, 384 }, new[] { 3 }, 0, true, new[] { 64 }, [], 7 },
+        { ReduceOp.Sum, new long[] { 1, 64, 384, 128 }, new[] { 3 }, 0, true, new[] { 1 }, [], 0 },
+        { ReduceOp.Mean, new long[] { 1, 384, 128 }, new[] { 2 }, 0, true, new[] { 1 }, [], 1 },
+        { ReduceOp.Mean, new long[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, [[-1], [0], [-1]], 2 },
+        { ReduceOp.Max, new long[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, [[-1], [0], [-1]], 3 },
+        { ReduceOp.Min, new long[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, [[-1], [0], [-1]], 4 },
+        { ReduceOp.Sum, new long[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, [[-1], [0], [-1]], 5 },
+        { ReduceOp.Mean, new long[] { 1, 3, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, [[-1], [-1], [-1]], 6 },
+        { ReduceOp.Sum, new long[] { 1, 64, 384, 384 }, new[] { 3 }, 0, true, new[] { 64 }, [], 7 },
     };
 
     [Theory]

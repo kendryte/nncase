@@ -73,7 +73,7 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
         if (input.TensorType.Shape.IsRanked && shapeExpr.IsRanked)
         {
             var newShape = TypeInference.ExpandShape(input.TensorType.Shape, shapeExpr);
-            var ndsbp = new SBP[newShape.Length];
+            var ndsbp = new SBP[newShape.Count];
             for (int i = 0; i < ndsbp.Length; i++)
             {
                 if (input.AxisPolices[i] is SBPSplit && newShape[i] != input.TensorType.Shape[i])

@@ -44,7 +44,7 @@ public partial class UnfoldDistributedConst : RewriteRule<Pattern>
         var type = input.CheckedType;
         if (type is DistributedType)
         {
-            return IR.F.CPU.Boxing(input.Value, type);
+            return IR.F.Distributed.Boxing(input.Value, type);
         }
 
         return null;

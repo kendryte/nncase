@@ -117,7 +117,7 @@ public class UnitTestGraphPartition : TestClassBase
         var ttype = new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 });
         var input = new Var("input", ttype);
         var unary = IR.F.Distributed.Boxing(input, new DistributedType(ttype, new[] { SBP.B, SBP.B, SBP.B }, new(new[] { 1 }, "b")));
-        var main = new Function("main", IR.F.Math.Abs(IR.F.CPU.Boxing(unary, ttype)), input);
+        var main = new Function("main", IR.F.Math.Abs(IR.F.Distributed.Boxing(unary, ttype)), input);
 
         Assert.True(CompilerServices.InferenceType(main));
 
@@ -154,7 +154,7 @@ public class UnitTestGraphPartition : TestClassBase
         var ttype = new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 });
         var input = new Var("input", ttype);
         var unary = IR.F.Distributed.Boxing(IR.F.Math.Abs(input), new DistributedType(ttype, new[] { SBP.B, SBP.B, SBP.B }, new(new[] { 1 }, "b")));
-        var main = new Function("main", IR.F.CPU.Boxing(IR.F.Math.Abs(unary), ttype), input);
+        var main = new Function("main", IR.F.Distributed.Boxing(IR.F.Math.Abs(unary), ttype), input);
 
         Assert.True(CompilerServices.InferenceType(main));
 
