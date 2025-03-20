@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 #pragma once
+#ifdef NNCASE_CPU_MODULE
 #include "arch/cpu/topology.h"
+#endif
 #include "shape.h"
 #include <cstddef>
 #include <cstdint>
