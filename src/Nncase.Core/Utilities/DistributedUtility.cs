@@ -49,7 +49,7 @@ public static class DistributedUtility
                 {
                     var axis = splitsAxes[ti];
                     var divisor = axis.Select(a => placement.Hierarchy[a]).Aggregate(1, (a, b) => a * b);
-                    if (tensorType.Shape[di] is { IsFixed: true, FixedValue: long s } && divisor > 1 && IsDivideExactly(s, divisor))
+                    if (tensorType.Shape[di] is { IsFixed: true, FixedValue: long s } && axis.All(a => placement.Hierarchy[a] > 1) && divisor > 1 && IsDivideExactly(s, divisor))
                     {
                         policy.Add(SBP.S(axis.ToArray()));
                     }
