@@ -142,18 +142,18 @@ public static class ShapeExprUtility
 
     public static Expr GetPermutation(Expr tensor, long[] dims)
     {
-
         var r = tensor.CheckedShape.Rank;
 
         // System.Console.WriteLine($"shape:{tensor.CheckedShape} rank:{r} dims:{dims[0]},{dims[1]}");
         // format dims to non-negative
         // var newDims = dims.Select(x => x < 0 ? x + r : x).ToArray();
-        List<long> fullDims = new List<long>();
+        var fullDims = new List<long>();
 
-        for (int i = 0; i!= r; i++)
+        for (int i = 0; i != r; i++)
         {
             fullDims.Add((long)i);
         }
+
         for (int i = 0; i != dims.Length; i++)
         {
             if (dims[i] < 0)

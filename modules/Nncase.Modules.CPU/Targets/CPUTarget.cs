@@ -117,7 +117,6 @@ public class CPUTarget : ITarget
         }
 
         // passManager.Add<Passes.Distributed.AutoDistributedPass>(true, Kind);
-
         passManager.Add<InferRangePass>();
         passManager.Add<OptimizeByRangePass>();
 
@@ -143,8 +142,7 @@ public class CPUTarget : ITarget
 
         // concat/reshape lower
         // tile and lower to tir.
-       //  passManager.Add<AutoTilePass>(Kind);
-
+        //  passManager.Add<AutoTilePass>(Kind);
         passManager.Add<CPUFusionToTirPass>();
 
         // todo add auto fusion merge pass here.
