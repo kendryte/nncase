@@ -467,17 +467,17 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     data = generator.from_numpy(file_list[idx])
                 elif method == 'text':
                     data = generator.from_text(file_list[0])
-                    assert(len(data)>= idx, "prompt not enough for calib")
+                    assert(len(data) >= idx, "prompt not enough for calib")
                     data = data[batch_idx]
                 if not test_utils.in_ci():
                     if method == 'text':
                         dump_txt_file(os.path.join(self.case_dir, name,
-                                               f'text_{name}_{input_idx}_{batch_idx}.txt'), data)
+                                                   f'text_{name}_{input_idx}_{batch_idx}.txt'), data)
                     else:
                         dump_bin_file(os.path.join(self.case_dir, name,
-                                                f'{name}_{input_idx}_{batch_idx}.bin'), data)
+                                                   f'{name}_{input_idx}_{batch_idx}.bin'), data)
                         dump_txt_file(os.path.join(self.case_dir, name,
-                                                f'{name}_{input_idx}_{batch_idx}.txt'), data)
+                                                   f'{name}_{input_idx}_{batch_idx}.txt'), data)
                 samples.append(data)
             input['data'] = samples
 

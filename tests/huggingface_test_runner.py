@@ -26,7 +26,7 @@ class HuggingfaceTestRunner(TestRunner):
 
     def run(self, model_dir):
         super().run(model_dir)
-        
+
     def cpu_infer(self, model_file: List[str]):
         outputs = []
         for idx, input in enumerate(self.inputs):
@@ -52,8 +52,10 @@ class HuggingfaceTestRunner(TestRunner):
                 max_new_tokens=128
             )
             if not test_utils.in_ci():
-                dump_bin_file(os.path.join(self.case_dir, f'cpu_result_{idx}.bin'), generated_ids.logits)
-                dump_txt_file(os.path.join(self.case_dir, f'cpu_result_{idx}.txt'), generated_ids.logits)
+                dump_bin_file(os.path.join(
+                    self.case_dir, f'cpu_result_{idx}.bin'), generated_ids.logits)
+                dump_txt_file(os.path.join(
+                    self.case_dir, f'cpu_result_{idx}.txt'), generated_ids.logits)
             generated_ids = generated_ids[0][len(model_inputs.input_ids[0]):-1]
 
             output = self.tokenizer.decode(generated_ids)
@@ -62,6 +64,6 @@ class HuggingfaceTestRunner(TestRunner):
 
     def parse_model(self, model_path):
         pass
-    
+
     def import_model(self, compiler, model_content, import_options):
         compiler.import_huggingface(model_content, import_options)
