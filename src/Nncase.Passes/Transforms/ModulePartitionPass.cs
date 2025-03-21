@@ -63,16 +63,10 @@ public sealed class ModulePartitionPass : ModulePass
             bool isSupport = false;
             switch (arg.Edge.Source.Expr, arg.Edge.Target.Expr)
             {
-                case (Var var, _) when !dynamicVars.Contains(var):
-                    isSupport = false;
-                    break;
-                case (If, _):
-                    isSupport = false;
-                    break;
                 case (_, IR.Tuple):
                     isSupport = true;
                     break;
-                case (_, Call caller):
+                case (IR.Tuple or Call, Call caller):
                     isSupport = ModuleCompiler.IsSupportedCall(caller, CompileSession.CompileOptions);
                     break;
                 default:
