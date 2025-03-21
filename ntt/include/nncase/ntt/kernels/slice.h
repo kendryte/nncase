@@ -34,7 +34,7 @@ template <class TInShape, class TBegins, class TEnds, class TStrides,
 auto slice_fill(const TInShape &in_shape, const TBegins &begins_value,
                 const TEnds &ends_value, const TStrides &strides_value,
                 const TAxes &axes_value) {
-    constexpr auto ndim = in_shape.rank();
+    constexpr auto ndim = TInShape::rank();
     using dims_t = std::array<int64_t, ndim>;
     dims_t begin_values{};
     dims_t end_values{};
@@ -98,31 +98,32 @@ template <typename TAxes, typename TStrides, typename TIn, typename TBegins,
           typename TEnds, typename TOut>
 void slice(const TIn &input, const TBegins &begins, const TEnds &ends,
            TOut &&output) {
-    auto &&[begin_values, end_values, strides_values] =
-        slice_detail::slice_fill(input.shape(), begins, ends, TStrides{},
-                                 TAxes{});
-    apply(input.shape(), [&](auto in_index) {
-        auto out_index = in_index;
-        for (size_t i = 0; i < TIn::rank(); i++) {
-            const auto stride = strides_values[i];
-            if (stride > 0) {
-                if ((int64_t)in_index[i] < begin_values[i] ||
-                    in_index[i] >= static_cast<size_t>(end_values[i]))
-                    return;
-            } else {
-                if ((int64_t)in_index[i] <= end_values[i] ||
-                    (int64_t)in_index[i] > begin_values[i])
-                    return;
-            }
+    auto [begin_values, end_values, strides_values] = slice_detail::slice_fill(
+        input.shape(), begins, ends, TStrides{}, TAxes{});
+    apply(input.shape(),
+          [&, begin_values = begin_values, end_values = end_values,
+           strides_values = strides_values](auto in_index) {
+              auto out_index = in_index;
+              for (size_t i = 0; i < TIn::rank(); i++) {
+                  const auto stride = strides_values[i];
+                  if (stride > 0) {
+                      if ((int64_t)in_index[i] < begin_values[i] ||
+                          in_index[i] >= static_cast<size_t>(end_values[i]))
+                          return;
+                  } else {
+                      if ((int64_t)in_index[i] <= end_values[i] ||
+                          (int64_t)in_index[i] > begin_values[i])
+                          return;
+                  }
 
-            auto out_div =
-                std::div((int64_t)in_index[i] - begin_values[i], stride);
-            if (out_div.rem)
-                return;
-            out_index[i] = (size_t)out_div.quot;
-        }
+                  auto out_div =
+                      std::div((int64_t)in_index[i] - begin_values[i], stride);
+                  if (out_div.rem)
+                      return;
+                  out_index[i] = (size_t)out_div.quot;
+              }
 
-        output(out_index) = input(in_index);
-    });
+              output(out_index) = input(in_index);
+          });
 }
 } // namespace nncase::ntt

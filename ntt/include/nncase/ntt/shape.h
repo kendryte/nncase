@@ -88,7 +88,7 @@ template <class T, T... Dims> struct fixed_dims_base {
             return dims_type::at(index_ + idx);
         }
 
-        auto operator==(const iterator &other) const {
+        bool operator==(const iterator &other) const {
             return index_ == other.index_;
         }
 
