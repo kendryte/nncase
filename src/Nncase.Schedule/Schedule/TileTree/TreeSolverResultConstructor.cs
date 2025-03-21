@@ -266,8 +266,8 @@ public sealed class TreeSolverResultConstructor : TreeSolverBase, ITreeNodeVisit
         var bodyBuilder = T.Sequential();
         Tree.Accept(this, new(bodyBuilder, Array.Empty<Expr>()));
 
-        var parameters = ArgumentsInfo.Inputs.Concat(ArgumentsInfo.DefUseMap.Values).Concat(ArgumentsInfo.Outputs).Select(k => OutSideBufferMemo[k]).ToArray();
-        var arguments = ArgumentsInfo.Inputs.Select(k => k.Node.Grid.Reads[k.Index]).Concat(ArgumentsInfo.DefUseMap.Values.Select(k => TilingUtilities.GetUninitialized(k.Node.Grid.Reads[k.Index]))).ToArray();
+        var parameters = ArgumentsInfo.Inputs.Concat(ArgumentsInfo.DefUseMap.Values).Concat(ArgumentsInfo.Outputs).Select(k => Var.BufferVar(OutSideBufferMemo[k])).ToArray();
+        var arguments = ArgumentsInfo.Inputs.Select(k => k.Node.Grid.Reads[k.Index]).Concat(ArgumentsInfo.DefUseMap.Values.Select(k => k.Node.Grid.Reads[k.Index])).ToArray();
 
         var funcBuilder = T.PrimFunc($"device_func{itemNumber}", moduleKind, parameters).Body(bodyBuilder);
         var primFunc = funcBuilder.Build();

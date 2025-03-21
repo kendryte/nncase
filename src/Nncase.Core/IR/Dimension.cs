@@ -183,6 +183,14 @@ public struct Dimension : IEquatable<Dimension?>
         {
             return System.Math.Clamp(value.FixedValue, min.FixedValue, max.FixedValue);
         }
+        else if (value.IsFixed && min.IsFixed && value.FixedValue <= min.FixedValue)
+        {
+            return min;
+        }
+        else if (value.IsFixed && max.IsFixed && value.FixedValue >= max.FixedValue)
+        {
+            return max;
+        }
 
         return IR.F.Math.Clamp(value.Value, min.Value, max.Value);
     }

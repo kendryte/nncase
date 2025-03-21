@@ -24,11 +24,6 @@ public sealed partial class Reshape : CPUKernelOp
     public static readonly ParameterInfo Input = new(typeof(Reshape), 0, "input");
 
     /// <summary>
-    /// Gets index.
-    /// </summary>
-    public static readonly ParameterInfo NewShape = new(typeof(Gather), 1, "newShape", IsIntegral(), ParameterKind.Input);
-
-    /// <summary>
     /// Gets input.
     /// </summary>
     public static readonly ParameterInfo Output = new(typeof(Reshape), 1, "output");

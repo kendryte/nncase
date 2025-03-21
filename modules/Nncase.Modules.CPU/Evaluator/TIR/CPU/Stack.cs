@@ -7,11 +7,12 @@ using Nncase.TIR.CPU;
 
 namespace Nncase.Evaluator.TIR.CPU;
 
-public sealed class UnsqueezeEvaluator : ITypeInferencer<Unsqueeze>
+public sealed class StackEvaluator : ITypeInferencer<Stack>
 {
-    public IRType Visit(ITypeInferenceContext context, Unsqueeze target)
+    public IRType Visit(ITypeInferenceContext context, Stack target)
     {
-        context.CheckArgumentType<TensorType>(target, Unsqueeze.Input);
+        context.CheckArgumentType<TensorType>(target, Stack.Input);
+        context.CheckArgumentType<TensorType>(target, Stack.Output);
         return TupleType.Void;
     }
 }

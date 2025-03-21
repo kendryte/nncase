@@ -33,11 +33,11 @@ internal static class PrimFuncBuilder
     public static PrimFunctionWrapper MakeLoadStoreFunc(bool mask)
     {
         var allocator = new Allocator();
-        var fusion_input = allocator.Allocate($"fusion_{_count}_input", TIR.MemoryLocation.Input);
+        var fusion_input = allocator.AllocateVar($"fusion_{_count}_input", TIR.MemoryLocation.Input);
 
         var glb = allocator.Allocate($"fusion_{_count}_glb", TIR.MemoryLocation.L2Data);
 
-        var fusion_output = allocator.Allocate($"fusion_{_count}_output", TIR.MemoryLocation.Output);
+        var fusion_output = allocator.AllocateVar($"fusion_{_count}_output", TIR.MemoryLocation.Output);
 
         var fusion_1 = TIR.T.PrimFunc($"fusion_{_count}_{mask}", Callable.StackVMModuleKind, fusion_input, fusion_output).Body(
           new Call(new TIRTest.LoadT(), fusion_input, glb),
@@ -50,12 +50,12 @@ internal static class PrimFuncBuilder
     public static PrimFunctionWrapper MakeBinaryFunc(BinaryOp binaryOp, bool mask)
     {
         var allocator = new Allocator();
-        var fusion_input_lhs = allocator.Allocate($"fusion_{_count}_input_lhs", TIR.MemoryLocation.Input);
-        var fusion_input_rhs = allocator.Allocate($"fusion_{_count}_input_rhs", TIR.MemoryLocation.Input);
+        var fusion_input_lhs = allocator.AllocateVar($"fusion_{_count}_input_lhs", TIR.MemoryLocation.Input);
+        var fusion_input_rhs = allocator.AllocateVar($"fusion_{_count}_input_rhs", TIR.MemoryLocation.Input);
         var glb_lhs = allocator.Allocate($"fusion_{_count}_glb_lhs", TIR.MemoryLocation.L2Data);
         var glb_rhs = allocator.Allocate($"fusion_{_count}_glb_rhs", TIR.MemoryLocation.L2Data);
         var glb_output = allocator.Allocate($"fusion_{_count}_glb_output", TIR.MemoryLocation.L2Data);
-        var fusion_output = allocator.Allocate($"fusion_{_count}_output", TIR.MemoryLocation.Output);
+        var fusion_output = allocator.AllocateVar($"fusion_{_count}_output", TIR.MemoryLocation.Output);
 
         var fusion = TIR.T.PrimFunc($"fusion_{_count}_{mask}", Callable.StackVMModuleKind, fusion_input_lhs, fusion_input_rhs, fusion_output).Body(
           new Call(new TIRTest.LoadT(), fusion_input_lhs, glb_lhs),
@@ -71,16 +71,16 @@ internal static class PrimFuncBuilder
     public static PrimFunctionWrapper MakeMultiInputFunc(int length, bool mask)
     {
         var allocator = new Allocator();
-        var fusion_inputs = new List<TIR.Buffer>();
+        var fusion_inputs = new List<Var>();
         for (int i = 0; i < length; i++)
         {
-            var fusion_input_i = allocator.Allocate($"fusion_{_count}_input_{i}", TIR.MemoryLocation.Input);
+            var fusion_input_i = allocator.AllocateVar($"fusion_{_count}_input_{i}", TIR.MemoryLocation.Input);
             fusion_inputs.Add(fusion_input_i);
         }
 
         var glb1 = allocator.Allocate($"fusion_{_count}_glb1", TIR.MemoryLocation.L2Data);
         var glb2 = allocator.Allocate($"fusion_{_count}_glb2", TIR.MemoryLocation.L2Data);
-        var fusion_output = allocator.Allocate($"fusion_{_count}_output", TIR.MemoryLocation.Output);
+        var fusion_output = allocator.AllocateVar($"fusion_{_count}_output", TIR.MemoryLocation.Output);
 
         var fusion = TIR.T.PrimFunc($"multi_fusion_{_count}_{mask}", Callable.StackVMModuleKind, fusion_inputs.Concat(new[] { fusion_output }).ToArray());
 
@@ -137,6 +137,14 @@ internal static class PrimFuncBuilder
             var size = TensorUtilities.GetSize(Dimensions, TensorUtilities.GetStrides(Dimensions), DataTypes.Float32.SizeInBytes);
 
             var buffer = new TIR.Buffer(name, DataTypes.Float32, new TIR.MemSpan(Tensor.FromPointer<float>(_usage[location]), size, location), dims, strides, null);
+            _usage[location] += (ulong)size;
+            return buffer;
+        }
+
+        public Var AllocateVar(string name, TIR.MemoryLocation location)
+        {
+            var size = TensorUtilities.GetSize(Dimensions, TensorUtilities.GetStrides(Dimensions), DataTypes.Float32.SizeInBytes);
+            var buffer = new Var(name, new TensorType(DataTypes.Float32, Dimensions));
             _usage[location] += (ulong)size;
             return buffer;
         }

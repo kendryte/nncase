@@ -11,25 +11,6 @@ using Nncase.IR;
 
 namespace Nncase.Targets;
 
-public enum MemoryAccessArchitecture : byte
-{
-    /// <summary>
-    /// Unified Memory Access.
-    /// </summary>
-    UMA = 0,
-
-    /// <summary>
-    /// Non-Unified Memory Access.
-    /// </summary>
-    NUMA = 1,
-}
-
-public enum NocArchitecture : byte
-{
-    Mesh = 0,
-    CrossBar = 1,
-}
-
 public class CpuTargetOptions : ICpuTargetOptions
 {
     [DisplayName("--model-name")]

@@ -20,8 +20,8 @@ internal class CPUModule : IApplicationPart
     {
         registrator.RegisterManyInterface<BinaryEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<GetItemEvaluator>(reuse: Reuse.Singleton);
-        registrator.RegisterManyInterface<UnsqueezeEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<MatmulEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<StackEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<PtrOfEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<SramPtrEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<TensorLoadEvaluator>(reuse: Reuse.Singleton);

@@ -41,6 +41,22 @@ namespace detail {
 template <class SrcTensor, class DestTensor> struct reshard_impl;
 
 // shard
+template <IsScalar SrcScalar, IsShardedTensor DestTensor>
+struct reshard_impl<SrcScalar, DestTensor> {
+    using mesh_type = typename DestTensor::mesh_type;
+    using sharding_type = typename DestTensor::sharding_type;
+
+    // Make TestGatherReduceScatter happy.
+    // static_assert(std::is_same_v<typename
+    // sharding_type::implicit_policy_type,
+    //                              distributed::shard_policy::B>,
+    //               "Cannot shard to a non-Broadcast sharding type.");
+
+    constexpr void operator()(const SrcScalar &src, DestTensor &dest) noexcept {
+        ntt::store(dest.local()(), src);
+    }
+};
+
 template <IsTensor SrcTensor, IsShardedTensor DestTensor>
 struct reshard_impl<SrcTensor, DestTensor> {
     using mesh_type = typename DestTensor::mesh_type;

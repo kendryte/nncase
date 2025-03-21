@@ -1003,14 +1003,18 @@ internal sealed class PrintCostCallBack : CpSolverSolutionCallback
     }
 }
 #else
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Reactive;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Google.OrTools.Sat;
 using NetFabric.Hyperlinq;
 using Nncase.CodeGen;
 using Nncase.Evaluator;
 using Nncase.IR;
-using Nncase.IR.CPU;
 using Nncase.IR.Distributed;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
@@ -1060,13 +1064,22 @@ public sealed partial class AutoDistributedPass : FunctionPass
 
     protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
     {
-        if (input.Metadata is AutoDistributedMetaData { Skip: true })
+        if (input.Metadata is AutoDistributedMetaData { Skip: true } || input.ModuleKind != _moduleKind)
         {
             return Task.FromResult(input);
         }
 
-        var rewriter = new AutoDistributedRewriter(_compileOptions, _compileOptions.TargetOptions is CpuTargetOptions options ? options : new CpuTargetOptions(), _moduleKind, _bidirectional);
-        return Task.FromResult(rewriter.Rewirte(input));
+        if (_compileOptions.TargetOptions is ICpuTargetOptions targetOptions)
+        {
+            var rewriter = new AutoDistributedRewriter(
+                _compileOptions,
+                targetOptions,
+                _moduleKind,
+                _bidirectional);
+            return Task.FromResult(rewriter.Rewirte(input));
+        }
+
+        return Task.FromResult(input);
     }
 }
 
@@ -1078,7 +1091,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
 
     private readonly bool _bidirectional;
 
-    public AutoDistributedRewriter(CompileOptions compileOptions, CpuTargetOptions targetOptions, string moduleKind = "cpu", bool bidirectional = false)
+    public AutoDistributedRewriter(CompileOptions compileOptions, ICpuTargetOptions targetOptions, string moduleKind = "cpu", bool bidirectional = false)
     {
         Placements = targetOptions.Hierarchies.Select(h => new Placement(h, targetOptions.HierarchyNames, targetOptions.HierarchyKind)).ToArray();
         CompileOptions = compileOptions;
@@ -1101,7 +1114,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
 
     public CompileOptions CompileOptions { get; }
 
-    public CpuTargetOptions TargetOptions { get; }
+    public ICpuTargetOptions TargetOptions { get; }
 
     public IReadOnlyDictionary<string, (IRArray<SBP> NdSBP, Placement Placement)> Scheme { get; }
 
@@ -1379,14 +1392,13 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             return new Dictionary<IRType, List<Expr>> { { expr.CheckedType, new() { expr } } };
         }
 
-        var isSupported = PassUtility.IsCpuSupported(op, expr, expr.Arguments.ToArray(), _moduleKind);
         foreach (var param in op.Parameters)
         {
-            VisitLeafArgument(param.ParameterKind, expr.Arguments[param.Index], isSupported);
+            VisitLeafArgument(param.ParameterKind, expr.Arguments[param.Index], true);
         }
 
         Dictionary<IRType, List<Expr>> results;
-        if (_bidirectional && isSupported)
+        if (_bidirectional)
         {
             results = expr.Arguments.ToArray().
                                 Select(Visit).
@@ -1407,8 +1419,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                 Select(Visit).
                 CartesianProduct().
                 Select(args => args.ToArray()).
-                Select(args => isSupported ? BuildEquivalCalls(op, args.Select(kv => kv.Value[0]).ToArray()).ToArray() :
-                                BuildNotSupportedCalls(op, args.Select(kv => kv.Value[0]).ToArray())).
+                Select(args => BuildEquivalCalls(op, args.Select(kv => kv.Value[0]).ToArray()).ToArray()).
                 SelectMany(i => i).
                 GroupBy(c => c.CheckedType).
                 ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());

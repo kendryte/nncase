@@ -92,7 +92,7 @@ public sealed class PackedReduceEvaluator : IEvaluator<PackedReduce>, ITypeInfer
 
     private IRType Visit(ITypeInferenceContext context, PackedReduce target, TensorType t)
     {
-        var inshape = t.Shape.ToValueArray();
+        var inshape = t.Shape;
         var inDtype = (VectorType)t.DType;
         var inlanes = inDtype.Lanes.ToArray();
         var (_, _, outLanes, outShape) = PackedReduce.ComputeOutputInfo(target, inshape, inlanes);

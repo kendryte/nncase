@@ -173,6 +173,12 @@ public sealed class PackInstanceNorm : PackRule
         {
             var packedInput = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
 
+            // todo support padings.
+            if (padsInput.Any(x => !x.IsFixed || x.FixedValue != 0))
+            {
+                return;
+            }
+
             var pAxes = packedAxes.Where(i => i == 1).Select(i => 0).ToArray();
             var packedScale = PackUtility.PadForPack(scale, pshape, pAxes, lanes, 0f, out var padsScale);
             if (pAxes.Length > 0)
@@ -413,6 +419,13 @@ public sealed class PackUnary : PackRule
         void AddCandidate(int[] packedAxes, int[] lanes)
         {
             var packedInput = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+
+            // todo support padings.
+            if (padsInput.Any(x => !x.IsFixed || x.FixedValue != 0))
+            {
+                return;
+            }
+
             var unary = IR.F.Math.Unary(op.UnaryOp, packedInput);
             var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(unary, lanes, packedAxes), inShape, padsInput);
             if (unary.CheckedType is not InvalidType)
@@ -464,6 +477,13 @@ public sealed class PackBinary : PackRule
         {
             var packedLhs = IR.F.CPU.Pack(PackUtility.PadForPack(lhs, lhsShape, lhsPackedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsPackedAxes);
             var packedRhs = IR.F.CPU.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
+
+            // todo support padings.
+            if (lhsPadNums.Any(x => !x.IsFixed || x.FixedValue != 0)
+                || rhsPadNums.Any(x => !x.IsFixed || x.FixedValue != 0))
+            {
+                return;
+            }
 
             var binary = IR.F.CPU.PackedBinary(packedLhs, packedRhs, op.BinaryOp, lhsPackedAxes, lhsPadNums.Select(x => (int)x.FixedValue).ToArray(), rhsPackedAxes, rhsPadNums.Select(x => (int)x.FixedValue).ToArray());
             var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(binary, lhsLanes.Length >= rhsLanes.Length ? lhsLanes : rhsLanes, lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPackedAxes : rhsPackedAxes), candidate.CheckedShape, lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPadNums : rhsPadNums);
@@ -534,6 +554,13 @@ public sealed class PackSwish : PackRule
         void AddCandidate(int[] packedAxes, int[] lanes)
         {
             var packed = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
+
+            // todo support padings.
+            if (pads.Any(x => !x.IsFixed || x.FixedValue != 0))
+            {
+                return;
+            }
+
             var swish = IR.F.NN.Swish(packed, beta);
             var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(swish, lanes, packedAxes), inShape, pads);
             if (post.CheckedType is not InvalidType)
@@ -581,6 +608,12 @@ public sealed class PackTranspose : PackRule
         void AddCandidate(int[] packedAxes, int[] lanes)
         {
             var packed = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
+
+            // todo support padings.
+            if (pads.Any(x => !x.IsFixed || x.FixedValue != 0))
+            {
+                return;
+            }
 
             var tarns = IR.F.Tensors.Transpose(packed, perm);
             if (tarns.CheckedType is not InvalidType)
@@ -637,6 +670,13 @@ public sealed class PackUnsqueeze : PackRule
         void AddCandidate(int[] packedAxes, int[] lanes)
         {
             var packed = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
+
+            // todo support padings.
+            if (pads.Any(x => !x.IsFixed || x.FixedValue != 0))
+            {
+                return;
+            }
+
             var unseq = IR.F.Tensors.Unsqueeze(packed, axes);
             var unpackAxes = packedAxes.Select(axis => axis + axes.Count(i => i <= axis)).ToArray();
             var outShape = inShape.ToList();
@@ -827,6 +867,13 @@ public sealed class PackReshape : PackRule
             }
 
             var packed = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
+
+            // todo support padings.
+            if (pads.Any(x => !x.IsFixed || x.FixedValue != 0))
+            {
+                return;
+            }
+
             var packedNewShape = newShape.ToArray();
             foreach (var (lane, axis) in lanes.Zip(unpackAxes))
             {
@@ -924,6 +971,13 @@ public sealed class PackSlice : PackRule
             }
 
             var packed = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packAxes, lanes, 0f, out var pads), lanes, packAxes);
+
+            // todo support padings.
+            if (pads.Any(x => !x.IsFixed || x.FixedValue != 0))
+            {
+                return;
+            }
+
             var slice = IR.F.Tensors.Slice(packed, packedBegins, packedEnds, axes, strides);
             var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(slice, lanes, packAxes), candidate.CheckedShape, pads);
             if (post.CheckedType is not InvalidType)
@@ -970,6 +1024,13 @@ public sealed class PackCast : PackRule
         void AddCandidate(int[] packedAxes, int[] lanes)
         {
             var packedInput = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+
+            // todo support padings.
+            if (padsInput.Any(x => !x.IsFixed || x.FixedValue != 0))
+            {
+                return;
+            }
+
             var cast = IR.F.Tensors.Cast(packedInput, op.NewType, op.CastMode);
             var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(cast, lanes, packedAxes), inShape, padsInput);
             if (cast.CheckedType is not InvalidType)

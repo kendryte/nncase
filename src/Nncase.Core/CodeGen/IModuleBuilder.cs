@@ -153,6 +153,10 @@ public interface IModuleBuilder
     ILinkableModule Build(IReadOnlyList<BaseFunction> functions);
 }
 
+public interface IStackVMModuleBuilder : IModuleBuilder
+{
+}
+
 /// <summary>
 /// Function id.
 /// </summary>

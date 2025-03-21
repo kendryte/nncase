@@ -101,7 +101,7 @@ public sealed class UnitTestBufferScheduler : TestClassBase
     private async Task Compile(IRModule module)
     {
         var passManager = CompileSession.CreatePassManager("pmgr");
-        passManager.Add<CPUFusionToTirPass>();
+        passManager.Add<CPUTIRSelectionPass>();
 
         // todo add auto fusion merge pass here.
         passManager.Add<PrimFuncPass>().Configure(p =>

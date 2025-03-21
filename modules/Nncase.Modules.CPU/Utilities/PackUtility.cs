@@ -17,7 +17,7 @@ public static class PackUtility
             var axis = packedAxes[i];
             if (shape[axis] % lanes[i] != 0)
             {
-                pads[axis, 1] = Dimension.AlignUp(shape[axis], lanes[i]) - shape[axis];
+                pads[axis, 1] = PadForAlign(shape[axis], lanes[i]);
                 isPadded = true;
             }
         }
@@ -170,5 +170,11 @@ public static class PackUtility
         }
 
         return (forward, backward);
+    }
+
+    private static Dimension PadForAlign(Dimension dim, int align)
+    {
+        var mod = dim % align;
+        return Dimension.Select(mod, 0, 0, align - mod);
     }
 }

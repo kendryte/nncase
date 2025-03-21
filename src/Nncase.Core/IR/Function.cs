@@ -32,7 +32,7 @@ public sealed class Function : BaseFunction
     {
     }
 
-    public Function(string name, string moduleKind, Expr body, ReadOnlySpan<Var> parameters, Dictionary<Var, Expr[]>? varMap)
+    public Function(string name, string moduleKind, Expr body, ReadOnlySpan<Var> parameters, Dictionary<Var, Expr[]>? varMap = null)
         : base(name, moduleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<Var, Expr>(parameters)))
     {
         VarMap = varMap ?? new();

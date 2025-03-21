@@ -56,4 +56,9 @@ public static class IRHelpers
     {
         old.ReplaceAllUsesWith(@new);
     }
+
+    public static HashSet<Var> GetDynamicDimVars()
+    {
+        return CompileSessionScope.GetCurrentThrowIfNull().CompileOptions.ShapeBucketOptions.VarMap.SelectMany(x => x.Value).OfType<Var>().ToHashSet((IEqualityComparer<Var>)ReferenceEqualityComparer.Instance);
+    }
 }

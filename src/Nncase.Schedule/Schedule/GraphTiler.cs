@@ -633,7 +633,7 @@ public class GraphTiler
                 result.ScheduleBuffers();
                 var bodyBuilder = T.Sequential();
                 result.Visit(primTree, new(bodyBuilder, Array.Empty<Expr>()));
-                var parameters = inputBids.Concat(outputBids).Select(k => result.PrimBufferMemo[k]).ToArray();
+                var parameters = inputBids.Concat(outputBids).Select(k => Var.BufferVar(result.PrimBufferMemo[k])).ToArray();
                 var funcBuilder = T.PrimFunc($"device_func_{DeviceFuncionCount++}", moduleKind, parameters).Body(bodyBuilder);
                 var primFunc = funcBuilder.Build();
                 memo = new(new PrimFunctionWrapper(primFunc, inputBids.Count, inputBids.Concat(outputBids).Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType).ToArray()), result.ObjectiveValue);

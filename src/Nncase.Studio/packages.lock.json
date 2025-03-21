@@ -1003,6 +1003,7 @@
           "Nncase.Modules.StackVM": "[1.0.0, )",
           "Nncase.Passes": "[1.0.0, )",
           "Nncase.Schedule": "[1.0.0, )",
+          "Nncase.Targets": "[1.0.0, )",
           "Razor.Templating.Core": "[2.0.0, )"
         }
       },
@@ -1044,6 +1045,14 @@
         "type": "Project",
         "dependencies": {
           "Nncase.Core": "[1.0.0, )"
+        }
+      },
+      "nncase.targets": {
+        "type": "Project",
+        "dependencies": {
+          "Nncase.CodeGen": "[1.0.0, )",
+          "Nncase.Core": "[1.0.0, )",
+          "Nncase.Schedule": "[1.0.0, )"
         }
       },
       "onnx.protobuf": {

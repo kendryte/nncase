@@ -99,11 +99,13 @@ public sealed class Var : Expr, IEquatable<Var?>
     /// </summary>
     public static Var SizeVar(string name) => Scalar(name, DataTypes.Int64);
 
+    public static Var BufferVar(TIR.Buffer buffer) => new Var(buffer.Name);
+
     /// <inheritdoc/>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitVar(this, context);
 
-    public Var With(string? name = null, IRType? typeAnnotation = null) => new Var(name ?? Name, typeAnnotation ?? TypeAnnotation);
+    public Var With(string? name = null, IRType? typeAnnotation = null) => new Var(name ?? Name, typeAnnotation ?? TypeAnnotation) { Metadata = Metadata };
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as Var);

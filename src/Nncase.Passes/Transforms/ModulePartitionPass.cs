@@ -1,25 +1,30 @@
-﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.Graphs;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Nncase.Passes.GraphPartition;
+using Nncase.Targets;
 using QuikGraph;
 using QuikGraph.Algorithms;
 using QuikGraph.Graphviz;
 
-namespace Nncase.Passes;
+namespace Nncase.Passes.Transforms;
 
-public sealed class CPUFunctionPartitionPass : ModulePass
+public sealed class ModulePartitionPass : ModulePass
 {
-    public CPUFunctionPartitionPass(string moduleKind = "cpu")
+    public ModulePartitionPass(IModuleCompiler moduleCompiler)
     {
-        ModuleKind = moduleKind;
+        ModuleCompiler = moduleCompiler;
     }
 
-    public string ModuleKind { get; set; }
+    public IModuleCompiler ModuleCompiler { get; }
 
     protected override Task<IRModule> RunCoreAsync(IRModule module, RunPassContext context)
     {
@@ -32,7 +37,7 @@ public sealed class CPUFunctionPartitionPass : ModulePass
             }
 
             Function pre = function;
-            var postBody = PerformPartition(pre.Name, pre.Body);
+            var postBody = PerformPartition(module, pre.Name, pre.Body);
             var post = pre.With(pre.Name, pre.ModuleKind, postBody, pre.Parameters.ToArray());
             module.Replace(i, post);
         }
@@ -40,8 +45,10 @@ public sealed class CPUFunctionPartitionPass : ModulePass
         return Task.FromResult(module);
     }
 
-    private Expr PerformPartition(string funcName, Expr pre)
+    private Expr PerformPartition(IRModule module, string funcName, Expr pre)
     {
+        var dynamicVars = IRHelpers.GetDynamicDimVars();
+
         // 1. convert to quikgraph
         var biGraph = new BidirectionalGraph<ExprVertex, ExprEdge>(false);
         {
@@ -53,41 +60,17 @@ public sealed class CPUFunctionPartitionPass : ModulePass
         var condenseAlgo = new CondensationGraphAlgorithm<ExprVertex, ExprEdge>(biGraph);
         condenseAlgo.IsEdgeCompatible += (algo, arg) =>
         {
-            bool CheckField(Expr f)
-            {
-                if (f is Call c && c.Target is IR.Distributed.Boxing { NewType: TensorType } && c.Arguments[0].CheckedType is DistributedType)
-                {
-                    return true;
-                }
-
-                return f.CheckedType is DistributedType;
-            }
-
             bool isSupport = false;
             switch (arg.Edge.Source.Expr, arg.Edge.Target.Expr)
             {
-                case (Call callee, Call caller):
-                    switch (callee.CheckedType, caller.CheckedType)
-                    {
-                        case (DistributedType, TensorType) when caller.Target is IR.Distributed.Boxing:
-                        case (DistributedType, DistributedType):
-                            isSupport = true;
-                            break;
-                    }
-
-                    break;
-                case (IR.Tuple tpArg, Call caller):
-                    if (tpArg.Fields.AsValueEnumerable().All(f => f.CheckedType is DistributedType) && caller.CheckedType is DistributedType)
-                    {
-                        isSupport = true;
-                    }
-
-                    break;
-                case (Call field, IR.Tuple tp):
-                    isSupport = tp.Fields.AsValueEnumerable().All(f => f is Call c && CheckField(c)) ? true : false;
-                    break;
-                case (If callee, _):
+                case (Var var, _) when !dynamicVars.Contains(var):
                     isSupport = false;
+                    break;
+                case (_, IR.Tuple):
+                    isSupport = true;
+                    break;
+                case (_, Call caller):
+                    isSupport = ModuleCompiler.IsSupportedCall(caller, CompileSession.CompileOptions);
                     break;
                 case (_, If caller):
                     isSupport = false;
@@ -119,7 +102,7 @@ public sealed class CPUFunctionPartitionPass : ModulePass
         }
 
         // 3. reconstruction
-        var constructor = new DistributedReconstructor(funcName, ModuleKind, condenseAlgo);
+        var constructor = new DistributedReconstructor(module, funcName, ModuleCompiler.ModuleKind, condenseAlgo);
         var post = constructor.Construct();
         return post;
     }
@@ -127,12 +110,15 @@ public sealed class CPUFunctionPartitionPass : ModulePass
 
 internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, ExprEdge>
 {
-    public DistributedReconstructor(string funcName, string moduleKind, CondensationGraphAlgorithm<ExprVertex, ExprEdge> algo)
+    public DistributedReconstructor(IRModule module, string funcName, string moduleKind, CondensationGraphAlgorithm<ExprVertex, ExprEdge> algo)
         : base(algo)
     {
+        Module = module;
         FuncName = funcName;
         ModuleKind = moduleKind;
     }
+
+    public IRModule Module { get; }
 
     public string FuncName { get; }
 
@@ -144,6 +130,14 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
         var paramDict = new Dictionary<Expr, Var>(ReferenceEqualityComparer.Instance);
         var extractDict = new Dictionary<Expr, Expr>(ReferenceEqualityComparer.Instance);
         var argumentDict = new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance);
+        var dynamicVars = IRHelpers.GetDynamicDimVars();
+
+        foreach (var dimVar in dynamicVars)
+        {
+            paramDict.Add(dimVar, dimVar);
+            argumentDict.Add(dimVar, dimVar);
+        }
+
         foreach (var (pre, post) in pairs)
         {
             if (pre is not (Call or Var or If))
@@ -153,14 +147,18 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
 
             Var @var;
             Expr extract;
-            if (pre.CheckedType is DistributedType d)
+            if (pre is Var preVar && dynamicVars.Contains(preVar))
             {
-                @var = new Var(d.TensorType);
+                continue;
+            }
+            else if (pre.CheckedType is DistributedType d)
+            {
+                @var = pre is Var oldVar ? oldVar.With(typeAnnotation: d.TensorType) : new Var(d.TensorType) { Metadata = pre.Metadata };
                 extract = IR.F.Distributed.Boxing(@var, d);
             }
             else
             {
-                @var = new Var(pre.CheckedType);
+                @var = pre is Var oldVar ? oldVar.With() : new Var(pre.CheckedType) { Metadata = pre.Metadata };
                 extract = @var;
             }
 
@@ -181,8 +179,9 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
         }
 
         var cloned = PostProcess(clones);
-        var fusion = new Fusion($"{FuncName}_{sortIndex}_kernel", ModuleKind, cloned, paramDict.Values.OfType<Var>().ToArray());
-        return new Call(fusion, paramDict.Values.OfType<Var>().Select(v => argumentDict[v]).ToArray());
+        var func = new Function($"{FuncName}_{sortIndex}_kernel", ModuleKind, cloned, paramDict.Values.OfType<Var>().ToArray());
+        Module.Add(func);
+        return new Call(func, paramDict.Values.OfType<Var>().Select(v => argumentDict[v]).ToArray());
     }
 
     private Expr PostProcess(List<Expr> clones)

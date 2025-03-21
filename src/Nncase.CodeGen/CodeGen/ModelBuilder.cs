@@ -16,14 +16,17 @@ namespace Nncase.CodeGen;
 /// </summary>
 public sealed class ModelBuilder : IModelBuilder
 {
+    private readonly IStackVMModuleBuilder _stackVMModuleBuilder;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ModelBuilder"/> class.
     /// default ctor.
     /// </summary>
-    public ModelBuilder(ITarget target, CompileOptions compileOptions)
+    public ModelBuilder(ITarget target, CompileOptions compileOptions, IStackVMModuleBuilder stackVMModuleBuilder)
     {
         Target = target;
         CompileOptions = compileOptions;
+        _stackVMModuleBuilder = stackVMModuleBuilder;
     }
 
     /// <summary>
@@ -45,11 +48,21 @@ public sealed class ModelBuilder : IModelBuilder
             CodeGenDumper.DumpIdMap(functionIds);
         }
 
-        var linkableModules = functionsByKind.Select(x => Target.CreateModuleBuilder(x.Key, CompileOptions).Build(x.ToList())).ToList();
+        var linkableModules = functionsByKind.Select(x => GetModuleBuilder(x.Key).Build(x.ToList())).ToList();
         var linkContext = new LinkContext(functionIds);
         var linkedModules = linkableModules.Select(x => x.Link(linkContext)).ToList();
         var entryFunctionId = module.Entry == null ? null : functionIds[module.Entry];
         return new LinkedModel(entryFunctionId, linkedModules);
+    }
+
+    private IModuleBuilder GetModuleBuilder(string kind)
+    {
+        if (kind == _stackVMModuleBuilder.ModuleKind)
+        {
+            return _stackVMModuleBuilder;
+        }
+
+        return Target.GetModuleCompiler(kind).CreateModuleBuilder(CompileOptions);
     }
 
     private Dictionary<BaseFunction, FunctionId> MakeFunctionsIds(IEnumerable<IGrouping<string, BaseFunction>> functionsByKind)

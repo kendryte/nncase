@@ -10,16 +10,6 @@ namespace Nncase.Schedule;
 
 public static class TilingUtilities
 {
-    public static Expr GetUninitialized(Expr expr)
-    {
-        return expr.CheckedType switch
-        {
-            TensorType t => IR.F.Buffer.Uninitialized(t.DType, TIR.MemoryLocation.Input, t.Shape.ToValueArray()),
-            DistributedType t => IR.F.Buffer.Uninitialized(t.TensorType.DType, TIR.MemoryLocation.Input, t.TensorType.Shape.ToValueArray(), t.NdSBP, t.Placement),
-            _ => throw new ArgumentOutOfRangeException(nameof(expr)),
-        };
-    }
-
     public static long[] GetBufferShape(Expr buffer)
     {
         return buffer.CheckedType switch

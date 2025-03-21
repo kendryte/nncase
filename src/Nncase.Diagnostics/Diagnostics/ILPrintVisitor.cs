@@ -288,7 +288,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         }
 
         // 1. Function signature
-        _writer.WInd().Write($"{name} = fn({StringUtility.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit))})");
+        _writer.WInd().Write($"{name} = fn<{expr.ModuleKind}>({StringUtility.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit))})");
         AppendCheckedType(expr.CheckedType, expr.Metadata.Range);
         _writer.WInd().WriteLine("{");
 

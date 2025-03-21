@@ -150,7 +150,8 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 
     public KernelCSource GetCSource()
     {
-        var ctype = $"void {VisitEntry.Name}({string.Join(", ", VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}").ToArray().Concat(_exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata).Select(Visit).Select(s => $" {s.Type} {s.Name}").ToArray()))}, uint8_t* data)";
+        var ctype = $"template<{string.Join(", ", Enumerable.Range(0, VisitEntry.Parameters.Length).Select(x => $"class T{x}"))}>" + Environment.NewLine +
+            $"void {VisitEntry.Name}({string.Join(", ", VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}").ToArray().Concat(_exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata).Select(Visit).Select(s => $" {s.Type} {s.Name}").ToArray()))}, uint8_t* data)";
         return new(
             CSourceBuiltn.MakeMain(VisitEntry, DataAlign, DataUsage, RdataPoolSize, LocalRdataPoolSize, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata), TargetOptions),
             CSourceBuiltn.MakeKernel(ctype, _kernelBuilder.ToString()),
@@ -171,7 +172,16 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
             return symbol;
         }
 
-        symbol = new(expr.CheckedDataType.ToC(), expr.Name);
+        var index = VisitEntry.Parameters.IndexOf(expr);
+        if (index != -1)
+        {
+            symbol = new CSymbol($"T{index}", expr.Name);
+        }
+        else
+        {
+            symbol = new(expr.CheckedDataType.ToC(), expr.Name);
+        }
+
         _exprMemo.Add(expr, symbol);
         return symbol;
     }
@@ -256,7 +266,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
         var dimensionStr = KernelUtility.DimensionsToC(isFixedDimensions, dimensionSymbols, true);
         var strideStr = KernelUtility.StridesToC(isFixedStrides, strideSymbols, true);
 
-        var type = VisitEntry.Parameters.AsValueEnumerable().Contains(expr) || expr.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata || expr.MemSpan.Start is TensorConst
+        var type = expr.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata || expr.MemSpan.Start is TensorConst
             ? (expr.DistributedType == null
              ? $"tensor_view<{dtypeStr}, {dimensionStr}, {strideStr}> "
              : $"sharded_tensor_view<{dtypeStr}, {dimensionStr}, {KernelUtility.DistributedToC(expr.DistributedType)}, {strideStr}> ")
@@ -292,7 +302,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 #if PROFILE_CALL
             IndentScope.Writer.Write($"auto start_{CallCount} = get_ms_time();\n");
 #endif
-            var args = expr.Arguments.ToArray().OfType<TIR.Buffer>().ToArray();
+            var args = expr.Arguments.ToArray();
             switch (kop)
             {
                 case TIR.CPU.Unary unary:
@@ -305,14 +315,14 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                 case TIR.CPU.TensorLoad load:
                     if (args.Length == 1)
                     {
-                        var fullShape = Enumerable.Repeat(1, args[0].Dimensions.Length).ToArray();
+                        var fullShape = Enumerable.Repeat(1, args[0].CheckedShape.Rank).ToArray();
                         var splitAxisAndScale = load.NdSbp.Select((sbp, i) => sbp is SBPSplit s ? (s.Axis, load.Placement.Hierarchy[i]) : (0, 1)).ToArray();
                         foreach (var s in splitAxisAndScale)
                         {
                             fullShape[s.Item1] *= s.Item2;
                         }
 
-                        foreach (var (dimS, axis) in args[0].Dimensions.ToArray().Select((e, axis) => (Visit(e).Name, axis)))
+                        foreach (var (dimS, axis) in args[0].CheckedShape.Select((e, axis) => (Visit(e.Value).Name, axis)))
                         {
                             if (int.TryParse(dimS, out var div))
                             {
@@ -326,7 +336,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                         }
 
                         _collective_pool_size = Math.Max(_collective_pool_size, (ulong)(TensorUtilities.GetProduct(fullShape) * args[0].CheckedDataType.SizeInBytes));
-                        var indices = args[0].Dimensions.ToArray().Select(e => Visit(e).Name).ToSlicing(load.NdSbp, load.Placement)[0];
+                        var indices = args[0].CheckedShape.Select(e => Visit(e.Value).Name).ToSlicing(load.NdSbp, load.Placement)[0];
                         IndentScope.Writer.Write($"tac::tensor_boxing_load_sync<fixed_shape<{string.Join(',', fullShape)}>>({indices}, {VisitBuffer(args[0], local: true).Name});\n");
                     }
                     else
@@ -338,14 +348,14 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                 case TIR.CPU.TensorStore store:
                     if (args.Length == 1)
                     {
-                        var fullShape = Enumerable.Repeat(1, args[0].Dimensions.Length).ToArray();
+                        var fullShape = Enumerable.Repeat(1, args[0].CheckedShape.Rank).ToArray();
                         var splitAxisAndScale = store.NdSbp.Select((sbp, i) => sbp is SBPSplit s ? (s.Axis, store.Placement.Hierarchy[i]) : (0, 1)).ToArray();
                         foreach (var s in splitAxisAndScale)
                         {
                             fullShape[s.Item1] *= s.Item2;
                         }
 
-                        foreach (var (dimS, axis) in args[0].Dimensions.ToArray().Select((e, axis) => (Visit(e).Name, axis)))
+                        foreach (var (dimS, axis) in args[0].CheckedShape.Select((e, axis) => (Visit(e.Value).Name, axis)))
                         {
                             if (int.TryParse(dimS, out var div))
                             {
@@ -359,7 +369,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                         }
 
                         _collective_pool_size = Math.Max(_collective_pool_size, (ulong)(TensorUtilities.GetProduct(fullShape) * args[0].CheckedDataType.SizeInBytes));
-                        var indices = args[0].Dimensions.ToArray().Select(e => Visit(e).Name).ToSlicing(store.NdSbp, store.Placement)[0];
+                        var indices = args[0].CheckedShape.Select(e => Visit(e.Value).Name).ToSlicing(store.NdSbp, store.Placement)[0];
                         IndentScope.Writer.Write($"tac::tensor_boxing_store_sync<fixed_shape<{string.Join(',', fullShape)}>>({indices}, {VisitBuffer(args[0], local: true).Name});\n");
                     }
                     else
@@ -413,7 +423,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 
                     break;
                 case TIR.CPU.InstanceNorm instanceNorm:
-                    IndentScope.Writer.Write($"instance_norm({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {args[0].ElemType.ToC()} {{ {instanceNorm.Epsilon} }}, fixed_shape<{string.Join(",", instanceNorm.PackedAxes)}>{{}}, fixed_shape<{string.Join(",", instanceNorm.PadedNums)}>{{}} );\n");
+                    IndentScope.Writer.Write($"instance_norm({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {args[0].CheckedDataType.ToC()} {{ {instanceNorm.Epsilon} }}, fixed_shape<{string.Join(",", instanceNorm.PackedAxes)}>{{}}, fixed_shape<{string.Join(",", instanceNorm.PadedNums)}>{{}} );\n");
 
                     break;
                 case TIR.CPU.ResizeImage resize:
@@ -464,7 +474,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     IndentScope.Writer.Write($"unary<ops::swish>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
                 case TIR.CPU.Slice slice:
-                    IndentScope.Writer.Write($"slice<fixed_shape<{string.Join(",", slice.Begins)}>, fixed_shape<{string.Join(",", slice.Ends)}>, fixed_shape<{string.Join(",", slice.Axes)}>, fixed_shape<{string.Join(",", slice.Strides)}>>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
+                    IndentScope.Writer.Write($"slice<fixed_dims<int64_t, {string.Join(",", slice.Axes)}>, fixed_dims<int64_t, {string.Join(",", slice.Strides)}>>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name});\n");
                     break;
                 case TIR.CPU.Concat concat:
                     IndentScope.Writer.Write($"concat<{concat.Axis}>(std::make_tuple({string.Join(",", args.SkipLast(1).Select(x => VisitBuffer(x, local: true)).Select(s => s.Name))}), {VisitBuffer(args[^1], local: true).Name});\n");
@@ -526,7 +536,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                         }
                         else
                         {
-                            var fullShape = Enumerable.Repeat(1, args[0].Dimensions.Length).ToArray();
+                            var fullShape = Enumerable.Repeat(1, args[0].CheckedShape.Rank).ToArray();
                             if (fullShape.Any())
                             {
                                 var splitAxisAndScale = grs.InType.NdSBP.Select((sbp, i) => sbp is SBPSplit s ? (s.Axis, grs.InType.Placement.Hierarchy[i]) : (0, 1)).ToArray();
@@ -536,7 +546,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                                 }
                             }
 
-                            foreach (var (dimS, axis) in args[0].Dimensions.ToArray().Select((e, axis) => (Visit(e).Name, axis)))
+                            foreach (var (dimS, axis) in args[0].CheckedShape.ToArray().Select((e, axis) => (Visit(e.Value).Name, axis)))
                             {
                                 if (int.TryParse(dimS, out var div))
                                 {
@@ -555,8 +565,15 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     }
 
                     break;
+                case TIR.CPU.GetItem getItem:
+                    IndentScope.Writer.Write($"get_item({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
+                    break;
+                case TIR.CPU.Stack stack:
+                    IndentScope.Writer.Write($"stack<{stack.Axis}>(std::make_tuple({string.Join(",", args.SkipLast(1).Select(x => VisitBuffer(x, local: true)).Select(s => s.Name))}), {VisitBuffer(args[^1], local: true).Name});\n");
+                    break;
                 case TIR.CPU.Reshape reshape:
-                    throw new NotSupportedException("the reshape should be eliminated");
+                    IndentScope.Writer.Write($"reshape({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
+                    break;
                 default:
                     throw new NotSupportedException(kop.ToString());
             }
@@ -679,10 +696,22 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
         return symbol;
     }
 
-    private CSymbol VisitBuffer(TIR.Buffer buffer, bool local)
+    protected override CSymbol VisitNone(None expr)
     {
-        var symbol = VisitBuffer(buffer);
-        if (local && buffer.DistributedType != null)
+        if (_exprMemo.TryGetValue(expr, out var symbol))
+        {
+            return symbol;
+        }
+
+        symbol = new("std::nullptr_t", "nullptr");
+        _exprMemo.Add(expr, symbol);
+        return symbol;
+    }
+
+    private CSymbol VisitBuffer(Expr buffer, bool local)
+    {
+        var symbol = Visit(buffer);
+        if (local && ((buffer.CheckedType is DistributedType) || (buffer is TIR.Buffer b && b.DistributedType != null)))
         {
             return new CSymbol(symbol.Type, $"{symbol.Name}.local()");
         }

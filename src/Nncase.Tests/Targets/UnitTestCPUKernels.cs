@@ -10,7 +10,6 @@ using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.CodeGen;
 using Nncase.IR;
@@ -104,7 +103,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             feedDict.Add(ve, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, eshape).Evaluate());
         }
 
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, new[] { f });
+        await RunCases($"Theory{count}", feedDict, new[] { f });
     }
 
     [Theory]
@@ -135,7 +134,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var post = IR.F.Distributed.Boxing(boxed, inputType);
         post.Metadata = new Passes.Distributed.AutoDistributedMetaData() { Skip = true };
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, new[] { post });
+        await RunCases($"Theory{count}", feedDict, new[] { post });
     }
 
     [Theory]
@@ -178,7 +177,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             posts.Add(post);
         }
 
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Fact]
@@ -251,7 +250,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rule = new Passes.Rules.CPU.PackSwish(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -272,7 +271,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rule = new Passes.Rules.CPU.PackUnary(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -307,7 +306,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rule = new Passes.Rules.CPU.PackUnary(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -358,7 +357,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             }
         }
 
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -395,7 +394,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rule = new Passes.Rules.CPU.PackBinary(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory(Skip = "Drop InstanceNorm")]
@@ -418,7 +417,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rule = new Passes.Rules.CPU.PackInstanceNorm(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -436,7 +435,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rule = new Passes.Rules.CPU.PackResizeImage(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -457,7 +456,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rule = new Passes.Rules.CPU.PackCast(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -500,7 +499,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
 
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -567,7 +566,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
 
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -583,7 +582,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         };
 
         var posts = new[] { pre };
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -786,7 +785,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         Expr post = Passes.Rules.CPU.PackConv2D.AddCandidate(input, weights, bias, strides, padding, wShape, outShape);
         Expr post2 = Passes.Rules.CPU.PackConv2D.AddPackedCandidate(input, weights, bias, strides, padding, wShape, outShape, Lane);
         var posts = new[] { pre, post, post2 };
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -931,6 +930,33 @@ public sealed class UnitTestCPUKernels : TestClassBase
         await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, new[] { unsqueezed });
     }
 
+    [Theory]
+    [InlineData(new object[] { new long[] { 2, 48, 512 }, new long[] { 0 }, new[] { 1 }, 0 })]
+    public async Task TestGetItem(long[] inShape, long[] indices, int[] hierarchy, int number)
+    {
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+
+        var inDims = inShape.Select(x => (Dimension)x).ToArray();
+
+        var input = new Var(new TensorType(DataTypes.Float32, new Shape(inDims)));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(input, inDims.Select(x => x.ToExpr()).ToArray());
+
+        var output = IR.F.Tensors.GetItem(input, indices);
+        output = IR.F.Math.Unary(UnaryOp.Cos, output);
+
+        var feedDict = new Dictionary<Var, IValue>()
+        {
+            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inShape).Evaluate() },
+        };
+
+        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, new[] { output });
+    }
+
     [Theory(Skip = "ToBig")]
     [InlineData(new object[] { false, 0 })]
     [InlineData(new object[] { true, 1 })] // enable packing
@@ -1009,7 +1035,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         };
 
         var posts = new[] { pre };
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -1046,7 +1072,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         };
 
         var posts = new[] { pre };
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     internal async Task RunCases(string dumpDir, Dictionary<Var, IValue> feedDict, IEnumerable<Expr> posts)
@@ -1065,8 +1091,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     internal async Task Run(string dumpDir, CpuKernelCase kernelCase)
     {
-        CompileOptions.DumpDir = Path.Join(dumpDir, kernelCase.Name);
-        using var dumpScope = new Diagnostics.DumpScope(string.Empty, CompileOptions.DumpFlags);
+        using var dumpScope = new Diagnostics.DumpScope(Path.Join(dumpDir, kernelCase.Name), CompileOptions.DumpFlags);
 
         // convert fusion to prim func
         var fusion = kernelCase.Fusion;
@@ -1121,8 +1146,10 @@ public sealed class UnitTestCPUKernels : TestClassBase
     private async Task Compile(IRModule module)
     {
         var pmgr = CompileSession.CreatePassManager("pmgr");
-        CompileSession.Target.RegisterTargetDependentAfterQuantPass(pmgr, CompileSession.CompileOptions);
-        CompileSession.Target.RegisterTargetDependentBeforeCodeGen(pmgr, CompileSession.CompileOptions);
+        var compiler = (Nncase.Compiler.Compiler)CompileSession.Compiler;
+        compiler.ModulePartitionPass(pmgr);
+        compiler.AutoDistributedPass(pmgr);
+        compiler.TIRPass(pmgr);
         pmgr.Add<ReplaceDimVarWithShapeOfPass>();
         await pmgr.RunAsync(module);
     }

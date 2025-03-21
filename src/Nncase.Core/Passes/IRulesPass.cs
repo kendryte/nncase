@@ -42,7 +42,7 @@ public interface IRulesAddable
     {
         private readonly IRulesPass _rulesPass;
 
-        internal AddResult(IRulesPass rulesPass, T rule)
+        public AddResult(IRulesPass rulesPass, T rule)
         {
             _rulesPass = rulesPass;
             Rule = rule;

@@ -24,7 +24,6 @@ namespace Nncase.CodeGen.CPU;
 
 public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 {
-#pragma warning disable SA1401
     protected readonly Dictionary<Expr, CSymbol> _exprMemo;
     protected readonly StringBuilder _deviceBuilder;
 
@@ -54,7 +53,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             throw new NotSupportedException("The PrimFunction must return void!");
         }
 
-        var ctype = $"template<{string.Join(", ", Enumerable.Range(0, expr.Parameters.Length).Select(x => $"class T{x}"))}>" +
+        var ctype = $"template<{string.Join(", ", Enumerable.Range(0, expr.Parameters.Length).Select(x => $"class T{x}"))}>" + Environment.NewLine +
             $"void {expr.Name}({string.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit).Select((s, i) => $"T{i} &&{s.Name}").ToArray())})";
 
         using (var scope = new IndentScope(_deviceBuilder))
