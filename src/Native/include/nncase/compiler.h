@@ -528,7 +528,7 @@ class huggingface_options : public clr_object_base {
     bool output_attentions() { return false; }
     void output_attentions(bool value) {
         nncase_clr_api()->huggingface_options_output_attentions(obj_.get(),
-                                                               value);
+                                                                value);
     }
 
     bool output_hidden_states() { return false; }

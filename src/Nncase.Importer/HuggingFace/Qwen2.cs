@@ -168,7 +168,7 @@ namespace Nncase.Importer
                 hiddenStates = _outputs["hiddenStates"];
             }
 
-            var output = new List<Expr> { logits, kvCache, outAttention, hiddenStates,};
+            var output = new List<Expr> { logits, kvCache, outAttention, hiddenStates, };
             output.RemoveAll(item => item == null);
 
             return new IR.Tuple(output.ToArray().AsSpan());
@@ -177,7 +177,6 @@ namespace Nncase.Importer
         // private Tuple<Call, HuggingFaceUtils.DynamicCache> VisitQwen2ForCausalLM()
         private void VisitQwen2ForCausalLM()
         {
-
             if (_constTensors == null)
             {
                 throw new ArgumentNullException(nameof(_constTensors));
@@ -344,7 +343,6 @@ namespace Nncase.Importer
             }
 
             // the last one
-
             Expr lastHiddenStates = Qwen2LayerNorm(hiddenStates, "model.norm.weight");
 
             if (CompileSession.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
@@ -352,8 +350,8 @@ namespace Nncase.Importer
                 allHiddenStates.Add(Unsqueeze(lastHiddenStates, new long[] { 0 }));
             }
 
-
             return Tuple.Create(lastHiddenStates, allKVcaches, allHiddenStates, allSelfAttns);
+
             // return Tuple.Create(lastHiddenStates, allSelfAttns, allKVcaches);
         }
 

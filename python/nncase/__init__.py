@@ -174,12 +174,14 @@ class Compiler:
     def init_target_options(self, compile_options: CompileOptions) -> None:
         if hasattr(compile_options, "target_options"):
             self._compile_options.set_cpu_target_options(compile_options.target_options)
-            
+
     def init_huggingface_options(self, compile_options: CompileOptions) -> None:
         if hasattr(compile_options, "huggingface_options"):
             self._huggingface_options = _nncase.HuggingFaceOptions()
-            self._huggingface_options.output_attentions = compile_options.huggingface_options['output_attentions']
-            self._huggingface_options.output_hidden_states = compile_options.huggingface_options['output_hidden_states']
+            self._huggingface_options.output_attentions = compile_options.huggingface_options[
+                'output_attentions']
+            self._huggingface_options.output_hidden_states = compile_options.huggingface_options[
+                'output_hidden_states']
             self._huggingface_options.use_cache = compile_options.huggingface_options['use_cache']
             self._compile_options.huggingface_options = self._huggingface_options
 
@@ -299,7 +301,7 @@ class Compiler:
 
         self._compile_options.input_file = compile_options.input_file
         dump_flags = _nncase.DumpFlags.Nothing if not compile_options.dump_ir else _nncase.DumpFlags(
-            _nncase.DumpFlags.PassIR | _nncase.DumpFlags.Compile| _nncase.DumpFlags.ImportOps)
+            _nncase.DumpFlags.PassIR | _nncase.DumpFlags.Compile | _nncase.DumpFlags.ImportOps)
         if (compile_options.dump_asm):
             dump_flags = _nncase.DumpFlags(dump_flags | _nncase.DumpFlags.CodeGen)
         self._compile_options.dump_flags = dump_flags
@@ -442,12 +444,13 @@ class ShapeBucketOptions:
         self.range_info = {}
         self.segments_count = 2
         self.fix_var_map = {}
-        
+
+
 class HuggingFaceOptions:
     output_attentions: bool
     output_hidden_states: bool
     use_cache: bool
-    
+
     def __init__(self) -> None:
         self.output_attentions = False
         self.output_hidden_states = False

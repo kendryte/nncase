@@ -144,7 +144,8 @@ PYBIND11_MODULE(_nncase, m) {
             py::overload_cast<>(&compile_options::shape_bucket_options),
             py::overload_cast<const shape_bucket_options &>(
                 &compile_options::shape_bucket_options))
-        .def_property("huggingface_options",
+        .def_property(
+            "huggingface_options",
             py::overload_cast<>(&compile_options::huggingface_options),
             py::overload_cast<const huggingface_options &>(
                 &compile_options::huggingface_options))
@@ -237,7 +238,7 @@ PYBIND11_MODULE(_nncase, m) {
                       py::overload_cast<>(&shape_bucket_options::fix_var_map),
                       py::overload_cast<std::map<std::string, int>>(
                           &shape_bucket_options::fix_var_map));
-                          
+
     py::class_<huggingface_options>(m, "HuggingFaceOptions")
         .def(py::init())
         .def_property(

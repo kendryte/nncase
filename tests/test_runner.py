@@ -469,7 +469,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     data = generator.from_numpy(file_list[idx])
                 elif method == 'text':
                     data = generator.from_text(file_list[0])
-                    assert(len(data)>= idx, "prompt not enough for calib")
+                    assert(len(data) >= idx, "prompt not enough for calib")
                     messages = [
                         {"role": "system", "content": "You are a assistant!"},
                         {"role": "user", "content": data[idx]}

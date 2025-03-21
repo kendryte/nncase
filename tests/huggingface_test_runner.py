@@ -10,6 +10,7 @@ import io
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 
+
 def recursive_stack(obj):
     if isinstance(obj, (list, tuple)):
         stacked = [recursive_stack(item) for item in obj]
@@ -19,13 +20,14 @@ def recursive_stack(obj):
             return stacked
     else:
         # numpy not support bf16 tensor
-        if(obj.dtype==torch.bfloat16 or obj.dtype==torch.float16):
+        if(obj.dtype == torch.bfloat16 or obj.dtype == torch.float16):
             obj = obj.to(torch.float32)
-        if(obj.shape[0]!=1):
-            return torch.unsqueeze(obj,0)
+        if(obj.shape[0] != 1):
+            return torch.unsqueeze(obj, 0)
         else:
             return obj
-        
+
+
 class HuggingfaceTestRunner(TestRunner):
     def __init__(self, case_name, overwrite_configs: str = None):
         super().__init__(case_name, overwrite_configs)
@@ -57,18 +59,20 @@ class HuggingfaceTestRunner(TestRunner):
             # )
             # model_inputs = self.tokenizer([text], return_tensors="pt").to(self.model.device)
             if not test_utils.in_ci():
-                dump_bin_file(os.path.join(self.case_dir,"input", f'input_{idx}.bin'), input['data'][idx])
-                dump_txt_file(os.path.join(self.case_dir,"input",  f'input_{idx}.txt'), input['data'][idx])
-            
+                dump_bin_file(os.path.join(self.case_dir, "input",
+                                           f'input_{idx}.bin'), input['data'][idx])
+                dump_txt_file(os.path.join(self.case_dir, "input",
+                                           f'input_{idx}.txt'), input['data'][idx])
+
             # TODO: add attention_mask in inputs
             result = self.model.forward(
-                torch.from_numpy(input['data'][0]), 
+                torch.from_numpy(input['data'][0]),
                 return_dict=True,
                 use_cache=self.cfg['huggingface_options']['use_cache'],
                 output_attentions=self.cfg['huggingface_options']['output_attentions'],
                 output_hidden_states=self.cfg['huggingface_options']['output_hidden_states'],
             )
-            
+
             ''' will be used in future[pipeline run]
             # logits = self.model.generate(
             #     torch.from_numpy(input['data'][0]),
@@ -83,56 +87,60 @@ class HuggingfaceTestRunner(TestRunner):
                 dump_bin_file(os.path.join(self.case_dir, f'cpu_result_{count}.bin'), logits)
                 dump_txt_file(os.path.join(self.case_dir, f'cpu_result_{count}.txt'), logits)
                 outputs.append(logits)
-                count+=1
+                count += 1
             if(self.cfg['huggingface_options']['use_cache']):
                 if not test_utils.in_ci():
                     past_kv = recursive_stack(result.past_key_values).detach().numpy()
                     dump_bin_file(os.path.join(self.case_dir, f'cpu_result_{count}.bin'), past_kv)
                     dump_txt_file(os.path.join(self.case_dir, f'cpu_result_{count}.txt'), past_kv)
                     outputs.append(past_kv)
-                    count+=1
+                    count += 1
             if(self.cfg['huggingface_options']['output_attentions']):
                 if not test_utils.in_ci():
                     attentions = recursive_stack(result.attentions).detach().numpy()
-                    dump_bin_file(os.path.join(self.case_dir, f'cpu_result_{count}.bin'), attentions)
-                    dump_txt_file(os.path.join(self.case_dir, f'cpu_result_{count}.txt'), attentions)
+                    dump_bin_file(os.path.join(
+                        self.case_dir, f'cpu_result_{count}.bin'), attentions)
+                    dump_txt_file(os.path.join(
+                        self.case_dir, f'cpu_result_{count}.txt'), attentions)
                     outputs.append(attentions)
-                    count+=1
+                    count += 1
             if(self.cfg['huggingface_options']['output_hidden_states']):
                 if not test_utils.in_ci():
                     hidden_states = recursive_stack(result.hidden_states).detach().numpy()
-                    dump_bin_file(os.path.join(self.case_dir, f'cpu_result_{count}.bin'), hidden_states)
-                    dump_txt_file(os.path.join(self.case_dir, f'cpu_result_{count}.txt'), hidden_states)
+                    dump_bin_file(os.path.join(
+                        self.case_dir, f'cpu_result_{count}.bin'), hidden_states)
+                    dump_txt_file(os.path.join(
+                        self.case_dir, f'cpu_result_{count}.txt'), hidden_states)
                     outputs.append(hidden_states)
-                    count+=1
-            
+                    count += 1
+
         return outputs
 
     def parse_model(self, model_path):
         self.model = AutoModelForCausalLM.from_pretrained(
-        model_path, torch_dtype="auto", device_map="auto").to(torch.float32)
+            model_path, torch_dtype="auto", device_map="auto").to(torch.float32)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.generation_config = self.model.generation_config
         # self.generation_config.return_dict_in_generate = True # if False, generate only output tokens
-        self.generation_config.max_new_tokens = 64 
+        self.generation_config.max_new_tokens = 64
         self.generation_config.do_sample = False
-        self.generation_config.temperature=0.0 # for Stable result
+        self.generation_config.temperature = 0.0  # for Stable result
         if(self.cfg['huggingface_options']['output_attentions']):
             self.generation_config.output_attentions = True
         if(self.cfg['huggingface_options']['output_hidden_states']):
             self.generation_config.output_hidden_states = True
         if(self.cfg['huggingface_options']['use_cache']):
             self.generation_config.use_cache = True
-            
+
         input_dict = {}
         for input_ in self.model.dummy_inputs:
             input_dict["name"] = input_
             input_dict["dtype"] = self.model.dummy_inputs[input_].dtype.__repr__().split('.')[1]
             # TODO: fix dynamic shape
             input_dict['shape'] = [1, "sequence_length"]
-            input_dict['model_shape'] = [1,  "sequence_length"]
+            input_dict['model_shape'] = [1, "sequence_length"]
         self.inputs.append(input_dict)
         self.calibs.append(copy.deepcopy(input_dict))
-    
+
     def import_model(self, compiler, model_content, import_options):
         compiler.import_huggingface(model_content, import_options)
