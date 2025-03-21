@@ -352,7 +352,7 @@ jobs:
           files: test_results/llm_huggingface.xml
 
   upload-coverage:
-    needs: [test-compiler]
+    needs: [test-compiler, test-llm]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v3
