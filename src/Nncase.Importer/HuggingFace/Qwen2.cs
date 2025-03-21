@@ -943,11 +943,11 @@ namespace Nncase.Importer
             // rope type not in config, so it is default. :_compute_default_rope_parameters
             // if "dynamic" in self.rope_type:
             //      self._dynamic_frequency_update(position_ids, device=x.device)
-            var (inv_freq, _) = RoPEInit("default");
+            var (inv_freq, scaling) = RoPEInit("default");
 
             // var a = x.CheckedShape[0];
             var invFreq = Tensor.FromArray(inv_freq.ToArray()); // Unsqueeze(Unsqueeze(Tensor.FromArray(inv_freq.ToArray()), new[] { 0 }),new[] { -1 });
-            var invFreq_float = Cast(invFreq, positionIds.CheckedDataType);
+            var invFreq_float = Cast(invFreq, DataTypes.Float32);
             var invFreqExpanded = Unsqueeze(invFreq_float, Tensor.From<long>(new long[] { 0, 2 }));
             var batch_size = ShapeOf(positionIds)[0];
             var dim_div_2 = ShapeOf(invFreq)[0];
@@ -959,6 +959,7 @@ namespace Nncase.Importer
             //     inv_freq_tensor,
             //     new Dimension[] { x.CheckedShape[0], inv_freq.Count, 1 });
             var positionIdsExpanded = Unsqueeze(positionIds, Tensor.From<long>(new long[] { 1 }));
+            positionIdsExpanded = Cast(positionIdsExpanded, DataTypes.Float32);
 
             var freqs = F.Math.MatMul(invFreqExpanded, positionIdsExpanded);
             freqs = Transpose(freqs, new long[] { 0, 2, 1 });
@@ -968,7 +969,11 @@ namespace Nncase.Importer
             Expr cos = F.Math.Unary(UnaryOp.Cos, emb);
             Expr sin = F.Math.Unary(UnaryOp.Sin, emb);
 
-            // TODO: add attention scaling
+            cos = cos * scaling;
+            sin = sin * scaling;
+            cos = Cast(cos, x.CheckedDataType);
+            sin = Cast(sin, x.CheckedDataType);
+
             return Tuple.Create(cos, sin);
         }
 
