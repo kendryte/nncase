@@ -44,6 +44,8 @@ template <typename T> ortki::DataType primitive_type2ort_type() {
         ort_type = ortki::DataType_UINT64;
     else if (std::is_same_v<T, float>)
         ort_type = ortki::DataType_FLOAT;
+    else if (std::is_same_v<T, half>)
+        ort_type = ortki::DataType_FLOAT16;
     else if (std::is_same_v<T, double>)
         ort_type = ortki::DataType_DOUBLE;
     else if (std::is_same_v<T, bool>)
