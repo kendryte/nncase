@@ -820,6 +820,11 @@ public sealed class PackReshape : PackRule
                 }
             }
 
+            if (unpackAxes.Count == 0)
+            {
+                return;
+            }
+
             var packed = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
             var packedNewShape = newShape.ToArray();
             foreach (var (lane, axis) in lanes.Zip(unpackAxes))
