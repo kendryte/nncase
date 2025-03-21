@@ -300,6 +300,16 @@ internal class Compiler : ICompiler
 
         passManager.Add<AddFunctionToModule>();
         passManager.Add<BufferizePass>();
+
+        passManager.AddWithName<PrimFuncPass>("Optimize").Configure(p =>
+        {
+            p.Add<Passes.Mutators.UnFoldBlock>();
+            p.Add<Passes.Mutators.FlattenSequential>();
+            p.Add<Passes.Mutators.TailLoopStripping>();
+            p.Add<Passes.Mutators.FoldConstCall>();
+            p.Add<Passes.Mutators.FlattenBuffer>();
+            p.Add<Passes.Mutators.RemoveNop>();
+        });
     }
 
     public async Task CompileAsync(IProgress<int>? progress = null, CancellationToken token = default)

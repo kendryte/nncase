@@ -91,26 +91,4 @@ public class CPUTarget : Target
     {
         passManager.Add<CPUTIRSelectionPass>();
     }
-
-    /// <inheritdoc/>
-    public override void RegisterTargetDependentBeforeCodeGen(IPassManager passManager, CompileOptions options)
-    {
-        // todo add auto fusion merge pass here.
-        passManager.Add<PrimFuncPass>().Configure(p =>
-        {
-            p.Add<Passes.Mutators.UnFoldBlock>();
-            p.Add<Passes.Mutators.FlattenSequential>();
-            p.Add<Passes.Mutators.TailLoopStripping>();
-            p.Add<Passes.Mutators.FoldConstCall>();
-        });
-
-        passManager.AddWithName<DDrBufferSchdeulePass>("DDrBufferSchdeule");
-
-        passManager.AddWithName<PrimFuncPass>("InstStage").Configure(p =>
-        {
-            p.Add<Passes.Mutators.FlattenBuffer>();
-            p.Add<Passes.Mutators.FoldConstCall>();
-            p.Add<Passes.Mutators.RemoveNop>();
-        });
-    }
 }

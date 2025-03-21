@@ -9,6 +9,7 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Passes.BufferSchedule;
+using Nncase.Passes.Transforms;
 using Nncase.Tests.TestFixture;
 using Xunit;
 
@@ -112,7 +113,7 @@ public sealed class UnitTestBufferScheduler : TestClassBase
             p.Add<Passes.Mutators.FoldConstCall>();
         });
 
-        passManager.AddWithName<DDrBufferSchdeulePass>("DDrBufferSchdeule");
+        passManager.AddWithName<BufferizePass>("BufferizePass");
 
         passManager.AddWithName<PrimFuncPass>("InstStage").Configure(p =>
         {
