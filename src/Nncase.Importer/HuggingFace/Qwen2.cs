@@ -29,7 +29,7 @@ namespace Nncase.Importer
 {
     public partial class HuggingFaceImporter
     {
-        protected (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) Qwen2CreateInputs()
+        private (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) Qwen2CreateInputs()
         {
             var hiddenSize = (long)_config!["hidden_size"];
             var numsHiddenLayers = (long)_config!["num_hidden_layers"];
@@ -170,10 +170,10 @@ namespace Nncase.Importer
                 hiddenStates = _outputs["hiddenStates"];
             }
 
-            var output = new List<Expr> { logits, kvCache, outAttention, hiddenStates, };
+            var output = new List<Expr?> { logits, kvCache, outAttention, hiddenStates, };
             output.RemoveAll(item => item == null);
 
-            return new IR.Tuple(output.ToArray().AsSpan());
+            return new IR.Tuple([.. output!]);
         }
 
         // private Tuple<Call, HuggingFaceUtils.DynamicCache> VisitQwen2ForCausalLM()
@@ -184,15 +184,15 @@ namespace Nncase.Importer
                 throw new ArgumentNullException(nameof(_constTensors));
             }
 
-            Var input_ids = _inputs[0]!;
+            Var input_ids = _inputs![0]!;
             var attention_mask = _inputs[1];
             var position_ids = _inputs[2];
             var pastKeyValues = _inputs[3];
 
             // var (lastHiddenStates, pastKeyValues, allSelfAttns, allHiddenStates) = Qwen2Model(input_ids,
             //     inputEmbeds: null, new HuggingFaceUtils.DynamicCache(), cachePosition: null, positionIds: null,
-            var (lastHiddenStates, allSelfKV, allHiddenStates, allSelfAttns) = Qwen2Model(
             /* useCache: false, outputAttentions: false, outputHiddenStates: false);*/
+            var (lastHiddenStates, allSelfKV, allHiddenStates, allSelfAttns) = Qwen2Model(
                 input_ids,
                 attention_mask,
                 position_ids,
@@ -256,7 +256,7 @@ namespace Nncase.Importer
 
                 if (method != null)
                 {
-                    asTypeZero = method.Invoke(null, new object[] { zeroValue });
+                    asTypeZero = method.Invoke(null, [zeroValue])!;
                 }
                 else
                 {
@@ -379,7 +379,7 @@ namespace Nncase.Importer
         }
 
         // calc torch.nn.linear (i.e. x*transpose(W)+b)
-        private Call Linear(Expr expr, Tensor weight, Tensor bias = null)
+        private Call Linear(Expr expr, Tensor weight, Tensor? bias = null)
         {
             var transposed_weight = F.Tensors.Transpose(weight, new long[] { 1, 0 });
             var result = F.Math.MatMul(expr, transposed_weight);
@@ -780,83 +780,76 @@ namespace Nncase.Importer
             return Tuple.Create(hiddenStates, selfAttenWeight, mergedKeyValue);
         }
 
-        private Tuple<Call, Call> SdpaAttention(
-            Call queryStates,
-            Call keyStates,
-            Call valueStates,
-            Expr? attentionMask,
-            float? scaling,
-            bool? isCausal)
-        {
-            /*
-             * def scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.0,
-                   is_causal=False, scale=None, enable_gqa=False) -> torch.Tensor:
-                   L, S = query.size(-2), key.size(-2)
-                   scale_factor = 1 / math.sqrt(query.size(-1)) if scale is None else scale
-                   attn_bias = torch.zeros(L, S, dtype=query.dtype)
-                   if is_causal:
-                       assert attn_mask is None
-                       temp_mask = torch.ones(L, S, dtype=torch.bool).tril(diagonal=0)
-                       attn_bias.masked_fill_(temp_mask.logical_not(), float("-inf"))
-                       attn_bias.to(query.dtype)
-
-                   if attn_mask is not None:
-                       if attn_mask.dtype == torch.bool:
-                           attn_bias.masked_fill_(attn_mask.logical_not(), float("-inf"))
-                       else:
-                           attn_bias += attn_mask
-
-                   if enable_gqa:
-                       key = key.repeat_interleave(query.size(-3)//key.size(-3), -3)
-                       value = value.repeat_interleave(query.size(-3)//value.size(-3), -3)
-
-                   attn_weight = query @ key.transpose(-2, -1) * scale_factor
-                   attn_weight += attn_bias
-                   attn_weight = torch.softmax(attn_weight, dim=-1)
-                   attn_weight = torch.dropout(attn_weight, dropout_p, train=True)
-                   return attn_weight @ value
-             */
-            var casualMask = attentionMask;
-            if (attentionMask != null)
-            {
-                casualMask = Slice(
-                    casualMask,
-                    new[] { 0L, 0L, 0L, 0L },
-                    Stack(new IR.Tuple(ShapeOf(casualMask)[0], ShapeOf(casualMask)[1], ShapeOf(casualMask)[2], ShapeOf(keyStates)[-2]), 0),
-                    new[] { 0L, 1L, 2L, 3L },
-                    new[] { 1L, 1L, 1L, 1L });
-            }
-
-            if (isCausal == null)
-            {
-                isCausal = casualMask == null && queryStates.CheckedShape[2].FixedValue > 1;
-            }
-
-            var (l, s) = (ShapeOf(queryStates)[-2], ShapeOf(keyStates)[-2]);
-            var scaleFactor = 1.0f / F.Math.Sqrt(Cast(ShapeOf(queryStates)[-1], queryStates.CheckedDataType));
-            var attnBias = (Call)F.Tensors.Broadcast(Tensor.FromScalar(0f), F.Tensors.Stack(new IR.Tuple(l, s), 0L));
-
-            // TODO: 也许需要处理attentionMask为空的情况,在这里生成下三角为0 ,其他为-inf的功能.
-            // if (isCausal == true)
-            // {
-            //     var tempMask = (Call)Tensor.FromScalar(0f, new Shape(l, s));
-            // }
-            if (attentionMask != null)
-            {
-                attnBias = Binary(BinaryOp.Add, attnBias, attentionMask);
-            }
-
-            var attnWeight =
-                IR.F.Math.MatMul(
-                    queryStates,
-                    Transpose(keyStates, ShapeExprUtility.GetPermutation(keyStates, [-2, -1]))) * scaleFactor;
-            attnWeight += attnBias;
-            attnWeight = Softmax(attnWeight, -1L);
-            var attnOutput = F.Math.MatMul(attnWeight, valueStates);
-            attnOutput = Transpose(attnOutput, ShapeExprUtility.GetPermutation(attnOutput, [1, 2]));
-            return Tuple.Create(attnOutput, (Call)null);
-        }
-
+        // private IR.Tuple SdpaAttention(
+        //     Call queryStates,
+        //     Call keyStates,
+        //     Call valueStates,
+        //     Expr? attentionMask,
+        //     float? scaling,
+        //     bool? isCausal)
+        // {
+        //     /*
+        //      * def scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.0,
+        //            is_causal=False, scale=None, enable_gqa=False) -> torch.Tensor:
+        //            L, S = query.size(-2), key.size(-2)
+        //            scale_factor = 1 / math.sqrt(query.size(-1)) if scale is None else scale
+        //            attn_bias = torch.zeros(L, S, dtype=query.dtype)
+        //            if is_causal:
+        //                assert attn_mask is None
+        //                temp_mask = torch.ones(L, S, dtype=torch.bool).tril(diagonal=0)
+        //                attn_bias.masked_fill_(temp_mask.logical_not(), float("-inf"))
+        //                attn_bias.to(query.dtype)
+        //            if attn_mask is not None:
+        //                if attn_mask.dtype == torch.bool:
+        //                    attn_bias.masked_fill_(attn_mask.logical_not(), float("-inf"))
+        //                else:
+        //                    attn_bias += attn_mask
+        //            if enable_gqa:
+        //                key = key.repeat_interleave(query.size(-3)//key.size(-3), -3)
+        //                value = value.repeat_interleave(query.size(-3)//value.size(-3), -3)
+        //            attn_weight = query @ key.transpose(-2, -1) * scale_factor
+        //            attn_weight += attn_bias
+        //            attn_weight = torch.softmax(attn_weight, dim=-1)
+        //            attn_weight = torch.dropout(attn_weight, dropout_p, train=True)
+        //            return attn_weight @ value
+        //      */
+        //     var casualMask = attentionMask;
+        //     if (attentionMask != null)
+        //     {
+        //         // casualMask
+        //         _ = Slice(
+        //            casualMask!,
+        //            new[] { 0L, 0L, 0L, 0L },
+        //            Stack(new IR.Tuple(ShapeOf(casualMask!)[0], ShapeOf(casualMask!)[1], ShapeOf(casualMask!)[2], ShapeOf(keyStates)[-2]), 0),
+        //            new[] { 0L, 1L, 2L, 3L },
+        //            new[] { 1L, 1L, 1L, 1L });
+        //     }
+        //     // if (isCausal == null)
+        //     // {
+        //     //     isCausal = casualMask == null && queryStates.CheckedShape[2].FixedValue > 1;
+        //     // }
+        //     var (l, s) = (ShapeOf(queryStates)[-2], ShapeOf(keyStates)[-2]);
+        //     var scaleFactor = 1.0f / F.Math.Sqrt(Cast(ShapeOf(queryStates)[-1], queryStates.CheckedDataType));
+        //     var attnBias = (Call)F.Tensors.Broadcast(Tensor.FromScalar(0f), F.Tensors.Stack(new IR.Tuple(l, s), 0L));
+        //     // TODO: 也许需要处理attentionMask为空的情况,在这里生成下三角为0 ,其他为-inf的功能.
+        //     // if (isCausal == true)
+        //     // {
+        //     //     var tempMask = (Call)Tensor.FromScalar(0f, new Shape(l, s));
+        //     // }
+        //     if (attentionMask != null)
+        //     {
+        //         attnBias = Binary(BinaryOp.Add, attnBias, attentionMask);
+        //     }
+        //     var attnWeight =
+        //         IR.F.Math.MatMul(
+        //             queryStates,
+        //             Transpose(keyStates, ShapeExprUtility.GetPermutation(keyStates, [-2, -1]))) * scaleFactor;
+        //     attnWeight += attnBias;
+        //     attnWeight = Softmax(attnWeight, -1L);
+        //     var attnOutput = F.Math.MatMul(attnWeight, valueStates);
+        //     attnOutput = Transpose(attnOutput, ShapeExprUtility.GetPermutation(attnOutput, [1, 2]));
+        //     return Tuple.Create(attnOutput, (Call)null);
+        // }
         private Tuple<Expr, Expr> EagerAttentionForward(Expr query, Expr key, Expr value, Expr? attentionMask, float scaling)
         {
             /*

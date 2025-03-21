@@ -22,13 +22,12 @@ public sealed partial class HuggingFaceImporter : BaseImporter
 {
     private readonly Dictionary<string, object>? _config;
     private readonly Dictionary<string, Tensor>? _constTensors;
-
-    private List<Var?> _inputs;
     private readonly Dictionary<string, Expr>? _outputs = new Dictionary<string, Expr> { };
-    private Dictionary<string, Var> _dynVarMap;
-    private Dictionary<string, int> _fixVarMap;
 
-    private readonly Dictionary<Var, Expr[]> _varMap;
+    // private readonly Dictionary<Var, Expr[]>? _varMap;
+    private List<Var?>? _inputs;
+    private Dictionary<string, Var>? _dynVarMap;
+    private Dictionary<string, int>? _fixVarMap;
 
     public HuggingFaceImporter(string huggingFaceDir, CompileSession compileSession)
         : base(compileSession)

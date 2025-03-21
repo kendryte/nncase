@@ -110,7 +110,7 @@ public static class ShapeExprUtility
         return Value.FromTensor(call.CheckedShape.ToValueArray().Select(x => (long)x).ToArray());
     }
 
-    private static Expr SliceAndMerge(Expr originShapeExpr, Expr index, Expr value, Expr indexOffset, bool valueIsList = true)
+    public static Expr SliceAndMerge(Expr originShapeExpr, Expr index, Expr value, Expr indexOffset, bool valueIsList = true)
     {
         var shapeExpr = Cast(originShapeExpr, DataTypes.Int64);
         var front = Slice(shapeExpr, 0, index);
@@ -124,7 +124,7 @@ public static class ShapeExprUtility
         return Concat(new IR.Tuple(front, c, last), 0);
     }
 
-    private static Expr CheckShape(Expr shape)
+    public static Expr CheckShape(Expr shape)
     {
         if (shape.CheckedType == null)
         {
@@ -144,9 +144,6 @@ public static class ShapeExprUtility
     {
         var r = tensor.CheckedShape.Rank;
 
-        // System.Console.WriteLine($"shape:{tensor.CheckedShape} rank:{r} dims:{dims[0]},{dims[1]}");
-        // format dims to non-negative
-        // var newDims = dims.Select(x => x < 0 ? x + r : x).ToArray();
         var fullDims = new List<long>();
 
         for (int i = 0; i != r; i++)
