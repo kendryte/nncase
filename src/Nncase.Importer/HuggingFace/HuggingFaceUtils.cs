@@ -63,7 +63,6 @@ internal static class HuggingFaceUtils
         var constTensor = HuggingFaceUtils.LoadStateDict(path);
         foreach (var item in constTensor)
         {
-            Console.WriteLine($"{item.Key}");
             if (item.Value is Tensor tensor)
             {
                 constTensors.Add(item.Key, tensor.CastTo(DataTypes.Float32));

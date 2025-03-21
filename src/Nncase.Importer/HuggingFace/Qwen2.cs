@@ -148,81 +148,40 @@ namespace Nncase.Importer
         private Expr Qwen2CreateOutputs()
         {
             // TODO: use self.config.output_attention to judge wether output kvache
-            var lm_head = _outputs!["lm_head"];
-            Expr? out_attention = null;
-            Expr? kvcache = null;
-            if (_outputs.ContainsKey("out_attention"))
+            var logits = _outputs!["logits"];
+            Expr? outAttention = null;
+            Expr? kvCache = null;
+            Expr? hiddenStates = null;
+
+            if (CompileSession.CompileOptions.HuggingFaceOptions.UseCache)
             {
-                out_attention = _outputs["out_attention"];
+                kvCache = _outputs["kvCache"];
             }
 
-            if (_outputs.ContainsKey("kvcache"))
+            if (CompileSession.CompileOptions.HuggingFaceOptions.OutputAttentions)
             {
-                kvcache = _outputs["kvcache"];
+                outAttention = _outputs["outAttention"];
             }
 
-            if ((out_attention is null) && (kvcache is null))
+            if (CompileSession.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
             {
-                return lm_head;
+                hiddenStates = _outputs["hiddenStates"];
             }
 
-            if ((out_attention is not null) && (kvcache is null))
-            {
-                return new IR.Tuple([lm_head, out_attention]);
-            }
+            var output = new List<Expr> { logits, kvCache, outAttention, hiddenStates,};
+            output.RemoveAll(item => item == null);
 
-            if ((out_attention is null) && (kvcache is not null))
-            {
-                return new IR.Tuple([lm_head, kvcache]);
-            }
-
-            return new IR.Tuple([lm_head, out_attention!, kvcache!]);
+            return new IR.Tuple(output.ToArray().AsSpan());
         }
 
         // private Tuple<Call, HuggingFaceUtils.DynamicCache> VisitQwen2ForCausalLM()
         private void VisitQwen2ForCausalLM()
         {
+
             if (_constTensors == null)
             {
                 throw new ArgumentNullException(nameof(_constTensors));
             }
-
-            // architecture: "QWenForCausalLM"
-            /*
-             Qwen2ForCausalLM
-             (
-                (model): Qwen2Model
-                (
-                    (embed_tokens): Embedding(151936, 896)
-                    (layers): ModuleList
-                    (
-                        (0-23): 24 x Qwen2DecoderLayer
-                        (
-                            (self_attn): Qwen2SdpaAttention
-                            (
-                                (q_proj): Linear(in_features=896, out_features=896, bias=True)
-                                (k_proj): Linear(in_features=896, out_features=128, bias=True)
-                                (v_proj): Linear(in_features=896, out_features=128, bias=True)
-                                (o_proj): Linear(in_features=896, out_features=896, bias=False)
-                                (rotary_emb): Qwen2RotaryEmbedding()
-                            )
-                            (mlp): Qwen2MLP
-                            (
-                                (gate_proj): Linear(in_features=896, out_features=4864, bias=False)
-                                (up_proj): Linear(in_features=896, out_features=4864, bias=False)
-                                (down_proj): Linear(in_features=4864, out_features=896, bias=False)
-                                (act_fn): SiLU()
-                            )
-                            (input_layernorm): Qwen2RMSNorm((896,), eps=1e-06)
-                            (post_attention_layernorm): Qwen2RMSNorm((896,), eps=1e-06)
-                        )
-                    )
-                    (norm): Qwen2RMSNorm((896,), eps=1e-06)
-                    (rotary_emb): Qwen2RotaryEmbedding()
-                )
-                (lm_head): Linear(in_features=896, out_features=151936, bias=False)
-            )
-            */
 
             Var input_ids = _inputs[0]!;
             var attention_mask = _inputs[1];
@@ -231,40 +190,33 @@ namespace Nncase.Importer
 
             // var (lastHiddenStates, pastKeyValues, allSelfAttns, allHiddenStates) = Qwen2Model(input_ids,
             //     inputEmbeds: null, new HuggingFaceUtils.DynamicCache(), cachePosition: null, positionIds: null,
-            var (lastHiddenStates, allSelfAttns, allSelfKV) = Qwen2Model(
-
-            // useCache: false, outputAttentions: false, outputHiddenStates: false);
+            var (lastHiddenStates, allSelfKV, allHiddenStates, allSelfAttns) = Qwen2Model(
+            /* useCache: false, outputAttentions: false, outputHiddenStates: false);*/
                 input_ids,
                 attention_mask,
                 position_ids,
                 pastKeyValues);
-            var lmHead = Linear(
-                lastHiddenStates,
-                _constTensors["model.embed_tokens.weight"]);
 
-            _outputs!["lm_head"] = lmHead;
-            var outAttention = (Call)null;
-            var kvCache = (Call)null;
+            var lmHead = Linear(lastHiddenStates, _constTensors["model.embed_tokens.weight"]);
 
-            // TODO: using config.output_attentions to judge whether need kv cache
-            if (CheckNeedOutput(allSelfAttns))
+            _outputs!["logits"] = lmHead;
+
+            if (CompileSession.CompileOptions.HuggingFaceOptions.OutputAttentions)
             {
-                outAttention = Concat(new IR.Tuple(allSelfAttns.ToArray()), 0);
+                var outAttention = Concat(new IR.Tuple(allSelfAttns.ToArray()), 0);
+                _outputs!["outAttention"] = outAttention;
             }
 
-            if (CheckNeedOutput(allSelfKV))
+            if (CompileSession.CompileOptions.HuggingFaceOptions.UseCache)
             {
-                kvCache = Concat(new IR.Tuple(allSelfKV.ToArray()), 0);
+                var kvCache = Concat(new IR.Tuple(allSelfKV.ToArray()), 0);
+                _outputs!["kvCache"] = kvCache;
             }
 
-            if (outAttention is not null)
+            if (CompileSession.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
             {
-                _outputs!["out_attention"] = outAttention;
-            }
-
-            if (kvCache is not null)
-            {
-                _outputs!["kvcache"] = kvCache;
+                var hiddenStates = Concat(new IR.Tuple(allHiddenStates.ToArray()), 0);
+                _outputs!["hiddenStates"] = hiddenStates;
             }
         }
 
@@ -278,7 +230,7 @@ namespace Nncase.Importer
         //     bool? outputAttentions = false,
         //     bool? outputHiddenStates = false
         // )
-        private Tuple<Expr, List<Expr>, List<Expr>> Qwen2Model(
+        private Tuple<Expr, List<Expr>, List<Expr>, List<Expr>> Qwen2Model(
             Expr input_ids,
             Expr? attentionMask,
             Expr? positionIds,
@@ -351,7 +303,7 @@ namespace Nncase.Importer
 
             var positionEmbeddings = RotaryEmbedding(hiddenStates, positionIds);
 
-            // var allHiddenStates = new List<Expr>();
+            var allHiddenStates = new List<Expr>();
             var allSelfAttns = new List<Expr>();
             var allKVcaches = new List<Expr>();
             /*
@@ -362,11 +314,10 @@ namespace Nncase.Importer
             _ = new List<Tuple<Call, Call>>();
             for (int i = 0; i < (int)(long)_config["num_hidden_layers"]; i++)
             {
-                // if (outputAttentions == true)
-                // {
-                //    allHiddenStates.Add(Unsqueeze(hiddenStates,new long[]{0}));
-
-                // }
+                if (CompileSession.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
+                {
+                    allHiddenStates.Add(Unsqueeze(hiddenStates, new long[] { 0 }));
+                }
 
                 // var (hiddenStatesTmp, selfAttenWeights) = DecodeLayer(i, hiddenStates, casualMask, positionIds,
                 //     pastKeyValues, outputAttentions,
@@ -381,25 +332,29 @@ namespace Nncase.Importer
 
                 hiddenStates = hiddenStatesTmp;
 
-                // if (outputAttentions == true)
-                // {
-                allSelfAttns.Add(Unsqueeze(outAttention, new[] { 0L }));
-                allKVcaches.Add(currentKV);
+                if (CompileSession.CompileOptions.HuggingFaceOptions.OutputAttentions)
+                {
+                    allSelfAttns.Add(Unsqueeze(outAttention, new[] { 0L }));
+                }
 
-                // }
+                if (CompileSession.CompileOptions.HuggingFaceOptions.UseCache)
+                {
+                    allKVcaches.Add(currentKV);
+                }
             }
 
             // the last one
 
             Expr lastHiddenStates = Qwen2LayerNorm(hiddenStates, "model.norm.weight");
 
-            // if (outputAttentions == true)
-            // {
-            //   allHiddenStates.Add(Unsqueeze(lastHiddenStates,new long[]{0}));
-            // }
+            if (CompileSession.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
+            {
+                allHiddenStates.Add(Unsqueeze(lastHiddenStates, new long[] { 0 }));
+            }
 
-            // return Tuple.Create(lastHiddenStates, pastKeyValues, allHiddenStates, allSelfAttns);
-            return Tuple.Create(lastHiddenStates, allSelfAttns, allKVcaches);
+
+            return Tuple.Create(lastHiddenStates, allKVcaches, allHiddenStates, allSelfAttns);
+            // return Tuple.Create(lastHiddenStates, allSelfAttns, allKVcaches);
         }
 
         // calc torch.nn.linear (i.e. x*transpose(W)+b)
