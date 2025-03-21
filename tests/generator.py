@@ -120,5 +120,5 @@ class Generator:
         data = []
         with open(path, "r") as f:
             for i in f.readlines():
-                data.append(i.strip("\n"))
+                data.append(i.strip("\n").strip("\""))
         return data

@@ -376,6 +376,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 continue
             exec(f"compile_options.{k} = {e + v + e if isinstance(v, str) else v}")
 
+        # update huggingface option
+        compile_options.huggingface_options = self.cfg['huggingface_options']
         compile_options.target = target
         compile_options.dump_dir = dump_dir
 
@@ -467,8 +469,17 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     data = generator.from_numpy(file_list[idx])
                 elif method == 'text':
                     data = generator.from_text(file_list[0])
-                    assert(len(data) >= idx, "prompt not enough for calib")
-                    data = data[batch_idx]
+                    assert(len(data)>= idx, "prompt not enough for calib")
+                    messages = [
+                        {"role": "system", "content": "You are a assistant!"},
+                        {"role": "user", "content": data[idx]}
+                    ]
+                    text = self.tokenizer.apply_chat_template(
+                        messages,
+                        tokenize=False,
+                        add_generation_prompt=True
+                    )
+                    data = self.tokenizer([text], return_tensors="np").input_ids
                 if not test_utils.in_ci():
                     if method == 'text':
                         dump_txt_file(os.path.join(self.case_dir, name,

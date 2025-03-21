@@ -120,6 +120,13 @@ class PTQTensorOptions:
     def set_tensor_data(self, bytes: bytes) -> None: ...
 
 
+class HuggingFaceOptions:
+    output_attentions: bool
+    output_hidden_states: bool
+    use_cache: bool
+    
+    def __init__(self) -> None: ...
+
 class Path:
     def __init__(self, path: str) -> None: ...
 
