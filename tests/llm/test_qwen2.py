@@ -19,8 +19,9 @@ from huggingface_test_runner import HuggingfaceTestRunner
 from .download_model import download_from_huggingface
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+
 def test_llm(request):
-    cfg="""
+    cfg = """
     [huggingface_options]
     output_attentions = false
     output_hidden_states = true
@@ -47,12 +48,12 @@ def test_llm(request):
     runner = HuggingfaceTestRunner(request.node.name, overwrite_configs=cfg)
 
     model_name = "Qwen/Qwen2.5-0.5B-Instruct"
-    
+
     if os.path.exists(model_name):
         model_file = model_name
     else:
         model_file = download_from_huggingface(AutoModelForCausalLM, AutoTokenizer, model_name)
-    
+
     runner.run(model_file)
 
 
