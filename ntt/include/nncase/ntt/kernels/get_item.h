@@ -25,8 +25,9 @@ namespace nncase::ntt {
 
 template <class TIn, class TIndices, class TOut>
 void get_item(const TIn &input, const TIndices &indices, TOut &&output) {
-    ranked_shape<indices.size()> indices_dims{};
-    if constexpr (indices_dims.rank()) {
+    constexpr size_t indices_rank = TIndices::size();
+    ranked_shape<indices_rank> indices_dims{};
+    if constexpr (indices_rank) {
         for (size_t i = 0; i < indices_dims.rank(); i++) {
             indices_dims[i] = positive_index(indices(i), input.shape()[i]);
         }

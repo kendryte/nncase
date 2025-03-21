@@ -1147,6 +1147,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     {
         var pmgr = CompileSession.CreatePassManager("pmgr");
         var compiler = (Nncase.Compiler.Compiler)CompileSession.Compiler;
+        compiler.TargetIndependentPass(pmgr);
         compiler.ModulePartitionPass(pmgr);
         compiler.AutoDistributedPass(pmgr);
         compiler.TIRPass(pmgr);
