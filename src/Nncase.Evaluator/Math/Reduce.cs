@@ -25,7 +25,12 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Reduce reduce)
     {
-        var input = context.GetOrtArgumentValue(reduce, Reduce.Input);
+        var input_raw = context.GetArgumentValueAsTensor(reduce, Reduce.Input);
+        var originType=input_raw.ElementType;
+        if(originType.IsFloat()&&originType!=DataTypes.Float32){
+            input_raw=input_raw.CastTo(DataTypes.Float32);
+        }
+        var input=input_raw.ToOrtTensor();
         var axis = context.GetArgumentValueAsArray<long>(reduce, Reduce.Axes);
         var keepDims = context.GetArgumentValueAsScalar<long>(reduce, Reduce.KeepDims);
 
@@ -56,7 +61,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
             }
         }
 
-        return (reduce.ReduceOp switch
+        return (TensorValue)(reduce.ReduceOp switch
         {
             ReduceOp.Mean => OrtKI.ReduceMean(input, axis, keepDims),
             ReduceOp.Max => OrtKI.ReduceMax(input, axis, keepDims),
@@ -68,7 +73,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
                 keepDims,
                 0),
             _ => throw new ArgumentOutOfRangeException(nameof(reduce)),
-        }).ToValue();
+        }).ToValue().AsTensor().CastTo(originType);
     }
 
     /// <inheritdoc/>

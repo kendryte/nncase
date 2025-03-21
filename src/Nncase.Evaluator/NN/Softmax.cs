@@ -17,9 +17,15 @@ public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSo
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, LogSoftmax logSoftMax)
     {
-        var input = context.GetOrtArgumentValue(logSoftMax, LogSoftmax.Input);
+        var input = context.GetArgumentValueAsTensor(logSoftMax, LogSoftmax.Input);
+        var originType = input.ElementType;
+        if (originType.IsFloat() && originType != DataTypes.Float32)
+        {
+            input = input.Cast<float>();
+        }
+        var inputOrt = input.ToOrtTensor();
         var axis = context.GetArgumentValueAsScalar<long>(logSoftMax, LogSoftmax.Axis);
-        return OrtKI.LogSoftmax(input, axis).ToValue();
+        return (TensorValue)OrtKI.LogSoftmax(inputOrt, axis).ToValue().AsTensor().CastTo(originType);
     }
 
     /// <inheritdoc/>
@@ -72,9 +78,16 @@ public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, I
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Softmax softMax)
     {
-        var input = context.GetOrtArgumentValue(softMax, Softmax.Input);
+        var input = context.GetArgumentValue(softMax, Softmax.Input).AsTensor();
+        var originDtype = input.ElementType;
+        if (originDtype.IsFloat() && originDtype != DataTypes.Float32)
+        {
+            input = input.CastTo(DataTypes.Float32);
+        }
+
         var dim = context.GetArgumentValueAsScalar<int>(softMax, Softmax.Axis);
-        return OrtKI.Softmax(input, dim).ToValue();
+
+        return OrtKI.Softmax(input.ToOrtTensor(), dim).Cast(originDtype.ToOrtType()).ToValue();
     }
 
     /// <inheritdoc/>

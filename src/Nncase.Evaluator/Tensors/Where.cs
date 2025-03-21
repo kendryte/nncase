@@ -23,8 +23,6 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Where where)
     {
-        var xt = context.GetArgumentValueAsTensor(where, Where.X);
-        var yt = context.GetArgumentValueAsTensor(where, Where.Y);
         if (where.IsTfWhere)
         {
             var condTensor = context.GetArgumentValueAsTensor<bool>(where, Where.Cond);
@@ -38,9 +36,18 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
         }
 
         var cond = context.GetOrtArgumentValue(where, Where.Cond);
-        var x = context.GetOrtArgumentValue(where, Where.X);
-        var y = context.GetOrtArgumentValue(where, Where.Y);
-        return OrtKI.Where(cond, x, y).ToValue();
+        var x = context.GetArgumentValue(where, Where.X).AsTensor();
+        var y = context.GetArgumentValue(where, Where.Y).AsTensor();
+        var originType = x.ElementType;
+        if (originType.IsFloat() && originType != DataTypes.Float32)
+        {
+            x = x.CastTo(DataTypes.Float32);
+            y = y.CastTo(DataTypes.Float32);
+        }
+
+        var xOrt = x.ToOrtTensor();
+        var yOrt = y.ToOrtTensor();
+        return OrtKI.Where(cond, xOrt, yOrt).Cast(originType.ToOrtType()).ToValue();
     }
 
     /// <inheritdoc/>

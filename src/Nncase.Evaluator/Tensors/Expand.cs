@@ -23,9 +23,16 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Expand expand)
     {
-        var input = context.GetOrtArgumentValue(expand, Expand.Input);
+        var input = context.GetArgumentValueAsTensor(expand, Expand.Input);
+        var originType = input.ElementType;
+        if (originType.IsFloat() && originType != DataTypes.Float32)
+        {
+            input = input.CastTo(DataTypes.Float32);
+        }
+
+        var inputOrt = input.ToOrtTensor();
         var shape = context.GetInt64OrtTensorArgumentValue(expand, Expand.Shape);
-        return OrtKI.Expand(input, shape).ToValue();
+        return (TensorValue)OrtKI.Expand(inputOrt, shape).ToValue().AsTensor().CastTo(originType);
     }
 
     public Cost Visit(ICostEvaluateContext context, Expand target)

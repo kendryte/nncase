@@ -333,11 +333,11 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
 
     public static IValue InferValue(DataType dataType, Tensor lhs, Tensor rhs)
     {
-        if (dataType == DataTypes.Float8E4M3 || dataType == DataTypes.Float8E5M2)
+        if (dataType.IsFloat() && dataType!=DataTypes.Float32)
         {
             var lhsOrt = Cast(lhs, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
             var rhsOrt = Cast(rhs, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
-            var ret = OrtKI.MatMul(lhsOrt, rhsOrt).ToTensor();
+            var ret = OrtKI.MatMul(lhsOrt, rhsOrt).ToTensor().CastTo(dataType);
             return Value.FromTensor(ret);
         }
         else
