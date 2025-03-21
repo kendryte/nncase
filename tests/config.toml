@@ -57,7 +57,7 @@ report_name = 'infer_report.json'
 
 [generator]
 [generator.inputs]
-# ['random', 'bin', 'image', 'constant_of_shape']
+# ['random', 'bin', 'image', 'constant_of_shape', 'text']
 method = 'random'
 number = 1
 batch = 1
@@ -76,6 +76,10 @@ args = ''
 [generator.inputs.constant_of_shape]
 # shape
 args = []
+
+[generator.inputs.text]
+# /path/to/prompt.txt directory
+args = 'tests/llm/prompt.txt'
 
 [generator.calibs]
 method = 'random'
@@ -96,6 +100,10 @@ args = ''
 [generator.calibs.constant_of_shape]
 # shape
 args = []
+
+[generator.calibs.text]
+# /path/to/prompt.txt directory
+args = 'tests/llm/prompt.txt'
 
 [target]
 
