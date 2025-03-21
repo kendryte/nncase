@@ -24,6 +24,10 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
 
     public static BFloat16 NegInfinity => FromRaw(0xff80);
 
+    public static BFloat16 MinValue => FromRaw(0xff7f);
+
+    public static BFloat16 MaxValue => FromRaw(0x7f7f);
+
     public static BFloat16 Epsilon => FromRaw(0x3c00);
 
     public static BFloat16 NaN => FromRaw(0x7fc0);
