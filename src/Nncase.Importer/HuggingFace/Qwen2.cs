@@ -8,8 +8,10 @@ using System.Linq;
 using System.Reflection;
 using System.Xml;
 using CommunityToolkit.HighPerformance;
+using DryIoc;
 using LanguageExt;
 using NetFabric.Hyperlinq;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
@@ -241,12 +243,33 @@ namespace Nncase.Importer
             // if (inputEmbeds == null)
             // {
             var embedTokensWeight = _constTensors!["model.embed_tokens.weight"];
+            var zeroValue=0.0f;
+            object asTypeZero =zeroValue;
+            if(embedTokensWeight.ElementType!= DataTypes.Float32){
+                var method = embedTokensWeight.ElementType.CLRType.GetMethod(
+                                            "op_Explicit",
+                                            BindingFlags.Public | BindingFlags.Static,
+                                            null,
+                                            new Type[] { typeof(float) },
+                                            null
+                            );
+
+                if(method!= null)
+                    asTypeZero=method.Invoke(null, new object[] { zeroValue });
+                else{
+                    throw new InvalidOperationException($"cannot get float convert for type:{embedTokensWeight.ElementType}");
+                }
+
+            }
+
+
             if (_config!.Keys.Contains("pad_token_id"))
             {
                 for (var i = 0; i < embedTokensWeight.Shape[-1].FixedValue; i++)
                 {
-                    embedTokensWeight[(long)_config["pad_token_id"], i] = 0;
+                    embedTokensWeight[(long)_config["pad_token_id"], i] = asTypeZero!;
                 }
+
             }
 
             Expr? inputEmbeds;
@@ -409,11 +432,23 @@ namespace Nncase.Importer
             }
             else
             {
-                // get the min value for current dtype
-                FieldInfo minValueField = dtype.CLRType.GetField("MinValue", BindingFlags.Public | BindingFlags.Static)!;
-                var min = minValueField.GetValue(null)!;
-                var minValue = Tensor.FromScalar(dtype, min, [1L]);
                 var mask_shape = Stack(new IR.Tuple([seqLen, targtLen]), 0L);
+                Tensor minValue;
+                // get the min value for current dtype
+                FieldInfo? minValueField = dtype.CLRType.GetField("MinValue", BindingFlags.Public | BindingFlags.Static);
+                if(minValueField!=null){
+                    var min= minValueField.GetValue(null)!;
+                    minValue = Tensor.FromScalar(dtype, min, [1L]);
+                }else{
+                    PropertyInfo? minValueProperty= dtype.CLRType.GetProperty("MinValue", BindingFlags.Public | BindingFlags.Static);
+                    if(minValueProperty !=null){
+                        var min= minValueProperty.GetValue(null)!;
+                        minValue = Tensor.FromScalar(dtype, min, [1L]);
+                    }else{
+                        throw new InvalidOperationException($"cannot get current dtype's min value:{dtype.CLRType}");
+                    }
+                }
+
                 casualMask = F.Tensors.ConstantOfShape(mask_shape, minValue);
 
                 /*
@@ -630,11 +665,17 @@ namespace Nncase.Importer
         // Qwen2RMSNorm : Qwen2LayerNorm : input_layernorm
         private Call Qwen2LayerNorm(Expr hiddenStates, string layerName)
         {
+            //originType->fp32->dolayernorm->origintype
             // fit layernorm partten 5
-            var weight = _constTensors![$"{layerName}"];
-            var bias = Tensor.FromScalar(0f, weight.Shape);
+            var originDtype=hiddenStates.CheckedDataType;
+            hiddenStates=Cast(hiddenStates,DataTypes.Float32);
+
+            Expr weight = _constTensors![$"{layerName}"];
+
+            weight=Cast(weight, DataTypes.Float32);
+            var bias = Tensor.FromScalar(0f, weight.CheckedShape);
             int axis = -1;
-            return F.NN.LayerNorm(axis, 1e-6F, hiddenStates, weight, bias, false);
+            return Cast(F.NN.LayerNorm(axis, 1e-6F, hiddenStates, weight, bias, false),originDtype);
         }
 
         // Qwen2Attention : SelfAtten
@@ -785,7 +826,7 @@ namespace Nncase.Importer
             }
 
             var (l, s) = (ShapeOf(queryStates)[-2], ShapeOf(keyStates)[-2]);
-            var scaleFactor = 1.0f / F.Math.Sqrt(Cast(ShapeOf(queryStates)[-1], DataTypes.Float32));
+            var scaleFactor = 1.0f / F.Math.Sqrt(Cast(ShapeOf(queryStates)[-1], queryStates.CheckedDataType));
             var attnBias = (Call)F.Tensors.Broadcast(Tensor.FromScalar(0f), F.Tensors.Stack(new IR.Tuple(l, s), 0L));
 
             // TODO: 也许需要处理attentionMask为空的情况,在这里生成下三角为0 ,其他为-inf的功能.
@@ -830,7 +871,8 @@ namespace Nncase.Importer
             var numKVGroups = (long)_config!["num_attention_heads"] / (long)_config!["num_key_value_heads"];
             var keyStates = RepeatKV(key, numKVGroups);
             var valueStates = RepeatKV(value, numKVGroups);
-            Expr attnWeights = F.Math.MatMul(query, Transpose(keyStates, ShapeExprUtility.GetPermutation(keyStates, [2, 3]))) * scaling;
+            var ScalingExpr=Cast(Tensor.FromScalar(scaling), query.CheckedDataType);
+            Expr attnWeights = F.Math.MatMul(query, Transpose(keyStates, ShapeExprUtility.GetPermutation(keyStates, [2, 3]))) * ScalingExpr;
             if (attentionMask is not null)
             {
                 var causalMask = Slice(
@@ -905,7 +947,7 @@ namespace Nncase.Importer
 
             // var a = x.CheckedShape[0];
             var invFreq = Tensor.FromArray(inv_freq.ToArray()); // Unsqueeze(Unsqueeze(Tensor.FromArray(inv_freq.ToArray()), new[] { 0 }),new[] { -1 });
-            var invFreq_float = Cast(invFreq, DataTypes.Float32);
+            var invFreq_float = Cast(invFreq, positionIds.CheckedDataType);
             var invFreqExpanded = Unsqueeze(invFreq_float, Tensor.From<long>(new long[] { 0, 2 }));
             var batch_size = ShapeOf(positionIds)[0];
             var dim_div_2 = ShapeOf(invFreq)[0];
@@ -961,7 +1003,9 @@ namespace Nncase.Importer
                 F.Tensors.Stack(new IR.Tuple(ShapeOf(x)[0], ShapeOf(x)[1], ShapeOf(x)[2], xS3), 0L),
                 new[] { 0L, 1L, 2L, 3L },
                 new[] { 1L, 1L, 1L, 1L });
-            return Concat(new IR.Tuple(Binary(BinaryOp.Mul, x2, -1.0f), x1), -1);
+            //cast -1.0f to current dtype
+            var factor=Cast(Tensor.FromScalar(-1.0f),x2.CheckedDataType);
+            return Concat(new IR.Tuple(Binary(BinaryOp.Mul, x2, factor), x1), -1);
         }
 
         private Tuple<Call, Call> UpdateKVWithCache(int layerIdx, Call k, Call v, Expr pastKeyValues)
