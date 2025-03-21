@@ -386,7 +386,7 @@ public sealed class UnitTestMutators : TestClassBase
         pass.Add<UnRollLoopSequential>();
         pass.Add<Substitutor>(Expr? (Expr e) =>
         {
-            if (e is Call { } call && call.Arguments[0] is Buffer physicalBuffer && bufferIndexMap.TryGetValue(physicalBuffer, out var index))
+            if (e is Call { } call && call.Arguments[0] is Var physicalBuffer && bufferIndexMap.TryGetValue(physicalBuffer, out var index))
             {
                 return index;
             }

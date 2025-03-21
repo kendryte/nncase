@@ -20,7 +20,8 @@ public static class PassUtility
             return true;
         }
 
-        return op is IR.Math.Unary
+        return op is IR.Distributed.Boxing
+            or IR.Math.Unary
             or IR.Math.Binary { BinaryOp: BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div }
             or IR.Math.Clamp
             or IR.Math.Compare

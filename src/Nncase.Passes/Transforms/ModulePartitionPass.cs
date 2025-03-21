@@ -66,14 +66,14 @@ public sealed class ModulePartitionPass : ModulePass
                 case (Var var, _) when !dynamicVars.Contains(var):
                     isSupport = false;
                     break;
+                case (If, _):
+                    isSupport = false;
+                    break;
                 case (_, IR.Tuple):
                     isSupport = true;
                     break;
                 case (_, Call caller):
                     isSupport = ModuleCompiler.IsSupportedCall(caller, CompileSession.CompileOptions);
-                    break;
-                case (_, If caller):
-                    isSupport = false;
                     break;
                 default:
                     break;

@@ -78,7 +78,7 @@ public class UnitTestGraphPartition : TestClassBase
     }
 
     [Fact]
-    public async Task TestLineSmaeModuleC()
+    public async Task TestLineSameModuleC()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
         var main = new Function("main", IR.F.Math.Abs(IR.F.Distributed.Boxing(input, new DistributedType(input.CheckedTensorType, new[] { SBP.B }, new(new[] { 1 }, "t")))), input);
@@ -104,7 +104,7 @@ public class UnitTestGraphPartition : TestClassBase
 
         tv.Clear();
         tv.Visit(module.Entry!);
-        var post_number = tv.CountCallFunction<Fusion>();
+        var post_number = tv.CountCallFunction<Function>();
         var post_result = CompilerServices.Evaluate(((Function)module.Entry!).Body, feed_dict);
 
         Assert.Equal(1, pre_number);
@@ -141,7 +141,7 @@ public class UnitTestGraphPartition : TestClassBase
 
         tv.Clear();
         tv.Visit(module.Entry!);
-        var post_number = tv.CountCallFunction<Fusion>();
+        var post_number = tv.CountCallFunction<Function>();
         var post_result = CompilerServices.Evaluate(((Function)module.Entry!).Body, feed_dict);
 
         Assert.Equal(1, pre_number);
@@ -450,7 +450,7 @@ public class UnitTestGraphPartition : TestClassBase
         var post_result = CompilerServices.Evaluate(((Function)module.Entry!).Body, feed_dict);
 
         Assert.Equal(3, pre_number);
-        Assert.Equal(1, post_number);
+        Assert.Equal(0, post_number);
         Assert.True(Comparator.AllEqual(pre_result, post_result));
     }
 
@@ -596,7 +596,7 @@ public class UnitTestGraphPartition : TestClassBase
 
         tv.Clear();
         tv.Visit(module.Entry!);
-        var post_number = tv.CountCallFunction<Fusion>();
+        var post_number = tv.CountCallFunction<Function>();
         var post_result = CompilerServices.Evaluate(((Function)module.Entry!).Body, feed_dict);
 
         Assert.Equal(2, pre_number);
@@ -634,7 +634,7 @@ public class UnitTestGraphPartition : TestClassBase
 
         tv.Clear();
         tv.Visit(module.Entry!);
-        var post_number = tv.CountCallFunction<Fusion>();
+        var post_number = tv.CountCallFunction<Function>();
         var post_result = CompilerServices.Evaluate(((Function)module.Entry!).Body, feed_dict);
 
         Assert.Equal(2, pre_number);
@@ -751,7 +751,7 @@ public class UnitTestGraphPartition : TestClassBase
         var post_result = CompilerServices.Evaluate(((Function)module.Entry!).Body, feed_dict);
 
         Assert.Equal(1, pre_number);
-        Assert.Equal(1, post_number);
+        Assert.Equal(0, post_number);
         Assert.Equal(pre_result, post_result);
     }
 
