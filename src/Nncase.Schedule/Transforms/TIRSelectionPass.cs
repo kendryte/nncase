@@ -84,10 +84,26 @@ public abstract class TIRSelectionPass : FunctionPass
         protected sealed override Expr VisitLeafCall(Call expr, Unit context)
         {
             var args = expr.Arguments.AsValueEnumerable().Select(x => ExprMemo[x]).ToArray();
-            var output = CreateOutputBuffer(expr);
-            var newCall = _selectionPass.SelectCall(expr, args, output);
-            Body.Add(newCall);
-            return output;
+            return SelectCall(expr, args);
+        }
+
+        private Expr SelectCall(Call call, IReadOnlyList<Expr> arguments)
+        {
+            if (call.Target is IR.Tensors.GetItem && arguments[IR.Tensors.GetItem.Input.Index] is IR.Tuple tuple && call[IR.Tensors.GetItem.Index] is TensorConst index)
+            {
+                return tuple[index.Value.ToScalar<int>()];
+            }
+            else
+            {
+                var output = CreateOutputBuffer(call);
+                var newCall = call.Target switch
+                {
+                    PrimFunctionWrapper { Target: TIR.PrimFunction deviceFunc } => new Call(deviceFunc, arguments.Append(output).ToArray()),
+                    _ => _selectionPass.SelectCall(call, arguments, output),
+                };
+                Body.Add(newCall);
+                return output;
+            }
         }
 
         private Expr CreateOutputBuffer(Call expr)

@@ -34,8 +34,6 @@ public sealed class CPUTIRSelectionPass : TIRSelectionPass
         var op = call.Target;
         switch (op)
         {
-            case PrimFunctionWrapper { Target: TIR.PrimFunction { ModuleKind: string mkind } deviceFunc }:
-                return new Call(deviceFunc, arguments.Concat(new[] { output }).ToArray());
             case IR.Math.Unary unary:
                 return GenerateUnary(unary.UnaryOp, arguments, output);
             case IR.CustomCPU.Unary unary:
