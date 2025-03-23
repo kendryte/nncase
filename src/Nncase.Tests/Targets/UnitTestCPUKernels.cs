@@ -202,7 +202,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { f, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, fshape).Evaluate() },
         };
 
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), string.Empty), feedDict, new[] { g });
+        await RunCases(string.Empty, feedDict, new[] { g });
     }
 
     [Fact]
@@ -234,7 +234,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { dimM, Value.FromTensor(ashape[^2]) },
         };
 
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), string.Empty), feedDict, new[] { g });
+        await RunCases(string.Empty, feedDict, new[] { g });
     }
 
     [Theory]
@@ -647,7 +647,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             }
         }
 
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, posts);
+        await RunCases($"Theory{number}", feedDict, posts);
     }
 
     [Theory]
@@ -673,7 +673,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         };
 
         var posts = new[] { pre };
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, posts);
+        await RunCases($"Theory{number}", feedDict, posts);
     }
 
     [Theory]
@@ -701,7 +701,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rule = new Passes.Rules.CPU.PackReshape(packRank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, posts);
+        await RunCases($"Theory{number}", feedDict, posts);
     }
 
     [Theory]
@@ -723,7 +723,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rule = new Passes.Rules.CPU.PackTranspose(rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, posts);
+        await RunCases($"Theory{number}", feedDict, posts);
     }
 
     [Theory]
@@ -759,7 +759,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         };
 
         var posts = new[] { pre };
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, posts);
+        await RunCases($"Theory{number}", feedDict, posts);
     }
 
     [Theory]
@@ -815,7 +815,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
         };
 
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, new[] { unary });
+        await RunCases($"Theory{number}", feedDict, new[] { unary });
     }
 
     [Theory]
@@ -853,7 +853,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { dimM, Value.FromTensor(lhsShape[^2]) },
         };
 
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, new[] { unary });
+        await RunCases($"Theory{number}", feedDict, new[] { unary });
     }
 
     [Theory]
@@ -888,7 +888,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
         };
 
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, new[] { unsqueezed });
+        await RunCases($"Theory{number}", feedDict, new[] { unsqueezed });
     }
 
     [Theory]
@@ -927,7 +927,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { dimN, Value.FromTensor(rhsShape[^1]) },
         };
 
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, new[] { unsqueezed });
+        await RunCases($"Theory{number}", feedDict, new[] { unsqueezed });
     }
 
     [Theory]
@@ -954,7 +954,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inShape).Evaluate() },
         };
 
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, new[] { output });
+        await RunCases($"Theory{number}", feedDict, new[] { output });
     }
 
     [Theory(Skip = "ToBig")]
