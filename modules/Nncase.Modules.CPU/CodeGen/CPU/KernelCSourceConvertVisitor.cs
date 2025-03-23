@@ -536,30 +536,8 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                         }
                         else
                         {
-                            var fullShape = Enumerable.Repeat(1, args[0].CheckedShape.Rank).ToArray();
-                            if (fullShape.Any())
-                            {
-                                var splitAxisAndScale = grs.InType.NdSBP.Select((sbp, i) => sbp is SBPSplit s ? (s.Axis, grs.InType.Placement.Hierarchy[i]) : (0, 1)).ToArray();
-                                foreach (var s in splitAxisAndScale)
-                                {
-                                    fullShape[s.Item1] *= s.Item2;
-                                }
-                            }
-
-                            foreach (var (dimS, axis) in args[0].CheckedShape.ToArray().Select((e, axis) => (Visit(e.Value).Name, axis)))
-                            {
-                                if (int.TryParse(dimS, out var div))
-                                {
-                                    fullShape[axis] *= div;
-                                }
-                                else if (CSourceUtilities.TryGetDivRem(dimS, out div, out var rem))
-                                {
-                                    fullShape[axis] = (fullShape[axis] - 1) * div;
-                                    fullShape[axis] += rem;
-                                }
-                            }
-
-                            _collective_pool_size = Math.Max(_collective_pool_size, (ulong)(TensorUtilities.GetProduct(fullShape) * args[0].CheckedDataType.SizeInBytes));
+                            (var maxSize, _) = TensorUtilities.GetTensorMaxSizeAndStrides(args[0].CheckedTensorType);
+                            _collective_pool_size = Math.Max(_collective_pool_size, (ulong)(maxSize * args[0].CheckedDataType.SizeInBytes));
                             IndentScope.Writer.Write($"reshard({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: false).Name});\n");
                         }
                     }
