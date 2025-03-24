@@ -65,29 +65,6 @@ public sealed partial class HuggingFaceImporter : BaseImporter
         }
     }
 
-    private static bool IsModelFile(string fileName)
-    {
-        if (!fileName.StartsWith("model-") || !fileName.EndsWith(".safetensors"))
-        {
-            return false;
-        }
-
-        string middlePart = fileName.Substring("model-".Length, fileName.Length - "model-".Length - ".safetensors".Length);
-
-        string[] parts = middlePart.Split('-');
-        if (parts.Length != 3 || parts[1] != "of")
-        {
-            return false;
-        }
-
-        if (!int.TryParse(parts[0], out _) || !int.TryParse(parts[2], out _))
-        {
-            return false;
-        }
-
-        return true;
-    }
-
     protected override (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
     {
         // throw new NotImplementedException();
@@ -124,5 +101,28 @@ public sealed partial class HuggingFaceImporter : BaseImporter
             default:
                 throw new NotImplementedException();
         }
+    }
+
+    private static bool IsModelFile(string fileName)
+    {
+        if (!fileName.StartsWith("model-") || !fileName.EndsWith(".safetensors"))
+        {
+            return false;
+        }
+
+        string middlePart = fileName.Substring("model-".Length, fileName.Length - "model-".Length - ".safetensors".Length);
+
+        string[] parts = middlePart.Split('-');
+        if (parts.Length != 3 || parts[1] != "of")
+        {
+            return false;
+        }
+
+        if (!int.TryParse(parts[0], out _) || !int.TryParse(parts[2], out _))
+        {
+            return false;
+        }
+
+        return true;
     }
 }
