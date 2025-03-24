@@ -482,7 +482,10 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 
                     break;
                 case TIR.CPU.SUMMA summa:
-                    IndentScope.Writer.IndWrite($"summa<false>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: false).Name}, {VisitBuffer(args[2], local: false).Name});\n");
+                    var rdKind = "tar::reduce_kind::" + string.Join("_", Enumerable.Range(0, TargetOptions.HierarchyNames.Length).Select(i => i >= TargetOptions.HierarchyNames.Length - 2 ? "r" + TargetOptions.HierarchyNames[i] : string.Empty + TargetOptions.HierarchyNames[i]));
+                    IndentScope.Writer.IndWrite($"tac::detail::tensor_reduce_sync_impl<reduce_op::sum, {rdKind}> impl; impl.reduce_group_sync();\n");
+                    IndentScope.Writer.IndWrite($"summa<false>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: false).Name}, {VisitBuffer(args[2], local: false).Name}, fixed_shape<{string.Join(",", summa.LhsPackedAxes)}>{{}}, fixed_shape<{string.Join(",", summa.LhsPadedNums)}>{{}}, fixed_shape<{string.Join(",", summa.RhsPackedAxes)}>{{}}, fixed_shape<{string.Join(",", summa.RhsPadedNums)}>{{}});\n");
+                    IndentScope.Writer.IndWrite($"impl.reduce_group_sync();\n");
                     break;
                 case TIR.Memcopy copy:
                     WriteWithProfiler($"tensor_copy({VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[0], local: true).Name});\n");

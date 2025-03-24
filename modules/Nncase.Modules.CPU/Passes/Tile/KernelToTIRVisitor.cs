@@ -115,6 +115,12 @@ public sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 // _mainBody.Add(TIR.F.CPU.Binary(arguments[0], arguments[1], ret, packed_binary.BinaryOp, packed_binary.LhsPackedAxes, packed_binary.LhsPadedNums, packed_binary.RhsPackedAxes, packed_binary.RhsPadedNums));
                 _mainBody.Add(TIR.F.CPU.Binary(packed_binary.BinaryOp, arguments[0], arguments[1], ret));
                 break;
+            case IR.CPU.PackedMatMul packed_mat_mul_summa when arguments[0].DistributedType is DistributedType dta && dta.AxisPolices[^1] is SBPSplit:
+                _mainBody.Add(TIR.F.CPU.SUMMA(arguments[0], arguments[1], ret, None.Default, packed_mat_mul_summa.LhsPackedAxes, packed_mat_mul_summa.LhsPadedNums, packed_mat_mul_summa.RhsPackedAxes, packed_mat_mul_summa.RhsPadedNums, packed_mat_mul_summa.TransposeA, packed_mat_mul_summa.TransposeB));
+                break;
+            case IR.Math.MatMul when arguments[0].DistributedType is DistributedType dta && dta.AxisPolices[^1] is SBPSplit:
+                _mainBody.Add(TIR.F.CPU.SUMMA(arguments[0], arguments[1], ret, None.Default));
+                break;
             case IR.CPU.PackedMatMul packed_mat_mul:
                 _mainBody.Add(TIR.F.CPU.Matmul(arguments[0], arguments[1], ret, None.Default, packed_mat_mul.LhsPackedAxes, packed_mat_mul.LhsPadedNums, packed_mat_mul.RhsPackedAxes, packed_mat_mul.RhsPadedNums, packed_mat_mul.TransposeA, packed_mat_mul.TransposeB, packed_mat_mul.FusedReduce));
                 break;

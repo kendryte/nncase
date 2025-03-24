@@ -39,7 +39,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var aPad = oRank - aRank;
         var bPad = oRank - bRank;
         var (lm, lk, rk, rn) = dimInfo ?? new(aRank - 2, aRank - 1, bRank - 2, bRank - 1);
-#if false
+#if true
         var ndsbp = new SBP[oRank];
         if (a.Placement.Rank == 1)
         {
