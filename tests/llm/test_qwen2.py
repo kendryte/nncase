@@ -49,8 +49,8 @@ def test_llm(request):
 
     model_name = "Qwen/Qwen2.5-0.5B-Instruct"
 
-    if os.path.exists(model_name):
-        model_file = model_name
+    if os.path.exists(os.path.join(os.path.dirname(__file__), model_name)):
+        model_file = os.path.join(os.path.dirname(__file__), model_name)
     else:
         model_file = download_from_huggingface(AutoModelForCausalLM, AutoTokenizer, model_name)
 

@@ -41,7 +41,45 @@ public sealed partial class HuggingFaceImporter : BaseImporter
             _config[pair.Key] = pair.Value;
         }
 
-        _constTensors = HuggingFaceUtils.GetAllWeights(Path.Combine(huggingFaceDir, "model.safetensors"));
+        if (File.Exists(Path.Combine(huggingFaceDir, "model.safetensors.index.json")))
+        {
+            _constTensors = new Dictionary<string, Tensor>();
+            string[] files = Directory.GetFiles(huggingFaceDir, "*.safetensors");
+            foreach (string file in files)
+            {
+                string fileName = Path.GetFileName(file);
+                if (IsModelFile(fileName))
+                {
+                    Console.WriteLine($"find safetensor file: {fileName}");
+                    var tmpConst = HuggingFaceUtils.GetAllWeights(Path.Combine(huggingFaceDir, fileName));
+                    foreach (var item in tmpConst)
+                    {
+                        _constTensors[item.Key] = item.Value;
+                    }
+                }
+            }
+        }
+        else
+        {
+            _constTensors = HuggingFaceUtils.GetAllWeights(Path.Combine(huggingFaceDir, "model.safetensors"));
+        }
+    }
+
+    static bool IsModelFile(string fileName)
+    {
+        if (!fileName.StartsWith("model-") || !fileName.EndsWith(".safetensors"))
+            return false;
+
+        string middlePart = fileName.Substring("model-".Length, fileName.Length - "model-".Length - ".safetensors".Length);
+
+        string[] parts = middlePart.Split('-');
+        if (parts.Length != 3 || parts[1] != "of")
+            return false;
+
+        if (!int.TryParse(parts[0], out int firstNumber) || !int.TryParse(parts[2], out int secondNumber))
+            return false;
+
+        return true;
     }
 
     protected override (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
