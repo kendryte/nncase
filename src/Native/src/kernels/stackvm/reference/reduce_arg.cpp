@@ -136,7 +136,7 @@ dims_t infer_shape(std::span<const size_t> in_shape, int32_t axis,
 }
 
 result<value_t> nncase::kernels::stackvm::reduce_arg(
-    reduce_arg_op_t reduce_arg_op, prim_type_t dest_type, value_t input,
+    reduce_arg_op_t reduce_arg_op, typecode_t dest_type, value_t input,
     value_t axis, value_t keep_dims, value_t select_last_index, value_t output,
     kernel_context &context) {
     try_input(in_mem, input);
@@ -144,12 +144,11 @@ result<value_t> nncase::kernels::stackvm::reduce_arg(
     try_positive_axis(axis_value, axis, input_tensor);
     try_to_scalar(keep_dims_value, keep_dims, bool);
     try_to_scalar(select_last_index_value, select_last_index, bool);
-    auto dest_typecode = dest_type->typecode();
     auto out_shape =
         infer_shape(input_tensor->shape(), axis_value, keep_dims_value);
-    try_output(out_mem, output, dest_typecode, out_shape);
+    try_output(out_mem, output, dest_type, out_shape);
     auto axes = dims_t{axis_value};
-    try_(reduce_arg_impl(input_typecode, dest_typecode, reduce_arg_op, in_mem,
+    try_(reduce_arg_impl(input_typecode, dest_type, reduce_arg_op, in_mem,
                          out_mem, input_tensor->shape(),
                          input_tensor->strides(), output_tensor->strides(),
                          axes, keep_dims_value, select_last_index_value,
