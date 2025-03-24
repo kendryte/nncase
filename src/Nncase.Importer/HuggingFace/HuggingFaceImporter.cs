@@ -65,19 +65,25 @@ public sealed partial class HuggingFaceImporter : BaseImporter
         }
     }
 
-    static bool IsModelFile(string fileName)
+    private static bool IsModelFile(string fileName)
     {
         if (!fileName.StartsWith("model-") || !fileName.EndsWith(".safetensors"))
+        {
             return false;
+        }
 
         string middlePart = fileName.Substring("model-".Length, fileName.Length - "model-".Length - ".safetensors".Length);
 
         string[] parts = middlePart.Split('-');
         if (parts.Length != 3 || parts[1] != "of")
+        {
             return false;
+        }
 
-        if (!int.TryParse(parts[0], out int firstNumber) || !int.TryParse(parts[2], out int secondNumber))
+        if (!int.TryParse(parts[0], out _) || !int.TryParse(parts[2], out _))
+        {
             return false;
+        }
 
         return true;
     }
