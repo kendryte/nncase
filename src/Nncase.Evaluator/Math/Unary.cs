@@ -144,15 +144,15 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
     private static IRType Visit(DistributedType inType, UnaryOp unaryOp)
     {
         var invalid = new InvalidType(inType.ToString());
-        var ndsbp = new SBP[inType.Placement.Rank];
-        for (int i = 0; i < inType.Placement.Rank; i++)
+        var ndsbp = new SBP[inType.AxisPolices.Count];
+        for (int i = 0; i < ndsbp.Length; i++)
         {
-            if (inType.NdSBP[i] is SBPPartial && unaryOp != UnaryOp.Neg)
+            if (inType.AxisPolices[i] is SBPPartial)
             {
                 return invalid;
             }
 
-            ndsbp[i] = inType.NdSBP[i];
+            ndsbp[i] = inType.AxisPolices[i];
         }
 
         return new DistributedType(inType.TensorType, ndsbp, inType.Placement);

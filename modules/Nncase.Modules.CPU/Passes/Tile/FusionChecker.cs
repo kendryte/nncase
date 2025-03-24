@@ -221,8 +221,9 @@ public sealed class FusionChecker
 
         foreach (var kv in _initTileList)
         {
-            var ndSbp = ((DistributedType)kv.Key.CheckedType).NdSBP;
+            var ndSbp = ((DistributedType)kv.Key.CheckedType).AxisPolices;
             var hierarchy = ((DistributedType)kv.Key.CheckedType).Placement.Hierarchy;
+#if false
             var divided = Enumerable.Range(0, ndSbp.Count).Where(i => ndSbp[i] is SBPSplit).Select(i => (((SBPSplit)ndSbp[i]).Axis, hierarchy[i])).ToArray();
             var dividedSlice = DistributedUtility.TryGetNonUniformDividedSlice((DistributedType)kv.Key.CheckedType);
             if (dividedSlice.Count == 1)
@@ -335,10 +336,11 @@ public sealed class FusionChecker
                         }
 
                         break;
-                    default:
+            default:
                         throw new NotImplementedException("Not support split");
-                }
-            }
+        }
+        }
+#endif
         }
 
         List<Dictionary<Expr, long[]>> ret = new();

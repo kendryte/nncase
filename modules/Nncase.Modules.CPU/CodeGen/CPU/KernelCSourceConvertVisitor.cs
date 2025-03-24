@@ -346,11 +346,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     if (args.Length == 1)
                     {
                         var fullShape = Enumerable.Repeat(1, args[0].Dimensions.Length).ToArray();
-                        var splitAxisAndScale = load.NdSbp.Select((sbp, i) => sbp is SBPSplit s ? (s.Axis, load.Placement.Hierarchy[i]) : (0, 1)).ToArray();
-                        foreach (var s in splitAxisAndScale)
-                        {
-                            fullShape[s.Item1] *= s.Item2;
-                        }
+                        fullShape = fullShape.Select((l, i) => load.NdSbp[i] is SBPSplit split ? split.Axes.Select(s => load.Placement.Hierarchy[s]).Aggregate(1, (a, b) => a * b) : l).ToArray();
 
                         foreach (var (dimS, axis) in args[0].Dimensions.ToArray().Select((e, axis) => (Visit(e).Name, axis)))
                         {
@@ -379,11 +375,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     if (args.Length == 1)
                     {
                         var fullShape = Enumerable.Repeat(1, args[0].Dimensions.Length).ToArray();
-                        var splitAxisAndScale = store.NdSbp.Select((sbp, i) => sbp is SBPSplit s ? (s.Axis, store.Placement.Hierarchy[i]) : (0, 1)).ToArray();
-                        foreach (var s in splitAxisAndScale)
-                        {
-                            fullShape[s.Item1] *= s.Item2;
-                        }
+                        fullShape = fullShape.Select((l, i) => store.NdSbp[i] is SBPSplit split ? split.Axes.Select(s => store.Placement.Hierarchy[s]).Aggregate(1, (a, b) => a * b) : l).ToArray();
 
                         foreach (var (dimS, axis) in args[0].Dimensions.ToArray().Select((e, axis) => (Visit(e).Name, axis)))
                         {
@@ -489,6 +481,9 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     }).Result);
 
                     break;
+                case TIR.CPU.SUMMA summa:
+                    IndentScope.Writer.IndWrite($"summa<false>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: false).Name}, {VisitBuffer(args[2], local: false).Name});\n");
+                    break;
                 case TIR.Memcopy copy:
                     WriteWithProfiler($"tensor_copy({VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[0], local: true).Name});\n");
                     break;
@@ -558,23 +553,16 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     break;
                 case TIR.CPU.GatherReduceScatter grs:
                     {
-                        if (grs.InType.NdSBP.Any(s => s is SBPPartial))
+                        if (grs.InType.AxisPolices.Any(s => s is SBPPartial))
                         {
-                            var sbpPartial = (SBPPartial)grs.InType.NdSBP.Where(s => s is SBPPartial).Distinct().First();
-                            var reduceKind = "tar::reduce_kind::" + string.Join("_", grs.InType.NdSBP.Select((s, i) => (s is SBPPartial ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
+                            var sbpPartial = (SBPPartial)grs.InType.AxisPolices.Where(s => s is SBPPartial).Distinct().First();
+                            var reduceKind = "tar::reduce_kind::" + string.Join("_", grs.InType.AxisPolices.Select((s, i) => (s is SBPPartial ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
                             WriteIndWithProfiler($"tac::tensor_reduce_sync<reduce_op::{sbpPartial.Op.ToC()}, {reduceKind}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                         }
                         else
                         {
                             var fullShape = Enumerable.Repeat(1, args[0].Dimensions.Length).ToArray();
-                            if (fullShape.Any())
-                            {
-                                var splitAxisAndScale = grs.InType.NdSBP.Select((sbp, i) => sbp is SBPSplit s ? (s.Axis, grs.InType.Placement.Hierarchy[i]) : (0, 1)).ToArray();
-                                foreach (var s in splitAxisAndScale)
-                                {
-                                    fullShape[s.Item1] *= s.Item2;
-                                }
-                            }
+                            fullShape = fullShape.Select((l, i) => grs.InType.AxisPolices[i] is SBPSplit split ? split.Axes.Select(s => grs.InType.Placement.Hierarchy[s]).Aggregate(1, (a, b) => a * b) : l).ToArray();
 
                             foreach (var (dimS, axis) in args[0].Dimensions.ToArray().Select((e, axis) => (Visit(e).Name, axis)))
                             {

@@ -29,6 +29,24 @@ public partial class FoldBoxingConst : RewriteRule<Pattern>
     private Expr? GetReplace(Boxing boxing, Tensor input)
     {
         var type = (DistributedType)boxing.NewType;
-        return new TensorConst(input, type.NdSBP, type.Placement);
+        return new TensorConst(input, type.AxisPolices, type.Placement);
+    }
+}
+
+[RuleGenerator]
+public partial class UnfoldDistributedConst : RewriteRule<Pattern>
+{
+    /// <inheritdoc/>
+    public override Pattern Pattern { get; } = IsTensorConst("input");
+
+    private Expr? GetReplace(TensorConst input)
+    {
+        var type = input.CheckedType;
+        if (type is DistributedType)
+        {
+            return IR.F.Distributed.Boxing(input.Value, type);
+        }
+
+        return null;
     }
 }
