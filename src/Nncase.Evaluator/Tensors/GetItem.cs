@@ -156,15 +156,15 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
     private IRType Visit(ITypeInferenceContext context, GetItem target, DistributedType input, TensorType index)
     {
         var outputType = (TensorType)Visit(context, target, input.TensorType, index);
-        var ndsbp = input.NdSBP.ToArray();
-        for (var i = 0; i < ndsbp.Length; i++)
+        var ndsbp = input.AxisPolices.Skip(input.TensorType.Shape.Rank - outputType.Shape.Rank).ToArray();
+        for (var i = 0; i < input.AxisPolices.Count; i++)
         {
-            if (ndsbp[i] is SBPSplit { Axis: int axis })
+            if (ndsbp[i] is SBPSplit)
             {
-                if ((index.Shape.IsScalar && axis == 0)
-                    || axis < index.Shape[0].FixedValue)
+                if ((index.Shape.IsScalar && i == 0)
+                    || i < index.Shape[0].FixedValue)
                 {
-                    ndsbp[i] = SBP.B;
+                    return new InvalidType("not support");
                 }
             }
         }

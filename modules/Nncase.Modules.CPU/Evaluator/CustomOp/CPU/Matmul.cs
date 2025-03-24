@@ -64,12 +64,12 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         {
             for (int i = 0; i < a.Placement.Rank; i++)
             {
-                if (a.NdSBP[i] != matmul.LhsSBPs[i])
+                if (a.AxisPolices[i] != matmul.LhsSBPs[i])
                 {
                     return false;
                 }
 
-                if (b.NdSBP[i] != matmul.RhsSBPs[i])
+                if (b.AxisPolices[i] != matmul.RhsSBPs[i])
                 {
                     return false;
                 }

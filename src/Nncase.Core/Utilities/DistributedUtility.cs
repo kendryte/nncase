@@ -9,33 +9,64 @@ namespace Nncase.Utilities;
 
 public static class DistributedUtility
 {
-    public static IReadOnlyList<IRArray<SBP>> GetLeafCandidateNDSBPs(TensorType tensorType, Placement placement)
+    public static List<List<int>> GetHierarchyCombinations(int rank)
     {
-        var ndsbps = new List<List<SBP>>();
-        for (int i = 0; i < placement.Rank; i++)
+        var allCombinations = new List<List<int>>(rank);
+        for (int length = 1; length <= rank; length++)
         {
-            var ndsbp = new List<SBP>();
+            GetCombinations(Enumerable.Range(0, rank).ToArray(), length, 0, new List<int>(), allCombinations);
+        }
+
+        return allCombinations;
+    }
+
+    public static void GetCombinations(int[] array, int length, int startIndex, List<int> current, List<List<int>> result)
+    {
+        if (current.Count == length)
+        {
+            result.Add([.. current]);
+            return;
+        }
+
+        for (int i = startIndex; i < array.Length; i++)
+        {
+            current.Add(array[i]);
+            GetCombinations(array, length, i + 1, current, result);
+            current.RemoveAt(current.Count - 1);
+        }
+    }
+
+    public static IReadOnlyList<IRArray<SBP>> GetLeafCandidatePolicies(TensorType tensorType, Placement placement)
+    {
+        var splitsAxes = GetHierarchyCombinations(placement.Rank);
+        var policies = new List<List<SBP>>();
+        for (int di = 0; di < tensorType.Shape.Rank; di++)
+        {
+            var policy = new List<SBP>();
             if (tensorType.Shape.All(x => x.IsDynamic || x.FixedValue != 0))
             {
-                for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
+                for (int ti = 0; ti < splitsAxes.Count; ti++)
                 {
-                    if (tensorType.Shape[axis] is { IsFixed: true, FixedValue: long s } && placement.Hierarchy[i] > 1 && IsDivideExactly(s, placement.Hierarchy[i]))
+                    var axis = splitsAxes[ti];
+                    var divisor = axis.Select(a => placement.Hierarchy[a]).Aggregate(1, (a, b) => a * b);
+                    if (tensorType.Shape[di] is { IsFixed: true, FixedValue: long s } && axis.All(a => placement.Hierarchy[a] > 1) && divisor > 1 && IsDivideExactly(s, divisor))
                     {
-                        ndsbp.Add(SBP.S(axis));
+                        policy.Add(SBP.S(axis.ToArray()));
                     }
                 }
             }
 
-            ndsbp.Add(SBP.B);
-            ndsbps.Add(ndsbp);
+            policy.Add(SBP.B);
+            policies.Add(policy);
         }
 
-        return ndsbps.CartesianProduct().Select(ndsbp => ndsbp.ToArray()).Where(ndsbp => IsDistributable(tensorType, ndsbp, placement)).Select(ndsbp => new IRArray<SBP>(ndsbp)).ToArray();
+        var candidates = policies.CartesianProduct().Select(policy => policy.ToArray()).Where(policy => IsDistributable(tensorType, policy, placement)).Select(policy => new IRArray<SBP>(policy)).ToArray();
+        return candidates;
     }
 
     public static IReadOnlyList<IRArray<SBP>> GetPartialCandidateNDSBPs(DistributedType distributedType)
     {
-        IRArray<SBP> ndsbp = distributedType.NdSBP;
+        IRArray<SBP> ndsbp = distributedType.AxisPolices;
         TensorType tensorType = distributedType.TensorType;
         Placement placement = distributedType.Placement;
         if (!ndsbp.Any(sbp => sbp is SBPPartial))
@@ -47,7 +78,8 @@ public static class DistributedUtility
         for (int i = 0; i < placement.Rank; i++)
         {
             candidateNdsbps[i] = new List<SBP>();
-            var innerSplitedAxes = distributedType.NdSBP.Skip(i + 1).OfType<SBPSplit>().Select(sbp => sbp.Axis).ToList();
+
+            // var innerSplitedAxes = distributedType.NdSBP.Skip(i + 1).OfType<SBPSplit>().Select(sbp => sbp.Axis).ToList();
             if (ndsbp[i] is SBPPartial)
             {
                 candidateNdsbps[i].Add(SBP.B);
@@ -70,31 +102,63 @@ public static class DistributedUtility
         return candidateNdsbps.CartesianProduct().Select(ndsbp => ndsbp.ToArray()).Where(ndsbp => IsDistributable(tensorType, ndsbp, placement)).Select(ndsbp => new IRArray<SBP>(ndsbp)).ToArray();
     }
 
-    public static bool IsDistributable(TensorType tensorType, ReadOnlySpan<SBP> ndsbp, Placement placement)
+    public static bool IsDistributable(TensorType tensorType, ReadOnlySpan<SBP> polices, Placement placement)
     {
         if (!tensorType.Shape.IsRanked)
         {
             return false;
         }
 
-        var divisors = GetDivisors(new DistributedType(tensorType, new IRArray<SBP>(ndsbp.ToArray()), placement));
+        // 1. S on different dim must have different topology axis.
+        if (!IsDistributable(polices))
+        {
+            return false;
+        }
+
+        // 2. All shapes are divisible by the mesh.
+        var divisors = GetDivisors(new DistributedType(tensorType, polices.ToArray(), placement));
         return divisors.Select((d, axis) => (d, axis)).All(p => p.d == 0 ? true : IsDivideExactly(tensorType.Shape[p.axis].FixedValue, p.d));
+    }
+
+    public static bool IsDistributable(ReadOnlySpan<SBP> polices)
+    {
+        var splits = polices.ToArray().Where(p => p is SBPSplit).Select(p => (SBPSplit)p).ToArray();
+        if (splits == null || splits.Length == 0 || (splits.Length < 2 && splits[0].Axes.GroupBy(x => x).All(group => group.Count() == 1)))
+        {
+            return true;
+        }
+
+        for (int i = 0; i < splits.Length - 1; i++)
+        {
+            for (int j = i + 1; j < splits.Length; j++)
+            {
+                if (splits[i].Axes.Intersect(splits[j].Axes).Any())
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     public static IReadOnlyList<int> GetDivisors(DistributedType distributedType)
     {
         var rank = distributedType.TensorType.Shape.Rank;
         var divisors = Enumerable.Repeat(0, rank).ToArray();
-        for (int i = 0; i < distributedType.NdSBP.Count; i++)
+        for (int i = 0; i < distributedType.AxisPolices.Count; i++)
         {
-            if (distributedType.NdSBP[i] is SBPSplit { Axis: int axis })
+            if (distributedType.AxisPolices[i] is SBPSplit split)
             {
-                if (divisors[axis] == 0)
+                foreach (var a in split.Axes)
                 {
-                    divisors[axis] = 1;
-                }
+                    if (divisors[i] == 0)
+                    {
+                        divisors[i] = 1;
+                    }
 
-                divisors[axis] *= distributedType.Placement.Hierarchy[i];
+                    divisors[i] *= distributedType.Placement.Hierarchy[a];
+                }
             }
         }
 
@@ -111,6 +175,44 @@ public static class DistributedUtility
         return true;
     }
 
+    public static IRArray<SBP> AxisPolicesToNDSBP(IRArray<SBP> axisPolices, int rank)
+    {
+        var ndsbp = new SBP[rank];
+        for (var i = 0; i < axisPolices.Count; i++)
+        {
+            var policy = axisPolices[i];
+            if (policy is SBPSplit split)
+            {
+                foreach (var ax in split.Axes)
+                {
+                    ndsbp[ax] = SBP.S(new[] { i });
+                }
+            }
+        }
+
+        return ndsbp.Select(sbp => sbp is SBPSplit ? sbp : SBP.B).ToArray();
+    }
+
+    public static IRArray<SBP> NDSBPToAxisPolices(IRArray<SBP> ndsbp, int rank)
+    {
+        var polices = new SBP[rank];
+        for (int d = 0; d < polices.Length; d++)
+        {
+            var splitAxes = Enumerable.Range(0, ndsbp.Count).Where(i => ndsbp[i] is SBPSplit split && split.Axes[0] == d).ToArray();
+            if (splitAxes.Any())
+            {
+                polices[d] = SBP.S(splitAxes);
+            }
+            else
+            {
+                polices[d] = SBP.B;
+            }
+        }
+
+        return polices;
+    }
+
+#if false
     public static Expr[] TryGetNonUniformDividedShape(DistributedType distributedType)
     {
         var shape = distributedType.TensorType.Shape.ToValueArray();
@@ -195,6 +297,7 @@ public static class DistributedUtility
 
         return ret.ToList();
     }
+#endif
 
     public static bool IsDivideBy(long input, int divisor)
     {
@@ -261,10 +364,9 @@ public static class DistributedUtility
         var shape = new long[distributedType.TensorType.Shape.Rank];
         for (int axis = 0; axis < offset.Length; axis++)
         {
-            var splits = (from d in distributedType.NdSBP.Select((s, i) => (s, i))
-                          let s = d.s as SBPSplit
-                          where s != null && s.Axis == axis
-                          select (Placement: d.i, DeviceIndex: shardIndex[d.i], DeviceDim: distributedType.Placement.Hierarchy[d.i])).ToArray();
+            var splits = distributedType.AxisPolices[axis] is SBPSplit s
+            ? s.Axes.Select(td => (Placement: td, DeviceIndex: shardIndex[td], DeviceDim: distributedType.Placement.Hierarchy[td])).ToArray()
+            : Array.Empty<(int Placement, int DeviceIndex, int DeviceDim)>();
             if (splits.Any())
             {
                 var subHierarchies = splits.Select(x => x.DeviceDim).ToArray();
@@ -290,9 +392,12 @@ public static class DistributedUtility
     {
         var shape = distributedType.TensorType.Shape.ToArray();
         var tiles = distributedType.TensorType.Shape.ToArray();
-        foreach (var (s, i) in distributedType.NdSBP.Select((s, i) => (s, i)).Where(t => t.s is SBPSplit).Select(t => ((SBPSplit)t.s, t.i)))
+        for (var d = 0; d < shape.Length; d++)
         {
-            tiles[s.Axis] /= distributedType.Placement.Hierarchy[i];
+            if (distributedType.AxisPolices[d] is SBPSplit split)
+            {
+                tiles[d] /= split.Axes.Select(t => distributedType.Placement.Hierarchy[t]).Aggregate(1, (a, b) => a * b);
+            }
         }
 
         return (tiles, shape);

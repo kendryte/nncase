@@ -54,7 +54,7 @@ public partial class LowerReduce : RewriteRule<Pattern>
         var outBuffer = call.CheckedType switch
         {
             TensorType t => IR.F.Buffer.Uninitialized(t.DType, TIR.MemoryLocation.Data, t.Shape.ToValueArray()),
-            DistributedType dt => IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape.ToValueArray(), dt.NdSBP, dt.Placement),
+            DistributedType dt => IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape.ToValueArray(), dt.AxisPolices, dt.Placement),
             _ => throw new ArgumentOutOfRangeException(nameof(call)),
         };
 

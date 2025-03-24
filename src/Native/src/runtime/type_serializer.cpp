@@ -38,7 +38,7 @@ result<type> deserialize_type_impl(TReader &sr) noexcept {
             while ((dim_token = sr.template read_unaligned<uint8_t>()) !=
                    type_sig_end) {
                 if (dim_token == dim_fixed) {
-                    shape.push_back(sr.template read_unaligned<uint32_t>());
+                    shape.push_back(sr.template read_unaligned<int64_t>());
                 } else if (dim_token == dim_unknown) {
                     shape.push_back(unknown_dim);
                 } else {

@@ -86,18 +86,22 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
     {
         var tensorType = (TensorType)Visit(context, target, input.TensorType);
 
-        var ndsbp = new SBP[input.NdSBP.Count];
+        var ndsbp = new SBP[tensorType.Shape.Count];
 
         if (context.GetArgument(target, Unsqueeze.Dim) is TensorConst tdims)
         {
-            var dimsValue = tdims.Value.Cast<int>();
-            for (int i = 0; i < input.NdSBP.Count; i++)
+            var dimsValue = tdims.Value.Cast<int>().ToArray().Select(d => d < 0 ? d + tensorType.Shape.Rank : d);
+            for (int i = 0; i < input.AxisPolices.Count; i++)
             {
-                ndsbp[i] = input.NdSBP[i] switch
+                var outAxis = i + dimsValue.Select(d => d <= i).Count(b => b);
+                if (dimsValue.Contains(outAxis))
                 {
-                    SBPSplit { Axis: int axis } => SBP.S(axis + dimsValue.Select(i => i < 0 ? i + tensorType.Shape.Rank : i).Select(i => i <= axis).Count(b => b)),
-                    SBP sbp => sbp,
-                };
+                    ndsbp[i] = SBP.B;
+                }
+                else
+                {
+                    ndsbp[i] = input.AxisPolices[i];
+                }
             }
         }
 
