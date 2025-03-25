@@ -172,14 +172,15 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
             return symbol;
         }
 
+        var name = IRHelpers.GetIdentityName(expr.Name);
         var index = VisitEntry.Parameters.IndexOf(expr);
         if (index != -1)
         {
-            symbol = new CSymbol($"T{index}", expr.Name);
+            symbol = new CSymbol($"T{index}", name);
         }
         else
         {
-            symbol = new(expr.CheckedDataType.ToC(), expr.Name);
+            symbol = new(expr.CheckedDataType.ToC(), name);
         }
 
         _exprMemo.Add(expr, symbol);

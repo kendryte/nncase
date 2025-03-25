@@ -28,14 +28,15 @@ extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *inout
   }
   @foreach(var (input,i) in Model.PrimFunction.Parameters.ToArray().Select((input,i)=>(input,i)))
   {
+    var name = IRHelpers.GetIdentityName(input.Name);
     if (dynamicVars.Contains(input))
     {
-      names.Add(input.Name);
-  @:int64_t @Html.Raw(input.Name) = *(int64_t *)inouts[@i].data;
+      names.Add(name);
+  @:int64_t @Html.Raw(name) = *(int64_t *)inouts[@i].data;
     }
     else
     {
-      names.Add(input.Name);
+      names.Add(name);
       var shape = input.CheckedShape;
       var rank = shape.Rank;
       var sizeStr = $"inouts[{i}].size / {input.CheckedDataType.SizeInBytes}";
@@ -44,8 +45,8 @@ extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *inout
       var stridesType = $"ranked_strides<{rank}>";
       var dimStr = shape.IsFixed ? ", {}" : $", make_ranked_shape({string.Join(", ", Enumerable.Range(0, rank).Select(d => shape[d].IsFixed ? $"{shape[d].FixedValue}" : $"inouts[{i}].shape[{d}]"))})";
       var strideStr = $", make_ranked_strides({string.Join(", ", Enumerable.Range(0, rank).Select(d => $"inouts[{i}].strides[{d}]"))})";
-  @:std::span<@Html.Raw(elemType)> p@(input.Name)((@Html.Raw(elemType) *)inouts[@i].data, @Html.Raw(sizeStr));
-  @:tensor_view<@Html.Raw(elemType), @Html.Raw(dimType), @Html.Raw(stridesType)> @(input.Name)(p@(input.Name)@Html.Raw(dimStr)@Html.Raw(strideStr));
+  @:std::span<@Html.Raw(elemType)> p@(name)((@Html.Raw(elemType) *)inouts[@i].data, @Html.Raw(sizeStr));
+  @:tensor_view<@Html.Raw(elemType), @Html.Raw(dimType), @Html.Raw(stridesType)> @(name)(p@(name)@Html.Raw(dimStr)@Html.Raw(strideStr));
     }
   @:
   }

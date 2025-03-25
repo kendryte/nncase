@@ -27,17 +27,14 @@ public abstract class TIRSelectionPass : FunctionPass
             && input is Function func)
         {
             var visitor = new TIRSelectionVisitor(this);
-            visitor.Clone(func.Body, default);
+            (var newBody, var outBuffers) = visitor.Select(func);
 
             var inBuffers = func.Parameters.ToArray();
-            var outBuffers = func.Body is IR.Tuple tuple
-                ? tuple.Fields.AsValueEnumerable().Select(x => (Var)visitor.ExprMemo[x]).ToArray()
-                : [(Var)visitor.ExprMemo[func.Body]];
             var outputBufferShapes = outBuffers.Select(x => (ElemType: x.CheckedDataType, Shape: x.CheckedShape.ToValueArrayExpr())).ToArray();
             var primFunc = new PrimFunction(
                 $"{input.Name}_prim",
                 ModuleKind,
-                new Sequential(visitor.Body.ToArray()),
+                newBody,
                 inBuffers.Concat(outBuffers).ToArray());
             var primWrapper = new PrimFunctionWrapper(input.Name, primFunc, inBuffers.Length);
             AddOutputBufferAllocsToCallers(func, outBuffers);
@@ -62,9 +59,12 @@ public abstract class TIRSelectionPass : FunctionPass
         }
     }
 
+    private sealed record SelectionResult(Sequential Body, IReadOnlyList<Var> OutputBuffers);
+
     private sealed class TIRSelectionVisitor : ExprCloner<Unit>
     {
         private readonly TIRSelectionPass _selectionPass;
+        private readonly List<Expr> _body = new();
         private int _bufferIndex;
 
         public TIRSelectionVisitor(TIRSelectionPass selectionPass)
@@ -72,7 +72,30 @@ public abstract class TIRSelectionPass : FunctionPass
             _selectionPass = selectionPass;
         }
 
-        public List<Expr> Body { get; } = new();
+        public SelectionResult Select(Function function)
+        {
+            Visit(function.Body, Unit.Default);
+
+            // Add necessary copy calls
+            var outBuffers = function.Body is IR.Tuple tuple
+                ? tuple.Fields.AsValueEnumerable().Select(x => (Var)ExprMemo[x]).ToArray()
+                : [(Var)ExprMemo[function.Body]];
+
+            for (int i = 0; i < outBuffers.Length; i++)
+            {
+                var previousBuffers = outBuffers.AsSpan(0, i);
+                var currentBuffer = outBuffers[i];
+                if (previousBuffers.Contains(currentBuffer)
+                    || function.Parameters.Contains(currentBuffer))
+                {
+                    var newBuffer = currentBuffer.With($"out_{_bufferIndex++}");
+                    _body.Add(T.Memcopy(newBuffer, currentBuffer));
+                    outBuffers[i] = newBuffer;
+                }
+            }
+
+            return new(new Sequential(_body.ToArray()), outBuffers);
+        }
 
         protected sealed override Expr VisitLeafTensorConst(TensorConst expr, Unit context)
         {
@@ -101,7 +124,7 @@ public abstract class TIRSelectionPass : FunctionPass
                     PrimFunctionWrapper { Target: TIR.PrimFunction deviceFunc } => new Call(deviceFunc, arguments.Append(output).ToArray()),
                     _ => _selectionPass.SelectCall(call, arguments, output),
                 };
-                Body.Add(newCall);
+                _body.Add(newCall);
                 return output;
             }
         }
