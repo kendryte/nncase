@@ -200,24 +200,31 @@ namespace Nncase.Importer
 
             var lmHead = Linear(lastHiddenStates, _constTensors["model.embed_tokens.weight"]);
 
-            _outputs!["logits"] = lmHead;
+            // FIXIT: this is work around for bfloat16
+            _outputs!["logits"] = Cast(lmHead, DataTypes.Float32);
 
             if (CompileSession.CompileOptions.HuggingFaceOptions.OutputAttentions)
             {
                 var outAttention = Concat(new IR.Tuple(allSelfAttns.ToArray()), 0);
-                _outputs!["outAttention"] = outAttention;
+
+                // FIXIT: this is work around for bfloat16
+                _outputs!["outAttention"] = Cast(outAttention, DataTypes.Float32);
             }
 
             if (CompileSession.CompileOptions.HuggingFaceOptions.UseCache)
             {
                 var kvCache = Concat(new IR.Tuple(allSelfKV.ToArray()), 0);
-                _outputs!["kvCache"] = kvCache;
+
+                // FIXIT: this is work around for bfloat16
+                _outputs!["kvCache"] = Cast(kvCache, DataTypes.Float32);
             }
 
             if (CompileSession.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
             {
                 var hiddenStates = Concat(new IR.Tuple(allHiddenStates.ToArray()), 0);
-                _outputs!["hiddenStates"] = hiddenStates;
+
+                // FIXIT: this is work around for bfloat16
+                _outputs!["hiddenStates"] = Cast(hiddenStates, DataTypes.Float32);
             }
         }
 
@@ -243,35 +250,6 @@ namespace Nncase.Importer
             // if (inputEmbeds == null)
             // {
             var embedTokensWeight = _constTensors!["model.embed_tokens.weight"];
-            var zeroValue = 0.0f;
-            object asTypeZero = zeroValue;
-            if (embedTokensWeight.ElementType != DataTypes.Float32)
-            {
-                var method = embedTokensWeight.ElementType.CLRType.GetMethod(
-                                            "op_Explicit",
-                                            BindingFlags.Public | BindingFlags.Static,
-                                            null,
-                                            new Type[] { typeof(float) },
-                                            null);
-
-                if (method != null)
-                {
-                    asTypeZero = method.Invoke(null, [zeroValue])!;
-                }
-                else
-                {
-                    throw new InvalidOperationException($"cannot get float convert for type:{embedTokensWeight.ElementType}");
-                }
-            }
-
-            if (_config!.Keys.Contains("pad_token_id"))
-            {
-                for (var i = 0; i < embedTokensWeight.Shape[-1].FixedValue; i++)
-                {
-                    embedTokensWeight[(long)_config["pad_token_id"], i] = asTypeZero!;
-                }
-            }
-
             Expr? inputEmbeds;
             if (input_ids.CheckedShape.Rank > 2 && input_ids.CheckedDataType.IsFloat())
             {
@@ -280,7 +258,14 @@ namespace Nncase.Importer
             }
             else
             {
-                inputEmbeds = Gather(embedTokensWeight, 0, input_ids);
+
+                long? padding_idx = null;
+                if (_config!.Keys.Contains("pad_token_id"))
+                {
+                    padding_idx = (long)_config["pad_token_id"];
+                }
+
+                inputEmbeds = Embeding(input_ids, embedTokensWeight, padding_idx);
             }
 
             // }
@@ -389,6 +374,25 @@ namespace Nncase.Importer
             }
 
             return result;
+        }
+
+        private Call Embeding(Expr input, Tensor embedingWeight, long? paddingIdx = null)
+        {
+            var embedingDim = embedingWeight.Shape[-1];
+            var gatherResult = Gather(embedingWeight, 0, input);
+            if (paddingIdx == null)
+            {
+                return gatherResult;
+            }
+            else
+            {
+                var zeros = Tensor.Zeros(embedingWeight.ElementType, new long[] { 1, embedingDim.FixedValue });
+                var paddingMask = Equal(input, paddingIdx);
+                paddingMask = Unsqueeze(paddingMask, new long[] { 2 });
+                paddingMask = Expand(paddingMask, ShapeOf(gatherResult));
+                var results = Where(paddingMask, zeros, gatherResult);
+                return results;
+            }
         }
 
         /*
