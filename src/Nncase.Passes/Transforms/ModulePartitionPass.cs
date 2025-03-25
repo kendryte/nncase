@@ -99,7 +99,7 @@ public sealed class ModulePartitionPass : ModulePass
         }
 
         // 3. reconstruction
-        var constructor = new DistributedReconstructor(module, funcName, ModuleCompiler.ModuleKind, condenseAlgo);
+        var constructor = new DistributedReconstructor(module, funcName, ModuleCompiler, CompileSession.CompileOptions, condenseAlgo);
         var post = constructor.Construct();
         return post;
     }
@@ -107,19 +107,32 @@ public sealed class ModulePartitionPass : ModulePass
 
 internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, ExprEdge>
 {
-    public DistributedReconstructor(IRModule module, string funcName, string moduleKind, CondensationGraphAlgorithm<ExprVertex, ExprEdge> algo)
+    public DistributedReconstructor(IRModule module, string funcName, IModuleCompiler moduleCompiler, CompileOptions compileOptions, CondensationGraphAlgorithm<ExprVertex, ExprEdge> algo)
         : base(algo)
     {
         Module = module;
         FuncName = funcName;
-        ModuleKind = moduleKind;
+        ModuleCompiler = moduleCompiler;
+        CompileOptions = compileOptions;
     }
 
     public IRModule Module { get; }
 
     public string FuncName { get; }
 
-    public string ModuleKind { get; }
+    public IModuleCompiler ModuleCompiler { get; }
+
+    public CompileOptions CompileOptions { get; }
+
+    protected override Expr OnAtomCluster(ClusteredBidirectionalGraph<ExprVertex, ExprEdge> cluster, int sortIndex)
+    {
+        if (cluster.Vertices.First().Expr is Call call && ModuleCompiler.IsSupportedCall(call, CompileOptions))
+        {
+            return OnComplexCluster(cluster, sortIndex);
+        }
+
+        return base.OnAtomCluster(cluster, sortIndex);
+    }
 
     protected override Expr OnComplexCluster(ClusteredBidirectionalGraph<ExprVertex, ExprEdge> cluster, int sortIndex)
     {
@@ -176,7 +189,7 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
         }
 
         var cloned = PostProcess(clones);
-        var func = new Function($"{FuncName}_{sortIndex}_kernel", ModuleKind, cloned, paramDict.Values.OfType<Var>().ToArray());
+        var func = new Function($"{FuncName}_{sortIndex}_kernel", ModuleCompiler.ModuleKind, cloned, paramDict.Values.OfType<Var>().ToArray());
         Module.Add(func);
         return new Call(func, paramDict.Values.OfType<Var>().Select(v => argumentDict[v]).ToArray());
     }
