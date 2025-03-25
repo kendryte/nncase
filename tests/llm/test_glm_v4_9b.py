@@ -20,7 +20,7 @@ from .download_model import download_from_huggingface
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
-def test_qwen2(request):
+def test_glm_v4_9b(request):
     cfg = """
     [huggingface_options]
     output_attentions = false
@@ -47,7 +47,7 @@ def test_qwen2(request):
     """
     runner = HuggingfaceTestRunner(request.node.name, overwrite_configs=cfg)
 
-    model_name = "Qwen/Qwen2.5-0.5B-Instruct"
+    model_name = "THUDM/glm-4v-9b"
 
     if os.path.exists(os.path.join(os.path.dirname(__file__), model_name)):
         model_file = os.path.join(os.path.dirname(__file__), model_name)
@@ -58,4 +58,4 @@ def test_qwen2(request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_qwen2.py'])
+    pytest.main(['-vv', 'test_glm_v4_9b.py'])
