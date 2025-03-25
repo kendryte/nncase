@@ -52,7 +52,7 @@ jobs:
         shell: bash
         run: |
           conan install . --build=missing -s build_type=${{matrix.config.buildType}} -pr:a=toolchains/${{matrix.config.name}}.profile.jinja -o "&:runtime=False" -o "&:python=True" -o "&:tests=False"
-          cmake --preset conan-release
+          cmake --preset conan-debug
 
       - name: Build & Install
         shell: bash
