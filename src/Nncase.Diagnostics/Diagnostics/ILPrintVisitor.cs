@@ -529,8 +529,8 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
     protected override string VisitShape(Shape shape) =>
         shape.Kind switch
         {
-            ShapeKind.Invalid => "Invalid",
-            ShapeKind.Unranked => "Unranked",
+            ShapeKind.Invalid => "[invalid]",
+            ShapeKind.Unranked => "[*]",
             _ => $"[{string.Join(',', shape.Select(VisitDimension))}]",
         };
 
