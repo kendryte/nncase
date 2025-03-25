@@ -161,3 +161,32 @@ class Simulator:
 
 
 def test_target(target: str) -> bool: ...
+
+class AttentionKVCache:
+    def __init__(self, *args, **kwargs) -> None: ...
+
+class PagedAttentionKVCache(AttentionKVCache):
+    num_decode_tokens: int
+    num_prefill_tokens: int
+    num_prefills: int
+    """
+    [chip][die][core] tensor[num_blocks, layers, num_kv_head, 2, head_dim//64, block_size, 64]<kv_type>
+    """
+    kv_caches: list[list[list[RuntimeTensor]]]
+    """
+    [chip] tensor[seq_len, block_size, 3]
+    """
+    block_tables: list[RuntimeTensor]
+    """
+    [chip] tensor[seq_len, block_size, 3]
+    """
+    slot_mapping: list[RuntimeTensor]
+    def __init__(self) -> None: ...
+
+class InterpreterForCausalLM:
+    def __init__(self) -> None: ...
+    @overload
+    def load_model(self, arg0: bytes) -> None: ...
+    @overload
+    def load_model(self, arg0: pystream) -> None: ...
+    def __call__(self, arg0: object, arg1: object, arg2: object, **kwargs) -> None: ...

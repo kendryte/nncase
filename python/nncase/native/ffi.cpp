@@ -15,6 +15,7 @@
 #include "pytype_utils.h"
 #include "type_casters.h"
 #include <iostream>
+#include <llm_ffi.h>
 #include <nncase/compiler.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -467,4 +468,7 @@ PYBIND11_MODULE(_nncase, m) {
              })
         .def("run",
              [](interpreter &interp) { interp.run().unwrap_or_throw(); });
+
+    register_kv_cache(m);
+    register_llm_interpreter(m);
 }
