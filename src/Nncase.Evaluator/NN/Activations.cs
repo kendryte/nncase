@@ -333,7 +333,8 @@ public class SigmoidEvaluator : IEvaluator<Sigmoid>, ITypeInferencer<Sigmoid>, I
     {
         var input = context.GetArgumentValue(sigmoid, Sigmoid.Input).AsTensor();
         var originDtype = input.ElementType;
-        if (originDtype.IsFloat() && originDtype != DataTypes.Float32){
+        if (originDtype.IsFloat() && originDtype != DataTypes.Float32)
+        {
             input = input.CastTo(DataTypes.Float32);
         }
 

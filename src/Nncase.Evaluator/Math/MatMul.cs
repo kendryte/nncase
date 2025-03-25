@@ -333,7 +333,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
 
     public static IValue InferValue(DataType dataType, Tensor lhs, Tensor rhs)
     {
-        if (dataType.IsFloat() && dataType!=DataTypes.Float32)
+        if (dataType.IsFloat() && dataType != DataTypes.Float32)
         {
             var lhsOrt = Cast(lhs, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
             var rhsOrt = Cast(rhs, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();

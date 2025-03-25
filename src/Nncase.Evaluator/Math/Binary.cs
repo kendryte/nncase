@@ -80,7 +80,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     {
         var lhs = context.GetArgumentValueAsTensor(binary, Binary.Lhs);
         var rhs = context.GetArgumentValueAsTensor(binary, Binary.Rhs);
-        var originDtype=lhs.ElementType;
+        var originDtype = lhs.ElementType;
 
         if (lhs.Shape.IsScalar && rhs.Shape.IsScalar)
         {
@@ -118,14 +118,15 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             }
         }
 
-        //for float16/float8/bfloat16 infere
-        if(originDtype.IsFloat()&&originDtype!=DataTypes.Float32){
-            lhs=lhs.Cast<float>();
-            rhs=rhs.Cast<float>();
+        // for float16/float8/bfloat16 infere
+        if (originDtype.IsFloat() && originDtype != DataTypes.Float32)
+        {
+            lhs = lhs.Cast<float>();
+            rhs = rhs.Cast<float>();
         }
 
-        var res=Ort_compute(binary, lhs, rhs);
-        return (TensorValue) res.AsTensor().CastTo(originDtype);
+        var res = Ort_compute(binary, lhs, rhs);
+        return (TensorValue)res.AsTensor().CastTo(originDtype);
     }
 
     /// <inheritdoc/>

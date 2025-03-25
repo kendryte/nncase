@@ -26,11 +26,13 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
     public IValue Visit(IEvaluateContext context, Reduce reduce)
     {
         var input_raw = context.GetArgumentValueAsTensor(reduce, Reduce.Input);
-        var originType=input_raw.ElementType;
-        if(originType.IsFloat()&&originType!=DataTypes.Float32){
-            input_raw=input_raw.CastTo(DataTypes.Float32);
+        var originType = input_raw.ElementType;
+        if (originType.IsFloat() && originType != DataTypes.Float32)
+        {
+            input_raw = input_raw.CastTo(DataTypes.Float32);
         }
-        var input=input_raw.ToOrtTensor();
+
+        var input = input_raw.ToOrtTensor();
         var axis = context.GetArgumentValueAsArray<long>(reduce, Reduce.Axes);
         var keepDims = context.GetArgumentValueAsScalar<long>(reduce, Reduce.KeepDims);
 

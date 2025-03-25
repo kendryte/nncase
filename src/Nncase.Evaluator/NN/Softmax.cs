@@ -23,6 +23,7 @@ public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSo
         {
             input = input.Cast<float>();
         }
+
         var inputOrt = input.ToOrtTensor();
         var axis = context.GetArgumentValueAsScalar<long>(logSoftMax, LogSoftmax.Axis);
         return (TensorValue)OrtKI.LogSoftmax(inputOrt, axis).ToValue().AsTensor().CastTo(originType);

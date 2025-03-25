@@ -258,7 +258,6 @@ namespace Nncase.Importer
             }
             else
             {
-
                 long? padding_idx = null;
                 if (_config!.Keys.Contains("pad_token_id"))
                 {
