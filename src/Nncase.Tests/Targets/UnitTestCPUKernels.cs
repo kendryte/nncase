@@ -345,7 +345,6 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 1, 1, 384, 256 }, new long[] { 32, 256, 512 }, false, true, new[] { 1 }, 4 })]
     [InlineData(new object[] { new long[] { 384, 512 }, new long[] { 512, 512 }, false, true, new[] { 1 }, 5 })]
     [InlineData(new object[] { new long[] { 384, 512 }, new long[] { 512, 256 }, false, true, new[] { 2 }, 6 })]
-    [InlineData(new object[] { new long[] { 384, 512 }, new long[] { 512, 512 }, false, true, new[] { 2, 4 }, 7 })]
     public async Task TestPackMatMul(long[] lhsShape, long[] rhsShape, bool constA, bool constB, int[] hierarchy, int count)
     {
         var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
@@ -381,9 +380,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new long[] { 384, 512 }, new long[] { 2, 512, 512 }, false, false, new[] { 4, 4 }, 0 })]
+    [InlineData(new object[] { new long[] { 384, 512 }, new long[] { 2, 512, 512 }, false, true, new[] { 4, 4 }, 0 })]
     [InlineData(new object[] { new long[] { 2, 384, 512 }, new long[] { 2, 512, 512 }, false, false, new[] { 4, 8 }, 1 })]
-    [InlineData(new object[] { new long[] { 2, 384, 512 }, new long[] { 2, 512, 512 }, false, false, new[] { 2, 8, 4 }, 2 })]
+    [InlineData(new object[] { new long[] { 2, 384, 512 }, new long[] { 2, 512, 512 }, false, true, new[] { 2, 8, 4 }, 2 })]
     [InlineData(new object[] { new long[] { 2, 384, 512 }, new long[] { 2, 512, 512 }, false, false, new[] { 2, 4, 8 }, 3 })]
     public async Task TestSUMMA(long[] lhsShape, long[] rhsShape, bool constA, bool constB, int[] hierarchy, int count)
     {

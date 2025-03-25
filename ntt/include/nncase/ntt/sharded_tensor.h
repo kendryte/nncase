@@ -70,11 +70,11 @@ class sharded_tensor_view
         //             detail::get_submesh_rank<mesh_type, RemoteScope>() - 1 ==
         //         mesh_type::shape_type::rank(),
         //     "Invalid index.");
-        auto local_address = local().elements().data() -
-                             (T*)global_local_data_ptr(mesh_type::remote_program_id(
-                                 ranked_shape<mesh_type::shape_type::rank()>(
-                                     mesh_type::local_index())));
+        auto local_address = local().elements().data();
         return remote_tensor_type<RemoteScope>::create(
+            mesh_type::remote_program_id(
+                ranked_shape<mesh_type::shape_type::rank()>(
+                    mesh_type::local_index())),
             mesh_type::remote_program_id(
                 ranked_shape<mesh_type::shape_type::rank()>(
                     std::forward<ShardIndexes>(shardIndexes)...)),
