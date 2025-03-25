@@ -63,6 +63,9 @@ public sealed class ModulePartitionPass : ModulePass
             bool isSupport = false;
             switch (arg.Edge.Source.Expr, arg.Edge.Target.Expr)
             {
+                case (Var, _):
+                    isSupport = false;
+                    break;
                 case (_, IR.Tuple):
                     isSupport = true;
                     break;
