@@ -27,36 +27,47 @@ using Tuple = System.Tuple;
 
 namespace Nncase.Importer
 {
-    public partial class HuggingFaceImporter
+    // public partial class HuggingFaceImporter
+    // {
+    public class Qwen2 : HuggingFaceModel
     {
-        private (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) Qwen2CreateInputs()
+        private ModelInitContext? _context;
+
+        public override void Initialize(ModelInitContext context, string dir)
         {
-            var hiddenSize = (long)_config!["hidden_size"];
-            var numsHiddenLayers = (long)_config!["num_hidden_layers"];
-            var num_attention_heads = (long)_config!["num_attention_heads"];
+            base.Initialize(context, dir);
+            _context = context;
+        }
+
+        // public Qwen2(){}
+        public override (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
+        {
+            var hiddenSize = (long)_context!.Config!["hidden_size"];
+            var numsHiddenLayers = (long)_context.Config!["num_hidden_layers"];
+            var num_attention_heads = (long)_context.Config!["num_attention_heads"];
             var headDim = hiddenSize / num_attention_heads;
-            if (_config.ContainsKey("head_dim"))
+            if (_context.Config.ContainsKey("head_dim"))
             {
-                headDim = (long)_config["head_dim"];
+                headDim = (long)_context.Config["head_dim"];
             }
 
-            var numKVHeads = (long)_config!["num_key_value_heads"];
+            var numKVHeads = (long)_context.Config!["num_key_value_heads"];
 
-            _inputs = [];
-            _dynVarMap = new Dictionary<string, Var>();
+            _context.Inputs = [];
+            _context.DynVarMap = new Dictionary<string, Var>();
             var varMap = new Dictionary<Var, Expr[]>();
 
-            var bucketOptions = CompileSession.CompileOptions.ShapeBucketOptions;
-            _fixVarMap = bucketOptions.FixVarMap;
+            var bucketOptions = _context.CompileSession!.CompileOptions.ShapeBucketOptions;
+            _context.FixVarMap = bucketOptions.FixVarMap;
 
             // local test set
             // _fixVarMap["sequence_length"] = 10;
             // _fixVarMap["history_len"] = 0;
             // TODO: control by config file
-            if (!_fixVarMap.ContainsKey("sequence_length"))
+            if (!_context.FixVarMap.ContainsKey("sequence_length"))
             {
-                _dynVarMap["sequence_length"] = Var.SizeVar("sequence_length");
-                _dynVarMap["sequence_length"].Metadata.Range = new(1, 64);
+                _context.DynVarMap["sequence_length"] = Var.SizeVar("sequence_length");
+                _context.DynVarMap["sequence_length"].Metadata.Range = new(1, 64);
             }
 
             // if (!_fixVarMap.ContainsKey("history_len"))
@@ -64,14 +75,14 @@ namespace Nncase.Importer
             //     _dynVarMap["history_len"] = Var.SizeVar("history_len");
             //     _dynVarMap["history_len"].Metadata.Range=new (4096,8192);
             // }
-            if (!_fixVarMap.ContainsKey("batch_size"))
+            if (!_context.FixVarMap.ContainsKey("batch_size"))
             {
-                _dynVarMap["batch_size"] = Var.SizeVar("batch_size");
-                _dynVarMap["batch_size"].Metadata.Range = new(1, 4);
+                _context.DynVarMap["batch_size"] = Var.SizeVar("batch_size");
+                _context.DynVarMap["batch_size"].Metadata.Range = new(1, 4);
             }
 
-            var inputIdsShapeExpr = new Expr[] { _dynVarMap["batch_size"],
-                                                   _dynVarMap["sequence_length"],
+            var inputIdsShapeExpr = new Expr[] { _context.DynVarMap["batch_size"],
+                                                   _context.DynVarMap["sequence_length"],
                                                 };
             var attentionMaskShapeExpr = new Expr[]
             {
@@ -94,8 +105,8 @@ namespace Nncase.Importer
             var inputIds = new Var(
                 "input_ids",
                 new TensorType(DataTypes.Int64, new Shape(
-                                                     _dynVarMap["batch_size"],
-                                                     _dynVarMap["sequence_length"])));
+                                                     _context.DynVarMap["batch_size"],
+                                                     _context.DynVarMap["sequence_length"])));
 
             var attentionMask = new Var(
                 "attention_mask",
@@ -120,10 +131,10 @@ namespace Nncase.Importer
                     numKVHeads,
                     0, // _dynVarMap["history_len"],
                     headDim)));
-            _inputs.Add(inputIds);
-            _inputs.Add(null); // attentionMask
-            _inputs.Add(null); // positionIds
-            _inputs.Add(null); // pastKeyValue
+            _context.Inputs.Add(inputIds);
+            _context.Inputs.Add(null); // attentionMask
+            _context.Inputs.Add(null); // positionIds
+            _context.Inputs.Add(null); // pastKeyValue
 
             // _inputs.Add(attentionMask);
             // _inputs.Add(positionIds);
@@ -136,7 +147,7 @@ namespace Nncase.Importer
             var inputs = new List<Var> { };
 
             // for the input is optional
-            foreach (var input in _inputs)
+            foreach (var input in _context.Inputs)
             {
                 if (input != null)
                 {
@@ -147,27 +158,27 @@ namespace Nncase.Importer
             return (inputs, varMap);
         }
 
-        private Expr Qwen2CreateOutputs()
+        public override Expr CreateOutputs()
         {
             // TODO: use self.config.output_attention to judge wether output kvache
-            var logits = _outputs!["logits"];
+            var logits = _context!.Outputs["logits"];
             Expr? outAttention = null;
             Expr? kvCache = null;
             Expr? hiddenStates = null;
 
-            if (CompileSession.CompileOptions.HuggingFaceOptions.UseCache)
+            if (_context.CompileSession!.CompileOptions.HuggingFaceOptions.UseCache)
             {
-                kvCache = _outputs["kvCache"];
+                kvCache = _context.Outputs["kvCache"];
             }
 
-            if (CompileSession.CompileOptions.HuggingFaceOptions.OutputAttentions)
+            if (_context.CompileSession.CompileOptions.HuggingFaceOptions.OutputAttentions)
             {
-                outAttention = _outputs["outAttention"];
+                outAttention = _context.Outputs["outAttention"];
             }
 
-            if (CompileSession.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
+            if (_context.CompileSession.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
             {
-                hiddenStates = _outputs["hiddenStates"];
+                hiddenStates = _context.Outputs["hiddenStates"];
             }
 
             var output = new List<Expr?> { logits, kvCache, outAttention, hiddenStates, };
@@ -177,17 +188,17 @@ namespace Nncase.Importer
         }
 
         // private Tuple<Call, HuggingFaceUtils.DynamicCache> VisitQwen2ForCausalLM()
-        private void VisitQwen2ForCausalLM()
+        public override void VisitForCausalLM()
         {
-            if (_constTensors == null)
+            if (_context!.ConstTensors == null)
             {
-                throw new ArgumentNullException(nameof(_constTensors));
+                throw new ArgumentNullException(nameof(_context.ConstTensors));
             }
 
-            Var input_ids = _inputs![0]!;
-            var attention_mask = _inputs[1];
-            var position_ids = _inputs[2];
-            var pastKeyValues = _inputs[3];
+            Var input_ids = _context.Inputs![0]!;
+            var attention_mask = _context.Inputs[1];
+            var position_ids = _context.Inputs[2];
+            var pastKeyValues = _context.Inputs[3];
 
             // var (lastHiddenStates, pastKeyValues, allSelfAttns, allHiddenStates) = Qwen2Model(input_ids,
             //     inputEmbeds: null, new HuggingFaceUtils.DynamicCache(), cachePosition: null, positionIds: null,
@@ -198,26 +209,29 @@ namespace Nncase.Importer
                 position_ids,
                 pastKeyValues);
 
-            var lmHead = Linear(lastHiddenStates, _constTensors["model.embed_tokens.weight"]);
+            var lmHead = Linear(lastHiddenStates, _context.ConstTensors["model.embed_tokens.weight"]);
 
-            _outputs!["logits"] = lmHead;
+            _context.Outputs!.Add("logits", lmHead);
+            if (!_context!.Outputs!.ContainsKey("logits"))
+            {
+            }
 
-            if (CompileSession.CompileOptions.HuggingFaceOptions.OutputAttentions)
+            if (_context.CompileSession!.CompileOptions.HuggingFaceOptions.OutputAttentions)
             {
                 var outAttention = Concat(new IR.Tuple(allSelfAttns.ToArray()), 0);
-                _outputs!["outAttention"] = outAttention;
+                _context.Outputs!["outAttention"] = outAttention;
             }
 
-            if (CompileSession.CompileOptions.HuggingFaceOptions.UseCache)
+            if (_context.CompileSession.CompileOptions.HuggingFaceOptions.UseCache)
             {
                 var kvCache = Concat(new IR.Tuple(allSelfKV.ToArray()), 0);
-                _outputs!["kvCache"] = kvCache;
+                _context.Outputs!["kvCache"] = kvCache;
             }
 
-            if (CompileSession.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
+            if (_context.CompileSession.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
             {
                 var hiddenStates = Concat(new IR.Tuple(allHiddenStates.ToArray()), 0);
-                _outputs!["hiddenStates"] = hiddenStates;
+                _context.Outputs!["hiddenStates"] = hiddenStates;
             }
         }
 
@@ -242,7 +256,7 @@ namespace Nncase.Importer
              */
             // if (inputEmbeds == null)
             // {
-            var embedTokensWeight = _constTensors!["model.embed_tokens.weight"];
+            var embedTokensWeight = _context!.ConstTensors!["model.embed_tokens.weight"];
             var zeroValue = 0.0f;
             object asTypeZero = zeroValue;
             if (embedTokensWeight.ElementType != DataTypes.Float32)
@@ -264,11 +278,11 @@ namespace Nncase.Importer
                 }
             }
 
-            if (_config!.Keys.Contains("pad_token_id"))
+            if (_context.Config!.Keys.Contains("pad_token_id"))
             {
                 for (var i = 0; i < embedTokensWeight.Shape[-1].FixedValue; i++)
                 {
-                    embedTokensWeight[(long)_config["pad_token_id"], i] = asTypeZero!;
+                    embedTokensWeight[(long)_context.Config["pad_token_id"], i] = asTypeZero!;
                 }
             }
 
@@ -334,9 +348,9 @@ namespace Nncase.Importer
             *
             */
             _ = new List<Tuple<Call, Call>>();
-            for (int i = 0; i < (int)(long)_config["num_hidden_layers"]; i++)
+            for (int i = 0; i < (int)(long)_context.Config["num_hidden_layers"]; i++)
             {
-                if (CompileSession.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
+                if (_context.CompileSession!.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
                 {
                     allHiddenStates.Add(Unsqueeze(hiddenStates, new long[] { 0 }));
                 }
@@ -354,12 +368,12 @@ namespace Nncase.Importer
 
                 hiddenStates = hiddenStatesTmp;
 
-                if (CompileSession.CompileOptions.HuggingFaceOptions.OutputAttentions)
+                if (_context.CompileSession.CompileOptions.HuggingFaceOptions.OutputAttentions)
                 {
                     allSelfAttns.Add(Unsqueeze(outAttention, new[] { 0L }));
                 }
 
-                if (CompileSession.CompileOptions.HuggingFaceOptions.UseCache)
+                if (_context.CompileSession.CompileOptions.HuggingFaceOptions.UseCache)
                 {
                     allKVcaches.Add(currentKV);
                 }
@@ -368,7 +382,7 @@ namespace Nncase.Importer
             // the last one
             Expr lastHiddenStates = Qwen2LayerNorm(hiddenStates, "model.norm.weight");
 
-            if (CompileSession.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
+            if (_context.CompileSession!.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
             {
                 allHiddenStates.Add(Unsqueeze(lastHiddenStates, new long[] { 0 }));
             }
@@ -659,9 +673,9 @@ namespace Nncase.Importer
 
         private Call Qwen2Mlp(int count, Expr hiddenStates)
         {
-            var gateProjW = _constTensors![$"model.layers.{count}.mlp.gate_proj.weight"];
-            var upProjW = _constTensors![$"model.layers.{count}.mlp.up_proj.weight"];
-            var downProjW = _constTensors![$"model.layers.{count}.mlp.down_proj.weight"];
+            var gateProjW = _context!.ConstTensors![$"model.layers.{count}.mlp.gate_proj.weight"];
+            var upProjW = _context.ConstTensors![$"model.layers.{count}.mlp.up_proj.weight"];
+            var downProjW = _context.ConstTensors![$"model.layers.{count}.mlp.down_proj.weight"];
 
             var tmp = Linear(hiddenStates, gateProjW);
             return Linear(
@@ -677,7 +691,7 @@ namespace Nncase.Importer
             var originDtype = hiddenStates.CheckedDataType;
             hiddenStates = Cast(hiddenStates, DataTypes.Float32);
 
-            Expr weight = _constTensors![$"{layerName}"];
+            Expr weight = _context!.ConstTensors![$"{layerName}"];
 
             weight = Cast(weight, DataTypes.Float32);
             var bias = Tensor.FromScalar(0f, weight.CheckedShape);
@@ -695,10 +709,10 @@ namespace Nncase.Importer
             Expr cachePosition,
             Tuple<Expr, Expr> positionEmbeddings)
         {
-            var head_dim = (long)_config!["hidden_size"] / (long)_config["num_attention_heads"];
-            if (_config!.Keys.Contains("head_dim"))
+            var head_dim = (long)_context!.Config!["hidden_size"] / (long)_context.Config["num_attention_heads"];
+            if (_context.Config!.Keys.Contains("head_dim"))
             {
-                head_dim = (long)_config["head_dim"];
+                head_dim = (long)_context.Config["head_dim"];
             }
 
             var batch_size = ShapeOf(hiddenStates)[0];
@@ -709,22 +723,22 @@ namespace Nncase.Importer
 
             // hidden_shape.Add(new Dimension(hidden_dim));
             // hidden_shape = Concat(new IR.Tuple(hidden_shape, Tensor.FromScalar(hidden_dim)), 0);
-            var qProjW = _constTensors![$"model.layers.{count}.self_attn.q_proj.weight"];
-            var qProjB = _constTensors![$"model.layers.{count}.self_attn.q_proj.bias"];
+            var qProjW = _context.ConstTensors![$"model.layers.{count}.self_attn.q_proj.weight"];
+            var qProjB = _context.ConstTensors![$"model.layers.{count}.self_attn.q_proj.bias"];
             var queryStates = Linear(hiddenStates, qProjW, qProjB);
             queryStates = Reshape(queryStates, hidden_shape);
 
             // batch_size, num_heads, seq_len, head_dim
             queryStates = Transpose(queryStates, new long[] { 0, 2, 1, 3 });
 
-            var kProjW = _constTensors![$"model.layers.{count}.self_attn.k_proj.weight"];
-            var kProjB = _constTensors![$"model.layers.{count}.self_attn.k_proj.bias"];
+            var kProjW = _context.ConstTensors![$"model.layers.{count}.self_attn.k_proj.weight"];
+            var kProjB = _context.ConstTensors![$"model.layers.{count}.self_attn.k_proj.bias"];
             var keyStates = Linear(hiddenStates, kProjW, kProjB);
             keyStates = Reshape(keyStates, hidden_shape);
             keyStates = Transpose(keyStates, new long[] { 0, 2, 1, 3 });
 
-            var vProjW = _constTensors![$"model.layers.{count}.self_attn.v_proj.weight"];
-            var vProjB = _constTensors![$"model.layers.{count}.self_attn.v_proj.bias"];
+            var vProjW = _context.ConstTensors![$"model.layers.{count}.self_attn.v_proj.weight"];
+            var vProjB = _context.ConstTensors![$"model.layers.{count}.self_attn.v_proj.bias"];
             var valueStates = Linear(hiddenStates, vProjW, vProjB);
             valueStates = Reshape(valueStates, hidden_shape);
             valueStates = Transpose(valueStates, new long[] { 0, 2, 1, 3 });
@@ -771,7 +785,7 @@ namespace Nncase.Importer
             // inputShape.Add(-1);
             var inputShape = Stack(new IR.Tuple(batch_size, seq_len, -1L), 0L);
             hiddenStates = IR.F.Tensors.Reshape(hiddenStates, inputShape);
-            var oProjW = _constTensors![$"model.layers.{count}.self_attn.o_proj.weight"];
+            var oProjW = _context.ConstTensors![$"model.layers.{count}.self_attn.o_proj.weight"];
             hiddenStates = Linear(hiddenStates, oProjW);
 
             // TODO: using config to judge weher need collect kv
@@ -868,7 +882,7 @@ namespace Nncase.Importer
 
                 return attn_output, attn_weights
             */
-            var numKVGroups = (long)_config!["num_attention_heads"] / (long)_config!["num_key_value_heads"];
+            var numKVGroups = (long)_context!.Config!["num_attention_heads"] / (long)_context.Config!["num_key_value_heads"];
             var keyStates = RepeatKV(key, numKVGroups);
             var valueStates = RepeatKV(value, numKVGroups);
             var scalingExpr = Cast(Tensor.FromScalar(scaling), query.CheckedDataType);
@@ -943,7 +957,7 @@ namespace Nncase.Importer
             // rope type not in config, so it is default. :_compute_default_rope_parameters
             // if "dynamic" in self.rope_type:
             //      self._dynamic_frequency_update(position_ids, device=x.device)
-            var (inv_freq, _) = RoPEInit("default");
+            var (inv_freq, _) = ModelUilts.RoPEInit(_context!.Config!, "default");
 
             // var a = x.CheckedShape[0];
             var invFreq = Tensor.FromArray(inv_freq.ToArray()); // Unsqueeze(Unsqueeze(Tensor.FromArray(inv_freq.ToArray()), new[] { 0 }),new[] { -1 });
@@ -970,17 +984,6 @@ namespace Nncase.Importer
 
             // TODO: add attention scaling
             return Tuple.Create(cos, sin);
-        }
-
-        private Tuple<List<double>, float> RoPEInit(string type = "default")
-        {
-            switch (type)
-            {
-                case "default":
-                    return HuggingFaceUtils.ComputeDefaultRopeParameters(_config!);
-                default:
-                    throw new NotImplementedException($"RoPE function {type} need to impl");
-            }
         }
 
         // def rotate_half(x):

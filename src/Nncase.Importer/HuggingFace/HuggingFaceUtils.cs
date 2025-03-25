@@ -48,6 +48,7 @@ internal static class HuggingFaceUtils
     public static Dictionary<string, Tensor> GetAllWeights(string path)
     {
         var constTensors = new Dictionary<string, Tensor>();
+        Console.WriteLine($"{path}");
         var constTensor = HuggingFaceUtils.LoadStateDict(path);
         foreach (var item in constTensor)
         {
@@ -117,50 +118,6 @@ internal static class HuggingFaceUtils
         }
 
         return dictionary2;
-    }
-
-    public static Tuple<List<double>, float> ComputeDefaultRopeParameters(
-        Dictionary<string, object> config)
-    {
-        /*
-         * base = config.rope_theta
-           partial_rotary_factor = config.partial_rotary_factor if hasattr(config, "partial_rotary_factor") else 1.0
-           head_dim = getattr(config, "head_dim", config.hidden_size // config.num_attention_heads)
-           dim = int(head_dim * partial_rotary_factor)
-         */
-        var baseRoPETheta = (float)(double)config["rope_theta"];
-        var partialRotaryFactor = 1.0; // config.partial_rotary_factor if hasattr(config, "partial_rotary_factor") else 1.0
-
-        int headDim;
-
-        if (config.TryGetValue("head_dim", out var headDimObj) && headDimObj is int headDim1)
-        {
-            headDim = headDim1;
-        }
-        else
-        {
-            int hiddenSize = (int)(long)config["hidden_size"];
-            int numAttentionHeads = (int)(long)config["num_attention_heads"];
-            headDim = hiddenSize / numAttentionHeads;
-        }
-
-        var dim = (int)(headDim * partialRotaryFactor);
-        float attentionFactor = 1.0f;
-
-        // Compute the inverse frequencies
-        // 创建一个从 0 到 dim-1 的数组，步长为 2
-        var arange = Enumerable
-            .Range(0, dim)
-            .Where(i => i % 2 == 0)
-            .Select(i => (float)i)
-            .ToArray();
-
-        // 计算 inv_freq
-        var inv_freq = arange
-            .Select(i => 1.0 / Math.Pow(baseRoPETheta, i / dim))
-            .ToArray()
-            .ToList();
-        return Tuple.Create(inv_freq, attentionFactor);
     }
 
     internal static Dictionary<string, SafetensorsEntry> LoadIndex(Stream stream)
@@ -320,6 +277,69 @@ internal static class HuggingFaceUtils
     //         return Tuple.Create((Call)KeyCache[layerCount], (Call)ValueCache[layerCount]);
     //     }
     // }
+}
+
+internal static class ModelUilts
+{
+    /// <summary>
+    /// huggingface utils functions: compute rope args.
+    /// </summary>
+    /// <param name="config">Get [rope_theta, head_dim, num_attention_heads, hidden_size].</param>
+    /// <returns>repo parameters.</returns>
+    public static Tuple<List<double>, float> ComputeDefaultRopeParameters(
+        Dictionary<string, object> config)
+    {
+        /*
+         * base = config.rope_theta
+           partial_rotary_factor = config.partial_rotary_factor if hasattr(config, "partial_rotary_factor") else 1.0
+           head_dim = getattr(config, "head_dim", config.hidden_size // config.num_attention_heads)
+           dim = int(head_dim * partial_rotary_factor)
+         */
+        var baseRoPETheta = (float)(double)config["rope_theta"];
+        var partialRotaryFactor = 1.0; // config.partial_rotary_factor if hasattr(config, "partial_rotary_factor") else 1.0
+
+        int headDim;
+
+        if (config.TryGetValue("head_dim", out var headDimObj) && headDimObj is int headDim1)
+        {
+            headDim = headDim1;
+        }
+        else
+        {
+            int hiddenSize = (int)(long)config["hidden_size"];
+            int numAttentionHeads = (int)(long)config["num_attention_heads"];
+            headDim = hiddenSize / numAttentionHeads;
+        }
+
+        var dim = (int)(headDim * partialRotaryFactor);
+        float attentionFactor = 1.0f;
+
+        // Compute the inverse frequencies
+        // 创建一个从 0 到 dim-1 的数组，步长为 2
+        var arange = Enumerable
+            .Range(0, dim)
+            .Where(i => i % 2 == 0)
+            .Select(i => (float)i)
+            .ToArray();
+
+        // 计算 inv_freq
+        var inv_freq = arange
+            .Select(i => 1.0 / Math.Pow(baseRoPETheta, i / dim))
+            .ToArray()
+            .ToList();
+        return Tuple.Create(inv_freq, attentionFactor);
+    }
+
+    public static Tuple<List<double>, float> RoPEInit(Dictionary<string, object> config, string type = "default")
+    {
+        switch (type)
+        {
+            case "default":
+                return ModelUilts.ComputeDefaultRopeParameters(config!);
+            default:
+                throw new NotImplementedException($"RoPE function {type} need to impl");
+        }
+    }
 }
 
 internal class SafetensorsEntry
