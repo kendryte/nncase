@@ -22,12 +22,12 @@ namespace Nncase.Importer
         private Expr SoftmaxV1Process(in NodeProto op, Func<Expr, Expr, Expr> f)
         {
             var input = GetSingleInputExpr(op);
-            var axis = (int)GetIntAttribute(op, "axis", 1);
+            var axis = GetIntAttribute(op, "axis", 1);
             var inShape = ShapeOf(input);
             Expr axisExpr = axis < 0
-                ? axis + Cast(Rank(input), DataTypes.Int32)
-                : Tensor.From<int>(new[] { axis });
-            var first = Prod(Slice(inShape, new[] { 0 }, axisExpr, 1));
+                ? Stack(axis + Cast(Rank(input), DataTypes.Int32), 0)
+                : Tensor.From<long>(new[] { axis });
+            var first = Prod(Slice(inShape, new[] { 0L }, axisExpr, 1));
             var second = Prod(Slice(inShape, axisExpr, Rank(input), 1));
             var beforeShape = Stack(new IR.Tuple(first, second), 0);
             var afterShape = ShapeOf(input);

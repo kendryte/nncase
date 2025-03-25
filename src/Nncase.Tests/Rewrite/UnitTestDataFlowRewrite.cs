@@ -126,7 +126,7 @@ public class UnitTestDataFlowRewrite : RewriteFixtrue
     public async Task TestExpandToRank()
     {
         var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 240, 320)));
-        var exp = Expand(1, Cast(Rank(input) - 0, DataTypes.Int64));
+        var exp = Expand(1, Unsqueeze(Cast(Rank(input) - 0L, DataTypes.Int64), 0));
         var result = await RunShapeInferPass(string.Empty, exp);
         Assert.Equal(new[] { 1, 1, 1, 1 }, result.Evaluate().AsTensor().ToArray<int>());
     }
