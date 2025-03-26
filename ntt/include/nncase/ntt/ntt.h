@@ -39,6 +39,7 @@
 #include "kernels/unpack.h"
 #include "kernels/where.h"
 #include "primitive_ops.h"
+#include "profiling.h"
 #include "remote_tensor.h"
 #include "sharded_tensor.h"
 #include "sharding.h"
@@ -73,4 +74,5 @@
 #include "arch/cpu/distributed.h"
 #include "arch/cpu/runtime.h"
 #include "arch/cpu/topology.h"
+#include "arch/cpu/profiling.h"
 #endif

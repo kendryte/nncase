@@ -105,6 +105,7 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
                     [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
                 };
 
+#if false
             case (DistributedType inputDistributedType, DistributedType):
                 var scaleType = context.GetArgumentType<DistributedType>(target, InstacneNorm.Scale);
                 var biasType = context.GetArgumentType<DistributedType>(target, InstacneNorm.Bias);
@@ -116,6 +117,7 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
                     [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(inputType, 1) * (UInt128)reCompute,
                     [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType) + ring,
                 };
+#endif
             default:
                 throw new NotSupportedException();
         }
@@ -149,19 +151,21 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
             return invalid;
         }
 
-        var ndsbp = new SBP[input.Placement.Rank];
-
-        for (int i = 0; i < input.Placement.Rank; i++)
+        var ndsbp = new SBP[input.AxisPolices.Count];
+        var rAxis = 1;
+        for (int i = 0; i < ndsbp.Length; i++)
         {
-            switch (input.NdSBP[i], scale.NdSBP[i], bias.NdSBP[i])
+            var scalePolicy = i - rAxis == 0 ? scale.AxisPolices[i - rAxis] : null;
+            var biasPolicy = i - rAxis == 0 ? bias.AxisPolices[i - rAxis] : null;
+            switch (input.AxisPolices[i], scalePolicy, biasPolicy)
             {
-                case (SBPSplit { Axis: int ix }, SBPSplit { Axis: int sx }, SBPSplit { Axis: int bx }) when ix == 1 && sx == 0 && bx == 0:
-                    ndsbp[i] = SBP.S(ix);
+                case (SBPSplit si, SBPSplit ss, SBPSplit sb) when i == rAxis && si.Axes == ss.Axes && ss.Axes == sb.Axes:
+                    ndsbp[i] = si;
                     break;
-                case (SBPSplit { Axis: int ix }, SBPBroadCast, SBPBroadCast) when ix != 1:
-                    ndsbp[i] = SBP.S(ix);
+                case (SBPSplit si, _, _) when i != rAxis:
+                    ndsbp[i] = si;
                     break;
-                case (SBPBroadCast, SBPBroadCast, SBPBroadCast):
+                case (SBPBroadCast, SBPBroadCast or null, SBPBroadCast or null):
                     ndsbp[i] = SBP.B;
                     break;
                 default:
@@ -172,6 +176,7 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
         return new DistributedType(tensorType, ndsbp, input.Placement);
     }
 
+#if false
     private UInt128 GetRingReduceCommunicate(DistributedType distributedType, int[] axes)
     {
         var ttype = Utilities.DistributedUtility.GetDividedTensorType(distributedType);
@@ -185,4 +190,5 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
         var v = CostUtility.GetMemoryAccess(distributedType.TensorType);
         return (p - 1) * (v / p);
     }
+#endif
 }

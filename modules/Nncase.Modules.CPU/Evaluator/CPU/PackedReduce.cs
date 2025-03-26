@@ -108,21 +108,21 @@ public sealed class PackedReduceEvaluator : IEvaluator<PackedReduce>, ITypeInfer
         }
 
         var axes = target.Axes.ToArray();
-        var ndsbp = new SBP[input.Placement.Rank];
+        var ndsbp = new SBP[input.TensorType.Shape.Rank];
 
-        for (int i = 0; i < input.Placement.Rank; i++)
+        for (int i = 0; i < ndsbp.Length; i++)
         {
-            switch (input.NdSBP[i])
+            switch (input.AxisPolices[i])
             {
-                case SBPSplit { Axis: int ix } when axes.Contains(ix):
-                    ndsbp[i] = SBP.P(target.ReduceOp);
-                    break;
+                case SBPSplit split when axes.Contains(i):
+                    // ndsbp[i] = SBP.P(target.ReduceOp);
+                    return new InvalidType("reduce not support split on axes for now.");
                 default:
-                    ndsbp[i] = input.NdSBP[i];
+                    ndsbp[i] = input.AxisPolices[i];
                     break;
             }
         }
 
-        return new DistributedType(tensorType, ndsbp, input.Placement);
+        return new DistributedType(tensorType, tensorType.Shape.Rank == ndsbp.Length ? ndsbp : ndsbp.Where((_, i) => !axes.Contains(i)).ToArray(), input.Placement);
     }
 }

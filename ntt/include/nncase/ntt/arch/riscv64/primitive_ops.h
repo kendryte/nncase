@@ -1513,6 +1513,37 @@ struct cast<ntt::vector<bool, NTT_VL(sizeof(bool) * 8, *, 1)>,
 // where
 #define WHERE_FLOAT32(lmul1, lmul2, mlen)                                      \
     inline vfloat32m##lmul1##_t where_float32(                                 \
+        const vuint8m##lmul2##_t &condition, const float &x, const float &y,   \
+        const size_t vl) {                                                     \
+        vbool##mlen##_t mask =                                                 \
+            __riscv_vmsne_vx_u8m##lmul2##_b##mlen(condition, 0.f, vl);         \
+        auto x_broadcast = __riscv_vfmv_v_f_f32m##lmul1(x, vl);                \
+        auto y_broadcast = __riscv_vfmv_v_f_f32m##lmul1(y, vl);                \
+        return __riscv_vmerge_vvm_f32m##lmul1(y_broadcast, x_broadcast, mask,  \
+                                              vl);                             \
+    }                                                                          \
+                                                                               \
+    inline vfloat32m##lmul1##_t where_float32(                                 \
+        const uint8_t &condition, const float &x,                              \
+        const vfloat32m##lmul1##_t &y, const size_t vl) {                      \
+        auto cond_brct = __riscv_vmv_v_x_u8m##lmul2(condition, vl);            \
+        vbool##mlen##_t mask =                                                 \
+            __riscv_vmsne_vx_u8m##lmul2##_b##mlen(cond_brct, 0.f, vl);         \
+        auto x_broadcast = __riscv_vfmv_v_f_f32m##lmul1(x, vl);                \
+        return __riscv_vmerge_vvm_f32m##lmul1(y, x_broadcast, mask, vl);       \
+    }                                                                          \
+                                                                               \
+    inline vfloat32m##lmul1##_t where_float32(                                 \
+        const uint8_t &condition, const vfloat32m##lmul1##_t &x,               \
+        const float &y, const size_t vl) {                                     \
+        auto cond_brct = __riscv_vmv_v_x_u8m##lmul2(condition, vl);            \
+        vbool##mlen##_t mask =                                                 \
+            __riscv_vmsne_vx_u8m##lmul2##_b##mlen(cond_brct, 0.f, vl);         \
+        auto y_broadcast = __riscv_vfmv_v_f_f32m##lmul1(y, vl);                \
+        return __riscv_vmerge_vvm_f32m##lmul1(y_broadcast, x, mask, vl);       \
+    }                                                                          \
+                                                                               \
+    inline vfloat32m##lmul1##_t where_float32(                                 \
         const vuint8m##lmul2##_t &condition, const vfloat32m##lmul1##_t &x,    \
         const vfloat32m##lmul1##_t &y, const size_t vl) {                      \
         vbool##mlen##_t mask =                                                 \
@@ -1583,6 +1614,30 @@ struct cast<ntt::vector<bool, NTT_VL(sizeof(bool) * 8, *, 1)>,
         ntt::vector<dtype, vl>                                                 \
         operator()(const bool &condition, const ntt::vector<dtype, vl> &x,     \
                    const ntt::vector<dtype, vl> &y) const noexcept {           \
+            return kernel(condition, x, y, vl);                                \
+        }                                                                      \
+    };                                                                         \
+                                                                               \
+    template <> struct where<ntt::vector<bool, vl>, dtype, dtype> {            \
+        ntt::vector<dtype, vl>                                                 \
+        operator()(const ntt::vector<bool, vl> &condition, const dtype &x,     \
+                   const dtype &y) const noexcept {                            \
+            return kernel(condition, x, y, vl);                                \
+        }                                                                      \
+    };                                                                         \
+                                                                               \
+    template <> struct where<bool, dtype, ntt::vector<dtype, vl>> {            \
+        ntt::vector<dtype, vl>                                                 \
+        operator()(const bool &condition, const dtype &x,                      \
+                   const ntt::vector<dtype, vl> &y) const noexcept {           \
+            return kernel(condition, x, y, vl);                                \
+        }                                                                      \
+    };                                                                         \
+                                                                               \
+    template <> struct where<bool, ntt::vector<dtype, vl>, dtype> {            \
+        ntt::vector<dtype, vl> operator()(const bool &condition,               \
+                                          const ntt::vector<dtype, vl> &x,     \
+                                          const dtype &y) const noexcept {     \
             return kernel(condition, x, y, vl);                                \
         }                                                                      \
     };

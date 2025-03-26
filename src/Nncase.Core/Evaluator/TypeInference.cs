@@ -72,7 +72,7 @@ public static class TypeInference
 
         return context.GetArgumentType(op, parameter) switch
         {
-            DistributedType d when d.NdSBP.All(x => x is SBPBroadCast) => WrapperException(d.TensorType),
+            DistributedType d when d.AxisPolices.All(x => x is SBPBroadCast) => WrapperException(d.TensorType),
             IRType t => CheckArgumentType<TensorType>(context, op, parameter, reason),
         };
     }

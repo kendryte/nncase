@@ -81,6 +81,20 @@ class where_impl<TCond, TX, TY, TOut> {
                           is_same_seq(cond_rest_dims, y_rest_dims)) {
                 return where_non_broadcast(cond_p, x_p, y_p, out_p,
                                            cond_rest_dims.length());
+            } else if constexpr (x_rest_dims.length() == 1 &&
+                                 y_rest_dims.length() == 1) {
+                return where_x_y_broadcast(cond_p, x_p, y_p, out_p,
+                                           cond_rest_dims.length());
+            } else if constexpr (x_rest_dims.length() == 1 &&
+                                 cond_rest_dims.length() == 1 &&
+                                 y_rest_dims.length() != 1) {
+                return where_c_x_broadcast(cond_p, x_p, y_p, out_p,
+                                           y_rest_dims.length());
+            } else if constexpr (y_rest_dims.length() == 1 &&
+                                 cond_rest_dims.length() == 1 &&
+                                 x_rest_dims.length() != 1) {
+                return where_c_y_broadcast(cond_p, x_p, y_p, out_p,
+                                           x_rest_dims.length());
             } else if constexpr (x_rest_dims.length() == 1) {
                 return where_x_broadcast(cond_p, x_p, y_p, out_p,
                                          y_rest_dims.length());
@@ -132,6 +146,27 @@ class where_impl<TCond, TX, TY, TOut> {
                               const TYElem *y, TOutElem *output,
                               size_t extent) {
         ntt::u_where<TCondElem, TXElem, TYElem, TOutElem>(cond, 0, x, 1, y, 1,
+                                                          output, 1, extent);
+    }
+
+    template <class TCondElem, class TXElem, class TYElem, class TOutElem>
+    void where_x_y_broadcast(const TCondElem *cond, const TXElem *x,
+                             const TYElem *y, TOutElem *output, size_t extent) {
+        ntt::u_where<TCondElem, TXElem, TYElem, TOutElem>(cond, 1, x, 0, y, 0,
+                                                          output, 1, extent);
+    }
+
+    template <class TCondElem, class TXElem, class TYElem, class TOutElem>
+    void where_c_x_broadcast(const TCondElem *cond, const TXElem *x,
+                             const TYElem *y, TOutElem *output, size_t extent) {
+        ntt::u_where<TCondElem, TXElem, TYElem, TOutElem>(cond, 0, x, 0, y, 1,
+                                                          output, 1, extent);
+    }
+
+    template <class TCondElem, class TXElem, class TYElem, class TOutElem>
+    void where_c_y_broadcast(const TCondElem *cond, const TXElem *x,
+                             const TYElem *y, TOutElem *output, size_t extent) {
+        ntt::u_where<TCondElem, TXElem, TYElem, TOutElem>(cond, 0, x, 1, y, 0,
                                                           output, 1, extent);
     }
 };

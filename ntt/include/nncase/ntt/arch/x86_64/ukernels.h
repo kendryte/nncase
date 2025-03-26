@@ -67,22 +67,22 @@ SPECIALIZE_U_BINARY(floor_mod, 2)
 #undef SPECIALIZE_U_BINARY
 
 // compare
-#define SPECIALIZE_U_COMPARE(op, unroll_num)                                    \
+#define SPECIALIZE_U_COMPARE(op, unroll_num)                                   \
     template <typename T1, typename T2>                                        \
-    struct u_compare_policy<ntt::ops::op<vector<T1, 8>, vector<T2, 8>>,         \
-                           vector<T1, 8>, vector<T2, 8>, true> {               \
+    struct u_compare_policy<ntt::ops::op<vector<T1, 8>, vector<T2, 8>>,        \
+                            vector<T1, 8>, vector<T2, 8>, true> {              \
         static constexpr size_t unroll = unroll_num;                           \
     };                                                                         \
                                                                                \
     template <typename T1, typename T2>                                        \
-    struct u_compare_policy<ntt::ops::op<T1, vector<T2, 8>>, T1, vector<T2, 8>, \
-                           true> {                                             \
+    struct u_compare_policy<ntt::ops::op<T1, vector<T2, 8>>, T1,               \
+                            vector<T2, 8>, true> {                             \
         static constexpr size_t unroll = unroll_num;                           \
     };                                                                         \
                                                                                \
     template <typename T1, typename T2>                                        \
-    struct u_compare_policy<ntt::ops::op<vector<T1, 8>, T2>, vector<T1, 8>, T2, \
-                           true> {                                             \
+    struct u_compare_policy<ntt::ops::op<vector<T1, 8>, T2>, vector<T1, 8>,    \
+                            T2, true> {                                        \
         static constexpr size_t unroll = unroll_num;                           \
     };
 
@@ -483,5 +483,26 @@ struct u_matmul_policy<mamtul_pack_kind::pack_mkn, vector<float, 8, 8>,
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 2;
     static constexpr size_t m0_subtile = 4;
+};
+
+// Where
+template <typename T1, typename T2, typename T3>
+struct u_where_policy<vector<T1, 8>, vector<T2, 8>, vector<T3, 8>, true> {
+    static constexpr size_t unroll = 2;
+};
+
+template <typename T1, typename T2, typename T3>
+struct u_where_policy<T1, vector<T2, 8>, vector<T3, 8>, true> {
+    static constexpr size_t unroll = 2;
+};
+
+template <typename T1, typename T2, typename T3>
+struct u_where_policy<vector<T1, 8>, T2, vector<T3, 8>, true> {
+    static constexpr size_t unroll = 2;
+};
+
+template <typename T1, typename T2, typename T3>
+struct u_where_policy<vector<T1, 8>, vector<T2, 8>, T3, true> {
+    static constexpr size_t unroll = 2;
 };
 } // namespace nncase::ntt::ukernels

@@ -323,7 +323,18 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                             "WHNC": '1.5',
                                             "WHCN": '1.5',
                                             },
-                              }
+                               'compare': {'equal': '2.0',
+                                           'not_equal': '2.0',
+                                           'greater': '2.0',
+                                           'greater_or_equal': '2.0',
+                                           'less': '2.0',
+                                           'less_or_equal': '2.0',
+                                         },
+                                'where': {'pack': '2.5',},
+                                'scatterND': {'unpack': '1.5',},
+                                }
+                               
+                              
 
     def run(self):
         for bin in self.bin_list:
@@ -469,6 +480,15 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                             "WHNC": '4.3',
                                             "WHCN": '4.3',
                                             },
+                               'compare': {'equal': '13.6',
+                                           'not_equal': '13.6',
+                                           'greater': '13.6',
+                                           'greater_or_equal': '13.6',
+                                           'less': '13.6',
+                                           'less_or_equal': '13.6',
+                                          },
+                               'where': {'pack': '16.6',},
+                               'scatterND': {'unpack': '4.3'},
                               }
 
     def run(self):

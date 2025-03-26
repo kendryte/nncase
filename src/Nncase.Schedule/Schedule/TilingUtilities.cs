@@ -15,7 +15,7 @@ public static class TilingUtilities
         return expr.CheckedType switch
         {
             TensorType t => IR.F.Buffer.Uninitialized(t.DType, TIR.MemoryLocation.Input, t.Shape.ToValueArray()),
-            DistributedType t => IR.F.Buffer.Uninitialized(t.TensorType.DType, TIR.MemoryLocation.Input, t.TensorType.Shape.ToValueArray(), t.NdSBP, t.Placement),
+            DistributedType t => IR.F.Buffer.Uninitialized(t.TensorType.DType, TIR.MemoryLocation.Input, t.TensorType.Shape.ToValueArray(), t.AxisPolices, t.Placement),
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         };
     }
