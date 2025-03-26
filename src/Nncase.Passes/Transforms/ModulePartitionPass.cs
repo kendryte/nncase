@@ -165,7 +165,7 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
 
         foreach (var (pre, post) in pairs)
         {
-            if (pre is not (Call or Var or If))
+            if (pre is not (Call or Var or If or IR.Tuple))
             {
                 continue;
             }
