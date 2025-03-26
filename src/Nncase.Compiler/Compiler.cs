@@ -50,25 +50,25 @@ internal class Compiler : ICompiler
     /// <inheritdoc/>
     public void ImportIRModule(IRModule module) => _module = module;
 
-    public Task<IRModule> ImportTFLiteModuleAsync(Stream content)
+    public async Task<IRModule> ImportTFLiteModuleAsync(Stream content)
     {
         using var scope = new CompileSessionScope(_compileSession);
         var module = Importers.ImportTFLite(content, _compileSession);
-        return InitializeModuleAsync(module);
+        return await InitializeModuleAsync(module);
     }
 
-    public Task<IRModule> ImportOnnxModuleAsync(Stream content)
+    public async Task<IRModule> ImportOnnxModuleAsync(Stream content)
     {
         using var scope = new CompileSessionScope(_compileSession);
         var module = Importers.ImportOnnx(content, _compileSession);
-        return InitializeModuleAsync(module);
+        return await InitializeModuleAsync(module);
     }
 
-    public Task<IRModule> ImportNcnnModuleAsync(Stream ncnnParam, Stream ncnnBin)
+    public async Task<IRModule> ImportNcnnModuleAsync(Stream ncnnParam, Stream ncnnBin)
     {
         using var scope = new CompileSessionScope(_compileSession);
         var module = Importers.ImportNcnn(ncnnParam, ncnnBin, _compileSession);
-        return InitializeModuleAsync(module);
+        return await InitializeModuleAsync(module);
     }
 
     public void RegisterPreAndPostProcess(IPassManager passManager)

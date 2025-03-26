@@ -1135,9 +1135,10 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             return [expr];
         }
 
-        if (expr is IR.Tuple tuple)
+        if (expr.CheckedType is TupleType tupleType)
         {
-            return tuple.Fields.ToArray().
+            return Enumerable.Range(0, tupleType.Fields.Count).
+                Select(i => expr[i]).
                 Select(e => IsDistributed(e.CheckedType) ? [e] : GetLeafCandidateBoxings(e, placements)).
                 CartesianProduct().
                 Select(fs => new IR.Tuple(fs.ToArray())).

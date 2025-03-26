@@ -60,21 +60,27 @@ public sealed class ModulePartitionPass : ModulePass
         var condenseAlgo = new CondensationGraphAlgorithm<ExprVertex, ExprEdge>(biGraph);
         condenseAlgo.IsEdgeCompatible += (algo, arg) =>
         {
+            bool CheckField(Expr expr)
+            {
+                return expr switch
+                {
+                    Const => true,
+                    Call call => ModuleCompiler.IsSupportedCall(call, CompileSession.CompileOptions),
+                    _ => false,
+                };
+            }
+
             bool isSupport = false;
             switch (arg.Edge.Source.Expr, arg.Edge.Target.Expr)
             {
-                case (Var, _):
-                    isSupport = false;
-                    break;
-                case (_, IR.Tuple):
-                    isSupport = true;
-                    break;
                 case (Call callee, Call caller):
-                    isSupport = ModuleCompiler.IsSupportedCall(callee, CompileSession.CompileOptions)
-                        && ModuleCompiler.IsSupportedCall(caller, CompileSession.CompileOptions);
+                    isSupport = CheckField(callee) && CheckField(caller);
                     break;
-                case (IR.Tuple, Call caller):
-                    isSupport = ModuleCompiler.IsSupportedCall(caller, CompileSession.CompileOptions);
+                case (IR.Tuple tuple, Call caller):
+                    isSupport = tuple.Fields.AsValueEnumerable().All(CheckField) && CheckField(caller);
+                    break;
+                case (Call callee, IR.Tuple tuple):
+                    isSupport = CheckField(callee) && tuple.Fields.AsValueEnumerable().All(CheckField);
                     break;
                 default:
                     break;
@@ -141,15 +147,20 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
     protected override Expr OnComplexCluster(ClusteredBidirectionalGraph<ExprVertex, ExprEdge> cluster, int sortIndex)
     {
         var pairs = GetClusterArgumentPairs(cluster);
-        var paramDict = new Dictionary<Expr, Var>(ReferenceEqualityComparer.Instance);
+        var processedParams = new HashSet<Expr>(ReferenceEqualityComparer.Instance);
         var extractDict = new Dictionary<Expr, Expr>(ReferenceEqualityComparer.Instance);
-        var argumentDict = new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance);
+        var @params = new List<Var>();
+        var arguments = new List<Expr>();
         var dynamicVars = IRHelpers.GetDynamicDimVars();
 
         foreach (var dimVar in dynamicVars)
         {
-            paramDict.Add(dimVar, dimVar);
-            argumentDict.Add(dimVar, dimVar);
+            if (processedParams.Add(dimVar))
+            {
+                extractDict.Add(dimVar, dimVar);
+                @params.Add(dimVar);
+                arguments.Add(dimVar);
+            }
         }
 
         foreach (var (pre, post) in pairs)
@@ -170,17 +181,36 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
                 @var = pre is Var oldVar ? oldVar.With(typeAnnotation: d.TensorType) : new Var(d.TensorType) { Metadata = pre.Metadata };
                 extract = IR.F.Distributed.Boxing(@var, d);
             }
+            else if (pre.CheckedType is TupleType tupleType)
+            {
+                if (processedParams.Add(pre))
+                {
+                    var extractFields = new Expr[tupleType.Fields.Count];
+                    for (int i = 0; i < tupleType.Fields.Count; i++)
+                    {
+                        var field = tupleType.Fields[i];
+                        @var = new Var(field) { Metadata = pre.Metadata };
+                        extractFields[i] = @var;
+                        @params.Add(@var);
+                        arguments.Add(post[i]);
+                    }
+
+                    extractDict.Add(pre, new IR.Tuple(extractFields));
+                }
+
+                continue;
+            }
             else
             {
                 @var = pre is Var oldVar ? oldVar.With() : new Var(pre.CheckedType) { Metadata = pre.Metadata };
                 extract = @var;
             }
 
-            var added = paramDict.TryAdd(pre, @var);
-            if (added)
+            if (processedParams.Add(pre))
             {
                 extractDict.Add(pre, extract);
-                argumentDict.Add(@var, post);
+                @params.Add(@var);
+                arguments.Add(post);
             }
         }
 
@@ -193,9 +223,9 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
         }
 
         var cloned = PostProcess(clones);
-        var func = new Function($"{FuncName}_{sortIndex}_kernel", ModuleCompiler.ModuleKind, cloned, paramDict.Values.OfType<Var>().ToArray());
+        var func = new Function($"{FuncName}_{sortIndex}_kernel", ModuleCompiler.ModuleKind, cloned, @params.ToArray());
         Module.Add(func);
-        return new Call(func, paramDict.Values.OfType<Var>().Select(v => argumentDict[v]).ToArray());
+        return new Call(func, arguments.ToArray());
     }
 
     private Expr PostProcess(List<Expr> clones)
