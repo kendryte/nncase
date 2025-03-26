@@ -69,7 +69,11 @@ public sealed class ModulePartitionPass : ModulePass
                 case (_, IR.Tuple):
                     isSupport = true;
                     break;
-                case (IR.Tuple or Call, Call caller):
+                case (Call callee, Call caller):
+                    isSupport = ModuleCompiler.IsSupportedCall(callee, CompileSession.CompileOptions)
+                        && ModuleCompiler.IsSupportedCall(caller, CompileSession.CompileOptions);
+                    break;
+                case (IR.Tuple, Call caller):
                     isSupport = ModuleCompiler.IsSupportedCall(caller, CompileSession.CompileOptions);
                     break;
                 default:
