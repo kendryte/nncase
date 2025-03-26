@@ -157,8 +157,11 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldDilatedConv2D>();
             p.Add<Passes.Rules.Neutral.PowOf2ToSquare>();
             p.Add<Passes.Rules.Neutral.ScalarConstToTensor>();
+        });
 
-            // Decompose complex ops
+        // Decompose complex ops
+        passManager.AddWithName<DataflowPass>("DecomposeComplexOps").Configure(p =>
+        {
             p.Add<Passes.Rules.Neutral.SwapBinaryArgs>();
             p.Add<Passes.Rules.Neutral.DecomposeSoftmax>();
             p.Add<Passes.Rules.Neutral.DecomposeLayerNorm>();
