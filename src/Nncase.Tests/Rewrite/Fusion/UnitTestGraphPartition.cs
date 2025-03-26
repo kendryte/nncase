@@ -750,6 +750,7 @@ public class UnitTestGraphPartition : TestClassBase
         var post_number = tv.CountCallOp<IR.Tensors.Concat>();
         var post_result = CompilerServices.Evaluate(((Function)module.Entry!).Body, feed_dict);
 
+        Assert.All(tv.ExprMemo.Keys.OfType<Fusion>(), (f) => Assert.Equal(1, f.Parameters.Length));
         Assert.Equal(1, pre_number);
         Assert.Equal(0, post_number);
         Assert.Equal(pre_result, post_result);
