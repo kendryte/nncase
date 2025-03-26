@@ -25,16 +25,16 @@ namespace Nncase.Importer
             var axis = GetIntAttribute(op, "axis", 1);
             var inShape = ShapeOf(input);
             Expr axisExpr = axis < 0
-                ? Stack(axis + Cast(Rank(input), DataTypes.Int32), 0)
+                ? Unsqueeze(axis + Rank(input), 0L)
                 : Tensor.From<long>(new[] { axis });
             var first = Prod(Slice(inShape, new[] { 0L }, axisExpr, 1));
-            var second = Prod(Slice(inShape, axisExpr, Rank(input), 1));
+            var second = Prod(Slice(inShape, axisExpr, Unsqueeze(Rank(input), 0L), 1));
             var beforeShape = Stack(new IR.Tuple(first, second), 0);
             var afterShape = ShapeOf(input);
             return Reshape(
                 f(
                     Reshape(input, beforeShape),
-                    1),
+                    1L),
                 afterShape);
         }
 
@@ -42,7 +42,7 @@ namespace Nncase.Importer
         {
             var input = GetSingleInputExpr(op);
             var axis = GetIntAttribute(op, "axis", -1);
-            return f(input, IR.F.Math.Select(axis < 0, (Rank(input) + axis)[0], axis));
+            return f(input, IR.F.Math.Select(axis < 0, Rank(input) + axis, axis));
         }
 
         private Expr SoftmaxV1(in NodeProto op)
