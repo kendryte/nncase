@@ -126,7 +126,7 @@ public class UnitTestDataFlowRewrite : RewriteFixtrue
     public async Task TestExpandToRank()
     {
         var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 240, 320)));
-        var exp = Expand(1, Cast(Rank(input) - 0, DataTypes.Int64));
+        var exp = Expand(1, Unsqueeze(Cast(Rank(input) - 0L, DataTypes.Int64), 0));
         var result = await RunShapeInferPass(string.Empty, exp);
         Assert.Equal(new[] { 1, 1, 1, 1 }, result.Evaluate().AsTensor().ToArray<int>());
     }
@@ -232,18 +232,18 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
     public async Task SoftMaxImporterProcess()
     {
         var input = new Var(new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
-        var axis = -1;
+        var axis = -1L;
         var inShape = ShapeOf(input);
         using var inShapePin = new ExprPinner(inShape);
         Expr axisExprBefore = axis < 0
-            ? axis + Rank(input)
-            : Tensor.From<int>(new[] { axis });
+            ? Unsqueeze(axis + Rank(input), 0)
+            : Tensor.From<long>(new[] { axis });
         axisExprBefore.InferenceType();
         var axisExpr = await RunShapeInferPass("Axis", axisExprBefore, input);
         using var axisPin = new ExprPinner(axisExpr);
         Assert.Equal(3, ((TensorConst)axisExpr).Value.Cast<int>()[0]);
 
-        var firstSliceBefore = Slice(inShape, new[] { 0 }, axisExpr, 1);
+        var firstSliceBefore = Slice(inShape, new[] { 0L }, axisExpr, 1);
         firstSliceBefore.InferenceType();
         var firstSlice = await RunShapeInferPass("firstSlice", firstSliceBefore, input);
         using var firstSlicePin = new ExprPinner(firstSlice);
@@ -254,7 +254,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var firstSize = await RunShapeInferPass("firstSize", firstSizeBefore, input);
         Assert.Equal(1 * 3 * 224, ((TensorConst)firstSize).Value.ToScalar<int>());
 
-        var secondBefore = Prod(Slice(inShape, axisExpr, Rank(input), 1));
+        var secondBefore = Prod(Slice(inShape, axisExpr, Unsqueeze(Rank(input), 0), 1));
         var secondSize = await RunShapeInferPass("secondSize", secondBefore, input);
         Assert.Equal(224, ((TensorConst)secondSize).Value.ToScalar<int>());
 
