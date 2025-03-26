@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         config:
-          - {name: aarch64-macos, os: macos-14, buildType: Debug}
+          - {name: aarch64-macos, os: macos-14, buildType: Release}
           #- {name: x86_64-linux, os: ubuntu-24.04, buildType: Release}
           #- {name: x86_64-windows, os: windows-latest, arch: x64, buildType: Release}
 
@@ -52,7 +52,7 @@ jobs:
         shell: bash
         run: |
           conan install . --build=missing -s build_type=${{matrix.config.buildType}} -pr:a=toolchains/${{matrix.config.name}}.profile.jinja -o "&:runtime=False" -o "&:python=True" -o "&:tests=False"
-          cmake --preset conan-debug
+          cmake --preset conan-release
 
       - name: Build & Install
         shell: bash
@@ -75,7 +75,7 @@ jobs:
       matrix:
         dotnet-version: ['8.0']
         config:
-          - {name: aarch64-macos, os: macos-14, shell: bash, rid: osx-arm64, buildType: Debug}
+          - {name: aarch64-macos, os: macos-14, shell: bash, rid: osx-arm64, buildType: Release}
           #- {name: x86_64-linux, os: ubuntu-24.04, shell: bash, rid: linux-x64, buildType: Release}
           #- {name: x86_64-windows, os: windows-latest, arch: x64, shell: bash, rid: win-x64, buildType: Release}
 
@@ -234,7 +234,7 @@ jobs:
           NNCASE_TILING_MAX_SOLUTIONS: 1
         run: |
           dotnet tool install --global dotnet-coverage
-          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_basic.xml pytest -vvs tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/onnx_basic.xml
+          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_basic.xml pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/onnx_basic.xml
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_combine.xml pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/onnx_combine.xml
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_basic.xml pytest tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/tflite_basic.xml
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_combine.xml pytest tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/tflite_combine.xml

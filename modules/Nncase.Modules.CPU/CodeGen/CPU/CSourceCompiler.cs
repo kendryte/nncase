@@ -86,7 +86,6 @@ public class CSourceCompiler
                 proc.WaitForExit();
                 if (proc.ExitCode != 0)
                 {
-                    Console.Error.WriteLine(errMsg.ToString());
                     throw new InvalidOperationException(errMsg.ToString());
                 }
             }
