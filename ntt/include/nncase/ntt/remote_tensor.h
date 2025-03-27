@@ -20,6 +20,14 @@
 #include "nncase/ntt/arch/cpu/topology.h"
 #endif
 
+#if defined(NNCASE_CPU_MODULE) || defined(NNCASE_XPU_MODULE)
+#include <topology_def.h>
+#elif !defined(NNCASE_NTT_TOPOLOGY_DEFINED)
+namespace nncase::ntt::distributed {
+constexpr std::array<size_t, 1> topology_dims = {1};
+}
+#endif
+
 #include "tensor.h"
 
 #if defined(NNCASE_XPU_MODULE) && defined(SYS_MODE)
@@ -28,21 +36,9 @@
 #define PREFIX
 #endif
 
-PREFIX extern nncase::ntt::tensor<
-    uintptr_t[2],
-    nncase::ntt::ranked_shape<(
-        size_t)nncase::ntt::distributed::topology::count__>,
-    nncase::ntt::ranked_strides<(
-        size_t)nncase::ntt::distributed::topology::count__>>
-    global_local_data_ptr;
+PREFIX extern nncase::ntt::tensor<uintptr_t[2], nncase::ntt::distributed::topology_shape_t> global_local_data_ptr;
 
-PREFIX extern nncase::ntt::tensor<
-    uintptr_t,
-    nncase::ntt::ranked_shape<(
-        size_t)nncase::ntt::distributed::topology::count__>,
-    nncase::ntt::ranked_strides<(
-        size_t)nncase::ntt::distributed::topology::count__>>
-    global_local_rdata_ptr;
+PREFIX extern nncase::ntt::tensor<uintptr_t, nncase::ntt::distributed::topology_shape_t> global_local_rdata_ptr;
 
 namespace nncase::ntt::distributed {
 template <class T, class Shape, topology Scope, class Strides>

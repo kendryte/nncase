@@ -19,8 +19,8 @@
 #include "kernel.h"
 
 //alignas(@(Model.Alignment)) static thread_local uint8_t local_data[@(Model.DataSize)];
-nncase::ntt::tensor<uintptr_t[2], nncase::ntt::ranked_shape<(size_t)nncase::ntt::distributed::topology::count__>, nncase::ntt::ranked_strides<(size_t)nncase::ntt::distributed::topology::count__>> global_local_data_ptr(nncase::ntt::make_ranked_shape(cdim(), bdim(), tdim()), nncase::ntt::make_ranked_strides(bdim() * tdim(), tdim(), 1));
-nncase::ntt::tensor<uintptr_t, nncase::ntt::ranked_shape<(size_t)nncase::ntt::distributed::topology::count__>, nncase::ntt::ranked_strides<(size_t)nncase::ntt::distributed::topology::count__>> global_local_rdata_ptr(nncase::ntt::make_ranked_shape(cdim(), bdim(), tdim()), nncase::ntt::make_ranked_strides(bdim() * tdim(), tdim(), 1));
+nncase::ntt::tensor<uintptr_t[2], nncase::ntt::distributed::topology_shape_t> global_local_data_ptr;
+nncase::ntt::tensor<uintptr_t, nncase::ntt::distributed::topology_shape_t> global_local_rdata_ptr;
 
 extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *inouts, const std::byte *rdata, const std::byte *local_rdata, nncase::ntt::ranked_shape<(size_t)nncase::ntt::distributed::topology::count__> program_ids) {
   /* prepare inputs */

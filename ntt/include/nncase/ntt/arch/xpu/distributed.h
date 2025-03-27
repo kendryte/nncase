@@ -36,45 +36,29 @@ inline constexpr size_t cdim() noexcept { return program_dim(topology::chip); }
 
 template <> struct program_id_getter<topology::thread> {
     static size_t id() noexcept {
-#ifdef SYS_MODE
-        size_t current_id = device_thread_id();
-        return current_id % tdim();
-#else
+
         return runtime::xpu_thread_context_t::current().tid;
-#endif
     }
 };
 
 template <> struct program_id_getter<topology::block> {
     static size_t id() noexcept {
-#ifdef SYS_MODE
-        size_t current_id = device_thread_id();
-        return ((current_id % (ddim() * bdim() * tdim())) % (bdim() * tdim())) / tdim();
-#else
+
         return runtime::xpu_thread_context_t::current().bid;
-#endif
     }
 };
 
 template <> struct program_id_getter<topology::die> {
     static size_t id() noexcept {
-#ifdef SYS_MODE
-        size_t current_id = device_thread_id();
-        return (current_id % (ddim() * bdim() * tdim())) / (bdim() * tdim());
-#else
+
         return runtime::xpu_thread_context_t::current().did;
-#endif
     }
 };
 
 template <> struct program_id_getter<topology::chip> {
     static size_t id() noexcept {
-#ifdef SYS_MODE
-        size_t current_id = device_thread_id();
-        return current_id / (ddim() * bdim() * tdim());
-#else
+
         return runtime::xpu_thread_context_t::current().cid;
-#endif
     }
 };
 
