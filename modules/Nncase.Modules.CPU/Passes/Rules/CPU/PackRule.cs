@@ -421,7 +421,7 @@ public sealed class PackUnary : PackRule
             var packedInput = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
 
             // todo support padings.
-            if (padsInput.Any(x => !x.IsFixed || x.FixedValue != 0))
+            if (padsInput.Any(x => !x.IsFixed))
             {
                 return;
             }
@@ -479,8 +479,8 @@ public sealed class PackBinary : PackRule
             var packedRhs = IR.F.CPU.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
 
             // todo support padings.
-            if (lhsPadNums.Any(x => !x.IsFixed || x.FixedValue != 0)
-                || rhsPadNums.Any(x => !x.IsFixed || x.FixedValue != 0))
+            if (lhsPadNums.Any(x => !x.IsFixed)
+                || rhsPadNums.Any(x => !x.IsFixed))
             {
                 return;
             }
@@ -556,7 +556,7 @@ public sealed class PackSwish : PackRule
             var packed = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
 
             // todo support padings.
-            if (pads.Any(x => !x.IsFixed || x.FixedValue != 0))
+            if (pads.Any(x => !x.IsFixed))
             {
                 return;
             }
@@ -610,7 +610,7 @@ public sealed class PackTranspose : PackRule
             var packed = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
 
             // todo support padings.
-            if (pads.Any(x => !x.IsFixed || x.FixedValue != 0))
+            if (pads.Any(x => !x.IsFixed))
             {
                 return;
             }
@@ -672,7 +672,7 @@ public sealed class PackUnsqueeze : PackRule
             var packed = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
 
             // todo support padings.
-            if (pads.Any(x => !x.IsFixed || x.FixedValue != 0))
+            if (pads.Any(x => !x.IsFixed))
             {
                 return;
             }
@@ -869,7 +869,7 @@ public sealed class PackReshape : PackRule
             var packed = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
 
             // todo support padings.
-            if (pads.Any(x => !x.IsFixed || x.FixedValue != 0))
+            if (pads.Any(x => !x.IsFixed))
             {
                 return;
             }
@@ -973,7 +973,7 @@ public sealed class PackSlice : PackRule
             var packed = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packAxes, lanes, 0f, out var pads), lanes, packAxes);
 
             // todo support padings.
-            if (pads.Any(x => !x.IsFixed || x.FixedValue != 0))
+            if (pads.Any(x => !x.IsFixed))
             {
                 return;
             }
@@ -1026,7 +1026,7 @@ public sealed class PackCast : PackRule
             var packedInput = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
 
             // todo support padings.
-            if (padsInput.Any(x => !x.IsFixed || x.FixedValue != 0))
+            if (padsInput.Any(x => !x.IsFixed))
             {
                 return;
             }

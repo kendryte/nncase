@@ -64,21 +64,11 @@ public static class IRHelpers
 
     public static string GetIdentityName(string name)
     {
-        var sb = new StringBuilder();
-        bool first = true;
+        var sb = new StringBuilder("id_");
         foreach (var c in name)
         {
             if (char.IsLetterOrDigit(c) || c == '_')
             {
-                if (first)
-                {
-                    first = false;
-                    if (!char.IsLetter(c))
-                    {
-                        sb.Append('_');
-                    }
-                }
-
                 sb.Append(c);
             }
             else
