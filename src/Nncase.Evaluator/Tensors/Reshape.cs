@@ -297,7 +297,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
     {
         var shape = context.GetDimensionArgument(target, Reshape.Shape);
         var shapeType = context.CheckArgumentTensorTypeOrBroadcast(target, Reshape.Shape);
-        if (shapeType.Shape.IsUnranked || !shapeType.Shape[0].IsFixed)
+        if (input.Shape.IsUnranked || shapeType.Shape.IsUnranked || !shapeType.Shape[0].IsFixed)
         {
             return input with { Shape = Shape.Unranked };
         }

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+// #define IGNORE_ONXX_DATA
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -126,6 +127,12 @@ public sealed partial class OnnxImporter
             var externalData = tensor.ExternalData;
             var location = Path.Join(parent, externalData[0].Value);
             var offset = externalDataCount > 1L ? long.Parse(externalData[1].Value) : 0;
+#if IGNORE_ONXX_DATA
+            if (!File.Exists(location))
+            {
+                return Tensor.Zeros(type, shape);
+            }
+#endif
             using var fs = new FileStream(location, FileMode.Open);
             var length = externalDataCount > 1 ? long.Parse(externalData[2].Value) : fs.Length;
             fs.Seek(offset, SeekOrigin.Begin);

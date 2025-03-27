@@ -80,7 +80,7 @@ namespace Nncase.Importer
                 return Enumerable.Range(0, input.CheckedShape.Rank).Select(i => (long)i).ToArray();
             }
 
-            return F.Tensors.Range(0L, F.Tensors.Cast(F.Tensors.Rank(input), DataTypes.Int64), 1L);
+            return F.Tensors.Range(0L, F.Tensors.Rank(input), 1L);
         }
 
         private Expr GetAxesAttribute(NodeProto n, Expr input)
