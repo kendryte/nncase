@@ -991,7 +991,7 @@ public abstract class HuggingFaceModel
         var lmHead = Linear(lastHiddenStates, Context.ConstTensors["model.embed_tokens.weight"]);
 
         // FIXIT: this is work around for bfloat16
-        Context.Outputs!.Add("logits",  IR.F.Tensors.Cast(lmHead, DataTypes.Float32));
+        Context.Outputs!.Add("logits", IR.F.Tensors.Cast(lmHead, DataTypes.Float32));
         if (Context.CompileSession!.CompileOptions.HuggingFaceOptions.OutputAttentions)
         {
             var outAttention = IR.F.Tensors.Concat(new IR.Tuple(allSelfAttns.ToArray()), 0);

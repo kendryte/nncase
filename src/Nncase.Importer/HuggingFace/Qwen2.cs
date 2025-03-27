@@ -31,6 +31,5 @@ namespace Nncase.Importer
     // {
     public class Qwen2 : HuggingFaceModel
     {
-
     }
 }
