@@ -24,7 +24,7 @@ namespace Nncase.Evaluator.Math;
 /// </summary>
 public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICostEvaluator<MatMul>, IMetricEvaluator<MatMul>
 {
-    public static IRType VisitDistributedType(DistributedType a, DistributedType b, bool packingK = false, DimInfo? dimInfo = null)
+    public static IRType VisitDistributedType(DistributedType a, DistributedType b, bool packingK = false, DimInfo? dimInfo = null, bool transB = false)
     {
         if (VisitTensorType(a.TensorType, b.TensorType, packingK, dimInfo) is not TensorType outType)
         {
@@ -44,7 +44,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var (lm, lk, rk, rn) = dimInfo ?? new(aRank - 2, aRank - 1, bRank - 2, bRank - 1);
 
         // TODO: keep summa only
-        if (a.Placement.HierarchyKind == HierarchyKind.SMT && a.TensorType.DType is VectorType vt && vt.ElemType == DataTypes.Float8E4M3)
+        if (transB || (a.Placement.HierarchyKind == HierarchyKind.SMT && a.TensorType.DType is VectorType vt && vt.ElemType == DataTypes.Float8E4M3))
         {
             var ndsbpsA = DistributedUtility.AxisPolicesToNDSBP(a.AxisPolices, a.Placement.Rank);
             var ndsbpsB = DistributedUtility.AxisPolicesToNDSBP(b.AxisPolices, b.Placement.Rank);
@@ -158,10 +158,6 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                 if (a.AxisPolices[lk] is SBPSplit || b.AxisPolices[rk] is SBPSplit)
                 {
                     var (lmMeshAxis, lkMeshAxis) = (a.Placement.Rank - 2, a.Placement.Rank - 1);
-                    if (a.Placement.HierarchyKind == HierarchyKind.SMT)
-                    {
-                        (lmMeshAxis, lkMeshAxis) = (a.Placement.Rank - 3, a.Placement.Rank - 2);
-                    }
 
                     // TODO: support split on multi-meshes.
                     if (a.AxisPolices[lm] is SBPSplit slm && a.AxisPolices[lk] is SBPSplit slk
