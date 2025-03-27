@@ -35,7 +35,6 @@ public abstract class HuggingFaceModel
     // public abstract (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs();
     public virtual (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
     {
-        Console.WriteLine($"use virtual create input");
         var hiddenSize = (long)Context!.Config!["hidden_size"];
         var numsHiddenLayers = (long)Context.Config!["num_hidden_layers"];
         var num_attention_heads = (long)Context.Config!["num_attention_heads"];
@@ -208,7 +207,7 @@ public abstract class HuggingFaceModel
         return hiddenStates;
     }
 
-    public virtual System.Tuple<Call, Call> ApplyRotaryPosEmb(Expr q, Expr k, Expr cos, Expr sin)
+    public virtual System.Tuple<Call, Call> ApplyRotaryPosEmb(Expr q, Expr k, Expr cos, Expr sin, long unSqueezeDim = 1)
     {
         cos = IR.F.Tensors.Unsqueeze(cos, Tensor.From<long>(new long[] { 1 }));
         sin = IR.F.Tensors.Unsqueeze(sin, Tensor.From<long>(new long[] { 1 }));
@@ -238,18 +237,16 @@ public abstract class HuggingFaceModel
             x,
             new[] { 0L },
             IR.F.Tensors.Stack(new IR.Tuple(xS3 / 2L), 0L),
-            new[] { 3L },
+            new[] { -1L },
             new[] { 1L });
         var x2 = IR.F.Tensors.Slice(
             x,
             IR.F.Tensors.Stack(new IR.Tuple(xS3 / 2L), 0L),
             IR.F.Tensors.Stack(new IR.Tuple(xS3), 0L),
-            new[] { 3L },
+            new[] { -1L },
             new[] { 1L });
 
-        // cast -1.0f to current dtype
-        var factor = IR.F.Tensors.Cast(Tensor.FromScalar(-1.0f), x2.CheckedDataType);
-        return IR.F.Tensors.Concat(new IR.Tuple(IR.F.Math.Binary(BinaryOp.Mul, x2, factor), x1), -1);
+        return IR.F.Tensors.Concat(new IR.Tuple(IR.F.Math.Neg(x2), x1), -1);
     }
 
     // Qwen2RMSNorm : Qwen2LayerNorm : input_layernorm

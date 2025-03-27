@@ -85,6 +85,9 @@ public partial class HuggingFaceImporter : BaseImporter
             case "LlamaForCausalLM":
                 _model = new Llama3_2();
                 break;
+            case "ChatGLMForConditionalGeneration":
+                _model = new Glm4V9B();
+                break;
             default:
                 throw new NotImplementedException();
         }
