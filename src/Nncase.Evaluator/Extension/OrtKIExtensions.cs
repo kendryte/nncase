@@ -66,6 +66,16 @@ public static class OrtKIExtensions
         return tensor.ToTensor();
     }
 
+    public static TensorValue ToValue(this OrtKISharp.Tensor tensor, DataType dataType) => dataType switch
+    {
+        VectorType vectorType => Tensor.From(
+            vectorType with { ElemType = tensor.DataType.ToDataType() },
+            new TensorInitializerWithOrt(tensor),
+            tensor.Shape.Take(tensor.Shape.Length - vectorType.Lanes.Count).ToArray()).CastTo(vectorType),
+        PrimType primType => tensor.ToTensor().CastTo(primType),
+        _ => throw new NotSupportedException(),
+    };
+
     public static OrtKISharp.Tensor ToOrtTensor(this Tensor tensor) => tensor.ElementType switch
     {
         VectorType vectorType => ToOrtTensor(tensor, vectorType.ElemType.ToOrtType(), tensor.Dimensions.ToArray().Concat(vectorType.Lanes.Select(x => (long)x)).ToArray()),

@@ -64,7 +64,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
             _ => throw new ArgumentOutOfRangeException(nameof(input_tensor)),
         };
 
-        return (TensorValue)result.ToValue().AsTensor().CastTo(originDtype);
+        return result.ToValue(originDtype);
     }
 
     public static IRType InferType(IRType inputType, UnaryOp unaryOp)

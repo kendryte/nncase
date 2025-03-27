@@ -32,7 +32,7 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
 
         var inputOrt = input.ToOrtTensor();
         var shape = context.GetInt64OrtTensorArgumentValue(expand, Expand.Shape);
-        return (TensorValue)OrtKI.Expand(inputOrt, shape).ToValue().AsTensor().CastTo(originType);
+        return OrtKI.Expand(inputOrt, shape).ToValue(originType);
     }
 
     public Cost Visit(ICostEvaluateContext context, Expand target)

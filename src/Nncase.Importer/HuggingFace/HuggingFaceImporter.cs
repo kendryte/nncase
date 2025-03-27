@@ -20,7 +20,7 @@ namespace Nncase.Importer;
 
 public sealed partial class HuggingFaceImporter : BaseImporter
 {
-    private readonly Dictionary<string, object>? _config;
+    private readonly Dictionary<string, object> _config;
     private readonly Dictionary<string, Tensor>? _constTensors;
     private readonly Dictionary<string, Expr>? _outputs = new Dictionary<string, Expr> { };
 
@@ -68,7 +68,7 @@ public sealed partial class HuggingFaceImporter : BaseImporter
     protected override (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
     {
         // throw new NotImplementedException();
-        switch (_config!["architectures"]!)
+        switch (_config["architectures"]!)
         {
             case "Qwen2ForCausalLM":
                 return Qwen2CreateInputs();
@@ -80,7 +80,7 @@ public sealed partial class HuggingFaceImporter : BaseImporter
 
     protected override void ConvertOp()
     {
-        switch (_config!["architectures"]!)
+        switch (_config["architectures"]!)
         {
             case "Qwen2ForCausalLM":
                 Debug.Assert(_constTensors != null, nameof(_constTensors) + " != null");
@@ -93,7 +93,7 @@ public sealed partial class HuggingFaceImporter : BaseImporter
 
     protected override Expr CreateOutputs()
     {
-        switch (_config!["architectures"]!)
+        switch (_config["architectures"]!)
         {
             case "Qwen2ForCausalLM":
                 return Qwen2CreateOutputs();

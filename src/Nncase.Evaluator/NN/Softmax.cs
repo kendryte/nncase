@@ -26,7 +26,7 @@ public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSo
 
         var inputOrt = input.ToOrtTensor();
         var axis = context.GetArgumentValueAsScalar<long>(logSoftMax, LogSoftmax.Axis);
-        return (TensorValue)OrtKI.LogSoftmax(inputOrt, axis).ToValue().AsTensor().CastTo(originType);
+        return OrtKI.LogSoftmax(inputOrt, axis).ToValue(originType);
     }
 
     /// <inheritdoc/>

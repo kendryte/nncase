@@ -63,7 +63,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
             }
         }
 
-        return (TensorValue)(reduce.ReduceOp switch
+        return (reduce.ReduceOp switch
         {
             ReduceOp.Mean => OrtKI.ReduceMean(input, axis, keepDims),
             ReduceOp.Max => OrtKI.ReduceMax(input, axis, keepDims),
@@ -75,7 +75,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
                 keepDims,
                 0),
             _ => throw new ArgumentOutOfRangeException(nameof(reduce)),
-        }).ToValue().AsTensor().CastTo(originType);
+        }).ToValue(originType);
     }
 
     /// <inheritdoc/>
