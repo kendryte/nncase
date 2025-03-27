@@ -416,7 +416,7 @@ public abstract class HuggingFaceModel
             attnWeights += causalMask;
         }
 
-        attnWeights = IR.F.Tensors.Cast(IR.F.NN.Softmax(IR.F.Tensors.Cast(attnWeights, DataTypes.Float32), -1L), DataTypes.Float32);
+        attnWeights = IR.F.Tensors.Cast(IR.F.NN.Softmax(IR.F.Tensors.Cast(attnWeights, DataTypes.Float32), -1L), valueStates.CheckedDataType);
 
         Expr attnOutput = IR.F.Math.MatMul(attnWeights, valueStates);
         attnOutput = IR.F.Tensors.Transpose(attnOutput, ShapeExprUtility.GetPermutation(attnOutput, [1, 2]));
@@ -434,7 +434,9 @@ public abstract class HuggingFaceModel
 
         // var a = x.CheckedShape[0];
         var invFreq = Tensor.FromArray(invFreq_.ToArray()); // Unsqueeze(Unsqueeze(Tensor.FromArray(inv_freq.ToArray()), new[] { 0 }),new[] { -1 });
-        var invFreq_float = IR.F.Tensors.Cast(invFreq, positionIds.CheckedDataType);
+
+        // Force float32 (see https://github.com/huggingface/transformers/pull/29285)
+        var invFreq_float = IR.F.Tensors.Cast(invFreq, DataTypes.Float32);
         var invFreqExpanded = IR.F.Tensors.Unsqueeze(invFreq_float, Tensor.From<long>(new long[] { 0, 2 }));
         var batch_size = IR.F.Tensors.ShapeOf(positionIds)[0];
         var dim_div_2 = IR.F.Tensors.ShapeOf(invFreq)[0];
@@ -446,6 +448,7 @@ public abstract class HuggingFaceModel
         //     inv_freq_tensor,
         //     new Dimension[] { x.CheckedShape[0], inv_freq.Count, 1 });
         var positionIdsExpanded = IR.F.Tensors.Unsqueeze(positionIds, Tensor.From<long>(new long[] { 1 }));
+        positionIdsExpanded = IR.F.Tensors.Cast(positionIdsExpanded, DataTypes.Float32);
 
         var freqs = IR.F.Math.MatMul(invFreqExpanded, positionIdsExpanded);
         freqs = IR.F.Tensors.Transpose(freqs, new long[] { 0, 2, 1 });
@@ -456,6 +459,9 @@ public abstract class HuggingFaceModel
         // add attention scaling
         Expr cos = IR.F.Math.Unary(UnaryOp.Cos, emb) * attentionScaling;
         Expr sin = IR.F.Math.Unary(UnaryOp.Sin, emb) * attentionScaling;
+
+        cos = IR.F.Tensors.Cast(cos,x.CheckedDataType);
+        sin = IR.F.Tensors.Cast(sin, x.CheckedDataType);
 
         return System.Tuple.Create(cos, sin);
     }
@@ -723,14 +729,12 @@ public abstract class HuggingFaceModel
 
         var batch_size = IR.F.Tensors.ShapeOf(hiddenStates)[0];
         var seq_len = IR.F.Tensors.ShapeOf(hiddenStates)[1];
-
         var (queryStates, keyStates, valueStates) = QKVCompute(count, hiddenStates, batch_size, seq_len, head_dim);
 
         var (cos, sin) = positionEmbeddings;
 
         // apply_rotary_pos_emb
         (queryStates, keyStates) = ApplyRotaryPosEmb(queryStates, keyStates, cos, sin);
-
         // update kv with cache
         if (paskKeyValues != null)
         {
