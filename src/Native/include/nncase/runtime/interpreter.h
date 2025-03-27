@@ -31,12 +31,12 @@ BEGIN_NS_NNCASE_RUNTIME
 
 class NNCASE_API options_dict {
   public:
-    template <class T> result<T> get_scalar_opt(const char *name) {
+    template <class T> result<T> get_scalar_opt(std::string_view name) {
         try_var(value, get<scalar>(name));
-        return value.template as<T>();
+        return ok(value.template as<T>());
     }
 
-    template <class T> result<T> get(const char *name) {
+    template <class T> result<T> get(std::string_view name) {
         auto it = values_.find(name);
         if (it != values_.end())
             return ok(std::get<T>(it->second));
@@ -44,13 +44,13 @@ class NNCASE_API options_dict {
             return err(std::errc::result_out_of_range);
     }
 
-    template <class T> result<void> set(const char *name, T value) {
+    template <class T> void set(std::string_view name, T value) {
         values_[name] = value;
-        return ok();
     }
 
   private:
-    std::unordered_map<const char *, std::variant<scalar, std::string>> values_;
+    std::unordered_map<std::string_view, std::variant<scalar, std::string_view>>
+        values_;
 };
 
 struct tensor_desc {
@@ -86,6 +86,7 @@ class NNCASE_API interpreter {
     result<void> input_tensor(size_t index, runtime_tensor tensor) noexcept;
     result<runtime_tensor> output_tensor(size_t index) noexcept;
     result<void> output_tensor(size_t index, runtime_tensor tensor) noexcept;
+    void enable_profiling(uint8_t enable_profiling) noexcept;
 
     result<void> run() noexcept;
 

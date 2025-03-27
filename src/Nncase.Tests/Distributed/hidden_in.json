@@ -6,16 +6,20 @@
       "Name": "hidden_in",
       "NdSBP": [
         {
-          "$type": "S",
-          "Axis": 1
+          "$type": "B"
         },
         {
           "$type": "S",
-          "Axis": 2
+          "Axes": [
+            0
+          ]
         },
         {
           "$type": "S",
-          "Axis": 2
+          "Axes": [
+            1,
+            2
+          ]
         }
       ],
       "Hierarchy": [

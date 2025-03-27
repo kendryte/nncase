@@ -45,7 +45,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         {
             for (int i = 0; i < inType.Placement.Rank; i++)
             {
-                if (inType.NdSBP[i] != target.SBPs[i])
+                if (inType.AxisPolices[i] != target.SBPs[i])
                 {
                     return false;
                 }

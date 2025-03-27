@@ -9,6 +9,7 @@ using System.Runtime;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.CodeGen;
@@ -66,6 +67,31 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     public static int Rank => 2;
 
+    public static TheoryData<long[], int[], List<int[][]>, int> TestReshardData { get; } = new()
+    {
+        { [1, 77, 768], [2, 32, 4], new() { new int[][] { [-1, 1], [-1, 1], [0, 2] }, new int[][] { [-1, 2], [-1, 2], [0, 1] } }, 0 },
+    };
+
+    public static TheoryData<BinaryOp, long[], long[], int[], int[][], int> TestPackBinaryData { get; } = new()
+    {
+        { BinaryOp.Add, [8, 2], [8, 2], [1], [], 0 },
+        { BinaryOp.Mul, [1, 8, 64, 2 * 8], [1, 1, 64, 2 * 8], [1], [], 1 },
+        { BinaryOp.Add, [8, 16], [16], [1], [], 2 },
+        { BinaryOp.Mul, [1, 8, 64, 2 * 8], [1, 1, 64, 2 * 8], [4], [[-1], [-1], [0], [-1]], 3 },
+    };
+
+    public static TheoryData<ReduceOp, long[], int[], float, bool, int[], int[][], int> TestPackReduceData { get; } = new()
+    {
+        { ReduceOp.Sum, new long[] { 1, 64, 384, 128 }, new[] { 3 }, 0, true, new[] { 1 }, [], 0 },
+        { ReduceOp.Mean, new long[] { 1, 384, 128 }, new[] { 2 }, 0, true, new[] { 1 }, [], 1 },
+        { ReduceOp.Mean, new long[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, [[-1], [0], [-1]], 2 },
+        { ReduceOp.Max, new long[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, [[-1], [0], [-1]], 3 },
+        { ReduceOp.Min, new long[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, [[-1], [0], [-1]], 4 },
+        { ReduceOp.Sum, new long[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, [[-1], [0], [-1]], 5 },
+        { ReduceOp.Mean, new long[] { 1, 3, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, [[-1], [-1], [-1]], 6 },
+        { ReduceOp.Sum, new long[] { 1, 64, 384, 384 }, new[] { 3 }, 0, true, new[] { 64 }, [], 7 },
+    };
+
     [Theory]
     [InlineData(new object[] { new[] { 32, 64 }, false, new[] { 64, 48 }, false, new[] { 48, 16 }, true, new[] { 1 }, 0 })]
     [InlineData(new object[] { new[] { 128, 256 }, true, new[] { 256, 384 }, false, new[] { 384, 512 }, true, new[] { 2 }, 1 })]
@@ -107,8 +133,8 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData([new long[] { 1, 77, 768 }, new[] { 2, 32, 4 }, new int[] { 2, -1, 2, 2, 2, -1 }, 0])]
-    public async Task TestReshard(long[] shape, int[] hierarchy, int[] sbps, int count)
+    [MemberData(nameof(TestReshardData))]
+    public async Task TestReshard(long[] shape, int[] hierarchy, List<int[][]> sbps, int count)
     {
         var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
@@ -120,12 +146,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var inputType = new TensorType(DataTypes.Float32, shape);
         var input = new Var(inputType);
         var feedDict = new Dictionary<Var, IValue>() {
-            // { input, IR.F.Tensors.ConstantOfShape(shape, 1.0f).Evaluate() },
             { input, IR.F.Random.Normal(DataTypes.Float32, 1.0f, 1.0f, 1, shape).Evaluate() },
         };
 
         var placement = new Placement(hierarchy, targetOptions.HierarchyNames);
-        var ndsbps = sbps.Chunk(hierarchy.Length).Select<int[], SBP[]>(sbp => sbp.Select<int, SBP>(s => s > 0 ? SBP.S(s) : SBP.B).ToArray()).ToArray();
+        var ndsbps = sbps.Select(sbp => sbp.Select(s => s[0] < 0 ? (SBP)SBP.B : SBP.S(s)).ToArray()).ToArray();
         Expr boxed = input;
         foreach (var ndsbp in ndsbps)
         {
@@ -310,11 +335,8 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { BinaryOp.Add, new long[] { 8, 2 }, new long[] { 8, 2 }, new int[] { 1 }, new int[] { }, 0 })] // normal
-    [InlineData(new object[] { BinaryOp.Mul, new long[] { 1, 8, 64, 2 * 8 }, new long[] { 1, 1, 64, 2 * 8 }, new int[] { 1 }, new int[] { }, 1 })] // broadcast
-    [InlineData(new object[] { BinaryOp.Add, new long[] { 8, 16 }, new long[] { 16 }, new int[] { 1 }, new int[] { }, 2 })] // normal
-    [InlineData(new object[] { BinaryOp.Mul, new long[] { 1, 8, 64, 2 * 8 }, new long[] { 1, 1, 64, 2 * 8 }, new[] { 4 }, new[] { 2 }, 3 })] // broadcast
-    public async Task TestPackBinary(BinaryOp op, long[] lhsShape, long[] rhsShape, int[] hierarchy, int[] sbps, int count)
+    [MemberData(nameof(TestPackBinaryData))]
+    public async Task TestPackBinary(BinaryOp op, long[] lhsShape, long[] rhsShape, int[] hierarchy, int[][] sbps, int count)
     {
         var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
@@ -336,7 +358,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
 
-        if (sbps.Any(i => i != -1))
+        if (sbps.Length > 0)
         {
             foreach (var post in posts)
             {
@@ -344,8 +366,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
                 call.Metadata = new() { OutputNames = new[] { "call" } };
             }
 
-            var scheme = new Passes.Distributed.DistributedSchema("1", "llama", [new("call", sbps.Select<int, SBP>(s => s > 0 ? SBP.S(s) : SBP.B).ToArray(), hierarchy, targetOptions.HierarchyNames)]);
-            var export = System.Text.Json.JsonSerializer.Serialize(scheme, new System.Text.Json.JsonSerializerOptions() { WriteIndented = true });
+            var scheme = new Passes.Distributed.DistributedSchema("1", "llama", [new("call", sbps.Select(s => s[0] < 0 ? SBP.B : (SBP)SBP.S(s)).ToArray(), hierarchy, targetOptions.HierarchyNames)]);
+            var options = new JsonSerializerOptions();
+            options.Converters.Add(new SBPConverter());
+            options.WriteIndented = true;
+            var export = System.Text.Json.JsonSerializer.Serialize(scheme, options);
             var dumpper = Diagnostics.DumpScope.Current.CreateSubDummper($"Theory{count}");
             targetOptions.DistributedScheme = Path.Join(dumpper.Directory, "schema.json");
             using (var stream = dumpper.OpenFile("schema.json"))
@@ -586,15 +611,8 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData([ReduceOp.Sum, new long[] { 1, 64, 384, 128 }, new[] { 3 }, 0, true, new[] { 1 }, new int[] { }, 0])]
-    [InlineData([ReduceOp.Mean, new long[] { 1, 384, 128 }, new[] { 2 }, 0, true, new[] { 1 }, new int[] { }, 1])]
-    [InlineData([ReduceOp.Mean, new long[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, new int[] { 2 }, 2])]
-    [InlineData([ReduceOp.Max, new long[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, new int[] { 2 }, 3])]
-    [InlineData([ReduceOp.Min, new long[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, new int[] { 2 }, 4])]
-    [InlineData([ReduceOp.Sum, new long[] { 1, 384, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, new int[] { 2 }, 5])]
-    [InlineData([ReduceOp.Mean, new long[] { 1, 3, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, new int[] { 2 }, 6])]
-    [InlineData([ReduceOp.Sum, new long[] { 1, 64, 384, 384 }, new[] { 3 }, 0, true, new[] { 64 }, new int[] { }, 7])]
-    public async Task TestPackReduce(ReduceOp reduceOp, long[] shape, int[] axes, float init, bool keepDims, int[] hierarchy, int[] splitedAxes, int number)
+    [MemberData(nameof(TestPackReduceData))]
+    public async Task TestPackReduce(ReduceOp reduceOp, long[] shape, int[] axes, float init, bool keepDims, int[] hierarchy, int[][] splitedAxes, int number)
     {
         var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
@@ -620,7 +638,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result, new Passes.RunPassContext()));
 
-        if (splitedAxes.Any(i => i != -1))
+        if (splitedAxes.Length > 0)
         {
             foreach (var post in posts)
             {
@@ -634,8 +652,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
                 }
             }
 
-            var scheme = new Passes.Distributed.DistributedSchema("1", "llama", [new("reduceIn", splitedAxes.Select<int, SBP>(s => s > 0 ? SBP.S(s) : SBP.B).ToArray(), hierarchy, targetOptions.HierarchyNames)]);
-            var export = System.Text.Json.JsonSerializer.Serialize(scheme, new System.Text.Json.JsonSerializerOptions() { WriteIndented = true });
+            var scheme = new Passes.Distributed.DistributedSchema("1", "llama", [new("reduceIn", splitedAxes.Select(s => s[0] < 0 ? SBP.B : (SBP)SBP.S(s)).ToArray(), hierarchy, targetOptions.HierarchyNames)]);
+            var options = new JsonSerializerOptions();
+            options.Converters.Add(new SBPConverter());
+            options.WriteIndented = true;
+            var export = System.Text.Json.JsonSerializer.Serialize(scheme, options);
             var dumpper = Diagnostics.DumpScope.Current.CreateSubDummper($"Theory{number}");
             targetOptions.DistributedScheme = Path.Join(dumpper.Directory, "schema.json");
             using (var stream = dumpper.OpenFile("schema.json"))

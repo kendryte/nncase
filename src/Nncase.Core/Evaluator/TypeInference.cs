@@ -72,7 +72,7 @@ public static class TypeInference
 
         return context.GetArgumentType(op, parameter) switch
         {
-            DistributedType d when d.NdSBP.All(x => x is SBPBroadCast) => WrapperException(d.TensorType),
+            DistributedType d when d.AxisPolices.All(x => x is SBPBroadCast) => WrapperException(d.TensorType),
             IRType t => CheckArgumentType<TensorType>(context, op, parameter, reason),
         };
     }
@@ -605,7 +605,7 @@ public static class TypeInference
         shapeType ??= newShape.CheckedType switch
         {
             TensorType t => t,
-            DistributedType dt when dt.NdSBP.All(x => x is SBPBroadCast) => dt.TensorType,
+            DistributedType dt when dt.AxisPolices.All(x => x is SBPBroadCast) => dt.TensorType,
             _ => throw new TypeInferenceInterruptException(new InvalidType("Invalid shape type")),
         };
 

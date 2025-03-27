@@ -162,7 +162,7 @@ public static class Tensors
     public static Call Unsqueeze(Expr input, Expr dims) => new Call(new Unsqueeze(), input, dims);
 
     // return a scalar
-    public static Expr Rank(Expr input) => Slice(ShapeOf(ShapeOf(input)), new[] { 0 }, new[] { 1 }, 1);
+    public static Expr Rank(Expr input) => ShapeOf(ShapeOf(input))[0];
 
     // sections (int or list[int])
     public static Call Split(Expr input, Expr axis, Expr sections) => new Call(new Split(), input, axis, sections);

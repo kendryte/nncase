@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq;
 using Nncase.CostModel;
 using Nncase.Diagnostics;
 using Nncase.IR;
@@ -69,15 +70,15 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     private IRType Visit(Cast target, DistributedType inType)
     {
         var invalid = new InvalidType(inType.ToString());
-        var ndsbp = new SBP[inType.Placement.Rank];
-        for (int i = 0; i < inType.Placement.Rank; i++)
+        var ndsbp = new SBP[inType.TensorType.Shape.Rank];
+        for (int i = 0; i < ndsbp.Length; i++)
         {
-            if (inType.NdSBP[i] is SBPPartial)
+            if (inType.AxisPolices[i] is SBPPartial)
             {
                 return invalid;
             }
 
-            ndsbp[i] = inType.NdSBP[i];
+            ndsbp[i] = inType.AxisPolices[i];
         }
 
         return new DistributedType(new TensorType(target.NewType, inType.TensorType.Shape), ndsbp, inType.Placement);

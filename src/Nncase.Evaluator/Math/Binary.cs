@@ -2,7 +2,9 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq;
 using DryIoc;
+using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.Diagnostics;
 using Nncase.IR;
@@ -23,54 +25,50 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         // assume broadcast shapes are left algin
         var padA = tensorType.Shape.Rank - a.TensorType.Shape.Rank;
         var padB = tensorType.Shape.Rank - b.TensorType.Shape.Rank;
-        var ndsbp = new SBP[a.Placement.Rank];
-        for (int i = 0; i < a.Placement.Rank; i++)
+        var ndsbp = new SBP[tensorType.Shape.Rank];
+        for (int i = 0; i < ndsbp.Length; i++)
         {
-            switch (a.NdSBP[i], b.NdSBP[i])
+            var policyA = i < padA ? null : a.AxisPolices[i - padA];
+            var policyB = i < padB ? null : b.AxisPolices[i - padB];
+            switch (policyA, policyB)
             {
+                case (null, _):
+                    ndsbp[i] = policyB!;
+                    break;
+                case (_, null):
+                    ndsbp[i] = policyA!;
+                    break;
                 case (SBPSplit sa, SBPSplit sb):
-                    if ((padA + sa.Axis) != (padB + sb.Axis))
+                    if (sa.Axes != sb.Axes)
                     {
                         return new InvalidType($"lhs rhs sbp at {i} not equal");
                     }
 
-                    ndsbp[i] = SBP.S(padA + sa.Axis);
+                    ndsbp[i] = sa;
                     break;
-                case (SBPSplit s1, SBPBroadCast):
+                case (SBPSplit sa, SBPBroadCast):
                     // invalid (S, B) if B is not broacast
-                    if (s1.Axis + padA - padB >= 0 && b.TensorType.Shape[s1.Axis + padA - padB] != 1)
+                    if (b.TensorType.Shape[i - padB] != 1)
                     {
                         return new InvalidType($"lhs rhs sbp at {i} not broadcast");
                     }
 
-                    ndsbp[i] = SBP.S(padA + s1.Axis);
+                    ndsbp[i] = sa;
                     break;
-                case (SBPBroadCast, SBPSplit s2):
+                case (SBPBroadCast, SBPSplit sb):
                     // invalid (B, S) if A is not broacast
-                    if (s2.Axis + padB - padA >= 0 && a.TensorType.Shape[s2.Axis + padB - padA] != 1)
+                    if (a.TensorType.Shape[i - padA] != 1)
                     {
                         return new InvalidType($"lhs rhs sbp at {i} not broadcast");
                     }
 
-                    ndsbp[i] = SBP.S(padB + s2.Axis);
+                    ndsbp[i] = sb;
                     break;
                 case (SBPBroadCast, SBPBroadCast):
                     ndsbp[i] = SBP.B;
                     break;
-                case (SBPPartial, SBPPartial):
-                    if (op == BinaryOp.Add)
-                    {
-                        ndsbp[i] = SBP.P();
-                    }
-                    else
-                    {
-                        return new InvalidType("lhs rhs all partialsum only can be added.");
-                    }
-
-                    break;
-                case (SBPPartial, _):
-                case (_, SBPPartial):
-                    return new InvalidType("not support lhs or rhs partial.");
+                default:
+                    return new InvalidType("not support binary sbp.");
             }
         }
 

@@ -88,19 +88,19 @@ internal static class CSourceExtensions
     {
         var hstrides = TensorUtilities.GetStrides(placement.Hierarchy.ToArray());
         var splitHierarchy = Enumerable.Range(0, begins.Length).Select(_ => new List<int>()).ToArray();
-        var splits = Enumerable.Range(0, begins.Length).Select(_ => new List<(int H, SBPSplit S)>()).ToArray();
+        var splits = Enumerable.Range(0, begins.Length).Select(_ => new List<int>()).ToArray();
         foreach (var (sbp, i) in ndsbp.Select((s, i) => (s, i)))
         {
-            if (sbp is SBPSplit { Axis: int axis } split)
+            if (sbp is SBPSplit split)
             {
-                splits[axis].Add((i, split));
-                splitHierarchy[axis] = placement.Hierarchy.Select((h, i) => ndsbp[i] is SBPSplit { Axis: int a } && a == axis ? h : 1).ToList();
+                splits[i] = split.Axes.ToList();
+                splitHierarchy[i] = placement.Hierarchy.Select((h, i) => split.Axes.Contains(i) ? h : 1).ToList();
             }
         }
 
         foreach (var splist in splits)
         {
-            splist.Sort((a, b) => -a.H.CompareTo(b.H));
+            splist.Sort((a, b) => -a.CompareTo(b));
         }
 
         for (int i = 0; i < begins.Length; i++)
@@ -114,7 +114,7 @@ internal static class CSourceExtensions
                     dimi = dimi[(s + 1)..e].Trim();
                 }
 
-                begins[i] += " + " + sp.Skip(1).Aggregate($"{placement.Name[sp[0].H]}id()", (acc, p) => $"({acc} + {TensorUtilities.GetProduct(splitHierarchy[i].ToArray().AsSpan()[(p.H + 1)..])} * {placement.Name[p.H]}id())") + $" * {dimi}";
+                begins[i] += " + " + sp.Skip(1).Aggregate($"{placement.Name[sp[0]]}id()", (acc, p) => $"({acc} + {TensorUtilities.GetProduct(splitHierarchy[i].ToArray().AsSpan()[(p + 1)..])} * {placement.Name[p]}id())") + $" * {dimi}";
             }
         }
 

@@ -82,7 +82,7 @@ public partial class LowerBinary : RewriteRule<Pattern>
         var outBuffer = call.CheckedType switch
         {
             TensorType t => IR.F.Buffer.Uninitialized(t.DType, TIR.MemoryLocation.Data, t.Shape.ToValueArray()),
-            DistributedType dt => IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape.ToValueArray(), dt.NdSBP, dt.Placement),
+            DistributedType dt => IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape.ToValueArray(), dt.AxisPolices, dt.Placement),
             _ => throw new ArgumentOutOfRangeException(nameof(call)),
         };
         return IR.F.Affine.Grid(ModuleKind)
@@ -166,7 +166,7 @@ public partial class LowerPackedBinary : RewriteRule<Pattern>
         var outBuffer = call.CheckedType switch
         {
             TensorType t => IR.F.Buffer.Uninitialized(t.DType, TIR.MemoryLocation.Data, t.Shape.ToValueArray()),
-            DistributedType dt => IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape.ToValueArray(), dt.NdSBP, dt.Placement),
+            DistributedType dt => IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape.ToValueArray(), dt.AxisPolices, dt.Placement),
             _ => throw new ArgumentOutOfRangeException(nameof(call)),
         };
         return IR.F.Affine.Grid(ModuleKind)

@@ -619,7 +619,7 @@ public sealed class PackTranspose : PackRule
             if (tarns.CheckedType is not InvalidType)
             {
                 var partialPerm = perm.Select(axis => packedAxes.IndexOf(axis)).Where(x => x != -1).ToArray();
-                var unpackAxes = packedAxes.Select(axis => perm[axis]).ToArray();
+                var unpackAxes = packedAxes.Select(axis => perm.IndexOf(axis)).ToArray();
                 var unpackPads = Enumerable.Range(0, pads.Length).Select(i => pads[partialPerm[i]]).ToArray();
                 var unpackLanes = Enumerable.Range(0, lanes.Length).Select(i => lanes[partialPerm[i]]).ToArray();
                 var newShape = perm.Select(i => inShape[i]).ToArray();
@@ -864,6 +864,11 @@ public sealed class PackReshape : PackRule
                         return;
                     }
                 }
+            }
+
+            if (unpackAxes.Count == 0)
+            {
+                return;
             }
 
             var packed = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);

@@ -13,9 +13,7 @@
  * limitations under the License.
  */
 #pragma once
-#include "../apply.h"
 #include "../primitive_ops.h"
-#include "../profiler.h"
 #include "../shape_infer/reduce.h"
 #include "../tensor_ops.h"
 #include "../tensor_traits.h"
@@ -195,7 +193,6 @@ void reduce(const TIn &input, TOut &&output) noexcept {
                   "not support padding");
     static_assert(!(LoadPrevious && Op == reduce_op::mean),
                   "not support reduce mean splited on reduce axis");
-    AUTO_NTT_PROFILER
     detail::reduce_impl<Op, false, std::decay_t<TIn>, std::decay_t<TOut>, Axes,
                         PackedAxes, PadedNums, LoadPrevious>
         impl;

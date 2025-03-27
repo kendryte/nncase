@@ -340,6 +340,26 @@ public class UnitTestEvaluatorTensors : TestClassBase
     }
 
     [Fact]
+    public void TestReshapeUnranked()
+    {
+        var oldShape = new long[] { 1, 3, 16, 16 };
+        var newShape = new long[] { 3, 256 };
+        var dims = new Var(new TensorType(DataTypes.Int64, new int[] { newShape.Length }));
+        var input = OrtKI.Random(oldShape);
+        var expect = OrtKI.Reshape(input, newShape, 0);
+
+        var inputVar = new Var("input", TensorType.Unranked(DataTypes.Float32));
+        var expr = IR.F.Tensors.Reshape(inputVar, dims);
+        Assert.True(CompilerServices.InferenceType(expr));
+        var d = new Dictionary<Var, IValue>()
+        {
+            { inputVar, Value.FromTensor(input.ToTensor()) },
+            { dims, Value.FromTensor(Tensor.From<long>(newShape)) },
+        };
+        Assert.Equal(expect, expr.Evaluate(d).AsTensor().ToOrtTensor());
+    }
+
+    [Fact]
     public void TestSizeOf()
     {
         var shape = new Shape(new[] { 1, 3, 16, 16 });
@@ -590,6 +610,26 @@ public class UnitTestEvaluatorTensors : TestClassBase
         var expr = IR.F.Tensors.Tile(input.ToTensor(), repeats);
         CompilerServices.InferenceType(expr);
         var d = new Dictionary<Var, IValue>() { { repeats, Value.FromTensor(Tensor.From<long>(a)) } };
+        Assert.Equal(expect, expr.Evaluate(d).AsTensor().ToOrtTensor());
+    }
+
+    [Fact]
+    public void TestTileUnranked()
+    {
+        var shape = new long[] { 1, 3, 16, 16 };
+        var a = new long[] { 1, 1, 2, 2 };
+        var repeats = new Var(new TensorType(DataTypes.Int64, new int[] { a.Length }));
+        var input = OrtKI.Random(shape);
+        var expect = OrtKI.Tile(input, a);
+
+        var inputVar = new Var("input", TensorType.Unranked(DataTypes.Float32));
+        var expr = IR.F.Tensors.Tile(inputVar, repeats);
+        Assert.True(CompilerServices.InferenceType(expr));
+        var d = new Dictionary<Var, IValue>()
+        {
+            { inputVar, Value.FromTensor(input.ToTensor()) },
+            { repeats, Value.FromTensor(Tensor.From<long>(a)) },
+        };
         Assert.Equal(expect, expr.Evaluate(d).AsTensor().ToOrtTensor());
     }
 

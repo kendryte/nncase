@@ -82,35 +82,53 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
         }
 
         var targetType = (TensorType)TypeInference.BroadcastType(x.TensorType.DType, cond.TensorType, x.TensorType, y.TensorType);
-        if (cond.TensorType.Shape != targetType.Shape)
-        {
-            return invalid;
-        }
 
-        var ndsbp = new SBP[cond.Placement.Rank];
+        // if (cond.TensorType.Shape != targetType.Shape)
+        // {
+        //     return invalid;
+        // }
+        var padCond = targetType.Shape.Rank - cond.TensorType.Shape.Rank;
+        var padX = targetType.Shape.Rank - x.TensorType.Shape.Rank;
+        var padY = targetType.Shape.Rank - y.TensorType.Shape.Rank;
 
-        for (int i = 0; i < cond.Placement.Rank; i++)
+        var ndsbp = new SBP[targetType.Shape.Rank];
+        for (int i = 0; i < ndsbp.Length; i++)
         {
-            switch (cond.NdSBP[i], x.NdSBP[i], y.NdSBP[i])
+            var policyCond = i < padCond ? null : cond.AxisPolices[i - padCond];
+            var policyX = i < padX ? null : x.AxisPolices[i - padX];
+            var policyY = i < padY ? null : y.AxisPolices[i - padY];
+
+            SBP? policyOut;
+            switch (policyCond, policyX, policyY)
             {
-                case (SBPSplit { Axis: int ic }, SBPSplit { Axis: int }, SBPSplit { Axis: int }):
-                    ndsbp[i] = SBP.S(ic);
+                case (null, _, _):
+                    policyOut = CheckSBP(policyX, policyY, x.TensorType.Shape, y.TensorType.Shape, padX, padY, i);
                     break;
-                case (SBPSplit { Axis: int ic }, SBPBroadCast, SBPSplit { Axis: int }):
-                    ndsbp[i] = SBP.S(ic);
+                case (_, null, _):
+                    policyOut = CheckSBP(policyCond, policyY, cond.TensorType.Shape, y.TensorType.Shape, padCond, padY, i);
                     break;
-                case (SBPSplit { Axis: int ic }, SBPSplit { Axis: int }, SBPBroadCast):
-                    ndsbp[i] = SBP.S(ic);
-                    break;
-                case (SBPSplit { Axis: int ic }, SBPBroadCast, SBPBroadCast):
-                    ndsbp[i] = SBP.S(ic);
-                    break;
-                case (SBPBroadCast, SBPBroadCast, SBPBroadCast):
-                    ndsbp[i] = SBP.B;
+                case (_, _, null):
+                    policyOut = CheckSBP(policyCond, policyX, cond.TensorType.Shape, x.TensorType.Shape, padCond, padX, i);
                     break;
                 default:
-                    return invalid;
+                    var policyXY = CheckSBP(policyX, policyY, x.TensorType.Shape, y.TensorType.Shape, padX, padY, i);
+                    if (policyXY is null)
+                    {
+                        return invalid;
+                    }
+
+                    var xyType = (TensorType)TypeInference.BroadcastType(x.TensorType.DType, x.TensorType, y.TensorType);
+                    var padXY = targetType.Shape.Rank - xyType.Shape.Rank;
+                    policyOut = CheckSBP(policyCond, policyXY, cond.TensorType.Shape, xyType.Shape, padCond, padXY, i);
+                    break;
             }
+
+            if (policyOut is null)
+            {
+                return invalid;
+            }
+
+            ndsbp[i] = policyOut!;
         }
 
         return new DistributedType(targetType, ndsbp, cond.Placement);
@@ -143,5 +161,65 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
     private bool IsTFWhere(TensorType x, TensorType y)
     {
         return x.Shape[0] == 0 && y.Shape[0] == 0 && x.DType == DataTypes.Float32;
+    }
+
+    private SBP? CheckSBP(SBP? policyA, SBP? policyB, Shape a, Shape b, int padA, int padB, int axis)
+    {
+        SBP? ret;
+        switch (policyA, policyB)
+        {
+            case (null, null):
+                ret = null;
+                break;
+            case (null, _):
+                ret = policyB!;
+                break;
+            case (_, null):
+                ret = policyA!;
+                break;
+            case (SBPSplit sa, SBPSplit sb):
+                if (sa.Axes != sb.Axes)
+                {
+                    ret = null;
+                }
+                else
+                {
+                    ret = sa;
+                }
+
+                break;
+            case (SBPSplit sa, SBPBroadCast):
+                // invalid (S, B) if B is not broacast
+                if (b[axis - padB] != 1)
+                {
+                    ret = null;
+                }
+                else
+                {
+                    ret = sa;
+                }
+
+                break;
+            case (SBPBroadCast, SBPSplit sb):
+                // invalid (B, S) if A is not broacast
+                if (a[axis - padA] != 1)
+                {
+                    ret = null;
+                }
+                else
+                {
+                    ret = sb;
+                }
+
+                break;
+            case (SBPBroadCast, SBPBroadCast):
+                ret = SBP.B;
+                break;
+            default:
+                ret = null;
+                break;
+        }
+
+        return ret;
     }
 }

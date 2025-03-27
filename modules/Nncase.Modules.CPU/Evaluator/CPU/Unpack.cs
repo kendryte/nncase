@@ -82,6 +82,6 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
             throw new InvalidOperationException();
         }
 
-        return new DistributedType(tensorType, input.NdSBP, input.Placement);
+        return new DistributedType(tensorType, input.AxisPolices, input.Placement);
     }
 }

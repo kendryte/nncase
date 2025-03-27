@@ -17,22 +17,25 @@ public sealed class ForceBoxingEvaluator : ITypeInferencer<ForceBoxing>, ICostEv
     {
         IRType VisitD2D(DistributedType inv, DistributedType outv)
         {
+            var ndsbpsA = DistributedUtility.AxisPolicesToNDSBP(inv.AxisPolices, inv.Placement.Rank).ToArray();
+            var ndsbpsB = DistributedUtility.AxisPolicesToNDSBP(outv.AxisPolices, outv.Placement.Rank).ToArray();
+
             // TODO: add more invalid cases
-            if (inv.NdSBP.Distinct().Count() == 1 && outv.NdSBP.Distinct().Count() == 1 && inv.NdSBP[0] == outv.NdSBP[0])
+            if (ndsbpsA.Distinct().Count() == 1 && ndsbpsB.Distinct().Count() == 1 && ndsbpsA[0] == ndsbpsB[0])
             {
                 return new InvalidType("Same NDSBP");
             }
 
-            if (inv.NdSBP.Any(sbp => sbp is SBPPartial))
+            if (ndsbpsA.Any(sbp => sbp is SBPPartial))
             {
-                var nonPartialSumPos = Enumerable.Range(0, inv.NdSBP.Count).Where(i => inv.NdSBP[i] is not SBPPartial);
-                if (nonPartialSumPos.Any(i => inv.NdSBP[i] is SBPSplit && outv.NdSBP[i] is SBPBroadCast))
+                var nonPartialSumPos = Enumerable.Range(0, ndsbpsA.Length).Where(i => ndsbpsA[i] is not SBPPartial);
+                if (nonPartialSumPos.Any(i => ndsbpsA[i] is SBPSplit && ndsbpsB[i] is SBPBroadCast))
                 {
                     return new InvalidType("Not supported input is Split output is BroadCast");
                 }
 
-                var partialSumPos = Enumerable.Range(0, inv.NdSBP.Count).Where(i => inv.NdSBP[i] is SBPPartial);
-                if (partialSumPos.Any(i => inv.NdSBP[i] is SBPPartial && outv.NdSBP[i] is SBPSplit))
+                var partialSumPos = Enumerable.Range(0, ndsbpsA.Length).Where(i => ndsbpsA[i] is SBPPartial);
+                if (partialSumPos.Any(i => ndsbpsA[i] is SBPPartial && ndsbpsB[i] is SBPSplit))
                 {
                     return new InvalidType("Not supported input is Partial output is Split");
                 }
@@ -40,16 +43,16 @@ public sealed class ForceBoxingEvaluator : ITypeInferencer<ForceBoxing>, ICostEv
                 return outv;
             }
 
-            if (outv.NdSBP.Any(sbp => sbp is SBPPartial))
+            if (ndsbpsB.Any(sbp => sbp is SBPPartial))
             {
-                var nonPartialSumPos = Enumerable.Range(0, outv.NdSBP.Count).Where(i => outv.NdSBP[i] is not SBPPartial);
-                if (nonPartialSumPos.Any(i => inv.NdSBP[i] is SBPSplit && outv.NdSBP[i] is SBPBroadCast))
+                var nonPartialSumPos = Enumerable.Range(0, ndsbpsB.Length).Where(i => ndsbpsB[i] is not SBPPartial);
+                if (nonPartialSumPos.Any(i => ndsbpsA[i] is SBPSplit && ndsbpsB[i] is SBPBroadCast))
                 {
                     return new InvalidType("Not supported input is Split output is BroadCast");
                 }
 
-                var partialSumPos = Enumerable.Range(0, outv.NdSBP.Count).Where(i => outv.NdSBP[i] is SBPPartial);
-                if (partialSumPos.Any(i => inv.NdSBP[i] is SBPSplit && outv.NdSBP[i] is SBPPartial))
+                var partialSumPos = Enumerable.Range(0, ndsbpsB.Length).Where(i => ndsbpsB[i] is SBPPartial);
+                if (partialSumPos.Any(i => ndsbpsA[i] is SBPSplit && ndsbpsB[i] is SBPPartial))
                 {
                     return new InvalidType("Not supported input is Split output is Partial");
                 }
@@ -87,7 +90,7 @@ public sealed class ForceBoxingEvaluator : ITypeInferencer<ForceBoxing>, ICostEv
         var inTenor = context.GetArgumentValueAsTensor(target, ForceBoxing.Input);
         var input = inTenor.ToOrtTensor();
         var output = input - input;
-        var repeat = target.NewType.NdSBP.Select((x, i) => (x is SBPPartial) ? target.NewType.Placement.Hierarchy[i] : 1).Aggregate(1, (x, i) => x * i);
+        var repeat = target.NewType.AxisPolices.Select((x, i) => (x is SBPPartial) ? target.NewType.Placement.Hierarchy[i] : 1).Aggregate(1, (x, i) => x * i);
         for (int i = 0; i < repeat; i++)
         {
             output += input;

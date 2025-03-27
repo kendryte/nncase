@@ -55,6 +55,11 @@ public class TileEvaluator : IEvaluator<Tile>, ITypeInferencer<Tile>, ICostEvalu
     private IRType Visit(ITypeInferenceContext context, Tile target, TensorType input, TensorType repeat)
     {
         var inShape = input.Shape;
+        if (inShape.IsUnranked)
+        {
+            return input;
+        }
+
         var repeats = context.GetArgument(target, Tile.Repeats);
         if (repeats is TensorConst tc)
         {

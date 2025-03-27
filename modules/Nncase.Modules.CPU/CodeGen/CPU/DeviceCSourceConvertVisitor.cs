@@ -35,6 +35,46 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
     public PrimFunction VisitEntry => (TIR.PrimFunction)VisitRoot!;
 
+    public static void WriteWithProfiler(string functionName, string tagName = "")
+    {
+        functionName = functionName.TrimEnd(new char[] { ';', '\n' });
+        if (tagName == string.Empty)
+        {
+            int index = functionName.IndexOf('(', StringComparison.Ordinal);
+            if (index != -1)
+            {
+                tagName = functionName.Substring(0, index);
+            }
+        }
+
+        tagName = tagName == string.Empty ? functionName : tagName;
+        IndentScope.Writer.IndWrite("{\n");
+        IndentScope.Writer.Write($"constexpr std::string_view function_name = \"{tagName}\";\n");
+        IndentScope.Writer.Write($"auto_profiler profiler(function_name, runtime::profiling_level::device);\n");
+        IndentScope.Writer.Write($"{functionName};\n");
+        IndentScope.Writer.IndWrite("}\n");
+    }
+
+    public static void WriteIndWithProfiler(string functionName, string tagName = "")
+    {
+        functionName = functionName.TrimEnd(new char[] { ';', '\n' });
+        if (tagName == string.Empty)
+        {
+            int index = functionName.IndexOf('(', StringComparison.Ordinal);
+            if (index != -1)
+            {
+                tagName = functionName.Substring(0, index);
+            }
+        }
+
+        tagName = tagName == string.Empty ? functionName : tagName;
+        IndentScope.Writer.IndWrite("{\n");
+        IndentScope.Writer.IndWrite($"constexpr std::string_view function_name = \"{tagName}\";\n");
+        IndentScope.Writer.IndWrite($"auto_profiler profiler(function_name, runtime::profiling_level::device);\n");
+        IndentScope.Writer.IndWrite($"{functionName};\n");
+        IndentScope.Writer.IndWrite("}\n");
+    }
+
     public string GetHeader()
     {
         return _deviceBuilder.ToString();
@@ -209,7 +249,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         switch (expr.Target)
         {
             case PrimFunction deviceFunc:
-                IndentScope.Writer.IndWrite($"{deviceFunc.Name}({string.Join(",", arguments.Select(arg => arg.Name))});\n");
+                WriteIndWithProfiler($"{deviceFunc.Name}({string.Join(",", arguments.Select(arg => arg.Name))});\n");
                 break;
             case IR.Math.Binary op:
                 str = CSourceUtilities.ContertBinary(op, arguments);
@@ -290,24 +330,24 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 str = $"(({op.NewType.ToC()}){arguments[0].Name})";
                 break;
             case TIR.Memcopy op:
-                IndentScope.Writer.IndWrite($"tensor_copy({arguments[1].Name}, {arguments[0].Name});\n");
+                WriteIndWithProfiler($"tensor_copy({arguments[1].Name}, {arguments[0].Name});\n");
                 break;
             case TIR.CPU.Unary op:
-                IndentScope.Writer.IndWrite(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unary.cshtml", new UnaryKernelTemplateModel
+                WriteIndWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unary.cshtml", new UnaryKernelTemplateModel
                 {
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
                     UnaryOp = op.UnaryOp,
                 }).Result);
                 break;
             case TIR.CPU.Binary op:
-                IndentScope.Writer.IndWrite(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
+                WriteIndWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
                 {
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
                     BinaryOp = op.BinaryOp,
                 }).Result);
                 break;
             case TIR.CPU.PackedBinary op:
-                IndentScope.Writer.IndWrite(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
+                WriteIndWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
                 {
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
                     BinaryOp = op.BinaryOp,
@@ -316,13 +356,13 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             case TIR.CPU.Swish swish:
                 if (swish.Beta == 1.0f)
                 {
-                    IndentScope.Writer.IndWrite($"unary<ops::swish>({arguments[0].Name}, {arguments[1].Name});\n");
+                    WriteIndWithProfiler($"unary<ops::swish>({arguments[0].Name}, {arguments[1].Name});\n");
                 }
                 else
                 {
                     IndentScope.Writer.IndWrite($"float beta[1] = {{{swish.Beta}}};\n");
                     IndentScope.Writer.IndWrite($"tensor_view<float, fixed_shape<1>> tb(std::span<float, 1>(beta, beta + 1));\n");
-                    IndentScope.Writer.IndWrite($"binary<ops::swishb>({arguments[0].Name}, tb, {arguments[1].Name});\n");
+                    WriteIndWithProfiler($"binary<ops::swishb>({arguments[0].Name}, tb, {arguments[1].Name});\n");
                 }
 
                 break;
@@ -335,7 +375,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
                 break;
             case TIR.CPU.Pack pack:
-                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Pack.cshtml", new TypedKernelTemplateModel<TIR.CPU.Pack>(pack)
+                WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Pack.cshtml", new TypedKernelTemplateModel<TIR.CPU.Pack>(pack)
                 {
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
                     Indent = new string(' ', IndentScope.Writer.Indent),

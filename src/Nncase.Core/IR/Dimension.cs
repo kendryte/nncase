@@ -173,6 +173,10 @@ public struct Dimension : IEquatable<Dimension?>
         {
             return System.Math.Abs(value.FixedValue);
         }
+        else if (value.IsUnknown)
+        {
+            return Unknown;
+        }
 
         return value.Value.Metadata.Range?.Min >= 0 ? value.Value : IR.F.Math.Abs(value.Value);
     }
@@ -191,6 +195,10 @@ public struct Dimension : IEquatable<Dimension?>
         {
             return max;
         }
+        else if (value.IsUnknown || min.IsUnknown || max.IsUnknown)
+        {
+            return Unknown;
+        }
 
         return IR.F.Math.Clamp(value.Value, min.Value, max.Value);
     }
@@ -200,6 +208,10 @@ public struct Dimension : IEquatable<Dimension?>
         if (lhs.IsFixed && rhs.IsFixed)
         {
             return (lhs.FixedValue + rhs.FixedValue - 1) / rhs.FixedValue;
+        }
+        else if (lhs.IsUnknown || rhs.IsUnknown)
+        {
+            return Unknown;
         }
 
         return IR.F.Math.CeilDiv(lhs.Value, rhs.Value);
@@ -216,6 +228,10 @@ public struct Dimension : IEquatable<Dimension?>
         {
             return System.Math.Max(lhs.FixedValue, rhs.FixedValue);
         }
+        else if (lhs.IsUnknown || rhs.IsUnknown)
+        {
+            return Unknown;
+        }
 
         return IR.F.Math.Max(lhs.Value, rhs.Value);
     }
@@ -225,6 +241,10 @@ public struct Dimension : IEquatable<Dimension?>
         if (lhs.IsFixed && rhs.IsFixed)
         {
             return System.Math.Min(lhs.FixedValue, rhs.FixedValue);
+        }
+        else if (lhs.IsUnknown || rhs.IsUnknown)
+        {
+            return Unknown;
         }
 
         return IR.F.Math.Min(lhs.Value, rhs.Value);
@@ -245,6 +265,10 @@ public struct Dimension : IEquatable<Dimension?>
                 && (min > compare.FixedValue || max < compare.FixedValue))
         {
             return falseValue;
+        }
+        else if (value.IsUnknown || compare.IsUnknown)
+        {
+            return Unknown;
         }
 
         return IR.F.Math.Select(IR.F.Math.Equal(value.Value, compare.Value), trueValue.ToExpr(), falseValue.ToExpr());
