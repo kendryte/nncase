@@ -57,7 +57,7 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
            [[maybe_unused]] LhsPadedNums lhsPadedNums = {},
            [[maybe_unused]] RhsPackedAxes rhsPackedAxes = {},
            [[maybe_unused]] RhsPadedNums rhsPadedNums = {}) {
-    static_assert(TransposedA == false && TransposedA == false,
+    static_assert(TransposedA == false && TransposedB == false,
                   "not supported for now");
     using TLhsElem = typename TLhs::local_tensor_type::element_type;
     using TRhsElem = typename TRhs::local_tensor_type::element_type;
@@ -101,6 +101,20 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
     constexpr auto LhsRank = TLhs::local_tensor_type::rank();
     constexpr auto RhsRank = TRhs::local_tensor_type::rank();
     constexpr auto OutRank = std::decay_t<TOut>::local_tensor_type::rank();
+    ntt::ranked_shape<OutRank> CShape;
+    ntt::ranked_strides<OutRank> CStrides;
+    for (auto i = 0; i < OutRank; i++) {
+        CShape.at(i) = out_local_shape::at(i);
+        CStrides.at(i) = out_local_strides::at(i);
+    }
+
+    auto C = ntt::tensor_view<TOutElem, ntt::ranked_shape<OutRank>,
+                              ntt::ranked_strides<OutRank>>(
+        std::span<TOutElem>(output.local().buffer().data(),
+                            CShape[0] * CStrides[0]),
+        CShape, CStrides);
+
+    // TODO: start from different k_offset can reduce confliction
     for (size_t k_offset = 0; k_offset < K; k_offset += lcm_K) {
         if (local_K_lhs >= local_K_rhs) {
             size_t lhs_k_mesh_idx = k_offset / local_K_lhs;
@@ -133,13 +147,6 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
                     BStrides.at(i) = B_remote.strides()[i];
                 }
 
-                ntt::ranked_shape<OutRank> CShape;
-                ntt::ranked_strides<OutRank> CStrides;
-                for (auto i = 0; i < OutRank; i++) {
-                    CShape.at(i) = out_local_shape::at(i);
-                    CStrides.at(i) = out_local_strides::at(i);
-                }
-
                 auto A = ntt::tensor_view<TLhsElem, ntt::ranked_shape<LhsRank>,
                                           ntt::ranked_strides<LhsRank>>(
                     std::span<TLhsElem>(A_remote.buffer().data() + rhs_k_offset,
@@ -150,15 +157,7 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
                     std::span<TRhsElem>(B_remote.buffer().data(),
                                         BShape[0] * BStrides[0]),
                     BShape, BStrides);
-                auto C = ntt::tensor_view<TOutElem, ntt::ranked_shape<OutRank>,
-                                          ntt::ranked_strides<OutRank>>(
-                    std::span<TOutElem>(output.local().buffer().data(),
-                                        CShape[0] * CStrides[0]),
-                    CShape, CStrides);
-                // auto A = ntt::tensor_view<TLhsElem, lhs_local_shape>(
-                // std::span<TLhsElem,192*256>(A_remote.buffer().data() +
-                // rhs_k_offset,AShape[0] * AStrides[0]));
-                // //                         AShape[0] * AStrides[0]))
+
                 if (global_rhs_k == 0) {
                     ntt::matmul<AccumulateC, TransposedA, TransposedB>(
                         A, B, C, lhsPackedAxes, lhsPadedNums, rhsPackedAxes,
@@ -200,13 +199,6 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
                     AStrides.at(i) = A_remote.strides()[i];
                 }
 
-                ntt::ranked_shape<OutRank> CShape;
-                ntt::ranked_strides<OutRank> CStrides;
-                for (auto i = 0; i < OutRank; i++) {
-                    CShape.at(i) = out_local_shape::at(i);
-                    CStrides.at(i) = out_local_strides::at(i);
-                }
-
                 auto B = ntt::tensor_view<TRhsElem, ntt::ranked_shape<RhsRank>,
                                           ntt::ranked_strides<RhsRank>>(
                     std::span<TRhsElem>(B_remote.buffer().data() +
@@ -219,11 +211,6 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
                     std::span<TLhsElem>(A_remote.buffer().data(),
                                         AShape[0] * AStrides[0]),
                     AShape, AStrides);
-                auto C = ntt::tensor_view<TOutElem, ntt::ranked_shape<OutRank>,
-                                          ntt::ranked_strides<OutRank>>(
-                    std::span<TOutElem>(output.local().buffer().data(),
-                                        CShape[0] * CStrides[0]),
-                    CShape, CStrides);
 
                 if (global_lhs_k == 0) {
                     ntt::matmul<AccumulateC, TransposedA, TransposedB>(
@@ -235,6 +222,31 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
                         rhsPadedNums);
                 }
             }
+        }
+    }
+
+    // TODO: remove this when summa tiling is ready
+    if constexpr (IsVector<TLhsElem> && IsVector<TRhsElem>) {
+        if constexpr (TLhsElem::shape_type::rank() == 2 &&
+                      TRhsElem::shape_type::rank() == 2 &&
+                      TLhsElem::shape_type::at(0) == 64 &&
+                      TLhsElem::shape_type::at(1) == 32 &&
+                      TRhsElem::shape_type::at(0) == 64 &&
+                      TRhsElem::shape_type::at(1) == 32 &&
+                      std::is_same_v<float, typename TLhsElem::element_type>) {
+
+            ntt::apply(CShape, [&](auto index) {
+                auto data = (float *)C(index).buffer().data();
+                float tmp[64 * 64];
+                for (int i = 0; i < 64; i++) {
+                    std::memcpy(tmp + i * 2 * 32, data + i * 32,
+                                32 * sizeof(float));
+                    std::memcpy(tmp + (i * 2 + 1) * 32, data + (i + 64) * 32,
+                                32 * sizeof(float));
+                }
+
+                std::memcpy(data, tmp, 64 * 64 * sizeof(float));
+            });
         }
     }
 }
