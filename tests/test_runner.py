@@ -393,7 +393,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         return (arg_names, arg_values)
 
     def read_model_file(self, model_file: Union[List[str], str]):
-        if isdir(model_file):
+        if isinstance(model_file, str) and isdir(model_file):
             return model_file
         if isinstance(model_file, str):
             with open(model_file, 'rb') as f:
