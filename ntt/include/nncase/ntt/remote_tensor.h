@@ -20,14 +20,6 @@
 #include "nncase/ntt/arch/cpu/topology.h"
 #endif
 
-#if defined(NNCASE_CPU_MODULE) || defined(NNCASE_XPU_MODULE)
-#include <topology_def.h>
-#elif !defined(NNCASE_NTT_TOPOLOGY_DEFINED)
-namespace nncase::ntt::distributed {
-constexpr std::array<size_t, 1> topology_dims = {1};
-}
-#endif
-
 #include "tensor.h"
 
 #if defined(NNCASE_XPU_MODULE) && defined(SYS_MODE)
