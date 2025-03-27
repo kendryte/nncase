@@ -784,54 +784,28 @@ public abstract class HuggingFaceModel
     {
         /*
          * 1.1 embedding
+         * self.padding_idx = config.pad_token_id
+         * self.vocab_size = config.vocab_size
+         * self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx)
          */
-        // if (inputEmbeds == null)
-        // {
         var embedTokensWeight = Context!.ConstTensors!["model.embed_tokens.weight"];
-
-        // TODO:@lordrebel
-        var zeroValue = 0.0f;
-        object asTypeZero = zeroValue;
-        if (embedTokensWeight.ElementType != DataTypes.Float32)
-        {
-            var method = embedTokensWeight.ElementType.CLRType.GetMethod(
-                                        "op_Explicit",
-                                        BindingFlags.Public | BindingFlags.Static,
-                                        null,
-                                        new Type[] { typeof(float) },
-                                        null);
-
-            if (method != null)
-            {
-                asTypeZero = method.Invoke(null, [zeroValue])!;
-            }
-            else
-            {
-                throw new InvalidOperationException($"cannot get float convert for type:{embedTokensWeight.ElementType}");
-            }
-        }
-
-        if (Context.Config!.Keys.Contains("pad_token_id"))
-        {
-            for (var i = 0; i < embedTokensWeight.Shape[-1].FixedValue; i++)
-            {
-                embedTokensWeight[(long)Context.Config["pad_token_id"], i] = asTypeZero!;
-            }
-        }
 
         Expr? inputEmbeds;
         if (input_ids.CheckedShape.Rank > 2 && input_ids.CheckedDataType.IsFloat())
         {
-            System.Console.WriteLine("input_ids rank >2 && dtype==float32 ,regard input_id as embedding...");
+            System.Console.WriteLine("input_ids rank >2 && dtype.isFloat()==true ,regard input_id as embedding...");
             inputEmbeds = input_ids;
         }
         else
         {
-            inputEmbeds = IR.F.Tensors.Gather(embedTokensWeight, 0, input_ids);
-        }
+            long? padding_idx = null;
+            if (Context.Config!.Keys.Contains("pad_token_id"))
+            {
+                padding_idx = (long)Context.Config["pad_token_id"];
+            }
 
-        // TODO: @lordrebel end
-        // }
+            inputEmbeds = Embeding(input_ids, embedTokensWeight, padding_idx);
+        }
 
         // if (useCache == true && pastKeyValues == null)
         // {
@@ -1016,24 +990,30 @@ public abstract class HuggingFaceModel
 
         var lmHead = Linear(lastHiddenStates, Context.ConstTensors["model.embed_tokens.weight"]);
 
-        Context.Outputs!.Add("logits", lmHead);
-
+        // FIXIT: this is work around for bfloat16
+        Context.Outputs!.Add("logits",  IR.F.Tensors.Cast(lmHead, DataTypes.Float32));
         if (Context.CompileSession!.CompileOptions.HuggingFaceOptions.OutputAttentions)
         {
             var outAttention = IR.F.Tensors.Concat(new IR.Tuple(allSelfAttns.ToArray()), 0);
-            Context.Outputs!["outAttention"] = outAttention;
+
+            // FIXIT: this is work around for bfloat16
+            Context.Outputs!["outAttention"] = IR.F.Tensors.Cast(outAttention, DataTypes.Float32);
         }
 
         if (Context.CompileSession.CompileOptions.HuggingFaceOptions.UseCache)
         {
             var kvCache = IR.F.Tensors.Concat(new IR.Tuple(allSelfKV.ToArray()), 0);
-            Context.Outputs!["kvCache"] = kvCache;
+
+            // FIXIT: this is work around for bfloat16
+            Context.Outputs!["kvCache"] = IR.F.Tensors.Cast(kvCache, DataTypes.Float32);
         }
 
         if (Context.CompileSession.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
         {
             var hiddenStates = IR.F.Tensors.Concat(new IR.Tuple(allHiddenStates.ToArray()), 0);
-            Context.Outputs!["hiddenStates"] = hiddenStates;
+
+            // FIXIT: this is work around for bfloat16
+            Context.Outputs!["hiddenStates"] = IR.F.Tensors.Cast(hiddenStates, DataTypes.Float32);
         }
     }
 }
