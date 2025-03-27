@@ -69,7 +69,6 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
 
     using lhs_global_shape = typename TLhs::global_shape_type;
     using rhs_global_shape = typename TRhs::global_shape_type;
-    using out_global_shape = typename std::decay_t<TOut>::global_shape_type;
 
     using lhs_local_shape = typename TLhs::local_shape_type;
     using rhs_local_shape = typename TRhs::local_shape_type;
