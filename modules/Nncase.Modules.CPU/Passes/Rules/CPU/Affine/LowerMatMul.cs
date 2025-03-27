@@ -24,11 +24,13 @@ public partial class LowerMatmul : RewriteRule<Pattern>
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsCall(
         "call",
-        IsOp<Op>("op", op => op is MatMul or IR.CPU.PackedMatMul),
+        IsOp<Op>("op", op => op is TIR.CPU.Matmul),
         IsWildcard("lhs") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") },
-        IsWildcard("rhs") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") });
+        IsWildcard("rhs") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") },
+        IsWildcard("output") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") },
+        IsWildcard("loadC"));
 
-    private Expr? GetReplace(Expr call, Op op, Expr lhs, Expr rhs)
+    private Expr? GetReplace(Expr call, TIR.CPU.Matmul op, Expr lhs, Expr rhs, Expr output)
     {
         // TODO: summa not support tiling for now.
         if (lhs.CheckedType is DistributedType ldt && ldt.AxisPolices.Last() is SBPSplit)
@@ -48,8 +50,7 @@ public partial class LowerMatmul : RewriteRule<Pattern>
             var rhsi = i - (rank - (rhsShape.Length + 1));
             switch (lhsi, rhsi)
             {
-#pragma warning disable SA1008 // Opening parenthesis should be spaced correctly
-                case ( >= 0, >= 0):
+                case (>= 0, >= 0):
                     switch (lhsShape[lhsi], rhsShape[rhsi])
                     {
                         case (long a, long b) when a == b:
@@ -69,32 +70,28 @@ public partial class LowerMatmul : RewriteRule<Pattern>
                     }
 
                     break;
-                case ( < 0, >= 0):
+                case (< 0, >= 0):
                     rhsRes[rhsi] = new AffineRange(domains[i].Offset, domains[i].Extent);
                     break;
-                case ( >= 0, < 0):
+                case (>= 0, < 0):
                     lhsRes[lhsi] = new AffineRange(domains[i].Offset, domains[i].Extent);
                     break;
-                case ( < 0, < 0):
+                case (< 0, < 0):
                     break;
-#pragma warning restore SA1008 // Opening parenthesis should be spaced correctly
             }
         }
 
         var (om, ok, on) = (rank - 3, rank - 2, rank - 1);
         var (lm, lk) = (lhsShape.Length - 2, lhsShape.Length - 1);
         var (rk, rn) = (rhsShape.Length - 2, rhsShape.Length - 1);
-        if (op is IR.CPU.PackedMatMul pm)
+        if (op.TransposeA)
         {
-            if (pm.TransposeA)
-            {
-                (lm, lk) = (lk, lm);
-            }
+            (lm, lk) = (lk, lm);
+        }
 
-            if (pm.TransposeB)
-            {
-                (rk, rn) = (rn, rk);
-            }
+        if (op.TransposeB)
+        {
+            (rk, rn) = (rn, rk);
         }
 
         lhsRes[lm] = new AffineRange(domains[om].Offset, domains[om].Extent);
@@ -105,23 +102,13 @@ public partial class LowerMatmul : RewriteRule<Pattern>
         var lhsMap = new AffineMap(domains, default, lhsRes);
         var rhsMap = new AffineMap(domains, default, rhsRes);
         var outMap = new AffineMap(domains, default, domains.SkipLast(3).Concat([domains[om], domains[on]]).Select(x => new AffineRange(x.Offset, x.Extent)).ToArray());
-        var outBuffer = call.CheckedType switch
-        {
-            TensorType t => IR.F.Buffer.Uninitialized(t.DType, TIR.MemoryLocation.Data, t.Shape.ToValueArray()),
-            DistributedType dt => IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape.ToValueArray(), dt.AxisPolices, dt.Placement),
-            _ => throw new ArgumentOutOfRangeException(nameof(call)),
-        };
         return IR.F.Affine.Grid(ModuleKind)
             .Domain(rank, out var domainVar)
             .Read(lhs, lhsMap, out var lhsTile)
             .Read(rhs, rhsMap, out var rhsTile)
-            .Write(outBuffer, outMap, out var outTile)
-            .Body(op switch
-            {
-                MatMul => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L)),
-                IR.CPU.PackedMatMul pop => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L), pop.LhsPackedAxes, pop.LhsPadedNums, pop.RhsPackedAxes, pop.RhsPadedNums, pop.TransposeA, pop.TransposeB, pop.FusedReduce),
-                _ => throw new System.Diagnostics.UnreachableException(),
-            })
+            .Write(output, outMap, out var outTile)
+            .Body(
+                TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L), op.LhsPackedAxes, op.LhsPadedNums, op.RhsPackedAxes, op.RhsPadedNums, op.TransposeA, op.TransposeB, op.FusedReduce))
             .Build();
     }
 }
