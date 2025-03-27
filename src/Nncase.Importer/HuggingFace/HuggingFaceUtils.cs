@@ -28,9 +28,8 @@ internal static class HuggingFaceUtils
                 json,
                 new JsonSerializerSettings
                 {
-                    DateParseHandling = DateParseHandling.None // 防止日期自动转换
-                }
-            );
+                    DateParseHandling = DateParseHandling.None, // 防止日期自动转换
+                });
 
             ProcessDictionary(root);
             return root;
@@ -49,12 +48,14 @@ internal static class HuggingFaceUtils
                     ProcessDictionary(subDict); // 递归处理
                     dict[key] = subDict;
                 }
+
                 // 处理数组
                 else if (value is JArray jArray)
                 {
                     var list = ProcessArray(jArray);
                     dict[key] = list;
                 }
+
                 // 处理基本类型
                 else if (value is JValue jValue)
                 {
@@ -83,6 +84,7 @@ internal static class HuggingFaceUtils
                         break;
                 }
             }
+
             return list;
         }
     }
@@ -96,27 +98,36 @@ internal static class HuggingFaceUtils
             {
                 case Dictionary<string, object> d:
                     if (!d.TryGetValue(key.ToString(), out current))
+                    {
                         throw new KeyNotFoundException();
+                    }
+
                     break;
                 case List<object> l when key is int index:
                     if (index < 0 || index >= l.Count)
+                    {
                         throw new IndexOutOfRangeException();
+                    }
+
                     current = l[index];
                     break;
                 default:
                     throw new InvalidOperationException();
             }
         }
+
         return (T)current;
     }
 
     public static Dictionary<string, object> GetConfigInfo(string path)
     {
-        var config = new Dictionary<string, object>();
+        _ = new Dictionary<string, object>();
+        Dictionary<string, object>? config;
         if (File.Exists(path))
         {
             var configJson = File.ReadAllText(path);
             config = MyJsonConverter.ParseNestedJson(configJson);
+
             // foreach (var key in config.Keys.ToList())
             // {
             //     if (config[key] is JArray jArray)

@@ -789,7 +789,7 @@ public abstract class HuggingFaceModel
         // {
         var embedTokensWeight = Context!.ConstTensors!["model.embed_tokens.weight"];
 
-        //TODO:@lordrebel
+        // TODO:@lordrebel
         var zeroValue = 0.0f;
         object asTypeZero = zeroValue;
         if (embedTokensWeight.ElementType != DataTypes.Float32)
@@ -829,7 +829,8 @@ public abstract class HuggingFaceModel
         {
             inputEmbeds = IR.F.Tensors.Gather(embedTokensWeight, 0, input_ids);
         }
-        //TODO: @lordrebel end
+
+        // TODO: @lordrebel end
         // }
 
         // if (useCache == true && pastKeyValues == null)

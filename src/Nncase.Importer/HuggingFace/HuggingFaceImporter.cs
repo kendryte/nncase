@@ -39,7 +39,7 @@ public class ModelInitContext
 public partial class HuggingFaceImporter : BaseImporter
 {
     private readonly HuggingFaceModel _model;
-    private ModelInitContext _modelContext = new();
+    private readonly ModelInitContext _modelContext = new();
 
     public HuggingFaceImporter(string huggingFaceDir, CompileSession compileSession)
         : base(compileSession)
