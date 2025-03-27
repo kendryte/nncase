@@ -208,13 +208,12 @@ program_id_in_mesh(ranked_shape<Mesh::shape_type::rank()> index) noexcept {
     auto submesh_rank = get_submesh_rank<Mesh, Topology>();
     if (submesh_rank) {
         auto axis = get_submesh_start<Mesh, Topology>();
-        size_t id = 0;
+        size_t id = index.at(axis);
         for (size_t i = 0; i < submesh_rank - 1; i++) {
             auto next_dim = Mesh::shape_type::at(axis + 1);
-            id = id * next_dim + index.at(axis);
+            id = id * next_dim + index.at(axis + 1);
             axis++;
         }
-        id = id + index.at(axis);
         return id;
     }
     return 0;
