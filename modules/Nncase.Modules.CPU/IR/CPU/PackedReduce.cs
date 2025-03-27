@@ -49,6 +49,10 @@ public sealed partial class PackedReduce : Op
                 packedAxes.Remove(axis);
                 padedNums.RemoveAt(j);
                 lanes.RemoveAt(j);
+            }
+
+            if (!target.KeepDims)
+            {
                 for (int i = 0; i < packedAxes.Count; i++)
                 {
                     if (packedAxes[i] > axis)
