@@ -23,9 +23,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 def test_llama32_1B(request):
     cfg = """
     [huggingface_options]
-    output_attentions = false
+    output_attentions = true
     output_hidden_states = true
-    use_cache = false
+    use_cache = true
 
     [generator]
     [generator.inputs]

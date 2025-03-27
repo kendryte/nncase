@@ -36,23 +36,6 @@ public class ModelInitContext
     public CompileSession? CompileSession { get; set; }
 }
 
-public abstract class HuggingFaceModel
-{
-    // 通过属性暴露关键数据
-    protected ModelInitContext? Context { get; private set; }
-
-    public virtual void Initialize(ModelInitContext context, string dir)
-    {
-        Context = context;  // 保存上下文引用
-    }
-
-    public abstract (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs();
-
-    public abstract Expr CreateOutputs();
-
-    public abstract void VisitForCausalLM();
-}
-
 public partial class HuggingFaceImporter : BaseImporter
 {
     private readonly HuggingFaceModel _model;
@@ -61,8 +44,6 @@ public partial class HuggingFaceImporter : BaseImporter
     public HuggingFaceImporter(string huggingFaceDir, CompileSession compileSession)
         : base(compileSession)
     {
-        // TODO: restructure for reading saftensors
-        // 读取 config.json 文件
         var config = HuggingFaceUtils.GetConfigInfo(Path.Combine(huggingFaceDir, "config.json"));
         var tmp_config = HuggingFaceUtils.GetConfigInfo(Path.Combine(huggingFaceDir, "generation_config.json"));
         foreach (var pair in tmp_config)
@@ -96,12 +77,13 @@ public partial class HuggingFaceImporter : BaseImporter
         _modelContext!.Config = config;
         _modelContext!.ConstTensors = constTensors;
         _modelContext!.CompileSession = compileSession;
-        switch (config!["architectures"]!)
+        switch (config.GetNestedValue<string>("architectures", 0))
         {
             case "Qwen2ForCausalLM":
                 _model = new Qwen2();
                 break;
-            case "ChatGLMForConditionalGeneration":
+            case "LlamaForCausalLM":
+                _model = new Llama3_2();
                 break;
             default:
                 throw new NotImplementedException();
