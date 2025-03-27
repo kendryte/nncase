@@ -155,9 +155,9 @@ public sealed class CPUTIRSelectionPass : TIRSelectionPass
         switch (call[IR.Distributed.Boxing.Input].CheckedType, boxing.NewType)
         {
             case (TensorType, DistributedType distTensorType):
-                return TIR.F.CPU.TensorLoad(output, arguments[0], distTensorType.NdSBP, distTensorType.Placement);
+                return TIR.F.CPU.TensorLoad(output, arguments[0], distTensorType.AxisPolices, distTensorType.Placement);
             case (DistributedType distTensorType, TensorType):
-                return TIR.F.CPU.TensorStore(arguments[0], output, distTensorType.NdSBP, distTensorType.Placement);
+                return TIR.F.CPU.TensorStore(arguments[0], output, distTensorType.AxisPolices, distTensorType.Placement);
             case (DistributedType inType, DistributedType outType):
                 return TIR.F.CPU.GatherReduceScatter(arguments[0], output, inType, outType);
             default:

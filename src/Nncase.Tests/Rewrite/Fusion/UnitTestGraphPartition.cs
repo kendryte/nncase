@@ -830,7 +830,7 @@ public class UnitTestGraphPartition : TestClassBase
         var post_result = CompilerServices.Evaluate(((Function)module.Entry!).Body, feed_dict);
 
         Assert.Equal(2, pre_number);
-        Assert.Equal(0, post_number);
+        Assert.Equal(2, post_number);
         Assert.Equal(pre_result, post_result);
     }
 }

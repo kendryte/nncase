@@ -15,7 +15,6 @@
 #pragma once
 #include "../apply.h"
 #include "../loop.h"
-#include "../profiler.h"
 #include "../shape_infer/reduce_axis.h"
 #include "../utility.h"
 #include <tuple>
@@ -24,7 +23,6 @@ namespace nncase::ntt {
 
 template <size_t Axis, IsTensor... TInputs, IsTensor TOut>
 void stack(const std::tuple<TInputs...> &inputs, TOut &&output) {
-    AUTO_NTT_PROFILER
     auto domain = to_ranked_shape(output.shape());
     domain[Axis] = 1;
     apply(domain, [&](auto out_index) {

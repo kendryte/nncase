@@ -609,7 +609,7 @@ public static class TypeInference
             _ => throw new TypeInferenceInterruptException(new InvalidType("Invalid shape type")),
         };
 
-        if (shapeType.Shape.IsUnranked || !shapeType.Shape[0].IsFixed)
+        if (inShape.IsUnranked || shapeType.Shape.IsUnranked || !shapeType.Shape[0].IsFixed)
         {
             return Shape.Unranked;
         }
