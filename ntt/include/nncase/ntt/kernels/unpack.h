@@ -42,7 +42,8 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
             auto pout = output.buffer().data();
             auto count = input.shape().length();
             if constexpr (PackAxis == (rank - 1))
-                ntt::u_memcpy(pin, 1, reinterpret_cast<TVec *>(pout), 1, count);
+                ntt::u_unary<ntt::ops::copy<TVec>, TVec>(
+                    pin, 1, reinterpret_cast<TVec *>(pout), 1, count);
             else {
                 constexpr auto in_strides =
                     std::array<size_t, sizeof...(InStrides)>{InStrides...};
@@ -152,7 +153,8 @@ class unpack_impl<ranked_shape<in_rank>, fixed_shape<InElemDims...>, OutShape,
             auto pout = output.buffer().data();
             auto count = input.shape().length();
             if constexpr (PackAxis == (rank - 1))
-                ntt::u_memcpy(pin, 1, reinterpret_cast<TVec *>(pout), 1, count);
+                ntt::u_unary<ntt::ops::copy<TVec>, TVec>(
+                    pin, 1, reinterpret_cast<TVec *>(pout), 1, count);
             else
                 ntt::u_unpack_1d_ranked<TVec::shape()[0], TVec,
                                         typename TOut::element_type>(

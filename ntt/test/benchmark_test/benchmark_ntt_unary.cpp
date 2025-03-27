@@ -31,18 +31,18 @@ void benchmark_ntt_unary(std::string op_name, T low, T high) {
     constexpr size_t size2 = 2000;
 #endif
     using tensor_type = ntt::tensor<ntt::vector<T, N>, ntt::fixed_shape<size2>>;
-    tensor_type ntt_input, ntt_result;
+    tensor_type ntt_input, ntt_output;
     NttTest::init_tensor(ntt_input, low, high);
 
     for (size_t i = 0; i < size1; i++) {
-        ntt::unary<Op>(ntt_input, ntt_result);
-        asm volatile("" ::"g"(ntt_result));
+        ntt::unary<Op>(ntt_input, ntt_output);
+        asm volatile("" ::"g"(ntt_output));
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < size1; i++) {
-        ntt::unary<Op>(ntt_input, ntt_result);
-        asm volatile("" ::"g"(ntt_result));
+        ntt::unary<Op>(ntt_input, ntt_output);
+        asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -63,6 +63,7 @@ int main(int argc, char *argv[]) {
     benchmark_ntt_unary<ntt::ops::asin, float, N>("asin", -1.f, 1.f);
     benchmark_ntt_unary<ntt::ops::asinh, float, N>("asinh", -10.f, 10.f);
     benchmark_ntt_unary<ntt::ops::ceil, float, N>("ceil", -10.f, 10.f);
+    benchmark_ntt_unary<ntt::ops::copy, float, N>("copy", -10.f, 10.f);
     benchmark_ntt_unary<ntt::ops::cos, float, N>("cos", -10.f, 10.f);
     benchmark_ntt_unary<ntt::ops::cosh, float, N>("cosh", -10.f, 10.f);
     benchmark_ntt_unary<ntt::ops::erf, float, N>("erf", -10.f, 10.f);
