@@ -84,8 +84,12 @@ class HuggingfaceTestRunner(TestRunner):
             count = 0
             if not test_utils.in_ci():
                 logits = result.logits.detach().numpy()
+                # data = np.argmax(logits, 2).flatten()
+                # print(data)
+                # print(self.tokenizer.decode(data, skip_special_tokens=False))
                 dump_bin_file(os.path.join(self.case_dir, f'cpu_result_{count}.bin'), logits)
                 dump_txt_file(os.path.join(self.case_dir, f'cpu_result_{count}.txt'), logits)
+                dump_npy_file(os.path.join(self.case_dir, f'cpu_result_{count}.npy'), logits)
                 outputs.append(logits)
                 count += 1
             if(self.cfg['huggingface_options']['use_cache']):
@@ -93,6 +97,7 @@ class HuggingfaceTestRunner(TestRunner):
                     past_kv = recursive_stack(result.past_key_values).detach().numpy()
                     dump_bin_file(os.path.join(self.case_dir, f'cpu_result_{count}.bin'), past_kv)
                     dump_txt_file(os.path.join(self.case_dir, f'cpu_result_{count}.txt'), past_kv)
+                    dump_npy_file(os.path.join(self.case_dir, f'cpu_result_{count}.npy'), past_kv)
                     outputs.append(past_kv)
                     count += 1
             if(self.cfg['huggingface_options']['output_attentions']):
@@ -102,6 +107,8 @@ class HuggingfaceTestRunner(TestRunner):
                         self.case_dir, f'cpu_result_{count}.bin'), attentions)
                     dump_txt_file(os.path.join(
                         self.case_dir, f'cpu_result_{count}.txt'), attentions)
+                    dump_npy_file(os.path.join(
+                        self.case_dir, f'cpu_result_{count}.npy'), attentions)
                     outputs.append(attentions)
                     count += 1
             if(self.cfg['huggingface_options']['output_hidden_states']):
@@ -111,6 +118,8 @@ class HuggingfaceTestRunner(TestRunner):
                         self.case_dir, f'cpu_result_{count}.bin'), hidden_states)
                     dump_txt_file(os.path.join(
                         self.case_dir, f'cpu_result_{count}.txt'), hidden_states)
+                    dump_npy_file(os.path.join(
+                        self.case_dir, f'cpu_result_{count}.npy'), hidden_states)
                     outputs.append(hidden_states)
                     count += 1
 
@@ -118,8 +127,8 @@ class HuggingfaceTestRunner(TestRunner):
 
     def parse_model(self, model_path):
         self.model = AutoModelForCausalLM.from_pretrained(
-            model_path, torch_dtype="auto", device_map="auto").to(torch.float32)
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+            model_path, torch_dtype="auto", device_map="auto",trust_remote_code=True).to(torch.float32).eval()
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         self.generation_config = self.model.generation_config
         # self.generation_config.return_dict_in_generate = True # if False, generate only output tokens
         self.generation_config.max_new_tokens = 64

@@ -11,6 +11,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Nncase;
 using Nncase.IR;
@@ -19,21 +20,110 @@ using Tuple = System.Tuple;
 
 internal static class HuggingFaceUtils
 {
+    public class MyJsonConverter
+    {
+        public static Dictionary<string, object> ParseNestedJson(string json)
+        {
+            var root = JsonConvert.DeserializeObject<Dictionary<string, object>>(
+                json,
+                new JsonSerializerSettings
+                {
+                    DateParseHandling = DateParseHandling.None // 防止日期自动转换
+                }
+            );
+
+            ProcessDictionary(root);
+            return root;
+        }
+
+        private static void ProcessDictionary(IDictionary<string, object> dict)
+        {
+            foreach (var key in dict.Keys.ToList())
+            {
+                var value = dict[key];
+
+                // 处理嵌套对象
+                if (value is JObject jObject)
+                {
+                    var subDict = jObject.ToObject<Dictionary<string, object>>();
+                    ProcessDictionary(subDict); // 递归处理
+                    dict[key] = subDict;
+                }
+                // 处理数组
+                else if (value is JArray jArray)
+                {
+                    var list = ProcessArray(jArray);
+                    dict[key] = list;
+                }
+                // 处理基本类型
+                else if (value is JValue jValue)
+                {
+                    dict[key] = jValue.Value;
+                }
+            }
+        }
+
+        private static List<object> ProcessArray(JArray jArray)
+        {
+            var list = new List<object>();
+            foreach (var item in jArray)
+            {
+                switch (item.Type)
+                {
+                    case JTokenType.Object:
+                        var subDict = ((JObject)item).ToObject<Dictionary<string, object>>();
+                        ProcessDictionary(subDict);
+                        list.Add(subDict);
+                        break;
+                    case JTokenType.Array:
+                        list.Add(ProcessArray((JArray)item));
+                        break;
+                    default:
+                        list.Add(((JValue)item).Value);
+                        break;
+                }
+            }
+            return list;
+        }
+    }
+
+    public static T GetNestedValue<T>(this Dictionary<string, object> dict, params object[] keys)
+    {
+        object current = dict;
+        foreach (var key in keys)
+        {
+            switch (current)
+            {
+                case Dictionary<string, object> d:
+                    if (!d.TryGetValue(key.ToString(), out current))
+                        throw new KeyNotFoundException();
+                    break;
+                case List<object> l when key is int index:
+                    if (index < 0 || index >= l.Count)
+                        throw new IndexOutOfRangeException();
+                    current = l[index];
+                    break;
+                default:
+                    throw new InvalidOperationException();
+            }
+        }
+        return (T)current;
+    }
+
     public static Dictionary<string, object> GetConfigInfo(string path)
     {
         var config = new Dictionary<string, object>();
         if (File.Exists(path))
         {
             var configJson = File.ReadAllText(path);
-            config = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, object>>(
-                configJson);
-            foreach (var key in config.Keys.ToList())
-            {
-                if (config[key] is JArray jArray)
-                {
-                    config[key] = string.Join(", ", jArray.Select(token => token.ToString()));
-                }
-            }
+            config = MyJsonConverter.ParseNestedJson(configJson);
+            // foreach (var key in config.Keys.ToList())
+            // {
+            //     if (config[key] is JArray jArray)
+            //     {
+            //         config[key] = string.Join(", ", jArray.Select(token => token.ToString()));
+            //     }
+            // }
         }
         else
         {
@@ -48,6 +138,7 @@ internal static class HuggingFaceUtils
     public static Dictionary<string, Tensor> GetAllWeights(string path)
     {
         var constTensors = new Dictionary<string, Tensor>();
+        Console.WriteLine($"{path}");
         var constTensor = HuggingFaceUtils.LoadStateDict(path);
         foreach (var item in constTensor)
         {
@@ -119,50 +210,6 @@ internal static class HuggingFaceUtils
         return dictionary2;
     }
 
-    public static Tuple<List<double>, float> ComputeDefaultRopeParameters(
-        Dictionary<string, object> config)
-    {
-        /*
-         * base = config.rope_theta
-           partial_rotary_factor = config.partial_rotary_factor if hasattr(config, "partial_rotary_factor") else 1.0
-           head_dim = getattr(config, "head_dim", config.hidden_size // config.num_attention_heads)
-           dim = int(head_dim * partial_rotary_factor)
-         */
-        var baseRoPETheta = (float)(double)config["rope_theta"];
-        var partialRotaryFactor = 1.0; // config.partial_rotary_factor if hasattr(config, "partial_rotary_factor") else 1.0
-
-        int headDim;
-
-        if (config.TryGetValue("head_dim", out var headDimObj) && headDimObj is int headDim1)
-        {
-            headDim = headDim1;
-        }
-        else
-        {
-            int hiddenSize = (int)(long)config["hidden_size"];
-            int numAttentionHeads = (int)(long)config["num_attention_heads"];
-            headDim = hiddenSize / numAttentionHeads;
-        }
-
-        var dim = (int)(headDim * partialRotaryFactor);
-        float attentionFactor = 1.0f;
-
-        // Compute the inverse frequencies
-        // 创建一个从 0 到 dim-1 的数组，步长为 2
-        var arange = Enumerable
-            .Range(0, dim)
-            .Where(i => i % 2 == 0)
-            .Select(i => (float)i)
-            .ToArray();
-
-        // 计算 inv_freq
-        var inv_freq = arange
-            .Select(i => 1.0 / Math.Pow(baseRoPETheta, i / dim))
-            .ToArray()
-            .ToList();
-        return Tuple.Create(inv_freq, attentionFactor);
-    }
-
     internal static Dictionary<string, SafetensorsEntry> LoadIndex(Stream stream)
     {
         ulong uint64 = BitConverter.ToUInt64((ReadOnlySpan<byte>)stream.ReadBytes(8));
@@ -171,7 +218,7 @@ internal static class HuggingFaceUtils
             throw new ArgumentOutOfRangeException("stream", "Length of JSON exceeded int.MaxValue, not supported yet");
         }
 
-        return JsonSerializer.Deserialize<Dictionary<string, SafetensorsEntry>>(
+        return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, SafetensorsEntry>>(
                    Encoding.UTF8.GetString(stream.ReadBytes((int)uint64))) ??
                throw new NotImplementedException("Loaded header string failed to deserialize into the correct format.");
     }
@@ -320,6 +367,120 @@ internal static class HuggingFaceUtils
     //         return Tuple.Create((Call)KeyCache[layerCount], (Call)ValueCache[layerCount]);
     //     }
     // }
+}
+
+internal static class ModelUilts
+{
+    /// <summary>
+    /// huggingface utils functions: compute rope args.
+    /// </summary>
+    /// <param name="config">Get [rope_theta, head_dim, num_attention_heads, hidden_size].</param>
+    /// <returns>repo parameters.</returns>
+    public static Tuple<List<double>, float> ComputeDefaultRopeParameters(
+        Dictionary<string, object> config)
+    {
+        /*
+         * base = config.rope_theta
+           partial_rotary_factor = config.partial_rotary_factor if hasattr(config, "partial_rotary_factor") else 1.0
+           head_dim = getattr(config, "head_dim", config.hidden_size // config.num_attention_heads)
+           dim = int(head_dim * partial_rotary_factor)
+         */
+        var baseRoPETheta = (float)(double)config["rope_theta"];
+        var partialRotaryFactor = 1.0; // config.partial_rotary_factor if hasattr(config, "partial_rotary_factor") else 1.0
+
+        int headDim;
+
+        if (config.TryGetValue("head_dim", out var headDimObj) && headDimObj is int headDim1)
+        {
+            headDim = headDim1;
+        }
+        else
+        {
+            int hiddenSize = (int)(long)config["hidden_size"];
+            int numAttentionHeads = (int)(long)config["num_attention_heads"];
+            headDim = hiddenSize / numAttentionHeads;
+        }
+
+        var dim = (int)(headDim * partialRotaryFactor);
+        float attentionFactor = 1.0f;
+
+        // Compute the inverse frequencies
+        // 创建一个从 0 到 dim-1 的数组，步长为 2
+        var arange = Enumerable
+            .Range(0, dim)
+            .Where(i => i % 2 == 0)
+            .Select(i => (float)i)
+            .ToArray();
+
+        // 计算 inv_freq
+        var inv_freq = arange
+            .Select(i => 1.0 / Math.Pow(baseRoPETheta, i / dim))
+            .ToArray()
+            .ToList();
+        return Tuple.Create(inv_freq, attentionFactor);
+    }
+
+    /// <summary>
+    /// huggingface utils functions: compute rope args.
+    /// </summary>
+    /// <param name="config">Get [rope_theta, head_dim, num_attention_heads, hidden_size].</param>
+    /// <returns>repo parameters.</returns>
+    public static Tuple<List<double>, float> ComputeLlama3RopeParameters(
+        Dictionary<string, object> config)
+    {
+        /*
+         * base = config.rope_theta
+           partial_rotary_factor = config.partial_rotary_factor if hasattr(config, "partial_rotary_factor") else 1.0
+           head_dim = getattr(config, "head_dim", config.hidden_size // config.num_attention_heads)
+           dim = int(head_dim * partial_rotary_factor)
+         */
+
+        var (invFreq, attentionFactor) = ComputeDefaultRopeParameters(config);
+        var factor = (float)config.GetNestedValue<double>("rope_scaling", "factor");
+        var lowFreqFactor = (float)config.GetNestedValue<double>("rope_scaling", "low_freq_factor");
+        var highFreqFactor = (float)config.GetNestedValue<double>("rope_scaling", "high_freq_factor");
+        var oldContextLen = config.GetNestedValue<long>("rope_scaling", "original_max_position_embeddings");
+
+        var lowFreqWavelen = oldContextLen / lowFreqFactor;
+        var highFreqWavelen = oldContextLen / highFreqFactor;
+
+        var waveLen = invFreq.Select(f => 2 * Math.PI / f).ToList();
+
+        var invFreqLlama = invFreq.Zip(waveLen, (f, w) => w > lowFreqWavelen ? f / factor : f).ToList();
+
+        var smoothFactor = waveLen.Select(w =>
+        {
+            var denominator = highFreqFactor - lowFreqFactor;
+            return denominator != 0 ? ((oldContextLen / w) - lowFreqFactor) / denominator : 0; // 根据需求处理除零情况
+        }).ToList();
+
+        var smoothedInvFreq = smoothFactor.Zip(invFreqLlama, (s, f) => ((1 - s) * (f / factor)) + (s * f)).ToList();
+
+        var isMediumFreq = waveLen.Select((w, i) => !(w < highFreqWavelen) && !(w > lowFreqWavelen)).ToList();
+
+        invFreqLlama = invFreqLlama.Zip(isMediumFreq, (f, isMed) => isMed ? smoothedInvFreq[invFreqLlama.IndexOf(f)] : f).ToList();
+
+        return Tuple.Create(invFreqLlama, attentionFactor);
+    }
+
+    public static Tuple<List<double>, float> RoPEInit(Dictionary<string, object> config)
+    {
+        string type = "default";
+        if (config.ContainsKey("rope_scaling"))
+        {
+            type = config!.GetNestedValue<string>("rope_scaling", "rope_type");
+        }
+
+        switch (type)
+        {
+            case "default":
+                return ModelUilts.ComputeDefaultRopeParameters(config!);
+            case "llama3":
+                return ModelUilts.ComputeLlama3RopeParameters(config!);
+            default:
+                throw new NotImplementedException($"RoPE function {type} need to impl");
+        }
+    }
 }
 
 internal class SafetensorsEntry

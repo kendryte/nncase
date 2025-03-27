@@ -27,204 +27,64 @@ using Tuple = System.Tuple;
 
 namespace Nncase.Importer
 {
-    public partial class HuggingFaceImporter
+    // public partial class HuggingFaceImporter
+    // {
+    public class Qwen2 : HuggingFaceModel
     {
-        private (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) Qwen2CreateInputs()
+        private ModelInitContext? _context;
+
+        public override void Initialize(ModelInitContext context, string dir)
         {
-            var hiddenSize = (long)_config!["hidden_size"];
-            var numsHiddenLayers = (long)_config!["num_hidden_layers"];
-            var num_attention_heads = (long)_config!["num_attention_heads"];
-            var headDim = hiddenSize / num_attention_heads;
-            if (_config.ContainsKey("head_dim"))
-            {
-                headDim = (long)_config["head_dim"];
-            }
-
-            var numKVHeads = (long)_config!["num_key_value_heads"];
-
-            _inputs = [];
-            _dynVarMap = new Dictionary<string, Var>();
-            var varMap = new Dictionary<Var, Expr[]>();
-
-            var bucketOptions = CompileSession.CompileOptions.ShapeBucketOptions;
-            _fixVarMap = bucketOptions.FixVarMap;
-
-            // local test set
-            // _fixVarMap["sequence_length"] = 10;
-            // _fixVarMap["history_len"] = 0;
-            // TODO: control by config file
-            if (!_fixVarMap.ContainsKey("sequence_length"))
-            {
-                _dynVarMap["sequence_length"] = Var.SizeVar("sequence_length");
-                _dynVarMap["sequence_length"].Metadata.Range = new(1, 64);
-            }
-
-            // if (!_fixVarMap.ContainsKey("history_len"))
-            // {
-            //     _dynVarMap["history_len"] = Var.SizeVar("history_len");
-            //     _dynVarMap["history_len"].Metadata.Range=new (4096,8192);
-            // }
-            if (!_fixVarMap.ContainsKey("batch_size"))
-            {
-                _dynVarMap["batch_size"] = Var.SizeVar("batch_size");
-                _dynVarMap["batch_size"].Metadata.Range = new(1, 4);
-            }
-
-            var inputIdsShapeExpr = new Expr[] { _dynVarMap["batch_size"],
-                                                   _dynVarMap["sequence_length"],
-                                                };
-            var attentionMaskShapeExpr = new Expr[]
-            {
-                1L, // _dynVarMap["batch_size"],
-                20L, // _dynVarMap["sequence_length"]
-            };
-            var positionIdsShapeExpr = new Expr[] {
-                                                1L, // _dynVarMap["batch_size"],
-                                                20L, // _dynVarMap["sequence_length"]
-                                                };
-
-            // [decode_layers, k_or_v, batch_size, num_heads, past_seq_length, head_dim]
-            var pastKeyValueShapeExpr = new Expr[] { numsHiddenLayers,
-                                                     2L,
-                                                     1L, // _dynVarMap["batch_size"],
-                                                     numKVHeads,
-                                                     0, // _dynVarMap["history_len"],
-                                                     headDim, };
-
-            var inputIds = new Var(
-                "input_ids",
-                new TensorType(DataTypes.Int64, new Shape(
-                                                     _dynVarMap["batch_size"],
-                                                     _dynVarMap["sequence_length"])));
-
-            var attentionMask = new Var(
-                "attention_mask",
-                new TensorType(
-                    DataTypes.Float32,
-                    new Shape(
-                        1L, // _dynVarMap["batch_size"],
-                        20L)));
-            var positionIds = new Var(
-                "position_ids",
-                new TensorType(DataTypes.Float32, new Shape(
-                                                1L, // _dynVarMap["batch_size"],
-                                                20L)));
-
-            // [decode_layers, k_or_v, batch_size, num_heads, past_seq_length, head_dim]
-            var pastKeyValue = new Var(
-                "past_key_values",
-                new TensorType(DataTypes.Float32, new Shape(
-                    numsHiddenLayers,
-                    2L,
-                    1L, // _dynVarMap["batch_size"],
-                    numKVHeads,
-                    0, // _dynVarMap["history_len"],
-                    headDim)));
-            _inputs.Add(inputIds);
-            _inputs.Add(null); // attentionMask
-            _inputs.Add(null); // positionIds
-            _inputs.Add(null); // pastKeyValue
-
-            // _inputs.Add(attentionMask);
-            // _inputs.Add(positionIds);
-            // _inputs.Add(pastKeyValue);
-            varMap[inputIds] = inputIdsShapeExpr;
-
-            // varMap[attentionMask] = attentionMaskShapeExpr;
-            // varMap[positionIds] = positionIdsShapeExpr;
-            // varMap[pastKeyValue] = pastKeyValueShapeExpr;
-            var inputs = new List<Var> { };
-
-            // for the input is optional
-            foreach (var input in _inputs)
-            {
-                if (input != null)
-                {
-                    inputs.Add(input);
-                }
-            }
-
-            return (inputs, varMap);
-        }
-
-        private Expr Qwen2CreateOutputs()
-        {
-            // TODO: use self.config.output_attention to judge wether output kvache
-            var logits = _outputs!["logits"];
-            Expr? outAttention = null;
-            Expr? kvCache = null;
-            Expr? hiddenStates = null;
-
-            if (CompileSession.CompileOptions.HuggingFaceOptions.UseCache)
-            {
-                kvCache = _outputs["kvCache"];
-            }
-
-            if (CompileSession.CompileOptions.HuggingFaceOptions.OutputAttentions)
-            {
-                outAttention = _outputs["outAttention"];
-            }
-
-            if (CompileSession.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
-            {
-                hiddenStates = _outputs["hiddenStates"];
-            }
-
-            var output = new List<Expr?> { logits, kvCache, outAttention, hiddenStates, };
-            output.RemoveAll(item => item == null);
-
-            return new IR.Tuple([.. output!]);
+            base.Initialize(context, dir);
+            _context = context;
         }
 
         // private Tuple<Call, HuggingFaceUtils.DynamicCache> VisitQwen2ForCausalLM()
-        private void VisitQwen2ForCausalLM()
+        public override void VisitForCausalLM()
         {
-            if (_constTensors == null)
+            if (_context!.ConstTensors == null)
             {
-                throw new ArgumentNullException(nameof(_constTensors));
+                throw new ArgumentNullException(nameof(_context.ConstTensors));
             }
 
-            Var input_ids = _inputs![0]!;
-            var attention_mask = _inputs[1];
-            var position_ids = _inputs[2];
-            var pastKeyValues = _inputs[3];
+            Var input_ids = _context.Inputs![0]!;
+            var attention_mask = _context.Inputs[1];
+            var position_ids = _context.Inputs[2];
+            var pastKeyValues = _context.Inputs[3];
 
-            // var (lastHiddenStates, pastKeyValues, allSelfAttns, allHiddenStates) = Qwen2Model(input_ids,
-            //     inputEmbeds: null, new HuggingFaceUtils.DynamicCache(), cachePosition: null, positionIds: null,
-            /* useCache: false, outputAttentions: false, outputHiddenStates: false);*/
-            var (lastHiddenStates, allSelfKV, allHiddenStates, allSelfAttns) = Qwen2Model(
+            var (lastHiddenStates, allSelfKV, allHiddenStates, allSelfAttns) = LLMModel(
                 input_ids,
                 attention_mask,
                 position_ids,
                 pastKeyValues);
 
-            var lmHead = Linear(lastHiddenStates, _constTensors["model.embed_tokens.weight"]);
+            var lmHead = Linear(lastHiddenStates, _context.ConstTensors["model.embed_tokens.weight"]);
 
             // FIXIT: this is work around for bfloat16
-            _outputs!["logits"] = Cast(lmHead, DataTypes.Float32);
+            _context.Outputs!.Add("logits", Cast(lmHead, DataTypes.Float32));
 
-            if (CompileSession.CompileOptions.HuggingFaceOptions.OutputAttentions)
+            if (_context.CompileSession!.CompileOptions.HuggingFaceOptions.OutputAttentions)
             {
                 var outAttention = Concat(new IR.Tuple(allSelfAttns.ToArray()), 0);
 
                 // FIXIT: this is work around for bfloat16
-                _outputs!["outAttention"] = Cast(outAttention, DataTypes.Float32);
+                _context.Outputs!["outAttention"] = Cast(outAttention, DataTypes.Float32);
             }
 
-            if (CompileSession.CompileOptions.HuggingFaceOptions.UseCache)
+            if (_context.CompileSession.CompileOptions.HuggingFaceOptions.UseCache)
             {
                 var kvCache = Concat(new IR.Tuple(allSelfKV.ToArray()), 0);
 
                 // FIXIT: this is work around for bfloat16
-                _outputs!["kvCache"] = Cast(kvCache, DataTypes.Float32);
+                _context.Outputs!["kvCache"] = Cast(kvCache, DataTypes.Float32);
             }
 
-            if (CompileSession.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
+            if (_context.CompileSession.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
             {
                 var hiddenStates = Concat(new IR.Tuple(allHiddenStates.ToArray()), 0);
 
                 // FIXIT: this is work around for bfloat16
-                _outputs!["hiddenStates"] = Cast(hiddenStates, DataTypes.Float32);
+                _context.Outputs!["hiddenStates"] = Cast(hiddenStates, DataTypes.Float32);
             }
         }
 
@@ -238,7 +98,7 @@ namespace Nncase.Importer
         //     bool? outputAttentions = false,
         //     bool? outputHiddenStates = false
         // )
-        private Tuple<Expr, List<Expr>, List<Expr>, List<Expr>> Qwen2Model(
+        public override Tuple<Expr, List<Expr>, List<Expr>, List<Expr>> LLMModel(
             Expr input_ids,
             Expr? attentionMask,
             Expr? positionIds,
@@ -249,7 +109,7 @@ namespace Nncase.Importer
              */
             // if (inputEmbeds == null)
             // {
-            var embedTokensWeight = _constTensors!["model.embed_tokens.weight"];
+            var embedTokensWeight = Context!.ConstTensors!["model.embed_tokens.weight"];
             Expr? inputEmbeds;
             if (input_ids.CheckedShape.Rank > 2 && input_ids.CheckedDataType.IsFloat())
             {
@@ -259,9 +119,9 @@ namespace Nncase.Importer
             else
             {
                 long? padding_idx = null;
-                if (_config!.Keys.Contains("pad_token_id"))
+                if (Context.Config!.Keys.Contains("pad_token_id"))
                 {
-                    padding_idx = (long)_config["pad_token_id"];
+                    padding_idx = (long)Context.Config["pad_token_id"];
                 }
 
                 inputEmbeds = Embeding(input_ids, embedTokensWeight, padding_idx);
@@ -318,9 +178,9 @@ namespace Nncase.Importer
             *
             */
             _ = new List<Tuple<Call, Call>>();
-            for (int i = 0; i < (int)(long)_config["num_hidden_layers"]; i++)
+            for (int i = 0; i < (int)(long)_context!.Config!["num_hidden_layers"]; i++)
             {
-                if (CompileSession.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
+                if (_context.CompileSession!.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
                 {
                     allHiddenStates.Add(Unsqueeze(hiddenStates, new long[] { 0 }));
                 }
@@ -338,21 +198,21 @@ namespace Nncase.Importer
 
                 hiddenStates = hiddenStatesTmp;
 
-                if (CompileSession.CompileOptions.HuggingFaceOptions.OutputAttentions)
+                if (_context.CompileSession.CompileOptions.HuggingFaceOptions.OutputAttentions)
                 {
                     allSelfAttns.Add(Unsqueeze(outAttention, new[] { 0L }));
                 }
 
-                if (CompileSession.CompileOptions.HuggingFaceOptions.UseCache)
+                if (_context.CompileSession.CompileOptions.HuggingFaceOptions.UseCache)
                 {
                     allKVcaches.Add(currentKV);
                 }
             }
 
             // the last one
-            Expr lastHiddenStates = Qwen2LayerNorm(hiddenStates, "model.norm.weight");
+            Expr lastHiddenStates = LLMLayerNorm(hiddenStates, "model.norm.weight");
 
-            if (CompileSession.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
+            if (_context.CompileSession!.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
             {
                 allHiddenStates.Add(Unsqueeze(lastHiddenStates, new long[] { 0 }));
             }
@@ -362,259 +222,7 @@ namespace Nncase.Importer
             // return Tuple.Create(lastHiddenStates, allSelfAttns, allKVcaches);
         }
 
-        // calc torch.nn.linear (i.e. x*transpose(W)+b)
-        private Call Linear(Expr expr, Tensor weight, Tensor? bias = null)
-        {
-            var transposed_weight = F.Tensors.Transpose(weight, new long[] { 1, 0 });
-            var result = F.Math.MatMul(expr, transposed_weight);
-            if (bias != null)
-            {
-                result = F.Math.Add(result, bias);
-            }
-
-            return result;
-        }
-
-        private Call Embeding(Expr input, Tensor embedingWeight, long? paddingIdx = null)
-        {
-            var embedingDim = embedingWeight.Shape[-1];
-            var gatherResult = Gather(embedingWeight, 0, input);
-            if (paddingIdx == null)
-            {
-                return gatherResult;
-            }
-            else
-            {
-                var zeros = Tensor.Zeros(embedingWeight.ElementType, new long[] { 1, embedingDim.FixedValue });
-                var paddingMask = Equal(input, paddingIdx);
-                paddingMask = Unsqueeze(paddingMask, new long[] { 2 });
-                paddingMask = Expand(paddingMask, ShapeOf(gatherResult));
-                var results = Where(paddingMask, zeros, gatherResult);
-                return results;
-            }
-        }
-
-        /*
-        Creates a causal 4D mask of shape `(batch_size, 1, query_length, key_value_length)` from a 2D mask of shape
-        `(batch_size, key_value_length)`, or if the input `attention_mask` is already 4D, do nothing.
-
-        Args:
-            attention_mask (`torch.Tensor`):
-                A 2D attention mask of shape `(batch_size, key_value_length)` or a 4D attention mask of shape `(batch_size, 1, query_length, key_value_length)`.
-            sequence_length (`int`):
-                The sequence length being processed.
-            target_length (`int`):
-                The target length: when generating with static cache, the mask should be as long as the static cache, to account for the 0 padding, the part of the cache that is not filled yet.
-            dtype (`torch.dtype`):
-                The dtype to use for the 4D attention mask.
-            device (`torch.device`):
-                The device to plcae the 4D attention mask on.
-            cache_position (`torch.Tensor`):
-                Indices depicting the position of the input sequence tokens in the sequence.
-            batch_size (`torch.Tensor`):
-                Batch size.
-            config (`Qwen2Config`):
-                The model's configuration class
-            past_key_values (`Cache`):
-                The cache class that is being used currently to generate
-        */
-        private Expr Prepare4dCausalAttentionMaskWithCachePosition(
-                                    Expr? attentionMask,
-                                    Expr seqLen,
-                                    Expr targtLen,
-                                    DataType dtype,
-                                    Expr cachePosition,
-                                    Expr batchSize,
-                                    Expr? pastKeyValues)
-        {
-            Expr? casualMask;
-            if (attentionMask != null && attentionMask.CheckedShape.Rank == 4)
-            {
-                Console.WriteLine("attention_mask is already 4D, no need to prepare 4D causal mask.");
-                casualMask = attentionMask;
-            }
-            else
-            {
-                var mask_shape = Stack(new IR.Tuple([seqLen, targtLen]), 0L);
-                Tensor minValue;
-
-                // get the min value for current dtype
-                FieldInfo? minValueField = dtype.CLRType.GetField("MinValue", BindingFlags.Public | BindingFlags.Static);
-                if (minValueField != null)
-                {
-                    var min = minValueField.GetValue(null)!;
-                    minValue = Tensor.FromScalar(dtype, min, [1L]);
-                }
-                else
-                {
-                    PropertyInfo? minValueProperty = dtype.CLRType.GetProperty("MinValue", BindingFlags.Public | BindingFlags.Static);
-                    if (minValueProperty != null)
-                    {
-                        var min = minValueProperty.GetValue(null)!;
-                        minValue = Tensor.FromScalar(dtype, min, [1L]);
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException($"cannot get current dtype's min value:{dtype.CLRType}");
-                    }
-                }
-
-                casualMask = F.Tensors.ConstantOfShape(mask_shape, minValue);
-
-                /*
-                    min_dtype = torch.finfo(dtype).min
-                causal_mask = torch.full(
-                    (sequence_length, target_length), fill_value=min_dtype, dtype=dtype, device=device
-                )
-                diagonal_attend_mask = torch.arange(target_length, device=device) > cache_position.reshape(-1, 1)
-                */
-                var diagonalAttendMask = Range(0L, targtLen, 1L) > Reshape(cachePosition, new long[] { -1, 1 });
-
-                // TODO: maybe consider:
-                /*
-                 if config.sliding_window is not None:
-                    # if we have sliding window, we should not attend to tokens beyond sliding window length, so we mask them out also
-                    # the check is needed to verify is current checkpoint was trained with sliding window or not
-                    if not isinstance(past_key_values, SlidingWindowCache) or sequence_length > target_length:
-                        sliding_attend_mask = torch.arange(target_length, device=device) <= (
-                            cache_position.reshape(-1, 1) - config.sliding_window
-                        )
-                        diagonal_attend_mask.bitwise_or_(sliding_attend_mask)
-                */
-                casualMask = casualMask * Cast(diagonalAttendMask, casualMask.CheckedDataType);
-
-                // casualMask = casualMask[None, None, :, :].expand(batch_size, 1, -1, -1)
-                var expandShape = Stack(new IR.Tuple(batchSize, 1L, seqLen, targtLen), 0L);
-                casualMask = Unsqueeze(casualMask, new long[] { 0, 1 });
-                casualMask = Expand(casualMask, expandShape);
-                /*
-                    mask_length = attention_mask.shape[-1]
-                    padding_mask = causal_mask[:, :, :, :mask_length] + attention_mask[:, None, None, :].to(
-                        causal_mask.device
-                    )
-                */
-                if (attentionMask != null)
-                {
-                    var maskLength = ShapeOf(attentionMask)[-1];
-                    var paddingMask = Slice(
-                        casualMask,
-                        new[] { 0L, 0L, 0L, 0L },
-                        Stack(new IR.Tuple(ShapeOf(casualMask)[0], ShapeOf(casualMask)[1], ShapeOf(casualMask)[2], maskLength), 0L),
-                        new[] { 0L, 1L, 2L, 3L },
-                        new[] { 1L, 1L, 1L, 1L });
-                    paddingMask += Unsqueeze(attentionMask, new long[] { 1, 2 });
-
-                    /*
-                        padding_mask = padding_mask == 0
-                        causal_mask[:, :, :, :mask_length] = causal_mask[:, :, :, :mask_length].masked_fill(
-                            padding_mask, min_dtype
-                        )
-                    */
-                    paddingMask = Equal(paddingMask, 0.0f);
-                    var maskPart = Slice(
-                        casualMask,
-                        new[] { 0L, 0L, 0L, 0L },
-                        Stack(new IR.Tuple(ShapeOf(casualMask)[0], ShapeOf(casualMask)[1], ShapeOf(casualMask)[2], maskLength), 0L),
-                        new[] { 0L, 1L, 2L, 3L },
-                        new[] { 1L, 1L, 1L, 1L });
-
-                    var minDtypeMatrix = ConstantOfShape(ShapeOf(maskPart), minValue);
-
-                    maskPart = Where(paddingMask, minDtypeMatrix, maskPart);
-
-                    // TODO: for dynamic cache, maskLength== sequence length == target length
-                    //  just return maskPart
-                    var leftPart = Slice(
-                        casualMask,
-                        Stack(new IR.Tuple(0L, 0L, 0L, maskLength), 0),
-                        Stack(new IR.Tuple(ShapeOf(casualMask)[0], ShapeOf(casualMask)[1], ShapeOf(casualMask)[2], ShapeOf(casualMask)[-1]), 0L),
-                        new[] { 0L, 1L, 2L, 3L },
-                        new[] { 1L, 1L, 1L, 1L });
-                    casualMask = Concat(new IR.Tuple(maskPart, leftPart), -1);
-                }
-            }
-
-            return casualMask;
-        }
-
-        private Expr UpdatecasualMask(Expr? attentionMask, Expr inputsEmbeds, Expr cachePosition, Expr? pastKeyValues, bool outputAttentions = false)
-        {
-            /*
-            # SlidingWindowCache or StaticCache
-        if using_sliding_window_cache or using_static_cache:
-            target_length = past_key_values.get_max_cache_shape()
-        # DynamicCache or no cache
-        else:
-            target_length = (
-                attention_mask.shape[-1]
-                if isinstance(attention_mask, torch.Tensor)
-                else past_seen_tokens + sequence_length + 1
-            )
-            */
-            // TODO:consider flash attention v2
-            Expr historyLen = 0L;
-            if (pastKeyValues != null)
-            {
-                historyLen = ShapeOf(pastKeyValues)[-2];
-            }
-
-            var batchSize = ShapeOf(inputsEmbeds)[0];
-            var seqLen = ShapeOf(inputsEmbeds)[1];
-            Expr targetLength = historyLen + seqLen + 1L;
-            if (attentionMask != null)
-            {
-                targetLength = ShapeOf(attentionMask)[-1];
-            }
-
-            var dataType = inputsEmbeds.CheckedDataType;
-
-            Expr casualMask = Prepare4dCausalAttentionMaskWithCachePosition(
-                                                attentionMask,
-                                                seqLen,
-                                                targetLength,
-                                                dataType,
-                                                cachePosition,
-                                                batchSize,
-                                                pastKeyValues);
-            /*
-            if (
-            self.config._attn_implementation == "sdpa"
-            and attention_mask is not None
-            and attention_mask.device.type in ["cuda", "xpu"]
-            and not output_attentions
-            ):
-            # Attend to all tokens in fully masked rows in the casualMask, for example the relevant first rows when
-            # using left padding. This is required by F.scaled_dot_product_attention memory-efficient attention path.
-            # Details: https://github.com/pytorch/pytorch/issues/110213
-            casualMask = AttentionMaskConverter._unmask_unattended(casualMask, min_dtype)
-            */
-
-            // TODO: maybe need upon
-            return casualMask;
-        }
-
-        private bool CheckNeedOutput(List<Expr> allSelfAttns)
-        {
-            if (allSelfAttns.Length() == 0)
-            {
-                return false;
-            }
-
-            foreach (var call in allSelfAttns)
-            {
-                if (call is null)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        // private Tuple<Call, Call> DecodeLayer(int count, Call hiddenStates, Call? attentionMask, Call positionIds,
-        //     HuggingFaceUtils.DynamicCache pastKeyValues, bool? outputAttentions, bool? useCache, Expr cachePosition,
-        //     Tuple<Call, Call> positionEmbeddings)
-        private Tuple<Expr, Expr, Expr> DecodeLayer(
+        public override Tuple<Expr, Expr, Expr> DecodeLayer(
             int count,
             Expr hiddenStates,
             Expr? attentionMask,
@@ -623,13 +231,13 @@ namespace Nncase.Importer
             Tuple<Expr, Expr> positionEmbeddings)
         {
             var residual = hiddenStates;
-            hiddenStates = Qwen2LayerNorm(
+            hiddenStates = LLMLayerNorm(
                 hiddenStates,
                 $"model.layers.{count}.input_layernorm.weight");
 
             // TODO: using `config.attn_implementation` to choose attention implementation
             // self attention
-            var (hiddenStatesTmp, outAttention, currentKV) = Qwen2SelfAtten(
+            var (hiddenStatesTmp, outAttention, currentKV) = LLMSelfAttention(
                 count,
                 hiddenStates,
                 attentionMask,
@@ -641,56 +249,20 @@ namespace Nncase.Importer
 
             // fully Connected
             residual = hiddenStates;
-            hiddenStates = Qwen2LayerNorm(
+            hiddenStates = LLMLayerNorm(
                 hiddenStates,
                 $"model.layers.{count}.post_attention_layernorm.weight");
 
-            hiddenStates = Qwen2Mlp(count, hiddenStates);
+            hiddenStates = LLMMlp(count, hiddenStates);
 
             hiddenStates = residual + hiddenStates;
 
             var output = hiddenStates;
 
-            // if (outputAttentions == true && selfAttenKV is not null)
-            // {
             return Tuple.Create<Expr, Expr, Expr>(output, outAttention, currentKV);
-
-            // }
-
-            // return Tuple.Create<Call, Call>(output, null);
         }
 
-        private Call Qwen2Mlp(int count, Expr hiddenStates)
-        {
-            var gateProjW = _constTensors![$"model.layers.{count}.mlp.gate_proj.weight"];
-            var upProjW = _constTensors![$"model.layers.{count}.mlp.up_proj.weight"];
-            var downProjW = _constTensors![$"model.layers.{count}.mlp.down_proj.weight"];
-
-            var tmp = Linear(hiddenStates, gateProjW);
-            return Linear(
-                Sigmoid(tmp) * tmp * Linear(hiddenStates, upProjW),
-                downProjW);
-        }
-
-        // Qwen2RMSNorm : Qwen2LayerNorm : input_layernorm
-        private Call Qwen2LayerNorm(Expr hiddenStates, string layerName)
-        {
-            // originType->fp32->dolayernorm->origintype
-            // fit layernorm partten 5
-            var originDtype = hiddenStates.CheckedDataType;
-            hiddenStates = Cast(hiddenStates, DataTypes.Float32);
-
-            Expr weight = _constTensors![$"{layerName}"];
-
-            weight = Cast(weight, DataTypes.Float32);
-            var bias = Tensor.FromScalar(0f, weight.CheckedShape);
-            int axis = -1;
-            return Cast(F.NN.LayerNorm(axis, 1e-6F, hiddenStates, weight, bias, false), originDtype);
-        }
-
-        // Qwen2Attention : SelfAtten
-        // llama config find in : https://www.restack.io/p/transformer-models-answer-llama-config-json-cat-ai
-        private Tuple<Expr, Expr, Expr> Qwen2SelfAtten(
+        public override Tuple<Expr, Expr, Expr> LLMSelfAttention(
             int count,
             Expr hiddenStates,
             Expr? attentionMask,
@@ -698,39 +270,17 @@ namespace Nncase.Importer
             Expr cachePosition,
             Tuple<Expr, Expr> positionEmbeddings)
         {
-            var head_dim = (long)_config!["hidden_size"] / (long)_config["num_attention_heads"];
-            if (_config!.Keys.Contains("head_dim"))
+            var head_dim = (long)_context!.Config!["hidden_size"] / (long)_context.Config["num_attention_heads"];
+            if (_context.Config!.Keys.Contains("head_dim"))
             {
-                head_dim = (long)_config["head_dim"];
+                head_dim = (long)_context.Config["head_dim"];
             }
 
             var batch_size = ShapeOf(hiddenStates)[0];
             var seq_len = ShapeOf(hiddenStates)[1];
 
             // batch_size, seq_len, num_heads, head_dim
-            var hidden_shape = Stack(new IR.Tuple(batch_size, seq_len, -1L, head_dim), 0L);
-
-            // hidden_shape.Add(new Dimension(hidden_dim));
-            // hidden_shape = Concat(new IR.Tuple(hidden_shape, Tensor.FromScalar(hidden_dim)), 0);
-            var qProjW = _constTensors![$"model.layers.{count}.self_attn.q_proj.weight"];
-            var qProjB = _constTensors![$"model.layers.{count}.self_attn.q_proj.bias"];
-            var queryStates = Linear(hiddenStates, qProjW, qProjB);
-            queryStates = Reshape(queryStates, hidden_shape);
-
-            // batch_size, num_heads, seq_len, head_dim
-            queryStates = Transpose(queryStates, new long[] { 0, 2, 1, 3 });
-
-            var kProjW = _constTensors![$"model.layers.{count}.self_attn.k_proj.weight"];
-            var kProjB = _constTensors![$"model.layers.{count}.self_attn.k_proj.bias"];
-            var keyStates = Linear(hiddenStates, kProjW, kProjB);
-            keyStates = Reshape(keyStates, hidden_shape);
-            keyStates = Transpose(keyStates, new long[] { 0, 2, 1, 3 });
-
-            var vProjW = _constTensors![$"model.layers.{count}.self_attn.v_proj.weight"];
-            var vProjB = _constTensors![$"model.layers.{count}.self_attn.v_proj.bias"];
-            var valueStates = Linear(hiddenStates, vProjW, vProjB);
-            valueStates = Reshape(valueStates, hidden_shape);
-            valueStates = Transpose(valueStates, new long[] { 0, 2, 1, 3 });
+            var (queryStates, keyStates, valueStates) = QKVCompute(count, hiddenStates, batch_size, seq_len, head_dim);
 
             var (cos, sin) = positionEmbeddings;
 
@@ -774,296 +324,13 @@ namespace Nncase.Importer
             // inputShape.Add(-1);
             var inputShape = Stack(new IR.Tuple(batch_size, seq_len, -1L), 0L);
             hiddenStates = IR.F.Tensors.Reshape(hiddenStates, inputShape);
-            var oProjW = _constTensors![$"model.layers.{count}.self_attn.o_proj.weight"];
+            var oProjW = _context.ConstTensors![$"model.layers.{count}.self_attn.o_proj.weight"];
             hiddenStates = Linear(hiddenStates, oProjW);
 
             // TODO: using config to judge weher need collect kv
             var mergedKeyValue = MergeKV(keyStates, valueStates);
 
             return Tuple.Create(hiddenStates, selfAttenWeight, mergedKeyValue);
-        }
-
-        // private IR.Tuple SdpaAttention(
-        //     Call queryStates,
-        //     Call keyStates,
-        //     Call valueStates,
-        //     Expr? attentionMask,
-        //     float? scaling,
-        //     bool? isCausal)
-        // {
-        //     /*
-        //      * def scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.0,
-        //            is_causal=False, scale=None, enable_gqa=False) -> torch.Tensor:
-        //            L, S = query.size(-2), key.size(-2)
-        //            scale_factor = 1 / math.sqrt(query.size(-1)) if scale is None else scale
-        //            attn_bias = torch.zeros(L, S, dtype=query.dtype)
-        //            if is_causal:
-        //                assert attn_mask is None
-        //                temp_mask = torch.ones(L, S, dtype=torch.bool).tril(diagonal=0)
-        //                attn_bias.masked_fill_(temp_mask.logical_not(), float("-inf"))
-        //                attn_bias.to(query.dtype)
-        //            if attn_mask is not None:
-        //                if attn_mask.dtype == torch.bool:
-        //                    attn_bias.masked_fill_(attn_mask.logical_not(), float("-inf"))
-        //                else:
-        //                    attn_bias += attn_mask
-        //            if enable_gqa:
-        //                key = key.repeat_interleave(query.size(-3)//key.size(-3), -3)
-        //                value = value.repeat_interleave(query.size(-3)//value.size(-3), -3)
-        //            attn_weight = query @ key.transpose(-2, -1) * scale_factor
-        //            attn_weight += attn_bias
-        //            attn_weight = torch.softmax(attn_weight, dim=-1)
-        //            attn_weight = torch.dropout(attn_weight, dropout_p, train=True)
-        //            return attn_weight @ value
-        //      */
-        //     var casualMask = attentionMask;
-        //     if (attentionMask != null)
-        //     {
-        //         // casualMask
-        //         _ = Slice(
-        //            casualMask!,
-        //            new[] { 0L, 0L, 0L, 0L },
-        //            Stack(new IR.Tuple(ShapeOf(casualMask!)[0], ShapeOf(casualMask!)[1], ShapeOf(casualMask!)[2], ShapeOf(keyStates)[-2]), 0),
-        //            new[] { 0L, 1L, 2L, 3L },
-        //            new[] { 1L, 1L, 1L, 1L });
-        //     }
-        //     // if (isCausal == null)
-        //     // {
-        //     //     isCausal = casualMask == null && queryStates.CheckedShape[2].FixedValue > 1;
-        //     // }
-        //     var (l, s) = (ShapeOf(queryStates)[-2], ShapeOf(keyStates)[-2]);
-        //     var scaleFactor = 1.0f / F.Math.Sqrt(Cast(ShapeOf(queryStates)[-1], queryStates.CheckedDataType));
-        //     var attnBias = (Call)F.Tensors.Broadcast(Tensor.FromScalar(0f), F.Tensors.Stack(new IR.Tuple(l, s), 0L));
-        //     // TODO: 也许需要处理attentionMask为空的情况,在这里生成下三角为0 ,其他为-inf的功能.
-        //     // if (isCausal == true)
-        //     // {
-        //     //     var tempMask = (Call)Tensor.FromScalar(0f, new Shape(l, s));
-        //     // }
-        //     if (attentionMask != null)
-        //     {
-        //         attnBias = Binary(BinaryOp.Add, attnBias, attentionMask);
-        //     }
-        //     var attnWeight =
-        //         IR.F.Math.MatMul(
-        //             queryStates,
-        //             Transpose(keyStates, ShapeExprUtility.GetPermutation(keyStates, [-2, -1]))) * scaleFactor;
-        //     attnWeight += attnBias;
-        //     attnWeight = Softmax(attnWeight, -1L);
-        //     var attnOutput = F.Math.MatMul(attnWeight, valueStates);
-        //     attnOutput = Transpose(attnOutput, ShapeExprUtility.GetPermutation(attnOutput, [1, 2]));
-        //     return Tuple.Create(attnOutput, (Call)null);
-        // }
-        private Tuple<Expr, Expr> EagerAttentionForward(Expr query, Expr key, Expr value, Expr? attentionMask, float scaling)
-        {
-            /*
-                key_states = repeat_kv(key, module.num_key_value_groups)
-                value_states = repeat_kv(value, module.num_key_value_groups)
-
-                attn_weights = torch.matmul(query, key_states.transpose(2, 3)) * scaling
-                if attention_mask is not None:
-                    causal_mask = attention_mask[:, :, :, : key_states.shape[-2]]
-                    attn_weights = attn_weights + causal_mask
-
-                attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query.dtype)
-                attn_weights = nn.functional.dropout(attn_weights, p=dropout, training=module.training)
-                attn_output = torch.matmul(attn_weights, value_states)
-                attn_output = attn_output.transpose(1, 2).contiguous()
-
-                return attn_output, attn_weights
-            */
-            var numKVGroups = (long)_config!["num_attention_heads"] / (long)_config!["num_key_value_heads"];
-            var keyStates = RepeatKV(key, numKVGroups);
-            var valueStates = RepeatKV(value, numKVGroups);
-            var scalingExpr = Cast(Tensor.FromScalar(scaling), query.CheckedDataType);
-            Expr attnWeights = F.Math.MatMul(query, Transpose(keyStates, ShapeExprUtility.GetPermutation(keyStates, [2, 3]))) * scalingExpr;
-            if (attentionMask is not null)
-            {
-                var causalMask = Slice(
-                        attentionMask,
-                        new[] { 0L, 0L, 0L, 0L },
-                        Stack(new IR.Tuple(ShapeOf(attentionMask)[0], ShapeOf(attentionMask)[1], ShapeOf(attentionMask)[2], ShapeOf(keyStates)[-2]), 0L),
-                        new[] { 0L, 1L, 2L, 3L },
-                        new[] { 1L, 1L, 1L, 1L });
-
-                attnWeights += causalMask;
-            }
-
-            attnWeights = Softmax(attnWeights, -1L);
-
-            Expr attnOutput = F.Math.MatMul(attnWeights, valueStates);
-            attnOutput = Transpose(attnOutput, ShapeExprUtility.GetPermutation(attnOutput, [1, 2]));
-
-            // TODO: base on config to decide output attnWeights or not
-            return Tuple.Create(attnOutput, attnWeights);
-        }
-
-        private Expr RepeatKV(Expr hiddenStates, long nRep)
-        {
-            /*
-                batch, num_key_value_heads, slen, head_dim = hidden_states.shape
-                if n_rep == 1:
-                    return hidden_states
-                hidden_states = hidden_states[:, :, None, :, :].expand(batch, num_key_value_heads, n_rep, slen, head_dim)
-                return hidden_states.reshape(batch, num_key_value_heads * n_rep, slen, head_dim)
-            */
-            if (nRep == 1)
-            {
-                return hiddenStates;
-            }
-
-            var batch_size = ShapeOf(hiddenStates)[0];
-            var numKVHeads = ShapeOf(hiddenStates)[1];
-            var seqLen = ShapeOf(hiddenStates)[2];
-            var headDim = ShapeOf(hiddenStates)[3];
-            hiddenStates = Unsqueeze(hiddenStates, new long[] { 2 });
-
-            var tmp = Stack(new IR.Tuple(batch_size, numKVHeads, nRep, seqLen, headDim), 0L);
-            hiddenStates = Expand(hiddenStates, tmp);
-            hiddenStates = Reshape(hiddenStates, Stack(new IR.Tuple(batch_size, numKVHeads * nRep, seqLen, headDim), 0L));
-            return hiddenStates;
-        }
-
-        private Tuple<Call, Call> ApplyRotaryPosEmb(Expr q, Expr k, Expr cos, Expr sin)
-        {
-            cos = Unsqueeze(cos, Tensor.From<long>(new long[] { 1 }));
-            sin = Unsqueeze(sin, Tensor.From<long>(new long[] { 1 }));
-
-            // q_embed = (q * cos) + (rotate_half(q) * sin)
-            // k_embed = (k * cos) + (rotate_half(k) * sin)
-            var qEmbed = Binary(
-                BinaryOp.Add,
-                Binary(BinaryOp.Mul, q, cos),
-                Binary(BinaryOp.Mul, RotateHalf(q), sin));
-            var kEmbed = Binary(
-                BinaryOp.Add,
-                Binary(BinaryOp.Mul, k, cos),
-                Binary(BinaryOp.Mul, RotateHalf(k), sin));
-            return Tuple.Create(qEmbed, kEmbed);
-        }
-
-        private Tuple<Expr, Expr> RotaryEmbedding(Expr x, Expr positionIds)
-        {
-            // rope type not in config, so it is default. :_compute_default_rope_parameters
-            // if "dynamic" in self.rope_type:
-            //      self._dynamic_frequency_update(position_ids, device=x.device)
-            var (inv_freq, scaling) = RoPEInit("default");
-
-            // var a = x.CheckedShape[0];
-            var invFreq = Tensor.FromArray(inv_freq.ToArray()); // Unsqueeze(Unsqueeze(Tensor.FromArray(inv_freq.ToArray()), new[] { 0 }),new[] { -1 });
-            var invFreq_float = Cast(invFreq, DataTypes.Float32);
-            var invFreqExpanded = Unsqueeze(invFreq_float, Tensor.From<long>(new long[] { 0, 2 }));
-            var batch_size = ShapeOf(positionIds)[0];
-            var dim_div_2 = ShapeOf(invFreq)[0];
-            var shape_tensor = F.Tensors.Stack(new IR.Tuple(batch_size, dim_div_2, 1L), 0);
-
-            invFreqExpanded = Expand(invFreqExpanded, shape_tensor);
-
-            // var invFreqExpanded = Broadcast(
-            //     inv_freq_tensor,
-            //     new Dimension[] { x.CheckedShape[0], inv_freq.Count, 1 });
-            var positionIdsExpanded = Unsqueeze(positionIds, Tensor.From<long>(new long[] { 1 }));
-            positionIdsExpanded = Cast(positionIdsExpanded, DataTypes.Float32);
-
-            var freqs = F.Math.MatMul(invFreqExpanded, positionIdsExpanded);
-            freqs = Transpose(freqs, new long[] { 0, 2, 1 });
-
-            // F.Tensors.Transpose(F.Math.MatMul(invFreqExpanded, positionIdsExpanded),new Dimension[] { 0, 2, 1 });
-            var emb = F.Tensors.Concat(new IR.Tuple(freqs, freqs), -1);
-            Expr cos = F.Math.Unary(UnaryOp.Cos, emb);
-            Expr sin = F.Math.Unary(UnaryOp.Sin, emb);
-
-            cos = cos * scaling;
-            sin = sin * scaling;
-            cos = Cast(cos, x.CheckedDataType);
-            sin = Cast(sin, x.CheckedDataType);
-
-            return Tuple.Create(cos, sin);
-        }
-
-        private Tuple<List<double>, float> RoPEInit(string type = "default")
-        {
-            switch (type)
-            {
-                case "default":
-                    return HuggingFaceUtils.ComputeDefaultRopeParameters(_config!);
-                default:
-                    throw new NotImplementedException($"RoPE function {type} need to impl");
-            }
-        }
-
-        // def rotate_half(x):
-        // """Rotates half the hidden dims of the input."""
-        // x1 = x[..., : x.shape[-1] // 2]
-        // x2 = x[..., x.shape[-1] // 2 :]
-        // return torch.cat((-x2, x1), dim=-1)
-        private Call RotateHalf(Expr x)
-        {
-            var xS3 = ShapeOf(x)[3];
-            var x1 = Slice(
-                x,
-                new[] { 0L, 0L, 0L, 0L },
-                F.Tensors.Stack(new IR.Tuple(ShapeOf(x)[0], ShapeOf(x)[1], ShapeOf(x)[2], xS3 / 2L), 0L),
-                new[] { 0L, 1L, 2L, 3L },
-                new[] { 1L, 1L, 1L, 1L });
-            var x2 = Slice(
-                x,
-                F.Tensors.Stack(new IR.Tuple(0L, 0L, 0L, xS3 / 2L), 0L),
-                F.Tensors.Stack(new IR.Tuple(ShapeOf(x)[0], ShapeOf(x)[1], ShapeOf(x)[2], xS3), 0L),
-                new[] { 0L, 1L, 2L, 3L },
-                new[] { 1L, 1L, 1L, 1L });
-
-            // cast -1.0f to current dtype
-            var factor = Cast(Tensor.FromScalar(-1.0f), x2.CheckedDataType);
-            return Concat(new IR.Tuple(Binary(BinaryOp.Mul, x2, factor), x1), -1);
-        }
-
-        private Tuple<Call, Call> UpdateKVWithCache(int layerIdx, Call k, Call v, Expr pastKeyValues)
-        {
-            // dynamic cache update kvcache
-            /*
-                # Update the number of seen tokens
-                if layer_idx == 0:
-                    self._seen_tokens += key_states.shape[-2]
-
-                # Update the cache
-                if key_states is not None:
-                    if len(self.key_cache) <= layer_idx:
-                        # There may be skipped layers, fill them with empty lists
-                        for _ in range(len(self.key_cache), layer_idx):
-                            self.key_cache.append([])
-                            self.value_cache.append([])
-                        self.key_cache.append(key_states)
-                        self.value_cache.append(value_states)
-                    elif (
-                        len(self.key_cache[layer_idx]) == 0
-                    ):  # fills previously skipped layers; checking for tensor causes errors
-                        self.key_cache[layer_idx] = key_states
-                        self.value_cache[layer_idx] = value_states
-                    else:
-                        self.key_cache[layer_idx] = torch.cat([self.key_cache[layer_idx], key_states], dim=-2)
-                        self.value_cache[layer_idx] = torch.cat([self.value_cache[layer_idx], value_states], dim=-2)
-
-                return self.key_cache[layer_idx], self.value_cache[layer_idx]
-            */
-            // past_key_values shape: [decode_layers, k_or_v, batch_size, num_heads, past_seq_length, head_dim]
-            var pastKeyValuesCurrentLayer = Gather(pastKeyValues, 0, (long)layerIdx);
-            var pastKeyCurrentLayer = Gather(pastKeyValuesCurrentLayer, 0, 0L);
-            var pastValueCurrentLayer = Gather(pastKeyValuesCurrentLayer, 0, 1L);
-
-            // [batch_size, num_heads, past_seq_length, head_dim]
-            var key_states = Concat(new IR.Tuple(pastKeyCurrentLayer, k), -2);
-            var value_states = Concat(new IR.Tuple(pastValueCurrentLayer, v), -2);
-
-            return Tuple.Create(key_states, value_states);
-        }
-
-        private Expr MergeKV(Expr key, Expr value)
-        {
-            // [batchsize, num_heads, seq_length, head_dim]  ->[1,2,batchsize, num_heads, seq_length, head_dim]
-            var keyStates = Unsqueeze(key, new long[] { 0 });
-            var valueStates = Unsqueeze(value, new long[] { 0 });
-            var mergedKeyValue = Concat(new IR.Tuple(keyStates, valueStates), 0);
-            return Unsqueeze(mergedKeyValue, new long[] { 0 });
         }
     }
 }

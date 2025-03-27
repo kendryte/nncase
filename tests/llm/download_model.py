@@ -6,8 +6,8 @@ def download_from_huggingface(model_api, tokenizer_api, model_name):
     model_dir = os.path.join(os.path.dirname(__file__), model_name)
 
     try:
-        model = model_api.from_pretrained(model_name)
-        tokenizer = tokenizer_api.from_pretrained(model_name)
+        model = model_api.from_pretrained(model_name, trust_remote_code=True)
+        tokenizer = tokenizer_api.from_pretrained(model_name, trust_remote_code=True)
     except Exception as e:
         raise os.error(
             f"\033[31m Download {model_name} has error. Make sure it's a valid repository. Or check your network!\033[0m")

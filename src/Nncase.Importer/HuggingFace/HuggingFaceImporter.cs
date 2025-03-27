@@ -18,32 +18,42 @@ using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Importer;
 
-public sealed partial class HuggingFaceImporter : BaseImporter
+public class ModelInitContext
 {
-    private readonly Dictionary<string, object> _config;
-    private readonly Dictionary<string, Tensor>? _constTensors;
-    private readonly Dictionary<string, Expr>? _outputs = new Dictionary<string, Expr> { };
+    public Dictionary<string, object>? Config = new Dictionary<string, object>();
+
+    public Dictionary<string, Tensor>? ConstTensors = new Dictionary<string, Tensor>();
+
+    public Dictionary<string, Expr> Outputs = new Dictionary<string, Expr>();
 
     // private readonly Dictionary<Var, Expr[]>? _varMap;
-    private List<Var?>? _inputs;
-    private Dictionary<string, Var>? _dynVarMap;
-    private Dictionary<string, int>? _fixVarMap;
+    public List<Var?>? Inputs = new List<Var?>();
+
+    public Dictionary<string, Var>? DynVarMap = new Dictionary<string, Var>();
+
+    public Dictionary<string, int>? FixVarMap = new Dictionary<string, int>();
+
+    public CompileSession? CompileSession { get; set; }
+}
+
+public partial class HuggingFaceImporter : BaseImporter
+{
+    private readonly HuggingFaceModel _model;
+    private ModelInitContext _modelContext = new();
 
     public HuggingFaceImporter(string huggingFaceDir, CompileSession compileSession)
         : base(compileSession)
     {
-        // TODO: restructure for reading saftensors
-        // 读取 config.json 文件
-        _config = HuggingFaceUtils.GetConfigInfo(Path.Combine(huggingFaceDir, "config.json"));
+        var config = HuggingFaceUtils.GetConfigInfo(Path.Combine(huggingFaceDir, "config.json"));
         var tmp_config = HuggingFaceUtils.GetConfigInfo(Path.Combine(huggingFaceDir, "generation_config.json"));
         foreach (var pair in tmp_config)
         {
-            _config[pair.Key] = pair.Value;
+            config[pair.Key] = pair.Value;
         }
 
+        var constTensors = new Dictionary<string, Tensor>();
         if (File.Exists(Path.Combine(huggingFaceDir, "model.safetensors.index.json")))
         {
-            _constTensors = new Dictionary<string, Tensor>();
             string[] files = Directory.GetFiles(huggingFaceDir, "*.safetensors");
             foreach (string file in files)
             {
@@ -54,53 +64,47 @@ public sealed partial class HuggingFaceImporter : BaseImporter
                     var tmpConst = HuggingFaceUtils.GetAllWeights(Path.Combine(huggingFaceDir, fileName));
                     foreach (var item in tmpConst)
                     {
-                        _constTensors[item.Key] = item.Value;
+                        constTensors[item.Key] = item.Value;
                     }
                 }
             }
         }
         else
         {
-            _constTensors = HuggingFaceUtils.GetAllWeights(Path.Combine(huggingFaceDir, "model.safetensors"));
+            constTensors = HuggingFaceUtils.GetAllWeights(Path.Combine(huggingFaceDir, "model.safetensors"));
         }
-    }
 
-    protected override (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
-    {
-        // throw new NotImplementedException();
-        switch (_config["architectures"]!)
+        _modelContext!.Config = config;
+        _modelContext!.ConstTensors = constTensors;
+        _modelContext!.CompileSession = compileSession;
+        switch (config.GetNestedValue<string>("architectures", 0))
         {
             case "Qwen2ForCausalLM":
-                return Qwen2CreateInputs();
-
-            default:
-                throw new NotImplementedException();
-        }
-    }
-
-    protected override void ConvertOp()
-    {
-        switch (_config["architectures"]!)
-        {
-            case "Qwen2ForCausalLM":
-                Debug.Assert(_constTensors != null, nameof(_constTensors) + " != null");
-                VisitQwen2ForCausalLM();
+                _model = new Qwen2();
+                break;
+            case "LlamaForCausalLM":
+                _model = new Llama3_2();
                 break;
             default:
                 throw new NotImplementedException();
         }
+
+        _model!.Initialize(_modelContext, huggingFaceDir);
+    }
+
+    protected override (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
+    {
+        return _model.CreateInputs();
+    }
+
+    protected override void ConvertOp()
+    {
+        _model.VisitForCausalLM();
     }
 
     protected override Expr CreateOutputs()
     {
-        switch (_config["architectures"]!)
-        {
-            case "Qwen2ForCausalLM":
-                return Qwen2CreateOutputs();
-
-            default:
-                throw new NotImplementedException();
-        }
+        return _model.CreateOutputs();
     }
 
     private static bool IsModelFile(string fileName)
