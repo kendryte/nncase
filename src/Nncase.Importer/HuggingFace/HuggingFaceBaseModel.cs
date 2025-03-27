@@ -460,7 +460,7 @@ public abstract class HuggingFaceModel
         Expr cos = IR.F.Math.Unary(UnaryOp.Cos, emb) * attentionScaling;
         Expr sin = IR.F.Math.Unary(UnaryOp.Sin, emb) * attentionScaling;
 
-        cos = IR.F.Tensors.Cast(cos,x.CheckedDataType);
+        cos = IR.F.Tensors.Cast(cos, x.CheckedDataType);
         sin = IR.F.Tensors.Cast(sin, x.CheckedDataType);
 
         return System.Tuple.Create(cos, sin);
@@ -735,6 +735,7 @@ public abstract class HuggingFaceModel
 
         // apply_rotary_pos_emb
         (queryStates, keyStates) = ApplyRotaryPosEmb(queryStates, keyStates, cos, sin);
+
         // update kv with cache
         if (paskKeyValues != null)
         {
