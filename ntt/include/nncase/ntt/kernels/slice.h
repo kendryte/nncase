@@ -62,6 +62,7 @@ void slice(const TIn &input, TOut &&output) {
 
     auto in_strides = input.strides();
     auto out_strides = output.strides();
+    using element_type = typename TIn::element_type;
     apply(domain, [&](auto index) {
         auto pout =
             output.buffer().data() + linear_offset(index, output.strides());
@@ -69,8 +70,9 @@ void slice(const TIn &input, TOut &&output) {
             [&](auto i) { index[i] = in_starts[i] + index[i] * in_steps[i]; });
         auto pin =
             input.buffer().data() + linear_offset(index, input.strides());
-        u_memcpy(pin, in_strides[rank - 1] * in_steps[rank - 1], pout,
-                 out_strides[rank - 1], count);
+        u_unary<ntt::ops::copy<element_type>, element_type>(
+            pin, in_strides[rank - 1] * in_steps[rank - 1], pout,
+            out_strides[rank - 1], count);
     });
 }
 } // namespace nncase::ntt
