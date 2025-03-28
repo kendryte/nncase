@@ -6,89 +6,86 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading;
 using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Nncase;
 using Nncase.IR;
-using Nncase.IR.Tensors;
 using Tuple = System.Tuple;
 
-internal static class HuggingFaceUtils
+public class MyJsonConverter
 {
-    public class MyJsonConverter
+    public static Dictionary<string, object> ParseNestedJson(string json)
     {
-        public static Dictionary<string, object> ParseNestedJson(string json)
-        {
-            var root = JsonConvert.DeserializeObject<Dictionary<string, object>>(
-                json,
-                new JsonSerializerSettings
-                {
-                    DateParseHandling = DateParseHandling.None, // 防止日期自动转换
-                });
-
-            ProcessDictionary(root);
-            return root;
-        }
-
-        private static void ProcessDictionary(IDictionary<string, object> dict)
-        {
-            foreach (var key in dict.Keys.ToList())
+        var root = JsonConvert.DeserializeObject<Dictionary<string, object>>(
+            json,
+            new JsonSerializerSettings
             {
-                var value = dict[key];
+                DateParseHandling = DateParseHandling.None, // 防止日期自动转换
+            });
 
-                // 处理嵌套对象
-                if (value is JObject jObject)
-                {
-                    var subDict = jObject.ToObject<Dictionary<string, object>>();
-                    ProcessDictionary(subDict); // 递归处理
-                    dict[key] = subDict;
-                }
+        ProcessDictionary(root);
+        return root;
+    }
 
-                // 处理数组
-                else if (value is JArray jArray)
-                {
-                    var list = ProcessArray(jArray);
-                    dict[key] = list;
-                }
-
-                // 处理基本类型
-                else if (value is JValue jValue)
-                {
-                    dict[key] = jValue.Value;
-                }
-            }
-        }
-
-        private static List<object> ProcessArray(JArray jArray)
+    private static void ProcessDictionary(IDictionary<string, object> dict)
+    {
+        foreach (var key in dict.Keys.ToList())
         {
-            var list = new List<object>();
-            foreach (var item in jArray)
+            var value = dict[key];
+
+            // 处理嵌套对象
+            if (value is JObject jObject)
             {
-                switch (item.Type)
-                {
-                    case JTokenType.Object:
-                        var subDict = ((JObject)item).ToObject<Dictionary<string, object>>();
-                        ProcessDictionary(subDict);
-                        list.Add(subDict);
-                        break;
-                    case JTokenType.Array:
-                        list.Add(ProcessArray((JArray)item));
-                        break;
-                    default:
-                        list.Add(((JValue)item).Value);
-                        break;
-                }
+                var subDict = jObject.ToObject<Dictionary<string, object>>();
+                ProcessDictionary(subDict); // 递归处理
+                dict[key] = subDict;
             }
 
-            return list;
+            // 处理数组
+            else if (value is JArray jArray)
+            {
+                var list = ProcessArray(jArray);
+                dict[key] = list;
+            }
+
+            // 处理基本类型
+            else if (value is JValue jValue)
+            {
+                dict[key] = jValue.Value;
+            }
         }
     }
 
+    private static List<object> ProcessArray(JArray jArray)
+    {
+        var list = new List<object>();
+        foreach (var item in jArray)
+        {
+            switch (item.Type)
+            {
+                case JTokenType.Object:
+                    var subDict = ((JObject)item).ToObject<Dictionary<string, object>>();
+                    ProcessDictionary(subDict);
+                    list.Add(subDict);
+                    break;
+                case JTokenType.Array:
+                    list.Add(ProcessArray((JArray)item));
+                    break;
+                default:
+                    list.Add(((JValue)item).Value);
+                    break;
+            }
+        }
+
+        return list;
+    }
+}
+
+internal static class HuggingFaceUtils
+{
     public static T GetNestedValue<T>(this Dictionary<string, object> dict, params object[] keys)
     {
         object current = dict;
@@ -97,7 +94,7 @@ internal static class HuggingFaceUtils
             switch (current)
             {
                 case Dictionary<string, object> d:
-                    if (!d.TryGetValue(key.ToString(), out current))
+                    if (!d.TryGetValue(key.ToString()!, out current!))
                     {
                         throw new KeyNotFoundException();
                     }
@@ -106,7 +103,7 @@ internal static class HuggingFaceUtils
                 case List<object> l when key is int index:
                     if (index < 0 || index >= l.Count)
                     {
-                        throw new IndexOutOfRangeException();
+                        throw new ArgumentOutOfRangeException(nameof(dict), "index of config list is invalid.");
                     }
 
                     current = l[index];

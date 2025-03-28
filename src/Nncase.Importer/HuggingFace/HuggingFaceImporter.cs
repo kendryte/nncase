@@ -3,37 +3,69 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using Google.Protobuf;
-using Google.Protobuf.Collections;
-using LanguageExt;
-using NetFabric.Hyperlinq;
-using Newtonsoft.Json.Linq;
 using Nncase.IR;
-using Nncase.IR.Tensors;
-using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Importer;
 
 public class ModelInitContext
 {
-    public Dictionary<string, object>? Config = new Dictionary<string, object>();
+    private Dictionary<string, object>? _config = new Dictionary<string, object>();
 
-    public Dictionary<string, Tensor>? ConstTensors = new Dictionary<string, Tensor>();
+    private Dictionary<string, Tensor>? _constTensors = new Dictionary<string, Tensor>();
 
-    public Dictionary<string, Expr> Outputs = new Dictionary<string, Expr>();
+    private Dictionary<string, Expr> _outputs = new Dictionary<string, Expr>();
 
-    // private readonly Dictionary<Var, Expr[]>? _varMap;
-    public List<Var?>? Inputs = new List<Var?>();
+    private List<Var?>? _inputs = new List<Var?>();
 
-    public Dictionary<string, Var>? DynVarMap = new Dictionary<string, Var>();
+    private Dictionary<string, Var>? _dynVarMap = new Dictionary<string, Var>();
 
-    public Dictionary<string, int>? FixVarMap = new Dictionary<string, int>();
+    private Dictionary<string, int>? _fixVarMap = new Dictionary<string, int>();
 
-    public CompileSession? CompileSession { get; set; }
+    private CompileSession? _compileSession;
+
+    // 公共属性
+    public Dictionary<string, object>? Config
+    {
+        get { return _config; }
+        set { _config = value; }
+    }
+
+    public Dictionary<string, Tensor>? ConstTensors
+    {
+        get { return _constTensors; }
+        set { _constTensors = value; }
+    }
+
+    public Dictionary<string, Expr> Outputs
+    {
+        get { return _outputs; }
+        set { _outputs = value; }
+    }
+
+    public List<Var?>? Inputs
+    {
+        get { return _inputs; }
+        set { _inputs = value; }
+    }
+
+    public Dictionary<string, Var>? DynVarMap
+    {
+        get { return _dynVarMap; }
+        set { _dynVarMap = value; }
+    }
+
+    public Dictionary<string, int>? FixVarMap
+    {
+        get { return _fixVarMap; }
+        set { _fixVarMap = value; }
+    }
+
+    public CompileSession? CompileSession
+    {
+        get { return _compileSession; }
+        set { _compileSession = value; }
+    }
 }
 
 public partial class HuggingFaceImporter : BaseImporter

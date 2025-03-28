@@ -77,53 +77,53 @@ public abstract class HuggingFaceModel
         var inputIdsShapeExpr = new Expr[] { Context.DynVarMap["batch_size"],
                                                    Context.DynVarMap["sequence_length"],
                                                 };
-        var attentionMaskShapeExpr = new Expr[]
-        {
-                1L, // _dynVarMap["batch_size"],
-                20L, // _dynVarMap["sequence_length"]
-        };
-        var positionIdsShapeExpr = new Expr[] {
-                                                1L, // _dynVarMap["batch_size"],
-                                                20L, // _dynVarMap["sequence_length"]
-                                                };
 
-        // [decode_layers, k_or_v, batch_size, num_heads, past_seq_length, head_dim]
-        var pastKeyValueShapeExpr = new Expr[] { numsHiddenLayers,
-                                                     2L,
-                                                     1L, // _dynVarMap["batch_size"],
-                                                     numKVHeads,
-                                                     0, // _dynVarMap["history_len"],
-                                                     headDim, };
+        // var attentionMaskShapeExpr = new Expr[]
+        // {
+        //         1L, // _dynVarMap["batch_size"],
+        //         20L, // _dynVarMap["sequence_length"]
+        // };
+        // var positionIdsShapeExpr = new Expr[] {
+        //                                         1L, // _dynVarMap["batch_size"],
+        //                                         20L, // _dynVarMap["sequence_length"]
+        //                                         };
 
+        // // [decode_layers, k_or_v, batch_size, num_heads, past_seq_length, head_dim]
+        // var pastKeyValueShapeExpr = new Expr[] { numsHiddenLayers,
+        //                                              2L,
+        //                                              1L, // _dynVarMap["batch_size"],
+        //                                              numKVHeads,
+        //                                              0, // _dynVarMap["history_len"],
+        //                                              headDim, };
         var inputIds = new Var(
             "input_ids",
             new TensorType(DataTypes.Int64, new Shape(
                                                  Context.DynVarMap["batch_size"],
                                                  Context.DynVarMap["sequence_length"])));
 
-        var attentionMask = new Var(
-            "attention_mask",
-            new TensorType(
-                DataTypes.Float32,
-                new Shape(
-                    1L, // _dynVarMap["batch_size"],
-                    20L)));
-        var positionIds = new Var(
-            "position_ids",
-            new TensorType(DataTypes.Float32, new Shape(
-                                            1L, // _dynVarMap["batch_size"],
-                                            20L)));
+        // var attentionMask = new Var(
+        //     "attention_mask",
+        //     new TensorType(
+        //         DataTypes.Float32,
+        //         new Shape(
+        //             1L, // _dynVarMap["batch_size"],
+        //             20L)));
+        // var positionIds = new Var(
+        //     "position_ids",
+        //     new TensorType(DataTypes.Float32, new Shape(
+        //                                     1L, // _dynVarMap["batch_size"],
+        //                                     20L)));
 
-        // [decode_layers, k_or_v, batch_size, num_heads, past_seq_length, head_dim]
-        var pastKeyValue = new Var(
-            "past_key_values",
-            new TensorType(DataTypes.Float32, new Shape(
-                numsHiddenLayers,
-                2L,
-                1L, // _dynVarMap["batch_size"],
-                numKVHeads,
-                0, // _dynVarMap["history_len"],
-                headDim)));
+        // // [decode_layers, k_or_v, batch_size, num_heads, past_seq_length, head_dim]
+        // var pastKeyValue = new Var(
+        //     "past_key_values",
+        //     new TensorType(DataTypes.Float32, new Shape(
+        //         numsHiddenLayers,
+        //         2L,
+        //         1L, // _dynVarMap["batch_size"],
+        //         numKVHeads,
+        //         0, // _dynVarMap["history_len"],
+        //         headDim)));
         Context.Inputs.Add(inputIds);
         Context.Inputs.Add(null); // attentionMask
         Context.Inputs.Add(null); // positionIds

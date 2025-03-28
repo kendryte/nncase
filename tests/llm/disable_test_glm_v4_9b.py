@@ -47,7 +47,7 @@ def test_glm_v4_9b(request):
     """
     runner = HuggingfaceTestRunner(request.node.name, overwrite_configs=cfg)
 
-    model_name = "THUDM/glm-4v-9b"
+    model_name = "THUDM/glm-4-9b-chat-hf"
 
     if os.path.exists(os.path.join(os.path.dirname(__file__), model_name)):
         model_file = os.path.join(os.path.dirname(__file__), model_name)
