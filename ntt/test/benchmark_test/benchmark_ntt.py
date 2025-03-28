@@ -214,6 +214,7 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                         'asin': '8.2',
                                         'asinh': '25.34',
                                         'ceil': '1.5',
+                                        'copy': '1.5',
                                         'cos': '8.7',
                                         'cosh': '12.5',
                                         'erf': '26.5',
@@ -323,18 +324,16 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                             "WHNC": '1.5',
                                             "WHCN": '1.5',
                                             },
-                               'compare': {'equal': '2.0',
-                                           'not_equal': '2.0',
-                                           'greater': '2.0',
-                                           'greater_or_equal': '2.0',
-                                           'less': '2.0',
-                                           'less_or_equal': '2.0',
-                                         },
-                                'where': {'pack': '2.5',},
-                                'scatterND': {'unpack': '1.5',},
-                                }
-                               
-                              
+                              'compare': {'equal': '2.0',
+                                          'not_equal': '2.0',
+                                          'greater': '2.0',
+                                          'greater_or_equal': '2.0',
+                                          'less': '2.0',
+                                          'less_or_equal': '2.0',
+                                          },
+                              'where': {'pack': '2.5', },
+                              'scatterND': {'unpack': '1.5', },
+                              }
 
     def run(self):
         for bin in self.bin_list:
@@ -371,6 +370,7 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                         'asin': '83',
                                         'asinh': '127',
                                         'ceil': '12.3',
+                                        'copy': '4.3',
                                         'cos': '62',
                                         'cosh': '112',
                                         'erf': '69',
@@ -480,15 +480,15 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                             "WHNC": '4.3',
                                             "WHCN": '4.3',
                                             },
-                               'compare': {'equal': '13.6',
-                                           'not_equal': '13.6',
-                                           'greater': '13.6',
-                                           'greater_or_equal': '13.6',
-                                           'less': '13.6',
-                                           'less_or_equal': '13.6',
+                              'compare': {'equal': '13.6',
+                                          'not_equal': '13.6',
+                                          'greater': '13.6',
+                                          'greater_or_equal': '13.6',
+                                          'less': '13.6',
+                                          'less_or_equal': '13.6',
                                           },
-                               'where': {'pack': '16.6',},
-                               'scatterND': {'unpack': '4.3'},
+                              'where': {'pack': '16.6', },
+                              'scatterND': {'unpack': '4.3'},
                               }
 
     def run(self):
@@ -601,4 +601,3 @@ if __name__ == '__main__':
     benchmark_list = sorted(ntt_matmul_riscv64.benchmark_list, key=lambda d: (d['pack_mode']))
     md_file = ntt_matmul_riscv64_report_file('benchmark_ntt_matmul_riscv64.md')
     generate_benchmark_ntt_md(benchmark_list, 'pack_mode', md_file)
-
