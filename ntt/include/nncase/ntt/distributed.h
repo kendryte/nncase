@@ -29,6 +29,7 @@
 #elif !defined(NNCASE_NTT_TOPOLOGY_DEFINED)
 namespace nncase::ntt::distributed {
 constexpr std::array<size_t, 1> topology_dims = {1};
+using topology_shape_t = ntt::fixed_shape<1, 1, 1>;
 }
 #endif
 
