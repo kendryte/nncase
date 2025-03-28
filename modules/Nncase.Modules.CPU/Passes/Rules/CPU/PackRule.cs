@@ -866,7 +866,7 @@ public sealed class PackReshape : PackRule
                 }
             }
 
-            if (unpackAxes.Count == 0)
+            if (unpackAxes.Count == 0 || unpackAxes.Count != packedAxes.Length)
             {
                 return;
             }
