@@ -94,7 +94,13 @@ class HuggingfaceTestRunner(TestRunner):
                 count += 1
             if(self.cfg['huggingface_options']['use_cache']):
                 if not test_utils.in_ci():
-                    past_kv = recursive_stack(result.past_key_values).detach().numpy()
+                    from transformers import DynamicCache
+                    if(isinstance(result.past_key_values, DynamicCache)):
+                        k = recursive_stack(result.past_key_values.key_cache)
+                        v = recursive_stack(result.past_key_values.value_cache)
+                        past_kv = torch.stack([k,v], 1).detach().numpy()
+                    else:
+                        past_kv = recursive_stack(result.past_key_values).detach().numpy()
                     dump_bin_file(os.path.join(self.case_dir, f'cpu_result_{count}.bin'), past_kv)
                     dump_txt_file(os.path.join(self.case_dir, f'cpu_result_{count}.txt'), past_kv)
                     dump_npy_file(os.path.join(self.case_dir, f'cpu_result_{count}.npy'), past_kv)

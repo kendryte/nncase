@@ -23,7 +23,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 def test_glm_v4_9b(request):
     cfg = """
     [huggingface_options]
-    output_attentions = false
+    output_attentions = true
     output_hidden_states = true
     use_cache = true
 

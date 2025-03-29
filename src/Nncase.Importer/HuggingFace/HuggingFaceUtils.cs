@@ -23,7 +23,7 @@ public class MyJsonConverter
             json,
             new JsonSerializerSettings
             {
-                DateParseHandling = DateParseHandling.None, // 防止日期自动转换
+                DateParseHandling = DateParseHandling.None,
             });
 
         ProcessDictionary(root);
@@ -36,22 +36,17 @@ public class MyJsonConverter
         {
             var value = dict[key];
 
-            // 处理嵌套对象
             if (value is JObject jObject)
             {
                 var subDict = jObject.ToObject<Dictionary<string, object>>();
-                ProcessDictionary(subDict); // 递归处理
+                ProcessDictionary(subDict);
                 dict[key] = subDict;
             }
-
-            // 处理数组
             else if (value is JArray jArray)
             {
                 var list = ProcessArray(jArray);
                 dict[key] = list;
             }
-
-            // 处理基本类型
             else if (value is JValue jValue)
             {
                 dict[key] = jValue.Value;
@@ -124,14 +119,6 @@ internal static class HuggingFaceUtils
         {
             var configJson = File.ReadAllText(path);
             config = MyJsonConverter.ParseNestedJson(configJson);
-
-            // foreach (var key in config.Keys.ToList())
-            // {
-            //     if (config[key] is JArray jArray)
-            //     {
-            //         config[key] = string.Join(", ", jArray.Select(token => token.ToString()));
-            //     }
-            // }
         }
         else
         {
@@ -146,7 +133,6 @@ internal static class HuggingFaceUtils
     public static Dictionary<string, Tensor> GetAllWeights(string path)
     {
         var constTensors = new Dictionary<string, Tensor>();
-        Console.WriteLine($"{path}");
         var constTensor = HuggingFaceUtils.LoadStateDict(path);
         foreach (var item in constTensor)
         {
@@ -192,7 +178,6 @@ internal static class HuggingFaceUtils
             {
                 var datatype = ConvertToDataDType(keyValuePair.Value.DataType!);
 
-                // var tensor = new Tensor(datatype, new Shape(keyValuePair.Value.Shape));
                 var shape = new Shape(keyValuePair.Value.Shape!);
                 if (
                     keyValuePair.Value.Offsets![1] - keyValuePair.Value.Offsets[0]
@@ -377,7 +362,7 @@ internal static class HuggingFaceUtils
     // }
 }
 
-internal static class ModelUilts
+internal static class ModelUtils
 {
     /// <summary>
     /// huggingface utils functions: compute rope args.
@@ -395,6 +380,10 @@ internal static class ModelUilts
          */
         var baseRoPETheta = (float)(double)config["rope_theta"];
         var partialRotaryFactor = 1.0; // config.partial_rotary_factor if hasattr(config, "partial_rotary_factor") else 1.0
+        if (config.ContainsKey("partial_rotary_factor"))
+        {
+            partialRotaryFactor = (float)(double)config["partial_rotary_factor"];
+        }
 
         int headDim;
 
@@ -413,14 +402,13 @@ internal static class ModelUilts
         float attentionFactor = 1.0f;
 
         // Compute the inverse frequencies
-        // 创建一个从 0 到 dim-1 的数组，步长为 2
         var arange = Enumerable
             .Range(0, dim)
             .Where(i => i % 2 == 0)
             .Select(i => (float)i)
             .ToArray();
 
-        // 计算 inv_freq
+        // Compute inv_freq
         var inv_freq = arange
             .Select(i => 1.0 / Math.Pow(baseRoPETheta, i / dim))
             .ToArray()
@@ -459,7 +447,7 @@ internal static class ModelUilts
         var smoothFactor = waveLen.Select(w =>
         {
             var denominator = highFreqFactor - lowFreqFactor;
-            return denominator != 0 ? ((oldContextLen / w) - lowFreqFactor) / denominator : 0; // 根据需求处理除零情况
+            return denominator != 0 ? ((oldContextLen / w) - lowFreqFactor) / denominator : 0;
         }).ToList();
 
         var smoothedInvFreq = smoothFactor.Zip(invFreqLlama, (s, f) => ((1 - s) * (f / factor)) + (s * f)).ToList();
@@ -474,7 +462,11 @@ internal static class ModelUilts
     public static Tuple<List<double>, float> RoPEInit(Dictionary<string, object> config)
     {
         string type = "default";
-        if (config.ContainsKey("rope_scaling"))
+        if (config.ContainsKey("rope_type"))
+        {
+            type = config!.GetNestedValue<string>("rope_type");
+        }
+        else if (config.ContainsKey("rope_scaling"))
         {
             type = config!.GetNestedValue<string>("rope_scaling", "rope_type");
         }
@@ -482,12 +474,26 @@ internal static class ModelUilts
         switch (type)
         {
             case "default":
-                return ModelUilts.ComputeDefaultRopeParameters(config!);
+                return ModelUtils.ComputeDefaultRopeParameters(config!);
             case "llama3":
-                return ModelUilts.ComputeLlama3RopeParameters(config!);
+                return ModelUtils.ComputeLlama3RopeParameters(config!);
             default:
                 throw new NotImplementedException($"RoPE function {type} need to impl");
         }
+    }
+
+    public static Call ActFunc(Call data, string actType)
+    {
+        switch (actType)
+        {
+            case "silu":
+                data = Nncase.IR.F.NN.Sigmoid(data) * data;
+                break;
+            default:
+                throw new ArgumentException("LLM act type not support!");
+        }
+
+        return data;
     }
 }
 

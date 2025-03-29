@@ -92,7 +92,6 @@ public partial class HuggingFaceImporter : BaseImporter
                 string fileName = Path.GetFileName(file);
                 if (IsModelFile(fileName))
                 {
-                    Console.WriteLine($"find safetensor file: {fileName}");
                     var tmpConst = HuggingFaceUtils.GetAllWeights(Path.Combine(huggingFaceDir, fileName));
                     foreach (var item in tmpConst)
                     {
@@ -117,7 +116,7 @@ public partial class HuggingFaceImporter : BaseImporter
             case "LlamaForCausalLM":
                 _model = new Llama3_2();
                 break;
-            case "ChatGLMForConditionalGeneration":
+            case "GlmForCausalLM":
                 _model = new Glm4V9B();
                 break;
             default:

@@ -3,20 +3,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Reflection;
-using Google.Protobuf;
-using Google.Protobuf.Collections;
-using LanguageExt;
-using NetFabric.Hyperlinq;
-using Newtonsoft.Json.Linq;
 using Nncase.IR;
-using Nncase.IR.Tensors;
 using Nncase.Utilities;
-using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Importer;
 
@@ -29,10 +18,9 @@ public abstract class HuggingFaceModel
 
     public virtual void Initialize(ModelInitContext context, string dir)
     {
-        Context = context;  // 保存上下文引用
+        Context = context;
     }
 
-    // public abstract (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs();
     public virtual (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
     {
         var hiddenSize = (long)Context!.Config!["hidden_size"];
@@ -249,7 +237,6 @@ public abstract class HuggingFaceModel
         return IR.F.Tensors.Concat(new IR.Tuple(IR.F.Math.Neg(x2), x1), -1);
     }
 
-    // Qwen2RMSNorm : Qwen2LayerNorm : input_layernorm
     public virtual Call LLMLayerNorm(Expr hiddenStates, string layerName)
     {
         // originType->fp32->dolayernorm->origintype
@@ -340,14 +327,7 @@ public abstract class HuggingFaceModel
         if (Context!.Config!.ContainsKey("hidden_act"))
         {
             var actType = Context!.Config!.GetNestedValue<string>("hidden_act");
-            switch (actType)
-            {
-                case "silu":
-                    tmp = IR.F.NN.Sigmoid(tmp) * tmp;
-                    break;
-                default:
-                    throw new ArgumentException("LLM act type not support!");
-            }
+            tmp = ModelUtils.ActFunc(tmp, actType);
         }
 
         return Linear(tmp * Linear(hiddenStates, upProjW), downProjW);
@@ -427,7 +407,7 @@ public abstract class HuggingFaceModel
         // rope type not in config, so it is default. :_compute_default_rope_parameters
         // if "dynamic" in self.rope_type:
         //      self._dynamic_frequency_update(position_ids, device=x.device)
-        var (invFreq_, attentionScaling) = ModelUilts.RoPEInit(Context!.Config!);
+        var (invFreq_, attentionScaling) = ModelUtils.RoPEInit(Context!.Config!);
 
         // var a = x.CheckedShape[0];
         var invFreq = Tensor.FromArray(invFreq_.ToArray()); // Unsqueeze(Unsqueeze(Tensor.FromArray(inv_freq.ToArray()), new[] { 0 }),new[] { -1 });
@@ -752,7 +732,7 @@ public abstract class HuggingFaceModel
         //     queryStates,
         //     keyStates,
         //     valueStates,
-        //     attentionMask, /*TODO: 这里可能不需要,如果使用输入*/
+        //     attentionMask,
         //     0.0f,
         //     false);
 
@@ -820,7 +800,7 @@ public abstract class HuggingFaceModel
         //     {
         //         var pastSeenTokens = pastKeyValues.GetSeqLength();
         //         int sequenceLength =
-        //             inputEmbeds.CheckedShape[1].FixedValue; // 假设 inputEmbeds 的第二个维度是 sequenceLength
+        //             inputEmbeds.CheckedShape[1].FixedValue;
         //         var cachePositionList = Enumerable.Range(pastSeenTokens, pastSeenTokens + sequenceLength).ToArray();
         //         cachePosition = Tensor.FromArray(cachePositionList);
         //     }
@@ -953,7 +933,6 @@ public abstract class HuggingFaceModel
     //     var (l, s) = (ShapeOf(query)[-2], ShapeOf(key)[-2]);
     //     var scaleFactor = 1.0f / F.Math.Sqrt(Cast(ShapeOf(query)[-1], query.CheckedDataType));
     //     var attnBias = (Call)F.Tensors.Broadcast(Tensor.FromScalar(0f), F.Tensors.Stack(new IR.Tuple(l, s), 0L));
-    //     // TODO: 也许需要处理attentionMask为空的情况,在这里生成下三角为0 ,其他为-inf的功能.
     //     // if (isCausal == true)
     //     // {
     //     //     var tempMask = (Call)Tensor.FromScalar(0f, new Shape(l, s));
@@ -990,7 +969,13 @@ public abstract class HuggingFaceModel
             position_ids,
             pastKeyValues);
 
-        var lmHead = Linear(lastHiddenStates, Context.ConstTensors["model.embed_tokens.weight"]);
+        var lmHeadWeights = Context.ConstTensors["model.embed_tokens.weight"];
+        if (Context!.Config!.ContainsKey("tie_word_embeddings") && Context!.Config!.GetNestedValue<bool>("tie_word_embeddings") && Context.ConstTensors.ContainsKey("lm_head.weight"))
+        {
+            lmHeadWeights = Context.ConstTensors["lm_head.weight"];
+        }
+
+        var lmHead = Linear(lastHiddenStates, lmHeadWeights);
 
         // FIXIT: this is work around for bfloat16
         Context.Outputs!.Add("logits", IR.F.Tensors.Cast(lmHead, DataTypes.Float32));
