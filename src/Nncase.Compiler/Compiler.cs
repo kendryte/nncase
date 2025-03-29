@@ -158,6 +158,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldDilatedConv2D>();
             p.Add<Passes.Rules.Neutral.PowOf2ToSquare>();
             p.Add<Passes.Rules.Neutral.ScalarConstToTensor>();
+            p.Add<Passes.Rules.Neutral.TileToExpand>();
         });
 
         passManager.Add<InferRangePass>();

@@ -19,7 +19,8 @@
 #include "kernel.h"
 
 //alignas(@(Model.Alignment)) static thread_local uint8_t local_data[@(Model.DataSize)];
-//nncase::ntt::tensor<uint8_t*, nncase::ntt::ranked_shape<(size_t)nncase::ntt::distributed::topology::count__>, nncase::ntt::ranked_strides<(size_t)nncase::ntt::distributed::topology::count__>> topo_aware_ptr(nncase::ntt::make_ranked_shape(cdim(), bdim(), tdim()), nncase::ntt::make_ranked_strides(bdim(), tdim(), 1));
+nncase::ntt::tensor<uintptr_t[2], nncase::ntt::distributed::topology_shape_t> global_local_data_ptr;
+nncase::ntt::tensor<uintptr_t, nncase::ntt::distributed::topology_shape_t> global_local_rdata_ptr;
 
 extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *inouts, const std::byte *rdata, const std::byte *local_rdata, nncase::ntt::ranked_shape<(size_t)nncase::ntt::distributed::topology::count__> program_ids) {
   /* prepare inputs */
@@ -68,7 +69,9 @@ extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *inout
   }
   
   auto local_data = (uint8_t *)nncase::ntt::runtime::thread_alloc(@Model.DataSize, @Model.Alignment);
-  @* topo_aware_ptr(program_ids[0], program_ids[1], program_ids[2]) = local_data; *@
+  global_local_data_ptr(program_ids[0], program_ids[1], program_ids[2])[0] = (uintptr_t)local_data;
+  global_local_data_ptr(program_ids[0], program_ids[1], program_ids[2])[1] = (uintptr_t)local_data + @Model.DataSize;
+  global_local_rdata_ptr(program_ids[0], program_ids[1], program_ids[2]) = (uintptr_t)local_rdata;
   @(Model.PrimFunction.Name)(@(string.Join(", ", names)), local_data);
   nncase::ntt::runtime::thread_free(local_data);
 }
