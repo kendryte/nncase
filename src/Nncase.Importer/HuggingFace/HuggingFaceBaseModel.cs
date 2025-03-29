@@ -970,7 +970,7 @@ public abstract class HuggingFaceModel
             pastKeyValues);
 
         var lmHeadWeights = Context.ConstTensors["model.embed_tokens.weight"];
-        if (Context!.Config!.ContainsKey("tie_word_embeddings") && Context!.Config!.GetNestedValue<bool>("tie_word_embeddings") && Context.ConstTensors.ContainsKey("lm_head.weight"))
+        if (Context!.Config!.ContainsKey("tie_word_embeddings") && !Context!.Config!.GetNestedValue<bool>("tie_word_embeddings") && Context.ConstTensors.ContainsKey("lm_head.weight"))
         {
             lmHeadWeights = Context.ConstTensors["lm_head.weight"];
         }

@@ -17,5 +17,5 @@ pytest-xdist
 pyyaml
 pandas
 tabulate
-transformers==4.49.0
+transformers==4.50.0
 accelerate>=0.26.0
