@@ -68,6 +68,12 @@ internal class Compiler : ICompiler
         return InitializeModuleAsync(module);
     }
 
+    public Task<IRModule> ImportHuggingfaceAsync(string modelDir)
+    {
+        var module = Importers.ImportHuggingFace(modelDir, _compileSession);
+        return InitializeModuleAsync(module);
+    }
+
     public void BroadcastOutputNamesAfterImportPass(IPassManager passManager)
     {
         passManager.AddWithName<DataflowPass>("FoldQuantDeQuant").Configure(p =>

@@ -241,6 +241,16 @@ jobs:
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/ncnn_basic.xml pytest tests/importer/ncnn_/basic/ --doctest-modules --junitxml=test_results/ncnn_basic.xml
           dotnet-coverage merge -o coverage.integration.xml -f cobertura -r coverage/*.xml
 
+      - name: Test LLM
+        working-directory: ${{github.workspace}}
+        shell: bash
+        if: matrix.config.name == 'x86_64-linux'
+        env:
+          NNCASE_COMPILER: ${{github.workspace}}/install/Nncase.Compiler.dll
+          NNCASE_TILING_MAX_SOLUTIONS: 1
+        run: |
+          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/llm_huggingface.xml pytest tests/importer/huggingface_/ --doctest-modules --junitxml=test_results/llm_huggingface.xml
+
       - name: Upload Coverage
         uses: actions/upload-artifact@v4
         if: matrix.config.name == 'x86_64-linux'

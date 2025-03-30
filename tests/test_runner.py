@@ -14,6 +14,7 @@
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
 import copy
+from genericpath import isdir
 import os
 import re
 import shutil
@@ -375,6 +376,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 continue
             exec(f"compile_options.{k} = {e + v + e if isinstance(v, str) else v}")
 
+        # update huggingface option
+        compile_options.huggingface_options = self.cfg['huggingface_options']
         compile_options.target = target
         compile_options.dump_dir = dump_dir
 
@@ -390,6 +393,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         return (arg_names, arg_values)
 
     def read_model_file(self, model_file: Union[List[str], str]):
+        if isinstance(model_file, str) and isdir(model_file):
+            return model_file
         if isinstance(model_file, str):
             with open(model_file, 'rb') as f:
                 return f.read()
@@ -426,6 +431,9 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 if file.endswith('.npy'):
                     file_list.append(os.path.join(args, file))
             file_list.sort()
+        elif method == 'text':
+            assert(not os.path.isdir(args))
+            file_list.append(args)
         else:
             assert '{0} : not supported generator method'.format(method)
 
@@ -459,11 +467,28 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     data = generator.from_constant_of_shape(args, dtype)
                 elif method == 'numpy':
                     data = generator.from_numpy(file_list[idx])
+                elif method == 'text':
+                    data = generator.from_text(file_list[0])
+                    assert(len(data) >= idx, "prompt not enough for calib")
+                    messages = [
+                        {"role": "system", "content": "You are a assistant!"},
+                        {"role": "user", "content": data[idx]}
+                    ]
+                    text = self.tokenizer.apply_chat_template(
+                        messages,
+                        tokenize=False,
+                        add_generation_prompt=True
+                    )
+                    data = self.tokenizer([text], return_tensors="np").input_ids
                 if not test_utils.in_ci():
-                    dump_bin_file(os.path.join(self.case_dir, name,
-                                               f'{name}_{input_idx}_{batch_idx}.bin'), data)
-                    dump_txt_file(os.path.join(self.case_dir, name,
-                                               f'{name}_{input_idx}_{batch_idx}.txt'), data)
+                    if method == 'text':
+                        dump_txt_file(os.path.join(self.case_dir, name,
+                                                   f'text_{name}_{input_idx}_{batch_idx}.txt'), data)
+                    else:
+                        dump_bin_file(os.path.join(self.case_dir, name,
+                                                   f'{name}_{input_idx}_{batch_idx}.bin'), data)
+                        dump_txt_file(os.path.join(self.case_dir, name,
+                                                   f'{name}_{input_idx}_{batch_idx}.txt'), data)
                 samples.append(data)
             input['data'] = samples
 

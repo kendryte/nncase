@@ -1,0 +1,3 @@
+"Hello!"
+"Nice to meet you!"
+"今天天气挺不错的."

@@ -49,6 +49,20 @@ public class UnitTestImporter : TestClassBase
         Assert.True(module.Entry!.InferenceType());
     }
 
+    [Fact(Skip = "There is no HuggingFace model. HuggingFaceImport will be tested in pytest!")]
+    public async Task TestImportHuggingFace()
+    {
+        var file = "/compiler/Qwen2.5-0.5B-Instruct/"; // TODO: need a relative path!
+        CompileSession.CompileOptions.DumpFlags = Diagnostics.DumpFlags.ImportOps | Diagnostics.DumpFlags.PassIR | Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.Compile;
+        CompileSession.CompileOptions.DumpDir = "/compiler/nncase/tests_output";
+        var module = Importers.ImportHuggingFace(file, CompileSession);
+
+        await InferShapeAsync(module);
+        Assert.NotNull(module.Entry);
+        Assert.True(module.Entry!.InferenceType());
+        Dumpper.DumpModule(module);
+    }
+
     private Task InferShapeAsync(IRModule module)
     {
         var pmgr = CompileSession.CreatePassManager("InferShapePasses");

@@ -314,3 +314,6 @@ cmake-build-*
 
 # set dotnet version
 global.json
+
+# set huggingface repo
+tests/llm/*/

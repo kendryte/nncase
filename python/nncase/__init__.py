@@ -147,6 +147,7 @@ class Compiler:
     _target_options: object
     _quantize_options: _nncase.QuantizeOptions
     _shape_bucket_options: _nncase.ShapeBucketOptions
+    _huggingface_options: _nncase.HuggingFaceOptions
     _module: IRModule
 
     def __init__(self, compile_options: CompileOptions) -> None:
@@ -156,8 +157,10 @@ class Compiler:
         self._compiler = self._session.compiler
         self._quantize_options = None
         self._shape_bucket_options = _nncase.ShapeBucketOptions()
+        self._huggingface_options = _nncase.HuggingFaceOptions()
         self.init_shape_bucket_options(compile_options)
         self.init_target_options(compile_options)
+        self.init_huggingface_options(compile_options)
 
     def init_shape_bucket_options(self, compile_options: CompileOptions) -> None:
         self._shape_bucket_options = _nncase.ShapeBucketOptions()
@@ -171,6 +174,16 @@ class Compiler:
     def init_target_options(self, compile_options: CompileOptions) -> None:
         if hasattr(compile_options, "target_options"):
             self._compile_options.set_cpu_target_options(compile_options.target_options)
+
+    def init_huggingface_options(self, compile_options: CompileOptions) -> None:
+        if hasattr(compile_options, "huggingface_options"):
+            self._huggingface_options = _nncase.HuggingFaceOptions()
+            self._huggingface_options.output_attentions = compile_options.huggingface_options[
+                'output_attentions']
+            self._huggingface_options.output_hidden_states = compile_options.huggingface_options[
+                'output_hidden_states']
+            self._huggingface_options.use_cache = compile_options.huggingface_options['use_cache']
+            self._compile_options.huggingface_options = self._huggingface_options
 
     def compile(self) -> None:
         self._compiler.compile()
@@ -205,6 +218,10 @@ class Compiler:
     def import_ncnn(self, model_param: bytes, model_bin: bytes, options: ImportOptions) -> None:
         self._compile_options.input_format = "ncnn"
         self._import_ncnn_module(model_param, model_bin)
+
+    def import_huggingface(self, model_path: str, options: ImportOptions) -> None:
+        self._compile_options.input_format = "huggingface"
+        self._import_huggingface_module(model_path)
 
     def use_ptq(self, ptq_dataset_options: PTQTensorOptions) -> None:
         dataset = [_nncase.RTValue.from_runtime_tensor(
@@ -284,7 +301,7 @@ class Compiler:
 
         self._compile_options.input_file = compile_options.input_file
         dump_flags = _nncase.DumpFlags.Nothing if not compile_options.dump_ir else _nncase.DumpFlags(
-            _nncase.DumpFlags.PassIR)
+            _nncase.DumpFlags.PassIR | _nncase.DumpFlags.Compile | _nncase.DumpFlags.ImportOps)
         if (compile_options.dump_asm):
             dump_flags = _nncase.DumpFlags(dump_flags | _nncase.DumpFlags.CodeGen)
         self._compile_options.dump_flags = dump_flags
@@ -302,6 +319,9 @@ class Compiler:
         param_stream = io.BytesIO(model_param) if isinstance(model_param, bytes) else model_param
         bin_stream = io.BytesIO(model_bin) if isinstance(model_bin, bytes) else model_bin
         self._module = IRModule(self._compiler.import_ncnn_module(param_stream, bin_stream))
+
+    def _import_huggingface_module(self, model_dir: str) -> None:
+        self._module = IRModule(self._compiler.import_huggingface_module(model_dir))
 
 
 def check_target(target: str):
@@ -424,3 +444,14 @@ class ShapeBucketOptions:
         self.range_info = {}
         self.segments_count = 2
         self.fix_var_map = {}
+
+
+class HuggingFaceOptions:
+    output_attentions: bool
+    output_hidden_states: bool
+    use_cache: bool
+
+    def __init__(self) -> None:
+        self.output_attentions = False
+        self.output_hidden_states = False
+        self.use_cache = True
