@@ -466,7 +466,7 @@ internal static class ModelUtils
         {
             type = config!.GetNestedValue<string>("rope_type");
         }
-        else if (config.TryGetValue("rope_scaling", out var ropeScaling) && ropeScaling is not null)
+        else if (config.TryGetValue("rope_scaling", out var ropeScaling) && ropeScaling is not null && config!.GetNestedValue<string>("rope_scaling") != "null")
         {
             type = config!.GetNestedValue<string>("rope_scaling", "rope_type");
         }
