@@ -377,7 +377,10 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
 
         compile_options.target = target
         compile_options.dump_dir = dump_dir
-        compile_options.input_file = model_file
+        if isinstance(model_file, str):
+            compile_options.input_file = model_file
+        else:
+            compile_options.input_file = model_file[0]
 
         return compile_options
 
