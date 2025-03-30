@@ -134,7 +134,6 @@ jobs:
 
       - name: Dotnet Test
         working-directory: ${{github.workspace}}
-        if: false
         run: |
           dotnet tool install --global dotnet-coverage
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/unit.xml "dotnet test -c ${{matrix.config.buildType}} -s test.runsettings --no-build --verbosity normal --blame"
