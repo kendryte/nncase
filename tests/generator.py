@@ -117,6 +117,8 @@ class Generator:
         return np.load(path)
 
     def from_text(self, path) -> List[str]:
+        if not os.path.isabs(path):
+            path = os.path.join(os.path.dirname(__file__), "..", path)
         data = []
         with open(path, "r") as f:
             for i in f.readlines():

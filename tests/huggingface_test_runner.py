@@ -11,6 +11,25 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 
 
+def download_from_huggingface(model_api, tokenizer_api, model_name):
+    print(f" Downloading \033[32m\033[1m {model_name} \033[0m from huggingface ... ")
+    model_dir = os.path.join(os.path.dirname(__file__), model_name)
+
+    try:
+        model = model_api.from_pretrained(model_name, trust_remote_code=True)
+        tokenizer = tokenizer_api.from_pretrained(model_name, trust_remote_code=True)
+    except Exception as e:
+        raise os.error(
+            f"\033[31m Download {model_name} has error. Make sure it's a valid repository. Or check your network!\033[0m")
+
+    model.save_pretrained(model_dir)
+    tokenizer.save_pretrained(model_dir)
+
+    print(
+        f"\033[32m\033[1m {model_name} \033[0m has been downloaded into \033[34m\033[5m {model_dir} \033[0m")
+    return model_dir
+
+
 def recursive_stack(obj):
     if isinstance(obj, (list, tuple)):
         stacked = [recursive_stack(item) for item in obj]
@@ -20,9 +39,9 @@ def recursive_stack(obj):
             return stacked
     else:
         # numpy not support bf16 tensor
-        if(obj.dtype == torch.bfloat16 or obj.dtype == torch.float16):
+        if (obj.dtype == torch.bfloat16 or obj.dtype == torch.float16):
             obj = obj.to(torch.float32)
-        if(obj.shape[0] != 1):
+        if (obj.shape[0] != 1):
             return torch.unsqueeze(obj, 0)
         else:
             return obj
@@ -92,10 +111,10 @@ class HuggingfaceTestRunner(TestRunner):
                 dump_npy_file(os.path.join(self.case_dir, f'cpu_result_{count}.npy'), logits)
                 outputs.append(logits)
                 count += 1
-            if(self.cfg['huggingface_options']['use_cache']):
+            if (self.cfg['huggingface_options']['use_cache']):
                 if not test_utils.in_ci():
                     from transformers import DynamicCache
-                    if(isinstance(result.past_key_values, DynamicCache)):
+                    if (isinstance(result.past_key_values, DynamicCache)):
                         k = recursive_stack(result.past_key_values.key_cache)
                         v = recursive_stack(result.past_key_values.value_cache)
                         past_kv = torch.stack([k, v], 1).detach().numpy()
@@ -106,7 +125,7 @@ class HuggingfaceTestRunner(TestRunner):
                     dump_npy_file(os.path.join(self.case_dir, f'cpu_result_{count}.npy'), past_kv)
                     outputs.append(past_kv)
                     count += 1
-            if(self.cfg['huggingface_options']['output_attentions']):
+            if (self.cfg['huggingface_options']['output_attentions']):
                 if not test_utils.in_ci():
                     attentions = recursive_stack(result.attentions).detach().numpy()
                     dump_bin_file(os.path.join(
@@ -117,7 +136,7 @@ class HuggingfaceTestRunner(TestRunner):
                         self.case_dir, f'cpu_result_{count}.npy'), attentions)
                     outputs.append(attentions)
                     count += 1
-            if(self.cfg['huggingface_options']['output_hidden_states']):
+            if (self.cfg['huggingface_options']['output_hidden_states']):
                 if not test_utils.in_ci():
                     hidden_states = recursive_stack(result.hidden_states).detach().numpy()
                     dump_bin_file(os.path.join(
@@ -140,11 +159,11 @@ class HuggingfaceTestRunner(TestRunner):
         self.generation_config.max_new_tokens = 64
         self.generation_config.do_sample = False
         self.generation_config.temperature = 0.0  # for Stable result
-        if(self.cfg['huggingface_options']['output_attentions']):
+        if (self.cfg['huggingface_options']['output_attentions']):
             self.generation_config.output_attentions = True
-        if(self.cfg['huggingface_options']['output_hidden_states']):
+        if (self.cfg['huggingface_options']['output_hidden_states']):
             self.generation_config.output_hidden_states = True
-        if(self.cfg['huggingface_options']['use_cache']):
+        if (self.cfg['huggingface_options']['use_cache']):
             self.generation_config.use_cache = True
 
         input_dict = {}

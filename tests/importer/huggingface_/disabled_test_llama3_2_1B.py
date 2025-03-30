@@ -15,8 +15,7 @@
 
 import os
 import pytest
-from huggingface_test_runner import HuggingfaceTestRunner
-from .download_model import download_from_huggingface
+from huggingface_test_runner import HuggingfaceTestRunner, download_from_huggingface
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 

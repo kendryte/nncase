@@ -15,8 +15,7 @@
 
 import os
 import pytest
-from huggingface_test_runner import HuggingfaceTestRunner
-from .download_model import download_from_huggingface
+from huggingface_test_runner import HuggingfaceTestRunner, download_from_huggingface
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
@@ -32,13 +31,13 @@ def test_qwen2(request):
     method = 'text'
 
     [generator.inputs.text]
-    args = 'tests/llm/prompt.txt'
+    args = 'tests/importer/huggingface/prompt.txt'
 
     [generator.calibs]
     method = 'text'
 
     [generator.calibs.text]
-    args = 'tests/llm/prompt.txt'
+    args = 'tests/importer/huggingface/prompt.txt'
     
     #TODO: Need remove!
     [target]
