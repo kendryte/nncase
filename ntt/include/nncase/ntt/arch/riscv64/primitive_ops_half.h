@@ -5,7 +5,7 @@
 #include "nncase/ntt/arch/riscv64/arch_types.h"
 #include "nncase/ntt/vector.h"
 #include "rvv_mathfun.h"
-#include "rvv_mathfun_fp16.h"
+#include "rvv_mathfun_half.h"
 #ifdef __riscv_vector
 #include <riscv_vector.h>
 #endif
@@ -18,7 +18,7 @@ namespace nncase::ntt::ops {
     kernel(1, 16) kernel(2, 8) kernel(4, 4) kernel(8, 2)
 #endif
 
-#define RVV_UNARY16_OP(op, dtype, vl, kernel)                                  \
+#define RVV_UNARY_FP16_OP(op, dtype, vl, kernel)                                  \
     template <> struct op<ntt::vector<dtype, vl>> {                            \
         ntt::vector<dtype, vl>                                                 \
         operator()(const ntt::vector<dtype, vl> &v) const noexcept {           \
@@ -27,11 +27,11 @@ namespace nncase::ntt::ops {
     };
 
 // unary with half
-#define REGISTER_RVV_UNARY16_OP(OP, dtype, kernel)                             \
-    RVV_UNARY16_OP(OP, dtype, NTT_VL(sizeof(dtype) * 8, *, 1), kernel)         \
-    RVV_UNARY16_OP(OP, dtype, NTT_VL(sizeof(dtype) * 8, *, 2), kernel)         \
-    RVV_UNARY16_OP(OP, dtype, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)         \
-    RVV_UNARY16_OP(OP, dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)
+#define REGISTER_RVV_UNARY_FP16_OP(OP, dtype, kernel)                             \
+    RVV_UNARY_FP16_OP(OP, dtype, NTT_VL(sizeof(dtype) * 8, *, 1), kernel)         \
+    RVV_UNARY_FP16_OP(OP, dtype, NTT_VL(sizeof(dtype) * 8, *, 2), kernel)         \
+    RVV_UNARY_FP16_OP(OP, dtype, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)         \
+    RVV_UNARY_FP16_OP(OP, dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)
 
 #define ABS_FLOAT16(lmul, mlen)                                                \
     inline vfloat16m##lmul##_t abs_float16(const vfloat16m##lmul##_t &v,       \
@@ -40,7 +40,7 @@ namespace nncase::ntt::ops {
     }
 
 REGISTER_RVV_FP16_KERNEL(ABS_FLOAT16)
-REGISTER_RVV_UNARY16_OP(abs, half, abs_float16)
+REGISTER_RVV_UNARY_FP16_OP(abs, half, abs_float16)
 
 #define ACOS_FLOAT16(lmul, mlen)                                               \
     inline vfloat16m##lmul##_t acos_float16(const vfloat16m##lmul##_t &v,      \
@@ -89,7 +89,7 @@ REGISTER_RVV_UNARY16_OP(abs, half, abs_float16)
         return __riscv_vfmadd_vv_f16m##lmul(y1, mul, add, vl);                 \
     }
 REGISTER_RVV_FP16_KERNEL(ACOS_FLOAT16)
-REGISTER_RVV_UNARY16_OP(acos, half, acos_float16)
+REGISTER_RVV_UNARY_FP16_OP(acos, half, acos_float16)
 
 #define ASIN_FLOAT16(lmul, mlen)                                               \
     inline vfloat16m##lmul##_t asin_float16(const vfloat16m##lmul##_t &v,      \
@@ -141,7 +141,7 @@ REGISTER_RVV_UNARY16_OP(acos, half, acos_float16)
         return __riscv_vfmul_vv_f16m##lmul(y1, mul1, vl);                      \
     }
 REGISTER_RVV_FP16_KERNEL(ASIN_FLOAT16)
-REGISTER_RVV_UNARY16_OP(asin, half, asin_float16)
+REGISTER_RVV_UNARY_FP16_OP(asin, half, asin_float16)
 
 // correct
 #define CEIL_FLOAT16(lmul, mlen)                                               \
@@ -154,7 +154,7 @@ REGISTER_RVV_UNARY16_OP(asin, half, asin_float16)
         return vf;                                                             \
     }
 REGISTER_RVV_FP16_KERNEL(CEIL_FLOAT16)
-REGISTER_RVV_UNARY16_OP(ceil, half, ceil_float16)
+REGISTER_RVV_UNARY_FP16_OP(ceil, half, ceil_float16)
 
 #define FLOOR_FLOAT16(lmul, mlen)                                              \
     inline vfloat16m##lmul##_t floor_float16(const vfloat16m##lmul##_t &v,     \
@@ -166,7 +166,7 @@ REGISTER_RVV_UNARY16_OP(ceil, half, ceil_float16)
         return vf;                                                             \
     }
 REGISTER_RVV_FP16_KERNEL(FLOOR_FLOAT16)
-REGISTER_RVV_UNARY16_OP(floor, half, floor_float16)
+REGISTER_RVV_UNARY_FP16_OP(floor, half, floor_float16)
 
 #define NEG_FLOAT16(lmul, mlen)                                                \
     inline vfloat16m##lmul##_t neg_float16(const vfloat16m##lmul##_t &v,       \
@@ -174,7 +174,7 @@ REGISTER_RVV_UNARY16_OP(floor, half, floor_float16)
         return __riscv_vfneg_v_f16m##lmul(v, vl);                              \
     }
 REGISTER_RVV_FP16_KERNEL(NEG_FLOAT16)
-REGISTER_RVV_UNARY16_OP(neg, half, neg_float16)
+REGISTER_RVV_UNARY_FP16_OP(neg, half, neg_float16)
 
 #define RSQRT_FLOAT16(lmul, mlen)                                              \
     inline vfloat16m##lmul##_t rsqrt_float16(const vfloat16m##lmul##_t &v,     \
@@ -209,7 +209,7 @@ REGISTER_RVV_UNARY16_OP(neg, half, neg_float16)
     }
 
 REGISTER_RVV_FP16_KERNEL(RSQRT_FLOAT16)
-REGISTER_RVV_UNARY16_OP(rsqrt, half, rsqrt_float16)
+REGISTER_RVV_UNARY_FP16_OP(rsqrt, half, rsqrt_float16)
 
 #define ROUND_FLOAT16(lmul, mlen)                                              \
     inline vfloat16m##lmul##_t round_float16(const vfloat16m##lmul##_t &v,     \
@@ -218,7 +218,7 @@ REGISTER_RVV_UNARY16_OP(rsqrt, half, rsqrt_float16)
             __riscv_vfcvt_x_f_v_i16m##lmul(v, vl), vl);                        \
     }
 REGISTER_RVV_FP16_KERNEL(ROUND_FLOAT16)
-REGISTER_RVV_UNARY16_OP(round, half, round_float16)
+REGISTER_RVV_UNARY_FP16_OP(round, half, round_float16)
 
 #define SIGN_FLOAT16(lmul, mlen)                                               \
     inline vfloat16m##lmul##_t sign_float16(const vfloat16m##lmul##_t &v,      \
@@ -236,7 +236,7 @@ REGISTER_RVV_UNARY16_OP(round, half, round_float16)
     }
 
 REGISTER_RVV_FP16_KERNEL(SIGN_FLOAT16)
-REGISTER_RVV_UNARY16_OP(sign, half, sign_float16)
+REGISTER_RVV_UNARY_FP16_OP(sign, half, sign_float16)
 
 #define SQRT_FLOAT16(lmul, mlen)                                               \
     inline vfloat16m##lmul##_t sqrt_float16(const vfloat16m##lmul##_t &v,      \
@@ -244,7 +244,7 @@ REGISTER_RVV_UNARY16_OP(sign, half, sign_float16)
         return __riscv_vfsqrt_v_f16m##lmul(v, vl);                             \
     }
 REGISTER_RVV_FP16_KERNEL(SQRT_FLOAT16)
-REGISTER_RVV_UNARY16_OP(sqrt, half, sqrt_float16)
+REGISTER_RVV_UNARY_FP16_OP(sqrt, half, sqrt_float16)
 
 #define SQUARE_FLOAT16(lmul, mlen)                                             \
     inline vfloat16m##lmul##_t square_float16(const vfloat16m##lmul##_t &v,    \
@@ -252,7 +252,7 @@ REGISTER_RVV_UNARY16_OP(sqrt, half, sqrt_float16)
         return __riscv_vfmul_vv_f16m##lmul(v, v, vl);                          \
     }
 REGISTER_RVV_FP16_KERNEL(SQUARE_FLOAT16)
-REGISTER_RVV_UNARY16_OP(square, half, square_float16)
+REGISTER_RVV_UNARY_FP16_OP(square, half, square_float16)
 
 // exp
 #define EXP_FLOAT16(lmul, mlen)                                                \
@@ -262,7 +262,7 @@ REGISTER_RVV_UNARY16_OP(square, half, square_float16)
     }
 
 REGISTER_RVV_FP16_KERNEL(EXP_FLOAT16)
-REGISTER_RVV_UNARY16_OP(exp, half, exp_float16)
+REGISTER_RVV_UNARY_FP16_OP(exp, half, exp_float16)
 
 // log
 #define LOG_FLOAT16(lmul, mlen)                                                \
@@ -272,7 +272,7 @@ REGISTER_RVV_UNARY16_OP(exp, half, exp_float16)
     }
 
 REGISTER_RVV_FP16_KERNEL(LOG_FLOAT16)
-REGISTER_RVV_UNARY16_OP(log, half, log_float16)
+REGISTER_RVV_UNARY_FP16_OP(log, half, log_float16)
 
 // binary
 #define RVV_BINARY_fp16_OP(op, dtype, vl, kernel)                              \
@@ -304,6 +304,90 @@ REGISTER_RVV_UNARY16_OP(log, half, log_float16)
     RVV_BINARY_fp16_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)     \
     RVV_BINARY_fp16_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)     
 
+// add 
+#define ADD_FLOAT16(lmul, mlen)                                                \
+    inline vfloat16m##lmul##_t add_float16(const vfloat16m##lmul##_t &v1,      \
+                                           const vfloat16m##lmul##_t &v2,      \
+                                           const size_t vl) {                  \
+        return __riscv_vfadd_vv_f16m##lmul(v1, v2, vl);                        \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t add_float16(const vfloat16m##lmul##_t &v,       \
+                                           const half &s, const size_t vl) {   \
+        return __riscv_vfadd_vf_f16m##lmul(v, s, vl);                          \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t add_float16(                                    \
+        const half &s, const vfloat16m##lmul##_t &v, const size_t vl) {        \
+        return __riscv_vfadd_vf_f16m##lmul(v, s, vl);                          \
+    }
+
+REGISTER_RVV_FP16_KERNEL(ADD_FLOAT16)
+REGISTER_RVV_BINARY_FP16_OP(add, half, add_float16)
+
+// sub
+#define SUB_FLOAT16(lmul, mlen)                                                \
+    inline vfloat16m##lmul##_t sub_float16(const vfloat16m##lmul##_t &v1,      \
+                                           const vfloat16m##lmul##_t &v2,      \
+                                           const size_t vl) {                  \
+        return __riscv_vfsub_vv_f16m##lmul(v1, v2, vl);                        \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t sub_float16(const vfloat16m##lmul##_t &v,       \
+                                           const half &s, const size_t vl) {   \
+        return __riscv_vfsub_vf_f16m##lmul(v, s, vl);                          \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t sub_float16(                                    \
+        const half &s, const vfloat16m##lmul##_t &v, const size_t vl) {        \
+        return __riscv_vfrsub_vf_f16m##lmul(v, s, vl);                         \
+    }
+
+REGISTER_RVV_FP16_KERNEL(SUB_FLOAT16)
+REGISTER_RVV_BINARY_FP16_OP(sub, half, sub_float16)
+
+// mul 
+#define MUL_FLOAT16(lmul, mlen)                                                \
+    inline vfloat16m##lmul##_t mul_float16(const vfloat16m##lmul##_t &v1,      \
+                                           const vfloat16m##lmul##_t &v2,      \
+                                           const size_t vl) {                  \
+        return __riscv_vfmul_vv_f16m##lmul(v1, v2, vl);                        \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t mul_float16(const vfloat16m##lmul##_t &v,       \
+                                           const half &s, const size_t vl) {  \
+        return __riscv_vfmul_vf_f16m##lmul(v, s, vl);                          \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t mul_float16(                                    \
+        const half &s, const vfloat16m##lmul##_t &v, const size_t vl) {       \
+        return __riscv_vfmul_vf_f16m##lmul(v, s, vl);                          \
+    }
+
+REGISTER_RVV_FP16_KERNEL(MUL_FLOAT16)
+REGISTER_RVV_BINARY_FP16_OP(mul, half, mul_float16)
+
+// div 
+#define DIV_FLOAT16(lmul, mlen)                                                \
+    inline vfloat16m##lmul##_t div_float16(const vfloat16m##lmul##_t &v1,      \
+                                           const vfloat16m##lmul##_t &v2,      \
+                                           const size_t vl) {                  \
+        return __riscv_vfdiv_vv_f16m##lmul(v1, v2, vl);                        \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t div_float16(const vfloat16m##lmul##_t &v,       \
+                                           const half &s, const size_t vl) {   \
+        return __riscv_vfdiv_vf_f16m##lmul(v, s, vl);                          \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t div_float16(                                    \
+        const half &s, const vfloat16m##lmul##_t &v, const size_t vl) {        \
+        return __riscv_vfrdiv_vf_f16m##lmul(v, s, vl);                         \
+    }
+
+REGISTER_RVV_FP16_KERNEL(DIV_FLOAT16)
+REGISTER_RVV_BINARY_FP16_OP(div, half, div_float16)
+
 // pow
 #define POW_FLOAT16(lmul, mlen)                                                \
     inline vfloat16m##lmul##_t pow_float16(const vfloat16m##lmul##_t &v1,      \
@@ -311,11 +395,13 @@ REGISTER_RVV_UNARY16_OP(log, half, log_float16)
                                            const size_t vl) {                  \
         return pow_ps_fp16(v1, v2, vl);                                        \
     }                                                                          \
+                                                                               \
     inline vfloat16m##lmul##_t pow_float16(const vfloat16m##lmul##_t &v1,      \
                                            const half &s, const size_t vl) {   \
         auto v2 = __riscv_vfmv_v_f_f16m##lmul(s, vl);                          \
         return pow_ps_fp16(v1, v2, vl);                                        \
     }                                                                          \
+                                                                               \
     inline vfloat16m##lmul##_t pow_float16(                                    \
         const half &s, const vfloat16m##lmul##_t &v2, const size_t vl) {       \
         auto v1 = __riscv_vfmv_v_f_f16m##lmul(s, vl);                          \
@@ -324,6 +410,102 @@ REGISTER_RVV_UNARY16_OP(log, half, log_float16)
 
 REGISTER_RVV_FP16_KERNEL(POW_FLOAT16)
 REGISTER_RVV_BINARY_FP16_OP(pow, half, pow_float16)
+
+// mod
+#define MOD_FLOAT16(lmul, mlen)                                                \
+    inline vfloat16m##lmul##_t mod_float16(const vfloat16m##lmul##_t &v1,      \
+                                           const vfloat16m##lmul##_t &v2,      \
+                                           const size_t vl) {                  \
+        auto quotient = __riscv_vfcvt_f_x_v_f16m##lmul(                        \
+            __riscv_vfcvt_rtz_x_f_v_i16m##lmul(                                \
+                __riscv_vfdiv_vv_f16m##lmul(v1, v2, vl), vl),                  \
+            vl);                                                               \
+        return __riscv_vfnmsub_vv_f16m##lmul(quotient, v2, v1, vl);            \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t mod_float16(const vfloat16m##lmul##_t &v,       \
+                                           const half &s, const size_t vl) {  \
+        auto quotient = __riscv_vfcvt_f_x_v_f16m##lmul(                        \
+            __riscv_vfcvt_rtz_x_f_v_i16m##lmul(                                \
+                __riscv_vfdiv_vf_f16m##lmul(v, s, vl), vl),                    \
+            vl);                                                               \
+        return __riscv_vfnmsub_vf_f16m##lmul(quotient, s, v, vl);              \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t mod_float16(                                    \
+        const half &s, const vfloat16m##lmul##_t &v2, const size_t vl) {      \
+        auto v1 = __riscv_vfmv_v_f_f16m##lmul(s, vl);                          \
+        auto quotient = __riscv_vfcvt_f_x_v_f16m##lmul(                        \
+            __riscv_vfcvt_rtz_x_f_v_i16m##lmul(                                \
+                __riscv_vfrdiv_vf_f16m##lmul(v2, s, vl), vl),                  \
+            vl);                                                               \
+        return __riscv_vfnmsub_vv_f16m##lmul(quotient, v2, v1, vl);            \
+    }
+
+REGISTER_RVV_FP16_KERNEL(MOD_FLOAT16)
+REGISTER_RVV_BINARY_FP16_OP(mod, half, mod_float16)
+
+// min
+template <> struct min<half, half> {
+    auto operator()(const half &s1, const half &s2) const noexcept {
+        half ret;
+        __asm("fmin.h %[ret], %[s1], %[s2];"
+              : [ret] "=f"(ret)
+              : [s1] "f"(s1), [s2] "f"(s2));
+        return ret;
+    }
+};
+
+#define MIN_FLOAT16(lmul, mlen)                                                \
+    inline vfloat16m##lmul##_t min_float16(                                    \
+        const vfloat16m##lmul##_t &v1, const vfloat16m##lmul##_t &v2,          \
+        const size_t vl) {                                                     \
+        return __riscv_vfmin_vv_f16m##lmul(v1, v2, vl);                        \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t min_float16(const vfloat16m##lmul##_t &v,       \
+                                           const half &s, const size_t vl) {   \
+        return __riscv_vfmin_vf_f16m##lmul(v, s, vl);                          \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t min_float16(                                    \
+        const half &s, const vfloat16m##lmul##_t &v, const size_t vl) {        \
+        return __riscv_vfmin_vf_f16m##lmul(v, s, vl);                          \
+    }
+
+REGISTER_RVV_FP16_KERNEL(MIN_FLOAT16)
+REGISTER_RVV_BINARY_FP16_OP(min, half, min_float16)
+
+// max
+template <> struct max<half, half> {
+    auto operator()(const half &s1, const half &s2) const noexcept {
+        half ret;
+        __asm("fmax.h %[ret], %[s1], %[s2];"
+              : [ret] "=h"(ret)
+              : [s1] "h"(s1), [s2] "h"(s2));
+        return ret;
+    }
+};
+
+#define MAX_FLOAT16(lmul, mlen)                                                \
+    inline vfloat16m##lmul##_t max_float16(                                   \
+        const vfloat16m##lmul##_t &v1, const vfloat16m##lmul##_t &v2,         \
+        const size_t vl) {                                                    \
+        return __riscv_vfmax_vv_f16m##lmul(v1, v2, vl);                       \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t max_float16(const vfloat16m##lmul##_t &v,      \
+                                           const half &s, const size_t vl) {  \
+        return __riscv_vfmax_vf_f16m##lmul(v, s, vl);                         \
+    }                                                                          \
+                                                                               \
+    inline vfloat16m##lmul##_t max_float16(                                   \
+        const half &s, const vfloat16m##lmul##_t &v, const size_t vl) {       \
+        return __riscv_vfmax_vf_f16m##lmul(v, s, vl);                         \
+    }
+
+REGISTER_RVV_FP16_KERNEL(MAX_FLOAT16)
+REGISTER_RVV_BINARY_FP16_OP(max, half, max_float16)
 
 // floor_mod
 #define FLOOR_MOD_INT16(lmul, mlen)                                            \
