@@ -195,10 +195,16 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 var type = DistributedUtility.GetDividedTensorType((DistributedType)k.Expr.CheckedType);
                 var size = TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
 
-                if (k.Expr is Call { Target: Boxing boxing } call && boxing.NewType is DistributedType distributedType && call.Arguments[0].CheckedType is DistributedType inType && inType.NdSBP.Any(sbp => sbp is SBPPartial) && distributedType != call.Arguments[0].CheckedType)
+                if (k.Expr is Call call)
                 {
-                    type = DistributedUtility.GetDividedTensorType(inType);
-                    size += TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
+                    for (var i = 0; i < call.Arguments.Length; i++)
+                    {
+                        if (call.Arguments[i].CheckedType is DistributedType inType)
+                        {
+                            type = DistributedUtility.GetDividedTensorType(inType);
+                            size += TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
+                        }
+                    }
                 }
 
                 model.Add(vars[k] * size < TargetOptions.HierarchySizes[^2] / TargetOptions.Hierarchies[0][^1]);
