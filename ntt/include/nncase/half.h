@@ -302,4 +302,7 @@ inline half nearbyint(const half &a) {
     return half::round_to_half(nearbyintf(float(a)));
 }
 inline long lrint(const half &a) { return lrintf(float(a)); }
+
+template <>
+struct is_floating_point<half> : public std::true_type {};
 } // namespace std
