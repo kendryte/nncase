@@ -29,7 +29,10 @@ def compile_kmodel(model_path, dump_path, calib_data):
     compile_options.dump_dir = dump_path
     # compile_options.input_file = "/mnt/workspace/onnxruntime-inference-examples/quantization/language_model/llama/smooth_quant/new_model/onnx/llm.onnx.data"
     # compile_options.input_file = "/mnt/model/pipeline/llm-export/model24/onnx/llm.onnx.data"
- 
+    
+    # TODO: fix this! need change nncase/python/nncase/__init__.py:174L 
+    compile_options.cpu_target_options = None
+    
     compile_options.shape_bucket_enable = False
     compile_options.shape_bucket_segments_count = 8
     compile_options.shape_bucket_range_info = {}#{"seq_len": [1,512], "history_len": [0,512]}
