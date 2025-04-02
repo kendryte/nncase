@@ -363,7 +363,7 @@ bool compare_ulp(ntt::tensor<T, Shape, Stride> &lhs,
     nncase::ntt::apply(lhs.shape(), [&](auto index) {
         auto lvalue = lhs(index);
         auto rvalue = rhs(index);
-        auto ulp_error = std::abs(lvalue - rvalue) / ulp(rvalue);
+        double ulp_error = std::abs(lvalue - rvalue) / ulp(rvalue);
         max_ulp_error = ulp_error > max_ulp_error ? ulp_error : max_ulp_error;
     });
 
@@ -403,7 +403,7 @@ bool compare_ulp(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
         auto rvalue = rhs(index);
 
         nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
-            auto ulp_error =
+            double ulp_error =
                 std::abs(lvalue(idx) - rvalue(idx)) / ulp((T)rvalue(idx));
             if (ulp_error > max_ulp_error)
                 std::cout << "lvalue(idx) = " << lvalue(idx)

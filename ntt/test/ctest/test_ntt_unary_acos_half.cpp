@@ -24,10 +24,9 @@ using namespace ortki;
 TEST(UnaryTestAcosFloat, fixed_fixed) {
     // init
     using shape = ntt::fixed_shape<1, 3, 16, 16>;
-    using tensor_type = ntt::tensor<float, shape>;
+    using tensor_type = ntt::tensor<half, shape>;
     std::unique_ptr<tensor_type> ntt_input(new tensor_type);
-    NttTest::init_tensor(*ntt_input, half::round_to_half(-1.f),
-                         half::round_to_half(1.f));
+    NttTest::init_tensor(*ntt_input, -1.f, 1.f);
 
     // ntt
     std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
@@ -46,13 +45,13 @@ TEST(UnaryTestAcosFloat, fixed_fixed) {
 TEST(UnaryTestAcosFloat, fixed_ranked) {
     // init
     using shape1 = ntt::fixed_shape<1, 3, 16, 16>;
-    using tensor_type1 = ntt::tensor<float, shape1>;
+    using tensor_type1 = ntt::tensor<half, shape1>;
     std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
     NttTest::init_tensor(*ntt_input, -1.f, 1.f);
 
     // ntt
     auto shape2 = ntt::make_ranked_shape(1, 3, 16, 16);
-    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    using tensor_type2 = ntt::tensor<half, ntt::ranked_shape<4>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2(shape2));
     ntt::unary<ntt::ops::acos>(*ntt_input, *ntt_output1);
 
@@ -68,7 +67,7 @@ TEST(UnaryTestAcosFloat, fixed_ranked) {
 
 TEST(UnaryTestAcosFloat, ranked_ranked) {
     // init
-    using tensor_type = ntt::tensor<float, ntt::ranked_shape<4>>;
+    using tensor_type = ntt::tensor<half, ntt::ranked_shape<4>>;
     auto shape = ntt::make_ranked_shape(1, 3, 16, 16);
     std::unique_ptr<tensor_type> ntt_input(new tensor_type(shape));
     NttTest::init_tensor(*ntt_input, -1.f, 1.f);
@@ -90,13 +89,13 @@ TEST(UnaryTestAcosFloat, ranked_ranked) {
 TEST(UnaryTestAcosFloat, ranked_fixed) {
     // init
     auto shape1 = ntt::make_ranked_shape(1, 3, 16, 16);
-    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<4>>;
+    using tensor_type1 = ntt::tensor<half, ntt::ranked_shape<4>>;
     std::unique_ptr<tensor_type1> ntt_input(new tensor_type1(shape1));
     NttTest::init_tensor(*ntt_input, -1.f, 1.f);
 
     // ntt
     using shape2 = ntt::fixed_shape<1, 3, 16, 16>;
-    using tensor_type2 = ntt::tensor<float, shape2>;
+    using tensor_type2 = ntt::tensor<half, shape2>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
     ntt::unary<ntt::ops::acos>(*ntt_input, *ntt_output1);
 
@@ -130,7 +129,7 @@ template <typename T, size_t vl> void test_vector() {
     _TEST_VECTOR(T, 4)                                                         \
     _TEST_VECTOR(T, 8)
 
-TEST(UnaryTestAcos, vector) { TEST_VECTOR(float) }
+TEST(UnaryTestAcos, vector) { TEST_VECTOR(half) }
 
 template <typename T, size_t vl> void test_vector_ulp(double ulp_threshold) {
     constexpr size_t size = ULP_SIZE;
@@ -173,7 +172,7 @@ template <typename T, size_t vl> void test_vector_ulp(double ulp_threshold) {
 #define TEST_VECTOR_ULP(T, ulp_threshold) _TEST_VECTOR_ULP(T, 1, ulp_threshold)
 #endif
 
-TEST(UnaryTestAcosFloat, ulp_error) { TEST_VECTOR_ULP(float, 2.f) }
+TEST(UnaryTestAcosFloat, ulp_error) { TEST_VECTOR_ULP(half, 2.f) }
 
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);

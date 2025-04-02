@@ -301,8 +301,8 @@ using nncase::half;
 inline bool isinf(const half &a) { return std::isinf(float(a)); }
 inline bool isnan(const half &a) { return std::isnan(float(a)); }
 inline bool isfinite(const half &a) { return std::isfinite(float(a)); }
-inline half fabs(const half &a) { return half::round_to_half(fabs(float(a))); }
 inline half abs(const half &a) { return half::round_to_half(fabsf(float(a))); }
+inline half fabs(const half &a) { return half::round_to_half(fabs(float(a))); }
 inline half exp(const half &a) { return half::round_to_half(expf(float(a))); }
 inline half log(const half &a) { return half::round_to_half(logf(float(a))); }
 inline half log10(const half &a) {
@@ -329,6 +329,15 @@ inline half round(const half &a) {
 }
 inline half nearbyint(const half &a) {
     return half::round_to_half(nearbyintf(float(a)));
+}
+inline half acos(const half &a) {
+    return half::round_to_half(std::acosf(float(a)));
+}
+inline half asin(const half &a) {
+    return half::round_to_half(std::asinf(float(a)));
+}
+inline half rsqrt(const half &a) {
+    return half::round_to_half(std::rsqrt(float(a)));
 }
 inline long lrint(const half &a) { return lrintf(float(a)); }
 } // namespace std
