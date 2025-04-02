@@ -41,6 +41,7 @@ jobs:
       - name: Install Conan
         run: |
           pip install conan==2.6.0
+          pip install cmake==3.30.3
           conan remote add sunnycase https://conan.sunnycase.moe --index 0
           conan remote update conancenter --url "https://center2.conan.io"
 
@@ -115,6 +116,7 @@ jobs:
       - name: Install Conan
         run: |
           pip install conan==2.6.0
+          pip install cmake==3.30.3
           conan remote add sunnycase https://conan.sunnycase.moe --index 0
           conan remote update conancenter --url "https://center2.conan.io"
 
