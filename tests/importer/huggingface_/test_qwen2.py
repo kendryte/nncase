@@ -51,7 +51,8 @@ def test_qwen2(request):
     if os.path.exists(os.path.join(os.path.dirname(__file__), model_name)):
         model_file = os.path.join(os.path.dirname(__file__), model_name)
     else:
-        model_file = download_from_huggingface(AutoModelForCausalLM, AutoTokenizer, model_name, need_save=True)
+        model_file = download_from_huggingface(
+            AutoModelForCausalLM, AutoTokenizer, model_name, need_save=True)
 
     runner.run(model_file)
 
