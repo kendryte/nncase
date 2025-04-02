@@ -35,16 +35,17 @@ public sealed partial class DecomposeSoftmax : IRewriteRule
 
     private Expr? GetReplace(Expr input, Call softmaxCall, int[] axis)
     {
+        var normalizedaxes = axis.Select(axes => axes < 0 ? axes + input.CheckedShape.Rank : axes).ToArray();
         var max = input.CheckedDataType switch
         {
-            var x when x == DataTypes.Float32 => IR.F.Tensors.ReduceMax(input, axis, float.MinValue, true),
-            var x when x == DataTypes.Float64 => IR.F.Tensors.ReduceMax(input, axis, double.MinValue, true),
-            var x when x == DataTypes.Float16 => IR.F.Tensors.ReduceMax(input, axis, (Half)float.MinValue, true),
-            var x when x == DataTypes.BFloat16 => IR.F.Tensors.ReduceMax(input, axis, (BFloat16)float.MinValue, true),
-            var x when x == DataTypes.Int32 => IR.F.Tensors.ReduceMax(input, axis, int.MinValue, true),
-            var x when x == DataTypes.Int64 => IR.F.Tensors.ReduceMax(input, axis, long.MinValue, true),
-            var x when x == DataTypes.UInt32 => IR.F.Tensors.ReduceMax(input, axis, 0u, true),
-            var x when x == DataTypes.UInt64 => IR.F.Tensors.ReduceMax(input, axis, 0ul, true),
+            var x when x == DataTypes.Float32 => IR.F.Tensors.ReduceMax(input, normalizedaxes, float.MinValue, true),
+            var x when x == DataTypes.Float64 => IR.F.Tensors.ReduceMax(input, normalizedaxes, double.MinValue, true),
+            var x when x == DataTypes.Float16 => IR.F.Tensors.ReduceMax(input, normalizedaxes, (Half)float.MinValue, true),
+            var x when x == DataTypes.BFloat16 => IR.F.Tensors.ReduceMax(input, normalizedaxes, (BFloat16)float.MinValue, true),
+            var x when x == DataTypes.Int32 => IR.F.Tensors.ReduceMax(input, normalizedaxes, int.MinValue, true),
+            var x when x == DataTypes.Int64 => IR.F.Tensors.ReduceMax(input, normalizedaxes, long.MinValue, true),
+            var x when x == DataTypes.UInt32 => IR.F.Tensors.ReduceMax(input, normalizedaxes, 0u, true),
+            var x when x == DataTypes.UInt64 => IR.F.Tensors.ReduceMax(input, normalizedaxes, 0ul, true),
             _ => throw new NotSupportedException(),
         };
 
@@ -52,14 +53,14 @@ public sealed partial class DecomposeSoftmax : IRewriteRule
         var exp = IR.F.Math.Exp(sub);
         var reduce = input.CheckedDataType switch
         {
-            var x when x == DataTypes.Float32 => IR.F.Tensors.ReduceSum(exp, axis, 0f, true),
-            var x when x == DataTypes.Float64 => IR.F.Tensors.ReduceSum(exp, axis, 0d, true),
-            var x when x == DataTypes.Float16 => IR.F.Tensors.ReduceSum(exp, axis, (Half)0f, true),
-            var x when x == DataTypes.BFloat16 => IR.F.Tensors.ReduceSum(exp, axis, (BFloat16)0f, true),
-            var x when x == DataTypes.Int32 => IR.F.Tensors.ReduceSum(exp, axis, 0, true),
-            var x when x == DataTypes.Int64 => IR.F.Tensors.ReduceSum(exp, axis, 0L, true),
-            var x when x == DataTypes.UInt32 => IR.F.Tensors.ReduceSum(exp, axis, 0u, true),
-            var x when x == DataTypes.UInt64 => IR.F.Tensors.ReduceSum(exp, axis, 0ul, true),
+            var x when x == DataTypes.Float32 => IR.F.Tensors.ReduceSum(exp, normalizedaxes, 0f, true),
+            var x when x == DataTypes.Float64 => IR.F.Tensors.ReduceSum(exp, normalizedaxes, 0d, true),
+            var x when x == DataTypes.Float16 => IR.F.Tensors.ReduceSum(exp, normalizedaxes, (Half)0f, true),
+            var x when x == DataTypes.BFloat16 => IR.F.Tensors.ReduceSum(exp, normalizedaxes, (BFloat16)0f, true),
+            var x when x == DataTypes.Int32 => IR.F.Tensors.ReduceSum(exp, normalizedaxes, 0, true),
+            var x when x == DataTypes.Int64 => IR.F.Tensors.ReduceSum(exp, normalizedaxes, 0L, true),
+            var x when x == DataTypes.UInt32 => IR.F.Tensors.ReduceSum(exp, normalizedaxes, 0u, true),
+            var x when x == DataTypes.UInt64 => IR.F.Tensors.ReduceSum(exp, normalizedaxes, 0ul, true),
             _ => throw new NotSupportedException(),
         };
 
