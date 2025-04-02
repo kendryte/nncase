@@ -51,10 +51,12 @@ _initialize()
 class ImportOptions:
     _import_options: _nncase.ImportOptions
     huggingface_options: _nncase.HuggingFaceOptions
+
     def __init__(self) -> None:
         self._import_options = _nncase.ImportOptions()
         self.huggingface_options = _nncase.HuggingFaceOptions()
         self._import_options.huggingface_options = self.huggingface_options
+
 
 class PTQTensorOptions:
     use_mix_quant: bool
@@ -312,7 +314,8 @@ class Compiler:
         self._module = IRModule(self._compiler.import_ncnn_module(param_stream, bin_stream))
 
     def _import_huggingface_module(self, model_dir: str, options: ImportOptions) -> None:
-        self._module = IRModule(self._compiler.import_huggingface_module(model_dir, options._import_options))
+        self._module = IRModule(self._compiler.import_huggingface_module(
+            model_dir, options._import_options))
 
 
 def check_target(target: str):

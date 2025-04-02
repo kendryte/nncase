@@ -862,7 +862,7 @@ class import_options : public clr_object_base {
   public:
     using clr_object_base::clr_object_base;
 
-    import_options() { obj_ = nncase_clr_api()->import_options_create();}
+    import_options() { obj_ = nncase_clr_api()->import_options_create(); }
 
     clr::huggingface_options huggingface_options() { return nullptr; }
     void huggingface_options(const clr::huggingface_options &value) {
@@ -893,9 +893,10 @@ class compiler : public clr_object_base {
 
     ir_module import_huggingface_module(std::string_view modelDir,
                                         const import_options &import_opts) {
-        return {std::in_place,
-                nncase_clr_api()->compiler_import_huggingface_module(
-                    get(), modelDir.data(), modelDir.length(), import_opts.get())};
+        return {
+            std::in_place,
+            nncase_clr_api()->compiler_import_huggingface_module(
+                get(), modelDir.data(), modelDir.length(), import_opts.get())};
     }
 
     void compile() { nncase_clr_api()->compiler_compile(obj_.get()); }

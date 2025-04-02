@@ -388,7 +388,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         import_opt = self.cfg['huggingface_options']
         e = '"'
         for k, v in import_opt.items():
-            exec(f"import_options.huggingface_options.{k} = {e + v + e if isinstance(v, str) else v}")
+            exec(
+                f"import_options.huggingface_options.{k} = {e + v + e if isinstance(v, str) else v}")
 
         return import_options
 

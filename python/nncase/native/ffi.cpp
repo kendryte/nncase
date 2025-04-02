@@ -87,7 +87,7 @@ PYBIND11_MODULE(_nncase, m) {
         .value("NoFineTuneWeights", nncase_no_finetune_weights)
         .value("UseSquant", nncase_finetune_weights_squant)
         .value("UseAdaRound", nncase_finetune_weights_adaround);
-        
+
     py::class_<import_options>(m, "ImportOptions")
         .def(py::init())
         .def_property("huggingface_options",
@@ -108,7 +108,7 @@ PYBIND11_MODULE(_nncase, m) {
         .def_property("use_cache",
                       py::overload_cast<>(&huggingface_options::use_cache),
                       py::overload_cast<bool>(&huggingface_options::use_cache));
-                      
+
     py::class_<compile_options>(m, "CompileOptions")
         .def(py::init())
         .def_property(
