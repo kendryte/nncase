@@ -42,6 +42,7 @@ jobs:
         run: |
           pip install conan==2.6.0
           conan remote add sunnycase https://conan.sunnycase.moe --index 0
+          conan remote update conancenter --url "https://center2.conan.io"
 
       - name: Configure
         shell: bash
@@ -115,6 +116,7 @@ jobs:
         run: |
           pip install conan==2.6.0
           conan remote add sunnycase https://conan.sunnycase.moe --index 0
+          conan remote update conancenter --url "https://center2.conan.io"
 
       - name: Configure
         shell: bash
