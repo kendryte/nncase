@@ -54,7 +54,7 @@ class nncaseConan(ConanFile):
 
     def requirements(self):
         if self.options.tests:
-            self.requires('gtest/1.10.0')
+            self.requires('gtest/1.16.0')
             self.requires('ortki/0.0.4')
 
         if self.options.python:

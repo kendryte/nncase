@@ -148,17 +148,17 @@ public abstract class HuggingFaceModel
         Expr? kvCache = null;
         Expr? hiddenStates = null;
 
-        if (Context.CompileSession!.CompileOptions.HuggingFaceOptions.UseCache)
+        if (Context.ImportOptions!.HuggingFaceOptions.UseCache)
         {
             kvCache = Context.Outputs["kvCache"];
         }
 
-        if (Context.CompileSession.CompileOptions.HuggingFaceOptions.OutputAttentions)
+        if (Context.ImportOptions.HuggingFaceOptions.OutputAttentions)
         {
             outAttention = Context.Outputs["outAttention"];
         }
 
-        if (Context.CompileSession.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
+        if (Context.ImportOptions.HuggingFaceOptions.OutputHiddenStates)
         {
             hiddenStates = Context.Outputs["hiddenStates"];
         }
@@ -835,7 +835,7 @@ public abstract class HuggingFaceModel
         // _ = new List<Tuple<Call, Call>>();
         for (int i = 0; i < (int)(long)Context!.Config!["num_hidden_layers"]; i++)
         {
-            if (Context.CompileSession!.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
+            if (Context.ImportOptions.HuggingFaceOptions.OutputHiddenStates)
             {
                 allHiddenStates.Add(IR.F.Tensors.Unsqueeze(hiddenStates, new long[] { 0 }));
             }
@@ -853,12 +853,12 @@ public abstract class HuggingFaceModel
 
             hiddenStates = hiddenStatesTmp;
 
-            if (Context.CompileSession.CompileOptions.HuggingFaceOptions.OutputAttentions)
+            if (Context.ImportOptions.HuggingFaceOptions.OutputAttentions)
             {
                 allSelfAttns.Add(IR.F.Tensors.Unsqueeze(outAttention, new[] { 0L }));
             }
 
-            if (Context.CompileSession.CompileOptions.HuggingFaceOptions.UseCache)
+            if (Context.ImportOptions.HuggingFaceOptions.UseCache)
             {
                 allKVcaches.Add(currentKV);
             }
@@ -867,7 +867,7 @@ public abstract class HuggingFaceModel
         // the last one
         Expr lastHiddenStates = LLMLayerNorm(hiddenStates, "model.norm.weight");
 
-        if (Context.CompileSession!.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
+        if (Context.ImportOptions!.HuggingFaceOptions.OutputHiddenStates)
         {
             allHiddenStates.Add(IR.F.Tensors.Unsqueeze(lastHiddenStates, new long[] { 0 }));
         }
@@ -979,7 +979,7 @@ public abstract class HuggingFaceModel
 
         // FIXIT: this is work around for bfloat16
         Context.Outputs!.Add("logits", IR.F.Tensors.Cast(lmHead, DataTypes.Float32));
-        if (Context.CompileSession!.CompileOptions.HuggingFaceOptions.OutputAttentions)
+        if (Context.ImportOptions!.HuggingFaceOptions.OutputAttentions)
         {
             var outAttention = IR.F.Tensors.Concat(new IR.Tuple(allSelfAttns.ToArray()), 0);
 
@@ -987,7 +987,7 @@ public abstract class HuggingFaceModel
             Context.Outputs!["outAttention"] = IR.F.Tensors.Cast(outAttention, DataTypes.Float32);
         }
 
-        if (Context.CompileSession.CompileOptions.HuggingFaceOptions.UseCache)
+        if (Context.ImportOptions.HuggingFaceOptions.UseCache)
         {
             var kvCache = IR.F.Tensors.Concat(new IR.Tuple(allSelfKV.ToArray()), 0);
 
@@ -995,7 +995,7 @@ public abstract class HuggingFaceModel
             Context.Outputs!["kvCache"] = IR.F.Tensors.Cast(kvCache, DataTypes.Float32);
         }
 
-        if (Context.CompileSession.CompileOptions.HuggingFaceOptions.OutputHiddenStates)
+        if (Context.ImportOptions.HuggingFaceOptions.OutputHiddenStates)
         {
             var hiddenStates = IR.F.Tensors.Concat(new IR.Tuple(allHiddenStates.ToArray()), 0);
 

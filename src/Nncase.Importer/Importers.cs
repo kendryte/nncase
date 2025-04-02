@@ -65,12 +65,13 @@ public static class Importers
     /// Import huggingface model.
     /// </summary>
     /// <param name="hfModelDir">Huggingface model directory.</param>
+    /// <param name="importOptions">import options.</param>
     /// <param name="compileSession">compile session.</param>
     /// <returns>Imported IR module.</returns>
-    public static IRModule ImportHuggingFace(string hfModelDir, CompileSession compileSession)
+    public static IRModule ImportHuggingFace(string hfModelDir, ImportOptions importOptions, CompileSession compileSession)
     {
         compileSession.CompileOptions.ModelLayout = "NCHW";
-        var importer = new HuggingFaceImporter(hfModelDir, compileSession);
+        var importer = new HuggingFaceImporter(hfModelDir, importOptions, compileSession);
         return importer.Import();
     }
 }

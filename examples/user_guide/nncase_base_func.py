@@ -66,8 +66,8 @@ def model_simplify(model_file):
         print("[ onnx done ]")
     elif model_file.split('.')[-1] == "tflite":
         print("[ tflite skip ]")
-    else:
-        raise Exception(f"Unsupport type {model_file.split('.')[-1]}")
+    # else:
+    #     raise Exception(f"Unsupport type {model_file.split('.')[-1]}")
 
     return model_file
 
