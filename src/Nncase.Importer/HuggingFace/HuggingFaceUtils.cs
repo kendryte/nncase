@@ -84,27 +84,41 @@ internal static class HuggingFaceUtils
     public static T GetNestedValue<T>(this Dictionary<string, object> dict, params object[] keys)
     {
         object current = dict;
+        var keyPath = new List<object>();
+
         foreach (var key in keys)
         {
+            keyPath.Add(key);
+
             switch (current)
             {
                 case Dictionary<string, object> d:
                     if (!d.TryGetValue(key.ToString()!, out current!))
                     {
-                        throw new KeyNotFoundException();
+                        Console.WriteLine($"Key not found: {key}");
+                        Console.WriteLine($"Current key path: {string.Join(" -> ", keyPath)}");
+                        Console.WriteLine($"Current dictionary: {JsonConvert.SerializeObject(d, Formatting.Indented)}");
+                        throw new KeyNotFoundException($"Key '{key}' not found in dictionary. Path: {string.Join(" -> ", keyPath)}");
                     }
-
                     break;
+
                 case List<object> l when key is int index:
                     if (index < 0 || index >= l.Count)
                     {
-                        throw new ArgumentOutOfRangeException(nameof(dict), "index of config list is invalid.");
+                        Console.WriteLine($"Index out of range: {index}");
+                        Console.WriteLine($"Current key path: {string.Join(" -> ", keyPath)}");
+                        Console.WriteLine($"Current list: {JsonConvert.SerializeObject(l, Formatting.Indented)}");
+                        throw new ArgumentOutOfRangeException(nameof(dict), $"Index {index} is out of range for the list. Path: {string.Join(" -> ", keyPath)}");
                     }
 
                     current = l[index];
                     break;
+
                 default:
-                    throw new InvalidOperationException();
+                    Console.WriteLine($"Invalid operation at key: {key}");
+                    Console.WriteLine($"Current key path: {string.Join(" -> ", keyPath)}");
+                    Console.WriteLine($"Current object type: {current?.GetType().Name ?? "null"}");
+                    throw new InvalidOperationException($"Invalid operation at key '{key}'. Path: {string.Join(" -> ", keyPath)}");
             }
         }
 
@@ -466,7 +480,7 @@ internal static class ModelUtils
         {
             type = config!.GetNestedValue<string>("rope_type");
         }
-        else if (config.TryGetValue("rope_scaling", out var ropeScaling) && ropeScaling is not null && config!.GetNestedValue<string>("rope_scaling") != "null")
+        else if (config.TryGetValue("rope_scaling", out var ropeScaling) && ropeScaling is not null)
         {
             type = config!.GetNestedValue<string>("rope_scaling", "rope_type");
         }
