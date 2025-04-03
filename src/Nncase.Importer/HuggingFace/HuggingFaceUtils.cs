@@ -100,6 +100,7 @@ internal static class HuggingFaceUtils
                         Console.WriteLine($"Current dictionary: {JsonConvert.SerializeObject(d, Formatting.Indented)}");
                         throw new KeyNotFoundException($"Key '{key}' not found in dictionary. Path: {string.Join(" -> ", keyPath)}");
                     }
+
                     break;
 
                 case List<object> l when key is int index:

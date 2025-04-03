@@ -14,7 +14,7 @@ from huggingface_hub import snapshot_download
 
 def download_from_huggingface(model_api, tokenizer_api, model_name, need_save=False):
     print(f" Downloading \033[32m\033[1m {model_name} \033[0m from huggingface ... ")
-    model_dir = os.path.join(os.path.dirname(__file__),"llm", model_name)
+    model_dir = os.path.join(os.path.dirname(__file__), "llm", model_name)
     print(f" model_dir: {model_dir}")
     if os.path.exists(model_dir):
         print(f"\033[32m\033[1m {model_name} \033[0m exits in \033[34m\033[5m {model_dir} \033[0m")
@@ -24,7 +24,7 @@ def download_from_huggingface(model_api, tokenizer_api, model_name, need_save=Fa
         if hf_home_env is None:
             print(
                 f"Please set your huggingface cache dir in environment variable\033[31m 10.10.1.11 'export HF_HOME=/data/huggingface_cache' \033[0m")
-            
+
         model_path = snapshot_download(repo_id=model_name)
 
         if need_save:
