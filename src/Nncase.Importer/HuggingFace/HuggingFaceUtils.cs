@@ -313,6 +313,26 @@ internal static class HuggingFaceUtils
                     }
 
                     break;
+                case 7:
+                    switch (dataType[4])
+                    {
+                        case '4':
+                            if (dataType == "F8_E4M3")
+                            {
+                                return DataTypes.Float8E4M3;
+                            }
+
+                            break;
+                        case '5':
+                            if (dataType == "F8_E5M2")
+                            {
+                                return DataTypes.Float8E5M2;
+                            }
+
+                            break;
+                    }
+
+                    break;
             }
         }
 
