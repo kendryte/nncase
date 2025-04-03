@@ -1,5 +1,6 @@
 #pragma once
 #include "nncase/half.h"
+#include "rvv_mathfun.h"
 #include <cmath>
 
 #if __riscv_vector
@@ -7,6 +8,7 @@
 
 using namespace nncase;
 
+// log
 #define c_inv_mant_mask_f16 -31745
 #define c_cephes_SQRTHF 0.707106781186547524
 #define c_cephes_log_p0 7.0376836292E-2
@@ -21,7 +23,7 @@ using namespace nncase;
 #define c_cephes_log_q1 -2.12194440e-4
 #define c_cephes_log_q2 0.693359375
 
-#define _LOG_FLOAT16(lmul, mlen)                                               \
+#define _RVV_FLOAT16_LOG_OP(lmul, mlen)                                        \
     inline vfloat16m##lmul##_t log_ps_fp16(vfloat16m##lmul##_t x, size_t vl) { \
         x = __riscv_vfmax_vf_f16m##lmul(                                       \
             x, half::round_to_half(0.f),                                       \
@@ -108,11 +110,12 @@ using namespace nncase;
         return x;                                                              \
     }
 
-_LOG_FLOAT16(1, 16)
-_LOG_FLOAT16(2, 8)
-_LOG_FLOAT16(4, 4)
-_LOG_FLOAT16(8, 2)
+_RVV_FLOAT16_LOG_OP(1, 16)
+_RVV_FLOAT16_LOG_OP(2, 8)
+_RVV_FLOAT16_LOG_OP(4, 4)
+_RVV_FLOAT16_LOG_OP(8, 2)
 
+// exp
 #define c_exp_hi_f16 10.7421875f
 #define c_exp_lo_f16 -10.7421875f
 
@@ -127,7 +130,7 @@ _LOG_FLOAT16(8, 2)
 #define c_cephes_exp_p4 1.6666665459E-1
 #define c_cephes_exp_p5 5.0000001201E-1
 
-#define _EXP_FLOAT16(lmul, mlen)                                               \
+#define _RVV_FLOAT16_EXP_OP(lmul, mlen)                                        \
     static inline vfloat16m##lmul##_t exp_ps_fp16(vfloat16m##lmul##_t x,       \
                                                   size_t vl) {                 \
         vfloat16m##lmul##_t tmp, fx;                                           \
@@ -193,11 +196,12 @@ _LOG_FLOAT16(8, 2)
         return y;                                                              \
     }
 
-_EXP_FLOAT16(1, 16)
-_EXP_FLOAT16(2, 8)
-_EXP_FLOAT16(4, 4)
-_EXP_FLOAT16(8, 2)
+_RVV_FLOAT16_EXP_OP(1, 16)
+_RVV_FLOAT16_EXP_OP(2, 8)
+_RVV_FLOAT16_EXP_OP(4, 4)
+_RVV_FLOAT16_EXP_OP(8, 2)
 
+// sincos
 #define c_minus_cephes_DP1 -0.78515625
 #define c_minus_cephes_DP2 -2.4187564849853515625e-4
 #define c_minus_cephes_DP3 -3.77489497744594108e-8
@@ -209,7 +213,7 @@ _EXP_FLOAT16(8, 2)
 #define c_coscof_p2 4.166664568298827E-002
 #define c_cephes_FOPI 1.27323954473516 // 4 / M_PI
 
-#define SINCOS_FLOAT16(LMUL, MLEN)                                             \
+#define _RVV_FLOAT16_SINCOS_OP(LMUL, MLEN)                                     \
     static inline void sincos_ps_fp16(vfloat16m##LMUL##_t x,                   \
                                       vfloat16m##LMUL##_t *ysin,               \
                                       vfloat16m##LMUL##_t *ycos, size_t vl) {  \
@@ -295,13 +299,169 @@ _EXP_FLOAT16(8, 2)
         *ycos = __riscv_vmerge_vvm_f16m##LMUL(                                 \
             __riscv_vfneg_v_f16m##LMUL(yc, vl), yc, sign_mask_cos, vl);        \
     }
-SINCOS_FLOAT16(1, 16)
-SINCOS_FLOAT16(2, 8)
-SINCOS_FLOAT16(4, 4)
-SINCOS_FLOAT16(8, 2)
+
+_RVV_FLOAT16_SINCOS_OP(1, 16)
+_RVV_FLOAT16_SINCOS_OP(2, 8)
+_RVV_FLOAT16_SINCOS_OP(4, 4)
+_RVV_FLOAT16_SINCOS_OP(8, 2)
+
+// tanh
+#define LOG2_INV 0x1.71547652b82fep+0
+#define LOG2_HI 0x1.62e42fefa39efp-1
+#define LOG2_LO 0x1.abc9e3b39803fp-56
+
+#define _RVV_FLOAT16_TANH_OP(LMUL, MLEN, TLEN)                                 \
+    static inline vfloat##TLEN##m##LMUL##_t tanh_ps_fp16(                      \
+        vfloat##TLEN##m##LMUL##_t v, size_t vl) {                              \
+        constexpr auto fp_posZero = 0.f16;                                     \
+        constexpr auto fp_posOne = 1.f16;                                      \
+        auto zero = __riscv_vfmv_v_f_f##TLEN##m##LMUL(fp_posZero, vl);         \
+        auto one = __riscv_vfmv_v_f_f##TLEN##m##LMUL(fp_posOne, vl);           \
+        /*tanh(x) = sign(x) * tanh(|x|); suffices to work on |x| for the main  \
+         * part */                                                             \
+        auto vx = __riscv_vfsgnj_vf_f##TLEN##m##LMUL(v, fp_posOne, vl);        \
+        /* Suffices to clip |x| to 20, which is bigger than 28 log(2) */       \
+        vx = __riscv_vfmin_vf_f##TLEN##m##LMUL(                                \
+            vx, half::round_to_half(0x1.4p4), vl);                             \
+                                                                               \
+        /* tanh(x) = (1 - exp(-2x)) / (1 + exp(-2x)); so we compute exp(-2x)   \
+         */                                                                    \
+        /* by replacing x by -2x */                                            \
+        vx = __riscv_vfmul_vf_f##TLEN##m##LMUL(vx, half::round_to_half(-2.f),  \
+                                               vl);                            \
+        auto n_flt = __riscv_vfmul_vf_f##TLEN##m##LMUL(                        \
+            vx, half::round_to_half(LOG2_INV), vl);                            \
+        auto n = __riscv_vfcvt_x_f_v_i##TLEN##m##LMUL(n_flt, vl);              \
+        n_flt = __riscv_vfcvt_f_x_v_f##TLEN##m##LMUL(n, vl);                   \
+        auto u = __riscv_vadd_vx_i##TLEN##m##LMUL(n, 127, vl);                 \
+        auto r_delta = __riscv_vfnmsac_vf_f##TLEN##m##LMUL(                    \
+            vx, half::round_to_half(LOG2_HI), n_flt, vl);                      \
+        u = __riscv_vsll_vx_i##TLEN##m##LMUL(u, 23, vl);                       \
+        auto r = __riscv_vfnmsac_vf_f##TLEN##m##LMUL(                          \
+            r_delta, half::round_to_half(LOG2_LO), n_flt, vl);                 \
+        auto s =                                                               \
+            __riscv_vreinterpret_v_i##TLEN##m##LMUL##_f##TLEN##m##LMUL(u);     \
+        auto s_is_small =                                                      \
+            __riscv_vmsle_vx_i##TLEN##m##LMUL##_b##MLEN(n, -(23 + 1), vl);     \
+        r_delta = __riscv_vfsub_vv_f##TLEN##m##LMUL(r_delta, r, vl);           \
+        auto s_head = __riscv_vfmerge_vfm_f##TLEN##m##LMUL(s, fp_posZero,      \
+                                                           s_is_small, vl);    \
+        r_delta = __riscv_vfnmsac_vf_f##TLEN##m##LMUL(                         \
+            r_delta, half::round_to_half(LOG2_LO), n_flt, vl);                 \
+        /* exp(x) = 2^n exp(r'), r' = r + r_delta and thus we compute 1 +/-    \
+        exp(x) as 1 +/- 2^(n)(1 + r' + (r')^2/2 + r^3 p(r)) (1 +/- s) +/- s(r' \
+        + (r')^2/2) +/- s r^3 p(r) To maintain good precision, 1 +/- s and r'  \
+        + (r')^2/2 are computed to extra precision in a leading term and a     \
+        correctional term. This leads to representing 1 +/- exp(x) in a        \
+        leading and correctional term. */                                      \
+        /* 1 +/- s is exact when s is not small */                             \
+        auto rsq = __riscv_vfmul_vv_f##TLEN##m##LMUL(r, r, vl);                \
+        auto s_tail =                                                          \
+            __riscv_vmerge_vvm_f##TLEN##m##LMUL(zero, s, s_is_small, vl);      \
+        /* s_head + s_tail = s; and 1 +/- s is (1 +/- s_head) +/- s_tail */    \
+        /* exp(r') is approximated by 1 + r' + (r')^2/2 + r^3(p_even(r^2) +    \
+           r*p_odd(r^2)) using r without delta_r sufficies from the third      \
+         order onwards */                                                      \
+        auto rcube = __riscv_vfmul_vv_f##TLEN##m##LMUL(rsq, r, vl);            \
+        auto c0 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(                           \
+            half::round_to_half(0x1.71ddef82f4beep-19), vl);                   \
+        auto c1 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(                           \
+            half::round_to_half(0x1.a01a01b32b633p-13), vl);                   \
+        auto c2 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(                           \
+            half::round_to_half(0x1.111111110ef6ap-7), vl);                    \
+        auto c3 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(                           \
+            half::round_to_half(0x1.555555555555ap-3), vl);                    \
+        auto c4 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(                           \
+            half::round_to_half(0x1.a019b37a2b3dfp-16), vl);                   \
+        auto c5 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(                           \
+            half::round_to_half(0x1.6c16c17a09506p-10), vl);                   \
+        auto c6 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(                           \
+            half::round_to_half(0x1.5555555553aefp-5), vl);                    \
+                                                                               \
+        auto p_even = __riscv_vmv_v_v_f##TLEN##m##LMUL(rsq, vl);               \
+        p_even = __riscv_vfmadd_vf_f##TLEN##m##LMUL(                           \
+            p_even, half::round_to_half(0x1.af6eacd796f0bp-26), c0, vl);       \
+        p_even = __riscv_vfmadd_vv_f##TLEN##m##LMUL(p_even, rsq, c1, vl);      \
+        p_even = __riscv_vfmadd_vv_f##TLEN##m##LMUL(p_even, rsq, c2, vl);      \
+        p_even = __riscv_vfmadd_vv_f##TLEN##m##LMUL(p_even, rsq, c3, vl);      \
+                                                                               \
+        auto p_odd = __riscv_vmv_v_v_f##TLEN##m##LMUL(rsq, vl);                \
+        p_odd = __riscv_vfmadd_vf_f##TLEN##m##LMUL(                            \
+            p_odd, half::round_to_half(0x1.289788d8bdadfp-22), c4, vl);        \
+        p_odd = __riscv_vfmadd_vv_f##TLEN##m##LMUL(p_odd, rsq, c5, vl);        \
+        p_odd = __riscv_vfmadd_vv_f##TLEN##m##LMUL(p_odd, rsq, c6, vl);        \
+        auto poly = __riscv_vfmadd_vv_f##TLEN##m##LMUL(p_odd, r, p_even, vl);  \
+                                                                               \
+        /* r^3 * poly will be r^3(...)                                         \
+           we delay this multiplication with r^3 for now */                    \
+                                                                               \
+        /*  Compute r' + (r')^2/2 extra precisely */                           \
+        auto r_prime = __riscv_vfmul_vf_f##TLEN##m##LMUL(                      \
+            r, half::round_to_half(0x1.0p-1), vl);                             \
+        auto B = __riscv_vfmadd_vv_f##TLEN##m##LMUL(r, r_prime, r, vl);        \
+        auto b = __riscv_vfsub_vv_f##TLEN##m##LMUL(r, B, vl);                  \
+        b = __riscv_vfmacc_vv_f##TLEN##m##LMUL(b, r, r_prime, vl);             \
+        /* B + b is r' + (r')^2/2 extra precisely */                           \
+        /* incoporate r_delta in R + R^2/2 */                                  \
+        auto c = __riscv_vfmadd_vv_f##TLEN##m##LMUL(r, r_delta, r_delta, vl);  \
+        b = __riscv_vfadd_vv_f##TLEN##m##LMUL(b, c, vl);                       \
+        poly = __riscv_vfmadd_vv_f##TLEN##m##LMUL(poly, rcube, b, vl);         \
+        /* B + poly is r' + (r')^2/2 + r^3(.....) */                           \
+        /* and exp(r') is well approximated by s*(1 + B + poly) */             \
+                                                                               \
+        /* We compute the denominator 1 + exp(R) first as                      \
+           we will need to recipricate afterwards, the latency of which        \
+           can be hidden somewhat by proceeding with the numerator             \
+           at that time */                                                     \
+        auto Z = __riscv_vfadd_vf_f##TLEN##m##LMUL(s_head, fp_posOne, vl);     \
+        auto D_tmp = __riscv_vfmadd_vv_f##TLEN##m##LMUL(B, s, Z, vl);          \
+        auto d_tmp = __riscv_vfsub_vv_f##TLEN##m##LMUL(Z, D_tmp, vl);          \
+        d_tmp = __riscv_vfmacc_vv_f##TLEN##m##LMUL(d_tmp, s, B, vl);           \
+        d_tmp = __riscv_vfadd_vv_f##TLEN##m##LMUL(d_tmp, s_tail, vl);          \
+        d_tmp = __riscv_vfmacc_vv_f##TLEN##m##LMUL(d_tmp, s, poly, vl);        \
+        /* D_tmp + d_tmp is 1 + exp(R) to high precision, but we have to       \
+           normalize this representation so that the leading term              \
+           has full FP64 precision of this sum */                              \
+        auto D = __riscv_vfadd_vv_f##TLEN##m##LMUL(D_tmp, d_tmp, vl);          \
+        auto d = __riscv_vfsub_vv_f##TLEN##m##LMUL(D_tmp, D, vl);              \
+        d = __riscv_vfadd_vv_f##TLEN##m##LMUL(d, d_tmp, vl);                   \
+                                                                               \
+        /* Now start to compute 1/(D+d) as E + e */                            \
+        auto E = __riscv_vfrdiv_vf_f##TLEN##m##LMUL(D, fp_posOne, vl);         \
+        auto e = __riscv_vfnmsub_vv_f##TLEN##m##LMUL(E, D, one, vl);           \
+        e = __riscv_vfnmsac_vv_f##TLEN##m##LMUL(e, E, d, vl);                  \
+        e = __riscv_vfmul_vv_f##TLEN##m##LMUL(                                 \
+            e, __riscv_vfrec7_v_f##TLEN##m##LMUL(D, vl), vl);                  \
+        /* E + e is 1/(D+d) to extra precision */                              \
+                                                                               \
+        /* Overlap much of the 1/(D+d) computation with */                     \
+        /* computing 1 - s(1 + B + poly) */                                    \
+        Z = __riscv_vfrsub_vf_f##TLEN##m##LMUL(s_head, fp_posOne, vl);         \
+                                                                               \
+        auto Numer = __riscv_vfnmsub_vv_f##TLEN##m##LMUL(B, s, Z, vl);         \
+        auto numer = __riscv_vfsub_vv_f##TLEN##m##LMUL(Z, Numer, vl);          \
+        numer = __riscv_vfnmsac_vv_f##TLEN##m##LMUL(numer, s, B, vl);          \
+                                                                               \
+        /* Numer + numer = Z - s * B accurately */                             \
+        numer = __riscv_vfsub_vv_f##TLEN##m##LMUL(numer, s_tail, vl);          \
+        numer = __riscv_vfnmsac_vv_f##TLEN##m##LMUL(numer, s, poly, vl);       \
+                                                                               \
+        /* (Numer + numer) * (E + e) */                                        \
+        /* Numer * E + ( numer * E + (Numer * e + (e*numer)) ) */              \
+        auto vy = __riscv_vfmul_vv_f##TLEN##m##LMUL(e, numer, vl);             \
+        vy = __riscv_vfmacc_vv_f##TLEN##m##LMUL(vy, Numer, e, vl);             \
+        vy = __riscv_vfmacc_vv_f##TLEN##m##LMUL(vy, numer, E, vl);             \
+        vy = __riscv_vfmacc_vv_f##TLEN##m##LMUL(vy, Numer, E, vl);             \
+        return __riscv_vfsgnj_vv_f##TLEN##m##LMUL(vy, v, vl);                  \
+    }
+
+_RVV_FLOAT16_TANH_OP(1, 16, 16)
+_RVV_FLOAT16_TANH_OP(2, 8, 16)
+_RVV_FLOAT16_TANH_OP(4, 4, 16)
+_RVV_FLOAT16_TANH_OP(8, 2, 16)
 
 #define _RVV_FLOAT16_POW_OP(LMUL, MLEN, TLEN)                                  \
-    static inline vfloat##TLEN##m##LMUL##_t pow_ps_fp16(                            \
+    static inline vfloat##TLEN##m##LMUL##_t pow_ps_fp16(                       \
         vfloat##TLEN##m##LMUL##_t a, vfloat##TLEN##m##LMUL##_t b, size_t vl) { \
         /* pow(x, m) = exp(m * log(x)) */                                      \
         return exp_ps_fp16(                                                    \
@@ -312,5 +472,7 @@ _RVV_FLOAT16_POW_OP(1, 16, 16)
 _RVV_FLOAT16_POW_OP(2, 8, 16)
 _RVV_FLOAT16_POW_OP(4, 4, 16)
 _RVV_FLOAT16_POW_OP(8, 2, 16)
+
+// erf
 
 #endif

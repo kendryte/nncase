@@ -72,6 +72,7 @@ struct half {
     operator bfloat16() const noexcept {
         return bfloat16::round_to_bfloat16(float(*this));
     }
+
     explicit operator float() const noexcept {
         const fp32 magic = {113 << 23};
         const unsigned int shifted_exp = 0x7c00
@@ -189,13 +190,19 @@ struct half {
         return float(a) x float(b);                                            \
     }
 
-#define DEFINE_FP16_FP32_BINARY_BOOLRET(x) \
-    inline bool operator x(half a, float b) noexcept { \
-    return float(a) x b; \
-} 
+#define DEFINE_FP16_BINARY_FP32RET(x)                                          \
+    inline bool operator x(half a, float b) noexcept { return float(a) x b; }
 
-DEFINE_FP16_FP32_BINARY_BOOLRET(<)
+#define DEFINE_FP16_BINARY_INTRET(x)                                           \
+    inline half operator x(half a, int b) noexcept {                           \
+        return half::round_to_half(float(a) x b);                              \
+    }
 
+DEFINE_FP16_BINARY_FP32RET(<)
+DEFINE_FP16_BINARY_INTRET(-)
+DEFINE_FP16_BINARY_INTRET(+)
+DEFINE_FP16_BINARY_INTRET(*)
+DEFINE_FP16_BINARY_INTRET(/)
 
 DEFINE_FP16_BINARY_FP16RET(+)
 DEFINE_FP16_BINARY_FP16RET(-)
@@ -338,6 +345,18 @@ inline half asin(const half &a) {
 }
 inline half rsqrt(const half &a) {
     return half::round_to_half(std::rsqrt(float(a)));
+}
+inline half cosh(const half &a) {
+    return half::round_to_half(std::coshf(float(a)));
+}
+inline half sinh(const half &a) {
+    return half::round_to_half(std::sinf(float(a)));
+}
+inline half swish(const half &a) {
+    return half::round_to_half(std::swish(float(a)));
+}
+inline half swishb(const half &a) {
+    return half::round_to_half(std::swishb(float(a)));
 }
 inline long lrint(const half &a) { return lrintf(float(a)); }
 } // namespace std
