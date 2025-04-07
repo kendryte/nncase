@@ -30,6 +30,7 @@ def test_llm_interp(request):
   kvcaches = [[[nncase.RuntimeTensor.from_numpy(np.random.rand(num_blocks, layers, num_kv_head, kv, head_dim //
                                                 64, block_size, 64).astype(np.float32)) for core in range(32)] for die in range(2)] for chip in range(1)]
   # set up kv caches
+  paged_kv = nncase.PagedAttentionKVCacheForEvaluator()
   paged_kv = nncase.PagedAttentionKVCache()
   paged_kv.kv_caches = kvcaches
   paged_kv.block_tables = [nncase.RuntimeTensor.from_numpy(np.random.randint(0, 100, [8, 4, 3]))]

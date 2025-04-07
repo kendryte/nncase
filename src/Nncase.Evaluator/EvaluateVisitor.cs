@@ -69,6 +69,35 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
             throw new ArgumentException($"Must Set Input For Var {expr.Name}!");
         }
 
+        switch (expr.CheckedType, value.Type)
+        {
+            case (AnyType, _):
+                return value;
+            case (TensorType checkedTensorType, TensorType valueTensorType):
+                if (!checkedTensorType.Shape.IsAssignableFrom(valueTensorType.Shape))
+                {
+                    throw new ArgumentException(
+                        $"Shape mismatch. The Var {expr.Name} Require {expr.CheckedShape} But Give {valueTensorType.Shape}");
+                }
+
+                switch (checkedTensorType.DType, valueTensorType.DType)
+                {
+                    case (ReferenceType a, ReferenceType b):
+                        if (!a.ElemType.CLRType.IsAssignableFrom(b.ElemType.CLRType))
+                        {
+                            throw new ArgumentException($"Reference DataType mismatch. The Var {expr.Name} Require {a} But Give {b}");
+                        }
+
+                        break;
+                    case (DataType a, DataType b) when a != b:
+                        throw new ArgumentException($"DataType mismatch. The Var {expr.Name} Require {a} But Give {b}");
+                }
+
+                return value;
+            default:
+                break;
+        }
+
         if (expr.CheckedType is not AnyType)
         {
             if (value.Type is TensorType resultType)
@@ -80,11 +109,7 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
                         throw new ArgumentException($"DataType mismatch. The Var {expr.Name} Require {expr.CheckedDataType} But Give {resultType.DType}");
                     }
 
-                    if (!expr.CheckedShape.IsAssignableFrom(resultType.Shape))
-                    {
-                        throw new ArgumentException(
-                            $"Shape mismatch. The Var {expr.Name} Require {expr.CheckedShape} But Give {resultType.Shape}");
-                    }
+
                 }
             }
         }

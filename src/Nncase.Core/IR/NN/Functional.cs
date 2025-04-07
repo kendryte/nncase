@@ -109,4 +109,6 @@ public static class NN
     /// create Swish call.
     /// </summary>
     public static Call Swish(Expr input, Expr beta) => new Call(new Swish(), input, beta);
+
+    public static Expr PagedAttention(Expr query, Expr key, Expr value, Expr kvcache, long layer_id) => new Call(new PagedAttention(layer_id), query, key, value, kvcache);
 }
