@@ -24,6 +24,6 @@ public sealed partial class CPUAffineSelectionPass
             return call;
         }
 
-        return SelectUnaryLike(swish, new TIR.CPU.Swish(betaConst.Value.ToScalar<float>()), call, output);
+        return SelectUnaryLike(call[IR.NN.Swish.Input], new TIR.CPU.Swish(betaConst.Value.ToScalar<float>()), call, output);
     }
 }

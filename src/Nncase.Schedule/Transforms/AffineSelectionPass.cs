@@ -36,17 +36,16 @@ public abstract class AffineSelectionPass : FunctionPass
 
     protected abstract Expr SelectCall(Call call, Expr output);
 
-    protected Expr SelectUnaryLike(Op op, Op tirOp, Call call, Expr output)
+    protected Expr SelectUnaryLike(Expr input, Op tirOp, Call call, Expr output)
     {
-        var input = call.Arguments[IR.Math.Unary.Input.Index];
         if (output.CheckedShape is not { IsFixed: true, Rank: > 0 })
         {
             return call;
         }
 
-        if (op.Parameters.Count != 1)
+        if (tirOp.Parameters.Count != 2)
         {
-            throw new ArgumentException($"Unary-like op {op} should have only 1 parameter");
+            throw new ArgumentException($"Unary-like TIR op {tirOp} should have 2 parameters");
         }
 
         var rank = input.CheckedShape.Rank;

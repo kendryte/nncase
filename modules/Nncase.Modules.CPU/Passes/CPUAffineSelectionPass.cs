@@ -49,7 +49,7 @@ public sealed partial class CPUAffineSelectionPass : AffineSelectionPass
             case IR.Math.MatMul:
                 return SelectMatMul((Op)call.Target, call, output);
             case IR.Math.Unary op:
-                return SelectUnaryLike(op, new TIR.CPU.Unary(op.UnaryOp), call, output);
+                return SelectUnaryLike(call[IR.Math.Unary.Input], new TIR.CPU.Unary(op.UnaryOp), call, output);
             case IR.NN.Swish op:
                 return SelectSwish(op, call, output);
             case IR.Tensors.Cast op:
