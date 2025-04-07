@@ -242,7 +242,19 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Reshape reshape)
     {
-        var input = context.GetOrtArgumentValue(reshape, Reshape.Input);
+        OrtKISharp.Tensor input;
+
+        var inputOrg = context.GetArgumentValue(reshape, Reshape.Input).AsTensor();
+        var dataType = inputOrg.ElementType;
+        if (dataType.IsFloat() && dataType != DataTypes.Float32)
+        {
+            input = Cast(inputOrg, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
+        }
+        else
+        {
+            input = context.GetOrtArgumentValue(reshape, Reshape.Input);
+        }
+
         var shape = context.GetArgumentValueAsArray<long>(reshape, Reshape.Shape);
         if (context.CurrentCall.CheckedType is AnyType)
         {
@@ -258,7 +270,14 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
 
         var reshaped = OrtKI.Reshape(input, shape, allowzero);
 
-        return Value.FromTensor(reshaped.ToTensor(tensorType));
+        if (dataType.IsFloat() && dataType != DataTypes.Float32)
+        {
+            return Value.FromTensor(reshaped.ToTensor(tensorType).CastTo(dataType));
+        }
+        else
+        {
+            return Value.FromTensor(reshaped.ToTensor(tensorType));
+        }
     }
 
     /// <inheritdoc/>

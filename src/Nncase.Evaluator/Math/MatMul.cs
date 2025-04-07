@@ -340,7 +340,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         {
             var lhsOrt = Cast(lhs, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
             var rhsOrt = Cast(rhs, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
-            var ret = OrtKI.MatMul(lhsOrt, rhsOrt).ToTensor().CastTo(dataType);
+            var ret = OrtKI.MatMul(lhsOrt, rhsOrt).ToTensor();
             return Value.FromTensor(ret);
         }
         else

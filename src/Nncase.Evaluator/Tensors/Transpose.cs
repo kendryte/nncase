@@ -53,7 +53,18 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
     {
         var inputValue = context.GetArgumentValue(tr, Transpose.Input);
         var perm = context.GetArgumentValueAsArray<long>(tr, Transpose.Perm);
-        var input = context.GetOrtArgumentValue(tr, Transpose.Input);
+        OrtKISharp.Tensor input;
+        var inputOrg = inputValue.AsTensor();
+        var dataType = inputOrg.ElementType;
+        if (dataType.IsFloat() && dataType != DataTypes.Float32)
+        {
+            input = Nncase.IR.F.Tensors.Cast(inputOrg, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
+        }
+        else
+        {
+            input = context.GetOrtArgumentValue(tr, Transpose.Input);
+        }
+
         if (inputValue.Type is TensorType { DType: VectorType vectorType })
         {
             var newPerm = perm.Concat(Enumerable.Range(0, vectorType.Lanes.Count).Select(i => (long)(i + perm.Length))).ToArray();
@@ -93,7 +104,14 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
             }
         }
 
-        return OrtKI.Transpose(input, perm).ToValue();
+        if (dataType.IsFloat() && dataType != DataTypes.Float32)
+        {
+            return Value.FromTensor(OrtKI.Transpose(input, perm).ToTensor().CastTo(dataType));
+        }
+        else
+        {
+            return OrtKI.Transpose(input, perm).ToValue();
+        }
     }
 
     /// <inheritdoc/>

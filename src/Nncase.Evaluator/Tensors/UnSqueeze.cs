@@ -19,9 +19,27 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Unsqueeze unSqueeze)
     {
-        var input = context.GetOrtArgumentValue(unSqueeze, Unsqueeze.Input);
+        OrtKISharp.Tensor input;
+        var inputOrg = context.GetArgumentValue(unSqueeze, Unsqueeze.Input).AsTensor();
+        var dataType = inputOrg.ElementType;
+        if (dataType.IsFloat() && dataType != DataTypes.Float32)
+        {
+            input = Nncase.IR.F.Tensors.Cast(inputOrg, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
+        }
+        else
+        {
+            input = context.GetOrtArgumentValue(unSqueeze, Unsqueeze.Input);
+        }
+
         var axes = context.GetInt64OrtTensorArgumentValue(unSqueeze, Unsqueeze.Dim);
-        return Value.FromTensor(OrtKI.Unsqueeze(input, axes).ToTensor(context.CurrentCall.CheckedTensorType));
+        if (dataType.IsFloat() && dataType != DataTypes.Float32)
+        {
+            return Value.FromTensor(OrtKI.Unsqueeze(input, axes).ToTensor(context.CurrentCall.CheckedTensorType).CastTo(dataType));
+        }
+        else
+        {
+            return Value.FromTensor(OrtKI.Unsqueeze(input, axes).ToTensor(context.CurrentCall.CheckedTensorType));
+        }
     }
 
     /// <inheritdoc/>
