@@ -258,7 +258,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         expected = self.cpu_infer(model_file)
         targets = self.cfg['target']
         model_content = self.read_model_file(model_file)
-        import_options = nncase.ImportOptions()
+        import_options = self.get_import_options()
 
         compiler = None
         dump_hist = self.cfg['dump_hist']
@@ -376,12 +376,22 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 continue
             exec(f"compile_options.{k} = {e + v + e if isinstance(v, str) else v}")
 
-        # update huggingface option
-        compile_options.huggingface_options = self.cfg['huggingface_options']
         compile_options.target = target
         compile_options.dump_dir = dump_dir
 
         return compile_options
+
+    def get_import_options(self):
+        import_options = nncase.ImportOptions()
+
+        # update preprocess option
+        import_opt = self.cfg['huggingface_options']
+        e = '"'
+        for k, v in import_opt.items():
+            exec(
+                f"import_options.huggingface_options.{k} = {e + v + e if isinstance(v, str) else v}")
+
+        return import_options
 
     @staticmethod
     def split_value(kwcfg: List[Dict[str, str]]) -> Tuple[List[str], List[str]]:

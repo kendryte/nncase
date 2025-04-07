@@ -68,9 +68,9 @@ internal class Compiler : ICompiler
         return InitializeModuleAsync(module);
     }
 
-    public Task<IRModule> ImportHuggingfaceAsync(string modelDir)
+    public Task<IRModule> ImportHuggingFaceModuleAsync(string modelDir, ImportOptions importOptions)
     {
-        var module = Importers.ImportHuggingFace(modelDir, _compileSession);
+        var module = Importers.ImportHuggingFace(modelDir, importOptions, _compileSession);
         return InitializeModuleAsync(module);
     }
 

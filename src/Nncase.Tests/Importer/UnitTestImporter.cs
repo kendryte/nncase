@@ -53,9 +53,11 @@ public class UnitTestImporter : TestClassBase
     public async Task TestImportHuggingFace()
     {
         var file = "/compiler/Qwen2.5-0.5B-Instruct/"; // TODO: need a relative path!
-        CompileSession.CompileOptions.DumpFlags = Diagnostics.DumpFlags.ImportOps | Diagnostics.DumpFlags.PassIR | Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.Compile;
-        CompileSession.CompileOptions.DumpDir = "/compiler/nncase/tests_output";
-        var module = Importers.ImportHuggingFace(file, CompileSession);
+        var importOptions = new ImportOptions();
+        importOptions.HuggingFaceOptions.OutputAttentions = true;
+        importOptions.HuggingFaceOptions.OutputHiddenStates = true;
+        importOptions.HuggingFaceOptions.UseCache = true;
+        var module = Importers.ImportHuggingFace(file, importOptions, CompileSession);
 
         await InferShapeAsync(module);
         Assert.NotNull(module.Entry);

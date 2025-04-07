@@ -49,8 +49,13 @@ _initialize()
 
 
 class ImportOptions:
+    _import_options: _nncase.ImportOptions
+    huggingface_options: _nncase.HuggingFaceOptions
+
     def __init__(self) -> None:
-        pass
+        self._import_options = _nncase.ImportOptions()
+        self.huggingface_options = _nncase.HuggingFaceOptions()
+        self._import_options.huggingface_options = self.huggingface_options
 
 
 class PTQTensorOptions:
@@ -147,7 +152,6 @@ class Compiler:
     _target_options: object
     _quantize_options: _nncase.QuantizeOptions
     _shape_bucket_options: _nncase.ShapeBucketOptions
-    _huggingface_options: _nncase.HuggingFaceOptions
     _module: IRModule
 
     def __init__(self, compile_options: CompileOptions) -> None:
@@ -157,10 +161,8 @@ class Compiler:
         self._compiler = self._session.compiler
         self._quantize_options = None
         self._shape_bucket_options = _nncase.ShapeBucketOptions()
-        self._huggingface_options = _nncase.HuggingFaceOptions()
         self.init_shape_bucket_options(compile_options)
         self.init_target_options(compile_options)
-        self.init_huggingface_options(compile_options)
 
     def init_shape_bucket_options(self, compile_options: CompileOptions) -> None:
         self._shape_bucket_options = _nncase.ShapeBucketOptions()
@@ -174,16 +176,6 @@ class Compiler:
     def init_target_options(self, compile_options: CompileOptions) -> None:
         if hasattr(compile_options, "target_options"):
             self._compile_options.set_cpu_target_options(compile_options.target_options)
-
-    def init_huggingface_options(self, compile_options: CompileOptions) -> None:
-        if hasattr(compile_options, "huggingface_options"):
-            self._huggingface_options = _nncase.HuggingFaceOptions()
-            self._huggingface_options.output_attentions = compile_options.huggingface_options[
-                'output_attentions']
-            self._huggingface_options.output_hidden_states = compile_options.huggingface_options[
-                'output_hidden_states']
-            self._huggingface_options.use_cache = compile_options.huggingface_options['use_cache']
-            self._compile_options.huggingface_options = self._huggingface_options
 
     def compile(self) -> None:
         self._compiler.compile()
@@ -219,9 +211,9 @@ class Compiler:
         self._compile_options.input_format = "ncnn"
         self._import_ncnn_module(model_param, model_bin)
 
-    def import_huggingface(self, model_path: str, options: ImportOptions) -> None:
+    def import_huggingface(self, model_path: str, options: _nncase.ImportOptions) -> None:
         self._compile_options.input_format = "huggingface"
-        self._import_huggingface_module(model_path)
+        self._import_huggingface_module(model_path, options)
 
     def use_ptq(self, ptq_dataset_options: PTQTensorOptions) -> None:
         dataset = [_nncase.RTValue.from_runtime_tensor(
@@ -320,8 +312,9 @@ class Compiler:
         bin_stream = io.BytesIO(model_bin) if isinstance(model_bin, bytes) else model_bin
         self._module = IRModule(self._compiler.import_ncnn_module(param_stream, bin_stream))
 
-    def _import_huggingface_module(self, model_dir: str) -> None:
-        self._module = IRModule(self._compiler.import_huggingface_module(model_dir))
+    def _import_huggingface_module(self, model_dir: str, options: ImportOptions) -> None:
+        self._module = IRModule(self._compiler.import_huggingface_module(
+            model_dir, options._import_options))
 
 
 def check_target(target: str):
