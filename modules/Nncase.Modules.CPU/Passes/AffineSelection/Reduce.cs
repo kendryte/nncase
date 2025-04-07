@@ -13,7 +13,8 @@ public sealed partial class CPUAffineSelectionPass
     private Expr SelectReduce(IR.CPU.PackedReduce reduce, Call call, Expr output)
     {
         var input = call[IR.CPU.PackedReduce.Input];
-        if (output.CheckedShape is not { IsFixed: true, Rank: > 0 })
+        if (output.CheckedShape is not { IsFixed: true, Rank: > 0 }
+            || reduce.ReduceOp == ReduceOp.Mean)
         {
             return call;
         }

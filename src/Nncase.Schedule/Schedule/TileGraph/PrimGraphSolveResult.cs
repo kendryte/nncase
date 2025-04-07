@@ -346,10 +346,12 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
     {
         var expr = bid.Node.Grid.Buffers[bid.Index];
         var tensorType = GetBufferTensorType(expr);
-        var distributedType = GetBufferDistributedType(expr);
+
+        // TODO: Currently we only support the buffer which is not distributed.
+        // var distributedType = GetBufferDistributedType(expr);
         if (!PrimBufferMemo.TryGetValue(bid, out var buffer))
         {
-            buffer = new Var($"{bid}", (IRType)distributedType ?? tensorType);
+            buffer = new Var($"{bid}", tensorType);
             PrimBufferMemo.Add(bid, buffer);
         }
 

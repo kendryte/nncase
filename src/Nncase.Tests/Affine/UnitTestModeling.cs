@@ -264,7 +264,7 @@ public sealed class UnitTestModeling : TestClassBase
     [Fact]
     public void TestAutoFusion()
     {
-        var func = FunctionSamples.Get1();
+        var func = FunctionSamples.Get1WithTarget(Callable.StackVMModuleKind);
         var module = new IR.IRModule(func);
         CompileSession.Compiler.ImportIRModule(module);
         CompileSession.Compiler.CompileAsync();
