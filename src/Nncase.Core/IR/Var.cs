@@ -99,7 +99,7 @@ public sealed class Var : Expr, IEquatable<Var?>
     /// </summary>
     public static Var SizeVar(string name) => Scalar(name, DataTypes.Int64);
 
-    public static Var BufferVar(TIR.Buffer buffer) => new Var(buffer.Name);
+    public static Var BufferVar(TIR.Buffer buffer) => new Var(buffer.Name, buffer.DistributedType ?? buffer.CheckedType);
 
     /// <inheritdoc/>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)

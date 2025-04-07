@@ -49,18 +49,9 @@ public class CPUTarget : Target
         return (cmd, ParseTargetCompileOptions);
     }
 
-    public override void RegisterAffineSelectionRules(IRulesAddable pass, CompileOptions options)
+    public override void RegisterAffineSelectionPass(IPassManager passManager, CompileOptions options)
     {
-        // pass.Add<Passes.Rules.CPU.Affine.LowerPack>();
-        // pass.Add<Passes.Rules.CPU.Affine.LowerUnary>();
-        // pass.Add<Passes.Rules.CPU.Affine.LowerSwish>();
-        // pass.Add<Passes.Rules.CPU.Affine.LowerBinary>();
-        // pass.Add<Passes.Rules.CPU.Affine.LowerPackedBinary>();
-        // pass.Add<Passes.Rules.CPU.Affine.LowerMatmul>();
-        // pass.Add<Passes.Rules.CPU.Affine.LowerTranspose>();
-        // pass.Add<Passes.Rules.CPU.Affine.LowerUnpack>();
-        // pass.Add<Passes.Rules.CPU.Affine.LowerReduce>();
-        // pass.Add<Passes.Rules.CPU.Affine.LowerCast>();
+        passManager.Add<CPUAffineSelectionPass>();
     }
 
     public override void RegisterAutoPackingRules(IRulesAddable pass, CompileOptions options)

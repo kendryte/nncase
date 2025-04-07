@@ -39,7 +39,7 @@ internal sealed class SimplifyTarget : ITarget
 
     public void ParseTargetDependentOptions(IConfigurationSection configure) => throw new NotImplementedException();
 
-    public void RegisterAffineSelectionRules(IRulesAddable pass, CompileOptions options) => throw new NotImplementedException();
+    public void RegisterAffineSelectionPass(IPassManager passManager, CompileOptions options) => throw new NotImplementedException();
 
     public void RegisterAutoPackingRules(IRulesAddable pass, CompileOptions options) => throw new NotImplementedException();
 

@@ -3,30 +3,21 @@
 
 using Nncase.IR;
 using Nncase.IR.Affine;
-using Nncase.PatternMatch;
-using Nncase.Targets;
-using static Nncase.IR.TypePatternUtility;
-using static Nncase.PatternMatch.Utility;
+using Nncase.TIR;
+using Nncase.TIR.CPU;
 
-namespace Nncase.Passes.Rules.CPU.Affine;
+namespace Nncase.Passes;
 
-[RuleGenerator]
-public partial class LowerReduce : RewriteRule<Pattern>
+public sealed partial class CPUAffineSelectionPass
 {
-    public LowerReduce(string moduleKind = CPUTarget.Kind)
+    private Expr SelectReduce(IR.CPU.PackedReduce reduce, Call call, Expr output)
     {
-        ModuleKind = moduleKind;
-    }
+        var input = call[IR.CPU.PackedReduce.Input];
+        if (output.CheckedShape is not { IsFixed: true, Rank: > 0 })
+        {
+            return call;
+        }
 
-    public string ModuleKind { get; }
-
-    public override Pattern Pattern { get; } = IsCall(
-            "call",
-            IsOp<IR.CPU.PackedReduce>("op", r => r.ReduceOp != ReduceOp.Mean),
-            IsWildcard("input") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") });
-
-    private Expr? GetReplace(Expr call, IR.CPU.PackedReduce op, Expr input)
-    {
         var inputShape = input.CheckedShape.ToValueArray();
         var rank = inputShape.Length;
         var domains = IR.F.Affine.Domains(rank);
@@ -36,9 +27,9 @@ public partial class LowerReduce : RewriteRule<Pattern>
             var j = 0;
             for (int i = 0; i < rank; i++)
             {
-                if (op.Axes.Contains(i))
+                if (reduce.Axes.Contains(i))
                 {
-                    if (op.KeepDims == true)
+                    if (reduce.KeepDims == true)
                     {
                         results[j++] = new AffineRange(0, 1);
                     }
@@ -51,18 +42,11 @@ public partial class LowerReduce : RewriteRule<Pattern>
         }
 
         var affinemap = new AffineMap(domains, default, results);
-        var outBuffer = call.CheckedType switch
-        {
-            TensorType t => IR.F.Buffer.Uninitialized(t.DType, TIR.MemoryLocation.Data, t.Shape.ToValueArray()),
-            DistributedType dt => IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape.ToValueArray(), dt.AxisPolices, dt.Placement),
-            _ => throw new ArgumentOutOfRangeException(nameof(call)),
-        };
-
-        return IR.F.Affine.Grid(ModuleKind)
+        return IR.F.Affine.Grid()
             .Domain(rank, out var domainVar)
             .Read(input, AffineMap.Identity(rank), out var intile)
-            .Write(outBuffer, affinemap, out var outTile)
-            .Body(TIR.F.CPU.Reduce(intile, outTile, GetLoadPreviousExpr(op.Axes, domainVar), op.PackedAxes.ToArray(), op.PadedNums.ToArray(), op.Axes, op.KeepDims, op.ReduceOp))
+            .Write(output, affinemap, out var outTile)
+            .Body(TIR.F.CPU.Reduce(intile, outTile, GetLoadPreviousExpr(reduce.Axes, domainVar), reduce.PackedAxes.ToArray(), reduce.PadedNums.ToArray(), reduce.Axes, reduce.KeepDims, reduce.ReduceOp))
             .Build();
     }
 

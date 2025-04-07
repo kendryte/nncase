@@ -8,7 +8,6 @@ using System.Linq;
 using Google.OrTools.ConstraintSolver;
 using Nncase.IR;
 using Nncase.Passes;
-using Nncase.Schedule.TileTree;
 using QuikGraph.Graphviz;
 using Xunit;
 

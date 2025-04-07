@@ -54,7 +54,7 @@ public abstract class Target : ITarget
     {
     }
 
-    public virtual void RegisterAffineSelectionRules(IRulesAddable pass, CompileOptions options)
+    public virtual void RegisterAffineSelectionPass(IPassManager passManager, CompileOptions options)
     {
     }
 

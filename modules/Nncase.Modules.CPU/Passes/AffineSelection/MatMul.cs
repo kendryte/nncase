@@ -3,39 +3,23 @@
 
 using Nncase.IR;
 using Nncase.IR.Affine;
-using Nncase.IR.Math;
-using Nncase.PatternMatch;
-using Nncase.Targets;
-using static Nncase.IR.TypePatternUtility;
-using static Nncase.PatternMatch.Utility;
+using Nncase.TIR;
+using Nncase.TIR.CPU;
 
-namespace Nncase.Passes.Rules.CPU.Affine;
+namespace Nncase.Passes;
 
-[RuleGenerator]
-public partial class LowerMatmul : RewriteRule<Pattern>
+public sealed partial class CPUAffineSelectionPass
 {
-    public LowerMatmul(string moduleKind = CPUTarget.Kind)
+    private Expr SelectMatMul(Op op, Call call, Expr output)
     {
-        ModuleKind = moduleKind;
-    }
+        var lhs = call.Arguments[IR.Math.MatMul.Lhs.Index];
+        var rhs = call.Arguments[IR.Math.MatMul.Rhs.Index];
 
-    public string ModuleKind { get; }
-
-    /// <inheritdoc/>
-    public override Pattern Pattern { get; } = IsCall(
-        "call",
-        IsOp<Op>("op", op => op is TIR.CPU.Matmul),
-        IsWildcard("lhs") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") },
-        IsWildcard("rhs") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") },
-        IsWildcard("output") with { TypePattern = HasShape(s => s.Rank > 0 && s.IsFixed, "tileable") },
-        IsWildcard("loadC"));
-
-    private Expr? GetReplace(Expr call, TIR.CPU.Matmul op, Expr lhs, Expr rhs, Expr output)
-    {
         // TODO: summa not support tiling for now.
-        if (lhs.CheckedType is DistributedType ldt && ldt.AxisPolices.Last() is SBPSplit)
+        if ((lhs.CheckedType is DistributedType ldt && ldt.AxisPolices.Last() is SBPSplit)
+            || output.CheckedShape is not { IsFixed: true, Rank: > 0 })
         {
-            return null;
+            return call;
         }
 
         var lhsShape = lhs.CheckedShape.ToValueArray();
@@ -66,7 +50,7 @@ public partial class LowerMatmul : RewriteRule<Pattern>
                             rhsRes[rhsi] = new AffineRange(0, 1);
                             break;
                         default:
-                            return null;
+                            return call;
                     }
 
                     break;
@@ -84,14 +68,17 @@ public partial class LowerMatmul : RewriteRule<Pattern>
         var (om, ok, on) = (rank - 3, rank - 2, rank - 1);
         var (lm, lk) = (lhsShape.Length - 2, lhsShape.Length - 1);
         var (rk, rn) = (rhsShape.Length - 2, rhsShape.Length - 1);
-        if (op.TransposeA)
+        if (op is IR.CPU.PackedMatMul pm)
         {
-            (lm, lk) = (lk, lm);
-        }
+            if (pm.TransposeA)
+            {
+                (lm, lk) = (lk, lm);
+            }
 
-        if (op.TransposeB)
-        {
-            (rk, rn) = (rn, rk);
+            if (pm.TransposeB)
+            {
+                (rk, rn) = (rn, rk);
+            }
         }
 
         lhsRes[lm] = new AffineRange(domains[om].Offset, domains[om].Extent);
@@ -102,13 +89,16 @@ public partial class LowerMatmul : RewriteRule<Pattern>
         var lhsMap = new AffineMap(domains, default, lhsRes);
         var rhsMap = new AffineMap(domains, default, rhsRes);
         var outMap = new AffineMap(domains, default, domains.SkipLast(3).Concat([domains[om], domains[on]]).Select(x => new AffineRange(x.Offset, x.Extent)).ToArray());
-        return IR.F.Affine.Grid(ModuleKind)
+        return IR.F.Affine.Grid()
             .Domain(rank, out var domainVar)
             .Read(lhs, lhsMap, out var lhsTile)
             .Read(rhs, rhsMap, out var rhsTile)
             .Write(output, outMap, out var outTile)
-            .Body(
-                TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L), op.LhsPackedAxes, op.LhsPadedNums, op.RhsPackedAxes, op.RhsPadedNums, op.TransposeA, op.TransposeB, op.FusedReduce))
-            .Build();
+            .Body(op switch
+            {
+                IR.Math.MatMul => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L)),
+                IR.CPU.PackedMatMul pop => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L), pop.LhsPackedAxes, pop.LhsPadedNums, pop.RhsPackedAxes, pop.RhsPadedNums, pop.TransposeA, pop.TransposeB, pop.FusedReduce),
+                _ => throw new System.Diagnostics.UnreachableException(),
+            }).Build();
     }
 }

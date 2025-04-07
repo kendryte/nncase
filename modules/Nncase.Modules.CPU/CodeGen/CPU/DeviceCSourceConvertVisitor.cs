@@ -532,14 +532,24 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             return symbol;
         }
 
-        symbol = new(
-            expr.CheckedType switch
-            {
-                TensorType t => t.DType.ToC(),
-                AnyType => "auto",
-                _ => throw new ArgumentOutOfRangeException(nameof(expr)),
-            },
-            expr.Name + "_" + expr.GlobalVarIndex.ToString());
+        var name = IRHelpers.GetIdentityName(expr.Name);
+        var index = VisitEntry.Parameters.IndexOf(expr);
+        if (index != -1)
+        {
+            symbol = new CSymbol($"T{index}", name);
+        }
+        else
+        {
+            symbol = new(
+                expr.CheckedType switch
+                {
+                    TensorType t => t.DType.ToC(),
+                    AnyType => "auto",
+                    _ => throw new ArgumentOutOfRangeException(nameof(expr)),
+                },
+                expr.Name + "_" + expr.GlobalVarIndex.ToString());
+        }
+
         _exprMemo.Add(expr, symbol);
         return symbol;
     }

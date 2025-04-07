@@ -286,17 +286,10 @@ internal class Compiler : ICompiler
         passManager.Add<OptimizeByRangePass>();
     }
 
-    public void TIRPass(IPassManager passManager)
+    public void AutoTilingPass(IPassManager passManager)
     {
         var target = _compileSession.Target;
-        target.RegisterTIRSelectionPass(passManager, _compileSession.CompileOptions);
-        passManager.Add<InferRangePass>();
-        passManager.Add<OptimizeByRangePass>();
-
-        passManager.AddWithName<DataflowPass>("AffineSelection").Configure(p =>
-        {
-            target.RegisterAffineSelectionRules(p, _compileSession.CompileOptions);
-        });
+        target.RegisterAffineSelectionPass(passManager, _compileSession.CompileOptions);
 
         foreach (var moduleCompiler in _compileSession.Target.ModuleCompilers)
         {
@@ -304,6 +297,18 @@ internal class Compiler : ICompiler
         }
 
         passManager.Add<AddFunctionToModule>();
+        passManager.Add<InferRangePass>();
+        passManager.Add<OptimizeByRangePass>();
+    }
+
+    public void TIRPass(IPassManager passManager)
+    {
+        var target = _compileSession.Target;
+        target.RegisterTIRSelectionPass(passManager, _compileSession.CompileOptions);
+        passManager.Add<AddFunctionToModule>();
+        passManager.Add<RemoveUnusedFunctions>();
+        passManager.Add<InferRangePass>();
+        passManager.Add<OptimizeByRangePass>();
         passManager.Add<BufferizePass>();
 
         passManager.AddWithName<PrimFuncPass>("Optimize").Configure(p =>
@@ -337,6 +342,7 @@ internal class Compiler : ICompiler
         await RunPassAsync(ModulePartitionPass, "ModulePartitionPass");
         await RunPassAsync(AutoPackingPass, "AutoPackingPass");
         await RunPassAsync(AutoDistributedPass, "AutoDistributedPass");
+        await RunPassAsync(AutoTilingPass, "AutoTilingPass");
 
         await RunPassAsync(TIRPass, "TIRPass");
 

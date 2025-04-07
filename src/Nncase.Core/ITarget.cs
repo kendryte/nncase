@@ -147,11 +147,11 @@ public interface ITarget
     /// <param name="options">compile options.</param>
     void RegisterTargetDependentBeforeCodeGen(IPassManager passManager, CompileOptions options);
 
-    void RegisterAffineSelectionRules(IRulesAddable pass, CompileOptions options);
+    void RegisterAffineSelectionPass(IPassManager passManager, CompileOptions options);
 
     void RegisterAutoPackingRules(IRulesAddable pass, CompileOptions options);
 
-    void RegisterTIRSelectionPass(IPassManager passManager, CompileOptions optionsÍ);
+    void RegisterTIRSelectionPass(IPassManager passManager, CompileOptions options);
 }
 
 public sealed class DefaultTargetCompileOptions : ITargetOptions

@@ -13,12 +13,6 @@ using Nncase.TIR;
 
 namespace Nncase.CodeGen;
 
-public enum FunctionIdComponent
-{
-    ModuleId,
-    FunctionId,
-}
-
 public static class WellknownSectionNames
 {
     public static readonly string Text = ".text";
@@ -42,8 +36,6 @@ public class Symbol
 }
 
 public record SymbolRef(long Position, int Length, Symbol Symbol, bool Relative, int Offset);
-
-public record FunctionRef(long Position, int Length, BaseFunction Callable, FunctionIdComponent Component, int Offset);
 
 public class SectionManager
 {

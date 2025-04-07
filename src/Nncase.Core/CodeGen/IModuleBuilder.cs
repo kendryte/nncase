@@ -127,6 +127,8 @@ public interface ILinkedModule
 /// </summary>
 public interface ILinkableModule
 {
+    IReadOnlyList<ILinkableFunction> PublicFunctions { get; }
+
     /// <summary>
     /// Link module.
     /// </summary>

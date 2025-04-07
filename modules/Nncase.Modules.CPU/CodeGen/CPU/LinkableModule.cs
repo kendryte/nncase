@@ -29,7 +29,10 @@ internal sealed class LinkableModule : ILinkableModule
         _rdata = rdata;
         _localRdatas = localRdatas;
         _functions = functions;
+        PublicFunctions = _functions.OfType<LinkableKernelFunction>().ToArray();
     }
+
+    public IReadOnlyList<ILinkableFunction> PublicFunctions { get; }
 
     public ILinkedModule Link(ILinkContext linkContext)
     {
