@@ -15,6 +15,7 @@ using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using Nncase.Passes;
 using Nncase.Passes.Analysis;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.PatternMatch;
 using Nncase.Tests.TestFixture;
 using OrtKISharp;
@@ -111,6 +112,27 @@ public class UnitTestDataFlowRewrite : RewriteFixtrue
         var expand = Expand(0f, Cast(Util.ShapeIndex(weights, 0), DataTypes.Int64));
         var s = await RunShapeInferPass(string.Empty, expand, weights);
         Assert.True(s is Const);
+    }
+
+    [Fact]
+    public void TestTileToExpand()
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, new long[] { 1, 32, 256, 1 }));
+        var tile = Tile(input, new long[] { 1, 1, 1, 2 });
+        var expand = Expand(input, new long[] { 1, 32, 256, 2 });
+
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new long[] { 1, 32, 256, 1 }).Evaluate().AsTensor();
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { input, Value.FromTensor(input_tensor) },
+        };
+
+        var pre = new Function(tile, new[] { input });
+        var pass = new DataflowPass() { Name = "TileToExpand" };
+        pass.Add<Passes.Rules.Neutral.TileToExpand>();
+
+        var post = (Function)pass.RunAsync(pre, new()).Result;
+        Assert.Equal(expand.Evaluate(feedDict).AsTensor().ToArray<float>(), post.Body.Evaluate(feedDict).AsTensor().ToArray<float>());
     }
 
     [Fact]

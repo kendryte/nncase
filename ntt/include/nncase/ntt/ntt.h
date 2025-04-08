@@ -37,6 +37,7 @@
 #include "kernels/scatter_nd.h"
 #include "kernels/slice.h"
 #include "kernels/stack.h"
+#include "kernels/summa.h"
 #include "kernels/transpose.h"
 #include "kernels/unary.h"
 #include "kernels/unpack.h"

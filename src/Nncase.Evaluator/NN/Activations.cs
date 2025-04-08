@@ -331,8 +331,16 @@ public class SigmoidEvaluator : IEvaluator<Sigmoid>, ITypeInferencer<Sigmoid>, I
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Sigmoid sigmoid)
     {
-        var input = context.GetOrtArgumentValue(sigmoid, Sigmoid.Input);
-        return OrtKI.Sigmoid(input).ToValue();
+        var input = context.GetArgumentValue(sigmoid, Sigmoid.Input).AsTensor();
+        var originDtype = input.ElementType;
+        if (originDtype.IsFloat() && originDtype != DataTypes.Float32)
+        {
+            input = input.CastTo(DataTypes.Float32);
+        }
+
+        var inputOrt = input.ToOrtTensor();
+
+        return OrtKI.Sigmoid(inputOrt).Cast(originDtype.ToOrtType()).ToValue();
     }
 
     /// <inheritdoc/>

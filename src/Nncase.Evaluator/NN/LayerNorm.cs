@@ -97,11 +97,12 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
         var input = context.GetArgumentValueAsTensor<float>(layerNorm, LayerNorm.Input);
         var scale = context.GetArgumentValueAsTensor<float>(layerNorm, LayerNorm.Scale);
         var bias = context.GetArgumentValueAsTensor<float>(layerNorm, LayerNorm.Bias);
+        var originType = context.CurrentCall.Arguments[LayerNorm.Input.Index].CheckedDataType;
 
         // return Value.FromTensor(OrtKI.LayerNormalization(input, scale, bias, layerNorm.Axis, layerNorm.Epsilon, 1));
         var shape = input.Shape.ToValueArray();
         var output = LayerNormImpl(shape, input.Buffer.Span, scale.Buffer.Span, bias.Buffer.Span, layerNorm.Axis, layerNorm.Epsilon, layerNorm.UseMean);
-        return Value.FromTensor(Tensor.From(output, shape));
+        return Value.FromTensor(Tensor.From(output, shape).CastTo(originType));
     }
 
     /// <inheritdoc/>

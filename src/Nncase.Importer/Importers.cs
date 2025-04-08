@@ -60,4 +60,18 @@ public static class Importers
         var importer = new NcnnImporter(ncnnParam, ncnnBin, compileSession);
         return importer.Import();
     }
+
+    /// <summary>
+    /// Import huggingface model.
+    /// </summary>
+    /// <param name="hfModelDir">Huggingface model directory.</param>
+    /// <param name="importOptions">import options.</param>
+    /// <param name="compileSession">compile session.</param>
+    /// <returns>Imported IR module.</returns>
+    public static IRModule ImportHuggingFace(string hfModelDir, ImportOptions importOptions, CompileSession compileSession)
+    {
+        compileSession.CompileOptions.ModelLayout = "NCHW";
+        var importer = new HuggingFaceImporter(hfModelDir, importOptions, compileSession);
+        return importer.Import();
+    }
 }

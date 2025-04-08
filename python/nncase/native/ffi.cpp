@@ -88,6 +88,27 @@ PYBIND11_MODULE(_nncase, m) {
         .value("UseSquant", nncase_finetune_weights_squant)
         .value("UseAdaRound", nncase_finetune_weights_adaround);
 
+    py::class_<import_options>(m, "ImportOptions")
+        .def(py::init())
+        .def_property("huggingface_options",
+                      py::overload_cast<>(&import_options::huggingface_options),
+                      py::overload_cast<const huggingface_options &>(
+                          &import_options::huggingface_options));
+
+    py::class_<huggingface_options>(m, "HuggingFaceOptions")
+        .def(py::init())
+        .def_property(
+            "output_attentions",
+            py::overload_cast<>(&huggingface_options::output_attentions),
+            py::overload_cast<bool>(&huggingface_options::output_attentions))
+        .def_property(
+            "output_hidden_states",
+            py::overload_cast<>(&huggingface_options::output_hidden_states),
+            py::overload_cast<bool>(&huggingface_options::output_hidden_states))
+        .def_property("use_cache",
+                      py::overload_cast<>(&huggingface_options::use_cache),
+                      py::overload_cast<bool>(&huggingface_options::use_cache));
+
     py::class_<compile_options>(m, "CompileOptions")
         .def(py::init())
         .def_property(
@@ -255,35 +276,35 @@ PYBIND11_MODULE(_nncase, m) {
       .def_property(
         "ModelName",
         []() {},
-        py::overload_cast<std::string_view>(&cpu_target_options::model_name)) 
+        py::overload_cast<std::string_view>(&cpu_target_options::model_name))
       .def_property(
         "Packing",
         []() {},
-        py::overload_cast<bool>(&cpu_target_options::packing)) 
+        py::overload_cast<bool>(&cpu_target_options::packing))
       .def_property(
         "UnifiedMemoryArch",
         []() {},
-        py::overload_cast<bool>(&cpu_target_options::unified_memory_arch)) 
+        py::overload_cast<bool>(&cpu_target_options::unified_memory_arch))
       .def_property(
         "MemoryAccessArch",
         py::overload_cast<>(&cpu_target_options::memory_access_arch),
-        py::overload_cast<memory_access_architecture_t>(&cpu_target_options::memory_access_arch)) 
+        py::overload_cast<memory_access_architecture_t>(&cpu_target_options::memory_access_arch))
       .def_property(
         "NocArch",
         py::overload_cast<>(&cpu_target_options::noc_arch),
-        py::overload_cast<noc_architecture_t>(&cpu_target_options::noc_arch)) 
+        py::overload_cast<noc_architecture_t>(&cpu_target_options::noc_arch))
       .def_property(
         "HierarchyKind",
         py::overload_cast<>(&cpu_target_options::hierarchy_kind),
-        py::overload_cast<hierarchy_kind_t>(&cpu_target_options::hierarchy_kind)) 
+        py::overload_cast<hierarchy_kind_t>(&cpu_target_options::hierarchy_kind))
       .def_property(
         "Hierarchies",
         []() {},
-        py::overload_cast<std::vector<std::vector<int>>>(&cpu_target_options::hierarchies)) 
+        py::overload_cast<std::vector<std::vector<int>>>(&cpu_target_options::hierarchies))
       .def_property(
         "HierarchyNames",
         []() {},
-        py::overload_cast<std::string_view>(&cpu_target_options::hierarchy_names)) 
+        py::overload_cast<std::string_view>(&cpu_target_options::hierarchy_names))
       .def_property(
         "HierarchySizes",
         []() {},
@@ -291,23 +312,23 @@ PYBIND11_MODULE(_nncase, m) {
       .def_property(
         "HierarchyLatencies",
         []() {},
-        py::overload_cast<std::vector<int>>(&cpu_target_options::hierarchy_latencies)) 
+        py::overload_cast<std::vector<int>>(&cpu_target_options::hierarchy_latencies))
       .def_property(
         "HierarchyBandWidths",
         []() {},
-        py::overload_cast<std::vector<int>>(&cpu_target_options::hierarchy_band_widths)) 
+        py::overload_cast<std::vector<int>>(&cpu_target_options::hierarchy_band_widths))
       .def_property(
         "MemoryCapacities",
         []() {},
-        py::overload_cast<std::vector<int>>(&cpu_target_options::memory_capacities)) 
+        py::overload_cast<std::vector<int>>(&cpu_target_options::memory_capacities))
       .def_property(
         "MemoryBandWidths",
         []() {},
-        py::overload_cast<std::vector<int>>(&cpu_target_options::memory_band_widths)) 
+        py::overload_cast<std::vector<int>>(&cpu_target_options::memory_band_widths))
       .def_property(
         "DistributedScheme",
         []() {},
-        py::overload_cast<std::string_view>(&cpu_target_options::distributed_scheme)) 
+        py::overload_cast<std::string_view>(&cpu_target_options::distributed_scheme))
       .def_property(
         "CustomOpScheme",
         []() {},
@@ -394,6 +415,7 @@ PYBIND11_MODULE(_nncase, m) {
         .def("import_tflite_module", &compiler::import_tflite_module)
         .def("import_onnx_module", &compiler::import_onnx_module)
         .def("import_ncnn_module", &compiler::import_ncnn_module)
+        .def("import_huggingface_module", &compiler::import_huggingface_module)
         .def("compile", &compiler::compile)
         .def("gencode", &compiler::gencode);
 

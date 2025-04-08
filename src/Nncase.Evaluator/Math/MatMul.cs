@@ -5,9 +5,12 @@ using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using DryIoc.ImTools;
+using Google.OrTools.ConstraintSolver;
+using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.IR.Distributed;
 using Nncase.IR.Math;
 using Nncase.Utilities;
 using OrtKISharp;
@@ -21,7 +24,7 @@ namespace Nncase.Evaluator.Math;
 /// </summary>
 public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICostEvaluator<MatMul>, IMetricEvaluator<MatMul>
 {
-    public static IRType VisitDistributedType(DistributedType a, DistributedType b, bool packingK = false, DimInfo? dimInfo = null)
+    public static IRType VisitDistributedType(DistributedType a, DistributedType b, bool packingK = false, DimInfo? dimInfo = null, bool transB = false)
     {
         if (VisitTensorType(a.TensorType, b.TensorType, packingK, dimInfo) is not TensorType outType)
         {
@@ -39,198 +42,198 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var aPad = oRank - aRank;
         var bPad = oRank - bRank;
         var (lm, lk, rk, rn) = dimInfo ?? new(aRank - 2, aRank - 1, bRank - 2, bRank - 1);
-#if false
-        var ndsbp = new SBP[oRank];
-        if (a.Placement.Rank == 1)
+
+        // TODO: keep summa only
+        if (transB || (a.Placement.HierarchyKind == HierarchyKind.SMT && a.TensorType.DType is VectorType vt && vt.ElemType == DataTypes.Float8E4M3))
         {
-            // not support split on k.
-            if (a.AxisPolices[lk] is SBPSplit || b.AxisPolices[rk] is SBPSplit)
+            var ndsbpsA = DistributedUtility.AxisPolicesToNDSBP(a.AxisPolices, a.Placement.Rank);
+            var ndsbpsB = DistributedUtility.AxisPolicesToNDSBP(b.AxisPolices, b.Placement.Rank);
+
+            var ndsbp = new SBP[ndsbpsA.Count];
+            for (int i = 0; i < ndsbp.Length; i++)
             {
-                return new InvalidType("not support split on k for 1d mesh.");
+                var invalid = new InvalidType($"({ndsbpsA[i]}, {ndsbpsB[i]}) not support");
+                switch (ndsbpsA[i], ndsbpsB[i])
+                {
+                    case (SBPSplit sa, SBPSplit sb):
+                        if (sa.Axes[0] == lk && sb.Axes[0] == rk)
+                        {
+                            return invalid;
+
+                            // // split on k
+                            // if (a.Placement.HierarchyKind == HierarchyKind.SMT && i == a.Placement.Rank - 1)
+                            // {
+                            //     // not split k on threads
+                            //     return invalid;
+                            // }
+                            // ndsbp[i] = SBP.P(ReduceOp.Sum);
+                        }
+                        else if ((sa.Axes[0] == lk && sb.Axes[0] != rk) || (sa.Axes[0] != lk && sb.Axes[0] == rk) || (sa.Axes[0] == lm && sb.Axes[0] == rn))
+                        {
+                            // not support (k, not k), (not k, k), (m, n)
+                            return invalid;
+                        }
+                        else
+                        {
+                            if ((sa.Axes[0] + aPad) == (sb.Axes[0] + bPad))
+                            {
+                                ndsbp[i] = SBP.S(new[] { sa.Axes[0] + aPad });
+                            }
+                            else
+                            {
+                                return invalid;
+                            }
+                        }
+
+                        break;
+                    case (SBPSplit sa, SBPBroadCast):
+                        if (sa.Axes[0] == lk)
+                        {
+                            return invalid;
+                        }
+
+                        // invalid (S, B) if B is not broacast matmul
+                        if (sa.Axes[0] < lm && !(bRank <= 2 || (sa.Axes[0] + aPad - bPad >= 0 && b.TensorType.Shape[sa.Axes[0] + aPad - bPad] == 1)))
+                        {
+                            return invalid;
+                        }
+
+                        ndsbp[i] = SBP.S(new[] { sa.Axes[0] + aPad });
+                        break;
+                    case (SBPBroadCast, SBPSplit sb):
+                        if (sb.Axes[0] == rk)
+                        {
+                            return invalid;
+                        }
+
+                        // invalid (B, S) if A is not broacast matmul
+                        if (sb.Axes[0] < (bRank - 2) && !(aRank <= 2 || (sb.Axes[0] + bPad - aPad >= 0 && a.TensorType.Shape[sb.Axes[0] + bPad - aPad] == 1)))
+                        {
+                            return invalid;
+                        }
+
+                        // bx can be lm,rn,or any broadcast axis.
+                        if (sb.Axes[0] == rn)
+                        {
+                            ndsbp[i] = SBP.S(new[] { oRank - 1 });
+                        }
+                        else if (sb.Axes[0] == lm)
+                        {
+                            ndsbp[i] = SBP.S(new[] { oRank - 2 });
+                        }
+                        else
+                        {
+                            ndsbp[i] = SBP.S(new[] { sb.Axes[0] + bPad });
+                        }
+
+                        break;
+                    case (SBPBroadCast, SBPBroadCast):
+                        ndsbp[i] = SBP.B;
+                        break;
+                    default:
+                        return invalid;
+                }
             }
 
-            ndsbp[oRank - 2] = a.AxisPolices[lm];
-            ndsbp[oRank - 1] = b.AxisPolices[rn];
+            var polices = DistributedUtility.NDSBPToAxisPolices(ndsbp, oRank);
+
+            return new DistributedType(outType, polices, a.Placement);
         }
         else
         {
-            if (a.AxisPolices[lk] is SBPSplit || b.AxisPolices[rk] is SBPSplit)
+            var ndsbp = new SBP[oRank];
+            if (a.Placement.Rank == 1)
             {
-                var (lmMeshAxis, lkMeshAxis) = (a.Placement.Rank - 2, a.Placement.Rank - 1);
-                if (a.Placement.HierarchyKind == HierarchyKind.SMT)
+                // not support split on k.
+                if (a.AxisPolices[lk] is SBPSplit || b.AxisPolices[rk] is SBPSplit)
                 {
-                    (lmMeshAxis, lkMeshAxis) = (a.Placement.Rank - 3, a.Placement.Rank - 2);
+                    return new InvalidType("not support split on k for 1d mesh.");
                 }
 
-                // TODO: support split on multi-meshes.
-                if (a.AxisPolices[lm] is SBPSplit slm && a.AxisPolices[lk] is SBPSplit slk
-                && b.AxisPolices[rk] is SBPSplit srk && b.AxisPolices[rn] is SBPSplit srn
-                && slm.Axes.Count == 1 && slk.Axes.Count == 1 && srk.Axes.Count == 1 && srn.Axes.Count == 1
-                && slm.Axes[0] == srk.Axes[0] && slk.Axes[0] == srn.Axes[0]
-                && slm.Axes[0] == lmMeshAxis && slk.Axes[0] == lkMeshAxis)
+                ndsbp[oRank - 2] = a.AxisPolices[lm];
+                ndsbp[oRank - 1] = b.AxisPolices[rn];
+            }
+            else
+            {
+                if (a.AxisPolices[lk] is SBPSplit || b.AxisPolices[rk] is SBPSplit)
+                {
+                    var (lmMeshAxis, lkMeshAxis) = (a.Placement.Rank - 2, a.Placement.Rank - 1);
+
+                    // TODO: support split on multi-meshes.
+                    if (a.AxisPolices[lm] is SBPSplit slm && a.AxisPolices[lk] is SBPSplit slk
+                    && b.AxisPolices[rk] is SBPSplit srk && b.AxisPolices[rn] is SBPSplit srn
+                    && slm.Axes.Count == 1 && slk.Axes.Count == 1 && srk.Axes.Count == 1 && srn.Axes.Count == 1
+                    && slm.Axes[0] == srk.Axes[0] && slk.Axes[0] == srn.Axes[0]
+                    && slm.Axes[0] == lmMeshAxis && slk.Axes[0] == lkMeshAxis)
+                    {
+                        ndsbp[oRank - 2] = a.AxisPolices[lm];
+                        ndsbp[oRank - 1] = b.AxisPolices[rn];
+                    }
+                    else
+                    {
+                        return new InvalidType("only support specific split for summa.");
+                    }
+                }
+                else
                 {
                     ndsbp[oRank - 2] = a.AxisPolices[lm];
                     ndsbp[oRank - 1] = b.AxisPolices[rn];
                 }
-                else
+            }
+
+            for (int i = 0; i < ndsbp.Length - 2; i++)
+            {
+                var policyA = i < aPad ? null : a.AxisPolices[i - aPad];
+                var policyB = i < bPad ? null : b.AxisPolices[i - bPad];
+                switch (policyA, policyB)
                 {
-                    return new InvalidType("only support specific split for summa.");
+                    case (null, _):
+                        ndsbp[i] = policyB!;
+                        break;
+                    case (_, null):
+                        ndsbp[i] = policyA!;
+                        break;
+                    case (SBPSplit sa, SBPSplit sb):
+                        if (sa.Axes != sb.Axes)
+                        {
+                            return new InvalidType($"lhs rhs sbp at {i} not equal");
+                        }
+
+                        ndsbp[i] = sa;
+                        break;
+                    case (SBPSplit sa, SBPBroadCast):
+                        // invalid (S, B) if B is not broacast
+                        if (b.TensorType.Shape[i - bPad] != 1)
+                        {
+                            return new InvalidType($"lhs rhs sbp at {i} not broadcast");
+                        }
+
+                        ndsbp[i] = sa;
+                        break;
+                    case (SBPBroadCast, SBPSplit sb):
+                        // invalid (B, S) if A is not broacast
+                        if (a.TensorType.Shape[i - aPad] != 1)
+                        {
+                            return new InvalidType($"lhs rhs sbp at {i} not broadcast");
+                        }
+
+                        ndsbp[i] = sb;
+                        break;
+                    case (SBPBroadCast, SBPBroadCast):
+                        ndsbp[i] = SBP.B;
+                        break;
+                    default:
+                        return new InvalidType("not support binary sbp.");
                 }
             }
-            else
+
+            if (DistributedUtility.IsDistributable(ndsbp))
             {
-                ndsbp[oRank - 2] = a.AxisPolices[lm];
-                ndsbp[oRank - 1] = b.AxisPolices[rn];
+                return new DistributedType(outType, ndsbp, a.Placement);
             }
+
+            return new InvalidType("no valid sbp.");
         }
-
-        for (int i = 0; i < ndsbp.Length - 2; i++)
-        {
-            var policyA = i < aPad ? null : a.AxisPolices[i - aPad];
-            var policyB = i < bPad ? null : b.AxisPolices[i - bPad];
-            switch (policyA, policyB)
-            {
-                case (null, _):
-                    ndsbp[i] = policyB!;
-                    break;
-                case (_, null):
-                    ndsbp[i] = policyA!;
-                    break;
-                case (SBPSplit sa, SBPSplit sb):
-                    if (sa.Axes != sb.Axes)
-                    {
-                        return new InvalidType($"lhs rhs sbp at {i} not equal");
-                    }
-
-                    ndsbp[i] = sa;
-                    break;
-                case (SBPSplit sa, SBPBroadCast):
-                    // invalid (S, B) if B is not broacast
-                    if (b.TensorType.Shape[i - bPad] != 1)
-                    {
-                        return new InvalidType($"lhs rhs sbp at {i} not broadcast");
-                    }
-
-                    ndsbp[i] = sa;
-                    break;
-                case (SBPBroadCast, SBPSplit sb):
-                    // invalid (B, S) if A is not broacast
-                    if (a.TensorType.Shape[i - aPad] != 1)
-                    {
-                        return new InvalidType($"lhs rhs sbp at {i} not broadcast");
-                    }
-
-                    ndsbp[i] = sb;
-                    break;
-                case (SBPBroadCast, SBPBroadCast):
-                    ndsbp[i] = SBP.B;
-                    break;
-                default:
-                    return new InvalidType("not support binary sbp.");
-            }
-        }
-
-        if (DistributedUtility.IsDistributable(ndsbp))
-        {
-            return new DistributedType(outType, ndsbp, a.Placement);
-        }
-
-        return new InvalidType("no valid sbp.");
-
-#else
-        var ndsbpsA = DistributedUtility.AxisPolicesToNDSBP(a.AxisPolices, a.Placement.Rank);
-        var ndsbpsB = DistributedUtility.AxisPolicesToNDSBP(b.AxisPolices, b.Placement.Rank);
-
-        var ndsbp = new SBP[ndsbpsA.Count];
-        for (int i = 0; i < ndsbp.Length; i++)
-        {
-            var invalid = new InvalidType($"({ndsbpsA[i]}, {ndsbpsB[i]}) not support");
-            switch (ndsbpsA[i], ndsbpsB[i])
-            {
-                case (SBPSplit sa, SBPSplit sb):
-                    if (sa.Axes[0] == lk && sb.Axes[0] == rk)
-                    {
-                        return invalid;
-
-                        // // split on k
-                        // if (a.Placement.HierarchyKind == HierarchyKind.SMT && i == a.Placement.Rank - 1)
-                        // {
-                        //     // not split k on threads
-                        //     return invalid;
-                        // }
-                        // ndsbp[i] = SBP.P(ReduceOp.Sum);
-                    }
-                    else if ((sa.Axes[0] == lk && sb.Axes[0] != rk) || (sa.Axes[0] != lk && sb.Axes[0] == rk) || (sa.Axes[0] == lm && sb.Axes[0] == rn))
-                    {
-                        // not support (k, not k), (not k, k), (m, n)
-                        return invalid;
-                    }
-                    else
-                    {
-                        if ((sa.Axes[0] + aPad) == (sb.Axes[0] + bPad))
-                        {
-                            ndsbp[i] = SBP.S(new[] { sa.Axes[0] + aPad });
-                        }
-                        else
-                        {
-                            return invalid;
-                        }
-                    }
-
-                    break;
-                case (SBPSplit sa, SBPBroadCast):
-                    if (sa.Axes[0] == lk)
-                    {
-                        return invalid;
-                    }
-
-                    // invalid (S, B) if B is not broacast matmul
-                    if (sa.Axes[0] < lm && !(bRank <= 2 || (sa.Axes[0] + aPad - bPad >= 0 && b.TensorType.Shape[sa.Axes[0] + aPad - bPad] == 1)))
-                    {
-                        return invalid;
-                    }
-
-                    ndsbp[i] = SBP.S(new[] { sa.Axes[0] + aPad });
-                    break;
-                case (SBPBroadCast, SBPSplit sb):
-                    if (sb.Axes[0] == rk)
-                    {
-                        return invalid;
-                    }
-
-                    // invalid (B, S) if A is not broacast matmul
-                    if (sb.Axes[0] < (bRank - 2) && !(aRank <= 2 || (sb.Axes[0] + bPad - aPad >= 0 && a.TensorType.Shape[sb.Axes[0] + bPad - aPad] == 1)))
-                    {
-                        return invalid;
-                    }
-
-                    // bx can be lm,rn,or any broadcast axis.
-                    if (sb.Axes[0] == rn)
-                    {
-                        ndsbp[i] = SBP.S(new[] { oRank - 1 });
-                    }
-                    else if (sb.Axes[0] == lm)
-                    {
-                        ndsbp[i] = SBP.S(new[] { oRank - 2 });
-                    }
-                    else
-                    {
-                        ndsbp[i] = SBP.S(new[] { sb.Axes[0] + bPad });
-                    }
-
-                    break;
-                case (SBPBroadCast, SBPBroadCast):
-                    ndsbp[i] = SBP.B;
-                    break;
-                default:
-                    return invalid;
-            }
-        }
-
-        var polices = DistributedUtility.NDSBPToAxisPolices(ndsbp, oRank);
-
-        return new DistributedType(outType, polices, a.Placement);
-#endif
     }
 
     public static IRType ConvertPartialToBroadcast(DistributedType a)
@@ -333,11 +336,11 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
 
     public static IValue InferValue(DataType dataType, Tensor lhs, Tensor rhs)
     {
-        if (dataType == DataTypes.Float8E4M3 || dataType == DataTypes.Float8E5M2)
+        if (dataType.IsFloat() && dataType != DataTypes.Float32)
         {
             var lhsOrt = Cast(lhs, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
             var rhsOrt = Cast(rhs, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
-            var ret = OrtKI.MatMul(lhsOrt, rhsOrt).ToTensor();
+            var ret = OrtKI.MatMul(lhsOrt, rhsOrt).ToTensor().CastTo(dataType);
             return Value.FromTensor(ret);
         }
         else

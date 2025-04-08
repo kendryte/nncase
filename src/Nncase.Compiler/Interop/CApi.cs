@@ -44,6 +44,12 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, nuint, IntPtr, IntPtr> CalibrationDatasetProviderCreatePtr;
     public delegate* unmanaged<IntPtr, void> ClrHandleDisposePtr;
     public delegate* unmanaged<IntPtr, void> ClrHandleFreePtr;
+    public delegate* unmanaged<IntPtr> ImportOptionsCreatePtr;
+    public delegate* unmanaged<IntPtr> HuggingFaceOptionsCreatePtr;
+    public delegate* unmanaged<IntPtr, IntPtr, void> ImportOptionsSetHuggingFaceOptionsPtr;
+    public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsOutputAttentionsPtr;
+    public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsOutputHiddenStatesPtr;
+    public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsUseCachePtr;
     public delegate* unmanaged<IntPtr> CompileOptionsCreatePtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetInputFilePtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetInputFormatPtr;
@@ -69,6 +75,7 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr> CompilerImportTFLiteModulePtr;
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr> CompilerImportOnnxModulePtr;
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr, IntPtr> CompilerImportNcnnModulePtr;
+    public delegate* unmanaged<IntPtr, byte*, nuint, IntPtr, IntPtr> CompilerImportHuggingFaceModulePtr;
     public delegate* unmanaged<IntPtr, void> CompilerCompilePtr;
     public delegate* unmanaged<IntPtr, IntPtr, void> CompilerGencodePtr;
     public delegate* unmanaged<Runtime.TypeCode, IntPtr> DataTypeFromTypeCodePtr;
@@ -138,6 +145,12 @@ public static unsafe class CApi
         mt->CalibrationDatasetProviderCreatePtr = &CalibrationDatasetProviderCreate;
         mt->ClrHandleDisposePtr = &ClrHandleDispose;
         mt->ClrHandleFreePtr = &ClrHandleFree;
+        mt->ImportOptionsCreatePtr = &ImportOptionsCreate;
+        mt->HuggingFaceOptionsCreatePtr = &HuggingFaceOptionsCreate;
+        mt->ImportOptionsSetHuggingFaceOptionsPtr = &ImportOptionsSetHuggingFaceOptions;
+        mt->HuggingFaceOptionsOutputAttentionsPtr = &HuggingFaceOptionsOutputAttentions;
+        mt->HuggingFaceOptionsOutputHiddenStatesPtr = &HuggingFaceOptionsOutputHiddenStates;
+        mt->HuggingFaceOptionsUseCachePtr = &HuggingFaceOptionsUseCache;
         mt->CompileOptionsCreatePtr = &CompileOptionsCreate;
         mt->CompileOptionsSetInputFilePtr = &CompileOptionsSetInputFile;
         mt->CompileOptionsSetInputFormatPtr = &CompileOptionsSetInputFormat;
@@ -163,6 +176,7 @@ public static unsafe class CApi
         mt->CompilerImportTFLiteModulePtr = &CompilerImportTFLiteModule;
         mt->CompilerImportOnnxModulePtr = &CompilerImportOnnxModule;
         mt->CompilerImportNcnnModulePtr = &CompilerImportNcnnModule;
+        mt->CompilerImportHuggingFaceModulePtr = &CompilerImportHuggingFaceModule;
         mt->CompilerCompilePtr = &CompilerCompile;
         mt->CompilerGencodePtr = &CompilerGencode;
         mt->DataTypeFromTypeCodePtr = &DataTypeFromTypeCode;
@@ -285,6 +299,45 @@ public static unsafe class CApi
         {
             GCHandle.FromIntPtr(handle).Free();
         }
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr ImportOptionsCreate()
+    {
+        return GCHandle.ToIntPtr(GCHandle.Alloc(new ImportOptions()));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr HuggingFaceOptionsCreate()
+    {
+        return GCHandle.ToIntPtr(GCHandle.Alloc(HuggingFaceOptions.Default));
+    }
+
+    [UnmanagedCallersOnly]
+    private static void ImportOptionsSetHuggingFaceOptions(IntPtr importOptionsHandle, IntPtr huggingFaceOptionsHandle)
+    {
+        Get<ImportOptions>(importOptionsHandle).HuggingFaceOptions = Get<HuggingFaceOptions>(huggingFaceOptionsHandle);
+    }
+
+    [UnmanagedCallersOnly]
+    private static void HuggingFaceOptionsOutputAttentions(IntPtr huggingFaceOptionsHandle, byte outputAttentions)
+    {
+        bool outputAttentionsBool = outputAttentions != 0;
+        Get<HuggingFaceOptions>(huggingFaceOptionsHandle).OutputAttentions = outputAttentionsBool;
+    }
+
+    [UnmanagedCallersOnly]
+    private static void HuggingFaceOptionsOutputHiddenStates(IntPtr huggingFaceOptionsHandle, byte outputHiddenStates)
+    {
+        bool outputHiddenStatesBool = outputHiddenStates != 0;
+        Get<HuggingFaceOptions>(huggingFaceOptionsHandle).OutputHiddenStates = outputHiddenStatesBool;
+    }
+
+    [UnmanagedCallersOnly]
+    private static void HuggingFaceOptionsUseCache(IntPtr huggingFaceOptionsHandle, byte useCache)
+    {
+        bool useCacheBool = useCache != 0;
+        Get<HuggingFaceOptions>(huggingFaceOptionsHandle).UseCache = useCacheBool;
     }
 
     [UnmanagedCallersOnly]
@@ -484,6 +537,16 @@ public static unsafe class CApi
         var ncnnParam = Get<CStream>(ncnnParamHandle);
         var ncnnBin = Get<CStream>(ncnnBinHandle);
         var module = compiler.ImportNcnnModuleAsync(ncnnParam, ncnnBin).Result;
+        return GCHandle.ToIntPtr(GCHandle.Alloc(module));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr CompilerImportHuggingFaceModule(IntPtr compilerHandle, byte* modelDir, nuint modelDirLength, IntPtr importOptionsHandle)
+    {
+        var compiler = Get<Compiler>(compilerHandle);
+        var modelDirStr = ToString(modelDir, modelDirLength);
+        var importOptions = Get<ImportOptions>(importOptionsHandle);
+        var module = compiler.ImportHuggingFaceModuleAsync(modelDirStr, importOptions).Result;
         return GCHandle.ToIntPtr(GCHandle.Alloc(module));
     }
 

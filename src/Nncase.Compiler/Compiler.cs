@@ -81,6 +81,13 @@ internal class Compiler : ICompiler
         });
     }
 
+    public Task<IRModule> ImportHuggingFaceModuleAsync(string modelDir, ImportOptions importOptions)
+    {
+        using var scope = new CompileSessionScope(_compileSession);
+        var module = Importers.ImportHuggingFace(modelDir, importOptions, _compileSession);
+        return InitializeModuleAsync(module);
+    }
+
     public void ProcessAfterImportPass(IPassManager passManager)
     {
         passManager.AddWithName<DataflowPass>("FoldQuantDeQuant").Configure(p =>
@@ -157,6 +164,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldDilatedConv2D>();
             p.Add<Passes.Rules.Neutral.PowOf2ToSquare>();
             p.Add<Passes.Rules.Neutral.ScalarConstToTensor>();
+            p.Add<Passes.Rules.Neutral.TileToExpand>();
         });
 
         // Decompose complex ops

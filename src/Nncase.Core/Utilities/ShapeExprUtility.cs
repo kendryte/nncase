@@ -3,6 +3,7 @@
 
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.IR.F;
 using Nncase.IR.Tensors;
 using static Nncase.IR.F.Tensors;
 
@@ -109,7 +110,7 @@ public static class ShapeExprUtility
         return Value.FromTensor(call.CheckedShape.ToValueArray().Select(x => (long)x).ToArray());
     }
 
-    private static Expr SliceAndMerge(Expr originShapeExpr, Expr index, Expr value, Expr indexOffset, bool valueIsList = true)
+    public static Expr SliceAndMerge(Expr originShapeExpr, Expr index, Expr value, Expr indexOffset, bool valueIsList = true)
     {
         var shapeExpr = Cast(originShapeExpr, DataTypes.Int64);
         var front = Slice(shapeExpr, 0, index);
@@ -123,7 +124,7 @@ public static class ShapeExprUtility
         return Concat(new IR.Tuple(front, c, last), 0);
     }
 
-    private static Expr CheckShape(Expr shape)
+    public static Expr CheckShape(Expr shape)
     {
         if (shape.CheckedType == null)
         {
@@ -137,5 +138,35 @@ public static class ShapeExprUtility
         }
 
         return shape;
+    }
+
+    public static Expr GetPermutation(Expr tensor, long[] dims)
+    {
+        var r = tensor.CheckedShape.Rank;
+
+        var fullDims = new List<long>();
+
+        for (int i = 0; i != r; i++)
+        {
+            fullDims.Add((long)i);
+        }
+
+        for (int i = 0; i != dims.Length; i++)
+        {
+            if (dims[i] < 0)
+            {
+                dims[i] = r + dims[i];
+            }
+        }
+
+        if (dims.Length == 2)
+        {
+            (fullDims[(int)dims[0]], fullDims[(int)dims[1]]) = (fullDims[(int)dims[1]], fullDims[(int)dims[0]]);
+            return Tensor.FromArray(fullDims.ToArray());
+        }
+        else
+        {
+            throw new NotImplementedException("GetPermuation in Transpose need 2D perm");
+        }
     }
 }
