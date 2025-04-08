@@ -30,6 +30,8 @@ prim_type_t datatype_t::float16(std::in_place, dt_float16);
 prim_type_t datatype_t::float32(std::in_place, dt_float32);
 prim_type_t datatype_t::float64(std::in_place, dt_float64);
 prim_type_t datatype_t::bfloat16(std::in_place, dt_bfloat16);
+value_type_t datatype_t::paged_attention_kv_cache(std::in_place, uuid_t({0xF6, 0x95, 0x50, 0x16, 0xF1, 0x85, 0x46, 0xFB, 0xAA, 0x5F,
+  0xFD, 0xCE, 0xA1, 0xC8, 0x9E, 0xF6}), 0);
 
 result<prim_type_t> datatype_t::from_typecode(typecode_t typecode) {
     switch (typecode) {

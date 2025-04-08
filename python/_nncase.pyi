@@ -135,13 +135,22 @@ class Path:
 class RuntimeTensor:
     def __init__(self) -> None: ...
     def copy_to(self, to: RuntimeTensor) -> None: ...
+    @staticmethod
     def from_numpy(self, arr: numpy.ndarray) -> Any: ...
+    @staticmethod
+    def from_object(arg0) -> RuntimeTensor: ...
     def to_numpy(self) -> numpy.ndarray: ...
     @property
     def dtype(self) -> dtype: ...
     @property
     def shape(self) -> List[int]: ...
 
+class RTValue:
+    def __init__(self, *args, **kwargs) -> None: ...
+    @staticmethod
+    def from_runtime_tensor(arg0: RuntimeTensor) -> RTValue: ...
+    def to_runtime_tensor(self) -> RuntimeTensor: ...
+    def to_runtime_tensors(self) -> list[RuntimeTensor]: ...
 
 class Simulator:
     def __init__(self) -> None: ...
@@ -165,21 +174,19 @@ def test_target(target: str) -> bool: ...
 class AttentionKVCache:
     def __init__(self, *args, **kwargs) -> None: ...
 
-class PagedAttentionKVCache(AttentionKVCache):
+class PagedAttentionKVCache:
+    block_tables: RuntimeTensor
+    context_lens: RuntimeTensor
+    seq_lens: RuntimeTensor
+    slot_mapping: RuntimeTensor
+    def __init__(self, num_layers: int, num_blocks: int, block_size: int, num_kv_heads: int, head_size: int) -> None: ...
+
+class DUCAPagedAttentionKVCache(AttentionKVCache):
+    block_tables: list[RuntimeTensor]
+    kv_caches: list
     num_decode_tokens: int
     num_prefill_tokens: int
     num_prefills: int
-    """
-    [chip][die][core] tensor[num_blocks, layers, num_kv_head, 2, head_dim//64, block_size, 64]<kv_type>
-    """
-    kv_caches: list[list[list[RuntimeTensor]]]
-    """
-    [chip] tensor[seq_len, block_size, 3]
-    """
-    block_tables: list[RuntimeTensor]
-    """
-    [chip] tensor[seq_len, block_size, 3]
-    """
     slot_mapping: list[RuntimeTensor]
     def __init__(self) -> None: ...
 

@@ -28,9 +28,9 @@
 
 BEGIN_NS_NNCASE_RUNTIME
 
-class NNCASE_API paged_attention_kv_cache : public attention_kv_cache {
+class NNCASE_API duca_paged_attention_kv_cache : public attention_kv_cache {
   public:
-    paged_attention_kv_cache() {}
+    duca_paged_attention_kv_cache() {}
     int64_t num_prefills;
     int64_t num_prefill_tokens;
     int64_t num_decode_tokens;

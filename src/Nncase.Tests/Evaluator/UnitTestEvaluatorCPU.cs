@@ -228,14 +228,14 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
             slotmapping.AddRange(query_slots);
         }
 
-        kvcacheObject.SlotMaping = Tensor<long>.From(slotmapping.ToArray());
+        kvcacheObject.SlotMapping = Tensor<long>.From(slotmapping.ToArray());
         kvcacheObject.BlockTables = Tensor.FromArray(blockTables).Cast<long>();
 
         var feedDict = new Dictionary<Var, IValue>() {
             { queryVar, Value.FromTensor(queryTensor) },
             { keyVar,   Value.FromTensor(keyTensor) },
             { valueVar, Value.FromTensor(valueTensor) },
-            { kvcacheVar, Value.FromObjectRef(kvcacheObject) },
+            { kvcacheVar, Value.FromObject(kvcacheObject) },
         };
 
         attention.Evaluate(feedDict);

@@ -1,5 +1,5 @@
 #pragma once
-#include "nncase/runtime/paged_attention_kv_cache.h"
+#include "nncase/runtime/duca_paged_attention_kv_cache.h"
 #include <nncase/runtime/interpreter_for_causal_lm.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl_bind.h>
@@ -68,19 +68,19 @@ inline void register_kv_cache(py::module &m) {
     //     m, "RuntimeTensorCube");
     py::class_<attention_kv_cache>(m, "AttentionKVCache");
 
-    py::class_<paged_attention_kv_cache, attention_kv_cache>(
-        m, "PagedAttentionKVCache")
+    py::class_<duca_paged_attention_kv_cache, attention_kv_cache>(
+        m, "DUCAPagedAttentionKVCache")
         .def(py::init())
-        .def_readwrite("num_prefills", &paged_attention_kv_cache::num_prefills)
+        .def_readwrite("num_prefills", &duca_paged_attention_kv_cache::num_prefills)
         .def_readwrite("num_prefill_tokens",
-                       &paged_attention_kv_cache::num_prefill_tokens)
+                       &duca_paged_attention_kv_cache::num_prefill_tokens)
         .def_readwrite("num_decode_tokens",
-                       &paged_attention_kv_cache::num_decode_tokens)
-        .def_readwrite("block_tables", &paged_attention_kv_cache::block_tables)
-        .def_readwrite("slot_mapping", &paged_attention_kv_cache::slot_mapping)
+                       &duca_paged_attention_kv_cache::num_decode_tokens)
+        .def_readwrite("block_tables", &duca_paged_attention_kv_cache::block_tables)
+        .def_readwrite("slot_mapping", &duca_paged_attention_kv_cache::slot_mapping)
         .def_property(
             "kv_caches",
-            [](const paged_attention_kv_cache &self) {
+            [](const duca_paged_attention_kv_cache &self) {
                 auto value = py::list();
                 if (self.kv_caches.empty()) {
                     return value;
@@ -100,7 +100,7 @@ inline void register_kv_cache(py::module &m) {
                 }
                 return value;
             },
-            [](paged_attention_kv_cache &self, const py::list &value) {
+            [](duca_paged_attention_kv_cache &self, const py::list &value) {
                 if (!self.kv_caches.empty()) {
                     throw py::value_error(
                         "can't assgin kv caches when it is not empty.");

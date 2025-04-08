@@ -69,7 +69,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
 
     public static void CacheFlash(Tensor<float> key, Tensor<float> value, PagedAttentionKVCache cache, long layerId)
     {
-        var num_tokens = cache.SlotMaping.Length;
+        var num_tokens = cache.SlotMapping.Length;
         var key_span = key.Buffer.Span;
         var val_span = value.Buffer.Span;
         var key_cache_span = cache.KCaches.Buffer.Span;
@@ -80,7 +80,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
             var token_key_span = key_span.Slice(i * unit_length, unit_length);
             var token_val_span = val_span.Slice(i * unit_length, unit_length);
 
-            var slot = cache.SlotMaping[i];
+            var slot = cache.SlotMapping[i];
             var token_key_cache_span = key_cache_span.Slice((int)TensorUtilities.GetIndex(cache.KCaches.Strides, [layerId, slot / cache.BlockSize, slot % cache.BlockSize, 0, 0]), unit_length);
             var token_val_cache_span = val_cache_span.Slice((int)TensorUtilities.GetIndex(cache.KCaches.Strides, [layerId, slot / cache.BlockSize, slot % cache.BlockSize, 0, 0]), unit_length);
 

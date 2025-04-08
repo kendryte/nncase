@@ -108,8 +108,6 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
                     {
                         throw new ArgumentException($"DataType mismatch. The Var {expr.Name} Require {expr.CheckedDataType} But Give {resultType.DType}");
                     }
-
-
                 }
             }
         }

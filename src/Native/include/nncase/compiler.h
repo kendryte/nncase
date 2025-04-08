@@ -121,6 +121,27 @@ typedef struct {
     clr_object_handle_t (*array_get_item)(clr_object_handle_t array,
                                           size_t index);
     size_t (*array_get_length)(clr_object_handle_t array);
+    clr_object_handle_t (*paged_attention_kv_cache_create)(size_t num_layers,
+                                                           size_t num_blocks,
+                                                           size_t block_size,
+                                                           size_t num_kv_heads,
+                                                           size_t head_size);
+    clr_object_handle_t (*native_paged_attention_kv_cache_get_block_tables)(
+        clr_object_handle_t handle);
+    void (*native_paged_attention_kv_cache_set_block_tables)(
+        clr_object_handle_t handle, clr_object_handle_t value);
+    clr_object_handle_t (*native_paged_attention_kv_cache_get_seq_lens)(
+        clr_object_handle_t handle);
+    void (*native_paged_attention_kv_cache_set_seq_lens)(
+        clr_object_handle_t handle, clr_object_handle_t value);
+    clr_object_handle_t (*native_paged_attention_kv_cache_get_context_lens)(
+        clr_object_handle_t handle);
+    void (*native_paged_attention_kv_cache_set_context_lens)(
+        clr_object_handle_t handle, clr_object_handle_t value);
+    clr_object_handle_t (*native_paged_attention_kv_cache_get_slot_mapping)(
+        clr_object_handle_t handle);
+    void (*native_paged_attention_kv_cache_set_slot_mapping)(
+        clr_object_handle_t handle, clr_object_handle_t value);
     clr_object_handle_t (*calibration_dataset_provider_create)(
         clr_object_handle_t dataset, size_t samplesCount,
         clr_object_handle_t fn_params);
@@ -868,6 +889,65 @@ class import_options : public clr_object_base {
     void huggingface_options(const clr::huggingface_options &value) {
         nncase_clr_api()->import_options_set_huggingface_options(obj_.get(),
                                                                  value.get());
+    }
+};
+
+class paged_attention_kv_cache : public clr_object_base {
+  public:
+    using clr_object_base::clr_object_base;
+
+    paged_attention_kv_cache(size_t num_layers, size_t num_blocks,
+                                    size_t block_size, size_t num_kv_heads,
+                                    size_t head_size) {
+        obj_ = nncase_clr_api()->paged_attention_kv_cache_create(
+            num_layers, num_blocks, block_size, num_kv_heads, head_size);
+    }
+
+    rtvalue block_tables() noexcept {
+        return {
+            std::in_place,
+            nncase_clr_api()->native_paged_attention_kv_cache_get_block_tables(
+                get())};
+    }
+
+    void block_tables(const rtvalue &value) noexcept {
+        nncase_clr_api()->native_paged_attention_kv_cache_set_block_tables(
+            get(), value.get());
+    }
+
+    rtvalue seq_lens() noexcept {
+        return {std::in_place,
+                nncase_clr_api()->native_paged_attention_kv_cache_get_seq_lens(
+                    get())};
+    }
+
+    void seq_lens(const rtvalue &value) noexcept {
+        nncase_clr_api()->native_paged_attention_kv_cache_set_seq_lens(
+            get(), value.get());
+    }
+
+    rtvalue context_lens() noexcept {
+        return {
+            std::in_place,
+            nncase_clr_api()->native_paged_attention_kv_cache_get_context_lens(
+                get())};
+    }
+
+    void context_lens(const rtvalue &value) noexcept {
+        nncase_clr_api()->native_paged_attention_kv_cache_set_context_lens(
+            get(), value.get());
+    }
+
+    rtvalue slot_mapping() noexcept {
+        return {
+            std::in_place,
+            nncase_clr_api()->native_paged_attention_kv_cache_get_slot_mapping(
+                get())};
+    }
+
+    void slot_mapping(const rtvalue &value) noexcept {
+        nncase_clr_api()->native_paged_attention_kv_cache_set_slot_mapping(
+            get(), value.get());
     }
 };
 

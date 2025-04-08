@@ -41,6 +41,15 @@ public unsafe struct CApiMT
     public delegate* unmanaged<ArrayElementKind, IntPtr*, nuint, IntPtr> ArrayCreatePtr;
     public delegate* unmanaged<IntPtr, nuint, IntPtr> ArrayGetItemPtr;
     public delegate* unmanaged<IntPtr, nuint> ArrayGetLengthPtr;
+    public delegate* unmanaged<nuint, nuint, nuint, nuint, nuint, IntPtr> PagedAttentionKVCacheCreatePtr;
+    public delegate* unmanaged<IntPtr, IntPtr> PagedAttentionKVCacheGetBlockTablesPtr;
+    public delegate* unmanaged<IntPtr, IntPtr, void> PagedAttentionKVCacheSetBlockTablesPtr;
+    public delegate* unmanaged<IntPtr, IntPtr> PagedAttentionKVCacheGetSeqLensPtr;
+    public delegate* unmanaged<IntPtr, IntPtr, void> PagedAttentionKVCacheSetSeqLensPtr;
+    public delegate* unmanaged<IntPtr, IntPtr> PagedAttentionKVCacheGetContextLensPtr;
+    public delegate* unmanaged<IntPtr, IntPtr, void> PagedAttentionKVCacheSetContextLensPtr;
+    public delegate* unmanaged<IntPtr, IntPtr> PagedAttentionKVCacheGetSlotMappingPtr;
+    public delegate* unmanaged<IntPtr, IntPtr, void> PagedAttentionKVCacheSetSlotMappingPtr;
     public delegate* unmanaged<IntPtr, nuint, IntPtr, IntPtr> CalibrationDatasetProviderCreatePtr;
     public delegate* unmanaged<IntPtr, void> ClrHandleDisposePtr;
     public delegate* unmanaged<IntPtr, void> ClrHandleFreePtr;
@@ -142,6 +151,15 @@ public static unsafe class CApi
         mt->ArrayCreatePtr = &ArrayCreate;
         mt->ArrayGetItemPtr = &ArrayGetItem;
         mt->ArrayGetLengthPtr = &ArrayGetLength;
+        mt->PagedAttentionKVCacheCreatePtr = &PagedAttentionKVCacheCreate;
+        mt->PagedAttentionKVCacheGetBlockTablesPtr = &PagedAttentionKVCacheGetBlockTables;
+        mt->PagedAttentionKVCacheSetBlockTablesPtr = &PagedAttentionKVCacheSetBlockTables;
+        mt->PagedAttentionKVCacheGetSeqLensPtr = &PagedAttentionKVCacheGetSeqLens;
+        mt->PagedAttentionKVCacheSetSeqLensPtr = &PagedAttentionKVCacheSetSeqLens;
+        mt->PagedAttentionKVCacheGetContextLensPtr = &PagedAttentionKVCacheGetContextLens;
+        mt->PagedAttentionKVCacheSetContextLensPtr = &PagedAttentionKVCacheSetContextLens;
+        mt->PagedAttentionKVCacheGetSlotMappingPtr = &PagedAttentionKVCacheGetSlotMapping;
+        mt->PagedAttentionKVCacheSetSlotMappingPtr = &PagedAttentionKVCacheSetSlotMapping;
         mt->CalibrationDatasetProviderCreatePtr = &CalibrationDatasetProviderCreate;
         mt->ClrHandleDisposePtr = &ClrHandleDispose;
         mt->ClrHandleFreePtr = &ClrHandleFree;
@@ -266,6 +284,64 @@ public static unsafe class CApi
     {
         var array = Get<Array>(arrayHandle);
         return (nuint)array.LongLength;
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr PagedAttentionKVCacheCreate(nuint num_layers, nuint num_blocks, nuint block_size, nuint num_kv_heads, nuint head_size)
+    {
+        return GCHandle.ToIntPtr(GCHandle.Alloc(new PagedAttentionKVCache(checked((int)num_layers), checked((int)num_blocks), checked((int)block_size), checked((int)num_kv_heads), checked((int)head_size))));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr PagedAttentionKVCacheGetBlockTables(IntPtr handle)
+    {
+        var rtValue = RTValue.FromValue(Value.FromTensor(Get<PagedAttentionKVCache>(handle).BlockTables));
+        return GCHandle.ToIntPtr(GCHandle.Alloc(rtValue));
+    }
+
+    [UnmanagedCallersOnly]
+    private static void PagedAttentionKVCacheSetBlockTables(IntPtr handle, IntPtr value_handle)
+    {
+        Get<PagedAttentionKVCache>(handle).BlockTables = Get<RTValue>(value_handle).ToValue().AsTensor().Cast<long>();
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr PagedAttentionKVCacheGetSeqLens(IntPtr handle)
+    {
+        var rtValue = RTValue.FromValue(Value.FromTensor(Get<PagedAttentionKVCache>(handle).SeqLens));
+        return GCHandle.ToIntPtr(GCHandle.Alloc(rtValue));
+    }
+
+    [UnmanagedCallersOnly]
+    private static void PagedAttentionKVCacheSetSeqLens(IntPtr handle, IntPtr value_handle)
+    {
+        Get<PagedAttentionKVCache>(handle).SeqLens = Get<RTValue>(value_handle).ToValue().AsTensor().Cast<long>();
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr PagedAttentionKVCacheGetContextLens(IntPtr handle)
+    {
+        var rtValue = RTValue.FromValue(Value.FromTensor(Get<PagedAttentionKVCache>(handle).ContextLens));
+        return GCHandle.ToIntPtr(GCHandle.Alloc(rtValue));
+    }
+
+    [UnmanagedCallersOnly]
+    private static void PagedAttentionKVCacheSetContextLens(IntPtr handle, IntPtr value_handle)
+    {
+        Get<PagedAttentionKVCache>(handle).ContextLens = Get<RTValue>(value_handle).ToValue().AsTensor().Cast<long>();
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr PagedAttentionKVCacheGetSlotMapping(IntPtr handle)
+    {
+        var rtValue = RTValue.FromValue(Value.FromTensor(Get<PagedAttentionKVCache>(handle).SlotMapping));
+        return GCHandle.ToIntPtr(GCHandle.Alloc(rtValue));
+    }
+
+    [UnmanagedCallersOnly]
+    private static void PagedAttentionKVCacheSetSlotMapping(IntPtr handle, IntPtr value_handle)
+    {
+        Get<PagedAttentionKVCache>(handle).SlotMapping = Get<RTValue>(value_handle).ToValue().AsTensor().Cast<long>();
     }
 
     [UnmanagedCallersOnly]

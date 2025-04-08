@@ -106,7 +106,7 @@ public static class Value
         }
     }
 
-    public static IValue FromObjectRef(object @object)
+    public static IValue FromObject(object @object)
     {
         return new ReferenceValue(@object);
     }
