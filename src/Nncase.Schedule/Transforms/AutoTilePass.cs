@@ -17,7 +17,7 @@ using QuikGraph.Algorithms;
 
 namespace Nncase.Passes.Transforms;
 
-public sealed class AutoTilePass : ModulePass
+public sealed class AutoTilePass : FunctionPass
 {
     public AutoTilePass(string moduleKind, CompileOptions compileOptions)
     {
@@ -32,35 +32,21 @@ public sealed class AutoTilePass : ModulePass
 
     public int WorkItem { get; set; }
 
-    protected override Task<IRModule> RunCoreAsync(IRModule input, RunPassContext context)
+    protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
     {
         var tiler = new GraphTiler();
-        var funcNums = input.Functions.Count;
-        for (int i = 0; i < funcNums; i++)
+        if (!(input is Function func && func.ModuleKind == ModuleKind))
         {
-            var pre = input.Functions[i];
-            using var scope = new Diagnostics.DumpScope(pre.Name);
-            var post = Rewrite(pre, tiler);
-            input.Replace(i, post);
+            return Task.FromResult(input);
         }
 
-        return Task.FromResult(input);
-    }
-
-    private BaseFunction Rewrite(BaseFunction pre, GraphTiler tiler)
-    {
-        if (!(pre is IR.Fusion fusion && fusion.ModuleKind == ModuleKind))
-        {
-            return pre;
-        }
-
-        var funcName = pre.Name;
+        var funcName = func.Name;
 
         // 1. convert to quikgraph
         var graph = new BidirectionalGraph<ExprVertex, ExprEdge>(false);
         {
             var convertor = new AutoTileExprGraphConvertor();
-            convertor.Visit(fusion.Body, graph);
+            convertor.Visit(func.Body, graph);
         }
 
         // 2. perform condensation
@@ -97,7 +83,7 @@ public sealed class AutoTilePass : ModulePass
         // 3. reconstruction
         var constructor = new AutoTileReconstructor(tiler, ModuleKind, CompileOptions, condenseAlgo);
         var post = constructor.Construct();
-        return fusion.With(fusion.Name, fusion.ModuleKind, post, fusion.Parameters.ToArray());
+        return Task.FromResult((BaseFunction)func.With(body: post));
     }
 }
 

@@ -22,7 +22,6 @@ internal sealed class LinkableModule : ILinkableModule
     private readonly IReadOnlyList<Stream> _localRdatas;
 
     private readonly IReadOnlyList<ILinkableFunction> _functions;
-    private readonly CompileOptions _options;
 
     public LinkableModule(Stream desc, Stream rdata, IReadOnlyList<Stream> localRdatas, IReadOnlyList<ILinkableFunction> functions, CompileOptions options)
     {
@@ -30,18 +29,21 @@ internal sealed class LinkableModule : ILinkableModule
         _rdata = rdata;
         _localRdatas = localRdatas;
         _functions = functions;
-        _options = options;
+        PublicFunctions = _functions.OfType<LinkableKernelFunction>().ToArray();
     }
+
+    public IReadOnlyList<ILinkableFunction> PublicFunctions { get; }
 
     public ILinkedModule Link(ILinkContext linkContext)
     {
+        var codegenDir = DumpScope.Current.Directory;
         {
-            if (!Directory.Exists(_options.DumpDir))
+            if (!Directory.Exists(codegenDir))
             {
-                Directory.CreateDirectory(_options.DumpDir);
+                Directory.CreateDirectory(codegenDir);
             }
 
-            using (var writer = new StreamWriter(File.Open(Path.Join(_options.DumpDir, "device.h"), FileMode.Create)))
+            using (var writer = new StreamWriter(File.Open(Path.Join(codegenDir, "device.h"), FileMode.Create)))
             {
                 writer.Write(CSourceBuiltn.KernelHeader);
 
@@ -54,7 +56,7 @@ internal sealed class LinkableModule : ILinkableModule
 
         foreach (var func in _functions.OfType<LinkableKernelFunction>())
         {
-            var dumpPath = Path.Join(_options.DumpDir, func.PrimFunction.Name);
+            var dumpPath = Path.Join(codegenDir, func.PrimFunction.Name);
             if (!Directory.Exists(dumpPath))
             {
                 Directory.CreateDirectory(dumpPath);
@@ -109,7 +111,7 @@ internal sealed class LinkableModule : ILinkableModule
         foreach (var func in _functions.OfType<LinkableKernelFunction>())
         {
             rdataAlign = Math.Max(rdataAlign, func.PrimFunction.SchedResult.DataAlign);
-            var dumpPath = Path.Join(_options.DumpDir, func.PrimFunction.Name);
+            var dumpPath = Path.Join(codegenDir, func.PrimFunction.Name);
             var elfPath = CompileCSource(dumpPath);
 
             var func_text = File.ReadAllBytes(elfPath);

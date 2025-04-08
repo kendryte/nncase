@@ -112,7 +112,7 @@ public static class Tensors
     public static Call Reduce(ReduceOp reduceOp, Expr input, Expr axes, Expr initValue, Expr keepDims) =>
         new Call(new Reduce(reduceOp), input, axes, initValue, keepDims);
 
-    public static Call ReduceArg(ReduceArgOp reduceArgOp, PrimType destType, Expr input, Expr axis, Expr keepDims, Expr selectLastIndex) =>
+    public static Call ReduceArg(ReduceArgOp reduceArgOp, DataType destType, Expr input, Expr axis, Expr keepDims, Expr selectLastIndex) =>
         new Call(new ReduceArg(reduceArgOp, destType), input, axis, keepDims, selectLastIndex);
 
     public static Call ReduceMean(Expr input, Expr axis, Expr initValue, Expr keepDims) =>

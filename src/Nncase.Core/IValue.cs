@@ -330,3 +330,78 @@ public sealed class TupleValue : IValue, IEquatable<TupleValue?>
         return "(" + string.Join(",", _values.Select(v => v.ToString())) + ")";
     }
 }
+
+/// <summary>
+/// Shape value.
+/// </summary>
+public sealed class ShapeValue : IValue, IEquatable<ShapeValue?>
+{
+    private readonly long[] _shape;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ShapeValue"/> class.
+    /// </summary>
+    /// <param name="shape">Shape.</param>
+    public ShapeValue(long[] shape)
+    {
+        _shape = shape;
+        Type = NoneType.Default;
+    }
+
+    /// <inheritdoc/>
+    public int Count => 1;
+
+    /// <inheritdoc/>
+    public IRType Type { get; }
+
+    /// <inheritdoc/>
+    public IValue this[int index] => index == 0 ? this : throw new ArgumentOutOfRangeException(nameof(index));
+
+    /// <inheritdoc/>
+    public IEnumerator<IValue> GetEnumerator()
+    {
+        yield break;
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        yield break;
+    }
+
+    /// <inheritdoc/>
+    public Tensor AsTensor()
+    {
+        return _shape;
+    }
+
+    /// <inheritdoc/>
+    public Tensor[] AsTensors()
+    {
+        return new[] { AsTensor() };
+    }
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj)
+    {
+        return Equals(obj as TensorValue);
+    }
+
+    /// <inheritdoc/>
+    public bool Equals(ShapeValue? other)
+    {
+        return other != null &&
+               _shape.SequenceEqual(other._shape);
+    }
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(_shape);
+    }
+
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        return string.Join(", ", _shape);
+    }
+}

@@ -80,15 +80,23 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
         if (input.TensorType.Shape.IsRanked && shapeExpr.IsRanked)
         {
             var newShape = TypeInference.ExpandShape(input.TensorType.Shape, shapeExpr);
-            var ndsbp = new SBP[newShape.Count];
+            var dimExtends = newShape.Rank - input.TensorType.Shape.Rank;
+            var ndsbp = new SBP[newShape.Rank];
             for (int i = 0; i < ndsbp.Length; i++)
             {
-                if (input.AxisPolices[i] is SBPSplit && newShape[i] != input.TensorType.Shape[i])
+                if (i < dimExtends)
                 {
-                    return invalid;
+                    ndsbp[i] = SBP.B;
                 }
+                else
+                {
+                    if (input.AxisPolices[i - dimExtends] is SBPSplit && newShape[i] != input.TensorType.Shape[i - dimExtends])
+                    {
+                        return invalid;
+                    }
 
-                ndsbp[i] = input.AxisPolices[i];
+                    ndsbp[i] = input.AxisPolices[i - dimExtends];
+                }
             }
 
             return new DistributedType(new TensorType(input.TensorType.DType, newShape), ndsbp, input.Placement);

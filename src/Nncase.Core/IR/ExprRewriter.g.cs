@@ -384,7 +384,7 @@ public partial class ExprRewriter<TContext>
     /// <summary>
     /// Rewrite leaf <see cref="TIR.PrimFunction"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafPrimFunction(TIR.PrimFunction expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual Expr RewriteLeafPrimFunction(TIR.PrimFunction expr, TContext context) => RewriteLeafBaseFunction(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.Sequential"/>.
@@ -669,7 +669,7 @@ public partial class ExprRewriter
     /// <summary>
     /// Rewrite leaf <see cref="TIR.PrimFunction"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafPrimFunction(TIR.PrimFunction expr) => DefaultRewriteLeaf(expr);
+    protected virtual Expr RewriteLeafPrimFunction(TIR.PrimFunction expr) => RewriteLeafBaseFunction(expr);
 
     /// <inheritdoc />
     protected sealed override Expr RewriteLeafPrimFunction(TIR.PrimFunction expr, Unit context) => RewriteLeafPrimFunction(expr);

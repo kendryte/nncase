@@ -25,7 +25,7 @@ namespace Nncase.Importer.TFLite
             var padW = TypeInference.GetWindowedPadding(inW, filterW, strideW, 1, option.Padding == tflite.Padding.SAME);
             var filter = Tensor.From<int>(new[] { filterH, filterW }, [2]);
             var stride = Tensor.From<int>(new[] { strideH, strideW }, [2]);
-            var padding = TypeInference.ConcatPadding(padH, padW);
+            var padding = Dimension.ConcatPadding(padH, padW);
             return F.Tensors.NCHWToNHWC(
                 F.NN.ReduceWindow2D(
                     reduceOp, input, initValue, filter, stride, padding, Tensor.From<long>(new long[] { 1, 1 }), false, false));

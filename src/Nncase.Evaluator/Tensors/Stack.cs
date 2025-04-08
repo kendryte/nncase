@@ -46,7 +46,7 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
     public Cost Visit(ICostEvaluateContext context, Stack target)
     {
         var input = context.GetArgumentType<TupleType>(target, Stack.Inputs);
-        var ret = context.GetReturnType<TensorType>();
+        var ret = context.GetReturnType<IRType>();
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input),
@@ -74,49 +74,36 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
         if (context.GetArgument(target, Stack.Axis) is TensorConst axis_con)
         {
             var axis_v = axis_con.Value.ToScalar<int>();
-            var ttypes = new TensorType[inputs.Count];
-            foreach (var (i, input) in Enumerable.Range(0, inputs.Count).Zip(inputs))
+            var firstType = inputs[0];
+            if (inputs.Any(x => x != firstType))
             {
-                if (input is TensorType ttype)
-                {
-                    if (ttype.Shape.IsUnranked)
-                    {
-                        return ttype;
-                    }
-
-                    ttypes[i] = ttype;
-                }
-                else
-                {
-                    return new InvalidType("The Tuple Elements Type Must All Equals TensorType");
-                }
+                return new InvalidType("The Tuple Elements Type Must All Equal!");
             }
 
-            if (!ttypes.Skip(1).All(ttype => ttype.Shape == ttypes[0].Shape))
+            var tensorType = firstType switch
             {
-                return new InvalidType("The Tuple Elements Shape Must All Equal!");
-            }
+                TensorType t => t,
+                DistributedType dt => dt.TensorType,
+                _ => throw new TypeInferenceInterruptException(new InvalidType("The Tuple Elements Must Be TensorType!")),
+            };
 
-            if (!ttypes.Skip(1).All(ttype => ttype.DType == ttypes[0].DType))
-            {
-                return new InvalidType("The Tuple Elements DatType Must All Equal!");
-            }
-
-            if (ttypes[0].Shape.IsScalar)
+            if (tensorType.IsScalar)
             {
                 if (axis_v != 0)
                 {
                     return new InvalidType("Axis must be zero when stack scalar");
                 }
 
-                return ttypes[0] with { Shape = new Shape(inputs.Count) };
+                tensorType = tensorType with { Shape = new Shape(inputs.Count) };
             }
             else
             {
-                var outshape = ttypes[0].Shape.ToList();
+                var outshape = tensorType.Shape.ToList();
                 outshape.Insert(axis_v, inputs.Count);
-                return ttypes[0] with { Shape = new Shape(outshape) };
+                tensorType = tensorType with { Shape = new Shape(outshape) };
             }
+
+            return firstType is DistributedType dt2 ? dt2 with { TensorType = tensorType } : tensorType;
         }
 
         return new InvalidType("The Stack Axis Must Be Const!");

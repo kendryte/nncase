@@ -27,9 +27,4 @@ public sealed partial class Reshape : CPUKernelOp
     /// Gets input.
     /// </summary>
     public static readonly ParameterInfo Output = new(typeof(Reshape), 1, "output");
-
-    /// <summary>
-    /// Gets begins.
-    /// </summary>
-    public IRArray<long> NewShape { get; }
 }

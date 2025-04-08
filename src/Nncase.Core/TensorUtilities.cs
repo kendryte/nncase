@@ -512,7 +512,7 @@ public static class TensorUtilities
         => type switch
         {
             TensorType tensorType => GetTensorMaxSizeAndStrides(tensorType, null),
-            DistributedType distributedType => GetTensorMaxSizeAndStrides(distributedType.TensorType, distributedType),
+            DistributedType distributedType => GetTensorMaxSizeAndStrides(DistributedUtility.GetDividedTensorType(distributedType), distributedType),
             _ => throw new NotSupportedException(),
         };
 }

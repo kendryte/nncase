@@ -59,6 +59,8 @@ internal partial class Program
         await compiler.CompileAsync();
 
         // 5. code gen
+        var directory = Path.GetDirectoryName(outputFile) ?? throw new ArgumentException($"Invalid path: {outputFile}");
+        Directory.CreateDirectory(directory);
         using (var os = File.Open(outputFile, FileMode.Create, FileAccess.Write))
         {
             compiler.Gencode(os);

@@ -237,12 +237,12 @@ internal sealed class PassManager : IPassManager
                     switch (pass)
                     {
                         case FunctionPass p:
-                            _function = await p.RunAsync(_function, context);
+                            ReplaceFunction(await p.RunAsync(_function, context));
                             break;
                         case PrimFuncPass p:
                             if (_function is PrimFunction pf)
                             {
-                                _function = await p.RunAsync(pf, context);
+                                ReplaceFunction(await p.RunAsync(pf, context));
                             }
 
                             break;
@@ -253,7 +253,7 @@ internal sealed class PassManager : IPassManager
                             _eGraph = await p.RunAsync(_function, context);
                             break;
                         case EGraphExtractPass p:
-                            _function = await p.RunAsync(_eGraph!, context);
+                            ReplaceFunction(await p.RunAsync(_eGraph!, context));
                             _eGraph = null;
                             break;
                         default:
@@ -262,6 +262,12 @@ internal sealed class PassManager : IPassManager
                 }
 
                 return _function;
+            }
+
+            private void ReplaceFunction(BaseFunction newFunction)
+            {
+                IRHelpers.ReplaceAllUsesWith(_function, newFunction);
+                _function = newFunction;
             }
 
             private RunPassContext CreateRunPassContext(IPass pass, int index)

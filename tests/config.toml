@@ -113,11 +113,11 @@ infer = true
 similarity_name = 'cosine'
 
 [target.cpu.mode.noptq]
-enabled = false
+enabled = true
 threshold = 0.999
 
 [target.cpu.mode.ptq]
-enabled = true
+enabled = false
 threshold = 0.98
 
 [target.cpu.target_options]

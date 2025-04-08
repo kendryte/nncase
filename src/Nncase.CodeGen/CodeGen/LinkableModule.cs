@@ -23,6 +23,8 @@ public abstract class LinkableModule : ILinkableModule
 
     public SectionManager SectionManager { get; }
 
+    public IReadOnlyList<ILinkableFunction> PublicFunctions => _functions;
+
     public ILinkedModule Link(ILinkContext linkContext)
     {
         var linkedFunctions = new List<LinkedFunction>();
