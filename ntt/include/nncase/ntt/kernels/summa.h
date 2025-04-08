@@ -67,8 +67,8 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
     using lhs_mesh_type = typename TLhs::mesh_type;
     using rhs_mesh_type = typename TRhs::mesh_type;
 
-    using lhs_global_shape = typename TLhs::global_shape_type;
-    using rhs_global_shape = typename TRhs::global_shape_type;
+    using lhs_global_shape = typename TLhs::shape_type;
+    using rhs_global_shape = typename TRhs::shape_type;
 
     using lhs_local_shape = typename TLhs::local_shape_type;
     using rhs_local_shape = typename TRhs::local_shape_type;
