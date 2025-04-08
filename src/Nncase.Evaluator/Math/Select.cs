@@ -15,7 +15,7 @@ namespace Nncase.Evaluator.Math;
 /// </summary>
 [PatternMatch.PatternFunctionalGenerator]
 [EvaluatorGenerator]
-public partial class SelectEvaluator : IEvaluator<Select>, ITypeInferencer<Select>, IOpPrinter<Select>
+public partial class SelectEvaluator : IEvaluator<Select>, ITypeInferencer<Select>, IOpPrinter<Select>, ICostEvaluator<Select>
 {
     /// <inheritdoc/>
     public string Visit(IPrintOpContext context, Select target)
@@ -38,6 +38,21 @@ public partial class SelectEvaluator : IEvaluator<Select>, ITypeInferencer<Selec
         var lhs = context.CheckArgumentType<IRType>(target, Select.TrueValue);
         var rhs = context.CheckArgumentType<IRType>(target, Select.FalseValue);
         return TypeInference.CommonType(lhs, rhs);
+    }
+
+    public Cost Visit(ICostEvaluateContext context, Select target)
+    {
+        var condition = context.GetArgumentType<IRType>(target, Select.Predicate);
+        var true_value = context.GetArgumentType<IRType>(target, Select.TrueValue);
+        var false_value = context.GetArgumentType<IRType>(target, Select.FalseValue);
+        var ret = context.GetReturnType<IRType>();
+
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(condition, true_value, false_value),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(condition, CostUtility.GetCPUCyclesOfCompare()),
+        };
     }
 
     private IValue Visit(bool predicate, IValue trueValue, IValue falseValue)
