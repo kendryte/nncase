@@ -198,7 +198,7 @@ public static class T
     /// ));
     /// </code>
     /// </summary>
-    public static ISequentialBuilder<PrimFunction> PrimFunc(string name, string module_kind, params Expr[] parameters)
+    public static ISequentialBuilder<PrimFunction> PrimFunc(string name, string module_kind, params Var[] parameters)
     {
         return new SequentialBuilder<PrimFunction>(body => new PrimFunction(name, module_kind, body, parameters));
     }
@@ -217,6 +217,20 @@ public static class T
     public static IIfThenElseBuilder If(Expr condition)
     {
         return new IfThenElseBuilder(condition);
+    }
+
+    /// <summary>
+    /// create the buffer by tensortype.
+    /// </summary>
+    public static Var CreateBufferVar(TensorType tensorType, out Var buffer, [CallerArgumentExpression("buffer")] string name = "", DistributedType? distributedType = null)
+    {
+        if (name.StartsWith("var "))
+        {
+            name = name[4..];
+        }
+
+        buffer = new Var(name, (IRType?)distributedType ?? tensorType);
+        return buffer;
     }
 
     /// <summary>

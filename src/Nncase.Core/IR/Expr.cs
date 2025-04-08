@@ -170,7 +170,7 @@ public abstract partial class Expr
     /// <summary>
     /// Gets users.
     /// </summary>
-    public IEnumerable<Expr> Users => _users.Select(x => x.Key).ToArray();
+    public IEnumerable<Expr> Users => _users.Select(x => x.Key);
 
     /// <summary>
     /// Gets operands.

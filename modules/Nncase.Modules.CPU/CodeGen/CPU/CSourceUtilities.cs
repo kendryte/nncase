@@ -54,6 +54,9 @@ internal static class CSourceUtilities
         string str;
         switch (op.UnaryOp)
         {
+            case UnaryOp.Abs:
+                str = $"std::abs({input})";
+                break;
             default:
                 str = $"nncase_mt->{arguments[0].Type}_{nameof(Unary).ToLower(CultureInfo.CurrentCulture)}_{op.UnaryOp.ToString().ToLower(CultureInfo.CurrentCulture)}{input}";
                 break;

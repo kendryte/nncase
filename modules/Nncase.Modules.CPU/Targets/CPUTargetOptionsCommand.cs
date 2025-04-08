@@ -65,10 +65,10 @@ public sealed class CpuTargetOptionsCommand : Command
             description: "the name identify of hierarchies.",
             getDefaultValue: () => "b");
         Add(HierarchyNamesOption);
-        HierarchySizesOption = new Option<IEnumerable<int>>(
+        HierarchySizesOption = new Option<IEnumerable<long>>(
             name: "--hierarchy-sizes",
             description: "the memory capacity of hierarchies.",
-            getDefaultValue: () => new int[] { 1073741824 })
+            getDefaultValue: () => new long[] { 1099511627776 })
         {
             AllowMultipleArgumentsPerToken = true,
         };
@@ -133,7 +133,7 @@ public sealed class CpuTargetOptionsCommand : Command
 
     public Option<string> HierarchyNamesOption { get; }
 
-    public Option<IEnumerable<int>> HierarchySizesOption { get; }
+    public Option<IEnumerable<long>> HierarchySizesOption { get; }
 
     public Option<IEnumerable<int>> HierarchyLatenciesOption { get; }
 

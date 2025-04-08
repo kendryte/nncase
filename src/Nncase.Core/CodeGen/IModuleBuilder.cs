@@ -127,6 +127,8 @@ public interface ILinkedModule
 /// </summary>
 public interface ILinkableModule
 {
+    IReadOnlyList<ILinkableFunction> PublicFunctions { get; }
+
     /// <summary>
     /// Link module.
     /// </summary>
@@ -151,6 +153,10 @@ public interface IModuleBuilder
     /// <param name="functions">Source functions.</param>
     /// <returns>Compiled linkable module.</returns>
     ILinkableModule Build(IReadOnlyList<BaseFunction> functions);
+}
+
+public interface IStackVMModuleBuilder : IModuleBuilder
+{
 }
 
 /// <summary>

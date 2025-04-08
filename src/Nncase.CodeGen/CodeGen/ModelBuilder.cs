@@ -16,14 +16,17 @@ namespace Nncase.CodeGen;
 /// </summary>
 public sealed class ModelBuilder : IModelBuilder
 {
+    private readonly IStackVMModuleBuilder _stackVMModuleBuilder;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ModelBuilder"/> class.
     /// default ctor.
     /// </summary>
-    public ModelBuilder(ITarget target, CompileOptions compileOptions)
+    public ModelBuilder(ITarget target, CompileOptions compileOptions, IStackVMModuleBuilder stackVMModuleBuilder)
     {
         Target = target;
         CompileOptions = compileOptions;
+        _stackVMModuleBuilder = stackVMModuleBuilder;
     }
 
     /// <summary>
@@ -39,29 +42,39 @@ public sealed class ModelBuilder : IModelBuilder
     public ILinkedModel Build(IRModule module)
     {
         var functionsByKind = module.Functions.GroupBy(x => x.ModuleKind).ToList();
-        var functionIds = MakeFunctionsIds(functionsByKind);
+        var linkableModules = functionsByKind.Select(x => GetModuleBuilder(x.Key).Build(x.ToList())).ToList();
+        var functionIds = MakeFunctionsIds(linkableModules);
         if (DumpScope.Current.IsEnabled(DumpFlags.CodeGen))
         {
             CodeGenDumper.DumpIdMap(functionIds);
         }
 
-        var linkableModules = functionsByKind.Select(x => Target.CreateModuleBuilder(x.Key, CompileOptions).Build(x.ToList())).ToList();
         var linkContext = new LinkContext(functionIds);
         var linkedModules = linkableModules.Select(x => x.Link(linkContext)).ToList();
         var entryFunctionId = module.Entry == null ? null : functionIds[module.Entry];
         return new LinkedModel(entryFunctionId, linkedModules);
     }
 
-    private Dictionary<BaseFunction, FunctionId> MakeFunctionsIds(IEnumerable<IGrouping<string, BaseFunction>> functionsByKind)
+    private IModuleBuilder GetModuleBuilder(string kind)
+    {
+        if (kind == _stackVMModuleBuilder.ModuleKind)
+        {
+            return _stackVMModuleBuilder;
+        }
+
+        return Target.GetModuleCompiler(kind).CreateModuleBuilder(CompileOptions);
+    }
+
+    private Dictionary<BaseFunction, FunctionId> MakeFunctionsIds(IReadOnlyList<ILinkableModule> modules)
     {
         var ids = new Dictionary<BaseFunction, FunctionId>(ReferenceEqualityComparer.Instance);
         uint moduleId = 0;
-        foreach (var fp in functionsByKind)
+        foreach (var mod in modules)
         {
             uint funcId = 0;
-            foreach (var func in fp)
+            foreach (var func in mod.PublicFunctions)
             {
-                ids.Add(func, new FunctionId(funcId++, moduleId));
+                ids.Add(func.SourceFunction, new FunctionId(funcId++, moduleId));
             }
 
             moduleId++;

@@ -14,7 +14,7 @@ namespace Nncase.CodeGen.StackVM;
 /// <summary>
 /// StackVM module builder.
 /// </summary>
-public class StackVMModuleBuilder : ModuleBuilder
+public class StackVMModuleBuilder : ModuleBuilder, IStackVMModuleBuilder
 {
     private readonly Dictionary<TensorConst, Symbol> _constSymbols = new();
 

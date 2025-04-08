@@ -217,6 +217,14 @@
           "Nncase.Passes": "[1.0.0, )"
         }
       },
+      "nncase.targets": {
+        "type": "Project",
+        "dependencies": {
+          "Nncase.CodeGen": "[1.0.0, )",
+          "Nncase.Core": "[1.0.0, )",
+          "Nncase.Schedule": "[1.0.0, )"
+        }
+      },
       "CommunityToolkit.HighPerformance": {
         "type": "CentralTransitive",
         "requested": "[8.2.2, )",

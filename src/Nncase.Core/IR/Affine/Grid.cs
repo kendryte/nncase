@@ -19,17 +19,15 @@ public sealed class Grid : Expr
     /// <summary>
     /// Initializes a new instance of the <see cref="Grid"/> class.
     /// </summary>
-    /// <param name="moduleKind">module kind.</param>
     /// <param name="domainParameter">the grid domain parameter. </param>
     /// <param name="bodyParameters">Body parameters.</param>
     /// <param name="accessMaps">Access maps.</param>
     /// <param name="buffers">output buffers.</param>
     /// <param name="reads">Reads.</param>
     /// <param name="body">The body sequence.</param>
-    public Grid(string moduleKind, Var domainParameter, ReadOnlySpan<Var> bodyParameters, ReadOnlySpan<AffineMap> accessMaps, ReadOnlySpan<Expr> buffers, ReadOnlySpan<Expr> reads, Sequential body)
+    public Grid(Var domainParameter, ReadOnlySpan<Var> bodyParameters, ReadOnlySpan<AffineMap> accessMaps, ReadOnlySpan<Expr> buffers, ReadOnlySpan<Expr> reads, Sequential body)
         : base(new Expr[] { domainParameter }.Concat(bodyParameters.ToArray()).Concat(accessMaps.ToArray()).Concat(buffers.ToArray()).Concat(reads.ToArray()).Append(body))
     {
-        ModuleKind = moduleKind;
         _bodyParametersCount = bodyParameters.Length;
         _accessMapsCount = accessMaps.Length;
 
@@ -44,8 +42,6 @@ public sealed class Grid : Expr
             throw new ArgumentException("Invalid reads count.");
         }
     }
-
-    public string ModuleKind { get; }
 
     public Var DomainParameter => (Var)Operands[0];
 
@@ -63,6 +59,6 @@ public sealed class Grid : Expr
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitGrid(this, context);
 
-    public Grid With(string? moduleKind = null, Var? domainParameter = null, Var[]? bodyParameters = null, AffineMap[]? accessMaps = null, Expr[]? buffers = null, Expr[]? reads = null, Sequential? body = null)
-        => new Grid(moduleKind ?? ModuleKind, domainParameter ?? DomainParameter, bodyParameters ?? BodyParameters, accessMaps ?? AccessMaps, buffers ?? Buffers, reads ?? Reads, body ?? Body);
+    public Grid With(Var? domainParameter = null, Var[]? bodyParameters = null, AffineMap[]? accessMaps = null, Expr[]? buffers = null, Expr[]? reads = null, Sequential? body = null)
+        => new Grid(domainParameter ?? DomainParameter, bodyParameters ?? BodyParameters, accessMaps ?? AccessMaps, buffers ?? Buffers, reads ?? Reads, body ?? Body);
 }

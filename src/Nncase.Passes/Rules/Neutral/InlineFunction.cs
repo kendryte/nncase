@@ -30,12 +30,15 @@ public sealed partial class InlineFunction : RewriteRule<Pattern>
     private Expr? GetReplace(Call expr)
     {
         var target = (Function)expr.Target;
-        var count = ExprCollector.Collect(target.Body).Count;
-        if (count <= MaxInlineSize)
+        if (target.ModuleKind == Callable.StackVMModuleKind)
         {
-            var mapper = target.Parameters.ToArray().Zip(expr.Arguments.ToArray(), (p, a) => (p, a)).ToDictionary(x => x.p, x => x.a);
-            var cloner = new FunctionBodyCloner(mapper);
-            return cloner.Visit(target.Body, Unit.Default);
+            var count = ExprCollector.Collect(target.Body).Count;
+            if (count <= MaxInlineSize)
+            {
+                var mapper = target.Parameters.ToArray().Zip(expr.Arguments.ToArray(), (p, a) => (p, a)).ToDictionary(x => x.p, x => x.a);
+                var cloner = new FunctionBodyCloner(mapper);
+                return cloner.Visit(target.Body, Unit.Default);
+            }
         }
 
         return null;

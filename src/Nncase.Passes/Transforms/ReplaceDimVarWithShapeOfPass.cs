@@ -35,7 +35,8 @@ public sealed class ReplaceDimVarWithShapeOfPass : FunctionPass
         {
             var varMap = CreateDimVarMap();
             var visitor = new ReplaceDimVarWithShapeOfVisitor(varMap);
-            var post = (BaseFunction)visitor.Clone(func, default);
+            var newBody = visitor.Visit(func.Body, default);
+            var post = (BaseFunction)func.With(body: newBody);
             return Task.FromResult(post);
         }
 

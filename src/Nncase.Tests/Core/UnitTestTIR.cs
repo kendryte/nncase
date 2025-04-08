@@ -136,8 +136,8 @@ public sealed class UnitTestTIR
     {
         var primFunc = new PrimFunction("test_module", new Sequential(new Expr[] { 1 }), new[]
         {
-            TIR.T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 16, 64, 400 }), MemoryLocation.Input, out var _),
-            TIR.T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 16, 64, 400 }), MemoryLocation.Input, out var _),
+            TIR.T.CreateBufferVar(new(DataTypes.Float32, new[] { 1, 16, 64, 400 }), out var _),
+            TIR.T.CreateBufferVar(new(DataTypes.Float32, new[] { 1, 16, 64, 400 }), out var _),
         });
 
         var primFuncParameters = primFunc.Parameters;
@@ -149,8 +149,8 @@ public sealed class UnitTestTIR
         var newBody = new Sequential(new Expr[] { 3 });
         var newParams = new[]
         {
-            TIR.T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 16, 64, 400 }), MemoryLocation.Input, out var _),
-            TIR.T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 16, 64, 400 }), MemoryLocation.Input, out var _),
+            TIR.T.CreateBufferVar(new(DataTypes.Float32, new[] { 1, 16, 64, 400 }), out var _),
+            TIR.T.CreateBufferVar(new(DataTypes.Float32, new[] { 1, 16, 64, 400 }), out var _),
         };
 
         var newPrimFunc = primFunc.With(moduleKind: newModuleKind, body: newBody, parameters: newParams);
@@ -161,7 +161,7 @@ public sealed class UnitTestTIR
         Assert.Equal(newParams, newPrimFunc.Parameters.ToArray());
         Assert.Equal(primFunc.Name, newPrimFunc.Name); // should not change the name
 
-        Assert.NotNull(new PrimFunction("test_module", new Sequential(new Expr[] { 1 }), default(ReadOnlySpan<Expr>)));
+        Assert.NotNull(new PrimFunction("test_module", new Sequential(new Expr[] { 1 }), default(ReadOnlySpan<Var>)));
     }
 
     [Fact]

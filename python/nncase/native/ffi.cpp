@@ -308,7 +308,7 @@ PYBIND11_MODULE(_nncase, m) {
       .def_property(
         "HierarchySizes",
         []() {},
-        py::overload_cast<std::vector<int>>(&cpu_target_options::hierarchy_sizes))
+        py::overload_cast<std::vector<int64_t>>(&cpu_target_options::hierarchy_sizes)) 
       .def_property(
         "HierarchyLatencies",
         []() {},

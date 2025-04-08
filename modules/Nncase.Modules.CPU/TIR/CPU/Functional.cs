@@ -70,7 +70,7 @@ public partial class CPU
         return new Call(new Pack(lanes, axes), input, output);
     }
 
-    public static Call Conv2D(Buffer input, Buffer weights, Buffer bias, Buffer output, int[] stride, int[] padding, int[] dilation, int groups, PadMode padMode, DistributedType distributedType) => new Call(new Conv2D(stride, padding, dilation, groups, padMode, distributedType), input, weights, bias, output);
+    public static Call Conv2D(Expr input, Expr weights, Expr bias, Expr output, int[] stride, int[] padding, int[] dilation, int groups, PadMode padMode, DistributedType distributedType) => new Call(new Conv2D(stride, padding, dilation, groups, padMode, distributedType), input, weights, bias, output);
 
     public static Expr Unpack(Expr input, Expr output, IRArray<int> lanes, IRArray<int> axes)
     {
@@ -97,24 +97,24 @@ public partial class CPU
         return new Call(new PackedBinary(binaryOp, lhsPackedAxes, lhsPadedNums, rhsPackedAxes, rhsPadedNums), lhs, rhs, output);
     }
 
-    public static Call ResizeImage(Buffer input, Buffer output, int[] packedAxes, int[] padedNums, int[] newSize, ImageResizeMode resizeMode, ImageResizeTransformationMode transformationMode, ImageResizeNearestMode nearestMode)
+    public static Call ResizeImage(Expr input, Expr output, int[] packedAxes, int[] padedNums, int[] newSize, ImageResizeMode resizeMode, ImageResizeTransformationMode transformationMode, ImageResizeNearestMode nearestMode)
     {
         return new Call(new ResizeImage(packedAxes, padedNums, newSize, resizeMode, transformationMode, nearestMode), input, output);
     }
 
-    public static Expr Slice(Buffer input, Buffer ret, int[] begin, int[] stop, int[] axes, int[] stride, DistributedType distributedType)
+    public static Expr Slice(Expr input, Expr begins, Expr ends, Expr ret, int[] axes, int[] strides)
     {
-        return new Call(new Slice(begin, stop, axes, stride, distributedType), input, ret);
+        return new Call(new Slice(axes, strides), input, begins, ends, ret);
     }
 
-    public static Expr Concat(Buffer[] inputs, Buffer ret, int axis)
+    public static Expr Concat(Expr[] inputs, Expr ret, int axis)
     {
         return new Call(new Concat(axis), inputs.Concat(new[] { ret }).ToArray());
     }
 
-    public static Expr Reshape(Buffer input, Buffer ret, long[] newShape)
+    public static Expr Reshape(Expr input, Expr ret)
     {
-        return new Call(new Reshape(newShape), input, ret);
+        return new Call(new Reshape(), input, ret);
     }
 
     public static Expr Swish(Expr buffer, Expr ret, float v)
@@ -122,9 +122,14 @@ public partial class CPU
         return new Call(new Swish(v), buffer, ret);
     }
 
-    public static Expr Gather(Buffer input, Buffer indcies, Buffer ret, int axis)
+    public static Expr Gather(Expr input, Expr indcies, Expr ret, int axis)
     {
         return new Call(new Gather(axis), input, indcies, ret);
+    }
+
+    public static Expr GetItem(Expr input, Expr index, Expr ret)
+    {
+        return new Call(new GetItem(), input, index, ret);
     }
 
     public static Expr Transpose(Expr buffer, Expr ret, int[] perm)
@@ -132,12 +137,12 @@ public partial class CPU
         return new Call(new Transpose(perm), buffer, ret);
     }
 
-    public static Expr Pad(Buffer input, Buffer ret, int[] pads, float padValue)
+    public static Expr Pad(Expr input, Expr ret, int[] pads, float padValue)
     {
         return new Call(new Pad(pads, padValue), input, ret);
     }
 
-    public static Expr Im2col(Buffer input, Buffer output, IRArray<long> kernel, IRArray<int> stride, IRArray<int> padding, IRArray<int> packedAxes, IRArray<int> padedNums)
+    public static Expr Im2col(Expr input, Expr output, IRArray<long> kernel, IRArray<int> stride, IRArray<int> padding, IRArray<int> packedAxes, IRArray<int> padedNums)
     {
         return new Call(new Im2col(kernel, stride, padding, packedAxes, padedNums), input, output);
     }
@@ -147,7 +152,7 @@ public partial class CPU
         return new Call(new TIR.CPU.Reduce(packedAxes, padedNums, axis, keepDims, reduceOp), input, ret, loadPrevious);
     }
 
-    public static Expr ReduceArg(Buffer input, Buffer ret, int axis, bool keepDims, bool selectLastIndex, ReduceArgOp reduceArgOp, DataType destType)
+    public static Expr ReduceArg(Expr input, Expr ret, int axis, bool keepDims, bool selectLastIndex, ReduceArgOp reduceArgOp, DataType destType)
     {
         return new Call(new TIR.CPU.ReduceArg(axis, keepDims, selectLastIndex, reduceArgOp, destType), input, ret);
     }
@@ -167,14 +172,14 @@ public partial class CPU
         return new Call(new TIR.CPU.Cast(newType, castMode), input, output);
     }
 
-    public static Call Where(Expr cond, Expr x, Expr y, Expr output, DistributedType distributedType)
+    public static Call Where(Expr cond, Expr x, Expr y, Expr output)
     {
-        return new Call(new TIR.CPU.Where(distributedType), cond, x, y, output);
+        return new Call(new TIR.CPU.Where(), cond, x, y, output);
     }
 
-    public static Call Expand(Expr input, Expr output, IRArray<int> shape, IRArray<SBP> ndsbp)
+    public static Call Expand(Expr input, Expr output)
     {
-        return new Call(new TIR.CPU.Expand(shape, ndsbp), input, output);
+        return new Call(new TIR.CPU.Expand(), input, output);
     }
 
     public static Call Erf(Expr input, Expr output)
@@ -190,5 +195,10 @@ public partial class CPU
     public static Call ScatterND(Expr input, Expr indices, Expr updates, Expr output)
     {
         return new Call(new TIR.CPU.ScatterND(), input, indices, updates, output);
+    }
+
+    public static Expr Stack(Expr[] inputs, Expr ret, int axis)
+    {
+        return new Call(new Stack(axis), inputs.Concat(new[] { ret }).ToArray());
     }
 }

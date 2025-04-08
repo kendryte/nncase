@@ -20,14 +20,7 @@ public class LifeTimeUpdater : ExprFunctor<Unit, Unit, LifeTimeUpdater.Context>
     {
         foreach (var item in expr.Fields)
         {
-            if (item is IR.Tuple tp)
-            {
-                Visit(tp, context);
-            }
-            else if (item is Call c)
-            {
-                PerformUpdate(c, context);
-            }
+            Visit(item, context);
         }
 
         return default;
@@ -113,15 +106,6 @@ public class BufferSizeCalculator : ExprFunctor<BufferSizeCalculator.Result, Buf
 
     protected override Result VisitCall(Call expr)
     {
-        if (expr.Target is IR.Tensors.GetItem)
-        {
-            if (expr.Arguments[1] is TensorConst tc && tc.Value.Shape.IsScalar)
-            {
-                var res = VisitType(expr.CheckedType);
-                return new(0, res.Shape, res.Stride);
-            }
-        }
-
         return VisitType(expr.CheckedType);
     }
 

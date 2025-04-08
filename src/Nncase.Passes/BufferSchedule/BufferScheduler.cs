@@ -49,19 +49,19 @@ public class BufferScheduler
 
     public static void GetItemReSchedule(object? sender, IReadOnlyDictionary<Expr, ScheduleBuffer> buffers)
     {
-        foreach (var getItem in buffers.Keys.OfType<Call>().Where(e => e is Call { Target: IR.Tensors.GetItem } && buffers[e].MemInterval.Size == 0))
-        {
-            var index = ((TensorConst)getItem.Arguments[1]).Value.ToScalar<int>();
-            var tuple = (IR.Tuple)getItem.Arguments[0];
-            switch (tuple.Fields[index])
-            {
-                case Call argCall:
-                    buffers[getItem].MemInterval.Start = buffers[argCall].MemInterval.Start;
-                    break;
-                case IR.Tuple argTP:
-                    throw new NotSupportedException("not support nested tuple!.");
-            }
-        }
+        // foreach (var getItem in buffers.Keys.OfType<Call>().Where(e => e is Call { Target: IR.Tensors.GetItem } && buffers[e].MemInterval.Size == 0))
+        // {
+        //     var index = ((TensorConst)getItem.Arguments[1]).Value.ToScalar<int>();
+        //     var tuple = (IR.Tuple)getItem.Arguments[0];
+        //     switch (tuple.Fields[index])
+        //     {
+        //         case Call argCall:
+        //             buffers[getItem].MemInterval.Start = buffers[argCall].MemInterval.Start;
+        //             break;
+        //         case IR.Tuple argTP:
+        //             throw new NotSupportedException("not support nested tuple!.");
+        //     }
+        // }
     }
 
 #if false
@@ -112,8 +112,9 @@ public class BufferScheduler
         foreach (var (expr, item) in bufferMap)
         {
             var xInterval = model.NewIntervalVar(model.NewConstant(item.TimeInterval.Start), model.NewConstant(item.TimeInterval.Size), model.NewConstant(item.TimeInterval.Stop), item.Name + $"{item.Number}_x");
+            var memPoolSize = item.MemInterval.Stop - item.MemInterval.Start;
 
-            var upbound = MemoryCapacity - item.MemInterval.Stop;
+            var upbound = MemoryCapacity - memPoolSize;
             if (upbound <= 0)
             {
                 throw new System.NotSupportedException();
@@ -121,7 +122,7 @@ public class BufferScheduler
 
             var memStartVar = model.NewIntVar(0, upbound, $"{item.Name}_{item.Number}_y_start");
             model.AddModuloEquality(0, memStartVar, Alignment);
-            var yInterval = model.NewFixedSizeIntervalVar(memStartVar, item.MemInterval.Stop, $"{item.Name}_{item.Number}_y");
+            var yInterval = model.NewFixedSizeIntervalVar(memStartVar, memPoolSize, $"{item.Name}_{item.Number}_y");
             noOverlap.AddRectangle(xInterval, yInterval);
             yStarts.Add(memStartVar);
             model.AddModuloEquality(0, memStartVar, 32);
@@ -143,7 +144,7 @@ public class BufferScheduler
         model.Minimize(LinearExpr.Sum(yStarts));
 
         var solver = new CpSolver();
-        solver.StringParameters = $"max_time_in_seconds:{60},num_workers:{8}";
+        solver.StringParameters = $"max_time_in_seconds:{6000},num_workers:{8}";
         CpSolverStatus solve_status = solver.Solve(model);
         if (solve_status != CpSolverStatus.Optimal && solve_status != CpSolverStatus.Feasible)
         {

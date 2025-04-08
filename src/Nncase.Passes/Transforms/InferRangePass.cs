@@ -10,9 +10,11 @@ using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.IR.Distributed;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.Passes.Rules;
+using Nncase.Utilities;
 
 namespace Nncase.Passes.Transforms;
 
@@ -108,16 +110,19 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
     {
         return op switch
         {
-            Reshape => Visit(expr[Reshape.Input]),
-            Slice => Visit(expr[Slice.Input]),
+            Binary binary => InferenceBinary(expr, binary.BinaryOp),
+            Boxing => Visit(expr[Boxing.Input]),
+            Clamp => InferenceClamp(expr[Clamp.Input], expr[Clamp.Min], expr[Clamp.Max]),
+            Concat => Visit(expr[Concat.Input]),
             Gather => Visit(expr[Gather.Input]),
             GetItem => Visit(expr[GetItem.Input]),
-            Concat => Visit(expr[Concat.Input]),
-            Binary binary => InferenceBinary(expr, binary.BinaryOp),
+            Reshape => Visit(expr[Reshape.Input]),
             Squeeze => Visit(expr[Squeeze.Input]),
-            Unsqueeze => Visit(expr[Unsqueeze.Input]),
+            Slice => Visit(expr[Slice.Input]),
             Stack => Visit(expr[Stack.Inputs]),
             Select => InferenceSelect(expr),
+            Unary unary => InferenceUnary(expr, unary.UnaryOp),
+            Unsqueeze => Visit(expr[Unsqueeze.Input]),
             _ => ValueRange<double>.Full,
         };
     }
@@ -139,14 +144,39 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
             BinaryOp.Add => new(lhs.Min + rhs.Min, lhs.Max + rhs.Max),
             BinaryOp.Sub => new(lhs.Min - rhs.Max, lhs.Max - rhs.Min),
             BinaryOp.Mul => VisitMul(lhs, rhs),
-            BinaryOp.Div => VisitDiv(lhs, rhs),
+            BinaryOp.CeilDiv => VisitCeilDiv(lhs, rhs),
+            BinaryOp.Div => VisitDiv(lhs, rhs, expr[Binary.Rhs].CheckedDataType),
             BinaryOp.Max => new(Math.Max(lhs.Min, rhs.Min), Math.Max(lhs.Max, rhs.Max)),
             BinaryOp.Min => new(Math.Min(lhs.Min, rhs.Min), Math.Min(lhs.Max, rhs.Max)),
+            BinaryOp.Mod => VisitMod(lhs, rhs, expr[Binary.Rhs].CheckedDataType),
             _ => ValueRange<double>.Full,
         };
     }
 
-    private ValueRange<double> VisitDiv(ValueRange<double> lhs, ValueRange<double> rhs)
+    private ValueRange<double> InferenceClamp(Expr input, Expr min, Expr max)
+    {
+        var inputRange = Visit(input);
+        var minRange = Visit(min);
+        var maxRange = Visit(max);
+
+        var newMin = Math.Max(inputRange.Min, minRange.Min);
+        var newMax = Math.Min(inputRange.Max, maxRange.Max);
+        return new(newMin, newMax);
+    }
+
+    private ValueRange<double> InferenceUnary(Call expr, UnaryOp op)
+    {
+        var input = Visit(expr[Unary.Input]);
+
+        return op switch
+        {
+            UnaryOp.Abs => VisitAbs(input),
+            UnaryOp.Neg => new(-input.Max, -input.Min),
+            _ => ValueRange<double>.Full,
+        };
+    }
+
+    private ValueRange<double> VisitCeilDiv(ValueRange<double> lhs, ValueRange<double> rhs)
     {
         if (rhs.Min <= 0 && rhs.Max >= 0)
         {
@@ -155,11 +185,85 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
 
         var values = new[]
         {
-            lhs.Min / rhs.Min,
-            lhs.Min / rhs.Max,
-            lhs.Max / rhs.Min,
-            lhs.Max / rhs.Max,
+            MathUtility.CeilDiv(lhs.Min, rhs.Min),
+            MathUtility.CeilDiv(lhs.Min, rhs.Max),
+            MathUtility.CeilDiv(lhs.Max, rhs.Min),
+            MathUtility.CeilDiv(lhs.Max, rhs.Max),
         };
+        return new ValueRange<double>(values.Min(), values.Max());
+    }
+
+    private ValueRange<double> VisitAbs(ValueRange<double> input)
+    {
+        var values = new[]
+        {
+            Math.Abs(input.Min),
+            Math.Abs(input.Max),
+        };
+        return new ValueRange<double>(values.Min(), values.Max());
+    }
+
+    private ValueRange<double> VisitDiv(ValueRange<double> lhs, ValueRange<double> rhs, DataType rhsDataType)
+    {
+        if (rhs.Min <= 0 && rhs.Max >= 0)
+        {
+            return ValueRange<double>.Full;
+        }
+
+        double[] values;
+        if (rhsDataType.IsIntegral())
+        {
+            values = new[]
+            {
+                Math.Floor(lhs.Min / rhs.Min),
+                Math.Floor(lhs.Min / rhs.Max),
+                Math.Floor(lhs.Max / rhs.Min),
+                Math.Floor(lhs.Max / rhs.Max),
+            };
+        }
+        else
+        {
+            values = new[]
+            {
+                lhs.Min / rhs.Min,
+                lhs.Min / rhs.Max,
+                lhs.Max / rhs.Min,
+                lhs.Max / rhs.Max,
+            };
+        }
+
+        return new ValueRange<double>(values.Min(), values.Max());
+    }
+
+    private ValueRange<double> VisitMod(ValueRange<double> lhs, ValueRange<double> rhs, DataType rhsDataType)
+    {
+        if (rhs.Min <= 0 && rhs.Max >= 0)
+        {
+            return ValueRange<double>.Full;
+        }
+
+        double[] values;
+        if (rhsDataType.IsIntegral())
+        {
+            values = new[]
+            {
+                Math.Floor(lhs.Min % rhs.Min),
+                Math.Floor(lhs.Min % rhs.Max),
+                Math.Floor(lhs.Max % rhs.Min),
+                Math.Floor(lhs.Max % rhs.Max),
+            };
+        }
+        else
+        {
+            values = new[]
+            {
+                lhs.Min % rhs.Min,
+                lhs.Min % rhs.Max,
+                lhs.Max % rhs.Min,
+                lhs.Max % rhs.Max,
+            };
+        }
+
         return new ValueRange<double>(values.Min(), values.Max());
     }
 
