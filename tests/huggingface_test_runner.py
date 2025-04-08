@@ -34,7 +34,7 @@ def download_from_huggingface(model_api, tokenizer_api, model_name, need_save=Fa
                 model_path = cache_model_dir
             else:
                 model_path = snapshot_download(repo_id=model_name)
-                    
+
     if need_save:
         try:
             model = model_api.from_pretrained(model_path, trust_remote_code=True)
