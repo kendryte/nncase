@@ -835,7 +835,7 @@ public abstract class HuggingFaceModel
         // _ = new List<Tuple<Call, Call>>();
         for (int i = 0; i < (int)(long)Context!.Config!["num_hidden_layers"]; i++)
         {
-            if (Context.ImportOptions.HuggingFaceOptions.OutputHiddenStates)
+            if (Context.ImportOptions!.HuggingFaceOptions.OutputHiddenStates)
             {
                 allHiddenStates.Add(IR.F.Tensors.Unsqueeze(hiddenStates, new long[] { 0 }));
             }
