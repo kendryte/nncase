@@ -24,8 +24,15 @@ def download_from_huggingface(model_api, tokenizer_api, model_name, need_save=Fa
         if hf_home_env is None:
             print(
                 f"Please set your huggingface cache dir in environment variable\033[31m 10.10.1.11 'export HF_HOME=/data/huggingface_cache' \033[0m")
-
-        model_path = snapshot_download(repo_id=model_name)
+        
+        # if the model can't access in huggingface hub, you can download it from other source and put it in the cache dir ($HF_HOME/hub)
+        # e.g.: modelscope download --model LLM-Research/Llama-3.2-1B-Instruct --local_dir $HF_HOME/hub/LLM-Research/Llama-3.2-1B-Instruct
+        cache_model_dir = os.path.join(hf_home_env, "hub", model_name)
+        if(os.path.exists(cache_model_dir)):
+            model_path = cache_model_dir
+        else:
+            # download the model from huggingface hub
+            model_path = snapshot_download(repo_id=model_name)
 
         if need_save:
             try:
