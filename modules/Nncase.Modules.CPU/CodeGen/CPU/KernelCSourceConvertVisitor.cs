@@ -356,23 +356,9 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                 case TIR.CPU.TensorLoad load:
                     if (args.Length == 1)
                     {
-                        var fullShape = Enumerable.Repeat(1, args[0].CheckedShape.Rank).ToArray();
-                        fullShape = fullShape.Select((l, i) => load.NdSbp[i] is SBPSplit split ? split.Axes.Select(s => load.Placement.Hierarchy[s]).Aggregate(1, (a, b) => a * b) : l).ToArray();
-
-                        foreach (var (dimS, axis) in args[0].CheckedShape.Select((e, axis) => (Visit(e.Value).Name, axis)))
-                        {
-                            if (int.TryParse(dimS, out var div))
-                            {
-                                fullShape[axis] *= div;
-                            }
-                            else if (CSourceUtilities.TryGetDivRem(dimS, out div, out var rem))
-                            {
-                                fullShape[axis] = (fullShape[axis] - 1) * div;
-                                fullShape[axis] += rem;
-                            }
-                        }
-
-                        _collective_pool_size = Math.Max(_collective_pool_size, (ulong)(TensorUtilities.GetProduct(fullShape) * args[0].CheckedDataType.SizeInBytes));
+                        var fullShape = args[0].CheckedShape.ToValueArray();
+                        (var maxSize, _) = TensorUtilities.GetTensorMaxSizeAndStrides(args[0].CheckedTensorType);
+                        _collective_pool_size = Math.Max(_collective_pool_size, (ulong)maxSize);
                         var indices = args[0].CheckedShape.Select(e => Visit(e.Value).Name).ToSlicing(load.NdSbp, load.Placement)[0];
                         WriteWithProfiler($"tac::tensor_boxing_load_sync<fixed_shape<{string.Join(',', fullShape)}>>({indices}, {VisitBuffer(args[0], local: true).Name});\n");
                     }
@@ -385,23 +371,9 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                 case TIR.CPU.TensorStore store:
                     if (args.Length == 1)
                     {
-                        var fullShape = Enumerable.Repeat(1, args[0].CheckedShape.Rank).ToArray();
-                        fullShape = fullShape.Select((l, i) => store.NdSbp[i] is SBPSplit split ? split.Axes.Select(s => store.Placement.Hierarchy[s]).Aggregate(1, (a, b) => a * b) : l).ToArray();
-
-                        foreach (var (dimS, axis) in args[0].CheckedShape.Select((e, axis) => (Visit(e.Value).Name, axis)))
-                        {
-                            if (int.TryParse(dimS, out var div))
-                            {
-                                fullShape[axis] *= div;
-                            }
-                            else if (CSourceUtilities.TryGetDivRem(dimS, out div, out var rem))
-                            {
-                                fullShape[axis] = (fullShape[axis] - 1) * div;
-                                fullShape[axis] += rem;
-                            }
-                        }
-
-                        _collective_pool_size = Math.Max(_collective_pool_size, (ulong)(TensorUtilities.GetProduct(fullShape) * args[0].CheckedDataType.SizeInBytes));
+                        var fullShape = args[0].CheckedShape.ToValueArray();
+                        (var maxSize, _) = TensorUtilities.GetTensorMaxSizeAndStrides(args[0].CheckedTensorType);
+                        _collective_pool_size = Math.Max(_collective_pool_size, (ulong)maxSize);
                         var indices = args[0].CheckedShape.Select(e => Visit(e.Value).Name).ToSlicing(store.NdSbp, store.Placement)[0];
                         WriteWithProfiler($"tac::tensor_boxing_store_sync<fixed_shape<{string.Join(',', fullShape)}>>({indices}, {VisitBuffer(args[0], local: true).Name});\n");
                     }
@@ -572,7 +544,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                         else
                         {
                             (var maxSize, _) = TensorUtilities.GetTensorMaxSizeAndStrides(args[0].CheckedTensorType);
-                            _collective_pool_size = Math.Max(_collective_pool_size, (ulong)(maxSize * args[0].CheckedDataType.SizeInBytes));
+                            _collective_pool_size = Math.Max(_collective_pool_size, (ulong)maxSize);
                             WriteWithProfiler($"reshard({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: false).Name});\n");
                         }
                     }
