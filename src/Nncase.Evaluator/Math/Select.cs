@@ -40,19 +40,18 @@ public partial class SelectEvaluator : IEvaluator<Select>, ITypeInferencer<Selec
         return TypeInference.CommonType(lhs, rhs);
     }
 
-    /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Select target)
     {
-        var predicateType = context.GetArgumentType<IRType>(target, Select.Predicate);
-        var trueType = context.GetArgumentType<IRType>(target, Select.TrueValue);
-        var falseType = context.GetArgumentType<IRType>(target, Select.FalseValue);
-        var outputType = context.GetReturnType<IRType>();
+        var condition = context.GetArgumentType<IRType>(target, Select.Predicate);
+        var true_value = context.GetArgumentType<IRType>(target, Select.TrueValue);
+        var false_value = context.GetArgumentType<IRType>(target, Select.FalseValue);
+        var ret = context.GetReturnType<IRType>();
 
         return new()
         {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(predicateType) + CostUtility.GetMemoryAccess(trueType) + CostUtility.GetMemoryAccess(falseType),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, 2),
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(condition, true_value, false_value),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(condition, CostUtility.GetCPUCyclesOfCompare()),
         };
     }
 
