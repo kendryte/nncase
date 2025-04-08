@@ -23,7 +23,7 @@ public static class PassUtility
         return op is IR.Distributed.Boxing
             or IR.Distributed.ForceBoxing
             or IR.Math.Unary
-            or IR.Math.Binary { BinaryOp: BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div }
+            or IR.Math.Binary { BinaryOp: BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div or BinaryOp.Mod or BinaryOp.Min or BinaryOp.Max or BinaryOp.Pow }
             or IR.Math.Clamp
             or IR.Math.Compare
             or IR.Math.MatMul

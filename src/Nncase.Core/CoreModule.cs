@@ -15,6 +15,7 @@ internal class CoreModule : IApplicationPart
     {
         registrator.RegisterManyInterface<CompilerServicesProvider>(reuse: Reuse.Singleton);
         registrator.Register<IDataTypeServiceProvider, DataTypeServiceProvider>(reuse: Reuse.Singleton);
+        registrator.Register<INamingProvider, NamingProvider>(reuse: Reuse.Singleton);
 
         // Prim types
         registrator.Register<PrimType, BooleanType>(reuse: Reuse.Singleton);

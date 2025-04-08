@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Google.OrTools.ConstraintSolver;
+using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.Graphs;
 using Nncase.IR;
@@ -16,8 +17,6 @@ namespace Nncase.Schedule;
 
 public class GraphTiler
 {
-    public int DeviceFuncionCount { get; private set; }
-
     public Dictionary<TileNode, TiledFunc> SolveMemo { get; } = new Dictionary<TileNode, TiledFunc>(new ITreeNodeComparer());
 
     public static TreeSolveResult SolvePrimGraph(TileNode primTree, Dictionary<TieredTileGraph, BufferGraph> bufferGraphMemo, ICpuTargetOptions targetOptions, string moduleKind)
@@ -621,7 +620,8 @@ public class GraphTiler
         long objectValue = 0;
         foreach (var (primGraph, i) in condensedGraph.TopologicalSort().Select((s, i) => (s, i)))
         {
-            using var subSubScope = new Diagnostics.DumpScope($"device_func_{DeviceFuncionCount}", Diagnostics.DumpFlags.Tiling);
+            var funcName = CompileSessionScope.GetCurrentThrowIfNull().GetRequiredService<INamingProvider>().GetName("device_func");
+            using var subSubScope = new Diagnostics.DumpScope(funcName, Diagnostics.DumpFlags.Tiling);
             var primTree = treeGraphMemo[primGraph];
             HashSet<BufferIdentity> inputBids;
             HashSet<BufferIdentity> outputBids;
@@ -634,7 +634,7 @@ public class GraphTiler
                 var bodyBuilder = T.Sequential();
                 result.Visit(primTree, new(bodyBuilder, Array.Empty<Expr>()));
                 var parameters = inputBids.Concat(outputBids).Select(k => (Var)result.PrimBufferMemo[k]).ToArray();
-                var funcBuilder = T.PrimFunc($"device_func_{DeviceFuncionCount++}", moduleKind, parameters).Body(bodyBuilder);
+                var funcBuilder = T.PrimFunc(funcName, moduleKind, parameters).Body(bodyBuilder);
                 var primFunc = funcBuilder.Build();
                 memo = new(new PrimFunctionWrapper(primFunc, inputBids.Count, inputBids.Concat(outputBids).Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType).ToArray()), result.ObjectiveValue);
                 SolveMemo.Add(primTree, memo);
