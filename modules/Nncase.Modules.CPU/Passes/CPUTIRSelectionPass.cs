@@ -52,6 +52,10 @@ public sealed class CPUTIRSelectionPass : TIRSelectionPass
                 return TIR.F.CPU.Unpack(arguments[0], output, unpack.Lanes, unpack.Axes);
             case IR.CPU.PackedBinary packedBinary:
                 return TIR.F.CPU.Binary(packedBinary.BinaryOp, arguments[0], arguments[1], output);
+            case IR.CPU.PackedMatMul packed_mat_mul_summa when GetArgumentType(arguments[0]) is DistributedType dta && dta.AxisPolices[^1] is SBPSplit:
+                return TIR.F.CPU.SUMMA(arguments[0], arguments[1], output, None.Default, packed_mat_mul_summa.LhsPackedAxes, packed_mat_mul_summa.LhsPadedNums, packed_mat_mul_summa.RhsPackedAxes, packed_mat_mul_summa.RhsPadedNums, packed_mat_mul_summa.TransposeA, packed_mat_mul_summa.TransposeB);
+            case IR.Math.MatMul when GetArgumentType(arguments[0]) is DistributedType dta && dta.AxisPolices[^1] is SBPSplit:
+                return TIR.F.CPU.SUMMA(arguments[0], arguments[1], output, None.Default);
             case IR.CPU.PackedMatMul packedMatMul:
                 return TIR.F.CPU.Matmul(arguments[0], arguments[1], output, None.Default, packedMatMul.LhsPackedAxes, packedMatMul.LhsPadedNums, packedMatMul.RhsPackedAxes, packedMatMul.RhsPadedNums, packedMatMul.TransposeA, packedMatMul.TransposeB, packedMatMul.FusedReduce);
             case IR.Math.MatMul matmul:

@@ -46,6 +46,15 @@ public abstract class TIRSelectionPass : FunctionPass
 
     protected abstract Expr SelectCall(Call call, IReadOnlyList<Expr> arguments, Expr output);
 
+    protected IRType GetArgumentType(Expr argument)
+    {
+        return argument switch
+        {
+            TIR.Buffer b => b.DistributedType ?? b.CheckedType,
+            _ => argument.CheckedType,
+        };
+    }
+
     private void AddOutputBufferAllocsToCallers(Function function, IEnumerable<Var> outputBuffers)
     {
         var callers = function.Users.OfType<Call>().ToArray();
