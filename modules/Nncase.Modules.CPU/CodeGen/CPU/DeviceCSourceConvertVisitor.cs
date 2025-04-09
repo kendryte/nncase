@@ -24,7 +24,6 @@ namespace Nncase.CodeGen.CPU;
 
 public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 {
-#pragma warning disable SA1401
     protected readonly Dictionary<Expr, CSymbol> _exprMemo;
     protected readonly StringBuilder _deviceBuilder;
 
@@ -94,7 +93,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             throw new NotSupportedException("The PrimFunction must return void!");
         }
 
-        var ctype = $"template<{string.Join(", ", Enumerable.Range(0, expr.Parameters.Length).Select(x => $"class T{x}"))}>" +
+        var ctype = $"template<{string.Join(", ", Enumerable.Range(0, expr.Parameters.Length).Select(x => $"class T{x}"))}>" + Environment.NewLine +
             $"void {expr.Name}({string.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit).Select((s, i) => $"T{i} &&{s.Name}").ToArray())})";
 
         using (var scope = new IndentScope(_deviceBuilder))
@@ -533,14 +532,24 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             return symbol;
         }
 
-        symbol = new(
-            expr.CheckedType switch
-            {
-                TensorType t => t.DType.ToC(),
-                AnyType => "auto",
-                _ => throw new ArgumentOutOfRangeException(nameof(expr)),
-            },
-            expr.Name + "_" + expr.GlobalVarIndex.ToString());
+        var name = IRHelpers.GetIdentityName(expr.Name);
+        var index = VisitEntry.Parameters.IndexOf(expr);
+        if (index != -1)
+        {
+            symbol = new CSymbol($"T{index}", name);
+        }
+        else
+        {
+            symbol = new(
+                expr.CheckedType switch
+                {
+                    TensorType t => t.DType.ToC(),
+                    AnyType => "auto",
+                    _ => throw new ArgumentOutOfRangeException(nameof(expr)),
+                },
+                expr.Name + "_" + expr.GlobalVarIndex.ToString());
+        }
+
         _exprMemo.Add(expr, symbol);
         return symbol;
     }

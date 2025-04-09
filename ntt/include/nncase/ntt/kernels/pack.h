@@ -91,8 +91,9 @@ class pack_impl<TIn, TOut, PackAxis> {
         if constexpr ((in_conti_dims == rank) && (out_conti_dims == rank) &&
                       (PackAxis == rank - 1) &&
                       (in_shape.length() % VecLen == 0)) {
-            ntt::u_memcpy(reinterpret_cast<const TVec *>(in_p), 1, out_p, 1,
-                          output.shape().length());
+            u_unary<ntt::ops::copy<TVec>, TVec>(
+                reinterpret_cast<const TVec *>(in_p), 1, out_p, 1,
+                output.shape().length());
         } else {
             apply<0>(input, output, in_p, out_p);
         }
@@ -139,8 +140,7 @@ class pack_impl<TIn, TOut, PackAxis> {
         if constexpr (Axis + ContiguousDims == TOut::rank()) {
             constexpr auto rest_rank = TOut::rank() - Axis;
             constexpr auto rest_dims =
-                slice_dims<rest_rank, TOut::rank() - rest_rank>(
-                    TOut::shape());
+                slice_dims<rest_rank, TOut::rank() - rest_rank>(TOut::shape());
             constexpr auto N = rest_dims.length();
             ntt::u_pack<M, N, MStrides>(in_p, out_p);
         } else {

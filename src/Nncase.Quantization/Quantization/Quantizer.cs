@@ -305,7 +305,7 @@ internal partial class Quantizer
             // AssignDataTypeFromConfig(quantScheme!);
 
             // load from file
-            if (_target.Kind == "xpu")
+            if (_target.Name == "xpu")
             {
                 using (var r = new StreamReader(readJson))
                 {

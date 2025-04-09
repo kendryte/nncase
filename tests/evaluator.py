@@ -53,6 +53,7 @@ class Evaluator:
             if not test_utils.in_ci():
                 dump_bin_file(os.path.join(eval_dir, f'nncase_result_{i}.bin'), result)
                 dump_txt_file(os.path.join(eval_dir, f'nncase_result_{i}.txt'), result)
+                dump_npy_file(os.path.join(eval_dir, f'nncase_result_{i}.npy'), result)
 
             results.append(result)
         return results

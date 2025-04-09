@@ -29,7 +29,7 @@ TEST(BinaryTestModFloat, fixed_fixed_fixed) {
     std::unique_ptr<tensor_type> ntt_lhs(new tensor_type);
     std::unique_ptr<tensor_type> ntt_rhs(new tensor_type);
     NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, -10.f, -1.f);
 
     // ntt
     std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
@@ -49,12 +49,12 @@ TEST(BinaryTestModFloat, fixed_fixed_fixed) {
 TEST(BinaryTestModFloat, fixed_fixed_fixed_broadcast_lhs_scalar) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<1>>;
-    std::unique_ptr<tensor_type1> ntt_rhs(new tensor_type1);
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
 
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
-    std::unique_ptr<tensor_type2> ntt_lhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
+    NttTest::init_tensor(*ntt_rhs, -10.f, -1.f);
 
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
@@ -79,7 +79,7 @@ TEST(BinaryTestModFloat, fixed_fixed_fixed_broadcast_rhs_scalar) {
 
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1>>;
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, -10.f, -1.f);
 
     // ntt
     std::unique_ptr<tensor_type1> ntt_output1(new tensor_type1);
@@ -99,12 +99,12 @@ TEST(BinaryTestModFloat, fixed_fixed_fixed_broadcast_rhs_scalar) {
 TEST(BinaryTestModFloat, fixed_fixed_fixed_broadcast_lhs_vector) {
     // init
     using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<16>>;
-    std::unique_ptr<tensor_type1> ntt_rhs(new tensor_type1);
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
+    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
 
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
-    std::unique_ptr<tensor_type2> ntt_lhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
+    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
+    NttTest::init_tensor(*ntt_rhs, -10.f, -1.f);
 
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
@@ -129,7 +129,7 @@ TEST(BinaryTestModFloat, fixed_fixed_fixed_broadcast_rhs_vector) {
 
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<16>>;
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, -10.f, -1.f);
 
     // ntt
     std::unique_ptr<tensor_type1> ntt_output1(new tensor_type1);
@@ -154,7 +154,7 @@ TEST(BinaryTestModFloat, fixed_fixed_fixed_broadcast_multidirectional) {
 
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<3, 1, 16, 1>>;
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, -10.f, -1.f);
 
     // ntt
     using tensor_type3 = ntt::tensor<float, ntt::fixed_shape<3, 3, 16, 16>>;
@@ -181,7 +181,7 @@ TEST(BinaryTestModFloat, fixed_ranked_ranked) {
     using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
     auto shape = ntt::make_ranked_shape(1, 3, 16, 16);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape));
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, -10.f, -1.f);
 
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2(shape));
@@ -207,7 +207,7 @@ TEST(BinaryTestModFloat, fixed_ranked_ranked_broadcast_lhs_scalar) {
     using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
     auto shape = ntt::make_ranked_shape(1, 3, 16, 16);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape));
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, -10.f, -1.f);
 
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2(shape));
@@ -233,7 +233,7 @@ TEST(BinaryTestModFloat, fixed_ranked_ranked_broadcast_rhs_scalar) {
     using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<1>>;
     auto shape1 = ntt::make_ranked_shape(1);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape1));
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, -10.f, -1.f);
 
     // ntt
     using tensor_type3 = ntt::tensor<float, ntt::ranked_shape<4>>;
@@ -261,7 +261,7 @@ TEST(BinaryTestModFloat, fixed_ranked_ranked_broadcast_lhs_vector) {
     using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
     auto shape = ntt::make_ranked_shape(1, 3, 16, 16);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape));
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, 1.f, 10.f);
 
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2(shape));
@@ -287,7 +287,7 @@ TEST(BinaryTestModFloat, fixed_ranked_ranked_broadcast_rhs_vector) {
     using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<1>>;
     auto shape1 = ntt::make_ranked_shape(16);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape1));
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, 1.f, 10.f);
 
     // ntt
     using tensor_type3 = ntt::tensor<float, ntt::ranked_shape<4>>;
@@ -315,7 +315,7 @@ TEST(BinaryTestModFloat, fixed_ranked_ranked_broadcast_multidirectional) {
     using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
     auto shape1 = ntt::make_ranked_shape(3, 1, 16, 1);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape1));
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, 1.f, 10.f);
 
     // ntt
     using tensor_type3 = ntt::tensor<float, ntt::ranked_shape<4>>;
@@ -343,7 +343,7 @@ TEST(BinaryTestModFloat, ranked_fixed_ranked) {
 
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, 1.f, 10.f);
 
     // ntt
     std::unique_ptr<tensor_type1> ntt_output1(new tensor_type1(shape));
@@ -369,7 +369,7 @@ TEST(BinaryTestModFloat, ranked_fixed_ranked_broadcast_lhs_scalar) {
 
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, 1.f, 10.f);
 
     // ntt
     using tensor_type3 = ntt::tensor<float, ntt::ranked_shape<4>>;
@@ -397,7 +397,7 @@ TEST(BinaryTestModFloat, ranked_fixed_ranked_broadcast_rhs_scalar) {
 
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1>>;
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, 1.f, 10.f);
 
     // ntt
     using tensor_type3 = ntt::tensor<float, ntt::ranked_shape<4>>;
@@ -425,7 +425,7 @@ TEST(BinaryTestModFloat, ranked_fixed_ranked_broadcast_lhs_vector) {
 
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, 1.f, 10.f);
 
     // ntt
     using tensor_type3 = ntt::tensor<float, ntt::ranked_shape<4>>;
@@ -453,7 +453,7 @@ TEST(BinaryTestModFloat, ranked_fixed_ranked_broadcast_rhs_vector) {
 
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<16>>;
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, 1.f, 10.f);
 
     // ntt
     using tensor_type3 = ntt::tensor<float, ntt::ranked_shape<4>>;
@@ -481,7 +481,7 @@ TEST(BinaryTestModFloat, ranked_fixed_ranked_broadcast_multidirectional) {
 
     using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<3, 1, 16, 1>>;
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, 1.f, 10.f);
 
     // ntt
     using tensor_type3 = ntt::tensor<float, ntt::ranked_shape<4>>;
@@ -508,7 +508,7 @@ TEST(BinaryTestModFloat, ranked_ranked_ranked) {
     NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
 
     std::unique_ptr<tensor_type> ntt_rhs(new tensor_type(shape));
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, 1.f, 10.f);
 
     // ntt
     std::unique_ptr<tensor_type> ntt_output1(new tensor_type(shape));
@@ -535,7 +535,7 @@ TEST(BinaryTestModFloat, ranked_ranked_ranked_broadcast_lhs_scalar) {
     using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
     auto shape2 = ntt::make_ranked_shape(1, 3, 16, 16);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape2));
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, 1.f, 10.f);
 
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2(shape2));
@@ -562,7 +562,7 @@ TEST(BinaryTestModFloat, ranked_ranked_ranked_broadcast_rhs_scalar) {
     using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<1>>;
     auto shape2 = ntt::make_ranked_shape(1);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape2));
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, 1.f, 10.f);
 
     // ntt
     std::unique_ptr<tensor_type1> ntt_output1(new tensor_type1(shape1));
@@ -589,7 +589,7 @@ TEST(BinaryTestModFloat, ranked_ranked_ranked_broadcast_lhs_vector) {
     using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
     auto shape2 = ntt::make_ranked_shape(1, 3, 16, 16);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape2));
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, 1.f, 10.f);
 
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2(shape2));
@@ -616,7 +616,7 @@ TEST(BinaryTestModFloat, ranked_ranked_ranked_broadcast_rhs_vector) {
     using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<1>>;
     auto shape2 = ntt::make_ranked_shape(16);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape2));
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, 1.f, 10.f);
 
     // ntt
     std::unique_ptr<tensor_type1> ntt_output1(new tensor_type1(shape1));
@@ -643,7 +643,7 @@ TEST(BinaryTestModFloat, ranked_ranked_ranked_broadcast_multidirectional) {
     using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<4>>;
     auto shape2 = ntt::make_ranked_shape(3, 1, 16, 1);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape2));
-    NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_rhs, 1.f, 10.f);
 
     // ntt
     using tensor_type3 = ntt::tensor<float, ntt::ranked_shape<4>>;

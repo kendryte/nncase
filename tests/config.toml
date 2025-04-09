@@ -43,6 +43,11 @@ input_std = 0.5
 quant_scheme = ""
 quant_scheme_strict_mode = false
 
+[huggingface_options]
+output_attentions = false
+output_hidden_states = false
+use_cache = false
+
 [infer_report_opt]
 enabled = false
 priority = 100
@@ -52,7 +57,7 @@ report_name = 'infer_report.json'
 
 [generator]
 [generator.inputs]
-# ['random', 'bin', 'image', 'constant_of_shape']
+# ['random', 'bin', 'image', 'constant_of_shape', 'text']
 method = 'random'
 number = 1
 batch = 1
@@ -71,6 +76,10 @@ args = ''
 [generator.inputs.constant_of_shape]
 # shape
 args = []
+
+[generator.inputs.text]
+# /path/to/prompt.txt directory
+args = 'tests/llm/prompt.txt'
 
 [generator.calibs]
 method = 'random'
@@ -92,6 +101,10 @@ args = ''
 # shape
 args = []
 
+[generator.calibs.text]
+# /path/to/prompt.txt directory
+args = 'tests/llm/prompt.txt'
+
 [target]
 
 [target.cpu]
@@ -100,11 +113,11 @@ infer = true
 similarity_name = 'cosine'
 
 [target.cpu.mode.noptq]
-enabled = false
+enabled = true
 threshold = 0.999
 
 [target.cpu.mode.ptq]
-enabled = true
+enabled = false
 threshold = 0.98
 
 [target.cpu.target_options]

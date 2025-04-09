@@ -15,6 +15,7 @@ using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using Nncase.Passes;
 using Nncase.Passes.Analysis;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.PatternMatch;
 using Nncase.Tests.TestFixture;
 using OrtKISharp;
@@ -114,6 +115,27 @@ public class UnitTestDataFlowRewrite : RewriteFixtrue
     }
 
     [Fact]
+    public void TestTileToExpand()
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, new long[] { 1, 32, 256, 1 }));
+        var tile = Tile(input, new long[] { 1, 1, 1, 2 });
+        var expand = Expand(input, new long[] { 1, 32, 256, 2 });
+
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new long[] { 1, 32, 256, 1 }).Evaluate().AsTensor();
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { input, Value.FromTensor(input_tensor) },
+        };
+
+        var pre = new Function(tile, new[] { input });
+        var pass = new DataflowPass() { Name = "TileToExpand" };
+        pass.Add<Passes.Rules.Neutral.TileToExpand>();
+
+        var post = (Function)pass.RunAsync(pre, new()).Result;
+        Assert.Equal(expand.Evaluate(feedDict).AsTensor().ToArray<float>(), post.Body.Evaluate(feedDict).AsTensor().ToArray<float>());
+    }
+
+    [Fact]
     public async Task TestFoldShapeOf()
     {
         var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 240, 320)));
@@ -126,7 +148,7 @@ public class UnitTestDataFlowRewrite : RewriteFixtrue
     public async Task TestExpandToRank()
     {
         var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 240, 320)));
-        var exp = Expand(1, Cast(Rank(input) - 0, DataTypes.Int64));
+        var exp = Expand(1, Unsqueeze(Cast(Rank(input) - 0L, DataTypes.Int64), 0));
         var result = await RunShapeInferPass(string.Empty, exp);
         Assert.Equal(new[] { 1, 1, 1, 1 }, result.Evaluate().AsTensor().ToArray<int>());
     }
@@ -160,7 +182,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var dilationW = 1;
         var padH = TypeInference.GetWindowedPadding(inH, fH, strideH, dilationH, true);
         var padW = TypeInference.GetWindowedPadding(inW, fW, strideW, dilationW, true);
-        var padding = TypeInference.ConcatPadding(padH, padW);
+        var padding = Dimension.ConcatPadding(padH, padW);
 
         // Assert.True(CompilerServices.InferenceType(padding));
         var paddingPost = await RunShapeInferPass("padding", padding, input);
@@ -183,7 +205,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var padW = TypeInference.GetWindowedPadding(inW, fW, strideW, dilationW, true);
         var stride = Tensor.From<int>(new[] { strideH, strideW }, [2]);
         var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, [2]);
-        var padding = TypeInference.ConcatPadding(padH, padW);
+        var padding = Dimension.ConcatPadding(padH, padW);
 
         var conv = NN.Conv2D(
             NHWCToNCHW(input),
@@ -209,7 +231,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var (rInH, rInW) = Util.GetHW(max);
         var rPadH = TypeInference.GetWindowedPadding(rInH, 2, 2, dilationH, true);
         var rPadW = TypeInference.GetWindowedPadding(rInW, 2, 2, dilationW, true);
-        var rPadding = TypeInference.ConcatPadding(rPadH, rPadW);
+        var rPadding = Dimension.ConcatPadding(rPadH, rPadW);
         var reduce = NCHWToNHWC(ReduceWindow2D(ReduceOp.Max, NHWCToNCHW(max), initValue, doubleV, doubleV, rPadding, dilation, false, false));
         var post = await RunShapeInferPass("reduce", reduce);
         Assert.True(CompilerServices.InferenceType(post));
@@ -232,18 +254,18 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
     public async Task SoftMaxImporterProcess()
     {
         var input = new Var(new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
-        var axis = -1;
+        var axis = -1L;
         var inShape = ShapeOf(input);
         using var inShapePin = new ExprPinner(inShape);
         Expr axisExprBefore = axis < 0
-            ? axis + Rank(input)
-            : Tensor.From<int>(new[] { axis });
+            ? Unsqueeze(axis + Rank(input), 0)
+            : Tensor.From<long>(new[] { axis });
         axisExprBefore.InferenceType();
         var axisExpr = await RunShapeInferPass("Axis", axisExprBefore, input);
         using var axisPin = new ExprPinner(axisExpr);
         Assert.Equal(3, ((TensorConst)axisExpr).Value.Cast<int>()[0]);
 
-        var firstSliceBefore = Slice(inShape, new[] { 0 }, axisExpr, 1);
+        var firstSliceBefore = Slice(inShape, new[] { 0L }, axisExpr, 1);
         firstSliceBefore.InferenceType();
         var firstSlice = await RunShapeInferPass("firstSlice", firstSliceBefore, input);
         using var firstSlicePin = new ExprPinner(firstSlice);
@@ -254,7 +276,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var firstSize = await RunShapeInferPass("firstSize", firstSizeBefore, input);
         Assert.Equal(1 * 3 * 224, ((TensorConst)firstSize).Value.ToScalar<int>());
 
-        var secondBefore = Prod(Slice(inShape, axisExpr, Rank(input), 1));
+        var secondBefore = Prod(Slice(inShape, axisExpr, Unsqueeze(Rank(input), 0), 1));
         var secondSize = await RunShapeInferPass("secondSize", secondBefore, input);
         Assert.Equal(224, ((TensorConst)secondSize).Value.ToScalar<int>());
 

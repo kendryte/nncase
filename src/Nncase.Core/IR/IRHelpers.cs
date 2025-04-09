@@ -56,4 +56,27 @@ public static class IRHelpers
     {
         old.ReplaceAllUsesWith(@new);
     }
+
+    public static HashSet<Var> GetDynamicDimVars()
+    {
+        return CompileSessionScope.GetCurrentThrowIfNull().CompileOptions.ShapeBucketOptions.VarMap.SelectMany(x => x.Value).OfType<Var>().ToHashSet((IEqualityComparer<Var>)ReferenceEqualityComparer.Instance);
+    }
+
+    public static string GetIdentityName(string name)
+    {
+        var sb = new StringBuilder("id_");
+        foreach (var c in name)
+        {
+            if (char.IsLetterOrDigit(c) || c == '_')
+            {
+                sb.Append(c);
+            }
+            else
+            {
+                sb.Append('_');
+            }
+        }
+
+        return sb.ToString();
+    }
 }

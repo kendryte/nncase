@@ -288,7 +288,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         }
 
         // 1. Function signature
-        _writer.WInd().Write($"{name} = fn({StringUtility.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit))})");
+        _writer.WInd().Write($"{name} = fn<{expr.ModuleKind}>({StringUtility.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit))})");
         AppendCheckedType(expr.CheckedType, expr.Metadata.Range);
         _writer.WInd().WriteLine("{");
 
@@ -529,8 +529,8 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
     protected override string VisitShape(Shape shape) =>
         shape.Kind switch
         {
-            ShapeKind.Invalid => "Invalid",
-            ShapeKind.Unranked => "Unranked",
+            ShapeKind.Invalid => "[invalid]",
+            ShapeKind.Unranked => "[*]",
             _ => $"[{string.Join(',', shape.Select(VisitDimension))}]",
         };
 

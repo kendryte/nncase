@@ -50,7 +50,7 @@ namespace Nncase.Importer
 
         private Call ExpandOneToRank(Expr input, long value, long rankOffset = 0)
         {
-            return Expand(value, Unsqueeze(Cast(Rank(input) - rankOffset, new Int64Type()), new[] { 0 }));
+            return Expand(value, Unsqueeze(Rank(input) - rankOffset, new[] { 0 }));
         }
     }
 }

@@ -18,6 +18,7 @@
 #include "nncase/ntt/shape.h"
 #include "nncase/ntt/utility.h"
 #include "tensor_traits.h"
+#include "utility.h"
 #include <type_traits>
 
 namespace nncase::ntt {
@@ -230,6 +231,27 @@ class basic_tensor
                                        linear_size(shape, strides())),
                     shape, strides()};
         }
+    }
+
+    template <class Index> constexpr auto view(const Index &index) noexcept {
+        auto ones_shape = make_ones_shape_like<shape_type>();
+        auto left_shape = slice_dims<Index::rank()>(ones_shape);
+        auto right_shape =
+            slice_dims<rank() - Index::rank(), Index::rank()>(shape());
+        auto new_shape = concat_dims(left_shape, right_shape);
+        auto t_view = view(index, new_shape);
+        return t_view.squeeze(make_index_axes<Index::rank()>());
+    }
+
+    template <class Index>
+    constexpr auto view(const Index &index) const noexcept {
+        auto ones_shape = make_ones_shape_like<shape_type>();
+        auto left_shape = slice_dims<Index::rank()>(ones_shape);
+        auto right_shape =
+            slice_dims<rank() - Index::rank(), Index::rank()>(shape());
+        auto new_shape = concat_dims(left_shape, right_shape);
+        auto t_view = view(index, new_shape);
+        return t_view.squeeze(make_index_axes<Index::rank()>());
     }
 
     template <typename TNewShape>

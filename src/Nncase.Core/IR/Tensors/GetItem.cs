@@ -26,5 +26,5 @@ public sealed partial class GetItem : Op
     /// <summary>
     /// Gets index.
     /// </summary>
-    public static readonly ParameterInfo Index = new(typeof(GetItem), 1, "index", IsIntegral() & (HasRank(0) | HasRank(1)));
+    public static readonly ParameterInfo Index = new(typeof(GetItem), 1, "index", IsIntegral() & (HasRank(0) | HasRank(1)), ParameterKind.Attribute);
 }

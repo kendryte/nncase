@@ -102,10 +102,9 @@ TEST_P(ReduceArgMinTest, ReduceArgMin) {
                         .expect("create tensor failed");
 
     // actual
-    auto dtype = datatype_t::from_typecode(dt_int64).unwrap();
     auto output =
         kernels::stackvm::reduce_arg(runtime::stackvm::reduce_arg_op_t::arg_min,
-                                     dtype, a.impl(), axis.impl(),
+                                     dt_int64, a.impl(), axis.impl(),
                                      keepDims.impl(), select_last_idx.impl())
             .expect("reduce_arg_max failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));

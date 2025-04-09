@@ -23,9 +23,16 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Expand expand)
     {
-        var input = context.GetOrtArgumentValue(expand, Expand.Input);
+        var input = context.GetArgumentValueAsTensor(expand, Expand.Input);
+        var originType = input.ElementType;
+        if (originType.IsFloat() && originType != DataTypes.Float32)
+        {
+            input = input.CastTo(DataTypes.Float32);
+        }
+
+        var inputOrt = input.ToOrtTensor();
         var shape = context.GetInt64OrtTensorArgumentValue(expand, Expand.Shape);
-        return OrtKI.Expand(input, shape).ToValue();
+        return OrtKI.Expand(inputOrt, shape).ToValue(originType);
     }
 
     public Cost Visit(ICostEvaluateContext context, Expand target)
@@ -73,15 +80,23 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
         if (input.TensorType.Shape.IsRanked && shapeExpr.IsRanked)
         {
             var newShape = TypeInference.ExpandShape(input.TensorType.Shape, shapeExpr);
-            var ndsbp = new SBP[newShape.Count];
+            var dimExtends = newShape.Rank - input.TensorType.Shape.Rank;
+            var ndsbp = new SBP[newShape.Rank];
             for (int i = 0; i < ndsbp.Length; i++)
             {
-                if (input.AxisPolices[i] is SBPSplit && newShape[i] != input.TensorType.Shape[i])
+                if (i < dimExtends)
                 {
-                    return invalid;
+                    ndsbp[i] = SBP.B;
                 }
+                else
+                {
+                    if (input.AxisPolices[i - dimExtends] is SBPSplit && newShape[i] != input.TensorType.Shape[i - dimExtends])
+                    {
+                        return invalid;
+                    }
 
-                ndsbp[i] = input.AxisPolices[i];
+                    ndsbp[i] = input.AxisPolices[i - dimExtends];
+                }
             }
 
             return new DistributedType(new TensorType(input.TensorType.DType, newShape), ndsbp, input.Placement);

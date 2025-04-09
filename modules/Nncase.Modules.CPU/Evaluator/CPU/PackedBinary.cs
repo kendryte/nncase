@@ -51,7 +51,8 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
             _ => throw new ArgumentOutOfRangeException(target.BinaryOp.ToString()),
         };
 
-        return Value.FromTensor(Tensor.FromBytes(context.CurrentCall.CheckedDataType, binary.BytesBuffer.ToArray(), context.CurrentCall.CheckedShape));
+        var outShape = context.Evaluate(context.CurrentCall.CheckedShape).AsTensor().ToArray<long>();
+        return Value.FromTensor(Tensor.FromBytes(context.CurrentCall.CheckedDataType, binary.BytesBuffer.ToArray(), outShape));
     }
 
     public IRType Visit(ITypeInferenceContext context, PackedBinary target)
@@ -95,9 +96,9 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
     private IRType Visit(PackedBinary target, TensorType a, TensorType b)
     {
         var rank = System.Math.Max(a.Shape.Rank, b.Shape.Rank);
-        var outShape = new long[rank];
-        var lhsOrginShape = a.Shape.ToValueArray();
-        var rhsOrginShape = b.Shape.ToValueArray();
+        var outShape = new Dimension[rank];
+        var lhsOrginShape = a.Shape.ToArray();
+        var rhsOrginShape = b.Shape.ToArray();
         for (int i = 0; i < target.LhsPackedAxes.Count; i++)
         {
             lhsOrginShape[target.LhsPackedAxes[i]] = (lhsOrginShape[target.LhsPackedAxes[i]] * ((VectorType)a.DType).Lanes[i]) - target.LhsPadedNums[i];
@@ -117,26 +118,26 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
             switch (aAxis, bAxis)
             {
                 case ( < 0, _):
-                    outShape[rank + i] = b.Shape[bAxis].FixedValue;
+                    outShape[rank + i] = b.Shape[bAxis];
                     orginKinds[rank + i] = DimKind.B;
                     break;
                 case (_, < 0):
-                    outShape[rank + i] = a.Shape[aAxis].FixedValue;
+                    outShape[rank + i] = a.Shape[aAxis];
                     orginKinds[rank + i] = DimKind.B;
                     break;
                 case ( >= 0, >= 0):
                     switch (lhsOrginShape[aAxis], rhsOrginShape[bAxis])
                     {
-                        case (long l, long r) when l == r:
-                            outShape[rank + i] = a.Shape[aAxis].FixedValue;
+                        case (Dimension l, Dimension r) when l == r:
+                            outShape[rank + i] = a.Shape[aAxis];
                             orginKinds[rank + i] = DimKind.E;
                             break;
-                        case (1, _):
-                            outShape[rank + i] = b.Shape[bAxis].FixedValue;
+                        case (Dimension l, _) when l.IsFixed && l.FixedValue == 1:
+                            outShape[rank + i] = b.Shape[bAxis];
                             orginKinds[rank + i] = DimKind.B;
                             break;
-                        case (_, 1):
-                            outShape[rank + i] = a.Shape[aAxis].FixedValue;
+                        case (_, Dimension r) when r.IsFixed && r.FixedValue == 1:
+                            outShape[rank + i] = a.Shape[aAxis];
                             orginKinds[rank + i] = DimKind.B;
                             break;
                         default:

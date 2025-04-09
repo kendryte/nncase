@@ -194,14 +194,15 @@ public static class Testing
         var modelBuilder = compileSession.GetRequiredService<IModelBuilder>();
         var linkedModel = modelBuilder.Build(module);
 
-        Directory.CreateDirectory(compileSession.CompileOptions.DumpDir);
-        var kmodel_path = Path.Combine(compileSession.CompileOptions.DumpDir, $"{name}.kmodel");
-        using (var output = System.IO.File.Open(kmodel_path, System.IO.FileMode.Create))
+        var kmodelDir = DumpScope.Current.Directory;
+        Directory.CreateDirectory(kmodelDir);
+        var kmodelPath = Path.Combine(kmodelDir, $"{name}.kmodel");
+        using (var output = System.IO.File.Open(kmodelPath, System.IO.FileMode.Create))
         {
             linkedModel.Serialize(output);
         }
 
-        return (kmodel_path, readBytes ? File.ReadAllBytes(kmodel_path) : Array.Empty<byte>());
+        return (kmodelPath, readBytes ? File.ReadAllBytes(kmodelPath) : Array.Empty<byte>());
     }
 
     /// <summary>

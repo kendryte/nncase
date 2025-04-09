@@ -19,7 +19,6 @@ namespace Nncase.CodeGen
         public static void WriteDebugInfo(uint fnId, uint moduleId, List<(Expr Expr, (long Min, long Max) Range)> sourceMap)
         {
             var dir = DumpScope.Current.Directory;
-            var ids = ReadIds(dir);
 
             // stackvm id is 0
             var debugInfoDir = Path.Join(dir, "StackVMInst");
@@ -28,19 +27,8 @@ namespace Nncase.CodeGen
                 Directory.CreateDirectory(debugInfoDir);
             }
 
-            using var stream = File.OpenWrite(Path.Join(dir, "StackVMInst", $"{ids[new(fnId, moduleId)]}.txt"));
+            using var stream = File.OpenWrite(Path.Join(dir, "StackVMInst", $"{fnId}_{moduleId}.txt"));
             DumpUtility.WriteResult(stream, sourceMap.Where(x => x.Expr is not PrimFunctionWrapper).Select(x => ToStr(x.Expr) + x.Range).ToArray());
-        }
-
-        public static Dictionary<FunctionId, string> ReadIds(string dir)
-        {
-            using var sr = new StreamReader(Path.Join(dir, "ids.txt"));
-            var ids = sr.ReadToEnd().Split("\n").Select(line =>
-            {
-                var data = line.Split(" ").ToArray();
-                return (new FunctionId(uint.Parse(data[1]), uint.Parse(data[0])), data[2]);
-            }).ToDictionary(x => x.Item1, x => x.Item2);
-            return ids;
         }
 
         // todo: refactor this

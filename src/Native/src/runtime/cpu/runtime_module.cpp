@@ -59,8 +59,8 @@ result<void> cpu_runtime_module::initialize_before_functions(
     try_set(text_, context.get_or_read_section(".text", text_storage_, false));
     try_set(rdata_,
             context.get_or_read_section(".rdata", rdata_storage_, false));
-    try_set(local_rdata_,
-            context.get_or_read_section(".local_rdata", rdata_storage_, false));
+    try_set(local_rdata_, context.get_or_read_section(
+                              ".local_rdata", local_rdata_storage_, false));
     return ok();
 }
 

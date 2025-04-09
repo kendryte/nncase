@@ -37,19 +37,18 @@ struct unknown_dim_t {};
 
 inline constexpr unknown_dim_t unknown_dim;
 
-enum dim_kind_t { dim_unknown = 0, dim_fixed = 1 };
+enum dim_kind_t { dim_fixed = 0, dim_unknown = 1 };
 
 using dim_value_t = int64_t;
 
 /** @brief Dimension */
 struct dim_t {
-    /** @brief Initialize an unknown dim */
-    constexpr dim_t(unknown_dim_t = unknown_dim) noexcept
-        : kind(dim_unknown), value(0) {}
-
     /** @brief Initialize an fixed dim */
-    constexpr dim_t(dim_value_t value) noexcept
+    constexpr dim_t(dim_value_t value = 0) noexcept
         : kind(dim_fixed), value(value) {}
+
+    /** @brief Initialize an unknown dim */
+    constexpr dim_t(unknown_dim_t) noexcept : kind(dim_unknown), value(0) {}
 
     /** @brief Is this a fixed dim */
     bool is_fixed() const noexcept { return kind == dim_fixed; }

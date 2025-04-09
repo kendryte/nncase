@@ -15,6 +15,7 @@
 #pragma once
 #include "../apply.h"
 #include "../utility.h"
+#include <cstdint>
 
 namespace nncase::ntt {
 namespace slice_detail {
@@ -26,6 +27,60 @@ inline constexpr auto compute_inner_domain(std::index_sequence<Ints...>) {
           TStart::at(Ints)) /
          TStride::at(Ints)) +
         1)...>{};
+}
+
+template <class TInShape, class TBegins, class TEnds, class TStrides,
+          class TAxes>
+auto slice_fill(const TInShape &in_shape, const TBegins &begins_value,
+                const TEnds &ends_value, const TStrides &strides_value,
+                const TAxes &axes_value) {
+    constexpr auto ndim = TInShape::rank();
+    using dims_t = std::array<int64_t, ndim>;
+    dims_t begin_values{};
+    dims_t end_values{};
+    std::copy(in_shape.begin(), in_shape.end(), end_values.begin());
+    dims_t strides_values{};
+    strides_values.fill(1);
+    for (size_t i = 0; i < ndim; ++i) {
+        const auto it = std::find_if(axes_value.begin(), axes_value.end(),
+                                     [i, ndim](const auto axis) {
+                                         return positive_index(axis, ndim) == i;
+                                     });
+        if (it != axes_value.end()) {
+            auto idx = (size_t)std::distance(axes_value.begin(), it);
+            auto max = static_cast<int64_t>(in_shape[i]);
+            auto min = (-1) * max - 1;
+
+            // check starts
+            begin_values[i] = begins_value(idx) < min   ? min
+                              : begins_value(idx) > max ? max
+                                                        : begins_value(idx);
+
+            // check stops
+            end_values[i] = ends_value(idx) < min   ? min
+                            : ends_value(idx) > max ? max
+                                                    : ends_value(idx);
+
+            // check steps
+            if (strides_value.rank()) {
+                strides_values[i] = strides_value[idx];
+            }
+
+            // fixup begin_values
+            if ((strides_values[i] > 0 && end_values[i] > begin_values[i]) ||
+                (strides_values[i] < 0 && end_values[i] < begin_values[i])) {
+                begin_values[i] =
+                    begin_values[i] == min ? min + 1 : begin_values[i];
+                begin_values[i] =
+                    begin_values[i] == max ? max - 1 : begin_values[i];
+            }
+            if (begin_values[i] < 0)
+                begin_values[i] += max;
+            if (end_values[i] < 0)
+                end_values[i] += max;
+        }
+    }
+    return std::tuple(begin_values, end_values, strides_values);
 }
 } // namespace slice_detail
 
@@ -39,38 +94,36 @@ inline constexpr auto compute_inner_domain(std::index_sequence<Ints...>) {
  * @param input input tensor
  * @param output output tensor
  */
-template <typename TStart, typename TStop, typename TAxes, typename TStride,
-          typename TIn, typename TOut>
-void slice(const TIn &input, TOut &&output) {
-    auto out_shape = output.shape();
-    constexpr auto rank = out_shape.rank();
-    auto count = out_shape[rank - 1];
-    ranked_shape<rank> domain;
-    loop<rank>([&](auto i) { domain[i] = out_shape[i]; });
-    domain[rank - 1] = 1;
+template <typename TAxes, typename TStrides, typename TIn, typename TBegins,
+          typename TEnds, typename TOut>
+void slice(const TIn &input, const TBegins &begins, const TEnds &ends,
+           TOut &&output) {
+    auto [begin_values, end_values, strides_values] = slice_detail::slice_fill(
+        input.shape(), begins, ends, TStrides{}, TAxes{});
+    apply(input.shape(),
+          [&, begin_values = begin_values, end_values = end_values,
+           strides_values = strides_values](auto in_index) {
+              auto out_index = in_index;
+              for (size_t i = 0; i < TIn::rank(); i++) {
+                  const auto stride = strides_values[i];
+                  if (stride > 0) {
+                      if ((int64_t)in_index[i] < begin_values[i] ||
+                          in_index[i] >= static_cast<size_t>(end_values[i]))
+                          return;
+                  } else {
+                      if ((int64_t)in_index[i] <= end_values[i] ||
+                          (int64_t)in_index[i] > begin_values[i])
+                          return;
+                  }
 
-    // update starts/steps
-    size_t in_starts[rank] = {0};
-    size_t in_steps[rank] = {0};
-    for (size_t i = 0; i < rank; i++) {
-        in_steps[i] = 1;
-    }
-    loop<TAxes::rank()>([&](auto i) {
-        in_starts[TAxes::at(i)] = TStart::at(i);
-        in_steps[TAxes::at(i)] = TStride::at(i);
-    });
+                  auto out_div =
+                      std::div((int64_t)in_index[i] - begin_values[i], stride);
+                  if (out_div.rem)
+                      return;
+                  out_index[i] = (size_t)out_div.quot;
+              }
 
-    auto in_strides = input.strides();
-    auto out_strides = output.strides();
-    apply(domain, [&](auto index) {
-        auto pout =
-            output.buffer().data() + linear_offset(index, output.strides());
-        loop<rank>(
-            [&](auto i) { index[i] = in_starts[i] + index[i] * in_steps[i]; });
-        auto pin =
-            input.buffer().data() + linear_offset(index, input.strides());
-        u_memcpy(pin, in_strides[rank - 1] * in_steps[rank - 1], pout,
-                 out_strides[rank - 1], count);
-    });
+              output(out_index) = input(in_index);
+          });
 }
 } // namespace nncase::ntt

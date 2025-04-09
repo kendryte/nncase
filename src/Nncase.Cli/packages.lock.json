@@ -734,6 +734,7 @@
       "nncase.importer": {
         "type": "Project",
         "dependencies": {
+          "Clawfoot.Extensions.Newtonsoft": "[0.1.0, )",
           "LanguageExt.Core": "[4.4.9, )",
           "Nncase.Core": "[1.0.0, )",
           "Onnx.Protobuf": "[1.0.0, )",
@@ -752,6 +753,7 @@
           "Nncase.Modules.StackVM": "[1.0.0, )",
           "Nncase.Passes": "[1.0.0, )",
           "Nncase.Schedule": "[1.0.0, )",
+          "Nncase.Targets": "[1.0.0, )",
           "Razor.Templating.Core": "[2.0.0, )"
         }
       },
@@ -813,6 +815,15 @@
         "type": "Project",
         "dependencies": {
           "Nncase.FlatBuffers": "[2.0.0, )"
+        }
+      },
+      "Clawfoot.Extensions.Newtonsoft": {
+        "type": "CentralTransitive",
+        "requested": "[0.1.0, )",
+        "resolved": "0.1.0",
+        "contentHash": "A8p8THcOiOoexdYUUHgEVeW2BgsFLRqm65+4WuE3Te0XyZdiq+3Alu0D8ktMFUU+0eFeXr6sYcNsDTD3OsVJ4w==",
+        "dependencies": {
+          "Newtonsoft.Json": "12.0.2"
         }
       },
       "CommunityToolkit.HighPerformance": {

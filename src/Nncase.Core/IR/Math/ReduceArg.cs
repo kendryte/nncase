@@ -42,7 +42,7 @@ public sealed partial class ReduceArg : Op
 
     public ReduceArgOp ReduceArgOp { get; }
 
-    public PrimType DestType { get; }
+    public DataType DestType { get; }
 
     /// <inheritdoc/>
     public override string DisplayProperty() => $"ReduceArgOp.{ReduceArgOp}, DestType: {DestType}";

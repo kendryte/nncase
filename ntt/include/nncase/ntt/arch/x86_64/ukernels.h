@@ -26,6 +26,7 @@ namespace nncase::ntt::ukernels {
     };
 
 SPECIALIZE_U_UNARY(abs, 2)
+SPECIALIZE_U_UNARY(copy, 4)
 SPECIALIZE_U_UNARY(ceil, 2)
 SPECIALIZE_U_UNARY(floor, 2)
 SPECIALIZE_U_UNARY(neg, 2)
@@ -34,6 +35,36 @@ SPECIALIZE_U_UNARY(sign, 2)
 SPECIALIZE_U_UNARY(square, 2)
 
 #undef SPECIALIZE_U_UNARY
+
+template <>
+struct u_unary<ntt::ops::copy<vector<float, 8>>, vector<float, 8>, true> {
+  public:
+    void operator()(const vector<float, 8> *input, size_t input_stride,
+                    vector<float, 8> *output, size_t output_stride,
+                    size_t count) noexcept {
+        using policy_t = u_unary_policy<ntt::ops::copy<vector<float, 8>>,
+                                        vector<float, 8>, true>;
+        constexpr auto unroll = policy_t::unroll;
+        while (count / unroll) {
+            for (size_t i = 0; i < unroll; i++) {
+                __m256 data =
+                    _mm256_loadu_ps(reinterpret_cast<const float *>(input));
+                _mm256_storeu_ps(reinterpret_cast<float *>(output), data);
+                input += input_stride;
+                output += output_stride;
+                count--;
+            }
+        }
+
+        for (size_t i = 0; i < count; i++) {
+            __m256 data =
+                _mm256_loadu_ps(reinterpret_cast<const float *>(input));
+            _mm256_storeu_ps(reinterpret_cast<float *>(output), data);
+            input += input_stride;
+            output += output_stride;
+        }
+    }
+};
 
 // binary
 #define SPECIALIZE_U_BINARY(op, unroll_num)                                    \
@@ -171,10 +202,11 @@ class u_pack<M, N, MStrides, true, float, vector<float, 8>> {
 };
 
 template <class TIn, class TOut, size_t... Axes>
-    requires(sizeof...(Axes) > 0 &&
-             (std::get<sizeof...(Axes) - 1>(std::array<size_t, sizeof...(Axes)>{
-                  Axes...}) == (TIn::rank() - 1)))
-class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>, Axes...> {
+requires(sizeof...(Axes) > 0 &&
+         (std::get<sizeof...(Axes) - 1>(std::array<size_t, sizeof...(Axes)>{
+              Axes...}) ==
+          (TIn::rank() - 1))) class u_pack2d<true, TIn, TOut, float,
+                                             vector<float, 8, 8>, Axes...> {
   public:
     constexpr void operator()(const TIn &input, TOut &output) noexcept {
         using TVec = vector<float, 8, 8>;
@@ -267,40 +299,6 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>, Axes...> {
         }
     }
 };
-
-// gather
-template <> struct u_memcpy_policy<vector<float, 8>, true> {
-    static constexpr size_t unroll = 4;
-};
-
-template <> struct u_memcpy<vector<float, 8>, true> {
-  public:
-    constexpr void operator()(const vector<float, 8> *input,
-                              size_t input_stride, vector<float, 8> *output,
-                              size_t output_stride, size_t count) noexcept {
-        using policy_t = u_memcpy_policy<vector<float, 8>, true>;
-        constexpr auto unroll = policy_t::unroll;
-        while (count / unroll) {
-            for (size_t i = 0; i < unroll; i++) {
-                __m256 data =
-                    _mm256_loadu_ps(reinterpret_cast<const float *>(input));
-                _mm256_storeu_ps(reinterpret_cast<float *>(output), data);
-                input += input_stride;
-                output += output_stride;
-                count--;
-            }
-        }
-
-        for (size_t i = 0; i < count; i++) {
-            __m256 data =
-                _mm256_loadu_ps(reinterpret_cast<const float *>(input));
-            _mm256_storeu_ps(reinterpret_cast<float *>(output), data);
-            input += input_stride;
-            output += output_stride;
-        }
-    }
-};
-
 template <size_t axis_stride, class T1, size_t PackAxis>
 class u_unpack_1d_fixed<axis_stride, 8, T1, float, true, PackAxis> {
   public:

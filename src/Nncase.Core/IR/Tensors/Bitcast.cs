@@ -29,9 +29,9 @@ public sealed partial class Bitcast : Op
     /// </summary>
     public static readonly ParameterInfo NewShape = new(typeof(Bitcast), 1, "new_shape", HasRank(1) & HasDataType(DataTypes.Int64));
 
-    public PrimType Type { get; }
+    public DataType Type { get; }
 
-    public PrimType NewType { get; }
+    public DataType NewType { get; }
 
     /// <inheritdoc/>
     public override string DisplayProperty() => $"{Type.GetCSharpName()}, {NewType.GetCSharpName()}";

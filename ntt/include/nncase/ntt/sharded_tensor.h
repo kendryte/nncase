@@ -26,52 +26,47 @@
 #include <cstddef>
 
 namespace nncase::ntt::distributed {
-template <
-    class T, class GlobalShape, class Sharding,
-    class LocalStrides = default_strides_t<
-        typename detail::local_shard_shape_type<GlobalShape, Sharding>::type>>
-class sharded_tensor_view
-    : private tensor_view<
-          T,
-          typename detail::local_shard_shape_type<GlobalShape, Sharding>::type,
-          LocalStrides> {
+template <class T, class Shape, class Sharding,
+          class LocalStrides = default_strides_t<
+              typename detail::local_shard_shape_type<Shape, Sharding>::type>>
+class sharded_tensor_view : public ntt::detail::shape_storage<Shape> {
   public:
     using sharding_type = Sharding;
     using mesh_type = typename sharding_type::mesh_type;
-    using global_shape_type = GlobalShape;
+    using shape_type = Shape;
+    using shape_storage_type = ntt::detail::shape_storage<Shape>;
 
     using local_shape_type =
-        typename detail::local_shard_shape_type<GlobalShape, Sharding>::type;
+        typename detail::local_shard_shape_type<Shape, Sharding>::type;
     using local_tensor_type = tensor_view<T, local_shape_type, LocalStrides>;
+    using local_buffer_type = typename local_tensor_type::buffer_type;
 
     template <topology Scope>
     using remote_tensor_type =
         remote_tensor_view<T, local_shape_type, Scope, LocalStrides>;
 
-    using local_tensor_type::local_tensor_type;
+    sharded_tensor_view(local_buffer_type local_buffer, Shape shape = {},
+                        LocalStrides local_strides = {}) noexcept
+        : shape_storage_type(shape),
+          local_(local_buffer, detail::local_shard_shape<Sharding>(shape),
+                 local_strides) {}
 
-    static constexpr GlobalShape global_shape() noexcept {
-        return GlobalShape{};
-    }
-
-    local_tensor_type &local() noexcept {
-        return static_cast<local_tensor_type &>(*this);
-    }
-
-    const local_tensor_type &local() const noexcept {
-        return static_cast<const local_tensor_type &>(*this);
-    }
+    local_tensor_type &local() noexcept { return local_; }
+    const local_tensor_type &local() const noexcept { return local_; }
 
     template <topology RemoteScope, class... ShardIndexes>
     remote_tensor_type<RemoteScope>
     remote(ShardIndexes &&...shardIndexes) const noexcept {
-        static_assert(
-            sizeof...(shardIndexes) +
-                    detail::get_submesh_rank<mesh_type, RemoteScope>() - 1 ==
-                mesh_type::shape_type::rank(),
-            "Invalid index.");
+        // static_assert(
+        //     sizeof...(shardIndexes) +
+        //             detail::get_submesh_rank<mesh_type, RemoteScope>() - 1 ==
+        //         mesh_type::shape_type::rank(),
+        //     "Invalid index.");
         auto local_address = local().elements().data();
         return remote_tensor_type<RemoteScope>::create(
+            mesh_type::remote_program_id(
+                ranked_shape<mesh_type::shape_type::rank()>(
+                    mesh_type::local_index())),
             mesh_type::remote_program_id(
                 ranked_shape<mesh_type::shape_type::rank()>(
                     std::forward<ShardIndexes>(shardIndexes)...)),
@@ -79,7 +74,10 @@ class sharded_tensor_view
     }
 
     template <class DestSharding, class DestStrides>
-    void reshard(sharded_tensor_view<T, GlobalShape, DestSharding, DestStrides>
+    void reshard(sharded_tensor_view<T, Shape, DestSharding, DestStrides>
                      dest_view) noexcept;
+
+  private:
+    local_tensor_type local_;
 };
 } // namespace nncase::ntt::distributed

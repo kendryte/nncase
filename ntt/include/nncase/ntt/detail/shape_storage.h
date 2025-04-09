@@ -62,9 +62,7 @@ struct NTT_EMPTY_BASES tensor_size_impl : public shape_storage<Shape>,
     tensor_size_impl(Shape shape, Strides strides)
         : shape_storage<Shape>(shape), strides_storage<Strides>(strides) {}
 
-    constexpr size_t size() noexcept {
-        return linear_size(this->shape(), this->strides());
-    }
+    constexpr size_t size() const noexcept { return this->shape().length(); }
 };
 
 template <size_t... Shapes, size_t... Strides>
@@ -74,8 +72,7 @@ class NTT_EMPTY_BASES
       public strides_storage<fixed_strides<Strides...>> {
   public:
     static constexpr size_t size() noexcept {
-        return linear_size(fixed_shape<Shapes...>{},
-                           fixed_strides<Strides...>{});
+        return fixed_shape<Shapes...>::length();
     }
 };
 } // namespace nncase::ntt::detail

@@ -26,13 +26,17 @@ namespace Nncase.Targets;
 /// <summary>
 /// Target for CPU.
 /// </summary>
-public class CPUTarget : ITarget
+public class CPUTarget : Target
 {
     public const string Kind = "cpu";
 
-    string ITarget.Kind => Kind;
+    public override string Name => Kind;
 
-    public (System.CommandLine.Command Command, Func<InvocationContext, System.CommandLine.Command, ITargetOptions> Parser) RegisterCommandAndParser()
+    public override IReadOnlyList<IModuleCompiler> ModuleCompilers { get; } = [
+        new CPUModuleCompiler(),
+    ];
+
+    public override (System.CommandLine.Command Command, Func<InvocationContext, System.CommandLine.Command, ITargetOptions> Parser) RegisterCommandAndParser()
     {
         var cmd = new CpuTargetOptionsCommand(Kind);
 
@@ -45,145 +49,37 @@ public class CPUTarget : ITarget
         return (cmd, ParseTargetCompileOptions);
     }
 
-    /// <inheritdoc/>
-    public void ParseTargetDependentOptions(IConfigurationSection configure)
+    public override void RegisterAffineSelectionPass(IPassManager passManager, CompileOptions options)
     {
+        passManager.Add<CPUAffineSelectionPass>();
     }
 
-    /// <inheritdoc/>
-    public void RegisterTargetInDependentPass(IPassManager passManager, CompileOptions options)
+    public override void RegisterAutoPackingRules(IRulesAddable pass, CompileOptions options)
     {
+        // todo config it in the target options.
+        var rank = 2;
+        var lane = System.Runtime.Intrinsics.Vector256.IsHardwareAccelerated ? 8 : 4;
+        pass.Add<Passes.Rules.CPU.PackReduce>(rank, lane);
+        pass.Add<Passes.Rules.CPU.PackSwish>(rank, lane);
+        pass.Add<Passes.Rules.CPU.PackResizeImage>(rank, lane);
+        pass.Add<Passes.Rules.CPU.PackMatMul>(rank, lane);
+        pass.Add<Passes.Rules.CPU.PackConv2D>(rank, lane);
+        pass.Add<Passes.Rules.CPU.PackUnary>(rank, lane);
+        pass.Add<Passes.Rules.CPU.PackBinary>(rank, lane);
+        pass.Add<Passes.Rules.CPU.PackTranspose>(rank, lane);
+        pass.Add<Passes.Rules.CPU.PackUnsqueeze>(rank, lane);
+        pass.Add<Passes.Rules.CPU.PackReshape>(rank, lane);
+        pass.Add<Passes.Rules.CPU.PackSlice>(rank, lane);
+        pass.Add<Passes.Rules.Neutral.FoldConstCall>();
+        pass.Add<Passes.Rules.CPU.FoldPackUnpack>();
+        pass.Add<Passes.Rules.CPU.FoldPackConcatUnpack>();
+        pass.Add<Passes.Rules.CPU.TransposePackMatMulInputs>();
+        pass.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
+        pass.Add<Passes.Rules.Neutral.FoldTwoTransposes>();
     }
 
-    /// <inheritdoc/>
-    public void RegisterTargetDependentPass(IPassManager passManager, CompileOptions options)
+    public override void RegisterTIRSelectionPass(IPassManager passManager, CompileOptions optionsÍ)
     {
-    }
-
-    /// <inheritdoc/>
-    public Task<Dictionary<ENode, List<Tuple<List<DataType>, List<List<QuantParam>>, float>>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, QuantizeOptions quantizeOptions)
-    {
-        var enodeQuantCosineDict = new Dictionary<ENode, List<Tuple<List<DataType>, List<List<QuantParam>>, float>>>();
-        return Task.FromResult(enodeQuantCosineDict);
-    }
-
-    /// <inheritdoc/>
-    public Task AdaRoundWeights(ICalibrationDatasetProvider calibrationDataset, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, QuantizeOptions quantizeOptions)
-    {
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc/>
-    public void RegisterQuantizePass(IPassManager passManager, CompileOptions options)
-    {
-    }
-
-    /// <inheritdoc/>
-    public void RegisterTargetDependentAfterQuantPass(IPassManager passManager, CompileOptions options)
-    {
-        if (options.QuantizeOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
-        {
-            passManager.AddWithName<DataflowPass>("RemoveMarker").Configure(p =>
-            {
-                p.Add<Passes.Rules.Lower.RemoveMarker>();
-            });
-        }
-
-        if (options.TargetOptions is CpuTargetOptions { Packing: true })
-        {
-            passManager.AddWithName<EGraphRulesPass>("AutoPacking").Configure(p =>
-            {
-                // todo config it in the target options.
-                var rank = 2;
-                var lane = System.Runtime.Intrinsics.Vector256.IsHardwareAccelerated ? 8 : 4;
-                p.Add<Passes.Rules.CPU.PackReduce>(rank, lane);
-                p.Add<Passes.Rules.CPU.PackSwish>(rank, lane);
-                p.Add<Passes.Rules.CPU.PackResizeImage>(rank, lane);
-                p.Add<Passes.Rules.CPU.PackMatMul>(rank, lane);
-                p.Add<Passes.Rules.CPU.PackConv2D>(rank, lane);
-                p.Add<Passes.Rules.CPU.PackUnary>(rank, lane);
-                p.Add<Passes.Rules.CPU.PackBinary>(rank, lane);
-                p.Add<Passes.Rules.CPU.PackTranspose>(rank, lane);
-                p.Add<Passes.Rules.CPU.PackUnsqueeze>(rank, lane);
-                p.Add<Passes.Rules.CPU.PackReshape>(rank, lane);
-                p.Add<Passes.Rules.CPU.PackSlice>(rank, lane);
-                p.Add<Passes.Rules.Neutral.FoldConstCall>();
-                p.Add<Passes.Rules.CPU.FoldPackUnpack>();
-                p.Add<Passes.Rules.CPU.FoldPackConcatUnpack>();
-                p.Add<Passes.Rules.CPU.TransposePackMatMulInputs>();
-                p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
-                p.Add<Passes.Rules.Neutral.FoldTwoTransposes>();
-            });
-        }
-
-        passManager.Add<Passes.Distributed.AutoDistributedPass>(true, Kind);
-
-        passManager.Add<InferRangePass>();
-        passManager.Add<OptimizeByRangePass>();
-
-        passManager.Add<AddFunctionToModule>();
-        passManager.Add<CPUFunctionPartitionPass>();
-
-        passManager.Add<CPUFusionToModulePass>();
-        passManager.Add<OptimizeByRangePass>();
-
-        passManager.AddWithName<DataflowPass>("LowerToAffine").Configure(p =>
-        {
-            p.Add<Passes.Rules.CPU.Affine.LowerPack>();
-            p.Add<Passes.Rules.CPU.Affine.LowerUnary>();
-            p.Add<Passes.Rules.CPU.Affine.LowerSwish>();
-            p.Add<Passes.Rules.CPU.Affine.LowerBinary>();
-            p.Add<Passes.Rules.CPU.Affine.LowerPackedBinary>();
-            p.Add<Passes.Rules.CPU.Affine.LowerMatmul>();
-            p.Add<Passes.Rules.CPU.Affine.LowerTranspose>();
-            p.Add<Passes.Rules.CPU.Affine.LowerUnpack>();
-            p.Add<Passes.Rules.CPU.Affine.LowerReduce>();
-            p.Add<Passes.Rules.CPU.Affine.LowerCast>();
-        });
-
-        // concat/reshape lower
-        // tile and lower to tir.
-        passManager.Add<AutoTilePass>(Kind);
-
-        passManager.Add<CPUFusionToTirPass>();
-
-        // todo add auto fusion merge pass here.
-        passManager.Add<PrimFuncPass>().Configure(p =>
-        {
-            p.Add<Passes.Mutators.UnFoldBlock>();
-            p.Add<Passes.Mutators.FlattenSequential>();
-            p.Add<Passes.Mutators.TailLoopStripping>();
-            p.Add<Passes.Mutators.FoldConstCall>();
-        });
-
-        passManager.AddWithName<DDrBufferSchdeulePass>("DDrBufferSchdeule");
-
-        passManager.AddWithName<PrimFuncPass>("InstStage").Configure(p =>
-        {
-            p.Add<Passes.Mutators.FlattenBuffer>();
-            p.Add<Passes.Mutators.FoldConstCall>();
-            p.Add<Passes.Mutators.RemoveNop>();
-        });
-    }
-
-    public void RegisterTargetDependentBeforeCodeGen(IPassManager passManager, CompileOptions options)
-    {
-    }
-
-    /// <inheritdoc/>
-    public IModuleBuilder CreateModuleBuilder(string moduleKind, CompileOptions options)
-    {
-        if (moduleKind == Callable.StackVMModuleKind)
-        {
-            return new StackVMModuleBuilder();
-        }
-        else if (moduleKind == "cpu")
-        {
-            return new CPUModuleBuilder(options);
-        }
-        else
-        {
-            throw new NotSupportedException($"{moduleKind} module is not supported.");
-        }
+        passManager.Add<CPUTIRSelectionPass>();
     }
 }

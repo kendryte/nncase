@@ -66,7 +66,7 @@ public sealed class UnitTestDumpper : TestClassBase
     [Fact]
     public void TestDumpScript()
     {
-        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), MemoryLocation.Input, out _), T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), MemoryLocation.Output, out _)).Body(T.Nop()).Build();
+        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.CreateBufferVar(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), out _), T.CreateBufferVar(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), out _)).Body(T.Nop()).Build();
 
         Assert.True(CompilerServices.InferenceType(prim_func_1));
 
@@ -157,8 +157,8 @@ public sealed class UnitTestDumpper : TestClassBase
             var padW = TypeInference.GetWindowedPadding(inW, fW, strideW, dilationW, true);
             var padding = Stack(
               new IR.Tuple(
-                Stack(new IR.Tuple(new Expr[] { 0, 0 }), 0),
-                Stack(new IR.Tuple(new Expr[] { 0, 0 }), 0),
+                Stack(new IR.Tuple(new Expr[] { 0L, 0L }), 0),
+                Stack(new IR.Tuple(new Expr[] { 0L, 0L }), 0),
                 Stack(new IR.Tuple(padH.Select(x => x.ToExpr()).ToArray()), 0),
                 Stack(new IR.Tuple(padW.Select(x => x.ToExpr()).ToArray()), 0)),
               0);

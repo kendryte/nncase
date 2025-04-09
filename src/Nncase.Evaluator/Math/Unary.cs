@@ -30,6 +30,12 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
             }
         }
 
+        var originDtype = input_tensor.ElementType;
+        if (originDtype.IsFloat() && originDtype is PrimType && originDtype != DataTypes.Float32)
+        {
+            input_tensor = input_tensor.Cast<float>();
+        }
+
         var input = input_tensor.ToOrtTensor();
         var result = unaryOp switch
         {
@@ -57,7 +63,8 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
             UnaryOp.LogicalNot => OrtKI.Not(input),
             _ => throw new ArgumentOutOfRangeException(nameof(input_tensor)),
         };
-        return result.ToValue();
+
+        return result.ToValue(originDtype);
     }
 
     public static IRType InferType(IRType inputType, UnaryOp unaryOp)

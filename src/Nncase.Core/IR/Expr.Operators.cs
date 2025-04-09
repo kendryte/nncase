@@ -48,6 +48,7 @@ public partial class Expr
         this switch
         {
             TensorConst tc when tc.Value.Rank == indices.Length => Tensor.FromScalar(tc.Value.ElementType, tc.Value[indices]),
+            Call { Target: Stack } c when indices.Length == 2 => c[Stack.Inputs][indices[0]][indices[1]],
             _ => this[indices.Select(x => (Expr)x).ToArray()],
         };
 

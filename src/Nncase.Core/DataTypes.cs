@@ -100,7 +100,8 @@ public static class DataTypes
     /// <param name="srcType">Data type.</param>
     /// <returns>Checked result.</returns>
     public static bool IsIntegral(this DataType srcType) =>
-      srcType is PrimType ptype && ptype.Attributes.HasFlag(PrimTypeAttributes.IsInteger);
+      (srcType is PrimType ptype && ptype.Attributes.HasFlag(PrimTypeAttributes.IsInteger))
+      || (srcType is VectorType vectorType && IsIntegral(vectorType.ElemType));
 
     /// <summary>
     /// check the data type is float.
@@ -108,7 +109,8 @@ public static class DataTypes
     /// <param name="srcType">Data type.</param>
     /// <returns>Checked result.</returns>
     public static bool IsFloat(this DataType srcType) =>
-      srcType is PrimType ptype && ptype.Attributes.HasFlag(PrimTypeAttributes.IsFloat);
+      (srcType is PrimType ptype && ptype.Attributes.HasFlag(PrimTypeAttributes.IsFloat))
+      || (srcType is VectorType vectorType && IsFloat(vectorType.ElemType));
 
     /// <summary>
     /// check the data type is pointer.

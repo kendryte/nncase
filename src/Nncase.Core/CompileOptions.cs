@@ -116,6 +116,11 @@ public sealed record CompileOptions
     public ShapeBucketOptions ShapeBucketOptions { get; set; } = ShapeBucketOptions.Default;
 
     /// <summary>
+    /// Gets or sets huggingface options.
+    /// </summary>
+    public HuggingFaceOptions HuggingFaceOptions { get; set; } = HuggingFaceOptions.Default;
+
+    /// <summary>
     /// Gets or sets a value indicating whether is benchmark only.
     /// </summary>
     public bool IsBenchmarkOnly { get; set; }

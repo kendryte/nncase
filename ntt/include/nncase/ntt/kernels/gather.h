@@ -89,8 +89,8 @@ class gather_impl<fixed_shape<Dims...>, fixed_strides<InStrides...>,
                         &(input(src_index)));
                     constexpr auto len = domain_after_axis.length();
 
-                    ntt::u_memcpy<element_type>(addr_input, 1,
-                                                addr_output_element, 1, len);
+                    u_unary<ntt::ops::copy<element_type>, element_type>(
+                        addr_input, 1, addr_output_element, 1, len);
                     addr_output_element += len;
                 }
             });

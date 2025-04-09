@@ -9,8 +9,4 @@ public sealed partial class Expand : CPUKernelOp
     public static readonly ParameterInfo Input = new(typeof(Expand), 0, "input");
 
     public static readonly ParameterInfo Output = new(typeof(Expand), 1, "output");
-
-    public IRArray<int> Shape { get; }
-
-    public IRArray<SBP> NdSbp { get; }
 }

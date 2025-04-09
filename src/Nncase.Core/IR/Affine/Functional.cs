@@ -45,5 +45,5 @@ public static class Affine
 
     public static For For(int memoryLevel, AffineMap domain, Expr body) => new For(memoryLevel, domain, body);
 
-    public static IGridBuilder Grid(string moduleKind) => new GridBuilder(moduleKind);
+    public static IGridBuilder Grid() => new GridBuilder();
 }

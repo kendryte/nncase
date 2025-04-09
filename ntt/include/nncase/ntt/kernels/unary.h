@@ -22,7 +22,47 @@
 
 namespace nncase::ntt {
 namespace detail {
-template <class Shape, class InStrides, class OutStrides> class unary_impl;
+template <class Shape, class InStrides, class OutStrides> class unary_impl {
+  public:
+    static constexpr size_t Rank = Shape::rank();
+
+    template <class Op, class TIn, class TOut>
+    constexpr void operator()(Op &op, const TIn &input, TOut &output) {
+        ranked_shape<Rank> index{};
+        auto conti_dims =
+            std::min(contiguous_dims(input.shape(), input.strides()),
+                     contiguous_dims(input.shape(), output.strides()));
+        apply<Op, TIn, TOut, 0>(op, index, conti_dims, input, output);
+    }
+
+  private:
+    template <class Op, class TIn, class TOut, size_t Axis>
+    constexpr void apply(Op &op, ranked_shape<Rank> &index, size_t conti_dims,
+                         const TIn &input, TOut &output) {
+        const auto outer_dims = Rank - conti_dims;
+        if (Axis >= outer_dims) {
+            size_t inner_size = 1;
+            for (size_t i = outer_dims; i < input.shape().rank(); i++)
+                inner_size *= input.shape()[i];
+            auto input_p =
+                input.buffer().data() + linear_offset(index, input.strides());
+            auto output_p =
+                output.buffer().data() + linear_offset(index, output.strides());
+            unary_contiguous<Op>(input_p, output_p, inner_size);
+        } else if constexpr (Axis + 1 < Rank) {
+            const auto dim = input.shape()[Axis];
+            for (index[Axis] = 0; index[Axis] < dim; index[Axis]++) {
+                apply<Op, TIn, TOut, Axis + 1>(op, index, conti_dims, input,
+                                               output);
+            }
+        }
+    }
+
+    template <class Op, class T>
+    constexpr void unary_contiguous(const T *input, T *output, size_t extent) {
+        ntt::u_unary<Op, T>(input, 1, output, 1, extent);
+    }
+};
 
 template <size_t... Dims, size_t... InStrides, size_t... OutStrides>
 class unary_impl<fixed_shape<Dims...>, fixed_strides<InStrides...>,

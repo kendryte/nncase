@@ -17,14 +17,14 @@ namespace Nncase.IR;
 public enum DimensionKind : byte
 {
     /// <summary>
-    /// Dynamic dimension.
-    /// </summary>
-    Dynamic,
-
-    /// <summary>
     /// Fixed dimesnion.
     /// </summary>
     Fixed,
+
+    /// <summary>
+    /// Dynamic dimension.
+    /// </summary>
+    Dynamic,
 
     /// <summary>
     /// Used for shape pattern.
@@ -39,7 +39,7 @@ public struct Dimension : IEquatable<Dimension?>
 {
     public static readonly Dimension Unknown = new Dimension(None.Default);
 
-    private readonly long? _fixedValue;
+    private readonly long _fixedValue;
     private readonly Expr? _exprValue;
 
     /// <summary>
@@ -80,16 +80,12 @@ public struct Dimension : IEquatable<Dimension?>
     /// <summary>
     /// Gets value.
     /// </summary>
-    public Expr Value => _exprValue ?? _fixedValue!.Value;
+    public Expr Value => _exprValue ?? _fixedValue;
 
     /// <summary>
     /// Gets FixedValue.
     /// </summary>
-    public long FixedValue
-    {
-        get => _fixedValue ??
-           throw new InvalidOperationException("Only Can Get It When Shape Is Fixed !");
-    }
+    public long FixedValue => IsFixed ? _fixedValue : throw new InvalidOperationException("Dimension is not fixed.");
 
     /// <summary>
     /// Gets a value indicating whether dynamic.
@@ -177,6 +173,10 @@ public struct Dimension : IEquatable<Dimension?>
         {
             return System.Math.Abs(value.FixedValue);
         }
+        else if (value.IsUnknown)
+        {
+            return Unknown;
+        }
 
         return value.Value.Metadata.Range?.Min >= 0 ? value.Value : IR.F.Math.Abs(value.Value);
     }
@@ -186,6 +186,18 @@ public struct Dimension : IEquatable<Dimension?>
         if (value.IsFixed && min.IsFixed && max.IsFixed)
         {
             return System.Math.Clamp(value.FixedValue, min.FixedValue, max.FixedValue);
+        }
+        else if (value.IsFixed && min.IsFixed && value.FixedValue <= min.FixedValue)
+        {
+            return min;
+        }
+        else if (value.IsFixed && max.IsFixed && value.FixedValue >= max.FixedValue)
+        {
+            return max;
+        }
+        else if (value.IsUnknown || min.IsUnknown || max.IsUnknown)
+        {
+            return Unknown;
         }
 
         return IR.F.Math.Clamp(value.Value, min.Value, max.Value);
@@ -197,8 +209,17 @@ public struct Dimension : IEquatable<Dimension?>
         {
             return (lhs.FixedValue + rhs.FixedValue - 1) / rhs.FixedValue;
         }
+        else if (lhs.IsUnknown || rhs.IsUnknown)
+        {
+            return Unknown;
+        }
 
         return IR.F.Math.CeilDiv(lhs.Value, rhs.Value);
+    }
+
+    public static Dimension AlignUp(Dimension dimension, int align)
+    {
+        return CeilDiv(dimension, align) * align;
     }
 
     public static Dimension Max(Dimension lhs, Dimension rhs)
@@ -206,6 +227,10 @@ public struct Dimension : IEquatable<Dimension?>
         if (lhs.IsFixed && rhs.IsFixed)
         {
             return System.Math.Max(lhs.FixedValue, rhs.FixedValue);
+        }
+        else if (lhs.IsUnknown || rhs.IsUnknown)
+        {
+            return Unknown;
         }
 
         return IR.F.Math.Max(lhs.Value, rhs.Value);
@@ -217,13 +242,21 @@ public struct Dimension : IEquatable<Dimension?>
         {
             return System.Math.Min(lhs.FixedValue, rhs.FixedValue);
         }
+        else if (lhs.IsUnknown || rhs.IsUnknown)
+        {
+            return Unknown;
+        }
 
         return IR.F.Math.Min(lhs.Value, rhs.Value);
     }
 
     public static Dimension Select(Dimension value, Dimension compare, Dimension trueValue, Dimension falseValue)
     {
-        if (value.IsFixed && compare.IsFixed)
+        if (trueValue == falseValue)
+        {
+            return trueValue;
+        }
+        else if (value.IsFixed && compare.IsFixed)
         {
             return value.FixedValue == compare.FixedValue ? trueValue : falseValue;
         }
@@ -233,8 +266,36 @@ public struct Dimension : IEquatable<Dimension?>
         {
             return falseValue;
         }
+        else if (value.IsUnknown || compare.IsUnknown)
+        {
+            return Unknown;
+        }
 
         return IR.F.Math.Select(IR.F.Math.Equal(value.Value, compare.Value), trueValue.ToExpr(), falseValue.ToExpr());
+    }
+
+    public static Expr ConcatPadding(Dimension[] padH, Dimension[] padW)
+    {
+        // return [[padh_before, padh_after],
+        //         [padw_before, padw_after]]
+        var padHExpr = new Shape(padH).ToValueArrayExpr();
+        var padWExpr = new Shape(padW).ToValueArrayExpr();
+        var result = IR.F.Tensors.Stack(new IR.Tuple(padHExpr, padWExpr), 0);
+        return padHExpr is Const && padWExpr is Const ? result.Evaluate().AsTensor() : result;
+    }
+
+    public static Expr ConcatPadding(Dimension[,] pads)
+    {
+        if (pads.GetLength(1) != 2)
+        {
+            throw new ArgumentException("Padding must be a 2D array with 2 columns");
+        }
+
+        var stackedPads = Enumerable.Range(0, pads.GetLength(0))
+            .Select(i => new Shape(pads[i, 0], pads[i, 1]).ToValueArrayExpr())
+            .ToArray();
+        var result = IR.F.Tensors.Stack(new IR.Tuple(stackedPads), 0);
+        return stackedPads.All(x => x is Const) ? result.Evaluate().AsTensor() : result;
     }
 
     /// <inheritdoc/>
