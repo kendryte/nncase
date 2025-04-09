@@ -96,6 +96,10 @@ PYBIND11_MODULE(_nncase, m) {
                       py::overload_cast<const huggingface_options &>(
                           &import_options::huggingface_options));
 
+    py::enum_<huggingface_attenion_backend>(m, "HuggingFaceAttentionBackend")
+        .value("Default", huggingface_attenion_backend::_default)
+        .value("PagedAttention", huggingface_attenion_backend::paged_attention);
+
     py::class_<huggingface_options>(m, "HuggingFaceOptions")
         .def(py::init())
         .def_property(
@@ -108,7 +112,12 @@ PYBIND11_MODULE(_nncase, m) {
             py::overload_cast<bool>(&huggingface_options::output_hidden_states))
         .def_property("use_cache",
                       py::overload_cast<>(&huggingface_options::use_cache),
-                      py::overload_cast<bool>(&huggingface_options::use_cache));
+                      py::overload_cast<bool>(&huggingface_options::use_cache))
+        .def_property(
+            "attention_backend",
+            py::overload_cast<>(&huggingface_options::attention_backend),
+            py::overload_cast<huggingface_attenion_backend>(
+                &huggingface_options::attention_backend));
 
     py::class_<compile_options>(m, "CompileOptions")
         .def(py::init())

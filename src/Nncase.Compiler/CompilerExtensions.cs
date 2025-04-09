@@ -28,6 +28,12 @@ public static class CompilerExtensions
                     return await compiler.ImportNcnnModuleAsync(fileStream, binStream);
                 }
 
+            case "HUGGINGFACE":
+                return await compiler.ImportHuggingFaceModuleAsync(fileName, new ImportOptions()
+                {
+                    HuggingFaceOptions = CompileSessionScope.Current!.CompileOptions.HuggingFaceOptions,
+                });
+
             default:
                 throw new NotSupportedException($"Unsupported model format: {modelFormat}");
         }

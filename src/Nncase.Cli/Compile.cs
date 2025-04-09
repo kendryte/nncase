@@ -41,7 +41,8 @@ internal sealed class CompileCommand : Command
         InputFormat = new Option<string>(
           aliases: new[] { "-i", "--input-format" },
           description: "input format, e.g. tflite",
-          getDefaultValue: () => "tflite");
+          getDefaultValue: () => "tflite").
+          FromAmong("tflite", "onnx", "param", "huggingface");
         DumpFlags = new Option<IEnumerable<DumpFlags>>(
           name: "--dump-flags",
           description: "dump ir flags. \navailable value: None,ImportOps,PassIR,EGraphCost,Rewrite,Calibration,Evaluator,Compile,Tiling,Schedule,CodeGen.")
@@ -152,6 +153,23 @@ internal sealed class CompileCommand : Command
             name: "--benchmark-only",
             description: "whether to generate benchmark only model",
             getDefaultValue: () => false);
+        HFOutputAttentions = new(
+            name: "--hf-output-attentions",
+            description: "whether to output attentions, only support for huggface format",
+            getDefaultValue: () => false);
+        HFOutputHiddenStates = new(
+            name: "--hf-output-hidden-states",
+            description: "whether to output hidden states, only support for huggface format",
+            getDefaultValue: () => false);
+        HFUseCache = new(
+            name: "--hf-use-cache",
+            description: "whether to use cache, only support for huggface format",
+            getDefaultValue: () => false);
+        HFAttenionBackend = new(
+            name: "--hf-attention-backend",
+            description: "the attention backend, only support for huggface format",
+            getDefaultValue: () => HuggingFaceAttentionBackendKind.Default);
+
         AddArgument(InputFile);
         AddArgument(OutputFile);
         AddGlobalOption(InputFormat);
@@ -177,6 +195,10 @@ internal sealed class CompileCommand : Command
         AddGlobalOption(Std);
         AddGlobalOption(ModelLayout);
         AddGlobalOption(BenchmarkOnly);
+        AddGlobalOption(HFOutputAttentions);
+        AddGlobalOption(HFOutputHiddenStates);
+        AddGlobalOption(HFUseCache);
+        AddGlobalOption(HFAttenionBackend);
     }
 
     public Argument<string> InputFile { get; }
@@ -228,4 +250,12 @@ internal sealed class CompileCommand : Command
     public Option<string> ModelLayout { get; }
 
     public Option<bool> BenchmarkOnly { get; }
+
+    public Option<bool> HFOutputAttentions { get; }
+
+    public Option<bool> HFOutputHiddenStates { get; }
+
+    public Option<bool> HFUseCache { get; }
+
+    public Option<HuggingFaceAttentionBackendKind> HFAttenionBackend { get; }
 }

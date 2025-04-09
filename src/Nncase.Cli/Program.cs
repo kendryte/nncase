@@ -127,6 +127,13 @@ internal partial class Program
                 ModelQuantMode = context.ParseResult.GetValueForOption(compilecmd.ModelQuantMode),
                 QuantScheme = context.ParseResult.GetValueForOption(compilecmd.QuantScheme)!,
             },
+            HuggingFaceOptions = new()
+            {
+                OutputAttentions = context.ParseResult.GetValueForOption(compilecmd.HFOutputAttentions),
+                OutputHiddenStates = context.ParseResult.GetValueForOption(compilecmd.HFOutputHiddenStates),
+                UseCache = context.ParseResult.GetValueForOption(compilecmd.HFUseCache),
+                AttenionBackend = context.ParseResult.GetValueForOption(compilecmd.HFAttenionBackend),
+            },
         };
 
 #if false
