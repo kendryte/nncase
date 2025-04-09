@@ -61,13 +61,14 @@ def recursive_stack(obj):
         else:
             return obj
 
+
 def dequantize_weights(model_dir):
     org_safetensors = model_dir + "/model_org.safetensors"
     f32_safetensors = model_dir + "/model.safetensors"
     if not os.path.exists(org_safetensors):
         os.rename(f32_safetensors, org_safetensors)
     state_dict = load_file(org_safetensors)
-    
+
     for key in list(state_dict.keys()):
         if key.endswith('weight_scale'):
             scale_tensor = state_dict[key]
@@ -86,11 +87,13 @@ def dequantize_weights(model_dir):
 
     save_file(state_dict, f32_safetensors)
 
+
 def restore_weights(model_dir):
     org_safetensors = model_dir + "/model_org.safetensors"
     f32_safetensors = model_dir + "/model.safetensors"
     if os.path.exists(org_safetensors):
         os.rename(org_safetensors, f32_safetensors)
+
 
 class HuggingfaceTestRunner(TestRunner):
     def __init__(self, case_name, overwrite_configs: str = None):
@@ -199,7 +202,7 @@ class HuggingfaceTestRunner(TestRunner):
         config = AutoConfig.from_pretrained(model_path + "/config.json")
         if hasattr(config, "quantization_config"):
             dequantize_weights(model_path)
-            delattr(config, "quantization_config") 
+            delattr(config, "quantization_config")
         self.model = AutoModelForCausalLM.from_pretrained(
             model_path, config=config, torch_dtype="auto", device_map="auto", trust_remote_code=True).to(torch.float32).eval()
         restore_weights(model_path)
