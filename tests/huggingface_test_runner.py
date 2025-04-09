@@ -204,7 +204,7 @@ class HuggingfaceTestRunner(TestRunner):
             dequantize_weights(model_path)
             delattr(config, "quantization_config")
         self.model = AutoModelForCausalLM.from_pretrained(
-            model_path, config=config, torch_dtype="auto", device_map="auto", trust_remote_code=True).to(torch.float32).eval()
+            model_path, config=config, torch_dtype="auto", device_map="cpu", trust_remote_code=True).to(torch.float32).eval()
         restore_weights(model_path)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         self.generation_config = self.model.generation_config
