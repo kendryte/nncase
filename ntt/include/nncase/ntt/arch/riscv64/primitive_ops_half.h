@@ -199,22 +199,21 @@ REGISTER_RVV_UNARY_FP16_OP(ceil, half, ceil_float16)
                                            const size_t vl) {                  \
         auto n = __riscv_vfmv_v_f_f16m##lmul(                                  \
             half::round_to_half(0x1.45f306p-2f), vl);                          \
-        auto half = __riscv_vfmv_v_f_f16m##lmul(0.5f16, vl);                   \
+        auto half =                                                            \
+            __riscv_vfmv_v_f_f16m##lmul(half::round_to_half(0.5f), vl);        \
         auto c0 = __riscv_vfmv_v_f_f16m##lmul(                                 \
             half::round_to_half(-0x1.555548p-3f), vl);                         \
         auto c2 = __riscv_vfmv_v_f_f16m##lmul(                                 \
             half::round_to_half(-0x1.9f42eap-13f), vl);                        \
                                                                                \
-        /*  n = rint((|x|+pi/2)/pi) - 0.5. */                                  \
         auto r = __riscv_vfabs_v_f16m##lmul(v, vl);                            \
-        n = __riscv_vfmadd_vv_f16m##lmul(n, r, half, vl);                      \
+        n = __riscv_vfmadd_vv_f16m##lmul(r, n, half, vl);                      \
         auto ni = __riscv_vfcvt_x_f_v_i16m##lmul(n, vl);                       \
         n = __riscv_vfcvt_f_x_v_f16m##lmul(ni, vl);                            \
-        auto odd = __riscv_vadd_vx_i16m##lmul(ni, int16_t(0x1.8p+23), vl);     \
-        n = __riscv_vfsub_vf_f16m##lmul(n, 0.5f16, vl);                        \
-        odd = __riscv_vsll_vx_i16##m##lmul(odd, 31, vl);                       \
+        auto parity = __riscv_vand_vx_i16m##lmul(ni, 1, vl);                   \
+        auto odd = __riscv_vsll_vx_i16m##lmul(parity, 15, vl);                 \
+        n = __riscv_vfsub_vf_f16m##lmul(n, half::round_to_half(0.5f), vl);     \
                                                                                \
-        /* r = |x| - n*pi  (range reduction into -pi/2 .. pi/2).  */           \
         r = __riscv_vfnmsac_vf_f16m##lmul(                                     \
             r, half::round_to_half(0x1.921fb6p+1f), n, vl);                    \
         r = __riscv_vfnmsac_vf_f16m##lmul(                                     \
@@ -222,7 +221,6 @@ REGISTER_RVV_UNARY_FP16_OP(ceil, half, ceil_float16)
         r = __riscv_vfnmsac_vf_f16m##lmul(                                     \
             r, half::round_to_half(-0x1.ee59dap-49f), n, vl);                  \
                                                                                \
-        /* y = sin(r).  */                                                     \
         auto r2 = __riscv_vfmul_vv_f16m##lmul(r, r, vl);                       \
         auto y1 = __riscv_vfmv_v_f_f16m##lmul(                                 \
             half::round_to_half(0x1.5b2e76p-19f), vl);                         \
@@ -234,6 +232,7 @@ REGISTER_RVV_UNARY_FP16_OP(ceil, half, ceil_float16)
         auto r3 = __riscv_vfmul_vv_f16m##lmul(r2, r, vl);                      \
         y1 = __riscv_vfmadd_vv_f16m##lmul(y1, r4, y2, vl);                     \
         y1 = __riscv_vfmadd_vv_f16m##lmul(y1, r3, r, vl);                      \
+                                                                               \
         auto tmp = __riscv_vreinterpret_v_f16m##lmul##_i16m##lmul(y1);         \
         tmp = __riscv_vxor_vv_i16m##lmul(tmp, odd, vl);                        \
         return __riscv_vreinterpret_v_i16m##lmul##_f16m##lmul(tmp);            \
@@ -362,12 +361,12 @@ REGISTER_RVV_UNARY_FP16_OP(sign, half, sign_float16)
             __riscv_vreinterpret_v_f16m##lmul##_i16m##lmul(r), vl);            \
         auto ni = __riscv_vfcvt_x_f_v_i16m##lmul(n, vl);                       \
         n = __riscv_vfcvt_f_x_v_f16m##lmul(ni, vl);                            \
-        auto odd = __riscv_vadd_vx_i16m##lmul(ni, int16_t(0x1.8p+23), vl);     \
+        auto odd = __riscv_vadd_vx_i16m##lmul(ni, 1, vl);                      \
                                                                                \
         /* r = |x| - n*pi  (range reduction into -pi/2 .. pi/2).  */           \
         r = __riscv_vfnmsac_vf_f16m##lmul(                                     \
             r, half::round_to_half(0x1.921fb6p+1f), n, vl);                    \
-        odd = __riscv_vsll_vx_i16##m##lmul(odd, 31, vl);                       \
+        odd = __riscv_vsll_vx_i16##m##lmul(odd, 15, vl);                       \
         r = __riscv_vfnmsac_vf_f16m##lmul(                                     \
             r, half::round_to_half(-0x1.777a5cp-24f), n, vl);                  \
         r = __riscv_vfnmsac_vf_f16m##lmul(                                     \

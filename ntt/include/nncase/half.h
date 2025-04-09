@@ -358,5 +358,8 @@ inline half swish(const half &a) {
 inline half swishb(const half &a) {
     return half::round_to_half(std::swishb(float(a)));
 }
+inline half nextafter(const half &a, const half &b) {
+    return half::round_to_half(std::nextafterf(float(a), float(b)));
+}
 inline long lrint(const half &a) { return lrintf(float(a)); }
 } // namespace std
