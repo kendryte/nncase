@@ -911,9 +911,9 @@ class import_options : public clr_object_base {
     }
 };
 
-class paged_attention_kv_cache : public clr_object_base {
+class paged_attention_kv_cache : public rtvalue {
   public:
-    using clr_object_base::clr_object_base;
+    using rtvalue::clr_object_base;
 
     paged_attention_kv_cache(size_t num_layers, size_t num_blocks,
                              size_t block_size, size_t num_kv_heads,

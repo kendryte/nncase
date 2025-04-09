@@ -41,7 +41,7 @@ internal sealed class CompileCommand : Command
         InputFormat = new Option<string>(
           aliases: new[] { "-i", "--input-format" },
           description: "input format, e.g. tflite",
-          getDefaultValue: () => "tflite").
+          getDefaultValue: () => string.Empty).
           FromAmong("tflite", "onnx", "param", "huggingface");
         DumpFlags = new Option<IEnumerable<DumpFlags>>(
           name: "--dump-flags",

@@ -15,15 +15,23 @@ public static class CompilerExtensions
 {
     public static async Task<IRModule> ImportModuleAsync(this ICompiler compiler, string modelFormat, string fileName, bool isBenchmarkOnly = false)
     {
-        using var fileStream = File.OpenRead(fileName);
         switch (modelFormat.ToUpperInvariant())
         {
             case "TFLITE":
-                return await compiler.ImportTFLiteModuleAsync(fileStream);
+                {
+                    using var fileStream = File.OpenRead(fileName);
+                    return await compiler.ImportTFLiteModuleAsync(fileStream);
+                }
+
             case "ONNX":
-                return await compiler.ImportOnnxModuleAsync(fileStream);
+                {
+                    using var fileStream = File.OpenRead(fileName);
+                    return await compiler.ImportOnnxModuleAsync(fileStream);
+                }
+
             case "PARAM":
                 {
+                    using var fileStream = File.OpenRead(fileName);
                     using var binStream = isBenchmarkOnly ? (Stream)new ZeroStream() : File.OpenRead(Path.ChangeExtension(fileName, "bin"));
                     return await compiler.ImportNcnnModuleAsync(fileStream, binStream);
                 }

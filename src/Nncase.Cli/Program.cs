@@ -36,7 +36,8 @@ internal partial class Program
         using var compileSession = CompileSession.Create(target, compileOptions);
         using var compileSessionScope = new CompileSessionScope(compileSession);
         var compiler = compileSession.Compiler;
-        IR.IRModule module = await compiler.ImportModuleAsync(Path.GetExtension(compileOptions.InputFile).Trim('.'), compileOptions.InputFile, compileOptions.IsBenchmarkOnly);
+        var inputformat = compileOptions.InputFormat.Any() ? compileOptions.InputFormat : (System.IO.File.Exists(compileOptions.InputFile) ? Path.GetExtension(compileOptions.InputFile).Trim('.') : throw new NotSupportedException($"Input File {compileOptions.InputFile} is directory and not set the input format!"));
+        IR.IRModule module = await compiler.ImportModuleAsync(inputformat, compileOptions.InputFile, compileOptions.IsBenchmarkOnly);
 
         // 3. create the calib dataset
         if (compileOptions.QuantizeOptions.ModelQuantMode == Quantization.ModelQuantMode.UsePTQ)
@@ -75,9 +76,13 @@ internal partial class Program
             var (targetCmd, targetParser) = target.RegisterCommandAndParser();
             Action<System.CommandLine.Invocation.InvocationContext> targetHandler = async (System.CommandLine.Invocation.InvocationContext context) =>
             {
+                System.Console.WriteLine("fuck!!!", context);
                 var options = ParseCompileOptions(context, compile);
+                System.Console.WriteLine("fuck2!!!", context);
                 options.TargetOptions = targetParser(context, targetCmd);
+                System.Console.WriteLine("fuck3!!!", context);
                 await RunAsync(targetCmd.Name, options, context.ParseResult.GetValueForOption(compile.DatasetFormat), context.ParseResult.GetValueForOption(compile.Dataset)!, context.ParseResult.GetValueForArgument(compile.OutputFile), context.GetHost());
+                System.Console.WriteLine("fuck4!!!", context);
             };
             targetCmd.SetHandler(targetHandler);
             compile.AddCommand(targetCmd);
