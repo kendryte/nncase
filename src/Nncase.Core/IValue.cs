@@ -428,6 +428,8 @@ public sealed class ShapeValue : IValue, IEquatable<ShapeValue?>
         return new[] { AsTensor() };
     }
 
+    T IValue.AsObjectRef<T>() => throw new NotImplementedException();
+
     /// <inheritdoc/>
     public override bool Equals(object? obj)
     {
