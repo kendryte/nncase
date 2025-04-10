@@ -79,7 +79,7 @@ def dequantize_weights(model_dir):
                     scale = scale_tensor.item()
                     weight_fp32 = weight_tensor.to(torch.float32)
                     scaled_weight = weight_fp32 * scale
-                    state_dict[weight_key] = scaled_weight.to(torch.float16)
+                    state_dict[weight_key] = scaled_weight
                 else:
                     print(f"Warning: {key} is not a single-element tensor, skipping.")
             else:
