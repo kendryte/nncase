@@ -133,6 +133,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
     {
         PrimType ptype => ptype.GetDisplayName() + (type.Shape.IsScalar ? string.Empty : VisitShape(type.Shape)),
         PointerType { ElemType: PrimType etype } => $"*{etype.GetDisplayName()}",
+        ReferenceType { ElemType: DataType rtype } => $"&{rtype.GetDisplayName()}",
         ValueType => $"{type.DType}",
         VectorType vtype => $"{vtype.ElemType.GetDisplayName()}<{string.Join(",", vtype.Lanes)}>" + (type.Shape.IsScalar ? string.Empty : VisitShape(type.Shape)),
         _ => throw new NotSupportedException(type.DType.GetType().Name),

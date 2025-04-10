@@ -5,6 +5,7 @@ set(SRCS
         object.cpp
         shape.cpp
         tensor.cpp
+        attention_kv_cache.cpp
         type.cpp
         value.cpp)
 

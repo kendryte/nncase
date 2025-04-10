@@ -33,7 +33,7 @@ import warnings
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 import _nncase
-from _nncase import RuntimeTensor, RTValue, PagedAttentionKVCache, DUCAPagedAttentionKVCache, InterpreterForCausalLM, TensorDesc, Simulator, CpuTargetOptions, NocArchitecture, HierarchyKind, MemoryAccessArchitecture
+from _nncase import RuntimeTensor, RTValue, AttentionConfig, TensorDesc, Simulator, CpuTargetOptions, NocArchitecture, HierarchyKind, MemoryAccessArchitecture
 
 
 def _initialize():
@@ -101,7 +101,7 @@ class PTQTensorOptions:
 
 
 class GraphEvaluator:
-    _inputs: List[RuntimeTensor]
+    _inputs: List[RuntimeTensor | RTValue]
     _func: _nncase.Function
     _params: _nncase.Var
     _outputs: List[RuntimeTensor]
@@ -117,9 +117,9 @@ class GraphEvaluator:
         tensor = self._inputs[index]
         return tensor.to_runtime_tensor() if tensor else None
 
-    def set_input_tensor(self, index: int, value: RuntimeTensor):
+    def set_input_tensor(self, index: int, value: RuntimeTensor | RTValue):
         assert index < len(self._inputs)
-        self._inputs[index] = _nncase.RTValue.from_runtime_tensor(value)
+        self._inputs[index] = _nncase.RTValue.from_runtime_tensor(value) if isinstance(value, RuntimeTensor) else value
 
     def get_output_tensor(self, index: int):
         return self._outputs[index]

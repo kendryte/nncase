@@ -19,6 +19,8 @@
 namespace nncase {
 class object_node;
 class tensor_node;
+class attention_kv_cache_node;
+class paged_attention_kv_cache_node;
 class tuple_node;
 class value_node;
 class type_node;

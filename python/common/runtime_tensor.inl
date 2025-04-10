@@ -24,15 +24,15 @@ py::class_<tensor_desc>(m, "TensorDesc")
 
 py::class_<runtime_tensor>(m, "RuntimeTensor")
     .def_static("from_object",
-                [](const nncase::clr::paged_attention_kv_cache &obj) {
+                [](const nncase::attention_kv_cache &obj) {
                   auto ref_type =
-                  nncase::reference_type_t(std::in_place, datatype_t::paged_attention_kv_cache);
+                  nncase::reference_type_t(std::in_place, datatype_t::attention_kv_cache);
                   auto tensor = nncase::runtime::detail::create(
                     ref_type, {}, nncase::runtime::hrt::memory_pool_t::pool_shared).unwrap_or_throw();
                   auto host_buffer = tensor->buffer().as_host().unwrap_or_throw();
                   auto mapped_data = host_buffer.map(map_write).unwrap_or_throw();
                   auto dest_buffer = mapped_data.buffer();
-                  memcpy(dest_buffer.data(), obj.get(), host_buffer.size_bytes());
+                  memcpy(dest_buffer.data(), static_cast<void *>(obj.get()), host_buffer.size_bytes());
                   return runtime_tensor(tensor);
                 })
     .def_static(

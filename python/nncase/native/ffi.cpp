@@ -16,6 +16,7 @@
 #include "type_casters.h"
 #include <iostream>
 #include <llm_ffi.h>
+#include <nncase/attention_kv_cache.h>
 #include <nncase/compiler.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -478,66 +479,13 @@ PYBIND11_MODULE(_nncase, m) {
         .def("run",
              [](interpreter &interp) { interp.run().unwrap_or_throw(); });
 
-    register_kv_cache(m);
+    // register_kv_cache(m);
 
-    py::class_<paged_attention_kv_cache>(m, "PagedAttentionKVCache")
-        .def(py::init<size_t, size_t, size_t, size_t, size_t>())
-        .def_property(
-            "block_tables",
-            [](paged_attention_kv_cache &self) {
-                auto v = self.block_tables().to_value();
-                if (v.is_a<tensor>()) {
-                    return runtime_tensor(v.as<tensor>().unwrap_or_throw());
-                } else {
-                    throw py::value_error("block_tables is not a tensor");
-                }
-            },
-            [](paged_attention_kv_cache &self, runtime_tensor &value) {
-                auto rtv = rtvalue(value.impl());
-                self.block_tables(rtv);
-            })
-        .def_property(
-            "seq_lens",
-            [](paged_attention_kv_cache &self) {
-                auto v = self.seq_lens().to_value();
-                if (v.is_a<tensor>()) {
-                    return runtime_tensor(v.as<tensor>().unwrap_or_throw());
-                } else {
-                    throw py::value_error("seq_lens is not a tensor");
-                }
-            },
-            [](paged_attention_kv_cache &self, runtime_tensor &value) {
-                auto rtv = rtvalue(value.impl());
-                self.seq_lens(rtv);
-            })
-        .def_property(
-            "context_lens",
-            [](paged_attention_kv_cache &self) {
-                auto v = self.context_lens().to_value();
-                if (v.is_a<tensor>()) {
-                    return runtime_tensor(v.as<tensor>().unwrap_or_throw());
-                } else {
-                    throw py::value_error("context_lens is not a tensor");
-                }
-            },
-            [](paged_attention_kv_cache &self, runtime_tensor &value) {
-                auto rtv = rtvalue(value.impl());
-                self.context_lens(rtv);
-            })
-        .def_property(
-            "slot_mapping",
-            [](paged_attention_kv_cache &self) {
-                auto v = self.slot_mapping().to_value();
-                if (v.is_a<tensor>()) {
-                    return runtime_tensor(v.as<tensor>().unwrap_or_throw());
-                } else {
-                    throw py::value_error("slot_mapping is not a tensor");
-                }
-            },
-            [](paged_attention_kv_cache &self, runtime_tensor &value) {
-                auto rtv = rtvalue(value.impl());
-                self.slot_mapping(rtv);
-            });
+    py::class_<attention_kv_cache>(m, "AttentionKVCache");
 
-    register_llm_interpreter(m);
+    register_paged_attention_scheduler(m);
+
+    // py::class_<, typename options>
+
+    // register_llm_interpreter(m);
 }

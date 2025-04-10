@@ -142,6 +142,7 @@ public static class DataTypes
     {
         PrimType primType => $"DataTypes.{primType.FullName}",
         PointerType pointerType => $"new PointerType({pointerType.ElemType.GetCSharpName()})",
+        ReferenceType refType => $"new ReferenceType({refType.ElemType.GetCSharpName()})",
         ValueType valueType => $"new {valueType.GetType().Name}()",
         VectorType vtype => $"{GetCSharpName(vtype.ElemType)}<{string.Join(",", vtype.Lanes)}>",
         _ => throw new ArgumentOutOfRangeException(dataType.GetType().Name),
