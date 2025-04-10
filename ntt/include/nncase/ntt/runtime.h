@@ -15,6 +15,8 @@
 #pragma once
 #ifdef NNCASE_CPU_MODULE
 #include "arch/cpu/topology.h"
+#elif defined(NNCASE_XPU_MODULE)
+#include "arch/xpu/topology.h"
 #endif
 #include "shape.h"
 #include <cstddef>
