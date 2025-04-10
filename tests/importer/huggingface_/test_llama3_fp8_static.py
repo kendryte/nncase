@@ -18,6 +18,7 @@ import pytest
 from huggingface_test_runner import HuggingfaceTestRunner, download_from_huggingface
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+
 def test_llama3_fp8_static(request):
     cfg = """
     [huggingface_options]
