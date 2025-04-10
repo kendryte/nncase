@@ -179,7 +179,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="value">Value.</param>
     /// <returns>Created tensor.</returns>
     public static Tensor<T> FromScalar<T>(T value)
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
     {
         var tensor = new Tensor<T>(ReadOnlySpan<long>.Empty);
         tensor[Array.Empty<long>()] = value;
@@ -607,7 +607,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         public object Value { get; }
 
         public void Initialize<T>(Tensor<T> tensor)
-            where T : unmanaged, IEquatable<T>
+            where T : struct, IEquatable<T>
         {
             var value = (T)Convert.ChangeType(Value, typeof(T));
             tensor.Fill(value);

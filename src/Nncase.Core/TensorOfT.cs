@@ -28,7 +28,7 @@ namespace Nncase;
 /// <typeparam name="T">type contained within the Tensor. Typically a value type such as int, double, float, etc.</typeparam>
 public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollection<T>,
     IReadOnlyCollection<T>, IList<T>, IReadOnlyList<T>, IEquatable<Tensor<T>>
-    where T : unmanaged, IEquatable<T>
+    where T : struct, IEquatable<T>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="Tensor{T}"/> class.

@@ -181,7 +181,7 @@ public abstract record DataType
     /// <typeparam name="T">CLR type.</typeparam>
     /// <returns>Data type.</returns>
     public static DataType FromType<T>()
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
         => FromType(typeof(T));
 }
 

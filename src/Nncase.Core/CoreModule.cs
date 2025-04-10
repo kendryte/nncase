@@ -3,6 +3,7 @@
 
 using DryIoc;
 using Nncase.Hosting;
+using Nncase.IR.NN;
 
 namespace Nncase;
 

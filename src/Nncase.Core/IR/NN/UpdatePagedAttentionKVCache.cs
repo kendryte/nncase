@@ -12,11 +12,13 @@ using Nncase.PatternMatch;
 namespace Nncase.IR.NN;
 
 [PatternFunctionalGenerator]
-public sealed partial class PagedAttention : Op
+public sealed partial class UpdatePagedAttentionKVCache : Op
 {
-    public static readonly ParameterInfo Q = new(typeof(PagedAttention), 0, "q", ParameterKind.Input);
+    public static readonly ParameterInfo Slots = new(typeof(PagedAttention), 0, "slots", ParameterKind.Input);
 
-    public static readonly ParameterInfo KVCache = new(typeof(PagedAttention), 3, "kvCache", ParameterKind.Attribute);
+    public static readonly ParameterInfo KVCache = new(typeof(UpdatePagedAttentionKVCache), 1, "kvCache", ParameterKind.Attribute);
+
+    public AttentionCacheKind CacheKind { get; }
 
     public int LayerId { get; }
 }

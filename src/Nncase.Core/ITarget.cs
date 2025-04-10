@@ -9,6 +9,7 @@ using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Nncase.CodeGen;
 using Nncase.IR;
+using Nncase.IR.NN;
 using Nncase.Passes;
 using Nncase.Quantization;
 using Nncase.Targets;
