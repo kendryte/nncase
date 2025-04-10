@@ -75,7 +75,7 @@ def dequantize_weights(model_dir):
             weight_key = key.replace('.weight_scale', '.weight')
             if weight_key in state_dict:
                 weight_tensor = state_dict[weight_key]
-                if scale_tensor.shape[0] == weight_tensor.shape[0]:
+                if scale_tensor.numel() == 1 or scale_tensor.shape[0] == weight_tensor.shape[0]:
                     weight_fp32 = weight_tensor.to(torch.float32)
                     scaled_weight = weight_fp32 * scale_tensor
                     state_dict[weight_key] = scaled_weight
