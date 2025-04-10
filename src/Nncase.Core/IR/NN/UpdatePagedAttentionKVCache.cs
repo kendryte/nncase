@@ -16,7 +16,7 @@ public sealed partial class UpdatePagedAttentionKVCache : Op
 {
     public static readonly ParameterInfo Slots = new(typeof(PagedAttention), 0, "slots", ParameterKind.Input);
 
-    public static readonly ParameterInfo KVCache = new(typeof(UpdatePagedAttentionKVCache), 1, "kvCache", ParameterKind.Attribute);
+    public static readonly ParameterInfo KVCaches = new(typeof(UpdatePagedAttentionKVCache), 1, "kvCaches", ParameterKind.Attribute);
 
     public AttentionCacheKind CacheKind { get; }
 

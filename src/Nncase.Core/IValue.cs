@@ -105,11 +105,6 @@ public static class Value
                 throw new ArgumentOutOfRangeException(nameof(@const));
         }
     }
-
-    public static IValue FromObject(object @object)
-    {
-        return new ReferenceValue(@object);
-    }
 }
 
 /// <summary>

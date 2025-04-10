@@ -14,7 +14,6 @@ namespace Nncase;
 /// </summary>
 /// <typeparam name="T">Elem type.</typeparam>
 public struct Reference<T> : IEquatable<Reference<T>>
-    where T : IEquatable<T>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="Reference{T}"/> struct.
@@ -66,13 +65,13 @@ public struct Reference<T> : IEquatable<Reference<T>>
     /// <inheritdoc/>
     public bool Equals(Reference<T> other)
     {
-        return Value.Equals(other.Value);
+        return EqualityComparer<T>.Default.Equals(Value, other.Value);
     }
 
     /// <inheritdoc/>
     public override int GetHashCode()
     {
-        return Value.GetHashCode();
+        return HashCode.Combine(Value);
     }
 }
 

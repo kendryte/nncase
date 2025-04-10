@@ -13,10 +13,6 @@ using Xunit;
 
 namespace Nncase.Tests.EvaluatorTest;
 
-internal sealed record SeqLen(int QueryLen, int ContextLen)
-{
-}
-
 [AutoSetupTestMethod(InitSession = true)]
 public sealed class UnitTestEvaluatorCPU : TestClassBase
 {
@@ -136,109 +132,6 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
                 18.0f, 19.0f, 20.0f, 21.0f,
                 18.0f, 19.0f, 20.0f, 21.0f]));
         }
-    }
-
-    [Theory]
-    [InlineData(new object[] { new[] { 8, 4 }, new[] { 8, 4 }, 2, 2, 32, 16, 99 })]
-    [InlineData(new object[] { new[] { 8, 1 }, new[] { 16, 4 }, 2, 2, 32, 16, 99 })]
-    public void TestRefPagedAttention(int[] query_lens, int[] seq_lens, int num_q_heads, int num_kv_heads, int head_size, int block_size, int num_blocks)
-    {
-        var num_seqs = seq_lens.Length;
-        var max_query_len = query_lens.Max();
-        var max_seq_len = seq_lens.Max();
-        var scale = MathF.Sqrt(head_size);
-
-        var kvcache = new PagedAttentionKVCache(1, num_blocks, block_size, num_kv_heads, head_size);
-
-        var query = IR.F.Random.Normal(DataTypes.Float32, new[] { query_lens.Sum(), num_q_heads, head_size }).Evaluate().AsTensor();
-        var key_cache = IR.F.Random.Normal(DataTypes.Float32, new[] { num_blocks, block_size, num_kv_heads, head_size }).Evaluate().AsTensor().Cast<float>();
-        var value_cache = IR.F.Random.Normal(DataTypes.Float32, new[] { num_blocks, block_size, num_kv_heads, head_size }).Evaluate().AsTensor().Cast<float>();
-
-        // update key_cache and value_cache
-        key_cache.Buffer.Span.CopyTo(kvcache.KCaches.Buffer.Span);
-        value_cache.Buffer.Span.CopyTo(kvcache.VCaches.Buffer.Span);
-        kvcache.ContextLens = Tensor<long>.From(query_lens.Zip(seq_lens).Select(p => (long)(p.Second - p.First)).ToArray());
-        kvcache.SeqLens = Tensor<long>.From(seq_lens.Select(i => (long)i).ToArray());
-
-        var max_num_blocks_per_seq = (max_seq_len + block_size - 1) / block_size;
-        long[,] blockTables = new long[num_seqs, max_num_blocks_per_seq];
-        var rand = new Random();
-        for (int i = 0; i < num_seqs; i++)
-        {
-            for (int j = 0; j < max_num_blocks_per_seq; j++)
-            {
-                blockTables[i, j] = rand.NextInt64(0, num_blocks);
-            }
-        }
-
-        kvcache.BlockTables = Tensor.FromArray(blockTables).Cast<long>();
-
-        var ref_output = Evaluator.NN.PagedAttentionEvaluator.RefPagedAttn(Evaluator.OrtKIExtensions.ToOrtTensor(query), kvcache, scale, 0);
-    }
-
-    [Theory]
-    [InlineData(new object[] { new[] { 8, 4 }, new[] { 8, 4 }, 2, 2, 32, 16, 99 })]
-    [InlineData(new object[] { new[] { 8, 1 }, new[] { 16, 4 }, 2, 2, 32, 16, 99 })]
-    public void TestPagedAttention(int[] query_lens, int[] seq_lens, int num_q_heads, int num_kv_heads, int head_size, int block_size, int num_blocks)
-    {
-        var query = IR.F.Random.Normal(DataTypes.Float32, new[] { query_lens.Sum(), num_q_heads, head_size }).Evaluate().AsTensor();
-        var key_cache = IR.F.Random.Normal(DataTypes.Float32, new[] { num_blocks, block_size, num_kv_heads, head_size }).Evaluate().AsTensor().Cast<float>();
-        var value_cache = IR.F.Random.Normal(DataTypes.Float32, new[] { num_blocks, block_size, num_kv_heads, head_size }).Evaluate().AsTensor().Cast<float>();
-
-        int num_tokens = query_lens.Sum();
-        var queryVar = new Var("query", new TensorType(DataTypes.Float32, new(num_tokens, num_q_heads, head_size)));
-        var keyVar = new Var("key", new TensorType(DataTypes.Float32, new(num_tokens, num_kv_heads, head_size)));
-        var valueVar = new Var("value", new TensorType(DataTypes.Float32, new(num_tokens, num_kv_heads, head_size)));
-        var kvcacheVar = new Var("kvcacke", new ReferenceType(new AttentionKVCacheType()));
-        Expr attention = IR.F.NN.PagedAttention(queryVar, keyVar, valueVar, kvcacheVar, 0);
-
-        // prepare input arguments.
-        var queryTensor = IR.F.Random.Normal(DataTypes.Float32, new[] { query_lens.Sum(), num_q_heads, head_size }).Evaluate().AsTensor();
-        var keyTensor = IR.F.Random.Normal(DataTypes.Float32, new[] { query_lens.Sum(), num_kv_heads, head_size }).Evaluate().AsTensor();
-        var valueTensor = IR.F.Random.Normal(DataTypes.Float32, new[] { query_lens.Sum(), num_kv_heads, head_size }).Evaluate().AsTensor();
-        var kvcacheObject = new PagedAttentionKVCache(1, num_blocks, block_size, num_kv_heads, head_size);
-        kvcacheObject.ContextLens = Tensor<long>.From(query_lens.Zip(seq_lens).Select(p => (long)(p.Second - p.First)).ToArray());
-        kvcacheObject.SeqLens = Tensor<long>.From(seq_lens.Select(i => (long)i).ToArray());
-        var max_num_blocks_per_seq = MathUtility.CeilDiv(seq_lens.Max(), block_size);
-
-        long[,] blockTables = new long[seq_lens.Length, max_num_blocks_per_seq];
-        var rand = new Random();
-        var uniqueNumbers = new HashSet<long>();
-
-        var slotmapping = new List<long>();
-        for (int i = 0; i < seq_lens.Length; i++)
-        {
-            for (int j = 0; j < MathUtility.CeilDiv(seq_lens[i], block_size); j++)
-            {
-                var next = rand.NextInt64(0, num_blocks);
-                while (uniqueNumbers.Contains(next))
-                {
-                    next = rand.NextInt64(0, num_blocks);
-                }
-
-                uniqueNumbers.Add(next);
-                blockTables[i, j] = next;
-            }
-
-            var query_slots = Enumerable.Range(0, MathUtility.CeilDiv(seq_lens[i], block_size)).Select(j => blockTables[i, j]).
-                Select(block_id => LinqUtility.Range(block_id * block_size, block_size).ToArray()).
-                SelectMany(i => i).
-                SkipLast(MathUtility.AlignUp(seq_lens[i], block_size) - seq_lens[i]).
-                TakeLast(query_lens[i]);
-            slotmapping.AddRange(query_slots);
-        }
-
-        kvcacheObject.SlotMapping = Tensor<long>.From(slotmapping.ToArray());
-        kvcacheObject.BlockTables = Tensor.FromArray(blockTables).Cast<long>();
-
-        var feedDict = new Dictionary<Var, IValue>() {
-            { queryVar, Value.FromTensor(queryTensor) },
-            { keyVar,   Value.FromTensor(keyTensor) },
-            { valueVar, Value.FromTensor(valueTensor) },
-            { kvcacheVar, Value.FromObject(kvcacheObject) },
-        };
-
-        attention.Evaluate(feedDict);
     }
 
 #if false

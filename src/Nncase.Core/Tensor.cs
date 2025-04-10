@@ -471,7 +471,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="castMode">Cast mode.</param>
     /// <returns>Typed tensor.</returns>
     public abstract Tensor<T> Cast<T>(CastMode castMode = CastMode.KDefault)
-        where T : unmanaged, IEquatable<T>;
+        where T : struct, IEquatable<T>;
 
     /// <summary>
     /// <see cref="Cast{T}(CastMode)"/>.

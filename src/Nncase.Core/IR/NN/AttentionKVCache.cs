@@ -16,19 +16,54 @@ public enum AttentionCacheKind
     Value,
 }
 
-public record AttentionConfig(int NumLayers, int NumKVHeads, int HeadDim);
+public interface IAttentionConfig
+{
+    int NumLayers { get; }
+
+    int NumKVHeads { get; }
+
+    int HeadDim { get; }
+}
 
 /// <summary>
 /// AttentionKVCache.
 /// </summary>
-public abstract record AttentionKVCache(
-    AttentionConfig Config,
-    int NumDecodeTokens,
-    int NumPrefillTokens,
-    int NumRequests,
-    int NumPrefills,
-    Tensor<long> ContextLens,
-    Tensor<long> SeqLens);
+public interface IAttentionKVCache
+{
+    /// <summary>
+    /// Gets the config.
+    /// </summary>
+    AttentionConfig Config { get; }
+
+    /// <summary>
+    /// Gets the number of requests.
+    /// </summary>
+    int NumRequests { get; }
+
+    /// <summary>
+    /// Gets the context lens.
+    /// </summary>
+    /// <param name="requestId">The request id.</param>
+    /// <returns>The context lens.</returns>
+    /// <remarks>
+    /// The context lens are used to identify the lengths of the blocks of key-value
+    /// pairs that are used for the attention mechanism in the transformer model.
+    /// </remarks>
+    long GetContextLength(int requestId);
+
+    /// <summary>
+    /// Gets the sequence lens.
+    /// </summary>
+    /// <param name="requestId">The request id.</param>
+    /// <returns>The sequence lens.</returns>
+    /// <remarks>
+    /// The sequence lens are used to identify the lengths of the sequences of
+    /// key-value pairs that are used for the attention mechanism in the transformer model.
+    /// </remarks>
+    long GetSeqLens(int requestId);
+}
+
+public record AttentionConfig(int NumLayers, int NumKVHeads, int HeadDim) : IAttentionConfig;
 
 /// <summary>
 /// Prim type of <see cref="QuantParam"/>.
@@ -36,7 +71,7 @@ public abstract record AttentionKVCache(
 public record AttentionKVCacheType : ValueType
 {
     /// <inheritdoc/>
-    public override Type CLRType => typeof(AttentionKVCache);
+    public override Type CLRType => typeof(IAttentionKVCache);
 
     /// <inheritdoc/>
     public unsafe override int SizeInBytes => throw new NotSupportedException();
@@ -47,6 +82,6 @@ public record AttentionKVCacheType : ValueType
     /// <inheritdoc/>
     public override string ToString()
     {
-        return nameof(AttentionKVCache);
+        return "AttentionKVCache";
     }
 }

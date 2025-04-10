@@ -18,7 +18,7 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
     public IRType Visit(ITypeInferenceContext context, UpdatePagedAttentionKVCache target)
     {
         var slots = context.CheckArgumentType<IRType>(target, UpdatePagedAttentionKVCache.Slots);
-        var kvCache = context.CheckArgumentType<IRType>(target, UpdatePagedAttentionKVCache.KVCache);
+        var kvCache = context.CheckArgumentType<IRType>(target, UpdatePagedAttentionKVCache.KVCaches);
         return slots switch
         {
             DistributedType dslots => Visit(context, target, dslots, kvCache),
@@ -40,29 +40,37 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
     public IValue Visit(IEvaluateContext context, UpdatePagedAttentionKVCache target)
     {
         var slots = context.GetArgumentValueAsTensor(target, UpdatePagedAttentionKVCache.Slots);
-        var kvCache = context.GetArgumentValue(target, UpdatePagedAttentionKVCache.KVCache);
-        UpdateCache(slots, kvCache.AsObjectRef<PagedAttentionKVCache>(), target.CacheKind, target.LayerId);
-        return kvCache;
+        var kvCaches = context.GetArgumentValue(target, UpdatePagedAttentionKVCache.KVCaches);
+        UpdateCache(slots, kvCaches.AsTensor().Cast<Reference<IPagedAttentionKVCache>>(), target.CacheKind, target.LayerId);
+        return kvCaches;
     }
 
-    private static void UpdateCache(Tensor slots, PagedAttentionKVCache cache, AttentionCacheKind cacheKind, int layerId)
+    private static void UpdateCache(Tensor slots, Tensor<Reference<IPagedAttentionKVCache>> kvCaches, AttentionCacheKind cacheKind, int layerId)
     {
+        // TODO: Support DP
+        if (kvCaches.Length != 1)
+        {
+            throw new ArgumentException($"kvCaches length {kvCaches.Length} != 1");
+        }
+
+        var cache = kvCaches.Single().Value;
         if (slots.Dimensions[0] != cache.NumRequests)
         {
             throw new ArgumentException($"slots dim 0 {slots.Dimensions[0]} != cache num requests {cache.NumRequests}");
         }
 
         // [num_queries, num_heads, head_dim]
-        long queryStart = 0;
+        var slotIds = cache.GetOutputSlotIds();
+        long queryIndex = 0;
         for (int requestId = 0; requestId < cache.NumRequests; requestId++)
         {
-            var slotIds = cache.GetOutputSlotIds(cacheKind, layerId);
             var slotsCount = slotIds.Dimensions[0];
             for (int i = 0; i < slotsCount; i++)
             {
-                var slotId = slotIds[i];
-                var slot = IR.F.Tensors.GetItem(slots, queryStart++).Evaluate().AsTensor();
-                cache.UpdateOutputSlot(cacheKind, slotId, slot);
+                var slotId = slotIds[queryIndex];
+                var slot = IR.F.Tensors.GetItem(slots, queryIndex).Evaluate().AsTensor();
+                cache.UpdateOutputSlot(cacheKind, layerId, slotId, slot);
+                queryIndex++;
             }
         }
     }

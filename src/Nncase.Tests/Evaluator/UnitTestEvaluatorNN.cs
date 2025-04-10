@@ -9,6 +9,7 @@ using NetFabric.Hyperlinq;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.F;
+using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using Nncase.Utilities;
 using OrtKISharp;
@@ -19,6 +20,96 @@ using static Nncase.Utilities.DumpUtility;
 using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.EvaluatorTest;
+
+internal abstract record TestAttentionKVCache(
+    AttentionConfig Config,
+    int NumRequests,
+    Tensor<long> ContextLens,
+    Tensor<long> SeqLens) : IAttentionKVCache
+{
+    public long GetContextLength(int requestId) => ContextLens[requestId];
+
+    public long GetSeqLens(int requestId) => SeqLens[requestId];
+}
+
+internal sealed record TestPagedAttentionKVCache(
+    AttentionConfig Config,
+    int NumRequests,
+    Tensor<long> ContextLens,
+    Tensor<long> SeqLens,
+    Tensor<long> BlockTables,
+    Tensor<long> SlotMapping,
+    Tensor<float> KVCaches)
+    : TestAttentionKVCache(
+        Config,
+        NumRequests,
+        ContextLens,
+        SeqLens), IPagedAttentionKVCache
+{
+    public PagedAttentionConfig PagedAttentionConfig => (PagedAttentionConfig)Config;
+
+    PagedAttentionConfig IPagedAttentionKVCache.Config => PagedAttentionConfig;
+
+    public Tensor GetBlock(AttentionCacheKind kind, int layerId, object blockId)
+    {
+        var blockIdValue = (long)blockId;
+        var starts = new long[] { blockIdValue, layerId, 0, kind == AttentionCacheKind.Key ? 0 : 1, 0, 0 };
+        var lengths = new long[] { 1, 1, PagedAttentionConfig.NumKVHeads, 1, PagedAttentionConfig.BlockSize, PagedAttentionConfig.HeadDim };
+        var ends = starts.Zip(lengths).Select(x => x.First + x.Second).ToArray();
+        var axes = Enumerable.Range(0, starts.Length).Select(x => (long)x).ToArray();
+        var strides = Tensor.FromScalar(1L, 6);
+        return Slice(KVCaches, starts, ends, axes, strides).Evaluate().AsTensor();
+    }
+
+    public Tensor GetContextBlockIds(int requestId)
+    {
+        return GetItem(BlockTables, (long)requestId).Evaluate().AsTensor();
+    }
+
+    public Tensor GetOutputSlotIds() => SlotMapping;
+
+    public Tensor GetSlot(AttentionCacheKind kind, int layerId, object slotId)
+    {
+        var slotIdValue = (long)slotId;
+        var blockId = slotIdValue / PagedAttentionConfig.BlockSize;
+        var slotIndex = slotIdValue % PagedAttentionConfig.BlockSize;
+        var block = GetBlock(kind, layerId, blockId);
+        var slots = GetSlots(block, (int)slotIndex, 1);
+        return Unsqueeze(slots, 0L).Evaluate().AsTensor();
+    }
+
+    public Tensor GetSlots(Tensor block, int startSlot, int count)
+    {
+        return Slice(block, new[] { startSlot }, new[] { startSlot + count }, new[] { 0L }, new[] { 1L }).Evaluate().AsTensor();
+    }
+
+    public void UpdateOutputSlot(AttentionCacheKind kind, int layerId, object slotId, Tensor slot)
+    {
+        var slotValue = slot.Cast<float>();
+        var slotIdValue = (long)slotId;
+        var blockId = slotIdValue / PagedAttentionConfig.BlockSize;
+        var slotIndex = slotIdValue % PagedAttentionConfig.BlockSize;
+        var srcIndices = new long[] { 0, 0 };
+        var destIndices = new long[] {
+            blockId,
+            layerId,
+            0,
+            kind == AttentionCacheKind.Key ? 0 : 1,
+            slotIndex,
+            0,
+        };
+        for (int headIndex = 0; headIndex < PagedAttentionConfig.NumKVHeads; headIndex++)
+        {
+            srcIndices[0] = headIndex;
+            destIndices[2] = headIndex;
+            var srcLinearIndex = TensorUtilities.GetIndex(slot.Strides, srcIndices);
+            var destLinearIndex = TensorUtilities.GetIndex(KVCaches.Strides, destIndices);
+            var srcSpan = slotValue.Buffer.Span.Slice((int)srcLinearIndex, PagedAttentionConfig.HeadDim);
+            var destSpan = KVCaches.Buffer.Span.Slice((int)destLinearIndex, PagedAttentionConfig.HeadDim);
+            srcSpan.CopyTo(destSpan);
+        }
+    }
+}
 
 public class UnitTestEvaluatorNN : TestClassBase
 {
@@ -666,6 +757,66 @@ public class UnitTestEvaluatorNN : TestClassBase
             Tensor.From(crops, [2, 2])));
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor());
+    }
+
+    [Theory]
+    [InlineData(new object[] { new[] { 8L, 4L }, new[] { 8L, 4L }, 2, 2, 32, 16, 99 })]
+    [InlineData(new object[] { new[] { 8L, 1L }, new[] { 16L, 4L }, 2, 2, 32, 16, 99 })]
+    public void TestPagedAttention(long[] queryLens, long[] seqLens, int numQHeads, int numKVHeads, int headDim, int blockSize, int numBlocks)
+    {
+        var layers = 1;
+        var numRequests = queryLens.Length;
+        var numTokens = queryLens.Sum();
+        var queryVar = new Var("query", new TensorType(DataTypes.Float32, new(numTokens, numQHeads, headDim)));
+        var kvCacheObjVar = new Var("kvCache", TensorType.Scalar(new ReferenceType(new AttentionKVCacheType())));
+        var attention = IR.F.NN.PagedAttention(queryVar, kvCacheObjVar, 0);
+
+        // prepare input arguments.
+        var query = IR.F.Random.Normal(DataTypes.Float32, new[] { numTokens, numQHeads, headDim }).Evaluate().AsTensor();
+        var kvCaches = IR.F.Random.Normal(DataTypes.Float32, new[] { numBlocks, layers, numKVHeads, 2, blockSize, headDim }).Evaluate().AsTensor().Cast<float>();
+        var contextLens = Tensor.From(queryLens.Zip(seqLens).Select(p => p.Second - p.First).ToArray());
+        var maxContextLen = contextLens.Max();
+
+        var blockTables = Tensor.FromScalar(-1L, [numRequests, MathUtility.CeilDiv(maxContextLen, blockSize)]);
+        var slotMapping = Tensor.FromScalar(-1L, [numTokens]);
+        var config = new PagedAttentionConfig(blockSize, layers, numKVHeads, headDim);
+        var kvCacheObject = new TestPagedAttentionKVCache(config, numRequests, contextLens, Tensor.From(seqLens), blockTables, slotMapping, kvCaches);
+        var kvCacheObjectTensor = Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvCacheObject));
+
+        var currentSlotId = 0;
+        var currentToken = 0;
+        for (int requestId = 0; requestId < numRequests; requestId++)
+        {
+            // Align up the current slot id to the block size.
+            currentSlotId = MathUtility.CeilDiv(currentSlotId, blockSize) * blockSize;
+
+            // Context: Update block tables.
+            var contextLen = contextLens[requestId];
+            long lastBlockId = -1;
+            for (int i = 0; i < contextLen; i++)
+            {
+                var blockId = currentSlotId++ / blockSize;
+                if (lastBlockId != blockId)
+                {
+                    blockTables[requestId, i / blockSize] = blockId;
+                    lastBlockId = blockId;
+                }
+            }
+
+            // Output: Update slot mapping.
+            var queryLen = queryLens[requestId];
+            for (int i = 0; i < queryLen; i++)
+            {
+                slotMapping[currentToken++] = currentSlotId++;
+            }
+        }
+
+        var feedDict = new Dictionary<Var, IValue>() {
+            { queryVar, Value.FromTensor(query) },
+            { kvCacheObjVar, Value.FromTensor(kvCacheObjectTensor) },
+        };
+
+        attention.Evaluate(feedDict);
     }
 
     private void DoHardmax(OrtKISharp.Tensor ortTensor, Tensor nncaseTensor, long axis)

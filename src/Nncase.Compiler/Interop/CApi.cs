@@ -128,7 +128,6 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CpuTargetOptionsSetCustomOpSchemePtr;
     /* end the auto generated block by tools/stackvm_gen/CApiGen at 12/20/2024 5:31:31 PM +08:00. */
     public delegate* unmanaged<nuint, nuint, nuint, nuint, IntPtr> PagedAttentionConfigCreatePtr;
-    public delegate* unmanaged<IntPtr, IntPtr, IntPtr, IntPtr> PagedAttentionSchedulerSchedulePtr;
     public delegate* unmanaged<IntPtr, IntPtr> RTValueFromHandlePtr;
     public delegate* unmanaged<IntPtr, IntPtr> RTValueGetHandlePtr;
     public delegate* unmanaged<CStreamMT*, IntPtr, IntPtr> StreamCreatePtr;
@@ -234,7 +233,6 @@ public static unsafe class CApi
         mt->CpuTargetOptionsSetCustomOpSchemePtr = &CpuTargetOptionsSetCustomOpScheme;
         /* end the auto generated block by tools/stackvm_gen/CApiGen at 12/20/2024 3:41:05 PM +08:00. */
         mt->PagedAttentionConfigCreatePtr = &PagedAttentionConfigCreate;
-        mt->PagedAttentionSchedulerSchedulePtr = &PagedAttentionSchedulerSchedule;
         mt->RTValueFromHandlePtr = &RTValueFromHandle;
         mt->RTValueGetHandlePtr = &RTValueGetHandle;
         mt->StreamCreatePtr = &StreamCreate;
@@ -998,15 +996,6 @@ public static unsafe class CApi
     private static IntPtr PagedAttentionConfigCreate(nuint blockSize, nuint numLayers, nuint numKVHeads, nuint headDim)
     {
         return GCHandle.ToIntPtr(GCHandle.Alloc(new PagedAttentionConfig((int)blockSize, (int)numLayers, (int)numKVHeads, (int)headDim)));
-    }
-
-    [UnmanagedCallersOnly]
-    private static IntPtr PagedAttentionSchedulerSchedule(IntPtr handle, IntPtr sessionIdsHandle, IntPtr tokensCountHandle)
-    {
-        var scheduler = Get<IPagedAttentionScheduler>(handle);
-        var sessionIds = ((RTTensor)RTValue.FromHandle(sessionIdsHandle, true)).ToTensor().Cast<long>();
-        var tokensCount = ((RTTensor)RTValue.FromHandle(tokensCountHandle, true)).ToTensor().Cast<long>();
-        return GCHandle.ToIntPtr(GCHandle.Alloc(scheduler.Schedule(sessionIds, tokensCount)));
     }
 
     [UnmanagedCallersOnly]
