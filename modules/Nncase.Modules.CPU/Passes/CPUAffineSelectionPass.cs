@@ -24,8 +24,8 @@ public sealed partial class CPUAffineSelectionPass : AffineSelectionPass
 {
     private readonly CompileOptions _compileOptions;
 
-    public CPUAffineSelectionPass(CompileOptions compileOptions)
-        : base(CPUTarget.Kind)
+    public CPUAffineSelectionPass(CompileOptions compileOptions, string moduleKind = CPUTarget.Kind)
+        : base(moduleKind)
     {
         _compileOptions = compileOptions;
     }

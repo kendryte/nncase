@@ -31,7 +31,7 @@ using FoldConstCall = Nncase.Passes.Rules.Neutral.FoldConstCall;
 
 namespace Nncase.Compiler;
 
-internal class Compiler : ICompiler
+public class Compiler : ICompiler
 {
     private readonly CompileSession _compileSession;
     private readonly IModelBuilder _modelBuilder;
@@ -257,6 +257,8 @@ internal class Compiler : ICompiler
                 p.Add<Passes.Rules.Lower.RemoveMarker>();
             });
         }
+
+        _compileSession.Target.RegisterPostQuantizePass(passManager, options);
     }
 
     public void ModulePartitionPass(IPassManager passManager)
@@ -281,6 +283,8 @@ internal class Compiler : ICompiler
 
         passManager.Add<InferRangePass>();
         passManager.Add<OptimizeByRangePass>();
+
+        target.RegisterPostAutoPackingPass(passManager, _compileSession.CompileOptions);
     }
 
     public void AutoDistributedPass(IPassManager passManager)
