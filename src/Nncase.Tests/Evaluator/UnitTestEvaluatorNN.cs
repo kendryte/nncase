@@ -54,11 +54,10 @@ internal sealed record TestPagedAttentionKVCache(
     {
         var blockIdValue = (long)blockId;
         var starts = new long[] { blockIdValue, layerId, 0, kind == AttentionCacheKind.Key ? 0 : 1, 0, 0 };
-        var lengths = new long[] { 1, 1, PagedAttentionConfig.NumKVHeads, 1, PagedAttentionConfig.BlockSize, PagedAttentionConfig.HeadDim };
-        var ends = starts.Zip(lengths).Select(x => x.First + x.Second).ToArray();
-        var axes = Enumerable.Range(0, starts.Length).Select(x => (long)x).ToArray();
-        var strides = Tensor.FromScalar(1L, 6);
-        return Slice(KVCaches, starts, ends, axes, strides).Evaluate().AsTensor();
+        var dims = new long[] { PagedAttentionConfig.NumKVHeads, PagedAttentionConfig.BlockSize, PagedAttentionConfig.HeadDim };
+        var linearIndex = TensorUtilities.GetIndex(KVCaches.Strides, starts);
+        var buffer = KVCaches.Buffer.Slice((int)linearIndex, (int)TensorUtilities.GetProduct(dims));
+        return new Tensor<float>(buffer, dims);
     }
 
     public Tensor GetContextBlockIds(int requestId)
@@ -75,12 +74,12 @@ internal sealed record TestPagedAttentionKVCache(
         var slotIndex = slotIdValue % PagedAttentionConfig.BlockSize;
         var block = GetBlock(kind, layerId, blockId);
         var slots = GetSlots(block, (int)slotIndex, 1);
-        return Unsqueeze(slots, 0L).Evaluate().AsTensor();
+        return Squeeze(slots, new[] { 1L }).Evaluate().AsTensor();
     }
 
     public Tensor GetSlots(Tensor block, int startSlot, int count)
     {
-        return Slice(block, new[] { startSlot }, new[] { startSlot + count }, new[] { 0L }, new[] { 1L }).Evaluate().AsTensor();
+        return Slice(block, new[] { startSlot }, new[] { startSlot + count }, new[] { 1L }, new[] { 1L }).Evaluate().AsTensor();
     }
 
     public void UpdateOutputSlot(AttentionCacheKind kind, int layerId, object slotId, Tensor slot)

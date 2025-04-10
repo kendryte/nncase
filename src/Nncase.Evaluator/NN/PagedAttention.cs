@@ -71,10 +71,10 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
             var attn = OrtKI.Einsum([q, k], "qhd,hkd->qhk"); // [query_len, num_heads, seq_len]
 
             // compute causal mask
-            var emptyMask = Tensor.FromScalar(1.0f, [queryLen, seqLen]).ToOrtTensor();
+            var emptyMask = Tensor.FromScalar(1.0f, [queryLen, 1, seqLen]).ToOrtTensor();
             var maskCond = OrtKI.Equal(OrtKI.Trilu(emptyMask, queryLen - seqLen, 0), 1.0f);
-            var attnBias = OrtKI.Expand(OrtKISharp.Tensor.FromScalar(0f), OrtKISharp.Tensor.MakeTensor([queryLen, seqLen]));
-            var neginf = OrtKI.Expand(OrtKISharp.Tensor.FromScalar(float.NegativeInfinity), OrtKISharp.Tensor.MakeTensor([queryLen, seqLen]));
+            var attnBias = OrtKI.Expand(OrtKISharp.Tensor.FromScalar(0f), OrtKISharp.Tensor.MakeTensor([queryLen, 1, seqLen]));
+            var neginf = OrtKI.Expand(OrtKISharp.Tensor.FromScalar(float.NegativeInfinity), OrtKISharp.Tensor.MakeTensor([queryLen, 1, seqLen]));
             attnBias = OrtKI.Where(maskCond, attnBias, neginf);
             attn = attn + attnBias;
             attn = OrtKI.Softmax(attn, -1);
@@ -97,12 +97,13 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
 
         // context seqs
         long slotsRead = 0;
+        var contextLen = seqLen - queryLen;
         var blocksCount = contextBlockIds.Dimensions[0];
         for (int i = 0; i < blocksCount; i++)
         {
             var blockId = contextBlockIds[i];
             var block = cache.GetBlock(cacheKind, layerId, blockId);
-            var slotsCount = (int)System.Math.Min(seqLen - slotsRead, cache.Config.BlockSize);
+            var slotsCount = (int)System.Math.Min(contextLen - slotsRead, cache.Config.BlockSize);
             var slots = cache.GetSlots(block, 0, slotsCount);
             caches.Add(slots.ToOrtTensor());
             slotsRead += slotsCount;
@@ -113,7 +114,9 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         {
             var slotId = outputSlotIds[queryStart + i];
             var slot = cache.GetSlot(cacheKind, layerId, slotId);
-            caches.Add(slot.ToOrtTensor());
+            var ortSlot = slot.ToOrtTensor();
+            ortSlot.Reshape([cache.Config.NumKVHeads, 1, cache.Config.HeadDim]);
+            caches.Add(ortSlot);
         }
 
         return OrtKI.Concat(caches.ToArray(), 1L);
