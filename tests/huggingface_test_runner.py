@@ -71,17 +71,16 @@ def dequantize_weights(model_dir):
 
     for key in list(state_dict.keys()):
         if key.endswith('weight_scale'):
-            scale_tensor = state_dict[key]
+            scale_tensor = state_dict[key].to(torch.float32)
             weight_key = key.replace('.weight_scale', '.weight')
             if weight_key in state_dict:
                 weight_tensor = state_dict[weight_key]
-                if scale_tensor.numel() == 1:
-                    scale = scale_tensor.item()
+                if scale_tensor.shape[0] == weight_tensor.shape[0]:
                     weight_fp32 = weight_tensor.to(torch.float32)
-                    scaled_weight = weight_fp32 * scale
+                    scaled_weight = weight_fp32 * scale_tensor
                     state_dict[weight_key] = scaled_weight
                 else:
-                    print(f"Warning: {key} is not a single-element tensor, skipping.")
+                    raise os.error(f"\033[31m weight_tensor {weight_key} and scale_tensor {key} shape not match! \033[0m")
             else:
                 print(f"Warning: Corresponding weight {weight_key} not found, skipping.")
 
