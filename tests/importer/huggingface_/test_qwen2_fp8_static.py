@@ -19,7 +19,7 @@ from huggingface_test_runner import HuggingfaceTestRunner, download_from_hugging
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
-def test_qwen2(request):
+def test_qwen2_fp8_static(request):
     cfg = """
     [huggingface_options]
     output_attentions = false
@@ -63,4 +63,4 @@ def test_qwen2(request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_qwen2.py'])
+    pytest.main(['-vv', 'test_qwen2_fp8_static.py'])
