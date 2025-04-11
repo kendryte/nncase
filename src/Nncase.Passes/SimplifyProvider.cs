@@ -19,12 +19,15 @@ using Nncase.Passes.Rules.Neutral;
 using Nncase.Passes.Rules.ShapeExpr;
 using Nncase.Passes.Transforms;
 using Nncase.Quantization;
+using Nncase.Targets;
 
 namespace Nncase.Passes;
 
 internal sealed class SimplifyTarget : ITarget
 {
-    public string Kind => "Simplify";
+    public string Name => "Simplify";
+
+    public IReadOnlyList<IModuleCompiler> ModuleCompilers => throw new NotImplementedException();
 
     public Task AdaRoundWeights(ICalibrationDatasetProvider calibrationDataset, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, QuantizeOptions quantizeOptions) => throw new NotImplementedException();
 
@@ -32,7 +35,13 @@ internal sealed class SimplifyTarget : ITarget
 
     public IModuleBuilder CreateModuleBuilder(string moduleKind, CompileOptions options) => throw new NotImplementedException();
 
+    public IModuleCompiler GetModuleCompiler(string moduleKind) => throw new NotImplementedException();
+
     public void ParseTargetDependentOptions(IConfigurationSection configure) => throw new NotImplementedException();
+
+    public void RegisterAffineSelectionPass(IPassManager passManager, CompileOptions options) => throw new NotImplementedException();
+
+    public void RegisterAutoPackingRules(IRulesAddable pass, CompileOptions options) => throw new NotImplementedException();
 
     public (Command Command, Func<InvocationContext, Command, ITargetOptions> Parser) RegisterCommandAndParser() => throw new NotImplementedException();
 
@@ -45,6 +54,8 @@ internal sealed class SimplifyTarget : ITarget
     public void RegisterTargetDependentPass(IPassManager passManager, CompileOptions options) => throw new NotImplementedException();
 
     public void RegisterTargetInDependentPass(IPassManager passManager, CompileOptions options) => throw new NotImplementedException();
+
+    public void RegisterTIRSelectionPass(IPassManager passManager, CompileOptions optionsÍ) => throw new NotImplementedException();
 }
 
 internal sealed class SimplifyProvider : ISimplifyProvider

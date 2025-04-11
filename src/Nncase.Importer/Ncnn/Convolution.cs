@@ -83,7 +83,7 @@ public partial class NcnnImporter
         var dilation = Tensor.From(new[] { dilationH, dilationW }, [2]);
         var clampRange = ToFloatClampRange(activationType, activationParams);
         var clamp = Tensor.From(new[] { clampRange.Min, clampRange.Max }, [2]);
-        var padding = TypeInference.ConcatPadding(paddingH, paddingW);
+        var padding = Dimension.ConcatPadding(paddingH, paddingW);
         var weights = _modelBin.LoadFloat32(new[] { numOutput, numInput, kernelH, kernelW }, true);
         var bias = biasTerm != 0 ? _modelBin.LoadFloat32(new[] { numOutput }, false) : Tensor.FromScalar(0f, numOutput);
 

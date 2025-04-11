@@ -67,8 +67,8 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
     using lhs_mesh_type = typename TLhs::mesh_type;
     using rhs_mesh_type = typename TRhs::mesh_type;
 
-    using lhs_global_shape = typename TLhs::global_shape_type;
-    using rhs_global_shape = typename TRhs::global_shape_type;
+    using lhs_global_shape = typename TLhs::shape_type;
+    using rhs_global_shape = typename TRhs::shape_type;
 
     using lhs_local_shape = typename TLhs::local_shape_type;
     using rhs_local_shape = typename TRhs::local_shape_type;
@@ -228,11 +228,10 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
     if constexpr (IsVector<TLhsElem> && IsVector<TRhsElem>) {
         if constexpr (TLhsElem::shape_type::rank() == 2 &&
                       TRhsElem::shape_type::rank() == 2 &&
-                      TLhsElem::shape_type::at(0) == 64 &&
-                      TLhsElem::shape_type::at(1) == 32 &&
-                      TRhsElem::shape_type::at(0) == 64 &&
-                      TRhsElem::shape_type::at(1) == 32 &&
-                      std::is_same_v<float, typename TLhsElem::element_type>) {
+                      TOutElem::shape_type::at(0) == 64 &&
+                      TOutElem::shape_type::at(1) == 64 &&
+                      (std::is_same_v<float, typename TLhsElem::element_type> ||
+                       std::is_same_v<half, typename TLhsElem::element_type>)) {
 
             ntt::apply(CShape, [&](auto index) {
                 auto data = (float *)C(index).buffer().data();

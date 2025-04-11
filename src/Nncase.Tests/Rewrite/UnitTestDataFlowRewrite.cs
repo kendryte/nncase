@@ -182,7 +182,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var dilationW = 1;
         var padH = TypeInference.GetWindowedPadding(inH, fH, strideH, dilationH, true);
         var padW = TypeInference.GetWindowedPadding(inW, fW, strideW, dilationW, true);
-        var padding = TypeInference.ConcatPadding(padH, padW);
+        var padding = Dimension.ConcatPadding(padH, padW);
 
         // Assert.True(CompilerServices.InferenceType(padding));
         var paddingPost = await RunShapeInferPass("padding", padding, input);
@@ -205,7 +205,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var padW = TypeInference.GetWindowedPadding(inW, fW, strideW, dilationW, true);
         var stride = Tensor.From<int>(new[] { strideH, strideW }, [2]);
         var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, [2]);
-        var padding = TypeInference.ConcatPadding(padH, padW);
+        var padding = Dimension.ConcatPadding(padH, padW);
 
         var conv = NN.Conv2D(
             NHWCToNCHW(input),
@@ -231,7 +231,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var (rInH, rInW) = Util.GetHW(max);
         var rPadH = TypeInference.GetWindowedPadding(rInH, 2, 2, dilationH, true);
         var rPadW = TypeInference.GetWindowedPadding(rInW, 2, 2, dilationW, true);
-        var rPadding = TypeInference.ConcatPadding(rPadH, rPadW);
+        var rPadding = Dimension.ConcatPadding(rPadH, rPadW);
         var reduce = NCHWToNHWC(ReduceWindow2D(ReduceOp.Max, NHWCToNCHW(max), initValue, doubleV, doubleV, rPadding, dilation, false, false));
         var post = await RunShapeInferPass("reduce", reduce);
         Assert.True(CompilerServices.InferenceType(post));

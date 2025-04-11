@@ -24,24 +24,32 @@ def download_from_huggingface(model_api, tokenizer_api, model_name, need_save=Fa
         hf_home_env = os.getenv("HF_HOME")
         if hf_home_env is None:
             print(
-                f"Please set your huggingface cache dir in environment variable\033[31m 10.10.1.11 'export HF_HOME=/data/huggingface_cache' \033[0m")
-
-        model_path = snapshot_download(repo_id=model_name)
-
-        if need_save:
-            try:
-                model = model_api.from_pretrained(model_path, trust_remote_code=True)
-                tokenizer = tokenizer_api.from_pretrained(model_path, trust_remote_code=True)
-            except Exception as e:
-                raise os.error(
-                    f"\033[31m Download {model_name} has error. Make sure it's a valid repository. Or check your network!\033[0m")
-
-            model.save_pretrained(model_dir)
-            tokenizer.save_pretrained(model_dir)
+                f"Please set your huggingface cache dir in environment variable\033[31m 10.10.1.11 'export HF_HOME=/compiler/share/huggingface_cache' \033[0m")
+            # download the model from huggingface hub
+            model_path = snapshot_download(repo_id=model_name)
         else:
-            model_dir = model_path
-        print(
-            f"\033[32m\033[1m {model_name} \033[0m has been downloaded into \033[34m\033[5m {model_dir} \033[0m")
+            # if the model can't access in huggingface hub, you can download it from other source and put it in the cache dir ($HF_HOME/hub)
+            # e.g.: modelscope download --model LLM-Research/Llama-3.2-1B-Instruct --local_dir $HF_HOME/hub/LLM-Research/Llama-3.2-1B-Instruct
+            cache_model_dir = os.path.join(hf_home_env, "hub", model_name)
+            if(os.path.exists(cache_model_dir)):
+                model_path = cache_model_dir
+            else:
+                model_path = snapshot_download(repo_id=model_name)
+
+    if need_save:
+        try:
+            model = model_api.from_pretrained(model_path, trust_remote_code=True)
+            tokenizer = tokenizer_api.from_pretrained(model_path, trust_remote_code=True)
+        except Exception as e:
+            raise os.error(
+                f"\033[31m Download {model_name} has error. Make sure it's a valid repository. Or check your network!\033[0m")
+
+        model.save_pretrained(model_dir)
+        tokenizer.save_pretrained(model_dir)
+    else:
+        model_dir = model_path
+    print(
+        f"\033[32m\033[1m {model_name} \033[0m has been downloaded into \033[34m\033[5m {model_dir} \033[0m")
     return model_dir
 
 

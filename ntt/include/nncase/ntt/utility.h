@@ -111,10 +111,19 @@ slice_index(const ranked_shape<InRank> &index,
         index, offset, std::make_index_sequence<OutRank>{});
 }
 
-template <template <size_t...> class T, size_t... PreDims, size_t... PostDims>
-inline constexpr auto concat_fixed_dims(T<PreDims...>,
-                                        T<PostDims...>) noexcept {
-    return T<PreDims..., PostDims...>{};
+template <size_t... PreDims, size_t... PostDims>
+inline constexpr auto concat_dims(fixed_shape<PreDims...>,
+                                  fixed_shape<PostDims...>) noexcept {
+    return fixed_shape<PreDims..., PostDims...>{};
+}
+
+template <size_t RankA, size_t RankB>
+inline constexpr auto concat_dims(const ranked_shape<RankA> &shape_a,
+                                  const ranked_shape<RankB> &shape_b) noexcept {
+    ranked_shape<RankA + RankB> new_shape{};
+    std::copy(shape_a.begin(), shape_a.end(), new_shape.begin());
+    std::copy(shape_b.begin(), shape_b.end(), new_shape.begin() + RankA);
+    return new_shape;
 }
 
 template <size_t OutRank, size_t OffSet = 0, template <size_t...> class A,
@@ -137,7 +146,7 @@ inline constexpr auto fill_fixed_dims(A<Dims...> a) noexcept {
     constexpr auto mid = utility_detail::make_sames<Rank, Value, A>(
         std::make_index_sequence<Rank>{});
     constexpr auto right = slice_dims<OffSet, 0>(a);
-    return concat_fixed_dims(concat_fixed_dims(left, mid), right);
+    return concat_dims(concat_dims(left, mid), right);
 }
 
 template <template <size_t...> class T, size_t... ADims, size_t... BDims>
@@ -206,5 +215,15 @@ constexpr auto make_index_axes(std::index_sequence<Axes...>) noexcept {
 
 template <size_t Rank> constexpr auto make_index_axes() noexcept {
     return make_index_axes<Rank>(std::make_index_sequence<Rank>());
+}
+
+template <class TShape> constexpr auto make_ones_shape_like() noexcept {
+    if constexpr (is_fixed_dims_v<TShape>) {
+        return fill_fixed_dims<TShape::rank(), 0, 1>(TShape{});
+    } else {
+        TShape shape;
+        std::fill(shape.begin(), shape.end(), 1);
+        return shape;
+    }
 }
 } // namespace nncase::ntt

@@ -118,7 +118,7 @@ public partial class NcnnImporter
                 }
             }
 
-            var padding = TypeInference.ConcatPadding(paddingH, paddingW);
+            var padding = Dimension.ConcatPadding(paddingH, paddingW);
             pooling = NN.ReduceWindow2D(reduceOp, input, initValue, filter, stride, padding, dilation, false, avgpoolCountIncludePad);
         }
 

@@ -15,7 +15,7 @@ namespace Nncase.Diagnostics;
 /// </summary>
 public struct DumpScope : IDisposable
 {
-    private static readonly AsyncLocal<IDumpper> _dumpper = new AsyncLocal<IDumpper>();
+    private static readonly AsyncLocal<IDumpper?> _dumpper = new AsyncLocal<IDumpper?>();
 
     private readonly bool _initialized;
     private readonly IDumpper _originalDumpper;
@@ -71,7 +71,14 @@ public struct DumpScope : IDisposable
     {
         if (_initialized)
         {
-            _dumpper.Value = _originalDumpper;
+            if (_originalDumpper is NullDumpper)
+            {
+                _dumpper.Value = null;
+            }
+            else
+            {
+                _dumpper.Value = _originalDumpper;
+            }
         }
     }
 }

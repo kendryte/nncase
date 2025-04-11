@@ -257,8 +257,6 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
                 {
                     DumpScope.Current.DumpIR(dim, "InvalidDimension");
                 }
-
-                throw new ArgumentException($"Invalid dimension type: {dim.CheckedType}");
             }
         }
 
@@ -350,6 +348,8 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
     /// <param name="index">Index, allowing negative value.</param>
     /// <returns>Dimension.</returns>
     public new Dimension this[int index] => index >= 0 ? Dimensions[index] : Dimensions[Rank + index];
+
+    public new Dimension this[long index] => this[(int)index];
 
     public new Dimension this[Index index] => Dimensions[index];
 

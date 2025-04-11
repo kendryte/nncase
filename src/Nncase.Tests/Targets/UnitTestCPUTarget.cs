@@ -72,7 +72,7 @@ public class UnitTestCPUTarget : TestClassBase
     [CombinatorialData]
     public void TestCreateStackVMModuleBuilder([CombinatorialValues("stackvm")] string moduleKind)
     {
-        var moduleBuilder = CompileSession.Target.CreateModuleBuilder(moduleKind, CompileOptions);
+        var moduleBuilder = CompileSession.Target.ModuleCompilers[0].CreateModuleBuilder(CompileOptions);
         Assert.NotNull(moduleBuilder);
     }
 

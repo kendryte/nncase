@@ -17,15 +17,20 @@ public sealed class OptimizeByRangePass : DataflowPass
 {
     public OptimizeByRangePass()
     {
-        Add<FoldConstCall>();
-        Add<InferRange>();
-        Add<FoldNopAbsByRange>();
-        Add<FoldNopCompareByRange>();
-        Add<FoldNopIf>();
-        Add<FoldNopSelect>();
-        Add<FoldNopBinary>();
-        Add<FoldSameBinary>();
-        Add<FoldNopWhere>();
-        Add<InlineFunction>(20);
+        RegisterRules(this);
+    }
+
+    public static void RegisterRules(DataflowPass pass)
+    {
+        pass.Add<FoldConstCall>();
+        pass.Add<InferRange>();
+        pass.Add<FoldNopAbsByRange>();
+        pass.Add<FoldNopCompareByRange>();
+        pass.Add<FoldNopIf>();
+        pass.Add<FoldNopSelect>();
+        pass.Add<FoldNopBinary>();
+        pass.Add<FoldSameBinary>();
+        pass.Add<FoldNopWhere>();
+        pass.Add<InlineFunction>(20);
     }
 }

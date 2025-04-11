@@ -31,7 +31,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         }
 
         var originDtype = input_tensor.ElementType;
-        if (originDtype.IsFloat() && originDtype != DataTypes.Float32)
+        if (originDtype.IsFloat() && originDtype is PrimType && originDtype != DataTypes.Float32)
         {
             input_tensor = input_tensor.Cast<float>();
         }

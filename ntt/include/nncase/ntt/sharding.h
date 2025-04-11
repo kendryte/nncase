@@ -177,7 +177,7 @@ constexpr size_t get_submesh_start() noexcept {
 }
 
 template <class Sharding, size_t Axis, class GlobalShape>
-constexpr size_t get_local_shard_dim(GlobalShape shape) noexcept {
+constexpr size_t get_local_shard_dim(const GlobalShape &shape) noexcept {
     static_assert(GlobalShape::rank() == Sharding::axis_policies_size,
                   "Invalid sharding.");
 
@@ -186,10 +186,21 @@ constexpr size_t get_local_shard_dim(GlobalShape shape) noexcept {
         .template local_dim<typename Sharding::mesh_type>(local_dim);
 }
 
-template <class Sharding, class GlobalShape, size_t... Axes>
-constexpr auto
-get_fixed_local_shard_dim(GlobalShape, std::index_sequence<Axes...>) noexcept {
-    return fixed_shape<get_local_shard_dim<Sharding, Axes>(GlobalShape{})...>{};
+template <class Sharding, class GlobalShape>
+constexpr auto local_shard_shape(const GlobalShape &shape) noexcept {
+    if constexpr (is_fixed_dims_v<GlobalShape>) {
+        auto get_dims = [&]<size_t... Axes>(std::index_sequence<Axes...>) {
+            return fixed_shape<get_local_shard_dim<Sharding, Axes>(
+                GlobalShape{})...>{};
+        };
+        return get_dims(std::make_index_sequence<GlobalShape::rank()>{});
+    } else {
+        auto get_dims = [&]<size_t... Axes>(std::index_sequence<Axes...>) {
+            return make_ranked_shape(
+                get_local_shard_dim<Sharding, Axes>(shape)...);
+        };
+        return get_dims(std::make_index_sequence<GlobalShape::rank()>{});
+    }
 }
 
 template <class GlobalShape, class Sharding> struct local_shard_shape_type {
@@ -198,8 +209,7 @@ template <class GlobalShape, class Sharding> struct local_shard_shape_type {
 
 template <size_t... Dims, class Sharding>
 struct local_shard_shape_type<fixed_shape<Dims...>, Sharding> {
-    using type = decltype(get_fixed_local_shard_dim<Sharding>(
-        fixed_shape<Dims...>{}, std::make_index_sequence<sizeof...(Dims)>{}));
+    using type = decltype(local_shard_shape<Sharding>(fixed_shape<Dims...>{}));
 };
 
 template <class Mesh, topology Topology>
