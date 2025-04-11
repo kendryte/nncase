@@ -191,5 +191,11 @@ public class UnitTestInterop : TestClassBase
         Assert.Equal(a.NumLayers, r_a.NumLayers);
         Assert.Equal(a.NumKVHeads, r_a.NumKVHeads);
         Assert.Equal(a.HeadDim, r_a.HeadDim);
+        r_a.NumLayers = 3;
+        r_a.NumKVHeads = 2;
+        r_a.HeadDim = 1;
+        Assert.Equal(3, r_a.NumLayers);
+        Assert.Equal(2, r_a.NumKVHeads);
+        Assert.Equal(1, r_a.HeadDim);
     }
 }
