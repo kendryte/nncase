@@ -88,4 +88,38 @@ internal static class Native
 
     [DllImport(LibraryName, EntryPoint = "nncase_tuple_get_fields")]
     public static extern unsafe ErrorCode TupleGetFields(RTTuple tuple, IntPtr* fields, ref uint fieldsLength);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_config_create")]
+    public static extern unsafe ErrorCode AttentionConfigCreate(int num_layers, int num_kv_heads, int head_dim, out RTAttentionConfig config);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_config_get_num_layers")]
+    public static extern unsafe ErrorCode AttentionConfigGetNumLayers(RTAttentionConfig config, ref int num_layers);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_config_set_num_layers")]
+    public static extern unsafe ErrorCode AttentionConfigSetNumLayers(RTAttentionConfig config, int num_layers);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_config_get_num_kv_heads")]
+    public static extern unsafe ErrorCode AttentionConfigGetNumKvHeads(RTAttentionConfig config, ref int num_kv_heads);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_config_set_num_kv_heads")]
+    public static extern unsafe ErrorCode AttentionConfigSetNumKvHeads(RTAttentionConfig config, int num_kv_heads);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_config_get_head_dim")]
+    public static extern unsafe ErrorCode AttentionConfigGetHeadDim(RTAttentionConfig config, ref int head_dim);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_config_set_head_dim")]
+    public static extern unsafe ErrorCode AttentionConfigSetHeadDim(RTAttentionConfig config, int head_dim);
+
+    // [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_create")]
+    // public static extern unsafe ErrorCode  NncasePagedAttentionConfigCreate(
+    //     int num_layers, int num_kv_heads, int head_dim, int block_size,
+    //     rtpaged_attention_config_node ** config);
+
+    // [DllImport(LibraryName, EntryPoint = "nncase_attention_config_get_block_size")]
+    // public static extern unsafe ErrorCode  NncaseAttentionConfigGetBlockSize(
+    //     rtpaged_attention_config_node * config, int* block_size);
+
+    // [DllImport(LibraryName, EntryPoint = "nncase_attention_config_set_block_size")]
+    // public static extern unsafe ErrorCode  NncaseAttentionConfigSetBlockSize(
+    //     rtpaged_attention_config_node * config, int block_size);
 }

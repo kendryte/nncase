@@ -31,11 +31,50 @@ public class RTAttentionConfig : RTObject, IAttentionConfig
         }
     }
 
-    public int NumLayers => throw new NotImplementedException();
+    public int NumLayers
+    {
+        get
+        {
+            int num_layers = 0;
+            Native.AttentionConfigGetNumLayers(this, ref num_layers);
+            return num_layers;
+        }
 
-    public int NumKVHeads => throw new NotImplementedException();
+        set
+        {
+            Native.AttentionConfigSetNumLayers(this, value);
+        }
+    }
 
-    public int HeadDim => throw new NotImplementedException();
+    public int NumKVHeads
+    {
+        get
+        {
+            int num_kv_heads = 0;
+            Native.AttentionConfigGetNumKvHeads(this, ref num_kv_heads);
+            return num_kv_heads;
+        }
+
+        set
+        {
+            Native.AttentionConfigSetNumKvHeads(this, value);
+        }
+    }
+
+    public int HeadDim
+    {
+        get
+        {
+            int head_dim = 0;
+            Native.AttentionConfigGetHeadDim(this, ref head_dim);
+            return head_dim;
+        }
+
+        set
+        {
+            Native.AttentionConfigSetHeadDim(this, value);
+        }
+    }
 
     /// <summary>
     /// convert <see cref="AttentionConfig"/> Value To <see cref="RTAttentionConfig"/>.
@@ -43,7 +82,7 @@ public class RTAttentionConfig : RTObject, IAttentionConfig
     public static RTAttentionConfig FromAttentionConfig(AttentionConfig value) => value switch
     {
         PagedAttentionConfig cfg => throw new NotImplementedException(),
-        AttentionConfig cfg => throw new NotImplementedException(),
+        AttentionConfig cfg => RTAttentionConfigCreate(cfg),
         _ => throw new ArgumentOutOfRangeException(nameof(value)),
     };
 
@@ -58,6 +97,12 @@ public class RTAttentionConfig : RTObject, IAttentionConfig
             Native.ObjectRelease(handle);
             throw;
         }
+    }
+
+    private static RTAttentionConfig RTAttentionConfigCreate(AttentionConfig cfg)
+    {
+        Native.AttentionConfigCreate(cfg.NumLayers, cfg.NumKVHeads, cfg.HeadDim, out var rtcfg).ThrowIfFailed();
+        return rtcfg;
     }
 }
 

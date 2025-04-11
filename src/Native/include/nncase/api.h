@@ -19,6 +19,8 @@
 namespace nncase {
 class object_node;
 class tensor_node;
+class attention_config_node;
+class paged_attention_config_node;
 class attention_kv_cache_node;
 class paged_attention_kv_cache_node;
 class tuple_node;
@@ -113,4 +115,33 @@ NNCASE_API int nncase_tuple_create(nncase::value_node **fields,
 NNCASE_API int nncase_tuple_get_fields(nncase::tuple_node *tuple,
                                        nncase::value_node **fields,
                                        uint32_t *fields_length);
+NNCASE_API int
+nncase_attention_config_create(int32_t num_layers, int32_t num_kv_heads,
+                               int32_t head_dim,
+                               nncase::attention_config_node **config);
+NNCASE_API int
+nncase_attention_config_get_num_layers(nncase::attention_config_node *config,
+                                       int32_t *num_layers);
+NNCASE_API int
+nncase_attention_config_set_num_layers(nncase::attention_config_node *config,
+                                       int32_t num_layers);
+NNCASE_API int
+nncase_attention_config_get_num_kv_heads(nncase::attention_config_node *config,
+                                         int32_t *num_kv_heads);
+NNCASE_API int
+nncase_attention_config_set_num_kv_heads(nncase::attention_config_node *config,
+                                         int32_t num_kv_heads);
+NNCASE_API int
+nncase_attention_config_get_head_dim(nncase::attention_config_node *config,
+                                     int32_t *head_dim);
+NNCASE_API int
+nncase_attention_config_set_head_dim(nncase::attention_config_node *config,
+                                     int32_t head_dim);
+NNCASE_API int nncase_paged_attention_config_create(
+    int32_t num_layers, int32_t num_kv_heads, int32_t head_dim, int block_size,
+    nncase::paged_attention_config_node **config);
+NNCASE_API int nncase_attention_config_get_block_size(
+    nncase::paged_attention_config_node *config, int32_t *block_size);
+NNCASE_API int nncase_attention_config_set_block_size(
+    nncase::paged_attention_config_node *config, int32_t block_size);
 }

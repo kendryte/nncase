@@ -122,11 +122,10 @@ class paged_attention_scheduler {
 
 inline void register_paged_attention_scheduler(py::module &m) {
     py::class_<nncase::attention_config>(m, "AttentionConfig")
-        .def("__init__",
-             [](int num_layers, int num_kv_heads, int head_dim) {
-                 return nncase::attention_config(std::in_place, num_layers,
-                                                 num_kv_heads, head_dim);
-             })
+        .def(py::init([](int num_layers, int num_kv_heads, int head_dim) {
+            return nncase::attention_config(std::in_place, num_layers,
+                                            num_kv_heads, head_dim);
+        }))
         .def_property(
             "num_layers",
             [](const nncase::attention_config &cfg) { return cfg->num_layers; },
@@ -149,13 +148,11 @@ inline void register_paged_attention_scheduler(py::module &m) {
             });
 
     py::class_<nncase::paged_attention_config>(m, "PagedAttentionConfig")
-        .def(
-            "__init__",
-            [](int num_layers, int num_kv_heads, int head_dim, int block_size) {
-                return nncase::paged_attention_config(std::in_place, num_layers,
-                                                      num_kv_heads, head_dim,
-                                                      block_size);
-            })
+        .def(py::init([](int num_layers, int num_kv_heads, int head_dim,
+                         int block_size) {
+            return nncase::paged_attention_config(
+                std::in_place, num_layers, num_kv_heads, head_dim, block_size);
+        }))
         .def_property(
             "block_size",
             [](const nncase::paged_attention_config &cfg) {

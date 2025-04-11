@@ -182,4 +182,14 @@ public class UnitTestInterop : TestClassBase
         Assert.Equal(intVal, fields[0].ToValue());
         Assert.Equal(floatVal, fields[1].ToValue());
     }
+
+    [Fact]
+    public void TestRTAttentionConfig()
+    {
+        var a = new IR.NN.AttentionConfig(1, 2, 3);
+        var r_a = RTAttentionConfig.FromAttentionConfig(a);
+        Assert.Equal(a.NumLayers, r_a.NumLayers);
+        Assert.Equal(a.NumKVHeads, r_a.NumKVHeads);
+        Assert.Equal(a.HeadDim, r_a.HeadDim);
+    }
 }

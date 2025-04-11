@@ -17,6 +17,7 @@
 #include <iostream>
 #include <map>
 #include <nncase/compiler_defs.h>
+#include <nncase/paged_attention_config.h>
 #include <nncase/runtime/simple_types.h>
 #include <nncase/value.h>
 #include <string>
