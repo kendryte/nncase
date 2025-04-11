@@ -80,9 +80,11 @@ def dequantize_weights(model_dir):
                     scaled_weight = weight_fp32 * scale_tensor
                     state_dict[weight_key] = scaled_weight
                 else:
-                    raise os.error(f"\033[31m weight_tensor {weight_key} and scale_tensor {key} shape not match! \033[0m")
+                    raise os.error(
+                        f"\033[31m weight_tensor {weight_key} and scale_tensor {key} shape not match! \033[0m")
             else:
-                print(f"Warning: Corresponding weight {weight_key} not found, skipping.")
+                print(
+                    f"Warning: Corresponding weight {weight_key} not found, skipping.")
 
     save_file(state_dict, f32_safetensors)
 
