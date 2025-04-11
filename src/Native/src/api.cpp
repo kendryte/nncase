@@ -12,9 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "nncase/paged_attention_config.h"
 #include <nncase/api.h>
+#include <nncase/paged_attention_kv_cache.h>
 #include <nncase/object.h>
+#include <nncase/paged_attention_config.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
@@ -376,7 +377,7 @@ int nncase_attention_config_get_num_layers(
         *num_layers = config->num_layers;
         return 0;
     }
-    return -EINVAL; // Failure
+    return -EINVAL;
 }
 int nncase_attention_config_set_num_layers(
     nncase::attention_config_node *config, int32_t num_layers) {
@@ -384,7 +385,7 @@ int nncase_attention_config_set_num_layers(
         config->num_layers = num_layers;
         return 0;
     }
-    return -EINVAL; // Failure
+    return -EINVAL;
 }
 // Get the number of key-value heads in the attention configuration
 int nncase_attention_config_get_num_kv_heads(
@@ -393,7 +394,7 @@ int nncase_attention_config_get_num_kv_heads(
         *num_kv_heads = config->num_kv_heads;
         return 0;
     }
-    return -EINVAL; // Failure
+    return -EINVAL;
 }
 int nncase_attention_config_set_num_kv_heads(
     nncase::attention_config_node *config, int32_t num_kv_heads) {
@@ -401,7 +402,7 @@ int nncase_attention_config_set_num_kv_heads(
         config->num_kv_heads = num_kv_heads;
         return 0;
     }
-    return -EINVAL; // Failure
+    return -EINVAL;
 }
 
 int nncase_attention_config_get_head_dim(nncase::attention_config_node *config,
@@ -410,7 +411,7 @@ int nncase_attention_config_get_head_dim(nncase::attention_config_node *config,
         *head_dim = config->head_dim;
         return 0;
     }
-    return -EINVAL; // Failure
+    return -EINVAL;
 }
 int nncase_attention_config_set_head_dim(nncase::attention_config_node *config,
                                          int32_t head_dim) {
@@ -418,7 +419,7 @@ int nncase_attention_config_set_head_dim(nncase::attention_config_node *config,
         config->head_dim = head_dim;
         return 0;
     }
-    return -EINVAL; // Failure
+    return -EINVAL;
 }
 
 int nncase_paged_attention_config_create(
@@ -438,14 +439,42 @@ int nncase_paged_attention_config_get_block_size(
         *block_size = config->block_size;
         return 0;
     }
-    return -EINVAL; // Failure
+    return -EINVAL;
 }
+
 int nncase_paged_attention_config_set_block_size(
     nncase::paged_attention_config_node *config, int32_t block_size) {
     if (config) {
         config->block_size = block_size;
         return 0;
     }
-    return -EINVAL; // Failure
+    return -EINVAL;
+}
+
+int nncase_attention_kv_cache_get_num_requests(
+    nncase::paged_attention_kv_cache_node *cache, int32_t *num_requests) {
+    if (cache && num_requests) {
+        *num_requests = cache->num_requests();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_attention_kv_cache_get_seq_len(
+    nncase::paged_attention_kv_cache_node *cache, int32_t request_id, int32_t *out) {
+    if (cache && out) {
+        *out = cache->seq_len(request_id);
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_attention_kv_cache_get_context_len(
+    nncase::paged_attention_kv_cache_node *cache, int32_t request_id, int32_t *out) {
+    if (cache && out) {
+        *out = cache->context_len(request_id);
+        return 0;
+    }
+    return -EINVAL;
 }
 }

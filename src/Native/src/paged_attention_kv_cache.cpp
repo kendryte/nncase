@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/attention_kv_cache.h>
+#include <nncase/paged_attention_kv_cache.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -20,13 +20,16 @@
 
 using namespace nncase;
 
-attention_kv_cache_node::attention_kv_cache_node(
-    runtime::runtime_tensor kv_cache, runtime::runtime_tensor seq_lens,
-    runtime::runtime_tensor context_lens, runtime::runtime_tensor block_tables,
-    runtime::runtime_tensor slot_mapping)
+paged_attention_kv_cache_node::paged_attention_kv_cache_node(
+    std::vector<std::byte> &kv_cache_storage,
+    std::vector<size_t> &kv_cache_shape, const std::vector<int64_t> &seq_lens,
+    const std::vector<int64_t> &context_lens,
+    const std::vector<int64_t> &block_tables,
+    const std::vector<int64_t> &slot_mapping)
     : dtype_(datatype_t::attention_kv_cache),
-      kv_cache_(kv_cache.impl()),
-      seq_lens_(seq_lens.impl()),
-      context_lens_(context_lens.impl()),
-      block_tables_(block_tables.impl()),
-      slot_mapping_(slot_mapping.impl()) {}
+      kv_cache_storage_(kv_cache_storage),
+      kv_cache_shape_(kv_cache_shape),
+      seq_lens_(std::move(seq_lens)),
+      context_lens_(std::move(context_lens)),
+      block_tables_(std::move(block_tables)),
+      slot_mapping_(std::move(slot_mapping)) {}

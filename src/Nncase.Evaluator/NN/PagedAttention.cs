@@ -62,8 +62,8 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         long queryStart = 0;
         for (int requestId = 0; requestId < cache.NumRequests; requestId++)
         {
-            var seqLen = cache.GetSeqLens(requestId);
-            var queryLen = seqLen - cache.GetContextLength(requestId);
+            var seqLen = cache.GetSeqLen(requestId);
+            var queryLen = seqLen - cache.GetContextLen(requestId);
             var q = OrtKI.Slice(query, OrtKISharp.Tensor.MakeTensor([queryStart], [1]), OrtKISharp.Tensor.MakeTensor([queryStart + queryLen], [1]), OrtKISharp.Tensor.MakeTensor([0L], [1]), OrtKISharp.Tensor.MakeTensor([1L], [1]));
             q = q * scale;
 

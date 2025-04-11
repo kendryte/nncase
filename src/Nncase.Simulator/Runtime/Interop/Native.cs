@@ -118,4 +118,21 @@ internal static class Native
 
     [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_set_block_size")]
     public static extern unsafe ErrorCode PagedAttentionConfigSetBlockSize(RTPagedAttentionConfig config, int block_size);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_get_num_requests")]
+    public static extern unsafe ErrorCode AttentionKvCacheGetNumRequests(RTAttentionKVCache kvcache, out int num_requests);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_get_seq_len")]
+    public static extern unsafe ErrorCode AttentionKvCacheGetSeqLen(RTAttentionKVCache kvcache, int request_id, out long seq_len);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_get_context_len")]
+    public static extern unsafe ErrorCode AttentionKvCacheGetContextLen(RTAttentionKVCache kvcache, int request_id, out long context_len);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_scheduler_create")]
+    public static extern unsafe ErrorCode PagedAttentionSchedulerCreate(int max_model_len, out RTPagedAttentionScheduler scheduler);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_scheduler_initialize")]
+    public static extern unsafe ErrorCode PagedAttentionSchedulerInitialize(RTPagedAttentionScheduler rTPagedAttentionScheduler, RTPagedAttentionConfig config, int num_blocks);
+
+    // internal static object PagedAttentionSchedulerSchedule(RTPagedAttentionScheduler rTPagedAttentionScheduler, Tensor<long> session_ids, Tensor<long> tokens_count, out object cache) => throw new NotImplementedException();
 }

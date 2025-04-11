@@ -149,14 +149,25 @@ public abstract class RTAttentionKVCache : RTObject, IAttentionKVCache
     {
     }
 
-    internal RTAttentionKVCache(IntPtr handle)
+    internal RTAttentionKVCache(IntPtr handle, bool addRef = false)
         : base(handle)
     {
+        if (addRef)
+        {
+            Native.ObjectAddRef(handle);
+        }
     }
 
     public AttentionConfig Config => throw new NotImplementedException();
 
-    public int NumRequests => throw new NotImplementedException();
+    public int NumRequests
+    {
+        get
+        {
+            Native.AttentionKvCacheGetNumRequests(this, out var numRequests).ThrowIfFailed();
+            return numRequests;
+        }
+    }
 
     public static RTAttentionKVCache FromHandle(IntPtr handle, bool addRef = false)
     {
@@ -171,9 +182,17 @@ public abstract class RTAttentionKVCache : RTObject, IAttentionKVCache
         }
     }
 
-    public long GetContextLength(int requestId) => throw new NotImplementedException();
+    public long GetContextLen(int requestId)
+    {
+        Native.AttentionKvCacheGetContextLen(this, requestId, out var contextLen).ThrowIfFailed();
+        return contextLen;
+    }
 
-    public long GetSeqLens(int requestId) => throw new NotImplementedException();
+    public long GetSeqLen(int requestId)
+    {
+        Native.AttentionKvCacheGetSeqLen(this, requestId, out var seqLen).ThrowIfFailed();
+        return seqLen;
+    }
 }
 
 /// <summary>

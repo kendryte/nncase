@@ -27,9 +27,9 @@ internal abstract record TestAttentionKVCache(
     Tensor<long> ContextLens,
     Tensor<long> SeqLens) : IAttentionKVCache
 {
-    public long GetContextLength(int requestId) => ContextLens[requestId];
+    public long GetContextLen(int requestId) => ContextLens[requestId];
 
-    public long GetSeqLens(int requestId) => SeqLens[requestId];
+    public long GetSeqLen(int requestId) => SeqLens[requestId];
 }
 
 internal sealed record TestPagedAttentionKVCache(

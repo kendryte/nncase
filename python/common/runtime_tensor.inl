@@ -24,7 +24,7 @@ py::class_<tensor_desc>(m, "TensorDesc")
 
 py::class_<runtime_tensor>(m, "RuntimeTensor")
     .def_static("from_object",
-                [](const nncase::attention_kv_cache &obj) {
+                [](const nncase::paged_attention_kv_cache &obj) {
                   auto ref_type =
                   nncase::reference_type_t(std::in_place, datatype_t::attention_kv_cache);
                   auto tensor = nncase::runtime::detail::create(

@@ -16,7 +16,7 @@
 #include "type_casters.h"
 #include <iostream>
 #include <llm_ffi.h>
-#include <nncase/attention_kv_cache.h>
+#include <nncase/paged_attention_kv_cache.h>
 #include <nncase/compiler.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -481,7 +481,7 @@ PYBIND11_MODULE(_nncase, m) {
 
     // register_kv_cache(m);
 
-    py::class_<attention_kv_cache>(m, "AttentionKVCache");
+    py::class_<paged_attention_kv_cache>(m, "AttentionKVCache");
 
     register_paged_attention_scheduler(m);
 
