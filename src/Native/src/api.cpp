@@ -432,7 +432,7 @@ int nncase_paged_attention_config_create(
     return -EINVAL;
 }
 
-int nncase_attention_config_get_block_size(
+int nncase_paged_attention_config_get_block_size(
     nncase::paged_attention_config_node *config, int32_t *block_size) {
     if (config) {
         *block_size = config->block_size;
@@ -440,7 +440,7 @@ int nncase_attention_config_get_block_size(
     }
     return -EINVAL; // Failure
 }
-int nncase_attention_config_set_block_size(
+int nncase_paged_attention_config_set_block_size(
     nncase::paged_attention_config_node *config, int32_t block_size) {
     if (config) {
         config->block_size = block_size;

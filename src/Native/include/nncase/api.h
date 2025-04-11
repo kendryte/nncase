@@ -140,8 +140,8 @@ nncase_attention_config_set_head_dim(nncase::attention_config_node *config,
 NNCASE_API int nncase_paged_attention_config_create(
     int32_t num_layers, int32_t num_kv_heads, int32_t head_dim, int block_size,
     nncase::paged_attention_config_node **config);
-NNCASE_API int nncase_attention_config_get_block_size(
+NNCASE_API int nncase_paged_attention_config_get_block_size(
     nncase::paged_attention_config_node *config, int32_t *block_size);
-NNCASE_API int nncase_attention_config_set_block_size(
+NNCASE_API int nncase_paged_attention_config_set_block_size(
     nncase::paged_attention_config_node *config, int32_t block_size);
 }

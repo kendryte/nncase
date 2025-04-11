@@ -110,16 +110,12 @@ internal static class Native
     [DllImport(LibraryName, EntryPoint = "nncase_attention_config_set_head_dim")]
     public static extern unsafe ErrorCode AttentionConfigSetHeadDim(RTAttentionConfig config, int head_dim);
 
-    // [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_create")]
-    // public static extern unsafe ErrorCode  NncasePagedAttentionConfigCreate(
-    //     int num_layers, int num_kv_heads, int head_dim, int block_size,
-    //     rtpaged_attention_config_node ** config);
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_create")]
+    public static extern unsafe ErrorCode PagedAttentionConfigCreate(int num_layers, int num_kv_heads, int head_dim, int block_size, out RTPagedAttentionConfig config);
 
-    // [DllImport(LibraryName, EntryPoint = "nncase_attention_config_get_block_size")]
-    // public static extern unsafe ErrorCode  NncaseAttentionConfigGetBlockSize(
-    //     rtpaged_attention_config_node * config, int* block_size);
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_get_block_size")]
+    public static extern unsafe ErrorCode PagedAttentionConfigGetBlockSize(RTPagedAttentionConfig config, out int block_size);
 
-    // [DllImport(LibraryName, EntryPoint = "nncase_attention_config_set_block_size")]
-    // public static extern unsafe ErrorCode  NncaseAttentionConfigSetBlockSize(
-    //     rtpaged_attention_config_node * config, int block_size);
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_set_block_size")]
+    public static extern unsafe ErrorCode PagedAttentionConfigSetBlockSize(RTPagedAttentionConfig config, int block_size);
 }

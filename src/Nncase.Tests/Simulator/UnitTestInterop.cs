@@ -197,5 +197,20 @@ public class UnitTestInterop : TestClassBase
         Assert.Equal(3, r_a.NumLayers);
         Assert.Equal(2, r_a.NumKVHeads);
         Assert.Equal(1, r_a.HeadDim);
+
+        var b = new IR.NN.PagedAttentionConfig(1, 2, 3, 4);
+        var r_b = (RTPagedAttentionConfig)RTAttentionConfig.FromAttentionConfig(b);
+        Assert.Equal(b.NumLayers, r_b.NumLayers);
+        Assert.Equal(b.NumKVHeads, r_b.NumKVHeads);
+        Assert.Equal(b.HeadDim, r_b.HeadDim);
+        Assert.Equal(b.BlockSize, r_b.BlockSize);
+        r_b.NumLayers = 3;
+        r_b.NumKVHeads = 2;
+        r_b.HeadDim = 1;
+        r_b.BlockSize = 0;
+        Assert.Equal(3, r_b.NumLayers);
+        Assert.Equal(2, r_b.NumKVHeads);
+        Assert.Equal(1, r_b.HeadDim);
+        Assert.Equal(0, r_b.BlockSize);
     }
 }
