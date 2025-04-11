@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Nncase.IR;
 using Nncase.Utilities;
@@ -263,6 +264,12 @@ public abstract class HuggingFaceModel
     {
         if (scaleIf is not null && scaleW is not null)
         {
+            // TODO: only support by tensor quant now!
+            if (scaleIf.Rank > 1 || scaleW.Rank > 1)
+            {
+                throw new NotImplementedException("only support by tensor quant now: ");
+            }
+
             var qScaleA = 1.0f / scaleIf.ToArray<float>()[0];
             var qScaleB = 1.0f / scaleW.ToArray<float>()[0];
             var deqScaleA = 1.0f / qScaleA;
@@ -273,6 +280,36 @@ public abstract class HuggingFaceModel
             var qWeights = IR.F.Tensors.Cast(transposed_weight, DataTypes.Float8E4M3);
             var qMatmul = Nncase.IR.F.Math.MatMul(qInput, qWeights).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
             var result = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, qMatmul, deqScaleA * deqScaleB);
+            if (bias != null)
+            {
+                result = IR.F.Math.Add(result, bias);
+            }
+
+            return result;
+        }
+        else if (scaleIf is null && scaleW is not null)
+        {
+            long[] axes = System.Linq.Enumerable.Range(0, (int)expr.CheckedShape.Rank).Select(i => (long)i).ToArray();
+            var max = Nncase.IR.F.Tensors.ReduceMax(expr, axes, float.MinValue, 0);
+            var min = Nncase.IR.F.Tensors.ReduceMin(expr, axes, float.MaxValue, 0);
+            var limit = Nncase.IR.F.Math.Max(Nncase.IR.F.Math.Abs(max), Nncase.IR.F.Math.Abs(min));
+            var qScaleA = Nncase.IR.F.Math.Div((float)Float8E4M3.MaxNormal, limit);
+            var deqScaleA = Nncase.IR.F.Math.Div(1.0f, qScaleA);
+            var deqScaleB = scaleW;
+            var deqScaleAB = Nncase.IR.F.Math.Mul(deqScaleA, deqScaleB);
+            var qInput = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, expr, qScaleA);
+            qInput = Nncase.IR.F.Tensors.Cast(qInput, DataTypes.Float8E4M3);
+            var transposed_weight = IR.F.Tensors.Transpose(weight, new long[] { 1, 0 }).Evaluate().AsTensor();
+            var qWeights = IR.F.Tensors.Cast(transposed_weight, DataTypes.Float8E4M3);
+            var qMatmul = Nncase.IR.F.Math.MatMul(qInput, qWeights).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
+            if (deqScaleAB.CheckedShape.Rank == 2)
+            {
+                long[] dims = System.Linq.Enumerable.Range(0, qMatmul.CheckedShape.Rank).Select(i => 1L).ToArray();
+                dims[dims.Length - 1] = deqScaleAB.CheckedShape[0].FixedValue;
+                deqScaleAB = Nncase.IR.F.Tensors.Reshape(deqScaleAB, dims);
+            }
+
+            var result = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, qMatmul, deqScaleAB);
             if (bias != null)
             {
                 result = IR.F.Math.Add(result, bias);
