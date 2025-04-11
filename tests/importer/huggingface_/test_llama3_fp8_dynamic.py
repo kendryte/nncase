@@ -55,7 +55,7 @@ def test_llama3_fp8_dynamic(request):
     runner = HuggingfaceTestRunner(request.node.name, overwrite_configs=cfg)
 
     model_name = "/compiler/share/huggingface_cache/hub/LLM-Research/Llama-3.2-1B-Instruct-FP8-dynamic"
-            
+
     if os.path.exists(os.path.join(os.path.dirname(__file__), model_name)):
         model_file = os.path.join(os.path.dirname(__file__), model_name)
     else:

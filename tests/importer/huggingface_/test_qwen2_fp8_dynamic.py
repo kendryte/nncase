@@ -55,7 +55,7 @@ def test_qwen2_fp8_dynamic(request):
     runner = HuggingfaceTestRunner(request.node.name, overwrite_configs=cfg)
 
     model_name = "/compiler/share/huggingface_cache/hub/LLM-Research/Qwen2.5-0.5B-FP8-dynamic"
-            
+
     if os.path.exists(os.path.join(os.path.dirname(__file__), model_name)):
         model_file = os.path.join(os.path.dirname(__file__), model_name)
     else:
