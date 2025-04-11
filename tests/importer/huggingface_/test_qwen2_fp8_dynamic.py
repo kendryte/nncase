@@ -17,11 +17,12 @@ import os
 import pytest
 from huggingface_test_runner import HuggingfaceTestRunner, download_from_huggingface
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from safetensors.torch import load_file, save_file
 import logging
 logging.getLogger("transformers").setLevel(logging.ERROR)
 
 
-def test_llama3_fp8_static(request):
+def test_qwen2_fp8_dynamic(request):
     cfg = """
     [huggingface_options]
     output_attentions = false
@@ -53,8 +54,8 @@ def test_llama3_fp8_static(request):
     """
     runner = HuggingfaceTestRunner(request.node.name, overwrite_configs=cfg)
 
-    model_name = "/compiler/share/huggingface_cache/hub/LLM-Research/Llama-3.2-1B-Instruct-FP8"
-
+    model_name = "/compiler/share/huggingface_cache/hub/LLM-Research/Qwen2.5-0.5B-FP8-dynamic"
+            
     if os.path.exists(os.path.join(os.path.dirname(__file__), model_name)):
         model_file = os.path.join(os.path.dirname(__file__), model_name)
     else:
@@ -65,4 +66,4 @@ def test_llama3_fp8_static(request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_llama3_fp8_static.py'])
+    pytest.main(['-vv', 'test_qwen2_fp8_dynamic.py'])

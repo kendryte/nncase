@@ -21,7 +21,7 @@ import logging
 logging.getLogger("transformers").setLevel(logging.ERROR)
 
 
-def test_llama3_fp8_static(request):
+def test_deepseek_r1_static(request):
     cfg = """
     [huggingface_options]
     output_attentions = false
@@ -53,7 +53,7 @@ def test_llama3_fp8_static(request):
     """
     runner = HuggingfaceTestRunner(request.node.name, overwrite_configs=cfg)
 
-    model_name = "/compiler/share/huggingface_cache/hub/LLM-Research/Llama-3.2-1B-Instruct-FP8"
+    model_name = "/compiler/share/huggingface_cache/hub/LLM-Research/DeepSeek-R1-Distill-Qwen-1.5B-FP8"
 
     if os.path.exists(os.path.join(os.path.dirname(__file__), model_name)):
         model_file = os.path.join(os.path.dirname(__file__), model_name)
@@ -65,4 +65,4 @@ def test_llama3_fp8_static(request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_llama3_fp8_static.py'])
+    pytest.main(['-vv', 'test_deepseek_r1_static.py'])

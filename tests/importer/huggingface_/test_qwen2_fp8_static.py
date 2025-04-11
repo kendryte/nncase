@@ -17,6 +17,8 @@ import os
 import pytest
 from huggingface_test_runner import HuggingfaceTestRunner, download_from_huggingface
 from transformers import AutoModelForCausalLM, AutoTokenizer
+import logging
+logging.getLogger("transformers").setLevel(logging.ERROR)
 
 
 def test_qwen2_fp8_static(request):
