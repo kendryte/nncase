@@ -13,49 +13,64 @@
  * limitations under the License.
  */
 #pragma once
-#include "object.h"
-#include "shape.h"
-#include "tensor.h"
-#include "value.h"
-#include <nncase/runtime/buffer.h>
-#include <nncase/runtime/datatypes.h>
-#include <nncase/runtime/runtime_tensor.h>
+#include "attention_kv_cache.h"
+#include "paged_attention_config.h"
 
 namespace nncase {
 class paged_attention_kv_cache_node;
 using paged_attention_kv_cache = object_t<paged_attention_kv_cache_node>;
 
-class NNCASE_API paged_attention_kv_cache_node : public object_node {
-    DEFINE_OBJECT_KIND(object_node, object_paged_attention_kv_cache);
+class NNCASE_API paged_attention_kv_cache_node
+    : public attention_kv_cache_node {
+    DEFINE_OBJECT_KIND(attention_kv_cache_node,
+                       object_paged_attention_kv_cache);
 
   public:
-    paged_attention_kv_cache_node(std::vector<std::byte> &kv_cache_storage,
-                                  std::vector<size_t> &kv_cache_shape,
-                                  const std::vector<int64_t> &seq_lens,
-                                  const std::vector<int64_t> &context_lens,
-                                  const std::vector<int64_t> &block_tables,
-                                  const std::vector<int64_t> &slot_mapping);
+    paged_attention_kv_cache_node(paged_attention_config config,
+                                  size_t num_request, tensor context_lens,
+                                  tensor seq_lens, tensor block_tables,
+                                  tensor slot_mapping) noexcept
+        : attention_kv_cache_node(std::move(config), num_request,
+                                  std::move(context_lens), std::move(seq_lens)),
+          block_tables_(std::move(block_tables)),
+          slot_mapping_(std::move(slot_mapping)) {};
 
-    /** @brief Gets element type. */
-    const datatype_t &dtype() const noexcept { return dtype_; }
-
-    int32_t num_requests() const noexcept { return seq_lens_.size(); }
-
-    int64_t context_len(int32_t request_id) const noexcept {
-        return context_lens_[request_id];
+    /**@brief Gets attention config. */
+    const paged_attention_config &config() const noexcept {
+        return attention_kv_cache_node::config()
+            .as<paged_attention_config>()
+            .unwrap();
     }
 
-    int64_t seq_len(int32_t request_id) const noexcept {
-        return seq_lens_[request_id];
+    /**@brief Sets attention config.
+     * @param config Attention config.
+     */
+    void set_config(paged_attention_config config) noexcept {
+        attention_kv_cache_node::set_config(std::move(config));
+    }
+
+    /**@brief Gets block tables. */
+    const tensor &block_tables() const noexcept { return block_tables_; }
+
+    /**@brief Sets block tables.
+     * @param block_tables Block tables.
+     */
+    void set_block_tables(tensor block_tables) noexcept {
+        block_tables_ = std::move(block_tables);
+    }
+
+    /**@brief Gets slot mapping. */
+    const tensor &slot_mapping() const noexcept { return slot_mapping_; }
+
+    /**@brief Sets slot mapping.
+     * @param slot_mapping Slot mapping.
+     */
+    void set_slot_mapping(tensor slot_mapping) noexcept {
+        slot_mapping_ = std::move(slot_mapping);
     }
 
   private:
-    datatype_t dtype_;
-    std::vector<std::byte> &kv_cache_storage_;
-    std::vector<size_t> &kv_cache_shape_;
-    const std::vector<int64_t> seq_lens_;
-    const std::vector<int64_t> context_lens_;
-    const std::vector<int64_t> block_tables_;
-    const std::vector<int64_t> slot_mapping_;
+    tensor block_tables_;
+    tensor slot_mapping_;
 };
 } // namespace nncase

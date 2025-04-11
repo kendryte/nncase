@@ -15,28 +15,22 @@
 #pragma once
 #include "attention_config.h"
 #include "object.h"
-#include "shape.h"
-#include "tensor.h"
-#include "value.h"
-#include <nncase/runtime/buffer.h>
-#include <nncase/runtime/datatypes.h>
-#include <nncase/runtime/runtime_tensor.h>
 
 namespace nncase {
-
 class paged_attention_config_node : public attention_config_node {
     DEFINE_OBJECT_KIND(attention_config_node, object_paged_attention_config);
 
   public:
-    paged_attention_config_node(int num_layers, int num_kv_heads, int head_dim,
-                                int block_size)
+    paged_attention_config_node(size_t num_layers, size_t num_kv_heads,
+                                size_t head_dim, size_t block_size) noexcept
         : attention_config_node(num_layers, num_kv_heads, head_dim),
-          block_size(block_size) {}
+          block_size_(block_size) {}
 
-    int num_layers;
-    int num_kv_heads;
-    int head_dim;
-    int block_size;
+    size_t block_size() const noexcept { return block_size_; }
+    void block_size(size_t block_size) noexcept { block_size_ = block_size; }
+
+  private:
+    size_t block_size_;
 };
 
 using paged_attention_config = object_t<paged_attention_config_node>;
