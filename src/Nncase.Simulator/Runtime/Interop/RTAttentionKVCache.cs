@@ -79,12 +79,11 @@ public class RTAttentionConfig : RTObject, IAttentionConfig
     /// <summary>
     /// convert <see cref="AttentionConfig"/> Value To <see cref="RTAttentionConfig"/>.
     /// </summary>
-    public static RTAttentionConfig FromAttentionConfig(AttentionConfig value) => value switch
+    public static RTAttentionConfig FromConfig(AttentionConfig cfg)
     {
-        PagedAttentionConfig cfg => RTPagedAttentionConfigCreate(cfg),
-        AttentionConfig cfg => RTAttentionConfigCreate(cfg),
-        _ => throw new ArgumentOutOfRangeException(nameof(value)),
-    };
+        Native.AttentionConfigCreate(cfg.NumLayers, cfg.NumKVHeads, cfg.HeadDim, out var rtcfg).ThrowIfFailed();
+        return rtcfg;
+    }
 
     public static RTAttentionConfig FromHandle(IntPtr handle, bool addRef = false)
     {
@@ -97,18 +96,6 @@ public class RTAttentionConfig : RTObject, IAttentionConfig
             Native.ObjectRelease(handle);
             throw;
         }
-    }
-
-    private static RTAttentionConfig RTAttentionConfigCreate(AttentionConfig cfg)
-    {
-        Native.AttentionConfigCreate(cfg.NumLayers, cfg.NumKVHeads, cfg.HeadDim, out var rtcfg).ThrowIfFailed();
-        return rtcfg;
-    }
-
-    private static RTPagedAttentionConfig RTPagedAttentionConfigCreate(PagedAttentionConfig cfg)
-    {
-        Native.PagedAttentionConfigCreate(cfg.NumLayers, cfg.NumKVHeads, cfg.HeadDim, cfg.BlockSize, out var rtcfg).ThrowIfFailed();
-        return rtcfg;
     }
 }
 
@@ -136,6 +123,12 @@ public sealed class RTPagedAttentionConfig : RTAttentionConfig
         {
             Native.PagedAttentionConfigSetBlockSize(this, value).ThrowIfFailed();
         }
+    }
+
+    public static RTPagedAttentionConfig FromConfig(PagedAttentionConfig cfg)
+    {
+        Native.PagedAttentionConfigCreate(cfg.NumLayers, cfg.NumKVHeads, cfg.HeadDim, cfg.BlockSize, out var rtcfg).ThrowIfFailed();
+        return rtcfg;
     }
 }
 

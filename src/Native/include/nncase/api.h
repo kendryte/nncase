@@ -23,6 +23,7 @@ class attention_config_node;
 class paged_attention_config_node;
 class attention_kv_cache_node;
 class paged_attention_kv_cache_node;
+class paged_attention_scheduler_node;
 class tuple_node;
 class value_node;
 class type_node;
@@ -150,10 +151,23 @@ NNCASE_API int nncase_paged_attention_config_set_block_size(
 NNCASE_API int nncase_attention_kv_cache_get_num_requests(
     nncase::paged_attention_kv_cache_node *cache, int32_t *num_requests);
 
-NNCASE_API int
-nncase_attention_kv_cache_get_seq_len(nncase::paged_attention_kv_cache_node *cache,
-                                      int request_id, int32_t *out);
+NNCASE_API int nncase_attention_kv_cache_get_seq_len(
+    nncase::paged_attention_kv_cache_node *cache, int request_id,
+    int32_t *seq_len);
 
 NNCASE_API int nncase_attention_kv_cache_get_context_len(
-    nncase::paged_attention_kv_cache_node *cache, int request_id, int32_t *out);
+    nncase::paged_attention_kv_cache_node *cache, int request_id,
+    int32_t *context_len);
+
+NNCASE_API int nncase_paged_attenion_scheduler_create(
+    int max_model_len, nncase::paged_attention_scheduler_node **scheduler);
+
+NNCASE_API int nncase_paged_attenion_scheduler_initialize(
+    nncase::paged_attention_scheduler_node *scheduler,
+    nncase::paged_attention_config_node *config, int num_blocks);
+
+NNCASE_API int nncase_paged_attenion_scheduler_schedule(
+    nncase::paged_attention_scheduler_node *scheduler, int64_t *session_ids,
+    int session_ids_len, int64_t *token_counts, int token_counts_len,
+    nncase::paged_attention_kv_cache_node **cache);
 }

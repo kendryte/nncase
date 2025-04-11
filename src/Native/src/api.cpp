@@ -13,9 +13,10 @@
  * limitations under the License.
  */
 #include <nncase/api.h>
-#include <nncase/paged_attention_kv_cache.h>
 #include <nncase/object.h>
 #include <nncase/paged_attention_config.h>
+#include <nncase/paged_attention_kv_cache.h>
+#include <nncase/paged_attention_scheduler.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
@@ -461,7 +462,8 @@ int nncase_attention_kv_cache_get_num_requests(
 }
 
 int nncase_attention_kv_cache_get_seq_len(
-    nncase::paged_attention_kv_cache_node *cache, int32_t request_id, int32_t *out) {
+    nncase::paged_attention_kv_cache_node *cache, int32_t request_id,
+    int32_t *out) {
     if (cache && out) {
         *out = cache->seq_len(request_id);
         return 0;
@@ -470,9 +472,45 @@ int nncase_attention_kv_cache_get_seq_len(
 }
 
 int nncase_attention_kv_cache_get_context_len(
-    nncase::paged_attention_kv_cache_node *cache, int32_t request_id, int32_t *out) {
+    nncase::paged_attention_kv_cache_node *cache, int32_t request_id,
+    int32_t *out) {
     if (cache && out) {
         *out = cache->context_len(request_id);
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_paged_attenion_scheduler_create(
+    int max_model_len, nncase::paged_attention_scheduler_node **scheduler) {
+    if (scheduler) {
+        *scheduler = new nncase::paged_attention_scheduler_node(max_model_len);
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_paged_attenion_scheduler_initialize(
+    nncase::paged_attention_scheduler_node *scheduler,
+    nncase::paged_attention_config_node *config, int num_blocks) {
+    if (scheduler && config) {
+        scheduler->initialize(config, num_blocks);
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_paged_attenion_scheduler_schedule(
+    nncase::paged_attention_scheduler_node *scheduler, int64_t *session_ids,
+    int session_ids_len, int64_t *token_counts, int token_counts_len,
+    nncase::paged_attention_kv_cache_node **cache) {
+    if (scheduler && session_ids && token_counts && cache) {
+        std::vector<int64_t> session_ids_vec(session_ids,
+                                             session_ids + session_ids_len);
+        std::vector<int64_t> token_counts_vec(token_counts,
+                                              token_counts + token_counts_len);
+        auto kv_cache = scheduler->schedule(session_ids_vec, token_counts_vec);
+        *cache = kv_cache.detach(); // avoid early free
         return 0;
     }
     return -EINVAL;

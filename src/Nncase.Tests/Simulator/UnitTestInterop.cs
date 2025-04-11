@@ -187,7 +187,7 @@ public class UnitTestInterop : TestClassBase
     public void TestRTAttentionConfig()
     {
         var a = new IR.NN.AttentionConfig(1, 2, 3);
-        var r_a = RTAttentionConfig.FromAttentionConfig(a);
+        var r_a = RTAttentionConfig.FromConfig(a);
         Assert.Equal(a.NumLayers, r_a.NumLayers);
         Assert.Equal(a.NumKVHeads, r_a.NumKVHeads);
         Assert.Equal(a.HeadDim, r_a.HeadDim);
@@ -199,7 +199,7 @@ public class UnitTestInterop : TestClassBase
         Assert.Equal(1, r_a.HeadDim);
 
         var b = new IR.NN.PagedAttentionConfig(1, 2, 3, 4);
-        var r_b = (RTPagedAttentionConfig)RTAttentionConfig.FromAttentionConfig(b);
+        var r_b = (RTPagedAttentionConfig)RTAttentionConfig.FromConfig(b);
         Assert.Equal(b.NumLayers, r_b.NumLayers);
         Assert.Equal(b.NumKVHeads, r_b.NumKVHeads);
         Assert.Equal(b.HeadDim, r_b.HeadDim);
@@ -212,5 +212,20 @@ public class UnitTestInterop : TestClassBase
         Assert.Equal(2, r_b.NumKVHeads);
         Assert.Equal(1, r_b.HeadDim);
         Assert.Equal(0, r_b.BlockSize);
+    }
+
+    [Fact]
+    public void TestRTPagedAttentionScheduler()
+    {
+        var s = RTPagedAttentionScheduler.Create(1238);
+        var cfg = new IR.NN.PagedAttentionConfig(1, 2, 3, 4);
+        s.Initialize(cfg, 128);
+
+        var session_ids = Tensor.From([1L]);
+        var token_counts = Tensor.From([128L]);
+        var cache = s.Schedule(session_ids, token_counts);
+        Assert.Equal(1, cache.NumRequests);
+        Assert.Equal(128, cache.GetSeqLen(0));
+        Assert.Equal(0, cache.GetContextLen(0));
     }
 }

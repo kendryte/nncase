@@ -134,5 +134,6 @@ internal static class Native
     [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_scheduler_initialize")]
     public static extern unsafe ErrorCode PagedAttentionSchedulerInitialize(RTPagedAttentionScheduler rTPagedAttentionScheduler, RTPagedAttentionConfig config, int num_blocks);
 
-    // internal static object PagedAttentionSchedulerSchedule(RTPagedAttentionScheduler rTPagedAttentionScheduler, Tensor<long> session_ids, Tensor<long> tokens_count, out object cache) => throw new NotImplementedException();
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_scheduler_schedule")]
+    public static extern unsafe ErrorCode PagedAttentionSchedulerSchedule(RTPagedAttentionScheduler rTPagedAttentionScheduler, [In] long[] session_ids, int session_ids_len, [In] long[] token_counts, int token_counts_len, out RTPagedAttentionKVCache cache);
 }
