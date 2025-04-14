@@ -86,17 +86,17 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
                  T stop = static_cast<T>(1)) {
     std::random_device rd;
     std::mt19937 gen(rd());
-    if (std::is_same_v<T, int8_t>) {
+    if constexpr (std::is_same_v<T, int8_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<int8_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, int16_t>) {
+    } else if constexpr (std::is_same_v<T, int16_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<int16_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, int32_t>) {
+    } else if constexpr (std::is_same_v<T, int32_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<int32_t>(dis(gen));
@@ -105,32 +105,32 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
             //     std::cout << index[i] << " ";
             // std::cout << ") = " << tensor(index) << std::endl;
         });
-    } else if (std::is_same_v<T, int64_t>) {
+    } else if constexpr (std::is_same_v<T, int64_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<int64_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, uint8_t>) {
+    } else if constexpr (std::is_same_v<T, uint8_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<uint8_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, uint16_t>) {
+    } else if constexpr (std::is_same_v<T, uint16_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<uint16_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, uint32_t>) {
+    } else if constexpr (std::is_same_v<T, uint32_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<uint32_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, uint64_t>) {
+    } else if constexpr (std::is_same_v<T, uint64_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<uint64_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, float>) {
+    } else if constexpr (std::is_same_v<T, float>) {
         std::uniform_real_distribution<float> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<float>(dis(gen));
@@ -139,17 +139,17 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
             //     std::cout << index[i] << " ";
             // std::cout << ") = " << tensor(index) << std::endl;
         });
-    } else if (std::is_same_v<T,half>){
+    } else if constexpr (std::is_same_v<T, half>){
         std::uniform_real_distribution<float> dis(start, stop);
          ntt::apply(tensor.shape(), [&](auto &index) {
-            tensor(index) = static_cast<half>(dis(gen));
+            tensor(index) = half::round_to_half(dis(gen));
         });
-    } else if (std::is_same_v<T, double>) {
+    } else if constexpr (std::is_same_v<T, double>) {
         std::uniform_real_distribution<double> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<double>(dis(gen));
         });
-    } else if (std::is_same_v<T, bool>) {
+    } else if constexpr (std::is_same_v<T, bool>) {
         std::uniform_real_distribution<double> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<double>(dis(gen)) >= 0.5;

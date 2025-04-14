@@ -13,12 +13,13 @@
  * limitations under the License.
  */
 #pragma once
+#include "bfloat16.h"
 #include "ntt/compiler_defs.h"
+#include <bit>
 #include <cmath>
 #include <codecvt>
 #include <cstdint>
 #include <float.h>
-#include "bfloat16.h"
 #include <functional>
 #include <limits>
 
@@ -54,6 +55,7 @@ struct half {
   public:
     half() noexcept = default;
 
+    half(_Float16 v) noexcept : value_(std::bit_cast<uint16_t>(v)) {}
     explicit half(float v) noexcept : value_(round_to_half(v).value_) {}
 
     template <class T,
@@ -61,15 +63,13 @@ struct half {
                                        std::is_floating_point<T>::value>>
     explicit half(const T &val) noexcept : half(static_cast<float>(val)) {}
 
-    half(int &&val) noexcept : half(static_cast<float>(val)) {}
-
     constexpr half(fp16_from_raw_t, uint16_t value) noexcept : value_(value) {}
 
     operator _Float16() const noexcept{
         return static_cast<_Float16>(float(*this));
     }
 
-    operator bfloat16() const noexcept {
+    explicit operator bfloat16() const noexcept {
         return bfloat16::round_to_bfloat16(float(*this));
     }
 
@@ -150,7 +150,6 @@ struct half {
         return o;
     }
 
-
     static constexpr half epsilon() noexcept { return from_raw(0x0800); }
 
     static constexpr half highest() noexcept { return from_raw(0x7bff); }
@@ -176,9 +175,6 @@ struct half {
   private:
     uint16_t value_;
 };
-
-
-
 
 #define DEFINE_FP16_BINARY_FP16RET(x)                                          \
     inline half operator x(half a, half b) noexcept {                          \
@@ -214,7 +210,7 @@ DEFINE_FP16_BINARY_BOOLRET(>=)
 DEFINE_FP16_BINARY_BOOLRET(>)
 
 #define DEFINE_FP16_BINARY_SELF_MOD(x, op)                                     \
-    inline half &operator x(half &a, half b) noexcept {                        \
+    inline half &operator x(half & a, half b) noexcept {                       \
         a = a op b;                                                            \
         return a;                                                              \
     }
@@ -236,7 +232,7 @@ inline bool operator!=(const half &lhs, const half &rhs) noexcept {
     return lhs.raw() != rhs.raw();
 }
 
-inline std::ostream& operator<<(std::ostream& os, const half& a){
+inline std::ostream &operator<<(std::ostream &os, const half &a) {
     os << std::to_string(float(a));
     return os;
 }
@@ -305,7 +301,7 @@ template <> struct numeric_limits<nncase::half> {
 };
 
 using nncase::half;
-inline bool isinf(const half &a) { return std::isinf(float(a)); }
+inline bool isinf(const half &a) { return std::isinf((float)(a)); }
 inline bool isnan(const half &a) { return std::isnan(float(a)); }
 inline bool isfinite(const half &a) { return std::isfinite(float(a)); }
 inline half abs(const half &a) { return half::round_to_half(fabsf(float(a))); }
@@ -343,26 +339,16 @@ inline half acos(const half &a) {
 inline half asin(const half &a) {
     return half::round_to_half(std::asinf(float(a)));
 }
-inline half rsqrt(const half &a) {
-    return half::round_to_half(std::rsqrt(float(a)));
-}
 inline half cosh(const half &a) {
     return half::round_to_half(std::coshf(float(a)));
 }
 inline half sinh(const half &a) {
     return half::round_to_half(std::sinf(float(a)));
 }
-inline half swish(const half &a) {
-    return half::round_to_half(std::swish(float(a)));
-}
-inline half swishb(const half &a) {
-    return half::round_to_half(std::swishb(float(a)));
-}
 inline half nextafter(const half &a, const half &b) {
     return half::round_to_half(std::nextafterf(float(a), float(b)));
 }
 inline long lrint(const half &a) { return lrintf(float(a)); }
 
-template <>
-struct is_floating_point<half> : public std::true_type {};
+template <> struct is_floating_point<half> : public std::true_type {};
 } // namespace std
