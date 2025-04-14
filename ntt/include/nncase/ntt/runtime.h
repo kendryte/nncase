@@ -34,6 +34,7 @@ struct thread_inout_desc {
     size_t size;
     const size_t *shape;
     const size_t *strides;
+    size_t rank;
 };
 
 void *thread_alloc(size_t bytes, size_t alignment);
