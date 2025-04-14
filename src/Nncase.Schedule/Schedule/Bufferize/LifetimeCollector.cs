@@ -61,7 +61,7 @@ public sealed class LifetimeCollector
 
         protected override Unit VisitLeafBuffer(TIR.Buffer expr)
         {
-            (var bufferSize, _) = TensorUtilities.GetTensorMaxSizeAndStrides(expr.CheckedType);
+            (var bufferSize, _) = TensorUtilities.GetTensorMaxSizeAndStrides(expr.CheckedTensorType, expr.DistributedType);
             var lifetime = new BufferLifetime(expr) { Memory = new(0, bufferSize) };
             _lifetimes.Add(expr, (lifetime, 0));
             return default;
