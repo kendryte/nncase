@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR.NN;
 
-public enum AttentionCacheKind
+public enum AttentionCacheKind : byte
 {
     Key,
     Value,
