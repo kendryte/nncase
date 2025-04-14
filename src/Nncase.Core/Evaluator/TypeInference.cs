@@ -107,7 +107,8 @@ public static class TypeInference
         }
 
         var dataType = inputs[0].DType;
-        if (inputs.Any(x => x.DType != dataType))
+        if (inputs.Any(x => ((x.DType is VectorType && dataType is VectorType) || (x.DType is not VectorType && dataType is not VectorType)) &&
+            x.DType != dataType))
         {
             return new InvalidType(
                 $"Inputs of broadcast must have same datatype: {string.Join(",", inputs.Select(x => x.DType.GetDisplayName()))}");
