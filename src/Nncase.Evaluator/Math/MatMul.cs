@@ -44,7 +44,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var (lm, lk, rk, rn) = dimInfo ?? new(aRank - 2, aRank - 1, bRank - 2, bRank - 1);
 
         // TODO: keep summa only
-        if (transB || (a.Placement.HierarchyKind == HierarchyKind.SMT && a.TensorType.DType is VectorType vt && vt.ElemType == DataTypes.Float8E4M3))
+        if (!a.TensorType.Shape.IsFixed || !b.TensorType.Shape.IsFixed || transB || (a.Placement.HierarchyKind == HierarchyKind.SMT && a.TensorType.DType is VectorType vt && vt.ElemType == DataTypes.Float8E4M3))
         {
             var ndsbpsA = DistributedUtility.AxisPolicesToNDSBP(a.AxisPolices, a.Placement.Rank);
             var ndsbpsB = DistributedUtility.AxisPolicesToNDSBP(b.AxisPolices, b.Placement.Rank);

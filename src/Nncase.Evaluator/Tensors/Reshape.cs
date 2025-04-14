@@ -87,7 +87,14 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                 }
             }
 
-            return new DistributedType(new TensorType(inType.TensorType.DType, newSymbolShape), DistributedUtility.NDSBPToAxisPolices(ndsbp, newShape.Length), inType.Placement);
+            var policies = DistributedUtility.NDSBPToAxisPolices(ndsbp, newShape.Length);
+            var newTensorType = new TensorType(inType.TensorType.DType, newSymbolShape);
+            if (!DistributedUtility.IsDistributable(newTensorType, policies.ToArray(), inType.Placement))
+            {
+                return invalidType;
+            }
+
+            return new DistributedType(newTensorType, policies, inType.Placement);
         }
         else
         {
