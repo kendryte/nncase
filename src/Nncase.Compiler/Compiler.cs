@@ -175,6 +175,7 @@ public class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.DecomposeLayerNorm>();
             p.Add<Passes.Rules.Neutral.DecomposeInstanceNorm>();
             p.Add<Passes.Rules.Neutral.DecomposeGelu>();
+            p.Add<Passes.Rules.Neutral.DecomposeSwish>();
             p.Add<Passes.Rules.Neutral.ScalarConstToTensor>();
         });
 
@@ -291,7 +292,7 @@ public class Compiler : ICompiler
     {
         foreach (var moduleCompiler in _compileSession.Target.ModuleCompilers)
         {
-            passManager.AddWithName<AutoDistributedPass>($"AutoDistributed_{moduleCompiler.ModuleKind}", true, moduleCompiler.ModuleKind);
+            passManager.AddWithName<AutoDistributedPass>($"AutoDistributed_{moduleCompiler.ModuleKind}", false, moduleCompiler.ModuleKind);
         }
 
         passManager.Add<InferRangePass>();
