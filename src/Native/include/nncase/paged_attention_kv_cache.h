@@ -42,7 +42,7 @@ class NNCASE_API paged_attention_kv_cache_node
     /**@brief Sets attention config.
      * @param config Attention config.
      */
-    void set_config(paged_attention_config config) noexcept {
+    void config(paged_attention_config config) noexcept {
         attention_kv_cache_node::set_config(std::move(config));
     }
 
@@ -52,7 +52,7 @@ class NNCASE_API paged_attention_kv_cache_node
     /**@brief Sets block tables.
      * @param block_tables Block tables.
      */
-    void set_block_tables(tensor block_tables) noexcept {
+    void block_tables(tensor block_tables) noexcept {
         block_tables_ = std::move(block_tables);
     }
 
@@ -62,9 +62,29 @@ class NNCASE_API paged_attention_kv_cache_node
     /**@brief Sets slot mapping.
      * @param slot_mapping Slot mapping.
      */
-    void set_slot_mapping(tensor slot_mapping) noexcept {
+    void slot_mapping(tensor slot_mapping) noexcept {
         slot_mapping_ = std::move(slot_mapping);
     }
+
+    nncase::tensor sub_block(const std::vector<int> &indices);
+    void sub_block(const std::vector<int> &indices, nncase::tensor block);
+
+    /*
+    nncase::tensor get_block(attention_kv_cache_kind kind, int32_t layer_id,
+                             int64_t block_id);
+
+    nncase::tensor get_context_block_ids(int32_t request_id);
+
+    nncase::tensor get_output_slot_ids();
+
+    nncase::tensor get_slot(attention_kv_cache_kind kind, int layer_id,
+                            long slot_id);
+
+    nncase::tensor get_slots(tensor block, int start_slot, int count);
+
+    void update_output_slot(attention_kv_cache_kind kind, int layer_id,
+                            int64_t slot_id, tensor slot);
+    */
 
   private:
     tensor block_tables_;

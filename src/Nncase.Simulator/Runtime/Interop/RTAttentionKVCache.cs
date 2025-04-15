@@ -230,5 +230,17 @@ public class RTPagedAttentionKVCache : RTAttentionKVCache, IPagedAttentionKVCach
 
     public Tensor GetSlots(Tensor block, int startSlot, int count) => throw new NotImplementedException();
 
+    public Tensor GetSubBlock(params int[] indices)
+    {
+        Native.PagedAttenionKVCacheGetSubBlock(this, indices, indices.Length, out var subBlock).ThrowIfFailed();
+        return subBlock.ToTensor();
+    }
+
+    public void SetSubBlock(int[] indices, Tensor subBlock)
+    {
+        var rtTensor = RTTensor.FromTensor(subBlock);
+        Native.PagedAttenionKVCacheSetSubBlock(this, indices, indices.Length, rtTensor).ThrowIfFailed();
+    }
+
     public void UpdateOutputSlot(AttentionCacheKind kind, int layerId, object slotId, Tensor slot) => throw new NotImplementedException();
 }

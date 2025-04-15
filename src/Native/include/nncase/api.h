@@ -167,4 +167,37 @@ NNCASE_API int nncase_paged_attenion_scheduler_schedule(
     nncase::paged_attention_scheduler_node *scheduler,
     nncase::tensor_node *session_ids, nncase::tensor_node *token_counts,
     nncase::paged_attention_kv_cache_node **cache);
+
+/*
+NNCASE_API int nncase_paged_attenion_kv_cache_get_block(
+    nncase::paged_attention_kv_cache_node *cache, uint8_t kind, int layer_id,
+    long block_id, nncase::tensor_node **tensor);
+
+NNCASE_API int nncase_paged_attenion_kv_cache_get_context_block_ids(
+    nncase::paged_attention_kv_cache_node *cache, int request_id,
+    nncase::tensor_node **tensor);
+
+NNCASE_API int nncase_paged_attenion_kv_cache_get_output_slot_ids(
+    nncase::paged_attention_kv_cache_node *cache, nncase::tensor_node **tensor);
+
+NNCASE_API int nncase_paged_attenion_kv_cache_get_slot(
+    nncase::paged_attention_kv_cache_node *cache, uint8_t kind, int layer_id,
+    long slot_id, nncase::tensor_node **tensor);
+
+NNCASE_API int nncase_paged_attenion_kv_cache_get_slots(
+    nncase::paged_attention_kv_cache_node *cache, nncase::tensor_node *block,
+    int start_slot, int count, nncase::tensor_node **tensor);
+
+NNCASE_API int nncase_paged_attenion_kv_cache_update_output_slot(
+    nncase::paged_attention_kv_cache_node *cache, uint8_t kind, int layer_id,
+    long slot_id, nncase::tensor_node *slot);
+*/
+
+NNCASE_API int nncase_paged_attenion_kv_cache_get_sub_block(
+    nncase::paged_attention_kv_cache_node *cache, int *indices, int indices_len,
+    nncase::tensor_node **sub_block);
+
+NNCASE_API int nncase_paged_attenion_kv_cache_set_sub_block(
+    nncase::paged_attention_kv_cache_node *cache, int *indices, int indices_len,
+    nncase::tensor_node *sub_block);
 }

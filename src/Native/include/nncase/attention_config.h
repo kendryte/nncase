@@ -21,10 +21,11 @@ class attention_config_node : public object_node {
 
   public:
     attention_config_node(size_t num_layers, size_t num_kv_heads,
-                          size_t head_dim) noexcept
+                          size_t head_dim, typecode_t kv_type) noexcept
         : num_layers_(num_layers),
           num_kv_heads_(num_kv_heads),
-          head_dim_(head_dim) {}
+          head_dim_(head_dim),
+          kv_type_(kv_type) {}
 
     size_t num_layers() const noexcept { return num_layers_; }
     void num_layers(size_t num_layers) noexcept { num_layers_ = num_layers; }
@@ -37,10 +38,14 @@ class attention_config_node : public object_node {
     size_t head_dim() const noexcept { return head_dim_; }
     void head_dim(size_t head_dim) noexcept { head_dim_ = head_dim; }
 
+    typecode_t kv_type() const noexcept { return kv_type_; }
+    void kv_type(typecode_t kv_type) noexcept { kv_type_ = kv_type; }
+
   private:
     size_t num_layers_;
     size_t num_kv_heads_;
     size_t head_dim_;
+    typecode_t kv_type_;
 };
 
 using attention_config = object_t<attention_config_node>;

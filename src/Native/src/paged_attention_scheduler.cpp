@@ -28,8 +28,11 @@ paged_attention_scheduler_node::paged_attention_scheduler_node(
     : config_(std::move(config)),
       num_blocks_(num_blocks),
       max_model_len_(max_model_len),
-      kv_cache_shape_{2, (size_t)config_->num_layers(), (size_t)num_blocks_,
+      kv_cache_shape_{(size_t)num_blocks_,
+                      (size_t)config_->num_layers(),
                       (size_t)config_->num_kv_heads(),
+                      2,
+                      (size_t)config_->block_size(),
                       (size_t)config_->head_dim()},
       kv_caches_(
           hrt::create(dt_float32, kv_cache_shape_).unwrap_or_throw().impl()) {}

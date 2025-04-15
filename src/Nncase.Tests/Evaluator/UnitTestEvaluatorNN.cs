@@ -82,6 +82,24 @@ internal sealed record TestPagedAttentionKVCache(
         return Slice(block, new[] { startSlot }, new[] { startSlot + count }, new[] { 1L }, new[] { 1L }).Evaluate().AsTensor();
     }
 
+    public Tensor GetSubBlock(params int[] indices)
+    {
+        var sub_block_shape = KVCaches.Shape.ToValueArray()[indices.Length..];
+        var starts = indices.Select(i => (long)i).Concat(Enumerable.Repeat(0L, KVCaches.Shape.Rank - indices.Length)).ToArray();
+        var linearIndex = TensorUtilities.GetIndex(KVCaches.Strides, starts);
+        var buffer = KVCaches.Buffer.Slice((int)linearIndex, (int)TensorUtilities.GetProduct(sub_block_shape));
+        return new Tensor<float>(buffer, sub_block_shape);
+    }
+
+    public void SetSubBlock(int[] indices, Tensor subBlock)
+    {
+        var sub_block_shape = KVCaches.Shape.ToValueArray()[indices.Length..];
+        var starts = indices.Select(i => (long)i).Concat(Enumerable.Repeat(0L, KVCaches.Shape.Rank - indices.Length)).ToArray();
+        var linearIndex = TensorUtilities.GetIndex(KVCaches.Strides, starts);
+        var buffer = KVCaches.Buffer.Slice((int)linearIndex, (int)TensorUtilities.GetProduct(sub_block_shape));
+        subBlock.Cast<float>().Buffer.CopyTo(buffer);
+    }
+
     public void UpdateOutputSlot(AttentionCacheKind kind, int layerId, object slotId, Tensor slot)
     {
         var slotValue = slot.Cast<float>();

@@ -23,6 +23,20 @@ public interface IPagedAttentionKVCache : IAttentionKVCache
     new PagedAttentionConfig Config { get; }
 
     /// <summary>
+    /// Gets the contiguous sub block.
+    /// </summary>
+    /// <param name="indices">indices.</param>
+    /// <returns> block tensor. </returns>
+    Tensor GetSubBlock(params int[] indices);
+
+    /// <summary>
+    /// Sets the contiguous sub block.
+    /// </summary>
+    /// <param name="indices">indices.</param>
+    /// <param name="subBlock">block tensor.</param>
+    void SetSubBlock(int[] indices, Tensor subBlock);
+
+    /// <summary>
     /// Gets the context block ids.
     /// </summary>
     /// <param name="requestId">The request id.</param>

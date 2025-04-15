@@ -133,4 +133,30 @@ internal static class Native
 
     [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_scheduler_schedule")]
     public static extern unsafe ErrorCode PagedAttentionSchedulerSchedule(RTPagedAttentionScheduler rTPagedAttentionScheduler, RTTensor sessionIds, RTTensor tokenCounts, out RTPagedAttentionKVCache cache);
+
+    /*
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_kv_cache_get_block")]
+    public static extern unsafe ErrorCode GetBlock(RTPagedAttentionKVCache cache, IR.NN.AttentionCacheKind kind, int layerId, long blockId, out RTTensor tensor);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_kv_cache_get_context_block_ids")]
+    public static extern unsafe ErrorCode GetContextBlockIds(RTPagedAttentionKVCache cache, int requestId, out RTTensor tensor);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_kv_cache_get_output_slot_ids")]
+    public static extern unsafe ErrorCode GetOutputSlotIds(RTPagedAttentionKVCache cache, out RTTensor tensor);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_kv_cache_get_slot")]
+    public static extern unsafe ErrorCode GetSlot(RTPagedAttentionKVCache cache, IR.NN.AttentionCacheKind kind, int layerId, long slotId, out RTTensor tensor);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_kv_cache_get_slots")]
+    public static extern unsafe ErrorCode GetSlots(RTPagedAttentionKVCache cache, [In] RTTensor block, int startSlot, int count, out RTTensor tensor);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_kv_cache_update_output_slot")]
+    public static extern unsafe ErrorCode UpdateOutputSlot(RTPagedAttentionKVCache cache, IR.NN.AttentionCacheKind kind, int layerId, long slotId, [In] RTTensor slot);
+    */
+
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_kv_cache_get_sub_block")]
+    public static extern unsafe ErrorCode PagedAttenionKVCacheGetSubBlock(RTPagedAttentionKVCache cache, [In] int[] indices, int indices_len, out RTTensor sub_block);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_kv_cache_set_sub_block")]
+    public static extern unsafe ErrorCode PagedAttenionKVCacheSetSubBlock(RTPagedAttentionKVCache cache, [In] int[] indices, int indices_len, RTTensor sub_block);
 }

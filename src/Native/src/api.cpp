@@ -502,4 +502,85 @@ int nncase_paged_attenion_scheduler_schedule(
     }
     return -EINVAL;
 }
+/*
+int nncase_paged_attenion_kv_cache_get_block(
+    nncase::paged_attention_kv_cache_node *cache, uint8_t kind, int layer_id,
+    long block_id, nncase::tensor_node **tensor) {
+    // if (cache && tensor) {
+    //     auto block = cache->get_block((attention_kv_cache_kind)kind,
+layer_id, block_id);
+    // }
+    return -EINVAL;
+}
+
+int nncase_paged_attenion_kv_cache_get_context_block_ids(
+    nncase::paged_attention_kv_cache_node *cache, int request_id,
+    nncase::tensor_node **tensor) {
+    // if (cache && tensor) {
+    //     auto block_ids = cache->get_context_block_ids(request_id);
+    // }
+    return -EINVAL;
+}
+
+int nncase_paged_attenion_kv_cache_get_output_slot_ids(
+    nncase::paged_attention_kv_cache_node *cache, nncase::tensor_node **tensor)
+{
+    // if (cache && tensor) {
+    //     auto slot_ids = cache->get_output_slot_ids();
+    // }
+    return -EINVAL;
+}
+
+int nncase_paged_attenion_kv_cache_get_slot(
+    nncase::paged_attention_kv_cache_node *cache, uint8_t kind, int layer_id,
+    long slot_id, nncase::tensor_node **tensor) {
+    // if (cache && tensor) {
+    //     auto slot = cache->get_slot((attention_kv_cache_kind)kind, layer_id,
+slot_id);
+    // }
+    return -EINVAL;
+}
+
+int nncase_paged_attenion_kv_cache_get_slots(
+    nncase::paged_attention_kv_cache_node *cache, nncase::tensor_node *block,
+    int start_slot, int count, nncase::tensor_node **tensor) {
+    // if (cache && block && tensor) {
+    //     auto slots = cache->get_slots(block, start_slot, count);
+    // }
+    return -EINVAL;
+}
+
+int nncase_paged_attenion_kv_cache_update_output_slot(
+    nncase::paged_attention_kv_cache_node *cache, uint8_t kind, int layer_id,
+    long slot_id, nncase::tensor_node *slot) {
+    // if (cache && slot) {
+    //     cache->update_output_slot((attention_kv_cache_kind)kind, layer_id,
+    //                               slot_id, slot);
+    // }
+    return -EINVAL;
+}
+    */
+
+int nncase_paged_attenion_kv_cache_get_sub_block(
+    nncase::paged_attention_kv_cache_node *cache, int *indices,
+    int indices_len, nncase::tensor_node **sub_block) {
+    if (cache && indices && sub_block) {
+        std::vector<int> indices_vec(indices, indices + indices_len);
+        auto block = cache->sub_block(indices_vec);
+        *sub_block = block.detach();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_paged_attenion_kv_cache_set_sub_block(
+    nncase::paged_attention_kv_cache_node *cache, int *indices,
+    int indices_len, nncase::tensor_node *sub_block) {
+    if (cache && indices && sub_block) {
+        std::vector<int> indices_vec(indices, indices + indices_len);
+        cache->sub_block(indices_vec, sub_block);
+        return 0;
+    }
+    return -EINVAL;
+}
 }
