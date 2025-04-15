@@ -65,4 +65,4 @@ def test_deepseek_r1_static(request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_deepseek_r1_static.py'])
+    pytest.main(['-vv', 'disabled_test_deepseek_r1_static.py'])

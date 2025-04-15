@@ -65,4 +65,4 @@ def test_llama3_fp8_static(request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_llama3_fp8_static.py'])
+    pytest.main(['-vv', 'disabled_test_llama3_fp8_static.py'])
