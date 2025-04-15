@@ -117,8 +117,8 @@ public interface IPagedAttentionKVCache : IAttentionKVCache
     void UpdateOutputSlot(AttentionCacheKind kind, int layerId, object slotId, Tensor slot);
 }
 
-public sealed record PagedAttentionConfig(int BlockSize, int NumLayers, int NumKVHeads, int HeadDim)
-    : AttentionConfig(NumLayers, NumKVHeads, HeadDim), IPagedAttentionConfig;
+public sealed record PagedAttentionConfig(int BlockSize, int NumLayers, int NumKVHeads, int HeadDim, PrimType KVType)
+    : AttentionConfig(NumLayers, NumKVHeads, HeadDim, KVType), IPagedAttentionConfig;
 
 public sealed record PagedAttentionKVCacheType : AttentionKVCacheType
 {

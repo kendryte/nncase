@@ -796,7 +796,7 @@ public class UnitTestEvaluatorNN : TestClassBase
 
         var blockTables = Tensor.FromScalar(-1L, [numRequests, MathUtility.CeilDiv(maxContextLen, blockSize)]);
         var slotMapping = Tensor.FromScalar(-1L, [numTokens]);
-        var config = new PagedAttentionConfig(blockSize, layers, numKVHeads, headDim);
+        var config = new PagedAttentionConfig(blockSize, layers, numKVHeads, headDim, DataTypes.Float32);
         var kvCacheObject = new TestPagedAttentionKVCache(config, numRequests, contextLens, Tensor.From(seqLens), blockTables, slotMapping, kvCaches);
         var kvCacheObjectTensor = Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvCacheObject));
 

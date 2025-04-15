@@ -76,6 +76,20 @@ public class RTAttentionConfig : RTObject, IAttentionConfig
         }
     }
 
+    public PrimType KVType
+    {
+        get
+        {
+            Native.AttentionConfigGetKVType(this, out var kv_type);
+            return PrimType.FromTypeCode(kv_type);
+        }
+
+        set
+        {
+            Native.AttentionConfigSetKVType(this, value.TypeCode);
+        }
+    }
+
     /// <summary>
     /// convert <see cref="AttentionConfig"/> Value To <see cref="RTAttentionConfig"/>.
     /// </summary>
@@ -87,7 +101,7 @@ public class RTAttentionConfig : RTObject, IAttentionConfig
         }
         else if (cfg.GetType() == typeof(AttentionConfig))
         {
-            Native.AttentionConfigCreate(cfg.NumLayers, cfg.NumKVHeads, cfg.HeadDim, out var rtcfg).ThrowIfFailed();
+            Native.AttentionConfigCreate(cfg.NumLayers, cfg.NumKVHeads, cfg.HeadDim, cfg.KVType.TypeCode, out var rtcfg).ThrowIfFailed();
             return rtcfg;
         }
         else
@@ -138,7 +152,7 @@ public sealed class RTPagedAttentionConfig : RTAttentionConfig
 
     public static RTPagedAttentionConfig FromConfig(PagedAttentionConfig cfg)
     {
-        Native.PagedAttentionConfigCreate(cfg.NumLayers, cfg.NumKVHeads, cfg.HeadDim, cfg.BlockSize, out var rtcfg).ThrowIfFailed();
+        Native.PagedAttentionConfigCreate(cfg.NumLayers, cfg.NumKVHeads, cfg.HeadDim, cfg.KVType.TypeCode, cfg.BlockSize, out var rtcfg).ThrowIfFailed();
         return rtcfg;
     }
 }

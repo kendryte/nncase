@@ -118,7 +118,7 @@ NNCASE_API int nncase_tuple_get_fields(nncase::tuple_node *tuple,
                                        uint32_t *fields_length);
 NNCASE_API int
 nncase_attention_config_create(int32_t num_layers, int32_t num_kv_heads,
-                               int32_t head_dim,
+                               int32_t head_dim, nncase::typecode_t kv_type,
                                nncase::attention_config_node **config);
 NNCASE_API int
 nncase_attention_config_get_num_layers(nncase::attention_config_node *config,
@@ -138,8 +138,18 @@ nncase_attention_config_get_head_dim(nncase::attention_config_node *config,
 NNCASE_API int
 nncase_attention_config_set_head_dim(nncase::attention_config_node *config,
                                      int32_t head_dim);
+
+NNCASE_API int
+nncase_attention_config_get_kv_type(nncase::attention_config_node *config,
+                                    nncase::typecode_t *kv_type);
+
+NNCASE_API int
+nncase_attention_config_set_kv_type(nncase::attention_config_node *config,
+                                    nncase::typecode_t kv_type);
+
 NNCASE_API int nncase_paged_attention_config_create(
-    int32_t num_layers, int32_t num_kv_heads, int32_t head_dim, int block_size,
+    int32_t num_layers, int32_t num_kv_heads, int32_t head_dim,
+    nncase::typecode_t kv_type, int32_t block_size,
     nncase::paged_attention_config_node **config);
 
 NNCASE_API int nncase_paged_attention_config_get_block_size(

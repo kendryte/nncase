@@ -22,7 +22,7 @@ class paged_attention_config_node : public attention_config_node {
 
   public:
     paged_attention_config_node(size_t num_layers, size_t num_kv_heads,
-                                size_t head_dim, size_t block_size, typecode_t kv_type) noexcept
+                                size_t head_dim, typecode_t kv_type, size_t block_size) noexcept
         : attention_config_node(num_layers, num_kv_heads, head_dim, kv_type),
           block_size_(block_size) {}
 

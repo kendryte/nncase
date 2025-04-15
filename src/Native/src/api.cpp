@@ -362,11 +362,11 @@ int nncase_tuple_get_fields(nncase::tuple_node *tuple,
 }
 
 int nncase_attention_config_create(int32_t num_layers, int32_t num_kv_heads,
-                                   int32_t head_dim,
+                                   int32_t head_dim, nncase::typecode_t kv_type,
                                    nncase::attention_config_node **config) {
     if (config) {
         *config = new nncase::attention_config_node(num_layers, num_kv_heads,
-                                                    head_dim);
+                                                    head_dim, kv_type);
         return 0;
     }
     return -EINVAL;
@@ -423,12 +423,31 @@ int nncase_attention_config_set_head_dim(nncase::attention_config_node *config,
     return -EINVAL;
 }
 
+int nncase_attention_config_get_kv_type(nncase::attention_config_node *config,
+                                        nncase::typecode_t *kv_type) {
+    if (config) {
+        *kv_type = config->kv_type();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_attention_config_set_kv_type(nncase::attention_config_node *config,
+                                        nncase::typecode_t kv_type) {
+    if (config) {
+        config->kv_type(kv_type);
+        return 0;
+    }
+    return -EINVAL;
+}
+
 int nncase_paged_attention_config_create(
-    int32_t num_layers, int32_t num_kv_heads, int32_t head_dim, int block_size,
+    int32_t num_layers, int32_t num_kv_heads, int32_t head_dim,
+    nncase::typecode_t kv_type, int32_t block_size,
     nncase::paged_attention_config_node **config) {
     if (config) {
         *config = new nncase::paged_attention_config_node(
-            num_layers, num_kv_heads, head_dim, block_size);
+            num_layers, num_kv_heads, head_dim, kv_type, block_size);
         return 0;
     }
     return -EINVAL;
@@ -562,8 +581,8 @@ int nncase_paged_attenion_kv_cache_update_output_slot(
     */
 
 int nncase_paged_attenion_kv_cache_get_sub_block(
-    nncase::paged_attention_kv_cache_node *cache, int *indices,
-    int indices_len, nncase::tensor_node **sub_block) {
+    nncase::paged_attention_kv_cache_node *cache, int *indices, int indices_len,
+    nncase::tensor_node **sub_block) {
     if (cache && indices && sub_block) {
         std::vector<int> indices_vec(indices, indices + indices_len);
         auto block = cache->sub_block(indices_vec);
@@ -574,8 +593,8 @@ int nncase_paged_attenion_kv_cache_get_sub_block(
 }
 
 int nncase_paged_attenion_kv_cache_set_sub_block(
-    nncase::paged_attention_kv_cache_node *cache, int *indices,
-    int indices_len, nncase::tensor_node *sub_block) {
+    nncase::paged_attention_kv_cache_node *cache, int *indices, int indices_len,
+    nncase::tensor_node *sub_block) {
     if (cache && indices && sub_block) {
         std::vector<int> indices_vec(indices, indices + indices_len);
         cache->sub_block(indices_vec, sub_block);

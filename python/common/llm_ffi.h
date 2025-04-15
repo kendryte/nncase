@@ -33,11 +33,11 @@ inline void register_llm(py::module &m) {
 
     py::class_<attention_config_node, object_node, attention_config>(
         m, "AttentionConfig")
-        .def(py::init(
-            [](size_t num_layers, size_t num_kv_heads, size_t head_dim) {
-                return attention_config(std::in_place, num_layers, num_kv_heads,
-                                        head_dim);
-            }))
+        .def(py::init([](size_t num_layers, size_t num_kv_heads,
+                         size_t head_dim, nncase::typecode_t kv_type) {
+            return attention_config(std::in_place, num_layers, num_kv_heads,
+                                    head_dim, kv_type);
+        }))
         .def_property(
             "num_layers",
             py::overload_cast<>(&attention_config_node::num_layers, py::const_),
@@ -54,11 +54,13 @@ inline void register_llm(py::module &m) {
 
     py::class_<paged_attention_config_node, attention_config_node,
                paged_attention_config>(m, "PagedAttentionConfig")
-        .def(py::init([](size_t num_layers, size_t num_kv_heads,
-                         size_t head_dim, size_t block_size) {
-            return paged_attention_config(std::in_place, num_layers,
-                                          num_kv_heads, head_dim, block_size);
-        }))
+        .def(
+            py::init([](size_t num_layers, size_t num_kv_heads, size_t head_dim,
+                        nncase::typecode_t kv_type, size_t block_size) {
+                return paged_attention_config(std::in_place, num_layers,
+                                              num_kv_heads, head_dim, kv_type,
+                                              block_size);
+            }))
         .def_property("block_size",
                       py::overload_cast<>(
                           &paged_attention_config_node::block_size, py::const_),
