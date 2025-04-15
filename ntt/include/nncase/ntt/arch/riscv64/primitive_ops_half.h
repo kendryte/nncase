@@ -501,6 +501,16 @@ REGISTER_RVV_FP16_KERNEL(SWISHB_FLOAT16)
 
 REGISTER_RVV_SWISHB_FP16_OP(half, swishb_float16)
 
+// erf
+#define ERF_FLOAT16(lmul, mlen)                                                \
+    inline vfloat16m##lmul##_t erf_float16(const vfloat16m##lmul##_t &v,       \
+                                           const size_t vl) {                  \
+        return erf_ps_fp16(v, vl);                                             \
+    }
+
+REGISTER_RVV_FP16_KERNEL(ERF_FLOAT16)
+REGISTER_RVV_UNARY_FP16_OP(erf, half, erf_float16)
+
 // binary
 #define RVV_BINARY_fp16_OP(op, dtype, vl, kernel)                              \
     template <> struct op<ntt::vector<dtype, vl>, ntt::vector<dtype, vl>> {    \

@@ -1,5 +1,6 @@
 #pragma once
 #include "nncase/half.h"
+#include "rvv_mathfun.h"
 #include <cmath>
 
 #if __riscv_vector
@@ -434,5 +435,73 @@ _RVV_FLOAT16_POW_OP(4, 4, 16)
 _RVV_FLOAT16_POW_OP(8, 2, 16)
 
 // erf
+struct sv_erff_half_data {
+    static constexpr size_t N = 513;
+    _Float16 erf[N];
+    _Float16 scale[N];
+    
+    sv_erff_half_data(const sv_erff_data& src) {
+        for(size_t i=0; i<N; ++i) {
+            erf[i] = static_cast<_Float16>(src.erf[i]);
+            scale[i] = static_cast<_Float16>(src.scale[i]);
+        }
+    }
+};
+
+const sv_erff_data& erf_data_fp32 = __sv_erff_data; 
+const sv_erff_half_data erf_data_half(erf_data_fp32);
+
+#define _RVV_FLOAT16_ERF_OP(LMUL, MLEN, TLEN)                                  \
+    static inline vfloat##TLEN##m##LMUL##_t erf_ps_fp16(                       \
+        vfloat##TLEN##m##LMUL##_t x, size_t vl) {                              \
+        auto zero = __riscv_vmv_v_x_u16m##LMUL(0, vl);                         \
+        auto a = __riscv_vfabs_v_f##TLEN##m##LMUL(x, vl);                      \
+                                                                               \
+        /* |x| > 1/64 - 1/512. */                                              \
+        auto gt_min_mask = __riscv_vmfgt_vf_f##TLEN##m##LMUL##_b##MLEN(        \
+            a, half::round_to_half(0x1.cp-7f), vl);                            \
+                                                                               \
+        auto tmp_i = __riscv_vfmul_vf_f##TLEN##m##LMUL(                        \
+            a, half::round_to_half(128.f), vl);                                \
+        auto i = __riscv_vfcvt_xu_f_v_u16m##LMUL(tmp_i, vl);                   \
+                                                                               \
+        /* Saturate lookup index. */                                           \
+        i = __riscv_vmerge_vvm_u16m##LMUL(zero, i, gt_min_mask, vl);           \
+        i = __riscv_vminu_vx_u16m##LMUL(i, 512, vl);                           \
+        auto tmp_r = __riscv_vfcvt_f_xu_v_f##TLEN##m##LMUL(i, vl);             \
+        auto r = __riscv_vfmul_vf_f##TLEN##m##LMUL(                            \
+            tmp_r, half::round_to_half(1.f / 128), vl);                        \
+        auto byte_i = __riscv_vmul_vx_u16m##LMUL(i, 2, vl); /* byte offset */  \
+                                                                               \
+        /* r and erf(r) set to 0 for |x| below min. */                         \
+        auto erfr = __riscv_vluxei16_v_f##TLEN##m##LMUL(erf_data_half.erf,     \
+                                                        byte_i, vl);           \
+        auto scale = __riscv_vluxei16_v_f##TLEN##m##LMUL(erf_data_half.scale,  \
+                                                         byte_i, vl);          \
+                                                                               \
+        /* |x| >= 4.0 - 8/128. */                                              \
+        auto ge_max_mask = __riscv_vmfge_vf_f##TLEN##m##LMUL##_b##MLEN(        \
+            a, half::round_to_half(3.9375f), vl);                              \
+                                                                               \
+        /* erf(x) ~ erf(r) + scale * d * (1 - r * d - 1/3 * d^2). */           \
+        auto d = __riscv_vfsub_vv_f##TLEN##m##LMUL(a, r, vl);                  \
+        auto d2 = __riscv_vfmul_vv_f##TLEN##m##LMUL(d, d, vl);                 \
+        auto y = __riscv_vfmacc_vf_f##TLEN##m##LMUL(                           \
+            r, half::round_to_half(0x1.555556p-2f), d, vl);                    \
+        y = __riscv_vfnmsub_vv_f##TLEN##m##LMUL(y, d2, d, vl);                 \
+        y = __riscv_vfmadd_vv_f##TLEN##m##LMUL(y, scale, erfr, vl);            \
+                                                                               \
+        /* Solves the |x| = inf case. */                                       \
+        y = __riscv_vfmerge_vfm_f##TLEN##m##LMUL(y, half::round_to_half(1.f),  \
+                                                 ge_max_mask, vl);             \
+                                                                               \
+        /* Copy sign. */                                                       \
+        return __riscv_vfsgnj_vv_f##TLEN##m##LMUL(y, x, vl);                   \
+    }
+
+_RVV_FLOAT16_ERF_OP(1, 16, 16)
+_RVV_FLOAT16_ERF_OP(2, 8, 16)
+_RVV_FLOAT16_ERF_OP(4, 4, 16)
+_RVV_FLOAT16_ERF_OP(8, 2, 16)
 
 #endif

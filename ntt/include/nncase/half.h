@@ -348,6 +348,9 @@ inline half sinh(const half &a) {
 inline half nextafter(const half &a, const half &b) {
     return half::round_to_half(std::nextafterf(float(a), float(b)));
 }
+inline half erf(const half &a) {
+    return half::round_to_half(std::erff(float(a)));
+}
 inline long lrint(const half &a) { return lrintf(float(a)); }
 
 template <> struct is_floating_point<half> : public std::true_type {};
