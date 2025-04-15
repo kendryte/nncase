@@ -20,7 +20,7 @@ using Nncase.TIR;
 
 namespace Nncase.Passes;
 
-public sealed partial class CPUAffineSelectionPass : AffineSelectionPass
+public partial class CPUAffineSelectionPass : AffineSelectionPass
 {
     private readonly CompileOptions _compileOptions;
 
