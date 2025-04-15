@@ -34,7 +34,12 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
 
         var inputOrg = context.GetArgumentValue(sl, Slice.Input).AsTensor();
         var dataType = inputOrg.ElementType;
-        if (dataType.IsFloat() && dataType != DataTypes.Float32)
+        if (dataType is VectorType { ElemType: DataType dataTypes } vType && dataTypes != DataTypes.Float32)
+        {
+            var interType = new VectorType(DataTypes.Float32, vType.Lanes);
+            input = Nncase.IR.F.Tensors.Cast(inputOrg, interType).Evaluate().AsTensor().ToOrtTensor();
+        }
+        else if (dataType is not VectorType && dataType.IsFloat() && dataType != DataTypes.Float32)
         {
             input = Cast(inputOrg, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
         }
