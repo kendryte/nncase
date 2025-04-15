@@ -129,11 +129,8 @@ internal static class Native
     public static extern unsafe ErrorCode AttentionKvCacheGetContextLen(RTAttentionKVCache kvcache, int request_id, out long context_len);
 
     [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_scheduler_create")]
-    public static extern unsafe ErrorCode PagedAttentionSchedulerCreate(int max_model_len, out RTPagedAttentionScheduler scheduler);
-
-    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_scheduler_initialize")]
-    public static extern unsafe ErrorCode PagedAttentionSchedulerInitialize(RTPagedAttentionScheduler rTPagedAttentionScheduler, RTPagedAttentionConfig config, int num_blocks);
+    public static extern unsafe ErrorCode PagedAttentionSchedulerCreate(RTPagedAttentionConfig config, int numBlocks, int maxModelLen, out RTPagedAttentionScheduler scheduler);
 
     [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_scheduler_schedule")]
-    public static extern unsafe ErrorCode PagedAttentionSchedulerSchedule(RTPagedAttentionScheduler rTPagedAttentionScheduler, [In] long[] session_ids, int session_ids_len, [In] long[] token_counts, int token_counts_len, out RTPagedAttentionKVCache cache);
+    public static extern unsafe ErrorCode PagedAttentionSchedulerSchedule(RTPagedAttentionScheduler rTPagedAttentionScheduler, RTTensor sessionIds, RTTensor tokenCounts, out RTPagedAttentionKVCache cache);
 }

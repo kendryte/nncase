@@ -1,61 +1,76 @@
+/* Copyright 2019-2021 Canaan Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #pragma once
 // #include "nncase/runtime/duca_paged_attention_kv_cache.h"
 // #include <nncase/runtime/interpreter_for_causal_lm.h>
+#include "nncase/attention_config.h"
+#include "type_casters.h"
+#include <nncase/object.h>
 #include <nncase/paged_attention_config.h>
 #include <nncase/paged_attention_kv_cache.h>
+#include <pybind11/detail/common.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl_bind.h>
 
 using namespace nncase::runtime;
 namespace py = pybind11;
 
-inline void register_paged_attention_scheduler(py::module &m) {
-    py::class_<nncase::attention_config>(m, "AttentionConfig")
-        .def(py::init([](int num_layers, int num_kv_heads, int head_dim) {
-            return nncase::attention_config(std::in_place, num_layers,
-                                            num_kv_heads, head_dim);
-        }))
+namespace nncase {
+inline void register_llm(py::module &m) {
+    py::class_<object_node, object>(m, "Object");
+
+    py::class_<attention_config_node, object_node, attention_config>(
+        m, "AttentionConfig")
+        .def(py::init(
+            [](size_t num_layers, size_t num_kv_heads, size_t head_dim) {
+                return attention_config(std::in_place, num_layers, num_kv_heads,
+                                        head_dim);
+            }))
         .def_property(
             "num_layers",
-            [](const nncase::attention_config &cfg) { return cfg->num_layers; },
-            [](nncase::attention_config &cfg, int num_layers) {
-                cfg->num_layers = num_layers;
-            })
+            py::overload_cast<>(&attention_config_node::num_layers, py::const_),
+            py::overload_cast<size_t>(&attention_config_node::num_layers))
         .def_property(
             "num_kv_heads",
-            [](const nncase::attention_config &cfg) {
-                return cfg->num_kv_heads;
-            },
-            [](nncase::attention_config &cfg, int num_kv_heads) {
-                cfg->num_kv_heads = num_kv_heads;
-            })
+            py::overload_cast<>(&attention_config_node::num_kv_heads,
+                                py::const_),
+            py::overload_cast<size_t>(&attention_config_node::num_kv_heads))
         .def_property(
             "head_dim",
-            [](const nncase::attention_config &cfg) { return cfg->head_dim; },
-            [](nncase::attention_config &cfg, int head_dim) {
-                cfg->head_dim = head_dim;
-            });
+            py::overload_cast<>(&attention_config_node::head_dim, py::const_),
+            py::overload_cast<size_t>(&attention_config_node::head_dim));
 
-    py::class_<nncase::paged_attention_config>(m, "PagedAttentionConfig")
-        .def(py::init([](int num_layers, int num_kv_heads, int head_dim,
-                         int block_size) {
-            return nncase::paged_attention_config(
-                std::in_place, num_layers, num_kv_heads, head_dim, block_size);
+    py::class_<paged_attention_config_node, attention_config_node,
+               paged_attention_config>(m, "PagedAttentionConfig")
+        .def(py::init([](size_t num_layers, size_t num_kv_heads,
+                         size_t head_dim, size_t block_size) {
+            return paged_attention_config(std::in_place, num_layers,
+                                          num_kv_heads, head_dim, block_size);
         }))
-        .def_property(
-            "block_size",
-            [](const nncase::paged_attention_config &cfg) {
-                return cfg->block_size;
-            },
-            [](nncase::paged_attention_config &cfg, int block_size) {
-                cfg->block_size = block_size;
-            });
+        .def_property("block_size",
+                      py::overload_cast<>(
+                          &paged_attention_config_node::block_size, py::const_),
+                      py::overload_cast<size_t>(
+                          &paged_attention_config_node::block_size));
 
     // py::class_<paged_attention_scheduler>(m, "PagedAttentionScheduler")
     //     .def(py::init<int>())
     //     .def("initialize", &paged_attention_scheduler::initialize)
     //     .def("schedule", &paged_attention_scheduler::schedule);
 }
+} // namespace nncase
 
 // PYBIND11_MAKE_OPAQUE(std::vector<runtime_tensor>)
 // PYBIND11_MAKE_OPAQUE(std::vector<std::vector<runtime_tensor>>)

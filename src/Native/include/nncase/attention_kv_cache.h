@@ -76,13 +76,13 @@ class NNCASE_API attention_kv_cache_node : public object_node {
      * @param request_id Request ID.
      * @return Context length.
      */
-    int64_t context_len(size_t request_id) const noexcept;
+    result<int64_t> context_len(size_t request_id) const noexcept;
 
     /**@brief Gets sequence length of a request.
      * @param request_id Request ID.
      * @return Sequence length.
      */
-    int64_t seq_len(size_t request_id) const noexcept;
+    result<int64_t> seq_len(size_t request_id) const noexcept;
 
   private:
     attention_config config_;

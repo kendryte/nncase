@@ -28,28 +28,21 @@ public sealed class RTPagedAttentionScheduler : RTObject, IAttentionScheduler
         }
     }
 
-    public static RTPagedAttentionScheduler Create(int max_model_len)
+    public static RTPagedAttentionScheduler Create(RTPagedAttentionConfig config, int numBlocks, int maxModelLen)
     {
-        Native.PagedAttentionSchedulerCreate(max_model_len, out var scheduler).ThrowIfFailed();
+        Native.PagedAttentionSchedulerCreate(config, numBlocks, maxModelLen, out var scheduler).ThrowIfFailed();
         return scheduler;
     }
 
-    public void Initialize(RTPagedAttentionConfig config, int num_blocks)
+    public static RTPagedAttentionScheduler Create(PagedAttentionConfig config, int numBlocks, int maxModelLen)
     {
-        Native.PagedAttentionSchedulerInitialize(this, config, num_blocks).ThrowIfFailed();
+        var rtConfig = RTPagedAttentionConfig.FromConfig(config);
+        return Create(rtConfig, numBlocks, maxModelLen);
     }
 
-    public void Initialize(PagedAttentionConfig config, int num_blocks)
+    public IAttentionKVCache Schedule(Tensor<long> sessionIds, Tensor<long> tokenCounts)
     {
-        var r_config = RTPagedAttentionConfig.FromConfig(config);
-        Native.PagedAttentionSchedulerInitialize(this, r_config, num_blocks).ThrowIfFailed();
-    }
-
-    public IAttentionKVCache Schedule(Tensor<long> session_ids, Tensor<long> tokens_count)
-    {
-        var a = session_ids.ToArray();
-        var b = tokens_count.ToArray();
-        Native.PagedAttentionSchedulerSchedule(this, a, a.Length, b, b.Length, out var cache).ThrowIfFailed();
+        Native.PagedAttentionSchedulerSchedule(this, RTTensor.FromTensor(sessionIds), RTTensor.FromTensor(tokenCounts), out var cache).ThrowIfFailed();
         return cache;
     }
 }

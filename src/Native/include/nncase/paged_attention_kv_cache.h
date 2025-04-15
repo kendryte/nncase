@@ -29,11 +29,8 @@ class NNCASE_API paged_attention_kv_cache_node
     paged_attention_kv_cache_node(paged_attention_config config,
                                   size_t num_request, tensor context_lens,
                                   tensor seq_lens, tensor block_tables,
-                                  tensor slot_mapping) noexcept
-        : attention_kv_cache_node(std::move(config), num_request,
-                                  std::move(context_lens), std::move(seq_lens)),
-          block_tables_(std::move(block_tables)),
-          slot_mapping_(std::move(slot_mapping)) {};
+                                  tensor slot_mapping,
+                                  tensor kv_caches) noexcept;
 
     /**@brief Gets attention config. */
     const paged_attention_config &config() const noexcept {
@@ -72,5 +69,6 @@ class NNCASE_API paged_attention_kv_cache_node
   private:
     tensor block_tables_;
     tensor slot_mapping_;
+    tensor kv_caches_;
 };
 } // namespace nncase

@@ -5,6 +5,7 @@ set(SRCS
         object.cpp
         shape.cpp
         tensor.cpp
+        attention_kv_cache.cpp
         paged_attention_kv_cache.cpp
         paged_attention_scheduler.cpp
         type.cpp

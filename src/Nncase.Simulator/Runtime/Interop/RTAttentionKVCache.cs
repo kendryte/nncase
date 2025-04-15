@@ -81,8 +81,19 @@ public class RTAttentionConfig : RTObject, IAttentionConfig
     /// </summary>
     public static RTAttentionConfig FromConfig(AttentionConfig cfg)
     {
-        Native.AttentionConfigCreate(cfg.NumLayers, cfg.NumKVHeads, cfg.HeadDim, out var rtcfg).ThrowIfFailed();
-        return rtcfg;
+        if (cfg is PagedAttentionConfig pagedCfg)
+        {
+            return RTPagedAttentionConfig.FromConfig(pagedCfg);
+        }
+        else if (cfg.GetType() == typeof(AttentionConfig))
+        {
+            Native.AttentionConfigCreate(cfg.NumLayers, cfg.NumKVHeads, cfg.HeadDim, out var rtcfg).ThrowIfFailed();
+            return rtcfg;
+        }
+        else
+        {
+            throw new NotSupportedException($"Unsupported config type: {cfg.GetType()}");
+        }
     }
 
     public static RTAttentionConfig FromHandle(IntPtr handle, bool addRef = false)

@@ -160,14 +160,11 @@ NNCASE_API int nncase_attention_kv_cache_get_context_len(
     int32_t *context_len);
 
 NNCASE_API int nncase_paged_attenion_scheduler_create(
-    int max_model_len, nncase::paged_attention_scheduler_node **scheduler);
-
-NNCASE_API int nncase_paged_attenion_scheduler_initialize(
-    nncase::paged_attention_scheduler_node *scheduler,
-    nncase::paged_attention_config_node *config, int num_blocks);
+    nncase::paged_attention_config_node *config, int32_t num_blocks,
+    int32_t max_model_len, nncase::paged_attention_scheduler_node **scheduler);
 
 NNCASE_API int nncase_paged_attenion_scheduler_schedule(
-    nncase::paged_attention_scheduler_node *scheduler, int64_t *session_ids,
-    int session_ids_len, int64_t *token_counts, int token_counts_len,
+    nncase::paged_attention_scheduler_node *scheduler,
+    nncase::tensor_node *session_ids, nncase::tensor_node *token_counts,
     nncase::paged_attention_kv_cache_node **cache);
 }

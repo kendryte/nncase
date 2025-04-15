@@ -14,6 +14,7 @@
  */
 #pragma once
 
+#include "nncase/runtime/simple_types.h"
 #include "object.h"
 #include "paged_attention_config.h"
 #include "paged_attention_kv_cache.h"
@@ -39,34 +40,18 @@ class paged_attention_scheduler_node : public object_node {
                        object_paged_attention_scheduler);
 
   public:
-    paged_attention_scheduler_node(int max_model_len)
-        : kv_cache_storage_(),
-          kv_cache_shape_(),
-          max_model_len_(max_model_len),
-          session_infos_() {}
+    paged_attention_scheduler_node(nncase::paged_attention_config config,
+                                   size_t num_blocks, size_t max_model_len);
 
-    void initialize(nncase::paged_attention_config config, int num_blocks) {
-        config_ = config;
-        num_blocks_ = num_blocks;
-        kv_cache_shape_ = {2, (size_t)config_->num_layers, (size_t)num_blocks_,
-                           (size_t)config_->num_kv_heads,
-                           (size_t)config_->head_dim};
-        kv_cache_storage_.reserve(sizeof(float) *
-                                  std::accumulate(kv_cache_shape_.begin(),
-                                                  kv_cache_shape_.end(), 1,
-                                                  std::multiplies<int>()));
-    }
-
-    nncase::paged_attention_kv_cache
-    schedule(std::vector<int64_t> session_ids,
-             std::vector<int64_t> tokens_count);
+    result<nncase::paged_attention_kv_cache> schedule(tensor session_ids,
+                                                      tensor tokens_count);
 
   private:
     nncase::paged_attention_config config_;
-    int num_blocks_;
-    std::vector<std::byte> kv_cache_storage_;
-    std::vector<size_t> kv_cache_shape_;
-    int64_t max_model_len_;
+    size_t num_blocks_;
+    size_t max_model_len_;
+    dims_t kv_cache_shape_;
+    tensor kv_caches_;
     std::unordered_map<int64_t, detail::session_info> session_infos_;
 };
 } // namespace nncase

@@ -12,5 +12,5 @@ namespace Nncase.IR.NN;
 
 public interface IAttentionScheduler
 {
-    IAttentionKVCache Schedule(Tensor<long> session_ids, Tensor<long> tokens_count);
+    IAttentionKVCache Schedule(Tensor<long> sessionIds, Tensor<long> tokenCounts);
 }

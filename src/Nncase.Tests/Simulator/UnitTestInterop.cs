@@ -217,13 +217,12 @@ public class UnitTestInterop : TestClassBase
     [Fact]
     public void TestRTPagedAttentionScheduler()
     {
-        var s = RTPagedAttentionScheduler.Create(1238);
         var cfg = new IR.NN.PagedAttentionConfig(1, 2, 3, 4);
-        s.Initialize(cfg, 128);
+        var s = RTPagedAttentionScheduler.Create(cfg, 128, 1238);
 
-        var session_ids = Tensor.From([1L]);
-        var token_counts = Tensor.From([128L]);
-        var cache = s.Schedule(session_ids, token_counts);
+        var sessionIds = Tensor.From([1L]);
+        var tokenCounts = Tensor.From([128L]);
+        var cache = s.Schedule(sessionIds, tokenCounts);
         Assert.Equal(1, cache.NumRequests);
         Assert.Equal(128, cache.GetSeqLen(0));
         Assert.Equal(0, cache.GetContextLen(0));

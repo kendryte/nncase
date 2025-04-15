@@ -12,13 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#pragma once
 #include <atomic>
 #include <nncase/compiler.h>
 #include <nncase/compiler_defs.h>
+#include <nncase/object.h>
 #include <nncase/runtime/stream.h>
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
+
+PYBIND11_DECLARE_HOLDER_TYPE(T, nncase::object_t<T>)
 
 namespace pybind11::detail {
 extern std::atomic_bool g_python_shutdown;
