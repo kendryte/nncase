@@ -361,12 +361,12 @@ REGISTER_RVV_UNARY_FP16_OP(sign, half, sign_float16)
             __riscv_vreinterpret_v_f16m##lmul##_i16m##lmul(r), vl);            \
         auto ni = __riscv_vfcvt_x_f_v_i16m##lmul(n, vl);                       \
         n = __riscv_vfcvt_f_x_v_f16m##lmul(ni, vl);                            \
-        auto odd = __riscv_vadd_vx_i16m##lmul(ni, 1, vl);                      \
+        auto odd = __riscv_vand_vx_i16m##lmul(ni, 1, vl);                      \
                                                                                \
         /* r = |x| - n*pi  (range reduction into -pi/2 .. pi/2).  */           \
         r = __riscv_vfnmsac_vf_f16m##lmul(                                     \
             r, half::round_to_half(0x1.921fb6p+1f), n, vl);                    \
-        odd = __riscv_vsll_vx_i16##m##lmul(odd, 15, vl);                       \
+        odd = __riscv_vsll_vx_i16m##lmul(odd, 15, vl);                         \
         r = __riscv_vfnmsac_vf_f16m##lmul(                                     \
             r, half::round_to_half(-0x1.777a5cp-24f), n, vl);                  \
         r = __riscv_vfnmsac_vf_f16m##lmul(                                     \
