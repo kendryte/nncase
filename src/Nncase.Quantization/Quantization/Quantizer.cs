@@ -145,8 +145,153 @@ internal partial class Quantizer
     public async Task RunAsync(RunPassContext options)
     {
         bool configExist = _quantizeOptions.QuantScheme != string.Empty;
+        bool exportQuantScheme = _quantizeOptions.ExportQuantScheme;
+        bool exportWeightRangeByChannel = _quantizeOptions.ExportWeightRangeByChannel;
 
-        if (configExist)
+        if (!configExist && _target.Name != "xpu")
+        {
+            int srcBinSize = 8192;
+            int dstBinSize = 256;
+
+            if (_quantizeOptions.CalibrationDataset == null)
+            {
+                throw new InvalidOperationException($"{nameof(_quantizeOptions.CalibrationDataset)} is not set");
+            }
+
+            // 1.0 Get ranges
+            var ranges = await GetRangesAsync(_quantizeOptions.CalibrationDataset);
+
+            ranges = ranges.ToDictionary(item => item.Key, item => FixUpRange(item.Value));
+
+            if (_quantizeOptions.CalibrationMethod is CalibMethod.Kld)
+            {
+                // 1.1. Get histograms
+                var histograms = await GetHistogramsAsync(_quantizeOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);
+
+                // 1.2. Select best ranges
+                ranges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, _quantizeOptions.CalibrationMethod);
+
+                // 1.3. Assign ranges
+                AssignRanges(ranges);
+            }
+            else
+            { // 2. Assign ranges
+                AssignRanges(ranges);
+            }
+
+            // 3. Export quant info
+            if (_quantizeOptions.ExportQuantScheme == true)
+            {
+                var outputNames = new HashSet<string>();
+                var quantScheme = new QuantScheme();
+                quantScheme.Version = "1.0";
+                var outputsCount = 0;
+                foreach (var range in ranges)
+                {
+                    if (range.Key.Expr.Metadata.OutputNames != null && !outputNames.Contains(range.Key.Expr.Metadata.OutputNames[0]))
+                    {
+                        outputNames.Add(range.Key.Expr.Metadata.OutputNames[0]);
+                        outputsCount++;
+                    }
+                }
+
+                outputNames.Clear();
+
+                quantScheme.Outputs = new Output[outputsCount];
+
+                if (_quantizeOptions.ExportWeightRangeByChannel == false)
+                {
+                    var index = 0;
+                    foreach (var range in ranges.Where(r => r.Key.Expr.Metadata.OutputNames != null && !outputNames.Contains(r.Key.Expr.Metadata.OutputNames[0])))
+                    {
+                        quantScheme.Outputs[index] = new Output();
+                        quantScheme.Outputs[index].Name = range.Key.Expr.Metadata.OutputNames![0];
+                        quantScheme.Outputs[index].DataRangeMode = "by_tensor";
+                        quantScheme.Outputs[index].DataType = ((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight == true ? _quantizeOptions.WQuantType.ToString() : _quantizeOptions.QuantType.ToString();
+                        quantScheme.Outputs[index].DataRange = new ValueRange<float>[1];
+                        quantScheme.Outputs[index].DataRange![0] = range.Value;
+                        outputNames.Add(range.Key.Expr.Metadata.OutputNames[0]);
+                        index++;
+                    }
+                }
+                else
+                {
+                    var byChannelRanges = new Dictionary<ENode, ValueRange<float>[]>(ReferenceEqualityComparer.Instance);
+                    foreach (var range in ranges)
+                    {
+                        if (((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight == true)
+                        {
+                            var oc = range.Key.Children[1].Nodes[0].Expr.CheckedShape[0].FixedValue;
+                            var valueRanges = new ValueRange<float>[oc];
+                            var weightsValue = ((TensorConst)range.Key.Children[1].Nodes[0].Expr).Value.Cast<float>().Buffer;
+                            var weightsSize = weightsValue.Length;
+                            var eachChannelSize = weightsSize / oc;
+                            var tmpMin = float.MaxValue;
+                            var tmpMax = float.MinValue;
+
+                            for (int i = 0; i < weightsSize; i++)
+                            {
+                                if (weightsValue.Span[i] < tmpMin)
+                                {
+                                    tmpMin = weightsValue.Span[i];
+                                }
+
+                                if (weightsValue.Span[i] > tmpMax)
+                                {
+                                    tmpMax = weightsValue.Span[i];
+                                }
+
+                                if ((i + 1) % eachChannelSize == 0)
+                                {
+                                    valueRanges[i / eachChannelSize] = new ValueRange<float> { Min = tmpMin, Max = tmpMax };
+                                    tmpMin = float.MaxValue;
+                                    tmpMax = float.MinValue;
+                                }
+                            }
+
+                            byChannelRanges.Add(range.Key, valueRanges);
+                        }
+                        else
+                        {
+                            var valueRanges = new ValueRange<float>[1];
+                            valueRanges[0] = range.Value;
+                            byChannelRanges.Add(range.Key, valueRanges);
+                        }
+                    }
+
+                    var index = 0;
+                    foreach (var range in ranges.Where(r => r.Key.Expr.Metadata.OutputNames != null && !outputNames.Contains(r.Key.Expr.Metadata.OutputNames[0])))
+                    {
+                        quantScheme.Outputs[index] = new Output();
+                        quantScheme.Outputs[index].Name = range.Key.Expr.Metadata.OutputNames![0];
+                        quantScheme.Outputs[index].DataRangeMode = ((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight == true ? "by_channel" : "by_tensor";
+                        quantScheme.Outputs[index].DataType = ((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight == true ? _quantizeOptions.WQuantType.ToString() : _quantizeOptions.QuantType.ToString();
+                        var rangeLength = byChannelRanges[range.Key].Length;
+                        quantScheme.Outputs[index].DataRange = new ValueRange<float>[rangeLength];
+                        for (int i = 0; i < rangeLength; i++)
+                        {
+                            quantScheme.Outputs[index].DataRange![i] = byChannelRanges[range.Key][i];
+                        }
+
+                        outputNames.Add(range.Key.Expr.Metadata.OutputNames[0]);
+                        index++;
+                    }
+                }
+
+                var quantSchemeString = JsonConvert.SerializeObject(quantScheme, Newtonsoft.Json.Formatting.Indented);
+                _quantizeOptions.QuantSchemeInnerCheck = quantSchemeString;
+                if (Path.Exists(DumpScope.Current.Directory))
+                {
+                    File.WriteAllText(Path.Join(DumpScope.Current.Directory, "..", "..", "QuantScheme.json"), quantSchemeString);
+                }
+            }
+
+            if (_quantizeOptions.DumpQuantError)
+            {
+                await DumpQuantError(ranges);
+            }
+        }
+        else
         {
             // 原本设计导入json功能将来会被集成在nncase studio中，在网页中交互直接复制粘贴json字符串到QuantScheme参数中比较合适，此时以下代码应走上面的分支，
             // 但是目前由于没有nncase studio，c#与python调试时不可能粘贴数万行的json，可在此处手动临时开启下面的分支，这样导入json时，QuantScheme填入json文件的路径即可。
