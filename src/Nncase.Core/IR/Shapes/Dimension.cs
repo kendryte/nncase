@@ -35,27 +35,14 @@ public enum DimensionKind : byte
 /// <summary>
 /// Shape dimension.
 /// </summary>
-public struct Dimension : IEquatable<Dimension?>
+public sealed class Dimension : Expr, IEquatable<Dimension?>
 {
     public static readonly Dimension Unknown = new Dimension(None.Default);
 
-    private readonly long _fixedValue;
-    private readonly Expr? _exprValue;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Dimension"/> struct.
-    /// </summary>
-    /// <param name="value">Dimension value.</param>
-    public Dimension(long value)
+    public Dimension(DimExpr value)
+        : base([value])
     {
-        Kind = DimensionKind.Fixed;
-        _fixedValue = value;
-    }
-
-    public Dimension(Expr value)
-    {
-        value = CompilerServices.FastSimplifyForDimension(value);
-        if (value is TensorConst tc)
+        if (value is dim tc)
         {
             Kind = DimensionKind.Fixed;
             _fixedValue = tc.Value.ToScalar<long>();
@@ -80,7 +67,7 @@ public struct Dimension : IEquatable<Dimension?>
     /// <summary>
     /// Gets value.
     /// </summary>
-    public Expr Value => _exprValue ?? _fixedValue;
+    public DimExpr Value => (DimExpr)Operands[0];
 
     /// <summary>
     /// Gets FixedValue.
