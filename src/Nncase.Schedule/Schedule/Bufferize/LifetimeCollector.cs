@@ -61,9 +61,13 @@ public sealed class LifetimeCollector
 
         protected override Unit VisitLeafBuffer(TIR.Buffer expr)
         {
-            (var bufferSize, _) = TensorUtilities.GetTensorMaxSizeAndStrides(expr.CheckedTensorType, expr.DistributedType);
-            var lifetime = new BufferLifetime(expr) { Memory = new(0, bufferSize) };
-            _lifetimes.Add(expr, (lifetime, 0));
+            if (expr.MemSpan.Start is None)
+            {
+                (var bufferSize, _) = TensorUtilities.GetTensorMaxSizeAndStrides(expr.CheckedTensorType, expr.DistributedType);
+                var lifetime = new BufferLifetime(expr) { Memory = new(0, bufferSize) };
+                _lifetimes.Add(expr, (lifetime, 0));
+            }
+
             return default;
         }
 
@@ -88,8 +92,11 @@ public sealed class LifetimeCollector
             }
             else if (TryGetBuffer(expr, out var buffer))
             {
-                ref var record = ref CollectionsMarshal.GetValueRefOrNullRef(_lifetimes, buffer);
-                record.RefCount++;
+                if (buffer.MemSpan.Start is None)
+                {
+                    ref var record = ref CollectionsMarshal.GetValueRefOrNullRef(_lifetimes, buffer);
+                    record.RefCount++;
+                }
             }
         }
     }
@@ -137,10 +144,13 @@ public sealed class LifetimeCollector
             }
             else if (TryGetBuffer(expr, out var buffer))
             {
-                ref var record = ref CollectionsMarshal.GetValueRefOrNullRef(_lifetimes, buffer);
-                if (--record.RefCount == 0)
+                if (buffer.MemSpan.Start is None)
                 {
-                    record.Lifetime.Time.Stop = _currentAge;
+                    ref var record = ref CollectionsMarshal.GetValueRefOrNullRef(_lifetimes, buffer);
+                    if (--record.RefCount == 0)
+                    {
+                        record.Lifetime.Time.Stop = _currentAge;
+                    }
                 }
             }
         }
