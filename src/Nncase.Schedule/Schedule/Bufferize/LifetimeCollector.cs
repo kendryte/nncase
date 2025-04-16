@@ -61,7 +61,7 @@ public sealed class LifetimeCollector
 
         protected override Unit VisitLeafBuffer(TIR.Buffer expr)
         {
-            if (expr.MemSpan.Start is None)
+            if (expr.MemSpan.Start is None or Call { Target: IR.Buffers.DDrOf })
             {
                 (var bufferSize, _) = TensorUtilities.GetTensorMaxSizeAndStrides(expr.CheckedTensorType, expr.DistributedType);
                 var lifetime = new BufferLifetime(expr) { Memory = new(0, bufferSize) };
@@ -92,7 +92,7 @@ public sealed class LifetimeCollector
             }
             else if (TryGetBuffer(expr, out var buffer))
             {
-                if (buffer.MemSpan.Start is None)
+                if (buffer.MemSpan.Start is None or Call { Target: IR.Buffers.DDrOf })
                 {
                     ref var record = ref CollectionsMarshal.GetValueRefOrNullRef(_lifetimes, buffer);
                     record.RefCount++;
@@ -113,7 +113,7 @@ public sealed class LifetimeCollector
 
         protected override Unit VisitLeafBuffer(TIR.Buffer expr)
         {
-            if (expr.MemSpan.Start is None)
+            if (expr.MemSpan.Start is None or Call { Target: IR.Buffers.DDrOf })
             {
                 ref var record = ref CollectionsMarshal.GetValueRefOrNullRef(_lifetimes, expr);
                 record.Lifetime.Time.Start = _currentAge;
@@ -144,7 +144,7 @@ public sealed class LifetimeCollector
             }
             else if (TryGetBuffer(expr, out var buffer))
             {
-                if (buffer.MemSpan.Start is None)
+                if (buffer.MemSpan.Start is None or Call { Target: IR.Buffers.DDrOf })
                 {
                     ref var record = ref CollectionsMarshal.GetValueRefOrNullRef(_lifetimes, buffer);
                     if (--record.RefCount == 0)
