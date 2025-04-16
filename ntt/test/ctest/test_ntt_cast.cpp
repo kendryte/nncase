@@ -572,7 +572,6 @@ TEST(CastTestFloat8E4M3ToFloat32, NoPack) {
     // init
     alignas(32) tensor_type1 ntt_input;
     NttTest::init_tensor(ntt_input, min_input, max_input);
-    // NttTest::init_tensor(ntt_lhs, (float_e4m3_t)-448.f, (float_e4m3_t)448.f);
 
     // ntt
     alignas(32) tensor_type2 ntt_output1;
