@@ -301,6 +301,38 @@ TEST(MatmulTestFloat, Pack_M_K_N) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
+TEST(MatmulTestfloate4m3, NoPack) {
+    // init
+    using tensorA_F8_type = ntt::tensor<float_e4m3_t, ntt::fixed_shape<64, 64>>;
+    using tensorB_F8_type = ntt::tensor<float_e4m3_t, ntt::fixed_shape<64, 64>>;
+    using tensorA_F32_type = ntt::tensor<float, ntt::fixed_shape<64, 64>>;
+    using tensorB_F32_type = ntt::tensor<float, ntt::fixed_shape<64, 64>>;
+    using tensorC_type = ntt::tensor<float, ntt::fixed_shape<64, 64>>;
+    tensorA_F8_type ntt_f8_lhs;
+    tensorB_F8_type ntt_f8_rhs;
+    NttTest::init_tensor(ntt_f8_lhs, (float_e4m3_t)-448.f, (float_e4m3_t)448.f);
+    NttTest::init_tensor(ntt_f8_rhs, (float_e4m3_t)-448.f, (float_e4m3_t)448.f);
+
+    // ntt
+    tensorC_type ntt_output;
+    ntt::matmul<false>(ntt_f8_lhs, ntt_f8_rhs, ntt_output);
+
+    tensorA_F32_type ntt_f32_lhs;
+    tensorB_F32_type ntt_f32_rhs;
+    ntt::cast(ntt_f8_lhs, ntt_f32_lhs);
+    ntt::cast(ntt_f8_rhs, ntt_f32_rhs);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(ntt_f32_lhs);
+    auto ort_rhs = NttTest::ntt2ort(ntt_f32_rhs);
+    auto ort_output = ortki_MatMul(ort_lhs, ort_rhs);
+
+    // // compare
+    tensorC_type ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_output2));
+}
+
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

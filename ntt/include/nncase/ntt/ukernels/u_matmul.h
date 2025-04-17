@@ -14,9 +14,11 @@
  */
 #pragma once
 #include "../apply.h"
+#include "nncase/float8.h"
 #include "nncase/ntt/primitive_ops.h"
 #include "nncase/ntt/shape.h"
 #include "u_mul_add.h"
+#include <type_traits>
 
 namespace nncase::ntt {
 namespace ukernels {
@@ -49,6 +51,15 @@ struct u_matmul_generic {
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
                               size_t K) noexcept {
+
+        using TLElemExpand = typename std::conditional<
+            IsScalar<TLhsElem> && std::is_same<TLhsElem, float_e4m3_t>::value,
+            TOutElem, TLhsElem>::type;
+
+        using TRElemExpand = typename std::conditional<
+            IsScalar<TRhsElem> && std::is_same<TRhsElem, float_e4m3_t>::value,
+            TOutElem, TRhsElem>::type;
+
         TOutElem c0_tmp[M0Tile][N0Tile];
         ntt::apply(c0.shape(), [&](auto index) {
             c0_tmp[index[0]][index[1]] = AccumulateC ? c0(index) : TOutElem{};
@@ -60,8 +71,8 @@ struct u_matmul_generic {
             auto b0 = b.view(TransposedB ? make_ranked_shape(0, k1)
                                          : make_ranked_shape(k1, 0),
                              BStride{});
-            TLhsElem a0_tmp[M0Tile];
-            TRhsElem b0_tmp[N0Tile];
+            TLElemExpand a0_tmp[M0Tile];
+            TRElemExpand b0_tmp[N0Tile];
 
             ntt::apply(fixed_shape<M0Tile>{},
                        [&](auto index) { a0_tmp[index[0]] = a0(index[0], 0); });
