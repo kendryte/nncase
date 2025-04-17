@@ -178,7 +178,7 @@ public abstract class RTAttentionKVCache : RTObject, IAttentionKVCache
 
     public AttentionConfig Config => throw new NotImplementedException();
 
-    public int NumRequests
+    public int NumSeqs
     {
         get
         {
@@ -186,6 +186,8 @@ public abstract class RTAttentionKVCache : RTObject, IAttentionKVCache
             return numRequests;
         }
     }
+
+    public int NumTokens => throw new NotImplementedException();
 
     public static RTAttentionKVCache FromHandle(IntPtr handle, bool addRef = false)
     {
@@ -236,9 +238,9 @@ public class RTPagedAttentionKVCache : RTAttentionKVCache, IPagedAttentionKVCach
 
     public Tensor GetBlock(AttentionCacheKind kind, int layerId, object blockId) => throw new NotImplementedException();
 
-    public Tensor GetContextBlockIds(int requestId) => throw new NotImplementedException();
+    public Tensor GetBlockIds(int requestId) => throw new NotImplementedException();
 
-    public Tensor GetOutputSlotIds() => throw new NotImplementedException();
+    public Tensor GetSlotIds() => throw new NotImplementedException();
 
     public Tensor GetSlot(AttentionCacheKind kind, int layerId, object slotId) => throw new NotImplementedException();
 
@@ -256,5 +258,10 @@ public class RTPagedAttentionKVCache : RTAttentionKVCache, IPagedAttentionKVCach
         Native.PagedAttenionKVCacheSetSubBlock(this, indices, indices.Length, rtTensor).ThrowIfFailed();
     }
 
-    public void UpdateOutputSlot(AttentionCacheKind kind, int layerId, object slotId, Tensor slot) => throw new NotImplementedException();
+    public void UpdateSlot(AttentionCacheKind kind, int layerId, object slotId, Tensor slot) => throw new NotImplementedException();
+    public Tensor GetBlock(AttentionCacheKind kind, int layerId, int headId, object blockId) => throw new NotImplementedException();
+    public void UpdateBlock(AttentionCacheKind kind, int layerId, int headId, object blockId, Tensor block) => throw new NotImplementedException();
+    public Tensor GetSlot(AttentionCacheKind kind, int layerId, int headId, object slotId) => throw new NotImplementedException();
+    public void UpdateSlot(AttentionCacheKind kind, int layerId, int headId, object slotId, Tensor slot) => throw new NotImplementedException();
+    public void UpdateSlots(AttentionCacheKind kind, int layerId, int headId, Tensor slotIds, Tensor slots) => throw new NotImplementedException();
 }

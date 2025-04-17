@@ -10,31 +10,39 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR.NN;
 
+public enum PagedAttentionDimKind : int
+{
+    NumBlocks = 0,
+    NumLayers,
+    KV,
+    BlockSize,
+    NumKVHeads,
+    HeadDim,
+}
+
 public interface IPagedAttentionConfig : IAttentionConfig
 {
     int BlockSize { get; }
+
+    PagedAttentionDimKind[] CacheLayout { get; }
+
+    PagedAttentionDimKind[] PackedAxes { get; }
+
+    int[] Lanes { get; }
 }
 
+/// <summary>
+/// kv cache layout: [num_blocks, num_layers, num_head, 2, block_size].
+///    block layout: [num_head, block_size].
+///     slot layout: [num_head].
+/// note the slot or block may have different pack shape.
+/// </summary>
 public interface IPagedAttentionKVCache : IAttentionKVCache
 {
     /// <summary>
     /// Gets the config.
     /// </summary>
     new PagedAttentionConfig Config { get; }
-
-    /// <summary>
-    /// Gets the contiguous sub block.
-    /// </summary>
-    /// <param name="indices">indices.</param>
-    /// <returns> block tensor. </returns>
-    Tensor GetSubBlock(params int[] indices);
-
-    /// <summary>
-    /// Sets the contiguous sub block.
-    /// </summary>
-    /// <param name="indices">indices.</param>
-    /// <param name="subBlock">block tensor.</param>
-    void SetSubBlock(int[] indices, Tensor subBlock);
 
     /// <summary>
     /// Gets the context block ids.
@@ -45,50 +53,7 @@ public interface IPagedAttentionKVCache : IAttentionKVCache
     /// The context block ids are used to identify the blocks of key-value pairs
     /// that are used for the attention mechanism in the transformer model.
     /// </remarks>
-    Tensor GetContextBlockIds(int requestId);
-
-    /// <summary>
-    /// Gets the block.
-    /// </summary>
-    /// <param name="kind">The kind of the block.</param>
-    /// <param name="layerId">The layer id.</param>
-    /// <param name="blockId">The block id.</param>
-    /// <returns>The block.</returns>
-    /// <remarks>
-    /// The block is used to store the key-value pairs for the attention mechanism
-    /// in the transformer model. The kind parameter indicates whether the block
-    /// is for keys or values.
-    /// </remarks>
-    Tensor GetBlock(AttentionCacheKind kind, int layerId, object blockId);
-
-    /// <summary>
-    /// Gets the slots.
-    /// </summary>
-    /// <param name="block">The block.</param>
-    /// <param name="startSlot">The start slot.</param>
-    /// <param name="count">The count.</param>
-    /// <returns>The slots.</returns>
-    /// <remarks>
-    /// The slots are used to store the key-value pairs for the attention mechanism
-    /// in the transformer model. The block parameter indicates which block the
-    /// slots belong to, and the startSlot and count parameters indicate which
-    /// slots to retrieve.
-    /// </remarks>
-    Tensor GetSlots(Tensor block, int startSlot, int count);
-
-    /// <summary>
-    /// Gets the slot.
-    /// </summary>
-    /// <param name="kind">The kind of the slot.</param>
-    /// <param name="layerId">The layer id.</param>
-    /// <param name="slotId">The slot id.</param>
-    /// <returns>The slot.</returns>
-    /// <remarks>
-    /// The slot is used to store the key-value pairs for the attention mechanism
-    /// in the transformer model. The kind parameter indicates whether the slot
-    /// is for keys or values.
-    /// </remarks>
-    Tensor GetSlot(AttentionCacheKind kind, int layerId, object slotId);
+    Tensor GetBlockIds(int requestId);
 
     /// <summary>
     /// Gets the output slot ids.
@@ -99,26 +64,65 @@ public interface IPagedAttentionKVCache : IAttentionKVCache
     /// that are used for the attention mechanism in the transformer model.
     /// The kind parameter indicates whether the output slot is for keys or values.
     /// </remarks>
-    Tensor GetOutputSlotIds();
+    Tensor GetSlotIds();
+
+    /// <summary>
+    /// Gets the block.
+    /// </summary>
+    /// <param name="kind">The kind of the block.</param>
+    /// <param name="layerId">The layer id.</param>
+    /// <param name="headId">The head id.</param>
+    /// <param name="blockId">The block id.</param>
+    /// <returns>The block contains block size and head dim.</returns>
+    Tensor GetBlock(AttentionCacheKind kind, int layerId, int headId, object blockId);
 
     /// <summary>
     /// Updates the output slot.
     /// </summary>
     /// <param name="kind">The kind of the output slot.</param>
     /// <param name="layerId">The layer id.</param>
+    /// <param name="headId"> The head id.</param>
+    /// <param name="blockId"> The block id.</param>
+    /// <param name="block"> the block tensor.</param>
+    void UpdateBlock(AttentionCacheKind kind, int layerId, int headId, object blockId, Tensor block);
+
+    /// <summary>
+    /// Gets the slot from kv cache.
+    /// </summary>
+    /// <param name="kind">The kind of the slot.</param>
+    /// <param name="layerId">The layer id.</param>
+    /// <param name="headId">The head Id.</param>
+    /// <param name="slotId">The slot id.</param>
+    /// <returns>The slot.</returns>
+    Tensor GetSlot(AttentionCacheKind kind, int layerId, int headId, object slotId);
+
+    /// <summary>
+    /// Updates the slot in the kv cache.
+    /// </summary>
+    /// <param name="kind">The kind of the output slot.</param>
+    /// <param name="layerId">The layer id.</param>
+    /// <param name="headId">The head Id.</param>
     /// <param name="slotId">The slot id.</param>
     /// <param name="slot">The slot.</param>
-    /// <remarks>
-    /// The output slot is used to store the key-value pairs for the attention
-    /// mechanism in the transformer model. The kind parameter indicates whether
-    /// the output slot is for keys or values. The slot parameter contains the
-    /// updated key-value pairs.
-    /// </remarks>
-    void UpdateOutputSlot(AttentionCacheKind kind, int layerId, object slotId, Tensor slot);
+    void UpdateSlot(AttentionCacheKind kind, int layerId, int headId, object slotId, Tensor slot);
+
+    /// <summary>
+    /// Updates the slots in the kv cache.
+    /// the slots is batch of slot.
+    /// </summary>
+    /// <param name="kind">The kind of the output slot.</param>
+    /// <param name="layerId">The layer id.</param>
+    /// <param name="headId">The head Id.</param>
+    /// <param name="slotIds">The slot ids.</param>
+    /// <param name="slots">The slots.</param>
+    void UpdateSlots(AttentionCacheKind kind, int layerId, int headId, Tensor slotIds, Tensor slots);
 }
 
-public sealed record PagedAttentionConfig(int BlockSize, int NumLayers, int NumKVHeads, int HeadDim, PrimType KVType)
-    : AttentionConfig(NumLayers, NumKVHeads, HeadDim, KVType), IPagedAttentionConfig;
+public sealed record PagedAttentionConfig(int BlockSize, int NumLayers, int NumKVHeads, int HeadDim, PagedAttentionDimKind[] CacheLayout, PagedAttentionDimKind[] PackedAxes, int[] Lanes, PrimType KVType)
+    : AttentionConfig(NumLayers, NumKVHeads, HeadDim, KVType), IPagedAttentionConfig
+{
+    public PagedAttentionDimKind[] BlockLayout => CacheLayout.Where(x => x is PagedAttentionDimKind.BlockSize or PagedAttentionDimKind.HeadDim).ToArray();
+}
 
 public sealed record PagedAttentionKVCacheType : AttentionKVCacheType
 {

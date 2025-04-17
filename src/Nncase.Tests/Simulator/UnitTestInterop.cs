@@ -198,7 +198,7 @@ public class UnitTestInterop : TestClassBase
         Assert.Equal(2, r_a.NumKVHeads);
         Assert.Equal(1, r_a.HeadDim);
 
-        var b = new IR.NN.PagedAttentionConfig(1, 2, 3, 4, DataTypes.Float16);
+        var b = new IR.NN.PagedAttentionConfig(1, 2, 3, 4, [IR.NN.PagedAttentionDimKind.BlockSize, IR.NN.PagedAttentionDimKind.HeadDim, IR.NN.PagedAttentionDimKind.KV, IR.NN.PagedAttentionDimKind.NumBlocks, IR.NN.PagedAttentionDimKind.NumKVHeads, IR.NN.PagedAttentionDimKind.NumLayers], [], [], DataTypes.Float16);
         var r_b = (RTPagedAttentionConfig)RTAttentionConfig.FromConfig(b);
         Assert.Equal(b.NumLayers, r_b.NumLayers);
         Assert.Equal(b.NumKVHeads, r_b.NumKVHeads);
@@ -217,13 +217,13 @@ public class UnitTestInterop : TestClassBase
     [Fact]
     public void TestRTPagedAttentionScheduler()
     {
-        var cfg = new IR.NN.PagedAttentionConfig(1, 2, 3, 4, DataTypes.Float32);
+        var cfg = new IR.NN.PagedAttentionConfig(1, 2, 3, 4, [IR.NN.PagedAttentionDimKind.BlockSize, IR.NN.PagedAttentionDimKind.HeadDim, IR.NN.PagedAttentionDimKind.KV, IR.NN.PagedAttentionDimKind.NumBlocks, IR.NN.PagedAttentionDimKind.NumKVHeads, IR.NN.PagedAttentionDimKind.NumLayers], [], [], DataTypes.Float32);
         var s = RTPagedAttentionScheduler.Create(cfg, 128, 1238);
 
         var sessionIds = Tensor.From([1L]);
         var tokenCounts = Tensor.From([128L]);
         var cache = s.Schedule(sessionIds, tokenCounts);
-        Assert.Equal(1, cache.NumRequests);
+        Assert.Equal(1, cache.NumSeqs);
         Assert.Equal(128, cache.GetSeqLen(0));
         Assert.Equal(0, cache.GetContextLen(0));
     }

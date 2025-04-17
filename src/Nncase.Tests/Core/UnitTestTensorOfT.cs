@@ -254,4 +254,104 @@ public sealed class UnitTestTensorOfT
         var t1 = new Tensor<float>([0]);
         Assert.Equal(0, t1.Length);
     }
+
+    [Fact]
+    public void TestTensorGetString()
+    {
+        var a = Tensor.From(new float[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 }, [4, 4]);
+        var expect = @"{
+  [0,0]: {0f,1f,2f,3f},
+  [1,0]: {4f,5f,6f,7f},
+  [2,0]: {8f,9f,10f,11f},
+  [3,0]: {12f,13f,14f,15f}
+}";
+        Assert.Equal(expect, a.GetArrayString(true));
+
+        var b = Tensor.From(new float[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 }, [1, 4, 4]);
+        var expectb = @"{
+  {
+    [0,0,0]: {0f,1f,2f,3f},
+    [0,1,0]: {4f,5f,6f,7f},
+    [0,2,0]: {8f,9f,10f,11f},
+    [0,3,0]: {12f,13f,14f,15f}
+  }
+}";
+        Assert.Equal(expectb, b.GetArrayString(true));
+    }
+
+    [Fact]
+    public void TestVectorTensor()
+    {
+        var a = Tensor<Vector4<float>>.From(new Vector4<float>[] { Vector4<float>.Create([1, 2, 3, 4]), Vector4<float>.Create([1, 2, 3, 4]), Vector4<float>.Create([1, 2, 3, 4]), Vector4<float>.Create([1, 2, 3, 4]) });
+        Assert.Equal(a.ElementType, new VectorType(DataTypes.Float32, [4]));
+
+        var b = Enumerable.Range(0, 12).Select(i => i).ToArray();
+        var d = Tensor<Vector4<float>>.From(System.Runtime.InteropServices.MemoryMarshal.Cast<int, Vector4<int>>(b).ToArray());
+        Assert.Equal(d.ElementType, new VectorType(DataTypes.Int32, [4]));
+        Assert.Equal("{<0,1,2,3>,<4,5,6,7>,<8,9,10,11>}", d.GetArrayString(false));
+    }
+
+    [Fact]
+    public void TestTensorView()
+    {
+        {
+            var a = Tensor.From(Enumerable.Range(0, 2 * 2 * 3).ToArray(), [2, 2, 3]);
+            /*
+            [[[ 0,  1,  2],
+              [ 3,  4,  5]],
+             [[ 6,  7,  8],
+              [ 9, 10, 11]]]
+            */
+            var b = a.View([1, 0, 0], [1, 1, 3]); /* [6,7,8] */
+            Assert.True(b.ToArray<int>().SequenceEqual([6, 7, 8]));
+            Assert.Equal("{{{6,7,8}}}", b.GetArrayString(false));
+            Assert.Equal("{6,7,8}", b.Squeeze([0, 1]).GetArrayString(false));
+
+            var c = new List<int>();
+            c.AddRange(b);
+            Assert.True(c.SequenceEqual([6, 7, 8]));
+
+            var d = new List<int>();
+            foreach (var item in b)
+            {
+                d.Add(item);
+            }
+
+            Assert.True(d.SequenceEqual([6, 7, 8]));
+        }
+
+        {
+            var a = Tensor.From(Enumerable.Range(0, 4 * 3).ToArray(), [4, 3]);
+            var b = a.View([0, 0], [4, 1]);
+            Assert.True(b.ToArray<int>().SequenceEqual([0, 3, 6, 9]));
+            Assert.Equal("{{0},{3},{6},{9}}", b.GetArrayString(false));
+            Assert.Equal("{0,3,6,9}", b.Squeeze([1]).GetArrayString(false));
+        }
+    }
+
+    [Fact]
+    public void TestTensorViewCopy()
+    {
+        {
+            var a = Tensor.From(Enumerable.Range(0, 2 * 2 * 3).ToArray(), [2, 2, 3]);
+            var b = a.View([0, 1, 0], [1, 1, 3]); /* [[[3,4,5]]] */
+            Assert.True(b.ToArray<int>().SequenceEqual([3, 4, 5]));
+
+            var c = Tensor.Zeros<int>([3]);
+            Assert.Throws<ArgumentException>(() =>
+            {
+                b.CopyTo(c);
+            });
+
+            b.Squeeze([0, 1]).CopyTo(c);
+            Assert.True(c.ToArray<int>().SequenceEqual([3, 4, 5]));
+        }
+
+        {
+            var a = Tensor.From(Enumerable.Range(0, 2 * 2 * 3).Select(i => Vector4<int>.Create([i, i, i, i])).ToArray(), [2, 2, 3]);
+
+            var b = a.View([1, 0, 0], [1, 1, 3]); /* [[[<9,9,9,9>,<10,...>,<11,...>]]] */
+            Assert.True(b.ToArray<Vector4<int>>().SequenceEqual([Vector4<int>.Create([9, 9, 9, 9]), Vector4<int>.Create([10, 10, 10, 10]), Vector4<int>.Create([11, 11, 11, 11])]));
+        }
+    }
 }

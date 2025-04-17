@@ -54,24 +54,12 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
         }
 
         var cache = kvCaches.Single().Value;
-        if (slots.Dimensions[0] != cache.NumRequests)
-        {
-            throw new ArgumentException($"slots dim 0 {slots.Dimensions[0]} != cache num requests {cache.NumRequests}");
-        }
 
-        // [num_queries, num_heads, head_dim]
-        var slotIds = cache.GetOutputSlotIds();
-        long queryIndex = 0;
-        for (int requestId = 0; requestId < cache.NumRequests; requestId++)
+        // [num_tokens, slot_shape]
+        var slotIds = cache.GetSlotIds();
+        for (int headId = 0; headId < cache.Config.NumKVHeads; headId++)
         {
-            var slotsCount = slotIds.Dimensions[0];
-            for (int i = 0; i < slotsCount; i++)
-            {
-                var slotId = slotIds[queryIndex];
-                var slot = IR.F.Tensors.GetItem(slots, queryIndex).Evaluate().AsTensor();
-                cache.UpdateOutputSlot(cacheKind, layerId, slotId, slot);
-                queryIndex++;
-            }
+            cache.UpdateSlots(cacheKind, layerId, headId, slotIds, slots);
         }
     }
 

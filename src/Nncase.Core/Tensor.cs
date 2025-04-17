@@ -97,6 +97,15 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         _strides = TensorUtilities.GetStrides(dimensions);
     }
 
+    internal Tensor(DataType elementType, ReadOnlySpan<long> dimensions, ReadOnlySpan<long> strides)
+    {
+        ElementType = elementType;
+        _dimensions = dimensions.ToArray();
+        Shape = dimensions.IsEmpty ? Shape.Scalar : new Shape(_dimensions);
+        Length = TensorUtilities.GetProduct(dimensions);
+        _strides = strides.ToArray();
+    }
+
     /// <summary>
     /// Gets element type.
     /// </summary>
@@ -123,7 +132,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     public int Rank => Dimensions.Length;
 
     /// <summary>
-    /// Gets total length.
+    /// Gets valid elements length.
     /// </summary>
     public long Length { get; }
 
@@ -141,6 +150,8 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     bool IList.IsFixedSize => true;
 
     bool IList.IsReadOnly => false;
+
+    public bool IsContiguous => TensorUtilities.IsContiguous(Dimensions, Strides);
 
     object? IList.this[int index]
     {

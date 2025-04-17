@@ -50,4 +50,12 @@ public partial class Tensor
 
         throw new InvalidCastException($"This tensor is not a string!");
     }
+
+    public abstract Tensor View(ReadOnlySpan<long> starts, ReadOnlySpan<long> shape);
+
+    public abstract Tensor Squeeze(params int[] axes);
+
+    public abstract void CopyTo(Tensor dest);
+
+    public abstract Tensor AsContiguous();
 }

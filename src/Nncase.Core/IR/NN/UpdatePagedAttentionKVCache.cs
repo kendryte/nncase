@@ -14,7 +14,7 @@ namespace Nncase.IR.NN;
 [PatternFunctionalGenerator]
 public sealed partial class UpdatePagedAttentionKVCache : Op
 {
-    public static readonly ParameterInfo Slots = new(typeof(PagedAttention), 0, "slots", ParameterKind.Input);
+    public static readonly ParameterInfo Slots = new(typeof(UpdatePagedAttentionKVCache), 0, "slots", ParameterKind.Input);
 
     public static readonly ParameterInfo KVCaches = new(typeof(UpdatePagedAttentionKVCache), 1, "kvCaches", ParameterKind.Attribute);
 

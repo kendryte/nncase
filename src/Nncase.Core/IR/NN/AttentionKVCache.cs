@@ -38,31 +38,36 @@ public interface IAttentionKVCache
     AttentionConfig Config { get; }
 
     /// <summary>
-    /// Gets the number of requests.
+    /// Gets the number of sequence in this batch.
     /// </summary>
-    int NumRequests { get; }
+    int NumSeqs { get; }
+
+    /// <summary>
+    /// Gets the number of tokens in this batch.
+    /// </summary>
+    int NumTokens { get; }
 
     /// <summary>
     /// Gets the context lens.
     /// </summary>
-    /// <param name="requestId">The request id.</param>
+    /// <param name="seqId">The request id.</param>
     /// <returns>The context lens.</returns>
     /// <remarks>
     /// The context lens are used to identify the lengths of the blocks of key-value
     /// pairs that are used for the attention mechanism in the transformer model.
     /// </remarks>
-    long GetContextLen(int requestId);
+    long GetContextLen(int seqId);
 
     /// <summary>
     /// Gets the sequence lens.
     /// </summary>
-    /// <param name="requestId">The request id.</param>
+    /// <param name="seqId">The request id.</param>
     /// <returns>The sequence lens.</returns>
     /// <remarks>
     /// The sequence lens are used to identify the lengths of the sequences of
     /// key-value pairs that are used for the attention mechanism in the transformer model.
     /// </remarks>
-    long GetSeqLen(int requestId);
+    long GetSeqLen(int seqId);
 }
 
 public record AttentionConfig(int NumLayers, int NumKVHeads, int HeadDim, PrimType KVType) : IAttentionConfig;
