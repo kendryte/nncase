@@ -77,7 +77,7 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
         uint macPerElement = 1;
         if (lhs is TensorType { Shape: Shape lhsShape })
         {
-            macPerElement = lhsShape[^1].IsFixed ? (uint)lhsShape[^1].FixedValue : 1U;
+            macPerElement = !lhsShape.IsScalar && lhsShape[^1].IsFixed ? (uint)lhsShape[^1].FixedValue : 1U;
         }
         else if (lhs is DistributedType distributedType)
         {
