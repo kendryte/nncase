@@ -47,9 +47,9 @@ public sealed class UnitTestTIR
     [Fact]
     public void TestIterVar()
     {
-        var dom = new Range(-1f, 1f, 1);
+        var dom = new Range(-1, 1, 1);
         var mode = IterationMode.Opaque;
-        var value = new Var("test", DataTypes.Float32);
+        var value = new DimVar("test");
         var iterVar = new IterVar(dom, mode, value);
         Assert.Equal(dom, iterVar.Dom);
         Assert.Equal(mode, iterVar.Mode);
@@ -61,14 +61,14 @@ public sealed class UnitTestTIR
     {
         var name = "test";
         var actual = T.SizeVar(name);
-        var expected = Var.SizeVar(name);
+        var expected = new DimVar(name);
         Assert.Equal(expected.ToString(), actual.ToString());
     }
 
     [Fact]
     public void TestSerial()
     {
-        var domain = new Range(-1f, 1f, 1);
+        var domain = new Range(-1, 1, 1);
         var actual = T.Serial(out _, domain);
         var expect = T.ForLoop(out _, domain, LoopMode.Serial, "v");
         Assert.Equal(expect.ToString(), actual.ToString());
@@ -89,7 +89,7 @@ public sealed class UnitTestTIR
     [Fact]
     public void TestForSegment()
     {
-        var count = IR.F.Tensors.Cast(2f / IR.F.Tensors.Cast(2, DataTypes.Float32), DataTypes.Int64);
+        var count = 2 / 2;
         var expect = T.Serial(out _, (0L, count));
         var actual = T.ForSegment(out _, 1L, 2L, 3L);
         Assert.Equal(expect.ToString(), actual.ToString());
@@ -98,7 +98,7 @@ public sealed class UnitTestTIR
     [Fact]
     public void TestGrid()
     {
-        var grid1 = T.Grid(out _, LoopMode.Serial, new Range(-1f, 1f, 1));
+        var grid1 = T.Grid(out _, LoopMode.Serial, new Range(-1, 1, 1));
         var grid2 = T.Grid(out _, LoopMode.Serial, new Range(1, 1, 1));
         Assert.Equal(grid1.GetType(), grid2.GetType());
     }
@@ -161,7 +161,7 @@ public sealed class UnitTestTIR
         Assert.Equal(newParams, newPrimFunc.Parameters.ToArray());
         Assert.Equal(primFunc.Name, newPrimFunc.Name); // should not change the name
 
-        Assert.NotNull(new PrimFunction("test_module", new Sequential(new Expr[] { 1 }), default(ReadOnlySpan<Var>)));
+        Assert.NotNull(new PrimFunction("test_module", new Sequential(new Expr[] { 1 }), default(ReadOnlySpan<IVar>)));
     }
 
     [Fact]

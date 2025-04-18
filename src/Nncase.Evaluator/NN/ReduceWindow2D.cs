@@ -7,6 +7,7 @@ using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using OrtKISharp;
 using static Nncase.Evaluator.EvaluatorUtil;
 using static Nncase.PatternMatch.F.Math;
@@ -104,6 +105,6 @@ public class ReduceWindow2DEvaluator : IEvaluator<ReduceWindow2D>, ITypeInferenc
     private IRType Visit(ITypeInferenceContext context, ReduceWindow2D target, TensorType input)
     {
         var args = context.GetArguments(target, ReduceWindow2D.Filter, ReduceWindow2D.Stride, ReduceWindow2D.Padding, ReduceWindow2D.CeilMode);
-        return TypeInference.ReduceWindow2DType(input, args[0], args[1], args[2], args[3]);
+        return TypeInference.ReduceWindow2DType(input, (Shape)args[0], (Shape)args[1], (Paddings)args[2], args[3]);
     }
 }

@@ -22,7 +22,7 @@ internal sealed class EvaluateProvider : IEvaluateProvider
         _serviceProvider = serviceProvider;
     }
 
-    public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null)
+    public IValue Evaluate(Expr expr, IReadOnlyDictionary<IVar, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null)
     {
         if (expr.CheckedType is null)
         {
@@ -39,7 +39,7 @@ internal sealed class EvaluateProvider : IEvaluateProvider
             throw new InvalidOperationException("Expr in Evaluator need a valid type");
         }
 
-        using var evaluatorVisitor = new EvaluateVisitor(varsValues ?? new Dictionary<Var, IValue>(), evaluator_cache ?? new());
+        using var evaluatorVisitor = new EvaluateVisitor(varsValues ?? new Dictionary<IVar, IValue>(), evaluator_cache ?? new());
         return evaluatorVisitor.Visit(expr);
     }
 

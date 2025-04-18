@@ -42,98 +42,6 @@ public enum ShapeKind
     Fixed,
 }
 
-public record struct FixedAndDynamicDimension(long Fixed, Dimension? Dynamic)
-{
-    public static implicit operator FixedAndDynamicDimension((long Fixed, Dimension? Dynamic) value) => new FixedAndDynamicDimension(value.Fixed, value.Dynamic);
-
-    public static FixedAndDynamicDimension operator *(FixedAndDynamicDimension a, FixedAndDynamicDimension b)
-    {
-        var dyn = (a.Dynamic, b.Dynamic) switch
-        {
-            (null, null) => (Dimension?)null,
-            (null, Dimension x) => x,
-            (Dimension x, null) => x,
-            (Dimension x, Dimension y) => x * y,
-        };
-        return new FixedAndDynamicDimension(a.Fixed * b.Fixed, dyn);
-    }
-
-    public static FixedAndDynamicDimension operator /(FixedAndDynamicDimension a, long b)
-    {
-        if (a.Fixed % b == 0 || a.Dynamic is null)
-        {
-            return new FixedAndDynamicDimension(a.Fixed / b, a.Dynamic);
-        }
-
-        return new FixedAndDynamicDimension(1, a.Fixed * a.Dynamic.Value / b);
-    }
-
-    public static FixedAndDynamicDimension operator /(FixedAndDynamicDimension a, FixedAndDynamicDimension b)
-    {
-        if (a.Fixed % b.Fixed == 0)
-        {
-            return (a.Dynamic, b.Dynamic) switch
-            {
-                (null, null) => new FixedAndDynamicDimension(a.Fixed / b.Fixed, null),
-                (null, Dimension y) => new FixedAndDynamicDimension(1, a.Fixed / b.Fixed / y),
-                (Dimension x, null) => new FixedAndDynamicDimension(a.Fixed / b.Fixed, x),
-                (Dimension x, Dimension y) when x == y => new FixedAndDynamicDimension(a.Fixed / b.Fixed, null),
-                (Dimension x, Dimension y) => new FixedAndDynamicDimension(1, a.Fixed / b.Fixed * x / y),
-            };
-        }
-
-        return (a.Dynamic, b.Dynamic) switch
-        {
-            (null, null) => new FixedAndDynamicDimension(a.Fixed / b.Fixed, null),
-            (null, Dimension y) => new FixedAndDynamicDimension(1, a.Fixed / (b.Fixed * y)),
-            (Dimension x, null) => new FixedAndDynamicDimension(1, a.Fixed * x / b.Fixed),
-            (Dimension x, Dimension y) when x == y => new FixedAndDynamicDimension(a.Fixed / b.Fixed, null),
-            (Dimension x, Dimension y) => new FixedAndDynamicDimension(1, a.Fixed * x / (b.Fixed * y)),
-        };
-    }
-
-    public static FixedAndDynamicDimension Abs(FixedAndDynamicDimension value) =>
-        new(System.Math.Abs(value.Fixed), value.Dynamic is null ? (Dimension?)null : Dimension.Abs(value.Dynamic.Value));
-
-    public static FixedAndDynamicDimension? TryDivExactly(FixedAndDynamicDimension a, FixedAndDynamicDimension b)
-    {
-        if (a.Fixed % b.Fixed == 0)
-        {
-            return (a.Dynamic, b.Dynamic) switch
-            {
-                (null, null) => new FixedAndDynamicDimension(a.Fixed / b.Fixed, null),
-                (null, Dimension y) => new FixedAndDynamicDimension(1, a.Fixed / b.Fixed / y),
-                (Dimension x, null) => new FixedAndDynamicDimension(a.Fixed / b.Fixed, x),
-                (Dimension x, Dimension y) when x == y => new FixedAndDynamicDimension(a.Fixed / b.Fixed, null),
-                (Dimension x, Dimension y) => new FixedAndDynamicDimension(1, a.Fixed / b.Fixed * x / y),
-            };
-        }
-
-        return (a.Dynamic, b.Dynamic) switch
-        {
-            (null, _) => null,
-            (Dimension x, null) => new FixedAndDynamicDimension(1, a.Fixed * x / b.Fixed),
-            (Dimension x, Dimension y) when x == y => null,
-            (Dimension x, Dimension y) => new FixedAndDynamicDimension(1, a.Fixed * x / (b.Fixed * y)),
-        };
-    }
-
-    public Dimension ToDimension()
-    {
-        return (Fixed, Dynamic) switch
-        {
-            (_, null) => Fixed,
-            (1, Dimension x) => x,
-            _ => Fixed * Dynamic.Value,
-        };
-    }
-
-    public Expr ToExpr()
-    {
-        return Dynamic is null ? Fixed : Fixed * Dynamic.Value.ToExpr();
-    }
-}
-
 /// <summary>
 /// Tensor shape.
 /// </summary>
@@ -143,9 +51,10 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
     /// Initializes a new instance of the <see cref="Shape"/> class.
     /// </summary>
     /// <param name="dimensions">Dimensions.</param>
-    public Shape(ReadOnlySpan<Expr> dimensions)
-        : this(dimensions.ToArray())
+    public Shape(ReadOnlySpan<Dimension> dimensions)
+        : base(dimensions.ToArray())
     {
+        RefreshKind();
     }
 
     /// <summary>
@@ -155,7 +64,7 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
     /// </summary>
     /// <param name="dimensions">Dimensions.</param>
     public Shape(ReadOnlySpan<int> dimensions)
-        : this(dimensions.AsValueEnumerable().Select(x => (Expr)(long)x).ToArray())
+        : this(dimensions.AsValueEnumerable().Select(x => (Dimension)(long)x).ToArray())
     {
     }
 
@@ -164,16 +73,7 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
     /// </summary>
     /// <param name="dimensions">Dimensions.</param>
     public Shape(ReadOnlySpan<long> dimensions)
-        : this(dimensions.AsValueEnumerable().Select(i => (Expr)i).ToArray())
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Shape"/> class.
-    /// </summary>
-    /// <param name="dimensions">Dimensions.</param>
-    public Shape(ReadOnlySpan<Dimension> dimensions)
-        : this(dimensions.AsValueEnumerable().Select(x => x.ToExpr()).ToArray())
+        : this(dimensions.AsValueEnumerable().Select(i => (Dimension)i).ToArray())
     {
     }
 
@@ -208,7 +108,7 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
     /// Initializes a new instance of the <see cref="Shape"/> class.
     /// </summary>
     /// <param name="dimensions">Dimensions.</param>
-    public Shape(IEnumerable<Expr> dimensions)
+    public Shape(IEnumerable<Dimension> dimensions)
         : this(dimensions.ToArray())
     {
     }
@@ -218,7 +118,7 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
     /// </summary>
     /// <param name="dimensions">Dimensions.</param>
     public Shape(IEnumerable<int> dimensions)
-        : this(dimensions.Select(x => (Expr)(long)x).ToArray())
+        : this(dimensions.Select(x => (Dimension)(long)x).ToArray())
     {
     }
 
@@ -227,40 +127,8 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
     /// </summary>
     /// <param name="dimensions">Dimensions.</param>
     public Shape(IEnumerable<long> dimensions)
-        : this(dimensions.Select(x => (Expr)x).ToArray())
+        : this(dimensions.Select(x => (Dimension)x).ToArray())
     {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Shape"/> class.
-    /// </summary>
-    /// <param name="dimensions">Dimensions.</param>
-    public Shape(IEnumerable<Dimension> dimensions)
-        : this(dimensions.Select(x => x.ToExpr()).ToArray())
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Shape"/> class.
-    /// </summary>
-    /// <param name="dimensions">Dimensions.</param>
-    public Shape(params Expr[] dimensions)
-        : base(dimensions.Select(CompilerServices.FastSimplifyForDimension).ToArray())
-    {
-        foreach (var dim in Dimensions)
-        {
-            var dtype = dim is Const c ? c.ValueType : dim.CheckedType;
-            if (dtype != TensorType.Scalar(DataTypes.Int64)
-                && dtype != NoneType.Default)
-            {
-                if (DumpScope.Current.IsEnabled(DumpFlags.Compile))
-                {
-                    DumpScope.Current.DumpIR(dim, "InvalidDimension");
-                }
-            }
-        }
-
-        RefreshKind();
     }
 
     private Shape(ShapeKind kind)
@@ -287,7 +155,7 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
     /// <summary>
     /// Gets dimensions.
     /// </summary>
-    public ReadOnlySpan<Expr> Dimensions => Operands;
+    public ReadOnlySpan<Dimension> Dimensions => SpanUtility.UnsafeCast<Expr, Dimension>(Operands);
 
     /// <summary>
     /// Gets kind.
@@ -353,6 +221,8 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
 
     public new Dimension this[Index index] => Dimensions[index];
 
+    public ReadOnlySpan<Dimension> this[System.Range range] => Dimensions[range];
+
     public static implicit operator ReadOnlySpan<long>(Shape shape) => shape.Select(x => x.FixedValue).ToArray();
 
     public static implicit operator Shape(int[] dimensions) => new Shape(dimensions);
@@ -379,34 +249,6 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
         return new Shape(Enumerable.Range(0, rank).Select(x => Dimension.Unknown));
     }
 
-    /// <summary>
-    /// Gets a shape with rank unknwon dimension.
-    /// </summary>
-    public static Shape FromExpr(Expr value)
-    {
-        if (value is TensorConst tc)
-        {
-            return new Shape(tc.Value.ToArray<long>());
-        }
-        else if (value is Call { Target: Concat } concat)
-        {
-            if (concat.Arguments[Concat.Input.Index] is Tuple tuple)
-            {
-                return new Shape(tuple.Fields.AsValueEnumerable().Select(x => x[0]).ToArray());
-            }
-        }
-
-        var shape = value.CheckedShape;
-        if (shape.Rank != 1 || !shape.IsFixed)
-        {
-            // throw new ArgumentException($"Invalid shape expr: {value}", nameof(value));
-            return Shape.Unranked;
-        }
-
-        var rank = (int)shape[0].FixedValue;
-        return new Shape(Enumerable.Range(0, rank).Select(x => value[x]));
-    }
-
     public IEnumerator<Dimension> GetEnumerator()
     {
         for (int i = 0; i < Count; i++)
@@ -422,26 +264,7 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
     /// </summary>
     public Dimension Prod()
     {
-        return Enumerable.Range(0, Rank).Aggregate((Dimension)1L, (size, i) => size * this[i]);
-    }
-
-    public FixedAndDynamicDimension ProdFixedAndDynamic()
-    {
-        var fixedValue = 1L;
-        Dimension? dynamicValue = null;
-        foreach (var dim in this)
-        {
-            if (dim.IsFixed)
-            {
-                fixedValue *= dim.FixedValue;
-            }
-            else
-            {
-                dynamicValue = dynamicValue is null ? dim : dynamicValue * dim;
-            }
-        }
-
-        return new(fixedValue, dynamicValue);
+        return new DimProduct(Dimensions.ToArray()).Simplify();
     }
 
     public long ProdWithDynamicAsMaxValue(int dynamicValue = short.MaxValue, long scale = 1)
@@ -462,7 +285,7 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
     public Shape InsertAndClone(int index, Dimension dim)
     {
         var l = Dimensions.AsValueEnumerable().ToList();
-        l.Insert(index, dim.ToExpr());
+        l.Insert(index, dim);
         return new Shape(l.ToArray());
     }
 
@@ -474,7 +297,7 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
         var l = Dimensions.AsValueEnumerable().ToList();
         foreach (var d in dims)
         {
-            l.Insert(index++, d.ToExpr());
+            l.Insert(index++, d);
         }
 
         return new Shape(l.ToArray());
@@ -496,22 +319,11 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
         return this.Select(x => x.FixedValue).ToArray();
     }
 
-    public Expr ToValueArrayExpr()
-    {
-        if (IsFixed)
-        {
-            return ToValueArray();
-        }
-
-        var tuple = new IR.Tuple(Dimensions);
-        return IR.F.Tensors.Stack(tuple, 0);
-    }
-
     /// <inheritdoc/>
     public override string ToString() => Kind switch
     {
-        ShapeKind.Invalid => "Invalid",
-        ShapeKind.Unranked => "Unranked",
+        ShapeKind.Invalid => "[invalid]",
+        ShapeKind.Unranked => "[*]",
         _ => $"[{StringUtility.Join(',', Dimensions)}]",
     };
 
@@ -558,7 +370,7 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
         functor.VisitShape(this, context);
 
-    public Shape With(Expr[]? dimensions = null) => new Shape(dimensions ?? Dimensions);
+    public Shape With(Dimension[]? dimensions = null) => new Shape(dimensions ?? Dimensions);
 
     protected override int GetHashCodeCore()
     {

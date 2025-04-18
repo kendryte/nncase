@@ -110,7 +110,7 @@ public class UnitTestFusionGroup : TestClassBase
 #endif
 
         var input_tensor = Testing.Rand<float>(1, 3, 224, 224);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
           { input, Value.FromTensor(input_tensor) },
         };
@@ -174,7 +174,7 @@ public class UnitTestFusionGroup : TestClassBase
         }
 
         var input_tensor = Testing.Rand<float>(1, 3, 224, 224);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
           { input, Value.FromTensor(input_tensor) },
         };

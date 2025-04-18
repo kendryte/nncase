@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using Nncase.TIR;
 using Nncase.Utilities;
 using static Nncase.IR.TypePatternUtility;
@@ -176,7 +177,7 @@ public static class TypeInference
                 }
                 else
                 {
-                    outputShape[dimIndex] = IR.F.Math.Max(non1Dims.Select(x => x.Value));
+                    outputShape[dimIndex] = Dimension.Max(non1Dims.ToArray());
                 }
             }
         }
@@ -187,7 +188,7 @@ public static class TypeInference
     /// <summary>
     /// Conv2D Type Infer.
     /// </summary>
-    public static IRType Conv2DType(TensorType input, TensorType weights, Expr stride, Expr padding, Expr dilation, Expr groups)
+    public static IRType Conv2DType(TensorType input, TensorType weights, Shape strides, Paddings paddings, Shape dilations, Dimension groups)
     {
         if (input.Shape.IsUnranked)
         {
@@ -196,11 +197,11 @@ public static class TypeInference
 
         var outShape = input.Shape.ToList();
         outShape[1] = weights.Shape[0];
-        if (groups is TensorConst groups_con &&
+        if (groups.IsFixed &&
             input.Shape.IsFixed &&
             weights.Shape.IsFixed)
         {
-            var groups_v = groups_con.Value.ToScalar<int>();
+            var groups_v = groups.FixedValue;
             if (!(input.Shape[1].FixedValue >= groups_v && (input.Shape[1].FixedValue % groups_v) == 0))
             {
                 return new InvalidType($"The Input Channel / Groups Error ({input.Shape[1].FixedValue}/{groups_v})");
@@ -212,18 +213,15 @@ public static class TypeInference
             }
         }
 
-        outShape[2] = GetWindowedOutputSize(
-            input.Shape[2] + padding[0, 0] + padding[0, 1],
-            weights.Shape[2],
-            stride[0],
-            dilation[0],
-            false);
-        outShape[3] = GetWindowedOutputSize(
-            input.Shape[3] + padding[1, 0] + padding[1, 1],
-            weights.Shape[3],
-            stride[1],
-            dilation[1],
-            false);
+        for (int i = 0; i < 2; i++)
+        {
+            outShape[i + 2] = GetWindowedOutputSize(
+                input.Shape[i + 2] + paddings[i].Before + paddings[i].After,
+                weights.Shape[i + 2],
+                strides[i],
+                dilations[i],
+                false);
+        }
 
         return input with { Shape = new Shape(outShape) };
     }
@@ -260,7 +258,7 @@ public static class TypeInference
         return (size + padding.Before + padding.After - effective_filter_size + stride) / stride;
     }
 
-    public static Expr GetPaddings(Shape inputShape, Shape weightsShape, Expr strides, Expr dilations, bool same, bool lower = false)
+    public static Expr GetPaddings(Shape inputShape, Shape weightsShape, Shape strides, Shape dilations, bool same, bool lower = false)
     {
         var padH = GetWindowedPadding(inputShape[2], weightsShape[2], strides[0], dilations[0], same, lower);
         var padW = GetWindowedPadding(inputShape[3], weightsShape[3], strides[1], dilations[1], same, lower);
@@ -290,7 +288,7 @@ public static class TypeInference
     /// <summary>
     /// Pad Type Infer.
     /// </summary>
-    public static IRType PadType(TensorType input, TensorType padsType, Expr pads, Expr pad)
+    public static IRType PadType(TensorType input, TensorType padsType, Paddings pads, Expr padValue)
     {
         if (input.Shape.IsUnranked)
         {
@@ -302,7 +300,7 @@ public static class TypeInference
             return new InvalidType($"The padding shape {padsType.Shape} is not support!");
         }
 
-        if (pad.CheckedType is TensorType padValueType)
+        if (padValue.CheckedType is TensorType padValueType)
         {
             if (padValueType.DType != input.DType)
             {
@@ -315,7 +313,7 @@ public static class TypeInference
         var channel = (int)padsType.Shape[0].FixedValue;
         for (int i = 0; i < channel; i++)
         {
-            newShape[newShape.Count - channel + i] += pads[i, 0] + pads[i, 1];
+            newShape[newShape.Count - channel + i] += pads[i].Before + pads[i].After;
         }
 
         return new TensorType(input.DType, new Shape(newShape));
@@ -324,11 +322,11 @@ public static class TypeInference
     /// <summary>
     /// ReduceWindow2D Type Infer.
     /// </summary>
-    public static IRType ReduceWindow2DType(TensorType input, Expr filter, Expr stride, Expr padding, Expr ceilMode)
+    public static IRType ReduceWindow2DType(TensorType input, Shape filters, Shape strides, Paddings paddings, Expr ceilMode)
     {
-        if (padding.CheckedShape.Rank != 2)
+        if (paddings.CheckedShape.Rank != 2)
         {
-            return new InvalidType($"The padding shape {padding.CheckedShape} is not support!");
+            return new InvalidType($"The padding shape {paddings.CheckedShape} is not support!");
         }
 
         var outShape = input.Shape.ToArray();
@@ -336,10 +334,10 @@ public static class TypeInference
         {
             var ceilModeV = ceilModeValue.Value.ToScalar<bool>();
 
-            var padh = padding[0, 0] + padding[0, 1];
-            var padw = padding[1, 0] + padding[1, 1];
-            outShape[2] = GetWindowedOutputSize(input.Shape[2] + padh, filter[0], filter[0], 1L, false, ceilModeV);
-            outShape[3] = GetWindowedOutputSize(input.Shape[3] + padw, filter[1], filter[1], 1L, false, ceilModeV);
+            var padh = paddings[0].Before + paddings[0].After;
+            var padw = paddings[1].Before + paddings[1].After;
+            outShape[2] = GetWindowedOutputSize(input.Shape[2] + padh, filters[0], filters[0], 1L, false, ceilModeV);
+            outShape[3] = GetWindowedOutputSize(input.Shape[3] + padw, filters[1], filters[1], 1L, false, ceilModeV);
 
             return input with { Shape = new Shape(outShape) };
         }
@@ -470,7 +468,7 @@ public static class TypeInference
     /// <summary>
     /// Resize Type Infer.
     /// </summary>
-    public static IRType ResizeType(TensorType input, Expr newSize, TensorType? inputbbox)
+    public static IRType ResizeType(TensorType input, Shape newSize, TensorType? inputbbox)
     {
         var outShape = input.Shape.ToArray();
         switch (outShape.Length)
@@ -600,21 +598,14 @@ public static class TypeInference
         return new Shape(newDims);
     }
 
-    public static Shape ReshapeShape(Shape inShape, Expr newShape, TensorType? shapeType = null)
+    public static Shape ReshapeShape(Shape inShape, Shape newShape)
     {
-        shapeType ??= newShape.CheckedType switch
-        {
-            TensorType t => t,
-            DistributedType dt when dt.AxisPolices.All(x => x is SBPBroadCast) => dt.TensorType,
-            _ => throw new TypeInferenceInterruptException(new InvalidType("Invalid shape type")),
-        };
-
-        if (inShape.IsUnranked || shapeType.Shape.IsUnranked || !shapeType.Shape[0].IsFixed)
+        if (inShape.IsUnranked || newShape.IsUnranked)
         {
             return Shape.Unranked;
         }
 
-        var rank = (int)shapeType.Shape[0].FixedValue;
+        var rank = newShape.Rank;
         var shapeDims = new Shape((from i in Enumerable.Range(0, rank)
                                    let dim = newShape[i]
                                    select i < inShape.Rank ? Dimension.Select(dim, 0, inShape[i], dim) : dim).ToArray());
@@ -626,32 +617,17 @@ public static class TypeInference
             throw new TypeInferenceInterruptException(new InvalidType($"More than one -1 in the shape is not supported"));
         }
 
-        var minus1DimValue = FixedAndDynamicDimension.TryDivExactly(inShape.ProdFixedAndDynamic(), shapeDims.ProdFixedAndDynamic());
-        if (!minus1DimValue.HasValue || (minus1DimValue.Value.Dynamic is null && minus1DimValue.Value.Fixed > 1))
+        if (!Dimension.TryDivExactly(inShape.Prod(), shapeDims.Prod(), out var minus1DimValue)
+            || (minus1DimValue is DimConst dc && dc.Value > 1))
         {
             throw new TypeInferenceInterruptException(new InvalidType($"Cannot reshape {inShape} to {shapeDims}"));
         }
 
-        var minus1Dim = FixedAndDynamicDimension.Abs(minus1DimValue.Value);
+        var minus1Dim = Dimension.Abs(minus1DimValue);
         for (var i = 0; i < rank; i++)
         {
             var shapeDim = shapeDims[i];
-            if (shapeDim.IsFixed)
-            {
-                outputShape[i] = shapeDim.FixedValue == -1 ? minus1Dim.ToDimension() : shapeDim;
-            }
-            else
-            {
-                switch (shapeDim)
-                {
-                    case Dimension { Value: Var }:
-                        outputShape[i] = shapeDim;
-                        break;
-                    default:
-                        outputShape[i] = Dimension.Select(shapeDim, -1L, minus1Dim.ToDimension(), shapeDim);
-                        break;
-                }
-            }
+            outputShape[i] = Dimension.Select(shapeDim, -1L, minus1Dim, shapeDim);
         }
 
         return outputShape;

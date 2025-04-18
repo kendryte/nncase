@@ -65,7 +65,7 @@ public sealed class BufferRegion : Expr
                   tp.Second.Stop switch
                   {
                       // if stop is neg, add the shape
-                      Call { Target: IR.Math.Unary { UnaryOp: UnaryOp.Neg } } => throw new NotSupportedException("Neg Region!"),
+                      Dimension d when d.Metadata.Range?.Min < 0 => throw new NotSupportedException("Neg Region!"),
 
                       // else return the origin range.
                       _ => tp.Second,

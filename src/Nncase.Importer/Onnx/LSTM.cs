@@ -47,11 +47,11 @@ namespace Nncase.Importer
 
             var hiddenSize = GetOptionIntAttribute(op, "hidden_size")
                     .Match(
-                        x => (Expr)x,
-                        () => Cast(Util.ShapeIndex(w, 1) / 4, DataTypes.Int64));
+                        x => (Dimension)x,
+                        () => Util.ShapeIndex(w, 1) / 4);
             var inputForget = GetOptionIntAttribute(op, "input_forget").Or(0);
-            var seqLens = Cast(Util.ShapeIndex(x, seqIndex), DataTypes.Int64);
-            var batchSize = Cast(Util.ShapeIndex(x, batchIndex), DataTypes.Int64);
+            var seqLens = Util.ShapeIndex(x, seqIndex);
+            var batchSize = Util.ShapeIndex(x, batchIndex);
             var r = GetInputExpr(op, 2);
 
             // cast to x type
@@ -88,11 +88,9 @@ namespace Nncase.Importer
                 outputCount);
         }
 
-        private Expr ExpandToType(Expr input, DataType t, params Expr[] dims)
+        private Expr ExpandToType(Expr input, DataType t, params Dimension[] dims)
         {
-            return Cast(
-                Expand(input, Stack(new Tuple(dims.Select(x => Cast(x, DataTypes.Int64)).ToArray()), 0)),
-                t);
+            return Cast(Expand(input, new Shape(dims)), t);
         }
     }
 }

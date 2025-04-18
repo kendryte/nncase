@@ -22,7 +22,7 @@ namespace Nncase.Importer
                 throw new NotSupportedException("Not support reshape attribute: allowzero");
             }
 
-            return F.Tensors.Reshape(input, shape);
+            return F.Tensors.Reshape(input, shape.AsShape());
         }
     }
 }

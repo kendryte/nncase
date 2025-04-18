@@ -133,11 +133,11 @@ public sealed class UnitTestTensorUtilities
     [Fact]
     public void TestGetProductOverload2()
     {
-        var dims1 = Array.Empty<Expr>();
+        var dims1 = Array.Empty<Dimension>();
         var actual1 = TensorUtilities.GetProduct(dims1);
         Assert.Equal(1, actual1.Evaluate().AsTensor().ToScalar<long>());
 
-        var dims2 = new Expr[] { 1, 2, 3, 4 };
+        var dims2 = new Dimension[] { 1, 2, 3, 4 };
         var expect2 = dims2.Select(x => x.Evaluate().AsTensor().ToScalar<int>()).ToArray<int>().Aggregate(1L, (x, y) => x * y);
         var actual2 = TensorUtilities.GetProduct(dims2);
         Assert.True(CompilerServices.InferenceType(actual2));
@@ -194,7 +194,7 @@ public sealed class UnitTestTensorUtilities
     [Fact]
     public void TestGetStridesOverload2()
     {
-        var a = new Expr[] { 1, 2, 3, 4 };
+        var a = new Dimension[] { 1, 2, 3, 4 };
 
         // reverseStride == false
         var expect1 = new int[] { 24, 12, 4, 1 };
@@ -206,7 +206,7 @@ public sealed class UnitTestTensorUtilities
         var actual2 = TensorUtilities.GetStrides(a, true).Select(x => x.Evaluate().AsTensor().ToScalar<int>()).ToArray<int>();
         Assert.Equal(expect2, actual2);
 
-        var b = Array.Empty<Expr>();
+        var b = Array.Empty<Dimension>();
         var expect3 = Array.Empty<int>();
         var actual3 = TensorUtilities.GetStrides(b, true).Select(x => x.Evaluate().AsTensor().ToScalar<int>()).ToArray<int>();
         Assert.Equal(expect3, actual3);

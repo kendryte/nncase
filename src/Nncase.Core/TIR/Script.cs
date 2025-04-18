@@ -92,9 +92,9 @@ public static class T
     /// <param name="mode">loop mode.</param>
     /// <param name="var_name">loop var name.</param>
     /// <returns> for builder. </returns>
-    public static ISequentialBuilder<For> ForLoop(out Var loopVar, Range domain, LoopMode mode, [CallerArgumentExpression("loopVar")] string var_name = "v")
+    public static ISequentialBuilder<For> ForLoop(out DimVar loopVar, Range domain, LoopMode mode, [CallerArgumentExpression("loopVar")] string var_name = "v")
     {
-        var newLoopVar = loopVar = new Var(var_name.StartsWith("var ") ? var_name[4..] : var_name, DataTypes.Int64);
+        var newLoopVar = loopVar = new DimVar(var_name.StartsWith("var ") ? var_name[4..] : var_name);
         return new SequentialBuilder<For>(body => new For(newLoopVar, domain, mode, body));
     }
 
@@ -105,7 +105,7 @@ public static class T
     /// <param name="domain">ranges.</param>
     /// <param name="var_name">loop var name.</param>
     /// <returns> the for loop. </returns>
-    public static ISequentialBuilder<For> Serial(out Var loopVar, Range domain, [CallerArgumentExpression("loopVar")] string var_name = "v") => ForLoop(out loopVar, domain, LoopMode.Serial, var_name);
+    public static ISequentialBuilder<For> Serial(out DimVar loopVar, Range domain, [CallerArgumentExpression("loopVar")] string var_name = "v") => ForLoop(out loopVar, domain, LoopMode.Serial, var_name);
 
     /// <summary>
     /// make unroll for loop.
@@ -113,7 +113,7 @@ public static class T
     /// <param name="loopVar">out index var.</param>
     /// <param name="domain">ranges.</param>
     /// <param name="var_name">loop var name.</param>
-    public static ISequentialBuilder<For> Unrolled(out Var loopVar, Range domain, [CallerArgumentExpression("loopVar")] string var_name = "v") => ForLoop(out loopVar, domain, LoopMode.Unrolled, var_name);
+    public static ISequentialBuilder<For> Unrolled(out DimVar loopVar, Range domain, [CallerArgumentExpression("loopVar")] string var_name = "v") => ForLoop(out loopVar, domain, LoopMode.Unrolled, var_name);
 
     /// <summary>
     ///   for i, j in T.grid(16, 16):
@@ -126,7 +126,7 @@ public static class T
     /// <param name="ends">end exprs.</param>
     /// <returns>the inner for loop.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1316:Tuple element names should use correct casing", Justification = "Naming i, j is conventional.")]
-    public static ISequentialBuilder<For> Grid(out Var i, out Var j, (Expr i, Expr j) ends)
+    public static ISequentialBuilder<For> Grid(out DimVar i, out DimVar j, (Dimension i, Dimension j) ends)
     {
         var builder_i = T.Serial(out i, (0, ends.i));
         var builder_j = T.Serial(out j, (0, ends.j));
@@ -136,18 +136,18 @@ public static class T
     /// <summary>
     /// make the the grid by ranges.
     /// </summary>
-    public static ISequentialBuilder<For> Grid(out Var[] loopVars, LoopMode loopMode, params TIR.Range[] ranges)
+    public static ISequentialBuilder<For> Grid(out DimVar[] loopVars, LoopMode loopMode, params TIR.Range[] ranges)
     {
         string[] names = { "i", "j", "k", "l" };
-        var newLoopVars = loopVars = new Var[ranges.Length];
+        var newLoopVars = loopVars = new DimVar[ranges.Length];
         var newLoops = ranges.Select((rg, i) => T.ForLoop(out newLoopVars[i], rg, loopMode, names[i % 4] + (i / 4 == 0 ? string.Empty : (i / 4).ToString())).Body()).ToArray();
         return new NestBodyExprBuilder<For>(newLoops);
     }
 
-    public static ISequentialBuilder<For> Grid(out Var[] loopVars, out ISequentialBuilder<For>[] loops, LoopMode loopMode, params TIR.Range[] ranges)
+    public static ISequentialBuilder<For> Grid(out DimVar[] loopVars, out ISequentialBuilder<For>[] loops, LoopMode loopMode, params TIR.Range[] ranges)
     {
         string[] names = { "i", "j", "k", "l" };
-        var newLoopVars = loopVars = new Var[ranges.Length];
+        var newLoopVars = loopVars = new DimVar[ranges.Length];
         var newLoops = loops = ranges.Select((rg, i) => T.ForLoop(out newLoopVars[i], rg, loopMode, names[i % 4] + (i / 4 == 0 ? string.Empty : (i / 4).ToString())).Body()).ToArray();
         return new NestBodyExprBuilder<For>(loops);
     }
@@ -155,9 +155,9 @@ public static class T
     /// <summary>
     /// a named variable represents a tensor index size.
     /// </summary>
-    public static Var SizeVar(string name)
+    public static DimVar SizeVar(string name)
     {
-        return Var.SizeVar(name);
+        return new DimVar(name);
     }
 
     /// <summary>
@@ -255,7 +255,7 @@ public static class T
     /// <summary>
     /// create the buffer by expressions.
     /// </summary>
-    public static Buffer CreateBuffer(DataType dataType, Expr[] dimensions, MemoryLocation location, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    public static Buffer CreateBuffer(DataType dataType, Dimension[] dimensions, MemoryLocation location, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
     {
         if (name.StartsWith("var "))
         {
@@ -269,7 +269,7 @@ public static class T
         return buffer;
     }
 
-    public static Buffer CreateBuffer(DataType dataType, Expr[] dimensions, Expr[] strides, MemSpan memSpan, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    public static Buffer CreateBuffer(DataType dataType, Dimension[] dimensions, Dimension[] strides, MemSpan memSpan, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
     {
         if (name.StartsWith("var "))
         {
@@ -306,46 +306,10 @@ public static class T
             name = name[4..];
         }
 
-        var dimensions = @const.CheckedShape.ToValueArray();
+        var dimensions = @const.CheckedShape.ToArray();
         (var maxSize, var strides) = TensorUtilities.GetTensorMaxSizeAndStrides(@const.CheckedTensorType, @const.ValueType as DistributedType);
         var memspan = new MemSpan(IR.F.Buffer.DDrOf(@const), maxSize, @const.ValueType is DistributedType ? MemoryLocation.ThreadLocalRdata : MemoryLocation.Rdata);
-        buffer = new Buffer(name, @const.CheckedDataType, memspan, dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray(), @const.ValueType as DistributedType);
-        return buffer;
-    }
-
-    /// <summary>
-    /// attach the buffer.
-    /// </summary>
-    public static Buffer AttachBuffer(Buffer originBuffer, Expr offset, TensorType tensorType, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
-    {
-        if (name.StartsWith("var "))
-        {
-            name = name[4..];
-        }
-
-        var dimensions = tensorType.Shape.ToValueArray();
-        var strides = TensorUtilities.GetStrides(dimensions);
-        var size = (int)TensorUtilities.GetProduct(dimensions.ToArray()) * tensorType.DType.SizeInBytes;
-        buffer = new Buffer(name, tensorType.DType, originBuffer.MemSpan.SubSpan(offset, size), dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray(), null);
-        return buffer;
-    }
-
-    /// <summary>
-    /// attach the buffer.
-    /// </summary>
-    public static Buffer AttachBuffer(TensorType tensorType, MemoryLocation location, int hierarchy, out Var @var, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "", DistributedType? distributedType = null)
-    {
-        if (name.StartsWith("var "))
-        {
-            name = name[4..];
-        }
-
-        @var = new Var(TensorType.Pointer(tensorType.DType));
-        var dimensions = tensorType.Shape.Dimensions.ToArray();
-        (var size, var strides) = location is MemoryLocation.Input or MemoryLocation.Output
-            ? TensorUtilities.GetTensorSizeAndContiguousStrides(tensorType, distributedType)
-            : TensorUtilities.GetTensorMaxSizeAndStridesExpr(tensorType, distributedType);
-        buffer = new Buffer(name, tensorType.DType, new MemSpan(@var, size, location, hierarchy), dimensions, strides.Select(i => (Expr)i).ToArray(), null);
+        buffer = new Buffer(name, @const.CheckedDataType, memspan, dimensions, strides.Select(i => (Dimension)i).ToArray(), @const.ValueType as DistributedType);
         return buffer;
     }
 
@@ -376,11 +340,11 @@ public static class T
     }
 #endif
 
-    public static ISequentialBuilder<For> ForSegment(out (Expr B, Expr E) seg, Expr low, Expr chunck, Expr high)
+    public static ISequentialBuilder<For> ForSegment(out (Expr B, Expr E) seg, Dimension low, Dimension chunck, Dimension high)
     {
-        var count = IR.F.Math.CeilDiv(high - low, chunck);
+        var count = Dimension.CeilDiv(high - low, chunck);
         var forloop = T.Serial(out var i, (0, count));
-        seg = (i * chunck, IR.F.Math.Min((i + 1L) * chunck, high));
+        seg = (i * chunck, Dimension.Min((i + 1L) * chunck, high));
         return forloop;
     }
 

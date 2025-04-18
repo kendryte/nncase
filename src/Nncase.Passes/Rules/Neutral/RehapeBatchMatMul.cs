@@ -45,8 +45,8 @@ public sealed partial class ReshapeBatchMatmul : IRewriteRule
 
         return Reshape(
             MatMul(
-                Reshape(a, newAShape.ToValueArrayExpr()),
-                Reshape(b, newBShape.ToValueArrayExpr())).InheritMetaData(call),
-            call.CheckedShape.ToValueArrayExpr()).InheritMetaData(call);
+                Reshape(a, newAShape),
+                Reshape(b, newBShape)).InheritMetaData(call),
+            call.CheckedShape).InheritMetaData(call);
     }
 }

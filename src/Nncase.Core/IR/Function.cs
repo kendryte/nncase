@@ -27,20 +27,20 @@ public sealed class Function : BaseFunction
     /// Initializes a new instance of the <see cref="Function"/> class.
     /// build function.
     /// </summary>
-    public Function(string name, Expr body, ReadOnlySpan<Var> parameters)
-        : this(name, body, parameters, new Dictionary<Var, Expr[]>())
+    public Function(string name, Expr body, ReadOnlySpan<IVar> parameters)
+        : this(name, body, parameters, new Dictionary<Var, Dimension[]>())
     {
     }
 
-    public Function(string name, string moduleKind, Expr body, ReadOnlySpan<Var> parameters, Dictionary<Var, Expr[]>? varMap = null)
-        : base(name, moduleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<Var, Expr>(parameters)))
+    public Function(string name, string moduleKind, Expr body, ReadOnlySpan<IVar> parameters, Dictionary<Var, Dimension[]>? varMap = null)
+        : base(name, moduleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<IVar, Expr>(parameters)))
     {
         VarMap = varMap ?? new();
         var dynamicDims = VarMap.Values.SelectMany(x => x).ToArray();
         _pinner = new ExprPinner(dynamicDims);
     }
 
-    public Function(string name, Expr body, ReadOnlySpan<Var> parameters, Dictionary<Var, Expr[]>? varMap)
+    public Function(string name, Expr body, ReadOnlySpan<IVar> parameters, Dictionary<Var, Dimension[]>? varMap)
         : this(name, StackVMModuleKind, body, parameters, varMap)
     {
     }
@@ -49,8 +49,8 @@ public sealed class Function : BaseFunction
     /// Initializes a new instance of the <see cref="Function"/> class.
     /// build function.
     /// </summary>
-    public Function(Expr body, ReadOnlySpan<Var> parameters)
-        : this($"func_{_globalFuncIndex++}", body, parameters, new Dictionary<Var, Expr[]>())
+    public Function(Expr body, ReadOnlySpan<IVar> parameters)
+        : this($"func_{_globalFuncIndex++}", body, parameters, new Dictionary<Var, Dimension[]>())
     {
     }
 
@@ -58,7 +58,7 @@ public sealed class Function : BaseFunction
     /// Initializes a new instance of the <see cref="Function"/> class.
     /// build function.
     /// </summary>
-    public Function(string name, Expr body, params Var[] parameters)
+    public Function(string name, Expr body, params IVar[] parameters)
         : this(name, body, parameters.AsSpan())
     {
     }
@@ -67,26 +67,26 @@ public sealed class Function : BaseFunction
     /// Initializes a new instance of the <see cref="Function"/> class.
     /// build function.
     /// </summary>
-    public Function(Expr body, params Var[] parameters)
+    public Function(Expr body, params IVar[] parameters)
         : this(body, parameters.AsSpan())
     {
     }
 
     public Expr Body => Operands[0];
 
-    public ReadOnlySpan<Var> Parameters => SpanUtility.UnsafeCast<Expr, Var>(Operands[1..]);
+    public ReadOnlySpan<IVar> Parameters => SpanUtility.UnsafeCast<Expr, IVar>(Operands[1..]);
 
-    public Dictionary<Var, Expr[]>? VarMap { get; }
+    public Dictionary<Var, Dimension[]>? VarMap { get; }
 
     /// <summary>
     /// Gets get all parameter checked types.
     /// </summary>
-    public override IEnumerable<IRType?> ParameterTypes => Parameters.AsValueEnumerable().Select(x => x.CheckedType).ToArray();
+    public override IEnumerable<IRType?> ParameterTypes => Parameters.AsValueEnumerable().Select(x => ((Expr)x).CheckedType).ToArray();
 
     /// <inheritdoc/>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitFunction(this, context);
 
-    public Function With(string? name = null, string? moduleKind = null, Expr? body = null, Var[]? parameters = null)
+    public Function With(string? name = null, string? moduleKind = null, Expr? body = null, IVar[]? parameters = null)
         => new Function(name ?? Name, moduleKind ?? ModuleKind, body ?? Body, parameters ?? Parameters, VarMap);
 }

@@ -228,6 +228,96 @@ public partial class ExprFunctor<TExprResult, TTypeResult, TContext>
     /// </summary>
     internal protected virtual TExprResult VisitBufferOf(Buffers.BufferOf expr, TContext context) => DefaultVisit(expr, context);
 
+    /// <summary>
+    /// Visit <see cref="Dimension"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimension(Dimension expr, TContext context) => DefaultVisit(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="AsDim"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitAsDim(AsDim expr, TContext context) => VisitDimension(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="UnknownDim"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitUnknownDim(UnknownDim expr, TContext context) => VisitDimension(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="DimVar"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimVar(DimVar expr, TContext context) => VisitDimension(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="DimConst"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimConst(DimConst expr, TContext context) => VisitDimension(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="DimPower"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimPower(DimPower expr, TContext context) => VisitDimension(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="DimFraction"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimFraction(DimFraction expr, TContext context) => VisitDimension(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="DimRemainder"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimRemainder(DimRemainder expr, TContext context) => VisitDimension(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="DimProduct"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimProduct(DimProduct expr, TContext context) => VisitDimension(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="DimSum"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimSum(DimSum expr, TContext context) => VisitDimension(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="DimAbs"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimAbs(DimAbs expr, TContext context) => VisitDimension(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="DimClamp"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimClamp(DimClamp expr, TContext context) => VisitDimension(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="DimCompareAndSelect"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimCompareAndSelect(DimCompareAndSelect expr, TContext context) => VisitDimension(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="DimMin"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimMin(DimMin expr, TContext context) => VisitDimension(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="DimMax"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimMax(DimMax expr, TContext context) => VisitDimension(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="DimPositive"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimPositive(DimPositive expr, TContext context) => VisitDimension(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="Shapes.Padding"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitPadding(Shapes.Padding expr, TContext context) => DefaultVisit(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="Shapes.Paddings"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitPaddings(Shapes.Paddings expr, TContext context) => DefaultVisit(expr, context);
+
 }
 
 public partial class ExprFunctor<TExprResult, TTypeResult>
@@ -533,4 +623,130 @@ public partial class ExprFunctor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitBufferOf(Buffers.BufferOf expr, Unit context) => VisitBufferOf(expr);
+    /// <summary>
+    /// Visit <see cref="Dimension"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimension(Dimension expr) => base.VisitDimension(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimension(Dimension expr, Unit context) => VisitDimension(expr);
+    /// <summary>
+    /// Visit <see cref="AsDim"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitAsDim(AsDim expr) => base.VisitAsDim(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitAsDim(AsDim expr, Unit context) => VisitAsDim(expr);
+    /// <summary>
+    /// Visit <see cref="UnknownDim"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitUnknownDim(UnknownDim expr) => base.VisitUnknownDim(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitUnknownDim(UnknownDim expr, Unit context) => VisitUnknownDim(expr);
+    /// <summary>
+    /// Visit <see cref="DimVar"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimVar(DimVar expr) => base.VisitDimVar(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimVar(DimVar expr, Unit context) => VisitDimVar(expr);
+    /// <summary>
+    /// Visit <see cref="DimConst"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimConst(DimConst expr) => base.VisitDimConst(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimConst(DimConst expr, Unit context) => VisitDimConst(expr);
+    /// <summary>
+    /// Visit <see cref="DimPower"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimPower(DimPower expr) => base.VisitDimPower(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimPower(DimPower expr, Unit context) => VisitDimPower(expr);
+    /// <summary>
+    /// Visit <see cref="DimFraction"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimFraction(DimFraction expr) => base.VisitDimFraction(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimFraction(DimFraction expr, Unit context) => VisitDimFraction(expr);
+    /// <summary>
+    /// Visit <see cref="DimRemainder"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimRemainder(DimRemainder expr) => base.VisitDimRemainder(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimRemainder(DimRemainder expr, Unit context) => VisitDimRemainder(expr);
+    /// <summary>
+    /// Visit <see cref="DimProduct"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimProduct(DimProduct expr) => base.VisitDimProduct(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimProduct(DimProduct expr, Unit context) => VisitDimProduct(expr);
+    /// <summary>
+    /// Visit <see cref="DimSum"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimSum(DimSum expr) => base.VisitDimSum(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimSum(DimSum expr, Unit context) => VisitDimSum(expr);
+    /// <summary>
+    /// Visit <see cref="DimAbs"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimAbs(DimAbs expr) => base.VisitDimAbs(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimAbs(DimAbs expr, Unit context) => VisitDimAbs(expr);
+    /// <summary>
+    /// Visit <see cref="DimClamp"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimClamp(DimClamp expr) => base.VisitDimClamp(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimClamp(DimClamp expr, Unit context) => VisitDimClamp(expr);
+    /// <summary>
+    /// Visit <see cref="DimCompareAndSelect"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimCompareAndSelect(DimCompareAndSelect expr) => base.VisitDimCompareAndSelect(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimCompareAndSelect(DimCompareAndSelect expr, Unit context) => VisitDimCompareAndSelect(expr);
+    /// <summary>
+    /// Visit <see cref="DimMin"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimMin(DimMin expr) => base.VisitDimMin(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimMin(DimMin expr, Unit context) => VisitDimMin(expr);
+    /// <summary>
+    /// Visit <see cref="DimMax"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimMax(DimMax expr) => base.VisitDimMax(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimMax(DimMax expr, Unit context) => VisitDimMax(expr);
+    /// <summary>
+    /// Visit <see cref="DimPositive"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimPositive(DimPositive expr) => base.VisitDimPositive(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimPositive(DimPositive expr, Unit context) => VisitDimPositive(expr);
+    /// <summary>
+    /// Visit <see cref="Shapes.Padding"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitPadding(Shapes.Padding expr) => base.VisitPadding(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitPadding(Shapes.Padding expr, Unit context) => VisitPadding(expr);
+    /// <summary>
+    /// Visit <see cref="Shapes.Paddings"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitPaddings(Shapes.Paddings expr) => base.VisitPaddings(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitPaddings(Shapes.Paddings expr, Unit context) => VisitPaddings(expr);
 }

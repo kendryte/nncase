@@ -26,23 +26,23 @@ public sealed partial class ExpandToBroadcast : IRewriteRule
         "expand",
         "call",
         IsWildcard("input") with { TypePattern = TypePatternUtility.HasFixedShape() },
-        IsTensorConst("shape"));
+        IsFixedShape("shape"));
 
-    private Expr? GetReplace(Expr input, TensorConst shape)
+    private Expr? GetReplace(Expr input, Shape shape)
     {
         var inputRank = input.CheckedShape.Rank;
-        var shapeSize = (int)shape.Value.Length;
-        var outputShape = Enumerable.Repeat((Expr)1L, System.Math.Max(inputRank, shapeSize)).ToArray();
+        var shapeSize = shape.Rank;
+        var outputShape = Enumerable.Repeat((Dimension)1L, System.Math.Max(inputRank, shapeSize)).ToArray();
         for (var i = 0; i < shapeSize; i++)
         {
-            outputShape[i + outputShape.Length - shapeSize] = shape.Value.Cast<long>()[i];
+            outputShape[i + outputShape.Length - shapeSize] = shape[i];
         }
 
         for (int i = 0; i < inputRank; i++)
         {
-            outputShape[i + outputShape.Length - inputRank] = Math.Max(input.CheckedShape[i].Value!, outputShape[i + outputShape.Length - inputRank]);
+            outputShape[i + outputShape.Length - inputRank] = Dimension.Max(input.CheckedShape[i], outputShape[i + outputShape.Length - inputRank]);
         }
 
-        return IR.F.Tensors.Broadcast(input, IR.F.Tensors.Stack(new IR.Tuple(outputShape), 0));
+        return IR.F.Tensors.Broadcast(input, new Shape(outputShape));
     }
 }

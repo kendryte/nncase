@@ -70,8 +70,8 @@ public abstract class AffineSelectionPass : FunctionPass
         {
             var outBuffer = expr.CheckedType switch
             {
-                TensorType t => IR.F.Buffer.Uninitialized(t.DType, TIR.MemoryLocation.Data, t.Shape.ToValueArrayExpr()),
-                DistributedType dt => IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape.ToValueArrayExpr(), dt.AxisPolices, dt.Placement),
+                TensorType t => IR.F.Buffer.Uninitialized(t.DType, TIR.MemoryLocation.Data, t.Shape),
+                DistributedType dt => IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape, dt.AxisPolices, dt.Placement),
                 _ => throw new ArgumentOutOfRangeException(nameof(expr), $"Unsupported type {expr.CheckedType}"),
             };
             return _selectionPass.SelectCall(expr, outBuffer);

@@ -88,12 +88,12 @@ public sealed class AffineRelation : Expr
         return new AffineRelation(domains, default, results);
     }
 
-    public Expr Apply(ReadOnlySpan<Expr> dims, IReadOnlyDictionary<AffineSymbol, Expr>? symbols = null)
+    public Expr Apply(ReadOnlySpan<Dimension> dims, IReadOnlyDictionary<AffineSymbol, Dimension>? symbols = null)
     {
-        var newResults = new Expr[Results.Length];
+        var newResults = new Dimension[Results.Length];
         for (int i = 0; i < newResults.Length; i++)
         {
-            newResults[i] = Results[i].Apply(dims, Array.Empty<Expr>(), symbols);
+            newResults[i] = Results[i].Apply(dims, Array.Empty<Dimension>(), symbols);
         }
 
         return newResults;

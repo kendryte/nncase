@@ -39,8 +39,8 @@ namespace Nncase.Importer
             {
                 var lhsShape = F.Tensors.ShapeOf(lhs);
                 var rhsShape = F.Tensors.ShapeOf(rhs);
-                var mm = F.Math.MatMul(lhs, F.Tensors.Reshape(rhs, F.Tensors.Stack(new IR.Tuple(rhsShape[0], rhsShape[1] * rhsShape[2]), 0)));
-                return F.Tensors.Reshape(mm, F.Tensors.Stack(new IR.Tuple(lhsShape[0], lhsShape[1], rhsShape[1], rhsShape[2]), 0));
+                var mm = F.Math.MatMul(lhs, F.Tensors.Reshape(rhs, new Shape(rhsShape[0], rhsShape[1] * rhsShape[2])));
+                return F.Tensors.Reshape(mm, new Shape(lhsShape[0], lhsShape[1], rhsShape[1], rhsShape[2]));
             }
 
             // ibnd,jbnd->bnij
@@ -52,10 +52,10 @@ namespace Nncase.Importer
                 var lhsShape = F.Tensors.ShapeOf(lhs);
                 var rhsShape = F.Tensors.ShapeOf(rhs);
                 var mm = F.Math.MatMul(
-                F.Tensors.Transpose(F.Tensors.Reshape(lhs, F.Tensors.Stack(new IR.Tuple(lhsShape[0], lhsShape[1] * lhsShape[2], lhsShape[3]), 0)), new[] { 1, 0, 2 }),
-                F.Tensors.Transpose(F.Tensors.Reshape(rhs, F.Tensors.Stack(new IR.Tuple(rhsShape[0], rhsShape[1] * rhsShape[2], rhsShape[3]), 0)), new[] { 1, 2, 0 }));
+                F.Tensors.Transpose(F.Tensors.Reshape(lhs, new Shape(lhsShape[0], lhsShape[1] * lhsShape[2], lhsShape[3])), new[] { 1, 0, 2 }),
+                F.Tensors.Transpose(F.Tensors.Reshape(rhs, new Shape(rhsShape[0], rhsShape[1] * rhsShape[2], rhsShape[3])), new[] { 1, 2, 0 }));
 
-                return F.Tensors.Reshape(mm, F.Tensors.Stack(new IR.Tuple(lhsShape[1], lhsShape[2], lhsShape[0], rhsShape[0]), 0));
+                return F.Tensors.Reshape(mm, new Shape(lhsShape[1], lhsShape[2], lhsShape[0], rhsShape[0]));
             }
 
             // bnij,jbnd->ibnd
@@ -67,10 +67,10 @@ namespace Nncase.Importer
                 var lhsShape = F.Tensors.ShapeOf(lhs);
                 var rhsShape = F.Tensors.ShapeOf(rhs);
                 var mm = F.Math.MatMul(
-                F.Tensors.Reshape(lhs, F.Tensors.Stack(new IR.Tuple(lhsShape[0] * lhsShape[1], lhsShape[2], lhsShape[3]), 0)),
-                F.Tensors.Transpose(F.Tensors.Reshape(rhs, F.Tensors.Stack(new IR.Tuple(rhsShape[0], rhsShape[1] * rhsShape[2], rhsShape[3]), 0)), new[] { 1, 0, 2 }));
+                F.Tensors.Reshape(lhs, new Shape(lhsShape[0] * lhsShape[1], lhsShape[2], lhsShape[3])),
+                F.Tensors.Transpose(F.Tensors.Reshape(rhs, new Shape(rhsShape[0], rhsShape[1] * rhsShape[2], rhsShape[3])), new[] { 1, 0, 2 }));
 
-                return F.Tensors.Reshape(F.Tensors.Transpose(mm, new[] { 1, 0, 2 }), F.Tensors.Stack(new IR.Tuple(lhsShape[2], lhsShape[0], lhsShape[1], rhsShape[3]), 0));
+                return F.Tensors.Reshape(F.Tensors.Transpose(mm, new[] { 1, 0, 2 }), new Shape(lhsShape[2], lhsShape[0], lhsShape[1], rhsShape[3]));
             }
 
             // ibnd,hnd->ibh
@@ -81,10 +81,10 @@ namespace Nncase.Importer
                 var lhsShape = F.Tensors.ShapeOf(lhs);
                 var rhsShape = F.Tensors.ShapeOf(rhs);
                 var mm = F.Math.MatMul(
-                F.Tensors.Reshape(lhs, F.Tensors.Stack(new IR.Tuple(lhsShape[0], lhsShape[1], lhsShape[2] * lhsShape[3]), 0)),
-                F.Tensors.Transpose(F.Tensors.Reshape(rhs, F.Tensors.Stack(new IR.Tuple(rhsShape[0], rhsShape[1] * rhsShape[2]), 0)), new[] { 1, 0 }));
+                F.Tensors.Reshape(lhs, new Shape(lhsShape[0], lhsShape[1], lhsShape[2] * lhsShape[3])),
+                F.Tensors.Transpose(F.Tensors.Reshape(rhs, new Shape(rhsShape[0], rhsShape[1] * rhsShape[2])), new[] { 1, 0 }));
 
-                return F.Tensors.Reshape(mm, F.Tensors.Stack(new IR.Tuple(lhsShape[0], lhsShape[1], rhsShape[0]), 0));
+                return F.Tensors.Reshape(mm, new Shape(lhsShape[0], lhsShape[1], rhsShape[0]));
             }
 
             throw new InvalidOperationException("Not Yet Supported Einsum Operation!");

@@ -12,6 +12,7 @@ using Microsoft.Extensions.Options;
 using NetFabric.Hyperlinq;
 using Nncase.Evaluator.TIR;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using Nncase.TIR;
 using Xunit;
 using Buffer = Nncase.TIR.Buffer;
@@ -262,7 +263,7 @@ public class UnitTestExpression
     {
         var c = IR.F.Random.Normal(DataTypes.Float32, 1, 0, 0, new[] { 1, 16, 64, 400 }).Evaluate().AsTensor();
         var ddr_ld_input = new TIR.BufferRegion(TIR.T.AttachBuffer(Const.FromTensor(c), out _, "ddr_ld_input"), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
-        var ddr_ld_output = new TIR.BufferRegion(new TIR.Buffer("ddr_ld_input", DataTypes.Float32, new MemSpan(0, 0, MemoryLocation.Input), new Expr[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Expr[] { 1, 16, 64, 400 }), null), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        var ddr_ld_output = new TIR.BufferRegion(new TIR.Buffer("ddr_ld_input", DataTypes.Float32, new MemSpan(0, 0, MemoryLocation.Input), new Dimension[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Dimension[] { 1, 16, 64, 400 }), null), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
         Assert.NotEqual(ddr_ld_input.Buffer, ddr_ld_output.Buffer);
         Assert.NotEqual(ddr_ld_input, ddr_ld_output);
     }
@@ -270,8 +271,8 @@ public class UnitTestExpression
     [Fact]
     public void TestBufferEqual()
     {
-        var ddr_ld_input = new TIR.BufferRegion(new TIR.Buffer("ddr_ld_input", DataTypes.Float32, new MemSpan(0, 0, MemoryLocation.Input), new Expr[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Expr[] { 1, 16, 64, 400 }), null), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
-        var ddr_ld_output = new TIR.BufferRegion(new TIR.Buffer("ddr_ld_input", DataTypes.Float32, new MemSpan(0, 0, MemoryLocation.Input), new Expr[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Expr[] { 1, 16, 64, 400 }), null), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        var ddr_ld_input = new TIR.BufferRegion(new TIR.Buffer("ddr_ld_input", DataTypes.Float32, new MemSpan(0, 0, MemoryLocation.Input), new Dimension[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Dimension[] { 1, 16, 64, 400 }), null), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        var ddr_ld_output = new TIR.BufferRegion(new TIR.Buffer("ddr_ld_input", DataTypes.Float32, new MemSpan(0, 0, MemoryLocation.Input), new Dimension[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Dimension[] { 1, 16, 64, 400 }), null), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
         Assert.Equal(ddr_ld_input.Buffer, ddr_ld_output.Buffer);
         Assert.Equal(ddr_ld_input, ddr_ld_output);
     }
@@ -279,8 +280,8 @@ public class UnitTestExpression
     [Fact]
     public void TestBufferNotEqual()
     {
-        var ddr_ld_input = new TIR.BufferRegion(new TIR.Buffer("ddr_ld_input", DataTypes.Float32, new MemSpan(0, 0, MemoryLocation.Input), new Expr[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Expr[] { 1, 16, 64, 400 }), null), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
-        var glb_ld_output = new TIR.BufferRegion(new TIR.Buffer("glb_ld_output", DataTypes.BFloat16, new MemSpan(0, 0, MemoryLocation.Data), new Expr[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Expr[] { 1, 16, 64, 400 }), null), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        var ddr_ld_input = new TIR.BufferRegion(new TIR.Buffer("ddr_ld_input", DataTypes.Float32, new MemSpan(0, 0, MemoryLocation.Input), new Dimension[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Dimension[] { 1, 16, 64, 400 }), null), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        var glb_ld_output = new TIR.BufferRegion(new TIR.Buffer("glb_ld_output", DataTypes.BFloat16, new MemSpan(0, 0, MemoryLocation.Data), new Dimension[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Dimension[] { 1, 16, 64, 400 }), null), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
         Assert.False(ddr_ld_input.Buffer.Equals(glb_ld_output.Buffer));
         Assert.False(ddr_ld_input.Equals(glb_ld_output));
     }
@@ -289,63 +290,7 @@ public class UnitTestExpression
     public void TestPaddingEqual()
     {
         Assert.Equal(2, new Padding(1, 1).Sum());
-        Assert.Equal(new Padding(0, 0), Padding.Zero());
-    }
-
-    [Fact]
-    public void TestSegmentNDEqual()
-    {
-        var segments = new[]
-        {
-            new Segment1D(default, new Padding(0, 0)),
-            new Segment1D(default, new Padding(0, 0)),
-            new Segment1D(default, new Padding(0, 0)),
-            new Segment1D(default, new Padding(0, 0)),
-        };
-        var segmentND = new SegmentND(segments);
-        Assert.Equal(4, segmentND.Count);
-        Assert.False(segmentND.Equals(new SegmentND()));
-        Assert.Equal(
-            HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(segments), segmentND.PadH, segmentND.PadW), segmentND.GetHashCode());
-        Assert.Equal(string.Join(",", segments.Select(s => s.ToString())), segmentND.ToString());
-        Assert.Equal(segments.Aggregate(1, (acc, seg) => acc * seg.Length), segmentND.Shape_size);
-        var segAll = new Segment1D(System.Range.All, Padding.Zero());
-        Assert.Throws<InvalidOperationException>(() => segAll.Length);
-        var segAddND = segmentND + segmentND;
-        Assert.Equal(segments, segAddND.Segments);
-        Assert.Equal(4, segAddND.Count);
-        Assert.True(segAddND == segmentND);
-        Assert.False(segAddND != segmentND);
-
-        var seg1 = new Segment1D(2..5, Padding.Zero());
-        Assert.Equal(2, seg1.Start);
-        Assert.Equal(5, seg1.End);
-        Assert.Equal(3, seg1.Length);
-        Assert.Equal(Padding.Zero(), seg1.Padding);
-
-        var seg2 = new Segment1D(4..7, Padding.Zero());
-        var segAdd = seg1 + seg2;
-        Assert.Equal(2, segAdd.Start);
-        Assert.Equal(7, segAdd.End);
-        Assert.Equal(5, segAdd.Length);
-
-        var segDivide = seg1 / 2;
-        Assert.Equal(1, segDivide.Start);
-        Assert.Equal(2, segDivide.End);
-        Assert.Equal(1, segDivide.Length);
-
-        var segMultiply = seg1 * 3;
-        Assert.Equal(6, segMultiply.Start);
-        Assert.Equal(15, segMultiply.End);
-        Assert.Equal(9, segMultiply.Length);
-    }
-
-    [Fact]
-    public void TestSelectedRangeEqual()
-    {
-        var selectedRange = new SelectedRange(0, 0, new Padding(0, 0));
-        Assert.Equal(selectedRange, selectedRange.Slice(new Segment1D(new System.Range(0, 0), new Padding(0, 0))));
-        Assert.Equal(selectedRange with { }, selectedRange.Slice(new Segment1D(System.Range.All, new Padding(0, 0))));
+        Assert.Equal(new Padding(0, 0), Padding.Zero);
     }
 
     [Fact]
@@ -375,12 +320,12 @@ public class UnitTestExpression
     [Fact]
     public void TestShapeGetHash()
     {
-        var n = new Dimension(1);
-        var c = new Dimension(1);
+        var n = new DimConst(1);
+        var c = new DimConst(1);
         Assert.StrictEqual(c, n);
 
         var a = ImmutableArray.CreateRange(new[] { n, c });
-        var b = ImmutableArray.CreateRange(new[] { new Dimension(1), new Dimension(1) });
+        var b = ImmutableArray.CreateRange(new[] { new DimConst(1), new DimConst(1) });
         Assert.True(a.SequenceEqual(b));
 
         var sa = new Shape(new[] { 1, 2, 3 });
@@ -486,7 +431,7 @@ public class UnitTestExpression
 
         for (int i = 0; i < 100000; i++)
         {
-            var res_1 = CompilerServices.Evaluate(fn_1.Body, new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance) { { input_1, Value.FromConst(i) } }).AsTensor().ToScalar<int>();
+            var res_1 = CompilerServices.Evaluate(fn_1.Body, new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance) { { input_1, Value.FromConst(i) } }).AsTensor().ToScalar<int>();
             Assert.Equal(i + 10, res_1);
             Assert.Equal(res_1, fn_2.DynamicInvoke(i));
         }
@@ -520,10 +465,10 @@ public class UnitTestExpression
         var cond = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));
         var z = new If(cond, 1, 2);
         z.InferenceType();
-        var result1 = z.Evaluate(new Dictionary<Var, IValue> { { cond, Value.FromTensor(a) } }).AsTensor().ToScalar<int>();
+        var result1 = z.Evaluate(new Dictionary<IVar, IValue> { { cond, Value.FromTensor(a) } }).AsTensor().ToScalar<int>();
         Assert.Equal(2, result1);
         var b = true;
-        var result2 = z.Evaluate(new Dictionary<Var, IValue> { { cond, Value.FromTensor(b) } }).AsTensor().ToScalar<int>();
+        var result2 = z.Evaluate(new Dictionary<IVar, IValue> { { cond, Value.FromTensor(b) } }).AsTensor().ToScalar<int>();
         Assert.Equal(1, result2);
     }
 #endif
@@ -593,7 +538,7 @@ public class UnitTestExpression
 
         protected override Expression VisitLeafFunction(Function expr)
         {
-            return Expression.Lambda(Visit(expr.Body), expr.Name, expr.Parameters.AsValueEnumerable().Select(v => (ParameterExpression)Visit(v)).ToArray());
+            return Expression.Lambda(Visit(expr.Body), expr.Name, expr.Parameters.AsValueEnumerable().Select(v => (ParameterExpression)Visit((Expr)v)).ToArray());
         }
 
         protected override Expression VisitLeafOp(Op expr)

@@ -283,21 +283,8 @@ public partial class EGraphPrinter
 
         protected override string VisitNone(None expr) => "None";
 
-        protected override string VisitShape(Shape shape) =>
-            shape.Kind switch
-            {
-                ShapeKind.Invalid => "Invalid",
-                ShapeKind.Unranked => "Unranked",
-                _ => $"[{string.Join(',', shape.Select(VisitDimension))}]",
-            };
+        protected override string VisitShape(Shape shape) => shape.ToString();
 
-        private string VisitDimension(Dimension dimension) =>
-            dimension.Kind switch
-            {
-                DimensionKind.Unknown => "?",
-                DimensionKind.Fixed => dimension.FixedValue.ToString(),
-                DimensionKind.Dynamic => dimension.Value is Var var ? $"%{var.Name}" : "...",
-                _ => throw new NotSupportedException(dimension.Kind.ToString()),
-            };
+        protected override string VisitDimension(Dimension expr) => expr.ToString();
     }
 }

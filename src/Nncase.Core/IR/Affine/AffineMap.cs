@@ -42,7 +42,7 @@ public sealed class AffineRange : Expr
     public AffineRange With(AffineExpr? offset = null, AffineExpr? extent = null)
         => new AffineRange(offset ?? Offset, extent ?? Extent);
 
-    public (Expr Offset, Expr Extent) Apply(ReadOnlySpan<Expr> dims, ReadOnlySpan<Expr> extents, IReadOnlyDictionary<AffineSymbol, Expr>? symbols = null)
+    public (Dimension Offset, Dimension Extent) Apply(ReadOnlySpan<Dimension> dims, ReadOnlySpan<Dimension> extents, IReadOnlyDictionary<AffineSymbol, Dimension>? symbols = null)
     {
         var offset = Offset.Apply(dims, extents, symbols);
         var extent = Extent.Apply(dims, extents, symbols);
@@ -198,7 +198,7 @@ public sealed class AffineMap : Expr
         return IsProjectedPermutation(false);
     }
 
-    public TIR.Range[] Apply(ReadOnlySpan<Expr> dims, ReadOnlySpan<Expr> extents, IReadOnlyDictionary<AffineSymbol, Expr>? symbols = null)
+    public TIR.Range[] Apply(ReadOnlySpan<Dimension> dims, ReadOnlySpan<Dimension> extents, IReadOnlyDictionary<AffineSymbol, Dimension>? symbols = null)
     {
         var newResults = new TIR.Range[Results.Length];
         for (int i = 0; i < newResults.Length; i++)

@@ -289,7 +289,7 @@ internal sealed class SatExprBuildVisitor
 
         switch (enode.Expr)
         {
-            case Var or TensorConst or TupleConst or Op or Fusion or None:
+            case Var or TensorConst or TupleConst or Op or Fusion or None or Dimension or Shape:
                 expr = enode.Expr;
                 break;
             case Function func:
@@ -306,9 +306,6 @@ internal sealed class SatExprBuildVisitor
                 break;
             case Marker mk:
                 expr = mk.With(target: children[0], attribute: children[1], metadata: mk.Metadata);
-                break;
-            case Shape shape:
-                expr = shape.With(children);
                 break;
             default:
                 throw new NotSupportedException(enode.Expr.GetType().Name);

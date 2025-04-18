@@ -63,7 +63,7 @@ public sealed partial class TFLiteImporter : BaseImporter
     }
 
     /// <inheritdoc/>
-    protected override (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
+    protected override (IEnumerable<Var> Inputs, Dictionary<Var, Dimension[]> VarMap) CreateInputs()
     {
         var inputsCount = _subGraph.InputsLength;
         var createdInputs = new Var[inputsCount];
@@ -77,7 +77,7 @@ public sealed partial class TFLiteImporter : BaseImporter
             .ToHashSet()
             .ToArray()
             .Order()
-            .Select(i => new Var(i.ToString(), new TensorType(DataTypes.Int32, Shape.Scalar)))
+            .Select(i => new DimVar(i.ToString()))
             .ToDictionary(v => v.Name, v => v);
 
         if (dynVarMap.Count > 1)
@@ -85,13 +85,13 @@ public sealed partial class TFLiteImporter : BaseImporter
             throw new NotImplementedException();
         }
 
-        var varMap = new Dictionary<Var, Expr[]>();
+        var varMap = new Dictionary<Var, Dimension[]>();
         for (int i = 0; i < inputsCount; i++)
         {
             var inputId = _subGraph.Inputs(i);
             var tensor = _subGraph.Tensors(inputId)!.Value;
             var input = new Var(tensor.Name, GetIRType(tensor));
-            var shape = input.CheckedShape.Select(x => x.IsFixed ? (Expr)x.FixedValue : dynVarMap.First().Value).ToArray();
+            var shape = input.CheckedShape.Select(x => x.IsFixed ? (Dimension)x.FixedValue : dynVarMap.First().Value).ToArray();
             varMap[input] = shape;
             createdInputs[i] = input;
             _outputTensors.Add(inputId, input);
@@ -152,7 +152,7 @@ public sealed partial class TFLiteImporter : BaseImporter
     {
         if (tensor.ShapeSignatureLength == 0)
         {
-            return tensor.GetShapeArray().Select(x => new Dimension(x)).ToArray();
+            return tensor.GetShapeArray().Select(x => (Dimension)x).ToArray();
         }
 
         return Enumerable.Range(0, tensor.ShapeLength).Select(i =>

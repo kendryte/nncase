@@ -98,9 +98,9 @@ public sealed partial class CombineReshapeUnary : IRewriteRule
     public IPattern Pattern { get; } = IsUnary(
         "unary",
         x => true,
-        IsReshape(IsWildcard("input"), IsWildcard("shape")));
+        IsReshape(IsWildcard("input"), IsShape("shape")));
 
-    private Expr? GetReplace(Unary unary, Expr input, Expr shape)
+    private Expr? GetReplace(Unary unary, Expr input, Shape shape)
     {
         return Reshape(Unary(unary.UnaryOp, input), shape);
     }

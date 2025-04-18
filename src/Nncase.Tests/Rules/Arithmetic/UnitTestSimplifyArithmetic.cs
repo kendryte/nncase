@@ -56,7 +56,7 @@ public class UnitTestSimplifyArithmetic : TransformTestBase
         var a = new Var();
         var b = new Var();
         var c = new Var();
-        var normal = new Dictionary<Var, IValue>();
+        var normal = new Dictionary<IVar, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
         normal.Add(b, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
         normal.Add(c, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
@@ -72,7 +72,7 @@ public class UnitTestSimplifyArithmetic : TransformTestBase
         var a = new Var();
         var b = new Var();
         var c = Random.Normal(DataTypes.Float32, 0, 1, 0, aShape); // Can't get Var's datatype. Pattern will not pass
-        var normal = new Dictionary<Var, IValue>();
+        var normal = new Dictionary<IVar, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
         normal.Add(b, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
 
@@ -85,7 +85,7 @@ public class UnitTestSimplifyArithmetic : TransformTestBase
     public void TestXDivXPositive(long[] aShape, int index)
     {
         var a = new Var(new TensorType(DataTypes.Float32, aShape));
-        var normal = new Dictionary<Var, IValue>();
+        var normal = new Dictionary<IVar, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
 
         var rootPre = a / a;
@@ -98,7 +98,7 @@ public class UnitTestSimplifyArithmetic : TransformTestBase
     {
         var a = new Var();
         var b = new Var();
-        var normal = new Dictionary<Var, IValue>();
+        var normal = new Dictionary<IVar, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
         normal.Add(b, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
         var rootPre = a * b;

@@ -39,7 +39,7 @@ public static class PackUtility
     public static Expr SliceForPack(Expr input, Shape shape, Dimension[] padNums)
     {
         bool isPadded = false;
-        var ends = shape.ToValueArrayExpr();
+        var ends = shape;
         if (padNums.Any(i => !i.IsFixed || i.FixedValue != 0))
         {
             isPadded = true;

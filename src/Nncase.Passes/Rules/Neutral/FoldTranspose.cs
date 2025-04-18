@@ -45,18 +45,18 @@ public sealed partial class FoldTwoTransposes : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsTranspose(
-        MaybeMarker(IsTranspose(IsWildcard("input"), IsWildcard("perm1") with { TypePattern = HasRank() })),
-        IsWildcard("perm2") with { TypePattern = HasRank() });
+        MaybeMarker(IsTranspose(IsWildcard("input"), IsRankedShape("perm1"))),
+        IsRankedShape("perm2"));
 
-    private Expr? GetReplace(Expr input, Expr perm1, Expr perm2)
+    private Expr? GetReplace(Expr input, Shape perm1, Shape perm2)
     {
-        if (perm1.CheckedShape.Rank is int rank && rank == perm2.CheckedShape.Rank)
+        if (perm1.Rank is int rank && rank == perm2.Rank)
         {
-            if (perm1 is TensorConst cperm1 && perm2 is TensorConst cperm2)
+            if (perm1.IsFixed && perm2.IsFixed)
             {
-                var p1 = cperm1.Value.ToArray<int>();
-                var p2 = cperm2.Value.ToArray<int>();
-                var np = new int[p2.Length];
+                var p1 = perm1.ToValueArray();
+                var p2 = perm2.ToValueArray();
+                var np = new long[p2.Length];
                 bool is_nop = true;
                 for (int i = 0; i < p2.Length; i++)
                 {
@@ -72,13 +72,13 @@ public sealed partial class FoldTwoTransposes : IRewriteRule
                 return IR.F.Tensors.Transpose(input, np);
             }
 
-            var newPerm = new Expr[perm2.CheckedShape[0].FixedValue];
+            var newPerm = new Dimension[perm2.Rank];
             for (int i = 0; i < newPerm.Length; i++)
             {
-                newPerm[i] = perm1[perm2[i]];
+                newPerm[i] = perm1[perm2[i]].AsDim();
             }
 
-            return Transpose(input, Stack(new Tuple(newPerm), 0));
+            return Transpose(input, newPerm);
         }
 
         return null;
@@ -135,6 +135,6 @@ public sealed partial class TransposeToReshape : IRewriteRule
         }
 
         context.MatchOptions.SuppressPattern(tp, Pattern);
-        return Reshape(input, tp.CheckedShape.ToValueArrayExpr());
+        return Reshape(input, tp.CheckedShape);
     }
 }

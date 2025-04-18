@@ -80,7 +80,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     /// <param name="axes">Axes.</param>
     /// <param name="input">Input type.</param>
     /// <param name="f">(index in axis, axis, inDim) -> outDim.</param>
-    private static Shape ApplyAxis(int[] axes, TensorType input, Func<int, int, Dimension, Dimension> f)
+    private static Shape ApplyAxis(long[] axes, TensorType input, Func<int, long, Dimension, Dimension> f)
     {
         if (input.Shape.IsUnranked)
         {
@@ -102,16 +102,8 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
 
     private static Dimension TranslateBeginEnd(Dimension x, Dimension dim, long lowerBound, long upperBoundBias)
     {
-        if (x.IsFixed)
-        {
-            var newX = x.FixedValue < 0 ? dim + x : x;
-            return Dimension.Clamp(newX, lowerBound, dim + upperBoundBias);
-        }
-        else
-        {
-            var newX = Select(x.Value < 0L, (dim + x).ToExpr(), x.ToExpr());
-            return Dimension.Clamp(newX, lowerBound, dim + upperBoundBias);
-        }
+        var newX = Dimension.Positive(x, dim);
+        return Dimension.Clamp(newX, lowerBound, dim + upperBoundBias);
     }
 
     private IRType Visit(ITypeInferenceContext context, Slice target, TensorType input)
@@ -126,10 +118,10 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
             return new InvalidType("Slice Input should not scalar");
         }
 
-        var axes = ((TensorConst)context.GetDimensionArgument(target, Slice.Axes)).Value.ToArray<int>();
-        var strides = ((TensorConst)context.GetDimensionArgument(target, Slice.Strides)).Value.ToArray<long>();
-        var begins = context.GetDimensionArgument(target, Slice.Begins);
-        var ends = context.GetDimensionArgument(target, Slice.Ends);
+        var axes = ((Shape)context.GetDimensionArgument(target, Slice.Axes)).ToValueArray();
+        var strides = ((Shape)context.GetDimensionArgument(target, Slice.Strides)).ToValueArray();
+        var begins = (Shape)context.GetDimensionArgument(target, Slice.Begins);
+        var ends = (Shape)context.GetDimensionArgument(target, Slice.Ends);
         if (begins.CheckedShape.IsFixed)
         {
             if (ends.CheckedShape.IsFixed)

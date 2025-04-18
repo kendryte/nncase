@@ -562,7 +562,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         }
 
         var buffer = Visit(expr.Buffer);
-        if (expr.Region.AsValueEnumerable().All(r => r is { Start: TensorConst, Stop: TensorConst, Step: TensorConst step } && step.Value.ToScalar<int>() == 1))
+        if (expr.Region.AsValueEnumerable().All(r => r is { Start: DimConst, Stop: DimConst, Step: DimConst step } && step.Value == 1))
         {
             var begins = $"{StringUtility.Join(", ", expr.Region.AsValueEnumerable().Select(x => Visit(x.Start).Name))}";
             var extents = $"{StringUtility.Join(", ", expr.Region.AsValueEnumerable().Select(x => Visit(x.Stop).Name))}";

@@ -557,6 +557,14 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
         }
     }
 
+    private void VisitArray(ReadOnlySpan<IVar> exprs)
+    {
+        foreach (var expr in exprs)
+        {
+            Visit((Expr)expr);
+        }
+    }
+
     private void UpdateVarColor(Var expr)
     {
         if (!_varColorMemo.TryGetValue(expr, out var _))

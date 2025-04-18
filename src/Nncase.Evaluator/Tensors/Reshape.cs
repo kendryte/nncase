@@ -10,9 +10,6 @@ using Nncase.IR;
 using Nncase.IR.Tensors;
 using Nncase.Utilities;
 using OrtKISharp;
-using static Nncase.Evaluator.TypeInference;
-using static Nncase.IR.F.Math;
-using static Nncase.IR.F.Tensors;
 using Range = Nncase.IR.Tensors.Range;
 using Reshape = Nncase.IR.Tensors.Reshape;
 
@@ -295,9 +292,8 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
 
     private IRType Visit(ITypeInferenceContext context, Reshape target, TensorType input)
     {
-        var shape = context.GetDimensionArgument(target, Reshape.Shape);
-        var shapeType = context.CheckArgumentTensorTypeOrBroadcast(target, Reshape.Shape);
-        var outShape = TypeInference.ReshapeShape(input.Shape, shape, shapeType);
+        var shape = (Shape)context.GetDimensionArgument(target, Reshape.Shape);
+        var outShape = TypeInference.ReshapeShape(input.Shape, shape);
         return input with { Shape = outShape };
     }
 

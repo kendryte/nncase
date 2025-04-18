@@ -167,7 +167,7 @@ public sealed partial class Squeeze5DTranspose : IRewriteRule
                 throw new NotSupportedException("Not Supported perm!");
         }
 
-        return Reshape(Transpose(Reshape(tp1, shape3), perm2).With(metadata: call.Metadata), call.CheckedShape.ToValueArrayExpr());
+        return Reshape(Transpose(Reshape(tp1, shape3), perm2).With(metadata: call.Metadata), call.CheckedShape);
     }
 }
 

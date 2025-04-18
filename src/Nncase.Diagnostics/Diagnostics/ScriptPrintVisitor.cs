@@ -674,7 +674,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             var regions = expr.Region.AsValueEnumerable().Select(rg =>
             {
-                if (rg.Step is TensorConst con && con.Value.ToScalar<int>() == 1)
+                if (rg.Step is DimConst con && con.Value == 1)
                 {
                     return $"{Visit(rg.Start)}..{Visit(rg.Stop)}";
                 }

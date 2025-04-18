@@ -22,7 +22,7 @@ public interface IEvaluateProvider
     /// <param name="varsValues">Optional vars' values.</param>
     /// <param name="evaluator_cache">Optional evaluator cache.</param>
     /// <returns>Evaluate result.</returns>
-    IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null);
+    IValue Evaluate(Expr expr, IReadOnlyDictionary<IVar, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null);
 
     /// <summary>
     /// Evaluate operator.

@@ -13,17 +13,18 @@ using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Affine;
 using Nncase.TIR;
+using Nncase.Utilities;
 
 namespace Nncase.Evaluator;
 
 internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
 {
     private readonly EvaluateContext _context;
-    private readonly IReadOnlyDictionary<Var, IValue> _varsValues;
+    private readonly IReadOnlyDictionary<IVar, IValue> _varsValues;
     private readonly EvaluatorDumpManager _dumpManager;
     private readonly Dictionary<Type, IEvaluator> _evaluator_cache;
 
-    public EvaluateVisitor(IReadOnlyDictionary<Var, IValue> varsValues, Dictionary<Type, IEvaluator> evaluator_cache)
+    public EvaluateVisitor(IReadOnlyDictionary<IVar, IValue> varsValues, Dictionary<Type, IEvaluator> evaluator_cache)
     {
         _context = new EvaluateContext(this, ExprMemo);
         _evaluator_cache = evaluator_cache;
@@ -158,9 +159,9 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
         };
     }
 
-    private IReadOnlyDictionary<Var, IValue> CreateFunctionEvaluateArguments(ReadOnlySpan<Var> parameters, ReadOnlySpan<Expr> arguments)
+    private IReadOnlyDictionary<IVar, IValue> CreateFunctionEvaluateArguments(ReadOnlySpan<IVar> parameters, ReadOnlySpan<Expr> arguments)
     {
-        var values = new Dictionary<Var, IValue>(_varsValues);
+        var values = new Dictionary<IVar, IValue>(_varsValues);
         for (int i = 0; i < parameters.Length; i++)
         {
             values.Add(parameters[i], ExprMemo[arguments[i]]);

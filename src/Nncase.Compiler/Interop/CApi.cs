@@ -272,14 +272,14 @@ public static unsafe class CApi
     private static IntPtr CalibrationDatasetProviderCreate(IntPtr datasetHandle, nuint samplesCount, IntPtr fnParamsHandle)
     {
         var dataset = Get<RTValue[]>(datasetHandle);
-        var fnParams = Get<Var[]>(fnParamsHandle);
+        var fnParams = Get<IVar[]>(fnParamsHandle);
         if (dataset.Length != fnParams.Length * (int)samplesCount)
         {
             throw new ArgumentException($"Dataset count {dataset.Length} not equals to params count {fnParams.Length} * samples count {samplesCount}");
         }
 
         var samples = (dataset.Length == 0 ?
-            Array.Empty<Dictionary<Var, IValue>>() :
+            Array.Empty<Dictionary<IVar, IValue>>() :
             dataset.Chunk(dataset.Length / (int)samplesCount).Select(inputs => inputs.Zip(fnParams).ToDictionary(
             item => item.Second,
             item => item.First.ToValue()))).ToAsyncEnumerable();
@@ -575,7 +575,7 @@ public static unsafe class CApi
     private static IntPtr ExprEvaluate(IntPtr exprHandle, IntPtr fnParamsHandle, IntPtr inputsHandle)
     {
         var expr = Get<Expr>(exprHandle);
-        var fnParams = Get<Var[]>(fnParamsHandle);
+        var fnParams = Get<IVar[]>(fnParamsHandle);
         var inputs = Get<RTValue[]>(inputsHandle);
         var result = CompilerServices.Evaluate(expr, fnParams.Zip(inputs).ToDictionary(
             x => x.First,
@@ -1065,7 +1065,7 @@ public static unsafe class CApi
 
     private class CCalibrationDatasetProvider : ICalibrationDatasetProvider
     {
-        public CCalibrationDatasetProvider(IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> samples, int samplesCount)
+        public CCalibrationDatasetProvider(IAsyncEnumerable<IReadOnlyDictionary<IVar, IValue>> samples, int samplesCount)
         {
             Samples = samples;
             Count = samplesCount;
@@ -1073,6 +1073,6 @@ public static unsafe class CApi
 
         public int? Count { get; }
 
-        public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
+        public IAsyncEnumerable<IReadOnlyDictionary<IVar, IValue>> Samples { get; }
     }
 }

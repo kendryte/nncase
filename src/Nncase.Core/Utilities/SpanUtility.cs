@@ -46,4 +46,12 @@ public static class SpanUtility
             position += length;
         }
     }
+
+    public static T[] Concat<T>(ReadOnlySpan<T> first, ReadOnlySpan<T> second)
+    {
+        var result = new T[first.Length + second.Length];
+        first.CopyTo(result);
+        second.CopyTo(result.AsSpan(first.Length));
+        return result;
+    }
 }

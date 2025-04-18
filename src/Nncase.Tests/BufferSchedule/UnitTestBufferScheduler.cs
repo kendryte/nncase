@@ -85,7 +85,7 @@ public sealed class UnitTestBufferScheduler : TestClassBase
     {
         ((Targets.CpuTargetOptions)CompileOptions.TargetOptions).HierarchySizes[^1] = capacity;
         var fusion = fusionGetter();
-        var dupVars = fusion.Parameters.AsValueEnumerable().Select(v => new Var(v.TypeAnnotation)).ToArray();
+        var dupVars = fusion.Parameters.AsValueEnumerable().Select(v => new Var(v.CheckedType)).ToArray();
 
         var module = new IRModule(new Function("main", new Call(fusion, dupVars), dupVars));
         module.Add(fusion);

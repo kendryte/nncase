@@ -97,7 +97,7 @@ namespace Nncase.Importer
             var biasSizeIndex = isConvTranspose ? 1 : 0;
             return op.Input.Count > 2
                 ? GetInputExpr(op, 2)
-                : F.Tensors.Expand(0f, Util.ShapeIndex(weights, biasSizeIndex) * groups);
+                : F.Tensors.Expand(0f, new Shape(Util.ShapeIndex(weights, biasSizeIndex) * groups));
         }
 
         private Expr AutoPad(NodeProto op, string autoPad, Expr input, Expr weights, long[] strides, long[] dilation, bool isConv1D = false) => autoPad switch

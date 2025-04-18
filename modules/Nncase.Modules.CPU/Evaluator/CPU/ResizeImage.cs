@@ -66,12 +66,12 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
         };
     }
 
-    public IRType Visit(TensorType input, Expr newSize)
+    public IRType Visit(TensorType input, Shape newSize)
     {
         return TypeInference.ResizeType(input, newSize, null);
     }
 
-    public IRType Visit(DistributedType input, Expr newSize)
+    public IRType Visit(DistributedType input, Shape newSize)
     {
         if (Visit(input.TensorType, newSize) is not TensorType tensorType)
         {

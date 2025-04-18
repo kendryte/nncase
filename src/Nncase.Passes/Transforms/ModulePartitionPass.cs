@@ -149,7 +149,7 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
         var pairs = GetClusterArgumentPairs(cluster);
         var processedParams = new HashSet<Expr>(ReferenceEqualityComparer.Instance);
         var extractDict = new Dictionary<Expr, Expr>(ReferenceEqualityComparer.Instance);
-        var @params = new List<Var>();
+        var @params = new List<IVar>();
         var arguments = new List<Expr>();
         var dynamicVars = IRHelpers.GetDynamicDimVars();
 
@@ -172,7 +172,7 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
 
             Var @var;
             Expr extract;
-            if (pre is Var preVar && dynamicVars.Contains(preVar))
+            if (pre is IVar preVar && dynamicVars.Contains(preVar))
             {
                 continue;
             }

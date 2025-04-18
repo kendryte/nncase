@@ -31,7 +31,7 @@ public sealed class RemoveBoxingCloner : ExprCloner<Unit>
             if (boxing.NewType is DistributedType dt && dt.TensorType != input.CheckedType)
             {
                 // Reshape
-                return IR.F.Tensors.Reshape(input, dt.TensorType.Shape.ToValueArrayExpr());
+                return IR.F.Tensors.Reshape(input, dt.TensorType.Shape);
             }
             else
             {

@@ -17,12 +17,12 @@ public sealed class UnitTestDimension
     public void TestValue()
     {
         long v1 = 1;
-        var d1 = new Dimension(v1);
+        var d1 = new DimConst(v1);
         Assert.Equal(v1, d1.Value);
         Assert.Equal(v1, d1.FixedValue);
 
         long v2 = -1;
-        var d2 = new Dimension(v2);
+        var d2 = new DimConst(v2);
         Assert.Equal(v2, d2.Value);
         Assert.Equal(v2, d2.FixedValue);
     }
@@ -31,7 +31,7 @@ public sealed class UnitTestDimension
     public void TestKind()
     {
         long v1 = 1;
-        var d1 = new Dimension(v1);
+        var d1 = new DimConst(v1);
         Assert.Equal(DimensionKind.Fixed, d1.Kind);
         Assert.False(d1.IsUnknown);
         Assert.True(d1.IsFixed);
@@ -72,14 +72,14 @@ public sealed class UnitTestDimension
         var d3 = Dimension.Unknown;
 
         var d4 = d1 + d2;
-        Assert.Equal(v1 + v2, d4.Value);
+        Assert.Equal(v1 + v2, d4);
         Assert.Equal(DimensionKind.Fixed, d4.Kind);
 
         d4 = d1 + d3;
         Assert.Equal(DimensionKind.Unknown, d4.Kind);
 
         d4 = d1 + v2;
-        Assert.Equal(v1 + v2, d4.Value);
+        Assert.Equal(v1 + v2, d4);
         Assert.Equal(DimensionKind.Fixed, d4.Kind);
     }
 
@@ -93,7 +93,7 @@ public sealed class UnitTestDimension
         var d3 = Dimension.Unknown;
 
         var d4 = d1 - d2;
-        Assert.Equal(v1 - v2, d4.Value);
+        Assert.Equal(v1 - v2, d4);
         Assert.Equal(DimensionKind.Fixed, d4.Kind);
 
         d4 = d1 - d3;
@@ -110,7 +110,7 @@ public sealed class UnitTestDimension
         var d3 = Dimension.Unknown;
 
         var d4 = d1 * d2;
-        Assert.Equal(v1 * v2, d4.Value);
+        Assert.Equal(v1 * v2, d4);
         Assert.Equal(DimensionKind.Fixed, d4.Kind);
 
         d4 = d1 * d3;
@@ -127,7 +127,7 @@ public sealed class UnitTestDimension
         var d3 = Dimension.Unknown;
 
         var d4 = d1 / d2;
-        Assert.Equal(v1 / v2, d4.Value);
+        Assert.Equal(v1 / v2, d4);
         Assert.Equal(DimensionKind.Fixed, d4.Kind);
 
         d4 = d1 / d3;

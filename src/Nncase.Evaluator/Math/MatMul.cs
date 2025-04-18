@@ -326,10 +326,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var lhsShape = lhs.Shape.Rank >= rhs.Shape.Rank ? lhs.Shape.ToArray() : Enumerable.Repeat((Dimension)1, rhs.Shape.Rank - lhs.Shape.Rank).Concat(lhs.Shape).ToArray();
         var rhsShape = lhs.Shape.Rank <= rhs.Shape.Rank ? rhs.Shape.ToArray() : Enumerable.Repeat((Dimension)1, lhs.Shape.Rank - rhs.Shape.Rank).Concat(rhs.Shape).ToArray();
 
-        var bigShape = Enumerable.Zip(lhsShape, rhsShape).SkipLast(2).Select(t =>
-            t.First.IsDynamic || t.Second.IsDynamic
-                ? (Dimension)IR.F.Math.Max(t.First.Value, t.Second.Value)
-                : System.Math.Max(t.First.FixedValue, t.Second.FixedValue)).ToArray();
+        var bigShape = Enumerable.Zip(lhsShape, rhsShape).SkipLast(2).Select(t => Dimension.Max(t.First, t.Second)).ToArray();
 
         // batch and channel
         var front = bigShape;

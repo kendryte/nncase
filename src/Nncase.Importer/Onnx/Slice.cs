@@ -32,7 +32,7 @@ namespace Nncase.Importer
                 starts,
                 ends,
                 axesExpr,
-                Expand(1L, Tensor.From<long>(new long[] { ends.Length })));
+                Tensor.FromScalar(1L, ends.Length));
         }
 
         private Expr SliceV10(in NodeProto op)
@@ -46,11 +46,6 @@ namespace Nncase.Importer
             var axes = GetOptionInputExpr(op, 3).Or(ComputeDefaultAxes(input));
             var steps = GetOptionInputExpr(op, 4).Or(Expand(1, starts.CheckedShape.ToValueArray()));
             return Slice(input, starts, ends, axes, steps);
-        }
-
-        private Call ExpandOneToRank(Expr input, long value, long rankOffset = 0)
-        {
-            return Expand(value, Unsqueeze(Rank(input) - rankOffset, new[] { 0 }));
         }
     }
 }

@@ -54,9 +54,9 @@ public sealed partial class FoldTwoReshapes : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsReshape(
-        MaybeMarker(IsReshape(IsWildcard("input"), IsWildcard())), IsWildcard("newShape"));
+        MaybeMarker(IsReshape(IsWildcard("input"), IsWildcard())), IsShape("newShape"));
 
-    private Expr? GetReplace(Expr input, Expr newShape)
+    private Expr? GetReplace(Expr input, Shape newShape)
     {
         return Reshape(input, newShape);
     }

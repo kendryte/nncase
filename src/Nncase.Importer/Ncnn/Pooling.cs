@@ -84,11 +84,11 @@ public partial class NcnnImporter
                 if (padMode == 0)
                 {
                     // full padding
-                    var tailW = ((w + padLeft + padRight - kernelW) % strideW).ToExpr();
-                    var tailH = ((h + padTop + padBottom - kernelH) % strideH).ToExpr();
+                    var tailW = (w + padLeft + padRight - kernelW) % strideW;
+                    var tailH = (h + padTop + padBottom - kernelH) % strideH;
 
-                    var tailPadW = IR.F.Math.Select(IR.F.Math.Equal(tailW, 0L), 0L, tailW);
-                    var tailPadH = IR.F.Math.Select(IR.F.Math.Equal(tailH, 0L), 0L, tailH);
+                    var tailPadW = Dimension.Select(tailW, 0L, 0L, tailW);
+                    var tailPadH = Dimension.Select(tailH, 0L, 0L, tailH);
 
                     paddingH = [padTop, padBottom + tailPadH];
                     paddingW = [padLeft, padRight + tailPadW];

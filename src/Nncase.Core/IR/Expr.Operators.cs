@@ -21,7 +21,7 @@ public partial class Expr
     /// get the item from the expr.
     /// </summary>
     /// <param name="index"> expr. </param>
-    public Expr this[Expr index] => F.Tensors.GetItem(this, index);
+    public Expr this[Dimension index] => F.Tensors.GetItem(this, index);
 
     /// <summary>
     /// get the item from the expr.
@@ -37,7 +37,7 @@ public partial class Expr
             Call { Target: Concat { Axis: 0 } } c when c[Concat.Input] is IR.Tuple tp && tp.Fields[0].CheckedType is TensorType { Shape: { IsFixed: true, Size: 1 } } => c[Concat.Input][index][0],
             Call { Target: Reshape } c when c[Reshape.Shape] is TensorConst tc && tc.Value.Length == 1 && tc.Value.Cast<long>()[0] == 1 => c[Reshape.Input],
             Call { Target: Stack } c => c[Stack.Inputs][index],
-            _ => this[(Expr)index],
+            _ => this[(Dimension)index],
         };
 
     /// <summary>
@@ -49,14 +49,14 @@ public partial class Expr
         {
             TensorConst tc when tc.Value.Rank == indices.Length => Tensor.FromScalar(tc.Value.ElementType, tc.Value[indices]),
             Call { Target: Stack } c when indices.Length == 2 => c[Stack.Inputs][indices[0]][indices[1]],
-            _ => this[indices.Select(x => (Expr)x).ToArray()],
+            _ => this[indices.Select(x => (Dimension)x).ToArray()],
         };
 
     /// <summary>
     /// get the item from the expr.
     /// </summary>
     /// <returns> expr. </returns>
-    public Expr this[params Expr[] indices]
+    public Expr this[params Dimension[] indices]
     {
         get
         {
@@ -83,11 +83,11 @@ public partial class Expr
                 if (shape?.IsRanked == true)
                 {
                     var newIndex = shape[0] - index.Value;
-                    return newIndex.IsFixed ? this[newIndex.FixedValue] : this[newIndex.ToExpr()];
+                    return this[newIndex];
                 }
                 else
                 {
-                    return this[IR.F.Tensors.ShapeOf(this)[0] - (long)index.Value];
+                    return this[IR.F.Tensors.ShapeOf(this)[0].AsDim() - index.Value];
                 }
             }
 

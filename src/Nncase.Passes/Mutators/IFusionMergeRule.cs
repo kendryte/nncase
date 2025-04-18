@@ -47,10 +47,10 @@ public interface IMergeRewriteRule
 
     protected sealed class FusionMerger : ExprCloner<Unit>
     {
-        private readonly IReadOnlyDictionary<Var, Expr> _calleeBodyMap;
-        private readonly IReadOnlyDictionary<Var, Var> _multiVarMap;
+        private readonly IReadOnlyDictionary<IVar, Expr> _calleeBodyMap;
+        private readonly IReadOnlyDictionary<IVar, IVar> _multiVarMap;
 
-        public FusionMerger(IReadOnlyDictionary<Var, Expr> calleeBodyMap, IReadOnlyDictionary<Var, Var> multiVarMap)
+        public FusionMerger(IReadOnlyDictionary<IVar, Expr> calleeBodyMap, IReadOnlyDictionary<IVar, IVar> multiVarMap)
         {
             _calleeBodyMap = calleeBodyMap;
             _multiVarMap = multiVarMap;
@@ -65,7 +65,7 @@ public interface IMergeRewriteRule
 
             if (_multiVarMap.TryGetValue(expr, out var newVar))
             {
-                return newVar;
+                return (Expr)newVar;
             }
 
             throw new InvalidOperationException();
@@ -179,16 +179,16 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
             throw new InvalidOperationException("Merged Fusion Type Infer Error!");
         }
 
-        var fusionParams = callee_fusion.Parameters.AsValueEnumerable().Select(x => (Var)merger.ExprMemo[x]).ToArray();
+        var fusionParams = callee_fusion.Parameters.AsValueEnumerable().Select(x => (Var)merger.ExprMemo[(Expr)x]).ToArray();
         return new Fusion($"{caller_fusion.Name}_{callee_fusion.Name}", ModuleKind, merged_fusion_body, fusionParams);
     }
 
     private sealed class FusionMerger : ExprCloner<Unit>
     {
-        private readonly Var _callerParam;
+        private readonly IVar _callerParam;
         private readonly Expr _calleeBody;
 
-        public FusionMerger(Var callerParam, Expr calleeBody)
+        public FusionMerger(IVar callerParam, Expr calleeBody)
         {
             _callerParam = callerParam;
             _calleeBody = calleeBody;
@@ -381,10 +381,10 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
         }
 
         var callParams = new List<Expr>() { calleeInput };
-        var fusionParams = new List<Var>() { (Var)merger.ExprMemo[calleeParam] };
+        var fusionParams = new List<IVar>() { (IVar)merger.ExprMemo[(Expr)calleeParam] };
         if (!calleeInputIsCallerOtherInput)
         {
-            var callerOtherParamClone = (Var)merger.ExprMemo[callerOtherParam];
+            var callerOtherParamClone = (IVar)merger.ExprMemo[(Expr)callerOtherParam];
             if (calleeInLeft)
             {
                 fusionParams.Add(callerOtherParamClone);
@@ -408,12 +408,12 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
     private sealed class FusionMerger : ExprCloner<Unit>
     {
         private readonly bool _calleeInputIsCallerOtherInput;
-        private readonly Var _callerParam;
-        private readonly Var _callerOtherParam;
-        private readonly Var _calleeParam;
+        private readonly IVar _callerParam;
+        private readonly IVar _callerOtherParam;
+        private readonly IVar _calleeParam;
         private readonly Expr _calleeBody;
 
-        public FusionMerger(bool calleeInputIsCallerOtherInput, Var callerParam, Var callerOtherParam, Var calleeParam, Expr calleeBody)
+        public FusionMerger(bool calleeInputIsCallerOtherInput, IVar callerParam, IVar callerOtherParam, IVar calleeParam, Expr calleeBody)
         {
             _calleeInputIsCallerOtherInput = calleeInputIsCallerOtherInput;
             _callerParam = callerParam;
@@ -433,7 +433,7 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
             if (_calleeInputIsCallerOtherInput
                 && ReferenceEquals(expr, _callerOtherParam))
             {
-                return Visit(_calleeParam, context);
+                return Visit((Expr)_calleeParam, context);
             }
 
             return base.VisitLeafVar(expr, context);
@@ -652,8 +652,8 @@ v2 =f2(v0)      v1 = f1(v0)
     {
         merged_fusion = null!;
         candidate_fusions = new() { caller_fusion };
-        var calleeBodyMap = new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance);
-        var multiVarMap = new Dictionary<Var, Var>();
+        var calleeBodyMap = new Dictionary<IVar, Expr>(ReferenceEqualityComparer.Instance);
+        var multiVarMap = new Dictionary<IVar, IVar>();
         if (input.CheckedType is null)
         {
             CompilerServices.InferenceType(input);

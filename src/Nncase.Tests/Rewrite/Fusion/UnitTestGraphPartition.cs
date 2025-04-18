@@ -55,7 +55,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -90,7 +90,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -127,7 +127,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -164,7 +164,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -204,7 +204,7 @@ public class UnitTestGraphPartition : TestClassBase
 
         var input_tensor1 = Testing.Rand<float>(1, 32, 32);
         var input_tensor2 = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input1, Value.FromTensor(input_tensor1) },
             { input2, Value.FromTensor(input_tensor2) },
@@ -244,7 +244,7 @@ public class UnitTestGraphPartition : TestClassBase
 
         var input_tensor1 = Testing.Rand<float>(1, 32, 32);
         var input_tensor2 = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input1, Value.FromTensor(input_tensor1) },
             { input2, Value.FromTensor(input_tensor2) },
@@ -280,7 +280,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -315,7 +315,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Boxing>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -353,7 +353,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -391,7 +391,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -432,7 +432,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -472,7 +472,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -510,7 +510,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -547,7 +547,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Binary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -583,7 +583,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Boxing>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -621,7 +621,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -658,7 +658,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Boxing>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -697,7 +697,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -733,7 +733,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<IR.Tensors.Concat>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -773,7 +773,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<IR.Tensors.Concat>();
 
         var input_tensor = Testing.Rand<float>(3, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -813,7 +813,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<IR.Tensors.GetItem>();
 
         var input_tensor = Testing.Rand<float>(2, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };

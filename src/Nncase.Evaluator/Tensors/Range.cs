@@ -48,12 +48,12 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEv
 
         if (begin is TensorConst beginConst && end is TensorConst endConst && step is TensorConst stepConst)
         {
-            var dim = (long)MathF.Ceiling(beginConst.Value.ToScalar<float>() + endConst.Value.ToScalar<float>()) / stepConst.Value.ToScalar<float>();
+            var dim = (long)MathF.Ceiling((beginConst.Value.ToScalar<float>() + endConst.Value.ToScalar<float>()) / stepConst.Value.ToScalar<float>());
             return new TensorType(dType, new Shape(dim));
         }
         else
         {
-            var dim = IR.F.Tensors.Cast(IR.F.Math.CeilDiv(begin + end, step), DataTypes.Int64);
+            var dim = IR.F.Tensors.Cast(IR.F.Math.CeilDiv(begin + end, step), DataTypes.Int64).AsDim();
             return new TensorType(dType, new Shape(dim));
         }
     }

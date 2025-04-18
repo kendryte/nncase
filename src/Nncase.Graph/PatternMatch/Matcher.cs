@@ -74,16 +74,6 @@ internal sealed partial class Matcher : ExprFunctor<bool, Unit, IPattern>
         return false;
     }
 
-    protected override bool VisitConst(Const expr, IPattern pattern)
-    {
-        if (pattern is ConstPattern constPattern)
-        {
-            return constPattern.MatchLeaf(expr);
-        }
-
-        return DefaultVisit(expr, pattern);
-    }
-
     protected override bool VisitOp(Op expr, IPattern pattern)
     {
         if (pattern is IOpPattern opPattern)
@@ -92,6 +82,16 @@ internal sealed partial class Matcher : ExprFunctor<bool, Unit, IPattern>
         }
 
         return DefaultVisit(expr, pattern);
+    }
+
+    protected override bool VisitShape(Shape expr, IPattern context)
+    {
+        if (context is ShapePattern shapePattern)
+        {
+            return shapePattern.MatchLeaf(expr);
+        }
+
+        return DefaultVisit(expr, context);
     }
 
     protected override bool DispatchVisit(Expr expr, IPattern pattern)
@@ -189,6 +189,9 @@ internal sealed partial class Matcher : ExprFunctor<bool, Unit, IPattern>
             return false;
         }
     }
+
+    private bool VisitVArgsPattern(ReadOnlySpan<IVar> exprs, VArgsPattern vArgsPattern) =>
+        VisitVArgsPattern(SpanUtility.UnsafeCast<IVar, Expr>(exprs), vArgsPattern);
 
     private sealed class MatchVisitor : ExprWalker
     {

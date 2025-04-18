@@ -1134,4 +1134,431 @@ public partial class ExprCloner<TContext>
         return expr;
     }
 
+    /// <inheritdoc />
+    protected override Expr VisitLeafAsDim(AsDim expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Dim, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                dim: Clone(expr.Dim, context)
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override Expr VisitLeafUnknownDim(UnknownDim expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override Expr VisitLeafDimVar(DimVar expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override Expr VisitLeafDimConst(DimConst expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override Expr VisitLeafDimPower(DimPower expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Dim, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                dim: Clone(expr.Dim, context)
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override Expr VisitLeafDimFraction(DimFraction expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Numerator, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Denominator, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                numerator: Clone(expr.Numerator, context),
+                denominator: Clone(expr.Denominator, context)
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override Expr VisitLeafDimRemainder(DimRemainder expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Numerator, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Denominator, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                numerator: Clone(expr.Numerator, context),
+                denominator: Clone(expr.Denominator, context)
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override Expr VisitLeafDimProduct(DimProduct expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            if (IsMutatedArray(expr.Operands, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                operands: CloneArray(expr.Operands, context)
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override Expr VisitLeafDimSum(DimSum expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            if (IsMutatedArray(expr.Operands, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                operands: CloneArray(expr.Operands, context)
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override Expr VisitLeafDimAbs(DimAbs expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Operand, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                operand: Clone(expr.Operand, context)
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override Expr VisitLeafDimClamp(DimClamp expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Operand, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.MinValue, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.MaxValue, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                operand: Clone(expr.Operand, context),
+                minValue: Clone(expr.MinValue, context),
+                maxValue: Clone(expr.MaxValue, context)
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override Expr VisitLeafDimCompareAndSelect(DimCompareAndSelect expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Value, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Expected, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.TrueValue, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.FalseValue, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                value: Clone(expr.Value, context),
+                expected: Clone(expr.Expected, context),
+                trueValue: Clone(expr.TrueValue, context),
+                falseValue: Clone(expr.FalseValue, context)
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override Expr VisitLeafDimMin(DimMin expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            if (IsMutatedArray(expr.Operands, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                operands: CloneArray(expr.Operands, context)
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override Expr VisitLeafDimMax(DimMax expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            if (IsMutatedArray(expr.Operands, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                operands: CloneArray(expr.Operands, context)
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override Expr VisitLeafDimPositive(DimPositive expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Operand, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.Extent, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                operand: Clone(expr.Operand, context),
+                extent: Clone(expr.Extent, context)
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override Expr VisitLeafPadding(Shapes.Padding expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Before, context))
+            {
+                return true;
+            }
+
+            if (IsMutated(expr.After, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                before: Clone(expr.Before, context),
+                after: Clone(expr.After, context)
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override Expr VisitLeafPaddings(Shapes.Paddings expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            if (IsMutatedArray(expr.Values, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                values: CloneArray(expr.Values, context)
+            );
+        }
+
+        return expr;
+    }
+
 }

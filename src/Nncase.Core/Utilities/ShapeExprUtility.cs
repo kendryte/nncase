@@ -81,7 +81,7 @@ public static class ShapeExprUtility
     {
         if (shapeExpr.CheckedShape.IsScalar)
         {
-            return SliceAndMerge(StackScalar(shapeExpr), index, value, 0L);
+            return SliceAndMerge(Stack(shapeExpr, 0), index, value, 0L);
         }
 
         return SliceAndMerge(shapeExpr, index, value, 0L);

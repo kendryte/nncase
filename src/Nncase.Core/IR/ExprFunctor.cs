@@ -67,6 +67,9 @@ public partial class ExprFunctor<TExprResult, TTypeResult> : ExprFunctor<TExprRe
     /// </summary>
     public TExprResult Visit(Expr expr) => Visit(expr, default);
 
+    public TExprResult Visit<T>(T var)
+        where T : class, IVar => Visit((Expr)(IVar)var, default);
+
     /// <summary>
     /// Visit type.
     /// </summary>

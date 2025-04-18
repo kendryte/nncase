@@ -58,7 +58,7 @@ public class UnitTestPrimFuncMerge : TestClassBase
 #if DEBUG
         Diagnostics.DumpScope.Current.DumpDotIR(main, $"{count}_pre");
 #endif
-        var feedDict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance) {
+        var feedDict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance) {
           { inputVar, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 12, PrimFuncBuilder.Dimensions).Evaluate() },
         };
 
@@ -86,9 +86,9 @@ public class UnitTestPrimFuncMerge : TestClassBase
 
 internal sealed class TestEvaluateVisitor : ExprVisitor<IValue, Unit>
 {
-    private readonly IReadOnlyDictionary<Var, IValue> _feedDict;
+    private readonly IReadOnlyDictionary<IVar, IValue> _feedDict;
 
-    public TestEvaluateVisitor(IReadOnlyDictionary<Var, IValue> feedDict)
+    public TestEvaluateVisitor(IReadOnlyDictionary<IVar, IValue> feedDict)
     {
         _feedDict = feedDict;
     }

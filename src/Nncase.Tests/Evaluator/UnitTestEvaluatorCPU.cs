@@ -39,7 +39,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
         var pre = IR.F.NN.Conv2D(input, weights, bias, strides, new[,] { { padding[0], padding[1] }, { padding[2], padding[3] } }, dilation, PadMode.Constant, groups);
         var outShape = pre.CheckedShape.ToValueArray();
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inputShape).Evaluate() },
             { weights, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, weightShape).Evaluate() },
         };
@@ -97,7 +97,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
             post = PackUtility.SliceForPack(IR.F.CPU.Unpack(softmax, packedAxes), shape, pads);
         }
 
-        var feedDict = new Dictionary<Var, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
+        var feedDict = new Dictionary<IVar, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
         Comparator.Compare(pre.Evaluate(feedDict), post.Evaluate(feedDict), 0.999f);
     }
 
@@ -112,7 +112,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pre = IR.F.NN.Softmax(input, axis);
-        var feedDict = new Dictionary<Var, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
+        var feedDict = new Dictionary<IVar, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
         var rule = new Passes.Rules.CPU.PackSoftmax();
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
@@ -173,7 +173,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
             post = PackUtility.SliceForPack(IR.F.CPU.Unpack(layernorm, packedAxes), shape, padsInput);
         }
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
             { scale, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, pshape).Evaluate() },
             { bias, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, pshape).Evaluate() },
@@ -201,7 +201,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
         var bias = new Var(new TensorType(DataTypes.Float32, pshape));
         var pre = IR.F.NN.LayerNorm(axis, 1e-6f, input, scale, bias, false);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
             { scale, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, pshape).Evaluate() },
             { bias, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, pshape).Evaluate() },
@@ -251,7 +251,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
             }
         }
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
         };
@@ -271,7 +271,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
         var pre = IR.F.Tensors.MatMul(lhs, rhs);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
         };
@@ -295,7 +295,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pre = IR.F.Math.Unary(UnaryOp.Neg, input);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
         var rule = new Passes.Rules.CPU.PackUnary();
@@ -347,7 +347,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
             return;
         }
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
         };
@@ -367,7 +367,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
         var pre = IR.F.Math.Binary(op, lhs, rhs);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
         };
@@ -400,7 +400,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
             post = PackUtility.SliceForPack(IR.F.CPU.Unpack(swish, packedAxes), shape, pads);
         }
 
-        var feedDict = new Dictionary<Var, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
+        var feedDict = new Dictionary<IVar, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
         Comparator.Compare(pre.Evaluate(feedDict), post.Evaluate(feedDict), 0.999f);
     }
 
@@ -414,7 +414,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
         var rule = new Passes.Rules.CPU.PackSwish();
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
-        var feedDict = new Dictionary<Var, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
+        var feedDict = new Dictionary<IVar, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
         foreach (var post in posts)
         {
 #if DEBUG
@@ -440,7 +440,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
         var rule = new Passes.Rules.CPU.PackTranspose();
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
-        var feedDict = new Dictionary<Var, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
+        var feedDict = new Dictionary<IVar, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
         foreach (var post in posts)
         {
             Comparator.Compare(pre.Evaluate(feedDict), post.Evaluate(feedDict), 0.999f);
@@ -457,7 +457,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
         var rule = new Passes.Rules.CPU.PackUnsqueeze();
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
-        var feedDict = new Dictionary<Var, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
+        var feedDict = new Dictionary<IVar, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
         foreach (var post in posts)
         {
             Comparator.Compare(pre.Evaluate(feedDict), post.Evaluate(feedDict), 0.999f);
@@ -476,7 +476,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
         var rule = new Passes.Rules.CPU.PackReshape();
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
-        var feedDict = new Dictionary<Var, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
+        var feedDict = new Dictionary<IVar, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
         foreach (var post in posts)
         {
 #if DEBUG
@@ -494,7 +494,7 @@ public sealed class UnitTestEvaluatorCPU : TestClassBase
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pre = IR.F.Tensors.Slice(input, start, stop, new[] { axis }, new[] { 1 });
 
-        var feedDict = new Dictionary<Var, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
+        var feedDict = new Dictionary<IVar, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
         var rule = new Passes.Rules.CPU.PackSlice();
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());

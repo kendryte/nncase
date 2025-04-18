@@ -47,14 +47,19 @@ public sealed partial class InlineFunction : RewriteRule<Pattern>
 
 internal sealed class FunctionBodyCloner : ExprCloner<Unit>
 {
-    private readonly Dictionary<Var, Expr> _mapper;
+    private readonly Dictionary<IVar, Expr> _mapper;
 
-    public FunctionBodyCloner(Dictionary<Var, Expr> mapper)
+    public FunctionBodyCloner(Dictionary<IVar, Expr> mapper)
     {
         _mapper = mapper;
     }
 
     protected override Expr VisitLeafVar(Var expr, Unit context)
+    {
+        return _mapper[expr];
+    }
+
+    protected override Expr VisitDimVar(DimVar expr, Unit context)
     {
         return _mapper[expr];
     }

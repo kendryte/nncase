@@ -55,9 +55,9 @@ public sealed class UnRollLoopSequential : ExprRewriter
     /// </summary>
     private static IEnumerable<TensorConst> MakeGrid(TIR.For loop)
     {
-        long start = ((TensorConst)loop.Domain.Start).Value.ToScalar<long>();
-        long stop = ((TensorConst)loop.Domain.Stop).Value.ToScalar<long>();
-        long step = ((TensorConst)loop.Domain.Step).Value.ToScalar<long>();
+        long start = loop.Domain.Start.FixedValue;
+        long stop = loop.Domain.Stop.FixedValue;
+        long step = loop.Domain.Step.FixedValue;
 
         for (long i = start; i < stop; i += step)
         {
@@ -67,7 +67,7 @@ public sealed class UnRollLoopSequential : ExprRewriter
 
     private bool IsCanUnroll(TIR.For for_loop)
     {
-        return for_loop.Domain.Start is TensorConst && for_loop.Domain.Stop is TensorConst && for_loop.Domain.Step is TensorConst && for_loop.Mode == LoopMode.Unrolled;
+        return for_loop.Domain.Start.IsFixed && for_loop.Domain.Stop.IsFixed && for_loop.Domain.Step.IsFixed && for_loop.Mode == LoopMode.Unrolled;
     }
 
     private Expr TryUnroll(TIR.For expr)
@@ -103,7 +103,7 @@ public sealed class UnRollLoopSequential : ExprRewriter
                      select grid.ToArray()).
           Select(grid =>
             {
-                var vmap = new Dictionary<Var, TensorConst>();
+                var vmap = new Dictionary<IVar, TensorConst>();
                 for (int i = 0; i < grid.Length; i++)
                 {
                     vmap.Add(nested_loops[i].LoopVar, grid[i]);
@@ -128,12 +128,12 @@ public sealed class UnRollLoopSequential : ExprRewriter
 /// </summary>
 internal sealed class LoopBodyCloner : ExprCloner<Unit>
 {
-    private readonly IReadOnlyDictionary<Var, TensorConst> _vmap;
-    private readonly Dictionary<Var, IValue> _cmap;
+    private readonly IReadOnlyDictionary<IVar, TensorConst> _vmap;
+    private readonly Dictionary<IVar, IValue> _cmap;
     private readonly Dictionary<Type, Evaluator.IEvaluator> _evaluator_cache;
     private readonly IDictionary<Expr, Expr> _cseMemo;
 
-    public LoopBodyCloner(IReadOnlyDictionary<Var, TensorConst> vmap, Dictionary<Type, Evaluator.IEvaluator> evaluator_cache, IDictionary<Expr, Expr> cseMemo)
+    public LoopBodyCloner(IReadOnlyDictionary<IVar, TensorConst> vmap, Dictionary<Type, Evaluator.IEvaluator> evaluator_cache, IDictionary<Expr, Expr> cseMemo)
     {
         _vmap = vmap;
         _cmap = new(ReferenceEqualityComparer.Instance);
@@ -171,7 +171,7 @@ internal sealed class LoopBodyCloner : ExprCloner<Unit>
 
         if (target is Function fn)
         {
-            var feedDict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance);
+            var feedDict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance);
             foreach (var (v, arg) in fn.Parameters.ToArray().Zip(arguments.ToArray()))
             {
                 if (arg is not Const constArg)
@@ -201,7 +201,8 @@ internal sealed class LoopBodyCloner : ExprCloner<Unit>
             strides: CloneArray(expr.Strides, context));
     }
 
-    private Expr CSE(Expr c)
+    private T CSE<T>(T c)
+        where T : Expr
     {
         if (!_cseMemo.TryGetValue(c, out var result))
         {
@@ -209,6 +210,6 @@ internal sealed class LoopBodyCloner : ExprCloner<Unit>
             _cseMemo.Add(c, result);
         }
 
-        return result;
+        return (T)result;
     }
 }

@@ -271,6 +271,114 @@ public partial class ExprRewriter<TContext>
         return RewriteLeafBufferOf(expr, context);
     }
 
+    /// <inheritdoc/>
+    protected sealed override Expr VisitLeafDimension(Dimension expr, TContext context)
+    {
+        return RewriteLeafDimension(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override Expr VisitLeafAsDim(AsDim expr, TContext context)
+    {
+        return RewriteLeafAsDim(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override Expr VisitLeafUnknownDim(UnknownDim expr, TContext context)
+    {
+        return RewriteLeafUnknownDim(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override Expr VisitLeafDimVar(DimVar expr, TContext context)
+    {
+        return RewriteLeafDimVar(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override Expr VisitLeafDimConst(DimConst expr, TContext context)
+    {
+        return RewriteLeafDimConst(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override Expr VisitLeafDimPower(DimPower expr, TContext context)
+    {
+        return RewriteLeafDimPower(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override Expr VisitLeafDimFraction(DimFraction expr, TContext context)
+    {
+        return RewriteLeafDimFraction(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override Expr VisitLeafDimRemainder(DimRemainder expr, TContext context)
+    {
+        return RewriteLeafDimRemainder(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override Expr VisitLeafDimProduct(DimProduct expr, TContext context)
+    {
+        return RewriteLeafDimProduct(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override Expr VisitLeafDimSum(DimSum expr, TContext context)
+    {
+        return RewriteLeafDimSum(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override Expr VisitLeafDimAbs(DimAbs expr, TContext context)
+    {
+        return RewriteLeafDimAbs(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override Expr VisitLeafDimClamp(DimClamp expr, TContext context)
+    {
+        return RewriteLeafDimClamp(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override Expr VisitLeafDimCompareAndSelect(DimCompareAndSelect expr, TContext context)
+    {
+        return RewriteLeafDimCompareAndSelect(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override Expr VisitLeafDimMin(DimMin expr, TContext context)
+    {
+        return RewriteLeafDimMin(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override Expr VisitLeafDimMax(DimMax expr, TContext context)
+    {
+        return RewriteLeafDimMax(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override Expr VisitLeafDimPositive(DimPositive expr, TContext context)
+    {
+        return RewriteLeafDimPositive(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override Expr VisitLeafPadding(Shapes.Padding expr, TContext context)
+    {
+        return RewriteLeafPadding(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override Expr VisitLeafPaddings(Shapes.Paddings expr, TContext context)
+    {
+        return RewriteLeafPaddings(expr, context);
+    }
+
     /// <summary>
     /// Rewrite leaf <see cref="BaseFunction"/>.
     /// </summary>
@@ -485,6 +593,96 @@ public partial class ExprRewriter<TContext>
     /// Rewrite leaf <see cref="Buffers.BufferOf"/>.
     /// </summary>
     protected virtual Expr RewriteLeafBufferOf(Buffers.BufferOf expr, TContext context) => DefaultRewriteLeaf(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="Dimension"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimension(Dimension expr, TContext context) => DefaultRewriteLeaf(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="AsDim"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafAsDim(AsDim expr, TContext context) => RewriteLeafDimension(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="UnknownDim"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafUnknownDim(UnknownDim expr, TContext context) => RewriteLeafDimension(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimVar"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimVar(DimVar expr, TContext context) => RewriteLeafDimension(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimConst"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimConst(DimConst expr, TContext context) => RewriteLeafDimension(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimPower"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimPower(DimPower expr, TContext context) => RewriteLeafDimension(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimFraction"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimFraction(DimFraction expr, TContext context) => RewriteLeafDimension(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimRemainder"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimRemainder(DimRemainder expr, TContext context) => RewriteLeafDimension(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimProduct"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimProduct(DimProduct expr, TContext context) => RewriteLeafDimension(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimSum"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimSum(DimSum expr, TContext context) => RewriteLeafDimension(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimAbs"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimAbs(DimAbs expr, TContext context) => RewriteLeafDimension(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimClamp"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimClamp(DimClamp expr, TContext context) => RewriteLeafDimension(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimCompareAndSelect"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimCompareAndSelect(DimCompareAndSelect expr, TContext context) => RewriteLeafDimension(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimMin"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimMin(DimMin expr, TContext context) => RewriteLeafDimension(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimMax"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimMax(DimMax expr, TContext context) => RewriteLeafDimension(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimPositive"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimPositive(DimPositive expr, TContext context) => RewriteLeafDimension(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="Shapes.Padding"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafPadding(Shapes.Padding expr, TContext context) => DefaultRewriteLeaf(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="Shapes.Paddings"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafPaddings(Shapes.Paddings expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
 }
 
@@ -833,5 +1031,149 @@ public partial class ExprRewriter
 
     /// <inheritdoc />
     protected sealed override Expr RewriteLeafBufferOf(Buffers.BufferOf expr, Unit context) => RewriteLeafBufferOf(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="Dimension"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimension(Dimension expr) => DefaultRewriteLeaf(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafDimension(Dimension expr, Unit context) => RewriteLeafDimension(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="AsDim"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafAsDim(AsDim expr) => RewriteLeafDimension(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafAsDim(AsDim expr, Unit context) => RewriteLeafAsDim(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="UnknownDim"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafUnknownDim(UnknownDim expr) => RewriteLeafDimension(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafUnknownDim(UnknownDim expr, Unit context) => RewriteLeafUnknownDim(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimVar"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimVar(DimVar expr) => RewriteLeafDimension(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafDimVar(DimVar expr, Unit context) => RewriteLeafDimVar(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimConst"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimConst(DimConst expr) => RewriteLeafDimension(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafDimConst(DimConst expr, Unit context) => RewriteLeafDimConst(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimPower"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimPower(DimPower expr) => RewriteLeafDimension(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafDimPower(DimPower expr, Unit context) => RewriteLeafDimPower(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimFraction"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimFraction(DimFraction expr) => RewriteLeafDimension(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafDimFraction(DimFraction expr, Unit context) => RewriteLeafDimFraction(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimRemainder"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimRemainder(DimRemainder expr) => RewriteLeafDimension(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafDimRemainder(DimRemainder expr, Unit context) => RewriteLeafDimRemainder(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimProduct"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimProduct(DimProduct expr) => RewriteLeafDimension(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafDimProduct(DimProduct expr, Unit context) => RewriteLeafDimProduct(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimSum"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimSum(DimSum expr) => RewriteLeafDimension(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafDimSum(DimSum expr, Unit context) => RewriteLeafDimSum(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimAbs"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimAbs(DimAbs expr) => RewriteLeafDimension(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafDimAbs(DimAbs expr, Unit context) => RewriteLeafDimAbs(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimClamp"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimClamp(DimClamp expr) => RewriteLeafDimension(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafDimClamp(DimClamp expr, Unit context) => RewriteLeafDimClamp(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimCompareAndSelect"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimCompareAndSelect(DimCompareAndSelect expr) => RewriteLeafDimension(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafDimCompareAndSelect(DimCompareAndSelect expr, Unit context) => RewriteLeafDimCompareAndSelect(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimMin"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimMin(DimMin expr) => RewriteLeafDimension(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafDimMin(DimMin expr, Unit context) => RewriteLeafDimMin(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimMax"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimMax(DimMax expr) => RewriteLeafDimension(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafDimMax(DimMax expr, Unit context) => RewriteLeafDimMax(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimPositive"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafDimPositive(DimPositive expr) => RewriteLeafDimension(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafDimPositive(DimPositive expr, Unit context) => RewriteLeafDimPositive(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="Shapes.Padding"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafPadding(Shapes.Padding expr) => DefaultRewriteLeaf(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafPadding(Shapes.Padding expr, Unit context) => RewriteLeafPadding(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="Shapes.Paddings"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafPaddings(Shapes.Paddings expr) => DefaultRewriteLeaf(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafPaddings(Shapes.Paddings expr, Unit context) => RewriteLeafPaddings(expr);
 
 }

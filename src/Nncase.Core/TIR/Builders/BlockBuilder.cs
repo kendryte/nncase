@@ -33,7 +33,7 @@ public interface IBlockBuilder : IExprBuilder<Block>
     /// <summary>
     /// create the iterVar and bind the value.
     /// </summary>
-    IBlockBuilder Bind(out IterVar vi, Range domain, IterationMode mode, Var value);
+    IBlockBuilder Bind(out IterVar vi, Range domain, IterationMode mode, DimVar value);
 
     /// <summary>
     /// bind the itervar with for loop.
@@ -86,7 +86,7 @@ internal class BlockBuilder : IBlockBuilder
         return this;
     }
 
-    public IBlockBuilder Bind(out IterVar vi, Range dom, IterationMode mode, Var value)
+    public IBlockBuilder Bind(out IterVar vi, Range dom, IterationMode mode, DimVar value)
     {
         vi = new IterVar(dom, mode, value);
         _iterVars.Add(vi);

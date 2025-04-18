@@ -96,7 +96,7 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
             return ValueRange<double>.Full;
         }
 
-        var ranges = expr.Select(x => x.IsFixed ? new ValueRange<double>(x.FixedValue, x.FixedValue) : Visit(x.Value)).ToArray();
+        var ranges = expr.Select(Visit).ToArray();
         return new ValueRange<double>(ranges.Min(x => x.Min), ranges.Max(x => x.Max));
     }
 

@@ -9,10 +9,28 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR;
 
+public interface IVar : IEquatable<IVar?>
+{
+    /// <summary>
+    /// Gets the name of the variable.
+    /// </summary>
+    string Name { get; }
+
+    int GlobalVarIndex { get; }
+
+    IRType CheckedType { get; }
+
+    Shape CheckedShape { get; }
+
+    DataType CheckedDataType { get; }
+
+    IVar With(string? name = null);
+}
+
 /// <summary>
 /// Variable expression.
 /// </summary>
-public sealed class Var : Expr, IEquatable<Var?>
+public sealed class Var : Expr, IVar, IEquatable<Var?>
 {
     private static int _globalVarIndex;
 
@@ -107,6 +125,8 @@ public sealed class Var : Expr, IEquatable<Var?>
 
     public Var With(string? name = null, IRType? typeAnnotation = null) => new Var(name ?? Name, typeAnnotation ?? TypeAnnotation) { Metadata = Metadata };
 
+    IVar IVar.With(string? name) => With(name);
+
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as Var);
 
@@ -120,6 +140,8 @@ public sealed class Var : Expr, IEquatable<Var?>
 
         return other is not null && GlobalVarIndex == other.GlobalVarIndex;
     }
+
+    bool IEquatable<IVar?>.Equals(IVar? other) => other is Var var && Equals(var);
 
     /// <inheritdoc/>
     protected override int GetHashCodeCore() => HashCode.Combine(GlobalVarIndex);

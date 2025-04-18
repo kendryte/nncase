@@ -193,7 +193,7 @@ public class UnitTestEGraphFusion : TestClassBase
         Assert.True(CompilerServices.InferenceType(main));
 
         var input_tensor = Testing.Rand<float>(1, 224, 224, 3);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
           { input, Value.FromTensor(input_tensor) },
         };
@@ -250,7 +250,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -307,7 +307,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -367,7 +367,7 @@ public class UnitTestEGraphFusion : TestClassBase
 
         var input_tensor1 = Testing.Rand<float>(1, 32, 32);
         var input_tensor2 = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input1, Value.FromTensor(input_tensor1) },
             { input2, Value.FromTensor(input_tensor2) },
@@ -422,7 +422,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -480,7 +480,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -542,7 +542,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -604,7 +604,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -670,7 +670,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -732,7 +732,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -790,7 +790,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -844,7 +844,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -903,7 +903,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -958,7 +958,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -1018,7 +1018,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -1066,7 +1066,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -1129,7 +1129,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>() + tv.CountCallOp<IR.Tensors.Split>();
 
         var input_tensor = Testing.Rand<float>(2, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };

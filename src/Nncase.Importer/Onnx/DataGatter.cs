@@ -34,10 +34,10 @@ public sealed partial class OnnxImporter
 
     public Shape GetShape(ValueInfoProto v) => new Shape(GetOriginShape(v));
 
-    public Expr[] GetOriginShape(ValueInfoProto v)
+    public Dimension[] GetOriginShape(ValueInfoProto v)
     {
         var shape = v.Type.TensorType.Shape.Dim;
-        return GetDimArray(shape, d => d, dim => _dynVarMap[dim.DimParam], dim => (Expr)dim.DimValue);
+        return GetDimArray(shape, d => d, dim => _dynVarMap[dim.DimParam], dim => (Dimension)dim.DimValue);
     }
 
     public T[] GetDimArray<T>(

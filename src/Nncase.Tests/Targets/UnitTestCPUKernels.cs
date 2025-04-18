@@ -26,7 +26,7 @@ namespace Nncase.Tests.TargetTest;
 
 public class CpuKernelCase
 {
-    public CpuKernelCase(string name, Fusion fusion, Var[] vars, Tensor[] inputs)
+    public CpuKernelCase(string name, Fusion fusion, IVar[] vars, Tensor[] inputs)
     {
         Name = name;
         Fusion = fusion;
@@ -38,7 +38,7 @@ public class CpuKernelCase
 
     public Fusion Fusion { get; }
 
-    public IReadOnlyList<Var> Vars { get; }
+    public IReadOnlyList<IVar> Vars { get; }
 
     public IReadOnlyList<Tensor> Inputs { get; }
 }
@@ -113,7 +113,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         Expr e = constE ? Const.FromValue(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, eshape).Evaluate()) : new Var("e", new TensorType(DataTypes.Float32, eshape));
         var f = IR.F.Tensors.MatMul(d, e);
 
-        var feedDict = new Dictionary<Var, IValue>();
+        var feedDict = new Dictionary<IVar, IValue>();
         if (a is Var va)
         {
             feedDict.Add(va, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, ashape).Evaluate());
@@ -145,7 +145,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var inputType = new TensorType(DataTypes.Float32, shape);
         var input = new Var(inputType);
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 1.0f, 1.0f, 1, shape).Evaluate() },
         };
 
@@ -178,7 +178,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var inputType = new TensorType(DataTypes.Float32, shape);
         var input = new Var(inputType);
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             // { input, IR.F.Tensors.ConstantOfShape(shape, 1.0f).Evaluate() },
             { input, IR.F.Random.Normal(DataTypes.Float32, 1.0f, 1.0f, 1, shape).Evaluate() },
         };
@@ -220,7 +220,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var f = new Var("f", new TensorType(DataTypes.Float32, fshape));
         var g = IR.F.Math.Binary(BinaryOp.Add, e, f);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { a, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, ashape).Evaluate() },
             { b, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, bshape).Evaluate() },
             { d, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, dshape).Evaluate() },
@@ -233,7 +233,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [Fact]
     public async Task TestDynamicMatmulBinaryBinary()
     {
-        var dimM = Var.SizeVar("m");
+        var dimM = new DimVar("m");
         dimM.Metadata.Range = new(1, 384 * 2);
         var ashape = new[] { 1, 64, 384, 128 };
         var bshape = new[] { 1, 64, 128, 384 };
@@ -241,7 +241,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         aDims[^2] = dimM;
 
         var a = new Var("a", new TensorType(DataTypes.Float32, new Shape(aDims)));
-        CompileOptions.ShapeBucketOptions.VarMap.Add(a, aDims.Select(x => x.ToExpr()).ToArray());
+        CompileOptions.ShapeBucketOptions.VarMap.Add(a, aDims.Select(x => x).ToArray());
         var b = new Var("b", new TensorType(DataTypes.Float32, bshape));
         var c = IR.F.Tensors.MatMul(a, b);
         var dshape = new[] { 1 };
@@ -251,7 +251,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var f = new Var("f", new TensorType(DataTypes.Float32, fshape));
         var g = IR.F.Math.Binary(BinaryOp.Add, e, f);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { a, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, ashape).Evaluate() },
             { b, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, bshape).Evaluate() },
             { d, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, dshape).Evaluate() },
@@ -268,7 +268,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pre = IR.F.NN.Swish(input);
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
 
@@ -289,7 +289,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pre = IR.F.Math.Unary(UnaryOp.Neg, input);
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
 
@@ -312,7 +312,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var dimVars = new[] { "n", "c", "h", "w" }.Select((x, i) =>
         {
-            var v = Var.SizeVar(x);
+            var v = new DimVar(x);
             v.Metadata.Range = new(1, shape[i] * 2);
             return v;
         }).ToArray();
@@ -320,7 +320,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         CompileOptions.ShapeBucketOptions.VarMap.Add(input, dimVars);
 
         var pre = IR.F.Math.Unary(UnaryOp.Neg, input);
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
             { dimVars[0], Value.FromTensor(shape[0]) },
             { dimVars[1], Value.FromTensor(shape[1]) },
@@ -349,7 +349,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
         var pre = IR.F.Math.Binary(op, lhs, rhs);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
         };
@@ -399,18 +399,18 @@ public sealed class UnitTestCPUKernels : TestClassBase
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
 
-        var dimH = Var.SizeVar("h");
+        var dimH = new DimVar("h");
         dimH.Metadata.Range = new(1, 128);
         var inputDims = lhsShape.Select(x => (Dimension)x).ToArray();
         inputDims[^2] = dimH;
 
         var lhsDynShape = new Shape(inputDims);
         var lhs = new Var(new TensorType(DataTypes.Float32, lhsDynShape));
-        CompileOptions.ShapeBucketOptions.VarMap.Add(lhs, inputDims.Select(x => x.ToExpr()).ToArray());
+        CompileOptions.ShapeBucketOptions.VarMap.Add(lhs, inputDims.Select(x => x).ToArray());
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
         var pre = IR.F.Math.Binary(op, lhs, rhs);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
             { dimH, Value.FromTensor(lhsShape[^2]) },
@@ -433,7 +433,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var bias = new Var(new TensorType(DataTypes.Float32, pshape));
         var pre = IR.F.NN.InstanceNormalization(input, scale, bias, epsion);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
             { scale, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, pshape).Evaluate() },
             { bias, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, pshape).Evaluate() },
@@ -453,7 +453,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pre = IR.F.Imaging.ResizeImage(resizeMode, input, Array.Empty<float>(), newSize);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
 
@@ -474,7 +474,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var casted2 = IR.F.Tensors.Cast(casted1, DataType.FromTypeCode(type2));
         var pre = IR.F.Tensors.Cast(casted2, DataTypes.Float32);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
 
@@ -508,7 +508,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         Expr rhs = constB ? rhsTensor : new Var(new TensorType(DataTypes.Float32, rhsShape));
         var pre = IR.F.Tensors.MatMul(lhs, rhs);
 
-        var feedDict = new Dictionary<Var, IValue>();
+        var feedDict = new Dictionary<IVar, IValue>();
         if (!constA)
         {
             feedDict.Add((Var)lhs, Value.FromTensor(lhsTensor));
@@ -545,9 +545,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var lhsTensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate().AsTensor(); // IR.F.Tensors.ConstantOfShape(lhsShape, 1.0f).Evaluate().AsTensor();
         var rhsTensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate().AsTensor(); // IR.F.Tensors.ConstantOfShape(rhsShape, 1.0f).Evaluate().AsTensor();
 
-        var dimM = Var.SizeVar("m");
+        var dimM = new DimVar("m");
         dimM.Metadata.Range = new(1, 1024);
-        var dimK = Var.SizeVar("k");
+        var dimK = new DimVar("k");
         dimK.Metadata.Range = new(1, 1024);
 
         var lhsDims = lhsShape.Select(x => (Dimension)x).ToArray();
@@ -569,20 +569,20 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var pre = IR.F.Tensors.MatMul(lhs, rhs);
 
-        var feedDict = new Dictionary<Var, IValue>
+        var feedDict = new Dictionary<IVar, IValue>
         {
             { dimM, Value.FromTensor(lhsShape[^2]) },
             { dimK, Value.FromTensor(rhsShape[^2]) },
         };
         if (!constA)
         {
-            CompileOptions.ShapeBucketOptions.VarMap.Add((Var)lhs, lhsDims.Select(x => x.ToExpr()).ToArray());
+            CompileOptions.ShapeBucketOptions.VarMap.Add((Var)lhs, lhsDims.Select(x => x).ToArray());
             feedDict.Add((Var)lhs, Value.FromTensor(lhsTensor));
         }
 
         if (!constB)
         {
-            CompileOptions.ShapeBucketOptions.VarMap.Add((Var)rhs, rhsDims.Select(x => x.ToExpr()).ToArray());
+            CompileOptions.ShapeBucketOptions.VarMap.Add((Var)rhs, rhsDims.Select(x => x).ToArray());
             feedDict.Add((Var)rhs, Value.FromTensor(rhsTensor));
         }
 
@@ -612,7 +612,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         Expr rhs = constB ? rhsTensor : new Var(new TensorType(DataTypes.Float32, rhsShape));
         var pre = IR.F.Tensors.MatMul(lhs, rhs);
 
-        var feedDict = new Dictionary<Var, IValue>();
+        var feedDict = new Dictionary<IVar, IValue>();
         if (!constA)
         {
             feedDict.Add((Var)lhs, Value.FromTensor(lhsTensor));
@@ -637,7 +637,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var vhidden_in = new Var("vhidden_in", new TensorType(DataTypes.Float32, shape));
         var vposition_ids = new Var("vposition_ids", new TensorType(DataTypes.Int64, indicesShape));
         var pre = IR.F.Tensors.Gather(vhidden_in, axis, vposition_ids); // f32[1,384,128]
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { vhidden_in, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
             { vposition_ids, IR.F.Random.Uniform(DataTypes.Int64, 6, 1, 1, indicesShape).Evaluate() },
         };
@@ -661,7 +661,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var input = new Var(tensorType);
         var pre = IR.F.Tensors.Reduce(reduceOp, input, axes, init, keepDims);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
 
@@ -725,7 +725,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             pre = IR.F.Math.Binary(BinaryOp.Add, v7, new float[3, 1, 1] { { { 0.6403651f } }, { { -0.7995949f } }, { { 0.46802735f } } }); // f32[1,3,28,28]
         }
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
 
@@ -751,7 +751,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             pre = IR.F.Tensors.Reshape(input, outshape);
         }
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inshape).Evaluate() },
         };
 
@@ -773,7 +773,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             pre = v4;
         }
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, Value.FromTensor(Tensor.From(Enumerable.Range(0, (int)TensorUtilities.GetProduct(shape)).Select(i => (float)i).ToArray(), shape)) },
         };
 
@@ -808,11 +808,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
             pre = v28;
         }
 
-        var feedDict = new Dictionary<Var, IValue>() {
-            { v13, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v13.CheckedShape.ToValueArrayExpr()).Evaluate() },
-            { v15, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v15.CheckedShape.ToValueArrayExpr()).Evaluate() },
-            { v19, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v19.CheckedShape.ToValueArrayExpr()).Evaluate() },
-            { v24, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v24.CheckedShape.ToValueArrayExpr()).Evaluate() },
+        var feedDict = new Dictionary<IVar, IValue>() {
+            { v13, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v13.CheckedShape).Evaluate() },
+            { v15, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v15.CheckedShape).Evaluate() },
+            { v19, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v19.CheckedShape).Evaluate() },
+            { v24, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v24.CheckedShape).Evaluate() },
         };
 
         var posts = new[] { pre };
@@ -834,7 +834,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var pre = IR.F.NN.Conv2D(input, weights, bias, strides, new[,] { { padding[0], padding[1] }, { padding[2], padding[3] } }, dilation, PadMode.Constant, groups);
         var outShape = pre.CheckedShape.ToValueArray();
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inputShape).Evaluate() },
             { weights, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, wShape).Evaluate() },
         };
@@ -866,7 +866,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             unary = IR.F.Math.Unary(item, unary);
         }
 
-        var feedDict = new Dictionary<Var, IValue>()
+        var feedDict = new Dictionary<IVar, IValue>()
         {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
@@ -887,13 +887,13 @@ public sealed class UnitTestCPUKernels : TestClassBase
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
-        var dimM = Var.SizeVar("m");
+        var dimM = new DimVar("m");
         dimM.Metadata.Range = new(1, 64);
         var lhsDims = lhsShape.Select(x => (Dimension)x).ToArray();
         lhsDims[^2] = dimM;
 
         var lhs = new Var(new TensorType(DataTypes.Float32, new Shape(lhsDims)));
-        CompileOptions.ShapeBucketOptions.VarMap.Add(lhs, lhsDims.Select(x => x.ToExpr()).ToArray());
+        CompileOptions.ShapeBucketOptions.VarMap.Add(lhs, lhsDims.Select(x => x).ToArray());
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
         var matmul = IR.F.Tensors.MatMul(lhs, rhs);
         var reshaped = IR.F.Tensors.Reshape(matmul, newShape);
@@ -903,7 +903,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             unary = IR.F.Math.Unary(item, unary);
         }
 
-        var feedDict = new Dictionary<Var, IValue>()
+        var feedDict = new Dictionary<IVar, IValue>()
         {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
@@ -927,7 +927,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var lhsDims = lhsShape.Select(x => (Dimension)x).ToArray();
 
         var lhs = new Var(new TensorType(DataTypes.Float32, new Shape(lhsDims)));
-        CompileOptions.ShapeBucketOptions.VarMap.Add(lhs, lhsDims.Select(x => x.ToExpr()).ToArray());
+        CompileOptions.ShapeBucketOptions.VarMap.Add(lhs, lhsDims.Select(x => x).ToArray());
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
         var matmul = IR.F.Tensors.MatMul(lhs, rhs);
         var reshaped = IR.F.Tensors.Reshape(matmul, newShape);
@@ -939,7 +939,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var unsqueezed = IR.F.Tensors.Unsqueeze(unary, 0);
 
-        var feedDict = new Dictionary<Var, IValue>()
+        var feedDict = new Dictionary<IVar, IValue>()
         {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
@@ -959,14 +959,14 @@ public sealed class UnitTestCPUKernels : TestClassBase
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
 
-        var dimN = Var.SizeVar("n");
+        var dimN = new DimVar("n");
         dimN.Metadata.Range = new(1, 1200);
         var rhsDims = rhsShape.Select(x => (Dimension)x).ToArray();
         rhsDims[^1] = dimN;
 
         var lhs = new Var(new TensorType(DataTypes.Float32, new Shape(lhsShape)));
         var rhs = new Var(new TensorType(DataTypes.Float32, new Shape(rhsDims)));
-        CompileOptions.ShapeBucketOptions.VarMap.Add(rhs, rhsDims.Select(x => x.ToExpr()).ToArray());
+        CompileOptions.ShapeBucketOptions.VarMap.Add(rhs, rhsDims.Select(x => x).ToArray());
         var matmul = IR.F.Tensors.MatMul(lhs, rhs);
         var reshaped = IR.F.Tensors.Reshape(matmul, newShape);
         var unary = reshaped;
@@ -977,7 +977,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var unsqueezed = IR.F.Tensors.Unsqueeze(unary, 0);
 
-        var feedDict = new Dictionary<Var, IValue>()
+        var feedDict = new Dictionary<IVar, IValue>()
         {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
@@ -1001,12 +1001,12 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var inDims = inShape.Select(x => (Dimension)x).ToArray();
 
         var input = new Var(new TensorType(DataTypes.Float32, new Shape(inDims)));
-        CompileOptions.ShapeBucketOptions.VarMap.Add(input, inDims.Select(x => x.ToExpr()).ToArray());
+        CompileOptions.ShapeBucketOptions.VarMap.Add(input, inDims.Select(x => x).ToArray());
 
         var output = IR.F.Tensors.GetItem(input, indices);
         output = IR.F.Math.Unary(UnaryOp.Cos, output);
 
-        var feedDict = new Dictionary<Var, IValue>()
+        var feedDict = new Dictionary<IVar, IValue>()
         {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inShape).Evaluate() },
         };
@@ -1085,7 +1085,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             pre = v46;
         }
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { vhidden_in, IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 13,  new[] { 1, 384, 8192 }).Evaluate() },
             { vattn_mask, IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 14,  new[] { 1, 1, 384, 384 }).Evaluate() },
             { vposition_ids, IR.F.Random.Uniform(DataTypes.Int64, 383, 1, 15, new[] { 1, 384 }).Evaluate() },
@@ -1124,7 +1124,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             pre = IR.F.Math.Binary(BinaryOp.Add, v1, v15); // f32[1,512,64,64]
         }
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { vlatent_sample, IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 13,  new[] { 1, 4, 64, 64 }).Evaluate() },
         };
 
@@ -1132,7 +1132,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         await RunCases($"Theory{count}", feedDict, posts);
     }
 
-    internal async Task RunCases(string dumpDir, Dictionary<Var, IValue> feedDict, IEnumerable<Expr> posts)
+    internal async Task RunCases(string dumpDir, Dictionary<IVar, IValue> feedDict, IEnumerable<Expr> posts)
     {
         var postArray = posts.ToArray();
         using var pinner = new ExprPinner(postArray);

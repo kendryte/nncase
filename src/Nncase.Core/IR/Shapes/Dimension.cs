@@ -3,11 +3,16 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
+using Nncase.IR.Shapes;
+using Nncase.IR.Tensors;
 using Nncase.Passes;
 using Nncase.Passes.Mutators;
+using Nncase.Utilities;
 
 namespace Nncase.IR;
 
@@ -32,47 +37,67 @@ public enum DimensionKind : byte
     Unknown,
 }
 
-/// <summary>
-/// Shape dimension.
-/// </summary>
-public sealed class Dimension : Expr, IEquatable<Dimension?>
+public static class DimensionExtensions
 {
-    public static readonly Dimension Unknown = new Dimension(None.Default);
-
-    public Dimension(DimExpr value)
-        : base([value])
+    public static Dimension AsDim(this Expr expr) => expr switch
     {
-        if (value is dim tc)
+        TensorConst tc => tc.Value.ToScalar<long>(),
+        Dimension dim => dim,
+        _ => new AsDim(expr),
+    };
+
+    public static Shape AsShape(this Expr value)
+    {
+        if (value is TensorConst tc)
         {
-            Kind = DimensionKind.Fixed;
-            _fixedValue = tc.Value.ToScalar<long>();
+            return new Shape(tc.Value.ToArray<long>());
         }
-        else if (value is None)
+        else if (value is Shape shape)
         {
-            Kind = DimensionKind.Unknown;
-            _exprValue = None.Default;
+            return shape;
         }
         else
         {
-            Kind = DimensionKind.Dynamic;
-            _exprValue = value;
+            shape = value.CheckedShape;
+            if (shape.Rank != 1 || !shape.IsFixed)
+            {
+                return Shape.Unranked;
+            }
+
+            var rank = (int)shape[0].FixedValue;
+            return new Shape(Enumerable.Range(0, rank).Select(x => value[x].AsDim()));
         }
+    }
+}
+
+/// <summary>
+/// Shape dimension.
+/// </summary>
+public abstract class Dimension : Expr
+{
+    public static readonly DimConst Zero = new(0);
+    public static readonly DimConst One = new(1);
+    public static readonly DimConst MinusOne = new(-1);
+    public static readonly Dimension Unknown = UnknownDim.Default;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Dimension"/> class.
+    /// </summary>
+    /// <param name="operands">Operands.</param>
+    protected Dimension(Expr[] operands)
+        : base(operands)
+    {
     }
 
     /// <summary>
     /// Gets kind.
     /// </summary>
-    public DimensionKind Kind { get; }
-
-    /// <summary>
-    /// Gets value.
-    /// </summary>
-    public DimExpr Value => (DimExpr)Operands[0];
+    public abstract DimensionKind Kind { get; }
 
     /// <summary>
     /// Gets FixedValue.
     /// </summary>
-    public long FixedValue => IsFixed ? _fixedValue : throw new InvalidOperationException("Dimension is not fixed.");
+    public virtual long FixedValue => throw new InvalidOperationException("Dimension is not fixed.");
 
     /// <summary>
     /// Gets a value indicating whether dynamic.
@@ -86,86 +111,97 @@ public sealed class Dimension : Expr, IEquatable<Dimension?>
 
     public bool IsUnknown => Kind == DimensionKind.Unknown;
 
+    public static implicit operator Dimension(string name) => new DimVar(name);
+
     /// <summary>
     /// Convert <see cref="long"/> to a fixed <see cref="Dimension"/>.
     /// </summary>
     /// <param name="value">Dimension value.</param>
-    public static implicit operator Dimension(long value) => new(value);
+    public static implicit operator Dimension(long value) => new DimConst(value);
 
     /// <summary>
-    /// Convert <see cref="Expr"/> to a <see cref="Dimension"/> expression.
+    /// Convert <see cref="int"/> to a fixed <see cref="Dimension"/>.
     /// </summary>
     /// <param name="value">Dimension value.</param>
-    public static implicit operator Dimension(Expr value) => value switch
-    {
-        TensorConst dc => new(dc.Value.ToScalar<long>()),
-        _ => new(value),
-    };
+    public static implicit operator Dimension(int value) => new DimConst(value);
 
-    public static bool operator ==(Dimension left, Dimension right)
-    {
-        return left.Equals(right);
-    }
+    public static Dimension operator -(Dimension value) => value * -1;
 
-    public static bool operator !=(Dimension left, Dimension right)
+    public static Dimension operator +(Dimension lhs, Dimension rhs) => (lhs, rhs) switch
     {
-        return !(left == right);
-    }
-
-    public static Dimension operator +(Dimension lhs, Dimension rhs) => (lhs.IsFixed, rhs.IsFixed) switch
-    {
-        (true, true) => lhs.FixedValue + rhs.FixedValue,
-        (true, _) when lhs.FixedValue == 0 => rhs,
-        (_, true) when rhs.FixedValue == 0 => lhs,
+        (DimConst lhsConst, DimConst rhsConst) => lhsConst.Value + rhsConst.Value,
+        (DimConst dimConst, _) when dimConst.Value == 0 => rhs,
+        (_, DimConst dimConst) when dimConst.Value == 0 => lhs,
         (_, _) when lhs.IsUnknown || rhs.IsUnknown => Unknown,
-        (_, _) => new Dimension(lhs.Value + rhs.Value),
+        (DimSum lhsSum, DimSum rhsSum) => new DimSum(SpanUtility.Concat(lhsSum.Operands, rhsSum.Operands)).Simplify(),
+        (DimSum lhsSum, _) => new DimSum(SpanUtility.Concat(lhsSum.Operands, [rhs])).Simplify(),
+        (_, DimSum rhsSum) => new DimSum(SpanUtility.Concat([lhs], rhsSum.Operands)).Simplify(),
+        (_, _) => new DimSum([lhs, rhs]).Simplify(),
     };
 
-    public static Dimension operator +(Dimension lhs, int rhs) => lhs.IsFixed ? lhs.FixedValue + rhs : new Dimension(lhs.Value + rhs);
+    public static Dimension operator -(Dimension lhs, Dimension rhs) => lhs + (-rhs);
 
-    public static Dimension operator -(Dimension lhs, Dimension rhs) => (lhs.IsFixed, rhs.IsFixed) switch
+    public static Dimension operator *(Dimension lhs, Dimension rhs) => (lhs, rhs) switch
     {
-        (true, true) => lhs.FixedValue - rhs.FixedValue,
-        (_, true) when rhs.FixedValue == 0 => lhs,
+        (DimConst lhsConst, DimConst rhsConst) => lhsConst.Value * rhsConst.Value,
+        (DimConst lhsConst, _) when lhsConst.Value == 0 => 0,
+        (_, DimConst rhsConst) when rhsConst.Value == 0 => 0,
+        (DimConst dimConst, _) when dimConst.Value == 1 => rhs,
+        (_, DimConst dimConst) when dimConst.Value == 1 => lhs,
         (_, _) when lhs.IsUnknown || rhs.IsUnknown => Unknown,
-        (_, _) => new Dimension(lhs.Value - rhs.Value),
+        (DimSum lhsSum, _) => new DimSum(lhsSum.Operands.AsValueEnumerable().Select(x => x * rhs).ToArray()).Simplify(),
+        (_, DimSum rhsSum) => new DimSum(rhsSum.Operands.AsValueEnumerable().Select(x => lhs * x).ToArray()).Simplify(),
+        (DimProduct dimProduct, DimConst dimConst) => dimProduct.With(scale: dimProduct.Scale * dimConst.Value),
+        (DimConst dimConst, DimProduct dimProduct) => dimProduct.With(scale: dimProduct.Scale * dimConst.Value),
+        (DimProduct lhsProduct, DimProduct rhsProduct) => new DimProduct(SpanUtility.Concat(lhsProduct.Operands, rhsProduct.Operands)).Simplify(),
+        (DimProduct lhsProduct, _) => new DimProduct(SpanUtility.Concat(lhsProduct.Operands, [rhs])).Simplify(),
+        (_, DimProduct rhsProduct) => new DimProduct(SpanUtility.Concat([lhs], rhsProduct.Operands)).Simplify(),
+        (_, _) => new DimProduct([lhs, rhs]).Simplify(),
     };
 
-    public static Dimension operator *(Dimension lhs, Dimension rhs) => (lhs.IsFixed, rhs.IsFixed) switch
+    public static Dimension operator /(Dimension lhs, Dimension rhs) => (lhs, rhs) switch
     {
-        (true, true) => lhs.FixedValue * rhs.FixedValue,
-        (true, _) when lhs.FixedValue == 1 => rhs,
-        (_, true) when rhs.FixedValue == 1 => lhs,
+        (DimConst lhsConst, DimConst rhsConst) => lhsConst.Value / rhsConst.Value,
+        (_, DimConst dimConst) when dimConst.Value == 0 => throw new DivideByZeroException(),
+        (_, DimConst dimConst) when dimConst.Value == 1 => lhs,
         (_, _) when lhs.IsUnknown || rhs.IsUnknown => Unknown,
-        (_, _) => new Dimension(lhs.Value * rhs.Value),
+        (DimProduct dimProduct, DimConst dimConst) when dimProduct.Scale % dimConst.Value == 0 => dimProduct.With(scale: dimProduct.Scale / dimConst.Value),
+        (_, _) => new DimFraction(DimDivideMode.FloorDiv, lhs, rhs).Simplify(),
     };
 
-    public static Dimension operator /(Dimension lhs, Dimension rhs) => (lhs.IsFixed, rhs.IsFixed) switch
+    public static Dimension operator %(Dimension lhs, Dimension rhs) => (lhs, rhs) switch
     {
-        (true, true) => lhs.FixedValue / rhs.FixedValue,
+        (DimConst lhsConst, DimConst rhsConst) => lhsConst.Value % rhsConst.Value,
+        (_, DimConst dimConst) when dimConst.Value == 0 => throw new DivideByZeroException(),
+        (_, DimConst dimConst) when dimConst.Value == 1 => DimConst.Zero,
         (_, _) when lhs.IsUnknown || rhs.IsUnknown => Unknown,
-        (_, _) => new Dimension(lhs.Value / rhs.Value),
+        (DimProduct dimProduct, DimConst dimConst) when dimProduct.Scale % dimConst.Value == 0 => DimConst.Zero,
+        (_, _) => new DimRemainder(lhs, rhs).Simplify(),
     };
 
-    public static Dimension operator %(Dimension lhs, Dimension rhs) => (lhs.IsFixed, rhs.IsFixed) switch
+    public static Dimension Abs(Dimension value) => value switch
     {
-        (true, true) => lhs.FixedValue % rhs.FixedValue,
-        (_, _) when lhs.IsUnknown || rhs.IsUnknown => Unknown,
-        (_, _) => new Dimension(lhs.Value % rhs.Value),
+        _ when value.Metadata.Range?.Min >= 0 => value,
+        DimConst dimConst => System.Math.Abs(dimConst.Value),
+        UnknownDim => Unknown,
+        DimProduct dimProduct => dimProduct.With(operands: dimProduct.Operands.AsValueEnumerable().Select(Abs).ToArray(), scale: System.Math.Abs(dimProduct.Scale)),
+        DimFraction dimFraction => dimFraction.With(numerator: Abs(dimFraction.Numerator), denominator: Abs(dimFraction.Denominator)),
+        DimRemainder dimRemainder => new DimRemainder(Abs(dimRemainder.Numerator), Abs(dimRemainder.Denominator)),
+        DimSum dimSum => dimSum.With(dimSum.Operands.AsValueEnumerable().Select(Abs).ToArray(), bias: System.Math.Abs(dimSum.Bias)).Simplify(),
+        _ => new DimAbs(value),
     };
 
-    public static Dimension Abs(Dimension value)
+    public static Dimension Pow(Dimension value, int power)
     {
-        if (value.IsFixed)
+        return value switch
         {
-            return System.Math.Abs(value.FixedValue);
-        }
-        else if (value.IsUnknown)
-        {
-            return Unknown;
-        }
-
-        return value.Value.Metadata.Range?.Min >= 0 ? value.Value : IR.F.Math.Abs(value.Value);
+            DimConst dimConst => (long)System.Math.Pow(dimConst.Value, power),
+            OpaqueDim opaqueDim => new DimPower(opaqueDim, power),
+            UnknownDim => UnknownDim.Default,
+            DimProduct dimProduct => dimProduct.With(operands: dimProduct.Operands.AsValueEnumerable().Select(x => Pow(x, power)).ToArray(), scale: (long)System.Math.Pow(dimProduct.Scale, power)),
+            DimAbs dimAbs => power % 2 == 0 ? dimAbs.Operand : new DimAbs(Pow(dimAbs.Operand, power)),
+            _ => throw new NotSupportedException($"Unsupported dimension type: {value.GetType()}"),
+        };
     }
 
     public static Dimension Clamp(Dimension value, Dimension min, Dimension max)
@@ -187,135 +223,136 @@ public sealed class Dimension : Expr, IEquatable<Dimension?>
             return Unknown;
         }
 
-        return IR.F.Math.Clamp(value.Value, min.Value, max.Value);
+        return new DimClamp(value, min, max);
     }
 
-    public static Dimension CeilDiv(Dimension lhs, Dimension rhs)
+    public static Dimension CeilDiv(Dimension lhs, Dimension rhs) => (lhs, rhs) switch
     {
-        if (lhs.IsFixed && rhs.IsFixed)
-        {
-            return (lhs.FixedValue + rhs.FixedValue - 1) / rhs.FixedValue;
-        }
-        else if (lhs.IsUnknown || rhs.IsUnknown)
-        {
-            return Unknown;
-        }
-
-        return IR.F.Math.CeilDiv(lhs.Value, rhs.Value);
-    }
+        (DimConst lhsConst, DimConst rhsConst) => lhsConst.Value / rhsConst.Value,
+        (_, DimConst dimConst) when dimConst.Value == 0 => throw new DivideByZeroException(),
+        (_, DimConst dimConst) when dimConst.Value == 1 => lhs,
+        (_, _) when lhs.IsUnknown || rhs.IsUnknown => Unknown,
+        (DimProduct dimProduct, DimConst dimConst) when dimProduct.Scale % dimConst.Value == 0 => dimProduct.With(scale: dimProduct.Scale / dimConst.Value),
+        (_, _) => new DimFraction(DimDivideMode.CeilDiv, lhs, rhs).Simplify(),
+    };
 
     public static Dimension AlignUp(Dimension dimension, int align)
     {
         return CeilDiv(dimension, align) * align;
     }
 
-    public static Dimension Max(Dimension lhs, Dimension rhs)
+    public static Dimension Max(params Dimension[] dimensions)
     {
-        if (lhs.IsFixed && rhs.IsFixed)
+        if (dimensions.Length == 0)
         {
-            return System.Math.Max(lhs.FixedValue, rhs.FixedValue);
+            throw new ArgumentException("At least one dimension is required.");
         }
-        else if (lhs.IsUnknown || rhs.IsUnknown)
+
+        if (dimensions.All(x => x.IsFixed))
+        {
+            return dimensions.MaxBy(x => x.FixedValue)!;
+        }
+        else if (dimensions.Any(x => x.IsUnknown))
         {
             return Unknown;
         }
 
-        return IR.F.Math.Max(lhs.Value, rhs.Value);
+        return new DimMax(dimensions).Simplify();
     }
 
-    public static Dimension Min(Dimension lhs, Dimension rhs)
+    public static Dimension Min(params Dimension[] dimensions)
     {
-        if (lhs.IsFixed && rhs.IsFixed)
+        if (dimensions.Length == 0)
         {
-            return System.Math.Min(lhs.FixedValue, rhs.FixedValue);
+            throw new ArgumentException("At least one dimension is required.");
         }
-        else if (lhs.IsUnknown || rhs.IsUnknown)
+
+        if (dimensions.All(x => x.IsFixed))
+        {
+            return dimensions.MinBy(x => x.FixedValue)!;
+        }
+        else if (dimensions.Any(x => x.IsUnknown))
         {
             return Unknown;
         }
 
-        return IR.F.Math.Min(lhs.Value, rhs.Value);
+        return new DimMin(dimensions).Simplify();
     }
 
-    public static Dimension Select(Dimension value, Dimension compare, Dimension trueValue, Dimension falseValue)
+    public static Dimension Select(Dimension value, Dimension expected, Dimension trueValue, Dimension falseValue)
     {
         if (trueValue == falseValue)
         {
             return trueValue;
         }
-        else if (value.IsFixed && compare.IsFixed)
+        else if (value.IsFixed && expected.IsFixed)
         {
-            return value.FixedValue == compare.FixedValue ? trueValue : falseValue;
+            return value.FixedValue == expected.FixedValue ? trueValue : falseValue;
         }
-        else if (value.Value.Metadata?.Range is { Min: var min, Max: var max }
-                && compare.IsFixed
-                && (min > compare.FixedValue || max < compare.FixedValue))
+        else if (value.Metadata?.Range is { Min: var min, Max: var max }
+                && expected.IsFixed
+                && (min > expected.FixedValue || max < expected.FixedValue))
         {
             return falseValue;
         }
-        else if (value.IsUnknown || compare.IsUnknown)
+        else if (value.IsUnknown || expected.IsUnknown)
         {
             return Unknown;
         }
 
-        return IR.F.Math.Select(IR.F.Math.Equal(value.Value, compare.Value), trueValue.ToExpr(), falseValue.ToExpr());
+        return new DimCompareAndSelect(value, expected, trueValue, falseValue);
     }
 
-    public static Expr ConcatPadding(Dimension[] padH, Dimension[] padW)
+    public static Dimension Positive(Dimension value, Dimension extent)
+    {
+        if (value.IsFixed)
+        {
+            return value.FixedValue >= 0 ? value : value + extent;
+        }
+        else if (value.IsUnknown || extent.IsUnknown)
+        {
+            return Unknown;
+        }
+        else if (value.Metadata.Range?.Min >= 0)
+        {
+            return value;
+        }
+
+        return new DimPositive(value, extent);
+    }
+
+    public static bool TryDivExactly(Dimension numerator, Dimension denominator, [MaybeNullWhen(false)] out Dimension divided)
+    {
+        var remainder = numerator % denominator;
+        divided = remainder switch
+        {
+            DimConst dimConst => dimConst.Value == 0 ? numerator / denominator : null,
+            _ => numerator / denominator,
+        };
+        return divided != null;
+    }
+
+    public static Paddings ConcatPadding(Dimension[] padH, Dimension[] padW)
     {
         // return [[padh_before, padh_after],
         //         [padw_before, padw_after]]
-        var padHExpr = new Shape(padH).ToValueArrayExpr();
-        var padWExpr = new Shape(padW).ToValueArrayExpr();
-        var result = IR.F.Tensors.Stack(new IR.Tuple(padHExpr, padWExpr), 0);
-        return padHExpr is Const && padWExpr is Const ? result.Evaluate().AsTensor() : result;
+        return new Paddings(new Padding(padH[0], padH[1]), new Padding(padW[0], padW[1]));
     }
 
-    public static Expr ConcatPadding(Dimension[,] pads)
+    public static Paddings ConcatPadding(Dimension[,] pads)
     {
         if (pads.GetLength(1) != 2)
         {
             throw new ArgumentException("Padding must be a 2D array with 2 columns");
         }
 
-        var stackedPads = Enumerable.Range(0, pads.GetLength(0))
-            .Select(i => new Shape(pads[i, 0], pads[i, 1]).ToValueArrayExpr())
-            .ToArray();
-        var result = IR.F.Tensors.Stack(new IR.Tuple(stackedPads), 0);
-        return stackedPads.All(x => x is Const) ? result.Evaluate().AsTensor() : result;
-    }
-
-    /// <inheritdoc/>
-    public override string ToString() => Kind switch
-    {
-        DimensionKind.Dynamic when Value is Var var => $"%{var.Name}",
-        DimensionKind.Fixed => FixedValue.ToString(),
-        DimensionKind.Unknown => "?",
-        _ => "...",
-    };
-
-    /// <inheritdoc/>
-    public override bool Equals(object? obj)
-    {
-        return obj is Dimension dimension && Equals(dimension);
-    }
-
-    /// <inheritdoc/>
-    public bool Equals(Dimension? other)
-    {
-        return other is not null && (Kind, other.Value.Kind) switch
+        var paddings = new Padding[pads.GetLength(0)];
+        for (int i = 0; i < pads.GetLength(0); i++)
         {
-            (DimensionKind.Dynamic, DimensionKind.Dynamic) => Value == other.Value.Value,
-            (DimensionKind.Fixed, DimensionKind.Fixed) => FixedValue == other.Value.FixedValue,
-            (DimensionKind.Unknown, DimensionKind.Unknown) => true,
-            (_, _) => false,
-        };
-    }
+            paddings[i] = new Padding(pads[i, 0], pads[i, 1]);
+        }
 
-    /// <inheritdoc/>
-    public override int GetHashCode()
-    {
-        return IsFixed ? HashCode.Combine(Kind, FixedValue) : HashCode.Combine(Kind, Value);
+        return new Paddings(paddings);
     }
 
     public bool HasFixedValue(Predicate<long> predicate)
@@ -326,12 +363,12 @@ public sealed class Dimension : Expr, IEquatable<Dimension?>
     public bool IsAssignableFrom(Dimension dimension) =>
         (Kind, dimension.Kind) switch
         {
-            (DimensionKind.Dynamic, DimensionKind.Dynamic) => Value == dimension.Value,
-            (DimensionKind.Dynamic, DimensionKind.Fixed) => Value.Metadata.Range?.Contains(dimension.FixedValue) ?? true,
+            (DimensionKind.Dynamic, DimensionKind.Dynamic) => this == dimension,
+            (DimensionKind.Dynamic, DimensionKind.Fixed) => Metadata.Range?.Contains(dimension.FixedValue) ?? true,
             (DimensionKind.Fixed, DimensionKind.Fixed) => FixedValue == dimension.FixedValue,
             (DimensionKind.Unknown, _) => true,
             (_, _) => false,
         };
 
-    public Expr ToExpr() => IsFixed ? FixedValue : Value;
+    public virtual Dimension Simplify() => this;
 }

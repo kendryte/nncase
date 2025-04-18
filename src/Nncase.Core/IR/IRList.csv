@@ -43,3 +43,22 @@ Load,true,false,Default,Affine.,Source;Region
 For,true,false,Default,Affine.,Domain;Body
 # Buffers
 BufferOf,true,false,Default,Buffers.,Input
+# Shapes
+Dimension,false,false,Default,,
+AsDim,true,false,Dimension,,Dim
+UnknownDim,true,false,Dimension,,
+DimVar,true,false,Dimension,,
+DimConst,true,false,Dimension,,
+DimPower,true,false,Dimension,,Dim
+DimFraction,true,false,Dimension,,Numerator;Denominator
+DimRemainder,true,false,Dimension,,Numerator;Denominator
+DimProduct,true,false,Dimension,,@Operands
+DimSum,true,false,Dimension,,@Operands
+DimAbs,true,false,Dimension,,Operand
+DimClamp,true,false,Dimension,,Operand;MinValue;MaxValue
+DimCompareAndSelect,true,false,Dimension,,Value;Expected;TrueValue;FalseValue
+DimMin,true,false,Dimension,,@Operands
+DimMax,true,false,Dimension,,@Operands
+DimPositive,true,false,Dimension,,Operand;Extent
+Padding,true,false,Default,Shapes.,Before;After
+Paddings,true,false,Default,Shapes.,@Values

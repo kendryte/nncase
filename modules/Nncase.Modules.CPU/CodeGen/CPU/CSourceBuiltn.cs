@@ -26,12 +26,12 @@ public record KernelMainModel(TIR.PrimFunction PrimFunction, TIR.Buffer[] RDataB
         var elemType = buffer.ElemType.ToC();
         var rank = buffer.Dimensions.Length;
         var size = (Dimension)buffer.MemSpan.Size / buffer.ElemType.SizeInBytes;
-        var isFixedDims = buffer.Dimensions.AsValueEnumerable().All(d => d is IR.TensorConst);
-        var isFixedStrides = buffer.Strides.AsValueEnumerable().All(d => d is IR.TensorConst);
+        var isFixedDims = buffer.Dimensions.AsValueEnumerable().All(d => d.IsFixed);
+        var isFixedStrides = buffer.Strides.AsValueEnumerable().All(d => d.IsFixed);
         var dims = KernelUtility.DimensionsTypeToC(isFixedDims, buffer.Dimensions);
         var strides = KernelUtility.StridesTypeToC(isFixedStrides, buffer.Strides);
         var distributed = buffer.DistributedType == null ? null : KernelUtility.DistributedToC(buffer.DistributedType);
-        return new(buffer.Name, elemType, buffer.ElemType.SizeInBytes, rank, offset, size.ToExpr(), isFixedDims, isFixedStrides, buffer.Dimensions.ToArray(), dims, buffer.Strides.ToArray(), strides, distributed);
+        return new(buffer.Name, elemType, buffer.ElemType.SizeInBytes, rank, offset, size, isFixedDims, isFixedStrides, buffer.Dimensions.ToArray(), dims, buffer.Strides.ToArray(), strides, distributed);
     }
 }
 

@@ -77,15 +77,7 @@ public static class Tensors
     public static Call CumSum(Expr input, Expr axis, Expr exclusive, Expr reverse) =>
         new Call(new CumSum(), input, axis, exclusive, reverse);
 
-    public static Call Expand(Expr input, Expr shape)
-    {
-        if (shape.InferenceType() && shape.CheckedShape.IsScalar)
-        {
-            shape = Unsqueeze(shape, new[] { 0 });
-        }
-
-        return new Call(new Expand(), input, shape);
-    }
+    public static Call Expand(Expr input, Shape shape) => new Call(new Expand(), input, shape);
 
     public static Call Flatten(Expr input, Expr axis) => new Call(new Flatten(), input, axis);
 
@@ -127,12 +119,12 @@ public static class Tensors
     public static Call ReduceSum(Expr input, Expr axis, Expr initValue, Expr keepDims) =>
         Reduce(ReduceOp.Sum, input, axis, initValue, keepDims);
 
-    public static Call Reshape(Expr input, Expr shape) => new Call(new Reshape(), input, shape);
+    public static Call Reshape(Expr input, Shape shape) => new Call(new Reshape(), input, shape);
 
     public static Call ReverseSequence(Expr input, Expr seqLens, Expr batchAxis, Expr timeAxis) =>
         new Call(new ReverseSequence(), input, seqLens, batchAxis, timeAxis);
 
-    public static Call ShapeOf(Expr input) => new Call(new ShapeOf(), input);
+    public static Shape ShapeOf(Expr input) => new Call(new ShapeOf(), input).AsShape();
 
     // https://github.com/onnx/onnx/blob/master/docs/Operators.md#slice
     public static Call Slice(Expr input, Expr begins, Expr ends, Expr axes, Expr strides) =>
@@ -162,7 +154,7 @@ public static class Tensors
     public static Call Unsqueeze(Expr input, Expr dims) => new Call(new Unsqueeze(), input, dims);
 
     // return a scalar
-    public static Expr Rank(Expr input) => ShapeOf(ShapeOf(input))[0];
+    public static Dimension Rank(Expr input) => ShapeOf(ShapeOf(input))[0];
 
     // sections (int or list[int])
     public static Call Split(Expr input, Expr axis, Expr sections) => new Call(new Split(), input, axis, sections);
@@ -178,8 +170,6 @@ public static class Tensors
     /// <param name="index">index.</param>
     /// <returns>call.</returns>
     public static Call GetItem(Expr input, Expr index) => new Call(new GetItem(), input, index);
-
-    public static Call StackScalar(Expr scalar) => Stack(new Tuple(scalar), 0);
 
     public static Call TopK(Expr x, Expr k, Expr axis, Expr largest, Expr sorted) =>
         new Call(new TopK(), x, k, axis, largest, sorted);

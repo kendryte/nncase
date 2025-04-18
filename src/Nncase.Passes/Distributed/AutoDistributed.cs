@@ -1596,7 +1596,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         var valid = call.InferenceType();
         if (!valid)
         {
-            if (target is Reshape && args[0].CheckedType is DistributedType inType && args[1] is TensorConst constNewShape)
+            if (target is Reshape && args[0].CheckedType is DistributedType inType && args[1] is Shape { IsFixed: true } constNewShape)
             {
                 // the reshape need force boxing.
                 var outShape = TypeInference.ReshapeShape(inType.TensorType.Shape, constNewShape);

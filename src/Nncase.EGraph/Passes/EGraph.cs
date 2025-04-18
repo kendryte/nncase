@@ -233,11 +233,21 @@ public sealed partial class EGraph : IEGraph
             _graph = graph;
         }
 
+        protected override EClass VisitShape(Shape expr)
+        {
+            return VisitLeafShape(expr);
+        }
+
         protected override EClass DefaultVisitLeaf(Expr expr)
         {
             EClass[]? operands;
             if (expr is BaseFunction baseFunction && !CanVisitFunctionBody(baseFunction))
             {
+                operands = Array.Empty<EClass>();
+            }
+            else if (expr is Dimension or Shape)
+            {
+                // Treat Dimension and Shape as leaf
                 operands = Array.Empty<EClass>();
             }
             else

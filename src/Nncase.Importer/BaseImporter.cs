@@ -96,7 +96,7 @@ public abstract class BaseImporter
         }
     }
 
-    protected abstract (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs();
+    protected abstract (IEnumerable<Var> Inputs, Dictionary<Var, Dimension[]> VarMap) CreateInputs();
 
     protected abstract void ConvertOp();
 
@@ -122,7 +122,7 @@ public abstract class BaseImporter
         }
     }
 
-    private IRModule CreateModule(Var[] inputs, Dictionary<Var, Expr[]> varMap, Expr body)
+    private IRModule CreateModule(Var[] inputs, Dictionary<Var, Dimension[]> varMap, Expr body)
     {
         var mainFunc = new Function("main", body, inputs, varMap);
         var module = new IRModule(mainFunc);

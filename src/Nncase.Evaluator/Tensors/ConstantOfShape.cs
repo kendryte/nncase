@@ -28,9 +28,9 @@ public class ConstantOfShapeEvaluator : IEvaluator<ConstantOfShape>, ITypeInfere
     public IRType Visit(ITypeInferenceContext context, ConstantOfShape target)
     {
         var value = context.CheckArgumentType<TensorType>(target, ConstantOfShape.Value);
-        var shape = context.GetArgument(target, ConstantOfShape.Shape);
+        var shape = (Shape)context.GetArgument(target, ConstantOfShape.Shape);
         var type = value.DType;
-        return new TensorType(type, Shape.FromExpr(shape));
+        return new TensorType(type, shape);
     }
 
     public Cost Visit(ICostEvaluateContext context, ConstantOfShape target)

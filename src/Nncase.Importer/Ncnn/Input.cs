@@ -20,9 +20,9 @@ public partial class NcnnImporter
 {
     private Expr VisitInput(NcnnLayer layer)
     {
-        var w = layer.ParamDict.GetInt(0) ?? (Expr)Var.SizeVar("w");
-        var h = layer.ParamDict.GetInt(1) ?? (Expr)Var.SizeVar("h");
-        var c = layer.ParamDict.GetInt(2) ?? (Expr)Var.SizeVar("c");
+        var w = (Dimension?)layer.ParamDict.GetInt(0) ?? new DimVar("w");
+        var h = (Dimension?)layer.ParamDict.GetInt(1) ?? new DimVar("h");
+        var c = (Dimension?)layer.ParamDict.GetInt(2) ?? new DimVar("c");
         var shape = new Shape(c, h, w);
         var input = new Var(layer.Name, new TensorType(DataTypes.Float32, shape));
         _inputs.Add(input);

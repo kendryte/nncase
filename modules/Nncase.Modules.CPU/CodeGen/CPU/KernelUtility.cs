@@ -20,10 +20,10 @@ public static class KernelUtility
     public static string StridesToC(bool isFixed, ReadOnlySpan<CSymbol> dimensions, bool isType) =>
         DimensionsToC("strides", isFixed, dimensions, isType);
 
-    public static string DimensionsTypeToC(bool isFixed, ReadOnlySpan<Expr> dimensions) =>
+    public static string DimensionsTypeToC(bool isFixed, ReadOnlySpan<Dimension> dimensions) =>
         DimensionsTypeToC("shape", isFixed, dimensions);
 
-    public static string StridesTypeToC(bool isFixed, ReadOnlySpan<Expr> dimensions) =>
+    public static string StridesTypeToC(bool isFixed, ReadOnlySpan<Dimension> dimensions) =>
         DimensionsTypeToC("strides", isFixed, dimensions);
 
     public static string DistributedToC(DistributedType distributedType)
@@ -87,7 +87,7 @@ public static class KernelUtility
         }
     }
 
-    private static string DimensionsTypeToC(string typeName, bool isFixed, ReadOnlySpan<Expr> dimensions)
+    private static string DimensionsTypeToC(string typeName, bool isFixed, ReadOnlySpan<Dimension> dimensions)
     {
         if (isFixed)
         {
@@ -115,11 +115,11 @@ public static class KernelUtility
         }
     }
 
-    private static void AppendDimValues(StringBuilder sb, ReadOnlySpan<Expr> dimensions)
+    private static void AppendDimValues(StringBuilder sb, ReadOnlySpan<Dimension> dimensions)
     {
         for (int i = 0; i < dimensions.Length; i++)
         {
-            var value = ((TensorConst)dimensions[i]).Value.ToScalar<long>();
+            var value = dimensions[i].FixedValue;
             sb.Append(value);
             if (i != dimensions.Length - 1)
             {

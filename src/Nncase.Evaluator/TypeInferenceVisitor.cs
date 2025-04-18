@@ -125,7 +125,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     {
         foreach (var p in expr.Parameters)
         {
-            VerifySubField(expr, p);
+            VerifySubField(expr, (Expr)p);
         }
 
         VerifySubField(expr, expr.Body);
@@ -140,7 +140,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     {
         foreach (var p in expr.Parameters)
         {
-            VerifySubField(expr, p);
+            VerifySubField(expr, (Expr)p);
         }
 
         VerifySubField(expr, expr.Body);
@@ -221,7 +221,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     {
         foreach (var p in expr.Parameters)
         {
-            VerifySubField(expr, p);
+            VerifySubField(expr, (Expr)p);
         }
 
         VerifySubField(expr, expr.Body);

@@ -526,39 +526,13 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         return name;
     }
 
-    protected override string VisitShape(Shape shape) =>
-        shape.Kind switch
-        {
-            ShapeKind.Invalid => "[invalid]",
-            ShapeKind.Unranked => "[*]",
-            _ => $"[{string.Join(',', shape.Select(VisitDimension))}]",
-        };
+    protected override string VisitShape(Shape shape) => shape.ToString();
+
+    protected override string VisitDimension(Dimension expr) => expr.ToString();
 
     private string GetNextSSANumber()
     {
         return $"%{_stackedSSANumbers[^1]++}";
-    }
-
-    private string VisitDimension(Dimension dimension) =>
-        dimension.Kind switch
-        {
-            DimensionKind.Unknown => "?",
-            DimensionKind.Fixed => $"{dimension.FixedValue}L",
-            DimensionKind.Dynamic => VisitDimensionExpr(dimension.Value),
-            _ => throw new NotSupportedException(dimension.Kind.ToString()),
-        };
-
-    private string VisitDimensionExpr(Expr expr)
-    {
-        if (Flags.HasFlag(PrinterFlags.SkipDimensionExpr))
-        {
-            return "...";
-        }
-
-        using (NestedScope(Flags | PrinterFlags.Inline, visitDepthDiff: -VisitDepth, scopeDepthDiff: -1))
-        {
-            return Visit(expr);
-        }
     }
 
     private void AppendCheckedType(IRType? type, ValueRange<double>? range, string end = "", bool hasNewLine = true)

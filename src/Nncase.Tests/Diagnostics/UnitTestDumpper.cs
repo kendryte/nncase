@@ -106,7 +106,7 @@ public sealed class UnitTestDumpper : TestClassBase
     {
         var weights = new Var("weights", new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
         _ = Util.ShapeIndex(weights, 0);
-        var expand = Expand(0f, Cast(Util.ShapeIndex(weights, 0), DataTypes.Int64));
+        var expand = Expand(0f, new Shape(Util.ShapeIndex(weights, 0)));
         await RunShapeInferPass("main", expand, weights);
         Assert.True(File.Exists(Path.Join(Dumpper.Directory, "0_ShapeInfer_main", "main", "Start_main.il")));
     }
@@ -159,8 +159,8 @@ public sealed class UnitTestDumpper : TestClassBase
               new IR.Tuple(
                 Stack(new IR.Tuple(new Expr[] { 0L, 0L }), 0),
                 Stack(new IR.Tuple(new Expr[] { 0L, 0L }), 0),
-                Stack(new IR.Tuple(padH.Select(x => x.ToExpr()).ToArray()), 0),
-                Stack(new IR.Tuple(padW.Select(x => x.ToExpr()).ToArray()), 0)),
+                Stack(new IR.Tuple(padH.Select(x => x).ToArray()), 0),
+                Stack(new IR.Tuple(padW.Select(x => x).ToArray()), 0)),
               0);
             var body = IR.F.NN.Pad(input, padding, PadMode.Constant, 0.0f);
             main = new Function("main", body, input);

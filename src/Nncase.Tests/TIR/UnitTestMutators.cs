@@ -41,15 +41,15 @@ public sealed class UnitTestMutators : TestClassBase
                          new LoadT(),
                          new BufferRegion(
                            ddr_if,
-                           new Range[] { (w, Min(w + 9L, 48L)) }),
+                           new Range[] { (w, Dimension.Min(w + 9L, 48L)) }),
                          GetItem(
                              new Tuple(new[] {
                           new BufferRegion(
                               glb_if_ping,
-                              new Range[] { (0, Min(w + 9L, 48L) - w) }),
+                              new Range[] { (0, Dimension.Min(w + 9L, 48L) - w) }),
                           new BufferRegion(
                               glb_if_pong,
-                              new Range[] { (0, Min(w + 9L, 48L) - w) }),
+                              new Range[] { (0, Dimension.Min(w + 9L, 48L) - w) }),
                           }),
                              Mod(w / 9L, 2L)))))
            .Build();
@@ -132,17 +132,17 @@ public sealed class UnitTestMutators : TestClassBase
                          new LoadT(),
                          new BufferRegion(
                            ddr_if,
-                           new TIR.Range[] { (n, IR.F.Math.Min(n + 3L, 3L)),
-                                        (c, IR.F.Math.Min(c + 10L, 16L)),
-                                        (h, IR.F.Math.Min(h + 5L, 24L)),
-                                        (w, IR.F.Math.Min(w + 9L, 24L)),
+                           new TIR.Range[] { (n, Dimension.Min(n + 3L, 3L)),
+                                        (c, Dimension.Min(c + 10L, 16L)),
+                                        (h, Dimension.Min(h + 5L, 24L)),
+                                        (w, Dimension.Min(w + 9L, 24L)),
                                          }),
                          new BufferRegion(
                            glb_if,
-                           new TIR.Range[] { (0, IR.F.Math.Min(n + 3L, 3L) - n),
-                                        (0, IR.F.Math.Min(c + 10L, 16L) - c),
-                                        (0, IR.F.Math.Min(h + 5L, 24L) - h),
-                                        (0, IR.F.Math.Min(w + 9L, 24L) - w),
+                           new TIR.Range[] { (0, IR.Dimension.Min(n + 3L, 3L) - n),
+                                        (0, Dimension.Min(c + 10L, 16L) - c),
+                                        (0, Dimension.Min(h + 5L, 24L) - h),
+                                        (0, Dimension.Min(w + 9L, 24L) - w),
                                          })))))))
            .Build();
         }
@@ -215,34 +215,34 @@ public sealed class UnitTestMutators : TestClassBase
                          new LoadT(),
                          new BufferRegion(
                            ddr_if,
-                           new TIR.Range[] { (n, IR.F.Math.Min(n + 3L, 3L)),
-                                        (c, IR.F.Math.Min(c + 10L, 16L)),
-                                        (h, IR.F.Math.Min(h + 5L, 24L)),
-                                        (w, IR.F.Math.Min(w + 9L, 24L)),
+                           new TIR.Range[] { (n, Dimension.Min(n + 3L, 3L)),
+                                        (c, Dimension.Min(c + 10L, 16L)),
+                                        (h, Dimension.Min(h + 5L, 24L)),
+                                        (w, Dimension.Min(w + 9L, 24L)),
                                          }),
                          new BufferRegion(
                            glb_if,
-                           new TIR.Range[] { (0, IR.F.Math.Min(n + 3L, 3L) - n),
-                                        (0, IR.F.Math.Min(c + 10L, 16L) - c),
-                                        (0, IR.F.Math.Min(h + 5L, 24L) - h),
-                                        (0, IR.F.Math.Min(w + 9L, 24L) - w),
+                           new TIR.Range[] { (0, Dimension.Min(n + 3L, 3L) - n),
+                                        (0, Dimension.Min(c + 10L, 16L) - c),
+                                        (0, Dimension.Min(h + 5L, 24L) - h),
+                                        (0, Dimension.Min(w + 9L, 24L) - w),
                                          })),
-                     T.Unrolled(out var tcu_h, (h, IR.F.Math.Min(h + 5L, 24L), 2L)).Body(
+                     T.Unrolled(out var tcu_h, (h, Dimension.Min(h + 5L, 24L), 2L)).Body(
                       new Call(
                          new LoadT(),
                          new BufferRegion(
                            ddr_if,
-                           new TIR.Range[] { (n, IR.F.Math.Min(n + 3L, 3L)),
-                                        (c, IR.F.Math.Min(c + 10L, 16L)),
-                                        (h + tcu_h, IR.F.Math.Min(h + tcu_h + 2L, 24L)),
-                                        (w, IR.F.Math.Min(w + 9L, 24L)),
+                           new TIR.Range[] { (n, Dimension.Min(n + 3L, 3L)),
+                                        (c, Dimension.Min(c + 10L, 16L)),
+                                        (h + tcu_h, Dimension.Min(h + tcu_h + 2L, 24L)),
+                                        (w, Dimension.Min(w + 9L, 24L)),
                                          }),
                          new BufferRegion(
                            glb_if,
-                           new TIR.Range[] { (0, IR.F.Math.Min(n + 3L, 3L) - n),
-                                        (0, IR.F.Math.Min(c + 10L, 16L) - c),
-                                        (tcu_h, IR.F.Math.Min(h + tcu_h + 2L, 24L) - h),
-                                        (0, IR.F.Math.Min(w + 9L, 24L) - w),
+                           new TIR.Range[] { (0, Dimension.Min(n + 3L, 3L) - n),
+                                        (0, Dimension.Min(c + 10L, 16L) - c),
+                                        (tcu_h, Dimension.Min(h + tcu_h + 2L, 24L) - h),
+                                        (0, Dimension.Min(w + 9L, 24L) - w),
                                          }))))))))
            .Build();
         }

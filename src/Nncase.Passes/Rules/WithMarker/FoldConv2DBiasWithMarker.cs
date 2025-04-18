@@ -51,11 +51,11 @@ public sealed partial class FoldConv2DBiasWithMarker : IRewriteRule
                         IsWildcard("dilation"),
                         IsWildcard("groups")),
                     IsWildcard()),
-                IsWildcard("shape")),
+                IsShape("shape")),
             IsRangeOfMarker("bm", IsTensorConst("b") with { TypePattern = HasRank(1) }, IsWildcard())),
         IsWildcard());
 
-    private Expr? GetReplace(Conv2D conv2d, Call binaryCall, Expr input, Expr weights, Tensor bias, Tensor b, Expr shape, Expr stride, Expr padding, Expr dilation, Expr groups, Marker binarym)
+    private Expr? GetReplace(Conv2D conv2d, Call binaryCall, Expr input, Expr weights, Tensor bias, Tensor b, Shape shape, Expr stride, Expr padding, Expr dilation, Expr groups, Marker binarym)
     {
         var newBias = IR.F.Math.Add(bias, b).Evaluate().AsTensor();
         var newConv2d = Conv2D(

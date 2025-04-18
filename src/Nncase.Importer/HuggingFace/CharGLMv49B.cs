@@ -21,7 +21,7 @@ namespace Nncase.Importer
         public override Call RotateHalf(Expr x)
         {
             var xShape = IR.F.Tensors.ShapeOf(x);
-            x = IR.F.Tensors.Reshape(x, IR.F.Tensors.Stack(new IR.Tuple(xShape[0], xShape[1], xShape[2], xShape[3] / 2L, 2L), 0L));
+            x = IR.F.Tensors.Reshape(x, new Shape(xShape[0].AsDim(), xShape[1].AsDim(), xShape[2].AsDim(), xShape[3].AsDim() / 2L, 2L));
             var x1 = IR.F.Tensors.Slice(
                 x,
                 new[] { 0L },

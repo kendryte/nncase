@@ -14,14 +14,15 @@ namespace Nncase
 {
     public static class Util
     {
-        public static Expr DynamicShapeIndex(in Expr input, Expr index) => GetItem(F.Tensors.ShapeOf(input), index);
+        public static Dimension DynamicShapeIndex(in Expr input, Dimension index) => F.Tensors.ShapeOf(input)[index].AsDim();
 
-        public static Expr ShapeIndex(in Expr input, int index)
+        public static Dimension ShapeIndex(in Expr input, int index)
         {
-            Expr i;
-            if (input.CheckedType != null)
+            int i;
+            if (input.CheckedType is TensorType tensorType && tensorType.Shape.IsRanked)
             {
-                i = index < 0 ? index + input.CheckedShape.Rank : index;
+                i = index < 0 ? index + tensorType.Shape.Rank : index;
+                return tensorType.Shape[i];
             }
             else
             {
@@ -31,18 +32,7 @@ namespace Nncase
             return DynamicShapeIndex(input, i);
         }
 
-        public static Expr GetItem(in Expr input, Expr index)
-        {
-            return F.Tensors.Squeeze(
-                F.Tensors.Slice(
-                    input,
-                    StackScalar(index),
-                    StackScalar(index + 1),
-                    1),
-                new[] { 0L });
-        }
-
-        public static (Expr H, Expr W) GetHW(in Expr input, bool isNHWC = false)
+        public static (Dimension H, Dimension W) GetHW(in Expr input, bool isNHWC = false)
         {
             if (isNHWC)
             {
@@ -69,7 +59,7 @@ namespace Nncase
         {
             return F.Tensors.Expand(
                 Util.ShapeIndex(input, (int)axis) / outputSize, // Util.DynamicShapeIndex(input, Cast(axis, DataTypes.Int32)) / outputSize
-                Stack(new Tuple(outputSize), 0));
+                new Shape(outputSize));
         }
     }
 }

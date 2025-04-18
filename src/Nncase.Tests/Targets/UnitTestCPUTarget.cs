@@ -166,7 +166,7 @@ public class UnitTestCPUTarget : TestClassBase
         var x = new Var("x", new TensorType(DataTypes.Int32, new[] { 1, 2, 3 }));
         var second = GetItem(x, index);
         var main = new Function("main", second, new[] { x });
-        var dict = new Dictionary<Var, IValue>() { { x, Value.FromTensor(input) } };
+        var dict = new Dictionary<IVar, IValue>() { { x, Value.FromTensor(input) } };
         GenerateKModelAndRunFromFn(main, input, second.Evaluate(dict).AsTensor());
     }
 
@@ -198,7 +198,7 @@ public class UnitTestCPUTarget : TestClassBase
         Assert.True(@if.InferenceType());
         var main = new Function("main", @if, new[] { condVar });
 
-        var output = @if.Evaluate(new Dictionary<Var, IValue> { { condVar, Value.FromTensor(input) } }).AsTensor();
+        var output = @if.Evaluate(new Dictionary<IVar, IValue> { { condVar, Value.FromTensor(input) } }).AsTensor();
         GenerateKModelAndRunFromFn(main, input, output);
     }
 

@@ -171,7 +171,7 @@ public sealed class ScopeWriter
     /// </summary>
     /// <param name="var">var name.</param>
     /// <param name="prefix">prefix name.</param>
-    public IPrintSymbol GetUniqueVarSymbol(Var @var, string prefix = "")
+    public IPrintSymbol GetUniqueVarSymbol(IVar @var, string prefix = "")
     {
         if (!_globalVarCountMap.TryGetValue(prefix + @var.Name + "#" + @var.GlobalVarIndex.ToString(), out var count))
         {

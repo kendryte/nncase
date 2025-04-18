@@ -170,7 +170,7 @@ public class UnitTestCombineTranspose : TransformTestBase
             inputList.Add(new Var());
         }
 
-        var normal = new Dictionary<Var, IValue>();
+        var normal = new Dictionary<IVar, IValue>();
         var tpList = new List<Call>();
         foreach (Var a in inputList)
         {
@@ -223,7 +223,7 @@ public class UnitTestCombineTranspose : TransformTestBase
         Expr rhs = leftConst ? new Var("b", new TensorType(DataTypes.Float32, rShape)) :
           rShape.Length == 0 ? 0.2f : Const.FromValue(Random.Normal(DataTypes.Float32, 0, 1, 4, rShape).Evaluate());
 
-        var feedDict = new Dictionary<Var, IValue>();
+        var feedDict = new Dictionary<IVar, IValue>();
         if (leftConst)
         {
             feedDict.Add((Var)rhs, Random.Normal(DataTypes.Float32, 0, 1, 1, rShape).Evaluate());
@@ -244,7 +244,7 @@ public class UnitTestCombineTranspose : TransformTestBase
         var a = new Var("a", new TensorType(DataTypes.Float32, lShape));
         var b = new Var("b", new TensorType(DataTypes.Float32, rShape));
 
-        var normal = new Dictionary<Var, IValue>()
+        var normal = new Dictionary<IVar, IValue>()
         {
          { a, Random.Normal(DataTypes.Float32, 0, 1, 0, lShape).Evaluate() },
          { b, Random.Normal(DataTypes.Float32, 0, 1, 0, rShape).Evaluate() },
@@ -307,7 +307,7 @@ public class UnitTestCombineTranspose : TransformTestBase
     public void TestCombineTransposePadPositive(long[] inShape, int[] perm, int[,] paddings, PadMode padM, float padValue)
     {
         var a = new Var("input", new TensorType(DataTypes.Float32, inShape));
-        var normal = new Dictionary<Var, IValue>();
+        var normal = new Dictionary<IVar, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = Pad(Tensors.Transpose(a, perm), paddings, padM, padValue);
         TestMatchedCore(
@@ -325,7 +325,7 @@ public class UnitTestCombineTranspose : TransformTestBase
     public void TestCombinePadTransposePositive(long[] inShape, int[] perm, int[,] paddings, PadMode padM, float padValue)
     {
         var a = new Var("input", new TensorType(DataTypes.Float32, inShape));
-        var normal = new Dictionary<Var, IValue>();
+        var normal = new Dictionary<IVar, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = Tensors.Transpose(Pad(a, paddings, padM, padValue), perm);
         TestMatchedCore(
@@ -343,7 +343,7 @@ public class UnitTestCombineTranspose : TransformTestBase
     public void TestCombineTransposeReducePositive(long[] inShape, int[] perm, int axis, int initValue, bool keepDims)
     {
         var a = new Var();
-        var normal = new Dictionary<Var, IValue>();
+        var normal = new Dictionary<IVar, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = IR.F.Tensors.Reduce(ReduceOp.Mean, Tensors.Transpose(a, perm), axis, initValue, keepDims);
         TestMatched<CombineTransposeReduce>(rootPre, normal);
@@ -354,7 +354,7 @@ public class UnitTestCombineTranspose : TransformTestBase
     public void TestCombineTransposeUnaryPositive(UnaryOp opType, long[] inShape, int[] perm)
     {
         var a = new Var();
-        var normal = new Dictionary<Var, IValue>();
+        var normal = new Dictionary<IVar, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = IR.F.Math.Unary(opType, Tensors.Transpose(a, perm));
         TestMatched<CombineUnaryTranspose>(rootPre, normal);
@@ -365,7 +365,7 @@ public class UnitTestCombineTranspose : TransformTestBase
     public void TestCombineTransposeReshapePostive(long[] inShape, long[] newShape, int[] perm)
     {
         var a = new Var(new TensorType(DataTypes.Float32, inShape));
-        var feed_dict = new Dictionary<Var, IValue>
+        var feed_dict = new Dictionary<IVar, IValue>
         {
             { a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate() },
         };

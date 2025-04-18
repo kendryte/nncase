@@ -9,6 +9,7 @@ using Nncase.CostModel;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.Utilities;
 using OrtKISharp;
 using static Nncase.Evaluator.EvaluatorUtil;
@@ -81,7 +82,7 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
     {
         var input = context.CheckArgumentType<IRType>(target, Pad.Input);
         var paddingsType = context.CheckArgumentTensorTypeOrBroadcast(target, Pad.Pads);
-        var paddings = context.GetArgument(target, Pad.Pads);
+        var paddings = (Paddings)context.GetArgument(target, Pad.Pads);
         var padValue = context.GetArgument(target, Pad.Value);
         return input switch
         {
@@ -92,7 +93,7 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
         };
     }
 
-    public IRType Visit(DistributedType input, TensorType paddingsType, Expr paddings, Expr padValue)
+    public IRType Visit(DistributedType input, TensorType paddingsType, Paddings paddings, Expr padValue)
     {
         if (TypeInference.PadType(input.TensorType, paddingsType, paddings, padValue) is not TensorType tensorType)
         {

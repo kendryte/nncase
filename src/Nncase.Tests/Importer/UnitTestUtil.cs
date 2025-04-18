@@ -42,7 +42,7 @@ public class UnitTestUtil
         var axis = -1L;
         var expr = Util.ComputeSplit(input, outputSize, axis);
 
-        var expect = IR.F.Tensors.Expand(Util.ShapeIndex(input, (int)axis) / outputSize, IR.F.Tensors.Stack(new Tuple(outputSize), 0));
+        var expect = IR.F.Tensors.Expand(Util.ShapeIndex(input, (int)axis) / outputSize, new Shape(outputSize));
         Assert.Equal(expr, expect);
     }
 }

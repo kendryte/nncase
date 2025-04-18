@@ -187,7 +187,7 @@ public sealed class UnitTestShape
         Assert.Equal(1, s.Size);
         Assert.Empty(s.ToValueArray());
         Assert.Empty(s.ToValueList());
-        Assert.Equal((Expr)Tensor.Zeros<long>([0]), s.ToValueArrayExpr());
+        Assert.Equal((Expr)Tensor.Zeros<long>([0]), s);
     }
 
     [Fact]
@@ -206,7 +206,7 @@ public sealed class UnitTestShape
         Assert.Equal(1, s.Size);
         Assert.Empty(s.ToValueArray());
         Assert.Empty(s.ToValueList());
-        Assert.Equal((Expr)Tensor.Zeros<long>([0]), s.ToValueArrayExpr());
+        Assert.Equal((Expr)Tensor.Zeros<long>([0]), s);
     }
 
     [Fact]

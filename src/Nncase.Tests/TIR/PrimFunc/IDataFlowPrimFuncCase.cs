@@ -132,8 +132,8 @@ internal static class PrimFuncBuilder
 
         public TIR.Buffer Allocate(string name, TIR.MemoryLocation location)
         {
-            var dims = Dimensions.Select(d => (Expr)d).ToArray();
-            var strides = TensorUtilities.GetStrides(Dimensions).Select(s => (Expr)s).ToArray();
+            var dims = Dimensions.Select(d => (Dimension)d).ToArray();
+            var strides = TensorUtilities.GetStrides(Dimensions).Select(s => (Dimension)s).ToArray();
             var size = TensorUtilities.GetSize(Dimensions, TensorUtilities.GetStrides(Dimensions), DataTypes.Float32.SizeInBytes);
 
             var buffer = new TIR.Buffer(name, DataTypes.Float32, new TIR.MemSpan(Tensor.FromPointer<float>(_usage[location]), size, location), dims, strides, null);

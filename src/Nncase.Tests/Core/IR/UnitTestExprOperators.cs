@@ -29,9 +29,9 @@ public class UnitTestExprOperators
     public void TestGetItemOfTensorWithScalarExprIndex()
     {
         var a = (Expr)new[] { 1, 2, 3 };
-        Assert.NotEqual(a[(Expr)0], 1);
-        Assert.NotEqual(a[(Expr)1], 2);
-        Assert.NotEqual(a[(Expr)2], 3);
+        Assert.NotEqual(a[(Dimension)0], 1);
+        Assert.NotEqual(a[(Dimension)1], 2);
+        Assert.NotEqual(a[(Dimension)2], 3);
     }
 
     [Fact]

@@ -30,7 +30,7 @@ public abstract class TIRSelectionPass : FunctionPass
             (var newBody, var outBuffers) = visitor.Select(func);
 
             var inBuffers = func.Parameters.ToArray();
-            var outputBufferShapes = outBuffers.Select(x => (ElemType: x.CheckedDataType, Shape: x.CheckedShape.ToValueArrayExpr())).ToArray();
+            var outputBufferShapes = outBuffers.Select(x => (ElemType: x.CheckedDataType, Shape: x.CheckedShape)).ToArray();
             var primFunc = new PrimFunction(
                 $"{input.Name}_prim",
                 ModuleKind,
@@ -58,7 +58,7 @@ public abstract class TIRSelectionPass : FunctionPass
     private void AddOutputBufferAllocsToCallers(Function function, IEnumerable<Var> outputBuffers)
     {
         var callers = function.Users.OfType<Call>().ToArray();
-        var outputBufferShapes = outputBuffers.Select(x => (ElemType: x.CheckedDataType, Shape: x.CheckedShape.ToValueArrayExpr())).ToArray();
+        var outputBufferShapes = outputBuffers.Select(x => (ElemType: x.CheckedDataType, Shape: x.CheckedShape)).ToArray();
         foreach (var caller in callers)
         {
             var outputAllocs = outputBufferShapes.Select(x => IR.F.Buffer.Uninitialized(x.ElemType, TIR.MemoryLocation.Data, x.Shape));

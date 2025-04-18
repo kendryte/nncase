@@ -89,7 +89,7 @@ public interface ICompilerServicesProvider
     /// <param name="varsValues">Optional vars' values.</param>
     /// <param name="evaluator_cache"> Optional evaluator cache. </param>
     /// <returns>Evaluate result.</returns>
-    IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null);
+    IValue Evaluate(Expr expr, IReadOnlyDictionary<IVar, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null);
 
     /// <summary>
     /// Evaluate operator.
@@ -273,7 +273,7 @@ public static class CompilerServices
     /// <param name="varsValues">Optional vars' values.</param>
     /// <param name="evaluator_cache"> Optional evaluator cache. </param>
     /// <returns>Evaluate result.</returns>
-    public static IValue Evaluate(this Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null)
+    public static IValue Evaluate(this Expr expr, IReadOnlyDictionary<IVar, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null)
     {
         return Provider.Evaluate(expr, varsValues, evaluator_cache);
     }
@@ -610,7 +610,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     public IDataTypeServiceProvider DataTypeService { get; }
 
     /// <inheritdoc/>
-    public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null)
+    public IValue Evaluate(Expr expr, IReadOnlyDictionary<IVar, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null)
     {
         return _evaluateProvider.Evaluate(expr, varsValues, evaluator_cache);
     }

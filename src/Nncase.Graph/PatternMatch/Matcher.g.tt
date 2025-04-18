@@ -26,6 +26,7 @@ internal partial class Matcher
 var autoGenIRs = new HashSet<string>
 {
     "Var",
+    "Const",
     "TensorConst",
     "TupleConst",
     "Function",
@@ -33,6 +34,7 @@ var autoGenIRs = new HashSet<string>
     "Tuple",
     "Marker",
     "Fusion",
+    "Dimension",
 };
 
 foreach (var ir in irs.Where(x => autoGenIRs.Contains(x.Name)))

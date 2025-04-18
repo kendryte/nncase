@@ -102,7 +102,7 @@ public sealed partial class CombineQuantizeReshape : RewriteRule<Pattern>
                 "reshape",
                 "reshapeCall",
                 IsWildcard("input") with { TypePattern = HasShape(sp => !(checkShapeSize && sp.ToValueArray().Any(s => s >= 65536)), "CheckedShape") },
-                IsWildcard("shape")),
+                IsShape("shape")),
             IsWildcard("quantParam"));
     }
 
@@ -114,7 +114,7 @@ public sealed partial class CombineQuantizeReshape : RewriteRule<Pattern>
     /// <inheritdoc/>
     public override Pattern Pattern { get; }
 
-    private Expr? GetReplace(Quantize quantize, Call reshapeCall, Expr input, Expr shape, Expr quantParam, RunPassContext context)
+    private Expr? GetReplace(Quantize quantize, Call reshapeCall, Expr input, Shape shape, Expr quantParam, RunPassContext context)
     {
         if (context.Driver is DataflowPass)
         {
@@ -146,9 +146,9 @@ public sealed partial class CombineReshapeQuantize : RewriteRule<Pattern>
             _ => true,
             IsWildcard("input"),
             IsWildcard("quantParam")),
-        IsWildcard("shape"));
+        IsShape("shape"));
 
-    private Expr? GetReplace(Quantize quantize, Call quantizeCall, Expr input, Expr shape, Expr quantParam, RunPassContext options)
+    private Expr? GetReplace(Quantize quantize, Call quantizeCall, Expr input, Shape shape, Expr quantParam, RunPassContext options)
     {
         var userAnalysis = options.GetAnalysis<IExprUserAnalysisResult>();
 

@@ -350,7 +350,7 @@ public class ModuleCase
 
     public IRModule Module { get; }
 
-    public IReadOnlyList<Var> Vars { get; }
+    public IReadOnlyList<IVar> Vars { get; }
 
     public IReadOnlyList<Tensor> Inputs { get; }
 }

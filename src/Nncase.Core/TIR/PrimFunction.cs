@@ -28,8 +28,8 @@ public sealed class PrimFunction : BaseFunction
     /// <param name="moduleKind">module kind.</param>
     /// <param name="parameters">Arguments.</param>
     /// <param name="body">Body.</param>
-    public PrimFunction(string name, string moduleKind, Sequential body, ReadOnlySpan<Var> parameters)
-        : base(name, moduleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<Var, Expr>(parameters)))
+    public PrimFunction(string name, string moduleKind, Sequential body, ReadOnlySpan<IVar> parameters)
+        : base(name, moduleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<IVar, Expr>(parameters)))
     {
     }
 
@@ -39,7 +39,7 @@ public sealed class PrimFunction : BaseFunction
     /// <param name="moduleKind">module kind.</param>
     /// <param name="parameters">Arguments.</param>
     /// <param name="body">Body.</param>
-    public PrimFunction(string moduleKind, Sequential body, ReadOnlySpan<Var> parameters)
+    public PrimFunction(string moduleKind, Sequential body, ReadOnlySpan<IVar> parameters)
         : this($"primfunc_{_globalFuncIndex++}", moduleKind, body, parameters)
     {
     }
@@ -48,7 +48,7 @@ public sealed class PrimFunction : BaseFunction
     /// Initializes a new instance of the <see cref="PrimFunction"/> class.
     /// build function.
     /// </summary>
-    public PrimFunction(string moduleKind, Sequential body, params Var[] parameters)
+    public PrimFunction(string moduleKind, Sequential body, params IVar[] parameters)
         : this($"primfunc_{_globalFuncIndex++}", moduleKind, body, new(parameters))
     {
     }
@@ -58,15 +58,15 @@ public sealed class PrimFunction : BaseFunction
     /// </summary>
     public Sequential Body => (Sequential)Operands[0];
 
-    public ReadOnlySpan<Var> Parameters => SpanUtility.UnsafeCast<Expr, Var>(Operands.Slice(1));
+    public ReadOnlySpan<IVar> Parameters => SpanUtility.UnsafeCast<Expr, IVar>(Operands.Slice(1));
 
-    public override IEnumerable<IRType?> ParameterTypes => Parameters.AsValueEnumerable().Select(x => x.CheckedType).ToArray();
+    public override IEnumerable<IRType?> ParameterTypes => Parameters.AsValueEnumerable().Select(x => ((Expr)x).CheckedType).ToArray();
 
     /// <inheritdoc/>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitPrimFunction(this, context);
 
-    public PrimFunction With(string? name = null, string? moduleKind = null, Sequential? body = null, Var[]? parameters = null, Schedule.SchedFunctionResult? sched = null)
+    public PrimFunction With(string? name = null, string? moduleKind = null, Sequential? body = null, IVar[]? parameters = null, Schedule.SchedFunctionResult? sched = null)
         => new PrimFunction(name ?? Name, moduleKind ?? ModuleKind, body ?? Body, parameters ?? Parameters)
         {
             // note maybe add SchedResult into ctor.

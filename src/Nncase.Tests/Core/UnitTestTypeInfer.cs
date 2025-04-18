@@ -121,7 +121,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         var end = new[] { 3 };
         var stride = new[] { 1 };
         var axes = new[] { 0 };
-        var slice = Slice(new Shape(1, 7, 7, 768).ToValueArrayExpr(), begin, end, axes, stride);
+        var slice = Slice(new Shape(1, 7, 7, 768), begin, end, axes, stride);
         CompilerServices.InferenceType(slice);
         var post = slice.Evaluate();
         Assert.Equal(new Shape(2), ((TensorType)post.Type).Shape);
@@ -343,17 +343,17 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
     [Fact]
     public void TestReshapeInfer()
     {
-        var dimVar = new Var("seq_len", new TensorType(DataTypes.Int64, Shape.Scalar));
+        var dimVar = new DimVar("seq_len");
         dimVar.Metadata.Range = new(1, 512);
         var dimC = (Dimension)dimVar;
         var a = new Var(new TensorType(DataTypes.Float32, new Shape(1, dimVar, 128)));
         var constShape = new Shape(1, dimC, 2, 64);
-        var reshape = Reshape(a, constShape.ToValueArrayExpr());
+        var reshape = Reshape(a, constShape);
         var result = reshape.CheckedType;
         Assert.Equal(new TensorType(DataTypes.Float32, new Shape(1, dimVar, 2, 64)), result);
 
         var b = new Var(new TensorType(DataTypes.Float32, new Shape(1, dimVar, 14, 64)));
-        var reshapeb = Reshape(b, new Shape(1, dimC, -1).ToValueArrayExpr());
+        var reshapeb = Reshape(b, new Shape(1, dimC, -1));
         var resultb = reshapeb.CheckedType;
         Assert.Equal(new TensorType(DataTypes.Float32, new Shape(1, dimVar, 896)), resultb);
     }
@@ -361,16 +361,16 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
     [Fact]
     public void TestConcatInfer()
     {
-        var seq_len = new Var("seq_len", new TensorType(DataTypes.Int64, Shape.Scalar));
-        var hist_len = new Var("his_len", new TensorType(DataTypes.Int64, Shape.Scalar));
+        var seq_len = new DimVar("seq_len");
+        var hist_len = new DimVar("his_len");
         var lhs = new Var(new TensorType(DataTypes.Float32, new Shape(1, seq_len, 2, 64)));
         var rhs = new Var(new TensorType(DataTypes.Float32, new Shape(1, hist_len, 2, 64)));
         var reshape = Concat(new IR.Tuple(new[] { lhs, rhs }), 1);
         var result = reshape.CheckedType;
         Assert.IsType<TensorType>(result);
-        Assert.IsType<Call>(((TensorType)result).Shape[1].Value);
-        var call = (Call)((TensorType)result).Shape[1].Value;
-        Assert.Equal(seq_len, call.Arguments[0]);
-        Assert.Equal(hist_len, call.Arguments[1]);
+        Assert.IsType<DimSum>(((TensorType)result).Shape[1]);
+        var call = (DimSum)((TensorType)result).Shape[1];
+        Assert.Equal(seq_len, call[0]);
+        Assert.Equal(hist_len, call[1]);
     }
 }

@@ -71,6 +71,8 @@ public sealed class EGraphMatcher
             (MarkerPattern mkPat, Marker mk) => Visit(matchScopes, mkPat, enode, mk),
             (TuplePattern tuplePat, IR.Tuple tuple) => Visit(matchScopes, tuplePat, enode, tuple),
             (IOpPattern opPat, Op op) => VisitLeaf(matchScopes, opPat, enode, op),
+            (DimensionPattern dimPat, Dimension dim) => VisitLeaf(matchScopes, dimPat, enode, dim),
+            (ShapePattern shapePat, Shape shape) => VisitLeaf(matchScopes, shapePat, enode, shape),
             (OrPattern orPat, _) => Visit(matchScopes, orPat, enode, enode.Expr),
             (ExprPattern exprPattern, Expr expr) => VisitLeaf(matchScopes, exprPattern, enode, expr),
             _ => Array.Empty<MatchScope>(),
@@ -113,7 +115,7 @@ public sealed class EGraphMatcher
 
         if (context.HasCandidates
             && pattern.MatchLeaf(expr)
-            && pattern.Parameters.MatchLeaf(SpanUtility.UnsafeCast<Var, Expr>(expr.Parameters), out var paramsPattern))
+            && pattern.Parameters.MatchLeaf(SpanUtility.UnsafeCast<IVar, Expr>(expr.Parameters), out var paramsPattern))
         {
             var newScopes = Visit(context.Candidates, pattern.Body, enode.Children[0]);
             if (newScopes.Count > 0)
@@ -233,6 +235,34 @@ public sealed class EGraphMatcher
                 context.NewScopes.AddRange(newScopes);
                 context.MatchCandidates(pattern, expr);
             }
+        }
+
+        return context.NewScopes;
+    }
+
+    private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, DimensionPattern pattern, ENode enode, Dimension expr)
+    {
+        var context = new MatchContext(matchScopes, pattern, expr);
+
+        if (context.HasCandidates
+            && pattern.MatchLeaf(expr))
+        {
+            context.NewScopes.AddRange(context.Candidates);
+            context.MatchCandidates(pattern, expr);
+        }
+
+        return context.NewScopes;
+    }
+
+    private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, ShapePattern pattern, ENode enode, Shape expr)
+    {
+        var context = new MatchContext(matchScopes, pattern, expr);
+
+        if (context.HasCandidates
+            && pattern.MatchLeaf(expr))
+        {
+            context.NewScopes.AddRange(context.Candidates);
+            context.MatchCandidates(pattern, expr);
         }
 
         return context.NewScopes;

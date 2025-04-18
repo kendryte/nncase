@@ -38,14 +38,14 @@ public sealed partial class CombineBinaryReshape : IRewriteRule
     /// </summary>
     public CombineBinaryReshape()
     {
-        var shape = IsWildcard("shape");
+        var shape = IsShape("shape");
         Pattern = IsBinary("binary", "call", x => true, IsReshape(IsWildcard("x"), shape), IsReshape(IsWildcard("y"), shape));
     }
 
     /// <inheritdoc/>
     public IPattern Pattern { get; init; }
 
-    private Expr? GetReplace(Binary binary, Call call, Expr x, Expr y, Expr shape)
+    private Expr? GetReplace(Binary binary, Call call, Expr x, Expr y, Shape shape)
     {
         if (x.CheckedShape == y.CheckedShape)
         {
@@ -68,7 +68,7 @@ public sealed partial class CombineConstBinaryReshape : IRewriteRule
     /// </summary>
     public CombineConstBinaryReshape()
     {
-        var shape = IsTensorConst("shape");
+        var shape = IsFixedShape("shape");
         var input = IsReshape(IsWildcard("input") with { TypePattern = HasFixedShape() }, shape);
         var @const = IsConst("constInput") with { TypePattern = HasRank(1) | HasRank(0) };
         Pattern = IsAlt(IsCallWildcard("call", IsOp<Binary>("binary"), input, @const), IsCallWildcard("call", IsOp<Binary>("binary"), @const, input));
@@ -77,9 +77,9 @@ public sealed partial class CombineConstBinaryReshape : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; init; }
 
-    private Expr? GetReplace(Binary binary, Call call, IReadOnlyList<Expr> callParams, Expr input, TensorConst constInput, TensorConst shape)
+    private Expr? GetReplace(Binary binary, Call call, IReadOnlyList<Expr> callParams, Expr input, TensorConst constInput, Shape shape)
     {
-        var oldShape = shape.Value.ToArray<long>();
+        var oldShape = shape.ToValueArray();
         var significantShape = oldShape.Where(x => x > 1).ToArray();
 
         bool leftConst = ReferenceEquals(callParams[0], constInput);
@@ -106,7 +106,7 @@ public sealed partial class CombineConstBinaryReshape : IRewriteRule
                         binary.BinaryOp,
                         leftConst ? Reshape(constInput, newConstShape.ToArray()) : input,
                         leftConst ? input : Reshape(constInput, newConstShape.ToArray())).InheritMetaData(call),
-                    call.CheckedShape.ToValueArrayExpr());
+                    call.CheckedShape);
                 res.InferenceType();
                 return res;
             }
@@ -128,9 +128,9 @@ public sealed partial class CombineUnaryReshape : IRewriteRule
             "unary",
             "call",
             _ => true,
-            IsReshape(IsWildcard("input"), IsWildcard("shape")));
+            IsReshape(IsWildcard("input"), IsShape("shape")));
 
-    private Expr? GetReplace(Unary unary, Call call, Expr input, Expr shape)
+    private Expr? GetReplace(Unary unary, Call call, Expr input, Shape shape)
     {
         return Reshape(
             Unary(unary.UnaryOp, input).InheritMetaData(call),
@@ -149,7 +149,7 @@ public sealed partial class CombineActivationsReshape : IRewriteRule
         IsCall("call", IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("parameters", (inputs) =>
         {
             var patterns = new Pattern[inputs.Length];
-            patterns[0] = IsReshape(IsWildcard("input"), IsWildcard("shape"));
+            patterns[0] = IsReshape(IsWildcard("input"), IsShape("shape"));
             for (int i = 1; i < inputs.Length; i++)
             {
                 patterns[i] = IsWildcard();
@@ -158,7 +158,7 @@ public sealed partial class CombineActivationsReshape : IRewriteRule
             return patterns;
         }));
 
-    private Expr? GetReplace(ActivationOp activation, Call call, Expr input, IReadOnlyList<Expr> parameters, Expr shape)
+    private Expr? GetReplace(ActivationOp activation, Call call, Expr input, IReadOnlyList<Expr> parameters, Shape shape)
     {
         // TODO: Not support PRelu for now.
         if (activation is PRelu)

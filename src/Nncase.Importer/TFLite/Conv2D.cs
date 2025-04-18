@@ -34,8 +34,8 @@ namespace Nncase.Importer.TFLite
             var strideW = options.StrideW;
             var dilationH = options.DilationHFactor;
             var dilationW = options.DilationWFactor;
-            var stride = Tensor.From<int>(new[] { strideH, strideW }, [2]);
-            var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, [2]);
+            var stride = new Shape(strideH, strideW);
+            var dilation = new Shape(dilationH, dilationW);
             var padding = TypeInference.GetPaddings(input.CheckedShape, weights.CheckedShape, stride, dilation, options.Padding == tflite.Padding.SAME, false);
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
             var inputQuantParams = GetInputQuantParams(op, 0);
@@ -124,8 +124,8 @@ namespace Nncase.Importer.TFLite
             var strideW = options.StrideW;
             var dilationH = options.DilationHFactor;
             var dilationW = options.DilationWFactor;
-            var stride = Tensor.From<int>(new[] { strideH, strideW }, [2]);
-            var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, [2]);
+            var stride = new Shape(strideH, strideW);
+            var dilation = new Shape(dilationH, dilationW);
             var padding = TypeInference.GetPaddings(input.CheckedShape, weights.CheckedShape, stride, dilation, options.Padding == tflite.Padding.SAME, false);
             var depthMul = options.DepthMultiplier;
             if (depthMul != 1)

@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.TIR;
+using Nncase.Utilities;
 
 namespace Nncase.IR;
 
@@ -45,10 +46,24 @@ public partial class ExprCloner<TContext> : ExprVisitor<Expr, IRType, TContext>
         where T : Expr
         => (T)Visit(expr, context);
 
+    public IVar Clone(IVar expr, TContext context)
+        => (IVar)Visit((Expr)expr, context);
+
     protected T[] CloneArray<T>(ReadOnlySpan<T> values, TContext context)
         where T : Expr
     {
         var array = new T[values.Length];
+        for (int i = 0; i < values.Length; i++)
+        {
+            array[i] = Clone(values[i], context);
+        }
+
+        return array;
+    }
+
+    protected IVar[] CloneArray(ReadOnlySpan<IVar> values, TContext context)
+    {
+        var array = new IVar[values.Length];
         for (int i = 0; i < values.Length; i++)
         {
             array[i] = Clone(values[i], context);
@@ -68,6 +83,9 @@ public partial class ExprCloner<TContext> : ExprVisitor<Expr, IRType, TContext>
     {
         return values.AsValueEnumerable().Any(v => IsMutated(v, context));
     }
+
+    protected bool IsMutatedArray(ReadOnlySpan<IVar> values, TContext context)
+        => IsMutatedArray(SpanUtility.UnsafeCast<IVar, Expr>(values), context);
 }
 
 public sealed class ReplacingExprCloner : ExprCloner<Unit>

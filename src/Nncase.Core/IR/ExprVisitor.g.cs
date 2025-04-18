@@ -497,6 +497,210 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
         return VisitLeafBufferOf(expr, context);
     }
 
+    /// <inheritdoc />
+    protected internal override TExprResult VisitAsDim(AsDim expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafAsDim(expr, context);
+    }
+
+    /// <inheritdoc />
+    protected internal override TExprResult VisitUnknownDim(UnknownDim expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafUnknownDim(expr, context);
+    }
+
+    /// <inheritdoc />
+    protected internal override TExprResult VisitDimVar(DimVar expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafDimVar(expr, context);
+    }
+
+    /// <inheritdoc />
+    protected internal override TExprResult VisitDimConst(DimConst expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafDimConst(expr, context);
+    }
+
+    /// <inheritdoc />
+    protected internal override TExprResult VisitDimPower(DimPower expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafDimPower(expr, context);
+    }
+
+    /// <inheritdoc />
+    protected internal override TExprResult VisitDimFraction(DimFraction expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafDimFraction(expr, context);
+    }
+
+    /// <inheritdoc />
+    protected internal override TExprResult VisitDimRemainder(DimRemainder expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafDimRemainder(expr, context);
+    }
+
+    /// <inheritdoc />
+    protected internal override TExprResult VisitDimProduct(DimProduct expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafDimProduct(expr, context);
+    }
+
+    /// <inheritdoc />
+    protected internal override TExprResult VisitDimSum(DimSum expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafDimSum(expr, context);
+    }
+
+    /// <inheritdoc />
+    protected internal override TExprResult VisitDimAbs(DimAbs expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafDimAbs(expr, context);
+    }
+
+    /// <inheritdoc />
+    protected internal override TExprResult VisitDimClamp(DimClamp expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafDimClamp(expr, context);
+    }
+
+    /// <inheritdoc />
+    protected internal override TExprResult VisitDimCompareAndSelect(DimCompareAndSelect expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafDimCompareAndSelect(expr, context);
+    }
+
+    /// <inheritdoc />
+    protected internal override TExprResult VisitDimMin(DimMin expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafDimMin(expr, context);
+    }
+
+    /// <inheritdoc />
+    protected internal override TExprResult VisitDimMax(DimMax expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafDimMax(expr, context);
+    }
+
+    /// <inheritdoc />
+    protected internal override TExprResult VisitDimPositive(DimPositive expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafDimPositive(expr, context);
+    }
+
+    /// <inheritdoc />
+    protected internal override TExprResult VisitPadding(Shapes.Padding expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafPadding(expr, context);
+    }
+
+    /// <inheritdoc />
+    protected internal override TExprResult VisitPaddings(Shapes.Paddings expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafPaddings(expr, context);
+    }
+
     /// <summary>
     /// Visit leaf <see cref="BaseFunction"/>.
     /// </summary>
@@ -711,6 +915,96 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     /// Visit leaf <see cref="Buffers.BufferOf"/>.
     /// </summary>
     protected virtual TExprResult VisitLeafBufferOf(Buffers.BufferOf expr, TContext context) => DefaultVisitLeaf(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="Dimension"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimension(Dimension expr, TContext context) => DefaultVisitLeaf(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="AsDim"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafAsDim(AsDim expr, TContext context) => VisitLeafDimension(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="UnknownDim"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafUnknownDim(UnknownDim expr, TContext context) => VisitLeafDimension(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimVar"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimVar(DimVar expr, TContext context) => VisitLeafDimension(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimConst"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimConst(DimConst expr, TContext context) => VisitLeafDimension(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimPower"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimPower(DimPower expr, TContext context) => VisitLeafDimension(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimFraction"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimFraction(DimFraction expr, TContext context) => VisitLeafDimension(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimRemainder"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimRemainder(DimRemainder expr, TContext context) => VisitLeafDimension(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimProduct"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimProduct(DimProduct expr, TContext context) => VisitLeafDimension(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimSum"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimSum(DimSum expr, TContext context) => VisitLeafDimension(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimAbs"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimAbs(DimAbs expr, TContext context) => VisitLeafDimension(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimClamp"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimClamp(DimClamp expr, TContext context) => VisitLeafDimension(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimCompareAndSelect"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimCompareAndSelect(DimCompareAndSelect expr, TContext context) => VisitLeafDimension(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimMin"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimMin(DimMin expr, TContext context) => VisitLeafDimension(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimMax"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimMax(DimMax expr, TContext context) => VisitLeafDimension(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimPositive"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimPositive(DimPositive expr, TContext context) => VisitLeafDimension(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="Shapes.Padding"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafPadding(Shapes.Padding expr, TContext context) => DefaultVisitLeaf(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="Shapes.Paddings"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafPaddings(Shapes.Paddings expr, TContext context) => DefaultVisitLeaf(expr, context);
 
 }
 
@@ -989,6 +1283,125 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitBufferOf(Buffers.BufferOf expr, Unit context) => VisitBufferOf(expr);
+    /// <summary>
+    /// Visit <see cref="AsDim"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitAsDim(AsDim expr) => base.VisitAsDim(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitAsDim(AsDim expr, Unit context) => VisitAsDim(expr);
+    /// <summary>
+    /// Visit <see cref="UnknownDim"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitUnknownDim(UnknownDim expr) => base.VisitUnknownDim(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitUnknownDim(UnknownDim expr, Unit context) => VisitUnknownDim(expr);
+    /// <summary>
+    /// Visit <see cref="DimVar"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimVar(DimVar expr) => base.VisitDimVar(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimVar(DimVar expr, Unit context) => VisitDimVar(expr);
+    /// <summary>
+    /// Visit <see cref="DimConst"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimConst(DimConst expr) => base.VisitDimConst(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimConst(DimConst expr, Unit context) => VisitDimConst(expr);
+    /// <summary>
+    /// Visit <see cref="DimPower"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimPower(DimPower expr) => base.VisitDimPower(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimPower(DimPower expr, Unit context) => VisitDimPower(expr);
+    /// <summary>
+    /// Visit <see cref="DimFraction"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimFraction(DimFraction expr) => base.VisitDimFraction(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimFraction(DimFraction expr, Unit context) => VisitDimFraction(expr);
+    /// <summary>
+    /// Visit <see cref="DimRemainder"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimRemainder(DimRemainder expr) => base.VisitDimRemainder(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimRemainder(DimRemainder expr, Unit context) => VisitDimRemainder(expr);
+    /// <summary>
+    /// Visit <see cref="DimProduct"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimProduct(DimProduct expr) => base.VisitDimProduct(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimProduct(DimProduct expr, Unit context) => VisitDimProduct(expr);
+    /// <summary>
+    /// Visit <see cref="DimSum"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimSum(DimSum expr) => base.VisitDimSum(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimSum(DimSum expr, Unit context) => VisitDimSum(expr);
+    /// <summary>
+    /// Visit <see cref="DimAbs"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimAbs(DimAbs expr) => base.VisitDimAbs(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimAbs(DimAbs expr, Unit context) => VisitDimAbs(expr);
+    /// <summary>
+    /// Visit <see cref="DimClamp"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimClamp(DimClamp expr) => base.VisitDimClamp(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimClamp(DimClamp expr, Unit context) => VisitDimClamp(expr);
+    /// <summary>
+    /// Visit <see cref="DimCompareAndSelect"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimCompareAndSelect(DimCompareAndSelect expr) => base.VisitDimCompareAndSelect(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimCompareAndSelect(DimCompareAndSelect expr, Unit context) => VisitDimCompareAndSelect(expr);
+    /// <summary>
+    /// Visit <see cref="DimMin"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimMin(DimMin expr) => base.VisitDimMin(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimMin(DimMin expr, Unit context) => VisitDimMin(expr);
+    /// <summary>
+    /// Visit <see cref="DimMax"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimMax(DimMax expr) => base.VisitDimMax(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimMax(DimMax expr, Unit context) => VisitDimMax(expr);
+    /// <summary>
+    /// Visit <see cref="DimPositive"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimPositive(DimPositive expr) => base.VisitDimPositive(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimPositive(DimPositive expr, Unit context) => VisitDimPositive(expr);
+    /// <summary>
+    /// Visit <see cref="Shapes.Padding"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitPadding(Shapes.Padding expr) => base.VisitPadding(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitPadding(Shapes.Padding expr, Unit context) => VisitPadding(expr);
+    /// <summary>
+    /// Visit <see cref="Shapes.Paddings"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitPaddings(Shapes.Paddings expr) => base.VisitPaddings(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitPaddings(Shapes.Paddings expr, Unit context) => VisitPaddings(expr);
     /// <summary>
     /// Visit leaf <see cref="BaseFunction"/>.
     /// </summary>
@@ -1332,5 +1745,149 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     protected sealed override TExprResult VisitLeafBufferOf(Buffers.BufferOf expr, Unit context) => VisitLeafBufferOf(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="Dimension"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimension(Dimension expr) => base.VisitLeafDimension(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafDimension(Dimension expr, Unit context) => VisitLeafDimension(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="AsDim"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafAsDim(AsDim expr) => base.VisitLeafAsDim(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafAsDim(AsDim expr, Unit context) => VisitLeafAsDim(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="UnknownDim"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafUnknownDim(UnknownDim expr) => base.VisitLeafUnknownDim(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafUnknownDim(UnknownDim expr, Unit context) => VisitLeafUnknownDim(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimVar"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimVar(DimVar expr) => base.VisitLeafDimVar(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafDimVar(DimVar expr, Unit context) => VisitLeafDimVar(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimConst"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimConst(DimConst expr) => base.VisitLeafDimConst(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafDimConst(DimConst expr, Unit context) => VisitLeafDimConst(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimPower"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimPower(DimPower expr) => base.VisitLeafDimPower(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafDimPower(DimPower expr, Unit context) => VisitLeafDimPower(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimFraction"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimFraction(DimFraction expr) => base.VisitLeafDimFraction(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafDimFraction(DimFraction expr, Unit context) => VisitLeafDimFraction(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimRemainder"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimRemainder(DimRemainder expr) => base.VisitLeafDimRemainder(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafDimRemainder(DimRemainder expr, Unit context) => VisitLeafDimRemainder(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimProduct"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimProduct(DimProduct expr) => base.VisitLeafDimProduct(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafDimProduct(DimProduct expr, Unit context) => VisitLeafDimProduct(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimSum"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimSum(DimSum expr) => base.VisitLeafDimSum(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafDimSum(DimSum expr, Unit context) => VisitLeafDimSum(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimAbs"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimAbs(DimAbs expr) => base.VisitLeafDimAbs(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafDimAbs(DimAbs expr, Unit context) => VisitLeafDimAbs(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimClamp"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimClamp(DimClamp expr) => base.VisitLeafDimClamp(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafDimClamp(DimClamp expr, Unit context) => VisitLeafDimClamp(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimCompareAndSelect"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimCompareAndSelect(DimCompareAndSelect expr) => base.VisitLeafDimCompareAndSelect(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafDimCompareAndSelect(DimCompareAndSelect expr, Unit context) => VisitLeafDimCompareAndSelect(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimMin"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimMin(DimMin expr) => base.VisitLeafDimMin(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafDimMin(DimMin expr, Unit context) => VisitLeafDimMin(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimMax"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimMax(DimMax expr) => base.VisitLeafDimMax(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafDimMax(DimMax expr, Unit context) => VisitLeafDimMax(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="DimPositive"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimPositive(DimPositive expr) => base.VisitLeafDimPositive(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafDimPositive(DimPositive expr, Unit context) => VisitLeafDimPositive(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="Shapes.Padding"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafPadding(Shapes.Padding expr) => base.VisitLeafPadding(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafPadding(Shapes.Padding expr, Unit context) => VisitLeafPadding(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="Shapes.Paddings"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafPaddings(Shapes.Paddings expr) => base.VisitLeafPaddings(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafPaddings(Shapes.Paddings expr, Unit context) => VisitLeafPaddings(expr);
 
 }

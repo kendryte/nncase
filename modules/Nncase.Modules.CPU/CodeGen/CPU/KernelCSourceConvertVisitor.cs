@@ -359,7 +359,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                         var fullShape = args[0].CheckedShape.ToValueArray();
                         (var maxSize, _) = TensorUtilities.GetTensorMaxSizeAndStrides(args[0].CheckedTensorType);
                         _collective_pool_size = Math.Max(_collective_pool_size, (ulong)maxSize);
-                        var indices = args[0].CheckedShape.Select(e => Visit(e.Value).Name).ToSlicing(load.NdSbp, load.Placement)[0];
+                        var indices = args[0].CheckedShape.Select(e => Visit(e).Name).ToSlicing(load.NdSbp, load.Placement)[0];
                         WriteWithProfiler($"tac::tensor_boxing_load_sync<fixed_shape<{string.Join(',', fullShape)}>>({indices}, {VisitBuffer(args[0], local: true).Name});\n");
                     }
                     else
@@ -374,7 +374,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                         var fullShape = args[0].CheckedShape.ToValueArray();
                         (var maxSize, _) = TensorUtilities.GetTensorMaxSizeAndStrides(args[0].CheckedTensorType);
                         _collective_pool_size = Math.Max(_collective_pool_size, (ulong)maxSize);
-                        var indices = args[0].CheckedShape.Select(e => Visit(e.Value).Name).ToSlicing(store.NdSbp, store.Placement)[0];
+                        var indices = args[0].CheckedShape.Select(e => Visit(e).Name).ToSlicing(store.NdSbp, store.Placement)[0];
                         WriteWithProfiler($"tac::tensor_boxing_store_sync<fixed_shape<{string.Join(',', fullShape)}>>({indices}, {VisitBuffer(args[0], local: true).Name});\n");
                     }
                     else

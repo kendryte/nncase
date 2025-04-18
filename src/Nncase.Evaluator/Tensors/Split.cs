@@ -80,7 +80,7 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
 
                 var outshape = new Dimension[inshape.Length];
                 Array.Copy(inshape, outshape, inshape.Length);
-                outshape[axis_v] = new Dimension(inshape[axis_v].FixedValue / sections_v[0]);
+                outshape[axis_v] = inshape[axis_v].FixedValue / sections_v[0];
                 return new TupleType(Enumerable.Repeat((IRType)(input with { Shape = new Shape(outshape) }), sections_v[0]));
             }
             else

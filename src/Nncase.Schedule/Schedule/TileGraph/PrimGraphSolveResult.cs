@@ -56,7 +56,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         var (parentbuilder, partentOffsets) = context;
 
         var loopBuilders = new ISequentialBuilder<TIR.For>[value.DomainRelation.Map.Results.Length];
-        var loopVars = new Var[value.DomainRelation.Map.Results.Length];
+        var loopVars = new DimVar[value.DomainRelation.Map.Results.Length];
 
         var nodeMemo = TileNodeMemo[value];
 
@@ -69,14 +69,14 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
             loopVars[i] = loopVar;
         }
 
-        var initOffsets = Enumerable.Repeat<Expr>(0L, loopVars.Length).ToArray();
+        var initOffsets = Enumerable.Repeat<Dimension>(0L, loopVars.Length).ToArray();
         foreach (var (k, v) in TileableNodeMemo[value].DimsMap)
         {
             initOffsets[k] += partentOffsets[v];
         }
 
         // forwardOffsets[0] means partentOffsets, forwardOffsets[i] means partentOffsets[0:i] + loop vars[0:i]
-        var forwardOffsets = new Expr[loopVars.Length + 1][];
+        var forwardOffsets = new Dimension[loopVars.Length + 1][];
         for (int i = 0; i < loopVars.Length + 1; i++)
         {
             var offsets = forwardOffsets[i] = initOffsets.ToArray();
@@ -120,7 +120,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                                 // for device we should use copy.
                                 var offset = LevelBufferOffsets[sl][new(value, bid)];
                                 var dtype = viewInfo.Buffer.CheckedDataType;
-                                var shape = bufferInfo.Shapes[i].Select(i => (Expr)i).ToArray();
+                                var shape = bufferInfo.Shapes[i].Select(i => (Dimension)i).ToArray();
                                 subView = new TIR.Buffer($"{bid}_L{value.Level}_Copy", dtype, new MemSpan(Tensor.FromPointer(offset, dtype), bufferInfo.SizeVars[i], MemoryLocation.Data, 0), shape, TensorUtilities.GetStrides(shape), distributedType);
                             }
                         }
@@ -381,9 +381,9 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         return false;
     }
 
-    private ParentSubViewInfo GetParentSubViewInfo(int storeLevel, ITreeNode node, BufferIdentity bid, AffineMap map, Expr[] forwardOffsets, long[] shapeExprs)
+    private ParentSubViewInfo GetParentSubViewInfo(int storeLevel, ITreeNode node, BufferIdentity bid, AffineMap map, Dimension[] forwardOffsets, long[] shapeExprs)
     {
-        var offset = new IR.Tuple(map.Apply(forwardOffsets, Enumerable.Repeat<Expr>(0L, forwardOffsets.Length).ToArray()).Select(i => i.Start).ToArray());
+        var offset = new IR.Tuple(map.Apply(forwardOffsets, Enumerable.Repeat<Dimension>(0L, forwardOffsets.Length).ToArray()).Select(i => i.Start).ToArray());
         var shape = shapeExprs.ToArray();
         bool innerAllocated = false;
         if (TryGetParerntBuffer(node, bid, out var parentBuffer, out var parentOffsets))
@@ -453,7 +453,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         return (TIR.Buffer)buffer;
     }
 
-    public sealed record Context(ISequentialBuilder<Expr> ParentBuilder, Expr[] ForwardOffsets)
+    public sealed record Context(ISequentialBuilder<Expr> ParentBuilder, Dimension[] ForwardOffsets)
     {
     }
 

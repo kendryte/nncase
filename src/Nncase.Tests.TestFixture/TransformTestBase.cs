@@ -30,13 +30,13 @@ public partial class TransformTestBase : TestClassBase
         CompileOptions.QuantizeOptions.WQuantType = DataTypes.UInt8;
     }
 
-    public virtual Expr TestMatched<T>(Function pre, IReadOnlyDictionary<Var, IValue>? feeds = null)
+    public virtual Expr TestMatched<T>(Function pre, IReadOnlyDictionary<IVar, IValue>? feeds = null)
         where T : IRewriteRule, new()
     {
         return TestMatchedCore(pre, feeds, false, new T());
     }
 
-    public virtual Expr TestMatched<T>(Expr pre, IReadOnlyDictionary<Var, IValue>? feeds = null)
+    public virtual Expr TestMatched<T>(Expr pre, IReadOnlyDictionary<IVar, IValue>? feeds = null)
         where T : IRewriteRule, new()
     {
         return TestMatchedCore(pre, feeds, new T());
@@ -55,7 +55,7 @@ public partial class TransformTestBase : TestClassBase
         }
     }
 
-    public Expr TestMatchedCore(Function pre, IReadOnlyDictionary<Var, IValue>? feeds = null, bool isNotMatch = false, params IRewriteRule[] rules)
+    public Expr TestMatchedCore(Function pre, IReadOnlyDictionary<IVar, IValue>? feeds = null, bool isNotMatch = false, params IRewriteRule[] rules)
     {
         IAnalyzerManager analyzerManager = CompileSession.GetRequiredService<IAnalyzerManager>();
         var analysis = new Dictionary<System.Type, IAnalysisResult> { [typeof(IExprUserAnalysisResult)] = analyzerManager.GetAnaylsis<IExprUserAnalysisResult>(pre) };
@@ -86,7 +86,7 @@ public partial class TransformTestBase : TestClassBase
         return post;
     }
 
-    public Expr TestMatchedCore(Expr pre, IReadOnlyDictionary<Var, IValue>? feeds = null, params IRewriteRule[] rules)
+    public Expr TestMatchedCore(Expr pre, IReadOnlyDictionary<IVar, IValue>? feeds = null, params IRewriteRule[] rules)
     {
         pre.InferenceType();
         Assert.True(pre.InferenceType(), "TestInferFailed:" + pre.CheckedType);

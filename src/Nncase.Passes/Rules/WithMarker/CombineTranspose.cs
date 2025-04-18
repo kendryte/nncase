@@ -149,7 +149,7 @@ public sealed partial class CombineActivationsReshape : IRewriteRule
             IsCall("call", IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("parameters", (inputs) =>
         {
             var patterns = new Pattern[inputs.Length];
-            patterns[0] = HasMarker(IsReshape(IsWildcard("input"), IsWildcard("shape")), "inputMarker");
+            patterns[0] = HasMarker(IsReshape(IsWildcard("input"), IsShape("shape")), "inputMarker");
             for (int i = 1; i < inputs.Length; i++)
             {
                 patterns[i] = IsWildcard();
@@ -159,7 +159,7 @@ public sealed partial class CombineActivationsReshape : IRewriteRule
         })),
             "outMarker");
 
-    private Expr? GetReplace(ActivationOp activation, Call call, Expr input, IReadOnlyList<Expr> parameters, Expr shape, Marker inputMarker, Marker outMarker)
+    private Expr? GetReplace(ActivationOp activation, Call call, Expr input, IReadOnlyList<Expr> parameters, Shape shape, Marker inputMarker, Marker outMarker)
     {
         // TODO: Not support PRelu for now.
         if (activation is PRelu)

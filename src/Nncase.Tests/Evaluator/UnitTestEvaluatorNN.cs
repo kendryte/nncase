@@ -509,7 +509,7 @@ public class UnitTestEvaluatorNN : TestClassBase
     public void TestPadReflect2()
     {
         var input = new Var();
-        var feed = new Dictionary<Var, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 12, new long[] { 1, 3, 4, 5 }).Evaluate() }, };
+        var feed = new Dictionary<IVar, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 12, new long[] { 1, 3, 4, 5 }).Evaluate() }, };
         var output = NN.Pad(IR.F.Math.Abs(input), Tensor.FromArray(new long[,] { { 1, 1 }, { -1, -1 }, { 1, 1 }, { 3, 3 } }), PadMode.Reflect, 0.0f);
         CompilerServices.InferenceType(output);
         var outputArray = output.Evaluate(feed).AsTensor().ToArray<float>();

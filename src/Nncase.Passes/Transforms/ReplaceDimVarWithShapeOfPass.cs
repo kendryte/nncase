@@ -43,16 +43,16 @@ public sealed class ReplaceDimVarWithShapeOfPass : FunctionPass
         return Task.FromResult(pre);
     }
 
-    private Dictionary<Var, Expr> CreateDimVarMap()
+    private Dictionary<DimVar, Dimension> CreateDimVarMap()
     {
         var shapeOfs = new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance);
-        var varMap = new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance);
+        var varMap = new Dictionary<DimVar, Dimension>(ReferenceEqualityComparer.Instance);
         foreach (var (tensorVar, dimExprs) in CompileSession.CompileOptions.ShapeBucketOptions.VarMap)
         {
             for (int i = 0; i < dimExprs.Length; i++)
             {
                 var dimExpr = dimExprs[i];
-                if (dimExpr is Var dimVar)
+                if (dimExpr is DimVar dimVar)
                 {
                     if (!varMap.ContainsKey(dimVar))
                     {
@@ -62,7 +62,7 @@ public sealed class ReplaceDimVarWithShapeOfPass : FunctionPass
                             shapeOfs.Add(tensorVar, shapeOf);
                         }
 
-                        varMap.Add(dimVar, shapeOf[i]);
+                        varMap.Add(dimVar, shapeOf[i].AsDim());
                     }
                 }
             }
@@ -74,15 +74,15 @@ public sealed class ReplaceDimVarWithShapeOfPass : FunctionPass
 
 internal sealed class ReplaceDimVarWithShapeOfVisitor : ExprCloner<Unit>
 {
-    private readonly IReadOnlyDictionary<Var, Expr> _varMap;
+    private readonly IReadOnlyDictionary<DimVar, Dimension> _varMap;
 
-    public ReplaceDimVarWithShapeOfVisitor(IReadOnlyDictionary<Var, Expr> varMap)
+    public ReplaceDimVarWithShapeOfVisitor(IReadOnlyDictionary<DimVar, Dimension> varMap)
     {
         _varMap = varMap;
         CloneUnmutated = false;
     }
 
-    protected override Expr VisitLeafVar(Var expr, Unit context)
+    protected override Expr VisitLeafDimVar(DimVar expr, Unit context)
     {
         if (_varMap.TryGetValue(expr, out var shapeOf))
         {

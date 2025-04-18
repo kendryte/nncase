@@ -331,10 +331,6 @@ public abstract partial class Expr
 
     private void ValidateOperand(Expr operand)
     {
-        if (operand is Shape)
-        {
-            throw new ArgumentException($"{operand.GetType()} can't be an operand.");
-        }
     }
 
     private void InvalidateTypeInference()

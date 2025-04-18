@@ -67,14 +67,14 @@ public abstract class AffineExpr : Expr
         };
     }
 
-    internal Expr Apply(ReadOnlySpan<Expr> dims, ReadOnlySpan<Expr> extents, IReadOnlyDictionary<AffineSymbol, Expr>? symbols = null)
+    internal Dimension Apply(ReadOnlySpan<Dimension> dims, ReadOnlySpan<Dimension> extents, IReadOnlyDictionary<AffineSymbol, Dimension>? symbols = null)
     {
-        static Expr ApplyDivBinary(AffineDivBinaryOp binaryOp, Expr lhs, Expr rhs) =>
+        static Dimension ApplyDivBinary(AffineDivBinaryOp binaryOp, Dimension lhs, Dimension rhs) =>
             binaryOp switch
             {
-                AffineDivBinaryOp.FloorDiv => F.Math.FloorDiv(lhs, rhs),
-                AffineDivBinaryOp.CeilDiv => F.Math.CeilDiv(lhs, rhs),
-                AffineDivBinaryOp.Mod => F.Math.Mod(lhs, rhs),
+                AffineDivBinaryOp.FloorDiv => lhs / rhs,
+                AffineDivBinaryOp.CeilDiv => Dimension.CeilDiv(lhs, rhs),
+                AffineDivBinaryOp.Mod => lhs % rhs,
                 _ => throw new UnreachableException(),
             };
 

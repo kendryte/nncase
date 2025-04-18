@@ -34,6 +34,6 @@ public sealed class UnitTestFusion
         var expect = parameters.AsValueEnumerable().Select(x => x.CheckedType).ToArray();
         Assert.Equal(expect, fusion.ParameterTypes);
 
-        Assert.NotNull(new Fusion("module", 1, default(ReadOnlySpan<Var>)));
+        Assert.NotNull(new Fusion("module", 1, default(ReadOnlySpan<IVar>)));
     }
 }

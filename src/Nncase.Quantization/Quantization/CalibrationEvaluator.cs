@@ -16,13 +16,13 @@ namespace Nncase.Quantization;
 
 public class CalibrationEvaluator : IDisposable
 {
-    private readonly IReadOnlyDictionary<Var, IValue> _inputs;
+    private readonly IReadOnlyDictionary<IVar, IValue> _inputs;
     private readonly IEnumerable<ENode> _awareEnodes;
     private readonly Dictionary<ENode, IValue> _values = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<EClass, IValue> _eclassValues = new();
     private readonly StreamWriter? _dumpWriter;
 
-    public CalibrationEvaluator(IReadOnlyDictionary<Var, IValue> inputs, IEnumerable<ENode> awareEnodes)
+    public CalibrationEvaluator(IReadOnlyDictionary<IVar, IValue> inputs, IEnumerable<ENode> awareEnodes)
     {
         _inputs = inputs;
         _awareEnodes = awareEnodes;

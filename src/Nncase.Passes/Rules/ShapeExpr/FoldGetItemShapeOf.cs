@@ -15,9 +15,7 @@ namespace Nncase.Passes.Rules.ShapeExpr;
 [RuleGenerator]
 public partial class FoldGetItemShapeOf : RewriteRule<Pattern>
 {
-    public override Pattern Pattern => IsGetItem(null, "getItem", IsAlt(CastPattern, ShapeOfPattern), IsTensorConst("index", IsScalar() | HasShape(new Shape(1L))));
-
-    public Pattern CastPattern => IsCast("cast", _ => true, ShapeOfPattern);
+    public override Pattern Pattern => IsGetItem(null, "getItem", ShapeOfPattern, IsTensorConst("index", IsScalar() | HasShape(new Shape(1L))));
 
     public Pattern ShapeOfPattern => IsShapeOf(IsWildcard("input") with { TypePattern = HasRank() });
 
@@ -30,7 +28,6 @@ public partial class FoldGetItemShapeOf : RewriteRule<Pattern>
             dt = cast.NewType;
         }
 
-        var dim = input.CheckedShape[index.Single()];
-        return dim.IsFixed ? Tensor.FromScalar(dt, Convert.ChangeType(dim.FixedValue, dt.CLRType)) : dim.Value;
+        return input.CheckedShape[index.Single()];
     }
 }

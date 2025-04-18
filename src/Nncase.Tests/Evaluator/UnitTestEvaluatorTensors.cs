@@ -167,7 +167,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
 
             var expr = IR.F.Tensors.ConstantOfShape(shape, value);
             CompilerServices.InferenceType(expr);
-            var d = new Dictionary<Var, IValue>() { { shape, Value.FromTensor(Tensor.From<long>(s)) } };
+            var d = new Dictionary<IVar, IValue>() { { shape, Value.FromTensor(Tensor.From<long>(s)) } };
             Assert.Equal(expect, expr.Evaluate(d).AsTensor());
         }
     }
@@ -258,7 +258,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
 
         var expr = IR.F.Tensors.Range(start, end, step);
         CompilerServices.InferenceType(expr);
-        var d = new Dictionary<Var, IValue>() { { start, Value.FromTensor(Tensor.FromScalar(begin)) } };
+        var d = new Dictionary<IVar, IValue>() { { start, Value.FromTensor(Tensor.FromScalar(begin)) } };
         Assert.Equal(expect, expr.Evaluate(d).AsTensor().ToOrtTensor());
     }
 
@@ -333,9 +333,9 @@ public class UnitTestEvaluatorTensors : TestClassBase
         var input = OrtKI.Random(oldShape);
         var expect = OrtKI.Reshape(input, newShape, 0);
 
-        var expr = IR.F.Tensors.Reshape(input.ToTensor(), dims);
+        var expr = IR.F.Tensors.Reshape(input.ToTensor(), dims.AsShape());
         CompilerServices.InferenceType(expr);
-        var d = new Dictionary<Var, IValue>() { { dims, Value.FromTensor(Tensor.From<long>(newShape)) } };
+        var d = new Dictionary<IVar, IValue>() { { dims, Value.FromTensor(Tensor.From<long>(newShape)) } };
         Assert.Equal(expect, expr.Evaluate(d).AsTensor().ToOrtTensor());
     }
 
@@ -349,9 +349,9 @@ public class UnitTestEvaluatorTensors : TestClassBase
         var expect = OrtKI.Reshape(input, newShape, 0);
 
         var inputVar = new Var("input", TensorType.Unranked(DataTypes.Float32));
-        var expr = IR.F.Tensors.Reshape(inputVar, dims);
+        var expr = IR.F.Tensors.Reshape(inputVar, dims.AsShape());
         Assert.True(CompilerServices.InferenceType(expr));
-        var d = new Dictionary<Var, IValue>()
+        var d = new Dictionary<IVar, IValue>()
         {
             { inputVar, Value.FromTensor(input.ToTensor()) },
             { dims, Value.FromTensor(Tensor.From<long>(newShape)) },
@@ -441,7 +441,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
 
         var expr = IR.F.Tensors.Squeeze(input.ToTensor(), dims);
         CompilerServices.InferenceType(expr);
-        var d = new Dictionary<Var, IValue>() { { dims, Value.FromTensor(Tensor.From<long>(axes)) } };
+        var d = new Dictionary<IVar, IValue>() { { dims, Value.FromTensor(Tensor.From<long>(axes)) } };
         Assert.Equal(expect, expr.Evaluate(d).AsTensor().ToOrtTensor());
     }
 
@@ -507,7 +507,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
 
         var expr = IR.F.Tensors.Split(input.ToTensor(), axis, sections);
         CompilerServices.InferenceType(expr);
-        var d = new Dictionary<Var, IValue>() { { axis, Value.FromTensor(dim) } };
+        var d = new Dictionary<IVar, IValue>() { { axis, Value.FromTensor(dim) } };
         Assert.Equal(expect.Select(t => t.ToTensor()).ToArray(), expr.Evaluate(d).AsTensors());
     }
 
@@ -609,7 +609,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
 
         var expr = IR.F.Tensors.Tile(input.ToTensor(), repeats);
         CompilerServices.InferenceType(expr);
-        var d = new Dictionary<Var, IValue>() { { repeats, Value.FromTensor(Tensor.From<long>(a)) } };
+        var d = new Dictionary<IVar, IValue>() { { repeats, Value.FromTensor(Tensor.From<long>(a)) } };
         Assert.Equal(expect, expr.Evaluate(d).AsTensor().ToOrtTensor());
     }
 
@@ -625,7 +625,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
         var inputVar = new Var("input", TensorType.Unranked(DataTypes.Float32));
         var expr = IR.F.Tensors.Tile(inputVar, repeats);
         Assert.True(CompilerServices.InferenceType(expr));
-        var d = new Dictionary<Var, IValue>()
+        var d = new Dictionary<IVar, IValue>()
         {
             { inputVar, Value.FromTensor(input.ToTensor()) },
             { repeats, Value.FromTensor(Tensor.From<long>(a)) },
