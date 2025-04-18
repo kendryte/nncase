@@ -25,9 +25,26 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Concat cat)
     {
-        var inputs = context.GetArgumentValueAsTensors(cat, Concat.Input);
-        var axis = cat.Axis;
-        return OrtKI.Concat(inputs.Select(t => t.ToOrtTensor()).ToArray(), axis).ToValue();
+        var inputOrg = context.GetArgumentValueAsTensors(cat, Concat.Input);
+        var dataType = inputOrg[0].ElementType;
+        if (dataType is VectorType { ElemType: DataType dataTypes } vType && dataTypes != DataTypes.Float32)
+        {
+            var axis = cat.Axis;
+            var interType = new VectorType(DataTypes.Float32, vType.Lanes);
+            var input = inputOrg.Select(t => Cast(t, interType).Evaluate().AsTensor().ToOrtTensor()).ToArray();
+            return Value.FromTensor(OrtKI.Concat(input, axis).ToTensor().CastTo(dataType));
+        }
+        else if (dataType.IsFloat() && dataType != DataTypes.Float32)
+        {
+            var axis = cat.Axis;
+            var input = inputOrg.Select(t => Cast(t, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor()).ToArray();
+            return Value.FromTensor(OrtKI.Concat(input, axis).ToTensor().CastTo(dataType));
+        }
+        else
+        {
+            var axis = cat.Axis;
+            return OrtKI.Concat(inputOrg.Select(t => t.ToOrtTensor()).ToArray(), axis).ToValue();
+        }
     }
 
     /// <inheritdoc/>
