@@ -26,10 +26,9 @@ using namespace nncase;
 #define _RVV_FLOAT16_LOG_OP(lmul, mlen)                                        \
     inline vfloat16m##lmul##_t log_ps_fp16(vfloat16m##lmul##_t x, size_t vl) { \
         x = __riscv_vfmax_vf_f16m##lmul(                                       \
-            x, (_Float16)(0.f),                                                \
-            vl); /* force flush to zero on denormal values */                  \
+            x, 0.f16, vl); /* force flush to zero on denormal values */        \
         vbool##mlen##_t invalid_mask =                                         \
-            __riscv_vmfle_vf_f16m##lmul##_b##mlen(x, (_Float16)(0.f), vl);     \
+            __riscv_vmfle_vf_f16m##lmul##_b##mlen(x, 0.f16, vl);               \
                                                                                \
         vint16m##lmul##_t ux =                                                 \
             __riscv_vreinterpret_v_f16m##lmul##_i16m##lmul(x);                 \
@@ -45,7 +44,7 @@ using namespace nncase;
         emm0 = __riscv_vsub_vx_i16m##lmul(emm0, 0xf, vl);                      \
         vfloat16m##lmul##_t e = __riscv_vfcvt_f_x_v_f16m##lmul(emm0, vl);      \
                                                                                \
-        e = __riscv_vfadd_vf_f16m##lmul(e, (_Float16)(1.f), vl);               \
+        e = __riscv_vfadd_vf_f16m##lmul(e, 1.f16, vl);                         \
                                                                                \
         /* part2:                      */                                      \
         /*     if( x < SQRTHF ) {      */                                      \
@@ -55,8 +54,8 @@ using namespace nncase;
         vbool##mlen##_t mask = __riscv_vmflt_vf_f16m##lmul##_b##mlen(          \
             x, (_Float16)(c_cephes_SQRTHF), vl);                               \
         x = __riscv_vfadd_vv_f16m##lmul##_mu(mask, x, x, x, vl);               \
-        x = __riscv_vfsub_vf_f16m##lmul(x, (_Float16)(1.f), vl);               \
-        e = __riscv_vfsub_vf_f16m##lmul##_mu(mask, e, e, (_Float16)(1.f), vl); \
+        x = __riscv_vfsub_vf_f16m##lmul(x, 1.f16, vl);                         \
+        e = __riscv_vfsub_vf_f16m##lmul##_mu(mask, e, e, 1.f16, vl);           \
                                                                                \
         vfloat16m##lmul##_t z = __riscv_vfmul_vv_f16m##lmul(x, x, vl);         \
                                                                                \
@@ -85,7 +84,7 @@ using namespace nncase;
             __riscv_vfmul_vf_f16m##lmul(e, (_Float16)(c_cephes_log_q1), vl);   \
         y = __riscv_vfadd_vv_f16m##lmul(y, tmp, vl);                           \
                                                                                \
-        tmp = __riscv_vfmul_vf_f16m##lmul(z, (_Float16)(0.5f), vl);            \
+        tmp = __riscv_vfmul_vf_f16m##lmul(z, 0.5f16, vl);                      \
         y = __riscv_vfsub_vv_f16m##lmul(y, tmp, vl);                           \
                                                                                \
         tmp = __riscv_vfmul_vf_f16m##lmul(e, (_Float16)(c_cephes_log_q2), vl); \
@@ -130,7 +129,7 @@ _RVV_FLOAT16_LOG_OP(8, 2)
                                                                                \
         /* express exp(x) as exp(g + n*log(2)) */                              \
         fx = __riscv_vfmacc_vf_f16m##lmul(                                     \
-            __riscv_vfmv_v_f_f16m##lmul((_Float16)(0.5f), vl),                 \
+            __riscv_vfmv_v_f_f16m##lmul(0.5f16, vl),                           \
             (_Float16)(c_cephes_LOG2EF), x, vl);                               \
                                                                                \
         /* perform a floorf */                                                 \
@@ -140,8 +139,7 @@ _RVV_FLOAT16_LOG_OP(8, 2)
         /* if greater, substract 1 */                                          \
         vbool##mlen##_t mask =                                                 \
             __riscv_vmfgt_vv_f16m##lmul##_b##mlen(tmp, fx, vl);                \
-        fx = __riscv_vfsub_vf_f16m##lmul##_mu(mask, tmp, tmp, (_Float16)(1.f), \
-                                              vl);                             \
+        fx = __riscv_vfsub_vf_f16m##lmul##_mu(mask, tmp, tmp, 1.f16, vl);      \
                                                                                \
         tmp =                                                                  \
             __riscv_vfmul_vf_f16m##lmul(fx, (_Float16)(c_cephes_exp_C1), vl);  \
@@ -166,7 +164,7 @@ _RVV_FLOAT16_LOG_OP(8, 2)
                                                                                \
         y = __riscv_vfmul_vv_f16m##lmul(y, z, vl);                             \
         y = __riscv_vfadd_vv_f16m##lmul(y, x, vl);                             \
-        y = __riscv_vfadd_vf_f16m##lmul(y, (_Float16)(1.f), vl);               \
+        y = __riscv_vfadd_vf_f16m##lmul(y, 1.f16, vl);                         \
                                                                                \
         /* build 2^n */                                                        \
         vint16m##lmul##_t mm = __riscv_vfcvt_x_f_v_i16m##lmul(fx, vl);         \
@@ -208,7 +206,7 @@ _RVV_FLOAT16_EXP_OP(8, 2)
         vbool##MLEN##_t sign_mask_sin, sign_mask_cos;                          \
         sign_mask_sin =                                                        \
             __riscv_vmflt_vf_f16m##LMUL##_b##MLEN(x, (_Float16)0.f, vl);       \
-        x = __riscv_vfsgnj_vf_f16m##LMUL(x, (_Float16)1.f, vl);                \
+        x = __riscv_vfsgnj_vf_f16m##LMUL(x, 1.f16, vl);                        \
                                                                                \
         /* scale by 4/Pi */                                                    \
         y = __riscv_vfmul_vf_f16m##LMUL(x, (_Float16)c_cephes_FOPI, vl);       \
@@ -268,9 +266,9 @@ _RVV_FLOAT16_EXP_OP(8, 2)
         y1 = __riscv_vfmul_vv_f16m##LMUL(y1, z, vl);                           \
         y2 = __riscv_vfmul_vv_f16m##LMUL(y2, x, vl);                           \
         y1 = __riscv_vfsub_vv_f16m##LMUL(                                      \
-            y1, __riscv_vfmul_vf_f16m##LMUL(z, (_Float16)0.5f, vl), vl);       \
+            y1, __riscv_vfmul_vf_f16m##LMUL(z, 0.5f16, vl), vl);               \
         y2 = __riscv_vfadd_vv_f16m##LMUL(y2, x, vl);                           \
-        y1 = __riscv_vfadd_vf_f16m##LMUL(y1, (_Float16)1.f, vl);               \
+        y1 = __riscv_vfadd_vf_f16m##LMUL(y1, 1.f16, vl);                       \
                                                                                \
         /* select the correct result from the two polynoms */                  \
         vfloat16m##LMUL##_t ys =                                               \
@@ -365,7 +363,7 @@ static constexpr _Float16 log2_lo = (_Float16)(0x1.ABC9Ep-56f);
                                                                                \
         auto poly = __riscv_vfmadd_vv_f16m##LMUL(p_odd, r, p_even, vl);        \
                                                                                \
-        auto r_prime = __riscv_vfmul_vf_f16m##LMUL(r, (_Float16)0.5f, vl);     \
+        auto r_prime = __riscv_vfmul_vf_f16m##LMUL(r, 0.5f16, vl);             \
         auto B = __riscv_vfmadd_vv_f16m##LMUL(r, r_prime, r, vl);              \
         auto b = __riscv_vfsub_vv_f16m##LMUL(r, B, vl);                        \
         b = __riscv_vfmacc_vv_f16m##LMUL(b, r, r_prime, vl);                   \
@@ -450,8 +448,7 @@ const sv_erff_half_data erf_data_half(erf_data_fp32);
         auto gt_min_mask = __riscv_vmfgt_vf_f##TLEN##m##LMUL##_b##MLEN(        \
             a, (_Float16)(0x1.cp-7f), vl);                                     \
                                                                                \
-        auto tmp_i =                                                           \
-            __riscv_vfmul_vf_f##TLEN##m##LMUL(a, (_Float16)(128.f), vl);       \
+        auto tmp_i = __riscv_vfmul_vf_f##TLEN##m##LMUL(a, 128.f16, vl);        \
         auto i = __riscv_vfcvt_xu_f_v_u16m##LMUL(tmp_i, vl);                   \
                                                                                \
         /* Saturate lookup index. */                                           \
@@ -481,8 +478,7 @@ const sv_erff_half_data erf_data_half(erf_data_fp32);
         y = __riscv_vfmadd_vv_f##TLEN##m##LMUL(y, scale, erfr, vl);            \
                                                                                \
         /* Solves the |x| = inf case. */                                       \
-        y = __riscv_vfmerge_vfm_f##TLEN##m##LMUL(y, (_Float16)(1.f),           \
-                                                 ge_max_mask, vl);             \
+        y = __riscv_vfmerge_vfm_f##TLEN##m##LMUL(y, 1.f16, ge_max_mask, vl);   \
                                                                                \
         /* Copy sign. */                                                       \
         return __riscv_vfsgnj_vv_f##TLEN##m##LMUL(y, x, vl);                   \

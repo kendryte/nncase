@@ -188,7 +188,7 @@ REGISTER_RVV_UNARY_FP16_OP(ceil, half, ceil_float16)
     inline vfloat16m##lmul##_t cos_float16(const vfloat16m##lmul##_t &v,       \
                                            const size_t vl) {                  \
         auto n = __riscv_vfmv_v_f_f16m##lmul((_Float16)(0x1.45f306p-2f), vl);  \
-        auto half = __riscv_vfmv_v_f_f16m##lmul((_Float16)(0.5f), vl);         \
+        auto half = __riscv_vfmv_v_f_f16m##lmul(0.5f16, vl);                   \
         auto c0 =                                                              \
             __riscv_vfmv_v_f_f16m##lmul((_Float16)(-0x1.555548p-3f), vl);      \
         auto c2 =                                                              \
@@ -200,7 +200,7 @@ REGISTER_RVV_UNARY_FP16_OP(ceil, half, ceil_float16)
         n = __riscv_vfcvt_f_x_v_f16m##lmul(ni, vl);                            \
         auto parity = __riscv_vand_vx_i16m##lmul(ni, 1, vl);                   \
         auto odd = __riscv_vsll_vx_i16m##lmul(parity, 15, vl);                 \
-        n = __riscv_vfsub_vf_f16m##lmul(n, (_Float16)(0.5f), vl);              \
+        n = __riscv_vfsub_vf_f16m##lmul(n, 0.5f16, vl);                        \
                                                                                \
         r = __riscv_vfnmsac_vf_f16m##lmul(r, (_Float16)(0x1.921fb6p+1f), n,    \
                                           vl);                                 \
@@ -269,8 +269,7 @@ REGISTER_RVV_UNARY_FP16_OP(neg, half, neg_float16)
 #define RSQRT_FLOAT16(lmul, mlen)                                              \
     inline vfloat16m##lmul##_t rsqrt_float16(const vfloat16m##lmul##_t &v,     \
                                              const size_t vl) {                \
-        auto one_point_five =                                                  \
-            __riscv_vfmv_v_f_f16m##lmul((_Float16)(1.5f), vl);                 \
+        auto one_point_five = __riscv_vfmv_v_f_f16m##lmul(1.5f16, vl);         \
                                                                                \
         auto ux = __riscv_vreinterpret_v_f16m##lmul##_u16m##lmul(v);           \
         ux = __riscv_vsrl_vx_u16m##lmul(ux, 1, vl);                            \
@@ -279,7 +278,7 @@ REGISTER_RVV_UNARY_FP16_OP(neg, half, neg_float16)
         auto y = __riscv_vreinterpret_v_u16m##lmul##_f16m##lmul(ux);           \
                                                                                \
         auto y2 = __riscv_vfmul_vv_f16m##lmul(y, y, vl);                       \
-        auto x = __riscv_vfmul_vf_f16m##lmul(v, (_Float16)(-0.5f), vl);        \
+        auto x = __riscv_vfmul_vf_f16m##lmul(v, -0.5f16, vl);                  \
         y2 = __riscv_vfmadd_vv_f16m##lmul(y2, x, one_point_five, vl);          \
         y = __riscv_vfmul_vv_f16m##lmul(y, y2, vl);                            \
                                                                                \
@@ -315,15 +314,11 @@ REGISTER_RVV_UNARY_FP16_OP(round, half, round_float16)
 #define SIGN_FLOAT16(lmul, mlen)                                               \
     inline vfloat16m##lmul##_t sign_float16(const vfloat16m##lmul##_t &v,      \
                                             const size_t vl) {                 \
-        auto ret = __riscv_vfmv_v_f_f16m##lmul((_Float16)(0.f), vl);           \
-        auto gt_mask =                                                         \
-            __riscv_vmfgt_vf_f16m##lmul##_b##mlen(v, (_Float16)(0.f), vl);     \
-        ret =                                                                  \
-            __riscv_vfmerge_vfm_f16m##lmul(ret, (_Float16)(1.f), gt_mask, vl); \
-        auto lt_mask =                                                         \
-            __riscv_vmflt_vf_f16m##lmul##_b##mlen(v, (_Float16)(0.f), vl);     \
-        return __riscv_vfmerge_vfm_f16m##lmul(ret, (_Float16)(-1.f), lt_mask,  \
-                                              vl);                             \
+        auto ret = __riscv_vfmv_v_f_f16m##lmul(0.f16, vl);                     \
+        auto gt_mask = __riscv_vmfgt_vf_f16m##lmul##_b##mlen(v, 0.f16, vl);    \
+        ret = __riscv_vfmerge_vfm_f16m##lmul(ret, 1.f16, gt_mask, vl);         \
+        auto lt_mask = __riscv_vmflt_vf_f16m##lmul##_b##mlen(v, 0.f16, vl);    \
+        return __riscv_vfmerge_vfm_f16m##lmul(ret, -1.f16, lt_mask, vl);       \
     }
 
 REGISTER_RVV_FP16_KERNEL(SIGN_FLOAT16)
@@ -463,7 +458,7 @@ REGISTER_RVV_UNARY_FP16_OP(swish, half, swish_float16)
                                               half beta, const size_t vl) {    \
         auto tmp = __riscv_vfmul_vf_f16m##lmul(v, -beta, vl);                  \
         tmp = exp_ps_fp16(tmp, vl);                                            \
-        tmp = __riscv_vfadd_vf_f16m##lmul(tmp, 1.0f16, vl);                    \
+        tmp = __riscv_vfadd_vf_f16m##lmul(tmp, 1.f16, vl);                     \
         return __riscv_vfdiv_vv_f16m##lmul(v, tmp, vl);                        \
     }
 
