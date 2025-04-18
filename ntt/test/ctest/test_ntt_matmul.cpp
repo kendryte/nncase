@@ -301,7 +301,7 @@ TEST(MatmulTestFloat, Pack_M_K_N) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(MatmulTestfloate4m3, NoPack) {
+TEST(MatmulTestFloatE4M3, NoPack) {
     // init
     using tensorA_F8_type = ntt::tensor<float_e4m3_t, ntt::fixed_shape<64, 64>>;
     using tensorB_F8_type = ntt::tensor<float_e4m3_t, ntt::fixed_shape<64, 64>>;
@@ -331,6 +331,49 @@ TEST(MatmulTestfloate4m3, NoPack) {
     tensorC_type ntt_output2;
     NttTest::ort2ntt(ort_output, ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_output2));
+}
+
+TEST(MatmulTestFloatE4M3, Pack_K) {
+    constexpr size_t P = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
+
+    // init
+    using tensor_type_f32 = ntt::tensor<float, ntt::fixed_shape<128, 128>>;
+    using tensor_type_f8 =
+        ntt::tensor<float_e4m3_t, ntt::fixed_shape<128, 128>>;
+    tensor_type_f8 ntt_lhs_f8;
+    tensor_type_f8 ntt_rhs_f8;
+    NttTest::init_tensor(ntt_lhs_f8, (float_e4m3_t)-448.f, (float_e4m3_t)448.f);
+    NttTest::init_tensor(ntt_rhs_f8, (float_e4m3_t)-448.f, (float_e4m3_t)448.f);
+
+    alignas(32) ntt::tensor<ntt::vector<float_e4m3_t, P>,
+                            ntt::fixed_shape<128, 128 / P>>
+        p_ntt_lhs;
+    alignas(32) ntt::tensor<ntt::vector<float_e4m3_t, P>,
+                            ntt::fixed_shape<128 / P, 128>>
+        p_ntt_rhs;
+    ntt::pack<1>(ntt_lhs_f8, p_ntt_lhs);
+    ntt::pack<0>(ntt_rhs_f8, p_ntt_rhs);
+
+    // ntt
+    tensor_type_f32 ntt_output1;
+    ntt::matmul<false>(p_ntt_lhs, p_ntt_rhs, ntt_output1, ntt::fixed_shape<1>{},
+                       ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
+                       ntt::fixed_shape<0>{});
+
+    tensor_type_f32 ntt_lhs_f32;
+    tensor_type_f32 ntt_rhs_f32;
+    ntt::cast(ntt_lhs_f8, ntt_lhs_f32);
+    ntt::cast(ntt_rhs_f8, ntt_rhs_f32);
+
+    // ort
+    auto ort_lhs = NttTest::ntt2ort(ntt_lhs_f32);
+    auto ort_rhs = NttTest::ntt2ort(ntt_rhs_f32);
+    auto ort_output = ortki_MatMul(ort_lhs, ort_rhs);
+
+    // compare
+    tensor_type_f32 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
 int main(int argc, char *argv[]) {

@@ -14,6 +14,8 @@
  */
 #pragma once
 #include "../primitive_ops.h"
+#include "nncase/float8.h"
+#include <iostream>
 
 namespace nncase::ntt {
 namespace ukernels {
@@ -35,7 +37,8 @@ template <ukernels::mamtul_pack_kind PackKind, bool AccC, class TLhsElem,
 void u_mul_add(const TLhsElem &lhs, const TRhsElem &rhs, TOutElem &output) {
     // 1. 0D-packing
     if constexpr (PackKind == ukernels::mamtul_pack_kind::no_pack) {
-        output = AccC ? ntt::mul_add(lhs, rhs, output) : ntt::mul(lhs, rhs);
+        output = AccC ? ntt::mul_add((TOutElem)lhs, (TOutElem)rhs, output)
+                      : ntt::mul((TOutElem)lhs, (TOutElem)rhs);
     }
     // 2. 1D-packing
     // 2.1. pack M
@@ -44,8 +47,27 @@ void u_mul_add(const TLhsElem &lhs, const TRhsElem &rhs, TOutElem &output) {
     }
     // 2.2. pack K
     else if constexpr (PackKind == ukernels::mamtul_pack_kind::pack_k) {
-        auto value = ntt::inner_product(lhs, rhs);
-        output = AccC ? output + value : value;
+        if constexpr (std::is_same_v<element_or_scalar_t<TLhsElem>,
+                                     float_e4m3_t>) {
+            using TLhsElemExpanded =
+                cast_fixed_tensor_element_type<TLhsElem, float>::type;
+            using TRhsElemExpanded =
+                cast_fixed_tensor_element_type<TRhsElem, float>::type;
+            TLhsElemExpanded lhs_expanded;
+            TRhsElemExpanded rhs_expanded;
+            ntt::apply(lhs.shape(), [&](auto index) {
+                lhs_expanded(index) = (float)lhs(index);
+            });
+            ntt::apply(rhs.shape(), [&](auto index) {
+                rhs_expanded(index) = (float)rhs(index);
+            });
+            auto value = ntt::inner_product(lhs_expanded, rhs_expanded);
+            output = AccC ? output + value : value;
+        } else {
+            auto value = ntt::inner_product(lhs, rhs);
+            output = AccC ? output + value : value;
+        }
+
     }
     // 2.3. pack N
     else if constexpr (PackKind == ukernels::mamtul_pack_kind::pack_n) {

@@ -87,9 +87,9 @@ class basic_vector
         }
     }
 
-    template <size_t Index>
-    static constexpr size_t lane() noexcept {
-        static_assert(Index < sizeof...(Lanes), "Dimension index out of bounds");
+    template <size_t Index> static constexpr size_t lane() noexcept {
+        static_assert(Index < sizeof...(Lanes),
+                      "Dimension index out of bounds");
         return std::get<Index>(std::make_tuple(Lanes...));
     }
 
@@ -104,4 +104,13 @@ template <class T, size_t... OldLanes, size_t... NewLanes>
 struct fixed_tensor_alike_type<basic_vector<T, OldLanes...>, NewLanes...> {
     using type = vector<T, NewLanes...>;
 };
+
+template <class OriginalVector, class Tnew>
+struct cast_fixed_tensor_element_type;
+
+template <class OldT, size_t... Lanes, class Tnew>
+struct cast_fixed_tensor_element_type<basic_vector<OldT, Lanes...>, Tnew> {
+    using type = vector<Tnew, Lanes...>;
+};
+
 } // namespace nncase::ntt
