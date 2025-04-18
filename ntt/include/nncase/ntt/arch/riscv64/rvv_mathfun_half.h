@@ -306,29 +306,26 @@ _RVV_FLOAT16_SINCOS_OP(4, 4)
 _RVV_FLOAT16_SINCOS_OP(8, 2)
 
 // tanh
-static constexpr _Float16 log2_inv = (_Float16)(0x1.71547652b82fep+0f);
-static constexpr _Float16 log2_hi = (_Float16)(0x1.62e42fefa39efp-1f);
-static constexpr _Float16 log2_lo = (_Float16)(0x1.abc9e3b39803fp-56f);
+static constexpr _Float16 log2_inv = (_Float16)(0x1.715476p+0f);
+static constexpr _Float16 log2_hi = (_Float16)(0x1.62E42p-1f);
+static constexpr _Float16 log2_lo = (_Float16)(0x1.ABC9Ep-56f);
 
 #define _RVV_FLOAT16_TANH_OP(LMUL, MLEN)                                       \
     static inline vfloat16m##LMUL##_t tanh_ps_fp16(vfloat16m##LMUL##_t v,      \
                                                    size_t vl) {                \
         static constexpr _Float16 fp_posZero = (_Float16)(0.0f);               \
         static constexpr _Float16 fp_posOne = (_Float16)(1.0f);                \
-        static constexpr _Float16 twenty = (_Float16)(20.0f);                  \
+        static constexpr _Float16 range_limit = (_Float16)(9.8f);              \
         static constexpr _Float16 neg_two = (_Float16)(-2.0f);                 \
-        static constexpr _Float16 c0 = (_Float16)(0x1.71ddef82f4beep-19f);     \
-        static constexpr _Float16 c1 = (_Float16)(0x1.a01a01b32b633p-13f);     \
-        static constexpr _Float16 c2 = (_Float16)(0x1.111111110ef6ap-7f);      \
-        static constexpr _Float16 c3 = (_Float16)(0x1.555555555555ap-3f);      \
-        static constexpr _Float16 c4 = (_Float16)(0x1.a019b37a2b3dfp-16f);     \
-        static constexpr _Float16 c5 = (_Float16)(0x1.6c16c17a09506p-10f);     \
-        static constexpr _Float16 c6 = (_Float16)(0x1.5555555553aefp-5f);      \
-        static constexpr _Float16 const_p_even =                               \
-            (_Float16)(0x1.af6eacd796f0bp-26f);                                \
-        static constexpr _Float16 const_p_odd =                                \
-            (_Float16)(0x1.289788d8bdadfp-22f);                                \
-        static constexpr _Float16 half_val = (_Float16)(0.5f);                 \
+        static constexpr _Float16 eps = (_Float16)(0x1p-10f);                  \
+                                                                               \
+        static constexpr _Float16 c0 = (_Float16)(0x1.6F3A8p-19f);             \
+        static constexpr _Float16 c1 = (_Float16)(0x1.9E09Ep-13f);             \
+        static constexpr _Float16 c2 = (_Float16)(0x1.0E38Ep-7f);              \
+        static constexpr _Float16 c3 = (_Float16)(0x1.5555p-3f);               \
+        static constexpr _Float16 c4 = (_Float16)(0x1.9F01Ap-16f);             \
+        static constexpr _Float16 c5 = (_Float16)(0x1.6B0C7p-10f);             \
+        static constexpr _Float16 c6 = (_Float16)(0x1.4E5E6p-5f);              \
                                                                                \
         auto c0_vec = __riscv_vfmv_v_f_f16m##LMUL(c0, vl);                     \
         auto c1_vec = __riscv_vfmv_v_f_f16m##LMUL(c1, vl);                     \
@@ -340,20 +337,27 @@ static constexpr _Float16 log2_lo = (_Float16)(0x1.abc9e3b39803fp-56f);
                                                                                \
         auto zero = __riscv_vfmv_v_f_f16m##LMUL(fp_posZero, vl);               \
         auto one = __riscv_vfmv_v_f_f16m##LMUL(fp_posOne, vl);                 \
+                                                                               \
         auto vx = __riscv_vfsgnj_vf_f16m##LMUL(v, fp_posOne, vl);              \
-        vx = __riscv_vfmin_vf_f16m##LMUL(vx, twenty, vl);                      \
+        vx = __riscv_vfmin_vf_f16m##LMUL(vx, range_limit, vl);                 \
                                                                                \
         vx = __riscv_vfmul_vf_f16m##LMUL(vx, neg_two, vl);                     \
         auto n_flt = __riscv_vfmul_vf_f16m##LMUL(vx, log2_inv, vl);            \
         auto n = __riscv_vfcvt_x_f_v_i16m##LMUL(n_flt, vl);                    \
         auto n_flt_from_n = __riscv_vfcvt_f_x_v_f16m##LMUL(n, vl);             \
-        auto r_delta =                                                         \
+                                                                               \
+        auto r_delta_hi =                                                      \
             __riscv_vfnmsac_vf_f16m##LMUL(vx, log2_hi, n_flt_from_n, vl);      \
+        auto r_delta_lo = __riscv_vfmul_vf_f16m##LMUL(n_flt_from_n, eps, vl);  \
+        auto r_delta =                                                         \
+            __riscv_vfadd_vv_f16m##LMUL(r_delta_hi, r_delta_lo, vl);           \
+                                                                               \
         auto u = __riscv_vadd_vx_i16m##LMUL(n, 15, vl);                        \
         u = __riscv_vsll_vx_i16m##LMUL(u, 10, vl);                             \
         auto r =                                                               \
             __riscv_vfnmsac_vf_f16m##LMUL(r_delta, log2_lo, n_flt_from_n, vl); \
         auto s = __riscv_vreinterpret_v_i16m##LMUL##_f16m##LMUL(u);            \
+                                                                               \
         auto s_is_small = __riscv_vmsle_vx_i16m##LMUL##_b##MLEN(n, -11, vl);   \
         r_delta = __riscv_vfsub_vv_f16m##LMUL(r_delta, r, vl);                 \
         auto s_head =                                                          \
@@ -364,20 +368,21 @@ static constexpr _Float16 log2_lo = (_Float16)(0x1.abc9e3b39803fp-56f);
         auto rsq = __riscv_vfmul_vv_f16m##LMUL(r, r, vl);                      \
         auto s_tail = __riscv_vmerge_vvm_f16m##LMUL(zero, s, s_is_small, vl);  \
         auto rcube = __riscv_vfmul_vv_f16m##LMUL(rsq, r, vl);                  \
-        auto p_even = __riscv_vmv_v_v_f16m##LMUL(rsq, vl);                     \
-        p_even =                                                               \
-            __riscv_vfmadd_vf_f16m##LMUL(p_even, const_p_even, c0_vec, vl);    \
+                                                                               \
+        auto p_even = __riscv_vfmadd_vf_f16m##LMUL(                            \
+            rsq, (_Float16)0x1.6F3A8p-19f, c0_vec, vl);                        \
         p_even = __riscv_vfmadd_vv_f16m##LMUL(p_even, rsq, c1_vec, vl);        \
         p_even = __riscv_vfmadd_vv_f16m##LMUL(p_even, rsq, c2_vec, vl);        \
         p_even = __riscv_vfmadd_vv_f16m##LMUL(p_even, rsq, c3_vec, vl);        \
                                                                                \
-        auto p_odd = __riscv_vmv_v_v_f16m##LMUL(rsq, vl);                      \
-        p_odd = __riscv_vfmadd_vf_f16m##LMUL(p_odd, const_p_odd, c4_vec, vl);  \
+        auto p_odd = __riscv_vfmadd_vf_f16m##LMUL(                             \
+            rsq, (_Float16)0x1.9F01Ap-16f, c4_vec, vl);                        \
         p_odd = __riscv_vfmadd_vv_f16m##LMUL(p_odd, rsq, c5_vec, vl);          \
         p_odd = __riscv_vfmadd_vv_f16m##LMUL(p_odd, rsq, c6_vec, vl);          \
+                                                                               \
         auto poly = __riscv_vfmadd_vv_f16m##LMUL(p_odd, r, p_even, vl);        \
                                                                                \
-        auto r_prime = __riscv_vfmul_vf_f16m##LMUL(r, half_val, vl);           \
+        auto r_prime = __riscv_vfmul_vf_f16m##LMUL(r, (_Float16)0.5f, vl);     \
         auto B = __riscv_vfmadd_vv_f16m##LMUL(r, r_prime, r, vl);              \
         auto b = __riscv_vfsub_vv_f16m##LMUL(r, B, vl);                        \
         b = __riscv_vfmacc_vv_f16m##LMUL(b, r, r_prime, vl);                   \
@@ -397,10 +402,10 @@ static constexpr _Float16 log2_lo = (_Float16)(0x1.abc9e3b39803fp-56f);
         d = __riscv_vfadd_vv_f16m##LMUL(d, d_tmp, vl);                         \
                                                                                \
         auto E = __riscv_vfrdiv_vf_f16m##LMUL(D, fp_posOne, vl);               \
-        auto e = __riscv_vfnmsub_vv_f16m##LMUL(E, D, one, vl);                 \
-        e = __riscv_vfnmsac_vv_f16m##LMUL(e, E, d, vl);                        \
-        e = __riscv_vfmul_vv_f16m##LMUL(e, __riscv_vfrec7_v_f16m##LMUL(D, vl), \
-                                        vl);                                   \
+        auto e1 = __riscv_vfnmsub_vv_f16m##LMUL(E, D, one, vl);                \
+        E = __riscv_vfmadd_vv_f16m##LMUL(E, e1, E, vl);                        \
+        auto e2 = __riscv_vfnmsub_vv_f16m##LMUL(E, D, one, vl);                \
+        E = __riscv_vfmadd_vv_f16m##LMUL(E, e2, E, vl);                        \
                                                                                \
         Z = __riscv_vfrsub_vf_f16m##LMUL(s_head, fp_posOne, vl);               \
         auto Numer = __riscv_vfnmsub_vv_f16m##LMUL(B, s, Z, vl);               \
@@ -409,10 +414,11 @@ static constexpr _Float16 log2_lo = (_Float16)(0x1.abc9e3b39803fp-56f);
         numer = __riscv_vfsub_vv_f16m##LMUL(numer, s_tail, vl);                \
         numer = __riscv_vfnmsac_vv_f16m##LMUL(numer, s, poly, vl);             \
                                                                                \
-        auto vy = __riscv_vfmul_vv_f16m##LMUL(e, numer, vl);                   \
-        vy = __riscv_vfmacc_vv_f16m##LMUL(vy, Numer, e, vl);                   \
+        auto vy = __riscv_vfmul_vv_f16m##LMUL(E, numer, vl);                   \
+        vy = __riscv_vfmacc_vv_f16m##LMUL(vy, Numer, E, vl);                   \
         vy = __riscv_vfmacc_vv_f16m##LMUL(vy, numer, E, vl);                   \
         vy = __riscv_vfmacc_vv_f16m##LMUL(vy, Numer, E, vl);                   \
+                                                                               \
         return __riscv_vfsgnj_vv_f16m##LMUL(vy, v, vl);                        \
     }
 
