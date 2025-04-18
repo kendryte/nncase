@@ -306,29 +306,29 @@ _RVV_FLOAT16_SINCOS_OP(4, 4)
 _RVV_FLOAT16_SINCOS_OP(8, 2)
 
 // tanh
-static const half log2_inv = half::round_to_half(0x1.71547652b82fep+0f);
-static const half log2_hi = half::round_to_half(0x1.62e42fefa39efp-1f);
-static const half log2_lo = half::round_to_half(0x1.abc9e3b39803fp-56f);
+static constexpr _Float16 log2_inv = (_Float16)(0x1.71547652b82fep+0f);
+static constexpr _Float16 log2_hi = (_Float16)(0x1.62e42fefa39efp-1f);
+static constexpr _Float16 log2_lo = (_Float16)(0x1.abc9e3b39803fp-56f);
 
 #define _RVV_FLOAT16_TANH_OP(LMUL, MLEN)                                       \
     static inline vfloat16m##LMUL##_t tanh_ps_fp16(vfloat16m##LMUL##_t v,      \
                                                    size_t vl) {                \
-        static const half fp_posZero = half::round_to_half(0.0f);                 \
-        static const half fp_posOne = half::round_to_half(1.0f);                  \
-        static const half twenty = half::round_to_half(20.0f);                    \
-        static const half neg_two = half::round_to_half(-2.0f);                   \
-        static const half c0 = half::round_to_half(0x1.71ddef82f4beep-19f);       \
-        static const half c1 = half::round_to_half(0x1.a01a01b32b633p-13f);       \
-        static const half c2 = half::round_to_half(0x1.111111110ef6ap-7f);        \
-        static const half c3 = half::round_to_half(0x1.555555555555ap-3f);        \
-        static const half c4 = half::round_to_half(0x1.a019b37a2b3dfp-16f);       \
-        static const half c5 = half::round_to_half(0x1.6c16c17a09506p-10f);       \
-        static const half c6 = half::round_to_half(0x1.5555555553aefp-5f);        \
-        static const half const_p_even =                                          \
-            half::round_to_half(0x1.af6eacd796f0bp-26f);                       \
-        static const half const_p_odd =                                           \
-            half::round_to_half(0x1.289788d8bdadfp-22f);                       \
-        static const half half_val = half::round_to_half(0.5f);                   \
+        static constexpr _Float16 fp_posZero = (_Float16)(0.0f);               \
+        static constexpr _Float16 fp_posOne = (_Float16)(1.0f);                \
+        static constexpr _Float16 twenty = (_Float16)(20.0f);                  \
+        static constexpr _Float16 neg_two = (_Float16)(-2.0f);                 \
+        static constexpr _Float16 c0 = (_Float16)(0x1.71ddef82f4beep-19f);     \
+        static constexpr _Float16 c1 = (_Float16)(0x1.a01a01b32b633p-13f);     \
+        static constexpr _Float16 c2 = (_Float16)(0x1.111111110ef6ap-7f);      \
+        static constexpr _Float16 c3 = (_Float16)(0x1.555555555555ap-3f);      \
+        static constexpr _Float16 c4 = (_Float16)(0x1.a019b37a2b3dfp-16f);     \
+        static constexpr _Float16 c5 = (_Float16)(0x1.6c16c17a09506p-10f);     \
+        static constexpr _Float16 c6 = (_Float16)(0x1.5555555553aefp-5f);      \
+        static constexpr _Float16 const_p_even =                               \
+            (_Float16)(0x1.af6eacd796f0bp-26f);                                \
+        static constexpr _Float16 const_p_odd =                                \
+            (_Float16)(0x1.289788d8bdadfp-22f);                                \
+        static constexpr _Float16 half_val = (_Float16)(0.5f);                 \
                                                                                \
         auto c0_vec = __riscv_vfmv_v_f_f16m##LMUL(c0, vl);                     \
         auto c1_vec = __riscv_vfmv_v_f_f16m##LMUL(c1, vl);                     \
