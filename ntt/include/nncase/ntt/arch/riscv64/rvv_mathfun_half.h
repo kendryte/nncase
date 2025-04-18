@@ -26,10 +26,10 @@ using namespace nncase;
 #define _RVV_FLOAT16_LOG_OP(lmul, mlen)                                        \
     inline vfloat16m##lmul##_t log_ps_fp16(vfloat16m##lmul##_t x, size_t vl) { \
         x = __riscv_vfmax_vf_f16m##lmul(                                       \
-            x, half::round_to_half(0.f),                                       \
+            x, (_Float16)(0.f),                                                \
             vl); /* force flush to zero on denormal values */                  \
-        vbool##mlen##_t invalid_mask = __riscv_vmfle_vf_f16m##lmul##_b##mlen(  \
-            x, half::round_to_half(0.f), vl);                                  \
+        vbool##mlen##_t invalid_mask =                                         \
+            __riscv_vmfle_vf_f16m##lmul##_b##mlen(x, (_Float16)(0.f), vl);     \
                                                                                \
         vint16m##lmul##_t ux =                                                 \
             __riscv_vreinterpret_v_f16m##lmul##_i16m##lmul(x);                 \
@@ -45,7 +45,7 @@ using namespace nncase;
         emm0 = __riscv_vsub_vx_i16m##lmul(emm0, 0xf, vl);                      \
         vfloat16m##lmul##_t e = __riscv_vfcvt_f_x_v_f16m##lmul(emm0, vl);      \
                                                                                \
-        e = __riscv_vfadd_vf_f16m##lmul(e, half::round_to_half(1.f), vl);      \
+        e = __riscv_vfadd_vf_f16m##lmul(e, (_Float16)(1.f), vl);               \
                                                                                \
         /* part2:                      */                                      \
         /*     if( x < SQRTHF ) {      */                                      \
@@ -53,52 +53,42 @@ using namespace nncase;
         /*       x = x + x - 1.0;      */                                      \
         /*     } else { x = x - 1.0; } */                                      \
         vbool##mlen##_t mask = __riscv_vmflt_vf_f16m##lmul##_b##mlen(          \
-            x, half::round_to_half(c_cephes_SQRTHF), vl);                      \
+            x, (_Float16)(c_cephes_SQRTHF), vl);                               \
         x = __riscv_vfadd_vv_f16m##lmul##_mu(mask, x, x, x, vl);               \
-        x = __riscv_vfsub_vf_f16m##lmul(x, half::round_to_half(1.f), vl);      \
-        e = __riscv_vfsub_vf_f16m##lmul##_mu(mask, e, e,                       \
-                                             half::round_to_half(1.f), vl);    \
+        x = __riscv_vfsub_vf_f16m##lmul(x, (_Float16)(1.f), vl);               \
+        e = __riscv_vfsub_vf_f16m##lmul##_mu(mask, e, e, (_Float16)(1.f), vl); \
                                                                                \
         vfloat16m##lmul##_t z = __riscv_vfmul_vv_f16m##lmul(x, x, vl);         \
                                                                                \
-        vfloat16m##lmul##_t y = __riscv_vfmul_vf_f16m##lmul(                   \
-            x, half::round_to_half(c_cephes_log_p0), vl);                      \
-        y = __riscv_vfadd_vf_f16m##lmul(                                       \
-            y, half::round_to_half(c_cephes_log_p1), vl);                      \
+        vfloat16m##lmul##_t y =                                                \
+            __riscv_vfmul_vf_f16m##lmul(x, (_Float16)(c_cephes_log_p0), vl);   \
+        y = __riscv_vfadd_vf_f16m##lmul(y, (_Float16)(c_cephes_log_p1), vl);   \
         y = __riscv_vfmul_vv_f16m##lmul(y, x, vl);                             \
-        y = __riscv_vfadd_vf_f16m##lmul(                                       \
-            y, half::round_to_half(c_cephes_log_p2), vl);                      \
+        y = __riscv_vfadd_vf_f16m##lmul(y, (_Float16)(c_cephes_log_p2), vl);   \
         y = __riscv_vfmul_vv_f16m##lmul(y, x, vl);                             \
-        y = __riscv_vfadd_vf_f16m##lmul(                                       \
-            y, half::round_to_half(c_cephes_log_p3), vl);                      \
+        y = __riscv_vfadd_vf_f16m##lmul(y, (_Float16)(c_cephes_log_p3), vl);   \
         y = __riscv_vfmul_vv_f16m##lmul(y, x, vl);                             \
-        y = __riscv_vfadd_vf_f16m##lmul(                                       \
-            y, half::round_to_half(c_cephes_log_p4), vl);                      \
+        y = __riscv_vfadd_vf_f16m##lmul(y, (_Float16)(c_cephes_log_p4), vl);   \
         y = __riscv_vfmul_vv_f16m##lmul(y, x, vl);                             \
-        y = __riscv_vfadd_vf_f16m##lmul(                                       \
-            y, half::round_to_half(c_cephes_log_p5), vl);                      \
+        y = __riscv_vfadd_vf_f16m##lmul(y, (_Float16)(c_cephes_log_p5), vl);   \
         y = __riscv_vfmul_vv_f16m##lmul(y, x, vl);                             \
-        y = __riscv_vfadd_vf_f16m##lmul(                                       \
-            y, half::round_to_half(c_cephes_log_p6), vl);                      \
+        y = __riscv_vfadd_vf_f16m##lmul(y, (_Float16)(c_cephes_log_p6), vl);   \
         y = __riscv_vfmul_vv_f16m##lmul(y, x, vl);                             \
-        y = __riscv_vfadd_vf_f16m##lmul(                                       \
-            y, half::round_to_half(c_cephes_log_p7), vl);                      \
+        y = __riscv_vfadd_vf_f16m##lmul(y, (_Float16)(c_cephes_log_p7), vl);   \
         y = __riscv_vfmul_vv_f16m##lmul(y, x, vl);                             \
-        y = __riscv_vfadd_vf_f16m##lmul(                                       \
-            y, half::round_to_half(c_cephes_log_p8), vl);                      \
+        y = __riscv_vfadd_vf_f16m##lmul(y, (_Float16)(c_cephes_log_p8), vl);   \
         y = __riscv_vfmul_vv_f16m##lmul(y, x, vl);                             \
                                                                                \
         y = __riscv_vfmul_vv_f16m##lmul(y, z, vl);                             \
                                                                                \
-        vfloat16m##lmul##_t tmp = __riscv_vfmul_vf_f16m##lmul(                 \
-            e, half::round_to_half(c_cephes_log_q1), vl);                      \
+        vfloat16m##lmul##_t tmp =                                              \
+            __riscv_vfmul_vf_f16m##lmul(e, (_Float16)(c_cephes_log_q1), vl);   \
         y = __riscv_vfadd_vv_f16m##lmul(y, tmp, vl);                           \
                                                                                \
-        tmp = __riscv_vfmul_vf_f16m##lmul(z, half::round_to_half(0.5f), vl);   \
+        tmp = __riscv_vfmul_vf_f16m##lmul(z, (_Float16)(0.5f), vl);            \
         y = __riscv_vfsub_vv_f16m##lmul(y, tmp, vl);                           \
                                                                                \
-        tmp = __riscv_vfmul_vf_f16m##lmul(                                     \
-            e, half::round_to_half(c_cephes_log_q2), vl);                      \
+        tmp = __riscv_vfmul_vf_f16m##lmul(e, (_Float16)(c_cephes_log_q2), vl); \
         x = __riscv_vfadd_vv_f16m##lmul(x, y, vl);                             \
         x = __riscv_vfadd_vv_f16m##lmul(x, tmp, vl);                           \
         /* negative arg will be NAN */                                         \
@@ -135,15 +125,13 @@ _RVV_FLOAT16_LOG_OP(8, 2)
                                                   size_t vl) {                 \
         vfloat16m##lmul##_t tmp, fx;                                           \
                                                                                \
-        x = __riscv_vfmin_vf_f16m##lmul(x, half::round_to_half(c_exp_hi_f16),  \
-                                        vl);                                   \
-        x = __riscv_vfmax_vf_f16m##lmul(x, half::round_to_half(c_exp_lo_f16),  \
-                                        vl);                                   \
+        x = __riscv_vfmin_vf_f16m##lmul(x, (_Float16)(c_exp_hi_f16), vl);      \
+        x = __riscv_vfmax_vf_f16m##lmul(x, (_Float16)(c_exp_lo_f16), vl);      \
                                                                                \
         /* express exp(x) as exp(g + n*log(2)) */                              \
         fx = __riscv_vfmacc_vf_f16m##lmul(                                     \
-            __riscv_vfmv_v_f_f16m##lmul(half::round_to_half(0.5f), vl),        \
-            half::round_to_half(c_cephes_LOG2EF), x, vl);                      \
+            __riscv_vfmv_v_f_f16m##lmul((_Float16)(0.5f), vl),                 \
+            (_Float16)(c_cephes_LOG2EF), x, vl);                               \
                                                                                \
         /* perform a floorf */                                                 \
         tmp = __riscv_vfcvt_f_x_v_f16m##lmul(                                  \
@@ -152,38 +140,33 @@ _RVV_FLOAT16_LOG_OP(8, 2)
         /* if greater, substract 1 */                                          \
         vbool##mlen##_t mask =                                                 \
             __riscv_vmfgt_vv_f16m##lmul##_b##mlen(tmp, fx, vl);                \
-        fx = __riscv_vfsub_vf_f16m##lmul##_mu(mask, tmp, tmp,                  \
-                                              half::round_to_half(1.f), vl);   \
+        fx = __riscv_vfsub_vf_f16m##lmul##_mu(mask, tmp, tmp, (_Float16)(1.f), \
+                                              vl);                             \
                                                                                \
-        tmp = __riscv_vfmul_vf_f16m##lmul(                                     \
-            fx, half::round_to_half(c_cephes_exp_C1), vl);                     \
-        vfloat16m##lmul##_t z = __riscv_vfmul_vf_f16m##lmul(                   \
-            fx, half::round_to_half(c_cephes_exp_C2), vl);                     \
+        tmp =                                                                  \
+            __riscv_vfmul_vf_f16m##lmul(fx, (_Float16)(c_cephes_exp_C1), vl);  \
+        vfloat16m##lmul##_t z =                                                \
+            __riscv_vfmul_vf_f16m##lmul(fx, (_Float16)(c_cephes_exp_C2), vl);  \
         x = __riscv_vfsub_vv_f16m##lmul(x, tmp, vl);                           \
         x = __riscv_vfsub_vv_f16m##lmul(x, z, vl);                             \
                                                                                \
-        vfloat16m##lmul##_t y = __riscv_vfmul_vf_f16m##lmul(                   \
-            x, half::round_to_half(c_cephes_exp_p0), vl);                      \
+        vfloat16m##lmul##_t y =                                                \
+            __riscv_vfmul_vf_f16m##lmul(x, (_Float16)(c_cephes_exp_p0), vl);   \
         z = __riscv_vfmul_vv_f16m##lmul(x, x, vl);                             \
                                                                                \
-        y = __riscv_vfadd_vf_f16m##lmul(                                       \
-            y, half::round_to_half(c_cephes_exp_p1), vl);                      \
+        y = __riscv_vfadd_vf_f16m##lmul(y, (_Float16)(c_cephes_exp_p1), vl);   \
         y = __riscv_vfmul_vv_f16m##lmul(y, x, vl);                             \
-        y = __riscv_vfadd_vf_f16m##lmul(                                       \
-            y, half::round_to_half(c_cephes_exp_p2), vl);                      \
+        y = __riscv_vfadd_vf_f16m##lmul(y, (_Float16)(c_cephes_exp_p2), vl);   \
         y = __riscv_vfmul_vv_f16m##lmul(y, x, vl);                             \
-        y = __riscv_vfadd_vf_f16m##lmul(                                       \
-            y, half::round_to_half(c_cephes_exp_p3), vl);                      \
+        y = __riscv_vfadd_vf_f16m##lmul(y, (_Float16)(c_cephes_exp_p3), vl);   \
         y = __riscv_vfmul_vv_f16m##lmul(y, x, vl);                             \
-        y = __riscv_vfadd_vf_f16m##lmul(                                       \
-            y, half::round_to_half(c_cephes_exp_p4), vl);                      \
+        y = __riscv_vfadd_vf_f16m##lmul(y, (_Float16)(c_cephes_exp_p4), vl);   \
         y = __riscv_vfmul_vv_f16m##lmul(y, x, vl);                             \
-        y = __riscv_vfadd_vf_f16m##lmul(                                       \
-            y, half::round_to_half(c_cephes_exp_p5), vl);                      \
+        y = __riscv_vfadd_vf_f16m##lmul(y, (_Float16)(c_cephes_exp_p5), vl);   \
                                                                                \
         y = __riscv_vfmul_vv_f16m##lmul(y, z, vl);                             \
         y = __riscv_vfadd_vv_f16m##lmul(y, x, vl);                             \
-        y = __riscv_vfadd_vf_f16m##lmul(y, half::round_to_half(1.f), vl);      \
+        y = __riscv_vfadd_vf_f16m##lmul(y, (_Float16)(1.f), vl);               \
                                                                                \
         /* build 2^n */                                                        \
         vint16m##lmul##_t mm = __riscv_vfcvt_x_f_v_i16m##lmul(fx, vl);         \
@@ -465,18 +448,18 @@ const sv_erff_half_data erf_data_half(erf_data_fp32);
                                                                                \
         /* |x| > 1/64 - 1/512. */                                              \
         auto gt_min_mask = __riscv_vmfgt_vf_f##TLEN##m##LMUL##_b##MLEN(        \
-            a, half::round_to_half(0x1.cp-7f), vl);                            \
+            a, (_Float16)(0x1.cp-7f), vl);                                     \
                                                                                \
-        auto tmp_i = __riscv_vfmul_vf_f##TLEN##m##LMUL(                        \
-            a, half::round_to_half(128.f), vl);                                \
+        auto tmp_i =                                                           \
+            __riscv_vfmul_vf_f##TLEN##m##LMUL(a, (_Float16)(128.f), vl);       \
         auto i = __riscv_vfcvt_xu_f_v_u16m##LMUL(tmp_i, vl);                   \
                                                                                \
         /* Saturate lookup index. */                                           \
         i = __riscv_vmerge_vvm_u16m##LMUL(zero, i, gt_min_mask, vl);           \
         i = __riscv_vminu_vx_u16m##LMUL(i, 512, vl);                           \
         auto tmp_r = __riscv_vfcvt_f_xu_v_f##TLEN##m##LMUL(i, vl);             \
-        auto r = __riscv_vfmul_vf_f##TLEN##m##LMUL(                            \
-            tmp_r, half::round_to_half(1.f / 128), vl);                        \
+        auto r = __riscv_vfmul_vf_f##TLEN##m##LMUL(tmp_r,                      \
+                                                   (_Float16)(1.f / 128), vl); \
         auto byte_i = __riscv_vmul_vx_u16m##LMUL(i, 2, vl); /* byte offset */  \
                                                                                \
         /* r and erf(r) set to 0 for |x| below min. */                         \
@@ -487,18 +470,18 @@ const sv_erff_half_data erf_data_half(erf_data_fp32);
                                                                                \
         /* |x| >= 4.0 - 8/128. */                                              \
         auto ge_max_mask = __riscv_vmfge_vf_f##TLEN##m##LMUL##_b##MLEN(        \
-            a, half::round_to_half(3.9375f), vl);                              \
+            a, (_Float16)(3.9375f), vl);                                       \
                                                                                \
         /* erf(x) ~ erf(r) + scale * d * (1 - r * d - 1/3 * d^2). */           \
         auto d = __riscv_vfsub_vv_f##TLEN##m##LMUL(a, r, vl);                  \
         auto d2 = __riscv_vfmul_vv_f##TLEN##m##LMUL(d, d, vl);                 \
         auto y = __riscv_vfmacc_vf_f##TLEN##m##LMUL(                           \
-            r, half::round_to_half(0x1.555556p-2f), d, vl);                    \
+            r, (_Float16)(0x1.555556p-2f), d, vl);                             \
         y = __riscv_vfnmsub_vv_f##TLEN##m##LMUL(y, d2, d, vl);                 \
         y = __riscv_vfmadd_vv_f##TLEN##m##LMUL(y, scale, erfr, vl);            \
                                                                                \
         /* Solves the |x| = inf case. */                                       \
-        y = __riscv_vfmerge_vfm_f##TLEN##m##LMUL(y, half::round_to_half(1.f),  \
+        y = __riscv_vfmerge_vfm_f##TLEN##m##LMUL(y, (_Float16)(1.f),           \
                                                  ge_max_mask, vl);             \
                                                                                \
         /* Copy sign. */                                                       \
