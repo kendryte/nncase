@@ -57,8 +57,11 @@ struct u_type_scale<ukernels::mamtul_pack_kind::pack_m, TA, TB, TC> {
 
 template <class TA, class TB, class TC>
 struct u_type_scale<ukernels::mamtul_pack_kind::pack_n, TA, TB, TC> {
+    using TLhsElem = std::decay_t<typename TA::element_type>;
+    using TRhsElem = std::decay_t<typename TB::element_type>;
+    using TOutElem = std::decay_t<typename TC::element_type>;
     static constexpr size_t m0_scale = 1;
-    static constexpr size_t n0_scale = 1;
+    static constexpr size_t n0_scale = (TRhsElem::size()) / (TOutElem::size());
 };
 
 template <ukernels::mamtul_pack_kind PackKind, bool AccumulateC,
@@ -128,6 +131,34 @@ struct u_matmul_generic {
                         for (size_t k = 0; k < m0_scale; k++) {
                             u_mul_add<PackKind, true>(
                                 a0_grouped[m](k), b0_grouped[n], c0_tmp[k][n]);
+                        }
+                    }
+                }
+
+            } else if constexpr (n0_scale != 1 && m0_scale == 1) {
+                using TRhsElemExpanded =
+                    cast_fixed_tensor_element_type<TRhsElem, float>::type;
+                using TRhsElemGrouped =
+                    ntt::fixed_tensor_alike_t<TRhsElemExpanded, n0_scale,
+                                              TRhsElemExpanded::size() /
+                                                  n0_scale>;
+
+                using TLhsElemGrouped = float;
+                TLhsElemGrouped a0_grouped[M0Tile];
+                TRhsElemGrouped b0_grouped[N0Tile];
+                loop<M0Tile>([&](auto i) { a0_grouped[i] = (float)a0_tmp[i]; });
+                loop<N0Tile>([&](auto i) {
+                    ntt::apply(b0_grouped[i].shape(), [&](auto index) {
+                        b0_grouped[i](index) = (float)b0_tmp[i](
+                            index[0] * b0_grouped[i].shape()[1] + index[1]);
+                    });
+                });
+
+                for (size_t n = 0; n < N0Tile; n++) {
+                    for (size_t m = 0; m < M0Tile; m++) {
+                        for (size_t k = 0; k < n0_scale; k++) {
+                            u_mul_add<PackKind, true>(
+                                a0_grouped[m], b0_grouped[n](k), c0_tmp[m][k]);
                         }
                     }
                 }
