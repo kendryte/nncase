@@ -44,6 +44,25 @@ public sealed class PackResizeImage : PackRule
 
     public override Pattern Pattern { get; } = IsResizeImage("target", op => op.TransformationMode == ImageResizeTransformationMode.Asymmetric && op.IsTFResize == false, IsWildcard("input") with { TypePattern = !IsVector() }, IsWildcard("roi"), IsTensorConst("newSize"), IsTensorConst("cubicCoeffA"), IsTensorConst("excludeOutside"), IsTensorConst("extrapolationValue"));
 
+    public static List<Expr> AddCandidate(IR.Imaging.ResizeImage op, Expr input, int[] newSize, int[] packedAxes, int[] lanes)
+    {
+        var inShape = input.CheckedShape;
+
+        var rets = new List<Expr>();
+
+        var packedInput = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+
+        var resized = IR.F.CPU.ResizeImage(packedInput, packedAxes, padsInput.Select(x => (int)x.FixedValue).ToArray(), newSize, op.ResizeMode, op.TransformationMode, op.NearestMode);
+
+        var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(resized, lanes, packedAxes), inShape, padsInput);
+        if (post.CheckedType is not InvalidType)
+        {
+            rets.Add(post);
+        }
+
+        return rets;
+    }
+
     public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var roi = (Expr)result["roi"];
@@ -52,26 +71,12 @@ public sealed class PackResizeImage : PackRule
             return null!;
         }
 
-        var rets = new List<Expr>();
         var op = (IR.Imaging.ResizeImage)result["target"];
         var input = (Expr)result["input"];
         var newSize = ((TensorConst)result["newSize"]).Value.ToArray<int>();
-        var inShape = input.CheckedShape;
+        var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
-        void AddCandidate(int[] packedAxes, int[] lanes)
-        {
-            var packedInput = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
-
-            var resized = IR.F.CPU.ResizeImage(packedInput, packedAxes, padsInput.Select(x => (int)x.FixedValue).ToArray(), newSize, op.ResizeMode, op.TransformationMode, op.NearestMode);
-
-            var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(resized, lanes, packedAxes), inShape, padsInput);
-            if (post.CheckedType is not InvalidType)
-            {
-                rets.Add(post);
-            }
-        }
-
-        AddCandidate(new[] { 1 }, new[] { Lane });
+        var rets = AddCandidate(op, input, newSize, new[] { 1 }, new[] { laneSize });
         return rets;
     }
 }
@@ -127,14 +132,15 @@ public sealed class PackReduce : PackRule
             }
         }
 
+        var laneSize = Lane / input.CheckedDataType.SizeInBytes;
         for (int i = 0; i < input.CheckedShape.Count; i++)
         {
-            AddCandidate([i], [Lane]);
+            AddCandidate([i], [laneSize]);
             for (int j = i + 1; j < input.CheckedShape.Count; j++)
             {
                 if (Rank > 1)
                 {
-                    AddCandidate([i, j], [Lane, Lane]);
+                    AddCandidate([i, j], [laneSize, laneSize]);
                 }
             }
         }
@@ -168,6 +174,7 @@ public sealed class PackInstanceNorm : PackRule
         var eps = ((TensorConst)result["eps"]).Value.ToScalar<float>();
         var inShape = input.CheckedShape;
         var pshape = scale.CheckedShape;
+        var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
         void AddCandidate(int[] packedAxes, int[] lanes)
         {
@@ -183,13 +190,13 @@ public sealed class PackInstanceNorm : PackRule
             var packedScale = PackUtility.PadForPack(scale, pshape, pAxes, lanes, 0f, out var padsScale);
             if (pAxes.Length > 0)
             {
-                packedScale = IR.F.CPU.Pack(packedScale, Enumerable.Repeat(Lane, pAxes.Length).ToArray(), pAxes);
+                packedScale = IR.F.CPU.Pack(packedScale, Enumerable.Repeat(laneSize, pAxes.Length).ToArray(), pAxes);
             }
 
             var packedBias = PackUtility.PadForPack(bias, pshape, pAxes, lanes, 0f, out var padsBias);
             if (pAxes.Length > 0)
             {
-                packedBias = IR.F.CPU.Pack(packedBias, Enumerable.Repeat(Lane, pAxes.Length).ToArray(), pAxes);
+                packedBias = IR.F.CPU.Pack(packedBias, Enumerable.Repeat(laneSize, pAxes.Length).ToArray(), pAxes);
             }
 
             var layernorm = IR.F.CPU.InstacneNorm(packedInput, packedScale, packedBias, eps, packedAxes, padsInput.Select(x => (int)x.FixedValue).ToArray());
@@ -203,12 +210,12 @@ public sealed class PackInstanceNorm : PackRule
 
         for (int i = 0; i < input.CheckedShape.Count; i++)
         {
-            AddCandidate(new[] { i }, new[] { Lane });
+            AddCandidate(new[] { i }, new[] { laneSize });
             for (int j = i + 1; j < input.CheckedShape.Count; j++)
             {
                 if (Rank > 1)
                 {
-                    AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                    AddCandidate(new[] { i, j }, new[] { laneSize, laneSize });
                 }
             }
         }
@@ -219,7 +226,7 @@ public sealed class PackInstanceNorm : PackRule
 
 public sealed class PackMatMul : PackRule
 {
-    public PackMatMul(int rank = 2, int lane = 4, bool transB = false)
+    public PackMatMul(int rank = 2, int lane = 16, bool transB = false)
         : base(rank, lane)
     {
         TransB = transB;
@@ -280,6 +287,8 @@ public sealed class PackMatMul : PackRule
         var (rets, lhs, rhs, candidate, _, _) = context;
         var lhsShape = context.LhsShape.ToArray();
         var rhsShape = context.RhsShape.ToArray();
+        var lhsLaneSize = Lane / lhs.CheckedDataType.SizeInBytes;
+        var rhsLaneSize = Lane / rhs.CheckedDataType.SizeInBytes;
         if (transA)
         {
             var perm = Enumerable.Range(0, lhsShape.Length).ToArray();
@@ -307,15 +316,15 @@ public sealed class PackMatMul : PackRule
                 lhsPackedAxes = Array.Empty<int>();
                 break;
             case IR.CPU.PackedMatMul.PackKind.M:
-                lhsLanes = [Lane];
+                lhsLanes = [lhsLaneSize];
                 lhsPackedAxes = [lm];
                 break;
             case IR.CPU.PackedMatMul.PackKind.K:
-                lhsLanes = [Lane];
+                lhsLanes = [lhsLaneSize];
                 lhsPackedAxes = [lk];
                 break;
             case IR.CPU.PackedMatMul.PackKind.M | IR.CPU.PackedMatMul.PackKind.K:
-                lhsLanes = [Lane, Lane];
+                lhsLanes = [lhsLaneSize, lhsLaneSize];
                 lhsPackedAxes = [lm, lk];
                 break;
             default:
@@ -331,15 +340,15 @@ public sealed class PackMatMul : PackRule
                 rhsPackedAxes = Array.Empty<int>();
                 break;
             case IR.CPU.PackedMatMul.PackKind.N:
-                rhsLanes = [Lane];
+                rhsLanes = [rhsLaneSize];
                 rhsPackedAxes = [rn];
                 break;
             case IR.CPU.PackedMatMul.PackKind.K:
-                rhsLanes = [Lane];
+                rhsLanes = [rhsLaneSize];
                 rhsPackedAxes = [rk];
                 break;
             case IR.CPU.PackedMatMul.PackKind.K | IR.CPU.PackedMatMul.PackKind.N:
-                rhsLanes = [Lane, Lane];
+                rhsLanes = [rhsLaneSize, rhsLaneSize];
                 rhsPackedAxes = [rk, rn];
                 break;
             default:
@@ -369,7 +378,7 @@ public sealed class PackMatMul : PackRule
             var mPackIndex = Array.IndexOf(lhsPackedAxes, lm);
             unpackAxes.Add(outRank - 2);
             unpadNums.Add(lhsPadNums[mPackIndex]);
-            unpackLanes.Add(Lane);
+            unpackLanes.Add(lhsLaneSize);
         }
 
         if (rhsPack.HasFlag(IR.CPU.PackedMatMul.PackKind.N))
@@ -377,7 +386,7 @@ public sealed class PackMatMul : PackRule
             var nPackIndex = Array.IndexOf(rhsPackedAxes, rn);
             unpackAxes.Add(outRank - 1);
             unpadNums.Add(rhsPadNums[nPackIndex]);
-            unpackLanes.Add(Lane);
+            unpackLanes.Add(rhsLaneSize);
         }
 
         Expr post = matmul;
@@ -415,6 +424,7 @@ public sealed class PackUnary : PackRule
         var op = (IR.Math.Unary)result["target"];
         var input = (Expr)result["input"];
         var inShape = input.CheckedShape;
+        var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
         void AddCandidate(int[] packedAxes, int[] lanes)
         {
@@ -436,12 +446,12 @@ public sealed class PackUnary : PackRule
 
         for (int i = 0; i < input.CheckedShape.Count; i++)
         {
-            AddCandidate(new[] { i }, new[] { Lane });
+            AddCandidate(new[] { i }, new[] { laneSize });
             for (int j = i + 1; j < input.CheckedShape.Count; j++)
             {
                 if (Rank > 1)
                 {
-                    AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                    AddCandidate(new[] { i, j }, new[] { laneSize, laneSize });
                 }
             }
         }
@@ -472,6 +482,8 @@ public sealed class PackBinary : PackRule
         var candidate = (Expr)result[Pattern];
         var lhsShape = lhs.CheckedShape;
         var rhsShape = rhs.CheckedShape;
+        var lhsLaneSize = Lane / lhs.CheckedDataType.SizeInBytes;
+        var rhsLaneSize = Lane / rhs.CheckedDataType.SizeInBytes;
 
         void AddCandidate(int[] lhsPackedAxes, int[] rhsPackedAxes, int[] lhsLanes, int[] rhsLanes)
         {
@@ -499,7 +511,7 @@ public sealed class PackBinary : PackRule
             var rhsPackedAxes = arr.Skip(1).First();
             if (lhsPackedAxes.Length <= Rank && rhsPackedAxes.Length <= Rank)
             {
-                AddCandidate(lhsPackedAxes, rhsPackedAxes, Enumerable.Repeat(Lane, lhsPackedAxes.Length).ToArray(), Enumerable.Repeat(Lane, rhsPackedAxes.Length).ToArray());
+                AddCandidate(lhsPackedAxes, rhsPackedAxes, Enumerable.Repeat(lhsLaneSize, lhsPackedAxes.Length).ToArray(), Enumerable.Repeat(rhsLaneSize, rhsPackedAxes.Length).ToArray());
             }
         }
 
@@ -550,6 +562,7 @@ public sealed class PackSwish : PackRule
         var input = (Expr)result["input"];
         var beta = ((TensorConst)result["beta"]).Value.ToScalar<float>();
         var inShape = input.CheckedShape;
+        var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
         void AddCandidate(int[] packedAxes, int[] lanes)
         {
@@ -571,12 +584,12 @@ public sealed class PackSwish : PackRule
 
         for (int i = 0; i < input.CheckedShape.Count; i++)
         {
-            AddCandidate(new[] { i }, new[] { Lane });
+            AddCandidate(new[] { i }, new[] { laneSize });
             for (int j = i + 1; j < input.CheckedShape.Count; j++)
             {
                 if (Rank > 1)
                 {
-                    AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                    AddCandidate(new[] { i, j }, new[] { laneSize, laneSize });
                 }
             }
         }
@@ -587,7 +600,7 @@ public sealed class PackSwish : PackRule
 
 public sealed class PackTranspose : PackRule
 {
-    public PackTranspose(int rank = 2, int lane = 4)
+    public PackTranspose(int rank = 2, int lane = 16)
         : base(rank, lane)
     {
     }
@@ -604,6 +617,7 @@ public sealed class PackTranspose : PackRule
         var input = (Expr)result["input"];
         var perm = ((TensorConst)result["perm"]).Value.ToArray<int>();
         var inShape = input.CheckedShape;
+        var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
         void AddCandidate(int[] packedAxes, int[] lanes)
         {
@@ -633,12 +647,12 @@ public sealed class PackTranspose : PackRule
 
         for (int i = 0; i < input.CheckedShape.Count; i++)
         {
-            AddCandidate(new[] { i }, new[] { Lane });
+            AddCandidate(new[] { i }, new[] { laneSize });
             for (int j = i + 1; j < input.CheckedShape.Count; j++)
             {
                 if (Rank > 1)
                 {
-                    AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                    AddCandidate(new[] { i, j }, new[] { laneSize, laneSize });
                 }
             }
         }
@@ -666,6 +680,7 @@ public sealed class PackUnsqueeze : PackRule
         var input = (Expr)result["input"];
         var axes = ((TensorConst)result["axes"]).Value.ToArray<int>();
         var inShape = input.CheckedShape;
+        var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
         void AddCandidate(int[] packedAxes, int[] lanes)
         {
@@ -702,12 +717,12 @@ public sealed class PackUnsqueeze : PackRule
 
         for (int i = 0; i < input.CheckedShape.Count; i++)
         {
-            AddCandidate(new[] { i }, new[] { Lane });
+            AddCandidate(new[] { i }, new[] { laneSize });
             for (int j = i + 1; j < input.CheckedShape.Count; j++)
             {
                 if (Rank > 1)
                 {
-                    AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                    AddCandidate(new[] { i, j }, new[] { laneSize, laneSize });
                 }
             }
         }
@@ -783,6 +798,7 @@ public sealed class PackConv2D : PackRule
         var fusedClamp = ((TensorConst)result["fusedClamp"]).Value.ToArray<float>();
         var wShape = weights.CheckedShape.ToValueArray();
         var outShape = ((Expr)result[Pattern]).CheckedShape.ToValueArray();
+        var laneSize = Lane / input.CheckedDataType.SizeInBytes;
         if (groups != 1 || wShape[1] % Lane != 0 || dilation[0] != 1 || dilation[1] != 1 || fusedClamp[0] != float.NegativeInfinity || fusedClamp[1] != float.PositiveInfinity)
         {
             return rets;
@@ -790,7 +806,7 @@ public sealed class PackConv2D : PackRule
 
         // only pack on in channels
         rets.Add(AddCandidate(input, weights, bias, strides, padding, wShape, outShape));
-        rets.Add(AddPackedCandidate(input, weights, bias, strides, padding, wShape, outShape, Lane));
+        rets.Add(AddPackedCandidate(input, weights, bias, strides, padding, wShape, outShape, laneSize));
         return rets;
     }
 }
@@ -814,6 +830,7 @@ public sealed class PackReshape : PackRule
         var input = (Expr)result["input"];
         var newShape = ((TensorConst)result["newShape"]).Value.ToArray<long>();
         var inShape = input.CheckedShape.ToValueArray();
+        var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
         // 1. find the mapping transforms
         if (!IRUtility.TryGetShapeMapMatrix(inShape, newShape, out var mat))
@@ -895,12 +912,12 @@ public sealed class PackReshape : PackRule
 
         for (int i = 0; i < input.CheckedShape.Count; i++)
         {
-            AddCandidate(new[] { i }, new[] { Lane });
+            AddCandidate(new[] { i }, new[] { laneSize });
             if (Rank > 1)
             {
                 for (int j = i + 1; j < input.CheckedShape.Count; j++)
                 {
-                    AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                    AddCandidate(new[] { i, j }, new[] { laneSize, laneSize });
                 }
             }
         }
@@ -935,6 +952,7 @@ public sealed class PackSlice : PackRule
         var strides = ((TensorConst)result["strides"]).Value.ToArray<long>();
         var inShape = input.CheckedShape;
         var candidate = (Expr)result[Pattern];
+        var laneSize = Lane / input.CheckedDataType.SizeInBytes;
         for (int i = 0; i < axes.Length; i++)
         {
             ends[i] = ends[i] switch
@@ -993,12 +1011,12 @@ public sealed class PackSlice : PackRule
 
         for (int i = 0; i < input.CheckedShape.Count; i++)
         {
-            AddCandidate(new[] { i }, new[] { Lane });
+            AddCandidate(new[] { i }, new[] { laneSize });
             for (int j = i + 1; j < input.CheckedShape.Count; j++)
             {
                 if (Rank > 1)
                 {
-                    AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                    AddCandidate(new[] { i, j }, new[] { laneSize, laneSize });
                 }
             }
         }
@@ -1025,6 +1043,7 @@ public sealed class PackCast : PackRule
         var op = (IR.Tensors.Cast)result["target"];
         var input = (Expr)result["input"];
         var inShape = input.CheckedShape;
+        var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
         void AddCandidate(int[] packedAxes, int[] lanes)
         {
@@ -1046,12 +1065,12 @@ public sealed class PackCast : PackRule
 
         for (int i = 0; i < input.CheckedShape.Count; i++)
         {
-            AddCandidate(new[] { i }, new[] { Lane });
+            AddCandidate(new[] { i }, new[] { laneSize });
             for (int j = i + 1; j < input.CheckedShape.Count; j++)
             {
                 if (Rank > 1)
                 {
-                    AddCandidate(new[] { i, j }, new[] { Lane, Lane });
+                    AddCandidate(new[] { i, j }, new[] { laneSize, laneSize });
                 }
             }
         }
