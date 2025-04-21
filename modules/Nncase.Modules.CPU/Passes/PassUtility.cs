@@ -48,7 +48,8 @@ public static class PassUtility
             or IR.Tensors.Stack
             or IR.Tensors.Transpose
             or IR.Tensors.Unsqueeze
-            or IR.Tensors.Where;
+            or IR.Tensors.Where
+            or IR.CustomCPU.MatMul;
     }
 
     public static bool IsCpuSupported(Op op, Call call, ReadOnlySpan<Expr> arguments, string moduleKind = "cpu")

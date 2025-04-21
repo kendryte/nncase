@@ -36,13 +36,20 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
     {
         var lhs = context.CheckArgumentType<IRType>(target, MatMul.Lhs);
         var rhs = context.CheckArgumentType<IRType>(target, MatMul.Rhs);
+        var (lhsRank, rhsRank) = (lhs, rhs) switch
+        {
+            (DistributedType a, DistributedType b) => (a.TensorType.Shape.Rank, b.TensorType.Shape.Rank),
+            (TensorType a, TensorType b) => (a.Shape.Rank, b.Shape.Rank),
+            _ => throw new ArgumentException($"Unsupported type: {lhs} {rhs}"),
+        };
+        var dimInfo = new Math.MatMulEvaluator.DimInfo(target.TransposeA ? lhsRank - 1 : lhsRank - 2, target.TransposeA ? lhsRank - 2 : lhsRank - 1, target.TransposeB ? rhsRank - 1 : rhsRank - 2, target.TransposeB ? rhsRank - 2 : rhsRank - 1);
 
         if (CheckCustomSBP(lhs, rhs, target))
         {
             return (lhs, rhs) switch
             {
-                (DistributedType a, DistributedType b) => Math.MatMulEvaluator.VisitDistributedType(a, b),
-                (TensorType a, TensorType b) => Math.MatMulEvaluator.VisitTensorType(a, b),
+                (DistributedType a, DistributedType b) => new DistributedType((TensorType)Math.MatMulEvaluator.VisitTensorType(a.TensorType, b.TensorType, true, dimInfo), target.OutSBPs, a.Placement),
+                (TensorType a, TensorType b) => Math.MatMulEvaluator.VisitTensorType(a, b, true, dimInfo),
                 _ => new InvalidType($"{lhs} {rhs} not support"),
             };
         }
@@ -62,17 +69,14 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
     {
         if (lhs is DistributedType a && rhs is DistributedType b)
         {
-            for (int i = 0; i < a.Placement.Rank; i++)
+            if (Enumerable.Range(0, a.TensorType.Shape.Rank).Any(i => a.AxisPolices[i] != matmul.LhsSBPs[i]))
             {
-                if (a.AxisPolices[i] != matmul.LhsSBPs[i])
-                {
-                    return false;
-                }
+                return false;
+            }
 
-                if (b.AxisPolices[i] != matmul.RhsSBPs[i])
-                {
-                    return false;
-                }
+            if (Enumerable.Range(0, b.TensorType.Shape.Rank).Any(i => b.AxisPolices[i] != matmul.RhsSBPs[i]))
+            {
+                return false;
             }
         }
 
