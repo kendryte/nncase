@@ -38,3 +38,26 @@ public sealed partial class FoldNopClamp : IRewriteRule
         return null;
     }
 }
+
+/// <summary>
+/// Fold <see cref="IR.Math.Clamp"/> by range.
+/// </summary>
+[RuleGenerator]
+public sealed partial class FoldClampByRange : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } = IsClamp(
+        IsWildcard("input"),
+        IsTensorConst("min", HasDataType(DataTypes.Float32)),
+        IsTensorConst("max", HasDataType(DataTypes.Float32)));
+
+    private Expr? GetReplace(Expr input, Tensor<float> min, Tensor<float> max)
+    {
+        if (min.All(v => v <= float.MinValue) && max.All(v => v >= float.MaxValue))
+        {
+            return input;
+        }
+
+        return null;
+    }
+}
