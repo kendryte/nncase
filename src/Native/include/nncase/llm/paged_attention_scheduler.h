@@ -15,16 +15,16 @@
 #pragma once
 
 #include "nncase/runtime/simple_types.h"
-#include "object.h"
 #include "paged_attention_config.h"
 #include "paged_attention_kv_cache.h"
-#include "tensor.h"
+#include <nncase/object.h>
 #include <nncase/runtime/buffer.h>
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/runtime_tensor.h>
+#include <nncase/tensor.h>
 #include <numeric>
 
-namespace nncase {
+namespace nncase::llm {
 
 namespace detail {
 class session_info {
@@ -40,18 +40,18 @@ class paged_attention_scheduler_node : public object_node {
                        object_paged_attention_scheduler);
 
   public:
-    paged_attention_scheduler_node(nncase::paged_attention_config config,
+    paged_attention_scheduler_node(paged_attention_config config,
                                    size_t num_blocks, size_t max_model_len);
 
-    result<nncase::paged_attention_kv_cache> schedule(tensor session_ids,
-                                                      tensor tokens_count);
+    result<paged_attention_kv_cache> schedule(tensor session_ids,
+                                              tensor tokens_count);
 
   private:
-    nncase::paged_attention_config config_;
+    paged_attention_config config_;
     size_t num_blocks_;
     size_t max_model_len_;
     dims_t kv_cache_shape_;
     tensor kv_caches_;
     std::unordered_map<int64_t, detail::session_info> session_infos_;
 };
-} // namespace nncase
+} // namespace nncase::llm

@@ -39,28 +39,31 @@ using kv_cache_block_id_t = ranked_shape<1>;
 namespace nncase::ntt::caching {
 class attention_kv_cache {
   public:
-    attention_kv_cache() noexcept {}
+    attention_kv_cache(size_t num_seqs, size_t num_tokens,
+                       tensor_view<int64_t, ranked_shape<1>> context_lens,
+                       tensor_view<int64_t, ranked_shape<1>> seq_lens)
+        : num_seqs_(num_seqs),
+          num_tokens_(num_tokens),
+          context_lens_(context_lens),
+          seq_lens_(seq_lens) {}
 
     virtual ~attention_kv_cache() = default;
 
-    size_t num_decode_tokens() const noexcept { return num_decode_tokens_; }
-    size_t num_prefill_tokens() const noexcept { return num_prefill_tokens_; }
-    size_t num_requests() const noexcept { return num_requests_; }
-    size_t num_prefills() const noexcept { return num_prefills_; }
+    size_t num_seqs() const noexcept { return num_seqs_; }
+
+    size_t num_tokens() const noexcept { return num_tokens_; }
 
     size_t context_len(size_t request_id) const noexcept {
         return (size_t)context_lens_(request_id);
     }
 
-    size_t seq_len(size_t request_id) const noexcept {
-        return (size_t)seq_lens_(request_id);
+    size_t seq_len(size_t seq_id) const noexcept {
+        return (size_t)seq_lens_(seq_id);
     }
 
   private:
-    size_t num_decode_tokens_;
-    size_t num_prefill_tokens_;
-    size_t num_requests_;
-    size_t num_prefills_;
+    size_t num_seqs_;
+    size_t num_tokens_;
 
     tensor_view<int64_t, ranked_shape<1>> context_lens_;
     tensor_view<int64_t, ranked_shape<1>> seq_lens_;

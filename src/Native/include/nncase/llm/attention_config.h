@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 #pragma once
-#include "object.h"
+#include <nncase/object.h>
 
-namespace nncase {
+namespace nncase::llm {
 class attention_config_node : public object_node {
     DEFINE_OBJECT_KIND(object_node, object_attention_config);
 
@@ -49,4 +49,4 @@ class attention_config_node : public object_node {
 };
 
 using attention_config = object_t<attention_config_node>;
-} // namespace nncase
+} // namespace nncase::llm

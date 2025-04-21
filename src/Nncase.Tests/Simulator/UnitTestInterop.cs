@@ -224,7 +224,7 @@ public class UnitTestInterop : TestClassBase
         var tokenCounts = Tensor.From([128L]);
         var cache = s.Schedule(sessionIds, tokenCounts);
         Assert.Equal(1, cache.NumSeqs);
-        Assert.Equal(128, cache.GetSeqLen(0));
-        Assert.Equal(0, cache.GetContextLen(0));
+        Assert.Equal(128, cache.SeqLen(0));
+        Assert.Equal(0, cache.ContextLen(0));
     }
 }

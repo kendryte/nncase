@@ -1070,35 +1070,35 @@ int main() {
             assert(tc(0, 23) == 15.f);
         }
 
-    // slice
-    {
-        ntt::tensor<float, ntt::fixed_shape<3, 24>> ta;
-        ntt::tensor<float, ntt::fixed_shape<3, 8>> tb;
-        ntt::tensor<float, ntt::fixed_shape<3, 16>> tc;
-        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-        ntt::slice<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(
-            ta, ntt::tensor<int64_t, ntt::fixed_shape<1>>({0}),
-            ntt::tensor<int64_t, ntt::fixed_shape<1>>({8}), tb);
-        ntt::slice<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(
-            ta, ntt::tensor<int64_t, ntt::fixed_shape<1>>({8}),
-            ntt::tensor<int64_t, ntt::fixed_shape<1>>({24}), tc);
-        assert(tb(0, 0) == 0.f);
-        assert(tb(0, 1) == 1.f);
-        assert(tb(0, 2) == 2.f);
-        assert(tb(0, 3) == 3.f);
-        assert(tb(0, 4) == 4.f);
-        assert(tb(0, 5) == 5.f);
-        assert(tb(0, 6) == 6.f);
-        assert(tb(0, 7) == 7.f);
-        assert(tc(0, 0) == 8.f);
-        assert(tc(0, 1) == 9.f);
-        assert(tc(0, 2) == 10.f);
-        assert(tc(0, 3) == 11.f);
-        assert(tc(0, 4) == 12.f);
-        assert(tc(0, 5) == 13.f);
-        assert(tc(0, 6) == 14.f);
-        assert(tc(0, 7) == 15.f);
-    }
+        // slice
+        {
+            ntt::tensor<float, ntt::fixed_shape<3, 24>> ta;
+            ntt::tensor<float, ntt::fixed_shape<3, 8>> tb;
+            ntt::tensor<float, ntt::fixed_shape<3, 16>> tc;
+            std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+            ntt::slice<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(
+                ta, ntt::tensor<int64_t, ntt::fixed_shape<1>>({0}),
+                ntt::tensor<int64_t, ntt::fixed_shape<1>>({8}), tb);
+            ntt::slice<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(
+                ta, ntt::tensor<int64_t, ntt::fixed_shape<1>>({8}),
+                ntt::tensor<int64_t, ntt::fixed_shape<1>>({24}), tc);
+            assert(tb(0, 0) == 0.f);
+            assert(tb(0, 1) == 1.f);
+            assert(tb(0, 2) == 2.f);
+            assert(tb(0, 3) == 3.f);
+            assert(tb(0, 4) == 4.f);
+            assert(tb(0, 5) == 5.f);
+            assert(tb(0, 6) == 6.f);
+            assert(tb(0, 7) == 7.f);
+            assert(tc(0, 0) == 8.f);
+            assert(tc(0, 1) == 9.f);
+            assert(tc(0, 2) == 10.f);
+            assert(tc(0, 3) == 11.f);
+            assert(tc(0, 4) == 12.f);
+            assert(tc(0, 5) == 13.f);
+            assert(tc(0, 6) == 14.f);
+            assert(tc(0, 7) == 15.f);
+        }
 
         // transpose
         {

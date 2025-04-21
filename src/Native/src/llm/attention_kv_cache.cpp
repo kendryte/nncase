@@ -13,18 +13,16 @@
  * limitations under the License.
  */
 #include "nncase/runtime/util.h"
-#include <cstdint>
-#include <nncase/attention_kv_cache.h>
+#include <nncase/llm/attention_kv_cache.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
-#include <numeric>
 
 using namespace nncase;
 using namespace nncase::runtime;
 
 result<int64_t>
-attention_kv_cache_node::context_len(size_t request_id) const noexcept {
+llm::attention_kv_cache_node::context_len(size_t request_id) const noexcept {
     CHECK_WITH_ERR(request_id < context_lens_->length(),
                    std::errc::invalid_argument);
     try_input_with_ty(context_lens_value, context_lens_, int64_t);
@@ -32,7 +30,7 @@ attention_kv_cache_node::context_len(size_t request_id) const noexcept {
 }
 
 result<int64_t>
-attention_kv_cache_node::seq_len(size_t request_id) const noexcept {
+llm::attention_kv_cache_node::seq_len(size_t request_id) const noexcept {
     CHECK_WITH_ERR(request_id < seq_lens_->length(),
                    std::errc::invalid_argument);
     try_input_with_ty(seq_lens_value, seq_lens_, int64_t);

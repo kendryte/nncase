@@ -5,9 +5,6 @@ set(SRCS
         object.cpp
         shape.cpp
         tensor.cpp
-        attention_kv_cache.cpp
-        paged_attention_kv_cache.cpp
-        paged_attention_scheduler.cpp
         type.cpp
         value.cpp)
 
@@ -26,6 +23,7 @@ set_property(TARGET nncasebase PROPERTY POSITION_INDEPENDENT_CODE ON)
 add_subdirectory(compiler)
 add_subdirectory(runtime)
 add_subdirectory(kernels)
+add_subdirectory(llm)
 
 if (NOT BUILDING_RUNTIME)
     add_executable(nncasetest test.cpp)

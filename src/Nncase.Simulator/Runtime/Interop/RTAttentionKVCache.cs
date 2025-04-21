@@ -202,13 +202,13 @@ public abstract class RTAttentionKVCache : RTObject, IAttentionKVCache
         }
     }
 
-    public long GetContextLen(int requestId)
+    public long ContextLen(int requestId)
     {
         Native.AttentionKvCacheGetContextLen(this, requestId, out var contextLen).ThrowIfFailed();
         return contextLen;
     }
 
-    public long GetSeqLen(int requestId)
+    public long SeqLen(int requestId)
     {
         Native.AttentionKvCacheGetSeqLen(this, requestId, out var seqLen).ThrowIfFailed();
         return seqLen;

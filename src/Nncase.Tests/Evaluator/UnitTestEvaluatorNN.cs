@@ -24,9 +24,9 @@ internal abstract record TestAttentionKVCache(
     Tensor<long> ContextLens,
     Tensor<long> SeqLens) : IAttentionKVCache
 {
-    public long GetContextLen(int requestId) => ContextLens[requestId];
+    public long ContextLen(int requestId) => ContextLens[requestId];
 
-    public long GetSeqLen(int requestId) => SeqLens[requestId];
+    public long SeqLen(int requestId) => SeqLens[requestId];
 }
 
 internal sealed record TestPagedAttentionKVCache(
@@ -99,7 +99,8 @@ internal sealed record TestPagedAttentionKVCache(
         var blockShape = blockView.Dimensions;
         var blockLayout = PagedAttentionConfig.BlockLayout;
 
-        PagedAttentionDimKind[] defaultLayout = [PagedAttentionDimKind.BlockSize, PagedAttentionDimKind.HeadDim];
+        // PagedAttentionDimKind[] defaultLayout = [PagedAttentionDimKind.BlockSize, PagedAttentionDimKind.HeadDim];
+        int[] defaultLayout = [-1, -1, -1, 0, -1, 1];
         long[] defaultStarts = [blockOffset, 0];
         long[] defaultShape = [1, PagedAttentionConfig.HeadDim];
         if (PagedAttentionConfig.PackedAxes.IndexOf(PagedAttentionDimKind.HeadDim) is int i && i != -1)
@@ -107,8 +108,8 @@ internal sealed record TestPagedAttentionKVCache(
             defaultShape[1] /= PagedAttentionConfig.Lanes[i];
         }
 
-        var starts = blockLayout.Select(i => defaultStarts[defaultLayout.IndexOf(i)]).ToArray();
-        var shape = blockLayout.Select(i => defaultShape[defaultLayout.IndexOf(i)]).ToArray();
+        var starts = blockLayout.Select(i => defaultStarts[defaultLayout[(int)i]]).ToArray();
+        var shape = blockLayout.Select(i => defaultShape[defaultLayout[(int)i]]).ToArray();
         return blockView.View(starts, shape).Squeeze([blockLayout.IndexOf(PagedAttentionDimKind.BlockSize)]);
     }
 
@@ -124,8 +125,8 @@ internal sealed record TestPagedAttentionKVCache(
             defaultShape[^1] /= PagedAttentionConfig.Lanes[i];
         }
 
-        var starts = PagedAttentionConfig.CacheLayout.Select(i => defaultStarts[defaultLayout.IndexOf(i)]).ToArray();
-        var shape = PagedAttentionConfig.CacheLayout.Select(i => defaultShape[defaultLayout.IndexOf(i)]).ToArray();
+        var starts = PagedAttentionConfig.CacheLayout.Select(i => defaultStarts[(int)i]).ToArray();
+        var shape = PagedAttentionConfig.CacheLayout.Select(i => defaultShape[(int)i]).ToArray();
         var squeezeAxes = Enumerable.Range(0, KVCaches.Rank).Where(i => PagedAttentionConfig.CacheLayout[i] is not (PagedAttentionDimKind.BlockSize or PagedAttentionDimKind.HeadDim)).ToArray();
         return KVCaches.View(starts, shape).Squeeze(squeezeAxes);
     }

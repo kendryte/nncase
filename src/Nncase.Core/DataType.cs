@@ -88,6 +88,10 @@ public abstract record DataType
             {
                 return new ReferenceType(FromType(t.GenericTypeArguments[0]));
             }
+            else if (generic == typeof(Memory<>))
+            {
+                return new MemoryType(FromType(t.GenericTypeArguments[0]));
+            }
             else if (generic == typeof(Vector4<>))
             {
                 return new VectorType(FromType(t.GenericTypeArguments[0]), 4);

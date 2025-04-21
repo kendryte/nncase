@@ -17,7 +17,7 @@
 #include "type_casters.h"
 #include <llm_ffi.h>
 #include <nncase/compiler.h>
-#include <nncase/paged_attention_kv_cache.h>
+#include <nncase/llm/paged_attention_kv_cache.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/version.h>
@@ -480,7 +480,7 @@ PYBIND11_MODULE(_nncase, m) {
     register_llm(m);
     // register_kv_cache(m);
 
-    py::class_<paged_attention_kv_cache>(m, "AttentionKVCache");
+    // py::class_<paged_attention_kv_cache>(m, "AttentionKVCache");
 
     // py::class_<, typename options>
 

@@ -15,11 +15,11 @@
 #pragma once
 // #include "nncase/runtime/duca_paged_attention_kv_cache.h"
 // #include <nncase/runtime/interpreter_for_causal_lm.h>
-#include "nncase/attention_config.h"
 #include "type_casters.h"
+#include <nncase/llm/attention_config.h>
+#include <nncase/llm/paged_attention_config.h>
+#include <nncase/llm/paged_attention_kv_cache.h>
 #include <nncase/object.h>
-#include <nncase/paged_attention_config.h>
-#include <nncase/paged_attention_kv_cache.h>
 #include <pybind11/detail/common.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl_bind.h>
@@ -28,44 +28,48 @@ using namespace nncase::runtime;
 namespace py = pybind11;
 
 namespace nncase {
-inline void register_llm(py::module &m) {
-    py::class_<object_node, object>(m, "Object");
+inline void register_llm(NNCASE_UNUSED py::module &m) {
+    // py::class_<object_node, object>(m, "Object");
 
-    py::class_<attention_config_node, object_node, attention_config>(
-        m, "AttentionConfig")
-        .def(py::init([](size_t num_layers, size_t num_kv_heads,
-                         size_t head_dim, nncase::typecode_t kv_type) {
-            return attention_config(std::in_place, num_layers, num_kv_heads,
-                                    head_dim, kv_type);
-        }))
-        .def_property(
-            "num_layers",
-            py::overload_cast<>(&attention_config_node::num_layers, py::const_),
-            py::overload_cast<size_t>(&attention_config_node::num_layers))
-        .def_property(
-            "num_kv_heads",
-            py::overload_cast<>(&attention_config_node::num_kv_heads,
-                                py::const_),
-            py::overload_cast<size_t>(&attention_config_node::num_kv_heads))
-        .def_property(
-            "head_dim",
-            py::overload_cast<>(&attention_config_node::head_dim, py::const_),
-            py::overload_cast<size_t>(&attention_config_node::head_dim));
+    // py::class_<attention_config_node, object_node, attention_config>(
+    //     m, "AttentionConfig")
+    //     .def(py::init([](size_t num_layers, size_t num_kv_heads,
+    //                      size_t head_dim, nncase::typecode_t kv_type) {
+    //         return attention_config(std::in_place, num_layers, num_kv_heads,
+    //                                 head_dim, kv_type);
+    //     }))
+    //     .def_property(
+    //         "num_layers",
+    //         py::overload_cast<>(&attention_config_node::num_layers,
+    //         py::const_),
+    //         py::overload_cast<size_t>(&attention_config_node::num_layers))
+    //     .def_property(
+    //         "num_kv_heads",
+    //         py::overload_cast<>(&attention_config_node::num_kv_heads,
+    //                             py::const_),
+    //         py::overload_cast<size_t>(&attention_config_node::num_kv_heads))
+    //     .def_property(
+    //         "head_dim",
+    //         py::overload_cast<>(&attention_config_node::head_dim,
+    //         py::const_),
+    //         py::overload_cast<size_t>(&attention_config_node::head_dim));
 
-    py::class_<paged_attention_config_node, attention_config_node,
-               paged_attention_config>(m, "PagedAttentionConfig")
-        .def(
-            py::init([](size_t num_layers, size_t num_kv_heads, size_t head_dim,
-                        nncase::typecode_t kv_type, size_t block_size) {
-                return paged_attention_config(std::in_place, num_layers,
-                                              num_kv_heads, head_dim, kv_type,
-                                              block_size);
-            }))
-        .def_property("block_size",
-                      py::overload_cast<>(
-                          &paged_attention_config_node::block_size, py::const_),
-                      py::overload_cast<size_t>(
-                          &paged_attention_config_node::block_size));
+    // py::class_<paged_attention_config_node, attention_config_node,
+    //            paged_attention_config>(m, "PagedAttentionConfig")
+    //     .def(
+    //         py::init([](size_t num_layers, size_t num_kv_heads, size_t
+    //         head_dim,
+    //                     nncase::typecode_t kv_type, size_t block_size) {
+    //             return paged_attention_config(std::in_place, num_layers,
+    //                                           num_kv_heads, head_dim,
+    //                                           kv_type, block_size);
+    //         }))
+    //     .def_property("block_size",
+    //                   py::overload_cast<>(
+    //                       &paged_attention_config_node::block_size,
+    //                       py::const_),
+    //                   py::overload_cast<size_t>(
+    //                       &paged_attention_config_node::block_size));
 
     // py::class_<paged_attention_scheduler>(m, "PagedAttentionScheduler")
     //     .def(py::init<int>())

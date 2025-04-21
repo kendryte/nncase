@@ -56,7 +56,7 @@ public interface IAttentionKVCache
     /// The context lens are used to identify the lengths of the blocks of key-value
     /// pairs that are used for the attention mechanism in the transformer model.
     /// </remarks>
-    long GetContextLen(int seqId);
+    long ContextLen(int seqId);
 
     /// <summary>
     /// Gets the sequence lens.
@@ -67,7 +67,7 @@ public interface IAttentionKVCache
     /// The sequence lens are used to identify the lengths of the sequences of
     /// key-value pairs that are used for the attention mechanism in the transformer model.
     /// </remarks>
-    long GetSeqLen(int seqId);
+    long SeqLen(int seqId);
 }
 
 public record AttentionConfig(int NumLayers, int NumKVHeads, int HeadDim, PrimType KVType) : IAttentionConfig;

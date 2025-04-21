@@ -133,6 +133,10 @@ class NNCASE_API vector_type_node : public datatype_node {
     vector_type_node(datatype_t elemtype, dims_t lanes) noexcept
         : elemtype_(elemtype), lanes_(lanes) {}
 
+    const datatype_t &elemtype() const noexcept { return elemtype_; }
+
+    const dims_t &lanes() const noexcept { return lanes_; }
+
     size_t size_bytes() const noexcept override {
         auto acc = elemtype_->size_bytes();
         for (size_t i = 0; i < lanes_.size(); i++) {
@@ -140,6 +144,7 @@ class NNCASE_API vector_type_node : public datatype_node {
         }
         return acc;
     }
+
     typecode_t typecode() const noexcept override { return dt_vectortype; }
 
   private:

@@ -47,13 +47,13 @@ public interface IPagedAttentionKVCache : IAttentionKVCache
     /// <summary>
     /// Gets the context block ids.
     /// </summary>
-    /// <param name="requestId">The request id.</param>
+    /// <param name="seqId">The seq id.</param>
     /// <returns>The context block ids.</returns>
     /// <remarks>
     /// The context block ids are used to identify the blocks of key-value pairs
     /// that are used for the attention mechanism in the transformer model.
     /// </remarks>
-    Tensor GetBlockIds(int requestId);
+    Tensor GetBlockIds(int seqId);
 
     /// <summary>
     /// Gets the output slot ids.

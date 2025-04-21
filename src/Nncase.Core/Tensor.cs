@@ -218,7 +218,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="length">Fill length.</param>
     /// <returns>Created tensor.</returns>
     public static Tensor<T> FromScalar<T>(T value, long length)
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
     {
         var tensor = new Tensor<T>(MemoryMarshal.CreateReadOnlySpan(ref length, 1));
         tensor.Fill(value);
@@ -233,7 +233,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="dimensions">Fill dimensions.</param>
     /// <returns>Created tensor.</returns>
     public static Tensor<T> FromScalar<T>(T value, ReadOnlySpan<long> dimensions)
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
     {
         var tensor = new Tensor<T>(dimensions);
         tensor.Fill(value);
@@ -284,7 +284,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="memory">Memory.</param>
     /// <returns>Created tensor.</returns>
     public static Tensor<T> From<T>(Memory<T> memory)
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
     {
         long dim = memory.Length;
         return new Tensor<T>(memory, MemoryMarshal.CreateReadOnlySpan(ref dim, 1));
@@ -298,7 +298,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="dimensions">Dimensions.</param>
     /// <returns>Created tensor.</returns>
     public static Tensor<T> From<T>(Memory<T> memory, ReadOnlySpan<long> dimensions)
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
     {
         return new Tensor<T>(memory, dimensions);
     }
@@ -310,7 +310,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="array">Array.</param>
     /// <returns>Created tensor.</returns>
     public static Tensor<T> From<T>(T[] array)
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
     {
         return From(array.AsMemory());
     }
@@ -323,7 +323,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="dimensions">Dimensions.</param>
     /// <returns>Created tensor.</returns>
     public static Tensor<T> From<T>(T[] array, ReadOnlySpan<long> dimensions)
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
     {
         return From(array.AsMemory(), dimensions);
     }

@@ -62,8 +62,8 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         long queryStart = 0;
         for (int seqId = 0; seqId < cache.NumSeqs; seqId++)
         {
-            var seqLen = cache.GetSeqLen(seqId);
-            var queryLen = seqLen - cache.GetContextLen(seqId);
+            var seqLen = cache.SeqLen(seqId);
+            var queryLen = seqLen - cache.ContextLen(seqId);
             var q = OrtKI.Slice(query, new long[] { queryStart }, new long[] { queryStart + queryLen }, new long[] { 0L }, new long[] { 1L });
 
             // unpack for q
@@ -116,7 +116,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
     {
         var caches = new List<OrtKISharp.Tensor>();
         var blockIds = cache.GetBlockIds(seqId);
-        var numBlocksForSeq = MathUtility.CeilDiv(cache.GetSeqLen(seqId), cache.Config.BlockSize);
+        var numBlocksForSeq = MathUtility.CeilDiv(cache.SeqLen(seqId), cache.Config.BlockSize);
 
         // block layout is construct from `head dim, block_size`. but we don't know the concrete shape.
         var blockLayout = cache.Config.BlockLayout;

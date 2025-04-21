@@ -15,16 +15,15 @@
 #include "nncase/runtime/simple_types.h"
 #include "nncase/runtime/util.h"
 #include <cstdint>
-#include <nncase/paged_attention_scheduler.h>
+#include <nncase/llm/paged_attention_scheduler.h>
 #include <nncase/runtime/runtime_tensor.h>
 #include <span>
 
 using namespace nncase;
 using namespace nncase::runtime;
 
-paged_attention_scheduler_node::paged_attention_scheduler_node(
-    nncase::paged_attention_config config, size_t num_blocks,
-    size_t max_model_len)
+llm::paged_attention_scheduler_node::paged_attention_scheduler_node(
+    llm::paged_attention_config config, size_t num_blocks, size_t max_model_len)
     : config_(std::move(config)),
       num_blocks_(num_blocks),
       max_model_len_(max_model_len),
@@ -37,9 +36,9 @@ paged_attention_scheduler_node::paged_attention_scheduler_node(
       kv_caches_(
           hrt::create(dt_float32, kv_cache_shape_).unwrap_or_throw().impl()) {}
 
-result<nncase::paged_attention_kv_cache>
-paged_attention_scheduler_node::schedule(tensor session_ids,
-                                         tensor tokens_count) {
+result<llm::paged_attention_kv_cache>
+llm::paged_attention_scheduler_node::schedule(tensor session_ids,
+                                              tensor tokens_count) {
     try_input_with_ty(session_ids_value, session_ids, int64_t);
     try_input_with_ty(tokens_count_value, tokens_count, int64_t);
 
@@ -104,8 +103,8 @@ paged_attention_scheduler_node::schedule(tensor session_ids,
             hrt::create(dt_int64, {query_num},
                         std::as_writable_bytes(std::span(slot_maping)), true,
                         hrt::memory_pool_t::pool_shared));
-    return ok(nncase::paged_attention_kv_cache(
-        std::in_place, config_, session_num, context_lens_tensor.impl(),
-        seq_lens_tensor.impl(), block_tables_tensor.impl(),
-        slot_maping_tensor.impl(), kv_caches_));
+    return ok(llm::paged_attention_kv_cache(
+        std::in_place, config_, session_num, query_num,
+        context_lens_tensor.impl(), seq_lens_tensor.impl(),
+        block_tables_tensor.impl(), slot_maping_tensor.impl(), kv_caches_));
 }
