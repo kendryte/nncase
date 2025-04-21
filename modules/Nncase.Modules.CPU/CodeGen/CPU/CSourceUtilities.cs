@@ -81,4 +81,13 @@ internal static class CSourceUtilities
         string str = $"({p} ? {lhs} : {rhs})";
         return str;
     }
+
+    internal static string ContertClamp(Clamp op, CSymbol[] arguments)
+    {
+        var input = arguments[Clamp.Input.Index].Name;
+        var min = arguments[Clamp.Min.Index].Name;
+        var max = arguments[Clamp.Max.Index].Name;
+        string str = $"std::clamp({input}, {min}, {max})";
+        return str;
+    }
 }

@@ -27,16 +27,21 @@ public class ConstantOfShapeEvaluator : IEvaluator<ConstantOfShape>, ITypeInfere
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, ConstantOfShape target)
     {
-        var value = context.CheckArgumentType<TensorType>(target, ConstantOfShape.Value);
-        var shape = context.GetArgument(target, ConstantOfShape.Shape);
-        var type = value.DType;
-        return new TensorType(type, Shape.FromExpr(shape));
+        var value = context.CheckArgumentType<IRType>(target, ConstantOfShape.Value);
+        var shape = context.CheckArgumentType<IRType>(target, ConstantOfShape.Shape);
+
+        return (value, shape) switch
+        {
+            (TensorType v, TensorType s) => Visit(context, target, v, s),
+            (DistributedType v, DistributedType s) => Visit(context, target, v, s),
+            _ => new InvalidType($"ConstantOfShape with {value} and {shape}"),
+        };
     }
 
     public Cost Visit(ICostEvaluateContext context, ConstantOfShape target)
     {
-        _ = context.GetArgumentType<TensorType>(target, ConstantOfShape.Shape);
-        var ret = context.GetReturnType<TensorType>();
+        _ = context.GetArgumentType<IRType>(target, ConstantOfShape.Shape);
+        var ret = context.GetReturnType<IRType>();
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret),
@@ -51,5 +56,19 @@ public class ConstantOfShapeEvaluator : IEvaluator<ConstantOfShape>, ITypeInfere
         {
             [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(ret),
         };
+    }
+
+    private IRType Visit(ITypeInferenceContext context, ConstantOfShape target, TensorType value, TensorType shape)
+    {
+        var shapeExpr = context.GetArgument(target, ConstantOfShape.Shape);
+        return new TensorType(value.DType, Shape.FromExpr(shapeExpr));
+    }
+
+    private IRType Visit(ITypeInferenceContext context, ConstantOfShape target, DistributedType value, DistributedType shape)
+    {
+        var shapeExpr = context.GetArgument(target, ConstantOfShape.Shape);
+        var outShape = Shape.FromExpr(shapeExpr);
+        var ndsbp = Enumerable.Repeat(SBP.B, outShape.Rank).ToArray();
+        return new DistributedType(new TensorType(value.TensorType.DType, outShape), ndsbp, shape.Placement);
     }
 }

@@ -54,5 +54,8 @@ internal class CPUModule : IApplicationPart
         registrator.RegisterManyInterface<ErfEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<CompareEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<ScatterNDEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<ShapeOfEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<ConstantOfShapeEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<RangeEvaluator>(reuse: Reuse.Singleton);
     }
 }

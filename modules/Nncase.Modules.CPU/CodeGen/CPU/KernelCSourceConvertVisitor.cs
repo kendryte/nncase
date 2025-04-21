@@ -579,6 +579,15 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                 case TIR.CPU.Reshape reshape:
                     IndentScope.Writer.Write($"reshape({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
+                case TIR.CPU.ShapeOf shapeOf:
+                    IndentScope.Writer.Write($"shapeof({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
+                    break;
+                case TIR.CPU.Range range:
+                    IndentScope.Writer.Write($"range({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name},{VisitBuffer(args[2], local: true).Name},{VisitBuffer(args[3], local: true).Name});\n");
+                    break;
+                case TIR.CPU.ConstantOfShape constantOfShape:
+                    IndentScope.Writer.Write($"constant_of_shape({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
+                    break;
                 default:
                     throw new NotSupportedException(kop.ToString());
             }
@@ -630,8 +639,11 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                 case TIR.CPU.PtrOf op:
                     str = op.PtrName;
                     break;
+                case IR.Math.Clamp op:
+                    str = CSourceUtilities.ContertClamp(op, arguments);
+                    break;
                 default:
-                    throw new NotSupportedException();
+                    throw new NotSupportedException(expr.Target.GetType().Name);
             }
         }
 

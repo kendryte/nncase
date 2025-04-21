@@ -201,4 +201,20 @@ public partial class CPU
     {
         return new Call(new Stack(axis), inputs.Concat(new[] { ret }).ToArray());
     }
+
+    public static Expr ShapeOf(Expr inputs, Expr ret)
+    {
+        return new Call(new TIR.CPU.ShapeOf(), inputs, ret);
+    }
+
+    public static Expr ConstantOfShape(Expr shape,  Expr value, Expr ret)
+    {
+        return new Call(new TIR.CPU.ConstantOfShape(), shape, value, ret);
+    }
+
+    public static Expr Range(Expr begin, Expr end, Expr step, Expr ret)
+    {
+        return new Call(new TIR.CPU.Range(), begin, end, step, ret);
+    }
+
 }

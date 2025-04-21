@@ -87,6 +87,13 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
                 _ => throw new TypeInferenceInterruptException(new InvalidType("The Tuple Elements Must Be TensorType!")),
             };
 
+            var axisPolices = firstType switch
+            {
+                TensorType t => Array.Empty<SBP>(),
+                DistributedType dt => dt.AxisPolices,
+                _ => throw new TypeInferenceInterruptException(new InvalidType("The Tuple Elements Must Be TensorType!")),
+            };
+
             if (tensorType.IsScalar)
             {
                 if (axis_v != 0)
@@ -95,6 +102,7 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
                 }
 
                 tensorType = tensorType with { Shape = new Shape(inputs.Count) };
+                axisPolices = new SBP[] { SBP.B };
             }
             else
             {
@@ -103,7 +111,7 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
                 tensorType = tensorType with { Shape = new Shape(outshape) };
             }
 
-            return firstType is DistributedType dt2 ? dt2 with { TensorType = tensorType } : tensorType;
+            return firstType is DistributedType dt2 ? dt2 with { TensorType = tensorType, AxisPolices = axisPolices } : tensorType;
         }
 
         return new InvalidType("The Stack Axis Must Be Const!");

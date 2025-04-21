@@ -21,10 +21,10 @@ public sealed partial class ConstantOfShape : Op
     /// <summary>
     /// Gets Shape.
     /// </summary>
-    public static readonly ParameterInfo Shape = new(typeof(ConstantOfShape), 0, "shape", IsIntegral() & HasRank(1));
+    public static readonly ParameterInfo Shape = new(typeof(ConstantOfShape), 0, "shape", IsIntegral() & HasRank(1), ParameterKind.Input);
 
     /// <summary>
     /// Gets Value.
     /// </summary>
-    public static readonly ParameterInfo Value = new(typeof(ConstantOfShape), 1, "value");
+    public static readonly ParameterInfo Value = new(typeof(ConstantOfShape), 1, "value", ParameterKind.Input);
 }

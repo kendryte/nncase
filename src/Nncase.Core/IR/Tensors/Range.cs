@@ -15,15 +15,15 @@ public sealed partial class Range : Op
     /// <summary>
     /// Gets begin.
     /// </summary>
-    public static readonly ParameterInfo Begin = new(typeof(Range), 0, "begin", IsScalar() & (IsIntegral() | IsFloat()));
+    public static readonly ParameterInfo Begin = new(typeof(Range), 0, "begin", IsScalar() & (IsIntegral() | IsFloat()), ParameterKind.Input);
 
     /// <summary>
     /// Gets end.
     /// </summary>
-    public static readonly ParameterInfo End = new(typeof(Range), 1, "end", IsScalar() & (IsIntegral() | IsFloat()));
+    public static readonly ParameterInfo End = new(typeof(Range), 1, "end", IsScalar() & (IsIntegral() | IsFloat()), ParameterKind.Input);
 
     /// <summary>
     /// Gets step.
     /// </summary>
-    public static readonly ParameterInfo Step = new(typeof(Range), 2, "step", IsScalar() & (IsIntegral() | IsFloat()));
+    public static readonly ParameterInfo Step = new(typeof(Range), 2, "step", IsScalar() & (IsIntegral() | IsFloat()), ParameterKind.Input);
 }

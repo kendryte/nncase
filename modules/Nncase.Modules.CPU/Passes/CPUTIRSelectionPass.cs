@@ -131,6 +131,12 @@ public sealed class CPUTIRSelectionPass : TIRSelectionPass
                 return TIR.F.CPU.Stack(((IR.Tuple)arguments[0]).Fields.ToArray(), output, ((TensorConst)call[IR.Tensors.Stack.Axis]).Value.ToScalar<int>());
             case IR.Tensors.Unsqueeze:
                 return TIR.F.CPU.Reshape(arguments[0], output);
+            case IR.Tensors.ShapeOf shapeOf:
+                return TIR.F.CPU.ShapeOf(arguments[0], output);
+            case IR.Tensors.ConstantOfShape constantOfShape:
+                return TIR.F.CPU.ConstantOfShape(arguments[0], arguments[1], output);
+            case IR.Tensors.Range range:
+                return TIR.F.CPU.Range(arguments[0], arguments[1], arguments[2], output);
             default:
                 throw new NotSupportedException($"Not supported: {op}");
         }

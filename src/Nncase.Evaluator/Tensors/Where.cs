@@ -132,7 +132,7 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
 
             if (policyOut is null)
             {
-                return invalid;
+                policyOut = SBP.B;
             }
 
             ndsbp[i] = policyOut!;
