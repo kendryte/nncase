@@ -22,6 +22,8 @@ public enum PagedAttentionDimKind : int
 
 public interface IPagedAttentionConfig : IAttentionConfig
 {
+    int NumBlocks { get; }
+
     int BlockSize { get; }
 
     PagedAttentionDimKind[] CacheLayout { get; }
@@ -118,7 +120,7 @@ public interface IPagedAttentionKVCache : IAttentionKVCache
     void UpdateSlots(AttentionCacheKind kind, int layerId, int headId, Tensor slotIds, Tensor slots);
 }
 
-public sealed record PagedAttentionConfig(int BlockSize, int NumLayers, int NumKVHeads, int HeadDim, PagedAttentionDimKind[] CacheLayout, PagedAttentionDimKind[] PackedAxes, int[] Lanes, PrimType KVType)
+public sealed record PagedAttentionConfig(int NumBlocks, int BlockSize, int NumLayers, int NumKVHeads, int HeadDim, PagedAttentionDimKind[] CacheLayout, PagedAttentionDimKind[] PackedAxes, int[] Lanes, PrimType KVType)
     : AttentionConfig(NumLayers, NumKVHeads, HeadDim, KVType), IPagedAttentionConfig
 {
     public PagedAttentionDimKind[] BlockLayout => CacheLayout.Where(x => x is PagedAttentionDimKind.BlockSize or PagedAttentionDimKind.HeadDim).ToArray();

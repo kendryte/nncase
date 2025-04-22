@@ -35,7 +35,7 @@ internal sealed record TestPagedAttentionKVCache(
     int NumTokens,
     Tensor<long> ContextLens,
     Tensor<long> SeqLens,
-    Tensor<long> BlockTables,
+    Tensor<long> BlockTable,
     Tensor<long> SlotMapping,
     Tensor KVCaches)
     : TestAttentionKVCache(
@@ -51,7 +51,7 @@ internal sealed record TestPagedAttentionKVCache(
 
     public Tensor GetBlockIds(int seqId)
     {
-        return BlockTables.View([seqId, 0], [1, BlockTables.Dimensions[1]]).Squeeze(0).AsContiguous();
+        return BlockTable.View([seqId, 0], [1, BlockTable.Dimensions[1]]).Squeeze(0).AsContiguous();
     }
 
     public Tensor GetSlotIds() => SlotMapping;
@@ -961,6 +961,7 @@ public class UnitTestEvaluatorNN : TestClassBase
             var kvcacheStorage = Tensor.Zeros(new VectorType(kvType, [lane]), [numBlocks, numLayers, numKVHeads, 2, headDim / lane, blockSize]);
 
             var config = new PagedAttentionConfig(
+                numBlocks,
                 blockSize,
                 numLayers,
                 numKVHeads,

@@ -111,6 +111,18 @@ template <class T, T... Dims> struct fixed_dims_base {
         return (false || ... || (Dims == value));
     }
 
+    static constexpr int64_t indexof(T value) noexcept {
+        int64_t it = -1;
+        for (size_t j = 0; j < sizeof...(Dims); j++) {
+            if (at(j) == value) {
+                it = j;
+                break;
+            }
+        }
+
+        return it;
+    }
+
     constexpr T operator[](size_t index) const noexcept { return at(index); }
 };
 
@@ -136,6 +148,11 @@ template <class T, size_t Rank> struct ranked_dims_base {
 
     constexpr bool contains(T value) const noexcept {
         return std::find(begin(), end(), value) != end();
+    }
+
+    constexpr int64_t indexof(T value) const noexcept {
+        auto it = std::find(begin(), end(), value);
+        return it != end() ? std::distance(begin(), it) : -1;
     }
 
     std::array<T, Rank> dims_;
