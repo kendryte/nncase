@@ -63,7 +63,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     public static Placement DefaultPlacement => new Placement(new[] { 1 }, "t");
 
-    public static int Lane => Vector256.IsHardwareAccelerated ? 8 : 4;
+    public static int Lane => Vector256.IsHardwareAccelerated ? 32 : 16;
 
     public static int Rank => 2;
 
