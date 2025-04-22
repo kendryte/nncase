@@ -48,7 +48,14 @@ public abstract class HuggingFaceModel
         if (!Context.FixVarMap.ContainsKey("sequence_length"))
         {
             Context.DynVarMap["sequence_length"] = Var.SizeVar("sequence_length");
-            Context.DynVarMap["sequence_length"].Metadata.Range = new(1, 64);
+            if(Context.CompileSession.CompileOptions.ShapeBucketOptions.RangeInfo.ContainsKey("sequence_length"))
+            {
+                Context.DynVarMap["sequence_length"].Metadata.Range = Context.CompileSession.CompileOptions.ShapeBucketOptions.RangeInfo["sequence_length"];
+            }
+            else
+            {
+                Context.DynVarMap["sequence_length"].Metadata.Range = new(1, 64);
+            }
         }
 
         // if (!_fixVarMap.ContainsKey("history_len"))
@@ -59,7 +66,14 @@ public abstract class HuggingFaceModel
         if (!Context.FixVarMap.ContainsKey("batch_size"))
         {
             Context.DynVarMap["batch_size"] = Var.SizeVar("batch_size");
-            Context.DynVarMap["batch_size"].Metadata.Range = new(1, 4);
+            if (Context.CompileSession.CompileOptions.ShapeBucketOptions.RangeInfo.ContainsKey("batch_size"))
+            {
+                Context.DynVarMap["batch_size"].Metadata.Range = Context.CompileSession.CompileOptions.ShapeBucketOptions.RangeInfo["batch_size"];
+            }
+            else
+            {
+                Context.DynVarMap["batch_size"].Metadata.Range = new(1, 4);
+            }
         }
 
 
@@ -88,7 +102,7 @@ public abstract class HuggingFaceModel
             "input_ids",
             new TensorType(DataTypes.Int64, new Shape(
                                                 Context.DynVarMap["batch_size"],
-                                                 Context.DynVarMap["sequence_length"])));
+                                                Context.DynVarMap["sequence_length"])));
 
         // var attentionMask = new Var(
         //     "attention_mask",
