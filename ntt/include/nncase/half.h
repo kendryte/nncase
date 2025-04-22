@@ -405,4 +405,6 @@ inline half erf(const half &a) {
 inline long lrint(const half &a) { return lrintf(float(a)); }
 
 template <> struct is_floating_point<half> : public std::true_type {};
+template<> struct __is_floating_point_helper<half> : public true_type {};
+template<> struct is_arithmetic<half> : public true_type {};
 } // namespace std
