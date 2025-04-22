@@ -49,6 +49,11 @@ public sealed class PackResizeImage : PackRule
         var inShape = input.CheckedShape;
 
         var rets = new List<Expr>();
+        if (packedAxes.Length == 0)
+        {
+            return rets;
+        }
+
         Dimension[]? padsInput = null;
         var packedInput = packedAxes.Length == 0 ? input : IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out padsInput), lanes, packedAxes);
 
@@ -106,6 +111,11 @@ public sealed class PackReduce : PackRule
     {
         var rets = new List<Expr>();
         var inShape = input.CheckedShape;
+        if (packedAxes.Length == 0)
+        {
+            return rets;
+        }
+
         Dimension[]? padsInput = null;
         var packedInput = packedAxes.Length == 0 ? input : IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out padsInput), lanes, packedAxes);
 
@@ -492,6 +502,12 @@ public sealed class PackBinary : PackRule
         var rhsShape = rhs.CheckedShape;
         Dimension[]? lhsPadNums = null;
         Dimension[]? rhsPadNums = null;
+
+        if (lhsPackedAxes.Length == 0 && rhsPackedAxes.Length == 0)
+        {
+            return rets;
+        }
+
         var packedLhs = lhsPackedAxes.Length == 0 ? lhs : IR.F.CPU.Pack(PackUtility.PadForPack(lhs, lhsShape, lhsPackedAxes, lhsLanes, 0f, out lhsPadNums), lhsLanes, lhsPackedAxes);
         var packedRhs = rhsPackedAxes.Length == 0 ? rhs : IR.F.CPU.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out rhsPadNums), rhsLanes, rhsPackedAxes);
 
@@ -699,6 +715,11 @@ public sealed class PackUnsqueeze : PackRule
     {
         var rets = new List<Expr>();
         var inShape = input.CheckedShape;
+        if (packedAxes.Length == 0)
+        {
+            return rets;
+        }
+
         Dimension[]? pads = null;
         var packed = packedAxes.Length == 0 ? input : IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out pads), lanes, packedAxes);
 
@@ -853,6 +874,10 @@ public sealed class PackReshape : PackRule
     {
         var rets = new List<Expr>();
         var inShape = input.CheckedShape;
+        if (packedAxes.Length == 0)
+        {
+            return rets;
+        }
 
         // 1. skip when the packedAxes will be split or merge.
         var unpackAxes = new List<int>();
@@ -976,6 +1001,11 @@ public sealed class PackSlice : PackRule
     public static List<Expr> AddCandidate(Expr input, Expr candidate, long[] begins, long[] ends, long[] axes, long[] strides, int[] packAxes, int[] lanes)
     {
         var rets = new List<Expr>();
+        if (packAxes.Length == 0)
+        {
+            return rets;
+        }
+
         var inShape = input.CheckedShape;
         var packedBegins = begins.ToArray();
         var packedEnds = ends.ToArray();
@@ -1078,6 +1108,11 @@ public sealed class PackCast : PackRule
     {
         var rets = new List<Expr>();
         var inShape = input.CheckedShape;
+        if (packedAxes.Length == 0)
+        {
+            return rets;
+        }
+
         Dimension[]? padsInput = null;
         var packedInput = packedAxes.Length == 0 ? input : IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out padsInput), lanes, packedAxes);
 
