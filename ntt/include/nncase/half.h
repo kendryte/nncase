@@ -22,6 +22,7 @@
 #include <float.h>
 #include <functional>
 #include <limits>
+#include <string>
 
 namespace nncase {
 struct fp16_from_raw_t {
