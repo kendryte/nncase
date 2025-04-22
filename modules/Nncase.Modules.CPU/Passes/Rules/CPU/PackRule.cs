@@ -159,7 +159,7 @@ public sealed class PackReduce : PackRule
             {
                 if (Rank > 1)
                 {
-                    rets.AddRange(AddCandidate(op, input, axes, initValue, keepDims, [i, j], [laneSize]));
+                    rets.AddRange(AddCandidate(op, input, axes, initValue, keepDims, [i, j], [laneSize, laneSize]));
                 }
             }
         }
@@ -473,7 +473,7 @@ public sealed class PackUnary : PackRule
             {
                 if (Rank > 1)
                 {
-                    rets.AddRange(AddCandidate(op, input, [i, j], [laneSize]));
+                    rets.AddRange(AddCandidate(op, input, [i, j], [laneSize, laneSize]));
                 }
             }
         }
