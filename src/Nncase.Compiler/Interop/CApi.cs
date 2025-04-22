@@ -571,15 +571,59 @@ public static unsafe class CApi
         return GCHandle.ToIntPtr(GCHandle.Alloc(DataType.FromTypeCode(typeCode)));
     }
 
+    // [UnmanagedCallersOnly]
+    // private static IntPtr ExprEvaluate(IntPtr exprHandle, IntPtr fnParamsHandle, IntPtr inputsHandle)
+    // {
+    //     var expr = Get<Expr>(exprHandle);
+    //     var fnParams = Get<Var[]>(fnParamsHandle);
+    //     var inputs = Get<RTValue[]>(inputsHandle);
+    //     var result = CompilerServices.Evaluate(expr, fnParams.Zip(inputs).ToDictionary(
+    //         x => x.First,
+    //         x => x.Second.ToValue()));
+    //     var rtValue = RTValue.FromValue(result);
+    //     return GCHandle.ToIntPtr(GCHandle.Alloc(rtValue));
+    // }
+    // FIXME: tmp code. Need move this function to eval api
     [UnmanagedCallersOnly]
     private static IntPtr ExprEvaluate(IntPtr exprHandle, IntPtr fnParamsHandle, IntPtr inputsHandle)
     {
         var expr = Get<Expr>(exprHandle);
         var fnParams = Get<Var[]>(fnParamsHandle);
         var inputs = Get<RTValue[]>(inputsHandle);
-        var result = CompilerServices.Evaluate(expr, fnParams.Zip(inputs).ToDictionary(
+        var map = fnParams.Zip(inputs).ToDictionary(
             x => x.First,
-            x => x.Second.ToValue()));
+            x => x.Second.ToValue());
+
+        // Avoid modifying dictionary while iterating
+        var itemsToAdd = new List<KeyValuePair<Var, IValue>>();
+        foreach (var param in map)
+        {
+            for (int i = 0; i < param.Key.CheckedShape.Count; i++)
+            {
+                if (param.Key.CheckedShape[i].IsDynamic)
+                {
+                    var shapeValue = param.Key.CheckedShape[i].Value;
+                    if (shapeValue is Var dynamicVar && !map.ContainsKey((Var)shapeValue))
+                    {
+                        var tensorType = param.Value.Type as Nncase.IR.TensorType;
+                        if (tensorType?.Shape[i].FixedValue != null)
+                        {
+                            var scalarValue = (long)tensorType.Shape[i].FixedValue;
+                            var tensor = Tensor.FromScalar(scalarValue/*,  new[] { 1L }*/);
+                            itemsToAdd.Add(new KeyValuePair<Var, IValue>(dynamicVar, Value.FromTensor(tensor)));
+                        }
+                    }
+                }
+            }
+        }
+
+        // Add new items to dictionary
+        foreach (var item in itemsToAdd)
+        {
+            map.Add(item.Key, item.Value);
+        }
+
+        var result = CompilerServices.Evaluate(expr, map);
         var rtValue = RTValue.FromValue(result);
         return GCHandle.ToIntPtr(GCHandle.Alloc(rtValue));
     }

@@ -244,6 +244,9 @@ internal class Compiler : ICompiler
             p.Add<BroadcastInputMarker>();
             p.Add<BroadcastOutputMarker>();
         });
+
+        passManager.Add<InferRangePass>();
+        passManager.Add<OptimizeByRangePass>();
     }
 
     public void QuantizePass(IPassManager passManager)

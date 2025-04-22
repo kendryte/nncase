@@ -26,12 +26,15 @@ public sealed class OptimizeByRangePass : DataflowPass
         pass.Add<FoldConstCall>();
         pass.Add<InferRange>();
         pass.Add<FoldNopCast>();
+        pass.Add<FoldClampByRangeConst>();
+        pass.Add<FoldClampByRangeVar>();
         pass.Add<FoldNopAbsByRange>();
         pass.Add<FoldNopCompareByRange>();
         pass.Add<FoldNopIf>();
         pass.Add<FoldNopSelect>();
         pass.Add<FoldGetItemShapeOf>();
         pass.Add<SimplifySelect>();
+        pass.Add<FoldCompareSelect>();
         pass.Add<SwapBinaryArgs>();
         pass.Add<FoldNopBinary>();
         pass.Add<FoldNopBinaryByRange>();
