@@ -248,7 +248,6 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                         'asin': '8.2',
                                         'asinh': '25.34',
                                         'ceil': '1.5',
-                                        'copy': '1.5',
                                         'cos': '8.7',
                                         'cosh': '12.5',
                                         'erf': '26.5',
