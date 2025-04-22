@@ -324,7 +324,7 @@ inline half pow(const half &a, const half &b) {
 inline half sin(const half &a) { return half::round_to_half(sinf(float(a))); }
 inline half cos(const half &a) { return half::round_to_half(cosf(float(a))); }
 inline half tan(const half &a) { return half::round_to_half(tanf(float(a))); }
-inline half tanh(const half &a) { return half::round_to_half(tanhf(float(a))); }
+inline half tanh(const half &a) { return half::round_to_half(tanh(float(a))); }
 inline half floor(const half &a) {
     return half::round_to_half(floorf(float(a)));
 }
@@ -336,16 +336,16 @@ inline half nearbyint(const half &a) {
     return half::round_to_half(nearbyintf(float(a)));
 }
 inline half acos(const half &a) {
-    return half::round_to_half(std::acosf(float(a)));
+    return half::round_to_half(std::acos(float(a)));
 }
 inline half asin(const half &a) {
-    return half::round_to_half(std::asinf(float(a)));
+    return half::round_to_half(std::asin(float(a)));
 }
 inline half cosh(const half &a) {
-    return half::round_to_half(std::coshf(float(a)));
+    return half::round_to_half(std::cosh(float(a)));
 }
 inline half sinh(const half &a) {
-    return half::round_to_half(std::sinf(float(a)));
+    return half::round_to_half(std::sinh(float(a)));
 }
 inline half nextafter(const half from, const half to) noexcept {
     if (from.raw() == to.raw()) {
