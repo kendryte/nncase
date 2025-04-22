@@ -304,6 +304,12 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         return From(array.AsMemory());
     }
 
+    public static Tensor<T> From<T>(T[,] array)
+        where T : unmanaged, IEquatable<T>
+    {
+        return From(array.AsMemory(), [array.GetLength(0), array.GetLength(1)]);
+    }
+
     /// <summary>
     /// Create tensor from an array, Set the shape as provided.
     /// </summary>

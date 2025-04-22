@@ -25,14 +25,14 @@ namespace Nncase.Importer
         {
             var input = GetSingleInputExpr(op);
             var axesExpr = GetAxesAttribute(op, input);
-            var starts = GetTensorIntsAttribute(op, "starts");
-            var ends = GetTensorIntsAttribute(op, "ends");
+            var starts = GetIntsAttribute(op, "starts");
+            var ends = GetIntsAttribute(op, "ends");
             return Slice(
                 input,
                 starts,
                 ends,
                 axesExpr,
-                Tensor.FromScalar(1L, ends.Length));
+                Shape.Repeat(1L, ends.Length));
         }
 
         private Expr SliceV10(in NodeProto op)
@@ -45,7 +45,7 @@ namespace Nncase.Importer
             starts.InferenceType();
             var axes = GetOptionInputExpr(op, 3).Or(ComputeDefaultAxes(input));
             var steps = GetOptionInputExpr(op, 4).Or(Expand(1, starts.CheckedShape.ToValueArray()));
-            return Slice(input, starts, ends, axes, steps);
+            return Slice(input, starts.AsShape(), ends.AsShape(), axes.AsShape(), steps.AsShape());
         }
     }
 }

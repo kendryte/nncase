@@ -81,21 +81,20 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
     public IRType Visit(ITypeInferenceContext context, Pad target)
     {
         var input = context.CheckArgumentType<IRType>(target, Pad.Input);
-        var paddingsType = context.CheckArgumentTensorTypeOrBroadcast(target, Pad.Pads);
         var paddings = (Paddings)context.GetArgument(target, Pad.Pads);
         var padValue = context.GetArgument(target, Pad.Value);
         return input switch
         {
-            DistributedType distributedType => Visit(distributedType, paddingsType, paddings, padValue),
-            TensorType tensorType => TypeInference.PadType(tensorType, paddingsType, paddings, padValue),
+            DistributedType distributedType => Visit(distributedType, paddings, padValue),
+            TensorType tensorType => TypeInference.PadType(tensorType, paddings, padValue),
             AnyType anyType => anyType,
             _ => new InvalidType("The pad input type not support"),
         };
     }
 
-    public IRType Visit(DistributedType input, TensorType paddingsType, Paddings paddings, Expr padValue)
+    public IRType Visit(DistributedType input, Paddings paddings, Expr padValue)
     {
-        if (TypeInference.PadType(input.TensorType, paddingsType, paddings, padValue) is not TensorType tensorType)
+        if (TypeInference.PadType(input.TensorType, paddings, padValue) is not TensorType tensorType)
         {
             return new InvalidType("pad infer type failed");
         }

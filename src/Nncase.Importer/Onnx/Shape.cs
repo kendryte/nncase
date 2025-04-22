@@ -37,7 +37,7 @@ namespace Nncase.Importer
             var start = GetIntAttribute(op, "start", 0);
             var inShape = F.Tensors.ShapeOf(input);
             var end = GetOptionIntAttribute(op, "end");
-            Expr endValue = end ? new[] { end.Value() } : F.Tensors.ShapeOf(inShape);
+            Shape endValue = end ? new[] { end.Value() } : F.Tensors.ShapeOf(inShape);
             return F.Tensors.Slice(
                 inShape,
                 new[] { start },

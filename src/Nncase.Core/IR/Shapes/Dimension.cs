@@ -52,21 +52,33 @@ public static class DimensionExtensions
         {
             return new Shape(tc.Value.ToArray<long>());
         }
-        else if (value is Shape shape)
+        else if (value is Shape shapeExpr)
         {
-            return shape;
+            return shapeExpr;
         }
-        else
+        else if (value is Call { Target: Concat } concat)
         {
-            shape = value.CheckedShape;
-            if (shape.Rank != 1 || !shape.IsFixed)
+            if (concat[Concat.Input] is Tuple tuple)
             {
-                return Shape.Unranked;
+                return new Shape(tuple.Fields.AsValueEnumerable().Select(x => x[0].AsDim()).ToArray());
             }
-
-            var rank = (int)shape[0].FixedValue;
-            return new Shape(Enumerable.Range(0, rank).Select(x => value[x].AsDim()));
         }
+        else if (value is Call { Target: Stack } stack)
+        {
+            if (stack[Stack.Inputs] is Tuple tuple)
+            {
+                return new Shape(tuple.Fields.AsValueEnumerable().Select(x => x.AsDim()).ToArray());
+            }
+        }
+
+        var shape = value.CheckedShape;
+        if (shape.Rank != 1 || !shape.IsFixed)
+        {
+            return Shape.Unranked;
+        }
+
+        var rank = (int)shape[0].FixedValue;
+        return new Shape(Enumerable.Range(0, rank).Select(x => value[x].AsDim()));
     }
 }
 
@@ -124,6 +136,10 @@ public abstract class Dimension : Expr
     /// </summary>
     /// <param name="value">Dimension value.</param>
     public static implicit operator Dimension(int value) => new DimConst(value);
+
+    public static bool operator ==(Dimension? left, Dimension? right) => EqualityComparer<Dimension>.Default.Equals(left, right);
+
+    public static bool operator !=(Dimension? left, Dimension? right) => !(left == right);
 
     public static Dimension operator -(Dimension value) => value * -1;
 
@@ -371,4 +387,8 @@ public abstract class Dimension : Expr
         };
 
     public virtual Dimension Simplify() => this;
+
+    public abstract Expr ToValueExpr();
+
+    public override bool Equals(object? obj) => base.Equals(obj as Dimension);
 }

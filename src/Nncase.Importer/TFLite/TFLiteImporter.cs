@@ -14,6 +14,7 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.Math;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using Math = System.Math;
 using Tuple = Nncase.IR.Tuple;
@@ -495,5 +496,30 @@ public sealed partial class TFLiteImporter : BaseImporter
     private Shape GetTensorShape(in tflite.Tensor tensor)
     {
         return GetShapeArray(tensor);
+    }
+
+    /// <summary>
+    /// Get paddings from expr.
+    /// The paddings is a 2D tensor, shape = [channels, 2(before, after)].
+    /// </summary>
+    /// <param name="expr">Expr.</param>
+    private Paddings GetPaddings(Expr expr)
+    {
+        var shape = expr.CheckedShape;
+        if (!shape.IsFixed || shape.Rank != 2)
+        {
+            throw new InvalidDataException($"Paddings should be a 2D tensor, but got {shape}.");
+        }
+
+        var channels = (int)shape[0].FixedValue;
+        return new Paddings(Enumerable
+            .Range(0, channels)
+            .Select(i =>
+            {
+                var before = expr[i, 0].AsDim();
+                var after = expr[i, 1].AsDim();
+                return new Padding(before, after);
+            })
+            .ToArray());
     }
 }

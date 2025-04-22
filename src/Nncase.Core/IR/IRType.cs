@@ -209,3 +209,24 @@ public sealed record NoneType : IRType
     {
     }
 }
+
+public sealed record ShapeType(ShapeKind Kind) : IRType
+{
+    public static readonly ShapeType Scalar = new(ShapeKind.Fixed);
+
+    public static readonly ShapeType Unranked = new(ShapeKind.Unranked);
+
+    public static readonly ShapeType Invalid = new(ShapeKind.Invalid);
+
+    public static ShapeType Fixed(int rank) => new(ShapeKind.Fixed);
+
+    public static ShapeType Unknown(int rank) => new(ShapeKind.HasUnknownDimension);
+}
+
+public sealed record PaddingType() : IRType
+{
+}
+
+public sealed record PaddingsType(int Rank) : IRType
+{
+}

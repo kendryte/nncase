@@ -69,14 +69,13 @@ namespace Nncase.Importer
             return ParseResizeMode(GetStringAttribute(op, "mode", "nearest"));
         }
 
-        private Expr ComputeNewSizes(Expr input, Expr scales)
+        private Shape ComputeNewSizes(Expr input, Expr scales)
         {
-            return Reshape(
-                Cast(Cast(ShapeOf(input), DataTypes.Float32) * Unsqueeze(scales, new[] { 0 }), DataTypes.Int64),
-                new[] { -1 });
+            var newShape = Cast(Cast(ShapeOf(input), DataTypes.Float32) * Unsqueeze(scales, new[] { 0 }), DataTypes.Int64).AsShape();
+            return newShape;
         }
 
-        private Expr GetNewSize(NodeProto op)
+        private Shape GetNewSize(NodeProto op)
         {
             // Only one of 'scales' and 'sizes' can be specified.
             // 2:scales, 3:sizes
@@ -91,7 +90,7 @@ namespace Nncase.Importer
                 }
             }
 
-            var sizes = GetOptionInputExpr(op, 3).ValueUnsafe();
+            var sizes = GetOptionInputExpr(op, 3).ValueUnsafe().AsShape();
             return sizes;
         }
     }

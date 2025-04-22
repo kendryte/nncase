@@ -122,18 +122,6 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     }
 
     /// <inheritdoc />
-    protected internal override TExprResult VisitShape(IR.Shape expr, TContext context)
-    {
-        VisitOperands(expr, context);
-        if (CanVisitAttributes(expr))
-        {
-            VisitAttributes(expr, context);
-        }
-
-        return VisitLeafShape(expr, context);
-    }
-
-    /// <inheritdoc />
     protected internal override TExprResult VisitTensorConst(TensorConst expr, TContext context)
     {
         VisitOperands(expr, context);
@@ -701,6 +689,18 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
         return VisitLeafPaddings(expr, context);
     }
 
+    /// <inheritdoc />
+    protected internal override TExprResult VisitShape(Shape expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafShape(expr, context);
+    }
+
     /// <summary>
     /// Visit leaf <see cref="BaseFunction"/>.
     /// </summary>
@@ -750,11 +750,6 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     /// Visit leaf <see cref="PrimFunctionWrapper"/>.
     /// </summary>
     protected virtual TExprResult VisitLeafPrimFunctionWrapper(PrimFunctionWrapper expr, TContext context) => VisitLeafBaseFunction(expr, context);
-
-    /// <summary>
-    /// Visit leaf <see cref="IR.Shape"/>.
-    /// </summary>
-    protected virtual TExprResult VisitLeafShape(IR.Shape expr, TContext context) => DefaultVisitLeaf(expr, context);
 
     /// <summary>
     /// Visit leaf <see cref="TensorConst"/>.
@@ -1006,6 +1001,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     /// </summary>
     protected virtual TExprResult VisitLeafPaddings(Shapes.Paddings expr, TContext context) => DefaultVisitLeaf(expr, context);
 
+    /// <summary>
+    /// Visit leaf <see cref="Shape"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafShape(Shape expr, TContext context) => DefaultVisitLeaf(expr, context);
+
 }
 
 public partial class ExprVisitor<TExprResult, TTypeResult>
@@ -1066,13 +1066,6 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitPrimFunctionWrapper(PrimFunctionWrapper expr, Unit context) => VisitPrimFunctionWrapper(expr);
-    /// <summary>
-    /// Visit <see cref="IR.Shape"/>.
-    /// </summary>
-    internal protected virtual TExprResult VisitShape(IR.Shape expr) => base.VisitShape(expr, default);
-    
-    /// <inheritdoc/>
-    internal protected sealed override TExprResult VisitShape(IR.Shape expr, Unit context) => VisitShape(expr);
     /// <summary>
     /// Visit <see cref="TensorConst"/>.
     /// </summary>
@@ -1403,6 +1396,13 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitPaddings(Shapes.Paddings expr, Unit context) => VisitPaddings(expr);
     /// <summary>
+    /// Visit <see cref="Shape"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitShape(Shape expr) => base.VisitShape(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitShape(Shape expr, Unit context) => VisitShape(expr);
+    /// <summary>
     /// Visit leaf <see cref="BaseFunction"/>.
     /// </summary>
     protected virtual TExprResult VisitLeafBaseFunction(BaseFunction expr) => base.VisitLeafBaseFunction(expr, default);
@@ -1481,14 +1481,6 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     protected sealed override TExprResult VisitLeafPrimFunctionWrapper(PrimFunctionWrapper expr, Unit context) => VisitLeafPrimFunctionWrapper(expr);
-
-    /// <summary>
-    /// Visit leaf <see cref="IR.Shape"/>.
-    /// </summary>
-    protected virtual TExprResult VisitLeafShape(IR.Shape expr) => base.VisitLeafShape(expr, default);
-    
-    /// <inheritdoc/>
-    protected sealed override TExprResult VisitLeafShape(IR.Shape expr, Unit context) => VisitLeafShape(expr);
 
     /// <summary>
     /// Visit leaf <see cref="TensorConst"/>.
@@ -1889,5 +1881,13 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     protected sealed override TExprResult VisitLeafPaddings(Shapes.Paddings expr, Unit context) => VisitLeafPaddings(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="Shape"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafShape(Shape expr) => base.VisitLeafShape(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafShape(Shape expr, Unit context) => VisitLeafShape(expr);
 
 }

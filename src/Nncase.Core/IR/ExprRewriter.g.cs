@@ -74,12 +74,6 @@ public partial class ExprRewriter<TContext>
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafShape(IR.Shape expr, TContext context)
-    {
-        return RewriteLeafShape(expr, context);
-    }
-
-    /// <inheritdoc/>
     protected sealed override Expr VisitLeafTensorConst(TensorConst expr, TContext context)
     {
         return RewriteLeafTensorConst(expr, context);
@@ -379,6 +373,12 @@ public partial class ExprRewriter<TContext>
         return RewriteLeafPaddings(expr, context);
     }
 
+    /// <inheritdoc/>
+    protected sealed override Expr VisitLeafShape(Shape expr, TContext context)
+    {
+        return RewriteLeafShape(expr, context);
+    }
+
     /// <summary>
     /// Rewrite leaf <see cref="BaseFunction"/>.
     /// </summary>
@@ -428,11 +428,6 @@ public partial class ExprRewriter<TContext>
     /// Rewrite leaf <see cref="PrimFunctionWrapper"/>.
     /// </summary>
     protected virtual Expr RewriteLeafPrimFunctionWrapper(PrimFunctionWrapper expr, TContext context) => RewriteLeafBaseFunction(expr, context);
-
-    /// <summary>
-    /// Rewrite leaf <see cref="IR.Shape"/>.
-    /// </summary>
-    protected virtual Expr RewriteLeafShape(IR.Shape expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="TensorConst"/>.
@@ -684,6 +679,11 @@ public partial class ExprRewriter<TContext>
     /// </summary>
     protected virtual Expr RewriteLeafPaddings(Shapes.Paddings expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
+    /// <summary>
+    /// Rewrite leaf <see cref="Shape"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafShape(Shape expr, TContext context) => DefaultRewriteLeaf(expr, context);
+
 }
 
 public partial class ExprRewriter
@@ -767,14 +767,6 @@ public partial class ExprRewriter
 
     /// <inheritdoc />
     protected sealed override Expr RewriteLeafPrimFunctionWrapper(PrimFunctionWrapper expr, Unit context) => RewriteLeafPrimFunctionWrapper(expr);
-
-    /// <summary>
-    /// Rewrite leaf <see cref="IR.Shape"/>.
-    /// </summary>
-    protected virtual Expr RewriteLeafShape(IR.Shape expr) => DefaultRewriteLeaf(expr);
-
-    /// <inheritdoc />
-    protected sealed override Expr RewriteLeafShape(IR.Shape expr, Unit context) => RewriteLeafShape(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="TensorConst"/>.
@@ -1175,5 +1167,13 @@ public partial class ExprRewriter
 
     /// <inheritdoc />
     protected sealed override Expr RewriteLeafPaddings(Shapes.Paddings expr, Unit context) => RewriteLeafPaddings(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="Shape"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafShape(Shape expr) => DefaultRewriteLeaf(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafShape(Shape expr, Unit context) => RewriteLeafShape(expr);
 
 }

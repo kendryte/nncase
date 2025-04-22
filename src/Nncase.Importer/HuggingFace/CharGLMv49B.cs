@@ -46,8 +46,8 @@ namespace Nncase.Importer
             var cosShape = IR.F.Tensors.ShapeOf(cos);
             var sinShape = IR.F.Tensors.ShapeOf(sin);
 
-            var cosLastDim = IR.F.Tensors.Stack(new IR.Tuple(cosShape[-1]), 0L);
-            var sinLastDim = IR.F.Tensors.Stack(new IR.Tuple(sinShape[-1]), 0L);
+            var cosLastDim = new Shape(cosShape[-1]);
+            var sinLastDim = new Shape(sinShape[-1]);
 
             // repeat_interleave for cos & sin
             cos = IR.F.Tensors.Slice(cos, new[] { 0L }, cosLastDim / 2L, new[] { 3L }, new[] { 1L });
@@ -60,12 +60,12 @@ namespace Nncase.Importer
             sin = IR.F.Tensors.Concat(new IR.Tuple(sin, sin), -1);
             sin = IR.F.Tensors.Reshape(sin, sinShape);
 
-            var rotaryDim = IR.F.Tensors.Stack(new IR.Tuple(IR.F.Tensors.ShapeOf(cos)[-1]), 0L);
+            var rotaryDim = new Shape(IR.F.Tensors.ShapeOf(cos)[-1]);
 
             var qRot = IR.F.Tensors.Slice(q, new[] { 0L }, rotaryDim, new[] { 3L }, new[] { 1L });
-            var qPass = IR.F.Tensors.Slice(q, rotaryDim, IR.F.Tensors.Stack(new IR.Tuple(IR.F.Tensors.ShapeOf(q)[-1]), 0L), new[] { 3L }, new[] { 1L });
+            var qPass = IR.F.Tensors.Slice(q, rotaryDim, new Shape(IR.F.Tensors.ShapeOf(q)[-1]), new[] { 3L }, new[] { 1L });
             var kRot = IR.F.Tensors.Slice(k, new[] { 0L }, rotaryDim, new[] { 3L }, new[] { 1L });
-            var kPass = IR.F.Tensors.Slice(k, rotaryDim, IR.F.Tensors.Stack(new IR.Tuple(IR.F.Tensors.ShapeOf(k)[-1]), 0L), new[] { 3L }, new[] { 1L });
+            var kPass = IR.F.Tensors.Slice(k, rotaryDim, new Shape(IR.F.Tensors.ShapeOf(k)[-1]), new[] { 3L }, new[] { 1L });
 
             var qRotEmbed = IR.F.Math.Binary(
                 BinaryOp.Add,
@@ -87,12 +87,12 @@ namespace Nncase.Importer
             var downProjW = _context.ConstTensors![$"model.layers.{count}.mlp.down_proj.weight"];
 
             var upStates = Linear(hiddenStates, gateUpProjW);
-            var upStatesShape = IR.F.Tensors.Stack(new IR.Tuple(IR.F.Tensors.ShapeOf(upStates)[-1]), 0L);
+            var upStatesShape = new Shape(IR.F.Tensors.ShapeOf(upStates)[-1]);
 
             // gate, up_states = up_states.chunk(2, dim = -1)
             // dim == -1 mean can slice 1/2
             var gate = IR.F.Tensors.Slice(upStates, new[] { 0L }, upStatesShape / 2L, new[] { -1L }, new[] { 1L });
-            upStates = IR.F.Tensors.Slice(upStates, upStatesShape / 2L, IR.F.Tensors.Stack(new IR.Tuple(IR.F.Tensors.ShapeOf(upStates)[-1]), 0L), new[] { -1L }, new[] { 1L });
+            upStates = IR.F.Tensors.Slice(upStates, upStatesShape / 2L, new Shape(IR.F.Tensors.ShapeOf(upStates)[-1]), new[] { -1L }, new[] { 1L });
 
             if (_context!.Config!.ContainsKey("hidden_act"))
             {

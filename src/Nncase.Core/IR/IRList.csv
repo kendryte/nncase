@@ -8,7 +8,6 @@ Marker,true,false,Default,,Target;Attribute
 None,true,false,Default,,
 Op,true,false,Default,,
 PrimFunctionWrapper,true,true,BaseFunction,,Target
-Shape,true,false,Default,IR.,@Dimensions
 TensorConst,true,false,Const,,
 Tuple,true,false,Default,IR.,@Fields
 TupleConst,true,false,Const,,
@@ -62,3 +61,4 @@ DimMax,true,false,Dimension,,@Operands
 DimPositive,true,false,Dimension,,Operand;Extent
 Padding,true,false,Default,Shapes.,Before;After
 Paddings,true,false,Default,Shapes.,@Values
+Shape,true,false,Default,,@Dimensions

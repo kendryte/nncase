@@ -224,13 +224,13 @@ public abstract class HuggingFaceModel
         var x1 = IR.F.Tensors.Slice(
             x,
             new[] { 0L },
-            IR.F.Tensors.Stack(new IR.Tuple(xS3 / 2L), 0L),
+            new Shape(xS3 / 2L),
             new[] { -1L },
             new[] { 1L });
         var x2 = IR.F.Tensors.Slice(
             x,
-            IR.F.Tensors.Stack(new IR.Tuple(xS3 / 2L), 0L),
-            IR.F.Tensors.Stack(new IR.Tuple(xS3), 0L),
+            new Shape(xS3 / 2L),
+            new Shape(xS3),
             new[] { -1L },
             new[] { 1L });
 
@@ -386,7 +386,7 @@ public abstract class HuggingFaceModel
             var causalMask = IR.F.Tensors.Slice(
                     attentionMask,
                     new[] { 0L },
-                    IR.F.Tensors.Stack(new IR.Tuple(IR.F.Tensors.ShapeOf(keyStates)[-2]), 0L),
+                    new Shape(IR.F.Tensors.ShapeOf(keyStates)[-2]),
                     new[] { 3L },
                     new[] { 1L });
 
@@ -573,7 +573,7 @@ public abstract class HuggingFaceModel
                 var paddingMask = IR.F.Tensors.Slice(
                     casualMask,
                     new[] { 0L, 0L, 0L, 0L },
-                    IR.F.Tensors.Stack(new IR.Tuple(maskLength), 0L),
+                    new Shape(maskLength),
                     new[] { 0L, 1L, 2L, 3L },
                     new[] { 1L, 1L, 1L, 1L });
                 paddingMask += IR.F.Tensors.Unsqueeze(attentionMask, new long[] { 1, 2 });
@@ -588,7 +588,7 @@ public abstract class HuggingFaceModel
                 var maskPart = IR.F.Tensors.Slice(
                     casualMask,
                     new[] { 0L },
-                    IR.F.Tensors.Stack(new IR.Tuple(maskLength), 0L),
+                    new Shape(maskLength),
                     new[] { -1L },
                     new[] { 1L });
 
@@ -600,8 +600,8 @@ public abstract class HuggingFaceModel
                 //  just return maskPart
                 var leftPart = IR.F.Tensors.Slice(
                     casualMask,
-                    IR.F.Tensors.Stack(new IR.Tuple(maskLength), 0),
-                    IR.F.Tensors.Stack(new IR.Tuple(IR.F.Tensors.ShapeOf(casualMask)[-1]), 0L),
+                    new Shape(maskLength),
+                    new Shape(IR.F.Tensors.ShapeOf(casualMask)[-1]),
                     new[] { -1L },
                     new[] { 1L });
                 casualMask = IR.F.Tensors.Concat(new IR.Tuple(maskPart, leftPart), -1);

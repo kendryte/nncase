@@ -34,9 +34,6 @@ public partial class Expr
             TupleConst tc => tc.Value[(int)index].AsTensor(),
             Shape shape => shape.Dimensions[(int)index],
             IR.Tuple t => t[(int)index],
-            Call { Target: Concat { Axis: 0 } } c when c[Concat.Input] is IR.Tuple tp && tp.Fields[0].CheckedType is TensorType { Shape: { IsFixed: true, Size: 1 } } => c[Concat.Input][index][0],
-            Call { Target: Reshape } c when c[Reshape.Shape] is TensorConst tc && tc.Value.Length == 1 && tc.Value.Cast<long>()[0] == 1 => c[Reshape.Input],
-            Call { Target: Stack } c => c[Stack.Inputs][index],
             _ => this[(Dimension)index],
         };
 
@@ -48,7 +45,6 @@ public partial class Expr
         this switch
         {
             TensorConst tc when tc.Value.Rank == indices.Length => Tensor.FromScalar(tc.Value.ElementType, tc.Value[indices]),
-            Call { Target: Stack } c when indices.Length == 2 => c[Stack.Inputs][indices[0]][indices[1]],
             _ => this[indices.Select(x => (Dimension)x).ToArray()],
         };
 

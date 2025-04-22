@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.IR.Imaging;
 using Nncase.IR.Math;
+using Nncase.IR.Shapes;
 using Nncase.Passes;
 using Nncase.PatternMatch;
 using OrtKISharp;
@@ -144,7 +145,7 @@ public sealed class AddPreProcess : ModulePass
                 {
                     var ratio = Math.Min(modelH / (float)h, modelW / (float)w);
 
-                    var pads = Tensor.From<int>(new[] { 0, 0, 0, 0, 0, 0, 0, 0 }, new Shape(new[] { 4, 2 }));
+                    var pads = Enumerable.Repeat(Padding.Zero, 4).ToArray();
 
                     var resizeH = Math.Round(h * ratio);
                     var resizeW = Math.Round(w * ratio);
@@ -153,10 +154,8 @@ public sealed class AddPreProcess : ModulePass
                     var padW = modelW - resizeW;
                     var resizeShape = new int[] { n, c, (int)resizeH, (int)resizeW };
 
-                    pads[2, 0] = (int)Math.Round((padH / 2) - 0.1);
-                    pads[2, 1] = (int)padH - (int)Math.Round((padH / 2) - 0.1);
-                    pads[3, 0] = (int)Math.Round((padW / 2) - 0.1);
-                    pads[3, 1] = (int)padW - (int)Math.Round((padW / 2) - 0.1);
+                    pads[2] = ((int)Math.Round((padH / 2) - 0.1), (int)padH - (int)Math.Round((padH / 2) - 0.1));
+                    pads[3] = ((int)Math.Round((padW / 2) - 0.1), (int)padW - (int)Math.Round((padW / 2) - 0.1));
 
                     newInput = IR.F.NN.Pad(
                         IR.F.Imaging.ResizeImage(

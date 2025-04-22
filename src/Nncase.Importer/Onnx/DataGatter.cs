@@ -9,6 +9,7 @@ using System.Linq;
 using Google.Protobuf.Collections;
 using LanguageExt;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using Onnx;
 using static Nncase.IR.F.Tensors;
 
@@ -248,8 +249,27 @@ public sealed partial class OnnxImporter
         return (GetOptionInputExpr(n, index0), GetOptionInputExpr(n, index1));
     }
 
-    private Expr ToNncasePadFormat(Expr pads)
+    /// <summary>
+    /// Convert pads to Nncase format.
+    /// </summary>
+    /// <param name="pads">The pads to convert.</param>
+    /// <returns>The converted pads.</returns>
+    /// <remarks>
+    /// The pads are converted from the format [x1_begin, x2_begin,...,x1_end, x2_end,...]
+    /// to the format [[x1_begin, x1_end], [x2_begin, x2_end], ...].
+    /// </remarks>
+    private Paddings ToNncasePadFormat(Expr pads)
     {
-        return Transpose(Reshape(pads, new[] { 2, -1 }), new[] { 1, 0 });
+        var shape = pads.CheckedShape;
+        if (shape.IsFixed || shape.Rank != 1 || !shape[0] % 2 != 0)
+        {
+            throw new ArgumentException($"Invalid pads shape: {shape}");
+        }
+
+        var padsRank = (int)shape[0].FixedValue / 2;
+        return new Paddings(
+            Enumerable.Range(0, padsRank)
+                .Select(i => new Padding(pads[i].AsDim(), pads[i + padsRank].AsDim()))
+                .ToArray());
     }
 }

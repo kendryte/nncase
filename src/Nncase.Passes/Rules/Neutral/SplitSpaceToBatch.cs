@@ -8,6 +8,7 @@ using CommunityToolkit.HighPerformance;
 using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using Nncase.Passes.Rules.ShapeExpr;
 using Nncase.PatternMatch;
@@ -99,10 +100,10 @@ public partial class SplitBatchToSpace : RewriteRule<Pattern>
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsBatchToSpace(
         IsWildcard("input") with { TypePattern = HasRank() },
-        IsShape("blockShape") with { TypePattern = HasFixedShape() },
-        IsWildcard("crop"));
+        IsFixedShape("blockShape"),
+        IsPaddings("crop"));
 
-    public Expr? GetReplace(Expr input, Shape blockShape, Expr crop)
+    public Expr? GetReplace(Expr input, Shape blockShape, Paddings crop)
     {
         // to nhwc
         var input0 = NCHWToNHWC(input);
@@ -134,15 +135,20 @@ public partial class SplitBatchToSpace : RewriteRule<Pattern>
         var newShape = new Shape(indices.Select(i => shape1[i]).ToArray());
         var x2 = Reshape(input0, newShape);
         var tr2 = Transpose(x2, perm);
-        Dimension[] shape2 = [-1, ..targetSpatial, ..depth];
+        Dimension[] shape2 = [-1, .. targetSpatial, .. depth];
         var x3 = Reshape(tr2, shape2);
 
-        var cropTransposed = Transpose(crop, new long[] { 1, 0 });
-        var cropArray = Reshape(cropTransposed, new long[] { -1 });
-        var w = cropTransposed.CheckedShape[1].FixedValue;
-        var cropStart = ShapeExprUtility.Slice(cropArray, 0, w);
-        var cropEnd = ShapeExprUtility.Slice(cropArray, w, w + w);
-        var endRange = targetSpatial - cropEnd;
+        var cropArray = new Dimension[2 * crop.Count];
+        for (int i = 0; i < crop.Count; i++)
+        {
+            cropArray[i] = crop[i].Before;
+            cropArray[crop.Count + i] = crop[i].After;
+        }
+
+        var w = crop.Count;
+        var cropStart = cropArray[0..w];
+        var cropEnd = cropArray[w..];
+        var endRange = targetSpatial.Select((x, i) => x - cropEnd[i]).ToArray();
         var axesConst = BoostRange(1, blockLen + 1).ToArray();
         var strideConst = Enumerable.Repeat(1, axesConst.Length).ToArray();
         var result = Slice(x3, cropStart, endRange, axesConst, strideConst);

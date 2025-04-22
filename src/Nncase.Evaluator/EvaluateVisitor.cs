@@ -17,7 +17,7 @@ using Nncase.Utilities;
 
 namespace Nncase.Evaluator;
 
-internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
+internal sealed partial class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
 {
     private readonly EvaluateContext _context;
     private readonly IReadOnlyDictionary<IVar, IValue> _varsValues;
@@ -140,12 +140,6 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
     {
         bool cond = Visit(expr.Condition).AsTensor().ToScalar<bool>();
         return cond ? EvaluateCallable(expr.Then, expr.Arguments) : EvaluateCallable(expr.Else, expr.Arguments);
-    }
-
-    protected override IValue VisitLeafShape(Shape expr)
-    {
-        var dims = expr.Dimensions.AsValueEnumerable().Select(x => ExprMemo[x].AsTensor().ToScalar<long>()).ToArray();
-        return new ShapeValue(dims);
     }
 
     private IValue EvaluateCallable(Expr callable, ReadOnlySpan<Expr> arguments)

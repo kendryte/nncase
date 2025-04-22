@@ -258,20 +258,20 @@ public static class TypeInference
         return (size + padding.Before + padding.After - effective_filter_size + stride) / stride;
     }
 
-    public static Expr GetPaddings(Shape inputShape, Shape weightsShape, Shape strides, Shape dilations, bool same, bool lower = false)
+    public static Paddings GetPaddings(Shape inputShape, Shape weightsShape, Shape strides, Shape dilations, bool same, bool lower = false)
     {
         var padH = GetWindowedPadding(inputShape[2], weightsShape[2], strides[0], dilations[0], same, lower);
         var padW = GetWindowedPadding(inputShape[3], weightsShape[3], strides[1], dilations[1], same, lower);
-        return Dimension.ConcatPadding(padH, padW);
+        return new[] { padH, padW };
     }
 
-    public static Dimension[] GetWindowedPadding(Dimension inputSize, Dimension filter, Dimension stride, Dimension dilation, bool same, bool lower = false)
+    public static Padding GetWindowedPadding(Dimension inputSize, Dimension filter, Dimension stride, Dimension dilation, bool same, bool lower = false)
     {
         var outputSize = GetWindowedOutputSize(inputSize, filter, stride, dilation, same, false);
         return GetWindowedPaddingValue(inputSize, outputSize, filter, stride, dilation, lower);
     }
 
-    public static Dimension[] GetWindowedPaddingValue(Dimension inputSize, Dimension outputSize, Dimension filter, Dimension stride, Dimension dilation, bool lower)
+    public static Padding GetWindowedPaddingValue(Dimension inputSize, Dimension outputSize, Dimension filter, Dimension stride, Dimension dilation, bool lower)
     {
         var effectiveFilterSize = ((filter - 1L) * dilation) + 1L;
         var padding = Dimension.Max(0L, ((outputSize - 1L) * stride) + effectiveFilterSize - inputSize);
@@ -279,25 +279,20 @@ public static class TypeInference
         var after = padding - (padding / 2L);
         if (lower)
         {
-            return [Dimension.Max(before, after), Dimension.Min(before, after)];
+            return (Dimension.Max(before, after), Dimension.Min(before, after));
         }
 
-        return [before, after];
+        return (before, after);
     }
 
     /// <summary>
     /// Pad Type Infer.
     /// </summary>
-    public static IRType PadType(TensorType input, TensorType padsType, Paddings pads, Expr padValue)
+    public static IRType PadType(TensorType input, Paddings pads, Expr padValue)
     {
         if (input.Shape.IsUnranked)
         {
             return input;
-        }
-
-        if (padsType.Shape.IsUnranked || padsType.Shape.Rank != 2 || !padsType.Shape[0].IsFixed)
-        {
-            return new InvalidType($"The padding shape {padsType.Shape} is not support!");
         }
 
         if (padValue.CheckedType is TensorType padValueType)
@@ -310,10 +305,10 @@ public static class TypeInference
         }
 
         var newShape = input.Shape.ToList();
-        var channel = (int)padsType.Shape[0].FixedValue;
+        var channel = pads.Rank;
         for (int i = 0; i < channel; i++)
         {
-            newShape[newShape.Count - channel + i] += pads[i].Before + pads[i].After;
+            newShape[newShape.Count - channel + i] += pads[i].Sum();
         }
 
         return new TensorType(input.DType, new Shape(newShape));

@@ -127,19 +127,19 @@ public static class Tensors
     public static Shape ShapeOf(Expr input) => new Call(new ShapeOf(), input).AsShape();
 
     // https://github.com/onnx/onnx/blob/master/docs/Operators.md#slice
-    public static Call Slice(Expr input, Expr begins, Expr ends, Expr axes, Expr strides) =>
+    public static Call Slice(Expr input, Shape begins, Shape ends, Shape axes, Shape strides) =>
         new Call(new Slice(), input, begins, ends, axes, strides);
 
-    public static Call Slice(Expr input, Expr begins, Expr ends, int rank)
+    public static Call Slice(Expr input, Shape begins, Shape ends, int rank)
     {
         if (rank < 1)
         {
             throw new ArgumentOutOfRangeException(nameof(rank));
         }
 
-        var axes = Tensor.FromRange(0, rank);
-        var strides = Tensor.FromScalar(1, rank);
-        return new Call(new Slice(), input, begins, ends, axes, strides);
+        var axes = Tensor.FromRange(0L, rank).ToArray();
+        var strides = Tensor.FromScalar(1L, rank).ToArray();
+        return Slice(input, begins, ends, axes, strides);
     }
 
     public static Expr SliceIndex(Expr input, int index) => Slice(input, new[] { index }, new[] { index + 1 }, 1);

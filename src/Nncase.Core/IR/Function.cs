@@ -59,7 +59,7 @@ public sealed class Function : BaseFunction
     /// build function.
     /// </summary>
     public Function(string name, Expr body, params IVar[] parameters)
-        : this(name, body, parameters.AsSpan())
+        : this(name, body, parameters.AsReadOnlySpan())
     {
     }
 
@@ -68,7 +68,7 @@ public sealed class Function : BaseFunction
     /// build function.
     /// </summary>
     public Function(Expr body, params IVar[] parameters)
-        : this(body, parameters.AsSpan())
+        : this(body, parameters.AsReadOnlySpan())
     {
     }
 

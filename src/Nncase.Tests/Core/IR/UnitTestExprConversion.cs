@@ -139,7 +139,7 @@ public class UnitTestExprConversion
         var a = new long[] { 1, 3, 16, 16 };
         var s = new Shape(a);
         var c = Const.FromShape(s);
-        Expr e = s;
+        Expr e = a;
         Assert.Equal(c, e);
     }
 

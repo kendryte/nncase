@@ -279,4 +279,20 @@ public static partial class TypePatternUtility
     /// is scalar quant param.
     /// </summary>
     public static TypePattern IsQuantParamType() => IsScalar() & HasDataType(new QuantParamType());
+
+    public static TypePattern IsShapeType() => new TypePattern(
+        x => x switch
+        {
+            ShapeType stype => true,
+            _ => false,
+        },
+        "IsShapeType");
+
+    public static TypePattern IsPaddingsType() => new TypePattern(
+        x => x switch
+        {
+            PaddingsType stype => true,
+            _ => false,
+        },
+        "IsPaddingsType");
 }

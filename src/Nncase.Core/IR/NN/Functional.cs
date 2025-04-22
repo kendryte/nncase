@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 
 namespace Nncase.IR.F;
@@ -55,7 +56,7 @@ public static class NN
     /// <summary>
     /// Pads is Const tensor, shape = [channels, 2(before, after)].
     /// </summary>
-    public static Call Pad(Expr input, Expr pads, PadMode mode, Expr value) => new Call(new Pad(mode), input, pads, value);
+    public static Call Pad(Expr input, Paddings pads, PadMode mode, Expr value) => new Call(new Pad(mode), input, pads, value);
 
     public static Call ReduceWindow2D(ReduceOp reduceOp, Expr input, Expr initValue, Expr filter, Expr stride, Expr padding, Expr dilation, Expr ceilMode, Expr countIncludePad) =>
         new Call(new ReduceWindow2D(reduceOp), input, initValue, filter, stride, padding, dilation, ceilMode, countIncludePad);

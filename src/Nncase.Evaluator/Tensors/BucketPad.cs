@@ -7,6 +7,7 @@ using DryIoc.ImTools;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using OrtKISharp;
 using static Nncase.IR.F.Tensors;
@@ -34,10 +35,8 @@ public class BucketPadEvaluator : IEvaluator<BucketPad>, ITypeInferencer<BucketP
             throw new InvalidOperationException();
         }
 
-        var pads = shape - (Expr)input.Shape;
-        var paddings = Transpose(
-            Stack(new Tuple(Enumerable.Repeat(0, shape.Length).ToArray(), pads), 0),
-            new[] { 1, 0 });
+        var pads = shape - input.Shape;
+        var paddings = new Paddings(Enumerable.Range(0, shape.Rank).Select(i => new Padding(0, pads[i])).ToArray());
         var fixedInput = IR.F.NN.Pad(input, paddings, PadMode.Constant, Cast(0, input.ElementType)).Evaluate();
         return fixedInput;
     }

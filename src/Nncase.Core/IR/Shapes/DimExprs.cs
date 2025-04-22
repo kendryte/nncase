@@ -4,8 +4,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using NetFabric.Hyperlinq;
+using Nncase.IR.Shapes;
 using Nncase.Utilities;
 
 namespace Nncase.IR;
@@ -36,12 +38,14 @@ public sealed class AsDim : Dimension, IEquatable<AsDim?>
     /// <summary>
     /// Gets dim.
     /// </summary>
-    public Expr Dim => (Dimension)Operands[0];
+    public Expr Dim => Operands[0];
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
         functor.VisitAsDim(this, context);
 
     public AsDim With(Expr? dim = null) => new AsDim(dim ?? Dim);
+
+    public override Expr ToValueExpr() => Dim;
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as AsDim);
@@ -79,6 +83,8 @@ public sealed class UnknownDim : Dimension, IEquatable<UnknownDim?>
 
     public UnknownDim With() => Default;
 
+    public override Expr ToValueExpr() => None.Default;
+
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as UnknownDim);
 
@@ -112,6 +118,7 @@ public sealed class DimVar : OpaqueDim, IVar, IEquatable<DimVar?>
     {
         GlobalVarIndex = GetNextId();
         Name = name;
+        Metadata.Range = ValueRange<double>.Full;
     }
 
     /// <summary>
@@ -154,8 +161,10 @@ public sealed class DimVar : OpaqueDim, IVar, IEquatable<DimVar?>
 
     IVar IVar.With(string? name) => With(name);
 
+    public override Expr ToValueExpr() => this;
+
     /// <inheritdoc/>
-    public override bool Equals(object? obj) => Equals(obj as Var);
+    public override bool Equals(object? obj) => Equals(obj as DimVar);
 
     /// <inheritdoc/>
     public bool Equals(DimVar? other)
@@ -170,7 +179,7 @@ public sealed class DimVar : OpaqueDim, IVar, IEquatable<DimVar?>
 
     bool IEquatable<IVar?>.Equals(IVar? other) => Equals(other as DimVar);
 
-    public override string ToString() => $"{Name}#{GlobalVarIndex}";
+    public override string ToString() => $"{Name}";
 
     /// <inheritdoc/>
     protected override int GetHashCodeCore() => HashCode.Combine(GlobalVarIndex);
@@ -194,7 +203,7 @@ public sealed class DimConst : Dimension, IEquatable<DimConst?>
         Metadata.Range = new ValueRange<double>(value, value);
     }
 
-    public override DimensionKind Kind => DimensionKind.Dynamic;
+    public override DimensionKind Kind => DimensionKind.Fixed;
 
     public override long FixedValue => Value;
 
@@ -209,6 +218,8 @@ public sealed class DimConst : Dimension, IEquatable<DimConst?>
         functor.VisitDimConst(this, context);
 
     public DimConst With(long? value = null) => new DimConst(value ?? Value);
+
+    public override Expr ToValueExpr() => Value;
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimConst);
@@ -257,6 +268,8 @@ public sealed class DimPower : Dimension, IEquatable<DimPower?>
         functor.VisitDimPower(this, context);
 
     public DimPower With(OpaqueDim? dim = null, int? power = null) => new DimPower(dim ?? Dim, power ?? Power);
+
+    public override Expr ToValueExpr() => F.Math.Pow(Dim.ToValueExpr(), Power);
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimPower);
@@ -341,6 +354,8 @@ public sealed class DimFraction : Dimension, IEquatable<DimFraction?>
     public DimFraction With(DimDivideMode? divMode = null, Dimension? numerator = null, Dimension? denominator = null) =>
         new DimFraction(divMode ?? DivMode, numerator ?? Numerator, denominator ?? Denominator);
 
+    public override Expr ToValueExpr() => F.Math.Binary(DivMode == DimDivideMode.FloorDiv ? BinaryOp.FloorDiv : BinaryOp.CeilDiv, Numerator.ToValueExpr(), Denominator.ToValueExpr());
+
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimFraction);
 
@@ -356,6 +371,52 @@ public sealed class DimFraction : Dimension, IEquatable<DimFraction?>
     }
 
     public override string ToString() => $"({Numerator} / {Denominator})";
+
+    public override Dimension Simplify()
+    {
+        var (numeratorScale, numeratorPows) = DimHelpers.GetScaleAndPows(Numerator);
+        var (denominatorScale, denominatorPows) = DimHelpers.GetScaleAndPows(Denominator);
+        if (numeratorScale % denominatorScale == 0)
+        {
+            numeratorScale /= denominatorScale;
+            denominatorScale = 1;
+        }
+
+        foreach (var (denominator, denominatorPow) in denominatorPows.ToArray())
+        {
+            ref var numeratorPow = ref CollectionsMarshal.GetValueRefOrNullRef(numeratorPows, denominator);
+            if (!Unsafe.IsNullRef(ref numeratorPow))
+            {
+                if (numeratorPow > denominatorPow)
+                {
+                    denominatorPows.Remove(denominator);
+                    numeratorPow -= denominatorPow;
+                }
+                else if (numeratorPow == denominatorPow)
+                {
+                    numeratorPows.Remove(denominator);
+                    denominatorPows.Remove(denominator);
+                }
+                else
+                {
+                    numeratorPows.Remove(denominator);
+                    denominatorPows[denominator] -= numeratorPow;
+                }
+            }
+        }
+
+        var newNumerator = DimHelpers.Simplify(numeratorScale, numeratorPows);
+        var newDenominator = DimHelpers.Simplify(denominatorScale, denominatorPows);
+        return (newNumerator, newDenominator) switch
+        {
+            (DimConst numConst, DimConst denConst) => DivMode == DimDivideMode.FloorDiv
+                ? numConst.Value / denConst.Value
+                : MathUtility.CeilDiv(numConst.Value, denConst.Value),
+            (DimConst numConst, _) when numConst.Value == 0 => Zero,
+            (_, DimConst denConst) when denConst.Value == 1 => newNumerator,
+            _ => new DimFraction(DivMode, newNumerator, newDenominator),
+        };
+    }
 
     /// <inheritdoc/>
     protected override int GetHashCodeCore() => HashCode.Combine(Numerator, Denominator);
@@ -407,6 +468,8 @@ public sealed class DimRemainder : Dimension, IEquatable<DimRemainder?>
 
     public DimRemainder With(Dimension? numerator = null, Dimension? denominator = null) =>
         new DimRemainder(numerator ?? Numerator, denominator ?? Denominator);
+
+    public override Expr ToValueExpr() => Numerator.ToValueExpr() % Denominator.ToValueExpr();
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimRemainder);
@@ -476,6 +539,8 @@ public sealed class DimProduct : Dimension, IEquatable<DimProduct?>
 
     public DimProduct With(Dimension[]? operands = null, long? scale = null) => new DimProduct(operands ?? Operands.ToArray(), scale ?? Scale);
 
+    public override Expr ToValueExpr() => Enumerable.Aggregate(Operands.ToArray(), (Expr)Scale, (acc, operand) => acc * operand.ToValueExpr());
+
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimProduct);
 
@@ -490,38 +555,16 @@ public sealed class DimProduct : Dimension, IEquatable<DimProduct?>
         return other is not null && Scale == other.Scale && Operands.SequenceEqual(other.Operands);
     }
 
-    public override string ToString() => $"({StringUtility.Join(" * ", Operands)})";
+    public override string ToString()
+    {
+        var scale = Scale == 1 ? string.Empty : $"{Scale} * ";
+        return $"({scale}{StringUtility.Join(" * ", Operands)})";
+    }
 
     public override Dimension Simplify()
     {
-        long scale = Scale;
-        var pows = new Dictionary<Dimension, int>(ReferenceEqualityComparer.Instance);
-
-        foreach (var operand in Operands)
-        {
-            if (operand is DimConst dimConst)
-            {
-                scale *= dimConst.Value;
-            }
-            else if (operand is DimPower powerOfDim)
-            {
-                ref var value = ref CollectionsMarshal.GetValueRefOrAddDefault(pows, powerOfDim.Dim, out _);
-                value += powerOfDim.Power;
-            }
-            else
-            {
-                ref var value = ref CollectionsMarshal.GetValueRefOrAddDefault(pows, operand, out _);
-                value += 1;
-            }
-        }
-
-        var newOperands = pows.Select(kvp => Dimension.Pow(kvp.Key, kvp.Value)).ToArray();
-        return (scale, newOperands.Length) switch
-        {
-            (_, 0) => new DimConst(scale),
-            (0, 1) => newOperands[0],
-            _ => new DimProduct(newOperands, scale),
-        };
+        (var scale, var pows) = DimHelpers.GetScaleAndPows(this);
+        return DimHelpers.Simplify(scale, pows);
     }
 
     /// <inheritdoc/>
@@ -588,6 +631,8 @@ public sealed class DimSum : Dimension, IEquatable<DimSum?>
 
     public DimSum With(Dimension[]? operands = null, long? bias = null) => new DimSum(operands ?? Operands.ToArray(), bias ?? Bias);
 
+    public override Expr ToValueExpr() => Enumerable.Aggregate(Operands.ToArray(), (Expr)Bias, (acc, operand) => acc + operand.ToValueExpr());
+
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimSum);
 
@@ -602,7 +647,11 @@ public sealed class DimSum : Dimension, IEquatable<DimSum?>
         return other is not null && Operands.SequenceEqual(other.Operands);
     }
 
-    public override string ToString() => $"({StringUtility.Join(" + ", Operands)})";
+    public override string ToString()
+    {
+        var bias = Bias == 1 ? string.Empty : $"{Bias} * ";
+        return $"({bias}{StringUtility.Join(" + ", Operands)})";
+    }
 
     public override Dimension Simplify()
     {
@@ -678,6 +727,8 @@ public sealed class DimAbs : Dimension, IEquatable<DimAbs?>
 
     public DimAbs With(Dimension? operand = null) => new DimAbs(operand ?? Operand);
 
+    public override Expr ToValueExpr() => F.Math.Abs(Operand.ToValueExpr());
+
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimAbs);
 
@@ -717,6 +768,7 @@ public sealed class DimClamp : OpaqueDim, IEquatable<DimClamp?>
     public DimClamp(Dimension operand, Dimension minValue, Dimension maxValue)
         : base([operand, minValue, maxValue])
     {
+        Metadata.Range = InferRange();
     }
 
     public override DimensionKind Kind => DimensionKind.Dynamic;
@@ -742,6 +794,8 @@ public sealed class DimClamp : OpaqueDim, IEquatable<DimClamp?>
     public DimClamp With(Dimension? operand = null, Dimension? minValue = null, Dimension? maxValue = null) =>
         new DimClamp(operand ?? Operand, minValue ?? MinValue, maxValue ?? MaxValue);
 
+    public override Expr ToValueExpr() => F.Math.Clamp(Operand.ToValueExpr(), MinValue.ToValueExpr(), MaxValue.ToValueExpr());
+
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimClamp);
 
@@ -760,6 +814,14 @@ public sealed class DimClamp : OpaqueDim, IEquatable<DimClamp?>
 
     /// <inheritdoc/>
     protected override int GetHashCodeCore() => HashCode.Combine(Operand, MinValue, MaxValue);
+
+    private ValueRange<double> InferRange()
+    {
+        var operandRange = Operand.Metadata.Range!.Value;
+        var min = System.Math.Max(operandRange.Min, MinValue.Metadata.Range!.Value.Min);
+        var max = System.Math.Min(operandRange.Max, MaxValue.Metadata.Range!.Value.Max);
+        return new ValueRange<double>(min, max);
+    }
 }
 
 public sealed class DimCompareAndSelect : OpaqueDim, IEquatable<DimCompareAndSelect?>
@@ -767,6 +829,7 @@ public sealed class DimCompareAndSelect : OpaqueDim, IEquatable<DimCompareAndSel
     public DimCompareAndSelect(Dimension value, Dimension expected, Dimension trueValue, Dimension falseValue)
         : base([value, expected, trueValue, falseValue])
     {
+        Metadata.Range = InferRange();
     }
 
     public override DimensionKind Kind => DimensionKind.Dynamic;
@@ -795,8 +858,9 @@ public sealed class DimCompareAndSelect : OpaqueDim, IEquatable<DimCompareAndSel
         functor.VisitDimCompareAndSelect(this, context);
 
     public DimCompareAndSelect With(Dimension? value = null, Dimension? expected = null, Dimension? trueValue = null, Dimension? falseValue = null) =>
-
         new DimCompareAndSelect(value ?? Value, expected ?? Expected, trueValue ?? TrueValue, falseValue ?? FalseValue);
+
+    public override Expr ToValueExpr() => F.Math.Select(F.Math.Equal(Value.ToValueExpr(), Expected.ToValueExpr()), TrueValue.ToValueExpr(), FalseValue.ToValueExpr());
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimCompareAndSelect);
@@ -816,6 +880,15 @@ public sealed class DimCompareAndSelect : OpaqueDim, IEquatable<DimCompareAndSel
 
     /// <inheritdoc/>
     protected override int GetHashCodeCore() => HashCode.Combine(Value, Expected, TrueValue, FalseValue);
+
+    private ValueRange<double> InferRange()
+    {
+        var trueValueRange = TrueValue.Metadata.Range!.Value;
+        var falseValueRange = FalseValue.Metadata.Range!.Value;
+        var min = System.Math.Min(trueValueRange.Min, falseValueRange.Min);
+        var max = System.Math.Max(trueValueRange.Max, falseValueRange.Max);
+        return new ValueRange<double>(min, max);
+    }
 }
 
 public sealed class DimMin : OpaqueDim, IEquatable<DimMin?>
@@ -823,6 +896,7 @@ public sealed class DimMin : OpaqueDim, IEquatable<DimMin?>
     public DimMin(params Dimension[] operands)
         : base(operands)
     {
+        Metadata.Range = InferRange();
     }
 
     public override DimensionKind Kind => DimensionKind.Dynamic;
@@ -836,6 +910,8 @@ public sealed class DimMin : OpaqueDim, IEquatable<DimMin?>
         functor.VisitDimMin(this, context);
 
     public DimMin With(Dimension[]? operands = null) => new DimMin(operands ?? Operands.ToArray());
+
+    public override Expr ToValueExpr() => Enumerable.Aggregate(Operands.AsValueEnumerable().Select(x => x.ToValueExpr()).ToArray(), F.Math.Min);
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimMin);
@@ -864,6 +940,20 @@ public sealed class DimMin : OpaqueDim, IEquatable<DimMin?>
 
         return hash.ToHashCode();
     }
+
+    private ValueRange<double> InferRange()
+    {
+        var min = double.MaxValue;
+        var max = double.MinValue;
+        foreach (var operand in Operands)
+        {
+            var range = operand.Metadata.Range!.Value;
+            min = System.Math.Min(min, range.Min);
+            max = System.Math.Min(max, range.Max);
+        }
+
+        return new ValueRange<double>(min, max);
+    }
 }
 
 public sealed class DimMax : OpaqueDim, IEquatable<DimMax?>
@@ -871,6 +961,7 @@ public sealed class DimMax : OpaqueDim, IEquatable<DimMax?>
     public DimMax(params Dimension[] operands)
         : base(operands)
     {
+        Metadata.Range = InferRange();
     }
 
     public override DimensionKind Kind => DimensionKind.Dynamic;
@@ -884,6 +975,8 @@ public sealed class DimMax : OpaqueDim, IEquatable<DimMax?>
         functor.VisitDimMax(this, context);
 
     public DimMax With(Dimension[]? operands = null) => new DimMax(operands ?? Operands.ToArray());
+
+    public override Expr ToValueExpr() => Enumerable.Aggregate(Operands.AsValueEnumerable().Select(x => x.ToValueExpr()).ToArray(), F.Math.Max);
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimMax);
@@ -912,6 +1005,20 @@ public sealed class DimMax : OpaqueDim, IEquatable<DimMax?>
 
         return hash.ToHashCode();
     }
+
+    private ValueRange<double> InferRange()
+    {
+        var min = double.MaxValue;
+        var max = double.MinValue;
+        foreach (var operand in Operands)
+        {
+            var range = operand.Metadata.Range!.Value;
+            min = System.Math.Max(min, range.Min);
+            max = System.Math.Max(max, range.Max);
+        }
+
+        return new ValueRange<double>(min, max);
+    }
 }
 
 public sealed class DimPositive : OpaqueDim, IEquatable<DimPositive?>
@@ -938,6 +1045,13 @@ public sealed class DimPositive : OpaqueDim, IEquatable<DimPositive?>
         functor.VisitDimPositive(this, context);
 
     public DimPositive With(Dimension? operand = null, Dimension? extent = null) => new DimPositive(operand ?? Operand, extent ?? Extent);
+
+    public override Expr ToValueExpr()
+    {
+        var operand = Operand.ToValueExpr();
+        var extent = Extent.ToValueExpr();
+        return F.Math.Select(operand < 0, operand + extent, operand);
+    }
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimPositive);

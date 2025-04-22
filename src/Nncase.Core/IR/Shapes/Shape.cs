@@ -231,6 +231,101 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
 
     public static implicit operator Shape(Dimension[] dimensions) => new Shape(dimensions);
 
+    public static Shape operator +(Shape lhs, Shape rhs)
+    {
+        if (lhs.Rank != rhs.Rank)
+        {
+            throw new ArgumentException($"Shape {lhs} and {rhs} rank not match");
+        }
+
+        return new Shape(lhs.Dimensions.AsValueEnumerable().Select((l, i) => l + rhs[i]).ToArray());
+    }
+
+    public static Shape operator -(Shape lhs, Shape rhs)
+    {
+        if (lhs.Rank != rhs.Rank)
+        {
+            throw new ArgumentException($"Shape {lhs} and {rhs} rank not match");
+        }
+
+        return new Shape(lhs.Dimensions.AsValueEnumerable().Select((l, i) => l - rhs[i]).ToArray());
+    }
+
+    public static Shape operator *(Shape lhs, Shape rhs)
+    {
+        if (lhs.Rank != rhs.Rank)
+        {
+            throw new ArgumentException($"Shape {lhs} and {rhs} rank not match");
+        }
+
+        return new Shape(lhs.Dimensions.AsValueEnumerable().Select((l, i) => l * rhs[i]).ToArray());
+    }
+
+    public static Shape operator /(Shape lhs, Shape rhs)
+    {
+        if (lhs.Rank != rhs.Rank)
+        {
+            throw new ArgumentException($"Shape {lhs} and {rhs} rank not match");
+        }
+
+        return new Shape(lhs.Dimensions.AsValueEnumerable().Select((l, i) => l / rhs[i]).ToArray());
+    }
+
+    public static Shape operator %(Shape lhs, Shape rhs)
+    {
+        if (lhs.Rank != rhs.Rank)
+        {
+            throw new ArgumentException($"Shape {lhs} and {rhs} rank not match");
+        }
+
+        return new Shape(lhs.Dimensions.AsValueEnumerable().Select((l, i) => l % rhs[i]).ToArray());
+    }
+
+    public static Shape operator +(Shape lhs, Dimension rhs)
+    {
+        return new Shape(lhs.Dimensions.AsValueEnumerable().Select(x => x + rhs).ToArray());
+    }
+
+    public static Shape operator -(Shape lhs, Dimension rhs)
+    {
+        return new Shape(lhs.Dimensions.AsValueEnumerable().Select(x => x - rhs).ToArray());
+    }
+
+    public static Shape operator *(Shape lhs, Dimension rhs)
+    {
+        return new Shape(lhs.Dimensions.AsValueEnumerable().Select(x => x * rhs).ToArray());
+    }
+
+    public static Shape operator /(Shape lhs, Dimension rhs)
+    {
+        return new Shape(lhs.Dimensions.AsValueEnumerable().Select(x => x / rhs).ToArray());
+    }
+
+    public static Shape operator %(Shape lhs, Dimension rhs)
+    {
+        return new Shape(lhs.Dimensions.AsValueEnumerable().Select(x => x % rhs).ToArray());
+    }
+
+    public static Shape operator +(Shape lhs, int rhs) => lhs + (Dimension)rhs;
+
+    public static Shape operator -(Shape lhs, int rhs) => lhs - (Dimension)rhs;
+
+    public static Shape operator *(Shape lhs, int rhs) => lhs * (Dimension)rhs;
+
+    public static Shape operator /(Shape lhs, int rhs) => lhs / (Dimension)rhs;
+
+    public static Shape operator %(Shape lhs, int rhs) => lhs % (Dimension)rhs;
+
+    public static Shape operator +(Shape lhs, long rhs) => lhs + (Dimension)rhs;
+
+    public static Shape operator -(Shape lhs, long rhs) => lhs - (Dimension)rhs;
+
+    public static Shape operator *(Shape lhs, long rhs) => lhs * (Dimension)rhs;
+
+    public static Shape operator /(Shape lhs, long rhs) => lhs / (Dimension)rhs;
+
+    public static Shape operator %(Shape lhs, long rhs) => lhs % (Dimension)rhs;
+
     public static bool operator ==(Shape? lhs, Shape? rhs)
     {
         return EqualityComparer<Shape>.Default.Equals(lhs, rhs);
@@ -247,6 +342,13 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
     public static Shape Unknown(int rank)
     {
         return new Shape(Enumerable.Range(0, rank).Select(x => Dimension.Unknown));
+    }
+
+    public static Shape Repeat(Dimension value, int length) => new Shape(Enumerable.Repeat(value, length).ToArray());
+
+    public static Shape Range(Dimension start, int rank)
+    {
+        return new Shape(Enumerable.Range(0, rank).Select(x => start + x).ToArray());
     }
 
     public IEnumerator<Dimension> GetEnumerator()
@@ -317,6 +419,17 @@ public sealed class Shape : Expr, IEquatable<Shape?>, IReadOnlyList<Dimension>
     public long[] ToValueArray()
     {
         return this.Select(x => x.FixedValue).ToArray();
+    }
+
+    public Expr ToValueArrayExpr()
+    {
+        if (IsFixed)
+        {
+            return ToValueArray();
+        }
+
+        var tuple = new IR.Tuple(Dimensions.AsValueEnumerable().Select(x => x.ToValueExpr()).ToArray());
+        return IR.F.Tensors.Stack(tuple, 0);
     }
 
     /// <inheritdoc/>

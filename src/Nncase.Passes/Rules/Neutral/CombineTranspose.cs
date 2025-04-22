@@ -9,6 +9,7 @@ using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.PatternMatch;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
@@ -283,21 +284,21 @@ public sealed partial class CombineTransposePad : IRewriteRule
         "padCall",
         x => true,
         IsTranspose(IsWildcard("input"), IsTensorConst("perm")),
-        IsTensorConst("pads"),
+        IsPaddings("pads"),
         IsWildcard("padValue"));
 
-    private Expr GetReplace(Pad pad, Call padCall, Expr input, int[] perm, Expr pads, Expr padValue)
+    private Expr GetReplace(Pad pad, Call padCall, Expr input, int[] perm, Paddings pads, Expr padValue)
     {
         var inv_perm = perm.Select((p, i) => (p, i)).OrderBy(tp => tp.p).ToArray();
-        var newPads = new List<Expr>();
+        var newPads = new List<Padding>();
         for (var i = 0; i < inv_perm.Length; i++)
         {
-            newPads.Add(Stack(new IR.Tuple(pads[inv_perm[i].i, 0], pads[inv_perm[i].i, 1]), 0));
+            newPads.Add(pads[inv_perm[i].i]);
 
             // newPads[i] = pads[perm[i]];
         }
 
-        var p = Pad(input, Stack(new IR.Tuple(newPads.ToArray()), 0).Evaluate().AsTensor(), pad.PadMode, padValue).InheritMetaData(padCall);
+        var p = Pad(input, newPads.ToArray(), pad.PadMode, padValue).InheritMetaData(padCall);
         return Transpose(p, perm);
     }
 }
@@ -318,20 +319,19 @@ public sealed partial class CombinePadTranspose : IRewriteRule
             "padCall",
             y => true,
             IsWildcard("input"),
-            IsTensorConst("pads"),
+            IsPaddings("pads"),
             IsTensorConst("padValue")),
         IsTensorConst("perm"));
 
-    private Expr GetReplace(Pad pad, Call padCall, Expr input, int[] perm, Expr pads, Expr padValue)
+    private Expr GetReplace(Pad pad, Call padCall, Expr input, int[] perm, Paddings pads, Expr padValue)
     {
-        var newPads = new List<int>();
+        var newPads = new List<Padding>();
         for (int i = 0; i < perm.Length; i++)
         {
-            newPads.Add(((TensorConst)pads).Value.ToArray<int>()[perm[i] * 2]);
-            newPads.Add(((TensorConst)pads).Value.ToArray<int>()[(perm[i] * 2) + 1]);
+            newPads.Add(pads[perm[i]]);
         }
 
-        return Pad(Transpose(input, perm), Tensor.From<int>(newPads.ToArray(), pads.CheckedShape), pad.PadMode, padValue).InheritMetaData(padCall);
+        return Pad(Transpose(input, perm), newPads.ToArray(), pad.PadMode, padValue).InheritMetaData(padCall);
     }
 }
 

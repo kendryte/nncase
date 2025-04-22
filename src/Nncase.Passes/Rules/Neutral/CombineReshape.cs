@@ -10,6 +10,7 @@ using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using Nncase.Utilities;
@@ -184,11 +185,11 @@ public sealed partial class CombineReshapePad : IRewriteRule
             "reshape",
             "reshapeCall",
             _ => true,
-            IsPad("pad", "padCall", _ => true, IsWildcard("input"), IsTensorConst("pads"), IsTensorConst("value")) with { TypePattern = HasFixedShape() },
+            IsPad("pad", "padCall", _ => true, IsWildcard("input"), IsPaddings("pads"), IsTensorConst("value")) with { TypePattern = HasFixedShape() },
             IsWildcard("shape")) with
         { TypePattern = HasFixedShape() };
 
-    private Expr? GetReplace(Reshape reshape, Call reshapeCall, Pad pad, Call padCall, Expr input, Expr shape, int[] pads, Expr value)
+    private Expr? GetReplace(Reshape reshape, Call reshapeCall, Pad pad, Call padCall, Expr input, Expr shape, Paddings pads, Expr value)
     {
         // only support pattern like melgan
         var reshapeRank = reshapeCall.CheckedShape.Rank;
@@ -198,7 +199,7 @@ public sealed partial class CombineReshapePad : IRewriteRule
         {
             return Pad(
             Reshape(input, Enumerable.Repeat(1L, reshapeRank - padRank).Concat(input.CheckedShape.ToValueArray()).ToArray()).InheritMetaData(reshapeCall),
-            Tensor.From(Enumerable.Repeat(0, (reshapeRank - padRank) * 2).Concat(pads).ToArray(), [reshapeRank, 2]),
+            Enumerable.Repeat(Padding.Zero, (reshapeRank - padRank) * 2).Concat(pads).ToArray(),
             pad.PadMode,
             value).InheritMetaData(padCall);
         }

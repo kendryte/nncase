@@ -5,6 +5,7 @@ using System.Linq;
 using NetFabric.Hyperlinq;
 using Nncase.Evaluator;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using F = Nncase.IR.F;
 
 namespace Nncase.Importer.TFLite
@@ -25,7 +26,7 @@ namespace Nncase.Importer.TFLite
             var padW = TypeInference.GetWindowedPadding(inW, filterW, strideW, 1, option.Padding == tflite.Padding.SAME);
             var filter = Tensor.From<int>(new[] { filterH, filterW }, [2]);
             var stride = Tensor.From<int>(new[] { strideH, strideW }, [2]);
-            var padding = Dimension.ConcatPadding(padH, padW);
+            var padding = new Paddings(padH, padW);
             return F.Tensors.NCHWToNHWC(
                 F.NN.ReduceWindow2D(
                     reduceOp, input, initValue, filter, stride, padding, Tensor.From<long>(new long[] { 1, 1 }), false, false));

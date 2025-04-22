@@ -43,10 +43,6 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     public IRType Visit(ITypeInferenceContext context, Slice target)
     {
         var input = context.CheckArgumentType<IRType>(target, Slice.Input);
-        context.CheckArgumentTensorTypeOrBroadcast(target, Slice.Begins);
-        context.CheckArgumentTensorTypeOrBroadcast(target, Slice.Ends);
-        context.CheckArgumentTensorTypeOrBroadcast(target, Slice.Axes);
-        context.CheckArgumentTensorTypeOrBroadcast(target, Slice.Strides);
         return input switch
         {
             TensorType t => Visit(context, target, t),
@@ -118,21 +114,21 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
             return new InvalidType("Slice Input should not scalar");
         }
 
-        var axes = ((Shape)context.GetDimensionArgument(target, Slice.Axes)).ToValueArray();
-        var strides = ((Shape)context.GetDimensionArgument(target, Slice.Strides)).ToValueArray();
-        var begins = (Shape)context.GetDimensionArgument(target, Slice.Begins);
-        var ends = (Shape)context.GetDimensionArgument(target, Slice.Ends);
-        if (begins.CheckedShape.IsFixed)
+        var axes = ((Shape)context.GetArgument(target, Slice.Axes)).ToValueArray();
+        var strides = ((Shape)context.GetArgument(target, Slice.Strides)).ToValueArray();
+        var begins = (Shape)context.GetArgument(target, Slice.Begins);
+        var ends = (Shape)context.GetArgument(target, Slice.Ends);
+        if (begins.IsRanked)
         {
-            if (ends.CheckedShape.IsFixed)
+            if (ends.IsRanked)
             {
-                if (begins.CheckedShape[0].FixedValue != ends.CheckedShape[0].FixedValue)
+                if (begins.Rank != ends.Rank)
                 {
                     return new InvalidType("Slice begins, ends, strides should be same length");
                 }
             }
 
-            if (begins.CheckedShape[0].FixedValue != strides.Length)
+            if (begins.Rank != strides.Length)
             {
                 return new InvalidType("Slice begins, ends, strides should be same length");
             }
@@ -174,7 +170,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
             return new InvalidType("not support input tensor type infer");
         }
 
-        var axes = ((TensorConst)context.GetArgument(target, Slice.Axes)).Value.ToArray<int>();
+        var axes = ((Shape)context.GetArgument(target, Slice.Axes)).ToValueArray();
         if (Enumerable.Range(0, input.AxisPolices.Count).Any(i => input.AxisPolices[i] is SBPSplit && axes.Contains(i)))
         {
             return new InvalidType("not support input tensor type infer");

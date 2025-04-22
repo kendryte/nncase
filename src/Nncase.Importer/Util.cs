@@ -42,14 +42,6 @@ namespace Nncase
             return (ShapeIndex(input, 2), ShapeIndex(input, 3));
         }
 
-        /// <summary>
-        /// onnx format pads to nncase format(same as tf).
-        /// </summary>
-        public static Expr PadTranslate(Expr pads)
-        {
-            return Transpose(Reshape(pads, new[] { -1, 2 }), new[] { 1, 0 });
-        }
-
         public static TensorConst ZeroTensor()
         {
             return new TensorConst(Tensor.From<int>(new[] { 0 }));

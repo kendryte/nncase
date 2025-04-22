@@ -187,7 +187,6 @@ public sealed class UnitTestShape
         Assert.Equal(1, s.Size);
         Assert.Empty(s.ToValueArray());
         Assert.Empty(s.ToValueList());
-        Assert.Equal((Expr)Tensor.Zeros<long>([0]), s);
     }
 
     [Fact]
@@ -206,7 +205,6 @@ public sealed class UnitTestShape
         Assert.Equal(1, s.Size);
         Assert.Empty(s.ToValueArray());
         Assert.Empty(s.ToValueList());
-        Assert.Equal((Expr)Tensor.Zeros<long>([0]), s);
     }
 
     [Fact]
@@ -322,10 +320,10 @@ public sealed class UnitTestShape
     public void TestToString()
     {
         var s = Shape.Invalid;
-        Assert.Equal("Invalid", s.ToString());
+        Assert.Equal("[invalid]", s.ToString());
 
         s = Shape.Unranked;
-        Assert.Equal("Unranked", s.ToString());
+        Assert.Equal("[*]", s.ToString());
 
         var a = new int[] { 1, 3, 2, 2 };
         s = a;

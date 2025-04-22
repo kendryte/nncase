@@ -12,26 +12,11 @@ namespace Nncase.PatternMatch;
 /// <summary>
 /// Pattern for <see cref="Shape"/>.
 /// </summary>
-/// <param name="Condition">Expression condition.</param>
+/// <param name="Condition">Shape condition.</param>
+/// <param name="Dimensions">Dimensions condition.</param>
 /// <param name="Name">name.</param>
-public sealed record ShapePattern(Func<Shape, bool> Condition, string? Name) : Pattern<Shape>(Name)
+public sealed record ShapePattern(Func<Shape, bool> Condition, VArgsPattern Dimensions, string? Name) : Pattern<Shape>(Name)
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ShapePattern"/> class.
-    /// </summary>
-    /// <param name="shape"><see cref="Shape"/> expression.</param>
-    /// <param name="name">name.</param>
-    public ShapePattern(Shape shape, string? name)
-        : this(x => x.Equals(shape), name)
-    {
-        Value = shape;
-    }
-
-    /// <summary>
-    /// Gets value.
-    /// </summary>
-    public Shape? Value { get; }
-
     /// <inheritdoc/>
     protected override bool MatchLeafCore(Shape expr) => Condition(expr);
 }
@@ -43,7 +28,7 @@ public static partial class Utility
     /// </summary>
     /// <param name="name">name.</param>
     /// <returns>ShapePattern.</returns>
-    public static ShapePattern IsShape(string? name = null) => new ShapePattern(x => x is not null, name);
+    public static ShapePattern IsShape(string? name = null) => IsShape(name, x => true);
 
     /// <summary>
     /// create the ShapePattern.
@@ -51,7 +36,7 @@ public static partial class Utility
     /// <param name="name">name.</param>
     /// <param name="cond">condition.</param>
     /// <returns>ShapePattern.</returns>
-    public static ShapePattern IsShape(string? name, Func<Shape, bool> cond) => new ShapePattern(cond, name);
+    public static ShapePattern IsShape(string? name, Func<Shape, bool> cond) => new ShapePattern(cond, IsVArgsRepeat(() => IsWildcard()), name);
 
     /// <summary>
     /// create the ShapePattern.
@@ -59,7 +44,7 @@ public static partial class Utility
     /// <param name="name">name.</param>
     /// <param name="shape">shape.</param>
     /// <returns>ShapePattern.</returns>
-    public static ShapePattern IsShape(string? name, Shape shape) => new ShapePattern(x => shape.IsAssignableFrom(shape), name);
+    public static ShapePattern IsShape(string? name, Shape shape) => new ShapePattern(x => shape.IsAssignableFrom(shape), IsVArgsRepeat(() => IsWildcard()), name);
 
     /// <summary>
     /// create the ShapePattern.

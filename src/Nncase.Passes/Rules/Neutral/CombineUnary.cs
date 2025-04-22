@@ -9,6 +9,7 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using static Nncase.IR.F.Math;
@@ -35,10 +36,10 @@ public sealed partial class CombinePadUnary : IRewriteRule
             "pad",
             x => true,
             IsWildcard("input"),
-            IsWildcard("pads"),
+            IsPaddings("pads"),
             IsWildcard("padValue")));
 
-    private Expr? GetReplace(Unary unary, Pad pad, Expr input, Expr pads, Expr padValue)
+    private Expr? GetReplace(Unary unary, Pad pad, Expr input, Paddings pads, Expr padValue)
     {
         if (pad.PadMode == PadMode.Constant)
         {
@@ -80,9 +81,9 @@ public sealed partial class CombineSliceUnary : IRewriteRule
     public IPattern Pattern { get; } = IsUnary(
         "unary",
         x => true,
-        IsSlice(IsWildcard("input"), IsWildcard("begins"), IsWildcard("ends"), IsWildcard("axes"), IsWildcard("strides")));
+        IsSlice(IsWildcard("input"), IsShape("begins"), IsShape("ends"), IsShape("axes"), IsShape("strides")));
 
-    private Expr? GetReplace(Unary unary, Expr input, Expr begins, Expr ends, Expr axes, Expr strides)
+    private Expr? GetReplace(Unary unary, Expr input, Shape begins, Shape ends, Shape axes, Shape strides)
     {
         return Slice(Unary(unary.UnaryOp, input), begins, ends, axes, strides);
     }

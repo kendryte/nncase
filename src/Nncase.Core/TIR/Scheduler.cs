@@ -75,7 +75,7 @@ public class Scheduler
     public For[] Split(For loop, params Expr[] factors)
     {
         // step 1. check the arguments
-        if (loop.Domain.Start != (Const)0L)
+        if (loop.Domain.Start != 0L)
         {
             throw new NotImplementedException("Loop Not Start With Zero");
         }

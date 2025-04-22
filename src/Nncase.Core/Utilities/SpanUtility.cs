@@ -54,4 +54,9 @@ public static class SpanUtility
         second.CopyTo(result.AsSpan(first.Length));
         return result;
     }
+
+    public static ReadOnlySpan<T> AsReadOnlySpan<T>(this T[] array)
+    {
+        return MemoryMarshal.CreateReadOnlySpan(ref MemoryMarshal.GetArrayDataReference(array), array.Length);
+    }
 }

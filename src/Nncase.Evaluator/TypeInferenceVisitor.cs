@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Affine;
+using Nncase.IR.Shapes;
 using Nncase.TIR;
 
 namespace Nncase.Evaluator;
@@ -238,11 +239,6 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
         return type;
     }
 
-    protected override IRType VisitLeafShape(Shape expr)
-    {
-        return NoneType.Default;
-    }
-
     protected override IRType VisitLeafGrid(Grid expr)
     {
         VerifySubField(expr, expr.DomainParameter);
@@ -322,6 +318,26 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     {
         var type = expr.TypeAnnotation;
         return type;
+    }
+
+    protected override IRType VisitLeafDimension(Dimension expr)
+    {
+        return TensorType.Scalar(DataTypes.Int64);
+    }
+
+    protected override IRType VisitLeafShape(Shape expr)
+    {
+        return new ShapeType(expr.Kind);
+    }
+
+    protected override IRType VisitLeafPadding(Padding expr)
+    {
+        return new PaddingType();
+    }
+
+    protected override IRType VisitLeafPaddings(Paddings expr)
+    {
+        return new PaddingsType(expr.Count);
     }
 
     protected override IRType VisitLeafMemSpan(MemSpan expr)

@@ -14,18 +14,13 @@ namespace Nncase.Importer.TFLite
 {
     public partial class TFLiteImporter
     {
-        private Expr MakeResizeSizes(Expr input, Expr newSize)
+        private Shape MakeResizeSizes(Expr input, Shape newSize)
         {
-            var newNC = Stack(
-                new IR.Tuple(
-                    Util.ShapeIndex(input, 0),
-                    Util.ShapeIndex(input, 1)),
-                0);
-            return Cast(
-                Concat(
-                    new IR.Tuple(newNC, Cast(newSize, DataTypes.Int64)),
-                    0),
-                new Int64Type());
+            var newNC = new[] {
+                Util.ShapeIndex(input, 0),
+                Util.ShapeIndex(input, 1),
+            };
+            return new Shape(newNC.Concat(newSize));
         }
 
         private Expr VisitResizeImage(in tflite.Operator op, ImageResizeMode resizeMode)
@@ -41,7 +36,7 @@ namespace Nncase.Importer.TFLite
                     resizeMode,
                     input,
                     Array.Empty<float>(),
-                    MakeResizeSizes(input, newSize),
+                    MakeResizeSizes(input, newSize.AsShape()),
                     tranMode,
                     nearestMode,
                     true));

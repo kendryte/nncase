@@ -373,10 +373,10 @@ public class UnitTestEvaluatorTensors : TestClassBase
     public void TestSlice()
     {
         var input = Tensor.From<int>(Enumerable.Range(0, 120).ToArray(), new Shape(new[] { 2, 3, 4, 5 }));
-        var begin = Tensor.From<int>(new[] { 0, 0, 0, 0 }, new Shape(new[] { 4 }));
-        var end = Tensor.From<int>(new[] { 1, 1, 1, 5 }, new Shape(new[] { 4 }));
-        var axes = Tensor.From<int>(new[] { 0, 1, 2, 3 }, new Shape(new[] { 4 }));
-        var strides = Tensor.From<int>(new[] { 1, 1, 1, 1 }, new Shape(new[] { 4 }));
+        var begin = new Shape(new[] { 0, 0, 0, 0 });
+        var end = new Shape(new[] { 1, 1, 1, 5 });
+        var axes = new Shape(new[] { 0, 1, 2, 3 });
+        var strides = new Shape(new[] { 1, 1, 1, 1 });
         var result = Const.FromTensor(Tensor.From<int>(Enumerable.Range(0, 5).ToArray(), new Shape(new[] { 1, 1, 1, 5 })));
         var tResult = result.Value.ToOrtTensor();
         var expr = Tensors.Slice(input, begin, end, axes, strides);

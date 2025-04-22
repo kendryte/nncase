@@ -16,7 +16,9 @@ namespace Nncase.Importer.TFLite
         private Expr VisitSlice(in tflite.Operator op)
         {
             var input = GetInputExprs(op, 0);
-            var (begin, size) = GetInputExprs(op, 1, 2);
+            var (beginExpr, sizeExpr) = GetInputExprs(op, 1, 2);
+            var begin = beginExpr.AsShape();
+            var size = sizeExpr.AsShape();
             var end = begin + size;
             var count = GetInputTensor(op, 1).Shape(0);
             return F.Tensors.Slice(input, begin, end, count);
@@ -25,10 +27,13 @@ namespace Nncase.Importer.TFLite
         private Expr VisitStrideSlice(in tflite.Operator op)
         {
             var (input, beginExpr) = GetInputExprs(op, 0, 1);
-            var (endExpr, strides) = GetInputExprs(op, 2, 3);
+            var (endExpr, stridesExpr) = GetInputExprs(op, 2, 3);
             var options = op.BuiltinOptionsAsStridedSliceOptions();
             var tensor = GetInputTensor(op, 0);
-            var axes = Tensor.From<int>(Enumerable.Range(0, tensor.ShapeLength).ToArray());
+            var begins = beginExpr.AsShape();
+            var ends = endExpr.AsShape();
+            var strides = stridesExpr.AsShape();
+            var axes = Shape.Range(0, tensor.ShapeLength);
             if ((options.NewAxisMask + options.EllipsisMask) != 0)
             {
                 throw new NotImplementedException("NewAxisMask and Ellipisis mask not impl in StrideSlice Importer");
@@ -39,15 +44,15 @@ namespace Nncase.Importer.TFLite
             var shrinkMask = options.ShrinkAxisMask;
             if ((beginMask + endMask + shrinkMask) == 0)
             {
-                return F.Tensors.Slice(input, beginExpr, endExpr, axes, strides);
+                return F.Tensors.Slice(input, begins, ends, axes, strides);
             }
 
-            if (beginExpr is TensorConst beginConst && endExpr is TensorConst endConst)
+            if (begins.IsFixed && ends.IsFixed)
             {
-                var begin = beginConst.Value.ToArray<int>();
-                var end = endConst.Value.ToArray<int>();
-                var newBegin = new List<int>();
-                var newEnd = new List<int>();
+                var begin = begins.ToValueArray();
+                var end = ends.ToValueArray();
+                var newBegin = new List<long>();
+                var newEnd = new List<long>();
                 var ellipsisGap = 0;
                 var needSqueeze = new List<int>();
                 for (int i = 0; i < begin.Length; i++)

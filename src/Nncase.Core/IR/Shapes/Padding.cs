@@ -26,6 +26,8 @@ public sealed partial class Padding : Expr, IEquatable<Padding?>
 
     public Dimension After => (Dimension)Operands[1];
 
+    public static Padding operator +(Padding lhs, Padding rhs) => new Padding(lhs.Before + rhs.Before, lhs.After + rhs.After);
+
     public Dimension Sum() => Before + After;
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
@@ -76,9 +78,34 @@ public sealed class Paddings : Expr, IEquatable<Paddings?>, IReadOnlyList<Paddin
 
     public ReadOnlySpan<Padding> Values => SpanUtility.UnsafeCast<Expr, Padding>(Operands);
 
-    public int Count => Operands.Length;
+    public int Rank => Values.Length;
+
+    public int Count => Values.Length;
 
     public new Padding this[int index] => Values[index];
+
+    public static implicit operator Paddings(Padding[] paddings) => new Paddings(paddings);
+
+    public static implicit operator Paddings(Tensor<long> tensor)
+    {
+        if (tensor.Shape.Rank != 2)
+        {
+            throw new ArgumentException("Tensor must have 2 dimensions.");
+        }
+
+        return new Paddings(
+            Enumerable.Range(0, (int)tensor.Dimensions[0])
+                .Select(i => new Padding(tensor[i, 0], tensor[i, 1]))
+                .ToArray());
+    }
+
+    public static implicit operator Paddings(Tensor<int> tensor) => tensor.Cast<long>(CastMode.KDefault);
+
+    public static implicit operator Paddings(int[,] array) => Tensor.From(array);
+
+    public static implicit operator Paddings(long[,] array) => Tensor.From(array);
+
+    public static Paddings Zeros(int rank) => Enumerable.Repeat(Padding.Zero, rank).ToArray();
 
     public IEnumerator<Padding> GetEnumerator()
     {

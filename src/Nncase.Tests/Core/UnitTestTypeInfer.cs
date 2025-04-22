@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Nncase;
 using Nncase.Evaluator;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
@@ -88,17 +89,17 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         var pads = Tensor.From(new[] { 0, 0, 1, 1, 2, 2, 3, 3 }, new Shape(4, 2));
         var pad = Pad(a, pads, PadMode.Constant, 1f);
         Assert.True(CompilerServices.InferenceType(pad));
-        Assert.Equal(pad.CheckedShape, new Shape(1, 5, 228, 230));
+        Assert.Equal(new Shape(1, 5, 228, 230), pad.CheckedShape);
     }
 
     [Fact]
     public void TestSlice()
     {
         var input = Tensor.From<int>(new[] { 1, 7, 7, 75 });
-        var begin = Tensor.From<int>(new[] { 0 });
-        var end = Tensor.From<int>(new[] { 1 });
-        var stride = Tensor.From<int>(new[] { 1 });
-        var axis = Tensor.From<int>(new[] { 0 });
+        var begin = new Shape(new[] { 0 });
+        var end = new Shape(new[] { 1 });
+        var stride = new Shape(new[] { 1 });
+        var axis = new Shape(new[] { 0 });
         var s = Slice(input, begin, end, axis, stride);
         Assert.True(CompilerServices.InferenceType(s));
         var post = s.Evaluate();
@@ -108,8 +109,8 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     [Fact]
     public void TestSlice2()
     {
-        var input_a = new Var("input_a", new TensorType(DataTypes.Float32, Shape.Unknown(3)));
-        var repeats = IR.F.Tensors.Slice(IR.F.Tensors.ShapeOf(input_a), new[] { -2 }, new[] { -1 }, 1);
+        var input_a = new Var("input_a", new TensorType(DataTypes.Float32, new Dimension[] { "x", "y", "z" }));
+        var repeats = IR.F.Tensors.Slice(ShapeOf(input_a).ToValueArrayExpr(), new[] { -2 }, new[] { -1 }, 1);
         Assert.True(CompilerServices.InferenceType(repeats));
         Assert.True(repeats.CheckedShape.Rank == 1);
     }
@@ -121,7 +122,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         var end = new[] { 3 };
         var stride = new[] { 1 };
         var axes = new[] { 0 };
-        var slice = Slice(new Shape(1, 7, 7, 768), begin, end, axes, stride);
+        var slice = Slice(new Shape(1, 7, 7, 768).ToValueArrayExpr(), begin, end, axes, stride);
         CompilerServices.InferenceType(slice);
         var post = slice.Evaluate();
         Assert.Equal(new Shape(2), ((TensorType)post.Type).Shape);
@@ -193,7 +194,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
             ImageResizeMode.NearestNeighbor,
             IR.F.Random.Uniform(DataTypes.Float32, 0, 2, 1, new[] { 1, 3, 34, 67 }),
             float.NaN,
-            Const.FromShape(new[] { 1, 3, 32, 48 }));
+            new[] { 1, 3, 32, 48 });
         Assert.True(CompilerServices.InferenceType(resize));
         Assert.True(HasShape(new[] { 1, 3, 32, 48 }).MatchLeaf(resize.CheckedType!));
 
@@ -201,7 +202,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
             ImageResizeMode.NearestNeighbor,
             IR.F.Random.Uniform(DataTypes.Float32, 0, 2, 1, new[] { 3, 34, 67 }),
             float.NaN,
-            Const.FromShape(new[] { 32, 48, 67 }));
+            new[] { 32, 48, 67 });
         Assert.True(CompilerServices.InferenceType(resize2));
         Assert.True(HasShape(new[] { 32, 48, 67 }).MatchLeaf(resize2.CheckedType!));
 
@@ -209,7 +210,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
             ImageResizeMode.NearestNeighbor,
             IR.F.Random.Uniform(DataTypes.Float32, 0, 2, 1, new[] { 34, 67 }),
             float.NaN,
-            Const.FromShape(new[] { 32, 48 }));
+            new[] { 32, 48 });
         Assert.True(CompilerServices.InferenceType(resize3));
         Assert.True(HasShape(new[] { 32, 48 }).MatchLeaf(resize3.CheckedType!));
     }
@@ -227,9 +228,9 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     public void TestSlice1()
     {
         var input = new Var("a", new TensorType(DataTypes.Float32, new Shape(1, 10, 256)));
-        var ones = Tensor.From<long>(new[] { 1L });
+        var ones = new Shape(new[] { 1L });
         var begins = ones;
-        var ends = Tensor.From<long>(new[] { 9223372036854775807 });
+        var ends = new Shape(new[] { 9223372036854775807 });
         var axes = ones;
         var s = Slice(input, begins, ends, axes, ones);
         CheckInferType(s, DataTypes.Float32, new Shape(1, 9, 256));
@@ -249,7 +250,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     {
         var v30 = new Var("serving_default_input_1:0", new TensorType(DataTypes.Float32, new[] { 1, 256, 56, 56 }));
         var v30_1 = new Marker("RangeOf", Testing.Rand<float>(256, 64, 1, 1), new float[] { -0.3903954f, 0.46443018f }); // f32[256,64,1,1]
-        var v30_2 = new Call(new IR.NN.Conv2D(PadMode.Constant), new Expr[] { v30, v30_1, Testing.Rand<float>(256), new int[] { 1, 1 }, new int[,] { { 0, 0 }, { 0, 0 } }, new int[] { 1, 1 }, 1, new float[] { -float.PositiveInfinity, float.PositiveInfinity } }); // f32[1,256,56,56]
+        var v30_2 = new Call(new IR.NN.Conv2D(PadMode.Constant), new Expr[] { v30, v30_1, Testing.Rand<float>(256), new Shape(1, 1), Paddings.Zeros(2), new Shape(1, 1), DimConst.One, new float[] { -float.PositiveInfinity, float.PositiveInfinity } }); // f32[1,256,56,56]
         CompilerServices.InferenceType(v30_2);
         Assert.IsType<InvalidType>(v30_2.CheckedType);
     }

@@ -11,6 +11,7 @@ using Microsoft.Extensions.Hosting;
 using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using Nncase.Passes;
 using Nncase.Passes.Transforms;
 using Nncase.PatternMatch;
@@ -155,13 +156,7 @@ public sealed class UnitTestDumpper : TestClassBase
             var dilationW = 1;
             var padH = TypeInference.GetWindowedPadding(inH, fH, strideH, dilationH, true);
             var padW = TypeInference.GetWindowedPadding(inW, fW, strideW, dilationW, true);
-            var padding = Stack(
-              new IR.Tuple(
-                Stack(new IR.Tuple(new Expr[] { 0L, 0L }), 0),
-                Stack(new IR.Tuple(new Expr[] { 0L, 0L }), 0),
-                Stack(new IR.Tuple(padH.Select(x => x).ToArray()), 0),
-                Stack(new IR.Tuple(padW.Select(x => x).ToArray()), 0)),
-              0);
+            var padding = new[] { Padding.Zero, Padding.Zero, padH, padW };
             var body = IR.F.NN.Pad(input, padding, PadMode.Constant, 0.0f);
             main = new Function("main", body, input);
         }

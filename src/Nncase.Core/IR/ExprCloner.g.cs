@@ -243,29 +243,6 @@ public partial class ExprCloner<TContext>
     }
 
     /// <inheritdoc />
-    protected override Expr VisitLeafShape(IR.Shape expr, TContext context)
-    {
-        bool IsOperandsMutated()
-        {
-            if (IsMutatedArray(expr.Dimensions, context))
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        if (CloneUnmutated || IsOperandsMutated())
-        {
-            return expr.With(
-                dimensions: CloneArray(expr.Dimensions, context)
-            );
-        }
-
-        return expr;
-    }
-
-    /// <inheritdoc />
     protected override Expr VisitLeafTensorConst(TensorConst expr, TContext context)
     {
         bool IsOperandsMutated()
@@ -1555,6 +1532,29 @@ public partial class ExprCloner<TContext>
         {
             return expr.With(
                 values: CloneArray(expr.Values, context)
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override Expr VisitLeafShape(Shape expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            if (IsMutatedArray(expr.Dimensions, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                dimensions: CloneArray(expr.Dimensions, context)
             );
         }
 
