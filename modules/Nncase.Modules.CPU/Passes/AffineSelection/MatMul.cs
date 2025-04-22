@@ -8,9 +8,9 @@ using Nncase.TIR.CPU;
 
 namespace Nncase.Passes;
 
-public sealed partial class CPUAffineSelectionPass
+public partial class CPUAffineSelectionPass
 {
-    private Expr SelectMatMul(Op op, Call call, Expr output)
+    public Expr SelectMatMul(Op op, Call call, Expr output)
     {
         var lhs = call.Arguments[IR.Math.MatMul.Lhs.Index];
         var rhs = call.Arguments[IR.Math.MatMul.Rhs.Index];

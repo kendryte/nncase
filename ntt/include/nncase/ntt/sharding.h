@@ -19,6 +19,7 @@
 #include "utility.h"
 #include <cstddef>
 #include <tuple>
+#include <type_traits>
 
 namespace nncase::ntt::distributed {
 namespace shard_policy {
@@ -59,7 +60,23 @@ template <size_t... Axes> struct S {
     template <class Mesh>
     static constexpr size_t local_dim(size_t global_dim) noexcept {
         auto divider = (1 * ... * Mesh::shape_type::at(Axes));
-        return ntt::ceil_div(global_dim, divider);
+        auto div = ntt::div(global_dim, divider);
+        auto rem = global_dim % divider;
+        if (std::is_constant_evaluated() && (rem == 0)) {
+            return div;
+        } else {
+            using submesh_shape = fixed_shape<Mesh::shape_type::at(Axes)...>;
+            using submesh_strides = default_strides_t<submesh_shape>;
+            auto shard_index = Mesh::local_index();
+            ranked_shape<submesh_shape::rank()> submesh_index{
+                shard_index.at(Axes)...};
+            auto submesh_linear_offset =
+            ntt::linear_offset(submesh_index, submesh_strides{});
+            if (submesh_linear_offset < rem)
+                div += 1;
+
+            return div;
+        }
     }
 
     template <class Mesh>
@@ -79,7 +96,7 @@ template <size_t... Axes> struct S {
     template <class Mesh>
     static constexpr size_t
     local_dim(size_t global_dim,
-              const typename Mesh::index_type &shard_index) noexcept {
+               const typename Mesh::index_type &shard_index) noexcept {
         auto local_dim = S::local_dim<Mesh>(global_dim);
         auto global_offset = S::global_offset<Mesh>(global_dim, shard_index);
         return std::min(global_dim - global_offset, local_dim);

@@ -23,8 +23,8 @@ public sealed class CPUTIRSelectionPass : TIRSelectionPass
 {
     private readonly CompileOptions _compileOptions;
 
-    public CPUTIRSelectionPass(CompileOptions compileOptions)
-        : base(CPUTarget.Kind)
+    public CPUTIRSelectionPass(CompileOptions compileOptions, string moduleKind = CPUTarget.Kind)
+        : base(moduleKind)
     {
         _compileOptions = compileOptions;
     }
