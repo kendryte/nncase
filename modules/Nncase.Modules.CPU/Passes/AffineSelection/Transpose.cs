@@ -8,9 +8,9 @@ using Nncase.TIR.CPU;
 
 namespace Nncase.Passes;
 
-public sealed partial class CPUAffineSelectionPass
+public partial class CPUAffineSelectionPass
 {
-    private Expr SelectTranspose(IR.Tensors.Transpose transpose, Call call, Expr output)
+    public Expr SelectTranspose(IR.Tensors.Transpose transpose, Call call, Expr output)
     {
         var input = call[IR.Tensors.Transpose.Input];
         var perm = call[IR.Tensors.Transpose.Perm];

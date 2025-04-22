@@ -7,9 +7,10 @@ from numpy.core.defchararray import array
 from numpy.lib.function_base import select
 from test_runner import *
 import io
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
 import torch
 from huggingface_hub import snapshot_download
+from safetensors.torch import load_file, save_file
 
 
 def download_from_huggingface(model_api, tokenizer_api, model_name, need_save=False):
@@ -23,24 +24,32 @@ def download_from_huggingface(model_api, tokenizer_api, model_name, need_save=Fa
         hf_home_env = os.getenv("HF_HOME")
         if hf_home_env is None:
             print(
-                f"Please set your huggingface cache dir in environment variable\033[31m 10.10.1.11 'export HF_HOME=/data/huggingface_cache' \033[0m")
-
-        model_path = snapshot_download(repo_id=model_name)
-
-        if need_save:
-            try:
-                model = model_api.from_pretrained(model_path, trust_remote_code=True)
-                tokenizer = tokenizer_api.from_pretrained(model_path, trust_remote_code=True)
-            except Exception as e:
-                raise os.error(
-                    f"\033[31m Download {model_name} has error. Make sure it's a valid repository. Or check your network!\033[0m")
-
-            model.save_pretrained(model_dir)
-            tokenizer.save_pretrained(model_dir)
+                f"Please set your huggingface cache dir in environment variable\033[31m 10.10.1.11 'export HF_HOME=/compiler/share/huggingface_cache' \033[0m")
+            # download the model from huggingface hub
+            model_path = snapshot_download(repo_id=model_name)
         else:
-            model_dir = model_path
-        print(
-            f"\033[32m\033[1m {model_name} \033[0m has been downloaded into \033[34m\033[5m {model_dir} \033[0m")
+            # if the model can't access in huggingface hub, you can download it from other source and put it in the cache dir ($HF_HOME/hub)
+            # e.g.: modelscope download --model LLM-Research/Llama-3.2-1B-Instruct --local_dir $HF_HOME/hub/LLM-Research/Llama-3.2-1B-Instruct
+            cache_model_dir = os.path.join(hf_home_env, "hub", model_name)
+            if(os.path.exists(cache_model_dir)):
+                model_path = cache_model_dir
+            else:
+                model_path = snapshot_download(repo_id=model_name)
+
+    if need_save:
+        try:
+            model = model_api.from_pretrained(model_path, trust_remote_code=True)
+            tokenizer = tokenizer_api.from_pretrained(model_path, trust_remote_code=True)
+        except Exception as e:
+            raise os.error(
+                f"\033[31m Download {model_name} has error. Make sure it's a valid repository. Or check your network!\033[0m")
+
+        model.save_pretrained(model_dir)
+        tokenizer.save_pretrained(model_dir)
+    else:
+        model_dir = model_path
+    print(
+        f"\033[32m\033[1m {model_name} \033[0m has been downloaded into \033[34m\033[5m {model_dir} \033[0m")
     return model_dir
 
 
@@ -59,6 +68,40 @@ def recursive_stack(obj):
             return torch.unsqueeze(obj, 0)
         else:
             return obj
+
+
+def dequantize_weights(model_dir):
+    org_safetensors = model_dir + "/model_org.safetensors"
+    f32_safetensors = model_dir + "/model.safetensors"
+    if not os.path.exists(org_safetensors):
+        os.rename(f32_safetensors, org_safetensors)
+    state_dict = load_file(org_safetensors)
+
+    for key in list(state_dict.keys()):
+        if key.endswith('weight_scale'):
+            scale_tensor = state_dict[key].to(torch.float32)
+            weight_key = key.replace('.weight_scale', '.weight')
+            if weight_key in state_dict:
+                weight_tensor = state_dict[weight_key]
+                if scale_tensor.numel() == 1 or scale_tensor.shape[0] == weight_tensor.shape[0]:
+                    weight_fp32 = weight_tensor.to(torch.float32)
+                    scaled_weight = weight_fp32 * scale_tensor
+                    state_dict[weight_key] = scaled_weight
+                else:
+                    raise os.error(
+                        f"\033[31m weight_tensor {weight_key} and scale_tensor {key} shape not match! \033[0m")
+            else:
+                print(
+                    f"Warning: Corresponding weight {weight_key} not found, skipping.")
+
+    save_file(state_dict, f32_safetensors)
+
+
+def restore_weights(model_dir):
+    org_safetensors = model_dir + "/model_org.safetensors"
+    f32_safetensors = model_dir + "/model.safetensors"
+    if os.path.exists(org_safetensors):
+        os.rename(org_safetensors, f32_safetensors)
 
 
 class HuggingfaceTestRunner(TestRunner):
@@ -165,8 +208,13 @@ class HuggingfaceTestRunner(TestRunner):
         return outputs
 
     def parse_model(self, model_path):
+        config = AutoConfig.from_pretrained(model_path + "/config.json")
+        if hasattr(config, "quantization_config"):
+            dequantize_weights(model_path)
+            delattr(config, "quantization_config")
         self.model = AutoModelForCausalLM.from_pretrained(
-            model_path, torch_dtype="auto", device_map="auto" if not torch.backends.mps.is_available() else 'cpu', trust_remote_code=True).to(torch.float32).eval()
+            model_path, config=config, torch_dtype="auto" if not torch.backends.mps.is_available() else 'cpu', device_map="cpu", trust_remote_code=True).to(torch.float32).eval()
+        restore_weights(model_path)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         self.generation_config = self.model.generation_config
         # self.generation_config.return_dict_in_generate = True # if False, generate only output tokens

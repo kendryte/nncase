@@ -142,7 +142,14 @@ public interface ITarget
     void RegisterQuantizePass(IPassManager passManager, CompileOptions options);
 
     /// <summary>
-    /// Register Target Dependent After Quant Pass.
+    /// Register Post Quant Pass.
+    /// </summary>
+    /// <param name="passManager">Pass manager.</param>
+    /// <param name="options">compile options.</param>
+    void RegisterPostQuantizePass(IPassManager passManager, CompileOptions options);
+
+    /// <summary>
+    /// Register Target Dependent Before CodeGen Pass.
     /// </summary>
     /// <param name="passManager">Pass manager.</param>
     /// <param name="options">compile options.</param>
@@ -151,6 +158,8 @@ public interface ITarget
     void RegisterAffineSelectionPass(IPassManager passManager, CompileOptions options);
 
     void RegisterAutoPackingRules(IRulesAddable pass, CompileOptions options);
+
+    void RegisterPostAutoPackingPass(IPassManager passManager, CompileOptions options);
 
     void RegisterTIRSelectionPass(IPassManager passManager, CompileOptions options);
 }

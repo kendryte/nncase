@@ -43,9 +43,13 @@ internal sealed class SimplifyTarget : ITarget
 
     public void RegisterAutoPackingRules(IRulesAddable pass, CompileOptions options) => throw new NotImplementedException();
 
+    public void RegisterPostAutoPackingPass(IPassManager passManager, CompileOptions options) => throw new NotImplementedException();
+
     public (Command Command, Func<InvocationContext, Command, ITargetOptions> Parser) RegisterCommandAndParser() => throw new NotImplementedException();
 
     public void RegisterQuantizePass(IPassManager passManager, CompileOptions options) => throw new NotImplementedException();
+
+    public void RegisterPostQuantizePass(IPassManager passManager, CompileOptions options) => throw new NotImplementedException();
 
     public void RegisterTargetDependentAfterQuantPass(IPassManager passManager, CompileOptions options) => throw new NotImplementedException();
 

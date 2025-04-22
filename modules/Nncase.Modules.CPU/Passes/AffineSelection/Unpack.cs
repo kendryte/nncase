@@ -8,9 +8,9 @@ using Nncase.TIR.CPU;
 
 namespace Nncase.Passes;
 
-public sealed partial class CPUAffineSelectionPass
+public partial class CPUAffineSelectionPass
 {
-    private Expr SelectUnpack(IR.CPU.Unpack unpack, Call call, Expr output)
+    public Expr SelectUnpack(IR.CPU.Unpack unpack, Call call, Expr output)
     {
         var input = call[IR.CPU.Unpack.Input];
         if (output.CheckedShape is not { IsFixed: true, Rank: > 0 })
