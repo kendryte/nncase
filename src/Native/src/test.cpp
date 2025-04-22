@@ -19,6 +19,7 @@
 #include <nncase/api.h>
 #include <nncase/compiler.h>
 #include <nncase/io_utils.h>
+#include <nncase/ntt/caching.h>
 #include <nncase/ntt/ntt.h>
 #include <nncase/runtime/runtime_tensor.h>
 #include <string_view>
