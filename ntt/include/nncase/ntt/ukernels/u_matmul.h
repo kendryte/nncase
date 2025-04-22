@@ -549,7 +549,6 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, TransposedA,
 
                 TSubLhsElem a0_tmp[M0Tile];
                 TSubRhsElem b0_tmp[N0Tile];
-
                 ntt::apply(fixed_shape<M0Tile>{}, [&](auto index) {
                     a0_tmp[index[0]] = a0(index[0], 0)(sk1);
                 });
