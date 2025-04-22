@@ -69,8 +69,6 @@ int main(int argc, char *argv[]) {
         "asinh", half::round_to_half(-10.f), half::round_to_half(10.f));
     benchmark_ntt_unary_half<ntt::ops::ceil, half, N>(
         "ceil", half::round_to_half(-10.f), half::round_to_half(10.f));
-    benchmark_ntt_unary_half<ntt::ops::copy, half, N>(
-        "copy", half::round_to_half(-10.f), half::round_to_half(10.f));
     benchmark_ntt_unary_half<ntt::ops::cos, half, N>(
         "cos", half::round_to_half(-10.f), half::round_to_half(10.f));
     benchmark_ntt_unary_half<ntt::ops::cosh, half, N>(
