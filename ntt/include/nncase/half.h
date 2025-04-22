@@ -345,7 +345,7 @@ inline half cosh(const half &a) {
 inline half sinh(const half &a) {
     return half::round_to_half(std::sinf(float(a)));
 }
-inline half nextafter(half &from, half &to) noexcept {
+inline half nextafter(const half &from, const half &to) noexcept {
     if (from.raw() == to.raw()) {
         return to;
     }
