@@ -26,8 +26,7 @@ TEST(UnaryTestAcosFloat, fixed_fixed) {
     using shape = ntt::fixed_shape<1, 3, 16, 16>;
     using tensor_type = ntt::tensor<float, shape>;
     std::unique_ptr<tensor_type> ntt_input(new tensor_type);
-    NttTest::init_tensor(*ntt_input, half::round_to_half(-1.f),
-                         half::round_to_half(1.f));
+    NttTest::init_tensor(*ntt_input, -1.f, 1.f);
 
     // ntt
     std::unique_ptr<tensor_type> ntt_output1(new tensor_type);

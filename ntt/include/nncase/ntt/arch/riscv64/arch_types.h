@@ -14,7 +14,6 @@
  */
 #pragma once
 #include "../../native_vector.h"
-#include "../../../half.h"
 #ifdef __riscv_vector
 #include <riscv_vector.h>
 
@@ -148,11 +147,11 @@ REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(8)
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
         uint32_t, fixed_vuint32mf2_t, NTT_VLEN / 8 / sizeof(uint32_t) / 2)     \
     NTT_END_DEFINE_NATIVE_VECTOR()                                             \
-    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(half, fixed_vfloat16mf2_t,          \
-                                           NTT_VLEN / 8 / sizeof(half) / 2)    \
+    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(_Float16, fixed_vfloat16mf2_t,          \
+                                           NTT_VLEN / 8 / sizeof(_Float16) / 2)    \
     NTT_END_DEFINE_NATIVE_VECTOR()                                             \
-    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(half, fixed_vfloat16mf4_t,          \
-                                           NTT_VLEN / 8 / sizeof(half) / 4)    \
+    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(_Float16, fixed_vfloat16mf4_t,          \
+                                           NTT_VLEN / 8 / sizeof(_Float16) / 4)    \
     NTT_END_DEFINE_NATIVE_VECTOR()                                             \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(float, fixed_vfloat32mf2_t,         \
                                            NTT_VLEN / 8 / sizeof(float) / 2)   \
@@ -197,7 +196,7 @@ REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(8)
         float, fixed_vfloat32m##lmul##_t, NTT_VLEN / 8 / sizeof(float) * lmul) \
     NTT_END_DEFINE_NATIVE_VECTOR()                                             \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
-        half, fixed_vfloat16m##lmul##_t, NTT_VLEN / 8 / sizeof(half) * lmul)   \
+        _Float16, fixed_vfloat16m##lmul##_t, NTT_VLEN / 8 / sizeof(_Float16) * lmul)   \
     NTT_END_DEFINE_NATIVE_VECTOR()                                             \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(double, fixed_vfloat64m##lmul##_t,  \
                                            NTT_VLEN / 8 / sizeof(double) *     \

@@ -24,9 +24,9 @@ using namespace ortki;
 TEST(UnaryTestCosFloat, fixed_fixed) {
     // init
     using shape = ntt::fixed_shape<1, 3, 16, 16>;
-    using tensor_type = ntt::tensor<half, shape>;
+    using tensor_type = ntt::tensor<_Float16, shape>;
     std::unique_ptr<tensor_type> ntt_input(new tensor_type);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_input, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
 
     // ntt
     std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
@@ -45,13 +45,13 @@ TEST(UnaryTestCosFloat, fixed_fixed) {
 TEST(UnaryTestCosFloat, fixed_ranked) {
     // init
     using shape1 = ntt::fixed_shape<1, 3, 16, 16>;
-    using tensor_type1 = ntt::tensor<half, shape1>;
+    using tensor_type1 = ntt::tensor<_Float16, shape1>;
     std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_input, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
 
     // ntt
     auto shape2 = ntt::make_ranked_shape(1, 3, 16, 16);
-    using tensor_type2 = ntt::tensor<half, ntt::ranked_shape<4>>;
+    using tensor_type2 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2(shape2));
     ntt::unary<ntt::ops::cos>(*ntt_input, *ntt_output1);
 
@@ -67,10 +67,10 @@ TEST(UnaryTestCosFloat, fixed_ranked) {
 
 TEST(UnaryTestCosFloat, ranked_ranked) {
     // init
-    using tensor_type = ntt::tensor<half, ntt::ranked_shape<4>>;
+    using tensor_type = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     auto shape = ntt::make_ranked_shape(1, 3, 16, 16);
     std::unique_ptr<tensor_type> ntt_input(new tensor_type(shape));
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_input, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
 
     // ntt
     std::unique_ptr<tensor_type> ntt_output1(new tensor_type(shape));
@@ -89,13 +89,13 @@ TEST(UnaryTestCosFloat, ranked_ranked) {
 TEST(UnaryTestCosFloat, ranked_fixed) {
     // init
     auto shape1 = ntt::make_ranked_shape(1, 3, 16, 16);
-    using tensor_type1 = ntt::tensor<half, ntt::ranked_shape<4>>;
+    using tensor_type1 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     std::unique_ptr<tensor_type1> ntt_input(new tensor_type1(shape1));
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_input, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
 
     // ntt
     using shape2 = ntt::fixed_shape<1, 3, 16, 16>;
-    using tensor_type2 = ntt::tensor<half, shape2>;
+    using tensor_type2 = ntt::tensor<_Float16, shape2>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
     ntt::unary<ntt::ops::cos>(*ntt_input, *ntt_output1);
 
@@ -129,7 +129,7 @@ template <typename T, size_t vl> void test_vector() {
     _TEST_VECTOR(T, 4)                                                         \
     _TEST_VECTOR(T, 8)
 
-TEST(UnaryTestCos, vector) { TEST_VECTOR(half) }
+TEST(UnaryTestCos, vector) { TEST_VECTOR(_Float16) }
 
 template <typename T, size_t N, typename Shape,
           typename Stride = ntt::default_strides_t<Shape>>
@@ -181,7 +181,7 @@ template <typename T, size_t vl> void test_vector_ulp(double ulp_threshold) {
 #endif
 
 #ifndef __aarch64__
-// TEST(UnaryTestCosFloat, ulp_error) { TEST_VECTOR_ULP(half, 2.) }
+// TEST(UnaryTestCosFloat, ulp_error) { TEST_VECTOR_ULP(_Float16, 2.) }
 #endif
 
 int main(int argc, char *argv[]) {

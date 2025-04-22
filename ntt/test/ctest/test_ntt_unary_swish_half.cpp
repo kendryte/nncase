@@ -37,9 +37,9 @@ static ortki::OrtKITensor *ortki_Swish(ortki::OrtKITensor *ort_input) {
 TEST(UnaryTestSwishFloat, fixed_fixed) {
     // init
     using shape = ntt::fixed_shape<1, 3, 16, 16>;
-    using tensor_type = ntt::tensor<half, shape>;
+    using tensor_type = ntt::tensor<_Float16, shape>;
     std::unique_ptr<tensor_type> ntt_input(new tensor_type);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_input, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
 
     // ntt
     std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
@@ -47,7 +47,7 @@ TEST(UnaryTestSwishFloat, fixed_fixed) {
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
-    auto ort_output = ortki_Swish<half>(ort_input);
+    auto ort_output = ortki_Swish<_Float16>(ort_input);
 
     // compare
     std::unique_ptr<tensor_type> ntt_output2(new tensor_type);
@@ -58,19 +58,19 @@ TEST(UnaryTestSwishFloat, fixed_fixed) {
 TEST(UnaryTestSwishFloat, fixed_ranked) {
     // init
     using shape1 = ntt::fixed_shape<1, 3, 16, 16>;
-    using tensor_type1 = ntt::tensor<half, shape1>;
+    using tensor_type1 = ntt::tensor<_Float16, shape1>;
     std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_input, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
 
     // ntt
     auto shape2 = ntt::make_ranked_shape(1, 3, 16, 16);
-    using tensor_type2 = ntt::tensor<half, ntt::ranked_shape<4>>;
+    using tensor_type2 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2(shape2));
     ntt::unary<ntt::ops::swish>(*ntt_input, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
-    auto ort_output = ortki_Swish<half>(ort_input);
+    auto ort_output = ortki_Swish<_Float16>(ort_input);
 
     // compare
     std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2(shape2));
@@ -80,10 +80,10 @@ TEST(UnaryTestSwishFloat, fixed_ranked) {
 
 TEST(UnaryTestSwishFloat, ranked_ranked) {
     // init
-    using tensor_type = ntt::tensor<half, ntt::ranked_shape<4>>;
+    using tensor_type = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     auto shape = ntt::make_ranked_shape(1, 3, 16, 16);
     std::unique_ptr<tensor_type> ntt_input(new tensor_type(shape));
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_input, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
 
     // ntt
     std::unique_ptr<tensor_type> ntt_output1(new tensor_type(shape));
@@ -91,7 +91,7 @@ TEST(UnaryTestSwishFloat, ranked_ranked) {
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
-    auto ort_output = ortki_Swish<half>(ort_input);
+    auto ort_output = ortki_Swish<_Float16>(ort_input);
 
     // compare
     std::unique_ptr<tensor_type> ntt_output2(new tensor_type(shape));
@@ -102,19 +102,19 @@ TEST(UnaryTestSwishFloat, ranked_ranked) {
 TEST(UnaryTestSwishFloat, ranked_fixed) {
     // init
     auto shape1 = ntt::make_ranked_shape(1, 3, 16, 16);
-    using tensor_type1 = ntt::tensor<half, ntt::ranked_shape<4>>;
+    using tensor_type1 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     std::unique_ptr<tensor_type1> ntt_input(new tensor_type1(shape1));
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    NttTest::init_tensor(*ntt_input, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
 
     // ntt
     using shape2 = ntt::fixed_shape<1, 3, 16, 16>;
-    using tensor_type2 = ntt::tensor<half, shape2>;
+    using tensor_type2 = ntt::tensor<_Float16, shape2>;
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
     ntt::unary<ntt::ops::swish>(*ntt_input, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
-    auto ort_output = ortki_Swish<half>(ort_input);
+    auto ort_output = ortki_Swish<_Float16>(ort_input);
 
     // compare
     std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
@@ -154,7 +154,7 @@ template <typename T, size_t vl> void test_vector() {
 #endif
 
 TEST(UnaryTestSwish, vector) {
-    TEST_VECTOR(half)
+    TEST_VECTOR(_Float16)
     TEST_VECTOR(double)
 }
 

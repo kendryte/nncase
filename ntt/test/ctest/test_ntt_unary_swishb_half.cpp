@@ -73,7 +73,7 @@ template <typename T, size_t vl> void test_vector() {
 #endif
 
 TEST(UnaryTestSwishB, vector) {
-    TEST_VECTOR(half)
+    TEST_VECTOR(_Float16)
     TEST_VECTOR(double)
 }
 

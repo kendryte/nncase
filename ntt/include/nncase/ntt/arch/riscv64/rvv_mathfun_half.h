@@ -1,5 +1,4 @@
 #pragma once
-#include "nncase/half.h"
 #include "rvv_mathfun.h"
 #include <cmath>
 

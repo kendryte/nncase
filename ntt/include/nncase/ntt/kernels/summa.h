@@ -231,7 +231,7 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
                       TOutElem::shape_type::at(0) == 64 &&
                       TOutElem::shape_type::at(1) == 64 &&
                       (std::is_same_v<float, typename TLhsElem::element_type> ||
-                       std::is_same_v<half, typename TLhsElem::element_type>)) {
+                       std::is_same_v<_Float16, typename TLhsElem::element_type>)) {
 
             ntt::apply(CShape, [&](auto index) {
                 auto data = (float *)C(index).buffer().data();

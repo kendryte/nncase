@@ -16,7 +16,6 @@
 #include "nncase/ntt/apply.h"
 #include "nncase/ntt/ntt.h"
 #include "nncase/ntt/shape.h"
-#include "nncase/half.h"
 #include <assert.h>
 #include <iostream>
 #include <random>
@@ -139,10 +138,10 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
             //     std::cout << index[i] << " ";
             // std::cout << ") = " << tensor(index) << std::endl;
         });
-    } else if constexpr (std::is_same_v<T, half>){
-        std::uniform_real_distribution<float> dis(start, stop);
+    } else if constexpr (std::is_same_v<T, _Float16>){
+        std::uniform_real_distribution<_Float16> dis(start, stop);
          ntt::apply(tensor.shape(), [&](auto &index) {
-            tensor(index) = half::round_to_half(dis(gen));
+            tensor(index) = static_cast<_Float16>(dis(gen));
         });
     } else if constexpr (std::is_same_v<T, double>) {
         std::uniform_real_distribution<double> dis(start, stop);

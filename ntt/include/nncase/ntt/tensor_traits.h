@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #pragma once
-#include "nncase/half.h"
 #include "shape.h"
 #include <cstddef>
 #include <cstring>
@@ -34,7 +33,7 @@ concept IsVector = std::decay_t<T>::IsVector;
 
 template <typename T>
 concept IsScalar = std::is_integral_v<T> || std::is_floating_point_v<T> ||
-                   std::is_same_v<T, half>;
+                   std::is_same_v<T, _Float16>;
 
 template <typename T>
 concept IsShardedTensor = requires {
