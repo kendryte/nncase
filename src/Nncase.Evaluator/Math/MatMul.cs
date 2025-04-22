@@ -285,6 +285,11 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             }
 
             dtype = vr1;
+            if (vr1.ElemType == DataTypes.Float8E4M3)
+            {
+                var interType = new VectorType(DataTypes.Float32, vr1.Lanes);
+                dtype = interType;
+            }
         }
         else if (lhs.DType is VectorType vl && rhs.DType is VectorType vr)
         {
