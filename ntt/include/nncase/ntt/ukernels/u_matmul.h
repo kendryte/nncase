@@ -42,8 +42,24 @@ struct u_matmul_policy {
 
 template <mamtul_pack_kind PackKind, class TA, class TB, class TC>
 struct u_type_scale {
+    using TLhsElem = std::decay_t<typename TA::element_type>;
+    using TRhsElem = std::decay_t<typename TB::element_type>;
+    using TOutElem = std::decay_t<typename TC::element_type>;
     static constexpr size_t m0_scale = 1;
     static constexpr size_t n0_scale = 1;
+    static constexpr size_t k0_scale = 1;
+    static constexpr bool same_type = std::is_same_v<TLhsElem, TOutElem>;
+};
+
+template <class TA, class TB, class TC>
+struct u_type_scale<ukernels::mamtul_pack_kind::pack_k, TA, TB, TC> {
+    using TLhsElem = std::decay_t<typename TA::element_type>::element_type;
+    using TRhsElem = std::decay_t<typename TB::element_type>;
+    using TOutElem = std::decay_t<typename TC::element_type>;
+    static constexpr size_t m0_scale = 1;
+    static constexpr size_t n0_scale = 1;
+    static constexpr size_t k0_scale = sizeof(TOutElem) / sizeof(TLhsElem);
+    static constexpr bool same_type = std::is_same_v<TLhsElem, TOutElem>;
 };
 
 template <class TA, class TB, class TC>
@@ -53,6 +69,10 @@ struct u_type_scale<ukernels::mamtul_pack_kind::pack_m, TA, TB, TC> {
     using TOutElem = std::decay_t<typename TC::element_type>;
     static constexpr size_t m0_scale = (TLhsElem::size()) / (TOutElem::size());
     static constexpr size_t n0_scale = 1;
+    static constexpr size_t k0_scale = 1;
+    static constexpr bool same_type =
+        std::is_same_v<typename TLhsElem::element_type,
+                       typename TOutElem::element_type>;
 };
 
 template <class TA, class TB, class TC>
@@ -62,6 +82,68 @@ struct u_type_scale<ukernels::mamtul_pack_kind::pack_n, TA, TB, TC> {
     using TOutElem = std::decay_t<typename TC::element_type>;
     static constexpr size_t m0_scale = 1;
     static constexpr size_t n0_scale = (TRhsElem::size()) / (TOutElem::size());
+    static constexpr size_t k0_scale = 1;
+    static constexpr bool same_type =
+        std::is_same_v<typename TRhsElem::element_type,
+                       typename TOutElem::element_type>;
+};
+
+template <class TA, class TB, class TC>
+struct u_type_scale<ukernels::mamtul_pack_kind::pack_mk, TA, TB, TC> {
+    using TLhsElem = std::decay_t<typename TA::element_type>;
+    using TRhsElem = std::decay_t<typename TB::element_type>;
+    using TOutElem = std::decay_t<typename TC::element_type>;
+    static constexpr size_t m0_scale =
+        (TLhsElem::size()) / (TLhsElem::shape()[1] * (TOutElem::size()));
+    static constexpr size_t n0_scale = 1;
+    static constexpr size_t k0_scale = m0_scale;
+    static constexpr bool same_type =
+        std::is_same_v<typename TRhsElem::element_type,
+                       typename TOutElem::element_type>;
+};
+
+template <class TA, class TB, class TC>
+struct u_type_scale<ukernels::mamtul_pack_kind::pack_kn, TA, TB, TC> {
+    using TLhsElem = std::decay_t<typename TA::element_type>;
+    using TRhsElem = std::decay_t<typename TB::element_type>;
+    using TOutElem = std::decay_t<typename TC::element_type>;
+    static constexpr size_t m0_scale = 1;
+    static constexpr size_t n0_scale =
+        (TRhsElem::size()) / (TRhsElem::shape()[0] * (TOutElem::size()));
+    static constexpr size_t k0_scale = n0_scale;
+    static constexpr bool same_type =
+        std::is_same_v<typename TRhsElem::element_type,
+                       typename TOutElem::element_type>;
+};
+
+template <class TA, class TB, class TC>
+struct u_type_scale<ukernels::mamtul_pack_kind::pack_mn, TA, TB, TC> {
+    using TLhsElem = std::decay_t<typename TA::element_type>;
+    using TRhsElem = std::decay_t<typename TB::element_type>;
+    using TOutElem = std::decay_t<typename TC::element_type>;
+    static constexpr size_t m0_scale =
+        TLhsElem::shape()[0] / TOutElem::shape()[0];
+    static constexpr size_t n0_scale =
+        TLhsElem::shape()[0] / TOutElem::shape()[1];
+    static constexpr size_t k0_scale = 1;
+    static constexpr bool same_type =
+        std::is_same_v<typename TRhsElem::element_type,
+                       typename TOutElem::element_type>;
+};
+
+template <class TA, class TB, class TC>
+struct u_type_scale<ukernels::mamtul_pack_kind::pack_mkn, TA, TB, TC> {
+    using TLhsElem = std::decay_t<typename TA::element_type>;
+    using TRhsElem = std::decay_t<typename TB::element_type>;
+    using TOutElem = std::decay_t<typename TC::element_type>;
+    static constexpr size_t m0_scale =
+        TLhsElem::shape()[0] / TOutElem::shape()[0];
+    static constexpr size_t n0_scale =
+        TLhsElem::shape()[0] / TOutElem::shape()[1];
+    static constexpr size_t k0_scale = n0_scale;
+    static constexpr bool same_type =
+        std::is_same_v<typename TRhsElem::element_type,
+                       typename TOutElem::element_type>;
 };
 
 template <ukernels::mamtul_pack_kind PackKind, bool AccumulateC,
@@ -78,6 +160,8 @@ struct u_matmul_generic {
             ukernels::u_type_scale<PackKind, TA, TB, TC>::m0_scale;
         constexpr auto n0_scale =
             ukernels::u_type_scale<PackKind, TA, TB, TC>::n0_scale;
+        constexpr auto same_type =
+            ukernels::u_type_scale<PackKind, TA, TB, TC>::same_type;
         constexpr auto m0_tile_scaled = m0_scale * M0Tile;
         constexpr auto n0_tile_scaled = n0_scale * N0Tile;
 
@@ -107,7 +191,41 @@ struct u_matmul_generic {
                 });
             }
 
-            if constexpr (m0_scale != 1 && n0_scale == 1) {
+            if constexpr ((ukernels::mamtul_pack_kind::pack_k == PackKind) &&
+                          (!same_type)) {
+                using TLhsElemExpanded =
+                    cast_fixed_tensor_element_type<TLhsElem, float>::type;
+                using TLhsElemGrouped = TLhsElemExpanded;
+
+                using TRhsElemExpanded =
+                    cast_fixed_tensor_element_type<TRhsElem, float>::type;
+                using TRhsElemGrouped = TRhsElemExpanded;
+
+                TLhsElemGrouped a0_grouped[M0Tile];
+                TRhsElemGrouped b0_grouped[N0Tile];
+
+                loop<M0Tile>([&](auto i) {
+                    ntt::apply(a0_grouped[i].shape(), [&](auto index) {
+                        a0_grouped[i](index) = (float)a0_tmp[i](index);
+                    });
+                });
+
+                loop<N0Tile>([&](auto i) {
+                    ntt::apply(b0_grouped[i].shape(), [&](auto index) {
+                        b0_grouped[i](index) = (float)b0_tmp[i](index);
+                    });
+                });
+
+                for (size_t n = 0; n < N0Tile; n++) {
+                    for (size_t m = 0; m < M0Tile; m++) {
+                        u_mul_add<PackKind, true>(a0_grouped[m], b0_grouped[n],
+                                                  c0_tmp[m][n]);
+                    }
+                }
+
+            } else if constexpr ((ukernels::mamtul_pack_kind::pack_m ==
+                                  PackKind) &&
+                                 (!same_type)) {
                 using TLhsElemExpanded =
                     cast_fixed_tensor_element_type<TLhsElem, float>::type;
                 using TLhsElemGrouped =
@@ -134,8 +252,9 @@ struct u_matmul_generic {
                         }
                     }
                 }
-
-            } else if constexpr (n0_scale != 1 && m0_scale == 1) {
+            } else if constexpr ((ukernels::mamtul_pack_kind::pack_n ==
+                                  PackKind) &&
+                                 (!same_type)) {
                 using TRhsElemExpanded =
                     cast_fixed_tensor_element_type<TRhsElem, float>::type;
                 using TRhsElemGrouped =
@@ -159,6 +278,135 @@ struct u_matmul_generic {
                         for (size_t k = 0; k < n0_scale; k++) {
                             u_mul_add<PackKind, true>(
                                 a0_grouped[m], b0_grouped[n](k), c0_tmp[m][k]);
+                        }
+                    }
+                }
+            } else if constexpr ((ukernels::mamtul_pack_kind::pack_mk ==
+                                  PackKind) &&
+                                 (!same_type)) {
+                using TLhsElemExpanded =
+                    cast_fixed_tensor_element_type<TLhsElem, float>::type;
+                using TLhsElemGrouped =
+                    ntt::fixed_tensor_alike_t<TLhsElemExpanded, m0_scale,
+                                              TLhsElemExpanded::shape()[0] /
+                                                  m0_scale,
+                                              TLhsElemExpanded::shape()[1]>;
+
+                using TRhsElemExpanded =
+                    cast_fixed_tensor_element_type<TRhsElem, float>::type;
+                using TRhsElemGrouped = TRhsElemExpanded;
+
+                TLhsElemGrouped a0_grouped[M0Tile];
+                TRhsElemGrouped b0_grouped[N0Tile];
+                loop<M0Tile>([&](auto i) {
+                    ntt::apply(a0_grouped[i].shape(), [&](auto index) {
+                        a0_grouped[i](index) = (float)a0_tmp[i](
+                            index[0] * a0_grouped[i].shape()[1] + index[1],
+                            index[2]);
+                    });
+                });
+                loop<N0Tile>([&](auto i) {
+                    ntt::apply(b0_grouped[i].shape(), [&](auto index) {
+                        b0_grouped[i](index) = (float)b0_tmp[i](index);
+                    });
+                });
+
+                for (size_t n = 0; n < N0Tile; n++) {
+                    for (size_t m = 0; m < M0Tile; m++) {
+                        for (size_t k = 0; k < m0_scale; k++) {
+                            u_mul_add<PackKind, true>(
+                                a0_grouped[m](k), b0_grouped[n], c0_tmp[k][n]);
+                        }
+                    }
+                }
+            } else if constexpr ((ukernels::mamtul_pack_kind::pack_mn ==
+                                  PackKind) &&
+                                 (!same_type)) {
+                using TLhsElemExpanded =
+                    cast_fixed_tensor_element_type<TLhsElem, float>::type;
+                using TLhsElemGrouped =
+                    ntt::fixed_tensor_alike_t<TLhsElemExpanded, m0_scale,
+                                              TLhsElemExpanded::size() /
+                                                  m0_scale>;
+
+                using TRhsElemExpanded =
+                    cast_fixed_tensor_element_type<TRhsElem, float>::type;
+                using TRhsElemGrouped =
+                    ntt::fixed_tensor_alike_t<TRhsElemExpanded, n0_scale,
+                                              TRhsElemExpanded::size() /
+                                                  n0_scale>;
+
+                TLhsElemGrouped a0_grouped[M0Tile];
+                TRhsElemGrouped b0_grouped[N0Tile];
+
+                loop<M0Tile>([&](auto i) {
+                    ntt::apply(a0_grouped[i].shape(), [&](auto index) {
+                        a0_grouped[i](index) = (float)a0_tmp[i](
+                            index[0] * a0_grouped[i].shape()[1] + index[1]);
+                    });
+                });
+
+                loop<N0Tile>([&](auto i) {
+                    ntt::apply(b0_grouped[i].shape(), [&](auto index) {
+                        b0_grouped[i](index) = (float)b0_tmp[i](
+                            index[0] * b0_grouped[i].shape()[1] + index[1]);
+                    });
+                });
+
+                for (size_t n = 0; n < N0Tile; n++) {
+                    for (size_t m = 0; m < M0Tile; m++) {
+                        for (size_t k = 0; k < n0_scale; k++) {
+                            for (size_t l = 0; l < m0_scale; l++) {
+                                u_mul_add<PackKind, true>(a0_grouped[m](l),
+                                                          b0_grouped[n](k),
+                                                          c0_tmp[l][k]);
+                            }
+                        }
+                    }
+                }
+
+            } else if constexpr ((ukernels::mamtul_pack_kind::pack_mkn ==
+                                  PackKind) &&
+                                 (!same_type)) {
+                using TLhsElemExpanded =
+                    cast_fixed_tensor_element_type<TLhsElem, float>::type;
+                using TLhsElemGrouped =
+                    ntt::fixed_tensor_alike_t<TLhsElemExpanded, m0_scale,
+                                              TLhsElemExpanded::shape()[0] /
+                                                  m0_scale,
+                                              TLhsElemExpanded::shape()[1]>;
+
+                using TRhsElemExpanded =
+                    cast_fixed_tensor_element_type<TRhsElem, float>::type;
+                using TRhsElemGrouped = ntt::fixed_tensor_alike_t<
+                    TRhsElemExpanded, n0_scale, TRhsElemExpanded::shape()[0],
+                    TRhsElemExpanded::shape()[1] / n0_scale>;
+
+                TLhsElemGrouped a0_grouped[M0Tile];
+                TRhsElemGrouped b0_grouped[N0Tile];
+                loop<M0Tile>([&](auto i) {
+                    ntt::apply(a0_grouped[i].shape(), [&](auto index) {
+                        a0_grouped[i](index) = (float)a0_tmp[i](
+                            index[0] * a0_grouped[i].shape()[1] + index[1],
+                            index[2]);
+                    });
+                });
+                loop<N0Tile>([&](auto i) {
+                    ntt::apply(b0_grouped[i].shape(), [&](auto index) {
+                        b0_grouped[i](index) = (float)b0_tmp[i](
+                            index[1],
+                            index[0] * b0_grouped[i].shape()[2] + index[2]);
+                    });
+                });
+
+                for (size_t n = 0; n < N0Tile; n++) {
+                    for (size_t m = 0; m < M0Tile; m++) {
+                        for (size_t k = 0; k < n0_scale; k++) {
+                            for (size_t l = 0; l < m0_scale; l++) {
+                                u_mul_add<PackKind, true>(a0_grouped[m](l),
+                                                          b0_grouped[n](k),
+                                                          c0_tmp[l][k]);
+                            }
                         }
                     }
                 }
@@ -271,7 +519,19 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, TransposedA,
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
                               size_t K) noexcept {
-        TOutElem c0_tmp[M0Tile][N0Tile];
+        constexpr auto m0_scale =
+            ukernels::u_type_scale<ukernels::mamtul_pack_kind::pack_kn, TA, TB,
+                                   TC>::m0_scale;
+        constexpr auto n0_scale =
+            ukernels::u_type_scale<ukernels::mamtul_pack_kind::pack_kn, TA, TB,
+                                   TC>::n0_scale;
+        constexpr auto same_type =
+            ukernels::u_type_scale<ukernels::mamtul_pack_kind::pack_kn, TA, TB,
+                                   TC>::same_type;
+        constexpr auto m0_tile_scaled = m0_scale * M0Tile;
+        constexpr auto n0_tile_scaled = n0_scale * N0Tile;
+
+        TOutElem c0_tmp[m0_tile_scaled][n0_tile_scaled];
         ntt::apply(c0.shape(), [&](auto index) {
             c0_tmp[index[0]][index[1]] = AccumulateC ? c0(index) : TOutElem{};
         });
@@ -303,10 +563,46 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, TransposedA,
                     });
                 }
 
-                for (size_t n = 0; n < N0Tile; n++) {
-                    for (size_t m = 0; m < M0Tile; m++) {
-                        c0_tmp[m][n] =
-                            ntt::mul_add(a0_tmp[m], b0_tmp[n], c0_tmp[m][n]);
+                if constexpr (!same_type) {
+
+                    using TLhsElemExpanded = float;
+                    using TLhsElemGrouped = TLhsElemExpanded;
+
+                    using TRhsElemExpanded =
+                        cast_fixed_tensor_element_type<TSubRhsElem,
+                                                       float>::type;
+                    using TRhsElemGrouped = ntt::fixed_tensor_alike_t<
+                        TRhsElemExpanded, n0_scale,
+                        (TRhsElemExpanded::shape()[0] / n0_scale)>;
+
+                    TLhsElemGrouped a0_grouped[M0Tile];
+                    TRhsElemGrouped b0_grouped[N0Tile];
+
+                    loop<M0Tile>(
+                        [&](auto i) { a0_grouped[i] = (float)a0_tmp[i]; });
+
+                    loop<N0Tile>([&](auto i) {
+                        ntt::apply(b0_grouped[i].shape(), [&](auto index) {
+                            b0_grouped[i](index) = (float)b0_tmp[i](
+                                index[0] * b0_grouped[i].shape()[1] + index[1]);
+                        });
+                    });
+
+                    for (size_t n = 0; n < N0Tile; n++) {
+                        for (size_t m = 0; m < M0Tile; m++) {
+                            for (size_t k = 0; k < n0_scale; k++) {
+                                c0_tmp[m][k] = ntt::mul_add(a0_grouped[m],
+                                                            b0_grouped[n](k),
+                                                            c0_tmp[m][k]);
+                            }
+                        }
+                    }
+                } else {
+                    for (size_t n = 0; n < N0Tile; n++) {
+                        for (size_t m = 0; m < M0Tile; m++) {
+                            c0_tmp[m][n] = ntt::mul_add(a0_tmp[m], b0_tmp[n],
+                                                        c0_tmp[m][n]);
+                        }
                     }
                 }
             }
