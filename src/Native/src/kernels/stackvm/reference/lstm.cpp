@@ -46,9 +46,9 @@ result<void> lstm_impl(const T *input, const T *w_xc, const T *w_rc,
     auto out_shape = to_4d(out_shape_3);
 
     auto tanh = [&](T x) {
-        return (1 - exp(-2 * (float)x)) / (1 + exp(-2 * (float)x));
+        return (1 - std::exp(-2 * (float)x)) / (1 + std::exp(-2 * (float)x));
     };
-    auto sigmoid = [&](T x) { return 1 / (1 + exp(-x)); };
+    auto sigmoid = [&](T x) { return (T)1 / ((T)1 + std::exp(-x)); };
 
     auto output_h_tmp = std::make_unique<T[]>(compute_size(init_h_shape));
     auto output_c_tmp = std::make_unique<T[]>(compute_size(init_c_shape));
