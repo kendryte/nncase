@@ -52,7 +52,7 @@ def test_qwen2(request):
     #TODO: Need remove!
     [target]
     [target.cpu]
-    infer = false
+    infer = true
     """
     runner = HuggingfaceTestRunner(request.node.name, overwrite_configs=cfg)
 
@@ -68,4 +68,4 @@ def test_qwen2(request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_qwen2.py'])
+    pytest.main(['-vv', __file__])

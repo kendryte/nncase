@@ -174,7 +174,7 @@ class HuggingfaceTestRunner(TestRunner):
 
     def parse_model(self, model_path):
         self.model = AutoModelForCausalLM.from_pretrained(
-            model_path, torch_dtype="auto", device_map="auto", trust_remote_code=True).to(torch.float32).eval()
+            model_path, torch_dtype="auto", device_map="auto" if not torch.backends.mps.is_available() else "cpu", trust_remote_code=True).to(torch.float32).eval()
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         self.generation_config = self.model.generation_config
         # self.generation_config.return_dict_in_generate = True # if False, generate only output tokens
