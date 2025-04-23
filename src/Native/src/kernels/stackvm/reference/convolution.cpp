@@ -91,7 +91,7 @@ result<void> conv2d_impl(
                                     const T w =
                                         weights[offset(w_strides, w_index)];
 
-                                    value += in_v * w;
+                                    value += (float)in_v * (float)w;
                                 }
                             }
                         }

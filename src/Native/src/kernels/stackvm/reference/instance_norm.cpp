@@ -69,7 +69,7 @@ instance_norm_impl2(typecode_t type, const T *input, const T *scale,
     auto sub_output = std::make_unique<T[]>(in_size);
 
     // square and get var
-    T init_value = 0;
+    T init_value = (T)0;
     auto init_value_addr = IN_CAST(std::byte, &init_value);
     auto tmp_out_strides = strides_t{in_shape[1], 1};
     auto tmp_out_shape = strides_t{in_shape[0], in_shape[1]};
