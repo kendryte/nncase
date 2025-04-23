@@ -293,7 +293,7 @@ inline half fmod(const half &a, const half &b) {
     return half::round_to_half(std::fmod(float(a), float(b)));
 }
 inline half powh(const half &a, const half &b) {
-    return half::round_to_half(std::powf(float(a), float(b)));
+    return half::round_to_half(std::pow(float(a), float(b)));
 }
 } // namespace nncase
 
