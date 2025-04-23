@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 #pragma once
+#include "nncase/half.h"
 #include "tensor_traits.h"
 #include "vector.h"
-#include  "../half.h"
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -216,6 +216,12 @@ template <class T1, class T2> struct mod {
     }
 };
 
+template <> struct mod<half, half> {
+    auto operator()(const half &v1, const half &v2) const noexcept {
+        return fmod(v1, v2);
+    }
+};
+
 template <class T1, class T2> struct min {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
         return std::min(v1, v2);
@@ -231,6 +237,12 @@ template <class T1, class T2> struct max {
 template <class T1, class T2> struct pow {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
         return std::pow(v1, v2);
+    }
+};
+
+template <> struct pow<half, half> {
+    auto operator()(const half &v1, const half &v2) const noexcept {
+        return powh(v1, v2);
     }
 };
 
@@ -405,8 +417,8 @@ constexpr TResult mma(const T1 &v1, const T2 &v2, const TResult &v3) noexcept {
     return ops::mma<AccC, TransA, T1, T2, TResult>()(v1, v2, v3);
 }
 
-template <template <class T1, class T2> class BinaryOp, IsTensorOrScalar TResult,
-          IsTensorOrScalar T>
+template <template <class T1, class T2> class BinaryOp,
+          IsTensorOrScalar TResult, IsTensorOrScalar T>
 constexpr TResult reduce(const T &v, TResult init_value) noexcept {
     return ops::reduce<BinaryOp, TResult, T>()(v, init_value);
 }
