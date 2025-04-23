@@ -217,7 +217,7 @@ template <class T1, class T2> struct mod {
 };
 
 template <> struct mod<half, half> {
-    constexpr auto operator()(const half &v1, const half &v2) const noexcept {
+    auto operator()(const half &v1, const half &v2) const noexcept {
         return fmod(v1, v2);
     }
 };
@@ -241,7 +241,7 @@ template <class T1, class T2> struct pow {
 };
 
 template <> struct pow<half, half> {
-    constexpr auto operator()(const half &v1, const half &v2) const noexcept {
+    auto operator()(const half &v1, const half &v2) const noexcept {
         return powh(v1, v2);
     }
 };
