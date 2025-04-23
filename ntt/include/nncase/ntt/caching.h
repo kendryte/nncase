@@ -45,8 +45,6 @@ struct attention_config {
 };
 
 struct paged_attention_config : public attention_config {
-    int num_blocks;
-
     static inline constexpr int block_size = 16;
 
     using cache_layout_t =
@@ -162,11 +160,12 @@ class paged_attention_kv_cache : public attention_kv_cache {
                              tensor_view<int64_t, ranked_shape<1>> seq_lens,
                              tensor_view<int64_t, ranked_shape<3>> block_table,
                              tensor_view<int64_t, ranked_shape<2>> slot_mapping,
-                             kv_tensor_type_t kv_caches)
+                             size_t num_blocks, kv_tensor_type_t kv_caches)
         : attention_kv_cache(config, num_seqs, num_tokens, context_lens,
                              seq_lens),
           block_table_(block_table),
           slot_mapping_(slot_mapping),
+          num_blocks_(num_blocks),
           kv_caches_(kv_caches) {}
 
     const paged_attention_config &config() const noexcept {
@@ -183,10 +182,12 @@ class paged_attention_kv_cache : public attention_kv_cache {
 
     auto get_slot_ids() { return slot_mapping_; }
 
+    size_t num_blocks() const noexcept { return num_blocks_; }
+
   private:
     const kv_storage_shape_t get_default_kv_storage_shape() {
         auto cfg = config();
-        auto shape = ntt::make_ranked_shape(cfg.num_blocks, cfg.num_layers, 2,
+        auto shape = ntt::make_ranked_shape(num_blocks(), cfg.num_layers, 2,
                                             cfg.block_size, cfg.num_kv_heads,
                                             cfg.head_dim);
         for (size_t i = 0; i < 6; i++) {
@@ -347,6 +348,7 @@ class paged_attention_kv_cache : public attention_kv_cache {
   private:
     tensor_view<int64_t, ranked_shape<3>> block_table_;
     tensor_view<int64_t, ranked_shape<2>> slot_mapping_;
+    size_t num_blocks_;
     kv_tensor_type_t kv_caches_;
 };
 } // namespace nncase::ntt::caching
