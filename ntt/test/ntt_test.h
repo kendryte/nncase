@@ -335,7 +335,16 @@ bool compare_tensor(ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &lhs,
 template <typename T> T ulp(T x) {
     x = std::fabs(x);
     if (std::isfinite(x)) {
-        T lower = static_cast<T>(std::nextafter(x, static_cast<T>(-1.0)));
+        T lower = std::nextafter(x, static_cast<T>(-1.0));
+        return x - lower;
+    }
+    return x;
+}
+
+template <> half ulp(half x) {
+    x = std::fabs(x);
+    if (std::isfinite(x)) {
+        half lower = nextafter(x, static_cast<half>(-1.0));
         return x - lower;
     }
     return x;

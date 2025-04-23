@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #pragma once
-#include "../half.h"
+#include "nncase/half.h"
 #include "tensor_traits.h"
 #include "vector.h"
 #include <cmath>
@@ -212,10 +212,13 @@ template <class T1, class T2> struct outer_product {
  */
 template <class T1, class T2> struct mod {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
-        using promoted_type =
-            decltype(static_cast<float>(v1) + static_cast<float>(v2));
-        return static_cast<T1>(std::fmod(static_cast<promoted_type>(v1),
-                                         static_cast<promoted_type>(v2)));
+        return std::fmod(v1, v2);
+    }
+};
+
+template <> struct mod<half, half> {
+    constexpr auto operator()(const half &v1, const half &v2) const noexcept {
+        return fmod(v1, v2);
     }
 };
 
@@ -233,8 +236,13 @@ template <class T1, class T2> struct max {
 
 template <class T1, class T2> struct pow {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
-        return static_cast<T1>(
-            std::pow(static_cast<float>(v1), static_cast<float>(v2)));
+        return std::pow(v1, v2);
+    }
+};
+
+template <> struct pow<half, half> {
+    constexpr auto operator()(const half &v1, const half &v2) const noexcept {
+        return powh(v1, v2);
     }
 };
 
