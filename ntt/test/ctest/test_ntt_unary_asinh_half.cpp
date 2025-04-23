@@ -129,7 +129,7 @@ template <typename T, size_t vl> void test_vector() {
     _TEST_VECTOR(T, 4)                                                         \
     _TEST_VECTOR(T, 8)
 
-#if __aarch64__
+#if !__aarch64__
 TEST(UnaryTestAsinh, vector) { TEST_VECTOR(half) }
 #endif
 
