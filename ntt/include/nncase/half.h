@@ -15,10 +15,10 @@
 #pragma once
 #include "bfloat16.h"
 #include "ntt/compiler_defs.h"
-#include <bit>
 #include <cmath>
 #include <codecvt>
 #include <cstdint>
+#include <cstring>
 #include <float.h>
 #include <functional>
 #include <iostream>
@@ -57,7 +57,12 @@ struct half {
   public:
     half() noexcept = default;
 
-    half(_Float16 v) noexcept : value_(std::bit_cast<uint16_t>(v)) {}
+    half(_Float16 v) noexcept {
+        uint16_t tmp;
+        std::memcpy(&tmp, &v, sizeof(uint16_t));
+        value_ = tmp;
+    }
+
     explicit half(float v) noexcept : value_(round_to_half(v).value_) {}
 
     template <class T,
