@@ -16,7 +16,9 @@
 #include "ortki_helper.h"
 #include <gtest/gtest.h>
 #include <iostream>
+#include <nncase/bfloat16.h>
 #include <nncase/float8.h>
+#include <nncase/half.h>
 #include <nncase/ntt/ntt.h>
 #include <ortki/operators.h>
 
@@ -617,6 +619,130 @@ TEST(CastTestFloat8E4M3ToFloat32, Pack) {
     alignas(32) tensor_type2 ntt_output2;
     nncase::ntt::apply(ntt_input.shape(), [&](auto index) {
         (ntt_output2)(index) = (float)((ntt_input)(index));
+    });
+
+    // compare
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+}
+
+TEST(CastTestFloat8E4M3ToBFloat16, NoPack) {
+    constexpr size_t M = 32;
+    constexpr size_t N = 32;
+    float_e4m3_t min_input = (float_e4m3_t)-448.0f;
+    float_e4m3_t max_input = (float_e4m3_t)448.0f;
+    using tensor_type1 = ntt::tensor<float_e4m3_t, ntt::fixed_shape<M, N>>;
+    using tensor_type2 = ntt::tensor<bfloat16, ntt::fixed_shape<M, N>>;
+
+    // init
+    alignas(32) tensor_type1 ntt_input;
+    NttTest::init_tensor(ntt_input, min_input, max_input);
+
+    // ntt
+    alignas(32) tensor_type2 ntt_output1;
+    ntt::cast(ntt_input, ntt_output1);
+
+    // float8
+    alignas(32) tensor_type2 ntt_output2;
+    nncase::ntt::apply(ntt_input.shape(), [&](auto index) {
+        (ntt_output2)(index) = (bfloat16)(ntt_input)(index);
+    });
+
+    // compare
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+}
+
+TEST(CastTestFloat8E4M3ToBFloat16, Pack) {
+    constexpr size_t M = 64;
+    constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
+    constexpr size_t P2 = NTT_VLEN / (sizeof(bfloat16) * 8);
+    float_e4m3_t min_input = (float_e4m3_t)-500.0f;
+    float_e4m3_t max_input = (float_e4m3_t)500.0f;
+
+    using tensor_type1 = ntt::tensor<float_e4m3_t, ntt::fixed_shape<M>>;
+    using tensor_type2 = ntt::tensor<bfloat16, ntt::fixed_shape<M>>;
+    using tensor_type3 =
+        ntt::tensor<ntt::vector<float_e4m3_t, P1>, ntt::fixed_shape<M / P1>>;
+    using tensor_type4 =
+        ntt::tensor<ntt::vector<bfloat16, P2>, ntt::fixed_shape<M / P2>>;
+
+    // init
+    alignas(32) tensor_type1 ntt_input;
+    NttTest::init_tensor(ntt_input, min_input, max_input);
+
+    alignas(32) tensor_type3 pack_input;
+    ntt::pack<0>(ntt_input, pack_input);
+
+    alignas(32) tensor_type4 pack_output;
+    ntt::cast(pack_input, pack_output);
+
+    alignas(32) tensor_type2 ntt_output1;
+    ntt::unpack<0>(pack_output, ntt_output1);
+
+    alignas(32) tensor_type2 ntt_output2;
+    nncase::ntt::apply(ntt_input.shape(), [&](auto index) {
+        (ntt_output2)(index) = (bfloat16)((ntt_input)(index));
+    });
+
+    // compare
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+}
+
+TEST(CastTestFloat8E4M3ToHalf, NoPack) {
+    constexpr size_t M = 32;
+    constexpr size_t N = 32;
+    float_e4m3_t min_input = (float_e4m3_t)-448.0f;
+    float_e4m3_t max_input = (float_e4m3_t)448.0f;
+    using tensor_type1 = ntt::tensor<float_e4m3_t, ntt::fixed_shape<M, N>>;
+    using tensor_type2 = ntt::tensor<half, ntt::fixed_shape<M, N>>;
+
+    // init
+    alignas(32) tensor_type1 ntt_input;
+    NttTest::init_tensor(ntt_input, min_input, max_input);
+
+    // ntt
+    alignas(32) tensor_type2 ntt_output1;
+    ntt::cast(ntt_input, ntt_output1);
+
+    // float8
+    alignas(32) tensor_type2 ntt_output2;
+    nncase::ntt::apply(ntt_input.shape(), [&](auto index) {
+        (ntt_output2)(index) = (half)(ntt_input)(index);
+    });
+
+    // compare
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+}
+
+TEST(CastTestFloat8E4M3ToHalf, Pack) {
+    constexpr size_t M = 64;
+    constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
+    constexpr size_t P2 = NTT_VLEN / (sizeof(half) * 8);
+    float_e4m3_t min_input = (float_e4m3_t)-500.0f;
+    float_e4m3_t max_input = (float_e4m3_t)500.0f;
+
+    using tensor_type1 = ntt::tensor<float_e4m3_t, ntt::fixed_shape<M>>;
+    using tensor_type2 = ntt::tensor<half, ntt::fixed_shape<M>>;
+    using tensor_type3 =
+        ntt::tensor<ntt::vector<float_e4m3_t, P1>, ntt::fixed_shape<M / P1>>;
+    using tensor_type4 =
+        ntt::tensor<ntt::vector<half, P2>, ntt::fixed_shape<M / P2>>;
+
+    // init
+    alignas(32) tensor_type1 ntt_input;
+    NttTest::init_tensor(ntt_input, min_input, max_input);
+
+    alignas(32) tensor_type3 pack_input;
+    ntt::pack<0>(ntt_input, pack_input);
+
+    alignas(32) tensor_type4 pack_output;
+    ntt::cast(pack_input, pack_output);
+
+    alignas(32) tensor_type2 ntt_output1;
+    ntt::unpack<0>(pack_output, ntt_output1);
+
+    alignas(32) tensor_type2 ntt_output2;
+    nncase::ntt::apply(ntt_input.shape(), [&](auto index) {
+        (ntt_output2)(index) = (half)((ntt_input)(index));
     });
 
     // compare
