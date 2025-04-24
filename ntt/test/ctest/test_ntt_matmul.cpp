@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "nncase/bfloat16.h"
 #include "ntt_test.h"
 #include "ortki_helper.h"
 #include <gtest/gtest.h>
@@ -301,7 +302,7 @@ TEST(MatmulTestFloat, Pack_M_K_N) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(MatmulTestFloatE4M3, NoPack) {
+TEST(MatmulTestFloatE4M3Float32, NoPack) {
     // init
     using tensorA_F8_type = ntt::tensor<float_e4m3_t, ntt::fixed_shape<64, 64>>;
     using tensorB_F8_type = ntt::tensor<float_e4m3_t, ntt::fixed_shape<64, 64>>;
@@ -333,7 +334,7 @@ TEST(MatmulTestFloatE4M3, NoPack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_output2));
 }
 
-TEST(MatmulTestFloatE4M3, Pack_K0) {
+TEST(MatmulTestFloatE4M3Float32, Pack_K0) {
     constexpr size_t P = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
 
     // init
@@ -376,7 +377,7 @@ TEST(MatmulTestFloatE4M3, Pack_K0) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(MatmulTestFloatE4M3, Pack_K1) {
+TEST(MatmulTestFloatE4M3Float32, Pack_K1) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     // init
@@ -419,7 +420,7 @@ TEST(MatmulTestFloatE4M3, Pack_K1) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(MatmulTestFloatE4M3, Pack_M0) {
+TEST(MatmulTestFloatE4M3Float32, Pack_M0) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -470,7 +471,7 @@ TEST(MatmulTestFloatE4M3, Pack_M0) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(MatmulTestFloatE4M3, Pack_M1) {
+TEST(MatmulTestFloatE4M3Float32, Pack_M1) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -521,7 +522,7 @@ TEST(MatmulTestFloatE4M3, Pack_M1) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(MatmulTestFloatE4M3, Pack_N0) {
+TEST(MatmulTestFloatE4M3Float32, Pack_N0) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -573,7 +574,7 @@ TEST(MatmulTestFloatE4M3, Pack_N0) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(MatmulTestFloatE4M3, Pack_N1) {
+TEST(MatmulTestFloatE4M3Float32, Pack_N1) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -625,7 +626,7 @@ TEST(MatmulTestFloatE4M3, Pack_N1) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(MatmulTestFloatE4M3, Pack_M_K0) {
+TEST(MatmulTestFloatE4M3Float32, Pack_M_K0) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -679,7 +680,7 @@ TEST(MatmulTestFloatE4M3, Pack_M_K0) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(MatmulTestFloatE4M3, Pack_M_K1) {
+TEST(MatmulTestFloatE4M3Float32, Pack_M_K1) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -733,7 +734,7 @@ TEST(MatmulTestFloatE4M3, Pack_M_K1) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(MatmulTestFloatE4M3, Pack_K_N0) {
+TEST(MatmulTestFloatE4M3Float32, Pack_K_N0) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -787,7 +788,7 @@ TEST(MatmulTestFloatE4M3, Pack_K_N0) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(MatmulTestFloatE4M3, Pack_K_N1) {
+TEST(MatmulTestFloatE4M3Float32, Pack_K_N1) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -841,7 +842,7 @@ TEST(MatmulTestFloatE4M3, Pack_K_N1) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(MatmulTestFloatE4M3, Pack_M_N0) {
+TEST(MatmulTestFloatE4M3Float32, Pack_M_N0) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -896,7 +897,7 @@ TEST(MatmulTestFloatE4M3, Pack_M_N0) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(MatmulTestFloatE4M3, Pack_M_N1) {
+TEST(MatmulTestFloatE4M3Float32, Pack_M_N1) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -951,7 +952,7 @@ TEST(MatmulTestFloatE4M3, Pack_M_N1) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(MatmulTestFloatE4M3, Pack_M_K_N0) {
+TEST(MatmulTestFloatE4M3Float32, Pack_M_K_N0) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -1006,7 +1007,7 @@ TEST(MatmulTestFloatE4M3, Pack_M_K_N0) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(MatmulTestFloatE4M3, Pack_M_K_N1) {
+TEST(MatmulTestFloatE4M3Float32, Pack_M_K_N1) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 

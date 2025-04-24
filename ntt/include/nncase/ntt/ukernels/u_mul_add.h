@@ -37,8 +37,7 @@ template <ukernels::mamtul_pack_kind PackKind, bool AccC, class TLhsElem,
 void u_mul_add(const TLhsElem &lhs, const TRhsElem &rhs, TOutElem &output) {
     // 1. 0D-packing
     if constexpr (PackKind == ukernels::mamtul_pack_kind::no_pack) {
-        output = AccC ? ntt::mul_add((TOutElem)lhs, (TOutElem)rhs, output)
-                      : ntt::mul((TOutElem)lhs, (TOutElem)rhs);
+        output = AccC ? ntt::mul_add(lhs, rhs, output) : ntt::mul(lhs, rhs);
     }
     // 2. 1D-packing
     // 2.1. pack M

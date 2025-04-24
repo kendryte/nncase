@@ -48,6 +48,17 @@ struct u_type_scale {
     static constexpr size_t m0_scale = 1;
     static constexpr size_t n0_scale = 1;
     static constexpr size_t k0_scale = 1;
+    static constexpr bool same_type = false;
+};
+
+template <class TA, class TB, class TC>
+struct u_type_scale<ukernels::mamtul_pack_kind::no_pack, TA, TB, TC> {
+    using TLhsElem = std::decay_t<typename TA::element_type>;
+    using TRhsElem = std::decay_t<typename TB::element_type>;
+    using TOutElem = std::decay_t<typename TC::element_type>;
+    static constexpr size_t m0_scale = 1;
+    static constexpr size_t n0_scale = 1;
+    static constexpr size_t k0_scale = 1;
     static constexpr bool same_type = std::is_same_v<TLhsElem, TOutElem>;
 };
 
@@ -408,6 +419,22 @@ struct u_matmul_generic {
                                                           c0_tmp[l][k]);
                             }
                         }
+                    }
+                }
+
+            } else if constexpr ((ukernels::mamtul_pack_kind::no_pack ==
+                                  PackKind) &&
+                                 (!same_type)) {
+                float a0_grouped[M0Tile];
+                float b0_grouped[N0Tile];
+
+                loop<M0Tile>([&](auto i) { a0_grouped[i] = (float)a0_tmp[i]; });
+                loop<N0Tile>([&](auto i) { b0_grouped[i] = (float)b0_tmp[i]; });
+
+                for (size_t n = 0; n < N0Tile; n++) {
+                    for (size_t m = 0; m < M0Tile; m++) {
+                        u_mul_add<PackKind, true>(a0_grouped[m], b0_grouped[n],
+                                                  c0_tmp[m][n]);
                     }
                 }
 
