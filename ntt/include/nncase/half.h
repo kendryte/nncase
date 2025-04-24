@@ -19,7 +19,6 @@
 #include <cmath>
 #include <codecvt>
 #include <cstdint>
-#include <cstring>
 #include <float.h>
 #include <functional>
 #include <iostream>
@@ -69,9 +68,7 @@ struct half {
     constexpr half(fp16_from_raw_t, uint16_t value) noexcept : value_(value) {}
 
     operator _Float16() const noexcept{
-        _Float16 result;
-        memcpy(&result, &value_, sizeof(uint16_t));
-        return result;
+        return static_cast<_Float16>(float(*this));
     }
 
     explicit operator bfloat16() const noexcept {
