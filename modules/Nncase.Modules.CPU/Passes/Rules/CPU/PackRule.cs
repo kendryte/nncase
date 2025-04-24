@@ -1093,7 +1093,7 @@ public sealed class PackCast : PackRule
 
     public override Pattern Pattern { get; } = IsCast(
       "target",
-      "calle",
+      "call",
       _ => true,
       IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() });
 
