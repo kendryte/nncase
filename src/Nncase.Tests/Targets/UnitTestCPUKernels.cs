@@ -15,6 +15,7 @@ using NetFabric.Hyperlinq;
 using Nncase.CodeGen;
 using Nncase.IR;
 using Nncase.IR.Tensors;
+using Nncase.Passes;
 using Nncase.Passes.Transforms;
 using Nncase.Runtime.Interop;
 using Nncase.Targets;
@@ -873,6 +874,82 @@ public sealed class UnitTestCPUKernels : TestClassBase
         };
 
         await RunCases($"Theory{number}", feedDict, new[] { unary });
+    }
+
+    [Theory]
+    [InlineData([new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new[] { 8 }, 0])]
+    public async Task TestPackPropagation(long[] lhsShape, long[] rhsShape, int[] hierarchy, int number)
+    {
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
+        var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
+        var feedDict = new Dictionary<Var, IValue>()
+        {
+            { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
+            { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
+        };
+
+        var candidates = new[] {
+            IR.F.Math.Unary(UnaryOp.Abs, lhs),
+            IR.F.Math.Binary(BinaryOp.Add, lhs, 1f),
+            IR.F.Tensors.Unsqueeze(lhs, new[] { 0 }),
+        };
+        var posts = new List<Expr>();
+
+        foreach (var c in candidates)
+        {
+            var matmul = IR.F.Tensors.MatMul(c, rhs);
+
+            var rule = new Passes.Rules.CPU.PackMatMul(2, Lane);
+            CompilerServices.TryMatch(matmul, rule.Pattern, out var result);
+            var context = new Passes.RunPassContext();
+            var packed = rule.GetReplaceCandidates(result!, context);
+            var rules = new IRewriteRule[] {
+                new Nncase.Passes.Rules.CPU.PackUnaryPropagation(),
+                new Nncase.Passes.Rules.CPU.PackBinaryPropagation(),
+                new Nncase.Passes.Rules.CPU.PackUnsqueezePropagation(),
+            };
+            posts.AddRange(packed.Select(ret => CompilerServices.Rewrite(ret, rules, context)));
+        }
+
+        await RunCases($"Theory{number}", feedDict, posts);
+    }
+
+    [Theory]
+    [InlineData([new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new[] { 8 }, 0])]
+    public async Task TestUnpackPropagation(long[] lhsShape, long[] rhsShape, int[] hierarchy, int number)
+    {
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
+        var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
+        var matmul = IR.F.Tensors.MatMul(lhs, rhs);
+
+        var feedDict = new Dictionary<Var, IValue>()
+        {
+            { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
+            { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
+        };
+
+        var rule = new Passes.Rules.CPU.PackMatMul(2, Lane);
+        CompilerServices.TryMatch(matmul, rule.Pattern, out var result);
+        var context = new Passes.RunPassContext();
+        var packed = rule.GetReplaceCandidates(result!, context);
+        var posts = packed.Select(ret => CompilerServices.Rewrite(IR.F.Math.Unary(UnaryOp.Abs, ret), [new Nncase.Passes.Rules.CPU.UnaryUnpackPropagation()], context)).ToList();
+        posts.AddRange(packed.Select(ret => CompilerServices.Rewrite(IR.F.Math.Binary(BinaryOp.Add, ret, 1f), [new Nncase.Passes.Rules.CPU.BinaryUnpackPropagation()], context)));
+        posts.AddRange(packed.Select(ret => CompilerServices.Rewrite(IR.F.Tensors.Transpose(ret, new[] { 0, 2, 1 }), [new Nncase.Passes.Rules.CPU.TransposeUnpackPropagation()], context)));
+        posts.AddRange(packed.Select(ret => CompilerServices.Rewrite(IR.F.Tensors.Unsqueeze(ret, new[] { 2 }), [new Nncase.Passes.Rules.CPU.UnsqueezeUnpackPropagation()], context)));
+        posts.AddRange(packed.Select(ret => CompilerServices.Rewrite(IR.F.Tensors.Reduce(ReduceOp.Max, ret, new[] { 2 }, 0f, true), [new Nncase.Passes.Rules.CPU.ReduceUnpackPropagation()], context)));
+        await RunCases($"Theory{number}", feedDict, posts);
     }
 
     [Theory]
